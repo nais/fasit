@@ -5,11 +5,17 @@ package graph
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/nais/c3po/pkg/graph/model"
 )
 
 func (r *mutationResolver) ConfigurationCreate(ctx context.Context, configuration model.NewConfiguration) (*model.Configuration, error) {
+	if !r.Features.ValidConfig(configuration.Feature, configuration.Key, configuration.Value) {
+		return nil, fmt.Errorf("invalid configuration %q for %q", configuration.Key, configuration.Feature)
+	}
+
+	configuration.Secret = r.Features.IsSecret(configuration.Feature, configuration.Key)
 	return r.Repo.ConfigCreate(ctx, configuration)
 }
 

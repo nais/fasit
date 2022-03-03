@@ -9,18 +9,13 @@ import (
 )
 
 func configurationFromSQL(c gensql.Configuration) (*model.Configuration, error) {
-	value := map[string]interface{}{}
-
-	if err := json.Unmarshal(c.Value, &value); err != nil {
-		return nil, err
-	}
 	return &model.Configuration{
 		ID:            c.ID,
 		EnvironmentID: nullUUIDToPtr(c.EnvironmentID),
 		Feature:       c.Feature,
 		Description:   nullStringToPtr(c.Description),
 		Key:           c.Key,
-		Value:         value,
+		Value:         c.Value,
 		Secret:        c.Secret,
 		Created:       c.Created,
 		Deleted:       c.Deleted.Bool,
@@ -51,6 +46,7 @@ func (r *Repo) ConfigCreate(ctx context.Context, c model.NewConfiguration) (*mod
 		EnvironmentID: ptrToNullUUID(c.EnvironmentID),
 		Feature:       c.Feature,
 		Description:   ptrToNullString(c.Description),
+		Secret:        c.Secret,
 		Key:           c.Key,
 		Value:         json.RawMessage(value),
 	})

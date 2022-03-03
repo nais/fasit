@@ -1,7 +1,4 @@
-"""
-Maps an arbitrary GraphQL value to a map[string]interface{} Go type.
-"""
-scalar Map
+scalar RawMessage
 
 type Configuration {
     id: ID!
@@ -9,7 +6,7 @@ type Configuration {
     feature: String!
     description: String
     key: String!
-    value: Map!
+    value: RawMessage!
     secret: Boolean!
     created: Time!
     deleted: Boolean!
@@ -19,7 +16,7 @@ input NewConfiguration {
     feature: String!
     description: String
     key: String!
-    value: Map!
+    value: RawMessage!
 }
 extend type Query {
     configuration(feature: String!): Configuration!

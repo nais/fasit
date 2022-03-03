@@ -46,6 +46,9 @@ models:
   ID:
     model:
       - github.com/nais/c3po/pkg/graph/scalars.UUID
+  RawMessage:
+    model:
+      - github.com/nais/c3po/pkg/graph/scalars.RawMessage
   Int:
     model:
       - github.com/99designs/gqlgen/graphql.Int

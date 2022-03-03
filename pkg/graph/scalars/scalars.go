@@ -24,3 +24,17 @@ func UnmarshalUUID(v interface{}) (uuid.UUID, error) {
 		return uuid.UUID{}, fmt.Errorf("%T is not a string", v)
 	}
 }
+
+func MarshalRawMessage(msg json.RawMessage) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		w.Write(msg)
+	})
+}
+
+func UnmarshalRawMessage(v interface{}) (json.RawMessage, error) {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return nil, err
+	}
+	return json.RawMessage(b), nil
+}

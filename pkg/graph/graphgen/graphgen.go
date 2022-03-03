@@ -5,6 +5,7 @@ package graphgen
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"strconv"
 	"sync"
@@ -306,10 +307,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "schema/configuration.graphqls", Input: `"""
-Maps an arbitrary GraphQL value to a map[string]interface{} Go type.
-"""
-scalar Map
+	{Name: "schema/configuration.graphqls", Input: `scalar RawMessage
 
 type Configuration {
     id: ID!
@@ -317,7 +315,7 @@ type Configuration {
     feature: String!
     description: String
     key: String!
-    value: Map!
+    value: RawMessage!
     secret: Boolean!
     created: Time!
     deleted: Boolean!
@@ -327,14 +325,15 @@ input NewConfiguration {
     feature: String!
     description: String
     key: String!
-    value: Map!
+    value: RawMessage!
 }
 extend type Query {
     configuration(feature: String!): Configuration!
 }
 extend type Mutation {
     configurationCreate(configuration: NewConfiguration!): Configuration!
-}`, BuiltIn: false},
+}
+`, BuiltIn: false},
 	{Name: "schema/partner.graphqls", Input: `"""
 Time is a string in [RFC 3339](https://rfc-editor.org/rfc/rfc3339.html) format, with sub-second precision added if present.
 """
@@ -662,9 +661,9 @@ func (ec *executionContext) _Configuration_value(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(map[string]interface{})
+	res := resTmp.(json.RawMessage)
 	fc.Result = res
-	return ec.marshalNMap2map(ctx, field.Selections, res)
+	return ec.marshalNRawMessage2encodingᚋjsonᚐRawMessage(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Configuration_secret(ctx context.Context, field graphql.CollectedField, obj *model.Configuration) (ret graphql.Marshaler) {
@@ -2407,7 +2406,7 @@ func (ec *executionContext) unmarshalInputNewConfiguration(ctx context.Context, 
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("value"))
-			it.Value, err = ec.unmarshalNMap2map(ctx, v)
+			it.Value, err = ec.unmarshalNRawMessage2encodingᚋjsonᚐRawMessage(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -3236,27 +3235,6 @@ func (ec *executionContext) marshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx c
 	return res
 }
 
-func (ec *executionContext) unmarshalNMap2map(ctx context.Context, v interface{}) (map[string]interface{}, error) {
-	res, err := graphql.UnmarshalMap(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNMap2map(ctx context.Context, sel ast.SelectionSet, v map[string]interface{}) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := graphql.MarshalMap(v)
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-	}
-	return res
-}
-
 func (ec *executionContext) unmarshalNNewConfiguration2githubᚗcomᚋnaisᚋc3poᚋpkgᚋgraphᚋmodelᚐNewConfiguration(ctx context.Context, v interface{}) (model.NewConfiguration, error) {
 	res, err := ec.unmarshalInputNewConfiguration(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -3323,6 +3301,27 @@ func (ec *executionContext) marshalNPartner2ᚖgithubᚗcomᚋnaisᚋc3poᚋpkg�
 func (ec *executionContext) unmarshalNPartnerCreate2githubᚗcomᚋnaisᚋc3poᚋpkgᚋgraphᚋmodelᚐPartnerCreate(ctx context.Context, v interface{}) (model.PartnerCreate, error) {
 	res, err := ec.unmarshalInputPartnerCreate(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNRawMessage2encodingᚋjsonᚐRawMessage(ctx context.Context, v interface{}) (json.RawMessage, error) {
+	res, err := graph.UnmarshalRawMessage(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNRawMessage2encodingᚋjsonᚐRawMessage(ctx context.Context, sel ast.SelectionSet, v json.RawMessage) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := graph.MarshalRawMessage(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
