@@ -1,0 +1,6 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/naiserator
+version: 0.1.1
+repo: ""
+source: ""
+config:
+  imageTag: string

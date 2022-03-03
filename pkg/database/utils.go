@@ -3,6 +3,8 @@ package database
 import (
 	"database/sql"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 func ptrToNullString(str *string) sql.NullString {
@@ -50,4 +52,21 @@ func ptrToString(s *string) string {
 
 func stringToPtr(s string) *string {
 	return &s
+}
+
+func nullUUIDToPtr(uid uuid.NullUUID) *uuid.UUID {
+	if uid.Valid {
+		return &uid.UUID
+	}
+	return nil
+}
+
+func ptrToNullUUID(uid *uuid.UUID) uuid.NullUUID {
+	if uid == nil {
+		return uuid.NullUUID{}
+	}
+	return uuid.NullUUID{
+		UUID:  *uid,
+		Valid: true,
+	}
 }

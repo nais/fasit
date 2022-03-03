@@ -6,6 +6,7 @@ package graph
 import (
 	"context"
 	"fmt"
+
 	"github.com/nais/c3po/pkg/graph/graphgen"
 	"github.com/nais/c3po/pkg/graph/model"
 )

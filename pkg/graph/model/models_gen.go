@@ -4,10 +4,32 @@ package model
 
 import (
 	"time"
+
+	"github.com/google/uuid"
 )
 
+type Configuration struct {
+	ID            uuid.UUID              `json:"id"`
+	EnvironmentID *uuid.UUID             `json:"environmentID"`
+	Feature       string                 `json:"feature"`
+	Description   *string                `json:"description"`
+	Key           string                 `json:"key"`
+	Value         map[string]interface{} `json:"value"`
+	Secret        bool                   `json:"secret"`
+	Created       time.Time              `json:"created"`
+	Deleted       bool                   `json:"deleted"`
+}
+
+type NewConfiguration struct {
+	EnvironmentID *uuid.UUID             `json:"environmentID"`
+	Feature       string                 `json:"feature"`
+	Description   *string                `json:"description"`
+	Key           string                 `json:"key"`
+	Value         map[string]interface{} `json:"value"`
+}
+
 type Partner struct {
-	ID           string    `json:"id"`
+	ID           uuid.UUID `json:"id"`
 	Name         string    `json:"name"`
 	Description  *string   `json:"description"`
 	Created      time.Time `json:"created"`

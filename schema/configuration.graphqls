@@ -1,0 +1,29 @@
+"""
+Maps an arbitrary GraphQL value to a map[string]interface{} Go type.
+"""
+scalar Map
+
+type Configuration {
+    id: ID!
+    environmentID: ID
+    feature: String!
+    description: String
+    key: String!
+    value: Map!
+    secret: Boolean!
+    created: Time!
+    deleted: Boolean!
+}
+input NewConfiguration {
+    environmentID: ID
+    feature: String!
+    description: String
+    key: String!
+    value: Map!
+}
+extend type Query {
+    configuration(feature: String!): Configuration!
+}
+extend type Mutation {
+    configurationCreate(configuration: NewConfiguration!): Configuration!
+}

@@ -13,9 +13,11 @@ import (
 type Configuration struct {
 	ID            uuid.UUID
 	EnvironmentID uuid.NullUUID
+	Feature       string
 	Key           string
 	Value         json.RawMessage
 	Description   sql.NullString
+	Secret        bool
 	Deleted       sql.NullBool
 	Created       time.Time
 }
