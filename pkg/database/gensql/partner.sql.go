@@ -5,18 +5,22 @@ package gensql
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/google/uuid"
 )
 
-const getPartner = `-- name: GetPartner :one
-SELECT id, name, description, created, last_modified
-FROM partners
-WHERE id = $1
+const partnerCreate = `-- name: PartnerCreate :one
+INSERT INTO partners (name, description) VALUES ($1, $2) RETURNING id, name, description, created, last_modified
 `
 
-func (q *Queries) GetPartner(ctx context.Context, id uuid.UUID) (Partner, error) {
-	row := q.db.QueryRowContext(ctx, getPartner, id)
+type PartnerCreateParams struct {
+	Name        string
+	Description sql.NullString
+}
+
+func (q *Queries) PartnerCreate(ctx context.Context, arg PartnerCreateParams) (Partner, error) {
+	row := q.db.QueryRowContext(ctx, partnerCreate, arg.Name, arg.Description)
 	var i Partner
 	err := row.Scan(
 		&i.ID,
@@ -28,13 +32,32 @@ func (q *Queries) GetPartner(ctx context.Context, id uuid.UUID) (Partner, error)
 	return i, err
 }
 
-const getPartners = `-- name: GetPartners :many
+const partnerGet = `-- name: PartnerGet :one
+SELECT id, name, description, created, last_modified
+FROM partners
+WHERE id = $1
+`
+
+func (q *Queries) PartnerGet(ctx context.Context, id uuid.UUID) (Partner, error) {
+	row := q.db.QueryRowContext(ctx, partnerGet, id)
+	var i Partner
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.Created,
+		&i.LastModified,
+	)
+	return i, err
+}
+
+const partnersGet = `-- name: PartnersGet :many
 SELECT id, name, description, created, last_modified
 FROM partners
 `
 
-func (q *Queries) GetPartners(ctx context.Context) ([]Partner, error) {
-	rows, err := q.db.QueryContext(ctx, getPartners)
+func (q *Queries) PartnersGet(ctx context.Context) ([]Partner, error) {
+	rows, err := q.db.QueryContext(ctx, partnersGet)
 	if err != nil {
 		return nil, err
 	}

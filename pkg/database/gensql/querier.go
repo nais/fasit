@@ -9,8 +9,9 @@ import (
 )
 
 type Querier interface {
-	GetPartner(ctx context.Context, id uuid.UUID) (Partner, error)
-	GetPartners(ctx context.Context) ([]Partner, error)
+	PartnerCreate(ctx context.Context, arg PartnerCreateParams) (Partner, error)
+	PartnerGet(ctx context.Context, id uuid.UUID) (Partner, error)
+	PartnersGet(ctx context.Context) ([]Partner, error)
 }
 
 var _ Querier = (*Queries)(nil)

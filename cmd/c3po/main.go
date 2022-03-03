@@ -1,15 +1,17 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
+	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/nais/c3po/pkg/database"
+	"github.com/nais/c3po/pkg/graph"
+	"github.com/nais/c3po/pkg/graph/graphgen"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
+	"net/http"
 	"os"
-	"os/signal"
-	"syscall"
 )
 
 var (
@@ -30,16 +32,22 @@ func init() {
 func main() {
 	flag.Parse()
 
-	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
-	defer cancel()
+	//ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	//defer cancel()
 
 	log := newLogger()
 	repo, err := database.New(cfg.DBConnectionDSN, log.WithField("subsystem", "repo"))
 	if err != nil {
 		log.WithError(err).Fatal("setting up database")
 	}
-	_ = repo
-	_ = ctx
+
+	srv := handler.NewDefaultServer(graphgen.NewExecutableSchema(graphgen.Config{Resolvers: &graph.Resolver{Repo: repo}}))
+
+	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
+	http.Handle("/query", srv)
+
+	log.Printf("connect to http://%s/ for GraphQL playground", cfg.BindAddress)
+	log.Fatal(http.ListenAndServe(cfg.BindAddress, nil))
 
 }
 

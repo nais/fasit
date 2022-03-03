@@ -1,0 +1,22 @@
+"""
+Time is a string in [RFC 3339](https://rfc-editor.org/rfc/rfc3339.html) format, with sub-second precision added if present.
+"""
+scalar Time
+
+type Partner {
+    id: ID!
+    name: String!
+    description: String
+    created: Time!
+    lastModified: Time!
+}
+type Query {
+    partners: [Partner!]!
+}
+input PartnerCreate {
+    name: String!
+    description: String
+}
+type Mutation {
+    partnerCreate(partner: PartnerCreate!): Partner!
+}

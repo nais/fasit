@@ -14,6 +14,9 @@ install-sqlc:
 generate-sql:
 	$(GOBIN)/sqlc generate
 
+generate-graphql:
+	go get -d github.com/99designs/gqlgen@latest && go run github.com/99designs/gqlgen generate
+
 local:
 	go run ./cmd/c3po \
 	--bind-address=127.0.0.1:8080 \
