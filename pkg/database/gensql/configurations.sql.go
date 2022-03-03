@@ -7,6 +7,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -46,6 +47,82 @@ func (q *Queries) ConfigCreate(ctx context.Context, arg ConfigCreateParams) (Con
 		&i.Created,
 	)
 	return i, err
+}
+
+const configForEnv = `-- name: ConfigForEnv :many
+WITH "inner" AS (
+		SELECT
+			id,
+			environment_id,
+			key,
+			value,
+			created,
+			(CASE WHEN environment_id IS NULL THEN 1 ELSE 0 END) as env,
+			rank()
+		OVER (PARTITION BY key ORDER BY created DESC)
+		FROM configurations
+		WHERE feature = $1
+		AND (environment_id IS NULL OR environment_id = $2::uuid)
+	),
+	"outer" AS (
+	SELECT
+		id,
+		environment_id,
+		key,
+		value,
+		created,
+		env,
+		rank()
+	OVER (PARTITION BY key ORDER BY env ASC, "inner".rank ASC)
+	FROM "inner"
+)
+SELECT id, environment_id, key, value, created, env, rank FROM "outer" WHERE rank = 1
+`
+
+type ConfigForEnvParams struct {
+	Feature       string
+	EnvironmentID uuid.UUID
+}
+
+type ConfigForEnvRow struct {
+	ID            uuid.UUID
+	EnvironmentID uuid.NullUUID
+	Key           string
+	Value         json.RawMessage
+	Created       time.Time
+	Env           interface{}
+	Rank          int64
+}
+
+func (q *Queries) ConfigForEnv(ctx context.Context, arg ConfigForEnvParams) ([]ConfigForEnvRow, error) {
+	rows, err := q.db.QueryContext(ctx, configForEnv, arg.Feature, arg.EnvironmentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ConfigForEnvRow{}
+	for rows.Next() {
+		var i ConfigForEnvRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.EnvironmentID,
+			&i.Key,
+			&i.Value,
+			&i.Created,
+			&i.Env,
+			&i.Rank,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const configGet = `-- name: ConfigGet :one

@@ -3,7 +3,9 @@ package database
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/nais/c3po/pkg/database/gensql"
 	"github.com/nais/c3po/pkg/graph/model"
 )
@@ -60,4 +62,22 @@ func (r *Repo) ConfigCreate(ctx context.Context, c model.NewConfiguration) (*mod
 	}
 
 	return ret, nil
+}
+
+func (r *Repo) HelmValues(ctx context.Context, feature string, envID uuid.UUID) (map[string]interface{}, error) {
+	vals, err := r.querier.ConfigForEnv(ctx, gensql.ConfigForEnvParams{
+		Feature:       feature,
+		EnvironmentID: envID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	val := make(map[string]interface{})
+	for _, v := range vals {
+		fmt.Println(v.Key, string(v.Value))
+		val[v.Key] = v.Value
+	}
+
+	return val, nil
 }

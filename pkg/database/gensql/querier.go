@@ -10,6 +10,7 @@ import (
 
 type Querier interface {
 	ConfigCreate(ctx context.Context, arg ConfigCreateParams) (Configuration, error)
+	ConfigForEnv(ctx context.Context, arg ConfigForEnvParams) ([]ConfigForEnvRow, error)
 	ConfigGet(ctx context.Context, feature string) (Configuration, error)
 	PartnerCreate(ctx context.Context, arg PartnerCreateParams) (Partner, error)
 	PartnerGet(ctx context.Context, id uuid.UUID) (Partner, error)
