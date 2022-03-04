@@ -1,0 +1,5 @@
+scalar Map
+
+extend type Query {
+	values(feature: String!, env: ID!): Map!
+}
