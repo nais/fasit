@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/nais/c3po/pkg/database/gensql"
@@ -73,11 +74,31 @@ func (r *Repo) HelmValues(ctx context.Context, feature string, envID uuid.UUID) 
 		return nil, err
 	}
 
-	val := make(map[string]interface{})
-	for _, v := range vals {
-		fmt.Println(v.Key, string(v.Value))
-		val[v.Key] = v.Value
-	}
+	return makeHelmConfigMap(vals)
+}
 
+func makeHelmConfigMap(vals []gensql.ConfigForEnvRow) (map[string]interface{}, error) {
+	val := make(map[string]interface{})
+
+	for _, v := range vals {
+		keys := strings.Split(v.Key, ".")
+		parent := val
+		for index, key := range keys {
+			if index == len(keys)-1 {
+				parent[key] = v.Value
+				continue
+			}
+			if e, ok := parent[key]; ok {
+				if p, ok := e.(map[string]interface{}); ok {
+					parent = p
+					continue
+				}
+				return nil, fmt.Errorf("key %v is not nestable", v.Key)
+			}
+			f := make(map[string]interface{})
+			parent[key] = f
+			parent = f
+		}
+	}
 	return val, nil
 }
