@@ -1,5 +1,3 @@
-scalar RawMessage
-
 type Configuration {
     id: ID!
     environmentID: ID

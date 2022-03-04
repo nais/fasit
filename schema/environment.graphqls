@@ -1,0 +1,17 @@
+type Environment {
+    id: ID!
+    name: String!
+    description: String
+    created: Time!
+    lastModified: Time!
+}
+
+input EnvironmentCreate {
+    name: String!
+    description: String
+    partnerID: ID!
+}
+
+extend type Mutation {
+    environmentCreate(environment: EnvironmentCreate!): Environment!
+}

@@ -21,6 +21,20 @@ type Configuration struct {
 	Deleted       bool            `json:"deleted"`
 }
 
+type Environment struct {
+	ID           uuid.UUID `json:"id"`
+	Name         string    `json:"name"`
+	Description  *string   `json:"description"`
+	Created      time.Time `json:"created"`
+	LastModified time.Time `json:"lastModified"`
+}
+
+type EnvironmentCreate struct {
+	Name        string    `json:"name"`
+	Description *string   `json:"description"`
+	PartnerID   uuid.UUID `json:"partnerID"`
+}
+
 type Partner struct {
 	ID           uuid.UUID `json:"id"`
 	Name         string    `json:"name"`

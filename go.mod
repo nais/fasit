@@ -5,6 +5,7 @@ go 1.17
 require (
 	github.com/99designs/gqlgen v0.17.1
 	github.com/davecgh/go-spew v1.1.1
+	github.com/google/go-cmp v0.5.7
 	github.com/google/uuid v1.3.0
 	github.com/lib/pq v1.10.4
 	github.com/pressly/goose/v3 v3.5.3
@@ -21,7 +22,6 @@ require (
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/google/go-cmp v0.5.7 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/hashicorp/golang-lru v0.5.1 // indirect
 	github.com/matryer/moq v0.2.3 // indirect

@@ -59,8 +59,17 @@ type ComplexityRoot struct {
 		Value         func(childComplexity int) int
 	}
 
+	Environment struct {
+		Created      func(childComplexity int) int
+		Description  func(childComplexity int) int
+		ID           func(childComplexity int) int
+		LastModified func(childComplexity int) int
+		Name         func(childComplexity int) int
+	}
+
 	Mutation struct {
 		ConfigurationCreate func(childComplexity int, configuration model.NewConfiguration) int
+		EnvironmentCreate   func(childComplexity int, environment model.EnvironmentCreate) int
 		PartnerCreate       func(childComplexity int, partner model.PartnerCreate) int
 	}
 
@@ -82,6 +91,7 @@ type ComplexityRoot struct {
 type MutationResolver interface {
 	PartnerCreate(ctx context.Context, partner model.PartnerCreate) (*model.Partner, error)
 	ConfigurationCreate(ctx context.Context, configuration model.NewConfiguration) (*model.Configuration, error)
+	EnvironmentCreate(ctx context.Context, environment model.EnvironmentCreate) (*model.Environment, error)
 }
 type QueryResolver interface {
 	Partners(ctx context.Context) ([]*model.Partner, error)
@@ -167,6 +177,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Configuration.Value(childComplexity), true
 
+	case "Environment.created":
+		if e.complexity.Environment.Created == nil {
+			break
+		}
+
+		return e.complexity.Environment.Created(childComplexity), true
+
+	case "Environment.description":
+		if e.complexity.Environment.Description == nil {
+			break
+		}
+
+		return e.complexity.Environment.Description(childComplexity), true
+
+	case "Environment.id":
+		if e.complexity.Environment.ID == nil {
+			break
+		}
+
+		return e.complexity.Environment.ID(childComplexity), true
+
+	case "Environment.lastModified":
+		if e.complexity.Environment.LastModified == nil {
+			break
+		}
+
+		return e.complexity.Environment.LastModified(childComplexity), true
+
+	case "Environment.name":
+		if e.complexity.Environment.Name == nil {
+			break
+		}
+
+		return e.complexity.Environment.Name(childComplexity), true
+
 	case "Mutation.configurationCreate":
 		if e.complexity.Mutation.ConfigurationCreate == nil {
 			break
@@ -178,6 +223,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.ConfigurationCreate(childComplexity, args["configuration"].(model.NewConfiguration)), true
+
+	case "Mutation.environmentCreate":
+		if e.complexity.Mutation.EnvironmentCreate == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_environmentCreate_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.EnvironmentCreate(childComplexity, args["environment"].(model.EnvironmentCreate)), true
 
 	case "Mutation.partnerCreate":
 		if e.complexity.Mutation.PartnerCreate == nil {
@@ -321,9 +378,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "schema/configuration.graphqls", Input: `scalar RawMessage
-
-type Configuration {
+	{Name: "schema/configuration.graphqls", Input: `type Configuration {
     id: ID!
     environmentID: ID
     feature: String!
@@ -348,18 +403,29 @@ extend type Mutation {
     configurationCreate(configuration: NewConfiguration!): Configuration!
 }
 `, BuiltIn: false},
-	{Name: "schema/helm.graphqls", Input: `scalar Map
+	{Name: "schema/environment.graphqls", Input: `type Environment {
+    id: ID!
+    name: String!
+    description: String
+    created: Time!
+    lastModified: Time!
+}
 
-extend type Query {
+input EnvironmentCreate {
+    name: String!
+    description: String
+    partnerID: ID!
+}
+
+extend type Mutation {
+    environmentCreate(environment: EnvironmentCreate!): Environment!
+}
+`, BuiltIn: false},
+	{Name: "schema/helm.graphqls", Input: `extend type Query {
 	values(feature: String!, env: ID!): Map!
 }
 `, BuiltIn: false},
-	{Name: "schema/partner.graphqls", Input: `"""
-Time is a string in [RFC 3339](https://rfc-editor.org/rfc/rfc3339.html) format, with sub-second precision added if present.
-"""
-scalar Time
-
-type Partner {
+	{Name: "schema/partner.graphqls", Input: `type Partner {
     id: ID!
     name: String!
     description: String
@@ -377,6 +443,13 @@ type Mutation {
     partnerCreate(partner: PartnerCreate!): Partner!
 }
 `, BuiltIn: false},
+	{Name: "schema/scalars.graphqls", Input: `scalar Map
+scalar RawMessage
+
+"""
+Time is a string in [RFC 3339](https://rfc-editor.org/rfc/rfc3339.html) format, with sub-second precision added if present.
+"""
+scalar Time`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
@@ -396,6 +469,21 @@ func (ec *executionContext) field_Mutation_configurationCreate_args(ctx context.
 		}
 	}
 	args["configuration"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_environmentCreate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.EnvironmentCreate
+	if tmp, ok := rawArgs["environment"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("environment"))
+		arg0, err = ec.unmarshalNEnvironmentCreate2githubᚗcomᚋnaisᚋc3poᚋpkgᚋgraphᚋmodelᚐEnvironmentCreate(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["environment"] = arg0
 	return args, nil
 }
 
@@ -815,6 +903,178 @@ func (ec *executionContext) _Configuration_deleted(ctx context.Context, field gr
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Environment_id(ctx context.Context, field graphql.CollectedField, obj *model.Environment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Environment",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(uuid.UUID)
+	fc.Result = res
+	return ec.marshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Environment_name(ctx context.Context, field graphql.CollectedField, obj *model.Environment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Environment",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Environment_description(ctx context.Context, field graphql.CollectedField, obj *model.Environment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Environment",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Environment_created(ctx context.Context, field graphql.CollectedField, obj *model.Environment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Environment",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Created, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Environment_lastModified(ctx context.Context, field graphql.CollectedField, obj *model.Environment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Environment",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastModified, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Mutation_partnerCreate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -897,6 +1157,48 @@ func (ec *executionContext) _Mutation_configurationCreate(ctx context.Context, f
 	res := resTmp.(*model.Configuration)
 	fc.Result = res
 	return ec.marshalNConfiguration2ᚖgithubᚗcomᚋnaisᚋc3poᚋpkgᚋgraphᚋmodelᚐConfiguration(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_environmentCreate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_environmentCreate_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().EnvironmentCreate(rctx, args["environment"].(model.EnvironmentCreate))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Environment)
+	fc.Result = res
+	return ec.marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋc3poᚋpkgᚋgraphᚋmodelᚐEnvironment(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Partner_id(ctx context.Context, field graphql.CollectedField, obj *model.Partner) (ret graphql.Marshaler) {
@@ -2447,6 +2749,45 @@ func (ec *executionContext) ___Type_specifiedByURL(ctx context.Context, field gr
 
 // region    **************************** input.gotpl *****************************
 
+func (ec *executionContext) unmarshalInputEnvironmentCreate(ctx context.Context, obj interface{}) (model.EnvironmentCreate, error) {
+	var it model.EnvironmentCreate
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	for k, v := range asMap {
+		switch k {
+		case "name":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "description":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
+			it.Description, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "partnerID":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partnerID"))
+			it.PartnerID, err = ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputNewConfiguration(ctx context.Context, obj interface{}) (model.NewConfiguration, error) {
 	var it model.NewConfiguration
 	asMap := map[string]interface{}{}
@@ -2646,6 +2987,74 @@ func (ec *executionContext) _Configuration(ctx context.Context, sel ast.Selectio
 	return out
 }
 
+var environmentImplementors = []string{"Environment"}
+
+func (ec *executionContext) _Environment(ctx context.Context, sel ast.SelectionSet, obj *model.Environment) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, environmentImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Environment")
+		case "id":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Environment_id(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "name":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Environment_name(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "description":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Environment_description(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+		case "created":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Environment_created(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "lastModified":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Environment_lastModified(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var mutationImplementors = []string{"Mutation"}
 
 func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -2678,6 +3087,16 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "configurationCreate":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_configurationCreate(ctx, field)
+			}
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, innerFunc)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "environmentCreate":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_environmentCreate(ctx, field)
 			}
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, innerFunc)
@@ -3327,6 +3746,25 @@ func (ec *executionContext) marshalNConfiguration2ᚖgithubᚗcomᚋnaisᚋc3po�
 		return graphql.Null
 	}
 	return ec._Configuration(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNEnvironment2githubᚗcomᚋnaisᚋc3poᚋpkgᚋgraphᚋmodelᚐEnvironment(ctx context.Context, sel ast.SelectionSet, v model.Environment) graphql.Marshaler {
+	return ec._Environment(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋc3poᚋpkgᚋgraphᚋmodelᚐEnvironment(ctx context.Context, sel ast.SelectionSet, v *model.Environment) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._Environment(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNEnvironmentCreate2githubᚗcomᚋnaisᚋc3poᚋpkgᚋgraphᚋmodelᚐEnvironmentCreate(ctx context.Context, v interface{}) (model.EnvironmentCreate, error) {
+	res, err := ec.unmarshalInputEnvironmentCreate(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx context.Context, v interface{}) (uuid.UUID, error) {
