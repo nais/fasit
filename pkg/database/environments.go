@@ -3,8 +3,8 @@ package database
 import (
 	"context"
 
-	"github.com/nais/c3po/pkg/database/gensql"
-	"github.com/nais/c3po/pkg/graph/model"
+	"github.com/nais/fasit/pkg/database/gensql"
+	"github.com/nais/fasit/pkg/graph/model"
 )
 
 func environmentFromSQL(p gensql.Environment) *model.Environment {

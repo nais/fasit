@@ -35,7 +35,7 @@ resolver:
 # gqlgen will search for any type names in the schema in these go packages
 # if they match it will use them, otherwise it will generate them.
 autobind:
-  - "github.com/nais/c3po/pkg/graph/model"
+  - "github.com/nais/fasit/pkg/graph/model"
 
 # This section declares type mapping between the GraphQL and go type systems
 #
@@ -45,10 +45,10 @@ autobind:
 models:
   ID:
     model:
-      - github.com/nais/c3po/pkg/graph/scalars.UUID
+      - github.com/nais/fasit/pkg/graph/scalars.UUID
   RawMessage:
     model:
-      - github.com/nais/c3po/pkg/graph/scalars.RawMessage
+      - github.com/nais/fasit/pkg/graph/scalars.RawMessage
   Int:
     model:
       - github.com/99designs/gqlgen/graphql.Int

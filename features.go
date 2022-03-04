@@ -1,4 +1,4 @@
-package c3po
+package fasit
 
 import "embed"
 

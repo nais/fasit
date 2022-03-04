@@ -1,4 +1,4 @@
-module github.com/nais/c3po
+module github.com/nais/fasit
 
 go 1.17
 

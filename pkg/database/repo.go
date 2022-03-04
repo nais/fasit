@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"embed"
 	"fmt"
-	"github.com/nais/c3po/pkg/database/gensql"
+	"github.com/nais/fasit/pkg/database/gensql"
 	"regexp"
 	"time"
 
@@ -67,7 +67,7 @@ type Hooks struct {
 func NewHooks() *Hooks {
 	return &Hooks{
 		bucket: prometheus.NewHistogramVec(prometheus.HistogramOpts{
-			Namespace: "c3po",
+			Namespace: "fasit",
 			Subsystem: "repo",
 			Name:      "query_time",
 			Help:      "Query time by name in ms",

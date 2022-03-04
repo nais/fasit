@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/nais/c3po/pkg/database/gensql"
+	"github.com/nais/fasit/pkg/database/gensql"
 )
 
 func TestHelmConfigMap(t *testing.T) {
@@ -13,8 +13,8 @@ func TestHelmConfigMap(t *testing.T) {
 		b, _ := json.Marshal(v)
 		return b
 	}
-	tests := map[string]struct{
-		input []gensql.ConfigForEnvRow
+	tests := map[string]struct {
+		input    []gensql.ConfigForEnvRow
 		expected map[string]interface{}
 	}{
 		"empty": {
@@ -22,14 +22,14 @@ func TestHelmConfigMap(t *testing.T) {
 			expected: make(map[string]interface{}),
 		},
 		"single_level": {
-			input:    []gensql.ConfigForEnvRow{
+			input: []gensql.ConfigForEnvRow{
 				{
-					Key:           "test1",
-					Value:         jsonify("value1"),
+					Key:   "test1",
+					Value: jsonify("value1"),
 				},
 				{
-					Key:           "test2",
-					Value:         jsonify("value2"),
+					Key:   "test2",
+					Value: jsonify("value2"),
 				},
 			},
 			expected: map[string]interface{}{
@@ -38,14 +38,14 @@ func TestHelmConfigMap(t *testing.T) {
 			},
 		},
 		"multi_level": {
-			input:    []gensql.ConfigForEnvRow{
+			input: []gensql.ConfigForEnvRow{
 				{
-					Key:           "test.a",
-					Value:         jsonify("value_a"),
+					Key:   "test.a",
+					Value: jsonify("value_a"),
 				},
 				{
-					Key:           "test.b",
-					Value:         jsonify("value_b"),
+					Key:   "test.b",
+					Value: jsonify("value_b"),
 				},
 			},
 			expected: map[string]interface{}{
@@ -58,7 +58,7 @@ func TestHelmConfigMap(t *testing.T) {
 	}
 
 	for name, tc := range tests {
-		t.Run( name, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			retval, err := makeHelmConfigMap(tc.input)
 			if err != nil {
 				t.Fatal(err)
@@ -66,6 +66,6 @@ func TestHelmConfigMap(t *testing.T) {
 			if !cmp.Equal(retval, tc.expected) {
 				t.Error(cmp.Diff(retval, tc.expected))
 			}
-		} )
+		})
 	}
 }

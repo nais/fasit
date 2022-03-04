@@ -1,8 +1,8 @@
 package graph
 
 import (
-	"github.com/nais/c3po/pkg/database"
-	"github.com/nais/c3po/pkg/feature"
+	"github.com/nais/fasit/pkg/database"
+	"github.com/nais/fasit/pkg/feature"
 )
 
 // This file will not be regenerated automatically.

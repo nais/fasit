@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/nais/c3po/pkg/database/gensql"
-	"github.com/nais/c3po/pkg/graph/model"
+	"github.com/nais/fasit/pkg/database/gensql"
+	"github.com/nais/fasit/pkg/graph/model"
 )
 
 func configurationFromSQL(c gensql.Configuration) (*model.Configuration, error) {

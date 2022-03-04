@@ -6,7 +6,7 @@ services:
     restart: always
     environment:
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: c3po
+      POSTGRES_DB: fasit
     command: ["postgres", "-c", "log_statement=all"]
     ports:
       - 5432:5432

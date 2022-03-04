@@ -15,8 +15,8 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
 	"github.com/google/uuid"
-	"github.com/nais/c3po/pkg/graph/model"
-	graph "github.com/nais/c3po/pkg/graph/scalars"
+	"github.com/nais/fasit/pkg/graph/model"
+	graph "github.com/nais/fasit/pkg/graph/scalars"
 	gqlparser "github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
 )
@@ -463,7 +463,7 @@ func (ec *executionContext) field_Mutation_configurationCreate_args(ctx context.
 	var arg0 model.NewConfiguration
 	if tmp, ok := rawArgs["configuration"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("configuration"))
-		arg0, err = ec.unmarshalNNewConfiguration2githubᚗcomᚋnaisᚋc3poᚋpkgᚋgraphᚋmodelᚐNewConfiguration(ctx, tmp)
+		arg0, err = ec.unmarshalNNewConfiguration2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐNewConfiguration(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -478,7 +478,7 @@ func (ec *executionContext) field_Mutation_environmentCreate_args(ctx context.Co
 	var arg0 model.EnvironmentCreate
 	if tmp, ok := rawArgs["environment"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("environment"))
-		arg0, err = ec.unmarshalNEnvironmentCreate2githubᚗcomᚋnaisᚋc3poᚋpkgᚋgraphᚋmodelᚐEnvironmentCreate(ctx, tmp)
+		arg0, err = ec.unmarshalNEnvironmentCreate2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentCreate(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -493,7 +493,7 @@ func (ec *executionContext) field_Mutation_partnerCreate_args(ctx context.Contex
 	var arg0 model.PartnerCreate
 	if tmp, ok := rawArgs["partner"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partner"))
-		arg0, err = ec.unmarshalNPartnerCreate2githubᚗcomᚋnaisᚋc3poᚋpkgᚋgraphᚋmodelᚐPartnerCreate(ctx, tmp)
+		arg0, err = ec.unmarshalNPartnerCreate2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐPartnerCreate(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1114,7 +1114,7 @@ func (ec *executionContext) _Mutation_partnerCreate(ctx context.Context, field g
 	}
 	res := resTmp.(*model.Partner)
 	fc.Result = res
-	return ec.marshalNPartner2ᚖgithubᚗcomᚋnaisᚋc3poᚋpkgᚋgraphᚋmodelᚐPartner(ctx, field.Selections, res)
+	return ec.marshalNPartner2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐPartner(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_configurationCreate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1156,7 +1156,7 @@ func (ec *executionContext) _Mutation_configurationCreate(ctx context.Context, f
 	}
 	res := resTmp.(*model.Configuration)
 	fc.Result = res
-	return ec.marshalNConfiguration2ᚖgithubᚗcomᚋnaisᚋc3poᚋpkgᚋgraphᚋmodelᚐConfiguration(ctx, field.Selections, res)
+	return ec.marshalNConfiguration2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐConfiguration(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Mutation_environmentCreate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1198,7 +1198,7 @@ func (ec *executionContext) _Mutation_environmentCreate(ctx context.Context, fie
 	}
 	res := resTmp.(*model.Environment)
 	fc.Result = res
-	return ec.marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋc3poᚋpkgᚋgraphᚋmodelᚐEnvironment(ctx, field.Selections, res)
+	return ec.marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironment(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Partner_id(ctx context.Context, field graphql.CollectedField, obj *model.Partner) (ret graphql.Marshaler) {
@@ -1405,7 +1405,7 @@ func (ec *executionContext) _Query_partners(ctx context.Context, field graphql.C
 	}
 	res := resTmp.([]*model.Partner)
 	fc.Result = res
-	return ec.marshalNPartner2ᚕᚖgithubᚗcomᚋnaisᚋc3poᚋpkgᚋgraphᚋmodelᚐPartnerᚄ(ctx, field.Selections, res)
+	return ec.marshalNPartner2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐPartnerᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_configuration(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1447,7 +1447,7 @@ func (ec *executionContext) _Query_configuration(ctx context.Context, field grap
 	}
 	res := resTmp.(*model.Configuration)
 	fc.Result = res
-	return ec.marshalNConfiguration2ᚖgithubᚗcomᚋnaisᚋc3poᚋpkgᚋgraphᚋmodelᚐConfiguration(ctx, field.Selections, res)
+	return ec.marshalNConfiguration2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐConfiguration(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_values(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3734,11 +3734,11 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) marshalNConfiguration2githubᚗcomᚋnaisᚋc3poᚋpkgᚋgraphᚋmodelᚐConfiguration(ctx context.Context, sel ast.SelectionSet, v model.Configuration) graphql.Marshaler {
+func (ec *executionContext) marshalNConfiguration2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐConfiguration(ctx context.Context, sel ast.SelectionSet, v model.Configuration) graphql.Marshaler {
 	return ec._Configuration(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNConfiguration2ᚖgithubᚗcomᚋnaisᚋc3poᚋpkgᚋgraphᚋmodelᚐConfiguration(ctx context.Context, sel ast.SelectionSet, v *model.Configuration) graphql.Marshaler {
+func (ec *executionContext) marshalNConfiguration2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐConfiguration(ctx context.Context, sel ast.SelectionSet, v *model.Configuration) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -3748,11 +3748,11 @@ func (ec *executionContext) marshalNConfiguration2ᚖgithubᚗcomᚋnaisᚋc3po�
 	return ec._Configuration(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNEnvironment2githubᚗcomᚋnaisᚋc3poᚋpkgᚋgraphᚋmodelᚐEnvironment(ctx context.Context, sel ast.SelectionSet, v model.Environment) graphql.Marshaler {
+func (ec *executionContext) marshalNEnvironment2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironment(ctx context.Context, sel ast.SelectionSet, v model.Environment) graphql.Marshaler {
 	return ec._Environment(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋc3poᚋpkgᚋgraphᚋmodelᚐEnvironment(ctx context.Context, sel ast.SelectionSet, v *model.Environment) graphql.Marshaler {
+func (ec *executionContext) marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironment(ctx context.Context, sel ast.SelectionSet, v *model.Environment) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -3762,7 +3762,7 @@ func (ec *executionContext) marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋc3poᚋ
 	return ec._Environment(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNEnvironmentCreate2githubᚗcomᚋnaisᚋc3poᚋpkgᚋgraphᚋmodelᚐEnvironmentCreate(ctx context.Context, v interface{}) (model.EnvironmentCreate, error) {
+func (ec *executionContext) unmarshalNEnvironmentCreate2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentCreate(ctx context.Context, v interface{}) (model.EnvironmentCreate, error) {
 	res, err := ec.unmarshalInputEnvironmentCreate(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
@@ -3803,16 +3803,16 @@ func (ec *executionContext) marshalNMap2map(ctx context.Context, sel ast.Selecti
 	return res
 }
 
-func (ec *executionContext) unmarshalNNewConfiguration2githubᚗcomᚋnaisᚋc3poᚋpkgᚋgraphᚋmodelᚐNewConfiguration(ctx context.Context, v interface{}) (model.NewConfiguration, error) {
+func (ec *executionContext) unmarshalNNewConfiguration2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐNewConfiguration(ctx context.Context, v interface{}) (model.NewConfiguration, error) {
 	res, err := ec.unmarshalInputNewConfiguration(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNPartner2githubᚗcomᚋnaisᚋc3poᚋpkgᚋgraphᚋmodelᚐPartner(ctx context.Context, sel ast.SelectionSet, v model.Partner) graphql.Marshaler {
+func (ec *executionContext) marshalNPartner2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐPartner(ctx context.Context, sel ast.SelectionSet, v model.Partner) graphql.Marshaler {
 	return ec._Partner(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNPartner2ᚕᚖgithubᚗcomᚋnaisᚋc3poᚋpkgᚋgraphᚋmodelᚐPartnerᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Partner) graphql.Marshaler {
+func (ec *executionContext) marshalNPartner2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐPartnerᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Partner) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -3836,7 +3836,7 @@ func (ec *executionContext) marshalNPartner2ᚕᚖgithubᚗcomᚋnaisᚋc3poᚋp
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNPartner2ᚖgithubᚗcomᚋnaisᚋc3poᚋpkgᚋgraphᚋmodelᚐPartner(ctx, sel, v[i])
+			ret[i] = ec.marshalNPartner2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐPartner(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -3856,7 +3856,7 @@ func (ec *executionContext) marshalNPartner2ᚕᚖgithubᚗcomᚋnaisᚋc3poᚋp
 	return ret
 }
 
-func (ec *executionContext) marshalNPartner2ᚖgithubᚗcomᚋnaisᚋc3poᚋpkgᚋgraphᚋmodelᚐPartner(ctx context.Context, sel ast.SelectionSet, v *model.Partner) graphql.Marshaler {
+func (ec *executionContext) marshalNPartner2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐPartner(ctx context.Context, sel ast.SelectionSet, v *model.Partner) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
@@ -3866,7 +3866,7 @@ func (ec *executionContext) marshalNPartner2ᚖgithubᚗcomᚋnaisᚋc3poᚋpkg�
 	return ec._Partner(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNPartnerCreate2githubᚗcomᚋnaisᚋc3poᚋpkgᚋgraphᚋmodelᚐPartnerCreate(ctx context.Context, v interface{}) (model.PartnerCreate, error) {
+func (ec *executionContext) unmarshalNPartnerCreate2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐPartnerCreate(ctx context.Context, v interface{}) (model.PartnerCreate, error) {
 	res, err := ec.unmarshalInputPartnerCreate(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }

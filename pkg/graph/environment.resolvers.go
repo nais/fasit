@@ -6,7 +6,7 @@ package graph
 import (
 	"context"
 
-	"github.com/nais/c3po/pkg/graph/model"
+	"github.com/nais/fasit/pkg/graph/model"
 )
 
 func (r *mutationResolver) EnvironmentCreate(ctx context.Context, environment model.EnvironmentCreate) (*model.Environment, error) {

@@ -4,11 +4,11 @@ import (
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/nais/c3po"
+	"github.com/nais/fasit"
 )
 
 func TestFeature(t *testing.T) {
-	mgr, err := New(c3po.FeaturesFS)
+	mgr, err := New(fasit.FeaturesFS)
 	if err != nil {
 		t.Fatal(err)
 	}

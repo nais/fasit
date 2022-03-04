@@ -7,8 +7,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/nais/c3po/pkg/graph/graphgen"
-	"github.com/nais/c3po/pkg/graph/model"
+	"github.com/nais/fasit/pkg/graph/graphgen"
+	"github.com/nais/fasit/pkg/graph/model"
 )
 
 func (r *mutationResolver) PartnerCreate(ctx context.Context, partner model.PartnerCreate) (*model.Partner, error) {

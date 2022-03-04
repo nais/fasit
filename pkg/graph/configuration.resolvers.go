@@ -7,7 +7,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/nais/c3po/pkg/graph/model"
+	"github.com/nais/fasit/pkg/graph/model"
 )
 
 func (r *mutationResolver) ConfigurationCreate(ctx context.Context, configuration model.NewConfiguration) (*model.Configuration, error) {

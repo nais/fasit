@@ -8,11 +8,11 @@ import (
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
-	"github.com/nais/c3po"
-	"github.com/nais/c3po/pkg/database"
-	"github.com/nais/c3po/pkg/feature"
-	"github.com/nais/c3po/pkg/graph"
-	"github.com/nais/c3po/pkg/graph/graphgen"
+	"github.com/nais/fasit"
+	"github.com/nais/fasit/pkg/database"
+	"github.com/nais/fasit/pkg/feature"
+	"github.com/nais/fasit/pkg/graph"
+	"github.com/nais/fasit/pkg/graph/graphgen"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 )
@@ -28,7 +28,7 @@ var (
 
 func init() {
 	flag.StringVar(&cfg.BindAddress, "bind-address", cfg.BindAddress, "Bind address")
-	flag.StringVar(&cfg.DBConnectionDSN, "db-connection-dsn", fmt.Sprintf("%v?sslmode=disable", getEnv("NAIS_DATABASE_C3PO_BACKEND_C3PO_URL", "postgres://postgres:postgres@127.0.0.1:5432/c3po")), "database connection DSN")
+	flag.StringVar(&cfg.DBConnectionDSN, "db-connection-dsn", fmt.Sprintf("%v?sslmode=disable", getEnv("NAIS_DATABASE_fasit_BACKEND_fasit_URL", "postgres://postgres:postgres@127.0.0.1:5432/fasit")), "database connection DSN")
 	flag.StringVar(&cfg.LogLevel, "log-level", "info", "which log level to output")
 }
 
@@ -44,7 +44,7 @@ func main() {
 		log.WithError(err).Fatal("setting up database")
 	}
 
-	featureMgr, err := feature.New(c3po.FeaturesFS)
+	featureMgr, err := feature.New(fasit.FeaturesFS)
 	if err != nil {
 		log.WithError(err).Fatal("setting up features")
 	}
