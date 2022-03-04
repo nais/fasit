@@ -17,3 +17,14 @@ services:
     ports:
       - 8081:8080
 
+  pubsub:
+    image: google/cloud-sdk
+    command: 
+      - gcloud
+      - beta
+      - emulators
+      - pubsub
+      - start
+      - --host-port=0.0.0.0:8085
+    ports:
+      - 8085:8085
