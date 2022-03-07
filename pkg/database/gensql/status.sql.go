@@ -10,26 +10,65 @@ import (
 )
 
 const statusCreateOrUpdate = `-- name: StatusCreateOrUpdate :exec
-INSERT INTO status (environment_id, feature, version, status)
-VALUES ($1, $2, $3, $4)
+INSERT INTO status (environment_id, feature, version, status, config_hash)
+VALUES ($1, $2, $3, $4, $5)
 ON CONFLICT (environment_id, feature)
 DO
-UPDATE SET version=EXCLUDED.version, status=EXCLUDED.status
+UPDATE SET version=EXCLUDED.version, status=EXCLUDED.status, config_hash=EXCLUDED.config_hash
 `
 
 type StatusCreateOrUpdateParams struct {
-	Environmentid uuid.UUID
+	EnvironmentID uuid.UUID
 	Feature       string
 	Version       string
 	Status        string
+	ConfigHash    string
 }
 
 func (q *Queries) StatusCreateOrUpdate(ctx context.Context, arg StatusCreateOrUpdateParams) error {
 	_, err := q.db.ExecContext(ctx, statusCreateOrUpdate,
-		arg.Environmentid,
+		arg.EnvironmentID,
 		arg.Feature,
 		arg.Version,
 		arg.Status,
+		arg.ConfigHash,
 	)
 	return err
+}
+
+const statusForEnvironment = `-- name: StatusForEnvironment :many
+SELECT environment_id, feature, version, status, config_hash, created, last_modified
+FROM status
+WHERE environment_id = $1
+`
+
+func (q *Queries) StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]Status, error) {
+	rows, err := q.db.QueryContext(ctx, statusForEnvironment, environmentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Status{}
+	for rows.Next() {
+		var i Status
+		if err := rows.Scan(
+			&i.EnvironmentID,
+			&i.Feature,
+			&i.Version,
+			&i.Status,
+			&i.ConfigHash,
+			&i.Created,
+			&i.LastModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

@@ -44,6 +44,7 @@ type Status struct {
 	Feature       string
 	Version       string
 	Status        string
+	ConfigHash    string
 	Created       time.Time
 	LastModified  time.Time
 }

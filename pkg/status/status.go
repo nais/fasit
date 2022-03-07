@@ -1,4 +1,4 @@
-package workers
+package status
 
 type StatusUpdate struct {
 	Partner     string
@@ -15,7 +15,10 @@ const (
 )
 
 type HelmStatus struct {
-	Name          string
-	Version		  string
+	// Name is the name of the feature
+	Name string
+	// Version is the chart version
+	Version       string
 	RolloutStatus string
+	ConfigHash    string
 }

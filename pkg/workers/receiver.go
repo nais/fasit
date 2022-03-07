@@ -1,4 +1,4 @@
-package status
+package workers
 
 import (
 	"context"
@@ -7,18 +7,18 @@ import (
 	"errors"
 
 	"github.com/nais/fasit/pkg/database"
-	"github.com/nais/fasit/pkg/workers"
+	"github.com/nais/fasit/pkg/status"
 	"github.com/sirupsen/logrus"
 )
 
 type Receiver struct {
-	manager      *Manager
+	manager      *status.Manager
 	subscriberID string
 	repo         *database.Repo
 	log          *logrus.Entry
 }
 
-func NewReceiver(mgr *Manager, subscriberID string, repo *database.Repo, log *logrus.Entry) *Receiver {
+func NewReceiver(mgr *status.Manager, subscriberID string, repo *database.Repo, log *logrus.Entry) *Receiver {
 	receiver := &Receiver{manager: mgr, subscriberID: subscriberID, repo: repo, log: log}
 	return receiver
 }
@@ -30,11 +30,11 @@ func (r *Receiver) Run(ctx context.Context) {
 	}
 }
 
-func (r *Receiver) handler(ctx context.Context, message workers.StatusUpdate) error {
-	if message.Type != workers.StatusUpdateTypeHelm {
+func (r *Receiver) handler(ctx context.Context, message status.StatusUpdate) error {
+	if message.Type != status.StatusUpdateTypeHelm {
 		return nil
 	}
-	helmStatus := &workers.HelmStatus{}
+	helmStatus := &status.HelmStatus{}
 	err := json.Unmarshal(message.Data, helmStatus)
 	if err != nil {
 		r.log.WithError(err).Errorf("invalid json")

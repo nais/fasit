@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
@@ -15,6 +16,7 @@ import (
 	"github.com/nais/fasit/pkg/graph"
 	"github.com/nais/fasit/pkg/graph/graphgen"
 	"github.com/nais/fasit/pkg/status"
+	"github.com/nais/fasit/pkg/workers"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 )
@@ -39,9 +41,9 @@ func init() {
 func main() {
 	flag.Parse()
 
-	//ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	// ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	ctx := context.Background()
-	//defer cancel()
+	// defer cancel()
 
 	log := newLogger()
 	repo, err := database.New(cfg.DBConnectionDSN, log.WithField("subsystem", "repo"))
@@ -58,8 +60,11 @@ func main() {
 	if err != nil {
 		log.WithError(err).Fatal("new status manager")
 	}
-	receiver := status.NewReceiver(mgr, "fasit", repo, log.WithField("subsystem", "status"))
+	receiver := workers.NewReceiver(mgr, "fasit", repo, log.WithField("subsystem", "status"))
 	go receiver.Run(ctx)
+
+	reconciler := workers.NewReconciler(repo, featureMgr, log.WithField("subsystem", "reconciler"))
+	go reconciler.Run(ctx, 10*time.Second)
 
 	resolver := &graph.Resolver{
 		Repo:     repo,
@@ -72,8 +77,6 @@ func main() {
 
 	log.Printf("connect to http://%s/ for GraphQL playground", cfg.BindAddress)
 	log.Fatal(http.ListenAndServe(cfg.BindAddress, nil))
-
-
 }
 
 func newLogger() *logrus.Logger {

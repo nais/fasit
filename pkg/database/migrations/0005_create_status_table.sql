@@ -5,6 +5,7 @@ CREATE TABLE status
     "feature"        TEXT        NOT NULL,
     "version"        TEXT        NOT NULL,
     "status"         TEXT        NOT NULL,
+    "config_hash"    TEXT        NOT NULL,
     "created"        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     "last_modified"  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     PRIMARY KEY (environment_id, feature),

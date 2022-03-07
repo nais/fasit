@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"os"
 	"testing"
-
-	"github.com/nais/fasit/pkg/workers"
 )
 
 func TestPubSub(t *testing.T) {
@@ -22,8 +20,8 @@ func TestPubSub(t *testing.T) {
 	}
 	defer mgr.Close()
 
-	err = mgr.Receive(ctx, "noenytt", func(ctx context.Context, msg workers.StatusUpdate) error {
-		data := workers.HelmStatus{}
+	err = mgr.Receive(ctx, "noenytt", func(ctx context.Context, msg StatusUpdate) error {
+		data := HelmStatus{}
 		err := json.Unmarshal(msg.Data, &data)
 		if err != nil {
 			return err

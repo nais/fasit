@@ -19,7 +19,9 @@ type Querier interface {
 	PartnerCreate(ctx context.Context, arg PartnerCreateParams) (Partner, error)
 	PartnerGet(ctx context.Context, id uuid.UUID) (Partner, error)
 	PartnersGet(ctx context.Context) ([]Partner, error)
+	ReconcileData(ctx context.Context) ([]ReconcileDataRow, error)
 	StatusCreateOrUpdate(ctx context.Context, arg StatusCreateOrUpdateParams) error
+	StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]Status, error)
 }
 
 var _ Querier = (*Queries)(nil)
