@@ -15,7 +15,7 @@ func main() {
 	}
 
 	ctx := context.Background()
-	mgr, err := status.New(ctx, "banankake", "status")
+	mgr, err := status.New[status.StatusUpdate](ctx, "banankake", "status")
 	if err != nil {
 		log.Fatal(err)
 	}

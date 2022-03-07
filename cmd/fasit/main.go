@@ -56,7 +56,7 @@ func main() {
 		log.WithError(err).Fatal("setting up features")
 	}
 
-	mgr, err := status.New(ctx, cfg.GCPProjectID, cfg.StatusTopicID)
+	mgr, err := status.New[status.StatusUpdate](ctx, cfg.GCPProjectID, cfg.StatusTopicID)
 	if err != nil {
 		log.WithError(err).Fatal("new status manager")
 	}

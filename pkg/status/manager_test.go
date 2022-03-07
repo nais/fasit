@@ -14,7 +14,7 @@ func TestPubSub(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	mgr, err := New(ctx, "banankake", "status")
+	mgr, err := New[StatusUpdate](ctx, "banankake", "status")
 	if err != nil {
 		t.Fatal(err)
 	}

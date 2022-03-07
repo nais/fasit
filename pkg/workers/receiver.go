@@ -12,13 +12,13 @@ import (
 )
 
 type Receiver struct {
-	manager      *status.Manager
+	manager      *status.Manager[status.StatusUpdate]
 	subscriberID string
 	repo         *database.Repo
 	log          *logrus.Entry
 }
 
-func NewReceiver(mgr *status.Manager, subscriberID string, repo *database.Repo, log *logrus.Entry) *Receiver {
+func NewReceiver(mgr *status.Manager[status.StatusUpdate], subscriberID string, repo *database.Repo, log *logrus.Entry) *Receiver {
 	receiver := &Receiver{manager: mgr, subscriberID: subscriberID, repo: repo, log: log}
 	return receiver
 }

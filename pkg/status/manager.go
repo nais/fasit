@@ -9,18 +9,18 @@ import (
 	"cloud.google.com/go/pubsub"
 )
 
-type Manager struct {
+type Manager[T any] struct {
 	client *pubsub.Client
 	topic  *pubsub.Topic
 }
 
-func New(ctx context.Context, projectID, topicID string) (*Manager, error) {
+func New[T any](ctx context.Context, projectID, topicID string) (*Manager[T], error) {
 	client, err := pubsub.NewClient(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}
 
-	mgr := &Manager{
+	mgr := &Manager[T]{
 		client: client,
 	}
 
@@ -31,7 +31,7 @@ func New(ctx context.Context, projectID, topicID string) (*Manager, error) {
 	return mgr, nil
 }
 
-func (m *Manager) ensureTopic(ctx context.Context, topicID string) error {
+func (m *Manager[T]) ensureTopic(ctx context.Context, topicID string) error {
 	m.topic = m.client.Topic(topicID)
 	exists, err := m.topic.Exists(ctx)
 	if err != nil {
@@ -51,7 +51,7 @@ func (m *Manager) ensureTopic(ctx context.Context, topicID string) error {
 	return nil
 }
 
-func (m *Manager) Publish(ctx context.Context, msg StatusUpdate) error {
+func (m *Manager[T]) Publish(ctx context.Context, msg T) error {
 	data, err := json.Marshal(msg)
 	if err != nil {
 		return err
@@ -63,13 +63,13 @@ func (m *Manager) Publish(ctx context.Context, msg StatusUpdate) error {
 	return nil
 }
 
-func (m *Manager) Receive(ctx context.Context, subID string, fn func(context.Context, StatusUpdate) error) error {
+func (m *Manager[T]) Receive(ctx context.Context, subID string, fn func(context.Context, T) error) error {
 	sub, err := m.ensureSubscription(ctx, subID)
 	if err != nil {
 		return err
 	}
 	return sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
-		su := StatusUpdate{}
+		var su T
 		if err := json.Unmarshal(msg.Data, &su); err != nil {
 			log.Println(err)
 			msg.Nack()
@@ -83,7 +83,7 @@ func (m *Manager) Receive(ctx context.Context, subID string, fn func(context.Con
 	})
 }
 
-func (m *Manager) ensureSubscription(ctx context.Context, subID string) (*pubsub.Subscription, error) {
+func (m *Manager[T]) ensureSubscription(ctx context.Context, subID string) (*pubsub.Subscription, error) {
 	sub := m.client.Subscription(subID)
 	exists, err := sub.Exists(ctx)
 	if err != nil {
@@ -98,16 +98,16 @@ func (m *Manager) ensureSubscription(ctx context.Context, subID string) (*pubsub
 	})
 }
 
-func (m *Manager) SubscribeTopic(ctx context.Context, name, topicID string) (*pubsub.Subscription, error) {
+func (m *Manager[T]) SubscribeTopic(ctx context.Context, name, topicID string) (*pubsub.Subscription, error) {
 	return m.client.CreateSubscription(ctx, name, pubsub.SubscriptionConfig{
 		Topic: m.client.Topic(topicID),
 	})
 }
 
-func (m *Manager) StopTopic() {
+func (m *Manager[T]) StopTopic() {
 	m.topic.Stop()
 }
 
-func (m *Manager) Close() error {
+func (m *Manager[T]) Close() error {
 	return m.client.Close()
 }
