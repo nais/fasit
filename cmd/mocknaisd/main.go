@@ -21,6 +21,12 @@ func main() {
 	}
 	defer mgr.Close()
 
+	deployMgr, err := status.New[status.DeployInstruction](ctx, "banankake", "deploys")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer deployMgr.Close()
+
 	helmStatus := status.HelmStatus{
 		Name:          "loadbalancer",
 		RolloutStatus: "Deployed",
@@ -53,5 +59,18 @@ func main() {
 		log.Fatal(err)
 	}
 
+	deploy := status.DeployInstruction{
+		Name:       "naiserator",
+		Version:    "0.0.1",
+		Chart:      "naiserator",
+		Repo:       "",
+		ConfigHash: "",
+	}
+
+	if err := deployMgr.Publish(ctx, deploy); err != nil {
+		log.Fatal(err)
+	}
+
+	deployMgr.StopTopic()
 	mgr.StopTopic()
 }

@@ -20,13 +20,28 @@ func TestPubSub(t *testing.T) {
 	}
 	defer mgr.Close()
 
-	err = mgr.Receive(ctx, "noenytt", func(ctx context.Context, msg StatusUpdate) error {
-		data := HelmStatus{}
-		err := json.Unmarshal(msg.Data, &data)
+	deployMgr, err := New[DeployInstruction](ctx, "banankake", "deploys")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer deployMgr.Close()
+
+	go func() {
+		err = mgr.Receive(ctx, "status", func(ctx context.Context, msg StatusUpdate) error {
+			data := HelmStatus{}
+			err := json.Unmarshal(msg.Data, &data)
+			if err != nil {
+				return err
+			}
+			fmt.Println(data)
+			return nil
+		})
 		if err != nil {
-			return err
+			t.Error(err)
 		}
-		fmt.Println(data)
+	}()
+	err = deployMgr.Receive(ctx, "deploys", func(ctx context.Context, msg DeployInstruction) error {
+		fmt.Println("deploy", msg)
 		return nil
 	})
 	if err != nil {
