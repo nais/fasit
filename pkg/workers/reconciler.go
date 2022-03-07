@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/nais/fasit/pkg/database"
@@ -103,7 +102,6 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.Reconcil
 			}
 		}
 
-		fmt.Println("publish", f.Name, values)
 		err = mgr.Publish(ctx, status.DeployInstruction{
 			Name:       f.Name,
 			Version:    f.Version,
