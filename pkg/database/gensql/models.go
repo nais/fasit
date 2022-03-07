@@ -38,3 +38,12 @@ type Partner struct {
 	Created      time.Time
 	LastModified time.Time
 }
+
+type Status struct {
+	EnvironmentID uuid.UUID
+	Feature       string
+	Version       string
+	Status        string
+	Created       time.Time
+	LastModified  time.Time
+}

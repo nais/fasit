@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/nais/fasit/pkg/status"
+	"github.com/nais/fasit/pkg/workers"
 )
 
 func main() {
@@ -21,9 +22,10 @@ func main() {
 	}
 	defer mgr.Close()
 
-	helmStatus := status.HelmStatus{
+	helmStatus := workers.HelmStatus{
 		Name:          "naiserator",
 		RolloutStatus: "Deployed",
+		Version:       "6.6.6",
 	}
 
 	data, err := json.Marshal(helmStatus)
@@ -31,7 +33,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := mgr.Publish(ctx, status.StatusUpdate{Partner: "mattilsynet", Environment: "dev", Type: status.StatusUpdateTypeHelm, Data: data}); err != nil {
+	if err := mgr.Publish(ctx, workers.StatusUpdate{Partner: "mattilsynet", Environment: "dev", Type: workers.StatusUpdateTypeHelm, Data: data}); err != nil {
 		log.Fatal(err)
 	}
 

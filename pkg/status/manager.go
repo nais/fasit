@@ -7,6 +7,7 @@ import (
 	"log"
 
 	"cloud.google.com/go/pubsub"
+	"github.com/nais/fasit/pkg/workers"
 )
 
 type Manager struct {
@@ -51,7 +52,7 @@ func (m *Manager) ensureTopic(ctx context.Context, topicID string) error {
 	return nil
 }
 
-func (m *Manager) Publish(ctx context.Context, msg StatusUpdate) error {
+func (m *Manager) Publish(ctx context.Context, msg workers.StatusUpdate) error {
 	data, err := json.Marshal(msg)
 	if err != nil {
 		return err
@@ -63,13 +64,13 @@ func (m *Manager) Publish(ctx context.Context, msg StatusUpdate) error {
 	return nil
 }
 
-func (m *Manager) Receive(ctx context.Context, subID string, fn func(context.Context, StatusUpdate) error) error {
+func (m *Manager) Receive(ctx context.Context, subID string, fn func(context.Context, workers.StatusUpdate) error) error {
 	sub, err := m.ensureSubscription(ctx, subID)
 	if err != nil {
 		return err
 	}
 	return sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
-		su := StatusUpdate{}
+		su := workers.StatusUpdate{}
 		if err := json.Unmarshal(msg.Data, &su); err != nil {
 			log.Println(err)
 			msg.Nack()

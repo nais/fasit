@@ -14,10 +14,12 @@ type Querier interface {
 	ConfigGet(ctx context.Context, feature string) (Configuration, error)
 	EnvironmentCreate(ctx context.Context, arg EnvironmentCreateParams) (Environment, error)
 	EnvironmentGet(ctx context.Context, id uuid.UUID) (Environment, error)
+	EnvironmentIDByNames(ctx context.Context, arg EnvironmentIDByNamesParams) (uuid.UUID, error)
 	EnvironmentsGet(ctx context.Context, partnerID uuid.UUID) ([]Environment, error)
 	PartnerCreate(ctx context.Context, arg PartnerCreateParams) (Partner, error)
 	PartnerGet(ctx context.Context, id uuid.UUID) (Partner, error)
 	PartnersGet(ctx context.Context) ([]Partner, error)
+	StatusCreateOrUpdate(ctx context.Context, arg StatusCreateOrUpdateParams) error
 }
 
 var _ Querier = (*Queries)(nil)

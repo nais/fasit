@@ -54,6 +54,26 @@ func (q *Queries) EnvironmentGet(ctx context.Context, id uuid.UUID) (Environment
 	return i, err
 }
 
+const environmentIDByNames = `-- name: EnvironmentIDByNames :one
+SELECT e.id
+FROM partners p
+JOIN environments e ON e.partner_id = p.id AND e.name = $1
+WHERE p.name = $2
+LIMIT 1
+`
+
+type EnvironmentIDByNamesParams struct {
+	EnvironmentName string
+	PartnerName     string
+}
+
+func (q *Queries) EnvironmentIDByNames(ctx context.Context, arg EnvironmentIDByNamesParams) (uuid.UUID, error) {
+	row := q.db.QueryRowContext(ctx, environmentIDByNames, arg.EnvironmentName, arg.PartnerName)
+	var id uuid.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
 const environmentsGet = `-- name: EnvironmentsGet :many
 SELECT id, partner_id, name, description, created, last_modified
 FROM environments

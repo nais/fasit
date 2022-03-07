@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"net/http"
@@ -13,6 +14,7 @@ import (
 	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph"
 	"github.com/nais/fasit/pkg/graph/graphgen"
+	"github.com/nais/fasit/pkg/status"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 )
@@ -30,13 +32,16 @@ func init() {
 	flag.StringVar(&cfg.BindAddress, "bind-address", cfg.BindAddress, "Bind address")
 	flag.StringVar(&cfg.DBConnectionDSN, "db-connection-dsn", fmt.Sprintf("%v?sslmode=disable", getEnv("NAIS_DATABASE_fasit_BACKEND_fasit_URL", "postgres://postgres:postgres@127.0.0.1:5432/fasit")), "database connection DSN")
 	flag.StringVar(&cfg.LogLevel, "log-level", "info", "which log level to output")
+	flag.StringVar(&cfg.GCPProjectID, "project-id", "banankake", "Google project ID")
+	flag.StringVar(&cfg.StatusTopicID, "topic-id", "status", "Pub/sub topic for status")
 }
 
 func main() {
 	flag.Parse()
 
-	// ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
-	// defer cancel()
+	//ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	ctx := context.Background()
+	//defer cancel()
 
 	log := newLogger()
 	repo, err := database.New(cfg.DBConnectionDSN, log.WithField("subsystem", "repo"))
@@ -49,6 +54,13 @@ func main() {
 		log.WithError(err).Fatal("setting up features")
 	}
 
+	mgr, err := status.New(ctx, cfg.GCPProjectID, cfg.StatusTopicID)
+	if err != nil {
+		log.WithError(err).Fatal("new status manager")
+	}
+	receiver := status.NewReceiver(mgr, "fasit", repo, log.WithField("subsystem", "status"))
+	go receiver.Run(ctx)
+
 	resolver := &graph.Resolver{
 		Repo:     repo,
 		Features: featureMgr,
@@ -60,6 +72,8 @@ func main() {
 
 	log.Printf("connect to http://%s/ for GraphQL playground", cfg.BindAddress)
 	log.Fatal(http.ListenAndServe(cfg.BindAddress, nil))
+
+
 }
 
 func newLogger() *logrus.Logger {

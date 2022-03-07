@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/graph/model"
 )
@@ -27,4 +28,12 @@ func (r *Repo) EnvironmentCreate(ctx context.Context, p *model.EnvironmentCreate
 		return nil, err
 	}
 	return environmentFromSQL(partner), nil
+}
+
+func (r *Repo) EnvironmentIDByNames(ctx context.Context, partnerName, environmentName string) (uuid.UUID, error) {
+	params := gensql.EnvironmentIDByNamesParams{
+		EnvironmentName: environmentName,
+		PartnerName:     partnerName,
+	}
+	return r.querier.EnvironmentIDByNames(ctx, params)
 }

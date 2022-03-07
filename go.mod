@@ -3,6 +3,7 @@ module github.com/nais/fasit
 go 1.17
 
 require (
+	cloud.google.com/go/pubsub v1.18.0
 	github.com/99designs/gqlgen v0.17.1
 	github.com/davecgh/go-spew v1.1.1
 	github.com/google/go-cmp v0.5.7
@@ -20,7 +21,6 @@ require (
 	cloud.google.com/go v0.100.2 // indirect
 	cloud.google.com/go/compute v0.1.0 // indirect
 	cloud.google.com/go/iam v0.1.0 // indirect
-	cloud.google.com/go/pubsub v1.18.0 // indirect
 	github.com/agnivade/levenshtein v1.1.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
