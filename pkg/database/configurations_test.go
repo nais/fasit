@@ -9,17 +9,17 @@ import (
 )
 
 func TestHelmConfigMap(t *testing.T) {
-	jsonify := func(v interface{}) json.RawMessage {
+	jsonify := func(v any) json.RawMessage {
 		b, _ := json.Marshal(v)
 		return b
 	}
 	tests := map[string]struct {
 		input    []gensql.ConfigForEnvRow
-		expected map[string]interface{}
+		expected map[string]any
 	}{
 		"empty": {
 			input:    nil,
-			expected: make(map[string]interface{}),
+			expected: make(map[string]any),
 		},
 		"single_level": {
 			input: []gensql.ConfigForEnvRow{
@@ -32,7 +32,7 @@ func TestHelmConfigMap(t *testing.T) {
 					Value: jsonify("value2"),
 				},
 			},
-			expected: map[string]interface{}{
+			expected: map[string]any{
 				"test1": jsonify("value1"),
 				"test2": jsonify("value2"),
 			},
@@ -48,8 +48,8 @@ func TestHelmConfigMap(t *testing.T) {
 					Value: jsonify("value_b"),
 				},
 			},
-			expected: map[string]interface{}{
-				"test": map[string]interface{}{
+			expected: map[string]any{
+				"test": map[string]any{
 					"a": jsonify("value_a"),
 					"b": jsonify("value_b"),
 				},

@@ -20,7 +20,7 @@ func (c ConfigType) Valid(value json.RawMessage) bool {
 		return false
 	}
 
-	var v interface{}
+	var v any
 	if err := json.Unmarshal(value, &v); err != nil {
 		return false
 	}
@@ -39,7 +39,7 @@ func (c ConfigType) Valid(value json.RawMessage) bool {
 	}
 }
 
-func (c *ConfigType) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (c *ConfigType) UnmarshalYAML(unmarshal func(any) error) error {
 	var v string
 	if err := unmarshal(&v); err != nil {
 		return err

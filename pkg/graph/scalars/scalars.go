@@ -16,7 +16,7 @@ func MarshalUUID(id uuid.UUID) graphql.Marshaler {
 	})
 }
 
-func UnmarshalUUID(v interface{}) (uuid.UUID, error) {
+func UnmarshalUUID(v any) (uuid.UUID, error) {
 	switch v := v.(type) {
 	case string:
 		return uuid.Parse(v)
@@ -31,7 +31,7 @@ func MarshalRawMessage(msg json.RawMessage) graphql.Marshaler {
 	})
 }
 
-func UnmarshalRawMessage(v interface{}) (json.RawMessage, error) {
+func UnmarshalRawMessage(v any) (json.RawMessage, error) {
 	b, err := json.Marshal(v)
 	if err != nil {
 		return nil, err

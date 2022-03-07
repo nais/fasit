@@ -112,7 +112,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.Reconcil
 	return nil
 }
 
-func generateHash(values map[string]interface{}) (string, error) {
+func generateHash(values map[string]any) (string, error) {
 	b, err := json.Marshal(values)
 	if err != nil {
 		return "", err

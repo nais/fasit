@@ -5,9 +5,10 @@ import (
 	"database/sql"
 	"embed"
 	"fmt"
-	"github.com/nais/fasit/pkg/database/gensql"
 	"regexp"
 	"time"
+
+	"github.com/nais/fasit/pkg/database/gensql"
 
 	"github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus"
@@ -79,12 +80,12 @@ func NewHooks() *Hooks {
 type ctxKey string
 
 // Before hook will print the query with it's args and return the context with the timestamp
-func (h *Hooks) Before(ctx context.Context, query string, args ...interface{}) (context.Context, error) {
+func (h *Hooks) Before(ctx context.Context, query string, args ...any) (context.Context, error) {
 	return context.WithValue(ctx, ctxKey("begin"), time.Now()), nil
 }
 
 // After hook will get the timestamp registered on the Before hook and print the elapsed time
-func (h *Hooks) After(ctx context.Context, query string, args ...interface{}) (context.Context, error) {
+func (h *Hooks) After(ctx context.Context, query string, args ...any) (context.Context, error) {
 	begin := ctx.Value(ctxKey("begin")).(time.Time)
 
 	name := nameFromQuery(query)

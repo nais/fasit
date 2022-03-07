@@ -65,7 +65,7 @@ func (r *Repo) ConfigCreate(ctx context.Context, c model.NewConfiguration) (*mod
 	return ret, nil
 }
 
-func (r *Repo) HelmValues(ctx context.Context, feature string, envID uuid.UUID) (map[string]interface{}, error) {
+func (r *Repo) HelmValues(ctx context.Context, feature string, envID uuid.UUID) (map[string]any, error) {
 	vals, err := r.querier.ConfigForEnv(ctx, gensql.ConfigForEnvParams{
 		Feature:       feature,
 		EnvironmentID: envID,
@@ -77,8 +77,8 @@ func (r *Repo) HelmValues(ctx context.Context, feature string, envID uuid.UUID) 
 	return makeHelmConfigMap(vals)
 }
 
-func makeHelmConfigMap(vals []gensql.ConfigForEnvRow) (map[string]interface{}, error) {
-	val := make(map[string]interface{})
+func makeHelmConfigMap(vals []gensql.ConfigForEnvRow) (map[string]any, error) {
+	val := make(map[string]any)
 
 	for _, v := range vals {
 		keys := strings.Split(v.Key, ".")
@@ -89,13 +89,13 @@ func makeHelmConfigMap(vals []gensql.ConfigForEnvRow) (map[string]interface{}, e
 				continue
 			}
 			if e, ok := parent[key]; ok {
-				if p, ok := e.(map[string]interface{}); ok {
+				if p, ok := e.(map[string]any); ok {
 					parent = p
 					continue
 				}
 				return nil, fmt.Errorf("key %v is not nestable", v.Key)
 			}
-			f := make(map[string]interface{})
+			f := make(map[string]any)
 			parent[key] = f
 			parent = f
 		}

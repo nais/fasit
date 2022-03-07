@@ -9,6 +9,6 @@ import (
 	"github.com/google/uuid"
 )
 
-func (r *queryResolver) Values(ctx context.Context, feature string, env uuid.UUID) (map[string]interface{}, error) {
+func (r *queryResolver) Values(ctx context.Context, feature string, env uuid.UUID) (map[string]any, error) {
 	return r.Repo.HelmValues(ctx, feature, env)
 }
