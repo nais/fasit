@@ -61,7 +61,7 @@ func main() {
 
 	deploy := status.DeployInstruction{
 		Name:       "naiserator",
-		Version:    "0.0.1",
+		Version:    "0.2.1",
 		Chart:      "naiserator",
 		Repo:       "",
 		ConfigHash: "",

@@ -8,4 +8,5 @@ type DeployInstruction struct {
 	Chart      string
 	Repo       string
 	ConfigHash string
+	Values     map[string]any
 }

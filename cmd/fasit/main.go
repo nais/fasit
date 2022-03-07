@@ -63,7 +63,7 @@ func main() {
 	receiver := workers.NewReceiver(mgr, "fasit", repo, log.WithField("subsystem", "status"))
 	go receiver.Run(ctx)
 
-	reconciler := workers.NewReconciler(repo, featureMgr, log.WithField("subsystem", "reconciler"))
+	reconciler := workers.NewReconciler(repo, featureMgr, cfg.GCPProjectID, log.WithField("subsystem", "reconciler"))
 	go reconciler.Run(ctx, 10*time.Second)
 
 	resolver := &graph.Resolver{

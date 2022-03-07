@@ -20,7 +20,7 @@ func TestPubSub(t *testing.T) {
 	}
 	defer mgr.Close()
 
-	deployMgr, err := New[DeployInstruction](ctx, "banankake", "deploys")
+	deployMgr, err := New[DeployInstruction](ctx, "banankake", "nais_mattilsynet")
 	if err != nil {
 		t.Fatal(err)
 	}

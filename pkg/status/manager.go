@@ -69,14 +69,13 @@ func (m *Manager[T]) Receive(ctx context.Context, subID string, fn func(context.
 		return err
 	}
 	return sub.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
-		fmt.Println(string(msg.Data))
-		var su T
-		if err := json.Unmarshal(msg.Data, &su); err != nil {
+		var v T
+		if err := json.Unmarshal(msg.Data, &v); err != nil {
 			log.Println(err)
 			msg.Nack()
 			return
 		}
-		if err := fn(ctx, su); err != nil {
+		if err := fn(ctx, v); err != nil {
 			msg.Nack()
 			return
 		}
