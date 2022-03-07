@@ -14,7 +14,7 @@ func TestPubSub(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	mgr, err := New[StatusUpdate](ctx, "banankake", "status")
+	mgr, err := New[Update](ctx, "banankake", "status")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -27,8 +27,8 @@ func TestPubSub(t *testing.T) {
 	defer deployMgr.Close()
 
 	go func() {
-		err = mgr.Receive(ctx, "status", func(ctx context.Context, msg StatusUpdate) error {
-			data := HelmStatus{}
+		err = mgr.Receive(ctx, "status", func(ctx context.Context, msg Update) error {
+			data := Helm{}
 			err := json.Unmarshal(msg.Data, &data)
 			if err != nil {
 				return err

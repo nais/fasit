@@ -1,20 +1,20 @@
 package status
 
-type StatusUpdate struct {
+type Update struct {
 	Partner     string
 	Environment string
-	Type        StatusUpdateType
+	Type        UpdateType
 	Data        []byte
 }
 
-type StatusUpdateType int
+type UpdateType int
 
 const (
-	StatusUpdateTypeKubernetesEvent StatusUpdateType = iota + 1
-	StatusUpdateTypeHelm
+	UpdateTypeKubernetesEvent UpdateType = iota + 1
+	UpdateTypeHelm
 )
 
-type HelmStatus struct {
+type Helm struct {
 	// Name is the name of the feature
 	Name string
 	// Version is the chart version

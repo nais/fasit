@@ -56,10 +56,11 @@ func main() {
 		log.WithError(err).Fatal("setting up features")
 	}
 
-	mgr, err := status.New[status.StatusUpdate](ctx, cfg.GCPProjectID, cfg.StatusTopicID)
+	mgr, err := status.New[status.Update](ctx, cfg.GCPProjectID, cfg.StatusTopicID)
 	if err != nil {
 		log.WithError(err).Fatal("new status manager")
 	}
+
 	receiver := workers.NewReceiver(mgr, "fasit", repo, log.WithField("subsystem", "status"))
 	go receiver.Run(ctx)
 

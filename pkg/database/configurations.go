@@ -51,7 +51,7 @@ func (r *Repo) ConfigCreate(ctx context.Context, c model.NewConfiguration) (*mod
 		Description:   ptrToNullString(c.Description),
 		Secret:        c.Secret,
 		Key:           c.Key,
-		Value:         json.RawMessage(value),
+		Value:         value,
 	})
 	if err != nil {
 		return nil, err

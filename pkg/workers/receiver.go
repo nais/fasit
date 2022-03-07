@@ -12,13 +12,13 @@ import (
 )
 
 type Receiver struct {
-	manager      *status.Manager[status.StatusUpdate]
+	manager      *status.Manager[status.Update]
 	subscriberID string
 	repo         *database.Repo
 	log          *logrus.Entry
 }
 
-func NewReceiver(mgr *status.Manager[status.StatusUpdate], subscriberID string, repo *database.Repo, log *logrus.Entry) *Receiver {
+func NewReceiver(mgr *status.Manager[status.Update], subscriberID string, repo *database.Repo, log *logrus.Entry) *Receiver {
 	receiver := &Receiver{manager: mgr, subscriberID: subscriberID, repo: repo, log: log}
 	return receiver
 }
@@ -30,11 +30,11 @@ func (r *Receiver) Run(ctx context.Context) {
 	}
 }
 
-func (r *Receiver) handler(ctx context.Context, message status.StatusUpdate) error {
-	if message.Type != status.StatusUpdateTypeHelm {
+func (r *Receiver) handler(ctx context.Context, message status.Update) error {
+	if message.Type != status.UpdateTypeHelm {
 		return nil
 	}
-	helmStatus := &status.HelmStatus{}
+	helmStatus := &status.Helm{}
 	err := json.Unmarshal(message.Data, helmStatus)
 	if err != nil {
 		r.log.WithError(err).Errorf("invalid json")

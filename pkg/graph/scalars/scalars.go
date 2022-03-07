@@ -36,5 +36,5 @@ func UnmarshalRawMessage(v any) (json.RawMessage, error) {
 	if err != nil {
 		return nil, err
 	}
-	return json.RawMessage(b), nil
+	return b, nil
 }

@@ -11,7 +11,7 @@ import (
 	"github.com/nais/fasit/pkg/status"
 )
 
-func (r *Repo) StatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *status.HelmStatus) error {
+func (r *Repo) StatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *status.Helm) error {
 	return r.querier.StatusCreateOrUpdate(ctx, gensql.StatusCreateOrUpdateParams{
 		EnvironmentID: environmentID,
 		Feature:       h.Name,

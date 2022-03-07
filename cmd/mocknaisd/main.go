@@ -15,7 +15,7 @@ func main() {
 	}
 
 	ctx := context.Background()
-	mgr, err := status.New[status.StatusUpdate](ctx, "banankake", "status")
+	mgr, err := status.New[status.Update](ctx, "banankake", "status")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -27,7 +27,7 @@ func main() {
 	}
 	defer deployMgr.Close()
 
-	helmStatus := status.HelmStatus{
+	helmStatus := status.Helm{
 		Name:          "loadbalancer",
 		RolloutStatus: "Deployed",
 		Version:       "0.1.0",
@@ -39,7 +39,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	helmStatus2 := status.HelmStatus{
+	helmStatus2 := status.Helm{
 		Name:          "naiserator",
 		RolloutStatus: "Deployed",
 		Version:       "0.1.1",
@@ -51,11 +51,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := mgr.Publish(ctx, status.StatusUpdate{Partner: "mattilsynet", Environment: "dev", Type: status.StatusUpdateTypeHelm, Data: data}); err != nil {
+	if err := mgr.Publish(ctx, status.Update{Partner: "mattilsynet", Environment: "dev", Type: status.UpdateTypeHelm, Data: data}); err != nil {
 		log.Fatal(err)
 	}
 
-	if err := mgr.Publish(ctx, status.StatusUpdate{Partner: "mattilsynet", Environment: "dev", Type: status.StatusUpdateTypeHelm, Data: data2}); err != nil {
+	if err := mgr.Publish(ctx, status.Update{Partner: "mattilsynet", Environment: "dev", Type: status.UpdateTypeHelm, Data: data2}); err != nil {
 		log.Fatal(err)
 	}
 
