@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"cloud.google.com/go/pubsub"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/nais/fasit"
@@ -46,6 +47,12 @@ func main() {
 	// defer cancel()
 
 	log := newLogger()
+
+	client, err := pubsub.NewClient(ctx, cfg.GCPProjectID)
+	if err != nil {
+		log.WithError(err).Fatal("setting up pubsub client")
+	}
+
 	repo, err := database.New(cfg.DBConnectionDSN, log.WithField("subsystem", "repo"))
 	if err != nil {
 		log.WithError(err).Fatal("setting up database")
@@ -56,15 +63,15 @@ func main() {
 		log.WithError(err).Fatal("setting up features")
 	}
 
-	mgr, err := status.New[status.Update](ctx, cfg.GCPProjectID, cfg.StatusTopicID)
+	statusMgr, err := status.NewSubscriber[status.Update](client, cfg.StatusTopicID)
 	if err != nil {
 		log.WithError(err).Fatal("new status manager")
 	}
 
-	receiver := workers.NewReceiver(mgr, "fasit", repo, log.WithField("subsystem", "status"))
+	receiver := workers.NewReceiver(statusMgr, "fasit", repo, log.WithField("subsystem", "status"))
 	go receiver.Run(ctx)
 
-	reconciler := workers.NewReconciler(repo, featureMgr, cfg.GCPProjectID, log.WithField("subsystem", "reconciler"))
+	reconciler := workers.NewReconciler(repo, featureMgr, client, log.WithField("subsystem", "reconciler"))
 	go reconciler.Run(ctx, 10*time.Second)
 
 	resolver := &graph.Resolver{

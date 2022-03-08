@@ -12,19 +12,19 @@ import (
 )
 
 type Receiver struct {
-	manager      *status.Manager[status.Update]
+	manager      *status.Subscriber[status.Update]
 	subscriberID string
 	repo         *database.Repo
 	log          *logrus.Entry
 }
 
-func NewReceiver(mgr *status.Manager[status.Update], subscriberID string, repo *database.Repo, log *logrus.Entry) *Receiver {
+func NewReceiver(mgr *status.Subscriber[status.Update], subscriberID string, repo *database.Repo, log *logrus.Entry) *Receiver {
 	receiver := &Receiver{manager: mgr, subscriberID: subscriberID, repo: repo, log: log}
 	return receiver
 }
 
 func (r *Receiver) Run(ctx context.Context) {
-	err := r.manager.Receive(ctx, r.subscriberID, r.handler)
+	err := r.manager.Receive(ctx, r.handler)
 	if err != nil {
 		r.log.WithError(err).Error("receive status messages")
 	}

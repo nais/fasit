@@ -20,7 +20,7 @@ func TestPubSub(t *testing.T) {
 	}
 	defer mgr.Close()
 
-	deployMgr, err := New[DeployInstruction](ctx, "banankake", "nais_mattilsynet")
+	deployMgr, err := New[DeployInstruction](ctx, "banankake", "naisd-mattilsynet-dev")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -40,7 +40,7 @@ func TestPubSub(t *testing.T) {
 			t.Error(err)
 		}
 	}()
-	err = deployMgr.Receive(ctx, "deploys", func(ctx context.Context, msg DeployInstruction) error {
+	err = deployMgr.Receive(ctx, "deploysss", func(ctx context.Context, msg DeployInstruction) error {
 		fmt.Println("deploy", msg)
 		return nil
 	})

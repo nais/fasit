@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"cloud.google.com/go/pubsub"
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph/model"
@@ -17,15 +18,15 @@ import (
 type Reconciler struct {
 	repo       *database.Repo
 	featureMgr *feature.Manager
-	projectID  string
+	client     *pubsub.Client
 	log        *logrus.Entry
 }
 
-func NewReconciler(repo *database.Repo, featureMgr *feature.Manager, projectID string, log *logrus.Entry) *Reconciler {
+func NewReconciler(repo *database.Repo, featureMgr *feature.Manager, client *pubsub.Client, log *logrus.Entry) *Reconciler {
 	return &Reconciler{
 		repo:       repo,
 		featureMgr: featureMgr,
-		projectID:  projectID,
+		client:     client,
 		log:        log,
 	}
 }
@@ -79,11 +80,11 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.Reconcil
 		lookup[s.Feature] = s
 	}
 
-	mgr, err := status.New[status.DeployInstruction](ctx, r.projectID, "nais_"+d.PartnerName)
+	mgr, err := status.NewPublisher[status.DeployInstruction](r.client, "naisd-"+d.PartnerName+"-"+d.Name)
 	if err != nil {
 		return err
 	}
-	defer mgr.Close()
+	defer mgr.Stop()
 
 	for _, f := range features {
 		values, err := r.repo.HelmValues(ctx, f.Name, d.ID)
@@ -114,7 +115,6 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.Reconcil
 			return err
 		}
 	}
-	mgr.StopTopic()
 
 	return nil
 }
