@@ -8,10 +8,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/graph/model"
-	"github.com/nais/fasit/pkg/status"
+	"github.com/nais/fasit/pkg/message"
 )
 
-func (r *Repo) StatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *status.Helm) error {
+func (r *Repo) StatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Helm) error {
 	return r.querier.StatusCreateOrUpdate(ctx, gensql.StatusCreateOrUpdateParams{
 		EnvironmentID: environmentID,
 		Feature:       h.Name,

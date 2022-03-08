@@ -11,7 +11,7 @@ import (
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph/model"
-	"github.com/nais/fasit/pkg/status"
+	"github.com/nais/fasit/pkg/message"
 	"github.com/sirupsen/logrus"
 )
 
@@ -80,7 +80,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.Reconcil
 		lookup[s.Feature] = s
 	}
 
-	mgr := status.NewPublisher[status.DeployInstruction](r.client, "naisd-"+d.PartnerName+"-"+d.Name)
+	mgr := message.NewPublisher[message.DeployInstruction](r.client, "naisd-"+d.PartnerName+"-"+d.Name)
 	defer mgr.Stop()
 
 	for _, f := range features {
@@ -100,7 +100,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.Reconcil
 			}
 		}
 
-		err = mgr.Publish(ctx, status.DeployInstruction{
+		err = mgr.Publish(ctx, message.DeployInstruction{
 			Name:       f.Name,
 			Version:    f.Version,
 			Chart:      f.Chart,

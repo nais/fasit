@@ -2,55 +2,102 @@ package workers
 
 import (
 	"context"
-	"github.com/nais/fasit/pkg/status"
+	"encoding/json"
+	"github.com/nais/fasit/pkg/message"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 	"k8s.io/client-go/rest"
 	"log"
 	"os"
 	"os/exec"
-	"path/filepath"
 )
 
-type DeployReceiver struct {
-	manager    *status.Subscriber[status.DeployInstruction]
-	kubeConfig *rest.Config
-	log        *logrus.Entry
-	helmCache  string
+type DeployManager struct {
+	deployments *message.Subscriber[message.DeployInstruction]
+	statuses    *message.Publisher[message.Status]
+	kubeConfig  *rest.Config
+	log         *logrus.Entry
+	helmCache   string
+	env         string
+	partnerName string
+	executor    executor
 }
 
-func NewDeployReceiver(mgr *status.Subscriber[status.DeployInstruction], log *logrus.Entry) (*DeployReceiver, error) {
+func NewDeployManager(
+	deploySubscriber *message.Subscriber[message.DeployInstruction],
+	statusPublisher *message.Publisher[message.Status],
+	partnerName, env string,
+	executor executor,
+	kubeConfig *rest.Config,
+	log *logrus.Entry,
+) (*DeployManager, error) {
 	helmCache, err := os.MkdirTemp(os.TempDir(), "naisd-helm-*")
 	if err != nil {
 		return nil, err
 	}
 
-	receiver := &DeployReceiver{manager: mgr, log: log, helmCache: helmCache}
+	receiver := &DeployManager{
+		deployments: deploySubscriber,
+		statuses:    statusPublisher,
+		log:         log, helmCache: helmCache,
+		env:         env,
+		partnerName: partnerName,
+		executor:    executor,
+		kubeConfig:  kubeConfig,
+	}
+
 	return receiver, nil
 }
 
-func (r *DeployReceiver) Run(ctx context.Context) {
-	err := r.manager.Receive(ctx, r.handler)
+func (d *DeployManager) Run(ctx context.Context) {
+	err := d.deployments.Receive(ctx, d.handler)
 	if err != nil {
-		r.log.WithError(err).Error("receive status messages")
+		d.log.WithError(err).Error("receive status messages")
 		// retry logic, kanskje. Denne skal aldri trigge
 	}
 }
 
-func (r *DeployReceiver) handler(ctx context.Context, message status.DeployInstruction) error {
-	args, err := helmArgs(message)
+func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstruction) error {
+	valuesFile, err := makeHelmValues(msg)
 	if err != nil {
 		return err
 	}
-	if err := r.runHelm(ctx, args); err != nil {
-		log.Printf("failed to run helm %s: %s", message.Name, err)
-		return nil
+	defer os.Remove(valuesFile)
+
+	args, err := helmArgs(msg, valuesFile)
+	if err != nil {
+		return err
 	}
-	return nil
+
+	helmStatus := message.Helm{
+		Name:          msg.Name,
+		Version:       msg.Version,
+		ConfigHash:    msg.ConfigHash,
+		RolloutStatus: "ok",
+	}
+
+	if err := d.runHelm(ctx, args); err != nil {
+		log.Printf("failed to run helm %s: %s", msg.Name, err)
+		helmStatus.RolloutStatus = "failed"
+	}
+
+	data, err := json.Marshal(helmStatus)
+	if err != nil {
+		return err
+	}
+
+	statusUpdate := message.Status{
+		Partner:     d.partnerName,
+		Environment: d.env,
+		Type:        message.StatusTypeHelm,
+		Data:        data,
+	}
+
+	return d.statuses.Publish(ctx, statusUpdate)
 }
 
-func (d *DeployReceiver) runHelm(ctx context.Context, args []string) error {
-	baseFlags := []string{
+func (d *DeployManager) runHelm(ctx context.Context, args []string) error {
+	connectionFlags := []string{
 		"--kube-apiserver",
 		d.kubeConfig.Host,
 		"--kube-ca-file",
@@ -64,26 +111,33 @@ func (d *DeployReceiver) runHelm(ctx context.Context, args []string) error {
 		"HELM_CACHE_HOME=" + d.helmCache,
 	}
 
-	cmd := exec.CommandContext(ctx, "helm", append(baseFlags, args...)...)
+	cmd := exec.CommandContext(ctx, "helm", append(connectionFlags, args...)...)
 	cmd.Env = append(cmd.Env, environment...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	return cmd.Run()
+
+	return d.executor.Execute(cmd)
 }
-func helmArgs(m status.DeployInstruction) ([]string, error) {
+
+func makeHelmValues(m message.DeployInstruction) (string, error) {
 	file, err := os.CreateTemp("", "values-*.yaml")
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 	defer file.Close()
 
 	enc := yaml.NewEncoder(file)
 	if err := enc.Encode(m.Values); err != nil {
-		return nil, err
+		return "", err
 	}
 
+	return file.Name(), nil
+}
+
+func helmArgs(m message.DeployInstruction, valuesFile string) ([]string, error) {
 	args := []string{
 		"upgrade",
+		"--atomic",
 		"--install",
 		m.Name,
 		m.Chart,
@@ -93,7 +147,7 @@ func helmArgs(m status.DeployInstruction) ([]string, error) {
 		"--version",
 		m.Version,
 		"-f",
-		filepath.Join(os.TempDir(), file.Name()),
+		valuesFile,
 	}
 
 	if m.Repo != "" {

@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"cloud.google.com/go/pubsub"
-	"github.com/nais/fasit/pkg/status"
+	"github.com/nais/fasit/pkg/message"
 )
 
 func main() {
@@ -21,11 +21,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	mgr := status.NewPublisher[status.Update](client, "status")
+	mgr := message.NewPublisher[message.Status](client, "status")
 
-	deployMgr := status.NewPublisher[status.DeployInstruction](client, "nais-test-dev")
+	deployMgr := message.NewPublisher[message.DeployInstruction](client, "nais-test-dev")
 
-	helmStatus := status.Helm{
+	helmStatus := message.Helm{
 		Name:          "loadbalancer",
 		RolloutStatus: "Deployed",
 		Version:       "0.1.0",
@@ -37,7 +37,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	helmStatus2 := status.Helm{
+	helmStatus2 := message.Helm{
 		Name:          "naiserator",
 		RolloutStatus: "Deployed",
 		Version:       "0.1.1",
@@ -49,15 +49,15 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := mgr.Publish(ctx, status.Update{Partner: "test", Environment: "dev", Type: status.UpdateTypeHelm, Data: data}); err != nil {
+	if err := mgr.Publish(ctx, message.Status{Partner: "test", Environment: "dev", Type: message.StatusTypeHelm, Data: data}); err != nil {
 		log.Fatal(err)
 	}
 
-	if err := mgr.Publish(ctx, status.Update{Partner: "test", Environment: "dev", Type: status.UpdateTypeHelm, Data: data2}); err != nil {
+	if err := mgr.Publish(ctx, message.Status{Partner: "test", Environment: "dev", Type: message.StatusTypeHelm, Data: data2}); err != nil {
 		log.Fatal(err)
 	}
 
-	deploy := status.DeployInstruction{
+	deploy := message.DeployInstruction{
 		Name:       "naiserator",
 		Version:    "0.2.1",
 		Chart:      "naiserator",

@@ -1,4 +1,4 @@
-package status
+package message
 
 import (
 	"context"
@@ -21,12 +21,12 @@ func TestPubSub(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mgr := NewSubscriber[Update](client, "fasit-subscription")
+	mgr := NewSubscriber[Status](client, "fasit-subscription")
 
 	deployMgr := NewSubscriber[DeployInstruction](client, "naisd-test-dev-subscription")
 
 	go func() {
-		err = mgr.Receive(ctx, func(ctx context.Context, msg Update) error {
+		err = mgr.Receive(ctx, func(ctx context.Context, msg Status) error {
 			data := Helm{}
 			err := json.Unmarshal(msg.Data, &data)
 			if err != nil {

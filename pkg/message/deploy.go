@@ -1,4 +1,4 @@
-package status
+package message
 
 type DeployInstruction struct {
 	// Name is the name of the feature

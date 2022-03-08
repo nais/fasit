@@ -16,7 +16,7 @@ import (
 	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph"
 	"github.com/nais/fasit/pkg/graph/graphgen"
-	"github.com/nais/fasit/pkg/status"
+	"github.com/nais/fasit/pkg/message"
 	"github.com/nais/fasit/pkg/workers"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
@@ -36,7 +36,7 @@ func init() {
 	flag.StringVar(&cfg.DBConnectionDSN, "db-connection-dsn", fmt.Sprintf("%v?sslmode=disable", getEnv("NAIS_DATABASE_fasit_BACKEND_fasit_URL", "postgres://postgres:postgres@127.0.0.1:5432/fasit")), "database connection DSN")
 	flag.StringVar(&cfg.LogLevel, "log-level", "info", "which log level to output")
 	flag.StringVar(&cfg.GCPProjectID, "project-id", "banankake", "Google project ID")
-	flag.StringVar(&cfg.StatusTopicID, "topic-id", "fasit-subscription", "Pub/sub topic for status")
+	flag.StringVar(&cfg.StatusSubscriptionID, "status-subscription-id", "fasit-subscription", "Pub/sub subscription for status")
 }
 
 func main() {
@@ -63,7 +63,7 @@ func main() {
 		log.WithError(err).Fatal("setting up features")
 	}
 
-	statusMgr := status.NewSubscriber[status.Update](client, cfg.StatusTopicID)
+	statusMgr := message.NewSubscriber[message.Status](client, cfg.StatusSubscriptionID)
 
 	receiver := workers.NewReceiver(statusMgr, repo, log.WithField("subsystem", "status"))
 	go receiver.Run(ctx)

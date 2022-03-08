@@ -4,11 +4,11 @@ import (
 	"cloud.google.com/go/pubsub"
 	"context"
 	"flag"
-	"fmt"
-	"github.com/nais/fasit/pkg/status"
+	"github.com/nais/fasit/pkg/message"
 	"github.com/nais/fasit/pkg/workers"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
+	"k8s.io/client-go/rest"
 )
 
 var (
@@ -24,7 +24,8 @@ func init() {
 	flag.StringVar(&cfg.BindAddress, "bind-address", cfg.BindAddress, "Bind address")
 	flag.StringVar(&cfg.LogLevel, "log-level", "info", "which log level to output")
 	flag.StringVar(&cfg.GCPProjectID, "project-id", "banankake", "Google project ID")
-	flag.StringVar(&cfg.StatusTopicID, "topic-id", "fasit-subscription", "Pub/sub topic for status")
+	flag.StringVar(&cfg.DeploySubscriptionID, "deploy-subscription-id", "naisd-subscription", "Pub/sub subscription for deploys")
+	flag.StringVar(&cfg.StatusTopicRef, "status-topic-ref", "projects/banankake/topic/status)", "status topic ref (projects/<project_id>/topic/<topic_id>)")
 	flag.StringVar(&cfg.PartnerName, "partner-name", "", "partner name")
 	flag.StringVar(&cfg.Env, "env", "", "cluster environment")
 }
@@ -33,17 +34,26 @@ func main() {
 	flag.Parse()
 	log := newLogger()
 	ctx := context.Background()
-	client, err := pubsub.NewClient(ctx, cfg.GCPProjectID)
+	deployClient, err := pubsub.NewClient(ctx, cfg.GCPProjectID)
 	if err != nil {
 		log.WithError(err).Fatal("setting up new pub/sub client")
 	}
 
-	statusPublisher := status.NewPublisher[status.Update](client, cfg.StatusTopicID)
-	deploySubscriber := status.NewSubscriber[status.DeployInstruction](client, fmt.Sprintf("naisd-%v-%v", cfg.PartnerName, cfg.Env))
+	deploySubscriber := message.NewSubscriber[message.DeployInstruction](deployClient, cfg.DeploySubscriptionID)
+	statusPublisher := message.NewPublisher[message.Status](deployClient, cfg.StatusTopicRef)
 
-	receiver := workers.NewReceiver(statusPublisher, repo, log.WithField("subsystem", "status"))
-	go receiver.Run(ctx)
+	kubeConfig, err := rest.InClusterConfig()
+	if err != nil {
+		//log.WithError(err).Fatal("failed to get kubeconfig")
+		kubeConfig = &rest.Config{}
+	}
 
+	receiver, err := workers.NewDeployManager(deploySubscriber, statusPublisher, cfg.PartnerName, cfg.Env, &workers.MockExecutor{Logger: log.WithField("subsystem", "executor")}, kubeConfig, log.WithField("subsystem", "deploy"))
+	if err != nil {
+		log.WithError(err).Fatal("setting up worker")
+	}
+
+	receiver.Run(ctx)
 }
 func newLogger() *logrus.Logger {
 	log := logrus.StandardLogger()
