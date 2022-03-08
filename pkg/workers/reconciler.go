@@ -80,10 +80,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.Reconcil
 		lookup[s.Feature] = s
 	}
 
-	mgr, err := status.NewPublisher[status.DeployInstruction](r.client, "naisd-"+d.PartnerName+"-"+d.Name)
-	if err != nil {
-		return err
-	}
+	mgr := status.NewPublisher[status.DeployInstruction](r.client, "naisd-"+d.PartnerName+"-"+d.Name)
 	defer mgr.Stop()
 
 	for _, f := range features {

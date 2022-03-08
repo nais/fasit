@@ -12,10 +12,10 @@ type Publisher[T any] struct {
 	topic *pubsub.Topic
 }
 
-func NewPublisher[T any](client *pubsub.Client, topicID string) (*Publisher[T], error) {
+func NewPublisher[T any](client *pubsub.Client, topicID string) *Publisher[T] {
 	return &Publisher[T]{
 		topic: client.Topic(topicID),
-	}, nil
+	}
 }
 
 func (m *Publisher[T]) Publish(ctx context.Context, msg T) error {

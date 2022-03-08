@@ -36,7 +36,7 @@ func init() {
 	flag.StringVar(&cfg.DBConnectionDSN, "db-connection-dsn", fmt.Sprintf("%v?sslmode=disable", getEnv("NAIS_DATABASE_fasit_BACKEND_fasit_URL", "postgres://postgres:postgres@127.0.0.1:5432/fasit")), "database connection DSN")
 	flag.StringVar(&cfg.LogLevel, "log-level", "info", "which log level to output")
 	flag.StringVar(&cfg.GCPProjectID, "project-id", "banankake", "Google project ID")
-	flag.StringVar(&cfg.StatusTopicID, "topic-id", "status", "Pub/sub topic for status")
+	flag.StringVar(&cfg.StatusTopicID, "topic-id", "fasit-subscription", "Pub/sub topic for status")
 }
 
 func main() {
@@ -63,16 +63,13 @@ func main() {
 		log.WithError(err).Fatal("setting up features")
 	}
 
-	statusMgr, err := status.NewSubscriber[status.Update](client, cfg.StatusTopicID)
-	if err != nil {
-		log.WithError(err).Fatal("new status manager")
-	}
+	statusMgr := status.NewSubscriber[status.Update](client, cfg.StatusTopicID)
 
-	receiver := workers.NewReceiver(statusMgr, "fasit", repo, log.WithField("subsystem", "status"))
+	receiver := workers.NewReceiver(statusMgr, repo, log.WithField("subsystem", "status"))
 	go receiver.Run(ctx)
 
 	reconciler := workers.NewReconciler(repo, featureMgr, client, log.WithField("subsystem", "reconciler"))
-	go reconciler.Run(ctx, 10*time.Second)
+	go reconciler.Run(ctx, 100*time.Second)
 
 	resolver := &graph.Resolver{
 		Repo:     repo,

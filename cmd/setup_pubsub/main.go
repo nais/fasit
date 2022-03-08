@@ -10,9 +10,13 @@ import (
 )
 
 var (
-	projectID          = "nais-io"
+	projectID          = "banankake"
 	statusSubscription = "fasit-subscription"
-	statusTopic        = "naisd-status"
+	statusTopic        = "status"
+
+	envs = map[string][]string{
+		"test": {"dev"},
+	}
 )
 
 func main() {
@@ -36,6 +40,25 @@ func main() {
 	})
 	if err != nil {
 		log.Println(err)
+	}
+
+	for partner, envs := range envs {
+		for _, env := range envs {
+			subscription := fmt.Sprintf("naisd-%v-%v-subscription", partner, env)
+			topic := fmt.Sprintf("naisd-%v-%v", partner, env)
+
+			_, err = client.CreateTopic(ctx, topic)
+			if err != nil {
+				log.Println(err)
+			}
+
+			_, err = client.CreateSubscription(ctx, subscription, pubsub.SubscriptionConfig{
+				Topic: client.Topic(topic),
+			})
+			if err != nil {
+				log.Println(err)
+			}
+		}
 	}
 
 	fmt.Println("ok")

@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 
+	"cloud.google.com/go/pubsub"
 	"github.com/nais/fasit/pkg/status"
 )
 
@@ -15,17 +16,14 @@ func main() {
 	}
 
 	ctx := context.Background()
-	mgr, err := status.New[status.Update](ctx, "banankake", "status")
+	client, err := pubsub.NewClient(ctx, "banankake")
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer mgr.Close()
 
-	deployMgr, err := status.New[status.DeployInstruction](ctx, "banankake", "deploys")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer deployMgr.Close()
+	mgr := status.NewPublisher[status.Update](client, "status")
+
+	deployMgr := status.NewPublisher[status.DeployInstruction](client, "nais-test-dev")
 
 	helmStatus := status.Helm{
 		Name:          "loadbalancer",
@@ -51,11 +49,11 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := mgr.Publish(ctx, status.Update{Partner: "mattilsynet", Environment: "dev", Type: status.UpdateTypeHelm, Data: data}); err != nil {
+	if err := mgr.Publish(ctx, status.Update{Partner: "test", Environment: "dev", Type: status.UpdateTypeHelm, Data: data}); err != nil {
 		log.Fatal(err)
 	}
 
-	if err := mgr.Publish(ctx, status.Update{Partner: "mattilsynet", Environment: "dev", Type: status.UpdateTypeHelm, Data: data2}); err != nil {
+	if err := mgr.Publish(ctx, status.Update{Partner: "test", Environment: "dev", Type: status.UpdateTypeHelm, Data: data2}); err != nil {
 		log.Fatal(err)
 	}
 
@@ -71,6 +69,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	deployMgr.StopTopic()
-	mgr.StopTopic()
+	deployMgr.Stop()
+	mgr.Stop()
 }
