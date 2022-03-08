@@ -3,7 +3,6 @@ package status
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 
 	"cloud.google.com/go/pubsub"
@@ -21,7 +20,6 @@ func NewSubscriber[T any](client *pubsub.Client, subscriptionID string) *Subscri
 
 func (s *Subscriber[T]) Receive(ctx context.Context, f func(ctx context.Context, msg T) error) error {
 	return s.subscription.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
-		fmt.Println("Received", msg.Data)
 		var t T
 		if err := json.Unmarshal(msg.Data, &t); err != nil {
 			log.Println(err)

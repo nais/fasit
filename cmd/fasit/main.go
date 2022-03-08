@@ -26,7 +26,7 @@ var (
 	cfg = DefaultConfig()
 
 	promErrs = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "nada_backend",
+		Namespace: "fasit",
 		Name:      "errors",
 	}, []string{"location"})
 )
