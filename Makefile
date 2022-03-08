@@ -17,6 +17,9 @@ generate-sql:
 generate-graphql:
 	go get -d github.com/99designs/gqlgen@latest && go run github.com/99designs/gqlgen generate
 
+setup:
+	go run cmd/setup_pubsub/main.go
+
 local:
 	PUBSUB_EMULATOR_HOST=localhost:8085 go run ./cmd/fasit \
 	--bind-address=127.0.0.1:8080 \
