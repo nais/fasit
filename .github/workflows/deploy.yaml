@@ -7,7 +7,7 @@ on:
 
 env:
   IMAGE_NAME: naisd
-  REGISTRY: europe-north1-docker.pkg.dev/nais-io/nais
+  REGISTRY: europe-north1-docker.pkg.dev/nais-io/nais/images
 
 jobs:
   build-push:
