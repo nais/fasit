@@ -3,7 +3,7 @@ on:
   push:
     paths-ignore:
       - "charts/**"
-      - ".github/workflows/chart.yaml"
+      - ".github/workflows/*_chart.yaml"
 
 env:
   IMAGE_NAME: naisd
