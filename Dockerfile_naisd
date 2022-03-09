@@ -1,0 +1,23 @@
+FROM golang:1.18rc1-alpine as builder
+
+RUN apk add --no-cache git
+
+WORKDIR /workspace
+COPY go.mod go.mod
+COPY go.sum go.sum
+RUN go mod download
+
+COPY . /workspace
+
+# Build
+RUN CGO_ENABLED=0 go build -a -o naisd ./cmd/naisd
+
+FROM alpine
+WORKDIR /
+
+RUN apk add --no-cache --repository=http://dl-cdn.alpinelinux.org/alpine/edge/testing helm
+
+COPY --from=builder /workspace/naisd .
+USER 65532:65532
+
+ENTRYPOINT ["/naisd"]

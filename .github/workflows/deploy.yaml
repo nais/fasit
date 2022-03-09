@@ -1,0 +1,63 @@
+name: Build and deploy
+on:
+  push:
+    paths-ignore:
+      - "charts/**"
+      - ".github/workflows/chart.yaml"
+
+env:
+  IMAGE_NAME: naisd
+  REGISTRY: europe-north1-docker.pkg.dev/nais-io/nais
+
+jobs:
+  build-push:
+    permissions:
+      contents: "read"
+      id-token: "write"
+
+    name: Build and push image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout fasit
+        uses: actions/checkout@v2
+
+      - id: "auth"
+        name: "Authenticate to Google Cloud"
+        uses: "google-github-actions/auth@v0.6.0"
+        with:
+          workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: "gh-fasit@nais-io.iam.gserviceaccount.com"
+          token_format: "access_token"
+
+      - name: Login to registry
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: "oauth2accesstoken"
+          password: "${{ steps.auth.outputs.access_token }}"
+
+      - name: Docker meta
+        id: metadata
+        uses: docker/metadata-action@v3
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          # Docker tags based on the following events/attributes
+          tags: |
+            type=schedule
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern=v{{version}}
+            type=semver,pattern=v{{major}}.{{minor}}
+            type=semver,pattern=v{{major}}
+            type=sha
+
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          dockerfile: Dockerfile_naisd
+          push: true
+          tags: ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
