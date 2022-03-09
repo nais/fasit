@@ -1,11 +1,12 @@
 package workers
 
 import (
-	"github.com/sirupsen/logrus"
 	"os/exec"
+
+	"github.com/sirupsen/logrus"
 )
 
-type executor interface {
+type Exec interface {
 	Execute(cmd *exec.Cmd) error
 }
 

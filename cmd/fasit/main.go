@@ -69,7 +69,7 @@ func main() {
 	go receiver.Run(ctx)
 
 	reconciler := workers.NewReconciler(repo, featureMgr, client, cfg.GCPProjectID, log.WithField("subsystem", "reconciler"))
-	go reconciler.Run(ctx, 100*time.Second)
+	go reconciler.Run(ctx, 5*time.Minute)
 
 	resolver := &graph.Resolver{
 		Repo:     repo,

@@ -8,6 +8,7 @@ type Config struct {
 	Env             string
 	PartnerName     string
 	NaisProjectID   string
+	Production      bool
 }
 
 func DefaultConfig() Config {

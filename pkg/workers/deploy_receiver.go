@@ -3,13 +3,14 @@ package workers
 import (
 	"context"
 	"encoding/json"
+	"log"
+	"os"
+	"os/exec"
+
 	"github.com/nais/fasit/pkg/message"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 	"k8s.io/client-go/rest"
-	"log"
-	"os"
-	"os/exec"
 )
 
 type DeployManager struct {
@@ -20,14 +21,14 @@ type DeployManager struct {
 	helmCache   string
 	env         string
 	partnerName string
-	executor    executor
+	executor    Exec
 }
 
 func NewDeployManager(
 	deploySubscriber *message.Subscriber[message.DeployInstruction],
 	statusPublisher *message.Publisher[message.Status],
 	partnerName, env string,
-	executor executor,
+	executor Exec,
 	kubeConfig *rest.Config,
 	log *logrus.Entry,
 ) (*DeployManager, error) {

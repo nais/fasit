@@ -33,6 +33,7 @@ func init() {
 	flag.StringVar(&cfg.NaisProjectID, "nais-project-id", "nais-local-dev", "Nais project ID")
 	flag.StringVar(&cfg.PartnerName, "partner-name", "test", "partner name")
 	flag.StringVar(&cfg.Env, "env", "dev", "cluster environment")
+	flag.BoolVar(&cfg.Production, "production", false, "When in production, actually run helm install")
 }
 
 func main() {
@@ -53,7 +54,11 @@ func main() {
 		kubeConfig = &rest.Config{}
 	}
 
-	receiver, err := workers.NewDeployManager(deploySubscriber, statusPublisher, cfg.PartnerName, cfg.Env, &workers.MockExecutor{Logger: log.WithField("subsystem", "executor")}, kubeConfig, log.WithField("subsystem", "deploy"))
+	var executor workers.Exec = &workers.MockExecutor{Logger: log.WithField("subsystem", "executor")}
+	if cfg.Production {
+		executor = &workers.Executor{}
+	}
+	receiver, err := workers.NewDeployManager(deploySubscriber, statusPublisher, cfg.PartnerName, cfg.Env, executor, kubeConfig, log.WithField("subsystem", "deploy"))
 	if err != nil {
 		log.WithError(err).Fatal("setting up worker")
 	}
