@@ -12,9 +12,9 @@ type Publisher[T any] struct {
 	topic *pubsub.Topic
 }
 
-func NewPublisher[T any](client *pubsub.Client, topicID string) *Publisher[T] {
+func NewPublisher[T any](client *pubsub.Client, projectID, topicID string) *Publisher[T] {
 	return &Publisher[T]{
-		topic: client.Topic(topicID),
+		topic: client.TopicInProject(topicID, projectID),
 	}
 }
 

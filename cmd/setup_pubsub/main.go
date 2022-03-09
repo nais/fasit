@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	projectID          = "banankake"
+	naisProjectID      = "nais-local-dev"
 	statusSubscription = "fasit-subscription"
 	statusTopic        = "status"
 
@@ -25,7 +25,7 @@ func main() {
 	}
 
 	ctx := context.Background()
-	client, err := pubsub.NewClient(ctx, projectID)
+	client, err := pubsub.NewClient(ctx, naisProjectID)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -44,16 +44,20 @@ func main() {
 
 	for partner, envs := range envs {
 		for _, env := range envs {
-			subscription := fmt.Sprintf("naisd-%v-%v-subscription", partner, env)
 			topic := fmt.Sprintf("naisd-%v-%v", partner, env)
+			subscription := "naisd-subscription"
 
 			_, err = client.CreateTopic(ctx, topic)
 			if err != nil {
 				log.Println(err)
 			}
 
-			_, err = client.CreateSubscription(ctx, subscription, pubsub.SubscriptionConfig{
-				Topic: client.Topic(topic),
+			envClient, err := pubsub.NewClient(ctx, "local-"+partner+"-"+env)
+			if err != nil {
+				log.Fatal(err)
+			}
+			_, err = envClient.CreateSubscription(ctx, subscription, pubsub.SubscriptionConfig{
+				Topic: envClient.TopicInProject(topic, naisProjectID),
 			})
 			if err != nil {
 				log.Println(err)

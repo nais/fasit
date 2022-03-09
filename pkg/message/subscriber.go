@@ -12,9 +12,9 @@ type Subscriber[T any] struct {
 	subscription *pubsub.Subscription
 }
 
-func NewSubscriber[T any](client *pubsub.Client, subscriptionID string) *Subscriber[T] {
+func NewSubscriber[T any](client *pubsub.Client, projectID, subscriptionID string) *Subscriber[T] {
 	return &Subscriber[T]{
-		subscription: client.Subscription(subscriptionID),
+		subscription: client.SubscriptionInProject(subscriptionID, projectID),
 	}
 }
 

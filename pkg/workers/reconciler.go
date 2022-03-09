@@ -20,14 +20,22 @@ type Reconciler struct {
 	featureMgr *feature.Manager
 	client     *pubsub.Client
 	log        *logrus.Entry
+	projectID  string
 }
 
-func NewReconciler(repo *database.Repo, featureMgr *feature.Manager, client *pubsub.Client, log *logrus.Entry) *Reconciler {
+func NewReconciler(
+	repo *database.Repo,
+	featureMgr *feature.Manager,
+	client *pubsub.Client,
+	gcpProjectID string,
+	log *logrus.Entry,
+) *Reconciler {
 	return &Reconciler{
 		repo:       repo,
 		featureMgr: featureMgr,
 		client:     client,
 		log:        log,
+		projectID:  gcpProjectID,
 	}
 }
 
@@ -80,7 +88,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.Reconcil
 		lookup[s.Feature] = s
 	}
 
-	mgr := message.NewPublisher[message.DeployInstruction](r.client, "naisd-"+d.PartnerName+"-"+d.Name)
+	mgr := message.NewPublisher[message.DeployInstruction](r.client, r.projectID, "naisd-"+d.PartnerName+"-"+d.Name)
 	defer mgr.Stop()
 
 	for _, f := range features {

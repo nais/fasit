@@ -1,14 +1,13 @@
 package main
 
 type Config struct {
-	BindAddress          string
-	DBConnectionDSN      string
-	LogLevel             string
-	GCPProjectID         string
-	DeploySubscriptionID string
-	Env                  string
-	PartnerName          string
-	StatusTopicRef       string
+	BindAddress     string
+	DBConnectionDSN string
+	LogLevel        string
+	EnvProjectID    string
+	Env             string
+	PartnerName     string
+	NaisProjectID   string
 }
 
 func DefaultConfig() Config {

@@ -21,9 +21,9 @@ func TestPubSub(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	mgr := NewSubscriber[Status](client, "fasit-subscription")
+	mgr := NewSubscriber[Status](client, "project", "fasit-subscription")
 
-	deployMgr := NewSubscriber[DeployInstruction](client, "naisd-test-dev-subscription")
+	deployMgr := NewSubscriber[DeployInstruction](client, "project", "naisd-test-dev-subscription")
 
 	go func() {
 		err = mgr.Receive(ctx, func(ctx context.Context, msg Status) error {
