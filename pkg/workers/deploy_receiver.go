@@ -59,6 +59,12 @@ func (d *DeployManager) Run(ctx context.Context) {
 }
 
 func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstruction) error {
+	d.log.WithFields(logrus.Fields{
+		"name":    msg.Name,
+		"chart":   msg.Chart,
+		"version": msg.Version,
+	}).Debug("Received instruction")
+
 	valuesFile, err := makeHelmValues(msg)
 	if err != nil {
 		return err

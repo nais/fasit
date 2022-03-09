@@ -46,7 +46,7 @@ func main() {
 	}
 
 	deploySubscriber := message.NewSubscriber[message.DeployInstruction](deployClient, cfg.EnvProjectID, deploySubscriptionID)
-	statusPublisher := message.NewPublisher[message.Status](deployClient, cfg.NaisProjectID, naisStatusTopic)
+	statusPublisher := message.NewPublisher[message.Status](deployClient, cfg.NaisProjectID, naisStatusTopic, log.WithField("subsystem", "status-pubsub"))
 
 	kubeConfig, err := rest.InClusterConfig()
 	if err != nil {
@@ -63,6 +63,7 @@ func main() {
 		log.WithError(err).Fatal("setting up worker")
 	}
 
+	log.Info("Recever started")
 	receiver.Run(ctx)
 }
 
