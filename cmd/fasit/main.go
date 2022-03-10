@@ -23,6 +23,7 @@ import (
 	"github.com/nais/fasit/pkg/message"
 	"github.com/nais/fasit/pkg/workers"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -86,8 +87,13 @@ func main() {
 	}
 	srv := handler.NewDefaultServer(graphgen.NewExecutableSchema(graphgen.Config{Resolvers: resolver}))
 
+	corsMW := cors.New(cors.Options{
+		AllowedOrigins:   []string{"https://*", "http://*"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowCredentials: true,
+	})
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
-	http.Handle("/query", srv)
+	http.Handle("/query", corsMW.Handler(srv))
 
 	log.Printf("connect to http://%s/ for GraphQL playground", cfg.BindAddress)
 	log.Fatal(http.ListenAndServe(cfg.BindAddress, nil))

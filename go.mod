@@ -13,6 +13,7 @@ require (
 	github.com/pressly/goose/v3 v3.5.3
 	github.com/prometheus/client_golang v1.12.1
 	github.com/qustavo/sqlhooks/v2 v2.1.0
+	github.com/rs/cors v1.8.2
 	github.com/sirupsen/logrus v1.8.1
 	github.com/vektah/gqlparser/v2 v2.4.0
 	gopkg.in/yaml.v2 v2.4.0
