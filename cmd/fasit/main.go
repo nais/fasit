@@ -2,15 +2,19 @@ package main
 
 import (
 	"context"
+	"database/sql/driver"
 	"flag"
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/pubsub"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/postgres"
+	"github.com/lib/pq"
 	"github.com/nais/fasit"
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/feature"
@@ -33,7 +37,7 @@ var (
 
 func init() {
 	flag.StringVar(&cfg.BindAddress, "bind-address", cfg.BindAddress, "Bind address")
-	flag.StringVar(&cfg.DBConnectionDSN, "db-connection-dsn", fmt.Sprintf("%v?sslmode=disable", getEnv("NAIS_DATABASE_fasit_BACKEND_fasit_URL", "postgres://postgres:postgres@127.0.0.1:5432/fasit")), "database connection DSN")
+	flag.StringVar(&cfg.DBConnectionDSN, "db-connection-dsn", fmt.Sprintf("%v?sslmode=disable", getEnv("FASIT_DBCONN_STRING", "postgres://postgres:postgres@127.0.0.1:5432/fasit")), "database connection DSN")
 	flag.StringVar(&cfg.LogLevel, "log-level", "info", "which log level to output")
 	flag.StringVar(&cfg.GCPProjectID, "project-id", "nais-local-dev", "Google project ID")
 	flag.StringVar(&cfg.StatusSubscriptionID, "status-subscription-id", "fasit-subscription", "Pub/sub subscription for status")
@@ -53,7 +57,12 @@ func main() {
 		log.WithError(err).Fatal("setting up pubsub client")
 	}
 
-	repo, err := database.New(cfg.DBConnectionDSN, log.WithField("subsystem", "repo"))
+	var dbDriver driver.Driver = pq.Driver{}
+	if !strings.Contains(cfg.DBConnectionDSN, "://") {
+		dbDriver = &postgres.Driver{}
+	}
+
+	repo, err := database.New(dbDriver, cfg.DBConnectionDSN, log.WithField("subsystem", "repo"))
 	if err != nil {
 		log.WithError(err).Fatal("setting up database")
 	}

@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"database/sql/driver"
 	"embed"
 	"fmt"
 	"regexp"
@@ -10,7 +11,6 @@ import (
 
 	"github.com/nais/fasit/pkg/database/gensql"
 
-	"github.com/lib/pq"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 
@@ -37,9 +37,9 @@ type Querier interface {
 	WithTx(tx *sql.Tx) *gensql.Queries
 }
 
-func New(dbConnDSN string, log *logrus.Entry) (*Repo, error) {
+func New(driver driver.Driver, dbConnDSN string, log *logrus.Entry) (*Repo, error) {
 	hooks := NewHooks()
-	sql.Register("psqlhooked", sqlhooks.Wrap(&pq.Driver{}, hooks))
+	sql.Register("psqlhooked", sqlhooks.Wrap(driver, hooks))
 
 	db, err := sql.Open("psqlhooked", dbConnDSN)
 	if err != nil {
