@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/nais/fasit/pkg/graph/model"
 )
 
 func ptrToNullString(str *string) sql.NullString {
@@ -54,19 +55,20 @@ func stringToPtr(s string) *string {
 	return &s
 }
 
-func nullUUIDToPtr(uid uuid.NullUUID) *uuid.UUID {
+func nullUUIDToPtr(uid uuid.NullUUID) *model.ID {
 	if uid.Valid {
-		return &uid.UUID
+		mid := model.ID(uid.UUID)
+		return &mid
 	}
 	return nil
 }
 
-func ptrToNullUUID(uid *uuid.UUID) uuid.NullUUID {
+func ptrToNullUUID(uid *model.ID) uuid.NullUUID {
 	if uid == nil {
 		return uuid.NullUUID{}
 	}
 	return uuid.NullUUID{
-		UUID:  *uid,
+		UUID:  uuid.UUID(*uid),
 		Valid: true,
 	}
 }

@@ -9,7 +9,7 @@ import (
 
 func partnerFromSQL(p gensql.Partner) *model.Partner {
 	return &model.Partner{
-		ID:           p.ID,
+		ID:           model.ID(p.ID),
 		Name:         p.Name,
 		Description:  nullStringToPtr(p.Description),
 		Created:      p.Created,

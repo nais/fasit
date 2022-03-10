@@ -6,9 +6,10 @@ package graph
 import (
 	"context"
 
-	"github.com/google/uuid"
+	"github.com/nais/fasit/pkg/graph/model"
 )
 
-func (r *queryResolver) Values(ctx context.Context, feature string, env uuid.UUID) (map[string]any, error) {
-	return r.Repo.HelmValues(ctx, feature, env)
+func (r *queryResolver) Values(ctx context.Context, feature string, env model.ID) (map[string]interface{}, error) {
+	panic("not implemented")
+	// return r.Repo.HelmValues(ctx, feature, env)
 }

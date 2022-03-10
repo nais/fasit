@@ -45,7 +45,7 @@ autobind:
 models:
   ID:
     model:
-      - github.com/nais/fasit/pkg/graph/scalars.UUID
+      - github.com/nais/fasit/pkg/graph/scalars.ID
   RawMessage:
     model:
       - github.com/nais/fasit/pkg/graph/scalars.RawMessage

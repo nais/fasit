@@ -7,21 +7,26 @@ import (
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/google/uuid"
+	"github.com/nais/fasit/pkg/graph/model"
 )
 
-func MarshalUUID(id uuid.UUID) graphql.Marshaler {
+func MarshalID(id model.ID) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
-		b, _ := json.Marshal(id)
+		b, _ := json.Marshal(uuid.UUID(id))
 		w.Write(b)
 	})
 }
 
-func UnmarshalUUID(v any) (uuid.UUID, error) {
+func UnmarshalID(v any) (model.ID, error) {
 	switch v := v.(type) {
 	case string:
-		return uuid.Parse(v)
+		id, err := uuid.Parse(v)
+		if err != nil {
+			return model.ID{}, err
+		}
+		return model.ID(id), nil
 	default:
-		return uuid.UUID{}, fmt.Errorf("%T is not a string", v)
+		return model.ID{}, fmt.Errorf("%T is not a string", v)
 	}
 }
 

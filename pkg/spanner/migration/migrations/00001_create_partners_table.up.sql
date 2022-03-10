@@ -1,0 +1,7 @@
+CREATE TABLE Partners (
+	PartnerID BYTES(16),
+	Name STRING(40) NOT NULL,
+	Description STRING(1024),
+	Created TIMESTAMP NOT NULL,
+	LastModified TIMESTAMP NOT NULL,
+) PRIMARY KEY (PartnerID)

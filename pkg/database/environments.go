@@ -10,7 +10,7 @@ import (
 
 func environmentFromSQL(p gensql.Environment) *model.Environment {
 	return &model.Environment{
-		ID:           p.ID,
+		ID:           model.ID(p.ID),
 		Name:         p.Name,
 		Description:  nullStringToPtr(p.Description),
 		Created:      p.Created,
@@ -22,7 +22,7 @@ func (r *Repo) EnvironmentCreate(ctx context.Context, p *model.EnvironmentCreate
 	partner, err := r.querier.EnvironmentCreate(ctx, gensql.EnvironmentCreateParams{
 		Name:        p.Name,
 		Description: ptrToNullString(p.Description),
-		PartnerID:   p.PartnerID,
+		PartnerID:   uuid.UUID(p.PartnerID),
 	})
 	if err != nil {
 		return nil, err

@@ -12,7 +12,13 @@ import (
 )
 
 func (r *mutationResolver) PartnerCreate(ctx context.Context, partner model.PartnerCreate) (*model.Partner, error) {
-	return r.Repo.PartnerCreate(ctx, &partner)
+	id, err := r.SRepo.PartnerCreate(ctx, &partner)
+	if err != nil {
+		return nil, err
+	}
+	return &model.Partner{
+		ID: id,
+	}, nil
 }
 
 func (r *queryResolver) Partners(ctx context.Context) ([]*model.Partner, error) {

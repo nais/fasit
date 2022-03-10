@@ -13,7 +13,7 @@ import (
 
 func configurationFromSQL(c gensql.Configuration) (*model.Configuration, error) {
 	return &model.Configuration{
-		ID:            c.ID,
+		ID:            model.ID(c.ID),
 		EnvironmentID: nullUUIDToPtr(c.EnvironmentID),
 		Feature:       c.Feature,
 		Description:   nullStringToPtr(c.Description),
@@ -65,10 +65,10 @@ func (r *Repo) ConfigCreate(ctx context.Context, c model.NewConfiguration) (*mod
 	return ret, nil
 }
 
-func (r *Repo) HelmValues(ctx context.Context, feature string, envID uuid.UUID) (map[string]any, error) {
+func (r *Repo) HelmValues(ctx context.Context, feature string, envID model.ID) (map[string]any, error) {
 	vals, err := r.querier.ConfigForEnv(ctx, gensql.ConfigForEnvParams{
 		Feature:       feature,
-		EnvironmentID: envID,
+		EnvironmentID: uuid.UUID(envID),
 	})
 	if err != nil {
 		return nil, err

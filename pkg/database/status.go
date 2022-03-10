@@ -21,8 +21,8 @@ func (r *Repo) StatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID
 	})
 }
 
-func (r *Repo) StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]*model.Status, error) {
-	status, err := r.querier.StatusForEnvironment(ctx, environmentID)
+func (r *Repo) StatusForEnvironment(ctx context.Context, environmentID model.ID) ([]*model.Status, error) {
+	status, err := r.querier.StatusForEnvironment(ctx, uuid.UUID(environmentID))
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil

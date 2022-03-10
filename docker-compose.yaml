@@ -1,25 +1,32 @@
 version: '3.1'
 
 services:
-  db:
-    image: postgres
-    restart: always
-    environment:
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: fasit
-    command: ["postgres", "-c", "log_statement=all"]
-    ports:
-      - 5432:5432
+  # db:
+  #   image: postgres
+  #   restart: always
+  #   environment:
+  #     POSTGRES_PASSWORD: postgres
+  #     POSTGRES_DB: fasit
+  #   command: ["postgres", "-c", "log_statement=all"]
+  #   ports:
+  #     - 5432:5432
 
-  adminer:
-    image: adminer
+  # adminer:
+  #   image: adminer
+  #   restart: always
+  #   ports:
+  #     - 8081:8080
+
+  spanner:
+    image: gcr.io/cloud-spanner-emulator/emulator
     restart: always
     ports:
-      - 8081:8080
+      - 9010:9010
+      - 9020:9020
 
   pubsub:
     image: google/cloud-sdk
-    command: 
+    command:
       - gcloud
       - beta
       - emulators

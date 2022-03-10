@@ -21,7 +21,7 @@ func (r *Repo) ReconcileData(ctx context.Context) ([]*model.ReconcileData, error
 	for _, d := range data {
 		ret = append(ret, &model.ReconcileData{
 			Environment: model.Environment{
-				ID:           d.ID,
+				ID:           model.ID(d.ID),
 				Name:         d.Name,
 				Description:  nullStringToPtr(d.Description),
 				Created:      d.Created,

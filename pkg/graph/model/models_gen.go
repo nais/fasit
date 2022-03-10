@@ -5,13 +5,11 @@ package model
 import (
 	"encoding/json"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type Configuration struct {
-	ID            uuid.UUID       `json:"id"`
-	EnvironmentID *uuid.UUID      `json:"environmentID"`
+	ID            ID              `json:"id"`
+	EnvironmentID *ID             `json:"environmentID"`
 	Feature       string          `json:"feature"`
 	Description   *string         `json:"description"`
 	Key           string          `json:"key"`
@@ -22,7 +20,7 @@ type Configuration struct {
 }
 
 type Environment struct {
-	ID           uuid.UUID `json:"id"`
+	ID           ID        `json:"id"`
 	Name         string    `json:"name"`
 	Description  *string   `json:"description"`
 	Created      time.Time `json:"created"`
@@ -30,13 +28,13 @@ type Environment struct {
 }
 
 type EnvironmentCreate struct {
-	Name        string    `json:"name"`
-	Description *string   `json:"description"`
-	PartnerID   uuid.UUID `json:"partnerID"`
+	Name        string  `json:"name"`
+	Description *string `json:"description"`
+	PartnerID   ID      `json:"partnerID"`
 }
 
 type Partner struct {
-	ID           uuid.UUID `json:"id"`
+	ID           ID        `json:"id"`
 	Name         string    `json:"name"`
 	Description  *string   `json:"description"`
 	Created      time.Time `json:"created"`
