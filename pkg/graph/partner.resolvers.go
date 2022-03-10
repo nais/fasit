@@ -5,7 +5,6 @@ package graph
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/nais/fasit/pkg/graph/graphgen"
 	"github.com/nais/fasit/pkg/graph/model"
@@ -16,7 +15,7 @@ func (r *mutationResolver) PartnerCreate(ctx context.Context, partner model.Part
 }
 
 func (r *queryResolver) Partners(ctx context.Context) ([]*model.Partner, error) {
-	panic(fmt.Errorf("not implemented"))
+	return r.Repo.PartnersGet(ctx)
 }
 
 // Mutation returns graphgen.MutationResolver implementation.

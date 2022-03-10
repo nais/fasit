@@ -27,3 +27,15 @@ func (r *Repo) PartnerCreate(ctx context.Context, p *model.PartnerCreate) (*mode
 	}
 	return partnerFromSQL(partner), nil
 }
+
+func (r *Repo) PartnersGet(ctx context.Context) ([]*model.Partner, error) {
+	partners, err := r.querier.PartnersGet(ctx)
+	if err != nil {
+		return nil, err
+	}
+	partnerSlice := make([]*model.Partner, 0)
+	for _, partner := range partners {
+		partnerSlice = append(partnerSlice, partnerFromSQL(partner))
+	}
+	return partnerSlice, nil
+}
