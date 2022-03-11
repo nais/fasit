@@ -1,0 +1,11 @@
+type Feature {
+    name: String!
+    chart: String
+    version: String!
+    repo: String!
+    source: String!
+    config: RawMessage!
+}
+extend type Query {
+    featuresGet: [Feature!]!
+}

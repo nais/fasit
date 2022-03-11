@@ -35,6 +35,15 @@ type EnvironmentCreate struct {
 	PartnerID   uuid.UUID `json:"partnerID"`
 }
 
+type Feature struct {
+	Name    string          `json:"name"`
+	Chart   *string         `json:"chart"`
+	Version string          `json:"version"`
+	Repo    string          `json:"repo"`
+	Source  string          `json:"source"`
+	Config  json.RawMessage `json:"config"`
+}
+
 type Partner struct {
 	ID           uuid.UUID `json:"id"`
 	Name         string    `json:"name"`
