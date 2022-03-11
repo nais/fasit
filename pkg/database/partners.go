@@ -33,7 +33,7 @@ func (r *Repo) PartnersGet(ctx context.Context) ([]*model.Partner, error) {
 	if err != nil {
 		return nil, err
 	}
-	partnerSlice := make([]*model.Partner, 0)
+	partnerSlice := []*model.Partner{}
 	for _, partner := range partners {
 		partnerSlice = append(partnerSlice, partnerFromSQL(partner))
 	}
