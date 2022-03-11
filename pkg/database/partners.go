@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"github.com/google/uuid"
 
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/graph/model"
@@ -22,6 +23,14 @@ func (r *Repo) PartnerCreate(ctx context.Context, p *model.PartnerCreate) (*mode
 		Name:        p.Name,
 		Description: ptrToNullString(p.Description),
 	})
+	if err != nil {
+		return nil, err
+	}
+	return partnerFromSQL(partner), nil
+}
+
+func (r *Repo) PartnerGet(ctx context.Context, id uuid.UUID) (*model.Partner, error) {
+	partner, err := r.querier.PartnerGet(ctx, id)
 	if err != nil {
 		return nil, err
 	}

@@ -15,3 +15,12 @@ input PartnerCreate {
 type Mutation {
     partnerCreate(partner: PartnerCreate!): Partner!
 }
+extend type Query {
+    """
+    partner returns the given partner.
+    """
+    partner(
+        "id of the requested partner."
+        id: ID!
+    ): Partner!
+}

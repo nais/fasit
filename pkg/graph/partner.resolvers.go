@@ -5,7 +5,7 @@ package graph
 
 import (
 	"context"
-
+	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/graph/graphgen"
 	"github.com/nais/fasit/pkg/graph/model"
 )
@@ -16,6 +16,10 @@ func (r *mutationResolver) PartnerCreate(ctx context.Context, partner model.Part
 
 func (r *queryResolver) Partners(ctx context.Context) ([]*model.Partner, error) {
 	return r.Repo.PartnersGet(ctx)
+}
+
+func (r *queryResolver) Partner(ctx context.Context, id uuid.UUID) (*model.Partner, error) {
+	return r.Repo.PartnerGet(ctx, id)
 }
 
 // Mutation returns graphgen.MutationResolver implementation.
