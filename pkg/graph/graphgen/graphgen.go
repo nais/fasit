@@ -92,6 +92,8 @@ type ComplexityRoot struct {
 
 	Query struct {
 		Configuration func(childComplexity int, feature string) int
+		Environment   func(childComplexity int, id uuid.UUID) int
+		Environments  func(childComplexity int, partnerID uuid.UUID) int
 		FeaturesGet   func(childComplexity int) int
 		Partner       func(childComplexity int, id uuid.UUID) int
 		Partners      func(childComplexity int) int
@@ -107,6 +109,8 @@ type MutationResolver interface {
 type QueryResolver interface {
 	Partners(ctx context.Context) ([]*model.Partner, error)
 	Configuration(ctx context.Context, feature string) (*model.Configuration, error)
+	Environment(ctx context.Context, id uuid.UUID) (*model.Environment, error)
+	Environments(ctx context.Context, partnerID uuid.UUID) ([]*model.Environment, error)
 	FeaturesGet(ctx context.Context) ([]*model.Feature, error)
 	Values(ctx context.Context, feature string, env uuid.UUID) (map[string]interface{}, error)
 	Partner(ctx context.Context, id uuid.UUID) (*model.Partner, error)
@@ -350,6 +354,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Configuration(childComplexity, args["feature"].(string)), true
 
+	case "Query.environment":
+		if e.complexity.Query.Environment == nil {
+			break
+		}
+
+		args, err := ec.field_Query_environment_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Environment(childComplexity, args["id"].(uuid.UUID)), true
+
+	case "Query.environments":
+		if e.complexity.Query.Environments == nil {
+			break
+		}
+
+		args, err := ec.field_Query_environments_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Environments(childComplexity, args["partnerID"].(uuid.UUID)), true
+
 	case "Query.featuresGet":
 		if e.complexity.Query.FeaturesGet == nil {
 			break
@@ -491,6 +519,23 @@ input EnvironmentCreate {
     partnerID: ID!
 }
 
+extend type Query {
+    """
+    Environment returns the given environment.
+    """
+    environment(
+        "id of the requested environment."
+        id: ID!
+    ): Environment!
+    """
+    Environments returns the environments for a partner.
+    """
+    environments(
+        "id of the requested partner."
+        partnerID: ID!
+    ): [Environment!]!
+}
+
 extend type Mutation {
     environmentCreate(environment: EnvironmentCreate!): Environment!
 }
@@ -624,6 +669,36 @@ func (ec *executionContext) field_Query_configuration_args(ctx context.Context, 
 		}
 	}
 	args["feature"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_environment_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 uuid.UUID
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_environments_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 uuid.UUID
+	if tmp, ok := rawArgs["partnerID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("partnerID"))
+		arg0, err = ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["partnerID"] = arg0
 	return args, nil
 }
 
@@ -1765,6 +1840,90 @@ func (ec *executionContext) _Query_configuration(ctx context.Context, field grap
 	res := resTmp.(*model.Configuration)
 	fc.Result = res
 	return ec.marshalNConfiguration2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐConfiguration(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_environment(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_environment_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Environment(rctx, args["id"].(uuid.UUID))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Environment)
+	fc.Result = res
+	return ec.marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironment(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_environments(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_environments_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Environments(rctx, args["partnerID"].(uuid.UUID))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Environment)
+	fc.Result = res
+	return ec.marshalNEnvironment2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_featuresGet(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -3720,6 +3879,52 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
+		case "environment":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_environment(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "environments":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_environments(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
 		case "featuresGet":
 			field := field
 
@@ -4268,6 +4473,50 @@ func (ec *executionContext) marshalNConfiguration2ᚖgithubᚗcomᚋnaisᚋfasit
 
 func (ec *executionContext) marshalNEnvironment2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironment(ctx context.Context, sel ast.SelectionSet, v model.Environment) graphql.Marshaler {
 	return ec._Environment(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNEnvironment2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Environment) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironment(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironment(ctx context.Context, sel ast.SelectionSet, v *model.Environment) graphql.Marshaler {

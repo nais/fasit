@@ -6,9 +6,18 @@ package graph
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
 func (r *mutationResolver) EnvironmentCreate(ctx context.Context, environment model.EnvironmentCreate) (*model.Environment, error) {
 	return r.Repo.EnvironmentCreate(ctx, &environment)
+}
+
+func (r *queryResolver) Environment(ctx context.Context, id uuid.UUID) (*model.Environment, error) {
+	return r.Repo.EnvironmentGet(ctx, id)
+}
+
+func (r *queryResolver) Environments(ctx context.Context, partnerID uuid.UUID) ([]*model.Environment, error) {
+	return r.Repo.EnvironmentsGet(ctx, partnerID)
 }

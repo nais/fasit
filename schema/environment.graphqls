@@ -12,6 +12,23 @@ input EnvironmentCreate {
     partnerID: ID!
 }
 
+extend type Query {
+    """
+    Environment returns the given environment.
+    """
+    environment(
+        "id of the requested environment."
+        id: ID!
+    ): Environment!
+    """
+    Environments returns the environments for a partner.
+    """
+    environments(
+        "id of the requested partner."
+        partnerID: ID!
+    ): [Environment!]!
+}
+
 extend type Mutation {
     environmentCreate(environment: EnvironmentCreate!): Environment!
 }

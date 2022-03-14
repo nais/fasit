@@ -90,7 +90,7 @@ type ConfigForEnvRow struct {
 	Key           string
 	Value         json.RawMessage
 	Created       time.Time
-	Env           any
+	Env           interface{}
 	Rank          int64
 }
 
