@@ -91,10 +91,10 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Configuration func(childComplexity int, feature string) int
+		Configuration func(childComplexity int, feature string, envID *uuid.UUID) int
 		Environment   func(childComplexity int, id uuid.UUID) int
 		Environments  func(childComplexity int, partnerID uuid.UUID) int
-		FeaturesGet   func(childComplexity int) int
+		Features      func(childComplexity int) int
 		Partner       func(childComplexity int, id uuid.UUID) int
 		Partners      func(childComplexity int) int
 		Values        func(childComplexity int, feature string, env uuid.UUID) int
@@ -108,10 +108,10 @@ type MutationResolver interface {
 }
 type QueryResolver interface {
 	Partners(ctx context.Context) ([]*model.Partner, error)
-	Configuration(ctx context.Context, feature string) (*model.Configuration, error)
+	Configuration(ctx context.Context, feature string, envID *uuid.UUID) ([]*model.Configuration, error)
 	Environment(ctx context.Context, id uuid.UUID) (*model.Environment, error)
 	Environments(ctx context.Context, partnerID uuid.UUID) ([]*model.Environment, error)
-	FeaturesGet(ctx context.Context) ([]*model.Feature, error)
+	Features(ctx context.Context) ([]*model.Feature, error)
 	Values(ctx context.Context, feature string, env uuid.UUID) (map[string]interface{}, error)
 	Partner(ctx context.Context, id uuid.UUID) (*model.Partner, error)
 }
@@ -352,7 +352,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Configuration(childComplexity, args["feature"].(string)), true
+		return e.complexity.Query.Configuration(childComplexity, args["feature"].(string), args["envID"].(*uuid.UUID)), true
 
 	case "Query.environment":
 		if e.complexity.Query.Environment == nil {
@@ -378,12 +378,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Environments(childComplexity, args["partnerID"].(uuid.UUID)), true
 
-	case "Query.featuresGet":
-		if e.complexity.Query.FeaturesGet == nil {
+	case "Query.features":
+		if e.complexity.Query.Features == nil {
 			break
 		}
 
-		return e.complexity.Query.FeaturesGet(childComplexity), true
+		return e.complexity.Query.Features(childComplexity), true
 
 	case "Query.partner":
 		if e.complexity.Query.Partner == nil {
@@ -499,7 +499,7 @@ input NewConfiguration {
     value: RawMessage!
 }
 extend type Query {
-    configuration(feature: String!): Configuration!
+    configuration(feature: String!, envID: ID): [Configuration!]!
 }
 extend type Mutation {
     configurationCreate(configuration: NewConfiguration!): Configuration!
@@ -549,7 +549,7 @@ extend type Mutation {
     config: RawMessage!
 }
 extend type Query {
-    featuresGet: [Feature!]!
+    features: [Feature!]!
 }
 `, BuiltIn: false},
 	{Name: "schema/helm.graphqls", Input: `extend type Query {
@@ -669,6 +669,15 @@ func (ec *executionContext) field_Query_configuration_args(ctx context.Context, 
 		}
 	}
 	args["feature"] = arg0
+	var arg1 *uuid.UUID
+	if tmp, ok := rawArgs["envID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("envID"))
+		arg1, err = ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["envID"] = arg1
 	return args, nil
 }
 
@@ -1825,7 +1834,7 @@ func (ec *executionContext) _Query_configuration(ctx context.Context, field grap
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Configuration(rctx, args["feature"].(string))
+		return ec.resolvers.Query().Configuration(rctx, args["feature"].(string), args["envID"].(*uuid.UUID))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1837,9 +1846,9 @@ func (ec *executionContext) _Query_configuration(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Configuration)
+	res := resTmp.([]*model.Configuration)
 	fc.Result = res
-	return ec.marshalNConfiguration2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐConfiguration(ctx, field.Selections, res)
+	return ec.marshalNConfiguration2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐConfigurationᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_environment(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1926,7 +1935,7 @@ func (ec *executionContext) _Query_environments(ctx context.Context, field graph
 	return ec.marshalNEnvironment2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_featuresGet(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_features(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1944,7 +1953,7 @@ func (ec *executionContext) _Query_featuresGet(ctx context.Context, field graphq
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().FeaturesGet(rctx)
+		return ec.resolvers.Query().Features(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3925,7 +3934,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
-		case "featuresGet":
+		case "features":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -3934,7 +3943,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_featuresGet(ctx, field)
+				res = ec._Query_features(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -4459,6 +4468,50 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 
 func (ec *executionContext) marshalNConfiguration2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐConfiguration(ctx context.Context, sel ast.SelectionSet, v model.Configuration) graphql.Marshaler {
 	return ec._Configuration(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNConfiguration2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐConfigurationᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Configuration) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNConfiguration2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐConfiguration(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalNConfiguration2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐConfiguration(ctx context.Context, sel ast.SelectionSet, v *model.Configuration) graphql.Marshaler {

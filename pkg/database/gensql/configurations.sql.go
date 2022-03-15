@@ -125,25 +125,85 @@ func (q *Queries) ConfigForEnv(ctx context.Context, arg ConfigForEnvParams) ([]C
 	return items, nil
 }
 
-const configGet = `-- name: ConfigGet :one
+const configGet = `-- name: ConfigGet :many
 SELECT id, environment_id, feature, key, value, description, secret, deleted, created
 FROM configurations
 WHERE feature = $1 AND environment_id IS NULL
 `
 
-func (q *Queries) ConfigGet(ctx context.Context, feature string) (Configuration, error) {
-	row := q.db.QueryRowContext(ctx, configGet, feature)
-	var i Configuration
-	err := row.Scan(
-		&i.ID,
-		&i.EnvironmentID,
-		&i.Feature,
-		&i.Key,
-		&i.Value,
-		&i.Description,
-		&i.Secret,
-		&i.Deleted,
-		&i.Created,
-	)
-	return i, err
+func (q *Queries) ConfigGet(ctx context.Context, feature string) ([]Configuration, error) {
+	rows, err := q.db.QueryContext(ctx, configGet, feature)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Configuration{}
+	for rows.Next() {
+		var i Configuration
+		if err := rows.Scan(
+			&i.ID,
+			&i.EnvironmentID,
+			&i.Feature,
+			&i.Key,
+			&i.Value,
+			&i.Description,
+			&i.Secret,
+			&i.Deleted,
+			&i.Created,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const configGetForEnv = `-- name: ConfigGetForEnv :many
+SELECT id, environment_id, feature, key, value, description, secret, deleted, created
+FROM configurations
+WHERE feature = $1 AND environment_id = $2
+`
+
+type ConfigGetForEnvParams struct {
+	Feature       string
+	EnvironmentID uuid.NullUUID
+}
+
+func (q *Queries) ConfigGetForEnv(ctx context.Context, arg ConfigGetForEnvParams) ([]Configuration, error) {
+	rows, err := q.db.QueryContext(ctx, configGetForEnv, arg.Feature, arg.EnvironmentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Configuration{}
+	for rows.Next() {
+		var i Configuration
+		if err := rows.Scan(
+			&i.ID,
+			&i.EnvironmentID,
+			&i.Feature,
+			&i.Key,
+			&i.Value,
+			&i.Description,
+			&i.Secret,
+			&i.Deleted,
+			&i.Created,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

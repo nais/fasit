@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
@@ -19,6 +20,9 @@ func (r *mutationResolver) ConfigurationCreate(ctx context.Context, configuratio
 	return r.Repo.ConfigCreate(ctx, configuration)
 }
 
-func (r *queryResolver) Configuration(ctx context.Context, feature string) (*model.Configuration, error) {
-	return r.Repo.ConfigGet(ctx, feature)
+func (r *queryResolver) Configuration(ctx context.Context, feature string, envID *uuid.UUID) ([]*model.Configuration, error) {
+	if envID == nil {
+		return r.Repo.ConfigGet(ctx, feature)
+	}
+	return r.Repo.ConfigGetForEnv(ctx, feature, *envID)
 }

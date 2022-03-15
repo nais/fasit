@@ -17,7 +17,7 @@ input NewConfiguration {
     value: RawMessage!
 }
 extend type Query {
-    configuration(feature: String!): Configuration!
+    configuration(feature: String!, envID: ID): [Configuration!]!
 }
 extend type Mutation {
     configurationCreate(configuration: NewConfiguration!): Configuration!

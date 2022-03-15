@@ -7,5 +7,5 @@ type Feature {
     config: RawMessage!
 }
 extend type Query {
-    featuresGet: [Feature!]!
+    features: [Feature!]!
 }

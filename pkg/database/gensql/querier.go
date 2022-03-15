@@ -11,7 +11,8 @@ import (
 type Querier interface {
 	ConfigCreate(ctx context.Context, arg ConfigCreateParams) (Configuration, error)
 	ConfigForEnv(ctx context.Context, arg ConfigForEnvParams) ([]ConfigForEnvRow, error)
-	ConfigGet(ctx context.Context, feature string) (Configuration, error)
+	ConfigGet(ctx context.Context, feature string) ([]Configuration, error)
+	ConfigGetForEnv(ctx context.Context, arg ConfigGetForEnvParams) ([]Configuration, error)
 	EnvironmentCreate(ctx context.Context, arg EnvironmentCreateParams) (Environment, error)
 	EnvironmentGet(ctx context.Context, id uuid.UUID) (Environment, error)
 	EnvironmentIDByNames(ctx context.Context, arg EnvironmentIDByNamesParams) (uuid.UUID, error)

@@ -1,10 +1,15 @@
--- name: ConfigGet :one
+-- name: ConfigGet :many
 SELECT *
 FROM configurations
 WHERE feature = @feature AND environment_id IS NULL;
 
 -- name: ConfigCreate :one
 INSERT INTO configurations (environment_id, feature, description, secret, key, value) VALUES (@environment_id, @feature, @description, @secret, @key, @value) RETURNING *;
+
+-- name: ConfigGetForEnv :many
+SELECT *
+FROM configurations
+WHERE feature = @feature AND environment_id = @environment_id;
 
 -- name: ConfigForEnv :many
 WITH "inner" AS (

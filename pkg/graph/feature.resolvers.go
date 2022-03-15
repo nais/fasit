@@ -6,12 +6,13 @@ package graph
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
-func (r *queryResolver) FeaturesGet(ctx context.Context) ([]*model.Feature, error) {
+func (r *queryResolver) Features(ctx context.Context) ([]*model.Feature, error) {
 	features := []*model.Feature{}
-	for _, feature := range r.Features.Features {
+	for _, feature := range r.Resolver.Features.Features {
 		config, err := json.Marshal(feature.Config)
 		if err != nil {
 			return nil, err
