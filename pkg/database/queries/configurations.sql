@@ -1,10 +1,18 @@
 -- name: ConfigGet :many
 SELECT *
 FROM configurations
-WHERE feature = @feature AND environment_id IS NULL;
+WHERE feature = @feature AND environment_id = uuid_nil();
 
--- name: ConfigCreate :one
-INSERT INTO configurations (environment_id, feature, description, secret, key, value) VALUES (@environment_id, @feature, @description, @secret, @key, @value) RETURNING *;
+-- name: ConfigUpdateOrCreate :one
+INSERT INTO configurations
+	(environment_id, feature, description, secret, key, value)
+VALUES
+	(@environment_id, @feature, @description, @secret, @key, @value)
+ON CONFLICT (environment_id, feature, key) DO UPDATE
+	SET
+		value = EXCLUDED.value,
+		description = EXCLUDED.description
+RETURNING *;
 
 -- name: ConfigGetForEnv :many
 SELECT *
@@ -19,12 +27,12 @@ WITH "inner" AS (
 			key,
 			value,
 			created,
-			(CASE WHEN environment_id IS NULL THEN 1 ELSE 0 END) as env,
+			(CASE WHEN environment_id = uuid_nil() THEN 1 ELSE 0 END) as env,
 			rank()
 		OVER (PARTITION BY key ORDER BY created DESC)
 		FROM configurations
 		WHERE feature = @feature
-		AND (environment_id IS NULL OR environment_id = @environment_id::uuid)
+		AND (environment_id = uuid_nil() OR environment_id = @environment_id::uuid)
 	),
 	"outer" AS (
 	SELECT

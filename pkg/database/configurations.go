@@ -21,7 +21,6 @@ func configurationFromSQL(c gensql.Configuration) (*model.Configuration, error) 
 		Value:         c.Value,
 		Secret:        c.Secret,
 		Created:       c.Created,
-		Deleted:       c.Deleted.Bool,
 	}, nil
 }
 
@@ -41,6 +40,7 @@ func (r *Repo) ConfigGet(ctx context.Context, feature string) ([]*model.Configur
 
 	return retVal, nil
 }
+
 func (r *Repo) ConfigGetForEnv(ctx context.Context, feature string, envID uuid.UUID) ([]*model.Configuration, error) {
 	params := gensql.ConfigGetForEnvParams{
 		Feature:       feature,
@@ -69,8 +69,13 @@ func (r *Repo) ConfigCreate(ctx context.Context, c model.NewConfiguration) (*mod
 		return nil, err
 	}
 
-	config, err := r.querier.ConfigCreate(ctx, gensql.ConfigCreateParams{
-		EnvironmentID: ptrToNullUUID(c.EnvironmentID),
+	envID := uuid.Nil
+	if c.EnvironmentID != nil {
+		envID = *c.EnvironmentID
+	}
+
+	config, err := r.querier.ConfigUpdateOrCreate(ctx, gensql.ConfigUpdateOrCreateParams{
+		EnvironmentID: uuid.NullUUID{UUID: envID, Valid: true},
 		Feature:       c.Feature,
 		Description:   ptrToNullString(c.Description),
 		Secret:        c.Secret,

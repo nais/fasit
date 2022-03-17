@@ -7,35 +7,48 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/nais/fasit/pkg/graph/model"
 	"gopkg.in/yaml.v2"
 )
 
 type ConfigType struct {
-	Type   string
+	Type   model.ConfigType
 	Secret bool
 }
 
-func (c ConfigType) Valid(value json.RawMessage) bool {
+func (c ConfigType) Valid(value json.RawMessage) error {
 	if c.Type == "" {
-		return false
+		return fmt.Errorf("type is invalid")
 	}
 
 	var v any
 	if err := json.Unmarshal(value, &v); err != nil {
-		return false
+		return fmt.Errorf("unable to decode json: %w", err)
 	}
 
 	switch v.(type) {
 	case string:
-		return c.Type == "string"
+		if c.Type == model.ConfigTypeString {
+			return nil
+		}
+		return fmt.Errorf("value doesn't match the required type. Expected string, got %T", v)
 	case int:
-		return c.Type == "int"
+		if c.Type == model.ConfigTypeInt {
+			return nil
+		}
+		return fmt.Errorf("value doesn't match the required type. Expected int, got %T", v)
 	case bool:
-		return c.Type == "bool"
+		if c.Type == model.ConfigTypeBool {
+			return nil
+		}
+		return fmt.Errorf("value doesn't match the required type. Expected bool, got %T", v)
 	case []string:
-		return c.Type == "stringarray"
+		if c.Type == model.ConfigTypeStringArray {
+			return nil
+		}
+		return fmt.Errorf("value doesn't match the required type. Expected []string, got %T", v)
 	default:
-		return false
+		return nil
 	}
 }
 
@@ -45,10 +58,8 @@ func (c *ConfigType) UnmarshalYAML(unmarshal func(any) error) error {
 		return err
 	}
 	parts := strings.SplitN(v, ",", 2)
-	switch parts[0] {
-	case "string", "int", "bool", "stringarray":
-		c.Type = parts[0]
-	default:
+	c.Type = model.ConfigType(parts[0])
+	if !c.Type.IsValid() {
 		return fmt.Errorf("unsupported config type %q", parts[0])
 	}
 
@@ -113,13 +124,12 @@ func New(files fs.FS) (*Manager, error) {
 	}, nil
 }
 
-func (m *Manager) ValidConfig(feature, key string, value json.RawMessage) bool {
-	for _, f := range m.Features {
-		if f.Name == feature {
-			return f.Config[key].Valid(value)
-		}
+func (m *Manager) ValidConfig(feature, key string, value json.RawMessage) error {
+	f := m.Get(feature)
+	if f == nil {
+		return fmt.Errorf("%q not a valid feature", feature)
 	}
-	return false
+	return f.Config[key].Valid(value)
 }
 
 func (m *Manager) IsSecret(feature, key string) bool {
@@ -132,6 +142,15 @@ func (m *Manager) IsSecret(feature, key string) bool {
 		}
 	}
 	return false
+}
+
+func (m *Manager) Get(feature string) *Feature {
+	for _, f := range m.Features {
+		if f.Name == feature {
+			return &f
+		}
+	}
+	return nil
 }
 
 // func (m *Manager) EnsureKeysInDB(ctx context.Context, repo *database.Repo) error {

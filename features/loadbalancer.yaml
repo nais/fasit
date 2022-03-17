@@ -1,5 +1,5 @@
-chart:  oci://europe-north1-docker.pkg.dev/nais-io/nais/loadbalancer
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/loadbalancer
 version: 0.1.0
 config:
-  certificates: stringarray
+  certificates: string_array
   wonderwall.loginstatus.enabled: bool,secret

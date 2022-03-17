@@ -12,8 +12,8 @@ import (
 )
 
 func (r *mutationResolver) ConfigurationCreate(ctx context.Context, configuration model.NewConfiguration) (*model.Configuration, error) {
-	if !r.Features.ValidConfig(configuration.Feature, configuration.Key, configuration.Value) {
-		return nil, fmt.Errorf("invalid configuration %q for %q", configuration.Key, configuration.Feature)
+	if err := r.Features.ValidConfig(configuration.Feature, configuration.Key, configuration.Value); err != nil {
+		return nil, fmt.Errorf("invalid configuration %q for %q: %w", configuration.Key, configuration.Feature, err)
 	}
 
 	configuration.Secret = r.Features.IsSecret(configuration.Feature, configuration.Key)
@@ -21,8 +21,35 @@ func (r *mutationResolver) ConfigurationCreate(ctx context.Context, configuratio
 }
 
 func (r *queryResolver) Configuration(ctx context.Context, feature string, envID *uuid.UUID) ([]*model.Configuration, error) {
-	if envID == nil {
-		return r.Repo.ConfigGet(ctx, feature)
+	if envID != nil {
+		return r.Repo.ConfigGetForEnv(ctx, feature, *envID)
 	}
-	return r.Repo.ConfigGetForEnv(ctx, feature, *envID)
+	ret, err := r.Repo.ConfigGet(ctx, feature)
+	if err != nil {
+		return nil, err
+	}
+
+	f := r.Resolver.Features.Get(feature)
+	if f == nil {
+		return ret, nil
+	}
+
+OUTER:
+	for key, val := range f.Config {
+		for _, c := range ret {
+			if c.Key == key {
+				c.Type = val.Type
+				continue OUTER
+			}
+		}
+		ret = append(ret, &model.Configuration{
+			Feature: feature,
+			Key:     key,
+			Value:   []byte("null"),
+			Secret:  val.Secret,
+			Type:    val.Type,
+		})
+	}
+
+	return ret, nil
 }

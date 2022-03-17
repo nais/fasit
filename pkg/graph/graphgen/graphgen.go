@@ -49,13 +49,13 @@ type DirectiveRoot struct {
 type ComplexityRoot struct {
 	Configuration struct {
 		Created       func(childComplexity int) int
-		Deleted       func(childComplexity int) int
 		Description   func(childComplexity int) int
 		EnvironmentID func(childComplexity int) int
 		Feature       func(childComplexity int) int
 		ID            func(childComplexity int) int
 		Key           func(childComplexity int) int
 		Secret        func(childComplexity int) int
+		Type          func(childComplexity int) int
 		Value         func(childComplexity int) int
 	}
 
@@ -138,13 +138,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Configuration.Created(childComplexity), true
 
-	case "Configuration.deleted":
-		if e.complexity.Configuration.Deleted == nil {
-			break
-		}
-
-		return e.complexity.Configuration.Deleted(childComplexity), true
-
 	case "Configuration.description":
 		if e.complexity.Configuration.Description == nil {
 			break
@@ -186,6 +179,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Configuration.Secret(childComplexity), true
+
+	case "Configuration.type":
+		if e.complexity.Configuration.Type == nil {
+			break
+		}
+
+		return e.complexity.Configuration.Type(childComplexity), true
 
 	case "Configuration.value":
 		if e.complexity.Configuration.Value == nil {
@@ -480,7 +480,14 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
-	{Name: "schema/configuration.graphqls", Input: `type Configuration {
+	{Name: "schema/configuration.graphqls", Input: `enum ConfigType {
+    STRING
+    INT
+    BOOL
+    STRING_ARRAY
+}
+
+type Configuration {
     id: ID!
     environmentID: ID
     feature: String!
@@ -489,7 +496,7 @@ var sources = []*ast.Source{
     value: RawMessage!
     secret: Boolean!
     created: Time!
-    deleted: Boolean!
+    type: ConfigType!
 }
 input NewConfiguration {
     environmentID: ID
@@ -1062,7 +1069,7 @@ func (ec *executionContext) _Configuration_created(ctx context.Context, field gr
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Configuration_deleted(ctx context.Context, field graphql.CollectedField, obj *model.Configuration) (ret graphql.Marshaler) {
+func (ec *executionContext) _Configuration_type(ctx context.Context, field graphql.CollectedField, obj *model.Configuration) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -1080,7 +1087,7 @@ func (ec *executionContext) _Configuration_deleted(ctx context.Context, field gr
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Deleted, nil
+		return obj.Type, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1092,9 +1099,9 @@ func (ec *executionContext) _Configuration_deleted(ctx context.Context, field gr
 		}
 		return graphql.Null
 	}
-	res := resTmp.(bool)
+	res := resTmp.(model.ConfigType)
 	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+	return ec.marshalNConfigType2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐConfigType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Environment_id(ctx context.Context, field graphql.CollectedField, obj *model.Environment) (ret graphql.Marshaler) {
@@ -3528,9 +3535,9 @@ func (ec *executionContext) _Configuration(ctx context.Context, sel ast.Selectio
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "deleted":
+		case "type":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Configuration_deleted(ctx, field, obj)
+				return ec._Configuration_type(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
@@ -4464,6 +4471,16 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNConfigType2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐConfigType(ctx context.Context, v interface{}) (model.ConfigType, error) {
+	var res model.ConfigType
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNConfigType2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐConfigType(ctx context.Context, sel ast.SelectionSet, v model.ConfigType) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) marshalNConfiguration2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐConfiguration(ctx context.Context, sel ast.SelectionSet, v model.Configuration) graphql.Marshaler {

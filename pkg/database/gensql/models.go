@@ -18,7 +18,6 @@ type Configuration struct {
 	Value         json.RawMessage
 	Description   sql.NullString
 	Secret        bool
-	Deleted       sql.NullBool
 	Created       time.Time
 }
 

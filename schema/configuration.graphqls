@@ -1,3 +1,10 @@
+enum ConfigType {
+    STRING
+    INT
+    BOOL
+    STRING_ARRAY
+}
+
 type Configuration {
     id: ID!
     environmentID: ID
@@ -7,7 +14,7 @@ type Configuration {
     value: RawMessage!
     secret: Boolean!
     created: Time!
-    deleted: Boolean!
+    type: ConfigType!
 }
 input NewConfiguration {
     environmentID: ID

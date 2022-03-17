@@ -12,43 +12,6 @@ import (
 	"github.com/google/uuid"
 )
 
-const configCreate = `-- name: ConfigCreate :one
-INSERT INTO configurations (environment_id, feature, description, secret, key, value) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, environment_id, feature, key, value, description, secret, deleted, created
-`
-
-type ConfigCreateParams struct {
-	EnvironmentID uuid.NullUUID
-	Feature       string
-	Description   sql.NullString
-	Secret        bool
-	Key           string
-	Value         json.RawMessage
-}
-
-func (q *Queries) ConfigCreate(ctx context.Context, arg ConfigCreateParams) (Configuration, error) {
-	row := q.db.QueryRowContext(ctx, configCreate,
-		arg.EnvironmentID,
-		arg.Feature,
-		arg.Description,
-		arg.Secret,
-		arg.Key,
-		arg.Value,
-	)
-	var i Configuration
-	err := row.Scan(
-		&i.ID,
-		&i.EnvironmentID,
-		&i.Feature,
-		&i.Key,
-		&i.Value,
-		&i.Description,
-		&i.Secret,
-		&i.Deleted,
-		&i.Created,
-	)
-	return i, err
-}
-
 const configForEnv = `-- name: ConfigForEnv :many
 WITH "inner" AS (
 		SELECT
@@ -57,12 +20,12 @@ WITH "inner" AS (
 			key,
 			value,
 			created,
-			(CASE WHEN environment_id IS NULL THEN 1 ELSE 0 END) as env,
+			(CASE WHEN environment_id = uuid_nil() THEN 1 ELSE 0 END) as env,
 			rank()
 		OVER (PARTITION BY key ORDER BY created DESC)
 		FROM configurations
 		WHERE feature = $1
-		AND (environment_id IS NULL OR environment_id = $2::uuid)
+		AND (environment_id = uuid_nil() OR environment_id = $2::uuid)
 	),
 	"outer" AS (
 	SELECT
@@ -126,9 +89,9 @@ func (q *Queries) ConfigForEnv(ctx context.Context, arg ConfigForEnvParams) ([]C
 }
 
 const configGet = `-- name: ConfigGet :many
-SELECT id, environment_id, feature, key, value, description, secret, deleted, created
+SELECT id, environment_id, feature, key, value, description, secret, created
 FROM configurations
-WHERE feature = $1 AND environment_id IS NULL
+WHERE feature = $1 AND environment_id = uuid_nil()
 `
 
 func (q *Queries) ConfigGet(ctx context.Context, feature string) ([]Configuration, error) {
@@ -148,7 +111,6 @@ func (q *Queries) ConfigGet(ctx context.Context, feature string) ([]Configuratio
 			&i.Value,
 			&i.Description,
 			&i.Secret,
-			&i.Deleted,
 			&i.Created,
 		); err != nil {
 			return nil, err
@@ -165,7 +127,7 @@ func (q *Queries) ConfigGet(ctx context.Context, feature string) ([]Configuratio
 }
 
 const configGetForEnv = `-- name: ConfigGetForEnv :many
-SELECT id, environment_id, feature, key, value, description, secret, deleted, created
+SELECT id, environment_id, feature, key, value, description, secret, created
 FROM configurations
 WHERE feature = $1 AND environment_id = $2
 `
@@ -192,7 +154,6 @@ func (q *Queries) ConfigGetForEnv(ctx context.Context, arg ConfigGetForEnvParams
 			&i.Value,
 			&i.Description,
 			&i.Secret,
-			&i.Deleted,
 			&i.Created,
 		); err != nil {
 			return nil, err
@@ -206,4 +167,48 @@ func (q *Queries) ConfigGetForEnv(ctx context.Context, arg ConfigGetForEnvParams
 		return nil, err
 	}
 	return items, nil
+}
+
+const configUpdateOrCreate = `-- name: ConfigUpdateOrCreate :one
+INSERT INTO configurations
+	(environment_id, feature, description, secret, key, value)
+VALUES
+	($1, $2, $3, $4, $5, $6)
+ON CONFLICT (environment_id, feature, key) DO UPDATE
+	SET
+		value = EXCLUDED.value,
+		description = EXCLUDED.description
+RETURNING id, environment_id, feature, key, value, description, secret, created
+`
+
+type ConfigUpdateOrCreateParams struct {
+	EnvironmentID uuid.NullUUID
+	Feature       string
+	Description   sql.NullString
+	Secret        bool
+	Key           string
+	Value         json.RawMessage
+}
+
+func (q *Queries) ConfigUpdateOrCreate(ctx context.Context, arg ConfigUpdateOrCreateParams) (Configuration, error) {
+	row := q.db.QueryRowContext(ctx, configUpdateOrCreate,
+		arg.EnvironmentID,
+		arg.Feature,
+		arg.Description,
+		arg.Secret,
+		arg.Key,
+		arg.Value,
+	)
+	var i Configuration
+	err := row.Scan(
+		&i.ID,
+		&i.EnvironmentID,
+		&i.Feature,
+		&i.Key,
+		&i.Value,
+		&i.Description,
+		&i.Secret,
+		&i.Created,
+	)
+	return i, err
 }

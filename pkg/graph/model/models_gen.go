@@ -18,7 +18,7 @@ type Configuration struct {
 	Value         json.RawMessage `json:"value"`
 	Secret        bool            `json:"secret"`
 	Created       time.Time       `json:"created"`
-	Deleted       bool            `json:"deleted"`
+	Type          ConfigType      `json:"type"`
 }
 
 type Environment struct {
