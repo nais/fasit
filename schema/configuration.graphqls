@@ -23,9 +23,15 @@ input NewConfiguration {
     key: String!
     value: RawMessage!
 }
+input UpdateConfiguration {
+    description: String
+    value: RawMessage!
+}
 extend type Query {
     configuration(feature: String!, envID: ID): [Configuration!]!
 }
 extend type Mutation {
     configurationCreate(configuration: NewConfiguration!): Configuration!
+    configurationUpdate(id: ID!, configuration: UpdateConfiguration!): Configuration!
+    configurationDelete(id:  ID!): Boolean!
 }

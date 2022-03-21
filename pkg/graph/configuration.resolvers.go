@@ -20,6 +20,17 @@ func (r *mutationResolver) ConfigurationCreate(ctx context.Context, configuratio
 	return r.Repo.ConfigCreate(ctx, configuration)
 }
 
+func (r *mutationResolver) ConfigurationUpdate(ctx context.Context, id uuid.UUID, configuration model.UpdateConfiguration) (*model.Configuration, error) {
+	return r.Repo.ConfigUpdate(ctx, id, configuration)
+}
+
+func (r *mutationResolver) ConfigurationDelete(ctx context.Context, id uuid.UUID) (bool, error) {
+	if err := r.Repo.ConfigDelete(ctx, id); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 func (r *queryResolver) Configuration(ctx context.Context, feature string, envID *uuid.UUID) ([]*model.Configuration, error) {
 	if envID != nil {
 		return r.Repo.ConfigGetForEnv(ctx, feature, *envID)

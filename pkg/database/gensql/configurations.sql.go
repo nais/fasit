@@ -12,6 +12,16 @@ import (
 	"github.com/google/uuid"
 )
 
+const configDelete = `-- name: ConfigDelete :exec
+DELETE FROM configurations
+WHERE id = $1
+`
+
+func (q *Queries) ConfigDelete(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, configDelete, id)
+	return err
+}
+
 const configForEnv = `-- name: ConfigForEnv :many
 WITH "inner" AS (
 		SELECT
@@ -167,6 +177,36 @@ func (q *Queries) ConfigGetForEnv(ctx context.Context, arg ConfigGetForEnvParams
 		return nil, err
 	}
 	return items, nil
+}
+
+const configUpdate = `-- name: ConfigUpdate :one
+UPDATE configurations
+SET description = $1,
+	value = $2
+WHERE id = $3
+RETURNING id, environment_id, feature, key, value, description, secret, created
+`
+
+type ConfigUpdateParams struct {
+	Description sql.NullString
+	Value       json.RawMessage
+	ID          uuid.UUID
+}
+
+func (q *Queries) ConfigUpdate(ctx context.Context, arg ConfigUpdateParams) (Configuration, error) {
+	row := q.db.QueryRowContext(ctx, configUpdate, arg.Description, arg.Value, arg.ID)
+	var i Configuration
+	err := row.Scan(
+		&i.ID,
+		&i.EnvironmentID,
+		&i.Feature,
+		&i.Key,
+		&i.Value,
+		&i.Description,
+		&i.Secret,
+		&i.Created,
+	)
+	return i, err
 }
 
 const configUpdateOrCreate = `-- name: ConfigUpdateOrCreate :one

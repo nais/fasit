@@ -47,3 +47,14 @@ WITH "inner" AS (
 	FROM "inner"
 )
 SELECT * FROM "outer" WHERE rank = 1;
+
+-- name: ConfigUpdate :one
+UPDATE configurations
+SET description = @description,
+	value = @value
+WHERE id = @id
+RETURNING *;
+
+-- name: ConfigDelete :exec
+DELETE FROM configurations
+WHERE id = @id;

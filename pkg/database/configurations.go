@@ -94,6 +94,22 @@ func (r *Repo) ConfigCreate(ctx context.Context, c model.NewConfiguration) (*mod
 	return ret, nil
 }
 
+func (r *Repo) ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration) (*model.Configuration, error) {
+	conf, err := r.querier.ConfigUpdate(ctx, gensql.ConfigUpdateParams{
+		Description: ptrToNullString(c.Description),
+		Value:       c.Value,
+		ID:          id,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return configurationFromSQL(conf)
+}
+
+func (r *Repo) ConfigDelete(ctx context.Context, id uuid.UUID) error {
+	return r.querier.ConfigDelete(ctx, id)
+}
+
 func (r *Repo) HelmValues(ctx context.Context, feature string, envID uuid.UUID) (map[string]any, error) {
 	vals, err := r.querier.ConfigForEnv(ctx, gensql.ConfigForEnvParams{
 		Feature:       feature,

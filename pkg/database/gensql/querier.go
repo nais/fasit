@@ -9,9 +9,11 @@ import (
 )
 
 type Querier interface {
+	ConfigDelete(ctx context.Context, id uuid.UUID) error
 	ConfigForEnv(ctx context.Context, arg ConfigForEnvParams) ([]ConfigForEnvRow, error)
 	ConfigGet(ctx context.Context, feature string) ([]Configuration, error)
 	ConfigGetForEnv(ctx context.Context, arg ConfigGetForEnvParams) ([]Configuration, error)
+	ConfigUpdate(ctx context.Context, arg ConfigUpdateParams) (Configuration, error)
 	ConfigUpdateOrCreate(ctx context.Context, arg ConfigUpdateOrCreateParams) (Configuration, error)
 	EnvironmentCreate(ctx context.Context, arg EnvironmentCreateParams) (Environment, error)
 	EnvironmentGet(ctx context.Context, id uuid.UUID) (Environment, error)

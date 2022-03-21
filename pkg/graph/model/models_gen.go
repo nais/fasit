@@ -63,3 +63,8 @@ type PartnerCreate struct {
 	Name        string  `json:"name"`
 	Description *string `json:"description"`
 }
+
+type UpdateConfiguration struct {
+	Description *string         `json:"description"`
+	Value       json.RawMessage `json:"value"`
+}
