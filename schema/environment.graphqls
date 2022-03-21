@@ -6,11 +6,23 @@ type Environment {
     lastModified: Time!
 }
 
+"""
+EnvironmentCreate contains metadata for creating an environment
+"""
 input EnvironmentCreate {
     name: String!
     description: String
     partnerID: ID!
 }
+
+"""
+UpdateEnvironment contains metadata for updating an environment
+"""
+input EnvironmentUpdate {
+    "description of the environment"
+    description: String
+}
+
 
 extend type Query {
     """
@@ -31,4 +43,13 @@ extend type Query {
 
 extend type Mutation {
     environmentCreate(environment: EnvironmentCreate!): Environment!
+    """
+    updateEnvironment updates an existing environment
+    """
+    environmentUpdate(
+        "id of requested environment."
+        id: ID!
+        "input contains information about the updated environment."
+        input: EnvironmentUpdate!
+    ): Environment!
 }

@@ -74,6 +74,33 @@ func (q *Queries) EnvironmentIDByNames(ctx context.Context, arg EnvironmentIDByN
 	return id, err
 }
 
+const environmentUpdate = `-- name: EnvironmentUpdate :one
+UPDATE environments
+SET description = $1
+WHERE
+    id = $2
+    RETURNING id, partner_id, name, description, created, last_modified
+`
+
+type EnvironmentUpdateParams struct {
+	Description sql.NullString
+	ID          uuid.UUID
+}
+
+func (q *Queries) EnvironmentUpdate(ctx context.Context, arg EnvironmentUpdateParams) (Environment, error) {
+	row := q.db.QueryRowContext(ctx, environmentUpdate, arg.Description, arg.ID)
+	var i Environment
+	err := row.Scan(
+		&i.ID,
+		&i.PartnerID,
+		&i.Name,
+		&i.Description,
+		&i.Created,
+		&i.LastModified,
+	)
+	return i, err
+}
+
 const environmentsGet = `-- name: EnvironmentsGet :many
 SELECT id, partner_id, name, description, created, last_modified
 FROM environments

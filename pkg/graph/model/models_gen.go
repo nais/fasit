@@ -29,10 +29,17 @@ type Environment struct {
 	LastModified time.Time `json:"lastModified"`
 }
 
+// EnvironmentCreate contains metadata for creating an environment
 type EnvironmentCreate struct {
 	Name        string    `json:"name"`
 	Description *string   `json:"description"`
 	PartnerID   uuid.UUID `json:"partnerID"`
+}
+
+// UpdateEnvironment contains metadata for updating an environment
+type EnvironmentUpdate struct {
+	// description of the environment
+	Description *string `json:"description"`
 }
 
 type Feature struct {

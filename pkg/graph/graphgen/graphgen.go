@@ -79,6 +79,7 @@ type ComplexityRoot struct {
 	Mutation struct {
 		ConfigurationCreate func(childComplexity int, configuration model.NewConfiguration) int
 		EnvironmentCreate   func(childComplexity int, environment model.EnvironmentCreate) int
+		EnvironmentUpdate   func(childComplexity int, id uuid.UUID, input model.EnvironmentUpdate) int
 		PartnerCreate       func(childComplexity int, partner model.PartnerCreate) int
 	}
 
@@ -105,6 +106,7 @@ type MutationResolver interface {
 	PartnerCreate(ctx context.Context, partner model.PartnerCreate) (*model.Partner, error)
 	ConfigurationCreate(ctx context.Context, configuration model.NewConfiguration) (*model.Configuration, error)
 	EnvironmentCreate(ctx context.Context, environment model.EnvironmentCreate) (*model.Environment, error)
+	EnvironmentUpdate(ctx context.Context, id uuid.UUID, input model.EnvironmentUpdate) (*model.Environment, error)
 }
 type QueryResolver interface {
 	Partners(ctx context.Context) ([]*model.Partner, error)
@@ -294,6 +296,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.EnvironmentCreate(childComplexity, args["environment"].(model.EnvironmentCreate)), true
+
+	case "Mutation.environmentUpdate":
+		if e.complexity.Mutation.EnvironmentUpdate == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_environmentUpdate_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.EnvironmentUpdate(childComplexity, args["id"].(uuid.UUID), args["input"].(model.EnvironmentUpdate)), true
 
 	case "Mutation.partnerCreate":
 		if e.complexity.Mutation.PartnerCreate == nil {
@@ -520,11 +534,23 @@ extend type Mutation {
     lastModified: Time!
 }
 
+"""
+EnvironmentCreate contains metadata for creating an environment
+"""
 input EnvironmentCreate {
     name: String!
     description: String
     partnerID: ID!
 }
+
+"""
+UpdateEnvironment contains metadata for updating an environment
+"""
+input EnvironmentUpdate {
+    "description of the environment"
+    description: String
+}
+
 
 extend type Query {
     """
@@ -545,6 +571,15 @@ extend type Query {
 
 extend type Mutation {
     environmentCreate(environment: EnvironmentCreate!): Environment!
+    """
+    updateEnvironment updates an existing environment
+    """
+    environmentUpdate(
+        "id of requested environment."
+        id: ID!
+        "input contains information about the updated environment."
+        input: EnvironmentUpdate!
+    ): Environment!
 }
 `, BuiltIn: false},
 	{Name: "schema/feature.graphqls", Input: `type Feature {
@@ -631,6 +666,30 @@ func (ec *executionContext) field_Mutation_environmentCreate_args(ctx context.Co
 		}
 	}
 	args["environment"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_environmentUpdate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 uuid.UUID
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	var arg1 model.EnvironmentUpdate
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg1, err = ec.unmarshalNEnvironmentUpdate2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentUpdate(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg1
 	return args, nil
 }
 
@@ -1593,6 +1652,48 @@ func (ec *executionContext) _Mutation_environmentCreate(ctx context.Context, fie
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().EnvironmentCreate(rctx, args["environment"].(model.EnvironmentCreate))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Environment)
+	fc.Result = res
+	return ec.marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironment(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_environmentUpdate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_environmentUpdate_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().EnvironmentUpdate(rctx, args["id"].(uuid.UUID), args["input"].(model.EnvironmentUpdate))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3357,6 +3458,29 @@ func (ec *executionContext) unmarshalInputEnvironmentCreate(ctx context.Context,
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputEnvironmentUpdate(ctx context.Context, obj interface{}) (model.EnvironmentUpdate, error) {
+	var it model.EnvironmentUpdate
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	for k, v := range asMap {
+		switch k {
+		case "description":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
+			it.Description, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputNewConfiguration(ctx context.Context, obj interface{}) (model.NewConfiguration, error) {
 	var it model.NewConfiguration
 	asMap := map[string]interface{}{}
@@ -3744,6 +3868,16 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "environmentCreate":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_environmentCreate(ctx, field)
+			}
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, innerFunc)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "environmentUpdate":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_environmentUpdate(ctx, field)
 			}
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, innerFunc)
@@ -4601,6 +4735,11 @@ func (ec *executionContext) marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋfasit�
 
 func (ec *executionContext) unmarshalNEnvironmentCreate2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentCreate(ctx context.Context, v interface{}) (model.EnvironmentCreate, error) {
 	res, err := ec.unmarshalInputEnvironmentCreate(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNEnvironmentUpdate2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentUpdate(ctx context.Context, v interface{}) (model.EnvironmentUpdate, error) {
+	res, err := ec.unmarshalInputEnvironmentUpdate(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 

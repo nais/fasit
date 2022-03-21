@@ -48,6 +48,17 @@ func (r *Repo) EnvironmentCreate(ctx context.Context, p *model.EnvironmentCreate
 	return environmentFromSQL(partner), nil
 }
 
+func (r *Repo) EnvironmentUpdate(ctx context.Context, environmentID uuid.UUID, p *model.EnvironmentUpdate) (*model.Environment, error) {
+	partner, err := r.querier.EnvironmentUpdate(ctx, gensql.EnvironmentUpdateParams{
+		Description: ptrToNullString(p.Description),
+		ID:          environmentID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return environmentFromSQL(partner), nil
+}
+
 func (r *Repo) EnvironmentIDByNames(ctx context.Context, partnerName, environmentName string) (uuid.UUID, error) {
 	params := gensql.EnvironmentIDByNamesParams{
 		EnvironmentName: environmentName,

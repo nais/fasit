@@ -14,6 +14,10 @@ func (r *mutationResolver) EnvironmentCreate(ctx context.Context, environment mo
 	return r.Repo.EnvironmentCreate(ctx, &environment)
 }
 
+func (r *mutationResolver) EnvironmentUpdate(ctx context.Context, id uuid.UUID, input model.EnvironmentUpdate) (*model.Environment, error) {
+	return r.Repo.EnvironmentUpdate(ctx, id, &input)
+}
+
 func (r *queryResolver) Environment(ctx context.Context, id uuid.UUID) (*model.Environment, error) {
 	return r.Repo.EnvironmentGet(ctx, id)
 }

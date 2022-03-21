@@ -17,3 +17,10 @@ LIMIT 1;
 
 -- name: EnvironmentCreate :one
 INSERT INTO environments (name, description, partner_id) VALUES (@name, @description, @partner_id) RETURNING *;
+
+-- name: EnvironmentUpdate :one
+UPDATE environments
+SET description = @description
+WHERE
+    id = @id
+    RETURNING *;

@@ -16,6 +16,7 @@ type Querier interface {
 	EnvironmentCreate(ctx context.Context, arg EnvironmentCreateParams) (Environment, error)
 	EnvironmentGet(ctx context.Context, id uuid.UUID) (Environment, error)
 	EnvironmentIDByNames(ctx context.Context, arg EnvironmentIDByNamesParams) (uuid.UUID, error)
+	EnvironmentUpdate(ctx context.Context, arg EnvironmentUpdateParams) (Environment, error)
 	EnvironmentsGet(ctx context.Context, partnerID uuid.UUID) ([]Environment, error)
 	PartnerCreate(ctx context.Context, arg PartnerCreateParams) (Partner, error)
 	PartnerGet(ctx context.Context, id uuid.UUID) (Partner, error)
