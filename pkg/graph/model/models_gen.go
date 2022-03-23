@@ -19,6 +19,7 @@ type Configuration struct {
 	Secret        bool            `json:"secret"`
 	Created       time.Time       `json:"created"`
 	Type          ConfigType      `json:"type"`
+	Env           bool            `json:"env"`
 }
 
 type Environment struct {

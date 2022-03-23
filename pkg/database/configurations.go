@@ -24,6 +24,40 @@ func configurationFromSQL(c gensql.Configuration) (*model.Configuration, error) 
 	}, nil
 }
 
+func envConfigFromSQL(c gensql.EnvConfigRow) (*model.Configuration, error) {
+	return &model.Configuration{
+		ID:            c.ID,
+		EnvironmentID: nullUUIDToPtr(c.EnvironmentID),
+		Feature:       c.Feature,
+		Description:   nullStringToPtr(c.Description),
+		Key:           c.Key,
+		Value:         c.Value,
+		Secret:        c.Secret,
+		Created:       c.Created,
+		Env:           c.Env,
+	}, nil
+}
+
+func (r *Repo) EnvConfig(ctx context.Context, feature string, envID uuid.UUID) ([]*model.Configuration, error) {
+	config, err := r.querier.EnvConfig(ctx, gensql.EnvConfigParams{
+		Feature:       feature,
+		EnvironmentID: uuid.NullUUID{UUID: envID, Valid: true},
+	})
+	if err != nil {
+		return nil, err
+	}
+	retVal := []*model.Configuration{}
+	for _, conf := range config {
+		c, err := envConfigFromSQL(conf)
+		if err != nil {
+			return nil, err
+		}
+		retVal = append(retVal, c)
+	}
+
+	return retVal, nil
+}
+
 func (r *Repo) ConfigGet(ctx context.Context, feature string) ([]*model.Configuration, error) {
 	config, err := r.querier.ConfigGet(ctx, feature)
 	if err != nil {

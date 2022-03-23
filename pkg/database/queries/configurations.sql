@@ -48,6 +48,42 @@ WITH "inner" AS (
 )
 SELECT * FROM "outer" WHERE rank = 1;
 
+
+-- name: EnvConfig :many
+WITH "inner" AS (
+    SELECT
+        id,
+        environment_id,
+        feature,
+        description,
+        secret,
+    key,
+    value,
+    created,
+   (CASE WHEN environment_id IS NULL THEN 0 ELSE 1 END)::boolean as env,
+    rank()
+    OVER (PARTITION BY key ORDER BY created ASC)
+FROM configurations
+WHERE feature = @feature
+  AND (environment_id  = @environment_id OR environment_id IS NULL)
+    ),
+    "outer" AS (
+SELECT
+    id,
+    environment_id,
+    feature,
+    description,
+    secret,
+    key,
+    value,
+    created,
+    env,
+    rank()
+    OVER (PARTITION BY key ORDER BY env DESC, "inner".rank ASC)
+FROM "inner"
+    )
+SELECT * FROM "outer" WHERE rank = 1;
+
 -- name: ConfigUpdate :one
 UPDATE configurations
 SET description = @description,

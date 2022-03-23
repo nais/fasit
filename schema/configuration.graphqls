@@ -15,6 +15,7 @@ type Configuration {
     secret: Boolean!
     created: Time!
     type: ConfigType!
+    env: Boolean!
 }
 input NewConfiguration {
     environmentID: ID
@@ -29,6 +30,7 @@ input UpdateConfiguration {
 }
 extend type Query {
     configuration(feature: String!, envID: ID): [Configuration!]!
+    envConfig(feature: String!, envID: ID!): [Configuration!]!
 }
 extend type Mutation {
     configurationCreate(configuration: NewConfiguration!): Configuration!

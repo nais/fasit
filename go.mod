@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	cloud.google.com/go/pubsub v1.18.0
-	github.com/99designs/gqlgen v0.17.1
+	github.com/99designs/gqlgen v0.17.2
 	github.com/GoogleCloudPlatform/cloudsql-proxy v1.29.0
 	github.com/davecgh/go-spew v1.1.1
 	github.com/google/go-cmp v0.5.7

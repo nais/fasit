@@ -50,6 +50,7 @@ type ComplexityRoot struct {
 	Configuration struct {
 		Created       func(childComplexity int) int
 		Description   func(childComplexity int) int
+		Env           func(childComplexity int) int
 		EnvironmentID func(childComplexity int) int
 		Feature       func(childComplexity int) int
 		ID            func(childComplexity int) int
@@ -95,6 +96,7 @@ type ComplexityRoot struct {
 
 	Query struct {
 		Configuration func(childComplexity int, feature string, envID *uuid.UUID) int
+		EnvConfig     func(childComplexity int, feature string, envID uuid.UUID) int
 		Environment   func(childComplexity int, id uuid.UUID) int
 		Environments  func(childComplexity int, partnerID uuid.UUID) int
 		Features      func(childComplexity int) int
@@ -115,6 +117,7 @@ type MutationResolver interface {
 type QueryResolver interface {
 	Partners(ctx context.Context) ([]*model.Partner, error)
 	Configuration(ctx context.Context, feature string, envID *uuid.UUID) ([]*model.Configuration, error)
+	EnvConfig(ctx context.Context, feature string, envID uuid.UUID) ([]*model.Configuration, error)
 	Environment(ctx context.Context, id uuid.UUID) (*model.Environment, error)
 	Environments(ctx context.Context, partnerID uuid.UUID) ([]*model.Environment, error)
 	Features(ctx context.Context) ([]*model.Feature, error)
@@ -150,6 +153,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Configuration.Description(childComplexity), true
+
+	case "Configuration.env":
+		if e.complexity.Configuration.Env == nil {
+			break
+		}
+
+		return e.complexity.Configuration.Env(childComplexity), true
 
 	case "Configuration.environmentID":
 		if e.complexity.Configuration.EnvironmentID == nil {
@@ -396,6 +406,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Configuration(childComplexity, args["feature"].(string), args["envID"].(*uuid.UUID)), true
 
+	case "Query.envConfig":
+		if e.complexity.Query.EnvConfig == nil {
+			break
+		}
+
+		args, err := ec.field_Query_envConfig_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.EnvConfig(childComplexity, args["feature"].(string), args["envID"].(uuid.UUID)), true
+
 	case "Query.environment":
 		if e.complexity.Query.Environment == nil {
 			break
@@ -539,6 +561,7 @@ type Configuration {
     secret: Boolean!
     created: Time!
     type: ConfigType!
+    env: Boolean!
 }
 input NewConfiguration {
     environmentID: ID
@@ -553,6 +576,7 @@ input UpdateConfiguration {
 }
 extend type Query {
     configuration(feature: String!, envID: ID): [Configuration!]!
+    envConfig(feature: String!, envID: ID!): [Configuration!]!
 }
 extend type Mutation {
     configurationCreate(configuration: NewConfiguration!): Configuration!
@@ -812,6 +836,30 @@ func (ec *executionContext) field_Query_configuration_args(ctx context.Context, 
 	if tmp, ok := rawArgs["envID"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("envID"))
 		arg1, err = ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["envID"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_envConfig_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["feature"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("feature"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["feature"] = arg0
+	var arg1 uuid.UUID
+	if tmp, ok := rawArgs["envID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("envID"))
+		arg1, err = ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -1234,6 +1282,41 @@ func (ec *executionContext) _Configuration_type(ctx context.Context, field graph
 	res := resTmp.(model.ConfigType)
 	fc.Result = res
 	return ec.marshalNConfigType2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐConfigType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Configuration_env(ctx context.Context, field graphql.CollectedField, obj *model.Configuration) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Configuration",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Env, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Environment_id(ctx context.Context, field graphql.CollectedField, obj *model.Environment) (ret graphql.Marshaler) {
@@ -2100,6 +2183,48 @@ func (ec *executionContext) _Query_configuration(ctx context.Context, field grap
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Query().Configuration(rctx, args["feature"].(string), args["envID"].(*uuid.UUID))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Configuration)
+	fc.Result = res
+	return ec.marshalNConfiguration2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐConfigurationᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_envConfig(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_envConfig_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().EnvConfig(rctx, args["feature"].(string), args["envID"].(uuid.UUID))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3857,6 +3982,16 @@ func (ec *executionContext) _Configuration(ctx context.Context, sel ast.Selectio
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "env":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Configuration_env(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4224,6 +4359,29 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_configuration(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "envConfig":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_envConfig(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}

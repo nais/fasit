@@ -63,3 +63,14 @@ func (e *ConfigType) UnmarshalGQL(v interface{}) error {
 func (e ConfigType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(strings.ToUpper(e.String())))
 }
+func (e ConfigType) MarshalJSON() ([]byte, error) {
+	return json.Marshal(strings.ToUpper(string(e)))
+}
+func (e *ConfigType) UnmarshalJSON(b []byte) error {
+	s := ""
+	if err := json.Unmarshal(b, &s); err != nil {
+		return err
+	}
+	*e = ConfigType(strings.ToLower(s))
+	return nil
+}

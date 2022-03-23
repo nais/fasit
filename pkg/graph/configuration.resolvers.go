@@ -64,3 +64,7 @@ OUTER:
 
 	return ret, nil
 }
+
+func (r *queryResolver) EnvConfig(ctx context.Context, feature string, envID uuid.UUID) ([]*model.Configuration, error) {
+	return r.Repo.EnvConfig(ctx, feature, envID)
+}

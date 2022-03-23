@@ -12,8 +12,8 @@ import (
 )
 
 type ConfigType struct {
-	Type   model.ConfigType
-	Secret bool
+	Type   model.ConfigType `json:"type"`
+	Secret bool             `json:"secret"`
 }
 
 func (c ConfigType) Valid(value json.RawMessage) error {

@@ -252,3 +252,91 @@ func (q *Queries) ConfigUpdateOrCreate(ctx context.Context, arg ConfigUpdateOrCr
 	)
 	return i, err
 }
+
+const envConfig = `-- name: EnvConfig :many
+WITH "inner" AS (
+    SELECT
+        id,
+        environment_id,
+        feature,
+        description,
+        secret,
+    key,
+    value,
+    created,
+   (CASE WHEN environment_id IS NULL THEN 0 ELSE 1 END)::boolean as env,
+    rank()
+    OVER (PARTITION BY key ORDER BY created ASC)
+FROM configurations
+WHERE feature = $1
+  AND (environment_id  = $2 OR environment_id IS NULL)
+    ),
+    "outer" AS (
+SELECT
+    id,
+    environment_id,
+    feature,
+    description,
+    secret,
+    key,
+    value,
+    created,
+    env,
+    rank()
+    OVER (PARTITION BY key ORDER BY env DESC, "inner".rank ASC)
+FROM "inner"
+    )
+SELECT id, environment_id, feature, description, secret, key, value, created, env, rank FROM "outer" WHERE rank = 1
+`
+
+type EnvConfigParams struct {
+	Feature       string
+	EnvironmentID uuid.NullUUID
+}
+
+type EnvConfigRow struct {
+	ID            uuid.UUID
+	EnvironmentID uuid.NullUUID
+	Feature       string
+	Description   sql.NullString
+	Secret        bool
+	Key           string
+	Value         json.RawMessage
+	Created       time.Time
+	Env           bool
+	Rank          int64
+}
+
+func (q *Queries) EnvConfig(ctx context.Context, arg EnvConfigParams) ([]EnvConfigRow, error) {
+	rows, err := q.db.QueryContext(ctx, envConfig, arg.Feature, arg.EnvironmentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []EnvConfigRow{}
+	for rows.Next() {
+		var i EnvConfigRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.EnvironmentID,
+			&i.Feature,
+			&i.Description,
+			&i.Secret,
+			&i.Key,
+			&i.Value,
+			&i.Created,
+			&i.Env,
+			&i.Rank,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
