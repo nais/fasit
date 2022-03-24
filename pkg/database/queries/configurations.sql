@@ -60,12 +60,12 @@ WITH "inner" AS (
     key,
     value,
     created,
-   (CASE WHEN environment_id IS NULL THEN 0 ELSE 1 END)::boolean as env,
+   (CASE WHEN environment_id = uuid_nil() THEN 0 ELSE 1 END)::boolean as env,
     rank()
     OVER (PARTITION BY key ORDER BY created ASC)
 FROM configurations
 WHERE feature = @feature
-  AND (environment_id  = @environment_id OR environment_id IS NULL)
+  AND (environment_id  = @environment_id OR environment_id = uuid_nil())
     ),
     "outer" AS (
 SELECT
