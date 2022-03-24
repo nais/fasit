@@ -2,4 +2,6 @@ chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/loadbalancer
 version: 0.1.0
 config:
   certificates: string_array
-  wonderwall.loginstatus.enabled: bool,secret
+  ingress-nginx.controller.resources.requests.cpu: string
+  ingress-nginx.controller.resources.requests.memory: string
+  ingress-nginx.controller.replicaCount: int
