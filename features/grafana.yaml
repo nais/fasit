@@ -1,0 +1,6 @@
+chart: grafana
+version: 6.24.1
+repo: "https://grafana.github.io/helm-charts"
+config:
+  ingress.enabled: bool
+  ingress.hosts: string_array
