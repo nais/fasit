@@ -45,7 +45,7 @@ type EnvironmentUpdate struct {
 
 type Feature struct {
 	Name    string          `json:"name"`
-	Chart   *string         `json:"chart"`
+	Chart   string          `json:"chart"`
 	Version string          `json:"version"`
 	Repo    string          `json:"repo"`
 	Source  string          `json:"source"`

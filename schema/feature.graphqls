@@ -1,6 +1,6 @@
 type Feature {
     name: String!
-    chart: String
+    chart: String!
     version: String!
     repo: String!
     source: String!

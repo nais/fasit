@@ -642,7 +642,7 @@ extend type Mutation {
 `, BuiltIn: false},
 	{Name: "schema/feature.graphqls", Input: `type Feature {
     name: String!
-    chart: String
+    chart: String!
     version: String!
     repo: String!
     source: String!
@@ -1551,11 +1551,14 @@ func (ec *executionContext) _Feature_chart(ctx context.Context, field graphql.Co
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Feature_version(ctx context.Context, field graphql.CollectedField, obj *model.Feature) (ret graphql.Marshaler) {
@@ -4098,6 +4101,9 @@ func (ec *executionContext) _Feature(ctx context.Context, sel ast.SelectionSet, 
 
 			out.Values[i] = innerFunc(ctx)
 
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "version":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Feature_version(ctx, field, obj)

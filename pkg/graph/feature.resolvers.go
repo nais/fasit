@@ -19,7 +19,7 @@ func (r *queryResolver) Features(ctx context.Context) ([]*model.Feature, error) 
 		}
 		tmp := &model.Feature{
 			Name:    feature.Name,
-			Chart:   &feature.Chart,
+			Chart:   feature.Chart,
 			Version: feature.Version,
 			Repo:    feature.Repo,
 			Source:  feature.Source,
