@@ -90,3 +90,29 @@ jobs:
           labels: ${{ steps.metadata_fasit.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Docker meta fasit-frontend
+        id: metadata_fasit_frontend
+        uses: docker/metadata-action@v3
+        with:
+          images: ${{ env.REGISTRY }}/fasit-frontend
+          # Docker tags based on the following events/attributes
+          tags: |
+            type=schedule
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern=v{{version}}
+            type=semver,pattern=v{{major}}.{{minor}}
+            type=semver,pattern=v{{major}}
+            type=sha
+
+      - name: Build and push fasit-frontend
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: Dockerfile_fasit_frontend
+          push: true
+          tags: ${{ steps.metadata_fasit_frontend.outputs.tags }}
+          labels: ${{ steps.metadata_fasit_frontend.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
