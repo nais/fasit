@@ -26,7 +26,38 @@ spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
+        - command:
+            - /cloud_sql_proxy
+            - -term_timeout=30s
+            - -instances=nais-io:europe-north1:fasit=tcp:5432
+          image: gcr.io/cloudsql-docker/gce-proxy:1.29.0-alpine
+          imagePullPolicy: IfNotPresent
+          name: cloudsql-proxy
+          ports:
+            - containerPort: 5432
+              protocol: TCP
+          resources:
+            limits:
+              cpu: 250m
+              ephemeral-storage: 1Gi
+              memory: 32Mi
+            requests:
+              cpu: 250m
+              ephemeral-storage: 1Gi
+              memory: 32Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - NET_RAW
+            runAsUser: 2
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+
         - name: {{ .Chart.Name }}
+          ports:
+            - name: http
+              containerPort: 8080
           securityContext:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"

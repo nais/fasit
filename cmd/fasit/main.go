@@ -53,11 +53,14 @@ func main() {
 
 	log := newLogger()
 
+	log.Info("starting pubsub client")
 	client, err := pubsub.NewClient(ctx, cfg.GCPProjectID)
 	if err != nil {
 		log.WithError(err).Fatal("setting up pubsub client")
 	}
+	log.Info("-- successfully started pubsub client")
 
+	log.Info("starting database client")
 	var dbDriver driver.Driver = pq.Driver{}
 	if !strings.Contains(cfg.DBConnectionDSN, "://") {
 		dbDriver = &postgres.Driver{}
@@ -67,6 +70,7 @@ func main() {
 	if err != nil {
 		log.WithError(err).Fatal("setting up database")
 	}
+	log.Info("-- successfully started database client")
 
 	featureMgr, err := feature.New(fasit.FeaturesFS)
 	if err != nil {
