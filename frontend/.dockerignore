@@ -1,0 +1,9 @@
+dist
+.dockerignore
+node_modules
+yarn-error.log
+.yarnclean
+Dockerfile
+.git
+.gitignore
+.npmrc

@@ -1,0 +1,6 @@
+This favicon was generated using the following font:
+
+- Font Title: Lexend
+- Font Author: Copyright 2019 The Lexend Project Authors (https://github.com/googlefonts/lexend)
+- Font Source: http://fonts.gstatic.com/s/lexend/v14/wlptgwvFAVdoq2_F94zlCfv0bz1WCzsW_LBte6KuGEo.ttf
+- Font License: SIL Open Font License, 1.1 (http://scripts.sil.org/OFL))
