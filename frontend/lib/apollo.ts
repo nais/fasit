@@ -14,7 +14,7 @@ const getQueryURI = () => {
         return 'http://localhost:8080/query'
     }
 
-    return isServer ? 'http://fasit-backend/api/query' : '/api/query'
+    return isServer ? 'http://fasit-backend/query' : 'http://localhost:8080/query'
 }
 
 const createApolloClient = (cookie?: string) => {
@@ -83,6 +83,5 @@ export const addApolloState = (client: ApolloClient<NormalizedCacheObject>, page
 
 export const useApollo = (pageProps: any) => {
     const state = pageProps[APOLLO_STATE_PROP_NAME];
-    const store = useMemo(() => initializeApollo(state), [state]);
-    return store;
+    return useMemo(() => initializeApollo(state), [state]);
 }
