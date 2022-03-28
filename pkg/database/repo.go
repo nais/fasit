@@ -38,19 +38,31 @@ type Querier interface {
 }
 
 func New(driver driver.Driver, dbConnDSN string, log *logrus.Entry) (*Repo, error) {
+	log.Info("creating new driver")
 	hooks := NewHooks()
 	sql.Register("psqlhooked", sqlhooks.Wrap(driver, hooks))
+	log.Info("registered")
 
 	db, err := sql.Open("psqlhooked", dbConnDSN)
 	if err != nil {
 		return nil, fmt.Errorf("open sql connection: %w", err)
 	}
+	log.Info("successfully opened connection")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	err = db.PingContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Info("successfully pinged connection")
 
 	goose.SetBaseFS(embedMigrations)
 
 	if err := goose.Up(db, "migrations"); err != nil {
 		return nil, fmt.Errorf("goose up: %w", err)
 	}
+	log.Info("successfully migrated")
 
 	return &Repo{
 		querier: gensql.New(db),
