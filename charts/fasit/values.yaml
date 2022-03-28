@@ -50,6 +50,11 @@ resources:
   #   cpu: 100m
   #   memory: 128Mi
 
+selectorLabels:
+  - app: fasit
+
+envProjectId: "nais-io"
+
 nodeSelector: {}
 
 tolerations: []

@@ -12,7 +12,7 @@ COPY frontend .
 
 ENV NODE_ENV production
 ENV NEXT_PUBLIC_ENV production
-ENV NEXT_PUBLIC_BACKEND http://fasit-backend/api
+ENV NEXT_PUBLIC_BACKEND http://fasit/api
 
 RUN npm run build
 
