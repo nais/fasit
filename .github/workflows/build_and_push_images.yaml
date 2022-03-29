@@ -13,8 +13,6 @@ jobs:
     permissions:
       contents: "read"
       id-token: "write"
-
-    name: Build and push image
     runs-on: ubuntu-latest
     steps:
       - name: Checkout fasit
