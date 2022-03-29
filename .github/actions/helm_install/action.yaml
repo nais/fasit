@@ -16,6 +16,12 @@ inputs:
   workloadIdentityProvider:
     description: workload identity provider
     required: true
+  actionRequestToken:
+    description: ACTIONS_ID_TOKEN_REQUEST_TOKEN
+    required: true
+  actionRequestUrl:
+    description: ACTIONS_ID_TOKEN_REQUEST_URL
+    required: true
 
 runs:
   using: composite
@@ -24,6 +30,8 @@ runs:
       shell: bash
       env:
         imageTag: ${{ inputs.imageTag }}
+        ACTIONS_ID_TOKEN_REQUEST_TOKEN: ${{ inputs.actionRequestToken }}
+        ACTIONS_ID_TOKEN_REQUEST_URL: ${{ inputs.actionRequestUrl }}
       run: |
         echo ${{ env.imageTag }}
     - name: install kubectl

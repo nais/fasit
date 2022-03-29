@@ -75,3 +75,5 @@ jobs:
           version: 0.1.0
           imageTag: ${{ needs.build_and_push_fasit.outputs.imageTag }}
           workloadIdentityProvider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
+          actionRequestToken: ${{ env.ACTIONS_ID_TOKEN_REQUEST_TOKEN }}
+          actionRequestUrl: ${{ env.ACTIONS_ID_TOKEN_REQUEST_URL }}
