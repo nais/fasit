@@ -9,6 +9,7 @@ config:
   prometheus.alertmanager.ingress.enabled: bool
   prometheus.alertmanager.ingress.hosts: string_array
   prometheus.alertmanager.baseURL: string
+  grafana.enabled: bool
   grafana.adminUser: string
   grafana.adminPassword: string
   grafana.grafana.ini.auth.anonymous.enabled: bool
