@@ -105,6 +105,7 @@ jobs:
             type=semver,pattern=v{{major}}.{{minor}}
             type=semver,pattern=v{{major}}
             type=sha
+        
 
       - name: Build and push fasit-frontend
         uses: docker/build-push-action@v2
@@ -116,3 +117,14 @@ jobs:
           labels: ${{ steps.metadata_fasit_frontend.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+  deploy:
+    name: Deploy helm-charts
+    runs-on: github-runner
+    steps:
+      - name: Deploy fasit-frontend
+        uses: ./.github/actions/helm_install
+        with:
+          name: fasit-frontend
+          chart: ${{ env.REGISTRY }}/fasit-frontend
+          version: 0.1.0
+          imageTag: ${{ steps.metadata.fasit-frontend.outputs.tags }}
