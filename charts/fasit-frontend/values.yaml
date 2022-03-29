@@ -2,6 +2,9 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
+ingressClassName: "nais-ingress"
+ingressHost: "fasit.nais.io"
+
 image:
   repository: europe-north1-docker.pkg.dev/nais-io/nais/images/fasit-frontend
   pullPolicy: IfNotPresent

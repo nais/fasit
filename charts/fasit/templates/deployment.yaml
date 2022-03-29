@@ -8,7 +8,7 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      {{- include "fasit.selectorLabels" . | nindent 6 }}
+      {{ include "fasit.selectorLabels" . | nindent 6}}
   template:
     metadata:
       {{- with .Values.podAnnotations }}
@@ -16,7 +16,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
-        {{- include "fasit.selectorLabels" . | nindent 8 }}
+        {{- include "fasit.labels" . | nindent 8 }}
     spec:
       {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
@@ -65,16 +65,6 @@ spec:
           args:
             - --project-id
             - nais-io
-
-          # livenessProbe:
-          #   httpGet:
-          #     path: /
-          #     port: http
-          # readinessProbe:
-          #   httpGet:
-          #     path: /
-          #     port: http
-
           volumeMounts:
           - mountPath: /tmp
             name: tmp

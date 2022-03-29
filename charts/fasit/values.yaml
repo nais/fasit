@@ -3,6 +3,8 @@
 # Declare variables to be passed into your templates.
 
 dbConnString:
+ingressHost: "fasit.nais.io"
+ingressClassName: "nais-ingress"
 
 image:
   repository: europe-north1-docker.pkg.dev/nais-io/nais/images/fasit
@@ -49,9 +51,6 @@ resources:
   # requests:
   #   cpu: 100m
   #   memory: 128Mi
-
-selectorLabels:
-  - app: fasit
 
 envProjectId: "nais-io"
 
