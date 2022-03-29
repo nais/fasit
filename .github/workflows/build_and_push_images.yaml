@@ -71,9 +71,8 @@ jobs:
           labels: ${{ steps.${{ matrix.application.name }}.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-     
-  - name: Deploy helm-charts
-    runs-on: github-runner
+  deploy_helm_chart:
+    runs-on: [ 'fasit' ]
     steps:
       - name: Deploy fasit-frontend
         uses: ./.github/actions/helm_install
