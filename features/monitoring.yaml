@@ -12,8 +12,8 @@ config:
   grafana.enabled: bool
   grafana.adminUser: string
   grafana.adminPassword: string
-  grafana.grafana.ini.auth.anonymous.enabled: bool
-  grafana.grafana.ini.auth.anonymous.org_role: string
+  grafana.grafana\.ini.auth\.anonymous.enabled: bool
+  grafana.grafana\.ini.auth\.anonymous.org_role: string
   grafana.persistence.size: string
   grafana.ingress.enabled: bool
   grafana.ingress.hosts: string_array
