@@ -59,9 +59,9 @@ jobs:
           labels: ${{ steps.metadata.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-  deploy_helm_chart:
+  deploy_fasit-frontend:
     runs-on: [ 'fasit' ]
-    needs: [ 'build_and_push' ]
+    needs: [ 'build_and_push_fasit-frontend' ]
     steps:
       - name: Checkout fasit
         uses: actions/checkout@v2
