@@ -9,7 +9,7 @@ env:
   REGISTRY: europe-north1-docker.pkg.dev/nais-io/nais/images
 
 jobs:
-  prereqs:
+  build_and_push:
     permissions:
       contents: "read"
       id-token: "write"
@@ -17,7 +17,6 @@ jobs:
     steps:
       - name: Checkout fasit
         uses: actions/checkout@v2
-
       - id: "auth"
         name: "Authenticate to Google Cloud"
         uses: "google-github-actions/auth@v0.6.0"
@@ -25,11 +24,9 @@ jobs:
           workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: "gh-fasit@nais-io.iam.gserviceaccount.com"
           token_format: "access_token"
-
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
-
       - name: Login to registry
         uses: docker/login-action@v1
         with:
@@ -112,7 +109,10 @@ jobs:
           cache-to: type=gha,mode=max
   deploy_helm_chart:
     runs-on: [ 'fasit' ]
+    needs: [ 'build_and_push' ]
     steps:
+      - name: Checkout fasit
+        uses: actions/checkout@v2
       - name: Deploy fasit-frontend
         uses: ./.github/actions/helm_install
         with:
