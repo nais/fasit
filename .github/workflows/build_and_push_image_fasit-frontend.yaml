@@ -71,5 +71,5 @@ jobs:
           name: fasit-frontend
           chart: ${{ env.REGISTRY }}/fasit-frontend
           version: 0.1.0
-          imageTag: ${{ steps.metadata.outputs.version }}
+          imageTag: ${{ jobs.build_and_push_fasit-frontend.steps.metadata.outputs.version }}
           workloadIdentityProvider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
