@@ -30,8 +30,6 @@ runs:
       shell: bash
       env:
         imageTag: ${{ inputs.imageTag }}
-        ACTIONS_ID_TOKEN_REQUEST_TOKEN: ${{ inputs.actionRequestToken }}
-        ACTIONS_ID_TOKEN_REQUEST_URL: ${{ inputs.actionRequestUrl }}
       run: |
         echo ${{ env.imageTag }}
     - name: install kubectl
@@ -68,6 +66,9 @@ runs:
     - id: "auth"
       name: "Authenticate to Google Cloud"
       uses: "google-github-actions/auth@v0.6.0"
+      env:
+        ACTIONS_ID_TOKEN_REQUEST_TOKEN: ${{ inputs.actionRequestToken }}
+        ACTIONS_ID_TOKEN_REQUEST_URL: ${{ inputs.actionRequestUrl }}
       with:
         workload_identity_provider: ${{ inputs.workloadIdentityProvider }}
         service_account: "gh-fasit@nais-io.iam.gserviceaccount.com"
