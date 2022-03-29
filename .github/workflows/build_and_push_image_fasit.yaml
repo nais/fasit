@@ -73,5 +73,5 @@ jobs:
           name: fasit-backend
           chart: ${{ env.REGISTRY }}/fasit
           version: 0.1.0
-          imageTag: ${{ jobs.build_and_push_fasit.outputs.imageTag }}
+          imageTag: ${{ needs.build_and_push_fasit.outputs.imageTag }}
           workloadIdentityProvider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
