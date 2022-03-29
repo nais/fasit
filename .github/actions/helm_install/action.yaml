@@ -9,7 +9,7 @@ runs:
       env:
         KUBECTL_VERSION: "v1.21.9"
       run: |
-        [ kubectl version --client=true -o json | grep -q "$KUBECTL_VERSION" ] && exit 0
+        kubectl version --client=true -o json | grep -q "$KUBECTL_VERSION" && exit 0
         set +e
         for i in 1 2 3; do
           echo "attempt $i"

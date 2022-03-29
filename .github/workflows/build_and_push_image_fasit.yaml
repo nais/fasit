@@ -86,5 +86,5 @@ jobs:
       - name: output tag
         shell: bash
         run: |
-          git rev-parse --short HEAD
+          env
           kubectl get pods -A
