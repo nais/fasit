@@ -4,7 +4,6 @@ metadata:
   labels:
     {{ include "fasit.labels" . | nindent 4 }}
   name: {{ include "fasit.fullname" . }}
-  namespace: nais-system
 spec:
   ports:
   - name: http

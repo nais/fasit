@@ -1,7 +1,6 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  namespace: nais-system
   name: {{ include "fasit.fullname" . }}
   labels:
     {{ include "fasit.labels" . | nindent 4 }}
