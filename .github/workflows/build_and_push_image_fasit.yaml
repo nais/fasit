@@ -11,7 +11,7 @@ env:
   REGISTRY: europe-north1-docker.pkg.dev/nais-io/nais/images
 
 jobs:
-  build_and_push:
+  build_and_push_fasit:
     permissions:
       contents: "read"
       id-token: "write"
@@ -72,3 +72,4 @@ jobs:
           chart: ${{ env.REGISTRY }}/fasit
           version: 0.1.0
           imageTag: ${{ steps.metadata.outputs.version }}
+          workloadIdentityProvider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}

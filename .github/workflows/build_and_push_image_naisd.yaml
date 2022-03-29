@@ -12,7 +12,7 @@ env:
   REGISTRY: europe-north1-docker.pkg.dev/nais-io/nais/images
 
 jobs:
-  build_and_push:
+  build_and_push_naisd:
     permissions:
       contents: "read"
       id-token: "write"

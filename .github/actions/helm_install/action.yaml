@@ -13,6 +13,9 @@ inputs:
   imageTag:
     description: image sha
     required: true
+  workloadIdentityProvider:
+    description: workload identity provider
+    required: true
 
 runs:
   using: composite
@@ -58,7 +61,7 @@ runs:
       name: "Authenticate to Google Cloud"
       uses: "google-github-actions/auth@v0.6.0"
       with:
-        workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
+        workload_identity_provider: ${{ inputs.workloadIdentityProvider }}
         service_account: "gh-fasit@nais-io.iam.gserviceaccount.com"
         token_format: "access_token"
     - name: Pre reqs
