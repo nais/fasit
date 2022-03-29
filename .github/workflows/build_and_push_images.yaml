@@ -36,22 +36,11 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: "oauth2accesstoken"
           password: "${{ steps.auth.outputs.access_token }}"
-  meta_build_and_push:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: naisd
-          - name: fasit
-          - name: fasit-frontend
-    runs-on: ubuntu-latest
-    needs: prereqs
-    steps:
-      - name: Docker meta ${{ matrix.name }}
-        id: metadata-${{ matrix.name }}
+      - name: Docker meta naisd
+        id: metadata_naisd
         uses: docker/metadata-action@v3
         with:
-          images: ${{ env.REGISTRY }}/${{ matrix.name }}
+          images: ${{ env.REGISTRY }}/naisd
           # Docker tags based on the following events/attributes
           tags: |
             type=schedule
@@ -65,10 +54,60 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: .
-          file: Dockerfile_${{ matrix.name }}
+          file: Dockerfile_naisd
           push: true
-          tags: ${{ steps.${{ matrix.name }}.outputs.tags }}
-          labels: ${{ steps.${{ matrix.name }}.outputs.labels }}
+          tags: ${{ steps.metadata_naisd.outputs.tags }}
+          labels: ${{ steps.metadata_naisd.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Docker meta fasit
+        id: metadata_fasit
+        uses: docker/metadata-action@v3
+        with:
+          images: ${{ env.REGISTRY }}/fasit
+          # Docker tags based on the following events/attributes
+          tags: |
+            type=schedule
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern=v{{version}}
+            type=semver,pattern=v{{major}}.{{minor}}
+            type=semver,pattern=v{{major}}
+            type=sha
+
+      - name: Build and push fasit
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: Dockerfile_fasit
+          push: true
+          tags: ${{ steps.metadata_fasit.outputs.tags }}
+          labels: ${{ steps.metadata_fasit.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Docker meta fasit-frontend
+        id: metadata_fasit_frontend
+        uses: docker/metadata-action@v3
+        with:
+          images: ${{ env.REGISTRY }}/fasit-frontend
+          # Docker tags based on the following events/attributes
+          tags: |
+            type=schedule
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern=v{{version}}
+            type=semver,pattern=v{{major}}.{{minor}}
+            type=semver,pattern=v{{major}}
+            type=sha
+      - name: Build and push fasit-frontend
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: Dockerfile_fasit-frontend
+          push: true
+          tags: ${{ steps.metadata_fasit_frontend.outputs.tags }}
+          labels: ${{ steps.metadata_fasit_frontend.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
   deploy_helm_chart:
@@ -80,4 +119,4 @@ jobs:
           name: fasit-frontend
           chart: ${{ env.REGISTRY }}/fasit-frontend
           version: 0.1.0
-          imageTag: ${{ steps.metadata.fasit-frontend.outputs.tags }}
+          imageTag: ${{ steps.metadata_fasit_frontend.outputs.version }}
