@@ -1,0 +1,68 @@
+name: 'helm install'
+description: 'install helm chart to cluster'
+inputs:
+  chart:
+    description: name of chart
+    required: true
+  version:
+    description: version of chart
+    required: true
+  name:
+    description: helm installation name
+    required: true
+  imageTag:
+    description: image sha
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: output tag
+      shell: bash
+      env:
+        imageTag: ${{ inputs.imageTag }}
+      run: |
+        echo ${{ env.imageTag }}
+    - name: install kubectl
+      shell: bash
+      env:
+        KUBECTL_VERSION: "v1.21.9"
+      run: |
+        [ kubectl version --client=true -o json | grep -q "$KUBECTL_VERSION" ] && exit 0
+        set +e
+        for i in 1 2 3; do
+          echo "attempt $i"
+          ls -la /usr/local/bin/kubectl
+          kubectl version --client=true
+          sleep 1
+          k=$(mktemp)
+          curl -L "https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" -o "$k"
+          sudo cp "$k" "/usr/local/bin/kubectl" || continue
+          sudo chmod +x "/usr/local/bin/kubectl" && break
+        done
+        set -e
+    - name: test kubectl
+      shell: bash
+      run: |
+        kubectl version --client=true
+    - name: install helm
+      shell: bash
+      run: |
+        type helm && exit 0
+        curl https://baltocdn.com/helm/signing.asc | sudo apt-key add -
+        sudo apt-get install apt-transport-https --yes
+        echo "deb https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
+        sudo apt-get update
+        sudo apt-get install helm
+    - id: "auth"
+      name: "Authenticate to Google Cloud"
+      uses: "google-github-actions/auth@v0.6.0"
+      with:
+        workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
+        service_account: "gh-fasit@nais-io.iam.gserviceaccount.com"
+        token_format: "access_token"
+    - name: Pre reqs
+      shell: bash
+      run: |
+        gcloud container clusters get-credentials nais-io --project nais-io --region europe-north1
+    
