@@ -84,9 +84,11 @@ jobs:
       - name: output tag
         shell: bash
         run: |
-          helm upgrade fasit-frontend oci://europe-north1-docker.pkg.dev/nais-io/nais/fasit-frontend \ 
+          helm upgrade \
           --install \
+          fasit-frontend \
+          oci://europe-north1-docker.pkg.dev/nais-io/nais/fasit-frontend \ 
           --wait \
           --version 0.1.0 \
           --set imageTag="sha-${GITHUB_SHA::7}" \
-          --namespace=nais-system
+          --namespace nais-system
