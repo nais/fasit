@@ -25,6 +25,9 @@ inputs:
 
 runs:
   using: composite
+  permissions:
+    contents: 'read'
+    id-token: 'write'
   steps:
     - name: output tag
       shell: bash
