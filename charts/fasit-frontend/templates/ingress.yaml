@@ -1,0 +1,20 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  namespace: nais-system
+  name: {{ include "fasit-frontend.fullname" . }}-frontend-ingress
+  labels:
+    app: fasit
+spec:
+  ingressClassName: nais-ingress
+  rules:
+    - host: fasit.nais.io
+      http:
+        paths:
+          - backend:
+              service:
+                name: {{ include "fasit-frontend.fullname" . }}
+                port:
+                  number: 8080
+            path: /
+            pathType: Prefix

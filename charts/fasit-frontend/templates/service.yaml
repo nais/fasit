@@ -3,7 +3,7 @@ kind: Service
 metadata:
   labels:
     team: nais
-  name: {{ include "fasit.fullname" . }}
+  name: {{ include "fasit-frontend.fullname" . }}
   namespace: nais-system
 spec:
   ports:
@@ -12,6 +12,6 @@ spec:
     protocol: TCP
     targetPort: http
   selector:
-    app.kubernetes.io/name: {{ include "fasit.fullname"}}
+    app.kubernetes.io/name: {{ include "fasit-frontend.fullname"}}
   sessionAffinity: None
   type: ClusterIP

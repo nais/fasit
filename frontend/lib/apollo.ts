@@ -14,7 +14,7 @@ const getQueryURI = () => {
         return 'http://localhost:8080/query'
     }
 
-    return isServer ? 'http://fasit-backend/query' : 'http://localhost:8080/query'
+    return isServer ? 'http://fasit/query' : '/query'
 }
 
 const createApolloClient = (cookie?: string) => {
