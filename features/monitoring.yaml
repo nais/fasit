@@ -1,5 +1,5 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring
-version: 0.2.0
+version: 0.3.0
 config:
   prometheus.server.persistentVolume.size: string
   prometheus.server.ingress.enabled: bool
