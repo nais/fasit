@@ -1,37 +1,9 @@
-name: 'helm install'
-description: 'install helm chart to cluster'
-inputs:
-  chart:
-    description: name of chart
-    required: true
-  version:
-    description: version of chart
-    required: true
-  name:
-    description: helm installation name
-    required: true
-  imageTag:
-    description: image sha
-    required: true
-  workloadIdentityProvider:
-    description: workload identity provider
-    required: true
-  actionRequestToken:
-    description: ACTIONS_ID_TOKEN_REQUEST_TOKEN
-    required: true
-  actionRequestUrl:
-    description: ACTIONS_ID_TOKEN_REQUEST_URL
-    required: true
+name: 'Install prereqs'
+description: 'install kubectl/helm'
 
 runs:
   using: composite
   steps:
-    - name: output tag
-      shell: bash
-      env:
-        imageTag: ${{ inputs.imageTag }}
-      run: |
-        echo ${{ env.imageTag }}
     - name: install kubectl
       shell: bash
       env:
@@ -63,18 +35,3 @@ runs:
         echo "deb https://baltocdn.com/helm/stable/debian/ all main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
         sudo apt-get update
         sudo apt-get install helm
-    - id: "auth"
-      name: "Authenticate to Google Cloud"
-      uses: "google-github-actions/auth@v0.6.0"
-      env:
-        ACTIONS_ID_TOKEN_REQUEST_TOKEN: ${{ inputs.actionRequestToken }}
-        ACTIONS_ID_TOKEN_REQUEST_URL: ${{ inputs.actionRequestUrl }}
-      with:
-        workload_identity_provider: ${{ inputs.workloadIdentityProvider }}
-        service_account: "gh-fasit@nais-io.iam.gserviceaccount.com"
-        token_format: "access_token"
-    - name: Pre reqs
-      shell: bash
-      run: |
-        gcloud container clusters get-credentials nais-io --project nais-io --region europe-north1
-    

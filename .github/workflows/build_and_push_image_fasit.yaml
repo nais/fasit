@@ -1,4 +1,4 @@
-name: Build and deploy
+name: Build and deploy fasit
 on:
   push:
     paths-ignore:
@@ -67,13 +67,21 @@ jobs:
     steps:
       - name: Checkout fasit
         uses: actions/checkout@v2
-      - name: Deploy fasit
-        uses: ./.github/actions/helm_install
+      - id: "auth"
+        name: "Authenticate to Google Cloud"
+        uses: "google-github-actions/auth@v0.6.0"
         with:
-          name: fasit-backend
-          chart: ${{ env.REGISTRY }}/fasit
-          version: 0.1.0
-          imageTag: ${{ needs.build_and_push_fasit.outputs.imageTag }}
-          workloadIdentityProvider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
-          actionRequestToken: ${{ env.ACTIONS_ID_TOKEN_REQUEST_TOKEN }}
-          actionRequestUrl: ${{ env.ACTIONS_ID_TOKEN_REQUEST_URL }}
+          workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: "gh-fasit@nais-io.iam.gserviceaccount.com"
+          token_format: "access_token"
+      - name: Install prereqs
+        uses: ./.github/actions/helm_install
+      - name: Get credentials
+        shell: bash
+        run: |
+          gcloud container clusters get-credentials nais-io --project nais-io --region europe-north1
+      - name: output tag
+        shell: bash
+        run: |
+          git rev-parse --short HEAD
+          kubectl get pods -A
