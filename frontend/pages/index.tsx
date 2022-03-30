@@ -79,20 +79,20 @@ const Home: NextPage = () => {
                 </CategoryCard>
               </a>
             </Link>
-            <Link href={"/features/"}>
-              <a>
-                <CategoryCard>
-                  <IconBox size={50}><FeatureLogo/></IconBox>
-                  <CategoryCardTitle>features</CategoryCardTitle>
-                </CategoryCard>
-              </a>
-            </Link>
           </Links> : <div><p>No partners, partner!</p><Links>
               <Link href={`/partner/new`}>
                 <a>
                   <CategoryCard>
                     <IconBox size={50}><Add width={'40px'} height={'40px'} color={"#222"}/></IconBox>
                     <CategoryCardTitle>New partner</CategoryCardTitle>
+                  </CategoryCard>
+                </a>
+              </Link>
+              <Link href={"/features/"}>
+                <a>
+                  <CategoryCard>
+                    <IconBox size={50}><FeatureLogo/></IconBox>
+                    <CategoryCardTitle>features</CategoryCardTitle>
                   </CategoryCard>
                 </a>
               </Link>
