@@ -6,6 +6,7 @@ on:
       - ".github/workflows/*_chart.yaml"
       - ".github/workflows/build_and_push_image_fasit-frontend.yaml"
       - ".github/workflows/build_and_push_image_fasit.yaml"
+      - "frontend"
 
 
 env:
