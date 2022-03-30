@@ -64,6 +64,16 @@ type Feature struct {
 	Config  Config `yaml:"config"`
 }
 
+func (f *Feature) RequiredFields() []string {
+	var requiredFields []string
+	for k, v := range f.Config {
+		if v.Required {
+			requiredFields = append(requiredFields, k)
+		}
+	}
+	return requiredFields
+}
+
 type Manager struct {
 	Features []Feature
 }
@@ -132,8 +142,3 @@ func (m *Manager) Get(feature string) *Feature {
 	}
 	return nil
 }
-
-// func (m *Manager) EnsureKeysInDB(ctx context.Context, repo *database.Repo) error {
-// 	// Iterate over all features
-// 	// If feature is not in DB, add it
-// }

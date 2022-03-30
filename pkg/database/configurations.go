@@ -144,7 +144,7 @@ func (r *Repo) ConfigDelete(ctx context.Context, id uuid.UUID) error {
 	return r.querier.ConfigDelete(ctx, id)
 }
 
-func (r *Repo) HelmValues(ctx context.Context, feature string, envID uuid.UUID) (map[string]any, error) {
+func (r *Repo) HelmValues(ctx context.Context, feature string, envID uuid.UUID, requiredFields []string) (map[string]any, error) {
 	vals, err := r.querier.ConfigForEnv(ctx, gensql.ConfigForEnvParams{
 		Feature:       feature,
 		EnvironmentID: envID,
@@ -153,7 +153,31 @@ func (r *Repo) HelmValues(ctx context.Context, feature string, envID uuid.UUID) 
 		return nil, err
 	}
 
+	missing := validateFields(requiredFields, vals)
+	if len(missing) > 0 {
+		return nil, &ErrMissingRequiredFields{Fields: missing}
+	}
 	return makeHelmConfigMap(vals)
+}
+
+func validateFields(requiredFields []string, values []gensql.ConfigForEnvRow) []string {
+	fields := map[string]int{}
+	for _, req := range requiredFields {
+		fields[req] = 0
+		for _, k := range values {
+			if k.Key == req {
+				fields[req] = 1
+			}
+		}
+	}
+
+	var missing []string
+	for k, v := range fields {
+		if v == 0 {
+			missing = append(missing, k)
+		}
+	}
+	return missing
 }
 
 func makeHelmConfigMap(vals []gensql.ConfigForEnvRow) (map[string]any, error) {

@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"time"
 
 	"cloud.google.com/go/pubsub"
@@ -92,27 +93,14 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.Reconcil
 	defer mgr.Stop()
 
 	for _, f := range features {
-		requiredFields := requiredFields(f)
-
-		values, err := r.repo.HelmValues(ctx, f.Name, d.ID)
+		values, err := r.repo.HelmValues(ctx, f.Name, d.ID, f.RequiredFields())
 		if err != nil {
-			return err
-		}
-
-		if len(requiredFields) > 0 {
-			fields := map[string]int{}
-			for _, req := range requiredFields {
-				fields[req] = 0
-				for k := range values {
-					if k == req {
-						fields[req] = 1
-					}
-				}
-			}
-			if missing, ok := validateFields(fields); !ok {
-				r.log.Debugf("missing required fields for feature [%s]: %v", f.Name, missing)
+			var fer *database.ErrMissingRequiredFields
+			if errors.As(err, &fer) {
+				r.log.WithField("feature", f.Name).WithError(err).Debug("missing required fields")
 				continue
 			}
+			return err
 		}
 
 		hash, err := generateHash(values)
@@ -140,30 +128,6 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.Reconcil
 	}
 
 	return nil
-}
-
-func validateFields(fields map[string]int) ([]string, bool) {
-	var missing []string
-	for k, v := range fields {
-		if v == 0 {
-			missing = append(missing, k)
-		}
-	}
-	if len(missing) > 0 {
-		return missing, false
-	}
-
-	return []string{}, true
-}
-
-func requiredFields(f feature.Feature) []string {
-	var requiredFields []string
-	for k, v := range f.Config {
-		if v.Required {
-			requiredFields = append(requiredFields, k)
-		}
-	}
-	return requiredFields
 }
 
 func generateHash(values map[string]any) (string, error) {
