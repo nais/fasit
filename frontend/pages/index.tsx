@@ -79,6 +79,14 @@ const Home: NextPage = () => {
                 </CategoryCard>
               </a>
             </Link>
+            <Link href={"/features/"}>
+              <a>
+                <CategoryCard>
+                  <IconBox size={50}><FeatureLogo/></IconBox>
+                  <CategoryCardTitle>features</CategoryCardTitle>
+                </CategoryCard>
+              </a>
+            </Link>
           </Links> : <div><p>No partners, partner!</p><Links>
               <Link href={`/partner/new`}>
                 <a>
