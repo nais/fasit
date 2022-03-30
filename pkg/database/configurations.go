@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -10,6 +11,8 @@ import (
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/graph/model"
 )
+
+var ErrMissingRequiredFields = errors.New("required fields missing")
 
 func configurationFromSQL(c gensql.Configuration) (*model.Configuration, error) {
 	return &model.Configuration{
@@ -144,13 +147,25 @@ func (r *Repo) ConfigDelete(ctx context.Context, id uuid.UUID) error {
 	return r.querier.ConfigDelete(ctx, id)
 }
 
-func (r *Repo) HelmValues(ctx context.Context, feature string, envID uuid.UUID) (map[string]any, error) {
+func (r *Repo) HelmValues(ctx context.Context, feature string, envID uuid.UUID, requiredFields []string) (map[string]any, error) {
 	vals, err := r.querier.ConfigForEnv(ctx, gensql.ConfigForEnvParams{
 		Feature:       feature,
 		EnvironmentID: envID,
 	})
 	if err != nil {
 		return nil, err
+	}
+
+	i := 0
+	for _, key := range vals {
+		for _, req := range requiredFields {
+			if key.Key == req {
+				i++
+			}
+		}
+	}
+	if i != len(requiredFields) {
+		return nil, ErrMissingRequiredFields
 	}
 
 	return makeHelmConfigMap(vals)

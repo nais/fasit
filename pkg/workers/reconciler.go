@@ -92,8 +92,19 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.Reconcil
 	defer mgr.Stop()
 
 	for _, f := range features {
-		values, err := r.repo.HelmValues(ctx, f.Name, d.ID)
+		var requiredFields []string
+		for k, v := range f.Config {
+			if v.Required {
+				requiredFields = append(requiredFields, k)
+			}
+		}
+
+		values, err := r.repo.HelmValues(ctx, f.Name, d.ID, requiredFields)
 		if err != nil {
+			if err == database.ErrMissingRequiredFields {
+				r.log.WithField("feature", f.Name).Debug("missing required field")
+				continue
+			}
 			return err
 		}
 
