@@ -2,14 +2,25 @@ chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/naiserator
 version: 0.1.1
 repo: ""
 config:
-  imageTag: string
-  naiserator.cluster-name: string
-  naiserator.google-project-id: string
-  naiserator.features.linkerd: bool
-  naiserator.features.nais-system: bool
-  naiserator.features.jwker: bool
-  naiserator.features.azurerator: bool
-  naiserator.features.digdirator: bool
-  naiserator.features.kafkarator: bool
-  naiserator.kafka.enabled: bool
-  naiserator.leader-election.image: string
+  imageTag:
+    type: string
+  naiserator.cluster-name:
+    type: string
+  naiserator.google-project-id:
+    type: string
+  naiserator.features.linkerd:
+    type: bool
+  naiserator.features.nais-system:
+    type: bool
+  naiserator.features.jwker:
+    type: bool
+  naiserator.features.azurerator:
+    type: bool
+  naiserator.features.digdirator:
+    type: bool
+  naiserator.features.kafkarator:
+    type: bool
+  naiserator.kafka.enabled:
+    type: bool
+  naiserator.leader-election.image:
+    type: string

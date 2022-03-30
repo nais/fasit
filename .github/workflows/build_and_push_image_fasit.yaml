@@ -6,7 +6,6 @@ on:
       - ".github/workflows/*_chart.yaml"
       - ".github/workflows/build_and_push_image_fasit-frontend.yaml"
       - ".github/workflows/build_and_push_image_naisd.yaml"
-      - "frontend"
 
 env:
   REGISTRY: europe-north1-docker.pkg.dev/nais-io/nais/images
@@ -84,7 +83,7 @@ jobs:
         shell: bash
         run: |
           gcloud container clusters get-credentials nais-io --project nais-io --region europe-north1
-      - name: deploy fasit
+      - name: output tag
         shell: bash
         run: |
-          helm upgrade fasit-backend oci://europe-north1-docker.pkg.dev/nais-io/nais/fasit  --install --wait --version 0.1.0 --set image.tag="sha-${GITHUB_SHA::7}",dbConnString="${{ secrets.DB_CONNECTION_STRING }}" --namespace nais-system
+          helm upgrade fasit-backend oci://europe-north1-docker.pkg.dev/nais-io/nais/fasit  --install --wait --version 0.1.0 --set imageTag="sha-${GITHUB_SHA::7}" FASIT_DBCONN_STRING="postgres://postgres:postgres@127.0.0.1:5432/fasit?sslmode=disable" --namespace nais-system

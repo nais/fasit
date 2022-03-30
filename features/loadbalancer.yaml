@@ -1,7 +1,12 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/loadbalancer
 version: 0.1.0
 config:
-  certificates: string_array
-  ingress-nginx.controller.resources.requests.cpu: string
-  ingress-nginx.controller.resources.requests.memory: string
-  ingress-nginx.controller.replicaCount: int
+  certificates:
+    type: string_array
+    required: true
+  ingress-nginx.controller.resources.requests.cpu:
+    type: string
+  ingress-nginx.controller.resources.requests.memory:
+    type: string
+  ingress-nginx.controller.replicaCount:
+    type: int

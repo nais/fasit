@@ -1,19 +1,35 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring
 version: 0.3.0
 config:
-  prometheus.server.persistentVolume.size: string
-  prometheus.server.ingress.enabled: bool
-  prometheus.server.ingress.hosts: string_array
-  prometheus.server.baseURL: string
-  prometheus.alertmanager.persistentVolume.size: string
-  prometheus.alertmanager.ingress.enabled: bool
-  prometheus.alertmanager.ingress.hosts: string_array
-  prometheus.alertmanager.baseURL: string
-  grafana.enabled: bool
-  grafana.adminUser: string
-  grafana.adminPassword: string
-  grafana.grafana\.ini.auth\.anonymous.enabled: bool
-  grafana.grafana\.ini.auth\.anonymous.org_role: string
-  grafana.persistence.size: string
-  grafana.ingress.enabled: bool
-  grafana.ingress.hosts: string_array
+  prometheus.server.persistentVolume.size:
+    type: string
+  prometheus.server.ingress.enabled:
+    type: bool
+  prometheus.server.ingress.hosts:
+    type: string_array
+  prometheus.server.baseURL:
+    type: string
+  prometheus.alertmanager.persistentVolume.size:
+    type: string
+  prometheus.alertmanager.ingress.enabled:
+    type: bool
+  prometheus.alertmanager.ingress.hosts:
+    type: string_array
+  prometheus.alertmanager.baseURL:
+    type: string
+  grafana.enabled:
+    type: bool
+  grafana.adminUser:
+    type: string
+  grafana.adminPassword:
+    type: secret
+  grafana.grafana\.ini.auth\.anonymous.enabled:
+    type: bool
+  grafana.grafana\.ini.auth\.anonymous.org_role:
+    type: string
+  grafana.persistence.size:
+    type: string
+  grafana.ingress.enabled:
+    type: bool
+  grafana.ingress.hosts:
+    type: string_array

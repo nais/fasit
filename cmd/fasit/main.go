@@ -76,6 +76,8 @@ func main() {
 		log.WithError(err).Fatal("setting up features")
 	}
 
+	log.Info(featureMgr.Features)
+
 	statusMgr := message.NewSubscriber[message.Status](client, cfg.GCPProjectID, cfg.StatusSubscriptionID)
 
 	receiver := workers.NewReceiver(statusMgr, repo, log.WithField("subsystem", "status"))

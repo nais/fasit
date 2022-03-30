@@ -12,8 +12,9 @@ import (
 )
 
 type ConfigType struct {
-	Type   model.ConfigType `json:"type"`
-	Secret bool             `json:"secret"`
+	Type     model.ConfigType `json:"type" yaml:"type"`
+	Secret   bool             `json:"secret" yaml:"secret"`
+	Required bool             `json:"required" yaml:"required"`
 }
 
 func (c ConfigType) Valid(value json.RawMessage) error {
@@ -50,27 +51,6 @@ func (c ConfigType) Valid(value json.RawMessage) error {
 	default:
 		return nil
 	}
-}
-
-func (c *ConfigType) UnmarshalYAML(unmarshal func(any) error) error {
-	var v string
-	if err := unmarshal(&v); err != nil {
-		return err
-	}
-	parts := strings.SplitN(v, ",", 2)
-	c.Type = model.ConfigType(parts[0])
-	if !c.Type.IsValid() {
-		return fmt.Errorf("unsupported config type %q", parts[0])
-	}
-
-	if len(parts) == 2 {
-		if parts[1] == "secret" {
-			c.Secret = true
-		} else {
-			return fmt.Errorf("unsupported config option %q", parts[1])
-		}
-	}
-	return nil
 }
 
 type Config map[string]ConfigType
