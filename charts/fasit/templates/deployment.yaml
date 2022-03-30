@@ -44,7 +44,7 @@ spec:
             {{- toYaml .Values.resources | nindent 12 }}
           envFrom:
             - secretRef:
-                name: fasit
+                name: {{ include "fasit.fullname" }}
       volumes:
       - name: tmp
         emptyDir: {}

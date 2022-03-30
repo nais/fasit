@@ -83,7 +83,7 @@ jobs:
         shell: bash
         run: |
           gcloud container clusters get-credentials nais-io --project nais-io --region europe-north1
-      - name: output tag
+      - name: deploy fasit
         shell: bash
         run: |
           helm upgrade fasit-backend oci://europe-north1-docker.pkg.dev/nais-io/nais/fasit  --install --wait --version 0.1.0 --set imageTag="sha-${GITHUB_SHA::7}",dbConnString="${{ secrets.DB_CONNECTION_STRING }}" --namespace nais-system
