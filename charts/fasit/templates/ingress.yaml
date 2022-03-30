@@ -3,7 +3,7 @@ kind: Ingress
 metadata:
   name: {{ include "fasit.fullname" . }}
   labels:
-    {{ include "fasit.labels" . | nindent 4 }}
+    {{- include "fasit.labels" . | nindent 4 }}
 spec:
   ingressClassName: {{ .Values.ingressClassName }}
   rules:
