@@ -10,8 +10,8 @@ import (
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
-func (r *featureStateResolver) Feature(ctx context.Context, featureState *model.FeatureState) (*model.Feature, error) {
-	feature := r.Resolver.Features.Get(featureState.FeatureName)
+func (r *featureStateResolver) Feature(ctx context.Context, obj *model.FeatureState) (*model.Feature, error) {
+	feature := r.Resolver.Features.Get(obj.FeatureName)
 	if feature == nil {
 		return nil, nil
 	}

@@ -11,8 +11,24 @@ import (
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
-func (r *environmentResolver) FeatureStates(ctx context.Context, environment *model.Environment) ([]*model.FeatureState, error) {
-	return r.Repo.FeatureStatesGet(ctx, environment.ID)
+func (r *environmentResolver) FeatureStates(ctx context.Context, obj *model.Environment) ([]*model.FeatureState, error) {
+	retVal, err := r.Repo.FeatureStatesGet(ctx, obj.ID)
+	if err != nil {
+		return nil, err
+	}
+
+OUTER:
+	for _, f := range r.Features.Features {
+		// Skip elements that are configured
+		for _, c := range retVal {
+			if f.Name == c.FeatureName {
+				continue OUTER
+			}
+		}
+		retVal = append(retVal, &model.FeatureState{FeatureName: f.Name})
+	}
+
+	return retVal, nil
 }
 
 func (r *mutationResolver) EnvironmentCreate(ctx context.Context, environment model.EnvironmentCreate) (*model.Environment, error) {

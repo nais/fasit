@@ -8,6 +8,19 @@ export const ENVIRONMENT_GET = gql`
       description
       lastModified
       created
+      featureStates {
+        enabled
+        lastModified
+        created
+        feature {
+          name
+          version
+          chart
+          repo
+          source
+          config
+        }
+      }
     }
   }
 `

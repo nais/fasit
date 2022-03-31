@@ -50,6 +50,7 @@ export type Environment = {
   __typename?: 'Environment'
   created: Scalars['Time']
   description?: Maybe<Scalars['String']>
+  featureStates: Array<FeatureState>
   id: Scalars['ID']
   lastModified: Scalars['Time']
   name: Scalars['String']
@@ -70,12 +71,20 @@ export type EnvironmentUpdate = {
 
 export type Feature = {
   __typename?: 'Feature'
-  chart?: Maybe<Scalars['String']>
+  chart: Scalars['String']
   config: Scalars['RawMessage']
   name: Scalars['String']
   repo: Scalars['String']
   source: Scalars['String']
   version: Scalars['String']
+}
+
+export type FeatureState = {
+  __typename?: 'FeatureState'
+  created: Scalars['Time']
+  enabled: Scalars['Boolean']
+  feature: Feature
+  lastModified: Scalars['Time']
 }
 
 export type Mutation = {
@@ -279,6 +288,21 @@ export type EnvironmentGetQuery = {
     description?: string | null
     lastModified: any
     created: any
+    featureStates: Array<{
+      __typename?: 'FeatureState'
+      enabled: boolean
+      lastModified: any
+      created: any
+      feature: {
+        __typename?: 'Feature'
+        name: string
+        version: string
+        chart: string
+        repo: string
+        source: string
+        config: any
+      }
+    }>
   }
 }
 
@@ -308,7 +332,7 @@ export type FeaturesQuery = {
   features: Array<{
     __typename?: 'Feature'
     name: string
-    chart?: string | null
+    chart: string
     config: any
     repo: string
     source: string
@@ -728,6 +752,19 @@ export const EnvironmentGetDocument = gql`
       description
       lastModified
       created
+      featureStates {
+        enabled
+        lastModified
+        created
+        feature {
+          name
+          version
+          chart
+          repo
+          source
+          config
+        }
+      }
     }
   }
 `

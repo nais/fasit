@@ -1,11 +1,11 @@
 import * as React from 'react'
-import { useFeaturesQuery } from '../../lib/schema/graphql'
+import {EnvironmentGetQuery, useFeaturesQuery} from '../../lib/schema/graphql'
 import ErrorMessage from '../lib/error'
 import LoaderSpinner from '../lib/spinner'
 import Link from 'next/link'
-import { useRouter } from 'next/router'
+import {useRouter} from 'next/router'
 import styled from 'styled-components'
-import { navRod } from '../../styles/constants'
+import {navRod} from '../../styles/constants'
 
 const SideMenu = styled.div`
   padding: 10px 0px 10px 10px;
@@ -23,6 +23,7 @@ const SideMenu = styled.div`
 
 interface MenuItemProps {
   active?: boolean
+  enabled?: boolean
 }
 
 const MenuItem = styled.div<MenuItemProps>`
@@ -34,17 +35,20 @@ const MenuItem = styled.div<MenuItemProps>`
   padding: 5px 15px;
   margin-right: -2px;
   position: relative;
-  * {
+  a {
     text-decoration: none;
-    color: #222;
+    color: ${(props) =>  props.enabled ? '#222' : "#999"};
   }
   :hover {
     background-color: var(--navds-semantic-color-interaction-primary-hover-subtle);
   }
 
 `
+interface FeaturesMenuProps {
+  env: EnvironmentGetQuery['environment']
 
-const FeaturesMenu = () => {
+}
+const FeaturesMenu = ({env}: FeaturesMenuProps) => {
   const features = useFeaturesQuery()
   const { data, loading, error } = features
   const router = useRouter()
@@ -56,12 +60,23 @@ const FeaturesMenu = () => {
   return (<SideMenu>
     <i style={{ marginBottom: "15px" }}>Features</i>
 
-    {features.data && features.data.features.map((f) => {
-      return <MenuItem key={f.name} active={f.name === feature}>
+    {env.featureStates.filter((f) => f.enabled).map((fs) => {
+      const f = fs.feature
+      return <MenuItem key={f.name} active={f.name === feature} enabled={fs.enabled}>
+
         <Link href={router.asPath.split('?')[0] + '?feature=' + f.name}>
           <a>{f.name}</a>
         </Link></MenuItem>
     })}
+        <hr style={{width: '100%'}}/>
+        {env.featureStates.filter((f) => !f.enabled).map((fs) => {
+          const f = fs.feature
+          return <MenuItem key={f.name} active={f.name === feature} enabled={fs.enabled}>
+
+            <Link href={router.asPath.split('?')[0] + '?feature=' + f.name}>
+              <a>{f.name}</a>
+            </Link></MenuItem>
+        })}
 
   </SideMenu>
   )

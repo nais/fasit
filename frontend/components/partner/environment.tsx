@@ -137,7 +137,7 @@ const Environment = ({ envID, partnerName }: EnvironmentProps) => {
         <span>Sist oppdatert {humanizeDate(env.lastModified)}</span>
       </TimeStamps>
       <Main>
-        <FeaturesMenu />
+        <FeaturesMenu env={env}/>
         <Feature envID={envID} featureName={feature} />
       </Main>
 
