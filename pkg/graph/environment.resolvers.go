@@ -7,8 +7,13 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/nais/fasit/pkg/graph/graphgen"
 	"github.com/nais/fasit/pkg/graph/model"
 )
+
+func (r *environmentResolver) FeatureStates(ctx context.Context, environment *model.Environment) ([]*model.FeatureState, error) {
+	return r.Repo.FeatureStatesGet(ctx, environment.ID)
+}
 
 func (r *mutationResolver) EnvironmentCreate(ctx context.Context, environment model.EnvironmentCreate) (*model.Environment, error) {
 	return r.Repo.EnvironmentCreate(ctx, &environment)
@@ -25,3 +30,8 @@ func (r *queryResolver) Environment(ctx context.Context, id uuid.UUID) (*model.E
 func (r *queryResolver) Environments(ctx context.Context, partnerID uuid.UUID) ([]*model.Environment, error) {
 	return r.Repo.EnvironmentsGet(ctx, partnerID)
 }
+
+// Environment returns graphgen.EnvironmentResolver implementation.
+func (r *Resolver) Environment() graphgen.EnvironmentResolver { return &environmentResolver{r} }
+
+type environmentResolver struct{ *Resolver }

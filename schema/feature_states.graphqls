@@ -1,0 +1,6 @@
+type FeatureState {
+    feature: Feature!
+    enabled: Boolean!
+    created: Time!
+    lastModified: Time!
+}

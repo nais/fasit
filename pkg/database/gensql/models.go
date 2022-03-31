@@ -30,6 +30,14 @@ type Environment struct {
 	LastModified time.Time
 }
 
+type FeatureState struct {
+	EnvironmentID uuid.UUID
+	Feature       string
+	Enabled       bool
+	Created       time.Time
+	LastModified  time.Time
+}
+
 type Partner struct {
 	ID           uuid.UUID
 	Name         string

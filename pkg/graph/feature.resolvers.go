@@ -5,7 +5,6 @@ package graph
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/nais/fasit/pkg/graph/model"
 )
@@ -13,17 +12,9 @@ import (
 func (r *queryResolver) Features(ctx context.Context) ([]*model.Feature, error) {
 	features := []*model.Feature{}
 	for _, feature := range r.Resolver.Features.Features {
-		config, err := json.Marshal(feature.Config)
+		tmp, err := marshalFeature(feature)
 		if err != nil {
 			return nil, err
-		}
-		tmp := &model.Feature{
-			Name:    feature.Name,
-			Chart:   feature.Chart,
-			Version: feature.Version,
-			Repo:    feature.Repo,
-			Source:  feature.Source,
-			Config:  config,
 		}
 		features = append(features, tmp)
 	}

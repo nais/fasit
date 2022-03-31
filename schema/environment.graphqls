@@ -2,6 +2,7 @@ type Environment {
     id: ID!
     name: String!
     description: String
+    featureStates: [FeatureState!]!
     created: Time!
     lastModified: Time!
 }

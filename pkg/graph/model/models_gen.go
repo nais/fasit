@@ -22,14 +22,6 @@ type Configuration struct {
 	Env           bool            `json:"env"`
 }
 
-type Environment struct {
-	ID           uuid.UUID `json:"id"`
-	Name         string    `json:"name"`
-	Description  *string   `json:"description"`
-	Created      time.Time `json:"created"`
-	LastModified time.Time `json:"lastModified"`
-}
-
 // EnvironmentCreate contains metadata for creating an environment
 type EnvironmentCreate struct {
 	Name        string    `json:"name"`
