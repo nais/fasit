@@ -1,12 +1,12 @@
 import * as React from 'react'
-import { Dispatch, SetStateAction, useEffect, useState } from 'react'
-import { Box, Modal } from '@mui/material'
-import { Config } from '../partner/configPage'
-import { ConfigType, useConfigurationCreateMutation, useFeaturesQuery } from '../../lib/schema/graphql'
+import {Dispatch, SetStateAction, useEffect, useState} from 'react'
+import {Box, Modal} from '@mui/material'
+import {Config} from '../partner/configPage'
+import {ConfigType, useConfigurationCreateMutation, useFeaturesQuery} from '../../lib/schema/graphql'
 import ErrorMessage from './error'
 import LoaderSpinner from './spinner'
-import { Button, Switch, TextField } from '@navikt/ds-react'
-import { useForm } from 'react-hook-form'
+import {Button, Switch, TextField} from '@navikt/ds-react'
+import {useForm} from 'react-hook-form'
 import KeywordsInput from './StringArrayInput'
 
 const style = {
@@ -42,7 +42,7 @@ const ConfigAdd = ({conf, envID, globalConfig, open, showOpen}: ConfigAddProps) 
     const {errors} = formState
     const values = watch('values')
     useEffect(() => { setVal(values) }, [values])
-    useEffect(() => { setVal(intVal) }, [intVal])
+    useEffect(() => { conf.type === ConfigType.Int && setVal(intVal) }, [intVal])
     useEffect(() => globalConfig?.value && setVal(globalConfig.value), [])
 
     const onDelete = (value: string) => {
@@ -133,7 +133,8 @@ const ConfigAdd = ({conf, envID, globalConfig, open, showOpen}: ConfigAddProps) 
         <Modal open={open} onClose={() => showOpen(false)}>
             <Box sx={style}>
                 <h1>{conf.feature}</h1>
-                <h3>{conf.key}</h3>
+                <h3>{conf.key} - {conf.type}</h3>
+
                 <form onSubmit={(e) => submit(e, featureConfig.type)}>
                     {featureConfig && inputType(featureConfig.type)}
                     <TextField label={'Comment'} value={description} onChange={(e) => setDescription(e.target.value)}/>

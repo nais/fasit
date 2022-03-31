@@ -1,18 +1,19 @@
 import * as React from 'react'
-import { useState } from 'react'
+import {useState} from 'react'
 import ErrorMessage from '../lib/error'
 import LoaderSpinner from '../lib/spinner'
-import { ConfigType, FeaturesQuery, useConfigurationQuery } from '../../lib/schema/graphql'
-import { Table } from '@navikt/ds-react'
-import { Add, Delete, FileContent, Globe, Wrench } from '@navikt/ds-icons'
+import {ConfigType, FeaturesQuery, useConfigurationQuery} from '../../lib/schema/graphql'
+import {Table} from '@navikt/ds-react'
+import {Add, Delete, FileContent, Globe, Warning, Wrench} from '@navikt/ds-icons'
 import styled from 'styled-components'
-import { navGronn, navRod } from '../../styles/constants'
+import {navGronn, navRod} from '../../styles/constants'
 import ConfigAdd from '../lib/configAdd'
 import ConfigEdit from '../lib/configEdit'
 import ConfigDelete from '../lib/configDelete'
 import prettifyArray from '../lib/prettifyArray'
+import ConfigRows from "../lib/configRows";
 
-const Operations = styled.div`
+const Center = styled.div`
   display: flex;
   gap: 10px;
   justify-content: center;
@@ -48,6 +49,7 @@ export interface Config {
     feature: string
     key: string
     secret: boolean
+    required: boolean
 }
 
 interface Configs {
@@ -68,7 +70,7 @@ const ConfigPage = ({feature}: ConfigProps) => {
     let configs: Configs = {}
     if (data) {
         data.configuration.forEach((c) => {
-            configs[c.key] = {...c, secret: false, env: false, type: ConfigType.Bool}
+            configs[c.key] = {...c, secret: false, env: false, type: ConfigType.Bool, required: false}
         })
         Object.keys(feature.config).forEach((k) => {
                 if (!configs[k]) {
@@ -79,10 +81,12 @@ const ConfigPage = ({feature}: ConfigProps) => {
                         key: k,
                         type: feature.config[k].type,
                         secret: feature.config[k].secret,
+                        required: feature.config[k].required
                     }
                 } else {
                     configs[k].type = feature.config[k].type
                     configs[k].secret = feature.config[k].secret
+                    configs[k].required = feature.config[k].required
                 }
 
             }
@@ -97,6 +101,8 @@ const ConfigPage = ({feature}: ConfigProps) => {
         setShowUpdate(false)
     }
 
+    const keys = Object.keys(configs).sort()
+
     return (
         <>
             {loading && <LoaderSpinner/>}
@@ -107,48 +113,21 @@ const ConfigPage = ({feature}: ConfigProps) => {
                         <Table.HeaderCell>Key</Table.HeaderCell>
                         <Table.HeaderCell>Value</Table.HeaderCell>
                         <Table.HeaderCell>Scope</Table.HeaderCell>
-                        <Table.HeaderCell>Comment</Table.HeaderCell>
+                        <Table.HeaderCell>Required</Table.HeaderCell>
                         <Table.HeaderCell align='center'>Operations</Table.HeaderCell>
+                        <Table.HeaderCell>Comment</Table.HeaderCell>
                     </Table.Row>
                 </Table.Header>
                 <Table.Body>
-                    {
-                        Object.keys(configs).sort().map((c) => {
-                                const conf = configs[c]
-                                return (
-                                    <Table.Row key={c}>
-                                        <Table.DataCell>{c}</Table.DataCell>
-                                        <Table.DataCell>{conf.type != ConfigType.StringArray ?
-                                          conf.value != null ? JSON.stringify(conf.value).replace(/"/g, '') :
-                                            '<default>' :
-                                          prettifyArray(conf.value)}
-                                        </Table.DataCell>
-                                        <Table.DataCell>{ conf.value != null ? <Globe/> : <FileContent/>}</Table.DataCell>
-                                        <Table.DataCell>{conf.description}</Table.DataCell>
-                                        <Table.DataCell>
-                                            <Operations> {conf.value != null?
-                                                <>
-                                                    <StyledWrench onClick={() => {
-                                                        setCurrentConfig(conf)
-                                                        setShowUpdate(true)
-                                                    }}
-                                                    />
-                                                    <StyledDelete onClick={() => {
-                                                        setCurrentConfig(conf)
-                                                        setShowDelete(true)
-                                                    }}
-                                                    />
-                                                </> :
-                                                <StyledAdd onClick={() => {
-                                                    setCurrentConfig(conf)
-                                                    setShowCreate(true)
-                                                }}/>}
-                                            </Operations>
-                                        </Table.DataCell>
-                                    </Table.Row>)
-                            },
-                        )
-                    }
+                    <ConfigRows
+                        configs={configs}
+                        keys={keys}
+                        setCurrentConfig={setCurrentConfig}
+                        setShowUpdate={setShowUpdate}
+                        setShowDelete={setShowDelete}
+                        setShowCreate={setShowCreate}
+                        featurePage={true}
+                    />
                 </Table.Body>
             </Table>
 

@@ -6,6 +6,8 @@ import LoaderSpinner from '../lib/spinner'
 import ErrorMessage from '../lib/error'
 import { Success } from '@navikt/ds-icons'
 import { navGronn } from '../../styles/constants'
+import IconBox from "../lib/icons/iconBox";
+import GitIcon from "../lib/icons/gitIcon";
 
 
 const FeatureContainer = styled.div`
@@ -47,8 +49,8 @@ const Feature = ({ envID, featureName }: FeatureProps) => {
             <div>status: <Success style={{ color: navGronn }} /></div>
             {f.chart && <div>chart: {f.chart}</div>}
             {f.repo && <div>repo: {f.repo}</div>}
-            {f.source && <div>source: {f.source}</div>}
             {f.version && <div>version: {f.version}</div>}
+              {f.source && <div style={{display: 'flex', width: 'fit-content', gap:'10px'}}><IconBox size={20}><GitIcon/></IconBox> <a href={f.source} target="_blank">{f.source}</a></div>}
           </div>
         })}
       </FeatureStatus>
