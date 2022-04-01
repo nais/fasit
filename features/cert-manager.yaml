@@ -5,3 +5,5 @@ repo: https://charts.jetstack.io
 config:
   installCRDs:
     type: bool
+  global.podSecurityPolicy.enabled:
+    type: bool
