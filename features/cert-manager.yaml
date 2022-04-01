@@ -1,4 +1,4 @@
-chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/loadbalancer
+chart: cert-manager
 source: https://github.com/cert-manager/cert-manager
 version: v1.7.2
 repo: https://charts.jetstack.io
