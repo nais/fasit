@@ -69,7 +69,7 @@ func main() {
 		log.WithError(err).Fatal("setting up worker")
 	}
 
-	log.Info("Recever started")
+	log.Info("Receiver started")
 	receiver.Run(ctx)
 }
 

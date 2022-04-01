@@ -22,6 +22,10 @@ func (s *Subscriber[T]) Name() string {
 	return s.subscription.String()
 }
 
+func (s *Subscriber[T]) Synchronous() {
+	s.subscription.ReceiveSettings.Synchronous = true
+}
+
 func (s *Subscriber[T]) Receive(ctx context.Context, f func(ctx context.Context, msg T) error) error {
 	return s.subscription.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
 		var t T

@@ -6,3 +6,4 @@ config:
     type: string
   ingresses:
     type: string_array
+    required: true

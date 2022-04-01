@@ -52,6 +52,7 @@ func NewDeployManager(
 
 func (d *DeployManager) Run(ctx context.Context) {
 	d.log.WithField("subscription", d.deployments.Name()).Info("Starting deploy receiver")
+	d.deployments.Synchronous()
 	err := d.deployments.Receive(ctx, d.handler)
 	if err != nil {
 		d.log.WithError(err).Error("receive status messages")
@@ -114,12 +115,19 @@ func (d *DeployManager) runHelm(ctx context.Context, args []string) error {
 		d.kubeConfig.BearerToken,
 	}
 
+	helmFlags := []string{
+		"--atomic",
+		"--cleanup-on-fail",
+	}
+
+	helmArgs := append(args, append(connectionFlags, helmFlags...)...)
+
 	environment := []string{
 		"HELM_EXPERIMENTAL_OCI=1",
 		"HELM_CACHE_HOME=" + d.helmCache,
 	}
 
-	cmd := exec.CommandContext(ctx, "helm", append(connectionFlags, args...)...)
+	cmd := exec.CommandContext(ctx, "helm", helmArgs...)
 	cmd.Env = append(cmd.Env, environment...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
