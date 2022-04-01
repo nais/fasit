@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
+	"os"
 
 	"cloud.google.com/go/pubsub"
 	"github.com/nais/fasit/pkg/message"
@@ -45,10 +47,9 @@ func main() {
 		log.WithError(err).Fatal("setting up new pub/sub client")
 	}
 
-	log.WithFields(logrus.Fields{
-		"subscription": deploySubscriptionID,
-		"topic":        naisStatusTopic,
-	}).Info("pubsub config")
+	enc := json.NewEncoder(os.Stdout)
+	enc.SetIndent("", "  ")
+	_ = enc.Encode(cfg)
 
 	deploySubscriber := message.NewSubscriber[message.DeployInstruction](deployClient, cfg.EnvProjectID, deploySubscriptionID)
 	statusPublisher := message.NewPublisher[message.Status](deployClient, cfg.NaisProjectID, naisStatusTopic, log.WithField("subsystem", "status-pubsub"))
