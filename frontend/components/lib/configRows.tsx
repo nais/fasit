@@ -4,7 +4,6 @@ import prettifyArray from "./prettifyArray";
 import {Add, Delete, FileContent, Globe, Place, Warning, Wrench} from "@navikt/ds-icons";
 import {navGronn, navRod} from "../../styles/constants";
 import * as React from "react";
-import {Config, Configs} from "../partner/configPage";
 import styled from "styled-components";
 
 const Center = styled.div`
@@ -33,6 +32,23 @@ const StyledAdd = styled(Add)`
   }
   cursor: pointer;
 `
+
+export interface Config {
+    id?: string
+    description?: string | null
+    value: any
+    type: ConfigType
+    env: boolean
+    feature: string
+    key: string
+    secret: boolean
+    required: boolean
+    enabled?: boolean
+}
+
+export interface Configs {
+    [index: string]: Config
+}
 
 interface ConfigRowProps {
     configs: Configs,

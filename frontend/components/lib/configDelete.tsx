@@ -1,11 +1,11 @@
 import * as React from 'react'
 import {useState} from 'react'
-import {Config} from '../partner/configPage'
 import {Box, Modal} from '@mui/material'
 import {Button} from '@navikt/ds-react'
 import ErrorMessage from './error'
 import {useConfigurationDeleteMutation} from '../../lib/schema/graphql'
 import styled from 'styled-components'
+import {Config} from "./configRows";
 
 const style = {
     position: 'absolute' as 'absolute',

@@ -2,35 +2,13 @@ import * as React from 'react'
 import {useState} from 'react'
 import ErrorMessage from '../lib/error'
 import LoaderSpinner from '../lib/spinner'
-import {
-    ConfigType,
-    EnvironmentGetQuery,
-    useConfigGetQuery,
-    useEnvironmentGetQuery,
-    useFeaturesQuery
-} from '../../lib/schema/graphql'
+import {EnvironmentGetQuery, useConfigGetQuery, useFeaturesQuery} from '../../lib/schema/graphql'
 import {Table} from '@navikt/ds-react'
 import ConfigAdd from '../lib/configAdd'
 import ConfigDelete from '../lib/configDelete'
 import ConfigEdit from '../lib/configEdit'
-import ConfigRows from "../lib/configRows";
+import ConfigRows, {Config, Configs} from "../lib/configRows";
 
-export interface Config {
-    id?: string
-    description?: string | null
-    value: any
-    type: ConfigType
-    env: boolean
-    feature: string
-    key: string
-    secret: boolean
-    required: boolean
-    enabled: boolean
-}
-
-export interface Configs {
-    [index: string]: Config
-}
 
 interface ConfigProps {
     env: EnvironmentGetQuery['environment']

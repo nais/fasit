@@ -10,51 +10,8 @@ import {navGronn, navRod} from '../../styles/constants'
 import ConfigAdd from '../lib/configAdd'
 import ConfigEdit from '../lib/configEdit'
 import ConfigDelete from '../lib/configDelete'
-import prettifyArray from '../lib/prettifyArray'
-import ConfigRows from "../lib/configRows";
+import ConfigRows, { Config, Configs } from "../lib/configRows";
 
-const Center = styled.div`
-  display: flex;
-  gap: 10px;
-  justify-content: center;
-`
-
-const StyledWrench = styled(Wrench)`
-  :hover{
-    color: ${navGronn};
-  }
-  cursor: pointer;
-`
-
-const StyledDelete = styled(Delete)`
-  :hover{
-    color: ${navRod};
-  }
-  cursor: pointer;
-`
-
-const StyledAdd = styled(Add)`
-  :hover{
-    color: ${navGronn};
-  }
-  cursor: pointer;
-`
-
-export interface Config {
-    id?: string
-    description?: string | null
-    value: any
-    type: ConfigType
-    env: boolean
-    feature: string
-    key: string
-    secret: boolean
-    required: boolean
-}
-
-interface Configs {
-    [index: string]: Config
-}
 
 interface ConfigProps {
     feature: FeaturesQuery['features'][0],

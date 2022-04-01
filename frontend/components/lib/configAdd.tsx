@@ -1,13 +1,13 @@
 import * as React from 'react'
 import {Dispatch, SetStateAction, useEffect, useState} from 'react'
 import {Box, Modal} from '@mui/material'
-import {Config} from '../partner/configPage'
 import {ConfigType, useConfigurationCreateMutation, useFeaturesQuery} from '../../lib/schema/graphql'
 import ErrorMessage from './error'
 import LoaderSpinner from './spinner'
 import {Button, Switch, TextField} from '@navikt/ds-react'
 import {useForm} from 'react-hook-form'
 import KeywordsInput from './StringArrayInput'
+import {Config} from "./configRows";
 
 const style = {
     position: 'absolute' as 'absolute',
