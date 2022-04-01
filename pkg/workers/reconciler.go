@@ -64,13 +64,15 @@ func (r *Reconciler) reconcile(ctx context.Context) error {
 	}
 
 	for _, d := range data {
+		log := r.log.WithFields(logrus.Fields{
+			"environment": d.Name,
+			"partner":     d.PartnerName,
+		})
+
+		log.Debug("reconcile environment")
+
 		if err := r.reconcileEnvironment(ctx, d); err != nil {
-			r.log.WithError(err).
-				WithFields(logrus.Fields{
-					"environment": d.Name,
-					"partner":     d.PartnerName,
-				}).
-				Error("unable to reconcile environment")
+			log.WithError(err).Error("unable to reconcile environment")
 		}
 	}
 	return nil
