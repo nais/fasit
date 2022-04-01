@@ -51,6 +51,7 @@ func NewDeployManager(
 }
 
 func (d *DeployManager) Run(ctx context.Context) {
+	d.log.WithField("subscription", d.deployments.Name()).Info("Starting deploy receiver")
 	err := d.deployments.Receive(ctx, d.handler)
 	if err != nil {
 		d.log.WithError(err).Error("receive status messages")

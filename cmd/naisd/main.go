@@ -45,6 +45,11 @@ func main() {
 		log.WithError(err).Fatal("setting up new pub/sub client")
 	}
 
+	log.WithFields(logrus.Fields{
+		"subscription": deploySubscriptionID,
+		"topic":        naisStatusTopic,
+	}).Info("pubsub config")
+
 	deploySubscriber := message.NewSubscriber[message.DeployInstruction](deployClient, cfg.EnvProjectID, deploySubscriptionID)
 	statusPublisher := message.NewPublisher[message.Status](deployClient, cfg.NaisProjectID, naisStatusTopic, log.WithField("subsystem", "status-pubsub"))
 
