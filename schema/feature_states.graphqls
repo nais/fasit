@@ -4,3 +4,7 @@ type FeatureState {
     created: Time
     lastModified: Time
 }
+
+extend type Mutation {
+    featureStateSave(envID: ID!, enabled: Boolean!, feature: String!): FeatureState!
+}

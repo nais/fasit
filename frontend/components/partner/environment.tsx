@@ -138,7 +138,7 @@ const Environment = ({ envID, partnerName }: EnvironmentProps) => {
       </TimeStamps>
       <Main>
         <FeaturesMenu env={env}/>
-        <Feature envID={envID} featureName={feature} />
+        <Feature env={env}  featureName={feature} />
       </Main>
 
     </div>

@@ -8,7 +8,7 @@ SELECT *
 FROM feature_states
 WHERE feature = @feature AND environment_id = @environment_id;
 
--- name: FeatureStateUpdateOrCreate :one
+-- name: FeatureStateCreateOrUpdate :one
 INSERT INTO feature_states
 (environment_id, feature, enabled)
 VALUES

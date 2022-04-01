@@ -2,7 +2,13 @@ import * as React from 'react'
 import {useState} from 'react'
 import ErrorMessage from '../lib/error'
 import LoaderSpinner from '../lib/spinner'
-import {ConfigType, useConfigGetQuery, useEnvironmentGetQuery, useFeaturesQuery} from '../../lib/schema/graphql'
+import {
+    ConfigType,
+    EnvironmentGetQuery,
+    useConfigGetQuery,
+    useEnvironmentGetQuery,
+    useFeaturesQuery
+} from '../../lib/schema/graphql'
 import {Table} from '@navikt/ds-react'
 import ConfigAdd from '../lib/configAdd'
 import ConfigDelete from '../lib/configDelete'
@@ -19,6 +25,7 @@ export interface Config {
     key: string
     secret: boolean
     required: boolean
+    enabled: boolean
 }
 
 export interface Configs {
@@ -26,12 +33,12 @@ export interface Configs {
 }
 
 interface ConfigProps {
-    envID: string,
+    env: EnvironmentGetQuery['environment']
     feature: string,
 }
 
-const ConfigPage = ({envID, feature}: ConfigProps) => {
-    const {data, error, loading} = useConfigGetQuery({variables: {envID, feature}})
+const ConfigPage = ({env, feature}: ConfigProps) => {
+    const {data, error, loading} = useConfigGetQuery({variables: {envID: env.id, feature}})
     const features = useFeaturesQuery()
     const [currentConfig, setCurrentConfig] = useState<Config | undefined>()
     const [showDelete, setShowDelete] = useState(false)
@@ -43,7 +50,7 @@ const ConfigPage = ({envID, feature}: ConfigProps) => {
     if (features.data && data) {
         const confKeys = features.data.features.find((f) => f.name === feature)?.config
         data.envConfig.forEach((c) => {
-                configs[c.key] = {...c, secret: false, required: false}
+                configs[c.key] = {...c, secret: false, required: false, enabled: false}
             },
         )
         Object.keys(confKeys).forEach((k) => {
@@ -55,12 +62,14 @@ const ConfigPage = ({envID, feature}: ConfigProps) => {
                         key: k,
                         type: confKeys[k].type,
                         secret: confKeys[k].secret,
-                        required: confKeys[k].required
+                        required: confKeys[k].required,
+                        enabled: confKeys[k].enabled
                     }
                 } else {
                     configs[k].type = confKeys[k].type
                     configs[k].secret = confKeys[k].secret
                     configs[k].required = confKeys[k].required
+                    configs[k].enabled = confKeys[k].enabled
                 }
             },
         )
@@ -128,7 +137,7 @@ const ConfigPage = ({envID, feature}: ConfigProps) => {
 
             {currentConfig &&
                 <>
-                    <ConfigAdd conf={currentConfig} envID={envID} globalConfig={configs[currentConfig.key]}
+                    <ConfigAdd conf={currentConfig} envID={env.id} globalConfig={configs[currentConfig.key]}
                                open={showCreate}
                                showOpen={resetConfig}/>
                     <ConfigEdit conf={currentConfig} open={showUpdate} showOpen={resetConfig}/>

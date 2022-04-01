@@ -9,6 +9,36 @@ import (
 	"github.com/google/uuid"
 )
 
+const featureStateCreateOrUpdate = `-- name: FeatureStateCreateOrUpdate :one
+INSERT INTO feature_states
+(environment_id, feature, enabled)
+VALUES
+    ($1, $2, $3)
+ON CONFLICT (environment_id, feature) DO UPDATE
+    SET
+        enabled = EXCLUDED.enabled
+RETURNING environment_id, feature, enabled, created, last_modified
+`
+
+type FeatureStateCreateOrUpdateParams struct {
+	EnvironmentID uuid.UUID
+	Feature       string
+	Enabled       bool
+}
+
+func (q *Queries) FeatureStateCreateOrUpdate(ctx context.Context, arg FeatureStateCreateOrUpdateParams) (FeatureState, error) {
+	row := q.db.QueryRowContext(ctx, featureStateCreateOrUpdate, arg.EnvironmentID, arg.Feature, arg.Enabled)
+	var i FeatureState
+	err := row.Scan(
+		&i.EnvironmentID,
+		&i.Feature,
+		&i.Enabled,
+		&i.Created,
+		&i.LastModified,
+	)
+	return i, err
+}
+
 const featureStateGet = `-- name: FeatureStateGet :one
 SELECT environment_id, feature, enabled, created, last_modified
 FROM feature_states
@@ -22,36 +52,6 @@ type FeatureStateGetParams struct {
 
 func (q *Queries) FeatureStateGet(ctx context.Context, arg FeatureStateGetParams) (FeatureState, error) {
 	row := q.db.QueryRowContext(ctx, featureStateGet, arg.Feature, arg.EnvironmentID)
-	var i FeatureState
-	err := row.Scan(
-		&i.EnvironmentID,
-		&i.Feature,
-		&i.Enabled,
-		&i.Created,
-		&i.LastModified,
-	)
-	return i, err
-}
-
-const featureStateUpdateOrCreate = `-- name: FeatureStateUpdateOrCreate :one
-INSERT INTO feature_states
-(environment_id, feature, enabled)
-VALUES
-    ($1, $2, $3)
-ON CONFLICT (environment_id, feature) DO UPDATE
-    SET
-        enabled = EXCLUDED.enabled
-RETURNING environment_id, feature, enabled, created, last_modified
-`
-
-type FeatureStateUpdateOrCreateParams struct {
-	EnvironmentID uuid.UUID
-	Feature       string
-	Enabled       bool
-}
-
-func (q *Queries) FeatureStateUpdateOrCreate(ctx context.Context, arg FeatureStateUpdateOrCreateParams) (FeatureState, error) {
-	row := q.db.QueryRowContext(ctx, featureStateUpdateOrCreate, arg.EnvironmentID, arg.Feature, arg.Enabled)
 	var i FeatureState
 	err := row.Scan(
 		&i.EnvironmentID,

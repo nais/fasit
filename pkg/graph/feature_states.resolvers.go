@@ -6,6 +6,7 @@ package graph
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/graph/graphgen"
 	"github.com/nais/fasit/pkg/graph/model"
 )
@@ -17,6 +18,10 @@ func (r *featureStateResolver) Feature(ctx context.Context, obj *model.FeatureSt
 	}
 
 	return marshalFeature(*feature)
+}
+
+func (r *mutationResolver) FeatureStateSave(ctx context.Context, envID uuid.UUID, enabled bool, feature string) (*model.FeatureState, error) {
+	return r.Repo.FeatureStatesCreateOrUpdate(ctx, envID, feature, enabled)
 }
 
 // FeatureState returns graphgen.FeatureStateResolver implementation.

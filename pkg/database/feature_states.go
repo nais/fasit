@@ -29,3 +29,15 @@ func (r *Repo) FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.
 	}
 	return ret, nil
 }
+
+func (r *Repo) FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature string, enabled bool) (*model.FeatureState, error) {
+	res, err := r.querier.FeatureStateCreateOrUpdate(ctx, gensql.FeatureStateCreateOrUpdateParams{
+		EnvironmentID: envID,
+		Feature:       feature,
+		Enabled:       enabled,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return featureStateFromSQL(res), nil
+}

@@ -23,16 +23,16 @@ export const RightJustifiedSubmitButton = ({
     <SubmitButton>
         {onCancel && (
             <Button type={'button'} variant={'danger'} onClick={onCancel}>
-                Avbryt
+                Abort
             </Button>
         )}
         <Button type={'submit'}>
             {loading ? (
                 <>
-                    <Loader /> Lagrer
+                    <Loader /> Saving
                 </>
             ) : (
-                'Lagre'
+                'Save'
             )}
         </Button>
     </SubmitButton>

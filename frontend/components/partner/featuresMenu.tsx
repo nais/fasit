@@ -42,12 +42,17 @@ const MenuItem = styled.div<MenuItemProps>`
   :hover {
     background-color: var(--navds-semantic-color-interaction-primary-hover-subtle);
   }
+`
 
+export const MenuSeparator = styled.div`
+  border-bottom: 1px solid #c0c0c0;
+  margin: 10px 0;
+  margin-left: -10px;
 `
 interface FeaturesMenuProps {
   env: EnvironmentGetQuery['environment']
-
 }
+
 const FeaturesMenu = ({env}: FeaturesMenuProps) => {
   const features = useFeaturesQuery()
   const { data, loading, error } = features
@@ -68,7 +73,7 @@ const FeaturesMenu = ({env}: FeaturesMenuProps) => {
           <a>{f.name}</a>
         </Link></MenuItem>
     })}
-        <hr style={{width: '100%'}}/>
+        <MenuSeparator/>
         {env.featureStates.filter((f) => !f.enabled).map((fs) => {
           const f = fs.feature
           return <MenuItem key={f.name} active={f.name === feature} enabled={fs.enabled}>

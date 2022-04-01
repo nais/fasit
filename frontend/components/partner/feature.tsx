@@ -1,13 +1,16 @@
 import * as React from 'react'
 import styled from 'styled-components'
 import ConfigPage from './configPage'
-import { useFeaturesQuery } from '../../lib/schema/graphql'
+import {EnvironmentGetQuery, useFeaturesQuery} from '../../lib/schema/graphql'
 import LoaderSpinner from '../lib/spinner'
 import ErrorMessage from '../lib/error'
-import { Success } from '@navikt/ds-icons'
-import { navGronn } from '../../styles/constants'
+import {Success} from '@navikt/ds-icons'
+import {navGronn} from '../../styles/constants'
 import IconBox from "../lib/icons/iconBox";
 import GitIcon from "../lib/icons/gitIcon";
+import {Switch} from '@navikt/ds-react'
+import {useState} from "react";
+import EnableFeature from "./enableFeature";
 
 
 const FeatureContainer = styled.div`
@@ -29,35 +32,55 @@ const FeatureStatus = styled.div`
   margin-bottom: 10px;
 `
 
+const EnableFeatureBox = styled.div`
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  background-color: var(--navds-semantic-color-feedback-danger-background);
+  border: 1px solid silver;
+  border-radius: 5px;
+  padding: 10px;
+`
+
 interface FeatureProps {
-  envID: string,
-  featureName: string,
+    env: EnvironmentGetQuery['environment']
+    featureName: string,
 }
 
 
-const Feature = ({ envID, featureName }: FeatureProps) => {
-  const { data, error, loading } = useFeaturesQuery()
-  if (!envID || !featureName) { return <EmptyFeature /> }
+const Feature = ({env, featureName}: FeatureProps) => {
+    const featureState = env.featureStates.find((f) => f.feature.name === featureName)
+    if (!env || !featureState) {
+        return <EmptyFeature/>
+    }
+    const f = featureState.feature
+    const [showVerify, setShowVerify] = useState(false)
 
-  return (
-    <FeatureContainer>
-      <FeatureStatus>
-        {error && <ErrorMessage error={error} />}
-        {loading || !data && <LoaderSpinner />}
-        {data?.features.filter((f) => f.name === featureName).map((f) => {
-          return <div key={f.name} style={{ display: 'flex', flexDirection: 'column' }}>
-            <div>status: <Success style={{ color: navGronn }} /></div>
-            {f.chart && <div>chart: {f.chart}</div>}
-            {f.repo && <div>repo: {f.repo}</div>}
-            {f.version && <div>version: {f.version}</div>}
-              {f.source && <div style={{display: 'flex', width: 'fit-content', gap:'10px'}}><IconBox size={20}><GitIcon/></IconBox> <a href={f.source} target="_blank">{f.source}</a></div>}
-          </div>
-        })}
-      </FeatureStatus>
-      {
-        featureName && envID && <ConfigPage envID={envID} feature={featureName} />
-      }
-    </FeatureContainer>
-  )
+
+    return (
+        <FeatureContainer>
+            <FeatureStatus>
+
+                <div style={{display: 'flex'}} key={f.name}>
+                    <div key={f.name} style={{display: 'flex', flexDirection: 'column', flexGrow: '1'}}>
+                        <div>status: <Success style={{color: navGronn}}/></div>
+                        {f.chart && <div>chart: {f.chart}</div>}
+                        {f.repo && <div>repo: {f.repo}</div>}
+                        {f.version && <div>version: {f.version}</div>}
+                        {f.source && <div style={{display: 'flex', width: 'fit-content', gap: '10px'}}><IconBox
+                            size={20}><GitIcon/></IconBox> <a href={f.source} target="_blank">{f.source}</a></div>}
+                    </div>
+                    <EnableFeatureBox>
+                        <div>Enable {f.name}</div>
+                        <Switch size="medium" checked={featureState.enabled} onChange={() => setShowVerify(true)}>{''}</Switch>
+                    </EnableFeatureBox>
+                </div>
+            </FeatureStatus>
+            {
+                featureName && env && <ConfigPage env={env} feature={featureName}/>
+            }
+            <EnableFeature open={showVerify} onClose={setShowVerify} feature={f.name} envID={env.id} enabled={featureState.enabled}/>
+        </FeatureContainer>
+    )
 }
 export default Feature

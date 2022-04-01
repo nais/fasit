@@ -81,10 +81,10 @@ export type Feature = {
 
 export type FeatureState = {
   __typename?: 'FeatureState'
-  created: Scalars['Time']
+  created?: Maybe<Scalars['Time']>
   enabled: Scalars['Boolean']
   feature: Feature
-  lastModified: Scalars['Time']
+  lastModified?: Maybe<Scalars['Time']>
 }
 
 export type Mutation = {
@@ -95,6 +95,7 @@ export type Mutation = {
   environmentCreate: Environment
   /** updateEnvironment updates an existing environment */
   environmentUpdate: Environment
+  featureStateSave: FeatureState
   partnerCreate: Partner
 }
 
@@ -118,6 +119,12 @@ export type MutationEnvironmentCreateArgs = {
 export type MutationEnvironmentUpdateArgs = {
   id: Scalars['ID']
   input: EnvironmentUpdate
+}
+
+export type MutationFeatureStateSaveArgs = {
+  enabled: Scalars['Boolean']
+  envID: Scalars['ID']
+  feature: Scalars['String']
 }
 
 export type MutationPartnerCreateArgs = {
@@ -291,8 +298,8 @@ export type EnvironmentGetQuery = {
     featureStates: Array<{
       __typename?: 'FeatureState'
       enabled: boolean
-      lastModified: any
-      created: any
+      lastModified?: any | null
+      created?: any | null
       feature: {
         __typename?: 'Feature'
         name: string
@@ -338,6 +345,17 @@ export type FeaturesQuery = {
     source: string
     version: string
   }>
+}
+
+export type FeatureStateSaveMutationVariables = Exact<{
+  envID: Scalars['ID']
+  feature: Scalars['String']
+  enabled: Scalars['Boolean']
+}>
+
+export type FeatureStateSaveMutation = {
+  __typename?: 'Mutation'
+  featureStateSave: { __typename?: 'FeatureState'; enabled: boolean }
 }
 
 export type PartnerCreateMutationVariables = Exact<{
@@ -985,6 +1003,62 @@ export type FeaturesLazyQueryHookResult = ReturnType<
 export type FeaturesQueryResult = Apollo.QueryResult<
   FeaturesQuery,
   FeaturesQueryVariables
+>
+export const FeatureStateSaveDocument = gql`
+  mutation featureStateSave(
+    $envID: ID!
+    $feature: String!
+    $enabled: Boolean!
+  ) {
+    featureStateSave(envID: $envID, feature: $feature, enabled: $enabled) {
+      enabled
+    }
+  }
+`
+export type FeatureStateSaveMutationFn = Apollo.MutationFunction<
+  FeatureStateSaveMutation,
+  FeatureStateSaveMutationVariables
+>
+
+/**
+ * __useFeatureStateSaveMutation__
+ *
+ * To run a mutation, you first call `useFeatureStateSaveMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useFeatureStateSaveMutation` returns a tuple that includes:
+ * - A mutate function that you can call at any time to execute the mutation
+ * - An object with fields that represent the current status of the mutation's execution
+ *
+ * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
+ *
+ * @example
+ * const [featureStateSaveMutation, { data, loading, error }] = useFeatureStateSaveMutation({
+ *   variables: {
+ *      envID: // value for 'envID'
+ *      feature: // value for 'feature'
+ *      enabled: // value for 'enabled'
+ *   },
+ * });
+ */
+export function useFeatureStateSaveMutation(
+  baseOptions?: Apollo.MutationHookOptions<
+    FeatureStateSaveMutation,
+    FeatureStateSaveMutationVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions }
+  return Apollo.useMutation<
+    FeatureStateSaveMutation,
+    FeatureStateSaveMutationVariables
+  >(FeatureStateSaveDocument, options)
+}
+export type FeatureStateSaveMutationHookResult = ReturnType<
+  typeof useFeatureStateSaveMutation
+>
+export type FeatureStateSaveMutationResult =
+  Apollo.MutationResult<FeatureStateSaveMutation>
+export type FeatureStateSaveMutationOptions = Apollo.BaseMutationOptions<
+  FeatureStateSaveMutation,
+  FeatureStateSaveMutationVariables
 >
 export const PartnerCreateDocument = gql`
   mutation partnerCreate($name: String!, $description: String) {

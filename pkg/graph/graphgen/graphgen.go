@@ -93,6 +93,7 @@ type ComplexityRoot struct {
 		ConfigurationUpdate func(childComplexity int, id uuid.UUID, configuration model.UpdateConfiguration) int
 		EnvironmentCreate   func(childComplexity int, environment model.EnvironmentCreate) int
 		EnvironmentUpdate   func(childComplexity int, id uuid.UUID, input model.EnvironmentUpdate) int
+		FeatureStateSave    func(childComplexity int, envID uuid.UUID, enabled bool, feature string) int
 		PartnerCreate       func(childComplexity int, partner model.PartnerCreate) int
 	}
 
@@ -129,6 +130,7 @@ type MutationResolver interface {
 	ConfigurationDelete(ctx context.Context, id uuid.UUID) (bool, error)
 	EnvironmentCreate(ctx context.Context, environment model.EnvironmentCreate) (*model.Environment, error)
 	EnvironmentUpdate(ctx context.Context, id uuid.UUID, input model.EnvironmentUpdate) (*model.Environment, error)
+	FeatureStateSave(ctx context.Context, envID uuid.UUID, enabled bool, feature string) (*model.FeatureState, error)
 }
 type QueryResolver interface {
 	Partners(ctx context.Context) ([]*model.Partner, error)
@@ -397,6 +399,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.EnvironmentUpdate(childComplexity, args["id"].(uuid.UUID), args["input"].(model.EnvironmentUpdate)), true
+
+	case "Mutation.featureStateSave":
+		if e.complexity.Mutation.FeatureStateSave == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_featureStateSave_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.FeatureStateSave(childComplexity, args["envID"].(uuid.UUID), args["enabled"].(bool), args["feature"].(string)), true
 
 	case "Mutation.partnerCreate":
 		if e.complexity.Mutation.PartnerCreate == nil {
@@ -709,7 +723,12 @@ extend type Query {
     enabled: Boolean!
     created: Time
     lastModified: Time
-}`, BuiltIn: false},
+}
+
+extend type Mutation {
+    featureStateSave(envID: ID!, enabled: Boolean!, feature: String!): FeatureState!
+}
+`, BuiltIn: false},
 	{Name: "schema/helm.graphqls", Input: `extend type Query {
 	values(feature: String!, env: ID!): Map!
 }
@@ -845,6 +864,39 @@ func (ec *executionContext) field_Mutation_environmentUpdate_args(ctx context.Co
 		}
 	}
 	args["input"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_featureStateSave_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 uuid.UUID
+	if tmp, ok := rawArgs["envID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("envID"))
+		arg0, err = ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["envID"] = arg0
+	var arg1 bool
+	if tmp, ok := rawArgs["enabled"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("enabled"))
+		arg1, err = ec.unmarshalNBoolean2bool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["enabled"] = arg1
+	var arg2 string
+	if tmp, ok := rawArgs["feature"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("feature"))
+		arg2, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["feature"] = arg2
 	return args, nil
 }
 
@@ -2178,6 +2230,48 @@ func (ec *executionContext) _Mutation_environmentUpdate(ctx context.Context, fie
 	res := resTmp.(*model.Environment)
 	fc.Result = res
 	return ec.marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironment(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_featureStateSave(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   true,
+		IsResolver: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_featureStateSave_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().FeatureStateSave(rctx, args["envID"].(uuid.UUID), args["enabled"].(bool), args["feature"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.FeatureState)
+	fc.Result = res
+	return ec.marshalNFeatureState2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐFeatureState(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Partner_id(ctx context.Context, field graphql.CollectedField, obj *model.Partner) (ret graphql.Marshaler) {
@@ -4546,6 +4640,16 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "featureStateSave":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_featureStateSave(ctx, field)
+			}
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, innerFunc)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5483,6 +5587,10 @@ func (ec *executionContext) marshalNFeature2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkg
 		return graphql.Null
 	}
 	return ec._Feature(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNFeatureState2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐFeatureState(ctx context.Context, sel ast.SelectionSet, v model.FeatureState) graphql.Marshaler {
+	return ec._FeatureState(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNFeatureState2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐFeatureStateᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.FeatureState) graphql.Marshaler {
