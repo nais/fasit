@@ -1,0 +1,4 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/liberator
+source: https://github.com/nais/liberator/tree/main/charts
+version: 0.1.0
+config: {}

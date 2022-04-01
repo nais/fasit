@@ -7,8 +7,10 @@ config:
     type: string
   naiserator.cluster-name:
     type: string
+    required: true
   naiserator.google-project-id:
     type: string
+    required: true
   naiserator.features.linkerd:
     type: bool
   naiserator.features.nais-system:
