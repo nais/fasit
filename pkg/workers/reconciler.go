@@ -92,7 +92,22 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.Reconcil
 	mgr := message.NewPublisher[message.DeployInstruction](r.client, r.projectID, "naisd-"+d.PartnerName+"-"+d.Name, r.log)
 	defer mgr.Stop()
 
+	featureStates, err := r.repo.FeatureStatesGet(ctx, d.ID)
+	if err != nil {
+		return err
+	}
+
+	states := map[string]*model.FeatureState{}
+	for _, s := range featureStates {
+		states[s.FeatureName] = s
+	}
+
 	for _, f := range features {
+		if states[f.Name] == nil || !states[f.Name].Enabled {
+			r.log.WithField("feature", f.Name).Debug("not enabled")
+			continue
+		}
+
 		values, err := r.repo.HelmValues(ctx, f.Name, d.ID, f.RequiredFields())
 		if err != nil {
 			var fer *database.ErrMissingRequiredFields
