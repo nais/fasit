@@ -1,36 +1,26 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring
-version: 0.3.0
+version: 0.4.0
 config:
-  prometheus.server.persistentVolume.size:
+  kube-prometheus-stack.prometheus.prometheusSpec.volumeClaimTemplate.spec.resources.requests.storage:
     type: string
-  prometheus.server.ingress.enabled:
+  kube-prometheus-stack.prometheus.ingress.enabled:
     type: bool
-  prometheus.server.ingress.hosts:
+  kube-prometheus-stack.prometheus.ingress.hosts:
     type: string_array
-  prometheus.server.baseURL:
-    type: string
-  prometheus.alertmanager.persistentVolume.size:
-    type: string
-  prometheus.alertmanager.ingress.enabled:
+  kube-prometheus-stack.grafana.enabled:
     type: bool
-  prometheus.alertmanager.ingress.hosts:
-    type: string_array
-  prometheus.alertmanager.baseURL:
+  kube-prometheus-stack.grafana.adminUser:
     type: string
-  grafana.enabled:
-    type: bool
-  grafana.adminUser:
-    type: string
-  grafana.adminPassword:
+  kube-prometheus-stack.grafana.adminPassword:
     type: secret
-  grafana.grafana\.ini.auth\.anonymous.enabled:
+  kube-prometheus-stack.grafana.grafana\.ini.auth\.anonymous.enabled:
     type: bool
-  grafana.grafana\.ini.auth\.anonymous.org_role:
+  kube-prometheus-stack.grafana.grafana\.ini.auth\.anonymous.org_role:
     type: string
-  grafana.persistence.size:
+  kube-prometheus-stack.grafana.persistence.size:
     type: string
-  grafana.ingress.enabled:
+  kube-prometheus-stack.grafana.ingress.enabled:
     type: bool
-  grafana.ingress.hosts:
+  kube-prometheus-stack.grafana.ingress.hosts:
     type: string_array
