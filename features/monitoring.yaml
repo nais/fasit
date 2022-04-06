@@ -2,6 +2,8 @@ chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring
 version: 0.4.0
 config:
+  kube-prometheus-stack.prometheus.prometheusSpec.retention:
+    type: string
   kube-prometheus-stack.prometheus.prometheusSpec.volumeClaimTemplate.spec.resources.requests.storage:
     type: string
   kube-prometheus-stack.prometheus.ingress.enabled:
