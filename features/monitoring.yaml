@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring
-version: 0.4.0
+version: 0.5.0
 config:
   kube-prometheus-stack.prometheus.prometheusSpec.retention:
     type: string
@@ -26,3 +26,5 @@ config:
     type: bool
   kube-prometheus-stack.grafana.ingress.hosts:
     type: string_array
+  kube-prometheus-stack.nais.additionalScrapeConfigs.kubernetesPods.enabled:
+    type: bool
