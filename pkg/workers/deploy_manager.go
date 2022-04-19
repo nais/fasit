@@ -3,6 +3,7 @@ package workers
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"log"
 	"os"
 	"os/exec"
@@ -13,20 +14,36 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+type DeploymentReceiver interface {
+	Name() string
+	Synchronous()
+	Receive(ctx context.Context, f func(ctx context.Context, msg message.DeployInstruction) error) error
+}
+
+type StatusPublisher interface {
+	Publish(ctx context.Context, msg message.Status) error
+}
+
+type file interface {
+	io.WriteCloser
+	Name() string
+}
+
 type DeployManager struct {
-	deployments *message.Subscriber[message.DeployInstruction]
-	statuses    *message.Publisher[message.Status]
-	kubeConfig  *rest.Config
-	log         *logrus.Entry
-	helmCache   string
-	env         string
-	partnerName string
-	executor    Exec
+	deployments    DeploymentReceiver
+	statuses       StatusPublisher
+	kubeConfig     *rest.Config
+	log            *logrus.Entry
+	helmCache      string
+	env            string
+	partnerName    string
+	executor       Exec
+	createTempFile func(string, string) (file, error)
 }
 
 func NewDeployManager(
-	deploySubscriber *message.Subscriber[message.DeployInstruction],
-	statusPublisher *message.Publisher[message.Status],
+	deploySubscriber DeploymentReceiver,
+	statusPublisher StatusPublisher,
 	partnerName, env string,
 	executor Exec,
 	kubeConfig *rest.Config,
@@ -38,13 +55,15 @@ func NewDeployManager(
 	}
 
 	receiver := &DeployManager{
-		deployments: deploySubscriber,
-		statuses:    statusPublisher,
-		log:         log, helmCache: helmCache,
-		env:         env,
-		partnerName: partnerName,
-		executor:    executor,
-		kubeConfig:  kubeConfig,
+		deployments:    deploySubscriber,
+		statuses:       statusPublisher,
+		log:            log,
+		helmCache:      helmCache,
+		env:            env,
+		partnerName:    partnerName,
+		executor:       executor,
+		kubeConfig:     kubeConfig,
+		createTempFile: func(prefix, suffix string) (file, error) { return os.CreateTemp(prefix, suffix) },
 	}
 
 	return receiver, nil
@@ -67,7 +86,7 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 		"version": msg.Version,
 	}).Debug("Received instruction")
 
-	valuesFile, err := makeHelmValues(msg)
+	valuesFile, err := d.makeHelmValues(msg)
 	if err != nil {
 		return err
 	}
@@ -135,8 +154,8 @@ func (d *DeployManager) runHelm(ctx context.Context, args []string) error {
 	return d.executor.Execute(cmd)
 }
 
-func makeHelmValues(m message.DeployInstruction) (string, error) {
-	file, err := os.CreateTemp("", "values-*.yaml")
+func (d *DeployManager) makeHelmValues(m message.DeployInstruction) (string, error) {
+	file, err := d.createTempFile("", "values-*.yaml")
 	if err != nil {
 		return "", err
 	}

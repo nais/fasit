@@ -8,7 +8,7 @@ import (
 	"errors"
 	"time"
 
-	"cloud.google.com/go/pubsub"
+	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph/model"
@@ -16,25 +16,39 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+type ReconcilerStore interface {
+	ReconcileData(ctx context.Context) ([]*model.ReconcileData, error)
+	StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]*model.Status, error)
+	FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
+	HelmValues(ctx context.Context, feature string, envID uuid.UUID, requiredFields []string) (map[string]any, error)
+}
+
+type Publisher interface {
+	Publish(ctx context.Context, msg message.DeployInstruction) error
+	Stop()
+}
+
+type NewPublisher func(projectID, topicID string, log *logrus.Entry) Publisher
+
 type Reconciler struct {
-	repo       *database.Repo
+	repo       ReconcilerStore
 	featureMgr *feature.Manager
-	client     *pubsub.Client
+	publisher  NewPublisher
 	log        *logrus.Entry
 	projectID  string
 }
 
 func NewReconciler(
-	repo *database.Repo,
+	repo ReconcilerStore,
 	featureMgr *feature.Manager,
-	client *pubsub.Client,
+	publisher NewPublisher,
 	gcpProjectID string,
 	log *logrus.Entry,
 ) *Reconciler {
 	return &Reconciler{
 		repo:       repo,
 		featureMgr: featureMgr,
-		client:     client,
+		publisher:  publisher,
 		log:        log,
 		projectID:  gcpProjectID,
 	}
@@ -91,7 +105,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.Reconcil
 		lookup[s.Feature] = s
 	}
 
-	mgr := message.NewPublisher[message.DeployInstruction](r.client, r.projectID, "naisd-"+d.PartnerName+"-"+d.Name, r.log)
+	mgr := r.publisher(r.projectID, "naisd-"+d.PartnerName+"-"+d.Name, r.log)
 	defer mgr.Stop()
 
 	featureStates, err := r.repo.FeatureStatesGet(ctx, d.ID)

@@ -6,18 +6,27 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/nais/fasit/pkg/database"
+	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/message"
 	"github.com/sirupsen/logrus"
 )
 
+type ReceiverClient interface {
+	Receive(ctx context.Context, f func(ctx context.Context, msg message.Status) error) error
+}
+
+type ReceiverStore interface {
+	EnvironmentIDByNames(ctx context.Context, partnerName string, environmentName string) (uuid.UUID, error)
+	StatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Helm) error
+}
+
 type Receiver struct {
-	manager *message.Subscriber[message.Status]
-	repo    *database.Repo
+	manager ReceiverClient
+	repo    ReceiverStore
 	log     *logrus.Entry
 }
 
-func NewReceiver(mgr *message.Subscriber[message.Status], repo *database.Repo, log *logrus.Entry) *Receiver {
+func NewReceiver(mgr ReceiverClient, repo ReceiverStore, log *logrus.Entry) *Receiver {
 	receiver := &Receiver{manager: mgr, repo: repo, log: log}
 	return receiver
 }

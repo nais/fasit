@@ -8,8 +8,14 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+type Topic interface {
+	Publish(ctx context.Context, msg *pubsub.Message) *pubsub.PublishResult
+	String() string
+	Stop()
+}
+
 type Publisher[T any] struct {
-	topic *pubsub.Topic
+	topic Topic
 	log   *logrus.Entry
 }
 

@@ -21,7 +21,6 @@ import (
 	"github.com/nais/fasit/pkg/graph/graphgen"
 	"github.com/nais/fasit/pkg/message"
 	"github.com/nais/fasit/pkg/workers"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
 )
@@ -29,10 +28,10 @@ import (
 var (
 	cfg = DefaultConfig()
 
-	promErrs = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "fasit",
-		Name:      "errors",
-	}, []string{"location"})
+	// promErrs = prometheus.NewCounterVec(prometheus.CounterOpts{
+	// 	Namespace: "fasit",
+	// 	Name:      "errors",
+	// }, []string{"location"})
 )
 
 func init() {
@@ -81,7 +80,10 @@ func main() {
 	receiver := workers.NewReceiver(statusMgr, repo, log.WithField("subsystem", "status"))
 	go receiver.Run(ctx)
 
-	reconciler := workers.NewReconciler(repo, featureMgr, client, cfg.GCPProjectID, log.WithField("subsystem", "reconciler"))
+	createPublisher := func(projectID, topicID string, log *logrus.Entry) workers.Publisher {
+		return message.NewPublisher[message.DeployInstruction](client, projectID, topicID, log)
+	}
+	reconciler := workers.NewReconciler(repo, featureMgr, createPublisher, cfg.GCPProjectID, log.WithField("subsystem", "reconciler"))
 	go reconciler.Run(ctx, 1*time.Minute)
 
 	resolver := &graph.Resolver{
