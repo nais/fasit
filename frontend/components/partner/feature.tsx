@@ -35,11 +35,8 @@ const FeatureStatus = styled.div`
 const EnableFeatureBox = styled.div`
   display: flex;
   align-items: center;
+  justify-self: center;
   flex-direction: column;
-  background-color: var(--navds-semantic-color-feedback-danger-background);
-  border: 1px solid silver;
-  border-radius: 5px;
-  padding: 10px;
 `
 
 interface FeatureProps {
@@ -63,7 +60,7 @@ const Feature = ({env, featureName}: FeatureProps) => {
     return (
         <FeatureContainer>
             <FeatureStatus>
-                <div style={{display: 'flex'}} key={f.name}>
+                <div style={{display: 'flex', alignItems: 'center'}} key={f.name}>
                     <div key={f.name} style={{display: 'flex', flexDirection: 'column', flexGrow: '1'}}>
                         <div>status: <Success style={{color: navGronn}}/></div>
                         {f.chart && <div>chart: {f.chart}</div>}
@@ -71,12 +68,12 @@ const Feature = ({env, featureName}: FeatureProps) => {
                         {f.version && <div>version: {f.version}</div>}
                         {f.source && <div style={{display: 'flex', width: 'fit-content', gap: '10px'}}><IconBox
                             size={20}><GitIcon/></IconBox> <a href={f.source} target="_blank">{f.source}</a></div>}
-                        {f.dependsOn && <div>dependencies: {f.dependsOn.map((d) => {
-                            return <span style={{color: missingDependencies.includes(d) ? navRod : navGronn}}>{d + " "}</span>
+                        {f.dependsOn.length > 0 && <div>dependencies: {f.dependsOn.map((d) => {
+                            return <span key={d} style={{color: missingDependencies.includes(d) ? navRod : navGronn}}>{d + " "}</span>
                         })}</div>}
                     </div>
                     <EnableFeatureBox>
-                        <div>Enable {f.name}</div>
+                        <div>Enabled</div>
                         <Switch disabled={missingDependencies.length > 0} size="medium" checked={featureState.enabled} onChange={() => setShowVerify(true)}>{''}</Switch>
                         {missingDependencies.length > 0 && "Missing dependencies"}
                     </EnableFeatureBox>

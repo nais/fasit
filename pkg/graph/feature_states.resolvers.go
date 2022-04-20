@@ -21,7 +21,11 @@ func (r *featureStateResolver) Feature(ctx context.Context, obj *model.FeatureSt
 }
 
 func (r *mutationResolver) FeatureStateSave(ctx context.Context, envID uuid.UUID, enabled bool, feature string) (*model.FeatureState, error) {
-	return r.Repo.FeatureStatesCreateOrUpdate(ctx, envID, feature, enabled)
+	feat := r.Resolver.Features.Get(feature)
+	if feat == nil {
+		return nil, nil
+	}
+	return r.Repo.FeatureStatesCreateOrUpdate(ctx, envID, feat, enabled)
 }
 
 // FeatureState returns graphgen.FeatureStateResolver implementation.
