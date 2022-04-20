@@ -2,6 +2,8 @@ chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/naiserator
 source: https://github.com/nais/naiserator/tree/master/charts
 version: 0.1.1
 repo: ""
+depends-on:
+  - "nais-crds"
 config:
   imageTag:
     type: string
@@ -27,3 +29,4 @@ config:
     type: bool
   naiserator.leader-election.image:
     type: string
+

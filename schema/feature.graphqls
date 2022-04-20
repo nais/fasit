@@ -4,6 +4,7 @@ type Feature {
     version: String!
     repo: String!
     source: String!
+    dependsOn: [String!]!
     config: RawMessage!
 }
 extend type Query {
