@@ -1,4 +1,4 @@
-.PHONY: test integration-test local-with-auth local linux-build docker-build docker-push run-postgres-test stop-postgres-test install-sqlc 
+.PHONY: test integration-test local-with-auth local linux-build docker-build docker-push run-postgres-test stop-postgres-test install-sqlc
 SQLC_VERSION ?= "v1.12.0"
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
@@ -24,3 +24,6 @@ local:
 	PUBSUB_EMULATOR_HOST=localhost:8085 go run ./cmd/fasit \
 	--bind-address=127.0.0.1:8080 \
 	--log-level=debug
+
+test:
+	go test -cover ./...
