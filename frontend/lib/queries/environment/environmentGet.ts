@@ -16,6 +16,7 @@ export const ENVIRONMENT_GET = gql`
           name
           version
           chart
+          dependsOn
           repo
           source
           config

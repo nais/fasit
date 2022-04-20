@@ -5,7 +5,7 @@ import {EnvironmentGetQuery, useFeaturesQuery} from '../../lib/schema/graphql'
 import LoaderSpinner from '../lib/spinner'
 import ErrorMessage from '../lib/error'
 import {Success} from '@navikt/ds-icons'
-import {navGronn} from '../../styles/constants'
+import {navGronn, navRod} from '../../styles/constants'
 import IconBox from "../lib/icons/iconBox";
 import GitIcon from "../lib/icons/gitIcon";
 import {Switch} from '@navikt/ds-react'
@@ -55,12 +55,14 @@ const Feature = ({env, featureName}: FeatureProps) => {
     }
     const f = featureState.feature
     const [showVerify, setShowVerify] = useState(false)
+    const missingDependencies = f.dependsOn.filter((dependency) => {
+        return !env.featureStates.find((fs) => fs.feature.name === dependency)?.enabled
+    })
 
 
     return (
         <FeatureContainer>
             <FeatureStatus>
-
                 <div style={{display: 'flex'}} key={f.name}>
                     <div key={f.name} style={{display: 'flex', flexDirection: 'column', flexGrow: '1'}}>
                         <div>status: <Success style={{color: navGronn}}/></div>
@@ -69,10 +71,14 @@ const Feature = ({env, featureName}: FeatureProps) => {
                         {f.version && <div>version: {f.version}</div>}
                         {f.source && <div style={{display: 'flex', width: 'fit-content', gap: '10px'}}><IconBox
                             size={20}><GitIcon/></IconBox> <a href={f.source} target="_blank">{f.source}</a></div>}
+                        {f.dependsOn && <div>dependencies: {f.dependsOn.map((d) => {
+                            return <span style={{color: missingDependencies.includes(d) ? navRod : navGronn}}>{d + " "}</span>
+                        })}</div>}
                     </div>
                     <EnableFeatureBox>
                         <div>Enable {f.name}</div>
-                        <Switch size="medium" checked={featureState.enabled} onChange={() => setShowVerify(true)}>{''}</Switch>
+                        <Switch disabled={missingDependencies.length > 0} size="medium" checked={featureState.enabled} onChange={() => setShowVerify(true)}>{''}</Switch>
+                        {missingDependencies.length > 0 && "Missing dependencies"}
                     </EnableFeatureBox>
                 </div>
             </FeatureStatus>

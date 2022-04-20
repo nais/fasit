@@ -73,6 +73,7 @@ export type Feature = {
   __typename?: 'Feature'
   chart: Scalars['String']
   config: Scalars['RawMessage']
+  dependsOn: Array<Scalars['String']>
   name: Scalars['String']
   repo: Scalars['String']
   source: Scalars['String']
@@ -305,6 +306,7 @@ export type EnvironmentGetQuery = {
         name: string
         version: string
         chart: string
+        dependsOn: Array<string>
         repo: string
         source: string
         config: any
@@ -338,6 +340,7 @@ export type FeaturesQuery = {
   __typename?: 'Query'
   features: Array<{
     __typename?: 'Feature'
+    dependsOn: Array<string>
     name: string
     chart: string
     config: any
@@ -778,6 +781,7 @@ export const EnvironmentGetDocument = gql`
           name
           version
           chart
+          dependsOn
           repo
           source
           config
@@ -950,6 +954,7 @@ export type EnvironmentsGetQueryResult = Apollo.QueryResult<
 export const FeaturesDocument = gql`
   query Features {
     features {
+      dependsOn
       name
       chart
       config

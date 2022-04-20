@@ -44,8 +44,8 @@ const Feature = ({feature}: FeatureProps) => {
                     {feature.chart && <div>chart: {feature.chart}</div>}
                     {feature.repo && <div>repo: {feature.repo}</div>}
                     {feature.source && <div>source: {feature.source}</div>}
-                    {feature.version && <div>version: {feature.version}</div>
-                    }
+                    {feature.version && <div>version: {feature.version}</div>}
+                    {feature.dependsOn && <div>dependencies: {feature.dependsOn.join(", ")}</div>}
                 </div>
             </FeatureStatus>
             <ConfigPage feature={feature} />

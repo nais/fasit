@@ -52,7 +52,7 @@ const EnableFeature = ({open, onClose, feature, envID, enabled}: EnableFeaturePr
             <Box sx={style}>
                 {backendError && <ErrorMessage error={backendError}/>}
                 <form onSubmit={onSubmit}>
-                    Are you sure you want to {!enabled ? 'disable' : 'enable'} {feature}?
+                    Are you sure you want to {enabled ? 'disable' : 'enable'} {feature}?
                         <RightJustifiedSubmitButton onCancel={() => onClose(false)}/>
                 </form>
             </Box>
