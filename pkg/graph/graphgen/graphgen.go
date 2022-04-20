@@ -72,12 +72,13 @@ type ComplexityRoot struct {
 	}
 
 	Feature struct {
-		Chart   func(childComplexity int) int
-		Config  func(childComplexity int) int
-		Name    func(childComplexity int) int
-		Repo    func(childComplexity int) int
-		Source  func(childComplexity int) int
-		Version func(childComplexity int) int
+		Chart     func(childComplexity int) int
+		Config    func(childComplexity int) int
+		DependsOn func(childComplexity int) int
+		Name      func(childComplexity int) int
+		Repo      func(childComplexity int) int
+		Source    func(childComplexity int) int
+		Version   func(childComplexity int) int
 	}
 
 	FeatureState struct {
@@ -283,6 +284,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Feature.Config(childComplexity), true
+
+	case "Feature.dependsOn":
+		if e.complexity.Feature.DependsOn == nil {
+			break
+		}
+
+		return e.complexity.Feature.DependsOn(childComplexity), true
 
 	case "Feature.name":
 		if e.complexity.Feature.Name == nil {
@@ -712,6 +720,7 @@ extend type Mutation {
     version: String!
     repo: String!
     source: String!
+    dependsOn: [String!]!
     config: RawMessage!
 }
 extend type Query {
@@ -1809,6 +1818,41 @@ func (ec *executionContext) _Feature_source(ctx context.Context, field graphql.C
 	res := resTmp.(string)
 	fc.Result = res
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Feature_dependsOn(ctx context.Context, field graphql.CollectedField, obj *model.Feature) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:     "Feature",
+		Field:      field,
+		Args:       nil,
+		IsMethod:   false,
+		IsResolver: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DependsOn, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Feature_config(ctx context.Context, field graphql.CollectedField, obj *model.Feature) (ret graphql.Marshaler) {
@@ -4475,6 +4519,16 @@ func (ec *executionContext) _Feature(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "dependsOn":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Feature_dependsOn(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "config":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Feature_config(ctx, field, obj)
@@ -5785,6 +5839,38 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNString2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalNTime2timeᚐTime(ctx context.Context, v interface{}) (time.Time, error) {

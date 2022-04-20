@@ -13,12 +13,13 @@ func marshalFeature(feature feature.Feature) (*model.Feature, error) {
 		return nil, err
 	}
 	tmp := &model.Feature{
-		Name:    feature.Name,
-		Chart:   feature.Chart,
-		Version: feature.Version,
-		Repo:    feature.Repo,
-		Source:  feature.Source,
-		Config:  config,
+		Name:      feature.Name,
+		Chart:     feature.Chart,
+		Version:   feature.Version,
+		Repo:      feature.Repo,
+		Source:    feature.Source,
+		DependsOn: feature.DependsOn,
+		Config:    config,
 	}
 	return tmp, nil
 }

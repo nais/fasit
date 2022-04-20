@@ -36,12 +36,13 @@ type EnvironmentUpdate struct {
 }
 
 type Feature struct {
-	Name    string          `json:"name"`
-	Chart   string          `json:"chart"`
-	Version string          `json:"version"`
-	Repo    string          `json:"repo"`
-	Source  string          `json:"source"`
-	Config  json.RawMessage `json:"config"`
+	Name      string          `json:"name"`
+	Chart     string          `json:"chart"`
+	Version   string          `json:"version"`
+	Repo      string          `json:"repo"`
+	Source    string          `json:"source"`
+	DependsOn []string        `json:"dependsOn"`
+	Config    json.RawMessage `json:"config"`
 }
 
 type Partner struct {

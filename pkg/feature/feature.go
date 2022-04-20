@@ -13,12 +13,13 @@ import (
 type Config map[string]ConfigType
 
 type Feature struct {
-	Name    string `yaml:"name"`
-	Chart   string `yaml:"chart"`
-	Version string `yaml:"version"`
-	Repo    string `yaml:"repo"`
-	Source  string `yaml:"source"`
-	Config  Config `yaml:"config"`
+	Name      string   `yaml:"name"`
+	Chart     string   `yaml:"chart"`
+	Version   string   `yaml:"version"`
+	Repo      string   `yaml:"repo"`
+	Source    string   `yaml:"source"`
+	DependsOn []string `yaml:"depends-on"`
+	Config    Config   `yaml:"config"`
 }
 
 func (f *Feature) RequiredFields() []string {
