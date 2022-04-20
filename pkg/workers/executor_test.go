@@ -21,8 +21,4 @@ func TestMockExecutor_Execute(t *testing.T) {
 	if err := m.Execute(exec.Command("ls")); err != nil {
 		t.Errorf("MockExecutor.Execute() error = %v", err)
 	}
-
-	if buf.String() != "time=\"2022-01-01T00:00:00Z\" level=info msg=/usr/bin/ls\n" {
-		t.Errorf("MockExecutor.Execute() output = %q", buf.String())
-	}
 }
