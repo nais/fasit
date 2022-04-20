@@ -1,12 +1,53 @@
 package database
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database/gensql"
+	"github.com/nais/fasit/pkg/graph/model"
 )
+
+func TestRepoEnvConfig(t *testing.T) {
+	mq := &MockQuerier{
+		envConfig: func(ctx context.Context, arg gensql.EnvConfigParams) ([]gensql.EnvConfigRow, error) {
+			return []gensql.EnvConfigRow{
+				{
+					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+					Feature: "feature",
+					Secret:  false,
+					Key:     "key",
+					Value:   []byte("value"),
+					Env:     true,
+					Rank:    1,
+				},
+			}, nil
+		},
+	}
+
+	expected := []*model.Configuration{
+		{
+			ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			Feature: "feature",
+			Key:     "key",
+			Value:   []byte("value"),
+			Env:     true,
+		},
+	}
+
+	repo := Repo{querier: mq}
+	ec, err := repo.EnvConfig(context.Background(), "feature", uuid.New())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !cmp.Equal(ec, expected) {
+		t.Error(cmp.Diff(ec, expected))
+	}
+}
 
 func TestHelmConfigMap(t *testing.T) {
 	jsonify := func(v any) json.RawMessage {

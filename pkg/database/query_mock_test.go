@@ -1,0 +1,184 @@
+package database
+
+import (
+	"context"
+	"database/sql"
+
+	"github.com/google/uuid"
+	"github.com/nais/fasit/pkg/database/gensql"
+)
+
+type MockQuerier struct {
+	configDelete               func(ctx context.Context, id uuid.UUID) error
+	configForEnv               func(ctx context.Context, arg gensql.ConfigForEnvParams) ([]gensql.ConfigForEnvRow, error)
+	configGet                  func(ctx context.Context, feature string) ([]gensql.Configuration, error)
+	configGetForEnv            func(ctx context.Context, arg gensql.ConfigGetForEnvParams) ([]gensql.Configuration, error)
+	configUpdate               func(ctx context.Context, arg gensql.ConfigUpdateParams) (gensql.Configuration, error)
+	configUpdateOrCreate       func(ctx context.Context, arg gensql.ConfigUpdateOrCreateParams) (gensql.Configuration, error)
+	envConfig                  func(ctx context.Context, arg gensql.EnvConfigParams) ([]gensql.EnvConfigRow, error)
+	environmentCreate          func(ctx context.Context, arg gensql.EnvironmentCreateParams) (gensql.Environment, error)
+	environmentGet             func(ctx context.Context, id uuid.UUID) (gensql.Environment, error)
+	environmentIDByNames       func(ctx context.Context, arg gensql.EnvironmentIDByNamesParams) (uuid.UUID, error)
+	environmentUpdate          func(ctx context.Context, arg gensql.EnvironmentUpdateParams) (gensql.Environment, error)
+	environmentsGet            func(ctx context.Context, partnerID uuid.UUID) ([]gensql.Environment, error)
+	featureStateCreateOrUpdate func(ctx context.Context, arg gensql.FeatureStateCreateOrUpdateParams) (gensql.FeatureState, error)
+	featureStateGet            func(ctx context.Context, arg gensql.FeatureStateGetParams) (gensql.FeatureState, error)
+	featureStatesGet           func(ctx context.Context, environmentID uuid.UUID) ([]gensql.FeatureState, error)
+	partnerCreate              func(ctx context.Context, arg gensql.PartnerCreateParams) (gensql.Partner, error)
+	partnerGet                 func(ctx context.Context, id uuid.UUID) (gensql.Partner, error)
+	partnersGet                func(ctx context.Context) ([]gensql.Partner, error)
+	reconcileData              func(ctx context.Context) ([]gensql.ReconcileDataRow, error)
+	statusCreateOrUpdate       func(ctx context.Context, arg gensql.StatusCreateOrUpdateParams) error
+	statusForEnvironment       func(ctx context.Context, environmentID uuid.UUID) ([]gensql.Status, error)
+}
+
+func (m *MockQuerier) ConfigDelete(ctx context.Context, id uuid.UUID) error {
+	if m.configDelete == nil {
+		panic("not implemented")
+	}
+	return m.configDelete(ctx, id)
+}
+
+func (m *MockQuerier) ConfigForEnv(ctx context.Context, arg gensql.ConfigForEnvParams) ([]gensql.ConfigForEnvRow, error) {
+	if m.configForEnv == nil {
+		panic("not implemented")
+	}
+	return m.configForEnv(ctx, arg)
+}
+
+func (m *MockQuerier) ConfigGet(ctx context.Context, feature string) ([]gensql.Configuration, error) {
+	if m.configGet == nil {
+		panic("not implemented")
+	}
+	return m.configGet(ctx, feature)
+}
+
+func (m *MockQuerier) ConfigGetForEnv(ctx context.Context, arg gensql.ConfigGetForEnvParams) ([]gensql.Configuration, error) {
+	if m.configGetForEnv == nil {
+		panic("not implemented")
+	}
+	return m.configGetForEnv(ctx, arg)
+}
+
+func (m *MockQuerier) ConfigUpdate(ctx context.Context, arg gensql.ConfigUpdateParams) (gensql.Configuration, error) {
+	if m.configUpdate == nil {
+		panic("not implemented")
+	}
+	return m.configUpdate(ctx, arg)
+}
+
+func (m *MockQuerier) ConfigUpdateOrCreate(ctx context.Context, arg gensql.ConfigUpdateOrCreateParams) (gensql.Configuration, error) {
+	if m.configUpdateOrCreate == nil {
+		panic("not implemented")
+	}
+	return m.configUpdateOrCreate(ctx, arg)
+}
+
+func (m *MockQuerier) EnvConfig(ctx context.Context, arg gensql.EnvConfigParams) ([]gensql.EnvConfigRow, error) {
+	if m.envConfig == nil {
+		panic("not implemented")
+	}
+	return m.envConfig(ctx, arg)
+}
+
+func (m *MockQuerier) EnvironmentCreate(ctx context.Context, arg gensql.EnvironmentCreateParams) (gensql.Environment, error) {
+	if m.environmentCreate == nil {
+		panic("not implemented")
+	}
+	return m.environmentCreate(ctx, arg)
+}
+
+func (m *MockQuerier) EnvironmentGet(ctx context.Context, id uuid.UUID) (gensql.Environment, error) {
+	if m.environmentGet == nil {
+		panic("not implemented")
+	}
+	return m.environmentGet(ctx, id)
+}
+
+func (m *MockQuerier) EnvironmentIDByNames(ctx context.Context, arg gensql.EnvironmentIDByNamesParams) (uuid.UUID, error) {
+	if m.environmentIDByNames == nil {
+		panic("not implemented")
+	}
+	return m.environmentIDByNames(ctx, arg)
+}
+
+func (m *MockQuerier) EnvironmentUpdate(ctx context.Context, arg gensql.EnvironmentUpdateParams) (gensql.Environment, error) {
+	if m.environmentUpdate == nil {
+		panic("not implemented")
+	}
+	return m.environmentUpdate(ctx, arg)
+}
+
+func (m *MockQuerier) EnvironmentsGet(ctx context.Context, partnerID uuid.UUID) ([]gensql.Environment, error) {
+	if m.environmentsGet == nil {
+		panic("not implemented")
+	}
+	return m.environmentsGet(ctx, partnerID)
+}
+
+func (m *MockQuerier) FeatureStateCreateOrUpdate(ctx context.Context, arg gensql.FeatureStateCreateOrUpdateParams) (gensql.FeatureState, error) {
+	if m.featureStateCreateOrUpdate == nil {
+		panic("not implemented")
+	}
+	return m.featureStateCreateOrUpdate(ctx, arg)
+}
+
+func (m *MockQuerier) FeatureStateGet(ctx context.Context, arg gensql.FeatureStateGetParams) (gensql.FeatureState, error) {
+	if m.featureStateGet == nil {
+		panic("not implemented")
+	}
+	return m.featureStateGet(ctx, arg)
+}
+
+func (m *MockQuerier) FeatureStatesGet(ctx context.Context, environmentID uuid.UUID) ([]gensql.FeatureState, error) {
+	if m.featureStatesGet == nil {
+		panic("not implemented")
+	}
+	return m.featureStatesGet(ctx, environmentID)
+}
+
+func (m *MockQuerier) PartnerCreate(ctx context.Context, arg gensql.PartnerCreateParams) (gensql.Partner, error) {
+	if m.partnerCreate == nil {
+		panic("not implemented")
+	}
+	return m.partnerCreate(ctx, arg)
+}
+
+func (m *MockQuerier) PartnerGet(ctx context.Context, id uuid.UUID) (gensql.Partner, error) {
+	if m.partnerGet == nil {
+		panic("not implemented")
+	}
+	return m.partnerGet(ctx, id)
+}
+
+func (m *MockQuerier) PartnersGet(ctx context.Context) ([]gensql.Partner, error) {
+	if m.partnersGet == nil {
+		panic("not implemented")
+	}
+	return m.partnersGet(ctx)
+}
+
+func (m *MockQuerier) ReconcileData(ctx context.Context) ([]gensql.ReconcileDataRow, error) {
+	if m.reconcileData == nil {
+		panic("not implemented")
+	}
+	return m.reconcileData(ctx)
+}
+
+func (m *MockQuerier) StatusCreateOrUpdate(ctx context.Context, arg gensql.StatusCreateOrUpdateParams) error {
+	if m.statusCreateOrUpdate == nil {
+		panic("not implemented")
+	}
+	return m.statusCreateOrUpdate(ctx, arg)
+}
+
+func (m *MockQuerier) StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]gensql.Status, error) {
+	if m.statusForEnvironment == nil {
+		panic("not implemented")
+	}
+	return m.statusForEnvironment(ctx, environmentID)
+}
+
+func (m *MockQuerier) WithTx(tx *sql.Tx) *gensql.Queries {
+	panic("not implemented")
+}

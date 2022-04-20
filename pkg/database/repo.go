@@ -10,12 +10,10 @@ import (
 	"time"
 
 	"github.com/nais/fasit/pkg/database/gensql"
-
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sirupsen/logrus"
-
 	"github.com/pressly/goose/v3"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/qustavo/sqlhooks/v2"
+	"github.com/sirupsen/logrus"
 )
 
 //go:embed migrations/*.sql
