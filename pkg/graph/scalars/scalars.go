@@ -21,15 +21,11 @@ func MarshalUUID(id uuid.UUID) graphql.Marshaler {
 }
 
 func UnmarshalUUID(v any) (uuid.UUID, error) {
-	if v == nil {
-		// should return uuid.nil instead of panicing
-		panic("@ the disco")
-	}
 	switch v := v.(type) {
 	case string:
 		return uuid.Parse(v)
 	default:
-		return uuid.UUID{}, fmt.Errorf("%T is not a string", v)
+		return uuid.Nil, fmt.Errorf("%T is not a string", v)
 	}
 }
 
