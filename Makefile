@@ -27,3 +27,6 @@ local:
 
 test:
 	go test -cover ./...
+
+mocks:
+	mockery --case underscore --name Repo --dir pkg/database/ --outpkg mocks --output pkg/database/mocks

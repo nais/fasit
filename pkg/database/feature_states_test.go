@@ -2,10 +2,11 @@ package database
 
 import (
 	"context"
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/feature"
-	"testing"
 )
 
 func TestRepo_FeatureStateCreateOrUpdate(t *testing.T) {
@@ -41,7 +42,7 @@ func TestRepo_FeatureStateCreateOrUpdate(t *testing.T) {
 				},
 			}
 
-			repo := Repo{querier: mq}
+			repo := repo{querier: mq}
 
 			f := &feature.Feature{
 				Name:      "kake",
@@ -53,6 +54,5 @@ func TestRepo_FeatureStateCreateOrUpdate(t *testing.T) {
 				t.Errorf("expected error %v, got %v", tc.expectError, err)
 			}
 		})
-
 	}
 }

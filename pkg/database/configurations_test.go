@@ -38,7 +38,7 @@ func TestRepoEnvConfig(t *testing.T) {
 		},
 	}
 
-	repo := Repo{querier: mq}
+	repo := repo{querier: mq}
 	ec, err := repo.EnvConfig(context.Background(), "feature", uuid.New())
 	if err != nil {
 		t.Fatal(err)

@@ -38,7 +38,7 @@ func envConfigFromSQL(c gensql.EnvConfigRow) (*model.Configuration, error) {
 	}, nil
 }
 
-func (r *Repo) EnvConfig(ctx context.Context, feature string, envID uuid.UUID) ([]*model.Configuration, error) {
+func (r *repo) EnvConfig(ctx context.Context, feature string, envID uuid.UUID) ([]*model.Configuration, error) {
 	config, err := r.querier.EnvConfig(ctx, gensql.EnvConfigParams{
 		Feature:       feature,
 		EnvironmentID: uuid.NullUUID{UUID: envID, Valid: true},
@@ -58,7 +58,7 @@ func (r *Repo) EnvConfig(ctx context.Context, feature string, envID uuid.UUID) (
 	return retVal, nil
 }
 
-func (r *Repo) ConfigGet(ctx context.Context, feature string) ([]*model.Configuration, error) {
+func (r *repo) ConfigGet(ctx context.Context, feature string) ([]*model.Configuration, error) {
 	config, err := r.querier.ConfigGet(ctx, feature)
 	if err != nil {
 		return nil, err
@@ -75,7 +75,7 @@ func (r *Repo) ConfigGet(ctx context.Context, feature string) ([]*model.Configur
 	return retVal, nil
 }
 
-func (r *Repo) ConfigGetForEnv(ctx context.Context, feature string, envID uuid.UUID) ([]*model.Configuration, error) {
+func (r *repo) ConfigGetForEnv(ctx context.Context, feature string, envID uuid.UUID) ([]*model.Configuration, error) {
 	params := gensql.ConfigGetForEnvParams{
 		Feature:       feature,
 		EnvironmentID: uuid.NullUUID{UUID: envID, Valid: true},
@@ -97,7 +97,7 @@ func (r *Repo) ConfigGetForEnv(ctx context.Context, feature string, envID uuid.U
 	return retVal, nil
 }
 
-func (r *Repo) ConfigCreate(ctx context.Context, c model.NewConfiguration) (*model.Configuration, error) {
+func (r *repo) ConfigCreate(ctx context.Context, c model.NewConfiguration) (*model.Configuration, error) {
 	value, err := json.Marshal(c.Value)
 	if err != nil {
 		return nil, err
@@ -128,7 +128,7 @@ func (r *Repo) ConfigCreate(ctx context.Context, c model.NewConfiguration) (*mod
 	return ret, nil
 }
 
-func (r *Repo) ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration) (*model.Configuration, error) {
+func (r *repo) ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration) (*model.Configuration, error) {
 	conf, err := r.querier.ConfigUpdate(ctx, gensql.ConfigUpdateParams{
 		Description: ptrToNullString(c.Description),
 		Value:       c.Value,
@@ -140,11 +140,11 @@ func (r *Repo) ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateCon
 	return configurationFromSQL(conf)
 }
 
-func (r *Repo) ConfigDelete(ctx context.Context, id uuid.UUID) error {
+func (r *repo) ConfigDelete(ctx context.Context, id uuid.UUID) error {
 	return r.querier.ConfigDelete(ctx, id)
 }
 
-func (r *Repo) HelmValues(ctx context.Context, feature string, envID uuid.UUID, requiredFields []string) (map[string]any, error) {
+func (r *repo) HelmValues(ctx context.Context, feature string, envID uuid.UUID, requiredFields []string) (map[string]any, error) {
 	vals, err := r.querier.ConfigForEnv(ctx, gensql.ConfigForEnvParams{
 		Feature:       feature,
 		EnvironmentID: envID,

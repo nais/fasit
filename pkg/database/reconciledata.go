@@ -8,7 +8,7 @@ import (
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
-func (r *Repo) ReconcileData(ctx context.Context) ([]*model.ReconcileData, error) {
+func (r *repo) ReconcileData(ctx context.Context) ([]*model.ReconcileData, error) {
 	data, err := r.querier.ReconcileData(ctx)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

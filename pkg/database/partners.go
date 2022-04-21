@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+
 	"github.com/google/uuid"
 
 	"github.com/nais/fasit/pkg/database/gensql"
@@ -18,7 +19,7 @@ func partnerFromSQL(p gensql.Partner) *model.Partner {
 	}
 }
 
-func (r *Repo) PartnerCreate(ctx context.Context, p *model.PartnerCreate) (*model.Partner, error) {
+func (r *repo) PartnerCreate(ctx context.Context, p *model.PartnerCreate) (*model.Partner, error) {
 	partner, err := r.querier.PartnerCreate(ctx, gensql.PartnerCreateParams{
 		Name:        p.Name,
 		Description: ptrToNullString(p.Description),
@@ -29,7 +30,7 @@ func (r *Repo) PartnerCreate(ctx context.Context, p *model.PartnerCreate) (*mode
 	return partnerFromSQL(partner), nil
 }
 
-func (r *Repo) PartnerGet(ctx context.Context, id uuid.UUID) (*model.Partner, error) {
+func (r *repo) PartnerGet(ctx context.Context, id uuid.UUID) (*model.Partner, error) {
 	partner, err := r.querier.PartnerGet(ctx, id)
 	if err != nil {
 		return nil, err
@@ -37,7 +38,7 @@ func (r *Repo) PartnerGet(ctx context.Context, id uuid.UUID) (*model.Partner, er
 	return partnerFromSQL(partner), nil
 }
 
-func (r *Repo) PartnersGet(ctx context.Context) ([]*model.Partner, error) {
+func (r *repo) PartnersGet(ctx context.Context) ([]*model.Partner, error) {
 	partners, err := r.querier.PartnersGet(ctx)
 	if err != nil {
 		return nil, err

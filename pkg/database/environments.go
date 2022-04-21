@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/graph/model"
@@ -16,7 +17,8 @@ func environmentFromSQL(p gensql.Environment) *model.Environment {
 		LastModified: p.LastModified,
 	}
 }
-func (r *Repo) EnvironmentGet(ctx context.Context, id uuid.UUID) (*model.Environment, error) {
+
+func (r *repo) EnvironmentGet(ctx context.Context, id uuid.UUID) (*model.Environment, error) {
 	env, err := r.querier.EnvironmentGet(ctx, id)
 	if err != nil {
 		return nil, err
@@ -24,7 +26,7 @@ func (r *Repo) EnvironmentGet(ctx context.Context, id uuid.UUID) (*model.Environ
 	return environmentFromSQL(env), nil
 }
 
-func (r *Repo) EnvironmentsGet(ctx context.Context, partnerID uuid.UUID) ([]*model.Environment, error) {
+func (r *repo) EnvironmentsGet(ctx context.Context, partnerID uuid.UUID) ([]*model.Environment, error) {
 	envs, err := r.querier.EnvironmentsGet(ctx, partnerID)
 	if err != nil {
 		return nil, err
@@ -36,7 +38,7 @@ func (r *Repo) EnvironmentsGet(ctx context.Context, partnerID uuid.UUID) ([]*mod
 	return environmentSlice, nil
 }
 
-func (r *Repo) EnvironmentCreate(ctx context.Context, p *model.EnvironmentCreate) (*model.Environment, error) {
+func (r *repo) EnvironmentCreate(ctx context.Context, p *model.EnvironmentCreate) (*model.Environment, error) {
 	partner, err := r.querier.EnvironmentCreate(ctx, gensql.EnvironmentCreateParams{
 		Name:        p.Name,
 		Description: ptrToNullString(p.Description),
@@ -48,7 +50,7 @@ func (r *Repo) EnvironmentCreate(ctx context.Context, p *model.EnvironmentCreate
 	return environmentFromSQL(partner), nil
 }
 
-func (r *Repo) EnvironmentUpdate(ctx context.Context, environmentID uuid.UUID, p *model.EnvironmentUpdate) (*model.Environment, error) {
+func (r *repo) EnvironmentUpdate(ctx context.Context, environmentID uuid.UUID, p *model.EnvironmentUpdate) (*model.Environment, error) {
 	partner, err := r.querier.EnvironmentUpdate(ctx, gensql.EnvironmentUpdateParams{
 		Description: ptrToNullString(p.Description),
 		ID:          environmentID,
@@ -59,7 +61,7 @@ func (r *Repo) EnvironmentUpdate(ctx context.Context, environmentID uuid.UUID, p
 	return environmentFromSQL(partner), nil
 }
 
-func (r *Repo) EnvironmentIDByNames(ctx context.Context, partnerName, environmentName string) (uuid.UUID, error) {
+func (r *repo) EnvironmentIDByNames(ctx context.Context, partnerName, environmentName string) (uuid.UUID, error) {
 	params := gensql.EnvironmentIDByNamesParams{
 		EnvironmentName: environmentName,
 		PartnerName:     partnerName,

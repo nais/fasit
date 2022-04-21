@@ -9,7 +9,11 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database/gensql"
+	"github.com/nais/fasit/pkg/feature"
+	"github.com/nais/fasit/pkg/graph/model"
+	"github.com/nais/fasit/pkg/message"
 	"github.com/pressly/goose/v3"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/qustavo/sqlhooks/v2"
@@ -19,14 +23,38 @@ import (
 //go:embed migrations/*.sql
 var embedMigrations embed.FS
 
-type Repo struct {
+type Repo interface {
+	ConfigCreate(ctx context.Context, c model.NewConfiguration) (*model.Configuration, error)
+	ConfigDelete(ctx context.Context, id uuid.UUID) error
+	ConfigGet(ctx context.Context, feature string) ([]*model.Configuration, error)
+	ConfigGetForEnv(ctx context.Context, feature string, envID uuid.UUID) ([]*model.Configuration, error)
+	ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration) (*model.Configuration, error)
+	EnvConfig(ctx context.Context, feature string, envID uuid.UUID) ([]*model.Configuration, error)
+	EnvironmentCreate(ctx context.Context, p *model.EnvironmentCreate) (*model.Environment, error)
+	EnvironmentGet(ctx context.Context, id uuid.UUID) (*model.Environment, error)
+	EnvironmentIDByNames(ctx context.Context, partnerName, environmentName string) (uuid.UUID, error)
+	EnvironmentUpdate(ctx context.Context, environmentID uuid.UUID, p *model.EnvironmentUpdate) (*model.Environment, error)
+	EnvironmentsGet(ctx context.Context, partnerID uuid.UUID) ([]*model.Environment, error)
+	FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *feature.Feature, enabled bool) (*model.FeatureState, error)
+	FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
+	HelmValues(ctx context.Context, feature string, envID uuid.UUID, requiredFields []string) (map[string]any, error)
+	Metrics() prometheus.Collector
+	PartnerCreate(ctx context.Context, p *model.PartnerCreate) (*model.Partner, error)
+	PartnerGet(ctx context.Context, id uuid.UUID) (*model.Partner, error)
+	PartnersGet(ctx context.Context) ([]*model.Partner, error)
+	ReconcileData(ctx context.Context) ([]*model.ReconcileData, error)
+	StatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Helm) error
+	StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]*model.Status, error)
+}
+
+type repo struct {
 	querier Querier
 	db      *sql.DB
 	log     *logrus.Entry
 	hooks   *Hooks
 }
 
-func (r *Repo) Metrics() prometheus.Collector {
+func (r *repo) Metrics() prometheus.Collector {
 	return r.hooks.bucket
 }
 
@@ -35,7 +63,7 @@ type Querier interface {
 	WithTx(tx *sql.Tx) *gensql.Queries
 }
 
-func New(driver driver.Driver, dbConnDSN string, log *logrus.Entry) (*Repo, error) {
+func New(driver driver.Driver, dbConnDSN string, log *logrus.Entry) (Repo, error) {
 	log.Info("creating new driver")
 	hooks := NewHooks()
 	sql.Register("psqlhooked", sqlhooks.Wrap(driver, hooks))
@@ -62,7 +90,7 @@ func New(driver driver.Driver, dbConnDSN string, log *logrus.Entry) (*Repo, erro
 	}
 	log.Info("successfully migrated")
 
-	return &Repo{
+	return &repo{
 		querier: gensql.New(db),
 		db:      db,
 		log:     log,

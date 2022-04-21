@@ -11,7 +11,7 @@ import (
 	"github.com/nais/fasit/pkg/message"
 )
 
-func (r *Repo) StatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Helm) error {
+func (r *repo) StatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Helm) error {
 	return r.querier.StatusCreateOrUpdate(ctx, gensql.StatusCreateOrUpdateParams{
 		EnvironmentID: environmentID,
 		Feature:       h.Name,
@@ -21,7 +21,7 @@ func (r *Repo) StatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID
 	})
 }
 
-func (r *Repo) StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]*model.Status, error) {
+func (r *repo) StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]*model.Status, error) {
 	status, err := r.querier.StatusForEnvironment(ctx, environmentID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

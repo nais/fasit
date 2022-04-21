@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
+
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/feature"
@@ -18,7 +19,7 @@ func featureStateFromSQL(state gensql.FeatureState) *model.FeatureState {
 	}
 }
 
-func (r *Repo) FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error) {
+func (r *repo) FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error) {
 	featureStates, err := r.querier.FeatureStatesGet(ctx, envID)
 	if err != nil {
 		return nil, err
@@ -31,7 +32,7 @@ func (r *Repo) FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.
 	return ret, nil
 }
 
-func (r *Repo) FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *feature.Feature, enabled bool) (*model.FeatureState, error) {
+func (r *repo) FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *feature.Feature, enabled bool) (*model.FeatureState, error) {
 	if len(feature.DependsOn) > 0 {
 		states, err := r.querier.FeatureStatesGet(ctx, envID)
 		if err != nil {
