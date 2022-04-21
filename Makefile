@@ -15,7 +15,7 @@ generate-sql:
 	$(GOBIN)/sqlc generate
 
 generate-graphql:
-	go get -d github.com/99designs/gqlgen@latest && go run github.com/99designs/gqlgen generate
+	go run github.com/99designs/gqlgen generate
 
 setup:
 	go run cmd/setup_pubsub/main.go
