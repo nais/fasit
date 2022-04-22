@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"database/sql"
-	"database/sql/driver"
 	"embed"
 	"fmt"
 	"regexp"
@@ -16,7 +15,6 @@ import (
 	"github.com/nais/fasit/pkg/message"
 	"github.com/pressly/goose/v3"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/qustavo/sqlhooks/v2"
 	"github.com/sirupsen/logrus"
 )
 
@@ -63,17 +61,23 @@ type Querier interface {
 	WithTx(tx *sql.Tx) *gensql.Queries
 }
 
-func New(driver driver.Driver, dbConnDSN string, log *logrus.Entry) (Repo, error) {
-	log.Info("creating new driver")
-	hooks := NewHooks()
-	sql.Register("psqlhooked", sqlhooks.Wrap(driver, hooks))
-	log.Info("registered")
+func New(db *sql.DB, log *logrus.Entry) Repo {
+	return &repo{
+		querier: gensql.New(db),
+		db:      db,
+		log:     log,
+	}
+}
 
-	db, err := sql.Open("psqlhooked", dbConnDSN)
+func NewDB(driver, dbConnDSN string) (*sql.DB, error) {
+	// TODO(thokra): Remove the prometheus hook to main
+	// hooks := NewHooks()
+	// sql.Register("psqlhooked", sqlhooks.Wrap(driver, hooks))
+
+	db, err := sql.Open(driver, dbConnDSN)
 	if err != nil {
 		return nil, fmt.Errorf("open sql connection: %w", err)
 	}
-	log.Info("successfully opened connection")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	err = db.PingContext(ctx)
@@ -81,21 +85,16 @@ func New(driver driver.Driver, dbConnDSN string, log *logrus.Entry) (Repo, error
 		return nil, err
 	}
 
-	log.Info("successfully pinged connection")
+	return db, err
+}
 
+func Migrate(db *sql.DB, log *logrus.Entry) error {
 	goose.SetBaseFS(embedMigrations)
-
+	goose.SetLogger(log)
 	if err := goose.Up(db, "migrations"); err != nil {
-		return nil, fmt.Errorf("goose up: %w", err)
+		return fmt.Errorf("goose up: %w", err)
 	}
-	log.Info("successfully migrated")
-
-	return &repo{
-		querier: gensql.New(db),
-		db:      db,
-		log:     log,
-		hooks:   hooks,
-	}, nil
+	return nil
 }
 
 // Hooks satisfies the sqlhook.Hooks interface

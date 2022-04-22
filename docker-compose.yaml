@@ -1,8 +1,8 @@
-version: '3.1'
+version: "3.1"
 
 services:
   db:
-    image: postgres
+    image: postgres:14
     restart: always
     environment:
       POSTGRES_PASSWORD: postgres
@@ -19,7 +19,7 @@ services:
 
   pubsub:
     image: google/cloud-sdk
-    command: 
+    command:
       - gcloud
       - beta
       - emulators

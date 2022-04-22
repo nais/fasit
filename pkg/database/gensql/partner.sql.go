@@ -54,6 +54,7 @@ func (q *Queries) PartnerGet(ctx context.Context, id uuid.UUID) (Partner, error)
 const partnersGet = `-- name: PartnersGet :many
 SELECT id, name, description, created, last_modified
 FROM partners
+ORDER BY created DESC, name ASC
 `
 
 func (q *Queries) PartnersGet(ctx context.Context) ([]Partner, error) {

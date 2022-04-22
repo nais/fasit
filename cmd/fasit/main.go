@@ -2,18 +2,19 @@ package main
 
 import (
 	"context"
-	"database/sql/driver"
 	"flag"
 	"net/http"
 	"os"
 	"strings"
 	"time"
 
+	// Supported database drivers.
+	_ "github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/postgres"
+	_ "github.com/lib/pq"
+
 	"cloud.google.com/go/pubsub"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
-	"github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/postgres"
-	"github.com/lib/pq"
 	"github.com/nais/fasit"
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/feature"
@@ -25,14 +26,10 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var (
-	cfg = DefaultConfig()
-
-	// promErrs = prometheus.NewCounterVec(prometheus.CounterOpts{
-	// 	Namespace: "fasit",
-	// 	Name:      "errors",
-	// }, []string{"location"})
-)
+var cfg = DefaultConfig() // promErrs = prometheus.NewCounterVec(prometheus.CounterOpts{
+// 	Namespace: "fasit",
+// 	Name:      "errors",
+// }, []string{"location"})
 
 func init() {
 	flag.StringVar(&cfg.BindAddress, "bind-address", cfg.BindAddress, "Bind address")
@@ -59,15 +56,20 @@ func main() {
 	log.Info("-- successfully started pubsub client")
 
 	log.Info("starting database client")
-	var dbDriver driver.Driver = pq.Driver{}
+	dbDriver := "postgres"
 	if !strings.Contains(cfg.DBConnectionDSN, "://") {
-		dbDriver = &postgres.Driver{}
+		dbDriver = "cloudsqlpostgres"
 	}
 
-	repo, err := database.New(dbDriver, cfg.DBConnectionDSN, log.WithField("subsystem", "repo"))
+	db, err := database.NewDB(dbDriver, cfg.DBConnectionDSN)
 	if err != nil {
 		log.WithError(err).Fatal("setting up database")
 	}
+	if err := database.Migrate(db, log.WithField("subsystem", "migrate")); err != nil {
+		log.WithError(err).Fatal("migrating database")
+	}
+
+	repo := database.New(db, log.WithField("subsystem", "repo"))
 	log.Info("-- successfully started database client")
 
 	featureMgr, err := feature.New(fasit.FeaturesFS)
