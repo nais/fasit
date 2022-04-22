@@ -17,6 +17,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: asdf-vm/actions/install@v1
+        with:
+          asdf_branch: v0.10.0
       - run: go version
       - run: go test ./...
   build_and_push_naisd:
