@@ -20,7 +20,7 @@ jobs:
         with:
           asdf_branch: v0.10.0
       - run: go version
-      - run: go test ./...
+      - run: go test -cover -tags integration_tests ./...
   build_and_push_naisd:
     needs: [test]
     permissions:
