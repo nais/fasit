@@ -96,9 +96,11 @@ func Test_queryResolver_Configuration_Empty_Defaults_Are_Set(t *testing.T) {
 		{Feature: "feature", Key: "stringArray", Value: json.RawMessage("null"), Type: model.ConfigTypeStringArray},
 	}
 
-	if !cmp.Equal(want, got, cmpopts.SortSlices(func(a, b *model.Configuration) bool {
+	opts := cmpopts.SortSlices(func(a, b *model.Configuration) bool {
 		return strings.Compare(a.Key, b.Key) < 0
-	})) {
-		t.Errorf("diff -want +got:\n%v", cmp.Diff(want, got))
+	})
+
+	if !cmp.Equal(want, got, opts) {
+		t.Errorf("diff -want +got:\n%v", cmp.Diff(want, got, opts))
 	}
 }

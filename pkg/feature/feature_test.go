@@ -1,10 +1,12 @@
 package feature
 
 import (
+	"strings"
 	"testing"
 	"testing/fstest"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
@@ -41,10 +43,13 @@ func TestFeature_RequiredFields(t *testing.T) {
 			f := Feature{
 				Config: test.Config,
 			}
-			rf := f.RequiredFields()
+			got := f.RequiredFields()
 
-			if !cmp.Equal(rf, test.expected) {
-				t.Error(cmp.Diff(rf, test.expected))
+			opts := cmpopts.SortSlices(func(a, b string) bool {
+				return strings.Compare(a, b) < 0
+			})
+			if !cmp.Equal(test.expected, got, opts) {
+				t.Errorf("diff -want +got:\n%v", cmp.Diff(test.expected, got, opts))
 			}
 		})
 	}
