@@ -1,3 +1,5 @@
+//go:build integration_test
+
 package database
 
 import (
@@ -8,11 +10,11 @@ import (
 	"testing"
 
 	_ "github.com/lib/pq"
-	"github.com/sirupsen/logrus"
 
 	"github.com/DATA-DOG/go-txdb"
 	"github.com/ory/dockertest/v3"
 	"github.com/ory/dockertest/v3/docker"
+	"github.com/sirupsen/logrus"
 )
 
 var dbString string

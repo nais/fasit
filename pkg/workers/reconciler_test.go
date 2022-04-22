@@ -19,8 +19,8 @@ var reconcileTests = map[string]struct {
 }{
 	"all empty": {
 		store: &mockStore{
-			reconcileData: []*model.ReconcileData{},
-			status:        []*model.Status{},
+			partnerEnvironments: []*model.PartnerEnvironments{},
+			status:              []*model.Status{},
 		},
 		want: []message.DeployInstruction{},
 	},
@@ -40,7 +40,7 @@ var reconcileTests = map[string]struct {
 					Enabled:     true,
 				},
 			},
-			reconcileData: []*model.ReconcileData{
+			partnerEnvironments: []*model.PartnerEnvironments{
 				{
 					Environment: model.Environment{
 						Name: "prod",
@@ -75,7 +75,7 @@ var reconcileTests = map[string]struct {
 					Enabled:     true,
 				},
 			},
-			reconcileData: []*model.ReconcileData{
+			partnerEnvironments: []*model.PartnerEnvironments{
 				{
 					Environment: model.Environment{
 						Name: "prod",
@@ -118,7 +118,7 @@ var reconcileTests = map[string]struct {
 					Enabled:     false,
 				},
 			},
-			reconcileData: []*model.ReconcileData{
+			partnerEnvironments: []*model.PartnerEnvironments{
 				{
 					Environment: model.Environment{
 						Name: "prod",
@@ -162,7 +162,7 @@ var reconcileTests = map[string]struct {
 					Enabled:     true,
 				},
 			},
-			reconcileData: []*model.ReconcileData{
+			partnerEnvironments: []*model.PartnerEnvironments{
 				{
 					Environment: model.Environment{
 						Name: "prod",
@@ -216,14 +216,14 @@ func TestReconcile(t *testing.T) {
 }
 
 type mockStore struct {
-	reconcileData []*model.ReconcileData
-	status        []*model.Status
-	featureStates []*model.FeatureState
-	helmValues    map[string]any
+	partnerEnvironments []*model.PartnerEnvironments
+	status              []*model.Status
+	featureStates       []*model.FeatureState
+	helmValues          map[string]any
 }
 
-func (m *mockStore) ReconcileData(ctx context.Context) ([]*model.ReconcileData, error) {
-	return m.reconcileData, nil
+func (m *mockStore) PartnerEnvironments(ctx context.Context) ([]*model.PartnerEnvironments, error) {
+	return m.partnerEnvironments, nil
 }
 
 func (m *mockStore) StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]*model.Status, error) {

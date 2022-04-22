@@ -1,6 +1,6 @@
 package model
 
-type ReconcileData struct {
+type PartnerEnvironments struct {
 	Environment
 	PartnerName string
 }

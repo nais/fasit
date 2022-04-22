@@ -2,6 +2,8 @@ package database
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 
 	"github.com/google/uuid"
 
@@ -48,4 +50,30 @@ func (r *repo) PartnersGet(ctx context.Context) ([]*model.Partner, error) {
 		partnerSlice = append(partnerSlice, partnerFromSQL(partner))
 	}
 	return partnerSlice, nil
+}
+
+func (r *repo) PartnerEnvironments(ctx context.Context) ([]*model.PartnerEnvironments, error) {
+	data, err := r.querier.PartnerEnvironments(ctx)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	var ret []*model.PartnerEnvironments
+	for _, d := range data {
+		ret = append(ret, &model.PartnerEnvironments{
+			Environment: model.Environment{
+				ID:           d.ID,
+				Name:         d.Name,
+				Description:  nullStringToPtr(d.Description),
+				Created:      d.Created,
+				LastModified: d.LastModified,
+			},
+			PartnerName: d.PartnerName,
+		})
+	}
+
+	return ret, nil
 }

@@ -25,9 +25,9 @@ type Querier interface {
 	FeatureStateGet(ctx context.Context, arg FeatureStateGetParams) (FeatureState, error)
 	FeatureStatesGet(ctx context.Context, environmentID uuid.UUID) ([]FeatureState, error)
 	PartnerCreate(ctx context.Context, arg PartnerCreateParams) (Partner, error)
+	PartnerEnvironments(ctx context.Context) ([]PartnerEnvironmentsRow, error)
 	PartnerGet(ctx context.Context, id uuid.UUID) (Partner, error)
 	PartnersGet(ctx context.Context) ([]Partner, error)
-	ReconcileData(ctx context.Context) ([]ReconcileDataRow, error)
 	StatusCreateOrUpdate(ctx context.Context, arg StatusCreateOrUpdateParams) error
 	StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]Status, error)
 }

@@ -6,6 +6,7 @@ package gensql
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -30,6 +31,54 @@ func (q *Queries) PartnerCreate(ctx context.Context, arg PartnerCreateParams) (P
 		&i.LastModified,
 	)
 	return i, err
+}
+
+const partnerEnvironments = `-- name: PartnerEnvironments :many
+SELECT e.id, e.partner_id, e.name, e.description, e.created, e.last_modified, p.name AS partner_name
+FROM environments e
+JOIN partners p ON e.partner_id = p.id
+ORDER BY p.name, e.name
+`
+
+type PartnerEnvironmentsRow struct {
+	ID           uuid.UUID
+	PartnerID    uuid.UUID
+	Name         string
+	Description  sql.NullString
+	Created      time.Time
+	LastModified time.Time
+	PartnerName  string
+}
+
+func (q *Queries) PartnerEnvironments(ctx context.Context) ([]PartnerEnvironmentsRow, error) {
+	rows, err := q.db.QueryContext(ctx, partnerEnvironments)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []PartnerEnvironmentsRow{}
+	for rows.Next() {
+		var i PartnerEnvironmentsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.PartnerID,
+			&i.Name,
+			&i.Description,
+			&i.Created,
+			&i.LastModified,
+			&i.PartnerName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const partnerGet = `-- name: PartnerGet :one

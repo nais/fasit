@@ -17,7 +17,7 @@ import (
 )
 
 type ReconcilerStore interface {
-	ReconcileData(ctx context.Context) ([]*model.ReconcileData, error)
+	PartnerEnvironments(ctx context.Context) ([]*model.PartnerEnvironments, error)
 	StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]*model.Status, error)
 	FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
 	HelmValues(ctx context.Context, feature string, envID uuid.UUID, requiredFields []string) (map[string]any, error)
@@ -72,7 +72,7 @@ func (r *Reconciler) Run(ctx context.Context, interval time.Duration) {
 }
 
 func (r *Reconciler) reconcile(ctx context.Context) error {
-	data, err := r.repo.ReconcileData(ctx)
+	data, err := r.repo.PartnerEnvironments(ctx)
 	if err != nil {
 		return err
 	}
@@ -92,7 +92,7 @@ func (r *Reconciler) reconcile(ctx context.Context) error {
 	return nil
 }
 
-func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.ReconcileData) error {
+func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.PartnerEnvironments) error {
 	features := r.featureMgr.Features[:]
 
 	envStatus, err := r.repo.StatusForEnvironment(ctx, d.ID)

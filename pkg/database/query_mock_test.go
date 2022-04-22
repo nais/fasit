@@ -27,7 +27,7 @@ type MockQuerier struct {
 	partnerCreate              func(ctx context.Context, arg gensql.PartnerCreateParams) (gensql.Partner, error)
 	partnerGet                 func(ctx context.Context, id uuid.UUID) (gensql.Partner, error)
 	partnersGet                func(ctx context.Context) ([]gensql.Partner, error)
-	reconcileData              func(ctx context.Context) ([]gensql.ReconcileDataRow, error)
+	partnerEnvironments        func(ctx context.Context) ([]gensql.PartnerEnvironmentsRow, error)
 	statusCreateOrUpdate       func(ctx context.Context, arg gensql.StatusCreateOrUpdateParams) error
 	statusForEnvironment       func(ctx context.Context, environmentID uuid.UUID) ([]gensql.Status, error)
 }
@@ -158,11 +158,11 @@ func (m *MockQuerier) PartnersGet(ctx context.Context) ([]gensql.Partner, error)
 	return m.partnersGet(ctx)
 }
 
-func (m *MockQuerier) ReconcileData(ctx context.Context) ([]gensql.ReconcileDataRow, error) {
-	if m.reconcileData == nil {
+func (m *MockQuerier) PartnerEnvironments(ctx context.Context) ([]gensql.PartnerEnvironmentsRow, error) {
+	if m.partnerEnvironments == nil {
 		panic("not implemented")
 	}
-	return m.reconcileData(ctx)
+	return m.partnerEnvironments(ctx)
 }
 
 func (m *MockQuerier) StatusCreateOrUpdate(ctx context.Context, arg gensql.StatusCreateOrUpdateParams) error {

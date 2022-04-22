@@ -377,6 +377,29 @@ func (_m *Repo) PartnerCreate(ctx context.Context, p *model.PartnerCreate) (*mod
 	return r0, r1
 }
 
+// PartnerEnvironments provides a mock function with given fields: ctx
+func (_m *Repo) PartnerEnvironments(ctx context.Context) ([]*model.PartnerEnvironments, error) {
+	ret := _m.Called(ctx)
+
+	var r0 []*model.PartnerEnvironments
+	if rf, ok := ret.Get(0).(func(context.Context) []*model.PartnerEnvironments); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.PartnerEnvironments)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // PartnerGet provides a mock function with given fields: ctx, id
 func (_m *Repo) PartnerGet(ctx context.Context, id uuid.UUID) (*model.Partner, error) {
 	ret := _m.Called(ctx, id)
@@ -410,29 +433,6 @@ func (_m *Repo) PartnersGet(ctx context.Context) ([]*model.Partner, error) {
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*model.Partner)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// ReconcileData provides a mock function with given fields: ctx
-func (_m *Repo) ReconcileData(ctx context.Context) ([]*model.ReconcileData, error) {
-	ret := _m.Called(ctx)
-
-	var r0 []*model.ReconcileData
-	if rf, ok := ret.Get(0).(func(context.Context) []*model.ReconcileData); ok {
-		r0 = rf(ctx)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.ReconcileData)
 		}
 	}
 

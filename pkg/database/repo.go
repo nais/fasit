@@ -40,7 +40,7 @@ type Repo interface {
 	PartnerCreate(ctx context.Context, p *model.PartnerCreate) (*model.Partner, error)
 	PartnerGet(ctx context.Context, id uuid.UUID) (*model.Partner, error)
 	PartnersGet(ctx context.Context) ([]*model.Partner, error)
-	ReconcileData(ctx context.Context) ([]*model.ReconcileData, error)
+	PartnerEnvironments(ctx context.Context) ([]*model.PartnerEnvironments, error)
 	StatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Helm) error
 	StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]*model.Status, error)
 }
