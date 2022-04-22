@@ -70,8 +70,6 @@ jobs:
           labels: ${{ steps.metadata.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          - wait for tests
-          - push
   deploy_fasit:
     runs-on: [ 'fasit' ]
     needs: [ 'build_and_push_fasit' ]
