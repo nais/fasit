@@ -25,6 +25,7 @@ func (r *mutationResolver) ConfigurationUpdate(ctx context.Context, id uuid.UUID
 }
 
 func (r *mutationResolver) ConfigurationDelete(ctx context.Context, id uuid.UUID) (bool, error) {
+	// TODO(thokra): Make this soft delete?
 	if err := r.Repo.ConfigDelete(ctx, id); err != nil {
 		return false, err
 	}

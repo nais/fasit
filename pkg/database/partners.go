@@ -2,8 +2,6 @@ package database
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 
 	"github.com/google/uuid"
 
@@ -55,9 +53,6 @@ func (r *repo) PartnersGet(ctx context.Context) ([]*model.Partner, error) {
 func (r *repo) PartnerEnvironments(ctx context.Context) ([]*model.PartnerEnvironments, error) {
 	data, err := r.querier.PartnerEnvironments(ctx)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
-		}
 		return nil, err
 	}
 

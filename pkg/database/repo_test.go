@@ -9,10 +9,10 @@ import (
 	"os"
 	"testing"
 
-	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 
 	"github.com/DATA-DOG/go-txdb"
+	"github.com/google/uuid"
 	"github.com/ory/dockertest/v3"
 	"github.com/ory/dockertest/v3/docker"
 	"github.com/sirupsen/logrus"

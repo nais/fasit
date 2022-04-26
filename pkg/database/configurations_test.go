@@ -4,8 +4,11 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -262,6 +265,7 @@ func TestRepo_ConfigCreate_Global(t *testing.T) {
 func TestRepo_ConfigUpdate_Environment(t *testing.T) {
 	repo := newTestRepo(t)
 	defer repo.Close()
+
 	envid := uuid.Nil
 	config := model.NewConfiguration{
 		EnvironmentID: &envid,
@@ -271,17 +275,22 @@ func TestRepo_ConfigUpdate_Environment(t *testing.T) {
 		Value:         []byte(`"stringval"`),
 		Secret:        true,
 	}
+	// Create
 	got, err := repo.ConfigCreate(context.Background(), config)
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	got, err = repo.ConfigUpdate(context.Background(), got.ID, model.UpdateConfiguration{
+		Value: []byte(`"newval"`),
+	})
+
 	want := &model.Configuration{
 		EnvironmentID: config.EnvironmentID,
 		Feature:       config.Feature,
 		Key:           config.Key,
-		Description:   config.Description,
-		Value:         config.Value,
+		Description:   nil,
+		Value:         []byte(`"newval"`),
 		Secret:        config.Secret,
 		Env:           false,
 	}
@@ -289,5 +298,124 @@ func TestRepo_ConfigUpdate_Environment(t *testing.T) {
 	opts := cmpopts.IgnoreFields(model.Configuration{}, "ID", "Created")
 	if !cmp.Equal(want, got, opts) {
 		t.Errorf("diff -want +got:\n%v", cmp.Diff(want, got, opts))
+	}
+}
+
+func TestRepo_ConfigDelete(t *testing.T) {
+	r := newTestRepo(t)
+	defer r.Close()
+
+	config := model.NewConfiguration{
+		Feature: "feature9",
+		Key:     "my.key",
+		Value:   []byte(`"stringval"`),
+	}
+	// Create
+	got, err := r.ConfigCreate(context.Background(), config)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = r.ConfigDelete(context.Background(), got.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = r.(*repo).db.QueryRow(`SELECT id FROM configurations WHERE id = $1`, got.ID).Scan()
+	if err != sql.ErrNoRows {
+		t.Errorf("got: %v, want %v", err, sql.ErrNoRows)
+	}
+}
+
+func TestRepo_HelmValues_OK(t *testing.T) {
+	r := newTestRepo(t)
+	defer r.Close()
+
+	envid := uuid.New()
+	config := model.NewConfiguration{
+		EnvironmentID: &envid,
+		Feature:       "feature5",
+		Key:           "my.key",
+		Value:         []byte(`"stringval"`),
+		Secret:        true,
+	}
+	// Create
+	_, err := r.ConfigCreate(context.Background(), config)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got, err := r.HelmValues(context.Background(), "feature5", envid, []string{"my.key"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := map[string]any{
+		"my": map[string]any{
+			"key": json.RawMessage(`"stringval"`),
+		},
+	}
+
+	if !cmp.Equal(want, got) {
+		t.Errorf("diff -want +got:\n%v", cmp.Diff(want, got))
+	}
+}
+
+func TestRepo_HelmValues_MissingRequiredField(t *testing.T) {
+	r := newTestRepo(t)
+	defer r.Close()
+
+	envid := uuid.New()
+	config := model.NewConfiguration{
+		EnvironmentID: &envid,
+		Feature:       "feature5",
+		Key:           "my.key",
+		Value:         []byte(`"stringval"`),
+		Secret:        true,
+	}
+	// Create
+	_, err := r.ConfigCreate(context.Background(), config)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = r.HelmValues(context.Background(), "feature5", envid, []string{"no.key"})
+	if !errors.Is(err, &ErrMissingRequiredFields{}) {
+		t.Errorf("got: %v, want ErrMissingRequiredFields", err)
+	}
+}
+
+func TestRepo_HelmValues_InvaldKeyNesting(t *testing.T) {
+	r := newTestRepo(t)
+	defer r.Close()
+
+	envid := uuid.New()
+	config := model.NewConfiguration{
+		EnvironmentID: &envid,
+		Feature:       "feature5",
+		Key:           "my.key",
+		Value:         []byte(`"stringval"`),
+		Secret:        true,
+	}
+	config2 := model.NewConfiguration{
+		EnvironmentID: &envid,
+		Feature:       "feature5",
+		Key:           "my",
+		Value:         []byte(`15`),
+		Secret:        true,
+	}
+	// Create
+	_, err := r.ConfigCreate(context.Background(), config2)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = r.ConfigCreate(context.Background(), config)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = r.HelmValues(context.Background(), "feature5", envid, nil)
+	if err == nil || !strings.HasSuffix(err.Error(), "is not nestable") {
+		t.Errorf("got: %v, want \"key `key` is not nestable\"", err)
 	}
 }
