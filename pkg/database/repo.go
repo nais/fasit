@@ -43,6 +43,7 @@ type Repo interface {
 	PartnerEnvironments(ctx context.Context) ([]*model.PartnerEnvironments, error)
 	StatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Helm) error
 	StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]*model.Status, error)
+	Close() error
 }
 
 type repo struct {
@@ -139,4 +140,8 @@ func nameFromQuery(q string) string {
 		return submatch[1]
 	}
 	return "Unknown"
+}
+
+func (r *repo) Close() error {
+	return r.db.Close()
 }

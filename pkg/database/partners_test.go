@@ -14,7 +14,8 @@ import (
 )
 
 func Test_repo_PartnerCreate(t *testing.T) {
-	repo := newTestRepo(t, "partner_create")
+	repo := newTestRepo(t)
+	defer repo.Close()
 
 	ctx := context.Background()
 
@@ -28,7 +29,8 @@ func Test_repo_PartnerCreate(t *testing.T) {
 }
 
 func Test_repo_PartnerGet(t *testing.T) {
-	repo := newTestRepo(t, "partner_get")
+	repo := newTestRepo(t)
+	defer repo.Close()
 
 	ctx := context.Background()
 
@@ -58,7 +60,8 @@ func Test_repo_PartnerGet(t *testing.T) {
 }
 
 func Test_repo_PartnersGet(t *testing.T) {
-	repo := newTestRepo(t, "partners_get")
+	repo := newTestRepo(t)
+	defer repo.Close()
 
 	ctx := context.Background()
 
@@ -90,7 +93,8 @@ func Test_repo_PartnersGet(t *testing.T) {
 }
 
 func TestRepo_PartnerEnvironments(t *testing.T) {
-	repo := newTestRepo(t, "partner_environments")
+	repo := newTestRepo(t)
+	defer repo.Close()
 
 	ctx := context.Background()
 

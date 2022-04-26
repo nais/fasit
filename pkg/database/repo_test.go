@@ -9,6 +9,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 
 	"github.com/DATA-DOG/go-txdb"
@@ -84,15 +85,22 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func newTestRepo(t testing.TB, name string) Repo {
+func newTestRepo(t testing.TB, stmts ...string) Repo {
 	t.Helper()
 
-	db, err := NewDB("txdb", name)
+	db, err := NewDB("txdb", uuid.NewString())
 	if err != nil {
 		t.Fatalf("Could not create db: %v", err)
 	}
 
-	return New(db, newTestLogger())
+	r := New(db, newTestLogger())
+	for _, s := range stmts {
+		_, err := r.(*repo).db.Exec(s)
+		if err != nil {
+			t.Fatalf("Error executing:\n%v\nErr: %v", s, err)
+		}
+	}
+	return r
 }
 
 func newTestLogger() *logrus.Entry {

@@ -21,6 +21,7 @@ func configurationFromSQL(c gensql.Configuration) (*model.Configuration, error) 
 		Value:         c.Value,
 		Secret:        c.Secret,
 		Created:       c.Created,
+		Env:           c.EnvironmentID.Valid && c.EnvironmentID.UUID != uuid.Nil,
 	}, nil
 }
 
