@@ -2,7 +2,9 @@ chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/naiserator
 source: https://github.com/nais/naiserator/tree/master/charts
 version: 0.1.1
 repo: ""
-depends-on:
+environmentKinds:
+  - "partner"
+dependsOn:
   - "nais-crds"
 config:
   imageTag:

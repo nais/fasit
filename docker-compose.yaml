@@ -3,7 +3,6 @@ version: "3.1"
 services:
   db:
     image: postgres:14
-    restart: always
     environment:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: fasit
@@ -13,7 +12,6 @@ services:
 
   adminer:
     image: adminer
-    restart: always
     ports:
       - 8081:8080
 

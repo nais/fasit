@@ -8,5 +8,5 @@ type Feature {
     config: RawMessage!
 }
 extend type Query {
-    features: [Feature!]!
+    features (kind: EnvironmentKind!): [Feature!]!
 }

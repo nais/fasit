@@ -68,6 +68,7 @@ type ComplexityRoot struct {
 		Description   func(childComplexity int) int
 		FeatureStates func(childComplexity int) int
 		ID            func(childComplexity int) int
+		Kind          func(childComplexity int) int
 		LastModified  func(childComplexity int) int
 		Name          func(childComplexity int) int
 	}
@@ -112,7 +113,7 @@ type ComplexityRoot struct {
 		EnvConfig     func(childComplexity int, feature string, envID uuid.UUID) int
 		Environment   func(childComplexity int, id uuid.UUID) int
 		Environments  func(childComplexity int, partnerID uuid.UUID) int
-		Features      func(childComplexity int) int
+		Features      func(childComplexity int, kind model.EnvironmentKind) int
 		Partner       func(childComplexity int, id uuid.UUID) int
 		Partners      func(childComplexity int) int
 		Values        func(childComplexity int, feature string, env uuid.UUID) int
@@ -121,6 +122,8 @@ type ComplexityRoot struct {
 
 type EnvironmentResolver interface {
 	FeatureStates(ctx context.Context, obj *model.Environment) ([]*model.FeatureState, error)
+
+	Kind(ctx context.Context, obj *model.Environment) (model.EnvironmentKind, error)
 }
 type FeatureStateResolver interface {
 	Feature(ctx context.Context, obj *model.FeatureState) (*model.Feature, error)
@@ -140,7 +143,7 @@ type QueryResolver interface {
 	EnvConfig(ctx context.Context, feature string, envID uuid.UUID) ([]*model.Configuration, error)
 	Environment(ctx context.Context, id uuid.UUID) (*model.Environment, error)
 	Environments(ctx context.Context, partnerID uuid.UUID) ([]*model.Environment, error)
-	Features(ctx context.Context) ([]*model.Feature, error)
+	Features(ctx context.Context, kind model.EnvironmentKind) ([]*model.Feature, error)
 	Values(ctx context.Context, feature string, env uuid.UUID) (map[string]interface{}, error)
 	Partner(ctx context.Context, id uuid.UUID) (*model.Partner, error)
 }
@@ -257,6 +260,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Environment.ID(childComplexity), true
+
+	case "Environment.kind":
+		if e.complexity.Environment.Kind == nil {
+			break
+		}
+
+		return e.complexity.Environment.Kind(childComplexity), true
 
 	case "Environment.lastModified":
 		if e.complexity.Environment.LastModified == nil {
@@ -521,7 +531,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		return e.complexity.Query.Features(childComplexity), true
+		args, err := ec.field_Query_features_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Features(childComplexity, args["kind"].(model.EnvironmentKind)), true
 
 	case "Query.partner":
 		if e.complexity.Query.Partner == nil {
@@ -658,13 +673,17 @@ extend type Mutation {
     configurationDelete(id:  ID!): Boolean!
 }
 `, BuiltIn: false},
-	{Name: "schema/environment.graphqls", Input: `type Environment {
+	{Name: "schema/environment.graphqls", Input: `enum EnvironmentKind {
+    PARTNER, MANAGEMENT
+}
+type Environment {
     id: ID!
     name: String!
     description: String
     featureStates: [FeatureState!]!
     created: Time!
     lastModified: Time!
+    kind: EnvironmentKind!
 }
 
 """
@@ -674,6 +693,7 @@ input EnvironmentCreate {
     name: String!
     description: String
     partnerID: ID!
+    kind: EnvironmentKind!
 }
 
 """
@@ -725,7 +745,7 @@ extend type Mutation {
     config: RawMessage!
 }
 extend type Query {
-    features: [Feature!]!
+    features (kind: EnvironmentKind!): [Feature!]!
 }
 `, BuiltIn: false},
 	{Name: "schema/feature_states.graphqls", Input: `type FeatureState {
@@ -1015,6 +1035,21 @@ func (ec *executionContext) field_Query_environments_args(ctx context.Context, r
 		}
 	}
 	args["partnerID"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_features_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.EnvironmentKind
+	if tmp, ok := rawArgs["kind"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("kind"))
+		arg0, err = ec.unmarshalNEnvironmentKind2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentKind(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["kind"] = arg0
 	return args, nil
 }
 
@@ -1795,6 +1830,50 @@ func (ec *executionContext) fieldContext_Environment_lastModified(ctx context.Co
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Environment_kind(ctx context.Context, field graphql.CollectedField, obj *model.Environment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Environment_kind(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Environment().Kind(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.EnvironmentKind)
+	fc.Result = res
+	return ec.marshalNEnvironmentKind2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentKind(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Environment_kind(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Environment",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type EnvironmentKind does not have child fields")
 		},
 	}
 	return fc, nil
@@ -2621,6 +2700,8 @@ func (ec *executionContext) fieldContext_Mutation_environmentCreate(ctx context.
 				return ec.fieldContext_Environment_created(ctx, field)
 			case "lastModified":
 				return ec.fieldContext_Environment_lastModified(ctx, field)
+			case "kind":
+				return ec.fieldContext_Environment_kind(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -2690,6 +2771,8 @@ func (ec *executionContext) fieldContext_Mutation_environmentUpdate(ctx context.
 				return ec.fieldContext_Environment_created(ctx, field)
 			case "lastModified":
 				return ec.fieldContext_Environment_lastModified(ctx, field)
+			case "kind":
+				return ec.fieldContext_Environment_kind(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -3251,6 +3334,8 @@ func (ec *executionContext) fieldContext_Query_environment(ctx context.Context, 
 				return ec.fieldContext_Environment_created(ctx, field)
 			case "lastModified":
 				return ec.fieldContext_Environment_lastModified(ctx, field)
+			case "kind":
+				return ec.fieldContext_Environment_kind(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -3320,6 +3405,8 @@ func (ec *executionContext) fieldContext_Query_environments(ctx context.Context,
 				return ec.fieldContext_Environment_created(ctx, field)
 			case "lastModified":
 				return ec.fieldContext_Environment_lastModified(ctx, field)
+			case "kind":
+				return ec.fieldContext_Environment_kind(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -3352,7 +3439,7 @@ func (ec *executionContext) _Query_features(ctx context.Context, field graphql.C
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Features(rctx)
+		return ec.resolvers.Query().Features(rctx, fc.Args["kind"].(model.EnvironmentKind))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3394,6 +3481,17 @@ func (ec *executionContext) fieldContext_Query_features(ctx context.Context, fie
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_features_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
 	}
 	return fc, nil
 }
@@ -5455,6 +5553,14 @@ func (ec *executionContext) unmarshalInputEnvironmentCreate(ctx context.Context,
 			if err != nil {
 				return it, err
 			}
+		case "kind":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("kind"))
+			it.Kind, err = ec.unmarshalNEnvironmentKind2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentKind(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -5801,6 +5907,26 @@ func (ec *executionContext) _Environment(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "kind":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Environment_kind(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -6931,6 +7057,16 @@ func (ec *executionContext) marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋfasit�
 func (ec *executionContext) unmarshalNEnvironmentCreate2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentCreate(ctx context.Context, v interface{}) (model.EnvironmentCreate, error) {
 	res, err := ec.unmarshalInputEnvironmentCreate(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNEnvironmentKind2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentKind(ctx context.Context, v interface{}) (model.EnvironmentKind, error) {
+	var res model.EnvironmentKind
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNEnvironmentKind2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentKind(ctx context.Context, sel ast.SelectionSet, v model.EnvironmentKind) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) unmarshalNEnvironmentUpdate2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentUpdate(ctx context.Context, v interface{}) (model.EnvironmentUpdate, error) {

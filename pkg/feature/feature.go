@@ -3,6 +3,7 @@ package feature
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/nais/fasit/pkg/graph/model"
 	"io/fs"
 	"path/filepath"
 	"strings"
@@ -13,13 +14,14 @@ import (
 type Config map[string]ConfigType
 
 type Feature struct {
-	Name      string   `yaml:"name"`
-	Chart     string   `yaml:"chart"`
-	Version   string   `yaml:"version"`
-	Repo      string   `yaml:"repo"`
-	Source    string   `yaml:"source"`
-	DependsOn []string `yaml:"depends-on"`
-	Config    Config   `yaml:"config"`
+	Name             string                  `yaml:"name"`
+	Chart            string                  `yaml:"chart"`
+	Version          string                  `yaml:"version"`
+	Repo             string                  `yaml:"repo"`
+	Source           string                  `yaml:"source"`
+	DependsOn        []string                `yaml:"dependsOn"`
+	Config           Config                  `yaml:"config"`
+	EnvironmentKinds []model.EnvironmentKind `yaml:"environmentKinds"`
 }
 
 func (f *Feature) RequiredFields() []string {

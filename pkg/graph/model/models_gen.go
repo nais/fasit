@@ -24,9 +24,10 @@ type Configuration struct {
 
 // EnvironmentCreate contains metadata for creating an environment
 type EnvironmentCreate struct {
-	Name        string    `json:"name"`
-	Description *string   `json:"description"`
-	PartnerID   uuid.UUID `json:"partnerID"`
+	Name        string          `json:"name"`
+	Description *string         `json:"description"`
+	PartnerID   uuid.UUID       `json:"partnerID"`
+	Kind        EnvironmentKind `json:"kind"`
 }
 
 // UpdateEnvironment contains metadata for updating an environment

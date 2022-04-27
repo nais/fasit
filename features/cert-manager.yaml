@@ -2,6 +2,9 @@ chart: cert-manager
 source: https://github.com/cert-manager/cert-manager
 version: v1.7.2
 repo: https://charts.jetstack.io
+environmentKinds:
+  - "partner"
+  - "management"
 config:
   installCRDs:
     type: bool
