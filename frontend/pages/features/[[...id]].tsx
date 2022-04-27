@@ -10,7 +10,7 @@ const Features = () => {
     const router = useRouter()
     const featureName = router.query.id as string
 
-    const {data, error, loading} = useFeaturesQuery()
+    const {data, error, loading} = useFeaturesQuery({})
 
     if (error) {
         return <ErrorMessage error={error}/>

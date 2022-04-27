@@ -54,7 +54,9 @@ interface FeaturesMenuProps {
 }
 
 const FeaturesMenu = ({env}: FeaturesMenuProps) => {
-  const features = useFeaturesQuery()
+  const features = useFeaturesQuery(
+    {variables: {kind: env.kind}},
+  )
   const { data, loading, error } = features
   const router = useRouter()
   const feature = router.query.feature

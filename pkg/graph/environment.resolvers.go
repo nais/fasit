@@ -19,6 +19,10 @@ func (r *environmentResolver) FeatureStates(ctx context.Context, obj *model.Envi
 
 OUTER:
 	for _, f := range r.Features.Features {
+		if !contains(f.EnvironmentKinds, obj.Kind) {
+			continue
+		}
+
 		// Skip elements that are configured
 		for _, c := range retVal {
 			if f.Name == c.FeatureName {

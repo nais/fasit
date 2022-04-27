@@ -48,7 +48,6 @@ const ConfigPage = ({feature}: ConfigProps) => {
 
             }
         )
-
     }
 
     const resetConfig = () => {
@@ -90,7 +89,7 @@ const ConfigPage = ({feature}: ConfigProps) => {
 
             {currentConfig &&
                 <>
-                    <ConfigAdd conf={currentConfig} open={showCreate} showOpen={resetConfig}/>
+                    <ConfigAdd conf={currentConfig} feature={feature} open={showCreate} showOpen={resetConfig}/>
                     <ConfigEdit conf={currentConfig} open={showUpdate} showOpen={resetConfig}/>
                     <ConfigDelete conf={currentConfig} open={showDelete} resetState={resetConfig}/>
                 </>

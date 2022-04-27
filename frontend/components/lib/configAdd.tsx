@@ -1,7 +1,7 @@
 import * as React from 'react'
 import {Dispatch, SetStateAction, useEffect, useState} from 'react'
 import {Box, Modal} from '@mui/material'
-import {ConfigType, useConfigurationCreateMutation, useFeaturesQuery} from '../../lib/schema/graphql'
+import {ConfigType, FeaturesQuery, useConfigurationCreateMutation, useFeaturesQuery} from '../../lib/schema/graphql'
 import ErrorMessage from './error'
 import LoaderSpinner from './spinner'
 import {Button, Switch, TextField} from '@navikt/ds-react'
@@ -26,13 +26,12 @@ interface ConfigAddProps {
     envID?: string
     globalConfig?: Config
     open: boolean
+    feature: FeaturesQuery['features'][0],
     showOpen: Dispatch<SetStateAction<boolean>>
 }
 
-
-const ConfigAdd = ({conf, envID, globalConfig, open, showOpen}: ConfigAddProps) => {
+const ConfigAdd = ({conf, envID, globalConfig, feature, open, showOpen}: ConfigAddProps) => {
     const [createConfig] = useConfigurationCreateMutation()
-    const {data, error, loading} = useFeaturesQuery()
     const [backendError, setBackendError] = useState(undefined)
     const [val, setVal] = useState<any>(undefined)
     const [intVal, setIntVal] = useState<number>(0)
@@ -56,15 +55,7 @@ const ConfigAdd = ({conf, envID, globalConfig, open, showOpen}: ConfigAddProps) 
     }
 
 
-    if (error) {
-        <ErrorMessage error={error}/>
-    }
-    if (!data || loading) {
-        <LoaderSpinner/>
-    }
-    const featureConfig = data?.features.filter((f) => {
-        return f.name == conf.feature
-    })[0].config[conf.key]
+    const featureConfig = feature.config[conf.key]
 
     const inputType = (type: ConfigType) => {
         switch (type) {

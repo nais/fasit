@@ -7,7 +7,7 @@ import (
 	"github.com/stevenle/topsort"
 )
 
-func TestFeatures_CircularDependency(t *testing.T) {
+func TestFeatures(t *testing.T) {
 	mgr, err := feature.New(FeaturesFS)
 	if err != nil {
 		t.Fatal(err)
@@ -21,12 +21,24 @@ func TestFeatures_CircularDependency(t *testing.T) {
 	}
 
 	for _, f := range mgr.Features {
-		if !g.ContainsNode(f.Name) {
-			continue
-		}
-		_, err := g.TopSort(f.Name)
-		if err != nil {
-			t.Errorf("Feature %s has a circular dependency: %v", f.Name, err)
-		}
+		t.Run(f.Name, func(t *testing.T) {
+			if len(f.EnvironmentKinds) == 0 {
+				t.Error("no environment kind specified")
+			}
+
+			for _, kind := range f.EnvironmentKinds {
+				if !kind.IsValid() {
+					t.Errorf("invalid environment kind: %s", kind)
+				}
+			}
+
+			if !g.ContainsNode(f.Name) {
+				return
+			}
+			_, err := g.TopSort(f.Name)
+			if err != nil {
+				t.Errorf("Feature %s has a circular dependency: %v", f.Name, err)
+			}
+		})
 	}
 }

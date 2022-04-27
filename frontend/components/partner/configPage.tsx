@@ -2,7 +2,7 @@ import * as React from 'react'
 import {useState} from 'react'
 import ErrorMessage from '../lib/error'
 import LoaderSpinner from '../lib/spinner'
-import {EnvironmentGetQuery, useConfigGetQuery, useFeaturesQuery} from '../../lib/schema/graphql'
+import {EnvironmentGetQuery, FeaturesQuery, useConfigGetQuery, useFeaturesQuery} from '../../lib/schema/graphql'
 import {Table} from '@navikt/ds-react'
 import ConfigAdd from '../lib/configAdd'
 import ConfigDelete from '../lib/configDelete'
@@ -17,7 +17,9 @@ interface ConfigProps {
 
 const ConfigPage = ({env, feature}: ConfigProps) => {
     const {data, error, loading} = useConfigGetQuery({variables: {envID: env.id, feature}})
-    const features = useFeaturesQuery()
+    const features = useFeaturesQuery({
+        variables: {kind: env.kind}
+    })
     const [currentConfig, setCurrentConfig] = useState<Config | undefined>()
     const [showDelete, setShowDelete] = useState(false)
     const [showUpdate, setShowUpdate] = useState(false)
@@ -25,8 +27,10 @@ const ConfigPage = ({env, feature}: ConfigProps) => {
 
 
     let configs: Configs = {}
+    let featureObject : FeaturesQuery['features'][0] | undefined
     if (features.data && data) {
-        const confKeys = features.data.features.find((f) => f.name === feature)?.config
+        featureObject = features.data.features.find((f) => f.name === feature)
+        const confKeys = featureObject?.config
         data.envConfig.forEach((c) => {
                 configs[c.key] = {...c, secret: false, required: false, enabled: false}
             },
@@ -113,10 +117,11 @@ const ConfigPage = ({env, feature}: ConfigProps) => {
                 </Table.Body>
             </Table>
 
-            {currentConfig &&
+            {currentConfig && featureObject &&
                 <>
                     <ConfigAdd conf={currentConfig} envID={env.id} globalConfig={configs[currentConfig.key]}
                                open={showCreate}
+                               feature={featureObject}
                                showOpen={resetConfig}/>
                     <ConfigEdit conf={currentConfig} open={showUpdate} showOpen={resetConfig}/>
                     <ConfigDelete conf={currentConfig} open={showDelete} resetState={resetConfig}/>

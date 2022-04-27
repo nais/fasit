@@ -52,6 +52,7 @@ export type Environment = {
   description?: Maybe<Scalars['String']>
   featureStates: Array<FeatureState>
   id: Scalars['ID']
+  kind: EnvironmentKind
   lastModified: Scalars['Time']
   name: Scalars['String']
 }
@@ -59,8 +60,14 @@ export type Environment = {
 /** EnvironmentCreate contains metadata for creating an environment */
 export type EnvironmentCreate = {
   description?: InputMaybe<Scalars['String']>
+  kind: EnvironmentKind
   name: Scalars['String']
   partnerID: Scalars['ID']
+}
+
+export enum EnvironmentKind {
+  Management = 'MANAGEMENT',
+  Partner = 'PARTNER',
 }
 
 /** UpdateEnvironment contains metadata for updating an environment */
@@ -74,6 +81,7 @@ export type Feature = {
   chart: Scalars['String']
   config: Scalars['RawMessage']
   dependsOn: Array<Scalars['String']>
+  environmentKinds: Array<EnvironmentKind>
   name: Scalars['String']
   repo: Scalars['String']
   source: Scalars['String']
@@ -187,6 +195,10 @@ export type QueryEnvironmentsArgs = {
   partnerID: Scalars['ID']
 }
 
+export type QueryFeaturesArgs = {
+  kind?: InputMaybe<EnvironmentKind>
+}
+
 export type QueryPartnerArgs = {
   id: Scalars['ID']
 }
@@ -276,6 +288,7 @@ export type EnvironmentCreateMutationVariables = Exact<{
   name: Scalars['String']
   description?: InputMaybe<Scalars['String']>
   partnerID: Scalars['ID']
+  kind: EnvironmentKind
 }>
 
 export type EnvironmentCreateMutation = {
@@ -296,6 +309,7 @@ export type EnvironmentGetQuery = {
     description?: string | null
     lastModified: any
     created: any
+    kind: EnvironmentKind
     featureStates: Array<{
       __typename?: 'FeatureState'
       enabled: boolean
@@ -334,7 +348,9 @@ export type EnvironmentsGetQuery = {
   environments: Array<{ __typename?: 'Environment'; id: string; name: string }>
 }
 
-export type FeaturesQueryVariables = Exact<{ [key: string]: never }>
+export type FeaturesQueryVariables = Exact<{
+  kind?: InputMaybe<EnvironmentKind>
+}>
 
 export type FeaturesQuery = {
   __typename?: 'Query'
@@ -346,6 +362,7 @@ export type FeaturesQuery = {
     config: any
     repo: string
     source: string
+    environmentKinds: Array<EnvironmentKind>
     version: string
   }>
 }
@@ -708,12 +725,14 @@ export const EnvironmentCreateDocument = gql`
     $name: String!
     $description: String
     $partnerID: ID!
+    $kind: EnvironmentKind!
   ) {
     environmentCreate(
       environment: {
         name: $name
         description: $description
         partnerID: $partnerID
+        kind: $kind
       }
     ) {
       id
@@ -741,6 +760,7 @@ export type EnvironmentCreateMutationFn = Apollo.MutationFunction<
  *      name: // value for 'name'
  *      description: // value for 'description'
  *      partnerID: // value for 'partnerID'
+ *      kind: // value for 'kind'
  *   },
  * });
  */
@@ -773,6 +793,7 @@ export const EnvironmentGetDocument = gql`
       description
       lastModified
       created
+      kind
       featureStates {
         enabled
         lastModified
@@ -952,14 +973,15 @@ export type EnvironmentsGetQueryResult = Apollo.QueryResult<
   EnvironmentsGetQueryVariables
 >
 export const FeaturesDocument = gql`
-  query Features {
-    features {
+  query Features($kind: EnvironmentKind) {
+    features(kind: $kind) {
       dependsOn
       name
       chart
       config
       repo
       source
+      environmentKinds
       version
     }
   }
@@ -977,6 +999,7 @@ export const FeaturesDocument = gql`
  * @example
  * const { data, loading, error } = useFeaturesQuery({
  *   variables: {
+ *      kind: // value for 'kind'
  *   },
  * });
  */

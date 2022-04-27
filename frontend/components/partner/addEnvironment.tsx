@@ -1,7 +1,7 @@
 import {Box, Modal} from '@mui/material'
 import * as React from 'react'
 import {useState} from 'react'
-import {Fieldset, TextField} from '@navikt/ds-react'
+import {Fieldset, Select, TextField} from '@navikt/ds-react'
 import ErrorMessage from '../lib/error'
 import RightJustifiedSubmitButton from '../lib/submitButton'
 import {useForm} from 'react-hook-form'
@@ -25,6 +25,7 @@ const style = {
 const newEnvironmentValidation = yup.object().shape({
     name: yup.string().required('Miljø trenger et navn'),
     description: yup.string(),
+    kind: yup.string().oneOf(['partner', 'management'], 'Miljø trenger en type'),
 })
 
 interface AddEnvironmentProps {
@@ -91,6 +92,15 @@ const AddEnvironment = ({open, onClose, partnerName, partnerID}: AddEnvironmentP
                             {...register('description')}
                             error={errors.description?.message}
                         />
+                        <Select
+                            label="Miljøtype"
+                            {...register('kind')}
+                            error={errors.kind?.message}
+                        >
+                            <option value="">Velg miljøtype</option>
+                            <option value="partner">Partner</option>
+                            <option value="management">Management</option>
+                        </Select>
                         <RightJustifiedSubmitButton onCancel={closeAndReset}/>
                     </Fieldset>
                 </form>

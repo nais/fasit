@@ -46,6 +46,7 @@ const Feature = ({feature}: FeatureProps) => {
                     {feature.source && <div>source: {feature.source}</div>}
                     {feature.version && <div>version: {feature.version}</div>}
                     {feature.dependsOn && <div>dependencies: {feature.dependsOn.join(", ")}</div>}
+                    {feature.environmentKinds && <div>environment kinds: {feature.environmentKinds.map(s => s.toLowerCase()).join(", ")}</div>}
                 </div>
             </FeatureStatus>
             <ConfigPage feature={feature} />

@@ -1,12 +1,14 @@
 type Feature {
-    name: String!
-    chart: String!
-    version: String!
-    repo: String!
-    source: String!
-    dependsOn: [String!]!
-    config: RawMessage!
+  name: String!
+  chart: String!
+  version: String!
+  repo: String!
+  source: String!
+  dependsOn: [String!]!
+  config: RawMessage!
+  environmentKinds: [EnvironmentKind!]!
 }
+
 extend type Query {
-    features (kind: EnvironmentKind!): [Feature!]!
+  features(kind: EnvironmentKind): [Feature!]!
 }

@@ -8,6 +8,7 @@ export const ENVIRONMENT_GET = gql`
       description
       lastModified
       created
+      kind
       featureStates {
         enabled
         lastModified
