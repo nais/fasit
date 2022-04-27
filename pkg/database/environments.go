@@ -15,6 +15,7 @@ func environmentFromSQL(p gensql.Environment) *model.Environment {
 		Description:  nullStringToPtr(p.Description),
 		Created:      p.Created,
 		LastModified: p.LastModified,
+		Kind:         model.EnvironmentKind(p.Kind),
 	}
 }
 
@@ -43,6 +44,7 @@ func (r *repo) EnvironmentCreate(ctx context.Context, p *model.EnvironmentCreate
 		Name:        p.Name,
 		Description: ptrToNullString(p.Description),
 		PartnerID:   p.PartnerID,
+		Kind:        gensql.EnvironmentKind(p.Kind),
 	})
 	if err != nil {
 		return nil, err

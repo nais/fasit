@@ -5,7 +5,6 @@ package graph
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/graph/graphgen"
@@ -30,10 +29,6 @@ OUTER:
 	}
 
 	return retVal, nil
-}
-
-func (r *environmentResolver) Kind(ctx context.Context, obj *model.Environment) (model.EnvironmentKind, error) {
-	panic(fmt.Errorf("not implemented"))
 }
 
 func (r *mutationResolver) EnvironmentCreate(ctx context.Context, environment model.EnvironmentCreate) (*model.Environment, error) {

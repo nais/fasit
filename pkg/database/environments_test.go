@@ -18,7 +18,7 @@ func TestRepo_EnvironmentGet(t *testing.T) {
 	id := uuid.New()
 	qs := []string{
 		fmt.Sprintf("INSERT INTO partners (id, name) VALUES ('%s', 'test')", partnerID),
-		fmt.Sprintf("INSERT INTO environments (id, name, description, partner_id) VALUES ('%s', 'testname', 'testdesc', '%s')", id, partnerID),
+		fmt.Sprintf("INSERT INTO environments (id, name, description, partner_id, kind) VALUES ('%s', 'testname', 'testdesc', '%s', 'partner')", id, partnerID),
 	}
 	repo := newTestRepo(t, qs...)
 	defer repo.Close()
@@ -32,6 +32,7 @@ func TestRepo_EnvironmentGet(t *testing.T) {
 		ID:          id,
 		Name:        "testname",
 		Description: stringToPtr("testdesc"),
+		Kind:        model.EnvironmentKindPartner,
 	}
 
 	opts := cmpopts.IgnoreFields(model.Environment{}, "Created", "LastModified")
@@ -48,7 +49,7 @@ func TestRepo_EnvironmentsGet(t *testing.T) {
 	}
 	for i, id := range ids {
 		qs = append(qs,
-			fmt.Sprintf("INSERT INTO environments (id, name, description, partner_id) VALUES ('%s', 'testname%v', 'testdesc', '%s')", id, i, partnerID),
+			fmt.Sprintf("INSERT INTO environments (id, name, description, partner_id, kind) VALUES ('%s', 'testname%v', 'testdesc', '%s', 'management')", id, i, partnerID),
 		)
 	}
 	repo := newTestRepo(t, qs...)
@@ -66,6 +67,7 @@ func TestRepo_EnvironmentsGet(t *testing.T) {
 			ID:          id,
 			Name:        fmt.Sprintf("testname%v", i),
 			Description: stringToPtr("testdesc"),
+			Kind:        model.EnvironmentKindManagement,
 		})
 	}
 
@@ -87,6 +89,7 @@ func TestRepo_EnvironmentCreate(t *testing.T) {
 		Name:        "somename",
 		Description: stringToPtr("somedesc"),
 		PartnerID:   partnerID,
+		Kind:        model.EnvironmentKindPartner,
 	}
 	got, err := repo.EnvironmentCreate(context.Background(), create)
 	if err != nil {
@@ -96,6 +99,7 @@ func TestRepo_EnvironmentCreate(t *testing.T) {
 	want := &model.Environment{
 		Name:        "somename",
 		Description: stringToPtr("somedesc"),
+		Kind:        model.EnvironmentKindPartner,
 	}
 
 	opts := cmpopts.IgnoreFields(model.Environment{}, "ID", "Created", "LastModified")
@@ -116,6 +120,7 @@ func TestRepo_EnvironmentUpdate(t *testing.T) {
 		Name:        "somename",
 		Description: stringToPtr("somedesc"),
 		PartnerID:   partnerID,
+		Kind:        model.EnvironmentKindPartner,
 	}
 	env, err := repo.EnvironmentCreate(context.Background(), create)
 	if err != nil {
@@ -128,6 +133,7 @@ func TestRepo_EnvironmentUpdate(t *testing.T) {
 	want := &model.Environment{
 		Name:        "somename",
 		Description: stringToPtr("somedesc2"),
+		Kind:        model.EnvironmentKindPartner,
 	}
 
 	opts := cmpopts.IgnoreFields(model.Environment{}, "ID", "Created", "LastModified")
@@ -139,6 +145,7 @@ func TestRepo_EnvironmentUpdate(t *testing.T) {
 	want2 := &model.Environment{
 		Name:        "somename",
 		Description: stringToPtr("somedesc2"),
+		Kind:        model.EnvironmentKindPartner,
 	}
 
 	if !cmp.Equal(want2, got, opts) {

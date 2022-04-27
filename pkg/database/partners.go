@@ -65,6 +65,7 @@ func (r *repo) PartnerEnvironments(ctx context.Context) ([]*model.PartnerEnviron
 				Description:  nullStringToPtr(d.Description),
 				Created:      d.Created,
 				LastModified: d.LastModified,
+				Kind:         model.EnvironmentKind(d.Kind),
 			},
 			PartnerName: d.PartnerName,
 		})

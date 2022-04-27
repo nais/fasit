@@ -112,6 +112,7 @@ func TestRepo_PartnerEnvironments(t *testing.T) {
 				Name:        fmt.Sprintf("test-env-%v", j),
 				Description: stringToPtr("description"),
 				PartnerID:   p.ID,
+				Kind:        model.EnvironmentKindPartner,
 			})
 			if err != nil {
 				t.Fatalf("EnvironmentCreate(ctx, env) err = %v, want nil", err)
@@ -131,6 +132,7 @@ func TestRepo_PartnerEnvironments(t *testing.T) {
 				ID:          eids[0],
 				Name:        "test-env-0",
 				Description: stringToPtr("description"),
+				Kind:        model.EnvironmentKindPartner,
 			},
 			PartnerName: "test-partner-0",
 		},
@@ -139,6 +141,7 @@ func TestRepo_PartnerEnvironments(t *testing.T) {
 				ID:          eids[1],
 				Name:        "test-env-1",
 				Description: stringToPtr("description"),
+				Kind:        model.EnvironmentKindPartner,
 			},
 			PartnerName: "test-partner-0",
 		},
@@ -147,6 +150,7 @@ func TestRepo_PartnerEnvironments(t *testing.T) {
 				ID:          eids[2],
 				Name:        "test-env-0",
 				Description: stringToPtr("description"),
+				Kind:        model.EnvironmentKindPartner,
 			},
 			PartnerName: "test-partner-1",
 		},
@@ -155,6 +159,7 @@ func TestRepo_PartnerEnvironments(t *testing.T) {
 				ID:          eids[3],
 				Name:        "test-env-1",
 				Description: stringToPtr("description"),
+				Kind:        model.EnvironmentKindPartner,
 			},
 			PartnerName: "test-partner-1",
 		},
@@ -180,6 +185,7 @@ func partnerWithEnv(t *testing.T, repo Repo) (*model.Partner, *model.Environment
 	env, err := repo.EnvironmentCreate(ctx, &model.EnvironmentCreate{
 		Name:      "test-env",
 		PartnerID: p.ID,
+		Kind:      model.EnvironmentKindPartner,
 	})
 	if err != nil {
 		t.Fatalf("EnvironmentCreate(ctx, env) err = %v, want nil", err)

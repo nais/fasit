@@ -11,17 +11,23 @@ import (
 )
 
 const environmentCreate = `-- name: EnvironmentCreate :one
-INSERT INTO environments (name, description, partner_id) VALUES ($1, $2, $3) RETURNING id, partner_id, name, description, created, last_modified
+INSERT INTO environments (name, description, partner_id, kind) VALUES ($1, $2, $3, $4) RETURNING id, partner_id, name, description, created, last_modified, kind
 `
 
 type EnvironmentCreateParams struct {
 	Name        string
 	Description sql.NullString
 	PartnerID   uuid.UUID
+	Kind        EnvironmentKind
 }
 
 func (q *Queries) EnvironmentCreate(ctx context.Context, arg EnvironmentCreateParams) (Environment, error) {
-	row := q.db.QueryRowContext(ctx, environmentCreate, arg.Name, arg.Description, arg.PartnerID)
+	row := q.db.QueryRowContext(ctx, environmentCreate,
+		arg.Name,
+		arg.Description,
+		arg.PartnerID,
+		arg.Kind,
+	)
 	var i Environment
 	err := row.Scan(
 		&i.ID,
@@ -30,12 +36,13 @@ func (q *Queries) EnvironmentCreate(ctx context.Context, arg EnvironmentCreatePa
 		&i.Description,
 		&i.Created,
 		&i.LastModified,
+		&i.Kind,
 	)
 	return i, err
 }
 
 const environmentGet = `-- name: EnvironmentGet :one
-SELECT id, partner_id, name, description, created, last_modified
+SELECT id, partner_id, name, description, created, last_modified, kind
 FROM environments
 WHERE id = $1
 `
@@ -50,6 +57,7 @@ func (q *Queries) EnvironmentGet(ctx context.Context, id uuid.UUID) (Environment
 		&i.Description,
 		&i.Created,
 		&i.LastModified,
+		&i.Kind,
 	)
 	return i, err
 }
@@ -79,7 +87,7 @@ UPDATE environments
 SET description = $1
 WHERE
     id = $2
-    RETURNING id, partner_id, name, description, created, last_modified
+    RETURNING id, partner_id, name, description, created, last_modified, kind
 `
 
 type EnvironmentUpdateParams struct {
@@ -97,12 +105,13 @@ func (q *Queries) EnvironmentUpdate(ctx context.Context, arg EnvironmentUpdatePa
 		&i.Description,
 		&i.Created,
 		&i.LastModified,
+		&i.Kind,
 	)
 	return i, err
 }
 
 const environmentsGet = `-- name: EnvironmentsGet :many
-SELECT id, partner_id, name, description, created, last_modified
+SELECT id, partner_id, name, description, created, last_modified, kind
 FROM environments
 WHERE partner_id = $1
 `
@@ -123,6 +132,7 @@ func (q *Queries) EnvironmentsGet(ctx context.Context, partnerID uuid.UUID) ([]E
 			&i.Description,
 			&i.Created,
 			&i.LastModified,
+			&i.Kind,
 		); err != nil {
 			return nil, err
 		}

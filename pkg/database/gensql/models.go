@@ -5,10 +5,30 @@ package gensql
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 )
+
+type EnvironmentKind string
+
+const (
+	EnvironmentKindPartner    EnvironmentKind = "partner"
+	EnvironmentKindManagement EnvironmentKind = "management"
+)
+
+func (e *EnvironmentKind) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = EnvironmentKind(s)
+	case string:
+		*e = EnvironmentKind(s)
+	default:
+		return fmt.Errorf("unsupported scan type for EnvironmentKind: %T", src)
+	}
+	return nil
+}
 
 type Configuration struct {
 	ID            uuid.UUID
@@ -28,6 +48,7 @@ type Environment struct {
 	Description  sql.NullString
 	Created      time.Time
 	LastModified time.Time
+	Kind         EnvironmentKind
 }
 
 type FeatureState struct {

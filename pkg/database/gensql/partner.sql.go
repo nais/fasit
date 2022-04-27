@@ -34,7 +34,7 @@ func (q *Queries) PartnerCreate(ctx context.Context, arg PartnerCreateParams) (P
 }
 
 const partnerEnvironments = `-- name: PartnerEnvironments :many
-SELECT e.id, e.partner_id, e.name, e.description, e.created, e.last_modified, p.name AS partner_name
+SELECT e.id, e.partner_id, e.name, e.description, e.created, e.last_modified, e.kind, p.name AS partner_name
 FROM environments e
 JOIN partners p ON e.partner_id = p.id
 ORDER BY p.name, e.name
@@ -47,6 +47,7 @@ type PartnerEnvironmentsRow struct {
 	Description  sql.NullString
 	Created      time.Time
 	LastModified time.Time
+	Kind         EnvironmentKind
 	PartnerName  string
 }
 
@@ -66,6 +67,7 @@ func (q *Queries) PartnerEnvironments(ctx context.Context) ([]PartnerEnvironment
 			&i.Description,
 			&i.Created,
 			&i.LastModified,
+			&i.Kind,
 			&i.PartnerName,
 		); err != nil {
 			return nil, err
