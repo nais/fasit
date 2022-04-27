@@ -1,16 +1,18 @@
 import * as React from 'react'
-import { useEffect, useState } from 'react'
-import { useEnvironmentGetQuery, useEnvironmentUpdateMutation } from '../../lib/schema/graphql'
+import {useEffect, useState} from 'react'
+import {EnvironmentKind, useEnvironmentGetQuery, useEnvironmentUpdateMutation} from '../../lib/schema/graphql'
 import ErrorMessage from '../lib/error'
 import LoaderSpinner from '../lib/spinner'
 import humanizeDate from '../lib/humanizeDate'
 import styled from 'styled-components'
-import { Close, Edit, SaveFile, Success } from '@navikt/ds-icons'
+import {Close, Edit, SaveFile} from '@navikt/ds-icons'
 import FeaturesMenu from './featuresMenu'
 import Feature from './feature'
-import { useRouter } from 'next/router'
-import { navGronn, navRod } from '../../styles/constants'
-import { Textarea } from '@navikt/ds-react'
+import {useRouter} from 'next/router'
+import {navGronn, navRod} from '../../styles/constants'
+import {Textarea} from '@navikt/ds-react'
+import ManagementLogo from "../lib/icons/managementLogo";
+
 
 const InfoBox = styled.div`
    display: flex;
@@ -52,8 +54,27 @@ const DescriptionBox = styled.div`
   flex-grow: 1;
   padding-bottom: 25px;
 `
-const PartnerHeader = styled.h1`
-  font-color: #222;
+
+const PartnerHeaderName = styled.h1`
+  text-transform: capitalize;
+  color: #222;
+  margin: 0px;
+`
+
+const PartnerHeader = styled.div`
+  display: flex;
+  flex-grow: 1;
+  justify-content: space-between;
+  text-transform: capitalize;
+`
+const PartnerHeaderEnv = styled.h2`
+  color: #696969;
+  padding: 0px;
+  margin: 0px;
+`
+
+const ManagementIcon = styled.div`
+  margin: 0px 0px 0px 20px;
 `
 const TimeStamps = styled.div`
   display: flex;
@@ -109,7 +130,7 @@ const Environment = ({ envID, partnerName }: EnvironmentProps) => {
   const env = data.environment
   return (
     <div>
-      <PartnerHeader>{partnerName}{` > ${env.name}`}</PartnerHeader>
+        <PartnerHeaderName>{partnerName}</PartnerHeaderName><PartnerHeader><PartnerHeaderEnv>{`> ${env.name}`}</PartnerHeaderEnv>{env.kind === EnvironmentKind.Management && <ManagementIcon><ManagementLogo /></ManagementIcon>}</PartnerHeader>
       <InfoBox>
         <DescriptionBox>
         {edit ?

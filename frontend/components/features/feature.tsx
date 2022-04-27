@@ -25,6 +25,7 @@ const FeatureStatus = styled.div`
   background-color: #f5f5f5;
   font-size: 0.8em;
   margin-bottom: 10px;
+  font-family: monospace;
 `
 
 interface FeatureProps {
@@ -45,7 +46,7 @@ const Feature = ({feature}: FeatureProps) => {
                     {feature.repo && <div>repo: {feature.repo}</div>}
                     {feature.source && <div>source: {feature.source}</div>}
                     {feature.version && <div>version: {feature.version}</div>}
-                    {feature.dependsOn && <div>dependencies: {feature.dependsOn.join(", ")}</div>}
+                    {feature.dependsOn.length > 0 && <div>dependencies: {feature.dependsOn.join(", ")}</div>}
                     {feature.environmentKinds && <div>environment kinds: {feature.environmentKinds.map(s => s.toLowerCase()).join(", ")}</div>}
                 </div>
             </FeatureStatus>
