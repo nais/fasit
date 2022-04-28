@@ -1,15 +1,13 @@
 import * as React from 'react'
+import {useState} from 'react'
 import styled from 'styled-components'
 import ConfigPage from './configPage'
-import {EnvironmentGetQuery, useFeaturesQuery} from '../../lib/schema/graphql'
-import LoaderSpinner from '../lib/spinner'
-import ErrorMessage from '../lib/error'
+import {EnvironmentGetQuery} from '../../lib/schema/graphql'
 import {Success} from '@navikt/ds-icons'
 import {navGronn, navRod} from '../../styles/constants'
 import IconBox from "../lib/icons/iconBox";
 import GitIcon from "../lib/icons/gitIcon";
 import {Switch} from '@navikt/ds-react'
-import {useState} from "react";
 import EnableFeature from "./enableFeature";
 
 
@@ -17,7 +15,7 @@ const FeatureContainer = styled.div`
   border: 1px solid silver;
   padding: 10px;
   flex-grow: 1;
-  border-radius: 0 5px 5px 5px;
+  border-radius: 0 5px 5px 0px;
 `
 const EmptyFeature = styled.div`
   border-left: 1px solid silver;
