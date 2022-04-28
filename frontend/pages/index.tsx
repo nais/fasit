@@ -71,7 +71,7 @@ const Home: NextPage = () => {
                   </CategoryCard>
                 </a>
               </Link>))}
-            <Link href={`/tenants/new`}>
+            <Link href={`/tenant/new`}>
               <a>
                 <CategoryCard>
                   <IconBox size={50}><Add width={'40px'} height={'40px'} color={"#222"}/></IconBox>
