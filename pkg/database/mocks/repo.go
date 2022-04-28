@@ -392,15 +392,15 @@ func (_m *Repo) PartnerCreate(ctx context.Context, p *model.PartnerCreate) (*mod
 }
 
 // PartnerEnvironments provides a mock function with given fields: ctx
-func (_m *Repo) PartnerEnvironments(ctx context.Context) ([]*model.PartnerEnvironments, error) {
+func (_m *Repo) TenantEnvironments(ctx context.Context) ([]*model.TenantEnvironments, error) {
 	ret := _m.Called(ctx)
 
-	var r0 []*model.PartnerEnvironments
-	if rf, ok := ret.Get(0).(func(context.Context) []*model.PartnerEnvironments); ok {
+	var r0 []*model.TenantEnvironments
+	if rf, ok := ret.Get(0).(func(context.Context) []*model.TenantEnvironments); ok {
 		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.PartnerEnvironments)
+			r0 = ret.Get(0).([]*model.TenantEnvironments)
 		}
 	}
 

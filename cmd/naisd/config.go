@@ -6,7 +6,7 @@ type Config struct {
 	LogLevel        string
 	EnvProjectID    string
 	Env             string
-	PartnerName     string
+	TenantName      string
 	NaisProjectID   string
 	Production      bool
 }

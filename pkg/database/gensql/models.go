@@ -14,7 +14,7 @@ import (
 type EnvironmentKind string
 
 const (
-	EnvironmentKindPartner    EnvironmentKind = "partner"
+	EnvironmentKindTenant     EnvironmentKind = "tenant"
 	EnvironmentKindManagement EnvironmentKind = "management"
 )
 
@@ -43,12 +43,12 @@ type Configuration struct {
 
 type Environment struct {
 	ID           uuid.UUID
-	PartnerID    uuid.UUID
+	TenantID     uuid.UUID
 	Name         string
+	Kind         EnvironmentKind
 	Description  sql.NullString
 	Created      time.Time
 	LastModified time.Time
-	Kind         EnvironmentKind
 }
 
 type FeatureState struct {
@@ -59,14 +59,6 @@ type FeatureState struct {
 	LastModified  time.Time
 }
 
-type Partner struct {
-	ID           uuid.UUID
-	Name         string
-	Description  sql.NullString
-	Created      time.Time
-	LastModified time.Time
-}
-
 type Status struct {
 	EnvironmentID uuid.UUID
 	Feature       string
@@ -75,4 +67,12 @@ type Status struct {
 	ConfigHash    string
 	Created       time.Time
 	LastModified  time.Time
+}
+
+type Tenant struct {
+	ID           uuid.UUID
+	Name         string
+	Description  sql.NullString
+	Created      time.Time
+	LastModified time.Time
 }

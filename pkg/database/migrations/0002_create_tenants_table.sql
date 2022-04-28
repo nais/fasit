@@ -1,5 +1,5 @@
 -- +goose Up
-CREATE TABLE partners
+CREATE TABLE tenants
 (
     "id"            uuid                 DEFAULT uuid_generate_v4(),
     "name"          TEXT        NOT NULL,
@@ -8,8 +8,8 @@ CREATE TABLE partners
     "last_modified" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     PRIMARY KEY (id)
 );
-CREATE TRIGGER partners_set_modified
+CREATE TRIGGER tenant_set_modified
     BEFORE UPDATE
-    ON partners
+    ON tenants
     FOR EACH ROW
     EXECUTE PROCEDURE update_modified_timestamp();

@@ -33,7 +33,7 @@ func init() {
 	flag.StringVar(&cfg.LogLevel, "log-level", "info", "which log level to output")
 	flag.StringVar(&cfg.EnvProjectID, "env-project-id", "local-test-dev", "Google project ID")
 	flag.StringVar(&cfg.NaisProjectID, "nais-project-id", "nais-local-dev", "Nais project ID")
-	flag.StringVar(&cfg.PartnerName, "partner-name", "test", "partner name")
+	flag.StringVar(&cfg.TenantName, "tenant-name", "test", "tenant name")
 	flag.StringVar(&cfg.Env, "env", "dev", "cluster environment")
 	flag.BoolVar(&cfg.Production, "production", false, "When in production, actually run helm install")
 }
@@ -64,7 +64,7 @@ func main() {
 	if cfg.Production {
 		executor = &workers.Executor{}
 	}
-	receiver, err := workers.NewDeployManager(deploySubscriber, statusPublisher, cfg.PartnerName, cfg.Env, executor, kubeConfig, log.WithField("subsystem", "deploy"))
+	receiver, err := workers.NewDeployManager(deploySubscriber, statusPublisher, cfg.TenantName, cfg.Env, executor, kubeConfig, log.WithField("subsystem", "deploy"))
 	if err != nil {
 		log.WithError(err).Fatal("setting up worker")
 	}

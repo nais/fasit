@@ -20,16 +20,16 @@ type Querier interface {
 	EnvironmentGet(ctx context.Context, id uuid.UUID) (Environment, error)
 	EnvironmentIDByNames(ctx context.Context, arg EnvironmentIDByNamesParams) (uuid.UUID, error)
 	EnvironmentUpdate(ctx context.Context, arg EnvironmentUpdateParams) (Environment, error)
-	EnvironmentsGet(ctx context.Context, partnerID uuid.UUID) ([]Environment, error)
+	EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]Environment, error)
 	FeatureStateCreateOrUpdate(ctx context.Context, arg FeatureStateCreateOrUpdateParams) (FeatureState, error)
 	FeatureStateGet(ctx context.Context, arg FeatureStateGetParams) (FeatureState, error)
 	FeatureStatesGet(ctx context.Context, environmentID uuid.UUID) ([]FeatureState, error)
-	PartnerCreate(ctx context.Context, arg PartnerCreateParams) (Partner, error)
-	PartnerEnvironments(ctx context.Context) ([]PartnerEnvironmentsRow, error)
-	PartnerGet(ctx context.Context, id uuid.UUID) (Partner, error)
-	PartnersGet(ctx context.Context) ([]Partner, error)
 	StatusCreateOrUpdate(ctx context.Context, arg StatusCreateOrUpdateParams) error
 	StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]Status, error)
+	TenantCreate(ctx context.Context, arg TenantCreateParams) (Tenant, error)
+	TenantEnvironments(ctx context.Context) ([]TenantEnvironmentsRow, error)
+	TenantGet(ctx context.Context, id uuid.UUID) (Tenant, error)
+	TenantsGet(ctx context.Context) ([]Tenant, error)
 }
 
 var _ Querier = (*Queries)(nil)

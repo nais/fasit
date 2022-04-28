@@ -11,13 +11,13 @@ import (
 )
 
 const environmentCreate = `-- name: EnvironmentCreate :one
-INSERT INTO environments (name, description, partner_id, kind) VALUES ($1, $2, $3, $4) RETURNING id, partner_id, name, description, created, last_modified, kind
+INSERT INTO environments (name, description, tenant_id, kind) VALUES ($1, $2, $3, $4) RETURNING id, tenant_id, name, kind, description, created, last_modified
 `
 
 type EnvironmentCreateParams struct {
 	Name        string
 	Description sql.NullString
-	PartnerID   uuid.UUID
+	TenantID    uuid.UUID
 	Kind        EnvironmentKind
 }
 
@@ -25,24 +25,24 @@ func (q *Queries) EnvironmentCreate(ctx context.Context, arg EnvironmentCreatePa
 	row := q.db.QueryRowContext(ctx, environmentCreate,
 		arg.Name,
 		arg.Description,
-		arg.PartnerID,
+		arg.TenantID,
 		arg.Kind,
 	)
 	var i Environment
 	err := row.Scan(
 		&i.ID,
-		&i.PartnerID,
+		&i.TenantID,
 		&i.Name,
+		&i.Kind,
 		&i.Description,
 		&i.Created,
 		&i.LastModified,
-		&i.Kind,
 	)
 	return i, err
 }
 
 const environmentGet = `-- name: EnvironmentGet :one
-SELECT id, partner_id, name, description, created, last_modified, kind
+SELECT id, tenant_id, name, kind, description, created, last_modified
 FROM environments
 WHERE id = $1
 `
@@ -52,31 +52,31 @@ func (q *Queries) EnvironmentGet(ctx context.Context, id uuid.UUID) (Environment
 	var i Environment
 	err := row.Scan(
 		&i.ID,
-		&i.PartnerID,
+		&i.TenantID,
 		&i.Name,
+		&i.Kind,
 		&i.Description,
 		&i.Created,
 		&i.LastModified,
-		&i.Kind,
 	)
 	return i, err
 }
 
 const environmentIDByNames = `-- name: EnvironmentIDByNames :one
 SELECT e.id
-FROM partners p
-JOIN environments e ON e.partner_id = p.id AND e.name = $1
+FROM tenants p
+JOIN environments e ON e.tenant_id = p.id AND e.name = $1
 WHERE p.name = $2
 LIMIT 1
 `
 
 type EnvironmentIDByNamesParams struct {
 	EnvironmentName string
-	PartnerName     string
+	TenantName      string
 }
 
 func (q *Queries) EnvironmentIDByNames(ctx context.Context, arg EnvironmentIDByNamesParams) (uuid.UUID, error) {
-	row := q.db.QueryRowContext(ctx, environmentIDByNames, arg.EnvironmentName, arg.PartnerName)
+	row := q.db.QueryRowContext(ctx, environmentIDByNames, arg.EnvironmentName, arg.TenantName)
 	var id uuid.UUID
 	err := row.Scan(&id)
 	return id, err
@@ -87,7 +87,7 @@ UPDATE environments
 SET description = $1
 WHERE
     id = $2
-    RETURNING id, partner_id, name, description, created, last_modified, kind
+    RETURNING id, tenant_id, name, kind, description, created, last_modified
 `
 
 type EnvironmentUpdateParams struct {
@@ -100,24 +100,24 @@ func (q *Queries) EnvironmentUpdate(ctx context.Context, arg EnvironmentUpdatePa
 	var i Environment
 	err := row.Scan(
 		&i.ID,
-		&i.PartnerID,
+		&i.TenantID,
 		&i.Name,
+		&i.Kind,
 		&i.Description,
 		&i.Created,
 		&i.LastModified,
-		&i.Kind,
 	)
 	return i, err
 }
 
 const environmentsGet = `-- name: EnvironmentsGet :many
-SELECT id, partner_id, name, description, created, last_modified, kind
+SELECT id, tenant_id, name, kind, description, created, last_modified
 FROM environments
-WHERE partner_id = $1
+WHERE tenant_id = $1
 `
 
-func (q *Queries) EnvironmentsGet(ctx context.Context, partnerID uuid.UUID) ([]Environment, error) {
-	rows, err := q.db.QueryContext(ctx, environmentsGet, partnerID)
+func (q *Queries) EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]Environment, error) {
+	rows, err := q.db.QueryContext(ctx, environmentsGet, tenantID)
 	if err != nil {
 		return nil, err
 	}
@@ -127,12 +127,12 @@ func (q *Queries) EnvironmentsGet(ctx context.Context, partnerID uuid.UUID) ([]E
 		var i Environment
 		if err := rows.Scan(
 			&i.ID,
-			&i.PartnerID,
+			&i.TenantID,
 			&i.Name,
+			&i.Kind,
 			&i.Description,
 			&i.Created,
 			&i.LastModified,
-			&i.Kind,
 		); err != nil {
 			return nil, err
 		}

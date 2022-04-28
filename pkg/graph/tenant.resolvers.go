@@ -5,22 +5,23 @@ package graph
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/graph/graphgen"
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
-func (r *mutationResolver) PartnerCreate(ctx context.Context, partner model.PartnerCreate) (*model.Partner, error) {
-	return r.Repo.PartnerCreate(ctx, &partner)
+func (r *mutationResolver) TenantCreate(ctx context.Context, tenant model.TenantCreate) (*model.Tenant, error) {
+	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *queryResolver) Partners(ctx context.Context) ([]*model.Partner, error) {
-	return r.Repo.PartnersGet(ctx)
+func (r *queryResolver) Tenants(ctx context.Context) ([]*model.Tenant, error) {
+	panic(fmt.Errorf("not implemented"))
 }
 
-func (r *queryResolver) Partner(ctx context.Context, id uuid.UUID) (*model.Partner, error) {
-	return r.Repo.PartnerGet(ctx, id)
+func (r *queryResolver) Tenant(ctx context.Context, id uuid.UUID) (*model.Tenant, error) {
+	panic(fmt.Errorf("not implemented"))
 }
 
 // Mutation returns graphgen.MutationResolver implementation.

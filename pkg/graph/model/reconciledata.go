@@ -1,6 +1,6 @@
 package model
 
-type PartnerEnvironments struct {
+type TenantEnvironments struct {
 	Environment
-	PartnerName string
+	TenantName string
 }

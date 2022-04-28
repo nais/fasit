@@ -1,4 +1,4 @@
-type Partner {
+type Tenant {
     id: ID!
     name: String!
     description: String
@@ -6,21 +6,21 @@ type Partner {
     lastModified: Time!
 }
 type Query {
-    partners: [Partner!]!
+    tenants: [Tenant!]!
 }
-input PartnerCreate {
+input TenantCreate {
     name: String!
     description: String
 }
 type Mutation {
-    partnerCreate(partner: PartnerCreate!): Partner!
+    tenantCreate(tenant: TenantCreate!): Tenant!
 }
 extend type Query {
     """
-    partner returns the given partner.
+    tenant returns the given tenant.
     """
-    partner(
-        "id of the requested partner."
+    tenant(
+        "id of the requested tenant."
         id: ID!
-    ): Partner!
+    ): Tenant!
 }

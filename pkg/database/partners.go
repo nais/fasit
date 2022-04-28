@@ -9,56 +9,56 @@ import (
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
-func partnerFromSQL(p gensql.Partner) *model.Partner {
-	return &model.Partner{
-		ID:           p.ID,
-		Name:         p.Name,
-		Description:  nullStringToPtr(p.Description),
-		Created:      p.Created,
-		LastModified: p.LastModified,
+func tenantFromSQL(t gensql.Tenant) *model.Tenant {
+	return &model.Tenant{
+		ID:           t.ID,
+		Name:         t.Name,
+		Description:  nullStringToPtr(t.Description),
+		Created:      t.Created,
+		LastModified: t.LastModified,
 	}
 }
 
-func (r *repo) PartnerCreate(ctx context.Context, p *model.PartnerCreate) (*model.Partner, error) {
-	partner, err := r.querier.PartnerCreate(ctx, gensql.PartnerCreateParams{
-		Name:        p.Name,
-		Description: ptrToNullString(p.Description),
+func (r *repo) TenantCreate(ctx context.Context, t *model.TenantCreate) (*model.Tenant, error) {
+	partner, err := r.querier.TenantCreate(ctx, gensql.TenantCreateParams{
+		Name:        t.Name,
+		Description: ptrToNullString(t.Description),
 	})
 	if err != nil {
 		return nil, err
 	}
-	return partnerFromSQL(partner), nil
+	return tenantFromSQL(partner), nil
 }
 
-func (r *repo) PartnerGet(ctx context.Context, id uuid.UUID) (*model.Partner, error) {
-	partner, err := r.querier.PartnerGet(ctx, id)
+func (r *repo) TenantGet(ctx context.Context, id uuid.UUID) (*model.Tenant, error) {
+	partner, err := r.querier.TenantGet(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	return partnerFromSQL(partner), nil
+	return tenantFromSQL(partner), nil
 }
 
-func (r *repo) PartnersGet(ctx context.Context) ([]*model.Partner, error) {
-	partners, err := r.querier.PartnersGet(ctx)
+func (r *repo) TenantsGet(ctx context.Context) ([]*model.Tenant, error) {
+	tenants, err := r.querier.TenantsGet(ctx)
 	if err != nil {
 		return nil, err
 	}
-	partnerSlice := []*model.Partner{}
-	for _, partner := range partners {
-		partnerSlice = append(partnerSlice, partnerFromSQL(partner))
+	tenantSlice := []*model.Tenant{}
+	for _, tenant := range tenants {
+		tenantSlice = append(tenantSlice, tenantFromSQL(tenant))
 	}
-	return partnerSlice, nil
+	return tenantSlice, nil
 }
 
-func (r *repo) PartnerEnvironments(ctx context.Context) ([]*model.PartnerEnvironments, error) {
-	data, err := r.querier.PartnerEnvironments(ctx)
+func (r *repo) TenantEnvironments(ctx context.Context) ([]*model.TenantEnvironments, error) {
+	data, err := r.querier.TenantEnvironments(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	var ret []*model.PartnerEnvironments
+	var ret []*model.TenantEnvironments
 	for _, d := range data {
-		ret = append(ret, &model.PartnerEnvironments{
+		ret = append(ret, &model.TenantEnvironments{
 			Environment: model.Environment{
 				ID:           d.ID,
 				Name:         d.Name,
@@ -67,7 +67,7 @@ func (r *repo) PartnerEnvironments(ctx context.Context) ([]*model.PartnerEnviron
 				LastModified: d.LastModified,
 				Kind:         model.EnvironmentKind(d.Kind),
 			},
-			PartnerName: d.PartnerName,
+			TenantName: d.TenantName,
 		})
 	}
 

@@ -30,17 +30,17 @@ type Repo interface {
 	EnvConfig(ctx context.Context, feature string, envID uuid.UUID) ([]*model.Configuration, error)
 	EnvironmentCreate(ctx context.Context, p *model.EnvironmentCreate) (*model.Environment, error)
 	EnvironmentGet(ctx context.Context, id uuid.UUID) (*model.Environment, error)
-	EnvironmentIDByNames(ctx context.Context, partnerName, environmentName string) (uuid.UUID, error)
+	EnvironmentIDByNames(ctx context.Context, tenantName, environmentName string) (uuid.UUID, error)
 	EnvironmentUpdate(ctx context.Context, environmentID uuid.UUID, p *model.EnvironmentUpdate) (*model.Environment, error)
-	EnvironmentsGet(ctx context.Context, partnerID uuid.UUID) ([]*model.Environment, error)
+	EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]*model.Environment, error)
 	FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *feature.Feature, enabled bool) (*model.FeatureState, error)
 	FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
 	HelmValues(ctx context.Context, feature string, envID uuid.UUID, requiredFields []string) (map[string]any, error)
 	Metrics() prometheus.Collector
-	PartnerCreate(ctx context.Context, p *model.PartnerCreate) (*model.Partner, error)
-	PartnerGet(ctx context.Context, id uuid.UUID) (*model.Partner, error)
-	PartnersGet(ctx context.Context) ([]*model.Partner, error)
-	PartnerEnvironments(ctx context.Context) ([]*model.PartnerEnvironments, error)
+	TenantCreate(ctx context.Context, p *model.TenantCreate) (*model.Tenant, error)
+	TenantGet(ctx context.Context, id uuid.UUID) (*model.Tenant, error)
+	TenantsGet(ctx context.Context) ([]*model.Tenant, error)
+	TenantEnvironments(ctx context.Context) ([]*model.TenantEnvironments, error)
 	StatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Helm) error
 	StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]*model.Status, error)
 	Close() error

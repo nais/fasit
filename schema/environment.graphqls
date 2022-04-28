@@ -1,5 +1,5 @@
 enum EnvironmentKind {
-    PARTNER, MANAGEMENT
+    TENANT, MANAGEMENT
 }
 type Environment {
     id: ID!
@@ -17,7 +17,7 @@ EnvironmentCreate contains metadata for creating an environment
 input EnvironmentCreate {
     name: String!
     description: String
-    partnerID: ID!
+    tenantID: ID!
     kind: EnvironmentKind!
 }
 
@@ -39,11 +39,11 @@ extend type Query {
         id: ID!
     ): Environment!
     """
-    Environments returns the environments for a partner.
+    Environments returns the environments for a tenant.
     """
     environments(
-        "id of the requested partner."
-        partnerID: ID!
+        "id of the requested tenant."
+        tenantID: ID!
     ): [Environment!]!
 }
 

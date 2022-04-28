@@ -47,8 +47,8 @@ func (r *queryResolver) Environment(ctx context.Context, id uuid.UUID) (*model.E
 	return r.Repo.EnvironmentGet(ctx, id)
 }
 
-func (r *queryResolver) Environments(ctx context.Context, partnerID uuid.UUID) ([]*model.Environment, error) {
-	return r.Repo.EnvironmentsGet(ctx, partnerID)
+func (r *queryResolver) Environments(ctx context.Context, tenantID uuid.UUID) ([]*model.Environment, error) {
+	return r.Repo.EnvironmentsGet(ctx, tenantID)
 }
 
 // Environment returns graphgen.EnvironmentResolver implementation.

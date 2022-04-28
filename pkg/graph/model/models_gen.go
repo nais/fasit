@@ -26,7 +26,7 @@ type Configuration struct {
 type EnvironmentCreate struct {
 	Name        string          `json:"name"`
 	Description *string         `json:"description"`
-	PartnerID   uuid.UUID       `json:"partnerID"`
+	TenantID    uuid.UUID       `json:"tenantID"`
 	Kind        EnvironmentKind `json:"kind"`
 }
 
@@ -47,7 +47,7 @@ type Feature struct {
 	EnvironmentKinds []EnvironmentKind `json:"environmentKinds"`
 }
 
-type Partner struct {
+type Tenant struct {
 	ID           uuid.UUID `json:"id"`
 	Name         string    `json:"name"`
 	Description  *string   `json:"description"`
@@ -55,7 +55,7 @@ type Partner struct {
 	LastModified time.Time `json:"lastModified"`
 }
 
-type PartnerCreate struct {
+type TenantCreate struct {
 	Name        string  `json:"name"`
 	Description *string `json:"description"`
 }

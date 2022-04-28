@@ -39,12 +39,12 @@ func (r *repo) EnvironmentsGet(ctx context.Context, partnerID uuid.UUID) ([]*mod
 	return environmentSlice, nil
 }
 
-func (r *repo) EnvironmentCreate(ctx context.Context, p *model.EnvironmentCreate) (*model.Environment, error) {
+func (r *repo) EnvironmentCreate(ctx context.Context, t *model.EnvironmentCreate) (*model.Environment, error) {
 	partner, err := r.querier.EnvironmentCreate(ctx, gensql.EnvironmentCreateParams{
-		Name:        p.Name,
-		Description: ptrToNullString(p.Description),
-		PartnerID:   p.PartnerID,
-		Kind:        gensql.EnvironmentKind(p.Kind),
+		Name:        t.Name,
+		Description: ptrToNullString(t.Description),
+		TenantID:    t.TenantID,
+		Kind:        gensql.EnvironmentKind(t.Kind),
 	})
 	if err != nil {
 		return nil, err
@@ -63,10 +63,10 @@ func (r *repo) EnvironmentUpdate(ctx context.Context, environmentID uuid.UUID, p
 	return environmentFromSQL(partner), nil
 }
 
-func (r *repo) EnvironmentIDByNames(ctx context.Context, partnerName, environmentName string) (uuid.UUID, error) {
+func (r *repo) EnvironmentIDByNames(ctx context.Context, tenantName, environmentName string) (uuid.UUID, error) {
 	params := gensql.EnvironmentIDByNamesParams{
 		EnvironmentName: environmentName,
-		PartnerName:     partnerName,
+		TenantName:      tenantName,
 	}
 	return r.querier.EnvironmentIDByNames(ctx, params)
 }

@@ -42,9 +42,9 @@ func main() {
 		log.Println(err)
 	}
 
-	for partner, envs := range envs {
+	for tenant, envs := range envs {
 		for _, env := range envs {
-			topic := fmt.Sprintf("naisd-%v-%v", partner, env)
+			topic := fmt.Sprintf("naisd-%v-%v", tenant, env)
 			subscription := "naisd-subscription"
 
 			_, err = client.CreateTopic(ctx, topic)
@@ -52,7 +52,7 @@ func main() {
 				log.Println(err)
 			}
 
-			envClient, err := pubsub.NewClient(ctx, "local-"+partner+"-"+env)
+			envClient, err := pubsub.NewClient(ctx, "local-"+tenant+"-"+env)
 			if err != nil {
 				log.Fatal(err)
 			}

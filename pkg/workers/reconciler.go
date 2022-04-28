@@ -17,7 +17,7 @@ import (
 )
 
 type ReconcilerStore interface {
-	PartnerEnvironments(ctx context.Context) ([]*model.PartnerEnvironments, error)
+	TenantEnvironments(ctx context.Context) ([]*model.TenantEnvironments, error)
 	StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]*model.Status, error)
 	FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
 	HelmValues(ctx context.Context, feature string, envID uuid.UUID, requiredFields []string) (map[string]any, error)
@@ -72,7 +72,7 @@ func (r *Reconciler) Run(ctx context.Context, interval time.Duration) {
 }
 
 func (r *Reconciler) reconcile(ctx context.Context) error {
-	data, err := r.repo.PartnerEnvironments(ctx)
+	data, err := r.repo.TenantEnvironments(ctx)
 	if err != nil {
 		return err
 	}
@@ -80,7 +80,7 @@ func (r *Reconciler) reconcile(ctx context.Context) error {
 	for _, d := range data {
 		log := r.log.WithFields(logrus.Fields{
 			"environment": d.Name,
-			"partner":     d.PartnerName,
+			"partner":     d.TenantName,
 		})
 
 		log.Debug("reconcile environment")
@@ -92,7 +92,7 @@ func (r *Reconciler) reconcile(ctx context.Context) error {
 	return nil
 }
 
-func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.PartnerEnvironments) error {
+func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEnvironments) error {
 	features := r.featureMgr.Features[:]
 
 	envStatus, err := r.repo.StatusForEnvironment(ctx, d.ID)
@@ -105,7 +105,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.PartnerE
 		lookup[s.Feature] = s
 	}
 
-	mgr := r.publisher(r.projectID, "naisd-"+d.PartnerName+"-"+d.Name, r.log)
+	mgr := r.publisher(r.projectID, "naisd-"+d.TenantName+"-"+d.Name, r.log)
 	defer mgr.Stop()
 
 	featureStates, err := r.repo.FeatureStatesGet(ctx, d.ID)

@@ -1,8 +1,8 @@
 import gql from 'graphql-tag'
 
-export const PARTNERS_GET = gql`
-  query PartnersGet {
-    partners {
+export const TENANT_GET = gql`
+  query TenantGet {
+    tenant {
       id
       name
       description

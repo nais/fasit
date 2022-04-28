@@ -24,7 +24,7 @@ func Test_repo_PartnerCreate(t *testing.T) {
 		Description: stringToPtr("description"),
 	})
 	if err != nil {
-		t.Fatalf("PartnerCreate(ctx, partner) err = %v, want nil", err)
+		t.Fatalf("TenantCreate(ctx, partner) err = %v, want nil", err)
 	}
 }
 
@@ -39,12 +39,12 @@ func Test_repo_PartnerGet(t *testing.T) {
 		Description: stringToPtr("description"),
 	})
 	if err != nil {
-		t.Fatalf("PartnerCreate(ctx, partner) err = %v, want nil", err)
+		t.Fatalf("TenantCreate(ctx, partner) err = %v, want nil", err)
 	}
 
 	got, err := repo.PartnerGet(ctx, p.ID)
 	if err != nil {
-		t.Fatalf("PartnerGet(ctx, id) err = %v, want nil", err)
+		t.Fatalf("TenantGet(ctx, id) err = %v, want nil", err)
 	}
 
 	want := &model.Partner{
@@ -73,13 +73,13 @@ func Test_repo_PartnersGet(t *testing.T) {
 			Name: name,
 		})
 		if err != nil {
-			t.Fatalf("PartnerCreate(ctx, partner) err = %v, want nil", err)
+			t.Fatalf("TenantCreate(ctx, partner) err = %v, want nil", err)
 		}
 	}
 
 	p2, err := repo.PartnersGet(ctx)
 	if err != nil {
-		t.Fatalf("PartnerGet(ctx, id) err = %v, want nil", err)
+		t.Fatalf("TenantGet(ctx, id) err = %v, want nil", err)
 	}
 
 	got := []string{}
@@ -104,7 +104,7 @@ func TestRepo_PartnerEnvironments(t *testing.T) {
 			Name: fmt.Sprintf("test-partner-%v", i),
 		})
 		if err != nil {
-			t.Fatalf("PartnerCreate(ctx, partner) err = %v, want nil", err)
+			t.Fatalf("TenantCreate(ctx, partner) err = %v, want nil", err)
 		}
 
 		for j := 0; j < 2; j++ {
@@ -123,10 +123,10 @@ func TestRepo_PartnerEnvironments(t *testing.T) {
 
 	got, err := repo.PartnerEnvironments(ctx)
 	if err != nil {
-		t.Fatalf("PartnerEnvironments(ctx) err = %v, want nil", err)
+		t.Fatalf("TenantEnvironments(ctx) err = %v, want nil", err)
 	}
 
-	want := []*model.PartnerEnvironments{
+	want := []*model.TenantEnvironments{
 		{
 			Environment: model.Environment{
 				ID:          eids[0],
@@ -134,7 +134,7 @@ func TestRepo_PartnerEnvironments(t *testing.T) {
 				Description: stringToPtr("description"),
 				Kind:        model.EnvironmentKindPartner,
 			},
-			PartnerName: "test-partner-0",
+			TenantName: "test-partner-0",
 		},
 		{
 			Environment: model.Environment{
@@ -143,7 +143,7 @@ func TestRepo_PartnerEnvironments(t *testing.T) {
 				Description: stringToPtr("description"),
 				Kind:        model.EnvironmentKindPartner,
 			},
-			PartnerName: "test-partner-0",
+			TenantName: "test-partner-0",
 		},
 		{
 			Environment: model.Environment{
@@ -152,7 +152,7 @@ func TestRepo_PartnerEnvironments(t *testing.T) {
 				Description: stringToPtr("description"),
 				Kind:        model.EnvironmentKindPartner,
 			},
-			PartnerName: "test-partner-1",
+			TenantName: "test-partner-1",
 		},
 		{
 			Environment: model.Environment{
@@ -161,7 +161,7 @@ func TestRepo_PartnerEnvironments(t *testing.T) {
 				Description: stringToPtr("description"),
 				Kind:        model.EnvironmentKindPartner,
 			},
-			PartnerName: "test-partner-1",
+			TenantName: "test-partner-1",
 		},
 	}
 
@@ -175,11 +175,11 @@ func partnerWithEnv(t *testing.T, repo Repo) (*model.Partner, *model.Environment
 	t.Helper()
 
 	ctx := context.Background()
-	p, err := repo.PartnerCreate(ctx, &model.PartnerCreate{
+	p, err := repo.TenantCreate(ctx, &model.PartnerCreate{
 		Name: "test-partner",
 	})
 	if err != nil {
-		t.Fatalf("PartnerCreate(ctx, partner) err = %v, want nil", err)
+		t.Fatalf("TenantCreate(ctx, partner) err = %v, want nil", err)
 	}
 
 	env, err := repo.EnvironmentCreate(ctx, &model.EnvironmentCreate{

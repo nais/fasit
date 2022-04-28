@@ -6,17 +6,17 @@ WHERE id = @id;
 -- name: EnvironmentsGet :many
 SELECT *
 FROM environments
-WHERE partner_id = @partner_id;
+WHERE tenant_id = @tenant_id;
 
 -- name: EnvironmentIDByNames :one
 SELECT e.id
-FROM partners p
-JOIN environments e ON e.partner_id = p.id AND e.name = @environment_name
-WHERE p.name = @partner_name
+FROM tenants p
+JOIN environments e ON e.tenant_id = p.id AND e.name = @environment_name
+WHERE p.name = @tenant_name
 LIMIT 1;
 
 -- name: EnvironmentCreate :one
-INSERT INTO environments (name, description, partner_id, kind) VALUES (@name, @description, @partner_id, @kind) RETURNING *;
+INSERT INTO environments (name, description, tenant_id, kind) VALUES (@name, @description, @tenant_id, @kind) RETURNING *;
 
 -- name: EnvironmentUpdate :one
 UPDATE environments
