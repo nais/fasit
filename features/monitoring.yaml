@@ -2,7 +2,7 @@ chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring
 version: 0.6.0
 environmentKinds:
-  - "partner"
+  - "tenant"
   - "management"
 config:
   kube-prometheus-stack.prometheus.prometheusSpec.retention:

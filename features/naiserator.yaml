@@ -3,7 +3,7 @@ source: https://github.com/nais/naiserator/tree/master/charts
 version: 0.1.1
 repo: ""
 environmentKinds:
-  - "partner"
+  - "tenant"
 dependsOn:
   - "nais-crds"
 config:
