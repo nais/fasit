@@ -185,7 +185,10 @@ func makeHelmConfigMap(vals []gensql.ConfigForEnvRow) (map[string]any, error) {
 	val := make(map[string]any)
 
 	for _, v := range vals {
-		keys := strings.Split(v.Key, ".")
+		keys, err := smartDotSplit(v.Key)
+		if err != nil {
+			return nil, err
+		}
 		parent := val
 		for index, key := range keys {
 			if index == len(keys)-1 {
@@ -205,4 +208,34 @@ func makeHelmConfigMap(vals []gensql.ConfigForEnvRow) (map[string]any, error) {
 		}
 	}
 	return val, nil
+}
+
+func smartDotSplit(s string) ([]string, error) {
+	if strings.HasSuffix(s, ".") {
+		return nil, fmt.Errorf("cannot end with `.`")
+	}
+	if strings.HasPrefix(s, ".") {
+		return nil, fmt.Errorf("cannot start with `.`")
+	}
+
+	str := ""
+	var ret []string
+	for i, ch := range s {
+		switch ch {
+		case '.':
+			if len(str) == 0 || i == 0 {
+				return nil, fmt.Errorf("invalid `.` on position %v", i)
+			}
+			if s[i-1] == '\\' {
+				str = str[:len(str)-1]
+				str += "."
+			} else {
+				ret = append(ret, str)
+				str = ""
+			}
+		default:
+			str += string(ch)
+		}
+	}
+	return append(ret, str), nil
 }
