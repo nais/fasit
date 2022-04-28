@@ -7,7 +7,7 @@ import {useRouter} from 'next/router'
 import styled from 'styled-components'
 import {navRod} from '../../styles/constants'
 
-const SideMenu = styled.div`
+const SideMenu = styled.div<MenuItemProps>`
   padding: 10px 0px 10px 10px;
   display: flex;
   flex-direction: column;
@@ -17,13 +17,17 @@ const SideMenu = styled.div`
   border-radius: 5px 0px 0px 5px;
   background-color: #f5f5f5;
   height: fit-content;
+  min-width: 150px;
   border-right: 1px solid #fff;
   position: relative;
+  a {
+    text-decoration: none;
+  }
 `
 
 interface MenuItemProps {
-  active?: boolean
-  enabled?: boolean
+    active?: boolean
+    enabled?: boolean
 }
 
 const MenuItem = styled.div<MenuItemProps>`
@@ -35,10 +39,8 @@ const MenuItem = styled.div<MenuItemProps>`
   padding: 5px 15px;
   margin-right: -2px;
   position: relative;
-  a {
-    text-decoration: none;
-    color: ${(props) =>  props.enabled ? '#222' : "#999"};
-  }
+  text-decoration: none;
+  color: ${(props) => props.enabled ? '#222' : "#999"};
   :hover {
     background-color: var(--navds-semantic-color-interaction-primary-hover-subtle);
   }
@@ -49,43 +51,46 @@ export const MenuSeparator = styled.div`
   margin: 10px 0;
   margin-left: -10px;
 `
+
 interface FeaturesMenuProps {
-  env: EnvironmentGetQuery['environment']
+    env: EnvironmentGetQuery['environment']
 }
 
 const FeaturesMenu = ({env}: FeaturesMenuProps) => {
-  const features = useFeaturesQuery(
-    {variables: {kind: env.kind}},
-  )
-  const { data, loading, error } = features
-  const router = useRouter()
-  const feature = router.query.feature
+    const features = useFeaturesQuery(
+        {variables: {kind: env.kind}},
+    )
+    const {data, loading, error} = features
+    const router = useRouter()
+    const feature = router.query.feature
 
-  if (error) return <ErrorMessage error={error} />
-  if (!data || loading) return <LoaderSpinner />
+    if (error) return <ErrorMessage error={error}/>
+    if (!data || loading) return <LoaderSpinner/>
 
-  return (<SideMenu>
-    <i style={{ marginBottom: "15px" }}>Features</i>
+    return (<SideMenu>
+            <i style={{marginBottom: "15px"}}>Features</i>
 
-    {env.featureStates.filter((f) => f.enabled).map((fs) => {
-      const f = fs.feature
-      return <MenuItem key={f.name} active={f.name === feature} enabled={fs.enabled}>
+            {env.featureStates.filter((f) => f.enabled).map((fs) => {
+                const f = fs.feature
+                return <Link href={router.asPath.split('?')[0] + '?feature=' + f.name}>
+                    <a>
+                        <MenuItem key={f.name} active={f.name === feature} enabled={fs.enabled}>
+                            {f.name}
+                        </MenuItem></a></Link>
+            })}
+            <MenuSeparator/>
+            {env.featureStates.filter((f) => !f.enabled).map((fs) => {
+                const f = fs.feature
+                return <Link href={router.asPath.split('?')[0] + '?feature=' + f.name}>
+                    <a>
+                    <MenuItem key={f.name} active={f.name === feature} enabled={fs.enabled}>
+                        {f.name}
+                    </MenuItem>
+                    </a>
+                </Link>
+            })}
 
-        <Link href={router.asPath.split('?')[0] + '?feature=' + f.name}>
-          <a>{f.name}</a>
-        </Link></MenuItem>
-    })}
-        <MenuSeparator/>
-        {env.featureStates.filter((f) => !f.enabled).map((fs) => {
-          const f = fs.feature
-          return <MenuItem key={f.name} active={f.name === feature} enabled={fs.enabled}>
-
-            <Link href={router.asPath.split('?')[0] + '?feature=' + f.name}>
-              <a>{f.name}</a>
-            </Link></MenuItem>
-        })}
-
-  </SideMenu>
-  )
+        </SideMenu>
+    )
 }
 export default FeaturesMenu

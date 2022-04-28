@@ -17,7 +17,7 @@ const FeatureContainer = styled.div`
   border: 1px solid silver;
   padding: 10px;
   flex-grow: 1;
-  border-radius: 0 5px 5px 5px;
+  border-radius: 0 5px 5px 0px;
 `
 const EmptyFeature = styled.div`
   border-left: 1px solid silver;
