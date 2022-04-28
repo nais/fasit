@@ -72,18 +72,18 @@ const FeaturesMenu = ({env}: FeaturesMenuProps) => {
 
             {env.featureStates.filter((f) => f.enabled).map((fs) => {
                 const f = fs.feature
-                return <Link href={router.asPath.split('?')[0] + '?feature=' + f.name}>
+                return <Link href={router.asPath.split('?')[0] + '?feature=' + f.name} key={f.name}>
                     <a>
-                        <MenuItem key={f.name} active={f.name === feature} enabled={fs.enabled}>
+                        <MenuItem active={f.name === feature} enabled={fs.enabled}>
                             {f.name}
                         </MenuItem></a></Link>
             })}
             <MenuSeparator/>
             {env.featureStates.filter((f) => !f.enabled).map((fs) => {
                 const f = fs.feature
-                return <Link href={router.asPath.split('?')[0] + '?feature=' + f.name}>
+                return <Link href={router.asPath.split('?')[0] + '?feature=' + f.name} key={f.name}>
                     <a>
-                    <MenuItem key={f.name} active={f.name === feature} enabled={fs.enabled}>
+                    <MenuItem active={f.name === feature} enabled={fs.enabled}>
                         {f.name}
                     </MenuItem>
                     </a>
