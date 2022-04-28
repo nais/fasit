@@ -27,8 +27,8 @@ func (r *repo) EnvironmentGet(ctx context.Context, id uuid.UUID) (*model.Environ
 	return environmentFromSQL(env), nil
 }
 
-func (r *repo) EnvironmentsGet(ctx context.Context, partnerID uuid.UUID) ([]*model.Environment, error) {
-	envs, err := r.querier.EnvironmentsGet(ctx, partnerID)
+func (r *repo) EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]*model.Environment, error) {
+	envs, err := r.querier.EnvironmentsGet(ctx, tenantID)
 	if err != nil {
 		return nil, err
 	}
@@ -40,7 +40,7 @@ func (r *repo) EnvironmentsGet(ctx context.Context, partnerID uuid.UUID) ([]*mod
 }
 
 func (r *repo) EnvironmentCreate(ctx context.Context, t *model.EnvironmentCreate) (*model.Environment, error) {
-	partner, err := r.querier.EnvironmentCreate(ctx, gensql.EnvironmentCreateParams{
+	env, err := r.querier.EnvironmentCreate(ctx, gensql.EnvironmentCreateParams{
 		Name:        t.Name,
 		Description: ptrToNullString(t.Description),
 		TenantID:    t.TenantID,
@@ -49,18 +49,18 @@ func (r *repo) EnvironmentCreate(ctx context.Context, t *model.EnvironmentCreate
 	if err != nil {
 		return nil, err
 	}
-	return environmentFromSQL(partner), nil
+	return environmentFromSQL(env), nil
 }
 
 func (r *repo) EnvironmentUpdate(ctx context.Context, environmentID uuid.UUID, p *model.EnvironmentUpdate) (*model.Environment, error) {
-	partner, err := r.querier.EnvironmentUpdate(ctx, gensql.EnvironmentUpdateParams{
+	env, err := r.querier.EnvironmentUpdate(ctx, gensql.EnvironmentUpdateParams{
 		Description: ptrToNullString(p.Description),
 		ID:          environmentID,
 	})
 	if err != nil {
 		return nil, err
 	}
-	return environmentFromSQL(partner), nil
+	return environmentFromSQL(env), nil
 }
 
 func (r *repo) EnvironmentIDByNames(ctx context.Context, tenantName, environmentName string) (uuid.UUID, error) {

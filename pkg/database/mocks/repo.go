@@ -214,13 +214,13 @@ func (_m *Repo) EnvironmentGet(ctx context.Context, id uuid.UUID) (*model.Enviro
 	return r0, r1
 }
 
-// EnvironmentIDByNames provides a mock function with given fields: ctx, partnerName, environmentName
-func (_m *Repo) EnvironmentIDByNames(ctx context.Context, partnerName string, environmentName string) (uuid.UUID, error) {
-	ret := _m.Called(ctx, partnerName, environmentName)
+// EnvironmentIDByNames provides a mock function with given fields: ctx, tenantName, environmentName
+func (_m *Repo) EnvironmentIDByNames(ctx context.Context, tenantName string, environmentName string) (uuid.UUID, error) {
+	ret := _m.Called(ctx, tenantName, environmentName)
 
 	var r0 uuid.UUID
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) uuid.UUID); ok {
-		r0 = rf(ctx, partnerName, environmentName)
+		r0 = rf(ctx, tenantName, environmentName)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(uuid.UUID)
@@ -229,7 +229,7 @@ func (_m *Repo) EnvironmentIDByNames(ctx context.Context, partnerName string, en
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, partnerName, environmentName)
+		r1 = rf(ctx, tenantName, environmentName)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -260,13 +260,13 @@ func (_m *Repo) EnvironmentUpdate(ctx context.Context, environmentID uuid.UUID, 
 	return r0, r1
 }
 
-// EnvironmentsGet provides a mock function with given fields: ctx, partnerID
-func (_m *Repo) EnvironmentsGet(ctx context.Context, partnerID uuid.UUID) ([]*model.Environment, error) {
-	ret := _m.Called(ctx, partnerID)
+// EnvironmentsGet provides a mock function with given fields: ctx, tenantID
+func (_m *Repo) EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]*model.Environment, error) {
+	ret := _m.Called(ctx, tenantID)
 
 	var r0 []*model.Environment
 	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) []*model.Environment); ok {
-		r0 = rf(ctx, partnerID)
+		r0 = rf(ctx, tenantID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*model.Environment)
@@ -275,7 +275,7 @@ func (_m *Repo) EnvironmentsGet(ctx context.Context, partnerID uuid.UUID) ([]*mo
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
-		r1 = rf(ctx, partnerID)
+		r1 = rf(ctx, tenantID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -368,98 +368,6 @@ func (_m *Repo) Metrics() prometheus.Collector {
 	return r0
 }
 
-// PartnerCreate provides a mock function with given fields: ctx, p
-func (_m *Repo) PartnerCreate(ctx context.Context, p *model.PartnerCreate) (*model.Partner, error) {
-	ret := _m.Called(ctx, p)
-
-	var r0 *model.Partner
-	if rf, ok := ret.Get(0).(func(context.Context, *model.PartnerCreate) *model.Partner); ok {
-		r0 = rf(ctx, p)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.Partner)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *model.PartnerCreate) error); ok {
-		r1 = rf(ctx, p)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// PartnerEnvironments provides a mock function with given fields: ctx
-func (_m *Repo) TenantEnvironments(ctx context.Context) ([]*model.TenantEnvironments, error) {
-	ret := _m.Called(ctx)
-
-	var r0 []*model.TenantEnvironments
-	if rf, ok := ret.Get(0).(func(context.Context) []*model.TenantEnvironments); ok {
-		r0 = rf(ctx)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.TenantEnvironments)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// PartnerGet provides a mock function with given fields: ctx, id
-func (_m *Repo) PartnerGet(ctx context.Context, id uuid.UUID) (*model.Partner, error) {
-	ret := _m.Called(ctx, id)
-
-	var r0 *model.Partner
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) *model.Partner); ok {
-		r0 = rf(ctx, id)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.Partner)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
-		r1 = rf(ctx, id)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// PartnersGet provides a mock function with given fields: ctx
-func (_m *Repo) PartnersGet(ctx context.Context) ([]*model.Partner, error) {
-	ret := _m.Called(ctx)
-
-	var r0 []*model.Partner
-	if rf, ok := ret.Get(0).(func(context.Context) []*model.Partner); ok {
-		r0 = rf(ctx)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.Partner)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // StatusCreateOrUpdate provides a mock function with given fields: ctx, environmentID, h
 func (_m *Repo) StatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Helm) error {
 	ret := _m.Called(ctx, environmentID, h)
@@ -490,6 +398,98 @@ func (_m *Repo) StatusForEnvironment(ctx context.Context, environmentID uuid.UUI
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
 		r1 = rf(ctx, environmentID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// TenantCreate provides a mock function with given fields: ctx, p
+func (_m *Repo) TenantCreate(ctx context.Context, p *model.TenantCreate) (*model.Tenant, error) {
+	ret := _m.Called(ctx, p)
+
+	var r0 *model.Tenant
+	if rf, ok := ret.Get(0).(func(context.Context, *model.TenantCreate) *model.Tenant); ok {
+		r0 = rf(ctx, p)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Tenant)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *model.TenantCreate) error); ok {
+		r1 = rf(ctx, p)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// TenantEnvironments provides a mock function with given fields: ctx
+func (_m *Repo) TenantEnvironments(ctx context.Context) ([]*model.TenantEnvironments, error) {
+	ret := _m.Called(ctx)
+
+	var r0 []*model.TenantEnvironments
+	if rf, ok := ret.Get(0).(func(context.Context) []*model.TenantEnvironments); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.TenantEnvironments)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// TenantGet provides a mock function with given fields: ctx, id
+func (_m *Repo) TenantGet(ctx context.Context, id uuid.UUID) (*model.Tenant, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *model.Tenant
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) *model.Tenant); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Tenant)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// TenantsGet provides a mock function with given fields: ctx
+func (_m *Repo) TenantsGet(ctx context.Context) ([]*model.Tenant, error) {
+	ret := _m.Called(ctx)
+
+	var r0 []*model.Tenant
+	if rf, ok := ret.Get(0).(func(context.Context) []*model.Tenant); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.Tenant)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
 	} else {
 		r1 = ret.Error(1)
 	}

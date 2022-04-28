@@ -36,7 +36,7 @@ func TestDeployReceiver(t *testing.T) {
 			},
 			statuses: []message.Status{
 				{
-					Partner:     "partner1",
+					Tenant:      "tenant1",
 					Environment: "prod",
 					Type:        2,
 					Data:        []uint8(`{"Name":"feature1","Version":"1","RolloutStatus":"ok","ConfigHash":"hash1"}`),
@@ -68,7 +68,7 @@ func TestDeployReceiver(t *testing.T) {
 			dr, err := NewDeployManager(
 				sub,
 				pub,
-				"partner1",
+				"tenant1",
 				"prod",
 				executor,
 				&rest.Config{

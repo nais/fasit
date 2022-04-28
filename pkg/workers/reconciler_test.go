@@ -19,8 +19,8 @@ var reconcileTests = map[string]struct {
 }{
 	"all empty": {
 		store: &mockStore{
-			partnerEnvironments: []*model.TenantEnvironments{},
-			status:              []*model.Status{},
+			tenantEnvironments: []*model.TenantEnvironments{},
+			status:             []*model.Status{},
 		},
 		want: []message.DeployInstruction{},
 	},
@@ -40,12 +40,12 @@ var reconcileTests = map[string]struct {
 					Enabled:     true,
 				},
 			},
-			partnerEnvironments: []*model.TenantEnvironments{
+			tenantEnvironments: []*model.TenantEnvironments{
 				{
 					Environment: model.Environment{
 						Name: "prod",
 					},
-					TenantName: "partner1",
+					TenantName: "tenant1",
 				},
 			},
 			status: []*model.Status{},
@@ -75,12 +75,12 @@ var reconcileTests = map[string]struct {
 					Enabled:     true,
 				},
 			},
-			partnerEnvironments: []*model.TenantEnvironments{
+			tenantEnvironments: []*model.TenantEnvironments{
 				{
 					Environment: model.Environment{
 						Name: "prod",
 					},
-					TenantName: "partner1",
+					TenantName: "tenant1",
 				},
 			},
 			status: []*model.Status{
@@ -118,12 +118,12 @@ var reconcileTests = map[string]struct {
 					Enabled:     false,
 				},
 			},
-			partnerEnvironments: []*model.TenantEnvironments{
+			tenantEnvironments: []*model.TenantEnvironments{
 				{
 					Environment: model.Environment{
 						Name: "prod",
 					},
-					TenantName: "partner1",
+					TenantName: "tenant1",
 				},
 			},
 			status: []*model.Status{},
@@ -162,12 +162,12 @@ var reconcileTests = map[string]struct {
 					Enabled:     true,
 				},
 			},
-			partnerEnvironments: []*model.TenantEnvironments{
+			tenantEnvironments: []*model.TenantEnvironments{
 				{
 					Environment: model.Environment{
 						Name: "prod",
 					},
-					TenantName: "partner1",
+					TenantName: "tenant1",
 				},
 			},
 			status: []*model.Status{
@@ -216,14 +216,14 @@ func TestReconcile(t *testing.T) {
 }
 
 type mockStore struct {
-	partnerEnvironments []*model.TenantEnvironments
-	status              []*model.Status
-	featureStates       []*model.FeatureState
-	helmValues          map[string]any
+	tenantEnvironments []*model.TenantEnvironments
+	status             []*model.Status
+	featureStates      []*model.FeatureState
+	helmValues         map[string]any
 }
 
 func (m *mockStore) TenantEnvironments(ctx context.Context) ([]*model.TenantEnvironments, error) {
-	return m.partnerEnvironments, nil
+	return m.tenantEnvironments, nil
 }
 
 func (m *mockStore) StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]*model.Status, error) {

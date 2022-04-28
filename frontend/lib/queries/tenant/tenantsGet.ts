@@ -1,8 +1,8 @@
 import gql from 'graphql-tag'
 
-export const TENANT_GET = gql`
-  query TenantGet {
-    tenant {
+export const TENANTS_GET = gql`
+  query TenantsGet {
+    tenants {
       id
       name
       description

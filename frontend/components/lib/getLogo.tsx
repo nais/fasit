@@ -1,5 +1,5 @@
 import NavLogo from "./icons/navLogo";
-import PartnerLogo from "./icons/partner";
+import TenantLogo from "./icons/tenantLogo";
 
 const GetLogo = (name: string, size?: number) => {
     switch (name) {
@@ -8,7 +8,7 @@ const GetLogo = (name: string, size?: number) => {
         case 'mattilsynet':
             return <img src={"/mattilsynet.png"} width={size?size+'px':'50px'}/>
         default:
-            return <PartnerLogo />
+            return <TenantLogo />
 
     }
 }

@@ -1,7 +1,7 @@
 package message
 
 type Status struct {
-	Partner     string
+	Tenant      string
 	Environment string
 	Type        StatusType
 	Data        []byte

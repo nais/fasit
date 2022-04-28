@@ -33,8 +33,8 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           args:
             - --production
-            - --partner-name
-            - {{ .Values.partnerName }}
+            - --tenant-name
+            - {{ .Values.tenantName }}
             - --env
             - {{ .Values.env }}
             - --env-project-id

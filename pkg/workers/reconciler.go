@@ -80,7 +80,7 @@ func (r *Reconciler) reconcile(ctx context.Context) error {
 	for _, d := range data {
 		log := r.log.WithFields(logrus.Fields{
 			"environment": d.Name,
-			"partner":     d.TenantName,
+			"tenant":      d.TenantName,
 		})
 
 		log.Debug("reconcile environment")

@@ -22,18 +22,18 @@ type Environment struct {
 type EnvironmentKind string
 
 const (
-	EnvironmentKindPartner    EnvironmentKind = "partner"
+	EnvironmentKindTenant     EnvironmentKind = "tenant"
 	EnvironmentKindManagement EnvironmentKind = "management"
 )
 
 var AllEnvironmentKind = []EnvironmentKind{
-	EnvironmentKindPartner,
+	EnvironmentKindTenant,
 	EnvironmentKindManagement,
 }
 
 func (e EnvironmentKind) IsValid() bool {
 	switch e {
-	case EnvironmentKindPartner, EnvironmentKindManagement:
+	case EnvironmentKindTenant, EnvironmentKindManagement:
 		return true
 	}
 	return false

@@ -12,7 +12,7 @@ const CreateBox = styled.div`
   margin-right: 10px;
 `
 
-const CreatePartner = () => {
+const CreateTenant = () => {
   const router = useRouter()
 
   return (
@@ -20,10 +20,10 @@ const CreatePartner = () => {
       <IconButton
         size='large'
         edge='end'
-        aria-label='Legg til ny partner'
+        aria-label='Add new tenant'
         aria-controls='primary-search-account-menu'
         aria-haspopup='true'
-        onClick={async () => await router.push('/partner/new')}
+        onClick={async () => await router.push('/tenant/new')}
         color='inherit'
       >
         <AddCircleFilled />
@@ -32,4 +32,4 @@ const CreatePartner = () => {
   )
 }
 
-export default CreatePartner
+export default CreateTenant

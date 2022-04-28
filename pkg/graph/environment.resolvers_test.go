@@ -13,7 +13,7 @@ import (
 
 func Test_environmentResolver_FeatureStates_FeatureStateMerge_Works(t *testing.T) {
 	id := uuid.New()
-	env := &model.Environment{ID: id, Kind: model.EnvironmentKindPartner}
+	env := &model.Environment{ID: id, Kind: model.EnvironmentKindTenant}
 	ctx := context.Background()
 
 	repoFeatureStates := []*model.FeatureState{
@@ -33,11 +33,11 @@ func Test_environmentResolver_FeatureStates_FeatureStateMerge_Works(t *testing.T
 				Features: []feature.Feature{
 					{
 						Name:             "global-feature",
-						EnvironmentKinds: []model.EnvironmentKind{model.EnvironmentKindPartner},
+						EnvironmentKinds: []model.EnvironmentKind{model.EnvironmentKindTenant},
 					},
 					{
 						Name:             "repo-feature",
-						EnvironmentKinds: []model.EnvironmentKind{model.EnvironmentKindPartner},
+						EnvironmentKinds: []model.EnvironmentKind{model.EnvironmentKindTenant},
 					},
 				},
 			},

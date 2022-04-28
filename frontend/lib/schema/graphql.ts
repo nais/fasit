@@ -62,12 +62,12 @@ export type EnvironmentCreate = {
   description?: InputMaybe<Scalars['String']>
   kind: EnvironmentKind
   name: Scalars['String']
-  partnerID: Scalars['ID']
+  tenantID: Scalars['ID']
 }
 
 export enum EnvironmentKind {
   Management = 'MANAGEMENT',
-  Partner = 'PARTNER',
+  Tenant = 'TENANT',
 }
 
 /** UpdateEnvironment contains metadata for updating an environment */
@@ -105,7 +105,7 @@ export type Mutation = {
   /** updateEnvironment updates an existing environment */
   environmentUpdate: Environment
   featureStateSave: FeatureState
-  partnerCreate: Partner
+  tenantCreate: Tenant
 }
 
 export type MutationConfigurationCreateArgs = {
@@ -136,8 +136,8 @@ export type MutationFeatureStateSaveArgs = {
   feature: Scalars['String']
 }
 
-export type MutationPartnerCreateArgs = {
-  partner: PartnerCreate
+export type MutationTenantCreateArgs = {
+  tenant: TenantCreate
 }
 
 export type NewConfiguration = {
@@ -148,32 +148,18 @@ export type NewConfiguration = {
   value: Scalars['RawMessage']
 }
 
-export type Partner = {
-  __typename?: 'Partner'
-  created: Scalars['Time']
-  description?: Maybe<Scalars['String']>
-  id: Scalars['ID']
-  lastModified: Scalars['Time']
-  name: Scalars['String']
-}
-
-export type PartnerCreate = {
-  description?: InputMaybe<Scalars['String']>
-  name: Scalars['String']
-}
-
 export type Query = {
   __typename?: 'Query'
   configuration: Array<Configuration>
   envConfig: Array<Configuration>
   /** Environment returns the given environment. */
   environment: Environment
-  /** Environments returns the environments for a partner. */
+  /** Environments returns the environments for a tenant. */
   environments: Array<Environment>
   features: Array<Feature>
-  /** partner returns the given partner. */
-  partner: Partner
-  partners: Array<Partner>
+  /** tenant returns the given tenant. */
+  tenant: Tenant
+  tenants: Array<Tenant>
   values: Scalars['Map']
 }
 
@@ -192,20 +178,34 @@ export type QueryEnvironmentArgs = {
 }
 
 export type QueryEnvironmentsArgs = {
-  partnerID: Scalars['ID']
+  tenantID: Scalars['ID']
 }
 
 export type QueryFeaturesArgs = {
   kind?: InputMaybe<EnvironmentKind>
 }
 
-export type QueryPartnerArgs = {
+export type QueryTenantArgs = {
   id: Scalars['ID']
 }
 
 export type QueryValuesArgs = {
   env: Scalars['ID']
   feature: Scalars['String']
+}
+
+export type Tenant = {
+  __typename?: 'Tenant'
+  created: Scalars['Time']
+  description?: Maybe<Scalars['String']>
+  id: Scalars['ID']
+  lastModified: Scalars['Time']
+  name: Scalars['String']
+}
+
+export type TenantCreate = {
+  description?: InputMaybe<Scalars['String']>
+  name: Scalars['String']
 }
 
 export type UpdateConfiguration = {
@@ -287,7 +287,7 @@ export type ConfigurationUpdateMutation = {
 export type EnvironmentCreateMutationVariables = Exact<{
   name: Scalars['String']
   description?: InputMaybe<Scalars['String']>
-  partnerID: Scalars['ID']
+  tenantID: Scalars['ID']
   kind: EnvironmentKind
 }>
 
@@ -340,7 +340,7 @@ export type EnvironmentUpdateMutation = {
 }
 
 export type EnvironmentsGetQueryVariables = Exact<{
-  partnerID: Scalars['ID']
+  tenantID: Scalars['ID']
 }>
 
 export type EnvironmentsGetQuery = {
@@ -378,24 +378,24 @@ export type FeatureStateSaveMutation = {
   featureStateSave: { __typename?: 'FeatureState'; enabled: boolean }
 }
 
-export type PartnerCreateMutationVariables = Exact<{
+export type TenantCreateMutationVariables = Exact<{
   name: Scalars['String']
   description?: InputMaybe<Scalars['String']>
 }>
 
-export type PartnerCreateMutation = {
+export type TenantCreateMutation = {
   __typename?: 'Mutation'
-  partnerCreate: { __typename?: 'Partner'; id: string }
+  tenantCreate: { __typename?: 'Tenant'; id: string }
 }
 
-export type PartnerGetQueryVariables = Exact<{
+export type TenantGetQueryVariables = Exact<{
   id: Scalars['ID']
 }>
 
-export type PartnerGetQuery = {
+export type TenantGetQuery = {
   __typename?: 'Query'
-  partner: {
-    __typename?: 'Partner'
+  tenant: {
+    __typename?: 'Tenant'
     id: string
     name: string
     description?: string | null
@@ -404,12 +404,12 @@ export type PartnerGetQuery = {
   }
 }
 
-export type PartnersGetQueryVariables = Exact<{ [key: string]: never }>
+export type TenantsGetQueryVariables = Exact<{ [key: string]: never }>
 
-export type PartnersGetQuery = {
+export type TenantsGetQuery = {
   __typename?: 'Query'
-  partners: Array<{
-    __typename?: 'Partner'
+  tenants: Array<{
+    __typename?: 'Tenant'
     id: string
     name: string
     description?: string | null
@@ -724,14 +724,14 @@ export const EnvironmentCreateDocument = gql`
   mutation environmentCreate(
     $name: String!
     $description: String
-    $partnerID: ID!
+    $tenantID: ID!
     $kind: EnvironmentKind!
   ) {
     environmentCreate(
       environment: {
         name: $name
         description: $description
-        partnerID: $partnerID
+        tenantID: $tenantID
         kind: $kind
       }
     ) {
@@ -759,7 +759,7 @@ export type EnvironmentCreateMutationFn = Apollo.MutationFunction<
  *   variables: {
  *      name: // value for 'name'
  *      description: // value for 'description'
- *      partnerID: // value for 'partnerID'
+ *      tenantID: // value for 'tenantID'
  *      kind: // value for 'kind'
  *   },
  * });
@@ -914,8 +914,8 @@ export type EnvironmentUpdateMutationOptions = Apollo.BaseMutationOptions<
   EnvironmentUpdateMutationVariables
 >
 export const EnvironmentsGetDocument = gql`
-  query environmentsGet($partnerID: ID!) {
-    environments(partnerID: $partnerID) {
+  query environmentsGet($tenantID: ID!) {
+    environments(tenantID: $tenantID) {
       id
       name
     }
@@ -934,7 +934,7 @@ export const EnvironmentsGetDocument = gql`
  * @example
  * const { data, loading, error } = useEnvironmentsGetQuery({
  *   variables: {
- *      partnerID: // value for 'partnerID'
+ *      tenantID: // value for 'tenantID'
  *   },
  * });
  */
@@ -1088,60 +1088,60 @@ export type FeatureStateSaveMutationOptions = Apollo.BaseMutationOptions<
   FeatureStateSaveMutation,
   FeatureStateSaveMutationVariables
 >
-export const PartnerCreateDocument = gql`
-  mutation partnerCreate($name: String!, $description: String) {
-    partnerCreate(partner: { name: $name, description: $description }) {
+export const TenantCreateDocument = gql`
+  mutation tenantCreate($name: String!, $description: String) {
+    tenantCreate(tenant: { name: $name, description: $description }) {
       id
     }
   }
 `
-export type PartnerCreateMutationFn = Apollo.MutationFunction<
-  PartnerCreateMutation,
-  PartnerCreateMutationVariables
+export type TenantCreateMutationFn = Apollo.MutationFunction<
+  TenantCreateMutation,
+  TenantCreateMutationVariables
 >
 
 /**
- * __usePartnerCreateMutation__
+ * __useTenantCreateMutation__
  *
- * To run a mutation, you first call `usePartnerCreateMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `usePartnerCreateMutation` returns a tuple that includes:
+ * To run a mutation, you first call `useTenantCreateMutation` within a React component and pass it any options that fit your needs.
+ * When your component renders, `useTenantCreateMutation` returns a tuple that includes:
  * - A mutate function that you can call at any time to execute the mutation
  * - An object with fields that represent the current status of the mutation's execution
  *
  * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
  *
  * @example
- * const [partnerCreateMutation, { data, loading, error }] = usePartnerCreateMutation({
+ * const [tenantCreateMutation, { data, loading, error }] = useTenantCreateMutation({
  *   variables: {
  *      name: // value for 'name'
  *      description: // value for 'description'
  *   },
  * });
  */
-export function usePartnerCreateMutation(
+export function useTenantCreateMutation(
   baseOptions?: Apollo.MutationHookOptions<
-    PartnerCreateMutation,
-    PartnerCreateMutationVariables
+    TenantCreateMutation,
+    TenantCreateMutationVariables
   >,
 ) {
   const options = { ...defaultOptions, ...baseOptions }
   return Apollo.useMutation<
-    PartnerCreateMutation,
-    PartnerCreateMutationVariables
-  >(PartnerCreateDocument, options)
+    TenantCreateMutation,
+    TenantCreateMutationVariables
+  >(TenantCreateDocument, options)
 }
-export type PartnerCreateMutationHookResult = ReturnType<
-  typeof usePartnerCreateMutation
+export type TenantCreateMutationHookResult = ReturnType<
+  typeof useTenantCreateMutation
 >
-export type PartnerCreateMutationResult =
-  Apollo.MutationResult<PartnerCreateMutation>
-export type PartnerCreateMutationOptions = Apollo.BaseMutationOptions<
-  PartnerCreateMutation,
-  PartnerCreateMutationVariables
+export type TenantCreateMutationResult =
+  Apollo.MutationResult<TenantCreateMutation>
+export type TenantCreateMutationOptions = Apollo.BaseMutationOptions<
+  TenantCreateMutation,
+  TenantCreateMutationVariables
 >
-export const PartnerGetDocument = gql`
-  query PartnerGet($id: ID!) {
-    partner(id: $id) {
+export const TenantGetDocument = gql`
+  query TenantGet($id: ID!) {
+    tenant(id: $id) {
       id
       name
       description
@@ -1152,56 +1152,53 @@ export const PartnerGetDocument = gql`
 `
 
 /**
- * __usePartnerGetQuery__
+ * __useTenantGetQuery__
  *
- * To run a query within a React component, call `usePartnerGetQuery` and pass it any options that fit your needs.
- * When your component renders, `usePartnerGetQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * To run a query within a React component, call `useTenantGetQuery` and pass it any options that fit your needs.
+ * When your component renders, `useTenantGetQuery` returns an object from Apollo Client that contains loading, error, and data properties
  * you can use to render your UI.
  *
  * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
  *
  * @example
- * const { data, loading, error } = usePartnerGetQuery({
+ * const { data, loading, error } = useTenantGetQuery({
  *   variables: {
  *      id: // value for 'id'
  *   },
  * });
  */
-export function usePartnerGetQuery(
-  baseOptions: Apollo.QueryHookOptions<
-    PartnerGetQuery,
-    PartnerGetQueryVariables
-  >,
+export function useTenantGetQuery(
+  baseOptions: Apollo.QueryHookOptions<TenantGetQuery, TenantGetQueryVariables>,
 ) {
   const options = { ...defaultOptions, ...baseOptions }
-  return Apollo.useQuery<PartnerGetQuery, PartnerGetQueryVariables>(
-    PartnerGetDocument,
+  return Apollo.useQuery<TenantGetQuery, TenantGetQueryVariables>(
+    TenantGetDocument,
     options,
   )
 }
-export function usePartnerGetLazyQuery(
+export function useTenantGetLazyQuery(
   baseOptions?: Apollo.LazyQueryHookOptions<
-    PartnerGetQuery,
-    PartnerGetQueryVariables
+    TenantGetQuery,
+    TenantGetQueryVariables
   >,
 ) {
   const options = { ...defaultOptions, ...baseOptions }
-  return Apollo.useLazyQuery<PartnerGetQuery, PartnerGetQueryVariables>(
-    PartnerGetDocument,
+  return Apollo.useLazyQuery<TenantGetQuery, TenantGetQueryVariables>(
+    TenantGetDocument,
     options,
   )
 }
-export type PartnerGetQueryHookResult = ReturnType<typeof usePartnerGetQuery>
-export type PartnerGetLazyQueryHookResult = ReturnType<
-  typeof usePartnerGetLazyQuery
+export type TenantGetQueryHookResult = ReturnType<typeof useTenantGetQuery>
+export type TenantGetLazyQueryHookResult = ReturnType<
+  typeof useTenantGetLazyQuery
 >
-export type PartnerGetQueryResult = Apollo.QueryResult<
-  PartnerGetQuery,
-  PartnerGetQueryVariables
+export type TenantGetQueryResult = Apollo.QueryResult<
+  TenantGetQuery,
+  TenantGetQueryVariables
 >
-export const PartnersGetDocument = gql`
-  query PartnersGet {
-    partners {
+export const TenantsGetDocument = gql`
+  query TenantsGet {
+    tenants {
       id
       name
       description
@@ -1212,49 +1209,49 @@ export const PartnersGetDocument = gql`
 `
 
 /**
- * __usePartnersGetQuery__
+ * __useTenantsGetQuery__
  *
- * To run a query within a React component, call `usePartnersGetQuery` and pass it any options that fit your needs.
- * When your component renders, `usePartnersGetQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * To run a query within a React component, call `useTenantsGetQuery` and pass it any options that fit your needs.
+ * When your component renders, `useTenantsGetQuery` returns an object from Apollo Client that contains loading, error, and data properties
  * you can use to render your UI.
  *
  * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
  *
  * @example
- * const { data, loading, error } = usePartnersGetQuery({
+ * const { data, loading, error } = useTenantsGetQuery({
  *   variables: {
  *   },
  * });
  */
-export function usePartnersGetQuery(
+export function useTenantsGetQuery(
   baseOptions?: Apollo.QueryHookOptions<
-    PartnersGetQuery,
-    PartnersGetQueryVariables
+    TenantsGetQuery,
+    TenantsGetQueryVariables
   >,
 ) {
   const options = { ...defaultOptions, ...baseOptions }
-  return Apollo.useQuery<PartnersGetQuery, PartnersGetQueryVariables>(
-    PartnersGetDocument,
+  return Apollo.useQuery<TenantsGetQuery, TenantsGetQueryVariables>(
+    TenantsGetDocument,
     options,
   )
 }
-export function usePartnersGetLazyQuery(
+export function useTenantsGetLazyQuery(
   baseOptions?: Apollo.LazyQueryHookOptions<
-    PartnersGetQuery,
-    PartnersGetQueryVariables
+    TenantsGetQuery,
+    TenantsGetQueryVariables
   >,
 ) {
   const options = { ...defaultOptions, ...baseOptions }
-  return Apollo.useLazyQuery<PartnersGetQuery, PartnersGetQueryVariables>(
-    PartnersGetDocument,
+  return Apollo.useLazyQuery<TenantsGetQuery, TenantsGetQueryVariables>(
+    TenantsGetDocument,
     options,
   )
 }
-export type PartnersGetQueryHookResult = ReturnType<typeof usePartnersGetQuery>
-export type PartnersGetLazyQueryHookResult = ReturnType<
-  typeof usePartnersGetLazyQuery
+export type TenantsGetQueryHookResult = ReturnType<typeof useTenantsGetQuery>
+export type TenantsGetLazyQueryHookResult = ReturnType<
+  typeof useTenantsGetLazyQuery
 >
-export type PartnersGetQueryResult = Apollo.QueryResult<
-  PartnersGetQuery,
-  PartnersGetQueryVariables
+export type TenantsGetQueryResult = Apollo.QueryResult<
+  TenantsGetQuery,
+  TenantsGetQueryVariables
 >

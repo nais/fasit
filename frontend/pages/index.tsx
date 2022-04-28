@@ -1,5 +1,5 @@
 import type { NextPage } from 'next'
-import { usePartnersGetQuery } from '../lib/schema/graphql'
+import { useTenantsGetQuery } from '../lib/schema/graphql'
 import LoaderSpinner from '../components/lib/spinner'
 import ErrorMessage from '../components/lib/error'
 import styled from 'styled-components'
@@ -48,22 +48,22 @@ const StyledMain = styled.div`
 
 `
 const Home: NextPage = () => {
-  const partnersQuery = usePartnersGetQuery()
-  if (partnersQuery.error) {
-    return <ErrorMessage error={partnersQuery.error} />
+  const tenantsGetQuery = useTenantsGetQuery()
+  if (tenantsGetQuery.error) {
+    return <ErrorMessage error={tenantsGetQuery.error} />
   }
-  if (partnersQuery.loading || !partnersQuery.data?.partners) {
+  if (tenantsGetQuery.loading || !tenantsGetQuery.data?.tenants) {
     return <LoaderSpinner />
   }
 
-  const partners = partnersQuery.data.partners
+  const tenants = tenantsGetQuery.data.tenants
 
     return (
       <StyledMain>
-        {partners.length > 0 ?
+        {tenants.length > 0 ?
           <Links>
-            {partners.map((p) => (
-              <Link href={`/partner/${p.id}`} key={p.name}>
+            {tenants.map((p) => (
+              <Link href={`/tenant/${p.id}`} key={p.name}>
                 <a>
                   <CategoryCard>
                     <IconBox size={50}>{GetLogo(p.name)}</IconBox>
@@ -71,11 +71,11 @@ const Home: NextPage = () => {
                   </CategoryCard>
                 </a>
               </Link>))}
-            <Link href={`/partner/new`}>
+            <Link href={`/tenants/new`}>
               <a>
                 <CategoryCard>
                   <IconBox size={50}><Add width={'40px'} height={'40px'} color={"#222"}/></IconBox>
-                  <CategoryCardTitle>New partner</CategoryCardTitle>
+                  <CategoryCardTitle>new tenant</CategoryCardTitle>
                 </CategoryCard>
               </a>
             </Link>
@@ -87,12 +87,12 @@ const Home: NextPage = () => {
                 </CategoryCard>
               </a>
             </Link>
-          </Links> : <div><p>No partners, partner!</p><Links>
-              <Link href={`/partner/new`}>
+          </Links> : <div><p>No tenants, compadre!</p><Links>
+              <Link href={`/tenant/new`}>
                 <a>
                   <CategoryCard>
                     <IconBox size={50}><Add width={'40px'} height={'40px'} color={"#222"}/></IconBox>
-                    <CategoryCardTitle>New partner</CategoryCardTitle>
+                    <CategoryCardTitle>new tenant</CategoryCardTitle>
                   </CategoryCard>
                 </a>
               </Link>

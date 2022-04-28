@@ -20,22 +20,22 @@ func tenantFromSQL(t gensql.Tenant) *model.Tenant {
 }
 
 func (r *repo) TenantCreate(ctx context.Context, t *model.TenantCreate) (*model.Tenant, error) {
-	partner, err := r.querier.TenantCreate(ctx, gensql.TenantCreateParams{
+	tenant, err := r.querier.TenantCreate(ctx, gensql.TenantCreateParams{
 		Name:        t.Name,
 		Description: ptrToNullString(t.Description),
 	})
 	if err != nil {
 		return nil, err
 	}
-	return tenantFromSQL(partner), nil
+	return tenantFromSQL(tenant), nil
 }
 
 func (r *repo) TenantGet(ctx context.Context, id uuid.UUID) (*model.Tenant, error) {
-	partner, err := r.querier.TenantGet(ctx, id)
+	tenant, err := r.querier.TenantGet(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	return tenantFromSQL(partner), nil
+	return tenantFromSQL(tenant), nil
 }
 
 func (r *repo) TenantsGet(ctx context.Context) ([]*model.Tenant, error) {

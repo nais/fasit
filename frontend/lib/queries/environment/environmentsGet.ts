@@ -1,8 +1,8 @@
 import gql from 'graphql-tag'
 
 export const ENVIRONMENTS_GET = gql`
-  query environmentsGet($partnerID: ID!) {
-    environments(partnerID: $partnerID) {
+  query environmentsGet($tenantID: ID!) {
+    environments(tenantID: $tenantID) {
       id
       name
     }

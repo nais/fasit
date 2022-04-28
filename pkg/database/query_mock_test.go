@@ -20,14 +20,14 @@ type MockQuerier struct {
 	environmentGet             func(ctx context.Context, id uuid.UUID) (gensql.Environment, error)
 	environmentIDByNames       func(ctx context.Context, arg gensql.EnvironmentIDByNamesParams) (uuid.UUID, error)
 	environmentUpdate          func(ctx context.Context, arg gensql.EnvironmentUpdateParams) (gensql.Environment, error)
-	environmentsGet            func(ctx context.Context, partnerID uuid.UUID) ([]gensql.Environment, error)
+	environmentsGet            func(ctx context.Context, tenantID uuid.UUID) ([]gensql.Environment, error)
 	featureStateCreateOrUpdate func(ctx context.Context, arg gensql.FeatureStateCreateOrUpdateParams) (gensql.FeatureState, error)
 	featureStateGet            func(ctx context.Context, arg gensql.FeatureStateGetParams) (gensql.FeatureState, error)
 	featureStatesGet           func(ctx context.Context, environmentID uuid.UUID) ([]gensql.FeatureState, error)
-	partnerCreate              func(ctx context.Context, arg gensql.PartnerCreateParams) (gensql.Partner, error)
-	partnerGet                 func(ctx context.Context, id uuid.UUID) (gensql.Partner, error)
-	partnersGet                func(ctx context.Context) ([]gensql.Partner, error)
-	partnerEnvironments        func(ctx context.Context) ([]gensql.PartnerEnvironmentsRow, error)
+	tenantCreate               func(ctx context.Context, arg gensql.TenantCreateParams) (gensql.Tenant, error)
+	tenantGet                  func(ctx context.Context, id uuid.UUID) (gensql.Tenant, error)
+	tenantsGet                 func(ctx context.Context) ([]gensql.Tenant, error)
+	tenantEnvironments         func(ctx context.Context) ([]gensql.TenantEnvironmentsRow, error)
 	statusCreateOrUpdate       func(ctx context.Context, arg gensql.StatusCreateOrUpdateParams) error
 	statusForEnvironment       func(ctx context.Context, environmentID uuid.UUID) ([]gensql.Status, error)
 }
@@ -109,11 +109,11 @@ func (m *MockQuerier) EnvironmentUpdate(ctx context.Context, arg gensql.Environm
 	return m.environmentUpdate(ctx, arg)
 }
 
-func (m *MockQuerier) EnvironmentsGet(ctx context.Context, partnerID uuid.UUID) ([]gensql.Environment, error) {
+func (m *MockQuerier) EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]gensql.Environment, error) {
 	if m.environmentsGet == nil {
 		panic("not implemented")
 	}
-	return m.environmentsGet(ctx, partnerID)
+	return m.environmentsGet(ctx, tenantID)
 }
 
 func (m *MockQuerier) FeatureStateCreateOrUpdate(ctx context.Context, arg gensql.FeatureStateCreateOrUpdateParams) (gensql.FeatureState, error) {
@@ -137,32 +137,32 @@ func (m *MockQuerier) FeatureStatesGet(ctx context.Context, environmentID uuid.U
 	return m.featureStatesGet(ctx, environmentID)
 }
 
-func (m *MockQuerier) PartnerCreate(ctx context.Context, arg gensql.PartnerCreateParams) (gensql.Partner, error) {
-	if m.partnerCreate == nil {
+func (m *MockQuerier) TenantCreate(ctx context.Context, arg gensql.TenantCreateParams) (gensql.Tenant, error) {
+	if m.tenantCreate == nil {
 		panic("not implemented")
 	}
-	return m.partnerCreate(ctx, arg)
+	return m.tenantCreate(ctx, arg)
 }
 
-func (m *MockQuerier) PartnerGet(ctx context.Context, id uuid.UUID) (gensql.Partner, error) {
-	if m.partnerGet == nil {
+func (m *MockQuerier) TenantGet(ctx context.Context, id uuid.UUID) (gensql.Tenant, error) {
+	if m.tenantGet == nil {
 		panic("not implemented")
 	}
-	return m.partnerGet(ctx, id)
+	return m.tenantGet(ctx, id)
 }
 
-func (m *MockQuerier) PartnersGet(ctx context.Context) ([]gensql.Partner, error) {
-	if m.partnersGet == nil {
+func (m *MockQuerier) TenantsGet(ctx context.Context) ([]gensql.Tenant, error) {
+	if m.tenantGet == nil {
 		panic("not implemented")
 	}
-	return m.partnersGet(ctx)
+	return m.tenantsGet(ctx)
 }
 
-func (m *MockQuerier) PartnerEnvironments(ctx context.Context) ([]gensql.PartnerEnvironmentsRow, error) {
-	if m.partnerEnvironments == nil {
+func (m *MockQuerier) TenantEnvironments(ctx context.Context) ([]gensql.TenantEnvironmentsRow, error) {
+	if m.tenantEnvironments == nil {
 		panic("not implemented")
 	}
-	return m.partnerEnvironments(ctx)
+	return m.tenantEnvironments(ctx)
 }
 
 func (m *MockQuerier) StatusCreateOrUpdate(ctx context.Context, arg gensql.StatusCreateOrUpdateParams) error {

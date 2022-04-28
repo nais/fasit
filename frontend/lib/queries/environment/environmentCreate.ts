@@ -4,14 +4,14 @@ export const ENVIRONMENT_CREATE = gql`
   mutation environmentCreate(
     $name: String!
     $description: String
-    $partnerID: ID!
+    $tenantID: ID!
     $kind: EnvironmentKind!
   ) {
     environmentCreate(
       environment: {
         name: $name
         description: $description
-        partnerID: $partnerID
+        tenantID: $tenantID
         kind: $kind
       }
     ) {

@@ -25,17 +25,17 @@ const style = {
 const newEnvironmentValidation = yup.object().shape({
     name: yup.string().required('Miljø trenger et navn'),
     description: yup.string(),
-    kind: yup.string().oneOf(['partner', 'management'], 'Miljø trenger en type'),
+    kind: yup.string().oneOf(['tenant', 'management'], 'Miljø trenger en type'),
 })
 
 interface AddEnvironmentProps {
     open: boolean,
     onClose: (value: boolean) => void,
-    partnerName: string
-    partnerID: string
+    tenantName: string
+    tenantID: string
 }
 
-const AddEnvironment = ({open, onClose, partnerName, partnerID}: AddEnvironmentProps) => {
+const AddEnvironment = ({open, onClose, tenantName, tenantID}: AddEnvironmentProps) => {
     const {register, handleSubmit, formState, reset} =
         useForm({
             resolver: yupResolver(newEnvironmentValidation),
@@ -46,7 +46,7 @@ const AddEnvironment = ({open, onClose, partnerName, partnerID}: AddEnvironmentP
     const router = useRouter()
 
     const onSubmit = async (requestData: any) => {
-        requestData.partnerID = partnerID
+        requestData.tenantID = tenantID
         try {
             await environmentCreate({
                 variables: requestData,
@@ -65,7 +65,7 @@ const AddEnvironment = ({open, onClose, partnerName, partnerID}: AddEnvironmentP
         onClose(false)
 
         if (data && data.environmentCreate) {
-            router.push(`/partner/${partnerID}/${data.environmentCreate.id}`)
+            router.push(`/tenant/${tenantID}/${data.environmentCreate.id}`)
         }
     }
 
@@ -77,7 +77,7 @@ const AddEnvironment = ({open, onClose, partnerName, partnerID}: AddEnvironmentP
         <Modal open={open} onClose={closeAndReset}>
             <Box sx={style}>
                 <form onSubmit={handleSubmit(onSubmit)}>
-                    Legg til miljø for {partnerName}
+                    Legg til miljø for {tenantName}
                     <Fieldset legend="Legg til nytt miljø" errorPropagation={false}>
                         {backendError && <ErrorMessage error={backendError}/>}
                         <TextField
@@ -97,8 +97,8 @@ const AddEnvironment = ({open, onClose, partnerName, partnerID}: AddEnvironmentP
                             {...register('kind')}
                             error={errors.kind?.message}
                         >
-                            <option value="">Velg miljøtype</option>
-                            <option value="partner">Partner</option>
+                            <option value="">Choose environment type</option>
+                            <option value="tenant">Tenant</option>
                             <option value="management">Management</option>
                         </Select>
                         <RightJustifiedSubmitButton onCancel={closeAndReset}/>

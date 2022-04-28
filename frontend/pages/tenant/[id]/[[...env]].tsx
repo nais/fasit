@@ -1,34 +1,34 @@
 import { useRouter } from 'next/router'
 import * as React from 'react'
 import { useState } from 'react'
-import { useEnvironmentsGetQuery, usePartnerGetQuery } from '../../../lib/schema/graphql'
+import { useEnvironmentsGetQuery, useTenantGetQuery } from '../../../lib/schema/graphql'
 import ErrorMessage from '../../../components/lib/error'
 import LoaderSpinner from '../../../components/lib/spinner'
-import AddEnvironment from '../../../components/partner/addEnvironment'
+import AddEnvironment from '../../../components/tenant/addEnvironment'
 import { GetServerSideProps } from 'next'
 import { addApolloState, initializeApollo } from '../../../lib/apollo'
-import { PARTNER_GET } from '../../../lib/queries/partner/partnerGet'
-import Environment from '../../../components/partner/environment'
+import { TENANT_GET } from '../../../lib/queries/tenant/tenantGet'
+import Environment from '../../../components/tenant/environment'
 import { Main, MenuItem, MenuItems, MenuSeparator, PageContainer, SideMenu } from '../../../components/lib/PageLayout'
 
 
-const Partner = () => {
+const Tenant = () => {
   const router = useRouter()
-  const partnerID = router.query.id as string
+  const tenantID = router.query.id as string
   const envID = router.query.env as string
 
 
-  const { data, error, loading } = usePartnerGetQuery({ variables: { id: partnerID } })
-  const envQuery = useEnvironmentsGetQuery({ variables: { partnerID } })
+  const { data, error, loading } = useTenantGetQuery({ variables: { id: tenantID } })
+  const envQuery = useEnvironmentsGetQuery({ variables: { tenantID: tenantID } })
   const [open, setOpen] = useState(false)
 
   if (error) {
     return <ErrorMessage error={error} />
   }
-  if (loading || !data?.partner) {
+  if (loading || !data?.tenant) {
     return <LoaderSpinner />
   }
-  const partner = data.partner
+  const tenant = data.tenant
 
   return (
     <PageContainer>
@@ -38,7 +38,7 @@ const Partner = () => {
         <MenuItems>
           {envQuery.data?.environments?.map((e, i) => {
             return (
-              <MenuItem onClick={() => router.push(`/partner/${partnerID}/${e.id}`)} key={`${e.name}_${i}`} active={e.id == envID}>
+              <MenuItem onClick={() => router.push(`/tenant/${tenantID}/${e.id}`)} key={`${e.name}_${i}`} active={e.id == envID}>
                 <a>{e.name}</a>
               </MenuItem>
             )
@@ -48,10 +48,10 @@ const Partner = () => {
         </MenuItems>
       </SideMenu>
       <Main>
-        {envID && <Environment envID={envID[0]} partnerName={partner.name} />}
+        {envID && <Environment envID={envID[0]} tenantName={tenant.name} />}
       </Main>
-      <AddEnvironment open={open} onClose={() => setOpen(false)} partnerName={partner.name}
-        partnerID={partner.id} />
+      <AddEnvironment open={open} onClose={() => setOpen(false)} tenantName={tenant.name}
+        tenantID={tenant.id} />
     </PageContainer>
   )
 
@@ -63,7 +63,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
   try {
     await apolloClient.query({
-      query: PARTNER_GET,
+      query: TENANT_GET,
       variables: { id },
     })
   } catch (e) {
@@ -74,4 +74,4 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     props: { id },
   })
 }
-export default Partner
+export default Tenant

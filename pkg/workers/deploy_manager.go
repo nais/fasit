@@ -36,7 +36,7 @@ type DeployManager struct {
 	log            *logrus.Entry
 	helmCache      string
 	env            string
-	partnerName    string
+	tenantName     string
 	executor       Exec
 	createTempFile func(string, string) (file, error)
 }
@@ -44,7 +44,7 @@ type DeployManager struct {
 func NewDeployManager(
 	deploySubscriber DeploymentReceiver,
 	statusPublisher StatusPublisher,
-	partnerName, env string,
+	tenantName, env string,
 	executor Exec,
 	kubeConfig *rest.Config,
 	log *logrus.Entry,
@@ -60,7 +60,7 @@ func NewDeployManager(
 		log:            log,
 		helmCache:      helmCache,
 		env:            env,
-		partnerName:    partnerName,
+		tenantName:     tenantName,
 		executor:       executor,
 		kubeConfig:     kubeConfig,
 		createTempFile: func(prefix, suffix string) (file, error) { return os.CreateTemp(prefix, suffix) },
@@ -115,7 +115,7 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 	}
 
 	statusUpdate := message.Status{
-		Partner:     d.partnerName,
+		Tenant:      d.tenantName,
 		Environment: d.env,
 		Type:        message.StatusTypeHelm,
 		Data:        data,

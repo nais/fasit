@@ -55,19 +55,19 @@ const DescriptionBox = styled.div`
   padding-bottom: 25px;
 `
 
-const PartnerHeaderName = styled.h1`
+const TenantHeaderName = styled.h1`
   text-transform: capitalize;
   color: #222;
   margin: 0px;
 `
 
-const PartnerHeader = styled.div`
+const TenantHeader = styled.div`
   display: flex;
   flex-grow: 1;
   justify-content: space-between;
   text-transform: capitalize;
 `
-const PartnerHeaderEnv = styled.h2`
+const TenantHeaderEnv = styled.h2`
   color: #696969;
   padding: 0px;
   margin: 0px;
@@ -90,10 +90,10 @@ const Main = styled.div`
 
 interface EnvironmentProps {
   envID: string,
-  partnerName: string;
+  tenantName: string;
 }
 
-const Environment = ({ envID, partnerName }: EnvironmentProps) => {
+const Environment = ({ envID, tenantName }: EnvironmentProps) => {
   const [edit, setEdit] = useState(false)
   const [backendError, setBackendError] = useState()
   const [description, setDescription] = useState('')
@@ -130,7 +130,7 @@ const Environment = ({ envID, partnerName }: EnvironmentProps) => {
   const env = data.environment
   return (
     <div>
-        <PartnerHeaderName>{partnerName}</PartnerHeaderName><PartnerHeader><PartnerHeaderEnv>{`> ${env.name}`}</PartnerHeaderEnv>{env.kind === EnvironmentKind.Management && <ManagementIcon><ManagementLogo /></ManagementIcon>}</PartnerHeader>
+        <TenantHeaderName>{tenantName}</TenantHeaderName><TenantHeader><TenantHeaderEnv>{`> ${env.name}`}</TenantHeaderEnv>{env.kind === EnvironmentKind.Management && <ManagementIcon><ManagementLogo /></ManagementIcon>}</TenantHeader>
       <InfoBox>
         <DescriptionBox>
         {edit ?

@@ -1,6 +1,6 @@
 import * as React from "react"
 
-export const PartnerLogo = () => (
+export const TenantLogo = () => (
     <svg
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 32 32"
@@ -16,4 +16,4 @@ export const PartnerLogo = () => (
     </svg>
 )
 
-export default PartnerLogo
+export default TenantLogo

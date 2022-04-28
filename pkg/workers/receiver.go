@@ -16,7 +16,7 @@ type ReceiverClient interface {
 }
 
 type ReceiverStore interface {
-	EnvironmentIDByNames(ctx context.Context, partnerName string, environmentName string) (uuid.UUID, error)
+	EnvironmentIDByNames(ctx context.Context, tenantName string, environmentName string) (uuid.UUID, error)
 	StatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Helm) error
 }
 
@@ -49,12 +49,12 @@ func (r *Receiver) handler(ctx context.Context, msg message.Status) error {
 		return nil
 	}
 
-	environmentID, err := r.repo.EnvironmentIDByNames(ctx, msg.Partner, msg.Environment)
+	environmentID, err := r.repo.EnvironmentIDByNames(ctx, msg.Tenant, msg.Environment)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			r.log.WithField("partner", msg.Partner).
+			r.log.WithField("tenant", msg.Tenant).
 				WithField("environment", msg.Environment).
-				Warn("unknown partner and/or environment")
+				Warn("unknown tenant and/or environment")
 			return nil
 		}
 		return err

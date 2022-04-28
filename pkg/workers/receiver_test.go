@@ -27,19 +27,19 @@ func TestReceiver(t *testing.T) {
 			statuses: []message.Status{
 				{
 					Type:        message.StatusTypeHelm,
-					Partner:     "partner",
+					Tenant:      "tenant",
 					Environment: "env",
 					Data:        []byte(`{"name":"test","namespace":"test","status":"deployed","chart":"test","version":"1.0.0","appVersion":"1.0.0","values":{}}`),
 				},
 			},
 			expectedUpdates: 1,
 		},
-		"missing partner": {
+		"missing tenant": {
 			envID: uuid.Nil,
 			statuses: []message.Status{
 				{
 					Type:        message.StatusTypeHelm,
-					Partner:     "partner",
+					Tenant:      "tenant",
 					Environment: "env",
 					Data:        []byte(`{"name":"test","namespace":"test","status":"deployed","chart":"test","version":"1.0.0","appVersion":"1.0.0","values":{}}`),
 				},
@@ -83,7 +83,7 @@ type mockStorage struct {
 	statusCreateOrUpdate int
 }
 
-func (m *mockStorage) EnvironmentIDByNames(ctx context.Context, partnerName string, environmentName string) (uuid.UUID, error) {
+func (m *mockStorage) EnvironmentIDByNames(ctx context.Context, tenantName string, environmentName string) (uuid.UUID, error) {
 	if m.envID == uuid.Nil {
 		return uuid.Nil, sql.ErrNoRows
 	}
