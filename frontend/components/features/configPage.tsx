@@ -4,13 +4,10 @@ import ErrorMessage from '../lib/error'
 import LoaderSpinner from '../lib/spinner'
 import {ConfigType, FeaturesQuery, useConfigurationQuery} from '../../lib/schema/graphql'
 import {Table} from '@navikt/ds-react'
-import {Add, Delete, FileContent, Globe, Warning, Wrench} from '@navikt/ds-icons'
-import styled from 'styled-components'
-import {navGronn, navRod} from '../../styles/constants'
 import ConfigAdd from '../lib/configAdd'
 import ConfigEdit from '../lib/configEdit'
 import ConfigDelete from '../lib/configDelete'
-import ConfigRows, { Config, Configs } from "../lib/configRows";
+import ConfigRows, {Config, Configs} from "../lib/configRows";
 
 
 interface ConfigProps {
