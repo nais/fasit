@@ -3,6 +3,8 @@ source: https://github.com/nais/helm-charts/tree/main/charts/management-certific
 version: 0.1.0
 environmentKinds:
   - "management"
+dependsOn:
+  - "cert-manager"
 config:
   acme.email:
     type: string
