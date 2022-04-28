@@ -1,0 +1,19 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/management-certificates
+source: https://github.com/nais/helm-charts/tree/main/charts/management-certificates
+version: 0.1.0
+environmentKinds:
+  - "management"
+config:
+  acme.email:
+    type: string
+  acme.api:
+    type: string
+  cloudDNS.zone:
+    type: string
+    required: true
+  cloudDNS.project:
+    type: string
+    required: true
+  partner:
+    type: string
+    required: true
