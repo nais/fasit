@@ -11,6 +11,8 @@ config:
     type: string
   kube-prometheus-stack.prometheus.ingress.enabled:
     type: bool
+  kube-prometheus-stack.prometheus.nodeExporter.enabled:
+    type: bool
   kube-prometheus-stack.prometheus.ingress.hosts:
     type: string_array
   kube-prometheus-stack.grafana.enabled:
