@@ -1,0 +1,13 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/console
+source: https://github.com/nais/console/tree/master/charts
+version: 0.0.1
+environmentKinds:
+  - "management"
+config:
+  image.tag:
+    type: string
+  ingress.enabled:
+    type: bool
+  ingress.hosts:
+    type: string_array
+    required: true
