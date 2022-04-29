@@ -1,6 +1,6 @@
 chart: cert-manager
 source: https://github.com/cert-manager/cert-manager
-version: v1.7.2
+version: v1.8.0
 repo: https://charts.jetstack.io
 environmentKinds:
   - "tenant"
@@ -8,5 +8,13 @@ environmentKinds:
 config:
   installCRDs:
     type: bool
+    required: true
   global.podSecurityPolicy.enabled:
     type: bool
+  global.leaderElection.namespace:
+    type: string
+    required: true
+  serviceAccount.annotations.iam\.gke\.io/gcp-service-account:
+    type: string
+  extraArgs:
+    type: string_array
