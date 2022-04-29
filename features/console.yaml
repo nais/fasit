@@ -4,6 +4,13 @@ version: 0.0.1
 environmentKinds:
   - "management"
 config:
+  database.url:
+    type: string
+    secret: true
+    required: true
+  envProjectId:
+    type: string
+    require: true
   image.tag:
     type: string
   ingress.enabled:
