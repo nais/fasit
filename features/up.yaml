@@ -1,12 +1,16 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/up
 source: https://github.com/nais/up/tree/master/charts
-version: 0.1.0
+version: 0.3.0
 environmentKinds:
   - "tenant"
   - "management"
 config:
-  imageTag:
+  image.tag:
     type: string
-  ingresses:
+  ingress.enabled:
+    type: bool
+  ingress.hosts:
     type: string_array
     required: true
+  replicaCount:
+    type: int
