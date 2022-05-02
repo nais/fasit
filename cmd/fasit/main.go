@@ -8,18 +8,14 @@ import (
 	"strings"
 	"time"
 
+	"cloud.google.com/go/pubsub"
 	"github.com/99designs/gqlgen/graphql"
+	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/handler/lru"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
-	// Supported database drivers.
-	_ "github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/postgres"
-	"github.com/gorilla/websocket"
-	_ "github.com/lib/pq"
-
-	"cloud.google.com/go/pubsub"
-	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/gorilla/websocket"
 	"github.com/nais/fasit"
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/feature"
@@ -29,6 +25,10 @@ import (
 	"github.com/nais/fasit/pkg/workers"
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
+
+	// Supported database drivers.
+	_ "github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/postgres"
+	_ "github.com/lib/pq"
 )
 
 var cfg = DefaultConfig() // promErrs = prometheus.NewCounterVec(prometheus.CounterOpts{
@@ -43,6 +43,7 @@ func init() {
 	flag.StringVar(&cfg.GCPProjectID, "project-id", "nais-local-dev", "Google project ID")
 	flag.StringVar(&cfg.StatusSubscriptionID, "status-subscription-id", "fasit-subscription", "Pub/sub subscription for status")
 }
+
 func newServer(es graphql.ExecutableSchema) *handler.Server {
 	srv := handler.New(es)
 

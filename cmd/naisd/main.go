@@ -3,9 +3,14 @@ package main
 import (
 	"context"
 	"flag"
+	"os"
+	"os/signal"
+	"time"
 
 	"cloud.google.com/go/pubsub"
+	"github.com/nais/fasit/pkg/helm"
 	"github.com/nais/fasit/pkg/message"
+	"github.com/nais/fasit/pkg/naisd"
 	"github.com/nais/fasit/pkg/workers"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
@@ -39,7 +44,9 @@ func init() {
 func main() {
 	flag.Parse()
 	log := newLogger()
-	ctx := context.Background()
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+
 	deployClient, err := pubsub.NewClient(ctx, cfg.EnvProjectID)
 	if err != nil {
 		log.WithError(err).Fatal("setting up new pub/sub client")
@@ -53,14 +60,21 @@ func main() {
 		log.WithError(err).Fatal("failed to get kubeconfig")
 	}
 
-	var executor workers.Exec = &workers.MockExecutor{Logger: log.WithField("subsystem", "executor")}
+	var executor naisd.Exec = &naisd.MockExecutor{Logger: log.WithField("subsystem", "executor")}
 	if cfg.Production {
-		executor = &workers.Executor{}
+		executor = &naisd.Executor{}
 	}
-	receiver, err := workers.NewDeployManager(deploySubscriber, statusPublisher, cfg.TenantName, cfg.Env, executor, kubeConfig, log.WithField("subsystem", "deploy"))
+	receiver, err := naisd.NewDeployManager(deploySubscriber, statusPublisher, cfg.TenantName, cfg.Env, executor, kubeConfig, log.WithField("subsystem", "deploy"))
 	if err != nil {
 		log.WithError(err).Fatal("setting up worker")
 	}
+
+	helmClient := helm.New(kubeConfig, "nais-system", log.WithField("subsystem", "helm"))
+
+	s := workers.NewScheduler(log.WithField("subsystem", "scheduler"))
+	helmListReporter := naisd.NewStatusReporter(cfg.TenantName, cfg.Env, helmClient, statusPublisher)
+	s.Register("helm-list", helmListReporter, 15*time.Minute)
+	go s.Run(ctx)
 
 	log.Info("Receiver started")
 	receiver.Run(ctx)

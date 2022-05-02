@@ -16,7 +16,7 @@ func (r *repo) StatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID
 		EnvironmentID: environmentID,
 		Feature:       h.Name,
 		Version:       h.Version,
-		Status:        h.RolloutStatus,
+		Status:        h.RolloutStatus.String(),
 		ConfigHash:    h.ConfigHash,
 		Log:           h.Log,
 	})

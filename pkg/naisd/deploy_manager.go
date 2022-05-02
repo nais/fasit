@@ -1,4 +1,4 @@
-package workers
+package naisd
 
 import (
 	"bytes"
@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/nais/fasit/pkg/message"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
@@ -102,16 +103,24 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 		Name:          msg.Name,
 		Version:       msg.Version,
 		ConfigHash:    msg.ConfigHash,
-		RolloutStatus: "ok",
+		RolloutStatus: model.RolloutStatusPending,
 	}
+
+	_ = d.publishStatus(ctx, helmStatus)
 
 	helmStatus.Log, err = d.runHelm(ctx, args)
 	if err != nil {
 		log.Printf("failed to run helm %s: %s", msg.Name, err)
-		helmStatus.RolloutStatus = "failed"
+		helmStatus.RolloutStatus = model.RolloutStatusFailed
+	} else {
+		helmStatus.RolloutStatus = model.RolloutStatusDeployed
 	}
 
-	data, err := json.Marshal(helmStatus)
+	return d.publishStatus(ctx, helmStatus)
+}
+
+func (d *DeployManager) publishStatus(ctx context.Context, msg message.Helm) error {
+	data, err := json.Marshal(msg)
 	if err != nil {
 		return err
 	}

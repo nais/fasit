@@ -1,4 +1,4 @@
-package workers
+package naisd
 
 import (
 	"os/exec"
