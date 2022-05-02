@@ -47,6 +47,10 @@ func (r *queryResolver) Environment(ctx context.Context, id uuid.UUID) (*model.E
 	return r.Repo.EnvironmentGet(ctx, id)
 }
 
+func (r *queryResolver) EnvironmentByNames(ctx context.Context, environmentName string, tenantName string) (*model.Environment, error) {
+	return r.Repo.EnvironmentByNames(ctx, tenantName, environmentName)
+}
+
 func (r *queryResolver) Environments(ctx context.Context, tenantID uuid.UUID) ([]*model.Environment, error) {
 	return r.Repo.EnvironmentsGet(ctx, tenantID)
 }

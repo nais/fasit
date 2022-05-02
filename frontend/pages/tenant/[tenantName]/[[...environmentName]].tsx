@@ -1,9 +1,8 @@
 import {useRouter} from 'next/router'
 import * as React from 'react'
-import {useEffect, useState} from 'react'
+import {useState} from 'react'
 import {
   useEnvironmentsGetLazyQuery,
-  useEnvironmentsGetQuery,
   useTenantGetByNameQuery
 } from '../../../lib/schema/graphql'
 import ErrorMessage from '../../../components/lib/error'
@@ -18,12 +17,12 @@ import {Main, MenuItem, MenuItems, MenuSeparator, PageContainer, SideMenu} from 
 
 const Tenant = () => {
   const router = useRouter()
-  const name = router.query.name as string
-  const envID = router.query.env as string
+  const tenantName = router.query.tenantName as string
+  const environmentName = router.query.environmentName as string
   const [tenantID, setTenantID] = useState("")
   const [open, setOpen] = useState(false)
 
-  const { data, error, loading } = useTenantGetByNameQuery({ variables: { slug: name } })
+  const { data, error, loading } = useTenantGetByNameQuery({ variables: { slug: tenantName } })
   const [getEnvs,  envQuery] =  useEnvironmentsGetLazyQuery({ variables: { tenantID }})
   React.useEffect(() => {
     if (data) {
@@ -50,7 +49,7 @@ const Tenant = () => {
         <MenuItems>
           {envQuery.data?.environments?.map((e, i) => {
             return (
-              <MenuItem onClick={() => router.push(`/tenant/${name}/${e.id}`)} key={`${e.name}_${i}`} active={e.id == envID}>
+              <MenuItem onClick={() => router.push(`/tenant/${tenantName}/${e.name}`)} key={`${e.name}_${i}`} active={e.name == environmentName}>
                 <a>{e.name}</a>
               </MenuItem>
             )
@@ -60,7 +59,7 @@ const Tenant = () => {
         </MenuItems>
       </SideMenu>
       <Main>
-        {envID && <Environment envID={envID[0]} tenantName={tenant.name} />}
+        {environmentName && <Environment environmentName={environmentName} tenantName={tenant.name} />}
       </Main>
       <AddEnvironment open={open} onClose={() => setOpen(false)} tenantName={tenant.name}
         tenantID={tenant.id} />
@@ -69,21 +68,21 @@ const Tenant = () => {
 
 }
 export const getServerSideProps: GetServerSideProps = async (context) => {
-  const { name } = context.query
+  const { tenantName } = context.query
 
   const apolloClient = initializeApollo()
 
   try {
     await apolloClient.query({
       query: TENANT_GET_BY_NAME,
-      variables: { name },
+      variables: { tenantName },
     })
   } catch (e) {
     console.log(e)
   }
 
   return addApolloState(apolloClient, {
-    props: { name },
+    props: { tenantName },
   })
 }
 export default Tenant

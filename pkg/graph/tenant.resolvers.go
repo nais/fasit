@@ -28,7 +28,6 @@ func (r *queryResolver) Tenant(ctx context.Context, id *uuid.UUID, slug *string)
 		return r.Repo.TenantGetByName(ctx, *slug)
 	}
 	return nil, fmt.Errorf("either ID or slug must be specified")
-
 }
 
 // Mutation returns graphgen.MutationResolver implementation.

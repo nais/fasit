@@ -6,9 +6,58 @@ package gensql
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/google/uuid"
 )
+
+const environmentByNames = `-- name: EnvironmentByNames :one
+SELECT t.id, t.name, t.description, t.created, t.last_modified, e.id, tenant_id, e.name, kind, e.description, e.created, e.last_modified
+FROM tenants t
+         JOIN environments e ON e.tenant_id = t.id AND e.name = $1
+WHERE t.name = $2
+    LIMIT 1
+`
+
+type EnvironmentByNamesParams struct {
+	EnvironmentName string
+	TenantName      string
+}
+
+type EnvironmentByNamesRow struct {
+	ID             uuid.UUID
+	Name           string
+	Description    sql.NullString
+	Created        time.Time
+	LastModified   time.Time
+	ID_2           uuid.UUID
+	TenantID       uuid.UUID
+	Name_2         string
+	Kind           EnvironmentKind
+	Description_2  sql.NullString
+	Created_2      time.Time
+	LastModified_2 time.Time
+}
+
+func (q *Queries) EnvironmentByNames(ctx context.Context, arg EnvironmentByNamesParams) (EnvironmentByNamesRow, error) {
+	row := q.db.QueryRowContext(ctx, environmentByNames, arg.EnvironmentName, arg.TenantName)
+	var i EnvironmentByNamesRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.Created,
+		&i.LastModified,
+		&i.ID_2,
+		&i.TenantID,
+		&i.Name_2,
+		&i.Kind,
+		&i.Description_2,
+		&i.Created_2,
+		&i.LastModified_2,
+	)
+	return i, err
+}
 
 const environmentCreate = `-- name: EnvironmentCreate :one
 INSERT INTO environments (name, description, tenant_id, kind) VALUES ($1, $2, $3, $4) RETURNING id, tenant_id, name, kind, description, created, last_modified

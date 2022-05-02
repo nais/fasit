@@ -16,6 +16,7 @@ type Querier interface {
 	ConfigUpdate(ctx context.Context, arg ConfigUpdateParams) (Configuration, error)
 	ConfigUpdateOrCreate(ctx context.Context, arg ConfigUpdateOrCreateParams) (Configuration, error)
 	EnvConfig(ctx context.Context, arg EnvConfigParams) ([]EnvConfigRow, error)
+	EnvironmentByNames(ctx context.Context, arg EnvironmentByNamesParams) (EnvironmentByNamesRow, error)
 	EnvironmentCreate(ctx context.Context, arg EnvironmentCreateParams) (Environment, error)
 	EnvironmentGet(ctx context.Context, id uuid.UUID) (Environment, error)
 	EnvironmentIDByNames(ctx context.Context, arg EnvironmentIDByNamesParams) (uuid.UUID, error)

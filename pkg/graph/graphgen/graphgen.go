@@ -104,15 +104,16 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Configuration func(childComplexity int, feature string, envID *uuid.UUID) int
-		EnvConfig     func(childComplexity int, feature string, envID uuid.UUID) int
-		Environment   func(childComplexity int, id uuid.UUID) int
-		Environments  func(childComplexity int, tenantID uuid.UUID) int
-		FeatureStatus func(childComplexity int, envID uuid.UUID, feature string) int
-		Features      func(childComplexity int, kind *model.EnvironmentKind) int
-		Tenant        func(childComplexity int, id *uuid.UUID, slug *string) int
-		Tenants       func(childComplexity int) int
-		Values        func(childComplexity int, feature string, env uuid.UUID) int
+		Configuration      func(childComplexity int, feature string, envID *uuid.UUID) int
+		EnvConfig          func(childComplexity int, feature string, envID uuid.UUID) int
+		Environment        func(childComplexity int, id uuid.UUID) int
+		EnvironmentByNames func(childComplexity int, environmentName string, tenantName string) int
+		Environments       func(childComplexity int, tenantID uuid.UUID) int
+		FeatureStatus      func(childComplexity int, envID uuid.UUID, feature string) int
+		Features           func(childComplexity int, kind *model.EnvironmentKind) int
+		Tenant             func(childComplexity int, id *uuid.UUID, slug *string) int
+		Tenants            func(childComplexity int) int
+		Values             func(childComplexity int, feature string, env uuid.UUID) int
 	}
 
 	Status struct {
@@ -159,6 +160,7 @@ type QueryResolver interface {
 	Configuration(ctx context.Context, feature string, envID *uuid.UUID) ([]*model.Configuration, error)
 	EnvConfig(ctx context.Context, feature string, envID uuid.UUID) ([]*model.Configuration, error)
 	Environment(ctx context.Context, id uuid.UUID) (*model.Environment, error)
+	EnvironmentByNames(ctx context.Context, environmentName string, tenantName string) (*model.Environment, error)
 	Environments(ctx context.Context, tenantID uuid.UUID) ([]*model.Environment, error)
 	Features(ctx context.Context, kind *model.EnvironmentKind) ([]*model.Feature, error)
 	Values(ctx context.Context, feature string, env uuid.UUID) (map[string]interface{}, error)
@@ -507,6 +509,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Environment(childComplexity, args["id"].(uuid.UUID)), true
 
+	case "Query.environmentByNames":
+		if e.complexity.Query.EnvironmentByNames == nil {
+			break
+		}
+
+		args, err := ec.field_Query_environmentByNames_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.EnvironmentByNames(childComplexity, args["environmentName"].(string), args["tenantName"].(string)), true
+
 	case "Query.environments":
 		if e.complexity.Query.Environments == nil {
 			break
@@ -839,6 +853,15 @@ extend type Query {
         id: ID!
     ): Environment!
     """
+    EnvironmentByName returns the given environment by tenantName and name.
+    """
+    environmentByNames(
+        "name of the requested environment."
+        environmentName: String!
+        "tenantname of the requested environment."
+        tenantName: String!
+    ): Environment!
+    """
     Environments returns the environments for a tenant.
     """
     environments(
@@ -1159,6 +1182,30 @@ func (ec *executionContext) field_Query_envConfig_args(ctx context.Context, rawA
 		}
 	}
 	args["envID"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_environmentByNames_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["environmentName"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("environmentName"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["environmentName"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["tenantName"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tenantName"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["tenantName"] = arg1
 	return args, nil
 }
 
@@ -3388,6 +3435,77 @@ func (ec *executionContext) fieldContext_Query_environment(ctx context.Context, 
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_environment_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_environmentByNames(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_environmentByNames(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().EnvironmentByNames(rctx, fc.Args["environmentName"].(string), fc.Args["tenantName"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Environment)
+	fc.Result = res
+	return ec.marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironment(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_environmentByNames(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Environment_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Environment_name(ctx, field)
+			case "description":
+				return ec.fieldContext_Environment_description(ctx, field)
+			case "featureStates":
+				return ec.fieldContext_Environment_featureStates(ctx, field)
+			case "created":
+				return ec.fieldContext_Environment_created(ctx, field)
+			case "lastModified":
+				return ec.fieldContext_Environment_lastModified(ctx, field)
+			case "kind":
+				return ec.fieldContext_Environment_kind(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_environmentByNames_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -7059,6 +7177,29 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_environment(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "environmentByNames":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_environmentByNames(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}

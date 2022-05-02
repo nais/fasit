@@ -1,6 +1,11 @@
 import * as React from 'react'
 import {useEffect, useState} from 'react'
-import {EnvironmentKind, useEnvironmentGetQuery, useEnvironmentUpdateMutation} from '../../lib/schema/graphql'
+import {
+    EnvironmentKind,
+    useEnvironmentGetByNamesQuery,
+    useEnvironmentGetQuery,
+    useEnvironmentUpdateMutation
+} from '../../lib/schema/graphql'
 import ErrorMessage from '../lib/error'
 import LoaderSpinner from '../lib/spinner'
 import humanizeDate from '../lib/humanizeDate'
@@ -90,21 +95,22 @@ const Main = styled.div`
 `
 
 interface EnvironmentProps {
-  envID: string,
+  environmentName: string,
   tenantName: string;
 }
 
-const Environment = ({ envID, tenantName }: EnvironmentProps) => {
+const Environment = ({ environmentName, tenantName }: EnvironmentProps) => {
   const [edit, setEdit] = useState(false)
   const [backendError, setBackendError] = useState()
   const [description, setDescription] = useState('')
   const [envUpdate] = useEnvironmentUpdateMutation()
-  const { data, error, loading } = useEnvironmentGetQuery({ variables: { id: envID } })
-  useEffect(() => { data?.environment?.description && setDescription(data.environment.description)}, [data])
+  const { data, error, loading } = useEnvironmentGetByNamesQuery({ variables: { environmentName: environmentName[0], tenantName } })
+  useEffect(() => { data?.environmentByNames?.description && setDescription(data.environmentByNames.description)}, [data])
   const router = useRouter()
 
   if (error) return <ErrorMessage error={error} />
   if (!data || loading) return <LoaderSpinner />
+  const envID = data.environmentByNames.id
 
 
   const submit = () => {
@@ -128,7 +134,7 @@ const Environment = ({ envID, tenantName }: EnvironmentProps) => {
   }
 
   const feature = router.query.feature as string
-  const env = data.environment
+  const env = data.environmentByNames
   return (
     <div>
         <BreadCrumb />

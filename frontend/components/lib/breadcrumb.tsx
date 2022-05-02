@@ -9,6 +9,7 @@ const TenantHeaderName = styled.h1`
 const BreadCrumb = () => {
     const router = useRouter()
     const path = router.asPath
+    console.log(router.asPath.split("/"))
     return (
         <div>{path.split("/")[2]}</div>
     )

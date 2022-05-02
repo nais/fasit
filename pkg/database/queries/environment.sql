@@ -8,6 +8,13 @@ SELECT *
 FROM environments
 WHERE tenant_id = @tenant_id;
 
+-- name: EnvironmentByNames :one
+SELECT *
+FROM tenants t
+         JOIN environments e ON e.tenant_id = t.id AND e.name = @environment_name
+WHERE t.name = @tenant_name
+    LIMIT 1;
+
 -- name: EnvironmentIDByNames :one
 SELECT e.id
 FROM tenants p

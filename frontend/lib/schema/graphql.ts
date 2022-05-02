@@ -154,6 +154,8 @@ export type Query = {
   envConfig: Array<Configuration>
   /** Environment returns the given environment. */
   environment: Environment
+  /** EnvironmentByName returns the given environment by tenantName and name. */
+  environmentByNames: Environment
   /** Environments returns the environments for a tenant. */
   environments: Array<Environment>
   featureStatus: Status
@@ -176,6 +178,11 @@ export type QueryEnvConfigArgs = {
 
 export type QueryEnvironmentArgs = {
   id: Scalars['ID']
+}
+
+export type QueryEnvironmentByNamesArgs = {
+  environmentName: Scalars['String']
+  tenantName: Scalars['String']
 }
 
 export type QueryEnvironmentsArgs = {
@@ -330,6 +337,40 @@ export type EnvironmentCreateMutationVariables = Exact<{
 export type EnvironmentCreateMutation = {
   __typename?: 'Mutation'
   environmentCreate: { __typename?: 'Environment'; id: string }
+}
+
+export type EnvironmentGetByNamesQueryVariables = Exact<{
+  tenantName: Scalars['String']
+  environmentName: Scalars['String']
+}>
+
+export type EnvironmentGetByNamesQuery = {
+  __typename?: 'Query'
+  environmentByNames: {
+    __typename?: 'Environment'
+    id: string
+    name: string
+    description?: string | null
+    lastModified: any
+    created: any
+    kind: EnvironmentKind
+    featureStates: Array<{
+      __typename?: 'FeatureState'
+      enabled: boolean
+      lastModified?: any | null
+      created?: any | null
+      feature: {
+        __typename?: 'Feature'
+        name: string
+        version: string
+        chart: string
+        dependsOn: Array<string>
+        repo: string
+        source: string
+        config: any
+      }
+    }>
+  }
 }
 
 export type EnvironmentGetQueryVariables = Exact<{
@@ -855,6 +896,87 @@ export type EnvironmentCreateMutationResult =
 export type EnvironmentCreateMutationOptions = Apollo.BaseMutationOptions<
   EnvironmentCreateMutation,
   EnvironmentCreateMutationVariables
+>
+export const EnvironmentGetByNamesDocument = gql`
+  query environmentGetByNames($tenantName: String!, $environmentName: String!) {
+    environmentByNames(
+      tenantName: $tenantName
+      environmentName: $environmentName
+    ) {
+      id
+      name
+      description
+      lastModified
+      created
+      kind
+      featureStates {
+        enabled
+        lastModified
+        created
+        feature {
+          name
+          version
+          chart
+          dependsOn
+          repo
+          source
+          config
+        }
+      }
+    }
+  }
+`
+
+/**
+ * __useEnvironmentGetByNamesQuery__
+ *
+ * To run a query within a React component, call `useEnvironmentGetByNamesQuery` and pass it any options that fit your needs.
+ * When your component renders, `useEnvironmentGetByNamesQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useEnvironmentGetByNamesQuery({
+ *   variables: {
+ *      tenantName: // value for 'tenantName'
+ *      environmentName: // value for 'environmentName'
+ *   },
+ * });
+ */
+export function useEnvironmentGetByNamesQuery(
+  baseOptions: Apollo.QueryHookOptions<
+    EnvironmentGetByNamesQuery,
+    EnvironmentGetByNamesQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions }
+  return Apollo.useQuery<
+    EnvironmentGetByNamesQuery,
+    EnvironmentGetByNamesQueryVariables
+  >(EnvironmentGetByNamesDocument, options)
+}
+export function useEnvironmentGetByNamesLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    EnvironmentGetByNamesQuery,
+    EnvironmentGetByNamesQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions }
+  return Apollo.useLazyQuery<
+    EnvironmentGetByNamesQuery,
+    EnvironmentGetByNamesQueryVariables
+  >(EnvironmentGetByNamesDocument, options)
+}
+export type EnvironmentGetByNamesQueryHookResult = ReturnType<
+  typeof useEnvironmentGetByNamesQuery
+>
+export type EnvironmentGetByNamesLazyQueryHookResult = ReturnType<
+  typeof useEnvironmentGetByNamesLazyQuery
+>
+export type EnvironmentGetByNamesQueryResult = Apollo.QueryResult<
+  EnvironmentGetByNamesQuery,
+  EnvironmentGetByNamesQueryVariables
 >
 export const EnvironmentGetDocument = gql`
   query environmentGet($id: ID!) {

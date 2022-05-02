@@ -39,6 +39,15 @@ extend type Query {
         id: ID!
     ): Environment!
     """
+    EnvironmentByName returns the given environment by tenantName and name.
+    """
+    environmentByNames(
+        "name of the requested environment."
+        environmentName: String!
+        "tenantname of the requested environment."
+        tenantName: String!
+    ): Environment!
+    """
     Environments returns the environments for a tenant.
     """
     environments(
