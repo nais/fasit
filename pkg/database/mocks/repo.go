@@ -405,6 +405,29 @@ func (_m *Repo) StatusForEnvironment(ctx context.Context, environmentID uuid.UUI
 	return r0, r1
 }
 
+// StatusForFeature provides a mock function with given fields: ctx, environmentID, _a2
+func (_m *Repo) StatusForFeature(ctx context.Context, environmentID uuid.UUID, _a2 string) (*model.Status, error) {
+	ret := _m.Called(ctx, environmentID, _a2)
+
+	var r0 *model.Status
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, string) *model.Status); ok {
+		r0 = rf(ctx, environmentID, _a2)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Status)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, string) error); ok {
+		r1 = rf(ctx, environmentID, _a2)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // TenantCreate provides a mock function with given fields: ctx, p
 func (_m *Repo) TenantCreate(ctx context.Context, p *model.TenantCreate) (*model.Tenant, error) {
 	ret := _m.Called(ctx, p)
