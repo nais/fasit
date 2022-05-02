@@ -8,8 +8,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/99designs/gqlgen/graphql"
+	"github.com/99designs/gqlgen/graphql/handler/extension"
+	"github.com/99designs/gqlgen/graphql/handler/lru"
+	"github.com/99designs/gqlgen/graphql/handler/transport"
 	// Supported database drivers.
 	_ "github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/postgres"
+	"github.com/gorilla/websocket"
 	_ "github.com/lib/pq"
 
 	"cloud.google.com/go/pubsub"
@@ -37,6 +42,29 @@ func init() {
 	flag.StringVar(&cfg.LogLevel, "log-level", "info", "which log level to output")
 	flag.StringVar(&cfg.GCPProjectID, "project-id", "nais-local-dev", "Google project ID")
 	flag.StringVar(&cfg.StatusSubscriptionID, "status-subscription-id", "fasit-subscription", "Pub/sub subscription for status")
+}
+func newServer(es graphql.ExecutableSchema) *handler.Server {
+	srv := handler.New(es)
+
+	srv.AddTransport(transport.Websocket{
+		KeepAlivePingInterval: 10 * time.Second,
+		Upgrader: websocket.Upgrader{CheckOrigin: func(r *http.Request) bool {
+			return true
+		}},
+	})
+	srv.AddTransport(transport.Options{})
+	srv.AddTransport(transport.GET{})
+	srv.AddTransport(transport.POST{})
+	srv.AddTransport(transport.MultipartForm{})
+
+	srv.SetQueryCache(lru.New(1000))
+
+	srv.Use(extension.Introspection{})
+	srv.Use(extension.AutomaticPersistedQuery{
+		Cache: lru.New(100),
+	})
+
+	return srv
 }
 
 func main() {
@@ -93,7 +121,8 @@ func main() {
 		Features: featureMgr,
 		Log:      log.WithField("subsystem", "graphql"),
 	}
-	srv := handler.NewDefaultServer(graphgen.NewExecutableSchema(graphgen.Config{Resolvers: resolver}))
+
+	srv := newServer(graphgen.NewExecutableSchema(graphgen.Config{Resolvers: resolver}))
 
 	corsMW := cors.New(cors.Options{
 		AllowedOrigins:   []string{"https://*", "http://*"},

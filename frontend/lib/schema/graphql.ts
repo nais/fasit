@@ -194,6 +194,27 @@ export type QueryValuesArgs = {
   feature: Scalars['String']
 }
 
+export type Status = {
+  __typename?: 'Status'
+  configHash: Scalars['String']
+  created: Scalars['Time']
+  environmentID: Scalars['ID']
+  feature: Scalars['String']
+  lastModified: Scalars['Time']
+  status: Scalars['String']
+  version: Scalars['String']
+}
+
+export type Subscription = {
+  __typename?: 'Subscription'
+  status: Status
+}
+
+export type SubscriptionStatusArgs = {
+  envID: Scalars['ID']
+  feature: Scalars['String']
+}
+
 export type Tenant = {
   __typename?: 'Tenant'
   created: Scalars['Time']
@@ -376,6 +397,25 @@ export type FeatureStateSaveMutationVariables = Exact<{
 export type FeatureStateSaveMutation = {
   __typename?: 'Mutation'
   featureStateSave: { __typename?: 'FeatureState'; enabled: boolean }
+}
+
+export type StatusForFeatureSubscriptionVariables = Exact<{
+  envID: Scalars['ID']
+  feature: Scalars['String']
+}>
+
+export type StatusForFeatureSubscription = {
+  __typename?: 'Subscription'
+  status: {
+    __typename?: 'Status'
+    environmentID: string
+    feature: string
+    version: string
+    status: string
+    configHash: string
+    created: any
+    lastModified: any
+  }
 }
 
 export type TenantCreateMutationVariables = Exact<{
@@ -1088,6 +1128,54 @@ export type FeatureStateSaveMutationOptions = Apollo.BaseMutationOptions<
   FeatureStateSaveMutation,
   FeatureStateSaveMutationVariables
 >
+export const StatusForFeatureDocument = gql`
+  subscription statusForFeature($envID: ID!, $feature: String!) {
+    status(envID: $envID, feature: $feature) {
+      environmentID
+      feature
+      version
+      status
+      configHash
+      created
+      lastModified
+    }
+  }
+`
+
+/**
+ * __useStatusForFeatureSubscription__
+ *
+ * To run a query within a React component, call `useStatusForFeatureSubscription` and pass it any options that fit your needs.
+ * When your component renders, `useStatusForFeatureSubscription` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the subscription, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useStatusForFeatureSubscription({
+ *   variables: {
+ *      envID: // value for 'envID'
+ *      feature: // value for 'feature'
+ *   },
+ * });
+ */
+export function useStatusForFeatureSubscription(
+  baseOptions: Apollo.SubscriptionHookOptions<
+    StatusForFeatureSubscription,
+    StatusForFeatureSubscriptionVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions }
+  return Apollo.useSubscription<
+    StatusForFeatureSubscription,
+    StatusForFeatureSubscriptionVariables
+  >(StatusForFeatureDocument, options)
+}
+export type StatusForFeatureSubscriptionHookResult = ReturnType<
+  typeof useStatusForFeatureSubscription
+>
+export type StatusForFeatureSubscriptionResult =
+  Apollo.SubscriptionResult<StatusForFeatureSubscription>
 export const TenantCreateDocument = gql`
   mutation tenantCreate($name: String!, $description: String) {
     tenantCreate(tenant: { name: $name, description: $description }) {

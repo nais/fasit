@@ -1,7 +1,11 @@
-import { useMemo } from 'react'
-import { ApolloClient, HttpLink, InMemoryCache, NormalizedCacheObject } from '@apollo/client'
+import {useMemo} from 'react'
+import {ApolloClient, HttpLink, InMemoryCache, NormalizedCacheObject, split} from '@apollo/client'
 import merge from 'deepmerge'
 import isEqual from 'lodash.isequal'
+import {GraphQLWsLink} from "@apollo/client/link/subscriptions";
+import {createClient} from "graphql-ws";
+import {getMainDefinition} from "@apollo/client/utilities";
+import WebSocket from 'ws'
 
 const isServer = typeof window === 'undefined'
 
@@ -11,22 +15,43 @@ let apolloClient: ApolloClient<NormalizedCacheObject> | undefined
 
 const getQueryURI = () => {
     if (process.env.NEXT_PUBLIC_ENV === 'development') {
-        return 'http://localhost:8080/query'
+        return '://localhost:8080/query'
     }
+    return isServer ? `://fasit-backend/query` : `s://${window.location.host}/query`
+}
 
-    return isServer ? 'http://fasit-backend/query' : '/query'
+const httpLink = (cookie: string | undefined) => {
+    return new HttpLink({
+        uri: `http${getQueryURI()}`,
+        credentials: 'include',
+        headers: {
+            cookie
+        }
+    })
+};
+
+const wsLink = new GraphQLWsLink(createClient({
+    webSocketImpl: isServer ? WebSocket : undefined,
+    url: `ws${getQueryURI()}`,
+}));
+
+const splitLink = (cookie: string | undefined) => {
+    return split(
+        ({query}) => {
+            const definition = getMainDefinition(query);
+            return (
+                definition.kind === 'OperationDefinition' &&
+                definition.operation === 'subscription'
+            );
+        },
+        wsLink,
+        httpLink(cookie),)
 }
 
 const createApolloClient = (cookie?: string) => {
     return new ApolloClient({
         ssrMode: typeof window === 'undefined',
-        link: new HttpLink({
-            uri: getQueryURI(),
-            credentials: 'include',
-            headers: {
-                cookie,
-            }
-        }),
+        link: splitLink(cookie),
         cache: new InMemoryCache({
                 typePolicies: {
                     Configuration: {

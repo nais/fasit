@@ -2,7 +2,7 @@ import * as React from 'react'
 import {useState} from 'react'
 import styled from 'styled-components'
 import ConfigPage from './configPage'
-import {EnvironmentGetQuery} from '../../lib/schema/graphql'
+import {EnvironmentGetQuery, useStatusForFeatureSubscription} from '../../lib/schema/graphql'
 import {Success} from '@navikt/ds-icons'
 import {navGronn, navRod} from '../../styles/constants'
 import IconBox from "../lib/icons/iconBox";
@@ -53,6 +53,11 @@ const Feature = ({env, featureName}: FeatureProps) => {
     const missingDependencies = f.dependsOn.filter((dependency) => {
         return !env.featureStates.find((fs) => fs.feature.name === dependency)?.enabled
     })
+    const {loading, error, data} = useStatusForFeatureSubscription({variables: {envID: env.id, feature: featureName}})
+    console.log("loading", loading)
+    console.log("data", data)
+
+
 
 
     return (
