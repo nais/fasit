@@ -43,6 +43,7 @@ type Repo interface {
 	TenantCreate(ctx context.Context, p *model.TenantCreate) (*model.Tenant, error)
 	TenantEnvironments(ctx context.Context) ([]*model.TenantEnvironments, error)
 	TenantGet(ctx context.Context, id uuid.UUID) (*model.Tenant, error)
+	TenantGetByName(ctx context.Context, name string) (*model.Tenant, error)
 	TenantsGet(ctx context.Context) ([]*model.Tenant, error)
 	Close() error
 }

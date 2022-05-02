@@ -21,6 +21,7 @@ extend type Query {
     """
     tenant(
         "id of the requested tenant."
-        id: ID!
+        id: ID
+        slug: String
     ): Tenant!
 }

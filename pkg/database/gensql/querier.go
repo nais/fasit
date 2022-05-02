@@ -30,6 +30,7 @@ type Querier interface {
 	TenantCreate(ctx context.Context, arg TenantCreateParams) (Tenant, error)
 	TenantEnvironments(ctx context.Context) ([]TenantEnvironmentsRow, error)
 	TenantGet(ctx context.Context, id uuid.UUID) (Tenant, error)
+	TenantGetByName(ctx context.Context, name string) (Tenant, error)
 	TenantsGet(ctx context.Context) ([]Tenant, error)
 }
 

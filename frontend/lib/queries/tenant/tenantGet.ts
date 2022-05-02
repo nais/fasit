@@ -11,3 +11,14 @@ export const TENANT_GET = gql`
     }
   }
 `
+export const TENANT_GET_BY_NAME = gql`
+  query TenantGetByName($slug: String!) {
+    tenant(slug: $slug) {
+      id
+      name
+      description
+      created
+      lastModified
+    }
+  }
+`

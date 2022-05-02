@@ -2,8 +2,8 @@ import * as React from 'react'
 import {useEffect, useState} from 'react'
 import styled from 'styled-components'
 import ConfigPage from './configPage'
-import {EnvironmentGetQuery, useStatusForFeatureSubscription} from '../../lib/schema/graphql'
-import {navGronn, navRod} from '../../styles/constants'
+import {EnvironmentGetQuery, RolloutStatus, useFeatureStatusQuery} from '../../lib/schema/graphql'
+import {navGronn, navOransje, navRod} from '../../styles/constants'
 import IconBox from "../lib/icons/iconBox";
 import GitIcon from "../lib/icons/gitIcon";
 import {Loader, Switch} from '@navikt/ds-react'
@@ -37,11 +37,38 @@ const EnableFeatureBox = styled.div`
   flex-direction: column;
 `
 
+interface StatusIndicatorProps {
+    status: RolloutStatus | undefined
+}
+
+const StatusIndicator = styled.div<StatusIndicatorProps>`
+width: 10px;
+height: 10px;
+border-radius: 50%;
+margin: 0 5px;
+${(props) => {
+    switch (props.status) {
+        case RolloutStatus.Deployed:
+            return `background-color: ${navGronn};`
+        case RolloutStatus.Failed:
+            return `background-color: ${navRod};`
+        case RolloutStatus.Pending:
+            return `background-color: ${navOransje};`
+        case RolloutStatus.Unknown:
+        default:
+            return `background-color: #222;`
+    }
+}} `
+const StatusField = styled.div`
+display: flex;
+align-items: center;
+
+`
+
 interface FeatureProps {
     env: EnvironmentGetQuery['environment']
     featureName: string,
 }
-
 
 const Feature = ({env, featureName}: FeatureProps) => {
     const featureState = env.featureStates.find((f) => f.feature.name === featureName)
@@ -53,42 +80,38 @@ const Feature = ({env, featureName}: FeatureProps) => {
     const missingDependencies = f.dependsOn.filter((dependency) => {
         return !env.featureStates.find((fs) => fs.feature.name === dependency)?.enabled
     })
-    const {loading, error, data} = useStatusForFeatureSubscription({variables: {envID: env.id, feature: featureName}})
-
-    // dirty, dirty hack to reload page when subscription is cancelled by HMR in dev
-    useEffect(() => {
-        if (error?.message === "Observable cancelled prematurely") {
-            window.location.reload()
-        }
-    }, [error])
+    const {loading, error, data} = useFeatureStatusQuery({variables: {envID: env.id, feature: featureName}})
+    const status = data?.featureStatus
 
     return (
         <FeatureContainer>
             <FeatureStatus>
                 <div style={{display: 'flex', alignItems: 'center'}} key={f.name}>
                     <div key={f.name} style={{display: 'flex', flexDirection: 'column', flexGrow: '1'}}>
+                        <div>
+                            {loading && <StatusField><Loader transparent/></StatusField>}
+                            {error && <StatusField>status: <StatusIndicator status={status?.status}/>{error.message === "sql: no rows in result set" ? "No status" : error.message}</StatusField> }
+                            {data &&<>
+                                <StatusField>status: <StatusIndicator status={status?.status}/>{status?.status.toLowerCase()}</StatusField>
+                            </>
+                            }
+                        </div>
                         {f.chart && <div>chart: {f.chart}</div>}
-                        {f.repo && <div>repos: {f.repo}</div>}
+                        {f.repo && <div>repo: {f.repo}</div>}
                         {f.version && <div>version: {f.version}</div>}
                         {f.source && <div style={{display: 'flex', width: 'fit-content', gap: '10px'}}><IconBox
                             size={20}><GitIcon/></IconBox> <a href={f.source} target="_blank">{f.source}</a></div>}
                         {f.dependsOn.length > 0 && <div>dependencies: {f.dependsOn.map((d) => {
-                            return <span key={d} style={{color: missingDependencies.includes(d) ? navRod : navGronn}}>{d + " "}</span>
+                            return <span key={d}
+                                         style={{color: missingDependencies.includes(d) ? navRod : navGronn}}>{d + " "}</span>
                         })}
                         </div>
                         }
-                        <div>
-
-                        {loading || !data && <Loader transparent /> }
-                        <div>status: {data?.status.status}</div>
-                        <div>version: {data?.status.version}</div>
-                        <div>lastModified: {humanizeDate(data?.status.lastModified)}</div>
-                        <div>created: {humanizeDate(data?.status.created)}</div>
-                        </div>
                     </div>
                     <EnableFeatureBox>
                         <div>Enabled</div>
-                        <Switch disabled={missingDependencies.length > 0} size="medium" checked={featureState.enabled} onChange={() => setShowVerify(true)}>{''}</Switch>
+                        <Switch disabled={missingDependencies.length > 0} size="medium" checked={featureState.enabled}
+                                onChange={() => setShowVerify(true)}>{''}</Switch>
                         {missingDependencies.length > 0 && "Missing dependencies"}
                     </EnableFeatureBox>
                 </div>
@@ -96,7 +119,8 @@ const Feature = ({env, featureName}: FeatureProps) => {
             {
                 featureName && env && <ConfigPage env={env} feature={featureName}/>
             }
-            <EnableFeature open={showVerify} onClose={setShowVerify} feature={f.name} envID={env.id} enabled={featureState.enabled}/>
+            <EnableFeature open={showVerify} onClose={setShowVerify} feature={f.name} envID={env.id}
+                           enabled={featureState.enabled}/>
         </FeatureContainer>
     )
 }

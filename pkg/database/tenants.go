@@ -38,6 +38,14 @@ func (r *repo) TenantGet(ctx context.Context, id uuid.UUID) (*model.Tenant, erro
 	return tenantFromSQL(tenant), nil
 }
 
+func (r *repo) TenantGetByName(ctx context.Context, name string) (*model.Tenant, error) {
+	tenant, err := r.querier.TenantGetByName(ctx, name)
+	if err != nil {
+		return nil, err
+	}
+	return tenantFromSQL(tenant), nil
+}
+
 func (r *repo) TenantsGet(ctx context.Context) ([]*model.Tenant, error) {
 	tenants, err := r.querier.TenantsGet(ctx)
 	if err != nil {

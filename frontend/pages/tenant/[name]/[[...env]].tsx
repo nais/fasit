@@ -1,26 +1,38 @@
-import { useRouter } from 'next/router'
+import {useRouter} from 'next/router'
 import * as React from 'react'
-import { useState } from 'react'
-import { useEnvironmentsGetQuery, useTenantGetQuery } from '../../../lib/schema/graphql'
+import {useEffect, useState} from 'react'
+import {
+  useEnvironmentsGetLazyQuery,
+  useEnvironmentsGetQuery,
+  useTenantGetByNameQuery
+} from '../../../lib/schema/graphql'
 import ErrorMessage from '../../../components/lib/error'
 import LoaderSpinner from '../../../components/lib/spinner'
 import AddEnvironment from '../../../components/tenant/addEnvironment'
-import { GetServerSideProps } from 'next'
-import { addApolloState, initializeApollo } from '../../../lib/apollo'
-import { TENANT_GET } from '../../../lib/queries/tenant/tenantGet'
+import {GetServerSideProps} from 'next'
+import {addApolloState, initializeApollo} from '../../../lib/apollo'
+import {TENANT_GET_BY_NAME} from '../../../lib/queries/tenant/tenantGet'
 import Environment from '../../../components/tenant/environment'
-import { Main, MenuItem, MenuItems, MenuSeparator, PageContainer, SideMenu } from '../../../components/lib/PageLayout'
+import {Main, MenuItem, MenuItems, MenuSeparator, PageContainer, SideMenu} from '../../../components/lib/PageLayout'
 
 
 const Tenant = () => {
   const router = useRouter()
-  const tenantID = router.query.id as string
+  const name = router.query.name as string
   const envID = router.query.env as string
-
-
-  const { data, error, loading } = useTenantGetQuery({ variables: { id: tenantID } })
-  const envQuery = useEnvironmentsGetQuery({ variables: { tenantID: tenantID } })
+  const [tenantID, setTenantID] = useState("")
   const [open, setOpen] = useState(false)
+
+  const { data, error, loading } = useTenantGetByNameQuery({ variables: { slug: name } })
+  const [getEnvs,  envQuery] =  useEnvironmentsGetLazyQuery({ variables: { tenantID }})
+  React.useEffect(() => {
+    if (data) {
+      setTenantID(data.tenant.id);
+    }
+    if (tenantID) {
+      getEnvs()
+    }
+  }, [data, tenantID]);
 
   if (error) {
     return <ErrorMessage error={error} />
@@ -33,12 +45,12 @@ const Tenant = () => {
   return (
     <PageContainer>
       <SideMenu>
-        {envQuery.loading || !envQuery.data && <LoaderSpinner />}
+        {envQuery.loading && envQuery.called && <LoaderSpinner />}
         {envQuery.error && <ErrorMessage error={envQuery.error} />}
         <MenuItems>
           {envQuery.data?.environments?.map((e, i) => {
             return (
-              <MenuItem onClick={() => router.push(`/tenant/${tenantID}/${e.id}`)} key={`${e.name}_${i}`} active={e.id == envID}>
+              <MenuItem onClick={() => router.push(`/tenant/${name}/${e.id}`)} key={`${e.name}_${i}`} active={e.id == envID}>
                 <a>{e.name}</a>
               </MenuItem>
             )
@@ -57,21 +69,21 @@ const Tenant = () => {
 
 }
 export const getServerSideProps: GetServerSideProps = async (context) => {
-  const { id } = context.query
+  const { name } = context.query
 
   const apolloClient = initializeApollo()
 
   try {
     await apolloClient.query({
-      query: TENANT_GET,
-      variables: { id },
+      query: TENANT_GET_BY_NAME,
+      variables: { name },
     })
   } catch (e) {
     console.log(e)
   }
 
   return addApolloState(apolloClient, {
-    props: { id },
+    props: { name },
   })
 }
 export default Tenant

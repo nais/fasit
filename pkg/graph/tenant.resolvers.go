@@ -5,6 +5,7 @@ package graph
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/graph/graphgen"
@@ -19,8 +20,15 @@ func (r *queryResolver) Tenants(ctx context.Context) ([]*model.Tenant, error) {
 	return r.Repo.TenantsGet(ctx)
 }
 
-func (r *queryResolver) Tenant(ctx context.Context, id uuid.UUID) (*model.Tenant, error) {
-	return r.Repo.TenantGet(ctx, id)
+func (r *queryResolver) Tenant(ctx context.Context, id *uuid.UUID, slug *string) (*model.Tenant, error) {
+	if id != nil {
+		return r.Repo.TenantGet(ctx, *id)
+	}
+	if slug != nil {
+		return r.Repo.TenantGetByName(ctx, *slug)
+	}
+	return nil, fmt.Errorf("either ID or slug must be specified")
+
 }
 
 // Mutation returns graphgen.MutationResolver implementation.

@@ -156,6 +156,7 @@ export type Query = {
   environment: Environment
   /** Environments returns the environments for a tenant. */
   environments: Array<Environment>
+  featureStatus: Status
   features: Array<Feature>
   /** tenant returns the given tenant. */
   tenant: Tenant
@@ -181,17 +182,30 @@ export type QueryEnvironmentsArgs = {
   tenantID: Scalars['ID']
 }
 
+export type QueryFeatureStatusArgs = {
+  envID: Scalars['ID']
+  feature: Scalars['String']
+}
+
 export type QueryFeaturesArgs = {
   kind?: InputMaybe<EnvironmentKind>
 }
 
 export type QueryTenantArgs = {
-  id: Scalars['ID']
+  id?: InputMaybe<Scalars['ID']>
+  slug?: InputMaybe<Scalars['String']>
 }
 
 export type QueryValuesArgs = {
   env: Scalars['ID']
   feature: Scalars['String']
+}
+
+export enum RolloutStatus {
+  Deployed = 'DEPLOYED',
+  Failed = 'FAILED',
+  Pending = 'PENDING',
+  Unknown = 'UNKNOWN',
 }
 
 export type Status = {
@@ -201,7 +215,8 @@ export type Status = {
   environmentID: Scalars['ID']
   feature: Scalars['String']
   lastModified: Scalars['Time']
-  status: Scalars['String']
+  log: Scalars['String']
+  status: RolloutStatus
   version: Scalars['String']
 }
 
@@ -399,19 +414,19 @@ export type FeatureStateSaveMutation = {
   featureStateSave: { __typename?: 'FeatureState'; enabled: boolean }
 }
 
-export type StatusForFeatureSubscriptionVariables = Exact<{
+export type FeatureStatusQueryVariables = Exact<{
   envID: Scalars['ID']
   feature: Scalars['String']
 }>
 
-export type StatusForFeatureSubscription = {
-  __typename?: 'Subscription'
-  status: {
+export type FeatureStatusQuery = {
+  __typename?: 'Query'
+  featureStatus: {
     __typename?: 'Status'
     environmentID: string
     feature: string
     version: string
-    status: string
+    status: RolloutStatus
     configHash: string
     created: any
     lastModified: any
@@ -433,6 +448,22 @@ export type TenantGetQueryVariables = Exact<{
 }>
 
 export type TenantGetQuery = {
+  __typename?: 'Query'
+  tenant: {
+    __typename?: 'Tenant'
+    id: string
+    name: string
+    description?: string | null
+    created: any
+    lastModified: any
+  }
+}
+
+export type TenantGetByNameQueryVariables = Exact<{
+  slug: Scalars['String']
+}>
+
+export type TenantGetByNameQuery = {
   __typename?: 'Query'
   tenant: {
     __typename?: 'Tenant'
@@ -1128,9 +1159,9 @@ export type FeatureStateSaveMutationOptions = Apollo.BaseMutationOptions<
   FeatureStateSaveMutation,
   FeatureStateSaveMutationVariables
 >
-export const StatusForFeatureDocument = gql`
-  subscription statusForFeature($envID: ID!, $feature: String!) {
-    status(envID: $envID, feature: $feature) {
+export const FeatureStatusDocument = gql`
+  query featureStatus($envID: ID!, $feature: String!) {
+    featureStatus(envID: $envID, feature: $feature) {
       environmentID
       feature
       version
@@ -1143,39 +1174,56 @@ export const StatusForFeatureDocument = gql`
 `
 
 /**
- * __useStatusForFeatureSubscription__
+ * __useFeatureStatusQuery__
  *
- * To run a query within a React component, call `useStatusForFeatureSubscription` and pass it any options that fit your needs.
- * When your component renders, `useStatusForFeatureSubscription` returns an object from Apollo Client that contains loading, error, and data properties
+ * To run a query within a React component, call `useFeatureStatusQuery` and pass it any options that fit your needs.
+ * When your component renders, `useFeatureStatusQuery` returns an object from Apollo Client that contains loading, error, and data properties
  * you can use to render your UI.
  *
- * @param baseOptions options that will be passed into the subscription, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
  *
  * @example
- * const { data, loading, error } = useStatusForFeatureSubscription({
+ * const { data, loading, error } = useFeatureStatusQuery({
  *   variables: {
  *      envID: // value for 'envID'
  *      feature: // value for 'feature'
  *   },
  * });
  */
-export function useStatusForFeatureSubscription(
-  baseOptions: Apollo.SubscriptionHookOptions<
-    StatusForFeatureSubscription,
-    StatusForFeatureSubscriptionVariables
+export function useFeatureStatusQuery(
+  baseOptions: Apollo.QueryHookOptions<
+    FeatureStatusQuery,
+    FeatureStatusQueryVariables
   >,
 ) {
   const options = { ...defaultOptions, ...baseOptions }
-  return Apollo.useSubscription<
-    StatusForFeatureSubscription,
-    StatusForFeatureSubscriptionVariables
-  >(StatusForFeatureDocument, options)
+  return Apollo.useQuery<FeatureStatusQuery, FeatureStatusQueryVariables>(
+    FeatureStatusDocument,
+    options,
+  )
 }
-export type StatusForFeatureSubscriptionHookResult = ReturnType<
-  typeof useStatusForFeatureSubscription
+export function useFeatureStatusLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    FeatureStatusQuery,
+    FeatureStatusQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions }
+  return Apollo.useLazyQuery<FeatureStatusQuery, FeatureStatusQueryVariables>(
+    FeatureStatusDocument,
+    options,
+  )
+}
+export type FeatureStatusQueryHookResult = ReturnType<
+  typeof useFeatureStatusQuery
 >
-export type StatusForFeatureSubscriptionResult =
-  Apollo.SubscriptionResult<StatusForFeatureSubscription>
+export type FeatureStatusLazyQueryHookResult = ReturnType<
+  typeof useFeatureStatusLazyQuery
+>
+export type FeatureStatusQueryResult = Apollo.QueryResult<
+  FeatureStatusQuery,
+  FeatureStatusQueryVariables
+>
 export const TenantCreateDocument = gql`
   mutation tenantCreate($name: String!, $description: String) {
     tenantCreate(tenant: { name: $name, description: $description }) {
@@ -1283,6 +1331,68 @@ export type TenantGetLazyQueryHookResult = ReturnType<
 export type TenantGetQueryResult = Apollo.QueryResult<
   TenantGetQuery,
   TenantGetQueryVariables
+>
+export const TenantGetByNameDocument = gql`
+  query TenantGetByName($slug: String!) {
+    tenant(slug: $slug) {
+      id
+      name
+      description
+      created
+      lastModified
+    }
+  }
+`
+
+/**
+ * __useTenantGetByNameQuery__
+ *
+ * To run a query within a React component, call `useTenantGetByNameQuery` and pass it any options that fit your needs.
+ * When your component renders, `useTenantGetByNameQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useTenantGetByNameQuery({
+ *   variables: {
+ *      slug: // value for 'slug'
+ *   },
+ * });
+ */
+export function useTenantGetByNameQuery(
+  baseOptions: Apollo.QueryHookOptions<
+    TenantGetByNameQuery,
+    TenantGetByNameQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions }
+  return Apollo.useQuery<TenantGetByNameQuery, TenantGetByNameQueryVariables>(
+    TenantGetByNameDocument,
+    options,
+  )
+}
+export function useTenantGetByNameLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    TenantGetByNameQuery,
+    TenantGetByNameQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions }
+  return Apollo.useLazyQuery<
+    TenantGetByNameQuery,
+    TenantGetByNameQueryVariables
+  >(TenantGetByNameDocument, options)
+}
+export type TenantGetByNameQueryHookResult = ReturnType<
+  typeof useTenantGetByNameQuery
+>
+export type TenantGetByNameLazyQueryHookResult = ReturnType<
+  typeof useTenantGetByNameLazyQuery
+>
+export type TenantGetByNameQueryResult = Apollo.QueryResult<
+  TenantGetByNameQuery,
+  TenantGetByNameQueryVariables
 >
 export const TenantsGetDocument = gql`
   query TenantsGet {

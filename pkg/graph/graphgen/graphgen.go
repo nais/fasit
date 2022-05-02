@@ -110,7 +110,7 @@ type ComplexityRoot struct {
 		Environments  func(childComplexity int, tenantID uuid.UUID) int
 		FeatureStatus func(childComplexity int, envID uuid.UUID, feature string) int
 		Features      func(childComplexity int, kind *model.EnvironmentKind) int
-		Tenant        func(childComplexity int, id uuid.UUID) int
+		Tenant        func(childComplexity int, id *uuid.UUID, slug *string) int
 		Tenants       func(childComplexity int) int
 		Values        func(childComplexity int, feature string, env uuid.UUID) int
 	}
@@ -163,7 +163,7 @@ type QueryResolver interface {
 	Features(ctx context.Context, kind *model.EnvironmentKind) ([]*model.Feature, error)
 	Values(ctx context.Context, feature string, env uuid.UUID) (map[string]interface{}, error)
 	FeatureStatus(ctx context.Context, envID uuid.UUID, feature string) (*model.Status, error)
-	Tenant(ctx context.Context, id uuid.UUID) (*model.Tenant, error)
+	Tenant(ctx context.Context, id *uuid.UUID, slug *string) (*model.Tenant, error)
 }
 type SubscriptionResolver interface {
 	Status(ctx context.Context, envID uuid.UUID, feature string) (<-chan *model.Status, error)
@@ -553,7 +553,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Tenant(childComplexity, args["id"].(uuid.UUID)), true
+		return e.complexity.Query.Tenant(childComplexity, args["id"].(*uuid.UUID), args["slug"].(*string)), true
 
 	case "Query.tenants":
 		if e.complexity.Query.Tenants == nil {
@@ -946,7 +946,8 @@ extend type Query {
     """
     tenant(
         "id of the requested tenant."
-        id: ID!
+        id: ID
+        slug: String
     ): Tenant!
 }
 `, BuiltIn: false},
@@ -1233,15 +1234,24 @@ func (ec *executionContext) field_Query_features_args(ctx context.Context, rawAr
 func (ec *executionContext) field_Query_tenant_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 uuid.UUID
+	var arg0 *uuid.UUID
 	if tmp, ok := rawArgs["id"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, tmp)
+		arg0, err = ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
 	args["id"] = arg0
+	var arg1 *string
+	if tmp, ok := rawArgs["slug"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("slug"))
+		arg1, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["slug"] = arg1
 	return args, nil
 }
 
@@ -3670,7 +3680,7 @@ func (ec *executionContext) _Query_tenant(ctx context.Context, field graphql.Col
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Tenant(rctx, fc.Args["id"].(uuid.UUID))
+		return ec.resolvers.Query().Tenant(rctx, fc.Args["id"].(*uuid.UUID), fc.Args["slug"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

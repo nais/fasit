@@ -63,7 +63,7 @@ const Home: NextPage = () => {
         {tenants.length > 0 ?
           <Links>
             {tenants.map((p) => (
-              <Link href={`/tenant/${p.id}`} key={p.name}>
+              <Link href={`/tenant/${p.name}`} key={p.name}>
                 <a>
                   <CategoryCard>
                     <IconBox size={50}>{GetLogo(p.name)}</IconBox>

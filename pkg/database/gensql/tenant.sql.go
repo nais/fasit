@@ -102,6 +102,25 @@ func (q *Queries) TenantGet(ctx context.Context, id uuid.UUID) (Tenant, error) {
 	return i, err
 }
 
+const tenantGetByName = `-- name: TenantGetByName :one
+SELECT id, name, description, created, last_modified
+FROM tenants
+WHERE name = $1
+`
+
+func (q *Queries) TenantGetByName(ctx context.Context, name string) (Tenant, error) {
+	row := q.db.QueryRowContext(ctx, tenantGetByName, name)
+	var i Tenant
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.Created,
+		&i.LastModified,
+	)
+	return i, err
+}
+
 const tenantsGet = `-- name: TenantsGet :many
 SELECT id, name, description, created, last_modified
 FROM tenants

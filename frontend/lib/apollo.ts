@@ -35,6 +35,7 @@ const wsLink = new GraphQLWsLink(createClient({
     url: `ws${getQueryURI()}`,
 }));
 
+// Not using wsLink at the moment, but kept for future use.
 const splitLink = (cookie: string | undefined) => {
     return split(
         ({query}) => {

@@ -12,6 +12,7 @@ import {useRouter} from 'next/router'
 import {navGronn, navRod} from '../../styles/constants'
 import {Textarea} from '@navikt/ds-react'
 import ManagementLogo from "../lib/icons/managementLogo";
+import BreadCrumb from "../lib/breadcrumb";
 
 
 const InfoBox = styled.div`
@@ -130,6 +131,7 @@ const Environment = ({ envID, tenantName }: EnvironmentProps) => {
   const env = data.environment
   return (
     <div>
+        <BreadCrumb />
         <TenantHeaderName>{tenantName}</TenantHeaderName><TenantHeader><TenantHeaderEnv>{`> ${env.name}`}</TenantHeaderEnv>{env.kind === EnvironmentKind.Management && <ManagementIcon><ManagementLogo /></ManagementIcon>}</TenantHeader>
       <InfoBox>
         <DescriptionBox>

@@ -3,6 +3,11 @@ SELECT *
 FROM tenants
 WHERE id = @id;
 
+-- name: TenantGetByName :one
+SELECT *
+FROM tenants
+WHERE name = @name;
+
 -- name: TenantsGet :many
 SELECT *
 FROM tenants
