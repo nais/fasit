@@ -2,9 +2,7 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
-	"os"
 
 	"cloud.google.com/go/pubsub"
 	"github.com/nais/fasit/pkg/message"
@@ -47,17 +45,12 @@ func main() {
 		log.WithError(err).Fatal("setting up new pub/sub client")
 	}
 
-	enc := json.NewEncoder(os.Stdout)
-	enc.SetIndent("", "  ")
-	_ = enc.Encode(cfg)
-
 	deploySubscriber := message.NewSubscriber[message.DeployInstruction](deployClient, cfg.EnvProjectID, deploySubscriptionID)
 	statusPublisher := message.NewPublisher[message.Status](deployClient, cfg.NaisProjectID, naisStatusTopic, log.WithField("subsystem", "status-pubsub"))
 
 	kubeConfig, err := rest.InClusterConfig()
 	if err != nil {
-		// log.WithError(err).Fatal("failed to get kubeconfig")
-		kubeConfig = &rest.Config{}
+		log.WithError(err).Fatal("failed to get kubeconfig")
 	}
 
 	var executor workers.Exec = &workers.MockExecutor{Logger: log.WithField("subsystem", "executor")}

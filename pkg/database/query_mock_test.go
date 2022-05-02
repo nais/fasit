@@ -30,6 +30,7 @@ type MockQuerier struct {
 	tenantEnvironments         func(ctx context.Context) ([]gensql.TenantEnvironmentsRow, error)
 	statusCreateOrUpdate       func(ctx context.Context, arg gensql.StatusCreateOrUpdateParams) error
 	statusForEnvironment       func(ctx context.Context, environmentID uuid.UUID) ([]gensql.Status, error)
+	statusForFeature           func(ctx context.Context, arg gensql.StatusForFeatureParams) (gensql.Status, error)
 }
 
 func (m *MockQuerier) ConfigDelete(ctx context.Context, id uuid.UUID) error {
@@ -177,6 +178,13 @@ func (m *MockQuerier) StatusForEnvironment(ctx context.Context, environmentID uu
 		panic("not implemented")
 	}
 	return m.statusForEnvironment(ctx, environmentID)
+}
+
+func (m *MockQuerier) StatusForFeature(ctx context.Context, arg gensql.StatusForFeatureParams) (gensql.Status, error) {
+	if m.statusForFeature == nil {
+		panic("not implemented")
+	}
+	return m.statusForFeature(ctx, arg)
 }
 
 func (m *MockQuerier) WithTx(tx *sql.Tx) *gensql.Queries {
