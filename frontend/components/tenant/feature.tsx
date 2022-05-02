@@ -1,14 +1,14 @@
 import * as React from 'react'
-import {useState} from 'react'
+import {useEffect, useState} from 'react'
 import styled from 'styled-components'
 import ConfigPage from './configPage'
 import {EnvironmentGetQuery, useStatusForFeatureSubscription} from '../../lib/schema/graphql'
-import {Success} from '@navikt/ds-icons'
 import {navGronn, navRod} from '../../styles/constants'
 import IconBox from "../lib/icons/iconBox";
 import GitIcon from "../lib/icons/gitIcon";
-import {Switch} from '@navikt/ds-react'
+import {Loader, Switch} from '@navikt/ds-react'
 import EnableFeature from "./enableFeature";
+import humanizeDate from "../lib/humanizeDate";
 
 
 const FeatureContainer = styled.div`
@@ -54,26 +54,37 @@ const Feature = ({env, featureName}: FeatureProps) => {
         return !env.featureStates.find((fs) => fs.feature.name === dependency)?.enabled
     })
     const {loading, error, data} = useStatusForFeatureSubscription({variables: {envID: env.id, feature: featureName}})
-    console.log("loading", loading)
-    console.log("data", data)
 
-
-
+    // dirty, dirty hack to reload page when subscription is cancelled by HMR in dev
+    useEffect(() => {
+        if (error?.message === "Observable cancelled prematurely") {
+            window.location.reload()
+        }
+    }, [error])
 
     return (
         <FeatureContainer>
             <FeatureStatus>
                 <div style={{display: 'flex', alignItems: 'center'}} key={f.name}>
                     <div key={f.name} style={{display: 'flex', flexDirection: 'column', flexGrow: '1'}}>
-                        <div>status: <Success style={{color: navGronn}}/></div>
                         {f.chart && <div>chart: {f.chart}</div>}
-                        {f.repo && <div>repo: {f.repo}</div>}
+                        {f.repo && <div>repos: {f.repo}</div>}
                         {f.version && <div>version: {f.version}</div>}
                         {f.source && <div style={{display: 'flex', width: 'fit-content', gap: '10px'}}><IconBox
                             size={20}><GitIcon/></IconBox> <a href={f.source} target="_blank">{f.source}</a></div>}
                         {f.dependsOn.length > 0 && <div>dependencies: {f.dependsOn.map((d) => {
                             return <span key={d} style={{color: missingDependencies.includes(d) ? navRod : navGronn}}>{d + " "}</span>
-                        })}</div>}
+                        })}
+                        </div>
+                        }
+                        <div>
+
+                        {loading || !data && <Loader transparent /> }
+                        <div>status: {data?.status.status}</div>
+                        <div>version: {data?.status.version}</div>
+                        <div>lastModified: {humanizeDate(data?.status.lastModified)}</div>
+                        <div>created: {humanizeDate(data?.status.created)}</div>
+                        </div>
                     </div>
                     <EnableFeatureBox>
                         <div>Enabled</div>
