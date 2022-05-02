@@ -72,3 +72,30 @@ func (q *Queries) StatusForEnvironment(ctx context.Context, environmentID uuid.U
 	}
 	return items, nil
 }
+
+const statusForFeature = `-- name: StatusForFeature :one
+SELECT environment_id, feature, version, status, config_hash, created, last_modified
+FROM status
+WHERE environment_id = $1
+AND feature = $2
+`
+
+type StatusForFeatureParams struct {
+	EnvironmentID uuid.UUID
+	Feature       string
+}
+
+func (q *Queries) StatusForFeature(ctx context.Context, arg StatusForFeatureParams) (Status, error) {
+	row := q.db.QueryRowContext(ctx, statusForFeature, arg.EnvironmentID, arg.Feature)
+	var i Status
+	err := row.Scan(
+		&i.EnvironmentID,
+		&i.Feature,
+		&i.Version,
+		&i.Status,
+		&i.ConfigHash,
+		&i.Created,
+		&i.LastModified,
+	)
+	return i, err
+}

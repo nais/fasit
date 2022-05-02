@@ -5,6 +5,7 @@ package graph
 
 import (
 	"context"
+
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/graph/graphgen"
 	"github.com/nais/fasit/pkg/graph/model"

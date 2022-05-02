@@ -9,3 +9,9 @@ UPDATE SET version=EXCLUDED.version, status=EXCLUDED.status, config_hash=EXCLUDE
 SELECT *
 FROM status
 WHERE environment_id = @environment_id;
+
+-- name: StatusForFeature :one
+SELECT *
+FROM status
+WHERE environment_id = @environment_id
+AND feature = @feature;

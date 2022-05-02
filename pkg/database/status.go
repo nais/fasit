@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/graph/model"
@@ -44,4 +43,24 @@ func (r *repo) StatusForEnvironment(ctx context.Context, environmentID uuid.UUID
 	}
 
 	return ret, nil
+}
+
+func (r *repo) StatusForFeature(ctx context.Context, environmentID uuid.UUID, feature string) (*model.Status, error) {
+	arg := gensql.StatusForFeatureParams{
+		Feature:       feature,
+		EnvironmentID: environmentID,
+	}
+	s, err := r.querier.StatusForFeature(ctx, arg)
+	if err != nil {
+		return nil, err
+	}
+	return &model.Status{
+		EnvironmentID: s.EnvironmentID,
+		Feature:       s.Feature,
+		Version:       s.Version,
+		Status:        s.Status,
+		ConfigHash:    s.ConfigHash,
+		Created:       s.Created,
+		LastModified:  s.LastModified,
+	}, nil
 }

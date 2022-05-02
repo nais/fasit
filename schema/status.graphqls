@@ -1,0 +1,13 @@
+type Status {
+    environmentID: ID!
+    feature: String!
+    version: String!
+    status: String!
+    configHash: String!
+    created: Time!
+    lastModified: Time!
+}
+
+type Subscription {
+    status( envID: ID!, feature: String!): Status!
+}

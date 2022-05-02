@@ -91,6 +91,7 @@ func main() {
 	resolver := &graph.Resolver{
 		Repo:     repo,
 		Features: featureMgr,
+		Log:      log.WithField("subsystem", "graphql"),
 	}
 	srv := handler.NewDefaultServer(graphgen.NewExecutableSchema(graphgen.Config{Resolvers: resolver}))
 

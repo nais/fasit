@@ -37,12 +37,13 @@ type Repo interface {
 	FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
 	HelmValues(ctx context.Context, feature string, envID uuid.UUID, requiredFields []string) (map[string]any, error)
 	Metrics() prometheus.Collector
-	TenantCreate(ctx context.Context, p *model.TenantCreate) (*model.Tenant, error)
-	TenantGet(ctx context.Context, id uuid.UUID) (*model.Tenant, error)
-	TenantsGet(ctx context.Context) ([]*model.Tenant, error)
-	TenantEnvironments(ctx context.Context) ([]*model.TenantEnvironments, error)
 	StatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Helm) error
 	StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]*model.Status, error)
+	StatusForFeature(ctx context.Context, environmentID uuid.UUID, feature string) (*model.Status, error)
+	TenantCreate(ctx context.Context, p *model.TenantCreate) (*model.Tenant, error)
+	TenantEnvironments(ctx context.Context) ([]*model.TenantEnvironments, error)
+	TenantGet(ctx context.Context, id uuid.UUID) (*model.Tenant, error)
+	TenantsGet(ctx context.Context) ([]*model.Tenant, error)
 	Close() error
 }
 

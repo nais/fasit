@@ -3,6 +3,7 @@ package graph
 import (
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/feature"
+	"github.com/sirupsen/logrus"
 )
 
 // This file will not be regenerated automatically.
@@ -12,4 +13,5 @@ import (
 type Resolver struct {
 	Repo     database.Repo
 	Features *feature.Manager
+	Log      *logrus.Entry
 }
