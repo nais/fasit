@@ -1,10 +1,7 @@
 import {useRouter} from 'next/router'
 import * as React from 'react'
 import {useState} from 'react'
-import {
-  useEnvironmentsGetLazyQuery,
-  useTenantGetByNameQuery
-} from '../../../lib/schema/graphql'
+import {useEnvironmentsGetLazyQuery, useTenantGetByNameQuery} from '../../../lib/schema/graphql'
 import ErrorMessage from '../../../components/lib/error'
 import LoaderSpinner from '../../../components/lib/spinner'
 import AddEnvironment from '../../../components/tenant/addEnvironment'
@@ -65,24 +62,6 @@ const Tenant = () => {
         tenantID={tenant.id} />
     </PageContainer>
   )
-
 }
-export const getServerSideProps: GetServerSideProps = async (context) => {
-  const { tenantName } = context.query
 
-  const apolloClient = initializeApollo()
-
-  try {
-    await apolloClient.query({
-      query: TENANT_GET_BY_NAME,
-      variables: { tenantName },
-    })
-  } catch (e) {
-    console.log(e)
-  }
-
-  return addApolloState(apolloClient, {
-    props: { tenantName },
-  })
-}
 export default Tenant
