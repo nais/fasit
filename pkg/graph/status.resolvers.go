@@ -14,6 +14,10 @@ import (
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
+func (r *queryResolver) FeatureStatus(ctx context.Context, envID uuid.UUID, feature string) (*model.Status, error) {
+	return r.Repo.StatusForFeature(ctx, envID, feature)
+}
+
 func (r *subscriptionResolver) Status(ctx context.Context, envID uuid.UUID, feature string) (<-chan *model.Status, error) {
 	ch := make(chan *model.Status, 1)
 	go func() {

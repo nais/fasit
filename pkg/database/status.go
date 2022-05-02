@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/graph/model"
@@ -17,6 +18,7 @@ func (r *repo) StatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID
 		Version:       h.Version,
 		Status:        h.RolloutStatus,
 		ConfigHash:    h.ConfigHash,
+		Log:           h.Log,
 	})
 }
 
@@ -35,10 +37,11 @@ func (r *repo) StatusForEnvironment(ctx context.Context, environmentID uuid.UUID
 			EnvironmentID: s.EnvironmentID,
 			Feature:       s.Feature,
 			Version:       s.Version,
-			Status:        s.Status,
+			Status:        model.RolloutStatus(s.Status),
 			ConfigHash:    s.ConfigHash,
 			Created:       s.Created,
 			LastModified:  s.LastModified,
+			Log:           s.Log,
 		})
 	}
 
@@ -58,9 +61,10 @@ func (r *repo) StatusForFeature(ctx context.Context, environmentID uuid.UUID, fe
 		EnvironmentID: s.EnvironmentID,
 		Feature:       s.Feature,
 		Version:       s.Version,
-		Status:        s.Status,
+		Status:        model.RolloutStatus(s.Status),
 		ConfigHash:    s.ConfigHash,
 		Created:       s.Created,
 		LastModified:  s.LastModified,
+		Log:           s.Log,
 	}, nil
 }

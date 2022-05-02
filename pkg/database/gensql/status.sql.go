@@ -10,8 +10,8 @@ import (
 )
 
 const statusCreateOrUpdate = `-- name: StatusCreateOrUpdate :exec
-INSERT INTO status (environment_id, feature, version, status, config_hash)
-VALUES ($1, $2, $3, $4, $5)
+INSERT INTO status (environment_id, feature, version, status, config_hash, log)
+VALUES ($1, $2, $3, $4, $5, $6)
 ON CONFLICT (environment_id, feature)
 DO
 UPDATE SET version=EXCLUDED.version, status=EXCLUDED.status, config_hash=EXCLUDED.config_hash
@@ -23,6 +23,7 @@ type StatusCreateOrUpdateParams struct {
 	Version       string
 	Status        string
 	ConfigHash    string
+	Log           string
 }
 
 func (q *Queries) StatusCreateOrUpdate(ctx context.Context, arg StatusCreateOrUpdateParams) error {
@@ -32,12 +33,13 @@ func (q *Queries) StatusCreateOrUpdate(ctx context.Context, arg StatusCreateOrUp
 		arg.Version,
 		arg.Status,
 		arg.ConfigHash,
+		arg.Log,
 	)
 	return err
 }
 
 const statusForEnvironment = `-- name: StatusForEnvironment :many
-SELECT environment_id, feature, version, status, config_hash, created, last_modified
+SELECT environment_id, feature, version, status, config_hash, created, last_modified, log
 FROM status
 WHERE environment_id = $1
 `
@@ -59,6 +61,7 @@ func (q *Queries) StatusForEnvironment(ctx context.Context, environmentID uuid.U
 			&i.ConfigHash,
 			&i.Created,
 			&i.LastModified,
+			&i.Log,
 		); err != nil {
 			return nil, err
 		}
@@ -74,7 +77,7 @@ func (q *Queries) StatusForEnvironment(ctx context.Context, environmentID uuid.U
 }
 
 const statusForFeature = `-- name: StatusForFeature :one
-SELECT environment_id, feature, version, status, config_hash, created, last_modified
+SELECT environment_id, feature, version, status, config_hash, created, last_modified, log
 FROM status
 WHERE environment_id = $1
 AND feature = $2
@@ -96,6 +99,7 @@ func (q *Queries) StatusForFeature(ctx context.Context, arg StatusForFeaturePara
 		&i.ConfigHash,
 		&i.Created,
 		&i.LastModified,
+		&i.Log,
 	)
 	return i, err
 }

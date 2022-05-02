@@ -1,13 +1,25 @@
+enum RolloutStatus {
+  UNKNOWN
+  PENDING
+  DEPLOYED
+  FAILED
+}
+
 type Status {
-    environmentID: ID!
-    feature: String!
-    version: String!
-    status: String!
-    configHash: String!
-    created: Time!
-    lastModified: Time!
+  environmentID: ID!
+  feature: String!
+  version: String!
+  status: RolloutStatus!
+  configHash: String!
+  created: Time!
+  lastModified: Time!
+  log: String!
 }
 
 type Subscription {
-    status( envID: ID!, feature: String!): Status!
+  status(envID: ID!, feature: String!): Status!
+}
+
+extend type Query {
+  featureStatus(envID: ID!, feature: String!): Status!
 }

@@ -21,4 +21,5 @@ type Helm struct {
 	Version       string
 	RolloutStatus string
 	ConfigHash    string
+	Log           string
 }

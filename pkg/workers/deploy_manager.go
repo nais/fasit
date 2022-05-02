@@ -1,6 +1,7 @@
 package workers
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"io"
@@ -104,7 +105,8 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 		RolloutStatus: "ok",
 	}
 
-	if err := d.runHelm(ctx, args); err != nil {
+	helmStatus.Log, err = d.runHelm(ctx, args)
+	if err != nil {
 		log.Printf("failed to run helm %s: %s", msg.Name, err)
 		helmStatus.RolloutStatus = "failed"
 	}
@@ -124,7 +126,7 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 	return d.statuses.Publish(ctx, statusUpdate)
 }
 
-func (d *DeployManager) runHelm(ctx context.Context, args []string) error {
+func (d *DeployManager) runHelm(ctx context.Context, args []string) (string, error) {
 	connectionFlags := []string{
 		"--kube-apiserver",
 		d.kubeConfig.Host,
@@ -146,12 +148,15 @@ func (d *DeployManager) runHelm(ctx context.Context, args []string) error {
 		"HELM_CACHE_HOME=" + d.helmCache,
 	}
 
+	buf := &bytes.Buffer{}
+
 	cmd := exec.CommandContext(ctx, "helm", helmArgs...)
 	cmd.Env = append(cmd.Env, environment...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cmd.Stdout = io.MultiWriter(buf, os.Stdout)
+	cmd.Stderr = io.MultiWriter(buf, os.Stderr)
 
-	return d.executor.Execute(cmd)
+	err := d.executor.Execute(cmd)
+	return buf.String(), err
 }
 
 func (d *DeployManager) makeHelmValues(m message.DeployInstruction) (string, error) {

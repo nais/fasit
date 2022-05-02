@@ -108,6 +108,7 @@ type ComplexityRoot struct {
 		EnvConfig     func(childComplexity int, feature string, envID uuid.UUID) int
 		Environment   func(childComplexity int, id uuid.UUID) int
 		Environments  func(childComplexity int, tenantID uuid.UUID) int
+		FeatureStatus func(childComplexity int, envID uuid.UUID, feature string) int
 		Features      func(childComplexity int, kind *model.EnvironmentKind) int
 		Tenant        func(childComplexity int, id uuid.UUID) int
 		Tenants       func(childComplexity int) int
@@ -120,6 +121,7 @@ type ComplexityRoot struct {
 		EnvironmentID func(childComplexity int) int
 		Feature       func(childComplexity int) int
 		LastModified  func(childComplexity int) int
+		Log           func(childComplexity int) int
 		Status        func(childComplexity int) int
 		Version       func(childComplexity int) int
 	}
@@ -160,6 +162,7 @@ type QueryResolver interface {
 	Environments(ctx context.Context, tenantID uuid.UUID) ([]*model.Environment, error)
 	Features(ctx context.Context, kind *model.EnvironmentKind) ([]*model.Feature, error)
 	Values(ctx context.Context, feature string, env uuid.UUID) (map[string]interface{}, error)
+	FeatureStatus(ctx context.Context, envID uuid.UUID, feature string) (*model.Status, error)
 	Tenant(ctx context.Context, id uuid.UUID) (*model.Tenant, error)
 }
 type SubscriptionResolver interface {
@@ -516,6 +519,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Environments(childComplexity, args["tenantID"].(uuid.UUID)), true
 
+	case "Query.featureStatus":
+		if e.complexity.Query.FeatureStatus == nil {
+			break
+		}
+
+		args, err := ec.field_Query_featureStatus_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.FeatureStatus(childComplexity, args["envID"].(uuid.UUID), args["feature"].(string)), true
+
 	case "Query.features":
 		if e.complexity.Query.Features == nil {
 			break
@@ -593,6 +608,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Status.LastModified(childComplexity), true
+
+	case "Status.log":
+		if e.complexity.Status.Log == nil {
+			break
+		}
+
+		return e.complexity.Status.Log(childComplexity), true
 
 	case "Status.status":
 		if e.complexity.Status.Status == nil {
@@ -875,18 +897,30 @@ scalar RawMessage
 Time is a string in [RFC 3339](https://rfc-editor.org/rfc/rfc3339.html) format, with sub-second precision added if present.
 """
 scalar Time`, BuiltIn: false},
-	{Name: "schema/status.graphqls", Input: `type Status {
-    environmentID: ID!
-    feature: String!
-    version: String!
-    status: String!
-    configHash: String!
-    created: Time!
-    lastModified: Time!
+	{Name: "schema/status.graphqls", Input: `enum RolloutStatus {
+  UNKNOWN
+  PENDING
+  DEPLOYED
+  FAILED
+}
+
+type Status {
+  environmentID: ID!
+  feature: String!
+  version: String!
+  status: RolloutStatus!
+  configHash: String!
+  created: Time!
+  lastModified: Time!
+  log: String!
 }
 
 type Subscription {
-    status( envID: ID!, feature: String!): Status!
+  status(envID: ID!, feature: String!): Status!
+}
+
+extend type Query {
+  featureStatus(envID: ID!, feature: String!): Status!
 }
 `, BuiltIn: false},
 	{Name: "schema/tenant.graphqls", Input: `type Tenant {
@@ -1154,6 +1188,30 @@ func (ec *executionContext) field_Query_environments_args(ctx context.Context, r
 		}
 	}
 	args["tenantID"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_featureStatus_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 uuid.UUID
+	if tmp, ok := rawArgs["envID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("envID"))
+		arg0, err = ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["envID"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["feature"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("feature"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["feature"] = arg1
 	return args, nil
 }
 
@@ -3525,6 +3583,79 @@ func (ec *executionContext) fieldContext_Query_values(ctx context.Context, field
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_featureStatus(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_featureStatus(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().FeatureStatus(rctx, fc.Args["envID"].(uuid.UUID), fc.Args["feature"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Status)
+	fc.Result = res
+	return ec.marshalNStatus2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_featureStatus(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "environmentID":
+				return ec.fieldContext_Status_environmentID(ctx, field)
+			case "feature":
+				return ec.fieldContext_Status_feature(ctx, field)
+			case "version":
+				return ec.fieldContext_Status_version(ctx, field)
+			case "status":
+				return ec.fieldContext_Status_status(ctx, field)
+			case "configHash":
+				return ec.fieldContext_Status_configHash(ctx, field)
+			case "created":
+				return ec.fieldContext_Status_created(ctx, field)
+			case "lastModified":
+				return ec.fieldContext_Status_lastModified(ctx, field)
+			case "log":
+				return ec.fieldContext_Status_log(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Status", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_featureStatus_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_tenant(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_tenant(ctx, field)
 	if err != nil {
@@ -3879,9 +4010,9 @@ func (ec *executionContext) _Status_status(ctx context.Context, field graphql.Co
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(model.RolloutStatus)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNRolloutStatus2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐRolloutStatus(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Status_status(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -3891,7 +4022,7 @@ func (ec *executionContext) fieldContext_Status_status(ctx context.Context, fiel
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type RolloutStatus does not have child fields")
 		},
 	}
 	return fc, nil
@@ -4029,6 +4160,50 @@ func (ec *executionContext) fieldContext_Status_lastModified(ctx context.Context
 	return fc, nil
 }
 
+func (ec *executionContext) _Status_log(ctx context.Context, field graphql.CollectedField, obj *model.Status) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Status_log(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Log, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Status_log(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Status",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Subscription_status(ctx context.Context, field graphql.CollectedField) (ret func(ctx context.Context) graphql.Marshaler) {
 	fc, err := ec.fieldContext_Subscription_status(ctx, field)
 	if err != nil {
@@ -4092,6 +4267,8 @@ func (ec *executionContext) fieldContext_Subscription_status(ctx context.Context
 				return ec.fieldContext_Status_created(ctx, field)
 			case "lastModified":
 				return ec.fieldContext_Status_lastModified(ctx, field)
+			case "log":
+				return ec.fieldContext_Status_log(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Status", field.Name)
 		},
@@ -6954,6 +7131,29 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
+		case "featureStatus":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_featureStatus(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
 		case "tenant":
 			field := field
 
@@ -7075,6 +7275,16 @@ func (ec *executionContext) _Status(ctx context.Context, sel ast.SelectionSet, o
 		case "lastModified":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Status_lastModified(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "log":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Status_log(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
@@ -8002,6 +8212,16 @@ func (ec *executionContext) marshalNRawMessage2encodingᚋjsonᚐRawMessage(ctx 
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNRolloutStatus2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐRolloutStatus(ctx context.Context, v interface{}) (model.RolloutStatus, error) {
+	var res model.RolloutStatus
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNRolloutStatus2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐRolloutStatus(ctx context.Context, sel ast.SelectionSet, v model.RolloutStatus) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) marshalNStatus2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐStatus(ctx context.Context, sel ast.SelectionSet, v model.Status) graphql.Marshaler {

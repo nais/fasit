@@ -67,6 +67,7 @@ type Status struct {
 	ConfigHash    string
 	Created       time.Time
 	LastModified  time.Time
+	Log           string
 }
 
 type Tenant struct {
