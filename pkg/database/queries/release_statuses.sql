@@ -3,7 +3,7 @@ INSERT INTO release_statuses
 	(environment_id, feature, version, status, revision, last_deployed)
 VALUES
 	(@environment_id, @feature, @version, @status, @revision, @last_deployed)
-ON CONFLICT (environment_id, feature, key) DO UPDATE
+ON CONFLICT (environment_id, feature) DO UPDATE
 	SET
     version = EXCLUDED.version,
     status = EXCLUDED.status,
