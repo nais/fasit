@@ -24,7 +24,9 @@ func TestScheduler(t *testing.T) {
 	s.Register("test_twice", tw1, 2*time.Second)
 	s.Register("test_once", tw2, time.Minute)
 
-	s.Run(ctx)
+	s.Start(ctx)
+
+	<-ctx.Done()
 
 	if tw1.runs != 2 {
 		t.Errorf("expected test worker to run twice, but ran %v times", tw1.runs)

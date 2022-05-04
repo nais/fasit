@@ -83,7 +83,7 @@ func main() {
 	healthReporter := naisd.NewHealthReporter(cfg.TenantName, cfg.Env, cfg.Kind, statusPublisher)
 	s.Register("helm-list", helmListReporter, 15*time.Minute)
 	s.Register("health", healthReporter, 1*time.Minute)
-	go s.Run(ctx)
+	s.Start(ctx)
 
 	log.Info("Receiver started")
 	receiver.Run(ctx)

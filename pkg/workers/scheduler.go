@@ -43,9 +43,9 @@ func (s *Scheduler) Register(name string, v Schedulable, interval time.Duration)
 	})
 }
 
-func (s *Scheduler) Run(ctx context.Context) {
+func (s *Scheduler) Start(ctx context.Context) {
 	for _, w := range s.workers {
-		s.run(ctx, w)
+		go s.run(ctx, w)
 	}
 }
 
