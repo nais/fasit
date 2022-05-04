@@ -352,6 +352,43 @@ func (_m *Repo) FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model
 	return r0, r1
 }
 
+// HealthGet provides a mock function with given fields: ctx, envID
+func (_m *Repo) HealthGet(ctx context.Context, envID uuid.UUID) (*model.Health, error) {
+	ret := _m.Called(ctx, envID)
+
+	var r0 *model.Health
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) *model.Health); ok {
+		r0 = rf(ctx, envID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Health)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, envID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// HealthStatusCreateOrUpdate provides a mock function with given fields: ctx, environmentID, h
+func (_m *Repo) HealthStatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Health) error {
+	ret := _m.Called(ctx, environmentID, h)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, *message.Health) error); ok {
+		r0 = rf(ctx, environmentID, h)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // HelmValues provides a mock function with given fields: ctx, _a1, envID, requiredFields
 func (_m *Repo) HelmValues(ctx context.Context, _a1 string, envID uuid.UUID, requiredFields []string) (map[string]interface{}, error) {
 	ret := _m.Called(ctx, _a1, envID, requiredFields)
@@ -403,6 +440,29 @@ func (_m *Repo) ReleaseStatusCreateOrUpdate(ctx context.Context, environmentID u
 	}
 
 	return r0
+}
+
+// ReleaseStatusesGet provides a mock function with given fields: ctx, environmentID
+func (_m *Repo) ReleaseStatusesGet(ctx context.Context, environmentID uuid.UUID) ([]*model.Release, error) {
+	ret := _m.Called(ctx, environmentID)
+
+	var r0 []*model.Release
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) []*model.Release); ok {
+		r0 = rf(ctx, environmentID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.Release)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, environmentID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // StatusCreateOrUpdate provides a mock function with given fields: ctx, environmentID, h

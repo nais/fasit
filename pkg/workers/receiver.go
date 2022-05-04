@@ -23,6 +23,7 @@ type ReceiverStore interface {
 	TenantGetByName(ctx context.Context, name string) (*model.Tenant, error)
 	TenantCreate(ctx context.Context, t *model.TenantCreate) (*model.Tenant, error)
 	EnvironmentCreate(ctx context.Context, t *model.EnvironmentCreate) (*model.Environment, error)
+	HealthStatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Health) error
 }
 
 type Receiver struct {
@@ -145,6 +146,5 @@ func (r *Receiver) healthStatus(ctx context.Context, msg message.Status) error {
 		}
 		environmentID = env.ID
 	}
-
-	return nil
+	return r.repo.HealthStatusCreateOrUpdate(ctx, environmentID, status)
 }

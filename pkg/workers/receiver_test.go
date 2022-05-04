@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/nais/fasit/pkg/message"
 	"github.com/sirupsen/logrus"
 )
@@ -99,4 +100,16 @@ func (m *mockStorage) StatusCreateOrUpdate(ctx context.Context, environmentID uu
 func (m *mockStorage) ReleaseStatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Release) error {
 	m.releaseStatusCreateOrUpdate++
 	return nil
+}
+func (m *mockStorage) EnvironmentCreate(ctx context.Context, t *model.EnvironmentCreate) (*model.Environment, error) {
+	panic("not implemented")
+}
+func (m *mockStorage) TenantCreate(ctx context.Context, create *model.TenantCreate) (*model.Tenant, error) {
+	panic("not implemented")
+}
+func (m *mockStorage) TenantGetByName(ctx context.Context, name string) (*model.Tenant, error) {
+	panic("not implemented")
+}
+func (m *mockStorage) HealthStatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Health) error {
+	panic("not implemented")
 }

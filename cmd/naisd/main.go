@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/pubsub"
+	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/nais/fasit/pkg/helm"
 	"github.com/nais/fasit/pkg/message"
 	"github.com/nais/fasit/pkg/naisd"
@@ -23,7 +24,8 @@ const (
 )
 
 var (
-	cfg = DefaultConfig()
+	cfg     = DefaultConfig()
+	envKind string
 
 	promErrs = prometheus.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "naisd",
@@ -37,7 +39,7 @@ func init() {
 	flag.StringVar(&cfg.EnvProjectID, "env-project-id", "local-test-dev", "Google project ID")
 	flag.StringVar(&cfg.NaisProjectID, "nais-project-id", "nais-local-dev", "Nais project ID")
 	flag.StringVar(&cfg.TenantName, "tenant-name", "test", "tenant name")
-	flag.StringVar(&cfg.Kind, "cluster kind", "", "management or tenant")
+	flag.StringVar(&envKind, "cluster-kind", "", "management or tenant")
 	flag.StringVar(&cfg.Env, "env", "dev", "cluster environment")
 	flag.BoolVar(&cfg.Production, "production", false, "When in production, actually run helm install")
 }
@@ -45,6 +47,10 @@ func init() {
 func main() {
 	flag.Parse()
 	log := newLogger()
+	cfg.Kind = model.EnvironmentKind(envKind)
+	if !cfg.Kind.IsValid() {
+		log.Fatal("cluster kind not set")
+	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 

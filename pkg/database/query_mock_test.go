@@ -25,7 +25,10 @@ type MockQuerier struct {
 	featureStateCreateOrUpdate  func(ctx context.Context, arg gensql.FeatureStateCreateOrUpdateParams) (gensql.FeatureState, error)
 	featureStateGet             func(ctx context.Context, arg gensql.FeatureStateGetParams) (gensql.FeatureState, error)
 	featureStatesGet            func(ctx context.Context, environmentID uuid.UUID) ([]gensql.FeatureState, error)
+	healthStatusCreateOrUpdate  func(ctx context.Context, arg gensql.HealthStatusCreateOrUpdateParams) (gensql.HealthStatus, error)
+	healthStatusGet             func(ctx context.Context, environmentID uuid.UUID) (gensql.HealthStatus, error)
 	releaseStatusCreateOrUpdate func(ctx context.Context, arg gensql.ReleaseStatusCreateOrUpdateParams) (gensql.ReleaseStatus, error)
+	releaseStatusesGet          func(ctx context.Context, environmentID uuid.UUID) ([]gensql.ReleaseStatus, error)
 	statusCreateOrUpdate        func(ctx context.Context, arg gensql.StatusCreateOrUpdateParams) error
 	statusForEnvironment        func(ctx context.Context, environmentID uuid.UUID) ([]gensql.Status, error)
 	statusForFeature            func(ctx context.Context, arg gensql.StatusForFeatureParams) (gensql.Status, error)
@@ -147,6 +150,18 @@ func (m *MockQuerier) FeatureStatesGet(ctx context.Context, environmentID uuid.U
 	}
 	return m.featureStatesGet(ctx, environmentID)
 }
+func (m *MockQuerier) HealthStatusCreateOrUpdate(ctx context.Context, arg gensql.HealthStatusCreateOrUpdateParams) (gensql.HealthStatus, error) {
+	if m.healthStatusCreateOrUpdate == nil {
+		panic("not implemented")
+	}
+	return m.healthStatusCreateOrUpdate(ctx, arg)
+}
+func (m *MockQuerier) HealthStatusGet(ctx context.Context, environmentID uuid.UUID) (gensql.HealthStatus, error) {
+	if m.healthStatusGet == nil {
+		panic("not implemented")
+	}
+	return m.healthStatusGet(ctx, environmentID)
+}
 
 func (m *MockQuerier) TenantCreate(ctx context.Context, arg gensql.TenantCreateParams) (gensql.Tenant, error) {
 	if m.tenantCreate == nil {
@@ -209,6 +224,12 @@ func (m *MockQuerier) ReleaseStatusCreateOrUpdate(ctx context.Context, arg gensq
 		panic("not implemented")
 	}
 	return m.releaseStatusCreateOrUpdate(ctx, arg)
+}
+func (m *MockQuerier) ReleaseStatusesGet(ctx context.Context, environmentID uuid.UUID) ([]gensql.ReleaseStatus, error) {
+	if m.releaseStatusesGet == nil {
+		panic("not implemented")
+	}
+	return m.releaseStatusesGet(ctx, environmentID)
 }
 
 func (m *MockQuerier) WithTx(tx *sql.Tx) *gensql.Queries {
