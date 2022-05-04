@@ -1,0 +1,24 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/naisd
+source: https://github.com/nais/fasit
+version: 0.1.1
+environmentKinds:
+  - "management"
+  - "tenant"
+config:
+  image.tag:
+    type: string
+  tenantName:
+    type: string
+    required: true
+  env:
+    type: string
+    required: true
+  clusterKind:
+    type: string
+    required: true
+  envProjectId:
+    type: string
+    required: true
+  naisProjectId:
+    type: string
+    required: true

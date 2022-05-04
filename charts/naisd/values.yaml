@@ -4,6 +4,7 @@
 
 tenantName:
 env:
+clusterKind:
 envProjectId:
 naisProjectId: nais-io
 
