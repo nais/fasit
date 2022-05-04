@@ -1,6 +1,20 @@
 enum EnvironmentKind {
     TENANT, MANAGEMENT
 }
+type Health {
+    reportedAt: Time!
+}
+
+type Release {
+    feature: Feature!
+    version: String!
+    status: String!
+    revision: Int!
+    lastDeployed: Time!
+    created: Time!
+    lastModified: Time!
+}
+
 type Environment {
     id: ID!
     name: String!
@@ -9,6 +23,8 @@ type Environment {
     created: Time!
     lastModified: Time!
     kind: EnvironmentKind!
+    health: Health!
+    releases: [Release!]!
 }
 
 """

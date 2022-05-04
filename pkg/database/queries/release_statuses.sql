@@ -10,3 +10,7 @@ ON CONFLICT (environment_id, feature, key) DO UPDATE
     revision = EXCLUDED.revision,
     last_deployed = EXCLUDED.last_deployed
 RETURNING *;
+
+-- name: ReleaseStatusesGet :many
+SELECT * FROM release_statuses
+WHERE environment_id = @environment_ID;

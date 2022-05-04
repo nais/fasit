@@ -37,6 +37,7 @@ func init() {
 	flag.StringVar(&cfg.EnvProjectID, "env-project-id", "local-test-dev", "Google project ID")
 	flag.StringVar(&cfg.NaisProjectID, "nais-project-id", "nais-local-dev", "Nais project ID")
 	flag.StringVar(&cfg.TenantName, "tenant-name", "test", "tenant name")
+	flag.StringVar(&cfg.Kind, "cluster kind", "", "management or tenant")
 	flag.StringVar(&cfg.Env, "env", "dev", "cluster environment")
 	flag.BoolVar(&cfg.Production, "production", false, "When in production, actually run helm install")
 }
@@ -73,7 +74,9 @@ func main() {
 
 	s := workers.NewScheduler(log.WithField("subsystem", "scheduler"))
 	helmListReporter := naisd.NewStatusReporter(cfg.TenantName, cfg.Env, helmClient, statusPublisher)
+	healthReporter := naisd.NewHealthReporter(cfg.TenantName, cfg.Env, cfg.Kind, statusPublisher)
 	s.Register("helm-list", helmListReporter, 15*time.Minute)
+	s.Register("health", healthReporter, 1*time.Minute)
 	go s.Run(ctx)
 
 	log.Info("Receiver started")

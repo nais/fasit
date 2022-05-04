@@ -55,3 +55,40 @@ func (q *Queries) ReleaseStatusCreateOrUpdate(ctx context.Context, arg ReleaseSt
 	)
 	return i, err
 }
+
+const releaseStatusesGet = `-- name: ReleaseStatusesGet :many
+SELECT environment_id, feature, version, status, revision, last_deployed, created, last_modified FROM release_statuses
+WHERE environment_id = $1
+`
+
+func (q *Queries) ReleaseStatusesGet(ctx context.Context, environmentID uuid.UUID) ([]ReleaseStatus, error) {
+	rows, err := q.db.QueryContext(ctx, releaseStatusesGet, environmentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ReleaseStatus{}
+	for rows.Next() {
+		var i ReleaseStatus
+		if err := rows.Scan(
+			&i.EnvironmentID,
+			&i.Feature,
+			&i.Version,
+			&i.Status,
+			&i.Revision,
+			&i.LastDeployed,
+			&i.Created,
+			&i.LastModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

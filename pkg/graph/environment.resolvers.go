@@ -5,6 +5,7 @@ package graph
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/graph/graphgen"
@@ -35,6 +36,14 @@ OUTER:
 	return retVal, nil
 }
 
+func (r *environmentResolver) Health(ctx context.Context, obj *model.Environment) (*model.Health, error) {
+	return r.Repo.HealthGet(ctx, obj.ID)
+}
+
+func (r *environmentResolver) Releases(ctx context.Context, obj *model.Environment) ([]*model.Release, error) {
+	return r.Repo.ReleaseStatusesGet(ctx, obj.ID)
+}
+
 func (r *mutationResolver) EnvironmentCreate(ctx context.Context, environment model.EnvironmentCreate) (*model.Environment, error) {
 	return r.Repo.EnvironmentCreate(ctx, &environment)
 }
@@ -55,7 +64,19 @@ func (r *queryResolver) Environments(ctx context.Context, tenantID uuid.UUID) ([
 	return r.Repo.EnvironmentsGet(ctx, tenantID)
 }
 
+func (r *releaseResolver) Feature(ctx context.Context, obj *model.Release) (*model.Feature, error) {
+	f := r.Features.Get(obj.FeatureName)
+	if f == nil {
+		return nil, fmt.Errorf("feature %v not found", obj.FeatureName)
+	}
+	return marshalFeature(*f)
+}
+
 // Environment returns graphgen.EnvironmentResolver implementation.
 func (r *Resolver) Environment() graphgen.EnvironmentResolver { return &environmentResolver{r} }
 
+// Release returns graphgen.ReleaseResolver implementation.
+func (r *Resolver) Release() graphgen.ReleaseResolver { return &releaseResolver{r} }
+
 type environmentResolver struct{ *Resolver }
+type releaseResolver struct{ *Resolver }

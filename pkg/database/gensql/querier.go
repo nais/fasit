@@ -25,7 +25,10 @@ type Querier interface {
 	FeatureStateCreateOrUpdate(ctx context.Context, arg FeatureStateCreateOrUpdateParams) (FeatureState, error)
 	FeatureStateGet(ctx context.Context, arg FeatureStateGetParams) (FeatureState, error)
 	FeatureStatesGet(ctx context.Context, environmentID uuid.UUID) ([]FeatureState, error)
+	HealthStatusCreateOrUpdate(ctx context.Context, arg HealthStatusCreateOrUpdateParams) (HealthStatus, error)
+	HealthStatusGet(ctx context.Context, environmentID uuid.UUID) (HealthStatus, error)
 	ReleaseStatusCreateOrUpdate(ctx context.Context, arg ReleaseStatusCreateOrUpdateParams) (ReleaseStatus, error)
+	ReleaseStatusesGet(ctx context.Context, environmentID uuid.UUID) ([]ReleaseStatus, error)
 	StatusCreateOrUpdate(ctx context.Context, arg StatusCreateOrUpdateParams) error
 	StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]Status, error)
 	StatusForFeature(ctx context.Context, arg StatusForFeatureParams) (Status, error)

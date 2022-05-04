@@ -19,6 +19,7 @@ const (
 	StatusTypeKubernetesEvent StatusType = iota + 1
 	StatusTypeHelm
 	StatusTypeHelmReleases
+	StatusTypeHealth
 )
 
 type Helm struct {
@@ -29,6 +30,11 @@ type Helm struct {
 	RolloutStatus model.RolloutStatus
 	ConfigHash    string
 	Log           string
+}
+
+type Health struct {
+	Kind       model.EnvironmentKind
+	ReportedAt time.Time
 }
 
 type Release struct {

@@ -59,6 +59,11 @@ type FeatureState struct {
 	LastModified  time.Time
 }
 
+type HealthStatus struct {
+	EnvironmentID uuid.UUID
+	ReportedAt    time.Time
+}
+
 type ReleaseStatus struct {
 	EnvironmentID uuid.UUID
 	Feature       string

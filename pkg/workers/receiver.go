@@ -7,6 +7,7 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
+	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/nais/fasit/pkg/message"
 	"github.com/sirupsen/logrus"
 )
@@ -19,6 +20,9 @@ type ReceiverStore interface {
 	EnvironmentIDByNames(ctx context.Context, tenantName string, environmentName string) (uuid.UUID, error)
 	StatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Helm) error
 	ReleaseStatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Release) error
+	TenantGetByName(ctx context.Context, name string) (*model.Tenant, error)
+	TenantCreate(ctx context.Context, t *model.TenantCreate) (*model.Tenant, error)
+	EnvironmentCreate(ctx context.Context, t *model.EnvironmentCreate) (*model.Environment, error)
 }
 
 type Receiver struct {
@@ -43,6 +47,10 @@ func (r *Receiver) handler(ctx context.Context, msg message.Status) error {
 	switch msg.Type {
 	case message.StatusTypeHelm:
 		return r.handlerHelm(ctx, msg)
+	case message.StatusTypeHelmReleases:
+		return r.releaseStatus(ctx, msg)
+	case message.StatusTypeHealth:
+		return r.healthStatus(ctx, msg)
 	}
 
 	return nil
@@ -98,6 +106,44 @@ func (r *Receiver) releaseStatus(ctx context.Context, msg message.Status) error 
 		if err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+func (r *Receiver) healthStatus(ctx context.Context, msg message.Status) error {
+	status := &message.Health{}
+	err := json.Unmarshal(msg.Data, status)
+	if err != nil {
+		r.log.WithError(err).Errorf("invalid json")
+		return nil
+	}
+	tenant, err := r.repo.TenantGetByName(ctx, msg.Tenant)
+	if err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			return err
+		}
+		tenant, err = r.repo.TenantCreate(ctx, &model.TenantCreate{
+			Name: msg.Tenant,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	environmentID, err := r.repo.EnvironmentIDByNames(ctx, tenant.Name, msg.Environment)
+	if err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			return err
+		}
+		env, err := r.repo.EnvironmentCreate(ctx, &model.EnvironmentCreate{
+			Name:     msg.Environment,
+			TenantID: tenant.ID,
+			Kind:     status.Kind,
+		})
+		if err != nil {
+			return err
+		}
+		environmentID = env.ID
 	}
 
 	return nil

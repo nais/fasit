@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database/gensql"
+	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/nais/fasit/pkg/message"
 )
 
@@ -19,4 +20,25 @@ func (r *repo) ReleaseStatusCreateOrUpdate(ctx context.Context, environmentID uu
 	})
 
 	return err
+}
+
+func (r *repo) ReleaseStatusesGet(ctx context.Context, environmentID uuid.UUID) ([]*model.Release, error) {
+	res, err := r.querier.ReleaseStatusesGet(ctx, environmentID)
+	if err != nil {
+		return nil, err
+	}
+	releases := make([]*model.Release, len(res))
+	for i, r := range res {
+		releases[i] = &model.Release{
+			FeatureName:  r.Feature,
+			Version:      r.Version,
+			Status:       r.Status,
+			Revision:     int(r.Revision),
+			LastDeployed: r.LastDeployed,
+			Created:      r.Created,
+			LastModified: r.LastModified,
+		}
+	}
+
+	return releases, nil
 }
