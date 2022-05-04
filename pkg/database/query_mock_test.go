@@ -9,30 +9,31 @@ import (
 )
 
 type MockQuerier struct {
-	configDelete               func(ctx context.Context, id uuid.UUID) error
-	configForEnv               func(ctx context.Context, arg gensql.ConfigForEnvParams) ([]gensql.ConfigForEnvRow, error)
-	configGet                  func(ctx context.Context, feature string) ([]gensql.Configuration, error)
-	configGetForEnv            func(ctx context.Context, arg gensql.ConfigGetForEnvParams) ([]gensql.Configuration, error)
-	configUpdate               func(ctx context.Context, arg gensql.ConfigUpdateParams) (gensql.Configuration, error)
-	configUpdateOrCreate       func(ctx context.Context, arg gensql.ConfigUpdateOrCreateParams) (gensql.Configuration, error)
-	envConfig                  func(ctx context.Context, arg gensql.EnvConfigParams) ([]gensql.EnvConfigRow, error)
-	environmentCreate          func(ctx context.Context, arg gensql.EnvironmentCreateParams) (gensql.Environment, error)
-	environmentGet             func(ctx context.Context, id uuid.UUID) (gensql.Environment, error)
-	environmentIDByNames       func(ctx context.Context, arg gensql.EnvironmentIDByNamesParams) (uuid.UUID, error)
-	environmentByNames         func(ctx context.Context, arg gensql.EnvironmentByNamesParams) (gensql.Environment, error)
-	environmentUpdate          func(ctx context.Context, arg gensql.EnvironmentUpdateParams) (gensql.Environment, error)
-	environmentsGet            func(ctx context.Context, tenantID uuid.UUID) ([]gensql.Environment, error)
-	featureStateCreateOrUpdate func(ctx context.Context, arg gensql.FeatureStateCreateOrUpdateParams) (gensql.FeatureState, error)
-	featureStateGet            func(ctx context.Context, arg gensql.FeatureStateGetParams) (gensql.FeatureState, error)
-	featureStatesGet           func(ctx context.Context, environmentID uuid.UUID) ([]gensql.FeatureState, error)
-	tenantCreate               func(ctx context.Context, arg gensql.TenantCreateParams) (gensql.Tenant, error)
-	tenantGet                  func(ctx context.Context, id uuid.UUID) (gensql.Tenant, error)
-	tenantGetByName            func(ctx context.Context, name string) (gensql.Tenant, error)
-	tenantsGet                 func(ctx context.Context) ([]gensql.Tenant, error)
-	tenantEnvironments         func(ctx context.Context) ([]gensql.TenantEnvironmentsRow, error)
-	statusCreateOrUpdate       func(ctx context.Context, arg gensql.StatusCreateOrUpdateParams) error
-	statusForEnvironment       func(ctx context.Context, environmentID uuid.UUID) ([]gensql.Status, error)
-	statusForFeature           func(ctx context.Context, arg gensql.StatusForFeatureParams) (gensql.Status, error)
+	configDelete                func(ctx context.Context, id uuid.UUID) error
+	configForEnv                func(ctx context.Context, arg gensql.ConfigForEnvParams) ([]gensql.ConfigForEnvRow, error)
+	configGet                   func(ctx context.Context, feature string) ([]gensql.Configuration, error)
+	configGetForEnv             func(ctx context.Context, arg gensql.ConfigGetForEnvParams) ([]gensql.Configuration, error)
+	configUpdate                func(ctx context.Context, arg gensql.ConfigUpdateParams) (gensql.Configuration, error)
+	configUpdateOrCreate        func(ctx context.Context, arg gensql.ConfigUpdateOrCreateParams) (gensql.Configuration, error)
+	envConfig                   func(ctx context.Context, arg gensql.EnvConfigParams) ([]gensql.EnvConfigRow, error)
+	environmentByNames          func(ctx context.Context, arg gensql.EnvironmentByNamesParams) (gensql.Environment, error)
+	environmentCreate           func(ctx context.Context, arg gensql.EnvironmentCreateParams) (gensql.Environment, error)
+	environmentGet              func(ctx context.Context, id uuid.UUID) (gensql.Environment, error)
+	environmentIDByNames        func(ctx context.Context, arg gensql.EnvironmentIDByNamesParams) (uuid.UUID, error)
+	environmentsGet             func(ctx context.Context, tenantID uuid.UUID) ([]gensql.Environment, error)
+	environmentUpdate           func(ctx context.Context, arg gensql.EnvironmentUpdateParams) (gensql.Environment, error)
+	featureStateCreateOrUpdate  func(ctx context.Context, arg gensql.FeatureStateCreateOrUpdateParams) (gensql.FeatureState, error)
+	featureStateGet             func(ctx context.Context, arg gensql.FeatureStateGetParams) (gensql.FeatureState, error)
+	featureStatesGet            func(ctx context.Context, environmentID uuid.UUID) ([]gensql.FeatureState, error)
+	releaseStatusCreateOrUpdate func(ctx context.Context, arg gensql.ReleaseStatusCreateOrUpdateParams) (gensql.ReleaseStatus, error)
+	statusCreateOrUpdate        func(ctx context.Context, arg gensql.StatusCreateOrUpdateParams) error
+	statusForEnvironment        func(ctx context.Context, environmentID uuid.UUID) ([]gensql.Status, error)
+	statusForFeature            func(ctx context.Context, arg gensql.StatusForFeatureParams) (gensql.Status, error)
+	tenantCreate                func(ctx context.Context, arg gensql.TenantCreateParams) (gensql.Tenant, error)
+	tenantEnvironments          func(ctx context.Context) ([]gensql.TenantEnvironmentsRow, error)
+	tenantGet                   func(ctx context.Context, id uuid.UUID) (gensql.Tenant, error)
+	tenantGetByName             func(ctx context.Context, name string) (gensql.Tenant, error)
+	tenantsGet                  func(ctx context.Context) ([]gensql.Tenant, error)
 }
 
 func (m *MockQuerier) ConfigDelete(ctx context.Context, id uuid.UUID) error {
@@ -201,6 +202,13 @@ func (m *MockQuerier) StatusForFeature(ctx context.Context, arg gensql.StatusFor
 		panic("not implemented")
 	}
 	return m.statusForFeature(ctx, arg)
+}
+
+func (m *MockQuerier) ReleaseStatusCreateOrUpdate(ctx context.Context, arg gensql.ReleaseStatusCreateOrUpdateParams) (gensql.ReleaseStatus, error) {
+	if m.releaseStatusCreateOrUpdate == nil {
+		panic("not implemented")
+	}
+	return m.releaseStatusCreateOrUpdate(ctx, arg)
 }
 
 func (m *MockQuerier) WithTx(tx *sql.Tx) *gensql.Queries {

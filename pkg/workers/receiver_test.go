@@ -79,8 +79,9 @@ func (m *mockReceiverClient) Receive(ctx context.Context, f func(ctx context.Con
 }
 
 type mockStorage struct {
-	envID                uuid.UUID
-	statusCreateOrUpdate int
+	envID                       uuid.UUID
+	statusCreateOrUpdate        int
+	releaseStatusCreateOrUpdate int
 }
 
 func (m *mockStorage) EnvironmentIDByNames(ctx context.Context, tenantName string, environmentName string) (uuid.UUID, error) {
@@ -92,5 +93,10 @@ func (m *mockStorage) EnvironmentIDByNames(ctx context.Context, tenantName strin
 
 func (m *mockStorage) StatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Helm) error {
 	m.statusCreateOrUpdate++
+	return nil
+}
+
+func (m *mockStorage) ReleaseStatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Release) error {
+	m.releaseStatusCreateOrUpdate++
 	return nil
 }

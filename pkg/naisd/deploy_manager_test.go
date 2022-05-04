@@ -23,7 +23,7 @@ func TestDeployReceiver(t *testing.T) {
 		"no messages": {
 			messages: []message.DeployInstruction{},
 		},
-		"one message": {
+		"helm_install": {
 			messages: []message.DeployInstruction{
 				{
 					Name:       "feature1",
@@ -39,7 +39,13 @@ func TestDeployReceiver(t *testing.T) {
 					Tenant:      "tenant1",
 					Environment: "prod",
 					Type:        2,
-					Data:        []uint8(`{"Name":"feature1","Version":"1","RolloutStatus":"ok","ConfigHash":"hash1","Log":""}`),
+					Data:        []uint8(`{"Name":"feature1","Version":"1","RolloutStatus":"pending","ConfigHash":"hash1","Log":""}`),
+				},
+				{
+					Tenant:      "tenant1",
+					Environment: "prod",
+					Type:        2,
+					Data:        []uint8(`{"Name":"feature1","Version":"1","RolloutStatus":"deployed","ConfigHash":"hash1","Log":""}`),
 				},
 			},
 			cmds: []cmd{

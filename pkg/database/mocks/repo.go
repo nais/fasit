@@ -391,6 +391,20 @@ func (_m *Repo) Metrics() prometheus.Collector {
 	return r0
 }
 
+// ReleaseStatusCreateOrUpdate provides a mock function with given fields: ctx, environmentID, h
+func (_m *Repo) ReleaseStatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Release) error {
+	ret := _m.Called(ctx, environmentID, h)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, *message.Release) error); ok {
+		r0 = rf(ctx, environmentID, h)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // StatusCreateOrUpdate provides a mock function with given fields: ctx, environmentID, h
 func (_m *Repo) StatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Helm) error {
 	ret := _m.Called(ctx, environmentID, h)

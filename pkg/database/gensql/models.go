@@ -59,6 +59,17 @@ type FeatureState struct {
 	LastModified  time.Time
 }
 
+type ReleaseStatus struct {
+	EnvironmentID uuid.UUID
+	Feature       string
+	Version       string
+	Status        string
+	Revision      int32
+	LastDeployed  time.Time
+	Created       time.Time
+	LastModified  time.Time
+}
+
 type Status struct {
 	EnvironmentID uuid.UUID
 	Feature       string

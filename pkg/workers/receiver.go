@@ -18,6 +18,7 @@ type ReceiverClient interface {
 type ReceiverStore interface {
 	EnvironmentIDByNames(ctx context.Context, tenantName string, environmentName string) (uuid.UUID, error)
 	StatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Helm) error
+	ReleaseStatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Release) error
 }
 
 type Receiver struct {
@@ -39,9 +40,15 @@ func (r *Receiver) Run(ctx context.Context) {
 }
 
 func (r *Receiver) handler(ctx context.Context, msg message.Status) error {
-	if msg.Type != message.StatusTypeHelm {
-		return nil
+	switch msg.Type {
+	case message.StatusTypeHelm:
+		return r.handlerHelm(ctx, msg)
 	}
+
+	return nil
+}
+
+func (r *Receiver) handlerHelm(ctx context.Context, msg message.Status) error {
 	helmStatus := &message.Helm{}
 	err := json.Unmarshal(msg.Data, helmStatus)
 	if err != nil {
@@ -62,6 +69,35 @@ func (r *Receiver) handler(ctx context.Context, msg message.Status) error {
 	err = r.repo.StatusCreateOrUpdate(ctx, environmentID, helmStatus)
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+func (r *Receiver) releaseStatus(ctx context.Context, msg message.Status) error {
+	status := &message.HelmRelease{}
+	err := json.Unmarshal(msg.Data, status)
+	if err != nil {
+		r.log.WithError(err).Errorf("invalid json")
+		return nil
+	}
+
+	environmentID, err := r.repo.EnvironmentIDByNames(ctx, msg.Tenant, msg.Environment)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			r.log.WithField("tenant", msg.Tenant).
+				WithField("environment", msg.Environment).
+				Warn("unknown tenant and/or environment")
+			return nil
+		}
+		return err
+	}
+
+	for _, rel := range status.Releases {
+		err = r.repo.ReleaseStatusCreateOrUpdate(ctx, environmentID, &rel)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
