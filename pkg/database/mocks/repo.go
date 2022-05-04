@@ -168,6 +168,29 @@ func (_m *Repo) EnvConfig(ctx context.Context, _a1 string, envID uuid.UUID) ([]*
 	return r0, r1
 }
 
+// EnvironmentByNames provides a mock function with given fields: ctx, tenantName, environmentName
+func (_m *Repo) EnvironmentByNames(ctx context.Context, tenantName string, environmentName string) (*model.Environment, error) {
+	ret := _m.Called(ctx, tenantName, environmentName)
+
+	var r0 *model.Environment
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Environment); ok {
+		r0 = rf(ctx, tenantName, environmentName)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Environment)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, tenantName, environmentName)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // EnvironmentCreate provides a mock function with given fields: ctx, p
 func (_m *Repo) EnvironmentCreate(ctx context.Context, p *model.EnvironmentCreate) (*model.Environment, error) {
 	ret := _m.Called(ctx, p)
@@ -490,6 +513,29 @@ func (_m *Repo) TenantGet(ctx context.Context, id uuid.UUID) (*model.Tenant, err
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
 		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// TenantGetByName provides a mock function with given fields: ctx, name
+func (_m *Repo) TenantGetByName(ctx context.Context, name string) (*model.Tenant, error) {
+	ret := _m.Called(ctx, name)
+
+	var r0 *model.Tenant
+	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Tenant); ok {
+		r0 = rf(ctx, name)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Tenant)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, name)
 	} else {
 		r1 = ret.Error(1)
 	}

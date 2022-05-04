@@ -39,7 +39,7 @@ func TestDeployReceiver(t *testing.T) {
 					Tenant:      "tenant1",
 					Environment: "prod",
 					Type:        2,
-					Data:        []uint8(`{"Name":"feature1","Version":"1","RolloutStatus":"ok","ConfigHash":"hash1"}`),
+					Data:        []uint8(`{"Name":"feature1","Version":"1","RolloutStatus":"ok","ConfigHash":"hash1","Log":""}`),
 				},
 			},
 			cmds: []cmd{
