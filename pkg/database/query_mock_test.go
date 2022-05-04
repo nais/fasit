@@ -19,6 +19,7 @@ type MockQuerier struct {
 	environmentCreate          func(ctx context.Context, arg gensql.EnvironmentCreateParams) (gensql.Environment, error)
 	environmentGet             func(ctx context.Context, id uuid.UUID) (gensql.Environment, error)
 	environmentIDByNames       func(ctx context.Context, arg gensql.EnvironmentIDByNamesParams) (uuid.UUID, error)
+	environmentByNames         func(ctx context.Context, arg gensql.EnvironmentByNamesParams) (gensql.EnvironmentByNamesRow, error)
 	environmentUpdate          func(ctx context.Context, arg gensql.EnvironmentUpdateParams) (gensql.Environment, error)
 	environmentsGet            func(ctx context.Context, tenantID uuid.UUID) ([]gensql.Environment, error)
 	featureStateCreateOrUpdate func(ctx context.Context, arg gensql.FeatureStateCreateOrUpdateParams) (gensql.FeatureState, error)
@@ -26,6 +27,7 @@ type MockQuerier struct {
 	featureStatesGet           func(ctx context.Context, environmentID uuid.UUID) ([]gensql.FeatureState, error)
 	tenantCreate               func(ctx context.Context, arg gensql.TenantCreateParams) (gensql.Tenant, error)
 	tenantGet                  func(ctx context.Context, id uuid.UUID) (gensql.Tenant, error)
+	tenantGetByName            func(ctx context.Context, name string) (gensql.Tenant, error)
 	tenantsGet                 func(ctx context.Context) ([]gensql.Tenant, error)
 	tenantEnvironments         func(ctx context.Context) ([]gensql.TenantEnvironmentsRow, error)
 	statusCreateOrUpdate       func(ctx context.Context, arg gensql.StatusCreateOrUpdateParams) error
@@ -96,6 +98,13 @@ func (m *MockQuerier) EnvironmentGet(ctx context.Context, id uuid.UUID) (gensql.
 	return m.environmentGet(ctx, id)
 }
 
+func (m *MockQuerier) EnvironmentByNames(ctx context.Context, arg gensql.EnvironmentByNamesParams) (gensql.EnvironmentByNamesRow, error) {
+	if m.environmentByNames == nil {
+		panic("not implemented")
+	}
+	return m.environmentByNames(ctx, arg)
+}
+
 func (m *MockQuerier) EnvironmentIDByNames(ctx context.Context, arg gensql.EnvironmentIDByNamesParams) (uuid.UUID, error) {
 	if m.environmentIDByNames == nil {
 		panic("not implemented")
@@ -150,6 +159,13 @@ func (m *MockQuerier) TenantGet(ctx context.Context, id uuid.UUID) (gensql.Tenan
 		panic("not implemented")
 	}
 	return m.tenantGet(ctx, id)
+}
+
+func (m *MockQuerier) TenantGetByName(ctx context.Context, name string) (gensql.Tenant, error) {
+	if m.tenantGetByName == nil {
+		panic("not implemented")
+	}
+	return m.tenantGetByName(ctx, name)
 }
 
 func (m *MockQuerier) TenantsGet(ctx context.Context) ([]gensql.Tenant, error) {
