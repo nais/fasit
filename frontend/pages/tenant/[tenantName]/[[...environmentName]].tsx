@@ -5,9 +5,6 @@ import {useEnvironmentsGetLazyQuery, useTenantGetByNameQuery} from '../../../lib
 import ErrorMessage from '../../../components/lib/error'
 import LoaderSpinner from '../../../components/lib/spinner'
 import AddEnvironment from '../../../components/tenant/addEnvironment'
-import {GetServerSideProps} from 'next'
-import {addApolloState, initializeApollo} from '../../../lib/apollo'
-import {TENANT_GET_BY_NAME} from '../../../lib/queries/tenant/tenantGet'
 import Environment from '../../../components/tenant/environment'
 import {Main, MenuItem, MenuItems, MenuSeparator, PageContainer, SideMenu} from '../../../components/lib/PageLayout'
 

@@ -9,7 +9,7 @@ FROM environments
 WHERE tenant_id = @tenant_id;
 
 -- name: EnvironmentByNames :one
-SELECT *
+SELECT e.*
 FROM tenants t
          JOIN environments e ON e.tenant_id = t.id AND e.name = @environment_name
 WHERE t.name = @tenant_name

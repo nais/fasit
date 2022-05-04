@@ -19,7 +19,7 @@ type MockQuerier struct {
 	environmentCreate          func(ctx context.Context, arg gensql.EnvironmentCreateParams) (gensql.Environment, error)
 	environmentGet             func(ctx context.Context, id uuid.UUID) (gensql.Environment, error)
 	environmentIDByNames       func(ctx context.Context, arg gensql.EnvironmentIDByNamesParams) (uuid.UUID, error)
-	environmentByNames         func(ctx context.Context, arg gensql.EnvironmentByNamesParams) (gensql.EnvironmentByNamesRow, error)
+	environmentByNames         func(ctx context.Context, arg gensql.EnvironmentByNamesParams) (gensql.Environment, error)
 	environmentUpdate          func(ctx context.Context, arg gensql.EnvironmentUpdateParams) (gensql.Environment, error)
 	environmentsGet            func(ctx context.Context, tenantID uuid.UUID) ([]gensql.Environment, error)
 	featureStateCreateOrUpdate func(ctx context.Context, arg gensql.FeatureStateCreateOrUpdateParams) (gensql.FeatureState, error)
@@ -98,7 +98,7 @@ func (m *MockQuerier) EnvironmentGet(ctx context.Context, id uuid.UUID) (gensql.
 	return m.environmentGet(ctx, id)
 }
 
-func (m *MockQuerier) EnvironmentByNames(ctx context.Context, arg gensql.EnvironmentByNamesParams) (gensql.EnvironmentByNamesRow, error) {
+func (m *MockQuerier) EnvironmentByNames(ctx context.Context, arg gensql.EnvironmentByNamesParams) (gensql.Environment, error) {
 	if m.environmentByNames == nil {
 		panic("not implemented")
 	}

@@ -6,13 +6,12 @@ package gensql
 import (
 	"context"
 	"database/sql"
-	"time"
 
 	"github.com/google/uuid"
 )
 
 const environmentByNames = `-- name: EnvironmentByNames :one
-SELECT t.id, t.name, t.description, t.created, t.last_modified, e.id, tenant_id, e.name, kind, e.description, e.created, e.last_modified
+SELECT e.id, e.tenant_id, e.name, e.kind, e.description, e.created, e.last_modified
 FROM tenants t
          JOIN environments e ON e.tenant_id = t.id AND e.name = $1
 WHERE t.name = $2
@@ -24,37 +23,17 @@ type EnvironmentByNamesParams struct {
 	TenantName      string
 }
 
-type EnvironmentByNamesRow struct {
-	ID             uuid.UUID
-	Name           string
-	Description    sql.NullString
-	Created        time.Time
-	LastModified   time.Time
-	ID_2           uuid.UUID
-	TenantID       uuid.UUID
-	Name_2         string
-	Kind           EnvironmentKind
-	Description_2  sql.NullString
-	Created_2      time.Time
-	LastModified_2 time.Time
-}
-
-func (q *Queries) EnvironmentByNames(ctx context.Context, arg EnvironmentByNamesParams) (EnvironmentByNamesRow, error) {
+func (q *Queries) EnvironmentByNames(ctx context.Context, arg EnvironmentByNamesParams) (Environment, error) {
 	row := q.db.QueryRowContext(ctx, environmentByNames, arg.EnvironmentName, arg.TenantName)
-	var i EnvironmentByNamesRow
+	var i Environment
 	err := row.Scan(
 		&i.ID,
+		&i.TenantID,
 		&i.Name,
+		&i.Kind,
 		&i.Description,
 		&i.Created,
 		&i.LastModified,
-		&i.ID_2,
-		&i.TenantID,
-		&i.Name_2,
-		&i.Kind,
-		&i.Description_2,
-		&i.Created_2,
-		&i.LastModified_2,
 	)
 	return i, err
 }

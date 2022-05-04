@@ -72,14 +72,7 @@ func (r *repo) EnvironmentByNames(ctx context.Context, tenantName, environmentNa
 	if err != nil {
 		return nil, err
 	}
-	return &model.Environment{
-		ID:           res.ID_2,
-		Name:         res.Name_2,
-		Description:  nullStringToPtr(res.Description_2),
-		Created:      res.Created_2,
-		LastModified: res.LastModified_2,
-		Kind:         model.EnvironmentKind(res.Kind),
-	}, nil
+	return environmentFromSQL(res), nil
 
 }
 func (r *repo) EnvironmentIDByNames(ctx context.Context, tenantName, environmentName string) (uuid.UUID, error) {
