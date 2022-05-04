@@ -6,18 +6,22 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/nais/fasit/pkg/helm"
 	"github.com/nais/fasit/pkg/message"
+	"helm.sh/helm/v3/pkg/release"
 )
 
+type HelmClient interface {
+	List() ([]*release.Release, error)
+}
+
 type StatusReporter struct {
-	client *helm.Client
+	client HelmClient
 	pub    StatusPublisher
 	tenant string
 	env    string
 }
 
-func NewStatusReporter(tenant, env string, client *helm.Client, pub StatusPublisher) *StatusReporter {
+func NewStatusReporter(tenant, env string, client HelmClient, pub StatusPublisher) *StatusReporter {
 	return &StatusReporter{
 		client: client,
 		pub:    pub,

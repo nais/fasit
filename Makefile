@@ -25,6 +25,18 @@ local:
 	--bind-address=127.0.0.1:8080 \
 	--log-level=debug
 
+local-naisd:
+	PUBSUB_EMULATOR_HOST=localhost:8085 go run ./cmd/naisd \
+	--env-project-id local-test-partner-dev \
+	--nais-project-id nais-local-dev \
+	--tenant-name test-partner \
+	--cluster-kind tenant \
+	--env dev \
+	--log-level=debug
+
+setup-local-pubsub:
+	go run ./cmd/setup_pubsub/main.go
+
 test:
 	go test -cover ./...
 

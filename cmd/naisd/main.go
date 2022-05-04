@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/pubsub"
+	"github.com/nais/fasit/cmd/naisd/local"
 	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/nais/fasit/pkg/helm"
 	"github.com/nais/fasit/pkg/message"
@@ -62,21 +63,22 @@ func main() {
 	deploySubscriber := message.NewSubscriber[message.DeployInstruction](deployClient, cfg.EnvProjectID, deploySubscriptionID)
 	statusPublisher := message.NewPublisher[message.Status](deployClient, cfg.NaisProjectID, naisStatusTopic, log.WithField("subsystem", "status-pubsub"))
 
-	kubeConfig, err := rest.InClusterConfig()
-	if err != nil {
-		log.WithError(err).Fatal("failed to get kubeconfig")
-	}
-
+	kubeConfig := local.RESTConfig()
 	var executor naisd.Exec = &naisd.MockExecutor{Logger: log.WithField("subsystem", "executor")}
+	helmClient := local.NewHelmClient()
 	if cfg.Production {
 		executor = &naisd.Executor{}
+
+		kubeConfig, err = rest.InClusterConfig()
+		if err != nil {
+			log.WithError(err).Fatal("failed to get kubeconfig")
+		}
+		helmClient = helm.New(kubeConfig, "nais-system", log.WithField("subsystem", "helm"))
 	}
 	receiver, err := naisd.NewDeployManager(deploySubscriber, statusPublisher, cfg.TenantName, cfg.Env, executor, kubeConfig, log.WithField("subsystem", "deploy"))
 	if err != nil {
 		log.WithError(err).Fatal("setting up worker")
 	}
-
-	helmClient := helm.New(kubeConfig, "nais-system", log.WithField("subsystem", "helm"))
 
 	s := workers.NewScheduler(log.WithField("subsystem", "scheduler"))
 	helmListReporter := naisd.NewStatusReporter(cfg.TenantName, cfg.Env, helmClient, statusPublisher)

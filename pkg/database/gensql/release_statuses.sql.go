@@ -15,7 +15,7 @@ INSERT INTO release_statuses
 	(environment_id, feature, version, status, revision, last_deployed)
 VALUES
 	($1, $2, $3, $4, $5, $6)
-ON CONFLICT (environment_id, feature, key) DO UPDATE
+ON CONFLICT (environment_id, feature) DO UPDATE
 	SET
     version = EXCLUDED.version,
     status = EXCLUDED.status,
