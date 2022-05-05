@@ -1,39 +1,67 @@
 enum ConfigType {
-    STRING
-    INT
-    BOOL
-    STRING_ARRAY
+  STRING
+  INT
+  BOOL
+  STRING_ARRAY
 }
 
-type Configuration {
-    id: ID!
-    environmentID: ID
-    feature: String!
-    description: String
-    key: String!
-    value: RawMessage!
-    secret: Boolean!
-    created: Time!
-    type: ConfigType!
-    env: Boolean!
+interface Configuration {
+  id: ID!
+  feature: Feature!
+  description: String
+  key: String!
+  value: RawMessage!
+  secret: Boolean!
+  created: Time!
+  type: ConfigType!
 }
+
+type GlobalConfiguration implements Configuration {
+  id: ID!
+  feature: Feature!
+  description: String
+  key: String!
+  value: RawMessage!
+  secret: Boolean!
+  created: Time!
+  type: ConfigType!
+}
+
+type EnvConfiguration implements Configuration {
+  id: ID!
+  environment: Environment!
+  feature: Feature!
+  description: String
+  key: String!
+  value: RawMessage!
+  secret: Boolean!
+  created: Time!
+  type: ConfigType!
+}
+
 input NewConfiguration {
-    environmentID: ID
-    feature: String!
-    description: String
-    key: String!
-    value: RawMessage!
+  environmentID: ID
+  feature: String!
+  description: String
+  key: String!
+  value: RawMessage!
 }
+
 input UpdateConfiguration {
-    description: String
-    value: RawMessage!
+  description: String
+  value: RawMessage!
 }
+
 extend type Query {
-    configuration(feature: String!, envID: ID): [Configuration!]!
-    envConfig(feature: String!, envID: ID!): [Configuration!]!
+  configuration(feature: String!, envID: ID): [Configuration!]!
+  envConfig(feature: String!, envID: ID!): [Configuration!]!
 }
+
 extend type Mutation {
-    configurationCreate(configuration: NewConfiguration!): Configuration!
-    configurationUpdate(id: ID!, configuration: UpdateConfiguration!): Configuration!
-    configurationDelete(id:  ID!): Boolean!
+  configurationCreate(configuration: NewConfiguration!): Configuration!
+  configurationUpdate(
+    id: ID!
+    configuration: UpdateConfiguration!
+  ): Configuration!
+  configurationDelete(id: ID!): Boolean!
 }

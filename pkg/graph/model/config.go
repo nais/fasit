@@ -6,6 +6,7 @@ import (
 	"io"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -76,3 +77,42 @@ func (e *ConfigType) UnmarshalJSON(b []byte) error {
 	*e = ConfigType(strings.ToLower(s))
 	return nil
 }
+
+type Configuration interface {
+	IsConfiguration()
+	SetType(ConfigType)
+	GetKey() string
+}
+
+type EnvConfiguration struct {
+	ID          uuid.UUID       `json:"id"`
+	Description *string         `json:"description"`
+	Key         string          `json:"key"`
+	Value       json.RawMessage `json:"value"`
+	Secret      bool            `json:"secret"`
+	Created     time.Time       `json:"created"`
+	Type        ConfigType      `json:"type"`
+
+	EnvironmentID uuid.UUID
+	FeatureName   string
+}
+
+func (EnvConfiguration) IsConfiguration()        {}
+func (e *EnvConfiguration) SetType(t ConfigType) { e.Type = t }
+func (e *EnvConfiguration) GetKey() string       { return e.Key }
+
+type GlobalConfiguration struct {
+	ID          uuid.UUID       `json:"id"`
+	Description *string         `json:"description"`
+	Key         string          `json:"key"`
+	Value       json.RawMessage `json:"value"`
+	Secret      bool            `json:"secret"`
+	Created     time.Time       `json:"created"`
+	Type        ConfigType      `json:"type"`
+
+	FeatureName string
+}
+
+func (GlobalConfiguration) IsConfiguration()        {}
+func (e *GlobalConfiguration) SetType(t ConfigType) { e.Type = t }
+func (e *GlobalConfiguration) GetKey() string       { return e.Key }

@@ -40,15 +40,15 @@ func (_m *Repo) Close() error {
 }
 
 // ConfigCreate provides a mock function with given fields: ctx, c
-func (_m *Repo) ConfigCreate(ctx context.Context, c model.NewConfiguration) (*model.Configuration, error) {
+func (_m *Repo) ConfigCreate(ctx context.Context, c model.NewConfiguration) (model.Configuration, error) {
 	ret := _m.Called(ctx, c)
 
-	var r0 *model.Configuration
-	if rf, ok := ret.Get(0).(func(context.Context, model.NewConfiguration) *model.Configuration); ok {
+	var r0 model.Configuration
+	if rf, ok := ret.Get(0).(func(context.Context, model.NewConfiguration) model.Configuration); ok {
 		r0 = rf(ctx, c)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.Configuration)
+			r0 = ret.Get(0).(model.Configuration)
 		}
 	}
 
@@ -77,15 +77,15 @@ func (_m *Repo) ConfigDelete(ctx context.Context, id uuid.UUID) error {
 }
 
 // ConfigGet provides a mock function with given fields: ctx, _a1
-func (_m *Repo) ConfigGet(ctx context.Context, _a1 string) ([]*model.Configuration, error) {
+func (_m *Repo) ConfigGet(ctx context.Context, _a1 string) ([]*model.GlobalConfiguration, error) {
 	ret := _m.Called(ctx, _a1)
 
-	var r0 []*model.Configuration
-	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.Configuration); ok {
+	var r0 []*model.GlobalConfiguration
+	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.GlobalConfiguration); ok {
 		r0 = rf(ctx, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.Configuration)
+			r0 = ret.Get(0).([]*model.GlobalConfiguration)
 		}
 	}
 
@@ -100,15 +100,15 @@ func (_m *Repo) ConfigGet(ctx context.Context, _a1 string) ([]*model.Configurati
 }
 
 // ConfigGetForEnv provides a mock function with given fields: ctx, _a1, envID
-func (_m *Repo) ConfigGetForEnv(ctx context.Context, _a1 string, envID uuid.UUID) ([]*model.Configuration, error) {
+func (_m *Repo) ConfigGetForEnv(ctx context.Context, _a1 string, envID uuid.UUID) ([]*model.EnvConfiguration, error) {
 	ret := _m.Called(ctx, _a1, envID)
 
-	var r0 []*model.Configuration
-	if rf, ok := ret.Get(0).(func(context.Context, string, uuid.UUID) []*model.Configuration); ok {
+	var r0 []*model.EnvConfiguration
+	if rf, ok := ret.Get(0).(func(context.Context, string, uuid.UUID) []*model.EnvConfiguration); ok {
 		r0 = rf(ctx, _a1, envID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.Configuration)
+			r0 = ret.Get(0).([]*model.EnvConfiguration)
 		}
 	}
 
@@ -123,15 +123,15 @@ func (_m *Repo) ConfigGetForEnv(ctx context.Context, _a1 string, envID uuid.UUID
 }
 
 // ConfigUpdate provides a mock function with given fields: ctx, id, c
-func (_m *Repo) ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration) (*model.Configuration, error) {
+func (_m *Repo) ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration) (model.Configuration, error) {
 	ret := _m.Called(ctx, id, c)
 
-	var r0 *model.Configuration
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, model.UpdateConfiguration) *model.Configuration); ok {
+	var r0 model.Configuration
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, model.UpdateConfiguration) model.Configuration); ok {
 		r0 = rf(ctx, id, c)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.Configuration)
+			r0 = ret.Get(0).(model.Configuration)
 		}
 	}
 
@@ -146,15 +146,15 @@ func (_m *Repo) ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateCo
 }
 
 // EnvConfig provides a mock function with given fields: ctx, _a1, envID
-func (_m *Repo) EnvConfig(ctx context.Context, _a1 string, envID uuid.UUID) ([]*model.Configuration, error) {
+func (_m *Repo) EnvConfig(ctx context.Context, _a1 string, envID uuid.UUID) ([]model.Configuration, error) {
 	ret := _m.Called(ctx, _a1, envID)
 
-	var r0 []*model.Configuration
-	if rf, ok := ret.Get(0).(func(context.Context, string, uuid.UUID) []*model.Configuration); ok {
+	var r0 []model.Configuration
+	if rf, ok := ret.Get(0).(func(context.Context, string, uuid.UUID) []model.Configuration); ok {
 		r0 = rf(ctx, _a1, envID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.Configuration)
+			r0 = ret.Get(0).([]model.Configuration)
 		}
 	}
 
@@ -191,13 +191,13 @@ func (_m *Repo) EnvironmentByNames(ctx context.Context, tenantName string, envir
 	return r0, r1
 }
 
-// EnvironmentCreate provides a mock function with given fields: ctx, p
-func (_m *Repo) EnvironmentCreate(ctx context.Context, p *model.EnvironmentCreate) (*model.Environment, error) {
-	ret := _m.Called(ctx, p)
+// EnvironmentCreate provides a mock function with given fields: ctx, t
+func (_m *Repo) EnvironmentCreate(ctx context.Context, t *model.EnvironmentCreate) (*model.Environment, error) {
+	ret := _m.Called(ctx, t)
 
 	var r0 *model.Environment
 	if rf, ok := ret.Get(0).(func(context.Context, *model.EnvironmentCreate) *model.Environment); ok {
-		r0 = rf(ctx, p)
+		r0 = rf(ctx, t)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.Environment)
@@ -206,7 +206,7 @@ func (_m *Repo) EnvironmentCreate(ctx context.Context, p *model.EnvironmentCreat
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *model.EnvironmentCreate) error); ok {
-		r1 = rf(ctx, p)
+		r1 = rf(ctx, t)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -352,13 +352,13 @@ func (_m *Repo) FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model
 	return r0, r1
 }
 
-// HealthGet provides a mock function with given fields: ctx, envID
-func (_m *Repo) HealthGet(ctx context.Context, envID uuid.UUID) (*model.Health, error) {
-	ret := _m.Called(ctx, envID)
+// HealthGet provides a mock function with given fields: ctx, environmentID
+func (_m *Repo) HealthGet(ctx context.Context, environmentID uuid.UUID) (*model.Health, error) {
+	ret := _m.Called(ctx, environmentID)
 
 	var r0 *model.Health
 	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) *model.Health); ok {
-		r0 = rf(ctx, envID)
+		r0 = rf(ctx, environmentID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.Health)
@@ -367,7 +367,7 @@ func (_m *Repo) HealthGet(ctx context.Context, envID uuid.UUID) (*model.Health, 
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
-		r1 = rf(ctx, envID)
+		r1 = rf(ctx, environmentID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -525,13 +525,13 @@ func (_m *Repo) StatusForFeature(ctx context.Context, environmentID uuid.UUID, _
 	return r0, r1
 }
 
-// TenantCreate provides a mock function with given fields: ctx, p
-func (_m *Repo) TenantCreate(ctx context.Context, p *model.TenantCreate) (*model.Tenant, error) {
-	ret := _m.Called(ctx, p)
+// TenantCreate provides a mock function with given fields: ctx, t
+func (_m *Repo) TenantCreate(ctx context.Context, t *model.TenantCreate) (*model.Tenant, error) {
+	ret := _m.Called(ctx, t)
 
 	var r0 *model.Tenant
 	if rf, ok := ret.Get(0).(func(context.Context, *model.TenantCreate) *model.Tenant); ok {
-		r0 = rf(ctx, p)
+		r0 = rf(ctx, t)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.Tenant)
@@ -540,7 +540,7 @@ func (_m *Repo) TenantCreate(ctx context.Context, p *model.TenantCreate) (*model
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *model.TenantCreate) error); ok {
-		r1 = rf(ctx, p)
+		r1 = rf(ctx, t)
 	} else {
 		r1 = ret.Error(1)
 	}

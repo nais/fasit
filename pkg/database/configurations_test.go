@@ -16,38 +16,37 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database/gensql"
+	"github.com/nais/fasit/pkg/database/mocks"
 	"github.com/nais/fasit/pkg/graph/model"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestRepoEnvConfig(t *testing.T) {
-	mq := &MockQuerier{
-		envConfig: func(ctx context.Context, arg gensql.EnvConfigParams) ([]gensql.EnvConfigRow, error) {
-			return []gensql.EnvConfigRow{
-				{
-					ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-					Feature: "feature",
-					Secret:  false,
-					Key:     "key",
-					Value:   []byte("value"),
-					Env:     true,
-					Rank:    1,
-				},
-			}, nil
-		},
-	}
-
-	expected := []*model.Configuration{
+	mq := mocks.NewQuerier(t)
+	id := uuid.New()
+	mq.On("EnvConfig", mock.Anything, gensql.EnvConfigParams{Feature: "feature", EnvironmentID: id}).Return([]gensql.EnvConfigRow{
 		{
-			ID:      uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-			Feature: "feature",
-			Key:     "key",
-			Value:   []byte("value"),
-			Env:     true,
+			ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			Feature:       "feature",
+			Secret:        false,
+			Key:           "key",
+			Value:         []byte("value"),
+			EnvironmentID: uuid.NullUUID{Valid: true, UUID: id},
+		},
+	}, nil)
+
+	expected := []model.Configuration{
+		&model.EnvConfiguration{
+			ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
+			FeatureName:   "feature",
+			Key:           "key",
+			Value:         []byte("value"),
+			EnvironmentID: id,
 		},
 	}
 
 	repo := repo{querier: mq}
-	ec, err := repo.EnvConfig(context.Background(), "feature", uuid.New())
+	ec, err := repo.EnvConfig(context.Background(), "feature", id)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -63,7 +62,7 @@ func TestHelmConfigMap(t *testing.T) {
 		return b
 	}
 	tests := map[string]struct {
-		input    []gensql.ConfigForEnvRow
+		input    []gensql.EnvConfigRow
 		expected map[string]any
 	}{
 		"empty": {
@@ -71,7 +70,7 @@ func TestHelmConfigMap(t *testing.T) {
 			expected: make(map[string]any),
 		},
 		"single_level": {
-			input: []gensql.ConfigForEnvRow{
+			input: []gensql.EnvConfigRow{
 				{
 					Key:   "test1",
 					Value: jsonify("value1"),
@@ -87,7 +86,7 @@ func TestHelmConfigMap(t *testing.T) {
 			},
 		},
 		"multi_level": {
-			input: []gensql.ConfigForEnvRow{
+			input: []gensql.EnvConfigRow{
 				{
 					Key:   "test.a",
 					Value: jsonify("value_a"),
@@ -105,7 +104,7 @@ func TestHelmConfigMap(t *testing.T) {
 			},
 		},
 		"escaped dots": {
-			input: []gensql.ConfigForEnvRow{
+			input: []gensql.EnvConfigRow{
 				{
 					Key:   "test.a",
 					Value: jsonify("value_a"),
@@ -195,15 +194,14 @@ func TestSmartDotSplit(t *testing.T) {
 
 func TestRepo_ConfigGet(t *testing.T) {
 	id := uuid.New()
-	envid := uuid.Nil
 	created := time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC)
 	description := "description"
-	q := `INSERT INTO configurations (
-		id, environment_id, feature, key, value, description, secret, created
+	q := `INSERT INTO configurations_global (
+		id, feature, key, value, description, secret, created
 	) VALUES (
-		'%s', '%s', 'feature3', 'my.key', '"stringval"', '%s', true, '%s'
+		'%s', 'feature3', 'my.key', '"stringval"', '%s', true, '%s'
 	)`
-	repo := newTestRepo(t, fmt.Sprintf(q, id, envid, description, created.Format(time.RFC3339)))
+	repo := newTestRepo(t, fmt.Sprintf(q, id, description, created.Format(time.RFC3339)))
 	defer repo.Close()
 
 	got, err := repo.ConfigGet(context.Background(), "feature3")
@@ -211,17 +209,15 @@ func TestRepo_ConfigGet(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := []*model.Configuration{
+	want := []*model.GlobalConfiguration{
 		{
-			ID:            id,
-			EnvironmentID: &envid,
-			Feature:       "feature3",
-			Key:           "my.key",
-			Value:         []byte(`"stringval"`),
-			Env:           false,
-			Created:       created,
-			Description:   &description,
-			Secret:        true,
+			ID:          id,
+			FeatureName: "feature3",
+			Key:         "my.key",
+			Value:       []byte(`"stringval"`),
+			Created:     created,
+			Description: &description,
+			Secret:      true,
 		},
 	}
 
@@ -233,16 +229,22 @@ func TestRepo_ConfigGet(t *testing.T) {
 func TestRepo_ConfigGetForEnv(t *testing.T) {
 	id := uuid.New()
 	envid := uuid.New()
+	tenantid := uuid.New()
 	created := time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC)
 	description := "description"
-	q := `INSERT INTO configurations (
+
+	q1 := `INSERT INTO tenants (id, name) VALUES ('%s', 'tenant1')`
+	q2 := `INSERT INTO environments (id, tenant_id, name, kind) VALUES ('%s', '%s', 'env1', 'tenant')`
+	q3 := `INSERT INTO configurations_environment (
 		id, environment_id, feature, key, value, description, secret, created
 	) VALUES (
 		'%s', '%s', 'feature3', 'my.key', '"stringval"', '%s', true, '%s'
 	)`
 
 	repo := newTestRepo(t,
-		fmt.Sprintf(q, id, envid, description, created.Format(time.RFC3339)),
+		fmt.Sprintf(q1, tenantid),
+		fmt.Sprintf(q2, envid, tenantid),
+		fmt.Sprintf(q3, id, envid, description, created.Format(time.RFC3339)),
 	)
 	defer repo.Close()
 
@@ -251,14 +253,13 @@ func TestRepo_ConfigGetForEnv(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := []*model.Configuration{
+	want := []*model.EnvConfiguration{
 		{
 			ID:            id,
-			EnvironmentID: &envid,
-			Feature:       "feature3",
+			EnvironmentID: envid,
+			FeatureName:   "feature3",
 			Key:           "my.key",
 			Value:         []byte(`"stringval"`),
-			Env:           true,
 			Created:       created,
 			Description:   &description,
 			Secret:        true,
@@ -271,9 +272,13 @@ func TestRepo_ConfigGetForEnv(t *testing.T) {
 }
 
 func TestRepo_ConfigCreate_Environment(t *testing.T) {
-	repo := newTestRepo(t)
-	defer repo.Close()
 	envid := uuid.New()
+	tenantid := uuid.New()
+	q1 := `INSERT INTO tenants (id, name) VALUES ('%s', 'tenant1')`
+	q2 := `INSERT INTO environments (id, tenant_id, name, kind) VALUES ('%s', '%s', 'env1', 'tenant')`
+	repo := newTestRepo(t, fmt.Sprintf(q1, tenantid), fmt.Sprintf(q2, envid, tenantid))
+	defer repo.Close()
+
 	config := model.NewConfiguration{
 		EnvironmentID: &envid,
 		Feature:       "feature5",
@@ -287,17 +292,16 @@ func TestRepo_ConfigCreate_Environment(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := &model.Configuration{
-		EnvironmentID: config.EnvironmentID,
-		Feature:       config.Feature,
+	want := &model.EnvConfiguration{
+		EnvironmentID: *config.EnvironmentID,
+		FeatureName:   config.Feature,
 		Key:           config.Key,
 		Description:   config.Description,
 		Value:         config.Value,
 		Secret:        config.Secret,
-		Env:           true,
 	}
 
-	opts := cmpopts.IgnoreFields(model.Configuration{}, "ID", "Created")
+	opts := cmpopts.IgnoreFields(model.EnvConfiguration{}, "ID", "Created")
 	if !cmp.Equal(want, got, opts) {
 		t.Errorf("diff -want +got:\n%v", cmp.Diff(want, got, opts))
 	}
@@ -320,34 +324,30 @@ func TestRepo_ConfigCreate_Global(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := &model.Configuration{
-		EnvironmentID: config.EnvironmentID,
-		Feature:       config.Feature,
-		Key:           config.Key,
-		Description:   config.Description,
-		Value:         config.Value,
-		Secret:        config.Secret,
-		Env:           false,
+	want := &model.GlobalConfiguration{
+		FeatureName: config.Feature,
+		Key:         config.Key,
+		Description: config.Description,
+		Value:       config.Value,
+		Secret:      config.Secret,
 	}
 
-	opts := cmpopts.IgnoreFields(model.Configuration{}, "ID", "Created")
+	opts := cmpopts.IgnoreFields(model.GlobalConfiguration{}, "ID", "Created")
 	if !cmp.Equal(want, got, opts) {
 		t.Errorf("diff -want +got:\n%v", cmp.Diff(want, got, opts))
 	}
 }
 
-func TestRepo_ConfigUpdate_Environment(t *testing.T) {
+func TestRepo_ConfigUpdate_Global(t *testing.T) {
 	repo := newTestRepo(t)
 	defer repo.Close()
 
-	envid := uuid.Nil
 	config := model.NewConfiguration{
-		EnvironmentID: &envid,
-		Feature:       "feature5",
-		Description:   stringToPtr("description"),
-		Key:           "my.key",
-		Value:         []byte(`"stringval"`),
-		Secret:        true,
+		Feature:     "feature5",
+		Description: stringToPtr("description"),
+		Key:         "my.key",
+		Value:       []byte(`"stringval"`),
+		Secret:      true,
 	}
 	// Create
 	got, err := repo.ConfigCreate(context.Background(), config)
@@ -355,21 +355,19 @@ func TestRepo_ConfigUpdate_Environment(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err = repo.ConfigUpdate(context.Background(), got.ID, model.UpdateConfiguration{
+	got, err = repo.ConfigUpdate(context.Background(), got.(*model.GlobalConfiguration).ID, model.UpdateConfiguration{
 		Value: []byte(`"newval"`),
 	})
 
-	want := &model.Configuration{
-		EnvironmentID: config.EnvironmentID,
-		Feature:       config.Feature,
-		Key:           config.Key,
-		Description:   nil,
-		Value:         []byte(`"newval"`),
-		Secret:        config.Secret,
-		Env:           false,
+	want := &model.GlobalConfiguration{
+		FeatureName: config.Feature,
+		Key:         config.Key,
+		Description: nil,
+		Value:       []byte(`"newval"`),
+		Secret:      config.Secret,
 	}
 
-	opts := cmpopts.IgnoreFields(model.Configuration{}, "ID", "Created")
+	opts := cmpopts.IgnoreFields(model.GlobalConfiguration{}, "ID", "Created")
 	if !cmp.Equal(want, got, opts) {
 		t.Errorf("diff -want +got:\n%v", cmp.Diff(want, got, opts))
 	}
@@ -390,22 +388,26 @@ func TestRepo_ConfigDelete(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = r.ConfigDelete(context.Background(), got.ID)
+	gotID := got.(*model.GlobalConfiguration).ID
+	err = r.ConfigDelete(context.Background(), gotID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = r.(*repo).db.QueryRow(`SELECT id FROM configurations WHERE id = $1`, got.ID).Scan()
+	err = r.(*repo).db.QueryRow(`SELECT id FROM configurations_global WHERE id = $1`, gotID).Scan()
 	if err != sql.ErrNoRows {
 		t.Errorf("got: %v, want %v", err, sql.ErrNoRows)
 	}
 }
 
 func TestRepo_HelmValues_OK(t *testing.T) {
-	r := newTestRepo(t)
+	envid := uuid.New()
+	tenantid := uuid.New()
+	q1 := `INSERT INTO tenants (id, name) VALUES ('%s', 'tenant1')`
+	q2 := `INSERT INTO environments (id, tenant_id, name, kind) VALUES ('%s', '%s', 'env1', 'tenant')`
+	r := newTestRepo(t, fmt.Sprintf(q1, tenantid), fmt.Sprintf(q2, envid, tenantid))
 	defer r.Close()
 
-	envid := uuid.New()
 	config := model.NewConfiguration{
 		EnvironmentID: &envid,
 		Feature:       "feature5",
@@ -436,10 +438,13 @@ func TestRepo_HelmValues_OK(t *testing.T) {
 }
 
 func TestRepo_HelmValues_MissingRequiredField(t *testing.T) {
-	r := newTestRepo(t)
+	envid := uuid.New()
+	tenantid := uuid.New()
+	q1 := `INSERT INTO tenants (id, name) VALUES ('%s', 'tenant1')`
+	q2 := `INSERT INTO environments (id, tenant_id, name, kind) VALUES ('%s', '%s', 'env1', 'tenant')`
+	r := newTestRepo(t, fmt.Sprintf(q1, tenantid), fmt.Sprintf(q2, envid, tenantid))
 	defer r.Close()
 
-	envid := uuid.New()
 	config := model.NewConfiguration{
 		EnvironmentID: &envid,
 		Feature:       "feature5",
@@ -463,20 +468,17 @@ func TestRepo_HelmValues_InvaldKeyNesting(t *testing.T) {
 	r := newTestRepo(t)
 	defer r.Close()
 
-	envid := uuid.New()
 	config := model.NewConfiguration{
-		EnvironmentID: &envid,
-		Feature:       "feature5",
-		Key:           "my.key",
-		Value:         []byte(`"stringval"`),
-		Secret:        true,
+		Feature: "feature5",
+		Key:     "my.key",
+		Value:   []byte(`"stringval"`),
+		Secret:  true,
 	}
 	config2 := model.NewConfiguration{
-		EnvironmentID: &envid,
-		Feature:       "feature5",
-		Key:           "my",
-		Value:         []byte(`15`),
-		Secret:        true,
+		Feature: "feature5",
+		Key:     "my",
+		Value:   []byte(`15`),
+		Secret:  true,
 	}
 	// Create
 	_, err := r.ConfigCreate(context.Background(), config2)
@@ -488,7 +490,7 @@ func TestRepo_HelmValues_InvaldKeyNesting(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = r.HelmValues(context.Background(), "feature5", envid, nil)
+	_, err = r.HelmValues(context.Background(), "feature5", uuid.New(), nil)
 	if err == nil || !strings.HasSuffix(err.Error(), "is not nestable") {
 		t.Errorf("got: %v, want \"key `key` is not nestable\"", err)
 	}

@@ -5,7 +5,6 @@ package graph
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/graph/graphgen"
@@ -65,11 +64,7 @@ func (r *queryResolver) Environments(ctx context.Context, tenantID uuid.UUID) ([
 }
 
 func (r *releaseResolver) Feature(ctx context.Context, obj *model.Release) (*model.Feature, error) {
-	f := r.Features.Get(obj.FeatureName)
-	if f == nil {
-		return nil, fmt.Errorf("feature %v not found", obj.FeatureName)
-	}
-	return marshalFeature(*f)
+	return r.resolveFeatureByName(obj.FeatureName)
 }
 
 // Environment returns graphgen.EnvironmentResolver implementation.

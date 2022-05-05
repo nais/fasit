@@ -1,10 +1,10 @@
 -- name: ConfigGet :many
 SELECT *
-FROM configurations
-WHERE feature = @feature AND environment_id = uuid_nil();
+FROM ONLY configurations_global
+WHERE feature = @feature;
 
--- name: ConfigUpdateOrCreate :one
-INSERT INTO configurations
+-- name: ConfigEnvUpdateOrCreate :one
+INSERT INTO configurations_environment
 	(environment_id, feature, description, secret, key, value)
 VALUES
 	(@environment_id, @feature, @description, @secret, @key, @value)
@@ -14,83 +14,53 @@ ON CONFLICT (environment_id, feature, key) DO UPDATE
 		description = EXCLUDED.description
 RETURNING *;
 
+-- name: ConfigGlobalUpdateOrCreate :one
+INSERT INTO configurations_global
+	(feature, description, secret, key, value)
+VALUES
+	(@feature, @description, @secret, @key, @value)
+ON CONFLICT (feature, key) DO UPDATE
+	SET
+		value = EXCLUDED.value,
+		description = EXCLUDED.description
+RETURNING *;
+
 -- name: ConfigGetForEnv :many
 SELECT *
-FROM configurations
+FROM configurations_environment
 WHERE feature = @feature AND environment_id = @environment_id;
 
--- name: ConfigForEnv :many
-WITH "inner" AS (
-		SELECT
-			id,
-			environment_id,
-			key,
-			value,
-			created,
-			(CASE WHEN environment_id = uuid_nil() THEN 1 ELSE 0 END) as env,
-			rank()
-		OVER (PARTITION BY key ORDER BY created DESC)
-		FROM configurations
-		WHERE feature = @feature
-		AND (environment_id = uuid_nil() OR environment_id = @environment_id::uuid)
-	),
-	"outer" AS (
-	SELECT
-		id,
-		environment_id,
-		key,
-		value,
-		created,
-		env,
-		rank()
-	OVER (PARTITION BY key ORDER BY env ASC, "inner".rank ASC)
-	FROM "inner"
-)
-SELECT * FROM "outer" WHERE rank = 1;
-
-
 -- name: EnvConfig :many
-WITH "inner" AS (
-    SELECT
-        id,
-        environment_id,
-        feature,
-        description,
-        secret,
-    key,
-    value,
-    created,
-   (CASE WHEN environment_id = uuid_nil() THEN 0 ELSE 1 END)::boolean as env,
-    rank()
-    OVER (PARTITION BY key ORDER BY created ASC)
-FROM configurations
-WHERE feature = @feature
-  AND (environment_id  = @environment_id OR environment_id = uuid_nil())
-    ),
-    "outer" AS (
-SELECT
-    id,
-    environment_id,
-    feature,
-    description,
-    secret,
-    key,
-    value,
-    created,
-    env,
-    rank()
-    OVER (PARTITION BY key ORDER BY env DESC, "inner".rank ASC)
-FROM "inner"
-    )
-SELECT * FROM "outer" WHERE rank = 1;
+WITH "combined" AS (
+		SELECT *, NULL::uuid AS environment_id
+		FROM ONLY configurations_global glob
+		WHERE glob.feature = @feature
+
+		UNION
+
+		SELECT *
+		FROM ONLY configurations_environment env
+		WHERE env.feature = @feature
+		AND environment_id = @environment_id
+	), "filtered" AS (
+		SELECT *, RANK() OVER (
+				PARTITION BY "key"
+				ORDER BY environment_id ASC, key ASC
+			)
+		FROM "combined"
+	)
+SELECT *
+FROM filtered
+WHERE RANK = 1
+;
 
 -- name: ConfigUpdate :one
-UPDATE configurations
+UPDATE configurations_global
 SET description = @description,
 	value = @value
 WHERE id = @id
 RETURNING *;
 
 -- name: ConfigDelete :exec
-DELETE FROM configurations
+DELETE FROM configurations_global
 WHERE id = @id;

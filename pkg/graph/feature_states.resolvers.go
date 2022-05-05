@@ -12,12 +12,7 @@ import (
 )
 
 func (r *featureStateResolver) Feature(ctx context.Context, obj *model.FeatureState) (*model.Feature, error) {
-	feature := r.Resolver.Features.Get(obj.FeatureName)
-	if feature == nil {
-		return nil, nil
-	}
-
-	return marshalFeature(*feature)
+	return r.resolveFeatureByName(obj.FeatureName)
 }
 
 func (r *mutationResolver) FeatureStateSave(ctx context.Context, envID uuid.UUID, enabled bool, feature string) (*model.FeatureState, error) {

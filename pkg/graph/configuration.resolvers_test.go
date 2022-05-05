@@ -15,26 +15,26 @@ import (
 )
 
 func Test_queryResolver_Configuration_Early_Exit_When_EnvID_Set(t *testing.T) {
-	feature := "feature"
 	ctx := context.Background()
 	envID := uuid.New()
 
 	repo := mocks.NewRepo(t)
-	repo.On("ConfigGetForEnv", ctx, feature, envID).Return(nil, nil).Once()
+	repo.On("ConfigGetForEnv", ctx, "feature", envID).Return(nil, nil).Once()
 
 	r := &queryResolver{
 		Resolver: &Resolver{
-			Repo: repo,
+			Repo:     repo,
+			Features: &feature.Manager{},
 		},
 	}
 
-	ret, err := r.Configuration(ctx, feature, &envID)
+	ret, err := r.Configuration(ctx, "feature", &envID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if ret != nil {
-		t.Fatal("expected nil (from mock repo)")
+	if len(ret) != 0 {
+		t.Fatalf("got %v, want 0 (from mock repo)", len(ret))
 	}
 }
 
@@ -43,16 +43,16 @@ func Test_queryResolver_Configuration_Empty_Defaults_Are_Set(t *testing.T) {
 	ctx := context.Background()
 
 	repo := mocks.NewRepo(t)
-	mockConfig := []*model.Configuration{
+	mockConfig := []*model.GlobalConfiguration{
 		{
-			Feature: "feature",
-			Key:     "string",
-			Value:   []byte("stringValue"),
+			FeatureName: "feature",
+			Key:         "string",
+			Value:       []byte("stringValue"),
 		},
 		{
-			Feature: "feature",
-			Key:     "int",
-			Value:   []byte("intValue"),
+			FeatureName: "feature",
+			Key:         "int",
+			Value:       []byte("intValue"),
 		},
 	}
 	repo.On("ConfigGet", ctx, featureName).Return(mockConfig, nil).Once()
@@ -89,15 +89,15 @@ func Test_queryResolver_Configuration_Empty_Defaults_Are_Set(t *testing.T) {
 		t.Fatalf("Configuration(ctx, %q, nil) err = %v, want nil", featureName, err)
 	}
 
-	want := []*model.Configuration{
-		{Feature: "feature", Key: "string", Value: json.RawMessage("stringValue"), Type: model.ConfigTypeString},
-		{Feature: "feature", Key: "int", Value: json.RawMessage("intValue"), Type: model.ConfigTypeInt},
-		{Feature: "feature", Key: "bool", Value: json.RawMessage("null"), Type: model.ConfigTypeBool},
-		{Feature: "feature", Key: "stringArray", Value: json.RawMessage("null"), Type: model.ConfigTypeStringArray},
+	want := []model.Configuration{
+		&model.GlobalConfiguration{FeatureName: "feature", Key: "string", Value: json.RawMessage("stringValue"), Type: model.ConfigTypeString},
+		&model.GlobalConfiguration{FeatureName: "feature", Key: "int", Value: json.RawMessage("intValue"), Type: model.ConfigTypeInt},
+		&model.GlobalConfiguration{FeatureName: "feature", Key: "bool", Value: json.RawMessage("null"), Type: model.ConfigTypeBool},
+		&model.GlobalConfiguration{FeatureName: "feature", Key: "stringArray", Value: json.RawMessage("null"), Type: model.ConfigTypeStringArray},
 	}
 
-	opts := cmpopts.SortSlices(func(a, b *model.Configuration) bool {
-		return strings.Compare(a.Key, b.Key) < 0
+	opts := cmpopts.SortSlices(func(a, b model.Configuration) bool {
+		return strings.Compare(a.GetKey(), b.GetKey()) < 0
 	})
 
 	if !cmp.Equal(want, got, opts) {

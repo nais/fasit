@@ -1,86 +1,80 @@
 enum EnvironmentKind {
-    TENANT, MANAGEMENT
+  TENANT
+  MANAGEMENT
 }
 type Health {
-    reportedAt: Time!
+  reportedAt: Time!
 }
 
 type Release {
-    feature: Feature!
-    version: String!
-    status: String!
-    revision: Int!
-    lastDeployed: Time!
-    created: Time!
-    lastModified: Time!
+  feature: Feature!
+  version: String!
+  status: String!
+  revision: Int!
+  lastDeployed: Time!
+  created: Time!
+  lastModified: Time!
 }
 
 type Environment {
-    id: ID!
-    name: String!
-    description: String
-    featureStates: [FeatureState!]!
-    created: Time!
-    lastModified: Time!
-    kind: EnvironmentKind!
-    health: Health!
-    releases: [Release!]!
+  id: ID!
+  name: String!
+  description: String
+  featureStates: [FeatureState!]!
+  created: Time!
+  lastModified: Time!
+  kind: EnvironmentKind!
+  health: Health!
+  releases: [Release!]!
 }
 
 """
 EnvironmentCreate contains metadata for creating an environment
 """
 input EnvironmentCreate {
-    name: String!
-    description: String
-    tenantID: ID!
-    kind: EnvironmentKind!
+  name: String!
+  description: String
+  tenantID: ID!
+  kind: EnvironmentKind!
 }
 
 """
 UpdateEnvironment contains metadata for updating an environment
 """
 input EnvironmentUpdate {
-    "description of the environment"
-    description: String
+  "description of the environment"
+  description: String
 }
 
-
 extend type Query {
-    """
-    Environment returns the given environment.
-    """
-    environment(
-        "id of the requested environment."
-        id: ID!
-    ): Environment!
-    """
-    EnvironmentByName returns the given environment by tenantName and name.
-    """
-    environmentByNames(
-        "name of the requested environment."
-        environmentName: String!
-        "tenantname of the requested environment."
-        tenantName: String!
-    ): Environment!
-    """
-    Environments returns the environments for a tenant.
-    """
-    environments(
-        "id of the requested tenant."
-        tenantID: ID!
-    ): [Environment!]!
+  """
+  Environment returns the given environment.
+  """
+  environment("id of the requested environment." id: ID!): Environment!
+  """
+  EnvironmentByName returns the given environment by tenantName and name.
+  """
+  environmentByNames(
+    "name of the requested environment."
+    environmentName: String!
+    "tenantname of the requested environment."
+    tenantName: String!
+  ): Environment!
+  """
+  Environments returns the environments for a tenant.
+  """
+  environments("id of the requested tenant." tenantID: ID!): [Environment!]!
 }
 
 extend type Mutation {
-    environmentCreate(environment: EnvironmentCreate!): Environment!
-    """
-    updateEnvironment updates an existing environment
-    """
-    environmentUpdate(
-        "id of requested environment."
-        id: ID!
-        "input contains information about the updated environment."
-        input: EnvironmentUpdate!
-    ): Environment!
+  environmentCreate(environment: EnvironmentCreate!): Environment!
+  """
+  updateEnvironment updates an existing environment
+  """
+  environmentUpdate(
+    "id of requested environment."
+    id: ID!
+    "input contains information about the updated environment."
+    input: EnvironmentUpdate!
+  ): Environment!
 }

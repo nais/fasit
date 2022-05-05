@@ -8,6 +8,7 @@ import ConfigAdd from '../lib/configAdd'
 import ConfigDelete from '../lib/configDelete'
 import ConfigEdit from '../lib/configEdit'
 import ConfigRows, {Config, Configs} from "../lib/configRows";
+import { CLIENT_RENEG_LIMIT } from 'tls'
 
 
 interface ConfigProps {
@@ -32,9 +33,34 @@ const ConfigPage = ({env, feature}: ConfigProps) => {
         featureObject = features.data.features.find((f) => f.name === feature)
         const confKeys = featureObject?.config
         data.envConfig.forEach((c) => {
-                configs[c.key] = {...c, secret: false, required: false, enabled: false}
-            },
-        )
+          if (c.__typename === 'EnvConfiguration') {
+            configs[c.key] = {
+              id: c.id,
+              feature: c.feature.name,
+              key: c.key,
+              type: c.type,
+              value: c.value,
+              description: c.description,
+              secret: false,
+              required: false,
+              enabled: false,
+              env: true,
+            }
+          } else {
+            configs[c.key] = {
+              id: c.id,
+              feature: c.feature.name,
+              key: c.key,
+              type: c.type,
+              value: c.value,
+              description: c.description,
+              secret: false,
+              required: false,
+              enabled: false,
+              env: false,
+            }
+          }
+        })
         Object.keys(confKeys).forEach((k) => {
                 if (!configs[k]) {
                     configs[k] = {
