@@ -56,3 +56,21 @@ export const ENVIRONMENT_GET = gql`
     }
   }
 `
+
+export const ENVIRONMENT_GET_REPORT = gql`
+  query environmentGetReport($id: ID!) {
+    environment(id: $id) {
+      health {
+        reportedAt
+      }
+      releases {
+        feature {
+          name
+        }
+        status
+        lastDeployed
+        version
+      }
+    }
+  }
+`

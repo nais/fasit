@@ -7,6 +7,7 @@ import LoaderSpinner from '../../../components/lib/spinner'
 import AddEnvironment from '../../../components/tenant/addEnvironment'
 import Environment from '../../../components/tenant/environment'
 import {Main, MenuItem, MenuItems, MenuSeparator, PageContainer, SideMenu} from '../../../components/lib/PageLayout'
+import BreadCrumb from "../../../components/lib/breadcrumb";
 
 
 const Tenant = () => {
@@ -53,7 +54,11 @@ const Tenant = () => {
         </MenuItems>
       </SideMenu>
       <Main>
-        {environmentName && <Environment environmentName={environmentName} tenantName={tenant.name} />}
+        <BreadCrumb/>
+        {environmentName ?
+            <Environment environmentName={environmentName} tenantName={tenant.name} /> :
+            <div> Tenant status</div>
+        }
       </Main>
       <AddEnvironment open={open} onClose={() => setOpen(false)} tenantName={tenant.name}
         tenantID={tenant.id} />

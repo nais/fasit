@@ -1,11 +1,6 @@
 import * as React from 'react'
 import {useEffect, useState} from 'react'
-import {
-    EnvironmentKind,
-    useEnvironmentGetByNamesQuery,
-    useEnvironmentGetQuery,
-    useEnvironmentUpdateMutation
-} from '../../lib/schema/graphql'
+import {useEnvironmentGetByNamesQuery, useEnvironmentUpdateMutation} from '../../lib/schema/graphql'
 import ErrorMessage from '../lib/error'
 import LoaderSpinner from '../lib/spinner'
 import humanizeDate from '../lib/humanizeDate'
@@ -16,17 +11,18 @@ import Feature from './feature'
 import {useRouter} from 'next/router'
 import {navGronn, navRod} from '../../styles/constants'
 import {Textarea} from '@navikt/ds-react'
-import ManagementLogo from "../lib/icons/managementLogo";
 import BreadCrumb from "../lib/breadcrumb";
+import Naisd from "./naisd";
 
 
 const InfoBox = styled.div`
-   display: flex;
-   border: 1px solid silver;
-   border-radius: 5px;
-   background-color: #f5f5f5;
-   padding: 10px 10px 0 10px;
-   font-size: 0.8em;
+  margin-top: 25px;
+  display: flex;
+  border: 1px solid silver;
+  border-radius: 5px;
+  background-color: #f5f5f5;
+  padding: 10px 10px 0 10px;
+  font-size: 0.8em;
 `
 const Description = styled.pre`
   font-family: var(--navds-font-family);
@@ -61,27 +57,6 @@ const DescriptionBox = styled.div`
   padding-bottom: 25px;
 `
 
-const TenantHeaderName = styled.h1`
-  text-transform: capitalize;
-  color: #222;
-  margin: 0px;
-`
-
-const TenantHeader = styled.div`
-  display: flex;
-  flex-grow: 1;
-  justify-content: space-between;
-  text-transform: capitalize;
-`
-const TenantHeaderEnv = styled.h2`
-  color: #696969;
-  padding: 0px;
-  margin: 0px;
-`
-
-const ManagementIcon = styled.div`
-  margin: 0px 0px 0px 20px;
-`
 const TimeStamps = styled.div`
   display: flex;
   flex-direction: column;
@@ -95,82 +70,88 @@ const Main = styled.div`
 `
 
 interface EnvironmentProps {
-  environmentName: string,
-  tenantName: string;
+    environmentName: string,
+    tenantName: string;
 }
 
-const Environment = ({ environmentName, tenantName }: EnvironmentProps) => {
-  const [edit, setEdit] = useState(false)
-  const [backendError, setBackendError] = useState()
-  const [description, setDescription] = useState('')
-  const [envUpdate] = useEnvironmentUpdateMutation()
-  const { data, error, loading } = useEnvironmentGetByNamesQuery({ variables: { environmentName: environmentName[0], tenantName } })
-  useEffect(() => { data?.environmentByNames?.description && setDescription(data.environmentByNames.description)}, [data])
-  const router = useRouter()
-
-  if (error) return <ErrorMessage error={error} />
-  if (!data || loading) return <LoaderSpinner />
-  const envID = data.environmentByNames.id
-
-
-  const submit = () => {
-    envUpdate(
-      {
-        variables: { description: description, id: envID },
-        awaitRefetchQueries: true,
-        refetchQueries: ['environmentGet'],
-      }).then(() => {
-        setBackendError(undefined)
-        setDescription("")
-        setEdit(false)
-      }).catch((e: any) => {
-        setBackendError(e)
-      })
-  }
-  {
-    backendError && (
-      <ErrorMessage error={backendError} />
-    )
-  }
-
-  const feature = router.query.feature as string
-  const env = data.environmentByNames
-  return (
-    <div>
-        <BreadCrumb />
-        <TenantHeaderName>{tenantName}</TenantHeaderName><TenantHeader><TenantHeaderEnv>{`> ${env.name}`}</TenantHeaderEnv>{env.kind === EnvironmentKind.Management && <ManagementIcon><ManagementLogo /></ManagementIcon>}</TenantHeader>
-      <InfoBox>
-        <DescriptionBox>
-        {edit ?
-          <Textarea
-            label={'description'}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          /> :
-          <Description>
-            {env.description}
-          </Description>
+const Environment = ({environmentName, tenantName}: EnvironmentProps) => {
+    const [edit, setEdit] = useState(false)
+    const [backendError, setBackendError] = useState()
+    const [description, setDescription] = useState('')
+    const [envUpdate] = useEnvironmentUpdateMutation()
+    const {data, error, loading} = useEnvironmentGetByNamesQuery({
+        variables: {
+            environmentName: environmentName[0],
+            tenantName
         }
-        </DescriptionBox>
-        <IconBox>
+    })
+    useEffect(() => {
+        data?.environmentByNames?.description && setDescription(data.environmentByNames.description)
+    }, [data])
+    const router = useRouter()
 
-        <Icon>
-          {edit ? <Close onClick={() => setEdit(false)} /> :
-            <Edit onClick={() => setEdit(true)} />}
-        </Icon>
-        {edit && <SaveIcon onClick={() => submit()}><SaveFile /></SaveIcon>}
-        </IconBox>
-      </InfoBox>
-      <TimeStamps>
-        <span>Opprettet {humanizeDate(env.created)}</span>
-        <span>Sist oppdatert {humanizeDate(env.lastModified)}</span>
-      </TimeStamps>
-      <Main>
-        <FeaturesMenu env={env}/>
-        <Feature env={env}  featureName={feature} />
-      </Main>
+    if (error) return <ErrorMessage error={error}/>
+    if (!data || loading) return <LoaderSpinner/>
+    const feature = router.query.feature as string
+    const env = data.environmentByNames
 
-    </div>
-  )
+    const submit = () => {
+        envUpdate(
+            {
+                variables: {description: description, id: env.id},
+                awaitRefetchQueries: true,
+                refetchQueries: ['environmentGet'],
+            }).then(() => {
+            setBackendError(undefined)
+            setDescription("")
+            setEdit(false)
+        }).catch((e: any) => {
+            setBackendError(e)
+        })
+    }
+    {
+        backendError && (
+            <ErrorMessage error={backendError}/>
+        )
+    }
+
+    return (
+        <div>
+            <InfoBox>
+                <DescriptionBox>
+                    {edit ?
+                        <Textarea
+                            label={'description'}
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                        /> :
+                        <Description>
+                            {env.description}
+                        </Description>
+                    }
+                </DescriptionBox>
+                <IconBox>
+
+                    <Icon>
+                        {edit ? <Close onClick={() => setEdit(false)}/> :
+                            <Edit onClick={() => setEdit(true)}/>}
+                    </Icon>
+                    {edit && <SaveIcon onClick={() => submit()}><SaveFile/></SaveIcon>}
+                </IconBox>
+            </InfoBox>
+            <TimeStamps>
+                <span>Opprettet {humanizeDate(env.created)}</span>
+                <span>Sist oppdatert {humanizeDate(env.lastModified)}</span>
+            </TimeStamps>
+            <Main>
+                <FeaturesMenu env={env}/>
+                {feature ?
+                    <Feature env={env} featureName={feature}/> :
+                    <Naisd environmentID={env.id}/>
+                }
+            </Main>
+
+        </div>
+    )
 }
 export default Environment

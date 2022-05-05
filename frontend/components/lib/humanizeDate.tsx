@@ -1,10 +1,11 @@
-import { format, parseISO } from 'date-fns'
+import { format, parseISO, formatDistance } from 'date-fns'
 import { enGB } from 'date-fns/locale'
-const humanizeDate = (isoDate: string, dateFormat = 'PPPP') => {
+const humanizeDate = (isoDate: string, dateFormat = 'PPPP', distance: boolean = false) => {
   try {
     const parsed = parseISO(isoDate);
     return <time dateTime={isoDate} title={format(parsed, "dd. MMMM yyyy HH:mm:ii", { locale: enGB })}>
-      {format(parsed, dateFormat, { locale: enGB })}
+
+      { distance ? formatDistance(parsed, Date.now(), {addSuffix: true, includeSeconds: true}): format(parsed, dateFormat, { locale: enGB })}
     </time>
   } catch (e) {
     return <></>

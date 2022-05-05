@@ -51,10 +51,12 @@ export type Environment = {
   created: Scalars['Time']
   description?: Maybe<Scalars['String']>
   featureStates: Array<FeatureState>
+  health: Health
   id: Scalars['ID']
   kind: EnvironmentKind
   lastModified: Scalars['Time']
   name: Scalars['String']
+  releases: Array<Release>
 }
 
 /** EnvironmentCreate contains metadata for creating an environment */
@@ -94,6 +96,11 @@ export type FeatureState = {
   enabled: Scalars['Boolean']
   feature: Feature
   lastModified?: Maybe<Scalars['Time']>
+}
+
+export type Health = {
+  __typename?: 'Health'
+  reportedAt: Scalars['Time']
 }
 
 export type Mutation = {
@@ -206,6 +213,17 @@ export type QueryTenantArgs = {
 export type QueryValuesArgs = {
   env: Scalars['ID']
   feature: Scalars['String']
+}
+
+export type Release = {
+  __typename?: 'Release'
+  created: Scalars['Time']
+  feature: Feature
+  lastDeployed: Scalars['Time']
+  lastModified: Scalars['Time']
+  revision: Scalars['Int']
+  status: Scalars['String']
+  version: Scalars['String']
 }
 
 export enum RolloutStatus {
@@ -402,6 +420,25 @@ export type EnvironmentGetQuery = {
         source: string
         config: any
       }
+    }>
+  }
+}
+
+export type EnvironmentGetReportQueryVariables = Exact<{
+  id: Scalars['ID']
+}>
+
+export type EnvironmentGetReportQuery = {
+  __typename?: 'Query'
+  environment: {
+    __typename?: 'Environment'
+    health: { __typename?: 'Health'; reportedAt: any }
+    releases: Array<{
+      __typename?: 'Release'
+      status: string
+      lastDeployed: any
+      version: string
+      feature: { __typename?: 'Feature'; name: string }
     }>
   }
 }
@@ -1054,6 +1091,74 @@ export type EnvironmentGetLazyQueryHookResult = ReturnType<
 export type EnvironmentGetQueryResult = Apollo.QueryResult<
   EnvironmentGetQuery,
   EnvironmentGetQueryVariables
+>
+export const EnvironmentGetReportDocument = gql`
+  query environmentGetReport($id: ID!) {
+    environment(id: $id) {
+      health {
+        reportedAt
+      }
+      releases {
+        feature {
+          name
+        }
+        status
+        lastDeployed
+        version
+      }
+    }
+  }
+`
+
+/**
+ * __useEnvironmentGetReportQuery__
+ *
+ * To run a query within a React component, call `useEnvironmentGetReportQuery` and pass it any options that fit your needs.
+ * When your component renders, `useEnvironmentGetReportQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useEnvironmentGetReportQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useEnvironmentGetReportQuery(
+  baseOptions: Apollo.QueryHookOptions<
+    EnvironmentGetReportQuery,
+    EnvironmentGetReportQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions }
+  return Apollo.useQuery<
+    EnvironmentGetReportQuery,
+    EnvironmentGetReportQueryVariables
+  >(EnvironmentGetReportDocument, options)
+}
+export function useEnvironmentGetReportLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    EnvironmentGetReportQuery,
+    EnvironmentGetReportQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions }
+  return Apollo.useLazyQuery<
+    EnvironmentGetReportQuery,
+    EnvironmentGetReportQueryVariables
+  >(EnvironmentGetReportDocument, options)
+}
+export type EnvironmentGetReportQueryHookResult = ReturnType<
+  typeof useEnvironmentGetReportQuery
+>
+export type EnvironmentGetReportLazyQueryHookResult = ReturnType<
+  typeof useEnvironmentGetReportLazyQuery
+>
+export type EnvironmentGetReportQueryResult = Apollo.QueryResult<
+  EnvironmentGetReportQuery,
+  EnvironmentGetReportQueryVariables
 >
 export const EnvironmentUpdateDocument = gql`
   mutation environmentUpdate($description: String, $id: ID!) {

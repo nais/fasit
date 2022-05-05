@@ -1,5 +1,5 @@
 import * as React from 'react'
-import {useEffect, useState} from 'react'
+import {useState} from 'react'
 import styled from 'styled-components'
 import ConfigPage from './configPage'
 import {EnvironmentGetQuery, RolloutStatus, useFeatureStatusQuery} from '../../lib/schema/graphql'
@@ -8,7 +8,6 @@ import IconBox from "../lib/icons/iconBox";
 import GitIcon from "../lib/icons/gitIcon";
 import {Loader, Switch} from '@navikt/ds-react'
 import EnableFeature from "./enableFeature";
-import humanizeDate from "../lib/humanizeDate";
 
 
 const FeatureContainer = styled.div`

@@ -36,7 +36,7 @@ const EnableFeature = ({open, onClose, feature, envID, enabled}: EnableFeaturePr
             await save({
                 variables: {feature, enabled: !enabled, envID},
                 awaitRefetchQueries: true,
-                refetchQueries: ['environmentGet'],
+                refetchQueries: ['environmentGetByNames'],
                 onCompleted: () => onClose(false),
                 onError:(e) => console.log(e)
             })
