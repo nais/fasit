@@ -1,8 +1,6 @@
 name: Build and deploy fasit
 on:
   push:
-    branches:
-      - main
     paths-ignore:
       - "charts/**"
       - ".github/workflows/*_chart.yaml"
@@ -75,6 +73,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
   deploy_fasit:
+    if: github.ref == 'refs/heads/main'
     runs-on: [ 'fasit' ]
     needs: [ 'build_and_push_fasit' ]
     permissions:

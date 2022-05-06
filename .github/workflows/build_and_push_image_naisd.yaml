@@ -1,8 +1,6 @@
 name: Build and deploy naisd
 on:
   push:
-    branches:
-      - main
     paths-ignore:
       - "charts/**"
       - ".github/workflows/*_chart.yaml"
@@ -63,6 +61,7 @@ jobs:
             type=semver,pattern=v{{major}}
             type=sha
       - name: Build and push naisd
+        if: github.ref == 'refs/heads/main'
         uses: docker/build-push-action@v2
         with:
           context: .

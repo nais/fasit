@@ -1,8 +1,6 @@
 name: Build and deploy fasit-frontend
 on:
   push:
-    branches:
-      - main
     paths:
       - ".github/workflows/build_and_push_image_fasit-frontend.yaml"
       - ".github/actions/helm_install/**"
@@ -62,6 +60,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
   deploy_fasit-frontend:
+    if: github.ref == 'refs/heads/main'
     runs-on: [ 'fasit' ]
     needs: [ 'build_and_push_fasit-frontend' ]
     permissions:
