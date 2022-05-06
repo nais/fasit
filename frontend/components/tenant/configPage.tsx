@@ -1,91 +1,28 @@
 import * as React from 'react'
 import {useState} from 'react'
-import ErrorMessage from '../lib/error'
-import LoaderSpinner from '../lib/spinner'
-import {EnvironmentGetQuery, FeaturesQuery, useConfigGetQuery, useFeaturesQuery} from '../../lib/schema/graphql'
+import {FeaturesQuery} from '../../lib/schema/graphql'
 import {Table} from '@navikt/ds-react'
 import ConfigAdd from '../lib/configAdd'
 import ConfigDelete from '../lib/configDelete'
 import ConfigEdit from '../lib/configEdit'
 import ConfigRows, {Config, Configs} from "../lib/configRows";
-import { CLIENT_RENEG_LIMIT } from 'tls'
 
 
 interface ConfigProps {
-    env: EnvironmentGetQuery['environment']
-    feature: string,
+    envID: string
+    configs: Configs
+    featureObject: FeaturesQuery['features'][0] | undefined
 }
 
-const ConfigPage = ({env, feature}: ConfigProps) => {
-    const {data, error, loading} = useConfigGetQuery({variables: {envID: env.id, feature}})
-    const features = useFeaturesQuery({
-        variables: {kind: env.kind}
-    })
+const ConfigPage = ({envID, configs, featureObject}: ConfigProps) => {
     const [currentConfig, setCurrentConfig] = useState<Config | undefined>()
     const [showDelete, setShowDelete] = useState(false)
     const [showUpdate, setShowUpdate] = useState(false)
     const [showCreate, setShowCreate] = useState(false)
 
-
-    let configs: Configs = {}
-    let featureObject : FeaturesQuery['features'][0] | undefined
-    if (features.data && data) {
-        featureObject = features.data.features.find((f) => f.name === feature)
-        const confKeys = featureObject?.config
-        data.envConfig.forEach((c) => {
-          if (c.__typename === 'EnvConfiguration') {
-            configs[c.key] = {
-              id: c.id,
-              feature: c.feature.name,
-              key: c.key,
-              type: c.type,
-              value: c.value,
-              description: c.description,
-              secret: false,
-              required: false,
-              enabled: false,
-              env: true,
-            }
-          } else {
-            configs[c.key] = {
-              id: c.id,
-              feature: c.feature.name,
-              key: c.key,
-              type: c.type,
-              value: c.value,
-              description: c.description,
-              secret: false,
-              required: false,
-              enabled: false,
-              env: false,
-            }
-          }
-        })
-        Object.keys(confKeys).forEach((k) => {
-                if (!configs[k]) {
-                    configs[k] = {
-                        value: null,
-                        env: false,
-                        feature: feature,
-                        key: k,
-                        type: confKeys[k].type,
-                        secret: confKeys[k].secret,
-                        required: confKeys[k].required,
-                        enabled: confKeys[k].enabled
-                    }
-                } else {
-                    configs[k].type = confKeys[k].type
-                    configs[k].secret = confKeys[k].secret
-                    configs[k].required = confKeys[k].required
-                    configs[k].enabled = confKeys[k].enabled
-                }
-            },
-        )
-    }
     const requiredConfigs = Object.keys(configs).filter((c) => configs[c].required).sort()
     const envConfigs = Object.keys(configs).filter((c) => configs[c].env && !configs[c].required).sort()
     const theRest = Object.keys(configs).filter((c) => !configs[c].env && !configs[c].required).sort()
-
 
     const resetConfig = () => {
         setCurrentConfig(undefined)
@@ -96,15 +33,13 @@ const ConfigPage = ({env, feature}: ConfigProps) => {
 
     return (
         <>
-            {loading && <LoaderSpinner/>}
-            {error && <ErrorMessage error={error}/>}
             <Table size={'small'}>
                 <Table.Header>
                     <Table.Row>
                         <Table.HeaderCell>Key</Table.HeaderCell>
                         <Table.HeaderCell>Value</Table.HeaderCell>
-                        <Table.HeaderCell>Scope</Table.HeaderCell>
-                        <Table.HeaderCell>Required</Table.HeaderCell>
+                        <Table.HeaderCell align={'center'}>Scope</Table.HeaderCell>
+                        <Table.HeaderCell align={'center'}>Required</Table.HeaderCell>
                         <Table.HeaderCell align='center'>Operations</Table.HeaderCell>
                         <Table.HeaderCell>Comment</Table.HeaderCell>
                     </Table.Row>
@@ -145,7 +80,7 @@ const ConfigPage = ({env, feature}: ConfigProps) => {
 
             {currentConfig && featureObject &&
                 <>
-                    <ConfigAdd conf={currentConfig} envID={env.id} globalConfig={configs[currentConfig.key]}
+                    <ConfigAdd conf={currentConfig} envID={envID} globalConfig={configs[currentConfig.key]}
                                open={showCreate}
                                feature={featureObject}
                                showOpen={resetConfig}/>

@@ -1,7 +1,7 @@
 import {Table} from "@navikt/ds-react";
 import {ConfigType} from "../../lib/schema/graphql";
 import prettifyArray from "./prettifyArray";
-import {Add, Delete, FileContent, Globe, Place, Warning, Wrench} from "@navikt/ds-icons";
+import {Add, Delete, FileContent, Globe, Place, Success, Warning, Wrench} from "@navikt/ds-icons";
 import {navGronn, navRod} from "../../styles/constants";
 import * as React from "react";
 import styled from "styled-components";
@@ -80,15 +80,16 @@ const ConfigRows = ({
                             '<default>' :
                         prettifyArray(conf.value)}
                     </Table.DataCell>
-                    <Table.DataCell>{conf.env ? <Place/> : conf.value ? <Globe/> :
+                    <Table.DataCell align={'center'}>{conf.env ? <Place/> : conf.value ? <Globe/> :
                         <FileContent/>}
                     </Table.DataCell>
-                    <Table.DataCell>{conf.required &&
+                    <Table.DataCell align={'center'}>{conf.required &&
                         <Center>
-                            <Warning style={{color: navRod}}/>
+                            {conf.value ? <Success style={{color: navGronn}}/> :
+                            <Warning style={{color: navRod}}/>}
                         </Center>}
                     </Table.DataCell>
-                    <Table.DataCell>
+                    <Table.DataCell align={'center'}>
                         <Center> {conf.env || (featurePage && conf.value != null) ?
                             <>
                                 <StyledWrench onClick={() => {
