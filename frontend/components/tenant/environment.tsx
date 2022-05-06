@@ -11,8 +11,7 @@ import Feature from './feature'
 import {useRouter} from 'next/router'
 import {navGronn, navRod} from '../../styles/constants'
 import {Textarea} from '@navikt/ds-react'
-import BreadCrumb from "../lib/breadcrumb";
-import Naisd from "./naisd";
+import EnvironmentStatusPage from "./environmentStatusPage";
 
 
 const InfoBox = styled.div`
@@ -147,7 +146,7 @@ const Environment = ({environmentName, tenantName}: EnvironmentProps) => {
                 <FeaturesMenu env={env}/>
                 {feature ?
                     <Feature env={env} featureName={feature}/> :
-                    <Naisd environmentID={env.id}/>
+                    <EnvironmentStatusPage environmentID={env.id}/>
                 }
             </Main>
 

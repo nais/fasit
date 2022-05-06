@@ -8,13 +8,13 @@ import ConfigEdit from '../lib/configEdit'
 import ConfigRows, {Config, Configs} from "../lib/configRows";
 
 
-interface ConfigProps {
+interface FeatureConfigProps {
     envID: string
     configs: Configs
     featureObject: FeaturesQuery['features'][0] | undefined
 }
 
-const ConfigPage = ({envID, configs, featureObject}: ConfigProps) => {
+const FeatureConfig = ({envID, configs, featureObject}: FeatureConfigProps) => {
     const [currentConfig, setCurrentConfig] = useState<Config | undefined>()
     const [showDelete, setShowDelete] = useState(false)
     const [showUpdate, setShowUpdate] = useState(false)
@@ -91,4 +91,4 @@ const ConfigPage = ({envID, configs, featureObject}: ConfigProps) => {
         </>
     )
 }
-export default ConfigPage
+export default FeatureConfig

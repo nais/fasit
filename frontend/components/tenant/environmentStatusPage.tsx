@@ -8,24 +8,24 @@ import {Table} from "@navikt/ds-react";
 import ReportStatus from "./reportStatus";
 
 
-const NaisdContainer = styled.div`
+const EnvironmentStatus = styled.div`
   border: 1px solid silver;
   padding: 10px;
   flex-grow: 1;
   border-radius: 0 5px 5px 0px;
   border-left: 1px solid silver;
 `
-interface  NaisdProps {
+interface  EnvironmentStatusPageProps {
     environmentID: string
 }
-const Naisd = ({environmentID}: NaisdProps) => {
+const EnvironmentStatusPage = ({environmentID}: EnvironmentStatusPageProps) => {
     const {data, loading, error} = useEnvironmentGetReportQuery({variables: {id: environmentID}, pollInterval: 10 * 1000})
     if (error) return <ErrorMessage error={error}/>
     if (loading || !data)return  <LoaderSpinner/>
     const report = data.environment
 
     return (
-        <NaisdContainer>
+        <EnvironmentStatus>
             <ReportStatus reportedAt={report.health.reportedAt}/>
             <h3>Helm installs</h3>
             <Table size={"small"}>
@@ -48,7 +48,7 @@ const Naisd = ({environmentID}: NaisdProps) => {
 
                 </Table.Body>
             </Table>
-        </NaisdContainer>
+        </EnvironmentStatus>
     )
 }
-export default Naisd
+export default EnvironmentStatusPage
