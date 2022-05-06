@@ -412,6 +412,43 @@ func (_m *Repo) HelmValues(ctx context.Context, _a1 string, envID uuid.UUID, req
 	return r0, r1
 }
 
+// KubernetesNodeSync provides a mock function with given fields: ctx, envID, kn
+func (_m *Repo) KubernetesNodeSync(ctx context.Context, envID uuid.UUID, kn *message.KubernetesNodes) error {
+	ret := _m.Called(ctx, envID, kn)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, *message.KubernetesNodes) error); ok {
+		r0 = rf(ctx, envID, kn)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// KubernetesNodesForEnv provides a mock function with given fields: ctx, envID
+func (_m *Repo) KubernetesNodesForEnv(ctx context.Context, envID uuid.UUID) ([]*model.KubernetesNode, error) {
+	ret := _m.Called(ctx, envID)
+
+	var r0 []*model.KubernetesNode
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) []*model.KubernetesNode); ok {
+		r0 = rf(ctx, envID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.KubernetesNode)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, envID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Metrics provides a mock function with given fields:
 func (_m *Repo) Metrics() prometheus.Collector {
 	ret := _m.Called()

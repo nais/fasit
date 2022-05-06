@@ -76,6 +76,7 @@ type ComplexityRoot struct {
 		Kind          func(childComplexity int) int
 		LastModified  func(childComplexity int) int
 		Name          func(childComplexity int) int
+		Nodes         func(childComplexity int) int
 		Releases      func(childComplexity int) int
 	}
 
@@ -110,6 +111,37 @@ type ComplexityRoot struct {
 
 	Health struct {
 		ReportedAt func(childComplexity int) int
+	}
+
+	KubernetesNode struct {
+		Allocatable             func(childComplexity int) int
+		Architecture            func(childComplexity int) int
+		Capacity                func(childComplexity int) int
+		Conditions              func(childComplexity int) int
+		ContainerRuntimeVersion func(childComplexity int) int
+		KernelVersion           func(childComplexity int) int
+		KubeProxyVersion        func(childComplexity int) int
+		KubeletVersion          func(childComplexity int) int
+		Name                    func(childComplexity int) int
+		OSImage                 func(childComplexity int) int
+		OperatingSystem         func(childComplexity int) int
+		Phase                   func(childComplexity int) int
+	}
+
+	KubernetesNodeCondition struct {
+		LastHeartbeat  func(childComplexity int) int
+		LastTransition func(childComplexity int) int
+		Message        func(childComplexity int) int
+		Reason         func(childComplexity int) int
+		Status         func(childComplexity int) int
+		Type           func(childComplexity int) int
+	}
+
+	KubernetesNodeResources struct {
+		CPU     func(childComplexity int) int
+		Memory  func(childComplexity int) int
+		Pods    func(childComplexity int) int
+		Storage func(childComplexity int) int
 	}
 
 	Mutation struct {
@@ -178,6 +210,7 @@ type EnvironmentResolver interface {
 
 	Health(ctx context.Context, obj *model.Environment) (*model.Health, error)
 	Releases(ctx context.Context, obj *model.Environment) ([]*model.Release, error)
+	Nodes(ctx context.Context, obj *model.Environment) ([]*model.KubernetesNode, error)
 }
 type FeatureStateResolver interface {
 	Feature(ctx context.Context, obj *model.FeatureState) (*model.Feature, error)
@@ -347,6 +380,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Environment.Name(childComplexity), true
 
+	case "Environment.nodes":
+		if e.complexity.Environment.Nodes == nil {
+			break
+		}
+
+		return e.complexity.Environment.Nodes(childComplexity), true
+
 	case "Environment.releases":
 		if e.complexity.Environment.Releases == nil {
 			break
@@ -500,6 +540,160 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Health.ReportedAt(childComplexity), true
+
+	case "KubernetesNode.allocatable":
+		if e.complexity.KubernetesNode.Allocatable == nil {
+			break
+		}
+
+		return e.complexity.KubernetesNode.Allocatable(childComplexity), true
+
+	case "KubernetesNode.architecture":
+		if e.complexity.KubernetesNode.Architecture == nil {
+			break
+		}
+
+		return e.complexity.KubernetesNode.Architecture(childComplexity), true
+
+	case "KubernetesNode.capacity":
+		if e.complexity.KubernetesNode.Capacity == nil {
+			break
+		}
+
+		return e.complexity.KubernetesNode.Capacity(childComplexity), true
+
+	case "KubernetesNode.conditions":
+		if e.complexity.KubernetesNode.Conditions == nil {
+			break
+		}
+
+		return e.complexity.KubernetesNode.Conditions(childComplexity), true
+
+	case "KubernetesNode.containerRuntimeVersion":
+		if e.complexity.KubernetesNode.ContainerRuntimeVersion == nil {
+			break
+		}
+
+		return e.complexity.KubernetesNode.ContainerRuntimeVersion(childComplexity), true
+
+	case "KubernetesNode.kernelVersion":
+		if e.complexity.KubernetesNode.KernelVersion == nil {
+			break
+		}
+
+		return e.complexity.KubernetesNode.KernelVersion(childComplexity), true
+
+	case "KubernetesNode.kubeProxyVersion":
+		if e.complexity.KubernetesNode.KubeProxyVersion == nil {
+			break
+		}
+
+		return e.complexity.KubernetesNode.KubeProxyVersion(childComplexity), true
+
+	case "KubernetesNode.kubeletVersion":
+		if e.complexity.KubernetesNode.KubeletVersion == nil {
+			break
+		}
+
+		return e.complexity.KubernetesNode.KubeletVersion(childComplexity), true
+
+	case "KubernetesNode.name":
+		if e.complexity.KubernetesNode.Name == nil {
+			break
+		}
+
+		return e.complexity.KubernetesNode.Name(childComplexity), true
+
+	case "KubernetesNode.osImage":
+		if e.complexity.KubernetesNode.OSImage == nil {
+			break
+		}
+
+		return e.complexity.KubernetesNode.OSImage(childComplexity), true
+
+	case "KubernetesNode.operatingSystem":
+		if e.complexity.KubernetesNode.OperatingSystem == nil {
+			break
+		}
+
+		return e.complexity.KubernetesNode.OperatingSystem(childComplexity), true
+
+	case "KubernetesNode.phase":
+		if e.complexity.KubernetesNode.Phase == nil {
+			break
+		}
+
+		return e.complexity.KubernetesNode.Phase(childComplexity), true
+
+	case "KubernetesNodeCondition.lastHeartbeat":
+		if e.complexity.KubernetesNodeCondition.LastHeartbeat == nil {
+			break
+		}
+
+		return e.complexity.KubernetesNodeCondition.LastHeartbeat(childComplexity), true
+
+	case "KubernetesNodeCondition.lastTransition":
+		if e.complexity.KubernetesNodeCondition.LastTransition == nil {
+			break
+		}
+
+		return e.complexity.KubernetesNodeCondition.LastTransition(childComplexity), true
+
+	case "KubernetesNodeCondition.message":
+		if e.complexity.KubernetesNodeCondition.Message == nil {
+			break
+		}
+
+		return e.complexity.KubernetesNodeCondition.Message(childComplexity), true
+
+	case "KubernetesNodeCondition.reason":
+		if e.complexity.KubernetesNodeCondition.Reason == nil {
+			break
+		}
+
+		return e.complexity.KubernetesNodeCondition.Reason(childComplexity), true
+
+	case "KubernetesNodeCondition.status":
+		if e.complexity.KubernetesNodeCondition.Status == nil {
+			break
+		}
+
+		return e.complexity.KubernetesNodeCondition.Status(childComplexity), true
+
+	case "KubernetesNodeCondition.type":
+		if e.complexity.KubernetesNodeCondition.Type == nil {
+			break
+		}
+
+		return e.complexity.KubernetesNodeCondition.Type(childComplexity), true
+
+	case "KubernetesNodeResources.cpu":
+		if e.complexity.KubernetesNodeResources.CPU == nil {
+			break
+		}
+
+		return e.complexity.KubernetesNodeResources.CPU(childComplexity), true
+
+	case "KubernetesNodeResources.memory":
+		if e.complexity.KubernetesNodeResources.Memory == nil {
+			break
+		}
+
+		return e.complexity.KubernetesNodeResources.Memory(childComplexity), true
+
+	case "KubernetesNodeResources.pods":
+		if e.complexity.KubernetesNodeResources.Pods == nil {
+			break
+		}
+
+		return e.complexity.KubernetesNodeResources.Pods(childComplexity), true
+
+	case "KubernetesNodeResources.storage":
+		if e.complexity.KubernetesNodeResources.Storage == nil {
+			break
+		}
+
+		return e.complexity.KubernetesNodeResources.Storage(childComplexity), true
 
 	case "Mutation.configurationCreate":
 		if e.complexity.Mutation.ConfigurationCreate == nil {
@@ -1029,6 +1223,7 @@ type Environment {
   kind: EnvironmentKind!
   health: Health!
   releases: [Release!]!
+  nodes: [KubernetesNode!]!
 }
 
 """
@@ -1110,6 +1305,57 @@ extend type Mutation {
 `, BuiltIn: false},
 	{Name: "schema/helm.graphqls", Input: `extend type Query {
 	values(feature: String!, env: ID!): Map!
+}
+`, BuiltIn: false},
+	{Name: "schema/kubernetes_node_status.graphqls", Input: `enum KubernetesNodePhase {
+  PENDING
+  RUNNING
+  TERMINATED
+}
+
+enum KubernetesNodeConditionType {
+  READY
+  MEMORY_PRESSURE
+  DISK_PRESSURE
+  PID_PRESSURE
+  NETWORK_UNAVAILABLE
+}
+
+enum ConditionStatus {
+  TRUE
+  FALSE
+  UNKNOWN
+}
+
+type KubernetesNodeCondition {
+  type: KubernetesNodeConditionType!
+  status: ConditionStatus!
+  reason: String!
+  message: String!
+  lastHeartbeat: Time!
+  lastTransition: Time!
+}
+
+type KubernetesNodeResources {
+  cpu: Int!
+  memory: Int!
+  storage: Int!
+  pods: Int!
+}
+
+type KubernetesNode {
+  name: String!
+  phase: KubernetesNodePhase!
+  kernelVersion: String!
+  osImage: String!
+  containerRuntimeVersion: String!
+  kubeletVersion: String!
+  kubeProxyVersion: String!
+  operatingSystem: String!
+  architecture: String!
+  conditions: [KubernetesNodeCondition!]!
+  allocatable: KubernetesNodeResources!
+  capacity: KubernetesNodeResources!
 }
 `, BuiltIn: false},
 	{Name: "schema/scalars.graphqls", Input: `scalar Map
@@ -1688,6 +1934,8 @@ func (ec *executionContext) fieldContext_EnvConfiguration_environment(ctx contex
 				return ec.fieldContext_Environment_health(ctx, field)
 			case "releases":
 				return ec.fieldContext_Environment_releases(ctx, field)
+			case "nodes":
+				return ec.fieldContext_Environment_nodes(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -2436,6 +2684,76 @@ func (ec *executionContext) fieldContext_Environment_releases(ctx context.Contex
 				return ec.fieldContext_Release_lastModified(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Release", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Environment_nodes(ctx context.Context, field graphql.CollectedField, obj *model.Environment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Environment_nodes(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Environment().Nodes(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.KubernetesNode)
+	fc.Result = res
+	return ec.marshalNKubernetesNode2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐKubernetesNodeᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Environment_nodes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Environment",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_KubernetesNode_name(ctx, field)
+			case "phase":
+				return ec.fieldContext_KubernetesNode_phase(ctx, field)
+			case "kernelVersion":
+				return ec.fieldContext_KubernetesNode_kernelVersion(ctx, field)
+			case "osImage":
+				return ec.fieldContext_KubernetesNode_osImage(ctx, field)
+			case "containerRuntimeVersion":
+				return ec.fieldContext_KubernetesNode_containerRuntimeVersion(ctx, field)
+			case "kubeletVersion":
+				return ec.fieldContext_KubernetesNode_kubeletVersion(ctx, field)
+			case "kubeProxyVersion":
+				return ec.fieldContext_KubernetesNode_kubeProxyVersion(ctx, field)
+			case "operatingSystem":
+				return ec.fieldContext_KubernetesNode_operatingSystem(ctx, field)
+			case "architecture":
+				return ec.fieldContext_KubernetesNode_architecture(ctx, field)
+			case "conditions":
+				return ec.fieldContext_KubernetesNode_conditions(ctx, field)
+			case "allocatable":
+				return ec.fieldContext_KubernetesNode_allocatable(ctx, field)
+			case "capacity":
+				return ec.fieldContext_KubernetesNode_capacity(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type KubernetesNode", field.Name)
 		},
 	}
 	return fc, nil
@@ -3392,6 +3710,1008 @@ func (ec *executionContext) fieldContext_Health_reportedAt(ctx context.Context, 
 	return fc, nil
 }
 
+func (ec *executionContext) _KubernetesNode_name(ctx context.Context, field graphql.CollectedField, obj *model.KubernetesNode) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KubernetesNode_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KubernetesNode_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KubernetesNode",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KubernetesNode_phase(ctx context.Context, field graphql.CollectedField, obj *model.KubernetesNode) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KubernetesNode_phase(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Phase, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.KubernetesNodePhase)
+	fc.Result = res
+	return ec.marshalNKubernetesNodePhase2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐKubernetesNodePhase(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KubernetesNode_phase(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KubernetesNode",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type KubernetesNodePhase does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KubernetesNode_kernelVersion(ctx context.Context, field graphql.CollectedField, obj *model.KubernetesNode) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KubernetesNode_kernelVersion(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.KernelVersion, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KubernetesNode_kernelVersion(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KubernetesNode",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KubernetesNode_osImage(ctx context.Context, field graphql.CollectedField, obj *model.KubernetesNode) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KubernetesNode_osImage(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OSImage, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KubernetesNode_osImage(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KubernetesNode",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KubernetesNode_containerRuntimeVersion(ctx context.Context, field graphql.CollectedField, obj *model.KubernetesNode) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KubernetesNode_containerRuntimeVersion(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ContainerRuntimeVersion, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KubernetesNode_containerRuntimeVersion(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KubernetesNode",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KubernetesNode_kubeletVersion(ctx context.Context, field graphql.CollectedField, obj *model.KubernetesNode) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KubernetesNode_kubeletVersion(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.KubeletVersion, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KubernetesNode_kubeletVersion(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KubernetesNode",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KubernetesNode_kubeProxyVersion(ctx context.Context, field graphql.CollectedField, obj *model.KubernetesNode) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KubernetesNode_kubeProxyVersion(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.KubeProxyVersion, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KubernetesNode_kubeProxyVersion(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KubernetesNode",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KubernetesNode_operatingSystem(ctx context.Context, field graphql.CollectedField, obj *model.KubernetesNode) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KubernetesNode_operatingSystem(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OperatingSystem, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KubernetesNode_operatingSystem(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KubernetesNode",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KubernetesNode_architecture(ctx context.Context, field graphql.CollectedField, obj *model.KubernetesNode) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KubernetesNode_architecture(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Architecture, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KubernetesNode_architecture(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KubernetesNode",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KubernetesNode_conditions(ctx context.Context, field graphql.CollectedField, obj *model.KubernetesNode) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KubernetesNode_conditions(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Conditions, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.KubernetesNodeCondition)
+	fc.Result = res
+	return ec.marshalNKubernetesNodeCondition2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐKubernetesNodeConditionᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KubernetesNode_conditions(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KubernetesNode",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "type":
+				return ec.fieldContext_KubernetesNodeCondition_type(ctx, field)
+			case "status":
+				return ec.fieldContext_KubernetesNodeCondition_status(ctx, field)
+			case "reason":
+				return ec.fieldContext_KubernetesNodeCondition_reason(ctx, field)
+			case "message":
+				return ec.fieldContext_KubernetesNodeCondition_message(ctx, field)
+			case "lastHeartbeat":
+				return ec.fieldContext_KubernetesNodeCondition_lastHeartbeat(ctx, field)
+			case "lastTransition":
+				return ec.fieldContext_KubernetesNodeCondition_lastTransition(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type KubernetesNodeCondition", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KubernetesNode_allocatable(ctx context.Context, field graphql.CollectedField, obj *model.KubernetesNode) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KubernetesNode_allocatable(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Allocatable, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.KubernetesNodeResources)
+	fc.Result = res
+	return ec.marshalNKubernetesNodeResources2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐKubernetesNodeResources(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KubernetesNode_allocatable(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KubernetesNode",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "cpu":
+				return ec.fieldContext_KubernetesNodeResources_cpu(ctx, field)
+			case "memory":
+				return ec.fieldContext_KubernetesNodeResources_memory(ctx, field)
+			case "storage":
+				return ec.fieldContext_KubernetesNodeResources_storage(ctx, field)
+			case "pods":
+				return ec.fieldContext_KubernetesNodeResources_pods(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type KubernetesNodeResources", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KubernetesNode_capacity(ctx context.Context, field graphql.CollectedField, obj *model.KubernetesNode) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KubernetesNode_capacity(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Capacity, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.KubernetesNodeResources)
+	fc.Result = res
+	return ec.marshalNKubernetesNodeResources2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐKubernetesNodeResources(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KubernetesNode_capacity(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KubernetesNode",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "cpu":
+				return ec.fieldContext_KubernetesNodeResources_cpu(ctx, field)
+			case "memory":
+				return ec.fieldContext_KubernetesNodeResources_memory(ctx, field)
+			case "storage":
+				return ec.fieldContext_KubernetesNodeResources_storage(ctx, field)
+			case "pods":
+				return ec.fieldContext_KubernetesNodeResources_pods(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type KubernetesNodeResources", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KubernetesNodeCondition_type(ctx context.Context, field graphql.CollectedField, obj *model.KubernetesNodeCondition) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KubernetesNodeCondition_type(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Type, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.KubernetesNodeConditionType)
+	fc.Result = res
+	return ec.marshalNKubernetesNodeConditionType2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐKubernetesNodeConditionType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KubernetesNodeCondition_type(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KubernetesNodeCondition",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type KubernetesNodeConditionType does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KubernetesNodeCondition_status(ctx context.Context, field graphql.CollectedField, obj *model.KubernetesNodeCondition) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KubernetesNodeCondition_status(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.ConditionStatus)
+	fc.Result = res
+	return ec.marshalNConditionStatus2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐConditionStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KubernetesNodeCondition_status(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KubernetesNodeCondition",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ConditionStatus does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KubernetesNodeCondition_reason(ctx context.Context, field graphql.CollectedField, obj *model.KubernetesNodeCondition) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KubernetesNodeCondition_reason(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Reason, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KubernetesNodeCondition_reason(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KubernetesNodeCondition",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KubernetesNodeCondition_message(ctx context.Context, field graphql.CollectedField, obj *model.KubernetesNodeCondition) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KubernetesNodeCondition_message(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Message, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KubernetesNodeCondition_message(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KubernetesNodeCondition",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KubernetesNodeCondition_lastHeartbeat(ctx context.Context, field graphql.CollectedField, obj *model.KubernetesNodeCondition) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KubernetesNodeCondition_lastHeartbeat(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastHeartbeat, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KubernetesNodeCondition_lastHeartbeat(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KubernetesNodeCondition",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KubernetesNodeCondition_lastTransition(ctx context.Context, field graphql.CollectedField, obj *model.KubernetesNodeCondition) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KubernetesNodeCondition_lastTransition(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastTransition, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KubernetesNodeCondition_lastTransition(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KubernetesNodeCondition",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KubernetesNodeResources_cpu(ctx context.Context, field graphql.CollectedField, obj *model.KubernetesNodeResources) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KubernetesNodeResources_cpu(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CPU, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KubernetesNodeResources_cpu(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KubernetesNodeResources",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KubernetesNodeResources_memory(ctx context.Context, field graphql.CollectedField, obj *model.KubernetesNodeResources) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KubernetesNodeResources_memory(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Memory, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KubernetesNodeResources_memory(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KubernetesNodeResources",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KubernetesNodeResources_storage(ctx context.Context, field graphql.CollectedField, obj *model.KubernetesNodeResources) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KubernetesNodeResources_storage(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Storage, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KubernetesNodeResources_storage(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KubernetesNodeResources",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KubernetesNodeResources_pods(ctx context.Context, field graphql.CollectedField, obj *model.KubernetesNodeResources) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KubernetesNodeResources_pods(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Pods, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KubernetesNodeResources_pods(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KubernetesNodeResources",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_tenantCreate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_tenantCreate(ctx, field)
 	if err != nil {
@@ -3681,6 +5001,8 @@ func (ec *executionContext) fieldContext_Mutation_environmentCreate(ctx context.
 				return ec.fieldContext_Environment_health(ctx, field)
 			case "releases":
 				return ec.fieldContext_Environment_releases(ctx, field)
+			case "nodes":
+				return ec.fieldContext_Environment_nodes(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -3756,6 +5078,8 @@ func (ec *executionContext) fieldContext_Mutation_environmentUpdate(ctx context.
 				return ec.fieldContext_Environment_health(ctx, field)
 			case "releases":
 				return ec.fieldContext_Environment_releases(ctx, field)
+			case "nodes":
+				return ec.fieldContext_Environment_nodes(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -4062,6 +5386,8 @@ func (ec *executionContext) fieldContext_Query_environment(ctx context.Context, 
 				return ec.fieldContext_Environment_health(ctx, field)
 			case "releases":
 				return ec.fieldContext_Environment_releases(ctx, field)
+			case "nodes":
+				return ec.fieldContext_Environment_nodes(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -4137,6 +5463,8 @@ func (ec *executionContext) fieldContext_Query_environmentByNames(ctx context.Co
 				return ec.fieldContext_Environment_health(ctx, field)
 			case "releases":
 				return ec.fieldContext_Environment_releases(ctx, field)
+			case "nodes":
+				return ec.fieldContext_Environment_nodes(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -4212,6 +5540,8 @@ func (ec *executionContext) fieldContext_Query_environments(ctx context.Context,
 				return ec.fieldContext_Environment_health(ctx, field)
 			case "releases":
 				return ec.fieldContext_Environment_releases(ctx, field)
+			case "nodes":
+				return ec.fieldContext_Environment_nodes(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -7847,6 +9177,26 @@ func (ec *executionContext) _Environment(ctx context.Context, sel ast.SelectionS
 				return innerFunc(ctx)
 
 			})
+		case "nodes":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Environment_nodes(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -8145,6 +9495,289 @@ func (ec *executionContext) _Health(ctx context.Context, sel ast.SelectionSet, o
 		case "reportedAt":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Health_reportedAt(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var kubernetesNodeImplementors = []string{"KubernetesNode"}
+
+func (ec *executionContext) _KubernetesNode(ctx context.Context, sel ast.SelectionSet, obj *model.KubernetesNode) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, kubernetesNodeImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("KubernetesNode")
+		case "name":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._KubernetesNode_name(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "phase":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._KubernetesNode_phase(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "kernelVersion":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._KubernetesNode_kernelVersion(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "osImage":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._KubernetesNode_osImage(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "containerRuntimeVersion":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._KubernetesNode_containerRuntimeVersion(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "kubeletVersion":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._KubernetesNode_kubeletVersion(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "kubeProxyVersion":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._KubernetesNode_kubeProxyVersion(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "operatingSystem":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._KubernetesNode_operatingSystem(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "architecture":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._KubernetesNode_architecture(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "conditions":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._KubernetesNode_conditions(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "allocatable":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._KubernetesNode_allocatable(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "capacity":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._KubernetesNode_capacity(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var kubernetesNodeConditionImplementors = []string{"KubernetesNodeCondition"}
+
+func (ec *executionContext) _KubernetesNodeCondition(ctx context.Context, sel ast.SelectionSet, obj *model.KubernetesNodeCondition) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, kubernetesNodeConditionImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("KubernetesNodeCondition")
+		case "type":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._KubernetesNodeCondition_type(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "status":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._KubernetesNodeCondition_status(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "reason":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._KubernetesNodeCondition_reason(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "message":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._KubernetesNodeCondition_message(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "lastHeartbeat":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._KubernetesNodeCondition_lastHeartbeat(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "lastTransition":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._KubernetesNodeCondition_lastTransition(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var kubernetesNodeResourcesImplementors = []string{"KubernetesNodeResources"}
+
+func (ec *executionContext) _KubernetesNodeResources(ctx context.Context, sel ast.SelectionSet, obj *model.KubernetesNodeResources) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, kubernetesNodeResourcesImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("KubernetesNodeResources")
+		case "cpu":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._KubernetesNodeResources_cpu(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "memory":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._KubernetesNodeResources_memory(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "storage":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._KubernetesNodeResources_storage(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "pods":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._KubernetesNodeResources_pods(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
@@ -9265,6 +10898,16 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
+func (ec *executionContext) unmarshalNConditionStatus2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐConditionStatus(ctx context.Context, v interface{}) (model.ConditionStatus, error) {
+	var res model.ConditionStatus
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNConditionStatus2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐConditionStatus(ctx context.Context, sel ast.SelectionSet, v model.ConditionStatus) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) unmarshalNConfigType2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐConfigType(ctx context.Context, v interface{}) (model.ConfigType, error) {
 	var res model.ConfigType
 	err := res.UnmarshalGQL(v)
@@ -9626,6 +11269,144 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNKubernetesNode2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐKubernetesNodeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.KubernetesNode) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNKubernetesNode2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐKubernetesNode(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNKubernetesNode2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐKubernetesNode(ctx context.Context, sel ast.SelectionSet, v *model.KubernetesNode) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._KubernetesNode(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNKubernetesNodeCondition2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐKubernetesNodeConditionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.KubernetesNodeCondition) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNKubernetesNodeCondition2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐKubernetesNodeCondition(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNKubernetesNodeCondition2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐKubernetesNodeCondition(ctx context.Context, sel ast.SelectionSet, v *model.KubernetesNodeCondition) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._KubernetesNodeCondition(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNKubernetesNodeConditionType2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐKubernetesNodeConditionType(ctx context.Context, v interface{}) (model.KubernetesNodeConditionType, error) {
+	var res model.KubernetesNodeConditionType
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNKubernetesNodeConditionType2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐKubernetesNodeConditionType(ctx context.Context, sel ast.SelectionSet, v model.KubernetesNodeConditionType) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalNKubernetesNodePhase2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐKubernetesNodePhase(ctx context.Context, v interface{}) (model.KubernetesNodePhase, error) {
+	var res model.KubernetesNodePhase
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNKubernetesNodePhase2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐKubernetesNodePhase(ctx context.Context, sel ast.SelectionSet, v model.KubernetesNodePhase) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) marshalNKubernetesNodeResources2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐKubernetesNodeResources(ctx context.Context, sel ast.SelectionSet, v *model.KubernetesNodeResources) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._KubernetesNodeResources(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNMap2map(ctx context.Context, v interface{}) (map[string]interface{}, error) {
