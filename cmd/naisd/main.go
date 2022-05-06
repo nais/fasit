@@ -16,6 +16,7 @@ import (
 	"github.com/nais/fasit/pkg/workers"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
 
@@ -66,6 +67,7 @@ func main() {
 	kubeConfig := local.RESTConfig()
 	var executor naisd.Exec = &naisd.MockExecutor{Logger: log.WithField("subsystem", "executor")}
 	helmClient := local.NewHelmClient()
+	k8sClient := local.NewKubernetesClient()
 	if cfg.Production {
 		executor = &naisd.Executor{}
 
@@ -74,6 +76,10 @@ func main() {
 			log.WithError(err).Fatal("failed to get kubeconfig")
 		}
 		helmClient = helm.New(kubeConfig, "nais-system", log.WithField("subsystem", "helm"))
+		k8sClient, err = kubernetes.NewForConfig(kubeConfig)
+		if err != nil {
+			log.WithError(err).Fatal("setting up k8s client")
+		}
 	}
 	receiver, err := naisd.NewDeployManager(deploySubscriber, statusPublisher, cfg.TenantName, cfg.Env, executor, kubeConfig, log.WithField("subsystem", "deploy"))
 	if err != nil {
@@ -83,8 +89,10 @@ func main() {
 	s := workers.NewScheduler(log.WithField("subsystem", "scheduler"))
 	helmListReporter := naisd.NewStatusReporter(cfg.TenantName, cfg.Env, helmClient, statusPublisher)
 	healthReporter := naisd.NewHealthReporter(cfg.TenantName, cfg.Env, cfg.Kind, statusPublisher)
+	kubernetesReporter := naisd.NewKubernetesReporter(cfg.TenantName, cfg.Env, k8sClient, statusPublisher)
 	s.Register("helm-list", helmListReporter, 15*time.Minute)
 	s.Register("health", healthReporter, 1*time.Minute)
+	s.Register("kubernetes", kubernetesReporter, 3*time.Minute)
 	s.Start(ctx)
 
 	log.Info("Receiver started")

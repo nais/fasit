@@ -33,13 +33,15 @@ type Repo interface {
 	EnvironmentCreate(ctx context.Context, t *model.EnvironmentCreate) (*model.Environment, error)
 	EnvironmentGet(ctx context.Context, id uuid.UUID) (*model.Environment, error)
 	EnvironmentIDByNames(ctx context.Context, tenantName, environmentName string) (uuid.UUID, error)
-	EnvironmentUpdate(ctx context.Context, environmentID uuid.UUID, p *model.EnvironmentUpdate) (*model.Environment, error)
 	EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]*model.Environment, error)
+	EnvironmentUpdate(ctx context.Context, environmentID uuid.UUID, p *model.EnvironmentUpdate) (*model.Environment, error)
 	FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *feature.Feature, enabled bool) (*model.FeatureState, error)
 	FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
 	HealthGet(ctx context.Context, environmentID uuid.UUID) (*model.Health, error)
 	HealthStatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Health) error
 	HelmValues(ctx context.Context, feature string, envID uuid.UUID, requiredFields []string) (map[string]any, error)
+	KubernetesNodesForEnv(ctx context.Context, envID uuid.UUID) ([]*model.KubernetesNode, error)
+	KubernetesNodeSync(ctx context.Context, envID uuid.UUID, kn *message.KubernetesNodes) error
 	Metrics() prometheus.Collector
 	ReleaseStatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Release) error
 	ReleaseStatusesGet(ctx context.Context, environmentID uuid.UUID) ([]*model.Release, error)

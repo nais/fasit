@@ -43,6 +43,10 @@ func (r *environmentResolver) Releases(ctx context.Context, obj *model.Environme
 	return r.Repo.ReleaseStatusesGet(ctx, obj.ID)
 }
 
+func (r *environmentResolver) Nodes(ctx context.Context, obj *model.Environment) ([]*model.KubernetesNode, error) {
+	return r.Repo.KubernetesNodesForEnv(ctx, obj.ID)
+}
+
 func (r *mutationResolver) EnvironmentCreate(ctx context.Context, environment model.EnvironmentCreate) (*model.Environment, error) {
 	return r.Repo.EnvironmentCreate(ctx, &environment)
 }
@@ -73,5 +77,7 @@ func (r *Resolver) Environment() graphgen.EnvironmentResolver { return &environm
 // Release returns graphgen.ReleaseResolver implementation.
 func (r *Resolver) Release() graphgen.ReleaseResolver { return &releaseResolver{r} }
 
-type environmentResolver struct{ *Resolver }
-type releaseResolver struct{ *Resolver }
+type (
+	environmentResolver struct{ *Resolver }
+	releaseResolver     struct{ *Resolver }
+)

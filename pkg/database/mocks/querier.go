@@ -404,6 +404,43 @@ func (_m *Querier) HealthStatusGet(ctx context.Context, environmentID uuid.UUID)
 	return r0, r1
 }
 
+// KubernetesNodeCreateOrUpdate provides a mock function with given fields: ctx, arg
+func (_m *Querier) KubernetesNodeCreateOrUpdate(ctx context.Context, arg gensql.KubernetesNodeCreateOrUpdateParams) error {
+	ret := _m.Called(ctx, arg)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.KubernetesNodeCreateOrUpdateParams) error); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// KubernetesNodeStatuses provides a mock function with given fields: ctx, environmentID
+func (_m *Querier) KubernetesNodeStatuses(ctx context.Context, environmentID uuid.UUID) ([]gensql.KubernetesNodeStatus, error) {
+	ret := _m.Called(ctx, environmentID)
+
+	var r0 []gensql.KubernetesNodeStatus
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) []gensql.KubernetesNodeStatus); ok {
+		r0 = rf(ctx, environmentID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gensql.KubernetesNodeStatus)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, environmentID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ReleaseStatusCreateOrUpdate provides a mock function with given fields: ctx, arg
 func (_m *Querier) ReleaseStatusCreateOrUpdate(ctx context.Context, arg gensql.ReleaseStatusCreateOrUpdateParams) (gensql.ReleaseStatus, error) {
 	ret := _m.Called(ctx, arg)

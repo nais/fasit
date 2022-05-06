@@ -26,6 +26,7 @@ type Environment {
   kind: EnvironmentKind!
   health: Health!
   releases: [Release!]!
+  nodes: [KubernetesNode!]!
 }
 
 """

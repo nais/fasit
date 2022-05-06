@@ -101,15 +101,23 @@ func (m *mockStorage) ReleaseStatusCreateOrUpdate(ctx context.Context, environme
 	m.releaseStatusCreateOrUpdate++
 	return nil
 }
+
 func (m *mockStorage) EnvironmentCreate(ctx context.Context, t *model.EnvironmentCreate) (*model.Environment, error) {
 	panic("not implemented")
 }
+
 func (m *mockStorage) TenantCreate(ctx context.Context, create *model.TenantCreate) (*model.Tenant, error) {
 	panic("not implemented")
 }
+
 func (m *mockStorage) TenantGetByName(ctx context.Context, name string) (*model.Tenant, error) {
 	panic("not implemented")
 }
+
 func (m *mockStorage) HealthStatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Health) error {
+	panic("not implemented")
+}
+
+func (m *mockStorage) KubernetesNodeSync(ctx context.Context, envID uuid.UUID, kn *message.KubernetesNodes) error {
 	panic("not implemented")
 }

@@ -20,6 +20,7 @@ const (
 	StatusTypeHelm
 	StatusTypeHelmReleases
 	StatusTypeHealth
+	StatusKubernetesNodes
 )
 
 type Helm struct {
@@ -49,3 +50,69 @@ type HelmRelease struct {
 	Created  time.Time
 	Releases []Release
 }
+
+type KubernetesNodes struct {
+	Nodes []KubernetesNode
+}
+
+type ConditionStatus string
+
+const (
+	ConditionTrue    ConditionStatus = "True"
+	ConditionFalse   ConditionStatus = "False"
+	ConditionUnknown ConditionStatus = "Unknown"
+)
+
+type KubernetesNodeConditionType string
+
+const (
+	// NodeReady means kubelet is healthy and ready to accept pods.
+	NodeReady KubernetesNodeConditionType = "Ready"
+	// NodeMemoryPressure means the kubelet is under pressure due to insufficient available memory.
+	NodeMemoryPressure KubernetesNodeConditionType = "MemoryPressure"
+	// NodeDiskPressure means the kubelet is under pressure due to insufficient available disk.
+	NodeDiskPressure KubernetesNodeConditionType = "DiskPressure"
+	// NodePIDPressure means the kubelet is under pressure due to insufficient available PID.
+	NodePIDPressure KubernetesNodeConditionType = "PIDPressure"
+	// NodeNetworkUnavailable means that network for the node is not correctly configured.
+	NodeNetworkUnavailable KubernetesNodeConditionType = "NetworkUnavailable"
+)
+
+type KubernetesNodeCondition struct {
+	Type           KubernetesNodeConditionType
+	Status         ConditionStatus
+	Reason         string
+	Message        string
+	LastHeartbeat  time.Time
+	LastTransition time.Time
+}
+
+type KubernetesNodeResources struct {
+	CPU     int64
+	Memory  int64
+	Storage int64
+	Pods    int64
+}
+
+type KubernetesNode struct {
+	Name                    string
+	Phase                   KubernetesNodePhase
+	KernelVersion           string
+	OSImage                 string
+	ContainerRuntimeVersion string
+	KubeletVersion          string
+	KubeProxyVersion        string
+	OperatingSystem         string
+	Architecture            string
+	Conditions              []KubernetesNodeCondition
+	Allocatable             KubernetesNodeResources
+	Capacity                KubernetesNodeResources
+}
+
+type KubernetesNodePhase string
+
+const (
+	NodePending    KubernetesNodePhase = "Pending"
+	NodeRunning    KubernetesNodePhase = "Running"
+	NodeTerminated KubernetesNodePhase = "Terminated"
+)

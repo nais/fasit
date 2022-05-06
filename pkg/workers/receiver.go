@@ -24,6 +24,7 @@ type ReceiverStore interface {
 	TenantCreate(ctx context.Context, t *model.TenantCreate) (*model.Tenant, error)
 	EnvironmentCreate(ctx context.Context, t *model.EnvironmentCreate) (*model.Environment, error)
 	HealthStatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Health) error
+	KubernetesNodeSync(ctx context.Context, envID uuid.UUID, kn *message.KubernetesNodes) error
 }
 
 type Receiver struct {
@@ -52,6 +53,8 @@ func (r *Receiver) handler(ctx context.Context, msg message.Status) error {
 		return r.releaseStatus(ctx, msg)
 	case message.StatusTypeHealth:
 		return r.healthStatus(ctx, msg)
+	case message.StatusKubernetesNodes:
+		return r.kubernetesNodes(ctx, msg)
 	}
 
 	return nil
@@ -111,6 +114,7 @@ func (r *Receiver) releaseStatus(ctx context.Context, msg message.Status) error 
 
 	return nil
 }
+
 func (r *Receiver) healthStatus(ctx context.Context, msg message.Status) error {
 	status := &message.Health{}
 	err := json.Unmarshal(msg.Data, status)
@@ -147,4 +151,26 @@ func (r *Receiver) healthStatus(ctx context.Context, msg message.Status) error {
 		environmentID = env.ID
 	}
 	return r.repo.HealthStatusCreateOrUpdate(ctx, environmentID, status)
+}
+
+func (r *Receiver) kubernetesNodes(ctx context.Context, msg message.Status) error {
+	status := &message.KubernetesNodes{}
+	err := json.Unmarshal(msg.Data, status)
+	if err != nil {
+		r.log.WithError(err).Errorf("invalid json")
+		return nil
+	}
+
+	environmentID, err := r.repo.EnvironmentIDByNames(ctx, msg.Tenant, msg.Environment)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			r.log.WithField("tenant", msg.Tenant).
+				WithField("environment", msg.Environment).
+				Warn("unknown tenant and/or environment")
+			return nil
+		}
+		return err
+	}
+
+	return r.repo.KubernetesNodeSync(ctx, environmentID, status)
 }

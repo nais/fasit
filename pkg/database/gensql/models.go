@@ -74,6 +74,24 @@ type HealthStatus struct {
 	ReportedAt    time.Time
 }
 
+type KubernetesNodeStatus struct {
+	EnvironmentID           uuid.UUID
+	Name                    string
+	Phase                   string
+	KernelVersion           string
+	OsImage                 string
+	ContainerRuntimeVersion string
+	KubeletVersion          string
+	KubeProxyVersion        string
+	OperatingSystem         string
+	Architecture            string
+	Conditions              json.RawMessage
+	Allocatable             json.RawMessage
+	Capacity                json.RawMessage
+	Created                 time.Time
+	LastModified            time.Time
+}
+
 type ReleaseStatus struct {
 	EnvironmentID uuid.UUID
 	Feature       string
