@@ -1,6 +1,8 @@
 name: Build and deploy fasit-frontend
 on:
   push:
+    branches:
+      - main
     paths:
       - ".github/workflows/build_and_push_image_fasit-frontend.yaml"
       - ".github/actions/helm_install/**"
