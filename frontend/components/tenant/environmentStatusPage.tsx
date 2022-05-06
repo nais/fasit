@@ -27,6 +27,25 @@ const EnvironmentStatusPage = ({environmentID}: EnvironmentStatusPageProps) => {
     return (
         <EnvironmentStatus>
             <ReportStatus reportedAt={report.health.reportedAt}/>
+            <h3>Kubernetes nodes</h3>
+            <Table size={"small"}>
+                <Table.Header>
+                    <Table.Row>
+                        <Table.HeaderCell>name</Table.HeaderCell>
+                        <Table.HeaderCell>status</Table.HeaderCell>
+                        <Table.HeaderCell>version</Table.HeaderCell>
+                    </Table.Row>
+                </Table.Header>
+                <Table.Body>
+                    {report.nodes.map((r) => (
+                        <Table.Row key={r.name}>
+                            <Table.DataCell>{r.name}</Table.DataCell>
+                            <Table.DataCell>{r.phase}</Table.DataCell>
+                            <Table.DataCell>{r.kubeletVersion}</Table.DataCell>
+                        </Table.Row>))}
+
+                </Table.Body>
+            </Table>
             <h3>Helm installs</h3>
             <Table size={"small"}>
                 <Table.Header>

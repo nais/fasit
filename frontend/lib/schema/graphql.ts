@@ -25,6 +25,12 @@ export type Scalars = {
   Time: any
 }
 
+export enum ConditionStatus {
+  False = 'FALSE',
+  True = 'TRUE',
+  Unknown = 'UNKNOWN',
+}
+
 export enum ConfigType {
   Bool = 'BOOL',
   Int = 'INT',
@@ -66,6 +72,7 @@ export type Environment = {
   kind: EnvironmentKind
   lastModified: Scalars['Time']
   name: Scalars['String']
+  nodes: Array<KubernetesNode>
   releases: Array<Release>
 }
 
@@ -123,6 +130,54 @@ export type GlobalConfiguration = Configuration & {
 export type Health = {
   __typename?: 'Health'
   reportedAt: Scalars['Time']
+}
+
+export type KubernetesNode = {
+  __typename?: 'KubernetesNode'
+  allocatable: KubernetesNodeResources
+  architecture: Scalars['String']
+  capacity: KubernetesNodeResources
+  conditions: Array<KubernetesNodeCondition>
+  containerRuntimeVersion: Scalars['String']
+  kernelVersion: Scalars['String']
+  kubeProxyVersion: Scalars['String']
+  kubeletVersion: Scalars['String']
+  name: Scalars['String']
+  operatingSystem: Scalars['String']
+  osImage: Scalars['String']
+  phase: KubernetesNodePhase
+}
+
+export type KubernetesNodeCondition = {
+  __typename?: 'KubernetesNodeCondition'
+  lastHeartbeat: Scalars['Time']
+  lastTransition: Scalars['Time']
+  message: Scalars['String']
+  reason: Scalars['String']
+  status: ConditionStatus
+  type: KubernetesNodeConditionType
+}
+
+export enum KubernetesNodeConditionType {
+  DiskPressure = 'DISK_PRESSURE',
+  MemoryPressure = 'MEMORY_PRESSURE',
+  NetworkUnavailable = 'NETWORK_UNAVAILABLE',
+  PidPressure = 'PID_PRESSURE',
+  Ready = 'READY',
+}
+
+export enum KubernetesNodePhase {
+  Pending = 'PENDING',
+  Running = 'RUNNING',
+  Terminated = 'TERMINATED',
+}
+
+export type KubernetesNodeResources = {
+  __typename?: 'KubernetesNodeResources'
+  cpu: Scalars['Int']
+  memory: Scalars['Int']
+  pods: Scalars['Int']
+  storage: Scalars['Int']
 }
 
 export type Mutation = {
@@ -485,6 +540,41 @@ export type EnvironmentGetReportQuery = {
       lastDeployed: any
       version: string
       feature: { __typename?: 'Feature'; name: string }
+    }>
+    nodes: Array<{
+      __typename?: 'KubernetesNode'
+      name: string
+      phase: KubernetesNodePhase
+      kernelVersion: string
+      osImage: string
+      containerRuntimeVersion: string
+      kubeletVersion: string
+      kubeProxyVersion: string
+      operatingSystem: string
+      architecture: string
+      conditions: Array<{
+        __typename?: 'KubernetesNodeCondition'
+        type: KubernetesNodeConditionType
+        status: ConditionStatus
+        reason: string
+        message: string
+        lastHeartbeat: any
+        lastTransition: any
+      }>
+      allocatable: {
+        __typename?: 'KubernetesNodeResources'
+        cpu: number
+        memory: number
+        pods: number
+        storage: number
+      }
+      capacity: {
+        __typename?: 'KubernetesNodeResources'
+        cpu: number
+        memory: number
+        pods: number
+        storage: number
+      }
     }>
   }
 }
@@ -1153,6 +1243,37 @@ export const EnvironmentGetReportDocument = gql`
         status
         lastDeployed
         version
+      }
+      nodes {
+        name
+        phase
+        kernelVersion
+        osImage
+        containerRuntimeVersion
+        kubeletVersion
+        kubeProxyVersion
+        operatingSystem
+        architecture
+        conditions {
+          type
+          status
+          reason
+          message
+          lastHeartbeat
+          lastTransition
+        }
+        allocatable {
+          cpu
+          memory
+          pods
+          storage
+        }
+        capacity {
+          cpu
+          memory
+          pods
+          storage
+        }
       }
     }
   }

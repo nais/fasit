@@ -71,6 +71,37 @@ export const ENVIRONMENT_GET_REPORT = gql`
         lastDeployed
         version
       }
+      nodes {
+        name
+        phase
+        kernelVersion
+        osImage
+        containerRuntimeVersion
+        kubeletVersion
+        kubeProxyVersion
+        operatingSystem
+        architecture
+        conditions {
+          type
+          status
+          reason
+          message
+          lastHeartbeat
+          lastTransition
+        }
+        allocatable {
+          cpu
+          memory
+          pods
+          storage
+        }
+        capacity {
+          cpu
+          memory
+          pods
+          storage
+        }
+      }
     }
   }
 `
