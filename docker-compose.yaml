@@ -23,6 +23,6 @@ services:
       - emulators
       - pubsub
       - start
-      - --host-port=0.0.0.0:8085
+      - --host-port=0.0.0.0:8086
     ports:
-      - 8085:8085
+      - 8086:8085

@@ -20,7 +20,7 @@ var (
 )
 
 func main() {
-	if err := os.Setenv("PUBSUB_EMULATOR_HOST", "localhost:8085"); err != nil {
+	if err := os.Setenv("PUBSUB_EMULATOR_HOST", "localhost:8086"); err != nil {
 		log.Fatal(err)
 	}
 
