@@ -28,7 +28,6 @@ func NewKubernetesReporter(tenant, env string, client kubernetes.Interface, pub 
 }
 
 func (k *KubernetesReporter) Run(ctx context.Context) error {
-	fmt.Println("Running k8s reporter")
 	return k.reportNodes(ctx)
 }
 
