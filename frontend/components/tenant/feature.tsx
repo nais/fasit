@@ -28,12 +28,13 @@ const Feature = ({env, featureName}: FeatureProps) => {
     const features = useFeaturesQuery({variables: {kind: env.kind}})
     const {configs, featureObject} = extractConfig(features, configQuery, featureName);
 
+
     return (
         <FeatureContainer>
             <FeatureStatus featureName={featureName} configs={configs} env={env} setShowVerify={setShowVerify}/>
             <FeatureConfig envID={env.id} configs={configs} featureObject={featureObject}/>
             <EnableFeature open={showVerify} onClose={setShowVerify} feature={featureName} envID={env.id}
-                           enabled={env.featureStates.find((f) => f.feature.name === featureName).enabled}/>
+                           enabled={env.featureStates.find((f) => f.feature.name === featureName)?.enabled ||false}/>
         </FeatureContainer>
     )
 }

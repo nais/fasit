@@ -1,10 +1,6 @@
 import * as React from 'react'
 import styled from 'styled-components'
-import {FeaturesQuery, useConfigurationQuery} from '../../lib/schema/graphql'
-import LoaderSpinner from '../lib/spinner'
-import ErrorMessage from '../lib/error'
-import {Success} from "@navikt/ds-icons";
-import {navGronn} from "../../styles/constants";
+import {FeaturesQuery} from '../../lib/schema/graphql'
 import ConfigPage from "./configPage";
 
 

@@ -65,7 +65,7 @@ const FeatureStatus = ({configs, env, featureName, setShowVerify}: FeatureProps)
     const requiredConfigs = Object.keys(configs).filter((c) => configs[c].required).sort()
     const status = data?.featureStatus
     const featureState = env.featureStates.find((f) => f.feature.name === featureName)
-    const feature = featureState.feature
+    const feature = featureState!.feature
 
     const missingRequirements = requiredConfigs.filter((r) => !configs[r].value)
     const missingDependencies = feature.dependsOn.filter((dependency) => !env.featureStates.find((fs) => fs.feature.name === dependency)?.enabled )
@@ -100,7 +100,7 @@ const FeatureStatus = ({configs, env, featureName, setShowVerify}: FeatureProps)
                 <EnableFeatureBox>
                     <div>Enabled</div>
                     <Switch disabled={missingDependencies.length > 0 || missingRequirements.length > 0} size="medium"
-                            checked={featureState.enabled}
+                            checked={featureState?.enabled || false}
                             onChange={() => setShowVerify(true)}>{''}</Switch>
                     {missingDependencies.length > 0 && "Missing dependencies"}
                 </EnableFeatureBox>
