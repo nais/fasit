@@ -7,7 +7,6 @@ import IconBox from '../components/lib/icons/iconBox'
 import Link from 'next/link'
 import FeatureLogo from '../components/lib/icons/featureLogo'
 import GetLogo from '../components/lib/getLogo'
-import { Add } from '@navikt/ds-icons'
 
 const Links = styled.div`
     display: flex;
@@ -71,14 +70,6 @@ const Home: NextPage = () => {
                   </CategoryCard>
                 </a>
               </Link>))}
-            <Link href={`/tenant/new`}>
-              <a>
-                <CategoryCard>
-                  <IconBox size={50}><Add width={'40px'} height={'40px'} color={"#222"}/></IconBox>
-                  <CategoryCardTitle>new tenant</CategoryCardTitle>
-                </CategoryCard>
-              </a>
-            </Link>
             <Link href={"/features/"}>
               <a>
                 <CategoryCard>
@@ -88,14 +79,6 @@ const Home: NextPage = () => {
               </a>
             </Link>
           </Links> : <div><p>No tenants, compadre!</p><Links>
-              <Link href={`/tenant/new`}>
-                <a>
-                  <CategoryCard>
-                    <IconBox size={50}><Add width={'40px'} height={'40px'} color={"#222"}/></IconBox>
-                    <CategoryCardTitle>new tenant</CategoryCardTitle>
-                  </CategoryCard>
-                </a>
-              </Link>
               <Link href={"/features/"}>
                 <a>
                   <CategoryCard>

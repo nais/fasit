@@ -49,6 +49,7 @@ type ResolverRoot interface {
 	Query() QueryResolver
 	Release() ReleaseResolver
 	Subscription() SubscriptionResolver
+	Tenant() TenantResolver
 }
 
 type DirectiveRoot struct {
@@ -194,6 +195,7 @@ type ComplexityRoot struct {
 	Tenant struct {
 		Created      func(childComplexity int) int
 		Description  func(childComplexity int) int
+		Environments func(childComplexity int) int
 		ID           func(childComplexity int) int
 		LastModified func(childComplexity int) int
 		Name         func(childComplexity int) int
@@ -243,6 +245,9 @@ type ReleaseResolver interface {
 }
 type SubscriptionResolver interface {
 	Status(ctx context.Context, envID uuid.UUID, feature string) (<-chan *model.Status, error)
+}
+type TenantResolver interface {
+	Environments(ctx context.Context, obj *model.Tenant) ([]*model.Environment, error)
 }
 
 type executableSchema struct {
@@ -1017,6 +1022,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Tenant.Description(childComplexity), true
 
+	case "Tenant.environments":
+		if e.complexity.Tenant.Environments == nil {
+			break
+		}
+
+		return e.complexity.Tenant.Environments(childComplexity), true
+
 	case "Tenant.id":
 		if e.complexity.Tenant.ID == nil {
 			break
@@ -1380,6 +1392,7 @@ extend type Query {
     id: ID!
     name: String!
     description: String
+    environments: [Environment!]!
     created: Time!
     lastModified: Time!
 }
@@ -4696,6 +4709,8 @@ func (ec *executionContext) fieldContext_Mutation_tenantCreate(ctx context.Conte
 				return ec.fieldContext_Tenant_name(ctx, field)
 			case "description":
 				return ec.fieldContext_Tenant_description(ctx, field)
+			case "environments":
+				return ec.fieldContext_Tenant_environments(ctx, field)
 			case "created":
 				return ec.fieldContext_Tenant_created(ctx, field)
 			case "lastModified":
@@ -5147,6 +5162,8 @@ func (ec *executionContext) fieldContext_Query_tenants(ctx context.Context, fiel
 				return ec.fieldContext_Tenant_name(ctx, field)
 			case "description":
 				return ec.fieldContext_Tenant_description(ctx, field)
+			case "environments":
+				return ec.fieldContext_Tenant_environments(ctx, field)
 			case "created":
 				return ec.fieldContext_Tenant_created(ctx, field)
 			case "lastModified":
@@ -5745,6 +5762,8 @@ func (ec *executionContext) fieldContext_Query_tenant(ctx context.Context, field
 				return ec.fieldContext_Tenant_name(ctx, field)
 			case "description":
 				return ec.fieldContext_Tenant_description(ctx, field)
+			case "environments":
+				return ec.fieldContext_Tenant_environments(ctx, field)
 			case "created":
 				return ec.fieldContext_Tenant_created(ctx, field)
 			case "lastModified":
@@ -6781,6 +6800,72 @@ func (ec *executionContext) fieldContext_Tenant_description(ctx context.Context,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Tenant_environments(ctx context.Context, field graphql.CollectedField, obj *model.Tenant) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Tenant_environments(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Tenant().Environments(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Environment)
+	fc.Result = res
+	return ec.marshalNEnvironment2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Tenant_environments(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Tenant",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Environment_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Environment_name(ctx, field)
+			case "description":
+				return ec.fieldContext_Environment_description(ctx, field)
+			case "featureStates":
+				return ec.fieldContext_Environment_featureStates(ctx, field)
+			case "created":
+				return ec.fieldContext_Environment_created(ctx, field)
+			case "lastModified":
+				return ec.fieldContext_Environment_lastModified(ctx, field)
+			case "kind":
+				return ec.fieldContext_Environment_kind(ctx, field)
+			case "health":
+				return ec.fieldContext_Environment_health(ctx, field)
+			case "releases":
+				return ec.fieldContext_Environment_releases(ctx, field)
+			case "nodes":
+				return ec.fieldContext_Environment_nodes(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
 	}
 	return fc, nil
@@ -10339,7 +10424,7 @@ func (ec *executionContext) _Tenant(ctx context.Context, sel ast.SelectionSet, o
 			out.Values[i] = innerFunc(ctx)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "name":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -10349,7 +10434,7 @@ func (ec *executionContext) _Tenant(ctx context.Context, sel ast.SelectionSet, o
 			out.Values[i] = innerFunc(ctx)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "description":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -10358,6 +10443,26 @@ func (ec *executionContext) _Tenant(ctx context.Context, sel ast.SelectionSet, o
 
 			out.Values[i] = innerFunc(ctx)
 
+		case "environments":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Tenant_environments(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		case "created":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Tenant_created(ctx, field, obj)
@@ -10366,7 +10471,7 @@ func (ec *executionContext) _Tenant(ctx context.Context, sel ast.SelectionSet, o
 			out.Values[i] = innerFunc(ctx)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "lastModified":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -10376,7 +10481,7 @@ func (ec *executionContext) _Tenant(ctx context.Context, sel ast.SelectionSet, o
 			out.Values[i] = innerFunc(ctx)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))

@@ -145,7 +145,6 @@ export type KubernetesNode = {
   name: Scalars['String']
   operatingSystem: Scalars['String']
   osImage: Scalars['String']
-  phase: KubernetesNodePhase
 }
 
 export type KubernetesNodeCondition = {
@@ -164,12 +163,6 @@ export enum KubernetesNodeConditionType {
   NetworkUnavailable = 'NETWORK_UNAVAILABLE',
   PidPressure = 'PID_PRESSURE',
   Ready = 'READY',
-}
-
-export enum KubernetesNodePhase {
-  Pending = 'PENDING',
-  Running = 'RUNNING',
-  Terminated = 'TERMINATED',
 }
 
 export type KubernetesNodeResources = {
@@ -336,6 +329,7 @@ export type Tenant = {
   __typename?: 'Tenant'
   created: Scalars['Time']
   description?: Maybe<Scalars['String']>
+  environments: Array<Environment>
   id: Scalars['ID']
   lastModified: Scalars['Time']
   name: Scalars['String']
@@ -444,18 +438,6 @@ export type ConfigurationUpdateMutation = {
   configurationUpdate:
     | { __typename?: 'EnvConfiguration'; id: string; key: string }
     | { __typename?: 'GlobalConfiguration'; id: string; key: string }
-}
-
-export type EnvironmentCreateMutationVariables = Exact<{
-  name: Scalars['String']
-  description?: InputMaybe<Scalars['String']>
-  tenantID: Scalars['ID']
-  kind: EnvironmentKind
-}>
-
-export type EnvironmentCreateMutation = {
-  __typename?: 'Mutation'
-  environmentCreate: { __typename?: 'Environment'; id: string }
 }
 
 export type EnvironmentGetByNamesQueryVariables = Exact<{
@@ -622,16 +604,6 @@ export type FeatureStatusQuery = {
   }
 }
 
-export type TenantCreateMutationVariables = Exact<{
-  name: Scalars['String']
-  description?: InputMaybe<Scalars['String']>
-}>
-
-export type TenantCreateMutation = {
-  __typename?: 'Mutation'
-  tenantCreate: { __typename?: 'Tenant'; id: string }
-}
-
 export type TenantGetQueryVariables = Exact<{
   id: Scalars['ID']
 }>
@@ -661,6 +633,11 @@ export type TenantGetByNameQuery = {
     description?: string | null
     created: any
     lastModified: any
+    environments: Array<{
+      __typename?: 'Environment'
+      id: string
+      name: string
+    }>
   }
 }
 
@@ -981,71 +958,6 @@ export type ConfigurationUpdateMutationResult =
 export type ConfigurationUpdateMutationOptions = Apollo.BaseMutationOptions<
   ConfigurationUpdateMutation,
   ConfigurationUpdateMutationVariables
->
-export const EnvironmentCreateDocument = gql`
-  mutation environmentCreate(
-    $name: String!
-    $description: String
-    $tenantID: ID!
-    $kind: EnvironmentKind!
-  ) {
-    environmentCreate(
-      environment: {
-        name: $name
-        description: $description
-        tenantID: $tenantID
-        kind: $kind
-      }
-    ) {
-      id
-    }
-  }
-`
-export type EnvironmentCreateMutationFn = Apollo.MutationFunction<
-  EnvironmentCreateMutation,
-  EnvironmentCreateMutationVariables
->
-
-/**
- * __useEnvironmentCreateMutation__
- *
- * To run a mutation, you first call `useEnvironmentCreateMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useEnvironmentCreateMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [environmentCreateMutation, { data, loading, error }] = useEnvironmentCreateMutation({
- *   variables: {
- *      name: // value for 'name'
- *      description: // value for 'description'
- *      tenantID: // value for 'tenantID'
- *      kind: // value for 'kind'
- *   },
- * });
- */
-export function useEnvironmentCreateMutation(
-  baseOptions?: Apollo.MutationHookOptions<
-    EnvironmentCreateMutation,
-    EnvironmentCreateMutationVariables
-  >,
-) {
-  const options = { ...defaultOptions, ...baseOptions }
-  return Apollo.useMutation<
-    EnvironmentCreateMutation,
-    EnvironmentCreateMutationVariables
-  >(EnvironmentCreateDocument, options)
-}
-export type EnvironmentCreateMutationHookResult = ReturnType<
-  typeof useEnvironmentCreateMutation
->
-export type EnvironmentCreateMutationResult =
-  Apollo.MutationResult<EnvironmentCreateMutation>
-export type EnvironmentCreateMutationOptions = Apollo.BaseMutationOptions<
-  EnvironmentCreateMutation,
-  EnvironmentCreateMutationVariables
 >
 export const EnvironmentGetByNamesDocument = gql`
   query environmentGetByNames($tenantName: String!, $environmentName: String!) {
@@ -1572,57 +1484,6 @@ export type FeatureStatusQueryResult = Apollo.QueryResult<
   FeatureStatusQuery,
   FeatureStatusQueryVariables
 >
-export const TenantCreateDocument = gql`
-  mutation tenantCreate($name: String!, $description: String) {
-    tenantCreate(tenant: { name: $name, description: $description }) {
-      id
-    }
-  }
-`
-export type TenantCreateMutationFn = Apollo.MutationFunction<
-  TenantCreateMutation,
-  TenantCreateMutationVariables
->
-
-/**
- * __useTenantCreateMutation__
- *
- * To run a mutation, you first call `useTenantCreateMutation` within a React component and pass it any options that fit your needs.
- * When your component renders, `useTenantCreateMutation` returns a tuple that includes:
- * - A mutate function that you can call at any time to execute the mutation
- * - An object with fields that represent the current status of the mutation's execution
- *
- * @param baseOptions options that will be passed into the mutation, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options-2;
- *
- * @example
- * const [tenantCreateMutation, { data, loading, error }] = useTenantCreateMutation({
- *   variables: {
- *      name: // value for 'name'
- *      description: // value for 'description'
- *   },
- * });
- */
-export function useTenantCreateMutation(
-  baseOptions?: Apollo.MutationHookOptions<
-    TenantCreateMutation,
-    TenantCreateMutationVariables
-  >,
-) {
-  const options = { ...defaultOptions, ...baseOptions }
-  return Apollo.useMutation<
-    TenantCreateMutation,
-    TenantCreateMutationVariables
-  >(TenantCreateDocument, options)
-}
-export type TenantCreateMutationHookResult = ReturnType<
-  typeof useTenantCreateMutation
->
-export type TenantCreateMutationResult =
-  Apollo.MutationResult<TenantCreateMutation>
-export type TenantCreateMutationOptions = Apollo.BaseMutationOptions<
-  TenantCreateMutation,
-  TenantCreateMutationVariables
->
 export const TenantGetDocument = gql`
   query TenantGet($id: ID!) {
     tenant(id: $id) {
@@ -1686,6 +1547,10 @@ export const TenantGetByNameDocument = gql`
       id
       name
       description
+      environments {
+        id
+        name
+      }
       created
       lastModified
     }

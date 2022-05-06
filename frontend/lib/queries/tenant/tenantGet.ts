@@ -17,6 +17,10 @@ export const TENANT_GET_BY_NAME = gql`
       id
       name
       description
+      environments {
+        id
+        name
+      }
       created
       lastModified
     }

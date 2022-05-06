@@ -2,6 +2,7 @@ type Tenant {
     id: ID!
     name: String!
     description: String
+    environments: [Environment!]!
     created: Time!
     lastModified: Time!
 }

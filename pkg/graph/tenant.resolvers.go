@@ -30,11 +30,19 @@ func (r *queryResolver) Tenant(ctx context.Context, id *uuid.UUID, slug *string)
 	return nil, fmt.Errorf("either ID or slug must be specified")
 }
 
+func (r *tenantResolver) Environments(ctx context.Context, obj *model.Tenant) ([]*model.Environment, error) {
+	return r.Repo.EnvironmentsGet(ctx, obj.ID)
+}
+
 // Mutation returns graphgen.MutationResolver implementation.
 func (r *Resolver) Mutation() graphgen.MutationResolver { return &mutationResolver{r} }
 
 // Query returns graphgen.QueryResolver implementation.
 func (r *Resolver) Query() graphgen.QueryResolver { return &queryResolver{r} }
 
+// Tenant returns graphgen.TenantResolver implementation.
+func (r *Resolver) Tenant() graphgen.TenantResolver { return &tenantResolver{r} }
+
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+type tenantResolver struct{ *Resolver }

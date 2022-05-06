@@ -4,7 +4,6 @@ package model
 
 import (
 	"encoding/json"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -32,14 +31,6 @@ type Feature struct {
 	DependsOn        []string          `json:"dependsOn"`
 	Config           json.RawMessage   `json:"config"`
 	EnvironmentKinds []EnvironmentKind `json:"environmentKinds"`
-}
-
-type Tenant struct {
-	ID           uuid.UUID `json:"id"`
-	Name         string    `json:"name"`
-	Description  *string   `json:"description"`
-	Created      time.Time `json:"created"`
-	LastModified time.Time `json:"lastModified"`
 }
 
 type TenantCreate struct {
