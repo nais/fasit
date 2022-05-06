@@ -4,7 +4,7 @@ import {useTenantGetByNameQuery} from '../../../lib/schema/graphql'
 import ErrorMessage from '../../../components/lib/error'
 import LoaderSpinner from '../../../components/lib/spinner'
 import Environment from '../../../components/tenant/environment'
-import {Main, MenuItem, MenuItems, MenuSeparator, PageContainer, SideMenu} from '../../../components/lib/PageLayout'
+import {Main, MenuItem, MenuItems, PageContainer, SideMenu} from '../../../components/lib/PageLayout'
 import BreadCrumb from "../../../components/lib/breadcrumb";
 
 

@@ -1,3 +1,5 @@
+// noinspection JSUnusedGlobalSymbols
+
 import gql from 'graphql-tag'
 
 export const ENVIRONMENT_GET_BY_NAMES = gql`

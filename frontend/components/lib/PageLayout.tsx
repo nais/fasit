@@ -19,10 +19,7 @@ export const Main = styled.div`
   flex-grow: 1;
   > div > h1 {margin-top: 0px;}
 `
-export const MenuSeparator = styled.div`
-  border-bottom: 1px solid #c0c0c0;
-  margin: 10px 0;
-`
+
 export const MenuItems = styled.div`
   display: flex;
   flex-direction: column;

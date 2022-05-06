@@ -1,5 +1,4 @@
 import * as React from 'react'
-import styled from 'styled-components'
 import humanizeDate from "../lib/humanizeDate";
 import {differenceInMinutes, parseISO} from "date-fns";
 import {navGronn, navOransje, navRod} from "../../styles/constants";

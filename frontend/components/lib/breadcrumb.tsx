@@ -4,8 +4,8 @@ import {Home} from "@navikt/ds-icons";
 import Link from "next/link";
 import {navRod} from "../../styles/constants";
 
-const BreadCrumbItem = styled(Link)`
-`
+styled(Link)`
+`;
 const BreadCrumbBox = styled.div`
 display: flex;
 a {

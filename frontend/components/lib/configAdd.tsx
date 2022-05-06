@@ -1,11 +1,12 @@
 import * as React from 'react'
-import {Dispatch, SetStateAction, useEffect, useState} from 'react'
+import {Dispatch, FormEvent, SetStateAction, useEffect, useState} from 'react'
 import {Box, Modal} from '@mui/material'
 import {ConfigType, FeaturesQuery, useConfigurationCreateMutation} from '../../lib/schema/graphql'
 import {Button, Switch, TextField} from '@navikt/ds-react'
 import {useForm} from 'react-hook-form'
 import KeywordsInput from './StringArrayInput'
 import {Config} from "./configRows";
+import ErrorMessage from "./error";
 
 const style = {
     position: 'absolute' as 'absolute',
@@ -86,7 +87,7 @@ const ConfigAdd = ({conf, envID, globalConfig, feature, open, showOpen}: ConfigA
 
 
 
-    const submit = async (e: any, type: string) => {
+    const submit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault()
 
         const variables: Variables = {
@@ -123,8 +124,9 @@ const ConfigAdd = ({conf, envID, globalConfig, feature, open, showOpen}: ConfigA
             <Box sx={style}>
                 <h1>{conf.feature}</h1>
                 <h3>{conf.key} - {conf.type}</h3>
+                { backendError && <ErrorMessage error={backendError}/>}
 
-                <form onSubmit={(e) => submit(e, featureConfig.type)}>
+                <form onSubmit={(e) => submit(e)}>
                     {featureConfig && inputType(featureConfig.type)}
                     <TextField label={'Comment'} value={description} onChange={(e) => setDescription(e.target.value)}/>
                     <Button style={{marginTop: "10px"}}>Submit</Button>

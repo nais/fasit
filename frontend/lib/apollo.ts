@@ -99,13 +99,7 @@ export const initializeApollo = (initialState: NormalizedCacheObject | null = nu
     return _apolloClient
 }
 
-export const addApolloState = (client: ApolloClient<NormalizedCacheObject>, pageProps: any) => {
-    if (pageProps?.props) {
-        pageProps.props[APOLLO_STATE_PROP_NAME] = client.cache.extract();
-    }
 
-    return pageProps;
-}
 
 export const useApollo = (pageProps: any) => {
     const state = pageProps[APOLLO_STATE_PROP_NAME];
