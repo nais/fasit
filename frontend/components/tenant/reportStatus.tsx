@@ -4,23 +4,12 @@ import humanizeDate from "../lib/humanizeDate";
 import {differenceInMinutes, parseISO} from "date-fns";
 import {navGronn, navOransje, navRod} from "../../styles/constants";
 import {useEffect, useState} from "react";
+import StatusCircle from "../lib/statusCircle";
 
-interface ReportCircleProps {
-    color: string
-}
 
-const ReportCircle = styled.span<ReportCircleProps>`
-  width: 0.75em;
-  height: 0.75em;
-  border-radius: 50%;
-  display: inline-block;
-  vertical-align: middle;
-  margin-left: 5px;
-  background-color: ${(props) => props.color};
-`
 const reportStatus = (date: string) => {
     const distance = differenceInMinutes(Date.now(), parseISO(date))
-    return <ReportCircle color={distance > 4 ? navRod : distance > 1 ? navOransje : navGronn}/>
+    return <StatusCircle color={distance > 4 ? navRod : distance > 1 ? navOransje : navGronn}/>
 }
 
 interface NaisdProps {

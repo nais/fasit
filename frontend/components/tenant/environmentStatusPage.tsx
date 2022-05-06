@@ -1,11 +1,13 @@
 import * as React from 'react'
 import styled from 'styled-components'
-import {useEnvironmentGetReportQuery} from '../../lib/schema/graphql'
+import {ConditionStatus, KubernetesNodeConditionType, useEnvironmentGetReportQuery} from '../../lib/schema/graphql'
 import ErrorMessage from "../lib/error";
 import LoaderSpinner from "../lib/spinner";
 import humanizeDate from "../lib/humanizeDate";
 import {Table} from "@navikt/ds-react";
 import ReportStatus from "./reportStatus";
+import StatusCircle from "../lib/statusCircle";
+import {navGronn, navRod} from "../../styles/constants";
 
 
 const EnvironmentStatus = styled.div`
@@ -40,7 +42,11 @@ const EnvironmentStatusPage = ({environmentID}: EnvironmentStatusPageProps) => {
                     {report.nodes.map((r) => (
                         <Table.Row key={r.name}>
                             <Table.DataCell>{r.name}</Table.DataCell>
-                            <Table.DataCell>{r.phase}</Table.DataCell>
+                            <Table.DataCell>{
+                                r.conditions.find((c) => {
+                                    return c.type === KubernetesNodeConditionType.Ready
+                                })?.status === ConditionStatus.True ? <><StatusCircle color={navGronn}/> Ready </> : <><StatusCircle color={navRod}/> NotReady </>
+                            }</Table.DataCell>
                             <Table.DataCell>{r.kubeletVersion}</Table.DataCell>
                         </Table.Row>))}
 
