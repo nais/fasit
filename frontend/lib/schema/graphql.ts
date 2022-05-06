@@ -544,37 +544,12 @@ export type EnvironmentGetReportQuery = {
     nodes: Array<{
       __typename?: 'KubernetesNode'
       name: string
-      phase: KubernetesNodePhase
-      kernelVersion: string
-      osImage: string
-      containerRuntimeVersion: string
       kubeletVersion: string
-      kubeProxyVersion: string
-      operatingSystem: string
-      architecture: string
       conditions: Array<{
         __typename?: 'KubernetesNodeCondition'
         type: KubernetesNodeConditionType
         status: ConditionStatus
-        reason: string
-        message: string
-        lastHeartbeat: any
-        lastTransition: any
       }>
-      allocatable: {
-        __typename?: 'KubernetesNodeResources'
-        cpu: number
-        memory: number
-        pods: number
-        storage: number
-      }
-      capacity: {
-        __typename?: 'KubernetesNodeResources'
-        cpu: number
-        memory: number
-        pods: number
-        storage: number
-      }
     }>
   }
 }
@@ -1246,33 +1221,10 @@ export const EnvironmentGetReportDocument = gql`
       }
       nodes {
         name
-        phase
-        kernelVersion
-        osImage
-        containerRuntimeVersion
         kubeletVersion
-        kubeProxyVersion
-        operatingSystem
-        architecture
         conditions {
           type
           status
-          reason
-          message
-          lastHeartbeat
-          lastTransition
-        }
-        allocatable {
-          cpu
-          memory
-          pods
-          storage
-        }
-        capacity {
-          cpu
-          memory
-          pods
-          storage
         }
       }
     }
