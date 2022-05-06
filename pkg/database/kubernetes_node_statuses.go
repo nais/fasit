@@ -56,7 +56,6 @@ func kubernetesNodeParams(envID uuid.UUID, n message.KubernetesNode) (gensql.Kub
 	return gensql.KubernetesNodeCreateOrUpdateParams{
 		EnvironmentID:           envID,
 		Name:                    n.Name,
-		Phase:                   string(n.Phase),
 		KernelVersion:           n.KernelVersion,
 		OsImage:                 n.OSImage,
 		ContainerRuntimeVersion: n.ContainerRuntimeVersion,
@@ -88,7 +87,6 @@ func kubernetesNodeFromSQL(n gensql.KubernetesNodeStatus) (*model.KubernetesNode
 
 	return &model.KubernetesNode{
 		Name:                    n.Name,
-		Phase:                   model.KubernetesNodePhase(n.Phase),
 		KernelVersion:           n.KernelVersion,
 		OSImage:                 n.OsImage,
 		ContainerRuntimeVersion: n.ContainerRuntimeVersion,

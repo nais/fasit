@@ -11,7 +11,6 @@ import (
 
 type KubernetesNode struct {
 	Name                    string                     `json:"name"`
-	Phase                   KubernetesNodePhase        `json:"phase"`
 	KernelVersion           string                     `json:"kernelVersion"`
 	OSImage                 string                     `json:"osImage"`
 	ContainerRuntimeVersion string                     `json:"containerRuntimeVersion"`
@@ -131,50 +130,5 @@ func (e *KubernetesNodeConditionType) UnmarshalGQL(v any) error {
 }
 
 func (e KubernetesNodeConditionType) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(strcase.ToScreamingSnake(e.String())))
-}
-
-type KubernetesNodePhase string
-
-const (
-	KubernetesNodePhasePending    KubernetesNodePhase = "Pending"
-	KubernetesNodePhaseRunning    KubernetesNodePhase = "Running"
-	KubernetesNodePhaseTerminated KubernetesNodePhase = "Terminated"
-)
-
-var AllKubernetesNodePhase = []KubernetesNodePhase{
-	KubernetesNodePhasePending,
-	KubernetesNodePhaseRunning,
-	KubernetesNodePhaseTerminated,
-}
-
-func (e KubernetesNodePhase) IsValid() bool {
-	switch e {
-	case KubernetesNodePhasePending, KubernetesNodePhaseRunning, KubernetesNodePhaseTerminated:
-		return true
-	}
-	return false
-}
-
-func (e KubernetesNodePhase) String() string {
-	return string(e)
-}
-
-func (e *KubernetesNodePhase) UnmarshalGQL(v any) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	str = strcase.ToCamel(str)
-
-	*e = KubernetesNodePhase(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid KubernetesNodePhase", str)
-	}
-	return nil
-}
-
-func (e KubernetesNodePhase) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(strcase.ToScreamingSnake(e.String())))
 }

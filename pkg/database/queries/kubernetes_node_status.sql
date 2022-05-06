@@ -1,11 +1,10 @@
 -- name: KubernetesNodeCreateOrUpdate :exec
 INSERT INTO kubernetes_node_statuses
-	(environment_id, name, phase, kernel_version, os_image, container_runtime_version, kubelet_version, kube_proxy_version, operating_system, architecture, conditions, allocatable, capacity)
+	(environment_id, name, kernel_version, os_image, container_runtime_version, kubelet_version, kube_proxy_version, operating_system, architecture, conditions, allocatable, capacity)
 VALUES
-	(@environment_id, @name, @phase, @kernel_version, @os_image, @container_runtime_version, @kubelet_version, @kube_proxy_version, @operating_system, @architecture, @conditions, @allocatable, @capacity)
+	(@environment_id, @name, @kernel_version, @os_image, @container_runtime_version, @kubelet_version, @kube_proxy_version, @operating_system, @architecture, @conditions, @allocatable, @capacity)
 ON CONFLICT (environment_id, name) DO UPDATE
 	SET
-    phase = EXCLUDED.phase,
     kernel_version = EXCLUDED.kernel_version,
     os_image = EXCLUDED.os_image,
     container_runtime_version = EXCLUDED.container_runtime_version,

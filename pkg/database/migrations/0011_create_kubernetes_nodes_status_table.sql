@@ -3,7 +3,6 @@ CREATE TABLE kubernetes_node_statuses
 (
     "environment_id" uuid,
     name text NOT NULL,
-    phase text NOT NULL,
     kernel_version text NOT NULL,
     os_image text NOT NULL,
     container_runtime_version text NOT NULL,

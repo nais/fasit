@@ -10,13 +10,6 @@ import (
 	"k8s.io/client-go/kubernetes/fake"
 )
 
-var phases = []corev1.NodePhase{
-	corev1.NodeRunning,
-	corev1.NodeRunning,
-	corev1.NodePending,
-	corev1.NodeTerminated,
-}
-
 func NewKubernetesClient() kubernetes.Interface {
 	objs := []runtime.Object{}
 	for i := 0; i < 5; i++ {
@@ -25,7 +18,6 @@ func NewKubernetesClient() kubernetes.Interface {
 		objs = append(objs, n)
 
 		n.Name = fmt.Sprintf("node-%v", i)
-		n.Status.Phase = phases[i%len(phases)]
 	}
 
 	client := fake.NewSimpleClientset(objs...)

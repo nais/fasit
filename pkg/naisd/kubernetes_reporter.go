@@ -80,7 +80,6 @@ func (k *KubernetesReporter) nodeList(ctx context.Context) ([]corev1.Node, error
 func (k *KubernetesReporter) createMessage(n corev1.Node) message.KubernetesNode {
 	kn := message.KubernetesNode{
 		Name:                    n.Name,
-		Phase:                   message.KubernetesNodePhase(n.Status.Phase),
 		KernelVersion:           n.Status.NodeInfo.KernelVersion,
 		OSImage:                 n.Status.NodeInfo.OSImage,
 		ContainerRuntimeVersion: n.Status.NodeInfo.ContainerRuntimeVersion,

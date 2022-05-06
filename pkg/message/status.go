@@ -96,7 +96,6 @@ type KubernetesNodeResources struct {
 
 type KubernetesNode struct {
 	Name                    string
-	Phase                   KubernetesNodePhase
 	KernelVersion           string
 	OSImage                 string
 	ContainerRuntimeVersion string
@@ -108,11 +107,3 @@ type KubernetesNode struct {
 	Allocatable             KubernetesNodeResources
 	Capacity                KubernetesNodeResources
 }
-
-type KubernetesNodePhase string
-
-const (
-	NodePending    KubernetesNodePhase = "Pending"
-	NodeRunning    KubernetesNodePhase = "Running"
-	NodeTerminated KubernetesNodePhase = "Terminated"
-)

@@ -77,7 +77,6 @@ type HealthStatus struct {
 type KubernetesNodeStatus struct {
 	EnvironmentID           uuid.UUID
 	Name                    string
-	Phase                   string
 	KernelVersion           string
 	OsImage                 string
 	ContainerRuntimeVersion string

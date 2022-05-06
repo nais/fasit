@@ -1,9 +1,3 @@
-enum KubernetesNodePhase {
-  PENDING
-  RUNNING
-  TERMINATED
-}
-
 enum KubernetesNodeConditionType {
   READY
   MEMORY_PRESSURE
@@ -36,7 +30,6 @@ type KubernetesNodeResources {
 
 type KubernetesNode {
   name: String!
-  phase: KubernetesNodePhase!
   kernelVersion: String!
   osImage: String!
   containerRuntimeVersion: String!

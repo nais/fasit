@@ -12,12 +12,11 @@ import (
 
 const kubernetesNodeCreateOrUpdate = `-- name: KubernetesNodeCreateOrUpdate :exec
 INSERT INTO kubernetes_node_statuses
-	(environment_id, name, phase, kernel_version, os_image, container_runtime_version, kubelet_version, kube_proxy_version, operating_system, architecture, conditions, allocatable, capacity)
+	(environment_id, name, kernel_version, os_image, container_runtime_version, kubelet_version, kube_proxy_version, operating_system, architecture, conditions, allocatable, capacity)
 VALUES
-	($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+	($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 ON CONFLICT (environment_id, name) DO UPDATE
 	SET
-    phase = EXCLUDED.phase,
     kernel_version = EXCLUDED.kernel_version,
     os_image = EXCLUDED.os_image,
     container_runtime_version = EXCLUDED.container_runtime_version,
@@ -33,7 +32,6 @@ ON CONFLICT (environment_id, name) DO UPDATE
 type KubernetesNodeCreateOrUpdateParams struct {
 	EnvironmentID           uuid.UUID
 	Name                    string
-	Phase                   string
 	KernelVersion           string
 	OsImage                 string
 	ContainerRuntimeVersion string
@@ -50,7 +48,6 @@ func (q *Queries) KubernetesNodeCreateOrUpdate(ctx context.Context, arg Kubernet
 	_, err := q.db.ExecContext(ctx, kubernetesNodeCreateOrUpdate,
 		arg.EnvironmentID,
 		arg.Name,
-		arg.Phase,
 		arg.KernelVersion,
 		arg.OsImage,
 		arg.ContainerRuntimeVersion,
@@ -66,7 +63,7 @@ func (q *Queries) KubernetesNodeCreateOrUpdate(ctx context.Context, arg Kubernet
 }
 
 const kubernetesNodeStatuses = `-- name: KubernetesNodeStatuses :many
-SELECT environment_id, name, phase, kernel_version, os_image, container_runtime_version, kubelet_version, kube_proxy_version, operating_system, architecture, conditions, allocatable, capacity, created, last_modified FROM kubernetes_node_statuses
+SELECT environment_id, name, kernel_version, os_image, container_runtime_version, kubelet_version, kube_proxy_version, operating_system, architecture, conditions, allocatable, capacity, created, last_modified FROM kubernetes_node_statuses
 WHERE environment_id = $1
 `
 
@@ -82,7 +79,6 @@ func (q *Queries) KubernetesNodeStatuses(ctx context.Context, environmentID uuid
 		if err := rows.Scan(
 			&i.EnvironmentID,
 			&i.Name,
-			&i.Phase,
 			&i.KernelVersion,
 			&i.OsImage,
 			&i.ContainerRuntimeVersion,
