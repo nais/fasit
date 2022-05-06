@@ -24,7 +24,33 @@ const ConfigPage = ({feature}: ConfigProps) => {
     let configs: Configs = {}
     if (data) {
         data.configuration.forEach((c) => {
-            configs[c.key] = {...c, secret: false, env: false, type: ConfigType.Bool, required: false}
+            if (c.__typename === 'EnvConfiguration') {
+                configs[c.key] = {
+                id: c.id,
+                feature: c.feature.name,
+                key: c.key,
+                type: ConfigType.Bool,
+                value: c.value,
+                description: c.description,
+                secret: false,
+                required: false,
+                enabled: false,
+                env: true,
+                }
+            } else {
+                configs[c.key] = {
+                id: c.id,
+                feature: c.feature.name,
+                key: c.key,
+                type: ConfigType.Bool,
+                value: c.value,
+                description: c.description,
+                secret: false,
+                required: false,
+                enabled: false,
+                env: false,
+                }
+            }
         })
         Object.keys(feature.config).forEach((k) => {
                 if (!configs[k]) {

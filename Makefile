@@ -45,3 +45,4 @@ integration-test:
 
 mocks:
 	mockery --case underscore --name Repo --dir pkg/database/ --outpkg mocks --output pkg/database/mocks
+	mockery --case underscore --name Querier --dir pkg/database/ --outpkg mocks --output pkg/database/mocks

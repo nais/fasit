@@ -22,21 +22,22 @@ import (
 var embedMigrations embed.FS
 
 type Repo interface {
-	ConfigCreate(ctx context.Context, c model.NewConfiguration) (*model.Configuration, error)
+	Close() error
+	ConfigCreate(ctx context.Context, c model.NewConfiguration) (model.Configuration, error)
 	ConfigDelete(ctx context.Context, id uuid.UUID) error
-	ConfigGet(ctx context.Context, feature string) ([]*model.Configuration, error)
-	ConfigGetForEnv(ctx context.Context, feature string, envID uuid.UUID) ([]*model.Configuration, error)
-	ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration) (*model.Configuration, error)
-	EnvConfig(ctx context.Context, feature string, envID uuid.UUID) ([]*model.Configuration, error)
+	ConfigGet(ctx context.Context, feature string) ([]*model.GlobalConfiguration, error)
+	ConfigGetForEnv(ctx context.Context, feature string, envID uuid.UUID) ([]*model.EnvConfiguration, error)
+	ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration) (model.Configuration, error)
+	EnvConfig(ctx context.Context, feature string, envID uuid.UUID) ([]model.Configuration, error)
 	EnvironmentByNames(ctx context.Context, tenantName, environmentName string) (*model.Environment, error)
-	EnvironmentCreate(ctx context.Context, p *model.EnvironmentCreate) (*model.Environment, error)
+	EnvironmentCreate(ctx context.Context, t *model.EnvironmentCreate) (*model.Environment, error)
 	EnvironmentGet(ctx context.Context, id uuid.UUID) (*model.Environment, error)
 	EnvironmentIDByNames(ctx context.Context, tenantName, environmentName string) (uuid.UUID, error)
-	EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]*model.Environment, error)
 	EnvironmentUpdate(ctx context.Context, environmentID uuid.UUID, p *model.EnvironmentUpdate) (*model.Environment, error)
+	EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]*model.Environment, error)
 	FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *feature.Feature, enabled bool) (*model.FeatureState, error)
 	FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
-	HealthGet(ctx context.Context, envID uuid.UUID) (*model.Health, error)
+	HealthGet(ctx context.Context, environmentID uuid.UUID) (*model.Health, error)
 	HealthStatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Health) error
 	HelmValues(ctx context.Context, feature string, envID uuid.UUID, requiredFields []string) (map[string]any, error)
 	Metrics() prometheus.Collector
@@ -45,12 +46,11 @@ type Repo interface {
 	StatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Helm) error
 	StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]*model.Status, error)
 	StatusForFeature(ctx context.Context, environmentID uuid.UUID, feature string) (*model.Status, error)
-	TenantCreate(ctx context.Context, p *model.TenantCreate) (*model.Tenant, error)
+	TenantCreate(ctx context.Context, t *model.TenantCreate) (*model.Tenant, error)
 	TenantEnvironments(ctx context.Context) ([]*model.TenantEnvironments, error)
 	TenantGet(ctx context.Context, id uuid.UUID) (*model.Tenant, error)
 	TenantGetByName(ctx context.Context, name string) (*model.Tenant, error)
 	TenantsGet(ctx context.Context) ([]*model.Tenant, error)
-	Close() error
 }
 
 type repo struct {

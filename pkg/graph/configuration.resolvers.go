@@ -8,10 +8,23 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/nais/fasit/pkg/graph/graphgen"
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
-func (r *mutationResolver) ConfigurationCreate(ctx context.Context, configuration model.NewConfiguration) (*model.Configuration, error) {
+func (r *envConfigurationResolver) Environment(ctx context.Context, obj *model.EnvConfiguration) (*model.Environment, error) {
+	return r.Repo.EnvironmentGet(ctx, obj.EnvironmentID)
+}
+
+func (r *envConfigurationResolver) Feature(ctx context.Context, obj *model.EnvConfiguration) (*model.Feature, error) {
+	return r.resolveFeatureByName(obj.FeatureName)
+}
+
+func (r *globalConfigurationResolver) Feature(ctx context.Context, obj *model.GlobalConfiguration) (*model.Feature, error) {
+	return r.resolveFeatureByName(obj.FeatureName)
+}
+
+func (r *mutationResolver) ConfigurationCreate(ctx context.Context, configuration model.NewConfiguration) (model.Configuration, error) {
 	if err := r.Features.ValidConfig(configuration.Feature, configuration.Key, configuration.Value); err != nil {
 		return nil, fmt.Errorf("invalid configuration %q for %q: %w", configuration.Key, configuration.Feature, err)
 	}
@@ -20,7 +33,7 @@ func (r *mutationResolver) ConfigurationCreate(ctx context.Context, configuratio
 	return r.Repo.ConfigCreate(ctx, configuration)
 }
 
-func (r *mutationResolver) ConfigurationUpdate(ctx context.Context, id uuid.UUID, configuration model.UpdateConfiguration) (*model.Configuration, error) {
+func (r *mutationResolver) ConfigurationUpdate(ctx context.Context, id uuid.UUID, configuration model.UpdateConfiguration) (model.Configuration, error) {
 	return r.Repo.ConfigUpdate(ctx, id, configuration)
 }
 
@@ -32,40 +45,68 @@ func (r *mutationResolver) ConfigurationDelete(ctx context.Context, id uuid.UUID
 	return true, nil
 }
 
-func (r *queryResolver) Configuration(ctx context.Context, feature string, envID *uuid.UUID) ([]*model.Configuration, error) {
+func (r *queryResolver) Configuration(ctx context.Context, feature string, envID *uuid.UUID) ([]model.Configuration, error) {
+	var ret []model.Configuration
 	if envID != nil {
-		return r.Repo.ConfigGetForEnv(ctx, feature, *envID)
-	}
-	ret, err := r.Repo.ConfigGet(ctx, feature)
-	if err != nil {
-		return nil, err
+		// Get config for environment
+		res, err := r.Repo.ConfigGetForEnv(ctx, feature, *envID)
+		if err != nil {
+			return nil, err
+		}
+		ret = make([]model.Configuration, len(res))
+		for i, c := range res {
+			ret[i] = c
+		}
+	} else {
+		// Get global config
+		res, err := r.Repo.ConfigGet(ctx, feature)
+		if err != nil {
+			return nil, err
+		}
+
+		ret = make([]model.Configuration, len(res))
+		for i, c := range res {
+			ret[i] = c
+		}
 	}
 
 	f := r.Resolver.Features.Get(feature)
 	if f == nil {
 		return ret, nil
 	}
-
 OUTER:
 	for key, val := range f.Config {
 		for _, c := range ret {
-			if c.Key == key {
-				c.Type = val.Type
+			if c.GetKey() == key {
+				c.SetType(val.Type)
 				continue OUTER
 			}
 		}
-		ret = append(ret, &model.Configuration{
-			Feature: feature,
-			Key:     key,
-			Value:   []byte("null"),
-			Secret:  val.Secret,
-			Type:    val.Type,
+		ret = append(ret, &model.GlobalConfiguration{
+			FeatureName: feature,
+			Key:         key,
+			Value:       []byte("null"),
+			Secret:      val.Secret,
+			Type:        val.Type,
 		})
 	}
 
 	return ret, nil
 }
 
-func (r *queryResolver) EnvConfig(ctx context.Context, feature string, envID uuid.UUID) ([]*model.Configuration, error) {
+func (r *queryResolver) EnvConfig(ctx context.Context, feature string, envID uuid.UUID) ([]model.Configuration, error) {
 	return r.Repo.EnvConfig(ctx, feature, envID)
 }
+
+// EnvConfiguration returns graphgen.EnvConfigurationResolver implementation.
+func (r *Resolver) EnvConfiguration() graphgen.EnvConfigurationResolver {
+	return &envConfigurationResolver{r}
+}
+
+// GlobalConfiguration returns graphgen.GlobalConfigurationResolver implementation.
+func (r *Resolver) GlobalConfiguration() graphgen.GlobalConfigurationResolver {
+	return &globalConfigurationResolver{r}
+}
+
+type envConfigurationResolver struct{ *Resolver }
+type globalConfigurationResolver struct{ *Resolver }

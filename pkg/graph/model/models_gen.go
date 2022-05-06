@@ -9,19 +9,6 @@ import (
 	"github.com/google/uuid"
 )
 
-type Configuration struct {
-	ID            uuid.UUID       `json:"id"`
-	EnvironmentID *uuid.UUID      `json:"environmentID"`
-	Feature       string          `json:"feature"`
-	Description   *string         `json:"description"`
-	Key           string          `json:"key"`
-	Value         json.RawMessage `json:"value"`
-	Secret        bool            `json:"secret"`
-	Created       time.Time       `json:"created"`
-	Type          ConfigType      `json:"type"`
-	Env           bool            `json:"env"`
-}
-
 // EnvironmentCreate contains metadata for creating an environment
 type EnvironmentCreate struct {
 	Name        string          `json:"name"`

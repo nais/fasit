@@ -33,12 +33,22 @@ export enum ConfigType {
 }
 
 export type Configuration = {
-  __typename?: 'Configuration'
   created: Scalars['Time']
   description?: Maybe<Scalars['String']>
-  env: Scalars['Boolean']
-  environmentID?: Maybe<Scalars['ID']>
-  feature: Scalars['String']
+  feature: Feature
+  id: Scalars['ID']
+  key: Scalars['String']
+  secret: Scalars['Boolean']
+  type: ConfigType
+  value: Scalars['RawMessage']
+}
+
+export type EnvConfiguration = Configuration & {
+  __typename?: 'EnvConfiguration'
+  created: Scalars['Time']
+  description?: Maybe<Scalars['String']>
+  environment: Environment
+  feature: Feature
   id: Scalars['ID']
   key: Scalars['String']
   secret: Scalars['Boolean']
@@ -96,6 +106,18 @@ export type FeatureState = {
   enabled: Scalars['Boolean']
   feature: Feature
   lastModified?: Maybe<Scalars['Time']>
+}
+
+export type GlobalConfiguration = Configuration & {
+  __typename?: 'GlobalConfiguration'
+  created: Scalars['Time']
+  description?: Maybe<Scalars['String']>
+  feature: Feature
+  id: Scalars['ID']
+  key: Scalars['String']
+  secret: Scalars['Boolean']
+  type: ConfigType
+  value: Scalars['RawMessage']
 }
 
 export type Health = {
@@ -281,16 +303,26 @@ export type ConfigGetQueryVariables = Exact<{
 
 export type ConfigGetQuery = {
   __typename?: 'Query'
-  envConfig: Array<{
-    __typename?: 'Configuration'
-    id: string
-    description?: string | null
-    value: any
-    type: ConfigType
-    env: boolean
-    feature: string
-    key: string
-  }>
+  envConfig: Array<
+    | {
+        __typename?: 'EnvConfiguration'
+        id: string
+        description?: string | null
+        value: any
+        type: ConfigType
+        key: string
+        feature: { __typename?: 'Feature'; name: string }
+      }
+    | {
+        __typename?: 'GlobalConfiguration'
+        id: string
+        description?: string | null
+        value: any
+        type: ConfigType
+        key: string
+        feature: { __typename?: 'Feature'; name: string }
+      }
+  >
 }
 
 export type ConfigurationQueryVariables = Exact<{
@@ -300,16 +332,26 @@ export type ConfigurationQueryVariables = Exact<{
 
 export type ConfigurationQuery = {
   __typename?: 'Query'
-  configuration: Array<{
-    __typename?: 'Configuration'
-    id: string
-    environmentID?: string | null
-    feature: string
-    description?: string | null
-    key: string
-    value: any
-    secret: boolean
-  }>
+  configuration: Array<
+    | {
+        __typename?: 'EnvConfiguration'
+        id: string
+        description?: string | null
+        key: string
+        value: any
+        secret: boolean
+        feature: { __typename?: 'Feature'; name: string }
+      }
+    | {
+        __typename?: 'GlobalConfiguration'
+        id: string
+        description?: string | null
+        key: string
+        value: any
+        secret: boolean
+        feature: { __typename?: 'Feature'; name: string }
+      }
+  >
 }
 
 export type ConfigurationCreateMutationVariables = Exact<{
@@ -322,7 +364,9 @@ export type ConfigurationCreateMutationVariables = Exact<{
 
 export type ConfigurationCreateMutation = {
   __typename?: 'Mutation'
-  configurationCreate: { __typename?: 'Configuration'; id: string; key: string }
+  configurationCreate:
+    | { __typename?: 'EnvConfiguration'; id: string; key: string }
+    | { __typename?: 'GlobalConfiguration'; id: string; key: string }
 }
 
 export type ConfigurationDeleteMutationVariables = Exact<{
@@ -342,7 +386,9 @@ export type ConfigurationUpdateMutationVariables = Exact<{
 
 export type ConfigurationUpdateMutation = {
   __typename?: 'Mutation'
-  configurationUpdate: { __typename?: 'Configuration'; id: string; key: string }
+  configurationUpdate:
+    | { __typename?: 'EnvConfiguration'; id: string; key: string }
+    | { __typename?: 'GlobalConfiguration'; id: string; key: string }
 }
 
 export type EnvironmentCreateMutationVariables = Exact<{
@@ -574,8 +620,9 @@ export const ConfigGetDocument = gql`
       description
       value
       type
-      env
-      feature
+      feature {
+        name
+      }
       key
     }
   }
@@ -631,8 +678,9 @@ export const ConfigurationDocument = gql`
   query configuration($feature: String!, $envID: ID) {
     configuration(feature: $feature, envID: $envID) {
       id
-      environmentID
-      feature
+      feature {
+        name
+      }
       description
       key
       value

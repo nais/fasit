@@ -7,8 +7,9 @@ export const CONFIG_FOR_ENV = gql`
       description
       value
       type
-      env
-      feature
+      feature {
+        name
+      }
       key
     }
   }
@@ -17,8 +18,9 @@ export const CONFIGURATION = gql`
   query configuration($feature: String!, $envID: ID) {
     configuration(feature: $feature, envID: $envID) {
       id
-      environmentID
-      feature
+      feature {
+        name
+      }
       description
       key
       value

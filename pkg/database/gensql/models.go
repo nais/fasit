@@ -30,15 +30,25 @@ func (e *EnvironmentKind) Scan(src interface{}) error {
 	return nil
 }
 
-type Configuration struct {
+type ConfigurationsEnvironment struct {
 	ID            uuid.UUID
-	EnvironmentID uuid.NullUUID
 	Feature       string
 	Key           string
 	Value         json.RawMessage
 	Description   sql.NullString
 	Secret        bool
 	Created       time.Time
+	EnvironmentID uuid.UUID
+}
+
+type ConfigurationsGlobal struct {
+	ID          uuid.UUID
+	Feature     string
+	Key         string
+	Value       json.RawMessage
+	Description sql.NullString
+	Secret      bool
+	Created     time.Time
 }
 
 type Environment struct {
