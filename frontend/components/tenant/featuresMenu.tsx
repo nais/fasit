@@ -18,7 +18,6 @@ const SideMenu = styled.div<MenuItemProps>`
   background-color: #f5f5f5;
   height: fit-content;
   min-width: 150px;
-  border-right: 1px solid #fff;
   position: relative;
   a {
     text-decoration: none;
@@ -37,7 +36,7 @@ const MenuItem = styled.div<MenuItemProps>`
   border-left: 3px solid ${(props) => props.active ? navRod : 'transparent'};
   border-radius: 5px 0px 0px 5px;
   padding: 5px 15px;
-  margin-right: -2px;
+  margin-right: ${(props) => props.active ? '-1px' : '0px'};
   position: relative;
   text-decoration: none;
   color: ${(props) => props.enabled ? '#222' : "#999"};
@@ -68,7 +67,7 @@ const FeaturesMenu = ({env}: FeaturesMenuProps) => {
     if (!data || loading) return <LoaderSpinner/>
 
     return (<SideMenu>
-            <i style={{marginBottom: "15px"}}>Features</i>
+            <span style={{marginBottom: "15px"}}>Features</span>
 
             {env.featureStates.filter((f) => f.enabled).map((fs) => {
                 const f = fs.feature

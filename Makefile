@@ -21,12 +21,12 @@ setup:
 	go run cmd/setup_pubsub/main.go
 
 local:
-	PUBSUB_EMULATOR_HOST=localhost:8085 go run ./cmd/fasit \
+	PUBSUB_EMULATOR_HOST=localhost:8086 go run ./cmd/fasit \
 	--bind-address=127.0.0.1:8080 \
 	--log-level=debug
 
 local-naisd:
-	PUBSUB_EMULATOR_HOST=localhost:8085 go run ./cmd/naisd \
+	PUBSUB_EMULATOR_HOST=localhost:8086 go run ./cmd/naisd \
 	--env-project-id local-test-partner-dev \
 	--nais-project-id nais-local-dev \
 	--tenant-name test-partner \
