@@ -359,6 +359,7 @@ export type ConfigGetQuery = {
         description?: string | null
         value: any
         type: ConfigType
+        secret: boolean
         key: string
         feature: { __typename?: 'Feature'; name: string }
       }
@@ -368,6 +369,7 @@ export type ConfigGetQuery = {
         description?: string | null
         value: any
         type: ConfigType
+        secret: boolean
         key: string
         feature: { __typename?: 'Feature'; name: string }
       }
@@ -662,6 +664,7 @@ export const ConfigGetDocument = gql`
       description
       value
       type
+      secret
       feature {
         name
       }

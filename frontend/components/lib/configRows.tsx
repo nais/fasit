@@ -75,7 +75,7 @@ const ConfigRows = ({
             return (
                 <Table.Row key={key}>
                     <Table.DataCell>{key}</Table.DataCell>
-                    <Table.DataCell>{conf.type != ConfigType.StringArray ?
+                    <Table.DataCell>{conf.secret ? '*****' : conf.type != ConfigType.StringArray ?
                         conf.value != null ? JSON.stringify(conf.value).replace(/"/g, '') :
                             '<default>' :
                         prettifyArray(conf.value)}

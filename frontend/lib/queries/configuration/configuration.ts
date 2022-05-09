@@ -7,6 +7,7 @@ export const CONFIG_FOR_ENV = gql`
       description
       value
       type
+      secret
       feature {
         name
       }
