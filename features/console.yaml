@@ -1,16 +1,18 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/console
 source: https://github.com/nais/console/tree/master/charts
-version: 0.0.1
+version: 0.0.2
 environmentKinds:
   - "management"
 config:
-  database.instance:
+  backend.database.instance:
     type: string
     required: true
-  envProjectId:
+  backend.envProjectId:
     type: string
     require: true
-  image.tag:
+  backend.image.tag:
+    type: string
+  frontend.image.tag:
     type: string
   ingress.enabled:
     type: bool
