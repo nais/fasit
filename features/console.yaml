@@ -9,7 +9,7 @@ config:
     required: true
   backend.envProjectId:
     type: string
-    require: true
+    required: true
   backend.image.tag:
     type: string
   frontend.image.tag:
