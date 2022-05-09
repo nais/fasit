@@ -4,9 +4,8 @@ version: 0.0.1
 environmentKinds:
   - "management"
 config:
-  database.url:
+  database.instance:
     type: string
-    secret: true
     required: true
   envProjectId:
     type: string
