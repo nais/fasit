@@ -10,7 +10,49 @@ config:
   backend.envProjectId:
     type: string
     required: true
+  backend.image.repository:
+    type: string
+  backend.image.imagePullPolicy:
+    type: string
   backend.image.tag:
+    type: string
+  backend.githubEnabled:
+    type: bool
+  backend.githubAppId:
+    type: string
+  backend.githubAppInstallationId:
+    type: string
+  backend.githubOrganization:
+    type: string
+  backend.githubPrivateKeyPath:
+    type: string
+  backend.googleEnabled:
+    type: bool
+  backend.googleCredentialsFile:
+    type: string
+  backend.googleDelegatedUser:
+    type: string
+  backend.googleDomain:
+    type: string
+  backend.naisDeployEnabled:
+    type: bool
+  backend.naisDeployEndpoint:
+    type: string
+  backend.naisDeployProvisionKey:
+    type: string
+  backend.usersyncEnabled:
+    type: bool
+  backend.usersyncCredentialsFile:
+    type: string
+  backend.usersyncDelegatedUser:
+    type: string
+  backend.usersyncDomain:
+    type: string
+  backend.oauthClientId:
+    type: string
+  backend.oauthClientSecret:
+    type: string
+  backend.oauthRedirectUrl:
     type: string
   frontend.image.tag:
     type: string
