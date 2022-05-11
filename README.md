@@ -43,6 +43,8 @@ These are some manual steps and configurations to do when enrolling a new tenant
 
 ### feature: loadbalancer
 
+Before enabling the loadbalancer feature, create a cloud armor policy in the GCP project of the cluster.
+
 | key            | value                  |
 | -------------- | ---------------------- |
 | `certificates` | `wc-cloud-nais-io-tls` |
