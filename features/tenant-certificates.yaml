@@ -1,8 +1,8 @@
-chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/management-certificates
-source: https://github.com/nais/helm-charts/tree/main/charts/management-certificates
-version: 0.2.0
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/tenant-certificates
+source: https://github.com/nais/helm-charts/tree/main/charts/tenant-certificates
+version: 0.1.0
 environmentKinds:
-  - "management"
+  - "tenant"
 dependsOn:
   - "cert-manager"
 config:
@@ -17,5 +17,8 @@ config:
     type: string
     required: true
   tenant:
+    type: string
+    required: true
+  env:
     type: string
     required: true
