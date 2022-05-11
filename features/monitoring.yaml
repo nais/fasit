@@ -15,6 +15,10 @@ config:
     type: bool
   kube-prometheus-stack.prometheus.ingress.hosts:
     type: string_array
+  kube-prometheus-stack.alertmanager.ingress.enabled:
+    type: bool
+  kube-prometheus-stack.alertmanager.ingress.hosts:
+    type: string_array
   kube-prometheus-stack.grafana.enabled:
     type: bool
   kube-prometheus-stack.grafana.adminUser:
