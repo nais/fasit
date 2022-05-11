@@ -19,3 +19,4 @@ config:
     required: true
   extraArgs:
     type: string_array
+    required: true
