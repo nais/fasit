@@ -24,7 +24,7 @@ These are some manual steps and configurations to do when enrolling a new tenant
 
 ## Management cluster
 
-### feature: Cert-manager
+### feature: cert-manager
 
 | key                                                           | value                                                |
 | ------------------------------------------------------------- | ---------------------------------------------------- |
@@ -37,6 +37,12 @@ These are some manual steps and configurations to do when enrolling a new tenant
 
 | key                | value                          |
 | ------------------ | ------------------------------ |
-| `cloudDNS.project` | `ENV_PROJECT_ID`               |
+| `cloudDNS.project` | `{ENV_PROJECT_ID}`             |
 | `cloudDNS.zone`    | `{PARTNER_NAME}-cloud-nais-io` |
 | `partner`          | `{PARTNER_NAME}`               |
+
+### feature: loadbalancer
+
+| key            | value                  |
+| -------------- | ---------------------- |
+| `certificates` | `wc-cloud-nais-io-tls` |
