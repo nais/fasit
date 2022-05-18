@@ -6,6 +6,7 @@ import IconBox from "../lib/icons/iconBox";
 import GitIcon from "../lib/icons/gitIcon";
 import {Loader, Switch} from '@navikt/ds-react'
 import {Configs} from "../lib/configRows";
+import {useEffect, useState} from "react";
 
 
 const FeatureStatusContainer = styled.div`
@@ -47,9 +48,8 @@ ${(props) => {
     }
 }} `
 const StatusField = styled.div`
-display: flex;
-align-items: center;
-
+  display: flex;
+  align-items: center;
 `
 
 interface FeatureProps {
@@ -61,6 +61,13 @@ interface FeatureProps {
 
 const FeatureStatus = ({configs, env, featureName, setShowVerify}: FeatureProps) => {
     const {loading, error, data} = useFeatureStatusQuery({variables: {envID: env.id, feature: featureName}})
+    const [time, setTime] = useState(Date.now());
+    useEffect(() => {
+        const interval = setInterval(() => setTime(Date.now()), 10 * 1000)
+        return () => {
+            clearInterval(interval);
+        };
+    }, [])
 
     const requiredConfigs = Object.keys(configs).filter((c) => configs[c].required).sort()
     const status = data?.featureStatus
