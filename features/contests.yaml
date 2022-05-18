@@ -1,0 +1,19 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/contests
+source: https://github.com/nais/contests/tree/main
+version: 0.1.0
+dependsOn:
+  - "naiserator"
+environmentKinds:
+  - "tenant"
+config:
+  image.tag:
+    type: string
+  ingresses:
+    type: string_array
+    required: true
+  env:
+    type: string
+    required: true
+  tenant:
+    type: string
+    required: true
