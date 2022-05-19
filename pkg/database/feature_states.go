@@ -2,7 +2,9 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database/gensql"
@@ -13,6 +15,7 @@ import (
 func featureStateFromSQL(state gensql.FeatureState) *model.FeatureState {
 	return &model.FeatureState{
 		FeatureName:  state.Feature,
+		EnabledAt:    nullTimeToPtr(state.EnabledAt),
 		Enabled:      state.Enabled,
 		Created:      state.Created,
 		LastModified: state.LastModified,
@@ -51,6 +54,10 @@ func (r *repo) FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID,
 		EnvironmentID: envID,
 		Feature:       feature.Name,
 		Enabled:       enabled,
+		Enabledat: sql.NullTime{
+			Time:  time.Now(),
+			Valid: enabled,
+		},
 	})
 	if err != nil {
 		return nil, err

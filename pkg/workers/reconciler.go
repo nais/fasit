@@ -134,7 +134,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 			return err
 		}
 
-		hash, err := generateHash(values, f)
+		hash, err := generateHash(values, f, states[f.Name].EnabledAt)
 		if err != nil {
 			return err
 		}
@@ -161,13 +161,18 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 	return nil
 }
 
-func generateHash(values map[string]any, feature feature.Feature) (string, error) {
+func generateHash(values map[string]any, feature feature.Feature, enabledAt *time.Time) (string, error) {
 	b, err := json.Marshal(values)
 	if err != nil {
 		return "", err
 	}
 
-	b = append(b, []byte(feature.Version+feature.Chart+feature.Repo)...)
+	at := ""
+	if enabledAt != nil {
+		at = enabledAt.String()
+	}
+
+	b = append(b, []byte(feature.Version+feature.Chart+feature.Repo+at)...)
 
 	hash := sha256.Sum256(b)
 	return hex.EncodeToString(hash[:]), nil

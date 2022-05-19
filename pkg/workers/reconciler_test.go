@@ -3,6 +3,7 @@ package workers
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
@@ -11,6 +12,8 @@ import (
 	"github.com/nais/fasit/pkg/message"
 	"github.com/sirupsen/logrus"
 )
+
+var atTime = time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC)
 
 var reconcileTests = map[string]struct {
 	features []feature.Feature
@@ -38,6 +41,7 @@ var reconcileTests = map[string]struct {
 				{
 					FeatureName: "feature1",
 					Enabled:     true,
+					EnabledAt:   &atTime,
 				},
 			},
 			tenantEnvironments: []*model.TenantEnvironments{
@@ -55,7 +59,7 @@ var reconcileTests = map[string]struct {
 				Name:       "feature1",
 				Version:    "1",
 				Chart:      "somechart",
-				ConfigHash: "6bceca2544c6cea880e6a21a64b348881714ed4dd7cc76218c8057fe77dfb6ca",
+				ConfigHash: "669ba084b976486b690f079cc191c846b18f466f78854096732f8ba4ccd3c3d8",
 			},
 		},
 	},
@@ -73,6 +77,7 @@ var reconcileTests = map[string]struct {
 				{
 					FeatureName: "feature1",
 					Enabled:     true,
+					EnabledAt:   &atTime,
 				},
 			},
 			tenantEnvironments: []*model.TenantEnvironments{
@@ -87,7 +92,7 @@ var reconcileTests = map[string]struct {
 				{
 					Feature:    "feature1",
 					Version:    "1",
-					ConfigHash: "6bceca2544c6cea880e6a21a64b348881714ed4dd7cc76218c8057fe77dfb6ca",
+					ConfigHash: "669ba084b976486b690f079cc191c846b18f466f78854096732f8ba4ccd3c3d8",
 				},
 			},
 		},
@@ -112,6 +117,7 @@ var reconcileTests = map[string]struct {
 				{
 					FeatureName: "feature1",
 					Enabled:     true,
+					EnabledAt:   &atTime,
 				},
 				{
 					FeatureName: "feature2",
@@ -133,7 +139,7 @@ var reconcileTests = map[string]struct {
 				Name:       "feature1",
 				Version:    "1",
 				Chart:      "somechart",
-				ConfigHash: "6bceca2544c6cea880e6a21a64b348881714ed4dd7cc76218c8057fe77dfb6ca",
+				ConfigHash: "669ba084b976486b690f079cc191c846b18f466f78854096732f8ba4ccd3c3d8",
 			},
 		},
 	},
@@ -156,10 +162,12 @@ var reconcileTests = map[string]struct {
 				{
 					FeatureName: "feature1",
 					Enabled:     true,
+					EnabledAt:   &atTime,
 				},
 				{
 					FeatureName: "feature2",
 					Enabled:     true,
+					EnabledAt:   &atTime,
 				},
 			},
 			tenantEnvironments: []*model.TenantEnvironments{
@@ -174,7 +182,7 @@ var reconcileTests = map[string]struct {
 				{
 					Feature:    "feature1",
 					Version:    "1",
-					ConfigHash: "6bceca2544c6cea880e6a21a64b348881714ed4dd7cc76218c8057fe77dfb6ca",
+					ConfigHash: "669ba084b976486b690f079cc191c846b18f466f78854096732f8ba4ccd3c3d8",
 				},
 			},
 		},
@@ -183,7 +191,7 @@ var reconcileTests = map[string]struct {
 				Name:       "feature2",
 				Version:    "2",
 				Chart:      "somechart",
-				ConfigHash: "20b62be5cb7ae8b60d6cf05e0de075cec01f56f9c7ff762b1b07fa8fe12ae8ff",
+				ConfigHash: "b53cc23210ced464158443b8dfa199597a50e556a057eb49151650b82bf79e64",
 			},
 		},
 	},

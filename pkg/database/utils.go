@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"time"
 )
 
 func ptrToNullString(str *string) sql.NullString {
@@ -24,4 +25,11 @@ func nullStringToPtr(ns sql.NullString) *string {
 
 func stringToPtr(s string) *string {
 	return &s
+}
+
+func nullTimeToPtr(nt sql.NullTime) *time.Time {
+	if !nt.Valid {
+		return nil
+	}
+	return &nt.Time
 }

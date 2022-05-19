@@ -67,6 +67,7 @@ type FeatureState struct {
 	Enabled       bool
 	Created       time.Time
 	LastModified  time.Time
+	EnabledAt     sql.NullTime
 }
 
 type HealthStatus struct {

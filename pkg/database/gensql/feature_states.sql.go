@@ -5,29 +5,37 @@ package gensql
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/google/uuid"
 )
 
 const featureStateCreateOrUpdate = `-- name: FeatureStateCreateOrUpdate :one
 INSERT INTO feature_states
-(environment_id, feature, enabled)
+(environment_id, feature, enabled, enabled_at)
 VALUES
-    ($1, $2, $3)
+    ($1, $2, $3, $4)
 ON CONFLICT (environment_id, feature) DO UPDATE
     SET
-        enabled = EXCLUDED.enabled
-RETURNING environment_id, feature, enabled, created, last_modified
+        enabled = EXCLUDED.enabled,
+        enabled_at = EXCLUDED.enabled_at
+RETURNING environment_id, feature, enabled, created, last_modified, enabled_at
 `
 
 type FeatureStateCreateOrUpdateParams struct {
 	EnvironmentID uuid.UUID
 	Feature       string
 	Enabled       bool
+	Enabledat     sql.NullTime
 }
 
 func (q *Queries) FeatureStateCreateOrUpdate(ctx context.Context, arg FeatureStateCreateOrUpdateParams) (FeatureState, error) {
-	row := q.db.QueryRowContext(ctx, featureStateCreateOrUpdate, arg.EnvironmentID, arg.Feature, arg.Enabled)
+	row := q.db.QueryRowContext(ctx, featureStateCreateOrUpdate,
+		arg.EnvironmentID,
+		arg.Feature,
+		arg.Enabled,
+		arg.Enabledat,
+	)
 	var i FeatureState
 	err := row.Scan(
 		&i.EnvironmentID,
@@ -35,12 +43,13 @@ func (q *Queries) FeatureStateCreateOrUpdate(ctx context.Context, arg FeatureSta
 		&i.Enabled,
 		&i.Created,
 		&i.LastModified,
+		&i.EnabledAt,
 	)
 	return i, err
 }
 
 const featureStateGet = `-- name: FeatureStateGet :one
-SELECT environment_id, feature, enabled, created, last_modified
+SELECT environment_id, feature, enabled, created, last_modified, enabled_at
 FROM feature_states
 WHERE feature = $1 AND environment_id = $2
 `
@@ -59,12 +68,13 @@ func (q *Queries) FeatureStateGet(ctx context.Context, arg FeatureStateGetParams
 		&i.Enabled,
 		&i.Created,
 		&i.LastModified,
+		&i.EnabledAt,
 	)
 	return i, err
 }
 
 const featureStatesGet = `-- name: FeatureStatesGet :many
-SELECT environment_id, feature, enabled, created, last_modified
+SELECT environment_id, feature, enabled, created, last_modified, enabled_at
 FROM feature_states
 WHERE environment_id = $1
 `
@@ -84,6 +94,7 @@ func (q *Queries) FeatureStatesGet(ctx context.Context, environmentID uuid.UUID)
 			&i.Enabled,
 			&i.Created,
 			&i.LastModified,
+			&i.EnabledAt,
 		); err != nil {
 			return nil, err
 		}
