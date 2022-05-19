@@ -130,6 +130,10 @@ func TestRepo_EnvironmentUpdate(t *testing.T) {
 	res, err := repo.EnvironmentUpdate(context.Background(), env.ID, &model.EnvironmentUpdate{
 		Description: stringToPtr("somedesc2"),
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	want := &model.Environment{
 		Name:        "somename",
 		Description: stringToPtr("somedesc2"),
@@ -142,6 +146,9 @@ func TestRepo_EnvironmentUpdate(t *testing.T) {
 	}
 
 	got, err := repo.EnvironmentGet(context.Background(), env.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
 	want2 := &model.Environment{
 		Name:        "somename",
 		Description: stringToPtr("somedesc2"),
