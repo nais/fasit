@@ -389,13 +389,13 @@ func (_m *Repo) HealthStatusCreateOrUpdate(ctx context.Context, environmentID uu
 	return r0
 }
 
-// HelmValues provides a mock function with given fields: ctx, _a1, envID, requiredFields
-func (_m *Repo) HelmValues(ctx context.Context, _a1 string, envID uuid.UUID, requiredFields []string) (map[string]interface{}, error) {
-	ret := _m.Called(ctx, _a1, envID, requiredFields)
+// HelmValues provides a mock function with given fields: ctx, _a1, envID
+func (_m *Repo) HelmValues(ctx context.Context, _a1 *feature.Feature, envID uuid.UUID) (map[string]interface{}, error) {
+	ret := _m.Called(ctx, _a1, envID)
 
 	var r0 map[string]interface{}
-	if rf, ok := ret.Get(0).(func(context.Context, string, uuid.UUID, []string) map[string]interface{}); ok {
-		r0 = rf(ctx, _a1, envID, requiredFields)
+	if rf, ok := ret.Get(0).(func(context.Context, *feature.Feature, uuid.UUID) map[string]interface{}); ok {
+		r0 = rf(ctx, _a1, envID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(map[string]interface{})
@@ -403,8 +403,8 @@ func (_m *Repo) HelmValues(ctx context.Context, _a1 string, envID uuid.UUID, req
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, uuid.UUID, []string) error); ok {
-		r1 = rf(ctx, _a1, envID, requiredFields)
+	if rf, ok := ret.Get(1).(func(context.Context, *feature.Feature, uuid.UUID) error); ok {
+		r1 = rf(ctx, _a1, envID)
 	} else {
 		r1 = ret.Error(1)
 	}

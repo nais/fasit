@@ -11,6 +11,7 @@ type ConfigType struct {
 	Type     model.ConfigType `json:"type" yaml:"type"`
 	Secret   bool             `json:"secret" yaml:"secret"`
 	Required bool             `json:"required" yaml:"required"`
+	Default  YAMLRawMessage   `json:"default" yaml:"default"`
 }
 
 func (c ConfigType) Valid(value json.RawMessage) error {
@@ -57,4 +58,19 @@ func isStringArray(v []any) bool {
 		}
 	}
 	return true
+}
+
+type YAMLRawMessage json.RawMessage
+
+func (msg *YAMLRawMessage) UnmarshalYAML(unmarshal func(any) error) error {
+	var v any
+	unmarshal(&v)
+
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	*msg = YAMLRawMessage(b)
+	return nil
 }

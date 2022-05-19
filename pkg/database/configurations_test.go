@@ -17,6 +17,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/database/mocks"
+	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/stretchr/testify/mock"
 )
@@ -358,6 +359,9 @@ func TestRepo_ConfigUpdate_Global(t *testing.T) {
 	got, err = repo.ConfigUpdate(context.Background(), got.(*model.GlobalConfiguration).ID, model.UpdateConfiguration{
 		Value: []byte(`"newval"`),
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	want := &model.GlobalConfiguration{
 		FeatureName: config.Feature,
@@ -421,7 +425,20 @@ func TestRepo_HelmValues_OK(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err := r.HelmValues(context.Background(), "feature5", envid, []string{"my.key"})
+	f := &feature.Feature{
+		Name: "feature5",
+		Config: feature.Config{
+			"my.key": {
+				Required: true,
+			},
+			"other.key": {
+				Type:    model.ConfigTypeString,
+				Default: []byte(`"default"`),
+			},
+		},
+	}
+
+	got, err := r.HelmValues(context.Background(), f, envid)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -429,6 +446,9 @@ func TestRepo_HelmValues_OK(t *testing.T) {
 	want := map[string]any{
 		"my": map[string]any{
 			"key": json.RawMessage(`"stringval"`),
+		},
+		"other": map[string]any{
+			"key": json.RawMessage(`"default"`),
 		},
 	}
 
@@ -458,7 +478,14 @@ func TestRepo_HelmValues_MissingRequiredField(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = r.HelmValues(context.Background(), "feature5", envid, []string{"no.key"})
+	f := &feature.Feature{
+		Name: "feature5",
+		Config: feature.Config{
+			"no.key": {Required: true},
+		},
+	}
+
+	_, err = r.HelmValues(context.Background(), f, envid)
 	if !errors.Is(err, &ErrMissingRequiredFields{}) {
 		t.Errorf("got: %v, want ErrMissingRequiredFields", err)
 	}
@@ -490,7 +517,11 @@ func TestRepo_HelmValues_InvaldKeyNesting(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = r.HelmValues(context.Background(), "feature5", uuid.New(), nil)
+	f := &feature.Feature{
+		Name: "feature5",
+	}
+
+	_, err = r.HelmValues(context.Background(), f, uuid.New())
 	if err == nil || !strings.HasSuffix(err.Error(), "is not nestable") {
 		t.Errorf("got: %v, want \"key `key` is not nestable\"", err)
 	}

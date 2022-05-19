@@ -12,5 +12,5 @@ import (
 func (r *queryResolver) Values(ctx context.Context, feature string, env uuid.UUID) (map[string]interface{}, error) {
 	f := r.Resolver.Features.Get(feature)
 
-	return r.Repo.HelmValues(ctx, feature, env, f.RequiredFields())
+	return r.Repo.HelmValues(ctx, f, env)
 }

@@ -1,6 +1,7 @@
 package fasit
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/nais/fasit/pkg/feature"
@@ -22,6 +23,11 @@ func TestFeatures(t *testing.T) {
 
 	for _, f := range mgr.Features {
 		t.Run(f.Name, func(t *testing.T) {
+			for name, cfg := range f.Config {
+				if cfg.Default != nil && cfg.Valid(json.RawMessage(cfg.Default)) != nil {
+					t.Errorf("config %s has invalid default value: %v", name, cfg.Valid(json.RawMessage(cfg.Default)))
+				}
+			}
 			if len(f.EnvironmentKinds) == 0 {
 				t.Error("no environment kind specified")
 			}

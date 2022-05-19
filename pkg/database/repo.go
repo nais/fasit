@@ -39,7 +39,7 @@ type Repo interface {
 	FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
 	HealthGet(ctx context.Context, environmentID uuid.UUID) (*model.Health, error)
 	HealthStatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Health) error
-	HelmValues(ctx context.Context, feature string, envID uuid.UUID, requiredFields []string) (map[string]any, error)
+	HelmValues(ctx context.Context, feature *feature.Feature, envID uuid.UUID) (map[string]any, error)
 	KubernetesNodesForEnv(ctx context.Context, envID uuid.UUID) ([]*model.KubernetesNode, error)
 	KubernetesNodeSync(ctx context.Context, envID uuid.UUID, kn *message.KubernetesNodes) error
 	Metrics() prometheus.Collector

@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database/gensql"
+	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
@@ -168,20 +169,46 @@ func (r *repo) ConfigDelete(ctx context.Context, id uuid.UUID) error {
 	return r.querier.ConfigDelete(ctx, id)
 }
 
-func (r *repo) HelmValues(ctx context.Context, feature string, envID uuid.UUID, requiredFields []string) (map[string]any, error) {
+func (r *repo) HelmValues(ctx context.Context, feature *feature.Feature, envID uuid.UUID) (map[string]any, error) {
 	vals, err := r.querier.EnvConfig(ctx, gensql.EnvConfigParams{
-		Feature:       feature,
+		Feature:       feature.Name,
 		EnvironmentID: envID,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	missing := validateFields(requiredFields, vals)
+	for ck, cv := range feature.Config {
+		if cv.Default == nil || hasHelmKey(ck, vals) {
+			continue
+		}
+		vals = append(vals, gensql.EnvConfigRow{
+			Feature: feature.Name,
+			Key:     ck,
+			Value:   json.RawMessage(cv.Default),
+			Secret:  cv.Secret,
+		})
+	}
+
+	missing := validateFields(feature.RequiredFields(), vals)
 	if len(missing) > 0 {
 		return nil, &ErrMissingRequiredFields{Fields: missing}
 	}
-	return makeHelmConfigMap(vals)
+	v, err := makeHelmConfigMap(vals)
+	if err != nil {
+		return nil, err
+	}
+
+	return v, nil
+}
+
+func hasHelmKey(ck string, vals []gensql.EnvConfigRow) bool {
+	for _, v := range vals {
+		if v.Key == ck {
+			return true
+		}
+	}
+	return false
 }
 
 func validateFields(requiredFields []string, values []gensql.EnvConfigRow) []string {
