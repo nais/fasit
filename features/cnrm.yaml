@@ -1,0 +1,9 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/cnrm
+source: https://github.com/nais/up/tree/master/charts
+version: 0.1.0
+environmentKinds:
+  - "tenant"
+config:
+  projectID:
+    type: string
+    required: true
