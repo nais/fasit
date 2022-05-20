@@ -15,10 +15,6 @@ config:
   naiserator.google-project-id:
     type: string
     required: true
-  naiserator.features.linkerd:
-    type: bool
-  naiserator.features.nais-system:
-    type: bool
   naiserator.features.jwker:
     type: bool
   naiserator.features.azurerator:
@@ -31,4 +27,3 @@ config:
     type: bool
   naiserator.leader-election.image:
     type: string
-
