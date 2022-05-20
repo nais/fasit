@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+option go_package = "pkg/provider/protogen;protogen";
+
+
+service Provider {
+  rpc CreateTenant(CreateTenantRequest) returns (TenantResponse) {}
+  rpc CreateCluster(CreateClusterRequest) returns (ClusterResponse) {}
+}
+
+message CreateTenantRequest {
+  string name = 1;
+}
+
+message TenantResponse {
+  string id = 1;
+  string name = 2;
+}
+
+
+message ClusterResponse {
+  string id = 1;
+  string tenant_id = 2;
+  string name = 3;
+  string gcp_project = 4;
+}
+
+message CreateClusterRequest {
+  string tenant_id=1;
+  string name=2;
+  string gcp_project = 3;
+}

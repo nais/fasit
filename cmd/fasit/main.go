@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"strings"
@@ -22,9 +24,13 @@ import (
 	"github.com/nais/fasit/pkg/graph"
 	"github.com/nais/fasit/pkg/graph/graphgen"
 	"github.com/nais/fasit/pkg/message"
+	"github.com/nais/fasit/pkg/provider"
+	"github.com/nais/fasit/pkg/provider/protogen"
 	"github.com/nais/fasit/pkg/workers"
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/sync/errgroup"
+	"google.golang.org/grpc"
 
 	// Supported database drivers.
 	_ "github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/postgres"
@@ -133,6 +139,12 @@ func main() {
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	http.Handle("/query", corsMW.Handler(srv))
 
+	go func() {
+		if err := runGRPC(ctx, repo); err != nil {
+			log.Error(err)
+		}
+	}()
+
 	log.Printf("connect to http://%s/ for GraphQL playground", cfg.BindAddress)
 	log.Fatal(http.ListenAndServe(cfg.BindAddress, nil))
 }
@@ -154,4 +166,27 @@ func getEnv(key, fallback string) string {
 		return env
 	}
 	return fallback
+}
+
+func runGRPC(ctx context.Context, repo database.Repo) error {
+	fmt.Println("GRPC serving on port 4444")
+	lis, err := net.Listen("tcp", ":4444")
+	if err != nil {
+		return fmt.Errorf("failed to listen: %w", err)
+	}
+
+	opts := []grpc.ServerOption{}
+	s := grpc.NewServer(opts...)
+
+	protogen.RegisterProviderServer(s, provider.NewServer(repo))
+
+	g, ctx := errgroup.WithContext(ctx)
+	g.Go(func() error { return s.Serve(lis) })
+	g.Go(func() error {
+		<-ctx.Done()
+		s.GracefulStop()
+		return nil
+	})
+
+	return g.Wait()
 }

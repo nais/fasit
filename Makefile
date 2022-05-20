@@ -46,3 +46,11 @@ integration-test:
 mocks:
 	mockery --case underscore --name Repo --dir pkg/database/ --outpkg mocks --output pkg/database/mocks
 	mockery --case underscore --name Querier --dir pkg/database/ --outpkg mocks --output pkg/database/mocks
+
+generate-proto:
+	mkdir -p pkg/provider/protogen
+	protoc \
+		-I schema/protobuf/ \
+		./schema/protobuf/*.proto \
+		--go_out=. \
+		--go-grpc_out=.
