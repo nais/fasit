@@ -4,6 +4,8 @@ version: 0.1.0
 environmentKinds:
   - "tenant"
   - "management"
+dependsOn:
+  - "certificates"
 config:
   certificates:
     type: string_array
