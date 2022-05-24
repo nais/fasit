@@ -21,8 +21,9 @@ import (
 )
 
 const (
-	deploySubscriptionID = "naisd-subscription"
-	naisStatusTopic      = "status"
+	deploySubscriptionID  = "naisd-subscription"
+	consoleSubscriptionID = "naisd-console-subscription"
+	naisStatusTopic       = "status"
 )
 
 var (
@@ -62,6 +63,7 @@ func main() {
 	}
 
 	deploySubscriber := message.NewSubscriber[message.DeployInstruction](deployClient, cfg.EnvProjectID, deploySubscriptionID)
+	namespaceSubscriber := message.NewSubscriber[message.Console](deployClient, cfg.EnvProjectID, consoleSubscriptionID)
 	statusPublisher := message.NewPublisher[message.Status](deployClient, cfg.NaisProjectID, naisStatusTopic, log.WithField("subsystem", "status-pubsub"))
 
 	kubeConfig := local.RESTConfig()
@@ -94,6 +96,9 @@ func main() {
 	s.Register("health", healthReporter, 1*time.Minute)
 	s.Register("kubernetes", kubernetesReporter, 3*time.Minute)
 	s.Start(ctx)
+
+	consoleMgr := naisd.NewConsoleManager(namespaceSubscriber, k8sClient, log.WithField("subsystem", "console"))
+	go consoleMgr.Run(ctx)
 
 	log.Info("Receiver started")
 	receiver.Run(ctx)
