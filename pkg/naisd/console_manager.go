@@ -83,7 +83,10 @@ func (c *ConsoleManager) createNamespace(ctx context.Context, msg message.Consol
 	if err != nil {
 		if errors.IsNotFound(err) {
 			_, err := c.kubeClient.CoreV1().Namespaces().Create(ctx, ns, metav1.CreateOptions{})
-			return fmt.Errorf("creating namespace: %w", err)
+			if err != nil {
+				return fmt.Errorf("creating namespace: %w", err)
+			}
+			return nil
 		}
 		return fmt.Errorf("getting namespace: %w", err)
 	}
