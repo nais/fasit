@@ -55,6 +55,8 @@ func (r *Receiver) handler(ctx context.Context, msg message.Status) error {
 		return r.healthStatus(ctx, msg)
 	case message.StatusKubernetesNodes:
 		return r.kubernetesNodes(ctx, msg)
+	default:
+		r.log.WithField("type", msg.Type).Warn("unknown status type")
 	}
 
 	return nil
@@ -172,5 +174,6 @@ func (r *Receiver) kubernetesNodes(ctx context.Context, msg message.Status) erro
 		return err
 	}
 
+	r.log.WithField("nodes", len(status.Nodes)).Info("received kubernetes nodes")
 	return r.repo.KubernetesNodeSync(ctx, environmentID, status)
 }

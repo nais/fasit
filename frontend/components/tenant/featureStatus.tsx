@@ -60,7 +60,7 @@ interface FeatureProps {
 }
 
 const FeatureStatus = ({configs, env, featureName, setShowVerify}: FeatureProps) => {
-    const {loading, error, data} = useFeatureStatusQuery({variables: {envID: env.id, feature: featureName}})
+    const {loading, error, data} = useFeatureStatusQuery({variables: {envID: env.id, feature: featureName}, pollInterval: 10 * 1000})
     const [time, setTime] = useState(Date.now());
     useEffect(() => {
         const interval = setInterval(() => setTime(Date.now()), 10 * 1000)

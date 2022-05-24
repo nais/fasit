@@ -1,7 +1,8 @@
-chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/management-certificates
-source: https://github.com/nais/helm-charts/tree/main/charts/management-certificates
-version: 0.2.0
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/certificates
+source: https://github.com/nais/helm-charts/tree/main/charts/certificates
+version: 0.3.0
 environmentKinds:
+  - "tenant"
   - "management"
 dependsOn:
   - "cert-manager"
@@ -18,4 +19,7 @@ config:
     required: true
   tenant:
     type: string
+    required: true
+  dnsNames:
+    type: string_array
     required: true

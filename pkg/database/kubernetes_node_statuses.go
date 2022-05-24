@@ -16,7 +16,10 @@ func (r *repo) KubernetesNodeSync(ctx context.Context, envID uuid.UUID, kn *mess
 		if err != nil {
 			return err
 		}
-		r.querier.KubernetesNodeCreateOrUpdate(ctx, params)
+		err = r.querier.KubernetesNodeCreateOrUpdate(ctx, params)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

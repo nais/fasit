@@ -1,0 +1,19 @@
+package message
+
+import "encoding/json"
+
+type ConsoleType string
+
+const (
+	ConsoleTypeCreateNamespace ConsoleType = "create-namespace"
+)
+
+type Console struct {
+	Type ConsoleType     `json:"type"`
+	Data json.RawMessage `json:"data"`
+}
+
+type CreateNamespace struct {
+	Name       string `json:"name"`
+	GCPProject string `json:"gcpProject"`
+}
