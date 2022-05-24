@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/contests
 source: https://github.com/nais/helm-charts/tree/main/charts/contests
-version: 0.1.0
+version: 0.3.0
 dependsOn:
   - "naiserator"
 environmentKinds:
