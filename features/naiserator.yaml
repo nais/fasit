@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/naiserator
 source: https://github.com/nais/naiserator/tree/master/charts
-version: 0.1.1
+version: 0.1.2
 repo: ""
 environmentKinds:
   - "tenant"
@@ -15,15 +15,17 @@ config:
   naiserator.google-project-id:
     type: string
     required: true
-  naiserator.features.jwker:
-    type: bool
-  naiserator.features.azurerator:
-    type: bool
-  naiserator.features.digdirator:
-    type: bool
-  naiserator.features.kafkarator:
-    type: bool
   naiserator.kafka.enabled:
     type: bool
   naiserator.leader-election.image:
     type: string
+  naiserator.features.azurerator:
+    type: bool
+  naiserator.features.cilium:
+    type: bool
+  naiserator.features.digdirator:
+    type: bool
+  naiserator.features.jwker:
+    type: bool
+  naiserator.features.kafkarator:
+    type: bool
