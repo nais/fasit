@@ -55,11 +55,15 @@ spec:
           volumeMounts:
           - mountPath: /tmp
             name: tmp
+          - mountPath: /.kube
+            name: kubeconfig
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
 
       volumes:
       - name: tmp
+        emptyDir: {}
+      - name: kubeconfig
         emptyDir: {}
       {{- with .Values.nodeSelector }}
       nodeSelector:
