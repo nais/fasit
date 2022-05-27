@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"embed"
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"time"
@@ -32,6 +33,7 @@ type Repo interface {
 	EnvironmentByNames(ctx context.Context, tenantName, environmentName string) (*model.Environment, error)
 	EnvironmentCreate(ctx context.Context, t *model.EnvironmentCreate) (*model.Environment, error)
 	EnvironmentGet(ctx context.Context, id uuid.UUID) (*model.Environment, error)
+	EnvironmentGetByName(ctx context.Context, tenantID uuid.UUID, name string) (*model.Environment, error)
 	EnvironmentIDByNames(ctx context.Context, tenantName, environmentName string) (uuid.UUID, error)
 	EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]*model.Environment, error)
 	EnvironmentUpdate(ctx context.Context, environmentID uuid.UUID, p *model.EnvironmentUpdate) (*model.Environment, error)
@@ -53,6 +55,8 @@ type Repo interface {
 	TenantGet(ctx context.Context, id uuid.UUID) (*model.Tenant, error)
 	TenantGetByName(ctx context.Context, name string) (*model.Tenant, error)
 	TenantsGet(ctx context.Context) ([]*model.Tenant, error)
+	EnvironmentValueStore(ctx context.Context, environmentID uuid.UUID, key string, value json.RawMessage) error
+	EnvironmentValueGet(ctx context.Context, environmentID uuid.UUID, key string) (*model.EnvironmentValue, error)
 }
 
 type repo struct {

@@ -141,7 +141,7 @@ func main() {
 
 	go func() {
 		if err := runGRPC(ctx, repo); err != nil {
-			log.Error(err)
+			panic(err)
 		}
 	}()
 

@@ -61,6 +61,12 @@ type Environment struct {
 	LastModified time.Time
 }
 
+type EnvironmentValue struct {
+	EnvironmentID uuid.UUID
+	Key           string
+	Value         json.RawMessage
+}
+
 type FeatureState struct {
 	EnvironmentID uuid.UUID
 	Feature       string

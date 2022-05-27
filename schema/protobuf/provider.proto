@@ -2,13 +2,20 @@ syntax = "proto3";
 
 option go_package = "pkg/provider/protogen;protogen";
 
-
 service Provider {
   rpc CreateTenant(CreateTenantRequest) returns (TenantResponse) {}
-  rpc CreateCluster(CreateClusterRequest) returns (ClusterResponse) {}
+  rpc GetTenant(GetTenantRequest) returns (TenantResponse) {}
+  rpc CreateEnvironment(CreateEnvironmentRequest) returns (EnvironmentResponse) {}
+  rpc GetEnvironment(GetEnvironmentRequest) returns (EnvironmentResponse) {}
+  rpc CreateOrUpdateEnvironmentValue(CreateOrUpdateEnvironmentValueRequest) returns (CreateOrUpdateEnvironmentValueResponse) {}
+  rpc GetEnvironmentValue(GetEnvironmentValueRequest) returns (EnvironmentValueResponse) {}
 }
 
 message CreateTenantRequest {
+  string name = 1;
+}
+
+message GetTenantRequest {
   string name = 1;
 }
 
@@ -16,17 +23,46 @@ message TenantResponse {
   string id = 1;
   string name = 2;
 }
+message CreateEnvironmentRequest {
+  string tenant_id = 1;
+  string name = 2;
+  EnvironmentKind kind = 3;
+}
 
+message GetEnvironmentRequest {
+  string tenant_id = 1;
+  string name = 2;
+}
 
-message ClusterResponse {
+message EnvironmentResponse {
   string id = 1;
   string tenant_id = 2;
   string name = 3;
-  string gcp_project = 4;
 }
 
-message CreateClusterRequest {
-  string tenant_id=1;
-  string name=2;
-  string gcp_project = 3;
+enum EnvironmentKind {
+  UNKNOWN = 0;
+  MANAGEMENT = 1;
+  TENANT = 2;
+}
+
+message CreateOrUpdateEnvironmentValueRequest {
+  string environment_id = 1;
+  string key = 2;
+  bytes value = 3;
+}
+
+message CreateOrUpdateEnvironmentValueResponse {
+  bool success = 1;
+}
+
+message GetEnvironmentValueRequest {
+  string environment_id = 1;
+  string key = 2;
+}
+
+message EnvironmentValueResponse {
+  string environment_id = 1;
+  string key = 2;
+  bytes value = 3;
 }

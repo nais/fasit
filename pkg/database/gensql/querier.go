@@ -19,8 +19,11 @@ type Querier interface {
 	EnvironmentByNames(ctx context.Context, arg EnvironmentByNamesParams) (Environment, error)
 	EnvironmentCreate(ctx context.Context, arg EnvironmentCreateParams) (Environment, error)
 	EnvironmentGet(ctx context.Context, id uuid.UUID) (Environment, error)
+	EnvironmentGetByName(ctx context.Context, arg EnvironmentGetByNameParams) (Environment, error)
 	EnvironmentIDByNames(ctx context.Context, arg EnvironmentIDByNamesParams) (uuid.UUID, error)
 	EnvironmentUpdate(ctx context.Context, arg EnvironmentUpdateParams) (Environment, error)
+	EnvironmentValueGet(ctx context.Context, arg EnvironmentValueGetParams) (EnvironmentValue, error)
+	EnvironmentValueStore(ctx context.Context, arg EnvironmentValueStoreParams) error
 	EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]Environment, error)
 	FeatureStateCreateOrUpdate(ctx context.Context, arg FeatureStateCreateOrUpdateParams) (FeatureState, error)
 	FeatureStateGet(ctx context.Context, arg FeatureStateGetParams) (FeatureState, error)

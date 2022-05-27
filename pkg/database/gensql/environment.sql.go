@@ -90,6 +90,33 @@ func (q *Queries) EnvironmentGet(ctx context.Context, id uuid.UUID) (Environment
 	return i, err
 }
 
+const environmentGetByName = `-- name: EnvironmentGetByName :one
+SELECT id, tenant_id, name, kind, description, created, last_modified
+FROM environments
+WHERE tenant_id = $1
+AND name = $2
+`
+
+type EnvironmentGetByNameParams struct {
+	TenantID uuid.UUID
+	Name     string
+}
+
+func (q *Queries) EnvironmentGetByName(ctx context.Context, arg EnvironmentGetByNameParams) (Environment, error) {
+	row := q.db.QueryRowContext(ctx, environmentGetByName, arg.TenantID, arg.Name)
+	var i Environment
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.Name,
+		&i.Kind,
+		&i.Description,
+		&i.Created,
+		&i.LastModified,
+	)
+	return i, err
+}
+
 const environmentIDByNames = `-- name: EnvironmentIDByNames :one
 SELECT e.id
 FROM tenants p

@@ -23,6 +23,11 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ProviderClient interface {
 	CreateTenant(ctx context.Context, in *CreateTenantRequest, opts ...grpc.CallOption) (*TenantResponse, error)
+	GetTenant(ctx context.Context, in *GetTenantRequest, opts ...grpc.CallOption) (*TenantResponse, error)
+	CreateEnvironment(ctx context.Context, in *CreateEnvironmentRequest, opts ...grpc.CallOption) (*EnvironmentResponse, error)
+	GetEnvironment(ctx context.Context, in *GetEnvironmentRequest, opts ...grpc.CallOption) (*EnvironmentResponse, error)
+	CreateOrUpdateEnvironmentValue(ctx context.Context, in *CreateOrUpdateEnvironmentValueRequest, opts ...grpc.CallOption) (*CreateOrUpdateEnvironmentValueResponse, error)
+	GetEnvironmentValue(ctx context.Context, in *GetEnvironmentValueRequest, opts ...grpc.CallOption) (*EnvironmentValueResponse, error)
 }
 
 type providerClient struct {
@@ -42,11 +47,61 @@ func (c *providerClient) CreateTenant(ctx context.Context, in *CreateTenantReque
 	return out, nil
 }
 
+func (c *providerClient) GetTenant(ctx context.Context, in *GetTenantRequest, opts ...grpc.CallOption) (*TenantResponse, error) {
+	out := new(TenantResponse)
+	err := c.cc.Invoke(ctx, "/Provider/GetTenant", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *providerClient) CreateEnvironment(ctx context.Context, in *CreateEnvironmentRequest, opts ...grpc.CallOption) (*EnvironmentResponse, error) {
+	out := new(EnvironmentResponse)
+	err := c.cc.Invoke(ctx, "/Provider/CreateEnvironment", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *providerClient) GetEnvironment(ctx context.Context, in *GetEnvironmentRequest, opts ...grpc.CallOption) (*EnvironmentResponse, error) {
+	out := new(EnvironmentResponse)
+	err := c.cc.Invoke(ctx, "/Provider/GetEnvironment", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *providerClient) CreateOrUpdateEnvironmentValue(ctx context.Context, in *CreateOrUpdateEnvironmentValueRequest, opts ...grpc.CallOption) (*CreateOrUpdateEnvironmentValueResponse, error) {
+	out := new(CreateOrUpdateEnvironmentValueResponse)
+	err := c.cc.Invoke(ctx, "/Provider/CreateOrUpdateEnvironmentValue", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *providerClient) GetEnvironmentValue(ctx context.Context, in *GetEnvironmentValueRequest, opts ...grpc.CallOption) (*EnvironmentValueResponse, error) {
+	out := new(EnvironmentValueResponse)
+	err := c.cc.Invoke(ctx, "/Provider/GetEnvironmentValue", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ProviderServer is the server API for Provider service.
 // All implementations must embed UnimplementedProviderServer
 // for forward compatibility
 type ProviderServer interface {
 	CreateTenant(context.Context, *CreateTenantRequest) (*TenantResponse, error)
+	GetTenant(context.Context, *GetTenantRequest) (*TenantResponse, error)
+	CreateEnvironment(context.Context, *CreateEnvironmentRequest) (*EnvironmentResponse, error)
+	GetEnvironment(context.Context, *GetEnvironmentRequest) (*EnvironmentResponse, error)
+	CreateOrUpdateEnvironmentValue(context.Context, *CreateOrUpdateEnvironmentValueRequest) (*CreateOrUpdateEnvironmentValueResponse, error)
+	GetEnvironmentValue(context.Context, *GetEnvironmentValueRequest) (*EnvironmentValueResponse, error)
 	mustEmbedUnimplementedProviderServer()
 }
 
@@ -56,6 +111,21 @@ type UnimplementedProviderServer struct {
 
 func (UnimplementedProviderServer) CreateTenant(context.Context, *CreateTenantRequest) (*TenantResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateTenant not implemented")
+}
+func (UnimplementedProviderServer) GetTenant(context.Context, *GetTenantRequest) (*TenantResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetTenant not implemented")
+}
+func (UnimplementedProviderServer) CreateEnvironment(context.Context, *CreateEnvironmentRequest) (*EnvironmentResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateEnvironment not implemented")
+}
+func (UnimplementedProviderServer) GetEnvironment(context.Context, *GetEnvironmentRequest) (*EnvironmentResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetEnvironment not implemented")
+}
+func (UnimplementedProviderServer) CreateOrUpdateEnvironmentValue(context.Context, *CreateOrUpdateEnvironmentValueRequest) (*CreateOrUpdateEnvironmentValueResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateOrUpdateEnvironmentValue not implemented")
+}
+func (UnimplementedProviderServer) GetEnvironmentValue(context.Context, *GetEnvironmentValueRequest) (*EnvironmentValueResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetEnvironmentValue not implemented")
 }
 func (UnimplementedProviderServer) mustEmbedUnimplementedProviderServer() {}
 
@@ -88,6 +158,96 @@ func _Provider_CreateTenant_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Provider_GetTenant_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetTenantRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProviderServer).GetTenant(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Provider/GetTenant",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProviderServer).GetTenant(ctx, req.(*GetTenantRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Provider_CreateEnvironment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateEnvironmentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProviderServer).CreateEnvironment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Provider/CreateEnvironment",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProviderServer).CreateEnvironment(ctx, req.(*CreateEnvironmentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Provider_GetEnvironment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetEnvironmentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProviderServer).GetEnvironment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Provider/GetEnvironment",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProviderServer).GetEnvironment(ctx, req.(*GetEnvironmentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Provider_CreateOrUpdateEnvironmentValue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateOrUpdateEnvironmentValueRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProviderServer).CreateOrUpdateEnvironmentValue(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Provider/CreateOrUpdateEnvironmentValue",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProviderServer).CreateOrUpdateEnvironmentValue(ctx, req.(*CreateOrUpdateEnvironmentValueRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Provider_GetEnvironmentValue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetEnvironmentValueRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProviderServer).GetEnvironmentValue(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Provider/GetEnvironmentValue",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProviderServer).GetEnvironmentValue(ctx, req.(*GetEnvironmentValueRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Provider_ServiceDesc is the grpc.ServiceDesc for Provider service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -98,6 +258,26 @@ var Provider_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateTenant",
 			Handler:    _Provider_CreateTenant_Handler,
+		},
+		{
+			MethodName: "GetTenant",
+			Handler:    _Provider_GetTenant_Handler,
+		},
+		{
+			MethodName: "CreateEnvironment",
+			Handler:    _Provider_CreateEnvironment_Handler,
+		},
+		{
+			MethodName: "GetEnvironment",
+			Handler:    _Provider_GetEnvironment_Handler,
+		},
+		{
+			MethodName: "CreateOrUpdateEnvironmentValue",
+			Handler:    _Provider_CreateOrUpdateEnvironmentValue_Handler,
+		},
+		{
+			MethodName: "GetEnvironmentValue",
+			Handler:    _Provider_GetEnvironmentValue_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

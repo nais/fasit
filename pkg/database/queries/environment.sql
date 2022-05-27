@@ -3,6 +3,12 @@ SELECT *
 FROM environments
 WHERE id = @id;
 
+-- name: EnvironmentGetByName :one
+SELECT *
+FROM environments
+WHERE tenant_id = @tenant_id
+AND name = @name;
+
 -- name: EnvironmentsGet :many
 SELECT *
 FROM environments

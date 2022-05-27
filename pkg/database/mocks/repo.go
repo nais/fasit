@@ -7,6 +7,8 @@ import (
 
 	feature "github.com/nais/fasit/pkg/feature"
 
+	json "encoding/json"
+
 	message "github.com/nais/fasit/pkg/message"
 
 	mock "github.com/stretchr/testify/mock"
@@ -237,6 +239,29 @@ func (_m *Repo) EnvironmentGet(ctx context.Context, id uuid.UUID) (*model.Enviro
 	return r0, r1
 }
 
+// EnvironmentGetByName provides a mock function with given fields: ctx, tenantID, name
+func (_m *Repo) EnvironmentGetByName(ctx context.Context, tenantID uuid.UUID, name string) (*model.Environment, error) {
+	ret := _m.Called(ctx, tenantID, name)
+
+	var r0 *model.Environment
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, string) *model.Environment); ok {
+		r0 = rf(ctx, tenantID, name)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Environment)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, string) error); ok {
+		r1 = rf(ctx, tenantID, name)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // EnvironmentIDByNames provides a mock function with given fields: ctx, tenantName, environmentName
 func (_m *Repo) EnvironmentIDByNames(ctx context.Context, tenantName string, environmentName string) (uuid.UUID, error) {
 	ret := _m.Called(ctx, tenantName, environmentName)
@@ -281,6 +306,43 @@ func (_m *Repo) EnvironmentUpdate(ctx context.Context, environmentID uuid.UUID, 
 	}
 
 	return r0, r1
+}
+
+// EnvironmentValueGet provides a mock function with given fields: ctx, environmentID, key
+func (_m *Repo) EnvironmentValueGet(ctx context.Context, environmentID uuid.UUID, key string) (*model.EnvironmentValue, error) {
+	ret := _m.Called(ctx, environmentID, key)
+
+	var r0 *model.EnvironmentValue
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, string) *model.EnvironmentValue); ok {
+		r0 = rf(ctx, environmentID, key)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.EnvironmentValue)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, string) error); ok {
+		r1 = rf(ctx, environmentID, key)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// EnvironmentValueStore provides a mock function with given fields: ctx, environmentID, key, value
+func (_m *Repo) EnvironmentValueStore(ctx context.Context, environmentID uuid.UUID, key string, value json.RawMessage) error {
+	ret := _m.Called(ctx, environmentID, key, value)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, string, json.RawMessage) error); ok {
+		r0 = rf(ctx, environmentID, key, value)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // EnvironmentsGet provides a mock function with given fields: ctx, tenantID

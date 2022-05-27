@@ -27,6 +27,17 @@ func (r *repo) EnvironmentGet(ctx context.Context, id uuid.UUID) (*model.Environ
 	return environmentFromSQL(env), nil
 }
 
+func (r *repo) EnvironmentGetByName(ctx context.Context, tenantID uuid.UUID, name string) (*model.Environment, error) {
+	env, err := r.querier.EnvironmentGetByName(ctx, gensql.EnvironmentGetByNameParams{
+		TenantID: tenantID,
+		Name:     name,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return environmentFromSQL(env), nil
+}
+
 func (r *repo) EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]*model.Environment, error) {
 	envs, err := r.querier.EnvironmentsGet(ctx, tenantID)
 	if err != nil {
@@ -73,8 +84,8 @@ func (r *repo) EnvironmentByNames(ctx context.Context, tenantName, environmentNa
 		return nil, err
 	}
 	return environmentFromSQL(res), nil
-
 }
+
 func (r *repo) EnvironmentIDByNames(ctx context.Context, tenantName, environmentName string) (uuid.UUID, error) {
 	params := gensql.EnvironmentIDByNamesParams{
 		EnvironmentName: environmentName,

@@ -230,6 +230,27 @@ func (_m *Querier) EnvironmentGet(ctx context.Context, id uuid.UUID) (gensql.Env
 	return r0, r1
 }
 
+// EnvironmentGetByName provides a mock function with given fields: ctx, arg
+func (_m *Querier) EnvironmentGetByName(ctx context.Context, arg gensql.EnvironmentGetByNameParams) (gensql.Environment, error) {
+	ret := _m.Called(ctx, arg)
+
+	var r0 gensql.Environment
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.EnvironmentGetByNameParams) gensql.Environment); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(gensql.Environment)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, gensql.EnvironmentGetByNameParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // EnvironmentIDByNames provides a mock function with given fields: ctx, arg
 func (_m *Querier) EnvironmentIDByNames(ctx context.Context, arg gensql.EnvironmentIDByNamesParams) (uuid.UUID, error) {
 	ret := _m.Called(ctx, arg)
@@ -272,6 +293,41 @@ func (_m *Querier) EnvironmentUpdate(ctx context.Context, arg gensql.Environment
 	}
 
 	return r0, r1
+}
+
+// EnvironmentValueGet provides a mock function with given fields: ctx, arg
+func (_m *Querier) EnvironmentValueGet(ctx context.Context, arg gensql.EnvironmentValueGetParams) (gensql.EnvironmentValue, error) {
+	ret := _m.Called(ctx, arg)
+
+	var r0 gensql.EnvironmentValue
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.EnvironmentValueGetParams) gensql.EnvironmentValue); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(gensql.EnvironmentValue)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, gensql.EnvironmentValueGetParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// EnvironmentValueStore provides a mock function with given fields: ctx, arg
+func (_m *Querier) EnvironmentValueStore(ctx context.Context, arg gensql.EnvironmentValueStoreParams) error {
+	ret := _m.Called(ctx, arg)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.EnvironmentValueStoreParams) error); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // EnvironmentsGet provides a mock function with given fields: ctx, tenantID
