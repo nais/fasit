@@ -105,6 +105,7 @@ export const KeywordsInput = ({
                     onAddition={(tag) => onAdd(tag.name)}
                     placeholderText={'values (press enter to add)'}
                     allowNew
+                    addOnBlur
                 />
             </StyledRectTags>
             {values && values.map((k) => {
