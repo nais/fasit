@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring
-version: 0.8.0
+version: 0.10.0
 environmentKinds:
   - "tenant"
   - "management"
@@ -37,3 +37,7 @@ config:
     type: string_array
   kube-prometheus-stack.nais.additionalScrapeConfigs.kubernetesPods.enabled:
     type: bool
+  nais_alerts.slack.webhook:
+    type: string
+  nais_alerts.slack.channel:
+    type: string
