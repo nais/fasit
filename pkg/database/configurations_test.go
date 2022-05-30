@@ -17,6 +17,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/database/mocks"
+	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/stretchr/testify/mock"
 )
@@ -128,62 +129,6 @@ func TestHelmConfigMap(t *testing.T) {
 			retval, err := makeHelmConfigMap(tc.input)
 			if err != nil {
 				t.Fatal(err)
-			}
-			if !cmp.Equal(retval, tc.expected) {
-				t.Error(cmp.Diff(retval, tc.expected))
-			}
-		})
-	}
-}
-
-func TestSmartDotSplit(t *testing.T) {
-	tests := map[string]struct {
-		input    string
-		expected []string
-		err      error
-	}{
-		"empty": {
-			input:    "",
-			expected: []string{""},
-		},
-		"single_level": {
-			input:    "test1",
-			expected: []string{"test1"},
-		},
-		"multi_level": {
-			input:    "test.a",
-			expected: []string{"test", "a"},
-		},
-		"escaped dots": {
-			input:    "test\\.a",
-			expected: []string{"test.a"},
-		},
-		"end with .": {
-			input: "test.a.",
-			err:   errors.New("cannot end with `.`"),
-		},
-		"starts with .": {
-			input: ".test.a",
-			err:   errors.New("cannot start with `.`"),
-		},
-		"contains ..": {
-			input: "test..a",
-			err:   errors.New("invalid `.` on position 5"),
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			retval, err := smartDotSplit(tc.input)
-			if err != nil {
-				if tc.err == nil {
-					t.Fatal(err)
-				}
-				if tc.err.Error() != err.Error() {
-					t.Errorf("got %q, want %q", err, tc.err)
-				}
-			} else if tc.err != nil {
-				t.Errorf("got nil, want %q", tc.err)
 			}
 			if !cmp.Equal(retval, tc.expected) {
 				t.Error(cmp.Diff(retval, tc.expected))
@@ -358,6 +303,9 @@ func TestRepo_ConfigUpdate_Global(t *testing.T) {
 	got, err = repo.ConfigUpdate(context.Background(), got.(*model.GlobalConfiguration).ID, model.UpdateConfiguration{
 		Value: []byte(`"newval"`),
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	want := &model.GlobalConfiguration{
 		FeatureName: config.Feature,
@@ -421,7 +369,7 @@ func TestRepo_HelmValues_OK(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err := r.HelmValues(context.Background(), "feature5", envid, []string{"my.key"})
+	got, err := r.HelmValues(context.Background(), feature.Feature{Name: "feature5"}, envid, []string{"my.key"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -458,14 +406,18 @@ func TestRepo_HelmValues_MissingRequiredField(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = r.HelmValues(context.Background(), "feature5", envid, []string{"no.key"})
+	_, err = r.HelmValues(context.Background(), feature.Feature{Name: "feature5"}, envid, []string{"no.key"})
 	if !errors.Is(err, &ErrMissingRequiredFields{}) {
 		t.Errorf("got: %v, want ErrMissingRequiredFields", err)
 	}
 }
 
 func TestRepo_HelmValues_InvaldKeyNesting(t *testing.T) {
-	r := newTestRepo(t)
+	envid := uuid.New()
+	tenantid := uuid.New()
+	q1 := `INSERT INTO tenants (id, name) VALUES ('%s', 'tenant1')`
+	q2 := `INSERT INTO environments (id, tenant_id, name, kind) VALUES ('%s', '%s', 'env1', 'tenant')`
+	r := newTestRepo(t, fmt.Sprintf(q1, tenantid), fmt.Sprintf(q2, envid, tenantid))
 	defer r.Close()
 
 	config := model.NewConfiguration{
@@ -490,8 +442,61 @@ func TestRepo_HelmValues_InvaldKeyNesting(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = r.HelmValues(context.Background(), "feature5", uuid.New(), nil)
+	_, err = r.HelmValues(context.Background(), feature.Feature{Name: "feature5"}, envid, nil)
 	if err == nil || !strings.HasSuffix(err.Error(), "is not nestable") {
 		t.Errorf("got: %v, want \"key `key` is not nestable\"", err)
+	}
+}
+
+func TestRepo_HelmValues_WithMappingValues(t *testing.T) {
+	envid := uuid.New()
+	mgmtID := uuid.New()
+	tenantid := uuid.New()
+	q1 := `INSERT INTO tenants (id, name) VALUES ('%s', 'tenant1')`
+	q2 := `INSERT INTO environments (id, tenant_id, name, kind) VALUES ('%s', '%s', 'management', 'management')`
+	q3 := `INSERT INTO environments (id, tenant_id, name, kind) VALUES ('%s', '%s', 'env1', 'tenant')`
+	r := newTestRepo(t, fmt.Sprintf(q1, tenantid), fmt.Sprintf(q2, mgmtID, tenantid), fmt.Sprintf(q3, envid, tenantid))
+	defer r.Close()
+
+	vali := []struct {
+		EnvID uuid.UUID
+		Key   string
+		Value json.RawMessage
+	}{
+		{mgmtID, "project_id", json.RawMessage(`"my-project"`)},
+		{envid, "project_id", json.RawMessage(`"env-project"`)},
+	}
+
+	feature := feature.Feature{
+		Name: "feature5",
+		Mapping: feature.Mapping{
+			"names.tenant":      "{{ .Tenant.Name }}",
+			"names.environment": "{{ .Env.name }}",
+			"kind":              "{{ .Kind }}",
+			"projects.env":      "{{ .Env.project_id }}",
+			"projects.mgmt":     "{{ .Management.project_id }}",
+		},
+	}
+
+	for _, v := range vali {
+		err := r.EnvironmentValueStore(context.Background(), v.EnvID, v.Key, v.Value)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	got, err := r.HelmValues(context.Background(), feature, envid, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := map[string]any{
+		"kind":     "tenant",
+		"names":    map[string]any{"environment": "env1", "tenant": "tenant1"},
+		"projects": map[string]any{"env": "env-project", "mgmt": "my-project"},
+	}
+
+	if !cmp.Equal(want, got) {
+		t.Errorf("diff -want +got:\n%v", cmp.Diff(want, got))
 	}
 }

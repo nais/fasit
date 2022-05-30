@@ -330,6 +330,27 @@ func (_m *Querier) EnvironmentValueStore(ctx context.Context, arg gensql.Environ
 	return r0
 }
 
+// EnvironmentValuesForEnvironment provides a mock function with given fields: ctx, arg
+func (_m *Querier) EnvironmentValuesForEnvironment(ctx context.Context, arg gensql.EnvironmentValuesForEnvironmentParams) (gensql.EnvironmentValuesForEnvironmentRow, error) {
+	ret := _m.Called(ctx, arg)
+
+	var r0 gensql.EnvironmentValuesForEnvironmentRow
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.EnvironmentValuesForEnvironmentParams) gensql.EnvironmentValuesForEnvironmentRow); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(gensql.EnvironmentValuesForEnvironmentRow)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, gensql.EnvironmentValuesForEnvironmentParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // EnvironmentsGet provides a mock function with given fields: ctx, tenantID
 func (_m *Querier) EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]gensql.Environment, error) {
 	ret := _m.Called(ctx, tenantID)

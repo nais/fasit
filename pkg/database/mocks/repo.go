@@ -345,6 +345,29 @@ func (_m *Repo) EnvironmentValueStore(ctx context.Context, environmentID uuid.UU
 	return r0
 }
 
+// EnvironmentValuesForEnvironment provides a mock function with given fields: ctx, envID
+func (_m *Repo) EnvironmentValuesForEnvironment(ctx context.Context, envID uuid.UUID) (*feature.MappingValues, error) {
+	ret := _m.Called(ctx, envID)
+
+	var r0 *feature.MappingValues
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) *feature.MappingValues); ok {
+		r0 = rf(ctx, envID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*feature.MappingValues)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, envID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // EnvironmentsGet provides a mock function with given fields: ctx, tenantID
 func (_m *Repo) EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]*model.Environment, error) {
 	ret := _m.Called(ctx, tenantID)
@@ -452,11 +475,11 @@ func (_m *Repo) HealthStatusCreateOrUpdate(ctx context.Context, environmentID uu
 }
 
 // HelmValues provides a mock function with given fields: ctx, _a1, envID, requiredFields
-func (_m *Repo) HelmValues(ctx context.Context, _a1 string, envID uuid.UUID, requiredFields []string) (map[string]interface{}, error) {
+func (_m *Repo) HelmValues(ctx context.Context, _a1 feature.Feature, envID uuid.UUID, requiredFields []string) (map[string]interface{}, error) {
 	ret := _m.Called(ctx, _a1, envID, requiredFields)
 
 	var r0 map[string]interface{}
-	if rf, ok := ret.Get(0).(func(context.Context, string, uuid.UUID, []string) map[string]interface{}); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, feature.Feature, uuid.UUID, []string) map[string]interface{}); ok {
 		r0 = rf(ctx, _a1, envID, requiredFields)
 	} else {
 		if ret.Get(0) != nil {
@@ -465,7 +488,7 @@ func (_m *Repo) HelmValues(ctx context.Context, _a1 string, envID uuid.UUID, req
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, uuid.UUID, []string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, feature.Feature, uuid.UUID, []string) error); ok {
 		r1 = rf(ctx, _a1, envID, requiredFields)
 	} else {
 		r1 = ret.Error(1)

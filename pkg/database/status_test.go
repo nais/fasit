@@ -17,8 +17,8 @@ func Test_repo_StatusCreateOrUpdate_Get(t *testing.T) {
 	repo := newTestRepo(t)
 	defer repo.Close()
 
-	_, env := tenantWithEnv(t, repo)
-	_, env2 := tenantWithEnv(t, repo)
+	_, env := tenantWithEnv(t, "tenant1", repo)
+	_, env2 := tenantWithEnv(t, "tenant2", repo)
 
 	tests := []struct {
 		name  string

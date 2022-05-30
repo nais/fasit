@@ -3,11 +3,11 @@ package feature
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/nais/fasit/pkg/graph/model"
 	"io/fs"
 	"path/filepath"
 	"strings"
 
+	"github.com/nais/fasit/pkg/graph/model"
 	"gopkg.in/yaml.v2"
 )
 
@@ -21,6 +21,7 @@ type Feature struct {
 	Source           string                  `yaml:"source"`
 	DependsOn        []string                `yaml:"dependsOn"`
 	Config           Config                  `yaml:"config"`
+	Mapping          Mapping                 `yaml:"mapping"`
 	EnvironmentKinds []model.EnvironmentKind `yaml:"environmentKinds"`
 }
 

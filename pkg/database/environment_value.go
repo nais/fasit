@@ -2,10 +2,14 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database/gensql"
+	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
@@ -27,6 +31,47 @@ func (r *repo) EnvironmentValueGet(ctx context.Context, environmentID uuid.UUID,
 	}
 
 	return environmentValueFromSQL(ev), nil
+}
+
+func (r *repo) EnvironmentValuesForEnvironment(ctx context.Context, envID uuid.UUID) (*feature.MappingValues, error) {
+	env, err := r.querier.EnvironmentGet(ctx, envID)
+	if err != nil {
+		return nil, fmt.Errorf("envValuesForEnv: failed to get environment: %w", err)
+	}
+
+	tenant, err := r.TenantGet(ctx, env.TenantID)
+	if err != nil {
+		return nil, fmt.Errorf("envValuesForEnv: failed to get tenant: %w", err)
+	}
+	mv := &feature.MappingValues{
+		Kind: model.EnvironmentKind(env.Kind),
+		Tenant: feature.MappingTenant{
+			Name: tenant.Name,
+		},
+	}
+
+	evs, err := r.querier.EnvironmentValuesForEnvironment(ctx, gensql.EnvironmentValuesForEnvironmentParams{
+		Tenantid: tenant.ID,
+		Envid:    envID,
+	})
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return mv, nil
+		}
+		return nil, fmt.Errorf("envValuesForEnv: failed to get environment values: %w", err)
+	}
+
+	if err := json.Unmarshal(evs.Management, &mv.Management); err != nil {
+		return nil, fmt.Errorf("envValuesForEnv: failed to unmarshal management values: %w", err)
+	}
+
+	if err := json.Unmarshal(evs.Environment, &mv.Env); err != nil {
+		return nil, fmt.Errorf("envValuesForEnv: failed to unmarshal environment values: %w", err)
+	}
+
+	mv.Env["name"] = env.Name
+
+	return mv, nil
 }
 
 func environmentValueFromSQL(p gensql.EnvironmentValue) *model.EnvironmentValue {

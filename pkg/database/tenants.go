@@ -76,6 +76,7 @@ func (r *repo) TenantEnvironments(ctx context.Context) ([]*model.TenantEnvironme
 				Kind:         model.EnvironmentKind(d.Kind),
 			},
 			TenantName: d.TenantName,
+			TenantID:   d.TenantID,
 		})
 	}
 

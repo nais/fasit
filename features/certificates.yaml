@@ -11,15 +11,12 @@ config:
     type: string
   acme.api:
     type: string
-  cloudDNS.zone:
-    type: string
-    required: true
-  cloudDNS.project:
-    type: string
-    required: true
-  tenant:
-    type: string
-    required: true
   dnsNames:
     type: string_array
     required: true
+mapping:
+  cloudDNS.zone: "{{.Management.cloud_dns_zone}}"
+  cloudDNS.project: "{{.Management.project_id}}"
+  tenant: "{{.Tenant.Name}}"
+  dnsNames:
+    - '*.{{if eq .Kind "tenant"}}{{.Env.name}}.{{end}}{{.Tenant.Name}}.cloud.nais.io'

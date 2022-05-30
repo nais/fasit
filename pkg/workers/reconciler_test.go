@@ -242,7 +242,7 @@ func (m *mockStore) FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*m
 	return m.featureStates, nil
 }
 
-func (m *mockStore) HelmValues(ctx context.Context, feature string, envID uuid.UUID, requiredFields []string) (map[string]any, error) {
+func (m *mockStore) HelmValues(ctx context.Context, feature feature.Feature, envID uuid.UUID, requiredFields []string) (map[string]any, error) {
 	return m.helmValues, nil
 }
 

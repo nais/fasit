@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database/gensql"
+	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
@@ -168,9 +168,14 @@ func (r *repo) ConfigDelete(ctx context.Context, id uuid.UUID) error {
 	return r.querier.ConfigDelete(ctx, id)
 }
 
-func (r *repo) HelmValues(ctx context.Context, feature string, envID uuid.UUID, requiredFields []string) (map[string]any, error) {
+func (r *repo) HelmValues(ctx context.Context, feature feature.Feature, envID uuid.UUID, requiredFields []string) (map[string]any, error) {
+	mv, err := r.EnvironmentValuesForEnvironment(ctx, envID)
+	if err != nil {
+		return nil, err
+	}
+
 	vals, err := r.querier.EnvConfig(ctx, gensql.EnvConfigParams{
-		Feature:       feature,
+		Feature:       feature.Name,
 		EnvironmentID: envID,
 	})
 	if err != nil {
@@ -181,7 +186,13 @@ func (r *repo) HelmValues(ctx context.Context, feature string, envID uuid.UUID, 
 	if len(missing) > 0 {
 		return nil, &ErrMissingRequiredFields{Fields: missing}
 	}
-	return makeHelmConfigMap(vals)
+	mp, err := makeHelmConfigMap(vals)
+	if err != nil {
+		return nil, err
+	}
+
+	err = feature.Mapping.Generate(mv, mp)
+	return mp, err
 }
 
 func validateFields(requiredFields []string, values []gensql.EnvConfigRow) []string {
@@ -208,7 +219,7 @@ func makeHelmConfigMap(vals []gensql.EnvConfigRow) (map[string]any, error) {
 	val := make(map[string]any)
 
 	for _, v := range vals {
-		keys, err := smartDotSplit(v.Key)
+		keys, err := feature.SmartDotSplit(v.Key)
 		if err != nil {
 			return nil, err
 		}
@@ -234,34 +245,4 @@ func makeHelmConfigMap(vals []gensql.EnvConfigRow) (map[string]any, error) {
 		}
 	}
 	return val, nil
-}
-
-func smartDotSplit(s string) ([]string, error) {
-	if strings.HasSuffix(s, ".") {
-		return nil, fmt.Errorf("cannot end with `.`")
-	}
-	if strings.HasPrefix(s, ".") {
-		return nil, fmt.Errorf("cannot start with `.`")
-	}
-
-	str := ""
-	var ret []string
-	for i, ch := range s {
-		switch ch {
-		case '.':
-			if len(str) == 0 || i == 0 {
-				return nil, fmt.Errorf("invalid `.` on position %v", i)
-			}
-			if s[i-1] == '\\' {
-				str = str[:len(str)-1]
-				str += "."
-			} else {
-				ret = append(ret, str)
-				str = ""
-			}
-		default:
-			str += string(ch)
-		}
-	}
-	return append(ret, str), nil
 }

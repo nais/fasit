@@ -41,3 +41,46 @@ func (q *Queries) EnvironmentValueStore(ctx context.Context, arg EnvironmentValu
 	_, err := q.db.ExecContext(ctx, environmentValueStore, arg.Envid, arg.Key, arg.Value)
 	return err
 }
+
+const environmentValuesForEnvironment = `-- name: EnvironmentValuesForEnvironment :one
+WITH management_id AS (
+  SELECT id
+  FROM environments
+  WHERE tenant_id = $1
+  AND kind = 'management'
+),
+management_values AS (
+  SELECT
+    json_object_agg("key", "value") AS management
+  FROM environment_values, management_id
+  WHERE environment_values.environment_id = management_id.id
+),
+environment_values AS (
+  SELECT
+    json_object_agg("key", "value") AS environment
+  FROM environment_values
+  WHERE environment_values.environment_id = $2
+)
+
+SELECT
+  COALESCE(management_values.management, '{}'::json),
+  COALESCE(environment_values.environment, '{}'::json)
+FROM management_values, environment_values
+`
+
+type EnvironmentValuesForEnvironmentParams struct {
+	Tenantid uuid.UUID
+	Envid    uuid.UUID
+}
+
+type EnvironmentValuesForEnvironmentRow struct {
+	Management  json.RawMessage
+	Environment json.RawMessage
+}
+
+func (q *Queries) EnvironmentValuesForEnvironment(ctx context.Context, arg EnvironmentValuesForEnvironmentParams) (EnvironmentValuesForEnvironmentRow, error) {
+	row := q.db.QueryRowContext(ctx, environmentValuesForEnvironment, arg.Tenantid, arg.Envid)
+	var i EnvironmentValuesForEnvironmentRow
+	err := row.Scan(&i.Management, &i.Environment)
+	return i, err
+}

@@ -99,6 +99,7 @@ func TestRepo_TenantEnvironments(t *testing.T) {
 	ctx := context.Background()
 
 	eids := []uuid.UUID{}
+	tenantIDs := []uuid.UUID{}
 	for i := 0; i < 2; i++ {
 		p, err := repo.TenantCreate(ctx, &model.TenantCreate{
 			Name: fmt.Sprintf("test-tenant-%v", i),
@@ -106,6 +107,7 @@ func TestRepo_TenantEnvironments(t *testing.T) {
 		if err != nil {
 			t.Fatalf("TenantCreate(ctx, tenant) err = %v, want nil", err)
 		}
+		tenantIDs = append(tenantIDs, p.ID)
 
 		for j := 0; j < 2; j++ {
 			e, err := repo.EnvironmentCreate(ctx, &model.EnvironmentCreate{
@@ -135,6 +137,7 @@ func TestRepo_TenantEnvironments(t *testing.T) {
 				Kind:        model.EnvironmentKindTenant,
 			},
 			TenantName: "test-tenant-0",
+			TenantID:   tenantIDs[0],
 		},
 		{
 			Environment: model.Environment{
@@ -144,6 +147,7 @@ func TestRepo_TenantEnvironments(t *testing.T) {
 				Kind:        model.EnvironmentKindTenant,
 			},
 			TenantName: "test-tenant-0",
+			TenantID:   tenantIDs[0],
 		},
 		{
 			Environment: model.Environment{
@@ -153,6 +157,7 @@ func TestRepo_TenantEnvironments(t *testing.T) {
 				Kind:        model.EnvironmentKindTenant,
 			},
 			TenantName: "test-tenant-1",
+			TenantID:   tenantIDs[1],
 		},
 		{
 			Environment: model.Environment{
@@ -162,6 +167,7 @@ func TestRepo_TenantEnvironments(t *testing.T) {
 				Kind:        model.EnvironmentKindTenant,
 			},
 			TenantName: "test-tenant-1",
+			TenantID:   tenantIDs[1],
 		},
 	}
 
@@ -171,12 +177,12 @@ func TestRepo_TenantEnvironments(t *testing.T) {
 	}
 }
 
-func tenantWithEnv(t *testing.T, repo Repo) (*model.Tenant, *model.Environment) {
+func tenantWithEnv(t *testing.T, name string, repo Repo) (*model.Tenant, *model.Environment) {
 	t.Helper()
 
 	ctx := context.Background()
 	p, err := repo.TenantCreate(ctx, &model.TenantCreate{
-		Name: "test-tenant",
+		Name: name,
 	})
 	if err != nil {
 		t.Fatalf("TenantCreate(ctx, tenant) err = %v, want nil", err)

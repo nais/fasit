@@ -20,7 +20,7 @@ type ReconcilerStore interface {
 	TenantEnvironments(ctx context.Context) ([]*model.TenantEnvironments, error)
 	StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]*model.Status, error)
 	FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
-	HelmValues(ctx context.Context, feature string, envID uuid.UUID, requiredFields []string) (map[string]any, error)
+	HelmValues(ctx context.Context, feature feature.Feature, envID uuid.UUID, requiredFields []string) (map[string]any, error)
 }
 
 type Publisher interface {
@@ -124,7 +124,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 			continue
 		}
 
-		values, err := r.repo.HelmValues(ctx, f.Name, d.ID, f.RequiredFields())
+		values, err := r.repo.HelmValues(ctx, f, d.ID, f.RequiredFields())
 		if err != nil {
 			var fer *database.ErrMissingRequiredFields
 			if errors.As(err, &fer) {
