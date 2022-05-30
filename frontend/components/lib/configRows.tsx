@@ -80,7 +80,7 @@ const ConfigRows = ({
                             '<default>' :
                         prettifyArray(conf.value)}
                     </Table.DataCell>
-                    <Table.DataCell align={'center'}>{conf.env ? <Place/> : conf.value ? <Globe/> :
+                    <Table.DataCell align={'center'}>{conf.env ? <Place/> : JSON.stringify(conf.value) !== "null" ? <Globe/> :
                         <FileContent/>}
                     </Table.DataCell>
                     <Table.DataCell align={'center'}>{conf.required &&
