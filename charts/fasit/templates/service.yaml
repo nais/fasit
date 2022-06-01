@@ -10,6 +10,10 @@ spec:
     port: 80
     protocol: TCP
     targetPort: http
+  - name: grpc
+    port: 4444
+    protocol: TCP
+    targetPort: grpc
   selector:
     {{- include "fasit.selectorLabels" . | nindent 4 }}
   sessionAffinity: None
