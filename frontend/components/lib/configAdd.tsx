@@ -130,6 +130,7 @@ const ConfigAdd = ({conf, envID, globalConfig, feature, open, showOpen}: ConfigA
                     {featureConfig && inputType(featureConfig.type)}
                     <TextField label={'Comment'} value={description} onChange={(e) => setDescription(e.target.value)}/>
                     <Button style={{marginTop: "10px"}}>Submit</Button>
+                    <Button variant={"danger"} style={{marginTop: "10px", marginLeft: "10px"}} onClick={() => showOpen(false)} >Cancel</Button>
                 </form>
             </Box>
         </Modal>

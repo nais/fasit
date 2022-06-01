@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/console
 source: https://github.com/nais/console/tree/master/charts
-version: 0.0.2
+version: 0.0.3
 environmentKinds:
   - "management"
 config:
@@ -42,12 +42,6 @@ config:
     type: string
   backend.usersyncEnabled:
     type: bool
-  backend.usersyncCredentialsFile:
-    type: string
-  backend.usersyncDelegatedUser:
-    type: string
-  backend.usersyncDomain:
-    type: string
   backend.oauthClientId:
     type: string
   backend.oauthClientSecret:
@@ -61,3 +55,27 @@ config:
   ingress.hosts:
     type: string_array
     required: true
+  backend.azureClientId:
+    type: string
+  backend.azureClientSecret:
+    type: string
+  backend.azureEnabled:
+    type: bool
+  backend.azureRedirectUrl:
+    type: string
+  backend.azureTenantId:
+    type: string
+  backend.gcpEnabled:
+    type: bool
+  backend.gcpProjectParentIds:
+    type: string  # fixme: this is a key:value list
+  backend.naisNamespaceEnabled:
+    type: bool
+  backend.naisNamespaceProjectId:
+    type: string
+  backend.naisNamespaceTopicPrefix:
+    type: string
+  backend.logLevel:
+    type: string
+  backend.logFormat:
+    type: string

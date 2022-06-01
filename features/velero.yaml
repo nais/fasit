@@ -1,0 +1,15 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/velero
+source: https://github.com/cert-manager/cert-manager
+version: 0.0.1
+environmentKinds:
+  - "tenant"
+config:
+  velero.serviceAccount.server.annotations.iam\.gke\.io/gcp-service-account:
+    type: string
+    required: true
+  velero.configuration.backupStorageLocation.bucket:
+    type: string
+    required: true
+  velero.configuration.backupStorageLocation.config.serviceAccount:
+    type: string
+    required: true
