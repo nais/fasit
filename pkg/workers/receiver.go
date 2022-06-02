@@ -126,31 +126,12 @@ func (r *Receiver) healthStatus(ctx context.Context, msg message.Status) error {
 	}
 	tenant, err := r.repo.TenantGetByName(ctx, msg.Tenant)
 	if err != nil {
-		if !errors.Is(err, sql.ErrNoRows) {
-			return err
-		}
-		tenant, err = r.repo.TenantCreate(ctx, &model.TenantCreate{
-			Name: msg.Tenant,
-		})
-		if err != nil {
-			return err
-		}
+		return err
 	}
 
 	environmentID, err := r.repo.EnvironmentIDByNames(ctx, tenant.Name, msg.Environment)
 	if err != nil {
-		if !errors.Is(err, sql.ErrNoRows) {
-			return err
-		}
-		env, err := r.repo.EnvironmentCreate(ctx, &model.EnvironmentCreate{
-			Name:     msg.Environment,
-			TenantID: tenant.ID,
-			Kind:     status.Kind,
-		})
-		if err != nil {
-			return err
-		}
-		environmentID = env.ID
+		return err
 	}
 	return r.repo.HealthStatusCreateOrUpdate(ctx, environmentID, status)
 }

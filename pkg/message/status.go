@@ -34,7 +34,6 @@ type Helm struct {
 }
 
 type Health struct {
-	Kind       model.EnvironmentKind
 	ReportedAt time.Time
 }
 
