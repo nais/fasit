@@ -41,8 +41,6 @@ spec:
             - {{ .Values.envProjectId }}
             - --nais-project-id
             - {{ .Values.naisProjectId }}
-            - --cluster-kind
-            - {{ .Values.clusterKind }}
           # livenessProbe:
           #   httpGet:
           #     path: /

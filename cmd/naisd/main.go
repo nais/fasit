@@ -9,7 +9,6 @@ import (
 
 	"cloud.google.com/go/pubsub"
 	"github.com/nais/fasit/cmd/naisd/local"
-	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/nais/fasit/pkg/helm"
 	"github.com/nais/fasit/pkg/message"
 	"github.com/nais/fasit/pkg/naisd"
@@ -42,7 +41,6 @@ func init() {
 	flag.StringVar(&cfg.EnvProjectID, "env-project-id", "local-test-dev", "Google project ID")
 	flag.StringVar(&cfg.NaisProjectID, "nais-project-id", "nais-local-dev", "Nais project ID")
 	flag.StringVar(&cfg.TenantName, "tenant-name", "test", "tenant name")
-	flag.StringVar(&envKind, "cluster-kind", "", "management or tenant")
 	flag.StringVar(&cfg.Env, "env", "dev", "cluster environment")
 	flag.BoolVar(&cfg.Production, "production", false, "When in production, actually run helm install")
 }
@@ -50,10 +48,6 @@ func init() {
 func main() {
 	flag.Parse()
 	log := newLogger()
-	cfg.Kind = model.EnvironmentKind(envKind)
-	if !cfg.Kind.IsValid() {
-		log.Fatal("cluster kind not set")
-	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
@@ -90,7 +84,7 @@ func main() {
 
 	s := workers.NewScheduler(log.WithField("subsystem", "scheduler"))
 	helmListReporter := naisd.NewStatusReporter(cfg.TenantName, cfg.Env, helmClient, statusPublisher)
-	healthReporter := naisd.NewHealthReporter(cfg.TenantName, cfg.Env, cfg.Kind, statusPublisher)
+	healthReporter := naisd.NewHealthReporter(cfg.TenantName, cfg.Env, statusPublisher)
 	kubernetesReporter := naisd.NewKubernetesReporter(cfg.TenantName, cfg.Env, k8sClient, statusPublisher)
 	s.Register("helm-list", helmListReporter, 15*time.Minute)
 	s.Register("health", healthReporter, 1*time.Minute)

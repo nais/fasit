@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/nais/fasit/pkg/message"
 )
 
@@ -14,21 +13,18 @@ type HealthReporter struct {
 	pub    StatusPublisher
 	tenant string
 	env    string
-	kind   model.EnvironmentKind
 }
 
-func NewHealthReporter(tenant, env string, kind model.EnvironmentKind, pub StatusPublisher) *HealthReporter {
+func NewHealthReporter(tenant, env string, pub StatusPublisher) *HealthReporter {
 	return &HealthReporter{
 		pub:    pub,
 		tenant: tenant,
 		env:    env,
-		kind:   kind,
 	}
 }
 
 func (s *HealthReporter) Run(ctx context.Context) error {
 	hr := message.Health{
-		Kind:       s.kind,
 		ReportedAt: time.Now(),
 	}
 
