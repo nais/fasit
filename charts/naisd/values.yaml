@@ -6,6 +6,7 @@ tenantName:
 env:
 envProjectId:
 naisProjectId: nais-io
+management: false
 
 image:
   repository: europe-north1-docker.pkg.dev/nais-io/nais/images/naisd

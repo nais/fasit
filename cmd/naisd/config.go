@@ -9,6 +9,7 @@ type Config struct {
 	TenantName      string
 	NaisProjectID   string
 	Production      bool
+	Management      bool
 }
 
 func DefaultConfig() Config {

@@ -13,7 +13,6 @@ import (
 	"github.com/nais/fasit/pkg/message"
 	"github.com/nais/fasit/pkg/naisd"
 	"github.com/nais/fasit/pkg/workers"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -26,13 +25,7 @@ const (
 )
 
 var (
-	cfg     = DefaultConfig()
-	envKind string
-
-	promErrs = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "naisd",
-		Name:      "errors",
-	}, []string{"location"})
+	cfg = DefaultConfig()
 )
 
 func init() {
@@ -43,6 +36,7 @@ func init() {
 	flag.StringVar(&cfg.TenantName, "tenant-name", "test", "tenant name")
 	flag.StringVar(&cfg.Env, "env", "dev", "cluster environment")
 	flag.BoolVar(&cfg.Production, "production", false, "When in production, actually run helm install")
+	flag.BoolVar(&cfg.Management, "management", false, "if naisd is running in a management cluster")
 }
 
 func main() {
@@ -57,7 +51,6 @@ func main() {
 	}
 
 	deploySubscriber := message.NewSubscriber[message.DeployInstruction](deployClient, cfg.EnvProjectID, deploySubscriptionID)
-	namespaceSubscriber := message.NewSubscriber[message.Console](deployClient, cfg.EnvProjectID, consoleSubscriptionID)
 	statusPublisher := message.NewPublisher[message.Status](deployClient, cfg.NaisProjectID, naisStatusTopic, log.WithField("subsystem", "status-pubsub"))
 
 	kubeConfig := local.RESTConfig()
@@ -91,8 +84,12 @@ func main() {
 	s.Register("kubernetes", kubernetesReporter, 3*time.Minute)
 	s.Start(ctx)
 
-	consoleMgr := naisd.NewConsoleManager(namespaceSubscriber, k8sClient, log.WithField("subsystem", "console"))
-	go consoleMgr.Run(ctx)
+	if !cfg.Management {
+		namespaceSubscriber := message.NewSubscriber[message.Console](deployClient, cfg.EnvProjectID, consoleSubscriptionID)
+		consoleMgr := naisd.NewConsoleManager(namespaceSubscriber, k8sClient, log.WithField("subsystem", "console"))
+
+		go consoleMgr.Run(ctx)
+	}
 
 	log.Info("Receiver started")
 	receiver.Run(ctx)
