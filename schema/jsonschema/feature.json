@@ -1,0 +1,82 @@
+{
+	"$id": "https://github.com/nais/fasit/pkg/feature/feature",
+	"$schema": "http://json-schema.org/draft/2020-12/schema",
+	"additionalProperties": false,
+	"properties": {
+		"chart": {
+			"description": "Chart name if using helm charts or full url if using CRI image chart.",
+			"type": "string"
+		},
+		"config": {
+			"description": "Config is the list of configuration options for the feature.",
+			"patternProperties": {
+				".*": {
+					"additionalProperties": false,
+					"properties": {
+						"required": {
+							"type": "boolean"
+						},
+						"secret": {
+							"type": "boolean"
+						},
+						"type": {
+							"enum": [
+								"string",
+								"int",
+								"bool",
+								"string_array"
+							],
+							"type": "string"
+						}
+					},
+					"required": [
+						"type"
+					],
+					"type": "object"
+				}
+			},
+			"type": "object"
+		},
+		"dependsOn": {
+			"description": "DependsOn defines the features that this feature depends on.",
+			"items": {
+				"type": "string"
+			},
+			"type": "array"
+		},
+		"environmentKinds": {
+			"description": "EnvironmentKinds is the list of environments this feature can be used in.",
+			"items": {
+				"enum": [
+					"management",
+					"tenant"
+				],
+				"type": "string"
+			},
+			"type": "array"
+		},
+		"mapping": {
+			"description": "Mapping is the list of mappings from environment values for the feature.",
+			"type": "object"
+		},
+		"repo": {
+			"description": "Repo is the repository where the helm chart is located.",
+			"type": "string"
+		},
+		"source": {
+			"description": "Source should be the URL to the helm chart source code.",
+			"type": "string"
+		},
+		"version": {
+			"description": "Version of the chart.",
+			"type": "string"
+		}
+	},
+	"required": [
+		"chart",
+		"version",
+		"source",
+		"environmentKinds"
+	],
+	"type": "object"
+}

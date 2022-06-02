@@ -14,15 +14,23 @@ import (
 type Config map[string]ConfigType
 
 type Feature struct {
-	Name             string                  `yaml:"name"`
-	Chart            string                  `yaml:"chart"`
-	Version          string                  `yaml:"version"`
-	Repo             string                  `yaml:"repo"`
-	Source           string                  `yaml:"source"`
-	DependsOn        []string                `yaml:"dependsOn"`
-	Config           Config                  `yaml:"config"`
-	Mapping          Mapping                 `yaml:"mapping"`
-	EnvironmentKinds []model.EnvironmentKind `yaml:"environmentKinds"`
+	Name string `yaml:"name" json:"-" jsonschema:"-"`
+	// Chart name if using helm charts or full url if using CRI image chart.
+	Chart string `yaml:"chart"`
+	// Version of the chart.
+	Version string `yaml:"version"`
+	// Repo is the repository where the helm chart is located.
+	Repo string `yaml:"repo,omitempty"`
+	// Source should be the URL to the helm chart source code.
+	Source string `yaml:"source"`
+	// DependsOn defines the features that this feature depends on.
+	DependsOn []string `yaml:"dependsOn,omitempty"`
+	// Config is the list of configuration options for the feature.
+	Config Config `yaml:"config,omitempty"`
+	// Mapping is the list of mappings from environment values for the feature.
+	Mapping Mapping `yaml:"mapping,omitempty"`
+	// EnvironmentKinds is the list of environments this feature can be used in.
+	EnvironmentKinds []model.EnvironmentKind `yaml:"environmentKinds" jsonschema:"enum=management,enum=tenant,required"`
 }
 
 func (f *Feature) RequiredFields() []string {

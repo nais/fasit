@@ -8,9 +8,9 @@ import (
 )
 
 type ConfigType struct {
-	Type     model.ConfigType `json:"type" yaml:"type"`
-	Secret   bool             `json:"secret" yaml:"secret"`
-	Required bool             `json:"required" yaml:"required"`
+	Type     model.ConfigType `json:"type" yaml:"type" jsonschema:"enum=string,enum=int,enum=bool,enum=string_array"`
+	Secret   bool             `json:"secret" yaml:"secret,omitempty"`
+	Required bool             `json:"required" yaml:"required,omitempty"`
 }
 
 func (c ConfigType) Valid(value json.RawMessage) error {
