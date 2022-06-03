@@ -44,6 +44,7 @@ var cfg = DefaultConfig() // promErrs = prometheus.NewCounterVec(prometheus.Coun
 
 func init() {
 	flag.StringVar(&cfg.BindAddress, "bind-address", cfg.BindAddress, "Bind address")
+	flag.StringVar(&cfg.GRPCBindAddress, "grpc-bind-address", cfg.BindAddress, "Bind address")
 	flag.StringVar(&cfg.DBConnectionDSN, "db-connection-dsn", getEnv("FASIT_DBCONN_STRING", "postgres://postgres:postgres@127.0.0.1:5432/fasit?sslmode=disable"), "database connection DSN")
 	flag.StringVar(&cfg.LogLevel, "log-level", "info", "which log level to output")
 	flag.StringVar(&cfg.GCPProjectID, "project-id", "nais-local-dev", "Google project ID")
@@ -169,8 +170,8 @@ func getEnv(key, fallback string) string {
 }
 
 func runGRPC(ctx context.Context, repo database.Repo) error {
-	fmt.Println("GRPC serving on port 4444")
-	lis, err := net.Listen("tcp", ":4444")
+	fmt.Println("GRPC serving on port", cfg.GRPCBindAddress)
+	lis, err := net.Listen("tcp", cfg.GRPCBindAddress)
 	if err != nil {
 		return fmt.Errorf("failed to listen: %w", err)
 	}

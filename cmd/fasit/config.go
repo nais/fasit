@@ -2,6 +2,7 @@ package main
 
 type Config struct {
 	BindAddress          string
+	GRPCBindAddress      string
 	DBConnectionDSN      string
 	LogLevel             string
 	GCPProjectID         string
@@ -10,7 +11,8 @@ type Config struct {
 
 func DefaultConfig() Config {
 	return Config{
-		BindAddress: ":8080",
-		LogLevel:    "info",
+		BindAddress:     ":8080",
+		GRPCBindAddress: ":4444",
+		LogLevel:        "info",
 	}
 }

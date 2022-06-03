@@ -12,5 +12,6 @@ config:
   ingress.hosts:
     type: string_array
     required: true
+    displayName: hostnames
   replicaCount:
     type: int
