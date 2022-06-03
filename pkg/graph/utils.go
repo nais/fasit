@@ -3,6 +3,7 @@ package graph
 import (
 	"encoding/json"
 	"sort"
+	"strings"
 
 	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph/model"
@@ -67,6 +68,7 @@ func mappingToSlice(f *feature.Feature, env *feature.MappingValues) ([]*model.Ma
 func flattenMap(mp map[string]any) map[string]any {
 	ret := map[string]any{}
 	for k, v := range mp {
+		k = strings.ReplaceAll(k, ".", "\\.")
 		if vMap, ok := v.(map[string]any); ok {
 			mp := flattenMap(vMap)
 			for k2, v2 := range mp {

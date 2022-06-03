@@ -89,6 +89,7 @@ OUTER:
 			Value:       []byte("null"),
 			Secret:      val.Secret,
 			Type:        val.Type,
+			DisplayName: val.DisplayName,
 		})
 	}
 
@@ -147,5 +148,7 @@ func (r *Resolver) GlobalConfiguration() graphgen.GlobalConfigurationResolver {
 	return &globalConfigurationResolver{r}
 }
 
-type envConfigurationResolver struct{ *Resolver }
-type globalConfigurationResolver struct{ *Resolver }
+type (
+	envConfigurationResolver    struct{ *Resolver }
+	globalConfigurationResolver struct{ *Resolver }
+)
