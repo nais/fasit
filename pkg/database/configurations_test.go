@@ -470,11 +470,11 @@ func TestRepo_HelmValues_WithMappingValues(t *testing.T) {
 	feature := feature.Feature{
 		Name: "feature5",
 		Mapping: feature.Mapping{
-			"names.tenant":      "{{ .Tenant.Name }}",
-			"names.environment": "{{ .Env.name }}",
-			"kind":              "{{ .Kind }}",
-			"projects.env":      "{{ .Env.project_id }}",
-			"projects.mgmt":     "{{ .Management.project_id }}",
+			"names.tenant":      feature.MappingConfig{Value: "{{ .Tenant.Name }}"},
+			"names.environment": feature.MappingConfig{Value: "{{ .Env.name }}"},
+			"kind":              feature.MappingConfig{Value: "{{ .Kind }}"},
+			"projects.env":      feature.MappingConfig{Value: "{{ .Env.project_id }}"},
+			"projects.mgmt":     feature.MappingConfig{Value: "{{ .Management.project_id }}"},
 		},
 	}
 
