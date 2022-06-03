@@ -13,6 +13,9 @@
 				".*": {
 					"additionalProperties": false,
 					"properties": {
+						"displayName": {
+							"type": "string"
+						},
 						"required": {
 							"type": "boolean"
 						},
