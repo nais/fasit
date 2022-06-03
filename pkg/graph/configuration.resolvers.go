@@ -57,17 +57,22 @@ func (r *queryResolver) Configuration(ctx context.Context, feature string, envID
 		for i, c := range res {
 			ret.Configuration[i] = c
 		}
-	} else {
-		// Get global config
-		res, err := r.Repo.ConfigGet(ctx, feature)
-		if err != nil {
-			return nil, err
-		}
+	}
 
-		ret.Configuration = make([]model.Configuration, len(res))
-		for i, c := range res {
-			ret.Configuration[i] = c
+	// Get global config
+	res, err := r.Repo.ConfigGet(ctx, feature)
+	if err != nil {
+		return nil, err
+	}
+
+OUTER2:
+	for _, c := range res {
+		for _, ec := range ret.Configuration {
+			if ec.GetKey() == c.Key {
+				continue OUTER2
+			}
 		}
+		ret.Configuration = append(ret.Configuration, c)
 	}
 
 	f := r.Resolver.Features.Get(feature)
