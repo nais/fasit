@@ -636,7 +636,7 @@
   "resolved" "https://registry.npmjs.org/@fontsource/source-sans-pro/-/source-sans-pro-4.5.3.tgz"
   "version" "4.5.3"
 
-"@graphql-codegen/cli@2.6.2":
+"@graphql-codegen/cli@^2.6.2":
   "integrity" "sha512-UO75msoVgvLEvfjCezM09cQQqp32+mR8Ma1ACsBpr7nroFvHbgcu2ulx1cMovg4sxDBCsvd9Eq/xOOMpARUxtw=="
   "resolved" "https://registry.npmjs.org/@graphql-codegen/cli/-/cli-2.6.2.tgz"
   "version" "2.6.2"

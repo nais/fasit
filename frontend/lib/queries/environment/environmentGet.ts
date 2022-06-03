@@ -14,6 +14,10 @@ export const ENVIRONMENT_GET_BY_NAMES = gql`
       lastModified
       created
       kind
+      values {
+        key
+        value
+      }
       featureStates {
         enabled
         lastModified
@@ -41,6 +45,10 @@ export const ENVIRONMENT_GET = gql`
       lastModified
       created
       kind
+      values {
+        key
+        value
+      }
       featureStates {
         enabled
         lastModified

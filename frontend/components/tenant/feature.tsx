@@ -6,6 +6,7 @@ import {EnvironmentGetQuery, useConfigGetQuery, useFeaturesQuery} from '../../li
 import EnableFeature from "./enableFeature";
 import FeatureStatus from "./featureStatus";
 import extractConfig from "../lib/extractConfig";
+import FeatureValues from './featureValues'
 
 
 const FeatureContainer = styled.div`
@@ -34,7 +35,7 @@ const Feature = ({env, featureName}: FeatureProps) => {
             <FeatureStatus featureName={featureName} configs={configs} env={env} setShowVerify={setShowVerify}/>
             <FeatureConfig envID={env.id} configs={configs} featureObject={featureObject}/>
             <EnableFeature open={showVerify} onClose={setShowVerify} feature={featureName} envID={env.id}
-                           enabled={env.featureStates.find((f) => f.feature.name === featureName)?.enabled ||false}/>
+                           enabled={env.featureStates.find((f) => f.feature.name === featureName)?.enabled || false}/>
         </FeatureContainer>
     )
 }

@@ -146,7 +146,7 @@ const Environment = ({environmentName, tenantName}: EnvironmentProps) => {
                 <FeaturesMenu env={env}/>
                 {feature ?
                     <Feature env={env} featureName={feature}/> :
-                    <EnvironmentStatusPage environmentID={env.id}/>
+                    <EnvironmentStatusPage env={env}/>
                 }
             </Main>
 
