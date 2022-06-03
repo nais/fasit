@@ -11,7 +11,11 @@ config:
     type: bool
   ingress.hosts:
     type: string_array
-    required: true
-    displayName: hostnames
+    displayName: DNS names
   replicaCount:
     type: int
+mapping:
+  ingress.hosts:
+    value:
+      - 'up.{{if eq .Kind "tenant"}}{{.Env.name}}.{{end}}{{.Tenant.Name}}.cloud.nais.io'
+    displayName: "DNS names"

@@ -9,12 +9,6 @@ dependsOn:
 config:
   imageTag:
     type: string
-  naiserator.cluster-name:
-    type: string
-    required: true
-  naiserator.google-project-id:
-    type: string
-    required: true
   naiserator.kafka.enabled:
     type: bool
   naiserator.leader-election.image:
@@ -29,3 +23,10 @@ config:
     type: bool
   naiserator.features.kafkarator:
     type: bool
+mapping:
+  naiserator.cluster-name:
+    value: "{{.Env.name}}"
+    displayName: "Cluster name"
+  naiserator.google-project-id:
+    value: "{{.Env.project_id}}"
+    displayName: "Google project ID"

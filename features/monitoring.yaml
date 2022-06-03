@@ -24,7 +24,8 @@ config:
   kube-prometheus-stack.grafana.adminUser:
     type: string
   kube-prometheus-stack.grafana.adminPassword:
-    type: secret
+    type: string
+    secret: true
   kube-prometheus-stack.grafana.grafana\.ini.auth\.anonymous.enabled:
     type: bool
   kube-prometheus-stack.grafana.grafana\.ini.auth\.anonymous.org_role:
@@ -41,3 +42,16 @@ config:
     type: string
   nais_alerts.slack.channel:
     type: string
+mapping:
+  kube-prometheus-stack.alertmanager.ingress.hosts:
+    value:
+      - 'alertmanager.{{if eq .Kind "tenant"}}{{.Env.name}}.{{end}}{{.Tenant.Name}}.cloud.nais.io'
+    displayName: "Alertmanager DNS names"
+  kube-prometheus-stack.grafana.ingress.hosts:
+    value:
+      - 'grafana.{{if eq .Kind "tenant"}}{{.Env.name}}.{{end}}{{.Tenant.Name}}.cloud.nais.io'
+    displayName: "Grafana DNS names"
+  kube-prometheus-stack.prometheus.ingress.hosts:
+    value:
+      - 'prometheus.{{if eq .Kind "tenant"}}{{.Env.name}}.{{end}}{{.Tenant.Name}}.cloud.nais.io'
+    displayName: "Prometheus DNS names"

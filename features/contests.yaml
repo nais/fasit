@@ -8,12 +8,14 @@ environmentKinds:
 config:
   image.tag:
     type: string
+mapping:
   ingresses:
-    type: string_array
-    required: true
+    value:
+      - "https://nais-testapp-a.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io"
+    displayName: "DNS names"
   env:
-    type: string
-    required: true
+    value: "{{.Env.name}}"
+    displayName: "Environment name"
   tenant:
-    type: string
-    required: true
+    value: "{{.Tenant.Name}}"
+    displayName: "Tenant name"

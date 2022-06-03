@@ -3,13 +3,13 @@ source: https://github.com/cert-manager/cert-manager
 version: 0.0.1
 environmentKinds:
   - "tenant"
-config:
-  velero.serviceAccount.server.annotations.iam\.gke\.io/gcp-service-account:
-    type: string
-    required: true
+mapping:
   velero.configuration.backupStorageLocation.bucket:
-    type: string
-    required: true
+    value: "{{.Env.velero_bucket}}"
+    displayName: "GCP Bucket name"
   velero.configuration.backupStorageLocation.config.serviceAccount:
-    type: string
-    required: true
+    value: "{{.Env.velero_service_account}}"
+    displayName: "GCP Service account"
+  velero.serviceAccount.server.annotations.iam\.gke\.io/gcp-service-account:
+    value: "{{.Env.velero_service_account}}"
+    displayName: "KSA annotation"
