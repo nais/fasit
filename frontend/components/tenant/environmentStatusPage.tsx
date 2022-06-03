@@ -1,6 +1,11 @@
 import * as React from 'react'
 import styled from 'styled-components'
-import {ConditionStatus, KubernetesNodeConditionType, useEnvironmentGetReportQuery} from '../../lib/schema/graphql'
+import {
+    ConditionStatus,
+    EnvironmentGetQuery,
+    KubernetesNodeConditionType,
+    useEnvironmentGetReportQuery
+} from '../../lib/schema/graphql'
 import ErrorMessage from "../lib/error";
 import LoaderSpinner from "../lib/spinner";
 import humanizeDate from "../lib/humanizeDate";
@@ -8,6 +13,7 @@ import {Table} from "@navikt/ds-react";
 import ReportStatus from "./reportStatus";
 import StatusCircle from "../lib/statusCircle";
 import {navGronn, navRod} from "../../styles/constants";
+import FeatureValues from "./featureValues";
 
 
 const EnvironmentStatus = styled.div`
@@ -18,10 +24,10 @@ const EnvironmentStatus = styled.div`
   border-left: 1px solid silver;
 `
 interface  EnvironmentStatusPageProps {
-    environmentID: string
+    env: EnvironmentGetQuery['environment']
 }
-const EnvironmentStatusPage = ({environmentID}: EnvironmentStatusPageProps) => {
-    const {data, loading, error} = useEnvironmentGetReportQuery({variables: {id: environmentID}, pollInterval: 10 * 1000})
+const EnvironmentStatusPage = ({env}: EnvironmentStatusPageProps) => {
+    const {data, loading, error} = useEnvironmentGetReportQuery({variables: {id: env.id}, pollInterval: 10 * 1000})
     if (error) return <ErrorMessage error={error}/>
     if (loading || !data)return  <LoaderSpinner/>
     const report = data.environment
@@ -73,6 +79,8 @@ const EnvironmentStatusPage = ({environmentID}: EnvironmentStatusPageProps) => {
 
                 </Table.Body>
             </Table>
+            <h3>Environment values</h3>
+            <FeatureValues values={env.values}/>
         </EnvironmentStatus>
     )
 }

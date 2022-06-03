@@ -74,6 +74,7 @@ export type Environment = {
   name: Scalars['String']
   nodes: Array<KubernetesNode>
   releases: Array<Release>
+  values: Array<EnvironmentValue>
 }
 
 /** EnvironmentCreate contains metadata for creating an environment */
@@ -93,6 +94,12 @@ export enum EnvironmentKind {
 export type EnvironmentUpdate = {
   /** description of the environment */
   description?: InputMaybe<Scalars['String']>
+}
+
+export type EnvironmentValue = {
+  __typename?: 'EnvironmentValue'
+  key: Scalars['String']
+  value: Scalars['RawMessage']
 }
 
 export type Feature = {
@@ -457,6 +464,7 @@ export type EnvironmentGetByNamesQuery = {
     lastModified: any
     created: any
     kind: EnvironmentKind
+    values: Array<{ __typename?: 'EnvironmentValue'; key: string; value: any }>
     featureStates: Array<{
       __typename?: 'FeatureState'
       enabled: boolean
@@ -490,6 +498,7 @@ export type EnvironmentGetQuery = {
     lastModified: any
     created: any
     kind: EnvironmentKind
+    values: Array<{ __typename?: 'EnvironmentValue'; key: string; value: any }>
     featureStates: Array<{
       __typename?: 'FeatureState'
       enabled: boolean
@@ -974,6 +983,10 @@ export const EnvironmentGetByNamesDocument = gql`
       lastModified
       created
       kind
+      values {
+        key
+        value
+      }
       featureStates {
         enabled
         lastModified
@@ -1052,6 +1065,10 @@ export const EnvironmentGetDocument = gql`
       lastModified
       created
       kind
+      values {
+        key
+        value
+      }
       featureStates {
         enabled
         lastModified
