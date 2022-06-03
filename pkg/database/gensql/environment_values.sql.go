@@ -42,7 +42,34 @@ func (q *Queries) EnvironmentValueStore(ctx context.Context, arg EnvironmentValu
 	return err
 }
 
-const environmentValuesForEnvironment = `-- name: EnvironmentValuesForEnvironment :one
+const environmentValuesForEnvironment = `-- name: EnvironmentValuesForEnvironment :many
+SELECT environment_id, key, value FROM environment_values WHERE "environment_id" = $1
+`
+
+func (q *Queries) EnvironmentValuesForEnvironment(ctx context.Context, envid uuid.UUID) ([]EnvironmentValue, error) {
+	rows, err := q.db.QueryContext(ctx, environmentValuesForEnvironment, envid)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []EnvironmentValue{}
+	for rows.Next() {
+		var i EnvironmentValue
+		if err := rows.Scan(&i.EnvironmentID, &i.Key, &i.Value); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const mappingValuesForEnvironment = `-- name: MappingValuesForEnvironment :one
 WITH management_id AS (
   SELECT id
   FROM environments
@@ -68,19 +95,19 @@ SELECT
 FROM management_values, environment_values
 `
 
-type EnvironmentValuesForEnvironmentParams struct {
+type MappingValuesForEnvironmentParams struct {
 	Tenantid uuid.UUID
 	Envid    uuid.UUID
 }
 
-type EnvironmentValuesForEnvironmentRow struct {
+type MappingValuesForEnvironmentRow struct {
 	Management  json.RawMessage
 	Environment json.RawMessage
 }
 
-func (q *Queries) EnvironmentValuesForEnvironment(ctx context.Context, arg EnvironmentValuesForEnvironmentParams) (EnvironmentValuesForEnvironmentRow, error) {
-	row := q.db.QueryRowContext(ctx, environmentValuesForEnvironment, arg.Tenantid, arg.Envid)
-	var i EnvironmentValuesForEnvironmentRow
+func (q *Queries) MappingValuesForEnvironment(ctx context.Context, arg MappingValuesForEnvironmentParams) (MappingValuesForEnvironmentRow, error) {
+	row := q.db.QueryRowContext(ctx, mappingValuesForEnvironment, arg.Tenantid, arg.Envid)
+	var i MappingValuesForEnvironmentRow
 	err := row.Scan(&i.Management, &i.Environment)
 	return i, err
 }

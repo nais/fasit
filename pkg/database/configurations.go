@@ -169,7 +169,7 @@ func (r *repo) ConfigDelete(ctx context.Context, id uuid.UUID) error {
 }
 
 func (r *repo) HelmValues(ctx context.Context, feature feature.Feature, envID uuid.UUID, requiredFields []string) (map[string]any, error) {
-	mv, err := r.EnvironmentValuesForEnvironment(ctx, envID)
+	mv, err := r.MappingValuesForEnvironment(ctx, envID)
 	if err != nil {
 		return nil, err
 	}

@@ -27,6 +27,12 @@ type Environment {
   health: Health!
   releases: [Release!]!
   nodes: [KubernetesNode!]!
+  values: [EnvironmentValue!]!
+}
+
+type EnvironmentValue {
+  key: String!
+  value: RawMessage!
 }
 
 """

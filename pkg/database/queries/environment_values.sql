@@ -5,7 +5,10 @@ ON CONFLICT ("environment_id", "key") DO UPDATE SET "value" = @value;
 -- name: EnvironmentValueGet :one
 SELECT * FROM environment_values WHERE "environment_id" = @envID AND "key" = @key;
 
--- name: EnvironmentValuesForEnvironment :one
+-- name: EnvironmentValuesForEnvironment :many
+SELECT * FROM environment_values WHERE "environment_id" = @envID;
+
+-- name: MappingValuesForEnvironment :one
 WITH management_id AS (
   SELECT id
   FROM environments

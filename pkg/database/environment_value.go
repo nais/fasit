@@ -32,8 +32,21 @@ func (r *repo) EnvironmentValueGet(ctx context.Context, environmentID uuid.UUID,
 
 	return environmentValueFromSQL(ev), nil
 }
+func (r *repo) EnvironmentValuesForEnvironment(ctx context.Context, envID uuid.UUID) ([]*model.EnvironmentValue, error) {
+	values, err := r.querier.EnvironmentValuesForEnvironment(ctx, envID)
+	if err != nil {
+		return nil, err
+	}
 
-func (r *repo) EnvironmentValuesForEnvironment(ctx context.Context, envID uuid.UUID) (*feature.MappingValues, error) {
+	ret := make([]*model.EnvironmentValue, len(values))
+	for i, ev := range values {
+		ret[i] = environmentValueFromSQL(ev)
+	}
+
+	return ret, nil
+}
+
+func (r *repo) MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID) (*feature.MappingValues, error) {
 	env, err := r.querier.EnvironmentGet(ctx, envID)
 	if err != nil {
 		return nil, fmt.Errorf("envValuesForEnv: failed to get environment: %w", err)
@@ -50,7 +63,7 @@ func (r *repo) EnvironmentValuesForEnvironment(ctx context.Context, envID uuid.U
 		},
 	}
 
-	evs, err := r.querier.EnvironmentValuesForEnvironment(ctx, gensql.EnvironmentValuesForEnvironmentParams{
+	evs, err := r.querier.MappingValuesForEnvironment(ctx, gensql.MappingValuesForEnvironmentParams{
 		Tenantid: tenant.ID,
 		Envid:    envID,
 	})

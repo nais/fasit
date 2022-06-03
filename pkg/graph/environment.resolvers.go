@@ -47,6 +47,10 @@ func (r *environmentResolver) Nodes(ctx context.Context, obj *model.Environment)
 	return r.Repo.KubernetesNodesForEnv(ctx, obj.ID)
 }
 
+func (r *environmentResolver) Values(ctx context.Context, obj *model.Environment) ([]*model.EnvironmentValue, error) {
+	return r.Repo.EnvironmentValuesForEnvironment(ctx, obj.ID)
+}
+
 func (r *mutationResolver) EnvironmentCreate(ctx context.Context, environment model.EnvironmentCreate) (*model.Environment, error) {
 	return r.Repo.EnvironmentCreate(ctx, &environment)
 }

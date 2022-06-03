@@ -79,6 +79,12 @@ type ComplexityRoot struct {
 		Name          func(childComplexity int) int
 		Nodes         func(childComplexity int) int
 		Releases      func(childComplexity int) int
+		Values        func(childComplexity int) int
+	}
+
+	EnvironmentValue struct {
+		Key   func(childComplexity int) int
+		Value func(childComplexity int) int
 	}
 
 	Feature struct {
@@ -212,6 +218,7 @@ type EnvironmentResolver interface {
 	Health(ctx context.Context, obj *model.Environment) (*model.Health, error)
 	Releases(ctx context.Context, obj *model.Environment) ([]*model.Release, error)
 	Nodes(ctx context.Context, obj *model.Environment) ([]*model.KubernetesNode, error)
+	Values(ctx context.Context, obj *model.Environment) ([]*model.EnvironmentValue, error)
 }
 type FeatureStateResolver interface {
 	Feature(ctx context.Context, obj *model.FeatureState) (*model.Feature, error)
@@ -397,6 +404,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Environment.Releases(childComplexity), true
+
+	case "Environment.values":
+		if e.complexity.Environment.Values == nil {
+			break
+		}
+
+		return e.complexity.Environment.Values(childComplexity), true
+
+	case "EnvironmentValue.key":
+		if e.complexity.EnvironmentValue.Key == nil {
+			break
+		}
+
+		return e.complexity.EnvironmentValue.Key(childComplexity), true
+
+	case "EnvironmentValue.value":
+		if e.complexity.EnvironmentValue.Value == nil {
+			break
+		}
+
+		return e.complexity.EnvironmentValue.Value(childComplexity), true
 
 	case "Feature.chart":
 		if e.complexity.Feature.Chart == nil {
@@ -1228,6 +1256,12 @@ type Environment {
   health: Health!
   releases: [Release!]!
   nodes: [KubernetesNode!]!
+  values: [EnvironmentValue!]!
+}
+
+type EnvironmentValue {
+  key: String!
+  value: RawMessage!
 }
 
 """
@@ -1934,6 +1968,8 @@ func (ec *executionContext) fieldContext_EnvConfiguration_environment(ctx contex
 				return ec.fieldContext_Environment_releases(ctx, field)
 			case "nodes":
 				return ec.fieldContext_Environment_nodes(ctx, field)
+			case "values":
+				return ec.fieldContext_Environment_values(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -2750,6 +2786,144 @@ func (ec *executionContext) fieldContext_Environment_nodes(ctx context.Context, 
 				return ec.fieldContext_KubernetesNode_capacity(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type KubernetesNode", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Environment_values(ctx context.Context, field graphql.CollectedField, obj *model.Environment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Environment_values(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Environment().Values(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.EnvironmentValue)
+	fc.Result = res
+	return ec.marshalNEnvironmentValue2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentValueᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Environment_values(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Environment",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "key":
+				return ec.fieldContext_EnvironmentValue_key(ctx, field)
+			case "value":
+				return ec.fieldContext_EnvironmentValue_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type EnvironmentValue", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EnvironmentValue_key(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentValue) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EnvironmentValue_key(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Key, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EnvironmentValue_key(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EnvironmentValue",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EnvironmentValue_value(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentValue) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EnvironmentValue_value(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Value, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(json.RawMessage)
+	fc.Result = res
+	return ec.marshalNRawMessage2encodingᚋjsonᚐRawMessage(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EnvironmentValue_value(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EnvironmentValue",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type RawMessage does not have child fields")
 		},
 	}
 	return fc, nil
@@ -4957,6 +5131,8 @@ func (ec *executionContext) fieldContext_Mutation_environmentCreate(ctx context.
 				return ec.fieldContext_Environment_releases(ctx, field)
 			case "nodes":
 				return ec.fieldContext_Environment_nodes(ctx, field)
+			case "values":
+				return ec.fieldContext_Environment_values(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -5034,6 +5210,8 @@ func (ec *executionContext) fieldContext_Mutation_environmentUpdate(ctx context.
 				return ec.fieldContext_Environment_releases(ctx, field)
 			case "nodes":
 				return ec.fieldContext_Environment_nodes(ctx, field)
+			case "values":
+				return ec.fieldContext_Environment_values(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -5344,6 +5522,8 @@ func (ec *executionContext) fieldContext_Query_environment(ctx context.Context, 
 				return ec.fieldContext_Environment_releases(ctx, field)
 			case "nodes":
 				return ec.fieldContext_Environment_nodes(ctx, field)
+			case "values":
+				return ec.fieldContext_Environment_values(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -5421,6 +5601,8 @@ func (ec *executionContext) fieldContext_Query_environmentByNames(ctx context.Co
 				return ec.fieldContext_Environment_releases(ctx, field)
 			case "nodes":
 				return ec.fieldContext_Environment_nodes(ctx, field)
+			case "values":
+				return ec.fieldContext_Environment_values(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -5498,6 +5680,8 @@ func (ec *executionContext) fieldContext_Query_environments(ctx context.Context,
 				return ec.fieldContext_Environment_releases(ctx, field)
 			case "nodes":
 				return ec.fieldContext_Environment_nodes(ctx, field)
+			case "values":
+				return ec.fieldContext_Environment_values(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -6864,6 +7048,8 @@ func (ec *executionContext) fieldContext_Tenant_environments(ctx context.Context
 				return ec.fieldContext_Environment_releases(ctx, field)
 			case "nodes":
 				return ec.fieldContext_Environment_nodes(ctx, field)
+			case "values":
+				return ec.fieldContext_Environment_values(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -9221,6 +9407,67 @@ func (ec *executionContext) _Environment(ctx context.Context, sel ast.SelectionS
 				return innerFunc(ctx)
 
 			})
+		case "values":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Environment_values(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var environmentValueImplementors = []string{"EnvironmentValue"}
+
+func (ec *executionContext) _EnvironmentValue(ctx context.Context, sel ast.SelectionSet, obj *model.EnvironmentValue) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, environmentValueImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("EnvironmentValue")
+		case "key":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._EnvironmentValue_key(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "value":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._EnvironmentValue_value(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -11143,6 +11390,60 @@ func (ec *executionContext) marshalNEnvironmentKind2ᚕgithubᚗcomᚋnaisᚋfas
 func (ec *executionContext) unmarshalNEnvironmentUpdate2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentUpdate(ctx context.Context, v interface{}) (model.EnvironmentUpdate, error) {
 	res, err := ec.unmarshalInputEnvironmentUpdate(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNEnvironmentValue2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentValueᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.EnvironmentValue) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNEnvironmentValue2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentValue(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNEnvironmentValue2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentValue(ctx context.Context, sel ast.SelectionSet, v *model.EnvironmentValue) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._EnvironmentValue(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNFeature2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐFeature(ctx context.Context, sel ast.SelectionSet, v model.Feature) graphql.Marshaler {

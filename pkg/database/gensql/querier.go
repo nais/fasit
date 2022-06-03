@@ -24,7 +24,7 @@ type Querier interface {
 	EnvironmentUpdate(ctx context.Context, arg EnvironmentUpdateParams) (Environment, error)
 	EnvironmentValueGet(ctx context.Context, arg EnvironmentValueGetParams) (EnvironmentValue, error)
 	EnvironmentValueStore(ctx context.Context, arg EnvironmentValueStoreParams) error
-	EnvironmentValuesForEnvironment(ctx context.Context, arg EnvironmentValuesForEnvironmentParams) (EnvironmentValuesForEnvironmentRow, error)
+	EnvironmentValuesForEnvironment(ctx context.Context, envid uuid.UUID) ([]EnvironmentValue, error)
 	EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]Environment, error)
 	FeatureStateCreateOrUpdate(ctx context.Context, arg FeatureStateCreateOrUpdateParams) (FeatureState, error)
 	FeatureStateGet(ctx context.Context, arg FeatureStateGetParams) (FeatureState, error)
@@ -33,6 +33,7 @@ type Querier interface {
 	HealthStatusGet(ctx context.Context, environmentID uuid.UUID) (HealthStatus, error)
 	KubernetesNodeCreateOrUpdate(ctx context.Context, arg KubernetesNodeCreateOrUpdateParams) error
 	KubernetesNodeStatuses(ctx context.Context, environmentID uuid.UUID) ([]KubernetesNodeStatus, error)
+	MappingValuesForEnvironment(ctx context.Context, arg MappingValuesForEnvironmentParams) (MappingValuesForEnvironmentRow, error)
 	ReleaseStatusCreateOrUpdate(ctx context.Context, arg ReleaseStatusCreateOrUpdateParams) (ReleaseStatus, error)
 	ReleaseStatusesGet(ctx context.Context, environmentID uuid.UUID) ([]ReleaseStatus, error)
 	StatusCreateOrUpdate(ctx context.Context, arg StatusCreateOrUpdateParams) error
