@@ -12,7 +12,6 @@ import {useRouter} from 'next/router'
 import {navGronn, navRod} from '../../styles/constants'
 import {Textarea} from '@navikt/ds-react'
 import EnvironmentStatusPage from "./environmentStatusPage";
-import FeatureValues from "./featureValues";
 
 
 const InfoBox = styled.div`
