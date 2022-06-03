@@ -23,7 +23,7 @@ const ConfigPage = ({feature}: ConfigProps) => {
 
     let configs: Configs = {}
     if (data) {
-        data.configuration.forEach((c) => {
+        data.configuration.configuration.forEach((c) => {
             if (c.__typename === 'EnvConfiguration') {
                 configs[c.key] = {
                 id: c.id,
