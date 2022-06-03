@@ -1,9 +1,5 @@
 import * as React from 'react'
-import {
-    EnvironmentGetByNamesQuery,
-    EnvironmentGetByNamesQueryResult,
-    EnvironmentGetQuery
-} from '../../lib/schema/graphql'
+import {EnvironmentGetQuery} from '../../lib/schema/graphql'
 import {Table} from '@navikt/ds-react'
 
 
@@ -24,7 +20,7 @@ const FeatureValues = ({values}: FeatureValuesProps) => {
                 </Table.Header>
                 <Table.Body>
                     { values.map((e) => (
-                                <Table.Row>
+                                <Table.Row key={e.key}>
                                     <Table.DataCell>
                                         {e.key}
                                     </Table.DataCell>

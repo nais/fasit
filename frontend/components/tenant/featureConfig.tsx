@@ -1,6 +1,6 @@
 import * as React from 'react'
 import {useState} from 'react'
-import {FeaturesQuery} from '../../lib/schema/graphql'
+import {ConfigurationQuery, FeaturesQuery} from '../../lib/schema/graphql'
 import {Table} from '@navikt/ds-react'
 import ConfigAdd from '../lib/configAdd'
 import ConfigDelete from '../lib/configDelete'
@@ -12,9 +12,10 @@ interface FeatureConfigProps {
     envID: string
     configs: Configs
     featureObject: FeaturesQuery['features'][0] | undefined
+    mapping?: ConfigurationQuery['configuration']['mapping']
 }
 
-const FeatureConfig = ({envID, configs, featureObject}: FeatureConfigProps) => {
+const FeatureConfig = ({envID, configs, featureObject, mapping}: FeatureConfigProps) => {
     const [currentConfig, setCurrentConfig] = useState<Config | undefined>()
     const [showDelete, setShowDelete] = useState(false)
     const [showUpdate, setShowUpdate] = useState(false)
@@ -23,6 +24,7 @@ const FeatureConfig = ({envID, configs, featureObject}: FeatureConfigProps) => {
     const requiredConfigs = Object.keys(configs).filter((c) => configs[c].required).sort()
     const envConfigs = Object.keys(configs).filter((c) => configs[c].env && !configs[c].required).sort()
     const theRest = Object.keys(configs).filter((c) => !configs[c].env && !configs[c].required).sort()
+
 
     const resetConfig = () => {
         setCurrentConfig(undefined)
@@ -45,36 +47,47 @@ const FeatureConfig = ({envID, configs, featureObject}: FeatureConfigProps) => {
                     </Table.Row>
                 </Table.Header>
                 <Table.Body>
-            {requiredConfigs.length > 0 &&
-                    <ConfigRows
-                        configs={configs}
-                        keys={requiredConfigs}
-                        setCurrentConfig={setCurrentConfig}
-                        setShowUpdate={setShowUpdate}
-                        setShowDelete={setShowDelete}
-                        setShowCreate={setShowCreate}
-                    />
-            }
-            {envConfigs.length > 0 &&
-                    <ConfigRows
-                        configs={configs}
-                        keys={envConfigs}
-                        setCurrentConfig={setCurrentConfig}
-                        setShowUpdate={setShowUpdate}
-                        setShowDelete={setShowDelete}
-                        setShowCreate={setShowCreate}
-                    />
-            }
-            {theRest.length > 0 &&
-                    <ConfigRows
-                        configs={configs}
-                        keys={theRest}
-                        setCurrentConfig={setCurrentConfig}
-                        setShowUpdate={setShowUpdate}
-                        setShowDelete={setShowDelete}
-                        setShowCreate={setShowCreate}
-                    />
-            }
+                    {requiredConfigs.length > 0 &&
+                        <ConfigRows
+                            configs={configs}
+                            keys={requiredConfigs}
+                            setCurrentConfig={setCurrentConfig}
+                            setShowUpdate={setShowUpdate}
+                            setShowDelete={setShowDelete}
+                            setShowCreate={setShowCreate}
+                        />
+                    }
+                    {envConfigs.length > 0 &&
+                        <ConfigRows
+                            configs={configs}
+                            keys={envConfigs}
+                            setCurrentConfig={setCurrentConfig}
+                            setShowUpdate={setShowUpdate}
+                            setShowDelete={setShowDelete}
+                            setShowCreate={setShowCreate}
+                        />
+                    }
+                    {theRest.length > 0 &&
+                        <ConfigRows
+                            configs={configs}
+                            keys={theRest}
+                            setCurrentConfig={setCurrentConfig}
+                            setShowUpdate={setShowUpdate}
+                            setShowDelete={setShowDelete}
+                            setShowCreate={setShowCreate}
+                        />
+                    }
+                    { mapping && mapping.map((m) => (
+                        <Table.Row key={m.key}>
+                            <Table.DataCell>
+                                {m.displayName ? <span title={"helm key: " + m.key}>{m.displayName}</span> : m.key}
+                            </Table.DataCell>
+                            <Table.DataCell colSpan={5}>
+                                {m.value}
+                            </Table.DataCell>
+                        </Table.Row>
+                    ))
+                    }
                 </Table.Body>
             </Table>
 

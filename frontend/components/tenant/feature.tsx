@@ -2,11 +2,10 @@ import * as React from 'react'
 import {useState} from 'react'
 import styled from 'styled-components'
 import FeatureConfig from './featureConfig'
-import {EnvironmentGetQuery, useConfigGetQuery, useFeaturesQuery} from '../../lib/schema/graphql'
+import {EnvironmentGetQuery, useConfigurationQuery, useFeaturesQuery} from '../../lib/schema/graphql'
 import EnableFeature from "./enableFeature";
 import FeatureStatus from "./featureStatus";
 import extractConfig from "../lib/extractConfig";
-import FeatureValues from './featureValues'
 
 
 const FeatureContainer = styled.div`
@@ -25,7 +24,7 @@ interface FeatureProps {
 const Feature = ({env, featureName}: FeatureProps) => {
     const [showVerify, setShowVerify] = useState(false)
 
-    const configQuery = useConfigGetQuery({variables: {envID: env.id, feature: featureName}})
+    const configQuery = useConfigurationQuery({variables: {envID: env.id, feature: featureName}})
     const features = useFeaturesQuery({variables: {kind: env.kind}})
     const {configs, featureObject} = extractConfig(features, configQuery, featureName);
 
@@ -33,7 +32,7 @@ const Feature = ({env, featureName}: FeatureProps) => {
     return (
         <FeatureContainer>
             <FeatureStatus featureName={featureName} configs={configs} env={env} setShowVerify={setShowVerify}/>
-            <FeatureConfig envID={env.id} configs={configs} featureObject={featureObject}/>
+            <FeatureConfig envID={env.id} configs={configs} featureObject={featureObject} mapping={configQuery.data?.configuration.mapping}/>
             <EnableFeature open={showVerify} onClose={setShowVerify} feature={featureName} envID={env.id}
                            enabled={env.featureStates.find((f) => f.feature.name === featureName)?.enabled || false}/>
         </FeatureContainer>

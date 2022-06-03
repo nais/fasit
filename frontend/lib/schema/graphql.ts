@@ -41,6 +41,7 @@ export enum ConfigType {
 export type Configuration = {
   created: Scalars['Time']
   description?: Maybe<Scalars['String']>
+  displayName: Scalars['String']
   feature: Feature
   id: Scalars['ID']
   key: Scalars['String']
@@ -49,10 +50,17 @@ export type Configuration = {
   value: Scalars['RawMessage']
 }
 
+export type EnvConfig = {
+  __typename?: 'EnvConfig'
+  configuration: Array<Configuration>
+  mapping: Array<MappingValue>
+}
+
 export type EnvConfiguration = Configuration & {
   __typename?: 'EnvConfiguration'
   created: Scalars['Time']
   description?: Maybe<Scalars['String']>
+  displayName: Scalars['String']
   environment: Environment
   feature: Feature
   id: Scalars['ID']
@@ -126,6 +134,7 @@ export type GlobalConfiguration = Configuration & {
   __typename?: 'GlobalConfiguration'
   created: Scalars['Time']
   description?: Maybe<Scalars['String']>
+  displayName: Scalars['String']
   feature: Feature
   id: Scalars['ID']
   key: Scalars['String']
@@ -178,6 +187,13 @@ export type KubernetesNodeResources = {
   memory: Scalars['Int']
   pods: Scalars['Int']
   storage: Scalars['Int']
+}
+
+export type MappingValue = {
+  __typename?: 'MappingValue'
+  displayName: Scalars['String']
+  key: Scalars['String']
+  value: Scalars['RawMessage']
 }
 
 export type Mutation = {
@@ -234,8 +250,8 @@ export type NewConfiguration = {
 
 export type Query = {
   __typename?: 'Query'
-  configuration: Array<Configuration>
-  envConfig: Array<Configuration>
+  configuration: EnvConfig
+  envConfig: EnvConfig
   /** Environment returns the given environment. */
   environment: Environment
   /** EnvironmentByName returns the given environment by tenantName and name. */
@@ -352,37 +368,6 @@ export type UpdateConfiguration = {
   value: Scalars['RawMessage']
 }
 
-export type ConfigGetQueryVariables = Exact<{
-  feature: Scalars['String']
-  envID: Scalars['ID']
-}>
-
-export type ConfigGetQuery = {
-  __typename?: 'Query'
-  envConfig: Array<
-    | {
-        __typename?: 'EnvConfiguration'
-        id: string
-        description?: string | null
-        value: any
-        type: ConfigType
-        secret: boolean
-        key: string
-        feature: { __typename?: 'Feature'; name: string }
-      }
-    | {
-        __typename?: 'GlobalConfiguration'
-        id: string
-        description?: string | null
-        value: any
-        type: ConfigType
-        secret: boolean
-        key: string
-        feature: { __typename?: 'Feature'; name: string }
-      }
-  >
-}
-
 export type ConfigurationQueryVariables = Exact<{
   feature: Scalars['String']
   envID?: InputMaybe<Scalars['ID']>
@@ -390,26 +375,39 @@ export type ConfigurationQueryVariables = Exact<{
 
 export type ConfigurationQuery = {
   __typename?: 'Query'
-  configuration: Array<
-    | {
-        __typename?: 'EnvConfiguration'
-        id: string
-        description?: string | null
-        key: string
-        value: any
-        secret: boolean
-        feature: { __typename?: 'Feature'; name: string }
-      }
-    | {
-        __typename?: 'GlobalConfiguration'
-        id: string
-        description?: string | null
-        key: string
-        value: any
-        secret: boolean
-        feature: { __typename?: 'Feature'; name: string }
-      }
-  >
+  configuration: {
+    __typename?: 'EnvConfig'
+    configuration: Array<
+      | {
+          __typename?: 'EnvConfiguration'
+          id: string
+          description?: string | null
+          type: ConfigType
+          key: string
+          value: any
+          displayName: string
+          secret: boolean
+          feature: { __typename?: 'Feature'; name: string }
+        }
+      | {
+          __typename?: 'GlobalConfiguration'
+          id: string
+          description?: string | null
+          type: ConfigType
+          key: string
+          value: any
+          displayName: string
+          secret: boolean
+          feature: { __typename?: 'Feature'; name: string }
+        }
+    >
+    mapping: Array<{
+      __typename?: 'MappingValue'
+      key: string
+      value: any
+      displayName: string
+    }>
+  }
 }
 
 export type ConfigurationCreateMutationVariables = Exact<{
@@ -666,79 +664,26 @@ export type TenantsGetQuery = {
   }>
 }
 
-export const ConfigGetDocument = gql`
-  query configGet($feature: String!, $envID: ID!) {
-    envConfig(feature: $feature, envID: $envID) {
-      id
-      description
-      value
-      type
-      secret
-      feature {
-        name
-      }
-      key
-    }
-  }
-`
-
-/**
- * __useConfigGetQuery__
- *
- * To run a query within a React component, call `useConfigGetQuery` and pass it any options that fit your needs.
- * When your component renders, `useConfigGetQuery` returns an object from Apollo Client that contains loading, error, and data properties
- * you can use to render your UI.
- *
- * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
- *
- * @example
- * const { data, loading, error } = useConfigGetQuery({
- *   variables: {
- *      feature: // value for 'feature'
- *      envID: // value for 'envID'
- *   },
- * });
- */
-export function useConfigGetQuery(
-  baseOptions: Apollo.QueryHookOptions<ConfigGetQuery, ConfigGetQueryVariables>,
-) {
-  const options = { ...defaultOptions, ...baseOptions }
-  return Apollo.useQuery<ConfigGetQuery, ConfigGetQueryVariables>(
-    ConfigGetDocument,
-    options,
-  )
-}
-export function useConfigGetLazyQuery(
-  baseOptions?: Apollo.LazyQueryHookOptions<
-    ConfigGetQuery,
-    ConfigGetQueryVariables
-  >,
-) {
-  const options = { ...defaultOptions, ...baseOptions }
-  return Apollo.useLazyQuery<ConfigGetQuery, ConfigGetQueryVariables>(
-    ConfigGetDocument,
-    options,
-  )
-}
-export type ConfigGetQueryHookResult = ReturnType<typeof useConfigGetQuery>
-export type ConfigGetLazyQueryHookResult = ReturnType<
-  typeof useConfigGetLazyQuery
->
-export type ConfigGetQueryResult = Apollo.QueryResult<
-  ConfigGetQuery,
-  ConfigGetQueryVariables
->
 export const ConfigurationDocument = gql`
   query configuration($feature: String!, $envID: ID) {
     configuration(feature: $feature, envID: $envID) {
-      id
-      feature {
-        name
+      configuration {
+        id
+        feature {
+          name
+        }
+        description
+        type
+        key
+        value
+        displayName
+        secret
       }
-      description
-      key
-      value
-      secret
+      mapping {
+        key
+        value
+        displayName
+      }
     }
   }
 `

@@ -1,31 +1,25 @@
 import gql from 'graphql-tag'
 
-export const CONFIG_FOR_ENV = gql`
-  query configGet($feature: String!, $envID: ID!) {
-    envConfig(feature: $feature, envID: $envID) {
-      id
-      description
-      value
-      type
-      secret
-      feature {
-        name
-      }
-      key
-    }
-  }
-`
 export const CONFIGURATION = gql`
   query configuration($feature: String!, $envID: ID) {
     configuration(feature: $feature, envID: $envID) {
-      id
-      feature {
-        name
+      configuration {
+        id
+        feature {
+          name
+        }
+        description
+        type
+        key
+        value
+        displayName
+        secret
       }
-      description
-      key
-      value
-      secret
+      mapping {
+        key
+        value
+        displayName
+      }
     }
   }
 `

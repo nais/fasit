@@ -36,6 +36,7 @@ const StyledAdd = styled(Add)`
 export interface Config {
     id?: string
     description?: string | null
+    displayName?: string
     value: any
     type: ConfigType
     env: boolean
@@ -74,7 +75,7 @@ const ConfigRows = ({
             const conf = configs[key]
             return (
                 <Table.Row key={key}>
-                    <Table.DataCell>{key}</Table.DataCell>
+                    <Table.DataCell>{conf.displayName ? <span title={"helm key: " + conf.key}>{conf.displayName}</span> : conf.key}</Table.DataCell>
                     <Table.DataCell>{conf.secret ? '*****' : conf.type != ConfigType.StringArray ?
                         conf.value != null ? JSON.stringify(conf.value).replace(/"/g, '') :
                             '<default>' :

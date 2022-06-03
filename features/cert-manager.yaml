@@ -11,6 +11,7 @@ config:
     required: true
   global.podSecurityPolicy.enabled:
     type: bool
+    displayName: "Enable PodSecurityPolicy"
   global.leaderElection.namespace:
     type: string
     required: true
