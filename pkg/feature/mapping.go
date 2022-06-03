@@ -9,23 +9,6 @@ import (
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
-type ErrOverride struct {
-	Path string
-}
-
-func (e ErrOverride) Error() string {
-	return fmt.Sprintf("override error: %v", e.Path)
-}
-
-func (e ErrOverride) Is(err error) bool {
-	t, ok := err.(*ErrOverride)
-	if !ok {
-		return false
-	}
-
-	return t.Path == e.Path
-}
-
 type Mapping map[string]MappingConfig
 
 type MappingConfig struct {
@@ -96,7 +79,7 @@ func addToMap(target map[string]any, values *MappingValues, key []string, tpl an
 	}
 
 	if _, ok := target[key[0]]; ok {
-		return &ErrOverride{Path: path}
+		return nil
 	}
 
 	target[key[0]] = val

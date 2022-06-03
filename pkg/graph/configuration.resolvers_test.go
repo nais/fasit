@@ -20,6 +20,7 @@ func Test_queryResolver_Configuration_Early_Exit_When_EnvID_Set(t *testing.T) {
 
 	repo := mocks.NewRepo(t)
 	repo.On("ConfigGetForEnv", ctx, "feature", envID).Return(nil, nil).Once()
+	repo.On("ConfigGet", ctx, "feature").Return(nil, nil).Once()
 
 	r := &queryResolver{
 		Resolver: &Resolver{

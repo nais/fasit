@@ -13,7 +13,6 @@ config:
     type: string
   dnsNames:
     type: string_array
-    required: true
 mapping:
   cloudDNS.zone:
     value: "{{.Management.cloud_dns_zone}}"

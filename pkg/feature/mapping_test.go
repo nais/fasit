@@ -91,8 +91,8 @@ func TestMapping_Generate(t *testing.T) {
 					Value: "{{.Management.project_id}}",
 				},
 			},
-			target: map[string]any{"foo": map[string]any{"name": "foo", "project": "bar"}},
-			err:    &ErrOverride{Path: "foo.project"},
+			target:   map[string]any{"foo": map[string]any{"name": "foo", "project": "bar"}},
+			expected: map[string]any{"foo": map[string]any{"name": "foo", "project": "bar"}},
 		},
 	}
 
