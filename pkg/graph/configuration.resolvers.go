@@ -79,6 +79,7 @@ OUTER:
 		for _, c := range ret.Configuration {
 			if c.GetKey() == key {
 				c.SetType(val.Type)
+				c.SetDisplayName(val.DisplayName)
 				continue OUTER
 			}
 		}
@@ -146,7 +147,5 @@ func (r *Resolver) GlobalConfiguration() graphgen.GlobalConfigurationResolver {
 	return &globalConfigurationResolver{r}
 }
 
-type (
-	envConfigurationResolver    struct{ *Resolver }
-	globalConfigurationResolver struct{ *Resolver }
-)
+type envConfigurationResolver struct{ *Resolver }
+type globalConfigurationResolver struct{ *Resolver }

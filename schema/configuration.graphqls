@@ -25,6 +25,7 @@ interface Configuration {
   secret: Boolean!
   created: Time!
   type: ConfigType!
+  displayName: String!
 }
 
 type GlobalConfiguration implements Configuration {
@@ -36,6 +37,7 @@ type GlobalConfiguration implements Configuration {
   secret: Boolean!
   created: Time!
   type: ConfigType!
+  displayName: String!
 }
 
 type EnvConfiguration implements Configuration {
@@ -48,6 +50,7 @@ type EnvConfiguration implements Configuration {
   secret: Boolean!
   created: Time!
   type: ConfigType!
+  displayName: String!
 }
 
 input NewConfiguration {

@@ -64,6 +64,7 @@ type ComplexityRoot struct {
 	EnvConfiguration struct {
 		Created     func(childComplexity int) int
 		Description func(childComplexity int) int
+		DisplayName func(childComplexity int) int
 		Environment func(childComplexity int) int
 		Feature     func(childComplexity int) int
 		ID          func(childComplexity int) int
@@ -113,6 +114,7 @@ type ComplexityRoot struct {
 	GlobalConfiguration struct {
 		Created     func(childComplexity int) int
 		Description func(childComplexity int) int
+		DisplayName func(childComplexity int) int
 		Feature     func(childComplexity int) int
 		ID          func(childComplexity int) int
 		Key         func(childComplexity int) int
@@ -310,6 +312,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.EnvConfiguration.Description(childComplexity), true
+
+	case "EnvConfiguration.displayName":
+		if e.complexity.EnvConfiguration.DisplayName == nil {
+			break
+		}
+
+		return e.complexity.EnvConfiguration.DisplayName(childComplexity), true
 
 	case "EnvConfiguration.environment":
 		if e.complexity.EnvConfiguration.Environment == nil {
@@ -548,6 +557,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.GlobalConfiguration.Description(childComplexity), true
+
+	case "GlobalConfiguration.displayName":
+		if e.complexity.GlobalConfiguration.DisplayName == nil {
+			break
+		}
+
+		return e.complexity.GlobalConfiguration.DisplayName(childComplexity), true
 
 	case "GlobalConfiguration.feature":
 		if e.complexity.GlobalConfiguration.Feature == nil {
@@ -1232,6 +1248,7 @@ interface Configuration {
   secret: Boolean!
   created: Time!
   type: ConfigType!
+  displayName: String!
 }
 
 type GlobalConfiguration implements Configuration {
@@ -1243,6 +1260,7 @@ type GlobalConfiguration implements Configuration {
   secret: Boolean!
   created: Time!
   type: ConfigType!
+  displayName: String!
 }
 
 type EnvConfiguration implements Configuration {
@@ -1255,6 +1273,7 @@ type EnvConfiguration implements Configuration {
   secret: Boolean!
   created: Time!
   type: ConfigType!
+  displayName: String!
 }
 
 input NewConfiguration {
@@ -2448,6 +2467,50 @@ func (ec *executionContext) fieldContext_EnvConfiguration_type(ctx context.Conte
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type ConfigType does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EnvConfiguration_displayName(ctx context.Context, field graphql.CollectedField, obj *model.EnvConfiguration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EnvConfiguration_displayName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DisplayName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EnvConfiguration_displayName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EnvConfiguration",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -3984,6 +4047,50 @@ func (ec *executionContext) fieldContext_GlobalConfiguration_type(ctx context.Co
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type ConfigType does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GlobalConfiguration_displayName(ctx context.Context, field graphql.CollectedField, obj *model.GlobalConfiguration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GlobalConfiguration_displayName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DisplayName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GlobalConfiguration_displayName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GlobalConfiguration",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -9587,6 +9694,16 @@ func (ec *executionContext) _EnvConfiguration(ctx context.Context, sel ast.Selec
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "displayName":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._EnvConfiguration_displayName(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -10073,6 +10190,16 @@ func (ec *executionContext) _GlobalConfiguration(ctx context.Context, sel ast.Se
 		case "type":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._GlobalConfiguration_type(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "displayName":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._GlobalConfiguration_displayName(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)

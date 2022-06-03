@@ -81,6 +81,7 @@ func (e *ConfigType) UnmarshalJSON(b []byte) error {
 type Configuration interface {
 	IsConfiguration()
 	SetType(ConfigType)
+	SetDisplayName(string)
 	GetKey() string
 }
 
@@ -92,14 +93,16 @@ type EnvConfiguration struct {
 	Secret      bool            `json:"secret"`
 	Created     time.Time       `json:"created"`
 	Type        ConfigType      `json:"type"`
+	DisplayName string          `json:"displayName"`
 
 	EnvironmentID uuid.UUID
 	FeatureName   string
 }
 
-func (EnvConfiguration) IsConfiguration()        {}
-func (e *EnvConfiguration) SetType(t ConfigType) { e.Type = t }
-func (e *EnvConfiguration) GetKey() string       { return e.Key }
+func (EnvConfiguration) IsConfiguration()           {}
+func (e *EnvConfiguration) SetType(t ConfigType)    { e.Type = t }
+func (e *EnvConfiguration) GetKey() string          { return e.Key }
+func (e *EnvConfiguration) SetDisplayName(n string) { e.DisplayName = n }
 
 type GlobalConfiguration struct {
 	ID          uuid.UUID       `json:"id"`
@@ -109,10 +112,12 @@ type GlobalConfiguration struct {
 	Secret      bool            `json:"secret"`
 	Created     time.Time       `json:"created"`
 	Type        ConfigType      `json:"type"`
+	DisplayName string          `json:"displayName"`
 
 	FeatureName string
 }
 
-func (GlobalConfiguration) IsConfiguration()        {}
-func (e *GlobalConfiguration) SetType(t ConfigType) { e.Type = t }
-func (e *GlobalConfiguration) GetKey() string       { return e.Key }
+func (GlobalConfiguration) IsConfiguration()           {}
+func (g *GlobalConfiguration) SetType(t ConfigType)    { g.Type = t }
+func (g *GlobalConfiguration) GetKey() string          { return g.Key }
+func (g *GlobalConfiguration) SetDisplayName(n string) { g.DisplayName = n }
