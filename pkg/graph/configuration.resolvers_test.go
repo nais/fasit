@@ -33,8 +33,8 @@ func Test_queryResolver_Configuration_Early_Exit_When_EnvID_Set(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(ret) != 0 {
-		t.Fatalf("got %v, want 0 (from mock repo)", len(ret))
+	if len(ret.Configuration) != 0 {
+		t.Fatalf("got %v, want 0 (from mock repo)", len(ret.Configuration))
 	}
 }
 
@@ -89,11 +89,13 @@ func Test_queryResolver_Configuration_Empty_Defaults_Are_Set(t *testing.T) {
 		t.Fatalf("Configuration(ctx, %q, nil) err = %v, want nil", featureName, err)
 	}
 
-	want := []model.Configuration{
-		&model.GlobalConfiguration{FeatureName: "feature", Key: "string", Value: json.RawMessage("stringValue"), Type: model.ConfigTypeString},
-		&model.GlobalConfiguration{FeatureName: "feature", Key: "int", Value: json.RawMessage("intValue"), Type: model.ConfigTypeInt},
-		&model.GlobalConfiguration{FeatureName: "feature", Key: "bool", Value: json.RawMessage("null"), Type: model.ConfigTypeBool},
-		&model.GlobalConfiguration{FeatureName: "feature", Key: "stringArray", Value: json.RawMessage("null"), Type: model.ConfigTypeStringArray},
+	want := &model.EnvConfig{
+		Configuration: []model.Configuration{
+			&model.GlobalConfiguration{FeatureName: "feature", Key: "string", Value: json.RawMessage("stringValue"), Type: model.ConfigTypeString},
+			&model.GlobalConfiguration{FeatureName: "feature", Key: "int", Value: json.RawMessage("intValue"), Type: model.ConfigTypeInt},
+			&model.GlobalConfiguration{FeatureName: "feature", Key: "bool", Value: json.RawMessage("null"), Type: model.ConfigTypeBool},
+			&model.GlobalConfiguration{FeatureName: "feature", Key: "stringArray", Value: json.RawMessage("null"), Type: model.ConfigTypeStringArray},
+		},
 	}
 
 	opts := cmpopts.SortSlices(func(a, b model.Configuration) bool {

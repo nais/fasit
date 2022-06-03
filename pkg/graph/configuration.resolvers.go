@@ -45,17 +45,17 @@ func (r *mutationResolver) ConfigurationDelete(ctx context.Context, id uuid.UUID
 	return true, nil
 }
 
-func (r *queryResolver) Configuration(ctx context.Context, feature string, envID *uuid.UUID) ([]model.Configuration, error) {
-	var ret []model.Configuration
+func (r *queryResolver) Configuration(ctx context.Context, feature string, envID *uuid.UUID) (*model.EnvConfig, error) {
+	ret := &model.EnvConfig{}
 	if envID != nil {
 		// Get config for environment
 		res, err := r.Repo.ConfigGetForEnv(ctx, feature, *envID)
 		if err != nil {
 			return nil, err
 		}
-		ret = make([]model.Configuration, len(res))
+		ret.Configuration = make([]model.Configuration, len(res))
 		for i, c := range res {
-			ret[i] = c
+			ret.Configuration[i] = c
 		}
 	} else {
 		// Get global config
@@ -64,9 +64,9 @@ func (r *queryResolver) Configuration(ctx context.Context, feature string, envID
 			return nil, err
 		}
 
-		ret = make([]model.Configuration, len(res))
+		ret.Configuration = make([]model.Configuration, len(res))
 		for i, c := range res {
-			ret[i] = c
+			ret.Configuration[i] = c
 		}
 	}
 
@@ -76,13 +76,13 @@ func (r *queryResolver) Configuration(ctx context.Context, feature string, envID
 	}
 OUTER:
 	for key, val := range f.Config {
-		for _, c := range ret {
+		for _, c := range ret.Configuration {
 			if c.GetKey() == key {
 				c.SetType(val.Type)
 				continue OUTER
 			}
 		}
-		ret = append(ret, &model.GlobalConfiguration{
+		ret.Configuration = append(ret.Configuration, &model.GlobalConfiguration{
 			FeatureName: feature,
 			Key:         key,
 			Value:       []byte("null"),
@@ -91,11 +91,49 @@ OUTER:
 		})
 	}
 
+	if len(f.Mapping) == 0 || envID == nil {
+		return ret, nil
+	}
+
+	mappingValues, err := r.Repo.MappingValuesForEnvironment(ctx, *envID)
+	if err != nil {
+		return nil, err
+	}
+
+	ret.Mapping, err = mappingToSlice(f, mappingValues)
+	if err != nil {
+		return nil, err
+	}
+
 	return ret, nil
 }
 
-func (r *queryResolver) EnvConfig(ctx context.Context, feature string, envID uuid.UUID) ([]model.Configuration, error) {
-	return r.Repo.EnvConfig(ctx, feature, envID)
+func (r *queryResolver) EnvConfig(ctx context.Context, feature string, envID uuid.UUID) (*model.EnvConfig, error) {
+	config, err := r.Repo.EnvConfig(ctx, feature, envID)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := &model.EnvConfig{
+		Configuration: config,
+	}
+
+	f := r.Resolver.Features.Get(feature)
+
+	if f == nil || len(f.Mapping) == 0 {
+		return ret, nil
+	}
+
+	mappingValues, err := r.Repo.MappingValuesForEnvironment(ctx, envID)
+	if err != nil {
+		return nil, err
+	}
+
+	ret.Mapping, err = mappingToSlice(f, mappingValues)
+	if err != nil {
+		return nil, err
+	}
+	return ret, nil
 }
 
 // EnvConfiguration returns graphgen.EnvConfigurationResolver implementation.
@@ -108,5 +146,7 @@ func (r *Resolver) GlobalConfiguration() graphgen.GlobalConfigurationResolver {
 	return &globalConfigurationResolver{r}
 }
 
-type envConfigurationResolver struct{ *Resolver }
-type globalConfigurationResolver struct{ *Resolver }
+type (
+	envConfigurationResolver    struct{ *Resolver }
+	globalConfigurationResolver struct{ *Resolver }
+)

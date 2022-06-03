@@ -8,6 +8,11 @@ import (
 	"github.com/google/uuid"
 )
 
+type EnvConfig struct {
+	Configuration []Configuration `json:"configuration"`
+	Mapping       []*MappingValue `json:"mapping"`
+}
+
 // EnvironmentCreate contains metadata for creating an environment
 type EnvironmentCreate struct {
 	Name        string          `json:"name"`
@@ -31,6 +36,12 @@ type Feature struct {
 	DependsOn        []string          `json:"dependsOn"`
 	Config           json.RawMessage   `json:"config"`
 	EnvironmentKinds []EnvironmentKind `json:"environmentKinds"`
+}
+
+type MappingValue struct {
+	Key         string          `json:"key"`
+	Value       json.RawMessage `json:"value"`
+	DisplayName string          `json:"displayName"`
 }
 
 type TenantCreate struct {

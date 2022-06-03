@@ -66,6 +66,16 @@ func (m Mapping) Generate(values *MappingValues, target map[string]any) error {
 	return nil
 }
 
+func (m Mapping) DisplayName(key string) string {
+	for k, v := range m {
+		if k == key {
+			return v.DisplayName
+		}
+	}
+
+	return ""
+}
+
 func addToMap(target map[string]any, values *MappingValues, key []string, tpl any, path string) error {
 	if len(key) > 1 {
 		t, ok := target[key[0]]

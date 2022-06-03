@@ -2,6 +2,7 @@ package graph
 
 import (
 	"encoding/json"
+	"sort"
 
 	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph/model"
@@ -32,4 +33,49 @@ func contains[T comparable](s []T, value T) bool {
 		}
 	}
 	return false
+}
+
+func mappingToSlice(f *feature.Feature, env *feature.MappingValues) ([]*model.MappingValue, error) {
+	target := map[string]any{}
+	if err := f.Mapping.Generate(env, target); err != nil {
+		return nil, err
+	}
+
+	flat := flattenMap(target)
+
+	mapping := []*model.MappingValue{}
+	for k, v := range flat {
+		b, err := json.Marshal(v)
+		if err != nil {
+			return nil, err
+		}
+
+		mapping = append(mapping, &model.MappingValue{
+			Key:         k,
+			Value:       b,
+			DisplayName: f.Mapping.DisplayName(k),
+		})
+	}
+
+	sort.Slice(mapping, func(i, j int) bool {
+		return mapping[i].Key < mapping[j].Key
+	})
+
+	return mapping, nil
+}
+
+func flattenMap(mp map[string]any) map[string]any {
+	ret := map[string]any{}
+	for k, v := range mp {
+		if vMap, ok := v.(map[string]any); ok {
+			mp := flattenMap(vMap)
+			for k2, v2 := range mp {
+				ret[k+"."+k2] = v2
+			}
+		} else {
+			ret[k] = v
+		}
+	}
+
+	return ret
 }

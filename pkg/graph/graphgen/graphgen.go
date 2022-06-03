@@ -56,6 +56,11 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	EnvConfig struct {
+		Configuration func(childComplexity int) int
+		Mapping       func(childComplexity int) int
+	}
+
 	EnvConfiguration struct {
 		Created     func(childComplexity int) int
 		Description func(childComplexity int) int
@@ -150,6 +155,12 @@ type ComplexityRoot struct {
 		Storage func(childComplexity int) int
 	}
 
+	MappingValue struct {
+		DisplayName func(childComplexity int) int
+		Key         func(childComplexity int) int
+		Value       func(childComplexity int) int
+	}
+
 	Mutation struct {
 		ConfigurationCreate func(childComplexity int, configuration model.NewConfiguration) int
 		ConfigurationDelete func(childComplexity int, id uuid.UUID) int
@@ -237,8 +248,8 @@ type MutationResolver interface {
 }
 type QueryResolver interface {
 	Tenants(ctx context.Context) ([]*model.Tenant, error)
-	Configuration(ctx context.Context, feature string, envID *uuid.UUID) ([]model.Configuration, error)
-	EnvConfig(ctx context.Context, feature string, envID uuid.UUID) ([]model.Configuration, error)
+	Configuration(ctx context.Context, feature string, envID *uuid.UUID) (*model.EnvConfig, error)
+	EnvConfig(ctx context.Context, feature string, envID uuid.UUID) (*model.EnvConfig, error)
 	Environment(ctx context.Context, id uuid.UUID) (*model.Environment, error)
 	EnvironmentByNames(ctx context.Context, environmentName string, tenantName string) (*model.Environment, error)
 	Environments(ctx context.Context, tenantID uuid.UUID) ([]*model.Environment, error)
@@ -271,6 +282,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	ec := executionContext{nil, e}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "EnvConfig.configuration":
+		if e.complexity.EnvConfig.Configuration == nil {
+			break
+		}
+
+		return e.complexity.EnvConfig.Configuration(childComplexity), true
+
+	case "EnvConfig.mapping":
+		if e.complexity.EnvConfig.Mapping == nil {
+			break
+		}
+
+		return e.complexity.EnvConfig.Mapping(childComplexity), true
 
 	case "EnvConfiguration.created":
 		if e.complexity.EnvConfiguration.Created == nil {
@@ -720,6 +745,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.KubernetesNodeResources.Storage(childComplexity), true
 
+	case "MappingValue.displayName":
+		if e.complexity.MappingValue.DisplayName == nil {
+			break
+		}
+
+		return e.complexity.MappingValue.DisplayName(childComplexity), true
+
+	case "MappingValue.key":
+		if e.complexity.MappingValue.Key == nil {
+			break
+		}
+
+		return e.complexity.MappingValue.Key(childComplexity), true
+
+	case "MappingValue.value":
+		if e.complexity.MappingValue.Value == nil {
+			break
+		}
+
+		return e.complexity.MappingValue.Value(childComplexity), true
+
 	case "Mutation.configurationCreate":
 		if e.complexity.Mutation.ConfigurationCreate == nil {
 			break
@@ -1166,6 +1212,17 @@ var sources = []*ast.Source{
   STRING_ARRAY
 }
 
+type MappingValue {
+  key: String!
+  value: RawMessage!
+  displayName: String!
+}
+
+type EnvConfig {
+  configuration: [Configuration!]!
+  mapping: [MappingValue!]!
+}
+
 interface Configuration {
   id: ID!
   feature: Feature!
@@ -1214,8 +1271,8 @@ input UpdateConfiguration {
 }
 
 extend type Query {
-  configuration(feature: String!, envID: ID): [Configuration!]!
-  envConfig(feature: String!, envID: ID!): [Configuration!]!
+  configuration(feature: String!, envID: ID): EnvConfig!
+  envConfig(feature: String!, envID: ID!): EnvConfig!
 }
 
 extend type Mutation {
@@ -1864,6 +1921,102 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
+
+func (ec *executionContext) _EnvConfig_configuration(ctx context.Context, field graphql.CollectedField, obj *model.EnvConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EnvConfig_configuration(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Configuration, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]model.Configuration)
+	fc.Result = res
+	return ec.marshalNConfiguration2ᚕgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐConfigurationᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EnvConfig_configuration(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EnvConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("FieldContext.Child cannot be called on type INTERFACE")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EnvConfig_mapping(ctx context.Context, field graphql.CollectedField, obj *model.EnvConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EnvConfig_mapping(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Mapping, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.MappingValue)
+	fc.Result = res
+	return ec.marshalNMappingValue2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐMappingValueᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EnvConfig_mapping(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EnvConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "key":
+				return ec.fieldContext_MappingValue_key(ctx, field)
+			case "value":
+				return ec.fieldContext_MappingValue_value(ctx, field)
+			case "displayName":
+				return ec.fieldContext_MappingValue_displayName(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MappingValue", field.Name)
+		},
+	}
+	return fc, nil
+}
 
 func (ec *executionContext) _EnvConfiguration_id(ctx context.Context, field graphql.CollectedField, obj *model.EnvConfiguration) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_EnvConfiguration_id(ctx, field)
@@ -4838,6 +4991,138 @@ func (ec *executionContext) fieldContext_KubernetesNodeResources_pods(ctx contex
 	return fc, nil
 }
 
+func (ec *executionContext) _MappingValue_key(ctx context.Context, field graphql.CollectedField, obj *model.MappingValue) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MappingValue_key(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Key, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MappingValue_key(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MappingValue",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MappingValue_value(ctx context.Context, field graphql.CollectedField, obj *model.MappingValue) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MappingValue_value(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Value, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(json.RawMessage)
+	fc.Result = res
+	return ec.marshalNRawMessage2encodingᚋjsonᚐRawMessage(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MappingValue_value(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MappingValue",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type RawMessage does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MappingValue_displayName(ctx context.Context, field graphql.CollectedField, obj *model.MappingValue) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_MappingValue_displayName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DisplayName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_MappingValue_displayName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MappingValue",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_tenantCreate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_tenantCreate(ctx, field)
 	if err != nil {
@@ -5379,9 +5664,9 @@ func (ec *executionContext) _Query_configuration(ctx context.Context, field grap
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]model.Configuration)
+	res := resTmp.(*model.EnvConfig)
 	fc.Result = res
-	return ec.marshalNConfiguration2ᚕgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐConfigurationᚄ(ctx, field.Selections, res)
+	return ec.marshalNEnvConfig2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvConfig(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_configuration(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5391,7 +5676,13 @@ func (ec *executionContext) fieldContext_Query_configuration(ctx context.Context
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("FieldContext.Child cannot be called on type INTERFACE")
+			switch field.Name {
+			case "configuration":
+				return ec.fieldContext_EnvConfig_configuration(ctx, field)
+			case "mapping":
+				return ec.fieldContext_EnvConfig_mapping(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type EnvConfig", field.Name)
 		},
 	}
 	defer func() {
@@ -5434,9 +5725,9 @@ func (ec *executionContext) _Query_envConfig(ctx context.Context, field graphql.
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]model.Configuration)
+	res := resTmp.(*model.EnvConfig)
 	fc.Result = res
-	return ec.marshalNConfiguration2ᚕgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐConfigurationᚄ(ctx, field.Selections, res)
+	return ec.marshalNEnvConfig2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvConfig(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_envConfig(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -5446,7 +5737,13 @@ func (ec *executionContext) fieldContext_Query_envConfig(ctx context.Context, fi
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("FieldContext.Child cannot be called on type INTERFACE")
+			switch field.Name {
+			case "configuration":
+				return ec.fieldContext_EnvConfig_configuration(ctx, field)
+			case "mapping":
+				return ec.fieldContext_EnvConfig_mapping(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type EnvConfig", field.Name)
 		},
 	}
 	defer func() {
@@ -9132,6 +9429,47 @@ func (ec *executionContext) _Configuration(ctx context.Context, sel ast.Selectio
 
 // region    **************************** object.gotpl ****************************
 
+var envConfigImplementors = []string{"EnvConfig"}
+
+func (ec *executionContext) _EnvConfig(ctx context.Context, sel ast.SelectionSet, obj *model.EnvConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, envConfigImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("EnvConfig")
+		case "configuration":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._EnvConfig_configuration(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "mapping":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._EnvConfig_mapping(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var envConfigurationImplementors = []string{"EnvConfiguration", "Configuration"}
 
 func (ec *executionContext) _EnvConfiguration(ctx context.Context, sel ast.SelectionSet, obj *model.EnvConfiguration) graphql.Marshaler {
@@ -10039,6 +10377,57 @@ func (ec *executionContext) _KubernetesNodeResources(ctx context.Context, sel as
 		case "pods":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._KubernetesNodeResources_pods(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var mappingValueImplementors = []string{"MappingValue"}
+
+func (ec *executionContext) _MappingValue(ctx context.Context, sel ast.SelectionSet, obj *model.MappingValue) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, mappingValueImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MappingValue")
+		case "key":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._MappingValue_key(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "value":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._MappingValue_value(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "displayName":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._MappingValue_displayName(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)
@@ -11253,6 +11642,20 @@ func (ec *executionContext) marshalNConfiguration2ᚕgithubᚗcomᚋnaisᚋfasit
 	return ret
 }
 
+func (ec *executionContext) marshalNEnvConfig2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvConfig(ctx context.Context, sel ast.SelectionSet, v model.EnvConfig) graphql.Marshaler {
+	return ec._EnvConfig(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNEnvConfig2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvConfig(ctx context.Context, sel ast.SelectionSet, v *model.EnvConfig) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._EnvConfig(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNEnvironment2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironment(ctx context.Context, sel ast.SelectionSet, v model.Environment) graphql.Marshaler {
 	return ec._Environment(ctx, sel, &v)
 }
@@ -11753,6 +12156,60 @@ func (ec *executionContext) marshalNMap2map(ctx context.Context, sel ast.Selecti
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNMappingValue2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐMappingValueᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.MappingValue) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNMappingValue2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐMappingValue(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNMappingValue2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐMappingValue(ctx context.Context, sel ast.SelectionSet, v *model.MappingValue) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._MappingValue(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNNewConfiguration2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐNewConfiguration(ctx context.Context, v interface{}) (model.NewConfiguration, error) {

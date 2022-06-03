@@ -5,6 +5,17 @@ enum ConfigType {
   STRING_ARRAY
 }
 
+type MappingValue {
+  key: String!
+  value: RawMessage!
+  displayName: String!
+}
+
+type EnvConfig {
+  configuration: [Configuration!]!
+  mapping: [MappingValue!]!
+}
+
 interface Configuration {
   id: ID!
   feature: Feature!
@@ -53,8 +64,8 @@ input UpdateConfiguration {
 }
 
 extend type Query {
-  configuration(feature: String!, envID: ID): [Configuration!]!
-  envConfig(feature: String!, envID: ID!): [Configuration!]!
+  configuration(feature: String!, envID: ID): EnvConfig!
+  envConfig(feature: String!, envID: ID!): EnvConfig!
 }
 
 extend type Mutation {
