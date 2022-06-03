@@ -44,7 +44,7 @@ var cfg = DefaultConfig() // promErrs = prometheus.NewCounterVec(prometheus.Coun
 
 func init() {
 	flag.StringVar(&cfg.BindAddress, "bind-address", cfg.BindAddress, "Bind address")
-	flag.StringVar(&cfg.GRPCBindAddress, "grpc-bind-address", cfg.BindAddress, "Bind address")
+	flag.StringVar(&cfg.GRPCBindAddress, "grpc-bind-address", cfg.GRPCBindAddress, "Bind address")
 	flag.StringVar(&cfg.DBConnectionDSN, "db-connection-dsn", getEnv("FASIT_DBCONN_STRING", "postgres://postgres:postgres@127.0.0.1:5432/fasit?sslmode=disable"), "database connection DSN")
 	flag.StringVar(&cfg.LogLevel, "log-level", "info", "which log level to output")
 	flag.StringVar(&cfg.GCPProjectID, "project-id", "nais-local-dev", "Google project ID")
