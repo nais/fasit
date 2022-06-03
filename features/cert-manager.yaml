@@ -14,9 +14,10 @@ config:
   global.leaderElection.namespace:
     type: string
     required: true
-  serviceAccount.annotations.iam\.gke\.io/gcp-service-account:
-    type: string
-    required: true
   extraArgs:
     type: string_array
     required: true
+mapping:
+  serviceAccount.annotations.iam\.gke\.io/gcp-service-account:
+    value: '{{ .Env.acme_service_account }}'
+    displayName: "GCP service account"

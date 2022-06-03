@@ -60,6 +60,21 @@
 		},
 		"mapping": {
 			"description": "Mapping is the list of mappings from environment values for the feature.",
+			"patternProperties": {
+				".*": {
+					"additionalProperties": false,
+					"properties": {
+						"displayName": {
+							"type": "string"
+						},
+						"value": true
+					},
+					"required": [
+						"value"
+					],
+					"type": "object"
+				}
+			},
 			"type": "object"
 		},
 		"repo": {

@@ -26,7 +26,12 @@ func (e ErrOverride) Is(err error) bool {
 	return t.Path == e.Path
 }
 
-type Mapping map[string]any
+type Mapping map[string]MappingConfig
+
+type MappingConfig struct {
+	DisplayName string `yaml:"displayName,omitempty"`
+	Value       any    `yaml:"value"`
+}
 
 type MappingTenant struct {
 	Name string
@@ -54,7 +59,7 @@ func (m Mapping) Generate(values *MappingValues, target map[string]any) error {
 			return err
 		}
 
-		if err := addToMap(target, values, keys, v, k); err != nil {
+		if err := addToMap(target, values, keys, v.Value, k); err != nil {
 			return err
 		}
 	}

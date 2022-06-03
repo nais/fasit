@@ -15,8 +15,16 @@ config:
     type: string_array
     required: true
 mapping:
-  cloudDNS.zone: "{{.Management.cloud_dns_zone}}"
-  cloudDNS.project: "{{.Management.project_id}}"
-  tenant: "{{.Tenant.Name}}"
+  cloudDNS.zone:
+    value: "{{.Management.cloud_dns_zone}}"
+    displayName: "Cloud DNS zone"
+  cloudDNS.project:
+    value: "{{.Management.project_id}}"
+    displayName: "Cloud DNS project"
+  tenant:
+    value: "{{.Tenant.Name}}"
+    displayName: "Tenant"
   dnsNames:
-    - '*.{{if eq .Kind "tenant"}}{{.Env.name}}.{{end}}{{.Tenant.Name}}.cloud.nais.io'
+    value:
+      - '*.{{if eq .Kind "tenant"}}{{.Env.name}}.{{end}}{{.Tenant.Name}}.cloud.nais.io'
+    displayName: "DNS names"

@@ -53,7 +53,10 @@ func TestMapping_Generate(t *testing.T) {
 		"single_level": {
 			values: &MappingValues{Tenant: MappingTenant{Name: "foo"}},
 			mapping: Mapping{
-				"foo": "{{.Tenant.Name}}",
+				"foo": MappingConfig{
+					DisplayName: "Tenant name",
+					Value:       "{{.Tenant.Name}}",
+				},
 			},
 			target:   map[string]any{},
 			expected: map[string]any{"foo": "foo"},
@@ -61,8 +64,12 @@ func TestMapping_Generate(t *testing.T) {
 		"multi_level": {
 			values: &MappingValues{Tenant: MappingTenant{Name: "foo"}, Management: map[string]any{"project_id": "gcp"}},
 			mapping: Mapping{
-				"foo.name":    "{{.Tenant.Name}}",
-				"foo.project": "{{.Management.project_id}}",
+				"foo.name": MappingConfig{
+					Value: "{{.Tenant.Name}}",
+				},
+				"foo.project": MappingConfig{
+					Value: "{{.Management.project_id}}",
+				},
 			},
 			target:   map[string]any{},
 			expected: map[string]any{"foo": map[string]any{"name": "foo", "project": "gcp"}},
@@ -70,7 +77,9 @@ func TestMapping_Generate(t *testing.T) {
 		"multi_level_with_existing": {
 			values: &MappingValues{Tenant: MappingTenant{Name: "foo"}, Management: map[string]any{"project_id": "gcp"}},
 			mapping: Mapping{
-				"foo.project": "{{.Management.project_id}}",
+				"foo.project": MappingConfig{
+					Value: "{{.Management.project_id}}",
+				},
 			},
 			target:   map[string]any{"foo": map[string]any{"name": "foo"}},
 			expected: map[string]any{"foo": map[string]any{"name": "foo", "project": "gcp"}},
@@ -78,7 +87,9 @@ func TestMapping_Generate(t *testing.T) {
 		"multi_level_with_existing_nested": {
 			values: &MappingValues{Tenant: MappingTenant{Name: "foo"}, Management: map[string]any{"project_id": "gcp"}},
 			mapping: Mapping{
-				"foo.project": "{{.Management.project_id}}",
+				"foo.project": MappingConfig{
+					Value: "{{.Management.project_id}}",
+				},
 			},
 			target: map[string]any{"foo": map[string]any{"name": "foo", "project": "bar"}},
 			err:    &ErrOverride{Path: "foo.project"},
