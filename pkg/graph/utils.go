@@ -9,20 +9,23 @@ import (
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
-func marshalFeature(feature feature.Feature) (*model.Feature, error) {
-	config, err := json.Marshal(feature.Config)
+func marshalFeature(feat feature.Feature) (*model.Feature, error) {
+	if feat.Config == nil {
+		feat.Config = feature.Config{}
+	}
+	config, err := json.Marshal(feat.Config)
 	if err != nil {
 		return nil, err
 	}
 	tmp := &model.Feature{
-		Name:             feature.Name,
-		Chart:            feature.Chart,
-		Version:          feature.Version,
-		Repo:             feature.Repo,
-		Source:           feature.Source,
-		DependsOn:        feature.DependsOn,
+		Name:             feat.Name,
+		Chart:            feat.Chart,
+		Version:          feat.Version,
+		Repo:             feat.Repo,
+		Source:           feat.Source,
+		DependsOn:        feat.DependsOn,
 		Config:           config,
-		EnvironmentKinds: feature.EnvironmentKinds,
+		EnvironmentKinds: feat.EnvironmentKinds,
 	}
 	return tmp, nil
 }
