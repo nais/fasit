@@ -2,6 +2,9 @@ package database
 
 import (
 	"context"
+	"database/sql"
+	"errors"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database/gensql"
@@ -20,6 +23,11 @@ func (r *repo) HealthStatusCreateOrUpdate(ctx context.Context, environmentID uui
 func (r *repo) HealthGet(ctx context.Context, environmentID uuid.UUID) (*model.Health, error) {
 	res, err := r.querier.HealthStatusGet(ctx, environmentID)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return &model.Health{
+				ReportedAt: time.Date(1969, 6, 9, 6, 9, 6, 9, time.UTC),
+			}, nil
+		}
 		return nil, err
 	}
 	return &model.Health{

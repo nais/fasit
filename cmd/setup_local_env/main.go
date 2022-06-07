@@ -2,11 +2,16 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"cloud.google.com/go/pubsub"
+	"github.com/nais/fasit/pkg/provider/protogen"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 var (
@@ -14,8 +19,8 @@ var (
 	statusSubscription = "fasit-subscription"
 	statusTopic        = "status"
 
-	envs = map[string][]string{
-		"test-partner": {"dev", "management"},
+	envs = map[string]map[string]protogen.EnvironmentKind{
+		"test-partner": {"dev": protogen.EnvironmentKind_TENANT, "management": protogen.EnvironmentKind_MANAGEMENT},
 	}
 )
 
@@ -25,6 +30,46 @@ func main() {
 	}
 
 	ctx := context.Background()
+
+	conn, err := grpc.Dial("localhost:4444", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("did not connect: %v", err)
+	}
+	defer conn.Close()
+	grpcClient := protogen.NewProviderClient(conn)
+	for tenantName, environments := range envs {
+		tenant, err := grpcClient.CreateTenant(ctx, &protogen.CreateTenantRequest{Name: tenantName})
+		if err != nil {
+			log.Fatal(err)
+		}
+		for env, kind := range environments {
+			environment, err := grpcClient.CreateEnvironment(ctx, &protogen.CreateEnvironmentRequest{
+				TenantId: tenant.Id,
+				Name:     env,
+				Kind:     kind,
+			})
+			if err != nil {
+				log.Fatal(err)
+			}
+			_, err = grpcClient.CreateOrUpdateEnvironmentValue(ctx, &protogen.CreateOrUpdateEnvironmentValueRequest{
+				EnvironmentId: environment.Id,
+				Key:           "project_id",
+				Value:         json.RawMessage(fmt.Sprintf("%q", "nais-"+env)),
+			})
+			if err != nil {
+				log.Fatal(err)
+			}
+			_, err = grpcClient.CreateOrUpdateEnvironmentValue(ctx, &protogen.CreateOrUpdateEnvironmentValueRequest{
+				EnvironmentId: environment.Id,
+				Key:           "updated_at",
+				Value:         json.RawMessage(fmt.Sprintf("%q", time.Now().String())),
+			})
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
+
 	client, err := pubsub.NewClient(ctx, naisProjectID)
 	if err != nil {
 		log.Fatal(err)
@@ -43,7 +88,7 @@ func main() {
 	}
 
 	for tenant, envs := range envs {
-		for _, env := range envs {
+		for env := range envs {
 			topic := fmt.Sprintf("naisd-%v-%v", tenant, env)
 			subscription := "naisd-subscription"
 

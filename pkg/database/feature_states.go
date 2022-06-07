@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -23,12 +24,15 @@ func featureStateFromSQL(state gensql.FeatureState) *model.FeatureState {
 }
 
 func (r *repo) FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error) {
+	ret := []*model.FeatureState{}
 	featureStates, err := r.querier.FeatureStatesGet(ctx, envID)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ret, nil
+		}
 		return nil, err
 	}
 
-	ret := []*model.FeatureState{}
 	for _, featureState := range featureStates {
 		ret = append(ret, featureStateFromSQL(featureState))
 	}
