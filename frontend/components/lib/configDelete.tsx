@@ -40,7 +40,7 @@ const ConfigDelete = ({conf, open, resetState}: ConfigDeleteProps) => {
         if (id) {
             deleteConfig({
                 variables: {id},
-                refetchQueries: ['configGet', 'configuration'],
+                refetchQueries: ['configuration'],
                 awaitRefetchQueries: true
             }).then(() => {
                 resetState()
