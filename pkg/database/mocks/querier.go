@@ -497,6 +497,20 @@ func (_m *Querier) KubernetesNodeCreateOrUpdate(ctx context.Context, arg gensql.
 	return r0
 }
 
+// KubernetesNodeDeleteObsolete provides a mock function with given fields: ctx, environmentID
+func (_m *Querier) KubernetesNodeDeleteObsolete(ctx context.Context, environmentID uuid.UUID) error {
+	ret := _m.Called(ctx, environmentID)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) error); ok {
+		r0 = rf(ctx, environmentID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // KubernetesNodeStatuses provides a mock function with given fields: ctx, environmentID
 func (_m *Querier) KubernetesNodeStatuses(ctx context.Context, environmentID uuid.UUID) ([]gensql.KubernetesNodeStatus, error) {
 	ret := _m.Called(ctx, environmentID)
