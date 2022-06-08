@@ -25,8 +25,17 @@ spec:
       serviceAccountName: {{ include "fasit-frontend.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      volumes:
+        - emptyDir: { }
+          name: tmp
       containers:
         - name: {{ .Chart.Name }}
+          env:
+            - name: NPM_CONFIG_CACHE
+              value: /tmp
+          volumeMounts:
+            - mountPath: /tmp
+              name: tmp
           ports:
             - containerPort: 3000
               name: http
