@@ -105,4 +105,5 @@ type KubernetesNode struct {
 	Conditions              []KubernetesNodeCondition
 	Allocatable             KubernetesNodeResources
 	Capacity                KubernetesNodeResources
+	InternalIP              string
 }

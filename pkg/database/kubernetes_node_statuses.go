@@ -73,6 +73,7 @@ func kubernetesNodeParams(envID uuid.UUID, n message.KubernetesNode) (gensql.Kub
 		Conditions:              conditions,
 		Allocatable:             allocatable,
 		Capacity:                capacity,
+		InternalIp:              n.InternalIP,
 	}, nil
 }
 

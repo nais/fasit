@@ -91,6 +91,13 @@ func (k *KubernetesReporter) createMessage(n corev1.Node) message.KubernetesNode
 		Capacity:                k.nodeResource(n.Status.Capacity),
 	}
 
+	for _, addr := range n.Status.Addresses {
+		if addr.Type == corev1.NodeInternalIP {
+			kn.InternalIP = addr.Address
+			break
+		}
+	}
+
 	for _, c := range n.Status.Conditions {
 		kn.Conditions = append(kn.Conditions, message.KubernetesNodeCondition{
 			Type:           message.KubernetesNodeConditionType(c.Type),
