@@ -7,6 +7,8 @@ import GitIcon from "../lib/icons/gitIcon";
 import {Loader, Switch} from '@navikt/ds-react'
 import {Configs} from "../lib/configRows";
 import {useEffect, useState} from "react";
+import Link from "next/link";
+import {useRouter} from "next/router"
 
 
 const FeatureStatusContainer = styled.div`
@@ -60,6 +62,8 @@ interface FeatureProps {
 }
 
 const FeatureStatus = ({configs, env, featureName, setShowVerify}: FeatureProps) => {
+    const router = useRouter()
+    const tenantName = router.query.tenantName as string
     const {loading, error, data} = useFeatureStatusQuery({variables: {envID: env.id, feature: featureName}, pollInterval: 10 * 1000})
     const [time, setTime] = useState(Date.now());
     useEffect(() => {
@@ -98,8 +102,7 @@ const FeatureStatus = ({configs, env, featureName, setShowVerify}: FeatureProps)
                     {feature.source && <div style={{display: 'flex', width: 'fit-content', gap: '10px'}}><IconBox
                         size={20}><GitIcon/></IconBox> <a href={feature.source} target="_blank">{feature.source}</a></div>}
                     {feature.dependsOn.length > 0 && <div>dependencies: {feature.dependsOn.map((d) => {
-                        return <span key={d}
-                                     style={{color: missingDependencies.includes(d) ? navRod : navGronn}}>{d + " "}</span>
+                        return <Link href={`/tenant/${tenantName}/${env.name}?feature=${d}`} key={d}><a style={{color: missingDependencies.includes(d) ? navRod : navGronn}} >{d + " "}</a></Link>
                     })}
                     </div>
                     }
