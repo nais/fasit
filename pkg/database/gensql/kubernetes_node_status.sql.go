@@ -62,6 +62,15 @@ func (q *Queries) KubernetesNodeCreateOrUpdate(ctx context.Context, arg Kubernet
 	return err
 }
 
+const kubernetesNodeDeleteObsolete = `-- name: KubernetesNodeDeleteObsolete :exec
+DELETE FROM kubernetes_node_statuses WHERE environment_id = $1 AND last_modified < NOW() - INTERVAL '1 minute'
+`
+
+func (q *Queries) KubernetesNodeDeleteObsolete(ctx context.Context, environmentID uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, kubernetesNodeDeleteObsolete, environmentID)
+	return err
+}
+
 const kubernetesNodeStatuses = `-- name: KubernetesNodeStatuses :many
 SELECT environment_id, name, kernel_version, os_image, container_runtime_version, kubelet_version, kube_proxy_version, operating_system, architecture, conditions, allocatable, capacity, created, last_modified FROM kubernetes_node_statuses
 WHERE environment_id = $1

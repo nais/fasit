@@ -17,6 +17,9 @@ ON CONFLICT (environment_id, name) DO UPDATE
     capacity = EXCLUDED.capacity
 ;
 
+-- name: KubernetesNodeDeleteObsolete :exec
+DELETE FROM kubernetes_node_statuses WHERE environment_id = @environment_id AND last_modified < NOW() - INTERVAL '1 minute';
+
 -- name: KubernetesNodeStatuses :many
 SELECT * FROM kubernetes_node_statuses
 WHERE environment_id = @environment_ID;

@@ -21,6 +21,10 @@ func (r *repo) KubernetesNodeSync(ctx context.Context, envID uuid.UUID, kn *mess
 			return err
 		}
 	}
+	err := r.querier.KubernetesNodeDeleteObsolete(ctx, envID)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
