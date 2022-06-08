@@ -133,6 +133,7 @@ type ComplexityRoot struct {
 		Capacity                func(childComplexity int) int
 		Conditions              func(childComplexity int) int
 		ContainerRuntimeVersion func(childComplexity int) int
+		InternalIP              func(childComplexity int) int
 		KernelVersion           func(childComplexity int) int
 		KubeProxyVersion        func(childComplexity int) int
 		KubeletVersion          func(childComplexity int) int
@@ -648,6 +649,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.KubernetesNode.ContainerRuntimeVersion(childComplexity), true
+
+	case "KubernetesNode.internalIP":
+		if e.complexity.KubernetesNode.InternalIP == nil {
+			break
+		}
+
+		return e.complexity.KubernetesNode.InternalIP(childComplexity), true
 
 	case "KubernetesNode.kernelVersion":
 		if e.complexity.KubernetesNode.KernelVersion == nil {
@@ -1463,6 +1471,7 @@ type KubernetesNode {
   conditions: [KubernetesNodeCondition!]!
   allocatable: KubernetesNodeResources!
   capacity: KubernetesNodeResources!
+  internalIP: String!
 }
 `, BuiltIn: false},
 	{Name: "schema/scalars.graphqls", Input: `scalar Map
@@ -3000,6 +3009,8 @@ func (ec *executionContext) fieldContext_Environment_nodes(ctx context.Context, 
 				return ec.fieldContext_KubernetesNode_allocatable(ctx, field)
 			case "capacity":
 				return ec.fieldContext_KubernetesNode_capacity(ctx, field)
+			case "internalIP":
+				return ec.fieldContext_KubernetesNode_internalIP(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type KubernetesNode", field.Name)
 		},
@@ -4653,6 +4664,50 @@ func (ec *executionContext) fieldContext_KubernetesNode_capacity(ctx context.Con
 				return ec.fieldContext_KubernetesNodeResources_pods(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type KubernetesNodeResources", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _KubernetesNode_internalIP(ctx context.Context, field graphql.CollectedField, obj *model.KubernetesNode) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_KubernetesNode_internalIP(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.InternalIP, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_KubernetesNode_internalIP(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "KubernetesNode",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -10362,6 +10417,16 @@ func (ec *executionContext) _KubernetesNode(ctx context.Context, sel ast.Selecti
 		case "capacity":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._KubernetesNode_capacity(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "internalIP":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._KubernetesNode_internalIP(ctx, field, obj)
 			}
 
 			out.Values[i] = innerFunc(ctx)

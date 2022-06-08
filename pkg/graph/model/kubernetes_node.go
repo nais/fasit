@@ -18,6 +18,7 @@ type KubernetesNode struct {
 	KubeProxyVersion        string                     `json:"kubeProxyVersion"`
 	OperatingSystem         string                     `json:"operatingSystem"`
 	Architecture            string                     `json:"architecture"`
+	InternalIP              string                     `json:"internalIP"`
 	Conditions              []*KubernetesNodeCondition `json:"conditions"`
 	Allocatable             *KubernetesNodeResources   `json:"allocatable"`
 	Capacity                *KubernetesNodeResources   `json:"capacity"`

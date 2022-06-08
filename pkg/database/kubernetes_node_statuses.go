@@ -105,5 +105,6 @@ func kubernetesNodeFromSQL(n gensql.KubernetesNodeStatus) (*model.KubernetesNode
 		Conditions:              conditions,
 		Allocatable:             allocatable,
 		Capacity:                capacity,
+		InternalIP:              n.InternalIp,
 	}, nil
 }
