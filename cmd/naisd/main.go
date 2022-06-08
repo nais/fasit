@@ -14,6 +14,7 @@ import (
 	"github.com/nais/fasit/pkg/naisd"
 	"github.com/nais/fasit/pkg/workers"
 	"github.com/sirupsen/logrus"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
@@ -69,6 +70,10 @@ func main() {
 		if err != nil {
 			log.WithError(err).Fatal("setting up k8s client")
 		}
+		err := ensureAnnotation(ctx, k8sClient, cfg.EnvProjectID)
+		if err != nil {
+			log.WithError(err).Error("annotating namespace")
+		}
 	}
 	receiver, err := naisd.NewDeployManager(deploySubscriber, statusPublisher, cfg.TenantName, cfg.Env, executor, kubeConfig, log.WithField("subsystem", "deploy"))
 	if err != nil {
@@ -93,6 +98,21 @@ func main() {
 
 	log.Info("Receiver started")
 	receiver.Run(ctx)
+}
+
+func ensureAnnotation(ctx context.Context, client kubernetes.Interface, id string) error {
+	ns, err := client.CoreV1().Namespaces().Get(ctx, "nais-system", metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	if metav1.HasAnnotation(ns.ObjectMeta, "cnrm.cloud.google.com/project-id") {
+		return nil
+	}
+
+	metav1.SetMetaDataAnnotation(&ns.ObjectMeta, "cnrm.cloud.google.com/project-id", id)
+	_, err = client.CoreV1().Namespaces().Update(ctx, ns, metav1.UpdateOptions{})
+
+	return err
 }
 
 func newLogger() *logrus.Logger {
