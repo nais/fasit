@@ -5,8 +5,8 @@ import FasitLogo from '../lib/icons/fasit'
 
 const LogoBox = styled.div`
   cursor: pointer;
-  width: 100px;
   margin-right: 12px;
+  height: 60px;
 `
 
 export const Logo = () => (
