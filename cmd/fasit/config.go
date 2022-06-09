@@ -7,6 +7,9 @@ type Config struct {
 	LogLevel             string
 	GCPProjectID         string
 	StatusSubscriptionID string
+
+	InsecureSkipProxy bool
+	IAPAudience       string
 }
 
 func DefaultConfig() Config {
