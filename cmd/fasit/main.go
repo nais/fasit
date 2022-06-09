@@ -212,9 +212,19 @@ func validateJWTFromComputeEngine(aud string) func(h http.Handler) http.Handler 
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			iapJWT := r.Header.Get("X-Goog-IAP-JWT-Assertion")
 
-			_, err := idtoken.Validate(r.Context(), iapJWT, aud)
+			payload, err := idtoken.Validate(r.Context(), iapJWT, aud)
 			if err != nil {
 				http.Error(w, "Invalid JWT token", http.StatusUnauthorized)
+				return
+			}
+
+			if time.Unix(payload.IssuedAt, 0).After(time.Now().Add(30 * time.Second)) {
+				http.Error(w, "JWT token is in the future", http.StatusUnauthorized)
+				return
+			}
+
+			if payload.Issuer != "https://cloud.google.com/iap" {
+				http.Error(w, "Invalid JWT token issuer", http.StatusUnauthorized)
 				return
 			}
 
