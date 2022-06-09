@@ -111,7 +111,7 @@ const Home: NextPage = ({email}: any) => {
           <HeaderBar role='banner'>
               <HeaderContent>
                   <Logo />
-                  {email ? <UserBox > {email} <a href={"/?gcp-iap-mode=CLEAR_LOGIN_COOKIE"}><Logout title={"Log out"}/> </a></UserBox>: "unauthenticated"}
+                  {email ? <UserBox > {email.split(":")[1]} <a href={"/?gcp-iap-mode=CLEAR_LOGIN_COOKIE"}><Logout title={"Log out"}/> </a></UserBox>: "unauthenticated"}
               </HeaderContent>
           </HeaderBar>
           <Main>
