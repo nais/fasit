@@ -74,8 +74,8 @@ jobs:
           cache-to: type=gha,mode=max
   deploy_fasit:
     if: github.ref == 'refs/heads/main'
-    runs-on: [ 'fasit' ]
-    needs: [ 'build_and_push_fasit' ]
+    runs-on: ["fasit"]
+    needs: ["build_and_push_fasit"]
     permissions:
       contents: "read"
       id-token: "write"
@@ -98,4 +98,4 @@ jobs:
       - name: deploy fasit
         shell: bash
         run: |
-          helm upgrade fasit-backend oci://europe-north1-docker.pkg.dev/nais-io/nais/fasit --install --wait --version 0.2.0 --set image.tag="sha-${GITHUB_SHA::7}",dbConnString="${{ secrets.DB_CONNECTION_STRING }}" --namespace nais-system
+          helm upgrade fasit-backend oci://europe-north1-docker.pkg.dev/nais-io/nais/fasit --install --wait --version 0.3.0 --set image.tag="sha-${GITHUB_SHA::7}",dbConnString="${{ secrets.DB_CONNECTION_STRING }}" --namespace nais-system
