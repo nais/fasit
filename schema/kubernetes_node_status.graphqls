@@ -40,4 +40,5 @@ type KubernetesNode {
   conditions: [KubernetesNodeCondition!]!
   allocatable: KubernetesNodeResources!
   capacity: KubernetesNodeResources!
+  internalIP: String!
 }

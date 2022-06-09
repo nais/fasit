@@ -155,6 +155,7 @@ export type KubernetesNode = {
   capacity: KubernetesNodeResources
   conditions: Array<KubernetesNodeCondition>
   containerRuntimeVersion: Scalars['String']
+  internalIP: Scalars['String']
   kernelVersion: Scalars['String']
   kubeProxyVersion: Scalars['String']
   kubeletVersion: Scalars['String']
@@ -536,6 +537,7 @@ export type EnvironmentGetReportQuery = {
       __typename?: 'KubernetesNode'
       name: string
       kubeletVersion: string
+      internalIP: string
       conditions: Array<{
         __typename?: 'KubernetesNodeCondition'
         type: KubernetesNodeConditionType
@@ -1099,6 +1101,7 @@ export const EnvironmentGetReportDocument = gql`
       nodes {
         name
         kubeletVersion
+        internalIP
         conditions {
           type
           status

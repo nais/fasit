@@ -96,6 +96,7 @@ type KubernetesNodeStatus struct {
 	Capacity                json.RawMessage
 	Created                 time.Time
 	LastModified            time.Time
+	InternalIp              string
 }
 
 type ReleaseStatus struct {

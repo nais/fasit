@@ -12,9 +12,37 @@ import (
 
 const kubernetesNodeCreateOrUpdate = `-- name: KubernetesNodeCreateOrUpdate :exec
 INSERT INTO kubernetes_node_statuses
-	(environment_id, name, kernel_version, os_image, container_runtime_version, kubelet_version, kube_proxy_version, operating_system, architecture, conditions, allocatable, capacity)
+	(
+        environment_id,
+        name,
+        kernel_version,
+        os_image,
+        container_runtime_version,
+        kubelet_version,
+        kube_proxy_version,
+        operating_system,
+        architecture,
+        conditions,
+        allocatable,
+        capacity,
+        internal_ip
+    )
 VALUES
-	($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+	(
+        $1,
+        $2,
+        $3,
+        $4,
+        $5,
+        $6,
+        $7,
+        $8,
+        $9,
+        $10,
+        $11,
+        $12,
+        $13
+    )
 ON CONFLICT (environment_id, name) DO UPDATE
 	SET
     kernel_version = EXCLUDED.kernel_version,
@@ -26,7 +54,8 @@ ON CONFLICT (environment_id, name) DO UPDATE
     architecture = EXCLUDED.architecture,
     conditions = EXCLUDED.conditions,
     allocatable = EXCLUDED.allocatable,
-    capacity = EXCLUDED.capacity
+    capacity = EXCLUDED.capacity,
+    internal_ip = EXCLUDED.internal_ip
 `
 
 type KubernetesNodeCreateOrUpdateParams struct {
@@ -42,6 +71,7 @@ type KubernetesNodeCreateOrUpdateParams struct {
 	Conditions              json.RawMessage
 	Allocatable             json.RawMessage
 	Capacity                json.RawMessage
+	InternalIp              string
 }
 
 func (q *Queries) KubernetesNodeCreateOrUpdate(ctx context.Context, arg KubernetesNodeCreateOrUpdateParams) error {
@@ -58,6 +88,7 @@ func (q *Queries) KubernetesNodeCreateOrUpdate(ctx context.Context, arg Kubernet
 		arg.Conditions,
 		arg.Allocatable,
 		arg.Capacity,
+		arg.InternalIp,
 	)
 	return err
 }
@@ -72,7 +103,7 @@ func (q *Queries) KubernetesNodeDeleteObsolete(ctx context.Context, environmentI
 }
 
 const kubernetesNodeStatuses = `-- name: KubernetesNodeStatuses :many
-SELECT environment_id, name, kernel_version, os_image, container_runtime_version, kubelet_version, kube_proxy_version, operating_system, architecture, conditions, allocatable, capacity, created, last_modified FROM kubernetes_node_statuses
+SELECT environment_id, name, kernel_version, os_image, container_runtime_version, kubelet_version, kube_proxy_version, operating_system, architecture, conditions, allocatable, capacity, created, last_modified, internal_ip FROM kubernetes_node_statuses
 WHERE environment_id = $1
 `
 
@@ -100,6 +131,7 @@ func (q *Queries) KubernetesNodeStatuses(ctx context.Context, environmentID uuid
 			&i.Capacity,
 			&i.Created,
 			&i.LastModified,
+			&i.InternalIp,
 		); err != nil {
 			return nil, err
 		}

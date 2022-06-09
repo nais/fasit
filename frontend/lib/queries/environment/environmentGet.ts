@@ -84,6 +84,7 @@ export const ENVIRONMENT_GET_REPORT = gql`
       nodes {
         name
         kubeletVersion
+        internalIP
         conditions {
           type
           status
