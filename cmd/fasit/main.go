@@ -30,6 +30,7 @@ import (
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/api/idtoken"
 	"google.golang.org/grpc"
 
 	// Supported database drivers.
@@ -49,6 +50,8 @@ func init() {
 	flag.StringVar(&cfg.LogLevel, "log-level", "info", "which log level to output")
 	flag.StringVar(&cfg.GCPProjectID, "project-id", "nais-local-dev", "Google project ID")
 	flag.StringVar(&cfg.StatusSubscriptionID, "status-subscription-id", "fasit-subscription", "Pub/sub subscription for status")
+	flag.StringVar(&cfg.IAPAudience, "iap-audience", "", "IAP audience string")
+	flag.BoolVar(&cfg.InsecureSkipProxy, "insecure-skip-proxy", false, "Insecure, but allows the server to not require iap")
 }
 
 func newServer(es graphql.ExecutableSchema) *handler.Server {
@@ -137,8 +140,20 @@ func main() {
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowCredentials: true,
 	})
-	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
-	http.Handle("/query", corsMW.Handler(srv))
+
+	// Add the IAP validation middleware.
+	// If the IAP audience is not set, we stop the server with a fatal error
+	// unless the insecure-skip-proxy flag is set.
+	iapMW := validateJWTFromComputeEngine(cfg.IAPAudience)
+	if cfg.IAPAudience == "" {
+		if !cfg.InsecureSkipProxy {
+			log.Fatal("IAP audience must be set")
+		}
+
+		iapMW = func(next http.Handler) http.Handler { return next }
+	}
+	http.Handle("/", iapMW(playground.Handler("GraphQL playground", "/query")))
+	http.Handle("/query", iapMW(corsMW.Handler(srv)))
 
 	go func() {
 		if err := runGRPC(ctx, repo); err != nil {
@@ -190,4 +205,30 @@ func runGRPC(ctx context.Context, repo database.Repo) error {
 	})
 
 	return g.Wait()
+}
+
+func validateJWTFromComputeEngine(aud string) func(h http.Handler) http.Handler {
+	return func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			iapJWT := r.Header.Get("X-Goog-IAP-JWT-Assertion")
+
+			payload, err := idtoken.Validate(r.Context(), iapJWT, aud)
+			if err != nil {
+				http.Error(w, "Invalid JWT token", http.StatusUnauthorized)
+				return
+			}
+
+			if time.Unix(payload.IssuedAt, 0).After(time.Now().Add(30 * time.Second)) {
+				http.Error(w, "JWT token is in the future", http.StatusUnauthorized)
+				return
+			}
+
+			if payload.Issuer != "https://cloud.google.com/iap" {
+				http.Error(w, "Invalid JWT token issuer", http.StatusUnauthorized)
+				return
+			}
+
+			h.ServeHTTP(w, r)
+		})
+	}
 }

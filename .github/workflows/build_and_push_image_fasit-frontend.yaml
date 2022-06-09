@@ -61,8 +61,8 @@ jobs:
           cache-to: type=gha,mode=max
   deploy_fasit-frontend:
     if: github.ref == 'refs/heads/main'
-    runs-on: [ 'fasit' ]
-    needs: [ 'build_and_push_fasit-frontend' ]
+    runs-on: ["fasit"]
+    needs: ["build_and_push_fasit-frontend"]
     permissions:
       contents: "read"
       id-token: "write"
@@ -85,4 +85,4 @@ jobs:
       - name: deploy fasit-frontend
         shell: bash
         run: |
-          helm upgrade fasit-frontend oci://europe-north1-docker.pkg.dev/nais-io/nais/fasit-frontend --install --wait --version 0.1.0 --set image.tag="sha-${GITHUB_SHA::7}" --namespace nais-system
+          helm upgrade fasit-frontend oci://europe-north1-docker.pkg.dev/nais-io/nais/fasit-frontend --install --wait --version 0.2.0 --set image.tag="sha-${GITHUB_SHA::7}" --namespace nais-system

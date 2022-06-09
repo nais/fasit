@@ -39,6 +39,8 @@ spec:
           args:
             - --project-id
             - nais-io
+            - --iap-audience
+            - {{ .Values.iapAudience }}
           volumeMounts:
           - mountPath: /tmp
             name: tmp
