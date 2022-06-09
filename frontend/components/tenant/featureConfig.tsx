@@ -80,7 +80,6 @@ const FeatureConfig = ({envID, configs, featureObject, mapping}: FeatureConfigPr
                     { mapping && mapping.map((m) => (
                         <Table.Row key={m.key} style={ { 'color': configs[m.key] && configs[m.key].value !== null ? 'red' : '', 'textDecoration': configs[m.key] && configs[m.key].value !== null ? 'line-through' : ''} }>
                             <Table.DataCell>
-                                {console.log(configs[m.key])}
                                 {m.displayName ? <span title={"helm key: " + m.key}>{m.displayName}</span> : m.key}
                             </Table.DataCell>
                             <Table.DataCell colSpan={5}>
