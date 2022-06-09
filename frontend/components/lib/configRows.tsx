@@ -75,21 +75,22 @@ const ConfigRows = ({
             const conf = configs[key]
             return (
                 <Table.Row key={key}>
-                    <Table.DataCell>{conf.displayName ? <span title={"helm key: " + conf.key}>{conf.displayName}</span> : conf.key}</Table.DataCell>
-                    <Table.DataCell>{conf.secret ? '*****' : conf.type != ConfigType.StringArray ?
+                    <Table.DataCell align={'center'}>{conf.env ? <Place title={"Local"}/> : JSON.stringify(conf.value) !== "null" ? <Globe title={"Global"}/> :
+                        <FileContent title={"Helm value"}/>}
+                    </Table.DataCell>
+                    <Table.DataCell align={'center'}>{conf.required &&
+                        <Center>
+                            {conf.value ? <Success style={{color: navGronn}} title={"Requirement met"}/> :
+                                <Warning style={{color: navRod}} title={"required field"}/>}
+                        </Center>}
+                    </Table.DataCell>
+                    <Table.DataCell >{conf.displayName ? <span title={"helm key: " + conf.key}>{conf.displayName}</span> : conf.key}</Table.DataCell>
+                    <Table.DataCell >{conf.secret ? '*****' : conf.type != ConfigType.StringArray ?
                         conf.value != null ? JSON.stringify(conf.value).replace(/"/g, '') :
                             '<default>' :
                         prettifyArray(conf.value)}
                     </Table.DataCell>
-                    <Table.DataCell align={'center'}>{conf.env ? <Place/> : JSON.stringify(conf.value) !== "null" ? <Globe/> :
-                        <FileContent/>}
-                    </Table.DataCell>
-                    <Table.DataCell align={'center'}>{conf.required &&
-                        <Center>
-                            {conf.value ? <Success style={{color: navGronn}}/> :
-                            <Warning style={{color: navRod}}/>}
-                        </Center>}
-                    </Table.DataCell>
+                    <Table.DataCell>{conf.description}</Table.DataCell>
                     <Table.DataCell align={'center'}>
                         <Center> {conf.env || (featurePage && conf.value != null) ?
                             <>
@@ -110,7 +111,6 @@ const ConfigRows = ({
                             }}/>}
                         </Center>
                     </Table.DataCell>
-                    <Table.DataCell>{conf.description}</Table.DataCell>
                 </Table.Row>
             )
         }

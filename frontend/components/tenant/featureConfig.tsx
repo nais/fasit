@@ -6,6 +6,7 @@ import ConfigAdd from '../lib/configAdd'
 import ConfigDelete from '../lib/configDelete'
 import ConfigEdit from '../lib/configEdit'
 import ConfigRows, {Config, Configs} from "../lib/configRows";
+import {AutomaticSystem, Wrench} from "@navikt/ds-icons";
 
 
 interface FeatureConfigProps {
@@ -21,7 +22,10 @@ const FeatureConfig = ({envID, configs, featureObject, mapping}: FeatureConfigPr
     const [showUpdate, setShowUpdate] = useState(false)
     const [showCreate, setShowCreate] = useState(false)
 
-    const requiredConfigs = Object.keys(configs).filter((c) => configs[c].required).sort()
+    const overridable = Object.keys(configs).filter((c) => mapping?.map((m) => m.key).includes(configs[c].key))
+    const nonOverridden = Object.keys(configs).filter((c) => overridable?.includes(c) ).filter((c) => !(configs[c].value))
+
+    const requiredConfigs = Object.keys(configs).filter((c) => configs[c].required).filter((c) => !(nonOverridden.includes(c))).sort()
     const envConfigs = Object.keys(configs).filter((c) => configs[c].env && !configs[c].required).sort()
     const theRest = Object.keys(configs).filter((c) => !configs[c].env && !configs[c].required).sort()
 
@@ -35,15 +39,15 @@ const FeatureConfig = ({envID, configs, featureObject, mapping}: FeatureConfigPr
 
     return (
         <>
-            <Table size={'small'}>
+            <Table size={'small'} >
                 <Table.Header>
                     <Table.Row>
+                        <Table.HeaderCell align={'center'} style={{width: "50px"}}></Table.HeaderCell>
+                        <Table.HeaderCell align={'center'} style={{width: "50px"}} ></Table.HeaderCell>
                         <Table.HeaderCell>Key</Table.HeaderCell>
                         <Table.HeaderCell>Value</Table.HeaderCell>
-                        <Table.HeaderCell align={'center'}>Scope</Table.HeaderCell>
-                        <Table.HeaderCell align={'center'}>Required</Table.HeaderCell>
-                        <Table.HeaderCell align='center'>Operations</Table.HeaderCell>
                         <Table.HeaderCell>Comment</Table.HeaderCell>
+                        <Table.HeaderCell style={{width: "100px"}} align='center'>Actions</Table.HeaderCell>
                     </Table.Row>
                 </Table.Header>
                 <Table.Body>
@@ -77,16 +81,27 @@ const FeatureConfig = ({envID, configs, featureObject, mapping}: FeatureConfigPr
                             setShowCreate={setShowCreate}
                         />
                     }
-                    { mapping && mapping.map((m) => (
-                        <Table.Row key={m.key} style={ { 'color': configs[m.key] && configs[m.key].value !== null ? 'red' : '', 'textDecoration': configs[m.key] && configs[m.key].value !== null ? 'line-through' : ''} }>
-                            <Table.DataCell>
+                    {mapping && mapping.filter((m) => {
+                        return !(configs[m.key] && configs[m.key].value !== null)
+                    }).map((m) => {
+                        const o = overridable.includes(m.key)
+                        return <Table.Row key={m.key}>
+                            <Table.DataCell align={"center"}>
+                               <AutomaticSystem title={"Mapping value"}/>
+                            </Table.DataCell>
+                            <Table.DataCell/>
+                            <Table.DataCell style={{overflowWrap: "break-word"}}>
                                 {m.displayName ? <span title={"helm key: " + m.key}>{m.displayName}</span> : m.key}
                             </Table.DataCell>
-                            <Table.DataCell colSpan={5}>
+                            <Table.DataCell colSpan={2}>
                                 {m.value}
                             </Table.DataCell>
+                            <Table.DataCell align={"center"}> {o && <Wrench onClick={() => {
+                                setCurrentConfig(configs[m.key])
+                                setShowCreate(true)
+                            }}/>}</Table.DataCell>
                         </Table.Row>
-                    ))
+                    })
                     }
                 </Table.Body>
             </Table>
