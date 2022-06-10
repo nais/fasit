@@ -1,0 +1,17 @@
+package graph
+
+// This file will be automatically regenerated based on the schema, any resolver implementations
+// will be copied through when generating and any unknown code will be moved to the end.
+
+import (
+	"context"
+
+	"github.com/nais/fasit/pkg/auth"
+	"github.com/nais/fasit/pkg/graph/model"
+)
+
+func (r *queryResolver) UserInfo(ctx context.Context) (*model.UserInfo, error) {
+	return &model.UserInfo{
+		Email: auth.GetEmail(ctx),
+	}, nil
+}
