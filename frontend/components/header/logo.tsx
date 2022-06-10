@@ -7,6 +7,7 @@ const LogoBox = styled.div`
   cursor: pointer;
   margin-right: 12px;
   height: 60px;
+  width: 60px;
 `
 
 export const Logo = () => (
