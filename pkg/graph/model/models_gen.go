@@ -53,3 +53,7 @@ type UpdateConfiguration struct {
 	Description *string         `json:"description"`
 	Value       json.RawMessage `json:"value"`
 }
+
+type UserInfo struct {
+	Email string `json:"email"`
+}

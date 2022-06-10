@@ -184,6 +184,7 @@ type ComplexityRoot struct {
 		Features           func(childComplexity int, kind *model.EnvironmentKind) int
 		Tenant             func(childComplexity int, id *uuid.UUID, slug *string) int
 		Tenants            func(childComplexity int) int
+		UserInfo           func(childComplexity int) int
 		Values             func(childComplexity int, feature string, env uuid.UUID) int
 	}
 
@@ -219,6 +220,10 @@ type ComplexityRoot struct {
 		ID           func(childComplexity int) int
 		LastModified func(childComplexity int) int
 		Name         func(childComplexity int) int
+	}
+
+	UserInfo struct {
+		Email func(childComplexity int) int
 	}
 }
 
@@ -260,6 +265,7 @@ type QueryResolver interface {
 	Values(ctx context.Context, feature string, env uuid.UUID) (map[string]interface{}, error)
 	FeatureStatus(ctx context.Context, envID uuid.UUID, feature string) (*model.Status, error)
 	Tenant(ctx context.Context, id *uuid.UUID, slug *string) (*model.Tenant, error)
+	UserInfo(ctx context.Context) (*model.UserInfo, error)
 }
 type ReleaseResolver interface {
 	Feature(ctx context.Context, obj *model.Release) (*model.Feature, error)
@@ -977,6 +983,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Tenants(childComplexity), true
 
+	case "Query.userInfo":
+		if e.complexity.Query.UserInfo == nil {
+			break
+		}
+
+		return e.complexity.Query.UserInfo(childComplexity), true
+
 	case "Query.values":
 		if e.complexity.Query.Values == nil {
 			break
@@ -1147,6 +1160,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Tenant.Name(childComplexity), true
+
+	case "userInfo.email":
+		if e.complexity.UserInfo.Email == nil {
+			break
+		}
+
+		return e.complexity.UserInfo.Email(childComplexity), true
 
 	}
 	return 0, false
@@ -1536,6 +1556,16 @@ extend type Query {
     ): Tenant!
 }
 `, BuiltIn: false},
+	{Name: "schema/userInfo.graphqls", Input: `type userInfo {
+    email: String!
+}
+extend type Query {
+    """
+    userInfo returns the user.
+    """
+    userInfo: userInfo
+
+}`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
@@ -6429,6 +6459,51 @@ func (ec *executionContext) fieldContext_Query_tenant(ctx context.Context, field
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_userInfo(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_userInfo(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().UserInfo(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.UserInfo)
+	fc.Result = res
+	return ec.marshalOuserInfo2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐUserInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_userInfo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "email":
+				return ec.fieldContext_userInfo_email(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type userInfo", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query___type(ctx, field)
 	if err != nil {
@@ -9373,6 +9448,50 @@ func (ec *executionContext) fieldContext___Type_specifiedByURL(ctx context.Conte
 	return fc, nil
 }
 
+func (ec *executionContext) _userInfo_email(ctx context.Context, field graphql.CollectedField, obj *model.UserInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_userInfo_email(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Email, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_userInfo_email(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "userInfo",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 // endregion **************************** field.gotpl *****************************
 
 // region    **************************** input.gotpl *****************************
@@ -10987,6 +11106,26 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
+		case "userInfo":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_userInfo(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
 		case "__type":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___type(ctx, field)
@@ -11730,6 +11869,37 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 
 			out.Values[i] = innerFunc(ctx)
 
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var userInfoImplementors = []string{"userInfo"}
+
+func (ec *executionContext) _userInfo(ctx context.Context, sel ast.SelectionSet, obj *model.UserInfo) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, userInfoImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("userInfo")
+		case "email":
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._userInfo_email(ctx, field, obj)
+			}
+
+			out.Values[i] = innerFunc(ctx)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -13175,6 +13345,13 @@ func (ec *executionContext) marshalO__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgen�
 		return graphql.Null
 	}
 	return ec.___Type(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOuserInfo2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐUserInfo(ctx context.Context, sel ast.SelectionSet, v *model.UserInfo) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._userInfo(ctx, sel, v)
 }
 
 // endregion ***************************** type.gotpl *****************************

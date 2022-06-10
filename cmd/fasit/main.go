@@ -19,6 +19,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/gorilla/websocket"
 	"github.com/nais/fasit"
+	"github.com/nais/fasit/pkg/auth"
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph"
@@ -30,7 +31,6 @@ import (
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
-	"google.golang.org/api/idtoken"
 	"google.golang.org/grpc"
 
 	// Supported database drivers.
@@ -144,13 +144,13 @@ func main() {
 	// Add the IAP validation middleware.
 	// If the IAP audience is not set, we stop the server with a fatal error
 	// unless the insecure-skip-proxy flag is set.
-	iapMW := validateJWTFromComputeEngine(cfg.IAPAudience)
+	iapMW := auth.ValidateJWTFromComputeEngine(cfg.IAPAudience)
 	if cfg.IAPAudience == "" {
 		if !cfg.InsecureSkipProxy {
 			log.Fatal("IAP audience must be set")
 		}
 
-		iapMW = func(next http.Handler) http.Handler { return next }
+		iapMW = auth.InsecureValidateMW
 	}
 	http.Handle("/", iapMW(playground.Handler("GraphQL playground", "/query")))
 	http.Handle("/query", iapMW(corsMW.Handler(srv)))
@@ -205,30 +205,4 @@ func runGRPC(ctx context.Context, repo database.Repo) error {
 	})
 
 	return g.Wait()
-}
-
-func validateJWTFromComputeEngine(aud string) func(h http.Handler) http.Handler {
-	return func(h http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			iapJWT := r.Header.Get("X-Goog-IAP-JWT-Assertion")
-
-			payload, err := idtoken.Validate(r.Context(), iapJWT, aud)
-			if err != nil {
-				http.Error(w, "Invalid JWT token", http.StatusUnauthorized)
-				return
-			}
-
-			if time.Unix(payload.IssuedAt, 0).After(time.Now().Add(30 * time.Second)) {
-				http.Error(w, "JWT token is in the future", http.StatusUnauthorized)
-				return
-			}
-
-			if payload.Issuer != "https://cloud.google.com/iap" {
-				http.Error(w, "Invalid JWT token issuer", http.StatusUnauthorized)
-				return
-			}
-
-			h.ServeHTTP(w, r)
-		})
-	}
 }
