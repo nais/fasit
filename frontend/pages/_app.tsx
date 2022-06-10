@@ -5,6 +5,8 @@ import {ApolloProvider} from '@apollo/client'
 import {useApollo} from '../lib/apollo'
 import React from 'react'
 import '@navikt/ds-css'
+import {useUserInfoQuery} from "../lib/schema/graphql";
+import PageLayout from "../components/pageLayout";
 
 
 const MyApp = ({Component, pageProps}: AppInitialProps & AppContext) => {
@@ -35,7 +37,9 @@ const MyApp = ({Component, pageProps}: AppInitialProps & AppContext) => {
                 <meta name='theme-color' content='#ffffff'/>
                 <title>Fasit</title>
             </Head>
-            <Component {...pageProps} />
+            <PageLayout>
+                <Component {...pageProps} />
+            </PageLayout>
         </ApolloProvider>
     )
 }

@@ -264,6 +264,8 @@ export type Query = {
   /** tenant returns the given tenant. */
   tenant: Tenant
   tenants: Array<Tenant>
+  /** userInfo returns the user. */
+  userInfo?: Maybe<UserInfo>
   values: Scalars['Map']
 }
 
@@ -367,6 +369,11 @@ export type TenantCreate = {
 export type UpdateConfiguration = {
   description?: InputMaybe<Scalars['String']>
   value: Scalars['RawMessage']
+}
+
+export type UserInfo = {
+  __typename?: 'userInfo'
+  email: Scalars['String']
 }
 
 export type ConfigurationQueryVariables = Exact<{
@@ -664,6 +671,13 @@ export type TenantsGetQuery = {
     created: any
     lastModified: any
   }>
+}
+
+export type UserInfoQueryVariables = Exact<{ [key: string]: never }>
+
+export type UserInfoQuery = {
+  __typename?: 'Query'
+  userInfo?: { __typename?: 'userInfo'; email: string } | null
 }
 
 export const ConfigurationDocument = gql`
@@ -1633,4 +1647,56 @@ export type TenantsGetLazyQueryHookResult = ReturnType<
 export type TenantsGetQueryResult = Apollo.QueryResult<
   TenantsGetQuery,
   TenantsGetQueryVariables
+>
+export const UserInfoDocument = gql`
+  query UserInfo {
+    userInfo {
+      email
+    }
+  }
+`
+
+/**
+ * __useUserInfoQuery__
+ *
+ * To run a query within a React component, call `useUserInfoQuery` and pass it any options that fit your needs.
+ * When your component renders, `useUserInfoQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useUserInfoQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useUserInfoQuery(
+  baseOptions?: Apollo.QueryHookOptions<UserInfoQuery, UserInfoQueryVariables>,
+) {
+  const options = { ...defaultOptions, ...baseOptions }
+  return Apollo.useQuery<UserInfoQuery, UserInfoQueryVariables>(
+    UserInfoDocument,
+    options,
+  )
+}
+export function useUserInfoLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    UserInfoQuery,
+    UserInfoQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions }
+  return Apollo.useLazyQuery<UserInfoQuery, UserInfoQueryVariables>(
+    UserInfoDocument,
+    options,
+  )
+}
+export type UserInfoQueryHookResult = ReturnType<typeof useUserInfoQuery>
+export type UserInfoLazyQueryHookResult = ReturnType<
+  typeof useUserInfoLazyQuery
+>
+export type UserInfoQueryResult = Apollo.QueryResult<
+  UserInfoQuery,
+  UserInfoQueryVariables
 >
