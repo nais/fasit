@@ -1,0 +1,25 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring-cluster
+source: https://github.com/nais/helm-charts/tree/main/charts/monitoring-cluster
+version: 0.1.0
+environmentKinds:
+  - "tenant"
+config:
+  kube-prometheus-stack.prometheus.prometheusSpec.retention:
+    type: string
+    displayName: Retention
+  kube-prometheus-stack.prometheus.prometheusSpec.volumeClaimTemplate.spec.resources.requests.storage:
+    type: string
+    displayName: Disk size
+  nais_alerts.slack.webhook:
+    type: string
+  nais_alerts.slack.channel:
+    type: string
+mapping:
+  kube-prometheus-stack.alertmanager.ingress.hosts:
+    value:
+      - 'alertmanager.{{if eq .Kind "tenant"}}{{.Env.name}}.{{end}}{{.Tenant.Name}}.cloud.nais.io'
+    displayName: "Alertmanager host"
+  kube-prometheus-stack.prometheus.ingress.hosts:
+    value:
+      - 'prometheus.{{if eq .Kind "tenant"}}{{.Env.name}}.{{end}}{{.Tenant.Name}}.cloud.nais.io'
+    displayName: "Prometheus host"
