@@ -1,57 +1,10 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring
-version: 0.10.0
+version: 0.11.0
 environmentKinds:
   - "tenant"
-  - "management"
 config:
-  kube-prometheus-stack.prometheus.prometheusSpec.retention:
-    type: string
-  kube-prometheus-stack.prometheus.prometheusSpec.volumeClaimTemplate.spec.resources.requests.storage:
-    type: string
-  kube-prometheus-stack.prometheus.ingress.enabled:
-    type: bool
-  kube-prometheus-stack.prometheus.nodeExporter.enabled:
-    type: bool
-  kube-prometheus-stack.prometheus.ingress.hosts:
-    type: string_array
-  kube-prometheus-stack.alertmanager.ingress.enabled:
-    type: bool
-  kube-prometheus-stack.alertmanager.ingress.hosts:
-    type: string_array
-  kube-prometheus-stack.grafana.enabled:
-    type: bool
-  kube-prometheus-stack.grafana.adminUser:
-    type: string
-  kube-prometheus-stack.grafana.adminPassword:
-    type: string
-    secret: true
-  kube-prometheus-stack.grafana.grafana\.ini.auth\.anonymous.enabled:
-    type: bool
-  kube-prometheus-stack.grafana.grafana\.ini.auth\.anonymous.org_role:
-    type: string
-  kube-prometheus-stack.grafana.persistence.size:
-    type: string
-  kube-prometheus-stack.grafana.ingress.enabled:
-    type: bool
-  kube-prometheus-stack.grafana.ingress.hosts:
-    type: string_array
-  kube-prometheus-stack.nais.additionalScrapeConfigs.kubernetesPods.enabled:
-    type: bool
-  nais_alerts.slack.webhook:
-    type: string
-  nais_alerts.slack.channel:
-    type: string
 mapping:
-  kube-prometheus-stack.alertmanager.ingress.hosts:
-    value:
-      - 'alertmanager.{{if eq .Kind "tenant"}}{{.Env.name}}.{{end}}{{.Tenant.Name}}.cloud.nais.io'
-    displayName: "Alertmanager DNS names"
-  kube-prometheus-stack.grafana.ingress.hosts:
-    value:
-      - 'grafana.{{if eq .Kind "tenant"}}{{.Env.name}}.{{end}}{{.Tenant.Name}}.cloud.nais.io'
-    displayName: "Grafana DNS names"
-  kube-prometheus-stack.prometheus.ingress.hosts:
-    value:
-      - 'prometheus.{{if eq .Kind "tenant"}}{{.Env.name}}.{{end}}{{.Tenant.Name}}.cloud.nais.io'
-    displayName: "Prometheus DNS names"
+  tenant_prometheus.ingress.host:
+    value: 'prometheus.{{if eq .Kind "tenant"}}{{.Env.name}}.{{end}}{{.Tenant.Name}}.cloud.nais.io'
+    displayName: "Prometheus host"
