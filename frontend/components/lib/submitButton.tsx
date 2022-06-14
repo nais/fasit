@@ -21,20 +21,20 @@ export const RightJustifiedSubmitButton = ({
                                                loading,
                                            }: RightJustifiedSubmitButtonProps) => (
     <SubmitButton>
-        {onCancel && (
-            <Button type={'button'} variant={'danger'} onClick={onCancel}>
-                Abort
-            </Button>
-        )}
         <Button type={'submit'}>
             {loading ? (
                 <>
-                    <Loader /> Saving
+                    <Loader /> Saving...
                 </>
             ) : (
                 'Save'
             )}
         </Button>
+        {onCancel && (
+            <Button type={'button'} variant={'danger'} onClick={onCancel}>
+                Cancel
+            </Button>
+        )}
     </SubmitButton>
 )
 
