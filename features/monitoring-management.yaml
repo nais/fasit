@@ -21,6 +21,7 @@ mapping:
     value: "{{.Tenant.Name}}"
     displayName: "Tenant name"
   tenant.clusters:
+    displayName: "Tenant clusters"
     template: |
       {{range $cluster := .Envs}}
       - name: {{$cluster.name}}
