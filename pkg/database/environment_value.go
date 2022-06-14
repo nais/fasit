@@ -32,6 +32,7 @@ func (r *repo) EnvironmentValueGet(ctx context.Context, environmentID uuid.UUID,
 
 	return environmentValueFromSQL(ev), nil
 }
+
 func (r *repo) EnvironmentValuesForEnvironment(ctx context.Context, envID uuid.UUID) ([]*model.EnvironmentValue, error) {
 	values, err := r.querier.EnvironmentValuesForEnvironment(ctx, envID)
 	if err != nil {
@@ -63,10 +64,7 @@ func (r *repo) MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID)
 		},
 	}
 
-	evs, err := r.querier.MappingValuesForEnvironment(ctx, gensql.MappingValuesForEnvironmentParams{
-		Tenantid: tenant.ID,
-		Envid:    envID,
-	})
+	values, err := r.querier.MappingValuesForTenant(ctx, tenant.ID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return mv, nil
@@ -74,15 +72,22 @@ func (r *repo) MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID)
 		return nil, fmt.Errorf("envValuesForEnv: failed to get environment values: %w", err)
 	}
 
-	if err := json.Unmarshal(evs.Management, &mv.Management); err != nil {
-		return nil, fmt.Errorf("envValuesForEnv: failed to unmarshal management values: %w", err)
-	}
+	for _, env := range values {
+		val := map[string]any{}
+		if err := json.Unmarshal(env.Values, &val); err != nil {
+			return nil, fmt.Errorf("envValuesForEnv: failed to unmarshal values for %q: %w", env.Name, err)
+		}
+		val["name"] = env.Name
 
-	if err := json.Unmarshal(evs.Environment, &mv.Env); err != nil {
-		return nil, fmt.Errorf("envValuesForEnv: failed to unmarshal environment values: %w", err)
+		if env.ID == envID {
+			mv.Env = val
+		}
+		if env.Kind == gensql.EnvironmentKind(model.EnvironmentKindManagement) {
+			mv.Management = val
+		} else {
+			mv.Envs = append(mv.Envs, val)
+		}
 	}
-
-	mv.Env["name"] = env.Name
 
 	return mv, nil
 }

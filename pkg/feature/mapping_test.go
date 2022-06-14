@@ -94,6 +94,29 @@ func TestMapping_Generate(t *testing.T) {
 			target:   map[string]any{"foo": map[string]any{"name": "foo", "project": "bar"}},
 			expected: map[string]any{"foo": map[string]any{"name": "foo", "project": "bar"}},
 		},
+		"template_object_array": {
+			values: &MappingValues{
+				Tenant:     MappingTenant{Name: "foo"},
+				Management: map[string]any{"project_id": "gcp"},
+				Envs:       []map[string]any{{"name": "dev"}, {"name": "prod"}},
+			},
+			mapping: Mapping{
+				"foo.project": MappingConfig{
+					Template: `{{ range $env := .Envs }}
+- name: {{ $env.name }}
+{{end}}`,
+				},
+			},
+			target: map[string]any{},
+			expected: map[string]any{
+				"foo": map[string]any{
+					"project": []any{
+						map[string]any{"name": "dev"},
+						map[string]any{"name": "prod"},
+					},
+				},
+			},
+		},
 	}
 
 	for name, tc := range tests {

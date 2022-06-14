@@ -69,45 +69,50 @@ func (q *Queries) EnvironmentValuesForEnvironment(ctx context.Context, envid uui
 	return items, nil
 }
 
-const mappingValuesForEnvironment = `-- name: MappingValuesForEnvironment :one
-WITH management_id AS (
-  SELECT id
-  FROM environments
-  WHERE tenant_id = $1
-  AND kind = 'management'
-),
-management_values AS (
-  SELECT
-    json_object_agg("key", "value") AS management
-  FROM environment_values, management_id
-  WHERE environment_values.environment_id = management_id.id
-),
-environment_values AS (
-  SELECT
-    json_object_agg("key", "value") AS environment
-  FROM environment_values
-  WHERE environment_values.environment_id = $2
-)
-
+const mappingValuesForTenant = `-- name: MappingValuesForTenant :many
 SELECT
-  COALESCE(management_values.management, '{}'::json),
-  COALESCE(environment_values.environment, '{}'::json)
-FROM management_values, environment_values
+  "id",
+  "name",
+  "kind",
+  -- FILTER is added to prevent error when there's no environment values
+  coalesce(json_object_agg("key", "value") FILTER (WHERE "key" IS NOT NULL), '{}'::json)::json AS "values"
+FROM environments
+LEFT JOIN environment_values ON environment_values.environment_id = environments.id
+WHERE tenant_id = $1
+GROUP BY "id", "name", "kind"
 `
 
-type MappingValuesForEnvironmentParams struct {
-	Tenantid uuid.UUID
-	Envid    uuid.UUID
+type MappingValuesForTenantRow struct {
+	ID     uuid.UUID
+	Name   string
+	Kind   EnvironmentKind
+	Values json.RawMessage
 }
 
-type MappingValuesForEnvironmentRow struct {
-	Management  json.RawMessage
-	Environment json.RawMessage
-}
-
-func (q *Queries) MappingValuesForEnvironment(ctx context.Context, arg MappingValuesForEnvironmentParams) (MappingValuesForEnvironmentRow, error) {
-	row := q.db.QueryRowContext(ctx, mappingValuesForEnvironment, arg.Tenantid, arg.Envid)
-	var i MappingValuesForEnvironmentRow
-	err := row.Scan(&i.Management, &i.Environment)
-	return i, err
+func (q *Queries) MappingValuesForTenant(ctx context.Context, tenantid uuid.UUID) ([]MappingValuesForTenantRow, error) {
+	rows, err := q.db.QueryContext(ctx, mappingValuesForTenant, tenantid)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []MappingValuesForTenantRow{}
+	for rows.Next() {
+		var i MappingValuesForTenantRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Kind,
+			&i.Values,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

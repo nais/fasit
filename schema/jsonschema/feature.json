@@ -67,11 +67,11 @@
 						"displayName": {
 							"type": "string"
 						},
+						"template": {
+							"type": "string"
+						},
 						"value": true
 					},
-					"required": [
-						"value"
-					],
 					"type": "object"
 				}
 			},

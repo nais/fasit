@@ -8,27 +8,15 @@ SELECT * FROM environment_values WHERE "environment_id" = @envID AND "key" = @ke
 -- name: EnvironmentValuesForEnvironment :many
 SELECT * FROM environment_values WHERE "environment_id" = @envID;
 
--- name: MappingValuesForEnvironment :one
-WITH management_id AS (
-  SELECT id
-  FROM environments
-  WHERE tenant_id = @tenantID
-  AND kind = 'management'
-),
-management_values AS (
-  SELECT
-    json_object_agg("key", "value") AS management
-  FROM environment_values, management_id
-  WHERE environment_values.environment_id = management_id.id
-),
-environment_values AS (
-  SELECT
-    json_object_agg("key", "value") AS environment
-  FROM environment_values
-  WHERE environment_values.environment_id = @envID
-)
-
+-- name: MappingValuesForTenant :many
 SELECT
-  COALESCE(management_values.management, '{}'::json),
-  COALESCE(environment_values.environment, '{}'::json)
-FROM management_values, environment_values;
+  "id",
+  "name",
+  "kind",
+  -- FILTER is added to prevent error when there's no environment values
+  coalesce(json_object_agg("key", "value") FILTER (WHERE "key" IS NOT NULL), '{}'::json)::json AS "values"
+FROM environments
+LEFT JOIN environment_values ON environment_values.environment_id = environments.id
+WHERE tenant_id = @tenantID
+GROUP BY "id", "name", "kind"
+;

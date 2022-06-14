@@ -15,8 +15,16 @@ mapping:
     value: 'prometheus.{{if eq .Kind "tenant"}}{{.Env.name}}.{{end}}{{.Tenant.Name}}.cloud.nais.io'
     displayName: "Prometheus host"
   tenant_prometheus.loadBalancerIP:
-    value: '{{ .Env.tenant_ilb_ip }}'
+    value: "{{ .Env.tenant_ilb_ip }}"
     displayName: "Tenant Prometheus lb IP"
   nais_prometheus.loadBalancerIP:
-    value: '{{ .Env.nais_ilb_ip }}'
+    value: "{{ .Env.nais_ilb_ip }}"
     displayName: "NAIS Prometheus lb IP"
+  tenant_clusters:
+    displayName: "NAIS clusters"
+    template: |
+      {{ range $env := .Envs }}
+        - name: {{ $env.name }}
+          nais_ilb: {{ $env.nais_ilb_ip }}
+          tenant_ilb: {{ $env.tenant_ilb_ip }}
+      {{ end }}

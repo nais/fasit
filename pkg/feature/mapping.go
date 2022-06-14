@@ -7,13 +7,15 @@ import (
 	"text/template"
 
 	"github.com/nais/fasit/pkg/graph/model"
+	"gopkg.in/yaml.v2"
 )
 
 type Mapping map[string]MappingConfig
 
 type MappingConfig struct {
 	DisplayName string `yaml:"displayName,omitempty"`
-	Value       any    `yaml:"value"`
+	Value       any    `yaml:"value,omitempty"`
+	Template    string `yaml:"template,omitempty"`
 }
 
 type MappingTenant struct {
@@ -29,6 +31,8 @@ type MappingValues struct {
 	Management map[string]any
 	// Env contains information about the cluster the feature is deployed to.
 	Env map[string]any
+	// Envs contains information about all clusters the tenant has access to.
+	Envs []map[string]any
 }
 
 func (m Mapping) Generate(values *MappingValues, target map[string]any) error {
@@ -42,7 +46,7 @@ func (m Mapping) Generate(values *MappingValues, target map[string]any) error {
 			return err
 		}
 
-		if err := addToMap(target, values, keys, v.Value, k); err != nil {
+		if err := addToMap(target, values, keys, v, k); err != nil {
 			return err
 		}
 	}
@@ -59,7 +63,7 @@ func (m Mapping) DisplayName(key string) string {
 	return ""
 }
 
-func addToMap(target map[string]any, values *MappingValues, key []string, tpl any, path string) error {
+func addToMap(target map[string]any, values *MappingValues, key []string, mc MappingConfig, path string) error {
 	if len(key) > 1 {
 		t, ok := target[key[0]]
 		if !ok {
@@ -70,10 +74,10 @@ func addToMap(target map[string]any, values *MappingValues, key []string, tpl an
 		if !ok {
 			return fmt.Errorf("key %v is not nestable", key[0])
 		}
-		return addToMap(tt, values, key[1:], tpl, path)
+		return addToMap(tt, values, key[1:], mc, path)
 	}
 
-	val, err := renderTpl(values, tpl)
+	val, err := renderTpl(values, mc)
 	if err != nil {
 		return err
 	}
@@ -86,15 +90,34 @@ func addToMap(target map[string]any, values *MappingValues, key []string, tpl an
 	return nil
 }
 
-func renderTpl(values *MappingValues, tpl any) (any, error) {
-	switch t := tpl.(type) {
+func renderTpl(values *MappingValues, mc MappingConfig) (any, error) {
+	switch t := mc.Value.(type) {
 	case string:
 		return renderString(values, t)
 	case []any:
 		return renderSlice(values, t)
 	default:
+		if mc.Template != "" {
+			return renderTemplate(values, mc.Template)
+		}
 		return nil, fmt.Errorf("unsupported type %T", t)
 	}
+}
+
+func renderTemplate(values *MappingValues, tpl string) (any, error) {
+	rdr, err := renderString(values, tpl)
+	if err != nil {
+		return nil, err
+	}
+
+	var v any
+	if err := yaml.Unmarshal([]byte(rdr), &v); err != nil {
+		return nil, err
+	}
+
+	v = repairMapAny(v)
+
+	return v, nil
 }
 
 func renderString(values *MappingValues, tpl string) (string, error) {
@@ -114,7 +137,9 @@ func renderString(values *MappingValues, tpl string) (string, error) {
 func renderSlice(values *MappingValues, tpl []any) ([]any, error) {
 	ret := make([]any, len(tpl))
 	for i, t := range tpl {
-		val, err := renderTpl(values, t)
+		val, err := renderTpl(values, MappingConfig{
+			Value: t,
+		})
 		if err != nil {
 			return nil, err
 		}
@@ -151,4 +176,20 @@ func SmartDotSplit(s string) ([]string, error) {
 		}
 	}
 	return append(ret, str), nil
+}
+
+func repairMapAny(v any) any {
+	switch t := v.(type) {
+	case []any:
+		for i, v := range t {
+			t[i] = repairMapAny(v)
+		}
+	case map[any]any:
+		nm := make(map[string]any)
+		for k, v := range t {
+			nm[k.(string)] = repairMapAny(v)
+		}
+		return nm
+	}
+	return v
 }
