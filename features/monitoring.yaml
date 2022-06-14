@@ -14,9 +14,9 @@ mapping:
   tenant_prometheus.ingress.host:
     value: 'prometheus.{{if eq .Kind "tenant"}}{{.Env.name}}.{{end}}{{.Tenant.Name}}.cloud.nais.io'
     displayName: "Prometheus host"
-  tenant_prometheus.loadBalacerIP:
+  tenant_prometheus.loadBalancerIP:
     value: '{{ .Env.tenant_ilb_ip }}'
     displayName: "Tenant Prometheus lb IP"
-  nais_prometheus.loadBalacerIP:
+  nais_prometheus.loadBalancerIP:
     value: '{{ .Env.nais_ilb_ip }}'
     displayName: "NAIS Prometheus lb IP"
