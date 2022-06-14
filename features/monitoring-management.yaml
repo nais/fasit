@@ -1,0 +1,28 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring-management
+source: https://github.com/nais/helm-charts/tree/main/charts/monitoring-management
+version: 0.2.0
+environmentKinds:
+  - "management"
+config:
+  nais_prometheus.retention:
+    type: string
+    displayName: NAIS prometheus retention
+  nais_prometheus.storage.size:
+    type: string
+    displayName: NAIS prometheus disk size
+mapping:
+  grafana.ingress.hosts:
+    value: [ 'grafana.{{.Tenant.Name}}.cloud.nais.io' ]
+    displayName: "Grafana hosts"
+  nais_prometheus.ingress.host:
+    value: 'nais-prometheus.{{.Tenant.Name}}.cloud.nais.io'
+    displayName: "NAIS Prometheus host"
+  tenant.name:
+    value: "{{.Tenant.Name}}"
+    displayName: "Tenant name"
+  tenant.clusters:
+    template: |
+      {{range $cluster := .Envs}}
+      - name: {{$cluster.name}}
+        ilb: {{$cluster.nais_ilb_ip}}
+      {{end}}
