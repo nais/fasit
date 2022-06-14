@@ -20,11 +20,3 @@ mapping:
   nais_prometheus.loadBalancerIP:
     value: "{{ .Env.nais_ilb_ip }}"
     displayName: "NAIS Prometheus lb IP"
-  tenant_clusters:
-    displayName: "NAIS clusters"
-    template: |
-      {{ range $env := .Envs }}
-        - name: {{ $env.name }}
-          nais_ilb: {{ $env.nais_ilb_ip }}
-          tenant_ilb: {{ $env.tenant_ilb_ip }}
-      {{ end }}
