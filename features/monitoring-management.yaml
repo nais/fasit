@@ -11,6 +11,17 @@ config:
     type: string
     displayName: NAIS prometheus disk size
 mapping:
+  grafana.datasources:
+    template: |
+      datasources.yaml:
+        apiVersion: 1
+        datasources:
+      {{ range $cluster := .Envs }}
+        - name: {{ $cluster.name }}
+          type: prometheus
+          url: http://{{ $cluster.tenant_ilb_ip }}:9090
+          access: proxy
+      {{ end }}
   grafana.ingress.hosts:
     value: [ 'grafana.{{.Tenant.Name}}.cloud.nais.io' ]
     displayName: "Grafana hosts"
