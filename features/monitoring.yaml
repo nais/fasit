@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring
-version: 0.12.0
+version: 0.13.0
 environmentKinds:
   - "tenant"
 config:
@@ -14,3 +14,9 @@ mapping:
   tenant_prometheus.ingress.host:
     value: 'prometheus.{{if eq .Kind "tenant"}}{{.Env.name}}.{{end}}{{.Tenant.Name}}.cloud.nais.io'
     displayName: "Prometheus host"
+  tenant_prometheus.loadBalacerIP:
+    value: '{{ .Env.tenant_ilb_ip }}'
+    displayName: "Tenant Prometheus lb IP"
+  nais_prometheus.loadBalacerIP:
+    value: '{{ .Env.nais_ilb_ip }}'
+    displayName: "NAIS Prometheus lb IP"
