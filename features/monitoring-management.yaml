@@ -1,15 +1,24 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring-management
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring-management
-version: 0.2.0
+version: 0.3.0
 environmentKinds:
   - "management"
 config:
   nais_prometheus.retention:
     type: string
-    displayName: NAIS prometheus retention
+    displayName: Prometheus retention
   nais_prometheus.storage.size:
     type: string
-    displayName: NAIS prometheus disk size
+    displayName: Prometheus disk size
+  nais_prometheus.memory:
+    type: string
+    displayName: Prometheus memory
+  nais_prometheus.cpu.request:
+    type: string
+    displayName: Prometheus cpu request
+  nais_prometheus.cpu.limit:
+    type: string
+    displayName: Prometheus cpu limit
 mapping:
   grafana.datasources:
     template: |

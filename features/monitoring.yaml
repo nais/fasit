@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring
-version: 0.13.0
+version: 0.14.0
 environmentKinds:
   - "tenant"
 config:
@@ -10,6 +10,24 @@ config:
   tenant_prometheus.storage.size:
     type: string
     displayName: Tenant prometheus disk size
+  tenant_prometheus.memory:
+    type: string
+    displayName: Tenant prometheus memory
+  tenant_prometheus.cpu.request:
+    type: string
+    displayName: Tenant prometheus cpu request
+  tenant_prometheus.cpu.limit:
+    type: string
+    displayName: Tenant prometheus cpu limit
+  nais_prometheus.memory:
+    type: string
+    displayName: Nais prometheus memory
+  nais_prometheus.cpu.request:
+    type: string
+    displayName: Nais prometheus cpu request
+  nais_prometheus.cpu.limit:
+    type: string
+    displayName: Nais prometheus cpu limit
 mapping:
   tenant_prometheus.ingress.host:
     value: 'prometheus.{{if eq .Kind "tenant"}}{{.Env.name}}.{{end}}{{.Tenant.Name}}.cloud.nais.io'
