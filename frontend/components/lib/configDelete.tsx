@@ -6,6 +6,7 @@ import ErrorMessage from './error'
 import {useConfigurationDeleteMutation} from '../../lib/schema/graphql'
 import styled from 'styled-components'
 import {Config} from "./configRows";
+import {RightJustifiedButtons} from "./rightJustifiedButtons";
 
 const style = {
     position: 'absolute' as 'absolute',
@@ -18,13 +19,6 @@ const style = {
     boxShadow: 24,
     p: 4,
 }
-
-const StyledButtonRow = styled.div`
-  display: flex;
-  gap: 10px;
-  margin-top: 10px;
-  justify-content: right;
-`
 
 interface ConfigDeleteProps {
     conf: Config
@@ -53,11 +47,12 @@ const ConfigDelete = ({conf, open, resetState}: ConfigDeleteProps) => {
 
         <Modal open={open} onClose={resetState}>
             <Box sx={style}>
-                Er du sikker på at du vil fjerne {conf.key}?
-                <StyledButtonRow>
-                    <Button variant='danger' onClick={() => deleteAndRefetchConfig(conf.id)}>Ja</Button>
-                    <Button onClick={resetState}>Nei</Button>
-                </StyledButtonRow>
+                <p style={{padding: '0px 0px 30px 0px'}}>Are you sure you want to delete {conf.key}?</p>
+                <RightJustifiedButtons>
+                    <Button style={{marginTop: "10px"}} onClick={resetState}>Cancel</Button>
+                    <Button style={{marginTop: "10px", marginLeft: "10px"}} variant='danger'
+                            onClick={() => deleteAndRefetchConfig(conf.id)}>Yes</Button>
+                </RightJustifiedButtons>
                 {
                     backendError && (
                         <ErrorMessage error={backendError}/>

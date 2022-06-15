@@ -10,7 +10,7 @@ const style = {
     top: '50%',
     left: '50%',
     transform: 'translate(-50%, -50%)',
-    width: 300,
+    width: 500,
     bgcolor: 'background.paper',
     border: '2px solid #000',
     boxShadow: 24,
@@ -30,7 +30,7 @@ const EnableFeature = ({open, onClose, feature, envID, enabled}: EnableFeaturePr
     const [backendError, setBackendError] = useState()
     const [save] = useFeatureStateSaveMutation()
 
-    const onSubmit = async (e:  React.FormEvent<HTMLFormElement>) => {
+    const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         try {
             await save({
@@ -38,7 +38,7 @@ const EnableFeature = ({open, onClose, feature, envID, enabled}: EnableFeaturePr
                 awaitRefetchQueries: true,
                 refetchQueries: ['environmentGetByNames'],
                 onCompleted: () => onClose(false),
-                onError:(e) => console.log(e)
+                onError: (e) => console.log(e)
             })
         } catch (e: any) {
             console.log(e)
@@ -52,8 +52,8 @@ const EnableFeature = ({open, onClose, feature, envID, enabled}: EnableFeaturePr
             <Box sx={style}>
                 {backendError && <ErrorMessage error={backendError}/>}
                 <form onSubmit={onSubmit}>
-                    Are you sure you want to {enabled ? 'disable' : 'enable'} {feature}?
-                        <RightJustifiedSubmitButton onCancel={() => onClose(false)}/>
+                    <p style={{padding: '0px 0px 30px 0px'}}>Are you sure you want to {enabled ? 'disable' : 'enable'} {feature}?</p>
+                    <RightJustifiedSubmitButton onCancel={() => onClose(false)}/>
                 </form>
             </Box>
         </Modal>

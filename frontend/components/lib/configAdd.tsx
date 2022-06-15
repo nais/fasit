@@ -7,6 +7,8 @@ import {useForm} from 'react-hook-form'
 import KeywordsInput from './StringArrayInput'
 import {Config} from "./configRows";
 import ErrorMessage from "./error";
+import styled from "@emotion/styled";
+import {RightJustifiedButtons} from "./rightJustifiedButtons";
 
 const style = {
     position: 'absolute' as 'absolute',
@@ -39,8 +41,12 @@ const ConfigAdd = ({conf, envID, globalConfig, feature, open, showOpen}: ConfigA
 
     const {errors} = formState
     const values = watch('values')
-    useEffect(() => { setVal(values) }, [values])
-    useEffect(() => { conf.type === ConfigType.Int && setVal(intVal) }, [intVal])
+    useEffect(() => {
+        setVal(values)
+    }, [values])
+    useEffect(() => {
+        conf.type === ConfigType.Int && setVal(intVal)
+    }, [intVal])
     useEffect(() => globalConfig?.value && setVal(globalConfig.value), [])
 
     const onDelete = (value: string) => {
@@ -72,7 +78,8 @@ const ConfigAdd = ({conf, envID, globalConfig, feature, open, showOpen}: ConfigA
                     enable
                 </Switch>
             case ConfigType.Int:
-                return <TextField value={intVal} label={''} onChange={(e) => setIntVal(Number(e.target.value))}></TextField>
+                return <TextField value={intVal} label={''}
+                                  onChange={(e) => setIntVal(Number(e.target.value))}></TextField>
 
         }
     }
@@ -86,15 +93,14 @@ const ConfigAdd = ({conf, envID, globalConfig, feature, open, showOpen}: ConfigA
     }
 
 
-
     const submit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault()
 
         const variables: Variables = {
-                key: conf.key,
-                description: description,
-                feature: conf.feature,
-                value: val,
+            key: conf.key,
+            description: description,
+            feature: conf.feature,
+            value: val,
         }
         if (conf.type === ConfigType.Int) {
             variables.value = Number(val)
@@ -124,13 +130,16 @@ const ConfigAdd = ({conf, envID, globalConfig, feature, open, showOpen}: ConfigA
             <Box sx={style}>
                 <h1>{conf.feature}</h1>
                 <h3>{conf.key} - {conf.type}</h3>
-                { backendError && <ErrorMessage error={backendError}/>}
+                {backendError && <ErrorMessage error={backendError}/>}
 
                 <form onSubmit={(e) => submit(e)}>
                     {featureConfig && inputType(featureConfig.type)}
                     <TextField label={'Comment'} value={description} onChange={(e) => setDescription(e.target.value)}/>
-                    <Button style={{marginTop: "10px"}}>Submit</Button>
-                    <Button variant={"danger"} style={{marginTop: "10px", marginLeft: "10px"}} onClick={() => showOpen(false)} >Cancel</Button>
+                    <RightJustifiedButtons>
+                        <Button variant={"danger"} style={{marginTop: "10px"}}
+                                onClick={() => showOpen(false)}>Cancel</Button>
+                        <Button style={{marginTop: "10px", marginLeft: "10px"}}>Submit</Button>
+                    </RightJustifiedButtons>
                 </form>
             </Box>
         </Modal>

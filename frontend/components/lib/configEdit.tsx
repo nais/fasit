@@ -1,13 +1,15 @@
 import * as React from 'react'
-import { Dispatch, SetStateAction, useEffect, useState } from 'react'
-import { Box, Modal } from '@mui/material'
-import { ConfigType, useConfigurationUpdateMutation } from '../../lib/schema/graphql'
+import {Dispatch, SetStateAction, useEffect, useState} from 'react'
+import {Box, Modal} from '@mui/material'
+import {ConfigType, useConfigurationUpdateMutation} from '../../lib/schema/graphql'
 import ErrorMessage from './error'
-import { Button, Switch, TextField } from '@navikt/ds-react'
-import { useForm } from 'react-hook-form'
+import {Button, Switch, TextField} from '@navikt/ds-react'
+import {useForm} from 'react-hook-form'
 import KeywordsInput from './StringArrayInput'
-import { ApolloError } from '@apollo/client'
+import {ApolloError} from '@apollo/client'
 import {Config} from "./configRows";
+import styled from "@emotion/styled";
+import {RightJustifiedButtons} from "./rightJustifiedButtons";
 
 const style = {
     position: 'absolute' as 'absolute',
@@ -38,8 +40,12 @@ const ConfigEdit = ({conf, open, showOpen}: ConfigEditProps) => {
     const {errors} = formState
     const values = watch('values')
 
-    useEffect(() => { setVal(conf.value) }, [] )
-    useEffect(() => { setVal(values) }, [values] )
+    useEffect(() => {
+        setVal(conf.value)
+    }, [])
+    useEffect(() => {
+        setVal(values)
+    }, [values])
 
     const onDelete = (value: string) => {
         setValue('values', values.filter((v: string) => v !== value))
@@ -67,7 +73,8 @@ const ConfigEdit = ({conf, open, showOpen}: ConfigEditProps) => {
                     error={errors.values?.[0].message}
                 />
             case ConfigType.Bool:
-                return <Switch size='medium' position='left' checked={val} onChange={() => setVal(!val)}> enable </Switch>
+                return <Switch size='medium' position='left' checked={val}
+                               onChange={() => setVal(!val)}> enable </Switch>
             case ConfigType.Int:
                 return <TextField value={val} label={''} onChange={(e) => setVal(e.target.value)}></TextField>
             default:
@@ -94,7 +101,7 @@ const ConfigEdit = ({conf, open, showOpen}: ConfigEditProps) => {
             description: description,
             value: val
         }
-        if ( conf.type === ConfigType.Int ) {
+        if (conf.type === ConfigType.Int) {
             variables.value = Number(val)
         }
         try {
@@ -121,12 +128,16 @@ const ConfigEdit = ({conf, open, showOpen}: ConfigEditProps) => {
             <Box sx={style}>
                 <h1>{conf.feature}</h1>
                 <h3>{conf.key}</h3>
-                {backendError &&<ErrorMessage error={backendError}/>}
+                {backendError && <ErrorMessage error={backendError}/>}
                 <form onSubmit={(e) => submit(e)}>
                     {inputType(conf.type)}
-                    <TextField label={'Comment'} value={description} onChange={(e) => setDescription(e.target.value)}/>
-                    <Button style={{marginTop: "10px"}}>Submit</Button>
-                    <Button variant={"danger"} style={{marginTop: "10px", marginLeft: "10px"}} onClick={() => showOpen(false)} >Cancel</Button>
+                    <br/>
+                    <TextField style={{marginTop: '20px'}} label={'Comment'} value={description} onChange={(e) => setDescription(e.target.value)}/>
+                    <RightJustifiedButtons>
+                        <Button variant={"danger"} style={{marginTop: "10px"}}
+                                onClick={() => showOpen(false)}>Cancel</Button>
+                        <Button style={{marginTop: "10px", marginLeft: "10px"}}>Submit</Button>
+                    </RightJustifiedButtons>
                 </form>
             </Box>
         </Modal>
