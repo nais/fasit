@@ -7,6 +7,8 @@ import ConfigDelete from '../lib/configDelete'
 import ConfigEdit from '../lib/configEdit'
 import ConfigRows, {Config, Configs} from "../lib/configRows";
 import {AutomaticSystem, Wrench} from "@navikt/ds-icons";
+import styled from "styled-components";
+import {navGronn} from "../../styles/constants";
 
 
 interface FeatureConfigProps {
@@ -15,6 +17,14 @@ interface FeatureConfigProps {
     featureObject: FeaturesQuery['features'][0] | undefined
     mapping?: ConfigurationQuery['configuration']['mapping']
 }
+
+const StyledWrench = styled(Wrench)`
+  :hover{
+    color: ${navGronn};
+  }
+  cursor: pointer;
+`
+
 
 const FeatureConfig = ({envID, configs, featureObject, mapping}: FeatureConfigProps) => {
     const [currentConfig, setCurrentConfig] = useState<Config | undefined>()
@@ -98,7 +108,7 @@ const FeatureConfig = ({envID, configs, featureObject, mapping}: FeatureConfigPr
                                 <pre style={{fontSize: ".8em", margin: 0}}>{JSON.stringify(m.value, null, 2) }</pre> :
                                 m.value}
                             </Table.DataCell>
-                            <Table.DataCell align={"center"}> {o && <Wrench onClick={() => {
+                            <Table.DataCell align={"center"}> {o && <StyledWrench onClick={() => {
                                 setCurrentConfig(configs[m.key])
                                 setShowCreate(true)
                             }}/>}</Table.DataCell>
