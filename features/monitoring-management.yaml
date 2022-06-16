@@ -47,7 +47,7 @@ mapping:
   kube-prometheus-stack.alertmanager.ingress.hosts:
     value:
       - 'alertmanager.{{.Tenant.Name}}.cloud.nais.io'
-    displayName: "Alertmanager host"
+    displayName: "Alertmanager hosts"
   tenant.name:
     value: "{{.Tenant.Name}}"
     displayName: "Tenant name"
