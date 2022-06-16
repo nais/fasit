@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring-management
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring-management
-version: 0.3.0
+version: 0.4.0
 environmentKinds:
   - "management"
 config:
@@ -19,6 +19,13 @@ config:
   nais_prometheus.cpu.limit:
     type: string
     displayName: Prometheus cpu limit
+  alerts.slack.webhook:
+    type: string
+    required: true
+    displayName: Slack webhook
+  alerts.slack.channel:
+    type: string
+    displayName: Slack channel
 mapping:
   grafana.datasources:
     template: |
@@ -37,6 +44,10 @@ mapping:
   nais_prometheus.ingress.host:
     value: 'nais-prometheus.{{.Tenant.Name}}.cloud.nais.io'
     displayName: "NAIS Prometheus host"
+  kube-prometheus-stack.alertmanager.ingress.hosts:
+    value:
+      - 'alertmanager.{{.Tenant.Name}}.cloud.nais.io'
+    displayName: "Alertmanager host"
   tenant.name:
     value: "{{.Tenant.Name}}"
     displayName: "Tenant name"
