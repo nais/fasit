@@ -58,6 +58,10 @@ const createApolloClient = (cookie?: string) => {
                     Configuration: {
                         keyFields: [["key"], ["id"]],
                     },
+                    GlobalConfiguration: {
+                        keyFields: [["key"], ["id"]],
+                    }
+
                 }
             }
         ),
@@ -98,7 +102,6 @@ export const initializeApollo = (initialState: NormalizedCacheObject | null = nu
 
     return _apolloClient
 }
-
 
 
 export const useApollo = (pageProps: any) => {

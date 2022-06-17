@@ -27,6 +27,7 @@ const ConfigPage = ({feature}: ConfigProps) => {
             if (c.__typename === 'EnvConfiguration') {
                 configs[c.key] = {
                 id: c.id,
+                displayName: c.displayName,
                 feature: c.feature.name,
                 key: c.key,
                 type: ConfigType.Bool,
@@ -40,6 +41,7 @@ const ConfigPage = ({feature}: ConfigProps) => {
             } else {
                 configs[c.key] = {
                 id: c.id,
+                displayName: c.displayName,
                 feature: c.feature.name,
                 key: c.key,
                 type: ConfigType.Bool,
