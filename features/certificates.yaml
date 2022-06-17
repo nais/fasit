@@ -9,8 +9,10 @@ dependsOn:
 config:
   acme.email:
     type: string
+    displayName: "email"
   acme.api:
     type: string
+    displayName: "api url"
   dnsNames:
     type: string_array
 mapping:

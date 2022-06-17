@@ -9,18 +9,25 @@ dependsOn:
 config:
   imageTag:
     type: string
+    displayName: "Image tag"
   naiserator.kafka.enabled:
     type: bool
+    displayName: "Enable Kafka"
   naiserator.leader-election.image:
     type: string
+    displayName: "Leader election image"
   naiserator.features.azurerator:
     type: bool
+    displayName: "Enable Azurerator"
   naiserator.features.digdirator:
     type: bool
+    displayName: "Enable Digdirator"
   naiserator.features.jwker:
     type: bool
+    displayName: "Enable Jwker"
   naiserator.features.kafkarator:
     type: bool
+    displayName: "Enable Kafkarator"
 mapping:
   naiserator.cluster-name:
     value: "{{.Env.name}}"

@@ -15,6 +15,7 @@ config:
   global.leaderElection.namespace:
     type: string
     required: true
+    displayName: "LeaderElection namespace"
   extraArgs:
     type: string_array
     required: true

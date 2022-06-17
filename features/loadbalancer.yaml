@@ -12,7 +12,10 @@ config:
     required: true
   ingress-nginx.controller.resources.requests.cpu:
     type: string
+    displayNames: "Cpu request"
   ingress-nginx.controller.resources.requests.memory:
     type: string
+    displayNames: "Memory request"
   ingress-nginx.controller.replicaCount:
     type: int
+    displayNames: "Replicas"
