@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"time"
 
 	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/nais/fasit/pkg/message"
@@ -184,6 +185,11 @@ func (d *DeployManager) makeHelmValues(m message.DeployInstruction) (string, err
 }
 
 func helmArgs(m message.DeployInstruction, valuesFile string) ([]string, error) {
+	timeout := 5 * time.Minute
+	if m.Timeout.Seconds() > 10 {
+		timeout = m.Timeout
+	}
+
 	args := []string{
 		"upgrade",
 		"--atomic",
@@ -197,6 +203,8 @@ func helmArgs(m message.DeployInstruction, valuesFile string) ([]string, error) 
 		m.Version,
 		"-f",
 		valuesFile,
+		"--timeout",
+		timeout.String(),
 	}
 
 	if m.Repo != "" {

@@ -1,5 +1,7 @@
 package message
 
+import "time"
+
 type DeployInstruction struct {
 	// Name is the name of the feature
 	Name string
@@ -8,5 +10,6 @@ type DeployInstruction struct {
 	Chart      string
 	Repo       string
 	ConfigHash string
+	Timeout    time.Duration
 	Values     map[string]any
 }

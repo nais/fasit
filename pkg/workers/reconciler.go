@@ -151,6 +151,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 			Chart:      f.Chart,
 			Repo:       f.Repo,
 			ConfigHash: hash,
+			Timeout:    f.Timeout,
 			Values:     values,
 		})
 		if err != nil {

@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/nais/fasit/pkg/graph/model"
 	"gopkg.in/yaml.v2"
@@ -31,6 +32,8 @@ type Feature struct {
 	Mapping Mapping `yaml:"mapping,omitempty"`
 	// EnvironmentKinds is the list of environments this feature can be used in.
 	EnvironmentKinds []model.EnvironmentKind `yaml:"environmentKinds" jsonschema:"enum=management,enum=tenant,required"`
+	// Timeout is the amount of time helm should wait for the feature to be ready. Defaults to 5m0s
+	Timeout time.Duration `yaml:"timeout,omitempty" jsonschema:"omitempty,type=string,pattern=^(\\d+h)?(\\d+m)?(\\d+s)?$"`
 }
 
 func (f *Feature) RequiredFields() []string {
@@ -63,7 +66,8 @@ func New(files fs.FS) (*Manager, error) {
 		}
 
 		feature := Feature{
-			Name: strings.TrimSuffix(filepath.Base(path), ".yaml"),
+			Name:    strings.TrimSuffix(filepath.Base(path), ".yaml"),
+			Timeout: 5 * time.Minute,
 		}
 		err = yaml.Unmarshal(f, &feature)
 		if err != nil {

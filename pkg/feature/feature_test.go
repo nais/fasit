@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 	"testing/fstest"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -140,6 +141,7 @@ func TestNew(t *testing.T) {
 				"global.podSecurityPolicy.enabled": {Type: model.ConfigTypeBool},
 				"installCRDs":                      {Type: model.ConfigTypeBool},
 			},
+			Timeout: 15 * time.Minute,
 		},
 		{
 			Name:    "nais-crds",
@@ -147,6 +149,7 @@ func TestNew(t *testing.T) {
 			Version: "0.1.0",
 			Source:  "https://github.com/nais/liberator/tree/main/charts",
 			Config:  Config{},
+			Timeout: 5 * time.Minute, // default
 		},
 	}
 
@@ -167,6 +170,7 @@ chart: cert-manager
 source: https://github.com/cert-manager/cert-manager
 version: v1.7.2
 repo: https://charts.jetstack.io
+timeout: 15m
 config:
   installCRDs:
     type: bool
