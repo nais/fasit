@@ -1,15 +1,22 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/console
-source: https://github.com/nais/console/tree/master/charts
-version: 0.0.3
+source: https://github.com/nais/helm-charts/tree/main/charts/console
+version: 0.0.6
 environmentKinds:
   - "management"
-config:
+mapping:
   backend.database.instance:
-    type: string
-    required: true
+    value: "{{.Management.console_database_instance}}"
+    displayName: "Database instance"
+  backend.database.user:
+    value: "{{.Management.console_database_user}}"
+    displayName: "Database user"
+  backend.database.name:
+    value: "{{.Management.console_database_name}}"
+    displayName: "Database name"
   backend.envProjectId:
-    type: string
-    required: true
+    value: "{{.Management.project_id}}"
+    displayName: "Google project ID"
+config:
   backend.image.repository:
     type: string
   backend.image.imagePullPolicy:
