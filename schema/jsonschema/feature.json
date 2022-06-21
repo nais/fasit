@@ -1,5 +1,5 @@
 {
-	"$id": "https://github.com/nais/fasit/pkg/feature/feature",
+	"$id": "https://fasit.nais.io/schema/feature",
 	"$schema": "http://json-schema.org/draft/2020-12/schema",
 	"additionalProperties": false,
 	"properties": {
