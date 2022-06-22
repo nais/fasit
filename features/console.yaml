@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/console
 source: https://github.com/nais/helm-charts/tree/main/charts/console
-version: 0.0.8
+version: 0.0.9
 environmentKinds:
   - "management"
 mapping:
@@ -16,6 +16,9 @@ mapping:
   backend.envProjectId:
     value: "{{.Management.project_id}}"
     displayName: "Google project ID"
+  backend.googleServiceAccountEmail:
+    value: "{{.Management.google_service_account_email}}"
+    displayName: "Google service account"
   ingress.host:
     value: "console.{{.Tenant.Name}}.cloud.nais.io"
     displayName: "Ingress URL"
