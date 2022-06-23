@@ -6,6 +6,7 @@ type ConsoleType string
 
 const (
 	ConsoleTypeCreateNamespace ConsoleType = "create-namespace"
+	ConsoleTypeDeleteNamespace ConsoleType = "delete-namespace"
 )
 
 type Console struct {
@@ -16,4 +17,8 @@ type Console struct {
 type CreateNamespace struct {
 	Name       string `json:"name"`
 	GCPProject string `json:"gcpProject"`
+}
+
+type DeleteNamespace struct {
+	Name string `json:"name"`
 }

@@ -13,6 +13,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+var ErrDeleteRequiredNamespace = fmt.Errorf("namespace is required, cannot be deleted")
+
 type ConsoleReceiver interface {
 	Name() string
 	Synchronous()
@@ -55,6 +57,8 @@ func (d *ConsoleManager) handler(ctx context.Context, msg message.Console) error
 	switch msg.Type {
 	case message.ConsoleTypeCreateNamespace:
 		return d.createNamespace(ctx, msg)
+	case message.ConsoleTypeDeleteNamespace:
+		return d.deleteNamespace(ctx, msg)
 	default:
 		log.Warn("Unknown console instruction")
 	}
@@ -105,5 +109,32 @@ func (c *ConsoleManager) createNamespace(ctx context.Context, msg message.Consol
 	if err != nil {
 		return fmt.Errorf("updating namespace: %w", err)
 	}
+	return nil
+}
+
+func (c *ConsoleManager) deleteNamespace(ctx context.Context, msg message.Console) error {
+	data := message.DeleteNamespace{}
+	err := json.Unmarshal(msg.Data, &data)
+	if err != nil {
+		return fmt.Errorf("unmarshal create namespace: %w", err)
+	}
+
+	switch data.Name {
+	case "nais-system",
+		"kube-system",
+		"default",
+		"kube-public":
+		c.log.WithField("namespace", data.Name).Warn("Namespace is not allowed to be deleted")
+		return ErrDeleteRequiredNamespace
+	}
+
+	err = c.kubeClient.CoreV1().Namespaces().Delete(ctx, data.Name, metav1.DeleteOptions{})
+	if err != nil {
+		if errors.IsNotFound(err) {
+			return nil
+		}
+		return err
+	}
+
 	return nil
 }
