@@ -51,6 +51,14 @@ func main() {
 	}
 
 	run(ctx, log)
+
+	log.Info("Run cancelled, exiting. If we've started an upgrade, we'll keep running until it's done.")
+	select {
+	case <-ctx.Done():
+		log.Info("Shutting down")
+	case <-time.After(10 * time.Minute):
+		log.Fatal("Shutdown timed out")
+	}
 }
 
 func run(ctx context.Context, log *logrus.Logger) {
