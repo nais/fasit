@@ -12,8 +12,10 @@ import (
 
 	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/nais/fasit/pkg/message"
+	"github.com/nais/fasit/pkg/naisd/selfupgrade"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
 
@@ -33,15 +35,20 @@ type file interface {
 }
 
 type DeployManager struct {
-	deployments    DeploymentReceiver
-	statuses       StatusPublisher
-	kubeConfig     *rest.Config
-	log            *logrus.Entry
-	helmCache      string
-	env            string
-	tenantName     string
-	executor       Exec
-	createTempFile func(string, string) (file, error)
+	deployments           DeploymentReceiver
+	statuses              StatusPublisher
+	kubeConfig            *rest.Config
+	k8sClient             kubernetes.Interface
+	k8sServiceAccountName string
+	log                   *logrus.Entry
+	helmCache             string
+	env                   string
+	tenantName            string
+	executor              Exec
+	createTempFile        func(string, string) (file, error)
+
+	performNaisdUpgrades bool
+	stop                 context.CancelFunc
 }
 
 func NewDeployManager(
@@ -49,7 +56,9 @@ func NewDeployManager(
 	statusPublisher StatusPublisher,
 	tenantName, env string,
 	executor Exec,
+	k8sClient kubernetes.Interface,
 	kubeConfig *rest.Config,
+	k8sServiceAccountName string,
 	log *logrus.Entry,
 ) (*DeployManager, error) {
 	helmCache, err := os.MkdirTemp(os.TempDir(), "naisd-helm-*")
@@ -58,15 +67,17 @@ func NewDeployManager(
 	}
 
 	receiver := &DeployManager{
-		deployments:    deploySubscriber,
-		statuses:       statusPublisher,
-		log:            log,
-		helmCache:      helmCache,
-		env:            env,
-		tenantName:     tenantName,
-		executor:       executor,
-		kubeConfig:     kubeConfig,
-		createTempFile: func(prefix, suffix string) (file, error) { return os.CreateTemp(prefix, suffix) },
+		deployments:           deploySubscriber,
+		statuses:              statusPublisher,
+		log:                   log,
+		helmCache:             helmCache,
+		env:                   env,
+		tenantName:            tenantName,
+		executor:              executor,
+		kubeConfig:            kubeConfig,
+		k8sClient:             k8sClient,
+		k8sServiceAccountName: k8sServiceAccountName,
+		createTempFile:        func(prefix, suffix string) (file, error) { return os.CreateTemp(prefix, suffix) },
 	}
 
 	return receiver, nil
@@ -75,10 +86,11 @@ func NewDeployManager(
 func (d *DeployManager) Run(ctx context.Context) {
 	d.log.WithField("subscription", d.deployments.Name()).Info("Starting deploy receiver")
 	d.deployments.Synchronous()
+	ctx, d.stop = context.WithCancel(ctx)
 	err := d.deployments.Receive(ctx, d.handler)
 	if err != nil {
 		d.log.WithError(err).Error("receive status messages")
-		// retry logic, kanskje. Denne skal aldri trigge
+		// retry logic? This should only trigger when an upgrade is triggered.
 	}
 }
 
@@ -88,6 +100,16 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 		"chart":   msg.Chart,
 		"version": msg.Version,
 	}).Debug("Received instruction")
+
+	if msg.Name == "naisd" && !d.performNaisdUpgrades {
+		d.log.Debug("Offloading naisd upgrade")
+		err := selfupgrade.StartJob(ctx, d.k8sClient, msg, d.k8sServiceAccountName)
+		if err != nil {
+			return err
+		}
+		d.stop()
+		return nil
+	}
 
 	valuesFile, err := d.makeHelmValues(msg)
 	if err != nil {

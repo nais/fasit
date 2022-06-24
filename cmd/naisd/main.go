@@ -12,6 +12,7 @@ import (
 	"github.com/nais/fasit/pkg/helm"
 	"github.com/nais/fasit/pkg/message"
 	"github.com/nais/fasit/pkg/naisd"
+	"github.com/nais/fasit/pkg/naisd/selfupgrade"
 	"github.com/nais/fasit/pkg/workers"
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -25,9 +26,7 @@ const (
 	naisStatusTopic       = "status"
 )
 
-var (
-	cfg = DefaultConfig()
-)
+var cfg = DefaultConfig()
 
 func init() {
 	flag.StringVar(&cfg.BindAddress, "bind-address", cfg.BindAddress, "Bind address")
@@ -46,39 +45,14 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
-	deployClient, err := pubsub.NewClient(ctx, cfg.EnvProjectID)
-	if err != nil {
-		log.WithError(err).Fatal("setting up new pub/sub client")
+	if len(flag.Args()) == 1 && flag.Arg(0) == "upgrade" {
+		upgrade(ctx, log)
+		return
 	}
+}
 
-	deploySubscriber := message.NewSubscriber[message.DeployInstruction](deployClient, cfg.EnvProjectID, deploySubscriptionID)
-	statusPublisher := message.NewPublisher[message.Status](deployClient, cfg.NaisProjectID, naisStatusTopic, log.WithField("subsystem", "status-pubsub"))
-
-	kubeConfig := local.RESTConfig()
-	var executor naisd.Exec = &naisd.MockExecutor{Logger: log.WithField("subsystem", "executor")}
-	helmClient := local.NewHelmClient()
-	k8sClient := local.NewKubernetesClient()
-	if cfg.Production {
-		executor = &naisd.Executor{}
-
-		kubeConfig, err = rest.InClusterConfig()
-		if err != nil {
-			log.WithError(err).Fatal("failed to get kubeconfig")
-		}
-		helmClient = helm.New(kubeConfig, "nais-system", log.WithField("subsystem", "helm"))
-		k8sClient, err = kubernetes.NewForConfig(kubeConfig)
-		if err != nil {
-			log.WithError(err).Fatal("setting up k8s client")
-		}
-		err := ensureAnnotation(ctx, k8sClient, cfg.EnvProjectID)
-		if err != nil {
-			log.WithError(err).Error("annotating namespace")
-		}
-	}
-	receiver, err := naisd.NewDeployManager(deploySubscriber, statusPublisher, cfg.TenantName, cfg.Env, executor, kubeConfig, log.WithField("subsystem", "deploy"))
-	if err != nil {
-		log.WithError(err).Fatal("setting up worker")
-	}
+func run(ctx context.Context, log *logrus.Logger) {
+	receiver, helmClient, k8sClient, deployClient, statusPublisher := sharedDependencies(ctx, log)
 
 	s := workers.NewScheduler(log.WithField("subsystem", "scheduler"))
 	helmListReporter := naisd.NewStatusReporter(cfg.TenantName, cfg.Env, helmClient, statusPublisher)
@@ -125,4 +99,57 @@ func newLogger() *logrus.Logger {
 	}
 	log.SetLevel(l)
 	return log
+}
+
+func upgrade(ctx context.Context, log *logrus.Logger) {
+	log.Info("Upgrading naisd")
+	receiver, _, k8sClient, _, _ := sharedDependencies(ctx, log)
+
+	err := naisd.Upgrade(ctx, receiver, log.WithField("subsystem", "self-upgrade"))
+	if err != nil {
+		log.WithError(err).Fatal("upgrading naisd")
+	}
+
+	log.Info("Self cleanup")
+	if err := selfupgrade.Cleanup(ctx, k8sClient); err != nil {
+		log.WithError(err).Fatal("self-upgrade cleanup")
+	}
+}
+
+func sharedDependencies(ctx context.Context, log *logrus.Logger) (*naisd.DeployManager, naisd.HelmClient, kubernetes.Interface, *pubsub.Client, *message.Publisher[message.Status]) {
+	deployClient, err := pubsub.NewClient(ctx, cfg.EnvProjectID)
+	if err != nil {
+		log.WithError(err).Fatal("setting up new pub/sub client")
+	}
+
+	deploySubscriber := message.NewSubscriber[message.DeployInstruction](deployClient, cfg.EnvProjectID, deploySubscriptionID)
+	statusPublisher := message.NewPublisher[message.Status](deployClient, cfg.NaisProjectID, naisStatusTopic, log.WithField("subsystem", "status-pubsub"))
+
+	kubeConfig := local.RESTConfig()
+	var executor naisd.Exec = &naisd.MockExecutor{Logger: log.WithField("subsystem", "executor")}
+	helmClient := local.NewHelmClient()
+	k8sClient := local.NewKubernetesClient()
+	if cfg.Production {
+		executor = &naisd.Executor{}
+
+		kubeConfig, err = rest.InClusterConfig()
+		if err != nil {
+			log.WithError(err).Fatal("failed to get kubeconfig")
+		}
+		helmClient = helm.New(kubeConfig, "nais-system", log.WithField("subsystem", "helm"))
+		k8sClient, err = kubernetes.NewForConfig(kubeConfig)
+		if err != nil {
+			log.WithError(err).Fatal("setting up k8s client")
+		}
+		err := ensureAnnotation(ctx, k8sClient, cfg.EnvProjectID)
+		if err != nil {
+			log.WithError(err).Error("annotating namespace")
+		}
+	}
+	receiver, err := naisd.NewDeployManager(deploySubscriber, statusPublisher, cfg.TenantName, cfg.Env, executor, k8sClient, kubeConfig, os.Getenv("NAIS_SA_NAME"), log.WithField("subsystem", "deploy"))
+	if err != nil {
+		log.WithError(err).Fatal("setting up worker")
+	}
+
+	return receiver, helmClient, k8sClient, deployClient, statusPublisher
 }

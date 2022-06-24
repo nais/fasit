@@ -78,6 +78,7 @@ func TestDeployReceiver(t *testing.T) {
 				"tenant1",
 				"prod",
 				executor,
+				nil, // k8s client only used with a deploy named `naisd`
 				&rest.Config{
 					Host:        "somehost",
 					BearerToken: "bearertoken",
@@ -85,6 +86,7 @@ func TestDeployReceiver(t *testing.T) {
 						CAFile: "cafile",
 					},
 				},
+				"naisd",
 				logrus.NewEntry(logrus.StandardLogger()),
 			)
 			if err != nil {
