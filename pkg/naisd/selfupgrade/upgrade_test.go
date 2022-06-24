@@ -41,7 +41,7 @@ func testCreate(t *testing.T, client *fake.Clientset) {
 		return time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC)
 	}
 
-	err := StartJob(ctx, client, deployInstruction, serviceAccount, "nais-project")
+	err := StartJob(ctx, client, deployInstruction, serviceAccount, "nais-project", "dev", "test-tenant")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -81,6 +81,10 @@ func testCreate(t *testing.T, client *fake.Clientset) {
 								"--production",
 								"--nais-project-id",
 								"nais-project",
+								"--env",
+								"dev",
+								"--tenant-name",
+								"test-tenant",
 								"upgrade",
 							},
 							"resources": map[string]any{},

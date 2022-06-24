@@ -20,4 +20,4 @@ mapping:
     template: "{{.Env.project_id}}"
   management:
     displayName: "Management Cluster?"
-    template: '{{eq .Kind "management"}}'
+    template: '"{{eq .Kind "management"}}"'
