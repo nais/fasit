@@ -8,3 +8,16 @@ config:
   image.tag:
     type: string
     displayName: "Image tag"
+mapping:
+  tenantName:
+    displayName: "Tenant name"
+    template: "{{.Tenant.Name}}"
+  env:
+    displayName: "Env"
+    template: "{{.Env.name}}"
+  envProjectId:
+    displayName: "Env project id"
+    template: "{{.Env.project_id}}"
+  management:
+    displayName: "Management Cluster?"
+    template: '{{eq .Kind "management"}}'

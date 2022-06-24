@@ -55,6 +55,7 @@ func createJob(suffix string, msg message.DeployInstruction, saName, naisProject
 		},
 		Spec: batchv1.JobSpec{
 			BackoffLimit: pointer.Int32(1),
+			Completions:  pointer.Int32(1),
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{

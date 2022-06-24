@@ -69,6 +69,7 @@ func testCreate(t *testing.T, client *fake.Clientset) {
 		},
 		"spec": map[string]any{
 			"backoffLimit": float64(1),
+			"completions":  float64(1),
 			"template": map[string]any{
 				"metadata": map[string]any{"creationTimestamp": nil},
 				"spec": map[string]any{
