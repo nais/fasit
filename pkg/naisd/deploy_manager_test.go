@@ -87,6 +87,7 @@ func TestDeployReceiver(t *testing.T) {
 					},
 				},
 				"naisd",
+				"nais-project",
 				logrus.NewEntry(logrus.StandardLogger()),
 			)
 			if err != nil {

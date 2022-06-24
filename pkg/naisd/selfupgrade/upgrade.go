@@ -22,9 +22,9 @@ const (
 	defaultTag   = "main"
 )
 
-func StartJob(ctx context.Context, client kubernetes.Interface, msg message.DeployInstruction, saName string) error {
+func StartJob(ctx context.Context, client kubernetes.Interface, msg message.DeployInstruction, saName, naisProjectID string) error {
 	suffix := now().UTC().Format("20060102-150405")
-	job := createJob(suffix, msg, saName)
+	job := createJob(suffix, msg, saName, naisProjectID)
 	secret, err := createSecretValues(suffix, msg)
 	if err != nil {
 		return fmt.Errorf("selfupgrade.Start: generate secret: %w", err)
@@ -42,7 +42,7 @@ func StartJob(ctx context.Context, client kubernetes.Interface, msg message.Depl
 	return nil
 }
 
-func createJob(suffix string, msg message.DeployInstruction, saName string) *batchv1.Job {
+func createJob(suffix string, msg message.DeployInstruction, saName, naisProjectID string) *batchv1.Job {
 	lbls := map[string]string{
 		"app": "naisd-self-upgrader",
 	}
@@ -62,6 +62,8 @@ func createJob(suffix string, msg message.DeployInstruction, saName string) *bat
 							Args: []string{
 								"upgrade",
 								"--production",
+								"--nais-project-id",
+								naisProjectID,
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{

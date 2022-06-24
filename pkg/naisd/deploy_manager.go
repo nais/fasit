@@ -40,6 +40,7 @@ type DeployManager struct {
 	kubeConfig            *rest.Config
 	k8sClient             kubernetes.Interface
 	k8sServiceAccountName string
+	naisProjectID         string
 	log                   *logrus.Entry
 	helmCache             string
 	env                   string
@@ -58,7 +59,8 @@ func NewDeployManager(
 	executor Exec,
 	k8sClient kubernetes.Interface,
 	kubeConfig *rest.Config,
-	k8sServiceAccountName string,
+	k8sServiceAccountName,
+	naisProjectID string,
 	log *logrus.Entry,
 ) (*DeployManager, error) {
 	helmCache, err := os.MkdirTemp(os.TempDir(), "naisd-helm-*")
@@ -76,6 +78,7 @@ func NewDeployManager(
 		executor:              executor,
 		kubeConfig:            kubeConfig,
 		k8sClient:             k8sClient,
+		naisProjectID:         naisProjectID,
 		k8sServiceAccountName: k8sServiceAccountName,
 		createTempFile:        func(prefix, suffix string) (file, error) { return os.CreateTemp(prefix, suffix) },
 	}
@@ -103,7 +106,7 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 
 	if msg.Name == "naisd" && !d.performNaisdUpgrades {
 		d.log.Debug("Offloading naisd upgrade")
-		err := selfupgrade.StartJob(ctx, d.k8sClient, msg, d.k8sServiceAccountName)
+		err := selfupgrade.StartJob(ctx, d.k8sClient, msg, d.k8sServiceAccountName, d.naisProjectID)
 		if err != nil {
 			return err
 		}

@@ -45,7 +45,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
-	if len(flag.Args()) == 1 && flag.Arg(0) == "upgrade" {
+	if flag.Arg(0) == "upgrade" {
 		upgrade(ctx, log)
 		return
 	}
@@ -156,7 +156,18 @@ func sharedDependencies(ctx context.Context, log *logrus.Logger) (*naisd.DeployM
 			log.WithError(err).Error("annotating namespace")
 		}
 	}
-	receiver, err := naisd.NewDeployManager(deploySubscriber, statusPublisher, cfg.TenantName, cfg.Env, executor, k8sClient, kubeConfig, os.Getenv("NAIS_SA_NAME"), log.WithField("subsystem", "deploy"))
+	receiver, err := naisd.NewDeployManager(
+		deploySubscriber,
+		statusPublisher,
+		cfg.TenantName,
+		cfg.Env,
+		executor,
+		k8sClient,
+		kubeConfig,
+		os.Getenv("NAIS_SA_NAME"),
+		cfg.NaisProjectID,
+		log.WithField("subsystem", "deploy"),
+	)
 	if err != nil {
 		log.WithError(err).Fatal("setting up worker")
 	}
