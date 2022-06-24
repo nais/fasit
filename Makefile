@@ -32,7 +32,6 @@ local-naisd:
 	--env-project-id local-test-partner-dev \
 	--nais-project-id nais-local-dev \
 	--tenant-name test-partner \
-	--cluster-kind tenant \
 	--env dev \
 	--log-level=debug
 

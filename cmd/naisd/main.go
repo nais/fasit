@@ -49,6 +49,8 @@ func main() {
 		upgrade(ctx, log)
 		return
 	}
+
+	run(ctx, log)
 }
 
 func run(ctx context.Context, log *logrus.Logger) {
