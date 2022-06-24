@@ -4,4 +4,7 @@ version: 0.1.1
 environmentKinds:
   - "tenant"
   - "management"
-config: {}
+config:
+  image.tag:
+    type: string
+    displayName: "Image tag"
