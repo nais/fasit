@@ -107,6 +107,10 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 		if err != nil {
 			return err
 		}
+
+		// Some hacks to try to reduce number of upgrades.
+		message.ForceAck(ctx)
+		time.Sleep(1 * time.Second)
 		d.stop()
 		return nil
 	}
