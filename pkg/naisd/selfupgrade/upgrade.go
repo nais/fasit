@@ -60,10 +60,10 @@ func createJob(suffix string, msg message.DeployInstruction, saName, naisProject
 							Name:  "naisd-self-upgrader",
 							Image: image(msg.Values),
 							Args: []string{
-								"upgrade",
 								"--production",
 								"--nais-project-id",
 								naisProjectID,
+								"upgrade",
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{

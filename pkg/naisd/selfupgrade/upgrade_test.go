@@ -76,10 +76,10 @@ func testCreate(t *testing.T, client *fake.Clientset) {
 							"name":  "naisd-self-upgrader",
 							"image": "europe-north1-docker.pkg.dev/nais-io/nais/images/naisd:newtag",
 							"args": []any{
-								"upgrade",
 								"--production",
 								"--nais-project-id",
 								"nais-project",
+								"upgrade",
 							},
 							"resources": map[string]any{},
 							"volumeMounts": []any{
