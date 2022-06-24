@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/console
 source: https://github.com/nais/helm-charts/tree/main/charts/console
-version: 0.0.9
+version: 0.0.10
 environmentKinds:
   - "management"
 mapping:
@@ -16,9 +16,12 @@ mapping:
   backend.envProjectId:
     value: "{{.Management.project_id}}"
     displayName: "Google project ID"
-  backend.googleServiceAccountEmail:
+  backend.google.serviceAccountEmail:
     value: "{{.Management.google_service_account_email}}"
     displayName: "Google service account"
+  backend.partnerDomain:
+    value: "{{.Management.tenant_domain}}"
+    displayName: "Tenant domain"
   ingress.host:
     value: "console.{{.Tenant.Name}}.cloud.nais.io"
     displayName: "Ingress URL"
@@ -29,61 +32,47 @@ config:
     type: string
   backend.image.tag:
     type: string
-  backend.githubEnabled:
+  backend.github.enabled:
     type: bool
-  backend.githubAppId:
+  backend.github.appId:
     type: string
-  backend.githubAppInstallationId:
+  backend.github.appInstallationId:
     type: string
-  backend.githubOrganization:
+  backend.github.organization:
     type: string
-  backend.githubPrivateKeyPath:
+  backend.github.privateKey:
     type: string
-  backend.googleEnabled:
+  backend.google.enabled:
     type: bool
-  backend.googleCredentialsFile:
+  backend.google.credentials:
     type: string
-  backend.googleDelegatedUser:
-    type: string
-  backend.googleDomain:
-    type: string
-  backend.naisDeployEnabled:
+  backend.usersync.enabled:
     type: bool
-  backend.naisDeployEndpoint:
+  backend.oauth.clientId:
     type: string
-  backend.naisDeployProvisionKey:
+  backend.oauth.clientSecret:
     type: string
-  backend.usersyncEnabled:
+  backend.azure.clientId:
+    type: string
+  backend.azure.clientSecret:
+    type: string
+  backend.azure.enabled:
     type: bool
-  backend.oauthClientId:
+  backend.azure.redirectUrl:
     type: string
-  backend.oauthClientSecret:
+  backend.azure.tenantId:
     type: string
-  backend.oauthRedirectUrl:
-    type: string
-  frontend.image.tag:
-    type: string
-  backend.azureClientId:
-    type: string
-  backend.azureClientSecret:
-    type: string
-  backend.azureEnabled:
+  backend.gcp.enabled:
     type: bool
-  backend.azureRedirectUrl:
-    type: string
-  backend.azureTenantId:
-    type: string
-  backend.gcpEnabled:
-    type: bool
-  backend.gcpProjectParentIds:
+  backend.gcp.projectParentIds:
     type: string  # fixme: this is a key:value list
-  backend.naisNamespaceEnabled:
+  backend.naisNamespace.enabled:
     type: bool
-  backend.naisNamespaceProjectId:
-    type: string
-  backend.naisNamespaceTopicPrefix:
+  backend.naisNamespace.projectId:
     type: string
   backend.logLevel:
     type: string
   backend.logFormat:
+    type: string
+  frontend.image.tag:
     type: string
