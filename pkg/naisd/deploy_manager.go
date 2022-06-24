@@ -4,12 +4,10 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"os"
 	"os/exec"
-	"strings"
 	"time"
 
 	"github.com/nais/fasit/pkg/graph/model"
@@ -126,13 +124,6 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 	}
 	defer os.Remove(valuesFile)
 
-	hn, _ := os.Hostname()
-	if strings.Contains(hn, "self") {
-		b, _ := os.ReadFile(valuesFile)
-		fmt.Println("----- VALUES: -----")
-		fmt.Println(string(b))
-	}
-
 	args, err := helmArgs(msg, valuesFile)
 	if err != nil {
 		return err
@@ -203,11 +194,6 @@ func (d *DeployManager) runHelm(ctx context.Context, args []string) (string, err
 	cmd.Stdout = io.MultiWriter(buf, os.Stdout)
 	cmd.Stderr = io.MultiWriter(buf, os.Stderr)
 
-	hn, _ := os.Hostname()
-	if strings.Contains(hn, "self") {
-		fmt.Println("----- COMMAND: -----")
-		fmt.Printf("%#v\n", helmArgs)
-	}
 	err := d.executor.Execute(cmd)
 	return buf.String(), err
 }
