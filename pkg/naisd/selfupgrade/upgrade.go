@@ -12,6 +12,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/utils/pointer"
 )
 
 var now = time.Now
@@ -53,6 +54,7 @@ func createJob(suffix string, msg message.DeployInstruction, saName, naisProject
 			Labels: lbls,
 		},
 		Spec: batchv1.JobSpec{
+			BackoffLimit: pointer.Int32(1),
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
