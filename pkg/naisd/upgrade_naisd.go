@@ -24,7 +24,7 @@ func Upgrade(ctx context.Context, mgr *DeployManager, log *logrus.Entry) error {
 }
 
 func getInstructionFromFile() (message.DeployInstruction, error) {
-	const instructionFile = "/etc/naisd/self-upgrade/deploy_instructions.json"
+	const instructionFile = "/etc/naisd/self-upgrade/deploy_instruction.json"
 
 	msg := message.DeployInstruction{}
 	f, err := os.OpenFile(instructionFile, os.O_RDONLY, 0o644)
