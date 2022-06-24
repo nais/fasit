@@ -77,6 +77,7 @@ func testCreate(t *testing.T, client *fake.Clientset) {
 							"image": "europe-north1-docker.pkg.dev/nais-io/nais/images/naisd:newtag",
 							"args": []any{
 								"upgrade",
+								"--production",
 							},
 							"resources": map[string]any{},
 							"volumeMounts": []any{

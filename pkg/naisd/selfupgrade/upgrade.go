@@ -61,6 +61,7 @@ func createJob(suffix string, msg message.DeployInstruction, saName string) *bat
 							Image: image(msg.Values),
 							Args: []string{
 								"upgrade",
+								"--production",
 							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
