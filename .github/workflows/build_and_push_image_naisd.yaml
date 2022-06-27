@@ -8,6 +8,10 @@ on:
       - ".github/workflows/build_and_push_image_fasit.yaml"
       - "frontend"
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   REGISTRY: europe-north1-docker.pkg.dev/nais-io/nais/images
 

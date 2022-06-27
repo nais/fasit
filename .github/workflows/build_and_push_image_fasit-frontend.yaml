@@ -7,6 +7,10 @@ on:
       - "frontend/**"
       - "Dockerfile_fasit-frontend"
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   REGISTRY: europe-north1-docker.pkg.dev/nais-io/nais/images
 
