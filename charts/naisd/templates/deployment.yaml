@@ -46,8 +46,7 @@ spec:
             - {{ .Values.envProjectId }}
             - --nais-project-id
             - {{ .Values.naisProjectId }}
-            - --management
-            - "{{ .Values.management }}"
+            - --management={{ .Values.management }}
           # livenessProbe:
           #   httpGet:
           #     path: /
