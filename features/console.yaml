@@ -17,7 +17,7 @@ mapping:
     value: "{{.Management.project_id}}"
     displayName: "Google project ID"
   backend.google.serviceAccountEmail:
-    value: "{{.Management.google_service_account_email}}"
+    value: "{{.Management.console_google_service_account_email}}"
     displayName: "Google service account"
   backend.partnerDomain:
     value: "{{.Management.tenant_domain}}"
