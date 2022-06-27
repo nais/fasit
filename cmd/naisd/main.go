@@ -119,6 +119,9 @@ func upgrade(ctx context.Context, log *logrus.Logger) {
 		log.WithError(err).Fatal("upgrading naisd")
 	}
 
+	// We sleep a few seconds to let possible requests finish (e.g. status report pubsub)
+	time.Sleep(3 * time.Second)
+
 	log.Info("Done")
 }
 
