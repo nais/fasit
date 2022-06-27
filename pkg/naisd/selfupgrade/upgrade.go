@@ -54,8 +54,9 @@ func createJob(suffix string, msg message.DeployInstruction, saName, naisProject
 			Labels: lbls,
 		},
 		Spec: batchv1.JobSpec{
-			BackoffLimit: pointer.Int32(1),
-			Completions:  pointer.Int32(1),
+			BackoffLimit:            pointer.Int32(1),
+			Completions:             pointer.Int32(1),
+			TTLSecondsAfterFinished: pointer.Int32(int32((3 * time.Hour).Seconds())),
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
 					Containers: []corev1.Container{
@@ -112,42 +113,18 @@ func createSecretValues(suffix string, values message.DeployInstruction) (*corev
 			Labels: map[string]string{
 				"app": "naisd-self-upgrader",
 			},
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion: batchv1.SchemeGroupVersion.String(),
+					Kind:       "Job",
+					Name:       "naisd-self-upgrader-" + suffix,
+				},
+			},
 		},
 		StringData: map[string]string{
 			"deploy_instruction.json": buf.String(),
 		},
 	}, nil
-}
-
-func Cleanup(ctx context.Context, client kubernetes.Interface) error {
-	jobs, err := client.BatchV1().Jobs(namespace).List(ctx, metav1.ListOptions{
-		LabelSelector: "app=naisd-self-upgrader",
-	})
-	if err != nil {
-		return err
-	}
-	for _, job := range jobs.Items {
-		err := client.BatchV1().Jobs(namespace).Delete(ctx, job.Name, metav1.DeleteOptions{})
-		if err != nil {
-			return err
-		}
-	}
-
-	secrets, err := client.CoreV1().Secrets(namespace).List(ctx, metav1.ListOptions{
-		LabelSelector: "app=naisd-self-upgrader",
-	})
-	if err != nil {
-		return err
-	}
-
-	for _, secret := range secrets.Items {
-		err := client.CoreV1().Secrets(namespace).Delete(ctx, secret.Name, metav1.DeleteOptions{})
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 func imageTag(v map[string]any) string {

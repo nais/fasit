@@ -12,7 +12,6 @@ import (
 	"github.com/nais/fasit/pkg/helm"
 	"github.com/nais/fasit/pkg/message"
 	"github.com/nais/fasit/pkg/naisd"
-	"github.com/nais/fasit/pkg/naisd/selfupgrade"
 	"github.com/nais/fasit/pkg/workers"
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -113,17 +112,14 @@ func newLogger() *logrus.Logger {
 
 func upgrade(ctx context.Context, log *logrus.Logger) {
 	log.Info("Upgrading naisd")
-	receiver, _, k8sClient, _, _ := sharedDependencies(ctx, log)
+	receiver, _, _, _, _ := sharedDependencies(ctx, log)
 
 	err := naisd.Upgrade(ctx, receiver, log.WithField("subsystem", "self-upgrade"))
 	if err != nil {
 		log.WithError(err).Fatal("upgrading naisd")
 	}
 
-	log.Info("Self cleanup")
-	if err := selfupgrade.Cleanup(ctx, k8sClient); err != nil {
-		log.WithError(err).Fatal("self-upgrade cleanup")
-	}
+	log.Info("Done")
 }
 
 func sharedDependencies(ctx context.Context, log *logrus.Logger) (*naisd.DeployManager, naisd.HelmClient, kubernetes.Interface, *pubsub.Client, *message.Publisher[message.Status]) {

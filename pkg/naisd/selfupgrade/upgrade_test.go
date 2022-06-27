@@ -8,19 +8,13 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/nais/fasit/pkg/message"
-	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 )
 
 func TestFullRun(t *testing.T) {
-	client := fake.NewSimpleClientset()
-	testCreate(t, client)
-	testCleanup(t, client)
-}
-
-func testCreate(t *testing.T, client *fake.Clientset) {
 	ctx := context.Background()
+	client := fake.NewSimpleClientset()
 
 	deployInstruction := message.DeployInstruction{
 		Name:       "naisd",
@@ -68,8 +62,9 @@ func testCreate(t *testing.T, client *fake.Clientset) {
 			},
 		},
 		"spec": map[string]any{
-			"backoffLimit": float64(1),
-			"completions":  float64(1),
+			"backoffLimit":            float64(1),
+			"completions":             float64(1),
+			"ttlSecondsAfterFinished": float64(10800), // 3 hours
 			"template": map[string]any{
 				"metadata": map[string]any{"creationTimestamp": nil},
 				"spec": map[string]any{
@@ -123,6 +118,14 @@ func testCreate(t *testing.T, client *fake.Clientset) {
 			"labels": map[string]any{
 				"app": "naisd-self-upgrader",
 			},
+			"ownerReferences": []any{
+				map[string]any{
+					"apiVersion": "batch/v1",
+					"kind":       "Job",
+					"name":       "naisd-self-upgrader-20200101-000000",
+					"uid":        "",
+				},
+			},
 		},
 		"stringData": map[string]any{
 			"deploy_instruction.json": "{\"Name\":\"naisd\",\"Version\":\"1.2.3\",\"Chart\":\"oci://asdf\",\"Repo\":\"\",\"ConfigHash\":\"123\",\"Timeout\":60000000000,\"Values\":{\"image\":{\"tag\":\"newtag\"}}}\n",
@@ -130,25 +133,6 @@ func testCreate(t *testing.T, client *fake.Clientset) {
 	}
 	if !cmp.Equal(wantSecret, secretMap) {
 		t.Errorf("diff -want +got:\n%v", cmp.Diff(wantSecret, secretMap))
-	}
-}
-
-func testCleanup(t *testing.T, client *fake.Clientset) {
-	ctx := context.Background()
-
-	err := Cleanup(ctx, client)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = client.BatchV1().Jobs(namespace).Get(ctx, "naisd-self-upgrader-20200101-000000", metav1.GetOptions{})
-	if !errors.IsNotFound(err) {
-		t.Errorf("Job should have been deleted, got err: %v", err)
-	}
-
-	_, err = client.CoreV1().Secrets(namespace).Get(ctx, "naisd-self-upgrader-20200101-000000", metav1.GetOptions{})
-	if !errors.IsNotFound(err) {
-		t.Error("Secret should have been deleted, got err:", err)
 	}
 }
 
