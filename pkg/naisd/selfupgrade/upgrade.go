@@ -11,6 +11,7 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/utils/pointer"
 )
@@ -26,7 +27,13 @@ const (
 func StartJob(ctx context.Context, client kubernetes.Interface, msg message.DeployInstruction, saName, naisProjectID, env, tenantName string) error {
 	suffix := now().UTC().Format("20060102-150405")
 	job := createJob(suffix, msg, saName, naisProjectID, env, tenantName)
-	secret, err := createSecretValues(suffix, msg)
+
+	newJob, err := client.BatchV1().Jobs(namespace).Create(ctx, job, metav1.CreateOptions{})
+	if err != nil {
+		return fmt.Errorf("selfupgrade.Start: create job: %w", err)
+	}
+
+	secret, err := createSecretValues(suffix, msg, newJob.GetUID())
 	if err != nil {
 		return fmt.Errorf("selfupgrade.Start: generate secret: %w", err)
 	}
@@ -36,10 +43,6 @@ func StartJob(ctx context.Context, client kubernetes.Interface, msg message.Depl
 		return fmt.Errorf("selfupgrade.Start: create secret: %w", err)
 	}
 
-	_, err = client.BatchV1().Jobs(namespace).Create(ctx, job, metav1.CreateOptions{})
-	if err != nil {
-		return fmt.Errorf("selfupgrade.Start: create job: %w", err)
-	}
 	return nil
 }
 
@@ -100,7 +103,7 @@ func createJob(suffix string, msg message.DeployInstruction, saName, naisProject
 	}
 }
 
-func createSecretValues(suffix string, values message.DeployInstruction) (*corev1.Secret, error) {
+func createSecretValues(suffix string, values message.DeployInstruction, uid types.UID) (*corev1.Secret, error) {
 	buf := &bytes.Buffer{}
 	enc := json.NewEncoder(buf)
 	if err := enc.Encode(values); err != nil {
@@ -118,6 +121,7 @@ func createSecretValues(suffix string, values message.DeployInstruction) (*corev
 					APIVersion: batchv1.SchemeGroupVersion.String(),
 					Kind:       "Job",
 					Name:       "naisd-self-upgrader-" + suffix,
+					UID:        uid,
 				},
 			},
 		},
