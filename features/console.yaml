@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/console
 source: https://github.com/nais/helm-charts/tree/main/charts/console
-version: 0.0.11
+version: 0.0.12
 environmentKinds:
   - "management"
 mapping:
@@ -34,6 +34,7 @@ config:
     type: string
   backend.github.enabled:
     type: bool
+    displayName: Enable Github teams
   backend.github.appId:
     type: string
   backend.github.appInstallationId:
@@ -45,16 +46,20 @@ config:
     secret: true
   backend.google.enabled:
     type: bool
+    displayName: Enable Google Workspaces
   backend.google.credentials:
     type: string
     secret: true
   backend.usersync.enabled:
     type: bool
+    displayName: Enable user sync
   backend.oauth.clientId:
     type: string
+    displayName: Google OAuth 2.0 Client ID
   backend.oauth.clientSecret:
     type: string
     secret: true
+    displayName: Google OAuth 2.0 Client Secret
   backend.azure.clientId:
     type: string
   backend.azure.clientSecret:
@@ -62,15 +67,18 @@ config:
     secret: true
   backend.azure.enabled:
     type: bool
+    displayName: Enable Azure
   backend.azure.redirectUrl:
     type: string
   backend.azure.tenantId:
     type: string
   backend.gcp.enabled:
     type: bool
+    displayName: Enable GCP team projects
   backend.gcp.projectParentIds:
     type: string  # fixme: this is a key:value list
   backend.naisNamespace.enabled:
     type: bool
+    displayName: Enable Kubernetes team namespaces
   frontend.image.tag:
     type: string
