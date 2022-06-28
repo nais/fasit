@@ -7,10 +7,6 @@ on:
       - "charts/fasit/**"
       - ".github/workflows/fasit_chart.yaml"
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   build:
     permissions:
