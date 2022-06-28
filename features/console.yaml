@@ -50,6 +50,7 @@ config:
   backend.google.credentials:
     type: string
     secret: true
+    displayName: Google service account credentials (JSON)
   backend.usersync.enabled:
     type: bool
     displayName: Enable user sync
