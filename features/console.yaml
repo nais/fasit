@@ -42,20 +42,24 @@ config:
     type: string
   backend.github.privateKey:
     type: string
+    secret: true
   backend.google.enabled:
     type: bool
   backend.google.credentials:
     type: string
+    secret: true
   backend.usersync.enabled:
     type: bool
   backend.oauth.clientId:
     type: string
   backend.oauth.clientSecret:
     type: string
+    secret: true
   backend.azure.clientId:
     type: string
   backend.azure.clientSecret:
     type: string
+    secret: true
   backend.azure.enabled:
     type: bool
   backend.azure.redirectUrl:
@@ -68,11 +72,5 @@ config:
     type: string  # fixme: this is a key:value list
   backend.naisNamespace.enabled:
     type: bool
-  backend.naisNamespace.projectId:
-    type: string
-  backend.logLevel:
-    type: string
-  backend.logFormat:
-    type: string
   frontend.image.tag:
     type: string
