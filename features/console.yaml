@@ -54,9 +54,6 @@ config:
     type: string
     secret: true
     displayName: Google service account credentials (JSON)
-  backend.usersync.enabled:
-    type: bool
-    displayName: Enable user sync
   backend.oauth.clientId:
     type: string
     displayName: Google OAuth 2.0 Client ID
