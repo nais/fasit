@@ -25,6 +25,9 @@ mapping:
   ingress.host:
     value: "console.{{.Tenant.Name}}.cloud.nais.io"
     displayName: "Ingress URL"
+  backend.gcp.projectParentIds:
+    value: "{{ range $cluster := .Envs }}{{ $cluster.name }}:{{ $cluster.teams_folder_id }},{{ end }}"
+    displayName: Mapping of env to teams folders
 config:
   backend.image.repository:
     type: string
@@ -76,8 +79,6 @@ config:
   backend.gcp.enabled:
     type: bool
     displayName: Enable GCP team projects
-  backend.gcp.projectParentIds:
-    type: string  # fixme: this is a key:value list
   backend.naisNamespace.enabled:
     type: bool
     displayName: Enable Kubernetes team namespaces
