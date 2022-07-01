@@ -26,7 +26,7 @@ mapping:
     value: "console.{{.Tenant.Name}}.cloud.nais.io"
     displayName: "Ingress URL"
   backend.gcp.projectParentIds:
-    value: "{{ range $cluster := .Envs }}{{ $cluster.name }}:{{ $cluster.teams_folder_id }},{{ end }}"
+    value: "{{$first := true}}{{ range $cluster := .Envs }}{{if $first}}{{$first = false}}{{else}},{{end}}{{ $cluster.name }}:{{ $cluster.teams_folder_id }}{{ end }}"
     displayName: Mapping of env to teams folders
 config:
   backend.image.repository:
