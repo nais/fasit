@@ -161,7 +161,6 @@ func TestRepo_ConfigGet(t *testing.T) {
 			Key:         "my.key",
 			Value:       []byte(`"stringval"`),
 			Created:     created,
-			Description: &description,
 			Secret:      true,
 		},
 	}
@@ -206,7 +205,6 @@ func TestRepo_ConfigGetForEnv(t *testing.T) {
 			Key:           "my.key",
 			Value:         []byte(`"stringval"`),
 			Created:       created,
-			Description:   &description,
 			Secret:        true,
 		},
 	}
@@ -241,7 +239,6 @@ func TestRepo_ConfigCreate_Environment(t *testing.T) {
 		EnvironmentID: *config.EnvironmentID,
 		FeatureName:   config.Feature,
 		Key:           config.Key,
-		Description:   config.Description,
 		Value:         config.Value,
 		Secret:        config.Secret,
 	}
@@ -272,7 +269,6 @@ func TestRepo_ConfigCreate_Global(t *testing.T) {
 	want := &model.GlobalConfiguration{
 		FeatureName: config.Feature,
 		Key:         config.Key,
-		Description: config.Description,
 		Value:       config.Value,
 		Secret:      config.Secret,
 	}
@@ -310,7 +306,6 @@ func TestRepo_ConfigUpdate_Global(t *testing.T) {
 	want := &model.GlobalConfiguration{
 		FeatureName: config.Feature,
 		Key:         config.Key,
-		Description: nil,
 		Value:       []byte(`"newval"`),
 		Secret:      config.Secret,
 	}
