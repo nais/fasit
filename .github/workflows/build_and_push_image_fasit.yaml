@@ -20,10 +20,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: asdf-vm/actions/install@v1
+      - uses: actions/setup-go@v3
         with:
-          asdf_branch: v0.10.0
-      - run: go version
+          go-version: '>=1.18.3'
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
       - run: go test -cover -tags integration_test ./...
   build_and_push_fasit:
     needs: [test]
