@@ -65,7 +65,7 @@ const ConfigAdd = ({conf, envID, globalConfig, feature, open, showOpen}: ConfigA
     const inputType = (type: ConfigType) => {
         switch (type) {
             case ConfigType.String:
-                return <TextField value={val} label={''} onChange={(e) => setVal(e.target.value)}></TextField>
+                return <TextField placeholder={'value'} value={val} label={''} onChange={(e) => setVal(e.target.value)}></TextField>
             case ConfigType.StringArray:
                 return <KeywordsInput
                     onAdd={onAdd}
@@ -128,14 +128,13 @@ const ConfigAdd = ({conf, envID, globalConfig, feature, open, showOpen}: ConfigA
     return (
         <Modal open={open} onClose={() => showOpen(false)}>
             <Box sx={style}>
-                <h1>{conf.feature}</h1>
-                <h3>{conf.key} - {conf.type}</h3>
+                <h1>Feature: {conf.feature}</h1>
+                <h3>Key: <span style={{fontFamily: "Courier New, monospace"}}>{conf.key}</span></h3>
                 <p>{conf.description}</p>
                 {backendError && <ErrorMessage error={backendError}/>}
 
                 <form onSubmit={(e) => submit(e)}>
                     {featureConfig && inputType(featureConfig.type)}
-                    <TextField label={'Comment'} value={description} onChange={(e) => setDescription(e.target.value)}/>
                     <RightJustifiedButtons>
                         <Button variant={"danger"} style={{marginTop: "10px"}}
                                 onClick={() => showOpen(false)}>Cancel</Button>

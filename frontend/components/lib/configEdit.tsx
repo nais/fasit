@@ -64,7 +64,7 @@ const ConfigEdit = ({conf, open, showOpen}: ConfigEditProps) => {
     const inputType = (type: ConfigType) => {
         switch (type) {
             case ConfigType.String:
-                return <TextField value={val} label={''} onChange={(e) => setVal(e.target.value)}></TextField>
+                return <TextField placeholder={'string value'} value={val} label={''} onChange={(e) => setVal(e.target.value)}></TextField>
             case ConfigType.StringArray:
                 return <KeywordsInput
                     onAdd={onAdd}
@@ -76,7 +76,7 @@ const ConfigEdit = ({conf, open, showOpen}: ConfigEditProps) => {
                 return <Switch size='medium' position='left' checked={val}
                                onChange={() => setVal(!val)}> enable </Switch>
             case ConfigType.Int:
-                return <TextField value={val} label={''} onChange={(e) => setVal(e.target.value)}></TextField>
+                return <TextField placeholder={'integer value'} type={"number"} value={val} label={''} onChange={(e) => setVal(e.target.value)}></TextField>
             default:
                 console.log("unknown type", type)
 
@@ -126,14 +126,13 @@ const ConfigEdit = ({conf, open, showOpen}: ConfigEditProps) => {
     return (
         <Modal open={open} onClose={resetAndClose}>
             <Box sx={style}>
-                <h1>{conf.feature}</h1>
-                <h3>{conf.key}</h3>
+                <h1>Feature: {conf.feature}</h1>
+                <h3>Key: <span style={{fontFamily: "Courier New, monospace"}}>{conf.key}</span></h3>
                 <p>{conf.description}</p>
                 {backendError && <ErrorMessage error={backendError}/>}
                 <form onSubmit={(e) => submit(e)}>
                     {inputType(conf.type)}
                     <br/>
-                    <TextField style={{marginTop: '20px'}} label={'Comment'} value={description} onChange={(e) => setDescription(e.target.value)}/>
                     <RightJustifiedButtons>
                         <Button variant={"danger"} style={{marginTop: "10px"}}
                                 onClick={() => showOpen(false)}>Cancel</Button>
