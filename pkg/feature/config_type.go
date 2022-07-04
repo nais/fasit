@@ -12,6 +12,7 @@ type ConfigType struct {
 	Secret      bool             `json:"secret,omitempty" yaml:"secret,omitempty"`
 	Required    bool             `json:"required,omitempty" yaml:"required,omitempty"`
 	DisplayName string           `json:"displayName,omitempty" yaml:"displayName,omitempty"`
+	Description string           `json:"description,omitempty" yaml:"description,omitempty"`
 }
 
 func (c ConfigType) Valid(value json.RawMessage) error {

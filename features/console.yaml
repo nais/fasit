@@ -81,3 +81,4 @@ config:
     displayName: Enable Kubernetes team namespaces
   frontend.image.tag:
     type: string
+    description: Frontend image tag

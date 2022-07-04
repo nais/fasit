@@ -13,6 +13,9 @@
 				".*": {
 					"additionalProperties": false,
 					"properties": {
+						"description": {
+							"type": "string"
+						},
 						"displayName": {
 							"type": "string"
 						},

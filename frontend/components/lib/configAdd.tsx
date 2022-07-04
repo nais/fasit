@@ -130,6 +130,7 @@ const ConfigAdd = ({conf, envID, globalConfig, feature, open, showOpen}: ConfigA
             <Box sx={style}>
                 <h1>{conf.feature}</h1>
                 <h3>{conf.key} - {conf.type}</h3>
+                <p>{conf.description}</p>
                 {backendError && <ErrorMessage error={backendError}/>}
 
                 <form onSubmit={(e) => submit(e)}>

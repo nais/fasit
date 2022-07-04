@@ -128,6 +128,7 @@ const ConfigEdit = ({conf, open, showOpen}: ConfigEditProps) => {
             <Box sx={style}>
                 <h1>{conf.feature}</h1>
                 <h3>{conf.key}</h3>
+                <p>{conf.description}</p>
                 {backendError && <ErrorMessage error={backendError}/>}
                 <form onSubmit={(e) => submit(e)}>
                     {inputType(conf.type)}
