@@ -16,11 +16,11 @@ func environmentConfigurationFromSQL(c gensql.ConfigurationsEnvironment) *model.
 		ID:            c.ID,
 		EnvironmentID: c.EnvironmentID,
 		FeatureName:   c.Feature,
-		Description:   nullStringToPtr(c.Description),
-		Key:           c.Key,
-		Value:         c.Value,
-		Secret:        c.Secret,
-		Created:       c.Created,
+		// Description:   nullStringToPtr(c.Description),
+		Key:     c.Key,
+		Value:   c.Value,
+		Secret:  c.Secret,
+		Created: c.Created,
 	}
 }
 
@@ -28,11 +28,11 @@ func globalConfigFromSQL(c gensql.ConfigurationsGlobal) *model.GlobalConfigurati
 	return &model.GlobalConfiguration{
 		ID:          c.ID,
 		FeatureName: c.Feature,
-		Description: nullStringToPtr(c.Description),
-		Key:         c.Key,
-		Value:       c.Value,
-		Secret:      c.Secret,
-		Created:     c.Created,
+		// Description: nullStringToPtr(c.Description),
+		Key:     c.Key,
+		Value:   c.Value,
+		Secret:  c.Secret,
+		Created: c.Created,
 	}
 }
 
@@ -58,22 +58,22 @@ func envConfigFromSQL(conf gensql.EnvConfigRow) model.Configuration {
 			ID:            conf.ID,
 			EnvironmentID: conf.EnvironmentID.UUID,
 			FeatureName:   conf.Feature,
-			Description:   nullStringToPtr(conf.Description),
-			Key:           conf.Key,
-			Value:         conf.Value,
-			Secret:        conf.Secret,
-			Created:       conf.Created,
+			// Description:   nullStringToPtr(conf.Description),
+			Key:     conf.Key,
+			Value:   conf.Value,
+			Secret:  conf.Secret,
+			Created: conf.Created,
 		}
 	}
 
 	return &model.GlobalConfiguration{
 		ID:          conf.ID,
 		FeatureName: conf.Feature,
-		Description: nullStringToPtr(conf.Description),
-		Key:         conf.Key,
-		Value:       conf.Value,
-		Secret:      conf.Secret,
-		Created:     conf.Created,
+		// Description: nullStringToPtr(conf.Description),
+		Key:     conf.Key,
+		Value:   conf.Value,
+		Secret:  conf.Secret,
+		Created: conf.Created,
 	}
 }
 

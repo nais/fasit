@@ -85,6 +85,7 @@ OUTER:
 			if c.GetKey() == key {
 				c.SetType(val.Type)
 				c.SetDisplayName(val.DisplayName)
+				c.SetDescription(val.Description)
 				continue OUTER
 			}
 		}
@@ -95,6 +96,7 @@ OUTER:
 			Secret:      val.Secret,
 			Type:        val.Type,
 			DisplayName: val.DisplayName,
+			Description: val.Description,
 		})
 	}
 
@@ -153,5 +155,7 @@ func (r *Resolver) GlobalConfiguration() graphgen.GlobalConfigurationResolver {
 	return &globalConfigurationResolver{r}
 }
 
-type envConfigurationResolver struct{ *Resolver }
-type globalConfigurationResolver struct{ *Resolver }
+type (
+	envConfigurationResolver    struct{ *Resolver }
+	globalConfigurationResolver struct{ *Resolver }
+)

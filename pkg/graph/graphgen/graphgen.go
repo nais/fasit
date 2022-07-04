@@ -1270,7 +1270,7 @@ type EnvConfig {
 interface Configuration {
   id: ID!
   feature: Feature!
-  description: String
+  description: String!
   key: String!
   value: RawMessage!
   secret: Boolean!
@@ -1282,7 +1282,7 @@ interface Configuration {
 type GlobalConfiguration implements Configuration {
   id: ID!
   feature: Feature!
-  description: String
+  description: String!
   key: String!
   value: RawMessage!
   secret: Boolean!
@@ -1295,7 +1295,7 @@ type EnvConfiguration implements Configuration {
   id: ID!
   environment: Environment!
   feature: Feature!
-  description: String
+  description: String!
   key: String!
   value: RawMessage!
   secret: Boolean!
@@ -2271,11 +2271,14 @@ func (ec *executionContext) _EnvConfiguration_description(ctx context.Context, f
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_EnvConfiguration_description(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -3853,11 +3856,14 @@ func (ec *executionContext) _GlobalConfiguration_description(ctx context.Context
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_GlobalConfiguration_description(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9818,6 +9824,9 @@ func (ec *executionContext) _EnvConfiguration(ctx context.Context, sel ast.Selec
 
 			out.Values[i] = innerFunc(ctx)
 
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "key":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._EnvConfiguration_key(ctx, field, obj)
@@ -10321,6 +10330,9 @@ func (ec *executionContext) _GlobalConfiguration(ctx context.Context, sel ast.Se
 
 			out.Values[i] = innerFunc(ctx)
 
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "key":
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._GlobalConfiguration_key(ctx, field, obj)

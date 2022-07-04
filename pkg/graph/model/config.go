@@ -82,12 +82,13 @@ type Configuration interface {
 	IsConfiguration()
 	SetType(ConfigType)
 	SetDisplayName(string)
+	SetDescription(string)
 	GetKey() string
 }
 
 type EnvConfiguration struct {
 	ID          uuid.UUID       `json:"id"`
-	Description *string         `json:"description"`
+	Description string          `json:"description"`
 	Key         string          `json:"key"`
 	Value       json.RawMessage `json:"value"`
 	Secret      bool            `json:"secret"`
@@ -103,10 +104,11 @@ func (EnvConfiguration) IsConfiguration()           {}
 func (e *EnvConfiguration) SetType(t ConfigType)    { e.Type = t }
 func (e *EnvConfiguration) GetKey() string          { return e.Key }
 func (e *EnvConfiguration) SetDisplayName(n string) { e.DisplayName = n }
+func (e *EnvConfiguration) SetDescription(n string) { e.Description = n }
 
 type GlobalConfiguration struct {
 	ID          uuid.UUID       `json:"id"`
-	Description *string         `json:"description"`
+	Description string          `json:"description"`
 	Key         string          `json:"key"`
 	Value       json.RawMessage `json:"value"`
 	Secret      bool            `json:"secret"`
@@ -121,3 +123,4 @@ func (GlobalConfiguration) IsConfiguration()           {}
 func (g *GlobalConfiguration) SetType(t ConfigType)    { g.Type = t }
 func (g *GlobalConfiguration) GetKey() string          { return g.Key }
 func (g *GlobalConfiguration) SetDisplayName(n string) { g.DisplayName = n }
+func (g *GlobalConfiguration) SetDescription(n string) { g.Description = n }

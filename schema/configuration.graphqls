@@ -19,7 +19,7 @@ type EnvConfig {
 interface Configuration {
   id: ID!
   feature: Feature!
-  description: String
+  description: String!
   key: String!
   value: RawMessage!
   secret: Boolean!
@@ -31,7 +31,7 @@ interface Configuration {
 type GlobalConfiguration implements Configuration {
   id: ID!
   feature: Feature!
-  description: String
+  description: String!
   key: String!
   value: RawMessage!
   secret: Boolean!
@@ -44,7 +44,7 @@ type EnvConfiguration implements Configuration {
   id: ID!
   environment: Environment!
   feature: Feature!
-  description: String
+  description: String!
   key: String!
   value: RawMessage!
   secret: Boolean!
