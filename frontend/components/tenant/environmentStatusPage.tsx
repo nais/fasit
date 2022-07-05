@@ -55,7 +55,7 @@ helm install naisd \\
 --set "tenantName=${tenantName}" \\
 --set "env=${env.name}" \\
 --set "envProjectId=${getValue('project_id')}" \\
---set "management='${env.kind === EnvironmentKind.Management ? 'true' : 'false'}'" \\
+--set "management=${env.kind === EnvironmentKind.Management ? 'true' : 'false'}" \\
 oci://europe-north1-docker.pkg.dev/nais-io/nais/naisd
                     `}
                 </pre>
