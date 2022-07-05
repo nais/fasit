@@ -4,3 +4,4 @@ version: v2.5.1
 source: https://github.com/kyverno/kyverno/tree/main/charts/kyverno
 environmentKinds:
   - tenant
+timeout: 20m
