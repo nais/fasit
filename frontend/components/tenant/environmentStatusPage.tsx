@@ -52,9 +52,9 @@ const EnvironmentStatusPage = ({env,tenantName}: EnvironmentStatusPageProps) => 
 helm install naisd \\
 --namespace "nais-system" \\
 --create-namespace \\
---set "tenantName=${tenantName} \\
+--set "tenantName=${tenantName}" \\
 --set "env=${env.name}" \\
---set "envProjectId=${getValue('project_id')} \\
+--set "envProjectId=${getValue('project_id')}" \\
 --set "management='${env.kind === EnvironmentKind.Management ? 'true' : 'false'}'" \\
 oci://europe-north1-docker.pkg.dev/nais-io/nais/naisd
                     `}
