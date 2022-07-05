@@ -51,6 +51,7 @@
     "@types/lodash.isequal": "4.5.5",
     "@types/react": "17.0.39",
     "@types/react-tag-autocomplete": "6.1.1",
+    "@types/ws": "^8.5.3",
     "eslint-config-next": "12.1.0",
     "graphql-codegen": "0.4.0",
     "prettier": "2.5.1",

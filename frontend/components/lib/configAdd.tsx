@@ -78,7 +78,7 @@ const ConfigAdd = ({conf, envID, globalConfig, feature, open, showOpen}: ConfigA
                     enable
                 </Switch>
             case ConfigType.Int:
-                return <TextField value={intVal} label={''}
+                return <TextField value={intVal.toString()} label={''}
                                   onChange={(e) => setIntVal(Number(e.target.value))}></TextField>
 
         }
