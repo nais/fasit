@@ -90,14 +90,13 @@ const ConfigPage = ({feature}: ConfigProps) => {
             {error && <ErrorMessage error={error}/>}
             <Table size={'small'}>
                 <Table.Header>
-                    <Table.Row>
-                        <Table.HeaderCell>Key</Table.HeaderCell>
-                        <Table.HeaderCell>Value</Table.HeaderCell>
-                        <Table.HeaderCell>Scope</Table.HeaderCell>
-                        <Table.HeaderCell>Required</Table.HeaderCell>
-                        <Table.HeaderCell align='center'>Operations</Table.HeaderCell>
-                        <Table.HeaderCell>Comment</Table.HeaderCell>
-                    </Table.Row>
+                        <Table.Row>
+                            <Table.HeaderCell align={'center'} style={{width: "50px"}}></Table.HeaderCell>
+                            <Table.HeaderCell align={'center'} style={{width: "50px"}} ></Table.HeaderCell>
+                            <Table.HeaderCell>Key</Table.HeaderCell>
+                            <Table.HeaderCell>Value</Table.HeaderCell>
+                            <Table.HeaderCell style={{width: "100px"}} align='center'>Actions</Table.HeaderCell>
+                        </Table.Row>
                 </Table.Header>
                 <Table.Body>
                     <ConfigRows

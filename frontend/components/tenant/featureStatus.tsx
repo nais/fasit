@@ -9,6 +9,7 @@ import {Configs} from "../lib/configRows";
 import {useEffect, useState} from "react";
 import Link from "next/link";
 import {useRouter} from "next/router"
+import ReactTooltip from "react-tooltip";
 
 
 const FeatureStatusContainer = styled.div`
@@ -109,10 +110,13 @@ const FeatureStatus = ({configs, env, featureName, setShowVerify}: FeatureProps)
                 </div>
                 <EnableFeatureBox>
                     <div>Enabled</div>
-                    <Switch disabled={missingDependencies.length > 0 || missingRequirements.length > 0} size="medium"
+                    <Switch data-tip data-for='enable_feature' disabled={missingDependencies.length > 0 || missingRequirements.length > 0} size="medium"
                             checked={featureState?.enabled || false}
                             onChange={() => setShowVerify(true)}>{''}</Switch>
                     {missingDependencies.length > 0 && "Missing dependencies"}
+                    <ReactTooltip id="enable_feature" place="bottom" type="info" effect="solid">
+                        { featureState?.enabled ? "Disable" : "Enable" } reconciling this feature
+                    </ReactTooltip>
                 </EnableFeatureBox>
             </div>
         </FeatureStatusContainer>

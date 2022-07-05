@@ -6,6 +6,7 @@ import {EnvironmentGetQuery, useConfigurationQuery, useFeaturesQuery} from '../.
 import EnableFeature from "./enableFeature";
 import FeatureStatus from "./featureStatus";
 import extractConfig from "../lib/extractConfig";
+import ReactTooltip from "react-tooltip";
 
 
 const FeatureContainer = styled.div`
@@ -35,6 +36,7 @@ const Feature = ({env, featureName}: FeatureProps) => {
             <FeatureConfig envID={env.id} configs={configs} featureObject={featureObject} mapping={configQuery.data?.configuration.mapping}/>
             <EnableFeature open={showVerify} onClose={setShowVerify} feature={featureName} envID={env.id}
                            enabled={env.featureStates.find((f) => f.feature.name === featureName)?.enabled || false}/>
+
         </FeatureContainer>
     )
 }

@@ -5,6 +5,7 @@ import {Add, Delete, FileContent, Globe, Place, Success, Warning, Wrench} from "
 import {navGronn, navRod} from "../../styles/constants";
 import * as React from "react";
 import styled from "styled-components";
+import ReactTooltip from 'react-tooltip';
 
 const Center = styled.div`
   display: flex;
@@ -31,6 +32,9 @@ const StyledAdd = styled(Add)`
     color: ${navGronn};
   }
   cursor: pointer;
+`
+
+const StyledConfigKey = styled.span`
 `
 
 export interface Config {
@@ -73,10 +77,21 @@ const ConfigRows = ({
 
     return <>{keys.map((key) => {
             const conf = configs[key]
+
             return (
                 <Table.Row key={key}>
-                    <Table.DataCell align={'center'}>{conf.env ? <Place title={"Local"}/> : JSON.stringify(conf.value) !== "null" ? <Globe title={"Global"}/> :
-                        <FileContent title={"Helm value"}/>}
+                    <Table.DataCell align={'center'}> {conf.env ?
+                        <Place data-tip data-for='local' /> : JSON.stringify(conf.value) !== "null" ? <Globe data-tip data-for='global' /> :
+                            <FileContent data-tip data-for='helm' />}
+                        <ReactTooltip id='local' place='top' type='dark' effect='solid'>
+                            {"Local value"}
+                        </ReactTooltip>
+                        <ReactTooltip id='global' place='top' type='dark' effect='solid'>
+                            {"Global value"}
+                        </ReactTooltip>
+                        <ReactTooltip id='helm' place='top' type='dark' effect='solid'>
+                            {"Helm default"}
+                        </ReactTooltip>
                     </Table.DataCell>
                     <Table.DataCell align={'center'}>{conf.required &&
                         <Center>
@@ -84,31 +99,48 @@ const ConfigRows = ({
                                 <Warning style={{color: navRod}} title={"required field"}/>}
                         </Center>}
                     </Table.DataCell>
-                    <Table.DataCell >{conf.displayName ? <span title={"helm key: " + conf.key}>{conf.displayName}</span> : conf.key}</Table.DataCell>
-                    <Table.DataCell >{conf.secret ? '*****' : conf.type != ConfigType.StringArray ?
+                    <Table.DataCell>
+                        <StyledConfigKey data-tip data-for={conf.key}>{conf.displayName ?
+                            <span title={"helm key: " + conf.key}>{conf.displayName}</span> : conf.key}</StyledConfigKey>
+                        { conf.description ? <ReactTooltip id={conf.key} aria-haspopup='true'>
+                            <p>{conf.description}</p>
+                        </ReactTooltip> : ''}
+                    </Table.DataCell>
+                    <Table.DataCell>{conf.secret ? '*****' : conf.type != ConfigType.StringArray ?
                         conf.value != null ? JSON.stringify(conf.value).replace(/"/g, '') :
                             '<default>' :
                         prettifyArray(conf.value)}
                     </Table.DataCell>
-                    <Table.DataCell>{conf.description}</Table.DataCell>
                     <Table.DataCell align={'center'}>
                         <Center> {conf.env || (featurePage && conf.value != null) ?
                             <>
-                                <StyledWrench onClick={() => {
+                                <StyledWrench data-tip data-for='modify' onClick={() => {
                                     setCurrentConfig(conf)
                                     setShowUpdate(true)
                                 }}
                                 />
-                                <StyledDelete onClick={() => {
+                                <StyledDelete data-tip data-for='delete' onClick={() => {
                                     setCurrentConfig(conf)
                                     setShowDelete(true)
                                 }}
                                 />
+                                <ReactTooltip id='modify' place='top' type='dark' effect='solid'>
+                                    {"Modify"}
+                                </ReactTooltip>
+                                <ReactTooltip id='delete' place='top' type='dark' effect='solid'>
+                                    {"Delete"}
+                                </ReactTooltip>
                             </> :
-                            <StyledAdd onClick={() => {
+                            <>
+                            <StyledAdd data-tip data-for='add' onClick={() => {
                                 setCurrentConfig(conf)
                                 setShowCreate(true)
-                            }}/>}
+                            }}/>
+                            <ReactTooltip id='add' place='top' type='dark' effect='solid'>
+                                {"Add"}
+                            </ReactTooltip>
+                            </>
+                        }
                         </Center>
                     </Table.DataCell>
                 </Table.Row>

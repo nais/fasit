@@ -9,6 +9,7 @@ import ConfigRows, {Config, Configs} from "../lib/configRows";
 import {AutomaticSystem, Wrench} from "@navikt/ds-icons";
 import styled from "styled-components";
 import {navGronn} from "../../styles/constants";
+import ReactTooltip from "react-tooltip";
 
 
 interface FeatureConfigProps {
@@ -56,7 +57,6 @@ const FeatureConfig = ({envID, configs, featureObject, mapping}: FeatureConfigPr
                         <Table.HeaderCell align={'center'} style={{width: "50px"}} ></Table.HeaderCell>
                         <Table.HeaderCell>Key</Table.HeaderCell>
                         <Table.HeaderCell>Value</Table.HeaderCell>
-                        <Table.HeaderCell>Description</Table.HeaderCell>
                         <Table.HeaderCell style={{width: "100px"}} align='center'>Actions</Table.HeaderCell>
                     </Table.Row>
                 </Table.Header>
@@ -97,7 +97,10 @@ const FeatureConfig = ({envID, configs, featureObject, mapping}: FeatureConfigPr
                         const o = overridable.includes(m.key)
                         return <Table.Row key={m.key}>
                             <Table.DataCell align={"center"}>
-                               <AutomaticSystem title={"Mapping value"}/>
+                               <AutomaticSystem data-tip data-for='mapping' title={"Mapping value"}/>
+                                <ReactTooltip id='mapping' place='top' type='dark' effect='solid'>
+                                    {"Mapping value"}
+                                </ReactTooltip>
                             </Table.DataCell>
                             <Table.DataCell/>
                             <Table.DataCell style={{overflowWrap: "break-word"}}>
