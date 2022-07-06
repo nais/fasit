@@ -5,3 +5,12 @@ source: https://github.com/kyverno/kyverno/tree/main/charts/kyverno
 environmentKinds:
   - tenant
 timeout: 20m
+config:
+  replicaCount:
+    type: int
+    displayName: "Replicas"
+    description: "Number of replicas, min 3 for HA."
+mapping:
+  replicaCount:
+    template: "3"
+    displayName: "Replicas"
