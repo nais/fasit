@@ -33,4 +33,10 @@ mapping:
   hubble.ui.enabled:
     template: "true"
     displayName: "Enable Hubble UI"
+  hubble.ui.ingress.enabled:
+    template: "true"
+    displayName: "Enable Hubble UI ingress"
+  hubble.ui.ingress.hosts:
+    value: ['hubble.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io']
+    displayName: "Hubble ingress"
 
