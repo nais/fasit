@@ -1,0 +1,29 @@
+chart: cilium
+repo: https://helm.cilium.io/
+version: 1.12.0
+source: https://github.com/cilium/charts
+environmentKinds:
+  - tenant
+timeout: 20m
+mapping:
+  nodeinit.enabled:
+    template: "true"
+    displayName: "Enable node init"
+  nodeinit.reconfigureKubelet:
+    template: "true"
+    displayName: "Reconfigure Kubelet"
+  nodeinit.removeCbrBridge:
+    template: "true"
+    displayName: "Remove Cilium CBR bridge"
+  cni.binPath:
+    template: "/home/kubernetes/bin"
+    displayName: "CNI bin path"
+  gke.enabled:
+    template: "true"
+    displayName: "Enable GKE"
+  ipam.mode:
+    template: "kubernetes"
+    displayName: "IPAM mode"
+  ipv4NativeRoutingCIDR:
+    template: "{{ .Env.pods_ip_cidr_range }}"
+    displayName: "IPv4 native routing CIDR"
