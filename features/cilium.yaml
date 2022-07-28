@@ -27,3 +27,10 @@ mapping:
   ipv4NativeRoutingCIDR:
     template: "{{ .Env.pods_ip_cidr_range }}"
     displayName: "IPv4 native routing CIDR"
+  hubble.relay.enabled:
+    template: "true"
+    displayName: "Enable Hubble relay"
+  hubble.ui.enabled:
+    template: "true"
+    displayName: "Enable Hubble UI"
+
