@@ -1,0 +1,49 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/hookd
+source: https://github.com/nais/helm-charts/tree/main/charts/hookd
+version: 0.0.1
+environmentKinds:
+  - "management"
+mapping:
+  hookd.database.instance:
+    value: "{{.Management.hookd_database_instance}}"
+    displayName: "Database instance"
+  hookd.database.user:
+    value: "{{.Management.hookd_database_user}}"
+    displayName: "Database user"
+  hookd.database.name:
+    value: "{{.Management.hookd_database_name}}"
+    displayName: "Database name"
+  hookd.googleServiceAccountEmail:
+    value: "{{.Management.hookd_google_service_account_email}}"
+    displayName: "Google service account"
+  ingress.host:
+    value: "deploy.{{.Tenant.Name}}.cloud.nais.io"
+    displayName: "Ingress URL"
+  frontendPreSharedKey:
+    value: "{{.Management.hookd_frontend_pre_shared_key}}"
+    displayName: "hookd frontend pre-shared key"
+  frontend.cookieKey:
+    value: "{{.Management.hookd_frontend_cookie_key}}"
+    displayName: "hookd frontend cookie key"
+  hookd.database.encryptionKey:
+    value: "{{.Management.hookd_database_encryption_key}}"
+    displayName: "Database encryption key used to encrypt deploy api keys"
+config:
+  hookd.image.repository:
+    type: string
+  hookd.image.imagePullPolicy:
+    type: string
+  hookd.image.tag:
+    type: string
+  hookd.consoleAPIKey:
+    type: string
+  googleClient.id:
+    type: string
+  googleClient.secret:
+    type: string
+  frontend.image.repository:
+    type: string
+  frontend.image.imagePullPolicy:
+    type: string
+  frontend.image.tag:
+    type: string
