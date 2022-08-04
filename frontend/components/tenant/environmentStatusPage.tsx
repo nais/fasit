@@ -4,7 +4,7 @@ import {
     ConditionStatus,
     EnvironmentGetQuery, EnvironmentKind,
     KubernetesNodeConditionType,
-    useEnvironmentGetReportQuery,
+    useEnvironmentGetReportQuery, useUserInfoQuery,
 } from '../../lib/schema/graphql'
 import ErrorMessage from '../lib/error'
 import LoaderSpinner from '../lib/spinner'
@@ -34,8 +34,12 @@ const EnvironmentStatusPage = ({env,tenantName}: EnvironmentStatusPageProps) => 
         variables: {id: env.id},
         pollInterval: 10 * 1000,
     })
+    const infoQuery = useUserInfoQuery()
+
     if (error) return <ErrorMessage error={error}/>
     if (loading || !data) return <LoaderSpinner/>
+
+    const email = infoQuery?.data?.userInfo?.email
     const report = data.environment
     const getValue = (key: string) =>{
         return env.values.find((v) => v.key === key)?.value
@@ -43,6 +47,8 @@ const EnvironmentStatusPage = ({env,tenantName}: EnvironmentStatusPageProps) => 
     return (
         <EnvironmentStatus>
             <ReportStatus reportedAt={report.health.reportedAt}/>
+            <br/>
+            <a href={`https://console.cloud.google.com/welcome?project=${getValue('project_id')}&authuser=${email}`}>Console</a>
             {
                 parseISO(report.health.reportedAt).getFullYear() === 1969 &&
                 <>

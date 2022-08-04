@@ -9,6 +9,8 @@ services:
     command: ["postgres", "-c", "log_statement=all"]
     ports:
       - 5432:5432
+    tmpfs:
+      - /var/lib/postgresql/data:rw
 
   adminer:
     image: adminer

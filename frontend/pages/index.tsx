@@ -7,9 +7,6 @@ import IconBox from '../components/lib/icons/iconBox'
 import Link from 'next/link'
 import FeatureLogo from '../components/lib/icons/featureLogo'
 import GetLogo from '../components/lib/getLogo'
-import Logo from "../components/header/logo";
-import {Logout} from "@navikt/ds-icons";
-import {navOransje} from "../styles/constants";
 
 const Links = styled.div`
     display: flex;

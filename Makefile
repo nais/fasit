@@ -18,7 +18,7 @@ generate-graphql:
 	go run github.com/99designs/gqlgen generate
 
 setup:
-	go run cmd/setup_pubsub/main.go
+	go run cmd/setup_local_env/main.go
 
 local:
 	PUBSUB_EMULATOR_HOST=localhost:8086 go run ./cmd/fasit \
@@ -34,9 +34,6 @@ local-naisd:
 	--tenant-name test-partner \
 	--env dev \
 	--log-level=debug
-
-setup-local-pubsub:
-	go run ./cmd/setup_pubsub/main.go
 
 test:
 	go test -cover ./...
