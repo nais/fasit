@@ -3,6 +3,7 @@ source: https://github.com/nais/helm-charts/tree/main/charts/monitoring-manageme
 version: 0.6.0
 environmentKinds:
   - "management"
+timeout: 20m
 config:
   nais_prometheus.retention:
     type: string
@@ -39,14 +40,14 @@ mapping:
           access: proxy
       {{ end }}
   grafana.ingress.hosts:
-    value: [ 'grafana.{{.Tenant.Name}}.cloud.nais.io' ]
+    value: ["grafana.{{.Tenant.Name}}.cloud.nais.io"]
     displayName: "Grafana hosts"
   nais_prometheus.ingress.host:
-    value: 'nais-prometheus.{{.Tenant.Name}}.cloud.nais.io'
+    value: "nais-prometheus.{{.Tenant.Name}}.cloud.nais.io"
     displayName: "NAIS Prometheus host"
   kube-prometheus-stack.alertmanager.ingress.hosts:
     value:
-      - 'alertmanager.{{.Tenant.Name}}.cloud.nais.io'
+      - "alertmanager.{{.Tenant.Name}}.cloud.nais.io"
     displayName: "Alertmanager hosts"
   tenant.name:
     value: "{{.Tenant.Name}}"
