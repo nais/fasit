@@ -38,12 +38,11 @@ config:
     type: string
   hookd.image.tag:
     type: string
-  hookd.consoleAPIKey:
-    type: string
   googleClient.id:
     type: string
   googleClient.secret:
     type: string
+    secret: true
   frontend.image.repository:
     type: string
   frontend.image.imagePullPolicy:
