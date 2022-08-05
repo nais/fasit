@@ -3,6 +3,8 @@ source: https://github.com/nais/helm-charts/tree/main/charts/hookd
 version: 0.0.1
 environmentKinds:
   - "management"
+dependsOn:
+  - "console"
 mapping:
   hookd.database.instance:
     value: "{{.Management.hookd_database_instance}}"
