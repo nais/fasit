@@ -11,22 +11,35 @@ import (
 )
 
 const environmentValueGet = `-- name: EnvironmentValueGet :one
-SELECT environment_id, key, value, secret FROM environment_values WHERE "environment_id" = $1 AND "key" = $2
+SELECT
+"environment_id",
+"key",
+"secret",
+(CASE WHEN secret THEN CASE WHEN $1::bool THEN value ELSE '"***"' END ELSE value END)::jsonb AS "value"
+FROM environment_values WHERE "environment_id" = $2 AND "key" = $3
 `
 
 type EnvironmentValueGetParams struct {
-	Envid uuid.UUID
-	Key   string
+	Showsensitive bool
+	Envid         uuid.UUID
+	Key           string
 }
 
-func (q *Queries) EnvironmentValueGet(ctx context.Context, arg EnvironmentValueGetParams) (EnvironmentValue, error) {
-	row := q.db.QueryRowContext(ctx, environmentValueGet, arg.Envid, arg.Key)
-	var i EnvironmentValue
+type EnvironmentValueGetRow struct {
+	EnvironmentID uuid.UUID
+	Key           string
+	Secret        bool
+	Value         json.RawMessage
+}
+
+func (q *Queries) EnvironmentValueGet(ctx context.Context, arg EnvironmentValueGetParams) (EnvironmentValueGetRow, error) {
+	row := q.db.QueryRowContext(ctx, environmentValueGet, arg.Showsensitive, arg.Envid, arg.Key)
+	var i EnvironmentValueGetRow
 	err := row.Scan(
 		&i.EnvironmentID,
 		&i.Key,
-		&i.Value,
 		&i.Secret,
+		&i.Value,
 	)
 	return i, err
 }
@@ -54,23 +67,40 @@ func (q *Queries) EnvironmentValueStore(ctx context.Context, arg EnvironmentValu
 }
 
 const environmentValuesForEnvironment = `-- name: EnvironmentValuesForEnvironment :many
-SELECT environment_id, key, value, secret FROM environment_values WHERE "environment_id" = $1
+SELECT
+"environment_id",
+"key",
+"secret",
+(CASE WHEN secret THEN CASE WHEN $1::bool THEN value ELSE '"***"' END ELSE value END)::jsonb AS "value"
+FROM environment_values WHERE "environment_id" = $2
 `
 
-func (q *Queries) EnvironmentValuesForEnvironment(ctx context.Context, envid uuid.UUID) ([]EnvironmentValue, error) {
-	rows, err := q.db.QueryContext(ctx, environmentValuesForEnvironment, envid)
+type EnvironmentValuesForEnvironmentParams struct {
+	Showsensitive bool
+	Envid         uuid.UUID
+}
+
+type EnvironmentValuesForEnvironmentRow struct {
+	EnvironmentID uuid.UUID
+	Key           string
+	Secret        bool
+	Value         json.RawMessage
+}
+
+func (q *Queries) EnvironmentValuesForEnvironment(ctx context.Context, arg EnvironmentValuesForEnvironmentParams) ([]EnvironmentValuesForEnvironmentRow, error) {
+	rows, err := q.db.QueryContext(ctx, environmentValuesForEnvironment, arg.Showsensitive, arg.Envid)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []EnvironmentValue{}
+	items := []EnvironmentValuesForEnvironmentRow{}
 	for rows.Next() {
-		var i EnvironmentValue
+		var i EnvironmentValuesForEnvironmentRow
 		if err := rows.Scan(
 			&i.EnvironmentID,
 			&i.Key,
-			&i.Value,
 			&i.Secret,
+			&i.Value,
 		); err != nil {
 			return nil, err
 		}
@@ -86,6 +116,18 @@ func (q *Queries) EnvironmentValuesForEnvironment(ctx context.Context, envid uui
 }
 
 const mappingValuesForTenant = `-- name: MappingValuesForTenant :many
+WITH environment_ids AS (
+  SELECT id FROM environments WHERE "tenant_id" = $1
+),
+mappings AS (
+  SELECT
+    "environment_id",
+    "key",
+    (CASE WHEN secret THEN CASE WHEN $2::bool THEN value ELSE '"***"' END ELSE value END)::jsonb AS "value",
+    "secret"
+  FROM environment_values
+  WHERE "environment_id" IN (SELECT id FROM environment_ids)
+)
 SELECT
   "id",
   "name",
@@ -93,10 +135,15 @@ SELECT
   -- FILTER is added to prevent error when there's no environment values
   coalesce(json_object_agg("key", "value") FILTER (WHERE "key" IS NOT NULL), '{}'::json)::json AS "values"
 FROM environments
-LEFT JOIN environment_values ON environment_values.environment_id = environments.id
-WHERE tenant_id = $1
+LEFT JOIN mappings ON mappings.environment_id = environments.id
+WHERE environments.tenant_id = $1
 GROUP BY "id", "name", "kind"
 `
+
+type MappingValuesForTenantParams struct {
+	Tenantid      uuid.UUID
+	Showsensitive bool
+}
 
 type MappingValuesForTenantRow struct {
 	ID     uuid.UUID
@@ -105,8 +152,8 @@ type MappingValuesForTenantRow struct {
 	Values json.RawMessage
 }
 
-func (q *Queries) MappingValuesForTenant(ctx context.Context, tenantid uuid.UUID) ([]MappingValuesForTenantRow, error) {
-	rows, err := q.db.QueryContext(ctx, mappingValuesForTenant, tenantid)
+func (q *Queries) MappingValuesForTenant(ctx context.Context, arg MappingValuesForTenantParams) ([]MappingValuesForTenantRow, error) {
+	rows, err := q.db.QueryContext(ctx, mappingValuesForTenant, arg.Tenantid, arg.Showsensitive)
 	if err != nil {
 		return nil, err
 	}

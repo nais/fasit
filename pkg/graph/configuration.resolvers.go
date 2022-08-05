@@ -104,7 +104,7 @@ OUTER:
 		return ret, nil
 	}
 
-	mappingValues, err := r.Repo.MappingValuesForEnvironment(ctx, *envID)
+	mappingValues, err := r.Repo.MappingValuesForEnvironment(ctx, *envID, false)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +133,7 @@ func (r *queryResolver) EnvConfig(ctx context.Context, feature string, envID uui
 		return ret, nil
 	}
 
-	mappingValues, err := r.Repo.MappingValuesForEnvironment(ctx, envID)
+	mappingValues, err := r.Repo.MappingValuesForEnvironment(ctx, envID, false)
 	if err != nil {
 		return nil, err
 	}

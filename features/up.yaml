@@ -21,3 +21,5 @@ mapping:
     value:
       - 'up.{{if eq .Kind "tenant"}}{{.Env.name}}.{{end}}{{.Tenant.Name}}.cloud.nais.io'
     displayName: "DNS names"
+  asdf:
+    value: "{{.Env.some_secret}}"

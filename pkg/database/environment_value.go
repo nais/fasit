@@ -13,41 +13,56 @@ import (
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
-func (r *repo) EnvironmentValueStore(ctx context.Context, environmentID uuid.UUID, key string, value json.RawMessage) error {
+func (r *repo) EnvironmentValueStore(ctx context.Context, environmentID uuid.UUID, key string, value json.RawMessage, secret bool) error {
 	return r.querier.EnvironmentValueStore(ctx, gensql.EnvironmentValueStoreParams{
-		Envid: environmentID,
-		Key:   key,
-		Value: value,
+		Envid:  environmentID,
+		Key:    key,
+		Value:  value,
+		Secret: secret,
 	})
 }
 
-func (r *repo) EnvironmentValueGet(ctx context.Context, environmentID uuid.UUID, key string) (*model.EnvironmentValue, error) {
+func (r *repo) EnvironmentValueGet(ctx context.Context, environmentID uuid.UUID, key string, showSensitive bool) (*model.EnvironmentValue, error) {
 	ev, err := r.querier.EnvironmentValueGet(ctx, gensql.EnvironmentValueGetParams{
-		Envid: environmentID,
-		Key:   key,
+		Envid:         environmentID,
+		Key:           key,
+		Showsensitive: showSensitive,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return environmentValueFromSQL(ev), nil
+	return &model.EnvironmentValue{
+		EnvironmentID: ev.EnvironmentID,
+		Key:           ev.Key,
+		Value:         ev.Value,
+		Secret:        ev.Secret,
+	}, nil
 }
 
-func (r *repo) EnvironmentValuesForEnvironment(ctx context.Context, envID uuid.UUID) ([]*model.EnvironmentValue, error) {
-	values, err := r.querier.EnvironmentValuesForEnvironment(ctx, envID)
+func (r *repo) EnvironmentValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) ([]*model.EnvironmentValue, error) {
+	values, err := r.querier.EnvironmentValuesForEnvironment(ctx, gensql.EnvironmentValuesForEnvironmentParams{
+		Envid:         envID,
+		Showsensitive: showSensitive,
+	})
 	if err != nil {
 		return nil, err
 	}
 
 	ret := make([]*model.EnvironmentValue, len(values))
 	for i, ev := range values {
-		ret[i] = environmentValueFromSQL(ev)
+		ret[i] = &model.EnvironmentValue{
+			EnvironmentID: ev.EnvironmentID,
+			Key:           ev.Key,
+			Value:         ev.Value,
+			Secret:        ev.Secret,
+		}
 	}
 
 	return ret, nil
 }
 
-func (r *repo) MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID) (*feature.MappingValues, error) {
+func (r *repo) MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) (*feature.MappingValues, error) {
 	env, err := r.querier.EnvironmentGet(ctx, envID)
 	if err != nil {
 		return nil, fmt.Errorf("envValuesForEnv: failed to get environment: %w", err)
@@ -64,7 +79,10 @@ func (r *repo) MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID)
 		},
 	}
 
-	values, err := r.querier.MappingValuesForTenant(ctx, tenant.ID)
+	values, err := r.querier.MappingValuesForTenant(ctx, gensql.MappingValuesForTenantParams{
+		Tenantid:      tenant.ID,
+		Showsensitive: showSensitive,
+	})
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return mv, nil
@@ -90,13 +108,4 @@ func (r *repo) MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID)
 	}
 
 	return mv, nil
-}
-
-func environmentValueFromSQL(p gensql.EnvironmentValue) *model.EnvironmentValue {
-	return &model.EnvironmentValue{
-		EnvironmentID: p.EnvironmentID,
-		Key:           p.Key,
-		Value:         p.Value,
-		Secret:        p.Secret,
-	}
 }

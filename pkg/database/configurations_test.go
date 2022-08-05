@@ -454,12 +454,14 @@ func TestRepo_HelmValues_WithMappingValues(t *testing.T) {
 	defer r.Close()
 
 	vali := []struct {
-		EnvID uuid.UUID
-		Key   string
-		Value json.RawMessage
+		EnvID  uuid.UUID
+		Key    string
+		Value  json.RawMessage
+		Secret bool
 	}{
-		{mgmtID, "project_id", json.RawMessage(`"my-project"`)},
-		{envid, "project_id", json.RawMessage(`"env-project"`)},
+		{mgmtID, "project_id", json.RawMessage(`"my-project"`), false},
+		{envid, "project_id", json.RawMessage(`"env-project"`), false},
+		{envid, "some_secret", json.RawMessage(`"hideme"`), true},
 	}
 
 	feature := feature.Feature{
@@ -474,7 +476,7 @@ func TestRepo_HelmValues_WithMappingValues(t *testing.T) {
 	}
 
 	for _, v := range vali {
-		err := r.EnvironmentValueStore(context.Background(), v.EnvID, v.Key, v.Value)
+		err := r.EnvironmentValueStore(context.Background(), v.EnvID, v.Key, v.Value, v.Secret)
 		if err != nil {
 			t.Fatal(err)
 		}
