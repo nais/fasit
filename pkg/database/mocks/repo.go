@@ -308,13 +308,13 @@ func (_m *Repo) EnvironmentUpdate(ctx context.Context, environmentID uuid.UUID, 
 	return r0, r1
 }
 
-// EnvironmentValueGet provides a mock function with given fields: ctx, environmentID, key
-func (_m *Repo) EnvironmentValueGet(ctx context.Context, environmentID uuid.UUID, key string) (*model.EnvironmentValue, error) {
-	ret := _m.Called(ctx, environmentID, key)
+// EnvironmentValueGet provides a mock function with given fields: ctx, environmentID, key, showSensitive
+func (_m *Repo) EnvironmentValueGet(ctx context.Context, environmentID uuid.UUID, key string, showSensitive bool) (*model.EnvironmentValue, error) {
+	ret := _m.Called(ctx, environmentID, key, showSensitive)
 
 	var r0 *model.EnvironmentValue
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, string) *model.EnvironmentValue); ok {
-		r0 = rf(ctx, environmentID, key)
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, string, bool) *model.EnvironmentValue); ok {
+		r0 = rf(ctx, environmentID, key, showSensitive)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.EnvironmentValue)
@@ -322,8 +322,8 @@ func (_m *Repo) EnvironmentValueGet(ctx context.Context, environmentID uuid.UUID
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, string) error); ok {
-		r1 = rf(ctx, environmentID, key)
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, string, bool) error); ok {
+		r1 = rf(ctx, environmentID, key, showSensitive)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -331,13 +331,13 @@ func (_m *Repo) EnvironmentValueGet(ctx context.Context, environmentID uuid.UUID
 	return r0, r1
 }
 
-// EnvironmentValueStore provides a mock function with given fields: ctx, environmentID, key, value
-func (_m *Repo) EnvironmentValueStore(ctx context.Context, environmentID uuid.UUID, key string, value json.RawMessage) error {
-	ret := _m.Called(ctx, environmentID, key, value)
+// EnvironmentValueStore provides a mock function with given fields: ctx, environmentID, key, value, secret
+func (_m *Repo) EnvironmentValueStore(ctx context.Context, environmentID uuid.UUID, key string, value json.RawMessage, secret bool) error {
+	ret := _m.Called(ctx, environmentID, key, value, secret)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, string, json.RawMessage) error); ok {
-		r0 = rf(ctx, environmentID, key, value)
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, string, json.RawMessage, bool) error); ok {
+		r0 = rf(ctx, environmentID, key, value, secret)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -345,13 +345,13 @@ func (_m *Repo) EnvironmentValueStore(ctx context.Context, environmentID uuid.UU
 	return r0
 }
 
-// EnvironmentValuesForEnvironment provides a mock function with given fields: ctx, envID
-func (_m *Repo) EnvironmentValuesForEnvironment(ctx context.Context, envID uuid.UUID) ([]*model.EnvironmentValue, error) {
-	ret := _m.Called(ctx, envID)
+// EnvironmentValuesForEnvironment provides a mock function with given fields: ctx, envID, showSensitive
+func (_m *Repo) EnvironmentValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) ([]*model.EnvironmentValue, error) {
+	ret := _m.Called(ctx, envID, showSensitive)
 
 	var r0 []*model.EnvironmentValue
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) []*model.EnvironmentValue); ok {
-		r0 = rf(ctx, envID)
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, bool) []*model.EnvironmentValue); ok {
+		r0 = rf(ctx, envID, showSensitive)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*model.EnvironmentValue)
@@ -359,8 +359,8 @@ func (_m *Repo) EnvironmentValuesForEnvironment(ctx context.Context, envID uuid.
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
-		r1 = rf(ctx, envID)
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, bool) error); ok {
+		r1 = rf(ctx, envID, showSensitive)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -534,13 +534,13 @@ func (_m *Repo) KubernetesNodesForEnv(ctx context.Context, envID uuid.UUID) ([]*
 	return r0, r1
 }
 
-// MappingValuesForEnvironment provides a mock function with given fields: ctx, envID
-func (_m *Repo) MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID) (*feature.MappingValues, error) {
-	ret := _m.Called(ctx, envID)
+// MappingValuesForEnvironment provides a mock function with given fields: ctx, envID, showSensitive
+func (_m *Repo) MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) (*feature.MappingValues, error) {
+	ret := _m.Called(ctx, envID, showSensitive)
 
 	var r0 *feature.MappingValues
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) *feature.MappingValues); ok {
-		r0 = rf(ctx, envID)
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, bool) *feature.MappingValues); ok {
+		r0 = rf(ctx, envID, showSensitive)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*feature.MappingValues)
@@ -548,8 +548,8 @@ func (_m *Repo) MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
-		r1 = rf(ctx, envID)
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, bool) error); ok {
+		r1 = rf(ctx, envID, showSensitive)
 	} else {
 		r1 = ret.Error(1)
 	}

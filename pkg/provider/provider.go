@@ -113,7 +113,7 @@ func (s *Server) CreateOrUpdateEnvironmentValue(ctx context.Context, in *protoge
 		return nil, status.Error(codes.InvalidArgument, "Invalid environment id")
 	}
 
-	err = s.repo.EnvironmentValueStore(ctx, envID, in.Key, in.Value)
+	err = s.repo.EnvironmentValueStore(ctx, envID, in.Key, in.Value, in.Secret)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -126,7 +126,7 @@ func (s *Server) GetEnvironmentValue(ctx context.Context, in *protogen.GetEnviro
 		return nil, status.Error(codes.InvalidArgument, "Invalid environment id")
 	}
 
-	ev, err := s.repo.EnvironmentValueGet(context.Background(), envID, in.Key)
+	ev, err := s.repo.EnvironmentValueGet(context.Background(), envID, in.Key, true)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, "Environment not found")
 	}
@@ -135,6 +135,7 @@ func (s *Server) GetEnvironmentValue(ctx context.Context, in *protogen.GetEnviro
 		EnvironmentId: envID.String(),
 		Key:           ev.Key,
 		Value:         ev.Value,
+		Secret:        ev.Secret,
 	}, nil
 }
 

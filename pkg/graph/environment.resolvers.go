@@ -48,7 +48,7 @@ func (r *environmentResolver) Nodes(ctx context.Context, obj *model.Environment)
 }
 
 func (r *environmentResolver) Values(ctx context.Context, obj *model.Environment) ([]*model.EnvironmentValue, error) {
-	return r.Repo.EnvironmentValuesForEnvironment(ctx, obj.ID)
+	return r.Repo.EnvironmentValuesForEnvironment(ctx, obj.ID, false)
 }
 
 func (r *mutationResolver) EnvironmentCreate(ctx context.Context, environment model.EnvironmentCreate) (*model.Environment, error) {
@@ -81,5 +81,7 @@ func (r *Resolver) Environment() graphgen.EnvironmentResolver { return &environm
 // Release returns graphgen.ReleaseResolver implementation.
 func (r *Resolver) Release() graphgen.ReleaseResolver { return &releaseResolver{r} }
 
-type environmentResolver struct{ *Resolver }
-type releaseResolver struct{ *Resolver }
+type (
+	environmentResolver struct{ *Resolver }
+	releaseResolver     struct{ *Resolver }
+)

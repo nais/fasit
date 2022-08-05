@@ -296,14 +296,14 @@ func (_m *Querier) EnvironmentUpdate(ctx context.Context, arg gensql.Environment
 }
 
 // EnvironmentValueGet provides a mock function with given fields: ctx, arg
-func (_m *Querier) EnvironmentValueGet(ctx context.Context, arg gensql.EnvironmentValueGetParams) (gensql.EnvironmentValue, error) {
+func (_m *Querier) EnvironmentValueGet(ctx context.Context, arg gensql.EnvironmentValueGetParams) (gensql.EnvironmentValueGetRow, error) {
 	ret := _m.Called(ctx, arg)
 
-	var r0 gensql.EnvironmentValue
-	if rf, ok := ret.Get(0).(func(context.Context, gensql.EnvironmentValueGetParams) gensql.EnvironmentValue); ok {
+	var r0 gensql.EnvironmentValueGetRow
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.EnvironmentValueGetParams) gensql.EnvironmentValueGetRow); ok {
 		r0 = rf(ctx, arg)
 	} else {
-		r0 = ret.Get(0).(gensql.EnvironmentValue)
+		r0 = ret.Get(0).(gensql.EnvironmentValueGetRow)
 	}
 
 	var r1 error
@@ -330,22 +330,22 @@ func (_m *Querier) EnvironmentValueStore(ctx context.Context, arg gensql.Environ
 	return r0
 }
 
-// EnvironmentValuesForEnvironment provides a mock function with given fields: ctx, envid
-func (_m *Querier) EnvironmentValuesForEnvironment(ctx context.Context, envid uuid.UUID) ([]gensql.EnvironmentValue, error) {
-	ret := _m.Called(ctx, envid)
+// EnvironmentValuesForEnvironment provides a mock function with given fields: ctx, arg
+func (_m *Querier) EnvironmentValuesForEnvironment(ctx context.Context, arg gensql.EnvironmentValuesForEnvironmentParams) ([]gensql.EnvironmentValuesForEnvironmentRow, error) {
+	ret := _m.Called(ctx, arg)
 
-	var r0 []gensql.EnvironmentValue
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) []gensql.EnvironmentValue); ok {
-		r0 = rf(ctx, envid)
+	var r0 []gensql.EnvironmentValuesForEnvironmentRow
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.EnvironmentValuesForEnvironmentParams) []gensql.EnvironmentValuesForEnvironmentRow); ok {
+		r0 = rf(ctx, arg)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]gensql.EnvironmentValue)
+			r0 = ret.Get(0).([]gensql.EnvironmentValuesForEnvironmentRow)
 		}
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
-		r1 = rf(ctx, envid)
+	if rf, ok := ret.Get(1).(func(context.Context, gensql.EnvironmentValuesForEnvironmentParams) error); ok {
+		r1 = rf(ctx, arg)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -534,13 +534,13 @@ func (_m *Querier) KubernetesNodeStatuses(ctx context.Context, environmentID uui
 	return r0, r1
 }
 
-// MappingValuesForTenant provides a mock function with given fields: ctx, tenantid
-func (_m *Querier) MappingValuesForTenant(ctx context.Context, tenantid uuid.UUID) ([]gensql.MappingValuesForTenantRow, error) {
-	ret := _m.Called(ctx, tenantid)
+// MappingValuesForTenant provides a mock function with given fields: ctx, arg
+func (_m *Querier) MappingValuesForTenant(ctx context.Context, arg gensql.MappingValuesForTenantParams) ([]gensql.MappingValuesForTenantRow, error) {
+	ret := _m.Called(ctx, arg)
 
 	var r0 []gensql.MappingValuesForTenantRow
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) []gensql.MappingValuesForTenantRow); ok {
-		r0 = rf(ctx, tenantid)
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.MappingValuesForTenantParams) []gensql.MappingValuesForTenantRow); ok {
+		r0 = rf(ctx, arg)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]gensql.MappingValuesForTenantRow)
@@ -548,8 +548,8 @@ func (_m *Querier) MappingValuesForTenant(ctx context.Context, tenantid uuid.UUI
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
-		r1 = rf(ctx, tenantid)
+	if rf, ok := ret.Get(1).(func(context.Context, gensql.MappingValuesForTenantParams) error); ok {
+		r1 = rf(ctx, arg)
 	} else {
 		r1 = ret.Error(1)
 	}
