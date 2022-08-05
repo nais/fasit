@@ -22,15 +22,15 @@ mapping:
   frontendPreSharedKey:
     value: "{{.Management.hookd_frontend_pre_shared_key}}"
     displayName: "hookd frontend pre-shared key"
-    secret: true
+    # secret: true
   frontend.cookieKey:
     value: "{{.Management.hookd_frontend_cookie_key}}"
     displayName: "hookd frontend cookie key"
-    secret: true
+    # secret: true
   hookd.database.encryptionKey:
     value: "{{.Management.hookd_database_encryption_key}}"
     displayName: "Database encryption key used to encrypt deploy api keys"
-    secret: true
+    # secret: true
 config:
   hookd.image.repository:
     type: string

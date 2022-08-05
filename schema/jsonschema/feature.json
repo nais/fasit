@@ -70,9 +70,6 @@
 						"displayName": {
 							"type": "string"
 						},
-						"secret": {
-							"type": "boolean"
-						},
 						"template": {
 							"type": "string"
 						},
