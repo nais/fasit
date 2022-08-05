@@ -120,12 +120,12 @@ const Environment = ({environmentName, tenantName}: EnvironmentProps) => {
                 <DescriptionBox>
                     {edit ?
                         <Textarea
-                            label={'description'}
+                            label={'Environment Description'}
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                         /> :
                         <Description>
-                            {env.description}
+                            {env.description || 'No environment description'}
                         </Description>
                     }
                 </DescriptionBox>
@@ -139,8 +139,8 @@ const Environment = ({environmentName, tenantName}: EnvironmentProps) => {
                 </IconBox>
             </InfoBox>
             <TimeStamps>
-                <span>Opprettet {humanizeDate(env.created)}</span>
-                <span>Sist oppdatert {humanizeDate(env.lastModified)}</span>
+                <span>Created {humanizeDate(env.created)}</span>
+                <span>Last updated {humanizeDate(env.lastModified)}</span>
             </TimeStamps>
             <Main>
                 <FeaturesMenu env={env}/>
