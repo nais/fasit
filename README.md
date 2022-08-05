@@ -4,16 +4,19 @@
 
 ```
 docker-compose up
+
+# Run backend
+make local
+
+# Build config
 make setup
 
 # Run naisd
 make local-naisd
 
-# Run backend
-make local
-
 # Run frontend
 cd frontend
+echo "NEXT_PUBLIC_ENV=development" > .env.development.local
 npm run install
 npm run dev
 ```
