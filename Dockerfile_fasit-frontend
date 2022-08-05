@@ -4,7 +4,7 @@ WORKDIR /usr/app
 
 COPY frontend/package*.json .
 
-RUN npm install --quiet
+RUN npm install --legacy-peer-deps --quiet
 
 FROM node-with-deps
 
