@@ -16,6 +16,7 @@ type MappingConfig struct {
 	DisplayName string `yaml:"displayName,omitempty"`
 	Value       any    `yaml:"value,omitempty"`
 	Template    string `yaml:"template,omitempty"`
+	Secret      bool   `yaml:"secret,omitempty"`
 }
 
 type MappingTenant struct {
@@ -35,7 +36,7 @@ type MappingValues struct {
 	Envs []map[string]any
 }
 
-func (m Mapping) Generate(values *MappingValues, target map[string]any) error {
+func (m Mapping) Generate(values *MappingValues, target map[string]any, hideSecrets bool) error {
 	if target == nil {
 		return fmt.Errorf("target is nil")
 	}
@@ -93,19 +94,19 @@ func addToMap(target map[string]any, values *MappingValues, key []string, mc Map
 func renderTpl(values *MappingValues, mc MappingConfig) (any, error) {
 	switch t := mc.Value.(type) {
 	case string:
-		return renderString(values, t)
+		return renderString(values, t, mc.Secret)
 	case []any:
-		return renderSlice(values, t)
+		return renderSlice(values, t, mc.Secret)
 	default:
 		if mc.Template != "" {
-			return renderTemplate(values, mc.Template)
+			return renderTemplate(values, mc.Template, mc.Secret)
 		}
 		return nil, fmt.Errorf("unsupported type %T", t)
 	}
 }
 
-func renderTemplate(values *MappingValues, tpl string) (any, error) {
-	rdr, err := renderString(values, tpl)
+func renderTemplate(values *MappingValues, tpl string, secret bool) (any, error) {
+	rdr, err := renderString(values, tpl, secret)
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +121,10 @@ func renderTemplate(values *MappingValues, tpl string) (any, error) {
 	return v, nil
 }
 
-func renderString(values *MappingValues, tpl string) (string, error) {
+func renderString(values *MappingValues, tpl string, secret bool) (string, error) {
+	if secret {
+		return "***", nil
+	}
 	t, err := template.New("tpl").Parse(tpl)
 	if err != nil {
 		return "", err
@@ -134,11 +138,12 @@ func renderString(values *MappingValues, tpl string) (string, error) {
 	return buf.String(), nil
 }
 
-func renderSlice(values *MappingValues, tpl []any) ([]any, error) {
+func renderSlice(values *MappingValues, tpl []any, secret bool) ([]any, error) {
 	ret := make([]any, len(tpl))
 	for i, t := range tpl {
 		val, err := renderTpl(values, MappingConfig{
-			Value: t,
+			Value:  t,
+			Secret: secret,
 		})
 		if err != nil {
 			return nil, err

@@ -109,7 +109,7 @@ OUTER:
 		return nil, err
 	}
 
-	ret.Mapping, err = mappingToSlice(f, mappingValues)
+	ret.Mapping, err = mappingToSlice(f, mappingValues, true)
 	if err != nil {
 		return nil, err
 	}
@@ -138,7 +138,7 @@ func (r *queryResolver) EnvConfig(ctx context.Context, feature string, envID uui
 		return nil, err
 	}
 
-	ret.Mapping, err = mappingToSlice(f, mappingValues)
+	ret.Mapping, err = mappingToSlice(f, mappingValues, true)
 	if err != nil {
 		return nil, err
 	}

@@ -168,7 +168,7 @@ func (r *repo) ConfigDelete(ctx context.Context, id uuid.UUID) error {
 	return r.querier.ConfigDelete(ctx, id)
 }
 
-func (r *repo) HelmValues(ctx context.Context, feature feature.Feature, envID uuid.UUID, requiredFields []string) (map[string]any, error) {
+func (r *repo) HelmValues(ctx context.Context, feature feature.Feature, envID uuid.UUID, requiredFields []string, hideSecrets bool) (map[string]any, error) {
 	mv, err := r.MappingValuesForEnvironment(ctx, envID)
 	if err != nil {
 		return nil, err
@@ -191,7 +191,7 @@ func (r *repo) HelmValues(ctx context.Context, feature feature.Feature, envID uu
 		return nil, err
 	}
 
-	err = feature.Mapping.Generate(mv, mp)
+	err = feature.Mapping.Generate(mv, mp, hideSecrets)
 	return mp, err
 }
 

@@ -11,6 +11,7 @@ func TestRenderString(t *testing.T) {
 	tests := map[string]struct {
 		values   *MappingValues
 		input    string
+		secret   bool
 		expected string
 		err      error
 	}{
@@ -23,11 +24,17 @@ func TestRenderString(t *testing.T) {
 			input:    "{{.Tenant.Name}}",
 			expected: "bar",
 		},
+		"secret": {
+			values:   &MappingValues{Tenant: MappingTenant{Name: "bar"}},
+			input:    "{{.Tenant.Name}}",
+			expected: "***",
+			secret:   true,
+		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			actual, err := renderString(tc.values, tc.input)
+			actual, err := renderString(tc.values, tc.input, tc.secret)
 			if diff := cmp.Diff(tc.err, err, cmp.Comparer(errors.Is)); diff != "" {
 				t.Errorf("renderString(%v) mismatch (-want +got):\n%s", tc.input, diff)
 			}
@@ -40,11 +47,12 @@ func TestRenderString(t *testing.T) {
 
 func TestMapping_Generate(t *testing.T) {
 	tests := map[string]struct {
-		mapping  Mapping
-		values   *MappingValues
-		target   map[string]any
-		expected map[string]any
-		err      error
+		mapping     Mapping
+		values      *MappingValues
+		target      map[string]any
+		expected    map[string]any
+		hideSecrets bool
+		err         error
 	}{
 		"empty": {
 			target:   map[string]any{},
@@ -60,6 +68,23 @@ func TestMapping_Generate(t *testing.T) {
 			},
 			target:   map[string]any{},
 			expected: map[string]any{"foo": "foo"},
+		},
+		"single_level_with_secret": {
+			values: &MappingValues{Tenant: MappingTenant{Name: "foo"}},
+			mapping: Mapping{
+				"foo": MappingConfig{
+					DisplayName: "Tenant name",
+					Value:       "{{.Tenant.Name}}",
+				},
+				"bar": MappingConfig{
+					DisplayName: "Tenant name",
+					Value:       "{{.Tenant.Name}}",
+					Secret:      true,
+				},
+			},
+			target:      map[string]any{},
+			expected:    map[string]any{"foo": "foo", "bar": "***"},
+			hideSecrets: true,
 		},
 		"multi_level": {
 			values: &MappingValues{Tenant: MappingTenant{Name: "foo"}, Management: map[string]any{"project_id": "gcp"}},
@@ -121,7 +146,7 @@ func TestMapping_Generate(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			err := tc.mapping.Generate(tc.values, tc.target)
+			err := tc.mapping.Generate(tc.values, tc.target, tc.hideSecrets)
 			if diff := cmp.Diff(tc.err, err, cmp.Comparer(errors.Is)); diff != "" {
 				t.Errorf("Generate(%v) mismatch (-want +got):\n%s", tc.values, diff)
 			}

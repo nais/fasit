@@ -364,7 +364,7 @@ func TestRepo_HelmValues_OK(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err := r.HelmValues(context.Background(), feature.Feature{Name: "feature5"}, envid, []string{"my.key"})
+	got, err := r.HelmValues(context.Background(), feature.Feature{Name: "feature5"}, envid, []string{"my.key"}, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -401,7 +401,7 @@ func TestRepo_HelmValues_MissingRequiredField(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = r.HelmValues(context.Background(), feature.Feature{Name: "feature5"}, envid, []string{"no.key"})
+	_, err = r.HelmValues(context.Background(), feature.Feature{Name: "feature5"}, envid, []string{"no.key"}, false)
 	if !errors.Is(err, &ErrMissingRequiredFields{}) {
 		t.Errorf("got: %v, want ErrMissingRequiredFields", err)
 	}
@@ -437,7 +437,7 @@ func TestRepo_HelmValues_InvaldKeyNesting(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = r.HelmValues(context.Background(), feature.Feature{Name: "feature5"}, envid, nil)
+	_, err = r.HelmValues(context.Background(), feature.Feature{Name: "feature5"}, envid, nil, false)
 	if err == nil || !strings.HasSuffix(err.Error(), "is not nestable") {
 		t.Errorf("got: %v, want \"key `key` is not nestable\"", err)
 	}
@@ -480,7 +480,7 @@ func TestRepo_HelmValues_WithMappingValues(t *testing.T) {
 		}
 	}
 
-	got, err := r.HelmValues(context.Background(), feature, envid, nil)
+	got, err := r.HelmValues(context.Background(), feature, envid, nil, false)
 	if err != nil {
 		t.Fatal(err)
 	}
