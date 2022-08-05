@@ -7,7 +7,7 @@ SELECT
 "environment_id",
 "key",
 "secret",
-(CASE WHEN secret THEN CASE WHEN @showSensitive::bool THEN value ELSE '"***"' END ELSE value END)::jsonb AS "value"
+(CASE WHEN secret THEN CASE WHEN @showSensitive::bool THEN value ELSE '"*****"' END ELSE value END)::jsonb AS "value"
 FROM environment_values WHERE "environment_id" = @envID AND "key" = @key;
 
 -- name: EnvironmentValuesForEnvironment :many
@@ -15,7 +15,7 @@ SELECT
 "environment_id",
 "key",
 "secret",
-(CASE WHEN secret THEN CASE WHEN @showSensitive::bool THEN value ELSE '"***"' END ELSE value END)::jsonb AS "value"
+(CASE WHEN secret THEN CASE WHEN @showSensitive::bool THEN value ELSE '"*****"' END ELSE value END)::jsonb AS "value"
 FROM environment_values WHERE "environment_id" = @envID;
 
 -- name: MappingValuesForTenant :many
@@ -26,7 +26,7 @@ mappings AS (
   SELECT
     "environment_id",
     "key",
-    (CASE WHEN secret THEN CASE WHEN @showSensitive::bool THEN value ELSE '"***"' END ELSE value END)::jsonb AS "value",
+    (CASE WHEN secret THEN CASE WHEN @showSensitive::bool THEN value ELSE '"*****"' END ELSE value END)::jsonb AS "value",
     "secret"
   FROM environment_values
   WHERE "environment_id" IN (SELECT * FROM environment_ids)

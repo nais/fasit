@@ -15,7 +15,7 @@ SELECT
 "environment_id",
 "key",
 "secret",
-(CASE WHEN secret THEN CASE WHEN $1::bool THEN value ELSE '"***"' END ELSE value END)::jsonb AS "value"
+(CASE WHEN secret THEN CASE WHEN $1::bool THEN value ELSE '"*****"' END ELSE value END)::jsonb AS "value"
 FROM environment_values WHERE "environment_id" = $2 AND "key" = $3
 `
 
@@ -71,7 +71,7 @@ SELECT
 "environment_id",
 "key",
 "secret",
-(CASE WHEN secret THEN CASE WHEN $1::bool THEN value ELSE '"***"' END ELSE value END)::jsonb AS "value"
+(CASE WHEN secret THEN CASE WHEN $1::bool THEN value ELSE '"*****"' END ELSE value END)::jsonb AS "value"
 FROM environment_values WHERE "environment_id" = $2
 `
 
@@ -123,7 +123,7 @@ mappings AS (
   SELECT
     "environment_id",
     "key",
-    (CASE WHEN secret THEN CASE WHEN $2::bool THEN value ELSE '"***"' END ELSE value END)::jsonb AS "value",
+    (CASE WHEN secret THEN CASE WHEN $2::bool THEN value ELSE '"*****"' END ELSE value END)::jsonb AS "value",
     "secret"
   FROM environment_values
   WHERE "environment_id" IN (SELECT id FROM environment_ids)
