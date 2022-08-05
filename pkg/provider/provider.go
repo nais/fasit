@@ -135,6 +135,7 @@ func (s *Server) GetEnvironmentValue(ctx context.Context, in *protogen.GetEnviro
 		EnvironmentId: envID.String(),
 		Key:           ev.Key,
 		Value:         ev.Value,
+		Secret:        ev.Secret,
 	}, nil
 }
 

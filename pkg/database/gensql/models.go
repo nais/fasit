@@ -65,6 +65,7 @@ type EnvironmentValue struct {
 	EnvironmentID uuid.UUID
 	Key           string
 	Value         json.RawMessage
+	Secret        bool
 }
 
 type FeatureState struct {

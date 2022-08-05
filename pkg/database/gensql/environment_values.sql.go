@@ -11,7 +11,7 @@ import (
 )
 
 const environmentValueGet = `-- name: EnvironmentValueGet :one
-SELECT environment_id, key, value FROM environment_values WHERE "environment_id" = $1 AND "key" = $2
+SELECT environment_id, key, value, secret FROM environment_values WHERE "environment_id" = $1 AND "key" = $2
 `
 
 type EnvironmentValueGetParams struct {
@@ -22,28 +22,39 @@ type EnvironmentValueGetParams struct {
 func (q *Queries) EnvironmentValueGet(ctx context.Context, arg EnvironmentValueGetParams) (EnvironmentValue, error) {
 	row := q.db.QueryRowContext(ctx, environmentValueGet, arg.Envid, arg.Key)
 	var i EnvironmentValue
-	err := row.Scan(&i.EnvironmentID, &i.Key, &i.Value)
+	err := row.Scan(
+		&i.EnvironmentID,
+		&i.Key,
+		&i.Value,
+		&i.Secret,
+	)
 	return i, err
 }
 
 const environmentValueStore = `-- name: EnvironmentValueStore :exec
-INSERT INTO environment_values ("environment_id", "key", "value") VALUES ($1, $2, $3)
-ON CONFLICT ("environment_id", "key") DO UPDATE SET "value" = $3
+INSERT INTO environment_values ("environment_id", "key", "value", "secret") VALUES ($1, $2, $3, $4)
+ON CONFLICT ("environment_id", "key") DO UPDATE SET "value" = $3, "secret" = $4
 `
 
 type EnvironmentValueStoreParams struct {
-	Envid uuid.UUID
-	Key   string
-	Value json.RawMessage
+	Envid  uuid.UUID
+	Key    string
+	Value  json.RawMessage
+	Secret bool
 }
 
 func (q *Queries) EnvironmentValueStore(ctx context.Context, arg EnvironmentValueStoreParams) error {
-	_, err := q.db.ExecContext(ctx, environmentValueStore, arg.Envid, arg.Key, arg.Value)
+	_, err := q.db.ExecContext(ctx, environmentValueStore,
+		arg.Envid,
+		arg.Key,
+		arg.Value,
+		arg.Secret,
+	)
 	return err
 }
 
 const environmentValuesForEnvironment = `-- name: EnvironmentValuesForEnvironment :many
-SELECT environment_id, key, value FROM environment_values WHERE "environment_id" = $1
+SELECT environment_id, key, value, secret FROM environment_values WHERE "environment_id" = $1
 `
 
 func (q *Queries) EnvironmentValuesForEnvironment(ctx context.Context, envid uuid.UUID) ([]EnvironmentValue, error) {
@@ -55,7 +66,12 @@ func (q *Queries) EnvironmentValuesForEnvironment(ctx context.Context, envid uui
 	items := []EnvironmentValue{}
 	for rows.Next() {
 		var i EnvironmentValue
-		if err := rows.Scan(&i.EnvironmentID, &i.Key, &i.Value); err != nil {
+		if err := rows.Scan(
+			&i.EnvironmentID,
+			&i.Key,
+			&i.Value,
+			&i.Secret,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

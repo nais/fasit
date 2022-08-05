@@ -97,5 +97,6 @@ func environmentValueFromSQL(p gensql.EnvironmentValue) *model.EnvironmentValue 
 		EnvironmentID: p.EnvironmentID,
 		Key:           p.Key,
 		Value:         p.Value,
+		Secret:        p.Secret,
 	}
 }
