@@ -3,6 +3,17 @@
 	"$schema": "http://json-schema.org/draft/2020-12/schema",
 	"additionalProperties": false,
 	"properties": {
+		"autoInstall": {
+			"description": "AutoInstall is the list of environments this feature can be auto-installed in.",
+			"items": {
+				"enum": [
+					"management",
+					"tenant"
+				],
+				"type": "string"
+			},
+			"type": "array"
+		},
 		"chart": {
 			"description": "Chart name if using helm charts or full url if using CRI image chart.",
 			"type": "string"

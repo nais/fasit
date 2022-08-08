@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/fs"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -32,6 +33,8 @@ type Feature struct {
 	Mapping Mapping `yaml:"mapping,omitempty"`
 	// EnvironmentKinds is the list of environments this feature can be used in.
 	EnvironmentKinds []model.EnvironmentKind `yaml:"environmentKinds" jsonschema:"enum=management,enum=tenant,required"`
+	// AutoInstall is the list of environments this feature can be auto-installed in.
+	AutoInstall []model.EnvironmentKind `yaml:"autoInstall,omitempty" jsonschema:"enum=management,enum=tenant"`
 	// Timeout is the amount of time helm should wait for the feature to be ready. Defaults to 5m0s
 	Timeout time.Duration `yaml:"timeout,omitempty" jsonschema:"omitempty,type=string,pattern=^(\\d+h)?(\\d+m)?(\\d+s)?$"`
 }
@@ -81,6 +84,11 @@ func New(files fs.FS) (*Manager, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// sorted because we want to be deterministic
+	sort.Slice(features, func(i, j int) bool {
+		return features[i].Name < features[j].Name
+	})
 
 	return &Manager{
 		Features: features,

@@ -2,24 +2,23 @@ chart: cert-manager
 source: https://github.com/cert-manager/cert-manager
 version: v1.8.0
 repo: https://charts.jetstack.io
+autoInstall:
+  - "tenant"
+  - "management"
 environmentKinds:
   - "tenant"
   - "management"
-config:
-  installCRDs:
-    type: bool
-    required: true
-  global.podSecurityPolicy.enabled:
-    type: bool
-    displayName: "Enable PodSecurityPolicy"
-  global.leaderElection.namespace:
-    type: string
-    required: true
-    displayName: "LeaderElection namespace"
-  extraArgs:
-    type: string_array
-    required: true
 mapping:
   serviceAccount.annotations.iam\.gke\.io/gcp-service-account:
     value: '{{ .Env.acme_service_account }}'
     displayName: "GCP service account"
+  installCRDs:
+    template: 'true'
+  global.leaderElection.namespace:
+    value: 'nais-system'
+  extraArgs:
+    value:
+      - --issuer-ambient-credentials
+      - --dns01-recursive-nameservers=1.1.1.1:53,8.8.8.8:53
+      - --dns01-recursive-nameservers-only
+
