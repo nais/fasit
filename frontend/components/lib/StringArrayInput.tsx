@@ -1,6 +1,7 @@
 import ReactTags from 'react-tag-autocomplete'
 import styled from 'styled-components'
 import {Delete} from "@navikt/ds-icons";
+import { Merge, FieldError, FieldErrorsImpl, DeepRequired } from 'react-hook-form';
 
 const StyledRectTags = styled.div`
   margin-top: 8px;
@@ -61,7 +62,7 @@ const Value = styled.div`
     color: rgb(38, 38, 38);
     :nth-child(2n) {
         background-color: #f1f1f1;
-    } 
+    }
 `
 
 

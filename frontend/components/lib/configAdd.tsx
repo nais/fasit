@@ -37,9 +37,8 @@ const ConfigAdd = ({conf, envID, globalConfig, feature, open, showOpen}: ConfigA
     const [val, setVal] = useState<any>(undefined)
     const [intVal, setIntVal] = useState<number>(0)
     const [description, setDescription] = useState('')
-    const {watch, formState, setValue} = useForm(globalConfig?.value && {defaultValues: {values: globalConfig.value}})
+    const {watch, formState: { errors }, setValue} = useForm(globalConfig?.value && {defaultValues: {values: globalConfig.value}})
 
-    const {errors} = formState
     const values = watch('values')
     useEffect(() => {
         setVal(values)
@@ -73,7 +72,7 @@ const ConfigAdd = ({conf, envID, globalConfig, feature, open, showOpen}: ConfigA
                     onAdd={onAdd}
                     onDelete={onDelete}
                     values={values || []}
-                    error={errors.values?.[0].message}
+                    error={errors?.values?.message || undefined}
                 />
             case ConfigType.Bool:
                 return <Switch size='medium' position='left' checked={val} onChange={() => setVal(!val)}>
