@@ -18,12 +18,14 @@ mapping:
   hookd.googleServiceAccountEmail:
     value: "{{.Management.hookd_google_service_account_email}}"
     displayName: "Google service account"
+    description: "The service account email that is used to access the postgres-database, set up by terraform."
   ingress.host:
     value: "deploy.{{.Tenant.Name}}.cloud.nais.io"
     displayName: "Ingress URL"
   frontendPreSharedKey:
     value: "{{.Management.hookd_frontend_pre_shared_key}}"
     displayName: "hookd frontend pre-shared key"
+    description: "The pre-shared key used to authenticate the hookd frontend"
     # secret: true
   frontend.cookieKey:
     value: "{{.Management.hookd_frontend_cookie_key}}"
@@ -31,7 +33,7 @@ mapping:
     # secret: true
   hookd.database.encryptionKey:
     value: "{{.Management.hookd_database_encryption_key}}"
-    displayName: "Database encryption key used to encrypt deploy api keys"
+    description: "Database encryption key used to encrypt deploy api keys"
     # secret: true
   hookd.consoleAPIKey:
     value: "{{.Management.hookd_console_api_key}}"
@@ -47,8 +49,10 @@ config:
     type: string
   googleClient.id:
     type: string
+    description: Google OAuth 2.0 Client ID, see https://handbook.nais.io/technical/tenant-setup/#set-up-oauth-client
   googleClient.secret:
     type: string
+    description: Google OAuth 2.0 Client Secret, see https://handbook.nais.io/technical/tenant-setup/#set-up-oauth-client
     secret: true
   frontend.image.repository:
     type: string
