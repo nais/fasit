@@ -33,7 +33,7 @@ interface ConfigAddProps {
 
 const ConfigAdd = ({conf, envID, globalConfig, feature, open, showOpen}: ConfigAddProps) => {
     const [createConfig] = useConfigurationCreateMutation()
-    const [backendError, setBackendError] = useState(undefined)
+    const [backendError, setBackendError] = useState(Error)
     const [val, setVal] = useState<any>(undefined)
     const [intVal, setIntVal] = useState<number>(0)
     const [description, setDescription] = useState('')
@@ -72,7 +72,7 @@ const ConfigAdd = ({conf, envID, globalConfig, feature, open, showOpen}: ConfigA
                     onAdd={onAdd}
                     onDelete={onDelete}
                     values={values || []}
-                    error={errors?.values?.message || undefined}
+                    error={errors?.values?.messsage || undefined}
                 />
             case ConfigType.Bool:
                 return <Switch size='medium' position='left' checked={val} onChange={() => setVal(!val)}>
@@ -119,7 +119,10 @@ const ConfigAdd = ({conf, envID, globalConfig, feature, open, showOpen}: ConfigA
                     showOpen(false)
                 },
                 onError: (e) => {
-                    console.log(e)
+                    console.log(this)
+                    console.log(e.graphQLErrors)
+                    console.log(e.message)
+                    setBackendError(e)
                 }
             })
         } catch (e: any) {
