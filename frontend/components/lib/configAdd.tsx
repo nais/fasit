@@ -7,7 +7,6 @@ import {useForm} from 'react-hook-form'
 import KeywordsInput from './StringArrayInput'
 import {Config} from "./configRows";
 import ErrorMessage from "./error";
-import styled from "@emotion/styled";
 import {RightJustifiedButtons} from "./rightJustifiedButtons";
 
 const style = {
@@ -33,7 +32,7 @@ interface ConfigAddProps {
 
 const ConfigAdd = ({conf, envID, globalConfig, feature, open, showOpen}: ConfigAddProps) => {
     const [createConfig] = useConfigurationCreateMutation()
-    const [backendError, setBackendError] = useState(Error)
+    const [backendError, setBackendError] = useState(null)
     const [val, setVal] = useState<any>(undefined)
     const [intVal, setIntVal] = useState<number>(0)
     const [description, setDescription] = useState('')
@@ -118,11 +117,13 @@ const ConfigAdd = ({conf, envID, globalConfig, feature, open, showOpen}: ConfigA
                 onCompleted: () => {
                     showOpen(false)
                 },
-                onError: (e) => {
-                    console.log(this)
-                    console.log(e.graphQLErrors)
-                    console.log(e.message)
-                    setBackendError(e)
+                onError: (e: any) => {
+                    console.log(JSON.stringify(e, null, 2))
+                    if (e.networkError) {
+                        setBackendError(e.networkError?.result?.errors[0])
+                    } else {
+                        setBackendError(e)
+                    }
                 }
             })
         } catch (e: any) {
