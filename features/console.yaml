@@ -19,6 +19,9 @@ mapping:
   backend.google.serviceAccountEmail:
     value: "{{.Management.console_google_service_account_email}}"
     displayName: "Google service account"
+  backend.google.credentials:
+    value: "{{.Management.console_google_service_account_key}}"
+    displayName: Google service account credentials (JSON)
   backend.tenantDomain:
     value: "{{.Management.tenant_domain}}"
     displayName: "Tenant domain"
@@ -53,10 +56,6 @@ config:
   backend.google.enabled:
     type: bool
     displayName: Enable Google Workspaces
-  backend.google.credentials:
-    type: string
-    secret: true
-    displayName: Google service account credentials (JSON)
   backend.oauth.clientId:
     type: string
     displayName: Google OAuth 2.0 Client ID
