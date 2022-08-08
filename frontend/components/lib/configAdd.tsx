@@ -7,7 +7,6 @@ import {useForm} from 'react-hook-form'
 import KeywordsInput from './StringArrayInput'
 import {Config} from "./configRows";
 import ErrorMessage from "./error";
-import styled from "@emotion/styled";
 import {RightJustifiedButtons} from "./rightJustifiedButtons";
 
 const style = {
@@ -33,13 +32,12 @@ interface ConfigAddProps {
 
 const ConfigAdd = ({conf, envID, globalConfig, feature, open, showOpen}: ConfigAddProps) => {
     const [createConfig] = useConfigurationCreateMutation()
-    const [backendError, setBackendError] = useState(undefined)
+    const [backendError, setBackendError] = useState(null)
     const [val, setVal] = useState<any>(undefined)
     const [intVal, setIntVal] = useState<number>(0)
     const [description, setDescription] = useState('')
-    const {watch, formState, setValue} = useForm(globalConfig?.value && {defaultValues: {values: globalConfig.value}})
+    const {watch, formState: { errors }, setValue} = useForm(globalConfig?.value && {defaultValues: {values: globalConfig.value}})
 
-    const {errors} = formState
     const values = watch('values')
     useEffect(() => {
         setVal(values)
@@ -47,7 +45,9 @@ const ConfigAdd = ({conf, envID, globalConfig, feature, open, showOpen}: ConfigA
     useEffect(() => {
         conf.type === ConfigType.Int && setVal(intVal)
     }, [intVal])
-    useEffect(() => globalConfig?.value && setVal(globalConfig.value), [])
+    useEffect(() => {
+        globalConfig?.value && setVal(globalConfig.value)
+    }, [])
 
     const onDelete = (value: string) => {
         setValue('values', values.filter((v: string) => v !== value))
@@ -71,7 +71,7 @@ const ConfigAdd = ({conf, envID, globalConfig, feature, open, showOpen}: ConfigA
                     onAdd={onAdd}
                     onDelete={onDelete}
                     values={values || []}
-                    error={errors.values?.[0].message}
+                    error={errors?.values?.messsage || undefined}
                 />
             case ConfigType.Bool:
                 return <Switch size='medium' position='left' checked={val} onChange={() => setVal(!val)}>
@@ -117,8 +117,13 @@ const ConfigAdd = ({conf, envID, globalConfig, feature, open, showOpen}: ConfigA
                 onCompleted: () => {
                     showOpen(false)
                 },
-                onError: (e) => {
-                    console.log(e)
+                onError: (e: any) => {
+                    console.log(JSON.stringify(e, null, 2))
+                    if (e.networkError) {
+                        setBackendError(e.networkError?.result?.errors[0])
+                    } else {
+                        setBackendError(e)
+                    }
                 }
             })
         } catch (e: any) {

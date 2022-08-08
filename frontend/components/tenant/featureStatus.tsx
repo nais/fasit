@@ -101,7 +101,7 @@ const FeatureStatus = ({configs, env, featureName, setShowVerify}: FeatureProps)
                     {feature.repo && <div>repo: {feature.repo}</div>}
                     {feature.version && <div>version: {feature.version}</div>}
                     {feature.source && <div style={{display: 'flex', width: 'fit-content', gap: '10px'}}><IconBox
-                        size={20}><GitIcon/></IconBox> <a href={feature.source} target="_blank">{feature.source}</a></div>}
+                        size={20}><GitIcon/></IconBox> <a href={feature.source} target="_blank" rel="noreferrer">{feature.source}</a></div>}
                     {feature.dependsOn.length > 0 && <div>dependencies: {feature.dependsOn.map((d) => {
                         return <Link href={`/tenant/${tenantName}/${env.name}?feature=${d}`} key={d}><a style={{color: missingDependencies.includes(d) ? navRod : navGronn}} >{d + " "}</a></Link>
                     })}
