@@ -4,6 +4,8 @@ version: 0.1.1
 repo: ""
 environmentKinds:
   - "tenant"
+autoInstall:
+  - "tenant"
 dependsOn:
   - "nais-crds"
 config:

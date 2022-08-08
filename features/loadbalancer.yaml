@@ -4,6 +4,9 @@ version: 0.1.0
 environmentKinds:
   - "tenant"
   - "management"
+autoInstall:
+  - "tenant"
+  - "management"
 dependsOn:
   - "certificates"
 config:

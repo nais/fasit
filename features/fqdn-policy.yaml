@@ -6,3 +6,5 @@ environmentKinds:
   - management
 dependsOn:
   - cert-manager
+autoInstall:
+  - "tenant"

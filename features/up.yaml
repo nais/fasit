@@ -4,6 +4,11 @@ version: 0.3.0
 environmentKinds:
   - "tenant"
   - "management"
+autoInstall:
+  - "tenant"
+  - "management"
+dependsOn:
+  - "loadbalancer"
 config:
   image.tag:
     type: string
@@ -21,5 +26,3 @@ mapping:
     value:
       - 'up.{{if eq .Kind "tenant"}}{{.Env.name}}.{{end}}{{.Tenant.Name}}.cloud.nais.io'
     displayName: "DNS names"
-  asdf:
-    value: "{{.Env.some_secret}}"

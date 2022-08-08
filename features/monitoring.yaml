@@ -3,6 +3,8 @@ source: https://github.com/nais/helm-charts/tree/main/charts/monitoring
 version: 0.16.0
 environmentKinds:
   - "tenant"
+autoInstall:
+  - "tenant"
 config:
   tenant_prometheus.retention:
     type: string
@@ -36,7 +38,8 @@ mapping:
     value: "{{ .Env.tenant_ilb_ip }}"
     displayName: "Tenant Prometheus lb IP"
   kube-prometheus-stack.alertmanager.ingress.hosts:
-    value: ['alertmanager.{{if eq .Kind "tenant"}}{{.Env.name}}.{{end}}{{.Tenant.Name}}.cloud.nais.io']
+    value:
+      - 'alertmanager.{{if eq .Kind "tenant"}}{{.Env.name}}.{{end}}{{.Tenant.Name}}.cloud.nais.io'
     displayName: "Alertmanager hosts"
   nais_prometheus.loadBalancerIP:
     value: "{{ .Env.nais_ilb_ip }}"

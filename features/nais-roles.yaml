@@ -3,4 +3,5 @@ source: https://github.com/nais/helm-charts/tree/main/charts/nais-roles
 version: 0.1.0
 environmentKinds:
   - "tenant"
-config: {}
+autoInstall:
+  - "tenant"

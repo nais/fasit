@@ -4,6 +4,8 @@ version: v2.5.1
 source: https://github.com/kyverno/kyverno/tree/main/charts/kyverno-policies
 environmentKinds:
   - tenant
+autoInstall:
+  - "tenant"
 dependsOn:
   - kyverno
 config:

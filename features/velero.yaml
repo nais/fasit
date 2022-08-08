@@ -3,6 +3,8 @@ source: https://github.com/nais/helm-charts/tree/main/charts/velero
 version: 0.0.1
 environmentKinds:
   - "tenant"
+autoInstall:
+  - "tenant"
 mapping:
   velero.configuration.backupStorageLocation.bucket:
     value: "{{.Env.velero_bucket}}"
