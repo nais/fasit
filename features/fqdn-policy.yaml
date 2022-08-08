@@ -8,3 +8,4 @@ dependsOn:
   - cert-manager
 autoInstall:
   - "tenant"
+  - "management"
