@@ -247,11 +247,13 @@ func (m *mockStore) HelmValues(ctx context.Context, feature feature.Feature, env
 }
 
 func (m *mockStore) FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *feature.Feature, enabled bool) (*model.FeatureState, error) {
-	panic("not implemented")
+	return nil, nil
 }
 
 func (m *mockStore) HealthGet(ctx context.Context, environmentID uuid.UUID) (*model.Health, error) {
-	panic("not implemented")
+	return &model.Health{
+		ReportedAt: time.Now(),
+	}, nil
 }
 
 type mockPublisher struct {
