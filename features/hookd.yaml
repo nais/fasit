@@ -26,20 +26,16 @@ mapping:
     value: "{{.Management.hookd_frontend_pre_shared_key}}"
     displayName: "hookd frontend pre-shared key"
     description: "The pre-shared key used to authenticate the hookd frontend"
-    # secret: true
   frontend.cookieKey:
     value: "{{.Management.hookd_frontend_cookie_key}}"
     displayName: "hookd frontend cookie key"
-    # secret: true
   hookd.database.encryptionKey:
     value: "{{.Management.hookd_database_encryption_key}}"
     description: "Database encryption key used to encrypt deploy api keys"
-    # secret: true
   hookd.consoleAPIKey:
     value: "{{.Management.hookd_console_api_key}}"
     displayName: Console API-key
     description: "API-key used to get groups from console"
-    secret: true
 config:
   hookd.image.repository:
     type: string

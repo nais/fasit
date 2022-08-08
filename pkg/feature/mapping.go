@@ -14,6 +14,7 @@ type Mapping map[string]MappingConfig
 
 type MappingConfig struct {
 	DisplayName string `yaml:"displayName,omitempty"`
+	Description string `yaml:"description,omitempty"`
 	Value       any    `yaml:"value,omitempty"`
 	Template    string `yaml:"template,omitempty"`
 }
