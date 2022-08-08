@@ -47,7 +47,9 @@ const ConfigAdd = ({conf, envID, globalConfig, feature, open, showOpen}: ConfigA
     useEffect(() => {
         conf.type === ConfigType.Int && setVal(intVal)
     }, [intVal])
-    useEffect(() => globalConfig?.value && setVal(globalConfig.value), [])
+    useEffect(() => {
+        globalConfig?.value && setVal(globalConfig.value)
+    }, [])
 
     const onDelete = (value: string) => {
         setValue('values', values.filter((v: string) => v !== value))
