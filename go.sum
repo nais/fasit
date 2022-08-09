@@ -847,6 +847,8 @@ github.com/inconshreveable/mousetrap v1.0.1/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLf
 github.com/intel/goresctrl v0.2.0/go.mod h1:+CZdzouYFn5EsxgqAQTEzMfwKwuc0fVdMrT9FCCAVRQ=
 github.com/invopop/jsonschema v0.4.0 h1:Yuy/unfgCnfV5Wl7H0HgFufp/rlurqPOOuacqyByrws=
 github.com/invopop/jsonschema v0.4.0/go.mod h1:O9uiLokuu0+MGFlyiaqtWxwqJm41/+8Nj0lD7A36YH0=
+github.com/invopop/jsonschema v0.5.0 h1:6tvpBcwTGxzvx3M9f3IfzqQVyZvoH+0NRUtBcsgyfrU=
+github.com/invopop/jsonschema v0.5.0/go.mod h1:O9uiLokuu0+MGFlyiaqtWxwqJm41/+8Nj0lD7A36YH0=
 github.com/invopop/jsonschema v0.6.0 h1:8e+xY8ZEn8gDHUYylSlLHy22P+SLeIRIHv3nM3hCbmY=
 github.com/invopop/jsonschema v0.6.0/go.mod h1:O9uiLokuu0+MGFlyiaqtWxwqJm41/+8Nj0lD7A36YH0=
 github.com/j-keck/arping v0.0.0-20160618110441-2cf9dc699c56/go.mod h1:ymszkNOg6tORTn+6F6j+Jc8TOr5osrynvN6ivFWZ2GA=
