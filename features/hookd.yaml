@@ -1,21 +1,21 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/hookd
 source: https://github.com/nais/helm-charts/tree/main/charts/hookd
-version: 0.0.1
+version: 0.1.0
 environmentKinds:
   - "management"
 dependsOn:
   - "console"
 mapping:
-  hookd.database.instance:
+  backend.database.instance:
     value: "{{.Management.hookd_database_instance}}"
     displayName: "Database instance"
-  hookd.database.user:
+  backend.database.user:
     value: "{{.Management.hookd_database_user}}"
     displayName: "Database user"
-  hookd.database.name:
+  backend.database.name:
     value: "{{.Management.hookd_database_name}}"
     displayName: "Database name"
-  hookd.googleServiceAccountEmail:
+  backend.googleServiceAccountEmail:
     value: "{{.Management.hookd_google_service_account_email}}"
     displayName: "Google service account"
     description: "The service account email that is used to access the postgres-database, set up by terraform."
@@ -29,19 +29,19 @@ mapping:
   frontend.cookieKey:
     value: "{{.Management.hookd_frontend_cookie_key}}"
     displayName: "hookd frontend cookie key"
-  hookd.database.encryptionKey:
+  backend.database.encryptionKey:
     value: "{{.Management.hookd_database_encryption_key}}"
     description: "Database encryption key used to encrypt deploy api keys"
-  hookd.consoleAPIKey:
+  backend.consoleAPIKey:
     value: "{{.Management.hookd_console_api_key}}"
     displayName: Console API-key
     description: "API-key used to get groups from console"
 config:
-  hookd.image.repository:
+  backend.image.repository:
     type: string
-  hookd.image.imagePullPolicy:
+  backend.image.imagePullPolicy:
     type: string
-  hookd.image.tag:
+  backend.image.tag:
     type: string
   googleClient.id:
     type: string
