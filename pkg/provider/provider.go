@@ -54,8 +54,8 @@ func (s *Server) GetTenant(ctx context.Context, in *protogen.GetTenantRequest) (
 }
 
 func (s *Server) CreateEnvironment(ctx context.Context, in *protogen.CreateEnvironmentRequest) (*protogen.EnvironmentResponse, error) {
-	if len(in.Name) < 3 {
-		return nil, status.Error(codes.InvalidArgument, "Environment name must be at least 3 characters long")
+	if len(in.Name) < 2 {
+		return nil, status.Error(codes.InvalidArgument, "Environment name must be at least 2 characters long")
 	}
 
 	tenantID, err := uuid.Parse(in.TenantId)
