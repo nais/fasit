@@ -5,6 +5,7 @@ environmentKinds:
   - "tenant"
 autoInstall:
   - "tenant"
+timeout: 20m
 config:
   tenant_prometheus.retention:
     type: string
