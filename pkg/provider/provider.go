@@ -24,8 +24,8 @@ func NewServer(repo database.Repo) protogen.ProviderServer {
 }
 
 func (s *Server) CreateTenant(ctx context.Context, in *protogen.CreateTenantRequest) (*protogen.TenantResponse, error) {
-	if len(in.Name) < 3 {
-		return nil, status.Error(codes.InvalidArgument, "Tenant name must be at least 3 characters long")
+	if len(in.Name) < 2 {
+		return nil, status.Error(codes.InvalidArgument, "Tenant name must be at least 2 characters long")
 	}
 
 	tenant, err := s.repo.TenantCreate(ctx, &model.TenantCreate{
