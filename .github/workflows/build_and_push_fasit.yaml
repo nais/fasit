@@ -5,7 +5,7 @@ on:
       - "charts/**"
       - ".github/workflows/*_chart.yaml"
       - ".github/workflows/build_and_push_image_fasit-frontend.yaml"
-      - "frontend"
+      - "frontend/**"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
