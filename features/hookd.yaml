@@ -36,6 +36,8 @@ mapping:
     value: "{{.Management.hookd_console_api_key}}"
     displayName: Console API-key
     description: "API-key used to get groups from console"
+  deploydPreSharedKeys:
+    value: "{{$first := true}}{{ range $env := .Envs }}{{if $first}}{{$first = false}}{{else}},{{end}}{{ $env.deployd_pre_shared_key }}{{ end }}"
 config:
   backend.image.repository:
     type: string

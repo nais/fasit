@@ -1,0 +1,24 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/deployd
+source: https://github.com/nais/helm-charts/tree/main/charts/deployd
+version: 0.0.1
+environmentKinds:
+  - "tenant"
+dependsOn: []
+mapping:
+  preSharedKey:
+    value: "{{.Env.deployd_pre_shared_key}}"
+    displayName: deployd pre-shared key
+    description: "API-key used to communicate with hookd"
+  cluster:
+    value: "{{.Env.name}}"
+  apiserverCIDR:
+    value: "{{.Env.apiserver_endpoint}}/32"
+  hookdHost:
+    value: "deploy.{{.Management.tenant_domain}}"
+config:
+  image.repository:
+    type: string
+  image.imagePullPolicy:
+    type: string
+  image.tag:
+    type: string
