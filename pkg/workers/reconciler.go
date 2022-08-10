@@ -96,6 +96,8 @@ func (r *Reconciler) reconcile(ctx context.Context) error {
 }
 
 func (r *Reconciler) autoInstallNextFeature(ctx context.Context, d *model.TenantEnvironments, features []feature.Feature, status map[string]*model.Status) error {
+	// Temporary disable globally
+	return nil
 OUTER:
 	for _, f := range features {
 		if !contains(f.AutoInstall, d.Kind) {
