@@ -15,7 +15,45 @@ env:
   REGISTRY: europe-north1-docker.pkg.dev/nais-io/nais/images
 
 jobs:
+  build_and_test_fasit-frontend:
+    if: github.ref != 'refs/heads/main'
+    permissions:
+      contents: "read"
+      id-token: "write"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout fasit
+        uses: actions/checkout@v3
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Docker meta fasit-frontend
+        id: metadata
+        uses: docker/metadata-action@v3
+        with:
+          images: ${{ env.REGISTRY }}/fasit-frontend
+          # Docker tags based on the following events/attributes
+          tags: |
+            type=schedule
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern=v{{version}}
+            type=semver,pattern=v{{major}}.{{minor}}
+            type=semver,pattern=v{{major}}
+            type=sha
+      - name: Build and push fasit-frontend
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: Dockerfile_fasit-frontend
+          tags: ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}
+          cache-from: type=gha
+
   build_and_push_fasit-frontend:
+    if: github.ref == 'refs/heads/main'
     permissions:
       contents: "read"
       id-token: "write"
@@ -30,6 +68,8 @@ jobs:
           workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: "gh-fasit@nais-io.iam.gserviceaccount.com"
           token_format: "access_token"
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
