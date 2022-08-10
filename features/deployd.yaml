@@ -14,7 +14,7 @@ mapping:
   apiserverCIDR:
     value: "{{.Env.apiserver_endpoint}}/32"
   hookdHost:
-    value: "deploy.{{.Management.tenant_domain}}"
+    value: "deploy.{{.Tenant.Name}}.cloud.nais.io"
 config:
   image.repository:
     type: string
