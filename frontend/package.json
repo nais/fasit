@@ -47,7 +47,7 @@
     "@graphql-codegen/typescript": "2.7.2",
     "@graphql-codegen/typescript-graphql-apollo": "1.2.1",
     "@graphql-codegen/typescript-operations": "2.5.2",
-    "@graphql-codegen/typescript-react-apollo": "3.3.2",
+    "@graphql-codegen/typescript-react-apollo": "3.3.3",
     "@types/lodash.isequal": "4.5.6",
     "@types/react": "18.0.17",
     "@types/react-tag-autocomplete": "6.1.1",
