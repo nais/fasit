@@ -128,7 +128,7 @@ jobs:
   deploy_fasit:
     if: github.ref == 'refs/heads/main'
     runs-on: [ "fasit" ]
-    needs: [ "build_and_push" ]
+    needs: [ "build_and_push_fasit" ]
     permissions:
       contents: "read"
       id-token: "write"
