@@ -61,7 +61,7 @@ jobs:
             type=semver,pattern=v{{major}}
             type=sha
       - name: Build and push fasit
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           context: .
           file: Dockerfile_fasit
@@ -115,7 +115,7 @@ jobs:
             type=sha
       - name: Build and push
         if: github.ref == 'refs/heads/main'
-        uses: docker/build-push-action@v2
+        uses: docker/build-push-action@v3
         with:
           context: .
           file: Dockerfile_${{matrix.asset}}
