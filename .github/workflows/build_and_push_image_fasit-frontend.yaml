@@ -31,7 +31,7 @@ jobs:
         uses: docker/setup-buildx-action@v2
       - name: Docker meta fasit-frontend
         id: metadata
-        uses: docker/metadata-action@v3
+        uses: docker/metadata-action@v4
         with:
           images: ${{ env.REGISTRY }}/fasit-frontend
           # Docker tags based on the following events/attributes
@@ -81,7 +81,7 @@ jobs:
           password: "${{ steps.auth.outputs.access_token }}"
       - name: Docker meta fasit-frontend
         id: metadata
-        uses: docker/metadata-action@v3
+        uses: docker/metadata-action@v4
         with:
           images: ${{ env.REGISTRY }}/fasit-frontend
           # Docker tags based on the following events/attributes
