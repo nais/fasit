@@ -21,7 +21,7 @@
     "@navikt/ds-css": "0.18.28",
     "@navikt/ds-icons": "0.8.20",
     "@navikt/ds-react": "0.19.25",
-    "@next/bundle-analyzer": "12.2.4",
+    "@next/bundle-analyzer": "12.2.5",
     "@types/material-ui": "0.21.12",
     "@types/node": "18.7.1",
     "@types/styled-components": "5.1.26",
@@ -53,7 +53,7 @@
     "@types/react-tag-autocomplete": "6.1.1",
     "@types/ws": "^8.5.3",
     "eslint": "^8.21.0",
-    "eslint-config-next": "12.2.4",
+    "eslint-config-next": "12.2.5",
     "prettier": "2.7.1",
     "typescript": "4.7.4"
   }
