@@ -35,10 +35,6 @@ mapping:
     value: "{{.Management.console_static_service_accounts}}"
     displayName: JSON-encoded list of static service accounts
 config:
-  backend.image.repository:
-    type: string
-  backend.image.imagePullPolicy:
-    type: string
   backend.image.tag:
     type: string
   backend.github.enabled:
