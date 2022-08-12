@@ -1,4 +1,4 @@
-FROM node:16-alpine AS node-with-deps
+FROM node:18-alpine AS node-with-deps
 
 WORKDIR /usr/app
 
