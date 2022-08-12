@@ -124,13 +124,14 @@ func (r *Receiver) healthStatus(ctx context.Context, msg message.Status) error {
 		r.log.WithError(err).Errorf("invalid json")
 		return nil
 	}
-	tenant, err := r.repo.TenantGetByName(ctx, msg.Tenant)
+	environmentID, err := r.repo.EnvironmentIDByNames(ctx, msg.Tenant, msg.Environment)
 	if err != nil {
-		return err
-	}
-
-	environmentID, err := r.repo.EnvironmentIDByNames(ctx, tenant.Name, msg.Environment)
-	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			r.log.WithField("tenant", msg.Tenant).
+				WithField("environment", msg.Environment).
+				Warn("unknown tenant and/or environment")
+			return nil
+		}
 		return err
 	}
 	return r.repo.HealthStatusCreateOrUpdate(ctx, environmentID, status)

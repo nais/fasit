@@ -127,6 +127,9 @@ OUTER:
 
 func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEnvironments) error {
 	health, err := r.repo.HealthGet(ctx, d.ID)
+	if err != nil {
+		return err
+	}
 	if time.Since(health.ReportedAt) > 3*time.Minute {
 		r.log.WithField("environment", d.ID).Infof("naisd is unhealthy - skip reconcile")
 		return nil

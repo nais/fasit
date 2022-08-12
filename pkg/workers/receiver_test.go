@@ -2,28 +2,30 @@ package workers
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/nais/fasit/pkg/graph/model"
+	"github.com/nais/fasit/pkg/database/mocks"
 	"github.com/nais/fasit/pkg/message"
 	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestReceiver(t *testing.T) {
 	uid := uuid.New()
 	tests := map[string]struct {
-		envID           uuid.UUID
-		statuses        []message.Status
-		expectedUpdates int
+		envID                          uuid.UUID
+		statuses                       []message.Status
+		numStatusCreateOrUpdate        int
+		numReleaseStatusCreateOrUpdate int
+		numHealthStatusCreateOrUpdate  int
+		numKubernetesNodeSync          int
 	}{
 		"empty": {
-			envID:           uid,
-			statuses:        []message.Status{},
-			expectedUpdates: 0,
+			envID:    uid,
+			statuses: []message.Status{},
 		},
-		"one": {
+		"helm one": {
 			envID: uid,
 			statuses: []message.Status{
 				{
@@ -33,9 +35,9 @@ func TestReceiver(t *testing.T) {
 					Data:        []byte(`{"name":"test","namespace":"test","status":"deployed","chart":"test","version":"1.0.0","appVersion":"1.0.0","values":{}}`),
 				},
 			},
-			expectedUpdates: 1,
+			numStatusCreateOrUpdate: 1,
 		},
-		"missing tenant": {
+		"helm missing tenant": {
 			envID: uuid.Nil,
 			statuses: []message.Status{
 				{
@@ -45,23 +47,73 @@ func TestReceiver(t *testing.T) {
 					Data:        []byte(`{"name":"test","namespace":"test","status":"deployed","chart":"test","version":"1.0.0","appVersion":"1.0.0","values":{}}`),
 				},
 			},
-			expectedUpdates: 0,
+			numStatusCreateOrUpdate: 1,
+		},
+		"helm releases": {
+			envID: uid,
+			statuses: []message.Status{
+				{
+					Type:        message.StatusTypeHelmReleases,
+					Tenant:      "tenant",
+					Environment: "env",
+					Data:        []byte(`{"releases":[{"name":"test","namespace":"test","status":"deployed","chart":"test","version":"1.0.0","appVersion":"1.0.0","values":{}}]}`),
+				},
+			},
+			numReleaseStatusCreateOrUpdate: 1,
+		},
+		"health status": {
+			envID: uid,
+			statuses: []message.Status{
+				{
+					Type:        message.StatusTypeHealth,
+					Tenant:      "tenant",
+					Environment: "env",
+					Data:        []byte(`{"reportedAt": "2020-01-01T00:00:00Z"}`),
+				},
+			},
+			numHealthStatusCreateOrUpdate: 1,
+		},
+		"kubernetes nodes": {
+			envID: uid,
+			statuses: []message.Status{
+				{
+					Type:        message.StatusKubernetesNodes,
+					Tenant:      "tenant",
+					Environment: "env",
+					Data:        []byte(`{}`),
+				},
+			},
+			numKubernetesNodeSync: 1,
 		},
 	}
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			storage := &mockStorage{envID: tc.envID}
+			repo := mocks.NewRepo(t)
+			repo.On("EnvironmentIDByNames", mock.Anything, "tenant", "env").Return(tc.envID, nil).Maybe().Times(len(tc.statuses))
+			if tc.numStatusCreateOrUpdate > 0 {
+				repo.On("StatusCreateOrUpdate", mock.Anything, tc.envID, mock.Anything).Return(nil).Times(tc.numStatusCreateOrUpdate)
+			}
+			if tc.numReleaseStatusCreateOrUpdate > 0 {
+				repo.On("ReleaseStatusCreateOrUpdate", mock.Anything, tc.envID, mock.Anything).Return(nil).Times(tc.numReleaseStatusCreateOrUpdate)
+			}
+			if tc.numHealthStatusCreateOrUpdate > 0 {
+				repo.On("HealthStatusCreateOrUpdate", mock.Anything, tc.envID, mock.Anything).Return(nil).Times(tc.numHealthStatusCreateOrUpdate)
+			}
+			if tc.numKubernetesNodeSync > 0 {
+				repo.On("KubernetesNodeSync", mock.Anything, tc.envID, mock.Anything).Return(nil).Times(tc.numKubernetesNodeSync)
+			}
+
 			rec := NewReceiver(
 				&mockReceiverClient{messages: tc.statuses},
-				storage,
+				repo,
 				logrus.NewEntry(logrus.StandardLogger()),
 			)
 
 			rec.Run(context.Background())
-			if storage.statusCreateOrUpdate != tc.expectedUpdates {
-				t.Errorf("expected %d status messages to be handled, got %d", len(tc.statuses), storage.statusCreateOrUpdate)
-			}
+			// if storage.statusCreateOrUpdate != tc.expectedUpdates {
+			// 	t.Errorf("expected %d status messages to be handled, got %d", len(tc.statuses), storage.statusCreateOrUpdate)
+			// }
 		})
 	}
 }
@@ -77,47 +129,4 @@ func (m *mockReceiverClient) Receive(ctx context.Context, f func(ctx context.Con
 		}
 	}
 	return nil
-}
-
-type mockStorage struct {
-	envID                       uuid.UUID
-	statusCreateOrUpdate        int
-	releaseStatusCreateOrUpdate int
-}
-
-func (m *mockStorage) EnvironmentIDByNames(ctx context.Context, tenantName string, environmentName string) (uuid.UUID, error) {
-	if m.envID == uuid.Nil {
-		return uuid.Nil, sql.ErrNoRows
-	}
-	return m.envID, nil
-}
-
-func (m *mockStorage) StatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Helm) error {
-	m.statusCreateOrUpdate++
-	return nil
-}
-
-func (m *mockStorage) ReleaseStatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Release) error {
-	m.releaseStatusCreateOrUpdate++
-	return nil
-}
-
-func (m *mockStorage) EnvironmentCreate(ctx context.Context, t *model.EnvironmentCreate) (*model.Environment, error) {
-	panic("not implemented")
-}
-
-func (m *mockStorage) TenantCreate(ctx context.Context, create *model.TenantCreate) (*model.Tenant, error) {
-	panic("not implemented")
-}
-
-func (m *mockStorage) TenantGetByName(ctx context.Context, name string) (*model.Tenant, error) {
-	panic("not implemented")
-}
-
-func (m *mockStorage) HealthStatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Health) error {
-	panic("not implemented")
-}
-
-func (m *mockStorage) KubernetesNodeSync(ctx context.Context, envID uuid.UUID, kn *message.KubernetesNodes) error {
-	panic("not implemented")
 }

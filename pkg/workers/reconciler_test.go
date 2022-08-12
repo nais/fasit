@@ -7,24 +7,31 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
+	"github.com/nais/fasit/pkg/database/mocks"
 	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/nais/fasit/pkg/message"
 	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/mock"
 )
 
 var atTime = time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC)
 
+type reconcileTestEnvironment struct {
+	Environment     model.Environment
+	TenantName      string
+	NaisdReportedAt time.Time
+	Status          []*model.Status
+	FeatureStates   []*model.FeatureState
+}
+
 var reconcileTests = map[string]struct {
-	features []feature.Feature
-	store    *mockStore
-	want     []message.DeployInstruction
+	features          []feature.Feature
+	environmentHealth *model.Health
+	environments      []*reconcileTestEnvironment
+	want              []message.DeployInstruction
 }{
 	"all empty": {
-		store: &mockStore{
-			tenantEnvironments: []*model.TenantEnvironments{},
-			status:             []*model.Status{},
-		},
 		want: []message.DeployInstruction{},
 	},
 
@@ -36,23 +43,20 @@ var reconcileTests = map[string]struct {
 				Version: "1",
 			},
 		},
-		store: &mockStore{
-			featureStates: []*model.FeatureState{
-				{
-					FeatureName: "feature1",
-					Enabled:     true,
-					EnabledAt:   &atTime,
+		environments: []*reconcileTestEnvironment{
+			{
+				Environment: model.Environment{
+					Name: "prod",
 				},
-			},
-			tenantEnvironments: []*model.TenantEnvironments{
-				{
-					Environment: model.Environment{
-						Name: "prod",
+				TenantName: "tenant1",
+				FeatureStates: []*model.FeatureState{
+					{
+						FeatureName: "feature1",
+						Enabled:     true,
+						EnabledAt:   &atTime,
 					},
-					TenantName: "tenant1",
 				},
 			},
-			status: []*model.Status{},
 		},
 		want: []message.DeployInstruction{
 			{
@@ -72,27 +76,25 @@ var reconcileTests = map[string]struct {
 				Version: "1",
 			},
 		},
-		store: &mockStore{
-			featureStates: []*model.FeatureState{
-				{
-					FeatureName: "feature1",
-					Enabled:     true,
-					EnabledAt:   &atTime,
-				},
-			},
-			tenantEnvironments: []*model.TenantEnvironments{
-				{
-					Environment: model.Environment{
-						Name: "prod",
+		environments: []*reconcileTestEnvironment{
+			{
+				FeatureStates: []*model.FeatureState{
+					{
+						FeatureName: "feature1",
+						Enabled:     true,
+						EnabledAt:   &atTime,
 					},
-					TenantName: "tenant1",
 				},
-			},
-			status: []*model.Status{
-				{
-					Feature:    "feature1",
-					Version:    "1",
-					ConfigHash: "669ba084b976486b690f079cc191c846b18f466f78854096732f8ba4ccd3c3d8",
+				Environment: model.Environment{
+					Name: "prod",
+				},
+				TenantName: "tenant1",
+				Status: []*model.Status{
+					{
+						Feature:    "feature1",
+						Version:    "1",
+						ConfigHash: "669ba084b976486b690f079cc191c846b18f466f78854096732f8ba4ccd3c3d8",
+					},
 				},
 			},
 		},
@@ -112,27 +114,24 @@ var reconcileTests = map[string]struct {
 				Version: "2",
 			},
 		},
-		store: &mockStore{
-			featureStates: []*model.FeatureState{
-				{
-					FeatureName: "feature1",
-					Enabled:     true,
-					EnabledAt:   &atTime,
+		environments: []*reconcileTestEnvironment{
+			{
+				Environment: model.Environment{
+					Name: "prod",
 				},
-				{
-					FeatureName: "feature2",
-					Enabled:     false,
-				},
-			},
-			tenantEnvironments: []*model.TenantEnvironments{
-				{
-					Environment: model.Environment{
-						Name: "prod",
+				TenantName: "tenant1",
+				FeatureStates: []*model.FeatureState{
+					{
+						FeatureName: "feature1",
+						Enabled:     true,
+						EnabledAt:   &atTime,
 					},
-					TenantName: "tenant1",
+					{
+						FeatureName: "feature2",
+						Enabled:     false,
+					},
 				},
 			},
-			status: []*model.Status{},
 		},
 		want: []message.DeployInstruction{
 			{
@@ -157,32 +156,30 @@ var reconcileTests = map[string]struct {
 				Version: "2",
 			},
 		},
-		store: &mockStore{
-			featureStates: []*model.FeatureState{
-				{
-					FeatureName: "feature1",
-					Enabled:     true,
-					EnabledAt:   &atTime,
+		environments: []*reconcileTestEnvironment{
+			{
+				Environment: model.Environment{
+					Name: "prod",
 				},
-				{
-					FeatureName: "feature2",
-					Enabled:     true,
-					EnabledAt:   &atTime,
-				},
-			},
-			tenantEnvironments: []*model.TenantEnvironments{
-				{
-					Environment: model.Environment{
-						Name: "prod",
+				TenantName: "tenant1",
+				FeatureStates: []*model.FeatureState{
+					{
+						FeatureName: "feature1",
+						Enabled:     true,
+						EnabledAt:   &atTime,
 					},
-					TenantName: "tenant1",
+					{
+						FeatureName: "feature2",
+						Enabled:     true,
+						EnabledAt:   &atTime,
+					},
 				},
-			},
-			status: []*model.Status{
-				{
-					Feature:    "feature1",
-					Version:    "1",
-					ConfigHash: "669ba084b976486b690f079cc191c846b18f466f78854096732f8ba4ccd3c3d8",
+				Status: []*model.Status{
+					{
+						Feature:    "feature1",
+						Version:    "1",
+						ConfigHash: "669ba084b976486b690f079cc191c846b18f466f78854096732f8ba4ccd3c3d8",
+					},
 				},
 			},
 		},
@@ -200,9 +197,34 @@ var reconcileTests = map[string]struct {
 func TestReconcile(t *testing.T) {
 	for name, tt := range reconcileTests {
 		t.Run(name, func(t *testing.T) {
+			repo := mocks.NewRepo(t)
+
+			tes := []*model.TenantEnvironments{}
+			for _, e := range tt.environments {
+				tes = append(tes, &model.TenantEnvironments{
+					TenantName:  e.TenantName,
+					Environment: e.Environment,
+				})
+			}
+			repo.On("TenantEnvironments", mock.Anything).Return(tes, nil)
+
+			for _, te := range tt.environments {
+				repo.On("StatusForEnvironment", mock.Anything, te.Environment.ID).Return(te.Status, nil)
+				repo.On("FeatureStatesGet", mock.Anything, te.Environment.ID).Return(te.FeatureStates, nil)
+				repo.On("HelmValues", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil).Maybe()
+
+				reportAt := time.Now()
+				if !te.NaisdReportedAt.IsZero() {
+					reportAt = te.NaisdReportedAt
+				}
+				repo.On("HealthGet", mock.Anything, te.Environment.ID).Return(&model.Health{
+					ReportedAt: reportAt,
+				}, nil)
+			}
+
 			messages := []message.DeployInstruction{}
 			recociler := &Reconciler{
-				repo:       tt.store,
+				repo:       repo,
 				featureMgr: &feature.Manager{Features: tt.features},
 				publisher: func(projectID, topicID string, log *logrus.Entry) Publisher {
 					return &mockPublisher{projectID: projectID, topicID: topicID, messages: &messages}
@@ -223,37 +245,159 @@ func TestReconcile(t *testing.T) {
 	}
 }
 
-type mockStore struct {
-	tenantEnvironments []*model.TenantEnvironments
-	status             []*model.Status
-	featureStates      []*model.FeatureState
-	helmValues         map[string]any
-}
+func TestReconcile_AutoInstall(t *testing.T) {
+	tests := map[string]struct {
+		features        []feature.Feature
+		expectedFeature string
+		status          map[string]*model.Status
+	}{
+		"no features": {
+			features:        []feature.Feature{},
+			expectedFeature: "",
+		},
+		"one feature": {
+			features: []feature.Feature{
+				{
+					Name:        "feature1",
+					AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
+				},
+			},
+			expectedFeature: "feature1",
+		},
+		"one feature which is deployed": {
+			features: []feature.Feature{
+				{
+					Name:        "feature1",
+					AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
+				},
+			},
+			expectedFeature: "",
+			status: map[string]*model.Status{
+				"feature1": {
+					Status: model.RolloutStatusDeployed,
+				},
+			},
+		},
+		"one feature which is failed": {
+			features: []feature.Feature{
+				{
+					Name:        "feature1",
+					AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
+				},
+			},
+			expectedFeature: "",
+			status: map[string]*model.Status{
+				"feature1": {
+					Status: model.RolloutStatusFailed,
+				},
+			},
+		},
+		"one feature which is pending": {
+			features: []feature.Feature{
+				{
+					Name:        "feature1",
+					AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
+				},
+			},
+			expectedFeature: "",
+			status: map[string]*model.Status{
+				"feature1": {
+					Status: model.RolloutStatusPending,
+				},
+			},
+		},
+		"one tenant feature, one management feature": {
+			features: []feature.Feature{
+				{
+					Name:        "feature_tenant",
+					AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
+				},
+				{
+					Name:        "feature_mgmt",
+					AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
+				},
+			},
+			expectedFeature: "feature_tenant",
+		},
+		"successfull complex case with dependencies and statuses": {
+			features: []feature.Feature{
+				{
+					Name:        "feature1",
+					AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
+					DependsOn:   []string{"feature2"},
+				},
+				{
+					Name:        "feature2",
+					AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
+					DependsOn:   []string{"feature3"},
+				},
+				{
+					Name:        "feature3",
+					AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
+				},
+			},
+			expectedFeature: "feature2",
+			status: map[string]*model.Status{
+				"feature1": {
+					Status: model.RolloutStatusDeployed,
+				},
+				"feature3": {
+					Status: model.RolloutStatusDeployed,
+				},
+			},
+		},
+		"pending complex case with dependencies and statuses": {
+			features: []feature.Feature{
+				{
+					Name:        "feature1",
+					AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
+					DependsOn:   []string{"feature2"},
+				},
+				{
+					Name:        "feature2",
+					AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
+					DependsOn:   []string{"feature3"},
+				},
+				{
+					Name:        "feature3",
+					AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
+				},
+			},
+			status: map[string]*model.Status{
+				"feature3": {
+					Status: model.RolloutStatusPending,
+				},
+			},
+		},
+	}
 
-func (m *mockStore) TenantEnvironments(ctx context.Context) ([]*model.TenantEnvironments, error) {
-	return m.tenantEnvironments, nil
-}
+	te := &model.TenantEnvironments{
+		Environment: model.Environment{
+			ID:   uuid.New(),
+			Kind: model.EnvironmentKindTenant,
+		},
+	}
 
-func (m *mockStore) StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]*model.Status, error) {
-	return m.status, nil
-}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			repo := mocks.NewRepo(t)
+			if tt.expectedFeature != "" {
+				repo.On("FeatureStatesCreateOrUpdate", mock.Anything, te.ID, mock.MatchedBy(func(f *feature.Feature) bool { return f.Name == tt.expectedFeature }), true).Return(nil, nil)
+			}
 
-func (m *mockStore) FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error) {
-	return m.featureStates, nil
-}
+			// repo.FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, _a2 *feature.Feature, enabled bool)
 
-func (m *mockStore) HelmValues(ctx context.Context, feature feature.Feature, envID uuid.UUID, requiredFields []string) (map[string]any, error) {
-	return m.helmValues, nil
-}
+			recociler := &Reconciler{
+				repo: repo,
+				log:  logrus.NewEntry(logrus.StandardLogger()),
+			}
 
-func (m *mockStore) FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *feature.Feature, enabled bool) (*model.FeatureState, error) {
-	return nil, nil
-}
-
-func (m *mockStore) HealthGet(ctx context.Context, environmentID uuid.UUID) (*model.Health, error) {
-	return &model.Health{
-		ReportedAt: time.Now(),
-	}, nil
+			ctx := context.Background()
+			if err := recociler.autoInstallNextFeature(ctx, te, tt.features, tt.status); err != nil {
+				t.Errorf("reconcile failed: %v", err)
+			}
+		})
+	}
 }
 
 type mockPublisher struct {
