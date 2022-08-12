@@ -9,7 +9,10 @@ import (
 	"google.golang.org/api/idtoken"
 )
 
-type contextKey int
+type (
+	contextKey int
+	valfunc    func(ctx context.Context, idToken string, audience string) (*idtoken.Payload, error)
+)
 
 const contextEmail contextKey = 1
 
@@ -26,11 +29,15 @@ func InsecureValidateMW(h http.Handler) http.Handler {
 }
 
 func ValidateJWTFromComputeEngine(aud string) func(h http.Handler) http.Handler {
+	return validateJWTFromComputeEngine(aud, idtoken.Validate)
+}
+
+func validateJWTFromComputeEngine(aud string, validator valfunc) func(h http.Handler) http.Handler {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			iapJWT := r.Header.Get("X-Goog-IAP-JWT-Assertion")
 
-			payload, err := idtoken.Validate(r.Context(), iapJWT, aud)
+			payload, err := validator(r.Context(), iapJWT, aud)
 			if err != nil {
 				http.Error(w, "Invalid JWT token", http.StatusUnauthorized)
 				return
