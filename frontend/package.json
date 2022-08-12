@@ -23,7 +23,7 @@
     "@navikt/ds-react": "0.19.25",
     "@next/bundle-analyzer": "12.2.4",
     "@types/material-ui": "0.21.12",
-    "@types/node": "18.7.1",
+    "@types/node": "18.7.2",
     "@types/styled-components": "5.1.26",
     "@types/yup": "0.29.14",
     "date-fns": "2.29.1",
