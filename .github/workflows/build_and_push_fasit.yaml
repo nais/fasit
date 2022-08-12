@@ -1,65 +1,65 @@
 name: Build and deploy fasit
 on:
-push:
-  paths-ignore:
-    - "charts/**"
-    - ".github/workflows/*_chart.yaml"
-    - ".github/workflows/build_and_push_image_fasit-frontend.yaml"
-    - "frontend/**"
+  push:
+    paths-ignore:
+      - "charts/**"
+      - ".github/workflows/*_chart.yaml"
+      - ".github/workflows/build_and_push_image_fasit-frontend.yaml"
+      - "frontend/**"
 
 concurrency:
-group: ${{ github.workflow }}-${{ github.ref }}
-cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
-REGISTRY: europe-north1-docker.pkg.dev/nais-io/nais/images
+  REGISTRY: europe-north1-docker.pkg.dev/nais-io/nais/images
 
 jobs:
-test_fasit:
-  runs-on: ubuntu-latest
-  steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-go@v3
-      with:
-        go-version: '>=1.18.3'
-    - uses: actions/cache@v3
-      with:
-        path: |
-          ~/.cache/go-build
-          ~/go/pkg/mod
-        key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-        restore-keys: |
-          ${{ runner.os }}-go-
-    - run: go test -cover -tags integration_test ./...
+  test_fasit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '>=1.18.3'
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+      - run: go test -cover -tags integration_test ./...
 
-build_and_test_fasit:
-  if: github.ref != 'refs/heads/main'
-  permissions:
-    contents: "read"
-    id-token: "write"
-  runs-on: ubuntu-latest
-  steps:
-    - name: Checkout fasit
-      uses: actions/checkout@v3
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v2
-    - name: Set up Docker Buildx
-      id: buildx
-      uses: docker/setup-buildx-action@v2
-    - name: Docker meta fasit
-      id: metadata
-      uses: docker/metadata-action@v4
-      with:
-        images: ${{ env.REGISTRY }}/fasit
-        # Docker tags based on the following events/attributes
-        tags: |
-          type=schedule
-          type=ref,event=branch
-          type=ref,event=pr
-          type=semver,pattern=v{{version}}
-          type=semver,pattern=v{{major}}.{{minor}}
-          type=semver,pattern=v{{major}}
-          type=sha
+  build_and_test_fasit:
+    if: github.ref != 'refs/heads/main'
+    permissions:
+      contents: "read"
+      id-token: "write"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout fasit
+        uses: actions/checkout@v3
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Docker meta fasit
+        id: metadata
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/fasit
+          # Docker tags based on the following events/attributes
+          tags: |
+            type=schedule
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern=v{{version}}
+            type=semver,pattern=v{{major}}.{{minor}}
+            type=semver,pattern=v{{major}}
+            type=sha
       - name: Build and test fasit
         uses: docker/build-push-action@v3
         with:
