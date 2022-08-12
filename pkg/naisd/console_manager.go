@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/nais/fasit/pkg/message"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
