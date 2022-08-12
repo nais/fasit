@@ -1,0 +1,15 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/armor
+source: https://github.com/nais/helm-charts/tree/main/charts/armor
+version: 0.0.1
+environmentKinds:
+  - "management"
+mapping:
+  ingress.host:
+    value: "armor.{{.Tenant.Name}}.cloud.nais.io"
+    displayName: "Ingress URL"
+  armor.google.serviceAccountEmail:
+    value: "{{.Management.console_google_service_account_email}}"
+    displayName: "Google service account"
+  armror.tenantDomain:
+    value: "{{.Management.tenant_domain}}"
+    displayName: "Tenant domain"
