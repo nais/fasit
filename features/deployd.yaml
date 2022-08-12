@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/deployd
 source: https://github.com/nais/helm-charts/tree/main/charts/deployd
-version: 0.0.1
+version: 0.0.2
 environmentKinds:
   - "tenant"
 dependsOn: []
@@ -11,8 +11,6 @@ mapping:
     description: "API-key used to communicate with hookd"
   cluster:
     value: "{{.Env.name}}"
-  apiserverCIDR:
-    value: "{{.Env.apiserver_endpoint}}/32"
   hookdHost:
     value: "deploy.{{.Tenant.Name}}.cloud.nais.io"
 config:
