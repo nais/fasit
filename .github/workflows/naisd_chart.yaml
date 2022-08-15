@@ -36,7 +36,7 @@ jobs:
       - uses: azure/setup-helm@v3
         name: "Setup Helm"
         with:
-          version: "3.8.0"
+          version: "3.9.3"
 
       - name: Build Chart
         run: |-
