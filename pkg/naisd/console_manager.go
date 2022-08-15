@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-
 	"github.com/nais/fasit/pkg/message"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
@@ -37,18 +37,18 @@ func NewConsoleManager(ConsoleSubscriber ConsoleReceiver, kubeClient kubernetes.
 	return receiver
 }
 
-func (d *ConsoleManager) Run(ctx context.Context) {
-	d.log.WithField("subscription", d.Consoles.Name()).Info("Starting Console receiver")
-	d.Consoles.Synchronous()
-	err := d.Consoles.Receive(ctx, d.handler)
+func (c *ConsoleManager) Run(ctx context.Context) {
+	c.log.WithField("subscription", c.Consoles.Name()).Info("Starting Console receiver")
+	c.Consoles.Synchronous()
+	err := c.Consoles.Receive(ctx, c.handler)
 	if err != nil {
-		d.log.WithError(err).Error("receive console messages")
+		c.log.WithError(err).Error("receive console messages")
 		// retry logic, kanskje. Denne skal aldri trigge
 	}
 }
 
-func (d *ConsoleManager) handler(ctx context.Context, msg message.Console) error {
-	log := d.log.WithFields(logrus.Fields{
+func (c *ConsoleManager) handler(ctx context.Context, msg message.Console) error {
+	log := c.log.WithFields(logrus.Fields{
 		"type": msg.Type,
 	})
 
@@ -56,9 +56,9 @@ func (d *ConsoleManager) handler(ctx context.Context, msg message.Console) error
 
 	switch msg.Type {
 	case message.ConsoleTypeCreateNamespace:
-		return d.createNamespace(ctx, msg)
+		return c.create(ctx, msg)
 	case message.ConsoleTypeDeleteNamespace:
-		return d.deleteNamespace(ctx, msg)
+		return c.deleteNamespace(ctx, msg)
 	default:
 		log.Warn("Unknown console instruction")
 	}
@@ -66,13 +66,27 @@ func (d *ConsoleManager) handler(ctx context.Context, msg message.Console) error
 	return nil
 }
 
-func (c *ConsoleManager) createNamespace(ctx context.Context, msg message.Console) error {
+func (c *ConsoleManager) create(ctx context.Context, msg message.Console) error {
 	data := message.CreateNamespace{}
 	err := json.Unmarshal(msg.Data, &data)
 	if err != nil {
 		return fmt.Errorf("unmarshal create namespace: %w", err)
 	}
 
+	err = c.createNamespace(ctx, data)
+	if err != nil {
+		return err
+	}
+
+	err = c.createServiceAccounts(ctx, data)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *ConsoleManager) createNamespace(ctx context.Context, data message.CreateNamespace) error {
 	ns := &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: data.Name,
@@ -109,6 +123,61 @@ func (c *ConsoleManager) createNamespace(ctx context.Context, msg message.Consol
 	if err != nil {
 		return fmt.Errorf("updating namespace: %w", err)
 	}
+	return nil
+}
+
+func (c *ConsoleManager) createServiceAccounts(ctx context.Context, data message.CreateNamespace) error {
+	svcAccount := v1.ServiceAccount{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("serviceuser-%s", data.Name),
+			Namespace: data.Name,
+		},
+	}
+
+	_, err := c.kubeClient.CoreV1().ServiceAccounts(svcAccount.GetNamespace()).Get(ctx, svcAccount.GetName(), metav1.GetOptions{})
+	if err != nil {
+		if errors.IsNotFound(err) {
+			_, err := c.kubeClient.CoreV1().ServiceAccounts(svcAccount.GetNamespace()).Create(ctx, &svcAccount, metav1.CreateOptions{})
+			if err != nil {
+				return fmt.Errorf("creating service account: %w", err)
+			}
+		} else {
+			return fmt.Errorf("getting service account: %w", err)
+		}
+	}
+
+	roleBinding := rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("serviceuser-%s-naisdeveloper", data.Name),
+			Namespace: data.Name,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				APIGroup:  "rbac.authorization.k8s.io",
+				Kind:      "User",
+				Name:      svcAccount.GetName(),
+				Namespace: svcAccount.GetNamespace(),
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "ClusterRole",
+			Name:     "nais:developer",
+		},
+	}
+
+	_, err = c.kubeClient.RbacV1().RoleBindings(roleBinding.GetNamespace()).Get(ctx, roleBinding.GetName(), metav1.GetOptions{})
+	if err != nil {
+		if errors.IsNotFound(err) {
+			_, err := c.kubeClient.RbacV1().RoleBindings(roleBinding.GetNamespace()).Create(ctx, &roleBinding, metav1.CreateOptions{})
+			if err != nil {
+				return fmt.Errorf("creating role binding: %w", err)
+			}
+		} else {
+			return fmt.Errorf("getting role binding: %w", err)
+		}
+	}
+
 	return nil
 }
 
