@@ -57,7 +57,7 @@ func (c *ConsoleManager) handler(ctx context.Context, msg message.Console) error
 
 	switch msg.Type {
 	case message.ConsoleTypeCreateNamespace:
-		return c.create(ctx, msg)
+		return c.create(ctx, msg, log)
 	case message.ConsoleTypeDeleteNamespace:
 		return c.deleteNamespace(ctx, msg)
 	default:
@@ -67,19 +67,19 @@ func (c *ConsoleManager) handler(ctx context.Context, msg message.Console) error
 	return nil
 }
 
-func (c *ConsoleManager) create(ctx context.Context, msg message.Console) error {
+func (c *ConsoleManager) create(ctx context.Context, msg message.Console, log logrus.FieldLogger) error {
 	data := message.CreateNamespace{}
 	err := json.Unmarshal(msg.Data, &data)
 	if err != nil {
 		return fmt.Errorf("unmarshal create namespace: %w", err)
 	}
 
-	err = c.createNamespace(ctx, data)
+	err = c.createNamespace(ctx, data, log)
 	if err != nil {
 		return err
 	}
 
-	err = c.createServiceAccounts(ctx, data)
+	err = c.createServiceAccounts(ctx, data, log)
 	if err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func (c *ConsoleManager) create(ctx context.Context, msg message.Console) error 
 	return nil
 }
 
-func (c *ConsoleManager) createNamespace(ctx context.Context, data message.CreateNamespace) error {
+func (c *ConsoleManager) createNamespace(ctx context.Context, data message.CreateNamespace, log logrus.FieldLogger) error {
 	ns := &v1.Namespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: data.Name,
@@ -105,6 +105,7 @@ func (c *ConsoleManager) createNamespace(ctx context.Context, data message.Creat
 			if err != nil {
 				return fmt.Errorf("creating namespace: %w", err)
 			}
+			log.Infof("Created namespace %s", data.Name)
 			return nil
 		}
 		return fmt.Errorf("getting namespace: %w", err)
@@ -124,10 +125,11 @@ func (c *ConsoleManager) createNamespace(ctx context.Context, data message.Creat
 	if err != nil {
 		return fmt.Errorf("updating namespace: %w", err)
 	}
+	log.Infof("Updated namespace %s with GCP project annotation", data.Name)
 	return nil
 }
 
-func (c *ConsoleManager) createServiceAccounts(ctx context.Context, data message.CreateNamespace) error {
+func (c *ConsoleManager) createServiceAccounts(ctx context.Context, data message.CreateNamespace, log logrus.FieldLogger) error {
 	svcAccount := v1.ServiceAccount{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("serviceuser-%s", data.Name),
@@ -142,6 +144,7 @@ func (c *ConsoleManager) createServiceAccounts(ctx context.Context, data message
 			if err != nil {
 				return fmt.Errorf("creating service account: %w", err)
 			}
+			log.Infof("Created service account %s in namespace %s", svcAccount.GetName(), svcAccount.GetNamespace())
 		} else {
 			return fmt.Errorf("getting service account: %w", err)
 		}
@@ -174,6 +177,7 @@ func (c *ConsoleManager) createServiceAccounts(ctx context.Context, data message
 			if err != nil {
 				return fmt.Errorf("creating role binding: %w", err)
 			}
+			log.Infof("Created role binding %s in namespace %s", roleBinding.GetName(), roleBinding.GetNamespace())
 		} else {
 			return fmt.Errorf("getting role binding: %w", err)
 		}
