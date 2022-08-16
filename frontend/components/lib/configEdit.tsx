@@ -70,7 +70,7 @@ const ConfigEdit = ({conf, open, showOpen}: ConfigEditProps) => {
                     onAdd={onAdd}
                     onDelete={onDelete}
                     values={values || []}
-                    error={errors?.values?.[0]?.message}
+                    error={errors?.values || undefined}
                 />
             case ConfigType.Bool:
                 return <Switch size='medium' position='left' checked={val}

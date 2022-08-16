@@ -67,7 +67,7 @@ const Value = styled.div`
 
 
 export interface KeywordsInputProps {
-    error?: Merge<FieldError, FieldErrorsImpl<DeepRequired<any>>>,
+    error?: FieldError | Merge<FieldError, FieldErrorsImpl<any>>,
     onAdd: (value: string) => void,
     onDelete: (value: string) => void,
     values: string[],

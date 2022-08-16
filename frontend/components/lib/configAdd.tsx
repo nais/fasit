@@ -71,7 +71,7 @@ const ConfigAdd = ({conf, envID, globalConfig, feature, open, showOpen}: ConfigA
                     onAdd={onAdd}
                     onDelete={onDelete}
                     values={values || []}
-                    error={errors?.values?.messsage || undefined}
+                    error={errors?.values || undefined}
                 />
             case ConfigType.Bool:
                 return <Switch size='medium' position='left' checked={val} onChange={() => setVal(!val)}>
