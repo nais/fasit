@@ -11,7 +11,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/websocket v1.5.0
 	github.com/iancoleman/strcase v0.2.0
-	github.com/invopop/jsonschema v0.4.0
+	github.com/invopop/jsonschema v0.6.0
 	github.com/lib/pq v1.10.6
 	github.com/ory/dockertest/v3 v3.9.1
 	github.com/pressly/goose/v3 v3.6.1

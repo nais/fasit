@@ -1,6 +1,6 @@
 {
 	"$id": "https://fasit.nais.io/schema/feature",
-	"$schema": "http://json-schema.org/draft/2020-12/schema",
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
 	"additionalProperties": false,
 	"properties": {
 		"autoInstall": {
@@ -77,6 +77,20 @@
 			"patternProperties": {
 				".*": {
 					"additionalProperties": false,
+					"oneOf": [
+						{
+							"required": [
+								"value"
+							],
+							"title": "value"
+						},
+						{
+							"required": [
+								"template"
+							],
+							"title": "template"
+						}
+					],
 					"properties": {
 						"description": {
 							"type": "string"

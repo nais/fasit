@@ -30,6 +30,13 @@ const (
 	RolloutStatusFailed   RolloutStatus = "failed"
 )
 
+var AllRolloutStatus = []RolloutStatus{
+	RolloutStatusUnknown,
+	RolloutStatusPending,
+	RolloutStatusDeployed,
+	RolloutStatusFailed,
+}
+
 func (r RolloutStatus) IsValid() bool {
 	switch r {
 	case RolloutStatusUnknown, RolloutStatusPending, RolloutStatusDeployed, RolloutStatusFailed:

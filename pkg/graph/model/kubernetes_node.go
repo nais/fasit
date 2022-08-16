@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/iancoleman/strcase"
@@ -72,7 +73,7 @@ func (e *ConditionStatus) UnmarshalGQL(v any) error {
 		return fmt.Errorf("enums must be strings")
 	}
 
-	str = strcase.ToCamel(str)
+	str = strcase.ToCamel(strings.ToLower(str))
 
 	*e = ConditionStatus(str)
 	if !e.IsValid() {
@@ -121,7 +122,7 @@ func (e *KubernetesNodeConditionType) UnmarshalGQL(v any) error {
 		return fmt.Errorf("enums must be strings")
 	}
 
-	str = strcase.ToCamel(str)
+	str = strcase.ToCamel(strings.ToLower(str))
 
 	*e = KubernetesNodeConditionType(str)
 	if !e.IsValid() {

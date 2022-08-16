@@ -17,7 +17,6 @@ func main() {
 
 	r := &jsonschema.Reflector{}
 	r.DoNotReference = true
-	r.PreferYAMLSchema = true
 	r.BaseSchemaID = "https://fasit.nais.io/schema"
 	r.AddGoComments("github.com/nais/fasit", "./pkg/feature/")
 	schema := r.Reflect(feature.Feature{})

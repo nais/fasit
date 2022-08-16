@@ -16,27 +16,27 @@ import (
 type Config map[string]ConfigType
 
 type Feature struct {
-	Name string `yaml:"name" json:"-" jsonschema:"-"`
+	Name string `yaml:"name" json:"name" jsonschema:"-"`
 	// Chart name if using helm charts or full url if using CRI image chart.
-	Chart string `yaml:"chart"`
+	Chart string `yaml:"chart" json:"chart"`
 	// Version of the chart.
-	Version string `yaml:"version"`
+	Version string `yaml:"version" json:"version"`
 	// Repo is the repository where the helm chart is located.
-	Repo string `yaml:"repo,omitempty"`
+	Repo string `yaml:"repo,omitempty" json:"repo,omitempty"`
 	// Source should be the URL to the helm chart source code.
-	Source string `yaml:"source"`
+	Source string `yaml:"source" json:"source"`
 	// DependsOn defines the features that this feature depends on.
-	DependsOn []string `yaml:"dependsOn,omitempty"`
+	DependsOn []string `yaml:"dependsOn,omitempty" json:"dependsOn,omitempty"`
 	// Config is the list of configuration options for the feature.
-	Config Config `yaml:"config,omitempty"`
+	Config Config `yaml:"config,omitempty" json:"config,omitempty"`
 	// Mapping is the list of mappings from environment values for the feature.
-	Mapping Mapping `yaml:"mapping,omitempty"`
+	Mapping Mapping `yaml:"mapping,omitempty" json:"mapping,omitempty"`
 	// EnvironmentKinds is the list of environments this feature can be used in.
-	EnvironmentKinds []model.EnvironmentKind `yaml:"environmentKinds" jsonschema:"enum=management,enum=tenant,required"`
+	EnvironmentKinds []model.EnvironmentKind `yaml:"environmentKinds" json:"environmentKinds" jsonschema:"enum=management,enum=tenant,required"`
 	// AutoInstall is the list of environments this feature can be auto-installed in.
-	AutoInstall []model.EnvironmentKind `yaml:"autoInstall,omitempty" jsonschema:"enum=management,enum=tenant"`
+	AutoInstall []model.EnvironmentKind `yaml:"autoInstall,omitempty" json:"autoInstall,omitempty" jsonschema:"enum=management,enum=tenant"`
 	// Timeout is the amount of time helm should wait for the feature to be ready. Defaults to 5m0s
-	Timeout time.Duration `yaml:"timeout,omitempty" jsonschema:"omitempty,type=string,pattern=^(\\d+h)?(\\d+m)?(\\d+s)?$"`
+	Timeout time.Duration `yaml:"timeout,omitempty" json:"timeout,omitempty" jsonschema:"omitempty,type=string,pattern=^(\\d+h)?(\\d+m)?(\\d+s)?$"`
 }
 
 func (f *Feature) RequiredFields() []string {

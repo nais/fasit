@@ -13,10 +13,10 @@ import (
 type Mapping map[string]MappingConfig
 
 type MappingConfig struct {
-	DisplayName string `yaml:"displayName,omitempty"`
-	Description string `yaml:"description,omitempty"`
-	Value       any    `yaml:"value,omitempty"`
-	Template    string `yaml:"template,omitempty"`
+	DisplayName string `yaml:"displayName,omitempty" json:"displayName,omitempty"`
+	Description string `yaml:"description,omitempty" json:"description,omitempty"`
+	Value       any    `yaml:"value,omitempty" json:"value,omitempty" jsonschema:"oneof_required=value"`
+	Template    string `yaml:"template,omitempty" json:"template,omitempty" jsonschema:"oneof_required=template"`
 }
 
 type MappingTenant struct {
