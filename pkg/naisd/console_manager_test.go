@@ -2,6 +2,7 @@ package naisd
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -76,9 +77,10 @@ func TestConsoleManager_handler(t *testing.T) {
 				t.Errorf("ConsoleManager.handler() error = %v, wantErr %v", gotErr, tt.wantErr)
 			}
 
+			// Check namespaces
 			namespaces, err := cs.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
 			if err != nil {
-				t.Errorf("ConsoleManager.handler() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("error listing namespaces = %v, wantErr %v", err, tt.wantErr)
 			}
 			names := make([]string, len(namespaces.Items))
 			for i, n := range namespaces.Items {
@@ -86,6 +88,18 @@ func TestConsoleManager_handler(t *testing.T) {
 			}
 			if !cmp.Equal(tt.expectedNamespaces, names) {
 				t.Errorf("diff -want +got:\n%v", cmp.Diff(tt.expectedNamespaces, names))
+			}
+
+			// Check service accounts
+			for _, namespace := range tt.expectedNamespaces {
+				_, err = cs.CoreV1().ServiceAccounts(namespace).Get(ctx, fmt.Sprintf("serviceuser-%s", namespace), metav1.GetOptions{})
+				if err != nil {
+					t.Errorf("error getting service account = %v, wantErr %v", err, tt.wantErr)
+				}
+				_, err = cs.RbacV1().RoleBindings(namespace).Get(ctx, fmt.Sprintf("serviceuser-%s-naisdeveloper", namespace), metav1.GetOptions{})
+				if err != nil {
+					t.Errorf("error getting role binding = %v, wantErr %v", err, tt.wantErr)
+				}
 			}
 		})
 	}
