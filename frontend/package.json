@@ -17,7 +17,7 @@
     "@emotion/styled": "11.10.0",
     "@fontsource/source-sans-pro": "4.5.11",
     "@hookform/resolvers": "2.9.7",
-    "@mui/material": "5.10.0",
+    "@mui/material": "5.10.1",
     "@navikt/ds-css": "0.18.28",
     "@navikt/ds-icons": "0.8.20",
     "@navikt/ds-react": "0.19.27",
