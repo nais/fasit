@@ -158,7 +158,7 @@ func (c *ConsoleManager) createServiceAccounts(ctx context.Context, data message
 		Subjects: []rbacv1.Subject{
 			{
 				APIGroup:  "rbac.authorization.k8s.io",
-				Kind:      "User",
+				Kind:      "ServiceAccount",
 				Name:      svcAccount.GetName(),
 				Namespace: svcAccount.GetNamespace(),
 			},
@@ -170,7 +170,7 @@ func (c *ConsoleManager) createServiceAccounts(ctx context.Context, data message
 		},
 	}
 
-	_, err = c.kubeClient.RbacV1().RoleBindings(roleBinding.GetNamespace()).Get(ctx, roleBinding.GetName(), metav1.GetOptions{})
+	existing, err := c.kubeClient.RbacV1().RoleBindings(roleBinding.GetNamespace()).Get(ctx, roleBinding.GetName(), metav1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
 			_, err := c.kubeClient.RbacV1().RoleBindings(roleBinding.GetNamespace()).Create(ctx, &roleBinding, metav1.CreateOptions{})
@@ -181,6 +181,13 @@ func (c *ConsoleManager) createServiceAccounts(ctx context.Context, data message
 		} else {
 			return fmt.Errorf("getting role binding: %w", err)
 		}
+	} else {
+		roleBinding.ObjectMeta = existing.ObjectMeta
+		_, err := c.kubeClient.RbacV1().RoleBindings(roleBinding.GetNamespace()).Update(ctx, &roleBinding, metav1.UpdateOptions{})
+		if err != nil {
+			return fmt.Errorf("update role binding: %w", err)
+		}
+		log.Infof("Updated role binding %s in namespace %s", roleBinding.GetName(), roleBinding.GetNamespace())
 	}
 
 	return nil
