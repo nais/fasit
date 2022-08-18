@@ -42,7 +42,6 @@ config:
 
   tokendings.ingresses:
     type: string_array
-    required: true
 
   tokendings.outbound:
     type: string_array
@@ -82,3 +81,8 @@ mapping:
   jwker.secrets.env.CLUSTER_NAME:
     displayName: Cluster name
     value: '{{ .Env.name }}'
+
+  tokendings.ingresses:
+    value:
+      - 'https://tokenx.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io'
+
