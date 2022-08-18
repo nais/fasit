@@ -44,6 +44,10 @@ config:
     type: string_array
     required: true
 
+  tokendings.outbound:
+    type: string_array
+    required: true
+
   tokendings.secrets.private_jwks:
     type: string
     required: true
