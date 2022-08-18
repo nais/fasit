@@ -82,6 +82,9 @@ mapping:
     displayName: Cluster name
     value: '{{ .Env.name }}'
 
+  tokendings.env.ISSUER_URL:
+    value: 'https://tokenx.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io'
+
   tokendings.ingresses:
     value:
       - 'https://tokenx.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io'
