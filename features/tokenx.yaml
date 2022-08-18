@@ -36,6 +36,11 @@ config:
     description: The client_id of tokendings in token provider
     required: true
 
+  tokendings.secrets.private_jwks:
+    type: string
+    required: true
+    secret: true
+
   tokendings.env.APPLICATION_PROFILE:
     type: string
     required: true
