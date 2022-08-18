@@ -38,7 +38,7 @@ config:
 
   tokendings.tag:
     type: string
-    displayName: Image tag for jwker
+    displayName: Image tag for tokendings
 
   tokendings.secrets.private_jwks:
     type: string
