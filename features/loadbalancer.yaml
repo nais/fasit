@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/loadbalancer
 source: https://github.com/nais/helm-charts/tree/main/charts/loadbalancer
-version: 0.1.0
+version: 0.2.0
 environmentKinds:
   - "tenant"
   - "management"
