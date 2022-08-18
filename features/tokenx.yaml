@@ -1,0 +1,45 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/tokenx
+source: https://github.com/nais/helm-charts/tree/main/charts/tokenx
+version: 0.1.0
+environmentKinds:
+  - "tenant"
+dependsOn:
+  - "naiserator"
+config:
+  jwker.tag:
+    type: string
+    displayName: Image tag for jwker
+
+  # TODO: generate JWK and distribute to tokendings
+  jwker.secrets.jwk:
+    type: string
+    displayName: jwkers private JWK
+    description: jwkers private JWK for connecting to tokendings
+    required: true
+    secret: true
+
+  jwker.secrets.env.AUTH_PROVIDER_WELL_KNOWN_URL:
+    type: string
+    displayName: Token provider URL
+    description: Well-Known URL to tokenprovider in order to communicate with tokendings
+    required: true
+
+  jwker.secrets.env.JWKER_CLIENT_ID:
+    type: string
+    displayName: jwker client_id
+    description: The client_id of jwker in token provider
+    required: true
+
+  jwker.secrets.env.TOKENDINGS_CLIENT_ID:
+    type: string
+    displayName: tokendings client_id
+    description: The client_id of tokendings in token provider
+    required: true
+
+mapping:
+  jwker.secrets.env.CLUSTER_NAME:
+    displayName: Cluster name
+    value: '{{ .Env.name }}'
+  jwker.secrets.env.TOKENDINGS_URL:
+    displayName: tokendings URL
+    value: 'https://tokendings.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io'
