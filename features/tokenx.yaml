@@ -36,6 +36,10 @@ config:
     description: The client_id of tokendings in token provider
     required: true
 
+  tokendings.tag:
+    type: string
+    displayName: Image tag for jwker
+
   tokendings.secrets.private_jwks:
     type: string
     required: true
