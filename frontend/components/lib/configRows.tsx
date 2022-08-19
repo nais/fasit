@@ -86,7 +86,7 @@ const ConfigRows = ({
         } else if (conf.type === ConfigType.StringArray) {
             return prettifyArray(conf.value)
         } else if (conf.value != null) {
-            if (conf.value.startsWith("{")) {
+            if (conf.value.trim().startsWith("{")) {
                 const obj = JSON.parse(conf.value)
                 return <StyledValue>{JSON.stringify(obj, null, 2)}</StyledValue>
             }
