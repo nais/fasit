@@ -55,7 +55,7 @@ const FeatureConfig = ({envID, configs, featureObject, mapping}: FeatureConfigPr
                     <Table.Row>
                         <Table.HeaderCell align={'center'} style={{width: "50px"}}></Table.HeaderCell>
                         <Table.HeaderCell align={'center'} style={{width: "50px"}} ></Table.HeaderCell>
-                        <Table.HeaderCell>Key</Table.HeaderCell>
+                        <Table.HeaderCell style={{width: "100px"}}>Key</Table.HeaderCell>
                         <Table.HeaderCell>Value</Table.HeaderCell>
                         <Table.HeaderCell style={{width: "100px"}} align='center'>Actions</Table.HeaderCell>
                     </Table.Row>
