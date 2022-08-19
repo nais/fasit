@@ -14,7 +14,7 @@ config:
   aiven.token:
     type: string
     secret: true
-    description: Create an API-token with full access to the relevant projects
+    description: An API-token with full access to the relevant projects
     displayName: Aiven API-token
   image.repository:
     type: string
