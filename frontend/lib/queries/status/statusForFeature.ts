@@ -10,6 +10,7 @@ export const STATUS_FOR_FEATURE = gql`
       configHash
       created
       lastModified
+      log
     }
   }
 `

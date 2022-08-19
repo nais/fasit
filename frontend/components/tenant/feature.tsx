@@ -16,6 +16,13 @@ const FeatureContainer = styled.div`
   border-radius: 0 5px 5px 0px;
 `
 
+const LogPre = styled.pre`
+  overflow: auto;
+  word-break: break-word,;
+  white-space: pre-wrap;
+  font-size: 14px;
+`
+
 interface FeatureProps {
     env: EnvironmentGetQuery['environment']
     featureName: string,
@@ -24,6 +31,7 @@ interface FeatureProps {
 
 const Feature = ({env, featureName}: FeatureProps) => {
     const [showVerify, setShowVerify] = useState(false)
+    const [showLog, setShowLog] = useState("")
 
     const configQuery = useConfigurationQuery({variables: {envID: env.id, feature: featureName}})
     const features = useFeaturesQuery({variables: {kind: env.kind}})
@@ -32,8 +40,9 @@ const Feature = ({env, featureName}: FeatureProps) => {
 
     return (
         <FeatureContainer>
-            <FeatureStatus featureName={featureName} configs={configs} env={env} setShowVerify={setShowVerify}/>
-            <FeatureConfig envID={env.id} configs={configs} featureObject={featureObject} mapping={configQuery.data?.configuration.mapping}/>
+            <FeatureStatus featureName={featureName} configs={configs} env={env} setShowVerify={setShowVerify} showLog={setShowLog}/>
+            {showLog && <LogPre>{showLog}</LogPre>}
+            {!showLog && <FeatureConfig envID={env.id} configs={configs} featureObject={featureObject} mapping={configQuery.data?.configuration.mapping}/> }
             <EnableFeature open={showVerify} onClose={setShowVerify} feature={featureName} envID={env.id}
                            enabled={env.featureStates.find((f) => f.feature.name === featureName)?.enabled || false}/>
 

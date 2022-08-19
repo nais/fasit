@@ -60,9 +60,10 @@ interface FeatureProps {
     env: EnvironmentGetQuery['environment']
     featureName: string
     setShowVerify: React.Dispatch<boolean>
+    showLog: React.Dispatch<string>
 }
 
-const FeatureStatus = ({configs, env, featureName, setShowVerify}: FeatureProps) => {
+const FeatureStatus = ({configs, env, featureName, setShowVerify, showLog}: FeatureProps) => {
     const router = useRouter()
     const tenantName = router.query.tenantName as string
     const {loading, error, data} = useFeatureStatusQuery({variables: {envID: env.id, feature: featureName}, pollInterval: 10 * 1000})
@@ -73,6 +74,17 @@ const FeatureStatus = ({configs, env, featureName, setShowVerify}: FeatureProps)
             clearInterval(interval);
         };
     }, [])
+
+    const [logToggle, setLogToggle] = useState(false);
+
+    const toggleLog = () => {
+        if(!status) {
+            return
+        }
+
+        setLogToggle(!logToggle)
+        showLog(!logToggle ? status.log || 'No log available' : '')
+    }
 
     const requiredConfigs = Object.keys(configs).filter((c) => configs[c].required).sort()
     const status = data?.featureStatus
@@ -93,7 +105,9 @@ const FeatureStatus = ({configs, env, featureName, setShowVerify}: FeatureProps)
                         </StatusField>}
                         {data && <>
                             <StatusField>status: <StatusIndicator
-                                status={status?.status}/>{status?.status.toLowerCase()}</StatusField>
+                                status={status?.status}/>{status?.status.toLowerCase()} -
+                                <a onClick={toggleLog} style={{cursor: "pointer"}}> toggle last logs</a>
+                            </StatusField>
                         </>
                         }
                     </div>

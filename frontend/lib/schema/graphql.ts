@@ -21,7 +21,6 @@ export type Scalars = {
   Float: number
   Map: any
   RawMessage: any
-  /** Time is a string in [RFC 3339](https://rfc-editor.org/rfc/rfc3339.html) format, with sub-second precision added if present. */
   Time: any
 }
 
@@ -40,7 +39,7 @@ export enum ConfigType {
 
 export type Configuration = {
   created: Scalars['Time']
-  description?: Maybe<Scalars['String']>
+  description: Scalars['String']
   displayName: Scalars['String']
   feature: Feature
   id: Scalars['ID']
@@ -59,7 +58,7 @@ export type EnvConfig = {
 export type EnvConfiguration = Configuration & {
   __typename?: 'EnvConfiguration'
   created: Scalars['Time']
-  description?: Maybe<Scalars['String']>
+  description: Scalars['String']
   displayName: Scalars['String']
   environment: Environment
   feature: Feature
@@ -133,7 +132,7 @@ export type FeatureState = {
 export type GlobalConfiguration = Configuration & {
   __typename?: 'GlobalConfiguration'
   created: Scalars['Time']
-  description?: Maybe<Scalars['String']>
+  description: Scalars['String']
   displayName: Scalars['String']
   feature: Feature
   id: Scalars['ID']
@@ -389,7 +388,7 @@ export type ConfigurationQuery = {
       | {
           __typename?: 'EnvConfiguration'
           id: string
-          description?: string | null
+          description: string
           type: ConfigType
           key: string
           value: any
@@ -400,7 +399,7 @@ export type ConfigurationQuery = {
       | {
           __typename?: 'GlobalConfiguration'
           id: string
-          description?: string | null
+          description: string
           type: ConfigType
           key: string
           value: any
@@ -619,6 +618,7 @@ export type FeatureStatusQuery = {
     configHash: string
     created: any
     lastModified: any
+    log: string
   }
 }
 
@@ -1411,6 +1411,7 @@ export const FeatureStatusDocument = gql`
       configHash
       created
       lastModified
+      log
     }
   }
 `
