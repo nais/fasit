@@ -157,7 +157,7 @@ func (c *ConsoleManager) createServiceAccounts(ctx context.Context, data message
 		},
 		Subjects: []rbacv1.Subject{
 			{
-				APIGroup:  "",
+				APIGroup:  "rbac.authorization.k8s.io",
 				Kind:      "ServiceAccount",
 				Name:      svcAccount.GetName(),
 				Namespace: svcAccount.GetNamespace(),
