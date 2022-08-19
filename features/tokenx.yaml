@@ -13,26 +13,26 @@ config:
   # TODO: generate JWK and distribute to tokendings
   jwker.secrets.jwk:
     type: string
-    displayName: jwkers private JWK
+    displayName: Jwker private JWK
     description: jwkers private JWK for connecting to tokendings
     required: true
     secret: true
 
   jwker.secrets.env.AUTH_PROVIDER_WELL_KNOWN_URL:
     type: string
-    displayName: Token provider URL
+    displayName: Jwker token provider Well-Known URL
     description: Well-Known URL to tokenprovider in order to communicate with tokendings
     required: true
 
   jwker.secrets.env.JWKER_CLIENT_ID:
     type: string
-    displayName: jwker client_id
+    displayName: Jwker client_id
     description: The client_id of jwker in token provider
     required: true
 
   jwker.secrets.env.TOKENDINGS_CLIENT_ID:
     type: string
-    displayName: tokendings client_id
+    displayName: Tokendings client_id
     description: The client_id of tokendings in token provider
     required: true
 
@@ -41,39 +41,65 @@ config:
     displayName: Image tag for tokendings
 
   tokendings.ingresses:
+    displayName: Tokendings ingresses
     type: string_array
 
   tokendings.outbound:
+    displayName: Tokendings external hosts
     type: string_array
     required: true
 
   tokendings.secrets.private_jwks:
+    displayName: Tokendings private JWKS
     type: string
     required: true
     secret: true
 
   tokendings.env.APPLICATION_PROFILE:
+    displayName: Tokendings application profile
+    description: Allowable values [PROD, NON_PROD]
     type: string
     required: true
+
   tokendings.env.ISSUER_URL:
+    displayName: Tokendings issuer URL
+    description: The value for issuer in tokens issued by tokendings, e.g. https://tokendings.something
     type: string
-    required: false
+    required: true
+
   tokendings.env.SUBJECT_TOKEN_ISSUERS:
+    displayName: Tokendings trusted token issuers
+    description: a commaseparated list of well-known urls to trusted token issuers in a token exchange
     type: string
     required: true
+
   tokendings.env.AUTH_IDENTITY_PROVIDER:
+    displayName: Auth token provider
+    description: The well-known URL to the authentication token provider (should match jwker token provider URL)
     type: string
     required: true
+
   tokendings.env.AUTH_ACCEPTED_AUDIENCE:
+    displayName: Auth accepted audience
+    description: should match tokendings client_id
     type: string
     required: true
+
   tokendings.env.AUTH_JWKER_CLIENT_ID:
+    displayName: Auth jwker client_id
+    description: should match jwker client_id
     type: string
     required: true
+
   tokendings.env.AUTH_JWKER_JWKS:
+    displayName: Auth jwker jwks
+    description: a jwks containing jwkers public JWK
     type: string
     required: true
+
   tokendings.env.AUTH_JWKER_SUB:
+    displayName: Auth jwker sub
+    description: the value of the sub claim in jwkers access_token
     type: string
     required: true
 
