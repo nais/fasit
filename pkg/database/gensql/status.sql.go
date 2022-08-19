@@ -14,7 +14,7 @@ INSERT INTO status (environment_id, feature, version, status, config_hash, log)
 VALUES ($1, $2, $3, $4, $5, $6)
 ON CONFLICT (environment_id, feature)
 DO
-UPDATE SET version=EXCLUDED.version, status=EXCLUDED.status, config_hash=EXCLUDED.config_hash
+UPDATE SET version=EXCLUDED.version, status=EXCLUDED.status, config_hash=EXCLUDED.config_hash, log=EXCLUDED.log
 `
 
 type StatusCreateOrUpdateParams struct {

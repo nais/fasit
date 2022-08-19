@@ -3,7 +3,7 @@ INSERT INTO status (environment_id, feature, version, status, config_hash, log)
 VALUES (@environment_id, @feature, @version, @status, @config_hash, @log)
 ON CONFLICT (environment_id, feature)
 DO
-UPDATE SET version=EXCLUDED.version, status=EXCLUDED.status, config_hash=EXCLUDED.config_hash;
+UPDATE SET version=EXCLUDED.version, status=EXCLUDED.status, config_hash=EXCLUDED.config_hash, log=EXCLUDED.log;
 
 -- name: StatusForEnvironment :many
 SELECT *
