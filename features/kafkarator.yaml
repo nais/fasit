@@ -1,0 +1,24 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/kafkarator
+source: https://github.com/nais/kafkarator/tree/main/charts/kafkarator
+version: 0.0.1
+environmentKinds:
+  - "tenant"
+#dependsOn: TODO: Create aivenator feature
+#  - "aivenator"
+mapping:
+  aiven.projects:
+    value: "{{.Env.aiven_project_0}}"
+    displayName: Aiven projects
+    description: "Aiven projects (space separated) with Kafka enabled for this instance of kafkarator"
+config:
+  aiven.token:
+    type: string
+    secret: true
+    description: Create an API-token with full access to the relevant projects
+    displayName: Aiven API-token
+  image.repository:
+    type: string
+  image.pullPolicy:
+    type: string
+  image.tag:
+    type: string
