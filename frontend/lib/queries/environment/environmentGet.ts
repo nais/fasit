@@ -22,6 +22,7 @@ export const ENVIRONMENT_GET_BY_NAMES = gql`
         enabled
         lastModified
         created
+        rolloutStatus
         feature {
           name
           version
@@ -53,6 +54,7 @@ export const ENVIRONMENT_GET = gql`
         enabled
         lastModified
         created
+        rolloutStatus
         feature {
           name
           version

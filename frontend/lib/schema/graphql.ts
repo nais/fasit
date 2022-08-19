@@ -127,6 +127,7 @@ export type FeatureState = {
   enabled: Scalars['Boolean']
   feature: Feature
   lastModified?: Maybe<Scalars['Time']>
+  rolloutStatus: RolloutStatus
 }
 
 export type GlobalConfiguration = Configuration & {
@@ -475,6 +476,7 @@ export type EnvironmentGetByNamesQuery = {
       enabled: boolean
       lastModified?: any | null
       created?: any | null
+      rolloutStatus: RolloutStatus
       feature: {
         __typename?: 'Feature'
         name: string
@@ -509,6 +511,7 @@ export type EnvironmentGetQuery = {
       enabled: boolean
       lastModified?: any | null
       created?: any | null
+      rolloutStatus: RolloutStatus
       feature: {
         __typename?: 'Feature'
         name: string
@@ -952,6 +955,7 @@ export const EnvironmentGetByNamesDocument = gql`
         enabled
         lastModified
         created
+        rolloutStatus
         feature {
           name
           version
@@ -1034,6 +1038,7 @@ export const EnvironmentGetDocument = gql`
         enabled
         lastModified
         created
+        rolloutStatus
         feature {
           name
           version

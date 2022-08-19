@@ -28,7 +28,7 @@ type Querier interface {
 	EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]Environment, error)
 	FeatureStateCreateOrUpdate(ctx context.Context, arg FeatureStateCreateOrUpdateParams) (FeatureState, error)
 	FeatureStateGet(ctx context.Context, arg FeatureStateGetParams) (FeatureState, error)
-	FeatureStatesGet(ctx context.Context, environmentID uuid.UUID) ([]FeatureState, error)
+	FeatureStatesGet(ctx context.Context, environmentID uuid.UUID) ([]FeatureStatesGetRow, error)
 	HealthStatusCreateOrUpdate(ctx context.Context, arg HealthStatusCreateOrUpdateParams) (HealthStatus, error)
 	HealthStatusGet(ctx context.Context, environmentID uuid.UUID) (HealthStatus, error)
 	KubernetesNodeCreateOrUpdate(ctx context.Context, arg KubernetesNodeCreateOrUpdateParams) error

@@ -12,18 +12,22 @@ import (
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
+// Environment is the resolver for the environment field.
 func (r *envConfigurationResolver) Environment(ctx context.Context, obj *model.EnvConfiguration) (*model.Environment, error) {
 	return r.Repo.EnvironmentGet(ctx, obj.EnvironmentID)
 }
 
+// Feature is the resolver for the feature field.
 func (r *envConfigurationResolver) Feature(ctx context.Context, obj *model.EnvConfiguration) (*model.Feature, error) {
 	return r.resolveFeatureByName(obj.FeatureName)
 }
 
+// Feature is the resolver for the feature field.
 func (r *globalConfigurationResolver) Feature(ctx context.Context, obj *model.GlobalConfiguration) (*model.Feature, error) {
 	return r.resolveFeatureByName(obj.FeatureName)
 }
 
+// ConfigurationCreate is the resolver for the configurationCreate field.
 func (r *mutationResolver) ConfigurationCreate(ctx context.Context, configuration model.NewConfiguration) (model.Configuration, error) {
 	if err := r.Features.ValidConfig(configuration.Feature, configuration.Key, configuration.Value); err != nil {
 		return nil, fmt.Errorf("invalid configuration %q for %q: %w", configuration.Key, configuration.Feature, err)
@@ -33,10 +37,12 @@ func (r *mutationResolver) ConfigurationCreate(ctx context.Context, configuratio
 	return r.Repo.ConfigCreate(ctx, configuration)
 }
 
+// ConfigurationUpdate is the resolver for the configurationUpdate field.
 func (r *mutationResolver) ConfigurationUpdate(ctx context.Context, id uuid.UUID, configuration model.UpdateConfiguration) (model.Configuration, error) {
 	return r.Repo.ConfigUpdate(ctx, id, configuration)
 }
 
+// ConfigurationDelete is the resolver for the configurationDelete field.
 func (r *mutationResolver) ConfigurationDelete(ctx context.Context, id uuid.UUID) (bool, error) {
 	// TODO(thokra): Make this soft delete?
 	if err := r.Repo.ConfigDelete(ctx, id); err != nil {
@@ -45,6 +51,7 @@ func (r *mutationResolver) ConfigurationDelete(ctx context.Context, id uuid.UUID
 	return true, nil
 }
 
+// Configuration is the resolver for the configuration field.
 func (r *queryResolver) Configuration(ctx context.Context, feature string, envID *uuid.UUID) (*model.EnvConfig, error) {
 	ret := &model.EnvConfig{}
 	if envID != nil {
@@ -117,6 +124,7 @@ OUTER:
 	return ret, nil
 }
 
+// EnvConfig is the resolver for the envConfig field.
 func (r *queryResolver) EnvConfig(ctx context.Context, feature string, envID uuid.UUID) (*model.EnvConfig, error) {
 	config, err := r.Repo.EnvConfig(ctx, feature, envID)
 	if err != nil {

@@ -10,6 +10,7 @@ import (
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
+// UserInfo is the resolver for the userInfo field.
 func (r *queryResolver) UserInfo(ctx context.Context) (*model.UserInfo, error) {
 	return &model.UserInfo{
 		Email: auth.GetEmail(ctx),

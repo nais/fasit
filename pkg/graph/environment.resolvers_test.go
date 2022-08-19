@@ -51,12 +51,12 @@ func Test_environmentResolver_FeatureStates_FeatureStateMerge_Works(t *testing.T
 
 	want := []*model.FeatureState{
 		{
-			FeatureName: "repo-feature",
-			Enabled:     true,
-		},
-		{
 			FeatureName: "global-feature",
 			Enabled:     false,
+		},
+		{
+			FeatureName: "repo-feature",
+			Enabled:     true,
 		},
 	}
 

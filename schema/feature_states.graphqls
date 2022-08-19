@@ -1,10 +1,15 @@
 type FeatureState {
-    feature: Feature!
-    enabled: Boolean!
-    created: Time
-    lastModified: Time
+  feature: Feature!
+  enabled: Boolean!
+  created: Time
+  lastModified: Time
+  rolloutStatus: RolloutStatus!
 }
 
 extend type Mutation {
-    featureStateSave(envID: ID!, enabled: Boolean!, feature: String!): FeatureState!
+  featureStateSave(
+    envID: ID!
+    enabled: Boolean!
+    feature: String!
+  ): FeatureState!
 }

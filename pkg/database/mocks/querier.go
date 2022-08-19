@@ -419,15 +419,15 @@ func (_m *Querier) FeatureStateGet(ctx context.Context, arg gensql.FeatureStateG
 }
 
 // FeatureStatesGet provides a mock function with given fields: ctx, environmentID
-func (_m *Querier) FeatureStatesGet(ctx context.Context, environmentID uuid.UUID) ([]gensql.FeatureState, error) {
+func (_m *Querier) FeatureStatesGet(ctx context.Context, environmentID uuid.UUID) ([]gensql.FeatureStatesGetRow, error) {
 	ret := _m.Called(ctx, environmentID)
 
-	var r0 []gensql.FeatureState
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) []gensql.FeatureState); ok {
+	var r0 []gensql.FeatureStatesGetRow
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) []gensql.FeatureStatesGetRow); ok {
 		r0 = rf(ctx, environmentID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]gensql.FeatureState)
+			r0 = ret.Get(0).([]gensql.FeatureStatesGetRow)
 		}
 	}
 

@@ -12,14 +12,17 @@ import (
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
+// TenantCreate is the resolver for the tenantCreate field.
 func (r *mutationResolver) TenantCreate(ctx context.Context, tenant model.TenantCreate) (*model.Tenant, error) {
 	return r.Repo.TenantCreate(ctx, &tenant)
 }
 
+// Tenants is the resolver for the tenants field.
 func (r *queryResolver) Tenants(ctx context.Context) ([]*model.Tenant, error) {
 	return r.Repo.TenantsGet(ctx)
 }
 
+// Tenant is the resolver for the tenant field.
 func (r *queryResolver) Tenant(ctx context.Context, id *uuid.UUID, slug *string) (*model.Tenant, error) {
 	if id != nil {
 		return r.Repo.TenantGet(ctx, *id)
@@ -30,6 +33,7 @@ func (r *queryResolver) Tenant(ctx context.Context, id *uuid.UUID, slug *string)
 	return nil, fmt.Errorf("either ID or slug must be specified")
 }
 
+// Environments is the resolver for the environments field.
 func (r *tenantResolver) Environments(ctx context.Context, obj *model.Tenant) ([]*model.Environment, error) {
 	return r.Repo.EnvironmentsGet(ctx, obj.ID)
 }

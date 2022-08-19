@@ -14,10 +14,12 @@ import (
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
+// FeatureStatus is the resolver for the featureStatus field.
 func (r *queryResolver) FeatureStatus(ctx context.Context, envID uuid.UUID, feature string) (*model.Status, error) {
 	return r.Repo.StatusForFeature(ctx, envID, feature)
 }
 
+// Status is the resolver for the status field.
 func (r *subscriptionResolver) Status(ctx context.Context, envID uuid.UUID, feature string) (<-chan *model.Status, error) {
 	ch := make(chan *model.Status, 1)
 	go func() {

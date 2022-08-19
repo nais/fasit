@@ -1,11 +1,15 @@
 import * as React from 'react'
-import {EnvironmentGetQuery, useFeaturesQuery} from '../../lib/schema/graphql'
+import {
+  EnvironmentGetQuery,
+  RolloutStatus,
+  useFeaturesQuery,
+} from '../../lib/schema/graphql'
 import ErrorMessage from '../lib/error'
 import LoaderSpinner from '../lib/spinner'
 import Link from 'next/link'
-import {useRouter} from 'next/router'
+import { useRouter } from 'next/router'
 import styled from 'styled-components'
-import {navRod} from '../../styles/constants'
+import { navRod } from '../../styles/constants'
 
 const SideMenu = styled.div<MenuItemProps>`
   padding: 10px 0px 10px 10px;
@@ -25,23 +29,27 @@ const SideMenu = styled.div<MenuItemProps>`
 `
 
 interface MenuItemProps {
-    active?: boolean
-    enabled?: boolean
+  active?: boolean
+  enabled?: boolean
+  failed?: boolean
 }
 
 const MenuItem = styled.div<MenuItemProps>`
   ${(props) => props.active && 'background-color: #fff;'}
-  border-top: 1px solid ${(props) => props.active ? 'silver' : 'transparent'};
-  border-bottom: 1px solid ${(props) => props.active ? 'silver' : 'transparent'};
-  border-left: 3px solid ${(props) => props.active ? navRod : 'transparent'};
+  border-top: 1px solid ${(props) => (props.active ? 'silver' : 'transparent')};
+  border-bottom: 1px solid
+    ${(props) => (props.active ? 'silver' : 'transparent')};
+  border-left: 3px solid ${(props) => (props.active ? navRod : 'transparent')};
   border-radius: 5px 0px 0px 5px;
   padding: 5px 15px;
-  margin-right: ${(props) => props.active ? '-1px' : '0px'};
+  margin-right: ${(props) => (props.active ? '-1px' : '0px')};
   position: relative;
   text-decoration: none;
-  color: ${(props) => props.enabled ? '#222' : "#999"};
+  color: ${(props) => (props.failed ? 'red' : props.enabled ? '#222' : '#999')};
   :hover {
-    background-color: var(--navds-semantic-color-interaction-primary-hover-subtle);
+    background-color: var(
+      --navds-semantic-color-interaction-primary-hover-subtle
+    );
   }
 `
 
@@ -52,44 +60,48 @@ export const MenuSeparator = styled.div`
 `
 
 interface FeaturesMenuProps {
-    env: EnvironmentGetQuery['environment']
+  env: EnvironmentGetQuery['environment']
 }
 
-const FeaturesMenu = ({env}: FeaturesMenuProps) => {
-    const features = useFeaturesQuery(
-        {variables: {kind: env.kind}},
+const FeaturesMenu = ({ env }: FeaturesMenuProps) => {
+  const features = useFeaturesQuery({ variables: { kind: env.kind } })
+  const { data, loading, error } = features
+  const router = useRouter()
+  const feature = router.query.feature
+
+  if (error) return <ErrorMessage error={error} />
+  if (!data || loading) return <LoaderSpinner />
+
+  const featureMenuItem = (
+    fs: EnvironmentGetQuery['environment']['featureStates'][0],
+  ) => {
+    const f = fs.feature
+    return (
+      <Link
+        href={router.asPath.split('?')[0] + '?feature=' + f.name}
+        key={f.name}
+      >
+        <a>
+          <MenuItem
+            active={f.name === feature}
+            enabled={fs.enabled}
+            failed={fs.rolloutStatus === RolloutStatus.Failed}
+          >
+            {f.name}
+          </MenuItem>
+        </a>
+      </Link>
     )
-    const {data, loading, error} = features
-    const router = useRouter()
-    const feature = router.query.feature
+  }
 
-    if (error) return <ErrorMessage error={error}/>
-    if (!data || loading) return <LoaderSpinner/>
+  return (
+    <SideMenu>
+      <span style={{ marginBottom: '15px' }}>Features</span>
 
-    return (<SideMenu>
-            <span style={{marginBottom: "15px"}}>Features</span>
-
-            {env.featureStates.filter((f) => f.enabled).map((fs) => {
-                const f = fs.feature
-                return <Link href={router.asPath.split('?')[0] + '?feature=' + f.name} key={f.name}>
-                    <a>
-                        <MenuItem active={f.name === feature} enabled={fs.enabled}>
-                            {f.name}
-                        </MenuItem></a></Link>
-            })}
-            <MenuSeparator/>
-            {env.featureStates.filter((f) => !f.enabled).map((fs) => {
-                const f = fs.feature
-                return <Link href={router.asPath.split('?')[0] + '?feature=' + f.name} key={f.name}>
-                    <a>
-                    <MenuItem active={f.name === feature} enabled={fs.enabled}>
-                        {f.name}
-                    </MenuItem>
-                    </a>
-                </Link>
-            })}
-
-        </SideMenu>
-    )
+      {env.featureStates.filter((f) => f.enabled).map(featureMenuItem)}
+      <MenuSeparator />
+      {env.featureStates.filter((f) => !f.enabled).map(featureMenuItem)}
+    </SideMenu>
+  )
 }
 export default FeaturesMenu

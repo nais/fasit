@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 )
 
+// Values is the resolver for the values field.
 func (r *queryResolver) Values(ctx context.Context, feature string, env uuid.UUID) (map[string]interface{}, error) {
 	f := r.Resolver.Features.Get(feature)
 

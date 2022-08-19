@@ -6,6 +6,7 @@ package gensql
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -14,11 +15,11 @@ const featureStateCreateOrUpdate = `-- name: FeatureStateCreateOrUpdate :one
 INSERT INTO feature_states
 (environment_id, feature, enabled, enabled_at)
 VALUES
-    ($1, $2, $3, $4)
+	($1, $2, $3, $4)
 ON CONFLICT (environment_id, feature) DO UPDATE
-    SET
-        enabled = EXCLUDED.enabled,
-        enabled_at = EXCLUDED.enabled_at
+	SET
+		enabled = EXCLUDED.enabled,
+		enabled_at = EXCLUDED.enabled_at
 RETURNING environment_id, feature, enabled, created, last_modified, enabled_at
 `
 
@@ -74,20 +75,34 @@ func (q *Queries) FeatureStateGet(ctx context.Context, arg FeatureStateGetParams
 }
 
 const featureStatesGet = `-- name: FeatureStatesGet :many
-SELECT environment_id, feature, enabled, created, last_modified, enabled_at
-FROM feature_states
-WHERE environment_id = $1
+SELECT fs.environment_id, fs.feature, fs.enabled, fs.created, fs.last_modified, fs.enabled_at, coalesce(s.status, '') AS rollout_status
+FROM feature_states fs
+LEFT JOIN status s
+ON
+	fs.environment_id = s.environment_id AND
+	fs.feature = s.feature
+WHERE fs.environment_id = $1
 `
 
-func (q *Queries) FeatureStatesGet(ctx context.Context, environmentID uuid.UUID) ([]FeatureState, error) {
+type FeatureStatesGetRow struct {
+	EnvironmentID uuid.UUID
+	Feature       string
+	Enabled       bool
+	Created       time.Time
+	LastModified  time.Time
+	EnabledAt     sql.NullTime
+	RolloutStatus string
+}
+
+func (q *Queries) FeatureStatesGet(ctx context.Context, environmentID uuid.UUID) ([]FeatureStatesGetRow, error) {
 	rows, err := q.db.QueryContext(ctx, featureStatesGet, environmentID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []FeatureState{}
+	items := []FeatureStatesGetRow{}
 	for rows.Next() {
-		var i FeatureState
+		var i FeatureStatesGetRow
 		if err := rows.Scan(
 			&i.EnvironmentID,
 			&i.Feature,
@@ -95,6 +110,7 @@ func (q *Queries) FeatureStatesGet(ctx context.Context, environmentID uuid.UUID)
 			&i.Created,
 			&i.LastModified,
 			&i.EnabledAt,
+			&i.RolloutStatus,
 		); err != nil {
 			return nil, err
 		}

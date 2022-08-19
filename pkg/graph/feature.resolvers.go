@@ -9,6 +9,7 @@ import (
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
+// Features is the resolver for the features field.
 func (r *queryResolver) Features(ctx context.Context, kind *model.EnvironmentKind) ([]*model.Feature, error) {
 	features := []*model.Feature{}
 	for _, feature := range r.Resolver.Features.Features {
