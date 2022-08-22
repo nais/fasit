@@ -3,8 +3,8 @@ source: https://github.com/nais/kafkarator/tree/main/charts/kafkarator
 version: 0.0.1
 environmentKinds:
   - "tenant"
-#dependsOn: TODO: Create aivenator feature
-#  - "aivenator"
+dependsOn:
+  - "aivenator"
 mapping:
   aiven.projects:
     value: "{{.Env.aiven_project_0}}"
@@ -14,7 +14,7 @@ config:
   aiven.token:
     type: string
     secret: true
-    description: Create an API-token with full access to the relevant projects
+    description: An API-token with full access to the relevant projects
     displayName: Aiven API-token
   image.repository:
     type: string

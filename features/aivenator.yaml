@@ -1,0 +1,26 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/aivenator
+source: https://github.com/nais/aivenator/tree/main/charts/aivenator
+version: 0.0.1
+environmentKinds:
+  - "tenant"
+mapping:
+  aiven.projects:
+    value: "{{.Env.aiven_project_0}}" # TODO: Handle multiple projects if it ever comes to that
+    displayName: Aiven projects
+    description: "Aiven projects (space separated) with Kafka enabled for this instance of aivenator"
+  aiven.mainProject:
+    value: "{{.Env.aiven_project_0}}"
+    displayName: Main Aiven project
+    description: "Main Aiven project for services that only support one"
+config:
+  aiven.token:
+    type: string
+    secret: true
+    description: An API-token with full access to the relevant projects
+    displayName: Aiven API-token
+  image.repository:
+    type: string
+  image.pullPolicy:
+    type: string
+  image.tag:
+    type: string
