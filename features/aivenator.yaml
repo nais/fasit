@@ -10,7 +10,7 @@ mapping:
     description: "Aiven projects (space separated) with Kafka enabled for this instance of aivenator"
   aiven.mainProject:
     value: "{{.Env.aiven_project_0}}"
-    displayName: Aiven projects
+    displayName: Main Aiven project
     description: "Main Aiven project for services that only support one"
 config:
   aiven.token:
