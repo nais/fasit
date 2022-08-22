@@ -12,3 +12,8 @@ config:
   podSecurityStandard:
     type: string
     displayName: Pod Security Standard
+mapping:
+  validationFailureAction:
+    value: "enforce"
+    displayName: "Validation Failure Action"
+    description: "Action to take when validation fails"
