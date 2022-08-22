@@ -219,6 +219,11 @@ func helmArgs(m message.DeployInstruction, valuesFile string) ([]string, error) 
 		timeout = m.Timeout
 	}
 
+	namespace := "nais-system"
+	if m.Name == "kyverno" {
+		namespace = "kyverno"
+	}
+
 	args := []string{
 		"upgrade",
 		"--atomic",
@@ -226,7 +231,7 @@ func helmArgs(m message.DeployInstruction, valuesFile string) ([]string, error) 
 		m.Name,
 		m.Chart,
 		"--namespace",
-		"nais-system",
+		namespace,
 		"--create-namespace",
 		"--version",
 		m.Version,
