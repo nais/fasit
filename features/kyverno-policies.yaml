@@ -1,19 +1,9 @@
-chart: kyverno-policies
-repo: https://kyverno.github.io/kyverno/
-version: v2.5.2
-source: https://github.com/kyverno/kyverno/tree/main/charts/kyverno-policies
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/kyverno-policies
+source: https://github.com/nais/helm-charts/tree/main/charts/kyverno-policies
+version: 0.1.0
 environmentKinds:
   - tenant
 autoInstall:
   - "tenant"
 dependsOn:
   - kyverno
-config:
-  podSecurityStandard:
-    type: string
-    displayName: Pod Security Standard
-mapping:
-  validationFailureAction:
-    value: "enforce"
-    displayName: "Validation Failure Action"
-    description: "Action to take when validation fails"
