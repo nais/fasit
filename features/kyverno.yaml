@@ -1,0 +1,18 @@
+chart: kyverno
+repo: https://kyverno.github.io/kyverno/
+version: v2.5.1
+source: https://github.com/kyverno/kyverno/tree/main/charts/kyverno
+environmentKinds:
+  - tenant
+autoInstall:
+  - "tenant"
+timeout: 20m
+config:
+  replicaCount:
+    type: int
+    displayName: "Replicas"
+    description: "Number of replicas, min 3 for HA."
+mapping:
+  replicaCount:
+    template: "3"
+    displayName: "Replicas"
