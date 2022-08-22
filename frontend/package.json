@@ -19,7 +19,7 @@
     "@hookform/resolvers": "2.9.7",
     "@mui/material": "5.10.1",
     "@navikt/ds-css": "1.0.2",
-    "@navikt/ds-icons": "1.0.2",
+    "@navikt/ds-icons": "1.1.0",
     "@navikt/ds-react": "1.0.2",
     "@next/bundle-analyzer": "12.2.5",
     "@types/material-ui": "0.21.12",
