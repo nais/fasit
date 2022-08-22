@@ -14,7 +14,7 @@ mapping:
   replicaCount:
     template: "3"
     displayName: "Replicas"
-  webhooks:
+  config.webhooks:
     # Exclude Namespaces
     template: |
       - namespaceSelector:
