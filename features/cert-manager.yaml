@@ -1,6 +1,6 @@
 chart: cert-manager
 source: https://github.com/cert-manager/cert-manager
-version: v1.8.0
+version: v1.9.1
 repo: https://charts.jetstack.io
 autoInstall:
   - "tenant"
@@ -10,15 +10,17 @@ environmentKinds:
   - "management"
 mapping:
   serviceAccount.annotations.iam\.gke\.io/gcp-service-account:
-    value: '{{ .Env.acme_service_account }}'
+    value: "{{ .Env.acme_service_account }}"
     displayName: "GCP service account"
   installCRDs:
-    template: 'true'
+    template: "true"
   global.leaderElection.namespace:
-    value: 'nais-system'
+    value: "nais-system"
+  containerSecurityContext.seccompProfile.type:
+    value: RuntimeDefault
+    description: Security profile
   extraArgs:
     value:
       - --issuer-ambient-credentials
       - --dns01-recursive-nameservers=1.1.1.1:53,8.8.8.8:53
       - --dns01-recursive-nameservers-only
-
