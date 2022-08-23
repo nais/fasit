@@ -83,6 +83,12 @@ func TestFullRun(t *testing.T) {
 								"upgrade",
 							},
 							"resources": map[string]any{},
+							"securityContext": map[string]any{
+								"allowPrivilegeEscalation": bool(false),
+								"capabilities":             map[string]any{"drop": []any{string("ALL")}},
+								"runAsNonRoot":             bool(true),
+								"seccompProfile":           map[string]any{"type": string("RuntimeDefault")},
+							},
 							"volumeMounts": []any{
 								map[string]any{
 									"mountPath": "/etc/naisd/self-upgrade",
