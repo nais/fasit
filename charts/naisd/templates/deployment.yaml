@@ -11,9 +11,6 @@ spec:
   selector:
     matchLabels:
       {{- include "naisd.selectorLabels" . | nindent 6 }}
-  securityContext:
-    seccompProfile:
-      type: RuntimeDefault
   template:
     metadata:
       {{- with .Values.podAnnotations }}
