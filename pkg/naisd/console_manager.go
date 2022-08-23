@@ -105,7 +105,7 @@ func (c *ConsoleManager) createNamespace(ctx context.Context, data message.Creat
 			if err != nil {
 				return fmt.Errorf("creating namespace: %w", err)
 			}
-			log.Infof("Created namespace %s", data.Name)
+			log.WithField("name", data.Name).Debug("Created namespace")
 			return nil
 		}
 		return fmt.Errorf("getting namespace: %w", err)
@@ -125,7 +125,7 @@ func (c *ConsoleManager) createNamespace(ctx context.Context, data message.Creat
 	if err != nil {
 		return fmt.Errorf("updating namespace: %w", err)
 	}
-	log.Infof("Updated namespace %s with GCP project annotation", data.Name)
+	log.WithField("ns", data.Name).Debug("Updated namespace with GCP project annotation")
 	return nil
 }
 
@@ -144,7 +144,10 @@ func (c *ConsoleManager) createServiceAccounts(ctx context.Context, data message
 			if err != nil {
 				return fmt.Errorf("creating service account: %w", err)
 			}
-			log.Infof("Created service account %s in namespace %s", svcAccount.GetName(), svcAccount.GetNamespace())
+			log.WithFields(logrus.Fields{
+				"name": svcAccount.GetName(),
+				"ns":   svcAccount.GetNamespace(),
+			}).Debug("Created service account")
 		} else {
 			return fmt.Errorf("getting service account: %w", err)
 		}
@@ -176,7 +179,10 @@ func (c *ConsoleManager) createServiceAccounts(ctx context.Context, data message
 			if err != nil {
 				return fmt.Errorf("creating role binding: %w", err)
 			}
-			log.Infof("Created role binding %s in namespace %s", roleBinding.GetName(), roleBinding.GetNamespace())
+			log.WithFields(logrus.Fields{
+				"name": roleBinding.GetName(),
+				"ns":   roleBinding.GetNamespace(),
+			}).Debug("Created role binding")
 		} else {
 			return fmt.Errorf("getting role binding: %w", err)
 		}
@@ -186,7 +192,10 @@ func (c *ConsoleManager) createServiceAccounts(ctx context.Context, data message
 		if err != nil {
 			return fmt.Errorf("update role binding: %w", err)
 		}
-		log.Infof("Updated role binding %s in namespace %s", roleBinding.GetName(), roleBinding.GetNamespace())
+		log.WithFields(logrus.Fields{
+			"name": roleBinding.GetName(),
+			"ns":   roleBinding.GetNamespace(),
+		}).Debug("Updated role binding")
 	}
 
 	return nil
