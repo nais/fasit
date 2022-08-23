@@ -104,6 +104,7 @@ func TestFullRun(t *testing.T) {
 							"secret": map[string]any{"secretName": "naisd-self-upgrader-20200101-000000"},
 						},
 					},
+					"securityContext":    map[string]any{"seccompProfile": map[string]any{"type": string("RuntimeDefault")}},
 					"restartPolicy":      "Never",
 					"serviceAccountName": serviceAccount,
 				},
