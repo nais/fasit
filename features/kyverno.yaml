@@ -14,3 +14,16 @@ mapping:
   replicaCount:
     template: "3"
     displayName: "Replicas"
+  config.webhooks:
+    # exclude namespaces
+    template: |
+      - namespaceselector:
+          matchexpressions:
+          - key: kubernetes.io/metadata.name
+            operator: notin
+            values:
+              - kube-system
+              - kube-node-lease
+              - kyverno
+              - cnrm-system
+              - configconnector-operator-system
