@@ -95,6 +95,11 @@ func createJob(suffix string, msg message.DeployInstruction, saName, naisProject
 							},
 						},
 					},
+					SecurityContext: &corev1.PodSecurityContext{
+						SeccompProfile: &corev1.SeccompProfile{
+							Type: corev1.SeccompProfileTypeRuntimeDefault,
+						},
+					},
 					ServiceAccountName: saName,
 					RestartPolicy:      corev1.RestartPolicyNever,
 					Volumes: []corev1.Volume{
