@@ -16,6 +16,11 @@ mapping:
     displayName: "Replicas"
   excludeKyvernoNamespace:
     template: "false"
+  extraArgs:
+    value:
+      - --autogenInternals=false
+      - --clientRateLimitQPS=50
+      - --clientRateLimitBurst=100
   config.webhooks:
     # exclude namespaces
     template: |
