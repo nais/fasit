@@ -76,6 +76,16 @@ func createJob(suffix string, msg message.DeployInstruction, saName, naisProject
 								tenantName,
 								"upgrade",
 							},
+							SecurityContext: &corev1.SecurityContext{
+								RunAsNonRoot:             pointer.Bool(true),
+								AllowPrivilegeEscalation: pointer.Bool(false),
+								Capabilities: &corev1.Capabilities{
+									Drop: []corev1.Capability{"ALL"},
+								},
+								SeccompProfile: &corev1.SeccompProfile{
+									Type: corev1.SeccompProfileTypeRuntimeDefault,
+								},
+							},
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      "instruction",

@@ -156,6 +156,6 @@ func (r *Receiver) kubernetesNodes(ctx context.Context, msg message.Status) erro
 		return err
 	}
 
-	r.log.WithField("nodes", len(status.Nodes)).Info("received kubernetes nodes")
+	r.log.WithField("nodes", len(status.Nodes)).Debug("received kubernetes nodes")
 	return r.repo.KubernetesNodeSync(ctx, environmentID, status)
 }

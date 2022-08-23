@@ -62,7 +62,7 @@ func (r *Reconciler) Run(ctx context.Context, interval time.Duration) {
 	defer ticker.Stop()
 
 	for {
-		r.log.Info("reconciling")
+		r.log.Debug("reconciling")
 		if err := r.reconcile(ctx); err != nil {
 			r.log.WithError(err).Error("reconcile")
 		}
@@ -175,7 +175,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 		if err != nil {
 			var fer *database.ErrMissingRequiredFields
 			if errors.As(err, &fer) {
-				r.log.WithField("feature", f.Name).WithError(err).Debug("missing required fields")
+				r.log.WithField("feature", f.Name).WithError(err).Info("missing required fields")
 				continue
 			}
 			return err
@@ -191,6 +191,12 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 				continue
 			}
 		}
+
+		r.log.WithFields(logrus.Fields{
+			"feature":     f.Name,
+			"tenant":      d.TenantName,
+			"environment": d.Name,
+		}).Info("publish deploy instruction")
 
 		err = mgr.Publish(ctx, message.DeployInstruction{
 			Name:       f.Name,
