@@ -14,13 +14,15 @@ mapping:
   replicaCount:
     template: "3"
     displayName: "Replicas"
+  excludeKyvernoNamespace:
+    template: "false"
   config.webhooks:
     # exclude namespaces
     template: |
-      - namespaceselector:
-          matchexpressions:
+      - namespaceSelector:
+          matchExpressions:
           - key: kubernetes.io/metadata.name
-            operator: notin
+            operator: NotIn
             values:
               - kube-system
               - kube-node-lease
