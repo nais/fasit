@@ -183,6 +183,7 @@ type ComplexityRoot struct {
 		Environments       func(childComplexity int, tenantID uuid.UUID) int
 		FeatureStatus      func(childComplexity int, envID uuid.UUID, feature string) int
 		Features           func(childComplexity int, kind *model.EnvironmentKind) int
+		HelmValues         func(childComplexity int, feature string, envID uuid.UUID) int
 		Tenant             func(childComplexity int, id *uuid.UUID, slug *string) int
 		Tenants            func(childComplexity int) int
 		UserInfo           func(childComplexity int) int
@@ -259,6 +260,7 @@ type QueryResolver interface {
 	Tenants(ctx context.Context) ([]*model.Tenant, error)
 	Configuration(ctx context.Context, feature string, envID *uuid.UUID) (*model.EnvConfig, error)
 	EnvConfig(ctx context.Context, feature string, envID uuid.UUID) (*model.EnvConfig, error)
+	HelmValues(ctx context.Context, feature string, envID uuid.UUID) (json.RawMessage, error)
 	Environment(ctx context.Context, id uuid.UUID) (*model.Environment, error)
 	EnvironmentByNames(ctx context.Context, environmentName string, tenantName string) (*model.Environment, error)
 	Environments(ctx context.Context, tenantID uuid.UUID) ([]*model.Environment, error)
@@ -972,6 +974,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Features(childComplexity, args["kind"].(*model.EnvironmentKind)), true
 
+	case "Query.helmValues":
+		if e.complexity.Query.HelmValues == nil {
+			break
+		}
+
+		args, err := ec.field_Query_helmValues_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.HelmValues(childComplexity, args["feature"].(string), args["envID"].(uuid.UUID)), true
+
 	case "Query.tenant":
 		if e.complexity.Query.Tenant == nil {
 			break
@@ -1337,6 +1351,7 @@ input UpdateConfiguration {
 extend type Query {
   configuration(feature: String!, envID: ID): EnvConfig!
   envConfig(feature: String!, envID: ID!): EnvConfig!
+  helmValues(feature: String!, envID: ID!): RawMessage!
 }
 
 extend type Mutation {
@@ -1889,6 +1904,30 @@ func (ec *executionContext) field_Query_features_args(ctx context.Context, rawAr
 		}
 	}
 	args["kind"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_helmValues_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["feature"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("feature"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["feature"] = arg0
+	var arg1 uuid.UUID
+	if tmp, ok := rawArgs["envID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("envID"))
+		arg1, err = ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["envID"] = arg1
 	return args, nil
 }
 
@@ -6022,6 +6061,61 @@ func (ec *executionContext) fieldContext_Query_envConfig(ctx context.Context, fi
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_envConfig_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_helmValues(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_helmValues(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().HelmValues(rctx, fc.Args["feature"].(string), fc.Args["envID"].(uuid.UUID))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(json.RawMessage)
+	fc.Result = res
+	return ec.marshalNRawMessage2encodingᚋjsonᚐRawMessage(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_helmValues(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type RawMessage does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_helmValues_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -10854,6 +10948,29 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_envConfig(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "helmValues":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_helmValues(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}

@@ -69,6 +69,7 @@ input UpdateConfiguration {
 extend type Query {
   configuration(feature: String!, envID: ID): EnvConfig!
   envConfig(feature: String!, envID: ID!): EnvConfig!
+  helmValues(feature: String!, envID: ID!): RawMessage!
 }
 
 extend type Mutation {

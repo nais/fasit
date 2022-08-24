@@ -5,6 +5,7 @@ package graph
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -153,6 +154,21 @@ func (r *queryResolver) EnvConfig(ctx context.Context, feature string, envID uui
 	return ret, nil
 }
 
+// HelmValues is the resolver for the helmValues field.
+func (r *queryResolver) HelmValues(ctx context.Context, feature string, envID uuid.UUID) (json.RawMessage, error) {
+	f := r.Resolver.Features.Get(feature)
+	if f == nil {
+		return json.RawMessage{}, nil
+	}
+
+	v, err := r.Repo.HelmValues(ctx, *f, envID, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(v)
+}
+
 // EnvConfiguration returns graphgen.EnvConfigurationResolver implementation.
 func (r *Resolver) EnvConfiguration() graphgen.EnvConfigurationResolver {
 	return &envConfigurationResolver{r}
@@ -163,7 +179,5 @@ func (r *Resolver) GlobalConfiguration() graphgen.GlobalConfigurationResolver {
 	return &globalConfigurationResolver{r}
 }
 
-type (
-	envConfigurationResolver    struct{ *Resolver }
-	globalConfigurationResolver struct{ *Resolver }
-)
+type envConfigurationResolver struct{ *Resolver }
+type globalConfigurationResolver struct{ *Resolver }
