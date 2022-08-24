@@ -52,7 +52,6 @@ mapping:
       - "[ReplicaSet,*,*]"
       - "[ReportChangeRequest,*,*]"
       - "[ClusterReportChangeRequest,*,*]"
-      - "[DaemonSet,nais-system,monitoring-prometheus-node-exporter]"
       # exclude resources from the chart
       - '[ClusterRole,*,{{ "{{" }} template "kyverno.fullname" . {{ "}}" }}:*]'
       - '[ClusterRoleBinding,*,{{ "{{" }} template "kyverno.fullname" . {{ "}}" }}:*]'
