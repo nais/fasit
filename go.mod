@@ -3,7 +3,7 @@ module github.com/nais/fasit
 go 1.18
 
 require (
-	cloud.google.com/go/pubsub v1.24.0
+	cloud.google.com/go/pubsub v1.25.1
 	github.com/99designs/gqlgen v0.17.15
 	github.com/DATA-DOG/go-txdb v0.1.5
 	github.com/GoogleCloudPlatform/cloudsql-proxy v1.31.2
@@ -36,7 +36,7 @@ require (
 )
 
 require (
-	cloud.google.com/go v0.103.0 // indirect
+	cloud.google.com/go v0.104.0 // indirect
 	cloud.google.com/go/compute v1.7.0 // indirect
 	cloud.google.com/go/iam v0.3.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
@@ -157,7 +157,7 @@ require (
 	golang.org/x/time v0.0.0-20220722155302-e5dcc9cfc0b9 // indirect
 	golang.org/x/tools v0.1.12 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/genproto v0.0.0-20220808204814-fd01256a5276 // indirect
+	google.golang.org/genproto v0.0.0-20220822174746-9e6da59bd2fc // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	k8s.io/apiextensions-apiserver v0.24.3 // indirect
 	k8s.io/apiserver v0.24.3 // indirect
