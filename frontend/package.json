@@ -20,7 +20,7 @@
     "@mui/material": "5.10.3",
     "@navikt/ds-css": "1.2.3",
     "@navikt/ds-icons": "1.2.3",
-    "@navikt/ds-react": "1.2.3",
+    "@navikt/ds-react": "1.2.4",
     "@next/bundle-analyzer": "12.2.5",
     "@types/material-ui": "0.21.12",
     "@types/node": "18.7.13",
