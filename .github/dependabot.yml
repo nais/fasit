@@ -3,16 +3,24 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: "weekly"
+    reviewers:
+      - "starefossen"
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: "weekly"
+    reviewers:
+      - "starefossen"
   - package-ecosystem: "gomod"
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: "weekly"
+    reviewers:
+      - "starefossen"
   - package-ecosystem: "npm"
     directory: "/frontend"
     schedule:
-      interval: "daily"
+      interval: "weekly"
+    reviewers:
+      - "starefossen"
