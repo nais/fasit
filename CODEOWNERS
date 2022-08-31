@@ -1,9 +1,3 @@
-* @nais/core
-
-# Excluded to reduce dependabot notifications
-!.github/workflows/*
-!go.mod @nais/core
-!go.sum @nais/core
-!Dockerfile @nais/core
-!frontend/package.json @nais/core
-!frontend/package-lock.json @nais/core
+*.go @nais/core
+*.ts @nais/core
+*.md @nais/core
