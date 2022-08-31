@@ -261,6 +261,7 @@ export type Query = {
   environments: Array<Environment>
   featureStatus: Status
   features: Array<Feature>
+  helmValues: Scalars['RawMessage']
   /** tenant returns the given tenant. */
   tenant: Tenant
   tenants: Array<Tenant>
@@ -299,6 +300,11 @@ export type QueryFeatureStatusArgs = {
 
 export type QueryFeaturesArgs = {
   kind?: InputMaybe<EnvironmentKind>
+}
+
+export type QueryHelmValuesArgs = {
+  envID: Scalars['ID']
+  feature: Scalars['String']
 }
 
 export type QueryTenantArgs = {
@@ -605,6 +611,13 @@ export type FeatureStateSaveMutation = {
   featureStateSave: { __typename?: 'FeatureState'; enabled: boolean }
 }
 
+export type HelmValuesQueryVariables = Exact<{
+  feature: Scalars['String']
+  envID: Scalars['ID']
+}>
+
+export type HelmValuesQuery = { __typename?: 'Query'; helmValues: any }
+
 export type FeatureStatusQueryVariables = Exact<{
   envID: Scalars['ID']
   feature: Scalars['String']
@@ -621,8 +634,17 @@ export type FeatureStatusQuery = {
     configHash: string
     created: any
     lastModified: any
-    log: string
   }
+}
+
+export type FeatureLogsQueryVariables = Exact<{
+  envID: Scalars['ID']
+  feature: Scalars['String']
+}>
+
+export type FeatureLogsQuery = {
+  __typename?: 'Query'
+  featureStatus: { __typename?: 'Status'; log: string }
 }
 
 export type TenantGetQueryVariables = Exact<{
@@ -1406,6 +1428,61 @@ export type FeatureStateSaveMutationOptions = Apollo.BaseMutationOptions<
   FeatureStateSaveMutation,
   FeatureStateSaveMutationVariables
 >
+export const HelmValuesDocument = gql`
+  query helmValues($feature: String!, $envID: ID!) {
+    helmValues(feature: $feature, envID: $envID)
+  }
+`
+
+/**
+ * __useHelmValuesQuery__
+ *
+ * To run a query within a React component, call `useHelmValuesQuery` and pass it any options that fit your needs.
+ * When your component renders, `useHelmValuesQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useHelmValuesQuery({
+ *   variables: {
+ *      feature: // value for 'feature'
+ *      envID: // value for 'envID'
+ *   },
+ * });
+ */
+export function useHelmValuesQuery(
+  baseOptions: Apollo.QueryHookOptions<
+    HelmValuesQuery,
+    HelmValuesQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions }
+  return Apollo.useQuery<HelmValuesQuery, HelmValuesQueryVariables>(
+    HelmValuesDocument,
+    options,
+  )
+}
+export function useHelmValuesLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    HelmValuesQuery,
+    HelmValuesQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions }
+  return Apollo.useLazyQuery<HelmValuesQuery, HelmValuesQueryVariables>(
+    HelmValuesDocument,
+    options,
+  )
+}
+export type HelmValuesQueryHookResult = ReturnType<typeof useHelmValuesQuery>
+export type HelmValuesLazyQueryHookResult = ReturnType<
+  typeof useHelmValuesLazyQuery
+>
+export type HelmValuesQueryResult = Apollo.QueryResult<
+  HelmValuesQuery,
+  HelmValuesQueryVariables
+>
 export const FeatureStatusDocument = gql`
   query featureStatus($envID: ID!, $feature: String!) {
     featureStatus(envID: $envID, feature: $feature) {
@@ -1416,7 +1493,6 @@ export const FeatureStatusDocument = gql`
       configHash
       created
       lastModified
-      log
     }
   }
 `
@@ -1471,6 +1547,63 @@ export type FeatureStatusLazyQueryHookResult = ReturnType<
 export type FeatureStatusQueryResult = Apollo.QueryResult<
   FeatureStatusQuery,
   FeatureStatusQueryVariables
+>
+export const FeatureLogsDocument = gql`
+  query featureLogs($envID: ID!, $feature: String!) {
+    featureStatus(envID: $envID, feature: $feature) {
+      log
+    }
+  }
+`
+
+/**
+ * __useFeatureLogsQuery__
+ *
+ * To run a query within a React component, call `useFeatureLogsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useFeatureLogsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useFeatureLogsQuery({
+ *   variables: {
+ *      envID: // value for 'envID'
+ *      feature: // value for 'feature'
+ *   },
+ * });
+ */
+export function useFeatureLogsQuery(
+  baseOptions: Apollo.QueryHookOptions<
+    FeatureLogsQuery,
+    FeatureLogsQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions }
+  return Apollo.useQuery<FeatureLogsQuery, FeatureLogsQueryVariables>(
+    FeatureLogsDocument,
+    options,
+  )
+}
+export function useFeatureLogsLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    FeatureLogsQuery,
+    FeatureLogsQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions }
+  return Apollo.useLazyQuery<FeatureLogsQuery, FeatureLogsQueryVariables>(
+    FeatureLogsDocument,
+    options,
+  )
+}
+export type FeatureLogsQueryHookResult = ReturnType<typeof useFeatureLogsQuery>
+export type FeatureLogsLazyQueryHookResult = ReturnType<
+  typeof useFeatureLogsLazyQuery
+>
+export type FeatureLogsQueryResult = Apollo.QueryResult<
+  FeatureLogsQuery,
+  FeatureLogsQueryVariables
 >
 export const TenantGetDocument = gql`
   query TenantGet($id: ID!) {

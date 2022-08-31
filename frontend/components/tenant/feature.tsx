@@ -1,13 +1,19 @@
 import * as React from 'react'
-import {useState} from 'react'
+import { useState } from 'react'
 import styled from 'styled-components'
 import FeatureConfig from './featureConfig'
-import {EnvironmentGetQuery, useConfigurationQuery, useFeaturesQuery} from '../../lib/schema/graphql'
-import EnableFeature from "./enableFeature";
-import FeatureStatus from "./featureStatus";
-import extractConfig from "../lib/extractConfig";
-import ReactTooltip from "react-tooltip";
-
+import {
+  EnvironmentGetQuery,
+  useConfigurationQuery,
+  useFeaturesQuery,
+} from '../../lib/schema/graphql'
+import EnableFeature from './enableFeature'
+import FeatureStatus from './featureStatus'
+import extractConfig from '../lib/extractConfig'
+import { Tabs } from '@navikt/ds-react'
+import { FileContent, Filter, Wrench } from '@navikt/ds-icons'
+import FeatureLogs from './featureLogs'
+import FeatureHelmValues from './featureHelmValues'
 
 const FeatureContainer = styled.div`
   border: 1px solid silver;
@@ -18,35 +24,78 @@ const FeatureContainer = styled.div`
 
 const LogPre = styled.pre`
   overflow: auto;
-  word-break: break-word,;
+  word-break: break-word;
   white-space: pre-wrap;
   font-size: 14px;
 `
 
 interface FeatureProps {
-    env: EnvironmentGetQuery['environment']
-    featureName: string,
+  env: EnvironmentGetQuery['environment']
+  featureName: string
 }
 
+const Feature = ({ env, featureName }: FeatureProps) => {
+  const [showVerify, setShowVerify] = useState(false)
 
-const Feature = ({env, featureName}: FeatureProps) => {
-    const [showVerify, setShowVerify] = useState(false)
-    const [showLog, setShowLog] = useState("")
+  const configQuery = useConfigurationQuery({
+    variables: { envID: env.id, feature: featureName },
+  })
+  const features = useFeaturesQuery({ variables: { kind: env.kind } })
+  const { configs, featureObject } = extractConfig(
+    features,
+    configQuery,
+    featureName,
+  )
 
-    const configQuery = useConfigurationQuery({variables: {envID: env.id, feature: featureName}})
-    const features = useFeaturesQuery({variables: {kind: env.kind}})
-    const {configs, featureObject} = extractConfig(features, configQuery, featureName);
+  return (
+    <FeatureContainer>
+      <FeatureStatus
+        featureName={featureName}
+        configs={configs}
+        env={env}
+        setShowVerify={setShowVerify}
+      />
+      <Tabs defaultValue="config" size="small" iconPosition="left">
+        <Tabs.List>
+          <Tabs.Tab
+            value="config"
+            label="Config"
+            icon={<Wrench title="config" />}
+          />
+          <Tabs.Tab value="logs" label="Logs" icon={<Filter title="logs" />} />
+          <Tabs.Tab
+            value="helm_values"
+            label="Helm Values"
+            icon={<FileContent title="helm values" />}
+          />
+        </Tabs.List>
+        <Tabs.Panel value="config" className="h-24 w-full bg-gray-50 p-8">
+          <FeatureConfig
+            envID={env.id}
+            configs={configs}
+            featureObject={featureObject}
+            mapping={configQuery.data?.configuration.mapping}
+          />
+        </Tabs.Panel>
+        <Tabs.Panel value="logs" className="h-24 w-full bg-gray-50 p-8">
+          <FeatureLogs env={env} featureName={featureName} />
+        </Tabs.Panel>
+        <Tabs.Panel value="helm_values" className="h-24  w-full bg-gray-50 p-8">
+          <FeatureHelmValues env={env} featureName={featureName} />
+        </Tabs.Panel>
+      </Tabs>
 
-
-    return (
-        <FeatureContainer>
-            <FeatureStatus featureName={featureName} configs={configs} env={env} setShowVerify={setShowVerify} showLog={setShowLog}/>
-            {showLog && <LogPre>{showLog}</LogPre>}
-            {!showLog && <FeatureConfig envID={env.id} configs={configs} featureObject={featureObject} mapping={configQuery.data?.configuration.mapping}/> }
-            <EnableFeature open={showVerify} onClose={setShowVerify} feature={featureName} envID={env.id}
-                           enabled={env.featureStates.find((f) => f.feature.name === featureName)?.enabled || false}/>
-
-        </FeatureContainer>
-    )
+      <EnableFeature
+        open={showVerify}
+        onClose={setShowVerify}
+        feature={featureName}
+        envID={env.id}
+        enabled={
+          env.featureStates.find((f) => f.feature.name === featureName)
+            ?.enabled || false
+        }
+      />
+    </FeatureContainer>
+  )
 }
 export default Feature
