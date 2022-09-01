@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/aivenator
 source: https://github.com/nais/aivenator/tree/main/charts/aivenator
-version: 0.0.1
+version: 0.1.0
 environmentKinds:
   - "tenant"
 mapping:
