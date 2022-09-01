@@ -3,6 +3,8 @@ source: https://github.com/nais/helm-charts/tree/main/charts/monitoring-manageme
 version: 0.8.0
 environmentKinds:
   - "management"
+dependsOn:
+  - "loadbalancer-iap"
 timeout: 20m
 config:
   nais_prometheus.retention:
