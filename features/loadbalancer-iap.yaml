@@ -1,0 +1,20 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/loadbalancer-iap
+source: https://github.com/nais/helm-charts/tree/main/charts/loadbalancer-iap
+version: 0.2.0
+environmentKinds:
+  - "management"
+dependsOn:
+  - "certificates"
+config:
+  certificates:
+    type: string_array
+    required: true
+  ingress-nginx.controller.resources.requests.cpu:
+    type: string
+    displayName: "Cpu request"
+  ingress-nginx.controller.resources.requests.memory:
+    type: string
+    displayName: "Memory request"
+  ingress-nginx.controller.replicaCount:
+    type: int
+    displayName: "Replicas"
