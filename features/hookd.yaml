@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/hookd
 source: https://github.com/nais/helm-charts/tree/main/charts/hookd
-version: 0.1.0
+version: 0.1.1
 environmentKinds:
   - "management"
 dependsOn:
@@ -19,6 +19,10 @@ mapping:
     value: "{{.Management.hookd_google_service_account_email}}"
     displayName: "Google service account"
     description: "The service account email that is used to access the postgres-database, set up by terraform."
+  backend.googleClusterProjects:
+    value: "{{$first := true}}{{ range $cluster := .Envs }}{{if $first}}{{$first = false}}{{else}},{{end}}{{ $cluster.name }}:{{ $cluster.project_id }}{{ end }}"
+    displayName: "Google Cluster Projects"
+    description: "Mapping from cluster name to google project ('cluster1=project1,cluster2=project2')"
   ingress.host:
     value: "deploy.{{.Tenant.Name}}.cloud.nais.io"
     displayName: "Ingress URL"
