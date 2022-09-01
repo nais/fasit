@@ -9,6 +9,12 @@ config:
   certificates:
     type: string_array
     required: true
+  iapClientId:
+    type: string
+    required: true
+  iapClientSecret:
+    type: string
+    required: true
   ingress-nginx.controller.resources.requests.cpu:
     type: string
     displayName: "Cpu request"
