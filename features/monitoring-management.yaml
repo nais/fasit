@@ -29,7 +29,7 @@ config:
   alerts.slack.channel:
     type: string
     displayName: Slack channel
-  grafana.grafana\.ini.auth.jwt.expect_claims:
+  grafana.grafana\.ini.auth\.jwt.expect_claims:
     type: string
     displayName: Grafana JWT claims
     description: "JSON object with claims to expect in the JWT token, example:  {\"iss\": \"https://cloud.google.com/iap\",\"aud\": \"/projects/718161667033/global/backendServices/2287975999985226128\"}"
