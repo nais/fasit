@@ -13,7 +13,7 @@ mapping:
   clusters:
     description: "List of clusters to deploy the canary image into"
     template: |
-      [{{$first := true}}{{ range $env := .Envs }}{{if $first}}{{$first = false}}{{else}},{{end}}"{{ $env.deployd_pre_shared_key }}"{{ end }}]
+      [{{$first := true}}{{ range $env := .Envs }}{{if $first}}{{$first = false}}{{else}},{{end}}"{{ $env.name }}"{{ end }}]
 config:
   image.repository:
     type: string
