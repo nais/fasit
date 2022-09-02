@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring-management
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring-management
-version: 0.8.0
+version: 0.9.0
 environmentKinds:
   - "management"
 dependsOn:
@@ -29,6 +29,12 @@ config:
   alerts.slack.channel:
     type: string
     displayName: Slack channel
+  grafana.grafana.ini.auth.jwt.expect_claims:
+    type: string
+    displayName: Grafana JWT claims
+    description: "JSON object with claims to expect in the JWT token, example:  {\"iss\": \"https://cloud.google.com/iap\",\"aud\": \"/projects/718161667033/global/backendServices/2287975999985226128\"}"
+    required: true
+
 mapping:
   grafana.datasources:
     template: |
