@@ -23,6 +23,7 @@ mapping:
       - --autogenInternals=false
       - --clientRateLimitQPS=50
       - --clientRateLimitBurst=100
+      - --splitPolicyReport
   config.webhooks:
     # exclude namespaces
     template: |
