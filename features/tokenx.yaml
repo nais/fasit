@@ -59,7 +59,6 @@ config:
     displayName: Tokendings issuer URL
     description: The value for issuer in tokens issued by tokendings, e.g. https://tokendings.something
     type: string
-    required: true
 
   tokendings.env.SUBJECT_TOKEN_ISSUERS:
     displayName: Tokendings trusted token issuers
