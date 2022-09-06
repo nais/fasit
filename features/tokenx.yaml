@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/tokenx
 source: https://github.com/nais/helm-charts/tree/main/charts/tokenx
-version: 0.2.0
+version: 0.3.0
 environmentKinds:
   - "tenant"
 dependsOn:
@@ -49,12 +49,6 @@ config:
     type: string_array
     required: true
 
-  tokendings.secrets.private_jwks:
-    displayName: Tokendings private JWKS
-    type: string
-    required: true
-    secret: true
-
   tokendings.env.APPLICATION_PROFILE:
     displayName: Tokendings application profile
     description: Allowable values [PROD, NON_PROD]
@@ -70,36 +64,6 @@ config:
   tokendings.env.SUBJECT_TOKEN_ISSUERS:
     displayName: Tokendings trusted token issuers
     description: a commaseparated list of well-known urls to trusted token issuers in a token exchange
-    type: string
-    required: true
-
-  tokendings.env.AUTH_IDENTITY_PROVIDER:
-    displayName: Auth token provider
-    description: The well-known URL to the authentication token provider (should match jwker token provider URL)
-    type: string
-    required: true
-
-  tokendings.env.AUTH_ACCEPTED_AUDIENCE:
-    displayName: Auth accepted audience
-    description: should match tokendings client_id
-    type: string
-    required: true
-
-  tokendings.env.AUTH_JWKER_CLIENT_ID:
-    displayName: Auth jwker client_id
-    description: should match jwker client_id
-    type: string
-    required: true
-
-  tokendings.env.AUTH_JWKER_JWKS:
-    displayName: Auth jwker jwks
-    description: a jwks containing jwkers public JWK
-    type: string
-    required: true
-
-  tokendings.env.AUTH_JWKER_SUB:
-    displayName: Auth jwker sub
-    description: the value of the sub claim in jwkers access_token
     type: string
     required: true
 
