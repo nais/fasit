@@ -4,6 +4,8 @@ version: v2.5.3
 source: https://github.com/kyverno/kyverno/tree/main/charts/kyverno
 environmentKinds:
   - tenant
+autoInstall:
+  - tenant
 timeout: 20m
 config:
   replicaCount:
@@ -21,6 +23,7 @@ mapping:
       - --autogenInternals=false
       - --clientRateLimitQPS=50
       - --clientRateLimitBurst=100
+      - --splitPolicyReport=true
   config.webhooks:
     # exclude namespaces
     template: |
