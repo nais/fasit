@@ -7,7 +7,7 @@ require (
 	github.com/99designs/gqlgen v0.17.16
 	github.com/DATA-DOG/go-txdb v0.1.5
 	github.com/GoogleCloudPlatform/cloudsql-proxy v1.32.0
-	github.com/google/go-cmp v0.5.8
+	github.com/google/go-cmp v0.5.9
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/websocket v1.5.0
 	github.com/iancoleman/strcase v0.2.0
