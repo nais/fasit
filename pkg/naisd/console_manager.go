@@ -11,10 +11,20 @@ import (
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 )
 
 var ErrDeleteRequiredNamespace = fmt.Errorf("namespace is required, cannot be deleted")
+
+var cnrmConfigGroupVersionResource = schema.GroupVersionResource{
+	Group:    "core.cnrm.cloud.google.com",
+	Version:  "v1beta1",
+	Resource: "ConfigConnectorContext",
+}
 
 type ConsoleReceiver interface {
 	Name() string
@@ -25,17 +35,28 @@ type ConsoleReceiver interface {
 type ConsoleManager struct {
 	Consoles   ConsoleReceiver
 	kubeClient kubernetes.Interface
+	dynClient  dynamic.Interface
+	projectID  string
 	log        *logrus.Entry
 }
 
-func NewConsoleManager(ConsoleSubscriber ConsoleReceiver, kubeClient kubernetes.Interface, log *logrus.Entry) *ConsoleManager {
+func NewConsoleManager(ConsoleSubscriber ConsoleReceiver, config *rest.Config, projectID string, log *logrus.Entry) (*ConsoleManager, error) {
+	kubeClient, err := kubernetes.NewForConfig(config)
+	if err != nil {
+		return nil, fmt.Errorf("creating kubernetes client: %w", err)
+	}
+	dyncClient, err := dynamic.NewForConfig(config)
+	if err != nil {
+		return nil, fmt.Errorf("creating dynamic client: %w", err)
+	}
 	receiver := &ConsoleManager{
 		Consoles:   ConsoleSubscriber,
 		kubeClient: kubeClient,
+		dynClient:  dyncClient,
 		log:        log,
 	}
 
-	return receiver
+	return receiver, nil
 }
 
 func (c *ConsoleManager) Run(ctx context.Context) {
@@ -80,6 +101,11 @@ func (c *ConsoleManager) create(ctx context.Context, msg message.Console, log lo
 	}
 
 	err = c.createServiceAccounts(ctx, data, log)
+	if err != nil {
+		return err
+	}
+
+	err = c.createCNRMConfig(ctx, data, log)
 	if err != nil {
 		return err
 	}
@@ -226,4 +252,41 @@ func (c *ConsoleManager) deleteNamespace(ctx context.Context, msg message.Consol
 	}
 
 	return nil
+}
+
+func (c *ConsoleManager) createCNRMConfig(ctx context.Context, data message.CreateNamespace, log logrus.FieldLogger) error {
+	cnrmClient := c.dynClient.Resource(cnrmConfigGroupVersionResource).Namespace(data.Name)
+
+	const contextName = "configconnectorcontext.core.cnrm.cloud.google.com"
+	saEmail := "cnrm-" + data.Name + "@" + c.projectID + ".iam.gserviceaccount.com"
+
+	res, err := cnrmClient.Get(ctx, contextName, metav1.GetOptions{})
+	if err != nil {
+		if !errors.IsNotFound(err) {
+			return fmt.Errorf("getting config connector context: %w", err)
+		}
+		_, err := cnrmClient.Create(ctx, &unstructured.Unstructured{
+			Object: map[string]interface{}{
+				"apiVersion": "core.cnrm.cloud.google.com/v1beta1",
+				"kind":       "ConfigConnectorContext",
+				"metadata": map[string]interface{}{
+					"name": contextName,
+				},
+				"spec": map[string]interface{}{
+					"googleServiceAccount": saEmail,
+				},
+			},
+		}, metav1.CreateOptions{})
+		if err != nil {
+			return fmt.Errorf("creating CNRM config: %w", err)
+		}
+		return nil
+	}
+
+	res.Object["spec"] = map[string]interface{}{
+		"googleServiceAccount": saEmail,
+	}
+
+	_, err = cnrmClient.Update(ctx, res, metav1.UpdateOptions{})
+	return err
 }
