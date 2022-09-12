@@ -23,7 +23,7 @@ var ErrDeleteRequiredNamespace = fmt.Errorf("namespace is required, cannot be de
 var cnrmConfigGroupVersionResource = schema.GroupVersionResource{
 	Group:    "core.cnrm.cloud.google.com",
 	Version:  "v1beta1",
-	Resource: "ConfigConnectorContext",
+	Resource: "configconnectorcontexts",
 }
 
 type ConsoleReceiver interface {
