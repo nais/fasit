@@ -9,6 +9,8 @@ import (
 	"github.com/nais/fasit/pkg/message"
 	"github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	dynFake "k8s.io/client-go/dynamic/fake"
 	"k8s.io/client-go/kubernetes/fake"
 )
 
@@ -62,8 +64,10 @@ func TestConsoleManager_handler(t *testing.T) {
 	ctx := context.Background()
 
 	cs := fake.NewSimpleClientset()
+	dynClient := dynFake.NewSimpleDynamicClient(&runtime.Scheme{})
 	m := &ConsoleManager{
 		kubeClient: cs,
+		dynClient:  dynClient,
 		log:        logrus.NewEntry(logrus.New()),
 	}
 
@@ -99,6 +103,14 @@ func TestConsoleManager_handler(t *testing.T) {
 				_, err = cs.RbacV1().RoleBindings(namespace).Get(ctx, fmt.Sprintf("serviceuser-%s-naisdeveloper", namespace), metav1.GetOptions{})
 				if err != nil {
 					t.Errorf("error getting role binding = %v, wantErr %v", err, tt.wantErr)
+				}
+			}
+
+			// Check cnrm config
+			for _, namespace := range tt.expectedNamespaces {
+				_, err := dynClient.Resource(cnrmConfigGroupVersionResource).Namespace(namespace).Get(ctx, "configconnectorcontext.core.cnrm.cloud.google.com", metav1.GetOptions{})
+				if err != nil {
+					t.Errorf("error getting cnrm context = %v, wantErr %v", err, tt.wantErr)
 				}
 			}
 		})

@@ -20,6 +20,12 @@ import (
 
 var ErrDeleteRequiredNamespace = fmt.Errorf("namespace is required, cannot be deleted")
 
+var cnrmConfigGroupVersionResource = schema.GroupVersionResource{
+	Group:    "core.cnrm.cloud.google.com",
+	Version:  "v1beta1",
+	Resource: "ConfigConnectorContext",
+}
+
 type ConsoleReceiver interface {
 	Name() string
 	Synchronous()
@@ -249,11 +255,7 @@ func (c *ConsoleManager) deleteNamespace(ctx context.Context, msg message.Consol
 }
 
 func (c *ConsoleManager) createCNRMConfig(ctx context.Context, data message.CreateNamespace, log logrus.FieldLogger) error {
-	cnrmClient := c.dynClient.Resource(schema.GroupVersionResource{
-		Group:    "core.cnrm.cloud.google.com",
-		Version:  "v1beta1",
-		Resource: "ConfigConnectorContext",
-	}).Namespace(data.Name)
+	cnrmClient := c.dynClient.Resource(cnrmConfigGroupVersionResource).Namespace(data.Name)
 
 	const contextName = "configconnectorcontext.core.cnrm.cloud.google.com"
 	saEmail := "cnrm-" + data.Name + "@" + c.projectID + ".iam.gserviceaccount.com"
