@@ -69,6 +69,7 @@ func TestConsoleManager_handler(t *testing.T) {
 		kubeClient: cs,
 		dynClient:  dynClient,
 		log:        logrus.NewEntry(logrus.New()),
+		projectID:  "test-project",
 	}
 
 	for _, tt := range tests {
@@ -108,9 +109,18 @@ func TestConsoleManager_handler(t *testing.T) {
 
 			// Check cnrm config
 			for _, namespace := range tt.expectedNamespaces {
-				_, err := dynClient.Resource(cnrmConfigGroupVersionResource).Namespace(namespace).Get(ctx, "configconnectorcontext.core.cnrm.cloud.google.com", metav1.GetOptions{})
+				cc, err := dynClient.Resource(cnrmConfigGroupVersionResource).Namespace(namespace).Get(ctx, "configconnectorcontext.core.cnrm.cloud.google.com", metav1.GetOptions{})
 				if err != nil {
 					t.Errorf("error getting cnrm context = %v, wantErr %v", err, tt.wantErr)
+				}
+
+				want := map[string]any{
+					"googleServiceAccount": "cnrm-" + namespace + "@test-project.iam.gserviceaccount.com",
+				}
+				got := cc.Object["spec"]
+
+				if !cmp.Equal(want, got) {
+					t.Errorf("diff -want +got:\n%v", cmp.Diff(want, got))
 				}
 			}
 		})

@@ -54,6 +54,7 @@ func NewConsoleManager(ConsoleSubscriber ConsoleReceiver, config *rest.Config, p
 		kubeClient: kubeClient,
 		dynClient:  dyncClient,
 		log:        log,
+		projectID:  projectID,
 	}
 
 	return receiver, nil
