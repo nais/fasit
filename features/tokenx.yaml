@@ -10,32 +10,6 @@ config:
     type: string
     displayName: Image tag for jwker
 
-  # TODO: generate JWK and distribute to tokendings
-  jwker.secrets.jwk:
-    type: string
-    displayName: Jwker private JWK
-    description: jwkers private JWK for connecting to tokendings
-    required: true
-    secret: true
-
-  jwker.secrets.env.AUTH_PROVIDER_WELL_KNOWN_URL:
-    type: string
-    displayName: Jwker token provider Well-Known URL
-    description: Well-Known URL to tokenprovider in order to communicate with tokendings
-    required: true
-
-  jwker.secrets.env.JWKER_CLIENT_ID:
-    type: string
-    displayName: Jwker client_id
-    description: The client_id of jwker in token provider
-    required: true
-
-  jwker.secrets.env.TOKENDINGS_CLIENT_ID:
-    type: string
-    displayName: Tokendings client_id
-    description: The client_id of tokendings in token provider
-    required: true
-
   tokendings.tag:
     type: string
     displayName: Image tag for tokendings
