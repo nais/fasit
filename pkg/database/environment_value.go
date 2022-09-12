@@ -13,6 +13,13 @@ import (
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
+type EnvironmentValueRepo interface {
+	EnvironmentValueGet(ctx context.Context, environmentID uuid.UUID, key string, showSensitive bool) (*model.EnvironmentValue, error)
+	EnvironmentValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) ([]*model.EnvironmentValue, error)
+	EnvironmentValueStore(ctx context.Context, environmentID uuid.UUID, key string, value json.RawMessage, secret bool) error
+	MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) (*feature.MappingValues, error)
+}
+
 func (r *repo) EnvironmentValueStore(ctx context.Context, environmentID uuid.UUID, key string, value json.RawMessage, secret bool) error {
 	return r.querier.EnvironmentValueStore(ctx, gensql.EnvironmentValueStoreParams{
 		Envid:  environmentID,

@@ -21,3 +21,6 @@ SELECT e.*, p.name AS tenant_name
 FROM environments e
 JOIN tenants p ON e.tenant_id = p.id
 ORDER BY p.name, e.name;
+
+-- name: TenantCI :one
+SELECT * FROM tenants WHERE ci = true;

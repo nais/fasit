@@ -11,6 +11,16 @@ import (
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
+type ConfigRepo interface {
+	ConfigCreate(ctx context.Context, c model.NewConfiguration) (model.Configuration, error)
+	ConfigDelete(ctx context.Context, id uuid.UUID) error
+	ConfigGet(ctx context.Context, feature string) ([]*model.GlobalConfiguration, error)
+	ConfigGetForEnv(ctx context.Context, feature string, envID uuid.UUID) ([]*model.EnvConfiguration, error)
+	ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration) (model.Configuration, error)
+	EnvConfig(ctx context.Context, feature string, envID uuid.UUID) ([]model.Configuration, error)
+	HelmValues(ctx context.Context, feature feature.Feature, envID uuid.UUID, requiredFields []string) (values map[string]any, rolloutIDs []uuid.UUID, err error)
+}
+
 func environmentConfigurationFromSQL(c gensql.ConfigurationsEnvironment) *model.EnvConfiguration {
 	return &model.EnvConfiguration{
 		ID:            c.ID,
@@ -129,6 +139,7 @@ func (r *repo) configEnvCreate(ctx context.Context, c model.NewConfiguration, va
 		Secret:        c.Secret,
 		Key:           c.Key,
 		Value:         value,
+		RolloutID:     ptrToNullUUID(c.RolloutID),
 	})
 	if err != nil {
 		return nil, err
@@ -144,6 +155,7 @@ func (r *repo) configGlobalCreate(ctx context.Context, c model.NewConfiguration,
 		Secret:      c.Secret,
 		Key:         c.Key,
 		Value:       value,
+		RolloutID:   ptrToNullUUID(c.RolloutID),
 	})
 	if err != nil {
 		return nil, err
@@ -168,10 +180,10 @@ func (r *repo) ConfigDelete(ctx context.Context, id uuid.UUID) error {
 	return r.querier.ConfigDelete(ctx, id)
 }
 
-func (r *repo) HelmValues(ctx context.Context, feature feature.Feature, envID uuid.UUID, requiredFields []string) (map[string]any, error) {
+func (r *repo) HelmValues(ctx context.Context, feature feature.Feature, envID uuid.UUID, requiredFields []string) (map[string]any, []uuid.UUID, error) {
 	mv, err := r.MappingValuesForEnvironment(ctx, envID, true)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	vals, err := r.querier.EnvConfig(ctx, gensql.EnvConfigParams{
@@ -179,20 +191,31 @@ func (r *repo) HelmValues(ctx context.Context, feature feature.Feature, envID uu
 		EnvironmentID: envID,
 	})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	missing := validateFields(requiredFields, vals)
 	if len(missing) > 0 {
-		return nil, &ErrMissingRequiredFields{Fields: missing}
+		return nil, nil, &ErrMissingRequiredFields{Fields: missing}
 	}
 	mp, err := makeHelmConfigMap(vals)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
+	}
+
+	var rolloutIDs []uuid.UUID
+	ridUnique := map[uuid.UUID]struct{}{}
+	for _, v := range vals {
+		if v.RolloutID.Valid {
+			if _, ok := ridUnique[v.RolloutID.UUID]; !ok {
+				ridUnique[v.RolloutID.UUID] = struct{}{}
+				rolloutIDs = append(rolloutIDs, v.RolloutID.UUID)
+			}
+		}
 	}
 
 	err = feature.Mapping.Generate(mv, mp)
-	return mp, err
+	return mp, rolloutIDs, err
 }
 
 func validateFields(requiredFields []string, values []gensql.EnvConfigRow) []string {

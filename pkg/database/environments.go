@@ -8,6 +8,17 @@ import (
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
+type EnvironmentRepo interface {
+	EnvironmentByNames(ctx context.Context, tenantName, environmentName string) (*model.Environment, error)
+	EnvironmentCI(ctx context.Context, kind model.EnvironmentKind) (*model.Environment, error)
+	EnvironmentCreate(ctx context.Context, t *model.EnvironmentCreate) (*model.Environment, error)
+	EnvironmentGet(ctx context.Context, id uuid.UUID) (*model.Environment, error)
+	EnvironmentGetByName(ctx context.Context, tenantID uuid.UUID, name string) (*model.Environment, error)
+	EnvironmentIDByNames(ctx context.Context, tenantName, environmentName string) (uuid.UUID, error)
+	EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]*model.Environment, error)
+	EnvironmentUpdate(ctx context.Context, environmentID uuid.UUID, p *model.EnvironmentUpdate) (*model.Environment, error)
+}
+
 func environmentFromSQL(p gensql.Environment) *model.Environment {
 	return &model.Environment{
 		ID:           p.ID,
@@ -92,4 +103,12 @@ func (r *repo) EnvironmentIDByNames(ctx context.Context, tenantName, environment
 		TenantName:      tenantName,
 	}
 	return r.querier.EnvironmentIDByNames(ctx, params)
+}
+
+func (r *repo) EnvironmentCI(ctx context.Context, kind model.EnvironmentKind) (*model.Environment, error) {
+	res, err := r.querier.EnvironmentCI(ctx, gensql.EnvironmentKind(kind))
+	if err != nil {
+		return nil, err
+	}
+	return environmentFromSQL(res), nil
 }

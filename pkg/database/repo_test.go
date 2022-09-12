@@ -3,70 +3,23 @@
 package database
 
 import (
-	"database/sql"
 	"io"
-	"log"
 	"os"
 	"testing"
 
 	_ "github.com/lib/pq"
+	"github.com/nais/fasit/pkg/database/dbtest"
 
 	"github.com/DATA-DOG/go-txdb"
 	"github.com/google/uuid"
-	"github.com/ory/dockertest/v3"
-	"github.com/ory/dockertest/v3/docker"
 	"github.com/sirupsen/logrus"
 )
 
-var dbString string
+var dbString = ""
 
 func TestMain(m *testing.M) {
-	dockerHost := os.Getenv("HOME") + "/.colima/docker.sock"
-	_, err := os.Stat(dockerHost)
-	if err != nil {
-		// uses a sensible default on windows (tcp/http) and linux/osx (socket)
-		dockerHost = ""
-	} else {
-		dockerHost = "unix://" + dockerHost
-	}
-
-	pool, err := dockertest.NewPool(dockerHost)
-	if err != nil {
-		log.Fatalf("Could not connect to docker: %s", err)
-	}
-
-	// pulls an image, creates a container based on it and runs it
-	resource, err := pool.RunWithOptions(
-		&dockertest.RunOptions{
-			Repository: "postgres",
-			Tag:        "14",
-			Env:        []string{"POSTGRES_PASSWORD=postgres", "POSTGRES_DB=fasit"},
-		},
-		func(config *docker.HostConfig) {
-			// set AutoRemove to true so that stopped container goes away by itself
-			config.AutoRemove = true
-			config.RestartPolicy = docker.RestartPolicy{Name: "no"}
-		},
-	)
-	if err != nil {
-		log.Fatalf("Could not start resource: %s", err)
-	}
-
-	resource.Expire(120) // Tell docker to hard kill the container in 120 seconds
-
-	var db *sql.DB
-	// exponential backoff-retry, because the application in the container might not be ready to accept connections yet
-	if err := pool.Retry(func() error {
-		var err error
-		dbString = "user=postgres dbname=fasit sslmode=disable password=postgres host=localhost port=" + resource.GetPort("5432/tcp")
-		db, err = sql.Open("postgres", dbString)
-		if err != nil {
-			return err
-		}
-		return db.Ping()
-	}); err != nil {
-		log.Fatalf("Could not connect to docker: %s", err)
-	}
+	db, dbs, cleanup := dbtest.DockerSQLPool()
+	dbString = dbs
 
 	log := logrus.New()
 	log.Out = io.Discard
@@ -77,10 +30,7 @@ func TestMain(m *testing.M) {
 
 	code := m.Run()
 
-	// You can't defer this because os.Exit doesn't care for defer
-	if err := pool.Purge(resource); err != nil {
-		log.Fatalf("Could not purge resource: %s", err)
-	}
+	cleanup()
 
 	os.Exit(code)
 }
@@ -93,7 +43,7 @@ func newTestRepo(t testing.TB, stmts ...string) Repo {
 		t.Fatalf("Could not create db: %v", err)
 	}
 
-	r := New(db, newTestLogger())
+	r := New(db, uuid.NewString(), newTestLogger())
 	for _, s := range stmts {
 		_, err := r.(*repo).db.Exec(s)
 		if err != nil {

@@ -22,7 +22,7 @@ type ReconcilerStore interface {
 	StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]*model.Status, error)
 	FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
 	FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *feature.Feature, enabled bool) (*model.FeatureState, error)
-	HelmValues(ctx context.Context, feature feature.Feature, envID uuid.UUID, requiredFields []string) (map[string]any, error)
+	HelmValues(ctx context.Context, feature feature.Feature, envID uuid.UUID, requiredFields []string) (map[string]any, []uuid.UUID, error)
 	HealthGet(ctx context.Context, environmentID uuid.UUID) (*model.Health, error)
 }
 
@@ -171,7 +171,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 			continue
 		}
 
-		values, err := r.repo.HelmValues(ctx, f, d.ID, f.RequiredFields())
+		values, rolloutIDs, err := r.repo.HelmValues(ctx, f, d.ID, f.RequiredFields())
 		if err != nil {
 			var fer *database.ErrMissingRequiredFields
 			if errors.As(err, &fer) {
@@ -206,6 +206,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 			ConfigHash: hash,
 			Timeout:    f.Timeout,
 			Values:     values,
+			RolloutIDs: rolloutIDs,
 		})
 		if err != nil {
 			return err

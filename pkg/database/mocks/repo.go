@@ -5,6 +5,7 @@ package mocks
 import (
 	context "context"
 
+	database "github.com/nais/fasit/pkg/database"
 	feature "github.com/nais/fasit/pkg/feature"
 
 	json "encoding/json"
@@ -16,6 +17,8 @@ import (
 	model "github.com/nais/fasit/pkg/graph/model"
 
 	prometheus "github.com/prometheus/client_golang/prometheus"
+
+	sql "database/sql"
 
 	testing "testing"
 
@@ -186,6 +189,29 @@ func (_m *Repo) EnvironmentByNames(ctx context.Context, tenantName string, envir
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, tenantName, environmentName)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// EnvironmentCI provides a mock function with given fields: ctx, kind
+func (_m *Repo) EnvironmentCI(ctx context.Context, kind model.EnvironmentKind) (*model.Environment, error) {
+	ret := _m.Called(ctx, kind)
+
+	var r0 *model.Environment
+	if rf, ok := ret.Get(0).(func(context.Context, model.EnvironmentKind) *model.Environment); ok {
+		r0 = rf(ctx, kind)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Environment)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, model.EnvironmentKind) error); ok {
+		r1 = rf(ctx, kind)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -475,7 +501,7 @@ func (_m *Repo) HealthStatusCreateOrUpdate(ctx context.Context, environmentID uu
 }
 
 // HelmValues provides a mock function with given fields: ctx, _a1, envID, requiredFields
-func (_m *Repo) HelmValues(ctx context.Context, _a1 feature.Feature, envID uuid.UUID, requiredFields []string) (map[string]interface{}, error) {
+func (_m *Repo) HelmValues(ctx context.Context, _a1 feature.Feature, envID uuid.UUID, requiredFields []string) (map[string]interface{}, []uuid.UUID, error) {
 	ret := _m.Called(ctx, _a1, envID, requiredFields)
 
 	var r0 map[string]interface{}
@@ -487,14 +513,23 @@ func (_m *Repo) HelmValues(ctx context.Context, _a1 feature.Feature, envID uuid.
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, feature.Feature, uuid.UUID, []string) error); ok {
+	var r1 []uuid.UUID
+	if rf, ok := ret.Get(1).(func(context.Context, feature.Feature, uuid.UUID, []string) []uuid.UUID); ok {
 		r1 = rf(ctx, _a1, envID, requiredFields)
 	} else {
-		r1 = ret.Error(1)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).([]uuid.UUID)
+		}
 	}
 
-	return r0, r1
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, feature.Feature, uuid.UUID, []string) error); ok {
+		r2 = rf(ctx, _a1, envID, requiredFields)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // KubernetesNodeSync provides a mock function with given fields: ctx, envID, kn
@@ -610,6 +645,140 @@ func (_m *Repo) ReleaseStatusesGet(ctx context.Context, environmentID uuid.UUID)
 	return r0, r1
 }
 
+// RolloutCreate provides a mock function with given fields: ctx, rollout
+func (_m *Repo) RolloutCreate(ctx context.Context, rollout *model.Rollout) (*model.Rollout, error) {
+	ret := _m.Called(ctx, rollout)
+
+	var r0 *model.Rollout
+	if rf, ok := ret.Get(0).(func(context.Context, *model.Rollout) *model.Rollout); ok {
+		r0 = rf(ctx, rollout)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Rollout)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *model.Rollout) error); ok {
+		r1 = rf(ctx, rollout)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// RolloutGetByID provides a mock function with given fields: ctx, id
+func (_m *Repo) RolloutGetByID(ctx context.Context, id uuid.UUID) (*model.Rollout, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *model.Rollout
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) *model.Rollout); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Rollout)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// RolloutUpdate provides a mock function with given fields: ctx, rollout
+func (_m *Repo) RolloutUpdate(ctx context.Context, rollout *model.Rollout) error {
+	ret := _m.Called(ctx, rollout)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.Rollout) error); ok {
+		r0 = rf(ctx, rollout)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// RolloutsGet provides a mock function with given fields: ctx, id
+func (_m *Repo) RolloutsGet(ctx context.Context, id uuid.UUID) (*model.Rollout, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *model.Rollout
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) *model.Rollout); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Rollout)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// RolloutsListen provides a mock function with given fields: ctx, fn
+func (_m *Repo) RolloutsListen(ctx context.Context, fn database.ListenFunc) error {
+	ret := _m.Called(ctx, fn)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, database.ListenFunc) error); ok {
+		r0 = rf(ctx, fn)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// RolloutsUnprocessed provides a mock function with given fields: ctx
+func (_m *Repo) RolloutsUnprocessed(ctx context.Context) ([]*model.Rollout, error) {
+	ret := _m.Called(ctx)
+
+	var r0 []*model.Rollout
+	if rf, ok := ret.Get(0).(func(context.Context) []*model.Rollout); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.Rollout)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// RolloutsUpdateStatus provides a mock function with given fields: ctx, ids, status
+func (_m *Repo) RolloutsUpdateStatus(ctx context.Context, ids []uuid.UUID, status model.RolloutStatus) error {
+	ret := _m.Called(ctx, ids, status)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, []uuid.UUID, model.RolloutStatus) error); ok {
+		r0 = rf(ctx, ids, status)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // StatusCreateOrUpdate provides a mock function with given fields: ctx, environmentID, h
 func (_m *Repo) StatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Helm) error {
 	ret := _m.Called(ctx, environmentID, h)
@@ -663,6 +832,29 @@ func (_m *Repo) StatusForFeature(ctx context.Context, environmentID uuid.UUID, _
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, string) error); ok {
 		r1 = rf(ctx, environmentID, _a2)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// TenantCI provides a mock function with given fields: ctx
+func (_m *Repo) TenantCI(ctx context.Context) (*model.Tenant, error) {
+	ret := _m.Called(ctx)
+
+	var r0 *model.Tenant
+	if rf, ok := ret.Get(0).(func(context.Context) *model.Tenant); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Tenant)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -783,6 +975,38 @@ func (_m *Repo) TenantsGet(ctx context.Context) ([]*model.Tenant, error) {
 	}
 
 	return r0, r1
+}
+
+// WithTx provides a mock function with given fields: ctx
+func (_m *Repo) WithTx(ctx context.Context) (database.Repo, *sql.Tx, error) {
+	ret := _m.Called(ctx)
+
+	var r0 database.Repo
+	if rf, ok := ret.Get(0).(func(context.Context) database.Repo); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(database.Repo)
+		}
+	}
+
+	var r1 *sql.Tx
+	if rf, ok := ret.Get(1).(func(context.Context) *sql.Tx); ok {
+		r1 = rf(ctx)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*sql.Tx)
+		}
+	}
+
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context) error); ok {
+		r2 = rf(ctx)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // NewRepo creates a new instance of Repo. It also registers a cleanup function to assert the mocks expectations.

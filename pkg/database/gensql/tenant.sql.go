@@ -13,8 +13,26 @@ import (
 	"github.com/google/uuid"
 )
 
+const tenantCI = `-- name: TenantCI :one
+SELECT id, name, description, created, last_modified, ci FROM tenants WHERE ci = true
+`
+
+func (q *Queries) TenantCI(ctx context.Context) (Tenant, error) {
+	row := q.db.QueryRowContext(ctx, tenantCI)
+	var i Tenant
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.Created,
+		&i.LastModified,
+		&i.Ci,
+	)
+	return i, err
+}
+
 const tenantCreate = `-- name: TenantCreate :one
-INSERT INTO tenants (name, description) VALUES ($1, $2) RETURNING id, name, description, created, last_modified
+INSERT INTO tenants (name, description) VALUES ($1, $2) RETURNING id, name, description, created, last_modified, ci
 `
 
 type TenantCreateParams struct {
@@ -31,12 +49,13 @@ func (q *Queries) TenantCreate(ctx context.Context, arg TenantCreateParams) (Ten
 		&i.Description,
 		&i.Created,
 		&i.LastModified,
+		&i.Ci,
 	)
 	return i, err
 }
 
 const tenantEnvironments = `-- name: TenantEnvironments :many
-SELECT e.id, e.tenant_id, e.name, e.kind, e.description, e.created, e.last_modified, p.name AS tenant_name
+SELECT e.id, e.tenant_id, e.name, e.kind, e.description, e.created, e.last_modified, e.ci, p.name AS tenant_name
 FROM environments e
 JOIN tenants p ON e.tenant_id = p.id
 ORDER BY p.name, e.name
@@ -50,6 +69,7 @@ type TenantEnvironmentsRow struct {
 	Description  sql.NullString
 	Created      time.Time
 	LastModified time.Time
+	Ci           bool
 	TenantName   string
 }
 
@@ -70,6 +90,7 @@ func (q *Queries) TenantEnvironments(ctx context.Context) ([]TenantEnvironmentsR
 			&i.Description,
 			&i.Created,
 			&i.LastModified,
+			&i.Ci,
 			&i.TenantName,
 		); err != nil {
 			return nil, err
@@ -86,7 +107,7 @@ func (q *Queries) TenantEnvironments(ctx context.Context) ([]TenantEnvironmentsR
 }
 
 const tenantGet = `-- name: TenantGet :one
-SELECT id, name, description, created, last_modified
+SELECT id, name, description, created, last_modified, ci
 FROM tenants
 WHERE id = $1
 `
@@ -100,12 +121,13 @@ func (q *Queries) TenantGet(ctx context.Context, id uuid.UUID) (Tenant, error) {
 		&i.Description,
 		&i.Created,
 		&i.LastModified,
+		&i.Ci,
 	)
 	return i, err
 }
 
 const tenantGetByName = `-- name: TenantGetByName :one
-SELECT id, name, description, created, last_modified
+SELECT id, name, description, created, last_modified, ci
 FROM tenants
 WHERE name = $1
 `
@@ -119,12 +141,13 @@ func (q *Queries) TenantGetByName(ctx context.Context, name string) (Tenant, err
 		&i.Description,
 		&i.Created,
 		&i.LastModified,
+		&i.Ci,
 	)
 	return i, err
 }
 
 const tenantsGet = `-- name: TenantsGet :many
-SELECT id, name, description, created, last_modified
+SELECT id, name, description, created, last_modified, ci
 FROM tenants
 ORDER BY created DESC, name ASC
 `
@@ -144,6 +167,7 @@ func (q *Queries) TenantsGet(ctx context.Context) ([]Tenant, error) {
 			&i.Description,
 			&i.Created,
 			&i.LastModified,
+			&i.Ci,
 		); err != nil {
 			return nil, err
 		}

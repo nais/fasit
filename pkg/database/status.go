@@ -11,6 +11,12 @@ import (
 	"github.com/nais/fasit/pkg/message"
 )
 
+type StatusRepo interface {
+	StatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Helm) error
+	StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]*model.Status, error)
+	StatusForFeature(ctx context.Context, environmentID uuid.UUID, feature string) (*model.Status, error)
+}
+
 func (r *repo) StatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Helm) error {
 	return r.querier.StatusCreateOrUpdate(ctx, gensql.StatusCreateOrUpdateParams{
 		EnvironmentID: environmentID,

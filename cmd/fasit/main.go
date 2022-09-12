@@ -17,6 +17,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/lru"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/websocket"
 	"github.com/nais/fasit"
 	"github.com/nais/fasit/pkg/auth"
@@ -27,6 +28,7 @@ import (
 	"github.com/nais/fasit/pkg/message"
 	"github.com/nais/fasit/pkg/provider"
 	"github.com/nais/fasit/pkg/provider/protogen"
+	"github.com/nais/fasit/pkg/rollout"
 	"github.com/nais/fasit/pkg/workers"
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
@@ -38,10 +40,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-var cfg = DefaultConfig() // promErrs = prometheus.NewCounterVec(prometheus.CounterOpts{
-// 	Namespace: "fasit",
-// 	Name:      "errors",
-// }, []string{"location"})
+var cfg = DefaultConfig()
 
 func init() {
 	flag.StringVar(&cfg.BindAddress, "bind-address", cfg.BindAddress, "Bind address")
@@ -108,7 +107,7 @@ func main() {
 		log.WithError(err).Fatal("migrating database")
 	}
 
-	repo := database.New(db, log.WithField("subsystem", "repo"))
+	repo := database.New(db, cfg.DBConnectionDSN, log.WithField("subsystem", "repo"))
 	log.Info("-- successfully started database client")
 
 	featureMgr, err := feature.New(fasit.FeaturesFS)
@@ -126,6 +125,10 @@ func main() {
 	}
 	reconciler := workers.NewReconciler(repo, featureMgr, createPublisher, cfg.GCPProjectID, log.WithField("subsystem", "reconciler"))
 	go reconciler.Run(ctx, 1*time.Minute)
+
+	rolloutWorker := workers.NewRollout(repo, log.WithField("subsystem", "rollout"))
+	go rolloutWorker.Listen(ctx)
+	go rolloutWorker.Run(ctx, 10*time.Minute)
 
 	resolver := &graph.Resolver{
 		Repo:     repo,
@@ -152,8 +155,17 @@ func main() {
 
 		iapMW = auth.InsecureValidateMW
 	}
-	http.Handle("/", iapMW(playground.Handler("GraphQL playground", "/query")))
-	http.Handle("/query", iapMW(corsMW.Handler(srv)))
+
+	router := chi.NewMux()
+	router.Handle("/", iapMW(playground.Handler("GraphQL playground", "/query")))
+	router.Handle("/query", iapMW(corsMW.Handler(srv)))
+
+	rout, err := rollout.New(ctx, featureMgr, repo)
+	if err != nil {
+		log.WithError(err).Fatal("setting up rollout")
+	}
+	router.Get("/github/exchange", rout.TokenExchange)
+	router.Get("/github/deploy/{feature}", rout.TokenExchange)
 
 	go func() {
 		if err := runGRPC(ctx, repo); err != nil {

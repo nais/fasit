@@ -112,6 +112,26 @@
 			"description": "Repo is the repository where the helm chart is located.",
 			"type": "string"
 		},
+		"rolloutSource": {
+			"description": "RolloutSource is the org and name of repositories which can trigger a rollout.",
+			"items": {
+				"additionalProperties": false,
+				"properties": {
+					"org": {
+						"type": "string"
+					},
+					"repo": {
+						"type": "string"
+					}
+				},
+				"required": [
+					"org",
+					"repo"
+				],
+				"type": "object"
+			},
+			"type": "array"
+		},
 		"source": {
 			"description": "Source should be the URL to the helm chart source code.",
 			"type": "string"

@@ -9,6 +9,15 @@ import (
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
+type TenantRepo interface {
+	TenantCI(ctx context.Context) (*model.Tenant, error)
+	TenantCreate(ctx context.Context, t *model.TenantCreate) (*model.Tenant, error)
+	TenantEnvironments(ctx context.Context) ([]*model.TenantEnvironments, error)
+	TenantGet(ctx context.Context, id uuid.UUID) (*model.Tenant, error)
+	TenantGetByName(ctx context.Context, name string) (*model.Tenant, error)
+	TenantsGet(ctx context.Context) ([]*model.Tenant, error)
+}
+
 func tenantFromSQL(t gensql.Tenant) *model.Tenant {
 	return &model.Tenant{
 		ID:           t.ID,
@@ -81,4 +90,12 @@ func (r *repo) TenantEnvironments(ctx context.Context) ([]*model.TenantEnvironme
 	}
 
 	return ret, nil
+}
+
+func (r *repo) TenantCI(ctx context.Context) (*model.Tenant, error) {
+	tenant, err := r.querier.TenantCI(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return tenantFromSQL(tenant), nil
 }

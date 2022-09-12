@@ -10,6 +10,11 @@ import (
 	"github.com/nais/fasit/pkg/message"
 )
 
+type KubernetesNodeRepo interface {
+	KubernetesNodesForEnv(ctx context.Context, envID uuid.UUID) ([]*model.KubernetesNode, error)
+	KubernetesNodeSync(ctx context.Context, envID uuid.UUID, kn *message.KubernetesNodes) error
+}
+
 func (r *repo) KubernetesNodeSync(ctx context.Context, envID uuid.UUID, kn *message.KubernetesNodes) error {
 	for _, n := range kn.Nodes {
 		params, err := kubernetesNodeParams(envID, n)

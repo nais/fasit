@@ -16,46 +16,9 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database/gensql"
-	"github.com/nais/fasit/pkg/database/mocks"
 	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph/model"
-	"github.com/stretchr/testify/mock"
 )
-
-func TestRepoEnvConfig(t *testing.T) {
-	mq := mocks.NewQuerier(t)
-	id := uuid.New()
-	mq.On("EnvConfig", mock.Anything, gensql.EnvConfigParams{Feature: "feature", EnvironmentID: id}).Return([]gensql.EnvConfigRow{
-		{
-			ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-			Feature:       "feature",
-			Secret:        false,
-			Key:           "key",
-			Value:         []byte("value"),
-			EnvironmentID: uuid.NullUUID{Valid: true, UUID: id},
-		},
-	}, nil)
-
-	expected := []model.Configuration{
-		&model.EnvConfiguration{
-			ID:            uuid.MustParse("00000000-0000-0000-0000-000000000001"),
-			FeatureName:   "feature",
-			Key:           "key",
-			Value:         []byte("value"),
-			EnvironmentID: id,
-		},
-	}
-
-	repo := repo{querier: mq}
-	ec, err := repo.EnvConfig(context.Background(), "feature", id)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if !cmp.Equal(ec, expected) {
-		t.Error(cmp.Diff(ec, expected))
-	}
-}
 
 func TestHelmConfigMap(t *testing.T) {
 	jsonify := func(v any) json.RawMessage {
@@ -364,7 +327,7 @@ func TestRepo_HelmValues_OK(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err := r.HelmValues(context.Background(), feature.Feature{Name: "feature5"}, envid, []string{"my.key"})
+	got, _, err := r.HelmValues(context.Background(), feature.Feature{Name: "feature5"}, envid, []string{"my.key"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -401,7 +364,7 @@ func TestRepo_HelmValues_MissingRequiredField(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = r.HelmValues(context.Background(), feature.Feature{Name: "feature5"}, envid, []string{"no.key"})
+	_, _, err = r.HelmValues(context.Background(), feature.Feature{Name: "feature5"}, envid, []string{"no.key"})
 	if !errors.Is(err, &ErrMissingRequiredFields{}) {
 		t.Errorf("got: %v, want ErrMissingRequiredFields", err)
 	}
@@ -437,7 +400,7 @@ func TestRepo_HelmValues_InvaldKeyNesting(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = r.HelmValues(context.Background(), feature.Feature{Name: "feature5"}, envid, nil)
+	_, _, err = r.HelmValues(context.Background(), feature.Feature{Name: "feature5"}, envid, nil)
 	if err == nil || !strings.HasSuffix(err.Error(), "is not nestable") {
 		t.Errorf("got: %v, want \"key `key` is not nestable\"", err)
 	}
@@ -482,7 +445,7 @@ func TestRepo_HelmValues_WithMappingValues(t *testing.T) {
 		}
 	}
 
-	got, err := r.HelmValues(context.Background(), feature, envid, nil)
+	got, _, err := r.HelmValues(context.Background(), feature, envid, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -13,6 +13,11 @@ import (
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
+type FeatureStateRepo interface {
+	FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *feature.Feature, enabled bool) (*model.FeatureState, error)
+	FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
+}
+
 func featureStateFromSQL(state gensql.FeatureState) *model.FeatureState {
 	return &model.FeatureState{
 		FeatureName:  state.Feature,

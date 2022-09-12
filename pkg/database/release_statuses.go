@@ -9,6 +9,11 @@ import (
 	"github.com/nais/fasit/pkg/message"
 )
 
+type ReleaseStatusRepo interface {
+	ReleaseStatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Release) error
+	ReleaseStatusesGet(ctx context.Context, environmentID uuid.UUID) ([]*model.Release, error)
+}
+
 func (r *repo) ReleaseStatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Release) error {
 	_, err := r.querier.ReleaseStatusCreateOrUpdate(ctx, gensql.ReleaseStatusCreateOrUpdateParams{
 		EnvironmentID: environmentID,

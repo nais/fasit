@@ -1,0 +1,12 @@
+type Rollout {
+  feature: Feature!
+  status: RolloutStatus!
+  changeset: RolloutChangeset!
+  created: Time!
+  lastModified: Time!
+}
+
+type RolloutChangeset {
+  New: RawMessage!
+  Old: RawMessage
+}

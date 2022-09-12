@@ -13,7 +13,7 @@ import (
 )
 
 const environmentByNames = `-- name: EnvironmentByNames :one
-SELECT e.id, e.tenant_id, e.name, e.kind, e.description, e.created, e.last_modified
+SELECT e.id, e.tenant_id, e.name, e.kind, e.description, e.created, e.last_modified, e.ci
 FROM tenants t
          JOIN environments e ON e.tenant_id = t.id AND e.name = $1
 WHERE t.name = $2
@@ -36,12 +36,33 @@ func (q *Queries) EnvironmentByNames(ctx context.Context, arg EnvironmentByNames
 		&i.Description,
 		&i.Created,
 		&i.LastModified,
+		&i.Ci,
+	)
+	return i, err
+}
+
+const environmentCI = `-- name: EnvironmentCI :one
+SELECT id, tenant_id, name, kind, description, created, last_modified, ci FROM environments WHERE ci = true AND kind = $1
+`
+
+func (q *Queries) EnvironmentCI(ctx context.Context, kind EnvironmentKind) (Environment, error) {
+	row := q.db.QueryRowContext(ctx, environmentCI, kind)
+	var i Environment
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.Name,
+		&i.Kind,
+		&i.Description,
+		&i.Created,
+		&i.LastModified,
+		&i.Ci,
 	)
 	return i, err
 }
 
 const environmentCreate = `-- name: EnvironmentCreate :one
-INSERT INTO environments (name, description, tenant_id, kind) VALUES ($1, $2, $3, $4) RETURNING id, tenant_id, name, kind, description, created, last_modified
+INSERT INTO environments (name, description, tenant_id, kind) VALUES ($1, $2, $3, $4) RETURNING id, tenant_id, name, kind, description, created, last_modified, ci
 `
 
 type EnvironmentCreateParams struct {
@@ -67,12 +88,13 @@ func (q *Queries) EnvironmentCreate(ctx context.Context, arg EnvironmentCreatePa
 		&i.Description,
 		&i.Created,
 		&i.LastModified,
+		&i.Ci,
 	)
 	return i, err
 }
 
 const environmentGet = `-- name: EnvironmentGet :one
-SELECT id, tenant_id, name, kind, description, created, last_modified
+SELECT id, tenant_id, name, kind, description, created, last_modified, ci
 FROM environments
 WHERE id = $1
 `
@@ -88,12 +110,13 @@ func (q *Queries) EnvironmentGet(ctx context.Context, id uuid.UUID) (Environment
 		&i.Description,
 		&i.Created,
 		&i.LastModified,
+		&i.Ci,
 	)
 	return i, err
 }
 
 const environmentGetByName = `-- name: EnvironmentGetByName :one
-SELECT id, tenant_id, name, kind, description, created, last_modified
+SELECT id, tenant_id, name, kind, description, created, last_modified, ci
 FROM environments
 WHERE tenant_id = $1
 AND name = $2
@@ -115,6 +138,7 @@ func (q *Queries) EnvironmentGetByName(ctx context.Context, arg EnvironmentGetBy
 		&i.Description,
 		&i.Created,
 		&i.LastModified,
+		&i.Ci,
 	)
 	return i, err
 }
@@ -144,7 +168,7 @@ UPDATE environments
 SET description = $1
 WHERE
     id = $2
-    RETURNING id, tenant_id, name, kind, description, created, last_modified
+    RETURNING id, tenant_id, name, kind, description, created, last_modified, ci
 `
 
 type EnvironmentUpdateParams struct {
@@ -163,12 +187,13 @@ func (q *Queries) EnvironmentUpdate(ctx context.Context, arg EnvironmentUpdatePa
 		&i.Description,
 		&i.Created,
 		&i.LastModified,
+		&i.Ci,
 	)
 	return i, err
 }
 
 const environmentsGet = `-- name: EnvironmentsGet :many
-SELECT id, tenant_id, name, kind, description, created, last_modified
+SELECT id, tenant_id, name, kind, description, created, last_modified, ci
 FROM environments
 WHERE tenant_id = $1
 `
@@ -190,6 +215,7 @@ func (q *Queries) EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]En
 			&i.Description,
 			&i.Created,
 			&i.LastModified,
+			&i.Ci,
 		); err != nil {
 			return nil, err
 		}

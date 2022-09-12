@@ -5,24 +5,26 @@ WHERE feature = @feature;
 
 -- name: ConfigEnvUpdateOrCreate :one
 INSERT INTO configurations_environment
-	(environment_id, feature, description, secret, key, value)
+	(environment_id, feature, description, secret, key, value, rollout_id)
 VALUES
-	(@environment_id, @feature, @description, @secret, @key, @value)
+	(@environment_id, @feature, @description, @secret, @key, @value, @rollout_id)
 ON CONFLICT (environment_id, feature, key) DO UPDATE
 	SET
 		value = EXCLUDED.value,
-		description = EXCLUDED.description
+		description = EXCLUDED.description,
+		rollout_id = EXCLUDED.rollout_id
 RETURNING *;
 
 -- name: ConfigGlobalUpdateOrCreate :one
 INSERT INTO configurations_global
-	(feature, description, secret, key, value)
+	(feature, description, secret, key, value, rollout_id)
 VALUES
-	(@feature, @description, @secret, @key, @value)
+	(@feature, @description, @secret, @key, @value, @rollout_id)
 ON CONFLICT (feature, key) DO UPDATE
 	SET
 		value = EXCLUDED.value,
-		description = EXCLUDED.description
+		description = EXCLUDED.description,
+		rollout_id = EXCLUDED.rollout_id
 RETURNING *;
 
 -- name: ConfigGetForEnv :many
@@ -57,7 +59,8 @@ WHERE RANK = 1
 -- name: ConfigUpdate :one
 UPDATE configurations_global
 SET description = @description,
-	value = @value
+	value = @value,
+	rollout_id = NULL
 WHERE id = @id
 RETURNING *;
 

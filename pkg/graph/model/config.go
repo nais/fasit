@@ -18,6 +18,7 @@ type NewConfiguration struct {
 	Key           string          `json:"key"`
 	Value         json.RawMessage `json:"value"`
 	Secret        bool
+	RolloutID     *uuid.UUID
 }
 
 type ConfigType string

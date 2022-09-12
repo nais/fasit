@@ -188,6 +188,27 @@ func (_m *Querier) EnvironmentByNames(ctx context.Context, arg gensql.Environmen
 	return r0, r1
 }
 
+// EnvironmentCI provides a mock function with given fields: ctx, kind
+func (_m *Querier) EnvironmentCI(ctx context.Context, kind gensql.EnvironmentKind) (gensql.Environment, error) {
+	ret := _m.Called(ctx, kind)
+
+	var r0 gensql.Environment
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.EnvironmentKind) gensql.Environment); ok {
+		r0 = rf(ctx, kind)
+	} else {
+		r0 = ret.Get(0).(gensql.Environment)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, gensql.EnvironmentKind) error); ok {
+		r1 = rf(ctx, kind)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // EnvironmentCreate provides a mock function with given fields: ctx, arg
 func (_m *Querier) EnvironmentCreate(ctx context.Context, arg gensql.EnvironmentCreateParams) (gensql.Environment, error) {
 	ret := _m.Called(ctx, arg)
@@ -601,6 +622,127 @@ func (_m *Querier) ReleaseStatusesGet(ctx context.Context, environmentID uuid.UU
 	return r0, r1
 }
 
+// RolloutCreate provides a mock function with given fields: ctx, arg
+func (_m *Querier) RolloutCreate(ctx context.Context, arg gensql.RolloutCreateParams) (gensql.Rollout, error) {
+	ret := _m.Called(ctx, arg)
+
+	var r0 gensql.Rollout
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.RolloutCreateParams) gensql.Rollout); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(gensql.Rollout)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, gensql.RolloutCreateParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// RolloutGetByID provides a mock function with given fields: ctx, id
+func (_m *Querier) RolloutGetByID(ctx context.Context, id uuid.UUID) (gensql.Rollout, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 gensql.Rollout
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) gensql.Rollout); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Get(0).(gensql.Rollout)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// RolloutUpdate provides a mock function with given fields: ctx, arg
+func (_m *Querier) RolloutUpdate(ctx context.Context, arg gensql.RolloutUpdateParams) (gensql.Rollout, error) {
+	ret := _m.Called(ctx, arg)
+
+	var r0 gensql.Rollout
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.RolloutUpdateParams) gensql.Rollout); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(gensql.Rollout)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, gensql.RolloutUpdateParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// RolloutsGet provides a mock function with given fields: ctx, id
+func (_m *Querier) RolloutsGet(ctx context.Context, id uuid.UUID) (gensql.Rollout, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 gensql.Rollout
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) gensql.Rollout); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Get(0).(gensql.Rollout)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// RolloutsUnprocessed provides a mock function with given fields: ctx
+func (_m *Querier) RolloutsUnprocessed(ctx context.Context) ([]gensql.Rollout, error) {
+	ret := _m.Called(ctx)
+
+	var r0 []gensql.Rollout
+	if rf, ok := ret.Get(0).(func(context.Context) []gensql.Rollout); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gensql.Rollout)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// RolloutsUpdateStatus provides a mock function with given fields: ctx, arg
+func (_m *Querier) RolloutsUpdateStatus(ctx context.Context, arg gensql.RolloutsUpdateStatusParams) error {
+	ret := _m.Called(ctx, arg)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.RolloutsUpdateStatusParams) error); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // StatusCreateOrUpdate provides a mock function with given fields: ctx, arg
 func (_m *Querier) StatusCreateOrUpdate(ctx context.Context, arg gensql.StatusCreateOrUpdateParams) error {
 	ret := _m.Called(ctx, arg)
@@ -652,6 +794,27 @@ func (_m *Querier) StatusForFeature(ctx context.Context, arg gensql.StatusForFea
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, gensql.StatusForFeatureParams) error); ok {
 		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// TenantCI provides a mock function with given fields: ctx
+func (_m *Querier) TenantCI(ctx context.Context) (gensql.Tenant, error) {
+	ret := _m.Called(ctx)
+
+	var r0 gensql.Tenant
+	if rf, ok := ret.Get(0).(func(context.Context) gensql.Tenant); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Get(0).(gensql.Tenant)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
 	} else {
 		r1 = ret.Error(1)
 	}
