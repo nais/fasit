@@ -48,6 +48,9 @@ mapping:
   backend.staticServiceAccounts:
     value: "{{.Management.console_static_service_accounts}}"
     displayName: JSON-encoded list of static service accounts
+  backend.gcp.cnrm_role:
+    value: "organizations/{{ .Management.org_id }}/roles/{{ .Management.cnrm_role }}"
+    displayName: CNRM role string
 config:
   backend.image.tag:
     type: string
