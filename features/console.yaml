@@ -34,15 +34,15 @@ mapping:
   backend.gcp.clusters:
     value: |
       {
-        {{ range $cluster, $i := .Envs }}
-          {{ if ne $i 0 }}
+        {{ range $i, $cluster  := .Envs -}}
+          {{- if ne $i 0 -}}
             ,
-          {{ end }}
+          {{ end -}}
           "{{ $cluster.name }}": {
             "team_folder_id": {{ $cluster.teams_folder_id }},
-            "cluster_project_id": {{ $cluster.project_id }}
+            "cluster_project_id": "{{ $cluster.project_id }}"
           }
-        {{ end }}
+        {{- end }}
       }
     displayName: Cluster information
   backend.staticServiceAccounts:
