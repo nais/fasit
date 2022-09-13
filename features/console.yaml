@@ -51,7 +51,7 @@ mapping:
   backend.gcp.cnrmRole:
     value: "organizations/{{ .Management.org_id }}/roles/{{ .Management.cnrm_role }}"
     displayName: CNRM role string
-  backend.gcp.billing_account:
+  backend.gcp.billingAccount:
     value: "{{ .Management.billing_account }}"
     displayName: Billing account
 config:
