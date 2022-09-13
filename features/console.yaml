@@ -31,6 +31,20 @@ mapping:
   backend.gcp.projectParentIds:
     value: "{{$first := true}}{{ range $cluster := .Envs }}{{if $first}}{{$first = false}}{{else}},{{end}}{{ $cluster.name }}:{{ $cluster.teams_folder_id }}{{ end }}"
     displayName: Mapping of env to teams folders
+  backend.gcp.clusters:
+    value: |
+      {
+        {{ range $cluster, $i := .Envs }}
+          {{ if ne $i 0 }}
+            ,
+          {{ end }}
+          "{{ $cluster.name }}": {
+            "team_folder_id": {{ $cluster.teams_folder_id }},
+            "cluster_project_id": {{ $cluster.project_id }}
+          }
+        {{ end }}
+      }
+    displayName: Cluster information
   backend.staticServiceAccounts:
     value: "{{.Management.console_static_service_accounts}}"
     displayName: JSON-encoded list of static service accounts
