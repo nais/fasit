@@ -10,6 +10,12 @@ config:
     type: string
     displayName: Image tag for jwker
 
+  jwker.secrets.env.JWKER_PRIVATE_JWK:
+    type: string
+    displayName: Private JWK
+    required: true
+    secret: true
+
   tokendings.tag:
     type: string
     displayName: Image tag for tokendings
@@ -37,6 +43,12 @@ config:
   tokendings.env.SUBJECT_TOKEN_ISSUERS:
     displayName: Tokendings trusted token issuers
     description: a commaseparated list of well-known urls to trusted token issuers in a token exchange
+    type: string
+    required: true
+
+  tokendings.env.AUTH_CLIENT_JWKS:
+    displayName: Jwker public JWKS
+    description: The JWKS for jwker
     type: string
     required: true
 
