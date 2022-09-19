@@ -116,7 +116,7 @@ func (r *Rollout) process(ctx context.Context, id uuid.UUID) {
 // getAndPrepare fetches the rollout from the database and prepares it for processing.
 // The main result of this function is to update the rollout with the existing values for the feature.
 func (r *Rollout) getAndPrepare(ctx context.Context, repo RolloutRepo, id uuid.UUID) (*model.Rollout, error) {
-	rollout, err := repo.RolloutsGet(ctx, id)
+	rollout, err := repo.RolloutGetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}

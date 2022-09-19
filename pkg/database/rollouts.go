@@ -16,7 +16,6 @@ type ListenFunc func(context.Context, uuid.UUID)
 type RolloutRepo interface {
 	RolloutCreate(ctx context.Context, rollout *model.Rollout) (*model.Rollout, error)
 	RolloutGetByID(ctx context.Context, id uuid.UUID) (*model.Rollout, error)
-	RolloutsGet(ctx context.Context, id uuid.UUID) (*model.Rollout, error)
 	RolloutsListen(ctx context.Context, fn ListenFunc) error
 	RolloutsUnprocessed(ctx context.Context) ([]*model.Rollout, error)
 	RolloutUpdate(ctx context.Context, rollout *model.Rollout) error
@@ -78,15 +77,6 @@ func (r *repo) RolloutsListen(ctx context.Context, fn ListenFunc) error {
 			fn(ctx, id)
 		}
 	}
-}
-
-func (r *repo) RolloutsGet(ctx context.Context, id uuid.UUID) (*model.Rollout, error) {
-	roll, err := r.querier.RolloutsGet(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	return rolloutFromSQL(roll)
 }
 
 func (r *repo) RolloutUpdate(ctx context.Context, rollout *model.Rollout) error {

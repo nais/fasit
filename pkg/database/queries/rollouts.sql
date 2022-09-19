@@ -1,6 +1,3 @@
--- name: RolloutsGet :one
-SELECT * FROM rollouts WHERE id = @id;
-
 -- name: RolloutUpdate :one
 UPDATE rollouts
 SET status = @status

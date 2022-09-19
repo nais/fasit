@@ -85,24 +85,6 @@ func (q *Queries) RolloutUpdate(ctx context.Context, arg RolloutUpdateParams) (R
 	return i, err
 }
 
-const rolloutsGet = `-- name: RolloutsGet :one
-SELECT id, feature, status, changeset, created, last_modified FROM rollouts WHERE id = $1
-`
-
-func (q *Queries) RolloutsGet(ctx context.Context, id uuid.UUID) (Rollout, error) {
-	row := q.db.QueryRowContext(ctx, rolloutsGet, id)
-	var i Rollout
-	err := row.Scan(
-		&i.ID,
-		&i.Feature,
-		&i.Status,
-		&i.Changeset,
-		&i.Created,
-		&i.LastModified,
-	)
-	return i, err
-}
-
 const rolloutsUnprocessed = `-- name: RolloutsUnprocessed :many
 SELECT id, feature, status, changeset, created, last_modified FROM rollouts WHERE status = ''
 `
