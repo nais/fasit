@@ -4,6 +4,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+	"time"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -15,10 +20,6 @@ import (
 	"github.com/nais/fasit/pkg/rollout"
 	"github.com/nais/fasit/pkg/workers"
 	"github.com/sirupsen/logrus"
-	"net/http"
-	"net/http/httptest"
-	"testing"
-	"time"
 )
 
 func TestRollout_integration(t *testing.T) {
@@ -52,9 +53,22 @@ func TestRollout_integration(t *testing.T) {
 	managementEnvID := uuid.New()
 	tenantID := uuid.New()
 
-	db.ExecContext(ctx, `INSERT INTO tenants (id, name, ci) VALUES ($1, 'tenant1', true)`, tenantID)
-	db.ExecContext(ctx, `INSERT INTO environments (id, tenant_id, name, kind, ci) VALUES ($1, $2, 'env1', 'tenant', true)`, tenantEnvID, tenantID)
-	db.ExecContext(ctx, `INSERT INTO environments (id, tenant_id, name, kind, ci) VALUES ($1, $2, 'env1', 'management', true)`, managementEnvID, tenantID)
+	_, err = db.ExecContext(ctx, `INSERT INTO tenants (id, name, ci) VALUES ($1, 'tenant1', true)`, tenantID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = db.ExecContext(ctx, `INSERT INTO environments (id, tenant_id, name, kind, ci) VALUES ($1, $2, 'env1', 'tenant', true)`, tenantEnvID, tenantID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = db.ExecContext(ctx, `INSERT INTO environments (id, tenant_id, name, kind, ci) VALUES ($1, $2, 'env2', 'management', true)`, managementEnvID, tenantID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = db.ExecContext(ctx, `INSERT INTO configurations_environment (feature, key, value, environment_id) VALUES ('feature', 'imageTag', '"existing"', $1)`, tenantEnvID)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	rollout, _ := rollout.New(ctx, mgr, repo)
 	rollout.AllowAll = true
@@ -64,7 +78,7 @@ func TestRollout_integration(t *testing.T) {
 	go func() {
 		err := sqlWorker.Listen(ctx)
 		if err != nil {
-			t.Fatalf("error running sql worker: %v", err)
+			panic(err)
 		}
 	}()
 
@@ -85,7 +99,7 @@ func TestRollout_integration(t *testing.T) {
 		t.Fatalf("got %v, want 201", w.Code)
 	}
 
-	time.Sleep(10 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 
 	obj := struct {
 		Rollout uuid.UUID `json:"rollout"`
@@ -103,9 +117,13 @@ func TestRollout_integration(t *testing.T) {
 	want := &model.Rollout{
 		ID:      pendingRollout.ID,
 		Feature: "feature",
+		Status:  model.RolloutStatusPending,
 		Changeset: &model.RolloutChangeset{
 			New: map[string]json.RawMessage{
 				"imageTag": json.RawMessage(`"sitronterte"`),
+			},
+			Old: map[string]json.RawMessage{
+				"imageTag": json.RawMessage(`"existing"`),
 			},
 		},
 	}
