@@ -143,6 +143,8 @@ func (r *Rollout) Rollout(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	w.WriteHeader(http.StatusCreated)
+
 	json.NewEncoder(w).Encode(map[string]any{
 		"rollout": nw.ID,
 	})
