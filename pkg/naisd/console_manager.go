@@ -208,7 +208,7 @@ func (c *ConsoleManager) createServiceAccounts(ctx context.Context, data message
 }
 
 func (c *ConsoleManager) createTeamRolebindings(ctx context.Context, data message.CreateNamespace, log logrus.FieldLogger) error {
-	if len(data.GroupEmail) == 0 {
+	if data.GroupEmail == "" {
 		log.WithFields(logrus.Fields{
 			"ns": data.Name,
 		}).Warn("Unable to create team rolebinding, missing group email")
