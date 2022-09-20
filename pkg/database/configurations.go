@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/lib/pq"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database/gensql"
@@ -16,6 +18,7 @@ type ConfigRepo interface {
 	ConfigDelete(ctx context.Context, id uuid.UUID) error
 	ConfigGet(ctx context.Context, feature string) ([]*model.GlobalConfiguration, error)
 	ConfigGetForEnv(ctx context.Context, feature string, envID uuid.UUID) ([]*model.EnvConfiguration, error)
+	ConfigListen(ctx context.Context, fn ListenFunc) error
 	ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration) (model.Configuration, error)
 	EnvConfig(ctx context.Context, feature string, envID uuid.UUID) ([]model.Configuration, error)
 	HelmValues(ctx context.Context, feature feature.Feature, envID uuid.UUID, requiredFields []string) (values map[string]any, rolloutIDs []uuid.UUID, err error)
@@ -268,4 +271,33 @@ func makeHelmConfigMap(vals []gensql.EnvConfigRow) (map[string]any, error) {
 		}
 	}
 	return val, nil
+}
+
+func (r *repo) ConfigListen(ctx context.Context, fn ListenFunc) error {
+	listener := pq.NewListener(r.dbConnDSN, time.Millisecond, 15*time.Second, nil)
+
+	if err := listener.Listen("configurations_notify"); err != nil {
+		return err
+	}
+
+	defer listener.Close()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return listener.UnlistenAll()
+		case n := <-listener.Notify:
+			if n == nil {
+				continue
+			}
+
+			id, err := uuid.Parse(n.Extra)
+			if err != nil {
+				r.log.WithField("query", "configurations_listen").WithError(err).Warn("invalid uuid")
+				continue
+			}
+
+			fn(ctx, id)
+		}
+	}
 }

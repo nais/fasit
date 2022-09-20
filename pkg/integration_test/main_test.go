@@ -170,5 +170,4 @@ func TestRollout_integration(t *testing.T) {
 	if !cmp.Equal(want2, confs, cmpOpts...) {
 		t.Errorf("diff -want +got:\n%v", cmp.Diff(want2, confs, cmpOpts...))
 	}
-
 }

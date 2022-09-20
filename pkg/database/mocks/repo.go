@@ -125,6 +125,20 @@ func (_m *Repo) ConfigGetForEnv(ctx context.Context, _a1 string, envID uuid.UUID
 	return r0, r1
 }
 
+// ConfigListen provides a mock function with given fields: ctx, fn
+func (_m *Repo) ConfigListen(ctx context.Context, fn database.ListenFunc) error {
+	ret := _m.Called(ctx, fn)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, database.ListenFunc) error); ok {
+		r0 = rf(ctx, fn)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // ConfigUpdate provides a mock function with given fields: ctx, id, c
 func (_m *Repo) ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration) (model.Configuration, error) {
 	ret := _m.Called(ctx, id, c)
