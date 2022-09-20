@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 	"time"
 
@@ -25,10 +26,15 @@ import (
 func TestRollout_integration(t *testing.T) {
 	ctx := context.Background()
 	mgr := &feature.Manager{}
+	const (
+		featureName = "feature"
+		oldTag      = "existing"
+		newTag      = "newtag"
+	)
 
 	mgr.Features = []feature.Feature{
 		{
-			Name:    "feature",
+			Name:    featureName,
 			Chart:   "oci://feature",
 			Version: "69",
 			Config: feature.Config{
@@ -65,7 +71,12 @@ func TestRollout_integration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = db.ExecContext(ctx, `INSERT INTO configurations_environment (feature, key, value, environment_id) VALUES ('feature', 'imageTag', '"existing"', $1)`, tenantEnvID)
+	_, err = db.ExecContext(
+		ctx,
+		`INSERT INTO configurations_environment (feature, key, value, environment_id) VALUES ($1, 'imageTag', $2, $3)`,
+		featureName, json.RawMessage(strconv.Quote(oldTag)), tenantEnvID,
+	)
+
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -83,9 +94,9 @@ func TestRollout_integration(t *testing.T) {
 	}()
 
 	w := httptest.NewRecorder()
-	body := []byte(`{"imageTag": "sitronterte"}`)
+	body := []byte(`{"imageTag": "` + newTag + `"}`)
 	chiCtx := chi.NewRouteContext()
-	chiCtx.URLParams.Add("feature", "feature")
+	chiCtx.URLParams.Add("feature", featureName)
 	req, err := http.NewRequestWithContext(context.WithValue(ctx, chi.RouteCtxKey, chiCtx), "POST", "/rollout", bytes.NewReader(body))
 	if err != nil {
 		t.Fatal(err)
@@ -116,14 +127,14 @@ func TestRollout_integration(t *testing.T) {
 
 	want := &model.Rollout{
 		ID:      pendingRollout.ID,
-		Feature: "feature",
+		Feature: featureName,
 		Status:  model.RolloutStatusPending,
 		Changeset: &model.RolloutChangeset{
 			New: map[string]json.RawMessage{
-				"imageTag": json.RawMessage(`"sitronterte"`),
+				"imageTag": json.RawMessage(strconv.Quote(newTag)),
 			},
 			Old: map[string]json.RawMessage{
-				"imageTag": json.RawMessage(`"existing"`),
+				"imageTag": json.RawMessage(strconv.Quote(oldTag)),
 			},
 		},
 	}
@@ -135,4 +146,29 @@ func TestRollout_integration(t *testing.T) {
 	if !cmp.Equal(want, pendingRollout, cmpOpts...) {
 		t.Errorf("diff -want +got:\n%v", cmp.Diff(want, pendingRollout, cmpOpts...))
 	}
+
+	confs, err := repo.ConfigGetForEnv(ctx, featureName, tenantEnvID)
+	if err != nil {
+		t.Fatalf("repo.ConfigGetForEnv(ctx, %v, %v) = _, %v, want _, nil", featureName, tenantEnvID, err)
+	}
+
+	cmpOpts = []cmp.Option{
+		cmpopts.IgnoreFields(model.EnvConfiguration{}, "ID", "Created"),
+	}
+
+	want2 := []*model.EnvConfiguration{
+		{
+			Key:           "imageTag",
+			Value:         json.RawMessage(strconv.Quote(newTag)),
+			Type:          "",
+			DisplayName:   "",
+			EnvironmentID: tenantEnvID,
+			FeatureName:   featureName,
+		},
+	}
+
+	if !cmp.Equal(want2, confs, cmpOpts...) {
+		t.Errorf("diff -want +got:\n%v", cmp.Diff(want2, confs, cmpOpts...))
+	}
+
 }
