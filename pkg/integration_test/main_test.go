@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"github.com/nais/fasit/pkg/message"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -26,27 +27,35 @@ import (
 func TestRollout_integration(t *testing.T) {
 	ctx := context.Background()
 	mgr := &feature.Manager{}
+	featConfig := feature.Config{"imageTag": feature.ConfigType{
+		Type: "string",
+	}}
+	feat := model.Feature{
+		Name:             "feature",
+		Chart:            "oci://chart",
+		Version:          "1",
+		Repo:             "",
+		Source:           "",
+		DependsOn:        nil,
+		EnvironmentKinds: nil,
+	}
 	const (
-		featureName = "feature"
-		oldTag      = "existing"
-		newTag      = "newtag"
+		oldTag = "existing"
+		newTag = "newtag"
 	)
 
 	mgr.Features = []feature.Feature{
 		{
-			Name:    featureName,
-			Chart:   "oci://feature",
-			Version: "69",
-			Config: feature.Config{
-				"imageTag": feature.ConfigType{
-					Type: "string",
-				},
-			},
+			Name:    feat.Name,
+			Chart:   feat.Chart,
+			Version: feat.Version,
+			Config:  featConfig,
 		},
 	}
 
 	db, dbConnString, close := dbtest.DockerSQLPool()
 	defer close()
+	logrus.StandardLogger().Level = logrus.DebugLevel
 	log := logrus.NewEntry(logrus.StandardLogger())
 
 	repo := database.New(db, dbConnString, log)
@@ -74,7 +83,18 @@ func TestRollout_integration(t *testing.T) {
 	_, err = db.ExecContext(
 		ctx,
 		`INSERT INTO configurations_environment (feature, key, value, environment_id) VALUES ($1, 'imageTag', $2, $3)`,
-		featureName, json.RawMessage(strconv.Quote(oldTag)), tenantEnvID,
+		feat.Name, json.RawMessage(strconv.Quote(oldTag)), tenantEnvID,
+	)
+	_, err = db.ExecContext(
+		ctx,
+		`INSERT INTO "feature_states" (environment_id, feature, enabled, enabled_at) VALUES ($1, $2, true, TIMESTAMP '2022-09-01 10:10:10')`,
+		tenantEnvID, feat.Name,
+	)
+
+	_, err = db.ExecContext(
+		ctx,
+		`INSERT INTO "health_statuses" (environment_id, reported_at) VALUES ($1, NOW())`,
+		tenantEnvID,
 	)
 
 	if err != nil {
@@ -93,10 +113,24 @@ func TestRollout_integration(t *testing.T) {
 		}
 	}()
 
+	publisher := &MockPublisher{}
+	newPublisher := func(projectID string, topicID string, log *logrus.Entry) workers.Publisher {
+		return publisher
+	}
+
+	reconciler := workers.NewReconciler(repo, mgr, newPublisher, "xxx", log)
+
+	go func() {
+		err = reconciler.Listen(ctx)
+		if err != nil {
+			panic(err)
+		}
+	}()
+
 	w := httptest.NewRecorder()
 	body := []byte(`{"imageTag": "` + newTag + `"}`)
 	chiCtx := chi.NewRouteContext()
-	chiCtx.URLParams.Add("feature", featureName)
+	chiCtx.URLParams.Add("feature", feat.Name)
 	req, err := http.NewRequestWithContext(context.WithValue(ctx, chi.RouteCtxKey, chiCtx), "POST", "/rollout", bytes.NewReader(body))
 	if err != nil {
 		t.Fatal(err)
@@ -120,14 +154,16 @@ func TestRollout_integration(t *testing.T) {
 		t.Fatalf("json.Unmarshal(jsonBody, v) = %v, want nil", err)
 	}
 
+	time.Sleep(100 * time.Millisecond)
+
 	pendingRollout, err := repo.RolloutGetByID(ctx, obj.Rollout)
 	if err != nil {
 		t.Fatalf("repo.RolloutGetByID(ctx, %v) = _, %v, want _, nil", obj.Rollout, err)
 	}
 
-	want := &model.Rollout{
+	wantRollout := &model.Rollout{
 		ID:      pendingRollout.ID,
-		Feature: featureName,
+		Feature: feat.Name,
 		Status:  model.RolloutStatusPending,
 		Changeset: &model.RolloutChangeset{
 			New: map[string]json.RawMessage{
@@ -143,31 +179,58 @@ func TestRollout_integration(t *testing.T) {
 		cmpopts.IgnoreFields(model.Rollout{}, "Created", "LastModified"),
 	}
 
-	if !cmp.Equal(want, pendingRollout, cmpOpts...) {
-		t.Errorf("diff -want +got:\n%v", cmp.Diff(want, pendingRollout, cmpOpts...))
+	if !cmp.Equal(wantRollout, pendingRollout, cmpOpts...) {
+		t.Errorf("diff -want +got:\n%v", cmp.Diff(wantRollout, pendingRollout, cmpOpts...))
 	}
 
-	confs, err := repo.ConfigGetForEnv(ctx, featureName, tenantEnvID)
+	confs, err := repo.ConfigGetForEnv(ctx, feat.Name, tenantEnvID)
 	if err != nil {
-		t.Fatalf("repo.ConfigGetForEnv(ctx, %v, %v) = _, %v, want _, nil", featureName, tenantEnvID, err)
+		t.Fatalf("repo.ConfigGetForEnv(ctx, %v, %v) = _, %v, want _, nil", feat.Name, tenantEnvID, err)
 	}
 
 	cmpOpts = []cmp.Option{
 		cmpopts.IgnoreFields(model.EnvConfiguration{}, "ID", "Created"),
 	}
 
-	want2 := []*model.EnvConfiguration{
+	wantConfiguration := []*model.EnvConfiguration{
 		{
 			Key:           "imageTag",
 			Value:         json.RawMessage(strconv.Quote(newTag)),
 			Type:          "",
 			DisplayName:   "",
 			EnvironmentID: tenantEnvID,
-			FeatureName:   featureName,
+			FeatureName:   feat.Name,
 		},
 	}
 
-	if !cmp.Equal(want2, confs, cmpOpts...) {
-		t.Errorf("diff -want +got:\n%v", cmp.Diff(want2, confs, cmpOpts...))
+	if !cmp.Equal(wantConfiguration, confs, cmpOpts...) {
+		t.Errorf("diff -want +got:\n%v", cmp.Diff(wantConfiguration, confs, cmpOpts...))
+	}
+
+	wantInstructions := []message.DeployInstruction{
+		{
+			Name:       feat.Name,
+			Version:    feat.Version,
+			Chart:      feat.Chart,
+			Repo:       "",
+			ConfigHash: "a2a8c185faa8b051c0a519210ea83d2204695b740db0a5558fdd2c0bd0e2f298",
+			Timeout:    0,
+			Values:     map[string]any{"imageTag": json.RawMessage(`"newtag"`)},
+		},
+	}
+
+	if !cmp.Equal(wantInstructions, publisher.deployInstruction, cmpOpts...) {
+		t.Errorf("diff -want +got:\n%v", cmp.Diff(wantInstructions, publisher.deployInstruction, cmpOpts...))
 	}
 }
+
+type MockPublisher struct {
+	deployInstruction []message.DeployInstruction
+}
+
+func (m *MockPublisher) Publish(ctx context.Context, msg message.DeployInstruction) error {
+	m.deployInstruction = append(m.deployInstruction, msg)
+	return nil
+}
+
+func (m *MockPublisher) Stop() {}

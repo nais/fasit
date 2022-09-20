@@ -96,6 +96,7 @@ func (r *Rollout) process(ctx context.Context, id uuid.UUID) {
 			Description:   &rolloutConfigDescription,
 			Key:           k,
 			Value:         v,
+			RolloutID:     &rollout.ID,
 		})
 		if err != nil {
 			errors = append(errors, err)
