@@ -9,7 +9,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -232,24 +231,24 @@ func (q *Queries) ConfigUpdate(ctx context.Context, arg ConfigUpdateParams) (Con
 
 const envConfig = `-- name: EnvConfig :many
 WITH "combined" AS (
-		SELECT id, feature, key, value, description, secret, created, rollout_id, NULL::uuid AS environment_id
+		SELECT "id", "feature", "key", "value", "rollout_id", NULL::uuid AS environment_id
 		FROM ONLY configurations_global glob
 		WHERE glob.feature = $1
 
 		UNION
 
-		SELECT id, feature, key, value, description, secret, created, environment_id, rollout_id
+		SELECT "id", "feature", "key", "value", "rollout_id", "environment_id"
 		FROM ONLY configurations_environment env
 		WHERE env.feature = $1
 		AND environment_id = $2
 	), "filtered" AS (
-		SELECT id, feature, key, value, description, secret, created, rollout_id, environment_id, RANK() OVER (
+		SELECT id, feature, key, value, rollout_id, environment_id, RANK() OVER (
 				PARTITION BY "key"
 				ORDER BY environment_id ASC, key ASC
 			)
 		FROM "combined"
 	)
-SELECT id, feature, key, value, description, secret, created, rollout_id, environment_id, rank
+SELECT id, feature, key, value, rollout_id, environment_id, rank
 FROM filtered
 WHERE RANK = 1
 `
@@ -264,9 +263,6 @@ type EnvConfigRow struct {
 	Feature       string
 	Key           string
 	Value         json.RawMessage
-	Description   sql.NullString
-	Secret        bool
-	Created       time.Time
 	RolloutID     uuid.NullUUID
 	EnvironmentID uuid.NullUUID
 	Rank          int64
@@ -286,9 +282,6 @@ func (q *Queries) EnvConfig(ctx context.Context, arg EnvConfigParams) ([]EnvConf
 			&i.Feature,
 			&i.Key,
 			&i.Value,
-			&i.Description,
-			&i.Secret,
-			&i.Created,
 			&i.RolloutID,
 			&i.EnvironmentID,
 			&i.Rank,

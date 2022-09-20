@@ -34,13 +34,13 @@ WHERE feature = @feature AND environment_id = @environment_id;
 
 -- name: EnvConfig :many
 WITH "combined" AS (
-		SELECT *, NULL::uuid AS environment_id
+		SELECT "id", "feature", "key", "value", "rollout_id", NULL::uuid AS environment_id
 		FROM ONLY configurations_global glob
 		WHERE glob.feature = @feature
 
 		UNION
 
-		SELECT *
+		SELECT "id", "feature", "key", "value", "rollout_id", "environment_id"
 		FROM ONLY configurations_environment env
 		WHERE env.feature = @feature
 		AND environment_id = @environment_id

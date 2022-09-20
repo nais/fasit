@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"github.com/nais/fasit/pkg/message"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -19,6 +18,7 @@ import (
 	"github.com/nais/fasit/pkg/database/dbtest"
 	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph/model"
+	"github.com/nais/fasit/pkg/message"
 	"github.com/nais/fasit/pkg/rollout"
 	"github.com/nais/fasit/pkg/workers"
 	"github.com/sirupsen/logrus"
@@ -216,6 +216,7 @@ func TestRollout_integration(t *testing.T) {
 			ConfigHash: "a2a8c185faa8b051c0a519210ea83d2204695b740db0a5558fdd2c0bd0e2f298",
 			Timeout:    0,
 			Values:     map[string]any{"imageTag": json.RawMessage(`"newtag"`)},
+			RolloutIDs: []uuid.UUID{pendingRollout.ID},
 		},
 	}
 

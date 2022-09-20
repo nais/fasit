@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/lib/pq"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph/model"
@@ -72,10 +72,8 @@ func envConfigFromSQL(conf gensql.EnvConfigRow) model.Configuration {
 			EnvironmentID: conf.EnvironmentID.UUID,
 			FeatureName:   conf.Feature,
 			// Description:   nullStringToPtr(conf.Description),
-			Key:     conf.Key,
-			Value:   conf.Value,
-			Secret:  conf.Secret,
-			Created: conf.Created,
+			Key:   conf.Key,
+			Value: conf.Value,
 		}
 	}
 
@@ -83,10 +81,8 @@ func envConfigFromSQL(conf gensql.EnvConfigRow) model.Configuration {
 		ID:          conf.ID,
 		FeatureName: conf.Feature,
 		// Description: nullStringToPtr(conf.Description),
-		Key:     conf.Key,
-		Value:   conf.Value,
-		Secret:  conf.Secret,
-		Created: conf.Created,
+		Key:   conf.Key,
+		Value: conf.Value,
 	}
 }
 
