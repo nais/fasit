@@ -135,7 +135,7 @@ func TestFullRun(t *testing.T) {
 			},
 		},
 		"stringData": map[string]any{
-			"deploy_instruction.json": "{\"Name\":\"naisd\",\"Version\":\"1.2.3\",\"Chart\":\"oci://asdf\",\"Repo\":\"\",\"ConfigHash\":\"123\",\"Timeout\":60000000000,\"Values\":{\"image\":{\"tag\":\"newtag\"}}}\n",
+			"deploy_instruction.json": "{\"Name\":\"naisd\",\"Version\":\"1.2.3\",\"Chart\":\"oci://asdf\",\"Repo\":\"\",\"ConfigHash\":\"123\",\"Timeout\":60000000000,\"Values\":{\"image\":{\"tag\":\"newtag\"}},\"RolloutIDs\":null}\n",
 		},
 	}
 	if !cmp.Equal(wantSecret, secretMap) {

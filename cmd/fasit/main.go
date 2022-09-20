@@ -124,7 +124,8 @@ func main() {
 		return message.NewPublisher[message.DeployInstruction](client, projectID, topicID, log)
 	}
 	reconciler := workers.NewReconciler(repo, featureMgr, createPublisher, cfg.GCPProjectID, log.WithField("subsystem", "reconciler"))
-	go reconciler.Run(ctx, 1*time.Minute)
+	go reconciler.Listen(ctx)
+	go reconciler.Run(ctx, 10*time.Minute)
 
 	rolloutWorker := workers.NewRollout(repo, log.WithField("subsystem", "rollout"))
 	go rolloutWorker.Listen(ctx)
