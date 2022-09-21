@@ -18,6 +18,7 @@ type NewConfiguration struct {
 	Key           string          `json:"key"`
 	Value         json.RawMessage `json:"value"`
 	Secret        bool
+	RolloutID     *uuid.UUID
 }
 
 type ConfigType string
@@ -95,6 +96,7 @@ type EnvConfiguration struct {
 	Created     time.Time       `json:"created"`
 	Type        ConfigType      `json:"type"`
 	DisplayName string          `json:"displayName"`
+	RolloutID   *uuid.UUID      `json:"rolloutID"`
 
 	EnvironmentID uuid.UUID
 	FeatureName   string

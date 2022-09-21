@@ -12,6 +12,7 @@ import (
 
 type Querier interface {
 	ConfigDelete(ctx context.Context, id uuid.UUID) error
+	ConfigDeleteByRolloutID(ctx context.Context, rolloutID uuid.NullUUID) error
 	ConfigEnvUpdateOrCreate(ctx context.Context, arg ConfigEnvUpdateOrCreateParams) (ConfigurationsEnvironment, error)
 	ConfigGet(ctx context.Context, feature string) ([]ConfigurationsGlobal, error)
 	ConfigGetForEnv(ctx context.Context, arg ConfigGetForEnvParams) ([]ConfigurationsEnvironment, error)
@@ -19,6 +20,7 @@ type Querier interface {
 	ConfigUpdate(ctx context.Context, arg ConfigUpdateParams) (ConfigurationsGlobal, error)
 	EnvConfig(ctx context.Context, arg EnvConfigParams) ([]EnvConfigRow, error)
 	EnvironmentByNames(ctx context.Context, arg EnvironmentByNamesParams) (Environment, error)
+	EnvironmentCI(ctx context.Context, kind EnvironmentKind) (Environment, error)
 	EnvironmentCreate(ctx context.Context, arg EnvironmentCreateParams) (Environment, error)
 	EnvironmentGet(ctx context.Context, id uuid.UUID) (Environment, error)
 	EnvironmentGetByName(ctx context.Context, arg EnvironmentGetByNameParams) (Environment, error)
@@ -39,9 +41,15 @@ type Querier interface {
 	MappingValuesForTenant(ctx context.Context, arg MappingValuesForTenantParams) ([]MappingValuesForTenantRow, error)
 	ReleaseStatusCreateOrUpdate(ctx context.Context, arg ReleaseStatusCreateOrUpdateParams) (ReleaseStatus, error)
 	ReleaseStatusesGet(ctx context.Context, environmentID uuid.UUID) ([]ReleaseStatus, error)
+	RolloutCreate(ctx context.Context, arg RolloutCreateParams) (Rollout, error)
+	RolloutGetByID(ctx context.Context, id uuid.UUID) (Rollout, error)
+	RolloutUpdate(ctx context.Context, arg RolloutUpdateParams) (Rollout, error)
+	RolloutsUnprocessed(ctx context.Context) ([]Rollout, error)
+	RolloutsUpdateStatus(ctx context.Context, arg RolloutsUpdateStatusParams) error
 	StatusCreateOrUpdate(ctx context.Context, arg StatusCreateOrUpdateParams) error
 	StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]Status, error)
 	StatusForFeature(ctx context.Context, arg StatusForFeatureParams) (Status, error)
+	TenantCI(ctx context.Context) (Tenant, error)
 	TenantCreate(ctx context.Context, arg TenantCreateParams) (Tenant, error)
 	TenantEnvironments(ctx context.Context) ([]TenantEnvironmentsRow, error)
 	TenantGet(ctx context.Context, id uuid.UUID) (Tenant, error)

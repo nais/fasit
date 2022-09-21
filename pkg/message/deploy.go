@@ -1,6 +1,10 @@
 package message
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
 
 type DeployInstruction struct {
 	// Name is the name of the feature
@@ -12,4 +16,5 @@ type DeployInstruction struct {
 	ConfigHash string
 	Timeout    time.Duration
 	Values     map[string]any
+	RolloutIDs []uuid.UUID
 }

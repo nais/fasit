@@ -7,6 +7,8 @@ require (
 	github.com/99designs/gqlgen v0.17.20
 	github.com/DATA-DOG/go-txdb v0.1.5
 	github.com/GoogleCloudPlatform/cloudsql-proxy v1.32.0
+	github.com/coreos/go-oidc/v3 v3.4.0
+	github.com/go-chi/chi/v5 v5.0.7
 	github.com/google/go-cmp v0.5.9
 	github.com/google/uuid v1.3.0
 	github.com/gorilla/websocket v1.5.0
@@ -22,7 +24,7 @@ require (
 	github.com/stevenle/topsort v0.2.0
 	github.com/stretchr/testify v1.8.0
 	github.com/vektah/gqlparser/v2 v2.5.1
-	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4
+	golang.org/x/sync v0.0.0-20220819030929-7fc1605a5dde
 	google.golang.org/api v0.96.0
 	google.golang.org/grpc v1.49.0
 	google.golang.org/protobuf v1.28.1
@@ -159,6 +161,7 @@ require (
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20220902135211-223410557253 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
+	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 	k8s.io/apiextensions-apiserver v0.24.3 // indirect
 	k8s.io/apiserver v0.24.3 // indirect
 	k8s.io/cli-runtime v0.24.3 // indirect

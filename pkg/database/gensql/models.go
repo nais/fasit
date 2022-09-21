@@ -56,6 +56,50 @@ func (ns NullEnvironmentKind) Value() (driver.Value, error) {
 	return ns.EnvironmentKind, nil
 }
 
+type RolloutStatus string
+
+const (
+	RolloutStatusValue0   RolloutStatus = ""
+	RolloutStatusPending  RolloutStatus = "pending"
+	RolloutStatusDeployed RolloutStatus = "deployed"
+	RolloutStatusFailed   RolloutStatus = "failed"
+)
+
+func (e *RolloutStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = RolloutStatus(s)
+	case string:
+		*e = RolloutStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for RolloutStatus: %T", src)
+	}
+	return nil
+}
+
+type NullRolloutStatus struct {
+	RolloutStatus RolloutStatus
+	Valid         bool // Valid is true if String is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullRolloutStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.RolloutStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.RolloutStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullRolloutStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return ns.RolloutStatus, nil
+}
+
 type ConfigurationsEnvironment struct {
 	ID            uuid.UUID
 	Feature       string
@@ -65,6 +109,7 @@ type ConfigurationsEnvironment struct {
 	Secret        bool
 	Created       time.Time
 	EnvironmentID uuid.UUID
+	RolloutID     uuid.NullUUID
 }
 
 type ConfigurationsGlobal struct {
@@ -75,6 +120,7 @@ type ConfigurationsGlobal struct {
 	Description sql.NullString
 	Secret      bool
 	Created     time.Time
+	RolloutID   uuid.NullUUID
 }
 
 type Environment struct {
@@ -85,6 +131,7 @@ type Environment struct {
 	Description  sql.NullString
 	Created      time.Time
 	LastModified time.Time
+	Ci           bool
 }
 
 type EnvironmentValue struct {
@@ -137,6 +184,23 @@ type ReleaseStatus struct {
 	LastModified  time.Time
 }
 
+type Rollout struct {
+	ID           uuid.UUID
+	Feature      string
+	Status       RolloutStatus
+	Changeset    json.RawMessage
+	Created      time.Time
+	LastModified time.Time
+}
+
+type RolloutEvent struct {
+	ID        uuid.UUID
+	RolloutID uuid.UUID
+	Type      string
+	Data      json.RawMessage
+	Created   time.Time
+}
+
 type Status struct {
 	EnvironmentID uuid.UUID
 	Feature       string
@@ -154,4 +218,5 @@ type Tenant struct {
 	Description  sql.NullString
 	Created      time.Time
 	LastModified time.Time
+	Ci           bool
 }

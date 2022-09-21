@@ -161,7 +161,7 @@ func (r *queryResolver) HelmValues(ctx context.Context, feature string, envID uu
 		return json.RawMessage{}, nil
 	}
 
-	v, err := r.Repo.HelmValues(ctx, *f, envID, nil)
+	v, _, err := r.Repo.HelmValues(ctx, *f, envID, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -179,5 +179,7 @@ func (r *Resolver) GlobalConfiguration() graphgen.GlobalConfigurationResolver {
 	return &globalConfigurationResolver{r}
 }
 
-type envConfigurationResolver struct{ *Resolver }
-type globalConfigurationResolver struct{ *Resolver }
+type (
+	envConfigurationResolver    struct{ *Resolver }
+	globalConfigurationResolver struct{ *Resolver }
+)

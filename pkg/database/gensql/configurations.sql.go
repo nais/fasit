@@ -9,7 +9,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -24,16 +23,27 @@ func (q *Queries) ConfigDelete(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
+const configDeleteByRolloutID = `-- name: ConfigDeleteByRolloutID :exec
+DELETE FROM configurations_environment
+WHERE rollout_id = $1
+`
+
+func (q *Queries) ConfigDeleteByRolloutID(ctx context.Context, rolloutID uuid.NullUUID) error {
+	_, err := q.db.ExecContext(ctx, configDeleteByRolloutID, rolloutID)
+	return err
+}
+
 const configEnvUpdateOrCreate = `-- name: ConfigEnvUpdateOrCreate :one
 INSERT INTO configurations_environment
-	(environment_id, feature, description, secret, key, value)
+	(environment_id, feature, description, secret, key, value, rollout_id)
 VALUES
-	($1, $2, $3, $4, $5, $6)
+	($1, $2, $3, $4, $5, $6, $7)
 ON CONFLICT (environment_id, feature, key) DO UPDATE
 	SET
 		value = EXCLUDED.value,
-		description = EXCLUDED.description
-RETURNING id, feature, key, value, description, secret, created, environment_id
+		description = EXCLUDED.description,
+		rollout_id = EXCLUDED.rollout_id
+RETURNING id, feature, key, value, description, secret, created, environment_id, rollout_id
 `
 
 type ConfigEnvUpdateOrCreateParams struct {
@@ -43,6 +53,7 @@ type ConfigEnvUpdateOrCreateParams struct {
 	Secret        bool
 	Key           string
 	Value         json.RawMessage
+	RolloutID     uuid.NullUUID
 }
 
 func (q *Queries) ConfigEnvUpdateOrCreate(ctx context.Context, arg ConfigEnvUpdateOrCreateParams) (ConfigurationsEnvironment, error) {
@@ -53,6 +64,7 @@ func (q *Queries) ConfigEnvUpdateOrCreate(ctx context.Context, arg ConfigEnvUpda
 		arg.Secret,
 		arg.Key,
 		arg.Value,
+		arg.RolloutID,
 	)
 	var i ConfigurationsEnvironment
 	err := row.Scan(
@@ -64,12 +76,13 @@ func (q *Queries) ConfigEnvUpdateOrCreate(ctx context.Context, arg ConfigEnvUpda
 		&i.Secret,
 		&i.Created,
 		&i.EnvironmentID,
+		&i.RolloutID,
 	)
 	return i, err
 }
 
 const configGet = `-- name: ConfigGet :many
-SELECT id, feature, key, value, description, secret, created
+SELECT id, feature, key, value, description, secret, created, rollout_id
 FROM ONLY configurations_global
 WHERE feature = $1
 `
@@ -91,6 +104,7 @@ func (q *Queries) ConfigGet(ctx context.Context, feature string) ([]Configuratio
 			&i.Description,
 			&i.Secret,
 			&i.Created,
+			&i.RolloutID,
 		); err != nil {
 			return nil, err
 		}
@@ -106,7 +120,7 @@ func (q *Queries) ConfigGet(ctx context.Context, feature string) ([]Configuratio
 }
 
 const configGetForEnv = `-- name: ConfigGetForEnv :many
-SELECT id, feature, key, value, description, secret, created, environment_id
+SELECT id, feature, key, value, description, secret, created, environment_id, rollout_id
 FROM configurations_environment
 WHERE feature = $1 AND environment_id = $2
 `
@@ -134,6 +148,7 @@ func (q *Queries) ConfigGetForEnv(ctx context.Context, arg ConfigGetForEnvParams
 			&i.Secret,
 			&i.Created,
 			&i.EnvironmentID,
+			&i.RolloutID,
 		); err != nil {
 			return nil, err
 		}
@@ -150,14 +165,15 @@ func (q *Queries) ConfigGetForEnv(ctx context.Context, arg ConfigGetForEnvParams
 
 const configGlobalUpdateOrCreate = `-- name: ConfigGlobalUpdateOrCreate :one
 INSERT INTO configurations_global
-	(feature, description, secret, key, value)
+	(feature, description, secret, key, value, rollout_id)
 VALUES
-	($1, $2, $3, $4, $5)
+	($1, $2, $3, $4, $5, $6)
 ON CONFLICT (feature, key) DO UPDATE
 	SET
 		value = EXCLUDED.value,
-		description = EXCLUDED.description
-RETURNING id, feature, key, value, description, secret, created
+		description = EXCLUDED.description,
+		rollout_id = EXCLUDED.rollout_id
+RETURNING id, feature, key, value, description, secret, created, rollout_id
 `
 
 type ConfigGlobalUpdateOrCreateParams struct {
@@ -166,6 +182,7 @@ type ConfigGlobalUpdateOrCreateParams struct {
 	Secret      bool
 	Key         string
 	Value       json.RawMessage
+	RolloutID   uuid.NullUUID
 }
 
 func (q *Queries) ConfigGlobalUpdateOrCreate(ctx context.Context, arg ConfigGlobalUpdateOrCreateParams) (ConfigurationsGlobal, error) {
@@ -175,6 +192,7 @@ func (q *Queries) ConfigGlobalUpdateOrCreate(ctx context.Context, arg ConfigGlob
 		arg.Secret,
 		arg.Key,
 		arg.Value,
+		arg.RolloutID,
 	)
 	var i ConfigurationsGlobal
 	err := row.Scan(
@@ -185,6 +203,7 @@ func (q *Queries) ConfigGlobalUpdateOrCreate(ctx context.Context, arg ConfigGlob
 		&i.Description,
 		&i.Secret,
 		&i.Created,
+		&i.RolloutID,
 	)
 	return i, err
 }
@@ -192,9 +211,10 @@ func (q *Queries) ConfigGlobalUpdateOrCreate(ctx context.Context, arg ConfigGlob
 const configUpdate = `-- name: ConfigUpdate :one
 UPDATE configurations_global
 SET description = $1,
-	value = $2
+	value = $2,
+	rollout_id = NULL
 WHERE id = $3
-RETURNING id, feature, key, value, description, secret, created
+RETURNING id, feature, key, value, description, secret, created, rollout_id
 `
 
 type ConfigUpdateParams struct {
@@ -214,30 +234,31 @@ func (q *Queries) ConfigUpdate(ctx context.Context, arg ConfigUpdateParams) (Con
 		&i.Description,
 		&i.Secret,
 		&i.Created,
+		&i.RolloutID,
 	)
 	return i, err
 }
 
 const envConfig = `-- name: EnvConfig :many
 WITH "combined" AS (
-		SELECT id, feature, key, value, description, secret, created, NULL::uuid AS environment_id
+		SELECT "id", "feature", "key", "value", "rollout_id", NULL::uuid AS environment_id
 		FROM ONLY configurations_global glob
 		WHERE glob.feature = $1
 
 		UNION
 
-		SELECT id, feature, key, value, description, secret, created, environment_id
+		SELECT "id", "feature", "key", "value", "rollout_id", "environment_id"
 		FROM ONLY configurations_environment env
 		WHERE env.feature = $1
 		AND environment_id = $2
 	), "filtered" AS (
-		SELECT id, feature, key, value, description, secret, created, environment_id, RANK() OVER (
+		SELECT id, feature, key, value, rollout_id, environment_id, RANK() OVER (
 				PARTITION BY "key"
 				ORDER BY environment_id ASC, key ASC
 			)
 		FROM "combined"
 	)
-SELECT id, feature, key, value, description, secret, created, environment_id, rank
+SELECT id, feature, key, value, rollout_id, environment_id, rank
 FROM filtered
 WHERE RANK = 1
 `
@@ -252,9 +273,7 @@ type EnvConfigRow struct {
 	Feature       string
 	Key           string
 	Value         json.RawMessage
-	Description   sql.NullString
-	Secret        bool
-	Created       time.Time
+	RolloutID     uuid.NullUUID
 	EnvironmentID uuid.NullUUID
 	Rank          int64
 }
@@ -273,9 +292,7 @@ func (q *Queries) EnvConfig(ctx context.Context, arg EnvConfigParams) ([]EnvConf
 			&i.Feature,
 			&i.Key,
 			&i.Value,
-			&i.Description,
-			&i.Secret,
-			&i.Created,
+			&i.RolloutID,
 			&i.EnvironmentID,
 			&i.Rank,
 		); err != nil {

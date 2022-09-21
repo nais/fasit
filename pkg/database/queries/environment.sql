@@ -37,3 +37,6 @@ SET description = @description
 WHERE
     id = @id
     RETURNING *;
+
+-- name: EnvironmentCI :one
+SELECT * FROM environments WHERE ci = true AND kind = @kind;

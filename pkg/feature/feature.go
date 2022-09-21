@@ -13,6 +13,15 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+type RolloutSource struct {
+	Org  string `json:"org" yaml:"org"`
+	Repo string `json:"repo" yaml:"repo"`
+}
+
+func (r RolloutSource) String() string {
+	return r.Org + "/" + r.Repo
+}
+
 type Config map[string]ConfigType
 
 type Feature struct {
@@ -23,6 +32,8 @@ type Feature struct {
 	Version string `yaml:"version" json:"version"`
 	// Repo is the repository where the helm chart is located.
 	Repo string `yaml:"repo,omitempty" json:"repo,omitempty"`
+	// RolloutSource is the org and name of repositories which can trigger a rollout.
+	RolloutSource []RolloutSource `yaml:"rolloutSource,omitempty" json:"rolloutSource,omitempty"`
 	// Source should be the URL to the helm chart source code.
 	Source string `yaml:"source" json:"source"`
 	// DependsOn defines the features that this feature depends on.

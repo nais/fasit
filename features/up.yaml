@@ -9,6 +9,9 @@ autoInstall:
   - "management"
 dependsOn:
   - "loadbalancer"
+rolloutSource:
+  - org: nais
+    repo: up
 config:
   image.tag:
     type: string

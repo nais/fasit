@@ -76,12 +76,14 @@ func run(ctx context.Context, log *logrus.Logger) error {
 
 	if !cfg.Management {
 		namespaceSubscriber := message.NewSubscriber[message.Console](deployClient, cfg.EnvProjectID, consoleSubscriptionID)
-		consoleMgr, err := naisd.NewConsoleManager(namespaceSubscriber, restConfig, cfg.EnvProjectID, log.WithField("subsystem", "console"))
-		if err != nil {
-			return err
+		if cfg.Production {
+			consoleMgr, err := naisd.NewConsoleManager(namespaceSubscriber, restConfig, cfg.EnvProjectID, log.WithField("subsystem", "console"))
+			if err != nil {
+				return err
+			}
+			go consoleMgr.Run(ctx)
 		}
 
-		go consoleMgr.Run(ctx)
 	}
 
 	log.Info("Receiver started")

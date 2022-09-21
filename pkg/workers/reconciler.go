@@ -18,12 +18,13 @@ import (
 )
 
 type ReconcilerStore interface {
-	TenantEnvironments(ctx context.Context) ([]*model.TenantEnvironments, error)
-	StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]*model.Status, error)
-	FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
+	ConfigListen(ctx context.Context, fn database.ListenFunc) error
 	FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *feature.Feature, enabled bool) (*model.FeatureState, error)
-	HelmValues(ctx context.Context, feature feature.Feature, envID uuid.UUID, requiredFields []string) (map[string]any, error)
+	FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
 	HealthGet(ctx context.Context, environmentID uuid.UUID) (*model.Health, error)
+	HelmValues(ctx context.Context, feature feature.Feature, envID uuid.UUID, requiredFields []string) (map[string]any, []uuid.UUID, error)
+	StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]*model.Status, error)
+	TenantEnvironments(ctx context.Context) ([]*model.TenantEnvironments, error)
 }
 
 type Publisher interface {
@@ -55,6 +56,12 @@ func NewReconciler(
 		log:        log,
 		projectID:  gcpProjectID,
 	}
+}
+
+func (r *Reconciler) Listen(ctx context.Context) error {
+	return r.repo.ConfigListen(ctx, func(ctx context.Context, envID uuid.UUID) {
+		r.reconcile(ctx)
+	})
 }
 
 func (r *Reconciler) Run(ctx context.Context, interval time.Duration) {
@@ -171,7 +178,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 			continue
 		}
 
-		values, err := r.repo.HelmValues(ctx, f, d.ID, f.RequiredFields())
+		values, rolloutIDs, err := r.repo.HelmValues(ctx, f, d.ID, f.RequiredFields())
 		if err != nil {
 			var fer *database.ErrMissingRequiredFields
 			if errors.As(err, &fer) {
@@ -206,6 +213,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 			ConfigHash: hash,
 			Timeout:    f.Timeout,
 			Values:     values,
+			RolloutIDs: rolloutIDs,
 		})
 		if err != nil {
 			return err

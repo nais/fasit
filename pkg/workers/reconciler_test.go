@@ -211,7 +211,7 @@ func TestReconcile(t *testing.T) {
 			for _, te := range tt.environments {
 				repo.On("StatusForEnvironment", mock.Anything, te.Environment.ID).Return(te.Status, nil)
 				repo.On("FeatureStatesGet", mock.Anything, te.Environment.ID).Return(te.FeatureStates, nil)
-				repo.On("HelmValues", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil).Maybe()
+				repo.On("HelmValues", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, nil).Maybe()
 
 				reportAt := time.Now()
 				if !te.NaisdReportedAt.IsZero() {
