@@ -4,17 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/http"
-	"strconv"
-	"strings"
-	"time"
-
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/go-chi/chi/v5"
-	"github.com/golang-jwt/jwt/v4"
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph/model"
+	"net/http"
+	"strconv"
+	"strings"
 )
 
 type Claims struct {
@@ -49,48 +46,6 @@ func New(ctx context.Context, featureMgr *feature.Manager, repo database.Rollout
 		featureMgr: featureMgr,
 		repo:       repo,
 	}, nil
-}
-
-func (r *Rollout) TokenExchange(w http.ResponseWriter, req *http.Request) {
-	token, err := getAuthToken(req)
-	if err != nil {
-		w.WriteHeader(http.StatusUnauthorized)
-		json.NewEncoder(w).Encode(map[string]any{
-			"error": err.Error(),
-		})
-		return
-	}
-
-	idToken, err := r.verifier.Verify(req.Context(), token)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
-		return
-	}
-
-	claims := &Claims{}
-	if err := idToken.Claims(claims); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	if claims.Owner != "nais" {
-		http.Error(w, "invalid repository owner", http.StatusUnauthorized)
-		return
-	}
-
-	ret := jwt.NewWithClaims(&jwt.SigningMethodHMAC{}, jwt.RegisteredClaims{
-		IssuedAt:  jwt.NewNumericDate(jwt.TimeFunc()),
-		ExpiresAt: jwt.NewNumericDate(jwt.TimeFunc().Add(5 * time.Minute)),
-		Subject:   claims.Repository,
-	})
-
-	retToken, err := ret.SignedString(r.signkingKey)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	json.NewEncoder(w).Encode(map[string]string{"token": retToken})
 }
 
 func (r *Rollout) Rollout(w http.ResponseWriter, req *http.Request) {
@@ -161,20 +116,29 @@ func (r *Rollout) validateToken(w http.ResponseWriter, req *http.Request, featur
 		return
 	}
 
-	tok, err := jwt.ParseWithClaims(token, &jwt.RegisteredClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return r.signkingKey, nil
-	})
+	idToken, err := r.verifier.Verify(req.Context(), token)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
 
-	claims := tok.Claims.(*jwt.RegisteredClaims)
+	claims := &Claims{}
+	if err := idToken.Claims(claims); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if claims.Owner != "nais" {
+		http.Error(w, "invalid repository owner", http.StatusUnauthorized)
+		return
+	}
+
 	for _, rf := range feature.RolloutSource {
-		if rf.String() == claims.Subject {
+		if rf.String() == claims.Repository {
 			return true
 		}
 	}
+	http.Error(w, "invalid repository", http.StatusUnauthorized)
 	return false
 }
 

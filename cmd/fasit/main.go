@@ -165,8 +165,7 @@ func main() {
 	if err != nil {
 		log.WithError(err).Fatal("setting up rollout")
 	}
-	router.Get("/github/exchange", rout.TokenExchange)
-	router.Get("/github/deploy/{feature}", rout.TokenExchange)
+	router.Post("/github/deploy/{feature}", rout.Rollout)
 
 	go func() {
 		if err := runGRPC(ctx, repo); err != nil {
@@ -175,7 +174,7 @@ func main() {
 	}()
 
 	log.Printf("connect to http://%s/ for GraphQL playground", cfg.BindAddress)
-	log.Fatal(http.ListenAndServe(cfg.BindAddress, nil))
+	log.Fatal(http.ListenAndServe(cfg.BindAddress, router))
 }
 
 func newLogger() *logrus.Logger {
