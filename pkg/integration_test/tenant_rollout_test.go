@@ -1,3 +1,5 @@
+//go:build integration_test
+
 package integration_test
 
 import (
@@ -215,7 +217,6 @@ func TestRollout_tenant_without_existing_config_failure(t *testing.T) {
 	if err := tctx.VerifyEnvConfiguration(feat.Name, wantConfiguration); err != nil {
 		t.Fatal(err)
 	}
-
 }
 
 func TestRollout_tenant_failure(t *testing.T) {
@@ -330,5 +331,4 @@ func TestRollout_tenant_failure(t *testing.T) {
 	if err := tctx.VerifyEnvConfiguration(feat.Name, wantConfiguration); err != nil {
 		t.Fatal(err)
 	}
-
 }
