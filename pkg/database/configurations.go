@@ -16,6 +16,7 @@ import (
 type ConfigRepo interface {
 	ConfigCreate(ctx context.Context, c model.NewConfiguration) (model.Configuration, error)
 	ConfigDelete(ctx context.Context, id uuid.UUID) error
+	ConfigDeleteByRolloutID(ctx context.Context, rolloutID uuid.UUID) error
 	ConfigGet(ctx context.Context, feature string) ([]*model.GlobalConfiguration, error)
 	ConfigGetForEnv(ctx context.Context, feature string, envID uuid.UUID) ([]*model.EnvConfiguration, error)
 	ConfigListen(ctx context.Context, fn ListenFunc) error
@@ -296,4 +297,11 @@ func (r *repo) ConfigListen(ctx context.Context, fn ListenFunc) error {
 			fn(ctx, id)
 		}
 	}
+}
+
+func (r *repo) ConfigDeleteByRolloutID(ctx context.Context, rolloutID uuid.UUID) error {
+	return r.querier.ConfigDeleteByRolloutID(ctx, uuid.NullUUID{
+		Valid: true,
+		UUID:  rolloutID,
+	})
 }

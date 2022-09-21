@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/graph/model"
@@ -15,6 +16,8 @@ import (
 type ReceiverClient interface {
 	Receive(ctx context.Context, f func(ctx context.Context, msg message.Status) error) error
 }
+
+type RolloutNotify func(ctx context.Context, id uuid.UUID, status model.RolloutStatus) error
 
 type ReceiverStore interface {
 	EnvironmentIDByNames(ctx context.Context, tenantName string, environmentName string) (uuid.UUID, error)
@@ -29,13 +32,19 @@ type ReceiverStore interface {
 }
 
 type Receiver struct {
-	manager ReceiverClient
-	repo    ReceiverStore
-	log     *logrus.Entry
+	manager       ReceiverClient
+	repo          ReceiverStore
+	rolloutNotify RolloutNotify
+	log           *logrus.Entry
 }
 
-func NewReceiver(mgr ReceiverClient, repo ReceiverStore, log *logrus.Entry) *Receiver {
-	receiver := &Receiver{manager: mgr, repo: repo, log: log}
+func NewReceiver(mgr ReceiverClient, repo ReceiverStore, rolloutNotify RolloutNotify, log *logrus.Entry) *Receiver {
+	receiver := &Receiver{
+		manager:       mgr,
+		repo:          repo,
+		log:           log,
+		rolloutNotify: rolloutNotify,
+	}
 	return receiver
 }
 
@@ -86,7 +95,18 @@ func (r *Receiver) handlerHelm(ctx context.Context, msg message.Status) error {
 		return err
 	}
 
-	return r.repo.RolloutsUpdateStatus(ctx, helmStatus.RolloutIDs, helmStatus.RolloutStatus)
+	var errors []error
+	for _, rid := range helmStatus.RolloutIDs {
+		err = r.rolloutNotify(ctx, rid, model.RolloutStatusDeployed)
+		if err != nil {
+			errors = append(errors, err)
+		}
+	}
+
+	if len(errors) > 0 {
+		return fmt.Errorf("error notifying rollout: %v", errors)
+	}
+	return nil
 }
 
 func (r *Receiver) releaseStatus(ctx context.Context, msg message.Status) error {

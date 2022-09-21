@@ -12,6 +12,7 @@ import (
 
 type Querier interface {
 	ConfigDelete(ctx context.Context, id uuid.UUID) error
+	ConfigDeleteByRolloutID(ctx context.Context, rolloutID uuid.NullUUID) error
 	ConfigEnvUpdateOrCreate(ctx context.Context, arg ConfigEnvUpdateOrCreateParams) (ConfigurationsEnvironment, error)
 	ConfigGet(ctx context.Context, feature string) ([]ConfigurationsGlobal, error)
 	ConfigGetForEnv(ctx context.Context, arg ConfigGetForEnvParams) ([]ConfigurationsEnvironment, error)

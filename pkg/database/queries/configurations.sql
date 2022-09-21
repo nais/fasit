@@ -67,3 +67,7 @@ RETURNING *;
 -- name: ConfigDelete :exec
 DELETE FROM configurations_global
 WHERE id = @id;
+
+-- name: ConfigDeleteByRolloutID :exec
+DELETE FROM configurations_environment
+WHERE rollout_id = @rollout_id;

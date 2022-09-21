@@ -23,6 +23,16 @@ func (q *Queries) ConfigDelete(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
+const configDeleteByRolloutID = `-- name: ConfigDeleteByRolloutID :exec
+DELETE FROM configurations_environment
+WHERE rollout_id = $1
+`
+
+func (q *Queries) ConfigDeleteByRolloutID(ctx context.Context, rolloutID uuid.NullUUID) error {
+	_, err := q.db.ExecContext(ctx, configDeleteByRolloutID, rolloutID)
+	return err
+}
+
 const configEnvUpdateOrCreate = `-- name: ConfigEnvUpdateOrCreate :one
 INSERT INTO configurations_environment
 	(environment_id, feature, description, secret, key, value, rollout_id)

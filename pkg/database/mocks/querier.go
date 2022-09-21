@@ -33,6 +33,20 @@ func (_m *Querier) ConfigDelete(ctx context.Context, id uuid.UUID) error {
 	return r0
 }
 
+// ConfigDeleteByRolloutID provides a mock function with given fields: ctx, rolloutID
+func (_m *Querier) ConfigDeleteByRolloutID(ctx context.Context, rolloutID uuid.NullUUID) error {
+	ret := _m.Called(ctx, rolloutID)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.NullUUID) error); ok {
+		r0 = rf(ctx, rolloutID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // ConfigEnvUpdateOrCreate provides a mock function with given fields: ctx, arg
 func (_m *Querier) ConfigEnvUpdateOrCreate(ctx context.Context, arg gensql.ConfigEnvUpdateOrCreateParams) (gensql.ConfigurationsEnvironment, error) {
 	ret := _m.Called(ctx, arg)

@@ -79,6 +79,20 @@ func (_m *Repo) ConfigDelete(ctx context.Context, id uuid.UUID) error {
 	return r0
 }
 
+// ConfigDeleteByRolloutID provides a mock function with given fields: ctx, rolloutID
+func (_m *Repo) ConfigDeleteByRolloutID(ctx context.Context, rolloutID uuid.UUID) error {
+	ret := _m.Called(ctx, rolloutID)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) error); ok {
+		r0 = rf(ctx, rolloutID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // ConfigGet provides a mock function with given fields: ctx, _a1
 func (_m *Repo) ConfigGet(ctx context.Context, _a1 string) ([]*model.GlobalConfiguration, error) {
 	ret := _m.Called(ctx, _a1)
