@@ -113,10 +113,18 @@ func TestRollout_integration(t *testing.T) {
 		}
 	}()
 
-	publisher := &MockPublisher{}
+	publisher := &MockPublisher{
+		ch:          make(chan message.Status, 1),
+		tenant:      "tenant1",
+		environment: "env1",
+	}
+
 	newPublisher := func(projectID string, topicID string, log *logrus.Entry) workers.Publisher {
 		return publisher
 	}
+
+	receiver := workers.NewReceiver(publisher, repo, sqlWorker.Notify, log)
+	go receiver.Run(ctx)
 
 	reconciler := workers.NewReconciler(repo, mgr, newPublisher, "xxx", log)
 
@@ -135,7 +143,7 @@ func TestRollout_integration(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	time.Sleep(10 * time.Millisecond)
+	time.Sleep(1 * time.Second)
 
 	rollout.Rollout(w, req)
 
@@ -144,7 +152,7 @@ func TestRollout_integration(t *testing.T) {
 		t.Fatalf("got %v, want 201", w.Code)
 	}
 
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(1 * time.Second)
 
 	obj := struct {
 		Rollout uuid.UUID `json:"rollout"`
@@ -154,7 +162,7 @@ func TestRollout_integration(t *testing.T) {
 		t.Fatalf("json.Unmarshal(jsonBody, v) = %v, want nil", err)
 	}
 
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(1 * time.Second)
 
 	pendingRollout, err := repo.RolloutGetByID(ctx, obj.Rollout)
 	if err != nil {
@@ -223,15 +231,83 @@ func TestRollout_integration(t *testing.T) {
 	if !cmp.Equal(wantInstructions, publisher.deployInstruction, cmpOpts...) {
 		t.Errorf("diff -want +got:\n%v", cmp.Diff(wantInstructions, publisher.deployInstruction, cmpOpts...))
 	}
+
+	publisher.SendStatus()
+	time.Sleep(1 * time.Second)
+
+	deployedRollout, err := repo.RolloutGetByID(ctx, obj.Rollout)
+	if err != nil {
+		t.Fatalf("repo.RolloutGetByID(ctx, %v) = _, %v, want _, nil", obj.Rollout, err)
+	}
+
+	wantRollout = &model.Rollout{
+		ID:      pendingRollout.ID,
+		Feature: feat.Name,
+		Status:  model.RolloutStatusDeployed,
+		Changeset: &model.RolloutChangeset{
+			New: map[string]json.RawMessage{
+				"imageTag": json.RawMessage(strconv.Quote(newTag)),
+			},
+			Old: map[string]json.RawMessage{
+				"imageTag": json.RawMessage(strconv.Quote(oldTag)),
+			},
+		},
+	}
+
+	cmpOpts = []cmp.Option{
+		cmpopts.IgnoreFields(model.Rollout{}, "Created", "LastModified"),
+	}
+
+	if !cmp.Equal(wantRollout, deployedRollout, cmpOpts...) {
+		t.Errorf("diff -want +got:\n%v", cmp.Diff(wantRollout, deployedRollout, cmpOpts...))
+	}
+
 }
 
 type MockPublisher struct {
 	deployInstruction []message.DeployInstruction
+	ch                chan message.Status
+	tenant            string
+	environment       string
+}
+
+func (m *MockPublisher) Receive(ctx context.Context, f func(ctx context.Context, msg message.Status) error) error {
+	for s := range m.ch {
+		if err := f(ctx, s); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (m *MockPublisher) Publish(ctx context.Context, msg message.DeployInstruction) error {
 	m.deployInstruction = append(m.deployInstruction, msg)
 	return nil
+}
+
+func (m *MockPublisher) SendStatus() {
+	for _, msg := range m.deployInstruction {
+		msgHelm := &message.Helm{
+			Name:          msg.Name,
+			Version:       msg.Version,
+			RolloutStatus: model.RolloutStatusDeployed,
+			ConfigHash:    msg.ConfigHash,
+			Log:           "",
+			RolloutIDs:    msg.RolloutIDs,
+		}
+
+		b, err := json.Marshal(msgHelm)
+		if err != nil {
+			panic(err)
+		}
+
+		m.ch <- message.Status{
+			Type:        message.StatusTypeHelm,
+			Data:        b,
+			Tenant:      m.tenant,
+			Environment: m.environment,
+		}
+	}
 }
 
 func (m *MockPublisher) Stop() {}
