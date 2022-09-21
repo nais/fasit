@@ -28,7 +28,6 @@ type ReceiverStore interface {
 	EnvironmentCreate(ctx context.Context, t *model.EnvironmentCreate) (*model.Environment, error)
 	HealthStatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Health) error
 	KubernetesNodeSync(ctx context.Context, envID uuid.UUID, kn *message.KubernetesNodes) error
-	RolloutsUpdateStatus(ctx context.Context, ids []uuid.UUID, status model.RolloutStatus) error
 }
 
 type Receiver struct {

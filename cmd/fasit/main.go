@@ -117,7 +117,11 @@ func main() {
 
 	statusMgr := message.NewSubscriber[message.Status](client, cfg.GCPProjectID, cfg.StatusSubscriptionID)
 
-	receiver := workers.NewReceiver(statusMgr, repo, log.WithField("subsystem", "status"))
+	rolloutWorker := workers.NewRollout(repo, log.WithField("subsystem", "rollout"))
+	go rolloutWorker.Listen(ctx)
+	go rolloutWorker.Run(ctx, 10*time.Minute)
+
+	receiver := workers.NewReceiver(statusMgr, repo, rolloutWorker.Notify, log.WithField("subsystem", "status"))
 	go receiver.Run(ctx)
 
 	createPublisher := func(projectID, topicID string, log *logrus.Entry) workers.Publisher {
@@ -126,10 +130,6 @@ func main() {
 	reconciler := workers.NewReconciler(repo, featureMgr, createPublisher, cfg.GCPProjectID, log.WithField("subsystem", "reconciler"))
 	go reconciler.Listen(ctx)
 	go reconciler.Run(ctx, 10*time.Minute)
-
-	rolloutWorker := workers.NewRollout(repo, log.WithField("subsystem", "rollout"))
-	go rolloutWorker.Listen(ctx)
-	go rolloutWorker.Run(ctx, 10*time.Minute)
 
 	resolver := &graph.Resolver{
 		Repo:     repo,

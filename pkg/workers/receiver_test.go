@@ -21,7 +21,6 @@ func TestReceiver(t *testing.T) {
 		numReleaseStatusCreateOrUpdate int
 		numHealthStatusCreateOrUpdate  int
 		numKubernetesNodeSync          int
-		numRolloutUpdate               int
 	}{
 		"empty": {
 			envID:    uid,
@@ -38,7 +37,6 @@ func TestReceiver(t *testing.T) {
 				},
 			},
 			numStatusCreateOrUpdate: 1,
-			numRolloutUpdate:        1,
 		},
 		"helm missing tenant": {
 			envID: uuid.Nil,
@@ -51,7 +49,6 @@ func TestReceiver(t *testing.T) {
 				},
 			},
 			numStatusCreateOrUpdate: 1,
-			numRolloutUpdate:        1,
 		},
 		"helm releases": {
 			envID: uid,
@@ -106,9 +103,6 @@ func TestReceiver(t *testing.T) {
 			}
 			if tc.numKubernetesNodeSync > 0 {
 				repo.On("KubernetesNodeSync", mock.Anything, tc.envID, mock.Anything).Return(nil).Times(tc.numKubernetesNodeSync)
-			}
-			if tc.numRolloutUpdate > 0 {
-				repo.On("RolloutsUpdateStatus", mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe().Times(len(tc.statuses))
 			}
 
 			rec := NewReceiver(
