@@ -1,176 +1,59 @@
 package integration_test
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
-	"net/http"
-	"net/http/httptest"
 	"strconv"
 	"testing"
 	"time"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
-	"github.com/nais/fasit/pkg/database"
-	"github.com/nais/fasit/pkg/database/dbtest"
 	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/nais/fasit/pkg/message"
-	"github.com/nais/fasit/pkg/rollout"
-	"github.com/nais/fasit/pkg/workers"
-	"github.com/sirupsen/logrus"
 )
 
-func TestRollout_integration(t *testing.T) {
-	ctx := context.Background()
-	mgr := &feature.Manager{}
-	featConfig := feature.Config{"imageTag": feature.ConfigType{
-		Type: "string",
-	}}
-	feat := model.Feature{
-		Name:             "feature",
-		Chart:            "oci://chart",
-		Version:          "1",
-		Repo:             "",
-		Source:           "",
-		DependsOn:        nil,
-		EnvironmentKinds: nil,
-	}
+func TestRollout_tenant_success(t *testing.T) {
 	const (
-		oldTag = "existing"
-		newTag = "newtag"
+		newTag = "new-tag"
+		oldTag = "old-tag"
 	)
-
-	mgr.Features = []feature.Feature{
-		{
-			Name:    feat.Name,
-			Chart:   feat.Chart,
-			Version: feat.Version,
-			Config:  featConfig,
+	ctx := context.Background()
+	feat := feature.Feature{
+		Name:    "feature",
+		Chart:   "oci://chart",
+		Version: "1",
+		Config: feature.Config{
+			"imageTag": feature.ConfigType{
+				Type: "string",
+			},
 		},
 	}
 
-	db, dbConnString, close := dbtest.DockerSQLPool()
+	tctx, close := NewTestContext(t, []feature.Feature{feat}, "env1", model.EnvironmentKindTenant)
 	defer close()
-	logrus.StandardLogger().Level = logrus.DebugLevel
-	log := logrus.NewEntry(logrus.StandardLogger())
 
-	repo := database.New(db, dbConnString, log)
-	err := database.Migrate(db, log)
+	_, err := tctx.Repo.ConfigCreate(ctx, model.NewConfiguration{
+		EnvironmentID: &tctx.EnvID,
+		Feature:       feat.Name,
+		Key:           "imageTag",
+		Value:         json.RawMessage(strconv.Quote(oldTag)),
+	})
 	if err != nil {
-		t.Fatalf("error migrating database: %v", err)
+		t.Fatalf("tctx.Repo.ConfigCreate(ctx, config) = %v, want nil", err)
 	}
 
-	tenantEnvID := uuid.New()
-	managementEnvID := uuid.New()
-	tenantID := uuid.New()
-
-	_, err = db.ExecContext(ctx, `INSERT INTO tenants (id, name, ci) VALUES ($1, 'tenant1', true)`, tenantID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = db.ExecContext(ctx, `INSERT INTO environments (id, tenant_id, name, kind, ci) VALUES ($1, $2, 'env1', 'tenant', true)`, tenantEnvID, tenantID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = db.ExecContext(ctx, `INSERT INTO environments (id, tenant_id, name, kind, ci) VALUES ($1, $2, 'env2', 'management', true)`, managementEnvID, tenantID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, err = db.ExecContext(
-		ctx,
-		`INSERT INTO configurations_environment (feature, key, value, environment_id) VALUES ($1, 'imageTag', $2, $3)`,
-		feat.Name, json.RawMessage(strconv.Quote(oldTag)), tenantEnvID,
-	)
-	_, err = db.ExecContext(
-		ctx,
-		`INSERT INTO "feature_states" (environment_id, feature, enabled, enabled_at) VALUES ($1, $2, true, TIMESTAMP '2022-09-01 10:10:10')`,
-		tenantEnvID, feat.Name,
-	)
-
-	_, err = db.ExecContext(
-		ctx,
-		`INSERT INTO "health_statuses" (environment_id, reported_at) VALUES ($1, NOW())`,
-		tenantEnvID,
-	)
-
-	if err != nil {
-		t.Fatal(err)
+	if err := tctx.Repo.HealthStatusCreateOrUpdate(ctx, tctx.EnvID, &message.Health{ReportedAt: time.Now()}); err != nil {
+		t.Fatalf("tctx.Repo.HealthStatusCreateOrUpdate(ctx, tctx.EnvTenantID, &message.Health{ReportedAt: time.Now()}) = %v, want nil", err)
 	}
 
-	rollout, _ := rollout.New(ctx, mgr, repo)
-	rollout.AllowAll = true
-
-	sqlWorker := workers.NewRollout(repo, log)
-
-	go func() {
-		err := sqlWorker.Listen(ctx)
-		if err != nil {
-			panic(err)
-		}
-	}()
-
-	publisher := &MockPublisher{
-		ch:          make(chan message.Status, 1),
-		tenant:      "tenant1",
-		environment: "env1",
-	}
-
-	newPublisher := func(projectID string, topicID string, log *logrus.Entry) workers.Publisher {
-		return publisher
-	}
-
-	receiver := workers.NewReceiver(publisher, repo, sqlWorker.Notify, log)
-	go receiver.Run(ctx)
-
-	reconciler := workers.NewReconciler(repo, mgr, newPublisher, "xxx", log)
-
-	go func() {
-		err = reconciler.Listen(ctx)
-		if err != nil {
-			panic(err)
-		}
-	}()
-
-	w := httptest.NewRecorder()
-	body := []byte(`{"imageTag": "` + newTag + `"}`)
-	chiCtx := chi.NewRouteContext()
-	chiCtx.URLParams.Add("feature", feat.Name)
-	req, err := http.NewRequestWithContext(context.WithValue(ctx, chi.RouteCtxKey, chiCtx), "POST", "/rollout", bytes.NewReader(body))
-	if err != nil {
-		t.Fatal(err)
-	}
+	defer tctx.StartListeners()()
 	time.Sleep(1 * time.Second)
 
-	rollout.Rollout(w, req)
-
-	if w.Code != 201 {
-		t.Log(w.Body.String())
-		t.Fatalf("got %v, want 201", w.Code)
-	}
-
-	time.Sleep(1 * time.Second)
-
-	obj := struct {
-		Rollout uuid.UUID `json:"rollout"`
-	}{}
-
-	if err := json.Unmarshal(w.Body.Bytes(), &obj); err != nil {
-		t.Fatalf("json.Unmarshal(jsonBody, v) = %v, want nil", err)
-	}
-
-	time.Sleep(1 * time.Second)
-
-	pendingRollout, err := repo.RolloutGetByID(ctx, obj.Rollout)
-	if err != nil {
-		t.Fatalf("repo.RolloutGetByID(ctx, %v) = _, %v, want _, nil", obj.Rollout, err)
-	}
+	rolloutID := tctx.PostRollout(t, feat.Name, map[string]any{"imageTag": newTag})
 
 	wantRollout := &model.Rollout{
-		ID:      pendingRollout.ID,
+		ID:      rolloutID,
 		Feature: feat.Name,
 		Status:  model.RolloutStatusPending,
 		Changeset: &model.RolloutChangeset{
@@ -183,21 +66,8 @@ func TestRollout_integration(t *testing.T) {
 		},
 	}
 
-	cmpOpts := []cmp.Option{
-		cmpopts.IgnoreFields(model.Rollout{}, "Created", "LastModified"),
-	}
-
-	if !cmp.Equal(wantRollout, pendingRollout, cmpOpts...) {
-		t.Errorf("diff -want +got:\n%v", cmp.Diff(wantRollout, pendingRollout, cmpOpts...))
-	}
-
-	confs, err := repo.ConfigGetForEnv(ctx, feat.Name, tenantEnvID)
-	if err != nil {
-		t.Fatalf("repo.ConfigGetForEnv(ctx, %v, %v) = _, %v, want _, nil", feat.Name, tenantEnvID, err)
-	}
-
-	cmpOpts = []cmp.Option{
-		cmpopts.IgnoreFields(model.EnvConfiguration{}, "ID", "Created"),
+	if err := tctx.VerifyRollout(rolloutID, wantRollout); err != nil {
+		t.Fatal(err)
 	}
 
 	wantConfiguration := []*model.EnvConfiguration{
@@ -206,13 +76,12 @@ func TestRollout_integration(t *testing.T) {
 			Value:         json.RawMessage(strconv.Quote(newTag)),
 			Type:          "",
 			DisplayName:   "",
-			EnvironmentID: tenantEnvID,
+			EnvironmentID: tctx.EnvID,
 			FeatureName:   feat.Name,
 		},
 	}
-
-	if !cmp.Equal(wantConfiguration, confs, cmpOpts...) {
-		t.Errorf("diff -want +got:\n%v", cmp.Diff(wantConfiguration, confs, cmpOpts...))
+	if err := tctx.VerifyEnvConfiguration(feat.Name, wantConfiguration); err != nil {
+		t.Fatal(err)
 	}
 
 	wantInstructions := []message.DeployInstruction{
@@ -221,93 +90,35 @@ func TestRollout_integration(t *testing.T) {
 			Version:    feat.Version,
 			Chart:      feat.Chart,
 			Repo:       "",
-			ConfigHash: "a2a8c185faa8b051c0a519210ea83d2204695b740db0a5558fdd2c0bd0e2f298",
+			ConfigHash: "30e3f8913511bf1e84c22c93c2cc97413762802b53e7d0743c2ed0f79f19e12f",
 			Timeout:    0,
-			Values:     map[string]any{"imageTag": json.RawMessage(`"newtag"`)},
-			RolloutIDs: []uuid.UUID{pendingRollout.ID},
+			Values:     map[string]any{"imageTag": json.RawMessage(strconv.Quote(newTag))},
+			RolloutIDs: []uuid.UUID{rolloutID},
 		},
 	}
 
-	if !cmp.Equal(wantInstructions, publisher.deployInstruction, cmpOpts...) {
-		t.Errorf("diff -want +got:\n%v", cmp.Diff(wantInstructions, publisher.deployInstruction, cmpOpts...))
+	if err := tctx.VerifyDeployInstructions(wantInstructions); err != nil {
+		t.Fatal(err)
 	}
 
-	publisher.SendStatus()
-	time.Sleep(1 * time.Second)
+	tctx.Naisd.SendStatus()
 
-	deployedRollout, err := repo.RolloutGetByID(ctx, obj.Rollout)
-	if err != nil {
-		t.Fatalf("repo.RolloutGetByID(ctx, %v) = _, %v, want _, nil", obj.Rollout, err)
+	wantRollout.Status = model.RolloutStatusDeployed
+	if err := tctx.VerifyRollout(rolloutID, wantRollout); err != nil {
+		t.Fatal(err)
 	}
 
-	wantRollout = &model.Rollout{
-		ID:      pendingRollout.ID,
-		Feature: feat.Name,
-		Status:  model.RolloutStatusDeployed,
-		Changeset: &model.RolloutChangeset{
-			New: map[string]json.RawMessage{
-				"imageTag": json.RawMessage(strconv.Quote(newTag)),
-			},
-			Old: map[string]json.RawMessage{
-				"imageTag": json.RawMessage(strconv.Quote(oldTag)),
-			},
+	wantGlobalConfiguration := []*model.GlobalConfiguration{
+		{
+			Key:         "imageTag",
+			Value:       json.RawMessage(strconv.Quote(newTag)),
+			Type:        "",
+			DisplayName: "",
+			FeatureName: feat.Name,
 		},
 	}
 
-	cmpOpts = []cmp.Option{
-		cmpopts.IgnoreFields(model.Rollout{}, "Created", "LastModified"),
-	}
-
-	if !cmp.Equal(wantRollout, deployedRollout, cmpOpts...) {
-		t.Errorf("diff -want +got:\n%v", cmp.Diff(wantRollout, deployedRollout, cmpOpts...))
-	}
-
-}
-
-type MockPublisher struct {
-	deployInstruction []message.DeployInstruction
-	ch                chan message.Status
-	tenant            string
-	environment       string
-}
-
-func (m *MockPublisher) Receive(ctx context.Context, f func(ctx context.Context, msg message.Status) error) error {
-	for s := range m.ch {
-		if err := f(ctx, s); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (m *MockPublisher) Publish(ctx context.Context, msg message.DeployInstruction) error {
-	m.deployInstruction = append(m.deployInstruction, msg)
-	return nil
-}
-
-func (m *MockPublisher) SendStatus() {
-	for _, msg := range m.deployInstruction {
-		msgHelm := &message.Helm{
-			Name:          msg.Name,
-			Version:       msg.Version,
-			RolloutStatus: model.RolloutStatusDeployed,
-			ConfigHash:    msg.ConfigHash,
-			Log:           "",
-			RolloutIDs:    msg.RolloutIDs,
-		}
-
-		b, err := json.Marshal(msgHelm)
-		if err != nil {
-			panic(err)
-		}
-
-		m.ch <- message.Status{
-			Type:        message.StatusTypeHelm,
-			Data:        b,
-			Tenant:      m.tenant,
-			Environment: m.environment,
-		}
+	if err := tctx.VerifyGlobalConfiguration(feat.Name, wantGlobalConfiguration); err != nil {
+		t.Fatal(err)
 	}
 }
-
-func (m *MockPublisher) Stop() {}
