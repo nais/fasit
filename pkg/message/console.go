@@ -17,6 +17,7 @@ type Console struct {
 type CreateNamespace struct {
 	Name       string `json:"name"`
 	GCPProject string `json:"gcpProject"`
+	GroupEmail string `json:"groupEmail"`
 }
 
 type DeleteNamespace struct {

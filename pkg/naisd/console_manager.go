@@ -111,6 +111,11 @@ func (c *ConsoleManager) create(ctx context.Context, msg message.Console, log lo
 		return err
 	}
 
+	err = c.createTeamRolebindings(ctx, data, log)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -199,6 +204,39 @@ func (c *ConsoleManager) createServiceAccounts(ctx context.Context, data message
 		},
 	}
 
+	return c.createOrUpdateRoleBinding(ctx, roleBinding, log)
+}
+
+func (c *ConsoleManager) createTeamRolebindings(ctx context.Context, data message.CreateNamespace, log logrus.FieldLogger) error {
+	if data.GroupEmail == "" {
+		log.WithFields(logrus.Fields{
+			"ns": data.Name,
+		}).Warn("Unable to create team rolebinding, missing group email")
+		return nil
+	}
+
+	roleBinding := rbacv1.RoleBinding{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      fmt.Sprintf("team-%s-naisdeveloper", data.Name),
+			Namespace: data.Name,
+		},
+		Subjects: []rbacv1.Subject{
+			{
+				Kind: "Group",
+				Name: data.GroupEmail,
+			},
+		},
+		RoleRef: rbacv1.RoleRef{
+			APIGroup: "rbac.authorization.k8s.io",
+			Kind:     "ClusterRole",
+			Name:     "nais:developer",
+		},
+	}
+
+	return c.createOrUpdateRoleBinding(ctx, roleBinding, log)
+}
+
+func (c *ConsoleManager) createOrUpdateRoleBinding(ctx context.Context, roleBinding rbacv1.RoleBinding, log logrus.FieldLogger) error {
 	existing, err := c.kubeClient.RbacV1().RoleBindings(roleBinding.GetNamespace()).Get(ctx, roleBinding.GetName(), metav1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -224,7 +262,6 @@ func (c *ConsoleManager) createServiceAccounts(ctx context.Context, data message
 			"ns":   roleBinding.GetNamespace(),
 		}).Debug("Updated role binding")
 	}
-
 	return nil
 }
 
