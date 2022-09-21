@@ -127,6 +127,11 @@ func (r *Rollout) rollback(ctx context.Context, id uuid.UUID) error {
 		return err
 	}
 
+	if err := r.repo.RolloutsUpdateStatus(ctx, []uuid.UUID{rollout.ID}, model.RolloutStatusFailed); err != nil {
+		log.WithError(err).Error("failed to set rollout status to failed")
+		return err
+	}
+
 	_, env, err := r.tenantAndEnv(ctx)
 	if err != nil {
 		return err

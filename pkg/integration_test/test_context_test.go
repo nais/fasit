@@ -28,7 +28,7 @@ type naisd interface {
 	workers.Publisher
 	workers.ReceiverClient
 	DeployInstructions() []message.DeployInstruction
-	SendStatus()
+	SendStatus(status model.RolloutStatus)
 }
 
 type TestContext struct {
@@ -193,16 +193,16 @@ func (t *TestContext) VerifyEnvConfiguration(featureName string, want []*model.E
 	var confs []*model.EnvConfiguration
 	var err error
 
+	cmpOpts := []cmp.Option{
+		cmpopts.IgnoreFields(model.EnvConfiguration{}, "ID", "Created"),
+	}
+
 	waitFor(func() bool {
 		confs, err = t.Repo.ConfigGetForEnv(ctx, featureName, t.EnvID)
-		return len(confs) > 0
+		return cmp.Equal(want, confs, cmpOpts...)
 	})
 	if err != nil {
 		return fmt.Errorf("repo.ConfigGetForEnv(ctx, %v, %v) = _, %v, want _, nil", featureName, t.EnvID, err)
-	}
-
-	cmpOpts := []cmp.Option{
-		cmpopts.IgnoreFields(model.EnvConfiguration{}, "ID", "Created"),
 	}
 
 	if !cmp.Equal(want, confs, cmpOpts...) {

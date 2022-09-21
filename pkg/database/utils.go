@@ -45,3 +45,10 @@ func ptrToNullUUID(id *uuid.UUID) uuid.NullUUID {
 		Valid: true,
 	}
 }
+
+func nullUUIDToPtr(nu uuid.NullUUID) *uuid.UUID {
+	if !nu.Valid {
+		return nil
+	}
+	return &nu.UUID
+}

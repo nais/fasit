@@ -31,10 +31,11 @@ func environmentConfigurationFromSQL(c gensql.ConfigurationsEnvironment) *model.
 		EnvironmentID: c.EnvironmentID,
 		FeatureName:   c.Feature,
 		// Description:   nullStringToPtr(c.Description),
-		Key:     c.Key,
-		Value:   c.Value,
-		Secret:  c.Secret,
-		Created: c.Created,
+		Key:       c.Key,
+		Value:     c.Value,
+		Secret:    c.Secret,
+		Created:   c.Created,
+		RolloutID: nullUUIDToPtr(c.RolloutID),
 	}
 }
 

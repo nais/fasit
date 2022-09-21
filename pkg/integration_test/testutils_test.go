@@ -5,7 +5,7 @@ import (
 )
 
 func waitFor(f func() bool) {
-	for i := 0; i < 3000; i++ {
+	for i := 0; i < 300; i++ {
 		if f() {
 			break
 		}

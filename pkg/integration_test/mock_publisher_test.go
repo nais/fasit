@@ -29,12 +29,12 @@ func (m *MockPublisher) Publish(ctx context.Context, msg message.DeployInstructi
 	return nil
 }
 
-func (m *MockPublisher) SendStatus() {
+func (m *MockPublisher) SendStatus(status model.RolloutStatus) {
 	for _, msg := range m.deployInstruction {
 		msgHelm := &message.Helm{
 			Name:          msg.Name,
 			Version:       msg.Version,
-			RolloutStatus: model.RolloutStatusDeployed,
+			RolloutStatus: status,
 			ConfigHash:    msg.ConfigHash,
 			Log:           "",
 			RolloutIDs:    msg.RolloutIDs,

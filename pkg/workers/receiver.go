@@ -97,7 +97,7 @@ func (r *Receiver) handlerHelm(ctx context.Context, msg message.Status) error {
 
 	var errors []error
 	for _, rid := range helmStatus.RolloutIDs {
-		err = r.rolloutNotify(ctx, rid, model.RolloutStatusDeployed)
+		err = r.rolloutNotify(ctx, rid, helmStatus.RolloutStatus)
 		if err != nil {
 			errors = append(errors, err)
 		}
