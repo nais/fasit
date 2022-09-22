@@ -272,12 +272,15 @@ func makeHelmConfigMap(vals []gensql.EnvConfigRow) (map[string]any, error) {
 }
 
 func (r *repo) ConfigListen(ctx context.Context, fn ListenFunc) error {
+	log := r.log.WithField("query", "configurations_listen")
+
 	listener := pq.NewListener(r.dbConnDSN, time.Millisecond, 15*time.Second, nil)
 
 	if err := listener.Listen("configurations_notify"); err != nil {
 		return err
 	}
 
+	log.Info("configuration listener started")
 	defer listener.Close()
 
 	for {
@@ -291,7 +294,7 @@ func (r *repo) ConfigListen(ctx context.Context, fn ListenFunc) error {
 
 			id, err := uuid.Parse(n.Extra)
 			if err != nil {
-				r.log.WithField("query", "configurations_listen").WithError(err).Warn("invalid uuid")
+				log.WithError(err).Warn("invalid uuid")
 				continue
 			}
 

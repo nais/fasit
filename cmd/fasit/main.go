@@ -133,6 +133,7 @@ func main() {
 	}
 	reconciler := workers.NewReconciler(repo, featureMgr, createPublisher, cfg.GCPProjectID, log.WithField("subsystem", "reconciler"))
 	go func() {
+		defer log.Error("reconciler listener stopped")
 		if err := reconciler.Listen(ctx); err != nil {
 			log.WithError(err).Fatal("setting up reconciler listener")
 		}
