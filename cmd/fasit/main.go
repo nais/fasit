@@ -118,12 +118,12 @@ func main() {
 	statusMgr := message.NewSubscriber[message.Status](client, cfg.GCPProjectID, cfg.StatusSubscriptionID)
 
 	rolloutWorker := workers.NewRollout(repo, log.WithField("subsystem", "rollout"))
-	go func() {
-		if err := rolloutWorker.Listen(ctx); err != nil {
-			log.WithError(err).Fatal("rollout worker listener")
-		}
-	}()
-	go rolloutWorker.Run(ctx, 10*time.Minute)
+	// go func() {
+	// 	if err := rolloutWorker.Listen(ctx); err != nil {
+	// 		log.WithError(err).Fatal("rollout worker listener")
+	// 	}
+	// }()
+	go rolloutWorker.Run(ctx, 1*time.Minute)
 
 	receiver := workers.NewReceiver(statusMgr, repo, rolloutWorker.Notify, log.WithField("subsystem", "status"))
 	go receiver.Run(ctx)
@@ -132,13 +132,13 @@ func main() {
 		return message.NewPublisher[message.DeployInstruction](client, projectID, topicID, log)
 	}
 	reconciler := workers.NewReconciler(repo, featureMgr, createPublisher, cfg.GCPProjectID, log.WithField("subsystem", "reconciler"))
-	go func() {
-		defer log.Error("reconciler listener stopped")
-		if err := reconciler.Listen(ctx); err != nil {
-			log.WithError(err).Fatal("setting up reconciler listener")
-		}
-	}()
-	go reconciler.Run(ctx, 10*time.Minute)
+	// go func() {
+	// 	defer log.Error("reconciler listener stopped")
+	// 	if err := reconciler.Listen(ctx); err != nil {
+	// 		log.WithError(err).Fatal("setting up reconciler listener")
+	// 	}
+	// }()
+	go reconciler.Run(ctx, 1*time.Minute)
 
 	resolver := &graph.Resolver{
 		Repo:     repo,

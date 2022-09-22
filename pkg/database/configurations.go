@@ -287,10 +287,16 @@ func (r *repo) ConfigListen(ctx context.Context, fn ListenFunc) error {
 	log.Info("configuration listener started")
 	defer listener.Close()
 
+	ticker := time.NewTicker(90 * time.Second)
+	defer ticker.Stop()
 	for {
 		select {
 		case <-ctx.Done():
 			return listener.UnlistenAll()
+		case <-ticker.C:
+			if err := listener.Ping(); err != nil {
+				log.WithError(err).Error("error pinging listener")
+			}
 		case n := <-listener.Notify:
 			if n == nil {
 				continue
