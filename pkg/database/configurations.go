@@ -274,7 +274,11 @@ func makeHelmConfigMap(vals []gensql.EnvConfigRow) (map[string]any, error) {
 func (r *repo) ConfigListen(ctx context.Context, fn ListenFunc) error {
 	log := r.log.WithField("query", "configurations_listen")
 
-	listener := pq.NewListener(r.dbConnDSN, time.Millisecond, 15*time.Second, nil)
+	listener := pq.NewListener(r.dbConnDSN, time.Millisecond, 15*time.Second, func(event pq.ListenerEventType, err error) {
+		if err != nil {
+			log.WithError(err).Error("error in listener")
+		}
+	})
 
 	if err := listener.Listen("configurations_notify"); err != nil {
 		return err
