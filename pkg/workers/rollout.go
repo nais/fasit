@@ -34,6 +34,7 @@ func NewRollout(repo database.Repo, log *logrus.Entry) *Rollout {
 }
 
 func (r *Rollout) Listen(ctx context.Context) error {
+	r.log.Info("started listener for rollout events")
 	return r.repo.RolloutsListen(ctx, r.process)
 }
 

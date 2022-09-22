@@ -59,6 +59,7 @@ func NewReconciler(
 }
 
 func (r *Reconciler) Listen(ctx context.Context) error {
+	r.log.Info("starting to listen for config changes")
 	return r.repo.ConfigListen(ctx, func(ctx context.Context, envID uuid.UUID) {
 		r.reconcile(ctx)
 	})
