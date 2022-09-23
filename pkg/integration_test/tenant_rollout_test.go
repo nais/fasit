@@ -25,7 +25,7 @@ func TestRollout_tenant_success(t *testing.T) {
 	feat := feature.Feature{
 		Name:    "feature",
 		Chart:   "oci://chart",
-		Version: "1",
+		Version: "10",
 		Config: feature.Config{
 			"imageTag": feature.ConfigType{
 				Type: "string",
@@ -94,7 +94,7 @@ func TestRollout_tenant_success(t *testing.T) {
 			Version:    feat.Version,
 			Chart:      feat.Chart,
 			Repo:       "",
-			ConfigHash: "c4812f9fe576186ae4ad48ddeba69ae7228ead12b936184ebee0d27760d5a3ea",
+			ConfigHash: "0adcc1736efa834f56a40505d89abab2ca1b65e6a439b54f09f83609a712d80c",
 			Timeout:    0,
 			Values:     map[string]any{"imageTag": pgtype.JSONB{Bytes: []byte(strconv.Quote(newTag)), Status: pgtype.Present}},
 			RolloutIDs: []uuid.UUID{rolloutID},
@@ -135,7 +135,7 @@ func TestRollout_tenant_without_existing_config_failure(t *testing.T) {
 	feat := feature.Feature{
 		Name:    "feature",
 		Chart:   "oci://chart",
-		Version: "1",
+		Version: "10",
 		Config: feature.Config{
 			"imageTag": feature.ConfigType{
 				Type: "string",
@@ -194,7 +194,7 @@ func TestRollout_tenant_without_existing_config_failure(t *testing.T) {
 			Version:    feat.Version,
 			Chart:      feat.Chart,
 			Repo:       "",
-			ConfigHash: "c4812f9fe576186ae4ad48ddeba69ae7228ead12b936184ebee0d27760d5a3ea",
+			ConfigHash: "0adcc1736efa834f56a40505d89abab2ca1b65e6a439b54f09f83609a712d80c",
 			Timeout:    0,
 			Values:     map[string]any{"imageTag": pgtype.JSONB{Bytes: []uint8(`"new-tag"`), Status: pgtype.Present}},
 			RolloutIDs: []uuid.UUID{rolloutID},
@@ -227,7 +227,7 @@ func TestRollout_tenant_failure(t *testing.T) {
 	feat := feature.Feature{
 		Name:    "feature",
 		Chart:   "oci://chart",
-		Version: "1",
+		Version: "10",
 		Config: feature.Config{
 			"imageTag": feature.ConfigType{
 				Type: "string",
@@ -296,7 +296,7 @@ func TestRollout_tenant_failure(t *testing.T) {
 			Version:    feat.Version,
 			Chart:      feat.Chart,
 			Repo:       "",
-			ConfigHash: "c4812f9fe576186ae4ad48ddeba69ae7228ead12b936184ebee0d27760d5a3ea",
+			ConfigHash: "0adcc1736efa834f56a40505d89abab2ca1b65e6a439b54f09f83609a712d80c",
 			Timeout:    0,
 			Values:     map[string]any{"imageTag": pgtype.JSONB{Bytes: []uint8(`"new-tag"`), Status: pgtype.Present}},
 			RolloutIDs: []uuid.UUID{rolloutID},
