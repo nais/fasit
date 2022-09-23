@@ -33,7 +33,7 @@ type FeatureStateCreateOrUpdateParams struct {
 }
 
 func (q *Queries) FeatureStateCreateOrUpdate(ctx context.Context, arg FeatureStateCreateOrUpdateParams) (FeatureState, error) {
-	row := q.db.QueryRowContext(ctx, featureStateCreateOrUpdate,
+	row := q.db.QueryRow(ctx, featureStateCreateOrUpdate,
 		arg.EnvironmentID,
 		arg.Feature,
 		arg.Enabled,
@@ -63,7 +63,7 @@ type FeatureStateGetParams struct {
 }
 
 func (q *Queries) FeatureStateGet(ctx context.Context, arg FeatureStateGetParams) (FeatureState, error) {
-	row := q.db.QueryRowContext(ctx, featureStateGet, arg.Feature, arg.EnvironmentID)
+	row := q.db.QueryRow(ctx, featureStateGet, arg.Feature, arg.EnvironmentID)
 	var i FeatureState
 	err := row.Scan(
 		&i.EnvironmentID,
@@ -97,7 +97,7 @@ type FeatureStatesGetRow struct {
 }
 
 func (q *Queries) FeatureStatesGet(ctx context.Context, environmentID uuid.UUID) ([]FeatureStatesGetRow, error) {
-	rows, err := q.db.QueryContext(ctx, featureStatesGet, environmentID)
+	rows, err := q.db.Query(ctx, featureStatesGet, environmentID)
 	if err != nil {
 		return nil, err
 	}
@@ -117,9 +117,6 @@ func (q *Queries) FeatureStatesGet(ctx context.Context, environmentID uuid.UUID)
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

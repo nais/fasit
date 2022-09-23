@@ -10,13 +10,13 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgtype"
 	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/nais/fasit/pkg/message"
 )
 
 func TestRollout_tenant_success(t *testing.T) {
-	t.Parallel()
 	const (
 		newTag = "new-tag"
 		oldTag = "old-tag"
@@ -25,7 +25,7 @@ func TestRollout_tenant_success(t *testing.T) {
 	feat := feature.Feature{
 		Name:    "feature",
 		Chart:   "oci://chart",
-		Version: "1",
+		Version: "10",
 		Config: feature.Config{
 			"imageTag": feature.ConfigType{
 				Type: "string",
@@ -50,7 +50,7 @@ func TestRollout_tenant_success(t *testing.T) {
 		t.Fatalf("tctx.Repo.HealthStatusCreateOrUpdate(ctx, tctx.EnvTenantID, &message.Health{ReportedAt: time.Now()}) = %v, want nil", err)
 	}
 
-	defer tctx.StartListeners()()
+	tctx.StartListeners()
 	time.Sleep(1 * time.Second)
 
 	rolloutID := tctx.PostRollout(t, feat.Name, map[string]any{"imageTag": newTag})
@@ -94,9 +94,9 @@ func TestRollout_tenant_success(t *testing.T) {
 			Version:    feat.Version,
 			Chart:      feat.Chart,
 			Repo:       "",
-			ConfigHash: "30e3f8913511bf1e84c22c93c2cc97413762802b53e7d0743c2ed0f79f19e12f",
+			ConfigHash: "8837e7108dd58fd3b3e6ddf2badf1f38ac71eacb5077628b4222110aca2cde5b",
 			Timeout:    0,
-			Values:     map[string]any{"imageTag": json.RawMessage(strconv.Quote(newTag))},
+			Values:     map[string]any{"imageTag": pgtype.JSONB{Bytes: []byte(strconv.Quote(newTag)), Status: pgtype.Present}},
 			RolloutIDs: []uuid.UUID{rolloutID},
 		},
 	}
@@ -128,7 +128,6 @@ func TestRollout_tenant_success(t *testing.T) {
 }
 
 func TestRollout_tenant_without_existing_config_failure(t *testing.T) {
-	t.Parallel()
 	const (
 		newTag = "new-tag"
 	)
@@ -136,7 +135,7 @@ func TestRollout_tenant_without_existing_config_failure(t *testing.T) {
 	feat := feature.Feature{
 		Name:    "feature",
 		Chart:   "oci://chart",
-		Version: "1",
+		Version: "10",
 		Config: feature.Config{
 			"imageTag": feature.ConfigType{
 				Type: "string",
@@ -195,9 +194,9 @@ func TestRollout_tenant_without_existing_config_failure(t *testing.T) {
 			Version:    feat.Version,
 			Chart:      feat.Chart,
 			Repo:       "",
-			ConfigHash: "30e3f8913511bf1e84c22c93c2cc97413762802b53e7d0743c2ed0f79f19e12f",
+			ConfigHash: "8837e7108dd58fd3b3e6ddf2badf1f38ac71eacb5077628b4222110aca2cde5b",
 			Timeout:    0,
-			Values:     map[string]any{"imageTag": json.RawMessage(strconv.Quote(newTag))},
+			Values:     map[string]any{"imageTag": pgtype.JSONB{Bytes: []uint8(`"new-tag"`), Status: pgtype.Present}},
 			RolloutIDs: []uuid.UUID{rolloutID},
 		},
 	}
@@ -220,7 +219,6 @@ func TestRollout_tenant_without_existing_config_failure(t *testing.T) {
 }
 
 func TestRollout_tenant_failure(t *testing.T) {
-	t.Parallel()
 	const (
 		newTag = "new-tag"
 		oldTag = "old-tag"
@@ -229,7 +227,7 @@ func TestRollout_tenant_failure(t *testing.T) {
 	feat := feature.Feature{
 		Name:    "feature",
 		Chart:   "oci://chart",
-		Version: "1",
+		Version: "10",
 		Config: feature.Config{
 			"imageTag": feature.ConfigType{
 				Type: "string",
@@ -298,9 +296,9 @@ func TestRollout_tenant_failure(t *testing.T) {
 			Version:    feat.Version,
 			Chart:      feat.Chart,
 			Repo:       "",
-			ConfigHash: "30e3f8913511bf1e84c22c93c2cc97413762802b53e7d0743c2ed0f79f19e12f",
+			ConfigHash: "8837e7108dd58fd3b3e6ddf2badf1f38ac71eacb5077628b4222110aca2cde5b",
 			Timeout:    0,
-			Values:     map[string]any{"imageTag": json.RawMessage(strconv.Quote(newTag))},
+			Values:     map[string]any{"imageTag": pgtype.JSONB{Bytes: []uint8(`"new-tag"`), Status: pgtype.Present}},
 			RolloutIDs: []uuid.UUID{rolloutID},
 		},
 	}

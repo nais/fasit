@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgtype"
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph/model"
@@ -22,9 +23,12 @@ type EnvironmentValueRepo interface {
 
 func (r *repo) EnvironmentValueStore(ctx context.Context, environmentID uuid.UUID, key string, value json.RawMessage, secret bool) error {
 	return r.querier.EnvironmentValueStore(ctx, gensql.EnvironmentValueStoreParams{
-		Envid:  environmentID,
-		Key:    key,
-		Value:  value,
+		Envid: environmentID,
+		Key:   key,
+		Value: pgtype.JSONB{
+			Bytes:  value,
+			Status: pgtype.Present,
+		},
 		Secret: secret,
 	})
 }
@@ -42,7 +46,7 @@ func (r *repo) EnvironmentValueGet(ctx context.Context, environmentID uuid.UUID,
 	return &model.EnvironmentValue{
 		EnvironmentID: ev.EnvironmentID,
 		Key:           ev.Key,
-		Value:         ev.Value,
+		Value:         ev.Value.Bytes,
 		Secret:        ev.Secret,
 	}, nil
 }
@@ -61,7 +65,7 @@ func (r *repo) EnvironmentValuesForEnvironment(ctx context.Context, envID uuid.U
 		ret[i] = &model.EnvironmentValue{
 			EnvironmentID: ev.EnvironmentID,
 			Key:           ev.Key,
-			Value:         ev.Value,
+			Value:         ev.Value.Bytes,
 			Secret:        ev.Secret,
 		}
 	}
@@ -99,7 +103,7 @@ func (r *repo) MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID,
 
 	for _, env := range values {
 		val := map[string]any{}
-		if err := json.Unmarshal(env.Values, &val); err != nil {
+		if err := json.Unmarshal(env.Values.Bytes, &val); err != nil {
 			return nil, fmt.Errorf("envValuesForEnv: failed to unmarshal values for %q: %w", env.Name, err)
 		}
 		val["name"] = env.Name

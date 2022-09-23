@@ -91,7 +91,7 @@ func (r *Rollout) completeRollout(ctx context.Context, id uuid.UUID) error {
 
 	if err := txRepo.ConfigDeleteByRolloutID(ctx, rollout.ID); err != nil {
 		log.WithError(err).Error("failed to delete rollout configurations")
-		tx.Rollback()
+		tx.Rollback(ctx)
 		return err
 	}
 
@@ -103,7 +103,7 @@ func (r *Rollout) completeRollout(ctx context.Context, id uuid.UUID) error {
 		})
 		if err != nil {
 			log.WithError(err).Error("failed to create new global configuration")
-			tx.Rollback()
+			tx.Rollback(ctx)
 			return err
 		}
 	}
@@ -111,11 +111,11 @@ func (r *Rollout) completeRollout(ctx context.Context, id uuid.UUID) error {
 	rollout.Status = model.RolloutStatusDeployed
 	if err := txRepo.RolloutUpdate(ctx, rollout); err != nil {
 		log.WithError(err).Error("failed to update rollout")
-		tx.Rollback()
+		tx.Rollback(ctx)
 		return err
 	}
 
-	return tx.Commit()
+	return tx.Commit(ctx)
 }
 
 func (r *Rollout) rollback(ctx context.Context, id uuid.UUID) error {
@@ -183,11 +183,11 @@ func (r *Rollout) rollback(ctx context.Context, id uuid.UUID) error {
 		for _, err := range errors {
 			log.WithField("rollout", rollout.ID).WithError(err).Error("failed to delete new configurations")
 		}
-		tx.Rollback()
+		tx.Rollback(ctx)
 		return fmt.Errorf("error while rolling back rollout: %v", errors)
 	}
 
-	return tx.Commit()
+	return tx.Commit(ctx)
 }
 
 func (r *Rollout) run(ctx context.Context) error {
@@ -242,11 +242,11 @@ func (r *Rollout) process(ctx context.Context, id uuid.UUID) {
 		for _, err := range errors {
 			log.WithField("rollout", rollout.ID).WithError(err).Error("failed to create new configurations")
 		}
-		tx.Rollback()
+		tx.Rollback(ctx)
 		return
 	}
 
-	tx.Commit()
+	tx.Commit(ctx)
 }
 
 // getAndPrepare fetches the rollout from the database and prepares it for processing.

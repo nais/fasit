@@ -7,10 +7,9 @@ package gensql
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/google/uuid"
-	"github.com/lib/pq"
+	"github.com/jackc/pgtype"
 )
 
 const rolloutCreate = `-- name: RolloutCreate :one
@@ -21,11 +20,11 @@ RETURNING id, feature, status, changeset, created, last_modified
 
 type RolloutCreateParams struct {
 	Feature   string
-	Changeset json.RawMessage
+	Changeset pgtype.JSONB
 }
 
 func (q *Queries) RolloutCreate(ctx context.Context, arg RolloutCreateParams) (Rollout, error) {
-	row := q.db.QueryRowContext(ctx, rolloutCreate, arg.Feature, arg.Changeset)
+	row := q.db.QueryRow(ctx, rolloutCreate, arg.Feature, arg.Changeset)
 	var i Rollout
 	err := row.Scan(
 		&i.ID,
@@ -43,7 +42,7 @@ SELECT id, feature, status, changeset, created, last_modified FROM rollouts WHER
 `
 
 func (q *Queries) RolloutGetByID(ctx context.Context, id uuid.UUID) (Rollout, error) {
-	row := q.db.QueryRowContext(ctx, rolloutGetByID, id)
+	row := q.db.QueryRow(ctx, rolloutGetByID, id)
 	var i Rollout
 	err := row.Scan(
 		&i.ID,
@@ -67,12 +66,12 @@ RETURNING id, feature, status, changeset, created, last_modified
 
 type RolloutUpdateParams struct {
 	Status    RolloutStatus
-	Changeset json.RawMessage
+	Changeset pgtype.JSONB
 	ID        uuid.UUID
 }
 
 func (q *Queries) RolloutUpdate(ctx context.Context, arg RolloutUpdateParams) (Rollout, error) {
-	row := q.db.QueryRowContext(ctx, rolloutUpdate, arg.Status, arg.Changeset, arg.ID)
+	row := q.db.QueryRow(ctx, rolloutUpdate, arg.Status, arg.Changeset, arg.ID)
 	var i Rollout
 	err := row.Scan(
 		&i.ID,
@@ -90,7 +89,7 @@ SELECT id, feature, status, changeset, created, last_modified FROM rollouts WHER
 `
 
 func (q *Queries) RolloutsUnprocessed(ctx context.Context) ([]Rollout, error) {
-	rows, err := q.db.QueryContext(ctx, rolloutsUnprocessed)
+	rows, err := q.db.Query(ctx, rolloutsUnprocessed)
 	if err != nil {
 		return nil, err
 	}
@@ -109,9 +108,6 @@ func (q *Queries) RolloutsUnprocessed(ctx context.Context) ([]Rollout, error) {
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -133,6 +129,6 @@ type RolloutsUpdateStatusParams struct {
 }
 
 func (q *Queries) RolloutsUpdateStatus(ctx context.Context, arg RolloutsUpdateStatusParams) error {
-	_, err := q.db.ExecContext(ctx, rolloutsUpdateStatus, arg.Status, pq.Array(arg.Ids))
+	_, err := q.db.Exec(ctx, rolloutsUpdateStatus, arg.Status, arg.Ids)
 	return err
 }

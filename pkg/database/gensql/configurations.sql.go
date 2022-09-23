@@ -8,9 +8,9 @@ package gensql
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgtype"
 )
 
 const configDelete = `-- name: ConfigDelete :exec
@@ -19,7 +19,7 @@ WHERE id = $1
 `
 
 func (q *Queries) ConfigDelete(ctx context.Context, id uuid.UUID) error {
-	_, err := q.db.ExecContext(ctx, configDelete, id)
+	_, err := q.db.Exec(ctx, configDelete, id)
 	return err
 }
 
@@ -29,7 +29,7 @@ WHERE rollout_id = $1
 `
 
 func (q *Queries) ConfigDeleteByRolloutID(ctx context.Context, rolloutID uuid.NullUUID) error {
-	_, err := q.db.ExecContext(ctx, configDeleteByRolloutID, rolloutID)
+	_, err := q.db.Exec(ctx, configDeleteByRolloutID, rolloutID)
 	return err
 }
 
@@ -52,12 +52,12 @@ type ConfigEnvUpdateOrCreateParams struct {
 	Description   sql.NullString
 	Secret        bool
 	Key           string
-	Value         json.RawMessage
+	Value         pgtype.JSONB
 	RolloutID     uuid.NullUUID
 }
 
 func (q *Queries) ConfigEnvUpdateOrCreate(ctx context.Context, arg ConfigEnvUpdateOrCreateParams) (ConfigurationsEnvironment, error) {
-	row := q.db.QueryRowContext(ctx, configEnvUpdateOrCreate,
+	row := q.db.QueryRow(ctx, configEnvUpdateOrCreate,
 		arg.EnvironmentID,
 		arg.Feature,
 		arg.Description,
@@ -88,7 +88,7 @@ WHERE feature = $1
 `
 
 func (q *Queries) ConfigGet(ctx context.Context, feature string) ([]ConfigurationsGlobal, error) {
-	rows, err := q.db.QueryContext(ctx, configGet, feature)
+	rows, err := q.db.Query(ctx, configGet, feature)
 	if err != nil {
 		return nil, err
 	}
@@ -110,9 +110,6 @@ func (q *Queries) ConfigGet(ctx context.Context, feature string) ([]Configuratio
 		}
 		items = append(items, i)
 	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -131,7 +128,7 @@ type ConfigGetForEnvParams struct {
 }
 
 func (q *Queries) ConfigGetForEnv(ctx context.Context, arg ConfigGetForEnvParams) ([]ConfigurationsEnvironment, error) {
-	rows, err := q.db.QueryContext(ctx, configGetForEnv, arg.Feature, arg.EnvironmentID)
+	rows, err := q.db.Query(ctx, configGetForEnv, arg.Feature, arg.EnvironmentID)
 	if err != nil {
 		return nil, err
 	}
@@ -153,9 +150,6 @@ func (q *Queries) ConfigGetForEnv(ctx context.Context, arg ConfigGetForEnvParams
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -181,12 +175,12 @@ type ConfigGlobalUpdateOrCreateParams struct {
 	Description sql.NullString
 	Secret      bool
 	Key         string
-	Value       json.RawMessage
+	Value       pgtype.JSONB
 	RolloutID   uuid.NullUUID
 }
 
 func (q *Queries) ConfigGlobalUpdateOrCreate(ctx context.Context, arg ConfigGlobalUpdateOrCreateParams) (ConfigurationsGlobal, error) {
-	row := q.db.QueryRowContext(ctx, configGlobalUpdateOrCreate,
+	row := q.db.QueryRow(ctx, configGlobalUpdateOrCreate,
 		arg.Feature,
 		arg.Description,
 		arg.Secret,
@@ -219,12 +213,12 @@ RETURNING id, feature, key, value, description, secret, created, rollout_id
 
 type ConfigUpdateParams struct {
 	Description sql.NullString
-	Value       json.RawMessage
+	Value       pgtype.JSONB
 	ID          uuid.UUID
 }
 
 func (q *Queries) ConfigUpdate(ctx context.Context, arg ConfigUpdateParams) (ConfigurationsGlobal, error) {
-	row := q.db.QueryRowContext(ctx, configUpdate, arg.Description, arg.Value, arg.ID)
+	row := q.db.QueryRow(ctx, configUpdate, arg.Description, arg.Value, arg.ID)
 	var i ConfigurationsGlobal
 	err := row.Scan(
 		&i.ID,
@@ -272,14 +266,14 @@ type EnvConfigRow struct {
 	ID            uuid.UUID
 	Feature       string
 	Key           string
-	Value         json.RawMessage
+	Value         pgtype.JSONB
 	RolloutID     uuid.NullUUID
 	EnvironmentID uuid.NullUUID
 	Rank          int64
 }
 
 func (q *Queries) EnvConfig(ctx context.Context, arg EnvConfigParams) ([]EnvConfigRow, error) {
-	rows, err := q.db.QueryContext(ctx, envConfig, arg.Feature, arg.EnvironmentID)
+	rows, err := q.db.Query(ctx, envConfig, arg.Feature, arg.EnvironmentID)
 	if err != nil {
 		return nil, err
 	}
@@ -299,9 +293,6 @@ func (q *Queries) EnvConfig(ctx context.Context, arg EnvConfigParams) ([]EnvConf
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

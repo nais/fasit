@@ -3,9 +3,9 @@ module github.com/nais/fasit
 go 1.18
 
 require (
+	cloud.google.com/go/cloudsqlconn v0.5.2
 	cloud.google.com/go/pubsub v1.25.1
 	github.com/99designs/gqlgen v0.17.20
-	github.com/DATA-DOG/go-txdb v0.1.5
 	github.com/GoogleCloudPlatform/cloudsql-proxy v1.32.0
 	github.com/coreos/go-oidc/v3 v3.4.0
 	github.com/go-chi/chi/v5 v5.0.7
@@ -14,6 +14,9 @@ require (
 	github.com/gorilla/websocket v1.5.0
 	github.com/iancoleman/strcase v0.2.0
 	github.com/invopop/jsonschema v0.6.0
+	github.com/jackc/pgconn v1.13.0
+	github.com/jackc/pgtype v1.12.0
+	github.com/jackc/pgx/v4 v4.17.2
 	github.com/lib/pq v1.10.7
 	github.com/ory/dockertest/v3 v3.9.1
 	github.com/pressly/goose/v3 v3.7.0
@@ -96,6 +99,12 @@ require (
 	github.com/iancoleman/orderedmap v0.2.0 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
+	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
+	github.com/jackc/pgio v1.0.0 // indirect
+	github.com/jackc/pgpassfile v1.0.0 // indirect
+	github.com/jackc/pgproto3/v2 v2.3.1 // indirect
+	github.com/jackc/pgservicefile v0.0.0-20200714003250-2b9c44734f2b // indirect
+	github.com/jackc/puddle v1.3.0 // indirect
 	github.com/jmoiron/sqlx v1.3.5 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect

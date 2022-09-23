@@ -7,9 +7,9 @@ package gensql
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgtype"
 )
 
 const kubernetesNodeCreateOrUpdate = `-- name: KubernetesNodeCreateOrUpdate :exec
@@ -70,14 +70,14 @@ type KubernetesNodeCreateOrUpdateParams struct {
 	KubeProxyVersion        string
 	OperatingSystem         string
 	Architecture            string
-	Conditions              json.RawMessage
-	Allocatable             json.RawMessage
-	Capacity                json.RawMessage
+	Conditions              pgtype.JSONB
+	Allocatable             pgtype.JSONB
+	Capacity                pgtype.JSONB
 	InternalIp              string
 }
 
 func (q *Queries) KubernetesNodeCreateOrUpdate(ctx context.Context, arg KubernetesNodeCreateOrUpdateParams) error {
-	_, err := q.db.ExecContext(ctx, kubernetesNodeCreateOrUpdate,
+	_, err := q.db.Exec(ctx, kubernetesNodeCreateOrUpdate,
 		arg.EnvironmentID,
 		arg.Name,
 		arg.KernelVersion,
@@ -100,7 +100,7 @@ DELETE FROM kubernetes_node_statuses WHERE environment_id = $1 AND last_modified
 `
 
 func (q *Queries) KubernetesNodeDeleteObsolete(ctx context.Context, environmentID uuid.UUID) error {
-	_, err := q.db.ExecContext(ctx, kubernetesNodeDeleteObsolete, environmentID)
+	_, err := q.db.Exec(ctx, kubernetesNodeDeleteObsolete, environmentID)
 	return err
 }
 
@@ -110,7 +110,7 @@ WHERE environment_id = $1
 `
 
 func (q *Queries) KubernetesNodeStatuses(ctx context.Context, environmentID uuid.UUID) ([]KubernetesNodeStatus, error) {
-	rows, err := q.db.QueryContext(ctx, kubernetesNodeStatuses, environmentID)
+	rows, err := q.db.Query(ctx, kubernetesNodeStatuses, environmentID)
 	if err != nil {
 		return nil, err
 	}
@@ -138,9 +138,6 @@ func (q *Queries) KubernetesNodeStatuses(ctx context.Context, environmentID uuid
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

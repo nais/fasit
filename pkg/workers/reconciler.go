@@ -232,7 +232,7 @@ func generateHash(values map[string]any, feature feature.Feature, enabledAt *tim
 
 	at := ""
 	if enabledAt != nil {
-		at = enabledAt.String()
+		at = enabledAt.UTC().Format(time.RFC3339)
 	}
 
 	b = append(b, []byte(feature.Version+feature.Chart+feature.Repo+at)...)

@@ -30,13 +30,13 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
-      - run: go test -cover -tags integration_test ./...
+      - run: go test -cover -tags integration_test -count=1 ./...
       - name: Vulnerability check
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@latest
           govulncheck ./...
 
-  build_and_test_fasit:
+  build_fasit_image:
     if: github.ref != 'refs/heads/main'
     permissions:
       contents: "read"
@@ -64,7 +64,7 @@ jobs:
             type=semver,pattern=v{{major}}.{{minor}}
             type=semver,pattern=v{{major}}
             type=sha
-      - name: Build and test fasit
+      - name: Build fasit
         uses: docker/build-push-action@v3
         with:
           context: .

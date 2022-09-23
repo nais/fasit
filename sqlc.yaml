@@ -7,6 +7,6 @@ packages:
     queries: "pkg/database/queries"
     emit_interface: true
     emit_empty_slices: true
+    sql_package: pgx/v4
     # Might want this for v1.11
     # emit_result_struct_pointers: true
-

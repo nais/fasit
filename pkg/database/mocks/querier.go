@@ -9,7 +9,7 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
-	sql "database/sql"
+	pgx "github.com/jackc/pgx/v4"
 
 	uuid "github.com/google/uuid"
 )
@@ -923,11 +923,11 @@ func (_m *Querier) TenantsGet(ctx context.Context) ([]gensql.Tenant, error) {
 }
 
 // WithTx provides a mock function with given fields: tx
-func (_m *Querier) WithTx(tx *sql.Tx) *gensql.Queries {
+func (_m *Querier) WithTx(tx pgx.Tx) *gensql.Queries {
 	ret := _m.Called(tx)
 
 	var r0 *gensql.Queries
-	if rf, ok := ret.Get(0).(func(*sql.Tx) *gensql.Queries); ok {
+	if rf, ok := ret.Get(0).(func(pgx.Tx) *gensql.Queries); ok {
 		r0 = rf(tx)
 	} else {
 		if ret.Get(0) != nil {

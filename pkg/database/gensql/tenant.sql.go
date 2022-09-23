@@ -18,7 +18,7 @@ SELECT id, name, description, created, last_modified, ci FROM tenants WHERE ci =
 `
 
 func (q *Queries) TenantCI(ctx context.Context) (Tenant, error) {
-	row := q.db.QueryRowContext(ctx, tenantCI)
+	row := q.db.QueryRow(ctx, tenantCI)
 	var i Tenant
 	err := row.Scan(
 		&i.ID,
@@ -41,7 +41,7 @@ type TenantCreateParams struct {
 }
 
 func (q *Queries) TenantCreate(ctx context.Context, arg TenantCreateParams) (Tenant, error) {
-	row := q.db.QueryRowContext(ctx, tenantCreate, arg.Name, arg.Description)
+	row := q.db.QueryRow(ctx, tenantCreate, arg.Name, arg.Description)
 	var i Tenant
 	err := row.Scan(
 		&i.ID,
@@ -74,7 +74,7 @@ type TenantEnvironmentsRow struct {
 }
 
 func (q *Queries) TenantEnvironments(ctx context.Context) ([]TenantEnvironmentsRow, error) {
-	rows, err := q.db.QueryContext(ctx, tenantEnvironments)
+	rows, err := q.db.Query(ctx, tenantEnvironments)
 	if err != nil {
 		return nil, err
 	}
@@ -97,9 +97,6 @@ func (q *Queries) TenantEnvironments(ctx context.Context) ([]TenantEnvironmentsR
 		}
 		items = append(items, i)
 	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -113,7 +110,7 @@ WHERE id = $1
 `
 
 func (q *Queries) TenantGet(ctx context.Context, id uuid.UUID) (Tenant, error) {
-	row := q.db.QueryRowContext(ctx, tenantGet, id)
+	row := q.db.QueryRow(ctx, tenantGet, id)
 	var i Tenant
 	err := row.Scan(
 		&i.ID,
@@ -133,7 +130,7 @@ WHERE name = $1
 `
 
 func (q *Queries) TenantGetByName(ctx context.Context, name string) (Tenant, error) {
-	row := q.db.QueryRowContext(ctx, tenantGetByName, name)
+	row := q.db.QueryRow(ctx, tenantGetByName, name)
 	var i Tenant
 	err := row.Scan(
 		&i.ID,
@@ -153,7 +150,7 @@ ORDER BY created DESC, name ASC
 `
 
 func (q *Queries) TenantsGet(ctx context.Context) ([]Tenant, error) {
-	rows, err := q.db.QueryContext(ctx, tenantsGet)
+	rows, err := q.db.Query(ctx, tenantsGet)
 	if err != nil {
 		return nil, err
 	}
@@ -172,9 +169,6 @@ func (q *Queries) TenantsGet(ctx context.Context) ([]Tenant, error) {
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
