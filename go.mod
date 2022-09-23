@@ -6,7 +6,6 @@ require (
 	cloud.google.com/go/cloudsqlconn v0.5.2
 	cloud.google.com/go/pubsub v1.25.1
 	github.com/99designs/gqlgen v0.17.20
-	github.com/DATA-DOG/go-txdb v0.1.5
 	github.com/GoogleCloudPlatform/cloudsql-proxy v1.32.0
 	github.com/coreos/go-oidc/v3 v3.4.0
 	github.com/go-chi/chi/v5 v5.0.7

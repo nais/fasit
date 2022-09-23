@@ -94,20 +94,26 @@ func main() {
 	log.Info("-- successfully started pubsub client")
 
 	log.Info("starting database client")
-	dbDriver := "postgres"
+	dbDriver := "pgx"
 	if !strings.Contains(cfg.DBConnectionDSN, "://") {
-		dbDriver = "cloudsqlpostgres"
+		dbDriver = "cloudsql-postgres"
 	}
 
-	db, err := database.NewDB(dbDriver, cfg.DBConnectionDSN)
+	db, closers, err := database.NewDB(ctx, cfg.DBConnectionDSN, false)
 	if err != nil {
 		log.WithError(err).Fatal("setting up database")
 	}
-	if err := database.Migrate(db, log.WithField("subsystem", "migrate")); err != nil {
+	defer func() {
+		if err := closers.Close(); err != nil {
+			log.WithError(err).Errorf("closing database: %v", err)
+		}
+	}()
+
+	if err := database.Migrate(dbDriver, cfg.DBConnectionDSN, log.WithField("subsystem", "migrate")); err != nil {
 		log.WithError(err).Fatal("migrating database")
 	}
 
-	repo := database.New(db, cfg.DBConnectionDSN, log.WithField("subsystem", "repo"))
+	repo := database.New(db, log.WithField("subsystem", "repo"))
 	log.Info("-- successfully started database client")
 
 	featureMgr, err := feature.New(fasit.FeaturesFS)
@@ -118,12 +124,12 @@ func main() {
 	statusMgr := message.NewSubscriber[message.Status](client, cfg.GCPProjectID, cfg.StatusSubscriptionID)
 
 	rolloutWorker := workers.NewRollout(repo, log.WithField("subsystem", "rollout"))
-	// go func() {
-	// 	if err := rolloutWorker.Listen(ctx); err != nil {
-	// 		log.WithError(err).Fatal("rollout worker listener")
-	// 	}
-	// }()
-	go rolloutWorker.Run(ctx, 1*time.Minute)
+	go func() {
+		if err := rolloutWorker.Listen(ctx); err != nil {
+			log.WithError(err).Fatal("rollout worker listener")
+		}
+	}()
+	go rolloutWorker.Run(ctx, 10*time.Minute)
 
 	receiver := workers.NewReceiver(statusMgr, repo, rolloutWorker.Notify, log.WithField("subsystem", "status"))
 	go receiver.Run(ctx)
@@ -132,13 +138,13 @@ func main() {
 		return message.NewPublisher[message.DeployInstruction](client, projectID, topicID, log)
 	}
 	reconciler := workers.NewReconciler(repo, featureMgr, createPublisher, cfg.GCPProjectID, log.WithField("subsystem", "reconciler"))
-	// go func() {
-	// 	defer log.Error("reconciler listener stopped")
-	// 	if err := reconciler.Listen(ctx); err != nil {
-	// 		log.WithError(err).Fatal("setting up reconciler listener")
-	// 	}
-	// }()
-	go reconciler.Run(ctx, 1*time.Minute)
+	go func() {
+		defer log.Error("reconciler listener stopped")
+		if err := reconciler.Listen(ctx); err != nil {
+			log.WithError(err).Fatal("setting up reconciler listener")
+		}
+	}()
+	go reconciler.Run(ctx, 10*time.Minute)
 
 	resolver := &graph.Resolver{
 		Repo:     repo,
