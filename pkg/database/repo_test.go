@@ -4,6 +4,7 @@ package database
 
 import (
 	"context"
+	"github.com/jackc/pgx/v4"
 	"io"
 	"os"
 	"testing"
@@ -31,7 +32,9 @@ func TestMain(m *testing.M) {
 	if err != nil {
 		log.Fatalf("Error connecting to database: %v", err)
 	}
-	defer closers.Close()
+	defer func() {
+		_ = closers.Close()
+	}()
 
 	if err := Migrate("pgx", dbString, logrus.NewEntry(log)); err != nil {
 		log.Fatalf("Could not migrate: %v", err)
@@ -48,12 +51,30 @@ func TestMain(m *testing.M) {
 
 func newTestRepo(t testing.TB, stmts ...string) Repo {
 	t.Helper()
+	newRepo, tx, err := repository.WithTx(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var txRepo = &transactionRepo{
+		Repo: newRepo,
+		tx:   tx,
+	}
 
 	for _, s := range stmts {
-		_, err := repository.db.Exec(context.Background(), s)
+		_, err := tx.Exec(context.Background(), s)
 		if err != nil {
 			t.Fatalf("Error executing:\n%v\nErr: %v", s, err)
 		}
 	}
-	return repository
+	return txRepo
+}
+
+type transactionRepo struct {
+	Repo
+	tx pgx.Tx
+}
+
+func (r *transactionRepo) Close() {
+	_ = r.tx.Rollback(context.Background())
 }

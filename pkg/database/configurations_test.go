@@ -4,7 +4,6 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -303,10 +302,18 @@ func TestRepo_ConfigDelete(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	err = r.(*repo).db.QueryRow(context.Background(), `SELECT id FROM configurations_global WHERE id = $1`, gotID).Scan()
-	if err != sql.ErrNoRows {
-		t.Errorf("got: %v, want %v", err, sql.ErrNoRows)
+	confs, err := r.ConfigGet(context.Background(), config.Feature)
+	if err != nil {
+		return
+	}
+	found := false
+	for _, conf := range confs {
+		if conf.ID == gotID {
+			found = true
+		}
+	}
+	if found {
+		t.Errorf("got: %v, want %v", found, false)
 	}
 }
 
@@ -338,7 +345,7 @@ func TestRepo_HelmValues_OK(t *testing.T) {
 
 	want := map[string]any{
 		"my": map[string]any{
-			"key": json.RawMessage(`"stringval"`),
+			"key": pgtype.JSONB{Bytes: []byte(`"stringval"`), Status: pgtype.Present},
 		},
 	}
 
@@ -431,7 +438,7 @@ func TestRepo_HelmValues_WithMappingValues(t *testing.T) {
 		{envid, "some_secret", json.RawMessage(`"hideme"`), true},
 	}
 
-	feature := feature.Feature{
+	f := feature.Feature{
 		Name: "feature5",
 		Mapping: feature.Mapping{
 			"names.tenant":      feature.MappingConfig{Value: "{{ .Tenant.Name }}"},
@@ -449,7 +456,7 @@ func TestRepo_HelmValues_WithMappingValues(t *testing.T) {
 		}
 	}
 
-	got, _, err := r.HelmValues(context.Background(), feature, envid, nil)
+	got, _, err := r.HelmValues(context.Background(), f, envid, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
