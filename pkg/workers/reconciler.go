@@ -232,15 +232,9 @@ func generateHash(values map[string]any, feature feature.Feature, enabledAt *tim
 
 	at := ""
 	if enabledAt != nil {
-		at = enabledAt.String()
+		at = enabledAt.UTC().Format(time.RFC3339)
 	}
 
-	fmt.Println("Generate hash for", feature.Name)
-	fmt.Println("Enabled at", at)
-	fmt.Println("Values", string(b))
-	fmt.Println("Version", feature.Version)
-	fmt.Println("Chart", feature.Chart)
-	fmt.Println("Repo", feature.Repo)
 	b = append(b, []byte(feature.Version+feature.Chart+feature.Repo+at)...)
 
 	hash := sha256.Sum256(b)
