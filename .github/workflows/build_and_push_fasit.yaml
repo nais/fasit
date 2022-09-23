@@ -30,6 +30,7 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
+      - run: go test -v -cover -tags integration_test -count=1 ./pkg/integration_test
       - run: go test -cover -tags integration_test -count=1 ./...
       - name: Vulnerability check
         run: |
