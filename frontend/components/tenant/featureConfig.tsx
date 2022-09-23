@@ -10,6 +10,7 @@ import {AutomaticSystem, Wrench} from "@navikt/ds-icons";
 import styled from "styled-components";
 import {navGronn} from "../../styles/constants";
 import ReactTooltip from "react-tooltip";
+import ValuesCollapse from "./valuesCollapse";
 
 
 interface FeatureConfigProps {
@@ -34,7 +35,7 @@ const FeatureConfig = ({envID, configs, featureObject, mapping}: FeatureConfigPr
     const [showCreate, setShowCreate] = useState(false)
 
     const overridable = Object.keys(configs).filter((c) => mapping?.map((m) => m.key).includes(configs[c].key))
-    const nonOverridden = Object.keys(configs).filter((c) => overridable?.includes(c) ).filter((c) => !(configs[c].value))
+    const nonOverridden = Object.keys(configs).filter((c) => overridable?.includes(c)).filter((c) => !(configs[c].value))
 
     const requiredConfigs = Object.keys(configs).filter((c) => configs[c].required).filter((c) => !(nonOverridden.includes(c))).sort()
     const envConfigs = Object.keys(configs).filter((c) => configs[c].env && !configs[c].required).sort()
@@ -107,9 +108,7 @@ const FeatureConfig = ({envID, configs, featureObject, mapping}: FeatureConfigPr
                                 {m.displayName ? <span title={"helm key: " + m.key}>{m.displayName}</span> : m.key}
                             </Table.DataCell>
                             <Table.DataCell>
-                                {Array.isArray(m.value) ?
-                                <pre style={{fontSize: ".8em", margin: 0}}>{JSON.stringify(m.value, null, 2) }</pre> :
-                                m.value}
+                                <ValuesCollapse content={m}/>
                             </Table.DataCell>
                             <Table.DataCell align={"center"}> {o && <StyledWrench onClick={() => {
                                 setCurrentConfig(configs[m.key])
