@@ -7,9 +7,9 @@ package gensql
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgtype"
 )
 
 const environmentValueGet = `-- name: EnvironmentValueGet :one
@@ -31,11 +31,11 @@ type EnvironmentValueGetRow struct {
 	EnvironmentID uuid.UUID
 	Key           string
 	Secret        bool
-	Value         json.RawMessage
+	Value         pgtype.JSONB
 }
 
 func (q *Queries) EnvironmentValueGet(ctx context.Context, arg EnvironmentValueGetParams) (EnvironmentValueGetRow, error) {
-	row := q.db.QueryRowContext(ctx, environmentValueGet, arg.Showsensitive, arg.Envid, arg.Key)
+	row := q.db.QueryRow(ctx, environmentValueGet, arg.Showsensitive, arg.Envid, arg.Key)
 	var i EnvironmentValueGetRow
 	err := row.Scan(
 		&i.EnvironmentID,
@@ -54,12 +54,12 @@ ON CONFLICT ("environment_id", "key") DO UPDATE SET "value" = $3, "secret" = $4
 type EnvironmentValueStoreParams struct {
 	Envid  uuid.UUID
 	Key    string
-	Value  json.RawMessage
+	Value  pgtype.JSONB
 	Secret bool
 }
 
 func (q *Queries) EnvironmentValueStore(ctx context.Context, arg EnvironmentValueStoreParams) error {
-	_, err := q.db.ExecContext(ctx, environmentValueStore,
+	_, err := q.db.Exec(ctx, environmentValueStore,
 		arg.Envid,
 		arg.Key,
 		arg.Value,
@@ -86,11 +86,11 @@ type EnvironmentValuesForEnvironmentRow struct {
 	EnvironmentID uuid.UUID
 	Key           string
 	Secret        bool
-	Value         json.RawMessage
+	Value         pgtype.JSONB
 }
 
 func (q *Queries) EnvironmentValuesForEnvironment(ctx context.Context, arg EnvironmentValuesForEnvironmentParams) ([]EnvironmentValuesForEnvironmentRow, error) {
-	rows, err := q.db.QueryContext(ctx, environmentValuesForEnvironment, arg.Showsensitive, arg.Envid)
+	rows, err := q.db.Query(ctx, environmentValuesForEnvironment, arg.Showsensitive, arg.Envid)
 	if err != nil {
 		return nil, err
 	}
@@ -107,9 +107,6 @@ func (q *Queries) EnvironmentValuesForEnvironment(ctx context.Context, arg Envir
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -151,11 +148,11 @@ type MappingValuesForTenantRow struct {
 	ID     uuid.UUID
 	Name   string
 	Kind   EnvironmentKind
-	Values json.RawMessage
+	Values pgtype.JSON
 }
 
 func (q *Queries) MappingValuesForTenant(ctx context.Context, arg MappingValuesForTenantParams) ([]MappingValuesForTenantRow, error) {
-	rows, err := q.db.QueryContext(ctx, mappingValuesForTenant, arg.Tenantid, arg.Showsensitive)
+	rows, err := q.db.Query(ctx, mappingValuesForTenant, arg.Tenantid, arg.Showsensitive)
 	if err != nil {
 		return nil, err
 	}
@@ -172,9 +169,6 @@ func (q *Queries) MappingValuesForTenant(ctx context.Context, arg MappingValuesF
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

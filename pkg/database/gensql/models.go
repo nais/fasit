@@ -7,11 +7,11 @@ package gensql
 import (
 	"database/sql"
 	"database/sql/driver"
-	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgtype"
 )
 
 type EnvironmentKind string
@@ -104,7 +104,7 @@ type ConfigurationsEnvironment struct {
 	ID            uuid.UUID
 	Feature       string
 	Key           string
-	Value         json.RawMessage
+	Value         pgtype.JSONB
 	Description   sql.NullString
 	Secret        bool
 	Created       time.Time
@@ -116,7 +116,7 @@ type ConfigurationsGlobal struct {
 	ID          uuid.UUID
 	Feature     string
 	Key         string
-	Value       json.RawMessage
+	Value       pgtype.JSONB
 	Description sql.NullString
 	Secret      bool
 	Created     time.Time
@@ -137,7 +137,7 @@ type Environment struct {
 type EnvironmentValue struct {
 	EnvironmentID uuid.UUID
 	Key           string
-	Value         json.RawMessage
+	Value         pgtype.JSONB
 	Secret        bool
 }
 
@@ -165,9 +165,9 @@ type KubernetesNodeStatus struct {
 	KubeProxyVersion        string
 	OperatingSystem         string
 	Architecture            string
-	Conditions              json.RawMessage
-	Allocatable             json.RawMessage
-	Capacity                json.RawMessage
+	Conditions              pgtype.JSONB
+	Allocatable             pgtype.JSONB
+	Capacity                pgtype.JSONB
 	Created                 time.Time
 	LastModified            time.Time
 	InternalIp              string
@@ -188,7 +188,7 @@ type Rollout struct {
 	ID           uuid.UUID
 	Feature      string
 	Status       RolloutStatus
-	Changeset    json.RawMessage
+	Changeset    pgtype.JSONB
 	Created      time.Time
 	LastModified time.Time
 }
@@ -197,7 +197,7 @@ type RolloutEvent struct {
 	ID        uuid.UUID
 	RolloutID uuid.UUID
 	Type      string
-	Data      json.RawMessage
+	Data      pgtype.JSONB
 	Created   time.Time
 }
 

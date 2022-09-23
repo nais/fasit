@@ -26,7 +26,7 @@ type EnvironmentByNamesParams struct {
 }
 
 func (q *Queries) EnvironmentByNames(ctx context.Context, arg EnvironmentByNamesParams) (Environment, error) {
-	row := q.db.QueryRowContext(ctx, environmentByNames, arg.EnvironmentName, arg.TenantName)
+	row := q.db.QueryRow(ctx, environmentByNames, arg.EnvironmentName, arg.TenantName)
 	var i Environment
 	err := row.Scan(
 		&i.ID,
@@ -46,7 +46,7 @@ SELECT id, tenant_id, name, kind, description, created, last_modified, ci FROM e
 `
 
 func (q *Queries) EnvironmentCI(ctx context.Context, kind EnvironmentKind) (Environment, error) {
-	row := q.db.QueryRowContext(ctx, environmentCI, kind)
+	row := q.db.QueryRow(ctx, environmentCI, kind)
 	var i Environment
 	err := row.Scan(
 		&i.ID,
@@ -73,7 +73,7 @@ type EnvironmentCreateParams struct {
 }
 
 func (q *Queries) EnvironmentCreate(ctx context.Context, arg EnvironmentCreateParams) (Environment, error) {
-	row := q.db.QueryRowContext(ctx, environmentCreate,
+	row := q.db.QueryRow(ctx, environmentCreate,
 		arg.Name,
 		arg.Description,
 		arg.TenantID,
@@ -100,7 +100,7 @@ WHERE id = $1
 `
 
 func (q *Queries) EnvironmentGet(ctx context.Context, id uuid.UUID) (Environment, error) {
-	row := q.db.QueryRowContext(ctx, environmentGet, id)
+	row := q.db.QueryRow(ctx, environmentGet, id)
 	var i Environment
 	err := row.Scan(
 		&i.ID,
@@ -128,7 +128,7 @@ type EnvironmentGetByNameParams struct {
 }
 
 func (q *Queries) EnvironmentGetByName(ctx context.Context, arg EnvironmentGetByNameParams) (Environment, error) {
-	row := q.db.QueryRowContext(ctx, environmentGetByName, arg.TenantID, arg.Name)
+	row := q.db.QueryRow(ctx, environmentGetByName, arg.TenantID, arg.Name)
 	var i Environment
 	err := row.Scan(
 		&i.ID,
@@ -157,7 +157,7 @@ type EnvironmentIDByNamesParams struct {
 }
 
 func (q *Queries) EnvironmentIDByNames(ctx context.Context, arg EnvironmentIDByNamesParams) (uuid.UUID, error) {
-	row := q.db.QueryRowContext(ctx, environmentIDByNames, arg.EnvironmentName, arg.TenantName)
+	row := q.db.QueryRow(ctx, environmentIDByNames, arg.EnvironmentName, arg.TenantName)
 	var id uuid.UUID
 	err := row.Scan(&id)
 	return id, err
@@ -177,7 +177,7 @@ type EnvironmentUpdateParams struct {
 }
 
 func (q *Queries) EnvironmentUpdate(ctx context.Context, arg EnvironmentUpdateParams) (Environment, error) {
-	row := q.db.QueryRowContext(ctx, environmentUpdate, arg.Description, arg.ID)
+	row := q.db.QueryRow(ctx, environmentUpdate, arg.Description, arg.ID)
 	var i Environment
 	err := row.Scan(
 		&i.ID,
@@ -199,7 +199,7 @@ WHERE tenant_id = $1
 `
 
 func (q *Queries) EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]Environment, error) {
-	rows, err := q.db.QueryContext(ctx, environmentsGet, tenantID)
+	rows, err := q.db.Query(ctx, environmentsGet, tenantID)
 	if err != nil {
 		return nil, err
 	}
@@ -220,9 +220,6 @@ func (q *Queries) EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]En
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

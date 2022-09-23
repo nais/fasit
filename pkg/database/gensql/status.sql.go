@@ -29,7 +29,7 @@ type StatusCreateOrUpdateParams struct {
 }
 
 func (q *Queries) StatusCreateOrUpdate(ctx context.Context, arg StatusCreateOrUpdateParams) error {
-	_, err := q.db.ExecContext(ctx, statusCreateOrUpdate,
+	_, err := q.db.Exec(ctx, statusCreateOrUpdate,
 		arg.EnvironmentID,
 		arg.Feature,
 		arg.Version,
@@ -47,7 +47,7 @@ WHERE environment_id = $1
 `
 
 func (q *Queries) StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]Status, error) {
-	rows, err := q.db.QueryContext(ctx, statusForEnvironment, environmentID)
+	rows, err := q.db.Query(ctx, statusForEnvironment, environmentID)
 	if err != nil {
 		return nil, err
 	}
@@ -69,9 +69,6 @@ func (q *Queries) StatusForEnvironment(ctx context.Context, environmentID uuid.U
 		}
 		items = append(items, i)
 	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -91,7 +88,7 @@ type StatusForFeatureParams struct {
 }
 
 func (q *Queries) StatusForFeature(ctx context.Context, arg StatusForFeatureParams) (Status, error) {
-	row := q.db.QueryRowContext(ctx, statusForFeature, arg.EnvironmentID, arg.Feature)
+	row := q.db.QueryRow(ctx, statusForFeature, arg.EnvironmentID, arg.Feature)
 	var i Status
 	err := row.Scan(
 		&i.EnvironmentID,
