@@ -6,6 +6,7 @@ package graph
 import (
 	"context"
 	"sort"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/graph/graphgen"
@@ -43,7 +44,14 @@ OUTER:
 
 // Health is the resolver for the health field.
 func (r *environmentResolver) Health(ctx context.Context, obj *model.Environment) (*model.Health, error) {
-	return r.Repo.HealthGet(ctx, obj.ID)
+	health, err := r.Repo.HealthGet(ctx, obj.ID)
+	if err != nil {
+		return &model.Health{
+			EnvironmentID: obj.ID,
+			ReportedAt:    time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC),
+		}, nil
+	}
+	return health, nil
 }
 
 // Releases is the resolver for the releases field.
