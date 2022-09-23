@@ -35,7 +35,7 @@ const FeatureConfig = ({envID, configs, featureObject, mapping}: FeatureConfigPr
     const [showCreate, setShowCreate] = useState(false)
 
     const overridable = Object.keys(configs).filter((c) => mapping?.map((m) => m.key).includes(configs[c].key))
-    const nonOverridden = Object.keys(configs).filter((c) => overridable?.includes(c)).filter((c) => !(configs[c].value))
+    const nonOverridden = Object.keys(configs).filter((c) => overridable?.includes(c) ).filter((c) => !(configs[c].value))
 
     const requiredConfigs = Object.keys(configs).filter((c) => configs[c].required).filter((c) => !(nonOverridden.includes(c))).sort()
     const envConfigs = Object.keys(configs).filter((c) => configs[c].env && !configs[c].required).sort()

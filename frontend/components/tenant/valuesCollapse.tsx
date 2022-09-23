@@ -42,4 +42,4 @@ const ValuesCollapse = ({content}: DropdownProps) => {
             : isJson(content.value) ? JSON.stringify(content.value) : content.value.toString()
     );
 }
-export default ValuesCollapse;
+export default ValuesCollapse
