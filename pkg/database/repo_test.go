@@ -3,6 +3,7 @@
 package database
 
 import (
+	"context"
 	"io"
 	"os"
 	"testing"
@@ -10,23 +11,33 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/nais/fasit/pkg/database/dbtest"
 
-	"github.com/DATA-DOG/go-txdb"
-	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 )
 
-var dbString = ""
+var (
+	dbString   = ""
+	repository *repo
+)
 
 func TestMain(m *testing.M) {
-	db, dbs, cleanup := dbtest.DockerSQLPool()
+	dbs, cleanup := dbtest.DockerSQLPool()
 	dbString = dbs
 
 	log := logrus.New()
 	log.Out = io.Discard
-	if err := Migrate(db, logrus.NewEntry(log)); err != nil {
+	ctx := context.Background()
+
+	db, closers, err := NewDB(ctx, dbString, false)
+	if err != nil {
+		log.Fatalf("Error connecting to database: %v", err)
+	}
+	defer closers.Close()
+
+	if err := Migrate("pgx", dbString, logrus.NewEntry(log)); err != nil {
 		log.Fatalf("Could not migrate: %v", err)
 	}
-	txdb.Register("txdb", "postgres", dbString)
+
+	repository = New(db, logrus.NewEntry(log)).(*repo)
 
 	code := m.Run()
 
@@ -38,25 +49,11 @@ func TestMain(m *testing.M) {
 func newTestRepo(t testing.TB, stmts ...string) Repo {
 	t.Helper()
 
-	db, err := NewDB("txdb", uuid.NewString())
-	if err != nil {
-		t.Fatalf("Could not create db: %v", err)
-	}
-
-	r := New(db, uuid.NewString(), newTestLogger())
 	for _, s := range stmts {
-		_, err := r.(*repo).db.Exec(s)
+		_, err := repository.db.Exec(context.Background(), s)
 		if err != nil {
 			t.Fatalf("Error executing:\n%v\nErr: %v", s, err)
 		}
 	}
-	return r
-}
-
-func newTestLogger() *logrus.Entry {
-	log := logrus.New()
-	if !testing.Verbose() {
-		log.Out = io.Discard
-	}
-	return logrus.NewEntry(log)
+	return repository
 }

@@ -3,7 +3,6 @@ package integration_test
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -14,6 +13,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/database/dbtest"
 	"github.com/nais/fasit/pkg/feature"
@@ -36,7 +36,7 @@ type TestContext struct {
 	EnvID           uuid.UUID
 	EnvManagementID uuid.UUID
 	Repo            database.Repo
-	DB              *sql.DB
+	DB              *pgxpool.Pool
 	FeatureManager  *feature.Manager
 	Rollout         *rollout.Rollout
 	RolloutWorker   *workers.Rollout
@@ -55,29 +55,34 @@ func NewTestContext(t *testing.T, features []feature.Feature, envName string, en
 		Features: features,
 	}
 
-	db, dbConnString, close := dbtest.DockerSQLPool()
+	dbConnString, close := dbtest.DockerSQLPool()
+	db, closers, err := database.NewDB(ctx, dbConnString, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	tctx.DB = db
 
 	logrus.StandardLogger().Level = logrus.DebugLevel
 	log := logrus.NewEntry(logrus.StandardLogger())
 
-	tctx.Repo = database.New(db, dbConnString, log)
-	err := database.Migrate(db, log)
-	if err != nil {
+	tctx.Repo = database.New(db, log)
+
+	if err := database.Migrate("pgx", dbConnString, log); err != nil {
 		t.Fatalf("error migrating database: %v", err)
 	}
 
-	_, err = db.ExecContext(ctx, `INSERT INTO tenants (id, name, ci) VALUES ($1, 'tenant1', true)`, tctx.TenantID)
+	_, err = db.Exec(ctx, `INSERT INTO tenants (id, name, ci) VALUES ($1, 'tenant1', true)`, tctx.TenantID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = db.ExecContext(ctx, `INSERT INTO environments (id, tenant_id, name, kind, ci) VALUES ($1, $2, $3, $4, true)`, tctx.EnvID, tctx.TenantID, envName, envKind)
+	_, err = db.Exec(ctx, `INSERT INTO environments (id, tenant_id, name, kind, ci) VALUES ($1, $2, $3, $4, true)`, tctx.EnvID, tctx.TenantID, envName, envKind)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for _, f := range features {
-		_, err = db.ExecContext(ctx,
+		_, err = db.Exec(ctx,
 			`INSERT INTO "feature_states" (environment_id, feature, enabled, enabled_at) VALUES ($1, $2, true, TIMESTAMP '2022-09-01 10:10:10')`,
 			tctx.EnvID, f.Name,
 		)
@@ -105,7 +110,10 @@ func NewTestContext(t *testing.T, features []feature.Feature, envName string, en
 
 	tctx.Reconciler = workers.NewReconciler(tctx.Repo, tctx.FeatureManager, newPublisher, "xxx", log)
 
-	return tctx, close
+	return tctx, func() {
+		close()
+		closers.Close()
+	}
 }
 
 func (t *TestContext) StartListeners() func() {
@@ -113,6 +121,9 @@ func (t *TestContext) StartListeners() func() {
 	go func() {
 		err := t.RolloutWorker.Listen(ctx)
 		if err != nil {
+			if err.Error() == "conn closed" {
+				return
+			}
 			panic(err)
 		}
 	}()
@@ -122,6 +133,9 @@ func (t *TestContext) StartListeners() func() {
 	go func() {
 		err := t.Reconciler.Listen(ctx)
 		if err != nil {
+			if err.Error() == "conn closed" {
+				return
+			}
 			panic(err)
 		}
 	}()

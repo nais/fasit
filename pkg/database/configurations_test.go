@@ -15,15 +15,19 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
+	"github.com/jackc/pgtype"
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
 func TestHelmConfigMap(t *testing.T) {
-	jsonify := func(v any) json.RawMessage {
+	jsonify := func(v any) pgtype.JSONB {
 		b, _ := json.Marshal(v)
-		return b
+		return pgtype.JSONB{
+			Bytes:  b,
+			Status: pgtype.Present,
+		}
 	}
 	tests := map[string]struct {
 		input    []gensql.EnvConfigRow
@@ -300,7 +304,7 @@ func TestRepo_ConfigDelete(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = r.(*repo).db.QueryRow(`SELECT id FROM configurations_global WHERE id = $1`, gotID).Scan()
+	err = r.(*repo).db.QueryRow(context.Background(), `SELECT id FROM configurations_global WHERE id = $1`, gotID).Scan()
 	if err != sql.ErrNoRows {
 		t.Errorf("got: %v, want %v", err, sql.ErrNoRows)
 	}

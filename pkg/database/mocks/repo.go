@@ -16,9 +16,9 @@ import (
 
 	model "github.com/nais/fasit/pkg/graph/model"
 
-	prometheus "github.com/prometheus/client_golang/prometheus"
+	pgx "github.com/jackc/pgx/v4"
 
-	sql "database/sql"
+	prometheus "github.com/prometheus/client_golang/prometheus"
 
 	uuid "github.com/google/uuid"
 )
@@ -29,17 +29,8 @@ type Repo struct {
 }
 
 // Close provides a mock function with given fields:
-func (_m *Repo) Close() error {
-	ret := _m.Called()
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func() error); ok {
-		r0 = rf()
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
+func (_m *Repo) Close() {
+	_m.Called()
 }
 
 // ConfigCreate provides a mock function with given fields: ctx, c
@@ -981,7 +972,7 @@ func (_m *Repo) TenantsGet(ctx context.Context) ([]*model.Tenant, error) {
 }
 
 // WithTx provides a mock function with given fields: ctx
-func (_m *Repo) WithTx(ctx context.Context) (database.Repo, *sql.Tx, error) {
+func (_m *Repo) WithTx(ctx context.Context) (database.Repo, pgx.Tx, error) {
 	ret := _m.Called(ctx)
 
 	var r0 database.Repo
@@ -993,12 +984,12 @@ func (_m *Repo) WithTx(ctx context.Context) (database.Repo, *sql.Tx, error) {
 		}
 	}
 
-	var r1 *sql.Tx
-	if rf, ok := ret.Get(1).(func(context.Context) *sql.Tx); ok {
+	var r1 pgx.Tx
+	if rf, ok := ret.Get(1).(func(context.Context) pgx.Tx); ok {
 		r1 = rf(ctx)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*sql.Tx)
+			r1 = ret.Get(1).(pgx.Tx)
 		}
 	}
 

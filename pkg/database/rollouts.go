@@ -3,15 +3,12 @@ package database
 import (
 	"context"
 	"encoding/json"
-	"time"
 
 	"github.com/google/uuid"
-	"github.com/lib/pq"
+	"github.com/jackc/pgtype"
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/graph/model"
 )
-
-type ListenFunc func(context.Context, uuid.UUID)
 
 type RolloutRepo interface {
 	RolloutCreate(ctx context.Context, rollout *model.Rollout) (*model.Rollout, error)
@@ -31,8 +28,11 @@ func (r *repo) RolloutCreate(ctx context.Context, rollout *model.Rollout) (*mode
 	}
 
 	roll, err := r.querier.RolloutCreate(ctx, gensql.RolloutCreateParams{
-		Feature:   rollout.Feature,
-		Changeset: rm,
+		Feature: rollout.Feature,
+		Changeset: pgtype.JSONB{
+			Bytes:  rm,
+			Status: pgtype.Present,
+		},
 	})
 	if err != nil {
 		return nil, err
@@ -51,32 +51,7 @@ func (r *repo) RolloutGetByID(ctx context.Context, id uuid.UUID) (*model.Rollout
 }
 
 func (r *repo) RolloutsListen(ctx context.Context, fn ListenFunc) error {
-	listener := pq.NewListener(r.dbConnDSN, time.Millisecond, 15*time.Second, nil)
-
-	if err := listener.Listen("rollout_notify"); err != nil {
-		return err
-	}
-
-	defer listener.Close()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return listener.UnlistenAll()
-		case n := <-listener.Notify:
-			if n == nil {
-				continue
-			}
-
-			id, err := uuid.Parse(n.Extra)
-			if err != nil {
-				r.log.WithField("query", "rollout_listen").WithError(err).Warn("invalid uuid")
-				continue
-			}
-
-			fn(ctx, id)
-		}
-	}
+	return r.ListenNotify(ctx, "rollout_notify", fn)
 }
 
 func (r *repo) RolloutUpdate(ctx context.Context, rollout *model.Rollout) error {
@@ -86,9 +61,12 @@ func (r *repo) RolloutUpdate(ctx context.Context, rollout *model.Rollout) error 
 	}
 
 	nw, err := r.querier.RolloutUpdate(ctx, gensql.RolloutUpdateParams{
-		ID:        rollout.ID,
-		Changeset: rm,
-		Status:    gensql.RolloutStatus(rollout.Status),
+		ID: rollout.ID,
+		Changeset: pgtype.JSONB{
+			Bytes:  rm,
+			Status: pgtype.Present,
+		},
+		Status: gensql.RolloutStatus(rollout.Status),
 	})
 	if err != nil {
 		return err
@@ -127,7 +105,7 @@ func (r *repo) RolloutsUpdateStatus(ctx context.Context, ids []uuid.UUID, status
 func rolloutFromSQL(roll gensql.Rollout) (*model.Rollout, error) {
 	cs := &model.RolloutChangeset{}
 
-	if err := json.Unmarshal(roll.Changeset, cs); err != nil {
+	if err := json.Unmarshal(roll.Changeset.Bytes, cs); err != nil {
 		return nil, err
 	}
 

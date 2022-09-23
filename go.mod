@@ -3,6 +3,7 @@ module github.com/nais/fasit
 go 1.18
 
 require (
+	cloud.google.com/go/cloudsqlconn v0.5.2
 	cloud.google.com/go/pubsub v1.25.1
 	github.com/99designs/gqlgen v0.17.20
 	github.com/DATA-DOG/go-txdb v0.1.5
@@ -16,7 +17,7 @@ require (
 	github.com/invopop/jsonschema v0.6.0
 	github.com/jackc/pgconn v1.13.0
 	github.com/jackc/pgtype v1.12.0
-	github.com/jackc/pgx/v4 v4.17.0
+	github.com/jackc/pgx/v4 v4.17.2
 	github.com/lib/pq v1.10.7
 	github.com/ory/dockertest/v3 v3.9.1
 	github.com/pressly/goose/v3 v3.7.0
@@ -104,6 +105,7 @@ require (
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgproto3/v2 v2.3.1 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20200714003250-2b9c44734f2b // indirect
+	github.com/jackc/puddle v1.3.0 // indirect
 	github.com/jmoiron/sqlx v1.3.5 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
