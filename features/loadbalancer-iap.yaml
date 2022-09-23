@@ -15,6 +15,7 @@ config:
   iapClientSecret:
     type: string
     required: true
+    secret: true
   ingress-nginx.controller.resources.requests.cpu:
     type: string
     displayName: "Cpu request"
