@@ -99,7 +99,7 @@ func main() {
 		dbDriver = "cloudsql-postgres"
 	}
 
-	db, closers, err := database.NewDB(ctx, cfg.DBConnectionDSN, false)
+	db, closers, err := database.NewDB(ctx, cfg.DBConnectionDSN, dbDriver != "pgx")
 	if err != nil {
 		log.WithError(err).Fatal("setting up database")
 	}
