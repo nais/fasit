@@ -18,19 +18,32 @@ interface DropdownProps {
     content: MappingValue
 }
 
-const isJson = (str: string) => {
+const isJson = (x: any) => {
     try {
-        JSON.parse(str);
+        JSON.parse(x);
     } catch (e) {
         return false;
     }
     return true;
 }
 
+function safeToString(x: any) {
+    if (isJson(x)) {
+        return JSON.stringify(x, null, 2)
+    }
+    if (Array.isArray(x)) {
+        if (x.toString() === '[object Object]') {
+            return JSON.stringify(x, null, 2)
+        }
+    }
+    return x.toString()
+}
+
+
 const ValuesCollapse = ({content}: DropdownProps) => {
     const {getCollapseProps, getToggleProps, isExpanded} = useCollapse();
     return (
-        Array.isArray(content.value) ?
+        Array.isArray(content.value) && content.value.length > 3 ?
             <div className="collapsible">
                 <Header {...getToggleProps()}>
                     {isExpanded ? '-' : '+'}
@@ -39,7 +52,7 @@ const ValuesCollapse = ({content}: DropdownProps) => {
                     <LogPre>{JSON.stringify(content.value, null, 2)}</LogPre>
                 </div>
             </div>
-            : isJson(content.value) ? JSON.stringify(content.value) : content.value.toString()
+            : safeToString(content.value)
     );
 }
 export default ValuesCollapse
