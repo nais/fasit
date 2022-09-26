@@ -1,6 +1,8 @@
 apiVersion: v1
 kind: Service
 metadata:
+  annotations:
+    networking.gke.io/load-balancer-type: "Internal"
   labels:
     {{- include "fasit.labels" . | nindent 4 }}
   name: {{ include "fasit.fullname" . }}
@@ -17,4 +19,4 @@ spec:
   selector:
     {{- include "fasit.selectorLabels" . | nindent 4 }}
   sessionAffinity: None
-  type: ClusterIP
+  type: LoadBalancer
