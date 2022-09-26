@@ -31,10 +31,8 @@ function safeToString(x: any) {
     if (isJson(x)) {
         return JSON.stringify(x, null, 2)
     }
-    if (Array.isArray(x)) {
-        if (x.toString() === '[object Object]') {
-            return JSON.stringify(x, null, 2)
-        }
+    if (x.toString() === '[object Object]') {
+        return JSON.stringify(x, null, 2)
     }
     return x.toString()
 }
@@ -43,7 +41,7 @@ function safeToString(x: any) {
 const ValuesCollapse = ({content}: DropdownProps) => {
     const {getCollapseProps, getToggleProps, isExpanded} = useCollapse();
     return (
-        Array.isArray(content.value) && content.value.length > 3 ?
+        Array.isArray(content.value) && content.value.length > 2 ?
             <div className="collapsible">
                 <Header {...getToggleProps()}>
                     {isExpanded ? '-' : '+'}
