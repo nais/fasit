@@ -6,7 +6,9 @@ import (
 	"embed"
 	"fmt"
 	"net"
+	"net/url"
 	"regexp"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/cloudsqlconn"
@@ -89,6 +91,17 @@ func (r *repo) WithTx(ctx context.Context) (Repo, pgx.Tx, error) {
 }
 
 func NewDB(ctx context.Context, dbConnDSN string, cloudsql bool) (*pgxpool.Pool, closeFuncs, error) {
+	cloudsqlHost := ""
+	if cloudsql {
+		vals, err := url.ParseQuery(strings.ReplaceAll(dbConnDSN, " ", "&"))
+		if err != nil {
+			return nil, nil, err
+		}
+		cloudsqlHost = vals.Get("host")
+		delete(vals, "host")
+		dbConnDSN = strings.ReplaceAll(vals.Encode(), "&", " ")
+	}
+
 	config, err := pgxpool.ParseConfig(dbConnDSN)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to parse pgx config: %w", err)
@@ -106,7 +119,7 @@ func NewDB(ctx context.Context, dbConnDSN string, cloudsql bool) (*pgxpool.Pool,
 
 		// Tell the driver to use the Cloud SQL Go Connector to create connections
 		config.ConnConfig.DialFunc = func(ctx context.Context, _ string, instance string) (net.Conn, error) {
-			return d.Dial(ctx, "project:region:instance")
+			return d.Dial(ctx, cloudsqlHost)
 		}
 
 		cleanup, err := cloudsqlpgx.RegisterDriver("cloudsql-postgres", cloudsqlconn.WithIAMAuthN())
