@@ -48,7 +48,7 @@
     "@graphql-codegen/typescript-operations": "2.5.3",
     "@graphql-codegen/typescript-react-apollo": "3.3.3",
     "@types/lodash.isequal": "4.5.6",
-    "@types/react": "18.0.20",
+    "@types/react": "18.0.21",
     "@types/react-tag-autocomplete": "6.1.1",
     "@types/ws": "^8.5.3",
     "eslint": "^8.23.1",
