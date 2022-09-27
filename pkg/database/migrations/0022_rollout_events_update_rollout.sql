@@ -13,7 +13,7 @@ END;
 $$ LANGUAGE plpgsql;
 -- +goose StatementEnd
 
-CREATE TRIGGER configurations_global_notify
+CREATE TRIGGER rollout_events_update_rollout
     BEFORE INSERT
     ON rollout_events
     FOR EACH ROW
