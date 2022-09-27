@@ -3,7 +3,7 @@
 -- +goose StatementBegin
 CREATE OR REPLACE FUNCTION update_rollout_status_on_failure() RETURNS trigger AS $$
 BEGIN
-    IF NEW.type = 'failed' THEN
+    IF NEW.type = 'FAILED' THEN
         UPDATE rollouts
         SET status = 'failed'
         WHERE id = NEW.rollout_id AND status IN ('pending', '');
