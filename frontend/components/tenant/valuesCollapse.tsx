@@ -1,7 +1,9 @@
 import React from 'react';
 import useCollapse from 'react-collapsed';
 import styled from "styled-components";
+import {Expand, Collapse} from "@navikt/ds-icons";
 import {MappingValue} from "../../lib/schema/graphql";
+import ReactTooltip from "react-tooltip";
 
 const LogPre = styled.pre`
   word-break: break-word;
@@ -37,14 +39,21 @@ function safeToString(x: any) {
     return x.toString()
 }
 
-
 const ValuesCollapse = ({content}: DropdownProps) => {
     const {getCollapseProps, getToggleProps, isExpanded} = useCollapse();
     return (
-        Array.isArray(content.value) && content.value.length > 2 ?
+        Array.isArray(content.value) && content.value.length > 1 ?
             <div className="collapsible">
                 <Header {...getToggleProps()}>
-                    {isExpanded ? '-' : '+'}
+                    {isExpanded ?
+                        <>
+                            <Collapse data-tip data-for={"collapse"}/>
+                            <ReactTooltip id='collapse' place='top' type='dark' effect='solid'> Collapse </ReactTooltip>
+                        </> :
+                        <>
+                            <Expand data-tip data-for={"expand"}/>
+                            <ReactTooltip id='expand' place='top' type='dark' effect='solid'> Expand </ReactTooltip>
+                        </>}
                 </Header>
                 <div {...getCollapseProps()}>
                     <LogPre>{JSON.stringify(content.value, null, 2)}</LogPre>
