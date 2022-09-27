@@ -31,4 +31,4 @@ VALUES (@rollout_id, @type, @data)
 ;
 
 -- name: RolloutEventsGetByRolloutID :many
-SELECT * FROM rollout_events WHERE rollout_id = @rollout_id;
+SELECT * FROM rollout_events WHERE rollout_id = @rollout_id ORDER BY created ASC;

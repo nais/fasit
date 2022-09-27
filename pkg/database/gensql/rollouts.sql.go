@@ -54,7 +54,7 @@ func (q *Queries) RolloutEventCreate(ctx context.Context, arg RolloutEventCreate
 }
 
 const rolloutEventsGetByRolloutID = `-- name: RolloutEventsGetByRolloutID :many
-SELECT id, rollout_id, type, data, created FROM rollout_events WHERE rollout_id = $1
+SELECT id, rollout_id, type, data, created FROM rollout_events WHERE rollout_id = $1 ORDER BY created ASC
 `
 
 func (q *Queries) RolloutEventsGetByRolloutID(ctx context.Context, rolloutID uuid.UUID) ([]RolloutEvent, error) {
