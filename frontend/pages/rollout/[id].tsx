@@ -16,9 +16,9 @@ const RolloutSummary = styled.div`
 
 const Rollout = () => {
   const id = useRouter().query.id as string
-  const { data, loading, error } = useRolloutQuery({ variables: { id } })
-  if (!data || loading) return <LoaderSpinner />
+  const { data, loading, error } = useRolloutQuery({ variables: { id }, pollInterval: 2000 })
   if (error) return <ErrorMessage error={error} />
+  if (!data || loading) return <LoaderSpinner />
   return <>
     <h1>Rollout - {data.rollout.feature.name}</h1>
     <RolloutSummary>
