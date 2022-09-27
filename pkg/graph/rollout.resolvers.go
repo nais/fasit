@@ -6,25 +6,34 @@ package graph
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-
+	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/graph/graphgen"
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
+// Rollout is the resolver for the rollout field.
+func (r *queryResolver) Rollout(ctx context.Context, id uuid.UUID) (*model.Rollout, error) {
+	return r.Repo.RolloutGetByID(ctx, id)
+}
+
 // Feature is the resolver for the feature field.
 func (r *rolloutResolver) Feature(ctx context.Context, obj *model.Rollout) (*model.Feature, error) {
-	panic(fmt.Errorf("not implemented: Feature - feature"))
+	return r.resolveFeatureByName(obj.Feature)
+}
+
+// Events is the resolver for the events field.
+func (r *rolloutResolver) Events(ctx context.Context, obj *model.Rollout) ([]*model.RolloutEvent, error) {
+	return r.Repo.RolloutEventsGetByRolloutID(ctx, obj.ID)
 }
 
 // New is the resolver for the New field.
 func (r *rolloutChangesetResolver) New(ctx context.Context, obj *model.RolloutChangeset) (json.RawMessage, error) {
-	panic(fmt.Errorf("not implemented: New - New"))
+	return json.Marshal(obj.New)
 }
 
 // Old is the resolver for the Old field.
 func (r *rolloutChangesetResolver) Old(ctx context.Context, obj *model.RolloutChangeset) (json.RawMessage, error) {
-	panic(fmt.Errorf("not implemented: Old - Old"))
+	return json.Marshal(obj.Old)
 }
 
 // Rollout returns graphgen.RolloutResolver implementation.

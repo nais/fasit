@@ -29,3 +29,6 @@ AND status = 'pending'
 INSERT INTO rollout_events (rollout_id, type, data)
 VALUES (@rollout_id, @type, @data)
 ;
+
+-- name: RolloutEventsGetByRolloutID :many
+SELECT * FROM rollout_events WHERE rollout_id = @rollout_id;

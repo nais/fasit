@@ -43,6 +43,7 @@ type Querier interface {
 	ReleaseStatusesGet(ctx context.Context, environmentID uuid.UUID) ([]ReleaseStatus, error)
 	RolloutCreate(ctx context.Context, arg RolloutCreateParams) (Rollout, error)
 	RolloutEventCreate(ctx context.Context, arg RolloutEventCreateParams) error
+	RolloutEventsGetByRolloutID(ctx context.Context, rolloutID uuid.UUID) ([]RolloutEvent, error)
 	RolloutGetByID(ctx context.Context, id uuid.UUID) (Rollout, error)
 	RolloutUpdate(ctx context.Context, arg RolloutUpdateParams) (Rollout, error)
 	RolloutsUnprocessed(ctx context.Context) ([]Rollout, error)

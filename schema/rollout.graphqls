@@ -1,9 +1,11 @@
 type Rollout {
+  id: ID!
   feature: Feature!
   status: RolloutStatus!
   changeset: RolloutChangeset!
   created: Time!
   lastModified: Time!
+  events: [RolloutEvent!]!
 }
 
 enum RolloutEventType {
@@ -18,4 +20,14 @@ enum RolloutEventType {
 type RolloutChangeset {
   New: RawMessage!
   Old: RawMessage
+}
+type RolloutEvent {
+  id: ID!
+  type: RolloutEventType!
+  data: RawMessage!
+  created: Time!
+}
+
+extend type Query {
+  rollout(id: ID!): Rollout!
 }

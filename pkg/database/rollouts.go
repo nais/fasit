@@ -19,6 +19,7 @@ type RolloutRepo interface {
 	RolloutsUpdateStatus(ctx context.Context, ids []uuid.UUID, status model.RolloutStatus) error
 
 	RolloutEventCreate(ctx context.Context, event *model.RolloutEvent) error
+	RolloutEventsGetByRolloutID(ctx context.Context, rolloutID uuid.UUID) ([]*model.RolloutEvent, error)
 }
 
 var _ RolloutRepo = &repo{}
@@ -134,4 +135,24 @@ func (r *repo) RolloutEventCreate(ctx context.Context, event *model.RolloutEvent
 			Status: pgtype.Present,
 		},
 	})
+}
+
+func (r *repo) RolloutEventsGetByRolloutID(ctx context.Context, rolloutID uuid.UUID) ([]*model.RolloutEvent, error) {
+	events, err := r.querier.RolloutEventsGetByRolloutID(ctx, rolloutID)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []*model.RolloutEvent
+	for _, event := range events {
+		result = append(result, &model.RolloutEvent{
+			ID:        event.ID,
+			RolloutID: event.RolloutID,
+			Type:      model.RolloutEventType(event.Type),
+			Data:      event.Data.Bytes,
+			Created:   event.Created,
+		})
+	}
+
+	return result, nil
 }

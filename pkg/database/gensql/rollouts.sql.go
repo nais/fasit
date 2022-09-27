@@ -53,6 +53,36 @@ func (q *Queries) RolloutEventCreate(ctx context.Context, arg RolloutEventCreate
 	return err
 }
 
+const rolloutEventsGetByRolloutID = `-- name: RolloutEventsGetByRolloutID :many
+SELECT id, rollout_id, type, data, created FROM rollout_events WHERE rollout_id = $1
+`
+
+func (q *Queries) RolloutEventsGetByRolloutID(ctx context.Context, rolloutID uuid.UUID) ([]RolloutEvent, error) {
+	rows, err := q.db.Query(ctx, rolloutEventsGetByRolloutID, rolloutID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []RolloutEvent{}
+	for rows.Next() {
+		var i RolloutEvent
+		if err := rows.Scan(
+			&i.ID,
+			&i.RolloutID,
+			&i.Type,
+			&i.Data,
+			&i.Created,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const rolloutGetByID = `-- name: RolloutGetByID :one
 SELECT id, feature, status, changeset, created, last_modified FROM rollouts WHERE id = $1
 `
