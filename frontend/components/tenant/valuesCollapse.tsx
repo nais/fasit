@@ -29,13 +29,19 @@ const isJson = (x: any) => {
     return true;
 }
 
+const isObject = (x: any) => {
+    return x.toString() === '[object Object]'
+}
+
 function safeToString(x: any) {
-    if (isJson(x)) {
+    if (typeof x === "string") {
+        return x
+    }
+
+    if (isJson(x) || isObject(x)) {
         return JSON.stringify(x, null, 2)
     }
-    if (x.toString() === '[object Object]') {
-        return JSON.stringify(x, null, 2)
-    }
+
     return x.toString()
 }
 
@@ -53,7 +59,8 @@ const ValuesCollapse = ({content}: DropdownProps) => {
                         <>
                             <Expand data-tip data-for={"expand"}/>
                             <ReactTooltip id='expand' place='top' type='dark' effect='solid'> Expand </ReactTooltip>
-                        </>}
+                        </>
+                    }
                 </Header>
                 <div {...getCollapseProps()}>
                     <LogPre>{JSON.stringify(content.value, null, 2)}</LogPre>

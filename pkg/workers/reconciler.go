@@ -190,20 +190,44 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 			return err
 		}
 
-		for _, rid := range rolloutIDs {
-			_ = r.repo.RolloutEventCreate(ctx, &model.RolloutEvent{
-				RolloutID: rid,
-				Type:      model.RolloutEventTypeInProgress,
-			})
+		createRolloutEvent := func(typ model.RolloutEventType, data map[string]any) {
+			var (
+				b   []byte
+				err error
+			)
+
+			if data != nil {
+				b, err = json.Marshal(data)
+				if err != nil {
+					r.log.WithError(err).Error("unable to marshal rollout event data")
+					return
+				}
+			}
+			for _, rid := range rolloutIDs {
+				_ = r.repo.RolloutEventCreate(ctx, &model.RolloutEvent{
+					RolloutID: rid,
+					Type:      typ,
+					Data:      b,
+				})
+			}
 		}
+
+		createRolloutEvent(model.RolloutEventTypeInProgress, nil)
 
 		hash, err := generateHash(values, f, states[f.Name].EnabledAt)
 		if err != nil {
+			createRolloutEvent(model.RolloutEventTypeInProgress, map[string]any{
+				"error": err.Error(),
+			})
+
 			return err
 		}
 
 		if status, ok := lookup[f.Name]; ok {
 			if status.Version == f.Version && status.ConfigHash == hash {
+				createRolloutEvent(model.RolloutEventTypeFailed, map[string]any{
+					"error": "no changes",
+				})
 				continue
 			}
 		}
@@ -225,6 +249,9 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 			RolloutIDs: rolloutIDs,
 		})
 		if err != nil {
+			createRolloutEvent(model.RolloutEventTypeFailed, map[string]any{
+				"error": err.Error(),
+			})
 			return err
 		}
 	}
