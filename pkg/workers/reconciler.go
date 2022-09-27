@@ -23,6 +23,7 @@ type ReconcilerStore interface {
 	FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
 	HealthGet(ctx context.Context, environmentID uuid.UUID) (*model.Health, error)
 	HelmValues(ctx context.Context, feature feature.Feature, envID uuid.UUID, requiredFields []string) (map[string]any, []uuid.UUID, error)
+	RolloutEventCreate(ctx context.Context, event *model.RolloutEvent) error
 	StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]*model.Status, error)
 	TenantEnvironments(ctx context.Context) ([]*model.TenantEnvironments, error)
 }
@@ -187,6 +188,13 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 				continue
 			}
 			return err
+		}
+
+		for _, rid := range rolloutIDs {
+			_ = r.repo.RolloutEventCreate(ctx, &model.RolloutEvent{
+				RolloutID: rid,
+				Type:      model.RolloutEventTypeInProgress,
+			})
 		}
 
 		hash, err := generateHash(values, f, states[f.Name].EnabledAt)

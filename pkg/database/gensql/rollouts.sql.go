@@ -37,6 +37,22 @@ func (q *Queries) RolloutCreate(ctx context.Context, arg RolloutCreateParams) (R
 	return i, err
 }
 
+const rolloutEventCreate = `-- name: RolloutEventCreate :exec
+INSERT INTO rollout_events (rollout_id, type, data)
+VALUES ($1, $2, $3)
+`
+
+type RolloutEventCreateParams struct {
+	RolloutID uuid.UUID
+	Type      string
+	Data      pgtype.JSONB
+}
+
+func (q *Queries) RolloutEventCreate(ctx context.Context, arg RolloutEventCreateParams) error {
+	_, err := q.db.Exec(ctx, rolloutEventCreate, arg.RolloutID, arg.Type, arg.Data)
+	return err
+}
+
 const rolloutGetByID = `-- name: RolloutGetByID :one
 SELECT id, feature, status, changeset, created, last_modified FROM rollouts WHERE id = $1
 `

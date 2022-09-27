@@ -1610,6 +1610,15 @@ type KubernetesNode {
   lastModified: Time!
 }
 
+enum RolloutEventType {
+  PROCESSED
+  IN_PROGRESS
+  HELM_COMPLETED
+  FAILED
+  ROLLED_BACK
+  SUCCESS
+}
+
 type RolloutChangeset {
   New: RawMessage!
   Old: RawMessage

@@ -20,14 +20,15 @@ type ReceiverClient interface {
 type RolloutNotify func(ctx context.Context, id uuid.UUID, status model.RolloutStatus) error
 
 type ReceiverStore interface {
-	EnvironmentIDByNames(ctx context.Context, tenantName string, environmentName string) (uuid.UUID, error)
-	StatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Helm) error
-	ReleaseStatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Release) error
-	TenantGetByName(ctx context.Context, name string) (*model.Tenant, error)
-	TenantCreate(ctx context.Context, t *model.TenantCreate) (*model.Tenant, error)
 	EnvironmentCreate(ctx context.Context, t *model.EnvironmentCreate) (*model.Environment, error)
+	EnvironmentIDByNames(ctx context.Context, tenantName string, environmentName string) (uuid.UUID, error)
 	HealthStatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Health) error
 	KubernetesNodeSync(ctx context.Context, envID uuid.UUID, kn *message.KubernetesNodes) error
+	ReleaseStatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Release) error
+	RolloutEventCreate(ctx context.Context, event *model.RolloutEvent) error
+	StatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Helm) error
+	TenantCreate(ctx context.Context, t *model.TenantCreate) (*model.Tenant, error)
+	TenantGetByName(ctx context.Context, name string) (*model.Tenant, error)
 }
 
 type Receiver struct {
@@ -95,7 +96,22 @@ func (r *Receiver) handlerHelm(ctx context.Context, msg message.Status) error {
 	}
 
 	var errors []error
+	data, err := json.Marshal(map[string]any{
+		"logs": helmStatus.Log,
+	})
+	if err != nil {
+		r.log.WithError(err).Error("marshalling log data failed")
+	}
 	for _, rid := range helmStatus.RolloutIDs {
+		err = r.repo.RolloutEventCreate(ctx, &model.RolloutEvent{
+			RolloutID: rid,
+			Type:      model.RolloutEventTypeHelmCompleted,
+			Data:      data,
+		})
+		if err != nil {
+			r.log.WithError(err).Error("unable to create helm completed rollout event")
+		}
+
 		err = r.rolloutNotify(ctx, rid, helmStatus.RolloutStatus)
 		if err != nil {
 			errors = append(errors, err)

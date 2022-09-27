@@ -24,3 +24,8 @@ WHERE
   id = ANY(@ids::uuid[])
 AND status = 'pending'
 ;
+
+-- name: RolloutEventCreate :exec
+INSERT INTO rollout_events (rollout_id, type, data)
+VALUES (@rollout_id, @type, @data)
+;

@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -59,6 +60,7 @@ func (r *Rollout) Notify(ctx context.Context, id uuid.UUID, status model.Rollout
 	switch status {
 	case model.RolloutStatusDeployed:
 		if err := r.completeRollout(ctx, id); err != nil {
+			r.addErrorEvent(ctx, id, err)
 			updateErr := r.repo.RolloutsUpdateStatus(ctx, []uuid.UUID{id}, model.RolloutStatusFailed)
 			if updateErr != nil {
 				r.log.WithError(updateErr).Error("failed to update status on failed rollout")
@@ -67,7 +69,12 @@ func (r *Rollout) Notify(ctx context.Context, id uuid.UUID, status model.Rollout
 		}
 		return nil
 	case model.RolloutStatusFailed:
-		return r.rollback(ctx, id)
+		if err := r.rollback(ctx, id); err != nil {
+			r.addErrorEvent(ctx, id, err)
+			return err
+		}
+		r.addEvent(ctx, id, model.RolloutEventTypeRolledBack, nil)
+		return nil
 	default:
 		return nil
 	}
@@ -209,18 +216,21 @@ func (r *Rollout) process(ctx context.Context, id uuid.UUID) {
 	_, env, err := r.tenantAndEnv(ctx)
 	if err != nil {
 		log.WithError(err).Error("failed to get tenant and environment")
+		r.addErrorEvent(ctx, id, err)
 		return
 	}
 
 	txRepo, tx, err := r.repo.WithTx(ctx)
 	if err != nil {
 		log.WithError(err).Error("failed to start transaction")
+		r.addErrorEvent(ctx, id, err)
 		return
 	}
 
 	rollout, err := r.getAndPrepare(ctx, txRepo, id)
 	if err != nil {
 		log.WithError(err).Error("failed to get rollout")
+		r.addErrorEvent(ctx, id, err)
 		return
 	}
 
@@ -243,10 +253,21 @@ func (r *Rollout) process(ctx context.Context, id uuid.UUID) {
 			log.WithField("rollout", rollout.ID).WithError(err).Error("failed to create new configurations")
 		}
 		tx.Rollback(ctx)
+		r.addErrorEvent(ctx, id, err)
 		return
 	}
 
-	tx.Commit(ctx)
+	err = r.repo.RolloutEventCreate(ctx, &model.RolloutEvent{RolloutID: id, Type: model.RolloutEventTypeProcessed})
+	if err != nil {
+		log.WithError(err).Error("failed to create rollout event")
+		r.addErrorEvent(ctx, id, err)
+		return
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		log.WithError(err).Error("failed to commit transaction")
+		r.addErrorEvent(ctx, id, err)
+	}
 }
 
 // getAndPrepare fetches the rollout from the database and prepares it for processing.
@@ -310,4 +331,19 @@ func (r *Rollout) tenantAndEnv(ctx context.Context) (*model.Tenant, *model.Envir
 		}
 	}
 	return r.tenant, r.env, nil
+}
+
+func (r *Rollout) addEvent(ctx context.Context, rolloutID uuid.UUID, typ model.RolloutEventType, data json.RawMessage) {
+	err := r.repo.RolloutEventCreate(ctx, &model.RolloutEvent{RolloutID: rolloutID, Type: typ, Data: data})
+	if err != nil {
+		r.log.WithFields(logrus.Fields{
+			"rollout": rolloutID,
+			"type":    typ,
+		}).WithError(err).Error("failed to create rollout event")
+	}
+}
+
+func (r *Rollout) addErrorEvent(ctx context.Context, rolloutID uuid.UUID, err error) {
+	e := strconv.Quote(err.Error())
+	r.addEvent(ctx, rolloutID, model.RolloutEventTypeFailed, json.RawMessage(fmt.Sprintf(`{"error": "%v"}`, e)))
 }

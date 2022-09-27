@@ -17,6 +17,8 @@ type RolloutRepo interface {
 	RolloutsUnprocessed(ctx context.Context) ([]*model.Rollout, error)
 	RolloutUpdate(ctx context.Context, rollout *model.Rollout) error
 	RolloutsUpdateStatus(ctx context.Context, ids []uuid.UUID, status model.RolloutStatus) error
+
+	RolloutEventCreate(ctx context.Context, event *model.RolloutEvent) error
 }
 
 var _ RolloutRepo = &repo{}
@@ -117,4 +119,19 @@ func rolloutFromSQL(roll gensql.Rollout) (*model.Rollout, error) {
 		Created:      roll.Created,
 		LastModified: roll.LastModified,
 	}, nil
+}
+
+func (r *repo) RolloutEventCreate(ctx context.Context, event *model.RolloutEvent) error {
+	jsonb := event.Data
+	if jsonb == nil {
+		jsonb = []byte("{}")
+	}
+	return r.querier.RolloutEventCreate(ctx, gensql.RolloutEventCreateParams{
+		RolloutID: event.RolloutID,
+		Type:      string(event.Type),
+		Data: pgtype.JSONB{
+			Bytes:  jsonb,
+			Status: pgtype.Present,
+		},
+	})
 }

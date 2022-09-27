@@ -685,6 +685,20 @@ func (_m *Repo) RolloutCreate(ctx context.Context, rollout *model.Rollout) (*mod
 	return r0, r1
 }
 
+// RolloutEventCreate provides a mock function with given fields: ctx, event
+func (_m *Repo) RolloutEventCreate(ctx context.Context, event *model.RolloutEvent) error {
+	ret := _m.Called(ctx, event)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.RolloutEvent) error); ok {
+		r0 = rf(ctx, event)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // RolloutGetByID provides a mock function with given fields: ctx, id
 func (_m *Repo) RolloutGetByID(ctx context.Context, id uuid.UUID) (*model.Rollout, error) {
 	ret := _m.Called(ctx, id)

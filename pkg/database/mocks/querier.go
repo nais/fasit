@@ -655,6 +655,20 @@ func (_m *Querier) RolloutCreate(ctx context.Context, arg gensql.RolloutCreatePa
 	return r0, r1
 }
 
+// RolloutEventCreate provides a mock function with given fields: ctx, arg
+func (_m *Querier) RolloutEventCreate(ctx context.Context, arg gensql.RolloutEventCreateParams) error {
+	ret := _m.Called(ctx, arg)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.RolloutEventCreateParams) error); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // RolloutGetByID provides a mock function with given fields: ctx, id
 func (_m *Querier) RolloutGetByID(ctx context.Context, id uuid.UUID) (gensql.Rollout, error) {
 	ret := _m.Called(ctx, id)

@@ -21,3 +21,11 @@ type RolloutChangeset struct {
 	New map[string]json.RawMessage `json:"new"`
 	Old map[string]json.RawMessage `json:"old"`
 }
+
+type RolloutEvent struct {
+	ID        uuid.UUID
+	RolloutID uuid.UUID
+	Type      RolloutEventType
+	Data      json.RawMessage
+	Created   time.Time
+}
