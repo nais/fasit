@@ -5,7 +5,9 @@ const humanizeDate = (isoDate: string, dateFormat = 'PPPP', distance: boolean = 
     const parsed = parseISO(isoDate);
     return <time dateTime={isoDate} title={format(parsed, "dd. MMMM yyyy HH:mm:ii", { locale: enGB })}>
 
-      { distance ? formatDistance(parsed, Date.now(), {addSuffix: true, includeSeconds: true}): format(parsed, dateFormat, { locale: enGB })}
+      { distance ?
+        formatDistance(parsed, Date.now(), {addSuffix: true, includeSeconds: true}):
+        format(parsed, dateFormat, { locale: enGB })}
     </time>
   } catch (e) {
     return <></>

@@ -7,18 +7,10 @@ import humanizeDate from "../../components/lib/humanizeDate"
 import { ErrorColored, SuccessColored } from "@navikt/ds-icons"
 import { Loader } from "@navikt/ds-react"
 
-const RolloutSummary = styled.div`
-  border: 1px solid silver;
-  border-radius: 5px;
-  padding: 10px;
-  background-color: #f5f5f5;
-  font-size: 0.8em;
-  margin-bottom: 10px;
-`
-
 const DateField = styled.span`
-  font-size: 0.8em;
+  font-size: 0.8rem;
   color: #666;
+  font-weight: normal;
 `
 
 const Details = styled.div`
@@ -32,12 +24,16 @@ const Details = styled.div`
   white-space: pre-wrap;
   font-size: 12px;
 `
-
-const Event = styled.div`
+type EventProps = {
+  header?: boolean
+}
+const Event = styled.div<EventProps>`
  display: flex; 
  align-items: center; 
  justify-content: space-between; 
- line-height: 2.5rem;
+ margin: 10px 0;
+ ${(props) => props.header && `font-weight: bold;`}
+ ${(props) => props.header && `font-size: 1.5em;`}
  > div { 
      display: flex;
      align-items: center;
@@ -66,22 +62,22 @@ const typeText = (type: RolloutEventType) => {
 
 const rolloutStatus = (status: RolloutStatus) => {
 
-  const style = {marginRight: "10px"}
+  const style = { marginRight: "10px" }
 
   switch (status) {
     case RolloutStatus.Deployed:
-      return <><SuccessColored style={style}/> Sucessfully rolled out</>
+      return <><SuccessColored style={style} /> Sucessfully rolled out</>
     case RolloutStatus.Failed:
-      return <><ErrorColored style={style}/> Failed rolling out</>
+      return <><ErrorColored style={style} /> Failed rolling out</>
     default:
-      return <><Loader style={style}/>Rolling out </>
+      return <><Loader style={style} />Rolling out </>
   }
 
 }
 
 const Rollout = () => {
   const id = useRouter().query.id as string
-  const { data, loading, error, startPolling, stopPolling } = useRolloutQuery({ variables: { id }})
+  const { data, loading, error, startPolling, stopPolling } = useRolloutQuery({ variables: { id } })
 
   if (error) return <ErrorMessage error={error} />
   if (!data || loading) return <LoaderSpinner />
@@ -95,11 +91,13 @@ const Rollout = () => {
     startPolling(2000)
   }
   return <>
-    <h1>{rolloutStatus(data.rollout.status)} <i>{data.rollout.feature.name}</i></h1>
-    <RolloutSummary>
-      <div>Rollout status: {data.rollout.status}</div>
-      <div>Rollout created: {humanizeDate(data.rollout.created)}</div>
-    </RolloutSummary>
+    <Event header>
+      <div style={{flexGrow: 1}}>
+        {rolloutStatus(data.rollout.status)}
+        <i>{data.rollout.feature.name}</i>
+      </div>
+      <DateField>{humanizeDate(data.rollout.created, "dd. MMMM yyyy - HH:mm:ii")}</DateField>
+    </Event>
     {data.rollout.events.map((e, i) => {
       return <div key={i}>
         <Event>
@@ -125,7 +123,7 @@ const Rollout = () => {
           />
           Waiting for rollout to complete
         </div>
-        <DateField>{humanizeDate(lastEventTime,"", true)}</DateField>
+        <DateField>{humanizeDate(lastEventTime, "", true)}</DateField>
       </Event>
     }
 
