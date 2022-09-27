@@ -67,6 +67,8 @@ func (r *Rollout) Notify(ctx context.Context, id uuid.UUID, status model.Rollout
 			}
 			return err
 		}
+
+		r.addEvent(ctx, id, model.RolloutEventTypeSuccess, nil)
 		return nil
 	case model.RolloutStatusFailed:
 		if err := r.rollback(ctx, id); err != nil {
