@@ -1169,14 +1169,14 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Rollout.Status(childComplexity), true
 
-	case "RolloutChangeset.New":
+	case "RolloutChangeset.new":
 		if e.complexity.RolloutChangeset.New == nil {
 			break
 		}
 
 		return e.complexity.RolloutChangeset.New(childComplexity), true
 
-	case "RolloutChangeset.Old":
+	case "RolloutChangeset.old":
 		if e.complexity.RolloutChangeset.Old == nil {
 			break
 		}
@@ -1689,8 +1689,8 @@ enum RolloutEventType {
 }
 
 type RolloutChangeset {
-  New: RawMessage!
-  Old: RawMessage
+  new: RawMessage!
+  old: RawMessage
 }
 type RolloutEvent {
   id: ID!
@@ -7576,10 +7576,10 @@ func (ec *executionContext) fieldContext_Rollout_changeset(ctx context.Context, 
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "New":
-				return ec.fieldContext_RolloutChangeset_New(ctx, field)
-			case "Old":
-				return ec.fieldContext_RolloutChangeset_Old(ctx, field)
+			case "new":
+				return ec.fieldContext_RolloutChangeset_new(ctx, field)
+			case "old":
+				return ec.fieldContext_RolloutChangeset_old(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type RolloutChangeset", field.Name)
 		},
@@ -7729,8 +7729,8 @@ func (ec *executionContext) fieldContext_Rollout_events(ctx context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _RolloutChangeset_New(ctx context.Context, field graphql.CollectedField, obj *model.RolloutChangeset) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_RolloutChangeset_New(ctx, field)
+func (ec *executionContext) _RolloutChangeset_new(ctx context.Context, field graphql.CollectedField, obj *model.RolloutChangeset) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RolloutChangeset_new(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -7760,7 +7760,7 @@ func (ec *executionContext) _RolloutChangeset_New(ctx context.Context, field gra
 	return ec.marshalNRawMessage2encodingᚋjsonᚐRawMessage(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_RolloutChangeset_New(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_RolloutChangeset_new(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "RolloutChangeset",
 		Field:      field,
@@ -7773,8 +7773,8 @@ func (ec *executionContext) fieldContext_RolloutChangeset_New(ctx context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _RolloutChangeset_Old(ctx context.Context, field graphql.CollectedField, obj *model.RolloutChangeset) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_RolloutChangeset_Old(ctx, field)
+func (ec *executionContext) _RolloutChangeset_old(ctx context.Context, field graphql.CollectedField, obj *model.RolloutChangeset) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RolloutChangeset_old(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -7801,7 +7801,7 @@ func (ec *executionContext) _RolloutChangeset_Old(ctx context.Context, field gra
 	return ec.marshalORawMessage2encodingᚋjsonᚐRawMessage(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_RolloutChangeset_Old(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_RolloutChangeset_old(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "RolloutChangeset",
 		Field:      field,
@@ -12261,7 +12261,7 @@ func (ec *executionContext) _RolloutChangeset(ctx context.Context, sel ast.Selec
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("RolloutChangeset")
-		case "New":
+		case "new":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -12270,7 +12270,7 @@ func (ec *executionContext) _RolloutChangeset(ctx context.Context, sel ast.Selec
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._RolloutChangeset_New(ctx, field, obj)
+				res = ec._RolloutChangeset_new(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -12281,7 +12281,7 @@ func (ec *executionContext) _RolloutChangeset(ctx context.Context, sel ast.Selec
 				return innerFunc(ctx)
 
 			})
-		case "Old":
+		case "old":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -12290,7 +12290,7 @@ func (ec *executionContext) _RolloutChangeset(ctx context.Context, sel ast.Selec
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._RolloutChangeset_Old(ctx, field, obj)
+				res = ec._RolloutChangeset_old(ctx, field, obj)
 				return res
 			}
 

@@ -262,6 +262,7 @@ export type Query = {
   featureStatus: Status
   features: Array<Feature>
   helmValues: Scalars['RawMessage']
+  rollout: Rollout
   /** tenant returns the given tenant. */
   tenant: Tenant
   tenants: Array<Tenant>
@@ -307,6 +308,10 @@ export type QueryHelmValuesArgs = {
   feature: Scalars['String']
 }
 
+export type QueryRolloutArgs = {
+  id: Scalars['ID']
+}
+
 export type QueryTenantArgs = {
   id?: InputMaybe<Scalars['ID']>
   slug?: InputMaybe<Scalars['String']>
@@ -326,6 +331,40 @@ export type Release = {
   revision: Scalars['Int']
   status: Scalars['String']
   version: Scalars['String']
+}
+
+export type Rollout = {
+  __typename?: 'Rollout'
+  changeset: RolloutChangeset
+  created: Scalars['Time']
+  events: Array<RolloutEvent>
+  feature: Feature
+  id: Scalars['ID']
+  lastModified: Scalars['Time']
+  status: RolloutStatus
+}
+
+export type RolloutChangeset = {
+  __typename?: 'RolloutChangeset'
+  new: Scalars['RawMessage']
+  old?: Maybe<Scalars['RawMessage']>
+}
+
+export type RolloutEvent = {
+  __typename?: 'RolloutEvent'
+  created: Scalars['Time']
+  data: Scalars['RawMessage']
+  id: Scalars['ID']
+  type: RolloutEventType
+}
+
+export enum RolloutEventType {
+  Failed = 'FAILED',
+  HelmCompleted = 'HELM_COMPLETED',
+  InProgress = 'IN_PROGRESS',
+  Processed = 'PROCESSED',
+  RolledBack = 'ROLLED_BACK',
+  Success = 'SUCCESS',
 }
 
 export enum RolloutStatus {
@@ -617,6 +656,29 @@ export type HelmValuesQueryVariables = Exact<{
 }>
 
 export type HelmValuesQuery = { __typename?: 'Query'; helmValues: any }
+
+export type RolloutQueryVariables = Exact<{
+  id: Scalars['ID']
+}>
+
+export type RolloutQuery = {
+  __typename?: 'Query'
+  rollout: {
+    __typename?: 'Rollout'
+    id: string
+    created: any
+    status: RolloutStatus
+    feature: { __typename?: 'Feature'; name: string }
+    events: Array<{
+      __typename?: 'RolloutEvent'
+      id: string
+      type: RolloutEventType
+      data: any
+      created: any
+    }>
+    changeset: { __typename?: 'RolloutChangeset'; new: any }
+  }
+}
 
 export type FeatureStatusQueryVariables = Exact<{
   envID: Scalars['ID']
@@ -1482,6 +1544,71 @@ export type HelmValuesLazyQueryHookResult = ReturnType<
 export type HelmValuesQueryResult = Apollo.QueryResult<
   HelmValuesQuery,
   HelmValuesQueryVariables
+>
+export const RolloutDocument = gql`
+  query rollout($id: ID!) {
+    rollout(id: $id) {
+      id
+      created
+      status
+      feature {
+        name
+      }
+      events {
+        id
+        type
+        data
+        created
+      }
+      changeset {
+        new
+      }
+    }
+  }
+`
+
+/**
+ * __useRolloutQuery__
+ *
+ * To run a query within a React component, call `useRolloutQuery` and pass it any options that fit your needs.
+ * When your component renders, `useRolloutQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useRolloutQuery({
+ *   variables: {
+ *      id: // value for 'id'
+ *   },
+ * });
+ */
+export function useRolloutQuery(
+  baseOptions: Apollo.QueryHookOptions<RolloutQuery, RolloutQueryVariables>,
+) {
+  const options = { ...defaultOptions, ...baseOptions }
+  return Apollo.useQuery<RolloutQuery, RolloutQueryVariables>(
+    RolloutDocument,
+    options,
+  )
+}
+export function useRolloutLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    RolloutQuery,
+    RolloutQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions }
+  return Apollo.useLazyQuery<RolloutQuery, RolloutQueryVariables>(
+    RolloutDocument,
+    options,
+  )
+}
+export type RolloutQueryHookResult = ReturnType<typeof useRolloutQuery>
+export type RolloutLazyQueryHookResult = ReturnType<typeof useRolloutLazyQuery>
+export type RolloutQueryResult = Apollo.QueryResult<
+  RolloutQuery,
+  RolloutQueryVariables
 >
 export const FeatureStatusDocument = gql`
   query featureStatus($envID: ID!, $feature: String!) {

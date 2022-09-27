@@ -18,8 +18,8 @@ enum RolloutEventType {
 }
 
 type RolloutChangeset {
-  New: RawMessage!
-  Old: RawMessage
+  new: RawMessage!
+  old: RawMessage
 }
 type RolloutEvent {
   id: ID!
