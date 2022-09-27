@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring-management
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring-management
-version: 0.9.0
+version: 0.9.1
 environmentKinds:
   - "management"
 dependsOn:
@@ -47,6 +47,10 @@ mapping:
           url: http://{{ $cluster.tenant_ilb_ip }}:9090
           access: proxy
       {{ end }}
+  grafana.server.domain:
+    value: "{{.Tenant.Name}}.cloud.nais.io"
+  grafana.server.root_url:
+    value: "grafana.{{.Tenant.Name}}.cloud.nais.io"
   grafana.ingress.hosts:
     value: ["grafana.{{.Tenant.Name}}.cloud.nais.io"]
     displayName: "Grafana hosts"
