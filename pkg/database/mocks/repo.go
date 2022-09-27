@@ -699,6 +699,29 @@ func (_m *Repo) RolloutEventCreate(ctx context.Context, event *model.RolloutEven
 	return r0
 }
 
+// RolloutEventsGetByRolloutID provides a mock function with given fields: ctx, rolloutID
+func (_m *Repo) RolloutEventsGetByRolloutID(ctx context.Context, rolloutID uuid.UUID) ([]*model.RolloutEvent, error) {
+	ret := _m.Called(ctx, rolloutID)
+
+	var r0 []*model.RolloutEvent
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) []*model.RolloutEvent); ok {
+		r0 = rf(ctx, rolloutID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.RolloutEvent)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, rolloutID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // RolloutGetByID provides a mock function with given fields: ctx, id
 func (_m *Repo) RolloutGetByID(ctx context.Context, id uuid.UUID) (*model.Rollout, error) {
 	ret := _m.Called(ctx, id)
