@@ -51,6 +51,7 @@ func init() {
 	flag.StringVar(&cfg.StatusSubscriptionID, "status-subscription-id", "fasit-subscription", "Pub/sub subscription for status")
 	flag.StringVar(&cfg.IAPAudience, "iap-audience", "", "IAP audience string")
 	flag.BoolVar(&cfg.InsecureSkipProxy, "insecure-skip-proxy", false, "Insecure, but allows the server to not require iap")
+	flag.BoolVar(&cfg.InsecureSkipTokenCheck, "insecure-skip-token-check", false, "Insecure, but allows the server ignore token check")
 }
 
 func newServer(es graphql.ExecutableSchema) *handler.Server {
@@ -180,6 +181,7 @@ func main() {
 	if err != nil {
 		log.WithError(err).Fatal("setting up rollout")
 	}
+	rout.AllowAll = cfg.InsecureSkipTokenCheck
 	router.Post("/github/deploy/{feature}", rout.Rollout)
 
 	go func() {

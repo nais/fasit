@@ -8,8 +8,9 @@ type Config struct {
 	GCPProjectID         string
 	StatusSubscriptionID string
 
-	InsecureSkipProxy bool
-	IAPAudience       string
+	InsecureSkipProxy      bool
+	InsecureSkipTokenCheck bool
+	IAPAudience            string
 }
 
 func DefaultConfig() Config {
