@@ -5,14 +5,33 @@ import (
 	"database/sql"
 	"embed"
 	"fmt"
+	"net"
+	"net/url"
 	"regexp"
+	"strings"
 	"time"
 
+	"cloud.google.com/go/cloudsqlconn"
+	cloudsqlpgx "cloud.google.com/go/cloudsqlconn/postgres/pgxv4"
+	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/pressly/goose/v3"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sirupsen/logrus"
 )
+
+type closeFuncs []func() error
+
+func (c closeFuncs) Close() error {
+	var err error
+	for _, f := range c {
+		if e := f(); e != nil {
+			err = e
+		}
+	}
+	return err
+}
 
 //go:embed migrations/0*.sql
 var embedMigrations embed.FS
@@ -29,17 +48,16 @@ type Repo interface {
 	StatusRepo
 	TenantRepo
 
-	Close() error
+	Close()
 	Metrics() prometheus.Collector
-	WithTx(ctx context.Context) (Repo, *sql.Tx, error)
+	WithTx(ctx context.Context) (Repo, pgx.Tx, error)
 }
 
 type repo struct {
-	querier   Querier
-	db        *sql.DB
-	log       *logrus.Entry
-	hooks     *Hooks
-	dbConnDSN string
+	querier Querier
+	db      *pgxpool.Pool
+	log     *logrus.Entry
+	hooks   *Hooks
 }
 
 func (r *repo) Metrics() prometheus.Collector {
@@ -48,20 +66,19 @@ func (r *repo) Metrics() prometheus.Collector {
 
 type Querier interface {
 	gensql.Querier
-	WithTx(tx *sql.Tx) *gensql.Queries
+	WithTx(tx pgx.Tx) *gensql.Queries
 }
 
-func New(db *sql.DB, dbConnDSN string, log *logrus.Entry) Repo {
+func New(db *pgxpool.Pool, log *logrus.Entry) Repo {
 	return &repo{
-		querier:   gensql.New(db),
-		db:        db,
-		log:       log,
-		dbConnDSN: dbConnDSN,
+		querier: gensql.New(db),
+		db:      db,
+		log:     log,
 	}
 }
 
-func (r *repo) WithTx(ctx context.Context) (Repo, *sql.Tx, error) {
-	tx, err := r.db.BeginTx(ctx, nil)
+func (r *repo) WithTx(ctx context.Context) (Repo, pgx.Tx, error) {
+	tx, err := r.db.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -73,29 +90,62 @@ func (r *repo) WithTx(ctx context.Context) (Repo, *sql.Tx, error) {
 	}, tx, nil
 }
 
-func NewDB(driver, dbConnDSN string) (*sql.DB, error) {
-	// TODO(thokra): Remove the prometheus hook to main
-	// hooks := NewHooks()
-	// sql.Register("psqlhooked", sqlhooks.Wrap(driver, hooks))
-
-	db, err := sql.Open(driver, dbConnDSN)
-	if err != nil {
-		return nil, fmt.Errorf("open sql connection: %w", err)
+func NewDB(ctx context.Context, dbConnDSN string, cloudsql bool) (*pgxpool.Pool, closeFuncs, error) {
+	cloudsqlHost := ""
+	if cloudsql {
+		vals, err := url.ParseQuery(strings.ReplaceAll(dbConnDSN, " ", "&"))
+		if err != nil {
+			return nil, nil, err
+		}
+		cloudsqlHost = vals.Get("host")
+		delete(vals, "host")
+		dbConnDSN = strings.ReplaceAll(vals.Encode(), "&", " ")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	err = db.PingContext(ctx)
+	config, err := pgxpool.ParseConfig(dbConnDSN)
 	if err != nil {
-		return nil, err
+		return nil, nil, fmt.Errorf("failed to parse pgx config: %w", err)
 	}
 
-	return db, nil
+	closers := closeFuncs{}
+
+	if cloudsql {
+		// Create a new dialer with any options
+		d, err := cloudsqlconn.NewDialer(ctx)
+		if err != nil {
+			return nil, closers, fmt.Errorf("failed to initialize dialer: %w", err)
+		}
+		closers = append(closers, d.Close)
+
+		// Tell the driver to use the Cloud SQL Go Connector to create connections
+		config.ConnConfig.DialFunc = func(ctx context.Context, _ string, instance string) (net.Conn, error) {
+			return d.Dial(ctx, cloudsqlHost)
+		}
+
+		cleanup, err := cloudsqlpgx.RegisterDriver("cloudsql-postgres", cloudsqlconn.WithIAMAuthN())
+		if err != nil {
+			return nil, closers, err
+		}
+		closers = append(closers, cleanup)
+	}
+
+	// Interact with the dirver directly as you normally would
+	conn, err := pgxpool.ConnectConfig(context.Background(), config)
+	if err != nil {
+		return nil, closers, fmt.Errorf("failed to connect: %w", err)
+	}
+	return conn, closers, nil
 }
 
-func Migrate(db *sql.DB, log *logrus.Entry) error {
+func Migrate(driver, dsn string, log *logrus.Entry) error {
 	goose.SetBaseFS(embedMigrations)
 	goose.SetLogger(log)
+
+	db, err := sql.Open(driver, dsn)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
 	if err := goose.Up(db, "migrations"); err != nil {
 		return fmt.Errorf("goose up: %w", err)
 	}
@@ -146,6 +196,6 @@ func nameFromQuery(q string) string {
 	return "Unknown"
 }
 
-func (r *repo) Close() error {
-	return r.db.Close()
+func (r *repo) Close() {
+	r.db.Close()
 }

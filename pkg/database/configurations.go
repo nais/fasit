@@ -4,10 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/google/uuid"
-	"github.com/lib/pq"
+	"github.com/jackc/pgtype"
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph/model"
@@ -32,7 +31,7 @@ func environmentConfigurationFromSQL(c gensql.ConfigurationsEnvironment) *model.
 		FeatureName:   c.Feature,
 		// Description:   nullStringToPtr(c.Description),
 		Key:       c.Key,
-		Value:     c.Value,
+		Value:     c.Value.Bytes,
 		Secret:    c.Secret,
 		Created:   c.Created,
 		RolloutID: nullUUIDToPtr(c.RolloutID),
@@ -45,7 +44,7 @@ func globalConfigFromSQL(c gensql.ConfigurationsGlobal) *model.GlobalConfigurati
 		FeatureName: c.Feature,
 		// Description: nullStringToPtr(c.Description),
 		Key:     c.Key,
-		Value:   c.Value,
+		Value:   c.Value.Bytes,
 		Secret:  c.Secret,
 		Created: c.Created,
 	}
@@ -75,7 +74,7 @@ func envConfigFromSQL(conf gensql.EnvConfigRow) model.Configuration {
 			FeatureName:   conf.Feature,
 			// Description:   nullStringToPtr(conf.Description),
 			Key:   conf.Key,
-			Value: conf.Value,
+			Value: conf.Value.Bytes,
 		}
 	}
 
@@ -84,7 +83,7 @@ func envConfigFromSQL(conf gensql.EnvConfigRow) model.Configuration {
 		FeatureName: conf.Feature,
 		// Description: nullStringToPtr(conf.Description),
 		Key:   conf.Key,
-		Value: conf.Value,
+		Value: conf.Value.Bytes,
 	}
 }
 
@@ -139,8 +138,11 @@ func (r *repo) configEnvCreate(ctx context.Context, c model.NewConfiguration, va
 		Description:   ptrToNullString(c.Description),
 		Secret:        c.Secret,
 		Key:           c.Key,
-		Value:         value,
-		RolloutID:     ptrToNullUUID(c.RolloutID),
+		Value: pgtype.JSONB{
+			Bytes:  value,
+			Status: pgtype.Present,
+		},
+		RolloutID: ptrToNullUUID(c.RolloutID),
 	})
 	if err != nil {
 		return nil, err
@@ -155,8 +157,11 @@ func (r *repo) configGlobalCreate(ctx context.Context, c model.NewConfiguration,
 		Description: ptrToNullString(c.Description),
 		Secret:      c.Secret,
 		Key:         c.Key,
-		Value:       value,
-		RolloutID:   ptrToNullUUID(c.RolloutID),
+		Value: pgtype.JSONB{
+			Bytes:  value,
+			Status: pgtype.Present,
+		},
+		RolloutID: ptrToNullUUID(c.RolloutID),
 	})
 	if err != nil {
 		return nil, err
@@ -168,8 +173,11 @@ func (r *repo) configGlobalCreate(ctx context.Context, c model.NewConfiguration,
 func (r *repo) ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration) (model.Configuration, error) {
 	conf, err := r.querier.ConfigUpdate(ctx, gensql.ConfigUpdateParams{
 		Description: ptrToNullString(c.Description),
-		Value:       c.Value,
-		ID:          id,
+		Value: pgtype.JSONB{
+			Bytes:  c.Value,
+			Status: pgtype.Present,
+		},
+		ID: id,
 	})
 	if err != nil {
 		return nil, err
@@ -272,32 +280,7 @@ func makeHelmConfigMap(vals []gensql.EnvConfigRow) (map[string]any, error) {
 }
 
 func (r *repo) ConfigListen(ctx context.Context, fn ListenFunc) error {
-	listener := pq.NewListener(r.dbConnDSN, time.Millisecond, 15*time.Second, nil)
-
-	if err := listener.Listen("configurations_notify"); err != nil {
-		return err
-	}
-
-	defer listener.Close()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return listener.UnlistenAll()
-		case n := <-listener.Notify:
-			if n == nil {
-				continue
-			}
-
-			id, err := uuid.Parse(n.Extra)
-			if err != nil {
-				r.log.WithField("query", "configurations_listen").WithError(err).Warn("invalid uuid")
-				continue
-			}
-
-			fn(ctx, id)
-		}
-	}
+	return r.ListenNotify(ctx, "configurations_notify", fn)
 }
 
 func (r *repo) ConfigDeleteByRolloutID(ctx context.Context, rolloutID uuid.UUID) error {

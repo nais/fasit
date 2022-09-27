@@ -3,6 +3,7 @@ source: https://github.com/nais/helm-charts/tree/main/charts/kyverno-policies
 version: 0.2.1
 environmentKinds:
   - tenant
+  - management
 autoInstall:
   - "tenant"
 dependsOn:

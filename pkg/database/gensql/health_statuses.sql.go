@@ -29,7 +29,7 @@ type HealthStatusCreateOrUpdateParams struct {
 }
 
 func (q *Queries) HealthStatusCreateOrUpdate(ctx context.Context, arg HealthStatusCreateOrUpdateParams) (HealthStatus, error) {
-	row := q.db.QueryRowContext(ctx, healthStatusCreateOrUpdate, arg.EnvironmentID, arg.ReportedAt)
+	row := q.db.QueryRow(ctx, healthStatusCreateOrUpdate, arg.EnvironmentID, arg.ReportedAt)
 	var i HealthStatus
 	err := row.Scan(&i.EnvironmentID, &i.ReportedAt)
 	return i, err
@@ -41,7 +41,7 @@ WHERE environment_id = $1
 `
 
 func (q *Queries) HealthStatusGet(ctx context.Context, environmentID uuid.UUID) (HealthStatus, error) {
-	row := q.db.QueryRowContext(ctx, healthStatusGet, environmentID)
+	row := q.db.QueryRow(ctx, healthStatusGet, environmentID)
 	var i HealthStatus
 	err := row.Scan(&i.EnvironmentID, &i.ReportedAt)
 	return i, err

@@ -94,20 +94,26 @@ func main() {
 	log.Info("-- successfully started pubsub client")
 
 	log.Info("starting database client")
-	dbDriver := "postgres"
+	dbDriver := "pgx"
 	if !strings.Contains(cfg.DBConnectionDSN, "://") {
-		dbDriver = "cloudsqlpostgres"
+		dbDriver = "cloudsql-postgres"
 	}
 
-	db, err := database.NewDB(dbDriver, cfg.DBConnectionDSN)
+	db, closers, err := database.NewDB(ctx, cfg.DBConnectionDSN, dbDriver != "pgx")
 	if err != nil {
 		log.WithError(err).Fatal("setting up database")
 	}
-	if err := database.Migrate(db, log.WithField("subsystem", "migrate")); err != nil {
+	defer func() {
+		if err := closers.Close(); err != nil {
+			log.WithError(err).Errorf("closing database: %v", err)
+		}
+	}()
+
+	if err := database.Migrate(dbDriver, cfg.DBConnectionDSN, log.WithField("subsystem", "migrate")); err != nil {
 		log.WithError(err).Fatal("migrating database")
 	}
 
-	repo := database.New(db, cfg.DBConnectionDSN, log.WithField("subsystem", "repo"))
+	repo := database.New(db, log.WithField("subsystem", "repo"))
 	log.Info("-- successfully started database client")
 
 	featureMgr, err := feature.New(fasit.FeaturesFS)
@@ -133,6 +139,7 @@ func main() {
 	}
 	reconciler := workers.NewReconciler(repo, featureMgr, createPublisher, cfg.GCPProjectID, log.WithField("subsystem", "reconciler"))
 	go func() {
+		defer log.Error("reconciler listener stopped")
 		if err := reconciler.Listen(ctx); err != nil {
 			log.WithError(err).Fatal("setting up reconciler listener")
 		}

@@ -3,9 +3,9 @@ module github.com/nais/fasit
 go 1.18
 
 require (
+	cloud.google.com/go/cloudsqlconn v0.5.2
 	cloud.google.com/go/pubsub v1.25.1
 	github.com/99designs/gqlgen v0.17.20
-	github.com/DATA-DOG/go-txdb v0.1.5
 	github.com/GoogleCloudPlatform/cloudsql-proxy v1.32.0
 	github.com/coreos/go-oidc/v3 v3.4.0
 	github.com/go-chi/chi/v5 v5.0.7
@@ -14,6 +14,9 @@ require (
 	github.com/gorilla/websocket v1.5.0
 	github.com/iancoleman/strcase v0.2.0
 	github.com/invopop/jsonschema v0.6.0
+	github.com/jackc/pgconn v1.13.0
+	github.com/jackc/pgtype v1.12.0
+	github.com/jackc/pgx/v4 v4.17.2
 	github.com/lib/pq v1.10.7
 	github.com/ory/dockertest/v3 v3.9.1
 	github.com/pressly/goose/v3 v3.7.0
@@ -30,10 +33,10 @@ require (
 	google.golang.org/protobuf v1.28.1
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
-	helm.sh/helm/v3 v3.9.4
-	k8s.io/api v0.25.1
-	k8s.io/apimachinery v0.25.1
-	k8s.io/client-go v0.25.1
+	helm.sh/helm/v3 v3.10.0
+	k8s.io/api v0.25.2
+	k8s.io/apimachinery v0.25.2
+	k8s.io/client-go v0.25.2
 	k8s.io/utils v0.0.0-20220728103510-ee6ede2d64ed
 )
 
@@ -55,7 +58,7 @@ require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.1.3 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
-	github.com/chai2010/gettext-go v0.0.0-20160711120539-c6fed771bfd5 // indirect
+	github.com/chai2010/gettext-go v1.0.2 // indirect
 	github.com/containerd/containerd v1.6.8 // indirect
 	github.com/containerd/continuity v0.3.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
@@ -96,6 +99,12 @@ require (
 	github.com/iancoleman/orderedmap v0.2.0 // indirect
 	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
+	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
+	github.com/jackc/pgio v1.0.0 // indirect
+	github.com/jackc/pgpassfile v1.0.0 // indirect
+	github.com/jackc/pgproto3/v2 v2.3.1 // indirect
+	github.com/jackc/pgservicefile v0.0.0-20200714003250-2b9c44734f2b // indirect
+	github.com/jackc/puddle v1.3.0 // indirect
 	github.com/jmoiron/sqlx v1.3.5 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
@@ -162,13 +171,13 @@ require (
 	google.golang.org/genproto v0.0.0-20220902135211-223410557253 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
-	k8s.io/apiextensions-apiserver v0.24.3 // indirect
-	k8s.io/apiserver v0.24.3 // indirect
-	k8s.io/cli-runtime v0.24.3 // indirect
-	k8s.io/component-base v0.24.3 // indirect
+	k8s.io/apiextensions-apiserver v0.25.0 // indirect
+	k8s.io/apiserver v0.25.0 // indirect
+	k8s.io/cli-runtime v0.25.0 // indirect
+	k8s.io/component-base v0.25.0 // indirect
 	k8s.io/klog/v2 v2.70.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20220803164354-a70c9af30aea // indirect
-	k8s.io/kubectl v0.24.3 // indirect
+	k8s.io/kubectl v0.25.0 // indirect
 	oras.land/oras-go v1.2.0 // indirect
 	sigs.k8s.io/json v0.0.0-20220713155537-f223a00ba0e2 // indirect
 	sigs.k8s.io/kustomize/api v0.12.1 // indirect

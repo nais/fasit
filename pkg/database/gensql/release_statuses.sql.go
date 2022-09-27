@@ -36,7 +36,7 @@ type ReleaseStatusCreateOrUpdateParams struct {
 }
 
 func (q *Queries) ReleaseStatusCreateOrUpdate(ctx context.Context, arg ReleaseStatusCreateOrUpdateParams) (ReleaseStatus, error) {
-	row := q.db.QueryRowContext(ctx, releaseStatusCreateOrUpdate,
+	row := q.db.QueryRow(ctx, releaseStatusCreateOrUpdate,
 		arg.EnvironmentID,
 		arg.Feature,
 		arg.Version,
@@ -64,7 +64,7 @@ WHERE environment_id = $1
 `
 
 func (q *Queries) ReleaseStatusesGet(ctx context.Context, environmentID uuid.UUID) ([]ReleaseStatus, error) {
-	rows, err := q.db.QueryContext(ctx, releaseStatusesGet, environmentID)
+	rows, err := q.db.Query(ctx, releaseStatusesGet, environmentID)
 	if err != nil {
 		return nil, err
 	}
@@ -85,9 +85,6 @@ func (q *Queries) ReleaseStatusesGet(ctx context.Context, environmentID uuid.UUI
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
