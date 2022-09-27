@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring-management
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring-management
-version: 0.9.1
+version: 0.10.0
 environmentKinds:
   - "management"
 dependsOn:
@@ -34,6 +34,10 @@ config:
     displayName: Grafana JWT claims
     description: "JSON object with claims to expect in the JWT token, example:  {\"iss\": \"https://cloud.google.com/iap\",\"aud\": \"/projects/718161667033/global/backendServices/2287975999985226128\"}"
     required: true
+  grafana.plugins:
+    type: string_array
+    displayName: Grafana plugins
+    description: List of Grafana plugins to install
 
 mapping:
   grafana.datasources:
