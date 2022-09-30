@@ -23,7 +23,7 @@ mapping:
     value: "{{.Management.console_google_service_account_key}}"
     displayName: Google service account credentials (JSON)
   backend.tenantName:
-    value: "{{.Management.tenant_name}}"
+    value: "{{.Tenant.Name}}"
     displayName: "Tenant name"
   backend.tenantDomain:
     value: "{{.Management.tenant_domain}}"
