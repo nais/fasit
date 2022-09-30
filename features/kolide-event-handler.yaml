@@ -16,21 +16,18 @@ config:
     secret: true
     displayName: "Kolide API token"
 
-  secrets.env.GRPC_AUTH_TOKEN:
-    type: string
-    required: true
-    secret: true
-    displayName: "gRPC auth token"
-
   image.tag:
     type: string
     displayName: Image tag
+
   ingress.enabled:
     type: bool
     displayName: Enable ingress
+
   ingress.hosts:
     type: string_array
     displayName: DNS names
+
   replicaCount:
     type: int
 
@@ -39,3 +36,7 @@ mapping:
     value:
       - 'kolide-event-handler.{{if eq .Kind "tenant"}}{{.Env.name}}.{{end}}{{.Tenant.Name}}.cloud.nais.io'
     displayName: "DNS names"
+
+  secrets.env.GRPC_AUTH_TOKEN:
+    displayName: "gRPC auth token"
+    value: "{{.Env.kolide_grpc_auth_token}}"
