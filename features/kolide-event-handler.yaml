@@ -20,14 +20,6 @@ config:
     type: string
     displayName: Image tag
 
-  ingress.enabled:
-    type: bool
-    displayName: Enable ingress
-
-  ingress.hosts:
-    type: string_array
-    displayName: DNS names
-
   replicaCount:
     type: int
 
