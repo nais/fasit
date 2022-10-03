@@ -52,8 +52,9 @@ mapping:
           access: proxy
         - name: {{ $cluster.name }}-alertmanager
           type: alertmanager
-          implementation: prometheus
-          url: http://{{ $cluster.tenant_ilb_ip }}:9093
+          jsonData:
+            implementation: prometheus
+          url: http://{{ $cluster.tenant_alertmanager_ilb_ip }}:9093
           access: proxy
       {{ end }}
   grafana.server.domain:
