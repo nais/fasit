@@ -39,7 +39,7 @@ mapping:
     value: "{{ .Env.tenant_ilb_ip }}"
     displayName: "Tenant Prometheus lb IP"
   kube-prometheus-stack.alertmanager.service.loadBalancerIP:
-    value: "{{ .Env.tenant_ilb_ip }}"
+    value: "{{ .Env.tenant_alertmanager_ilb_ip }}"
     displayName: "Tenant Alertmanager lb IP"
   kube-prometheus-stack.alertmanager.ingress.hosts:
     value:
