@@ -38,6 +38,9 @@ mapping:
   tenant_prometheus.loadBalancerIP:
     value: "{{ .Env.tenant_ilb_ip }}"
     displayName: "Tenant Prometheus lb IP"
+  kube-prometheus-stack.alertmanager.service.loadBalancerIP:
+    value: "{{ .Env.tenant_ilb_ip }}"
+    displayName: "Tenant Alertmanager lb IP"
   kube-prometheus-stack.alertmanager.ingress.hosts:
     value:
       - 'alertmanager.{{if eq .Kind "tenant"}}{{.Env.name}}.{{end}}{{.Tenant.Name}}.cloud.nais.io'

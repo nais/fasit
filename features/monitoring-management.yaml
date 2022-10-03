@@ -50,6 +50,11 @@ mapping:
           type: prometheus
           url: http://{{ $cluster.tenant_ilb_ip }}:9090
           access: proxy
+        - name: {{ $cluster.name }}-alertmanager
+          type: alertmanager
+          implementation: prometheus
+          url: http://{{ $cluster.tenant_ilb_ip }}:9093
+          access: proxy
       {{ end }}
   grafana.server.domain:
     value: "{{.Tenant.Name}}.cloud.nais.io"
