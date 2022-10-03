@@ -19,6 +19,7 @@ type EnvironmentKind string
 const (
 	EnvironmentKindTenant     EnvironmentKind = "tenant"
 	EnvironmentKindManagement EnvironmentKind = "management"
+	EnvironmentKindOnprem     EnvironmentKind = "onprem"
 )
 
 func (e *EnvironmentKind) Scan(src interface{}) error {

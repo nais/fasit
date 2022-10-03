@@ -57,12 +57,17 @@ func (r *repo) FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID,
 		if err != nil {
 			return nil, err
 		}
-		for _, d := range feature.DependsOn {
-			for _, fs := range states {
-				if fs.Feature == d && !fs.Enabled {
-					return nil, fmt.Errorf("dependency '%s' not enabled", d)
-				}
+
+		enabledFeatures := []string{}
+		for _, state := range states {
+			if state.Enabled {
+				enabledFeatures = append(enabledFeatures, state.Feature)
+
 			}
+		}
+
+		if !feature.DependsOn.FindMissing(enabledFeatures) {
+			return nil, fmt.Errorf("dependency '%s' not enabled", d)
 		}
 	}
 

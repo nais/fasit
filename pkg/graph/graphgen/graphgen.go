@@ -1504,6 +1504,7 @@ extend type Mutation {
 	{Name: "../../../schema/environment.graphqls", Input: `enum EnvironmentKind {
   TENANT
   MANAGEMENT
+  ONPREM
 }
 type Health {
   reportedAt: Time!
