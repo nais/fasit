@@ -9,7 +9,7 @@ autoInstall:
   - "management"
   - "onprem"
 dependsOn:
-  - oneof:
+  - anyOf:
     - "loadbalancer"
     - "loadbalancer-onprem"
 rolloutSource:

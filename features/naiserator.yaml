@@ -7,7 +7,8 @@ environmentKinds:
 autoInstall:
   - "tenant"
 dependsOn:
-  - "nais-crds"
+  - allOf:
+    - "nais-crds"
 config:
   imageTag:
     type: string

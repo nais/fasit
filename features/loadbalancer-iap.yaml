@@ -4,7 +4,8 @@ version: 0.2.0
 environmentKinds:
   - "management"
 dependsOn:
-  - "certificates"
+  - allOf:
+    - "certificates"
 config:
   certificates:
     type: string_array

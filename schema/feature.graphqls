@@ -4,9 +4,14 @@ type Feature {
   version: String!
   repo: String!
   source: String!
-  dependsOn: [String!]!
+  dependsOn: [Dependency!]!
   config: RawMessage!
   environmentKinds: [EnvironmentKind!]!
+}
+
+type Dependency {
+    anyOf: [String!]!
+    allOf: [String!]!
 }
 
 extend type Query {

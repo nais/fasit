@@ -8,7 +8,8 @@ autoInstall:
   - "tenant"
   - "management"
 dependsOn:
-  - "certificates"
+  - allOf:
+    - "certificates"
 config:
   certificates:
     type: string_array

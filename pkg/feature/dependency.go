@@ -11,8 +11,8 @@ func (d Dependencies) FindMissing(features []string) []string {
 }
 
 type Dependency struct {
-	AnyOf []string
-	AllOf []string
+	AnyOf []string `json:"anyOf,omitempty"`
+	AllOf []string `json:"allOf,omitempty"`
 }
 
 func (d *Dependency) FindMissing(features []string) []string {

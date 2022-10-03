@@ -8,7 +8,8 @@ autoInstall:
   - "tenant"
   - "management"
 dependsOn:
-  - "cert-manager"
+  - allOf:
+    - "cert-manager"
 config:
   acme.email:
     type: string

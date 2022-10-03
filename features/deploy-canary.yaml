@@ -4,7 +4,8 @@ version: 0.1.0
 environmentKinds:
   - "management"
 dependsOn:
-  - "hookd"
+  - allOf:
+    - "hookd"
 mapping:
   deploy_server:
     value: "deploy.{{.Tenant.Name}}.cloud.nais.io:443"

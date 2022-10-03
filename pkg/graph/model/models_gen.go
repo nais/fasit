@@ -11,6 +11,11 @@ import (
 	"github.com/google/uuid"
 )
 
+type Dependency struct {
+	AnyOf []string `json:"anyOf"`
+	AllOf []string `json:"allOf"`
+}
+
 type EnvConfig struct {
 	Configuration []Configuration `json:"configuration"`
 	Mapping       []*MappingValue `json:"mapping"`
@@ -36,7 +41,7 @@ type Feature struct {
 	Version          string            `json:"version"`
 	Repo             string            `json:"repo"`
 	Source           string            `json:"source"`
-	DependsOn        []string          `json:"dependsOn"`
+	DependsOn        []*Dependency     `json:"dependsOn"`
 	Config           json.RawMessage   `json:"config"`
 	EnvironmentKinds []EnvironmentKind `json:"environmentKinds"`
 }

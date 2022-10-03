@@ -4,7 +4,8 @@ version: 0.1.0
 environmentKinds:
   - "tenant"
 dependsOn:
-  - "aivenator"
+  - allOf:
+    - "aivenator"
 mapping:
   aiven.projects:
     value: "{{.Env.aiven_project_0}}"

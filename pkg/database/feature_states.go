@@ -66,8 +66,9 @@ func (r *repo) FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID,
 			}
 		}
 
-		if !feature.DependsOn.FindMissing(enabledFeatures) {
-			return nil, fmt.Errorf("dependency '%s' not enabled", d)
+		missingFeatures := feature.DependsOn.FindMissing(enabledFeatures)
+		if len(missingFeatures) > 0 {
+			return nil, fmt.Errorf("dependency '%v' not enebled", missingFeatures)
 		}
 	}
 
