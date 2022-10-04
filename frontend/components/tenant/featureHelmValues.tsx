@@ -13,10 +13,8 @@ const LogPre = styled.pre`
   font-size: 14px;
 `
 
-const Code = styled.div`
-  font-family: monospace, monospace;
+const Code = styled.pre`
   border-radius: 5px;
-  display: inline-block;
   margin-top: 20px;
   font-size: 14px;
   background-color: #334;
@@ -38,16 +36,30 @@ const Feature = ({ env, featureName }: FeatureProps) => {
     variables: { envID: env.id, feature: featureName },
   })
 
+  const feature = env.featureStates.find(
+    (f) => f.feature.name === featureName,
+  )!.feature
+
+  const helmInstall = [
+    `helm install ${featureName}`,
+    `--namespace nais-system`,
+    `--create-namespace`,
+    `-f values.json`,
+  ]
+
+  if (feature.repo) {
+    helmInstall.push(`--repo ${feature.repo}`)
+  }
+
+  helmInstall.push(feature.chart)
+
   return (
     <>
       {loading && <Loader transparent />}
       {error && <LogPre>{error.message}</LogPre>}
       {data && (
         <div>
-          <Code>
-            helm install {featureName} --namespace nais-system
-            --create-namespace -f values.json
-          </Code>
+          <Code>{helmInstall.join(' \\\n\t')}</Code>
           <hr />
           <LogPre>{JSON.stringify(data.helmValues, null, 2)}</LogPre>
         </div>
