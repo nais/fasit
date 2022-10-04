@@ -49,6 +49,14 @@ func main() {
 		return
 	}
 
+	if envLvl := os.Getenv("LOG_LEVEL"); envLvl != "" {
+		if lvl, err := logrus.ParseLevel(envLvl); err != nil {
+			log.WithError(err).Warn("log level not parsable")
+		} else {
+			log.SetLevel(lvl)
+		}
+	}
+
 	if err := run(ctx, log); err != nil {
 		log.Fatal(err)
 	}

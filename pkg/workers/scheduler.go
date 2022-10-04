@@ -50,9 +50,11 @@ func (s *Scheduler) Start(ctx context.Context) {
 }
 
 func (s *Scheduler) run(ctx context.Context, w *scheduledWorker) {
+	log := s.log.WithField("worker", w.name)
 	for {
+		log.Debug("running")
 		if err := w.v.Run(ctx); err != nil {
-			s.log.WithError(err).WithField("worker", w.name).Error("error running scheduled worker")
+			log.WithError(err).Error("error running scheduled worker")
 		}
 		select {
 		case <-ctx.Done():
