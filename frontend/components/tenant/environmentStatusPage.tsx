@@ -54,7 +54,7 @@ const EnvironmentStatusPage = ({env,tenantName}: EnvironmentStatusPageProps) => 
             {
                 parseISO(report.health.reportedAt).getFullYear() === 1969 &&
                 <>
-                <h3>naisd not installed. <Link href={`/tenant/${tenantName}/onprem?feature=naisd&tab=helm_values`}><a>More info here.</a></Link></h3>
+                <h3>naisd not installed. <Link href={`/tenant/${tenantName}/${env.name}?feature=naisd&tab=helm_values`}><a>More info here.</a></Link></h3>
                 </>
             }
             <h3>Kubernetes nodes</h3>
