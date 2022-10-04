@@ -148,7 +148,13 @@ func sharedDependencies(ctx context.Context, log *logrus.Logger) (*naisd.DeployM
 	}
 
 	deploySubscriber := message.NewSubscriber[message.DeployInstruction](deployClient, cfg.EnvProjectID, deploySubscriptionID)
-	statusPublisher := message.NewPublisher[message.Status](deployClient, cfg.NaisProjectID, naisStatusTopic, log.WithField("subsystem", "status-pubsub"))
+	statusPublisher := message.NewPublisher[message.Status](
+		deployClient,
+		cfg.NaisProjectID,
+		naisStatusTopic,
+		log.WithField("subsystem", "status-pubsub"),
+		message.WithWaithForPublish(),
+	)
 
 	kubeConfig := local.RESTConfig()
 	var executor naisd.Exec = &naisd.MockExecutor{Logger: log.WithField("subsystem", "executor")}

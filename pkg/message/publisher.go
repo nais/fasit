@@ -8,6 +8,18 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+type publisherConfig struct {
+	waitForPublish bool
+}
+
+type publisherOpts func(*publisherConfig)
+
+func WithWaithForPublish() publisherOpts {
+	return func(c *publisherConfig) {
+		c.waitForPublish = true
+	}
+}
+
 type Topic interface {
 	Publish(ctx context.Context, msg *pubsub.Message) *pubsub.PublishResult
 	String() string
@@ -15,14 +27,21 @@ type Topic interface {
 }
 
 type Publisher[T any] struct {
-	topic Topic
-	log   *logrus.Entry
+	topic  Topic
+	log    *logrus.Entry
+	config publisherConfig
 }
 
-func NewPublisher[T any](client *pubsub.Client, projectID, topicID string, log *logrus.Entry) *Publisher[T] {
+func NewPublisher[T any](client *pubsub.Client, projectID, topicID string, log *logrus.Entry, opts ...publisherOpts) *Publisher[T] {
+	cfg := publisherConfig{}
+	for _, opt := range opts {
+		opt(&cfg)
+	}
+
 	return &Publisher[T]{
-		topic: client.TopicInProject(topicID, projectID),
-		log:   log,
+		topic:  client.TopicInProject(topicID, projectID),
+		log:    log,
+		config: cfg,
 	}
 }
 
@@ -37,8 +56,10 @@ func (p *Publisher[T]) Publish(ctx context.Context, msg T) error {
 		Data: data,
 	})
 
-	if _, err := res.Get(ctx); err != nil {
-		return err
+	if p.config.waitForPublish {
+		if _, err := res.Get(ctx); err != nil {
+			return err
+		}
 	}
 
 	return nil
