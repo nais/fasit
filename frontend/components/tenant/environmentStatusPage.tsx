@@ -44,6 +44,22 @@ const EnvironmentStatusPage = ({env,tenantName}: EnvironmentStatusPageProps) => 
     const getValue = (key: string) =>{
         return env.values.find((v) => v.key === key)?.value
     }
+
+    const naisdInstall = [
+        `helm install naisd`,
+        `--namespace "nais-system"`,
+        `--create-namespace`,
+        `--set "tenantName=${tenantName}"`,
+        `--set "env=${env.name}"`,
+        `--set "envProjectId=${getValue('project_id')}"`,
+        `--set "management=${env.kind === EnvironmentKind.Management ? 'true' : 'false'}"`,
+    ]
+
+    if (env.kind === EnvironmentKind.Onprem) {
+        naisdInstall.push(`--set 'google.serviceAccountKey=${getValue('naisd_key').replaceAll("\n", "\\n")}'`)
+        naisdInstall.push(`--set "google.useServiceAccountKey=true"`)
+    }
+
     return (
         <EnvironmentStatus>
             <ReportStatus reportedAt={report.health.reportedAt}/>
@@ -54,16 +70,7 @@ const EnvironmentStatusPage = ({env,tenantName}: EnvironmentStatusPageProps) => 
                 <>
                 <h3>Install naisd using the following helm command:</h3>
                 <pre style={{fontSize: "14px", padding: '0 8px', backgroundColor: '#f5f5f5', border: '1px solid silver'}}>
-                    {`
-helm install naisd \\
---namespace "nais-system" \\
---create-namespace \\
---set "tenantName=${tenantName}" \\
---set "env=${env.name}" \\
---set "envProjectId=${getValue('project_id')}" \\
---set "management=${env.kind === EnvironmentKind.Management ? 'true' : 'false'}" \\
-oci://europe-north1-docker.pkg.dev/nais-io/nais/naisd
-                    `}
+                    {naisdInstall.join(" \\\n\t")}
                 </pre>
                 </>
             }
