@@ -274,7 +274,8 @@ func TestReconcile_AutoInstall(t *testing.T) {
 			expectedFeature: "",
 			status: map[string]*model.Status{
 				"feature1": {
-					Status: model.RolloutStatusDeployed,
+					Feature: "feature1",
+					Status:  model.RolloutStatusDeployed,
 				},
 			},
 		},
@@ -288,7 +289,8 @@ func TestReconcile_AutoInstall(t *testing.T) {
 			expectedFeature: "",
 			status: map[string]*model.Status{
 				"feature1": {
-					Status: model.RolloutStatusFailed,
+					Feature: "feature1",
+					Status:  model.RolloutStatusFailed,
 				},
 			},
 		},
@@ -302,7 +304,8 @@ func TestReconcile_AutoInstall(t *testing.T) {
 			expectedFeature: "",
 			status: map[string]*model.Status{
 				"feature1": {
-					Status: model.RolloutStatusPending,
+					Feature: "feature1",
+					Status:  model.RolloutStatusPending,
 				},
 			},
 		},
@@ -339,10 +342,12 @@ func TestReconcile_AutoInstall(t *testing.T) {
 			expectedFeature: "feature2",
 			status: map[string]*model.Status{
 				"feature1": {
-					Status: model.RolloutStatusDeployed,
+					Feature: "feature1",
+					Status:  model.RolloutStatusDeployed,
 				},
 				"feature3": {
-					Status: model.RolloutStatusDeployed,
+					Feature: "feature3",
+					Status:  model.RolloutStatusDeployed,
 				},
 			},
 		},
@@ -365,7 +370,8 @@ func TestReconcile_AutoInstall(t *testing.T) {
 			},
 			status: map[string]*model.Status{
 				"feature3": {
-					Status: model.RolloutStatusPending,
+					Feature: "feature3",
+					Status:  model.RolloutStatusPending,
 				},
 			},
 		},
@@ -382,10 +388,9 @@ func TestReconcile_AutoInstall(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			repo := mocks.NewRepo(t)
 			if tt.expectedFeature != "" {
-				repo.On("FeatureStatesCreateOrUpdate", mock.Anything, te.ID, mock.MatchedBy(func(f *feature.Feature) bool { return f.Name == tt.expectedFeature }), true).Return(nil, nil)
+				repo.On("FeatureStatesCreateOrUpdate",
+					mock.Anything, te.ID, mock.MatchedBy(func(f *feature.Feature) bool { return f.Name == tt.expectedFeature }), true).Return(nil, nil)
 			}
-
-			// repo.FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, _a2 *feature.Feature, enabled bool)
 
 			recociler := &Reconciler{
 				repo: repo,

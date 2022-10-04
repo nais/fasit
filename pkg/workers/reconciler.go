@@ -105,10 +105,9 @@ func (r *Reconciler) reconcile(ctx context.Context) error {
 }
 
 func (r *Reconciler) autoInstallNextFeature(ctx context.Context, d *model.TenantEnvironments, features []feature.Feature, status map[string]*model.Status) error {
-
 	enabledFeatures := []string{}
 	for _, s := range status {
-		if s.Status != model.RolloutStatusDeployed {
+		if s.Status == model.RolloutStatusDeployed {
 			enabledFeatures = append(enabledFeatures, s.Feature)
 		}
 	}
