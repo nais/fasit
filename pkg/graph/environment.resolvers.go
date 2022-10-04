@@ -48,7 +48,7 @@ func (r *environmentResolver) Health(ctx context.Context, obj *model.Environment
 	if err != nil {
 		return &model.Health{
 			EnvironmentID: obj.ID,
-			ReportedAt:    time.Date(1970, 1, 1, 0, 0, 0, 0, time.UTC),
+			ReportedAt:    time.Date(1969, 6, 9, 6, 9, 6, 9, time.UTC),
 		}, nil
 	}
 	return health, nil

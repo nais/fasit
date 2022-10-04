@@ -49,6 +49,7 @@ const EnvironmentStatusPage = ({env,tenantName}: EnvironmentStatusPageProps) => 
             <ReportStatus reportedAt={report.health.reportedAt}/>
             <br/>
             <a href={`https://console.cloud.google.com/welcome?project=${getValue('project_id')}&authuser=${email}`}>Console</a>
+          {report.health.reportedAt}
             {
                 parseISO(report.health.reportedAt).getFullYear() === 1969 &&
                 <>
