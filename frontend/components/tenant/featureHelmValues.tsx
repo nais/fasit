@@ -44,6 +44,7 @@ const Feature = ({ env, featureName }: FeatureProps) => {
     `helm upgrade --install ${featureName}`,
     `--namespace nais-system`,
     `--create-namespace`,
+    `--version=${feature.version}`,
     `-f values.json`,
   ]
 
