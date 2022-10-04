@@ -46,6 +46,7 @@ func (r *repo) FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.
 			Created:       featureState.Created,
 			LastModified:  featureState.LastModified,
 			RolloutStatus: model.RolloutStatus(featureState.RolloutStatus),
+			EnvID:         envID,
 		})
 	}
 	return ret, nil
@@ -62,7 +63,6 @@ func (r *repo) FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID,
 		for _, state := range states {
 			if state.Enabled {
 				enabledFeatures = append(enabledFeatures, state.Feature)
-
 			}
 		}
 

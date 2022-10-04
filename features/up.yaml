@@ -10,8 +10,8 @@ autoInstall:
   - "onprem"
 dependsOn:
   - anyOf:
-    - "loadbalancer"
-    - "loadbalancer-onprem"
+      - "loadbalancer"
+    # - "loadbalancer-onprem"
 rolloutSource:
   - org: nais
     repo: up

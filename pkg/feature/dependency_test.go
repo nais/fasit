@@ -1,8 +1,9 @@
 package feature
 
 import (
-	"github.com/google/go-cmp/cmp"
 	"testing"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 func TestDependencies_FindMissing(t *testing.T) {
@@ -61,6 +62,15 @@ func TestDependencies_FindMissing(t *testing.T) {
 			},
 			features: []string{"foo", "baz"},
 			want:     []string{"bar"},
+		},
+		"all of, not satisfied, no features": {
+			dep: Dependencies{
+				{
+					AllOf: []string{"foo", "bar"},
+				},
+			},
+			features: []string{},
+			want:     []string{"foo", "bar"},
 		},
 	}
 	for name, tt := range tests {

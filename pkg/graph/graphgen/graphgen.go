@@ -112,11 +112,12 @@ type ComplexityRoot struct {
 	}
 
 	FeatureState struct {
-		Created       func(childComplexity int) int
-		Enabled       func(childComplexity int) int
-		Feature       func(childComplexity int) int
-		LastModified  func(childComplexity int) int
-		RolloutStatus func(childComplexity int) int
+		Created             func(childComplexity int) int
+		Enabled             func(childComplexity int) int
+		Feature             func(childComplexity int) int
+		LastModified        func(childComplexity int) int
+		MissingDependencies func(childComplexity int) int
+		RolloutStatus       func(childComplexity int) int
 	}
 
 	GlobalConfiguration struct {
@@ -273,6 +274,8 @@ type EnvironmentResolver interface {
 }
 type FeatureStateResolver interface {
 	Feature(ctx context.Context, obj *model.FeatureState) (*model.Feature, error)
+
+	MissingDependencies(ctx context.Context, obj *model.FeatureState) ([]*model.Feature, error)
 }
 type GlobalConfigurationResolver interface {
 	Feature(ctx context.Context, obj *model.GlobalConfiguration) (*model.Feature, error)
@@ -607,6 +610,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.FeatureState.LastModified(childComplexity), true
+
+	case "FeatureState.missingDependencies":
+		if e.complexity.FeatureState.MissingDependencies == nil {
+			break
+		}
+
+		return e.complexity.FeatureState.MissingDependencies(childComplexity), true
 
 	case "FeatureState.rolloutStatus":
 		if e.complexity.FeatureState.RolloutStatus == nil {
@@ -1635,6 +1645,7 @@ extend type Query {
   created: Time
   lastModified: Time
   rolloutStatus: RolloutStatus!
+  missingDependencies: [Feature!]!
 }
 
 extend type Mutation {
@@ -3097,6 +3108,8 @@ func (ec *executionContext) fieldContext_Environment_featureStates(ctx context.C
 				return ec.fieldContext_FeatureState_lastModified(ctx, field)
 			case "rolloutStatus":
 				return ec.fieldContext_FeatureState_rolloutStatus(ctx, field)
+			case "missingDependencies":
+				return ec.fieldContext_FeatureState_missingDependencies(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type FeatureState", field.Name)
 		},
@@ -4137,6 +4150,68 @@ func (ec *executionContext) fieldContext_FeatureState_rolloutStatus(ctx context.
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type RolloutStatus does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FeatureState_missingDependencies(ctx context.Context, field graphql.CollectedField, obj *model.FeatureState) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FeatureState_missingDependencies(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.FeatureState().MissingDependencies(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Feature)
+	fc.Result = res
+	return ec.marshalNFeature2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐFeatureᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FeatureState_missingDependencies(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FeatureState",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_Feature_name(ctx, field)
+			case "chart":
+				return ec.fieldContext_Feature_chart(ctx, field)
+			case "version":
+				return ec.fieldContext_Feature_version(ctx, field)
+			case "repo":
+				return ec.fieldContext_Feature_repo(ctx, field)
+			case "source":
+				return ec.fieldContext_Feature_source(ctx, field)
+			case "dependsOn":
+				return ec.fieldContext_Feature_dependsOn(ctx, field)
+			case "config":
+				return ec.fieldContext_Feature_config(ctx, field)
+			case "environmentKinds":
+				return ec.fieldContext_Feature_environmentKinds(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
 	}
 	return fc, nil
@@ -6175,6 +6250,8 @@ func (ec *executionContext) fieldContext_Mutation_featureStateSave(ctx context.C
 				return ec.fieldContext_FeatureState_lastModified(ctx, field)
 			case "rolloutStatus":
 				return ec.fieldContext_FeatureState_rolloutStatus(ctx, field)
+			case "missingDependencies":
+				return ec.fieldContext_FeatureState_missingDependencies(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type FeatureState", field.Name)
 		},
@@ -11400,6 +11477,26 @@ func (ec *executionContext) _FeatureState(ctx context.Context, sel ast.Selection
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "missingDependencies":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._FeatureState_missingDependencies(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

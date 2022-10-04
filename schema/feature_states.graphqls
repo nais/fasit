@@ -4,6 +4,7 @@ type FeatureState {
   created: Time
   lastModified: Time
   rolloutStatus: RolloutStatus!
+  missingDependencies: [Feature!]!
 }
 
 extend type Mutation {

@@ -32,7 +32,7 @@ OUTER:
 				continue OUTER
 			}
 		}
-		retVal = append(retVal, &model.FeatureState{FeatureName: f.Name})
+		retVal = append(retVal, &model.FeatureState{FeatureName: f.Name, EnvID: obj.ID})
 	}
 
 	sort.Slice(retVal, func(i, j int) bool {
