@@ -96,10 +96,10 @@ const FeatureStatus = ({
   const feature = featureState!.feature
 
   const missingRequirements = requiredConfigs.filter((r) => !configs[r].value)
-  const missingDependencies = feature.dependsOn.filter(
-    (dependency) =>
-      !env.featureStates.find((fs) => fs.feature.name === dependency)?.enabled,
-  )
+
+  const dependencies = feature.dependsOn
+    .map((a) => a.allOf.concat(a.anyOf))
+    .flat()
 
   return (
     <FeatureStatusContainer>
@@ -144,10 +144,10 @@ const FeatureStatus = ({
               </a>
             </div>
           )}
-          {feature.dependsOn.length > 0 && (
+          {dependencies.length > 0 && (
             <div>
               dependencies:{' '}
-              {feature.dependsOn.map((d) => {
+              {dependencies.map((d) => {
                 return (
                   <Link
                     href={`/tenant/${tenantName}/${env.name}?feature=${d}`}
@@ -155,7 +155,9 @@ const FeatureStatus = ({
                   >
                     <a
                       style={{
-                        color: missingDependencies.includes(d)
+                        color: status?.missingDependencies.find(
+                          (a) => a.name === d,
+                        )
                           ? navRod
                           : navGronn,
                       }}
@@ -174,7 +176,8 @@ const FeatureStatus = ({
             data-tip
             data-for="enable_feature"
             disabled={
-              missingDependencies.length > 0 || missingRequirements.length > 0
+              (status?.missingDependencies.length || 0) > 0 ||
+              missingRequirements.length > 0
             }
             size="medium"
             checked={featureState?.enabled || false}
@@ -182,7 +185,8 @@ const FeatureStatus = ({
           >
             {''}
           </Switch>
-          {missingDependencies.length > 0 && 'Missing dependencies'}
+          {(status?.missingDependencies.length || 0) > 0 &&
+            'Missing dependencies'}
           <ReactTooltip
             id="enable_feature"
             place="bottom"

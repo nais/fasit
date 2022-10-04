@@ -27,7 +27,10 @@ export const ENVIRONMENT_GET_BY_NAMES = gql`
           name
           version
           chart
-          dependsOn
+          dependsOn {
+            anyOf
+            allOf
+          }
           repo
           source
           config
@@ -59,10 +62,13 @@ export const ENVIRONMENT_GET = gql`
           name
           version
           chart
-          dependsOn
           repo
           source
           config
+          dependsOn {
+            anyOf
+            allOf
+          }
         }
       }
     }

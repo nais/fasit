@@ -14,6 +14,7 @@ type Status {
   created: Time!
   lastModified: Time!
   log: String!
+  missingDependencies: [Feature!]!
 }
 
 type Subscription {
