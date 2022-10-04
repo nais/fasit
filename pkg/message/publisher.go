@@ -33,9 +33,13 @@ func (p *Publisher[T]) Publish(ctx context.Context, msg T) error {
 	}
 
 	p.log.WithField("topic", p.topic.String()).Debug("Published message")
-	p.topic.Publish(ctx, &pubsub.Message{
+	res := p.topic.Publish(ctx, &pubsub.Message{
 		Data: data,
 	})
+
+	if _, err := res.Get(ctx); err != nil {
+		return err
+	}
 
 	return nil
 }
