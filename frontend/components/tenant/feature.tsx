@@ -14,6 +14,7 @@ import { Tabs } from '@navikt/ds-react'
 import { FileContent, Filter, Wrench } from '@navikt/ds-icons'
 import FeatureLogs from './featureLogs'
 import FeatureHelmValues from './featureHelmValues'
+import { useRouter } from 'next/router'
 
 const FeatureContainer = styled.div`
   border: 1px solid silver;
@@ -37,6 +38,8 @@ interface FeatureProps {
 const Feature = ({ env, featureName }: FeatureProps) => {
   const [showVerify, setShowVerify] = useState(false)
 
+  const router = useRouter()
+
   const configQuery = useConfigurationQuery({
     variables: { envID: env.id, feature: featureName },
   })
@@ -47,6 +50,11 @@ const Feature = ({ env, featureName }: FeatureProps) => {
     featureName,
   )
 
+  let activeTab = router.query.tab as string
+  if (!activeTab) {
+    activeTab = 'config'
+  }
+
   return (
     <FeatureContainer>
       <FeatureStatus
@@ -55,7 +63,15 @@ const Feature = ({ env, featureName }: FeatureProps) => {
         env={env}
         setShowVerify={setShowVerify}
       />
-      <Tabs defaultValue="config" size="small" iconPosition="left">
+      <Tabs
+        defaultValue={activeTab}
+        size="small"
+        iconPosition="left"
+        onChange={(value) => {
+          router.query.tab = value
+          router.push(router)
+        }}
+      >
         <Tabs.List>
           <Tabs.Tab
             value="config"

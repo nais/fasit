@@ -4,6 +4,7 @@ version: 0.2.0
 environmentKinds:
   - "tenant"
   - "management"
+  - "onprem"
 config:
   image.tag:
     type: string
@@ -21,3 +22,9 @@ mapping:
   management:
     displayName: "Management Cluster?"
     template: '"{{eq .Kind "management"}}"'
+  google.useServiceAccountKey:
+    displayName: "Use service account key?"
+    template: '{{ eq .Kind "onprem" }}'
+  google.serviceAccountKey:
+    displayName: "Use service account key?"
+    value: "{{ .Env.naisd_key }}"

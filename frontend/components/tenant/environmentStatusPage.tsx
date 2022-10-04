@@ -15,6 +15,7 @@ import StatusCircle from '../lib/statusCircle'
 import {navGronn, navRod} from '../../styles/constants'
 import FeatureValues from './featureValues'
 import {parseISO} from "date-fns";
+import Link from 'next/link'
 
 const EnvironmentStatus = styled.div`
   border: 1px solid silver;
@@ -45,21 +46,6 @@ const EnvironmentStatusPage = ({env,tenantName}: EnvironmentStatusPageProps) => 
         return env.values.find((v) => v.key === key)?.value
     }
 
-    const naisdInstall = [
-        `helm install naisd`,
-        `--namespace "nais-system"`,
-        `--create-namespace`,
-        `--set "tenantName=${tenantName}"`,
-        `--set "env=${env.name}"`,
-        `--set "envProjectId=${getValue('project_id')}"`,
-        `--set "management=${env.kind === EnvironmentKind.Management ? 'true' : 'false'}"`,
-    ]
-
-    if (env.kind === EnvironmentKind.Onprem) {
-        naisdInstall.push(`--set 'google.serviceAccountKey=${getValue('naisd_key').replaceAll("\n", "\\n")}'`)
-        naisdInstall.push(`--set "google.useServiceAccountKey=true"`)
-    }
-
     return (
         <EnvironmentStatus>
             <ReportStatus reportedAt={report.health.reportedAt}/>
@@ -68,10 +54,7 @@ const EnvironmentStatusPage = ({env,tenantName}: EnvironmentStatusPageProps) => 
             {
                 parseISO(report.health.reportedAt).getFullYear() === 1969 &&
                 <>
-                <h3>Install naisd using the following helm command:</h3>
-                <pre style={{fontSize: "14px", padding: '0 8px', backgroundColor: '#f5f5f5', border: '1px solid silver'}}>
-                    {naisdInstall.join(" \\\n\t")}
-                </pre>
+                <h3>naisd not installed. <Link href={`/tenant/${tenantName}/onprem?feature=naisd&tab=helm_values`}><a>More info here.</a></Link></h3>
                 </>
             }
             <h3>Kubernetes nodes</h3>
