@@ -69,7 +69,7 @@ spec:
             name: kubeconfig
           {{ if .Values.google.useServiceAccountKey }}
           - mountPath: /var/run/secrets/google
-            name: google-service-account-key
+            name: google-service-account
           {{ end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
