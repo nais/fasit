@@ -1,6 +1,7 @@
 enum EnvironmentKind {
   TENANT
   MANAGEMENT
+  ONPREM
 }
 type Health {
   reportedAt: Time!

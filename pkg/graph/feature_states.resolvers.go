@@ -5,6 +5,7 @@ package graph
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/graph/graphgen"
@@ -14,6 +15,38 @@ import (
 // Feature is the resolver for the feature field.
 func (r *featureStateResolver) Feature(ctx context.Context, obj *model.FeatureState) (*model.Feature, error) {
 	return r.resolveFeatureByName(obj.FeatureName)
+}
+
+// MissingDependencies is the resolver for the missingDependencies field.
+func (r *featureStateResolver) MissingDependencies(ctx context.Context, obj *model.FeatureState) ([]*model.Feature, error) {
+	f := r.Features.Get(obj.FeatureName)
+
+	states, err := r.Repo.FeatureStatesGet(ctx, obj.EnvID)
+	if err != nil {
+		return nil, err
+	}
+
+	enabledFeatures := []string{}
+	for _, s := range states {
+		if s.Enabled && s.RolloutStatus == model.RolloutStatusDeployed {
+			enabledFeatures = append(enabledFeatures, s.FeatureName)
+		}
+	}
+
+	ret := []*model.Feature{}
+
+	for _, d := range f.DependsOn.FindMissing(enabledFeatures) {
+		feat := r.Features.Get(d)
+		if feat == nil {
+			return nil, fmt.Errorf("invalid dependency %v", d)
+		}
+		f, err := marshalFeature(*feat)
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, f)
+	}
+	return ret, nil
 }
 
 // FeatureStateSave is the resolver for the featureStateSave field.

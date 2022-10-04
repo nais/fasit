@@ -2,6 +2,8 @@ package model
 
 import (
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type FeatureState struct {
@@ -11,4 +13,6 @@ type FeatureState struct {
 	Created       time.Time     `json:"created"`
 	LastModified  time.Time     `json:"lastModified"`
 	RolloutStatus RolloutStatus `json:"rolloutStatus"`
+
+	EnvID uuid.UUID `json:"-"`
 }

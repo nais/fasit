@@ -8,7 +8,8 @@
 			"items": {
 				"enum": [
 					"management",
-					"tenant"
+					"tenant",
+					"onprem"
 				],
 				"type": "string"
 			},
@@ -57,7 +58,22 @@
 		"dependsOn": {
 			"description": "DependsOn defines the features that this feature depends on.",
 			"items": {
-				"type": "string"
+				"additionalProperties": false,
+				"properties": {
+					"allOf": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array"
+					},
+					"anyOf": {
+						"items": {
+							"type": "string"
+						},
+						"type": "array"
+					}
+				},
+				"type": "object"
 			},
 			"type": "array"
 		},
@@ -66,7 +82,8 @@
 			"items": {
 				"enum": [
 					"management",
-					"tenant"
+					"tenant",
+					"onprem"
 				],
 				"type": "string"
 			},

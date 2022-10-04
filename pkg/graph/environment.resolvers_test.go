@@ -19,6 +19,7 @@ func Test_environmentResolver_FeatureStates_FeatureStateMerge_Works(t *testing.T
 	repoFeatureStates := []*model.FeatureState{
 		{
 			FeatureName: "repo-feature",
+			EnvID:       env.ID,
 			Enabled:     true,
 		},
 	}
@@ -52,10 +53,12 @@ func Test_environmentResolver_FeatureStates_FeatureStateMerge_Works(t *testing.T
 	want := []*model.FeatureState{
 		{
 			FeatureName: "global-feature",
+			EnvID:       env.ID,
 			Enabled:     false,
 		},
 		{
 			FeatureName: "repo-feature",
+			EnvID:       env.ID,
 			Enabled:     true,
 		},
 	}

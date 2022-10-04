@@ -3,7 +3,10 @@ import gql from 'graphql-tag'
 export const FEATURES = gql`
   query Features($kind: EnvironmentKind) {
     features(kind: $kind) {
-      dependsOn
+      dependsOn {
+        anyOf
+        allOf
+      }
       name
       chart
       config

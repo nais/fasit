@@ -49,6 +49,12 @@ export type Configuration = {
   value: Scalars['RawMessage']
 }
 
+export type Dependency = {
+  __typename?: 'Dependency'
+  allOf: Array<Scalars['String']>
+  anyOf: Array<Scalars['String']>
+}
+
 export type EnvConfig = {
   __typename?: 'EnvConfig'
   configuration: Array<Configuration>
@@ -94,6 +100,7 @@ export type EnvironmentCreate = {
 
 export enum EnvironmentKind {
   Management = 'MANAGEMENT',
+  Onprem = 'ONPREM',
   Tenant = 'TENANT',
 }
 
@@ -113,7 +120,7 @@ export type Feature = {
   __typename?: 'Feature'
   chart: Scalars['String']
   config: Scalars['RawMessage']
-  dependsOn: Array<Scalars['String']>
+  dependsOn: Array<Dependency>
   environmentKinds: Array<EnvironmentKind>
   name: Scalars['String']
   repo: Scalars['String']
@@ -127,6 +134,7 @@ export type FeatureState = {
   enabled: Scalars['Boolean']
   feature: Feature
   lastModified?: Maybe<Scalars['Time']>
+  missingDependencies: Array<Feature>
   rolloutStatus: RolloutStatus
 }
 
@@ -382,6 +390,7 @@ export type Status = {
   feature: Scalars['String']
   lastModified: Scalars['Time']
   log: Scalars['String']
+  missingDependencies: Array<Feature>
   status: RolloutStatus
   version: Scalars['String']
 }
@@ -527,10 +536,14 @@ export type EnvironmentGetByNamesQuery = {
         name: string
         version: string
         chart: string
-        dependsOn: Array<string>
         repo: string
         source: string
         config: any
+        dependsOn: Array<{
+          __typename?: 'Dependency'
+          anyOf: Array<string>
+          allOf: Array<string>
+        }>
       }
     }>
   }
@@ -562,10 +575,14 @@ export type EnvironmentGetQuery = {
         name: string
         version: string
         chart: string
-        dependsOn: Array<string>
         repo: string
         source: string
         config: any
+        dependsOn: Array<{
+          __typename?: 'Dependency'
+          anyOf: Array<string>
+          allOf: Array<string>
+        }>
       }
     }>
   }
@@ -628,7 +645,6 @@ export type FeaturesQuery = {
   __typename?: 'Query'
   features: Array<{
     __typename?: 'Feature'
-    dependsOn: Array<string>
     name: string
     chart: string
     config: any
@@ -636,6 +652,11 @@ export type FeaturesQuery = {
     source: string
     environmentKinds: Array<EnvironmentKind>
     version: string
+    dependsOn: Array<{
+      __typename?: 'Dependency'
+      anyOf: Array<string>
+      allOf: Array<string>
+    }>
   }>
 }
 
@@ -696,6 +717,7 @@ export type FeatureStatusQuery = {
     configHash: string
     created: any
     lastModified: any
+    missingDependencies: Array<{ __typename?: 'Feature'; name: string }>
   }
 }
 
@@ -1044,7 +1066,10 @@ export const EnvironmentGetByNamesDocument = gql`
           name
           version
           chart
-          dependsOn
+          dependsOn {
+            anyOf
+            allOf
+          }
           repo
           source
           config
@@ -1127,10 +1152,13 @@ export const EnvironmentGetDocument = gql`
           name
           version
           chart
-          dependsOn
           repo
           source
           config
+          dependsOn {
+            anyOf
+            allOf
+          }
         }
       }
     }
@@ -1377,7 +1405,10 @@ export type EnvironmentsGetQueryResult = Apollo.QueryResult<
 export const FeaturesDocument = gql`
   query Features($kind: EnvironmentKind) {
     features(kind: $kind) {
-      dependsOn
+      dependsOn {
+        anyOf
+        allOf
+      }
       name
       chart
       config
@@ -1620,6 +1651,9 @@ export const FeatureStatusDocument = gql`
       configHash
       created
       lastModified
+      missingDependencies {
+        name
+      }
     }
   }
 `

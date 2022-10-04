@@ -5,7 +5,8 @@ environmentKinds:
   - tenant
   - management
 dependsOn:
-  - cert-manager
+  - allOf:
+    - cert-manager
 autoInstall:
   - "tenant"
   - "management"

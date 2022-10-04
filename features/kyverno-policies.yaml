@@ -7,4 +7,5 @@ environmentKinds:
 autoInstall:
   - "tenant"
 dependsOn:
-  - kyverno
+  - allOf:
+    - kyverno

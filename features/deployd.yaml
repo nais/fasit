@@ -3,7 +3,6 @@ source: https://github.com/nais/helm-charts/tree/main/charts/deployd
 version: 0.0.2
 environmentKinds:
   - "tenant"
-dependsOn: []
 mapping:
   preSharedKey:
     value: "{{.Env.deployd_pre_shared_key}}"

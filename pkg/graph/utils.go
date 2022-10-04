@@ -17,13 +17,23 @@ func marshalFeature(feat feature.Feature) (*model.Feature, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	deps := []*model.Dependency{}
+
+	for _, f := range feat.DependsOn {
+		deps = append(deps, &model.Dependency{
+			AnyOf: f.AnyOf,
+			AllOf: f.AllOf,
+		})
+	}
+
 	tmp := &model.Feature{
 		Name:             feat.Name,
 		Chart:            feat.Chart,
 		Version:          feat.Version,
 		Repo:             feat.Repo,
 		Source:           feat.Source,
-		DependsOn:        feat.DependsOn,
+		DependsOn:        deps,
 		Config:           config,
 		EnvironmentKinds: feat.EnvironmentKinds,
 	}

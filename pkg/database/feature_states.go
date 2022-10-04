@@ -46,6 +46,7 @@ func (r *repo) FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.
 			Created:       featureState.Created,
 			LastModified:  featureState.LastModified,
 			RolloutStatus: model.RolloutStatus(featureState.RolloutStatus),
+			EnvID:         envID,
 		})
 	}
 	return ret, nil
@@ -57,12 +58,17 @@ func (r *repo) FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID,
 		if err != nil {
 			return nil, err
 		}
-		for _, d := range feature.DependsOn {
-			for _, fs := range states {
-				if fs.Feature == d && !fs.Enabled {
-					return nil, fmt.Errorf("dependency '%s' not enabled", d)
-				}
+
+		enabledFeatures := []string{}
+		for _, state := range states {
+			if state.Enabled {
+				enabledFeatures = append(enabledFeatures, state.Feature)
 			}
+		}
+
+		missingFeatures := feature.DependsOn.FindMissing(enabledFeatures)
+		if len(missingFeatures) > 0 {
+			return nil, fmt.Errorf("dependency '%v' not enebled", missingFeatures)
 		}
 	}
 

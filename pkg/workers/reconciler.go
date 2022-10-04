@@ -105,7 +105,13 @@ func (r *Reconciler) reconcile(ctx context.Context) error {
 }
 
 func (r *Reconciler) autoInstallNextFeature(ctx context.Context, d *model.TenantEnvironments, features []feature.Feature, status map[string]*model.Status) error {
-OUTER:
+	enabledFeatures := []string{}
+	for _, s := range status {
+		if s.Status == model.RolloutStatusDeployed {
+			enabledFeatures = append(enabledFeatures, s.Feature)
+		}
+	}
+
 	for _, f := range features {
 		if !contains(f.AutoInstall, d.Kind) {
 			continue
@@ -120,11 +126,10 @@ OUTER:
 		}
 
 		// Dependency not enabled
-		for _, dep := range f.DependsOn {
-			if s, ok := status[dep]; !ok || s.Status != model.RolloutStatusDeployed {
-				continue OUTER
-			}
+		if len(f.DependsOn.FindMissing(enabledFeatures)) > 0 {
+			continue
 		}
+
 		_, err := r.repo.FeatureStatesCreateOrUpdate(ctx, d.ID, &f, true)
 		if err != nil {
 			return fmt.Errorf("unable to enable feature %s: %w", f.Name, err)

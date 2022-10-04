@@ -4,7 +4,8 @@ version: 0.11.0
 environmentKinds:
   - "management"
 dependsOn:
-  - "loadbalancer-iap"
+  - allOf:
+    - "loadbalancer-iap"
 timeout: 20m
 config:
   nais_prometheus.retention:

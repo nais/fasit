@@ -1,8 +1,7 @@
 import * as React from 'react'
 import styled from 'styled-components'
-import {FeaturesQuery} from '../../lib/schema/graphql'
-import ConfigPage from "./configPage";
-
+import { FeaturesQuery } from '../../lib/schema/graphql'
+import ConfigPage from './configPage'
 
 const FeatureContainer = styled.div`
   border: 1px solid silver;
@@ -25,30 +24,42 @@ const FeatureStatus = styled.div`
 `
 
 interface FeatureProps {
-    feature?: FeaturesQuery['features'][0],
+  feature?: FeaturesQuery['features'][0]
 }
 
+const Feature = ({ feature }: FeatureProps) => {
+  if (!feature) {
+    return <EmptyFeature />
+  }
 
-const Feature = ({feature}: FeatureProps) => {
-    if (!feature) {
-        return <EmptyFeature/>
-    }
+  const dependsOn = feature.dependsOn
+    ?.map((d) => d.anyOf.concat(d.allOf))
+    .flat()
 
-    return (
-        <FeatureContainer>
-            <FeatureStatus>
-                <div key={feature.name} style={{display: 'flex', flexDirection: 'column'}}>
-                    {feature.chart && <div>chart: {feature.chart}</div>}
-                    {feature.repo && <div>repo: {feature.repo}</div>}
-                    {feature.source && <div>source: {feature.source}</div>}
-                    {feature.version && <div>version: {feature.version}</div>}
-                    {feature.dependsOn.length > 0 && <div>dependencies: {feature.dependsOn.join(", ")}</div>}
-                    {feature.environmentKinds && <div>environment kinds: {feature.environmentKinds.map(s => s.toLowerCase()).join(", ")}</div>}
-                </div>
-            </FeatureStatus>
-            <ConfigPage feature={feature} />
-
-        </FeatureContainer>
-)
+  return (
+    <FeatureContainer>
+      <FeatureStatus>
+        <div
+          key={feature.name}
+          style={{ display: 'flex', flexDirection: 'column' }}
+        >
+          {feature.chart && <div>chart: {feature.chart}</div>}
+          {feature.repo && <div>repo: {feature.repo}</div>}
+          {feature.source && <div>source: {feature.source}</div>}
+          {feature.version && <div>version: {feature.version}</div>}
+          {dependsOn.length > 0 && (
+            <div>dependencies: {dependsOn.join(', ')}</div>
+          )}
+          {feature.environmentKinds && (
+            <div>
+              environment kinds:{' '}
+              {feature.environmentKinds.map((s) => s.toLowerCase()).join(', ')}
+            </div>
+          )}
+        </div>
+      </FeatureStatus>
+      <ConfigPage feature={feature} />
+    </FeatureContainer>
+  )
 }
 export default Feature

@@ -7,8 +7,11 @@ environmentKinds:
 autoInstall:
   - "tenant"
   - "management"
+  - "onprem"
 dependsOn:
-  - "loadbalancer"
+  - anyOf:
+      - "loadbalancer"
+    # - "loadbalancer-onprem"
 rolloutSource:
   - org: nais
     repo: up
