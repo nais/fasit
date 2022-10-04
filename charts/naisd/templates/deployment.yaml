@@ -38,6 +38,10 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.serviceAccountName
+          {{ if .Values.google.useServiceAccountKey }}
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /var/run/secrets/google/key.json
+          {{ end }}
           args:
             - --production
             - --tenant-name
@@ -63,6 +67,10 @@ spec:
             name: tmp
           - mountPath: /.kube
             name: kubeconfig
+          {{ if .Values.google.useServiceAccountKey }}
+          - mountPath: /var/run/secrets/google
+            name: google-service-account-key
+          {{ end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
 
@@ -71,6 +79,11 @@ spec:
         emptyDir: {}
       - name: kubeconfig
         emptyDir: {}
+      {{ if .Values.google.useServiceAccountKey }}
+      - name: google-service-account
+        secret:
+          secretName: {{ .Release.Name }}-google-sa-key
+      {{ end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

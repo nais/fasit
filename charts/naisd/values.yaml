@@ -62,3 +62,7 @@ nodeSelector: {}
 tolerations: []
 
 affinity: {}
+
+google:
+  useServiceAccountKey: false
+  serviceAccountKey: ""
