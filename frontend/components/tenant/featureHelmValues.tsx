@@ -45,7 +45,7 @@ const Feature = ({ env, featureName }: FeatureProps) => {
       {data && (
         <div>
           <Code>
-            helm install {featureName} --namespace "nais-system"
+            helm install {featureName} --namespace nais-system
             --create-namespace -f values.json
           </Code>
           <hr />
