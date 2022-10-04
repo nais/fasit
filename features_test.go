@@ -68,8 +68,10 @@ func TestFeatures(t *testing.T) {
 
 	g := topsort.NewGraph()
 	for _, f := range mgr.Features {
-		for _, dep := range f.DependsOn {
-			g.AddEdge(f.Name, dep)
+		for _, deps := range f.DependsOn {
+			for _, dep := range append(deps.AnyOf, deps.AllOf...) {
+				g.AddEdge(f.Name, dep)
+			}
 		}
 	}
 

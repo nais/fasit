@@ -324,12 +324,12 @@ func TestReconcile_AutoInstall(t *testing.T) {
 				{
 					Name:        "feature1",
 					AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
-					DependsOn:   []string{"feature2"},
+					DependsOn:   feature.Dependencies{{AllOf: []string{"feature2"}}},
 				},
 				{
 					Name:        "feature2",
 					AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
-					DependsOn:   []string{"feature3"},
+					DependsOn:   feature.Dependencies{{AllOf: []string{"feature3"}}},
 				},
 				{
 					Name:        "feature3",
@@ -351,12 +351,12 @@ func TestReconcile_AutoInstall(t *testing.T) {
 				{
 					Name:        "feature1",
 					AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
-					DependsOn:   []string{"feature2"},
+					DependsOn:   feature.Dependencies{{AllOf: []string{"feature2"}}},
 				},
 				{
 					Name:        "feature2",
 					AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
-					DependsOn:   []string{"feature3"},
+					DependsOn:   feature.Dependencies{{AllOf: []string{"feature3"}}},
 				},
 				{
 					Name:        "feature3",
