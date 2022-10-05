@@ -333,9 +333,10 @@ export type QueryValuesArgs = {
 export type Release = {
   __typename?: 'Release'
   created: Scalars['Time']
-  feature: Feature
+  feature?: Maybe<Feature>
   lastDeployed: Scalars['Time']
   lastModified: Scalars['Time']
+  name: Scalars['String']
   revision: Scalars['Int']
   status: Scalars['String']
   version: Scalars['String']
@@ -599,10 +600,11 @@ export type EnvironmentGetReportQuery = {
     health: { __typename?: 'Health'; reportedAt: any }
     releases: Array<{
       __typename?: 'Release'
+      name: string
       status: string
       lastDeployed: any
       version: string
-      feature: { __typename?: 'Feature'; name: string }
+      feature?: { __typename?: 'Feature'; name: string } | null
     }>
     nodes: Array<{
       __typename?: 'KubernetesNode'
@@ -1222,6 +1224,7 @@ export const EnvironmentGetReportDocument = gql`
         reportedAt
       }
       releases {
+        name
         feature {
           name
         }

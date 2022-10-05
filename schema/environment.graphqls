@@ -8,7 +8,8 @@ type Health {
 }
 
 type Release {
-  feature: Feature!
+  name: String!
+  feature: Feature
   version: String!
   status: String!
   revision: Int!

@@ -82,6 +82,7 @@ export const ENVIRONMENT_GET_REPORT = gql`
         reportedAt
       }
       releases {
+        name
         feature {
           name
         }

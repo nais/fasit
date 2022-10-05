@@ -35,7 +35,7 @@ func (r *repo) ReleaseStatusesGet(ctx context.Context, environmentID uuid.UUID) 
 	releases := make([]*model.Release, len(res))
 	for i, r := range res {
 		releases[i] = &model.Release{
-			FeatureName:  r.Feature,
+			Name:         r.Feature,
 			Version:      r.Version,
 			Status:       r.Status,
 			Revision:     int(r.Revision),

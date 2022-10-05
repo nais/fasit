@@ -3,7 +3,7 @@ package model
 import "time"
 
 type Release struct {
-	FeatureName  string
+	Name         string    `json:"name"`
 	Version      string    `json:"version"`
 	Status       string    `json:"status"`
 	Revision     int       `json:"revision"`

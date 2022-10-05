@@ -102,8 +102,8 @@ const EnvironmentStatusPage = ({env,tenantName}: EnvironmentStatusPageProps) => 
                 </Table.Header>
                 <Table.Body>
                     {report.releases.map((r) => (
-                        <Table.Row key={r.feature.name}>
-                            <Table.DataCell>{r.feature.name}</Table.DataCell>
+                        <Table.Row key={r.name} style={r.feature ? {} : {backgroundColor: "#ffd5d5"}}>
+                            <Table.DataCell>{r.name}</Table.DataCell>
                             <Table.DataCell>{r.status}</Table.DataCell>
                             <Table.DataCell>{r.version}</Table.DataCell>
                             <Table.DataCell>

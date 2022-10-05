@@ -96,7 +96,12 @@ func (r *queryResolver) Environments(ctx context.Context, tenantID uuid.UUID) ([
 
 // Feature is the resolver for the feature field.
 func (r *releaseResolver) Feature(ctx context.Context, obj *model.Release) (*model.Feature, error) {
-	return r.resolveFeatureByName(obj.FeatureName)
+	f, err := r.resolveFeatureByName(obj.Name)
+	if err != nil {
+		r.Log.WithError(err).Debug("error getting feature for release, returning nil")
+	}
+
+	return f, nil
 }
 
 // Environment returns graphgen.EnvironmentResolver implementation.
@@ -105,7 +110,5 @@ func (r *Resolver) Environment() graphgen.EnvironmentResolver { return &environm
 // Release returns graphgen.ReleaseResolver implementation.
 func (r *Resolver) Release() graphgen.ReleaseResolver { return &releaseResolver{r} }
 
-type (
-	environmentResolver struct{ *Resolver }
-	releaseResolver     struct{ *Resolver }
-)
+type environmentResolver struct{ *Resolver }
+type releaseResolver struct{ *Resolver }

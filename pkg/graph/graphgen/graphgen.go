@@ -205,6 +205,7 @@ type ComplexityRoot struct {
 		Feature      func(childComplexity int) int
 		LastDeployed func(childComplexity int) int
 		LastModified func(childComplexity int) int
+		Name         func(childComplexity int) int
 		Revision     func(childComplexity int) int
 		Status       func(childComplexity int) int
 		Version      func(childComplexity int) int
@@ -1133,6 +1134,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Release.LastModified(childComplexity), true
 
+	case "Release.name":
+		if e.complexity.Release.Name == nil {
+			break
+		}
+
+		return e.complexity.Release.Name(childComplexity), true
+
 	case "Release.revision":
 		if e.complexity.Release.Revision == nil {
 			break
@@ -1552,7 +1560,8 @@ type Health {
 }
 
 type Release {
-  feature: Feature!
+  name: String!
+  feature: Feature
   version: String!
   status: String!
   revision: Int!
@@ -3349,6 +3358,8 @@ func (ec *executionContext) fieldContext_Environment_releases(ctx context.Contex
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "name":
+				return ec.fieldContext_Release_name(ctx, field)
 			case "feature":
 				return ec.fieldContext_Release_feature(ctx, field)
 			case "version":
@@ -7272,6 +7283,50 @@ func (ec *executionContext) fieldContext_Query___schema(ctx context.Context, fie
 	return fc, nil
 }
 
+func (ec *executionContext) _Release_name(ctx context.Context, field graphql.CollectedField, obj *model.Release) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Release_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Release_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Release",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Release_feature(ctx context.Context, field graphql.CollectedField, obj *model.Release) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Release_feature(ctx, field)
 	if err != nil {
@@ -7293,14 +7348,11 @@ func (ec *executionContext) _Release_feature(ctx context.Context, field graphql.
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*model.Feature)
 	fc.Result = res
-	return ec.marshalNFeature2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐFeature(ctx, field.Selections, res)
+	return ec.marshalOFeature2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐFeature(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Release_feature(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -12412,6 +12464,13 @@ func (ec *executionContext) _Release(ctx context.Context, sel ast.SelectionSet, 
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Release")
+		case "name":
+
+			out.Values[i] = ec._Release_name(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "feature":
 			field := field
 
@@ -12422,9 +12481,6 @@ func (ec *executionContext) _Release(ctx context.Context, sel ast.SelectionSet, 
 					}
 				}()
 				res = ec._Release_feature(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
 				return res
 			}
 
@@ -14552,6 +14608,13 @@ func (ec *executionContext) marshalOEnvironmentKind2ᚖgithubᚗcomᚋnaisᚋfas
 		return graphql.Null
 	}
 	return v
+}
+
+func (ec *executionContext) marshalOFeature2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐFeature(ctx context.Context, sel ast.SelectionSet, v *model.Feature) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Feature(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx context.Context, v interface{}) (*uuid.UUID, error) {
