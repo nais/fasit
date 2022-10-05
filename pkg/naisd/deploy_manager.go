@@ -19,6 +19,8 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+var getEnvironment = os.Environ
+
 type DeploymentReceiver interface {
 	Name() string
 	Synchronous()
@@ -183,7 +185,7 @@ func (d *DeployManager) runHelm(ctx context.Context, args []string) (string, err
 
 	helmArgs := append(args, append(connectionFlags, helmFlags...)...)
 
-	environment := append(os.Environ(),
+	environment := append(getEnvironment(),
 		"HELM_EXPERIMENTAL_OCI=1",
 		"HELM_CACHE_HOME="+d.helmCache,
 	)
