@@ -63,6 +63,9 @@ tolerations: []
 
 affinity: {}
 
+no_proxy: 10.254.0.1
+https_proxy: http://webproxy-nais.nav.no:8088
+
 google:
   useServiceAccountKey: false
   serviceAccountKey: ""

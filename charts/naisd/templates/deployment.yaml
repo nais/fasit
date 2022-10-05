@@ -38,6 +38,14 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.serviceAccountName
+          {{ if .Values.no_proxy }}
+            - name: NO_PROXY
+              value: {{ .Values.no_proxy }}
+          {{ end }}
+          {{ if .Values.http_proxy }}
+            - name: HTTPS_PROXY
+              value: {{ .Values.https_proxy }}
+          {{ end }}
           {{ if .Values.google.useServiceAccountKey }}
             - name: GOOGLE_APPLICATION_CREDENTIALS
               value: /var/run/secrets/google/key.json

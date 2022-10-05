@@ -2,10 +2,11 @@ chart: cert-manager
 source: https://github.com/cert-manager/cert-manager
 version: v1.9.1
 repo: https://charts.jetstack.io
-autoInstall:
+environmentKinds:
   - "tenant"
   - "management"
-environmentKinds:
+  - "onprem"
+autoInstall:
   - "tenant"
   - "management"
 mapping:

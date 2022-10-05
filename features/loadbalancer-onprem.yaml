@@ -1,0 +1,21 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/loadbalancer-onprem
+source: https://github.com/nais/helm-charts/tree/main/charts/loadbalancer-onprem
+version: 0.3.0
+environmentKinds:
+  - "onprem"
+config:
+  ingress-nginx.controller.resources.requests.cpu:
+    type: string
+    displayName: "Cpu request"
+  ingress-nginx.controller.resources.requests.memory:
+    type: string
+    displayName: "Memory request"
+  ingress-nginx.controller.replicaCount:
+    type: int
+    displayName: "Default replicas"
+  ingress-nginx.controller.autoscaling.minReplicas:
+    type: int
+    displayName: "Min replicas"
+  ingress-nginx.controller.autoscaling.maxReplicas:
+    type: int
+    displayName: "Max replicas"
