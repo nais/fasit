@@ -108,7 +108,7 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 
 	if msg.Name == "naisd" && !d.performNaisdUpgrades {
 		d.log.Debug("Offloading naisd upgrade")
-		err := selfupgrade.StartJob(ctx, d.k8sClient, msg, d.k8sServiceAccountName, d.naisProjectID, d.env, d.tenantName)
+		err := selfupgrade.StartJob(ctx, d.k8sClient, msg, d.naisProjectID, d.env, d.tenantName)
 		if err != nil {
 			return err
 		}

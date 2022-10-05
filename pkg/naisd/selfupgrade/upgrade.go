@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/nais/fasit/pkg/message"
@@ -24,9 +25,18 @@ const (
 	defaultTag   = "main"
 )
 
-func StartJob(ctx context.Context, client kubernetes.Interface, msg message.DeployInstruction, saName, naisProjectID, env, tenantName string) error {
+func StartJob(ctx context.Context, client kubernetes.Interface, msg message.DeployInstruction, naisProjectID, env, tenantName string) error {
 	suffix := now().UTC().Format("20060102-150405")
-	job := createJob(suffix, msg, saName, naisProjectID, env, tenantName)
+	hostname, err := os.Hostname()
+	if err != nil {
+		return fmt.Errorf("unable to get hostname: %w", err)
+	}
+	podSpec, err := client.CoreV1().Pods(namespace).Get(ctx, hostname, metav1.GetOptions{})
+	if err != nil {
+		return fmt.Errorf("failed to get pod spec: %w", err)
+	}
+
+	job := createJob(suffix, msg, naisProjectID, env, tenantName, podSpec.Spec)
 
 	newJob, err := client.BatchV1().Jobs(namespace).Create(ctx, job, metav1.CreateOptions{})
 	if err != nil {
@@ -46,10 +56,44 @@ func StartJob(ctx context.Context, client kubernetes.Interface, msg message.Depl
 	return nil
 }
 
-func createJob(suffix string, msg message.DeployInstruction, saName, naisProjectID, env, tenantName string) *batchv1.Job {
+func createJob(suffix string, msg message.DeployInstruction, naisProjectID, env, tenantName string, spec corev1.PodSpec) *batchv1.Job {
 	lbls := map[string]string{
 		"app": "naisd-self-upgrader",
 	}
+	container := corev1.Container{}
+	containerIndex := 0
+	for i, c := range spec.Containers {
+		if c.Name == "naisd" {
+			container = c
+			containerIndex = i
+		}
+	}
+	container.Args = []string{
+		"--production",
+		"--nais-project-id",
+		naisProjectID,
+		"--env",
+		env,
+		"--tenant-name",
+		tenantName,
+		"upgrade",
+	}
+	container.Image = image(msg.Values)
+	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
+		Name:      "instruction",
+		ReadOnly:  true,
+		MountPath: "/etc/naisd/self-upgrade",
+	})
+	spec.Containers[containerIndex] = container
+	spec.RestartPolicy = corev1.RestartPolicyNever
+	spec.Volumes = append(spec.Volumes, corev1.Volume{
+		Name: "instruction",
+		VolumeSource: corev1.VolumeSource{
+			Secret: &corev1.SecretVolumeSource{
+				SecretName: "naisd-self-upgrader-" + suffix,
+			},
+		},
+	})
 
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
@@ -61,58 +105,7 @@ func createJob(suffix string, msg message.DeployInstruction, saName, naisProject
 			Completions:             pointer.Int32(1),
 			TTLSecondsAfterFinished: pointer.Int32(int32((3 * time.Hour).Seconds())),
 			Template: corev1.PodTemplateSpec{
-				Spec: corev1.PodSpec{
-					Containers: []corev1.Container{
-						{
-							Name:  "naisd-self-upgrader",
-							Image: image(msg.Values),
-							Args: []string{
-								"--production",
-								"--nais-project-id",
-								naisProjectID,
-								"--env",
-								env,
-								"--tenant-name",
-								tenantName,
-								"upgrade",
-							},
-							SecurityContext: &corev1.SecurityContext{
-								RunAsNonRoot:             pointer.Bool(true),
-								AllowPrivilegeEscalation: pointer.Bool(false),
-								Capabilities: &corev1.Capabilities{
-									Drop: []corev1.Capability{"ALL"},
-								},
-								SeccompProfile: &corev1.SeccompProfile{
-									Type: corev1.SeccompProfileTypeRuntimeDefault,
-								},
-							},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "instruction",
-									ReadOnly:  true,
-									MountPath: "/etc/naisd/self-upgrade",
-								},
-							},
-						},
-					},
-					SecurityContext: &corev1.PodSecurityContext{
-						SeccompProfile: &corev1.SeccompProfile{
-							Type: corev1.SeccompProfileTypeRuntimeDefault,
-						},
-					},
-					ServiceAccountName: saName,
-					RestartPolicy:      corev1.RestartPolicyNever,
-					Volumes: []corev1.Volume{
-						{
-							Name: "instruction",
-							VolumeSource: corev1.VolumeSource{
-								Secret: &corev1.SecretVolumeSource{
-									SecretName: "naisd-self-upgrader-" + suffix,
-								},
-							},
-						},
-					},
-				},
+				Spec: spec,
 			},
 		},
 	}

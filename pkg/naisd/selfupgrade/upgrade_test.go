@@ -3,6 +3,8 @@ package selfupgrade
 import (
 	"context"
 	"encoding/json"
+	corev1 "k8s.io/api/core/v1"
+	"os"
 	"testing"
 	"time"
 
@@ -14,7 +16,19 @@ import (
 
 func TestFullRun(t *testing.T) {
 	ctx := context.Background()
-	client := fake.NewSimpleClientset()
+	hostname, err := os.Hostname()
+	if err != nil {
+		t.Fatal(err)
+	}
+	client := fake.NewSimpleClientset(&corev1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      hostname,
+			Namespace: namespace,
+		},
+		Spec: corev1.PodSpec{
+			Containers: []corev1.Container{{Name: "naisd"}},
+		},
+	})
 
 	deployInstruction := message.DeployInstruction{
 		Name:       "naisd",
@@ -29,13 +43,11 @@ func TestFullRun(t *testing.T) {
 		},
 	}
 
-	serviceAccount := "naisd-service-account"
-
 	now = func() time.Time {
 		return time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC)
 	}
 
-	err := StartJob(ctx, client, deployInstruction, serviceAccount, "nais-project", "dev", "test-tenant")
+	err = StartJob(ctx, client, deployInstruction, "nais-project", "dev", "test-tenant")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -53,62 +65,31 @@ func TestFullRun(t *testing.T) {
 	secretMap := objToMap(t, secret)
 
 	wantJob := map[string]any{
-		"metadata": map[string]any{
-			"creationTimestamp": nil,
-			"name":              "naisd-self-upgrader-20200101-000000",
-			"namespace":         "nais-system",
-			"labels": map[string]any{
-				"app": "naisd-self-upgrader",
-			},
-		},
+		"metadata": map[string]any{"creationTimestamp": nil, "labels": map[string]any{"app": string("naisd-self-upgrader")}, "name": string("naisd-self-upgrader-20200101-000000"), "namespace": string("nais-system")},
 		"spec": map[string]any{
-			"backoffLimit":            float64(1),
-			"completions":             float64(1),
-			"ttlSecondsAfterFinished": float64(10800), // 3 hours
+			"backoffLimit": float64(1),
+			"completions":  float64(1),
 			"template": map[string]any{
 				"metadata": map[string]any{"creationTimestamp": nil},
 				"spec": map[string]any{
 					"containers": []any{
 						map[string]any{
-							"name":  "naisd-self-upgrader",
-							"image": "europe-north1-docker.pkg.dev/nais-io/nais/images/naisd:newtag",
-							"args": []any{
-								"--production",
-								"--nais-project-id",
-								"nais-project",
-								"--env",
-								"dev",
-								"--tenant-name",
-								"test-tenant",
-								"upgrade",
+							"args": []any{string("--production"), string("--nais-project-id"), string("nais-project"), string("--env"), string("dev"),
+								string("--tenant-name"),
+								string("test-tenant"),
+								string("upgrade"),
 							},
-							"resources": map[string]any{},
-							"securityContext": map[string]any{
-								"allowPrivilegeEscalation": bool(false),
-								"capabilities":             map[string]any{"drop": []any{string("ALL")}},
-								"runAsNonRoot":             bool(true),
-								"seccompProfile":           map[string]any{"type": string("RuntimeDefault")},
-							},
-							"volumeMounts": []any{
-								map[string]any{
-									"mountPath": "/etc/naisd/self-upgrade",
-									"name":      "instruction",
-									"readOnly":  true,
-								},
-							},
+							"image":        string("europe-north1-docker.pkg.dev/nais-io/nais/images/naisd:newtag"),
+							"name":         string("naisd"),
+							"resources":    map[string]any{},
+							"volumeMounts": []any{map[string]any{"mountPath": string("/etc/naisd/self-upgrade"), "name": string("instruction"), "readOnly": true}},
 						},
 					},
-					"volumes": []any{
-						map[string]any{
-							"name":   "instruction",
-							"secret": map[string]any{"secretName": "naisd-self-upgrader-20200101-000000"},
-						},
-					},
-					"securityContext":    map[string]any{"seccompProfile": map[string]any{"type": string("RuntimeDefault")}},
-					"restartPolicy":      "Never",
-					"serviceAccountName": serviceAccount,
+					"restartPolicy": string("Never"),
+					"volumes":       []any{map[string]any{"name": string("instruction"), "secret": map[string]any{"secretName": string("naisd-self-upgrader-20200101-000000")}}},
 				},
 			},
+			"ttlSecondsAfterFinished": float64(10800),
 		},
 		"status": map[string]any{},
 	}
