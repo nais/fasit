@@ -26,7 +26,7 @@ mapping:
       - --clientRateLimitBurst=100
       - --splitPolicyReport=true
   serviceMonitor:
-    enabled: true
+    enabled: "true"
   config.webhooks:
     # exclude namespaces
     template: |
