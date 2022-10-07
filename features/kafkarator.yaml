@@ -6,6 +6,9 @@ environmentKinds:
 dependsOn:
   - allOf:
     - "aivenator"
+rolloutSource:
+  - org: nais
+    repo: kafkarator
 mapping:
   aiven.projects:
     value: "{{.Env.aiven_project_0}}"
