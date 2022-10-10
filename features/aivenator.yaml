@@ -3,6 +3,9 @@ source: https://github.com/nais/aivenator/tree/main/charts/aivenator
 version: 0.1.0
 environmentKinds:
   - "tenant"
+rolloutSource:
+  - org: nais
+    repo: aivenator
 mapping:
   aiven.projects:
     value: "{{.Env.aiven_project_0}}" # TODO: Handle multiple projects if it ever comes to that
