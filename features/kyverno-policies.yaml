@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/kyverno-policies
 source: https://github.com/nais/helm-charts/tree/main/charts/kyverno-policies
-version: 0.2.2
+version: 0.2.3
 environmentKinds:
   - tenant
   - management
@@ -8,4 +8,4 @@ autoInstall:
   - "tenant"
 dependsOn:
   - allOf:
-    - kyverno
+      - kyverno
