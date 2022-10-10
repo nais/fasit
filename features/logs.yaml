@@ -19,10 +19,8 @@ mapping:
 
   loki.loki.serviceAccount.annotations.iam\.gke\.io/gcp-service-account:
     displayName: "Loki KSA Workload Identity annotation"
-    value: 'loki-user@{{.Env.project_id.}}.iam.gserviceaccount.com'
+    value: 'loki-user@{{.Env.project_id}}.iam.gserviceaccount.com'
 
   loki.loki.gateway.service.loadBalancerIP:
     displayName: "Loki load balancer IP"
-    value: '{{ .Env.tenant_loki_ilb_ip }}'
-
-
+    value: '{{.Env.tenant_loki_ilb_ip}}'
