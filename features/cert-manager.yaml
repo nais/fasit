@@ -11,7 +11,7 @@ autoInstall:
   - "management"
 mapping:
   serviceAccount.annotations.iam\.gke\.io/gcp-service-account:
-    template: '{{ if ne .Kind "onprem" }}"{{ .Env.acme_service_account }}"{{ else }}null{{ end }}'
+    template: '{{ if ne .Kind "onprem" }}"{{ .Env.acme_service_account }}"{{ else }}"unused"{{ end }}'
     displayName: "GCP service account"
   installCRDs:
     template: "true"
