@@ -28,7 +28,7 @@ require (
 	github.com/stretchr/testify v1.8.0
 	github.com/vektah/gqlparser/v2 v2.5.1
 	golang.org/x/sync v0.0.0-20220819030929-7fc1605a5dde
-	google.golang.org/api v0.96.0
+	google.golang.org/api v0.98.0
 	google.golang.org/grpc v1.50.0
 	google.golang.org/protobuf v1.28.1
 	gopkg.in/yaml.v2 v2.4.0
