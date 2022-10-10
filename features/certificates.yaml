@@ -9,7 +9,7 @@ autoInstall:
   - "management"
 dependsOn:
   - allOf:
-    - "cert-manager"
+      - "cert-manager"
 config:
   acme.email:
     type: string
@@ -31,5 +31,5 @@ mapping:
     displayName: "Tenant"
   dnsNames:
     value:
-      - '*.{{if eq .Kind "tenant"}}{{.Env.name}}.{{end}}{{.Tenant.Name}}.cloud.nais.io'
+      - '*.{{if ne .Kind "management"}}{{.Env.name}}.{{end}}{{.Tenant.Name}}.cloud.nais.io'
     displayName: "DNS names"

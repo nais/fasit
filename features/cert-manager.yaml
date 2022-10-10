@@ -11,24 +11,34 @@ autoInstall:
   - "management"
 mapping:
   serviceAccount.annotations.iam\.gke\.io/gcp-service-account:
-    template: '{{ if ne .Kind "onprem" }}"{{ .Env.acme_service_account }}"{{ else }}"unused"{{ end }}'
+    value: "{{ .Env.acme_service_account }}"
     displayName: "GCP service account"
+    ignoreKind:
+      - "onprem"
   installCRDs:
     template: "true"
   global.leaderElection.namespace:
     value: "nais-system"
   webhook.containerSecurityContext.seccompProfile.type:
-    template: '{{ if ne .Kind "onprem" }}"RuntimeDefault"{{ else }}null{{ end }}'
+    value: RuntimeDefault
     description: Webhook Security profile
+    ignoreKind:
+      - "onprem"
   cainjector.containerSecurityContext.seccompProfile.type:
-    template: '{{ if ne .Kind "onprem" }}"RuntimeDefault"{{ else }}null{{ end }}'
+    value: RuntimeDefault
     description: CA Injector Security profile
+    ignoreKind:
+      - "onprem"
   startupapicheck.containerSecurityContext.seccompProfile.type:
-    template: '{{ if ne .Kind "onprem" }}"RuntimeDefault"{{ else }}null{{ end }}'
+    value: RuntimeDefault
     description: CA Injector Security profile
+    ignoreKind:
+      - "onprem"
   containerSecurityContext.seccompProfile.type:
-    template: '{{ if ne .Kind "onprem" }}"RuntimeDefault"{{ else }}null{{ end }}'
+    value: RuntimeDefault
     description: Security profile
+    ignoreKind:
+      - "onprem"
   extraArgs:
     value:
       - --issuer-ambient-credentials

@@ -190,7 +190,7 @@ func (r *repo) ConfigDelete(ctx context.Context, id uuid.UUID) error {
 }
 
 func (r *repo) HelmValues(ctx context.Context, feature feature.Feature, envID uuid.UUID, requiredFields []string) (map[string]any, []uuid.UUID, error) {
-	mv, err := r.MappingValuesForEnvironment(ctx, envID, true)
+	mv, envKind, err := r.MappingValuesForEnvironment(ctx, envID, true)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -223,7 +223,7 @@ func (r *repo) HelmValues(ctx context.Context, feature feature.Feature, envID uu
 		}
 	}
 
-	err = feature.Mapping.Generate(mv, mp)
+	err = feature.Mapping.Generate(envKind, mv, mp)
 	return mp, rolloutIDs, err
 }
 

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/nais/fasit/pkg/graph/model"
 )
 
 func TestRenderString(t *testing.T) {
@@ -39,11 +40,13 @@ func TestRenderString(t *testing.T) {
 }
 
 func TestMapping_Generate(t *testing.T) {
+	// All tests are run as "tenant" environment if not defined otherwise.
 	tests := map[string]struct {
 		mapping  Mapping
 		values   *MappingValues
 		target   map[string]any
 		expected map[string]any
+		envKind  model.EnvironmentKind
 		err      error
 	}{
 		"empty": {
@@ -60,6 +63,18 @@ func TestMapping_Generate(t *testing.T) {
 			},
 			target:   map[string]any{},
 			expected: map[string]any{"foo": "foo"},
+		},
+		"single_level_with_ignore": {
+			values: &MappingValues{Tenant: MappingTenant{Name: "foo"}},
+			mapping: Mapping{
+				"foo": MappingConfig{
+					DisplayName: "Tenant name",
+					Value:       "{{.Tenant.Name}}",
+					IgnoreKind:  []model.EnvironmentKind{model.EnvironmentKindTenant},
+				},
+			},
+			target:   map[string]any{},
+			expected: map[string]any{},
 		},
 		"multi_level": {
 			values: &MappingValues{Tenant: MappingTenant{Name: "foo"}, Management: map[string]any{"project_id": "gcp"}},
@@ -121,7 +136,11 @@ func TestMapping_Generate(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			err := tc.mapping.Generate(tc.values, tc.target)
+			kind := model.EnvironmentKindTenant
+			if tc.envKind != "" {
+				kind = tc.envKind
+			}
+			err := tc.mapping.Generate(kind, tc.values, tc.target)
 			if diff := cmp.Diff(tc.err, err, cmp.Comparer(errors.Is)); diff != "" {
 				t.Errorf("Generate(%v) mismatch (-want +got):\n%s", tc.values, diff)
 			}

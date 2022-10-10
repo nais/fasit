@@ -18,7 +18,7 @@ type EnvironmentValueRepo interface {
 	EnvironmentValueGet(ctx context.Context, environmentID uuid.UUID, key string, showSensitive bool) (*model.EnvironmentValue, error)
 	EnvironmentValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) ([]*model.EnvironmentValue, error)
 	EnvironmentValueStore(ctx context.Context, environmentID uuid.UUID, key string, value json.RawMessage, secret bool) error
-	MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) (*feature.MappingValues, error)
+	MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) (*feature.MappingValues, model.EnvironmentKind, error)
 }
 
 func (r *repo) EnvironmentValueStore(ctx context.Context, environmentID uuid.UUID, key string, value json.RawMessage, secret bool) error {
@@ -73,15 +73,15 @@ func (r *repo) EnvironmentValuesForEnvironment(ctx context.Context, envID uuid.U
 	return ret, nil
 }
 
-func (r *repo) MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) (*feature.MappingValues, error) {
+func (r *repo) MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) (*feature.MappingValues, model.EnvironmentKind, error) {
 	env, err := r.querier.EnvironmentGet(ctx, envID)
 	if err != nil {
-		return nil, fmt.Errorf("envValuesForEnv: failed to get environment: %w", err)
+		return nil, "", fmt.Errorf("envValuesForEnv: failed to get environment: %w", err)
 	}
 
 	tenant, err := r.TenantGet(ctx, env.TenantID)
 	if err != nil {
-		return nil, fmt.Errorf("envValuesForEnv: failed to get tenant: %w", err)
+		return nil, model.EnvironmentKind(env.Kind), fmt.Errorf("envValuesForEnv: failed to get tenant: %w", err)
 	}
 	mv := &feature.MappingValues{
 		Kind: model.EnvironmentKind(env.Kind),
@@ -96,15 +96,15 @@ func (r *repo) MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID,
 	})
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return mv, nil
+			return mv, model.EnvironmentKind(env.Kind), nil
 		}
-		return nil, fmt.Errorf("envValuesForEnv: failed to get environment values: %w", err)
+		return nil, model.EnvironmentKind(env.Kind), fmt.Errorf("envValuesForEnv: failed to get environment values: %w", err)
 	}
 
 	for _, env := range values {
 		val := map[string]any{}
 		if err := json.Unmarshal(env.Values.Bytes, &val); err != nil {
-			return nil, fmt.Errorf("envValuesForEnv: failed to unmarshal values for %q: %w", env.Name, err)
+			return nil, model.EnvironmentKind(env.Kind), fmt.Errorf("envValuesForEnv: failed to unmarshal values for %q: %w", env.Name, err)
 		}
 		val["name"] = env.Name
 
@@ -118,5 +118,5 @@ func (r *repo) MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID,
 		}
 	}
 
-	return mv, nil
+	return mv, model.EnvironmentKind(env.Kind), nil
 }

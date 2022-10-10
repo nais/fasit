@@ -112,12 +112,12 @@ OUTER:
 		return ret, nil
 	}
 
-	mappingValues, err := r.Repo.MappingValuesForEnvironment(ctx, *envID, false)
+	mappingValues, envKind, err := r.Repo.MappingValuesForEnvironment(ctx, *envID, false)
 	if err != nil {
 		return nil, err
 	}
 
-	ret.Mapping, err = mappingToSlice(f, mappingValues)
+	ret.Mapping, err = mappingToSlice(f, envKind, mappingValues)
 	if err != nil {
 		return nil, err
 	}
@@ -142,12 +142,12 @@ func (r *queryResolver) EnvConfig(ctx context.Context, feature string, envID uui
 		return ret, nil
 	}
 
-	mappingValues, err := r.Repo.MappingValuesForEnvironment(ctx, envID, false)
+	mappingValues, envKind, err := r.Repo.MappingValuesForEnvironment(ctx, envID, false)
 	if err != nil {
 		return nil, err
 	}
 
-	ret.Mapping, err = mappingToSlice(f, mappingValues)
+	ret.Mapping, err = mappingToSlice(f, envKind, mappingValues)
 	if err != nil {
 		return nil, err
 	}
@@ -179,5 +179,7 @@ func (r *Resolver) GlobalConfiguration() graphgen.GlobalConfigurationResolver {
 	return &globalConfigurationResolver{r}
 }
 
-type envConfigurationResolver struct{ *Resolver }
-type globalConfigurationResolver struct{ *Resolver }
+type (
+	envConfigurationResolver    struct{ *Resolver }
+	globalConfigurationResolver struct{ *Resolver }
+)

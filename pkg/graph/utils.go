@@ -49,9 +49,9 @@ func contains[T comparable](s []T, value T) bool {
 	return false
 }
 
-func mappingToSlice(f *feature.Feature, env *feature.MappingValues) ([]*model.MappingValue, error) {
+func mappingToSlice(f *feature.Feature, envKind model.EnvironmentKind, env *feature.MappingValues) ([]*model.MappingValue, error) {
 	target := map[string]any{}
-	if err := f.Mapping.Generate(env, target); err != nil {
+	if err := f.Mapping.Generate(envKind, env, target); err != nil {
 		return nil, err
 	}
 

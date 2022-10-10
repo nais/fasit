@@ -587,7 +587,7 @@ func (_m *Repo) KubernetesNodesForEnv(ctx context.Context, envID uuid.UUID) ([]*
 }
 
 // MappingValuesForEnvironment provides a mock function with given fields: ctx, envID, showSensitive
-func (_m *Repo) MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) (*feature.MappingValues, error) {
+func (_m *Repo) MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) (*feature.MappingValues, model.EnvironmentKind, error) {
 	ret := _m.Called(ctx, envID, showSensitive)
 
 	var r0 *feature.MappingValues
@@ -599,14 +599,21 @@ func (_m *Repo) MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, bool) error); ok {
+	var r1 model.EnvironmentKind
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, bool) model.EnvironmentKind); ok {
 		r1 = rf(ctx, envID, showSensitive)
 	} else {
-		r1 = ret.Error(1)
+		r1 = ret.Get(1).(model.EnvironmentKind)
 	}
 
-	return r0, r1
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, uuid.UUID, bool) error); ok {
+		r2 = rf(ctx, envID, showSensitive)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // Metrics provides a mock function with given fields:
