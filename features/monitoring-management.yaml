@@ -57,6 +57,10 @@ mapping:
             implementation: prometheus
           url: http://{{ $cluster.tenant_alertmanager_ilb_ip }}:9093
           access: proxy
+        - name: {{ $cluster.name }}-loki
+          type: loki
+          url: http://{{ $cluster.tenant_loki_ilb_ip }}
+          access: proxy
       {{ end }}
   grafana.server.domain:
     value: "{{.Tenant.Name}}.cloud.nais.io"
