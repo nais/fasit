@@ -23,6 +23,6 @@ config:
   ingress-nginx.controller.replicaCount:
     type: int
     displayName: "Replicas"
-  controller.metrics.serviceMonitor:
+  ingress-nginx.controller.metrics.serviceMonitor:
     type: bool
     displayName: "Enable service monitor"
