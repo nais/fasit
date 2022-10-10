@@ -42,3 +42,18 @@ mapping:
   naiserator.features.cnrm:
     template: '{{ne .Kind "onprem"}}'
     displayName: "Enable CNRM"
+  naiserator.features.prometheus-operator:
+    template: '{{ne .Kind "onprem"}}'
+    displayName: "Enable Prometheus Operator"
+  naiserator.features.gcp:
+    template: '{{ne .Kind "onprem"}}'
+    displayName: "Enable GCP"
+  naiserator.features.seccomp:
+    template: '{{ne .Kind "onprem"}}'
+    displayName: "Enable Seccomp"
+  naiserator.features.network-policy:
+    template: '{{ne .Kind "onprem"}}'
+    displayName: "Enable Network Policy"
+  naiserator.features.vault:
+    template: '{{eq .Kind "onprem"}}'
+    displayName: "Enable Vault"
