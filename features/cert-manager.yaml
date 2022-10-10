@@ -18,16 +18,16 @@ mapping:
   global.leaderElection.namespace:
     value: "nais-system"
   webhook.containerSecurityContext.seccompProfile.type:
-    value: RuntimeDefault
+    template: '{{ if ne .Kind "onprem" }}"RuntimeDefault"{{ else }}null{{ end }}'
     description: Webhook Security profile
   cainjector.containerSecurityContext.seccompProfile.type:
-    value: RuntimeDefault
+    template: '{{ if ne .Kind "onprem" }}"RuntimeDefault"{{ else }}null{{ end }}'
     description: CA Injector Security profile
   startupapicheck.containerSecurityContext.seccompProfile.type:
-    value: RuntimeDefault
+    template: '{{ if ne .Kind "onprem" }}"RuntimeDefault"{{ else }}null{{ end }}'
     description: CA Injector Security profile
   containerSecurityContext.seccompProfile.type:
-    value: RuntimeDefault
+    template: '{{ if ne .Kind "onprem" }}"RuntimeDefault"{{ else }}null{{ end }}'
     description: Security profile
   extraArgs:
     value:
