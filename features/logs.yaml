@@ -17,10 +17,10 @@ mapping:
     displayName: "Loki admin bucket"
     value: 'loki-admin-{{.Tenant.Name}}-{{.Env.name}}'
 
-  loki.loki.serviceAccount.annotations.iam\.gke\.io/gcp-service-account:
+  loki.serviceAccount.annotations.iam\.gke\.io/gcp-service-account:
     displayName: "Loki KSA Workload Identity annotation"
     value: 'loki-user@{{.Env.project_id}}.iam.gserviceaccount.com'
 
-  loki.loki.gateway.service.loadBalancerIP:
+  loki.gateway.service.loadBalancerIP:
     displayName: "Loki load balancer IP"
     value: '{{.Env.tenant_loki_ilb_ip}}'
