@@ -4,10 +4,10 @@ version: 0.3.0
 environmentKinds:
   - "tenant"
   - "management"
+  - "onprem"
 autoInstall:
   - "tenant"
   - "management"
-  - "onprem"
 dependsOn:
   - anyOf:
       - "loadbalancer"

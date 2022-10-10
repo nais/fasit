@@ -4,6 +4,7 @@ version: 0.2.2
 repo: ""
 environmentKinds:
   - "tenant"
+  - "onprem"
 autoInstall:
   - "tenant"
 dependsOn:
