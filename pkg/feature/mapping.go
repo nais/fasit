@@ -48,7 +48,7 @@ func (m Mapping) Generate(envKind model.EnvironmentKind, values *MappingValues, 
 			return err
 		}
 
-		if contains(v.IgnoreKind, envKind) {
+		if containsKind(v.IgnoreKind, envKind) {
 			continue
 		}
 
@@ -200,7 +200,7 @@ func repairMapAny(v any) any {
 	return v
 }
 
-func contains(s []model.EnvironmentKind, e model.EnvironmentKind) bool {
+func containsKind(s []model.EnvironmentKind, e model.EnvironmentKind) bool {
 	for _, a := range s {
 		if a == e {
 			return true

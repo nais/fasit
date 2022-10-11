@@ -17,6 +17,6 @@ func (r *queryResolver) Values(ctx context.Context, feature string, env uuid.UUI
 	if f == nil {
 		return nil, fmt.Errorf("feature %s not found", feature)
 	}
-	vals, _, err := r.Repo.HelmValues(ctx, *f, env, f.RequiredFields())
+	vals, _, err := r.Repo.HelmValues(ctx, *f, env)
 	return vals, err
 }

@@ -50,9 +50,12 @@ type Feature struct {
 	Timeout time.Duration `yaml:"timeout,omitempty" json:"timeout,omitempty" jsonschema:"omitempty,type=string,pattern=^(\\d+h)?(\\d+m)?(\\d+s)?$"`
 }
 
-func (f *Feature) RequiredFields() []string {
+func (f *Feature) RequiredFields(envKind model.EnvironmentKind) []string {
 	var requiredFields []string
 	for k, v := range f.Config {
+		if containsKind(v.IgnoreKind, envKind) {
+			continue
+		}
 		if v.Required {
 			requiredFields = append(requiredFields, k)
 		}

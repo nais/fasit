@@ -325,9 +325,19 @@ func TestRepo_HelmValues_OK(t *testing.T) {
 	r := newTestRepo(t, fmt.Sprintf(q1, tenantid), fmt.Sprintf(q2, envid, tenantid))
 	defer r.Close()
 
+	feature := feature.Feature{
+		Name: "feature5",
+		Config: feature.Config{
+			"my.key": feature.ConfigType{
+				Type:   model.ConfigTypeString,
+				Secret: true,
+			},
+		},
+	}
+
 	config := model.NewConfiguration{
 		EnvironmentID: &envid,
-		Feature:       "feature5",
+		Feature:       feature.Name,
 		Key:           "my.key",
 		Value:         []byte(`"stringval"`),
 		Secret:        true,
@@ -338,7 +348,7 @@ func TestRepo_HelmValues_OK(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, _, err := r.HelmValues(context.Background(), feature.Feature{Name: "feature5"}, envid, []string{"my.key"})
+	got, _, err := r.HelmValues(context.Background(), feature, envid)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -362,6 +372,21 @@ func TestRepo_HelmValues_MissingRequiredField(t *testing.T) {
 	r := newTestRepo(t, fmt.Sprintf(q1, tenantid), fmt.Sprintf(q2, envid, tenantid))
 	defer r.Close()
 
+	feature := feature.Feature{
+		Name: "feature5",
+		Config: feature.Config{
+			"my.key": feature.ConfigType{
+				Type:   model.ConfigTypeString,
+				Secret: true,
+			},
+			"no.key": feature.ConfigType{
+				Type:     model.ConfigTypeString,
+				Secret:   true,
+				Required: true,
+			},
+		},
+	}
+
 	config := model.NewConfiguration{
 		EnvironmentID: &envid,
 		Feature:       "feature5",
@@ -375,7 +400,7 @@ func TestRepo_HelmValues_MissingRequiredField(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, _, err = r.HelmValues(context.Background(), feature.Feature{Name: "feature5"}, envid, []string{"no.key"})
+	_, _, err = r.HelmValues(context.Background(), feature, envid)
 	if !errors.Is(err, &ErrMissingRequiredFields{}) {
 		t.Errorf("got: %v, want ErrMissingRequiredFields", err)
 	}
@@ -411,7 +436,7 @@ func TestRepo_HelmValues_InvaldKeyNesting(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, _, err = r.HelmValues(context.Background(), feature.Feature{Name: "feature5"}, envid, nil)
+	_, _, err = r.HelmValues(context.Background(), feature.Feature{Name: "feature5"}, envid)
 	if err == nil || !strings.HasSuffix(err.Error(), "is not nestable") {
 		t.Errorf("got: %v, want \"key `key` is not nestable\"", err)
 	}
@@ -456,7 +481,7 @@ func TestRepo_HelmValues_WithMappingValues(t *testing.T) {
 		}
 	}
 
-	got, _, err := r.HelmValues(context.Background(), f, envid, nil)
+	got, _, err := r.HelmValues(context.Background(), f, envid)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -465,6 +490,139 @@ func TestRepo_HelmValues_WithMappingValues(t *testing.T) {
 		"kind":     "tenant",
 		"names":    map[string]any{"environment": "env1", "tenant": "tenant1"},
 		"projects": map[string]any{"env": "env-project", "mgmt": "my-project"},
+	}
+
+	if !cmp.Equal(want, got) {
+		t.Errorf("diff -want +got:\n%v", cmp.Diff(want, got))
+	}
+}
+
+func TestRepo_HelmValues_WithIgnoredKeys_Ignored(t *testing.T) {
+	envid := uuid.New()
+	tenantid := uuid.New()
+	q1 := `INSERT INTO tenants (id, name) VALUES ('%s', 'tenant1')`
+	q2 := `INSERT INTO environments (id, tenant_id, name, kind) VALUES ('%s', '%s', 'env1', 'onprem')`
+	r := newTestRepo(t, fmt.Sprintf(q1, tenantid), fmt.Sprintf(q2, envid, tenantid))
+	defer r.Close()
+
+	feature := feature.Feature{
+		Name: "feature6",
+		Config: feature.Config{
+			"my.key": feature.ConfigType{
+				Type:   model.ConfigTypeString,
+				Secret: true,
+			},
+			"ignore.key": feature.ConfigType{
+				Type:     model.ConfigTypeString,
+				Secret:   true,
+				Required: true,
+				IgnoreKind: []model.EnvironmentKind{
+					model.EnvironmentKindOnprem,
+				},
+			},
+		},
+	}
+
+	config := model.NewConfiguration{
+		EnvironmentID: &envid,
+		Feature:       feature.Name,
+		Key:           "my.key",
+		Value:         []byte(`"stringval"`),
+		Secret:        true,
+	}
+	_, err := r.ConfigCreate(context.Background(), config)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	globConfig := model.NewConfiguration{
+		Feature: feature.Name,
+		Key:     "ignore.key",
+		Value:   []byte(`"ignore"`),
+		Secret:  true,
+	}
+	_, err = r.ConfigCreate(context.Background(), globConfig)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got, _, err := r.HelmValues(context.Background(), feature, envid)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := map[string]any{
+		"my": map[string]any{
+			"key": pgtype.JSONB{Bytes: []byte(`"stringval"`), Status: pgtype.Present},
+		},
+	}
+
+	if !cmp.Equal(want, got) {
+		t.Errorf("diff -want +got:\n%v", cmp.Diff(want, got))
+	}
+}
+
+func TestRepo_HelmValues_WithIgnoredKeys_NotIgnored(t *testing.T) {
+	envid := uuid.New()
+	tenantid := uuid.New()
+	q1 := `INSERT INTO tenants (id, name) VALUES ('%s', 'tenant1')`
+	q2 := `INSERT INTO environments (id, tenant_id, name, kind) VALUES ('%s', '%s', 'env1', 'tenant')`
+	r := newTestRepo(t, fmt.Sprintf(q1, tenantid), fmt.Sprintf(q2, envid, tenantid))
+	defer r.Close()
+
+	feature := feature.Feature{
+		Name: "feature6",
+		Config: feature.Config{
+			"my.key": feature.ConfigType{
+				Type:   model.ConfigTypeString,
+				Secret: true,
+			},
+			"ignore.key": feature.ConfigType{
+				Type:     model.ConfigTypeString,
+				Secret:   true,
+				Required: true,
+				IgnoreKind: []model.EnvironmentKind{
+					model.EnvironmentKindOnprem,
+				},
+			},
+		},
+	}
+
+	config := model.NewConfiguration{
+		EnvironmentID: &envid,
+		Feature:       feature.Name,
+		Key:           "my.key",
+		Value:         []byte(`"stringval"`),
+		Secret:        true,
+	}
+	_, err := r.ConfigCreate(context.Background(), config)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	globConfig := model.NewConfiguration{
+		Feature: feature.Name,
+		Key:     "ignore.key",
+		Value:   []byte(`"ignore"`),
+		Secret:  true,
+	}
+	_, err = r.ConfigCreate(context.Background(), globConfig)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	got, _, err := r.HelmValues(context.Background(), feature, envid)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := map[string]any{
+		"my": map[string]any{
+			"key": pgtype.JSONB{Bytes: []byte(`"stringval"`), Status: pgtype.Present},
+		},
+		"ignore": map[string]any{
+			"key": pgtype.JSONB{Bytes: []uint8(`"ignore"`), Status: pgtype.Present},
+		},
 	}
 
 	if !cmp.Equal(want, got) {
