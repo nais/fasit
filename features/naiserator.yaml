@@ -14,6 +14,21 @@ config:
   imageTag:
     type: string
     displayName: "Image tag"
+  naiserator.vault.address:
+    type: string
+    required: true
+    ignoreKind:
+      - "tenant"
+  naiserator.vault.auth-path:
+    type: string
+    required: true
+    ignoreKind:
+      - "tenant"
+  naiserator.vault.kv-path:
+    type: string
+    required: true
+    ignoreKind:
+      - "tenant"
   naiserator.kafka.enabled:
     type: bool
     displayName: "Enable Kafka"
@@ -33,6 +48,10 @@ config:
     type: bool
     displayName: "Enable Kafkarator"
 mapping:
+  naiserator.vault.init-container-image:
+    value: "navikt/vault-sidekick:v0.3.10-26ad67d"
+    ignoreKind:
+      - "tenant"
   naiserator.cluster-name:
     value: "{{.Env.name}}"
     displayName: "Cluster name"
