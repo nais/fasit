@@ -197,10 +197,8 @@ func (r *repo) HelmValues(ctx context.Context, feature feature.Feature, envID uu
 
 	excludeKeys := []string{}
 	for key, f := range feature.Config {
-		for _, ek := range f.IgnoreKind {
-			if ek == envKind {
-				excludeKeys = append(excludeKeys, key)
-			}
+		if f.IgnoreKind.Contains(envKind) {
+			excludeKeys = append(excludeKeys, key)
 		}
 	}
 

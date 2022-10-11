@@ -53,7 +53,7 @@ type Feature struct {
 func (f *Feature) RequiredFields(envKind model.EnvironmentKind) []string {
 	var requiredFields []string
 	for k, v := range f.Config {
-		if containsKind(v.IgnoreKind, envKind) {
+		if v.IgnoreKind.Contains(envKind) {
 			continue
 		}
 		if v.Required {

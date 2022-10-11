@@ -7,7 +7,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/graph/graphgen"
 	"github.com/nais/fasit/pkg/graph/model"
@@ -54,8 +53,16 @@ func (r *mutationResolver) ConfigurationDelete(ctx context.Context, id uuid.UUID
 
 // Configuration is the resolver for the configuration field.
 func (r *queryResolver) Configuration(ctx context.Context, feature string, envID *uuid.UUID) (*model.EnvConfig, error) {
+	envKind := model.EnvironmentKind("")
 	ret := &model.EnvConfig{}
 	if envID != nil {
+		env, err := r.Repo.EnvironmentGet(ctx, *envID)
+		if err != nil {
+			return nil, fmt.Errorf("environment %q not found: %w", envID, err)
+		}
+
+		envKind = env.Kind
+
 		// Get config for environment
 		res, err := r.Repo.ConfigGetForEnv(ctx, feature, *envID)
 		if err != nil {
@@ -107,6 +114,7 @@ OUTER:
 			Description: val.Description,
 		})
 	}
+	ret.Configuration = removeIgnoredKinds(ret.Configuration, f, envKind)
 
 	if len(f.Mapping) == 0 || envID == nil {
 		return ret, nil
@@ -127,6 +135,10 @@ OUTER:
 
 // EnvConfig is the resolver for the envConfig field.
 func (r *queryResolver) EnvConfig(ctx context.Context, feature string, envID uuid.UUID) (*model.EnvConfig, error) {
+	env, err := r.Repo.EnvironmentGet(ctx, envID)
+	if err != nil {
+		return nil, err
+	}
 	config, err := r.Repo.EnvConfig(ctx, feature, envID)
 	if err != nil {
 		return nil, err
@@ -137,6 +149,7 @@ func (r *queryResolver) EnvConfig(ctx context.Context, feature string, envID uui
 	}
 
 	f := r.Resolver.Features.Get(feature)
+	ret.Configuration = removeIgnoredKinds(ret.Configuration, f, env.Kind)
 
 	if f == nil || len(f.Mapping) == 0 {
 		return ret, nil

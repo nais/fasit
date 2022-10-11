@@ -13,11 +13,11 @@ import (
 type Mapping map[string]MappingConfig
 
 type MappingConfig struct {
-	DisplayName string                  `yaml:"displayName,omitempty" json:"displayName,omitempty"`
-	Description string                  `yaml:"description,omitempty" json:"description,omitempty"`
-	Value       any                     `yaml:"value,omitempty" json:"value,omitempty" jsonschema:"oneof_required=value"`
-	Template    string                  `yaml:"template,omitempty" json:"template,omitempty" jsonschema:"oneof_required=template"`
-	IgnoreKind  []model.EnvironmentKind `yaml:"ignoreKind,omitempty" json:"ignoreKind,omitempty"`
+	DisplayName string      `yaml:"displayName,omitempty" json:"displayName,omitempty"`
+	Description string      `yaml:"description,omitempty" json:"description,omitempty"`
+	Value       any         `yaml:"value,omitempty" json:"value,omitempty" jsonschema:"oneof_required=value"`
+	Template    string      `yaml:"template,omitempty" json:"template,omitempty" jsonschema:"oneof_required=template"`
+	IgnoreKind  IgnoreKinds `yaml:"ignoreKind,omitempty" json:"ignoreKind,omitempty"`
 }
 
 type MappingTenant struct {
@@ -48,7 +48,7 @@ func (m Mapping) Generate(envKind model.EnvironmentKind, values *MappingValues, 
 			return err
 		}
 
-		if containsKind(v.IgnoreKind, envKind) {
+		if v.IgnoreKind.Contains(envKind) {
 			continue
 		}
 
@@ -198,13 +198,4 @@ func repairMapAny(v any) any {
 		return nm
 	}
 	return v
-}
-
-func containsKind(s []model.EnvironmentKind, e model.EnvironmentKind) bool {
-	for _, a := range s {
-		if a == e {
-			return true
-		}
-	}
-	return false
 }

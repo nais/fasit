@@ -8,12 +8,23 @@ import (
 )
 
 type ConfigType struct {
-	Type        model.ConfigType        `json:"type" yaml:"type" jsonschema:"enum=string,enum=int,enum=bool,enum=string_array"`
-	Secret      bool                    `json:"secret,omitempty" yaml:"secret,omitempty"`
-	Required    bool                    `json:"required,omitempty" yaml:"required,omitempty"`
-	DisplayName string                  `json:"displayName,omitempty" yaml:"displayName,omitempty"`
-	Description string                  `json:"description,omitempty" yaml:"description,omitempty"`
-	IgnoreKind  []model.EnvironmentKind `json:"ignoreKind,omitempty" yaml:"ignoreKind,omitempty"`
+	Type        model.ConfigType `json:"type" yaml:"type" jsonschema:"enum=string,enum=int,enum=bool,enum=string_array"`
+	Secret      bool             `json:"secret,omitempty" yaml:"secret,omitempty"`
+	Required    bool             `json:"required,omitempty" yaml:"required,omitempty"`
+	DisplayName string           `json:"displayName,omitempty" yaml:"displayName,omitempty"`
+	Description string           `json:"description,omitempty" yaml:"description,omitempty"`
+	IgnoreKind  IgnoreKinds      `json:"ignoreKind,omitempty" yaml:"ignoreKind,omitempty"`
+}
+
+type IgnoreKinds []model.EnvironmentKind
+
+func (i IgnoreKinds) Contains(kind model.EnvironmentKind) bool {
+	for _, k := range i {
+		if k == kind {
+			return true
+		}
+	}
+	return false
 }
 
 func (c ConfigType) Valid(value json.RawMessage) error {
