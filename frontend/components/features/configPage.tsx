@@ -37,6 +37,7 @@ const ConfigPage = ({feature}: ConfigProps) => {
                 required: false,
                 enabled: false,
                 env: true,
+                chartValue: c.chartValue,
                 }
             } else {
                 configs[c.key] = {
@@ -51,6 +52,7 @@ const ConfigPage = ({feature}: ConfigProps) => {
                 required: false,
                 enabled: false,
                 env: false,
+                chartValue: c.chartValue,
                 }
             }
         })
@@ -63,7 +65,8 @@ const ConfigPage = ({feature}: ConfigProps) => {
                         key: k,
                         type: feature.config[k].type,
                         secret: feature.config[k].secret,
-                        required: feature.config[k].required
+                        required: feature.config[k].required,
+                        chartValue: "default",
                     }
                 } else {
                     configs[k].type = feature.config[k].type

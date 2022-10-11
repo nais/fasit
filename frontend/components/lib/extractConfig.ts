@@ -30,6 +30,7 @@ const extractConfig = (
           required: false,
           enabled: false,
           env: true,
+          chartValue: c.chartValue,
         }
       } else {
         configs[c.key] = {
@@ -44,6 +45,7 @@ const extractConfig = (
           required: false,
           enabled: false,
           env: false,
+          chartValue: c.chartValue,
         }
       }
     })

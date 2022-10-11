@@ -38,6 +38,7 @@ export enum ConfigType {
 }
 
 export type Configuration = {
+  chartValue: Scalars['RawMessage']
   created: Scalars['Time']
   description: Scalars['String']
   displayName: Scalars['String']
@@ -63,6 +64,7 @@ export type EnvConfig = {
 
 export type EnvConfiguration = Configuration & {
   __typename?: 'EnvConfiguration'
+  chartValue: Scalars['RawMessage']
   created: Scalars['Time']
   description: Scalars['String']
   displayName: Scalars['String']
@@ -140,6 +142,7 @@ export type FeatureState = {
 
 export type GlobalConfiguration = Configuration & {
   __typename?: 'GlobalConfiguration'
+  chartValue: Scalars['RawMessage']
   created: Scalars['Time']
   description: Scalars['String']
   displayName: Scalars['String']
@@ -450,6 +453,7 @@ export type ConfigurationQuery = {
           value: any
           displayName: string
           secret: boolean
+          chartValue: any
           feature: { __typename?: 'Feature'; name: string }
         }
       | {
@@ -461,6 +465,7 @@ export type ConfigurationQuery = {
           value: any
           displayName: string
           secret: boolean
+          chartValue: any
           feature: { __typename?: 'Feature'; name: string }
         }
     >
@@ -805,6 +810,7 @@ export const ConfigurationDocument = gql`
         value
         displayName
         secret
+        chartValue
       }
       mapping {
         key

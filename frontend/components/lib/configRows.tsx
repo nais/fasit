@@ -6,6 +6,7 @@ import {navGronn, navRod} from "../../styles/constants";
 import * as React from "react";
 import styled from "styled-components";
 import ReactTooltip from 'react-tooltip';
+import ValuesCollapse from "../tenant/valuesCollapse";
 
 const Center = styled.div`
   display: flex;
@@ -35,7 +36,7 @@ const StyledAdd = styled(Add)`
 `
 const StyledValue = styled.pre`
   font-size: 0.6rem;
-  overflow: scroll;
+  overflow: auto;
   width: inherit;
 `
 
@@ -54,6 +55,7 @@ export interface Config {
     secret: boolean
     required: boolean
     enabled?: boolean
+    chartValue: any
 }
 
 export interface Configs {
@@ -93,7 +95,7 @@ const ConfigRows = ({
             return JSON.stringify(conf.value).replace(/"/g, '')
 
         }
-        return '<default>'
+        return <ValuesCollapse content={{value: conf.chartValue || "empty?", displayName: "asd", key: conf.key}} />
 
     }
     return <>{keys.map((key) => {
