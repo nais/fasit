@@ -7,7 +7,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/google/uuid"
+	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph/graphgen"
 	"github.com/nais/fasit/pkg/graph/model"
 )
@@ -22,9 +24,61 @@ func (r *envConfigurationResolver) Feature(ctx context.Context, obj *model.EnvCo
 	return r.resolveFeatureByName(obj.FeatureName)
 }
 
+// ChartValue is the resolver for the chartValue field.
+func (r *envConfigurationResolver) ChartValue(ctx context.Context, obj *model.EnvConfiguration) (json.RawMessage, error) {
+	vals := r.HelmChartValues.Get(obj.FeatureName)
+	if vals == nil {
+		return json.RawMessage(`"Empty?"`), nil
+	}
+
+	paths, err := feature.SmartDotSplit(obj.Key)
+	if err != nil {
+		return json.RawMessage(`"error!"`), nil
+	}
+
+	var ok bool
+	for i, path := range paths {
+		if i == len(paths)-1 {
+			return json.Marshal(vals[path])
+		}
+		vals, ok = vals[path].(map[string]interface{})
+		if !ok {
+			return json.RawMessage(`"error!"`), nil
+		}
+	}
+
+	return json.RawMessage(`"error!"`), nil
+}
+
 // Feature is the resolver for the feature field.
 func (r *globalConfigurationResolver) Feature(ctx context.Context, obj *model.GlobalConfiguration) (*model.Feature, error) {
 	return r.resolveFeatureByName(obj.FeatureName)
+}
+
+// ChartValue is the resolver for the chartValue field.
+func (r *globalConfigurationResolver) ChartValue(ctx context.Context, obj *model.GlobalConfiguration) (json.RawMessage, error) {
+	vals := r.HelmChartValues.Get(obj.FeatureName)
+	if vals == nil {
+		return json.RawMessage(`"Empty?"`), nil
+	}
+
+	paths, err := feature.SmartDotSplit(obj.Key)
+	if err != nil {
+		return json.RawMessage(`"error!"`), nil
+	}
+
+	var ok bool
+	for i, path := range paths {
+		if i == len(paths)-1 {
+			return json.Marshal(vals[path])
+		}
+		vals, ok = vals[path].(map[string]interface{})
+		if !ok {
+			return json.RawMessage(`"error!"`), nil
+		}
+	}
+
+	return json.RawMessage(`"error!"`), nil
 }
 
 // ConfigurationCreate is the resolver for the configurationCreate field.

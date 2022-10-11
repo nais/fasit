@@ -70,6 +70,7 @@ type ComplexityRoot struct {
 	}
 
 	EnvConfiguration struct {
+		ChartValue  func(childComplexity int) int
 		Created     func(childComplexity int) int
 		Description func(childComplexity int) int
 		DisplayName func(childComplexity int) int
@@ -122,6 +123,7 @@ type ComplexityRoot struct {
 	}
 
 	GlobalConfiguration struct {
+		ChartValue  func(childComplexity int) int
 		Created     func(childComplexity int) int
 		Description func(childComplexity int) int
 		DisplayName func(childComplexity int) int
@@ -266,6 +268,8 @@ type ComplexityRoot struct {
 type EnvConfigurationResolver interface {
 	Environment(ctx context.Context, obj *model.EnvConfiguration) (*model.Environment, error)
 	Feature(ctx context.Context, obj *model.EnvConfiguration) (*model.Feature, error)
+
+	ChartValue(ctx context.Context, obj *model.EnvConfiguration) (json.RawMessage, error)
 }
 type EnvironmentResolver interface {
 	FeatureStates(ctx context.Context, obj *model.Environment) ([]*model.FeatureState, error)
@@ -282,6 +286,8 @@ type FeatureStateResolver interface {
 }
 type GlobalConfigurationResolver interface {
 	Feature(ctx context.Context, obj *model.GlobalConfiguration) (*model.Feature, error)
+
+	ChartValue(ctx context.Context, obj *model.GlobalConfiguration) (json.RawMessage, error)
 }
 type MutationResolver interface {
 	TenantCreate(ctx context.Context, tenant model.TenantCreate) (*model.Tenant, error)
@@ -371,6 +377,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.EnvConfig.Mapping(childComplexity), true
+
+	case "EnvConfiguration.chartValue":
+		if e.complexity.EnvConfiguration.ChartValue == nil {
+			break
+		}
+
+		return e.complexity.EnvConfiguration.ChartValue(childComplexity), true
 
 	case "EnvConfiguration.created":
 		if e.complexity.EnvConfiguration.Created == nil {
@@ -630,6 +643,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.FeatureState.RolloutStatus(childComplexity), true
+
+	case "GlobalConfiguration.chartValue":
+		if e.complexity.GlobalConfiguration.ChartValue == nil {
+			break
+		}
+
+		return e.complexity.GlobalConfiguration.ChartValue(childComplexity), true
 
 	case "GlobalConfiguration.created":
 		if e.complexity.GlobalConfiguration.Created == nil {
@@ -1495,6 +1515,7 @@ interface Configuration {
   created: Time!
   type: ConfigType!
   displayName: String!
+  chartValue: RawMessage!
 }
 
 type GlobalConfiguration implements Configuration {
@@ -1507,6 +1528,7 @@ type GlobalConfiguration implements Configuration {
   created: Time!
   type: ConfigType!
   displayName: String!
+  chartValue: RawMessage!
 }
 
 type EnvConfiguration implements Configuration {
@@ -1520,6 +1542,7 @@ type EnvConfiguration implements Configuration {
   created: Time!
   type: ConfigType!
   displayName: String!
+  chartValue: RawMessage!
 }
 
 input NewConfiguration {
@@ -2947,6 +2970,50 @@ func (ec *executionContext) fieldContext_EnvConfiguration_displayName(ctx contex
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EnvConfiguration_chartValue(ctx context.Context, field graphql.CollectedField, obj *model.EnvConfiguration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EnvConfiguration_chartValue(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.EnvConfiguration().ChartValue(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(json.RawMessage)
+	fc.Result = res
+	return ec.marshalNRawMessage2encodingᚋjsonᚐRawMessage(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EnvConfiguration_chartValue(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EnvConfiguration",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type RawMessage does not have child fields")
 		},
 	}
 	return fc, nil
@@ -4650,6 +4717,50 @@ func (ec *executionContext) fieldContext_GlobalConfiguration_displayName(ctx con
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _GlobalConfiguration_chartValue(ctx context.Context, field graphql.CollectedField, obj *model.GlobalConfiguration) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_GlobalConfiguration_chartValue(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.GlobalConfiguration().ChartValue(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(json.RawMessage)
+	fc.Result = res
+	return ec.marshalNRawMessage2encodingᚋjsonᚐRawMessage(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_GlobalConfiguration_chartValue(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "GlobalConfiguration",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type RawMessage does not have child fields")
 		},
 	}
 	return fc, nil
@@ -11273,6 +11384,26 @@ func (ec *executionContext) _EnvConfiguration(ctx context.Context, sel ast.Selec
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "chartValue":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._EnvConfiguration_chartValue(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -11725,6 +11856,26 @@ func (ec *executionContext) _GlobalConfiguration(ctx context.Context, sel ast.Se
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "chartValue":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._GlobalConfiguration_chartValue(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
