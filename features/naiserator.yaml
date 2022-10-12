@@ -44,10 +44,11 @@ config:
   naiserator.features.jwker:
     type: bool
     displayName: "Enable Jwker"
-  naiserator.features.kafkarator:
-    type: bool
-    displayName: "Enable Kafkarator"
 mapping:
+  naiserator.features.kafkarator:
+    template: '{{ne .Env.aiven_project_0 ""}}'
+    # This flag is badly named in naiserator, giving it a better name here
+    displayName: "Enable Kafka for applications"
   naiserator.vault.init-container-image:
     value: "navikt/vault-sidekick:v0.3.10-26ad67d"
     ignoreKind:
