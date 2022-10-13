@@ -9,6 +9,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph/graphgen"
 	"github.com/nais/fasit/pkg/graph/model"
 )
@@ -23,9 +24,61 @@ func (r *envConfigurationResolver) Feature(ctx context.Context, obj *model.EnvCo
 	return r.resolveFeatureByName(obj.FeatureName)
 }
 
+// ChartValue is the resolver for the chartValue field.
+func (r *envConfigurationResolver) ChartValue(ctx context.Context, obj *model.EnvConfiguration) (json.RawMessage, error) {
+	vals := r.HelmChartValues.Get(obj.FeatureName)
+	if vals == nil {
+		return json.RawMessage(`"Empty?"`), nil
+	}
+
+	paths, err := feature.SmartDotSplit(obj.Key)
+	if err != nil {
+		return json.RawMessage(`"error!"`), nil
+	}
+
+	var ok bool
+	for i, path := range paths {
+		if i == len(paths)-1 {
+			return json.Marshal(vals[path])
+		}
+		vals, ok = vals[path].(map[string]interface{})
+		if !ok {
+			return json.RawMessage(`"error!"`), nil
+		}
+	}
+
+	return json.RawMessage(`"error!"`), nil
+}
+
 // Feature is the resolver for the feature field.
 func (r *globalConfigurationResolver) Feature(ctx context.Context, obj *model.GlobalConfiguration) (*model.Feature, error) {
 	return r.resolveFeatureByName(obj.FeatureName)
+}
+
+// ChartValue is the resolver for the chartValue field.
+func (r *globalConfigurationResolver) ChartValue(ctx context.Context, obj *model.GlobalConfiguration) (json.RawMessage, error) {
+	vals := r.HelmChartValues.Get(obj.FeatureName)
+	if vals == nil {
+		return json.RawMessage(`"Empty?"`), nil
+	}
+
+	paths, err := feature.SmartDotSplit(obj.Key)
+	if err != nil {
+		return json.RawMessage(`"error!"`), nil
+	}
+
+	var ok bool
+	for i, path := range paths {
+		if i == len(paths)-1 {
+			return json.Marshal(vals[path])
+		}
+		vals, ok = vals[path].(map[string]interface{})
+		if !ok {
+			return json.RawMessage(`"error!"`), nil
+		}
+	}
+
+	return json.RawMessage(`"error!"`), nil
 }
 
 // ConfigurationCreate is the resolver for the configurationCreate field.
@@ -54,8 +107,16 @@ func (r *mutationResolver) ConfigurationDelete(ctx context.Context, id uuid.UUID
 
 // Configuration is the resolver for the configuration field.
 func (r *queryResolver) Configuration(ctx context.Context, feature string, envID *uuid.UUID) (*model.EnvConfig, error) {
+	envKind := model.EnvironmentKind("")
 	ret := &model.EnvConfig{}
 	if envID != nil {
+		env, err := r.Repo.EnvironmentGet(ctx, *envID)
+		if err != nil {
+			return nil, fmt.Errorf("environment %q not found: %w", envID, err)
+		}
+
+		envKind = env.Kind
+
 		// Get config for environment
 		res, err := r.Repo.ConfigGetForEnv(ctx, feature, *envID)
 		if err != nil {
@@ -107,6 +168,7 @@ OUTER:
 			Description: val.Description,
 		})
 	}
+	ret.Configuration = removeIgnoredKinds(ret.Configuration, f, envKind)
 
 	if len(f.Mapping) == 0 || envID == nil {
 		return ret, nil
@@ -127,6 +189,10 @@ OUTER:
 
 // EnvConfig is the resolver for the envConfig field.
 func (r *queryResolver) EnvConfig(ctx context.Context, feature string, envID uuid.UUID) (*model.EnvConfig, error) {
+	env, err := r.Repo.EnvironmentGet(ctx, envID)
+	if err != nil {
+		return nil, err
+	}
 	config, err := r.Repo.EnvConfig(ctx, feature, envID)
 	if err != nil {
 		return nil, err
@@ -137,6 +203,7 @@ func (r *queryResolver) EnvConfig(ctx context.Context, feature string, envID uui
 	}
 
 	f := r.Resolver.Features.Get(feature)
+	ret.Configuration = removeIgnoredKinds(ret.Configuration, f, env.Kind)
 
 	if f == nil || len(f.Mapping) == 0 {
 		return ret, nil
@@ -161,7 +228,7 @@ func (r *queryResolver) HelmValues(ctx context.Context, feature string, envID uu
 		return json.RawMessage{}, nil
 	}
 
-	v, _, err := r.Repo.HelmValues(ctx, *f, envID, nil)
+	v, _, err := r.Repo.HelmValues(ctx, *f, envID)
 	if err != nil {
 		return nil, err
 	}

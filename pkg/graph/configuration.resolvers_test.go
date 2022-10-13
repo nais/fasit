@@ -14,29 +14,96 @@ import (
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
-func Test_queryResolver_Configuration_Early_Exit_When_EnvID_Set(t *testing.T) {
+func Test_queryResolver_Configuration_With_Environment_ID(t *testing.T) {
 	ctx := context.Background()
 	envID := uuid.New()
 
 	repo := mocks.NewRepo(t)
-	repo.On("ConfigGetForEnv", ctx, "feature", envID).Return(nil, nil).Once()
-	repo.On("ConfigGet", ctx, "feature").Return(nil, nil).Once()
+	repo.On("EnvironmentGet", ctx, envID).Return(&model.Environment{Kind: model.EnvironmentKindOnprem}, nil).Once()
+
+	mockConfig := []*model.EnvConfiguration{
+		{
+			FeatureName: "feature",
+			Key:         "string",
+			Value:       []byte("stringValue"),
+		},
+		{
+			FeatureName: "feature",
+			Key:         "bool",
+			Value:       []byte("true"),
+		},
+	}
+	repo.On("ConfigGetForEnv", ctx, "feature", envID).Return(mockConfig, nil).Once()
+
+	mockGlobal := []*model.GlobalConfiguration{
+		{
+			FeatureName: "feature",
+			Key:         "string",
+			Value:       []byte("stringValue"),
+		},
+		{
+			FeatureName: "feature",
+			Key:         "ignore",
+			Value:       []byte("intValue"),
+		},
+	}
+	repo.On("ConfigGet", ctx, "feature").Return(mockGlobal, nil).Once()
 
 	r := &queryResolver{
 		Resolver: &Resolver{
-			Repo:     repo,
-			Features: &feature.Manager{},
+			Repo: repo,
+			Features: &feature.Manager{
+				Features: []feature.Feature{
+					{
+						Name: "feature",
+						Config: feature.Config{
+							"string": {
+								Type: model.ConfigTypeString,
+							},
+							"bool": {
+								Type: model.ConfigTypeBool,
+							},
+							"ignore": {
+								Type:       model.ConfigTypeInt,
+								IgnoreKind: []model.EnvironmentKind{model.EnvironmentKindOnprem},
+							},
+						},
+					},
+				},
+			},
 		},
 	}
 
-	ret, err := r.Configuration(ctx, "feature", &envID)
+	got, err := r.Configuration(ctx, "feature", &envID)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if len(ret.Configuration) != 0 {
-		t.Fatalf("got %v, want 0 (from mock repo)", len(ret.Configuration))
+	want := &model.EnvConfig{
+		Configuration: []model.Configuration{
+			&model.EnvConfiguration{
+				Key:         "bool",
+				Value:       json.RawMessage("true"),
+				Type:        "bool",
+				FeatureName: "feature",
+			},
+			&model.EnvConfiguration{
+				Key:         "string",
+				Value:       json.RawMessage("stringValue"),
+				Type:        "string",
+				FeatureName: "feature",
+			},
+		},
 	}
+
+	opts := cmpopts.SortSlices(func(a, b model.Configuration) bool {
+		return strings.Compare(a.GetKey(), b.GetKey()) < 0
+	})
+
+	if !cmp.Equal(want, got, opts) {
+		t.Errorf("diff -want +got:\n%v", cmp.Diff(want, got, opts))
+	}
+
 }
 
 func Test_queryResolver_Configuration_Empty_Defaults_Are_Set(t *testing.T) {

@@ -238,13 +238,15 @@ WITH "combined" AS (
 		SELECT "id", "feature", "key", "value", "rollout_id", NULL::uuid AS environment_id
 		FROM ONLY configurations_global glob
 		WHERE glob.feature = $1
+		AND glob.key != ALL($2::text[])
 
 		UNION
 
 		SELECT "id", "feature", "key", "value", "rollout_id", "environment_id"
 		FROM ONLY configurations_environment env
 		WHERE env.feature = $1
-		AND environment_id = $2
+		AND environment_id = $3
+		AND env.key != ALL($2::text[])
 	), "filtered" AS (
 		SELECT id, feature, key, value, rollout_id, environment_id, RANK() OVER (
 				PARTITION BY "key"
@@ -259,6 +261,7 @@ WHERE RANK = 1
 
 type EnvConfigParams struct {
 	Feature       string
+	Excludekeys   []string
 	EnvironmentID uuid.UUID
 }
 
@@ -273,7 +276,7 @@ type EnvConfigRow struct {
 }
 
 func (q *Queries) EnvConfig(ctx context.Context, arg EnvConfigParams) ([]EnvConfigRow, error) {
-	rows, err := q.db.Query(ctx, envConfig, arg.Feature, arg.EnvironmentID)
+	rows, err := q.db.Query(ctx, envConfig, arg.Feature, arg.Excludekeys, arg.EnvironmentID)
 	if err != nil {
 		return nil, err
 	}
