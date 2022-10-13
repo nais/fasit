@@ -36,7 +36,7 @@ const ConfigAdd = ({conf, envID, globalConfig, feature, open, showOpen}: ConfigA
     const [val, setVal] = useState<any>(undefined)
     const [intVal, setIntVal] = useState<number>(0)
     const [description, setDescription] = useState('')
-    const {watch, formState: { errors }, setValue} = useForm(globalConfig?.value && {defaultValues: {values: globalConfig.value}})
+    const {watch, formState: { errors }, setValue} = useForm(globalConfig?.value && {defaultValues: {values: globalConfig.value}})
 
     const values = watch('values')
     useEffect(() => {

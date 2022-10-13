@@ -36,7 +36,7 @@
     "react-collapse": "^5.1.1",
     "react-collapsed": "^3.4.0",
     "react-dom": "18.2.0",
-    "react-hook-form": "7.37.0",
+    "react-hook-form": "7.36.1",
     "react-tag-autocomplete": "6.3.0",
     "react-tooltip": "^4.2.21",
     "styled-components": "5.3.6",
