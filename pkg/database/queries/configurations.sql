@@ -37,6 +37,7 @@ WITH "combined" AS (
 		SELECT "id", "feature", "key", "value", "rollout_id", NULL::uuid AS environment_id
 		FROM ONLY configurations_global glob
 		WHERE glob.feature = @feature
+		AND glob.key != ALL(@excludeKeys::text[])
 
 		UNION
 
@@ -44,6 +45,7 @@ WITH "combined" AS (
 		FROM ONLY configurations_environment env
 		WHERE env.feature = @feature
 		AND environment_id = @environment_id
+		AND env.key != ALL(@excludeKeys::text[])
 	), "filtered" AS (
 		SELECT *, RANK() OVER (
 				PARTITION BY "key"

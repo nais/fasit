@@ -14,6 +14,7 @@ export const CONFIGURATION = gql`
         value
         displayName
         secret
+        chartValue
       }
       mapping {
         key

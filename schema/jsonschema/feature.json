@@ -31,6 +31,12 @@
 						"displayName": {
 							"type": "string"
 						},
+						"ignoreKind": {
+							"items": {
+								"type": "string"
+							},
+							"type": "array"
+						},
 						"required": {
 							"type": "boolean"
 						},
@@ -114,6 +120,12 @@
 						},
 						"displayName": {
 							"type": "string"
+						},
+						"ignoreKind": {
+							"items": {
+								"type": "string"
+							},
+							"type": "array"
 						},
 						"template": {
 							"type": "string"

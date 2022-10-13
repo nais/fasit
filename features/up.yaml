@@ -30,5 +30,5 @@ config:
 mapping:
   ingress.hosts:
     value:
-      - 'up.{{if eq .Kind "tenant"}}{{.Env.name}}.{{end}}{{.Tenant.Name}}.cloud.nais.io'
+      - 'up.{{if ne .Kind "management"}}{{.Env.name}}.{{end}}{{.Tenant.Name}}.cloud.nais.io'
     displayName: "DNS names"

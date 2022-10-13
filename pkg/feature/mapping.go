@@ -13,10 +13,11 @@ import (
 type Mapping map[string]MappingConfig
 
 type MappingConfig struct {
-	DisplayName string `yaml:"displayName,omitempty" json:"displayName,omitempty"`
-	Description string `yaml:"description,omitempty" json:"description,omitempty"`
-	Value       any    `yaml:"value,omitempty" json:"value,omitempty" jsonschema:"oneof_required=value"`
-	Template    string `yaml:"template,omitempty" json:"template,omitempty" jsonschema:"oneof_required=template"`
+	DisplayName string      `yaml:"displayName,omitempty" json:"displayName,omitempty"`
+	Description string      `yaml:"description,omitempty" json:"description,omitempty"`
+	Value       any         `yaml:"value,omitempty" json:"value,omitempty" jsonschema:"oneof_required=value"`
+	Template    string      `yaml:"template,omitempty" json:"template,omitempty" jsonschema:"oneof_required=template"`
+	IgnoreKind  IgnoreKinds `yaml:"ignoreKind,omitempty" json:"ignoreKind,omitempty"`
 }
 
 type MappingTenant struct {
@@ -36,7 +37,7 @@ type MappingValues struct {
 	Envs []map[string]any
 }
 
-func (m Mapping) Generate(values *MappingValues, target map[string]any) error {
+func (m Mapping) Generate(envKind model.EnvironmentKind, values *MappingValues, target map[string]any) error {
 	if target == nil {
 		return fmt.Errorf("target is nil")
 	}
@@ -45,6 +46,10 @@ func (m Mapping) Generate(values *MappingValues, target map[string]any) error {
 		keys, err := SmartDotSplit(k)
 		if err != nil {
 			return err
+		}
+
+		if v.IgnoreKind.Contains(envKind) {
+			continue
 		}
 
 		if err := addToMap(target, values, keys, v, k); err != nil {

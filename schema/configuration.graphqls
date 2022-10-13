@@ -26,6 +26,7 @@ interface Configuration {
   created: Time!
   type: ConfigType!
   displayName: String!
+  chartValue: RawMessage!
 }
 
 type GlobalConfiguration implements Configuration {
@@ -38,6 +39,7 @@ type GlobalConfiguration implements Configuration {
   created: Time!
   type: ConfigType!
   displayName: String!
+  chartValue: RawMessage!
 }
 
 type EnvConfiguration implements Configuration {
@@ -51,6 +53,7 @@ type EnvConfiguration implements Configuration {
   created: Time!
   type: ConfigType!
   displayName: String!
+  chartValue: RawMessage!
 }
 
 input NewConfiguration {

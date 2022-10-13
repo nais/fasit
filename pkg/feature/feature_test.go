@@ -37,6 +37,13 @@ func TestFeature_RequiredFields(t *testing.T) {
 			},
 			expected: []string{"foo", "bar"},
 		},
+		"ignore management": {
+			Config: Config{
+				"foo": ConfigType{Required: true},
+				"bar": ConfigType{Required: true, IgnoreKind: []model.EnvironmentKind{model.EnvironmentKindManagement}},
+			},
+			expected: []string{"foo"},
+		},
 	}
 
 	for name, test := range tests {
@@ -44,7 +51,7 @@ func TestFeature_RequiredFields(t *testing.T) {
 			f := Feature{
 				Config: test.Config,
 			}
-			got := f.RequiredFields()
+			got := f.RequiredFields(model.EnvironmentKindManagement)
 
 			opts := cmpopts.SortSlices(func(a, b string) bool {
 				return strings.Compare(a, b) < 0

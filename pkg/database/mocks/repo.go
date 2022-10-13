@@ -517,13 +517,13 @@ func (_m *Repo) HealthStatusCreateOrUpdate(ctx context.Context, environmentID uu
 	return r0
 }
 
-// HelmValues provides a mock function with given fields: ctx, _a1, envID, requiredFields
-func (_m *Repo) HelmValues(ctx context.Context, _a1 feature.Feature, envID uuid.UUID, requiredFields []string) (map[string]interface{}, []uuid.UUID, error) {
-	ret := _m.Called(ctx, _a1, envID, requiredFields)
+// HelmValues provides a mock function with given fields: ctx, _a1, envID
+func (_m *Repo) HelmValues(ctx context.Context, _a1 feature.Feature, envID uuid.UUID) (map[string]interface{}, []uuid.UUID, error) {
+	ret := _m.Called(ctx, _a1, envID)
 
 	var r0 map[string]interface{}
-	if rf, ok := ret.Get(0).(func(context.Context, feature.Feature, uuid.UUID, []string) map[string]interface{}); ok {
-		r0 = rf(ctx, _a1, envID, requiredFields)
+	if rf, ok := ret.Get(0).(func(context.Context, feature.Feature, uuid.UUID) map[string]interface{}); ok {
+		r0 = rf(ctx, _a1, envID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(map[string]interface{})
@@ -531,8 +531,8 @@ func (_m *Repo) HelmValues(ctx context.Context, _a1 feature.Feature, envID uuid.
 	}
 
 	var r1 []uuid.UUID
-	if rf, ok := ret.Get(1).(func(context.Context, feature.Feature, uuid.UUID, []string) []uuid.UUID); ok {
-		r1 = rf(ctx, _a1, envID, requiredFields)
+	if rf, ok := ret.Get(1).(func(context.Context, feature.Feature, uuid.UUID) []uuid.UUID); ok {
+		r1 = rf(ctx, _a1, envID)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).([]uuid.UUID)
@@ -540,8 +540,8 @@ func (_m *Repo) HelmValues(ctx context.Context, _a1 feature.Feature, envID uuid.
 	}
 
 	var r2 error
-	if rf, ok := ret.Get(2).(func(context.Context, feature.Feature, uuid.UUID, []string) error); ok {
-		r2 = rf(ctx, _a1, envID, requiredFields)
+	if rf, ok := ret.Get(2).(func(context.Context, feature.Feature, uuid.UUID) error); ok {
+		r2 = rf(ctx, _a1, envID)
 	} else {
 		r2 = ret.Error(2)
 	}
@@ -587,7 +587,7 @@ func (_m *Repo) KubernetesNodesForEnv(ctx context.Context, envID uuid.UUID) ([]*
 }
 
 // MappingValuesForEnvironment provides a mock function with given fields: ctx, envID, showSensitive
-func (_m *Repo) MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) (*feature.MappingValues, error) {
+func (_m *Repo) MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) (*feature.MappingValues, model.EnvironmentKind, error) {
 	ret := _m.Called(ctx, envID, showSensitive)
 
 	var r0 *feature.MappingValues
@@ -599,14 +599,21 @@ func (_m *Repo) MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, bool) error); ok {
+	var r1 model.EnvironmentKind
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, bool) model.EnvironmentKind); ok {
 		r1 = rf(ctx, envID, showSensitive)
 	} else {
-		r1 = ret.Error(1)
+		r1 = ret.Get(1).(model.EnvironmentKind)
 	}
 
-	return r0, r1
+	var r2 error
+	if rf, ok := ret.Get(2).(func(context.Context, uuid.UUID, bool) error); ok {
+		r2 = rf(ctx, envID, showSensitive)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // Metrics provides a mock function with given fields:

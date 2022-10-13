@@ -13,6 +13,18 @@ type ConfigType struct {
 	Required    bool             `json:"required,omitempty" yaml:"required,omitempty"`
 	DisplayName string           `json:"displayName,omitempty" yaml:"displayName,omitempty"`
 	Description string           `json:"description,omitempty" yaml:"description,omitempty"`
+	IgnoreKind  IgnoreKinds      `json:"ignoreKind,omitempty" yaml:"ignoreKind,omitempty"`
+}
+
+type IgnoreKinds []model.EnvironmentKind
+
+func (i IgnoreKinds) Contains(kind model.EnvironmentKind) bool {
+	for _, k := range i {
+		if k == kind {
+			return true
+		}
+	}
+	return false
 }
 
 func (c ConfigType) Valid(value json.RawMessage) error {
