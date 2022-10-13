@@ -25,7 +25,6 @@ mapping:
       - --autogenInternals=false
       - --clientRateLimitQPS=50
       - --clientRateLimitBurst=100
-      - --splitPolicyReport=true
   serviceMonitor.enabled:
     template: "true"
   config.webhooks:
