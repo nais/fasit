@@ -5,6 +5,7 @@ source: https://github.com/kyverno/kyverno/tree/main/charts/kyverno
 environmentKinds:
   - tenant
   - management
+  - onprem
 autoInstall:
   - tenant
   - management
@@ -14,17 +15,62 @@ config:
     type: int
     displayName: "Replicas"
     description: "Number of replicas, min 3 for HA."
+  resources.limits.memory:
+    type: string
+    displayName: "Memory limit"
+    description: "Memory limit for kyverno pod."
+  resources.requests.memory:
+    type: string
+    displayName: "Memory request"
+    description: "Memory request for kyverno pod."
+  resources.requests.cpu:
+    type: string
+    displayName: "CPU request"
+    description: "CPU request for kyverno pod."
 mapping:
+  securityContext.seccompProfile.type:
+    template: "null"
+    description: Security profile
+    ignoreKind:
+      - management
+      - tenant
+  podAnnotations.nais\.io/logformat:
+    value: glog
+    displayName: "Log format"
+    ignoreKind:
+      - management
+      - tenant
+  podAnnotations.prometheus\.io/scrape:
+    value: "true"
+    displayName: "Prometheus scrape"
+    ignoreKind:
+      - management
+      - tenant
+  podAnnotations.prometheus\.io/port:
+    value: "8000"
+    displayName: "Prometheus port"
+    ignoreKind:
+      - management
+      - tenant
   replicaCount:
     template: "3"
     displayName: "Replicas"
+  resources.limits.memory:
+    value: "3548Mi"
+    displayName: "Memory limit"
+  resources.requests.memory:
+    value: "800Mi"
+    displayName: "Memory request"
+  resources.requests.cpu:
+    value: "200m"
+    displayName: "Memory request"
   excludeKyvernoNamespace:
     template: "false"
   extraArgs:
     value:
       - --autogenInternals=false
-      - --clientRateLimitQPS=50
-      - --clientRateLimitBurst=100
+      - --clientRateLimitQPS=150
+      - --clientRateLimitBurst=300
   serviceMonitor.enabled:
     template: "true"
   config.webhooks:
@@ -38,8 +84,8 @@ mapping:
               - kube-system
               - kube-node-lease
               - kyverno
-              - cnrm-system
-              - configconnector-operator-system
+              {{ if ne .Kind "onprem" }}- cnrm-system{{ end }}
+              {{ if ne .Kind "onprem" }}- configconnector-operator-system{{ end }}
   config.resourceFilters:
     displayName: Resource filters
     value:
