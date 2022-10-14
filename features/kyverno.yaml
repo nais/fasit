@@ -73,6 +73,8 @@ mapping:
       - --clientRateLimitBurst=300
   serviceMonitor.enabled:
     template: "true"
+    ignoreKind:
+      - "onprem"
   config.webhooks:
     # exclude namespaces
     template: |
