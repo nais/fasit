@@ -28,7 +28,7 @@ config:
     displayName: "CPU request"
     description: "CPU request for kyverno pod."
 mapping:
-  securityContext.seccompProfile.type:
+  securityContext.seccompProfile:
     template: "null"
     description: Security profile
     ignoreKind:
