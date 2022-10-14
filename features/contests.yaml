@@ -14,6 +14,13 @@ config:
   image.tag:
     type: string
     displayName: "Image tag"
+  alerts.enabled:
+    type: bool
+    displayName: "Enable alerts"
+  alerts.webhookUrl:
+    type: string
+    displayName: "Alerts webhook URL"
+
 mapping:
   ingresses:
     value:
