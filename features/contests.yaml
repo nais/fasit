@@ -20,6 +20,9 @@ config:
   alerts.webhookUrl:
     type: string
     displayName: "Alerts webhook URL"
+  targetURLs:
+    type: string_array
+    displayName: "Target URLs"
 
 mapping:
   ingresses:
