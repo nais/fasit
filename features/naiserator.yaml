@@ -59,6 +59,8 @@ mapping:
   naiserator.google-project-id:
     value: "{{.Env.project_id}}"
     displayName: "Google project ID"
+    ignoreKind:
+      - "onprem"
   naiserator.features.cnrm:
     template: '{{ne .Kind "onprem"}}'
     displayName: "Enable CNRM"
