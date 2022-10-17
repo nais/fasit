@@ -45,7 +45,14 @@ config:
   naiserator.features.jwker:
     type: bool
     displayName: "Enable Jwker"
+  gatewayMappings:
+    type: string_array
+    displayName: "Gateway mappings"
 mapping:
+  gatewayMappings:
+    value:
+      - "{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io"
+    displayName: "Gateway mappings"
   naiserator.features.kafkarator:
     template: '{{ne .Env.aiven_project_0 ""}}'
     # This flag is badly named in naiserator, giving it a better name here
