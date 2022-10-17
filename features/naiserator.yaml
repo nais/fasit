@@ -10,6 +10,7 @@ autoInstall:
 dependsOn:
   - allOf:
     - "nais-crds"
+    - "cert-manager"
 config:
   imageTag:
     type: string
