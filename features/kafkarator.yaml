@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/kafkarator
 source: https://github.com/nais/kafkarator/tree/main/charts/kafkarator
-version: 0.1.0
+version: 0.2.0
 environmentKinds:
   - "tenant"
   - "onprem"
@@ -15,6 +15,12 @@ mapping:
     value: "{{.Env.aiven_project_0}}"
     displayName: Aiven projects
     description: "Aiven projects (space separated) with Kafka enabled for this instance of kafkarator"
+  caBundle:
+    template: "true"
+    displayName: Enable CA bundle
+    description: "Enable CA bundle for Aiven API"
+    ignoreKind:
+      - "tenant"
 config:
   aiven.projects:
     type: string
@@ -30,3 +36,13 @@ config:
     type: string
   image.tag:
     type: string
+  extraEnv.HTTPS_PROXY:
+    type: string
+    displayName: HTTPS proxy
+    ignoreKind:
+      - "tenant"
+  extraEnv.NO_PROXY:
+    type: string
+    displayName: NO_PROXY
+    ignoreKind:
+      - "tenant"
