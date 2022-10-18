@@ -3,6 +3,7 @@ source: https://github.com/nais/aivenator/tree/main/charts/aivenator
 version: 0.1.0
 environmentKinds:
   - "tenant"
+  - "onprem"
 rolloutSource:
   - org: nais
     repo: aivenator
