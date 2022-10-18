@@ -17,6 +17,12 @@ mapping:
     displayName: Main Aiven project
     description: "Main Aiven project for services that only support one"
 config:
+  aiven.projects:
+    type: string
+    description: "Aiven projects (space separated) with Kafka enabled for this instance of aivenator"
+  aiven.mainProject:
+    type: string
+    description: "Main Aiven project for services that only support one"
   aiven.token:
     type: string
     secret: true
