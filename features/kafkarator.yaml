@@ -16,6 +16,9 @@ mapping:
     displayName: Aiven projects
     description: "Aiven projects (space separated) with Kafka enabled for this instance of kafkarator"
 config:
+  aiven.projects:
+    type: string
+    description: "Aiven projects (space separated) with Kafka enabled for this instance of kafkarator"
   aiven.token:
     type: string
     secret: true
