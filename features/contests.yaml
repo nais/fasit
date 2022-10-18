@@ -8,6 +8,7 @@ dependsOn:
     - "monitoring"
 environmentKinds:
   - "tenant"
+  - "onprem"
 autoInstall:
   - "tenant"
 config:
@@ -31,11 +32,15 @@ config:
     type: string_array
     displayName: "Additional Target URLs"
 
+  ingresses:
+    type: string_array
+    displayName: "Ingresses"
+
 mapping:
   ingresses:
     value:
-      - "https://contests.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io"
-    displayName: "DNS names"
+      - "{{-if ne .Kind 'onprem'}} https://contests.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io {{- end }}"
+    displayName: "Ingresses"
   env:
     value: "{{.Env.name}}"
     displayName: "Environment name"
