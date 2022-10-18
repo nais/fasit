@@ -16,6 +16,12 @@ mapping:
     value: "{{.Env.aiven_project_0}}"
     displayName: Main Aiven project
     description: "Main Aiven project for services that only support one"
+  caBundle:
+    template: "true"
+    displayName: Enable CA bundle
+    description: "Enable CA bundle for Aiven API"
+    ignoreKind:
+      - "tenant"
 config:
   aiven.projects:
     type: string
