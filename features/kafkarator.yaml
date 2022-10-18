@@ -3,6 +3,7 @@ source: https://github.com/nais/kafkarator/tree/main/charts/kafkarator
 version: 0.1.0
 environmentKinds:
   - "tenant"
+  - "onprem"
 dependsOn:
   - allOf:
     - "aivenator"
