@@ -12,6 +12,14 @@ config:
     type: string
     displayName: Image tag for jwker
 
+  jwker.secrets.env.TOKENDINGS_URL:
+    type: string
+    displayName: URL for tokendings
+    required: true
+    ignoreKind:
+      - management
+      - tenant
+
   jwker.secrets.env.JWKER_PRIVATE_JWK:
     type: string
     displayName: Private JWK
