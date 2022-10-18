@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/aivenator
 source: https://github.com/nais/aivenator/tree/main/charts/aivenator
-version: 0.1.0
+version: 0.2.0
 environmentKinds:
   - "tenant"
   - "onprem"
@@ -34,3 +34,13 @@ config:
     type: string
   image.tag:
     type: string
+  extraEnv.HTTPS_PROXY:
+    type: string
+    displayName: HTTPS proxy
+    ignoreKind:
+      - "tenant"
+  extraEnv.NO_PROXY:
+    type: string
+    displayName: NO_PROXY
+    ignoreKind:
+      - "tenant"
