@@ -39,12 +39,11 @@ mapping:
   tenant_prometheus.loadBalancerIP:
     value: "{{ .Env.tenant_ilb_ip }}"
     displayName: "Tenant Prometheus lb IP"
-  tenant_prometheus.nodeSelector:
-    template: |
-      kubernetes.io/role: prometheus
+  tenant_prometheus.nodeSelector.kubernetes\.io/role:
+    value: prometheus
     ignoreKind:
       - tenant
-    displayName: "Tenant prometheus node selector"
+    displayName: "Tenant prometheus node role"
   tenant_prometheus.tolerations:
     template: |
       - key: nais.io/prometheus-node
