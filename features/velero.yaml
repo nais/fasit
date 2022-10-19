@@ -8,13 +8,77 @@ environmentKinds:
 autoInstall:
   - "management"
   - "tenant"
+config:
+  velero.configuration.backupStorageLocation.bucket:
+    type: string
+    description: "The name of the bucket where backups will be stored"
+    displayName: "Bucket name"
+    ignoreKind:
+      - "tenant"
+      - "management"
+  velero.configuration.backupStorageLocation.config.serviceAccount:
+    type: string
+    description: "The name of the service account to use for GCS"
+    displayName: "Service account"
+    ignoreKind:
+      - "tenant"
+      - "management"
+  velero.credentials.secretContents.cloud:
+    type: string
+    secret: true
+    description: "The contents of the GCS service account key"
+    ignoreKind:
+      - "tenant"
+      - "management"
+  velero.configuration.extraEnvVars.HTTPS_PROXY:
+    type: string
+    displayName: HTTPS proxy
+    ignoreKind:
+      - "tenant"
+      - "management"
+  velero.configuration.extraEnvVars.NO_PROXY:
+    type: string
+    displayName: NO_PROXY
+    ignoreKind:
+      - "tenant"
+      - "management"
 mapping:
+  velero.extraVolumeMounts:
+    template: |
+      - mountPath: /etc/ssl/certs/ca-certificates.crt
+        name: ca-certs
+    displayName: Extra volume mounts
+    ignoreKind:
+      - "tenant"
+      - "management"
+  velero.extraVolumes:
+    template: |
+      - hostPath:
+          path: /etc/ssl/certs/ca-certificates.crt
+          type: File
+        name: ca-certs
+    displayName: Extra volumes
+    ignoreKind:
+      - "tenant"
+      - "management"
   velero.configuration.backupStorageLocation.bucket:
     value: "{{.Env.velero_bucket}}"
     displayName: "GCP Bucket name"
+    ignoreKind:
+      - "onprem"
   velero.configuration.backupStorageLocation.config.serviceAccount:
     value: "{{.Env.velero_service_account}}"
     displayName: "GCP Service account"
+    ignoreKind:
+      - "onprem"
   velero.serviceAccount.server.annotations.iam\.gke\.io/gcp-service-account:
     value: "{{.Env.velero_service_account}}"
     displayName: "KSA annotation"
+    ignoreKind:
+      - "onprem"
+  velero.credentials.useSecret:
+    template: "true"
+    displayName: "Use secret"
+    ignoreKind:
+      - "management"
+      - "tenant"
