@@ -1,0 +1,33 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/ingress-to-terraform-dns
+source: https://github.com/nais/ingress-to-terraform-dns/tree/master/charts/ingress-to-terraform-dns
+version: 1.0.0
+environmentKinds:
+  - "onprem"
+config:
+  image.tag:
+    type: string
+    displayName: Image tag
+  dnsZone:
+    type: string
+    displayName: DNS zone
+    required: true
+  recordIP:
+    type: string
+    displayName: Record IP
+    required: true
+  ingressSuffix:
+    type: string
+    displayName: Ingress suffix
+    required: true
+  recordsFilePath:
+    type: string
+    displayName: Path to records file
+    required: true
+  alert.enabled:
+    type: string
+    displayName: Enable alert
+  githubSecret:
+    type: string
+    secret: true
+    displayName: Github secret
+    required: true
