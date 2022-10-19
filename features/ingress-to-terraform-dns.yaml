@@ -24,7 +24,7 @@ config:
     displayName: Path to records file
     required: true
   alert.enabled:
-    type: string
+    type: bool
     displayName: Enable alert
   githubSecret:
     type: string
