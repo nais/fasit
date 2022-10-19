@@ -28,3 +28,15 @@ mapping:
   google.serviceAccountKey:
     displayName: "Use service account key?"
     value: "{{ .Env.naisd_key }}"
+  no_proxy:
+    displayName: "No proxy"
+    value: "10.254.0.1"
+    ignoreKind:
+      - "tenant"
+      - "management"
+  https_proxy:
+    displayName: "HTTPS proxy"
+    value: "http://webproxy-nais.nav.no:8088"
+    ignoreKind:
+      - "tenant"
+      - "management"
