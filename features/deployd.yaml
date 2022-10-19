@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/deployd
 source: https://github.com/nais/helm-charts/tree/main/charts/deployd
-version: 0.0.2
+version: 0.2.0
 environmentKinds:
   - "tenant"
   - "onprem"
@@ -13,6 +13,12 @@ mapping:
     value: "{{.Env.name}}"
   hookdHost:
     value: "deploy.{{.Tenant.Name}}.cloud.nais.io"
+  caBundle:
+    template: "true"
+    displayName: Enable CA bundle
+    description: "Enable CA bundle for Aiven API"
+    ignoreKind:
+      - "tenant"
 config:
   preSharedKey:
     type: string
@@ -29,3 +35,14 @@ config:
     type: string
   image.tag:
     type: string
+  extraEnv.HTTPS_PROXY:
+    type: string
+    displayName: HTTPS proxy
+    ignoreKind:
+      - "tenant"
+  extraEnv.NO_PROXY:
+    type: string
+    displayName: NO_PROXY
+    ignoreKind:
+      - "tenant"
+
