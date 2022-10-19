@@ -44,6 +44,7 @@ mapping:
       kubernetes.io/role: prometheus
     ignoreKind:
       - tenant
+    displayName: "Tenant prometheus node selector"
   tenant_prometheus.tolerations:
     template: |
       - key: nais.io/prometheus-node
@@ -52,6 +53,7 @@ mapping:
         operator: Exists
     ignoreKind:
       - tenant
+    displayName: "Tenant prometheus pod tolerations"
   kube-prometheus-stack.alertmanager.service.loadBalancerIP:
     value: "{{ .Env.tenant_alertmanager_ilb_ip }}"
     displayName: "Tenant Alertmanager lb IP"
