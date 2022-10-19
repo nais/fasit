@@ -49,8 +49,6 @@ config:
     type: string_array
     displayName: "Gateway mappings"
 mapping:
-  psp:
-    template: '{{eq .Kind "onprem"}}'
   gatewayMappings:
     value:
       - "{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io"
