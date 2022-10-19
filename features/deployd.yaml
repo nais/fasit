@@ -3,6 +3,7 @@ source: https://github.com/nais/helm-charts/tree/main/charts/deployd
 version: 0.0.2
 environmentKinds:
   - "tenant"
+  - "onprem"
 mapping:
   preSharedKey:
     value: "{{.Env.deployd_pre_shared_key}}"
@@ -13,6 +14,11 @@ mapping:
   hookdHost:
     value: "deploy.{{.Tenant.Name}}.cloud.nais.io"
 config:
+  preSharedKey:
+    type: string
+    secret: true
+    description: "API-key used to communicate with hookd"
+    displayName: deployd pre-shared key
   image.repository:
     type: string
   image.imagePullPolicy:
