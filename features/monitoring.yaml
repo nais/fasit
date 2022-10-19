@@ -40,12 +40,12 @@ mapping:
     value: "{{ .Env.tenant_ilb_ip }}"
     displayName: "Tenant Prometheus lb IP"
   tenant_prometheus.nodeSelector:
-    value:
+    template: |
       kubernetes.io/role: prometheus
     ignoreKind:
       - tenant
   tenant_prometheus.tolerations:
-    value:
+    template: |
       - key: nais.io/prometheus-node
         operator: Exists
       - key: nais.io/naas-node
