@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/nais/fasit/pkg/graph/model"
@@ -223,8 +224,8 @@ func helmArgs(m message.DeployInstruction, valuesFile string) ([]string, error) 
 	}
 
 	namespace := "nais-system"
-	if m.Name == "kyverno" {
-		namespace = "kyverno"
+	if strings.HasPrefix(m.Name, "kyverno") {
+		namespace = "kyvernonaj0ll"
 	}
 
 	args := []string{
