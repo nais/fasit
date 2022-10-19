@@ -225,7 +225,7 @@ func helmArgs(m message.DeployInstruction, valuesFile string) ([]string, error) 
 
 	namespace := "nais-system"
 	if strings.HasPrefix(m.Name, "kyverno") {
-		namespace = "kyvernonaj0ll"
+		namespace = "kyverno"
 	}
 
 	args := []string{
