@@ -19,6 +19,10 @@ config:
     secret: true
     description: "API-key used to communicate with hookd"
     displayName: deployd pre-shared key
+  hookdHost:
+    type: string
+    description: "Host for hookd"
+    displayName: hookd host
   image.repository:
     type: string
   image.imagePullPolicy:
