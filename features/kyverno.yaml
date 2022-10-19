@@ -86,6 +86,7 @@ mapping:
               - kube-system
               - kube-node-lease
               - kyverno
+              {{ if eq .Kind "onprem" }}- kube-flannel{{ end }}
               {{ if ne .Kind "onprem" }}- cnrm-system{{ end }}
               {{ if ne .Kind "onprem" }}- configconnector-operator-system{{ end }}
   config.resourceFilters:
