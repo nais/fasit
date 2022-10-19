@@ -1,8 +1,9 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring
-version: 1.1.0
+version: 1.2.0
 environmentKinds:
   - "tenant"
+  - "onprem"
 autoInstall:
   - "tenant"
 timeout: 20m
@@ -38,6 +39,19 @@ mapping:
   tenant_prometheus.loadBalancerIP:
     value: "{{ .Env.tenant_ilb_ip }}"
     displayName: "Tenant Prometheus lb IP"
+  tenant_prometheus.nodeSelector:
+    value:
+      kubernetes.io/role: prometheus
+    ignoreKind:
+      - tenant
+  tenant_prometheus.tolerations:
+    value:
+      - key: nais.io/prometheus-node
+        operator: Exists
+      - key: nais.io/naas-node
+        operator: Exists
+    ignoreKind:
+      - tenant
   kube-prometheus-stack.alertmanager.service.loadBalancerIP:
     value: "{{ .Env.tenant_alertmanager_ilb_ip }}"
     displayName: "Tenant Alertmanager lb IP"
