@@ -10,6 +10,7 @@ dependsOn:
       - "nais-crds"
       - "aivenator"
       - "kafkarator"
+      - "naiserator"
 config:
   trygdeetaten.enabled:
     type: bool
@@ -19,6 +20,10 @@ config:
   kafka.enabled:
     type: bool
 
+  secret.kafka.enabled:
+    type: bool
+    description: "should match kafka.enabled - TODO mapping value?"
+
   secret.azure.auth.client-secret:
     type: string
     secret: true
@@ -26,13 +31,8 @@ config:
     displayName: "Azure client secret"
 
 mapping:
-  secret.azure.auth.cluster-name:
+  secret.azure.cluster-name:
     value: "{{.Env.name}}"
     displayName: "Cluster name"
-
-  kafka.pool:
-    value: "{{.Env.aiven_project_0}}"
-    displayName: "Kafka pool"
-
   webproxy:
     template: '{{eq .Kind "onprem"}}'
