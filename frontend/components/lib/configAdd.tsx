@@ -1,13 +1,13 @@
-import * as React from 'react'
-import {Dispatch, FormEvent, SetStateAction, useEffect, useState} from 'react'
-import {Box, Modal} from '@mui/material'
-import {ConfigType, FeaturesQuery, useConfigurationCreateMutation} from '../../lib/schema/graphql'
-import {Button, Switch, TextField} from '@navikt/ds-react'
-import {useForm} from 'react-hook-form'
-import KeywordsInput from './StringArrayInput'
-import {Config} from "./configRows";
-import ErrorMessage from "./error";
-import {RightJustifiedButtons} from "./rightJustifiedButtons";
+import * as React from "react"
+import { Dispatch, FormEvent, SetStateAction, useEffect, useState } from "react"
+import { Box, Modal } from "@mui/material"
+import { ConfigType, FeaturesQuery, useConfigurationCreateMutation } from "../../lib/schema/graphql"
+import { Button, Switch, TextField } from "@navikt/ds-react"
+import { useForm } from "react-hook-form"
+import KeywordsInput from "./StringArrayInput"
+import { Config } from "./configRows"
+import ErrorMessage from "./error"
+import { RightJustifiedButtons } from "./rightJustifiedButtons"
 
 const style = {
     position: 'absolute' as 'absolute',
@@ -36,7 +36,8 @@ const ConfigAdd = ({conf, envID, globalConfig, feature, open, showOpen}: ConfigA
     const [val, setVal] = useState<any>(undefined)
     const [intVal, setIntVal] = useState<number>(0)
     const [description, setDescription] = useState('')
-    const {watch, formState: { errors }, setValue} = useForm(globalConfig?.value && {defaultValues: {values: globalConfig.value}})
+    const defaultValues = {values: globalConfig?.value ? globalConfig.value : ""}
+    const {watch, formState: { errors }, setValue} = useForm<Config["value"]>({defaultValues})
 
     const values = watch('values')
     useEffect(() => {
