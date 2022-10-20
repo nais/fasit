@@ -1,6 +1,6 @@
 chart: cert-manager
 source: https://github.com/cert-manager/cert-manager
-version: v1.9.1
+version: v1.10.0
 repo: https://charts.jetstack.io
 environmentKinds:
   - "tenant"
