@@ -17,33 +17,33 @@ config:
   image.tag:
     type: string
 
-  secret.azure-nav-tenant.kafka.enabled:
+  secret.azure_nav_tenant.kafka.enabled:
     type: bool
     displayName: "Enable Kafka (nav.no)"
     description: "Allow synchronization of events between Azurerator instances."
 
-  secret.azure-trygdeetaten-tenant.kafka.enabled:
+  secret.azure_trygdeetaten_tenant.kafka.enabled:
     type: bool
     displayName: "Enable Kafka (trygdeetaten)"
     description: "Allow synchronization of events between Azurerator instances."
 
-  secret.azure-nav-tenant.azure.auth.client-secret:
+  secret.azure_nav_tenant.azure.auth.client-secret:
     type: string
     secret: true
     required: true
     displayName: "Azure client secret (nav.no)"
 
-  secret.azure-trygdeetaten-tenant.azure.auth.client-secret:
+  secret.azure_trygdeetaten_tenant.azure.auth.client-secret:
     type: string
     secret: true
     required: true
     displayName: "Azure client secret (trygdeetaten)"
 
 mapping:
-  secret.azure-nav-tenant.cluster-name:
+  secret.azure_nav_tenant.cluster-name:
     value: "{{.Env.name}}"
     displayName: "Cluster name"
-  secret.azure-trygdeetaten-tenant.cluster-name:
+  secret.azure_trygdeetaten_tenant.cluster-name:
     value: "{{.Env.name}}"
     displayName: "Cluster name"
   webproxy:
