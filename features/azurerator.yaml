@@ -14,15 +14,14 @@ dependsOn:
 config:
   trygdeetaten.enabled:
     type: bool
+
   image.tag:
     type: string
 
-  kafka.enabled:
-    type: bool
-
   secret.kafka.enabled:
     type: bool
-    description: "should match kafka.enabled - TODO mapping value?"
+    displayName: "Enable Kafka"
+    description: "Allow synchronization of events between Azurerator instances."
 
   secret.azure.auth.client-secret:
     type: string
