@@ -1,0 +1,38 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/azurerator
+source: https://github.com/nais/azurerator/tree/master/charts
+version: 0.1.0
+repo: ""
+environmentKinds:
+  - "tenant"
+  - "onprem"
+dependsOn:
+  - allOf:
+      - "nais-crds"
+      - "aivenator"
+      - "kafkarator"
+config:
+  trygdeetaten.enabled:
+    type: bool
+  image.tag:
+    type: string
+
+  kafka.enabled:
+    type: bool
+
+  secret.azure.auth.client-secret:
+    type: string
+    secret: true
+    required: true
+    displayName: "Azure client secret"
+
+mapping:
+  secret.azure.auth.cluster-name:
+    value: "{{.Env.name}}"
+    displayName: "Cluster name"
+
+  kafka.pool:
+    value: "{{.Env.aiven_project_0}}"
+    displayName: "Kafka pool"
+
+  webproxy:
+    template: '{{eq .Kind "onprem"}}'
