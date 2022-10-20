@@ -29,7 +29,7 @@ config:
     displayName: "Azure client secret"
 
 mapping:
-  secret.azure.cluster-name:
+  secret.cluster-name:
     value: "{{.Env.name}}"
     displayName: "Cluster name"
   webproxy:
