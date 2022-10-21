@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/digdirator
 source: https://github.com/nais/digdirator/tree/master/charts
-version: 0.0.1
+version: 0.0.2
 environmentKinds:
   - "tenant"
   - "onprem"
@@ -18,12 +18,12 @@ config:
     displayName: External hosts
     description: "External hosts to allow outbound traffic to"
     type: string_array
-    required: true
 
   digdirator.secrets.env.DIGDIRATOR_DIGDIR_ADMIN_BASE_URL:
     displayName: Admin base URL
     description: "Admin base URL for Digdirator"
     type: string
+    required: true
 
   digdirator.secrets.env.DIGDIRATOR_DIGDIR_IDPORTEN_CERT_CHAIN_SECRET_NAME:
     displayName: ID-porten cert secret name
@@ -87,8 +87,8 @@ config:
 
   digdirator.secrets.google.sa.credentials:
     type: string
-    displayName: Google service account credentials to access Google KMS
-    description: "required if on-prem is enabled"
+    displayName: Google sa credentials
+    description: "Access Google KMS from onprem, required if onprem is enabled"
     secret: true
 
 mapping:
