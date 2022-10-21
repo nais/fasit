@@ -9,8 +9,8 @@ autoInstall:
   - "tenant"
 dependsOn:
   - allOf:
-    - "nais-crds"
-    - "cert-manager"
+      - "nais-crds"
+      - "cert-manager"
 config:
   imageTag:
     type: string
@@ -72,9 +72,6 @@ mapping:
   naiserator.features.cnrm:
     template: '{{ne .Kind "onprem"}}'
     displayName: "Enable CNRM"
-  naiserator.features.prometheus-operator:
-    template: '{{ne .Kind "onprem"}}'
-    displayName: "Enable Prometheus Operator"
   naiserator.features.gcp:
     template: '{{ne .Kind "onprem"}}'
     displayName: "Enable GCP"
