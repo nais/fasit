@@ -1,0 +1,96 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/digdirator
+source: https://github.com/nais/digdirator/tree/master/charts
+version: 0.0.1
+environmentKinds:
+  - "tenant"
+  - "onprem"
+dependsOn:
+  - allOf:
+      - "naiserator"
+      - "nais-crds"
+config:
+  digdirator.tag:
+    type: string
+    displayName: Digdirator image tag
+
+  digdirator.outbound.external:
+    displayName: Digdirator external hosts
+    type: string_array
+    required: true
+
+  digdirator.secrets.env.DIGDIRATOR_DIGDIR_ADMIN_BASE_URL:
+    displayName: Admin base URL
+    type: string
+    required: true
+
+  digdirator.secrets.env.DIGDIRATOR_DIGDIR_IDPORTEN_CERT_CHAIN_SECRET_NAME:
+    displayName: ID-porten cert secret name
+    type: string
+    required: true
+
+  digdirator.secrets.env.DIGDIRATOR_DIGDIR_IDPORTEN_CERT_CHAIN_SECRET_VERSION:
+    displayName: ID-porten cert version
+    type: string
+    required: true
+
+  digdirator.secrets.env.DIGDIRATOR_DIGDIR_IDPORTEN_CLIENT_ID:
+    displayName: ID-porten client ID
+    type: string
+    required: true
+
+  digdirator.secrets.env.DIGDIRATOR_DIGDIR_IDPORTEN_KMS_KEY_PATH:
+    displayName: ID-porten KMS key
+    type: string
+    required: true
+    secret: true
+
+  digdirator.secrets.env.DIGDIRATOR_DIGDIR_IDPORTEN_WELL_KNOWN_URL:
+    displayName: Wellknown id-porten URL
+    type: string
+    required: true
+
+  digdirator.secrets.env.DIGDIRATOR_FEATURES_MASKINPORTEN:
+    displayName: Feature toggle maskinporten
+    type: bool
+    required: true
+
+  digdirator.secrets.env.DIGDIRATOR_DIGDIR_MASKINPORTEN_CERT_CHAIN_SECRET_NAME:
+    displayName: Maskinporten cert secret
+    type: string
+    required: true
+
+  digdirator.secrets.env.DIGDIRATOR_DIGDIR_MASKINPORTEN_CERT_CHAIN_SECRET_VERSION:
+    displayName: Maskinporten cert chain secret version
+    type: string
+
+  digdirator.secret.env.DIGDIRATOR_DIGDIR_MASKINPORTEN_CLIENT_ID:
+    displayName: Maskinporten client ID
+    type: string
+
+  digdirator.secrets.env.DIGDIRATOR_DIGDIR_MASKINPORTEN_KMS_KEY_PATH:
+    displayName: Mskinporten KMS key path
+    type: string
+    secret: true
+
+  digdirator.secrets.env.DIGDIRATOR_DIGDIR_MASKINPORTEN_WELL_KNOWN_URL:
+    displayName: Maskinporten well-known URL
+    type: string
+
+  digdirator.secrets.google.sa.credentials:
+    type: string
+    displayName: Google service account credentials to access Google KMS
+    required: true
+    secret: true
+
+mapping:
+  digdirator.onprem.enabled:
+    displayName: "Enable resources for on-prem"
+    template: '{{ eq .Kind "onprem" }}'
+
+  digdirator.secrets.env.DIGDIRATOR_CLUSTER_NAME:
+    displayName: Cluster name
+    value: '{{ .Env.name }}'
+
+  digdirator.secrets.env.DIGDIRATOR_PROJECT_ID:
+    displayName: Project ID
+    value: '{{ .Env.project_id }}'
