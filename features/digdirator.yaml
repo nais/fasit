@@ -9,26 +9,31 @@ dependsOn:
       - "naiserator"
       - "nais-crds"
 config:
-  digdirator.image.tag:
+  image.tag:
     type: string
-    displayName: Digdirator image tag
+    displayName: Image tag
+    description: "Image tag for digdirator"
 
   digdirator.outbound.external:
     displayName: External hosts
+    description: "External hosts to allow outbound traffic to"
     type: string_array
     required: true
 
   digdirator.secrets.env.DIGDIRATOR_DIGDIR_ADMIN_BASE_URL:
     displayName: Admin base URL
+    description: "Admin base URL for Digdirator"
     type: string
 
   digdirator.secrets.env.DIGDIRATOR_DIGDIR_IDPORTEN_CERT_CHAIN_SECRET_NAME:
     displayName: ID-porten cert secret name
+    description: "Secret name for ID-porten cert chain"
     type: string
     required: true
 
   digdirator.secrets.env.DIGDIRATOR_DIGDIR_IDPORTEN_CERT_CHAIN_SECRET_VERSION:
     displayName: ID-porten cert version
+    description: "Secret version for ID-porten cert chain"
     type: string
     required: true
 
@@ -38,7 +43,8 @@ config:
     required: true
 
   digdirator.secrets.env.DIGDIRATOR_DIGDIR_IDPORTEN_KMS_KEY_PATH:
-    displayName: ID-porten KMS key path
+    displayName: ID-porten KMS path
+    description: "KMS key path for ID-porten"
     type: string
     required: true
     secret: true
@@ -54,29 +60,35 @@ config:
     required: true
 
   digdirator.secrets.env.DIGDIRATOR_DIGDIR_MASKINPORTEN_CERT_CHAIN_SECRET_NAME:
-    displayName: Maskinporten cert secret (required if maskinporten is enabled)
+    displayName: Maskinporten cert secret
+    description: "Required if maskinporten is enabled"
     type: string
 
   digdirator.secrets.env.DIGDIRATOR_DIGDIR_MASKINPORTEN_CERT_CHAIN_SECRET_VERSION:
-    displayName: Maskinporten cert chain secret version (required if maskinporten is enabled)
+    displayName: Maskinporten cert chain secret version
+    description: "Required if maskinporten is enabled"
     type: string
 
   digdirator.secrets.env.DIGDIRATOR_DIGDIR_MASKINPORTEN_CLIENT_ID:
-    displayName: Maskinporten client ID (required if maskinporten is enabled)
+    displayName: Maskinporten client ID
+    description: "Required if maskinporten is enabled"
     type: string
 
   digdirator.secrets.env.DIGDIRATOR_DIGDIR_MASKINPORTEN_KMS_KEY_PATH:
-    displayName: Mskinporten KMS key path (required if maskinporten is enabled)
+    displayName: Mskinporten KMS key path
+    description: "Required if maskinporten is enabled"
     type: string
     secret: true
 
   digdirator.secrets.env.DIGDIRATOR_DIGDIR_MASKINPORTEN_WELL_KNOWN_URL:
-    displayName: Maskinporten well-known (required if maskinporten is enabled)
+    displayName: Maskinporten well-known
+    description: "Required if maskinporten is enabled"
     type: string
 
   digdirator.secrets.google.sa.credentials:
     type: string
-    displayName: Google service account credentials to access Google KMS (required if on-prem is enabled)
+    displayName: Google service account credentials to access Google KMS
+    description: "required if on-prem is enabled"
     secret: true
 
 mapping:
