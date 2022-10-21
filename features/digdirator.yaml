@@ -93,7 +93,8 @@ config:
 
 mapping:
   digdirator.onprem.enabled:
-    displayName: "Enable resources for on-prem"
+    displayName: "Enable onprem"
+    description: "Enable resources for onprem"
     template: '{{ eq .Kind "onprem" }}'
 
   digdirator.secrets.env.DIGDIRATOR_CLUSTER_NAME:
