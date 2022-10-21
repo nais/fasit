@@ -22,6 +22,10 @@ config:
     description: "Password for the BIG-IP devices"
   bigipsync.partition:
     type: string
-    required: true
     displayName: "BIG-IP partition"
     description: "Partition to use on the BIG-IP devices"
+  bigipsync.pool_name:
+    type: string
+    required: true
+    displayName: "BIG-IP pool name"
+    description: "Pool to use on the BIG-IP devices"
