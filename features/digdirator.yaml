@@ -9,19 +9,18 @@ dependsOn:
       - "naiserator"
       - "nais-crds"
 config:
-  digdirator.tag:
+  digdirator.image.tag:
     type: string
     displayName: Digdirator image tag
 
   digdirator.outbound.external:
-    displayName: Digdirator external hosts
+    displayName: External hosts
     type: string_array
     required: true
 
   digdirator.secrets.env.DIGDIRATOR_DIGDIR_ADMIN_BASE_URL:
     displayName: Admin base URL
     type: string
-    required: true
 
   digdirator.secrets.env.DIGDIRATOR_DIGDIR_IDPORTEN_CERT_CHAIN_SECRET_NAME:
     displayName: ID-porten cert secret name
@@ -39,47 +38,45 @@ config:
     required: true
 
   digdirator.secrets.env.DIGDIRATOR_DIGDIR_IDPORTEN_KMS_KEY_PATH:
-    displayName: ID-porten KMS key
+    displayName: ID-porten KMS key path
     type: string
     required: true
     secret: true
 
   digdirator.secrets.env.DIGDIRATOR_DIGDIR_IDPORTEN_WELL_KNOWN_URL:
-    displayName: Wellknown id-porten URL
+    displayName: ID-porten well-known
     type: string
     required: true
 
   digdirator.secrets.env.DIGDIRATOR_FEATURES_MASKINPORTEN:
-    displayName: Feature toggle maskinporten
+    displayName: Maskinporten enabled
     type: bool
     required: true
 
   digdirator.secrets.env.DIGDIRATOR_DIGDIR_MASKINPORTEN_CERT_CHAIN_SECRET_NAME:
-    displayName: Maskinporten cert secret
+    displayName: Maskinporten cert secret (required if maskinporten is enabled)
     type: string
-    required: true
 
   digdirator.secrets.env.DIGDIRATOR_DIGDIR_MASKINPORTEN_CERT_CHAIN_SECRET_VERSION:
-    displayName: Maskinporten cert chain secret version
+    displayName: Maskinporten cert chain secret version (required if maskinporten is enabled)
     type: string
 
-  digdirator.secret.env.DIGDIRATOR_DIGDIR_MASKINPORTEN_CLIENT_ID:
-    displayName: Maskinporten client ID
+  digdirator.secrets.env.DIGDIRATOR_DIGDIR_MASKINPORTEN_CLIENT_ID:
+    displayName: Maskinporten client ID (required if maskinporten is enabled)
     type: string
 
   digdirator.secrets.env.DIGDIRATOR_DIGDIR_MASKINPORTEN_KMS_KEY_PATH:
-    displayName: Mskinporten KMS key path
+    displayName: Mskinporten KMS key path (required if maskinporten is enabled)
     type: string
     secret: true
 
   digdirator.secrets.env.DIGDIRATOR_DIGDIR_MASKINPORTEN_WELL_KNOWN_URL:
-    displayName: Maskinporten well-known URL
+    displayName: Maskinporten well-known (required if maskinporten is enabled)
     type: string
 
   digdirator.secrets.google.sa.credentials:
     type: string
-    displayName: Google service account credentials to access Google KMS
-    required: true
+    displayName: Google service account credentials to access Google KMS (required if on-prem is enabled)
     secret: true
 
 mapping:
