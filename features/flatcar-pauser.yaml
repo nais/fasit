@@ -3,6 +3,9 @@ source: https://github.com/nais/flatcar-pauser/tree/main/charts/flatcar-pauser
 version: 0.1.0
 environmentKinds:
   - "onprem"
+dependsOn:
+  - allOf:
+      - "naiserator"
 config:
   image.tag:
     type: string
