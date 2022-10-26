@@ -1,0 +1,20 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/flatcar-pauser
+source: https://github.com/nais/flatcar-pauser/tree/main/charts/flatcar-pauser
+version: 0.1.0
+environmentKinds:
+  - "onprem"
+config:
+  image.tag:
+    type: string
+    required: true
+    displayName: "Image tag"
+    description: "flatcar-pauser image"
+  dependsOnCluster:
+    type: string
+    required: true
+    displayName: "Depends on cluster"
+    description: "Cluster to evaluate against"
+mapping:
+  clusterName:
+    value: "{{ .Env.Name }}"
+    displayName: "Cluster name"
