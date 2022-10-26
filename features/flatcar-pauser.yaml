@@ -11,7 +11,6 @@ config:
     description: "flatcar-pauser image"
   dependsOnCluster:
     type: string
-    required: true
     displayName: "Depends on cluster"
     description: "Cluster to evaluate against"
 mapping:
