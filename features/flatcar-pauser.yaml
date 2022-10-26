@@ -16,5 +16,5 @@ config:
     description: "Cluster to evaluate against"
 mapping:
   clusterName:
-    value: "{{ .Env.Name }}"
+    value: "{{ .Env.name }}"
     displayName: "Cluster name"
