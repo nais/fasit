@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/digdirator
 source: https://github.com/nais/digdirator/tree/master/charts
-version: 0.0.3
+version: 0.0.4
 environmentKinds:
   - "tenant"
   - "onprem"
@@ -92,6 +92,6 @@ mapping:
     displayName: Cluster name
     value: '{{ .Env.name }}'
 
-  #digdirator.secrets.env.DIGDIRATOR_PROJECT_ID:
-  #  displayName: Project ID
-  #  value: '{{ .Env.project_id }}'
+  digdirator.secrets.env.DIGDIRATOR_PROJECT_ID:
+    displayName: Project ID
+    value: '{{ .Env.project_id }}'
