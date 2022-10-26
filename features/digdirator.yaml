@@ -23,41 +23,33 @@ config:
     displayName: Admin base URL
     description: "Admin base URL for Digdirator"
     type: string
-    required: true
 
   digdirator.secrets.env.DIGDIRATOR_DIGDIR_IDPORTEN_CERT_CHAIN_SECRET_NAME:
     displayName: ID-porten cert secret name
     description: "Secret name for ID-porten cert chain"
     type: string
-    required: true
 
   digdirator.secrets.env.DIGDIRATOR_DIGDIR_IDPORTEN_CERT_CHAIN_SECRET_VERSION:
     displayName: ID-porten cert version
     description: "Secret version for ID-porten cert chain"
     type: string
-    required: true
 
   digdirator.secrets.env.DIGDIRATOR_DIGDIR_IDPORTEN_CLIENT_ID:
     displayName: ID-porten client ID
     type: string
-    required: true
 
   digdirator.secrets.env.DIGDIRATOR_DIGDIR_IDPORTEN_KMS_KEY_PATH:
     displayName: ID-porten KMS path
     description: "KMS key path for ID-porten"
     type: string
-    required: true
-    secret: true
 
   digdirator.secrets.env.DIGDIRATOR_DIGDIR_IDPORTEN_WELL_KNOWN_URL:
     displayName: ID-porten well-known
     type: string
-    required: true
 
   digdirator.secrets.env.DIGDIRATOR_FEATURES_MASKINPORTEN:
     displayName: Maskinporten enabled
     type: bool
-    required: true
 
   digdirator.secrets.env.DIGDIRATOR_DIGDIR_MASKINPORTEN_CERT_CHAIN_SECRET_NAME:
     displayName: Maskinporten cert secret
@@ -75,10 +67,9 @@ config:
     type: string
 
   digdirator.secrets.env.DIGDIRATOR_DIGDIR_MASKINPORTEN_KMS_KEY_PATH:
-    displayName: Mskinporten KMS key path
+    displayName: Maskinporten KMS key path
     description: "Required if maskinporten is enabled"
     type: string
-    secret: true
 
   digdirator.secrets.env.DIGDIRATOR_DIGDIR_MASKINPORTEN_WELL_KNOWN_URL:
     displayName: Maskinporten well-known
