@@ -405,6 +405,7 @@ func Test_usage(t *testing.T) {
 			},
 			want: `["bar","baz"]`,
 		},
+
 		"mapOf piped to mapJoin piped to join": {
 			template: `{{ mapOf "name" "project_id" .Envs | mapJoin "=" | join "," }}`,
 			values: &MappingValues{
@@ -437,6 +438,27 @@ func Test_usage(t *testing.T) {
 				},
 			},
 			want: `{"foo":"bar"}`,
+		},
+
+		"map environment slice to a map keyed by cluster name": {
+			template: `{{ environmentsAsMap . "value1" "value2" | toJSON }}`,
+			values: &MappingValues{
+				Envs: []map[string]any{
+					{
+						"name":   "dev",
+						"value1": "bar",
+						"value2": "baz",
+						"value3": "boo",
+					},
+					{
+						"name":   "prod",
+						"value1": "car",
+						"value2": "caz",
+						"value3": "coo",
+					},
+				},
+			},
+			want: `{"dev":{"value1":"bar","value2":"baz"},"prod":{"value1":"car","value2":"caz"}}`,
 		},
 	}
 
@@ -544,5 +566,41 @@ func Test_filter(t *testing.T) {
 				t.Errorf("diff -want +got:\n%v", cmp.Diff(tt.want, got))
 			}
 		})
+	}
+}
+
+func Test_environmentsAsMap(t *testing.T) {
+	input := &MappingValues{
+		Envs: []map[string]any{
+			{
+				"name":   "dev",
+				"value1": "bar",
+				"value2": "baz",
+				"value3": "boo",
+			},
+			{
+				"name":   "prod",
+				"value1": "car",
+				"value2": "caz",
+				"value3": "coo",
+			},
+		},
+	}
+
+	expectedOutput := map[string]map[string]any{
+		"dev": {
+			"value1": "bar",
+			"value2": "baz",
+		},
+		"prod": {
+			"value1": "car",
+			"value2": "caz",
+		},
+	}
+
+	output := environmentsAsMap(input, "value1", "value2")
+
+	if !cmp.Equal(output, expectedOutput) {
+		t.Errorf("diff -want +got:\n%v", cmp.Diff(expectedOutput, output))
 	}
 }
