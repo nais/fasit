@@ -1,10 +1,9 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/contests
-source: https://github.com/nais/helm-charts/tree/main/charts/contests
+source: https://github.com/nais/contests/tree/main/charts/
 version: 0.6.0
 dependsOn:
   - allOf:
     - "naiserator"
-    - "cnrm"
     - "monitoring"
 environmentKinds:
   - "tenant"
