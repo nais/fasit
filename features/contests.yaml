@@ -23,10 +23,6 @@ config:
   contests.kafka.enabled:
     type: bool
     displayName: "Enable Kafka"
-  blackboxExporter.targetURLs:
-    type: string_array
-    displayName: "Default Target URLs"
-    description: "urls to probe by default, i.e. which connectivity tests to run"
 
   blackboxExporter.additionalTargetURLs:
     type: string_array
