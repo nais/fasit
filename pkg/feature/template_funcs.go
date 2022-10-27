@@ -106,7 +106,7 @@ func subdomain(m *MappingValues, subdomain string) string {
 //
 // USAGE:
 //
-// environmentsAsMap "value1" "value2"
+// environmentsAsMap . "value1" "value2"
 // .
 func environmentsAsMap(m *MappingValues, keys ...string) map[string]map[string]any {
 	const primaryKey = "name"
