@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring
-version: 1.5.1
+version: 1.5.2
 environmentKinds:
   - "tenant"
   - "onprem"
@@ -8,6 +8,12 @@ autoInstall:
   - "tenant"
 timeout: 20m
 config:
+  alerts.webhookUrl:
+    type: string
+    displayName: "Alerts webhook URL"
+  alerts.channel:
+    type: string
+    displayName: "Alerts channel"
   tenant_prometheus.storage.enabled:
     type: bool
     displayName: Tenant prometheus enable pvc storage
@@ -76,3 +82,9 @@ mapping:
     displayName: "NAIS Prometheus lb IP"
     ignoreKind:
       - onprem
+  env:
+    value: "{{.Env.name}}"
+    displayName: "Environment name"
+  tenant:
+    value: "{{.Tenant.Name}}"
+    displayName: "Tenant name"

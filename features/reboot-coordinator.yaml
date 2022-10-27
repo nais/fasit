@@ -1,0 +1,11 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/reboot-coordinator
+source: https://github.com/nais/helm-charts/tree/main/charts/reboot-coordinator
+version: 0.1.0
+environmentKinds:
+  - "onprem"
+config:
+  image.tag:
+    type: string
+    required: true
+    displayName: "Image tag"
+    description: "reboot-coordinator image"
