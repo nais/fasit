@@ -13,15 +13,16 @@ import (
 )
 
 var templateFuncs = template.FuncMap{
-	"mapOf":          mapOf,
-	"mapJoin":        mapJoin,
-	"prefixedValues": prefixedValues,
-	"subdomain":      subdomain,
-	"eachOf":         eachOf,
-	"toJSON":         toJSON,
-	"toYAML":         toYAML,
-	"join":           join,
-	"filter":         filter,
+	"mapOf":             mapOf,
+	"mapJoin":           mapJoin,
+	"environmentsAsMap": environmentsAsMap,
+	"prefixedValues":    prefixedValues,
+	"subdomain":         subdomain,
+	"eachOf":            eachOf,
+	"toJSON":            toJSON,
+	"toYAML":            toYAML,
+	"join":              join,
+	"filter":            filter,
 }
 
 // mapOf creates a new map from a list of map[string]any with the given key as the key in the new map,
@@ -81,6 +82,47 @@ func subdomain(m *MappingValues, subdomain string) string {
 		domain = m.Env["name"].(string) + "." + domain
 	}
 	return subdomain + "." + domain
+}
+
+// Return relevant values from .Envs[] in a custom structure.
+//
+// INPUT:
+//
+//	[
+//	  { keyName: ...
+//	  , value1: ...
+//	  , value2: ...
+//	  }
+//	]
+//
+// OUTPUT:
+//
+//	{
+//	   keyName: {
+//	     value1: ...,
+//	     value2: ...,
+//	   }
+//	}
+//
+// USAGE:
+//
+// environmentsAsMap "keyName" "value1" "value2"
+// .
+func environmentsAsMap(m *MappingValues, keyName string, values ...string) map[any]map[string]any {
+	result := make(map[any]map[string]any)
+	for _, envMap := range m.Envs {
+		key := envMap[keyName]
+		result[key] = make(map[string]any)
+		for k, v := range envMap {
+			for _, whitelistedKey := range values {
+				if k == whitelistedKey {
+					result[key][k] = v
+					break
+				}
+			}
+		}
+	}
+	return result
 }
 
 // eachOf returns a list of values by iterating over the given slice and getting the value using the given key.

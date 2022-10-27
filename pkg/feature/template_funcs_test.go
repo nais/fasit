@@ -546,3 +546,39 @@ func Test_filter(t *testing.T) {
 		})
 	}
 }
+
+func Test_environmentsAsMap(t *testing.T) {
+	input := &MappingValues{
+		Envs: []map[string]any{
+			{
+				"name":   "dev",
+				"value1": "bar",
+				"value2": "baz",
+				"value3": "boo",
+			},
+			{
+				"name":   "prod",
+				"value1": "car",
+				"value2": "caz",
+				"value3": "coo",
+			},
+		},
+	}
+
+	expectedOutput := map[any]map[string]any{
+		"dev": {
+			"value1": "bar",
+			"value2": "baz",
+		},
+		"prod": {
+			"value1": "car",
+			"value2": "caz",
+		},
+	}
+
+	output := environmentsAsMap(input, "name", "value1", "value2")
+
+	if !cmp.Equal(output, expectedOutput) {
+		t.Errorf("diff -want +got:\n%v", cmp.Diff(expectedOutput, output))
+	}
+}
