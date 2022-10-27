@@ -130,6 +130,8 @@ func (c *ConsoleManager) createNamespace(ctx context.Context, data message.Creat
 		metav1.SetMetaDataAnnotation(&ns.ObjectMeta, "cnrm.cloud.google.com/project-id", data.GCPProject)
 	}
 
+	metav1.SetMetaDataLabel(&ns.ObjectMeta, "team", data.Name)
+
 	existing, err := c.kubeClient.CoreV1().Namespaces().Get(ctx, data.Name, metav1.GetOptions{})
 	if err != nil {
 		if errors.IsNotFound(err) {
@@ -143,21 +145,21 @@ func (c *ConsoleManager) createNamespace(ctx context.Context, data message.Creat
 		return fmt.Errorf("getting namespace: %w", err)
 	}
 
-	if metav1.HasAnnotation(existing.ObjectMeta, "cnrm.cloud.google.com/project-id") {
-		return nil
-	}
-
-	if data.GCPProject == "" {
+	switch {
+	case !metav1.HasAnnotation(existing.ObjectMeta, "cnrm.cloud.google.com/project-id") && data.GCPProject != "":
+	case !metav1.HasLabel(existing.ObjectMeta, "team"):
+	default:
 		return nil
 	}
 
 	metav1.SetMetaDataAnnotation(&existing.ObjectMeta, "cnrm.cloud.google.com/project-id", data.GCPProject)
+	metav1.SetMetaDataLabel(&existing.ObjectMeta, "team", data.Name)
 
 	_, err = c.kubeClient.CoreV1().Namespaces().Update(ctx, existing, metav1.UpdateOptions{})
 	if err != nil {
 		return fmt.Errorf("updating namespace: %w", err)
 	}
-	log.WithField("ns", data.Name).Debug("Updated namespace with GCP project annotation")
+	log.WithField("ns", data.Name).Debug("Updated namespace")
 	return nil
 }
 
