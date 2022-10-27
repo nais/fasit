@@ -406,7 +406,7 @@ func Test_usage(t *testing.T) {
 			want: `["bar","baz"]`,
 		},
 		"mapOf piped to mapJoin piped to join": {
-			template: `{{ mapOf .Envs "name" "project_id" | mapJoin "=" | join "," }}`,
+			template: `{{ mapOf "name" "project_id" .Envs | mapJoin "=" | join "," }}`,
 			values: &MappingValues{
 				Envs: []map[string]any{
 					{
@@ -423,7 +423,7 @@ func Test_usage(t *testing.T) {
 		},
 
 		"filter envs and mapOf piped to toJSON": {
-			template: `{{ filter "name" "foo" .Envs | mapOf "name" "project_id" | toJSON }}`,
+			template: `{{ ( filter  "name" "foo" .Envs | mapOf "name" "project_id" ) | toJSON }}`,
 			values: &MappingValues{
 				Envs: []map[string]any{
 					{

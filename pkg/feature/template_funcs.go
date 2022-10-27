@@ -68,6 +68,10 @@ func prefixedValues(m any, prefix string) []any {
 				out = append(out, v)
 			}
 		}
+
+		sort.Slice(out, func(i, j int) bool {
+			return fmt.Sprint(out[i]) < fmt.Sprint(out[j])
+		})
 		return out
 	default:
 		return []any{prefix}
