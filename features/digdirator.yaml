@@ -82,6 +82,11 @@ config:
     description: "Access Google KMS from onprem, required if onprem is enabled"
     secret: true
 
+  digdirator.secrets.environment.DIGDIRATOR_PROJECT_ID:
+    type: string
+    displayName: Project ID
+    description: "Project ID for Digdirator"
+
 mapping:
   digdirator.onprem.enabled:
     displayName: "Enable onprem"
