@@ -34,7 +34,7 @@ config:
     ignoreKind:
       - "onprem"
 
-  conntests.connect.url:
+  contests.connect.url:
     type: string
     displayName: "Connect URL (downstream from contests app)"
 
@@ -54,3 +54,5 @@ mapping:
   contests.kafka.pool:
     value: "{{.Env.aiven_project_0}}"
     displayName: "Kafka pool"
+  contests.accessPolicy.enabled:
+    template: '{{ne .Kind "onprem"}}'
