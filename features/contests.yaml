@@ -34,11 +34,10 @@ config:
 mapping:
   ingresses:
     value:
-      - '{{ subdomain . "contests" }}'
+      - 'https://{{ subdomain . "contests" }}'
     displayName: "Ingresses"
     ignoreKind:
-      - "tenant"
-      - "management"
+      - "onprem"
   env:
     value: "{{.Env.name}}"
     displayName: "Environment name"
