@@ -19,59 +19,59 @@ config:
     description: "External hosts to allow outbound traffic to"
     type: string_array
 
-  digdirator.secrets.env.DIGDIRATOR_DIGDIR_ADMIN_BASE_URL:
+  digdirator.secrets.environment.DIGDIRATOR_DIGDIR_ADMIN_BASE_URL:
     displayName: Admin base URL
     description: "Admin base URL for Digdirator"
     type: string
 
-  digdirator.secrets.env.DIGDIRATOR_DIGDIR_IDPORTEN_CERT_CHAIN_SECRET_NAME:
+  digdirator.secrets.environment.DIGDIRATOR_DIGDIR_IDPORTEN_CERT_CHAIN_SECRET_NAME:
     displayName: ID-porten cert secret name
     description: "Secret name for ID-porten cert chain"
     type: string
 
-  digdirator.secrets.env.DIGDIRATOR_DIGDIR_IDPORTEN_CERT_CHAIN_SECRET_VERSION:
+  digdirator.secrets.environment.DIGDIRATOR_DIGDIR_IDPORTEN_CERT_CHAIN_SECRET_VERSION:
     displayName: ID-porten cert version
     description: "Secret version for ID-porten cert chain"
     type: string
 
-  digdirator.secrets.env.DIGDIRATOR_DIGDIR_IDPORTEN_CLIENT_ID:
+  digdirator.secrets.environment.DIGDIRATOR_DIGDIR_IDPORTEN_CLIENT_ID:
     displayName: ID-porten client ID
     type: string
 
-  digdirator.secrets.env.DIGDIRATOR_DIGDIR_IDPORTEN_KMS_KEY_PATH:
+  digdirator.secrets.environment.DIGDIRATOR_DIGDIR_IDPORTEN_KMS_KEY_PATH:
     displayName: ID-porten KMS path
     description: "KMS key path for ID-porten"
     type: string
 
-  digdirator.secrets.env.DIGDIRATOR_DIGDIR_IDPORTEN_WELL_KNOWN_URL:
+  digdirator.secrets.environment.DIGDIRATOR_DIGDIR_IDPORTEN_WELL_KNOWN_URL:
     displayName: ID-porten well-known
     type: string
 
-  digdirator.secrets.env.DIGDIRATOR_FEATURES_MASKINPORTEN:
+  digdirator.secrets.environment.DIGDIRATOR_FEATURES_MASKINPORTEN:
     displayName: Maskinporten enabled
     type: bool
 
-  digdirator.secrets.env.DIGDIRATOR_DIGDIR_MASKINPORTEN_CERT_CHAIN_SECRET_NAME:
+  digdirator.secrets.environment.DIGDIRATOR_DIGDIR_MASKINPORTEN_CERT_CHAIN_SECRET_NAME:
     displayName: Maskinporten cert secret
     description: "Required if maskinporten is enabled"
     type: string
 
-  digdirator.secrets.env.DIGDIRATOR_DIGDIR_MASKINPORTEN_CERT_CHAIN_SECRET_VERSION:
+  digdirator.secrets.environment.DIGDIRATOR_DIGDIR_MASKINPORTEN_CERT_CHAIN_SECRET_VERSION:
     displayName: Maskinporten cert chain secret version
     description: "Required if maskinporten is enabled"
     type: string
 
-  digdirator.secrets.env.DIGDIRATOR_DIGDIR_MASKINPORTEN_CLIENT_ID:
+  digdirator.secrets.environment.DIGDIRATOR_DIGDIR_MASKINPORTEN_CLIENT_ID:
     displayName: Maskinporten client ID
     description: "Required if maskinporten is enabled"
     type: string
 
-  digdirator.secrets.env.DIGDIRATOR_DIGDIR_MASKINPORTEN_KMS_KEY_PATH:
+  digdirator.secrets.environment.DIGDIRATOR_DIGDIR_MASKINPORTEN_KMS_KEY_PATH:
     displayName: Maskinporten KMS key path
     description: "Required if maskinporten is enabled"
     type: string
 
-  digdirator.secrets.env.DIGDIRATOR_DIGDIR_MASKINPORTEN_WELL_KNOWN_URL:
+  digdirator.secrets.environment.DIGDIRATOR_DIGDIR_MASKINPORTEN_WELL_KNOWN_URL:
     displayName: Maskinporten well-known
     description: "Required if maskinporten is enabled"
     type: string
@@ -88,10 +88,10 @@ mapping:
     description: "Enable resources for onprem"
     template: '{{ eq .Kind "onprem" }}'
 
-  digdirator.secrets.env.DIGDIRATOR_CLUSTER_NAME:
+  digdirator.secrets.environment.DIGDIRATOR_CLUSTER_NAME:
     displayName: Cluster name
     value: '{{ .Env.name }}'
 
-  digdirator.secrets.env.DIGDIRATOR_PROJECT_ID:
+  digdirator.secrets.environment.DIGDIRATOR_PROJECT_ID:
     displayName: Project ID
     value: '{{ .Env.project_id }}'
