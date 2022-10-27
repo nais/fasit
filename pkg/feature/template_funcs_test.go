@@ -565,7 +565,7 @@ func Test_environmentsAsMap(t *testing.T) {
 		},
 	}
 
-	expectedOutput := map[any]map[string]any{
+	expectedOutput := map[string]map[string]any{
 		"dev": {
 			"value1": "bar",
 			"value2": "baz",
