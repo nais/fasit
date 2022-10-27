@@ -107,6 +107,7 @@ func (r *repo) MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID,
 			return nil, model.EnvironmentKind(env.Kind), fmt.Errorf("envValuesForEnv: failed to unmarshal values for %q: %w", env.Name, err)
 		}
 		val["name"] = env.Name
+		val["kind"] = string(env.Kind)
 
 		if env.ID == envID {
 			mv.Env = val
