@@ -89,7 +89,7 @@ func subdomain(m *MappingValues, subdomain string) string {
 // INPUT:
 //
 //	[
-//	  { keyName: ...
+//	  { name: "mycluster"
 //	  , value1: ...
 //	  , value2: ...
 //	  }
@@ -98,7 +98,7 @@ func subdomain(m *MappingValues, subdomain string) string {
 // OUTPUT:
 //
 //	{
-//	   keyName: {
+//	   mycluster: {
 //	     value1: ...,
 //	     value2: ...,
 //	   }
@@ -106,19 +106,24 @@ func subdomain(m *MappingValues, subdomain string) string {
 //
 // USAGE:
 //
-// environmentsAsMap "keyName" "value1" "value2"
+// environmentsAsMap "value1" "value2"
 // .
-func environmentsAsMap(m *MappingValues, keyName string, values ...string) map[string]map[string]any {
+func environmentsAsMap(m *MappingValues, keys ...string) map[string]map[string]any {
+	const primaryKey = "name"
 	result := make(map[string]map[string]any)
 	for _, envMap := range m.Envs {
-		key, ok := envMap[keyName].(string)
+		key, ok := envMap[primaryKey].(string)
 		if !ok {
-			panic(fmt.Sprintf("trying to use env[%s] as string key, but it is a %T of value %q", keyName, envMap[keyName], envMap[keyName]))
+			panic(fmt.Sprintf("trying to use env[%s] as string key, but it is a %T of value %q",
+				primaryKey, envMap[primaryKey], envMap[primaryKey]))
+		}
+		if len(key) == 0 {
+			panic(fmt.Sprintf("env[%s] is empty, but it needs to be used as a primary key", primaryKey))
 		}
 		result[key] = make(map[string]any)
 		for k, v := range envMap {
-			for _, whitelistedKey := range values {
-				if k == whitelistedKey {
+			for _, includedKey := range keys {
+				if k == includedKey {
 					result[key][k] = v
 					break
 				}

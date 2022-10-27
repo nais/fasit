@@ -37,7 +37,7 @@ mapping:
     value: '{{ subdomain . "console" }}'
     displayName: "Ingress URL"
   backend.gcp.clusters:
-    value: '{{ environmentsAsMap . "name" "team_folder_id" "project_id" | toJSON }}'
+    value: '{{ environmentsAsMap . "team_folder_id" "project_id" | toJSON }}'
     displayName: Cluster information
   backend.staticServiceAccounts:
     value: "{{.Management.console_static_service_accounts}}"

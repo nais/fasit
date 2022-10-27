@@ -576,7 +576,7 @@ func Test_environmentsAsMap(t *testing.T) {
 		},
 	}
 
-	output := environmentsAsMap(input, "name", "value1", "value2")
+	output := environmentsAsMap(input, "value1", "value2")
 
 	if !cmp.Equal(output, expectedOutput) {
 		t.Errorf("diff -want +got:\n%v", cmp.Diff(expectedOutput, output))
