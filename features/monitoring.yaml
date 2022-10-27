@@ -37,7 +37,7 @@ config:
     displayName: Nais prometheus cpu limit
 mapping:
   tenant_prometheus.ingress.host:
-    value: 'prometheus.{{if ne .Kind "management"}}{{.Env.name}}.{{end}}{{.Tenant.Name}}.cloud.nais.io'
+    value: '{{ subdomain . "prometheus" }}'
     displayName: "Prometheus host"
   tenant_prometheus.loadBalancerIP:
     value: "{{ .Env.tenant_ilb_ip }}"
@@ -69,7 +69,7 @@ mapping:
       - onprem
   kube-prometheus-stack.alertmanager.ingress.hosts:
     value:
-      - 'alertmanager.{{if ne .Kind "management"}}{{.Env.name}}.{{end}}{{.Tenant.Name}}.cloud.nais.io'
+      - '{{ subdomain . "alertmanager" }}'
     displayName: "Alertmanager hosts"
   nais_prometheus.loadBalancerIP:
     value: "{{ .Env.nais_ilb_ip }}"

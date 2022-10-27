@@ -5,16 +5,15 @@ environmentKinds:
   - "management"
 dependsOn:
   - allOf:
-    - "hookd"
+      - "hookd"
 mapping:
   deploy_server:
-    value: "deploy.{{.Tenant.Name}}.cloud.nais.io:443"
+    value: '{{ subdomain . "deploy" }}:443'
     displayName: "Deploy server"
     description: "Deploy server host:port pair"
   clusters:
     description: "List of clusters to deploy the canary image into"
-    template: |
-      [{{$first := true}}{{ range $env := .Envs }}{{if $first}}{{$first = false}}{{else}},{{end}}"{{ $env.name }}"{{ end }}]
+    template: '{{ eachOf .Envs "name" | toJSON }}'
 config:
   image.repository:
     type: string

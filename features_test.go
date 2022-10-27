@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/nais/fasit/pkg/feature"
+	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/santhosh-tekuri/jsonschema/v5"
 	"github.com/stevenle/topsort"
 	"gopkg.in/yaml.v2"
@@ -60,7 +61,50 @@ func TestFeaturesSchema(t *testing.T) {
 	})
 }
 
-func TestFeatures(t *testing.T) {
+func TestFeatures_MappingValuesTemplate(t *testing.T) {
+	mgr, err := feature.New(FeaturesFS)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, f := range mgr.Features {
+		t.Run(f.Name, func(t *testing.T) {
+			for _, kind := range model.AllEnvironmentKind {
+				mv := &feature.MappingValues{
+					Kind: kind,
+					Tenant: feature.MappingTenant{
+						Name: "tenant_name",
+					},
+					Management: map[string]any{
+						"key": "value",
+					},
+					Env: map[string]any{
+						"name": "env",
+						"is":   "current",
+					},
+					Envs: []map[string]any{
+						{
+							"name": "env1",
+							"kind": "onprem",
+							"is":   "not_current",
+						},
+						{
+							"name": "env2",
+							"kind": "onprem",
+							"is":   "not_current",
+						},
+					},
+				}
+				target := map[string]any{}
+				if err := f.Mapping.Generate(kind, mv, target); err != nil {
+					t.Fatal(err)
+				}
+			}
+		})
+	}
+}
+
+func TestFeatures_dependencies(t *testing.T) {
 	mgr, err := feature.New(FeaturesFS)
 	if err != nil {
 		t.Fatal(err)

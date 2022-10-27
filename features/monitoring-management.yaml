@@ -5,7 +5,7 @@ environmentKinds:
   - "management"
 dependsOn:
   - allOf:
-    - "loadbalancer-iap"
+      - "loadbalancer-iap"
 timeout: 20m
 config:
   nais_prometheus.retention:
@@ -33,7 +33,7 @@ config:
   grafana.grafana\.ini.auth\.jwt.expect_claims:
     type: string
     displayName: Grafana JWT claims
-    description: "JSON object with claims to expect in the JWT token, example:  {\"iss\": \"https://cloud.google.com/iap\",\"aud\": \"/projects/718161667033/global/backendServices/2287975999985226128\"}"
+    description: 'JSON object with claims to expect in the JWT token, example:  {"iss": "https://cloud.google.com/iap","aud": "/projects/718161667033/global/backendServices/2287975999985226128"}'
     required: true
   grafana.plugins:
     type: string_array
@@ -65,16 +65,16 @@ mapping:
   grafana.server.domain:
     value: "{{.Tenant.Name}}.cloud.nais.io"
   grafana.server.root_url:
-    value: "grafana.{{.Tenant.Name}}.cloud.nais.io"
+    value: '{{ subdomain . "grafana" }}'
   grafana.ingress.hosts:
-    value: ["grafana.{{.Tenant.Name}}.cloud.nais.io"]
+    value: ['{{ subdomain . "grafana" }}']
     displayName: "Grafana hosts"
   nais_prometheus.ingress.host:
-    value: "nais-prometheus.{{.Tenant.Name}}.cloud.nais.io"
+    value: '{{ subdomain . "nais-prometheus" }}'
     displayName: "NAIS Prometheus host"
   kube-prometheus-stack.alertmanager.ingress.hosts:
     value:
-      - "alertmanager.{{.Tenant.Name}}.cloud.nais.io"
+      - '{{ subdomain . "alertmanager" }}'
     displayName: "Alertmanager hosts"
   tenant.name:
     value: "{{.Tenant.Name}}"

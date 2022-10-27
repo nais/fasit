@@ -3,9 +3,9 @@ source: https://github.com/nais/helm-charts/tree/main/charts/contests
 version: 0.5.3
 dependsOn:
   - allOf:
-    - "naiserator"
-    - "cnrm"
-    - "monitoring"
+      - "naiserator"
+      - "cnrm"
+      - "monitoring"
 environmentKinds:
   - "tenant"
   - "onprem"
@@ -35,12 +35,17 @@ config:
   ingresses:
     type: string_array
     displayName: "Ingresses"
+    ignoreKind:
+      - "onprem"
 
 mapping:
   ingresses:
     value:
-      - '{{ if ne .Kind "onprem" }}https://contests.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io{{ end }}'
+      - '{{ subdomain . "contests" }}'
     displayName: "Ingresses"
+    ignoreKind:
+      - "tenant"
+      - "management"
   env:
     value: "{{.Env.name}}"
     displayName: "Environment name"

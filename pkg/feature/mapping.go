@@ -85,7 +85,7 @@ func addToMap(target map[string]any, values *MappingValues, key []string, mc Map
 
 	val, err := renderTpl(values, mc)
 	if err != nil {
-		return err
+		return fmt.Errorf("%v: %w", strings.Join(key, "."), err)
 	}
 
 	if _, ok := target[key[0]]; ok {
@@ -127,7 +127,9 @@ func renderTemplate(values *MappingValues, tpl string) (any, error) {
 }
 
 func renderString(values *MappingValues, tpl string) (string, error) {
-	t, err := template.New("tpl").Parse(tpl)
+	t := template.New("tpl")
+	t.Funcs(templateFuncs)
+	t, err := t.Parse(tpl)
 	if err != nil {
 		return "", err
 	}

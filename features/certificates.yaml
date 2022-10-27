@@ -31,5 +31,5 @@ mapping:
     displayName: "Tenant"
   dnsNames:
     value:
-      - '*.{{if ne .Kind "management"}}{{.Env.name}}.{{end}}{{.Tenant.Name}}.cloud.nais.io'
+      - '{{ subdomain . "*" }}'
     displayName: "DNS names"
