@@ -12,7 +12,7 @@ mapping:
   cluster:
     value: "{{.Env.name}}"
   hookdHost:
-    value: '{{ subdomain . "deploy" }}'
+    value: "deploy.{{.Tenant.Name}}.cloud.nais.io"
   caBundle:
     template: "true"
     displayName: Enable CA bundle
