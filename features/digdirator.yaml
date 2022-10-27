@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/digdirator
 source: https://github.com/nais/digdirator/tree/master/charts
-version: 0.0.4
+version: 0.1.0
 environmentKinds:
   - "tenant"
   - "onprem"
