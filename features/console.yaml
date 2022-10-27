@@ -1,13 +1,11 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/console
 source: https://github.com/nais/helm-charts/tree/main/charts/console
-version: 0.0.16
+version: 0.0.17
 environmentKinds:
   - "management"
 rolloutSource:
   - org: nais
     repo: console
-  - org: nais
-    repo: console-frontend
   - org: nais
     repo: console-frontend-elm
 mapping:
@@ -38,9 +36,6 @@ mapping:
   ingress.host:
     value: '{{ subdomain . "console" }}'
     displayName: "Ingress URL"
-  backend.gcp.projectParentIds:
-    value: "{{$first := true}}{{ range $cluster := .Envs }}{{if $first}}{{$first = false}}{{else}},{{end}}{{ $cluster.name }}:{{ $cluster.teams_folder_id }}{{ end }}"
-    displayName: Mapping of env to teams folders
   backend.gcp.clusters:
     value: |
       {
@@ -67,21 +62,6 @@ mapping:
 config:
   backend.image.tag:
     type: string
-  backend.github.enabled:
-    type: bool
-    displayName: Enable Github teams
-  backend.github.appId:
-    type: string
-  backend.github.appInstallationId:
-    type: string
-  backend.github.organization:
-    type: string
-  backend.github.privateKey:
-    type: string
-    secret: true
-  backend.google.enabled:
-    type: bool
-    displayName: Enable Google Workspaces
   backend.oauth.clientId:
     type: string
     displayName: Google OAuth 2.0 Client ID
@@ -89,24 +69,6 @@ config:
     type: string
     secret: true
     displayName: Google OAuth 2.0 Client Secret
-  backend.azure.clientId:
-    type: string
-  backend.azure.clientSecret:
-    type: string
-    secret: true
-  backend.azure.enabled:
-    type: bool
-    displayName: Enable Azure
-  backend.azure.redirectUrl:
-    type: string
-  backend.azure.tenantId:
-    type: string
-  backend.gcp.enabled:
-    type: bool
-    displayName: Enable GCP team projects
-  backend.naisNamespace.enabled:
-    type: bool
-    displayName: Enable Kubernetes team namespaces
   frontend.image.tag:
     type: string
     description: Frontend image tag
