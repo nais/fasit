@@ -5,7 +5,7 @@ environmentKinds:
   - "management"
 dependsOn:
   - allOf:
-    - "console"
+      - "console"
 mapping:
   backend.database.instance:
     value: "{{.Management.hookd_database_instance}}"
@@ -21,11 +21,11 @@ mapping:
     displayName: "Google service account"
     description: "The service account email that is used to access the postgres-database, set up by terraform."
   backend.googleClusterProjects:
-    value: "{{$first := true}}{{ range $cluster := .Envs }}{{if $first}}{{$first = false}}{{else}},{{end}}{{ $cluster.name }}={{ $cluster.project_id }}{{ end }}"
+    value: '{{ mapOf .Envs "name" "project_id" | mapJoin "=" | join "," }}'
     displayName: "Google Cluster Projects"
     description: "Mapping from cluster name to google project ('cluster1=project1,cluster2=project2')"
   ingress.host:
-    value: "deploy.{{.Tenant.Name}}.cloud.nais.io"
+    value: '{{ subdomain . "deploy" }}'
     displayName: "Ingress URL"
   frontendPreSharedKey:
     value: "{{.Management.hookd_frontend_pre_shared_key}}"
@@ -42,7 +42,7 @@ mapping:
     displayName: Console API-key
     description: "API-key used to get groups from console"
   deploydPreSharedKeys:
-    value: "{{$first := true}}{{ range $env := .Envs }}{{if $first}}{{$first = false}}{{else}},{{end}}{{ $env.deployd_pre_shared_key }}{{ end }}"
+    value: '{{ eachOf .Envs "deployd_pre_shared_key" | join "," }}'
 config:
   backend.image.repository:
     type: string

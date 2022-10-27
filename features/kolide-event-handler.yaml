@@ -26,7 +26,7 @@ config:
 mapping:
   ingress.hosts:
     value:
-      - "kolide-event-handler.{{.Tenant.Name}}.cloud.nais.io"
+      - '{{ subdomain . "kolide-event-handler" }}'
     displayName: "DNS names"
 
   secrets.env.GRPC_AUTH_TOKEN:

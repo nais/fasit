@@ -36,7 +36,7 @@ mapping:
     value: "{{.Management.tenant_domain}}"
     displayName: "Tenant domain"
   ingress.host:
-    value: "console.{{.Tenant.Name}}.cloud.nais.io"
+    value: '{{ subdomain . "console" }}'
     displayName: "Ingress URL"
   backend.gcp.projectParentIds:
     value: "{{$first := true}}{{ range $cluster := .Envs }}{{if $first}}{{$first = false}}{{else}},{{end}}{{ $cluster.name }}:{{ $cluster.teams_folder_id }}{{ end }}"

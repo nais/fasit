@@ -69,7 +69,7 @@ config:
 mapping:
   jwker.secrets.env.CLUSTER_NAME:
     displayName: Cluster name
-    value: '{{ .Env.name }}'
+    value: "{{ .Env.name }}"
 
   jwker.webproxy:
     template: '{{eq .Kind "onprem"}}'
@@ -79,9 +79,8 @@ mapping:
     template: '{{ne .Kind "onprem"}}'
 
   tokendings.env.ISSUER_URL:
-    value: 'https://tokenx.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io'
+    value: '{{ subdomain . "tokenx" }}'
 
   tokendings.ingresses:
     value:
-      - 'https://tokenx.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io'
-
+      - '{{ subdomain . "tokenx" }}'
