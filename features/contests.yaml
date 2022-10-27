@@ -11,28 +11,39 @@ environmentKinds:
 autoInstall:
   - "tenant"
 config:
-  image.tag:
-    type: string
-    displayName: "Image tag"
   alerts.enabled:
     type: bool
     displayName: "Enable alerts"
-
-  targetURLs:
+  contests.image.tag:
+    type: string
+    displayName: "Image tag"
+  contests.storage.enabled:
+    type: bool
+    displayName: "Enable storage"
+  contests.kafka.enabled:
+    type: bool
+    displayName: "Enable Kafka"
+  blackboxExporter.targetURLs:
     type: string_array
     displayName: "Default Target URLs"
-  additionalTargetURLs:
+    description: "urls to probe by default, i.e. which connectivity tests to run"
+
+  blackboxExporter.additionalTargetURLs:
     type: string_array
     displayName: "Additional Target URLs"
 
-  ingresses:
+  contests.ingresses:
     type: string_array
     displayName: "Ingresses"
     ignoreKind:
       - "onprem"
 
+  conntests.connect.url:
+    type: string
+    displayName: "Connect URL (downstream from contests app)"
+
 mapping:
-  ingresses:
+  contests.ingresses:
     value:
       - 'https://{{ subdomain . "contests" }}'
     displayName: "Ingresses"
@@ -44,6 +55,6 @@ mapping:
   tenant:
     value: "{{.Tenant.Name}}"
     displayName: "Tenant name"
-  kafka.pool:
+  contests.kafka.pool:
     value: "{{.Env.aiven_project_0}}"
     displayName: "Kafka pool"
