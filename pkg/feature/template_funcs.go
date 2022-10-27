@@ -110,12 +110,13 @@ func subdomain(m *MappingValues, subdomain string) string {
 //
 // USAGE:
 //
-// environmentsAsMap . "value1" "value2"
+// environmentsAsMap "value1,value2" .Envs
 // .
-func environmentsAsMap(m *MappingValues, keys ...string) map[string]map[string]any {
+func environmentsAsMap(keyList string, data []map[string]any) map[string]map[string]any {
 	const primaryKey = "name"
+	keys := strings.Split(keyList, ",")
 	result := make(map[string]map[string]any)
-	for _, envMap := range m.Envs {
+	for _, envMap := range data {
 		key, ok := envMap[primaryKey].(string)
 		if !ok {
 			panic(fmt.Sprintf("trying to use env[%s] as string key, but it is a %T of value %q",

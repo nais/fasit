@@ -441,17 +441,26 @@ func Test_usage(t *testing.T) {
 		},
 
 		"map environment slice to a map keyed by cluster name": {
-			template: `{{ environmentsAsMap . "value1" "value2" | toJSON }}`,
+			template: `{{ (filter "kind" "tenant" .Envs | environmentsAsMap "value1,value2") | toJSON }}`,
 			values: &MappingValues{
 				Envs: []map[string]any{
 					{
 						"name":   "dev",
+						"kind":   "tenant",
 						"value1": "bar",
 						"value2": "baz",
 						"value3": "boo",
 					},
 					{
 						"name":   "prod",
+						"kind":   "tenant",
+						"value1": "car",
+						"value2": "caz",
+						"value3": "coo",
+					},
+					{
+						"name":   "onprem-prod",
+						"kind":   "onprem",
 						"value1": "car",
 						"value2": "caz",
 						"value3": "coo",
@@ -598,7 +607,7 @@ func Test_environmentsAsMap(t *testing.T) {
 		},
 	}
 
-	output := environmentsAsMap(input, "value1", "value2")
+	output := environmentsAsMap("value1,value2", input.Envs)
 
 	if !cmp.Equal(output, expectedOutput) {
 		t.Errorf("diff -want +got:\n%v", cmp.Diff(expectedOutput, output))
