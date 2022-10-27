@@ -21,11 +21,12 @@ var templateFuncs = template.FuncMap{
 	"toJSON":         toJSON,
 	"toYAML":         toYAML,
 	"join":           join,
+	"filter":         filter,
 }
 
 // mapOf creates a new map from a list of map[string]any with the given key as the key in the new map,
 // and the given valueKey as the value in the new map.
-func mapOf(m []map[string]any, key, valueKey string) map[string]any {
+func mapOf(key, valueKey string, m []map[string]any) map[string]any {
 	ret := map[string]any{}
 	for _, v := range m {
 		key, okKey := v[key]
@@ -142,4 +143,21 @@ func join(sep string, v any) string {
 		out[i] = fmt.Sprintf("%v", val.Index(i))
 	}
 	return strings.Join(out, sep)
+}
+
+func filter(key string, value, v any) []map[string]any {
+	typ := reflect.TypeOf(v)
+	if typ.Kind() != reflect.Slice {
+		panic(fmt.Sprintf("filter: expected slice or array, got %T", v))
+	}
+
+	val := reflect.ValueOf(v)
+	out := make([]map[string]any, 0)
+	for i := 0; i < val.Len(); i++ {
+		mp := val.Index(i).Interface().(map[string]any)
+		if mp[key] == value {
+			out = append(out, mp)
+		}
+	}
+	return out
 }

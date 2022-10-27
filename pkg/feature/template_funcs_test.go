@@ -53,7 +53,7 @@ func Test_mapOf(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := mapOf(tt.args.m, tt.args.key, tt.args.value); !cmp.Equal(got, tt.want) {
+			if got := mapOf(tt.args.key, tt.args.value, tt.args.m); !cmp.Equal(got, tt.want) {
 				t.Errorf("diff -want +got:\n%v", cmp.Diff(tt.want, got))
 			}
 		})
@@ -421,6 +421,23 @@ func Test_usage(t *testing.T) {
 			},
 			want: `baz=qux,foo=bar`,
 		},
+
+		"filter envs and mapOf piped to toJSON": {
+			template: `{{ filter "name" "foo" .Envs | mapOf "name" "project_id" | toJSON }}`,
+			values: &MappingValues{
+				Envs: []map[string]any{
+					{
+						"name":       "foo",
+						"project_id": "bar",
+					},
+					{
+						"name":       "baz",
+						"project_id": "qux",
+					},
+				},
+			},
+			want: `{"foo":"bar"}`,
+		},
 	}
 
 	for name, tt := range tests {
@@ -469,6 +486,61 @@ func Test_join(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			if got := join(tt.sep, tt.list); !cmp.Equal(got, tt.want) {
+				t.Errorf("diff -want +got:\n%v", cmp.Diff(tt.want, got))
+			}
+		})
+	}
+}
+
+func Test_filter(t *testing.T) {
+	type args struct {
+		m    any
+		key  string
+		find any
+	}
+	tests := map[string]struct {
+		args args
+		want []map[string]any
+	}{
+		"empty map": {
+			args: args{
+				m:    []map[string]any{},
+				key:  "foo",
+				find: "bar",
+			},
+			want: []map[string]any{},
+		},
+		"map with one matching key": {
+			args: args{
+				m: []map[string]any{
+					{"foo": "bar"},
+				},
+				key:  "foo",
+				find: "bar",
+			},
+			want: []map[string]any{
+				{"foo": "bar"},
+			},
+		},
+		"map with two matching keys and one missing": {
+			args: args{
+				m: []map[string]any{
+					{"foo": "bar", "baz": "qux"},
+					{"foo": "bar", "baz": "quux"},
+					{"bar": "qux"},
+				},
+				key:  "foo",
+				find: "bar",
+			},
+			want: []map[string]any{
+				{"foo": "bar", "baz": "qux"},
+				{"foo": "bar", "baz": "quux"},
+			},
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			if got := filter(tt.args.key, tt.args.find, tt.args.m); !cmp.Equal(got, tt.want) {
 				t.Errorf("diff -want +got:\n%v", cmp.Diff(tt.want, got))
 			}
 		})

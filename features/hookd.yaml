@@ -21,7 +21,7 @@ mapping:
     displayName: "Google service account"
     description: "The service account email that is used to access the postgres-database, set up by terraform."
   backend.googleClusterProjects:
-    value: '{{ mapOf .Envs "name" "project_id" | mapJoin "=" | join "," }}'
+    value: '{{ mapOf "name" "project_id" .Envs | mapJoin "=" | join "," }}'
     displayName: "Google Cluster Projects"
     description: "Mapping from cluster name to google project ('cluster1=project1,cluster2=project2')"
   ingress.host:
