@@ -64,6 +64,11 @@ mapping:
     ignoreKind:
       - tenant
     displayName: "Tenant prometheus pod tolerations"
+  tenant_prometheus.localStorage.enabled:
+    value: "true"
+    ignoreKind:
+      - tenant
+    displayName: "Tenant prometheus local storage"
   kube-prometheus-stack.alertmanager.service:
     template: |
       type: LoadBalancer
