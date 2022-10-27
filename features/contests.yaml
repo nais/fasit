@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/contests
 source: https://github.com/nais/helm-charts/tree/main/charts/contests
-version: 0.5.3
+version: 0.6.0
 dependsOn:
   - allOf:
     - "naiserator"
@@ -18,12 +18,6 @@ config:
   alerts.enabled:
     type: bool
     displayName: "Enable alerts"
-  alerts.webhookUrl:
-    type: string
-    displayName: "Alerts webhook URL"
-  alerts.channel:
-    type: string
-    displayName: "Alerts channel"
 
   targetURLs:
     type: string_array
