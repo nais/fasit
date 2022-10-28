@@ -1,12 +1,13 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/naiserator
 source: https://github.com/nais/naiserator/tree/master/charts
-version: 0.5.0
+version: 0.6.0
 repo: ""
 environmentKinds:
   - "tenant"
   - "onprem"
 autoInstall:
   - "tenant"
+  - "onprem"
 dependsOn:
   - allOf:
       - "nais-crds"

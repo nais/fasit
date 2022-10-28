@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/velero
 source: https://github.com/nais/helm-charts/tree/main/charts/velero
-version: 0.2.0
+version: 0.3.0
 environmentKinds:
   - "management"
   - "tenant"
@@ -8,6 +8,7 @@ environmentKinds:
 autoInstall:
   - "management"
   - "tenant"
+  - "onprem"
 config:
   velero.configuration.backupStorageLocation.bucket:
     type: string
