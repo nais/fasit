@@ -9,6 +9,7 @@ environmentKinds:
 autoInstall:
   - tenant
   - management
+  - onprem
 timeout: 20m
 config:
   replicaCount:
@@ -28,12 +29,6 @@ config:
     displayName: "CPU request"
     description: "CPU request for kyverno pod."
 mapping:
-  securityContext.seccompProfile:
-    template: "null"
-    description: Security profile
-    ignoreKind:
-      - management
-      - tenant
   podAnnotations.nais\.io/logformat:
     value: glog
     displayName: "Log format"
