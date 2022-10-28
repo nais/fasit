@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring
-version: 1.6.0
+version: 1.7.0
 environmentKinds:
   - "tenant"
   - "onprem"
@@ -20,6 +20,9 @@ config:
   tenant_prometheus.retention:
     type: string
     displayName: Tenant prometheus retention
+  tenant_prometheus.storage.type:
+    type: string
+    displayName: Tenant storage type (default / local)
   tenant_prometheus.storage.size:
     type: string
     displayName: Tenant prometheus disk size
