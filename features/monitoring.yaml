@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring
-version: 1.7.0
+version: 1.8.0
 environmentKinds:
   - "tenant"
   - "onprem"
@@ -11,6 +11,9 @@ config:
   alerts.webhookUrl:
     type: string
     displayName: "Alerts webhook URL"
+  alerts.proxyUrl:
+    type: string
+    displayName: "Alerts proxy URL"
   alerts.channel:
     type: string
     displayName: "Alerts channel"
