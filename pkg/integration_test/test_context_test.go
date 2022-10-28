@@ -167,32 +167,46 @@ func (t *TestContext) PostRollout(tt *testing.T, feature string, body map[string
 	}
 
 	obj := struct {
-		Rollout uuid.UUID `json:"rollout"`
+		Rollout         uuid.UUID `json:"rollout"`
+		EnvNotAvailable []string  `json:"envNotAvailable"`
 	}{}
 
 	if err := json.Unmarshal(w.Body.Bytes(), &obj); err != nil {
 		tt.Fatalf("json.Unmarshal(jsonBody, v) = %v, want nil", err)
 	}
 
+	if len(obj.EnvNotAvailable) > 0 {
+		tt.Fatalf("got %v, feature not enabled in given environments", obj.EnvNotAvailable)
+	}
+
 	return obj.Rollout
 }
 
-func (t *TestContext) VerifyRollout(rolloutID uuid.UUID, want *model.Rollout) error {
-	var pendingRollout *model.Rollout
+func (t *TestContext) VerifyRollout(summaryID uuid.UUID, want []*model.Rollout, wantStatus model.RolloutStatus) error {
+	var pendingRollout []*model.Rollout
 	var err error
 
 	ctx := context.Background()
 
 	waitFor(func() bool {
-		pendingRollout, err = t.Repo.RolloutGetByID(ctx, rolloutID)
-		return pendingRollout != nil && pendingRollout.Status == want.Status
+		pendingRollout, err = t.Repo.RolloutsBySummaryID(ctx, summaryID)
+		if len(pendingRollout) == 0 {
+			return false
+		}
+
+		for _, r := range pendingRollout {
+			if r.Status != wantStatus {
+				return false
+			}
+		}
+		return true
 	})
 	if err != nil {
-		return fmt.Errorf("repo.RolloutGetByID(ctx, %v) = _, %v, want _, nil", rolloutID, err)
+		return fmt.Errorf("repo.RolloutsBySummaryID(ctx, %v) = _, %v, want _, nil", summaryID, err)
 	}
 
 	cmpOpts := []cmp.Option{
-		cmpopts.IgnoreFields(model.Rollout{}, "Created", "LastModified"),
+		cmpopts.IgnoreFields(model.Rollout{}, "Created", "LastModified", "ID"),
 	}
 
 	if !cmp.Equal(want, pendingRollout, cmpOpts...) {
@@ -255,4 +269,39 @@ func (t *TestContext) VerifyDeployInstructions(want []message.DeployInstruction)
 		return fmt.Errorf("diff -want +got:\n%v", cmp.Diff(want, t.Naisd.DeployInstructions()))
 	}
 	return nil
+}
+
+func (t *TestContext) RolloutSummaryRolloutIDs(tb testing.TB, ctx context.Context, summaryID uuid.UUID) []uuid.UUID {
+	tb.Helper()
+
+	rollouts, err := t.Repo.RolloutsBySummaryID(ctx, summaryID)
+	if err != nil {
+		tb.Fatalf("repo.RolloutsBySummaryID(ctx, %v) = _, %v, want _, nil", summaryID, err)
+	}
+
+	var ids []uuid.UUID
+	for _, r := range rollouts {
+		ids = append(ids, r.ID)
+	}
+
+	return ids
+}
+
+func (t *TestContext) DebugQuery(q string) {
+	rows, err := t.DB.Query(context.Background(), q)
+	if err != nil {
+		panic(err)
+	}
+
+	for rows.Next() {
+		vals, err := rows.Values()
+		if err != nil {
+			panic(err)
+		}
+
+		for _, v := range vals {
+			fmt.Print(v, "\t")
+		}
+		fmt.Println()
+	}
 }

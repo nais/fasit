@@ -22,9 +22,6 @@ type RolloutRepo interface {
 type Rollout struct {
 	repo database.Repo
 	log  *logrus.Entry
-
-	env    *model.Environment
-	tenant *model.Tenant
 }
 
 func NewRollout(repo database.Repo, log *logrus.Entry) *Rollout {
@@ -59,7 +56,7 @@ func (r *Rollout) Run(ctx context.Context, interval time.Duration) {
 func (r *Rollout) Notify(ctx context.Context, id uuid.UUID, status model.RolloutStatus) error {
 	switch status {
 	case model.RolloutStatusDeployed:
-		if err := r.completeRollout(ctx, id); err != nil {
+		if err := r.completeRolloutEvent(ctx, id); err != nil {
 			r.addErrorEvent(ctx, id, err)
 			updateErr := r.repo.RolloutsUpdateStatus(ctx, []uuid.UUID{id}, model.RolloutStatusFailed)
 			if updateErr != nil {
@@ -82,14 +79,27 @@ func (r *Rollout) Notify(ctx context.Context, id uuid.UUID, status model.Rollout
 	}
 }
 
-func (r *Rollout) completeRollout(ctx context.Context, id uuid.UUID) error {
-	log := r.log.WithField("id", id)
-	log.Debug("completing rollout")
-
-	rollout, err := r.repo.RolloutGetByID(ctx, id)
+func (r *Rollout) completeRolloutEvent(ctx context.Context, rolloutID uuid.UUID) error {
+	log := r.log.WithField("id", rolloutID)
+	rollout, err := r.repo.RolloutGetByID(ctx, rolloutID)
 	if err != nil {
 		log.WithError(err).Error("failed to get rollout")
 		return err
+	}
+
+	done, err := r.repo.RolloutSummaryDone(ctx, rollout.RolloutSummaryID)
+	if err != nil {
+		log.WithError(err).Error("failed to get rollout summary")
+		return err
+	}
+
+	if err := r.markRolloutDeployed(ctx, rolloutID); err != nil {
+		log.WithError(err).Error("failed to mark rollout as deployed")
+		return err
+	}
+
+	if !done {
+		log.Warn("rollout summary not done")
 	}
 
 	txRepo, tx, err := r.repo.WithTx(ctx)
@@ -127,6 +137,13 @@ func (r *Rollout) completeRollout(ctx context.Context, id uuid.UUID) error {
 	return tx.Commit(ctx)
 }
 
+func (r *Rollout) markRolloutDeployed(ctx context.Context, rolloutID uuid.UUID) error {
+	log := r.log.WithField("id", rolloutID)
+	log.Debug("marking rollout as deployed")
+
+	return r.repo.RolloutsUpdateStatus(ctx, []uuid.UUID{rolloutID}, model.RolloutStatusDeployed)
+}
+
 func (r *Rollout) rollback(ctx context.Context, id uuid.UUID) error {
 	log := r.log.WithField("id", id)
 	log.Debug("rolling back rollout")
@@ -142,7 +159,7 @@ func (r *Rollout) rollback(ctx context.Context, id uuid.UUID) error {
 		return err
 	}
 
-	_, env, err := r.tenantAndEnv(ctx)
+	_, env, err := r.tenantAndEnv(ctx, rollout.EnvironmentKind)
 	if err != nil {
 		return err
 	}
@@ -215,13 +232,6 @@ func (r *Rollout) process(ctx context.Context, id uuid.UUID) {
 	log := r.log.WithField("id", id)
 	log.Debug("got new rollout to process")
 
-	_, env, err := r.tenantAndEnv(ctx)
-	if err != nil {
-		log.WithError(err).Error("failed to get tenant and environment")
-		r.addErrorEvent(ctx, id, err)
-		return
-	}
-
 	txRepo, tx, err := r.repo.WithTx(ctx)
 	if err != nil {
 		log.WithError(err).Error("failed to start transaction")
@@ -232,6 +242,13 @@ func (r *Rollout) process(ctx context.Context, id uuid.UUID) {
 	rollout, err := r.getAndPrepare(ctx, txRepo, id)
 	if err != nil {
 		log.WithError(err).Error("failed to get rollout")
+		r.addErrorEvent(ctx, id, err)
+		return
+	}
+
+	_, env, err := r.tenantAndEnv(ctx, rollout.EnvironmentKind)
+	if err != nil {
+		log.WithError(err).Error("failed to get tenant and environment")
 		r.addErrorEvent(ctx, id, err)
 		return
 	}
@@ -284,7 +301,7 @@ func (r *Rollout) getAndPrepare(ctx context.Context, repo RolloutRepo, id uuid.U
 		return rollout, nil
 	}
 
-	_, env, err := r.tenantAndEnv(ctx)
+	_, env, err := r.tenantAndEnv(ctx, rollout.EnvironmentKind)
 	if err != nil {
 		return rollout, err
 	}
@@ -317,22 +334,18 @@ func (r *Rollout) getAndPrepare(ctx context.Context, repo RolloutRepo, id uuid.U
 	return rollout, nil
 }
 
-func (r *Rollout) tenantAndEnv(ctx context.Context) (*model.Tenant, *model.Environment, error) {
+func (r *Rollout) tenantAndEnv(ctx context.Context, envKind model.EnvironmentKind) (*model.Tenant, *model.Environment, error) {
 	var err error
-	if r.tenant == nil {
-		r.tenant, err = r.repo.TenantCI(ctx)
-		if err != nil {
-			return nil, nil, err
-		}
+	tenant, err := r.repo.TenantCI(ctx)
+	if err != nil {
+		return nil, nil, err
 	}
 
-	if r.env == nil {
-		r.env, err = r.repo.EnvironmentCI(ctx, model.EnvironmentKindTenant)
-		if err != nil {
-			return nil, nil, err
-		}
+	env, err := r.repo.EnvironmentCI(ctx, envKind)
+	if err != nil {
+		return nil, nil, err
 	}
-	return r.tenant, r.env, nil
+	return tenant, env, nil
 }
 
 func (r *Rollout) addEvent(ctx context.Context, rolloutID uuid.UUID, typ model.RolloutEventType, data json.RawMessage) {
