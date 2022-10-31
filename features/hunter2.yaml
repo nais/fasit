@@ -1,0 +1,17 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/smsmanager
+source: https://github.com/nais/smsmanager/tree/master/charts/smsmanager
+version: 1.0.0
+environmentKinds:
+  - "tenant"
+mapping:
+  googleProjectID:
+    value: "{{ .Env.project_id }}"
+  pubsubSubscriptionID:
+    value: "{{ .Env.... }}"
+config:
+  image.tag:
+    type: string
+    displayName: Image tag
+  debug:
+    type: bool
+    displayName: Enable debug

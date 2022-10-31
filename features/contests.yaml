@@ -12,30 +12,18 @@ environmentKinds:
 autoInstall:
   - "tenant"
 config:
-  image.tag:
+  contests.image.tag:
     type: string
     displayName: "Image tag"
-  alerts.enabled:
-    type: bool
-    displayName: "Enable alerts"
-  alerts.webhookUrl:
-    type: string
-    displayName: "Alerts webhook URL"
-  alerts.channel:
-    type: string
-    displayName: "Alerts channel"
-  targetURLs:
-    type: string_array
-    displayName: "Default Target URLs"
-  additionalTargetURLs:
-    type: string_array
-    displayName: "Additional Target URLs"
-  ingresses:
+  contests.ingresses:
     type: string_array
     displayName: "Ingresses"
+  blackboxExporter.additionalTargetURLs:
+    type: string_array
+    displayName: "Additional Target URLs"
 
 mapping:
-  ingresses:
+  contests.ingresses:
     value:
       - '{{ if ne .Kind "onprem" }}https://contests.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io{{ end }}'
     displayName: "Ingresses"
@@ -45,6 +33,6 @@ mapping:
   tenant:
     value: "{{.Tenant.Name}}"
     displayName: "Tenant name"
-  kafka.pool:
+  contests.kafka.pool:
     value: "{{.Env.aiven_project_0}}"
     displayName: "Kafka pool"
