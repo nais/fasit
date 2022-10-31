@@ -34,7 +34,7 @@
     "next-remove-imports": "1.0.8",
     "react": "18.2.0",
     "react-collapse": "^5.1.1",
-    "react-collapsed": "^3.4.0",
+    "react-collapsed": "^3.5.0",
     "react-dom": "18.2.0",
     "react-hook-form": "7.38.0",
     "react-tag-autocomplete": "6.3.0",
