@@ -15,9 +15,6 @@ config:
   contests.image.tag:
     type: string
     displayName: "Image tag"
-  contests.ingresses:
-    type: string_array
-    displayName: "Ingresses"
   blackboxExporter.additionalTargetURLs:
     type: string_array
     displayName: "Additional Target URLs"
@@ -25,14 +22,14 @@ config:
 mapping:
   contests.ingresses:
     value:
-      - '{{ if ne .Kind "onprem" }}https://contests.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io{{ end }}'
+      - 'https://contests.{{ .Env.name }}.{{ .Tenant.Name }}.cloud.nais.io'
     displayName: "Ingresses"
   env:
-    value: "{{.Env.name}}"
+    value: "{{ .Env.name }}"
     displayName: "Environment name"
   tenant:
-    value: "{{.Tenant.Name}}"
+    value: "{{ .Tenant.Name }}"
     displayName: "Tenant name"
   contests.kafka.pool:
-    value: "{{.Env.aiven_project_0}}"
+    value: "{{ .Env.aiven_project_0 }}"
     displayName: "Kafka pool"

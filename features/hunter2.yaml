@@ -1,5 +1,5 @@
-chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/smsmanager
-source: https://github.com/nais/smsmanager/tree/master/charts/smsmanager
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/hunter2
+source: https://github.com/nais/smsmanager/tree/master/charts/hunter2
 version: 1.0.0
 environmentKinds:
   - "tenant"
