@@ -1,0 +1,463 @@
+chart: nais-logd
+repo: https://nais.io/charts/
+source: https://github.com/nais/nais-logd
+version: 2.25.0
+environmentKinds:
+  - "management"
+  - "tenant"
+  - "onprem"
+
+config:
+  cluster.envclass:
+    type: string
+    displayName: Environment class
+  elasticsearch.index_name:
+    type: string
+    displayName: Elasticsearch index
+  throttle.bucket_period:
+    type: int
+    displayName: Throttle bucket period
+  throttle.bucket_limit:
+    type: int
+    displayName: Throttle bucket limit
+  throttle.reset_rate:
+    type: int
+    displayName: Throttle reset rate
+  throttle.drop_logs:
+    type: bool
+    displayName: Throttle drop logs
+
+mapping:
+  cluster.name:
+    value: "{{.Env.name}}"
+    displayName: Cluster name
+  psp.enabled:
+    value: "false"
+    displayName: Enable psp
+  fluentd:
+    template: |
+      image:
+        repository: ghcr.io/nais/nais-logd/nais-logd
+        tag: 128
+      podLabels:
+        kyverno.policy.exclusion.nais.io/restrict-volume-types: "true"
+        kyverno.policy.exclusion.nais.io/disallow-host-path: "true"
+        kyverno.policy.exclusion.nais.io/require-run-as-non-root-user: "true"
+        kyverno.policy.exclusion.nais.io/require-run-as-nonroot: "true"
+      rollingUpdate:
+        maxUnavailable: 10
+      imagePullSecrets:
+      - name: gh-docker-credentials
+      resources:
+        limits:
+          cpu: 2000m
+          memory: 2048Mi
+        requests:
+          cpu: 400m
+          memory: 768Mi
+  logs_acl:
+    template: |
+      container_log_dir: /var/log/pods
+      resources:
+        limits:
+          cpu: 100m
+          memory: 100M
+        requests:
+          cpu: 5m
+          memory: 20M
+  volumes:
+    template: |
+      - name: varlog
+        mountPath: /var/log
+        hostPath: /var/log
+        readOnly: false
+      - name: containerlogdir
+        mountPath: /var/log/pods
+        hostPath: /var/log/pods
+        readOnly: true
+  elasticsearch:
+    template: |
+      hosts: log-ingest.adeo.no:443
+      scheme: https
+      ssl_verify: true
+      ca_file: /etc/pki/tls/certs/ca-bundle.crt
+      logstash_format: false
+      type_name: _doc
+      max_retries: 0
+  configMaps:
+    template: |
+      - name: ca-bundle-pem
+        path: /etc/pki/tls/certs/ca-bundle.crt
+        subPath: ca-bundle.pem
+  kubewatch:
+    template: |
+      resources:
+        limits:
+          cpu: 200m
+          memory: 256Mi
+        requests:
+          cpu: 100m
+          memory: 128Mi
+  configFiles:
+    template: |
+      fluent.conf: |
+        <system>
+          log_level warn
+          rpc_endpoint 0.0.0.0:24444
+        </system>
+
+        <source>
+          @type prometheus
+          bind 0.0.0.0
+          port 9000
+          metrics_path /metrics
+        </source>
+
+        <source>
+          @type prometheus_monitor
+        </source>
+
+        <source>
+          @type tail
+          path /var/log/containers/*.log
+          pos_file "#{ENV['FLUENTD_CONTAINERS_POS_FILE']}"
+          read_from_head true
+          tag kubernetes.*
+          <parse>
+            @type multi_format
+            <pattern>
+              format json
+              time_key time
+              time_type string
+              time_format "%Y-%m-%dT%H:%M:%S.%NZ"
+              keep_time_key false
+            </pattern>
+            <pattern>
+              format regexp
+              expression /^(?<time>.+) (?<stream>stdout|stderr)( (?<logtag>.))? (?<log>.*)$/
+              time_format '%Y-%m-%dT%H:%M:%S.%N%:z'
+              keep_time_key false
+            </pattern>
+          </parse>
+        </source>
+
+        # Drop empty / only whitespace messages
+        <filter kubernetes.**>
+        @type ignore
+        @id ignore_empty
+        regexp1 log \A\s*\z
+        </filter>
+
+        <source>
+          @type systemd
+          @id systemd
+          tag systemd
+          path /var/log/journal
+          read_from_head false
+          <storage>
+            @type local
+            path "#{ENV['FLUENTD_JOURNAL_POS_FILE']}"
+          </storage>
+          <entry>
+            fields_strip_underscores true
+            fields_lowercase true
+          </entry>
+        </source>
+
+        <filter systemd>
+          @type nais_remap_journald
+        </filter>
+
+        # Rewrite tag from systemd to include program
+        <match systemd>
+          @type rewrite_tag_filter
+          <rule>
+            key program
+            pattern /(.+)/
+            tag systemd.$1
+          </rule>
+        </match>
+
+        <filter systemd.kubelet>
+          @type nais_logformat
+          field message
+          logformat glog
+        </filter>
+
+        <filter systemd.dockerd>
+          @type nais_logformat
+          field message
+          logformat logrus
+        </filter>
+
+        <filter systemd.kube-proxy>
+          @type nais_logformat
+          field message
+          logformat glog
+        </filter>
+
+        <filter systemd.update_engine>
+          @type nais_logformat
+          field message
+          logformat glog
+        </filter>
+
+        <filter systemd.**>
+          @type nais_prefix_fields
+          prefix x_
+          regex ^(?:namespace|type)$
+        </filter>
+
+        <label @FLUENT_LOG>
+          # Rewrite tag from throttle filter log so it's not dropped
+          <match fluent.**>
+            @type rewrite_tag_filter
+            <rule>
+              key message
+              pattern /^log throttle:/
+              tag nais.throttle.warning
+            </rule>
+          </match>
+
+          <match fluent.**>
+            @type null
+            @id fluent_drop
+          </match>
+        </label>
+
+        <match kubernetes.var.log.containers.**nais-logd-fluentd**>
+          @type null
+          @id logd_drop
+        </match>
+
+        <match kubernetes.var.log.containers.**linkerd-proxy**>
+          @type null
+          @id linkerd_drop
+        </match>
+
+        <filter kubernetes.**>
+          @type kubernetes_metadata
+          annotation_match ^nais.io
+          cache_size 10000
+          skip_namespace_metadata true
+        </filter>
+
+        # Rewrite tag on system namespaces to bypass throttle filter
+        <match kubernetes.**>
+          @type rewrite_tag_filter
+          <rule>
+            key $['kubernetes']['namespace_name']
+            pattern /^(?:kube-system|nais|rook-ceph|reboot-coordinator|vault)$/
+            tag nais.${tag}
+          </rule>
+          <rule>
+            key $['kubernetes']['namespace_name']
+            pattern /.*/
+            tag throttle.${tag}
+          </rule>
+        </match>
+
+        <filter throttle.**>
+          @type throttle
+          group_key ["kubernetes.namespace_name", "kubernetes.pod_name", "kubernetes.container_name"]
+          group_bucket_period_s "#{ENV['THROTTLE_BUCKET_PERIOD']}"
+          group_bucket_limit    "#{ENV['THROTTLE_BUCKET_LIMIT']}"
+          group_reset_rate_s    "#{ENV['THROTTLE_RESET_RATE']}"
+          group_drop_logs       "#{ENV['THROTTLE_DROP_LOGS']}"
+        </filter>
+
+        <filter {nais.**,throttle.**}>
+          @type nais_merge_json
+          field log
+        </filter>
+
+        <filter **.var.log.containers.csi-rbdplugin-**>
+          @type nais_logformat
+          logformat glog
+        </filter>
+
+        <filter **.var.log.containers.rook-discover-**>
+          @type nais_logformat
+          logformat rook
+        </filter>
+
+        <filter **.var.log.containers.rook-ceph-osd-**>
+          @type nais_logformat
+          logformat rook
+        </filter>
+
+        <filter **.var.log.containers.rook-ceph-operator-**>
+          @type nais_logformat
+          logformat rook,glog
+        </filter>
+
+        <filter **.var.log.containers.rfr-**>
+          @type nais_logformat
+          logformat redis
+        </filter>
+
+        <filter **.var.log.containers.rfs-**>
+          @type nais_logformat
+          logformat redis
+        </filter>
+
+        <filter {nais.**,throttle.**}>
+          @type nais_logformat
+        </filter>
+
+        <filter {nais.**,throttle.**}>
+          @type nais_logtransform
+        </filter>
+
+        <filter {nais.**,throttle.**}>
+          @type nais_prefix_fields
+          prefix x_
+          regex ^(?:category|container|host|namespace|application|pod|team|type)$
+        </filter>
+
+        <filter {nais.**,throttle.**}>
+          @type nais_remap_kubernetes
+          labels team
+        </filter>
+
+        <filter **.var.log.containers.**kubewatch**>
+          @type nais_kubewatch
+          type_field x_type
+        </filter>
+
+        <filter **.var.log.containers.**kube-apiserver**>
+          @type nais_kubeapiserver
+        </filter>
+
+        <filter **.var.log.containers.**traefik-ingress-controller**>
+          @type nais_remap_traefik
+        </filter>
+
+        <filter **>
+          @type nais_remap_elasticsearch
+        </filter>
+
+        <filter **>
+          @type nais_remap_java
+        </filter>
+
+        <filter {nais.**,throttle.**}>
+          @type nais_keywords
+          field exception
+          regex \b[A-Z]\w+Exception\b
+        </filter>
+
+        <filter {nais.**,throttle.**}>
+          @type nais_keywords
+          field message_code
+          regex \bORA-\d{5}\b
+        </filter>
+
+        <filter {nais.**,throttle.**}>
+          @type nais_drop_nested_elements
+          keep ^objectRef$
+        </filter>
+
+        <filter {nais.**,throttle.**}>
+          @type nais_flatten_record
+        </filter>
+
+        <filter {nais.**,throttle.**}>
+          @type nais_rewrite_keys
+        </filter>
+
+        <filter {nais.**,throttle.**}>
+          @type record_transformer
+          <record>
+            type "containerlog"
+            cluster "#{ENV['CLUSTER_NAME']}"
+            envclass "#{ENV['CLUSTER_ENVCLASS']}"
+          </record>
+        </filter>
+
+        <filter systemd**>
+          @type record_transformer
+          <record>
+            type "journal"
+            cluster "#{ENV['CLUSTER_NAME']}"
+            envclass "#{ENV['CLUSTER_ENVCLASS']}"
+          </record>
+        </filter>
+
+        <filter **>
+          @type nais_prefix_fields
+          prefix x_
+          regex ^(?!(?:[xX][-_]|@timestamp$|@version$|type$|received_at$|message$|message_code$|container$|host$|namespace$|application$|pod$|thread$|component$|category$|level$|stack_trace$|exception$|cluster$|environment$|envclass$|content_length$|referer$|remote_ip$|remote_port$|response_code$|request$|user$|user_agent$|ident$|facility$|severity$|program$|processing_time$|response_time$|source$|event$|uri$|method$|operation$|session$|path$|query_params$|team$|transaction$)).*
+        </filter>
+
+        # use empty string for fields missing in log message
+        <filter **>
+          @type record_transformer
+          enable_ruby
+          <record>
+            tmp_program ${record.has_key?('program') ? record['program'] : ''}
+            tmp_level ${record.has_key?('level') ? record['level'] : ''}
+            tmp_pod ${record.has_key?('pod') ? record['pod'] : ''}
+            tmp_team ${record.has_key?('team') ? record['team'] : ''}
+            tmp_namespace ${record.has_key?('namespace') ? record['namespace'] : ''}
+            tmp_application ${record.has_key?('application') ? record['application'] : ''}
+        </record>
+        </filter>
+
+        <filter **>
+          @type prometheus
+          <metric>
+            name logd_messages_total
+            type counter
+            desc Number of log messages
+          </metric>
+          <metric>
+            name logd_exceptions_total
+            type counter
+            desc Number of exceptions
+            label_key exception
+          </metric>
+          <labels>
+            log_program ${tmp_program}
+            log_level ${tmp_level}
+            log_pod_name ${tmp_pod}
+            log_team ${tmp_team}
+            log_namespace ${tmp_namespace}
+            log_app ${tmp_application}
+          </labels>
+        </filter>
+
+        <filter **>
+          @type record_transformer
+          remove_keys tmp_program,tmp_level,tmp_pod,tmp_team,tmp_namespace,tmp_application
+        </filter>
+
+        <match **>
+          @type elasticsearch
+          @id elasticsearch_output
+          include_tag_key false
+          hosts "#{ENV['ELASTICSEARCH_HOSTS']}"
+          scheme "#{ENV['ELASTICSEARCH_SCHEME']}"
+          ssl_verify "#{ENV['ELASTICSEARCH_SSL_VERIFY']}"
+          ca_file "#{ENV['ELASTICSEARCH_CA_FILE']}"
+          type_name "#{ENV['ELASTICSEARCH_TYPE_NAME']}"
+          index_name "#{ENV['ELASTICSEARCH_INDEX_NAME']}"
+          logstash_format "#{ENV['ELASTICSEARCH_LOGSTASH_FORMAT']}"
+          logstash_prefix "#{ENV['ELASTICSEARCH_LOGSTASH_PREFIX']}"
+          reconnect_on_error true
+          reload_connections false
+          reload_on_failure false
+          <buffer>
+            flush_mode interval
+            flush_interval 5
+            flush_thread_count 8
+            retry_wait 5
+            retry_type exponential_backoff
+            retry_exponential_backoff_base 2
+            retry_forever false
+            retry_max_times "#{ENV['ELASTICSEARCH_MAX_RETRIES']}"
+            chunk_limit_size 4M
+            chunk_limit_records 4096
+            disable_chunk_backup true
+          </buffer>
+        </match>
