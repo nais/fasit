@@ -7,7 +7,7 @@ mapping:
   googleProjectID:
     value: "{{ .Env.project_id }}"
   pubsubSubscriptionID:
-    value: "{{ .Env.... }}"
+    value: "{{ .Env.pubsub_subscription_id}}"
 config:
   image.tag:
     type: string
