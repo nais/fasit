@@ -8,15 +8,12 @@ autoInstall:
   - "tenant"
 timeout: 20m
 config:
-  alerts.webhookUrl:
+  alerts.webhookURL:
     type: string
     displayName: "Alerts webhook URL"
-  alerts.proxyUrl:
+  alerts.proxyURL:
     type: string
     displayName: "Alerts proxy URL"
-  alerts.channel:
-    type: string
-    displayName: "Alerts channel"
   tenant_prometheus.storage.enabled:
     type: bool
     displayName: Tenant prometheus enable pvc storage
