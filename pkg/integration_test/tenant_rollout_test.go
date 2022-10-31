@@ -1,4 +1,4 @@
-//go:build integration_test
+//go:build integration_test_disable
 
 package integration_test
 
