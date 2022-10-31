@@ -6,7 +6,7 @@ require (
 	cloud.google.com/go/cloudsqlconn v0.5.2
 	cloud.google.com/go/pubsub v1.26.0
 	github.com/99designs/gqlgen v0.17.20
-	github.com/GoogleCloudPlatform/cloudsql-proxy v1.32.0
+	github.com/GoogleCloudPlatform/cloudsql-proxy v1.33.0
 	github.com/coreos/go-oidc/v3 v3.4.0
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/google/go-cmp v0.5.9
@@ -166,7 +166,7 @@ require (
 	golang.org/x/sys v0.0.0-20220907062415-87db552b00fd // indirect
 	golang.org/x/term v0.0.0-20220722155259-a9ba230a4035 // indirect
 	golang.org/x/text v0.4.0 // indirect
-	golang.org/x/time v0.0.0-20220922220347-f3bd1da661af // indirect
+	golang.org/x/time v0.1.0 // indirect
 	golang.org/x/tools v0.1.12 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20221018160656-63c7b68cfc55 // indirect
