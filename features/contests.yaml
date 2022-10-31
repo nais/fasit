@@ -1,58 +1,50 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/contests
-source: https://github.com/nais/contests/tree/main/charts/
-version: 0.6.0
+source: https://github.com/nais/contests
+version: 1.0.0
 dependsOn:
   - allOf:
-      - "naiserator"
-      - "monitoring"
+    - "naiserator"
+    - "cnrm"
+    - "monitoring"
 environmentKinds:
   - "tenant"
   - "onprem"
 autoInstall:
   - "tenant"
 config:
+  image.tag:
+    type: string
+    displayName: "Image tag"
   alerts.enabled:
     type: bool
     displayName: "Enable alerts"
-  contests.image.tag:
+  alerts.webhookUrl:
     type: string
-    displayName: "Image tag"
-  contests.storage.enabled:
-    type: bool
-    displayName: "Enable storage"
-  contests.kafka.enabled:
-    type: bool
-    displayName: "Enable Kafka"
-
-  blackboxExporter.additionalTargetURLs:
+    displayName: "Alerts webhook URL"
+  alerts.channel:
+    type: string
+    displayName: "Alerts channel"
+  targetURLs:
+    type: string_array
+    displayName: "Default Target URLs"
+  additionalTargetURLs:
     type: string_array
     displayName: "Additional Target URLs"
-
-  contests.ingresses:
+  ingresses:
     type: string_array
     displayName: "Ingresses"
-    ignoreKind:
-      - "onprem"
-
-  contests.connect.url:
-    type: string
-    displayName: "Connect URL (downstream from contests app)"
 
 mapping:
-  contests.ingresses:
+  ingresses:
     value:
-      - 'https://{{ subdomain . "contests" }}'
+      - '{{ if ne .Kind "onprem" }}https://contests.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io{{ end }}'
     displayName: "Ingresses"
-    ignoreKind:
-      - "onprem"
   env:
     value: "{{.Env.name}}"
     displayName: "Environment name"
   tenant:
     value: "{{.Tenant.Name}}"
     displayName: "Tenant name"
-  contests.kafka.pool:
+  kafka.pool:
     value: "{{.Env.aiven_project_0}}"
     displayName: "Kafka pool"
-  contests.accessPolicy.enabled:
-    template: '{{ne .Kind "onprem"}}'
