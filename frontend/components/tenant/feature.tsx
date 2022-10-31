@@ -15,6 +15,7 @@ import { FileContent, Filter, Wrench } from '@navikt/ds-icons'
 import FeatureLogs from './featureLogs'
 import FeatureHelmValues from './featureHelmValues'
 import { useRouter } from 'next/router'
+import RedeployFeature from './redeployFeature'
 
 const FeatureContainer = styled.div`
   border: 1px solid silver;
@@ -37,6 +38,7 @@ interface FeatureProps {
 
 const Feature = ({ env, featureName }: FeatureProps) => {
   const [showVerify, setShowVerify] = useState(false)
+  const [showRedeploy, setShowRedeploy] = useState(false)
 
   const router = useRouter()
 
@@ -62,6 +64,7 @@ const Feature = ({ env, featureName }: FeatureProps) => {
         configs={configs}
         env={env}
         setShowVerify={setShowVerify}
+        setShowRedeploy={setShowRedeploy}
       />
       <Tabs
         defaultValue={activeTab}
@@ -110,6 +113,12 @@ const Feature = ({ env, featureName }: FeatureProps) => {
           env.featureStates.find((f) => f.feature.name === featureName)
             ?.enabled || false
         }
+      />
+      <RedeployFeature
+        open={showRedeploy}
+        onClose={setShowRedeploy}
+        feature={featureName}
+        envID={env.id}
       />
     </FeatureContainer>
   )

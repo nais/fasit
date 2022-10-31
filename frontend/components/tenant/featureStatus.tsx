@@ -1,19 +1,19 @@
+import { Loader, Switch } from '@navikt/ds-react'
+import Link from 'next/link'
+import { useRouter } from 'next/router'
 import * as React from 'react'
+import { useEffect, useState } from 'react'
+import ReactTooltip from 'react-tooltip'
 import styled from 'styled-components'
 import {
   EnvironmentGetQuery,
   RolloutStatus,
   useFeatureStatusQuery,
 } from '../../lib/schema/graphql'
-import { navGronn, navOransje, navRod } from '../../styles/constants'
-import IconBox from '../lib/icons/iconBox'
-import GitIcon from '../lib/icons/gitIcon'
-import { Loader, Switch } from '@navikt/ds-react'
+import { navBla, navGronn, navOransje, navRod } from '../../styles/constants'
 import { Configs } from '../lib/configRows'
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/router'
-import ReactTooltip from 'react-tooltip'
+import GitIcon from '../lib/icons/gitIcon'
+import IconBox from '../lib/icons/iconBox'
 
 const FeatureStatusContainer = styled.div`
   border: 1px solid silver;
@@ -29,6 +29,19 @@ const EnableFeatureBox = styled.div`
   align-items: center;
   justify-self: center;
   flex-direction: column;
+`
+
+const FlatButton = styled.button`
+  background-color: transparent;
+  border: none;
+  color: ${navBla};
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+
+  &:hover {
+    text-decoration: none;
+  }
 `
 
 interface StatusIndicatorProps {
@@ -64,6 +77,7 @@ interface FeatureProps {
   env: EnvironmentGetQuery['environment']
   featureName: string
   setShowVerify: React.Dispatch<boolean>
+  setShowRedeploy: React.Dispatch<boolean>
 }
 
 const FeatureStatus = ({
@@ -71,6 +85,7 @@ const FeatureStatus = ({
   env,
   featureName,
   setShowVerify,
+  setShowRedeploy,
 }: FeatureProps) => {
   const router = useRouter()
   const tenantName = router.query.tenantName as string
@@ -196,6 +211,9 @@ const FeatureStatus = ({
             {featureState?.enabled ? 'Disable' : 'Enable'} reconciling this
             feature
           </ReactTooltip>
+          <FlatButton onClick={() => setShowRedeploy(true)}>
+            Redeploy
+          </FlatButton>
         </EnableFeatureBox>
       </div>
     </FeatureStatusContainer>

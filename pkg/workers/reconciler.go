@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -21,6 +22,7 @@ type ReconcilerStore interface {
 	ConfigListen(ctx context.Context, fn database.ListenFunc) error
 	FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *feature.Feature, enabled bool) (*model.FeatureState, error)
 	FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
+	FeatureStatesListen(ctx context.Context, fn database.ListenFunc) error
 	HealthGet(ctx context.Context, environmentID uuid.UUID) (*model.Health, error)
 	HelmValues(ctx context.Context, feature feature.Feature, envID uuid.UUID) (map[string]any, []uuid.UUID, error)
 	RolloutEventCreate(ctx context.Context, event *model.RolloutEvent) error
@@ -42,6 +44,9 @@ type Reconciler struct {
 	publisher  NewPublisher
 	log        *logrus.Entry
 	projectID  string
+
+	lock    sync.Mutex
+	running bool
 }
 
 func NewReconciler(
@@ -66,7 +71,7 @@ func (r *Reconciler) Listen(ctx context.Context) error {
 	flushTimer := time.NewTicker(1 * time.Second)
 	flushTimer.Stop()
 
-	ch := make(chan uuid.UUID, 1)
+	ch := make(chan struct{}, 1)
 
 	go func() {
 		for {
@@ -82,9 +87,17 @@ func (r *Reconciler) Listen(ctx context.Context) error {
 		}
 	}()
 
-	return r.repo.ConfigListen(ctx, func(ctx context.Context, envID uuid.UUID) {
-		ch <- envID
-	})
+	trigger := func(ctx context.Context, id uuid.UUID) {
+		ch <- struct{}{}
+	}
+
+	go func() {
+		if err := r.repo.FeatureStatesListen(ctx, trigger); err != nil {
+			r.log.WithError(err).Error("feature states listen")
+		}
+	}()
+
+	return r.repo.ConfigListen(ctx, trigger)
 }
 
 func (r *Reconciler) Run(ctx context.Context, interval time.Duration) {
@@ -105,6 +118,21 @@ func (r *Reconciler) Run(ctx context.Context, interval time.Duration) {
 }
 
 func (r *Reconciler) reconcile(ctx context.Context) error {
+	r.lock.Lock()
+
+	if r.running {
+		r.lock.Unlock()
+		return nil
+	}
+	r.running = true
+	r.lock.Unlock()
+
+	defer func() {
+		r.lock.Lock()
+		r.running = false
+		r.lock.Unlock()
+	}()
+
 	data, err := r.repo.TenantEnvironments(ctx)
 	if err != nil {
 		return err
