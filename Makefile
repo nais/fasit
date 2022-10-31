@@ -13,6 +13,7 @@ install-sqlc:
 
 generate-sql:
 	$(GOBIN)/sqlc generate
+	$(MAKE) mocks
 
 generate-graphql:
 	go run github.com/99designs/gqlgen generate

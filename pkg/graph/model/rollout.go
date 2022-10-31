@@ -8,10 +8,11 @@ import (
 )
 
 type RolloutSummary struct {
-	ID           uuid.UUID `json:"id"`
-	FeatureName  string    `json:"feature"`
-	Created      time.Time `json:"created"`
-	LastModified time.Time `json:"lastModified"`
+	ID           uuid.UUID     `json:"id"`
+	FeatureName  string        `json:"feature"`
+	Status       RolloutStatus `json:"status"`
+	Created      time.Time     `json:"created"`
+	LastModified time.Time     `json:"lastModified"`
 }
 
 type Rollout struct {

@@ -819,6 +819,29 @@ func (_m *Repo) RolloutSummaryDone(ctx context.Context, rolloutID uuid.UUID) (bo
 	return r0, r1
 }
 
+// RolloutSummaryGetByID provides a mock function with given fields: ctx, id
+func (_m *Repo) RolloutSummaryGetByID(ctx context.Context, id uuid.UUID) (*model.RolloutSummary, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *model.RolloutSummary
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) *model.RolloutSummary); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.RolloutSummary)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // RolloutUpdate provides a mock function with given fields: ctx, rollout
 func (_m *Repo) RolloutUpdate(ctx context.Context, rollout *model.Rollout) error {
 	ret := _m.Called(ctx, rollout)

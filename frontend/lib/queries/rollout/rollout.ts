@@ -1,22 +1,30 @@
 import gql from 'graphql-tag'
 
-export const ROLLOUT = gql`
-  query rollout($id: ID!) {
-    rollout(id: $id) {
+export const ROLLOUT_SUMMARY = gql`
+  query rolloutSummary($id: ID!) {
+    rolloutSummary(id: $id) {
       id
-      created
       status
+      created
       feature {
         name
       }
-      events {
+      rollouts {
         id
-        type
-        data
         created
-      }
-      changeset {
-        new
+        status
+        environment {
+          kind
+        }
+        events {
+          id
+          type
+          data
+          created
+        }
+        changeset {
+          new
+        }
       }
     }
   }

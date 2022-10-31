@@ -273,7 +273,7 @@ export type Query = {
   featureStatus: Status
   features: Array<Feature>
   helmValues: Scalars['RawMessage']
-  rollout: Rollout
+  rolloutSummary: RolloutSummary
   /** tenant returns the given tenant. */
   tenant: Tenant
   tenants: Array<Tenant>
@@ -319,7 +319,7 @@ export type QueryHelmValuesArgs = {
   feature: Scalars['String']
 }
 
-export type QueryRolloutArgs = {
+export type QueryRolloutSummaryArgs = {
   id: Scalars['ID']
 }
 
@@ -349,8 +349,8 @@ export type Rollout = {
   __typename?: 'Rollout'
   changeset: RolloutChangeset
   created: Scalars['Time']
+  environment: Environment
   events: Array<RolloutEvent>
-  feature: Feature
   id: Scalars['ID']
   lastModified: Scalars['Time']
   status: RolloutStatus
@@ -384,6 +384,16 @@ export enum RolloutStatus {
   Failed = 'FAILED',
   Pending = 'PENDING',
   Unknown = 'UNKNOWN',
+}
+
+export type RolloutSummary = {
+  __typename?: 'RolloutSummary'
+  created: Scalars['Time']
+  feature: Feature
+  id: Scalars['ID']
+  lastModified: Scalars['Time']
+  rollouts: Array<Rollout>
+  status: RolloutStatus
 }
 
 export type Status = {
@@ -685,26 +695,33 @@ export type HelmValuesQueryVariables = Exact<{
 
 export type HelmValuesQuery = { __typename?: 'Query'; helmValues: any }
 
-export type RolloutQueryVariables = Exact<{
+export type RolloutSummaryQueryVariables = Exact<{
   id: Scalars['ID']
 }>
 
-export type RolloutQuery = {
+export type RolloutSummaryQuery = {
   __typename?: 'Query'
-  rollout: {
-    __typename?: 'Rollout'
+  rolloutSummary: {
+    __typename?: 'RolloutSummary'
     id: string
-    created: any
     status: RolloutStatus
+    created: any
     feature: { __typename?: 'Feature'; name: string }
-    events: Array<{
-      __typename?: 'RolloutEvent'
+    rollouts: Array<{
+      __typename?: 'Rollout'
       id: string
-      type: RolloutEventType
-      data: any
       created: any
+      status: RolloutStatus
+      environment: { __typename?: 'Environment'; kind: EnvironmentKind }
+      events: Array<{
+        __typename?: 'RolloutEvent'
+        id: string
+        type: RolloutEventType
+        data: any
+        created: any
+      }>
+      changeset: { __typename?: 'RolloutChangeset'; new: any }
     }>
-    changeset: { __typename?: 'RolloutChangeset'; new: any }
   }
 }
 
@@ -1585,70 +1602,85 @@ export type HelmValuesQueryResult = Apollo.QueryResult<
   HelmValuesQuery,
   HelmValuesQueryVariables
 >
-export const RolloutDocument = gql`
-  query rollout($id: ID!) {
-    rollout(id: $id) {
+export const RolloutSummaryDocument = gql`
+  query rolloutSummary($id: ID!) {
+    rolloutSummary(id: $id) {
       id
-      created
       status
+      created
       feature {
         name
       }
-      events {
+      rollouts {
         id
-        type
-        data
         created
-      }
-      changeset {
-        new
+        status
+        environment {
+          kind
+        }
+        events {
+          id
+          type
+          data
+          created
+        }
+        changeset {
+          new
+        }
       }
     }
   }
 `
 
 /**
- * __useRolloutQuery__
+ * __useRolloutSummaryQuery__
  *
- * To run a query within a React component, call `useRolloutQuery` and pass it any options that fit your needs.
- * When your component renders, `useRolloutQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * To run a query within a React component, call `useRolloutSummaryQuery` and pass it any options that fit your needs.
+ * When your component renders, `useRolloutSummaryQuery` returns an object from Apollo Client that contains loading, error, and data properties
  * you can use to render your UI.
  *
  * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
  *
  * @example
- * const { data, loading, error } = useRolloutQuery({
+ * const { data, loading, error } = useRolloutSummaryQuery({
  *   variables: {
  *      id: // value for 'id'
  *   },
  * });
  */
-export function useRolloutQuery(
-  baseOptions: Apollo.QueryHookOptions<RolloutQuery, RolloutQueryVariables>,
-) {
-  const options = { ...defaultOptions, ...baseOptions }
-  return Apollo.useQuery<RolloutQuery, RolloutQueryVariables>(
-    RolloutDocument,
-    options,
-  )
-}
-export function useRolloutLazyQuery(
-  baseOptions?: Apollo.LazyQueryHookOptions<
-    RolloutQuery,
-    RolloutQueryVariables
+export function useRolloutSummaryQuery(
+  baseOptions: Apollo.QueryHookOptions<
+    RolloutSummaryQuery,
+    RolloutSummaryQueryVariables
   >,
 ) {
   const options = { ...defaultOptions, ...baseOptions }
-  return Apollo.useLazyQuery<RolloutQuery, RolloutQueryVariables>(
-    RolloutDocument,
+  return Apollo.useQuery<RolloutSummaryQuery, RolloutSummaryQueryVariables>(
+    RolloutSummaryDocument,
     options,
   )
 }
-export type RolloutQueryHookResult = ReturnType<typeof useRolloutQuery>
-export type RolloutLazyQueryHookResult = ReturnType<typeof useRolloutLazyQuery>
-export type RolloutQueryResult = Apollo.QueryResult<
-  RolloutQuery,
-  RolloutQueryVariables
+export function useRolloutSummaryLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    RolloutSummaryQuery,
+    RolloutSummaryQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions }
+  return Apollo.useLazyQuery<RolloutSummaryQuery, RolloutSummaryQueryVariables>(
+    RolloutSummaryDocument,
+    options,
+  )
+}
+export type RolloutSummaryQueryHookResult = ReturnType<
+  typeof useRolloutSummaryQuery
+>
+export type RolloutSummaryLazyQueryHookResult = ReturnType<
+  typeof useRolloutSummaryLazyQuery
+>
+export type RolloutSummaryQueryResult = Apollo.QueryResult<
+  RolloutSummaryQuery,
+  RolloutSummaryQueryVariables
 >
 export const FeatureStatusDocument = gql`
   query featureStatus($envID: ID!, $feature: String!) {

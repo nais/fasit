@@ -75,6 +75,7 @@ func (r *Reconciler) Listen(ctx context.Context) error {
 			case <-ch:
 				flushTimer.Reset(1 * time.Second)
 			case <-flushTimer.C:
+				flushTimer.Stop()
 				r.reconcile(ctx)
 			}
 		}

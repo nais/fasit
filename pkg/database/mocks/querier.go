@@ -755,6 +755,27 @@ func (_m *Querier) RolloutSummaryDone(ctx context.Context, rolloutSummaryID uuid
 	return r0, r1
 }
 
+// RolloutSummaryGetByID provides a mock function with given fields: ctx, id
+func (_m *Querier) RolloutSummaryGetByID(ctx context.Context, id uuid.UUID) (gensql.RolloutSummaryGetByIDRow, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 gensql.RolloutSummaryGetByIDRow
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) gensql.RolloutSummaryGetByIDRow); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Get(0).(gensql.RolloutSummaryGetByIDRow)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // RolloutUpdate provides a mock function with given fields: ctx, arg
 func (_m *Querier) RolloutUpdate(ctx context.Context, arg gensql.RolloutUpdateParams) (gensql.Rollout, error) {
 	ret := _m.Called(ctx, arg)

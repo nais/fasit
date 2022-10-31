@@ -7,6 +7,7 @@ package gensql
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgtype"
@@ -139,6 +140,35 @@ func (q *Queries) RolloutSummaryDone(ctx context.Context, rolloutSummaryID uuid.
 	var incomplete bool
 	err := row.Scan(&incomplete)
 	return incomplete, err
+}
+
+const rolloutSummaryGetByID = `-- name: RolloutSummaryGetByID :one
+SELECT
+  id, feature, created, last_modified,
+  (SELECT status FROM rollouts WHERE rollout_summary_id = rs.id ORDER BY status ASC LIMIT 1) as status
+FROM rollout_summaries rs
+WHERE rs.id = $1
+`
+
+type RolloutSummaryGetByIDRow struct {
+	ID           uuid.UUID
+	Feature      string
+	Created      time.Time
+	LastModified time.Time
+	Status       RolloutStatus
+}
+
+func (q *Queries) RolloutSummaryGetByID(ctx context.Context, id uuid.UUID) (RolloutSummaryGetByIDRow, error) {
+	row := q.db.QueryRow(ctx, rolloutSummaryGetByID, id)
+	var i RolloutSummaryGetByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.Feature,
+		&i.Created,
+		&i.LastModified,
+		&i.Status,
+	)
+	return i, err
 }
 
 const rolloutUpdate = `-- name: RolloutUpdate :one

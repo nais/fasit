@@ -97,7 +97,7 @@ func (r *Rollout) Rollout(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	if len(envNotAvailable) > 0 {
+	if len(envNotAvailable) >= len(feature.EnvironmentKinds) {
 		w.WriteHeader(http.StatusBadRequest)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"error": fmt.Sprintf("feature not available in any environments: %v", envNotAvailable),
@@ -114,7 +114,14 @@ func (r *Rollout) Rollout(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+OUTER:
 	for _, env := range feature.EnvironmentKinds {
+		for _, e := range envNotAvailable {
+			if e == env {
+				continue OUTER
+			}
+		}
+
 		rollout := &model.Rollout{
 			RolloutSummaryID: summaryID,
 			EnvironmentKind:  env,

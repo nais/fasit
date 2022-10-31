@@ -43,3 +43,11 @@ SELECT * FROM rollouts WHERE rollout_summary_id = @rollout_summary_id;
 
 -- name: RolloutSummaryDone :one
 SELECT count(1) = 0 as incomplete FROM rollouts WHERE rollout_summary_id = @rollout_summary_id AND status != 'deployed';
+
+-- name: RolloutSummaryGetByID :one
+SELECT
+  *,
+  (SELECT status FROM rollouts WHERE rollout_summary_id = rs.id ORDER BY status ASC LIMIT 1) as status
+FROM rollout_summaries rs
+WHERE rs.id = @id
+;

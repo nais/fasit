@@ -24,6 +24,7 @@ type RolloutRepo interface {
 	RolloutSummaryCreate(ctx context.Context, feature string) (uuid.UUID, error)
 	RolloutsBySummaryID(ctx context.Context, summaryID uuid.UUID) ([]*model.Rollout, error)
 	RolloutSummaryDone(ctx context.Context, rolloutID uuid.UUID) (bool, error)
+	RolloutSummaryGetByID(ctx context.Context, id uuid.UUID) (*model.RolloutSummary, error)
 }
 
 var _ RolloutRepo = &repo{}
@@ -195,4 +196,19 @@ func (r *repo) RolloutsBySummaryID(ctx context.Context, summaryID uuid.UUID) ([]
 
 func (r *repo) RolloutSummaryDone(ctx context.Context, rolloutID uuid.UUID) (bool, error) {
 	return r.querier.RolloutSummaryDone(ctx, rolloutID)
+}
+
+func (r *repo) RolloutSummaryGetByID(ctx context.Context, id uuid.UUID) (*model.RolloutSummary, error) {
+	summary, err := r.querier.RolloutSummaryGetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.RolloutSummary{
+		ID:           summary.ID,
+		FeatureName:  summary.Feature,
+		Status:       model.RolloutStatus(summary.Status),
+		Created:      summary.Created,
+		LastModified: summary.LastModified,
+	}, nil
 }
