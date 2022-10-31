@@ -46,8 +46,6 @@ mapping:
         kyverno.policy.exclusion.nais.io/require-run-as-nonroot: "true"
       rollingUpdate:
         maxUnavailable: 10
-      imagePullSecrets:
-      - name: gh-docker-credentials
       resources:
         limits:
           cpu: 2000m
