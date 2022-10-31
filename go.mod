@@ -22,7 +22,7 @@ require (
 	github.com/pressly/goose/v3 v3.7.0
 	github.com/prometheus/client_golang v1.13.0
 	github.com/rs/cors v1.8.2
-	github.com/santhosh-tekuri/jsonschema/v5 v5.0.1
+	github.com/santhosh-tekuri/jsonschema/v5 v5.0.2
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stevenle/topsort v0.2.0
 	github.com/stretchr/testify v1.8.1
