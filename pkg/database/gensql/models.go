@@ -186,12 +186,14 @@ type ReleaseStatus struct {
 }
 
 type Rollout struct {
-	ID           uuid.UUID
-	Feature      string
-	Status       RolloutStatus
-	Changeset    pgtype.JSONB
-	Created      time.Time
-	LastModified time.Time
+	ID               uuid.UUID
+	Feature          string
+	Status           RolloutStatus
+	Changeset        pgtype.JSONB
+	Created          time.Time
+	LastModified     time.Time
+	Kind             EnvironmentKind
+	RolloutSummaryID uuid.UUID
 }
 
 type RolloutEvent struct {
@@ -200,6 +202,13 @@ type RolloutEvent struct {
 	Type      string
 	Data      pgtype.JSONB
 	Created   time.Time
+}
+
+type RolloutSummary struct {
+	ID           uuid.UUID
+	Feature      string
+	Created      time.Time
+	LastModified time.Time
 }
 
 type Status struct {

@@ -45,7 +45,11 @@ type Querier interface {
 	RolloutEventCreate(ctx context.Context, arg RolloutEventCreateParams) error
 	RolloutEventsGetByRolloutID(ctx context.Context, rolloutID uuid.UUID) ([]RolloutEvent, error)
 	RolloutGetByID(ctx context.Context, id uuid.UUID) (Rollout, error)
+	RolloutSummaryCreate(ctx context.Context, feature string) (RolloutSummary, error)
+	RolloutSummaryDone(ctx context.Context, rolloutSummaryID uuid.UUID) (bool, error)
+	RolloutSummaryGetByID(ctx context.Context, id uuid.UUID) (RolloutSummaryGetByIDRow, error)
 	RolloutUpdate(ctx context.Context, arg RolloutUpdateParams) (Rollout, error)
+	RolloutsBySummaryID(ctx context.Context, rolloutSummaryID uuid.UUID) ([]Rollout, error)
 	RolloutsUnprocessed(ctx context.Context) ([]Rollout, error)
 	RolloutsUpdateStatus(ctx context.Context, arg RolloutsUpdateStatusParams) error
 	StatusCreateOrUpdate(ctx context.Context, arg StatusCreateOrUpdateParams) error

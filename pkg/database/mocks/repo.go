@@ -434,6 +434,29 @@ func (_m *Repo) EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]*mod
 	return r0, r1
 }
 
+// FeatureStateGet provides a mock function with given fields: ctx, envID, featureName
+func (_m *Repo) FeatureStateGet(ctx context.Context, envID uuid.UUID, featureName string) (*model.FeatureState, error) {
+	ret := _m.Called(ctx, envID, featureName)
+
+	var r0 *model.FeatureState
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, string) *model.FeatureState); ok {
+		r0 = rf(ctx, envID, featureName)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.FeatureState)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, string) error); ok {
+		r1 = rf(ctx, envID, featureName)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // FeatureStatesCreateOrUpdate provides a mock function with given fields: ctx, envID, _a2, enabled
 func (_m *Repo) FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, _a2 *feature.Feature, enabled bool) (*model.FeatureState, error) {
 	ret := _m.Called(ctx, envID, _a2, enabled)
@@ -752,6 +775,73 @@ func (_m *Repo) RolloutGetByID(ctx context.Context, id uuid.UUID) (*model.Rollou
 	return r0, r1
 }
 
+// RolloutSummaryCreate provides a mock function with given fields: ctx, _a1
+func (_m *Repo) RolloutSummaryCreate(ctx context.Context, _a1 string) (uuid.UUID, error) {
+	ret := _m.Called(ctx, _a1)
+
+	var r0 uuid.UUID
+	if rf, ok := ret.Get(0).(func(context.Context, string) uuid.UUID); ok {
+		r0 = rf(ctx, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(uuid.UUID)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// RolloutSummaryDone provides a mock function with given fields: ctx, rolloutID
+func (_m *Repo) RolloutSummaryDone(ctx context.Context, rolloutID uuid.UUID) (bool, error) {
+	ret := _m.Called(ctx, rolloutID)
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) bool); ok {
+		r0 = rf(ctx, rolloutID)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, rolloutID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// RolloutSummaryGetByID provides a mock function with given fields: ctx, id
+func (_m *Repo) RolloutSummaryGetByID(ctx context.Context, id uuid.UUID) (*model.RolloutSummary, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *model.RolloutSummary
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) *model.RolloutSummary); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.RolloutSummary)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // RolloutUpdate provides a mock function with given fields: ctx, rollout
 func (_m *Repo) RolloutUpdate(ctx context.Context, rollout *model.Rollout) error {
 	ret := _m.Called(ctx, rollout)
@@ -764,6 +854,29 @@ func (_m *Repo) RolloutUpdate(ctx context.Context, rollout *model.Rollout) error
 	}
 
 	return r0
+}
+
+// RolloutsBySummaryID provides a mock function with given fields: ctx, summaryID
+func (_m *Repo) RolloutsBySummaryID(ctx context.Context, summaryID uuid.UUID) ([]*model.Rollout, error) {
+	ret := _m.Called(ctx, summaryID)
+
+	var r0 []*model.Rollout
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) []*model.Rollout); ok {
+		r0 = rf(ctx, summaryID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.Rollout)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, summaryID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // RolloutsListen provides a mock function with given fields: ctx, fn

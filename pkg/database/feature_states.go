@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database/gensql"
@@ -16,6 +15,7 @@ import (
 type FeatureStateRepo interface {
 	FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *feature.Feature, enabled bool) (*model.FeatureState, error)
 	FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
+	FeatureStateGet(ctx context.Context, envID uuid.UUID, featureName string) (*model.FeatureState, error)
 }
 
 func featureStateFromSQL(state gensql.FeatureState) *model.FeatureState {
@@ -52,6 +52,17 @@ func (r *repo) FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.
 	return ret, nil
 }
 
+func (r *repo) FeatureStateGet(ctx context.Context, envID uuid.UUID, featureName string) (*model.FeatureState, error) {
+	featureState, err := r.querier.FeatureStateGet(ctx, gensql.FeatureStateGetParams{
+		EnvironmentID: envID,
+		Feature:       featureName,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return featureStateFromSQL(featureState), nil
+}
+
 func (r *repo) FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *feature.Feature, enabled bool) (*model.FeatureState, error) {
 	if len(feature.DependsOn) > 0 {
 		states, err := r.querier.FeatureStatesGet(ctx, envID)
@@ -77,7 +88,7 @@ func (r *repo) FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID,
 		Feature:       feature.Name,
 		Enabled:       enabled,
 		Enabledat: sql.NullTime{
-			Time:  time.Now(),
+			Time:  Now(ctx),
 			Valid: enabled,
 		},
 	})

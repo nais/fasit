@@ -1,8 +1,8 @@
 type Rollout {
   id: ID!
-  feature: Feature!
   status: RolloutStatus!
   changeset: RolloutChangeset!
+  environment: Environment!
   created: Time!
   lastModified: Time!
   events: [RolloutEvent!]!
@@ -21,6 +21,7 @@ type RolloutChangeset {
   new: RawMessage!
   old: RawMessage
 }
+
 type RolloutEvent {
   id: ID!
   type: RolloutEventType!
@@ -28,6 +29,15 @@ type RolloutEvent {
   created: Time!
 }
 
+type RolloutSummary {
+  id: ID!
+  feature: Feature!
+  status: RolloutStatus!
+  rollouts: [Rollout!]!
+  created: Time!
+  lastModified: Time!
+}
+
 extend type Query {
-  rollout(id: ID!): Rollout!
+  rolloutSummary(id: ID!): RolloutSummary!
 }

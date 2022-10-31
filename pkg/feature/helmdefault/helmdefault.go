@@ -66,7 +66,7 @@ func (c *Cache) update(ctx context.Context) {
 	for _, feature := range c.mgr.Features {
 		log := c.log.WithField("feature", feature.Name)
 
-		log.Debug("updating helm chart value cache")
+		// log.Debug("updating helm chart value cache")
 
 		values, err := c.ValuesForChart(feature.Chart, feature.Version, feature.Repo)
 		if err != nil {

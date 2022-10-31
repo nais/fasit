@@ -20,6 +20,11 @@ type RolloutRepo interface {
 
 	RolloutEventCreate(ctx context.Context, event *model.RolloutEvent) error
 	RolloutEventsGetByRolloutID(ctx context.Context, rolloutID uuid.UUID) ([]*model.RolloutEvent, error)
+
+	RolloutSummaryCreate(ctx context.Context, feature string) (uuid.UUID, error)
+	RolloutsBySummaryID(ctx context.Context, summaryID uuid.UUID) ([]*model.Rollout, error)
+	RolloutSummaryDone(ctx context.Context, rolloutID uuid.UUID) (bool, error)
+	RolloutSummaryGetByID(ctx context.Context, id uuid.UUID) (*model.RolloutSummary, error)
 }
 
 var _ RolloutRepo = &repo{}
@@ -36,6 +41,8 @@ func (r *repo) RolloutCreate(ctx context.Context, rollout *model.Rollout) (*mode
 			Bytes:  rm,
 			Status: pgtype.Present,
 		},
+		Rolloutsummaryid: rollout.RolloutSummaryID,
+		Envkind:          gensql.EnvironmentKind(rollout.EnvironmentKind),
 	})
 	if err != nil {
 		return nil, err
@@ -113,12 +120,14 @@ func rolloutFromSQL(roll gensql.Rollout) (*model.Rollout, error) {
 	}
 
 	return &model.Rollout{
-		ID:           roll.ID,
-		Feature:      roll.Feature,
-		Status:       model.RolloutStatus(roll.Status),
-		Changeset:    cs,
-		Created:      roll.Created,
-		LastModified: roll.LastModified,
+		ID:               roll.ID,
+		RolloutSummaryID: roll.RolloutSummaryID,
+		Feature:          roll.Feature,
+		EnvironmentKind:  model.EnvironmentKind(roll.Kind),
+		Status:           model.RolloutStatus(roll.Status),
+		Changeset:        cs,
+		Created:          roll.Created,
+		LastModified:     roll.LastModified,
 	}, nil
 }
 
@@ -155,4 +164,51 @@ func (r *repo) RolloutEventsGetByRolloutID(ctx context.Context, rolloutID uuid.U
 	}
 
 	return result, nil
+}
+
+func (r *repo) RolloutSummaryCreate(ctx context.Context, feature string) (uuid.UUID, error) {
+	summary, err := r.querier.RolloutSummaryCreate(ctx, feature)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	return summary.ID, nil
+}
+
+func (r *repo) RolloutsBySummaryID(ctx context.Context, summaryID uuid.UUID) ([]*model.Rollout, error) {
+	rollouts, err := r.querier.RolloutsBySummaryID(ctx, summaryID)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []*model.Rollout
+	for _, roll := range rollouts {
+		rollout, err := rolloutFromSQL(roll)
+		if err != nil {
+			return nil, err
+		}
+
+		result = append(result, rollout)
+	}
+
+	return result, nil
+}
+
+func (r *repo) RolloutSummaryDone(ctx context.Context, rolloutID uuid.UUID) (bool, error) {
+	return r.querier.RolloutSummaryDone(ctx, rolloutID)
+}
+
+func (r *repo) RolloutSummaryGetByID(ctx context.Context, id uuid.UUID) (*model.RolloutSummary, error) {
+	summary, err := r.querier.RolloutSummaryGetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.RolloutSummary{
+		ID:           summary.ID,
+		FeatureName:  summary.Feature,
+		Status:       model.RolloutStatus(summary.Status),
+		Created:      summary.Created,
+		LastModified: summary.LastModified,
+	}, nil
 }

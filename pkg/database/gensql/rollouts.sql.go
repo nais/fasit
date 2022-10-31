@@ -7,24 +7,32 @@ package gensql
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgtype"
 )
 
 const rolloutCreate = `-- name: RolloutCreate :one
-INSERT INTO rollouts (feature, changeset)
-VALUES ($1, $2)
-RETURNING id, feature, status, changeset, created, last_modified
+INSERT INTO rollouts (rollout_summary_id, feature, kind, changeset)
+VALUES ($1, $2, $3, $4)
+RETURNING id, feature, status, changeset, created, last_modified, kind, rollout_summary_id
 `
 
 type RolloutCreateParams struct {
-	Feature   string
-	Changeset pgtype.JSONB
+	Rolloutsummaryid uuid.UUID
+	Feature          string
+	Envkind          EnvironmentKind
+	Changeset        pgtype.JSONB
 }
 
 func (q *Queries) RolloutCreate(ctx context.Context, arg RolloutCreateParams) (Rollout, error) {
-	row := q.db.QueryRow(ctx, rolloutCreate, arg.Feature, arg.Changeset)
+	row := q.db.QueryRow(ctx, rolloutCreate,
+		arg.Rolloutsummaryid,
+		arg.Feature,
+		arg.Envkind,
+		arg.Changeset,
+	)
 	var i Rollout
 	err := row.Scan(
 		&i.ID,
@@ -33,6 +41,8 @@ func (q *Queries) RolloutCreate(ctx context.Context, arg RolloutCreateParams) (R
 		&i.Changeset,
 		&i.Created,
 		&i.LastModified,
+		&i.Kind,
+		&i.RolloutSummaryID,
 	)
 	return i, err
 }
@@ -84,7 +94,7 @@ func (q *Queries) RolloutEventsGetByRolloutID(ctx context.Context, rolloutID uui
 }
 
 const rolloutGetByID = `-- name: RolloutGetByID :one
-SELECT id, feature, status, changeset, created, last_modified FROM rollouts WHERE id = $1
+SELECT id, feature, status, changeset, created, last_modified, kind, rollout_summary_id FROM rollouts WHERE id = $1
 `
 
 func (q *Queries) RolloutGetByID(ctx context.Context, id uuid.UUID) (Rollout, error) {
@@ -97,6 +107,66 @@ func (q *Queries) RolloutGetByID(ctx context.Context, id uuid.UUID) (Rollout, er
 		&i.Changeset,
 		&i.Created,
 		&i.LastModified,
+		&i.Kind,
+		&i.RolloutSummaryID,
+	)
+	return i, err
+}
+
+const rolloutSummaryCreate = `-- name: RolloutSummaryCreate :one
+INSERT INTO rollout_summaries (feature)
+VALUES ($1)
+RETURNING id, feature, created, last_modified
+`
+
+func (q *Queries) RolloutSummaryCreate(ctx context.Context, feature string) (RolloutSummary, error) {
+	row := q.db.QueryRow(ctx, rolloutSummaryCreate, feature)
+	var i RolloutSummary
+	err := row.Scan(
+		&i.ID,
+		&i.Feature,
+		&i.Created,
+		&i.LastModified,
+	)
+	return i, err
+}
+
+const rolloutSummaryDone = `-- name: RolloutSummaryDone :one
+SELECT count(1) = 0 as incomplete FROM rollouts WHERE rollout_summary_id = $1 AND status != 'deployed'
+`
+
+func (q *Queries) RolloutSummaryDone(ctx context.Context, rolloutSummaryID uuid.UUID) (bool, error) {
+	row := q.db.QueryRow(ctx, rolloutSummaryDone, rolloutSummaryID)
+	var incomplete bool
+	err := row.Scan(&incomplete)
+	return incomplete, err
+}
+
+const rolloutSummaryGetByID = `-- name: RolloutSummaryGetByID :one
+SELECT
+  id, feature, created, last_modified,
+  (SELECT status FROM rollouts WHERE rollout_summary_id = rs.id ORDER BY status ASC LIMIT 1) as status
+FROM rollout_summaries rs
+WHERE rs.id = $1
+`
+
+type RolloutSummaryGetByIDRow struct {
+	ID           uuid.UUID
+	Feature      string
+	Created      time.Time
+	LastModified time.Time
+	Status       RolloutStatus
+}
+
+func (q *Queries) RolloutSummaryGetByID(ctx context.Context, id uuid.UUID) (RolloutSummaryGetByIDRow, error) {
+	row := q.db.QueryRow(ctx, rolloutSummaryGetByID, id)
+	var i RolloutSummaryGetByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.Feature,
+		&i.Created,
+		&i.LastModified,
+		&i.Status,
 	)
 	return i, err
 }
@@ -107,7 +177,7 @@ SET status = $1
   , changeset = $2
 WHERE
   id = $3
-RETURNING id, feature, status, changeset, created, last_modified
+RETURNING id, feature, status, changeset, created, last_modified, kind, rollout_summary_id
 `
 
 type RolloutUpdateParams struct {
@@ -126,12 +196,47 @@ func (q *Queries) RolloutUpdate(ctx context.Context, arg RolloutUpdateParams) (R
 		&i.Changeset,
 		&i.Created,
 		&i.LastModified,
+		&i.Kind,
+		&i.RolloutSummaryID,
 	)
 	return i, err
 }
 
+const rolloutsBySummaryID = `-- name: RolloutsBySummaryID :many
+SELECT id, feature, status, changeset, created, last_modified, kind, rollout_summary_id FROM rollouts WHERE rollout_summary_id = $1
+`
+
+func (q *Queries) RolloutsBySummaryID(ctx context.Context, rolloutSummaryID uuid.UUID) ([]Rollout, error) {
+	rows, err := q.db.Query(ctx, rolloutsBySummaryID, rolloutSummaryID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Rollout{}
+	for rows.Next() {
+		var i Rollout
+		if err := rows.Scan(
+			&i.ID,
+			&i.Feature,
+			&i.Status,
+			&i.Changeset,
+			&i.Created,
+			&i.LastModified,
+			&i.Kind,
+			&i.RolloutSummaryID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const rolloutsUnprocessed = `-- name: RolloutsUnprocessed :many
-SELECT id, feature, status, changeset, created, last_modified FROM rollouts WHERE status = ''
+SELECT id, feature, status, changeset, created, last_modified, kind, rollout_summary_id FROM rollouts WHERE status = ''
 `
 
 func (q *Queries) RolloutsUnprocessed(ctx context.Context) ([]Rollout, error) {
@@ -150,6 +255,8 @@ func (q *Queries) RolloutsUnprocessed(ctx context.Context) ([]Rollout, error) {
 			&i.Changeset,
 			&i.Created,
 			&i.LastModified,
+			&i.Kind,
+			&i.RolloutSummaryID,
 		); err != nil {
 			return nil, err
 		}

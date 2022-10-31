@@ -4,15 +4,23 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"strconv"
+	"strings"
+
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/go-chi/chi/v5"
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph/model"
-	"net/http"
-	"strconv"
-	"strings"
 )
+
+type store interface {
+	database.RolloutRepo
+	database.EnvironmentRepo
+	database.FeatureStateRepo
+}
 
 type Claims struct {
 	Repository string `json:"repository"`
@@ -20,17 +28,17 @@ type Claims struct {
 }
 
 type Rollout struct {
-	provder     *oidc.Provider
-	verifier    *oidc.IDTokenVerifier
-	signkingKey any
-	featureMgr  *feature.Manager
-	repo        database.RolloutRepo
+	provder  *oidc.Provider
+	verifier *oidc.IDTokenVerifier
+
+	featureMgr *feature.Manager
+	repo       store
 
 	// AllowAll will allow all rollout requests when set to true
 	AllowAll bool
 }
 
-func New(ctx context.Context, featureMgr *feature.Manager, repo database.RolloutRepo) (*Rollout, error) {
+func New(ctx context.Context, featureMgr *feature.Manager, repo store) (*Rollout, error) {
 	provider, err := oidc.NewProvider(ctx, "https://token.actions.githubusercontent.com")
 	if err != nil {
 		return nil, err
@@ -49,6 +57,8 @@ func New(ctx context.Context, featureMgr *feature.Manager, repo database.Rollout
 }
 
 func (r *Rollout) Rollout(w http.ResponseWriter, req *http.Request) {
+	ctx := req.Context()
+
 	feature := r.featureMgr.Get(chi.URLParam(req, "feature"))
 	if feature == nil {
 		http.Error(w, "feature not found", http.StatusNotFound)
@@ -59,49 +69,79 @@ func (r *Rollout) Rollout(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	v := map[string]any{}
-	if err := json.NewDecoder(req.Body).Decode(&v); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	spec, ok := createRolloutSpec(v)
-	if !ok {
-		http.Error(w, "invalid rollout spec", http.StatusBadRequest)
-		return
-	}
-
-	changedKeys := map[string]struct{}{}
-	for k := range spec {
-		changedKeys[k] = struct{}{}
-	}
-
-	for k := range feature.Config {
-		delete(changedKeys, k)
-	}
-
-	if len(changedKeys) > 0 {
-		http.Error(w, fmt.Sprintf("changes to non-config value: %v", changedKeys), http.StatusBadRequest)
-		return
-	}
-
-	rollout := &model.Rollout{
-		Feature: feature.Name,
-		Changeset: &model.RolloutChangeset{
-			New: spec,
-		},
-	}
-
-	nw, err := r.repo.RolloutCreate(req.Context(), rollout)
+	spec, err := r.createAndValidateSpec(req.Body, feature)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]string{
+			"error": err.Error(),
+		})
+	}
+
+	envNotAvailable := []model.EnvironmentKind{}
+	for _, env := range feature.EnvironmentKinds {
+		e, err := r.repo.EnvironmentCI(ctx, env)
+		if err != nil {
+			envNotAvailable = append(envNotAvailable, env)
+			continue
+		}
+
+		fs, err := r.repo.FeatureStateGet(ctx, e.ID, feature.Name)
+		if err != nil {
+			envNotAvailable = append(envNotAvailable, env)
+			continue
+		}
+
+		if !fs.Enabled {
+			envNotAvailable = append(envNotAvailable, env)
+			continue
+		}
+	}
+
+	if len(envNotAvailable) >= len(feature.EnvironmentKinds) {
+		w.WriteHeader(http.StatusBadRequest)
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"error": fmt.Sprintf("feature not available in any environments: %v", envNotAvailable),
+		})
 		return
+	}
+
+	summaryID, err := r.repo.RolloutSummaryCreate(ctx, feature.Name)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		_ = json.NewEncoder(w).Encode(map[string]string{
+			"error": err.Error(),
+		})
+		return
+	}
+
+OUTER:
+	for _, env := range feature.EnvironmentKinds {
+		for _, e := range envNotAvailable {
+			if e == env {
+				continue OUTER
+			}
+		}
+
+		rollout := &model.Rollout{
+			RolloutSummaryID: summaryID,
+			EnvironmentKind:  env,
+			Feature:          feature.Name,
+			Changeset: &model.RolloutChangeset{
+				New: spec,
+			},
+		}
+
+		_, err := r.repo.RolloutCreate(ctx, rollout)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 	}
 
 	w.WriteHeader(http.StatusCreated)
-
 	json.NewEncoder(w).Encode(map[string]any{
-		"rollout": nw.ID,
+		"rollout":         summaryID,
+		"envNotAvailable": envNotAvailable,
 	})
 }
 
@@ -140,6 +180,33 @@ func (r *Rollout) validateToken(w http.ResponseWriter, req *http.Request, featur
 	}
 	http.Error(w, "invalid repository", http.StatusUnauthorized)
 	return false
+}
+
+func (r *Rollout) createAndValidateSpec(rd io.Reader, feature *feature.Feature) (map[string]json.RawMessage, error) {
+	v := map[string]any{}
+	if err := json.NewDecoder(rd).Decode(&v); err != nil {
+		return nil, err
+	}
+
+	spec, ok := createRolloutSpec(v)
+	if !ok {
+		return nil, fmt.Errorf("invalid rollout spec, expected only changes to 'imageTag' and/or 'tag'")
+	}
+
+	changedKeys := map[string]struct{}{}
+	for k := range spec {
+		changedKeys[k] = struct{}{}
+	}
+
+	for k := range feature.Config {
+		delete(changedKeys, k)
+	}
+
+	if len(changedKeys) > 0 {
+		return nil, fmt.Errorf("changes to non-config value: %v", changedKeys)
+	}
+
+	return spec, nil
 }
 
 func getAuthToken(r *http.Request) (string, error) {
