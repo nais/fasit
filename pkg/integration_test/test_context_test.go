@@ -263,7 +263,7 @@ func (t *TestContext) VerifyGlobalConfiguration(featureName string, want []*mode
 
 func (t *TestContext) VerifyDeployInstructions(want []message.DeployInstruction) error {
 	waitFor(func() bool {
-		return len(t.Naisd.DeployInstructions()) > 0
+		return len(t.Naisd.DeployInstructions()) >= len(want)
 	})
 	if !cmp.Equal(want, t.Naisd.DeployInstructions()) {
 		return fmt.Errorf("diff -want +got:\n%v", cmp.Diff(want, t.Naisd.DeployInstructions()))
