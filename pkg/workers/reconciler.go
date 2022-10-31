@@ -24,6 +24,7 @@ type ReconcilerStore interface {
 	HealthGet(ctx context.Context, environmentID uuid.UUID) (*model.Health, error)
 	HelmValues(ctx context.Context, feature feature.Feature, envID uuid.UUID) (map[string]any, []uuid.UUID, error)
 	RolloutEventCreate(ctx context.Context, event *model.RolloutEvent) error
+	RolloutEventsGetByRolloutIDAndType(ctx context.Context, rolloutID uuid.UUID, eventType model.RolloutEventType) ([]*model.RolloutEvent, error)
 	StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]*model.Status, error)
 	TenantEnvironments(ctx context.Context) ([]*model.TenantEnvironments, error)
 }
@@ -215,7 +216,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 			return err
 		}
 
-		createRolloutEvent := func(typ model.RolloutEventType, data map[string]any) {
+		createRolloutEvent := func(typ model.RolloutEventType, data map[string]any, ignoreIfFoundType ...model.RolloutEventType) {
 			var (
 				b   []byte
 				err error
@@ -228,7 +229,14 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 					return
 				}
 			}
+
+		OUTER:
 			for _, rid := range rolloutIDs {
+				for _, t := range ignoreIfFoundType {
+					if rs, err := r.repo.RolloutEventsGetByRolloutIDAndType(ctx, rid, t); err == nil && len(rs) > 0 {
+						continue OUTER
+					}
+				}
 				_ = r.repo.RolloutEventCreate(ctx, &model.RolloutEvent{
 					RolloutID: rid,
 					Type:      typ,
@@ -237,11 +245,9 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 			}
 		}
 
-		createRolloutEvent(model.RolloutEventTypeInProgress, nil)
-
 		hash, err := generateHash(values, f, states[f.Name].EnabledAt)
 		if err != nil {
-			createRolloutEvent(model.RolloutEventTypeInProgress, map[string]any{
+			createRolloutEvent(model.RolloutEventTypeFailed, map[string]any{
 				"error": err.Error(),
 			})
 
@@ -252,7 +258,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 			if status.Version == f.Version && status.ConfigHash == hash {
 				createRolloutEvent(model.RolloutEventTypeFailed, map[string]any{
 					"error": "no changes",
-				})
+				}, model.RolloutEventTypeInProgress)
 				continue
 			}
 		}
@@ -279,6 +285,8 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 			})
 			return err
 		}
+
+		createRolloutEvent(model.RolloutEventTypeInProgress, nil)
 	}
 
 	return nil

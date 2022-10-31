@@ -62,8 +62,8 @@ type RolloutStatus string
 const (
 	RolloutStatusValue0   RolloutStatus = ""
 	RolloutStatusPending  RolloutStatus = "pending"
-	RolloutStatusDeployed RolloutStatus = "deployed"
 	RolloutStatusFailed   RolloutStatus = "failed"
+	RolloutStatusDeployed RolloutStatus = "deployed"
 )
 
 func (e *RolloutStatus) Scan(src interface{}) error {

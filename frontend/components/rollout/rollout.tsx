@@ -97,7 +97,7 @@ const Rollout = ({ rollout }: RolloutProps) => {
     <Accordion.Item defaultOpen={rollout.status !== RolloutStatus.Deployed}>
       <Accordion.Header>
         {rolloutStatus(rollout.status)}
-        Rollout to {rollout.environment.kind.toLowerCase()}
+        {' to '} {rollout.environment.kind.toLowerCase()}
       </Accordion.Header>
       <Accordion.Content>
         {rollout.events.map((e, i) => {

@@ -20,6 +20,7 @@ type RolloutRepo interface {
 
 	RolloutEventCreate(ctx context.Context, event *model.RolloutEvent) error
 	RolloutEventsGetByRolloutID(ctx context.Context, rolloutID uuid.UUID) ([]*model.RolloutEvent, error)
+	RolloutEventsGetByRolloutIDAndType(ctx context.Context, rolloutID uuid.UUID, eventType model.RolloutEventType) ([]*model.RolloutEvent, error)
 
 	RolloutSummaryCreate(ctx context.Context, feature string) (uuid.UUID, error)
 	RolloutsBySummaryID(ctx context.Context, summaryID uuid.UUID) ([]*model.Rollout, error)
@@ -148,6 +149,29 @@ func (r *repo) RolloutEventCreate(ctx context.Context, event *model.RolloutEvent
 
 func (r *repo) RolloutEventsGetByRolloutID(ctx context.Context, rolloutID uuid.UUID) ([]*model.RolloutEvent, error) {
 	events, err := r.querier.RolloutEventsGetByRolloutID(ctx, rolloutID)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []*model.RolloutEvent
+	for _, event := range events {
+		result = append(result, &model.RolloutEvent{
+			ID:        event.ID,
+			RolloutID: event.RolloutID,
+			Type:      model.RolloutEventType(event.Type),
+			Data:      event.Data.Bytes,
+			Created:   event.Created,
+		})
+	}
+
+	return result, nil
+}
+
+func (r *repo) RolloutEventsGetByRolloutIDAndType(ctx context.Context, rolloutID uuid.UUID, eventType model.RolloutEventType) ([]*model.RolloutEvent, error) {
+	events, err := r.querier.RolloutEventsGetByRolloutIDAndType(ctx, gensql.RolloutEventsGetByRolloutIDAndTypeParams{
+		RolloutID: rolloutID,
+		Type:      string(eventType),
+	})
 	if err != nil {
 		return nil, err
 	}

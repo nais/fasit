@@ -33,6 +33,9 @@ VALUES (@rollout_id, @type, @data)
 -- name: RolloutEventsGetByRolloutID :many
 SELECT * FROM rollout_events WHERE rollout_id = @rollout_id ORDER BY created ASC;
 
+-- name: RolloutEventsGetByRolloutIDAndType :many
+SELECT * FROM rollout_events WHERE rollout_id = @rollout_id AND type = @type ORDER BY created ASC;
+
 -- name: RolloutSummaryCreate :one
 INSERT INTO rollout_summaries (feature)
 VALUES (@feature)

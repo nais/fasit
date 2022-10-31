@@ -44,6 +44,7 @@ type Querier interface {
 	RolloutCreate(ctx context.Context, arg RolloutCreateParams) (Rollout, error)
 	RolloutEventCreate(ctx context.Context, arg RolloutEventCreateParams) error
 	RolloutEventsGetByRolloutID(ctx context.Context, rolloutID uuid.UUID) ([]RolloutEvent, error)
+	RolloutEventsGetByRolloutIDAndType(ctx context.Context, arg RolloutEventsGetByRolloutIDAndTypeParams) ([]RolloutEvent, error)
 	RolloutGetByID(ctx context.Context, id uuid.UUID) (Rollout, error)
 	RolloutSummaryCreate(ctx context.Context, feature string) (RolloutSummary, error)
 	RolloutSummaryDone(ctx context.Context, rolloutSummaryID uuid.UUID) (bool, error)

@@ -752,6 +752,29 @@ func (_m *Repo) RolloutEventsGetByRolloutID(ctx context.Context, rolloutID uuid.
 	return r0, r1
 }
 
+// RolloutEventsGetByRolloutIDAndType provides a mock function with given fields: ctx, rolloutID, eventType
+func (_m *Repo) RolloutEventsGetByRolloutIDAndType(ctx context.Context, rolloutID uuid.UUID, eventType model.RolloutEventType) ([]*model.RolloutEvent, error) {
+	ret := _m.Called(ctx, rolloutID, eventType)
+
+	var r0 []*model.RolloutEvent
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, model.RolloutEventType) []*model.RolloutEvent); ok {
+		r0 = rf(ctx, rolloutID, eventType)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.RolloutEvent)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, model.RolloutEventType) error); ok {
+		r1 = rf(ctx, rolloutID, eventType)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // RolloutGetByID provides a mock function with given fields: ctx, id
 func (_m *Repo) RolloutGetByID(ctx context.Context, id uuid.UUID) (*model.Rollout, error) {
 	ret := _m.Called(ctx, id)
