@@ -61,8 +61,27 @@ func NewReconciler(
 
 func (r *Reconciler) Listen(ctx context.Context) error {
 	r.log.Info("starting to listen for config changes")
+
+	flushTimer := time.NewTicker(1 * time.Second)
+	flushTimer.Stop()
+
+	ch := make(chan uuid.UUID, 1)
+
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ch:
+				flushTimer.Reset(1 * time.Second)
+			case <-flushTimer.C:
+				r.reconcile(ctx)
+			}
+		}
+	}()
+
 	return r.repo.ConfigListen(ctx, func(ctx context.Context, envID uuid.UUID) {
-		r.reconcile(ctx)
+		ch <- envID
 	})
 }
 

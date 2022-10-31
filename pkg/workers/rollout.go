@@ -255,6 +255,7 @@ func (r *Rollout) process(ctx context.Context, id uuid.UUID) {
 
 	var errors []error
 	for k, v := range rollout.Changeset.New {
+		log.Warnf("Creating new config with value %#v", v)
 		_, err := txRepo.ConfigCreate(ctx, model.NewConfiguration{
 			EnvironmentID: &env.ID,
 			Feature:       rollout.Feature,
