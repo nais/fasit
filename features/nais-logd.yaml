@@ -1,4 +1,4 @@
-repo: oci://europe-north1-docker.pkg.dev/nais-io/nais/nais-logd
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/nais-logd
 source: https://github.com/nais/nais-logd
 version: 3.0.0
 environmentKinds:
