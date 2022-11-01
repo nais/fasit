@@ -55,6 +55,8 @@ generate-proto:
 		--go_out=. \
 		--go-grpc_out=.
 
-
 generate-feature-schema:
 	go run cmd/generate_schema/main.go
+
+playground:
+	cd cmd/mapping_playground && go run .
