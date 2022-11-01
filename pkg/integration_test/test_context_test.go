@@ -56,7 +56,7 @@ func NewTestContext(t *testing.T, features []feature.Feature, envName string, en
 	}
 
 	dbConnString, close := dbtest.DockerSQLPool()
-	db, closers, err := database.NewDB(ctx, dbConnString, false)
+	db, closers, err := database.NewDB(ctx, dbConnString+" pool_max_conns=5", false)
 	if err != nil {
 		t.Fatal(err)
 	}
