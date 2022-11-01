@@ -24,6 +24,7 @@ var templateFuncs = template.FuncMap{
 	"toYAML":            toYAML,
 	"join":              join,
 	"filter":            filter,
+	"replace":           replace,
 }
 
 // mapOf creates a new map from a list of map[string]any with the given key as the key in the new map,
@@ -38,6 +39,11 @@ func mapOf(key, valueKey string, m []map[string]any) map[string]any {
 		}
 	}
 	return ret
+}
+
+// replace replaces all occurrences of the given old string with the given new string.
+func replace(s, old, new string) string {
+	return strings.ReplaceAll(s, old, new)
 }
 
 // mapJoin joins the values of a map into a string, with the given separator.

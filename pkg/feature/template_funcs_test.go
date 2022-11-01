@@ -60,6 +60,42 @@ func Test_mapOf(t *testing.T) {
 	}
 }
 
+func Test_replace(t *testing.T) {
+	type args struct {
+		s   string
+		old string
+		new string
+	}
+	tests := map[string]struct {
+		args args
+		want string
+	}{
+		"empty string": {
+			args: args{
+				s:   "",
+				old: "foo",
+				new: "bar",
+			},
+			want: "",
+		},
+		"multiple replacements": {
+			args: args{
+				s:   "foo foo foo bar",
+				old: "foo",
+				new: "bar",
+			},
+			want: "bar bar bar bar",
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			if got := replace(tt.args.s, tt.args.old, tt.args.new); !cmp.Equal(got, tt.want) {
+				t.Errorf("diff -want +got:\n%v", cmp.Diff(tt.want, got))
+			}
+		})
+	}
+}
+
 func Test_mapJoin(t *testing.T) {
 	type args struct {
 		m   any
