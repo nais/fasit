@@ -35,17 +35,6 @@ type EnvironmentUpdate struct {
 	Description *string `json:"description"`
 }
 
-type Feature struct {
-	Name             string            `json:"name"`
-	Chart            string            `json:"chart"`
-	Version          string            `json:"version"`
-	Repo             string            `json:"repo"`
-	Source           string            `json:"source"`
-	DependsOn        []*Dependency     `json:"dependsOn"`
-	Config           json.RawMessage   `json:"config"`
-	EnvironmentKinds []EnvironmentKind `json:"environmentKinds"`
-}
-
 type MappingValue struct {
 	Key         string          `json:"key"`
 	Value       json.RawMessage `json:"value"`

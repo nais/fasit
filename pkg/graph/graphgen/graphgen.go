@@ -43,6 +43,7 @@ type Config struct {
 type ResolverRoot interface {
 	EnvConfiguration() EnvConfigurationResolver
 	Environment() EnvironmentResolver
+	Feature() FeatureResolver
 	FeatureState() FeatureStateResolver
 	GlobalConfiguration() GlobalConfigurationResolver
 	Mutation() MutationResolver
@@ -110,6 +111,7 @@ type ComplexityRoot struct {
 		EnvironmentKinds func(childComplexity int) int
 		Name             func(childComplexity int) int
 		Repo             func(childComplexity int) int
+		RolloutSummaries func(childComplexity int) int
 		Source           func(childComplexity int) int
 		Version          func(childComplexity int) int
 	}
@@ -288,6 +290,9 @@ type EnvironmentResolver interface {
 	Releases(ctx context.Context, obj *model.Environment) ([]*model.Release, error)
 	Nodes(ctx context.Context, obj *model.Environment) ([]*model.KubernetesNode, error)
 	Values(ctx context.Context, obj *model.Environment) ([]*model.EnvironmentValue, error)
+}
+type FeatureResolver interface {
+	RolloutSummaries(ctx context.Context, obj *model.Feature) ([]*model.RolloutSummary, error)
 }
 type FeatureStateResolver interface {
 	Feature(ctx context.Context, obj *model.FeatureState) (*model.Feature, error)
@@ -602,6 +607,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Feature.Repo(childComplexity), true
+
+	case "Feature.rolloutSummaries":
+		if e.complexity.Feature.RolloutSummaries == nil {
+			break
+		}
+
+		return e.complexity.Feature.RolloutSummaries(childComplexity), true
 
 	case "Feature.source":
 		if e.complexity.Feature.Source == nil {
@@ -1729,11 +1741,12 @@ extend type Mutation {
   dependsOn: [Dependency!]!
   config: RawMessage!
   environmentKinds: [EnvironmentKind!]!
+  rolloutSummaries: [RolloutSummary!]!
 }
 
 type Dependency {
-    anyOf: [String!]!
-    allOf: [String!]!
+  anyOf: [String!]!
+  allOf: [String!]!
 }
 
 extend type Query {
@@ -2727,6 +2740,8 @@ func (ec *executionContext) fieldContext_EnvConfiguration_feature(ctx context.Co
 				return ec.fieldContext_Feature_config(ctx, field)
 			case "environmentKinds":
 				return ec.fieldContext_Feature_environmentKinds(ctx, field)
+			case "rolloutSummaries":
+				return ec.fieldContext_Feature_rolloutSummaries(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
@@ -4081,6 +4096,64 @@ func (ec *executionContext) fieldContext_Feature_environmentKinds(ctx context.Co
 	return fc, nil
 }
 
+func (ec *executionContext) _Feature_rolloutSummaries(ctx context.Context, field graphql.CollectedField, obj *model.Feature) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Feature_rolloutSummaries(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Feature().RolloutSummaries(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.RolloutSummary)
+	fc.Result = res
+	return ec.marshalNRolloutSummary2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐRolloutSummaryᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Feature_rolloutSummaries(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Feature",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_RolloutSummary_id(ctx, field)
+			case "feature":
+				return ec.fieldContext_RolloutSummary_feature(ctx, field)
+			case "status":
+				return ec.fieldContext_RolloutSummary_status(ctx, field)
+			case "rollouts":
+				return ec.fieldContext_RolloutSummary_rollouts(ctx, field)
+			case "created":
+				return ec.fieldContext_RolloutSummary_created(ctx, field)
+			case "lastModified":
+				return ec.fieldContext_RolloutSummary_lastModified(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type RolloutSummary", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _FeatureState_feature(ctx context.Context, field graphql.CollectedField, obj *model.FeatureState) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_FeatureState_feature(ctx, field)
 	if err != nil {
@@ -4136,6 +4209,8 @@ func (ec *executionContext) fieldContext_FeatureState_feature(ctx context.Contex
 				return ec.fieldContext_Feature_config(ctx, field)
 			case "environmentKinds":
 				return ec.fieldContext_Feature_environmentKinds(ctx, field)
+			case "rolloutSummaries":
+				return ec.fieldContext_Feature_rolloutSummaries(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
@@ -4368,6 +4443,8 @@ func (ec *executionContext) fieldContext_FeatureState_missingDependencies(ctx co
 				return ec.fieldContext_Feature_config(ctx, field)
 			case "environmentKinds":
 				return ec.fieldContext_Feature_environmentKinds(ctx, field)
+			case "rolloutSummaries":
+				return ec.fieldContext_Feature_rolloutSummaries(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
@@ -4474,6 +4551,8 @@ func (ec *executionContext) fieldContext_GlobalConfiguration_feature(ctx context
 				return ec.fieldContext_Feature_config(ctx, field)
 			case "environmentKinds":
 				return ec.fieldContext_Feature_environmentKinds(ctx, field)
+			case "rolloutSummaries":
+				return ec.fieldContext_Feature_rolloutSummaries(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
@@ -6999,6 +7078,8 @@ func (ec *executionContext) fieldContext_Query_features(ctx context.Context, fie
 				return ec.fieldContext_Feature_config(ctx, field)
 			case "environmentKinds":
 				return ec.fieldContext_Feature_environmentKinds(ctx, field)
+			case "rolloutSummaries":
+				return ec.fieldContext_Feature_rolloutSummaries(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
@@ -7555,6 +7636,8 @@ func (ec *executionContext) fieldContext_Release_feature(ctx context.Context, fi
 				return ec.fieldContext_Feature_config(ctx, field)
 			case "environmentKinds":
 				return ec.fieldContext_Feature_environmentKinds(ctx, field)
+			case "rolloutSummaries":
+				return ec.fieldContext_Feature_rolloutSummaries(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
@@ -8534,6 +8617,8 @@ func (ec *executionContext) fieldContext_RolloutSummary_feature(ctx context.Cont
 				return ec.fieldContext_Feature_config(ctx, field)
 			case "environmentKinds":
 				return ec.fieldContext_Feature_environmentKinds(ctx, field)
+			case "rolloutSummaries":
+				return ec.fieldContext_Feature_rolloutSummaries(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
@@ -9140,6 +9225,8 @@ func (ec *executionContext) fieldContext_Status_missingDependencies(ctx context.
 				return ec.fieldContext_Feature_config(ctx, field)
 			case "environmentKinds":
 				return ec.fieldContext_Feature_environmentKinds(ctx, field)
+			case "rolloutSummaries":
+				return ec.fieldContext_Feature_rolloutSummaries(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
@@ -11994,57 +12081,77 @@ func (ec *executionContext) _Feature(ctx context.Context, sel ast.SelectionSet, 
 			out.Values[i] = ec._Feature_name(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "chart":
 
 			out.Values[i] = ec._Feature_chart(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "version":
 
 			out.Values[i] = ec._Feature_version(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "repo":
 
 			out.Values[i] = ec._Feature_repo(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "source":
 
 			out.Values[i] = ec._Feature_source(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "dependsOn":
 
 			out.Values[i] = ec._Feature_dependsOn(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "config":
 
 			out.Values[i] = ec._Feature_config(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "environmentKinds":
 
 			out.Values[i] = ec._Feature_environmentKinds(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
+		case "rolloutSummaries":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Feature_rolloutSummaries(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -14822,6 +14929,50 @@ func (ec *executionContext) marshalNRolloutStatus2githubᚗcomᚋnaisᚋfasitᚋ
 
 func (ec *executionContext) marshalNRolloutSummary2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐRolloutSummary(ctx context.Context, sel ast.SelectionSet, v model.RolloutSummary) graphql.Marshaler {
 	return ec._RolloutSummary(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNRolloutSummary2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐRolloutSummaryᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.RolloutSummary) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNRolloutSummary2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐRolloutSummary(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalNRolloutSummary2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐRolloutSummary(ctx context.Context, sel ast.SelectionSet, v *model.RolloutSummary) graphql.Marshaler {

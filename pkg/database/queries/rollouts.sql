@@ -54,3 +54,13 @@ SELECT
 FROM rollout_summaries rs
 WHERE rs.id = @id
 ;
+
+-- name: RolloutSummariesByFeature :many
+SELECT
+  *,
+  (SELECT status FROM rollouts WHERE rollout_summary_id = rs.id ORDER BY status ASC LIMIT 1) as status
+FROM rollout_summaries rs
+WHERE rs.feature = @feature
+ORDER BY created DESC
+LIMIT 30
+;

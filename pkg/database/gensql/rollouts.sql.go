@@ -148,6 +148,50 @@ func (q *Queries) RolloutGetByID(ctx context.Context, id uuid.UUID) (Rollout, er
 	return i, err
 }
 
+const rolloutSummariesByFeature = `-- name: RolloutSummariesByFeature :many
+SELECT
+  id, feature, created, last_modified,
+  (SELECT status FROM rollouts WHERE rollout_summary_id = rs.id ORDER BY status ASC LIMIT 1) as status
+FROM rollout_summaries rs
+WHERE rs.feature = $1
+ORDER BY created DESC
+LIMIT 30
+`
+
+type RolloutSummariesByFeatureRow struct {
+	ID           uuid.UUID
+	Feature      string
+	Created      time.Time
+	LastModified time.Time
+	Status       RolloutStatus
+}
+
+func (q *Queries) RolloutSummariesByFeature(ctx context.Context, feature string) ([]RolloutSummariesByFeatureRow, error) {
+	rows, err := q.db.Query(ctx, rolloutSummariesByFeature, feature)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []RolloutSummariesByFeatureRow{}
+	for rows.Next() {
+		var i RolloutSummariesByFeatureRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Feature,
+			&i.Created,
+			&i.LastModified,
+			&i.Status,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const rolloutSummaryCreate = `-- name: RolloutSummaryCreate :one
 INSERT INTO rollout_summaries (feature)
 VALUES ($1)

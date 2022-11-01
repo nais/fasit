@@ -22,8 +22,9 @@ type RolloutRepo interface {
 	RolloutEventsGetByRolloutID(ctx context.Context, rolloutID uuid.UUID) ([]*model.RolloutEvent, error)
 	RolloutEventsGetByRolloutIDAndType(ctx context.Context, rolloutID uuid.UUID, eventType model.RolloutEventType) ([]*model.RolloutEvent, error)
 
-	RolloutSummaryCreate(ctx context.Context, feature string) (uuid.UUID, error)
 	RolloutsBySummaryID(ctx context.Context, summaryID uuid.UUID) ([]*model.Rollout, error)
+	RolloutSummariesByFeature(ctx context.Context, featureName string) ([]*model.RolloutSummary, error)
+	RolloutSummaryCreate(ctx context.Context, feature string) (uuid.UUID, error)
 	RolloutSummaryDone(ctx context.Context, rolloutID uuid.UUID) (bool, error)
 	RolloutSummaryGetByID(ctx context.Context, id uuid.UUID) (*model.RolloutSummary, error)
 }
@@ -235,4 +236,24 @@ func (r *repo) RolloutSummaryGetByID(ctx context.Context, id uuid.UUID) (*model.
 		Created:      summary.Created,
 		LastModified: summary.LastModified,
 	}, nil
+}
+
+func (r *repo) RolloutSummariesByFeature(ctx context.Context, featureName string) ([]*model.RolloutSummary, error) {
+	summaries, err := r.querier.RolloutSummariesByFeature(ctx, featureName)
+	if err != nil {
+		return nil, err
+	}
+
+	var result []*model.RolloutSummary
+	for _, summary := range summaries {
+		result = append(result, &model.RolloutSummary{
+			ID:           summary.ID,
+			FeatureName:  summary.Feature,
+			Status:       model.RolloutStatus(summary.Status),
+			Created:      summary.Created,
+			LastModified: summary.LastModified,
+		})
+	}
+
+	return result, nil
 }

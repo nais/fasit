@@ -736,6 +736,29 @@ func (_m *Querier) RolloutGetByID(ctx context.Context, id uuid.UUID) (gensql.Rol
 	return r0, r1
 }
 
+// RolloutSummariesByFeature provides a mock function with given fields: ctx, feature
+func (_m *Querier) RolloutSummariesByFeature(ctx context.Context, feature string) ([]gensql.RolloutSummariesByFeatureRow, error) {
+	ret := _m.Called(ctx, feature)
+
+	var r0 []gensql.RolloutSummariesByFeatureRow
+	if rf, ok := ret.Get(0).(func(context.Context, string) []gensql.RolloutSummariesByFeatureRow); ok {
+		r0 = rf(ctx, feature)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gensql.RolloutSummariesByFeatureRow)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, feature)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // RolloutSummaryCreate provides a mock function with given fields: ctx, feature
 func (_m *Querier) RolloutSummaryCreate(ctx context.Context, feature string) (gensql.RolloutSummary, error) {
 	ret := _m.Called(ctx, feature)

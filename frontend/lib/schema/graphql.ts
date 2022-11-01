@@ -126,6 +126,7 @@ export type Feature = {
   environmentKinds: Array<EnvironmentKind>
   name: Scalars['String']
   repo: Scalars['String']
+  rolloutSummaries: Array<RolloutSummary>
   source: Scalars['String']
   version: Scalars['String']
 }
@@ -652,6 +653,33 @@ export type EnvironmentsGetQueryVariables = Exact<{
 export type EnvironmentsGetQuery = {
   __typename?: 'Query'
   environments: Array<{ __typename?: 'Environment'; id: string; name: string }>
+}
+
+export type FeatureDetailsQueryVariables = Exact<{ [key: string]: never }>
+
+export type FeatureDetailsQuery = {
+  __typename?: 'Query'
+  features: Array<{
+    __typename?: 'Feature'
+    name: string
+    chart: string
+    config: any
+    repo: string
+    source: string
+    environmentKinds: Array<EnvironmentKind>
+    version: string
+    dependsOn: Array<{
+      __typename?: 'Dependency'
+      anyOf: Array<string>
+      allOf: Array<string>
+    }>
+    rolloutSummaries: Array<{
+      __typename?: 'RolloutSummary'
+      id: string
+      status: RolloutStatus
+      created: any
+    }>
+  }>
 }
 
 export type FeaturesQueryVariables = Exact<{
@@ -1427,6 +1455,78 @@ export type EnvironmentsGetLazyQueryHookResult = ReturnType<
 export type EnvironmentsGetQueryResult = Apollo.QueryResult<
   EnvironmentsGetQuery,
   EnvironmentsGetQueryVariables
+>
+export const FeatureDetailsDocument = gql`
+  query FeatureDetails {
+    features {
+      dependsOn {
+        anyOf
+        allOf
+      }
+      name
+      chart
+      config
+      repo
+      source
+      environmentKinds
+      version
+      rolloutSummaries {
+        id
+        status
+        created
+      }
+    }
+  }
+`
+
+/**
+ * __useFeatureDetailsQuery__
+ *
+ * To run a query within a React component, call `useFeatureDetailsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useFeatureDetailsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useFeatureDetailsQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useFeatureDetailsQuery(
+  baseOptions?: Apollo.QueryHookOptions<
+    FeatureDetailsQuery,
+    FeatureDetailsQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions }
+  return Apollo.useQuery<FeatureDetailsQuery, FeatureDetailsQueryVariables>(
+    FeatureDetailsDocument,
+    options,
+  )
+}
+export function useFeatureDetailsLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    FeatureDetailsQuery,
+    FeatureDetailsQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions }
+  return Apollo.useLazyQuery<FeatureDetailsQuery, FeatureDetailsQueryVariables>(
+    FeatureDetailsDocument,
+    options,
+  )
+}
+export type FeatureDetailsQueryHookResult = ReturnType<
+  typeof useFeatureDetailsQuery
+>
+export type FeatureDetailsLazyQueryHookResult = ReturnType<
+  typeof useFeatureDetailsLazyQuery
+>
+export type FeatureDetailsQueryResult = Apollo.QueryResult<
+  FeatureDetailsQuery,
+  FeatureDetailsQueryVariables
 >
 export const FeaturesDocument = gql`
   query Features($kind: EnvironmentKind) {

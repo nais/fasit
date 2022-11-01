@@ -7,11 +7,12 @@ type Feature {
   dependsOn: [Dependency!]!
   config: RawMessage!
   environmentKinds: [EnvironmentKind!]!
+  rolloutSummaries: [RolloutSummary!]!
 }
 
 type Dependency {
-    anyOf: [String!]!
-    allOf: [String!]!
+  anyOf: [String!]!
+  allOf: [String!]!
 }
 
 extend type Query {

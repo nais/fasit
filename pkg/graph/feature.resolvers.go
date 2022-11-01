@@ -6,8 +6,14 @@ package graph
 import (
 	"context"
 
+	"github.com/nais/fasit/pkg/graph/graphgen"
 	"github.com/nais/fasit/pkg/graph/model"
 )
+
+// RolloutSummaries is the resolver for the rolloutSummaries field.
+func (r *featureResolver) RolloutSummaries(ctx context.Context, obj *model.Feature) ([]*model.RolloutSummary, error) {
+	return r.Repo.RolloutSummariesByFeature(ctx, obj.Name)
+}
 
 // Features is the resolver for the features field.
 func (r *queryResolver) Features(ctx context.Context, kind *model.EnvironmentKind) ([]*model.Feature, error) {
@@ -25,3 +31,8 @@ func (r *queryResolver) Features(ctx context.Context, kind *model.EnvironmentKin
 	}
 	return features, nil
 }
+
+// Feature returns graphgen.FeatureResolver implementation.
+func (r *Resolver) Feature() graphgen.FeatureResolver { return &featureResolver{r} }
+
+type featureResolver struct{ *Resolver }
