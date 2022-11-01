@@ -353,6 +353,32 @@ func Test_toJSON(t *testing.T) {
 	}
 }
 
+func Test_fromJSON(t *testing.T) {
+	tests := map[string]struct {
+		arg  string
+		want map[string]any
+	}{
+		"empty map": {
+			arg:  "{}",
+			want: map[string]any{},
+		},
+		"map with one key": {
+			arg: `{"foo":"bar"}`,
+			want: map[string]any{
+				"foo": "bar",
+			},
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			if got := fromJSON(tt.arg); !cmp.Equal(got, tt.want) {
+				t.Errorf("diff -want +got:\n%v", cmp.Diff(tt.want, got))
+			}
+		})
+	}
+}
+
 func Test_toYAML(t *testing.T) {
 	tests := map[string]struct {
 		arg  any

@@ -20,6 +20,7 @@ var templateFuncs = template.FuncMap{
 	"subdomain":         subdomain,
 	"eachOf":            eachOf,
 	"toJSON":            toJSON,
+	"fromJSON":          fromJSON,
 	"toYAML":            toYAML,
 	"join":              join,
 	"filter":            filter,
@@ -174,6 +175,17 @@ func toJSON(v any) string {
 		panic(err)
 	}
 	return string(b)
+}
+
+// fromJSON returns a map of the given JSON string.
+func fromJSON(s string) map[string]any {
+	b := []byte(s)
+	m := map[string]any{}
+	err := json.Unmarshal(b, &m)
+	if err != nil {
+		panic(err)
+	}
+	return m
 }
 
 // toYAML returns the YAML representation of the given value.
