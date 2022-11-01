@@ -6,8 +6,8 @@ environmentKinds:
 mapping:
   googleProjectID:
     value: "{{ .Env.project_id }}"
-  pubsubSubscriptionID:
-    value: "{{ .Env.pubsub_subscription_id}}"
+  pubsubSubscriptionName:
+    value: "{{ .Env.pubsub_subscription_name }}"
 config:
   image.tag:
     type: string
