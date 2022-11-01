@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/nais-logd
 source: https://github.com/nais/nais-logd
-version: 3.0.0
+version: 3.1.0
 environmentKinds:
   - "management"
   - "tenant"
@@ -10,6 +10,12 @@ config:
   cluster.envclass:
     type: string
     displayName: Environment class
+  fluentd.metrics.enablePodMonitor:
+    type: bool
+    displayName: Enable PodMonitor
+  fluentd.metrics.enablePprometheusAnnotations:
+    type: bool
+    displayName: Enable Prometheus annotations
   elasticsearch.index_name:
     type: string
     displayName: Elasticsearch index
