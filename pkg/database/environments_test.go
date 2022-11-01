@@ -30,6 +30,7 @@ func TestRepo_EnvironmentGet(t *testing.T) {
 
 	want := &model.Environment{
 		ID:          id,
+		TenantID:    tenantID,
 		Name:        "testname",
 		Description: stringToPtr("testdesc"),
 		Kind:        model.EnvironmentKindTenant,
@@ -65,6 +66,7 @@ func TestRepo_EnvironmentsGet(t *testing.T) {
 	for i, id := range ids {
 		want = append(want, &model.Environment{
 			ID:          id,
+			TenantID:    tenantID,
 			Name:        fmt.Sprintf("testname%v", i),
 			Description: stringToPtr("testdesc"),
 			Kind:        model.EnvironmentKindManagement,
@@ -97,6 +99,7 @@ func TestRepo_EnvironmentCreate(t *testing.T) {
 	}
 
 	want := &model.Environment{
+		TenantID:    tenantID,
 		Name:        "somename",
 		Description: stringToPtr("somedesc"),
 		Kind:        model.EnvironmentKindTenant,
@@ -135,6 +138,7 @@ func TestRepo_EnvironmentUpdate(t *testing.T) {
 	}
 
 	want := &model.Environment{
+		TenantID:    tenantID,
 		Name:        "somename",
 		Description: stringToPtr("somedesc2"),
 		Kind:        model.EnvironmentKindTenant,
@@ -150,6 +154,7 @@ func TestRepo_EnvironmentUpdate(t *testing.T) {
 		t.Fatal(err)
 	}
 	want2 := &model.Environment{
+		TenantID:    tenantID,
 		Name:        "somename",
 		Description: stringToPtr("somedesc2"),
 		Kind:        model.EnvironmentKindTenant,
