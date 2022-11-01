@@ -13,7 +13,7 @@ config:
   fluentd.metrics.enablePodMonitor:
     type: bool
     displayName: Enable PodMonitor
-  fluentd.metrics.enablePprometheusAnnotations:
+  fluentd.metrics.enablePrometheusAnnotations:
     type: bool
     displayName: Enable Prometheus annotations
   elasticsearch.index_name:
