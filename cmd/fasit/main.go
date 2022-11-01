@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"runtime"
 	"strings"
 	"time"
 
@@ -88,6 +89,8 @@ func main() {
 
 	log := newLogger()
 
+	log.Info("CPUs available", runtime.NumCPU())
+
 	log.Info("starting pubsub client")
 	client, err := pubsub.NewClient(ctx, cfg.GCPProjectID)
 	if err != nil {
@@ -101,7 +104,12 @@ func main() {
 		dbDriver = "cloudsql-postgres"
 	}
 
-	db, closers, err := database.NewDB(ctx, cfg.DBConnectionDSN, dbDriver != "pgx")
+	extraDSN := ""
+	if runtime.NumCPU() < 5 {
+		extraDSN = " pool_max_conns=5"
+	}
+
+	db, closers, err := database.NewDB(ctx, cfg.DBConnectionDSN+extraDSN, dbDriver != "pgx")
 	if err != nil {
 		log.WithError(err).Fatal("setting up database")
 	}
