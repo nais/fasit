@@ -33,6 +33,12 @@ const RolloutLink = styled.a`
   margin-bottom: 10px;
 `
 
+const OverrideKeys = styled.pre`
+  font-size: 0.8em;
+  margin-top: 0;
+  margin-bottom: 10px;
+`
+
 interface FeatureProps {
   feature?: FeatureDetailsQuery['features'][0]
 }
@@ -106,16 +112,27 @@ const Feature = ({ feature }: FeatureProps) => {
         </Tabs.Panel>
         <Tabs.Panel value="overrides" className="h-24 w-full bg-gray-50 p-8">
           <h3>Environments with overrides</h3>
-          {feature.configoverrides?.map((e, i) => (
-            <div key={i}>
-              <Link href={`/environment/${e.environment?.name}`}>
-                <a href={`/environment/${e.environment?.name}`}>
-                  {e.environment?.name}
-                </a>
-              </Link>
-              {e.keys}
-            </div>
-          ))}
+          {feature.configoverrides
+            ?.concat()
+            .sort((a, b) =>
+              a.environment?.tenant?.name.localeCompare(
+                b.environment?.tenant?.name,
+              ),
+            )
+            .map((e, i) => (
+              <div key={i}>
+                <Link
+                  href={`/tenant/${e.environment.tenant.name}/${e.environment.name}?feature=${feature.name}`}
+                >
+                  <a
+                    href={`/tenant/${e.environment.tenant.name}/${e.environment.name}?feature=${feature.name}`}
+                  >
+                    {e.environment.tenant.name} - {e.environment.name}
+                  </a>
+                </Link>
+                <OverrideKeys>{e.keys.join('\n')}</OverrideKeys>
+              </div>
+            ))}
         </Tabs.Panel>
       </Tabs>
     </FeatureContainer>
