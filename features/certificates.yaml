@@ -1,12 +1,12 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/certificates
 source: https://github.com/nais/helm-charts/tree/main/charts/certificates
-version: 0.3.0
+version: 0.4.0
 environmentKinds:
   - "tenant"
   - "management"
-autoInstall:
-  - "tenant"
-  - "management"
+#autoInstall:
+#  - "tenant"
+#  - "management"
 dependsOn:
   - allOf:
       - "cert-manager"
@@ -17,19 +17,31 @@ config:
   acme.api:
     type: string
     displayName: "api url"
-  dnsNames:
-    type: string_array
+  hosts:
+    type: string
+
 mapping:
-  cloudDNS.zone:
-    value: "{{.Management.cloud_dns_zone}}"
-    displayName: "Cloud DNS zone"
-  cloudDNS.project:
-    value: "{{.Management.project_id}}"
-    displayName: "Cloud DNS project"
+  issuers:
+    template: |
+      {{ range $key,$value:= .Env.custom_domains | fromJSON }}
+        - issuerName: {{ replace $key "." "-" }}
+          zone: {{ replace $key "." "-" }}
+          project: {{ .Env.project_id }}
+      {{ end }}
+        - issuerName: {{ .Env.name }}-{{ .Management.cloud_dns_zone }}
+          zone: {{ .Management.cloud_dns_zone }}
+          project: {{ .Management.project_id }}
+  hosts:
+    template: |
+      {{ range $key,$value:= .Env.custom_domains | fromJSON }}
+        - issuerName: {{ replace $key "." "-" }}
+          dnsNames: 
+              - "*.{{ $key }}"
+      {{ end }}
+        - issuerName: {{ .Env.name }}-{{ .Management.cloud_dns_zone }}
+          dnsNames: 
+            - '{{ subdomain . "*" }}'
+
   tenant:
     value: "{{.Tenant.Name}}"
     displayName: "Tenant"
-  dnsNames:
-    value:
-      - '{{ subdomain . "*" }}'
-    displayName: "DNS names"
