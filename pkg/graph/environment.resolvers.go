@@ -69,6 +69,11 @@ func (r *environmentResolver) Values(ctx context.Context, obj *model.Environment
 	return r.Repo.EnvironmentValuesForEnvironment(ctx, obj.ID, false)
 }
 
+// Tenant is the resolver for the tenant field.
+func (r *environmentResolver) Tenant(ctx context.Context, obj *model.Environment) (*model.Tenant, error) {
+	return r.Repo.TenantGet(ctx, obj.TenantID)
+}
+
 // EnvironmentCreate is the resolver for the environmentCreate field.
 func (r *mutationResolver) EnvironmentCreate(ctx context.Context, environment model.EnvironmentCreate) (*model.Environment, error) {
 	return r.Repo.EnvironmentCreate(ctx, &environment)

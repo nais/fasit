@@ -135,6 +135,29 @@ func (_m *Querier) ConfigGlobalUpdateOrCreate(ctx context.Context, arg gensql.Co
 	return r0, r1
 }
 
+// ConfigOverridesByFeature provides a mock function with given fields: ctx, feature
+func (_m *Querier) ConfigOverridesByFeature(ctx context.Context, feature string) ([]gensql.ConfigOverridesByFeatureRow, error) {
+	ret := _m.Called(ctx, feature)
+
+	var r0 []gensql.ConfigOverridesByFeatureRow
+	if rf, ok := ret.Get(0).(func(context.Context, string) []gensql.ConfigOverridesByFeatureRow); ok {
+		r0 = rf(ctx, feature)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gensql.ConfigOverridesByFeatureRow)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, feature)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ConfigUpdate provides a mock function with given fields: ctx, arg
 func (_m *Querier) ConfigUpdate(ctx context.Context, arg gensql.ConfigUpdateParams) (gensql.ConfigurationsGlobal, error) {
 	ret := _m.Called(ctx, arg)

@@ -1,6 +1,10 @@
 package model
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/google/uuid"
+)
 
 type Feature struct {
 	Name             string            `json:"name"`
@@ -11,4 +15,9 @@ type Feature struct {
 	DependsOn        []*Dependency     `json:"dependsOn"`
 	Config           json.RawMessage   `json:"config"`
 	EnvironmentKinds []EnvironmentKind `json:"environmentKinds"`
+}
+
+type ConfigOverride struct {
+	EnvironmentID uuid.UUID
+	Keys          []string `json:"keys"`
 }

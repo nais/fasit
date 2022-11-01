@@ -19,6 +19,7 @@ type ConfigRepo interface {
 	ConfigGet(ctx context.Context, feature string) ([]*model.GlobalConfiguration, error)
 	ConfigGetForEnv(ctx context.Context, feature string, envID uuid.UUID) ([]*model.EnvConfiguration, error)
 	ConfigListen(ctx context.Context, fn ListenFunc) error
+	ConfigOverridesByFeature(ctx context.Context, featureName string) ([]*model.ConfigOverride, error)
 	ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration) (model.Configuration, error)
 	EnvConfig(ctx context.Context, feature string, envID uuid.UUID) ([]model.Configuration, error)
 	HelmValues(ctx context.Context, feature feature.Feature, envID uuid.UUID) (values map[string]any, rolloutIDs []uuid.UUID, err error)
@@ -296,4 +297,20 @@ func (r *repo) ConfigDeleteByRolloutID(ctx context.Context, rolloutID uuid.UUID)
 		Valid: true,
 		UUID:  rolloutID,
 	})
+}
+
+func (r *repo) ConfigOverridesByFeature(ctx context.Context, featureName string) ([]*model.ConfigOverride, error) {
+	overrides, err := r.querier.ConfigOverridesByFeature(ctx, featureName)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]*model.ConfigOverride, len(overrides))
+	for i, o := range overrides {
+		result[i] = &model.ConfigOverride{
+			EnvironmentID: o.EnvironmentID,
+			Keys:          o.Keys,
+		}
+	}
+	return result, nil
 }

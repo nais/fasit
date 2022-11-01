@@ -19,6 +19,15 @@ export const FEATUREDETAILS = gql`
         status
         created
       }
+      configoverrides {
+        keys
+        environment {
+          name
+          tenant {
+            name
+          }
+        }
+      }
     }
   }
 `

@@ -202,6 +202,38 @@ func (q *Queries) ConfigGlobalUpdateOrCreate(ctx context.Context, arg ConfigGlob
 	return i, err
 }
 
+const configOverridesByFeature = `-- name: ConfigOverridesByFeature :many
+SELECT environment_id, array_agg(key)::text[] AS keys
+FROM configurations_environment
+WHERE feature = $1
+GROUP BY environment_id
+`
+
+type ConfigOverridesByFeatureRow struct {
+	EnvironmentID uuid.UUID
+	Keys          []string
+}
+
+func (q *Queries) ConfigOverridesByFeature(ctx context.Context, feature string) ([]ConfigOverridesByFeatureRow, error) {
+	rows, err := q.db.Query(ctx, configOverridesByFeature, feature)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ConfigOverridesByFeatureRow{}
+	for rows.Next() {
+		var i ConfigOverridesByFeatureRow
+		if err := rows.Scan(&i.EnvironmentID, &i.Keys); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const configUpdate = `-- name: ConfigUpdate :one
 UPDATE configurations_global
 SET description = $1,

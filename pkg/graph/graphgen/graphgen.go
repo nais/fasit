@@ -41,6 +41,7 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	ConfigOverride() ConfigOverrideResolver
 	EnvConfiguration() EnvConfigurationResolver
 	Environment() EnvironmentResolver
 	Feature() FeatureResolver
@@ -61,6 +62,11 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	ConfigOverride struct {
+		Environment func(childComplexity int) int
+		Keys        func(childComplexity int) int
+	}
+
 	Dependency struct {
 		AllOf func(childComplexity int) int
 		AnyOf func(childComplexity int) int
@@ -96,6 +102,7 @@ type ComplexityRoot struct {
 		Name          func(childComplexity int) int
 		Nodes         func(childComplexity int) int
 		Releases      func(childComplexity int) int
+		Tenant        func(childComplexity int) int
 		Values        func(childComplexity int) int
 	}
 
@@ -107,6 +114,7 @@ type ComplexityRoot struct {
 	Feature struct {
 		Chart            func(childComplexity int) int
 		Config           func(childComplexity int) int
+		Configoverrides  func(childComplexity int) int
 		DependsOn        func(childComplexity int) int
 		EnvironmentKinds func(childComplexity int) int
 		Name             func(childComplexity int) int
@@ -277,6 +285,9 @@ type ComplexityRoot struct {
 	}
 }
 
+type ConfigOverrideResolver interface {
+	Environment(ctx context.Context, obj *model.ConfigOverride) (*model.Environment, error)
+}
 type EnvConfigurationResolver interface {
 	Environment(ctx context.Context, obj *model.EnvConfiguration) (*model.Environment, error)
 	Feature(ctx context.Context, obj *model.EnvConfiguration) (*model.Feature, error)
@@ -290,9 +301,11 @@ type EnvironmentResolver interface {
 	Releases(ctx context.Context, obj *model.Environment) ([]*model.Release, error)
 	Nodes(ctx context.Context, obj *model.Environment) ([]*model.KubernetesNode, error)
 	Values(ctx context.Context, obj *model.Environment) ([]*model.EnvironmentValue, error)
+	Tenant(ctx context.Context, obj *model.Environment) (*model.Tenant, error)
 }
 type FeatureResolver interface {
 	RolloutSummaries(ctx context.Context, obj *model.Feature) ([]*model.RolloutSummary, error)
+	Configoverrides(ctx context.Context, obj *model.Feature) ([]*model.ConfigOverride, error)
 }
 type FeatureStateResolver interface {
 	Feature(ctx context.Context, obj *model.FeatureState) (*model.Feature, error)
@@ -369,6 +382,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	ec := executionContext{nil, e}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "ConfigOverride.environment":
+		if e.complexity.ConfigOverride.Environment == nil {
+			break
+		}
+
+		return e.complexity.ConfigOverride.Environment(childComplexity), true
+
+	case "ConfigOverride.keys":
+		if e.complexity.ConfigOverride.Keys == nil {
+			break
+		}
+
+		return e.complexity.ConfigOverride.Keys(childComplexity), true
 
 	case "Dependency.allOf":
 		if e.complexity.Dependency.AllOf == nil {
@@ -545,6 +572,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Environment.Releases(childComplexity), true
 
+	case "Environment.tenant":
+		if e.complexity.Environment.Tenant == nil {
+			break
+		}
+
+		return e.complexity.Environment.Tenant(childComplexity), true
+
 	case "Environment.values":
 		if e.complexity.Environment.Values == nil {
 			break
@@ -579,6 +613,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Feature.Config(childComplexity), true
+
+	case "Feature.configoverrides":
+		if e.complexity.Feature.Configoverrides == nil {
+			break
+		}
+
+		return e.complexity.Feature.Configoverrides(childComplexity), true
 
 	case "Feature.dependsOn":
 		if e.complexity.Feature.DependsOn == nil {
@@ -1647,6 +1688,7 @@ extend type Mutation {
   MANAGEMENT
   ONPREM
 }
+
 type Health {
   reportedAt: Time!
 }
@@ -1674,6 +1716,7 @@ type Environment {
   releases: [Release!]!
   nodes: [KubernetesNode!]!
   values: [EnvironmentValue!]!
+  tenant: Tenant!
 }
 
 type EnvironmentValue {
@@ -1742,6 +1785,12 @@ extend type Mutation {
   config: RawMessage!
   environmentKinds: [EnvironmentKind!]!
   rolloutSummaries: [RolloutSummary!]!
+  configoverrides: [ConfigOverride!]!
+}
+
+type ConfigOverride {
+  environment: Environment!
+  keys: [String!]!
 }
 
 type Dependency {
@@ -1898,32 +1947,32 @@ extend type Query {
 }
 `, BuiltIn: false},
 	{Name: "../../../schema/tenant.graphqls", Input: `type Tenant {
-    id: ID!
-    name: String!
-    description: String
-    environments: [Environment!]!
-    created: Time!
-    lastModified: Time!
+  id: ID!
+  name: String!
+  description: String
+  environments: [Environment!]!
+  created: Time!
+  lastModified: Time!
 }
+
 type Query {
-    tenants: [Tenant!]!
+  tenants: [Tenant!]!
 }
+
 input TenantCreate {
-    name: String!
-    description: String
+  name: String!
+  description: String
 }
+
 type Mutation {
-    tenantCreate(tenant: TenantCreate!): Tenant!
+  tenantCreate(tenant: TenantCreate!): Tenant!
 }
+
 extend type Query {
-    """
-    tenant returns the given tenant.
-    """
-    tenant(
-        "id of the requested tenant."
-        id: ID
-        slug: String
-    ): Tenant!
+  """
+  tenant returns the given tenant.
+  """
+  tenant("id of the requested tenant." id: ID, slug: String): Tenant!
 }
 `, BuiltIn: false},
 	{Name: "../../../schema/userInfo.graphqls", Input: `type userInfo {
@@ -2389,6 +2438,120 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
+func (ec *executionContext) _ConfigOverride_environment(ctx context.Context, field graphql.CollectedField, obj *model.ConfigOverride) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ConfigOverride_environment(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.ConfigOverride().Environment(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Environment)
+	fc.Result = res
+	return ec.marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironment(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ConfigOverride_environment(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ConfigOverride",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Environment_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Environment_name(ctx, field)
+			case "description":
+				return ec.fieldContext_Environment_description(ctx, field)
+			case "featureStates":
+				return ec.fieldContext_Environment_featureStates(ctx, field)
+			case "created":
+				return ec.fieldContext_Environment_created(ctx, field)
+			case "lastModified":
+				return ec.fieldContext_Environment_lastModified(ctx, field)
+			case "kind":
+				return ec.fieldContext_Environment_kind(ctx, field)
+			case "health":
+				return ec.fieldContext_Environment_health(ctx, field)
+			case "releases":
+				return ec.fieldContext_Environment_releases(ctx, field)
+			case "nodes":
+				return ec.fieldContext_Environment_nodes(ctx, field)
+			case "values":
+				return ec.fieldContext_Environment_values(ctx, field)
+			case "tenant":
+				return ec.fieldContext_Environment_tenant(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ConfigOverride_keys(ctx context.Context, field graphql.CollectedField, obj *model.ConfigOverride) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ConfigOverride_keys(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Keys, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ConfigOverride_keys(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ConfigOverride",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Dependency_anyOf(ctx context.Context, field graphql.CollectedField, obj *model.Dependency) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Dependency_anyOf(ctx, field)
 	if err != nil {
@@ -2678,6 +2841,8 @@ func (ec *executionContext) fieldContext_EnvConfiguration_environment(ctx contex
 				return ec.fieldContext_Environment_nodes(ctx, field)
 			case "values":
 				return ec.fieldContext_Environment_values(ctx, field)
+			case "tenant":
+				return ec.fieldContext_Environment_tenant(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -2742,6 +2907,8 @@ func (ec *executionContext) fieldContext_EnvConfiguration_feature(ctx context.Co
 				return ec.fieldContext_Feature_environmentKinds(ctx, field)
 			case "rolloutSummaries":
 				return ec.fieldContext_Feature_rolloutSummaries(ctx, field)
+			case "configoverrides":
+				return ec.fieldContext_Feature_configoverrides(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
@@ -3650,6 +3817,64 @@ func (ec *executionContext) fieldContext_Environment_values(ctx context.Context,
 	return fc, nil
 }
 
+func (ec *executionContext) _Environment_tenant(ctx context.Context, field graphql.CollectedField, obj *model.Environment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Environment_tenant(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Environment().Tenant(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Tenant)
+	fc.Result = res
+	return ec.marshalNTenant2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐTenant(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Environment_tenant(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Environment",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Tenant_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Tenant_name(ctx, field)
+			case "description":
+				return ec.fieldContext_Tenant_description(ctx, field)
+			case "environments":
+				return ec.fieldContext_Tenant_environments(ctx, field)
+			case "created":
+				return ec.fieldContext_Tenant_created(ctx, field)
+			case "lastModified":
+				return ec.fieldContext_Tenant_lastModified(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Tenant", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _EnvironmentValue_key(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentValue) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_EnvironmentValue_key(ctx, field)
 	if err != nil {
@@ -4154,6 +4379,56 @@ func (ec *executionContext) fieldContext_Feature_rolloutSummaries(ctx context.Co
 	return fc, nil
 }
 
+func (ec *executionContext) _Feature_configoverrides(ctx context.Context, field graphql.CollectedField, obj *model.Feature) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Feature_configoverrides(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Feature().Configoverrides(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.ConfigOverride)
+	fc.Result = res
+	return ec.marshalNConfigOverride2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐConfigOverrideᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Feature_configoverrides(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Feature",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "environment":
+				return ec.fieldContext_ConfigOverride_environment(ctx, field)
+			case "keys":
+				return ec.fieldContext_ConfigOverride_keys(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ConfigOverride", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _FeatureState_feature(ctx context.Context, field graphql.CollectedField, obj *model.FeatureState) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_FeatureState_feature(ctx, field)
 	if err != nil {
@@ -4211,6 +4486,8 @@ func (ec *executionContext) fieldContext_FeatureState_feature(ctx context.Contex
 				return ec.fieldContext_Feature_environmentKinds(ctx, field)
 			case "rolloutSummaries":
 				return ec.fieldContext_Feature_rolloutSummaries(ctx, field)
+			case "configoverrides":
+				return ec.fieldContext_Feature_configoverrides(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
@@ -4445,6 +4722,8 @@ func (ec *executionContext) fieldContext_FeatureState_missingDependencies(ctx co
 				return ec.fieldContext_Feature_environmentKinds(ctx, field)
 			case "rolloutSummaries":
 				return ec.fieldContext_Feature_rolloutSummaries(ctx, field)
+			case "configoverrides":
+				return ec.fieldContext_Feature_configoverrides(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
@@ -4553,6 +4832,8 @@ func (ec *executionContext) fieldContext_GlobalConfiguration_feature(ctx context
 				return ec.fieldContext_Feature_environmentKinds(ctx, field)
 			case "rolloutSummaries":
 				return ec.fieldContext_Feature_rolloutSummaries(ctx, field)
+			case "configoverrides":
+				return ec.fieldContext_Feature_configoverrides(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
@@ -6385,6 +6666,8 @@ func (ec *executionContext) fieldContext_Mutation_environmentCreate(ctx context.
 				return ec.fieldContext_Environment_nodes(ctx, field)
 			case "values":
 				return ec.fieldContext_Environment_values(ctx, field)
+			case "tenant":
+				return ec.fieldContext_Environment_tenant(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -6464,6 +6747,8 @@ func (ec *executionContext) fieldContext_Mutation_environmentUpdate(ctx context.
 				return ec.fieldContext_Environment_nodes(ctx, field)
 			case "values":
 				return ec.fieldContext_Environment_values(ctx, field)
+			case "tenant":
+				return ec.fieldContext_Environment_tenant(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -6847,6 +7132,8 @@ func (ec *executionContext) fieldContext_Query_environment(ctx context.Context, 
 				return ec.fieldContext_Environment_nodes(ctx, field)
 			case "values":
 				return ec.fieldContext_Environment_values(ctx, field)
+			case "tenant":
+				return ec.fieldContext_Environment_tenant(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -6926,6 +7213,8 @@ func (ec *executionContext) fieldContext_Query_environmentByNames(ctx context.Co
 				return ec.fieldContext_Environment_nodes(ctx, field)
 			case "values":
 				return ec.fieldContext_Environment_values(ctx, field)
+			case "tenant":
+				return ec.fieldContext_Environment_tenant(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -7005,6 +7294,8 @@ func (ec *executionContext) fieldContext_Query_environments(ctx context.Context,
 				return ec.fieldContext_Environment_nodes(ctx, field)
 			case "values":
 				return ec.fieldContext_Environment_values(ctx, field)
+			case "tenant":
+				return ec.fieldContext_Environment_tenant(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -7080,6 +7371,8 @@ func (ec *executionContext) fieldContext_Query_features(ctx context.Context, fie
 				return ec.fieldContext_Feature_environmentKinds(ctx, field)
 			case "rolloutSummaries":
 				return ec.fieldContext_Feature_rolloutSummaries(ctx, field)
+			case "configoverrides":
+				return ec.fieldContext_Feature_configoverrides(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
@@ -7638,6 +7931,8 @@ func (ec *executionContext) fieldContext_Release_feature(ctx context.Context, fi
 				return ec.fieldContext_Feature_environmentKinds(ctx, field)
 			case "rolloutSummaries":
 				return ec.fieldContext_Feature_rolloutSummaries(ctx, field)
+			case "configoverrides":
+				return ec.fieldContext_Feature_configoverrides(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
@@ -8108,6 +8403,8 @@ func (ec *executionContext) fieldContext_Rollout_environment(ctx context.Context
 				return ec.fieldContext_Environment_nodes(ctx, field)
 			case "values":
 				return ec.fieldContext_Environment_values(ctx, field)
+			case "tenant":
+				return ec.fieldContext_Environment_tenant(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -8619,6 +8916,8 @@ func (ec *executionContext) fieldContext_RolloutSummary_feature(ctx context.Cont
 				return ec.fieldContext_Feature_environmentKinds(ctx, field)
 			case "rolloutSummaries":
 				return ec.fieldContext_Feature_rolloutSummaries(ctx, field)
+			case "configoverrides":
+				return ec.fieldContext_Feature_configoverrides(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
@@ -9227,6 +9526,8 @@ func (ec *executionContext) fieldContext_Status_missingDependencies(ctx context.
 				return ec.fieldContext_Feature_environmentKinds(ctx, field)
 			case "rolloutSummaries":
 				return ec.fieldContext_Feature_rolloutSummaries(ctx, field)
+			case "configoverrides":
+				return ec.fieldContext_Feature_configoverrides(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
@@ -9513,6 +9814,8 @@ func (ec *executionContext) fieldContext_Tenant_environments(ctx context.Context
 				return ec.fieldContext_Environment_nodes(ctx, field)
 			case "values":
 				return ec.fieldContext_Environment_values(ctx, field)
+			case "tenant":
+				return ec.fieldContext_Environment_tenant(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -11664,6 +11967,54 @@ func (ec *executionContext) _Configuration(ctx context.Context, sel ast.Selectio
 
 // region    **************************** object.gotpl ****************************
 
+var configOverrideImplementors = []string{"ConfigOverride"}
+
+func (ec *executionContext) _ConfigOverride(ctx context.Context, sel ast.SelectionSet, obj *model.ConfigOverride) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, configOverrideImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ConfigOverride")
+		case "environment":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ConfigOverride_environment(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "keys":
+
+			out.Values[i] = ec._ConfigOverride_keys(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var dependencyImplementors = []string{"Dependency"}
 
 func (ec *executionContext) _Dependency(ctx context.Context, sel ast.SelectionSet, obj *model.Dependency) graphql.Marshaler {
@@ -12020,6 +12371,26 @@ func (ec *executionContext) _Environment(ctx context.Context, sel ast.SelectionS
 				return innerFunc(ctx)
 
 			})
+		case "tenant":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Environment_tenant(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -12142,6 +12513,26 @@ func (ec *executionContext) _Feature(ctx context.Context, sel ast.SelectionSet, 
 					}
 				}()
 				res = ec._Feature_rolloutSummaries(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "configoverrides":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Feature_configoverrides(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -14019,6 +14410,60 @@ func (ec *executionContext) unmarshalNConditionStatus2githubᚗcomᚋnaisᚋfasi
 
 func (ec *executionContext) marshalNConditionStatus2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐConditionStatus(ctx context.Context, sel ast.SelectionSet, v model.ConditionStatus) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) marshalNConfigOverride2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐConfigOverrideᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ConfigOverride) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNConfigOverride2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐConfigOverride(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNConfigOverride2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐConfigOverride(ctx context.Context, sel ast.SelectionSet, v *model.ConfigOverride) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ConfigOverride(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNConfigType2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐConfigType(ctx context.Context, v interface{}) (model.ConfigType, error) {

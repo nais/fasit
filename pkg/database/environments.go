@@ -27,6 +27,7 @@ func environmentFromSQL(p gensql.Environment) *model.Environment {
 		Created:      p.Created,
 		LastModified: p.LastModified,
 		Kind:         model.EnvironmentKind(p.Kind),
+		TenantID:     p.TenantID,
 	}
 }
 

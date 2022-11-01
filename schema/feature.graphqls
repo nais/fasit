@@ -8,6 +8,12 @@ type Feature {
   config: RawMessage!
   environmentKinds: [EnvironmentKind!]!
   rolloutSummaries: [RolloutSummary!]!
+  configoverrides: [ConfigOverride!]!
+}
+
+type ConfigOverride {
+  environment: Environment!
+  keys: [String!]!
 }
 
 type Dependency {

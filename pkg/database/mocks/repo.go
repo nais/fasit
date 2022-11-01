@@ -144,6 +144,29 @@ func (_m *Repo) ConfigListen(ctx context.Context, fn database.ListenFunc) error 
 	return r0
 }
 
+// ConfigOverridesByFeature provides a mock function with given fields: ctx, featureName
+func (_m *Repo) ConfigOverridesByFeature(ctx context.Context, featureName string) ([]*model.ConfigOverride, error) {
+	ret := _m.Called(ctx, featureName)
+
+	var r0 []*model.ConfigOverride
+	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.ConfigOverride); ok {
+		r0 = rf(ctx, featureName)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.ConfigOverride)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, featureName)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ConfigUpdate provides a mock function with given fields: ctx, id, c
 func (_m *Repo) ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration) (model.Configuration, error) {
 	ret := _m.Called(ctx, id, c)

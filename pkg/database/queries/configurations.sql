@@ -73,3 +73,10 @@ WHERE id = @id;
 -- name: ConfigDeleteByRolloutID :exec
 DELETE FROM configurations_environment
 WHERE rollout_id = @rollout_id;
+
+-- name: ConfigOverridesByFeature :many
+SELECT environment_id, array_agg(key)::text[] AS keys
+FROM configurations_environment
+WHERE feature = @feature
+GROUP BY environment_id
+;

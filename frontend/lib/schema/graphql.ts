@@ -30,6 +30,12 @@ export enum ConditionStatus {
   Unknown = 'UNKNOWN',
 }
 
+export type ConfigOverride = {
+  __typename?: 'ConfigOverride'
+  environment: Environment
+  keys: Array<Scalars['String']>
+}
+
 export enum ConfigType {
   Bool = 'BOOL',
   Int = 'INT',
@@ -89,6 +95,7 @@ export type Environment = {
   name: Scalars['String']
   nodes: Array<KubernetesNode>
   releases: Array<Release>
+  tenant: Tenant
   values: Array<EnvironmentValue>
 }
 
@@ -122,6 +129,7 @@ export type Feature = {
   __typename?: 'Feature'
   chart: Scalars['String']
   config: Scalars['RawMessage']
+  configoverrides: Array<ConfigOverride>
   dependsOn: Array<Dependency>
   environmentKinds: Array<EnvironmentKind>
   name: Scalars['String']
@@ -678,6 +686,15 @@ export type FeatureDetailsQuery = {
       id: string
       status: RolloutStatus
       created: any
+    }>
+    configoverrides: Array<{
+      __typename?: 'ConfigOverride'
+      keys: Array<string>
+      environment: {
+        __typename?: 'Environment'
+        name: string
+        tenant: { __typename?: 'Tenant'; name: string }
+      }
     }>
   }>
 }
@@ -1474,6 +1491,15 @@ export const FeatureDetailsDocument = gql`
         id
         status
         created
+      }
+      configoverrides {
+        keys
+        environment {
+          name
+          tenant {
+            name
+          }
+        }
       }
     }
   }

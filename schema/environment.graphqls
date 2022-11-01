@@ -3,6 +3,7 @@ enum EnvironmentKind {
   MANAGEMENT
   ONPREM
 }
+
 type Health {
   reportedAt: Time!
 }
@@ -30,6 +31,7 @@ type Environment {
   releases: [Release!]!
   nodes: [KubernetesNode!]!
   values: [EnvironmentValue!]!
+  tenant: Tenant!
 }
 
 type EnvironmentValue {

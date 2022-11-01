@@ -17,6 +17,8 @@ type Environment struct {
 	Created      time.Time       `json:"created"`
 	LastModified time.Time       `json:"lastModified"`
 	Kind         EnvironmentKind `json:"kind"`
+
+	TenantID uuid.UUID `json:"tenantID"`
 }
 
 type EnvironmentKind string

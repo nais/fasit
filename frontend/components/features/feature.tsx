@@ -106,6 +106,16 @@ const Feature = ({ feature }: FeatureProps) => {
         </Tabs.Panel>
         <Tabs.Panel value="overrides" className="h-24 w-full bg-gray-50 p-8">
           <h3>Environments with overrides</h3>
+          {feature.configoverrides?.map((e, i) => (
+            <div key={i}>
+              <Link href={`/environment/${e.environment?.name}`}>
+                <a href={`/environment/${e.environment?.name}`}>
+                  {e.environment?.name}
+                </a>
+              </Link>
+              {e.keys}
+            </div>
+          ))}
         </Tabs.Panel>
       </Tabs>
     </FeatureContainer>
