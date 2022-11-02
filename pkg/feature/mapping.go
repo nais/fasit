@@ -2,6 +2,7 @@ package feature
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"text/template"
@@ -35,12 +36,16 @@ type MappingValues struct {
 	Env map[string]any
 	// Envs contains information about all clusters the tenant has access to.
 	Envs []map[string]any
+	// Configs contains information about all configs stored on the feature.
+	Configs map[string]any
 }
 
 func (m Mapping) Generate(envKind model.EnvironmentKind, values *MappingValues, target map[string]any) error {
 	if target == nil {
 		return fmt.Errorf("target is nil")
 	}
+
+	values.Configs = copyMap(target)
 
 	for k, v := range m {
 		keys, err := SmartDotSplit(k)
@@ -200,4 +205,11 @@ func repairMapAny(v any) any {
 		return nm
 	}
 	return v
+}
+
+func copyMap(m map[string]any) map[string]any {
+	ret := map[string]any{}
+	b, _ := json.Marshal(m)
+	_ = json.Unmarshal(b, &ret)
+	return ret
 }

@@ -246,5 +246,7 @@ func (r *Resolver) GlobalConfiguration() graphgen.GlobalConfigurationResolver {
 	return &globalConfigurationResolver{r}
 }
 
-type envConfigurationResolver struct{ *Resolver }
-type globalConfigurationResolver struct{ *Resolver }
+type (
+	envConfigurationResolver    struct{ *Resolver }
+	globalConfigurationResolver struct{ *Resolver }
+)
