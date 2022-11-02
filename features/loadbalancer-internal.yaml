@@ -3,7 +3,6 @@ source: https://github.com/nais/helm-charts/tree/main/charts/loadbalancer-intern
 version: 0.1.0
 environmentKinds:
   - "tenant"
-  - "management"
 dependsOn:
   - allOf:
     - "certificates"
@@ -23,6 +22,4 @@ config:
   ingress-nginx.controller.metrics.serviceMonitor.enabled:
     type: bool
     displayName: "Enable service monitor"
-
-mapping:
 
