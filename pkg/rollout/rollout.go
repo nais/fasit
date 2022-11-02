@@ -75,6 +75,7 @@ func (r *Rollout) Rollout(w http.ResponseWriter, req *http.Request) {
 		_ = json.NewEncoder(w).Encode(map[string]string{
 			"error": err.Error(),
 		})
+		return
 	}
 
 	envNotAvailable := []model.EnvironmentKind{}
