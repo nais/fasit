@@ -16,6 +16,7 @@ func TestRenderString(t *testing.T) {
 		err      error
 	}{
 		"empty": {
+			values:   &MappingValues{},
 			input:    "",
 			expected: "",
 		},
@@ -50,6 +51,7 @@ func TestMapping_Generate(t *testing.T) {
 		err      error
 	}{
 		"empty": {
+			values:   &MappingValues{},
 			target:   map[string]any{},
 			expected: map[string]any{},
 		},

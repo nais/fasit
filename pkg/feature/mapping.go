@@ -44,6 +44,9 @@ func (m Mapping) Generate(envKind model.EnvironmentKind, values *MappingValues, 
 	if target == nil {
 		return fmt.Errorf("target is nil")
 	}
+	if values == nil {
+		return fmt.Errorf("values is nil")
+	}
 
 	values.Configs = copyMap(target)
 
@@ -208,6 +211,9 @@ func repairMapAny(v any) any {
 }
 
 func copyMap(m map[string]any) map[string]any {
+	if m == nil {
+		return map[string]any{}
+	}
 	ret := map[string]any{}
 	b, _ := json.Marshal(m)
 	_ = json.Unmarshal(b, &ret)
