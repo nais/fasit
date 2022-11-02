@@ -1,0 +1,28 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/loadbalancer-internal
+source: https://github.com/nais/helm-charts/tree/main/charts/loadbalancer-internal
+version: 0.1.0
+environmentKinds:
+  - "tenant"
+  - "management"
+dependsOn:
+  - allOf:
+    - "certificates"
+config:
+  certificates:
+    type: string_array
+    required: true
+  ingress-nginx.controller.resources.requests.cpu:
+    type: string
+    displayName: "Cpu request"
+  ingress-nginx.controller.resources.requests.memory:
+    type: string
+    displayName: "Memory request"
+  ingress-nginx.controller.replicaCount:
+    type: int
+    displayName: "Replicas"
+  ingress-nginx.controller.metrics.serviceMonitor.enabled:
+    type: bool
+    displayName: "Enable service monitor"
+
+mapping:
+
