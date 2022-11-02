@@ -32,8 +32,13 @@ import (
 	"github.com/nais/fasit/pkg/provider/protogen"
 	"github.com/nais/fasit/pkg/rollout"
 	"github.com/nais/fasit/pkg/workers"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/ravilushqa/otelgqlgen"
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/exporters/prometheus"
+	"go.opentelemetry.io/otel/metric"
+	metricsdk "go.opentelemetry.io/otel/sdk/metric"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
 
@@ -98,6 +103,11 @@ func main() {
 	}
 	log.Info("-- successfully started pubsub client")
 
+	meter, err := newMetricsProvider()
+	if err != nil {
+		log.WithError(err).Fatal("setting up metrics provider")
+	}
+
 	log.Info("starting database client")
 	dbDriver := "pgx"
 	if !strings.Contains(cfg.DBConnectionDSN, "://") {
@@ -147,7 +157,10 @@ func main() {
 	createPublisher := func(projectID, topicID string, log *logrus.Entry) workers.Publisher {
 		return message.NewPublisher[message.DeployInstruction](client, projectID, topicID, log)
 	}
-	reconciler := workers.NewReconciler(repo, featureMgr, createPublisher, cfg.GCPProjectID, log.WithField("subsystem", "reconciler"))
+	reconciler, err := workers.NewReconciler(repo, featureMgr, createPublisher, cfg.GCPProjectID, meter, log.WithField("subsystem", "reconciler"))
+	if err != nil {
+		log.WithError(err).Fatal("setting up reconciler")
+	}
 	go func() {
 		defer log.Error("reconciler listener stopped")
 		if err := reconciler.Listen(ctx); err != nil {
@@ -170,6 +183,12 @@ func main() {
 	}
 
 	srv := newServer(graphgen.NewExecutableSchema(graphgen.Config{Resolvers: resolver}))
+	srv.Use(otelgqlgen.Middleware())
+	metricsMW, err := graph.NewMetrics(meter)
+	if err != nil {
+		log.WithError(err).Fatal("setting up metrics middleware")
+	}
+	srv.Use(metricsMW)
 
 	corsMW := cors.New(cors.Options{
 		AllowedOrigins:   []string{"https://*", "http://*"},
@@ -192,6 +211,7 @@ func main() {
 	router := chi.NewMux()
 	router.Handle("/", iapMW(playground.Handler("GraphQL playground", "/query")))
 	router.Handle("/query", iapMW(corsMW.Handler(srv)))
+	router.Handle("/metrics", promhttp.Handler())
 
 	rout, err := rollout.New(ctx, featureMgr, repo)
 	if err != nil {
@@ -250,4 +270,13 @@ func runGRPC(ctx context.Context, repo database.Repo) error {
 	})
 
 	return g.Wait()
+}
+
+func newMetricsProvider() (metric.Meter, error) {
+	exporter, err := prometheus.New()
+	if err != nil {
+		return nil, err
+	}
+	provider := metricsdk.NewMeterProvider(metricsdk.WithReader(exporter))
+	return provider.Meter("github.com/nais/fasit"), nil
 }

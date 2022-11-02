@@ -13,6 +13,7 @@ import (
 	"github.com/nais/fasit/pkg/message"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/mock"
+	"go.opentelemetry.io/otel/metric"
 )
 
 var atTime = time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC)
@@ -223,18 +224,17 @@ func TestReconcile(t *testing.T) {
 			}
 
 			messages := []message.DeployInstruction{}
-			recociler := &Reconciler{
-				repo:       repo,
-				featureMgr: &feature.Manager{Features: tt.features},
-				publisher: func(projectID, topicID string, log *logrus.Entry) Publisher {
-					return &mockPublisher{projectID: projectID, topicID: topicID, messages: &messages}
-				},
-				log:       logrus.NewEntry(logrus.StandardLogger()),
-				projectID: "root-project",
+
+			publisher := func(projectID, topicID string, log *logrus.Entry) Publisher {
+				return &mockPublisher{projectID: projectID, topicID: topicID, messages: &messages}
+			}
+			reconciler, err := NewReconciler(repo, &feature.Manager{Features: tt.features}, publisher, "root-project", metric.NewNoopMeter(), logrus.NewEntry(logrus.StandardLogger()))
+			if err != nil {
+				t.Fatal(err)
 			}
 
 			ctx := context.Background()
-			if err := recociler.reconcile(ctx); err != nil {
+			if err := reconciler.reconcile(ctx); err != nil {
 				t.Errorf("reconcile failed: %v", err)
 			}
 

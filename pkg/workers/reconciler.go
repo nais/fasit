@@ -16,6 +16,10 @@ import (
 	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/nais/fasit/pkg/message"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/metric/instrument"
+	"go.opentelemetry.io/otel/metric/instrument/syncint64"
 )
 
 type ReconcilerStore interface {
@@ -47,6 +51,10 @@ type Reconciler struct {
 
 	lock    sync.Mutex
 	running bool
+
+	// Metrics
+	reconcileTime  syncint64.Histogram
+	deployMessages syncint64.Counter
 }
 
 func NewReconciler(
@@ -54,15 +62,27 @@ func NewReconciler(
 	featureMgr *feature.Manager,
 	publisher NewPublisher,
 	gcpProjectID string,
+	meter metric.Meter,
 	log *logrus.Entry,
-) *Reconciler {
-	return &Reconciler{
-		repo:       repo,
-		featureMgr: featureMgr,
-		publisher:  publisher,
-		log:        log,
-		projectID:  gcpProjectID,
+) (*Reconciler, error) {
+	reconcileTime, err := meter.SyncInt64().Histogram("reconcile_time", instrument.WithDescription("Time spent reconciling"), instrument.WithUnit("ms"))
+	if err != nil {
+		return nil, fmt.Errorf("unable to create reconcile_time histogram: %w", err)
 	}
+	deployMessages, err := meter.SyncInt64().Counter("deploy_messages", instrument.WithDescription("Deploy messages sent"))
+	if err != nil {
+		return nil, fmt.Errorf("unable to create deploy_messages counter: %w", err)
+	}
+
+	return &Reconciler{
+		repo:           repo,
+		featureMgr:     featureMgr,
+		publisher:      publisher,
+		log:            log,
+		projectID:      gcpProjectID,
+		reconcileTime:  reconcileTime,
+		deployMessages: deployMessages,
+	}, nil
 }
 
 func (r *Reconciler) Listen(ctx context.Context) error {
@@ -189,6 +209,15 @@ func (r *Reconciler) autoInstallNextFeature(ctx context.Context, d *model.Tenant
 }
 
 func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEnvironments) error {
+	metricAttrs := []attribute.KeyValue{
+		attribute.Key("environment").String(d.Name),
+		attribute.Key("tenant").String(d.TenantName),
+	}
+	start := time.Now()
+	defer func() {
+		r.reconcileTime.Record(ctx, time.Since(start).Milliseconds(), metricAttrs...)
+	}()
+
 	health, err := r.repo.HealthGet(ctx, d.ID)
 	if err != nil {
 		return err
@@ -297,6 +326,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 			"environment": d.Name,
 		}).Info("publish deploy instruction")
 
+		r.deployMessages.Add(ctx, 1, append(metricAttrs, attribute.Key("feature").String(f.Name))...)
 		err = mgr.Publish(ctx, message.DeployInstruction{
 			Name:       f.Name,
 			Version:    f.Version,
