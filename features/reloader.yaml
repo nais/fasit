@@ -1,7 +1,6 @@
-chart: reloader
+chart: https://stakater.github.io/stakater-charts
 source: https://github.com/stakater/Reloader
 version: v0.0.124
-repo: https://stakater.github.io/stakater-charts
 environmentKinds:
   - tenant
   - management
