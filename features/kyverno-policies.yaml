@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/kyverno-policies
 source: https://github.com/nais/helm-charts/tree/main/charts/kyverno-policies
-version: 0.6.0
+version: 0.7.0
 environmentKinds:
   - tenant
   - management
@@ -8,6 +8,12 @@ environmentKinds:
 autoInstall:
   - "tenant"
   - "management"
+  - onprem
 dependsOn:
   - allOf:
       - kyverno
+
+mapping:
+  onprem.enabled:
+    template: '{{eq .Kind "onprem"}}'
+    displayName: "Enable onprem policies"
