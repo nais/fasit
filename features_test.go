@@ -10,6 +10,7 @@ import (
 	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/santhosh-tekuri/jsonschema/v5"
+	"github.com/sirupsen/logrus"
 	"github.com/stevenle/topsort"
 	"gopkg.in/yaml.v2"
 )
@@ -69,7 +70,7 @@ func TestFeatures_MappingValuesTemplate(t *testing.T) {
 	}
 	defer source.Close()
 
-	mgr, err := feature.New(source)
+	mgr, err := feature.New(source, logrus.StandardLogger())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -118,7 +119,7 @@ func TestFeatures_dependencies(t *testing.T) {
 	}
 	defer source.Close()
 
-	mgr, err := feature.New(source)
+	mgr, err := feature.New(source, logrus.StandardLogger())
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/nais/fasit/pkg/graph/model"
+	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
 
@@ -69,7 +70,7 @@ type Manager struct {
 	features []Feature
 }
 
-func New(source FeatureSource) (*Manager, error) {
+func New(source FeatureSource, log logrus.FieldLogger) (*Manager, error) {
 	mgr := &Manager{}
 	features, err := source.Features()
 	if err != nil {
@@ -79,6 +80,7 @@ func New(source FeatureSource) (*Manager, error) {
 	source.Register(func() {
 		features, err := source.Features()
 		if err != nil {
+			log.WithError(err).Error("failed to reload features")
 			return
 		}
 		mgr.SetFeatures(features)

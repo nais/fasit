@@ -8,6 +8,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/nais/fasit/pkg/graph/model"
+	"github.com/sirupsen/logrus"
 )
 
 func TestFeature_RequiredFields(t *testing.T) {
@@ -164,7 +165,7 @@ func TestNew(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer source.Close()
-	mgr, err := New(source)
+	mgr, err := New(source, logrus.StandardLogger())
 	if err != nil {
 		t.Fatal(err)
 	}

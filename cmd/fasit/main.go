@@ -175,7 +175,7 @@ func main() {
 	}
 	defer source.Close()
 
-	featureMgr, err := feature.New(source)
+	featureMgr, err := feature.New(source, log.WithField("subsystem", "feature_manager"))
 	if err != nil {
 		log.WithError(err).Fatal("setting up features")
 	}
