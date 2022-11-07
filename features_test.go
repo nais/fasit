@@ -67,7 +67,7 @@ func TestFeatures_MappingValuesTemplate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for _, f := range mgr.Features {
+	for _, f := range mgr.Features() {
 		t.Run(f.Name, func(t *testing.T) {
 			for _, kind := range model.AllEnvironmentKind {
 				mv := &feature.MappingValues{
@@ -111,7 +111,7 @@ func TestFeatures_dependencies(t *testing.T) {
 	}
 
 	g := topsort.NewGraph()
-	for _, f := range mgr.Features {
+	for _, f := range mgr.Features() {
 		for _, deps := range f.DependsOn {
 			for _, dep := range append(deps.AnyOf, deps.AllOf...) {
 				g.AddEdge(f.Name, dep)
@@ -119,7 +119,7 @@ func TestFeatures_dependencies(t *testing.T) {
 		}
 	}
 
-	for _, f := range mgr.Features {
+	for _, f := range mgr.Features() {
 		t.Run(f.Name, func(t *testing.T) {
 			if len(f.EnvironmentKinds) == 0 {
 				t.Error("no environment kind specified")

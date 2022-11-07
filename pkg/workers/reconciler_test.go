@@ -228,7 +228,10 @@ func TestReconcile(t *testing.T) {
 			publisher := func(projectID, topicID string, log *logrus.Entry) Publisher {
 				return &mockPublisher{projectID: projectID, topicID: topicID, messages: &messages}
 			}
-			reconciler, err := NewReconciler(repo, &feature.Manager{Features: tt.features}, publisher, "root-project", metric.NewNoopMeter(), logrus.NewEntry(logrus.StandardLogger()))
+
+			featureManager := &feature.Manager{}
+			featureManager.SetFeatures(tt.features)
+			reconciler, err := NewReconciler(repo, featureManager, publisher, "root-project", metric.NewNoopMeter(), logrus.NewEntry(logrus.StandardLogger()))
 			if err != nil {
 				t.Fatal(err)
 			}

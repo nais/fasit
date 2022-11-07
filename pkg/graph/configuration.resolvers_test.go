@@ -51,28 +51,28 @@ func Test_queryResolver_Configuration_With_Environment_ID(t *testing.T) {
 
 	r := &queryResolver{
 		Resolver: &Resolver{
-			Repo: repo,
-			Features: &feature.Manager{
-				Features: []feature.Feature{
-					{
-						Name: "feature",
-						Config: feature.Config{
-							"string": {
-								Type: model.ConfigTypeString,
-							},
-							"bool": {
-								Type: model.ConfigTypeBool,
-							},
-							"ignore": {
-								Type:       model.ConfigTypeInt,
-								IgnoreKind: []model.EnvironmentKind{model.EnvironmentKindOnprem},
-							},
-						},
-					},
+			Repo:     repo,
+			Features: &feature.Manager{},
+		},
+	}
+
+	r.Resolver.Features.SetFeatures([]feature.Feature{
+		{
+			Name: "feature",
+			Config: feature.Config{
+				"string": {
+					Type: model.ConfigTypeString,
+				},
+				"bool": {
+					Type: model.ConfigTypeBool,
+				},
+				"ignore": {
+					Type:       model.ConfigTypeInt,
+					IgnoreKind: []model.EnvironmentKind{model.EnvironmentKindOnprem},
 				},
 			},
 		},
-	}
+	})
 
 	got, err := r.Configuration(ctx, "feature", &envID)
 	if err != nil {
@@ -103,7 +103,6 @@ func Test_queryResolver_Configuration_With_Environment_ID(t *testing.T) {
 	if !cmp.Equal(want, got, opts) {
 		t.Errorf("diff -want +got:\n%v", cmp.Diff(want, got, opts))
 	}
-
 }
 
 func Test_queryResolver_Configuration_Empty_Defaults_Are_Set(t *testing.T) {
@@ -127,30 +126,30 @@ func Test_queryResolver_Configuration_Empty_Defaults_Are_Set(t *testing.T) {
 
 	r := &queryResolver{
 		Resolver: &Resolver{
-			Repo: repo,
-			Features: &feature.Manager{
-				Features: []feature.Feature{
-					{
-						Name: featureName,
-						Config: feature.Config{
-							"string": {
-								Type: model.ConfigTypeString,
-							},
-							"bool": {
-								Type: model.ConfigTypeBool,
-							},
-							"stringArray": {
-								Type: model.ConfigTypeStringArray,
-							},
-							"int": {
-								Type: model.ConfigTypeInt,
-							},
-						},
-					},
+			Repo:     repo,
+			Features: &feature.Manager{},
+		},
+	}
+
+	r.Resolver.Features.SetFeatures([]feature.Feature{
+		{
+			Name: featureName,
+			Config: feature.Config{
+				"string": {
+					Type: model.ConfigTypeString,
+				},
+				"bool": {
+					Type: model.ConfigTypeBool,
+				},
+				"stringArray": {
+					Type: model.ConfigTypeStringArray,
+				},
+				"int": {
+					Type: model.ConfigTypeInt,
 				},
 			},
 		},
-	}
+	})
 
 	got, err := r.Configuration(ctx, featureName, nil)
 	if err != nil {

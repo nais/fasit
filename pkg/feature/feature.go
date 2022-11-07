@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/nais/fasit/pkg/graph/model"
@@ -64,7 +65,8 @@ func (f *Feature) RequiredFields(envKind model.EnvironmentKind) []string {
 }
 
 type Manager struct {
-	Features []Feature
+	lock     sync.RWMutex
+	features []Feature
 }
 
 func New(files fs.FS) (*Manager, error) {
@@ -99,14 +101,26 @@ func New(files fs.FS) (*Manager, error) {
 		return nil, err
 	}
 
+	mgr := &Manager{}
+	mgr.SetFeatures(features)
+	return mgr, nil
+}
+
+func (m *Manager) Features() []Feature {
+	m.lock.RLock()
+	defer m.lock.RUnlock()
+	return m.features[:]
+}
+
+func (m *Manager) SetFeatures(features []Feature) {
 	// sorted because we want to be deterministic
 	sort.Slice(features, func(i, j int) bool {
 		return features[i].Name < features[j].Name
 	})
 
-	return &Manager{
-		Features: features,
-	}, nil
+	m.lock.Lock()
+	defer m.lock.Unlock()
+	m.features = features
 }
 
 func (m *Manager) ValidConfig(feature, key string, value json.RawMessage) error {
@@ -118,7 +132,7 @@ func (m *Manager) ValidConfig(feature, key string, value json.RawMessage) error 
 }
 
 func (m *Manager) IsSecret(feature, key string) bool {
-	for _, f := range m.Features {
+	for _, f := range m.Features() {
 		if f.Name == feature {
 			if c, ok := f.Config[key]; ok {
 				return c.Secret
@@ -130,7 +144,7 @@ func (m *Manager) IsSecret(feature, key string) bool {
 }
 
 func (m *Manager) Get(feature string) *Feature {
-	for _, f := range m.Features {
+	for _, f := range m.Features() {
 		if f.Name == feature {
 			return &f
 		}

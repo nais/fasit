@@ -65,7 +65,7 @@ func TestFeature_RequiredFields(t *testing.T) {
 
 func TestManager_ValidConfig(t *testing.T) {
 	mgr := Manager{
-		Features: []Feature{
+		features: []Feature{
 			{
 				Name: "foo",
 				Config: Config{
@@ -90,7 +90,7 @@ func TestManager_ValidConfig(t *testing.T) {
 
 func TestManager_IsSecret(t *testing.T) {
 	mgr := Manager{
-		Features: []Feature{
+		features: []Feature{
 			{
 				Name: "foo",
 				Config: Config{
@@ -120,7 +120,7 @@ func TestManager_IsSecret(t *testing.T) {
 
 func TestManager_Get(t *testing.T) {
 	mgr := Manager{
-		Features: []Feature{
+		features: []Feature{
 			{Name: "foo"},
 		},
 	}
@@ -165,8 +165,8 @@ func TestNew(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !cmp.Equal(mgr.Features, expected) {
-		t.Error(cmp.Diff(mgr.Features, expected))
+	if !cmp.Equal(mgr.Features(), expected) {
+		t.Error(cmp.Diff(mgr.Features(), expected))
 	}
 }
 
