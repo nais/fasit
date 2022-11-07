@@ -6,3 +6,11 @@ environmentKinds:
   - tenant
   - management
   - onprem
+mapping:
+  reloader.containerSecurityContext:
+    template: |
+      capabilities:
+        drop:
+          - ALL
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
