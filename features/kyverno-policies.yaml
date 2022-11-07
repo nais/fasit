@@ -8,7 +8,6 @@ environmentKinds:
 autoInstall:
   - "tenant"
   - "management"
-  - onprem
 dependsOn:
   - allOf:
       - kyverno
@@ -16,15 +15,18 @@ dependsOn:
 config:
   customPolicies.denyImageRegistries.enabled:
     type: bool
-    displayName: "Enable deny-image-registries policy"
+    displayName: "Deny image registries"
+    description: "Enable deny-image-registries policy"
 
   customPolicies.replaceOldGithubRegistry.enabled:
     type: bool
-    displayName: "Enable replace-old-github-registry policy"
+    displayName: "Replace old Github registry"
+    description: "Enable replace-old-github-registry policy"
 
   customPolicies.denyKafkaTopicCreate.enabled:
     type: bool
-    displayName: "Enable deny-kafka-topic-create policy"
+    displayName: "Deny Kafka topic create"
+    description: "Enable deny-kafka-topic-create policy"
 
 mapping:
   customPolicies.denyImageRegistries.enabled:
