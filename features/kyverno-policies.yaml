@@ -5,6 +5,10 @@ environmentKinds:
   - tenant
   - management
   - onprem
+autoInstall:
+  - tenant
+  - management
+  - onprem
 dependsOn:
   - allOf:
       - kyverno
@@ -25,6 +29,11 @@ config:
     displayName: "Deny Kafka topic create"
     description: "Enable deny-kafka-topic-create policy"
 
+  customPolicies.denyServiceTypes.enabled:
+    type: bool
+    description: "Enable deny-service-types policy"
+    displayName: "Deny service types"
+
 mapping:
   customPolicies.denyImageRegistries.enabled:
     template: '{{eq .Kind "onprem"}}'
@@ -40,3 +49,8 @@ mapping:
     template: '{{eq .Kind "onprem"}}'
     description: "Enable deny kafka topic create policy"
     displayName: "Deny Kafka topic create"
+
+  customPolicies.denyServiceTypes.enabled:
+    template: '{{eq .Kind "onprem"}}'
+    description: "Enable deny service types policy"
+    displayName: "Deny service types"
