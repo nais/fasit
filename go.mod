@@ -44,6 +44,7 @@ require (
 	cloud.google.com/go v0.104.0 // indirect
 	cloud.google.com/go/compute v1.10.0 // indirect
 	cloud.google.com/go/iam v0.5.0 // indirect
+	cloud.google.com/go/storage v1.27.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/BurntSushi/toml v1.2.0 // indirect
 	github.com/MakeNowJust/heredoc v1.0.0 // indirect
@@ -75,6 +76,7 @@ require (
 	github.com/evanphx/json-patch v5.6.0+incompatible // indirect
 	github.com/exponent-io/jsonpath v0.0.0-20210407135951-1de76d718b3f // indirect
 	github.com/fatih/color v1.13.0 // indirect
+	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-errors/errors v1.4.2 // indirect
 	github.com/go-gorp/gorp/v3 v3.0.2 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
@@ -177,6 +179,7 @@ require (
 	golang.org/x/text v0.4.0 // indirect
 	golang.org/x/time v0.1.0 // indirect
 	golang.org/x/tools v0.1.12 // indirect
+	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20221018160656-63c7b68cfc55 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect

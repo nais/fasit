@@ -28,7 +28,7 @@ func (r *featureResolver) Configoverrides(ctx context.Context, obj *model.Featur
 // Features is the resolver for the features field.
 func (r *queryResolver) Features(ctx context.Context, kind *model.EnvironmentKind) ([]*model.Feature, error) {
 	features := []*model.Feature{}
-	for _, feature := range r.Resolver.Features.Features {
+	for _, feature := range r.Resolver.Features.Features() {
 		if kind != nil && !contains(feature.EnvironmentKinds, *kind) {
 			continue
 		}
@@ -50,5 +50,7 @@ func (r *Resolver) ConfigOverride() graphgen.ConfigOverrideResolver {
 // Feature returns graphgen.FeatureResolver implementation.
 func (r *Resolver) Feature() graphgen.FeatureResolver { return &featureResolver{r} }
 
-type configOverrideResolver struct{ *Resolver }
-type featureResolver struct{ *Resolver }
+type (
+	configOverrideResolver struct{ *Resolver }
+	featureResolver        struct{ *Resolver }
+)

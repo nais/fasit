@@ -10,6 +10,7 @@ import (
 	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/santhosh-tekuri/jsonschema/v5"
+	"github.com/sirupsen/logrus"
 	"github.com/stevenle/topsort"
 	"gopkg.in/yaml.v2"
 )
@@ -29,7 +30,8 @@ func TestFeaturesSchema(t *testing.T) {
 		panic(err)
 	}
 
-	fs.WalkDir(FeaturesFS, ".", func(path string, d fs.DirEntry, err error) error {
+	files := os.DirFS("./features")
+	fs.WalkDir(files, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -37,7 +39,7 @@ func TestFeaturesSchema(t *testing.T) {
 			return nil
 		}
 
-		b, err := fs.ReadFile(FeaturesFS, path)
+		b, err := fs.ReadFile(files, path)
 		if err != nil {
 			return err
 		}
@@ -62,12 +64,18 @@ func TestFeaturesSchema(t *testing.T) {
 }
 
 func TestFeatures_MappingValuesTemplate(t *testing.T) {
-	mgr, err := feature.New(FeaturesFS)
+	source, err := feature.NewFeatureSourceFilesystem("./features")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer source.Close()
+
+	mgr, err := feature.New(source, logrus.StandardLogger())
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	for _, f := range mgr.Features {
+	for _, f := range mgr.Features() {
 		t.Run(f.Name, func(t *testing.T) {
 			for _, kind := range model.AllEnvironmentKind {
 				mv := &feature.MappingValues{
@@ -105,13 +113,19 @@ func TestFeatures_MappingValuesTemplate(t *testing.T) {
 }
 
 func TestFeatures_dependencies(t *testing.T) {
-	mgr, err := feature.New(FeaturesFS)
+	source, err := feature.NewFeatureSourceFilesystem("./features")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer source.Close()
+
+	mgr, err := feature.New(source, logrus.StandardLogger())
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	g := topsort.NewGraph()
-	for _, f := range mgr.Features {
+	for _, f := range mgr.Features() {
 		for _, deps := range f.DependsOn {
 			for _, dep := range append(deps.AnyOf, deps.AllOf...) {
 				g.AddEdge(f.Name, dep)
@@ -119,7 +133,7 @@ func TestFeatures_dependencies(t *testing.T) {
 		}
 	}
 
-	for _, f := range mgr.Features {
+	for _, f := range mgr.Features() {
 		t.Run(f.Name, func(t *testing.T) {
 			if len(f.EnvironmentKinds) == 0 {
 				t.Error("no environment kind specified")

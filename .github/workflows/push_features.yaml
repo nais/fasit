@@ -1,0 +1,50 @@
+name: Push features to GCS
+on:
+  push:
+    paths:
+      - "features/*.yaml"
+      - ".github/workflows/push_features.yaml"
+
+env:
+  BUCKET: "fasit-features"
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3.1.0
+      - uses: actions/setup-go@v3
+        with:
+          go-version: ">=1.19.3"
+      - uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-feat-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-feat-go-
+      - run: go test .
+
+  build_and_push_fasit:
+    if: github.ref == 'refs/heads/main'
+    needs: [tests]
+    permissions:
+      contents: "read"
+      id-token: "write"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3.1.0
+      - id: "auth"
+        name: "Authenticate to Google Cloud"
+        uses: "google-github-actions/auth@v0.8.3"
+        with:
+          workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: "gh-fasit@nais-io.iam.gserviceaccount.com"
+          token_format: "access_token"
+      - name: "Set up Cloud SDK"
+        uses: "google-github-actions/setup-gcloud@v0"
+      - name: Sync features to GCS
+        run: |-
+          gsutil -m rsync -d -r features gs://${{ env.BUCKET }}

@@ -1,0 +1,10 @@
+chart: cert-manager
+source: https://github.com/cert-manager/cert-manager
+version: v1.7.2
+repo: https://charts.jetstack.io
+timeout: 15m
+config:
+  installCRDs:
+    type: bool
+  global.podSecurityPolicy.enabled:
+    type: bool

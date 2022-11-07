@@ -227,7 +227,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 		return nil
 	}
 
-	features := r.featureMgr.Features[:]
+	features := r.featureMgr.Features()
 
 	envStatus, err := r.repo.StatusForEnvironment(ctx, d.ID)
 	if err != nil {

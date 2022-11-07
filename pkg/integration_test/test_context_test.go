@@ -52,9 +52,8 @@ func NewTestContext(t *testing.T, features []feature.Feature, envName string, en
 		EnvID:    uuid.New(),
 	}
 	ctx := context.Background()
-	tctx.FeatureManager = &feature.Manager{
-		Features: features,
-	}
+	tctx.FeatureManager = &feature.Manager{}
+	tctx.FeatureManager.SetFeatures(features)
 
 	dbConnString, close := dbtest.DockerSQLPool()
 	db, closers, err := database.NewDB(ctx, dbConnString+" pool_max_conns=5", false)

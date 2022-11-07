@@ -63,7 +63,7 @@ func (c *Cache) Get(feature string) chartutil.Values {
 func (c *Cache) update(ctx context.Context) {
 	newCache := make(map[string]chartutil.Values)
 
-	for _, feature := range c.mgr.Features {
+	for _, feature := range c.mgr.Features() {
 		log := c.log.WithField("feature", feature.Name)
 
 		// log.Debug("updating helm chart value cache")

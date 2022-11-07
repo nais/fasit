@@ -29,21 +29,21 @@ func Test_environmentResolver_FeatureStates_FeatureStateMerge_Works(t *testing.T
 
 	r := environmentResolver{
 		Resolver: &Resolver{
-			Repo: repo,
-			Features: &feature.Manager{
-				Features: []feature.Feature{
-					{
-						Name:             "global-feature",
-						EnvironmentKinds: []model.EnvironmentKind{model.EnvironmentKindTenant},
-					},
-					{
-						Name:             "repo-feature",
-						EnvironmentKinds: []model.EnvironmentKind{model.EnvironmentKindTenant},
-					},
-				},
-			},
+			Repo:     repo,
+			Features: &feature.Manager{},
 		},
 	}
+
+	r.Features.SetFeatures([]feature.Feature{
+		{
+			Name:             "global-feature",
+			EnvironmentKinds: []model.EnvironmentKind{model.EnvironmentKindTenant},
+		},
+		{
+			Name:             "repo-feature",
+			EnvironmentKinds: []model.EnvironmentKind{model.EnvironmentKindTenant},
+		},
+	})
 
 	got, err := r.FeatureStates(ctx, env)
 	if err != nil {

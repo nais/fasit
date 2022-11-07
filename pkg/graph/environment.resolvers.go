@@ -21,7 +21,7 @@ func (r *environmentResolver) FeatureStates(ctx context.Context, obj *model.Envi
 	}
 
 OUTER:
-	for _, f := range r.Features.Features {
+	for _, f := range r.Features.Features() {
 		if !contains(f.EnvironmentKinds, obj.Kind) {
 			continue
 		}
@@ -115,5 +115,7 @@ func (r *Resolver) Environment() graphgen.EnvironmentResolver { return &environm
 // Release returns graphgen.ReleaseResolver implementation.
 func (r *Resolver) Release() graphgen.ReleaseResolver { return &releaseResolver{r} }
 
-type environmentResolver struct{ *Resolver }
-type releaseResolver struct{ *Resolver }
+type (
+	environmentResolver struct{ *Resolver }
+	releaseResolver     struct{ *Resolver }
+)
