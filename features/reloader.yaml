@@ -7,7 +7,7 @@ environmentKinds:
   - management
   - onprem
 mapping:
-  reloader.containerSecurityContext:
+  reloader.deployment.containerSecurityContext:
     template: |
       capabilities:
         drop:
