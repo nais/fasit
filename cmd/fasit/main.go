@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/pubsub"
+	"cloud.google.com/go/storage"
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/extension"
@@ -58,6 +59,10 @@ func init() {
 	flag.StringVar(&cfg.IAPAudience, "iap-audience", "", "IAP audience string")
 	flag.BoolVar(&cfg.InsecureSkipProxy, "insecure-skip-proxy", false, "Insecure, but allows the server to not require iap")
 	flag.BoolVar(&cfg.InsecureSkipTokenCheck, "insecure-skip-token-check", false, "Insecure, but allows the server ignore token check")
+
+	flag.StringVar(&cfg.FeatureSource, "feature-source", cfg.FeatureSource, "Source of features, one of: file, bucket")
+	flag.StringVar(&cfg.FeatureBucket, "feature-bucket", cfg.FeatureBucket, "Bucket for features when feature-source is bucket")
+	flag.StringVar(&cfg.FeatureSubscription, "feature-subscription", cfg.FeatureSubscription, "Pub/sub subscription for features when feature-source is bucket")
 }
 
 func newServer(es graphql.ExecutableSchema) *handler.Server {
@@ -96,7 +101,7 @@ func main() {
 	log.Info("CPUs available", runtime.NumCPU())
 
 	log.Info("starting pubsub client")
-	client, err := pubsub.NewClient(ctx, cfg.GCPProjectID)
+	pubsubClient, err := pubsub.NewClient(ctx, cfg.GCPProjectID)
 	if err != nil {
 		log.WithError(err).Fatal("setting up pubsub client")
 	}
@@ -135,19 +140,47 @@ func main() {
 	repo := database.New(db, log.WithField("subsystem", "repo"))
 	log.Info("-- successfully started database client")
 
-	source, err := feature.NewFeatureSourceFilesystem("./features")
-	if err != nil {
-		log.WithError(err).Fatal("setting up feature source")
+	// source, err := feature.NewFeatureSourceFilesystem("./features")
+	// if err != nil {
+	// 	log.WithError(err).Fatal("setting up feature source")
+	// }
+	// defer source.Close()
+	// go source.Watch(ctx)
+
+	var source feature.FeatureSource
+	switch cfg.FeatureSource {
+	case "file":
+		fileSource, err := feature.NewFeatureSourceFilesystem("./features")
+		if err != nil {
+			log.WithError(err).Fatal("setting up feature source")
+		}
+		go fileSource.Watch(ctx)
+		source = fileSource
+	case "bucket":
+		storageClient, err := storage.NewClient(ctx)
+		if err != nil {
+			log.WithError(err).Fatal("setting up storage client")
+		}
+		defer storageClient.Close()
+
+		bucketSource, err := feature.NewFeatureSourceBucket(ctx, storageClient.Bucket(cfg.FeatureBucket), log.WithField("subsystem", "bucketsource"))
+		if err != nil {
+			log.WithError(err).Fatal("setting up feature source")
+		}
+
+		go bucketSource.Watch(ctx, pubsubClient.Subscription(cfg.FeatureSubscription))
+		source = bucketSource
+	default:
+		log.Fatalf("unknown feature source: %s", cfg.FeatureSource)
 	}
 	defer source.Close()
-	go source.Watch(ctx)
 
 	featureMgr, err := feature.New(source)
 	if err != nil {
 		log.WithError(err).Fatal("setting up features")
 	}
 
-	statusMgr := message.NewSubscriber[message.Status](client, cfg.GCPProjectID, cfg.StatusSubscriptionID)
+	statusMgr := message.NewSubscriber[message.Status](pubsubClient, cfg.GCPProjectID, cfg.StatusSubscriptionID)
 
 	rolloutWorker := workers.NewRollout(repo, log.WithField("subsystem", "rollout"))
 	go func() {
@@ -161,7 +194,7 @@ func main() {
 	go receiver.Run(ctx)
 
 	createPublisher := func(projectID, topicID string, log *logrus.Entry) workers.Publisher {
-		return message.NewPublisher[message.DeployInstruction](client, projectID, topicID, log)
+		return message.NewPublisher[message.DeployInstruction](pubsubClient, projectID, topicID, log)
 	}
 	reconciler, err := workers.NewReconciler(repo, featureMgr, createPublisher, cfg.GCPProjectID, meter, log.WithField("subsystem", "reconciler"))
 	if err != nil {

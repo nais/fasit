@@ -44,6 +44,7 @@ require (
 	cloud.google.com/go v0.104.0 // indirect
 	cloud.google.com/go/compute v1.10.0 // indirect
 	cloud.google.com/go/iam v0.5.0 // indirect
+	cloud.google.com/go/storage v1.27.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/BurntSushi/toml v1.2.0 // indirect
 	github.com/MakeNowJust/heredoc v1.0.0 // indirect
@@ -178,6 +179,7 @@ require (
 	golang.org/x/text v0.4.0 // indirect
 	golang.org/x/time v0.1.0 // indirect
 	golang.org/x/tools v0.1.12 // indirect
+	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20221018160656-63c7b68cfc55 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
