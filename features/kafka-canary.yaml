@@ -13,12 +13,8 @@ rolloutSource:
   - org: nais
     repo: kafkarator
 mapping:
-  aiven_project:
-    value: "{{.Env.aiven_project_0}}"
-    displayName: Aiven project
-    description: "Aiven project with Kafka enabled for this instance of kafka-canary"
-    ignoreKind:
-      - "tenant"
+  tenant:
+    value: "{{.Tenant.Name}}"
   clusters:
     description: "Space separated list of clusters"
     value: '{{ eachOf .Envs "name" | join " " }}'
@@ -38,8 +34,10 @@ mapping:
     value: "{{.Env.name}}"
     ignoreKind:
       - "management"
-  tenant:
-    value: "{{.Tenant.Name}}"
+  aiven_project:
+    value: "{{.Env.aiven_project_0}}"
+    displayName: Aiven projects
+    description: "Aiven projects with Kafka enabled for this instance of kafka-canary"
     ignoreKind:
       - "management"
 config:
