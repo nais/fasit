@@ -9,6 +9,7 @@ environmentKinds:
 autoInstall:
   - "tenant"
   - "management"
+timeout: 30m
 mapping:
   serviceAccount.annotations.iam\.gke\.io/gcp-service-account:
     value: "{{ .Env.acme_service_account }}"
