@@ -31,15 +31,15 @@ config:
 mapping:
   customPolicies.denyImageRegistries.enabled:
     template: '{{eq .Kind "onprem"}}'
-    displayName: "Enable image-registries-policy"
     description: "Enable deny image registries policy"
+    displayName: "Deny image registries"
 
   customPolicies.replaceOldGithubRegistry.enabled:
     template: '{{eq .Kind "onprem"}}'
-    displayName: "Enable replace-old-github-registry"
     description: "Enable replace old github registry policy"
+    displayName: "Replace old Github registry"
 
   customPolicies.denyKafkaTopicCreate.enabled:
     template: '{{eq .Kind "onprem"}}'
-    displayName: "Enable deny-kafka-topic-create"
     description: "Enable deny kafka topic create policy"
+    displayName: "Deny Kafka topic create"
