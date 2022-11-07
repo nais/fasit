@@ -140,13 +140,6 @@ func main() {
 	repo := database.New(db, log.WithField("subsystem", "repo"))
 	log.Info("-- successfully started database client")
 
-	// source, err := feature.NewFeatureSourceFilesystem("./features")
-	// if err != nil {
-	// 	log.WithError(err).Fatal("setting up feature source")
-	// }
-	// defer source.Close()
-	// go source.Watch(ctx)
-
 	var source feature.FeatureSource
 	switch cfg.FeatureSource {
 	case "file":
