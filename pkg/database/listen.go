@@ -19,13 +19,10 @@ func (r *repo) ListenNotify(ctx context.Context, channel string, fn ListenFunc) 
 		return err
 	}
 	defer conn.Release()
-	log.Info("aquired")
 
 	if _, err := conn.Exec(ctx, "LISTEN "+channel); err != nil {
 		return err
 	}
-	log.Info("listening")
-
 	log.Info("listener started")
 
 	for {
