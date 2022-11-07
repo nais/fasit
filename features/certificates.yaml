@@ -32,4 +32,5 @@ mapping:
   dnsNames:
     value:
       - '{{ subdomain . "*" }}'
+      - '{{ subdomain . "*.external" }}'
     displayName: "DNS names"

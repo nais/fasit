@@ -92,8 +92,14 @@ const Feature = ({ feature }: FeatureProps) => {
       >
         <Tabs.List>
           <Tabs.Tab value="config" label="Config" />
-          <Tabs.Tab value="rollouts" label="Rollouts" />
-          <Tabs.Tab value="overrides" label="Overrides" />
+          <Tabs.Tab
+            value="rollouts"
+            label={`Rollouts (${feature.rolloutSummaries.length})`}
+          />
+          <Tabs.Tab
+            value="overrides"
+            label={`Overrides (${feature.configoverrides.length})`}
+          />
         </Tabs.List>
 
         <Tabs.Panel value="config" className="h-24 w-full bg-gray-50 p-8">
