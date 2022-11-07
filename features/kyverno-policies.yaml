@@ -1,13 +1,42 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/kyverno-policies
 source: https://github.com/nais/helm-charts/tree/main/charts/kyverno-policies
-version: 0.6.0
+version: 0.7.0
 environmentKinds:
   - tenant
   - management
   - onprem
-autoInstall:
-  - "tenant"
-  - "management"
 dependsOn:
   - allOf:
       - kyverno
+
+config:
+  customPolicies.denyImageRegistries.enabled:
+    type: bool
+    displayName: "Deny image registries"
+    description: "Enable deny-image-registries policy"
+
+  customPolicies.replaceOldGithubRegistry.enabled:
+    type: bool
+    displayName: "Replace old Github registry"
+    description: "Enable replace-old-github-registry policy"
+
+  customPolicies.denyKafkaTopicCreate.enabled:
+    type: bool
+    displayName: "Deny Kafka topic create"
+    description: "Enable deny-kafka-topic-create policy"
+
+mapping:
+  customPolicies.denyImageRegistries.enabled:
+    template: '{{eq .Kind "onprem"}}'
+    description: "Enable deny image registries policy"
+    displayName: "Deny image registries"
+
+  customPolicies.replaceOldGithubRegistry.enabled:
+    template: '{{eq .Kind "onprem"}}'
+    description: "Enable replace old github registry policy"
+    displayName: "Replace old Github registry"
+
+  customPolicies.denyKafkaTopicCreate.enabled:
+    template: '{{eq .Kind "onprem"}}'
+    description: "Enable deny kafka topic create policy"
+    displayName: "Deny Kafka topic create"
