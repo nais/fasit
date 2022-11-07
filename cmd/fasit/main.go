@@ -20,7 +20,6 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/websocket"
-	"github.com/nais/fasit"
 	"github.com/nais/fasit/pkg/auth"
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/feature"
@@ -136,7 +135,14 @@ func main() {
 	repo := database.New(db, log.WithField("subsystem", "repo"))
 	log.Info("-- successfully started database client")
 
-	featureMgr, err := feature.New(fasit.FeaturesFS)
+	source, err := feature.NewFeatureSourceFilesystem("./features")
+	if err != nil {
+		log.WithError(err).Fatal("setting up feature source")
+	}
+	defer source.Close()
+	go source.Watch(ctx)
+
+	featureMgr, err := feature.New(source)
 	if err != nil {
 		log.WithError(err).Fatal("setting up features")
 	}

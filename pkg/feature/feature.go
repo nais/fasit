@@ -3,7 +3,7 @@ package feature
 import (
 	"encoding/json"
 	"fmt"
-	"io/fs"
+	"io"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -69,39 +69,21 @@ type Manager struct {
 	features []Feature
 }
 
-func New(files fs.FS) (*Manager, error) {
-	features := []Feature{}
-	err := fs.WalkDir(files, ".", func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if d.IsDir() {
-			return nil
-		}
-
-		f, err := fs.ReadFile(files, path)
-		if err != nil {
-			return err
-		}
-
-		feature := Feature{
-			Name:    strings.TrimSuffix(filepath.Base(path), ".yaml"),
-			Timeout: 5 * time.Minute,
-		}
-		err = yaml.Unmarshal(f, &feature)
-		if err != nil {
-			return err
-		}
-
-		features = append(features, feature)
-
-		return nil
-	})
+func New(source FeatureSource) (*Manager, error) {
+	mgr := &Manager{}
+	features, err := source.Features()
 	if err != nil {
 		return nil, err
 	}
 
-	mgr := &Manager{}
+	source.Register(func() {
+		features, err := source.Features()
+		if err != nil {
+			return
+		}
+		mgr.SetFeatures(features)
+	})
+
 	mgr.SetFeatures(features)
 	return mgr, nil
 }
@@ -150,4 +132,16 @@ func (m *Manager) Get(feature string) *Feature {
 		}
 	}
 	return nil
+}
+
+func parseFeature(filename string, r io.Reader) (Feature, error) {
+	feature := Feature{
+		Name:    strings.TrimSuffix(filepath.Base(filename), ".yaml"),
+		Timeout: 5 * time.Minute,
+	}
+
+	if err := yaml.NewDecoder(r).Decode(&feature); err != nil {
+		return Feature{}, err
+	}
+	return feature, nil
 }

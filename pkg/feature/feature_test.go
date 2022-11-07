@@ -3,7 +3,6 @@ package feature
 import (
 	"strings"
 	"testing"
-	"testing/fstest"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
@@ -160,7 +159,12 @@ func TestNew(t *testing.T) {
 		},
 	}
 
-	mgr, err := New(featureFS)
+	source, err := NewFeatureSourceFilesystem("./testdata")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer source.Close()
+	mgr, err := New(source)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -168,27 +172,4 @@ func TestNew(t *testing.T) {
 	if !cmp.Equal(mgr.Features(), expected) {
 		t.Error(cmp.Diff(mgr.Features(), expected))
 	}
-}
-
-var featureFS = fstest.MapFS{
-	"features/cert-manager.yaml": &fstest.MapFile{
-		Data: []byte(`
-chart: cert-manager
-source: https://github.com/cert-manager/cert-manager
-version: v1.7.2
-repo: https://charts.jetstack.io
-timeout: 15m
-config:
-  installCRDs:
-    type: bool
-  global.podSecurityPolicy.enabled:
-    type: bool`),
-	},
-	"features/nais-crds.yaml": &fstest.MapFile{
-		Data: []byte(`
-chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/nais-crds
-source: https://github.com/nais/liberator/tree/main/charts
-version: 0.1.0
-config: {}`),
-	},
 }
