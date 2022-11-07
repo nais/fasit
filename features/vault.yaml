@@ -22,7 +22,7 @@ config:
     displayName: "Image tag"
   vault_up.enabled:
     type: bool
-    displayName: "Enable vault_up alerts"
+    displayName: "Enable vault_up"
 
 mapping:
   env:
