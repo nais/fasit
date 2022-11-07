@@ -14,3 +14,6 @@ mapping:
           - ALL
       allowPrivilegeEscalation: false
       readOnlyRootFilesystem: true
+  reloader.deployment.labels:
+    template: |
+      kyverno.policy.exclusion.nais.io/restrict-seccomp-strict: "true"
