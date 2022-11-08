@@ -80,6 +80,7 @@ mapping:
             values:
               - kube-system
               - kube-node-lease
+              - kube-public
               - kyverno
               {{ if eq .Kind "onprem" }}- kube-flannel{{ end }}
               {{ if ne .Kind "onprem" }}- cnrm-system{{ end }}
