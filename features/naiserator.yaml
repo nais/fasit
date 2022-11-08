@@ -31,6 +31,13 @@ config:
     required: true
     ignoreKind:
       - "tenant"
+  naiserator.features.prometheus-operator:
+    type: boolean
+    displayName: "Enable Prometheus Operator"
+    description: "Enable Prometheus Operator"
+    ignoreKind:
+      - "tenant"
+      - "management"
   naiserator.kafka.enabled:
     type: bool
     displayName: "Enable Kafka"
