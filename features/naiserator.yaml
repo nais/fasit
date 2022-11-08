@@ -32,7 +32,7 @@ config:
     ignoreKind:
       - "tenant"
   naiserator.features.prometheus-operator:
-    type: boolean
+    type: bool
     displayName: "Enable Prometheus Operator"
     description: "Enable Prometheus Operator"
     ignoreKind:
