@@ -29,6 +29,8 @@ config:
     displayName: "CPU request"
     description: "CPU request for kyverno pod."
 mapping:
+  webhooksCleanup.enabled:
+    value: "true"
   podAnnotations.nais\.io/logformat:
     value: glog
     displayName: "Log format"
@@ -120,3 +122,8 @@ mapping:
       - '[Service,{{ "{{" }} include "kyverno.namespace" . {{ "}}" }},{{ "{{" }} template "kyverno.serviceName" . {{ "}}" }}-metrics]'
       - '[ServiceMonitor,{{ "{{" }} if .Values.serviceMonitor.namespace {{ "}}" }}{{ "{{" }} .Values.serviceMonitor.namespace {{ "}}" }}{{ "{{" }} else {{ "}}" }}{{ "{{" }} template "kyverno.namespace" . {{ "}}" }}{{ "{{" }} end {{ "}}" }},{{ "{{" }} template "kyverno.serviceName" . {{ "}}" }}-service-monitor]'
       - '[Pod,{{ "{{" }} include "kyverno.namespace" . {{ "}}" }},{{ "{{" }} template "kyverno.fullname" . {{ "}}" }}-test]'
+
+  #config.excludeGroupRole:
+  #  displayName: Exclude group role
+  #  value:
+  #    - cluster-admin
