@@ -16,10 +16,10 @@ config:
     displayName: "Tenant alerts proxy URL"
   nais_alertmanager.slack.webhook:
     type: string
-    displayName: "Tenant alerts webhook URL"
+    displayName: "Nais alerts webhook URL"
   nais_alertmanager.slack.proxy:
     type: string
-    displayName: "Tenant alerts proxy URL"
+    displayName: "Nais alerts proxy URL"
   nais_alertmanager.ingress.enabled:
     type: bool
     displayName: "Enable nais-alertmanager ingress"
