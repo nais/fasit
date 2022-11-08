@@ -53,6 +53,9 @@ config:
   naiserator.features.jwker:
     type: bool
     displayName: "Enable Jwker"
+  naiserator.features.nav-ca-bundle:
+    type: bool
+    displayName: "Enable NAV CA bundle" 
   mapping.internal_hosts:
     type: string_array
     displayName: "Extra internal hosts"
