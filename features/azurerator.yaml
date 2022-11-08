@@ -39,6 +39,16 @@ config:
     required: true
     displayName: "Azure client secret (trygdeetaten)"
 
+  secret.azure_nav_tenant.validations.tenant.required:
+    type: bool
+    displayName: "Enable CR field matching (nav.no)"
+    description: "Only process resources that have a matching tenant defined in the spec."
+
+  secret.azure_trygdeetaten_tenant.validations.tenant.required:
+    type: bool
+    displayName: "Enable CR field matching (trygdeetaten.no)"
+    description: "Only process resources that have a matching tenant defined in the spec."
+
 mapping:
   secret.azure_nav_tenant.cluster-name:
     value: "{{.Env.name}}"
