@@ -53,10 +53,7 @@ config:
   naiserator.features.jwker:
     type: bool
     displayName: "Enable Jwker"
-  gatewayMappings:
-    type: string_array
-    displayName: "Gateway mappings"
-  mappping.external_hosts:
+  mapping.external_hosts:
     type: string_array
     displayName: "Extra external hosts"
 mapping:
@@ -66,7 +63,7 @@ mapping:
         ingressClass: "nais-ingress"
       - domainSuffix: "external.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io"
         ingressClass: "nais-ingress-external"
-      {{- range .Configs.mappping.external_hosts }}
+      {{- range .Configs.mapping.external_hosts }}
       - domainSuffix: "{{ . }}"
         ingressClass: "nais-ingress-external"
       {{- end }}
