@@ -15,7 +15,7 @@ mapping:
     displayName: "Cluster Pools"
     description: "Space separated list of cluster and pools"
   api_key:
-    template: "" # TODO
+    template: "temporary dummy data" # TODO
     displayName: "Deploy API Key"
     description: "Hookd API KEY for deploying canary"
 config:
