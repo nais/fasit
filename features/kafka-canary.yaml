@@ -3,54 +3,17 @@ source: https://github.com/nais/kafkarator/tree/main/charts/kafka-canary
 version: 0.1.0
 environmentKinds:
   - "tenant"
-  - "management"
 dependsOn:
   - allOf:
       - "aivenator"
       - "kafkarator"
-      - "hookd"
 rolloutSource:
   - org: nais
     repo: kafkarator
 mapping:
   tenant:
-    value: "{{.Tenant.Name}}"
-  clusters:
-    description: "Space separated list of clusters"
-    value: '{{ eachOf .Envs "name" | join " " }}'
-    ignoreKind:
-      - "tenant"
-  api_key:
-    value: "" # TODO
-    displayName: "Deploy API Key"
-    description: "Hookd API KEY for deploying canary"
-    ignoreKind:
-      - "tenant"
-  cluster.kind:
-    value: "{{.Kind}}"
-    ignoreKind:
-      - "management"
-  cluster.name:
-    value: "{{.Env.name}}"
-    ignoreKind:
-      - "management"
+    template: "{{.Tenant.Name}}"
   aiven_project:
-    value: "{{.Env.aiven_project_0}}"
-    displayName: Aiven projects
-    description: "Aiven projects with Kafka enabled for this instance of kafka-canary"
-    ignoreKind:
-      - "management"
-config:
-  alert_enabled:
-    type: bool
-    displayName: Alert enabled
-  canary.image.repository:
-    type: string
-  canary.image.tag:
-    type: string
-  deployer.image.repository:
-    type: string
-  deployer.image.pullPolicy:
-    type: string
-  deployer.image.tag:
-    type: string
+    template: "{{.Env.aiven_project_0}}"
+    displayName: Aiven project
+    description: "Aiven project with Kafka enabled for this instance of kafka-canary"
