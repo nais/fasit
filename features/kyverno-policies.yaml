@@ -54,3 +54,8 @@ mapping:
     template: '{{eq .Kind "onprem"}}'
     description: "Enable deny service types policy"
     displayName: "Deny service types"
+
+  kyverno-policies.background:
+    template: '{{ne .Kind "onprem"}}'
+    description: "Run Kyverno in background mode"
+    displayName: "Background"
