@@ -17,3 +17,5 @@ mapping:
     template: "{{.Env.aiven_project_0}}"
     displayName: Aiven project
     description: "Aiven project with Kafka enabled for this instance of kafka-canary"
+  cluster_name:
+    template: "{{.Env.name}}"
