@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring
-version: 1.8.0
+version: 1.9.1
 environmentKinds:
   - "tenant"
   - "onprem"
@@ -8,12 +8,21 @@ autoInstall:
   - "tenant"
 timeout: 20m
 config:
-  alerts.webhookURL:
+  tenant_alertmanager.slack.webhook:
     type: string
-    displayName: "Alerts webhook URL"
-  alerts.proxyURL:
+    displayName: "Tenant alerts webhook URL"
+  tenant_alertmanager.slack.proxy:
     type: string
-    displayName: "Alerts proxy URL"
+    displayName: "Tenant alerts proxy URL"
+  nais_alertmanager.slack.webhook:
+    type: string
+    displayName: "Tenant alerts webhook URL"
+  nais_alertmanager.slack.proxy:
+    type: string
+    displayName: "Tenant alerts proxy URL"
+  nais_alertmanager.ingress.enabled:
+    type: bool
+    displayName: "Enable nais-alertmanager ingress"
   tenant_prometheus.storage.enabled:
     type: bool
     displayName: Tenant prometheus enable pvc storage
@@ -85,6 +94,9 @@ mapping:
     displayName: "NAIS Prometheus lb IP"
     ignoreKind:
       - onprem
+  nais_alertmanager.ingress.host:
+    value: '{{ subdomain . "nais-alertmanager" }}'
+    displayName: "Nais alertmanager host"
   env:
     value: "{{.Env.name}}"
     displayName: "Environment name"
