@@ -30,6 +30,7 @@ config:
     description: "CPU request for kyverno pod."
 mapping:
   webhooksCleanup.enabled:
+    displayName: "Enable webhook cleanup"
     value: "true"
   podAnnotations.nais\.io/logformat:
     value: glog
