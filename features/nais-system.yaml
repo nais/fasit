@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/nais-system
 source: https://github.com/nais/helm-charts/tree/main/charts/nais-system
-version: 0.1.0
+version: 1.0.0
 environmentKinds:
   - "onprem"
 autoInstall:
