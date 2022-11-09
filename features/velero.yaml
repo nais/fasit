@@ -8,7 +8,6 @@ environmentKinds:
 autoInstall:
   - "management"
   - "tenant"
-  - "onprem"
 config:
   velero.configuration.backupStorageLocation.bucket:
     type: string
