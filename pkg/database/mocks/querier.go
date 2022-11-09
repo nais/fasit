@@ -1114,6 +1114,29 @@ func (_m *Querier) TenantsGet(ctx context.Context) ([]gensql.Tenant, error) {
 	return r0, r1
 }
 
+// Warnings provides a mock function with given fields: ctx, arg
+func (_m *Querier) Warnings(ctx context.Context, arg gensql.WarningsParams) ([]gensql.WarningsRow, error) {
+	ret := _m.Called(ctx, arg)
+
+	var r0 []gensql.WarningsRow
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.WarningsParams) []gensql.WarningsRow); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gensql.WarningsRow)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, gensql.WarningsParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // WithTx provides a mock function with given fields: tx
 func (_m *Querier) WithTx(tx pgx.Tx) *gensql.Queries {
 	ret := _m.Called(tx)

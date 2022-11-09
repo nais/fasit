@@ -5,6 +5,7 @@ package graph
 
 import (
 	"context"
+	"sort"
 
 	"github.com/nais/fasit/pkg/graph/graphgen"
 	"github.com/nais/fasit/pkg/graph/model"
@@ -28,30 +29,18 @@ func (r *featureResolver) Configoverrides(ctx context.Context, obj *model.Featur
 // OutdatedInfo is the resolver for the outdatedInfo field.
 func (r *featureResolver) OutdatedInfo(ctx context.Context, obj *model.Feature) ([]*model.OutdatedInfo, error) {
 	version := r.HelmChartValues.GetVersion(obj.Name)
-	if version == nil {
-		return []*model.OutdatedInfo{}, nil
-	}
 
-	if version.Outdated() {
-		return []*model.OutdatedInfo{
-			{
-				NewVersion: version.NewVersion,
-			},
-		}, nil
-	}
+	outdated := makeOutdatedInfo(obj.Name, version)
 
-	ret := []*model.OutdatedInfo{}
-	for _, d := range version.Dependencies {
-		if d.Outdated() {
-			ret = append(ret, &model.OutdatedInfo{
-				NewVersion:     d.NewVersion,
-				Dependency:     true,
-				DependencyName: d.Name,
-			})
-		}
-	}
+	sort.Slice(outdated, func(i, j int) bool {
+		return outdated[i].FeatureName < outdated[j].FeatureName
+	})
+	return outdated, nil
+}
 
-	return ret, nil
+// Feature is the resolver for the feature field.
+func (r *outdatedInfoResolver) Feature(ctx context.Context, obj *model.OutdatedInfo) (*model.Feature, error) {
+	return r.resolveFeatureByName(obj.FeatureName)
 }
 
 // Features is the resolver for the features field.
@@ -71,6 +60,17 @@ func (r *queryResolver) Features(ctx context.Context, kind *model.EnvironmentKin
 	return features, nil
 }
 
+// OutdatedInfo is the resolver for the outdatedInfo field.
+func (r *queryResolver) OutdatedInfo(ctx context.Context) ([]*model.OutdatedInfo, error) {
+	versions := r.HelmChartValues.AllVersions()
+	ret := []*model.OutdatedInfo{}
+	for name, version := range versions {
+		ret = append(ret, makeOutdatedInfo(name, version)...)
+	}
+
+	return ret, nil
+}
+
 // ConfigOverride returns graphgen.ConfigOverrideResolver implementation.
 func (r *Resolver) ConfigOverride() graphgen.ConfigOverrideResolver {
 	return &configOverrideResolver{r}
@@ -79,7 +79,11 @@ func (r *Resolver) ConfigOverride() graphgen.ConfigOverrideResolver {
 // Feature returns graphgen.FeatureResolver implementation.
 func (r *Resolver) Feature() graphgen.FeatureResolver { return &featureResolver{r} }
 
+// OutdatedInfo returns graphgen.OutdatedInfoResolver implementation.
+func (r *Resolver) OutdatedInfo() graphgen.OutdatedInfoResolver { return &outdatedInfoResolver{r} }
+
 type (
 	configOverrideResolver struct{ *Resolver }
 	featureResolver        struct{ *Resolver }
+	outdatedInfoResolver   struct{ *Resolver }
 )

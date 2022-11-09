@@ -2,7 +2,7 @@ import * as React from 'react'
 import styled from 'styled-components'
 import {
   ConditionStatus,
-  EnvironmentGetQuery,
+  EnvironmentGetByNamesQuery,
   EnvironmentKind,
   KubernetesNodeConditionType,
   useEnvironmentGetReportQuery,
@@ -14,11 +14,31 @@ import humanizeDate from '../lib/humanizeDate'
 import { Table, Tabs } from '@navikt/ds-react'
 import ReportStatus from './reportStatus'
 import StatusCircle from '../lib/statusCircle'
-import { navGronn, navRod } from '../../styles/constants'
+import {
+  navGronn,
+  navMorkGra,
+  navRod,
+  redError,
+  redErrorLighten80,
+} from '../../styles/constants'
 import FeatureValues from './featureValues'
 import { parseISO } from 'date-fns'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
+
+const WarningLink = styled.a`
+  display: block;
+  color: ${navMorkGra};
+  cursor: pointer;
+  background-color: #fde8e6;
+  border: 1px solid ${redError};
+  border-radius: 5px;
+  padding: 0.5em 1em;
+  margin: 5px;
+  :hover {
+    background-color: ${redErrorLighten80};
+  }
+`
 
 const EnvironmentStatus = styled.div`
   border: 1px solid silver;
@@ -29,8 +49,33 @@ const EnvironmentStatus = styled.div`
 `
 
 interface EnvironmentStatusPageProps {
-  env: EnvironmentGetQuery['environment']
+  env: EnvironmentGetByNamesQuery['environmentByNames']
   tenantName: string
+}
+
+const warningLink = (
+  tenantName: string,
+  environmentName: string,
+  w: EnvironmentGetByNamesQuery['environmentByNames']['warnings'][0],
+  i: number,
+) => {
+  if (w.__typename === 'FeatureWarning') {
+    return (
+      <Link
+        href={`/tenant/${tenantName}/${environmentName}?feature=${w.feature.name}`}
+        key={i}
+      >
+        <WarningLink>
+          <strong>{w.feature.name}</strong>: {w.message}
+        </WarningLink>
+      </Link>
+    )
+  }
+  return (
+    <Link key={i} href="#">
+      <WarningLink key={i}>{w.message}</WarningLink>
+    </Link>
+  )
 }
 
 const EnvironmentStatusPage = ({
@@ -49,6 +94,7 @@ const EnvironmentStatusPage = ({
 
   const email = infoQuery?.data?.userInfo?.email
   const report = data.environment
+  const warnings = env.warnings
   const getValue = (key: string) => {
     return env.values.find((v) => v.key === key)?.value
   }
@@ -97,6 +143,7 @@ const EnvironmentStatusPage = ({
           <Tabs.Tab value="nodes" label="Kubernetes nodes" />
         </Tabs.List>
         <Tabs.Panel value="releases" className="h-24 w-full bg-gray-50 p-8">
+          <>{warnings.map((w, i) => warningLink(tenantName, env.name, w, i))}</>
           <h3>Helm installs</h3>
           <Table size={'small'}>
             <Table.Header>

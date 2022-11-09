@@ -87,6 +87,19 @@ func (c *Cache) GetVersion(feature string) *ChartVersion {
 	return nil
 }
 
+func (c *Cache) AllVersions() map[string]*ChartVersion {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	versions := make(map[string]*ChartVersion)
+
+	for feature, chart := range c.cache {
+		versions[feature] = chart.Version
+	}
+
+	return versions
+}
+
 func (c *Cache) get(feature string) Chart {
 	c.lock.Lock()
 	defer c.lock.Unlock()

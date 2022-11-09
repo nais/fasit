@@ -1211,6 +1211,29 @@ func (_m *Repo) TenantsGet(ctx context.Context) ([]*model.Tenant, error) {
 	return r0, r1
 }
 
+// Warnings provides a mock function with given fields: ctx, environmentID, tenantID
+func (_m *Repo) Warnings(ctx context.Context, environmentID *uuid.UUID, tenantID *uuid.UUID) ([]model.Warning, error) {
+	ret := _m.Called(ctx, environmentID, tenantID)
+
+	var r0 []model.Warning
+	if rf, ok := ret.Get(0).(func(context.Context, *uuid.UUID, *uuid.UUID) []model.Warning); ok {
+		r0 = rf(ctx, environmentID, tenantID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]model.Warning)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *uuid.UUID, *uuid.UUID) error); ok {
+		r1 = rf(ctx, environmentID, tenantID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // WithTx provides a mock function with given fields: ctx
 func (_m *Repo) WithTx(ctx context.Context) (database.Repo, pgx.Tx, error) {
 	ret := _m.Called(ctx)

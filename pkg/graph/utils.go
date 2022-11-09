@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/nais/fasit/pkg/feature"
+	"github.com/nais/fasit/pkg/feature/helminfo"
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
@@ -103,6 +104,35 @@ func flattenMap(mp map[string]any) map[string]any {
 			}
 		} else {
 			ret[k] = v
+		}
+	}
+
+	return ret
+}
+
+func makeOutdatedInfo(featureName string, version *helminfo.ChartVersion) []*model.OutdatedInfo {
+	if version == nil {
+		return []*model.OutdatedInfo{}
+	}
+
+	if version.Outdated() {
+		return []*model.OutdatedInfo{
+			{
+				FeatureName: featureName,
+				NewVersion:  version.NewVersion,
+			},
+		}
+	}
+
+	ret := []*model.OutdatedInfo{}
+	for _, d := range version.Dependencies {
+		if d.Outdated() {
+			ret = append(ret, &model.OutdatedInfo{
+				FeatureName:    featureName,
+				NewVersion:     d.NewVersion,
+				Dependency:     true,
+				DependencyName: d.Name,
+			})
 		}
 	}
 

@@ -32,6 +32,7 @@ type Environment {
   nodes: [KubernetesNode!]!
   values: [EnvironmentValue!]!
   tenant: Tenant!
+  warnings: [Warning!]!
 }
 
 type EnvironmentValue {

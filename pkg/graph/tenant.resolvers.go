@@ -38,6 +38,11 @@ func (r *tenantResolver) Environments(ctx context.Context, obj *model.Tenant) ([
 	return r.Repo.EnvironmentsGet(ctx, obj.ID)
 }
 
+// Warnings is the resolver for the warnings field.
+func (r *tenantResolver) Warnings(ctx context.Context, obj *model.Tenant) ([]model.Warning, error) {
+	return r.Repo.Warnings(ctx, nil, &obj.ID)
+}
+
 // Mutation returns graphgen.MutationResolver implementation.
 func (r *Resolver) Mutation() graphgen.MutationResolver { return &mutationResolver{r} }
 

@@ -74,6 +74,11 @@ func (r *environmentResolver) Tenant(ctx context.Context, obj *model.Environment
 	return r.Repo.TenantGet(ctx, obj.TenantID)
 }
 
+// Warnings is the resolver for the warnings field.
+func (r *environmentResolver) Warnings(ctx context.Context, obj *model.Environment) ([]model.Warning, error) {
+	return r.Repo.Warnings(ctx, &obj.ID, nil)
+}
+
 // EnvironmentCreate is the resolver for the environmentCreate field.
 func (r *mutationResolver) EnvironmentCreate(ctx context.Context, environment model.EnvironmentCreate) (*model.Environment, error) {
 	return r.Repo.EnvironmentCreate(ctx, &environment)

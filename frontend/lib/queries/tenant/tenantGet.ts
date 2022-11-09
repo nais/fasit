@@ -20,9 +20,30 @@ export const TENANT_GET_BY_NAME = gql`
       environments {
         id
         name
+        warnings {
+          message
+        }
       }
       created
       lastModified
+      warnings {
+        message
+
+        ... on FeatureWarning {
+          feature {
+            name
+          }
+          environment {
+            name
+          }
+        }
+
+        ... on NaisdWarning {
+          environment {
+            name
+          }
+        }
+      }
     }
   }
 `

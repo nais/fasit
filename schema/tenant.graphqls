@@ -5,6 +5,7 @@ type Tenant {
   environments: [Environment!]!
   created: Time!
   lastModified: Time!
+  warnings: [Warning!]!
 }
 
 type Query {

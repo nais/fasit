@@ -8,6 +8,12 @@ export const TENANTS_GET = gql`
       description
       created
       lastModified
+      warnings {
+        message
+      }
+    }
+    outdatedInfo {
+      dependency # Just a random field to get list length
     }
   }
 `

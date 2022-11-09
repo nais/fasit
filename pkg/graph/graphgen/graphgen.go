@@ -46,8 +46,11 @@ type ResolverRoot interface {
 	Environment() EnvironmentResolver
 	Feature() FeatureResolver
 	FeatureState() FeatureStateResolver
+	FeatureWarning() FeatureWarningResolver
 	GlobalConfiguration() GlobalConfigurationResolver
 	Mutation() MutationResolver
+	NaisdWarning() NaisdWarningResolver
+	OutdatedInfo() OutdatedInfoResolver
 	Query() QueryResolver
 	Release() ReleaseResolver
 	Rollout() RolloutResolver
@@ -104,6 +107,7 @@ type ComplexityRoot struct {
 		Releases      func(childComplexity int) int
 		Tenant        func(childComplexity int) int
 		Values        func(childComplexity int) int
+		Warnings      func(childComplexity int) int
 	}
 
 	EnvironmentValue struct {
@@ -132,6 +136,12 @@ type ComplexityRoot struct {
 		LastModified        func(childComplexity int) int
 		MissingDependencies func(childComplexity int) int
 		RolloutStatus       func(childComplexity int) int
+	}
+
+	FeatureWarning struct {
+		Environment func(childComplexity int) int
+		Feature     func(childComplexity int) int
+		Message     func(childComplexity int) int
 	}
 
 	GlobalConfiguration struct {
@@ -198,9 +208,15 @@ type ComplexityRoot struct {
 		TenantCreate        func(childComplexity int, tenant model.TenantCreate) int
 	}
 
+	NaisdWarning struct {
+		Environment func(childComplexity int) int
+		Message     func(childComplexity int) int
+	}
+
 	OutdatedInfo struct {
 		Dependency     func(childComplexity int) int
 		DependencyName func(childComplexity int) int
+		Feature        func(childComplexity int) int
 		NewVersion     func(childComplexity int) int
 	}
 
@@ -213,6 +229,7 @@ type ComplexityRoot struct {
 		FeatureStatus      func(childComplexity int, envID uuid.UUID, feature string) int
 		Features           func(childComplexity int, kind *model.EnvironmentKind) int
 		HelmValues         func(childComplexity int, feature string, envID uuid.UUID) int
+		OutdatedInfo       func(childComplexity int) int
 		RolloutSummary     func(childComplexity int, id uuid.UUID) int
 		Tenant             func(childComplexity int, id *uuid.UUID, slug *string) int
 		Tenants            func(childComplexity int) int
@@ -285,6 +302,7 @@ type ComplexityRoot struct {
 		ID           func(childComplexity int) int
 		LastModified func(childComplexity int) int
 		Name         func(childComplexity int) int
+		Warnings     func(childComplexity int) int
 	}
 
 	UserInfo struct {
@@ -309,6 +327,7 @@ type EnvironmentResolver interface {
 	Nodes(ctx context.Context, obj *model.Environment) ([]*model.KubernetesNode, error)
 	Values(ctx context.Context, obj *model.Environment) ([]*model.EnvironmentValue, error)
 	Tenant(ctx context.Context, obj *model.Environment) (*model.Tenant, error)
+	Warnings(ctx context.Context, obj *model.Environment) ([]model.Warning, error)
 }
 type FeatureResolver interface {
 	RolloutSummaries(ctx context.Context, obj *model.Feature) ([]*model.RolloutSummary, error)
@@ -319,6 +338,10 @@ type FeatureStateResolver interface {
 	Feature(ctx context.Context, obj *model.FeatureState) (*model.Feature, error)
 
 	MissingDependencies(ctx context.Context, obj *model.FeatureState) ([]*model.Feature, error)
+}
+type FeatureWarningResolver interface {
+	Feature(ctx context.Context, obj *model.FeatureWarning) (*model.Feature, error)
+	Environment(ctx context.Context, obj *model.FeatureWarning) (*model.Environment, error)
 }
 type GlobalConfigurationResolver interface {
 	Feature(ctx context.Context, obj *model.GlobalConfiguration) (*model.Feature, error)
@@ -334,6 +357,12 @@ type MutationResolver interface {
 	EnvironmentUpdate(ctx context.Context, id uuid.UUID, input model.EnvironmentUpdate) (*model.Environment, error)
 	FeatureStateSave(ctx context.Context, envID uuid.UUID, enabled bool, feature string) (*model.FeatureState, error)
 }
+type NaisdWarningResolver interface {
+	Environment(ctx context.Context, obj *model.NaisdWarning) (*model.Environment, error)
+}
+type OutdatedInfoResolver interface {
+	Feature(ctx context.Context, obj *model.OutdatedInfo) (*model.Feature, error)
+}
 type QueryResolver interface {
 	Tenants(ctx context.Context) ([]*model.Tenant, error)
 	Configuration(ctx context.Context, feature string, envID *uuid.UUID) (*model.EnvConfig, error)
@@ -343,6 +372,7 @@ type QueryResolver interface {
 	EnvironmentByNames(ctx context.Context, environmentName string, tenantName string) (*model.Environment, error)
 	Environments(ctx context.Context, tenantID uuid.UUID) ([]*model.Environment, error)
 	Features(ctx context.Context, kind *model.EnvironmentKind) ([]*model.Feature, error)
+	OutdatedInfo(ctx context.Context) ([]*model.OutdatedInfo, error)
 	Values(ctx context.Context, feature string, env uuid.UUID) (map[string]interface{}, error)
 	RolloutSummary(ctx context.Context, id uuid.UUID) (*model.RolloutSummary, error)
 	FeatureStatus(ctx context.Context, envID uuid.UUID, feature string) (*model.Status, error)
@@ -374,6 +404,8 @@ type SubscriptionResolver interface {
 }
 type TenantResolver interface {
 	Environments(ctx context.Context, obj *model.Tenant) ([]*model.Environment, error)
+
+	Warnings(ctx context.Context, obj *model.Tenant) ([]model.Warning, error)
 }
 
 type executableSchema struct {
@@ -594,6 +626,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Environment.Values(childComplexity), true
 
+	case "Environment.warnings":
+		if e.complexity.Environment.Warnings == nil {
+			break
+		}
+
+		return e.complexity.Environment.Warnings(childComplexity), true
+
 	case "EnvironmentValue.key":
 		if e.complexity.EnvironmentValue.Key == nil {
 			break
@@ -726,6 +765,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.FeatureState.RolloutStatus(childComplexity), true
+
+	case "FeatureWarning.environment":
+		if e.complexity.FeatureWarning.Environment == nil {
+			break
+		}
+
+		return e.complexity.FeatureWarning.Environment(childComplexity), true
+
+	case "FeatureWarning.feature":
+		if e.complexity.FeatureWarning.Feature == nil {
+			break
+		}
+
+		return e.complexity.FeatureWarning.Feature(childComplexity), true
+
+	case "FeatureWarning.message":
+		if e.complexity.FeatureWarning.Message == nil {
+			break
+		}
+
+		return e.complexity.FeatureWarning.Message(childComplexity), true
 
 	case "GlobalConfiguration.chartValue":
 		if e.complexity.GlobalConfiguration.ChartValue == nil {
@@ -1063,6 +1123,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.TenantCreate(childComplexity, args["tenant"].(model.TenantCreate)), true
 
+	case "NaisdWarning.environment":
+		if e.complexity.NaisdWarning.Environment == nil {
+			break
+		}
+
+		return e.complexity.NaisdWarning.Environment(childComplexity), true
+
+	case "NaisdWarning.message":
+		if e.complexity.NaisdWarning.Message == nil {
+			break
+		}
+
+		return e.complexity.NaisdWarning.Message(childComplexity), true
+
 	case "OutdatedInfo.dependency":
 		if e.complexity.OutdatedInfo.Dependency == nil {
 			break
@@ -1076,6 +1150,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.OutdatedInfo.DependencyName(childComplexity), true
+
+	case "OutdatedInfo.feature":
+		if e.complexity.OutdatedInfo.Feature == nil {
+			break
+		}
+
+		return e.complexity.OutdatedInfo.Feature(childComplexity), true
 
 	case "OutdatedInfo.newVersion":
 		if e.complexity.OutdatedInfo.NewVersion == nil {
@@ -1179,6 +1260,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.HelmValues(childComplexity, args["feature"].(string), args["envID"].(uuid.UUID)), true
+
+	case "Query.outdatedInfo":
+		if e.complexity.Query.OutdatedInfo == nil {
+			break
+		}
+
+		return e.complexity.Query.OutdatedInfo(childComplexity), true
 
 	case "Query.rolloutSummary":
 		if e.complexity.Query.RolloutSummary == nil {
@@ -1536,6 +1624,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Tenant.Name(childComplexity), true
 
+	case "Tenant.warnings":
+		if e.complexity.Tenant.Warnings == nil {
+			break
+		}
+
+		return e.complexity.Tenant.Warnings(childComplexity), true
+
 	case "userInfo.email":
 		if e.complexity.UserInfo.Email == nil {
 			break
@@ -1753,6 +1848,7 @@ type Environment {
   nodes: [KubernetesNode!]!
   values: [EnvironmentValue!]!
   tenant: Tenant!
+  warnings: [Warning!]!
 }
 
 type EnvironmentValue {
@@ -1812,6 +1908,7 @@ extend type Mutation {
 }
 `, BuiltIn: false},
 	{Name: "../../../schema/feature.graphqls", Input: `type OutdatedInfo {
+  feature: Feature!
   dependency: Boolean!
   dependencyName: String!
   newVersion: String!
@@ -1843,6 +1940,7 @@ type Dependency {
 
 extend type Query {
   features(kind: EnvironmentKind): [Feature!]!
+  outdatedInfo: [OutdatedInfo]!
 }
 `, BuiltIn: false},
 	{Name: "../../../schema/feature_states.graphqls", Input: `type FeatureState {
@@ -1996,6 +2094,7 @@ extend type Query {
   environments: [Environment!]!
   created: Time!
   lastModified: Time!
+  warnings: [Warning!]!
 }
 
 type Query {
@@ -2028,6 +2127,21 @@ extend type Query {
     userInfo: userInfo
 
 }`, BuiltIn: false},
+	{Name: "../../../schema/warning.graphqls", Input: `interface Warning {
+  message: String!
+}
+
+type FeatureWarning implements Warning {
+  message: String!
+  feature: Feature!
+  environment: Environment!
+}
+
+type NaisdWarning implements Warning {
+  message: String!
+  environment: Environment!
+}
+`, BuiltIn: false},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
@@ -2544,6 +2658,8 @@ func (ec *executionContext) fieldContext_ConfigOverride_environment(ctx context.
 				return ec.fieldContext_Environment_values(ctx, field)
 			case "tenant":
 				return ec.fieldContext_Environment_tenant(ctx, field)
+			case "warnings":
+				return ec.fieldContext_Environment_warnings(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -2886,6 +3002,8 @@ func (ec *executionContext) fieldContext_EnvConfiguration_environment(ctx contex
 				return ec.fieldContext_Environment_values(ctx, field)
 			case "tenant":
 				return ec.fieldContext_Environment_tenant(ctx, field)
+			case "warnings":
+				return ec.fieldContext_Environment_warnings(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -3913,8 +4031,54 @@ func (ec *executionContext) fieldContext_Environment_tenant(ctx context.Context,
 				return ec.fieldContext_Tenant_created(ctx, field)
 			case "lastModified":
 				return ec.fieldContext_Tenant_lastModified(ctx, field)
+			case "warnings":
+				return ec.fieldContext_Tenant_warnings(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tenant", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Environment_warnings(ctx context.Context, field graphql.CollectedField, obj *model.Environment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Environment_warnings(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Environment().Warnings(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]model.Warning)
+	fc.Result = res
+	return ec.marshalNWarning2ᚕgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐWarningᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Environment_warnings(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Environment",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("FieldContext.Child cannot be called on type INTERFACE")
 		},
 	}
 	return fc, nil
@@ -4513,6 +4677,8 @@ func (ec *executionContext) fieldContext_Feature_outdatedInfo(ctx context.Contex
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "feature":
+				return ec.fieldContext_OutdatedInfo_feature(ctx, field)
 			case "dependency":
 				return ec.fieldContext_OutdatedInfo_dependency(ctx, field)
 			case "dependencyName":
@@ -4827,6 +4993,190 @@ func (ec *executionContext) fieldContext_FeatureState_missingDependencies(ctx co
 				return ec.fieldContext_Feature_outdatedInfo(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FeatureWarning_message(ctx context.Context, field graphql.CollectedField, obj *model.FeatureWarning) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FeatureWarning_message(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Message, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FeatureWarning_message(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FeatureWarning",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FeatureWarning_feature(ctx context.Context, field graphql.CollectedField, obj *model.FeatureWarning) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FeatureWarning_feature(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.FeatureWarning().Feature(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Feature)
+	fc.Result = res
+	return ec.marshalNFeature2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐFeature(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FeatureWarning_feature(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FeatureWarning",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_Feature_name(ctx, field)
+			case "chart":
+				return ec.fieldContext_Feature_chart(ctx, field)
+			case "version":
+				return ec.fieldContext_Feature_version(ctx, field)
+			case "repo":
+				return ec.fieldContext_Feature_repo(ctx, field)
+			case "source":
+				return ec.fieldContext_Feature_source(ctx, field)
+			case "dependsOn":
+				return ec.fieldContext_Feature_dependsOn(ctx, field)
+			case "config":
+				return ec.fieldContext_Feature_config(ctx, field)
+			case "environmentKinds":
+				return ec.fieldContext_Feature_environmentKinds(ctx, field)
+			case "rolloutSummaries":
+				return ec.fieldContext_Feature_rolloutSummaries(ctx, field)
+			case "configoverrides":
+				return ec.fieldContext_Feature_configoverrides(ctx, field)
+			case "outdatedInfo":
+				return ec.fieldContext_Feature_outdatedInfo(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FeatureWarning_environment(ctx context.Context, field graphql.CollectedField, obj *model.FeatureWarning) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FeatureWarning_environment(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.FeatureWarning().Environment(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Environment)
+	fc.Result = res
+	return ec.marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironment(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FeatureWarning_environment(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FeatureWarning",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Environment_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Environment_name(ctx, field)
+			case "description":
+				return ec.fieldContext_Environment_description(ctx, field)
+			case "featureStates":
+				return ec.fieldContext_Environment_featureStates(ctx, field)
+			case "created":
+				return ec.fieldContext_Environment_created(ctx, field)
+			case "lastModified":
+				return ec.fieldContext_Environment_lastModified(ctx, field)
+			case "kind":
+				return ec.fieldContext_Environment_kind(ctx, field)
+			case "health":
+				return ec.fieldContext_Environment_health(ctx, field)
+			case "releases":
+				return ec.fieldContext_Environment_releases(ctx, field)
+			case "nodes":
+				return ec.fieldContext_Environment_nodes(ctx, field)
+			case "values":
+				return ec.fieldContext_Environment_values(ctx, field)
+			case "tenant":
+				return ec.fieldContext_Environment_tenant(ctx, field)
+			case "warnings":
+				return ec.fieldContext_Environment_warnings(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
 	}
 	return fc, nil
@@ -6525,6 +6875,8 @@ func (ec *executionContext) fieldContext_Mutation_tenantCreate(ctx context.Conte
 				return ec.fieldContext_Tenant_created(ctx, field)
 			case "lastModified":
 				return ec.fieldContext_Tenant_lastModified(ctx, field)
+			case "warnings":
+				return ec.fieldContext_Tenant_warnings(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tenant", field.Name)
 		},
@@ -6771,6 +7123,8 @@ func (ec *executionContext) fieldContext_Mutation_environmentCreate(ctx context.
 				return ec.fieldContext_Environment_values(ctx, field)
 			case "tenant":
 				return ec.fieldContext_Environment_tenant(ctx, field)
+			case "warnings":
+				return ec.fieldContext_Environment_warnings(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -6852,6 +7206,8 @@ func (ec *executionContext) fieldContext_Mutation_environmentUpdate(ctx context.
 				return ec.fieldContext_Environment_values(ctx, field)
 			case "tenant":
 				return ec.fieldContext_Environment_tenant(ctx, field)
+			case "warnings":
+				return ec.fieldContext_Environment_warnings(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -6935,6 +7291,190 @@ func (ec *executionContext) fieldContext_Mutation_featureStateSave(ctx context.C
 	if fc.Args, err = ec.field_Mutation_featureStateSave_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NaisdWarning_message(ctx context.Context, field graphql.CollectedField, obj *model.NaisdWarning) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NaisdWarning_message(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Message, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NaisdWarning_message(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NaisdWarning",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NaisdWarning_environment(ctx context.Context, field graphql.CollectedField, obj *model.NaisdWarning) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NaisdWarning_environment(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.NaisdWarning().Environment(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Environment)
+	fc.Result = res
+	return ec.marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironment(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NaisdWarning_environment(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NaisdWarning",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Environment_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Environment_name(ctx, field)
+			case "description":
+				return ec.fieldContext_Environment_description(ctx, field)
+			case "featureStates":
+				return ec.fieldContext_Environment_featureStates(ctx, field)
+			case "created":
+				return ec.fieldContext_Environment_created(ctx, field)
+			case "lastModified":
+				return ec.fieldContext_Environment_lastModified(ctx, field)
+			case "kind":
+				return ec.fieldContext_Environment_kind(ctx, field)
+			case "health":
+				return ec.fieldContext_Environment_health(ctx, field)
+			case "releases":
+				return ec.fieldContext_Environment_releases(ctx, field)
+			case "nodes":
+				return ec.fieldContext_Environment_nodes(ctx, field)
+			case "values":
+				return ec.fieldContext_Environment_values(ctx, field)
+			case "tenant":
+				return ec.fieldContext_Environment_tenant(ctx, field)
+			case "warnings":
+				return ec.fieldContext_Environment_warnings(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _OutdatedInfo_feature(ctx context.Context, field graphql.CollectedField, obj *model.OutdatedInfo) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_OutdatedInfo_feature(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.OutdatedInfo().Feature(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Feature)
+	fc.Result = res
+	return ec.marshalNFeature2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐFeature(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_OutdatedInfo_feature(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "OutdatedInfo",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_Feature_name(ctx, field)
+			case "chart":
+				return ec.fieldContext_Feature_chart(ctx, field)
+			case "version":
+				return ec.fieldContext_Feature_version(ctx, field)
+			case "repo":
+				return ec.fieldContext_Feature_repo(ctx, field)
+			case "source":
+				return ec.fieldContext_Feature_source(ctx, field)
+			case "dependsOn":
+				return ec.fieldContext_Feature_dependsOn(ctx, field)
+			case "config":
+				return ec.fieldContext_Feature_config(ctx, field)
+			case "environmentKinds":
+				return ec.fieldContext_Feature_environmentKinds(ctx, field)
+			case "rolloutSummaries":
+				return ec.fieldContext_Feature_rolloutSummaries(ctx, field)
+			case "configoverrides":
+				return ec.fieldContext_Feature_configoverrides(ctx, field)
+			case "outdatedInfo":
+				return ec.fieldContext_Feature_outdatedInfo(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
+		},
 	}
 	return fc, nil
 }
@@ -7122,6 +7662,8 @@ func (ec *executionContext) fieldContext_Query_tenants(ctx context.Context, fiel
 				return ec.fieldContext_Tenant_created(ctx, field)
 			case "lastModified":
 				return ec.fieldContext_Tenant_lastModified(ctx, field)
+			case "warnings":
+				return ec.fieldContext_Tenant_warnings(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tenant", field.Name)
 		},
@@ -7369,6 +7911,8 @@ func (ec *executionContext) fieldContext_Query_environment(ctx context.Context, 
 				return ec.fieldContext_Environment_values(ctx, field)
 			case "tenant":
 				return ec.fieldContext_Environment_tenant(ctx, field)
+			case "warnings":
+				return ec.fieldContext_Environment_warnings(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -7450,6 +7994,8 @@ func (ec *executionContext) fieldContext_Query_environmentByNames(ctx context.Co
 				return ec.fieldContext_Environment_values(ctx, field)
 			case "tenant":
 				return ec.fieldContext_Environment_tenant(ctx, field)
+			case "warnings":
+				return ec.fieldContext_Environment_warnings(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -7531,6 +8077,8 @@ func (ec *executionContext) fieldContext_Query_environments(ctx context.Context,
 				return ec.fieldContext_Environment_values(ctx, field)
 			case "tenant":
 				return ec.fieldContext_Environment_tenant(ctx, field)
+			case "warnings":
+				return ec.fieldContext_Environment_warnings(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -7624,6 +8172,60 @@ func (ec *executionContext) fieldContext_Query_features(ctx context.Context, fie
 	if fc.Args, err = ec.field_Query_features_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_outdatedInfo(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_outdatedInfo(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().OutdatedInfo(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.OutdatedInfo)
+	fc.Result = res
+	return ec.marshalNOutdatedInfo2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐOutdatedInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_outdatedInfo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "feature":
+				return ec.fieldContext_OutdatedInfo_feature(ctx, field)
+			case "dependency":
+				return ec.fieldContext_OutdatedInfo_dependency(ctx, field)
+			case "dependencyName":
+				return ec.fieldContext_OutdatedInfo_dependencyName(ctx, field)
+			case "newVersion":
+				return ec.fieldContext_OutdatedInfo_newVersion(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type OutdatedInfo", field.Name)
+		},
 	}
 	return fc, nil
 }
@@ -7878,6 +8480,8 @@ func (ec *executionContext) fieldContext_Query_tenant(ctx context.Context, field
 				return ec.fieldContext_Tenant_created(ctx, field)
 			case "lastModified":
 				return ec.fieldContext_Tenant_lastModified(ctx, field)
+			case "warnings":
+				return ec.fieldContext_Tenant_warnings(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tenant", field.Name)
 		},
@@ -8644,6 +9248,8 @@ func (ec *executionContext) fieldContext_Rollout_environment(ctx context.Context
 				return ec.fieldContext_Environment_values(ctx, field)
 			case "tenant":
 				return ec.fieldContext_Environment_tenant(ctx, field)
+			case "warnings":
+				return ec.fieldContext_Environment_warnings(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -10059,6 +10665,8 @@ func (ec *executionContext) fieldContext_Tenant_environments(ctx context.Context
 				return ec.fieldContext_Environment_values(ctx, field)
 			case "tenant":
 				return ec.fieldContext_Environment_tenant(ctx, field)
+			case "warnings":
+				return ec.fieldContext_Environment_warnings(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -10149,6 +10757,50 @@ func (ec *executionContext) fieldContext_Tenant_lastModified(ctx context.Context
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Tenant_warnings(ctx context.Context, field graphql.CollectedField, obj *model.Tenant) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Tenant_warnings(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Tenant().Warnings(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]model.Warning)
+	fc.Result = res
+	return ec.marshalNWarning2ᚕgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐWarningᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Tenant_warnings(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Tenant",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("FieldContext.Child cannot be called on type INTERFACE")
 		},
 	}
 	return fc, nil
@@ -12206,6 +12858,29 @@ func (ec *executionContext) _Configuration(ctx context.Context, sel ast.Selectio
 	}
 }
 
+func (ec *executionContext) _Warning(ctx context.Context, sel ast.SelectionSet, obj model.Warning) graphql.Marshaler {
+	switch obj := (obj).(type) {
+	case nil:
+		return graphql.Null
+	case model.FeatureWarning:
+		return ec._FeatureWarning(ctx, sel, &obj)
+	case *model.FeatureWarning:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._FeatureWarning(ctx, sel, obj)
+	case model.NaisdWarning:
+		return ec._NaisdWarning(ctx, sel, &obj)
+	case *model.NaisdWarning:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._NaisdWarning(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
 // endregion ************************** interface.gotpl ***************************
 
 // region    **************************** object.gotpl ****************************
@@ -12634,6 +13309,26 @@ func (ec *executionContext) _Environment(ctx context.Context, sel ast.SelectionS
 				return innerFunc(ctx)
 
 			})
+		case "warnings":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Environment_warnings(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -12879,6 +13574,74 @@ func (ec *executionContext) _FeatureState(ctx context.Context, sel ast.Selection
 					}
 				}()
 				res = ec._FeatureState_missingDependencies(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var featureWarningImplementors = []string{"FeatureWarning", "Warning"}
+
+func (ec *executionContext) _FeatureWarning(ctx context.Context, sel ast.SelectionSet, obj *model.FeatureWarning) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, featureWarningImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("FeatureWarning")
+		case "message":
+
+			out.Values[i] = ec._FeatureWarning_message(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "feature":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._FeatureWarning_feature(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		case "environment":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._FeatureWarning_environment(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -13397,6 +14160,54 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 	return out
 }
 
+var naisdWarningImplementors = []string{"NaisdWarning", "Warning"}
+
+func (ec *executionContext) _NaisdWarning(ctx context.Context, sel ast.SelectionSet, obj *model.NaisdWarning) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, naisdWarningImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("NaisdWarning")
+		case "message":
+
+			out.Values[i] = ec._NaisdWarning_message(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "environment":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._NaisdWarning_environment(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var outdatedInfoImplementors = []string{"OutdatedInfo"}
 
 func (ec *executionContext) _OutdatedInfo(ctx context.Context, sel ast.SelectionSet, obj *model.OutdatedInfo) graphql.Marshaler {
@@ -13407,26 +14218,46 @@ func (ec *executionContext) _OutdatedInfo(ctx context.Context, sel ast.Selection
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("OutdatedInfo")
+		case "feature":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._OutdatedInfo_feature(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		case "dependency":
 
 			out.Values[i] = ec._OutdatedInfo_dependency(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "dependencyName":
 
 			out.Values[i] = ec._OutdatedInfo_dependencyName(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "newVersion":
 
 			out.Values[i] = ec._OutdatedInfo_newVersion(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -13629,6 +14460,29 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_features(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "outdatedInfo":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_outdatedInfo(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -14335,6 +15189,26 @@ func (ec *executionContext) _Tenant(ctx context.Context, sel ast.SelectionSet, o
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "warnings":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Tenant_warnings(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -15915,6 +16789,60 @@ func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel as
 func (ec *executionContext) unmarshalNUpdateConfiguration2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐUpdateConfiguration(ctx context.Context, v interface{}) (model.UpdateConfiguration, error) {
 	res, err := ec.unmarshalInputUpdateConfiguration(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNWarning2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐWarning(ctx context.Context, sel ast.SelectionSet, v model.Warning) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Warning(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNWarning2ᚕgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐWarningᚄ(ctx context.Context, sel ast.SelectionSet, v []model.Warning) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNWarning2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐWarning(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {

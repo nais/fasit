@@ -97,6 +97,7 @@ export type Environment = {
   releases: Array<Release>
   tenant: Tenant
   values: Array<EnvironmentValue>
+  warnings: Array<Warning>
 }
 
 /** EnvironmentCreate contains metadata for creating an environment */
@@ -148,6 +149,13 @@ export type FeatureState = {
   lastModified?: Maybe<Scalars['Time']>
   missingDependencies: Array<Feature>
   rolloutStatus: RolloutStatus
+}
+
+export type FeatureWarning = Warning & {
+  __typename?: 'FeatureWarning'
+  environment: Environment
+  feature: Feature
+  message: Scalars['String']
 }
 
 export type GlobalConfiguration = Configuration & {
@@ -262,6 +270,12 @@ export type MutationTenantCreateArgs = {
   tenant: TenantCreate
 }
 
+export type NaisdWarning = Warning & {
+  __typename?: 'NaisdWarning'
+  environment: Environment
+  message: Scalars['String']
+}
+
 export type NewConfiguration = {
   description?: InputMaybe<Scalars['String']>
   environmentID?: InputMaybe<Scalars['ID']>
@@ -274,6 +288,7 @@ export type OutdatedInfo = {
   __typename?: 'OutdatedInfo'
   dependency: Scalars['Boolean']
   dependencyName: Scalars['String']
+  feature: Feature
   newVersion: Scalars['String']
 }
 
@@ -290,6 +305,7 @@ export type Query = {
   featureStatus: Status
   features: Array<Feature>
   helmValues: Scalars['RawMessage']
+  outdatedInfo: Array<Maybe<OutdatedInfo>>
   rolloutSummary: RolloutSummary
   /** tenant returns the given tenant. */
   tenant: Tenant
@@ -444,6 +460,7 @@ export type Tenant = {
   id: Scalars['ID']
   lastModified: Scalars['Time']
   name: Scalars['String']
+  warnings: Array<Warning>
 }
 
 export type TenantCreate = {
@@ -454,6 +471,10 @@ export type TenantCreate = {
 export type UpdateConfiguration = {
   description?: InputMaybe<Scalars['String']>
   value: Scalars['RawMessage']
+}
+
+export type Warning = {
+  message: Scalars['String']
 }
 
 export type UserInfo = {
@@ -579,6 +600,14 @@ export type EnvironmentGetByNamesQuery = {
         }>
       }
     }>
+    warnings: Array<
+      | {
+          __typename?: 'FeatureWarning'
+          message: string
+          feature: { __typename?: 'Feature'; name: string }
+        }
+      | { __typename?: 'NaisdWarning'; message: string }
+    >
   }
 }
 
@@ -847,7 +876,24 @@ export type TenantGetByNameQuery = {
       __typename?: 'Environment'
       id: string
       name: string
+      warnings: Array<
+        | { __typename?: 'FeatureWarning'; message: string }
+        | { __typename?: 'NaisdWarning'; message: string }
+      >
     }>
+    warnings: Array<
+      | {
+          __typename?: 'FeatureWarning'
+          message: string
+          feature: { __typename?: 'Feature'; name: string }
+          environment: { __typename?: 'Environment'; name: string }
+        }
+      | {
+          __typename?: 'NaisdWarning'
+          message: string
+          environment: { __typename?: 'Environment'; name: string }
+        }
+    >
   }
 }
 
@@ -862,7 +908,15 @@ export type TenantsGetQuery = {
     description?: string | null
     created: any
     lastModified: any
+    warnings: Array<
+      | { __typename?: 'FeatureWarning'; message: string }
+      | { __typename?: 'NaisdWarning'; message: string }
+    >
   }>
+  outdatedInfo: Array<{
+    __typename?: 'OutdatedInfo'
+    dependency: boolean
+  } | null>
 }
 
 export type UserInfoQueryVariables = Exact<{ [key: string]: never }>
@@ -1157,6 +1211,14 @@ export const EnvironmentGetByNamesDocument = gql`
           repo
           source
           config
+        }
+      }
+      warnings {
+        message
+        ... on FeatureWarning {
+          feature {
+            name
+          }
         }
       }
     }
@@ -2018,9 +2080,28 @@ export const TenantGetByNameDocument = gql`
       environments {
         id
         name
+        warnings {
+          message
+        }
       }
       created
       lastModified
+      warnings {
+        message
+        ... on FeatureWarning {
+          feature {
+            name
+          }
+          environment {
+            name
+          }
+        }
+        ... on NaisdWarning {
+          environment {
+            name
+          }
+        }
+      }
     }
   }
 `
@@ -2083,6 +2164,12 @@ export const TenantsGetDocument = gql`
       description
       created
       lastModified
+      warnings {
+        message
+      }
+    }
+    outdatedInfo {
+      dependency
     }
   }
 `

@@ -47,6 +47,7 @@ type Repo interface {
 	RolloutRepo
 	StatusRepo
 	TenantRepo
+	WarningRepo
 
 	Close()
 	Metrics() prometheus.Collector

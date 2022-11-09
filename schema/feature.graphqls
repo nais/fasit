@@ -1,4 +1,5 @@
 type OutdatedInfo {
+  feature: Feature!
   dependency: Boolean!
   dependencyName: String!
   newVersion: String!
@@ -30,4 +31,5 @@ type Dependency {
 
 extend type Query {
   features(kind: EnvironmentKind): [Feature!]!
+  outdatedInfo: [OutdatedInfo]!
 }

@@ -11,6 +11,11 @@ import (
 	"github.com/google/uuid"
 )
 
+type Warning interface {
+	IsWarning()
+	GetMessage() string
+}
+
 type Dependency struct {
 	AnyOf []string `json:"anyOf"`
 	AllOf []string `json:"allOf"`
@@ -39,12 +44,6 @@ type MappingValue struct {
 	Key         string          `json:"key"`
 	Value       json.RawMessage `json:"value"`
 	DisplayName string          `json:"displayName"`
-}
-
-type OutdatedInfo struct {
-	Dependency     bool   `json:"dependency"`
-	DependencyName string `json:"dependencyName"`
-	NewVersion     string `json:"newVersion"`
 }
 
 type TenantCreate struct {

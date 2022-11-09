@@ -64,6 +64,7 @@ type Querier interface {
 	TenantGet(ctx context.Context, id uuid.UUID) (Tenant, error)
 	TenantGetByName(ctx context.Context, name string) (Tenant, error)
 	TenantsGet(ctx context.Context) ([]Tenant, error)
+	Warnings(ctx context.Context, arg WarningsParams) ([]WarningsRow, error)
 }
 
 var _ Querier = (*Queries)(nil)
