@@ -6,6 +6,7 @@ environmentKinds:
 dependsOn:
   - allOf:
       - "naiserator"
+      - "monitoring"
 config:
   image.tag:
     type: string
