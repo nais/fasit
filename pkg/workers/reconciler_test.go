@@ -253,6 +253,7 @@ func TestReconcile_AutoInstall(t *testing.T) {
 		features        []feature.Feature
 		expectedFeature string
 		status          map[string]*model.Status
+		states          map[string]*model.FeatureState
 	}{
 		"no features": {
 			features:        []feature.Feature{},
@@ -279,6 +280,21 @@ func TestReconcile_AutoInstall(t *testing.T) {
 				"feature1": {
 					Feature: "feature1",
 					Status:  model.RolloutStatusDeployed,
+				},
+			},
+		},
+		"one feature which is already enabled": {
+			features: []feature.Feature{
+				{
+					Name:        "feature1",
+					AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
+				},
+			},
+			expectedFeature: "",
+			states: map[string]*model.FeatureState{
+				"feature1": {
+					FeatureName: "feature1",
+					Enabled:     true,
 				},
 			},
 		},
@@ -401,7 +417,7 @@ func TestReconcile_AutoInstall(t *testing.T) {
 			}
 
 			ctx := context.Background()
-			if err := recociler.autoInstallNextFeature(ctx, te, tt.features, tt.status); err != nil {
+			if err := recociler.autoInstallNextFeature(ctx, te, tt.features, tt.status, tt.states); err != nil {
 				t.Errorf("reconcile failed: %v", err)
 			}
 		})
