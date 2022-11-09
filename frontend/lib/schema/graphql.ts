@@ -133,6 +133,7 @@ export type Feature = {
   dependsOn: Array<Dependency>
   environmentKinds: Array<EnvironmentKind>
   name: Scalars['String']
+  outdatedInfo: Array<Maybe<OutdatedInfo>>
   repo: Scalars['String']
   rolloutSummaries: Array<RolloutSummary>
   source: Scalars['String']
@@ -267,6 +268,13 @@ export type NewConfiguration = {
   feature: Scalars['String']
   key: Scalars['String']
   value: Scalars['RawMessage']
+}
+
+export type OutdatedInfo = {
+  __typename?: 'OutdatedInfo'
+  dependency: Scalars['Boolean']
+  dependencyName: Scalars['String']
+  newVersion: Scalars['String']
 }
 
 export type Query = {
@@ -696,6 +704,12 @@ export type FeatureDetailsQuery = {
         tenant: { __typename?: 'Tenant'; name: string }
       }
     }>
+    outdatedInfo: Array<{
+      __typename?: 'OutdatedInfo'
+      newVersion: string
+      dependency: boolean
+      dependencyName: string
+    } | null>
   }>
 }
 
@@ -1500,6 +1514,11 @@ export const FeatureDetailsDocument = gql`
             name
           }
         }
+      }
+      outdatedInfo {
+        newVersion
+        dependency
+        dependencyName
       }
     }
   }

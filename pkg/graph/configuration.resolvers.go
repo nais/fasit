@@ -26,7 +26,7 @@ func (r *envConfigurationResolver) Feature(ctx context.Context, obj *model.EnvCo
 
 // ChartValue is the resolver for the chartValue field.
 func (r *envConfigurationResolver) ChartValue(ctx context.Context, obj *model.EnvConfiguration) (json.RawMessage, error) {
-	vals := r.HelmChartValues.Get(obj.FeatureName)
+	vals := r.HelmChartValues.GetValues(obj.FeatureName)
 	if vals == nil {
 		return json.RawMessage(`"Empty?"`), nil
 	}
@@ -57,7 +57,7 @@ func (r *globalConfigurationResolver) Feature(ctx context.Context, obj *model.Gl
 
 // ChartValue is the resolver for the chartValue field.
 func (r *globalConfigurationResolver) ChartValue(ctx context.Context, obj *model.GlobalConfiguration) (json.RawMessage, error) {
-	vals := r.HelmChartValues.Get(obj.FeatureName)
+	vals := r.HelmChartValues.GetValues(obj.FeatureName)
 	if vals == nil {
 		return json.RawMessage(`"Empty?"`), nil
 	}

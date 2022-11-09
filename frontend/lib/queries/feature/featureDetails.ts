@@ -28,6 +28,11 @@ export const FEATUREDETAILS = gql`
           }
         }
       }
+      outdatedInfo {
+        newVersion
+        dependency
+        dependencyName
+      }
     }
   }
 `

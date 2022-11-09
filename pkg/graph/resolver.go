@@ -5,7 +5,7 @@ import (
 
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/feature"
-	"github.com/nais/fasit/pkg/feature/helmdefault"
+	"github.com/nais/fasit/pkg/feature/helminfo"
 	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/sirupsen/logrus"
 )
@@ -18,7 +18,7 @@ type Resolver struct {
 	Repo            database.Repo
 	Features        *feature.Manager
 	Log             *logrus.Entry
-	HelmChartValues *helmdefault.Cache
+	HelmChartValues *helminfo.Cache
 }
 
 func (r *Resolver) resolveFeatureByName(name string) (*model.Feature, error) {

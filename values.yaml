@@ -1,0 +1,66 @@
+environmentSecrets:
+  - name: AIVEN_TOKEN
+    secretKeyRef:
+      key: pat
+      name: atlantis-aiven-pat
+environmentRaw:
+  - name: ATLANTIS_GH_ORG
+    value: nais
+  - name: ATLANTIS_GH_APP_SLUG
+    value: atlantis-nais
+githubApp:
+  id: 206235
+  key: |
+    -----BEGIN RSA PRIVATE KEY-----
+    MIIEogIBAAKCAQEA0OGODp2+1FoOdkA2KZK7cMnYUbciKfDeUe1qu6g4O11uk7bu
+    Yhw/HUynwJnT9m58fsnqmUkeXBkYMhMcFYontHS4gW77Hf9vKSrqVfguqrnZ/epi
+    1COMJoW2rYctZfGMRtC2+DLZfRwN1ILHbIgjjWjbUa+VLlVQk76QKt6jhKTnNuAz
+    dUZgcXeTxo3JsxFxQO5ck1YcoVAJ9uT0ni9XLyHgjB8H7irGt8Q4/l66Oz90l9/9
+    AKAEEnBUQb0plqbN6axC62HbEp5cs+mN3yGykuWnIu2W4leknhDgxjEdgOtb4Ru8
+    YY7DSDWrFZotNIZgPAz75E5KtZgviAQFM+LPxwIDAQABAoIBAAiAFVLc8oYbwBjp
+    1gptETmuzSHOLRK93Z5B5iUK3Hb1/2j9ecf+VEcx9mWtHOYbau+R8f0Y76ZZ0xU+
+    l9b8j08VrOh/hrKa0YBAYdbryaJi+88MecceRzbOHDgFl0BdyxKarcd98kHYIWvz
+    goAVLjUz/jDdz1laWXQZvi4wb0EXjfJjL61kFrKgrrpbNzjm72xSFbufj1xdcEvN
+    pLj5HhLvN7Oglbeb7F57WZiuovi6dZAyRvi5UmyaeIP7fyRpzriINB5+9W11SIkp
+    Te6Kkt2fUICHHRdINEDzpdP7W1QGw2XjvLacisEH/Jj6kpVGTg/ciknX+4VYAuuC
+    K4GNxSkCgYEA/9tEF2DgzZv61NK0Xa5DrfJDOITOvo+sJ4PgfYc7eM7UgZCm/zPX
+    nRTbJgSOmftCHNJTjDGfDDjil471gllTw8xkSPqwYFNSR8+a2Nl0wLMIVo1C7BMy
+    cyYje4bPeOSRYM7PDsHw7fU4ICGFZ47Pb8U0BPnnU2caL/FpksoCmh0CgYEA0P+L
+    ZsyGM3L3k4/uY0XFw8M+w+egIkaMfvuEp5m0IMt+KvjA87AWsTqAobT3nDs+rsUV
+    ftKfhq/nqpvu/xPEMkz+lDjF1hZ7Z36r5wv2VinCCtEGLi3C2Z/eJ5AW70Csle72
+    hOQgoT5gu+kfRtyhZ9t7K3rvI1VyvhMXU2+bzDMCgYB9JorrCJdN26NZIOva+xfd
+    6SfaaJQcgHiMJ6TSoiiEEl++NLyLDpfEHWSI9yetyEpxgKwfYlJTDyw/SE1tAjbI
+    Cp1vWTiXFYqk17b9pXjHnYtRku2OPmGqE5i9npazotI90UtVA6bPLujSRrNTkXaE
+    TKkCWh8+G6uikeq7Q5b8PQKBgGKQEXLyg1uiHWXm2/rPPdv7qQ8Enj1r3fhIr5/G
+    2e8ZaK/lTkHeSmVcfKtGR/vS6NXNNjzwIbGIJY4NKeH7tWwvaWQHfi1fvuTpFTLK
+    LmsmGE+3kd2XUSwGu+MWjepZKssuve2gFE9WtpIH9+sYQ7pSBL1VpY+ZTZqcMET1
+    /piHAoGAUoCnT9bw8lNIzwbcAFNv3ON0U0v3Y5jz6iJEh+ZASqFl4TxvTqHR2VNj
+    SaCZOU7YjA/iJjV4PCjbW2qDelFiN6OgcMWHyxcjQcwz0f6MjovxJiKpKC7Mdi24
+    f8yfQ9NSSEFSgnVcovGIzkyPtaTkKJMscXDQaVlRfk6Joqp8Lfw=
+    -----END RSA PRIVATE KEY-----
+  secret: 0a8bebd0d602a9e34019bf87250635b9b94459e3
+hidePrevPlanComments: true
+ingress:
+  host: atlantis.nais.io
+  hosts:
+    - host: atlantis.nais.io
+      paths:
+        - /
+  ingressClassName: nais-ingress
+  path: /
+  pathType: Prefix
+orgAllowlist: github.com/nais/*
+replicaCount: 1
+repoConfig:
+  "---\nrepos:\n- id: /.*/\n  allowed_overrides: [apply_requirements, delete_source_branch_on_merge,
+  workflow]\n  allow_custom_workflows: true \n"
+resources:
+  limits:
+    cpu: 100m
+    memory: 1Gi
+  requests:
+    cpu: 100m
+    memory: 1Gi
+serviceAccount:
+  annotations:
+    iam.gke.io/gcp-service-account: atlantis-runner@nais-io.iam.gserviceaccount.com

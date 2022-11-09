@@ -1,12 +1,12 @@
-import styled from "styled-components";
-import {navRod} from "../../styles/constants";
+import styled from 'styled-components'
+import { navRod } from '../../styles/constants'
 
 interface SideMenuProps {
-    width?: number
+  width?: number
 }
 export const SideMenu = styled.div<SideMenuProps>`
-  min-width: ${(props) => props.width ? `${props.width}px`: '150px'};
-  max-width: ${(props) => props.width ? `${props.width}px`: '150px'};
+  min-width: ${(props) => (props.width ? `${props.width}px` : '150px')};
+  max-width: ${(props) => (props.width ? `${props.width}px` : '150px')};
   border-right: 1px solid #c0c0c0;
   overflow-wrap: break-word;
   margin-right: 15px;
@@ -17,7 +17,9 @@ export const Main = styled.div`
   display: flex;
   flex-direction: column;
   flex-grow: 1;
-  > div > h1 {margin-top: 0px;}
+  > div > h1 {
+    margin-top: 0px;
+  }
 `
 
 export const MenuItems = styled.div`
@@ -32,15 +34,16 @@ export const PageContainer = styled.div`
 `
 
 interface MenuItemProps {
-    active?: boolean
+  active?: boolean
 }
 
 export const MenuItem = styled.div<MenuItemProps>`
-  border-left: ${(props) => props.active ? `5px solid ${navRod};` : '5px solid transparent;'}
+  border-left: ${(props) =>
+    props.active ? `5px solid ${navRod};` : '5px solid transparent;'}
   padding: 5px 10px;
   transition: border-left 0.3s ease-in-out;
   cursor: pointer;
-  * {
+  > * {
     text-decoration: none;
     text-transform: uppercase;
     color:rgba(0, 0, 0, 0.6) ;
@@ -49,4 +52,3 @@ export const MenuItem = styled.div<MenuItemProps>`
     background-color: var(--navds-semantic-color-interaction-primary-hover-subtle);
   }
 `
-

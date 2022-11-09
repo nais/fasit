@@ -24,7 +24,7 @@ import (
 	"github.com/nais/fasit/pkg/auth"
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/feature"
-	"github.com/nais/fasit/pkg/feature/helmdefault"
+	"github.com/nais/fasit/pkg/feature/helminfo"
 	"github.com/nais/fasit/pkg/graph"
 	"github.com/nais/fasit/pkg/graph/graphgen"
 	"github.com/nais/fasit/pkg/message"
@@ -202,7 +202,7 @@ func main() {
 	}()
 	go reconciler.Run(ctx, 10*time.Minute)
 
-	helmChartValues, err := helmdefault.New(featureMgr, log.WithField("subsystem", "helm-chart-values"))
+	helmChartValues, err := helminfo.New(featureMgr, log.WithField("subsystem", "helm-chart-values"))
 	if err != nil {
 		log.WithError(err).Fatal("setting up helm chart values")
 	}

@@ -25,6 +25,35 @@ func (r *featureResolver) Configoverrides(ctx context.Context, obj *model.Featur
 	return r.Repo.ConfigOverridesByFeature(ctx, obj.Name)
 }
 
+// OutdatedInfo is the resolver for the outdatedInfo field.
+func (r *featureResolver) OutdatedInfo(ctx context.Context, obj *model.Feature) ([]*model.OutdatedInfo, error) {
+	version := r.HelmChartValues.GetVersion(obj.Name)
+	if version == nil {
+		return []*model.OutdatedInfo{}, nil
+	}
+
+	if version.Outdated() {
+		return []*model.OutdatedInfo{
+			{
+				NewVersion: version.NewVersion,
+			},
+		}, nil
+	}
+
+	ret := []*model.OutdatedInfo{}
+	for _, d := range version.Dependencies {
+		if d.Outdated() {
+			ret = append(ret, &model.OutdatedInfo{
+				NewVersion:     d.NewVersion,
+				Dependency:     true,
+				DependencyName: d.Name,
+			})
+		}
+	}
+
+	return ret, nil
+}
+
 // Features is the resolver for the features field.
 func (r *queryResolver) Features(ctx context.Context, kind *model.EnvironmentKind) ([]*model.Feature, error) {
 	features := []*model.Feature{}

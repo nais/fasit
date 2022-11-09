@@ -39,6 +39,15 @@ const OverrideKeys = styled.pre`
   margin-bottom: 10px;
 `
 
+const WarningBox = styled.div`
+  border: 1px solid #f5a623;
+  border-radius: 5px;
+  padding: 10px;
+  background-color: #fff8e6;
+  font-size: 0.8em;
+  margin-bottom: 10px;
+`
+
 interface FeatureProps {
   feature?: FeatureDetailsQuery['features'][0]
 }
@@ -77,6 +86,25 @@ const Feature = ({ feature }: FeatureProps) => {
               environment kinds:{' '}
               {feature.environmentKinds.map((s) => s.toLowerCase()).join(', ')}
             </div>
+          )}
+          {feature.outdatedInfo.length > 0 && (
+            <WarningBox>
+              {feature.outdatedInfo.map((s, i) => {
+                if (s?.dependency) {
+                  return (
+                    <div key={i}>
+                      Outdated dependency: {s.dependencyName} has latest version{' '}
+                      <strong>{s.newVersion}</strong>
+                    </div>
+                  )
+                }
+                return (
+                  <div key={i}>
+                    Outdated: latest version is <strong>{s?.newVersion}</strong>
+                  </div>
+                )
+              })}
+            </WarningBox>
           )}
         </div>
       </FeatureStatus>

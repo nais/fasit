@@ -1,3 +1,4 @@
+import { Warning } from '@navikt/ds-icons'
 import { useRouter } from 'next/router'
 import Feature from '../../components/features/feature'
 import ErrorMessage from '../../components/lib/error'
@@ -10,6 +11,7 @@ import {
 } from '../../components/lib/PageLayout'
 import LoaderSpinner from '../../components/lib/spinner'
 import { useFeatureDetailsQuery } from '../../lib/schema/graphql'
+import { navOransje } from '../../styles/constants'
 
 const Features = () => {
   const router = useRouter()
@@ -35,6 +37,12 @@ const Features = () => {
                 active={e.name == featureName}
               >
                 <a>{e.name}</a>
+                {e.outdatedInfo.length > 0 && (
+                  <>
+                    {' '}
+                    <Warning style={{ color: navOransje }} />
+                  </>
+                )}
               </MenuItem>
             )
           })}

@@ -1,3 +1,9 @@
+type OutdatedInfo {
+  dependency: Boolean!
+  dependencyName: String!
+  newVersion: String!
+}
+
 type Feature {
   name: String!
   chart: String!
@@ -9,6 +15,7 @@ type Feature {
   environmentKinds: [EnvironmentKind!]!
   rolloutSummaries: [RolloutSummary!]!
   configoverrides: [ConfigOverride!]!
+  outdatedInfo: [OutdatedInfo]!
 }
 
 type ConfigOverride {

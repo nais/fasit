@@ -41,6 +41,12 @@ type MappingValue struct {
 	DisplayName string          `json:"displayName"`
 }
 
+type OutdatedInfo struct {
+	Dependency     bool   `json:"dependency"`
+	DependencyName string `json:"dependencyName"`
+	NewVersion     string `json:"newVersion"`
+}
+
 type TenantCreate struct {
 	Name        string  `json:"name"`
 	Description *string `json:"description"`
