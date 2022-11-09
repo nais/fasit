@@ -173,7 +173,14 @@ func (r *Reconciler) reconcile(ctx context.Context) error {
 	return nil
 }
 
-func (r *Reconciler) autoInstallNextFeature(ctx context.Context, d *model.TenantEnvironments, features []feature.Feature, status map[string]*model.Status) error {
+func (r *Reconciler) autoInstallNextFeature(
+	ctx context.Context,
+	d *model.TenantEnvironments,
+	features []feature.Feature,
+	status map[string]*model.Status,
+	featureStates map[string]*model.FeatureState,
+) error {
+	r.log.Debug("Auto install next feature")
 	enabledFeatures := []string{}
 	for _, s := range status {
 		if s.Status == model.RolloutStatusDeployed {
@@ -194,11 +201,17 @@ func (r *Reconciler) autoInstallNextFeature(ctx context.Context, d *model.Tenant
 			break
 		}
 
+		if _, ok := featureStates[f.Name]; ok {
+			r.log.WithField("feature", f.Name).Info("feature state already exists, skipping auto install for environment")
+			return nil
+		}
+
 		// Dependency not enabled
 		if len(f.DependsOn.FindMissing(enabledFeatures)) > 0 {
 			continue
 		}
 
+		r.log.WithField("feature", f.Name).Info("Auto install feature")
 		_, err := r.repo.FeatureStatesCreateOrUpdate(ctx, d.ID, &f, true)
 		if err != nil {
 			return fmt.Errorf("unable to enable feature %s: %w", f.Name, err)
@@ -229,7 +242,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 
 	features := r.featureMgr.Features()
 
-	envStatus, err := r.repo.StatusForEnvironment(ctx, d.ID)
+	envStatus, err := r.repo.StatusForEnvironment(ctx, d.Environment.ID)
 	if err != nil {
 		return err
 	}
@@ -238,14 +251,6 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 	for _, s := range envStatus {
 		lookup[s.Feature] = s
 	}
-
-	err = r.autoInstallNextFeature(ctx, d, features, lookup)
-	if err != nil {
-		r.log.WithField("environment", d.Environment.ID).WithError(err).Errorf("unable to auto enable feature")
-	}
-
-	mgr := r.publisher(r.projectID, "naisd-"+d.TenantName+"-"+d.Name, r.log)
-	defer mgr.Stop()
 
 	featureStates, err := r.repo.FeatureStatesGet(ctx, d.ID)
 	if err != nil {
@@ -257,9 +262,17 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 		states[s.FeatureName] = s
 	}
 
+	err = r.autoInstallNextFeature(ctx, d, features, lookup, states)
+	if err != nil {
+		r.log.WithField("environment", d.Environment.ID).WithError(err).Errorf("unable to auto enable feature")
+	}
+
+	mgr := r.publisher(r.projectID, "naisd-"+d.TenantName+"-"+d.Name, r.log)
+	defer mgr.Stop()
+
 	for _, f := range features {
 		if states[f.Name] == nil || !states[f.Name].Enabled {
-			r.log.WithField("feature", f.Name).Debug("not enabled")
+			// r.log.WithField("feature", f.Name).Debug("not enabled")
 			continue
 		}
 

@@ -118,7 +118,7 @@ func (c *Cache) update(ctx context.Context) {
 		values, err := c.ValuesForChart(feature.Chart, feature.Version, feature.Repo)
 		if err != nil {
 			newCache[feature.Name] = c.get(feature.Name)
-			log.WithError(err).Error("failed to fetch values for chart")
+			log.WithError(err).WithField("feature", feature.Name).Error("failed to fetch values for chart")
 			continue
 		}
 
@@ -162,6 +162,9 @@ func downloadChartFile(chart, version, repo, filename string) ([]byte, error) {
 	for {
 		hdr, err := r.Next()
 		if err != nil {
+			if err == io.EOF {
+				break
+			}
 			return nil, err
 		}
 
