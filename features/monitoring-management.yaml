@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring-management
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring-management
-version: 0.15.0
+version: 0.16.0
 environmentKinds:
   - "management"
 dependsOn:
@@ -76,6 +76,24 @@ mapping:
     value:
       - '{{ subdomain . "alertmanager" }}'
     displayName: "Alertmanager hosts"
+  kube-prometheus-stack.alertmanager.serviceMonitor.relabelings:
+    template: |
+      - targetLabel: tenant
+        replacement: {{ .Tenant.Name }}
+      - targetLabel: tenant_cluster
+        replacement: management
+      - targetLabel: tenant_cluster_id
+        replacement: {{ .Tenant.Name }}-management
+    displayName: Alertmanager metric labels
+  kube-prometheus-stack.prometheus.monitor.relabelings:
+    template: |
+      - targetLabel: tenant
+        replacement: {{ .Tenant.Name }}
+      - targetLabel: tenant_cluster
+        replacement: management
+      - targetLabel: tenant_cluster_id
+        replacement: {{ .Tenant.Name }}-management
+    displayName: Kube-state-metrics metric labels
   tenant.name:
     value: "{{.Tenant.Name}}"
     displayName: "Tenant name"
