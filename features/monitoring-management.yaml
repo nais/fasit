@@ -85,7 +85,7 @@ mapping:
       - targetLabel: tenant_cluster_id
         replacement: {{ .Tenant.Name }}-management
     displayName: Alertmanager metric labels
-  kube-prometheus-stack.prometheus.monitor.relabelings:
+  kube-prometheus-stack.kube-state-metrics.prometheus.monitor.relabelings:
     template: |
       - targetLabel: tenant
         replacement: {{ .Tenant.Name }}
