@@ -5,7 +5,6 @@ package graph
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/google/uuid"
 )
@@ -15,7 +14,8 @@ func (r *queryResolver) Values(ctx context.Context, feature string, env uuid.UUI
 	f := r.Resolver.Features.Get(feature)
 
 	if f == nil {
-		return nil, fmt.Errorf("feature %s not found", feature)
+		r.Log.WithField("feature", feature).Warn("feature not found")
+		return map[string]interface{}{}, nil
 	}
 	vals, _, err := r.Repo.HelmValues(ctx, *f, env)
 	return vals, err

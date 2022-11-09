@@ -87,7 +87,9 @@ const Home: NextPage = ({ email }: any) => {
             <Link href={`/tenant/${p.name}`} key={p.name}>
               <a>
                 <CategoryCard>
-                  {p.warnings && <WarningDot>{p.warnings.length}</WarningDot>}
+                  {p.warnings.length > 0 && (
+                    <WarningDot>{p.warnings.length}</WarningDot>
+                  )}
                   <IconBox size={50}>{GetLogo(p.name)}</IconBox>
                   <CategoryCardTitle>{p.name}</CategoryCardTitle>
                 </CategoryCard>
