@@ -211,9 +211,11 @@ const FeatureStatus = ({
             {featureState?.enabled ? 'Disable' : 'Enable'} reconciling this
             feature
           </ReactTooltip>
-          <FlatButton onClick={() => setShowRedeploy(true)}>
-            Redeploy
-          </FlatButton>
+          {featureState?.enabled && (
+            <FlatButton onClick={() => setShowRedeploy(true)}>
+              Redeploy
+            </FlatButton>
+          )}
         </EnableFeatureBox>
       </div>
     </FeatureStatusContainer>
