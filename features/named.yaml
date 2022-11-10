@@ -1,0 +1,22 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/named
+source: https://github.com/nais/helm-charts/tree/main/charts/named
+version: 0.1.0
+environmentKinds:
+  - "onprem"
+config:
+  image.tag:
+    type: string
+    displayName: "Image tag"
+    description: "named image"
+  fasitUrl:
+    type: string
+    displayName: "Legacy fasit URL"
+    description: "Legacy fasit URL"
+  ingress:
+    type: string
+    displayName: "Ingress URL"
+    description: "Cluster-dependent ingress URL"
+mapping:
+  clusterName:
+    value: "{{ .Env.name }}"
+    displayName: "Cluster name"
