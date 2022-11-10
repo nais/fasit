@@ -19,7 +19,7 @@ mapping:
     displayName: "Deploy API Key"
     description: "Hookd API KEY for deploying canary"
   tenant:
-    template: "{{ .Tenant.name }}"
+    template: "{{ .Tenant.Name }}"
 config:
   canary.image.repository:
     type: string
