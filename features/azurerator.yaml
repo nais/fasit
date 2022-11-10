@@ -9,7 +9,6 @@ dependsOn:
   - allOf:
       - "nais-crds"
       - "aivenator"
-      - "kafkarator"
 config:
   trygdeetaten.enabled:
     type: bool
