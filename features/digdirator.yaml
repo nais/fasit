@@ -47,6 +47,10 @@ config:
     displayName: ID-porten well-known
     type: string
 
+  digdirator.secrets.environment.DIGDIRATOR_DIGDIR_IDPORTEN_SCOPES:
+    displayName: ID-porten scopes
+    type: string
+
   digdirator.secrets.environment.DIGDIRATOR_FEATURES_MASKINPORTEN:
     displayName: Maskinporten enabled
     type: bool
@@ -86,6 +90,11 @@ config:
     type: string
     displayName: Project ID
     description: "Project ID for Digdirator"
+
+  digdirator.secrets.environment.DIGDIRATOR_DIGDIR_MASKINPORTEN_SCOPES:
+    displayName: Maskinporten scopes
+    description: "Required if maskinporten is enabled"
+    type: string
 
 mapping:
   digdirator.onprem.enabled:
