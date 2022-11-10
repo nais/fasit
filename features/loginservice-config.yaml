@@ -1,0 +1,11 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/loginservice-config
+source: https://github.com/nais/helm-charts/tree/main/charts/loginservice-config
+version: 0.1.0
+environmentKinds:
+  - "tenant"
+  - "onprem"
+config:
+  loginservice.discoveryUrl:
+    type: string
+    description: "URL to the OIDC discovery endpoint"
+    required: true
