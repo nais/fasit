@@ -1,8 +1,9 @@
-chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/hunter2
-source: https://github.com/nais/hunter2/tree/master/charts/hunter2
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/container_resource_usage
+source: https://github.com/nais/container_resource_usage/tree/master/charts/container_resource_usage
 version: 1.0.0
 environmentKinds:
   - "tenant"
+  - "onprem"
 mapping:
   googleProjectID:
     value: "{{ .Env.project_id }}"
@@ -12,6 +13,6 @@ config:
   image.tag:
     type: string
     displayName: Image tag
-  debug:
+  master:
     type: bool
-    displayName: Enable debug
+    displayName:
