@@ -31,7 +31,7 @@ config:
   throttle.drop_logs:
     type: bool
     displayName: Throttle drop logs
-  logs_acl:
+  logs_acl.updateInterval:
     type: int
     displayName: Log files acl update interval
 
