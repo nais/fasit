@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/kafka-canary-deployer
 source: https://github.com/nais/kafkarator/tree/main/charts/kafka-canary-deployer
-version: 0.1.0
+version: 0.2.0
 environmentKinds:
   - "management"
 dependsOn:
@@ -18,6 +18,8 @@ mapping:
     template: "temporary dummy data" # TODO
     displayName: "Deploy API Key"
     description: "Hookd API KEY for deploying canary"
+  tenant:
+    template: "{{ .Tenant.name }}"
 config:
   canary.image.repository:
     type: string
