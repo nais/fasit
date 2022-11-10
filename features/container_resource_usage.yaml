@@ -15,4 +15,4 @@ config:
     displayName: Image tag
   master:
     type: bool
-    displayName:
+    displayName: Master
