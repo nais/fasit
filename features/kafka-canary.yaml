@@ -10,6 +10,11 @@ dependsOn:
 rolloutSource:
   - org: nais
     repo: kafkarator
+config:
+  alert_enabled:
+    displayName: Alert enabled
+    description: When enabled, alerts will trigger if canary is not consuming messages
+    type: bool
 mapping:
   tenant:
     template: "{{.Tenant.Name}}"
