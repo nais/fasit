@@ -1,13 +1,13 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/console
 source: https://github.com/nais/helm-charts/tree/main/charts/console
-version: 0.0.17
+version: 0.0.18
 environmentKinds:
   - "management"
 rolloutSource:
   - org: nais
     repo: console
   - org: nais
-    repo: console-frontend-elm
+    repo: console-frontend
 mapping:
   backend.database.instance:
     value: "{{.Management.console_database_instance}}"
