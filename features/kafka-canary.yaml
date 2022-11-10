@@ -1,26 +1,31 @@
-chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/kafka-canary
-source: https://github.com/nais/kafkarator/tree/main/charts/kafka-canary
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/kafka-canary-deployer
+source: https://github.com/nais/kafkarator/tree/main/charts/kafka-canary-deployer
 version: 0.1.0
 environmentKinds:
-  - "tenant"
+  - "management"
 dependsOn:
   - allOf:
-      - "aivenator"
-      - "kafkarator"
+      - "hookd"
 rolloutSource:
   - org: nais
     repo: kafkarator
-config:
-  alert_enabled:
-    displayName: Alert enabled
-    description: When enabled, alerts will trigger if canary is not consuming messages
-    type: bool
 mapping:
-  tenant:
-    template: "{{.Tenant.Name}}"
-  aiven_project:
-    template: "{{.Env.aiven_project_0}}"
-    displayName: Aiven project
-    description: "Aiven project with Kafka enabled for this instance of kafka-canary"
-  cluster_name:
-    template: "{{.Env.name}}"
+  cluster_pools:
+    template: '{{ mapOf "name" "aiven_project_0" .Envs | mapJoin "=" | join " " }}'
+    displayName: "Cluster Pools"
+    description: "Space separated list of cluster and pools"
+  api_key:
+    template: "temporary dummy data" # TODO
+    displayName: "Deploy API Key"
+    description: "Hookd API KEY for deploying canary"
+config:
+  canary.image.repository:
+    type: string
+  canary.image.tag:
+    type: string
+  deployer.image.repository:
+    type: string
+  deployer.image.pullPolicy:
+    type: string
+  deployer.image.tag:
+    type: string
