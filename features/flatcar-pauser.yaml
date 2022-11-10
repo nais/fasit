@@ -7,6 +7,7 @@ dependsOn:
   - allOf:
       - "naiserator"
       - "monitoring"
+      - "nais-system"
 config:
   image.tag:
     type: string
