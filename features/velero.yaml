@@ -9,6 +9,18 @@ autoInstall:
   - "management"
   - "tenant"
 config:
+  velero.resources.requests.cpu:
+    type: string
+    displayName: "Cpu request"
+  velero.resources.requests.memory:
+    type: string
+    displayName: "Memory request"
+  velero.resources.limits.cpu:
+    type: string
+    displayName: "Cpu limit"
+  velero.resources.limits.memory:
+    type: string
+    displayName: "Memory limit"
   velero.configuration.backupStorageLocation.bucket:
     type: string
     description: "The name of the bucket where backups will be stored"
