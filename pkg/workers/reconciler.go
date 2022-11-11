@@ -236,7 +236,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 
 	health, err := r.repo.HealthGet(ctx, d.ID)
 	if err != nil {
-		return err
+		return fmt.Errorf("health status: %w", err)
 	}
 	if time.Since(health.ReportedAt) > 3*time.Minute {
 		r.log.WithField("environment", d.ID).Infof("naisd is unhealthy - skip reconcile")
@@ -247,7 +247,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 
 	envStatus, err := r.repo.StatusForEnvironment(ctx, d.Environment.ID)
 	if err != nil {
-		return err
+		return fmt.Errorf("status for environment: %w", err)
 	}
 
 	lookup := make(map[string]*model.Status)
@@ -257,7 +257,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 
 	featureStates, err := r.repo.FeatureStatesGet(ctx, d.ID)
 	if err != nil {
-		return err
+		return fmt.Errorf("feature states: %w", err)
 	}
 
 	states := map[string]*model.FeatureState{}
@@ -286,7 +286,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 				r.log.WithField("feature", f.Name).WithError(err).Info("missing required fields")
 				continue
 			}
-			return err
+			return fmt.Errorf("helm values: %w", err)
 		}
 
 		createRolloutEvent := func(typ model.RolloutEventType, data map[string]any, ignoreIfFoundType ...model.RolloutEventType) {
@@ -324,7 +324,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 				"error": err.Error(),
 			})
 
-			return err
+			return fmt.Errorf("generate hash: %w", err)
 		}
 
 		if status, ok := lookup[f.Name]; ok {
@@ -357,7 +357,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 			createRolloutEvent(model.RolloutEventTypeFailed, map[string]any{
 				"error": err.Error(),
 			})
-			return err
+			return fmt.Errorf("publish deploy instruction: %w", err)
 		}
 
 		createRolloutEvent(model.RolloutEventTypeInProgress, nil)
