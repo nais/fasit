@@ -11,6 +11,8 @@ import (
 )
 
 type Querier interface {
+	AuditCreate(ctx context.Context, arg AuditCreateParams) error
+	AuditForEnvironment(ctx context.Context, arg AuditForEnvironmentParams) ([]Audit, error)
 	ConfigDelete(ctx context.Context, id uuid.UUID) error
 	ConfigDeleteByRolloutID(ctx context.Context, rolloutID uuid.NullUUID) error
 	ConfigEnvUpdateOrCreate(ctx context.Context, arg ConfigEnvUpdateOrCreateParams) (ConfigurationsEnvironment, error)

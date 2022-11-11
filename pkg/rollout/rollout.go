@@ -11,6 +11,7 @@ import (
 
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/go-chi/chi/v5"
+	"github.com/nais/fasit/pkg/auth"
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph/model"
@@ -25,6 +26,8 @@ type store interface {
 type Claims struct {
 	Repository string `json:"repository"`
 	Owner      string `json:"repository_owner"`
+	Actor      string `json:"actor"`
+	RunID      string `json:"run_id"`
 }
 
 type Rollout struct {
@@ -65,9 +68,12 @@ func (r *Rollout) Rollout(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if !r.validateToken(w, req, feature) {
+	actor, valid := r.validateToken(w, req, feature)
+	if !valid {
 		return
 	}
+
+	ctx = auth.SetEmail(ctx, actor)
 
 	spec, err := r.createAndValidateSpec(req.Body, feature)
 	if err != nil {
@@ -146,9 +152,9 @@ OUTER:
 	})
 }
 
-func (r *Rollout) validateToken(w http.ResponseWriter, req *http.Request, feature *feature.Feature) (ok bool) {
+func (r *Rollout) validateToken(w http.ResponseWriter, req *http.Request, feature *feature.Feature) (actor string, ok bool) {
 	if r.AllowAll {
-		return true
+		return "mockrollout", true
 	}
 
 	token, err := getAuthToken(req)
@@ -176,11 +182,11 @@ func (r *Rollout) validateToken(w http.ResponseWriter, req *http.Request, featur
 
 	for _, rf := range feature.RolloutSource {
 		if rf.String() == claims.Repository {
-			return true
+			return claims.Actor + "@" + claims.RunID, true
 		}
 	}
 	http.Error(w, "invalid repository", http.StatusUnauthorized)
-	return false
+	return "", false
 }
 
 func (r *Rollout) createAndValidateSpec(rd io.Reader, feature *feature.Feature) (map[string]json.RawMessage, error) {

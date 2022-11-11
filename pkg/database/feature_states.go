@@ -96,6 +96,14 @@ func (r *repo) FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID,
 	if err != nil {
 		return nil, err
 	}
+
+	msg := fmt.Sprintf("enabled %v", feature.Name)
+	if !enabled {
+		msg = fmt.Sprintf("disabled %v", feature.Name)
+	}
+
+	r.createAudit(ctx, msg, "feature_states", envID.String()+":"+feature.Name)
+
 	return featureStateFromSQL(res), nil
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/nais/fasit/pkg/auth"
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/nais/fasit/pkg/provider/protogen"
@@ -24,6 +25,8 @@ func NewServer(repo database.Repo) protogen.ProviderServer {
 }
 
 func (s *Server) CreateTenant(ctx context.Context, in *protogen.CreateTenantRequest) (*protogen.TenantResponse, error) {
+	ctx = auth.SetEmail(ctx, "system:provider")
+
 	if len(in.Name) < 2 {
 		return nil, status.Error(codes.InvalidArgument, "Tenant name must be at least 2 characters long")
 	}
@@ -54,6 +57,8 @@ func (s *Server) GetTenant(ctx context.Context, in *protogen.GetTenantRequest) (
 }
 
 func (s *Server) CreateEnvironment(ctx context.Context, in *protogen.CreateEnvironmentRequest) (*protogen.EnvironmentResponse, error) {
+	ctx = auth.SetEmail(ctx, "system:provider")
+
 	if len(in.Name) < 2 {
 		return nil, status.Error(codes.InvalidArgument, "Environment name must be at least 2 characters long")
 	}
@@ -108,6 +113,8 @@ func (s *Server) GetEnvironment(ctx context.Context, in *protogen.GetEnvironment
 }
 
 func (s *Server) CreateOrUpdateEnvironmentValue(ctx context.Context, in *protogen.CreateOrUpdateEnvironmentValueRequest) (*protogen.CreateOrUpdateEnvironmentValueResponse, error) {
+	ctx = auth.SetEmail(ctx, "system:provider")
+
 	envID, err := uuid.Parse(in.EnvironmentId)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "Invalid environment id")
@@ -121,12 +128,14 @@ func (s *Server) CreateOrUpdateEnvironmentValue(ctx context.Context, in *protoge
 }
 
 func (s *Server) GetEnvironmentValue(ctx context.Context, in *protogen.GetEnvironmentValueRequest) (*protogen.EnvironmentValueResponse, error) {
+	ctx = auth.SetEmail(ctx, "system:provider")
+
 	envID, err := uuid.Parse(in.EnvironmentId)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "Invalid environment id")
 	}
 
-	ev, err := s.repo.EnvironmentValueGet(context.Background(), envID, in.Key, true)
+	ev, err := s.repo.EnvironmentValueGet(ctx, envID, in.Key, true)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, "Environment not found")
 	}

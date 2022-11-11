@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/graph/model"
 )
@@ -36,6 +35,9 @@ func (r *repo) TenantCreate(ctx context.Context, t *model.TenantCreate) (*model.
 	if err != nil {
 		return nil, err
 	}
+
+	r.createAudit(ctx, "created", "tenants", tenant.ID.String())
+
 	return tenantFromSQL(tenant), nil
 }
 

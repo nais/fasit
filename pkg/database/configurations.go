@@ -149,6 +149,8 @@ func (r *repo) configEnvCreate(ctx context.Context, c model.NewConfiguration, va
 		return nil, err
 	}
 
+	r.createAudit(ctx, "config created or updated", "configurations_environment", config.ID.String())
+
 	return environmentConfigurationFromSQL(config), nil
 }
 
@@ -168,6 +170,8 @@ func (r *repo) configGlobalCreate(ctx context.Context, c model.NewConfiguration,
 		return nil, err
 	}
 
+	r.createAudit(ctx, "config created or updated", "configurations_global", config.ID.String())
+
 	return globalConfigFromSQL(config), nil
 }
 
@@ -183,11 +187,19 @@ func (r *repo) ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateCon
 	if err != nil {
 		return nil, err
 	}
+
+	r.createAudit(ctx, "config updated", "configurations_global", conf.ID.String())
+
 	return globalConfigFromSQL(conf), nil
 }
 
 func (r *repo) ConfigDelete(ctx context.Context, id uuid.UUID) error {
-	return r.querier.ConfigDelete(ctx, id)
+	if err := r.querier.ConfigDelete(ctx, id); err != nil {
+		return err
+	}
+
+	r.createAudit(ctx, "config deleted", "configurations_global", id.String())
+	return nil
 }
 
 func (r *repo) HelmValues(ctx context.Context, feature feature.Feature, envID uuid.UUID) (map[string]any, []uuid.UUID, error) {

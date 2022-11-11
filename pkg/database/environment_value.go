@@ -22,7 +22,7 @@ type EnvironmentValueRepo interface {
 }
 
 func (r *repo) EnvironmentValueStore(ctx context.Context, environmentID uuid.UUID, key string, value json.RawMessage, secret bool) error {
-	return r.querier.EnvironmentValueStore(ctx, gensql.EnvironmentValueStoreParams{
+	err := r.querier.EnvironmentValueStore(ctx, gensql.EnvironmentValueStoreParams{
 		Envid: environmentID,
 		Key:   key,
 		Value: pgtype.JSONB{
@@ -31,6 +31,13 @@ func (r *repo) EnvironmentValueStore(ctx context.Context, environmentID uuid.UUI
 		},
 		Secret: secret,
 	})
+	if err != nil {
+		return fmt.Errorf("failed to store environment value: %w", err)
+	}
+
+	r.createAudit(ctx, "created or updated", "environment_values", environmentID.String()+":"+key)
+
+	return nil
 }
 
 func (r *repo) EnvironmentValueGet(ctx context.Context, environmentID uuid.UUID, key string, showSensitive bool) (*model.EnvironmentValue, error) {

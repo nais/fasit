@@ -14,6 +14,8 @@ type (
 	valfunc    func(ctx context.Context, idToken string, audience string) (*idtoken.Payload, error)
 )
 
+const UnauthorizedName = "unauthorized"
+
 const contextEmail contextKey = 1
 
 func InsecureValidateMW(h http.Handler) http.Handler {
@@ -67,7 +69,12 @@ func validateJWTFromComputeEngine(aud string, validator valfunc) func(h http.Han
 func GetEmail(ctx context.Context) string {
 	email := ctx.Value(contextEmail)
 	if email == nil {
-		return "unauthorized"
+		return UnauthorizedName
 	}
 	return email.(string)
+}
+
+// SetEmail is intended for system workers that modify resources.
+func SetEmail(ctx context.Context, email string) context.Context {
+	return context.WithValue(ctx, contextEmail, email)
 }

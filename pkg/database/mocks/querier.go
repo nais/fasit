@@ -19,6 +19,43 @@ type Querier struct {
 	mock.Mock
 }
 
+// AuditCreate provides a mock function with given fields: ctx, arg
+func (_m *Querier) AuditCreate(ctx context.Context, arg gensql.AuditCreateParams) error {
+	ret := _m.Called(ctx, arg)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.AuditCreateParams) error); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// AuditForEnvironment provides a mock function with given fields: ctx, arg
+func (_m *Querier) AuditForEnvironment(ctx context.Context, arg gensql.AuditForEnvironmentParams) ([]gensql.Audit, error) {
+	ret := _m.Called(ctx, arg)
+
+	var r0 []gensql.Audit
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.AuditForEnvironmentParams) []gensql.Audit); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gensql.Audit)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, gensql.AuditForEnvironmentParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ConfigDelete provides a mock function with given fields: ctx, id
 func (_m *Querier) ConfigDelete(ctx context.Context, id uuid.UUID) error {
 	ret := _m.Called(ctx, id)
