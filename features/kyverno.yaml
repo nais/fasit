@@ -124,8 +124,8 @@ mapping:
       - '[ServiceMonitor,{{ "{{" }} if .Values.serviceMonitor.namespace {{ "}}" }}{{ "{{" }} .Values.serviceMonitor.namespace {{ "}}" }}{{ "{{" }} else {{ "}}" }}{{ "{{" }} template "kyverno.namespace" . {{ "}}" }}{{ "{{" }} end {{ "}}" }},{{ "{{" }} template "kyverno.serviceName" . {{ "}}" }}-service-monitor]'
       - '[Pod,{{ "{{" }} include "kyverno.namespace" . {{ "}}" }},{{ "{{" }} template "kyverno.fullname" . {{ "}}" }}-test]'
 
- # config.excludeGroupRole:
- #   displayName: Exclude group roles
- #   description: Exclude group roles from the clusterrolebinding
- #   value:
- #     - cluster-admin
+  #config.excludeGroupRole:
+  #  displayName: Exclude group roles
+  #  description: Groups role that is excluded from all kyverno policies
+  #  value:
+  #    - cluster-admin

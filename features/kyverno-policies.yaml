@@ -61,6 +61,6 @@ mapping:
     displayName: "Deny service types"
 
   kyverno-policies.background:
-    value: false
+    value: "false"
     description: "Run Kyverno policies in background"
     displayName: "Background"
