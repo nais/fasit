@@ -22,6 +22,7 @@ config:
     displayName: "Deploy API Key"
     description: "Hookd API KEY for deploying canary"
     type: string
+    secret: true
   canary.image.repository:
     type: string
   canary.image.tag:
