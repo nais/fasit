@@ -32,3 +32,5 @@ config:
     type: string
   deployer.image.tag:
     type: string
+  alert_enabled:
+    type: bool
