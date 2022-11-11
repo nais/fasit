@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/nais/fasit/pkg/auth"
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph/model"
@@ -138,6 +139,8 @@ func (r *Reconciler) Run(ctx context.Context, interval time.Duration) {
 }
 
 func (r *Reconciler) reconcile(ctx context.Context) error {
+	ctx = auth.SetEmail(ctx, "system:reconciler")
+
 	r.lock.Lock()
 
 	if r.running {

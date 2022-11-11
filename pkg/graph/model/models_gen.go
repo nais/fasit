@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -14,6 +15,14 @@ import (
 type Warning interface {
 	IsWarning()
 	GetMessage() string
+}
+
+type AuditLog struct {
+	Actor       string    `json:"actor"`
+	Description string    `json:"description"`
+	ObjectType  string    `json:"objectType"`
+	ObjectID    string    `json:"objectId"`
+	CreatedAt   time.Time `json:"createdAt"`
 }
 
 type Dependency struct {

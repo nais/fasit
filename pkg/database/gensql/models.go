@@ -101,6 +101,15 @@ func (ns NullRolloutStatus) Value() (driver.Value, error) {
 	return ns.RolloutStatus, nil
 }
 
+type Audit struct {
+	ID          uuid.UUID
+	Actor       string
+	Description string
+	ObjectType  string
+	ObjectID    string
+	CreatedAt   time.Time
+}
+
 type ConfigurationsEnvironment struct {
 	ID            uuid.UUID
 	Feature       string

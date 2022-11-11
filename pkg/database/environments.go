@@ -72,6 +72,9 @@ func (r *repo) EnvironmentCreate(ctx context.Context, t *model.EnvironmentCreate
 	if err != nil {
 		return nil, err
 	}
+
+	r.createAudit(ctx, "created", "environments", env.ID.String())
+
 	return environmentFromSQL(env), nil
 }
 
@@ -83,6 +86,9 @@ func (r *repo) EnvironmentUpdate(ctx context.Context, environmentID uuid.UUID, p
 	if err != nil {
 		return nil, err
 	}
+
+	r.createAudit(ctx, "environment updated", "environments", env.ID.String())
+
 	return environmentFromSQL(env), nil
 }
 

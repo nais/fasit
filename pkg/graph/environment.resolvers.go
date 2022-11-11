@@ -79,6 +79,16 @@ func (r *environmentResolver) Warnings(ctx context.Context, obj *model.Environme
 	return r.Repo.Warnings(ctx, &obj.ID, nil)
 }
 
+// AuditLog is the resolver for the auditLog field.
+func (r *environmentResolver) AuditLog(ctx context.Context, obj *model.Environment, featureName *string) ([]*model.AuditLog, error) {
+	fn := ""
+	if featureName != nil {
+		fn = *featureName
+	}
+
+	return r.Repo.AuditForEnvironment(ctx, obj.ID, fn)
+}
+
 // EnvironmentCreate is the resolver for the environmentCreate field.
 func (r *mutationResolver) EnvironmentCreate(ctx context.Context, environment model.EnvironmentCreate) (*model.Environment, error) {
 	return r.Repo.EnvironmentCreate(ctx, &environment)
@@ -120,5 +130,7 @@ func (r *Resolver) Environment() graphgen.EnvironmentResolver { return &environm
 // Release returns graphgen.ReleaseResolver implementation.
 func (r *Resolver) Release() graphgen.ReleaseResolver { return &releaseResolver{r} }
 
-type environmentResolver struct{ *Resolver }
-type releaseResolver struct{ *Resolver }
+type (
+	environmentResolver struct{ *Resolver }
+	releaseResolver     struct{ *Resolver }
+)

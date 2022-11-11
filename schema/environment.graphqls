@@ -33,6 +33,7 @@ type Environment {
   values: [EnvironmentValue!]!
   tenant: Tenant!
   warnings: [Warning!]!
+  auditLog(featureName: String): [AuditLog!]!
 }
 
 type EnvironmentValue {
