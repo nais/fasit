@@ -17,6 +17,9 @@ config:
   nais_alertmanager.slack.webhook:
     type: string
     displayName: "Nais alerts webhook URL"
+  nais_alertmanager.slack.channel:
+    type: string
+    displayName: "Nais alerts slack channel"
   nais_alertmanager.slack.proxy:
     type: string
     displayName: "Nais alerts proxy URL"
