@@ -1,5 +1,5 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/aiven-poke
-source: https://github.com/nais/helm-charts/tree/main/charts/aiven-poke
+source: https://github.com/nais/aiven-poke
 version: 0.3.0
 environmentKinds:
   - "tenant"
