@@ -3,6 +3,7 @@ source: https://github.com/nais/helm-charts/tree/main/charts/aiven-poke
 version: 0.2.0
 environmentKinds:
   - "tenant"
+  - "onprem"
 dependsOn:
   - allOf:
       - "naiserator"
