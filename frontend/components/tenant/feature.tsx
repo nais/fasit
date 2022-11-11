@@ -11,11 +11,12 @@ import EnableFeature from './enableFeature'
 import FeatureStatus from './featureStatus'
 import extractConfig from '../lib/extractConfig'
 import { Tabs } from '@navikt/ds-react'
-import { FileContent, Filter, Wrench } from '@navikt/ds-icons'
+import { FileContent, Filter, Notes, Wrench } from '@navikt/ds-icons'
 import FeatureLogs from './featureLogs'
 import FeatureHelmValues from './featureHelmValues'
 import { useRouter } from 'next/router'
 import RedeployFeature from './redeployFeature'
+import AuditView from '../lib/auditView'
 
 const FeatureContainer = styled.div`
   border: 1px solid silver;
@@ -87,6 +88,11 @@ const Feature = ({ env, featureName }: FeatureProps) => {
             label="Helm Values"
             icon={<FileContent title="helm values" />}
           />
+          <Tabs.Tab
+            value="audit"
+            label="Audit"
+            icon={<Notes title="audit log" />}
+          />
         </Tabs.List>
         <Tabs.Panel value="config" className="h-24 w-full bg-gray-50 p-8">
           <FeatureConfig
@@ -101,6 +107,9 @@ const Feature = ({ env, featureName }: FeatureProps) => {
         </Tabs.Panel>
         <Tabs.Panel value="helm_values" className="h-24  w-full bg-gray-50 p-8">
           <FeatureHelmValues env={env} featureName={featureName} />
+        </Tabs.Panel>
+        <Tabs.Panel value="audit" className="h-24  w-full bg-gray-50 p-8">
+          <AuditView envID={env.id} />
         </Tabs.Panel>
       </Tabs>
 

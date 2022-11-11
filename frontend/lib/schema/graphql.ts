@@ -24,6 +24,15 @@ export type Scalars = {
   Time: any
 }
 
+export type AuditLog = {
+  __typename?: 'AuditLog'
+  actor: Scalars['String']
+  createdAt: Scalars['Time']
+  description: Scalars['String']
+  objectId: Scalars['String']
+  objectType: Scalars['String']
+}
+
 export enum ConditionStatus {
   False = 'FALSE',
   True = 'TRUE',
@@ -85,6 +94,7 @@ export type EnvConfiguration = Configuration & {
 
 export type Environment = {
   __typename?: 'Environment'
+  auditLog: Array<AuditLog>
   created: Scalars['Time']
   description?: Maybe<Scalars['String']>
   featureStates: Array<FeatureState>
@@ -98,6 +108,10 @@ export type Environment = {
   tenant: Tenant
   values: Array<EnvironmentValue>
   warnings: Array<Warning>
+}
+
+export type EnvironmentAuditLogArgs = {
+  featureName?: InputMaybe<Scalars['String']>
 }
 
 /** EnvironmentCreate contains metadata for creating an environment */
@@ -480,6 +494,26 @@ export type Warning = {
 export type UserInfo = {
   __typename?: 'userInfo'
   email: Scalars['String']
+}
+
+export type EnvironmentAuditLogQueryVariables = Exact<{
+  envID: Scalars['ID']
+  featureName?: InputMaybe<Scalars['String']>
+}>
+
+export type EnvironmentAuditLogQuery = {
+  __typename?: 'Query'
+  environment: {
+    __typename?: 'Environment'
+    auditLog: Array<{
+      __typename?: 'AuditLog'
+      actor: string
+      description: string
+      objectId: string
+      objectType: string
+      createdAt: any
+    }>
+  }
 }
 
 export type ConfigurationQueryVariables = Exact<{
@@ -926,6 +960,71 @@ export type UserInfoQuery = {
   userInfo?: { __typename?: 'userInfo'; email: string } | null
 }
 
+export const EnvironmentAuditLogDocument = gql`
+  query EnvironmentAuditLog($envID: ID!, $featureName: String) {
+    environment(id: $envID) {
+      auditLog(featureName: $featureName) {
+        actor
+        description
+        objectId
+        objectType
+        createdAt
+      }
+    }
+  }
+`
+
+/**
+ * __useEnvironmentAuditLogQuery__
+ *
+ * To run a query within a React component, call `useEnvironmentAuditLogQuery` and pass it any options that fit your needs.
+ * When your component renders, `useEnvironmentAuditLogQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useEnvironmentAuditLogQuery({
+ *   variables: {
+ *      envID: // value for 'envID'
+ *      featureName: // value for 'featureName'
+ *   },
+ * });
+ */
+export function useEnvironmentAuditLogQuery(
+  baseOptions: Apollo.QueryHookOptions<
+    EnvironmentAuditLogQuery,
+    EnvironmentAuditLogQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions }
+  return Apollo.useQuery<
+    EnvironmentAuditLogQuery,
+    EnvironmentAuditLogQueryVariables
+  >(EnvironmentAuditLogDocument, options)
+}
+export function useEnvironmentAuditLogLazyQuery(
+  baseOptions?: Apollo.LazyQueryHookOptions<
+    EnvironmentAuditLogQuery,
+    EnvironmentAuditLogQueryVariables
+  >,
+) {
+  const options = { ...defaultOptions, ...baseOptions }
+  return Apollo.useLazyQuery<
+    EnvironmentAuditLogQuery,
+    EnvironmentAuditLogQueryVariables
+  >(EnvironmentAuditLogDocument, options)
+}
+export type EnvironmentAuditLogQueryHookResult = ReturnType<
+  typeof useEnvironmentAuditLogQuery
+>
+export type EnvironmentAuditLogLazyQueryHookResult = ReturnType<
+  typeof useEnvironmentAuditLogLazyQuery
+>
+export type EnvironmentAuditLogQueryResult = Apollo.QueryResult<
+  EnvironmentAuditLogQuery,
+  EnvironmentAuditLogQueryVariables
+>
 export const ConfigurationDocument = gql`
   query configuration($feature: String!, $envID: ID) {
     configuration(feature: $feature, envID: $envID) {

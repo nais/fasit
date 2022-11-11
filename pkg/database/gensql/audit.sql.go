@@ -48,15 +48,18 @@ WHERE CASE WHEN $1::text != '' THEN
 ELSE
   starts_with(object_id, $2::text)
 END
+ORDER BY created_at DESC
+LIMIT $3
 `
 
 type AuditForEnvironmentParams struct {
 	Featurename   string
 	EnvironmentID string
+	PageSize      int32
 }
 
 func (q *Queries) AuditForEnvironment(ctx context.Context, arg AuditForEnvironmentParams) ([]Audit, error) {
-	rows, err := q.db.Query(ctx, auditForEnvironment, arg.Featurename, arg.EnvironmentID)
+	rows, err := q.db.Query(ctx, auditForEnvironment, arg.Featurename, arg.EnvironmentID, arg.PageSize)
 	if err != nil {
 		return nil, err
 	}

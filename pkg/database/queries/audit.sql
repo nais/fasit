@@ -19,4 +19,6 @@ WHERE CASE WHEN @featureName::text != '' THEN
 ELSE
   starts_with(object_id, @environment_id::text)
 END
+ORDER BY created_at DESC
+LIMIT @page_size
 ;

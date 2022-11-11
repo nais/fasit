@@ -19,6 +19,7 @@ func (r *repo) AuditForEnvironment(ctx context.Context, id uuid.UUID, featureNam
 	auditLogs, err := r.querier.AuditForEnvironment(ctx, gensql.AuditForEnvironmentParams{
 		EnvironmentID: id.String(),
 		Featurename:   featureName,
+		PageSize:      50,
 	})
 	if err != nil {
 		return nil, err
