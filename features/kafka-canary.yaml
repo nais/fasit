@@ -15,13 +15,13 @@ mapping:
     template: '{{ mapOf "name" "aiven_project_0" .Envs | mapJoin "=" | join " " }}'
     displayName: "Cluster Pools"
     description: "Space separated list of cluster and pools"
-  api_key:
-    template: "temporary dummy data" # TODO
-    displayName: "Deploy API Key"
-    description: "Hookd API KEY for deploying canary"
   tenant:
     template: "{{ .Tenant.Name }}"
 config:
+  api_key:
+    displayName: "Deploy API Key"
+    description: "Hookd API KEY for deploying canary"
+    type: string
   canary.image.repository:
     type: string
   canary.image.tag:
