@@ -1,0 +1,32 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/console
+source: https://github.com/nais/helm-charts/tree/main/charts/console
+version: 0.0.18
+environmentKinds:
+  - "tenant"
+dependsOn:
+  - allOf:
+      - "naiserator"
+      - "aivenator"
+rolloutSource:
+  - org: nais
+    repo: aiven-poke
+mapping:
+  aivenProject:
+    value: "{{ .Env.aiven_project_0 }}"
+    displayName: aiven project
+    description: "Which aiven project to look for topics in"
+config:
+  image.tag:
+    type: string
+  image.pullPolicy:
+    type: string
+  schedule:
+    type: string
+  resources.limits.cpu:
+    type: string
+  resources.limits.memory:
+    type: string
+  resources.requests.cpu:
+    type: string
+  resources.requests.memory:
+    type: string
