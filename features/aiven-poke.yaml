@@ -4,11 +4,10 @@ version: 0.4.0
 environmentKinds:
   - "tenant"
   - "onprem"
-# commented out as current clusters don't have these operator deployed through fasit yet
-#dependsOn:
-#  - allOf:
-#      - "naiserator"
-#      - "aivenator"
+dependsOn:
+  - allOf:
+      - "naiserator"
+      - "aivenator"
 rolloutSource:
   - org: nais
     repo: aiven-poke
