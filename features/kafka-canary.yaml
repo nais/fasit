@@ -5,7 +5,8 @@ environmentKinds:
   - "management"
 dependsOn:
   - allOf:
-      - "hookd"
+      - hookd   # For deploying the actual canary
+      - console # To ensure the nais-verification namespace exists
 rolloutSource:
   - org: nais
     repo: kafkarator
