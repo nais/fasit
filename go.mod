@@ -5,7 +5,7 @@ go 1.19
 require (
 	cloud.google.com/go/cloudsqlconn v1.0.1
 	cloud.google.com/go/pubsub v1.26.0
-	cloud.google.com/go/storage v1.27.0
+	cloud.google.com/go/storage v1.28.0
 	github.com/99designs/gqlgen v0.17.20
 	github.com/GoogleCloudPlatform/cloudsql-proxy v1.33.0
 	github.com/Masterminds/semver/v3 v3.1.1
