@@ -17,6 +17,8 @@ mapping:
     description: "Space separated list of cluster and pools"
   tenant:
     template: "{{ .Tenant.Name }}"
+  deploy_server:
+    template: "deploy.{{.Tenant.Name}}.cloud.nais.io"
 config:
   api_key:
     displayName: "Deploy API Key"
