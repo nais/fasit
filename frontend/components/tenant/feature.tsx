@@ -109,7 +109,7 @@ const Feature = ({ env, featureName }: FeatureProps) => {
           <FeatureHelmValues env={env} featureName={featureName} />
         </Tabs.Panel>
         <Tabs.Panel value="audit" className="h-24  w-full bg-gray-50 p-8">
-          <AuditView envID={env.id} />
+          <AuditView envID={env.id} featureName={featureName} />
         </Tabs.Panel>
       </Tabs>
 
