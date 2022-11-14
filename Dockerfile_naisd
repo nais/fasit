@@ -15,7 +15,7 @@ RUN CGO_ENABLED=0 go build -a -o naisd ./cmd/naisd
 FROM alpine
 WORKDIR /
 
-RUN apk add --no-cache --repository=http://dl-cdn.alpinelinux.org/alpine/edge/testing helm
+RUN apk add --no-cache --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community helm
 
 COPY --from=builder /workspace/naisd .
 USER 65532:65532
