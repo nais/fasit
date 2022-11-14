@@ -38,7 +38,7 @@
     "react-dom": "18.2.0",
     "react-hook-form": "7.38.0",
     "react-tag-autocomplete": "6.3.0",
-    "react-tooltip": "^4.4.3",
+    "react-tooltip": "^4.5.0",
     "styled-components": "5.3.6",
     "yup": "0.32.11"
   },
