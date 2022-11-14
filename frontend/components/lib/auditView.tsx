@@ -42,7 +42,7 @@ const AuditView = ({ envID, featureName }: AuditViewParams) => {
     <>
       {data.environment.auditLog.map((e, i) => (
         <AuditLine key={i}>
-          {e.description} {e.actor}
+          {e.description}
           <div className="details">
             {e.actor} @ {humanizeDate(e.createdAt, 'dd. MMMM yyyy HH:mm:ss')}
           </div>
