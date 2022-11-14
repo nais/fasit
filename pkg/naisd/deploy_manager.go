@@ -1,7 +1,6 @@
 package naisd
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"io"
@@ -191,7 +190,7 @@ func (d *DeployManager) runHelm(ctx context.Context, args []string) (string, err
 		"HELM_CACHE_HOME="+d.helmCache,
 	)
 
-	buf := &bytes.Buffer{}
+	buf := &timeLogger{}
 
 	cmd := exec.CommandContext(ctx, "helm", helmArgs...)
 	cmd.Env = append(cmd.Env, environment...)

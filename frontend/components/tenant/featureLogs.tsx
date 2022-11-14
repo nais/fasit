@@ -1,17 +1,10 @@
-import * as React from 'react'
-import styled from 'styled-components'
+import { Loader } from '@navikt/ds-react'
 import {
   EnvironmentGetQuery,
   useFeatureLogsQuery,
 } from '../../lib/schema/graphql'
-import { Loader } from '@navikt/ds-react'
-
-const LogPre = styled.pre`
-  overflow: auto;
-  word-break: break-word;
-  white-space: pre-wrap;
-  font-size: 14px;
-`
+import ErrorMessage from '../lib/error'
+import FeatureLogsView from './featureLogView'
 
 interface FeatureProps {
   env: EnvironmentGetQuery['environment']
@@ -26,14 +19,8 @@ const Feature = ({ env, featureName }: FeatureProps) => {
   return (
     <>
       {loading && <Loader transparent />}
-      {error && <LogPre>{error.message}</LogPre>}
-      {data && (
-        <LogPre>
-          {data.featureStatus.log
-            ? data.featureStatus.log
-            : 'No logs available'}
-        </LogPre>
-      )}
+      {error && <ErrorMessage error={error} />}
+      {data && <FeatureLogsView logs={data.featureStatus.log} />}
     </>
   )
 }
