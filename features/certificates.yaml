@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/certificates
 source: https://github.com/nais/helm-charts/tree/main/charts/certificates
-version: 0.3.0
+version: 0.5.0
 environmentKinds:
   - "tenant"
   - "management"
