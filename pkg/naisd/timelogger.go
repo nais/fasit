@@ -19,6 +19,9 @@ func (t *timeLogger) Write(p []byte) (n int, err error) {
 }
 
 func (t *timeLogger) String() string {
+	if len(t.lines) == 0 {
+		return ""
+	}
 	b, _ := json.Marshal(t.lines)
 	return string(b)
 }
