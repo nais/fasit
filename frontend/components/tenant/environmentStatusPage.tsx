@@ -25,6 +25,7 @@ import FeatureValues from './featureValues'
 import { parseISO } from 'date-fns'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
+import AuditView from '../lib/auditView'
 
 const WarningLink = styled.a`
   display: block;
@@ -141,6 +142,7 @@ const EnvironmentStatusPage = ({
           <Tabs.Tab value="releases" label="Releases" />
           <Tabs.Tab value="env_values" label="Environment values" />
           <Tabs.Tab value="nodes" label="Kubernetes nodes" />
+          <Tabs.Tab value="audit_log" label="Audit log" />
         </Tabs.List>
         <Tabs.Panel value="releases" className="h-24 w-full bg-gray-50 p-8">
           <>{warnings.map((w, i) => warningLink(tenantName, env.name, w, i))}</>
@@ -211,6 +213,10 @@ const EnvironmentStatusPage = ({
               ))}
             </Table.Body>
           </Table>
+        </Tabs.Panel>
+
+        <Tabs.Panel value="audit_log" className="h-24 w-full bg-gray-50 p-8">
+          <AuditView envID={env.id} />
         </Tabs.Panel>
       </Tabs>
     </EnvironmentStatus>

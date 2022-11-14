@@ -89,8 +89,8 @@ const Feature = ({ env, featureName }: FeatureProps) => {
             icon={<FileContent title="helm values" />}
           />
           <Tabs.Tab
-            value="audit"
-            label="Audit"
+            value="audit_log"
+            label="Audit log"
             icon={<Notes title="audit log" />}
           />
         </Tabs.List>
@@ -108,7 +108,7 @@ const Feature = ({ env, featureName }: FeatureProps) => {
         <Tabs.Panel value="helm_values" className="h-24  w-full bg-gray-50 p-8">
           <FeatureHelmValues env={env} featureName={featureName} />
         </Tabs.Panel>
-        <Tabs.Panel value="audit" className="h-24  w-full bg-gray-50 p-8">
+        <Tabs.Panel value="audit_log" className="h-24  w-full bg-gray-50 p-8">
           <AuditView envID={env.id} featureName={featureName} />
         </Tabs.Panel>
       </Tabs>
