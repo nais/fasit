@@ -95,6 +95,9 @@ func createJob(suffix string, msg message.DeployInstruction, naisProjectID, env,
 		},
 	})
 
+	spec.NodeName = ""
+	spec.SchedulerName = ""
+
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   "naisd-self-upgrader-" + suffix,
