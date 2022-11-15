@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/nais/fasit/pkg/message"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -16,6 +15,8 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+
+	"github.com/nais/fasit/pkg/message"
 )
 
 var ErrDeleteRequiredNamespace = fmt.Errorf("namespace is required, cannot be deleted")
@@ -217,17 +218,26 @@ func (c *ConsoleManager) createTeamRolebindings(ctx context.Context, data messag
 		return nil
 	}
 
+	subjects := []rbacv1.Subject{
+		{
+			Kind: "Group",
+			Name: data.GroupEmail,
+		},
+	}
+
+	if data.AzureGroupID != "" {
+		subjects = append(subjects, rbacv1.Subject{
+			Kind: "Group",
+			Name: data.AzureGroupID,
+		})
+	}
+
 	roleBinding := rbacv1.RoleBinding{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      fmt.Sprintf("team-%s-naisdeveloper", data.Name),
 			Namespace: data.Name,
 		},
-		Subjects: []rbacv1.Subject{
-			{
-				Kind: "Group",
-				Name: data.GroupEmail,
-			},
-		},
+		Subjects: subjects,
 		RoleRef: rbacv1.RoleRef{
 			APIGroup: "rbac.authorization.k8s.io",
 			Kind:     "ClusterRole",
