@@ -44,7 +44,7 @@ jobs:
           service_account: "gh-fasit@nais-io.iam.gserviceaccount.com"
           token_format: "access_token"
       - name: "Set up Cloud SDK"
-        uses: "google-github-actions/setup-gcloud@v0"
+        uses: "google-github-actions/setup-gcloud@v1"
       - name: Sync features to GCS
         run: |-
           gsutil -m rsync -d -r features gs://${{ env.BUCKET }}
