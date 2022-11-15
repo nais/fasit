@@ -1,8 +1,21 @@
 import gql from 'graphql-tag'
 
-export const FEATUREDETAILS = gql`
-  query FeatureDetails {
+export const FEATURELIST = gql`
+  query FeatureList {
     features {
+      name
+      outdatedInfo {
+        newVersion
+        dependency
+        dependencyName
+      }
+    }
+  }
+`
+
+export const FEATUREDETAILS = gql`
+  query FeatureDetails($name: String!) {
+    feature(name: $name) {
       dependsOn {
         anyOf
         allOf

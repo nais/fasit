@@ -1,5 +1,5 @@
 import type { NextPage } from 'next'
-import { useTenantsGetQuery } from '../lib/schema/graphql'
+import { useTenantsListQuery } from '../lib/schema/graphql'
 import LoaderSpinner from '../components/lib/spinner'
 import ErrorMessage from '../components/lib/error'
 import styled from 'styled-components'
@@ -68,8 +68,8 @@ const WarningDotOrange = styled(WarningDot)`
   background-color: ${navOransje};
 `
 
-const Home: NextPage = ({ email }: any) => {
-  const tenantsGetQuery = useTenantsGetQuery()
+const Home: NextPage = () => {
+  const tenantsGetQuery = useTenantsListQuery({ fetchPolicy: 'no-cache' })
   if (tenantsGetQuery.error) {
     return <ErrorMessage error={tenantsGetQuery.error} />
   }

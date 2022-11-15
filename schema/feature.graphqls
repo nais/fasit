@@ -31,5 +31,6 @@ type Dependency {
 
 extend type Query {
   features(kind: EnvironmentKind): [Feature!]!
+  feature(name: String!): Feature!
   outdatedInfo: [OutdatedInfo]!
 }

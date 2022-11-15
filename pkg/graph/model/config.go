@@ -84,6 +84,7 @@ type Configuration interface {
 	SetType(ConfigType)
 	SetDisplayName(string)
 	SetDescription(string)
+	SetRequired(bool)
 	GetKey() string
 }
 
@@ -97,6 +98,7 @@ type EnvConfiguration struct {
 	Type        ConfigType      `json:"type"`
 	DisplayName string          `json:"displayName"`
 	RolloutID   *uuid.UUID      `json:"rolloutID"`
+	Required    bool            `json:"required"`
 
 	EnvironmentID uuid.UUID
 	FeatureName   string
@@ -107,6 +109,7 @@ func (e *EnvConfiguration) SetType(t ConfigType)    { e.Type = t }
 func (e *EnvConfiguration) GetKey() string          { return e.Key }
 func (e *EnvConfiguration) SetDisplayName(n string) { e.DisplayName = n }
 func (e *EnvConfiguration) SetDescription(n string) { e.Description = n }
+func (e *EnvConfiguration) SetRequired(n bool)      { e.Required = n }
 
 type GlobalConfiguration struct {
 	ID          uuid.UUID       `json:"id"`
@@ -117,6 +120,7 @@ type GlobalConfiguration struct {
 	Created     time.Time       `json:"created"`
 	Type        ConfigType      `json:"type"`
 	DisplayName string          `json:"displayName"`
+	Required    bool            `json:"required"`
 
 	FeatureName string
 }
@@ -126,3 +130,4 @@ func (g *GlobalConfiguration) SetType(t ConfigType)    { g.Type = t }
 func (g *GlobalConfiguration) GetKey() string          { return g.Key }
 func (g *GlobalConfiguration) SetDisplayName(n string) { g.DisplayName = n }
 func (g *GlobalConfiguration) SetDescription(n string) { g.Description = n }
+func (g *GlobalConfiguration) SetRequired(n bool)      { g.Required = n }

@@ -1,18 +1,21 @@
 import * as React from 'react'
-import {useEffect, useState} from 'react'
-import {useEnvironmentGetByNamesQuery, useEnvironmentUpdateMutation} from '../../lib/schema/graphql'
+import { useEffect, useState } from 'react'
+import {
+  useEnvironmentGetByNamesQuery,
+  useEnvironmentUpdateMutation,
+} from '../../lib/schema/graphql'
 import ErrorMessage from '../lib/error'
 import LoaderSpinner from '../lib/spinner'
 import humanizeDate from '../lib/humanizeDate'
 import styled from 'styled-components'
-import {Close, Edit, SaveFile} from '@navikt/ds-icons'
+import { Close, Edit, SaveFile } from '@navikt/ds-icons'
 import FeaturesMenu from './featuresMenu'
 import Feature from './feature'
-import {useRouter} from 'next/router'
-import {navGronn, navRod} from '../../styles/constants'
-import {Textarea} from '@navikt/ds-react'
-import EnvironmentStatusPage from "./environmentStatusPage";
-
+import { useRouter } from 'next/router'
+import { navGronn, navRod } from '../../styles/constants'
+import { Textarea } from '@navikt/ds-react'
+import EnvironmentStatusPage from './environmentStatusPage'
+import { useFocusPoll } from '../../lib/useFocusPoll'
 
 const InfoBox = styled.div`
   margin-top: 25px;
@@ -31,23 +34,23 @@ const Description = styled.pre`
 `
 
 const SaveIcon = styled.div`
-   svg {
-     :hover {
-       color: ${navGronn};
-       cursor: pointer;
-     }
-   }
+  svg {
+    :hover {
+      color: ${navGronn};
+      cursor: pointer;
+    }
+  }
 `
 const Icon = styled.div`
-   svg {
-     :hover {
-       color: ${navRod};
-       cursor: pointer;
-     }
-   }
+  svg {
+    :hover {
+      color: ${navRod};
+      cursor: pointer;
+    }
+  }
 `
 const IconBox = styled.div`
-  display:flex;
+  display: flex;
   flex-direction: column;
   justify-content: space-between;
 `
@@ -69,88 +72,100 @@ const Main = styled.div`
 `
 
 interface EnvironmentProps {
-    environmentName: string,
-    tenantName: string;
+  environmentName: string
+  tenantName: string
 }
 
-const Environment = ({environmentName, tenantName}: EnvironmentProps) => {
-    const [edit, setEdit] = useState(false)
-    const [backendError, setBackendError] = useState()
-    const [description, setDescription] = useState('')
-    const [envUpdate] = useEnvironmentUpdateMutation()
-    const {data, error, loading} = useEnvironmentGetByNamesQuery({
-        variables: {
-            environmentName: environmentName[0],
-            tenantName
-        }
+const Environment = ({ environmentName, tenantName }: EnvironmentProps) => {
+  const [edit, setEdit] = useState(false)
+  const [backendError, setBackendError] = useState()
+  const [description, setDescription] = useState('')
+  const [envUpdate] = useEnvironmentUpdateMutation()
+  const query = useEnvironmentGetByNamesQuery({
+    variables: {
+      environmentName: environmentName,
+      tenantName,
+    },
+  })
+
+  useFocusPoll({ pollInterval: 10 * 1000, ...query })
+
+  const { data, error, loading } = query
+
+  useEffect(() => {
+    data?.environmentByNames?.description &&
+      setDescription(data.environmentByNames.description)
+  }, [data])
+  const router = useRouter()
+
+  if (error) return <ErrorMessage error={error} />
+  if (!data || loading) return <LoaderSpinner />
+  const feature = router.query.feature as string
+  const env = data.environmentByNames
+
+  const submit = () => {
+    envUpdate({
+      variables: { description: description, id: env.id },
+      awaitRefetchQueries: true,
+      refetchQueries: ['environmentGet'],
     })
-    useEffect(() => {
-        data?.environmentByNames?.description && setDescription(data.environmentByNames.description)
-    }, [data])
-    const router = useRouter()
+      .then(() => {
+        setBackendError(undefined)
+        setDescription('')
+        setEdit(false)
+      })
+      .catch((e: any) => {
+        setBackendError(e)
+      })
+  }
+  {
+    backendError && <ErrorMessage error={backendError} />
+  }
 
-    if (error) return <ErrorMessage error={error}/>
-    if (!data || loading) return <LoaderSpinner/>
-    const feature = router.query.feature as string
-    const env = data.environmentByNames
-
-    const submit = () => {
-        envUpdate(
-            {
-                variables: {description: description, id: env.id},
-                awaitRefetchQueries: true,
-                refetchQueries: ['environmentGet'],
-            }).then(() => {
-            setBackendError(undefined)
-            setDescription("")
-            setEdit(false)
-        }).catch((e: any) => {
-            setBackendError(e)
-        })
-    }
-    {
-        backendError && (
-            <ErrorMessage error={backendError}/>
-        )
-    }
-
-    return (
-        <div>
-            <InfoBox>
-                <DescriptionBox>
-                    {edit ?
-                        <Textarea
-                            label={'Environment Description'}
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                        /> :
-                        <Description>
-                            {env.description || 'No environment description'}
-                        </Description>
-                    }
-                </DescriptionBox>
-                <IconBox>
-
-                    <Icon>
-                        {edit ? <Close onClick={() => setEdit(false)}/> :
-                            <Edit onClick={() => setEdit(true)}/>}
-                    </Icon>
-                    {edit && <SaveIcon onClick={() => submit()}><SaveFile/></SaveIcon>}
-                </IconBox>
-            </InfoBox>
-            <TimeStamps>
-                <span>Created {humanizeDate(env.created)}</span>
-                <span>Last updated {humanizeDate(env.lastModified)}</span>
-            </TimeStamps>
-            <Main>
-                <FeaturesMenu env={env}/>
-                {feature ?
-                    <Feature env={env} featureName={feature}/> :
-                    <EnvironmentStatusPage env={env} tenantName={tenantName}/>
-                }
-            </Main>
-
-        </div>
-    )
+  return (
+    <div>
+      <InfoBox>
+        <DescriptionBox>
+          {edit ? (
+            <Textarea
+              label={'Environment Description'}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          ) : (
+            <Description>
+              {env.description || 'No environment description'}
+            </Description>
+          )}
+        </DescriptionBox>
+        <IconBox>
+          <Icon>
+            {edit ? (
+              <Close onClick={() => setEdit(false)} />
+            ) : (
+              <Edit onClick={() => setEdit(true)} />
+            )}
+          </Icon>
+          {edit && (
+            <SaveIcon onClick={() => submit()}>
+              <SaveFile />
+            </SaveIcon>
+          )}
+        </IconBox>
+      </InfoBox>
+      <TimeStamps>
+        <span>Created {humanizeDate(env.created)}</span>
+        <span>Last updated {humanizeDate(env.lastModified)}</span>
+      </TimeStamps>
+      <Main>
+        <FeaturesMenu env={env} />
+        {feature ? (
+          <Feature envID={env.id} featureName={feature} />
+        ) : (
+          <EnvironmentStatusPage env={env} tenantName={tenantName} />
+        )}
+      </Main>
+    </div>
+  )
 }
 export default Environment

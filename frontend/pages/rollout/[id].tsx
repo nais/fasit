@@ -9,12 +9,20 @@ import Rollout, {
   rolloutStatus,
 } from '../../components/rollout/rollout'
 import { RolloutStatus, useRolloutSummaryQuery } from '../../lib/schema/graphql'
+import { useFocusPoll } from '../../lib/useFocusPoll'
 
 const RolloutSummary = () => {
   const id = useRouter().query.id as string
-  const { data, loading, error, startPolling, stopPolling } =
-    useRolloutSummaryQuery({ variables: { id } })
+  const query = useRolloutSummaryQuery({ variables: { id } })
 
+  const { data, loading, error } = query
+  useFocusPoll({
+    stopped:
+      data?.rolloutSummary.status === RolloutStatus.Deployed ||
+      data?.rolloutSummary.status === RolloutStatus.Failed,
+    pollInterval: 10 * 1000,
+    ...query,
+  })
   if (error) return <ErrorMessage error={error} />
   if (!data || loading) return <LoaderSpinner />
   let lastEventTime = data.rolloutSummary.created
@@ -23,14 +31,7 @@ const RolloutSummary = () => {
       .flatMap((v) => v.events)
       .sort((a, b) => a.created - b.created)[0].created
   }
-  if (
-    data.rolloutSummary.status === RolloutStatus.Deployed ||
-    data.rolloutSummary.status === RolloutStatus.Failed
-  ) {
-    stopPolling()
-  } else {
-    startPolling(2000)
-  }
+
   return (
     <>
       <Event header>

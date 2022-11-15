@@ -39,7 +39,7 @@ const RedeployFeature = ({
       await save({
         variables: { feature, enabled: true, envID },
         awaitRefetchQueries: true,
-        refetchQueries: ['environmentGetByNames'],
+        refetchQueries: ['FeatureState'],
         onCompleted: () => onClose(false),
         onError: (e) => console.log(e),
       })

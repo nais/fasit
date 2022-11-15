@@ -1,22 +1,17 @@
-import * as React from 'react'
-import { useState } from 'react'
-import styled from 'styled-components'
-import FeatureConfig from './featureConfig'
-import {
-  EnvironmentGetQuery,
-  useConfigurationQuery,
-  useFeaturesQuery,
-} from '../../lib/schema/graphql'
-import EnableFeature from './enableFeature'
-import FeatureStatus from './featureStatus'
-import extractConfig from '../lib/extractConfig'
-import { Tabs } from '@navikt/ds-react'
 import { FileContent, Filter, Notes, Wrench } from '@navikt/ds-icons'
-import FeatureLogs from './featureLogs'
-import FeatureHelmValues from './featureHelmValues'
+import { Tabs } from '@navikt/ds-react'
 import { useRouter } from 'next/router'
-import RedeployFeature from './redeployFeature'
+import { useEffect, useState } from 'react'
+import styled from 'styled-components'
+import { useFeatureStateQuery } from '../../lib/schema/graphql'
+import { useFocusPoll } from '../../lib/useFocusPoll'
 import AuditView from '../lib/auditView'
+import EnableFeature from './enableFeature'
+import FeatureConfig from './featureConfig'
+import FeatureHelmValues from './featureHelmValues'
+import FeatureLogs from './featureLogs'
+import FeatureStatus from './featureStatus'
+import RedeployFeature from './redeployFeature'
 
 const FeatureContainer = styled.div`
   border: 1px solid silver;
@@ -25,45 +20,39 @@ const FeatureContainer = styled.div`
   border-radius: 0 5px 5px 0px;
 `
 
-const LogPre = styled.pre`
-  overflow: auto;
-  word-break: break-word;
-  white-space: pre-wrap;
-  font-size: 14px;
-`
-
 interface FeatureProps {
-  env: EnvironmentGetQuery['environment']
+  envID: string
   featureName: string
 }
 
-const Feature = ({ env, featureName }: FeatureProps) => {
+const Feature = ({ envID, featureName }: FeatureProps) => {
   const [showVerify, setShowVerify] = useState(false)
   const [showRedeploy, setShowRedeploy] = useState(false)
 
   const router = useRouter()
 
-  const configQuery = useConfigurationQuery({
-    variables: { envID: env.id, feature: featureName },
+  const query = useFeatureStateQuery({
+    variables: { envID: envID, feature: featureName },
   })
-  const features = useFeaturesQuery({ variables: { kind: env.kind } })
-  const { configs, featureObject } = extractConfig(
-    features,
-    configQuery,
-    featureName,
-  )
+  useFocusPoll({ pollInterval: 10 * 1000, ...query })
+
+  const { data, loading } = query
 
   let activeTab = router.query.tab as string
   if (!activeTab) {
     activeTab = 'config'
   }
 
+  if (loading || !data) {
+    return <div>Loading...</div>
+  }
+
+  const featureState = data.featureState
+
   return (
     <FeatureContainer>
       <FeatureStatus
-        featureName={featureName}
-        configs={configs}
-        env={env}
+        featureState={featureState}
         setShowVerify={setShowVerify}
         setShowRedeploy={setShowRedeploy}
       />
@@ -73,7 +62,10 @@ const Feature = ({ env, featureName }: FeatureProps) => {
         iconPosition="left"
         onChange={(value) => {
           router.query.tab = value
-          router.push(router)
+          router.push({
+            pathname: router.pathname,
+            query: router.query,
+          })
         }}
       >
         <Tabs.List>
@@ -95,21 +87,16 @@ const Feature = ({ env, featureName }: FeatureProps) => {
           />
         </Tabs.List>
         <Tabs.Panel value="config" className="h-24 w-full bg-gray-50 p-8">
-          <FeatureConfig
-            envID={env.id}
-            configs={configs}
-            featureObject={featureObject}
-            mapping={configQuery.data?.configuration.mapping}
-          />
+          <FeatureConfig featureState={featureState} envID={envID} />
         </Tabs.Panel>
         <Tabs.Panel value="logs" className="h-24 w-full bg-gray-50 p-8">
-          <FeatureLogs env={env} featureName={featureName} />
+          <FeatureLogs envID={envID} featureName={featureName} />
         </Tabs.Panel>
         <Tabs.Panel value="helm_values" className="h-24  w-full bg-gray-50 p-8">
-          <FeatureHelmValues env={env} featureName={featureName} />
+          <FeatureHelmValues envID={envID} feature={featureState.feature} />
         </Tabs.Panel>
         <Tabs.Panel value="audit_log" className="h-24  w-full bg-gray-50 p-8">
-          <AuditView envID={env.id} featureName={featureName} />
+          <AuditView envID={envID} featureName={featureName} />
         </Tabs.Panel>
       </Tabs>
 
@@ -117,17 +104,14 @@ const Feature = ({ env, featureName }: FeatureProps) => {
         open={showVerify}
         onClose={setShowVerify}
         feature={featureName}
-        envID={env.id}
-        enabled={
-          env.featureStates.find((f) => f.feature.name === featureName)
-            ?.enabled || false
-        }
+        envID={envID}
+        enabled={featureState.enabled}
       />
       <RedeployFeature
         open={showRedeploy}
         onClose={setShowRedeploy}
         feature={featureName}
-        envID={env.id}
+        envID={envID}
       />
     </FeatureContainer>
   )

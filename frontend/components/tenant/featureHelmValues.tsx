@@ -27,21 +27,22 @@ const Code = styled.pre`
 `
 
 interface FeatureProps {
-  env: EnvironmentGetQuery['environment']
-  featureName: string
+  envID: string
+  feature: {
+    name: string
+    version: string
+    repo: string
+    chart: string
+  }
 }
 
-const Feature = ({ env, featureName }: FeatureProps) => {
+const Feature = ({ envID, feature }: FeatureProps) => {
   const { loading, error, data } = useHelmValuesQuery({
-    variables: { envID: env.id, feature: featureName },
+    variables: { envID: envID, feature: feature.name },
   })
 
-  const feature = env.featureStates.find(
-    (f) => f.feature.name === featureName,
-  )!.feature
-
   const helmInstall = [
-    `helm upgrade --install ${featureName}`,
+    `helm upgrade --install ${feature.name}`,
     `--namespace nais-system`,
     `--create-namespace`,
     `--version=${feature.version}`,

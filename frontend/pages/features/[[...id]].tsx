@@ -10,14 +10,18 @@ import {
   SideMenu,
 } from '../../components/lib/PageLayout'
 import LoaderSpinner from '../../components/lib/spinner'
-import { useFeatureDetailsQuery } from '../../lib/schema/graphql'
+import { useFeatureListQuery } from '../../lib/schema/graphql'
 import { navOransje } from '../../styles/constants'
 
 const Features = () => {
   const router = useRouter()
-  const featureName = router.query.id as string
+  const featureNameParam = router.query.id
+  let featureName = featureNameParam as string
+  if (Array.isArray(featureNameParam)) {
+    featureName = featureNameParam[0]
+  }
 
-  const { data, error, loading } = useFeatureDetailsQuery({})
+  const { data, error, loading } = useFeatureListQuery({})
 
   if (error) {
     return <ErrorMessage error={error} />
@@ -49,9 +53,7 @@ const Features = () => {
         </MenuItems>
       </SideMenu>
       <Main>
-        {featureName && data && (
-          <Feature feature={data.features.find((f) => f.name == featureName)} />
-        )}
+        {featureName && data && <Feature featureName={featureName} />}
       </Main>
     </PageContainer>
   )

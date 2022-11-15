@@ -61,7 +61,9 @@ func (r *repo) FeatureStateGet(ctx context.Context, envID uuid.UUID, featureName
 	if err != nil {
 		return nil, err
 	}
-	return featureStateFromSQL(featureState), nil
+	fs := featureStateFromSQL(featureState)
+	fs.EnvID = envID
+	return fs, nil
 }
 
 func (r *repo) FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *feature.Feature, enabled bool) (*model.FeatureState, error) {

@@ -1,14 +1,10 @@
-import * as React from 'react'
-import {
-  EnvironmentGetQuery,
-  RolloutStatus,
-  useFeaturesQuery,
-} from '../../lib/schema/graphql'
-import ErrorMessage from '../lib/error'
-import LoaderSpinner from '../lib/spinner'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import styled from 'styled-components'
+import {
+  EnvironmentGetByNamesQuery,
+  RolloutStatus,
+} from '../../lib/schema/graphql'
 import { navRod } from '../../styles/constants'
 
 const SideMenu = styled.div<MenuItemProps>`
@@ -60,20 +56,15 @@ export const MenuSeparator = styled.div`
 `
 
 interface FeaturesMenuProps {
-  env: EnvironmentGetQuery['environment']
+  env: EnvironmentGetByNamesQuery['environmentByNames']
 }
 
 const FeaturesMenu = ({ env }: FeaturesMenuProps) => {
-  const features = useFeaturesQuery({ variables: { kind: env.kind } })
-  const { data, loading, error } = features
   const router = useRouter()
   const feature = router.query.feature
 
-  if (error) return <ErrorMessage error={error} />
-  if (!data || loading) return <LoaderSpinner />
-
   const featureMenuItem = (
-    fs: EnvironmentGetQuery['environment']['featureStates'][0],
+    fs: EnvironmentGetByNamesQuery['environmentByNames']['featureStates'][0],
   ) => {
     const f = fs.feature
     return (

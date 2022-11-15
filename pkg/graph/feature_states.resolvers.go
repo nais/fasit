@@ -5,9 +5,11 @@ package graph
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
+	pgx "github.com/jackc/pgx/v4"
 	"github.com/nais/fasit/pkg/graph/graphgen"
 	"github.com/nais/fasit/pkg/graph/model"
 )
@@ -49,6 +51,11 @@ func (r *featureStateResolver) MissingDependencies(ctx context.Context, obj *mod
 	return ret, nil
 }
 
+// Configuration is the resolver for the configuration field.
+func (r *featureStateResolver) Configuration(ctx context.Context, obj *model.FeatureState) (*model.EnvConfig, error) {
+	return r.Resolver.Query().Configuration(ctx, obj.FeatureName, &obj.EnvID)
+}
+
 // FeatureStateSave is the resolver for the featureStateSave field.
 func (r *mutationResolver) FeatureStateSave(ctx context.Context, envID uuid.UUID, enabled bool, feature string) (*model.FeatureState, error) {
 	feat := r.Resolver.Features.Get(feature)
@@ -56,6 +63,33 @@ func (r *mutationResolver) FeatureStateSave(ctx context.Context, envID uuid.UUID
 		return nil, nil
 	}
 	return r.Repo.FeatureStatesCreateOrUpdate(ctx, envID, feat, enabled)
+}
+
+// FeatureState is the resolver for the featureState field.
+func (r *queryResolver) FeatureState(ctx context.Context, envID uuid.UUID, feature string) (*model.FeatureState, error) {
+	fs, err := r.Repo.FeatureStateGet(ctx, envID, feature)
+	if err == nil {
+		status, err := r.Repo.StatusForFeature(ctx, envID, feature)
+		if err == nil {
+			// Don't fail if we can't get status
+			fs.RolloutStatus = status.Status
+		}
+
+		return fs, err
+	}
+
+	if !errors.Is(err, pgx.ErrNoRows) {
+		return nil, err
+	}
+
+	// If no feature state exists, return a default feature state
+	fs = &model.FeatureState{
+		FeatureName:   feature,
+		Enabled:       false,
+		RolloutStatus: model.RolloutStatusUnknown,
+		EnvID:         envID,
+	}
+	return fs, nil
 }
 
 // FeatureState returns graphgen.FeatureStateResolver implementation.

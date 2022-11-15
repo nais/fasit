@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/feature"
@@ -155,6 +156,7 @@ OUTER:
 				c.SetType(val.Type)
 				c.SetDisplayName(val.DisplayName)
 				c.SetDescription(val.Description)
+				c.SetRequired(val.Required)
 				continue OUTER
 			}
 		}
@@ -166,6 +168,7 @@ OUTER:
 			Type:        val.Type,
 			DisplayName: val.DisplayName,
 			Description: val.Description,
+			Required:    val.Required,
 		})
 	}
 	ret.Configuration = removeIgnoredKinds(ret.Configuration, f, envKind)
@@ -183,6 +186,27 @@ OUTER:
 	if err != nil {
 		return nil, err
 	}
+
+	sort.Slice(ret.Mapping, func(i, j int) bool {
+		return ret.Mapping[i].Key < ret.Mapping[j].Key
+	})
+
+	typeSort := func(c model.Configuration) int {
+		switch c.(type) {
+		case *model.EnvConfiguration:
+			return 1
+		default:
+			return 0
+		}
+	}
+	sort.Slice(ret.Configuration, func(i, j int) bool {
+		tsi := typeSort(ret.Configuration[i])
+		tsj := typeSort(ret.Configuration[j])
+		if tsi == tsj {
+			return ret.Configuration[i].GetKey() < ret.Configuration[j].GetKey()
+		}
+		return tsi < tsj
+	})
 
 	return ret, nil
 }

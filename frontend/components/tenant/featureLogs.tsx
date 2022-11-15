@@ -1,19 +1,16 @@
 import { Loader } from '@navikt/ds-react'
-import {
-  EnvironmentGetQuery,
-  useFeatureLogsQuery,
-} from '../../lib/schema/graphql'
+import { useFeatureLogsQuery } from '../../lib/schema/graphql'
 import ErrorMessage from '../lib/error'
 import FeatureLogsView from './featureLogView'
 
 interface FeatureProps {
-  env: EnvironmentGetQuery['environment']
+  envID: string
   featureName: string
 }
 
-const Feature = ({ env, featureName }: FeatureProps) => {
+const Feature = ({ envID, featureName }: FeatureProps) => {
   const { loading, error, data } = useFeatureLogsQuery({
-    variables: { envID: env.id, feature: featureName },
+    variables: { envID: envID, feature: featureName },
   })
 
   return (

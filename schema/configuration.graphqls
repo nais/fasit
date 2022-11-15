@@ -27,6 +27,7 @@ interface Configuration {
   type: ConfigType!
   displayName: String!
   chartValue: RawMessage!
+  required: Boolean!
 }
 
 type GlobalConfiguration implements Configuration {
@@ -40,6 +41,7 @@ type GlobalConfiguration implements Configuration {
   type: ConfigType!
   displayName: String!
   chartValue: RawMessage!
+  required: Boolean!
 }
 
 type EnvConfiguration implements Configuration {
@@ -54,6 +56,7 @@ type EnvConfiguration implements Configuration {
   type: ConfigType!
   displayName: String!
   chartValue: RawMessage!
+  required: Boolean!
 }
 
 input NewConfiguration {

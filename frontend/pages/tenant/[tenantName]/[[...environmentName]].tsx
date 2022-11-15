@@ -90,7 +90,14 @@ const warningLink = (
 const Tenant = () => {
   const router = useRouter()
   const tenantName = router.query.tenantName as string
-  const environmentName = router.query.environmentName as string
+
+  let environmentName = ''
+  const environmentNameQuery = router.query.environmentName
+  if (Array.isArray(environmentNameQuery)) {
+    environmentName = environmentNameQuery[0]
+  } else {
+    environmentName = environmentNameQuery as string
+  }
 
   const { data, error, loading } = useTenantGetByNameQuery({
     variables: { slug: tenantName },

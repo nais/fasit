@@ -60,6 +60,11 @@ func (r *queryResolver) Features(ctx context.Context, kind *model.EnvironmentKin
 	return features, nil
 }
 
+// Feature is the resolver for the feature field.
+func (r *queryResolver) Feature(ctx context.Context, name string) (*model.Feature, error) {
+	return r.resolveFeatureByName(name)
+}
+
 // OutdatedInfo is the resolver for the outdatedInfo field.
 func (r *queryResolver) OutdatedInfo(ctx context.Context) ([]*model.OutdatedInfo, error) {
 	versions := r.HelmChartValues.AllVersions()

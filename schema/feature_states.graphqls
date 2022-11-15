@@ -5,6 +5,7 @@ type FeatureState {
   lastModified: Time
   rolloutStatus: RolloutStatus!
   missingDependencies: [Feature!]!
+  configuration: EnvConfig!
 }
 
 extend type Mutation {
@@ -13,4 +14,8 @@ extend type Mutation {
     enabled: Boolean!
     feature: String!
   ): FeatureState!
+}
+
+extend type Query {
+  featureState(envID: ID!, feature: String!): FeatureState!
 }

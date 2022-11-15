@@ -2,11 +2,13 @@ import { Tabs } from '@navikt/ds-react'
 import { useRouter } from 'next/router'
 import * as React from 'react'
 import styled from 'styled-components'
-import { FeatureDetailsQuery } from '../../lib/schema/graphql'
+import { useFeatureDetailsQuery } from '../../lib/schema/graphql'
 import ConfigPage from './configPage'
 import Link from 'next/link'
 import humanizeDate from '../lib/humanizeDate'
 import { rolloutStatus } from '../rollout/rollout'
+import ErrorMessage from '../../components/lib/error'
+import LoaderSpinner from '../../components/lib/spinner'
 
 const FeatureContainer = styled.div`
   border: 1px solid silver;
@@ -49,14 +51,23 @@ const WarningBox = styled.div`
 `
 
 interface FeatureProps {
-  feature?: FeatureDetailsQuery['features'][0]
+  featureName: string
 }
 
-const Feature = ({ feature }: FeatureProps) => {
+const Feature = ({ featureName }: FeatureProps) => {
   const router = useRouter()
-  if (!feature) {
-    return <EmptyFeature />
+  const { data, error, loading } = useFeatureDetailsQuery({
+    variables: { name: featureName },
+  })
+
+  if (loading || !data) {
+    return <LoaderSpinner />
   }
+  if (error) {
+    return <ErrorMessage error={error} />
+  }
+
+  const feature = data.feature
 
   const dependsOn = feature.dependsOn
     ?.map((d) => d.anyOf.concat(d.allOf))
@@ -115,7 +126,10 @@ const Feature = ({ feature }: FeatureProps) => {
         iconPosition="left"
         onChange={(value) => {
           router.query.tab = value
-          router.push(router)
+          router.push({
+            pathname: router.pathname,
+            query: router.query,
+          })
         }}
       >
         <Tabs.List>

@@ -5,9 +5,6 @@ export const CONFIGURATION = gql`
     configuration(feature: $feature, envID: $envID) {
       configuration {
         id
-        feature {
-          name
-        }
         description
         type
         key
@@ -15,6 +12,7 @@ export const CONFIGURATION = gql`
         displayName
         secret
         chartValue
+        required
       }
       mapping {
         key

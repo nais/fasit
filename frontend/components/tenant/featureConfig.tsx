@@ -3,19 +3,17 @@ import { Table } from '@navikt/ds-react'
 import { useEffect, useState } from 'react'
 import ReactTooltip from 'react-tooltip'
 import styled from 'styled-components'
-import { ConfigurationQuery, FeaturesQuery } from '../../lib/schema/graphql'
+import { FeatureStateQuery } from '../../lib/schema/graphql'
 import { navBla, navGronn } from '../../styles/constants'
 import ConfigAdd from '../lib/configAdd'
 import ConfigDelete from '../lib/configDelete'
 import ConfigEdit from '../lib/configEdit'
-import ConfigRows, { Config, Configs } from '../lib/configRows'
+import ConfigRows, { Config } from '../lib/configRows'
 import ValuesCollapse from './valuesCollapse'
 
 interface FeatureConfigProps {
+  featureState: FeatureStateQuery['featureState']
   envID: string
-  configs: Configs
-  featureObject: FeaturesQuery['features'][0] | undefined
-  mapping?: ConfigurationQuery['configuration']['mapping']
 }
 
 const StyledWrench = styled(Wrench)`
@@ -42,12 +40,7 @@ const FlatButton = styled.button`
   }
 `
 
-const FeatureConfig = ({
-  envID,
-  configs,
-  featureObject,
-  mapping,
-}: FeatureConfigProps) => {
+const FeatureConfig = ({ featureState, envID }: FeatureConfigProps) => {
   const [currentConfig, setCurrentConfig] = useState<Config | undefined>()
   const [showDelete, setShowDelete] = useState(false)
   const [showUpdate, setShowUpdate] = useState(false)
@@ -62,22 +55,27 @@ const FeatureConfig = ({
     }
   })
 
-  const overridable = Object.keys(configs).filter((c) =>
-    mapping?.map((m) => m.key).includes(configs[c].key),
-  )
-  const nonOverridden = Object.keys(configs)
-    .filter((c) => overridable?.includes(c))
-    .filter((c) => !configs[c].value)
+  const {
+    configuration: { configuration: configs, mapping },
+  } = featureState
 
-  const requiredConfigs = Object.keys(configs)
-    .filter((c) => configs[c].required)
-    .filter((c) => !nonOverridden.includes(c))
+  const mappingKeys = mapping.map((m) => m.key)
+
+  const overridable = configs
+    .filter((c) => mappingKeys.includes(c.key))
+    .map((m) => m.key)
+
+  const overridden = configs
+    .filter((c) => overridable.includes(c.key))
+    .filter((c) => c.value !== null)
+    .map((m) => m.key)
+
+  const requiredConfigs = configs.filter((c) => c.required).sort()
+  const envConfigs = configs
+    .filter((c) => c.__typename === 'EnvConfiguration' && !c.required)
     .sort()
-  const envConfigs = Object.keys(configs)
-    .filter((c) => configs[c].env && !configs[c].required)
-    .sort()
-  const theRest = Object.keys(configs)
-    .filter((c) => !configs[c].env && !configs[c].required)
+  const theRest = configs
+    .filter((c) => c.__typename !== 'EnvConfiguration' && !c.required)
     .sort()
 
   const resetConfig = () => {
@@ -87,9 +85,7 @@ const FeatureConfig = ({
     setShowUpdate(false)
   }
 
-  const filteredMappings = mapping?.filter((m) => {
-    return !(configs[m.key] && configs[m.key].value !== null)
-  })
+  const filteredMappings = mapping.filter((m) => !overridden.includes(m.key))
 
   return (
     <>
@@ -114,28 +110,27 @@ const FeatureConfig = ({
         <Table.Body>
           {requiredConfigs.length > 0 && (
             <ConfigRows
-              configs={configs}
-              keys={requiredConfigs}
+              configs={requiredConfigs}
               setCurrentConfig={setCurrentConfig}
               setShowUpdate={setShowUpdate}
               setShowDelete={setShowDelete}
               setShowCreate={setShowCreate}
             />
           )}
+
           {envConfigs.length > 0 && (
             <ConfigRows
-              configs={configs}
-              keys={envConfigs}
+              configs={envConfigs}
               setCurrentConfig={setCurrentConfig}
               setShowUpdate={setShowUpdate}
               setShowDelete={setShowDelete}
               setShowCreate={setShowCreate}
             />
           )}
+
           {theRest.length > 0 && (
             <ConfigRows
-              configs={configs}
-              keys={theRest}
+              configs={theRest}
               setCurrentConfig={setCurrentConfig}
               setShowUpdate={setShowUpdate}
               setShowDelete={setShowDelete}
@@ -187,14 +182,14 @@ const FeatureConfig = ({
                   </Table.DataCell>
                   <Table.DataCell align={'center'}>
                     {' '}
-                    {o && (
+                    {/* {o && (
                       <StyledWrench
                         onClick={() => {
-                          setCurrentConfig(configs[m.key])
+                          setCurrentConfig(m.key)
                           setShowCreate(true)
                         }}
                       />
-                    )}
+                    )} */}
                   </Table.DataCell>
                 </Table.Row>
               )
@@ -202,18 +197,19 @@ const FeatureConfig = ({
         </Table.Body>
       </Table>
 
-      {currentConfig && featureObject && (
+      {currentConfig && featureState && (
         <>
           <ConfigAdd
             conf={currentConfig}
             envID={envID}
-            globalConfig={configs[currentConfig.key]}
+            globalConfig={currentConfig}
             open={showCreate}
-            feature={featureObject}
+            featureName={featureState.feature.name}
             showOpen={resetConfig}
           />
           <ConfigEdit
             conf={currentConfig}
+            featureName={featureState.feature.name}
             open={showUpdate}
             showOpen={resetConfig}
           />

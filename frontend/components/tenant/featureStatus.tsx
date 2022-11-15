@@ -1,17 +1,11 @@
-import { Loader, Switch } from '@navikt/ds-react'
+import { Switch } from '@navikt/ds-react'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import * as React from 'react'
-import { useEffect, useState } from 'react'
 import ReactTooltip from 'react-tooltip'
 import styled from 'styled-components'
-import {
-  EnvironmentGetQuery,
-  RolloutStatus,
-  useFeatureStatusQuery,
-} from '../../lib/schema/graphql'
+import { FeatureStateQuery, RolloutStatus } from '../../lib/schema/graphql'
 import { navBla, navGronn, navOransje, navRod } from '../../styles/constants'
-import { Configs } from '../lib/configRows'
 import GitIcon from '../lib/icons/gitIcon'
 import IconBox from '../lib/icons/iconBox'
 
@@ -73,44 +67,34 @@ const StatusField = styled.div`
 `
 
 interface FeatureProps {
-  configs: Configs
-  env: EnvironmentGetQuery['environment']
-  featureName: string
+  featureState: FeatureStateQuery['featureState']
   setShowVerify: React.Dispatch<boolean>
   setShowRedeploy: React.Dispatch<boolean>
 }
 
 const FeatureStatus = ({
-  configs,
-  env,
-  featureName,
+  featureState,
   setShowVerify,
   setShowRedeploy,
 }: FeatureProps) => {
   const router = useRouter()
   const tenantName = router.query.tenantName as string
-  const { loading, error, data } = useFeatureStatusQuery({
-    variables: { envID: env.id, feature: featureName },
-    pollInterval: 10 * 1000,
-  })
-  const [time, setTime] = useState(Date.now())
-  useEffect(() => {
-    const interval = setInterval(() => setTime(Date.now()), 10 * 1000)
-    return () => {
-      clearInterval(interval)
-    }
-  }, [])
+  const envName = (router.query.environmentName as string[])[0]
 
-  const requiredConfigs = Object.keys(configs)
-    .filter((c) => configs[c].required)
+  const {
+    feature,
+    configuration,
+    rolloutStatus: status,
+    missingDependencies,
+  } = featureState
+
+  const requiredConfigs = configuration.configuration
+    .filter((c) => c.required)
     .sort()
-  const status = data?.featureStatus
-  const featureState = env.featureStates.find(
-    (f) => f.feature.name === featureName,
-  )
-  const feature = featureState!.feature
 
-  const missingRequirements = requiredConfigs.filter((r) => !configs[r].value)
+  const missingRequirements = requiredConfigs.filter(
+    (r) => r.required && !r.value,
+  )
 
   const dependencies = feature.dependsOn
     .map((a) => a.allOf.concat(a.anyOf))
@@ -124,27 +108,10 @@ const FeatureStatus = ({
           style={{ display: 'flex', flexDirection: 'column', flexGrow: '1' }}
         >
           <div>
-            {loading && (
-              <StatusField>
-                <Loader transparent />
-              </StatusField>
-            )}
-            {error && (
-              <StatusField>
-                status: <StatusIndicator status={status?.status} />
-                {error.message === 'sql: no rows in result set'
-                  ? 'No status'
-                  : error.message}
-              </StatusField>
-            )}
-            {data && (
-              <>
-                <StatusField>
-                  status: <StatusIndicator status={status?.status} />
-                  {status?.status.toLowerCase()}
-                </StatusField>
-              </>
-            )}
+            <StatusField>
+              status: <StatusIndicator status={status} />
+              {status.toLowerCase()}
+            </StatusField>
           </div>
           {feature.chart && <div>chart: {feature.chart}</div>}
           {feature.repo && <div>repo: {feature.repo}</div>}
@@ -165,14 +132,12 @@ const FeatureStatus = ({
               {dependencies.map((d) => {
                 return (
                   <Link
-                    href={`/tenant/${tenantName}/${env.name}?feature=${d}`}
+                    href={`/tenant/${tenantName}/${envName}?feature=${d}`}
                     key={d}
                   >
                     <a
                       style={{
-                        color: status?.missingDependencies.find(
-                          (a) => a.name === d,
-                        )
+                        color: missingDependencies.find((a) => a.name === d)
                           ? navRod
                           : navGronn,
                       }}
@@ -191,7 +156,7 @@ const FeatureStatus = ({
             data-tip
             data-for="enable_feature"
             disabled={
-              (status?.missingDependencies.length || 0) > 0 ||
+              (missingDependencies.length || 0) > 0 ||
               missingRequirements.length > 0
             }
             size="medium"
@@ -200,8 +165,7 @@ const FeatureStatus = ({
           >
             {''}
           </Switch>
-          {(status?.missingDependencies.length || 0) > 0 &&
-            'Missing dependencies'}
+          {(missingDependencies.length || 0) > 0 && 'Missing dependencies'}
           <ReactTooltip
             id="enable_feature"
             place="bottom"

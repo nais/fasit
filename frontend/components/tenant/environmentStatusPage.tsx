@@ -1,19 +1,15 @@
-import * as React from 'react'
+import { Table, Tabs } from '@navikt/ds-react'
+import { parseISO } from 'date-fns'
+import Link from 'next/link'
+import { useRouter } from 'next/router'
 import styled from 'styled-components'
 import {
   ConditionStatus,
   EnvironmentGetByNamesQuery,
-  EnvironmentKind,
   KubernetesNodeConditionType,
   useEnvironmentGetReportQuery,
   useUserInfoQuery,
 } from '../../lib/schema/graphql'
-import ErrorMessage from '../lib/error'
-import LoaderSpinner from '../lib/spinner'
-import humanizeDate from '../lib/humanizeDate'
-import { Table, Tabs } from '@navikt/ds-react'
-import ReportStatus from './reportStatus'
-import StatusCircle from '../lib/statusCircle'
 import {
   navGronn,
   navMorkGra,
@@ -21,11 +17,15 @@ import {
   redError,
   redErrorLighten80,
 } from '../../styles/constants'
-import FeatureValues from './featureValues'
-import { parseISO } from 'date-fns'
-import Link from 'next/link'
-import { useRouter } from 'next/router'
 import AuditView from '../lib/auditView'
+import ErrorMessage from '../lib/error'
+import humanizeDate from '../lib/humanizeDate'
+import LoaderSpinner from '../lib/spinner'
+import StatusCircle from '../lib/statusCircle'
+import FeatureValues from './featureValues'
+import HelmInstalls from './helmInstalls'
+import KubernetesNodes from './kubernetesNodes'
+import ReportStatus from './reportStatus'
 
 const WarningLink = styled.a`
   display: block;
@@ -84,17 +84,9 @@ const EnvironmentStatusPage = ({
   tenantName,
 }: EnvironmentStatusPageProps) => {
   const router = useRouter()
-  const { data, loading, error } = useEnvironmentGetReportQuery({
-    variables: { id: env.id },
-    pollInterval: 10 * 1000,
-  })
   const infoQuery = useUserInfoQuery()
 
-  if (error) return <ErrorMessage error={error} />
-  if (loading || !data) return <LoaderSpinner />
-
   const email = infoQuery?.data?.userInfo?.email
-  const report = data.environment
   const warnings = env.warnings
   const getValue = (key: string) => {
     return env.values.find((v) => v.key === key)?.value
@@ -107,7 +99,7 @@ const EnvironmentStatusPage = ({
 
   return (
     <EnvironmentStatus>
-      <ReportStatus reportedAt={report.health.reportedAt} />
+      <ReportStatus reportedAt={env.health.reportedAt} />
       <br />
       <a
         href={`https://console.cloud.google.com/welcome?project=${getValue(
@@ -116,7 +108,7 @@ const EnvironmentStatusPage = ({
       >
         Console
       </a>
-      {parseISO(report.health.reportedAt).getFullYear() === 1969 && (
+      {parseISO(env.health.reportedAt).getFullYear() === 1969 && (
         <>
           <h3>
             naisd not installed.{' '}
@@ -135,9 +127,13 @@ const EnvironmentStatusPage = ({
         iconPosition="left"
         onChange={(value) => {
           router.query.tab = value
-          router.push(router)
+          router.push({
+            pathname: router.pathname,
+            query: router.query,
+          })
         }}
       >
+        <>{warnings.map((w, i) => warningLink(tenantName, env.name, w, i))}</>
         <Tabs.List>
           <Tabs.Tab value="releases" label="Releases" />
           <Tabs.Tab value="env_values" label="Environment values" />
@@ -145,33 +141,7 @@ const EnvironmentStatusPage = ({
           <Tabs.Tab value="audit_log" label="Audit log" />
         </Tabs.List>
         <Tabs.Panel value="releases" className="h-24 w-full bg-gray-50 p-8">
-          <>{warnings.map((w, i) => warningLink(tenantName, env.name, w, i))}</>
-          <h3>Helm installs</h3>
-          <Table size={'small'}>
-            <Table.Header>
-              <Table.Row>
-                <Table.HeaderCell>name</Table.HeaderCell>
-                <Table.HeaderCell>status</Table.HeaderCell>
-                <Table.HeaderCell>version</Table.HeaderCell>
-                <Table.HeaderCell>last deployed</Table.HeaderCell>
-              </Table.Row>
-            </Table.Header>
-            <Table.Body>
-              {report.releases.map((r) => (
-                <Table.Row
-                  key={r.name}
-                  style={r.feature ? {} : { backgroundColor: '#ffd5d5' }}
-                >
-                  <Table.DataCell>{r.name}</Table.DataCell>
-                  <Table.DataCell>{r.status}</Table.DataCell>
-                  <Table.DataCell>{r.version}</Table.DataCell>
-                  <Table.DataCell>
-                    {humanizeDate(r.lastDeployed, '', true)}
-                  </Table.DataCell>
-                </Table.Row>
-              ))}
-            </Table.Body>
-          </Table>
+          <HelmInstalls envID={env.id} />
         </Tabs.Panel>
 
         <Tabs.Panel value="env_values" className="h-24  w-full bg-gray-50 p-8">
@@ -180,39 +150,7 @@ const EnvironmentStatusPage = ({
         </Tabs.Panel>
 
         <Tabs.Panel value="nodes" className="h-24 w-full bg-gray-50 p-8">
-          <h3>Kubernetes nodes</h3>
-          <Table size={'small'}>
-            <Table.Header>
-              <Table.Row>
-                <Table.HeaderCell>name</Table.HeaderCell>
-                <Table.HeaderCell>status</Table.HeaderCell>
-                <Table.HeaderCell>internal ip</Table.HeaderCell>
-                <Table.HeaderCell>version</Table.HeaderCell>
-              </Table.Row>
-            </Table.Header>
-            <Table.Body>
-              {report.nodes.map((r) => (
-                <Table.Row key={r.name}>
-                  <Table.DataCell>{r.name}</Table.DataCell>
-                  <Table.DataCell>
-                    {r.conditions.find((c) => {
-                      return c.type === KubernetesNodeConditionType.Ready
-                    })?.status === ConditionStatus.True ? (
-                      <>
-                        <StatusCircle color={navGronn} /> Ready{' '}
-                      </>
-                    ) : (
-                      <>
-                        <StatusCircle color={navRod} /> NotReady{' '}
-                      </>
-                    )}
-                  </Table.DataCell>
-                  <Table.DataCell>{r.internalIP}</Table.DataCell>
-                  <Table.DataCell>{r.kubeletVersion}</Table.DataCell>
-                </Table.Row>
-              ))}
-            </Table.Body>
-          </Table>
+          <KubernetesNodes envID={env.id} />
         </Tabs.Panel>
 
         <Tabs.Panel value="audit_log" className="h-24 w-full bg-gray-50 p-8">
