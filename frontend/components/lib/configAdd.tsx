@@ -1,17 +1,15 @@
-import * as React from 'react'
-import { Dispatch, FormEvent, SetStateAction, useEffect, useState } from 'react'
 import { Box, Modal } from '@mui/material'
+import { Button, Switch, TextField } from '@navikt/ds-react'
+import { Dispatch, FormEvent, SetStateAction, useEffect, useState } from 'react'
+import { useForm } from 'react-hook-form'
 import {
   ConfigType,
-  FeaturesQuery,
   useConfigurationCreateMutation,
 } from '../../lib/schema/graphql'
-import { Button, Switch, TextField } from '@navikt/ds-react'
-import { useForm } from 'react-hook-form'
-import KeywordsInput from './StringArrayInput'
 import { Config } from './configRows'
 import ErrorMessage from './error'
 import { RightJustifiedButtons } from './rightJustifiedButtons'
+import KeywordsInput from './StringArrayInput'
 
 const style = {
   position: 'absolute' as 'absolute',

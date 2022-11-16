@@ -1,9 +1,6 @@
 import * as React from 'react'
 import styled from 'styled-components'
-import {
-  EnvironmentGetQuery,
-  useHelmValuesQuery,
-} from '../../lib/schema/graphql'
+import { useHelmValuesQuery } from '../../lib/schema/graphql'
 import { Loader } from '@navikt/ds-react'
 
 const LogPre = styled.pre`

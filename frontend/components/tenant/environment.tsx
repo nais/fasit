@@ -98,7 +98,7 @@ const Environment = ({ environmentName, tenantName }: EnvironmentProps) => {
   }, [data])
   const router = useRouter()
 
-  if (error) return <ErrorMessage error={error} />
+  if (error && !data) return <ErrorMessage error={error} />
   if (!data || loading) return <LoaderSpinner />
   const feature = router.query.feature as string
   const env = data.environmentByNames

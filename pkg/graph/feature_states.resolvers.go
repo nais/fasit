@@ -75,7 +75,7 @@ func (r *queryResolver) FeatureState(ctx context.Context, envID uuid.UUID, featu
 			fs.RolloutStatus = status.Status
 		}
 
-		return fs, err
+		return fs, nil
 	}
 
 	if !errors.Is(err, pgx.ErrNoRows) {

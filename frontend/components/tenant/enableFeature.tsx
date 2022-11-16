@@ -40,7 +40,6 @@ const EnableFeature = ({
     try {
       await save({
         variables: { feature, enabled: !enabled, envID },
-        awaitRefetchQueries: true,
         refetchQueries: ['FeatureState'],
         onCompleted: () => onClose(false),
         onError: (e) => console.log(e),
