@@ -1,0 +1,17 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/kafka-lag-exporter
+source: https://github.com/nais/helm-charts/tree/main/charts/kafka-lag-exporter
+version: 0.1.0
+environmentKinds:
+  - "tenant"
+mapping:
+  kafka-lag-exporter.clusters[0].name:
+    value: "{{ .Env.aiven_project_0 }}"
+    displayName: "Kafka cluster name"
+config:
+  kafka-lag-exporter.clusters[0].bootstrapBrokers:
+    type: string
+  keyStoreBase64:
+    type: string
+    secret: true
+  trustStoreBase64:
+    type: string
