@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/console
 source: https://github.com/nais/helm-charts/tree/main/charts/console
-version: 0.0.18
+version: 0.0.19
 environmentKinds:
   - "management"
 rolloutSource:
@@ -58,6 +58,9 @@ config:
     type: string
     secret: true
     displayName: Google OAuth 2.0 Client Secret
+  backend.naisNamespace.azureEnabled:
+    type: bool
+    displayName: Enable use of Azure groups for Kubernetes team namespaces
   frontend.image.tag:
     type: string
     description: Frontend image tag
