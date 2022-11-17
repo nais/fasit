@@ -48,5 +48,7 @@ config:
   deploymentEventRelays.image.tag:
     type: string
   deploymentEventRelays.influxdb.password:
-    type: string
+    description: "Influx DB password for deployment metrics"
     displayName: InfluxDB password
+    secret: true
+    type: string
