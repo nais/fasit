@@ -45,8 +45,8 @@ config:
     displayName: NO_PROXY
     ignoreKind:
       - "tenant"
-  deployment_event_relays.image.tag:
+  deploymentEventRelays.image.tag:
     type: string
-  deployment_event_relays.influxdb.password:
+  deploymentEventRelays.influxdb.password:
     type: string
     displayName: InfluxDB password
