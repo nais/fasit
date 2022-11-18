@@ -10,9 +10,3 @@ mapping:
   kafka-lag-exporter.clusters[0].bootstrapBrokers:
     value: "{{ .Env.kafka_bootstrap_broker }}"
     displayName: "Kafka cluster bootstrap brokers"
-config:
-  keyStoreBase64:
-    type: string
-    secret: true
-  trustStoreBase64:
-    type: string
