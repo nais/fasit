@@ -3,6 +3,9 @@ source: https://github.com/nais/helm-charts/tree/main/charts/kafka-lag-exporter
 version: 0.4.1
 environmentKinds:
   - "tenant"
+dependsOn:
+  - allOf:
+      - "aivenator"
 mapping:
   kafka-lag-exporter.clusters[0].name:
     value: "{{ .Env.aiven_project_0 }}"
