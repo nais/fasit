@@ -7,12 +7,10 @@ mapping:
   kafka-lag-exporter.clusters[0].name:
     value: "{{ .Env.aiven_project_0 }}"
     displayName: "Aiven cluster project"
-  # kafka-lag-exporter.clusters[0].bootstrapBrokers:
-  #   value: "{{ .Env.kafka_bootstrap_broker }}"
-  #   displayName: "Kafka cluster bootstrap brokers"
-config:
   kafka-lag-exporter.clusters[0].bootstrapBrokers:
-    type: string
+    value: "{{ .Env.kafka_bootstrap_broker }}"
+    displayName: "Kafka cluster bootstrap brokers"
+config:
   keyStoreBase64:
     type: string
     secret: true
