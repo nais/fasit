@@ -5,7 +5,7 @@ environmentKinds:
   - "tenant"
 mapping:
   kafka-lag-exporter.clusters:
-    value: |
+    value:
       - name: "{{ .Env.aiven_project_0 }}"
         #bootstrapbrokers:  # mapped by fasit
         # properties defined by org.apache.kafka.clients.consumer.consumerconfig
