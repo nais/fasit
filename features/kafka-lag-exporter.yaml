@@ -4,8 +4,30 @@ version: 0.4.1
 environmentKinds:
   - "tenant"
 mapping:
-  kafka-lag-exporter.clusters[0].name:
-    value: "{{ .Env.aiven_project_0 }}"
+  kafka-lag-exporter.clusters:
+    value: |
+      - name: "{{ .Env.aiven_project_0 }}"
+        #bootstrapbrokers:  # mapped by fasit
+        # properties defined by org.apache.kafka.clients.consumer.consumerconfig
+        # can be defined in this configuration section.
+        # https://kafka.apache.org/documentation/#consumerconfigs
+        consumerproperties:
+          security.protocol: "ssl"
+          ssl.truststore.location: "/var/run/secrets/nais.io/aiven-credentials/client.truststore.jks"
+          ssl.truststore.password: "changeme"
+          ssl.keystore.type: "pkcs12"
+          ssl.keystore.location: "/var/run/secrets/nais.io/aiven-credentials/client.keystore.p12"
+          ssl.keystore.password: "changeme"
+          ssl.key.password: "changeme"
+        # https://kafka.apache.org/documentation/#adminclientconfigs
+        adminclientproperties:
+          security.protocol: "ssl"
+          ssl.truststore.location: "/var/run/secrets/nais.io/aiven-credentials/client.truststore.jks"
+          ssl.truststore.password: "changeme"
+          ssl.keystore.type: "pkcs12"
+          ssl.keystore.location: "/var/run/secrets/nais.io/aiven-credentials/client.keystore.p12"
+          ssl.keystore.password: "changeme"
+          ssl.key.password: "changeme"
     displayName: "Kafka cluster name"
 config:
   kafka-lag-exporter.clusters[0].bootstrapBrokers:
