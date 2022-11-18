@@ -7,7 +7,7 @@ mapping:
   kafka-lag-exporter.clusters:
     value:
       - name: "{{ .Env.aiven_project_0 }}"
-        #bootstrapbrokers:  # mapped by fasit
+        bootstrapbrokers: "asd:123"
         # properties defined by org.apache.kafka.clients.consumer.consumerconfig
         # can be defined in this configuration section.
         # https://kafka.apache.org/documentation/#consumerconfigs
@@ -28,7 +28,7 @@ mapping:
           ssl.keystore.location: "/var/run/secrets/nais.io/aiven-credentials/client.keystore.p12"
           ssl.keystore.password: "changeme"
           ssl.key.password: "changeme"
-    displayName: "Kafka cluster name"
+    displayName: "Kafka cluster config"
 config:
   kafka-lag-exporter.clusters[0].bootstrapBrokers:
     type: string
