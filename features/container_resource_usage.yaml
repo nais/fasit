@@ -19,9 +19,10 @@ config:
   netpol.prometheusNamespace:
     type: string
     displayName: Namespace Prometheus runs in
-  prometheusURL:
+  bqCredentials:
     type: string
-    displayName:
+    secret: true
+    displayName: Google SA credentials
 mapping:
   prometheusURL:
     displayName: Prometheus URL
