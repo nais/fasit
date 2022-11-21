@@ -1,4 +1,4 @@
-chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/container_resource_usage
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/container-resource-usage
 source: https://github.com/nais/container_resource_usage/tree/master/charts/container-resource-usage
 version: 1.0.0
 environmentKinds:
