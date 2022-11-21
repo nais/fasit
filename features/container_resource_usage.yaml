@@ -1,14 +1,8 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/container_resource_usage
-source: https://github.com/nais/container_resource_usage/tree/master/charts/container_resource_usage
+source: https://github.com/nais/container_resource_usage/tree/master/charts/container-resource-usage
 version: 1.0.0
 environmentKinds:
-  - "tenant"
   - "onprem"
-mapping:
-  googleProjectID:
-    value: "{{ .Env.project_id }}"
-  pubsubSubscriptionName:
-    value: "{{ .Env.pubsub_subscription_name }}"
 config:
   image.tag:
     type: string
@@ -16,3 +10,19 @@ config:
   master:
     type: bool
     displayName: Master
+  webProxy:
+    type: bool
+    displayName: Enable webproxy
+  netpol.enabled:
+    type: bool
+    displayName: Network policies enabled in cluster
+  netpol.prometheusNamespace:
+    type: string
+    displayName: Namespace Prometheus runs in
+  prometheusURL:
+    type: string
+    displayName:
+mapping:
+  prometheusURL:
+    displayName: Prometheus URL
+    value: "https://prometheus.{{ .Env.name }}.nais.io"
