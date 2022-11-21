@@ -19,6 +19,9 @@ config:
     type: string
     displayName: Ingress suffix
     required: true
+  ignoreIngresses:
+    type: string
+    displayName: Ingresses to ignore
   recordsFilePath:
     type: string
     displayName: Path to records file
