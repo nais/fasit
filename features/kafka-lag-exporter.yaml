@@ -1,15 +1,29 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/kafka-lag-exporter
 source: https://github.com/nais/helm-charts/tree/main/charts/kafka-lag-exporter
-version: 0.4.1
+version: 0.4.2
 environmentKinds:
   - "tenant"
 dependsOn:
   - allOf:
       - "aivenator"
 mapping:
-  kafka-lag-exporter.clusters[0].name:
-    value: "{{ .Env.aiven_project_0 }}"
-    displayName: "Aiven cluster project"
-  kafka-lag-exporter.clusters[0].bootstrapBrokers:
-    value: "{{ .Env.kafka_bootstrap_broker }}"
-    displayName: "Kafka cluster bootstrap brokers"
+  kafka-lag-exporter.clusters:
+    template: |
+      - name: "{{ .Env.aiven_project_0 }}"
+        bootstrapBrokers: "{{ .Env.kafka_bootstrap_broker }}"
+        consumerProperties:
+          security.protocol: "SSL"
+          ssl.truststore.location: "/var/run/secrets/nais.io/aiven-credentials/client.truststore.jks"
+          ssl.truststore.password: "changeme"
+          ssl.keystore.type: "PKCS12"
+          ssl.keystore.location: "/var/run/secrets/nais.io/aiven-credentials/client.keystore.p12"
+          ssl.keystore.password: "changeme"
+          ssl.key.password: "changeme"
+        adminClientProperties:
+          security.protocol: "SSL"
+          ssl.truststore.location: "/var/run/secrets/nais.io/aiven-credentials/client.truststore.jks"
+          ssl.truststore.password: "changeme"
+          ssl.keystore.type: "PKCS12"
+          ssl.keystore.location: "/var/run/secrets/nais.io/aiven-credentials/client.keystore.p12"
+          ssl.keystore.password: "changeme"
+          ssl.key.password: "changeme"
