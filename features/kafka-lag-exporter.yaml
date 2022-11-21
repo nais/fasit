@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/kafka-lag-exporter
 source: https://github.com/nais/helm-charts/tree/main/charts/kafka-lag-exporter
-version: 0.4.2
+version: 0.4.3
 environmentKinds:
   - "tenant"
 dependsOn:
