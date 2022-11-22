@@ -1,0 +1,11 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/certificator
+source: https://github.com/nais/helm-charts/tree/main/charts/certificator
+version: 0.0.1
+environmentKinds:
+  - "tenant"
+rolloutSource:
+  - org: nais
+    repo: certificator
+config:
+  image.tag:
+    type: string
