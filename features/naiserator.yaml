@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/naiserator
 source: https://github.com/nais/naiserator/tree/master/charts
-version: 0.7.0
+version: 1.0.0
 repo: ""
 environmentKinds:
   - "tenant"
@@ -55,7 +55,10 @@ config:
     displayName: "Enable Jwker"
   naiserator.features.nav-ca-bundle:
     type: bool
-    displayName: "Enable NAV CA bundle" 
+    displayName: "Enable NAV CA bundle"
+  naiserator.features.fqdn-policy:
+    type: bool
+    displayName: "Enable FQDN policy"
   mapping.internal_hosts:
     type: string_array
     displayName: "Extra internal hosts"
