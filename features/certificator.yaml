@@ -9,7 +9,7 @@ rolloutSource:
 config:
   image.tag:
     type: string
-  image.caUrls:
+  caUrls:
     type: string_array
-  image.caDirectories:
+  caDirectories:
     type: string_array
