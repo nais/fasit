@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/console
 source: https://github.com/nais/helm-charts/tree/main/charts/console
-version: 0.0.21
+version: 0.0.20
 environmentKinds:
   - "management"
 rolloutSource:
@@ -24,6 +24,9 @@ mapping:
   backend.google.serviceAccountEmail:
     value: "{{.Management.console_google_service_account_email}}"
     displayName: "Google service account"
+  backend.google.credentials:
+    value: "{{.Management.console_google_service_account_key}}"
+    displayName: Google service account credentials (JSON)
   backend.tenantName:
     value: "{{.Tenant.Name}}"
     displayName: "Tenant name"
