@@ -18,15 +18,12 @@ mapping:
   backend.database.name:
     value: "{{.Management.console_database_name}}"
     displayName: "Database name"
-  backend.envProjectId:
+  backend.googleManagementProjectID:
     value: "{{.Management.project_id}}"
-    displayName: "Google project ID"
+    displayName: "Google management project ID"
   backend.google.serviceAccountEmail:
     value: "{{.Management.console_google_service_account_email}}"
     displayName: "Google service account"
-  backend.google.credentials:
-    value: "{{.Management.console_google_service_account_key}}"
-    displayName: Google service account credentials (JSON)
   backend.tenantName:
     value: "{{.Tenant.Name}}"
     displayName: "Tenant name"
