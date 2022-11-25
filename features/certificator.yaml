@@ -14,3 +14,5 @@ config:
     type: string_array
   caDirectories:
     type: string_array
+  namespaceLabelSelector:
+    type: string
