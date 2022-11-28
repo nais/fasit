@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring
-version: 1.13.0
+version: 1.14.0
 environmentKinds:
   - "tenant"
   - "onprem"
@@ -60,11 +60,11 @@ mapping:
   tenant_prometheus.ingress.host:
     value: '{{ subdomain . "prometheus" }}'
     displayName: "Prometheus host"
-  tenant_prometheus.loadBalancerIP:
-    value: "{{ .Env.tenant_ilb_ip }}"
-    displayName: "Tenant Prometheus lb IP"
-    ignoreKind:
-      - onprem
+  # tenant_prometheus.loadBalancerIP:
+  #   value: "{{ .Env.tenant_ilb_ip }}"
+  #   displayName: "Tenant Prometheus lb IP"
+  #   ignoreKind:
+  #     - onprem
   tenant_prometheus.nodeSelector.kubernetes\.io/role:
     value: prometheus
     ignoreKind:
@@ -79,15 +79,15 @@ mapping:
     ignoreKind:
       - tenant
     displayName: "Tenant prometheus pod tolerations"
-  kube-prometheus-stack.alertmanager.service:
-    template: |
-      type: LoadBalancer
-      loadBalancerIP: "{{ .Env.tenant_alertmanager_ilb_ip }}"
-      annotations:
-        networking.gke.io/load-balancer-type: Internal
-    displayName: "Tenant Alertmanager lb"
-    ignoreKind:
-      - onprem
+  # kube-prometheus-stack.alertmanager.service:
+  #   template: |
+  #     type: LoadBalancer
+  #     loadBalancerIP: "{{ .Env.tenant_alertmanager_ilb_ip }}"
+  #     annotations:
+  #       networking.gke.io/load-balancer-type: Internal
+  #   displayName: "Tenant Alertmanager lb"
+  #   ignoreKind:
+  #     - onprem
   kube-prometheus-stack.alertmanager.ingress.hosts:
     value:
       - '{{ subdomain . "alertmanager" }}'
