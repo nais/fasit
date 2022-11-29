@@ -37,6 +37,11 @@ config:
     description: "Secret version for ID-porten cert chain"
     type: string
 
+  digdirator.secrets.environment.DIGDIRATOR_DIGDIR_IDPORTEN_CERT_CHAIN_SECRET_PROJECT_ID:
+    displayName: ID-porten Secret Manager project ID
+    description: "Secret Manager project ID for ID-porten cert chain"
+    type: string
+
   digdirator.secrets.environment.DIGDIRATOR_DIGDIR_IDPORTEN_CLIENT_ID:
     displayName: ID-porten client ID
     type: string
@@ -45,6 +50,7 @@ config:
     displayName: ID-porten KMS path
     description: "KMS key path for ID-porten"
     type: string
+    required: true
 
   digdirator.secrets.environment.DIGDIRATOR_DIGDIR_IDPORTEN_WELL_KNOWN_URL:
     displayName: ID-porten well-known
@@ -57,6 +63,7 @@ config:
   digdirator.secrets.environment.DIGDIRATOR_FEATURES_MASKINPORTEN:
     displayName: Maskinporten enabled
     type: bool
+    required: true
 
   digdirator.secrets.environment.DIGDIRATOR_DIGDIR_MASKINPORTEN_CERT_CHAIN_SECRET_NAME:
     displayName: Maskinporten cert secret
@@ -65,6 +72,11 @@ config:
 
   digdirator.secrets.environment.DIGDIRATOR_DIGDIR_MASKINPORTEN_CERT_CHAIN_SECRET_VERSION:
     displayName: Maskinporten cert chain secret version
+    description: "Required if maskinporten is enabled"
+    type: string
+
+  digdirator.secrets.environment.DIGDIRATOR_DIGDIR_MASKINPORTEN_CERT_CHAIN_SECRET_PROJECT_ID:
+    displayName: Maskinporten cert chain secret project ID
     description: "Required if maskinporten is enabled"
     type: string
 
@@ -77,9 +89,15 @@ config:
     displayName: Maskinporten KMS key path
     description: "Required if maskinporten is enabled"
     type: string
+    required: true
 
   digdirator.secrets.environment.DIGDIRATOR_DIGDIR_MASKINPORTEN_WELL_KNOWN_URL:
     displayName: Maskinporten well-known
+    description: "Required if maskinporten is enabled"
+    type: string
+
+  digdirator.secrets.environment.DIGDIRATOR_DIGDIR_MASKINPORTEN_SCOPES:
+    displayName: Maskinporten scopes
     description: "Required if maskinporten is enabled"
     type: string
 
@@ -88,16 +106,6 @@ config:
     displayName: Google sa credentials
     description: "Access Google KMS from onprem, required if onprem is enabled"
     secret: true
-
-  digdirator.secrets.environment.DIGDIRATOR_PROJECT_ID:
-    type: string
-    displayName: Project ID
-    description: "Project ID for Digdirator"
-
-  digdirator.secrets.environment.DIGDIRATOR_DIGDIR_MASKINPORTEN_SCOPES:
-    displayName: Maskinporten scopes
-    description: "Required if maskinporten is enabled"
-    type: string
 
 mapping:
   digdirator.onprem.enabled:
@@ -109,6 +117,11 @@ mapping:
     displayName: Cluster name
     value: '{{ .Env.name }}'
 
-  digdirator.secrets.environment.DIGDIRATOR_PROJECT_ID:
-    displayName: Project ID
+  digdirator.secrets.environment.DIGDIRATOR_DIGDIR_MASKINPORTEN_CERT_CHAIN_SECRET_PROJECT_ID:
+    displayName: Maskinporten cert chain secret project ID
     value: '{{ .Env.project_id }}'
+
+  digdirator.secrets.environment.DIGDIRATOR_DIGDIR_IDPORTEN_CERT_CHAIN_SECRET_PROJECT_ID:
+    displayName: ID-porten Secret Manager project ID
+    value: '{{ .Env.project_id }}'
+
