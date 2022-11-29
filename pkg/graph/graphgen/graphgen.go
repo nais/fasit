@@ -1939,6 +1939,7 @@ extend type Mutation {
   TENANT
   MANAGEMENT
   ONPREM
+  LEGACY
 }
 
 type Health {

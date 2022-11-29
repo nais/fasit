@@ -2,6 +2,7 @@ enum EnvironmentKind {
   TENANT
   MANAGEMENT
   ONPREM
+  LEGACY
 }
 
 type Health {

@@ -45,6 +45,7 @@ enum EnvironmentKind {
   MANAGEMENT = 1;
   TENANT = 2;
   ONPREM = 3;
+  LEGACY = 4;
 }
 
 message CreateOrUpdateEnvironmentValueRequest {

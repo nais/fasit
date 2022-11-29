@@ -9,7 +9,8 @@
 				"enum": [
 					"management",
 					"tenant",
-					"onprem"
+					"onprem",
+					"legacy"
 				],
 				"type": "string"
 			},
@@ -89,7 +90,8 @@
 				"enum": [
 					"management",
 					"tenant",
-					"onprem"
+					"onprem",
+					"legacy"
 				],
 				"type": "string"
 			},
