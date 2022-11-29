@@ -45,9 +45,9 @@ type Feature struct {
 	// Mapping is the list of mappings from environment values for the feature.
 	Mapping Mapping `yaml:"mapping,omitempty" json:"mapping,omitempty"`
 	// EnvironmentKinds is the list of environments this feature can be used in.
-	EnvironmentKinds []model.EnvironmentKind `yaml:"environmentKinds" json:"environmentKinds" jsonschema:"enum=management,enum=tenant,enum=onprem,required"`
+	EnvironmentKinds []model.EnvironmentKind `yaml:"environmentKinds" json:"environmentKinds" jsonschema:"enum=management,enum=tenant,enum=onprem,enum=legacy,required"`
 	// AutoInstall is the list of environments this feature can be auto-installed in.
-	AutoInstall []model.EnvironmentKind `yaml:"autoInstall,omitempty" json:"autoInstall,omitempty" jsonschema:"enum=management,enum=tenant,enum=onprem"`
+	AutoInstall []model.EnvironmentKind `yaml:"autoInstall,omitempty" json:"autoInstall,omitempty" jsonschema:"enum=management,enum=tenant,enum=onprem,enum=legacy"`
 	// Timeout is the amount of time helm should wait for the feature to be ready. Defaults to 5m0s
 	Timeout time.Duration `yaml:"timeout,omitempty" json:"timeout,omitempty" jsonschema:"omitempty,type=string,pattern=^(\\d+h)?(\\d+m)?(\\d+s)?$"`
 }

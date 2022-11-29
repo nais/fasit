@@ -156,6 +156,8 @@ func toEnvironmentKind(kind protogen.EnvironmentKind) (model.EnvironmentKind, er
 		return model.EnvironmentKindTenant, nil
 	case protogen.EnvironmentKind_ONPREM:
 		return model.EnvironmentKindOnprem, nil
+	case protogen.EnvironmentKind_LEGACY:
+		return model.EnvironmentKindLegacy, nil
 	}
 
 	return "", status.Error(codes.InvalidArgument, "Invalid Environment kind")
