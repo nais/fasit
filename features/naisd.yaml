@@ -5,6 +5,7 @@ environmentKinds:
   - "tenant"
   - "management"
   - "onprem"
+  - "legacy"
 config:
   image.tag:
     type: string
@@ -34,9 +35,11 @@ mapping:
     ignoreKind:
       - "tenant"
       - "management"
+      - "legacy"
   https_proxy:
     displayName: "HTTPS proxy"
     value: "http://webproxy-nais.nav.no:8088"
     ignoreKind:
       - "tenant"
       - "management"
+      - "legacy"
