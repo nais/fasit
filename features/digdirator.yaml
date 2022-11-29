@@ -121,3 +121,4 @@ mapping:
   digdirator.secrets.environment.DIGDIRATOR_DIGDIR_IDPORTEN_CERT_CHAIN_SECRET_PROJECT_ID:
     displayName: ID-porten Secret Manager project ID
     value: '{{ .Env.project_id }}'
+
