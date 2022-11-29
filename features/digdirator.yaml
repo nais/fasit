@@ -8,9 +8,6 @@ dependsOn:
   - allOf:
       - "naiserator"
       - "nais-crds"
-rolloutSource:
-  - org: nais
-    repo: digdirator
 config:
   image.tag:
     type: string
