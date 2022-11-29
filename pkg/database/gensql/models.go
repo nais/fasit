@@ -19,7 +19,6 @@ type EnvironmentKind string
 const (
 	EnvironmentKindTenant     EnvironmentKind = "tenant"
 	EnvironmentKindManagement EnvironmentKind = "management"
-	EnvironmentKindOnprem     EnvironmentKind = "onprem"
 	EnvironmentKindLegacy     EnvironmentKind = "legacy"
 )
 
