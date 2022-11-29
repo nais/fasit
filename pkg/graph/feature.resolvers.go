@@ -87,8 +87,6 @@ func (r *Resolver) Feature() graphgen.FeatureResolver { return &featureResolver{
 // OutdatedInfo returns graphgen.OutdatedInfoResolver implementation.
 func (r *Resolver) OutdatedInfo() graphgen.OutdatedInfoResolver { return &outdatedInfoResolver{r} }
 
-type (
-	configOverrideResolver struct{ *Resolver }
-	featureResolver        struct{ *Resolver }
-	outdatedInfoResolver   struct{ *Resolver }
-)
+type configOverrideResolver struct{ *Resolver }
+type featureResolver struct{ *Resolver }
+type outdatedInfoResolver struct{ *Resolver }

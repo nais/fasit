@@ -4,10 +4,11 @@ package database
 
 import (
 	"context"
-	"github.com/jackc/pgx/v4"
 	"io"
 	"os"
 	"testing"
+
+	"github.com/jackc/pgx/v4"
 
 	_ "github.com/lib/pq"
 	"github.com/nais/fasit/pkg/database/dbtest"

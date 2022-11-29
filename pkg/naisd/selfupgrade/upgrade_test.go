@@ -3,10 +3,11 @@ package selfupgrade
 import (
 	"context"
 	"encoding/json"
-	corev1 "k8s.io/api/core/v1"
 	"os"
 	"testing"
 	"time"
+
+	corev1 "k8s.io/api/core/v1"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/nais/fasit/pkg/message"
