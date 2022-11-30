@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring
-version: 1.14.0
+version: 1.15.0
 environmentKinds:
   - "tenant"
   - "onprem"
@@ -93,11 +93,9 @@ mapping:
     value:
       - '{{ subdomain . "alertmanager" }}'
     displayName: "Alertmanager hosts"
-  nais_prometheus.loadBalancerIP:
-    value: "{{ .Env.nais_ilb_ip }}"
-    displayName: "NAIS Prometheus lb IP"
-    ignoreKind:
-      - onprem
+  nais_prometheus.ingress.host:
+    value: '{{ subdomain . "nais-prometheus" }}'
+    displayName: "NAIS Prometheus ingress host"
   nais_alertmanager.ingress.host:
     value: '{{ subdomain . "nais-alertmanager" }}'
     displayName: "Nais alertmanager host"
