@@ -5,6 +5,7 @@ repo: ""
 environmentKinds:
   - "tenant"
   - "onprem"
+  - "legacy"
 autoInstall:
   - "tenant"
   - "onprem"
