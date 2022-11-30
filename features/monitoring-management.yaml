@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring-management
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring-management
-version: 1.2.0
+version: 1.3.0
 environmentKinds:
   - "management"
 dependsOn:
