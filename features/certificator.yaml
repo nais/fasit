@@ -17,3 +17,5 @@ config:
     type: string_array
   namespaceLabelSelector:
     type: string
+  webproxy:
+    type: bool
