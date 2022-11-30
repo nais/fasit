@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring-management
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring-management
-version: 1.0.0
+version: 1.1.0
 environmentKinds:
   - "management"
 dependsOn:
@@ -102,5 +102,4 @@ mapping:
     template: |
       {{range $cluster := .Envs}}
       - name: {{$cluster.name}}
-        ilb: {{$cluster.nais_ilb_ip}}
       {{end}}
