@@ -5,6 +5,7 @@ environmentKinds:
   - "management"
   - "onprem"
   - "tenant"
+  - "legacy"
 config:
   image.tag:
     type: string
