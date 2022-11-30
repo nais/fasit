@@ -4,6 +4,7 @@ version: 1.14.0
 environmentKinds:
   - "tenant"
   - "onprem"
+  - "legacy"
 autoInstall:
   - "tenant"
 timeout: 20m

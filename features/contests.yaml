@@ -8,6 +8,7 @@ dependsOn:
 environmentKinds:
   - "tenant"
   - "onprem"
+  - "legacy"
 autoInstall:
   - "tenant"
 config:

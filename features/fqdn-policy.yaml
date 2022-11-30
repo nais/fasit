@@ -2,8 +2,9 @@ chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/fqdn-policy
 source: https://github.com/nais/helm-charts/tree/main/charts/fqdn-policy
 version: 0.0.2
 environmentKinds:
-  - tenant
-  - management
+  - "tenant"
+  - "management"
+  - "legacy"
 dependsOn:
   - allOf:
       - cert-manager

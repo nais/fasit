@@ -4,6 +4,7 @@ version: 0.1.0
 environmentKinds:
   - "tenant"
   - "onprem"
+  - "legacy"
 mapping:
   gcp:
     template: '"{{ne .Kind "onprem"}}"'

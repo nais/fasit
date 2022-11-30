@@ -2,17 +2,17 @@ chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/kyverno-policies
 source: https://github.com/nais/helm-charts/tree/main/charts/kyverno-policies
 version: 0.7.3
 environmentKinds:
-  - tenant
-  - management
-  - onprem
+  - "tenant"
+  - "management"
+  - "onprem"
+  - "legacy"
 autoInstall:
-  - tenant
-  - management
-  - onprem
+  - "tenant"
+  - "management"
+  - "onprem"
 dependsOn:
   - allOf:
       - kyverno
-
 config:
   customPolicies.denyImageRegistries.enabled:
     type: bool

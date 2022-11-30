@@ -4,6 +4,7 @@ version: 0.2.0
 environmentKinds:
   - "tenant"
   - "management"
+  - "legacy"
 timeout: 20m
 mapping:
   loki.loki.storage.bucketNames.chunks:

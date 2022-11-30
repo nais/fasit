@@ -3,6 +3,7 @@ source: https://github.com/nais/container_resource_usage/tree/master/charts/cont
 version: 1.0.1
 environmentKinds:
   - "onprem"
+  - "legacy"
 config:
   image.tag:
     type: string

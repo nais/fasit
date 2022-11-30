@@ -3,6 +3,7 @@ source: https://github.com/nais/hunter2/tree/master/charts/hunter2
 version: 1.0.0
 environmentKinds:
   - "tenant"
+  - "legacy"
 mapping:
   googleProjectID:
     value: "{{ .Env.project_id }}"
