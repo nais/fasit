@@ -31,6 +31,7 @@ config:
     displayName: ID-porten cert secret name
     description: "Secret name for ID-porten cert chain"
     type: string
+    required: true
 
   digdirator.secrets.environment.DIGDIRATOR_DIGDIR_IDPORTEN_CERT_CHAIN_SECRET_VERSION:
     displayName: ID-porten cert version
@@ -41,10 +42,12 @@ config:
     displayName: ID-porten Secret Manager project ID
     description: "Secret Manager project ID for ID-porten cert chain"
     type: string
+    required: true
 
   digdirator.secrets.environment.DIGDIRATOR_DIGDIR_IDPORTEN_CLIENT_ID:
     displayName: ID-porten client ID
     type: string
+    required: true
 
   digdirator.secrets.environment.DIGDIRATOR_DIGDIR_IDPORTEN_KMS_KEY_PATH:
     displayName: ID-porten KMS path
@@ -69,6 +72,7 @@ config:
     displayName: Maskinporten cert secret
     description: "Required if maskinporten is enabled"
     type: string
+    required: true
 
   digdirator.secrets.environment.DIGDIRATOR_DIGDIR_MASKINPORTEN_CERT_CHAIN_SECRET_VERSION:
     displayName: Maskinporten cert chain secret version
@@ -79,11 +83,13 @@ config:
     displayName: Maskinporten cert chain secret project ID
     description: "Required if maskinporten is enabled"
     type: string
+    required: true
 
   digdirator.secrets.environment.DIGDIRATOR_DIGDIR_MASKINPORTEN_CLIENT_ID:
     displayName: Maskinporten client ID
     description: "Required if maskinporten is enabled"
     type: string
+    required: true
 
   digdirator.secrets.environment.DIGDIRATOR_DIGDIR_MASKINPORTEN_KMS_KEY_PATH:
     displayName: Maskinporten KMS key path
