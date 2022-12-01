@@ -8,7 +8,7 @@ require (
 	cloud.google.com/go/storage v1.28.0
 	github.com/99designs/gqlgen v0.17.20
 	github.com/GoogleCloudPlatform/cloudsql-proxy v1.33.0
-	github.com/Masterminds/semver/v3 v3.1.1
+	github.com/Masterminds/semver/v3 v3.2.0
 	github.com/coreos/go-oidc/v3 v3.4.0
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/go-chi/chi/v5 v5.0.7
