@@ -28,25 +28,15 @@ config:
     description: "Admin base URL for Digdirator"
     type: string
 
-  digdirator.secrets.environment.DIGDIRATOR_DIGDIR_IDPORTEN_CERT_CHAIN_SECRET_NAME:
-    displayName: ID-porten cert secret name
-    description: "Secret name for ID-porten cert chain"
-    type: string
-    required: true
-
-  digdirator.secrets.environment.DIGDIRATOR_DIGDIR_IDPORTEN_CERT_CHAIN_SECRET_VERSION:
-    displayName: ID-porten cert version
-    description: "Secret version for ID-porten cert chain"
-    type: string
-
-  digdirator.secrets.environment.DIGDIRATOR_DIGDIR_IDPORTEN_CERT_CHAIN_SECRET_PROJECT_ID:
-    displayName: ID-porten Secret Manager project ID
-    description: "Secret Manager project ID for ID-porten cert chain"
+  digdirator.secrets.environment.DIGDIRATOR_DIGDIR_IDPORTEN_CERT_CHAIN:
+    displayName: ID-porten cert cain
+    description: "Secret path for ID-porten cert chain"
     type: string
     required: true
 
   digdirator.secrets.environment.DIGDIRATOR_DIGDIR_IDPORTEN_CLIENT_ID:
     displayName: ID-porten client ID
+    description: "Secret path for ID-porten client ID"
     type: string
     required: true
 
@@ -69,26 +59,15 @@ config:
     type: bool
     required: true
 
-  digdirator.secrets.environment.DIGDIRATOR_DIGDIR_MASKINPORTEN_CERT_CHAIN_SECRET_NAME:
-    displayName: Maskinporten cert secret
-    description: "Required if maskinporten is enabled"
-    type: string
-    required: true
-
-  digdirator.secrets.environment.DIGDIRATOR_DIGDIR_MASKINPORTEN_CERT_CHAIN_SECRET_VERSION:
-    displayName: Maskinporten cert chain secret version
-    description: "Required if maskinporten is enabled"
-    type: string
-
-  digdirator.secrets.environment.DIGDIRATOR_DIGDIR_MASKINPORTEN_CERT_CHAIN_SECRET_PROJECT_ID:
-    displayName: Maskinporten cert chain secret project ID
-    description: "Required if maskinporten is enabled"
+  digdirator.secrets.environment.DIGDIRATOR_DIGDIR_MASKINPORTEN_CERT_CHAIN:
+    displayName: Maskinporten cert chain
+    description: "Secret path to Maskinporten cert chain, required if maskinporten is enabled"
     type: string
     required: true
 
   digdirator.secrets.environment.DIGDIRATOR_DIGDIR_MASKINPORTEN_CLIENT_ID:
     displayName: Maskinporten client ID
-    description: "Required if maskinporten is enabled"
+    description: "Secret path to Maskinporten Client ID, required if maskinporten is enabled"
     type: string
     required: true
 
@@ -123,12 +102,3 @@ mapping:
   digdirator.secrets.environment.DIGDIRATOR_CLUSTER_NAME:
     displayName: Cluster name
     value: '{{ .Env.name }}'
-
-  digdirator.secrets.environment.DIGDIRATOR_DIGDIR_MASKINPORTEN_CERT_CHAIN_SECRET_PROJECT_ID:
-    displayName: Maskinporten cert chain secret project ID
-    value: '{{ .Env.project_id }}'
-
-  digdirator.secrets.environment.DIGDIRATOR_DIGDIR_IDPORTEN_CERT_CHAIN_SECRET_PROJECT_ID:
-    displayName: ID-porten Secret Manager project ID
-    value: '{{ .Env.project_id }}'
-
