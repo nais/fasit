@@ -19,3 +19,5 @@ config:
     type: string
   webproxy:
     type: bool
+  podMonitor:
+    type: bool
