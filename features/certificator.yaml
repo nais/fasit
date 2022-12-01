@@ -21,3 +21,5 @@ config:
     type: bool
   podMonitor:
     type: bool
+  seccomp:
+    type: bool
