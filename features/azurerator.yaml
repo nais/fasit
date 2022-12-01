@@ -9,6 +9,7 @@ dependsOn:
   - allOf:
       - "nais-crds"
       - "aivenator"
+      - "naiserator"
       - "reloader"
 config:
   image.tag:

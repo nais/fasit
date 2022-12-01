@@ -9,10 +9,13 @@ dependsOn:
   - allOf:
       - "nais-crds"
       - "aivenator"
+      - "naiserator"
       - "reloader"
 config:
   image.tag:
     type: string
+  alerts.enabled:
+    type: bool
   azure.clientID:
     type: string
     required: true
