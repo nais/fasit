@@ -11,6 +11,7 @@ autoInstall:
   - "tenant"
   - "management"
   - "onprem"
+  - "legacy"
 timeout: 20m
 config:
   replicaCount:
@@ -74,6 +75,7 @@ mapping:
     template: "true"
     ignoreKind:
       - "onprem"
+      - "legacy"
   config.webhooks:
     # exclude namespaces
     template: |
