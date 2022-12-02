@@ -97,6 +97,7 @@ mapping:
     displayName: "KSA annotation"
     ignoreKind:
       - "onprem"
+      - "legacy"
   velero.credentials.useSecret:
     template: "true"
     displayName: "Use secret"
