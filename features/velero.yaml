@@ -55,6 +55,11 @@ config:
     ignoreKind:
       - "tenant"
       - "management"
+  velero.serviceAccount.server.annotations.iam\.gke\.io/gcp-service-account:
+    type: string
+    displayName: "KSA annotation"
+    ignoreKind:
+      - "onprem"
 mapping:
   cluster:
     value: "{{ .Env.name }}"
