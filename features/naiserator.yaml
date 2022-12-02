@@ -22,16 +22,19 @@ config:
     required: true
     ignoreKind:
       - "tenant"
+      - "legacy"
   naiserator.vault.auth-path:
     type: string
     required: true
     ignoreKind:
       - "tenant"
+      - "legacy"
   naiserator.vault.kv-path:
     type: string
     required: true
     ignoreKind:
       - "tenant"
+      - "legacy"
   naiserator.features.prometheus-operator:
     type: bool
     displayName: "Enable Prometheus Operator"
@@ -39,6 +42,7 @@ config:
     ignoreKind:
       - "tenant"
       - "management"
+      - "legacy"
   naiserator.kafka.enabled:
     type: bool
     displayName: "Enable Kafka"
@@ -90,6 +94,7 @@ mapping:
     value: "navikt/vault-sidekick:v0.3.10-26ad67d"
     ignoreKind:
       - "tenant"
+      - "legacy"
   naiserator.cluster-name:
     value: "{{.Env.name}}"
     displayName: "Cluster name"
