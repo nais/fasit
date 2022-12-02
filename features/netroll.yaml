@@ -1,0 +1,10 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/netroll
+source: https://github.com/nais/helm-charts/tree/main/charts/netroll
+version: 0.0.1
+environmentKinds:
+  - "tenant"
+  - "management"
+config:
+  image.tag:
+    type: string
+    displayName: "Image tag"
