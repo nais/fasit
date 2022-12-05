@@ -6,6 +6,7 @@ import ReactTooltip from 'react-tooltip'
 import styled from 'styled-components'
 import { FeatureStateQuery, RolloutStatus } from '../../lib/schema/graphql'
 import { navBla, navGronn, navOransje, navRod } from '../../styles/constants'
+import humanizeDate from '../lib/humanizeDate'
 import GitIcon from '../lib/icons/gitIcon'
 import IconBox from '../lib/icons/iconBox'
 
@@ -86,6 +87,7 @@ const FeatureStatus = ({
     configuration,
     rolloutStatus: status,
     missingDependencies,
+    lastModified,
   } = featureState
 
   const requiredConfigs = configuration.configuration
@@ -110,7 +112,8 @@ const FeatureStatus = ({
           <div>
             <StatusField>
               status: <StatusIndicator status={status} />
-              {status.toLowerCase()}
+              {status.toLowerCase()}{' '}
+              {lastModified && <>({humanizeDate(lastModified, 'P p', true)})</>}
             </StatusField>
           </div>
           {feature.chart && <div>chart: {feature.chart}</div>}

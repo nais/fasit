@@ -5,6 +5,7 @@ export const FEATURE_STATE = gql`
     featureState(feature: $feature, envID: $envID) {
       enabled
       rolloutStatus
+      lastModified
       missingDependencies {
         name
       }

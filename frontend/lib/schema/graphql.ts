@@ -125,6 +125,7 @@ export type EnvironmentCreate = {
 }
 
 export enum EnvironmentKind {
+  Legacy = 'LEGACY',
   Management = 'MANAGEMENT',
   Onprem = 'ONPREM',
   Tenant = 'TENANT',
@@ -803,6 +804,7 @@ export type FeatureStateQuery = {
     __typename?: 'FeatureState'
     enabled: boolean
     rolloutStatus: RolloutStatus
+    lastModified?: any | null
     missingDependencies: Array<{ __typename?: 'Feature'; name: string }>
     feature: {
       __typename?: 'Feature'
@@ -1820,6 +1822,7 @@ export const FeatureStateDocument = gql`
     featureState(feature: $feature, envID: $envID) {
       enabled
       rolloutStatus
+      lastModified
       missingDependencies {
         name
       }

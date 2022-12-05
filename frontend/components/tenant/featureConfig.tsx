@@ -47,14 +47,6 @@ const FeatureConfig = ({ featureState, envID }: FeatureConfigProps) => {
   const [showCreate, setShowCreate] = useState(false)
   const [showMapping, setShowMapping] = useState(false)
 
-  useEffect(() => {
-    if (showMapping) {
-      return function cleanup() {
-        setShowMapping(false)
-      }
-    }
-  })
-
   const {
     configuration: { configuration: configs, mapping },
   } = featureState

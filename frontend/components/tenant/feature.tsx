@@ -43,8 +43,12 @@ const Feature = ({ envID, featureName }: FeatureProps) => {
     activeTab = 'config'
   }
 
-  if (loading || !data) {
+  if (loading && !data) {
     return <div>Loading...</div>
+  }
+
+  if (!data) {
+    return <div>Failed loading...</div>
   }
 
   const featureState = data.featureState
@@ -87,7 +91,11 @@ const Feature = ({ envID, featureName }: FeatureProps) => {
           />
         </Tabs.List>
         <Tabs.Panel value="config" className="h-24 w-full bg-gray-50 p-8">
-          <FeatureConfig featureState={featureState} envID={envID} />
+          <FeatureConfig
+            featureState={featureState}
+            envID={envID}
+            key={featureName}
+          />
         </Tabs.Panel>
         <Tabs.Panel value="logs" className="h-24 w-full bg-gray-50 p-8">
           <FeatureLogs envID={envID} featureName={featureName} />
