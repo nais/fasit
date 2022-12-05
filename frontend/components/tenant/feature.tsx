@@ -1,7 +1,7 @@
 import { FileContent, Filter, Notes, Wrench } from '@navikt/ds-icons'
 import { Tabs } from '@navikt/ds-react'
 import { useRouter } from 'next/router'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import styled from 'styled-components'
 import { useFeatureStateQuery } from '../../lib/schema/graphql'
 import { useFocusPoll } from '../../lib/useFocusPoll'
@@ -98,7 +98,11 @@ const Feature = ({ envID, featureName }: FeatureProps) => {
           />
         </Tabs.Panel>
         <Tabs.Panel value="logs" className="h-24 w-full bg-gray-50 p-8">
-          <FeatureLogs envID={envID} featureName={featureName} />
+          <FeatureLogs
+            envID={envID}
+            featureName={featureName}
+            key={featureState.lastModified}
+          />
         </Tabs.Panel>
         <Tabs.Panel value="helm_values" className="h-24  w-full bg-gray-50 p-8">
           <FeatureHelmValues envID={envID} feature={featureState.feature} />

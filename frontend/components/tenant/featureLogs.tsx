@@ -8,7 +8,7 @@ interface FeatureProps {
   featureName: string
 }
 
-const Feature = ({ envID, featureName }: FeatureProps) => {
+const FeatureLogs = ({ envID, featureName }: FeatureProps) => {
   const { loading, error, data } = useFeatureLogsQuery({
     variables: { envID: envID, feature: featureName },
   })
@@ -21,4 +21,4 @@ const Feature = ({ envID, featureName }: FeatureProps) => {
     </>
   )
 }
-export default Feature
+export default FeatureLogs
