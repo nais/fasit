@@ -42,7 +42,6 @@ config:
     ignoreKind:
       - "tenant"
       - "management"
-      - "legacy"
   naiserator.kafka.enabled:
     type: bool
     displayName: "Enable Kafka"
