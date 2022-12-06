@@ -173,6 +173,24 @@ OUTER:
 	}
 	ret.Configuration = removeIgnoredKinds(ret.Configuration, f, envKind)
 
+	typeSort := func(c model.Configuration) int {
+		switch c.(type) {
+		case *model.EnvConfiguration:
+			return 1
+		default:
+			return 0
+		}
+	}
+
+	sort.Slice(ret.Configuration, func(i, j int) bool {
+		tsi := typeSort(ret.Configuration[i])
+		tsj := typeSort(ret.Configuration[j])
+		if tsi == tsj {
+			return ret.Configuration[i].GetKey() < ret.Configuration[j].GetKey()
+		}
+		return tsi < tsj
+	})
+
 	if len(f.Mapping) == 0 || envID == nil {
 		return ret, nil
 	}
@@ -189,23 +207,6 @@ OUTER:
 
 	sort.Slice(ret.Mapping, func(i, j int) bool {
 		return ret.Mapping[i].Key < ret.Mapping[j].Key
-	})
-
-	typeSort := func(c model.Configuration) int {
-		switch c.(type) {
-		case *model.EnvConfiguration:
-			return 1
-		default:
-			return 0
-		}
-	}
-	sort.Slice(ret.Configuration, func(i, j int) bool {
-		tsi := typeSort(ret.Configuration[i])
-		tsj := typeSort(ret.Configuration[j])
-		if tsi == tsj {
-			return ret.Configuration[i].GetKey() < ret.Configuration[j].GetKey()
-		}
-		return tsi < tsj
 	})
 
 	return ret, nil
@@ -270,5 +271,7 @@ func (r *Resolver) GlobalConfiguration() graphgen.GlobalConfigurationResolver {
 	return &globalConfigurationResolver{r}
 }
 
-type envConfigurationResolver struct{ *Resolver }
-type globalConfigurationResolver struct{ *Resolver }
+type (
+	envConfigurationResolver    struct{ *Resolver }
+	globalConfigurationResolver struct{ *Resolver }
+)
