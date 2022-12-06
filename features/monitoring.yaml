@@ -64,7 +64,14 @@ mapping:
     value: prometheus
     ignoreKind:
       - tenant
-    displayName: "Tenant prometheus node role"
+      - legacy
+    displayName: "Tenant prometheus node role onprem"
+  tenant_prometheus.nodeSelector.nais\.io/prometheus-node:
+    value: "true"
+    ignoreKind:
+      - tenant
+      - onprem
+    displayName: "Tenant prometheus node role legacy"
   tenant_prometheus.tolerations:
     template: |
       - key: nais.io/prometheus-node
