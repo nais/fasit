@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring
-version: 1.18.0
+version: 1.19.0
 environmentKinds:
   - "tenant"
   - "onprem"
@@ -9,12 +9,6 @@ autoInstall:
   - "tenant"
 timeout: 20m
 config:
-  tenant_alertmanager.slack.webhook:
-    type: string
-    displayName: "Tenant alerts webhook URL"
-  tenant_alertmanager.slack.proxy:
-    type: string
-    displayName: "Tenant alerts proxy URL"
   nais_alertmanager.slack.webhook:
     type: string
     displayName: "Nais alerts webhook URL"
