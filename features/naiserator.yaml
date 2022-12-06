@@ -114,6 +114,9 @@ mapping:
     ignoreKind:
       - "tenant"
       - "legacy"
+  naiserator.aiven-cidr:
+    value: "{{.Env.aiven_vpc_cidr}}"
+    displayName: "Aiven VPC CIDR"
   naiserator.cluster-name:
     value: "{{.Env.name}}"
     displayName: "Cluster name"
