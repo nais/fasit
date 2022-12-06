@@ -100,7 +100,7 @@ mapping:
     value: '{{ subdomain . "nais-alertmanager" }}'
     displayName: "Nais alertmanager host"
   prometheus-adapter-resources.enabled:
-    value: "true"
+    template: "true"
     displayName: "Enable prometheus-adapter for resource metrics"
     ignoreKind:
       - tenant
