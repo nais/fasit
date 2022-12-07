@@ -8,3 +8,7 @@ config:
   image.tag:
     type: string
     displayName: "Image tag"
+mapping:
+  apiserverIP:
+    template: "{{ .Env.apiserver_endpoint }}"
+    displayName: "API server IP"
