@@ -13,7 +13,7 @@ config:
     type: string
     displayName: "image tag"
 mapping:
-  managementProjectId:
+  managementProjectID:
     value: "{{ .Management.project_id }}"
     displayName: "Management Project ID"
   env:
