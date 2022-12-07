@@ -91,7 +91,7 @@ config:
     displayName: "Extra external hosts"
 mapping:
   naiserator.api-server-ip:
-    value: "{{ .Env.apiserver_endpoint }}"
+    value: "{{ .Env.apiserver_endpoint }}/32"
     displayName: "API server IP"
   naiserator.gateway-mappings:
     template: |
