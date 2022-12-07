@@ -1,0 +1,20 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/dashboard-monitor
+source: https://github.com/nais/dashboard/tree/main/charts/dashboard-monitor
+version: 0.1.0
+environmentKinds:
+  - "onprem"
+  - "tenant"
+  - "legacy"
+dependsOn:
+  - allOf:
+      - "nais-crds"
+config:
+  image.tag:
+    type: string
+    displayName: "image tag"
+mapping:
+  managementProjectId:
+    value: "{{ .Management.project_id }}"
+    displayName: "Management Project ID"
+  env:
+    value: "{{ .Env.name }}"
