@@ -1,0 +1,32 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/dashboard
+source: https://github.com/nais/dashboard/tree/main/charts/dashboard
+version: 0.1.0
+environmentKinds:
+  - "management"
+dependsOn:
+  - allOf:
+      - "loadbalancer-iap"
+      - "monitoring-management"
+      - "console"
+config:
+  frontend.image.tag:
+    type: string
+    displayName: "frontend image tag"
+  backend.image.tag:
+    type: string
+    displayName: "backend image tag"
+  backend.iapAudience:
+    type: string
+    displayName: "IAP audience"
+mapping:
+  ingress.host:
+    value: '{{ subdomain . "dashboard" }}'
+    displayName: "Ingress host"
+  backend.dbConnectionDSN:
+    value: "{{ .Management.dashboard_dsn }}"
+    displayName: "Database connection DSN"
+  backend.projectId:
+    value: "{{ .Management.project_id }}"
+    displayName: "Project ID"
+  backend.envs:
+    value: '{{ eachOf .Envs "name" | join "," }}'
