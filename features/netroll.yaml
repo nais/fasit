@@ -10,5 +10,5 @@ config:
     displayName: "Image tag"
 mapping:
   apiserverIP:
-    template: "{{ .Env.apiserver_endpoint }}"
+    value: "{{ .Env.apiserver_endpoint }}"
     displayName: "API server IP"
