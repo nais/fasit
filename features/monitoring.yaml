@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring
-version: 1.21.2
+version: 1.22.0
 environmentKinds:
   - "tenant"
   - "onprem"
@@ -87,7 +87,7 @@ mapping:
     value: '{{ subdomain . "nais-alertmanager" }}'
     displayName: "Nais alertmanager host"
   prometheus-adapter-nais.rules.resource:
-    template: "{}"
+    template: "null"
     displayName: "Disable resource metrics (v1beta1.metrics.k8s.io)"
     ignoreKind:
       - onprem
