@@ -16,5 +16,9 @@ mapping:
   managementProjectID:
     value: "{{ .Management.project_id }}"
     displayName: "Management Project ID"
+  projectID:
+    value: "{{ .Env.project_id }}"
+    displayName: "Project ID"
   env:
     value: "{{ .Env.name }}"
+    displayName: "Environments"
