@@ -110,7 +110,7 @@ func Test_statusResolver_MissingDependencies(t *testing.T) {
 
 		assert.Equal(t, want, got)
 	})
-	t.Run("one of AnyOf is running gives no missing depedencies", func(t *testing.T) {
+	t.Run("one of AnyOf is running gives no missing dependencies", func(t *testing.T) {
 
 		status := &model.Status{
 			EnvironmentID: env.ID,
@@ -125,7 +125,7 @@ func Test_statusResolver_MissingDependencies(t *testing.T) {
 		assert.Equal(t, want, got)
 
 	})
-	t.Run("no depdenencies gives no missing", func(t *testing.T) {
+	t.Run("no dependencies gives no missing", func(t *testing.T) {
 
 		status := &model.Status{
 			EnvironmentID: env.ID,
