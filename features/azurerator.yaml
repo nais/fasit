@@ -82,7 +82,7 @@ mapping:
   clusterName:
     value: "{{.Env.name}}"
     displayName: "Cluster name"
-  google.projectId:
+  google.projectID:
     value: "{{.Env.project_id}}"
     ignoreKind:
       - "onprem"
