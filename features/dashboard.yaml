@@ -8,6 +8,7 @@ dependsOn:
       - "loadbalancer-iap"
       - "monitoring-management"
       - "console"
+timeout: 15m
 config:
   frontend.image.tag:
     type: string
