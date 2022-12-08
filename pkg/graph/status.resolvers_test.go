@@ -3,11 +3,11 @@ package graph
 import (
 	"context"
 	"encoding/json"
-	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database/mocks"
 	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph/model"
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
@@ -50,7 +50,7 @@ func Test_statusResolver_MissingDependencies(t *testing.T) {
 	features := []*model.FeatureState{featureName, deployedDep, pendingDep, notEnabledDep, enabledDep}
 
 	repo := mocks.NewRepo(t)
-	repo.On("FeatureStatesGet", ctx, id).Return(features, nil).Twice()
+	repo.On("FeatureStatesGet", ctx, id).Return(features, nil).Times(3)
 
 	r := statusResolver{
 		Resolver: &Resolver{
@@ -79,47 +79,65 @@ func Test_statusResolver_MissingDependencies(t *testing.T) {
 		{
 			Name:             pendingDep.FeatureName,
 			EnvironmentKinds: []model.EnvironmentKind{model.EnvironmentKindTenant},
-		}, {
+		},
+		{
 			Name:             notEnabledDep.FeatureName,
+			EnvironmentKinds: []model.EnvironmentKind{model.EnvironmentKindTenant},
+		},
+		{
+			Name:             enabledDep.FeatureName,
 			EnvironmentKinds: []model.EnvironmentKind{model.EnvironmentKindTenant},
 		},
 	})
 
-	status := &model.Status{
-		EnvironmentID: env.ID,
-		Feature:       featureName.FeatureName,
-	}
-	got, err := r.MissingDependencies(ctx, status)
-	if err != nil {
-		t.Fatal(err)
-	}
+	t.Run("Pending dep is missing", func(t *testing.T) {
+		status := &model.Status{
+			EnvironmentID: env.ID,
+			Feature:       featureName.FeatureName,
+		}
+		got, err := r.MissingDependencies(ctx, status)
 
-	want := []*model.Feature{
-		{
-			Name:             pendingDep.FeatureName,
-			EnvironmentKinds: []model.EnvironmentKind{model.EnvironmentKindTenant},
-			DependsOn:        []*model.Dependency{},
-			Config:           json.RawMessage("{}"),
-		},
-	}
+		assert.NoError(t, err)
 
-	if !cmp.Equal(want, got) {
-		t.Errorf("diff -want +got:\n%v", cmp.Diff(want, got))
-	}
+		want := []*model.Feature{
+			{
+				Name:             pendingDep.FeatureName,
+				EnvironmentKinds: []model.EnvironmentKind{model.EnvironmentKindTenant},
+				DependsOn:        []*model.Dependency{},
+				Config:           json.RawMessage("{}"),
+			},
+		}
 
-	status2 := &model.Status{
-		EnvironmentID: env.ID,
-		Feature:       deployedDep.FeatureName,
-	}
+		assert.Equal(t, want, got)
+	})
+	t.Run("one of AnyOf is running gives no missing depedencies", func(t *testing.T) {
 
-	got2, err := r.MissingDependencies(ctx, status2)
-	if err != nil {
-		t.Fatal(err)
-	}
+		status := &model.Status{
+			EnvironmentID: env.ID,
+			Feature:       deployedDep.FeatureName,
+		}
 
-	want2 := []*model.Feature{}
+		got, err := r.MissingDependencies(ctx, status)
+		assert.NoError(t, err)
 
-	if !cmp.Equal(want2, got2) {
-		t.Errorf("diff -want +got:\n%v", cmp.Diff(want2, got2))
-	}
+		want := []*model.Feature{}
+
+		assert.Equal(t, want, got)
+
+	})
+	t.Run("no depdenencies gives no missing", func(t *testing.T) {
+
+		status := &model.Status{
+			EnvironmentID: env.ID,
+			Feature:       enabledDep.FeatureName,
+		}
+
+		got, err := r.MissingDependencies(ctx, status)
+		assert.NoError(t, err)
+
+		want := []*model.Feature{}
+
+		assert.Equal(t, want, got)
+
+	})
 }
