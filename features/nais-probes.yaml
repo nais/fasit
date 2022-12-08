@@ -1,0 +1,47 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/nais-probes
+source: https://github.com/nais/helm-charts/tree/main/charts/nais-probes
+version: 1.0.0
+environmentKinds:
+  - "management"
+  - "onprem"
+  - "tenant"
+  - "legacy"
+dependsOn:
+  - anyOf:
+    - "monitoring"
+    - "monitoring-management"
+config:
+  probes.tls.secrets:
+    type: string_array
+    displayName: "Kubernetes TLS secrets"
+  probes.tls.hosts:
+    type: string_array
+    displayName: "TLS hosts"
+  probes.tls.etcd.hosts:
+    type: string_array
+    displayName: "Etcd hosts"
+    ignoreKind:
+      - management
+      - tenant
+      - legacy
+  probes.tls.kafka.enabled:
+    type: bool
+    displayName: "Enable Kafka TLS certificate probes"
+    ignoreKind:
+      - management
+      - tenant
+      - legacy
+  probes.tls.kafka.hosts:
+    type: string_array
+    displayName: "Kafka brokers"
+    ignoreKind:
+      - management
+      - tenant
+      - legacy
+mapping:
+  probes.tls.etcd.enabled:
+    template: "true"
+    ignoreKind:
+      - management
+      - tenant
+      - legacy
