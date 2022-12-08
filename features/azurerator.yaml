@@ -84,7 +84,7 @@ mapping:
       - "onprem"
       - "legacy"
   networkPolicy.apiServerCIDR:
-    value: "{{ .Env.apiserver_endpoint }}"
+    value: "{{ .Env.apiserver_endpoint }}/32"
     ignoreKind:
       - "onprem"
   webproxy:
