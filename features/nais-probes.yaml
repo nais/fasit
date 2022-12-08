@@ -14,12 +14,12 @@ config:
   probes.tls.secrets:
     type: string_array
     displayName: "Kubernetes TLS secrets"
-  probes.tls.hosts:
+  probes.tls.instances:
     type: string_array
-    displayName: "TLS hosts"
-  probes.tls.etcd.hosts:
+    displayName: "TLS instances"
+  probes.tls.etcd.instances:
     type: string_array
-    displayName: "Etcd hosts"
+    displayName: "Etcd instances"
     ignoreKind:
       - management
       - tenant
@@ -31,9 +31,9 @@ config:
       - management
       - tenant
       - legacy
-  probes.tls.kafka.hosts:
+  probes.tls.kafka.instances:
     type: string_array
-    displayName: "Kafka brokers"
+    displayName: "Kafka instances"
     ignoreKind:
       - management
       - tenant
