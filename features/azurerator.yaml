@@ -73,10 +73,6 @@ config:
     type: bool
     ignoreKind:
       - "onprem"
-  networkPolicy.apiServerCIDR:
-    type: string
-    ignoreKind:
-      - "onprem"
 
 mapping:
   clusterName:
@@ -87,5 +83,9 @@ mapping:
     ignoreKind:
       - "onprem"
       - "legacy"
+  networkPolicy.apiServerCIDR:
+    value: "{{ .Env.apiserver_endpoint }}"
+    ignoreKind:
+      - "onprem"
   webproxy:
     template: '{{eq .Kind "onprem"}}'
