@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/azurerator
 source: https://github.com/nais/azurerator/tree/master/charts
-version: 0.2.3
+version: 0.3.0
 repo: ""
 environmentKinds:
   - "tenant"
@@ -53,6 +53,9 @@ config:
     required: true
     displayName: "All users group IDs"
     description: "Default set of Azure AD group object IDs to be assigned to applications if all users should have access."
+  google.federatedAuth:
+    type: bool
+    description: "Enable client authentication using federated Google credentials"
   kafka.application:
     type: bool
     description: "Enable synchronization of events between Azurerator instances in different clusters using the same AAD tenant."
@@ -76,5 +79,7 @@ mapping:
   clusterName:
     value: "{{.Env.name}}"
     displayName: "Cluster name"
+  google.projectId:
+    value: "{{.Env.project_id}}"
   webproxy:
     template: '{{eq .Kind "onprem"}}'
