@@ -1,0 +1,31 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/rbac-sync
+source: https://github.com/nais/rbac-sync/tree/main/charts/rbac-sync
+version: 0.1.0
+environmentKinds:
+  - "onprem"
+  - "legacy"
+dependsOn:
+  - allOf:
+      - "nais-roles"
+config:
+  config.defaultRoles:
+    type: string
+    displayName: "Roles given to users"
+    description: "Cluster roles from RBAC (comma-separated), default: admin,naisdeveloper"
+  config.defaultRolebindingPrefix:
+    type: string
+    displayName: "Prefix for rolebinding-name"
+    description: "Prefix added to rolebinding name in team namespace, default: teammembers"
+  config.updateInterval:
+    type: string
+    displayName: "Update interval"
+    description: "Interval for updating rolebindings, default: 15m"
+  config.iamSecret:
+    type: string
+    secret: true
+    displayName: "Google IAM credential"
+    description: "Credential for user allowed to pose as others"
+  image.tag:
+    type: string
+    displayName: "Image tag"
+    description: "Image tag for rbac-sync"
