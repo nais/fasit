@@ -60,7 +60,7 @@ config:
   naiserator.features.nav-ca-bundle:
     type: bool
     displayName: "Enable NAV CA bundle"
-  naiserator.features.fqdn-policy:
+  naiserator.fqdn-policy.enabled:
     type: bool
     displayName: "Enable FQDN policy"
   naiserator.wonderwall.image:
