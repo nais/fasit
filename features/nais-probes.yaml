@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/nais-probes
 source: https://github.com/nais/helm-charts/tree/main/charts/nais-probes
-version: 1.1.0
+version: 1.3.0
 environmentKinds:
   - "management"
   - "onprem"
@@ -20,6 +20,20 @@ config:
   probes.tls.etcd.instances:
     type: string_array
     displayName: "Etcd instances"
+    ignoreKind:
+      - management
+      - tenant
+      - legacy
+  probes.tls.vault.enabled:
+    type: bool
+    displayName: "Enable Vault TLS certificate probes"
+    ignoreKind:
+      - management
+      - tenant
+      - legacy
+  probes.tls.vault.instances:
+    type: string_array
+    displayName: "Vault instances"
     ignoreKind:
       - management
       - tenant
