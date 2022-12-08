@@ -12,7 +12,7 @@ rolloutSource:
     repo: kafkarator
 mapping:
   cluster_pools:
-    template: '{{ mapOf "name" "aiven_project_0" .Envs | mapJoin "=" | join " " }}'
+    template: '{{ mapOf "name" "aiven_project" .Envs | mapJoin "=" | join " " }}'
     displayName: "Cluster Pools"
     description: "Space separated list of cluster and pools"
   tenant:

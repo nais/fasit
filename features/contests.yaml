@@ -37,5 +37,5 @@ mapping:
     value: "{{ .Tenant.Name }}"
     displayName: "Tenant name"
   contests.kafka.pool:
-    value: "{{ .Env.aiven_project_0 }}"
+    value: "{{ .Env.aiven_project }}"
     displayName: "Kafka pool"

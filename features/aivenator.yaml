@@ -10,11 +10,11 @@ rolloutSource:
     repo: aivenator
 mapping:
   aiven.projects:
-    value: "{{.Env.aiven_project_0}}" # TODO: Handle multiple projects if it ever comes to that
+    value: "{{.Env.aiven_project}}"
     displayName: Aiven projects
     description: "Aiven projects (space separated) with Kafka enabled for this instance of aivenator"
   aiven.mainProject:
-    value: "{{.Env.aiven_project_0}}"
+    value: "{{.Env.aiven_project}}"
     displayName: Main Aiven project
     description: "Main Aiven project for services that only support one"
   caBundle:

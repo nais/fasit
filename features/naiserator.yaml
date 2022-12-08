@@ -109,7 +109,7 @@ mapping:
       {{- end }}
     displayName: "Gateway mappings"
   naiserator.features.kafkarator:
-    template: '{{ne .Env.aiven_project_0 ""}}'
+    template: '{{ne .Env.aiven_project ""}}'
     # This flag is badly named in naiserator, giving it a better name here
     displayName: "Enable Kafka for applications"
   naiserator.vault.init-container-image:

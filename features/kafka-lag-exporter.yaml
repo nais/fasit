@@ -12,7 +12,7 @@ dependsOn:
 mapping:
   kafka-lag-exporter.clusters:
     template: |
-      - name: "{{ .Env.aiven_project_0 }}"
+      - name: "{{ .Env.aiven_project }}"
         bootstrapBrokers: "{{ .Env.kafka_bootstrap_broker }}"
         consumerProperties:
           security.protocol: "SSL"

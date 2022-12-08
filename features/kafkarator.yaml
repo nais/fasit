@@ -12,7 +12,7 @@ rolloutSource:
     repo: kafkarator
 mapping:
   aiven.projects:
-    value: "{{.Env.aiven_project_0}}"
+    value: "{{.Env.aiven_project}}"
     displayName: Aiven projects
     description: "Aiven projects (space separated) with Kafka enabled for this instance of kafkarator"
   caBundle:
