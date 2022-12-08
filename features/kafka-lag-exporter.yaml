@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/kafka-lag-exporter
 source: https://github.com/nais/helm-charts/tree/main/charts/kafka-lag-exporter
-version: 0.4.5
+version: 0.4.6
 environmentKinds:
   - "tenant"
   - "onprem"
@@ -30,3 +30,8 @@ mapping:
           ssl.keystore.location: "/var/run/secrets/nais.io/aiven-credentials/client.keystore.p12"
           ssl.keystore.password: "changeme"
           ssl.key.password: "changeme"
+config:
+  kafka-lag-exporter.kafkaClientTimeoutSeconds:
+    displayName: "kafka client timeout"
+    description: "kafka client timeout in seconds"
+    type: int
