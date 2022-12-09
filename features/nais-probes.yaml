@@ -14,7 +14,7 @@ config:
   probes.tls.secrets:
     type: string_array
     displayName: "Kubernetes TLS secrets"
-  probes.tls.https:
+  probes.tls.https.instances:
     type: string_array
     displayName: "Https instances"
   probes.tls.etcd.instances:
