@@ -46,22 +46,24 @@ mapping:
       datasources.yaml:
         apiVersion: 1
         datasources:
+      {{ with $root := . }}
       {{ range $cluster := .Envs }}
         - name: {{ $cluster.name }}
           type: prometheus
-          url: http://{{ $cluster.tenant_ilb_ip }}:9090
+          url: https://prometheus.{{ $cluster.name }}.{{ $root.Tenant.Name }}.cloud.nais.io
           access: proxy
         - name: {{ $cluster.name }}-alertmanager
           type: alertmanager
           jsonData:
             implementation: prometheus
-          url: http://{{ $cluster.tenant_alertmanager_ilb_ip }}:9093
+          url: https://alertmanager.{{ $cluster.name }}.{{ $root.Tenant.Name }}.cloud.nais.io
           access: proxy
         - name: {{ $cluster.name }}-loki
           type: loki
-          url: http://{{ $cluster.tenant_loki_ilb_ip }}
+          url: https://loki.{{ $cluster.name }}.{{ $root.Tenant.Name }}.cloud.nais.io
           access: proxy
       {{ end }}
+      {{end}}
   grafana.server.domain:
     value: "{{.Tenant.Name}}.cloud.nais.io"
   grafana.server.root_url:
