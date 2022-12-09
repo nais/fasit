@@ -146,7 +146,11 @@ const EnvironmentStatusPage = ({
 
         <Tabs.Panel value="env_values" className="h-24  w-full bg-gray-50 p-8">
           <h3>Environment values</h3>
-          <FeatureValues values={env.values} />
+          <FeatureValues
+            values={[...env.values].sort((a, b) => {
+              return a.key.localeCompare(b.key)
+            })}
+          />
         </Tabs.Panel>
 
         <Tabs.Panel value="nodes" className="h-24 w-full bg-gray-50 p-8">
