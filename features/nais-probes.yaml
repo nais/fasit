@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/nais-probes
 source: https://github.com/nais/helm-charts/tree/main/charts/nais-probes
-version: 1.3.2
+version: 1.4.0
 environmentKinds:
   - "management"
   - "onprem"
@@ -55,6 +55,25 @@ config:
 mapping:
   probes.tls.etcd.enabled:
     template: "true"
+    ignoreKind:
+      - management
+      - tenant
+      - legacy
+  prometheus-blackbox-exporter.extraVolumes:
+    template: |
+      - name: ca-bundle-pem
+        configMap:
+          name: ca-bundle-pem
+          defaultMode: 420
+    ignoreKind:
+      - management
+      - tenant
+      - legacy
+  prometheus-blackbox-exporter.extraVolumeMounts:
+    template: |
+      - name: ca-bundle-pem
+        mountPath: /etc/ssl/certs
+        readOnly: true
     ignoreKind:
       - management
       - tenant
