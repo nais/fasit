@@ -16,7 +16,9 @@ SELECT
 "key",
 "secret",
 (CASE WHEN secret THEN CASE WHEN @showSensitive::bool THEN value ELSE '"*****"' END ELSE value END)::jsonb AS "value"
-FROM environment_values WHERE "environment_id" = @envID;
+FROM environment_values WHERE "environment_id" = @envID
+ORDER BY "key" ASC
+;
 
 -- name: MappingValuesForTenant :many
 WITH environment_ids AS (
