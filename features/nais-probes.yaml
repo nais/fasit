@@ -10,6 +10,11 @@ dependsOn:
   - anyOf:
     - "monitoring"
     - "monitoring-management"
+autoInstall:
+  - "management"
+  - "onprem"
+  - "tenant"
+  - "legacy"
 config:
   probes.tls.secrets:
     type: string_array
