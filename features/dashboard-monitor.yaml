@@ -8,6 +8,9 @@ environmentKinds:
 dependsOn:
   - allOf:
       - "nais-crds"
+rolloutSource:
+  - org: nais
+    repo: dashboard
 config:
   image.tag:
     type: string

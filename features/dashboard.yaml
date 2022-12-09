@@ -8,6 +8,9 @@ dependsOn:
       - "loadbalancer-iap"
       - "monitoring-management"
       - "console"
+rolloutSource:
+  - org: nais
+    repo: dashboard
 config:
   frontend.image.tag:
     type: string
