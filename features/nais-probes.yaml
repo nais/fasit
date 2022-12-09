@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/nais-probes
 source: https://github.com/nais/helm-charts/tree/main/charts/nais-probes
-version: 1.4.0
+version: 1.5.0
 environmentKinds:
   - "management"
   - "onprem"
@@ -14,9 +14,9 @@ config:
   probes.tls.secrets:
     type: string_array
     displayName: "Kubernetes TLS secrets"
-  probes.tls.instances:
+  probes.tls.https:
     type: string_array
-    displayName: "TLS instances"
+    displayName: "Https instances"
   probes.tls.etcd.instances:
     type: string_array
     displayName: "Etcd instances"
