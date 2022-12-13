@@ -1,0 +1,6 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/dataproduct-collectors
+source: https://github.com/nais/helm-charts/tree/main/charts/dataproduct-collectors
+version: 0.1.0
+environmentKinds:
+  - "onprem"
+  - "legacy"
