@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/azurerator-nav
 source: https://github.com/nais/helm-charts/tree/main/charts/azurerator-nav
-version: 0.1.0
+version: 0.1.1
 environmentKinds:
   - "onprem"
   - "legacy"
@@ -39,17 +39,6 @@ mapping:
   global.clusterName:
     value: "{{ .Env.name }}"
     displayName: "Cluster name"
-  global.kafka.application:
-    value: "true"
-    displayName: "Enable synchronization of events between Azurerator instances in different clusters using the same AAD tenant."
-  global.kafka.pool:
-    value: "nav-infrastructure" # TODO: replace with "{{ .Env.aiven_project }}" when legacy migration is complete
-    displayName: "Kafka pool"
-  global.kafka.topic:
-    value: "false" # TODO: enable when legacy migration is complete
-    displayName: "Enable creation of Kafka topic for Azurerator."
-    ignoreKind:
-      - "onprem"
   global.networkPolicy.enabled:
     template: '{{ ne .Kind "onprem" }}'
     displayName: "Network policy enabled"
