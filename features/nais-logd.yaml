@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/nais-logd
 source: https://github.com/nais/nais-logd
-version: 3.4.0
+version: 3.5.0
 environmentKinds:
   - "management"
   - "tenant"
@@ -31,9 +31,6 @@ config:
   throttle.drop_logs:
     type: bool
     displayName: Throttle drop logs
-  logs_acl.updateInterval:
-    type: int
-    displayName: Log files acl update interval
 
 mapping:
   cluster.name:
