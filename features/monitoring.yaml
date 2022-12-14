@@ -109,13 +109,15 @@ mapping:
   tenant:
     value: "{{.Tenant.Name}}"
     displayName: "Tenant name"
-  additionalScrapeConfigs:
-    aivenKafka:
-      enabled: {{ if .Env.aiven_prometheus_username }}true{{ else }}false{{ end }}
-      scrapeConfig:
-        username:
-          value: "{{ .Env.aiven_prometheus_username }}"
-        password:
-          value: "{{ .Env.aiven_prometheus_password }}"
-        url:
-          value: "https://storage.googleapis.com/io-nais-aiven-prometheus-scrapeconfigs/{{ .Env.aiven_project }}.kafka.json"
+  additionalScrapeConfigs.aivenKafka.enabled:
+    template: "{{ if .Env.aiven_prometheus_username }}true{{ else }}false{{ end }}"
+    displayName: "Aiven Kafka scraping enabled"
+  additionalScrapeConfigs.aivenKafka.scrapeConfig.username:
+    value: "{{ .Env.aiven_prometheus_username }}"
+    displayName: "Aiven Kafka prometheus username"
+  additionalScrapeConfigs.aivenKafka.scrapeConfig.password:
+    value: "{{ .Env.aiven_prometheus_password }}"
+    displayName: "Aiven Kafka prometheus password"
+  additionalScrapeConfigs.aivenKafka.scrapeConfig.url:
+    value: "https://storage.googleapis.com/io-nais-aiven-prometheus-scrapeconfigs/{{ .Env.aiven_project }}.kafka.json"
+    displayName: "Aiven Kafka prometheus sd url"
