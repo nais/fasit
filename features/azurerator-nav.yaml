@@ -39,14 +39,6 @@ mapping:
   global.clusterName:
     value: "{{ .Env.name }}"
     displayName: "Cluster name"
-  global.networkPolicy.enabled:
-    template: '{{ ne .Kind "onprem" }}'
-    displayName: "Network policy enabled"
-  global.networkPolicy.apiServerCIDR:
-    value: "{{ .Env.apiserver_endpoint }}/32"
-    displayName: "Network policy apiserver cidr"
-    ignoreKind:
-      - "onprem"
   global.webproxy:
     template: '{{ eq .Kind "onprem" }}'
     displayName: "Webproxy"
