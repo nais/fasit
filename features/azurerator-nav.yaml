@@ -1,0 +1,63 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/azurerator-nav
+source: https://github.com/nais/helm-charts/tree/main/charts/azurerator-nav
+version: 0.1.0
+environmentKinds:
+  - "onprem"
+  - "legacy"
+dependsOn:
+  - allOf:
+      - "nais-crds"
+      - "aivenator"
+      - "naiserator"
+      - "reloader"
+config:
+  azurerator.clientSecret:
+    type: string
+    required: true
+    secret: true
+    displayName: "Client secret"
+  azurerator-dev.clientSecret:
+    type: string
+    required: true
+    secret: true
+    displayName: "Client secret (dev)"
+  global.image.tag:
+    type: string
+
+mapping:
+  azurerator.controller.tenantNameStrictMatching:
+    template: '{{ if or (eq "prod-fss" .Env.name) (eq "prod-gcp" .Env.name) }}false{{ else }}true{{ end }}'
+    displayName: "Strict resource matching"
+    description: "If false, will process any resources that have not explicitly declared azure.tenant.name."
+  azurerator-dev.enabled:
+    template: '{{ if or (eq "prod-fss" .Env.name) (eq "prod-gcp" .Env.name) }}false{{ else }}true{{ end }}'
+    displayName: "Enable azurerator-dev"
+  azurerator-dev.controller.tenantNameStrictMatching:
+    template: '{{ if or (eq "dev-fss" .Env.name) (eq "dev-gcp" .Env.name) }}false{{ else }}true{{ end }}'
+    displayName: "Strict resource matching (dev)"
+    description: "If false, will process any resources that have not explicitly declared azure.tenant.name."
+  global.clusterName:
+    value: "{{ .Env.name }}"
+    displayName: "Cluster name"
+  global.kafka.application:
+    value: "true"
+    displayName: "Enable synchronization of events between Azurerator instances in different clusters using the same AAD tenant."
+  global.kafka.pool:
+    value: "nav-infrastructure" # TODO: replace with "{{ .Env.aiven_project }}" when legacy migration is complete
+    displayName: "Kafka pool"
+  global.kafka.topic:
+    value: "false" # TODO: enable when legacy migration is complete
+    displayName: "Enable creation of Kafka topic for Azurerator."
+    ignoreKind:
+      - "onprem"
+  global.networkPolicy.enabled:
+    value: '{{ ne .Kind "onprem" }}'
+    displayName: "Network policy enabled"
+  global.networkPolicy.apiServerCIDR:
+    value: "{{ .Env.apiserver_endpoint }}/32"
+    displayName: "Network policy apiserver cidr"
+    ignoreKind:
+      - "onprem"
+  global.webproxy:
+    value: '{{ eq .Kind "onprem" }}'
+    displayName: "Webproxy"
