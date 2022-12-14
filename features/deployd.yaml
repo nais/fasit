@@ -5,6 +5,10 @@ environmentKinds:
   - "tenant"
   - "onprem"
   - "legacy"
+dependsOn:
+  - allOf:
+      - "nais-roles"
+      - "nais-crds"
 mapping:
   preSharedKey:
     value: "{{.Env.deployd_pre_shared_key}}"
