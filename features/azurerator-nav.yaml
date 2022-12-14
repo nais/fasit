@@ -11,12 +11,12 @@ dependsOn:
       - "naiserator"
       - "reloader"
 config:
-  azurerator.clientSecret:
+  azurerator.azure.clientSecret:
     type: string
     required: true
     secret: true
     displayName: "Client secret"
-  azurerator-dev.clientSecret:
+  azurerator-dev.azure.clientSecret:
     type: string
     required: true
     secret: true
