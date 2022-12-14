@@ -33,3 +33,5 @@ mapping:
     displayName: "Project ID"
   backend.envs:
     value: '{{ eachOf .Envs "name" | join "," }}'
+  backend.consoleToken:
+    value: '{{ .Env.dashboard_console_api_key }}'
