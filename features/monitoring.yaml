@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring
-version: 1.23.1
+version: 1.24.2
 environmentKinds:
   - "tenant"
   - "onprem"
@@ -109,3 +109,13 @@ mapping:
   tenant:
     value: "{{.Tenant.Name}}"
     displayName: "Tenant name"
+  additionalScrapeConfigs:
+    aivenKafka:
+      enabled: {{ if .Env.aiven_prometheus_username }}true{{ else }}false{{ end }}
+      scrapeConfig:
+        username:
+          value: "{{ .Env.aiven_prometheus_username }}"
+        password:
+          value: "{{ .Env.aiven_prometheus_password }}"
+        url:
+          value: "https://storage.googleapis.com/io-nais-aiven-prometheus-scrapeconfigs/{{ .Env.aiven_project }}.kafka.json"
