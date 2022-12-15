@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/kyverno-policies
 source: https://github.com/nais/helm-charts/tree/main/charts/kyverno-policies
-version: 0.7.4
+version: 0.8.0
 environmentKinds:
   - "tenant"
   - "management"
@@ -34,6 +34,31 @@ config:
     description: "Enable deny-service-types policy"
     displayName: "Deny service types"
 
+  customPolicies.addSpotTolerations.enabled:
+    type: bool
+    description: "Enable add-spot-toleration policy"
+    displayName: "Add spot toleration"
+
+  customPolicies.generateDefaultAllowEgress.enabled:
+    type: bool
+    description: "Enable generate-default-allow-egress policy"
+    displayName: "Generate default allow egress"
+
+  customPolicies.addTeamAIToleration.enabled:
+    type: bool
+    description: "Enable add-team-ai-toleration policy"
+    displayName: "Add team AI toleration"
+
+  customPolicies.cloneWonderWallSecret.enabled:
+    type: bool
+    description: "Enable clone-wonderwall-secret policy"
+    displayName: "Clone Wonderwall secret"
+
+  customPolicies.kafkaDenyTopicDelete.enabled:
+    type: bool
+    description: "Enable kafka-deny-topic-delete policy"
+    displayName: "Kafka deny topic delete"
+
   kyverno-policies.background:
     type: bool
     description: "Run Kyverno policies in background"
@@ -56,9 +81,34 @@ mapping:
     displayName: "Deny Kafka topic create"
 
   customPolicies.denyServiceTypes.enabled:
-    template: '{{eq .Kind "onprem"}}'
+    value: "true"
     description: "Enable deny service types policy"
     displayName: "Deny service types"
+
+  customPolicies.addSpotToleration.enabled:
+    template: '{{eq .Kind "legacy"}}'
+    description: "Enable add-spot-toleration policy"
+    displayName: "Add spot toleration"
+
+  customPolicies.generateDefaultAllowEgress.enabled:
+    template: '{{eq .Kind "legacy"}}'
+    description: "Enable generate-default-allow-egress policy"
+    displayName: "Generate default allow egress"
+
+  customPolicies.addTeamAIToleration.enabled:
+    template: '{{eq .Kind "legacy"}}'
+    description: "Enable add-team-ai-toleration policy"
+    displayName: "Add team ai toleration"
+
+  customPolicies.cloneWonderWallSecret.enabled:
+    template: '{{eq .Kind "legacy"}}'
+    description: "Enable clone-wonderwall-secret policy"
+    displayName: "Clone wonderwall secret"
+
+  customPolicies.kafkaDenyTopicDelete.enabled:
+    template: '{{eq .Kind "legacy"}}'
+    description: "Enable kafka-deny-topic-delete policy"
+    displayName: "Kafka deny topic delete"
 
   kyverno-policies.background:
     value: "false"
