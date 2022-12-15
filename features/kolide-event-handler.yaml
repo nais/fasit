@@ -26,7 +26,7 @@ config:
 mapping:
   ingress.hosts:
     value:
-      - '{{ subdomain . "kolide-event-handler" }}'
+      - '{{ subdomain . "kolide-event-handler.external" }}'
     displayName: "DNS names"
 
   secrets.env.GRPC_AUTH_TOKEN:
