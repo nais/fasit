@@ -66,12 +66,12 @@ config:
 
 mapping:
   customPolicies.denyImageRegistries.enabled:
-    template: '{{eq .Kind "onprem"}}'
+    template: '{{ if or (eq "onprem" .Kind) (eq "legacy" .Kind) }}true{{ else }}false{{ end }}'
     description: "Enable deny image registries policy"
     displayName: "Deny image registries"
 
   customPolicies.replaceOldGithubRegistry.enabled:
-    template: '{{eq .Kind "onprem"}}'
+    template: '{{ if or (eq "onprem" .Kind) (eq "legacy" .Kind) }}true{{ else }}false{{ end }}'
     description: "Enable replace old github registry policy"
     displayName: "Replace old Github registry"
 
