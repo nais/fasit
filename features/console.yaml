@@ -58,6 +58,11 @@ config:
   backend.naisNamespace.azureEnabled:
     type: bool
     displayName: Enable use of Azure groups for Kubernetes team namespaces
+  backend.naisDeploy.endpoint:
+    type: string
+  backend.naisDeploy.provisionKey:
+    type: string
+    secret: true
   frontend.image.tag:
     type: string
     description: Frontend image tag
