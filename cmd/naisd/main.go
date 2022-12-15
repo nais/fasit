@@ -85,7 +85,7 @@ func run(ctx context.Context, log *logrus.Logger) error {
 	if !cfg.Management {
 		namespaceSubscriber := message.NewSubscriber[message.Console](deployClient, cfg.EnvProjectID, consoleSubscriptionID)
 		if cfg.Production {
-			consoleMgr, err := naisd.NewConsoleManager(namespaceSubscriber, restConfig, cfg.EnvProjectID, log.WithField("subsystem", "console"))
+			consoleMgr, err := naisd.NewConsoleManager(namespaceSubscriber, restConfig, cfg.EnvProjectID, cfg.Env, log.WithField("subsystem", "console"))
 			if err != nil {
 				return err
 			}

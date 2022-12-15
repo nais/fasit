@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
@@ -39,9 +40,10 @@ type ConsoleManager struct {
 	dynClient  dynamic.Interface
 	projectID  string
 	log        *logrus.Entry
+	env        string
 }
 
-func NewConsoleManager(ConsoleSubscriber ConsoleReceiver, config *rest.Config, projectID string, log *logrus.Entry) (*ConsoleManager, error) {
+func NewConsoleManager(ConsoleSubscriber ConsoleReceiver, config *rest.Config, projectID string, envName string, log *logrus.Entry) (*ConsoleManager, error) {
 	kubeClient, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		return nil, fmt.Errorf("creating kubernetes client: %w", err)
@@ -56,6 +58,7 @@ func NewConsoleManager(ConsoleSubscriber ConsoleReceiver, config *rest.Config, p
 		dynClient:  dyncClient,
 		log:        log,
 		projectID:  projectID,
+		env:        envName,
 	}
 
 	return receiver, nil
@@ -305,6 +308,10 @@ func (c *ConsoleManager) deleteNamespace(ctx context.Context, msg message.Consol
 }
 
 func (c *ConsoleManager) createCNRMConfig(ctx context.Context, data message.CreateNamespace, log logrus.FieldLogger) error {
+	if strings.HasSuffix(c.env, "-fss") {
+		c.log.Info("Skipping CNRM config for FSS")
+		return nil
+	}
 	cnrmClient := c.dynClient.Resource(cnrmConfigGroupVersionResource).Namespace(data.Name)
 
 	const contextName = "configconnectorcontext.core.cnrm.cloud.google.com"
