@@ -23,6 +23,13 @@ config:
     displayName: "Client secret (dev)"
   global.image.tag:
     type: string
+    displayName: "Image tag"
+  global.kafka.pool:
+    type: string
+    displayName: "Kafka pool"
+  global.kafka.topic:
+    type: bool
+    displayName: "Create Kafka topic"
 
 mapping:
   azurerator.controller.tenantNameStrictMatching:
