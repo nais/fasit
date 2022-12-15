@@ -24,12 +24,9 @@ config:
   global.image.tag:
     type: string
     displayName: "Image tag"
-  global.kafka.pool:
-    type: string
-    displayName: "Kafka pool"
-  global.kafka.topic:
+  global.kafka.application:
     type: bool
-    displayName: "Create Kafka topic"
+    displayName: "Enable Kafka for synchronization across clusters"
 
 mapping:
   azurerator.controller.tenantNameStrictMatching:
