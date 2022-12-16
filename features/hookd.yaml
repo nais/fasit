@@ -50,6 +50,10 @@ config:
     type: string
   backend.image.tag:
     type: string
+  backend.provisionKey:
+    type: string
+    secret: true
+    description: Special API key used to create team deploy API keys
   googleClient.id:
     type: string
     description: Google OAuth 2.0 Client ID, see https://handbook.nais.io/technical/tenant-setup/#set-up-oauth-client
