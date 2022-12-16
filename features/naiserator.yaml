@@ -45,6 +45,7 @@ config:
   naiserator.kafka.enabled:
     type: bool
     displayName: "Enable Kafka"
+    description: "Enable Kafka topic for event relays"
   naiserator.leader-election.image:
     type: string
     displayName: "Leader election image"
