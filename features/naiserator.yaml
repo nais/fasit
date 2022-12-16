@@ -92,14 +92,14 @@ config:
     displayName: "Extra external hosts"
   naiserator.api-server-ip:
     type: string
-    displayName: "API server IP"
-    description: "IP address of the Kubernetes API server must be set for legacy GCP clusters"
+    displayName: "API server cidr"
+    description: "cidr address of the Kubernetes API server must be set for legacy GCP clusters"
     ignoreKind:
       - "tenant"
 mapping:
   naiserator.api-server-ip:
     value: "{{ .Env.apiserver_endpoint }}/32"
-    displayName: "API server IP"
+    displayName: "API server cidr"
   naiserator.gateway-mappings:
     template: |
       - domainSuffix: "{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io"
