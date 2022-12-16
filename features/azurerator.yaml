@@ -1,28 +1,18 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/azurerator
 source: https://github.com/nais/azurerator/tree/master/charts
-version: 0.3.1
-repo: ""
+version: 0.4.0
 environmentKinds:
   - "tenant"
-  - "onprem"
-  - "legacy"
 dependsOn:
   - allOf:
       - "nais-crds"
-      - "aivenator"
       - "naiserator"
       - "reloader"
 config:
   image.tag:
     type: string
-  alerts.enabled:
-    type: bool
   azure.clientID:
     type: string
-    required: true
-  azure.clientSecret:
-    type: string
-    secret: true
     required: true
   azure.permissionGrantResourceID:
     type: string
@@ -36,56 +26,21 @@ config:
     type: string
     required: true
     description: "Alias used to identify the tenant, such as the primary domain that is configured for the Azure AD tenant."
-  controller.tenantNameStrictMatching:
-    type: bool
-    displayName: "Strict resource matching"
-    description: "Only process resources that have explicitly defined a tenant in their spec and whose value matches azure.tenant.name."
-  features.claimsMappingPolicies.enabled:
-    type: bool
-    displayName: "Enable claims-mapping policies"
-    description: "Enable assignment of claims-mapping policy to applications."
-  features.claimsMappingPolicies.id:
-    type: string
-    displayName: "Claims-mapping policy ID"
-    description: "ID of claims-mapping policy to assign to applications."
   features.groupsAssignment.allUsersGroupIDs:
     type: string_array
     required: true
     displayName: "All users group IDs"
     description: "Default set of Azure AD group object IDs to be assigned to applications if all users should have access."
-  google.federatedAuth:
-    type: bool
-    description: "Enable client authentication using federated Google credentials"
-    ignoreKind:
-      - "onprem"
-      - "legacy"
-  kafka.application:
-    type: bool
-    description: "Enable synchronization of events between Azurerator instances in different clusters using the same AAD tenant."
-  kafka.topic:
-    type: bool
-    description: "Enable creation of Kafka topic for Azurerator."
-    ignoreKind:
-      - "onprem"
-  kafka.pool:
-    type: string
-  networkPolicy.enabled:
-    type: bool
-    ignoreKind:
-      - "onprem"
-
 mapping:
   clusterName:
     value: "{{.Env.name}}"
     displayName: "Cluster name"
+  google.federatedAuth:
+    template: 'true'
+    description: "Enable client authentication using federated Google credentials"
   google.projectID:
     value: "{{.Env.project_id}}"
-    ignoreKind:
-      - "onprem"
-      - "legacy"
+  networkPolicy.enabled:
+    template: 'true'
   networkPolicy.apiServerCIDR:
     value: "{{ .Env.apiserver_endpoint }}/32"
-    ignoreKind:
-      - "onprem"
-  webproxy:
-    template: '{{eq .Kind "onprem"}}'
