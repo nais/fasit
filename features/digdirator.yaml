@@ -92,12 +92,18 @@ config:
     displayName: Google sa credentials
     description: "Access Google KMS from onprem, required if onprem is enabled"
     secret: true
+    ignoreKind:
+      - "tenant"
+      - "legacy"
 
 mapping:
   digdirator.onprem.enabled:
     displayName: "Enable onprem"
     description: "Enable resources for onprem"
     template: '{{ eq .Kind "onprem" }}'
+    ignoreKind:
+      - "tenant"
+      - "legacy"
 
   digdirator.secrets.environment.DIGDIRATOR_CLUSTER_NAME:
     displayName: Cluster name
