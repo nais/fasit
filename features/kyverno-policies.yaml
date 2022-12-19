@@ -64,11 +64,6 @@ config:
     description: "Run Kyverno policies in background"
     displayName: "Background"
 
-  kyverno-policies.podSecurityStandard:
-    type: string
-    description: "Set type of Pod security standard"
-    displayName: "Pod security standard"
-
 mapping:
   customPolicies.denyImageRegistries.enabled:
     template: '{{ if or (eq "onprem" .Kind) (eq "legacy" .Kind) }}true{{ else }}false{{ end }}'
