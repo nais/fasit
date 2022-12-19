@@ -21,6 +21,9 @@ config:
     type: string
   image.tag:
     type: string
+  timeout:
+    type: string
+    description: "How much time the deploy system is allowed to use per deploy"
   deploy_key:
     type: string
     secret: true
