@@ -64,6 +64,11 @@ config:
     description: "Run Kyverno policies in background"
     displayName: "Background"
 
+  kyverno-policies.podSecurityStandard:
+    type: string
+    description: "Set type of Pod security standard"
+    displayName: "Pod security standard"
+
 mapping:
   customPolicies.denyImageRegistries.enabled:
     template: '{{ if or (eq "onprem" .Kind) (eq "legacy" .Kind) }}true{{ else }}false{{ end }}'
@@ -114,3 +119,26 @@ mapping:
     value: "false"
     description: "Run Kyverno policies in background"
     displayName: "Background"
+
+  kyverno-policies.podSecurityStandard:
+    value: '{{ if eq "legacy" .Kind }}custom{{ else }}restricted{{ end }}'
+    description: "Pod security standard"
+    displayName: "Pod security standard"
+
+  kyverno-policies.podSecurityPolicies:
+    template: |
+      {{- if eq .Kind "legacy" }}
+      - disallow-host-namespaces
+      - disallow-host-path
+      - disallow-host-ports
+      - disallow-host-process
+      - disallow-privileged-containers
+      - disallow-proc-mount
+      - disallow-selinux
+      - restrict-apparmor-profiles
+      - restrict-sysctls
+      {{- end }}
+    ignoreKind:
+      - "tenant"
+      - "management"
+      - "onprem"
