@@ -126,6 +126,7 @@ mapping:
     displayName: "Pod security standard"
 
   kyverno-policies.podSecurityPolicies:
+    displayName: "Custom pod security policies"
     template: |
       {{- if eq .Kind "legacy" }}
       - disallow-host-namespaces
