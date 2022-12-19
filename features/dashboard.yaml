@@ -34,4 +34,6 @@ mapping:
   backend.envs:
     value: '{{ eachOf .Envs "name" | join "," }}'
   backend.consoleToken:
-    value: '{{ .Env.dashboard_console_api_key }}'
+    value: "{{ .Env.dashboard_console_api_key }}"
+  backend.projectMapping:
+    value: '{{ mapOf "name" "project_id" .Envs | mapJoin "=" | join "&"}}'
