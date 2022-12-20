@@ -1,5 +1,9 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/policy-reporter
 source: https://github.com/nais/helm-charts/tree/main/charts/policy-reporter
-version: 0.0.1
+version: 0.0.2
 environmentKinds:
   - "onprem"
+dependsOn:
+  - allOf:
+      - "kyverno"
+      - "kyverno-policies"
