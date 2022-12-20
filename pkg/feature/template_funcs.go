@@ -129,7 +129,7 @@ func environmentsAsMap(keyList string, data []map[string]any) map[string]map[str
 			panic(fmt.Sprintf("trying to use env[%s] as string key, but it is a %T of value %q",
 				primaryKey, envMap[primaryKey], envMap[primaryKey]))
 		}
-		if len(key) == 0 {
+		if key == "" {
 			panic(fmt.Sprintf("env[%s] is empty, but it needs to be used as a primary key", primaryKey))
 		}
 		result[key] = make(map[string]any)

@@ -75,12 +75,13 @@ If a key needs `.` in it, it should be escaped with `\`.
 
 The value of each key is an object with the following fields:
 
-| Field         | Type   | Description                       | Required |
-| ------------- | ------ | --------------------------------- | -------- |
-| `template`    | String | Go text/template template string  | Yes      |
-| `displayName` | String | Display name used by the frontend |          |
+| Field         | Type                       | Description                                                                              | Required                |
+| ------------- | -------------------------- | ---------------------------------------------------------------------------------------- | ----------------------- |
+| `template`    | String                     | The string will be processed by Go text/template. The result must be valid yaml          | Yes (or `value`)        |
+| `value`       | String or array of strings | The string will be processed by Go template, and the result will be treated as a string. | Yes (One or `template`) |
+| `displayName` | String                     | Display name used by the frontend                                                        |                         |
 
-The `template` field has access to the following data:
+The `template` and `value` field has access to the following data:
 
 ```go
 type MappingValues struct {
@@ -107,6 +108,23 @@ On the bottom of the overview page you will see a list of all the values.
 
 You can also check [nais-terraform-modules](https://github.com/nais/nais-terraform-modules),
 By convention, all values are defined in `fasit.tf` files in both `module-tenant` and `module-management` modules.
+
+#### Functions
+
+| Function                                                   | Description                                                                                                                |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `mapOf(ikey, ivalue string, envs []map[string]any)`        | Creates a new map with key being the value of `ikey` and value being the value of `ivalue` from each env in `envs`.        |
+| ` replace(s, old, new string)`                             | Replaces all occurrences of `old` with `new` in `s`.                                                                       |
+| `mapJoin(sep string, m any)`                               | For each key-value pair in `m`, the key and value is joined with `sep` and all returned as a slice                         |
+| `prefixedValues(m any, prefix string)`                     | Return a slice with values from `m` where the key has the prefix `prefix`                                                  |
+| `subdomain(m *MappingValues, subdomain string)`            | Returns the subdomain for the environment. It will return a subdomain for the environment it's installed in.               |
+| `environmentsAsMap(keyList string, data []map[string]any)` | Works on `MappingVlaues.Envs` and will return a map with the environment name as key, and the value of `keyList` as value. |
+| `eachOf(m any, key string)`                                | Returns a list of values by iterating over `m` (slice or array) and getting the value using `key`.                         |
+| `toJSON(v any)`                                            | Returns the JSON representation of `v`.                                                                                    |
+| `fromJSON(s string)`                                       | Decode JSON and return `map[string]any{}`.                                                                                 |
+| `toYAML(v any)`                                            | Returns the YAML representation of `v`.                                                                                    |
+| `join(sep string, v any)`                                  | Joins the values in `v` with `sep`, where `v` is any slice                                                                 |
+| `filter(key string, v any)`                                | Filters the values in `v` by the key `key`. `v` must be a slice                                                            |
 
 # JSON Schema and testing
 

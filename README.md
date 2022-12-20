@@ -1,5 +1,11 @@
 # fasit
 
+## Features
+
+Fasit contains a set of features that can be enabled for a tenant. Each feature has a definition in the `features` directory.
+
+Documentation for each feature can be found in [`features/README.md`](./features/README.md).
+
 ## local dev setup
 
 ```
