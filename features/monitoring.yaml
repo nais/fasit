@@ -8,6 +8,7 @@ environmentKinds:
   - "management"
 autoInstall:
   - "tenant"
+  - "management"
 timeout: 20m
 config:
   nais_alertmanager.slack.webhook:
