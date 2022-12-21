@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/velero
 source: https://github.com/nais/helm-charts/tree/main/charts/velero
-version: 0.5.0
+version: 0.5.1
 environmentKinds:
   - "management"
   - "tenant"
