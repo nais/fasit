@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring
-version: 1.27.0
+version: 1.28.0
 environmentKinds:
   - "tenant"
   - "onprem"
