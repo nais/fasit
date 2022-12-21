@@ -54,7 +54,7 @@ config:
     displayName: Nais prometheus cpu limit
 mapping:
   tenantCluster:
-    mapping: "false"
+    template: "false"
     ignoreKind:
       - "tenant"
       - "onprem"
