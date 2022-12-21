@@ -66,7 +66,7 @@ mapping:
     value: ['{{ subdomain . "grafana" }}']
     displayName: "Grafana hosts"
   prometheus.ingress.host:
-    value: '{{ subdomain . "naas-prometheus" }}'
+    value: '{{ subdomain . "prometheus-monitoring" }}'
     displayName: "NAIS Prometheus host"
   tenant.name:
     value: "{{.Tenant.Name}}"
