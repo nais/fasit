@@ -1,11 +1,12 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring-management
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring-management
-version: 2.0.0
+version: 2.1.0
 environmentKinds:
   - "management"
 dependsOn:
   - allOf:
       - "loadbalancer-iap"
+      - "monitoring"
 timeout: 20m
 config:
   nais_prometheus.retention:
@@ -23,13 +24,6 @@ config:
   nais_prometheus.cpu.limit:
     type: string
     displayName: Prometheus cpu limit
-  alerts.slack.webhook:
-    type: string
-    required: true
-    displayName: Slack webhook
-  alerts.slack.channel:
-    type: string
-    displayName: Slack channel
   grafana.grafana\.ini.auth\.jwt.expect_claims:
     type: string
     displayName: Grafana JWT claims
@@ -71,31 +65,9 @@ mapping:
   grafana.ingress.hosts:
     value: ['{{ subdomain . "grafana" }}']
     displayName: "Grafana hosts"
-  nais_prometheus.ingress.host:
-    value: '{{ subdomain . "nais-prometheus" }}'
+  prometheus.ingress.host:
+    value: '{{ subdomain . "prometheus" }}'
     displayName: "NAIS Prometheus host"
-  kube-prometheus-stack.alertmanager.ingress.hosts:
-    value:
-      - '{{ subdomain . "alertmanager" }}'
-    displayName: "Alertmanager hosts"
-  kube-prometheus-stack.alertmanager.serviceMonitor.relabelings:
-    template: |
-      - targetLabel: tenant
-        replacement: {{ .Tenant.Name }}
-      - targetLabel: tenant_cluster
-        replacement: management
-      - targetLabel: tenant_cluster_id
-        replacement: {{ .Tenant.Name }}-management
-    displayName: Alertmanager metric labels
-  kube-prometheus-stack.kube-state-metrics.prometheus.monitor.relabelings:
-    template: |
-      - targetLabel: tenant
-        replacement: {{ .Tenant.Name }}
-      - targetLabel: tenant_cluster
-        replacement: management
-      - targetLabel: tenant_cluster_id
-        replacement: {{ .Tenant.Name }}-management
-    displayName: Kube-state-metrics metric labels
   tenant.name:
     value: "{{.Tenant.Name}}"
     displayName: "Tenant name"
