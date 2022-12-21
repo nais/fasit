@@ -9,19 +9,19 @@ dependsOn:
       - "monitoring"
 timeout: 20m
 config:
-  nais_prometheus.retention:
+  prometheus.retention:
     type: string
     displayName: Prometheus retention
-  nais_prometheus.storage.size:
+  prometheus.storage.size:
     type: string
     displayName: Prometheus disk size
-  nais_prometheus.memory:
+  prometheus.memory:
     type: string
     displayName: Prometheus memory
-  nais_prometheus.cpu.request:
+  prometheus.cpu.request:
     type: string
     displayName: Prometheus cpu request
-  nais_prometheus.cpu.limit:
+  prometheus.cpu.limit:
     type: string
     displayName: Prometheus cpu limit
   grafana.grafana\.ini.auth\.jwt.expect_claims:
