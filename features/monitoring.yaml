@@ -20,6 +20,10 @@ config:
   nais_alertmanager.slack.proxy:
     type: string
     displayName: "Nais alerts proxy URL"
+    ignoreKind:
+      - tenant
+      - legacy
+      - management
   nais_alertmanager.ingress.enabled:
     type: bool
     displayName: "Enable nais-alertmanager ingress"
