@@ -1,10 +1,11 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring
-version: 1.25.0
+version: 1.27.0
 environmentKinds:
   - "tenant"
   - "onprem"
   - "legacy"
+  - "management"
 autoInstall:
   - "tenant"
 timeout: 20m
@@ -52,6 +53,12 @@ config:
     type: string
     displayName: Nais prometheus cpu limit
 mapping:
+  tenantCluster:
+    mapping: "false"
+    ignoreKind:
+      - "tenant"
+      - "onprem"
+      - "legacy"
   tenant_prometheus.ingress.host:
     value: '{{ subdomain . "prometheus" }}'
     displayName: "Prometheus host"
