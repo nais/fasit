@@ -25,24 +25,38 @@ config:
   tenant_prometheus.storage.enabled:
     type: bool
     displayName: Tenant prometheus enable pvc storage
+    ignoreKind:
+      - management
   tenant_prometheus.retention:
     type: string
     displayName: Tenant prometheus retention
+    ignoreKind:
+      - management
   tenant_prometheus.storage.type:
     type: string
     displayName: Tenant storage type (default / local)
+    ignoreKind:
+      - management
   tenant_prometheus.storage.size:
     type: string
     displayName: Tenant prometheus disk size
+    ignoreKind:
+      - management
   tenant_prometheus.memory:
     type: string
     displayName: Tenant prometheus memory
+    ignoreKind:
+      - management
   tenant_prometheus.cpu.request:
     type: string
     displayName: Tenant prometheus cpu request
+    ignoreKind:
+      - management
   tenant_prometheus.cpu.limit:
     type: string
     displayName: Tenant prometheus cpu limit
+    ignoreKind:
+      - management
   nais_prometheus.memory:
     type: string
     displayName: Nais prometheus memory
