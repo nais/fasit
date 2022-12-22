@@ -7,9 +7,8 @@ environmentKinds:
   - "tenant"
   - "legacy"
 dependsOn:
-  - anyOf:
+  - allOf:
     - "monitoring"
-    - "monitoring-management"
 autoInstall:
   - "management"
   - "onprem"
