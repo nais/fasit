@@ -37,7 +37,7 @@ const FeatureLogsView = ({ logs }: FeatureLogsViewProps) => {
     return (
       <LogPre>
         {lines.map((line: { msg: string; time: string }, i: number) => (
-          <LogLine key="i">
+          <LogLine key={i}>
             {humanizeDate(line.time, 'dd-MM-yyyy HH:mm:ss')}
             {line.msg}
           </LogLine>

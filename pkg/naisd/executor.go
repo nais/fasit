@@ -1,6 +1,7 @@
 package naisd
 
 import (
+	"fmt"
 	"os/exec"
 	"time"
 
@@ -18,7 +19,10 @@ type MockExecutor struct {
 func (m *MockExecutor) Execute(cmd *exec.Cmd) error {
 	m.Logger.Println(cmd.String())
 
+	fmt.Fprintln(cmd.Stdout, "Start mock executor", time.Now())
 	time.Sleep(3 * time.Second)
+	fmt.Fprintln(cmd.Stdout, "end of mock executor")
+
 	return nil
 }
 
