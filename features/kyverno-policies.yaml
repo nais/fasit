@@ -133,6 +133,7 @@ mapping:
       - disallow-selinux
       - restrict-apparmor-profiles
       - restrict-sysctls
+      - restrict-volume-types
       {{- end }}
     ignoreKind:
       - "tenant"
