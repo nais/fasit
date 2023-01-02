@@ -131,6 +131,7 @@ mapping:
       - disallow-privileged-containers
       - disallow-proc-mount
       - disallow-selinux
+      - disallow-privilege-escalation
       - restrict-apparmor-profiles
       - restrict-sysctls
       - restrict-volume-types
