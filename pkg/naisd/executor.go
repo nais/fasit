@@ -19,9 +19,11 @@ type MockExecutor struct {
 func (m *MockExecutor) Execute(cmd *exec.Cmd) error {
 	m.Logger.Println(cmd.String())
 
-	fmt.Fprintln(cmd.Stdout, "Start mock executor", time.Now())
+	if cmd.Stdout != nil {
+		fmt.Fprintln(cmd.Stdout, "Start mock executor", time.Now())
+		defer fmt.Fprintln(cmd.Stdout, "end of mock executor")
+	}
 	time.Sleep(3 * time.Second)
-	fmt.Fprintln(cmd.Stdout, "end of mock executor")
 
 	return nil
 }

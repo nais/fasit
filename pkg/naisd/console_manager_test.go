@@ -25,19 +25,19 @@ func TestConsoleManager_handler(t *testing.T) {
 		{
 			name:               "create namespace test-namespace",
 			typ:                message.ConsoleTypeCreateNamespace,
-			data:               `{"name":"test-namespace","gcpProject":"test-project"}`,
+			data:               `{"name":"test-namespace","gcpProject":"test-project","cnrmEmail":"cnrm@proj.iam.gserviceaccounts.com"}`,
 			expectedNamespaces: []string{"test-namespace"},
 		},
 		{
 			name:               "create namespace test-namespace again",
 			typ:                message.ConsoleTypeCreateNamespace,
-			data:               `{"name":"test-namespace","gcpProject":"test-project"}`,
+			data:               `{"name":"test-namespace","gcpProject":"test-project","cnrmEmail":"cnrm@proj.iam.gserviceaccounts.com"}`,
 			expectedNamespaces: []string{"test-namespace"},
 		},
 		{
 			name:               "create namespace other-namespace",
 			typ:                message.ConsoleTypeCreateNamespace,
-			data:               `{"name":"other-namespace","gcpProject":"other-project"}`,
+			data:               `{"name":"other-namespace","gcpProject":"other-project","cnrmEmail":"cnrm@proj.iam.gserviceaccounts.com"}`,
 			expectedNamespaces: []string{"other-namespace", "test-namespace"},
 		},
 		{
@@ -115,7 +115,7 @@ func TestConsoleManager_handler(t *testing.T) {
 				}
 
 				want := map[string]any{
-					"googleServiceAccount": "cnrm-" + namespace + "@test-project.iam.gserviceaccount.com",
+					"googleServiceAccount": "cnrm@proj.iam.gserviceaccounts.com",
 				}
 				got := cc.Object["spec"]
 

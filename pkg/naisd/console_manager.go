@@ -315,7 +315,6 @@ func (c *ConsoleManager) createCNRMConfig(ctx context.Context, data message.Crea
 	cnrmClient := c.dynClient.Resource(cnrmConfigGroupVersionResource).Namespace(data.Name)
 
 	const contextName = "configconnectorcontext.core.cnrm.cloud.google.com"
-	saEmail := "cnrm-" + data.Name + "@" + c.projectID + ".iam.gserviceaccount.com"
 
 	res, err := cnrmClient.Get(ctx, contextName, metav1.GetOptions{})
 	if err != nil {
@@ -323,14 +322,14 @@ func (c *ConsoleManager) createCNRMConfig(ctx context.Context, data message.Crea
 			return fmt.Errorf("getting config connector context: %w", err)
 		}
 		_, err := cnrmClient.Create(ctx, &unstructured.Unstructured{
-			Object: map[string]interface{}{
+			Object: map[string]any{
 				"apiVersion": "core.cnrm.cloud.google.com/v1beta1",
 				"kind":       "ConfigConnectorContext",
-				"metadata": map[string]interface{}{
+				"metadata": map[string]any{
 					"name": contextName,
 				},
-				"spec": map[string]interface{}{
-					"googleServiceAccount": saEmail,
+				"spec": map[string]any{
+					"googleServiceAccount": data.CNRMEmail,
 				},
 			},
 		}, metav1.CreateOptions{})
@@ -338,10 +337,6 @@ func (c *ConsoleManager) createCNRMConfig(ctx context.Context, data message.Crea
 			return fmt.Errorf("creating CNRM config: %w", err)
 		}
 		return nil
-	}
-
-	res.Object["spec"] = map[string]interface{}{
-		"googleServiceAccount": saEmail,
 	}
 
 	_, err = cnrmClient.Update(ctx, res, metav1.UpdateOptions{})

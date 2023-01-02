@@ -19,6 +19,7 @@ type CreateNamespace struct {
 	GCPProject   string `json:"gcpProject"`
 	GroupEmail   string `json:"groupEmail"`
 	AzureGroupID string `json:"azureGroupID"`
+	CNRMEmail    string `json:"cnrmEmail"`
 }
 
 type DeleteNamespace struct {
