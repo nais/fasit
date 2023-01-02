@@ -1,0 +1,23 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/nais-verification
+source: https://github.com/nais/nais-verification/tree/main/charts/nais-verification
+version: 0.1.0
+environmentKinds:
+  - "tenant"
+dependsOn: [] # Cross-kind dependencies not possible :(
+#  - allOf:
+#      - console # Create team and get deploy key
+rolloutSource:
+  - org: nais
+    repo: nais-verification
+mapping:
+  console.api_url:
+    template: "console.{{.Tenant.Name}}.cloud.nais.io"
+  console.api_token:
+    template: "{{.Management.nais_verification_console_api_key}}"
+config:
+  image.repository:
+    type: string
+  image.tag:
+    type: string
+  image.pullPolicy:
+    type: string
