@@ -11,7 +11,7 @@ rolloutSource:
     repo: nais-verification
 mapping:
   console.api_url:
-    template: "console.{{.Tenant.Name}}.cloud.nais.io"
+    template: "https://console.{{.Tenant.Name}}.cloud.nais.io"
   console.api_token:
     value: "{{.Management.nais_verification_console_api_key}}"
 config:
