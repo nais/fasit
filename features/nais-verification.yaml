@@ -13,7 +13,7 @@ mapping:
   console.api_url:
     template: "console.{{.Tenant.Name}}.cloud.nais.io"
   console.api_token:
-    template: "{{.Management.nais_verification_console_api_key}}"
+    value: "{{.Management.nais_verification_console_api_key}}"
 config:
   image.repository:
     type: string
