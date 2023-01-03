@@ -9,9 +9,6 @@ const SvgComponent = () => (
     x={0}
     y={0}
     viewBox="0 0 174.52 249.18"
-    style={{
-      enableBackground: "new 0 0 174.52 249.18",
-    }}
     xmlSpace="preserve"
   >
     <style>
