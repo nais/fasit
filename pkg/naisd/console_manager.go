@@ -339,6 +339,10 @@ func (c *ConsoleManager) createCNRMConfig(ctx context.Context, data message.Crea
 		return nil
 	}
 
+	res.Object["spec"] = map[string]any{
+		"googleServiceAccount": data.CNRMEmail,
+	}
+
 	_, err = cnrmClient.Update(ctx, res, metav1.UpdateOptions{})
 	return err
 }
