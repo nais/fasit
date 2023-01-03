@@ -8,6 +8,9 @@ const GetLogo = (name: string, size?: number) => {
         case 'mattilsynet':
         case 'mtpilot':
             return <img src={"/mattilsynet.png"} width={size?size+'px':'50px'}/>
+        case 'ssb':
+            return <img src={"/ssb.png"} width={size?size+'px':'50px'}/>
+
         default:
             return <TenantLogo />
 
