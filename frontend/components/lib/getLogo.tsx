@@ -1,5 +1,6 @@
 import NavLogo from "./icons/navLogo";
 import TenantLogo from "./icons/tenantLogo";
+import NaisLogo from "./icons/naisLogo";
 
 const GetLogo = (name: string, size?: number) => {
     switch (name) {
@@ -10,6 +11,8 @@ const GetLogo = (name: string, size?: number) => {
             return <img src={"/mattilsynet.png"} width={size?size+'px':'50px'}/>
         case 'ssb':
             return <img src={"/ssb.png"} width={size?size+'px':'50px'}/>
+        case 'dev-nais':
+            return <NaisLogo />
 
         default:
             return <TenantLogo />
