@@ -3,7 +3,7 @@ source: https://github.com/nais/nais-verification/tree/main/charts/nais-verifica
 version: 0.1.0
 environmentKinds:
   - "tenant"
-dependsOn: [] # Cross-kind dependencies not possible :(
+#dependsOn: # Cross-kind dependencies not possible :(
 #  - allOf:
 #      - console # Create team and get deploy key
 rolloutSource:
