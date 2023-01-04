@@ -12,6 +12,9 @@ autoInstall:
   - "management"
   - "onprem"
   - "legacy"
+dependsOn:
+  - allOf:
+    - "monitoring"
 timeout: 20m
 config:
   replicaCount:
