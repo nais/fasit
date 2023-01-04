@@ -3,6 +3,12 @@ source: https://github.com/nais/helm-charts/tree/main/charts/console
 version: 0.0.23
 environmentKinds:
   - "management"
+dependsOn:
+  - allOf:
+    - loadbalancer
+    - certificates
+    - monitoring
+    - monitoring-management
 rolloutSource:
   - org: nais
     repo: console
