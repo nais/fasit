@@ -8,7 +8,6 @@ dependsOn:
     - loadbalancer
     - certificates
     - monitoring
-    - monitoring-management
 rolloutSource:
   - org: nais
     repo: console
