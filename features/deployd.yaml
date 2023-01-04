@@ -9,6 +9,9 @@ dependsOn:
   - allOf:
       - "nais-roles"
       - "nais-crds"
+rolloutSource:
+  - org: nais
+    repo: deploy
 mapping:
   preSharedKey:
     value: "{{.Env.deployd_pre_shared_key}}"

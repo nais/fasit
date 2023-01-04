@@ -6,6 +6,11 @@ environmentKinds:
 dependsOn:
   - allOf:
       - "console"
+rolloutSource:
+  - org: nais
+    repo: deploy
+  - org: nais
+    repo: deploy-frontend
 mapping:
   backend.database.instance:
     value: "{{.Management.hookd_database_instance}}"
