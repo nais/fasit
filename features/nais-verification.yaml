@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/nais-verification
 source: https://github.com/nais/nais-verification/tree/main/charts/nais-verification
-version: 0.1.0
+version: 0.1.1
 environmentKinds:
   - "tenant"
 #dependsOn: # Cross-kind dependencies not possible :(
