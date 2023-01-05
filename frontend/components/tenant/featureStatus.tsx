@@ -71,12 +71,14 @@ interface FeatureProps {
   featureState: FeatureStateQuery['featureState']
   setShowVerify: React.Dispatch<boolean>
   setShowRedeploy: React.Dispatch<boolean>
+  description?: string
 }
 
 const FeatureStatus = ({
   featureState,
   setShowVerify,
   setShowRedeploy,
+  description
 }: FeatureProps) => {
   const router = useRouter()
   const tenantName = router.query.tenantName as string
@@ -152,6 +154,7 @@ const FeatureStatus = ({
               })}
             </div>
           )}
+          {description && <div>description: {' '} {description}</div>}
         </div>
         <EnableFeatureBox>
           <div>Enabled</div>

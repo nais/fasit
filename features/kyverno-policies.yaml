@@ -1,6 +1,7 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/kyverno-policies
 source: https://github.com/nais/helm-charts/tree/main/charts/kyverno-policies
 version: 0.9.1
+description: "Sane cluster defaults - should be on in all clusters"
 environmentKinds:
   - "tenant"
   - "management"

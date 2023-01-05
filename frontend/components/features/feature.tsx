@@ -117,6 +117,7 @@ const Feature = ({ featureName }: FeatureProps) => {
               })}
             </WarningBox>
           )}
+          {feature.description && <div>description: {' '}{feature.description}</div>}
         </div>
       </FeatureStatus>
 

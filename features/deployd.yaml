@@ -1,6 +1,7 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/deployd
 source: https://github.com/nais/helm-charts/tree/main/charts/deployd
 version: 0.2.0
+description: "Retrieves deployment instructions from hookd and deploys to cluster"
 environmentKinds:
   - "tenant"
   - "onprem"

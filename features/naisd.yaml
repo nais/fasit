@@ -1,6 +1,7 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/naisd
 source: https://github.com/nais/fasit/tree/main/charts/naisd
 version: 0.3.0
+description: "install and upgrade features based on requests from fasit"
 environmentKinds:
   - "tenant"
   - "management"

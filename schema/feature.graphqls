@@ -11,6 +11,7 @@ type Feature {
   version: String!
   repo: String!
   source: String!
+  description: String!
   dependsOn: [Dependency!]!
   config: RawMessage!
   environmentKinds: [EnvironmentKind!]!

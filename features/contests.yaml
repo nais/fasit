@@ -1,10 +1,11 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/contests
 source: https://github.com/nais/contests
 version: 1.0.2
+description: "Checks connectivity to database, bucket and ingresses via blackbox exporter"
 dependsOn:
   - allOf:
-    - "naiserator"
-    - "monitoring"
+      - "naiserator"
+      - "monitoring"
 environmentKinds:
   - "tenant"
   - "onprem"
@@ -28,7 +29,7 @@ config:
 mapping:
   contests.ingresses:
     value:
-      - 'https://contests.{{ .Env.name }}.{{ .Tenant.Name }}.cloud.nais.io'
+      - "https://contests.{{ .Env.name }}.{{ .Tenant.Name }}.cloud.nais.io"
     displayName: "Ingresses"
   env:
     value: "{{ .Env.name }}"

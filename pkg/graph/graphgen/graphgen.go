@@ -130,6 +130,7 @@ type ComplexityRoot struct {
 		Config           func(childComplexity int) int
 		Configoverrides  func(childComplexity int) int
 		DependsOn        func(childComplexity int) int
+		Description      func(childComplexity int) int
 		EnvironmentKinds func(childComplexity int) int
 		Name             func(childComplexity int) int
 		OutdatedInfo     func(childComplexity int) int
@@ -746,6 +747,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Feature.DependsOn(childComplexity), true
+
+	case "Feature.description":
+		if e.complexity.Feature.Description == nil {
+			break
+		}
+
+		return e.complexity.Feature.Description(childComplexity), true
 
 	case "Feature.environmentKinds":
 		if e.complexity.Feature.EnvironmentKinds == nil {
@@ -2043,6 +2051,7 @@ type Feature {
   version: String!
   repo: String!
   source: String!
+  description: String!
   dependsOn: [Dependency!]!
   config: RawMessage!
   environmentKinds: [EnvironmentKind!]!
@@ -3467,6 +3476,8 @@ func (ec *executionContext) fieldContext_EnvConfiguration_feature(ctx context.Co
 				return ec.fieldContext_Feature_repo(ctx, field)
 			case "source":
 				return ec.fieldContext_Feature_source(ctx, field)
+			case "description":
+				return ec.fieldContext_Feature_description(ctx, field)
 			case "dependsOn":
 				return ec.fieldContext_Feature_dependsOn(ctx, field)
 			case "config":
@@ -4912,6 +4923,50 @@ func (ec *executionContext) fieldContext_Feature_source(ctx context.Context, fie
 	return fc, nil
 }
 
+func (ec *executionContext) _Feature_description(ctx context.Context, field graphql.CollectedField, obj *model.Feature) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Feature_description(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Feature_description(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Feature",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Feature_dependsOn(ctx context.Context, field graphql.CollectedField, obj *model.Feature) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Feature_dependsOn(ctx, field)
 	if err != nil {
@@ -5261,6 +5316,8 @@ func (ec *executionContext) fieldContext_FeatureState_feature(ctx context.Contex
 				return ec.fieldContext_Feature_repo(ctx, field)
 			case "source":
 				return ec.fieldContext_Feature_source(ctx, field)
+			case "description":
+				return ec.fieldContext_Feature_description(ctx, field)
 			case "dependsOn":
 				return ec.fieldContext_Feature_dependsOn(ctx, field)
 			case "config":
@@ -5499,6 +5556,8 @@ func (ec *executionContext) fieldContext_FeatureState_missingDependencies(ctx co
 				return ec.fieldContext_Feature_repo(ctx, field)
 			case "source":
 				return ec.fieldContext_Feature_source(ctx, field)
+			case "description":
+				return ec.fieldContext_Feature_description(ctx, field)
 			case "dependsOn":
 				return ec.fieldContext_Feature_dependsOn(ctx, field)
 			case "config":
@@ -5661,6 +5720,8 @@ func (ec *executionContext) fieldContext_FeatureWarning_feature(ctx context.Cont
 				return ec.fieldContext_Feature_repo(ctx, field)
 			case "source":
 				return ec.fieldContext_Feature_source(ctx, field)
+			case "description":
+				return ec.fieldContext_Feature_description(ctx, field)
 			case "dependsOn":
 				return ec.fieldContext_Feature_dependsOn(ctx, field)
 			case "config":
@@ -5847,6 +5908,8 @@ func (ec *executionContext) fieldContext_GlobalConfiguration_feature(ctx context
 				return ec.fieldContext_Feature_repo(ctx, field)
 			case "source":
 				return ec.fieldContext_Feature_source(ctx, field)
+			case "description":
+				return ec.fieldContext_Feature_description(ctx, field)
 			case "dependsOn":
 				return ec.fieldContext_Feature_dependsOn(ctx, field)
 			case "config":
@@ -8084,6 +8147,8 @@ func (ec *executionContext) fieldContext_OutdatedInfo_feature(ctx context.Contex
 				return ec.fieldContext_Feature_repo(ctx, field)
 			case "source":
 				return ec.fieldContext_Feature_source(ctx, field)
+			case "description":
+				return ec.fieldContext_Feature_description(ctx, field)
 			case "dependsOn":
 				return ec.fieldContext_Feature_dependsOn(ctx, field)
 			case "config":
@@ -8776,6 +8841,8 @@ func (ec *executionContext) fieldContext_Query_features(ctx context.Context, fie
 				return ec.fieldContext_Feature_repo(ctx, field)
 			case "source":
 				return ec.fieldContext_Feature_source(ctx, field)
+			case "description":
+				return ec.fieldContext_Feature_description(ctx, field)
 			case "dependsOn":
 				return ec.fieldContext_Feature_dependsOn(ctx, field)
 			case "config":
@@ -8855,6 +8922,8 @@ func (ec *executionContext) fieldContext_Query_feature(ctx context.Context, fiel
 				return ec.fieldContext_Feature_repo(ctx, field)
 			case "source":
 				return ec.fieldContext_Feature_source(ctx, field)
+			case "description":
+				return ec.fieldContext_Feature_description(ctx, field)
 			case "dependsOn":
 				return ec.fieldContext_Feature_dependsOn(ctx, field)
 			case "config":
@@ -9544,6 +9613,8 @@ func (ec *executionContext) fieldContext_Release_feature(ctx context.Context, fi
 				return ec.fieldContext_Feature_repo(ctx, field)
 			case "source":
 				return ec.fieldContext_Feature_source(ctx, field)
+			case "description":
+				return ec.fieldContext_Feature_description(ctx, field)
 			case "dependsOn":
 				return ec.fieldContext_Feature_dependsOn(ctx, field)
 			case "config":
@@ -10535,6 +10606,8 @@ func (ec *executionContext) fieldContext_RolloutSummary_feature(ctx context.Cont
 				return ec.fieldContext_Feature_repo(ctx, field)
 			case "source":
 				return ec.fieldContext_Feature_source(ctx, field)
+			case "description":
+				return ec.fieldContext_Feature_description(ctx, field)
 			case "dependsOn":
 				return ec.fieldContext_Feature_dependsOn(ctx, field)
 			case "config":
@@ -11147,6 +11220,8 @@ func (ec *executionContext) fieldContext_Status_missingDependencies(ctx context.
 				return ec.fieldContext_Feature_repo(ctx, field)
 			case "source":
 				return ec.fieldContext_Feature_source(ctx, field)
+			case "description":
+				return ec.fieldContext_Feature_description(ctx, field)
 			case "dependsOn":
 				return ec.fieldContext_Feature_dependsOn(ctx, field)
 			case "config":
@@ -14283,6 +14358,13 @@ func (ec *executionContext) _Feature(ctx context.Context, sel ast.SelectionSet, 
 		case "source":
 
 			out.Values[i] = ec._Feature_source(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
+		case "description":
+
+			out.Values[i] = ec._Feature_description(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)

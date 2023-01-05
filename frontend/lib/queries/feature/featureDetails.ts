@@ -11,6 +11,7 @@ export const FEATUREDETAILS = gql`
       chart
       config
       repo
+      description
       source
       environmentKinds
       version

@@ -1,6 +1,7 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/aiven-alerts
 source: https://github.com/nais/helm/charts/tree/main/aiven-alerts
 version: 0.1.0
+description: "Alerts for aiven topics"
 environmentKinds:
   - "tenant"
   - "legacy"

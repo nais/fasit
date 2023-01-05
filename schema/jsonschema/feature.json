@@ -84,6 +84,10 @@
 			},
 			"type": "array"
 		},
+		"description": {
+			"description": "Description is a short description of the feature.",
+			"type": "string"
+		},
 		"environmentKinds": {
 			"description": "EnvironmentKinds is the list of environments this feature can be used in.",
 			"items": {

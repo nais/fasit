@@ -1,13 +1,14 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/console
 source: https://github.com/nais/helm-charts/tree/main/charts/console
 version: 0.0.23
+description: "For managing teams and resources on the platform"
 environmentKinds:
   - "management"
 dependsOn:
   - allOf:
-    - loadbalancer
-    - certificates
-    - monitoring
+      - loadbalancer
+      - certificates
+      - monitoring
 rolloutSource:
   - org: nais
     repo: console

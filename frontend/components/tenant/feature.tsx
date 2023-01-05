@@ -3,7 +3,7 @@ import { Tabs } from '@navikt/ds-react'
 import { useRouter } from 'next/router'
 import { useState } from 'react'
 import styled from 'styled-components'
-import { useFeatureStateQuery } from '../../lib/schema/graphql'
+import { useFeatureDetailsQuery, useFeatureStateQuery } from '../../lib/schema/graphql'
 import { useFocusPoll } from '../../lib/useFocusPoll'
 import AuditView from '../lib/auditView'
 import EnableFeature from './enableFeature'
@@ -34,6 +34,10 @@ const Feature = ({ envID, featureName }: FeatureProps) => {
   const query = useFeatureStateQuery({
     variables: { envID: envID, feature: featureName },
   })
+  
+  const featureDetails = useFeatureDetailsQuery({
+    variables: { name: featureName },
+  })
   useFocusPoll({ pollInterval: 10 * 1000, ...query })
 
   const { data, loading } = query
@@ -59,6 +63,7 @@ const Feature = ({ envID, featureName }: FeatureProps) => {
         featureState={featureState}
         setShowVerify={setShowVerify}
         setShowRedeploy={setShowRedeploy}
+        description = {featureDetails.data?.feature?.description}
       />
       <Tabs
         defaultValue={activeTab}

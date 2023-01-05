@@ -1,6 +1,7 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/rbac-sync
 source: https://github.com/nais/rbac-sync/tree/main/charts/rbac-sync
 version: 1.0.0
+description: "Syncs team members from google groups to rolebindings"
 environmentKinds:
   - "onprem"
   - "legacy"

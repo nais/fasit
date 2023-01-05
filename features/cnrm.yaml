@@ -1,6 +1,7 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/cnrm
 source: https://github.com/nais/helm-charts/tree/main/charts/cnrm
 version: 0.1.0
+description: "Sets up Config Connector contexts, rolebinding and service-accounts namespace"
 environmentKinds:
   - "tenant"
   - "legacy"

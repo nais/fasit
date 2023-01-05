@@ -1,6 +1,7 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/hunter2
 source: https://github.com/nais/hunter2/tree/master/charts/hunter2
 version: 1.0.0
+description: "Syncs secrets from Google Secret manager to kubernetes"
 environmentKinds:
   - "tenant"
   - "legacy"

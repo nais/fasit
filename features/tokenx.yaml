@@ -1,13 +1,14 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/tokenx
 source: https://github.com/nais/helm-charts/tree/main/charts/tokenx
 version: 0.4.1
+description: "Token exchange"
 environmentKinds:
   - "tenant"
   - "onprem"
   - "legacy"
 dependsOn:
   - allOf:
-    - "naiserator"
+      - "naiserator"
 config:
   jwker.tag:
     type: string

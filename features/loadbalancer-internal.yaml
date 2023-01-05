@@ -1,13 +1,14 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/loadbalancer-internal
 source: https://github.com/nais/helm-charts/tree/main/charts/loadbalancer-internal
 version: 0.2.0
+description: "Ingress controller and Loadbalancer for internal traffic"
 environmentKinds:
   - "tenant"
   - "management"
   - "legacy"
 dependsOn:
   - allOf:
-    - "certificates"
+      - "certificates"
 config:
   certificates:
     type: string_array
@@ -24,4 +25,3 @@ config:
   ingress-nginx.controller.metrics.serviceMonitor.enabled:
     type: bool
     displayName: "Enable service monitor"
-

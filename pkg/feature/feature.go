@@ -36,6 +36,8 @@ type Feature struct {
 	Repo string `yaml:"repo,omitempty" json:"repo,omitempty"`
 	// RolloutSource is the org and name of repositories which can trigger a rollout.
 	RolloutSource []RolloutSource `yaml:"rolloutSource,omitempty" json:"rolloutSource,omitempty"`
+	// Description is a short description of the feature.
+	Description string `yaml:"description,omitempty" json:"description,omitempty"`
 	// Source should be the URL to the helm chart source code.
 	Source string `yaml:"source" json:"source"`
 	// DependsOn defines the features that this feature depends on.

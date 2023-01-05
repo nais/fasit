@@ -11,6 +11,7 @@ type Feature struct {
 	Chart            string            `json:"chart"`
 	Version          string            `json:"version"`
 	Repo             string            `json:"repo"`
+	Description      string            `json:"description"`
 	Source           string            `json:"source"`
 	DependsOn        []*Dependency     `json:"dependsOn"`
 	Config           json.RawMessage   `json:"config"`

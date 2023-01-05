@@ -1,6 +1,7 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/clamav
 source: https://github.com/nais/helm-charts/tree/main/charts/clamav
 version: 0.1.0
+description: "Anti-virus"
 environmentKinds:
   - "tenant"
   - "onprem"

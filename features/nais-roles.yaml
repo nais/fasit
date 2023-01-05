@@ -1,6 +1,7 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/nais-roles
 source: https://github.com/nais/helm-charts/tree/main/charts/nais-roles
 version: 0.1.0
+description: "Base nais roles"
 environmentKinds:
   - "tenant"
   - "onprem"

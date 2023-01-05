@@ -149,6 +149,7 @@ export type Feature = {
   config: Scalars['RawMessage']
   configoverrides: Array<ConfigOverride>
   dependsOn: Array<Dependency>
+  description: Scalars['String']
   environmentKinds: Array<EnvironmentKind>
   name: Scalars['String']
   outdatedInfo: Array<Maybe<OutdatedInfo>>
@@ -745,6 +746,7 @@ export type FeatureDetailsQuery = {
     chart: string
     config: any
     repo: string
+    description: string
     source: string
     environmentKinds: Array<EnvironmentKind>
     version: string
@@ -1681,6 +1683,7 @@ export const FeatureDetailsDocument = gql`
       chart
       config
       repo
+      description
       source
       environmentKinds
       version

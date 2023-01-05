@@ -1,6 +1,7 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/container-resource-usage
 source: https://github.com/nais/container_resource_usage/tree/master/charts/container-resource-usage
 version: 1.0.1
+description: "Reads prometheus data and reports to bigquery - should only be installed in NAV legacy and onprem"
 environmentKinds:
   - "onprem"
   - "legacy"

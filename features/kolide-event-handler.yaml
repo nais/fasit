@@ -1,6 +1,7 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/kolide-event-handler
 source: https://github.com/nais/kolide-event-handler/tree/main/charts
 version: 0.2.0
+description: "Integrates naisdevice with Kolide - should only be on in NAV"
 environmentKinds:
   - "management"
 config:

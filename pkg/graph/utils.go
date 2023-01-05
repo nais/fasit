@@ -34,6 +34,7 @@ func marshalFeature(feat feature.Feature) (*model.Feature, error) {
 		Version:          feat.Version,
 		Repo:             feat.Repo,
 		Source:           feat.Source,
+		Description:      feat.Description,
 		DependsOn:        deps,
 		Config:           config,
 		EnvironmentKinds: feat.EnvironmentKinds,
