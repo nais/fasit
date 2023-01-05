@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/replicator
 source: https://github.com/nais/helm-charts/tree/main/charts/replicator
-version: 2023-1-5-d245791
+version: 2023.1.5-f84863b
 environmentKinds:
   - "tenant"
   - "legacy"
