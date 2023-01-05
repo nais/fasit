@@ -50,6 +50,10 @@ mapping:
   backend.gcp.billingAccount:
     value: "{{ .Management.billing_account }}"
     displayName: Billing account
+  backend.naisDeploy.endpoint:
+    template: "https://deploy.{{.Tenant.Name}}.cloud.nais.io/api/v1/provision"
+  backend.naisDeploy.provisionKey:
+    value: "{{.Management.hookd_provision_key}}"
 config:
   backend.image.tag:
     type: string
@@ -65,11 +69,6 @@ config:
   backend.naisNamespace.azureEnabled:
     type: bool
     displayName: Enable use of Azure groups for Kubernetes team namespaces
-  backend.naisDeploy.endpoint:
-    type: string
-  backend.naisDeploy.provisionKey:
-    type: string
-    secret: true
   frontend.image.tag:
     type: string
     description: Frontend image tag

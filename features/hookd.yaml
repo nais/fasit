@@ -48,6 +48,8 @@ mapping:
     description: "API-key used to get groups from console"
   deploydPreSharedKeys:
     value: '{{ eachOf .Envs "deployd_pre_shared_key" | join "," }}'
+  backend.provisionKey:
+    value: "{{.Management.hookd_provision_key}}"
 config:
   backend.image.repository:
     type: string
@@ -55,10 +57,6 @@ config:
     type: string
   backend.image.tag:
     type: string
-  backend.provisionKey:
-    type: string
-    secret: true
-    description: Special API key used to create team deploy API keys
   googleClient.id:
     type: string
     description: Google OAuth 2.0 Client ID, see https://handbook.nais.io/technical/tenant-setup/#set-up-oauth-client
