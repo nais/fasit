@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/contests
 source: https://github.com/nais/contests
-version: 1.0.1
+version: 1.0.2
 dependsOn:
   - allOf:
     - "naiserator"
