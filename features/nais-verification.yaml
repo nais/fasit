@@ -15,6 +15,9 @@ mapping:
   console.api_token:
     value: "{{.Management.nais_verification_console_api_key}}"
 config:
+  slackChannel:
+    type: string
+    description: "The name of the nais<->tenant coop channel (default #nais)"
   image.repository:
     type: string
   image.tag:
