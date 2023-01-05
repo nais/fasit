@@ -5,7 +5,8 @@ dependsOn:
   - allOf:
       - "monitoring"
 environmentKinds:
-  - "tenant"
+  - "onprem"
+autoInstall:
   - "onprem"
 config:
   alerts.enabled:
