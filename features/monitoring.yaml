@@ -112,9 +112,6 @@ mapping:
     value:
       - '{{ subdomain . "alertmanager" }}'
     displayName: "Alertmanager hosts"
-  kube-prometheus-stack.alertmanager.ingress.ingressClassName:
-    value: '{{ if eq .Kind "tenant" }}nais-ingress-iap{{ else }}nais-ingress{{ end }}'
-    displayName: "Alertmanager ingress class"
   nais_prometheus.ingress.host:
     value: '{{ subdomain . "nais-prometheus" }}'
     displayName: "NAIS Prometheus ingress host"
