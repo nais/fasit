@@ -17,7 +17,7 @@ dependsOn:
       - "cert-manager"
 config:
   debug:
-    type: boolean
+    type: bool
     displayName: "Debug"
     description: "Enable debug logging"
 
