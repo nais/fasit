@@ -15,9 +15,18 @@ config:
   teamSlackAlerts.enabled:
     type: bool
     displayName: "Enable team slack alerts"
+    ignoreKind:
+      - management
   teamSlackAlerts.webhook:
     type: string
     displayName: "Team slack alerts webhook URL"
+    ignoreKind:
+      - management
+  teamSlackAlerts.proxy:
+    type: string
+    displayName: "Team slack alerts proxy URL"    
+    ignoreKind:
+      - management
   nais_alertmanager.slack.webhook:
     type: string
     displayName: "Nais alerts webhook URL"
