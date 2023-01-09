@@ -95,11 +95,11 @@ func TestConsoleManager_handler(t *testing.T) {
 				t.Errorf("diff -want +got:\n%v", cmp.Diff(tt.expectedNamespaces, names))
 			}
 
-			// check slack-alerts-channel annotation
+			// check slackAlertsChannel annotation
 			for _, n := range namespaces.Items {
-				c, _ := n.Annotations["replicator.nais.io/slack-alerts-channel"]
+				c, _ := n.Annotations["replicator.nais.io/slackAlertsChannel"]
 				if c != "#test-alerts" {
-					t.Errorf("namespace annotation %q has unexpected value, expected: %q got: %q", "replicator.nais.io/slack-alerts-channel", "#test-alerts", c)
+					t.Errorf("namespace annotation %q has unexpected value, expected: %q got: %q", "replicator.nais.io/slackAlertsChannel", "#test-alerts", c)
 				}
 			}
 

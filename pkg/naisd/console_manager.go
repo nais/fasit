@@ -135,7 +135,7 @@ func (c *ConsoleManager) createNamespace(ctx context.Context, data message.Creat
 	}
 
 	if data.SlackAlertsChannel != "" {
-		metav1.SetMetaDataAnnotation(&ns.ObjectMeta, "replicator.nais.io/slack-alerts-channel", data.SlackAlertsChannel)
+		metav1.SetMetaDataAnnotation(&ns.ObjectMeta, "replicator.nais.io/slackAlertsChannel", data.SlackAlertsChannel)
 	}
 
 	metav1.SetMetaDataLabel(&ns.ObjectMeta, "team", data.Name)
@@ -157,7 +157,7 @@ func (c *ConsoleManager) createNamespace(ctx context.Context, data message.Creat
 	switch {
 	case existing.Annotations == nil:
 	case existing.Annotations["cnrm.cloud.google.com/project-id"] != data.GCPProject:
-	case existing.Annotations["replicator.nais.io/slack-alerts-channel"] != data.SlackAlertsChannel:
+	case existing.Annotations["replicator.nais.io/slackAlertsChannel"] != data.SlackAlertsChannel:
 	case existing.Labels == nil:
 	case existing.Labels["team"] != data.Name:
 	default:
@@ -166,7 +166,7 @@ func (c *ConsoleManager) createNamespace(ctx context.Context, data message.Creat
 	}
 
 	metav1.SetMetaDataAnnotation(&existing.ObjectMeta, "cnrm.cloud.google.com/project-id", data.GCPProject)
-	metav1.SetMetaDataAnnotation(&existing.ObjectMeta, "replicator.nais.io/slack-alerts-channel", data.SlackAlertsChannel)
+	metav1.SetMetaDataAnnotation(&existing.ObjectMeta, "replicator.nais.io/slackAlertsChannel", data.SlackAlertsChannel)
 	metav1.SetMetaDataLabel(&existing.ObjectMeta, "team", data.Name)
 
 	_, err = c.kubeClient.CoreV1().Namespaces().Update(ctx, existing, metav1.UpdateOptions{})
