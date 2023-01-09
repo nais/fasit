@@ -12,12 +12,12 @@ autoInstall:
   - "management"
 timeout: 20m
 config:
-  slackAlerts.enabled:
+  teamSlackAlerts.enabled:
     type: bool
-    displayName: "Enable slack alerts"
-  slackAlerts.webhook:
+    displayName: "Enable team slack alerts"
+  teamSlackAlerts.webhook:
     type: string
-    displayName: "Slack alerts webhook URL"
+    displayName: "Team slack alerts webhook URL"
   nais_alertmanager.slack.webhook:
     type: string
     displayName: "Nais alerts webhook URL"
