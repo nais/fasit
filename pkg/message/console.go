@@ -15,11 +15,12 @@ type Console struct {
 }
 
 type CreateNamespace struct {
-	Name         string `json:"name"`
-	GCPProject   string `json:"gcpProject"`
-	GroupEmail   string `json:"groupEmail"`
-	AzureGroupID string `json:"azureGroupID"`
-	CNRMEmail    string `json:"cnrmEmail"`
+	Name               string `json:"name"`
+	GCPProject         string `json:"gcpProject"`
+	GroupEmail         string `json:"groupEmail"`
+	AzureGroupID       string `json:"azureGroupID"`
+	CNRMEmail          string `json:"cnrmEmail"`
+	SlackAlertsChannel string `json:"slackAlertsChannel"`
 }
 
 type DeleteNamespace struct {

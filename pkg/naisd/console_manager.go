@@ -134,6 +134,10 @@ func (c *ConsoleManager) createNamespace(ctx context.Context, data message.Creat
 		metav1.SetMetaDataAnnotation(&ns.ObjectMeta, "cnrm.cloud.google.com/project-id", data.GCPProject)
 	}
 
+	if data.SlackAlertsChannel != "" {
+		metav1.SetMetaDataAnnotation(&ns.ObjectMeta, "replicator.nais.io/slack-alerts-channel", data.SlackAlertsChannel)
+	}
+
 	metav1.SetMetaDataLabel(&ns.ObjectMeta, "team", data.Name)
 
 	existing, err := c.kubeClient.CoreV1().Namespaces().Get(ctx, data.Name, metav1.GetOptions{})

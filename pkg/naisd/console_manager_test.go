@@ -25,19 +25,19 @@ func TestConsoleManager_handler(t *testing.T) {
 		{
 			name:               "create namespace test-namespace",
 			typ:                message.ConsoleTypeCreateNamespace,
-			data:               `{"name":"test-namespace","gcpProject":"test-project","cnrmEmail":"cnrm@proj.iam.gserviceaccounts.com"}`,
+			data:               `{"name":"test-namespace","gcpProject":"test-project","cnrmEmail":"cnrm@proj.iam.gserviceaccounts.com","slackAlertsChannel":"#test-alerts"}`,
 			expectedNamespaces: []string{"test-namespace"},
 		},
 		{
 			name:               "create namespace test-namespace again",
 			typ:                message.ConsoleTypeCreateNamespace,
-			data:               `{"name":"test-namespace","gcpProject":"test-project","cnrmEmail":"cnrm@proj.iam.gserviceaccounts.com"}`,
+			data:               `{"name":"test-namespace","gcpProject":"test-project","cnrmEmail":"cnrm@proj.iam.gserviceaccounts.com","slackAlertsChannel":"#test-alerts"}`,
 			expectedNamespaces: []string{"test-namespace"},
 		},
 		{
 			name:               "create namespace other-namespace",
 			typ:                message.ConsoleTypeCreateNamespace,
-			data:               `{"name":"other-namespace","gcpProject":"other-project","cnrmEmail":"cnrm@proj.iam.gserviceaccounts.com"}`,
+			data:               `{"name":"other-namespace","gcpProject":"other-project","cnrmEmail":"cnrm@proj.iam.gserviceaccounts.com","slackAlertsChannel":"#test-alerts"}`,
 			expectedNamespaces: []string{"other-namespace", "test-namespace"},
 		},
 		{
@@ -93,6 +93,14 @@ func TestConsoleManager_handler(t *testing.T) {
 			}
 			if !cmp.Equal(tt.expectedNamespaces, names) {
 				t.Errorf("diff -want +got:\n%v", cmp.Diff(tt.expectedNamespaces, names))
+			}
+
+			// check slack-alerts-channel annotation
+			for _, n := range namespaces.Items {
+				c, _ := n.Annotations["replicator.nais.io/slack-alerts-channel"]
+				if c != "#test-alerts" {
+					t.Errorf("namespace annotation %q has unexpected value, expected: %q got: %q", "replicator.nais.io/slack-alerts-channel", "#test-alerts", c)
+				}
 			}
 
 			// Check service accounts
