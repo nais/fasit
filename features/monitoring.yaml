@@ -2,9 +2,6 @@ chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring
 version: 1.28.2
 description: "Monitoring stack for nais"
-dependsOn:
- - allOf:
-     - "replicator"
 environmentKinds:
   - "tenant"
   - "onprem"
@@ -27,7 +24,7 @@ config:
       - management
   teamSlackAlerts.proxy:
     type: string
-    displayName: "Team slack alerts proxy URL"    
+    displayName: "Team slack alerts proxy URL"
     ignoreKind:
       - management
   nais_alertmanager.slack.webhook:
