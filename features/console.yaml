@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/console
 source: https://github.com/nais/helm-charts/tree/main/charts/console
-version: 0.0.23
+version: 0.0.26
 description: "For managing teams and resources on the platform"
 environmentKinds:
   - "management"
@@ -73,3 +73,6 @@ config:
   frontend.image.tag:
     type: string
     description: Frontend image tag
+  backend.firstRunEnableReconcilers:
+    type: string
+    description: Comma separated list of reconcilers to enable on first run (empty database). Changing this after console has been deployed does nothing.
