@@ -6,7 +6,6 @@ environmentKinds:
   - "tenant"
   - "legacy"
   - "onprem"
-  - "management"
 
 #autoInstall:
 #  - "tenant"
