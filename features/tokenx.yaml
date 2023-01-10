@@ -81,8 +81,8 @@ mapping:
     template: '{{ne .Kind "onprem"}}'
 
   tokendings.env.ISSUER_URL:
-    value: '{{ subdomain . "tokenx" }}'
+    value: 'https://{{ subdomain . "tokenx" }}'
 
   tokendings.ingresses:
     value:
-      - '{{ subdomain . "tokenx" }}'
+      - 'https://{{ subdomain . "tokenx" }}'
