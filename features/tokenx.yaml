@@ -81,7 +81,7 @@ mapping:
     template: '{{ne .Kind "onprem"}}'
 
   tokendings.env.ISSUER_URL:
-    value: 'https://{{ subdomain . "tokenx" }}'
+    value: 'http://tokenx-tokendings.nais-system.svc.cluster.local'
 
   tokendings.ingresses:
     value:
