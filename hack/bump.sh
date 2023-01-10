@@ -16,6 +16,6 @@ fi
 sed -i "s/^version:.*/version: $version/" features/$feature.yaml
 
 git add features/$feature.yaml
-git commit -m "Bump $feature to $version"
+git commit -m "$feature: update version to $version"
 git push
 
