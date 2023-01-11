@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/tokenx
 source: https://github.com/nais/helm-charts/tree/main/charts/tokenx
-version: 0.4.1
+version: 0.4.2
 description: "Token exchange"
 environmentKinds:
   - "tenant"
@@ -86,3 +86,11 @@ mapping:
   tokendings.ingresses:
     value:
       - 'https://{{ subdomain . "tokenx" }}'
+
+  networkPolicy.enabled:
+    template: '{{ne .Kind "onprem"}}'
+
+  networkPolicy.apiServerCIDR:
+    value: "{{ .Env.apiserver_endpoint }}/32"
+    ignoreKind:
+      - onprem
