@@ -10,9 +10,6 @@ environmentKinds:
   - "tenant"
   - "legacy"
 config:
-  contests.image.tag:
-    type: string
-    displayName: "Image tag"
   contests.kafka.enabled:
     type: bool
     displayName: Enable Kafka checks
