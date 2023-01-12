@@ -8,10 +8,7 @@ dependsOn:
       - "monitoring"
 environmentKinds:
   - "tenant"
-  - "onprem"
   - "legacy"
-autoInstall:
-  - "tenant"
 config:
   contests.image.tag:
     type: string
