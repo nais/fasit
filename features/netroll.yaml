@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/netroll
 source: https://github.com/nais/netroll/tree/main/charts/netroll
-version: 0.0.2
+version: 2023.1.12-1bcbb71
 description: "Monitors SQLInstance objects and creates network policies to allow egress traffic from application"
 environmentKinds:
   - "tenant"
