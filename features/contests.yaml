@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/contests
 source: https://github.com/nais/contests
-version: 1.0.2
+version: 2023.1.12-5c2e474
 description: "Checks connectivity to database, bucket and ingresses via blackbox exporter"
 dependsOn:
   - allOf:
