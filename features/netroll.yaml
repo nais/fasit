@@ -5,10 +5,6 @@ description: "Monitors SQLInstance objects and creates network policies to allow
 environmentKinds:
   - "tenant"
   - "management"
-config:
-  image.tag:
-    type: string
-    displayName: "Image tag"
 mapping:
   apiserverIP:
     value: "{{ .Env.apiserver_endpoint }}"
