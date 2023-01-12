@@ -6,9 +6,6 @@ environmentKinds:
   - "onprem"
   - "legacy"
 config:
-  image.tag:
-    type: string
-    displayName: Image tag
   master:
     type: bool
     displayName: Master
