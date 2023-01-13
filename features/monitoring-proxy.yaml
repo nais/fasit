@@ -24,4 +24,4 @@ mapping:
         ingress: monitoring-proxy-management.external.{{$.Tenant.Name}}.cloud.nais.io 
         upstreamHost: monitoring-nais-prometheus
         upstreamScheme: http
-        psk: {{.Management.monitoring_proxy_pre_shared_key}}
+        psk: "{{.Management.monitoring_proxy_pre_shared_key}}"
