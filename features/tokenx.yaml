@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/tokenx
 source: https://github.com/nais/helm-charts/tree/main/charts/tokenx
-version: 0.4.2
+version: 0.4.3
 description: "Token exchange"
 environmentKinds:
   - "tenant"
@@ -10,36 +10,19 @@ dependsOn:
   - allOf:
       - "naiserator"
 config:
+  jwker.secrets.env.JWKER_PRIVATE_JWK:
+    type: string
+    displayName: Private JWK used by Jwker to sign client assertions.
+    required: true
+    secret: true
+
   jwker.tag:
     type: string
     displayName: Image tag for jwker
 
-  jwker.secrets.env.TOKENDINGS_URL:
-    type: string
-    displayName: URL for tokendings
-    required: true
-    ignoreKind:
-      - management
-      - tenant
-
-  jwker.secrets.env.JWKER_PRIVATE_JWK:
-    type: string
-    displayName: Private JWK
-    required: true
-    secret: true
-
-  tokendings.tag:
-    type: string
-    displayName: Image tag for tokendings
-
-  tokendings.ingresses:
-    displayName: Tokendings ingresses
-    type: string_array
-
-  tokendings.outbound:
-    displayName: Tokendings external hosts
-    type: string_array
-    required: true
+  tokendings.enabled:
+    displayName: Enable tokendings
+    type: bool
 
   tokendings.env.APPLICATION_PROFILE:
     displayName: Tokendings application profile
@@ -47,26 +30,35 @@ config:
     type: string
     required: true
 
-  tokendings.env.ISSUER_URL:
-    displayName: Tokendings issuer URL
-    description: The value for issuer in tokens issued by tokendings, e.g. https://tokendings.something
+  tokendings.env.AUTH_CLIENT_JWKS:
+    displayName: Jwker public JWKS
+    description: The public JWKS (JWK key set) used to verify client assertions from Jwker.
     type: string
+    required: true
 
   tokendings.env.SUBJECT_TOKEN_ISSUERS:
     displayName: Tokendings trusted token issuers
-    description: a commaseparated list of well-known urls to trusted token issuers in a token exchange
+    description: Comma-separated list of well-known urls to trusted token issuers in a token exchange
     type: string
     required: true
 
-  tokendings.env.AUTH_CLIENT_JWKS:
-    displayName: Jwker public JWKS
-    description: The JWKS for jwker
+  tokendings.host:
+    displayName: Tokendings host
+    description: Setting this overrides the mapping value (only needed for legacy/onprem environments)
     type: string
     required: true
+    ignoreKind:
+      - "tenant"
 
-  tokendings.enabled:
-    displayName: Enable tokendings
-    type: bool
+  tokendings.outbound:
+    displayName: Tokendings external hosts
+    description: List of hosts that Tokendings needs outbound access policies for
+    type: string_array
+    required: true
+
+  tokendings.tag:
+    type: string
+    displayName: Image tag for tokendings
 
 mapping:
   jwker.secrets.env.CLUSTER_NAME:
@@ -80,12 +72,8 @@ mapping:
     displayName: Enable tokendings
     template: '{{ne .Kind "onprem"}}'
 
-  tokendings.env.ISSUER_URL:
-    value: 'http://tokenx-tokendings.nais-system.svc.cluster.local'
-
-  tokendings.ingresses:
-    value:
-      - 'https://{{ subdomain . "tokenx" }}'
+  tokendings.host:
+    value: '{{ subdomain . "tokenx" }}'
 
   networkPolicy.enabled:
     template: '{{ne .Kind "onprem"}}'
