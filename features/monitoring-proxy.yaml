@@ -15,7 +15,7 @@ mapping:
     template: |
       {{range $cluster := .Envs}}
       - name: {{$cluster.name}}
-        ingress: monitoring-proxy-{{$cluster.name}}.{{.Tenant.Name}}.cloud.nais.io 
-        upstreamHost: nais-prometheus.{{$cluster.name}}.{{.Tenant.Name}}.cloud.nais.io
+        ingress: monitoring-proxy-{{$cluster.name}}.{{$.Tenant.Name}}.cloud.nais.io 
+        upstreamHost: nais-prometheus.{{$cluster.name}}.{{$.Tenant.Name}}.cloud.nais.io
         psk: "1234567890"
       {{end}}
