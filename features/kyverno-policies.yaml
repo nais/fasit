@@ -35,10 +35,14 @@ config:
     description: "Enable deny-service-types policy"
     displayName: "Deny service types"
 
-  customPolicies.addSpotTolerations.enabled:
+  customPolicies.addSpotToleration.enabled:
     type: bool
     description: "Enable add-spot-toleration policy"
     displayName: "Add spot toleration"
+    ignoreKind:
+      - "onprem"
+      - "management"
+      - "tenant"
 
   customPolicies.generateDefaultAllowEgress.enabled:
     type: bool
@@ -85,11 +89,6 @@ mapping:
     value: "true"
     description: "Enable deny service types policy"
     displayName: "Deny service types"
-
-  customPolicies.addSpotToleration.enabled:
-    template: '{{eq .Kind "legacy"}}'
-    description: "Enable add-spot-toleration policy"
-    displayName: "Add spot toleration"
 
   customPolicies.generateDefaultAllowEgress.enabled:
     template: '{{eq .Kind "legacy"}}'
