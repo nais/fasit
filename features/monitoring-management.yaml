@@ -38,10 +38,12 @@ mapping:
             implementation: prometheus
           url: https://alertmanager.{{ $cluster.name }}.{{ $root.Tenant.Name }}.cloud.nais.io
           access: proxy
+        {{- if ne $clusters.kind "tenant" }}
         - name: {{ $cluster.name }}-loki
           type: loki
           url: https://loki.{{ $cluster.name }}.{{ $root.Tenant.Name }}.cloud.nais.io
           access: proxy
+        {{- end }}
       {{ end }}
       {{end}}
   grafana.server.domain:
