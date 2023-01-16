@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring-proxy
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring-proxy
-version: 0.1.0
+version: 0.2.0
 description: "Monitoring authentication proxies for all clusters"
 environmentKinds:
   - "tenant"
@@ -8,10 +8,14 @@ environmentKinds:
   - "legacy"
   - "management"
 
+config:
+  image.tag:
+    type: string
+    displayName: "Image tag"
+
 mapping:
   clusters:
     displayName: "Tenant clusters"
-    # TODO: generate one psk for each cluster
     template: |
       {{range $cluster := .Envs}}
       - name: {{$cluster.name}}
