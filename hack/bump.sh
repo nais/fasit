@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 feature=$1
 version=$2
 
