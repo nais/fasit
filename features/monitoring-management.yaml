@@ -25,6 +25,14 @@ mapping:
     template: |
       datasources.yaml:
         apiVersion: 1
+        deleteDatasources:
+      {{ with $root := . }}
+      {{ range $cluster := .Envs }}
+        {{- if ne $cluster.kind "tenant" }}
+          - name: {{ $cluster.name }}-loki
+            orgId: 1
+        {{- end }}
+      {{ end }}
         datasources:
       {{ with $root := . }}
       {{ range $cluster := .Envs }}
