@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/ghcr-gcs-pull-cache
 source: https://github.com/nais/ghcr-gcs-pull-cache
-version: 0.3.0
+version: 2023.1.16-fd6bfe0
 environmentKinds:
   - "legacy"
 dependsOn:
