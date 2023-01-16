@@ -1,0 +1,13 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/ghcr-gcs-pull-cache
+source: https://github.com/nais/ghcr-gcs-pull-cache
+version: 0.3.0
+environmentKinds:
+  - "legacy"
+dependsOn:
+  - allOf:
+      - "kyverno"
+config:
+  registryUrl:
+    type: string
+    displayName: "Registry location"
+    description: "Registry location"
