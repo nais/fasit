@@ -26,6 +26,12 @@ mapping:
       datasources.yaml:
         apiVersion: 1
         deleteDatasources:
+          - name: labs-gcp
+            orgId: 1
+          - name: labs-gcp-alertmanager
+            orgId: 1
+          - name: labs-gcp-loki
+            orgId: 1
       {{ range $cluster := .Envs }}
         {{- if ne $cluster.kind "tenant" }}
           - name: {{ $cluster.name }}-loki
