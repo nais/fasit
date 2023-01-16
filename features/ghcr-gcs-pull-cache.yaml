@@ -1,7 +1,7 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/ghcr-gcs-pull-cache
 source: https://github.com/nais/ghcr-gcs-pull-cache/tree/main/feature
 description: "Cache images from GitHub Container Registry in Google Cloud Storage"
-version: 2023.1.16-4c76bea
+version: 2023.1.16-502252f
 environmentKinds:
   - "legacy"
 dependsOn:
