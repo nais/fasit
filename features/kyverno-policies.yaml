@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/kyverno-policies
 source: https://github.com/nais/helm-charts/tree/main/charts/kyverno-policies
-version: 0.9.2
+version: 0.9.3
 description: "Sane cluster defaults - should be on in all clusters"
 environmentKinds:
   - "tenant"
@@ -44,11 +44,6 @@ config:
       - "management"
       - "tenant"
 
-  customPolicies.generateDefaultAllowEgress.enabled:
-    type: bool
-    description: "Enable generate-default-allow-egress policy"
-    displayName: "Generate default allow egress"
-
   customPolicies.addTeamAIToleration.enabled:
     type: bool
     description: "Enable add-team-ai-toleration policy"
@@ -89,11 +84,6 @@ mapping:
     value: "true"
     description: "Enable deny service types policy"
     displayName: "Deny service types"
-
-  customPolicies.generateDefaultAllowEgress.enabled:
-    template: '{{eq .Kind "legacy"}}'
-    description: "Enable generate-default-allow-egress policy"
-    displayName: "Generate default allow egress"
 
   customPolicies.addTeamAIToleration.enabled:
     template: '{{eq .Kind "legacy"}}'
