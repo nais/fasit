@@ -53,6 +53,8 @@ mapping:
     displayName: Billing account
   backend.naisDeploy.endpoint:
     template: "https://deploy.{{.Tenant.Name}}.cloud.nais.io/api/v1/provision"
+  backend.naisDeploy.deployKeyEndpoint:
+    template: "https://deploy.{{.Tenant.Name}}.cloud.nais.io/internal/api/v1/apikey"
   backend.naisDeploy.provisionKey:
     value: "{{.Management.hookd_provision_key}}"
 config:
