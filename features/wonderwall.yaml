@@ -8,7 +8,7 @@ environmentKinds:
 dependsOn:
   - allOf:
     - "replicator"
-    - "fqdn-policy"
+    #- "fqdn-policy" - TODO: not enabled in legacy yet
     #- "azurerator-nav" - TODO: not enabled in legacy yet
     #- "digdirator" - TODO: not enabled in legacy yet
 config:
