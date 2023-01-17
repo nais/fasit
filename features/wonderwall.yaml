@@ -31,3 +31,4 @@ config:
   redis.password:
     type: string
     required: true
+    secret: true
