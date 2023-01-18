@@ -15,6 +15,13 @@ dependsOn:
   - allOf:
       - kyverno
 config:
+  customPolicies.denyImageRegistries.extraArgs:
+    type: string_array
+    description: "Add additional registries to allow"
+    displayName: "Additional registries to allow"
+    ignoreKind:
+      - "management"
+
   customPolicies.denyImageRegistries.legacy.enabled:
     type: bool
     description: "Enable 'deny-image-registries' policy for legacy clusters"
@@ -94,6 +101,14 @@ config:
     displayName: "Background"
 
 mapping:
+  customPolicies.denyImageRegistries.extraArgs:
+    template: |
+      - "europe-north1-docker.pkg.dev/{{ .Management.project_id }}/nais-repository/*"
+    description: "Add additional registries to allow"
+    displayName: "Additional registries to allow"
+    ignoreKind:
+      - "management"
+
   customPolicies.denyImageRegistries.legacy.enabled:
     template: '{{ if or (eq "onprem" .Kind) (eq "legacy" .Kind) }}true{{ else }}false{{ end }}'
     description: "Enable 'deny-image-registries' policy for legacy clusters"
