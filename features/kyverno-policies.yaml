@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/kyverno-policies
 source: https://github.com/nais/helm-charts/tree/main/charts/kyverno-policies
-version: 0.9.2
+version: 0.9.4
 description: "Sane cluster defaults - should be on in all clusters"
 environmentKinds:
   - "tenant"
@@ -15,20 +15,39 @@ dependsOn:
   - allOf:
       - kyverno
 config:
-  customPolicies.denyImageRegistries.enabled:
+  customPolicies.denyImageRegistries.legacy.enabled:
     type: bool
-    displayName: "Deny image registries"
-    description: "Enable deny-image-registries policy"
+    description: "Enable 'deny-image-registries' policy for legacy clusters"
+    displayName: "Deny image registries for legacy clusters"
+    ignoreKind:
+      - "management"
+      - "tenant"
+
+  customPolicies.denyImageRegistries.tenant.enabled:
+    type: bool
+    description: "Enable 'deny-image-registries' policy for tenant clusters"
+    displayName: "Deny image registries for tenant clusters"
+    ignoreKind:
+      - "management"
+      - "onprem"
+      - "legacy"
 
   customPolicies.replaceOldGithubRegistry.enabled:
     type: bool
     displayName: "Replace old Github registry"
     description: "Enable replace-old-github-registry policy"
+    ignoreKind:
+      - "management"
+      - "tenant"
 
   customPolicies.denyKafkaTopicCreate.enabled:
     type: bool
     displayName: "Deny Kafka topic create"
     description: "Enable deny-kafka-topic-create policy"
+    ignoreKind:
+      - "management"
+      - "tenant"
+      - "legacy"
 
   customPolicies.denyServiceTypes.enabled:
     type: bool
@@ -44,25 +63,30 @@ config:
       - "management"
       - "tenant"
 
-  customPolicies.generateDefaultAllowEgress.enabled:
-    type: bool
-    description: "Enable generate-default-allow-egress policy"
-    displayName: "Generate default allow egress"
-
   customPolicies.addTeamAIToleration.enabled:
     type: bool
     description: "Enable add-team-ai-toleration policy"
     displayName: "Add team AI toleration"
+    ignoreKind:
+      - "management"
+      - "tenant"
+      - "onprem"
 
   customPolicies.cloneWonderWallSecret.enabled:
     type: bool
     description: "Enable clone-wonderwall-secret policy"
     displayName: "Clone Wonderwall secret"
+    ignoreKind:
+      - "management"
+      - "onprem"
 
   customPolicies.kafkaDenyTopicDelete.enabled:
     type: bool
     description: "Enable kafka-deny-topic-delete policy"
     displayName: "Kafka deny topic delete"
+    ignoreKind:
+      - "management"
+      - "onprem"
 
   kyverno-policies.background:
     type: bool
@@ -70,45 +94,68 @@ config:
     displayName: "Background"
 
 mapping:
-  customPolicies.denyImageRegistries.enabled:
+  customPolicies.denyImageRegistries.legacy.enabled:
     template: '{{ if or (eq "onprem" .Kind) (eq "legacy" .Kind) }}true{{ else }}false{{ end }}'
-    description: "Enable deny image registries policy"
-    displayName: "Deny image registries"
+    description: "Enable 'deny-image-registries' policy for legacy clusters"
+    displayName: "Deny image registries for legacy clusters"
+    ignoreKind:
+      - "management"
+      - "tenant"
+
+  customPolicies.denyImageRegistries.tenant.enabled:
+    template: '{{ if eq "tenant" .Kind }}true{{ else }}false{{ end }}'
+    description: "Enable 'deny-image-registries' policy for tenant clusters"
+    displayName: "Deny image registries for tenant clusters"
+    ignoreKind:
+      - "management"
+      - "onprem"
+      - "legacy"
 
   customPolicies.replaceOldGithubRegistry.enabled:
     template: '{{ if or (eq "onprem" .Kind) (eq "legacy" .Kind) }}true{{ else }}false{{ end }}'
     description: "Enable replace old github registry policy"
     displayName: "Replace old Github registry"
+    ignoreKind:
+      - "management"
+      - "tenant"
 
   customPolicies.denyKafkaTopicCreate.enabled:
     template: '{{eq .Kind "onprem"}}'
     description: "Enable deny kafka topic create policy"
     displayName: "Deny Kafka topic create"
+    ignoreKind:
+      - "management"
+      - "tenant"
+      - "legacy"
 
   customPolicies.denyServiceTypes.enabled:
     value: "true"
     description: "Enable deny service types policy"
     displayName: "Deny service types"
 
-  customPolicies.generateDefaultAllowEgress.enabled:
-    template: '{{eq .Kind "legacy"}}'
-    description: "Enable generate-default-allow-egress policy"
-    displayName: "Generate default allow egress"
-
   customPolicies.addTeamAIToleration.enabled:
     template: '{{eq .Kind "legacy"}}'
     description: "Enable add-team-ai-toleration policy"
     displayName: "Add team ai toleration"
+    ignoreKind:
+      - "management"
+      - "onprem"
 
   customPolicies.cloneWonderWallSecret.enabled:
     template: '{{eq .Kind "legacy"}}'
     description: "Enable clone-wonderwall-secret policy"
     displayName: "Clone wonderwall secret"
+    ignoreKind:
+      - "management"
+      - "onprem"
 
   customPolicies.kafkaDenyTopicDelete.enabled:
-    template: '{{eq .Kind "legacy"}}'
+    template: '{{ if or (eq "tenant" .Kind) (eq "legacy" .Kind) }}true{{ else }}false{{ end }}'
     description: "Enable kafka-deny-topic-delete policy"
     displayName: "Kafka deny topic delete"
+    ignoreKind:
+      - "management"
+      - "onprem"
 
   kyverno-policies.background:
     value: "false"
