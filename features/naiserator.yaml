@@ -136,6 +136,12 @@ mapping:
         ingressClass: gw-nais-io
       - domainSuffix: .helserefusjon.no
         ingressClass: gw-helserefusjon-no
+      - domainSuffix: .ci-gcp.nais.io
+        ingressClass: gw-ci-gcp-nais-io
+      - domainSuffix: .ci.intern.nav.no
+        ingressClass: gw-ci-intern-nav-no
+      - domainSuffix: .ci.nav.no
+        ingressClass: gw-ci-nav-no
       {{ end }}
     displayName: "Gateway mappings"
   naiserator.features.kafkarator:
