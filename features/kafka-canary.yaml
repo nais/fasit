@@ -1,12 +1,12 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/kafka-canary
 source: https://github.com/nais/kafkarator/tree/master/charts/kafka-canary
-version: 0.3.0
+version: 0.3.1
 environmentKinds:
   - "management"
 dependsOn:
   - allOf:
       - hookd   # For deploying the actual canary
-      - console # To ensure the nais-verification namespace exists
+      - console # Proxy for the nais-verification feature in tenant clusters, because we can't have cross environment kind dependencies
 rolloutSource:
   - org: nais
     repo: kafkarator
@@ -20,11 +20,6 @@ mapping:
   deploy_server:
     template: "deploy.{{.Tenant.Name}}.cloud.nais.io"
 config:
-  api_key:
-    displayName: "Deploy API Key"
-    description: "Hookd API KEY for deploying canary"
-    type: string
-    secret: true
   canary.image.repository:
     type: string
   canary.image.tag:
