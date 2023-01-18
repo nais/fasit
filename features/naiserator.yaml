@@ -115,6 +115,28 @@ mapping:
       - domainSuffix: "{{ . }}"
         ingressClass: "nais-ingress-external"
       {{- end }}
+      {{ if .Env.Kind | eq "legacy" }}
+      - domainSuffix: .ekstern.dev.nav.no
+        ingressClass: gw-ekstern-dev-nav-no
+      - domainSuffix: .dev.intern.nav.no
+        ingressClass: gw-dev-intern-nav-no
+      - domainSuffix: .dev-gcp.nais.io
+        ingressClass: gw-dev-gcp-nais-io
+      - domainSuffix: .dev.nav.no
+        ingressClass: gw-dev-nav-no
+      - domainSuffix: .dev.helserefusjon.no
+        ingressClass: gw-dev-helserefusjon-no
+      - domainSuffix: .intern.nav.no
+        ingressClass: gw-intern-nav-no
+      - domainSuffix: .nav.no
+        ingressClass: gw-nav-no
+      - domainSuffix: .prod-gcp.nais.io
+        ingressClass: gw-prod-gcp-nais-io
+      - domainSuffix: .nais.io
+        ingressClass: gw-nais-io
+      - domainSuffix: .helserefusjon.no
+        ingressClass: gw-helserefusjon-no
+      {{ end }}
     displayName: "Gateway mappings"
   naiserator.features.kafkarator:
     template: '{{ne .Env.aiven_project ""}}'
