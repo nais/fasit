@@ -1,7 +1,10 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/nais-verification
 source: https://github.com/nais/nais-verification/tree/main/charts/nais-verification
+description: Creates nais-verification team for verification workloads (deploy-canary, kafka-canary etc.) and provides deploy key in a secret for other features to use
 version: 0.1.4
 environmentKinds:
+  - "management"
+autoInstall:
   - "management"
 dependsOn: # Cross-kind dependencies not possible :(
   - allOf:
