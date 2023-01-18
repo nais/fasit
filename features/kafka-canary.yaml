@@ -5,8 +5,7 @@ environmentKinds:
   - "management"
 dependsOn:
   - allOf:
-      - hookd   # For deploying the actual canary
-      - console # Proxy for the nais-verification feature in tenant clusters, because we can't have cross environment kind dependencies
+      - nais-verification   # Providing the deploy key
 rolloutSource:
   - org: nais
     repo: kafkarator
