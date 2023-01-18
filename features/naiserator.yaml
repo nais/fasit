@@ -115,7 +115,7 @@ mapping:
       - domainSuffix: "{{ . }}"
         ingressClass: "nais-ingress-external"
       {{- end }}
-      {{ if .Env.Kind | eq "legacy" }}
+      {{ if eq .Kind "legacy" }}
       - domainSuffix: .ekstern.dev.nav.no
         ingressClass: gw-ekstern-dev-nav-no
       - domainSuffix: .dev.intern.nav.no
