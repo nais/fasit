@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/nais-probes
 source: https://github.com/nais/helm-charts/tree/main/charts/nais-probes
-version: 1.5.0
+version: 1.6.0
 environmentKinds:
   - "management"
   - "onprem"
@@ -57,6 +57,10 @@ config:
       - tenant
       - legacy
 mapping:
+  probes.tls.ingress.instances:
+    template: |
+      - wildcard.{{ .Env.name }}.{{ .Tenant.Name }}.cloud.nais.io
+      - wildcard.external.{{ .Env.name }}.{{ .Tenant.Name }}.cloud.nais.io
   probes.tls.etcd.enabled:
     template: "true"
     ignoreKind:
