@@ -58,3 +58,4 @@ config:
   caBundle:
     displayName: Enable CA bundle
     description: Mounts NAV CA bundle
+    type: bool
