@@ -59,8 +59,8 @@ config:
 mapping:
   probes.tls.ingress.instances:
     template: |
-      - wildcard.{{ .Env.name }}.{{ .Tenant.Name }}.cloud.nais.io
-      - wildcard.external.{{ .Env.name }}.{{ .Tenant.Name }}.cloud.nais.io
+      - wildcard.{{ .Env.name }}.{{ .Tenant.Name }}.cloud.nais.io:443
+      - wildcard.external.{{ .Env.name }}.{{ .Tenant.Name }}.cloud.nais.io:443
   probes.tls.etcd.enabled:
     template: "true"
     ignoreKind:
