@@ -148,14 +148,6 @@ mapping:
       - "management"
       - "onprem"
 
-  customPolicies.cloneWonderWallSecret.enabled:
-    template: '{{eq .Kind "legacy"}}'
-    description: "Enable clone-wonderwall-secret policy"
-    displayName: "Clone wonderwall secret"
-    ignoreKind:
-      - "management"
-      - "onprem"
-
   customPolicies.kafkaDenyTopicDelete.enabled:
     template: '{{ if or (eq "tenant" .Kind) (eq "legacy" .Kind) }}true{{ else }}false{{ end }}'
     description: "Enable kafka-deny-topic-delete policy"
