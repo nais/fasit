@@ -17,23 +17,23 @@ dependsOn:
 config:
   customPolicies.denyImageRegistries.extraArgs:
     type: string_array
-    description: "Add additional registries to allow"
+    description: "Add additional registries to add to the allow list of registries"
     displayName: "Additional registries to allow"
     ignoreKind:
       - "management"
 
   customPolicies.denyImageRegistries.legacy.enabled:
     type: bool
-    description: "Enable 'deny-image-registries' policy for legacy clusters"
-    displayName: "Deny image registries for legacy clusters"
+    description: "Enable an allow list for registries in legacy clusters"
+    displayName: "Allow list policy for legacy clusters"
     ignoreKind:
       - "management"
       - "tenant"
 
   customPolicies.denyImageRegistries.tenant.enabled:
     type: bool
-    description: "Enable 'deny-image-registries' policy for tenant clusters"
-    displayName: "Deny image registries for tenant clusters"
+    description: "Enable an allow list for registries in tenant clusters"
+    displayName: "Allow list policy for tenant clusters"
     ignoreKind:
       - "management"
       - "onprem"
@@ -104,23 +104,23 @@ mapping:
   customPolicies.denyImageRegistries.extraArgs:
     template: |
       - "europe-north1-docker.pkg.dev/{{ .Management.project_id }}/nais-repository/*"
-    description: "Add additional registries to allow"
+    description: "Add additional registries to add to the list of registries"
     displayName: "Additional registries to allow"
     ignoreKind:
       - "management"
 
   customPolicies.denyImageRegistries.legacy.enabled:
     template: '{{ if or (eq "onprem" .Kind) (eq "legacy" .Kind) }}true{{ else }}false{{ end }}'
-    description: "Enable 'deny-image-registries' policy for legacy clusters"
-    displayName: "Deny image registries for legacy clusters"
+    description: "Enable allow list policy for legacy clusters"
+    displayName: "Allow list for policy for legacy clusters"
     ignoreKind:
       - "management"
       - "tenant"
 
   customPolicies.denyImageRegistries.tenant.enabled:
     template: '{{ if eq "tenant" .Kind }}true{{ else }}false{{ end }}'
-    description: "Enable 'deny-image-registries' policy for tenant clusters"
-    displayName: "Deny image registries for tenant clusters"
+    description: "Enable allow list policy for tenant clusters"
+    displayName: "Allow list for policy for tenant clusters"
     ignoreKind:
       - "management"
       - "onprem"
