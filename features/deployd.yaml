@@ -22,12 +22,6 @@ mapping:
     value: "{{.Env.name}}"
   hookdHost:
     value: "deploy.{{.Tenant.Name}}.cloud.nais.io"
-  caBundle:
-    template: "true"
-    displayName: Enable CA bundle
-    description: "Enable CA bundle for Aiven API"
-    ignoreKind:
-      - "tenant"
 config:
   preSharedKey:
     type: string
@@ -61,3 +55,6 @@ config:
     displayName: InfluxDB password
     secret: true
     type: string
+  caBundle:
+    displayName: Enable CA bundle
+    description: Mounts NAV CA bundle
