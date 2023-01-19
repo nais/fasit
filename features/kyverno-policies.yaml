@@ -79,14 +79,6 @@ config:
       - "tenant"
       - "onprem"
 
-  customPolicies.cloneWonderWallSecret.enabled:
-    type: bool
-    description: "Enable clone-wonderwall-secret policy"
-    displayName: "Clone Wonderwall secret"
-    ignoreKind:
-      - "management"
-      - "onprem"
-
   customPolicies.kafkaDenyTopicDelete.enabled:
     type: bool
     description: "Enable kafka-deny-topic-delete policy"
