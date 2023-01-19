@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/naiserator
 source: https://github.com/nais/naiserator/tree/master/charts
-version: 1.1.0
+version: 1.1.1
 repo: ""
 description: "creates k8s resources based on application spec"
 environmentKinds:
@@ -62,27 +62,17 @@ config:
   naiserator.features.nav-ca-bundle:
     type: bool
     displayName: "Enable NAV CA bundle"
+  naiserator.features.wonderwall:
+    type: bool
+    displayName: "Enable Wonderwall"
+    ignoreKind:
+      - "onprem"
   naiserator.fqdn-policy.enabled:
     type: bool
     displayName: "Enable FQDN policy"
   naiserator.wonderwall.image:
     type: string
     displayName: "Wonderwall image"
-    ignoreKind:
-      - "onprem"
-  naiserator.wonderwall.loginstatus.enabled:
-    type: bool
-    displayName: "Enable Wonderwall loginstatus"
-    ignoreKind:
-      - "onprem"
-  naiserator.wonderwall.loginstatus.cookie-domain:
-    type: string
-    displayName: "Wonderwall loginstatus cookie domain"
-    ignoreKind:
-      - "onprem"
-  naiserator.wonderwall.loginstatus.token-url:
-    type: string
-    displayName: "Wonderwall loginstatus token URL"
     ignoreKind:
       - "onprem"
   mapping.internal_hosts:
@@ -182,8 +172,3 @@ mapping:
   naiserator.features.vault:
     template: '{{eq .Kind "onprem"}}'
     displayName: "Enable Vault"
-  naiserator.wonderwall.loginstatus.resource-indicator:
-    value: "https://nav.no"
-    displayName: "Wonderwall loginstatus resource indicator"
-    ignoreKind:
-      - "onprem"
