@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/kafka-canary
 source: https://github.com/nais/kafkarator/tree/master/charts/kafka-canary
-version: 0.3.2
+version: 0.3.3
 environmentKinds:
   - "management"
 dependsOn:
@@ -17,7 +17,7 @@ mapping:
   tenant:
     template: "{{ .Tenant.Name }}"
   deploy_server:
-    template: "hookd-grpc:9090"
+    template: "deploy.{{.Tenant.Name}}.cloud.nais.io:443"
 config:
   canary.image.repository:
     type: string
