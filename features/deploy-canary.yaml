@@ -1,11 +1,12 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/deploy-canary
 source: https://github.com/nais/helm-charts/tree/main/charts/deploy-canary
-version: 0.1.1
+version: 0.1.2
 environmentKinds:
   - "management"
 dependsOn:
   - allOf:
       - "hookd"
+      - "nais-verification"
 mapping:
   deploy_server:
     value: '{{ subdomain . "deploy" }}:443'
@@ -24,7 +25,3 @@ config:
   timeout:
     type: string
     description: "How much time the deploy system is allowed to use per deploy"
-  deploy_key:
-    type: string
-    secret: true
-    required: true
