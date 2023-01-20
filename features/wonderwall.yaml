@@ -1,17 +1,20 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/wonderwall
 source: https://github.com/nais/helm-charts/tree/main/charts/wonderwall
-version: 0.1.0
-description: "Configuration for Wonderwall; a reverse proxy sidecar implementing OIDC auth"
+version: 0.1.1
+description: "Configuration for Wonderwall; a reverse proxy sidecar implementing OIDC auth. Depends on feature toggle in naiserator."
 environmentKinds:
   - "tenant"
   - "legacy"
 dependsOn:
   - allOf:
     - "replicator"
-    #- "fqdn-policy" - TODO: not enabled in legacy yet
+    - "naiserator"
+    - "fqdn-policy"
     #- "azurerator-nav" - TODO: not enabled in legacy yet
     #- "digdirator" - TODO: not enabled in legacy yet
 config:
+  idporten.postLogoutRedirectURL:
+    type: string
   loginstatus.cookieDomain:
     type: string
     required: true
