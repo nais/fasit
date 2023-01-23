@@ -9,7 +9,7 @@ environmentKinds:
 dependsOn:
   - allOf:
       - naiserator
-
+      - nais-system
 config:
   apiServerCIDR:
     type: string
