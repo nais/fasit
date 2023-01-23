@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/kyverno-policies
 source: https://github.com/nais/helm-charts/tree/main/charts/kyverno-policies
-version: 0.9.4
+version: 0.9.5
 description: "Sane cluster defaults - should be on in all clusters"
 environmentKinds:
   - "tenant"
@@ -15,18 +15,25 @@ dependsOn:
   - allOf:
       - kyverno
 config:
+  customPolicies.denyImageRegistries.extraArgs:
+    type: string_array
+    description: "Add additional registries to the default allow list policy of registries"
+    displayName: "Add additional registries to default registries"
+    ignoreKind:
+      - "management"
+
   customPolicies.denyImageRegistries.legacy.enabled:
     type: bool
-    description: "Enable 'deny-image-registries' policy for legacy clusters"
-    displayName: "Deny image registries for legacy clusters"
+    description: "Enable a default allow list policy for image registries in legacy clusters"
+    displayName: "Default allow list policy for legacy clusters"
     ignoreKind:
       - "management"
       - "tenant"
 
   customPolicies.denyImageRegistries.tenant.enabled:
     type: bool
-    description: "Enable 'deny-image-registries' policy for tenant clusters"
-    displayName: "Deny image registries for tenant clusters"
+    description: "Enable a default allow list policy for registries in tenant clusters"
+    displayName: "Default allow list policy for tenant clusters"
     ignoreKind:
       - "management"
       - "onprem"
@@ -72,14 +79,6 @@ config:
       - "tenant"
       - "onprem"
 
-  customPolicies.cloneWonderWallSecret.enabled:
-    type: bool
-    description: "Enable clone-wonderwall-secret policy"
-    displayName: "Clone Wonderwall secret"
-    ignoreKind:
-      - "management"
-      - "onprem"
-
   customPolicies.kafkaDenyTopicDelete.enabled:
     type: bool
     description: "Enable kafka-deny-topic-delete policy"
@@ -94,18 +93,26 @@ config:
     displayName: "Background"
 
 mapping:
+  customPolicies.denyImageRegistries.extraArgs:
+    template: |
+      - "europe-north1-docker.pkg.dev/{{ .Management.project_id }}/nais-repository/*"
+    description: "A default list of additional registries to allow"
+    displayName: "Additional registries allowed"
+    ignoreKind:
+      - "management"
+
   customPolicies.denyImageRegistries.legacy.enabled:
     template: '{{ if or (eq "onprem" .Kind) (eq "legacy" .Kind) }}true{{ else }}false{{ end }}'
-    description: "Enable 'deny-image-registries' policy for legacy clusters"
-    displayName: "Deny image registries for legacy clusters"
+    description: "Enable a default allow list policy for image registries in legacy clusters"
+    displayName: "Default allow list policy for legacy clusters"
     ignoreKind:
       - "management"
       - "tenant"
 
   customPolicies.denyImageRegistries.tenant.enabled:
     template: '{{ if eq "tenant" .Kind }}true{{ else }}false{{ end }}'
-    description: "Enable 'deny-image-registries' policy for tenant clusters"
-    displayName: "Deny image registries for tenant clusters"
+    description: "Enable a default allow list policy for image registries in tenant clusters"
+    displayName: "Default allow list policy for tenant clusters"
     ignoreKind:
       - "management"
       - "onprem"
@@ -137,14 +144,6 @@ mapping:
     template: '{{eq .Kind "legacy"}}'
     description: "Enable add-team-ai-toleration policy"
     displayName: "Add team ai toleration"
-    ignoreKind:
-      - "management"
-      - "onprem"
-
-  customPolicies.cloneWonderWallSecret.enabled:
-    template: '{{eq .Kind "legacy"}}'
-    description: "Enable clone-wonderwall-secret policy"
-    displayName: "Clone wonderwall secret"
     ignoreKind:
       - "management"
       - "onprem"

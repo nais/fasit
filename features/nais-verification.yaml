@@ -1,17 +1,21 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/nais-verification
 source: https://github.com/nais/nais-verification/tree/main/charts/nais-verification
-version: 0.1.3
+description: Creates nais-verification team for verification workloads (deploy-canary, kafka-canary etc.) and provides deploy key in a secret for other features to use
+version: 0.2.0
 environmentKinds:
-  - "tenant"
-#dependsOn: # Cross-kind dependencies not possible :(
-#  - allOf:
-#      - console # Create team and get deploy key
+  - "management"
+autoInstall:
+  - "management"
+dependsOn:
+  - allOf:
+      - console # Create team and get deploy key
+      - hookd # Provision deploy key
 rolloutSource:
   - org: nais
     repo: nais-verification
 mapping:
   console.api_url:
-    template: "https://console.{{.Tenant.Name}}.cloud.nais.io/query"
+    template: "http://console-backend/query"
   console.api_token:
     value: "{{.Management.nais_verification_console_api_key}}"
 config:

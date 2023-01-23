@@ -17,3 +17,6 @@ config:
   debug:
     type: bool
     displayName: Enable debug
+  pubsubSubscriptionName:
+    type: string
+    displayName: "PubSub subscription name"

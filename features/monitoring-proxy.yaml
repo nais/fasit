@@ -3,9 +3,6 @@ source: https://github.com/nais/helm-charts/tree/main/charts/monitoring-proxy
 version: 0.2.0
 description: "Monitoring authentication proxies for all clusters"
 environmentKinds:
-  - "tenant"
-  - "onprem"
-  - "legacy"
   - "management"
 
 config:
