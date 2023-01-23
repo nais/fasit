@@ -5,6 +5,9 @@ description: "Syncs secrets from Google Secret manager to kubernetes"
 environmentKinds:
   - "tenant"
   - "legacy"
+dependsOn:
+  - allOf:
+      - "naiserator"
 mapping:
   googleProjectID:
     value: "{{ .Env.project_id }}"
