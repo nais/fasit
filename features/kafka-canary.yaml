@@ -1,6 +1,7 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/kafka-canary
 source: https://github.com/nais/kafkarator/tree/master/charts/kafka-canary
-version: 0.3.3
+version: 0.3.4
+description: Cronjob that deploys kafka-canary, which monitors kafka connectivity in all connected clusters.
 environmentKinds:
   - "management"
 dependsOn:
@@ -29,5 +30,3 @@ config:
     type: string
   deployer.image.tag:
     type: string
-  alert_enabled:
-    type: bool
