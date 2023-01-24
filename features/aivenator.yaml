@@ -30,6 +30,12 @@ mapping:
     description: "Enable CA bundle for Aiven API"
     ignoreKind:
       - "tenant"
+  replicationConfig:
+    template: "true"
+    displayName: Enable ReplicationConfig
+    description: "Replicate common resources (e.g. NetworkPolicies) to all namespaces"
+    ignoreKind:
+      - "onprem"
 config:
   aiven.projects:
     type: string
@@ -65,9 +71,3 @@ config:
     displayName: NO_PROXY
     ignoreKind:
       - "tenant"
-  replicationConfig:
-    type: bool
-    displayName: Enable ReplicationConfig
-    description: "Replicate common resources (e.g. NetworkPolicies) to all namespaces"
-    ignoreKind:
-      - "onprem"
