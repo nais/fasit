@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/aivenator
 source: https://github.com/nais/aivenator/tree/main/charts/aivenator
-version: 0.2.1
+version: 0.2.2
 description: "Kubernetes operator that provisions credentials for Aiven services"
 environmentKinds:
   - "tenant"
@@ -9,6 +9,9 @@ environmentKinds:
 rolloutSource:
   - org: nais
     repo: aivenator
+dependsOn:
+  - allOf:
+      - "replicator"
 mapping:
   aiven.projects:
     value: "{{.Env.aiven_project}}"
@@ -18,6 +21,9 @@ mapping:
     value: "{{.Env.aiven_project}}"
     displayName: Main Aiven project
     description: "Main Aiven project for services that only support one"
+  aiven.mainCidr:
+    value: "{{.Env.aiven_vpc_cidr}}"
+    displayName: CIDR for main Aiven project VPC
   caBundle:
     template: "true"
     displayName: Enable CA bundle
@@ -31,6 +37,10 @@ config:
   aiven.mainProject:
     type: string
     description: "Main Aiven project for services that only support one"
+  aiven.cidrs:
+    type: string_array
+    description: List of additional CIDRs for other Aiven project VPCs
+    displayName: Additional Aiven VPC CIDRs
   aiven.token:
     type: string
     secret: true
@@ -52,3 +62,7 @@ config:
     displayName: NO_PROXY
     ignoreKind:
       - "tenant"
+  replicationConfig:
+    type: string
+    displayName: Enable ReplicationConfig
+    description: "Replicate common resources (e.g. NetworkPolicies) to all namespaces"
