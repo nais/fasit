@@ -1,12 +1,10 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/kafkarator
 source: https://github.com/nais/kafkarator/tree/main/charts/kafkarator
 version: 0.2.0
+description: Manage Kafka topics for Aiven Kafka
 environmentKinds:
   - "tenant"
   - "legacy"
-dependsOn:
-  - allOf:
-    - "aivenator"
 rolloutSource:
   - org: nais
     repo: kafkarator
