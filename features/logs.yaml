@@ -3,7 +3,6 @@ source: https://github.com/nais/helm-charts/tree/main/charts/logs
 version: 0.2.0
 environmentKinds:
   - "tenant"
-  - "legacy"
 timeout: 20m
 mapping:
   loki.loki.storage.bucketNames.chunks:
