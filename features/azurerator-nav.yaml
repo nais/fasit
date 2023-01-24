@@ -43,6 +43,10 @@ mapping:
   global.clusterName:
     value: "{{ .Env.name }}"
     displayName: "Cluster name"
+  global.networkPolicy.enabled:
+    template: '{{ eq .Kind "legacy" }}'
+  global.networkPolicy.apiServerCIDR:
+    value: "{{ .Env.apiserver_endpoint }}/32"
   global.webproxy:
     template: '{{ eq .Kind "onprem" }}'
     displayName: "Webproxy"
