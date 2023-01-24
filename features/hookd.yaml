@@ -71,3 +71,23 @@ config:
     type: string
   frontend.image.tag:
     type: string
+  backend.github.enabled:
+    type: string
+  backend.github.appId:
+    type: string
+    secret: true
+  backend.github.clientId:
+    type: string
+    secret: true
+  backend.github.clientSecret:
+    type: string
+    secret: true
+  backend.github.installId:
+    type: string
+    secret: true
+  backend.github.webhookSecret:
+    type: string
+    secret: true
+  backend.github.privateKeyPemBase64:
+    type: string
+    secret: true
