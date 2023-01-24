@@ -41,6 +41,9 @@ config:
     type: string_array
     description: List of additional CIDRs for other Aiven project VPCs
     displayName: Additional Aiven VPC CIDRs
+    ignoreKind:
+      - "onprem"
+      - "tenant" # remove if we decide that tenants need an "infrastructure" project
   aiven.token:
     type: string
     secret: true
@@ -63,6 +66,8 @@ config:
     ignoreKind:
       - "tenant"
   replicationConfig:
-    type: string
+    type: bool
     displayName: Enable ReplicationConfig
     description: "Replicate common resources (e.g. NetworkPolicies) to all namespaces"
+    ignoreKind:
+      - "onprem"
