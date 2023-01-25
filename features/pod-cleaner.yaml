@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/pod-cleaner
 source: https://github.com/nais/pod-cleaner/tree/main/charts/pod-cleaner
-version: 0.1.0
+version: 0.1.2
 description: "Removes pods in terminating"
 environmentKinds:
   - "onprem"
