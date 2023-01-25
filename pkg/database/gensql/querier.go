@@ -43,6 +43,7 @@ type Querier interface {
 	KubernetesNodeStatuses(ctx context.Context, environmentID uuid.UUID) ([]KubernetesNodeStatus, error)
 	MappingValuesForTenant(ctx context.Context, arg MappingValuesForTenantParams) ([]MappingValuesForTenantRow, error)
 	ReleaseStatusCreateOrUpdate(ctx context.Context, arg ReleaseStatusCreateOrUpdateParams) (ReleaseStatus, error)
+	ReleaseStatusDeleteByEnvironment(ctx context.Context, environmentID uuid.UUID) error
 	ReleaseStatusesGet(ctx context.Context, environmentID uuid.UUID) ([]ReleaseStatus, error)
 	RolloutCreate(ctx context.Context, arg RolloutCreateParams) (Rollout, error)
 	RolloutEventCreate(ctx context.Context, arg RolloutEventCreateParams) error

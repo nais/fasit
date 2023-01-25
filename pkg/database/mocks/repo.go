@@ -727,6 +727,20 @@ func (_m *Repo) ReleaseStatusCreateOrUpdate(ctx context.Context, environmentID u
 	return r0
 }
 
+// ReleaseStatusDeleteByEnvironmentID provides a mock function with given fields: ctx, environmentID
+func (_m *Repo) ReleaseStatusDeleteByEnvironmentID(ctx context.Context, environmentID uuid.UUID) error {
+	ret := _m.Called(ctx, environmentID)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) error); ok {
+		r0 = rf(ctx, environmentID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // ReleaseStatusesGet provides a mock function with given fields: ctx, environmentID
 func (_m *Repo) ReleaseStatusesGet(ctx context.Context, environmentID uuid.UUID) ([]*model.Release, error) {
 	ret := _m.Called(ctx, environmentID)
@@ -1230,6 +1244,20 @@ func (_m *Repo) TenantsGet(ctx context.Context) ([]*model.Tenant, error) {
 	}
 
 	return r0, r1
+}
+
+// TxFunc provides a mock function with given fields: ctx, fn
+func (_m *Repo) TxFunc(ctx context.Context, fn database.TXFunc) error {
+	ret := _m.Called(ctx, fn)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, database.TXFunc) error); ok {
+		r0 = rf(ctx, fn)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // Warnings provides a mock function with given fields: ctx, environmentID, tenantID

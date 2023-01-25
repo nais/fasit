@@ -39,6 +39,8 @@ func (c closeFuncs) Close() error {
 //go:embed migrations/0*.sql
 var embedMigrations embed.FS
 
+type TXFunc func(repo Repo) error
+
 type Repo interface {
 	AuditRepo
 	ConfigRepo
@@ -56,6 +58,7 @@ type Repo interface {
 	Close()
 	Metrics(meter metric.Meter) error
 	WithTx(ctx context.Context) (Repo, pgx.Tx, error)
+	TxFunc(ctx context.Context, fn TXFunc) error
 }
 
 type repo struct {
@@ -98,6 +101,16 @@ func (r *repo) WithTx(ctx context.Context) (Repo, pgx.Tx, error) {
 		db:      r.db,
 		log:     r.log,
 	}, tx, nil
+}
+
+func (r *repo) TxFunc(ctx context.Context, fn TXFunc) error {
+	return r.db.BeginFunc(ctx, func(tx pgx.Tx) error {
+		return fn(&repo{
+			querier: r.querier.WithTx(tx),
+			db:      r.db,
+			log:     r.log,
+		})
+	})
 }
 
 func NewDB(ctx context.Context, dbConnDSN string, cloudsql bool) (*pgxpool.Pool, closeFuncs, error) {

@@ -58,6 +58,16 @@ func (q *Queries) ReleaseStatusCreateOrUpdate(ctx context.Context, arg ReleaseSt
 	return i, err
 }
 
+const releaseStatusDeleteByEnvironment = `-- name: ReleaseStatusDeleteByEnvironment :exec
+DELETE FROM release_statuses
+WHERE environment_id = $1
+`
+
+func (q *Queries) ReleaseStatusDeleteByEnvironment(ctx context.Context, environmentID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, releaseStatusDeleteByEnvironment, environmentID)
+	return err
+}
+
 const releaseStatusesGet = `-- name: ReleaseStatusesGet :many
 SELECT environment_id, feature, version, status, revision, last_deployed, created, last_modified FROM release_statuses
 WHERE environment_id = $1

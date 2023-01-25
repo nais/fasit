@@ -671,6 +671,20 @@ func (_m *Querier) ReleaseStatusCreateOrUpdate(ctx context.Context, arg gensql.R
 	return r0, r1
 }
 
+// ReleaseStatusDeleteByEnvironment provides a mock function with given fields: ctx, environmentID
+func (_m *Querier) ReleaseStatusDeleteByEnvironment(ctx context.Context, environmentID uuid.UUID) error {
+	ret := _m.Called(ctx, environmentID)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) error); ok {
+		r0 = rf(ctx, environmentID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // ReleaseStatusesGet provides a mock function with given fields: ctx, environmentID
 func (_m *Querier) ReleaseStatusesGet(ctx context.Context, environmentID uuid.UUID) ([]gensql.ReleaseStatus, error) {
 	ret := _m.Called(ctx, environmentID)

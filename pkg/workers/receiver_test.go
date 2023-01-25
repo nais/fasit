@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
+	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/database/mocks"
 	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/nais/fasit/pkg/message"
@@ -96,7 +97,11 @@ func TestReceiver(t *testing.T) {
 				repo.On("StatusCreateOrUpdate", mock.Anything, tc.envID, mock.Anything).Return(nil).Times(tc.numStatusCreateOrUpdate)
 			}
 			if tc.numReleaseStatusCreateOrUpdate > 0 {
+				repo.On("ReleaseStatusDeleteByEnvironmentID", mock.Anything, tc.envID).Return(nil).Times(tc.numReleaseStatusCreateOrUpdate)
 				repo.On("ReleaseStatusCreateOrUpdate", mock.Anything, tc.envID, mock.Anything).Return(nil).Times(tc.numReleaseStatusCreateOrUpdate)
+				repo.On("TxFunc", mock.Anything, mock.Anything).Return(nil).Run(func(args mock.Arguments) {
+					args.Get(1).(database.TXFunc)(repo)
+				})
 			}
 			if tc.numHealthStatusCreateOrUpdate > 0 {
 				repo.On("HealthStatusCreateOrUpdate", mock.Anything, tc.envID, mock.Anything).Return(nil).Times(tc.numHealthStatusCreateOrUpdate)

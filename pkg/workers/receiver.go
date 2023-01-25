@@ -8,6 +8,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/nais/fasit/pkg/message"
 	"github.com/sirupsen/logrus"
@@ -29,6 +30,7 @@ type ReceiverStore interface {
 	StatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Helm) error
 	TenantCreate(ctx context.Context, t *model.TenantCreate) (*model.Tenant, error)
 	TenantGetByName(ctx context.Context, name string) (*model.Tenant, error)
+	TxFunc(ctx context.Context, fn database.TXFunc) error
 }
 
 type Receiver struct {
@@ -143,14 +145,20 @@ func (r *Receiver) releaseStatus(ctx context.Context, msg message.Status) error 
 		return err
 	}
 
-	for _, rel := range status.Releases {
-		err = r.repo.ReleaseStatusCreateOrUpdate(ctx, environmentID, &rel)
+	return r.repo.TxFunc(ctx, func(repo database.Repo) error {
+		err = repo.ReleaseStatusDeleteByEnvironmentID(ctx, environmentID)
 		if err != nil {
 			return err
 		}
-	}
 
-	return nil
+		for _, rel := range status.Releases {
+			err = repo.ReleaseStatusCreateOrUpdate(ctx, environmentID, &rel)
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 func (r *Receiver) healthStatus(ctx context.Context, msg message.Status) error {

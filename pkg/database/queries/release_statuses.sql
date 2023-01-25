@@ -14,3 +14,7 @@ RETURNING *;
 -- name: ReleaseStatusesGet :many
 SELECT * FROM release_statuses
 WHERE environment_id = @environment_ID;
+
+-- name: ReleaseStatusDeleteByEnvironment :exec
+DELETE FROM release_statuses
+WHERE environment_id = @environment_id;

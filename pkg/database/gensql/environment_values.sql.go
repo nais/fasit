@@ -75,6 +75,7 @@ SELECT
 "secret",
 (CASE WHEN secret THEN CASE WHEN $1::bool THEN value ELSE '"*****"' END ELSE value END)::jsonb AS "value"
 FROM environment_values WHERE "environment_id" = $2
+ORDER BY "key" ASC
 `
 
 type EnvironmentValuesForEnvironmentParams struct {

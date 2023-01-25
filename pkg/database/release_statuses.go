@@ -12,6 +12,7 @@ import (
 type ReleaseStatusRepo interface {
 	ReleaseStatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Release) error
 	ReleaseStatusesGet(ctx context.Context, environmentID uuid.UUID) ([]*model.Release, error)
+	ReleaseStatusDeleteByEnvironmentID(ctx context.Context, environmentID uuid.UUID) error
 }
 
 func (r *repo) ReleaseStatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Release) error {
@@ -46,4 +47,8 @@ func (r *repo) ReleaseStatusesGet(ctx context.Context, environmentID uuid.UUID) 
 	}
 
 	return releases, nil
+}
+
+func (r *repo) ReleaseStatusDeleteByEnvironmentID(ctx context.Context, environmentID uuid.UUID) error {
+	return r.querier.ReleaseStatusDeleteByEnvironment(ctx, environmentID)
 }
