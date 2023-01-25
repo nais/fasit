@@ -1,9 +1,12 @@
-name: 'Install prereqs'
-description: 'install kubectl/helm'
+name: "Install prereqs"
+description: "install kubectl/helm"
 
 runs:
   using: composite
   steps:
+    - name: install gke-gcloud-auth-plugin
+      shell: bash
+      run: gcloud components install gke-gcloud-auth-plugin
     - name: install kubectl
       shell: bash
       env:
