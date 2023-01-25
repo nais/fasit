@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/azurerator
 source: https://github.com/nais/azurerator/tree/master/charts
-version: 0.4.1
+version: 0.4.2
 environmentKinds:
   - "tenant"
 dependsOn:
@@ -8,6 +8,9 @@ dependsOn:
       - "nais-crds"
       - "naiserator"
       - "reloader"
+rolloutSource:
+  - org: nais
+    repo: azurerator
 config:
   image.tag:
     type: string
