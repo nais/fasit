@@ -6,7 +6,7 @@ runs:
   steps:
     - name: install gke-gcloud-auth-plugin
       shell: bash
-      run: gcloud components install gke-gcloud-auth-plugin
+      run: sudo apt-get install -y google-cloud-sdk-gke-gcloud-auth-plugin
     - name: install kubectl
       shell: bash
       env:
