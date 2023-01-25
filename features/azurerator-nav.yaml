@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/azurerator-nav
 source: https://github.com/nais/helm-charts/tree/main/charts/azurerator-nav
-version: 0.1.1
+version: 0.1.2
 environmentKinds:
   - "onprem"
   - "legacy"
