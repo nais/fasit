@@ -105,25 +105,15 @@ mapping:
     displayName: "Prometheus host"
     ignoreKind:
       - management
-  tenant_prometheus.nodeSelector.kubernetes\.io/role:
-    value: prometheus
-    ignoreKind:
-      - tenant
-      - legacy
-      - management
-    displayName: "Tenant prometheus node role onprem"
   tenant_prometheus.nodeSelector.nais\.io/prometheus-node:
     value: "true"
     ignoreKind:
       - tenant
-      - onprem
       - management
-    displayName: "Tenant prometheus node role legacy"
+    displayName: "Tenant prometheus node selector onprem/legacy"
   tenant_prometheus.tolerations:
     template: |
       - key: nais.io/prometheus-node
-        operator: Exists
-      - key: nais.io/naas-node
         operator: Exists
     ignoreKind:
       - tenant
@@ -140,9 +130,8 @@ mapping:
     value: "true"
     ignoreKind:
       - tenant
-      - onprem
       - management
-    displayName: "Nais prometheus node role legacy"
+    displayName: "Nais prometheus node selector onprem/legacy"
   nais_prometheus.tolerations:
     template: |
       - key: nais.io/prometheus-node
