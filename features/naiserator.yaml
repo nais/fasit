@@ -87,6 +87,15 @@ config:
     description: "cidr address of the Kubernetes API server must be set for legacy GCP clusters"
     ignoreKind:
       - "tenant"
+  naiserator.features.legacy-gcp:
+    type: bool
+    displayName: "Enable legacy GCP mode"
+    description: "Configure Naiserator to work with legacy GCP clusters (override mapping for migration)"
+    ignoreKind:
+      - "tenant"
+      - "onprem"
+      - "management"
+
 mapping:
   naiserator.api-server-ip:
     value: "{{ .Env.apiserver_endpoint }}/32"
