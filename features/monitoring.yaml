@@ -40,6 +40,13 @@ config:
       - tenant
       - legacy
       - management
+  tenant_prometheus.nodeName:
+    type: string
+    displayName: Tenant prometheus node name
+    ignoreKind:
+      - tenant
+      - legacy
+      - management
   tenant_prometheus.storage.enabled:
     type: bool
     displayName: Tenant prometheus enable pvc storage
@@ -69,6 +76,13 @@ config:
     type: string
     displayName: Tenant prometheus cpu request
     ignoreKind:
+      - management
+  nais_prometheus.nodeName:
+    type: string
+    displayName: Nais prometheus node name
+    ignoreKind:
+      - tenant
+      - legacy
       - management
   nais_prometheus.memory:
     type: string
