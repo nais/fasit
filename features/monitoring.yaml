@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring
-version: 1.39.0
+version: 1.40.0
 description: "Monitoring stack for nais"
 environmentKinds:
   - "tenant"
@@ -111,14 +111,6 @@ mapping:
       - tenant
       - management
     displayName: "Tenant prometheus node selector onprem/legacy"
-  tenant_prometheus.tolerations:
-    template: |
-      - key: nais.io/prometheus-node
-        operator: Exists
-    ignoreKind:
-      - tenant
-      - management
-    displayName: "Tenant prometheus pod tolerations"
   kube-prometheus-stack.alertmanager.ingress.hosts:
     value:
       - '{{ subdomain . "alertmanager" }}'
@@ -132,15 +124,6 @@ mapping:
       - tenant
       - management
     displayName: "Nais prometheus node selector onprem/legacy"
-  nais_prometheus.tolerations:
-    template: |
-      - key: nais.io/prometheus-node
-        operator: Exists
-    ignoreKind:
-      - tenant
-      - onprem
-      - management
-    displayName: "Nais prometheus pod tolerations"
   nais_alertmanager.ingress.host:
     value: '{{ subdomain . "nais-alertmanager" }}'
     displayName: "Nais alertmanager host"
