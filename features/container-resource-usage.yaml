@@ -22,7 +22,3 @@ config:
     type: string
     secret: true
     displayName: Google SA credentials
-mapping:
-  prometheusURL:
-    displayName: Prometheus URL
-    value: "https://prometheus.{{ .Env.name }}.nais.io"
