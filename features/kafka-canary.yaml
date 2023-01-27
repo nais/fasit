@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/kafka-canary
 source: https://github.com/nais/kafkarator/tree/master/charts/kafka-canary
-version: 0.5.1
+version: 0.5.2
 description: Cronjob that deploys kafka-canary, which monitors kafka connectivity in all connected clusters.
 environmentKinds:
   - "management"
@@ -12,7 +12,17 @@ rolloutSource:
     repo: kafkarator
 mapping:
   deploy_configs:
-    value: '{{ mapOf "name" "aiven_project" .Envs | toJSON }}'
+    value: |
+      [
+      {{ range .Envs }}
+        {{ if ne .kind "management" }}
+        {
+          "canary_cluster": "{{ .name }}",
+          "pool": "{{ .aiven_project }}",
+        },
+        {{ end }}
+      {{ end }}
+      ]
     displayName: "Deploy Configs"
     description: |
       Expects a JSON-list of objects with `canary_cluster` and `pool`.
