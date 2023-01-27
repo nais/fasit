@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/kafka-canary
 source: https://github.com/nais/kafkarator/tree/master/charts/kafka-canary
-version: 0.5.3
+version: 0.5.2
 description: Cronjob that deploys kafka-canary, which monitors kafka connectivity in all connected clusters.
 environmentKinds:
   - "management"
@@ -12,35 +12,21 @@ rolloutSource:
     repo: kafkarator
 mapping:
   deploy_configs:
-    template: |
-      {{ if eq "nav" .Tenant.Name }}
+    value: |
       [
-        {{ $legacy_clusters := filter "kind" "legacy" .Envs }}
-        {{ range .Envs }}
-        {{ $topic_cluster := index (filter "aiven_project" .aiven_project $legacy_clusters) 0 }}
+      {{ range .Envs }}
+        {{ if ne .kind "management" }}
         {
           "canary_cluster": "{{ .name }}",
           "pool": "{{ .aiven_project }}",
-          "topic_cluster": "{{ $topic_cluster.name }}"
         },
         {{ end }}
-      ]      
-      {{ else }}
-      [
-        {{ range .Envs }}
-        {
-          "canary_cluster": "{{ .name }}",
-          "pool": "{{ .aiven_project }}",
-          "topic_cluster": "{{ .name }}"
-        },
-        {{ end }}
-      ]      
       {{ end }}
+      ]
     displayName: "Deploy Configs"
     description: |
-      Expects a list of objects with `canary_cluster`, `topic_cluster` and `pool`.
+      Expects a JSON-list of objects with `canary_cluster` and `pool`.
       `canary_cluster` is the cluster to deploy the canary to
-      `topic_cluster` is the cluster to deploy the associated topic definition to
       `pool` is the Aiven Kafka pool this instance of the canary should use
   deploy_server:
     value: "hookd-grpc:9090"
