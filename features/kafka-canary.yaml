@@ -12,7 +12,7 @@ rolloutSource:
     repo: kafkarator
 mapping:
   deploy_configs:
-    value: |
+    template: |
       [
         {{ $tenant_name := .Tenant.Name }}
         {{ range .Envs }}
