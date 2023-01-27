@@ -12,7 +12,7 @@ rolloutSource:
     repo: kafkarator
 mapping:
   deploy_configs:
-    template: '{{ mapOf "name" "aiven_project" .Envs | toJSON }}'
+    value: '{{ mapOf "name" "aiven_project" .Envs | toJSON }}'
     displayName: "Deploy Configs"
     description: |
       Expects a JSON-list of objects with `canary_cluster` and `pool`.
