@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring
-version: 1.40.1
+version: 1.41.0
 description: "Monitoring stack for nais"
 environmentKinds:
   - "tenant"
@@ -47,19 +47,9 @@ config:
       - tenant
       - legacy
       - management
-  tenant_prometheus.storage.enabled:
-    type: bool
-    displayName: Tenant prometheus enable pvc storage
-    ignoreKind:
-      - management
   tenant_prometheus.retention:
     type: string
     displayName: Tenant prometheus retention
-    ignoreKind:
-      - management
-  tenant_prometheus.storage.type:
-    type: string
-    displayName: Tenant storage type (default / local)
     ignoreKind:
       - management
   tenant_prometheus.storage.size:
@@ -84,21 +74,36 @@ config:
       - tenant
       - legacy
       - management
+  nais_prometheus.retention:
+    type: string
+    displayName: Nais prometheus retention
+  nais_prometheus.storage.size:
+    type: string
+    displayName: Nais prometheus disk size
   nais_prometheus.memory:
     type: string
     displayName: Nais prometheus memory
   nais_prometheus.cpu.request:
     type: string
     displayName: Nais prometheus cpu request
-  nais_prometheus.cpu.limit:
-    type: string
-    displayName: Nais prometheus cpu limit
 mapping:
   tenantCluster:
     template: "false"
     ignoreKind:
       - tenant
       - onprem
+      - legacy
+  nais_prometheus.storage.local:
+    template: "true"
+    ignoreKind:
+      - management
+      - tenant
+      - legacy
+  tenant_prometheus.storage.local:
+    template: "true"
+    ignoreKind:
+      - management
+      - tenant
       - legacy
   tenant_prometheus.ingress.host:
     value: '{{ subdomain . "prometheus" }}'
