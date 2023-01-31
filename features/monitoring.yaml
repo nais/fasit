@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring
-version: 1.42.0
+version: 1.42.1
 description: "Monitoring stack for nais"
 environmentKinds:
   - "tenant"
@@ -132,8 +132,9 @@ mapping:
     displayName: "Disable resource metrics (v1beta1.metrics.k8s.io)"
     ignoreKind:
       - onprem
-  prometheus-pushgateway.ingress.host:
-    value: '{{ subdomain . "prometheus-pushgateway" }}'
+  prometheus-pushgateway.ingress.hosts:
+    template: |
+      - '{{ subdomain . "prometheus-pushgateway" }}'
     displayName: "Prometheus pushgateway host"
     ignoreKind:
       - management
