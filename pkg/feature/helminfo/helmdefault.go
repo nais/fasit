@@ -29,6 +29,7 @@ import (
 )
 
 type Chart struct {
+	Feature feature.Feature
 	Values  chartutil.Values
 	Version *ChartVersion
 }
