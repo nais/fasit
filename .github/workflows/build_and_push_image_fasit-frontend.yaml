@@ -105,7 +105,7 @@ jobs:
           cache-to: type=gha,mode=max
   deploy_fasit-frontend:
     if: github.ref == 'refs/heads/main'
-    runs-on: ["fasit"]
+    runs-on: ["fasit-deploy"]
     needs: ["build_and_push_fasit-frontend"]
     permissions:
       contents: "read"
