@@ -132,6 +132,12 @@ mapping:
     displayName: "Disable resource metrics (v1beta1.metrics.k8s.io)"
     ignoreKind:
       - onprem
+  prometheus-pushgateway.enabled:
+    template: "false"
+    ignoreKind:
+      - tenant
+      - legacy
+      - onprem
   prometheus-pushgateway.ingress.hosts:
     template: |
       - '{{ subdomain . "prometheus-pushgateway" }}'
