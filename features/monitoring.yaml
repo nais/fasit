@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring
-version: 1.41.0
+version: 1.42.0
 description: "Monitoring stack for nais"
 environmentKinds:
   - "tenant"
@@ -12,19 +12,21 @@ autoInstall:
   - "management"
 timeout: 20m
 config:
-  teamSlackAlerts.enabled:
+  alerts.proxy:
+    type: string
+    displayName: "Alerts proxy URL"
+    ignoreKind:
+      - management
+      - tenant
+      - legacy
+  alerts.teamAlerts.enabled:
     type: bool
     displayName: "Enable team slack alerts"
     ignoreKind:
       - management
-  teamSlackAlerts.webhook:
+  alerts.teamAlerts.webhook:
     type: string
     displayName: "Team slack alerts webhook URL"
-    ignoreKind:
-      - management
-  teamSlackAlerts.proxy:
-    type: string
-    displayName: "Team slack alerts proxy URL"
     ignoreKind:
       - management
   nais_alertmanager.slack.webhook:
@@ -33,13 +35,6 @@ config:
   nais_alertmanager.slack.channel:
     type: string
     displayName: "Nais alerts slack channel"
-  nais_alertmanager.slack.proxy:
-    type: string
-    displayName: "Nais alerts proxy URL"
-    ignoreKind:
-      - tenant
-      - legacy
-      - management
   tenant_prometheus.nodeName:
     type: string
     displayName: Tenant prometheus node name
@@ -137,6 +132,11 @@ mapping:
     displayName: "Disable resource metrics (v1beta1.metrics.k8s.io)"
     ignoreKind:
       - onprem
+  prometheus-pushgateway.ingress.host:
+    value: '{{ subdomain . "prometheus-pushgateway" }}'
+    displayName: "Prometheus host"
+    ignoreKind:
+      - management
   prometheus-adapter-nais.service.clusterIP:
     value: "10.254.123.45"
     displayName: "Static service ip for prometheus-adapter-nais"
