@@ -6,4 +6,4 @@ environmentKinds:
   - "onprem"
 mapping:
   external-dns.secretConfiguration.data.key:
-    value: "{{ .Env.external-dns_service_account_key }}"
+    value: "{{ .Env.external_dns_service_account_key }}"
