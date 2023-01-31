@@ -134,7 +134,7 @@ mapping:
       - onprem
   prometheus-pushgateway.ingress.host:
     value: '{{ subdomain . "prometheus-pushgateway" }}'
-    displayName: "Prometheus host"
+    displayName: "Prometheus pushgateway host"
     ignoreKind:
       - management
   prometheus-adapter-nais.service.clusterIP:
