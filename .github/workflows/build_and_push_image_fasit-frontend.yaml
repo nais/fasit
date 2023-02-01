@@ -44,7 +44,7 @@ jobs:
             type=semver,pattern=v{{major}}
             type=sha
       - name: Build and test fasit-frontend
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           context: .
           file: Dockerfile_fasit-frontend
@@ -94,7 +94,7 @@ jobs:
             type=semver,pattern=v{{major}}
             type=sha
       - name: Build and push fasit-frontend
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v4
         with:
           context: .
           file: Dockerfile_fasit-frontend
