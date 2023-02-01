@@ -7,7 +7,7 @@ require (
 	cloud.google.com/go/pubsub v1.28.0
 	cloud.google.com/go/storage v1.28.1
 	github.com/99designs/gqlgen v0.17.22
-	github.com/GoogleCloudPlatform/cloudsql-proxy v1.33.1
+	github.com/GoogleCloudPlatform/cloudsql-proxy v1.33.2
 	github.com/Masterminds/semver/v3 v3.2.0
 	github.com/coreos/go-oidc/v3 v3.4.0
 	github.com/fsnotify/fsnotify v1.6.0
