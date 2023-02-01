@@ -3,7 +3,7 @@ module github.com/nais/fasit
 go 1.19
 
 require (
-	cloud.google.com/go/cloudsqlconn v1.1.0
+	cloud.google.com/go/cloudsqlconn v1.1.1
 	cloud.google.com/go/pubsub v1.28.0
 	cloud.google.com/go/storage v1.28.1
 	github.com/99designs/gqlgen v0.17.22
@@ -36,7 +36,7 @@ require (
 	go.opentelemetry.io/otel/metric v0.34.0
 	go.opentelemetry.io/otel/sdk/metric v0.34.0
 	golang.org/x/sync v0.1.0
-	google.golang.org/api v0.105.0
+	google.golang.org/api v0.106.0
 	google.golang.org/grpc v1.51.0
 	google.golang.org/protobuf v1.28.1
 	gopkg.in/yaml.v2 v2.4.0
@@ -51,7 +51,7 @@ require (
 require (
 	cloud.google.com/go v0.107.0 // indirect
 	cloud.google.com/go/compute v1.14.0 // indirect
-	cloud.google.com/go/compute/metadata v0.2.2 // indirect
+	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	cloud.google.com/go/iam v0.8.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/BurntSushi/toml v1.2.1 // indirect
@@ -181,7 +181,7 @@ require (
 	golang.org/x/tools v0.5.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/genproto v0.0.0-20221207170731-23e4bf6bdc37 // indirect
+	google.golang.org/genproto v0.0.0-20230109162033-3c3c17ce83e6 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 	k8s.io/apiextensions-apiserver v0.26.0 // indirect
