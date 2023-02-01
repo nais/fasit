@@ -7,3 +7,11 @@ environmentKinds:
 mapping:
   external-dns.secretConfiguration.data.key:
     value: "{{ .Env.external_dns_service_account_key }}"
+  external-dns.extraArgs:
+    template: |
+      - --google-project={{ .Env.tenant_project }}
+config:
+  external-dns.domainFilters:
+    type: string_array
+    description: "Domains to manage"
+    required: true
