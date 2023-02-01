@@ -19,7 +19,7 @@ jobs:
   tests:
     runs-on: ubuntu-latest-4-cores
     steps:
-      - uses: actions/checkout@v3.2.0
+      - uses: actions/checkout@v3.3.0
       - uses: actions/setup-go@v3
         with:
           go-version: ">=1.19.4"
@@ -45,7 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout fasit
-        uses: actions/checkout@v3.2.0
+        uses: actions/checkout@v3.3.0
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
@@ -84,7 +84,7 @@ jobs:
     runs-on: ubuntu-latest-4-cores
     steps:
       - name: Checkout
-        uses: actions/checkout@v3.2.0
+        uses: actions/checkout@v3.3.0
       - id: "auth"
         name: "Authenticate to Google Cloud"
         uses: "google-github-actions/auth@v1.0.0"
@@ -136,7 +136,7 @@ jobs:
     runs-on: ubuntu-latest-4-cores
     steps:
       - name: Checkout
-        uses: actions/checkout@v3.2.0
+        uses: actions/checkout@v3.3.0
       - id: "auth"
         name: "Authenticate to Google Cloud"
         uses: "google-github-actions/auth@v1.0.0"
@@ -188,7 +188,7 @@ jobs:
       id-token: "write"
     steps:
       - name: Checkout fasit
-        uses: actions/checkout@v3.2.0
+        uses: actions/checkout@v3.3.0
       - id: "auth"
         name: "Authenticate to Google Cloud"
         uses: "google-github-actions/auth@v1.0.0"
