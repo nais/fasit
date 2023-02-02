@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring
-version: 1.43.2
+version: 1.43.3
 description: "Monitoring stack for nais"
 environmentKinds:
   - "tenant"
