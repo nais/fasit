@@ -1,6 +1,6 @@
 chart: kyverno
 repo: https://kyverno.github.io/kyverno/
-version: v2.6.5
+version: v2.7.0
 source: https://github.com/kyverno/kyverno/tree/main/charts/kyverno
 description: "Policy engine for Kubernetes"
 environmentKinds:
