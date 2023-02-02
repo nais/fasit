@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/nais-alerts
 source: https://github.com/nais/helm-charts/tree/main/charts/nais-alerts
-version: 0.6.1
+version: 0.6.2
 environmentKinds:
   - "tenant"
   - "onprem"
