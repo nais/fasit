@@ -1,6 +1,6 @@
 chart: kyverno
 repo: https://kyverno.github.io/kyverno/
-version: v2.6.5
+version: v2.7.0
 source: https://github.com/kyverno/kyverno/tree/main/charts/kyverno
 description: "Policy engine for Kubernetes"
 environmentKinds:
@@ -72,7 +72,7 @@ mapping:
     template: "false"
   extraArgs:
     value:
-      - --autogenInternals=false
+      - --backgroundScanInterval=3h
       - --clientRateLimitQPS=150
       - --clientRateLimitBurst=300
   serviceMonitor.enabled:
@@ -130,9 +130,3 @@ mapping:
       - '[Service,{{ "{{" }} include "kyverno.namespace" . {{ "}}" }},{{ "{{" }} template "kyverno.serviceName" . {{ "}}" }}-metrics]'
       - '[ServiceMonitor,{{ "{{" }} if .Values.serviceMonitor.namespace {{ "}}" }}{{ "{{" }} .Values.serviceMonitor.namespace {{ "}}" }}{{ "{{" }} else {{ "}}" }}{{ "{{" }} template "kyverno.namespace" . {{ "}}" }}{{ "{{" }} end {{ "}}" }},{{ "{{" }} template "kyverno.serviceName" . {{ "}}" }}-service-monitor]'
       - '[Pod,{{ "{{" }} include "kyverno.namespace" . {{ "}}" }},{{ "{{" }} template "kyverno.fullname" . {{ "}}" }}-test]'
-
-  #config.excludeGroupRole:
-  #  displayName: Exclude group roles
-  #  description: Groups role that is excluded from all kyverno policies
-  #  value:
-  #    - cluster-admin
