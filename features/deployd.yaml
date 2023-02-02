@@ -59,3 +59,7 @@ config:
     displayName: Enable CA bundle
     description: Mounts NAV CA bundle
     type: bool
+  canaryAlert:
+    displayName: Enable canary alert
+    description: Enable canary alert
+    type: bool
