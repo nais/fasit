@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/kafka-canary-alert
 source: https://github.com/nais/kafkarator/tree/master/charts/kafka-canary-alert
-version: 0.1.1
+version: 0.1.2
 description: Installs alert for kafka-canary. Requires that kafka-canary is installed in management cluster.
 environmentKinds:
   - "tenant"
@@ -19,3 +19,7 @@ mapping:
     template: '{{ .Env.aiven_project }}'
     displayName: "Cluster Pool"
     description: "Kafka pool this canary alert should monitor"
+  cluster:
+    value: "{{ .Env.name }}"
+    displayName: "NAIS cluster"
+    description: "The nais cluster the alert is installed in"
