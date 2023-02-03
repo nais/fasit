@@ -6,6 +6,14 @@ environmentKinds:
   - "tenant"
   - "legacy"
   - "onprem"
+autoInstall:
+  - "tenant"
+  - "legacy"
+  - "onprem"
+dependsOn:
+  - allOf:
+    # - "kafka-canary" installed in management cluster
+      - "aivenator"  # Surrogate for the above "impossible" dependency
 mapping:
   pool:
     template: '{{ .Env.aiven_project }}'
