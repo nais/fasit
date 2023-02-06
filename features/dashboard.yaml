@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/dashboard
 source: https://github.com/nais/dashboard/tree/main/charts/dashboard
-version: 0.1.0
+version: 0.1.1
 description: "Dashboard for teams showing cluster and application health"
 environmentKinds:
   - "management"
@@ -38,3 +38,5 @@ mapping:
     value: "{{ .Env.dashboard_console_api_key }}"
   backend.projectMapping:
     value: '{{ mapOf "name" "project_id" .Envs | mapJoin "=" | join "&"}}'
+  backend.tenant:
+    value: "{{ .Tenant.Name }}"

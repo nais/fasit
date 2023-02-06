@@ -22,3 +22,6 @@ config:
     type: string
     secret: true
     displayName: Google SA credentials
+  prometheusURL:
+    type: string
+    displayName: Prometheus URL

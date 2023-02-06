@@ -1,0 +1,17 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/external-dns
+source: https://github.com/nais/helm-charts/tree/main/charts/external-dns
+version: 1.12.0
+description: "External DNS"
+environmentKinds:
+  - "onprem"
+mapping:
+  external-dns.secretConfiguration.data.key:
+    value: "{{ .Env.external_dns_service_account_key }}"
+  external-dns.extraArgs:
+    template: |
+      - --google-project={{ .Env.tenant_project }}
+config:
+  external-dns.domainFilters:
+    type: string_array
+    description: "Domains to manage"
+    required: true

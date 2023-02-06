@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout fasit
-        uses: actions/checkout@v3.2.0
+        uses: actions/checkout@v3.3.0
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx
@@ -60,7 +60,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout fasit
-        uses: actions/checkout@v3.2.0
+        uses: actions/checkout@v3.3.0
       - id: "auth"
         name: "Authenticate to Google Cloud"
         uses: "google-github-actions/auth@v1.0.0"
@@ -105,14 +105,14 @@ jobs:
           cache-to: type=gha,mode=max
   deploy_fasit-frontend:
     if: github.ref == 'refs/heads/main'
-    runs-on: ["fasit"]
+    runs-on: ["fasit-deploy"]
     needs: ["build_and_push_fasit-frontend"]
     permissions:
       contents: "read"
       id-token: "write"
     steps:
       - name: Checkout fasit
-        uses: actions/checkout@v3.2.0
+        uses: actions/checkout@v3.3.0
       - id: "auth"
         name: "Authenticate to Google Cloud"
         uses: "google-github-actions/auth@v1.0.0"
