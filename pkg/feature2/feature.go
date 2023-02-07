@@ -3,7 +3,6 @@ package feature
 import (
 	"archive/tar"
 	"compress/gzip"
-	"fmt"
 	"io"
 	"strings"
 	"time"
@@ -12,6 +11,7 @@ import (
 	"github.com/nais/fasit/pkg/helm"
 	"gopkg.in/yaml.v2"
 	"helm.sh/helm/v3/pkg/chart"
+	"helm.sh/helm/v3/pkg/chartutil"
 )
 
 type Values map[string]Value
@@ -63,7 +63,8 @@ type Feature struct {
 	// Description is a short description of the feature.
 	Description string `yaml:"description,omitempty" json:"description,omitempty"`
 	// Source should be the URL to the helm chart source code.
-	Source string `yaml:"source" json:"source"`
+	Source     string         `yaml:"source" json:"source"`
+	ValuesYaml map[string]any `yaml:"-" json:"-"`
 }
 
 func FromChart(chart, version string) (*Feature, error) {
@@ -90,8 +91,8 @@ func FromChart(chart, version string) (*Feature, error) {
 			}
 			return nil, err
 		}
-
 		fname := strings.Split(hdr.Name, "/")
+		// Ensure that the file is in the root of the chart
 		if len(fname) != 2 {
 			continue
 		}
@@ -106,16 +107,16 @@ func FromChart(chart, version string) (*Feature, error) {
 				return nil, err
 			}
 		case "values.yaml":
-			fmt.Println("Parse values.yaml")
+			b, err := io.ReadAll(r)
+			if err != nil {
+				return nil, err
+			}
+			vals, err := chartutil.ReadValues(b)
+			if err != nil {
+				return nil, err
+			}
+			f.ValuesYaml = vals
 		}
-
-		// if filepath.Base(hdr.nhjmName) == filename {
-		// 	valuesYAML, err = io.ReadAll(r)
-		// 	if err != nil {
-		// 		return nil, err
-		// 	}
-		// 	break
-		// }
 	}
 
 	return f, nil
