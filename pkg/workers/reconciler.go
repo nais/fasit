@@ -66,11 +66,11 @@ func NewReconciler(
 	meter metric.Meter,
 	log *logrus.Entry,
 ) (*Reconciler, error) {
-	reconcileTime, err := meter.SyncInt64().Histogram("reconcile_time", instrument.WithDescription("Time spent reconciling"), instrument.WithUnit("ms"))
+	reconcileTime, err := meter.Int64Histogram("reconcile_time", instrument.WithDescription("Time spent reconciling"), instrument.WithUnit("ms"))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create reconcile_time histogram: %w", err)
 	}
-	deployMessages, err := meter.SyncInt64().Counter("deploy_messages", instrument.WithDescription("Deploy messages sent"))
+	deployMessages, err := meter.Int64Counter("deploy_messages", instrument.WithDescription("Deploy messages sent"))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create deploy_messages counter: %w", err)
 	}

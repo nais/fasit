@@ -4,21 +4,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/coreos/go-oidc/v3/oidc"
-	"github.com/go-chi/chi/v5"
 	"github.com/nais/fasit/pkg/auth"
 	"github.com/nais/fasit/pkg/database"
-	"github.com/nais/fasit/pkg/feature"
+	feature "github.com/nais/fasit/pkg/feature2"
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
 type store interface {
-	database.RolloutRepo
 	database.EnvironmentRepo
 	database.FeatureStateRepo
 }
@@ -34,14 +30,18 @@ type Rollout struct {
 	provder  *oidc.Provider
 	verifier *oidc.IDTokenVerifier
 
-	featureMgr *feature.Manager
-	repo       store
+	repo store
 
 	// AllowAll will allow all rollout requests when set to true
 	AllowAll bool
 }
 
-func New(ctx context.Context, featureMgr *feature.Manager, repo store) (*Rollout, error) {
+type Request struct {
+	Chart   string `json:"chart"`
+	Version string `json:"version"`
+}
+
+func New(ctx context.Context, repo store) (*Rollout, error) {
 	provider, err := oidc.NewProvider(ctx, "https://token.actions.githubusercontent.com")
 	if err != nil {
 		return nil, err
@@ -52,35 +52,31 @@ func New(ctx context.Context, featureMgr *feature.Manager, repo store) (*Rollout
 	})
 
 	return &Rollout{
-		provder:    provider,
-		verifier:   verifier,
-		featureMgr: featureMgr,
-		repo:       repo,
+		provder:  provider,
+		verifier: verifier,
+		repo:     repo,
 	}, nil
 }
 
 func (r *Rollout) Rollout(w http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 
-	feature := r.featureMgr.Get(chi.URLParam(req, "feature"))
-	if feature == nil {
-		http.Error(w, "feature not found", http.StatusNotFound)
-		return
-	}
-
-	actor, valid := r.validateToken(w, req, feature)
+	actor, valid := r.validateToken(w, req)
 	if !valid {
 		return
 	}
 
 	ctx = auth.SetEmail(ctx, actor)
 
-	spec, err := r.createAndValidateSpec(req.Body, feature)
+	body := &Request{}
+	err := json.NewDecoder(req.Body).Decode(body)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(map[string]string{
-			"error": err.Error(),
-		})
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	feature, err := feature.FromChart(body.Chart, body.Version)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -107,52 +103,18 @@ func (r *Rollout) Rollout(w http.ResponseWriter, req *http.Request) {
 	if len(envNotAvailable) >= len(feature.EnvironmentKinds) {
 		w.WriteHeader(http.StatusBadRequest)
 		_ = json.NewEncoder(w).Encode(map[string]interface{}{
-			"error": fmt.Sprintf("feature not available in any environments: %v", envNotAvailable),
+			"error": fmt.Sprintf("no available environments to test in for kind(s): %v", envNotAvailable),
 		})
 		return
-	}
-
-	summaryID, err := r.repo.RolloutSummaryCreate(ctx, feature.Name)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		_ = json.NewEncoder(w).Encode(map[string]string{
-			"error": err.Error(),
-		})
-		return
-	}
-
-OUTER:
-	for _, env := range feature.EnvironmentKinds {
-		for _, e := range envNotAvailable {
-			if e == env {
-				continue OUTER
-			}
-		}
-
-		rollout := &model.Rollout{
-			RolloutSummaryID: summaryID,
-			EnvironmentKind:  env,
-			Feature:          feature.Name,
-			Changeset: &model.RolloutChangeset{
-				New: spec,
-			},
-		}
-
-		_, err := r.repo.RolloutCreate(ctx, rollout)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
 	}
 
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]any{
-		"rollout":         summaryID,
 		"envNotAvailable": envNotAvailable,
 	})
 }
 
-func (r *Rollout) validateToken(w http.ResponseWriter, req *http.Request, feature *feature.Feature) (actor string, ok bool) {
+func (r *Rollout) validateToken(w http.ResponseWriter, req *http.Request) (actor string, ok bool) {
 	if r.AllowAll {
 		return "mockrollout", true
 	}
@@ -180,40 +142,7 @@ func (r *Rollout) validateToken(w http.ResponseWriter, req *http.Request, featur
 		return
 	}
 
-	for _, rf := range feature.RolloutSource {
-		if rf.String() == claims.Repository {
-			return claims.Actor + "@" + claims.RunID, true
-		}
-	}
-	http.Error(w, "invalid repository", http.StatusUnauthorized)
-	return "", false
-}
-
-func (r *Rollout) createAndValidateSpec(rd io.Reader, feature *feature.Feature) (map[string]json.RawMessage, error) {
-	v := map[string]any{}
-	if err := json.NewDecoder(rd).Decode(&v); err != nil {
-		return nil, err
-	}
-
-	spec, ok := createRolloutSpec(v)
-	if !ok {
-		return nil, fmt.Errorf("invalid rollout spec, expected only changes to 'imageTag' and/or 'tag'")
-	}
-
-	changedKeys := map[string]struct{}{}
-	for k := range spec {
-		changedKeys[k] = struct{}{}
-	}
-
-	for k := range feature.Config {
-		delete(changedKeys, k)
-	}
-
-	if len(changedKeys) > 0 {
-		return nil, fmt.Errorf("changes to non-config value: %v", changedKeys)
-	}
-
-	return spec, nil
+	return claims.Actor + "@" + claims.Repository + "/" + claims.RunID, true
 }
 
 func getAuthToken(r *http.Request) (string, error) {
@@ -228,39 +157,4 @@ func getAuthToken(r *http.Request) (string, error) {
 	}
 
 	return token, nil
-}
-
-func createRolloutSpec(v map[string]any) (map[string]json.RawMessage, bool) {
-	out := map[string]json.RawMessage{}
-	if flattenSpec(out, v, "") {
-		return out, true
-	}
-	return nil, false
-}
-
-func flattenSpec(out map[string]json.RawMessage, v map[string]any, parent string) (ok bool) {
-	if len(v) == 0 {
-		return false
-	}
-
-	for key, val := range v {
-		key := strings.ReplaceAll(key, ".", "\\.")
-		switch val := val.(type) {
-		case map[string]any:
-			if !flattenSpec(out, val, parent+key+".") {
-				return false
-			}
-		case string:
-			switch key {
-			case "imageTag", "tag":
-				// ok
-			default:
-				return false
-			}
-			out[parent+key] = json.RawMessage(strconv.Quote(val))
-		default:
-			return false
-		}
-	}
-	return true
 }

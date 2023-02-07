@@ -246,12 +246,12 @@ func main() {
 	router.Handle("/query", iapMW(corsMW.Handler(srv)))
 	router.Handle("/metrics", promhttp.Handler())
 
-	rout, err := rollout.New(ctx, featureMgr, repo)
+	rout, err := rollout.New(ctx, repo)
 	if err != nil {
 		log.WithError(err).Fatal("setting up rollout")
 	}
 	rout.AllowAll = cfg.InsecureSkipTokenCheck
-	router.Post("/github/deploy/{feature}", rout.Rollout)
+	router.Post("/github/deploy", rout.Rollout)
 
 	go func() {
 		if err := runGRPC(ctx, repo); err != nil {
