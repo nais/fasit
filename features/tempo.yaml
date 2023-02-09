@@ -9,6 +9,8 @@ dependsOn:
   - allOf:
     - "monitoring"
 mapping:
+  minio.enabled:
+    value: "false"
   tempo.securityContext.seccompProfile.type:
     # Satisfy Kyverno policy
     value: "RuntimeDefault"
