@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring
-version: 1.45.0
+version: 1.45.1
 description: "Monitoring stack for nais"
 environmentKinds:
   - "tenant"
@@ -114,6 +114,8 @@ mapping:
   tenant_alertmanager.ingress.host:
     value: '{{ subdomain . "alertmanager" }}'
     displayName: "Tenant alertmanager host"
+    ignoreKind:
+      - management
   nais_prometheus.ingress.host:
     value: '{{ subdomain . "nais-prometheus" }}'
     displayName: "NAIS Prometheus ingress host"
