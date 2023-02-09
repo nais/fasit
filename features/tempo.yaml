@@ -21,3 +21,11 @@ mapping:
     value: "{{.Env.tempo_bucket_traces}}"
   serviceAccount.annotations.iam\.gke\.io/gcp-service-account:
     value: "{{.Env.tempo_service_account}}"
+  gateway.enabled:
+    template: "true"
+  gateway.ingress.enabled:
+    template: "true"
+  gateway.ingress.hosts[0].host:
+    value: '{{ subdomain . "tempo" }}'
+  gateway.ingress.hosts[0].paths[0].path:
+    value: "/"
