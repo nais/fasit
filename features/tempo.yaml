@@ -1,6 +1,6 @@
 chart: tempo
 repo: https://grafana.github.io/helm-charts
-version: 1.0.1
+version: 1.0.0
 source: https://github.com/grafana/helm-charts/tree/main/charts/tempo-distributed
 description: "Grafana Tempo in MicroService mode"
 environmentKinds:
