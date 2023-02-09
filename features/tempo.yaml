@@ -18,4 +18,4 @@ mapping:
     # https://grafana.com/docs/tempo/latest/configuration/#storage
     value: "gcs"
   storage.trace.gcs.bucket_name:
-    value: "{{.Tenant.tempo_bucket_traces}}"
+    value: "{{.Env.tempo_bucket_traces}}"
