@@ -111,10 +111,9 @@ mapping:
       - tenant
       - management
     displayName: "Tenant prometheus node selector onprem/legacy"
-  kube-prometheus-stack.alertmanager.ingress.hosts:
-    value:
-      - '{{ subdomain . "alertmanager" }}'
-    displayName: "Alertmanager hosts"
+  tenant_alertmanager.ingress.host:
+    value: '{{ subdomain . "alertmanager" }}'
+    displayName: "Tenant alertmanager host"
   nais_prometheus.ingress.host:
     value: '{{ subdomain . "nais-prometheus" }}'
     displayName: "NAIS Prometheus ingress host"
