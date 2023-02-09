@@ -19,3 +19,5 @@ mapping:
     value: "gcs"
   storage.trace.gcs.bucket_name:
     value: "{{.Env.tempo_bucket_traces}}"
+  serviceAccount.annotations.iam\.gke\.io/gcp-service-account:
+    value: "{{.Env.tempo_service_account}}"
