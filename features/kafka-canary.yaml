@@ -16,12 +16,14 @@ mapping:
       [
         {{ $tenant_name := .Tenant.Name }}
         {{ range .Envs }}
+        {{ if and (ne .name "ci-fss") (ne .name "ci-gcp") }}
         {
           "kind": "{{ .kind }}",
           "cluster_name": "{{ .name }}",
           "aiven_project": "{{ .aiven_project }}",
           "tenant": "{{ $tenant_name }}",
         },
+        {{ end }}
         {{ end }}
       ]
     displayName: "Deploy Configs"
