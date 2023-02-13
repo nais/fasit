@@ -25,7 +25,9 @@ mapping:
     template: "true"
   gateway.ingress.enabled:
     template: "true"
-  gateway.ingress.hosts[0].host:
-    value: '{{ subdomain . "tempo" }}'
-  gateway.ingress.hosts[0].paths[0].path:
-    value: "/"
+  gateway.ingress.hosts:
+    template: |
+      - host: '{{ subdomain . "tempo" }}'
+        paths:
+          - path: "/"
+            pathType: "ImplementationSpecific"
