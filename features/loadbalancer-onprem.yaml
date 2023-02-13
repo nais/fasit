@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/loadbalancer-onprem
 source: https://github.com/nais/helm-charts/tree/main/charts/loadbalancer-onprem
-version: 0.5.0
+version: 0.5.1
 description: "Ingress controller for on-premises"
 environmentKinds:
   - "onprem"
