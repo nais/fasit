@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/aivenator
 source: https://github.com/nais/aivenator/tree/main/charts/aivenator
-version: 0.2.3
+version: 0.2.4
 description: "Kubernetes operator that provisions credentials for Aiven services"
 environmentKinds:
   - "tenant"
@@ -32,6 +32,8 @@ mapping:
     description: "Enable CA bundle for Aiven API"
     ignoreKind:
       - "tenant"
+  clusterName:
+    value: "{{.Env.name}}"
   replicationConfig:
     template: "true"
     displayName: Enable ReplicationConfig
