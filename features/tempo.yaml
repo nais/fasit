@@ -23,6 +23,8 @@ mapping:
     value: "{{.Env.tempo_service_account}}"
   gateway.enabled:
     template: "true"
+  gateway.ingress.ingressClassName:
+    template: "nais-ingress"
   gateway.ingress.enabled:
     template: "true"
   gateway.ingress.hosts:
