@@ -23,7 +23,7 @@ var _ interface {
 } = &Metrics{}
 
 func NewMetrics(meter metric.Meter) (*Metrics, error) {
-	resTime, err := meter.SyncInt64().Histogram("gql_query_time", instrument.WithDescription("graphql gql query time"), instrument.WithUnit("ms"))
+	resTime, err := meter.Int64Histogram("gql_query_time", instrument.WithDescription("graphql gql query time"), instrument.WithUnit("ms"))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create gql_query_time histogram: %w", err)
 	}
