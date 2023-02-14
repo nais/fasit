@@ -24,4 +24,4 @@ mapping:
     displayName: "NAIS cluster"
     description: "The nais cluster the alert is installed in"
   tenant:
-    value: "{{ .Tenant.name }}"
+    value: "{{ .Tenant.Name }}"
