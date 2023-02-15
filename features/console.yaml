@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/console
 source: https://github.com/nais/helm-charts/tree/main/charts/console
-version: 0.0.28
+version: 0.0.29
 description: "For managing teams and resources on the platform"
 environmentKinds:
   - "management"
@@ -51,6 +51,9 @@ mapping:
   backend.gcp.billingAccount:
     value: "{{ .Management.billing_account }}"
     displayName: Billing account
+  backend.gcp.workloadIdentityPoolName:
+    value: "{{ .Management.nais_identity_pool_name }}"
+    displayName: Google workload identity pool name
   backend.naisDeploy.endpoint:
     template: "https://deploy.{{.Tenant.Name}}.cloud.nais.io/api/v1/provision"
   backend.naisDeploy.deployKeyEndpoint:
