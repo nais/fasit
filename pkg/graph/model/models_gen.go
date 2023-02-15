@@ -4,9 +4,6 @@ package model
 
 import (
 	"encoding/json"
-	"fmt"
-	"io"
-	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -67,53 +64,4 @@ type UpdateConfiguration struct {
 
 type UserInfo struct {
 	Email string `json:"email"`
-}
-
-type RolloutEventType string
-
-const (
-	RolloutEventTypeProcessed     RolloutEventType = "PROCESSED"
-	RolloutEventTypeInProgress    RolloutEventType = "IN_PROGRESS"
-	RolloutEventTypeHelmCompleted RolloutEventType = "HELM_COMPLETED"
-	RolloutEventTypeFailed        RolloutEventType = "FAILED"
-	RolloutEventTypeRolledBack    RolloutEventType = "ROLLED_BACK"
-	RolloutEventTypeSuccess       RolloutEventType = "SUCCESS"
-)
-
-var AllRolloutEventType = []RolloutEventType{
-	RolloutEventTypeProcessed,
-	RolloutEventTypeInProgress,
-	RolloutEventTypeHelmCompleted,
-	RolloutEventTypeFailed,
-	RolloutEventTypeRolledBack,
-	RolloutEventTypeSuccess,
-}
-
-func (e RolloutEventType) IsValid() bool {
-	switch e {
-	case RolloutEventTypeProcessed, RolloutEventTypeInProgress, RolloutEventTypeHelmCompleted, RolloutEventTypeFailed, RolloutEventTypeRolledBack, RolloutEventTypeSuccess:
-		return true
-	}
-	return false
-}
-
-func (e RolloutEventType) String() string {
-	return string(e)
-}
-
-func (e *RolloutEventType) UnmarshalGQL(v interface{}) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = RolloutEventType(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid RolloutEventType", str)
-	}
-	return nil
-}
-
-func (e RolloutEventType) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
 }

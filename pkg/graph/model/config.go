@@ -97,7 +97,6 @@ type EnvConfiguration struct {
 	Created     time.Time       `json:"created"`
 	Type        ConfigType      `json:"type"`
 	DisplayName string          `json:"displayName"`
-	RolloutID   *uuid.UUID      `json:"rolloutID"`
 	Required    bool            `json:"required"`
 
 	EnvironmentID uuid.UUID

@@ -10,6 +10,7 @@ require (
 	github.com/GoogleCloudPlatform/cloudsql-proxy v1.33.2
 	github.com/Masterminds/semver/v3 v3.2.0
 	github.com/coreos/go-oidc/v3 v3.4.0
+	github.com/davecgh/go-spew v1.1.1
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/go-chi/chi/v5 v5.0.8
 	github.com/google/go-cmp v0.5.9
@@ -71,7 +72,6 @@ require (
 	github.com/containerd/continuity v0.3.0 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.3 // indirect
-	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/cli v20.10.21+incompatible // indirect
 	github.com/docker/distribution v2.8.1+incompatible // indirect
 	github.com/docker/docker v20.10.21+incompatible // indirect

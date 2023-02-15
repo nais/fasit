@@ -348,7 +348,7 @@ func TestRepo_HelmValues_OK(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, _, err := r.HelmValues(context.Background(), feature, envid)
+	got, err := r.HelmValues(context.Background(), feature, envid)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -400,7 +400,7 @@ func TestRepo_HelmValues_MissingRequiredField(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, _, err = r.HelmValues(context.Background(), feature, envid)
+	_, err = r.HelmValues(context.Background(), feature, envid)
 	if !errors.Is(err, &ErrMissingRequiredFields{}) {
 		t.Errorf("got: %v, want ErrMissingRequiredFields", err)
 	}
@@ -436,7 +436,7 @@ func TestRepo_HelmValues_InvaldKeyNesting(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, _, err = r.HelmValues(context.Background(), feature.Feature{Name: "feature5"}, envid)
+	_, err = r.HelmValues(context.Background(), feature.Feature{Name: "feature5"}, envid)
 	if err == nil || !strings.HasSuffix(err.Error(), "is not nestable") {
 		t.Errorf("got: %v, want \"key `key` is not nestable\"", err)
 	}
@@ -481,7 +481,7 @@ func TestRepo_HelmValues_WithMappingValues(t *testing.T) {
 		}
 	}
 
-	got, _, err := r.HelmValues(context.Background(), f, envid)
+	got, err := r.HelmValues(context.Background(), f, envid)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -546,7 +546,7 @@ func TestRepo_HelmValues_WithIgnoredKeys_Ignored(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, _, err := r.HelmValues(context.Background(), feature, envid)
+	got, err := r.HelmValues(context.Background(), feature, envid)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -611,7 +611,7 @@ func TestRepo_HelmValues_WithIgnoredKeys_NotIgnored(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, _, err := r.HelmValues(context.Background(), feature, envid)
+	got, err := r.HelmValues(context.Background(), feature, envid)
 	if err != nil {
 		t.Fatal(err)
 	}

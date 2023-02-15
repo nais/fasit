@@ -30,7 +30,6 @@ import (
 	"github.com/nais/fasit/pkg/message"
 	"github.com/nais/fasit/pkg/provider"
 	"github.com/nais/fasit/pkg/provider/protogen"
-	"github.com/nais/fasit/pkg/rollout"
 	"github.com/nais/fasit/pkg/workers"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/ravilushqa/otelgqlgen"
@@ -176,15 +175,7 @@ func main() {
 
 	statusMgr := message.NewSubscriber[message.Status](pubsubClient, cfg.GCPProjectID, cfg.StatusSubscriptionID)
 
-	rolloutWorker := workers.NewRollout(repo, log.WithField("subsystem", "rollout"))
-	go func() {
-		if err := rolloutWorker.Listen(ctx); err != nil {
-			log.WithError(err).Fatal("rollout worker listener")
-		}
-	}()
-	go rolloutWorker.Run(ctx, 10*time.Minute)
-
-	receiver := workers.NewReceiver(statusMgr, repo, rolloutWorker.Notify, log.WithField("subsystem", "status"))
+	receiver := workers.NewReceiver(statusMgr, repo, log.WithField("subsystem", "status"))
 	go receiver.Run(ctx)
 
 	createPublisher := func(projectID, topicID string, log *logrus.Entry) workers.Publisher {
@@ -245,13 +236,6 @@ func main() {
 	router.Handle("/", iapMW(playground.Handler("GraphQL playground", "/query")))
 	router.Handle("/query", iapMW(corsMW.Handler(srv)))
 	router.Handle("/metrics", promhttp.Handler())
-
-	rout, err := rollout.New(ctx, repo)
-	if err != nil {
-		log.WithError(err).Fatal("setting up rollout")
-	}
-	rout.AllowAll = cfg.InsecureSkipTokenCheck
-	router.Post("/github/deploy", rout.Rollout)
 
 	go func() {
 		if err := runGRPC(ctx, repo); err != nil {

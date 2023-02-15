@@ -254,7 +254,7 @@ func (r *queryResolver) HelmValues(ctx context.Context, feature string, envID uu
 		return json.RawMessage{}, nil
 	}
 
-	v, _, err := r.Repo.HelmValues(ctx, *f, envID)
+	v, err := r.Repo.HelmValues(ctx, *f, envID)
 	if err != nil {
 		return nil, err
 	}

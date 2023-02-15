@@ -2,8 +2,6 @@ package message
 
 import (
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type DeployInstruction struct {
@@ -16,5 +14,4 @@ type DeployInstruction struct {
 	ConfigHash string
 	Timeout    time.Duration
 	Values     map[string]any
-	RolloutIDs []uuid.UUID
 }

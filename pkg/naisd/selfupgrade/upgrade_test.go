@@ -75,7 +75,8 @@ func TestFullRun(t *testing.T) {
 				"spec": map[string]any{
 					"containers": []any{
 						map[string]any{
-							"args": []any{string("--production"), string("--nais-project-id"), string("nais-project"), string("--env"), string("dev"),
+							"args": []any{
+								string("--production"), string("--nais-project-id"), string("nais-project"), string("--env"), string("dev"),
 								string("--tenant-name"),
 								string("test-tenant"),
 								string("upgrade"),
@@ -117,7 +118,7 @@ func TestFullRun(t *testing.T) {
 			},
 		},
 		"stringData": map[string]any{
-			"deploy_instruction.json": "{\"Name\":\"naisd\",\"Version\":\"1.2.3\",\"Chart\":\"oci://asdf\",\"Repo\":\"\",\"ConfigHash\":\"123\",\"Timeout\":60000000000,\"Values\":{\"image\":{\"tag\":\"newtag\"}},\"RolloutIDs\":null}\n",
+			"deploy_instruction.json": "{\"Name\":\"naisd\",\"Version\":\"1.2.3\",\"Chart\":\"oci://asdf\",\"Repo\":\"\",\"ConfigHash\":\"123\",\"Timeout\":60000000000,\"Values\":{\"image\":{\"tag\":\"newtag\"}}}\n",
 		},
 	}
 	if !cmp.Equal(wantSecret, secretMap) {

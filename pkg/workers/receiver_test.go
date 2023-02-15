@@ -7,7 +7,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/database/mocks"
-	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/nais/fasit/pkg/message"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/mock"
@@ -113,7 +112,6 @@ func TestReceiver(t *testing.T) {
 			rec := NewReceiver(
 				&mockReceiverClient{messages: tc.statuses},
 				repo,
-				func(ctx context.Context, id uuid.UUID, status model.RolloutStatus) error { return nil },
 				logrus.NewEntry(logrus.StandardLogger()),
 			)
 

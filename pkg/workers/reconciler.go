@@ -29,9 +29,7 @@ type ReconcilerStore interface {
 	FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
 	FeatureStatesListen(ctx context.Context, fn database.ListenFunc) error
 	HealthGet(ctx context.Context, environmentID uuid.UUID) (*model.Health, error)
-	HelmValues(ctx context.Context, feature feature.Feature, envID uuid.UUID) (map[string]any, []uuid.UUID, error)
-	RolloutEventCreate(ctx context.Context, event *model.RolloutEvent) error
-	RolloutEventsGetByRolloutIDAndType(ctx context.Context, rolloutID uuid.UUID, eventType model.RolloutEventType) ([]*model.RolloutEvent, error)
+	HelmValues(ctx context.Context, feature feature.Feature, envID uuid.UUID) (map[string]any, error)
 	StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]*model.Status, error)
 	TenantEnvironments(ctx context.Context) ([]*model.TenantEnvironments, error)
 }
@@ -279,7 +277,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 			continue
 		}
 
-		values, rolloutIDs, err := r.repo.HelmValues(ctx, f, d.ID)
+		values, err := r.repo.HelmValues(ctx, f, d.ID)
 		if err != nil {
 			var fer *database.ErrMissingRequiredFields
 			if errors.As(err, &fer) {
@@ -289,49 +287,13 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 			return fmt.Errorf("helm values: %w", err)
 		}
 
-		createRolloutEvent := func(typ model.RolloutEventType, data map[string]any, ignoreIfFoundType ...model.RolloutEventType) {
-			var (
-				b   []byte
-				err error
-			)
-
-			if data != nil {
-				b, err = json.Marshal(data)
-				if err != nil {
-					r.log.WithError(err).Error("unable to marshal rollout event data")
-					return
-				}
-			}
-
-		OUTER:
-			for _, rid := range rolloutIDs {
-				for _, t := range ignoreIfFoundType {
-					if rs, err := r.repo.RolloutEventsGetByRolloutIDAndType(ctx, rid, t); err == nil && len(rs) > 0 {
-						continue OUTER
-					}
-				}
-				_ = r.repo.RolloutEventCreate(ctx, &model.RolloutEvent{
-					RolloutID: rid,
-					Type:      typ,
-					Data:      b,
-				})
-			}
-		}
-
 		hash, err := generateHash(values, f, states[f.Name].EnabledAt)
 		if err != nil {
-			createRolloutEvent(model.RolloutEventTypeFailed, map[string]any{
-				"error": err.Error(),
-			})
-
 			return fmt.Errorf("generate hash: %w", err)
 		}
 
 		if status, ok := lookup[f.Name]; ok {
 			if status.Version == f.Version && status.ConfigHash == hash {
-				createRolloutEvent(model.RolloutEventTypeFailed, map[string]any{
-					"error": "no changes",
-				}, model.RolloutEventTypeInProgress)
 				continue
 			}
 		}
@@ -351,16 +313,10 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 			ConfigHash: hash,
 			Timeout:    f.Timeout,
 			Values:     values,
-			RolloutIDs: rolloutIDs,
 		})
 		if err != nil {
-			createRolloutEvent(model.RolloutEventTypeFailed, map[string]any{
-				"error": err.Error(),
-			})
 			return fmt.Errorf("publish deploy instruction: %w", err)
 		}
-
-		createRolloutEvent(model.RolloutEventTypeInProgress, nil)
 	}
 
 	return nil

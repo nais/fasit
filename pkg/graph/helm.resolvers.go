@@ -18,6 +18,6 @@ func (r *queryResolver) Values(ctx context.Context, feature string, env uuid.UUI
 		r.Log.WithField("feature", feature).Warn("feature not found")
 		return map[string]interface{}{}, nil
 	}
-	vals, _, err := r.Repo.HelmValues(ctx, *f, env)
+	vals, err := r.Repo.HelmValues(ctx, *f, env)
 	return vals, err
 }

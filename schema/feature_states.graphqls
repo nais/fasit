@@ -3,7 +3,6 @@ type FeatureState {
   enabled: Boolean!
   created: Time
   lastModified: Time
-  rolloutStatus: RolloutStatus!
   missingDependencies: [Feature!]!
   configuration: EnvConfig!
 }

@@ -37,7 +37,6 @@ func (m *MockPublisher) SendStatus(status model.RolloutStatus) {
 			RolloutStatus: status,
 			ConfigHash:    msg.ConfigHash,
 			Log:           "",
-			RolloutIDs:    msg.RolloutIDs,
 		}
 
 		b, err := json.Marshal(msgHelm)

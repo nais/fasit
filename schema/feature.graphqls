@@ -15,7 +15,6 @@ type Feature {
   dependsOn: [Dependency!]!
   config: RawMessage!
   environmentKinds: [EnvironmentKind!]!
-  rolloutSummaries: [RolloutSummary!]!
   configoverrides: [ConfigOverride!]!
   outdatedInfo: [OutdatedInfo]!
 }

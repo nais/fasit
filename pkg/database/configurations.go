@@ -15,14 +15,13 @@ import (
 type ConfigRepo interface {
 	ConfigCreate(ctx context.Context, c model.NewConfiguration) (model.Configuration, error)
 	ConfigDelete(ctx context.Context, id uuid.UUID) error
-	ConfigDeleteByRolloutID(ctx context.Context, rolloutID uuid.UUID) error
 	ConfigGet(ctx context.Context, feature string) ([]*model.GlobalConfiguration, error)
 	ConfigGetForEnv(ctx context.Context, feature string, envID uuid.UUID) ([]*model.EnvConfiguration, error)
 	ConfigListen(ctx context.Context, fn ListenFunc) error
 	ConfigOverridesByFeature(ctx context.Context, featureName string) ([]*model.ConfigOverride, error)
 	ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration) (model.Configuration, error)
 	EnvConfig(ctx context.Context, feature string, envID uuid.UUID) ([]model.Configuration, error)
-	HelmValues(ctx context.Context, feature feature.Feature, envID uuid.UUID) (values map[string]any, rolloutIDs []uuid.UUID, err error)
+	HelmValues(ctx context.Context, feature feature.Feature, envID uuid.UUID) (values map[string]any, err error)
 }
 
 func environmentConfigurationFromSQL(c gensql.ConfigurationsEnvironment) *model.EnvConfiguration {
@@ -31,11 +30,10 @@ func environmentConfigurationFromSQL(c gensql.ConfigurationsEnvironment) *model.
 		EnvironmentID: c.EnvironmentID,
 		FeatureName:   c.Feature,
 		// Description:   nullStringToPtr(c.Description),
-		Key:       c.Key,
-		Value:     c.Value.Bytes,
-		Secret:    c.Secret,
-		Created:   c.Created,
-		RolloutID: nullUUIDToPtr(c.RolloutID),
+		Key:     c.Key,
+		Value:   c.Value.Bytes,
+		Secret:  c.Secret,
+		Created: c.Created,
 	}
 }
 
@@ -143,7 +141,6 @@ func (r *repo) configEnvCreate(ctx context.Context, c model.NewConfiguration, va
 			Bytes:  value,
 			Status: pgtype.Present,
 		},
-		RolloutID: ptrToNullUUID(c.RolloutID),
 	})
 	if err != nil {
 		return nil, err
@@ -164,7 +161,6 @@ func (r *repo) configGlobalCreate(ctx context.Context, c model.NewConfiguration,
 			Bytes:  value,
 			Status: pgtype.Present,
 		},
-		RolloutID: ptrToNullUUID(c.RolloutID),
 	})
 	if err != nil {
 		return nil, err
@@ -202,10 +198,10 @@ func (r *repo) ConfigDelete(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-func (r *repo) HelmValues(ctx context.Context, feature feature.Feature, envID uuid.UUID) (map[string]any, []uuid.UUID, error) {
+func (r *repo) HelmValues(ctx context.Context, feature feature.Feature, envID uuid.UUID) (map[string]any, error) {
 	mv, envKind, err := r.MappingValuesForEnvironment(ctx, envID, true)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	excludeKeys := []string{}
@@ -221,31 +217,20 @@ func (r *repo) HelmValues(ctx context.Context, feature feature.Feature, envID uu
 		Excludekeys:   excludeKeys,
 	})
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	missing := validateFields(feature.RequiredFields(envKind), vals)
 	if len(missing) > 0 {
-		return nil, nil, &ErrMissingRequiredFields{Fields: missing}
+		return nil, &ErrMissingRequiredFields{Fields: missing}
 	}
 	mp, err := makeHelmConfigMap(vals)
 	if err != nil {
-		return nil, nil, err
-	}
-
-	var rolloutIDs []uuid.UUID
-	ridUnique := map[uuid.UUID]struct{}{}
-	for _, v := range vals {
-		if v.RolloutID.Valid {
-			if _, ok := ridUnique[v.RolloutID.UUID]; !ok {
-				ridUnique[v.RolloutID.UUID] = struct{}{}
-				rolloutIDs = append(rolloutIDs, v.RolloutID.UUID)
-			}
-		}
+		return nil, err
 	}
 
 	err = feature.Mapping.Generate(envKind, mv, mp)
-	return mp, rolloutIDs, err
+	return mp, err
 }
 
 func validateFields(requiredFields []string, values []gensql.EnvConfigRow) []string {
@@ -302,13 +287,6 @@ func makeHelmConfigMap(vals []gensql.EnvConfigRow) (map[string]any, error) {
 
 func (r *repo) ConfigListen(ctx context.Context, fn ListenFunc) error {
 	return r.ListenNotify(ctx, "configurations_notify", fn)
-}
-
-func (r *repo) ConfigDeleteByRolloutID(ctx context.Context, rolloutID uuid.UUID) error {
-	return r.querier.ConfigDeleteByRolloutID(ctx, uuid.NullUUID{
-		Valid: true,
-		UUID:  rolloutID,
-	})
 }
 
 func (r *repo) ConfigOverridesByFeature(ctx context.Context, featureName string) ([]*model.ConfigOverride, error) {

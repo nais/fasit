@@ -17,11 +17,6 @@ func (r *configOverrideResolver) Environment(ctx context.Context, obj *model.Con
 	return r.Repo.EnvironmentGet(ctx, obj.EnvironmentID)
 }
 
-// RolloutSummaries is the resolver for the rolloutSummaries field.
-func (r *featureResolver) RolloutSummaries(ctx context.Context, obj *model.Feature) ([]*model.RolloutSummary, error) {
-	return r.Repo.RolloutSummariesByFeature(ctx, obj.Name)
-}
-
 // Configoverrides is the resolver for the configoverrides field.
 func (r *featureResolver) Configoverrides(ctx context.Context, obj *model.Feature) ([]*model.ConfigOverride, error) {
 	return r.Repo.ConfigOverridesByFeature(ctx, obj.Name)

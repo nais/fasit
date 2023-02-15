@@ -3,7 +3,6 @@ package message
 import (
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
@@ -32,7 +31,6 @@ type Helm struct {
 	RolloutStatus model.RolloutStatus
 	ConfigHash    string
 	Log           string
-	RolloutIDs    []uuid.UUID
 }
 
 type Health struct {

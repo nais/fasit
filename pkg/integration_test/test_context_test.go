@@ -1,15 +1,10 @@
 package integration_test
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
-	"net/http/httptest"
 	"testing"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
@@ -19,7 +14,6 @@ import (
 	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/nais/fasit/pkg/message"
-	"github.com/nais/fasit/pkg/rollout"
 	"github.com/nais/fasit/pkg/workers"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/metric"
@@ -39,8 +33,6 @@ type TestContext struct {
 	Repo            database.Repo
 	DB              *pgxpool.Pool
 	FeatureManager  *feature.Manager
-	Rollout         *rollout.Rollout
-	RolloutWorker   *workers.Rollout
 	StatusReceiver  *workers.Receiver
 	Reconciler      *workers.Reconciler
 	Naisd           naisd
@@ -91,18 +83,13 @@ func NewTestContext(t *testing.T, features []feature.Feature, envName string, en
 		}
 	}
 
-	tctx.Rollout, _ = rollout.New(ctx, tctx.FeatureManager, tctx.Repo)
-	tctx.Rollout.AllowAll = true
-
-	tctx.RolloutWorker = workers.NewRollout(tctx.Repo, log)
-
 	tctx.Naisd = &MockPublisher{
 		ch:          make(chan message.Status, 1),
 		tenant:      "tenant1",
 		environment: envName,
 	}
 
-	tctx.StatusReceiver = workers.NewReceiver(tctx.Naisd, tctx.Repo, tctx.RolloutWorker.Notify, log)
+	tctx.StatusReceiver = workers.NewReceiver(tctx.Naisd, tctx.Repo, log)
 
 	newPublisher := func(projectID string, topicID string, log *logrus.Entry) workers.Publisher {
 		return tctx.Naisd
@@ -120,15 +107,6 @@ func NewTestContext(t *testing.T, features []feature.Feature, envName string, en
 
 func (t *TestContext) StartListeners() func() {
 	ctx, cancel := context.WithCancel(context.Background())
-	go func() {
-		err := t.RolloutWorker.Listen(ctx)
-		if err != nil {
-			if err.Error() == "conn closed" {
-				return
-			}
-			panic(err)
-		}
-	}()
 
 	go t.StatusReceiver.Run(ctx)
 
@@ -143,78 +121,6 @@ func (t *TestContext) StartListeners() func() {
 	}()
 
 	return cancel
-}
-
-func (t *TestContext) PostRollout(tt *testing.T, feature string, body map[string]any) uuid.UUID {
-	tt.Helper()
-
-	ctx := context.Background()
-	w := httptest.NewRecorder()
-	b, err := json.Marshal(body)
-	if err != nil {
-		tt.Fatal(err)
-	}
-	chiCtx := chi.NewRouteContext()
-	chiCtx.URLParams.Add("feature", feature)
-	req, err := http.NewRequestWithContext(context.WithValue(ctx, chi.RouteCtxKey, chiCtx), "POST", "/rollout", bytes.NewReader(b))
-	if err != nil {
-		tt.Fatal(err)
-	}
-
-	t.Rollout.Rollout(w, req)
-
-	if w.Code != 201 {
-		tt.Log(w.Body.String())
-		tt.Fatalf("got %v, want 201", w.Code)
-	}
-
-	obj := struct {
-		Rollout         uuid.UUID `json:"rollout"`
-		EnvNotAvailable []string  `json:"envNotAvailable"`
-	}{}
-
-	if err := json.Unmarshal(w.Body.Bytes(), &obj); err != nil {
-		tt.Fatalf("json.Unmarshal(jsonBody, v) = %v, want nil", err)
-	}
-
-	if len(obj.EnvNotAvailable) > 0 {
-		tt.Fatalf("got %v, feature not enabled in given environments", obj.EnvNotAvailable)
-	}
-
-	return obj.Rollout
-}
-
-func (t *TestContext) VerifyRollout(summaryID uuid.UUID, want []*model.Rollout, wantStatus model.RolloutStatus) error {
-	var pendingRollout []*model.Rollout
-	var err error
-
-	ctx := context.Background()
-
-	waitFor(func() bool {
-		pendingRollout, err = t.Repo.RolloutsBySummaryID(ctx, summaryID)
-		if len(pendingRollout) == 0 {
-			return false
-		}
-
-		for _, r := range pendingRollout {
-			if r.Status != wantStatus {
-				return false
-			}
-		}
-		return true
-	})
-	if err != nil {
-		return fmt.Errorf("repo.RolloutsBySummaryID(ctx, %v) = _, %v, want _, nil", summaryID, err)
-	}
-
-	cmpOpts := []cmp.Option{
-		cmpopts.IgnoreFields(model.Rollout{}, "Created", "LastModified", "ID"),
-	}
-
-	if !cmp.Equal(want, pendingRollout, cmpOpts...) {
-		return fmt.Errorf("diff -want +got:\n%v", cmp.Diff(want, pendingRollout, cmpOpts...))
-	}
-	return nil
 }
 
 func (t *TestContext) VerifyEnvConfiguration(featureName string, want []*model.EnvConfiguration) error {
@@ -271,22 +177,6 @@ func (t *TestContext) VerifyDeployInstructions(want []message.DeployInstruction)
 		return fmt.Errorf("diff -want +got:\n%v", cmp.Diff(want, t.Naisd.DeployInstructions()))
 	}
 	return nil
-}
-
-func (t *TestContext) RolloutSummaryRolloutIDs(tb testing.TB, ctx context.Context, summaryID uuid.UUID) []uuid.UUID {
-	tb.Helper()
-
-	rollouts, err := t.Repo.RolloutsBySummaryID(ctx, summaryID)
-	if err != nil {
-		tb.Fatalf("repo.RolloutsBySummaryID(ctx, %v) = _, %v, want _, nil", summaryID, err)
-	}
-
-	var ids []uuid.UUID
-	for _, r := range rollouts {
-		ids = append(ids, r.ID)
-	}
-
-	return ids
 }
 
 func (t *TestContext) DebugQuery(q string) {

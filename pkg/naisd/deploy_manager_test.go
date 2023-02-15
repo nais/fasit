@@ -10,7 +10,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/message"
 	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/rest"
@@ -23,8 +22,6 @@ func TestDeployReceiver(t *testing.T) {
 	defer func() {
 		getEnvironment = os.Environ
 	}()
-
-	rolloutID := uuid.New()
 
 	tests := map[string]struct {
 		messages []message.DeployInstruction
@@ -43,7 +40,6 @@ func TestDeployReceiver(t *testing.T) {
 					Repo:       "repo1",
 					ConfigHash: "hash1",
 					Values:     map[string]any{"val1": "val1"},
-					RolloutIDs: []uuid.UUID{rolloutID},
 				},
 			},
 			statuses: []message.Status{
@@ -51,13 +47,13 @@ func TestDeployReceiver(t *testing.T) {
 					Tenant:      "tenant1",
 					Environment: "prod",
 					Type:        2,
-					Data:        []uint8(`{"Name":"feature1","Version":"1","RolloutStatus":"pending","ConfigHash":"hash1","Log":"","RolloutIDs":["` + rolloutID.String() + `"]}`),
+					Data:        []uint8(`{"Name":"feature1","Version":"1","RolloutStatus":"pending","ConfigHash":"hash1","Log":""}`),
 				},
 				{
 					Tenant:      "tenant1",
 					Environment: "prod",
 					Type:        2,
-					Data:        []uint8(`{"Name":"feature1","Version":"1","RolloutStatus":"deployed","ConfigHash":"hash1","Log":"","RolloutIDs":["` + rolloutID.String() + `"]}`),
+					Data:        []uint8(`{"Name":"feature1","Version":"1","RolloutStatus":"deployed","ConfigHash":"hash1","Log":""}`),
 				},
 			},
 			cmds: []cmd{
