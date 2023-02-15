@@ -29,3 +29,7 @@ config:
   resources.requests.memory:
     type: string
     displayName: "Memory request"
+
+  image.tag:
+    type: string
+    displayName: "Image version"
