@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/loadbalancer-iap
 source: https://github.com/nais/helm-charts/tree/main/charts/loadbalancer-iap
-version: 0.7.1
+version: 0.7.2
 description: "Ingress controller and loadbalancer with IAP support"
 environmentKinds:
   - "management"
