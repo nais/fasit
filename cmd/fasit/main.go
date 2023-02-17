@@ -30,6 +30,7 @@ import (
 	"github.com/nais/fasit/pkg/message"
 	"github.com/nais/fasit/pkg/provider"
 	"github.com/nais/fasit/pkg/provider/protogen"
+	"github.com/nais/fasit/pkg/rollout"
 	"github.com/nais/fasit/pkg/workers"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/ravilushqa/otelgqlgen"
@@ -236,6 +237,13 @@ func main() {
 	router.Handle("/", iapMW(playground.Handler("GraphQL playground", "/query")))
 	router.Handle("/query", iapMW(corsMW.Handler(srv)))
 	router.Handle("/metrics", promhttp.Handler())
+
+	rout, err := rollout.New(ctx, repo)
+	if err != nil {
+		log.WithError(err).Fatal("setting up rollout")
+	}
+	rout.AllowAll = cfg.InsecureSkipTokenCheck
+	router.Post("/github/rollout", rout.Rollout)
 
 	go func() {
 		if err := runGRPC(ctx, repo); err != nil {

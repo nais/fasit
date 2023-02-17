@@ -101,13 +101,13 @@ func (r *Rollout) Rollout(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	if len(envNotAvailable) >= len(feature.EnvironmentKinds) {
-		w.WriteHeader(http.StatusBadRequest)
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{
-			"error": fmt.Sprintf("no available environments to test in for kind(s): %v", envNotAvailable),
-		})
-		return
-	}
+	// if len(envNotAvailable) >= len(feature.EnvironmentKinds) {
+	// 	w.WriteHeader(http.StatusBadRequest)
+	// 	_ = json.NewEncoder(w).Encode(map[string]interface{}{
+	// 		"error": fmt.Sprintf("no available environments to test in for kind(s): %v", envNotAvailable),
+	// 	})
+	// 	return
+	// }
 
 	r.repo.RolloutCreate(ctx, feature.Name, body.Chart, body.Version)
 
