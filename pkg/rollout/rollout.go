@@ -17,6 +17,7 @@ import (
 type store interface {
 	database.EnvironmentRepo
 	database.FeatureStateRepo
+	database.RolloutRepo
 }
 
 type Claims struct {
@@ -107,6 +108,8 @@ func (r *Rollout) Rollout(w http.ResponseWriter, req *http.Request) {
 		})
 		return
 	}
+
+	r.repo.RolloutCreate(ctx, feature.Name, body.Chart, body.Version)
 
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]any{

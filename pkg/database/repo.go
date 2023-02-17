@@ -50,6 +50,7 @@ type Repo interface {
 	HealthRepo
 	KubernetesNodeRepo
 	ReleaseStatusRepo
+	RolloutRepo
 	StatusRepo
 	TenantRepo
 	WarningRepo

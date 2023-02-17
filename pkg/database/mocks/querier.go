@@ -775,6 +775,30 @@ func (_m *Querier) ReleaseStatusesGet(ctx context.Context, environmentID uuid.UU
 	return r0, r1
 }
 
+// RolloutCreate provides a mock function with given fields: ctx, arg
+func (_m *Querier) RolloutCreate(ctx context.Context, arg gensql.RolloutCreateParams) (gensql.Rollout, error) {
+	ret := _m.Called(ctx, arg)
+
+	var r0 gensql.Rollout
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.RolloutCreateParams) (gensql.Rollout, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.RolloutCreateParams) gensql.Rollout); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(gensql.Rollout)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, gensql.RolloutCreateParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // StatusCreateOrUpdate provides a mock function with given fields: ctx, arg
 func (_m *Querier) StatusCreateOrUpdate(ctx context.Context, arg gensql.StatusCreateOrUpdateParams) error {
 	ret := _m.Called(ctx, arg)

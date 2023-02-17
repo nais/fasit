@@ -1,0 +1,7 @@
+type Rollout {
+  id: ID!
+  feature: Feature!
+  version: String!
+  chart: String!
+  created: Time!
+}
