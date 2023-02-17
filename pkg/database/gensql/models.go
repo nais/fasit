@@ -106,6 +106,15 @@ type EnvironmentValue struct {
 	Secret        bool
 }
 
+type Feature struct {
+	ID           uuid.UUID
+	Name         string
+	Chart        string
+	Version      string
+	Created      time.Time
+	LastModified time.Time
+}
+
 type FeatureState struct {
 	EnvironmentID uuid.UUID
 	Feature       string
@@ -118,13 +127,6 @@ type FeatureState struct {
 type HealthStatus struct {
 	EnvironmentID uuid.UUID
 	ReportedAt    time.Time
-}
-
-type IncomingFeature struct {
-	ID        uuid.UUID
-	Name      string
-	Version   string
-	CreatedAt time.Time
 }
 
 type KubernetesNodeStatus struct {
@@ -154,6 +156,14 @@ type ReleaseStatus struct {
 	LastDeployed  time.Time
 	Created       time.Time
 	LastModified  time.Time
+}
+
+type Rollout struct {
+	ID          uuid.UUID
+	FeatureName string
+	Chart       string
+	Version     string
+	Created     time.Time
 }
 
 type Status struct {
