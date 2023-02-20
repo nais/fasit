@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring
-version: 1.45.8
+version: 1.45.9
 description: "Monitoring stack for nais"
 environmentKinds:
   - "tenant"
@@ -178,6 +178,19 @@ mapping:
     template: |
       - url: "https://storage.googleapis.com/io-nais-aiven-prometheus-scrapeconfigs/{{ .Env.aiven_project }}.kafka.json"
     displayName: "Aiven Kafka prometheus sd url"
+  additionalScrapeConfigs.aivenOpenSearch.enabled:
+    template: "{{ if .Env.aiven_prometheus_username }}true{{ else }}false{{ end }}"
+    displayName: "Aiven OpenSearch scraping enabled"
+  additionalScrapeConfigs.aivenOpenSearch.scrapeConfig.basic_auth.username:
+    value: "{{ .Env.aiven_prometheus_username }}"
+    displayName: "Aiven OpenSearch prometheus username"
+  additionalScrapeConfigs.aivenOpenSearch.scrapeConfig.basic_auth.password:
+    value: "{{ .Env.aiven_prometheus_password }}"
+    displayName: "Aiven OpenSearch prometheus password"
+  additionalScrapeConfigs.aivenOpenSearch.scrapeConfig.http_sd_configs:
+    template: |
+      - url: "https://storage.googleapis.com/io-nais-aiven-prometheus-scrapeconfigs/{{ .Env.aiven_project }}.opensearch.json"
+    displayName: "Aiven OpenSearch prometheus sd url"
   kube-prometheus-stack.nodeExporter.enabled:
     template: "true"
     ignoreKind:
