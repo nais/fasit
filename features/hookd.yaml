@@ -91,3 +91,5 @@ config:
   backend.github.privateKeyPemBase64:
     type: string
     secret: true
+  backend.logLinkFormatter:
+    type: string
