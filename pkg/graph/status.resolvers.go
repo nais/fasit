@@ -59,17 +59,18 @@ func (r *statusResolver) MissingDependencies(ctx context.Context, obj *model.Sta
 
 	ret := []*model.Feature{}
 
-	for _, d := range f.DependsOn.FindMissing(enabledFeatures) {
-		feat := r.Features.Get(d)
-		if feat == nil {
-			return nil, fmt.Errorf("invalid dependency %v", d)
-		}
-		f, err := marshalFeature(*feat)
-		if err != nil {
-			return nil, err
-		}
-		ret = append(ret, f)
-	}
+	_ = f
+	// for _, d := range f.DependsOn.FindMissing(enabledFeatures) {
+	// 	feat := r.Features.Get(d)
+	// 	if feat == nil {
+	// 		return nil, fmt.Errorf("invalid dependency %v", d)
+	// 	}
+	// 	f, err := marshalFeature(*feat)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	ret = append(ret, f)
+	// }
 	return ret, nil
 }
 
@@ -107,5 +108,7 @@ func (r *Resolver) Status() graphgen.StatusResolver { return &statusResolver{r} 
 // Subscription returns graphgen.SubscriptionResolver implementation.
 func (r *Resolver) Subscription() graphgen.SubscriptionResolver { return &subscriptionResolver{r} }
 
-type statusResolver struct{ *Resolver }
-type subscriptionResolver struct{ *Resolver }
+type (
+	statusResolver       struct{ *Resolver }
+	subscriptionResolver struct{ *Resolver }
+)

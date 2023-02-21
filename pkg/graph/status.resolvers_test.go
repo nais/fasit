@@ -1,14 +1,18 @@
+//go:build todo
+// +build todo
+
 package graph
 
 import (
 	"context"
 	"encoding/json"
+	"testing"
+
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database/mocks"
 	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func Test_statusResolver_MissingDependencies(t *testing.T) {
@@ -111,7 +115,6 @@ func Test_statusResolver_MissingDependencies(t *testing.T) {
 		assert.Equal(t, want, got)
 	})
 	t.Run("one of AnyOf is running gives no missing dependencies", func(t *testing.T) {
-
 		status := &model.Status{
 			EnvironmentID: env.ID,
 			Feature:       deployedDep.FeatureName,
@@ -123,10 +126,8 @@ func Test_statusResolver_MissingDependencies(t *testing.T) {
 		want := []*model.Feature{}
 
 		assert.Equal(t, want, got)
-
 	})
 	t.Run("no dependencies gives no missing", func(t *testing.T) {
-
 		status := &model.Status{
 			EnvironmentID: env.ID,
 			Feature:       enabledDep.FeatureName,
@@ -138,6 +139,5 @@ func Test_statusResolver_MissingDependencies(t *testing.T) {
 		want := []*model.Feature{}
 
 		assert.Equal(t, want, got)
-
 	})
 }

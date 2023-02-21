@@ -10,7 +10,6 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph/graphgen"
 	"github.com/nais/fasit/pkg/graph/model"
 )
@@ -27,26 +26,26 @@ func (r *envConfigurationResolver) Feature(ctx context.Context, obj *model.EnvCo
 
 // ChartValue is the resolver for the chartValue field.
 func (r *envConfigurationResolver) ChartValue(ctx context.Context, obj *model.EnvConfiguration) (json.RawMessage, error) {
-	vals := r.HelmChartValues.GetValues(obj.FeatureName)
-	if vals == nil {
-		return json.RawMessage(`"Empty?"`), nil
-	}
+	// vals := r.HelmChartValues.GetValues(obj.FeatureName)
+	// if vals == nil {
+	// 	return json.RawMessage(`"Empty?"`), nil
+	// }
 
-	paths, err := feature.SmartDotSplit(obj.Key)
-	if err != nil {
-		return json.RawMessage(`"error!"`), nil
-	}
+	// paths, err := feature.SmartDotSplit(obj.Key)
+	// if err != nil {
+	// 	return json.RawMessage(`"error!"`), nil
+	// }
 
-	var ok bool
-	for i, path := range paths {
-		if i == len(paths)-1 {
-			return json.Marshal(vals[path])
-		}
-		vals, ok = vals[path].(map[string]interface{})
-		if !ok {
-			return json.RawMessage(`"error!"`), nil
-		}
-	}
+	// var ok bool
+	// for i, path := range paths {
+	// 	if i == len(paths)-1 {
+	// 		return json.Marshal(vals[path])
+	// 	}
+	// 	vals, ok = vals[path].(map[string]interface{})
+	// 	if !ok {
+	// 		return json.RawMessage(`"error!"`), nil
+	// 	}
+	// }
 
 	return json.RawMessage(`"error!"`), nil
 }
@@ -58,26 +57,26 @@ func (r *globalConfigurationResolver) Feature(ctx context.Context, obj *model.Gl
 
 // ChartValue is the resolver for the chartValue field.
 func (r *globalConfigurationResolver) ChartValue(ctx context.Context, obj *model.GlobalConfiguration) (json.RawMessage, error) {
-	vals := r.HelmChartValues.GetValues(obj.FeatureName)
-	if vals == nil {
-		return json.RawMessage(`"Empty?"`), nil
-	}
+	// vals := r.HelmChartValues.GetValues(obj.FeatureName)
+	// if vals == nil {
+	// 	return json.RawMessage(`"Empty?"`), nil
+	// }
 
-	paths, err := feature.SmartDotSplit(obj.Key)
-	if err != nil {
-		return json.RawMessage(`"error!"`), nil
-	}
+	// paths, err := feature.SmartDotSplit(obj.Key)
+	// if err != nil {
+	// 	return json.RawMessage(`"error!"`), nil
+	// }
 
-	var ok bool
-	for i, path := range paths {
-		if i == len(paths)-1 {
-			return json.Marshal(vals[path])
-		}
-		vals, ok = vals[path].(map[string]interface{})
-		if !ok {
-			return json.RawMessage(`"error!"`), nil
-		}
-	}
+	// var ok bool
+	// for i, path := range paths {
+	// 	if i == len(paths)-1 {
+	// 		return json.Marshal(vals[path])
+	// 	}
+	// 	vals, ok = vals[path].(map[string]interface{})
+	// 	if !ok {
+	// 		return json.RawMessage(`"error!"`), nil
+	// 	}
+	// }
 
 	return json.RawMessage(`"error!"`), nil
 }
@@ -230,9 +229,9 @@ func (r *queryResolver) EnvConfig(ctx context.Context, feature string, envID uui
 	f := r.Resolver.Features.Get(feature)
 	ret.Configuration = removeIgnoredKinds(ret.Configuration, f, env.Kind)
 
-	if f == nil || len(f.Mapping) == 0 {
-		return ret, nil
-	}
+	// if f == nil || len(f.Mapping) == 0 {
+	// 	return ret, nil
+	// }
 
 	mappingValues, envKind, err := r.Repo.MappingValuesForEnvironment(ctx, envID, false)
 	if err != nil {

@@ -67,24 +67,24 @@ func (r *repo) FeatureStateGet(ctx context.Context, envID uuid.UUID, featureName
 }
 
 func (r *repo) FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *feature.Feature, enabled bool) (*model.FeatureState, error) {
-	if len(feature.DependsOn) > 0 {
-		states, err := r.querier.FeatureStatesGet(ctx, envID)
-		if err != nil {
-			return nil, err
-		}
+	// if len(feature.DependsOn) > 0 {
+	// 	states, err := r.querier.FeatureStatesGet(ctx, envID)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
 
-		enabledFeatures := []string{}
-		for _, state := range states {
-			if state.Enabled {
-				enabledFeatures = append(enabledFeatures, state.Feature)
-			}
-		}
+	// 	enabledFeatures := []string{}
+	// 	for _, state := range states {
+	// 		if state.Enabled {
+	// 			enabledFeatures = append(enabledFeatures, state.Feature)
+	// 		}
+	// 	}
 
-		missingFeatures := feature.DependsOn.FindMissing(enabledFeatures)
-		if len(missingFeatures) > 0 {
-			return nil, fmt.Errorf("dependency '%v' not enebled", missingFeatures)
-		}
-	}
+	// 	missingFeatures := feature.DependsOn.FindMissing(enabledFeatures)
+	// 	if len(missingFeatures) > 0 {
+	// 		return nil, fmt.Errorf("dependency '%v' not enebled", missingFeatures)
+	// 	}
+	// }
 
 	res, err := r.querier.FeatureStateCreateOrUpdate(ctx, gensql.FeatureStateCreateOrUpdateParams{
 		EnvironmentID: envID,

@@ -1,58 +1,56 @@
 package graph
 
 import (
-	"encoding/json"
-	"sort"
 	"strings"
 
 	"github.com/nais/fasit/pkg/feature"
-	"github.com/nais/fasit/pkg/feature/helminfo"
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
 func marshalFeature(feat feature.Feature) (*model.Feature, error) {
-	if feat.Config == nil {
-		feat.Config = feature.Config{}
-	}
-	config, err := json.Marshal(feat.Config)
-	if err != nil {
-		return nil, err
-	}
+	// if feat.Config == nil {
+	// 	feat.Config = feature.Config{}
+	// }
+	// config, err := json.Marshal(feat.Config)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	deps := []*model.Dependency{}
+	// deps := []*model.Dependency{}
 
-	for _, f := range feat.DependsOn {
-		deps = append(deps, &model.Dependency{
-			AnyOf: f.AnyOf,
-			AllOf: f.AllOf,
-		})
-	}
+	// for _, f := range feat.DependsOn {
+	// 	deps = append(deps, &model.Dependency{
+	// 		AnyOf: f.AnyOf,
+	// 		AllOf: f.AllOf,
+	// 	})
+	// }
 
-	tmp := &model.Feature{
-		Name:             feat.Name,
-		Chart:            feat.Chart,
-		Version:          feat.Version,
-		Repo:             feat.Repo,
-		Source:           feat.Source,
-		Description:      feat.Description,
-		DependsOn:        deps,
-		Config:           config,
-		EnvironmentKinds: feat.EnvironmentKinds,
-	}
-	return tmp, nil
+	// tmp := &model.Feature{
+	// 	Name:             feat.Name,
+	// 	Chart:            feat.Chart,
+	// 	Version:          feat.Version,
+	// 	Repo:             feat.Repo,
+	// 	Source:           feat.Source,
+	// 	Description:      feat.Description,
+	// 	DependsOn:        deps,
+	// 	Config:           config,
+	// 	EnvironmentKinds: feat.EnvironmentKinds,
+	// }
+	// return tmp, nil
+	return nil, nil
 }
 
 func removeIgnoredKinds(old []model.Configuration, f *feature.Feature, envKind model.EnvironmentKind) (ret []model.Configuration) {
-	for key, val := range f.Config {
-		for _, c := range old {
-			if c.GetKey() == key {
-				if val.IgnoreKind.Contains(envKind) {
-					continue
-				}
-				ret = append(ret, c)
-			}
-		}
-	}
+	// for key, val := range f.Config {
+	// 	for _, c := range old {
+	// 		if c.GetKey() == key {
+	// 			if val.IgnoreKind.Contains(envKind) {
+	// 				continue
+	// 			}
+	// 			ret = append(ret, c)
+	// 		}
+	// 	}
+	// }
 	return ret
 }
 
@@ -66,32 +64,33 @@ func contains[T comparable](s []T, value T) bool {
 }
 
 func mappingToSlice(f *feature.Feature, envKind model.EnvironmentKind, env *feature.MappingValues) ([]*model.MappingValue, error) {
-	target := map[string]any{}
-	if err := f.Mapping.Generate(envKind, env, target); err != nil {
-		return nil, err
-	}
+	// target := map[string]any{}
+	// if err := f.Mapping.Generate(envKind, env, target); err != nil {
+	// 	return nil, err
+	// }
 
-	flat := flattenMap(target)
+	// flat := flattenMap(target)
 
-	mapping := []*model.MappingValue{}
-	for k, v := range flat {
-		b, err := json.Marshal(v)
-		if err != nil {
-			return nil, err
-		}
+	// mapping := []*model.MappingValue{}
+	// for k, v := range flat {
+	// 	b, err := json.Marshal(v)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
 
-		mapping = append(mapping, &model.MappingValue{
-			Key:         k,
-			Value:       b,
-			DisplayName: f.Mapping.DisplayName(k),
-		})
-	}
+	// 	mapping = append(mapping, &model.MappingValue{
+	// 		Key:         k,
+	// 		Value:       b,
+	// 		DisplayName: f.Mapping.DisplayName(k),
+	// 	})
+	// }
 
-	sort.Slice(mapping, func(i, j int) bool {
-		return mapping[i].Key < mapping[j].Key
-	})
+	// sort.Slice(mapping, func(i, j int) bool {
+	// 	return mapping[i].Key < mapping[j].Key
+	// })
 
-	return mapping, nil
+	// return mapping, nil
+	return nil, nil
 }
 
 func flattenMap(mp map[string]any) map[string]any {
@@ -111,31 +110,31 @@ func flattenMap(mp map[string]any) map[string]any {
 	return ret
 }
 
-func makeOutdatedInfo(featureName string, version *helminfo.ChartVersion) []*model.OutdatedInfo {
-	if version == nil {
-		return []*model.OutdatedInfo{}
-	}
+// func makeOutdatedInfo(featureName string, version *helminfo.ChartVersion) []*model.OutdatedInfo {
+// 	if version == nil {
+// 		return []*model.OutdatedInfo{}
+// 	}
 
-	if version.Outdated() {
-		return []*model.OutdatedInfo{
-			{
-				FeatureName: featureName,
-				NewVersion:  version.NewVersion,
-			},
-		}
-	}
+// 	if version.Outdated() {
+// 		return []*model.OutdatedInfo{
+// 			{
+// 				FeatureName: featureName,
+// 				NewVersion:  version.NewVersion,
+// 			},
+// 		}
+// 	}
 
-	ret := []*model.OutdatedInfo{}
-	for _, d := range version.Dependencies {
-		if d.Outdated() {
-			ret = append(ret, &model.OutdatedInfo{
-				FeatureName:    featureName,
-				NewVersion:     d.NewVersion,
-				Dependency:     true,
-				DependencyName: d.Name,
-			})
-		}
-	}
+// 	ret := []*model.OutdatedInfo{}
+// 	for _, d := range version.Dependencies {
+// 		if d.Outdated() {
+// 			ret = append(ret, &model.OutdatedInfo{
+// 				FeatureName:    featureName,
+// 				NewVersion:     d.NewVersion,
+// 				Dependency:     true,
+// 				DependencyName: d.Name,
+// 			})
+// 		}
+// 	}
 
-	return ret
-}
+// 	return ret
+// }

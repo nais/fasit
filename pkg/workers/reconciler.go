@@ -197,9 +197,9 @@ func (r *Reconciler) autoInstallNextFeature(
 	}
 
 	for _, f := range features {
-		if !contains(f.AutoInstall, d.Kind) {
-			continue
-		}
+		// if !contains(f.AutoInstall, d.Kind) {
+		// 	continue
+		// }
 
 		// Feature already enabled and rolled out to environment successfully
 		if s, ok := status[f.Name]; ok && s.Status == model.RolloutStatusDeployed {
@@ -215,9 +215,9 @@ func (r *Reconciler) autoInstallNextFeature(
 		}
 
 		// Dependency not enabled
-		if len(f.DependsOn.FindMissing(enabledFeatures)) > 0 {
-			continue
-		}
+		// if len(f.DependsOn.FindMissing(enabledFeatures)) > 0 {
+		// 	continue
+		// }
 
 		r.log.WithField("feature", f.Name).Info("Auto install feature")
 		_, err := r.repo.FeatureStatesCreateOrUpdate(ctx, d.ID, &f, true)
@@ -313,10 +313,10 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 
 		r.deployMessages.Add(ctx, 1, append(metricAttrs, attribute.Key("feature").String(f.Name))...)
 		err = mgr.Publish(ctx, message.DeployInstruction{
-			Name:       f.Name,
-			Version:    f.Version,
-			Chart:      f.Chart,
-			Repo:       f.Repo,
+			Name:    f.Name,
+			Version: f.Version,
+			Chart:   f.Chart,
+			// Repo:       f.Repo,
 			ConfigHash: hash,
 			Timeout:    f.Timeout,
 			Values:     values,
@@ -340,7 +340,7 @@ func generateHash(values map[string]any, feature feature.Feature, enabledAt *tim
 		at = enabledAt.UTC().Format(time.RFC3339)
 	}
 
-	b = append(b, []byte(feature.Version+feature.Chart+feature.Repo+at)...)
+	b = append(b, []byte(feature.Version+feature.Chart+at)...)
 
 	hash := sha256.Sum256(b)
 	return hex.EncodeToString(hash[:]), nil

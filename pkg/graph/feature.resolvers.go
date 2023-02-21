@@ -6,7 +6,6 @@ package graph
 
 import (
 	"context"
-	"sort"
 
 	"github.com/nais/fasit/pkg/graph/graphgen"
 	"github.com/nais/fasit/pkg/graph/model"
@@ -24,14 +23,15 @@ func (r *featureResolver) Configoverrides(ctx context.Context, obj *model.Featur
 
 // OutdatedInfo is the resolver for the outdatedInfo field.
 func (r *featureResolver) OutdatedInfo(ctx context.Context, obj *model.Feature) ([]*model.OutdatedInfo, error) {
-	version := r.HelmChartValues.GetVersion(obj.Name)
+	// version := r.HelmChartValues.GetVersion(obj.Name)
 
-	outdated := makeOutdatedInfo(obj.Name, version)
+	// outdated := makeOutdatedInfo(obj.Name, version)
 
-	sort.Slice(outdated, func(i, j int) bool {
-		return outdated[i].FeatureName < outdated[j].FeatureName
-	})
-	return outdated, nil
+	// sort.Slice(outdated, func(i, j int) bool {
+	// 	return outdated[i].FeatureName < outdated[j].FeatureName
+	// })
+	// return outdated, nil
+	panic("not implemented featureResolver.OutdatedInfo")
 }
 
 // Feature is the resolver for the feature field.
@@ -63,13 +63,14 @@ func (r *queryResolver) Feature(ctx context.Context, name string) (*model.Featur
 
 // OutdatedInfo is the resolver for the outdatedInfo field.
 func (r *queryResolver) OutdatedInfo(ctx context.Context) ([]*model.OutdatedInfo, error) {
-	versions := r.HelmChartValues.AllVersions()
-	ret := []*model.OutdatedInfo{}
-	for name, version := range versions {
-		ret = append(ret, makeOutdatedInfo(name, version)...)
-	}
+	// versions := r.HelmChartValues.AllVersions()
+	// ret := []*model.OutdatedInfo{}
+	// for name, version := range versions {
+	// 	ret = append(ret, makeOutdatedInfo(name, version)...)
+	// }
 
-	return ret, nil
+	// return ret, nil
+	panic("not implemented queryResolver.OutdatedInfo")
 }
 
 // ConfigOverride returns graphgen.ConfigOverrideResolver implementation.
@@ -83,6 +84,8 @@ func (r *Resolver) Feature() graphgen.FeatureResolver { return &featureResolver{
 // OutdatedInfo returns graphgen.OutdatedInfoResolver implementation.
 func (r *Resolver) OutdatedInfo() graphgen.OutdatedInfoResolver { return &outdatedInfoResolver{r} }
 
-type configOverrideResolver struct{ *Resolver }
-type featureResolver struct{ *Resolver }
-type outdatedInfoResolver struct{ *Resolver }
+type (
+	configOverrideResolver struct{ *Resolver }
+	featureResolver        struct{ *Resolver }
+	outdatedInfoResolver   struct{ *Resolver }
+)

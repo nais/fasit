@@ -205,11 +205,11 @@ func (r *repo) HelmValues(ctx context.Context, feature feature.Feature, envID uu
 	}
 
 	excludeKeys := []string{}
-	for key, f := range feature.Config {
-		if f.IgnoreKind.Contains(envKind) {
-			excludeKeys = append(excludeKeys, key)
-		}
-	}
+	// for key, f := range feature.Config {
+	// 	if f.IgnoreKind.Contains(envKind) {
+	// 		excludeKeys = append(excludeKeys, key)
+	// 	}
+	// }
 
 	vals, err := r.querier.EnvConfig(ctx, gensql.EnvConfigParams{
 		Feature:       feature.Name,
@@ -229,7 +229,8 @@ func (r *repo) HelmValues(ctx context.Context, feature feature.Feature, envID uu
 		return nil, err
 	}
 
-	err = feature.Mapping.Generate(envKind, mv, mp)
+	// err = feature.Mapping.Generate(envKind, mv, mp)
+	_ = mv
 	return mp, err
 }
 

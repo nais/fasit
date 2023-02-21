@@ -24,7 +24,6 @@ import (
 	"github.com/nais/fasit/pkg/auth"
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/feature"
-	"github.com/nais/fasit/pkg/feature/helminfo"
 	"github.com/nais/fasit/pkg/graph"
 	"github.com/nais/fasit/pkg/graph/graphgen"
 	"github.com/nais/fasit/pkg/message"
@@ -194,17 +193,17 @@ func main() {
 	}()
 	go reconciler.Run(ctx, 10*time.Minute)
 
-	helmChartValues, err := helminfo.New(featureMgr, log.WithField("subsystem", "helm-chart-values"))
-	if err != nil {
-		log.WithError(err).Fatal("setting up helm chart values")
-	}
-	go helmChartValues.Run(ctx, 1*time.Hour)
+	// helmChartValues, err := helminfo.New(featureMgr, log.WithField("subsystem", "helm-chart-values"))
+	// if err != nil {
+	// 	log.WithError(err).Fatal("setting up helm chart values")
+	// }
+	// go helmChartValues.Run(ctx, 1*time.Hour)
 
 	resolver := &graph.Resolver{
-		Repo:            repo,
-		Features:        featureMgr,
-		Log:             log.WithField("subsystem", "graphql"),
-		HelmChartValues: helmChartValues,
+		Repo:     repo,
+		Features: featureMgr,
+		Log:      log.WithField("subsystem", "graphql"),
+		// HelmChartValues: helmChartValues,
 	}
 
 	srv := newServer(graphgen.NewExecutableSchema(graphgen.Config{Resolvers: resolver}))

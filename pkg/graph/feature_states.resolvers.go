@@ -7,7 +7,6 @@ package graph
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/google/uuid"
 	pgx "github.com/jackc/pgx/v4"
@@ -22,7 +21,7 @@ func (r *featureStateResolver) Feature(ctx context.Context, obj *model.FeatureSt
 
 // MissingDependencies is the resolver for the missingDependencies field.
 func (r *featureStateResolver) MissingDependencies(ctx context.Context, obj *model.FeatureState) ([]*model.Feature, error) {
-	f := r.Features.Get(obj.FeatureName)
+	// f := r.Features.Get(obj.FeatureName)
 
 	states, err := r.Repo.FeatureStatesGet(ctx, obj.EnvID)
 	if err != nil {
@@ -38,17 +37,17 @@ func (r *featureStateResolver) MissingDependencies(ctx context.Context, obj *mod
 
 	ret := []*model.Feature{}
 
-	for _, d := range f.DependsOn.FindMissing(enabledFeatures) {
-		feat := r.Features.Get(d)
-		if feat == nil {
-			return nil, fmt.Errorf("invalid dependency %v", d)
-		}
-		f, err := marshalFeature(*feat)
-		if err != nil {
-			return nil, err
-		}
-		ret = append(ret, f)
-	}
+	// for _, d := range f.DependsOn.FindMissing(enabledFeatures) {
+	// 	feat := r.Features.Get(d)
+	// 	if feat == nil {
+	// 		return nil, fmt.Errorf("invalid dependency %v", d)
+	// 	}
+	// 	f, err := marshalFeature(*feat)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	ret = append(ret, f)
+	// }
 	return ret, nil
 }
 

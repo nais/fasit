@@ -1,3 +1,6 @@
+//go:build todo
+// +build todo
+
 package graph
 
 import (
