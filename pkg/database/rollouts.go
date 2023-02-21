@@ -9,6 +9,7 @@ import (
 
 type RolloutRepo interface {
 	RolloutCreate(ctx context.Context, name, chart, version string) (*model.Rollout, error)
+	RolloutsListen(ctx context.Context, fn ListenFunc) error
 }
 
 func (r *repo) RolloutCreate(ctx context.Context, name, chart, version string) (*model.Rollout, error) {
@@ -24,4 +25,8 @@ func (r *repo) RolloutCreate(ctx context.Context, name, chart, version string) (
 		Created:     ro.Created,
 		FeatureName: ro.FeatureName,
 	}, nil
+}
+
+func (r *repo) RolloutsListen(ctx context.Context, fn ListenFunc) error {
+	return r.ListenNotify(ctx, "rollout_notify", fn)
 }

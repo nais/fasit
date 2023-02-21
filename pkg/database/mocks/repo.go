@@ -816,6 +816,46 @@ func (_m *Repo) ReleaseStatusesGet(ctx context.Context, environmentID uuid.UUID)
 	return r0, r1
 }
 
+// RolloutCreate provides a mock function with given fields: ctx, name, chart, version
+func (_m *Repo) RolloutCreate(ctx context.Context, name string, chart string, version string) (*model.Rollout, error) {
+	ret := _m.Called(ctx, name, chart, version)
+
+	var r0 *model.Rollout
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) (*model.Rollout, error)); ok {
+		return rf(ctx, name, chart, version)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) *model.Rollout); ok {
+		r0 = rf(ctx, name, chart, version)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Rollout)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
+		r1 = rf(ctx, name, chart, version)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// RolloutsListen provides a mock function with given fields: ctx, fn
+func (_m *Repo) RolloutsListen(ctx context.Context, fn database.ListenFunc) error {
+	ret := _m.Called(ctx, fn)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, database.ListenFunc) error); ok {
+		r0 = rf(ctx, fn)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // StatusCreateOrUpdate provides a mock function with given fields: ctx, environmentID, h
 func (_m *Repo) StatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Helm) error {
 	ret := _m.Called(ctx, environmentID, h)

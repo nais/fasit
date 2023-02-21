@@ -30,6 +30,7 @@ type ReconcilerStore interface {
 	FeatureStatesListen(ctx context.Context, fn database.ListenFunc) error
 	HealthGet(ctx context.Context, environmentID uuid.UUID) (*model.Health, error)
 	HelmValues(ctx context.Context, feature feature.Feature, envID uuid.UUID) (map[string]any, error)
+	RolloutsListen(ctx context.Context, fn database.ListenFunc) error
 	StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]*model.Status, error)
 	TenantEnvironments(ctx context.Context) ([]*model.TenantEnvironments, error)
 }
@@ -109,6 +110,12 @@ func (r *Reconciler) Listen(ctx context.Context) error {
 	trigger := func(ctx context.Context, id uuid.UUID) {
 		ch <- struct{}{}
 	}
+
+	go func() {
+		if err := r.repo.RolloutsListen(ctx, trigger); err != nil {
+			r.log.WithError(err).Error("rollouts listen")
+		}
+	}()
 
 	go func() {
 		if err := r.repo.FeatureStatesListen(ctx, trigger); err != nil {
