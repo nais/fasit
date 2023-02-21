@@ -107,12 +107,13 @@ type EnvironmentValue struct {
 }
 
 type Feature struct {
-	ID           uuid.UUID
-	Name         string
-	Chart        string
-	Version      string
-	Created      time.Time
-	LastModified time.Time
+	ID               uuid.UUID
+	Name             string
+	Chart            string
+	EnvironmentKinds []EnvironmentKind
+	Version          string
+	Created          time.Time
+	LastModified     time.Time
 }
 
 type FeatureState struct {
@@ -159,11 +160,12 @@ type ReleaseStatus struct {
 }
 
 type Rollout struct {
-	ID          uuid.UUID
-	FeatureName string
-	Chart       string
-	Version     string
-	Created     time.Time
+	ID               uuid.UUID
+	FeatureName      string
+	Chart            string
+	EnvironmentKinds []EnvironmentKind
+	Version          string
+	Created          time.Time
 }
 
 type Status struct {

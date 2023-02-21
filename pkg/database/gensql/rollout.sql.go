@@ -10,7 +10,7 @@ import (
 )
 
 const rolloutCreate = `-- name: RolloutCreate :one
-INSERT INTO rollouts (feature_name, chart, version) VALUES ($1, $2, $3) RETURNING id, feature_name, chart, version, created
+INSERT INTO rollouts (feature_name, chart, version) VALUES ($1, $2, $3) RETURNING id, feature_name, chart, environment_kinds, version, created
 `
 
 type RolloutCreateParams struct {
@@ -26,6 +26,7 @@ func (q *Queries) RolloutCreate(ctx context.Context, arg RolloutCreateParams) (R
 		&i.ID,
 		&i.FeatureName,
 		&i.Chart,
+		&i.EnvironmentKinds,
 		&i.Version,
 		&i.Created,
 	)

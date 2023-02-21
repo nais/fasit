@@ -1,5 +1,4 @@
 //go:build todo
-//go:build integration_test
 // +build todo
 
 package database
