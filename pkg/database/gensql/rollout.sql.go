@@ -32,3 +32,34 @@ func (q *Queries) RolloutCreate(ctx context.Context, arg RolloutCreateParams) (R
 	)
 	return i, err
 }
+
+const rolloutsForKind = `-- name: RolloutsForKind :many
+SELECT id, feature_name, chart, environment_kinds, version, created FROM rollouts WHERE $1::text = ANY(environment_kinds)
+`
+
+func (q *Queries) RolloutsForKind(ctx context.Context, environmentKind string) ([]Rollout, error) {
+	rows, err := q.db.Query(ctx, rolloutsForKind, environmentKind)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Rollout{}
+	for rows.Next() {
+		var i Rollout
+		if err := rows.Scan(
+			&i.ID,
+			&i.FeatureName,
+			&i.Chart,
+			&i.EnvironmentKinds,
+			&i.Version,
+			&i.Created,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

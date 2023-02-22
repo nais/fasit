@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v4"
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph/model"
@@ -58,12 +59,14 @@ func (r *repo) FeatureStateGet(ctx context.Context, envID uuid.UUID, featureName
 		EnvironmentID: envID,
 		Feature:       featureName,
 	})
-	if err != nil {
+
+	if err == nil {
+		fs := featureStateFromSQL(featureState)
+		fs.EnvID = envID
+		return fs, nil
+	} else if !errors.Is(err, pgx.ErrNoRows) {
 		return nil, err
 	}
-	fs := featureStateFromSQL(featureState)
-	fs.EnvID = envID
-	return fs, nil
 }
 
 func (r *repo) FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *feature.Feature, enabled bool) (*model.FeatureState, error) {

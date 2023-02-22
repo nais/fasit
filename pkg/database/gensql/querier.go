@@ -20,6 +20,7 @@ type Querier interface {
 	ConfigGlobalUpdateOrCreate(ctx context.Context, arg ConfigGlobalUpdateOrCreateParams) (ConfigurationsGlobal, error)
 	ConfigOverridesByFeature(ctx context.Context, feature string) ([]ConfigOverridesByFeatureRow, error)
 	ConfigUpdate(ctx context.Context, arg ConfigUpdateParams) (ConfigurationsGlobal, error)
+	DefaultFeaturesForKind(ctx context.Context, environmentKind EnvironmentKind) ([]DefaultFeature, error)
 	EnvConfig(ctx context.Context, arg EnvConfigParams) ([]EnvConfigRow, error)
 	EnvironmentByNames(ctx context.Context, arg EnvironmentByNamesParams) (Environment, error)
 	EnvironmentCI(ctx context.Context, kind EnvironmentKind) (Environment, error)
@@ -35,7 +36,7 @@ type Querier interface {
 	FeatureStateCreateOrUpdate(ctx context.Context, arg FeatureStateCreateOrUpdateParams) (FeatureState, error)
 	FeatureStateGet(ctx context.Context, arg FeatureStateGetParams) (FeatureState, error)
 	FeatureStatesGet(ctx context.Context, environmentID uuid.UUID) ([]FeatureStatesGetRow, error)
-	FeaturesForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]FeaturesForEnvironmentRow, error)
+	FeaturesForKind(ctx context.Context, environmentKind string) ([]Feature, error)
 	HealthStatusCreateOrUpdate(ctx context.Context, arg HealthStatusCreateOrUpdateParams) (HealthStatus, error)
 	HealthStatusGet(ctx context.Context, environmentID uuid.UUID) (HealthStatus, error)
 	KubernetesNodeCreateOrUpdate(ctx context.Context, arg KubernetesNodeCreateOrUpdateParams) error
@@ -46,6 +47,7 @@ type Querier interface {
 	ReleaseStatusDeleteByEnvironment(ctx context.Context, environmentID uuid.UUID) error
 	ReleaseStatusesGet(ctx context.Context, environmentID uuid.UUID) ([]ReleaseStatus, error)
 	RolloutCreate(ctx context.Context, arg RolloutCreateParams) (Rollout, error)
+	RolloutsForKind(ctx context.Context, environmentKind string) ([]Rollout, error)
 	StatusCreateOrUpdate(ctx context.Context, arg StatusCreateOrUpdateParams) error
 	StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]Status, error)
 	StatusForFeature(ctx context.Context, arg StatusForFeatureParams) (Status, error)

@@ -223,6 +223,32 @@ func (_m *Querier) ConfigUpdate(ctx context.Context, arg gensql.ConfigUpdatePara
 	return r0, r1
 }
 
+// DefaultFeaturesForKind provides a mock function with given fields: ctx, environmentKind
+func (_m *Querier) DefaultFeaturesForKind(ctx context.Context, environmentKind gensql.EnvironmentKind) ([]gensql.DefaultFeature, error) {
+	ret := _m.Called(ctx, environmentKind)
+
+	var r0 []gensql.DefaultFeature
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.EnvironmentKind) ([]gensql.DefaultFeature, error)); ok {
+		return rf(ctx, environmentKind)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.EnvironmentKind) []gensql.DefaultFeature); ok {
+		r0 = rf(ctx, environmentKind)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gensql.DefaultFeature)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, gensql.EnvironmentKind) error); ok {
+		r1 = rf(ctx, environmentKind)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // EnvConfig provides a mock function with given fields: ctx, arg
 func (_m *Querier) EnvConfig(ctx context.Context, arg gensql.EnvConfigParams) ([]gensql.EnvConfigRow, error) {
 	ret := _m.Called(ctx, arg)
@@ -583,6 +609,32 @@ func (_m *Querier) FeatureStatesGet(ctx context.Context, environmentID uuid.UUID
 	return r0, r1
 }
 
+// FeaturesForKind provides a mock function with given fields: ctx, environmentKind
+func (_m *Querier) FeaturesForKind(ctx context.Context, environmentKind string) ([]gensql.Feature, error) {
+	ret := _m.Called(ctx, environmentKind)
+
+	var r0 []gensql.Feature
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]gensql.Feature, error)); ok {
+		return rf(ctx, environmentKind)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) []gensql.Feature); ok {
+		r0 = rf(ctx, environmentKind)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gensql.Feature)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, environmentKind)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // HealthStatusCreateOrUpdate provides a mock function with given fields: ctx, arg
 func (_m *Querier) HealthStatusCreateOrUpdate(ctx context.Context, arg gensql.HealthStatusCreateOrUpdateParams) (gensql.HealthStatus, error) {
 	ret := _m.Called(ctx, arg)
@@ -792,6 +844,32 @@ func (_m *Querier) RolloutCreate(ctx context.Context, arg gensql.RolloutCreatePa
 
 	if rf, ok := ret.Get(1).(func(context.Context, gensql.RolloutCreateParams) error); ok {
 		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// RolloutsForKind provides a mock function with given fields: ctx, environmentKind
+func (_m *Querier) RolloutsForKind(ctx context.Context, environmentKind string) ([]gensql.Rollout, error) {
+	ret := _m.Called(ctx, environmentKind)
+
+	var r0 []gensql.Rollout
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]gensql.Rollout, error)); ok {
+		return rf(ctx, environmentKind)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) []gensql.Rollout); ok {
+		r0 = rf(ctx, environmentKind)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gensql.Rollout)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, environmentKind)
 	} else {
 		r1 = ret.Error(1)
 	}

@@ -9,10 +9,9 @@ type Feature {
   name: String!
   chart: String!
   version: String!
-  repo: String!
   source: String!
   description: String!
-  dependsOn: [Dependency!]!
+  dependencies: [Dependency!]!
   config: RawMessage!
   environmentKinds: [EnvironmentKind!]!
   configoverrides: [ConfigOverride!]!

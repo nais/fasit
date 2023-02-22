@@ -88,6 +88,12 @@ type ConfigurationsGlobal struct {
 	Created     time.Time
 }
 
+type DefaultFeature struct {
+	Kind    EnvironmentKind
+	Feature string
+	Created time.Time
+}
+
 type Environment struct {
 	ID           uuid.UUID
 	TenantID     uuid.UUID
@@ -107,7 +113,6 @@ type EnvironmentValue struct {
 }
 
 type Feature struct {
-	ID               uuid.UUID
 	Name             string
 	Chart            string
 	EnvironmentKinds []EnvironmentKind
