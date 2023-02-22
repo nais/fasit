@@ -224,19 +224,19 @@ func (_m *Querier) ConfigUpdate(ctx context.Context, arg gensql.ConfigUpdatePara
 }
 
 // DefaultFeaturesForKind provides a mock function with given fields: ctx, environmentKind
-func (_m *Querier) DefaultFeaturesForKind(ctx context.Context, environmentKind gensql.EnvironmentKind) ([]gensql.DefaultFeature, error) {
+func (_m *Querier) DefaultFeaturesForKind(ctx context.Context, environmentKind gensql.EnvironmentKind) ([]string, error) {
 	ret := _m.Called(ctx, environmentKind)
 
-	var r0 []gensql.DefaultFeature
+	var r0 []string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, gensql.EnvironmentKind) ([]gensql.DefaultFeature, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.EnvironmentKind) ([]string, error)); ok {
 		return rf(ctx, environmentKind)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, gensql.EnvironmentKind) []gensql.DefaultFeature); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.EnvironmentKind) []string); ok {
 		r0 = rf(ctx, environmentKind)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]gensql.DefaultFeature)
+			r0 = ret.Get(0).([]string)
 		}
 	}
 

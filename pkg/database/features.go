@@ -53,9 +53,9 @@ func (r *repo) featuresForKind(ctx context.Context, kind model.EnvironmentKind, 
 	return features, nil
 }
 
-func (r *repo) FeaturesForEnvironment(ctx context.Context, environmentID uuid.UUID, kind model.EnvironmentKind, ci bool) ([]*model.Feature, error) {
-	all, err := r.featuresForKind(ctx, kind, ci)
-	if err != nil {
-		return nil, err
-	}
-}
+// func (r *repo) FeaturesForEnvironment(ctx context.Context, environmentID uuid.UUID, kind model.EnvironmentKind, ci bool) ([]*model.Feature, error) {
+// 	all, err := r.featuresForKind(ctx, kind, ci)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// }

@@ -10,22 +10,22 @@ import (
 )
 
 const defaultFeaturesForKind = `-- name: DefaultFeaturesForKind :many
-SELECT kind, feature, created FROM default_features WHERE kind = $1 ORDER BY feature
+SELECT feature FROM default_features WHERE kind = $1 ORDER BY feature
 `
 
-func (q *Queries) DefaultFeaturesForKind(ctx context.Context, environmentKind EnvironmentKind) ([]DefaultFeature, error) {
+func (q *Queries) DefaultFeaturesForKind(ctx context.Context, environmentKind EnvironmentKind) ([]string, error) {
 	rows, err := q.db.Query(ctx, defaultFeaturesForKind, environmentKind)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []DefaultFeature{}
+	items := []string{}
 	for rows.Next() {
-		var i DefaultFeature
-		if err := rows.Scan(&i.Kind, &i.Feature, &i.Created); err != nil {
+		var feature string
+		if err := rows.Scan(&feature); err != nil {
 			return nil, err
 		}
-		items = append(items, i)
+		items = append(items, feature)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

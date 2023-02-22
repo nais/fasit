@@ -67,6 +67,27 @@ func (r *repo) FeatureStateGet(ctx context.Context, envID uuid.UUID, featureName
 	} else if !errors.Is(err, pgx.ErrNoRows) {
 		return nil, err
 	}
+
+	fs := &model.FeatureState{
+		FeatureName: featureName,
+		EnvID:       envID,
+		Enabled:     false,
+	}
+
+	kind := model.EnvironmentKind("TODO") // TODO
+	defaultFeatures, err := r.DefaultFeaturesForKind(ctx, kind)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, feature := range defaultFeatures {
+		if feature == featureName {
+			fs.Enabled = true
+			return fs, nil
+		}
+	}
+
+	return fs, nil
 }
 
 func (r *repo) FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *feature.Feature, enabled bool) (*model.FeatureState, error) {
