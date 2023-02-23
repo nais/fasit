@@ -8,6 +8,7 @@ require (
 	cloud.google.com/go/storage v1.29.0
 	github.com/99designs/gqlgen v0.17.22
 	github.com/GoogleCloudPlatform/cloudsql-proxy v1.33.2
+	github.com/GoogleCloudPlatform/k8s-config-connector v1.101.0
 	github.com/Masterminds/semver/v3 v3.2.0
 	github.com/coreos/go-oidc/v3 v3.4.0
 	github.com/fsnotify/fsnotify v1.6.0
@@ -81,6 +82,7 @@ require (
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/emicklei/go-restful/v3 v3.10.1 // indirect
 	github.com/evanphx/json-patch v5.6.0+incompatible // indirect
+	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
 	github.com/exponent-io/jsonpath v0.0.0-20210407135951-1de76d718b3f // indirect
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/go-errors/errors v1.4.2 // indirect
@@ -191,7 +193,9 @@ require (
 	k8s.io/kube-openapi v0.0.0-20221207184640-f3cff1453715 // indirect
 	k8s.io/kubectl v0.26.0 // indirect
 	oras.land/oras-go v1.2.2 // indirect
+	sigs.k8s.io/controller-runtime v0.13.0 // indirect
 	sigs.k8s.io/json v0.0.0-20221116044647-bc3834ca7abd // indirect
+	sigs.k8s.io/kubebuilder-declarative-pattern v0.13.0-beta.1.0.20221121171032-ecacd65a9e07 // indirect
 	sigs.k8s.io/kustomize/api v0.12.1 // indirect
 	sigs.k8s.io/kustomize/kyaml v0.13.9 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect

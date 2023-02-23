@@ -7,31 +7,26 @@ import (
 	"strings"
 	"time"
 
+	cnrmbeta1 "github.com/GoogleCloudPlatform/k8s-config-connector/operator/pkg/apis/core/v1beta1"
+	"github.com/google/go-cmp/cmp"
+	"github.com/nais/fasit/pkg/message"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	v1lister "k8s.io/client-go/listers/core/v1"
 	rbacv1lister "k8s.io/client-go/listers/rbac/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
-
-	"github.com/nais/fasit/pkg/message"
 )
 
 var ErrDeleteRequiredNamespace = fmt.Errorf("namespace is required, cannot be deleted")
-
-var cnrmConfigGroupVersionResource = schema.GroupVersionResource{
-	Group:    "core.cnrm.cloud.google.com",
-	Version:  "v1beta1",
-	Resource: "configconnectorcontexts",
-}
 
 type ConsoleReceiver interface {
 	Name() string
@@ -49,6 +44,7 @@ type ConsoleManager struct {
 	nsList     v1lister.NamespaceLister
 	saList     v1lister.ServiceAccountLister
 	rbList     rbacv1lister.RoleBindingLister
+	cnrmConfig cache.GenericLister
 }
 
 func NewConsoleManager(ctx context.Context, ConsoleSubscriber ConsoleReceiver, config *rest.Config, projectID string, envName string, log *logrus.Entry) (*ConsoleManager, error) {
@@ -73,7 +69,7 @@ func newConsoleManager(ctx context.Context,
 	envName string,
 	log *logrus.Entry,
 ) (*ConsoleManager, error) {
-	inf := informers.NewSharedInformerFactory(kubeClient, 2*time.Hour)
+	inf := informers.NewSharedInformerFactory(kubeClient, 4*time.Hour)
 	nsInf := inf.Core().V1().Namespaces()
 	saInf := inf.Core().V1().ServiceAccounts()
 	rbInf := inf.Rbac().V1().RoleBindings()
@@ -81,10 +77,14 @@ func newConsoleManager(ctx context.Context,
 	go saInf.Informer().Run(ctx.Done())
 	go rbInf.Informer().Run(ctx.Done())
 
+	dynInf := dynamicinformer.NewDynamicSharedInformerFactory(dyncClient, 4*time.Hour)
+	cnrmInf := dynInf.ForResource(cnrmbeta1.GroupVersion.WithResource("configconnectorcontexts"))
+	go cnrmInf.Informer().Run(ctx.Done())
+
 	// wait for caches to sync
 	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
-	if !waitForCacheSync(ctx.Done(), nsInf.Informer().HasSynced, saInf.Informer().HasSynced, rbInf.Informer().HasSynced) {
+	if !waitForCacheSync(ctx.Done(), nsInf.Informer().HasSynced, saInf.Informer().HasSynced, rbInf.Informer().HasSynced, cnrmInf.Informer().HasSynced) {
 		log.Warn("failed to sync caches")
 	}
 
@@ -98,6 +98,7 @@ func newConsoleManager(ctx context.Context,
 		nsList:     nsInf.Lister(),
 		saList:     saInf.Lister(),
 		rbList:     rbInf.Lister(),
+		cnrmConfig: cnrmInf.Lister(),
 	}
 
 	return receiver, nil
@@ -319,6 +320,14 @@ func (c *ConsoleManager) createOrUpdateRoleBinding(ctx context.Context, roleBind
 		}
 	} else {
 		roleBinding.ObjectMeta = existing.ObjectMeta
+
+		if cmp.Equal(roleBinding.RoleRef, existing.RoleRef) && cmp.Equal(roleBinding.Subjects, existing.Subjects) {
+			log.WithFields(logrus.Fields{
+				"name": roleBinding.GetName(),
+				"ns":   roleBinding.GetNamespace(),
+			}).Debug("no changes to role binding")
+			return nil
+		}
 		_, err := c.kubeClient.RbacV1().RoleBindings(roleBinding.GetNamespace()).Update(ctx, &roleBinding, metav1.UpdateOptions{})
 		if err != nil {
 			return fmt.Errorf("update role binding: %w", err)
@@ -363,11 +372,12 @@ func (c *ConsoleManager) createCNRMConfig(ctx context.Context, data message.Crea
 		c.log.Info("Skipping CNRM config for FSS")
 		return nil
 	}
-	cnrmClient := c.dynClient.Resource(cnrmConfigGroupVersionResource).Namespace(data.Name)
+	cnrmClient := c.dynClient.Resource(cnrmbeta1.GroupVersion.WithResource("configconnectorcontexts")).Namespace(data.Name)
 
 	const contextName = "configconnectorcontext.core.cnrm.cloud.google.com"
 
-	res, err := cnrmClient.Get(ctx, contextName, metav1.GetOptions{})
+	// res, err := cnrmClient.Get(ctx, contextName, metav1.GetOptions{})
+	res, err := c.cnrmConfig.ByNamespace(data.Name).Get(contextName)
 	if err != nil {
 		if !errors.IsNotFound(err) {
 			return fmt.Errorf("getting config connector context: %w", err)
@@ -390,11 +400,21 @@ func (c *ConsoleManager) createCNRMConfig(ctx context.Context, data message.Crea
 		return nil
 	}
 
-	res.Object["spec"] = map[string]any{
+	obj := res.DeepCopyObject().(*unstructured.Unstructured)
+
+	// Check if we need to update the CNRM email
+	if spec, ok := obj.Object["spec"]; ok {
+		if specMap, ok := spec.(map[string]any); ok {
+			if specMap["googleServiceAccount"] == data.CNRMEmail {
+				return nil
+			}
+		}
+	}
+	obj.Object["spec"] = map[string]any{
 		"googleServiceAccount": data.CNRMEmail,
 	}
 
-	_, err = cnrmClient.Update(ctx, res, metav1.UpdateOptions{})
+	_, err = cnrmClient.Update(ctx, obj, metav1.UpdateOptions{})
 	return err
 }
 
