@@ -23,14 +23,14 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version: ">=1.20.1"
-      - uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
+      # - uses: actions/cache@v3
+      #   with:
+      #     path: |
+      #       ~/.cache/go-build
+      #       ~/go/pkg/mod
+      #     key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-go-
       - run: go test -cover -tags integration_test ./...
       - name: Vulnerability check
         run: |
@@ -72,8 +72,8 @@ jobs:
           file: Dockerfile_fasit
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # cache-from: type=gha
+          # cache-to: type=gha,mode=max
 
   build_and_push_fasit:
     if: github.ref == 'refs/heads/main'
@@ -124,8 +124,8 @@ jobs:
           push: true
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # cache-from: type=gha
+          # cache-to: type=gha,mode=max
 
   build_and_push_naisd:
     if: github.ref == 'refs/heads/main'
@@ -176,8 +176,8 @@ jobs:
           push: true
           tags: ${{ steps.metadata.outputs.tags }}
           labels: ${{ steps.metadata.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # cache-from: type=gha
+          # cache-to: type=gha,mode=max
 
   deploy_fasit:
     if: github.ref == 'refs/heads/main'
