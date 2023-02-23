@@ -61,6 +61,18 @@ func NewConsoleManager(ctx context.Context, ConsoleSubscriber ConsoleReceiver, c
 		return nil, fmt.Errorf("creating dynamic client: %w", err)
 	}
 
+	return newConsoleManager(ctx, kubeClient, dyncClient, ConsoleSubscriber, config, projectID, envName, log)
+}
+
+func newConsoleManager(ctx context.Context,
+	kubeClient kubernetes.Interface,
+	dyncClient dynamic.Interface,
+	ConsoleSubscriber ConsoleReceiver,
+	config *rest.Config,
+	projectID string,
+	envName string,
+	log *logrus.Entry,
+) (*ConsoleManager, error) {
 	inf := informers.NewSharedInformerFactory(kubeClient, 2*time.Hour)
 	nsInf := inf.Core().V1().Namespaces()
 	saInf := inf.Core().V1().ServiceAccounts()
@@ -85,6 +97,7 @@ func NewConsoleManager(ctx context.Context, ConsoleSubscriber ConsoleReceiver, c
 		env:        envName,
 		nsList:     nsInf.Lister(),
 		saList:     saInf.Lister(),
+		rbList:     rbInf.Lister(),
 	}
 
 	return receiver, nil

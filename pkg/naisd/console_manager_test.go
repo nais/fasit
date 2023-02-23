@@ -65,11 +65,10 @@ func TestConsoleManager_handler(t *testing.T) {
 
 	cs := fake.NewSimpleClientset()
 	dynClient := dynFake.NewSimpleDynamicClient(&runtime.Scheme{})
-	m := &ConsoleManager{
-		kubeClient: cs,
-		dynClient:  dynClient,
-		log:        logrus.NewEntry(logrus.New()),
-		projectID:  "test-project",
+
+	m, err := newConsoleManager(ctx, cs, dynClient, nil, nil, "test-proj", "test", logrus.NewEntry(logrus.New()))
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	for _, tt := range tests {
