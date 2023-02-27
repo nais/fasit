@@ -536,27 +536,17 @@ func (_m *Querier) EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]g
 }
 
 // FeatureDataCreate provides a mock function with given fields: ctx, arg
-func (_m *Querier) FeatureDataCreate(ctx context.Context, arg gensql.FeatureDataCreateParams) (gensql.FeatureDatum, error) {
+func (_m *Querier) FeatureDataCreate(ctx context.Context, arg gensql.FeatureDataCreateParams) error {
 	ret := _m.Called(ctx, arg)
 
-	var r0 gensql.FeatureDatum
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, gensql.FeatureDataCreateParams) (gensql.FeatureDatum, error)); ok {
-		return rf(ctx, arg)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, gensql.FeatureDataCreateParams) gensql.FeatureDatum); ok {
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.FeatureDataCreateParams) error); ok {
 		r0 = rf(ctx, arg)
 	} else {
-		r0 = ret.Get(0).(gensql.FeatureDatum)
+		r0 = ret.Error(0)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, gensql.FeatureDataCreateParams) error); ok {
-		r1 = rf(ctx, arg)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
 // FeatureStateCreateOrUpdate provides a mock function with given fields: ctx, arg

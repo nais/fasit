@@ -1,4 +1,4 @@
--- name: FeatureDataCreate :one
+-- name: FeatureDataCreate :exec
 INSERT INTO feature_data (
     name, 
     version, 
@@ -18,4 +18,5 @@ INSERT INTO feature_data (
     @kinds, 
     @dependencies, 
     @values, 
-    @default_values) RETURNING *;
+    @default_values
+);

@@ -108,6 +108,7 @@ func (r *Rollout) Rollout(w http.ResponseWriter, req *http.Request) {
 	// 	})
 	// 	return
 	// }
+	r.repo.FeatureDataC
 
 	r.repo.RolloutCreate(ctx, feature.Name, body.Chart, body.Version)
 

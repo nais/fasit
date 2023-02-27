@@ -11,7 +11,7 @@ import (
 	"github.com/jackc/pgtype"
 )
 
-const featureDataCreate = `-- name: FeatureDataCreate :one
+const featureDataCreate = `-- name: FeatureDataCreate :exec
 INSERT INTO feature_data (
     name, 
     version, 
@@ -31,7 +31,8 @@ INSERT INTO feature_data (
     $6, 
     $7, 
     $8, 
-    $9) RETURNING name, version, chart, description, source, kinds, dependencies, values, default_values
+    $9
+)
 `
 
 type FeatureDataCreateParams struct {
@@ -46,8 +47,8 @@ type FeatureDataCreateParams struct {
 	DefaultValues pgtype.JSONB
 }
 
-func (q *Queries) FeatureDataCreate(ctx context.Context, arg FeatureDataCreateParams) (FeatureDatum, error) {
-	row := q.db.QueryRow(ctx, featureDataCreate,
+func (q *Queries) FeatureDataCreate(ctx context.Context, arg FeatureDataCreateParams) error {
+	_, err := q.db.Exec(ctx, featureDataCreate,
 		arg.FeatureName,
 		arg.Version,
 		arg.Chart,
@@ -58,17 +59,5 @@ func (q *Queries) FeatureDataCreate(ctx context.Context, arg FeatureDataCreatePa
 		arg.Values,
 		arg.DefaultValues,
 	)
-	var i FeatureDatum
-	err := row.Scan(
-		&i.Name,
-		&i.Version,
-		&i.Chart,
-		&i.Description,
-		&i.Source,
-		&i.Kinds,
-		&i.Dependencies,
-		&i.Values,
-		&i.DefaultValues,
-	)
-	return i, err
+	return err
 }
