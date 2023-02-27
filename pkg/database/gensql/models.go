@@ -67,6 +67,12 @@ type Audit struct {
 	CreatedAt   time.Time
 }
 
+type AutoInstall struct {
+	Kind    EnvironmentKind
+	Feature string
+	Created time.Time
+}
+
 type ConfigurationsEnvironment struct {
 	ID            uuid.UUID
 	Feature       string
@@ -88,12 +94,6 @@ type ConfigurationsGlobal struct {
 	Created     time.Time
 }
 
-type DefaultFeature struct {
-	Kind    EnvironmentKind
-	Feature string
-	Created time.Time
-}
-
 type Environment struct {
 	ID           uuid.UUID
 	TenantID     uuid.UUID
@@ -113,12 +113,22 @@ type EnvironmentValue struct {
 }
 
 type Feature struct {
-	Name             string
-	Chart            string
-	EnvironmentKinds []EnvironmentKind
-	Version          string
-	Created          time.Time
-	LastModified     time.Time
+	Name         string
+	Version      string
+	Created      time.Time
+	LastModified time.Time
+}
+
+type FeatureDatum struct {
+	Name          string
+	Version       string
+	Chart         string
+	Description   string
+	Source        string
+	Kinds         []EnvironmentKind
+	Dependencies  pgtype.JSONB
+	Values        pgtype.JSONB
+	DefaultValues pgtype.JSONB
 }
 
 type FeatureState struct {
@@ -165,12 +175,10 @@ type ReleaseStatus struct {
 }
 
 type Rollout struct {
-	ID               uuid.UUID
-	FeatureName      string
-	Chart            string
-	EnvironmentKinds []EnvironmentKind
-	Version          string
-	Created          time.Time
+	ID          uuid.UUID
+	FeatureName string
+	Version     string
+	Created     time.Time
 }
 
 type Status struct {

@@ -270,6 +270,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 		states[s.FeatureName] = s
 	}
 
+	// TODO: handle in separate process
 	err = r.autoInstallNextFeature(ctx, d, features, lookup, states)
 	if err != nil {
 		r.log.WithField("environment", d.Environment.ID).WithError(err).Errorf("unable to auto enable feature")

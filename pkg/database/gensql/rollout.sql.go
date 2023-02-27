@@ -10,23 +10,20 @@ import (
 )
 
 const rolloutCreate = `-- name: RolloutCreate :one
-INSERT INTO rollouts (feature_name, chart, version) VALUES ($1, $2, $3) RETURNING id, feature_name, chart, environment_kinds, version, created
+INSERT INTO rollouts (feature_name, version) VALUES ($1, $2) RETURNING id, feature_name, version, created
 `
 
 type RolloutCreateParams struct {
 	FeatureName string
-	Chart       string
 	Version     string
 }
 
 func (q *Queries) RolloutCreate(ctx context.Context, arg RolloutCreateParams) (Rollout, error) {
-	row := q.db.QueryRow(ctx, rolloutCreate, arg.FeatureName, arg.Chart, arg.Version)
+	row := q.db.QueryRow(ctx, rolloutCreate, arg.FeatureName, arg.Version)
 	var i Rollout
 	err := row.Scan(
 		&i.ID,
 		&i.FeatureName,
-		&i.Chart,
-		&i.EnvironmentKinds,
 		&i.Version,
 		&i.Created,
 	)
@@ -34,7 +31,7 @@ func (q *Queries) RolloutCreate(ctx context.Context, arg RolloutCreateParams) (R
 }
 
 const rolloutsForKind = `-- name: RolloutsForKind :many
-SELECT id, feature_name, chart, environment_kinds, version, created FROM rollouts WHERE $1::text = ANY(environment_kinds)
+SELECT id, feature_name, version, created FROM rollouts WHERE $1::text = ANY(environment_kinds)
 `
 
 func (q *Queries) RolloutsForKind(ctx context.Context, environmentKind string) ([]Rollout, error) {
@@ -49,8 +46,6 @@ func (q *Queries) RolloutsForKind(ctx context.Context, environmentKind string) (
 		if err := rows.Scan(
 			&i.ID,
 			&i.FeatureName,
-			&i.Chart,
-			&i.EnvironmentKinds,
 			&i.Version,
 			&i.Created,
 		); err != nil {

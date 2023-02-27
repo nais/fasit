@@ -13,6 +13,7 @@ import (
 type Querier interface {
 	AuditCreate(ctx context.Context, arg AuditCreateParams) error
 	AuditForEnvironment(ctx context.Context, arg AuditForEnvironmentParams) ([]Audit, error)
+	AutoInstallsForKind(ctx context.Context, environmentKind EnvironmentKind) ([]string, error)
 	ConfigDelete(ctx context.Context, id uuid.UUID) error
 	ConfigEnvUpdateOrCreate(ctx context.Context, arg ConfigEnvUpdateOrCreateParams) (ConfigurationsEnvironment, error)
 	ConfigGet(ctx context.Context, feature string) ([]ConfigurationsGlobal, error)
@@ -20,7 +21,6 @@ type Querier interface {
 	ConfigGlobalUpdateOrCreate(ctx context.Context, arg ConfigGlobalUpdateOrCreateParams) (ConfigurationsGlobal, error)
 	ConfigOverridesByFeature(ctx context.Context, feature string) ([]ConfigOverridesByFeatureRow, error)
 	ConfigUpdate(ctx context.Context, arg ConfigUpdateParams) (ConfigurationsGlobal, error)
-	DefaultFeaturesForKind(ctx context.Context, environmentKind EnvironmentKind) ([]string, error)
 	EnvConfig(ctx context.Context, arg EnvConfigParams) ([]EnvConfigRow, error)
 	EnvironmentByNames(ctx context.Context, arg EnvironmentByNamesParams) (Environment, error)
 	EnvironmentCI(ctx context.Context, kind EnvironmentKind) (Environment, error)
@@ -33,6 +33,7 @@ type Querier interface {
 	EnvironmentValueStore(ctx context.Context, arg EnvironmentValueStoreParams) error
 	EnvironmentValuesForEnvironment(ctx context.Context, arg EnvironmentValuesForEnvironmentParams) ([]EnvironmentValuesForEnvironmentRow, error)
 	EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]Environment, error)
+	FeatureDataCreate(ctx context.Context, arg FeatureDataCreateParams) (FeatureDatum, error)
 	FeatureStateCreateOrUpdate(ctx context.Context, arg FeatureStateCreateOrUpdateParams) (FeatureState, error)
 	FeatureStateGet(ctx context.Context, arg FeatureStateGetParams) (FeatureState, error)
 	FeatureStatesGet(ctx context.Context, environmentID uuid.UUID) ([]FeatureStatesGetRow, error)

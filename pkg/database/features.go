@@ -37,11 +37,9 @@ func (r *repo) featuresForKind(ctx context.Context, kind model.EnvironmentKind, 
 			}
 		}
 		features = append(features, gensql.Feature{
-			Name:             ro.FeatureName,
-			Version:          ro.Version,
-			Chart:            ro.Chart,
-			EnvironmentKinds: ro.EnvironmentKinds,
-			Created:          ro.Created,
+			Name:    ro.FeatureName,
+			Version: ro.Version,
+			Created: ro.Created,
 		})
 	}
 
@@ -52,10 +50,3 @@ func (r *repo) featuresForKind(ctx context.Context, kind model.EnvironmentKind, 
 
 	return features, nil
 }
-
-// func (r *repo) FeaturesForEnvironment(ctx context.Context, environmentID uuid.UUID, kind model.EnvironmentKind, ci bool) ([]*model.Feature, error) {
-// 	all, err := r.featuresForKind(ctx, kind, ci)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// }

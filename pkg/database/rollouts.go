@@ -13,7 +13,7 @@ type RolloutRepo interface {
 }
 
 func (r *repo) RolloutCreate(ctx context.Context, name, chart, version string) (*model.Rollout, error) {
-	ro, err := r.querier.RolloutCreate(ctx, gensql.RolloutCreateParams{FeatureName: name, Chart: chart, Version: version})
+	ro, err := r.querier.RolloutCreate(ctx, gensql.RolloutCreateParams{FeatureName: name, Version: version})
 	if err != nil {
 		return nil, err
 	}
@@ -21,7 +21,6 @@ func (r *repo) RolloutCreate(ctx context.Context, name, chart, version string) (
 	return &model.Rollout{
 		ID:          ro.ID,
 		Version:     ro.Version,
-		Chart:       ro.Chart,
 		Created:     ro.Created,
 		FeatureName: ro.FeatureName,
 	}, nil

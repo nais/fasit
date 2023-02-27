@@ -10,7 +10,7 @@ import (
 )
 
 const featuresForKind = `-- name: FeaturesForKind :many
-SELECT name, chart, environment_kinds, version, created, last_modified FROM features WHERE $1::text = ANY(environment_kinds) ORDER BY name
+SELECT name, version, created, last_modified FROM features WHERE $1::text = ANY(environment_kinds) ORDER BY name
 `
 
 func (q *Queries) FeaturesForKind(ctx context.Context, environmentKind string) ([]Feature, error) {
@@ -24,8 +24,6 @@ func (q *Queries) FeaturesForKind(ctx context.Context, environmentKind string) (
 		var i Feature
 		if err := rows.Scan(
 			&i.Name,
-			&i.Chart,
-			&i.EnvironmentKinds,
 			&i.Version,
 			&i.Created,
 			&i.LastModified,

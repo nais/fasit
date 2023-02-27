@@ -59,6 +59,32 @@ func (_m *Querier) AuditForEnvironment(ctx context.Context, arg gensql.AuditForE
 	return r0, r1
 }
 
+// AutoInstallsForKind provides a mock function with given fields: ctx, environmentKind
+func (_m *Querier) AutoInstallsForKind(ctx context.Context, environmentKind gensql.EnvironmentKind) ([]string, error) {
+	ret := _m.Called(ctx, environmentKind)
+
+	var r0 []string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.EnvironmentKind) ([]string, error)); ok {
+		return rf(ctx, environmentKind)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.EnvironmentKind) []string); ok {
+		r0 = rf(ctx, environmentKind)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, gensql.EnvironmentKind) error); ok {
+		r1 = rf(ctx, environmentKind)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ConfigDelete provides a mock function with given fields: ctx, id
 func (_m *Querier) ConfigDelete(ctx context.Context, id uuid.UUID) error {
 	ret := _m.Called(ctx, id)
@@ -216,32 +242,6 @@ func (_m *Querier) ConfigUpdate(ctx context.Context, arg gensql.ConfigUpdatePara
 
 	if rf, ok := ret.Get(1).(func(context.Context, gensql.ConfigUpdateParams) error); ok {
 		r1 = rf(ctx, arg)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// DefaultFeaturesForKind provides a mock function with given fields: ctx, environmentKind
-func (_m *Querier) DefaultFeaturesForKind(ctx context.Context, environmentKind gensql.EnvironmentKind) ([]string, error) {
-	ret := _m.Called(ctx, environmentKind)
-
-	var r0 []string
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, gensql.EnvironmentKind) ([]string, error)); ok {
-		return rf(ctx, environmentKind)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, gensql.EnvironmentKind) []string); ok {
-		r0 = rf(ctx, environmentKind)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]string)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, gensql.EnvironmentKind) error); ok {
-		r1 = rf(ctx, environmentKind)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -528,6 +528,30 @@ func (_m *Querier) EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]g
 
 	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
 		r1 = rf(ctx, tenantID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// FeatureDataCreate provides a mock function with given fields: ctx, arg
+func (_m *Querier) FeatureDataCreate(ctx context.Context, arg gensql.FeatureDataCreateParams) (gensql.FeatureDatum, error) {
+	ret := _m.Called(ctx, arg)
+
+	var r0 gensql.FeatureDatum
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.FeatureDataCreateParams) (gensql.FeatureDatum, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.FeatureDataCreateParams) gensql.FeatureDatum); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(gensql.FeatureDatum)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, gensql.FeatureDataCreateParams) error); ok {
+		r1 = rf(ctx, arg)
 	} else {
 		r1 = ret.Error(1)
 	}

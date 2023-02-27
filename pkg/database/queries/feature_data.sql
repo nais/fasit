@@ -1,0 +1,21 @@
+-- name: FeatureDataCreate :one
+INSERT INTO feature_data (
+    name, 
+    version, 
+    chart, 
+    description, 
+    source, 
+    kinds, 
+    dependencies, 
+    values, 
+    default_values
+) VALUES (
+    @feature_name, 
+    @version, 
+    @chart, 
+    @description, 
+    @source, 
+    @kinds, 
+    @dependencies, 
+    @values, 
+    @default_values) RETURNING *;

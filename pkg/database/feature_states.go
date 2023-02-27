@@ -75,7 +75,7 @@ func (r *repo) FeatureStateGet(ctx context.Context, envID uuid.UUID, featureName
 	}
 
 	kind := model.EnvironmentKind("TODO") // TODO
-	defaultFeatures, err := r.DefaultFeaturesForKind(ctx, kind)
+	defaultFeatures, err := r.AutoInstallsForKind(ctx, kind)
 	if err != nil {
 		return nil, err
 	}
