@@ -15,7 +15,7 @@ INSERT INTO feature_data (
     @chart, 
     @description, 
     @source, 
-    @kinds, 
+    (@kinds::text[])::environment_kind[],
     @dependencies, 
     @values, 
     @default_values

@@ -15,10 +15,10 @@ type FeatureDataRepo interface {
 	FeatureDataCreate(context.Context, feature.Feature) error
 }
 
-func environmentKindToSQL(kinds []model.EnvironmentKind) []gensql.EnvironmentKind {
-	ret := []gensql.EnvironmentKind{}
+func environmentKindToSQL(kinds []model.EnvironmentKind) []string {
+	ret := []string{}
 	for _, kind := range kinds {
-		ret = append(ret, gensql.EnvironmentKind(kind))
+		ret = append(ret, kind.String())
 	}
 	return ret
 }

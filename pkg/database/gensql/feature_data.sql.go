@@ -28,7 +28,7 @@ INSERT INTO feature_data (
     $3, 
     $4, 
     $5, 
-    $6, 
+    ($6::text[])::environment_kind[],
     $7, 
     $8, 
     $9
@@ -41,7 +41,7 @@ type FeatureDataCreateParams struct {
 	Chart         string
 	Description   string
 	Source        string
-	Kinds         []EnvironmentKind
+	Kinds         []string
 	Dependencies  pgtype.JSONB
 	Values        pgtype.JSONB
 	DefaultValues pgtype.JSONB
