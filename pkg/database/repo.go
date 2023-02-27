@@ -56,9 +56,14 @@ type Repo interface {
 	TenantRepo
 	WarningRepo
 
+	Transaction
+
 	Close()
 	Metrics(meter metric.Meter) error
 	WithTx(ctx context.Context) (Repo, pgx.Tx, error)
+}
+
+type Transaction interface {
 	TxFunc(ctx context.Context, fn TXFunc) error
 }
 

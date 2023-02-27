@@ -19,6 +19,8 @@ type store interface {
 	database.FeatureDataRepo
 	database.FeatureStateRepo
 	database.RolloutRepo
+
+	database.Transaction
 }
 
 type Claims struct {
@@ -109,13 +111,19 @@ func (r *Rollout) Rollout(w http.ResponseWriter, req *http.Request) {
 	// 	})
 	// 	return
 	// }
+	err = r.repo.TxFunc(ctx, func(repo database.Repo) error {
+		if err := repo.FeatureDataCreate(ctx, *feature); err != nil {
+			return err
+		}
 
-	if err := r.repo.FeatureDataCreate(ctx, *feature); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+		if _, err := repo.RolloutCreate(ctx, feature.Name, body.Version); err != nil {
+			return err
+		}
 
-	if _, err := r.repo.RolloutCreate(ctx, feature.Name, body.Chart, body.Version); err != nil {
+		return nil
+	})
+
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}

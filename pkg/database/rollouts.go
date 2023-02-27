@@ -8,11 +8,11 @@ import (
 )
 
 type RolloutRepo interface {
-	RolloutCreate(ctx context.Context, name, chart, version string) (*model.Rollout, error)
+	RolloutCreate(ctx context.Context, name, version string) (*model.Rollout, error)
 	RolloutsListen(ctx context.Context, fn ListenFunc) error
 }
 
-func (r *repo) RolloutCreate(ctx context.Context, name, chart, version string) (*model.Rollout, error) {
+func (r *repo) RolloutCreate(ctx context.Context, name, version string) (*model.Rollout, error) {
 	ro, err := r.querier.RolloutCreate(ctx, gensql.RolloutCreateParams{FeatureName: name, Version: version})
 	if err != nil {
 		return nil, err
