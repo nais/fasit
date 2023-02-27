@@ -1,11 +1,11 @@
 -- +goose Up
 CREATE TABLE features(
-    name text NOT NULL UNIQUE,
-    chart text NOT NULL UNIQUE,
-    environment_kinds environment_kind[] NOT NULL,
+    name text PRIMARY KEY,
     version text NOT NULL,
     "created"        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    "last_modified"  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    "last_modified"  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+    FOREIGN KEY (name, version) REFERENCES feature_data (name, version)
 );
 
 CREATE TRIGGER features_set_modified
