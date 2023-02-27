@@ -7,11 +7,11 @@ import (
 
 	"github.com/jackc/pgtype"
 	"github.com/nais/fasit/pkg/database/gensql"
-	"github.com/nais/fasit/pkg/feature"
+	feature "github.com/nais/fasit/pkg/feature2"
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
-type FeatureData interface {
+type FeatureDataRepo interface {
 	FeatureDataCreate(context.Context, feature.Feature) error
 }
 

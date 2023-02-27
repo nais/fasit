@@ -46,6 +46,7 @@ type Repo interface {
 	ConfigRepo
 	EnvironmentRepo
 	EnvironmentValueRepo
+	FeatureDataRepo
 	FeatureStateRepo
 	HealthRepo
 	KubernetesNodeRepo

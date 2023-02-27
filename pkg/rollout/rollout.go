@@ -16,6 +16,7 @@ import (
 
 type store interface {
 	database.EnvironmentRepo
+	database.FeatureDataRepo
 	database.FeatureStateRepo
 	database.RolloutRepo
 }
@@ -108,9 +109,16 @@ func (r *Rollout) Rollout(w http.ResponseWriter, req *http.Request) {
 	// 	})
 	// 	return
 	// }
-	r.repo.FeatureDataC
 
-	r.repo.RolloutCreate(ctx, feature.Name, body.Chart, body.Version)
+	if err := r.repo.FeatureDataCreate(ctx, *feature); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if _, err := r.repo.RolloutCreate(ctx, feature.Name, body.Chart, body.Version); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]any{
