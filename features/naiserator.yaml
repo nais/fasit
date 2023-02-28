@@ -1,7 +1,7 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/naiserator
 source: https://github.com/nais/naiserator/tree/master/charts
 version: 1.1.4
-repo: ""
+repo: "naiserator"
 description: "creates k8s resources based on application spec"
 environmentKinds:
   - "tenant"
