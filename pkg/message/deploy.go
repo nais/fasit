@@ -10,7 +10,6 @@ type DeployInstruction struct {
 	// Version is the chart version
 	Version    string
 	Chart      string
-	Repo       string
 	ConfigHash string
 	Timeout    time.Duration
 	Values     map[string]any

@@ -535,6 +535,30 @@ func (_m *Querier) EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]g
 	return r0, r1
 }
 
+// FeatureByName provides a mock function with given fields: ctx, name
+func (_m *Querier) FeatureByName(ctx context.Context, name string) (gensql.Feature, error) {
+	ret := _m.Called(ctx, name)
+
+	var r0 gensql.Feature
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (gensql.Feature, error)); ok {
+		return rf(ctx, name)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) gensql.Feature); ok {
+		r0 = rf(ctx, name)
+	} else {
+		r0 = ret.Get(0).(gensql.Feature)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, name)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // FeatureDataCreate provides a mock function with given fields: ctx, arg
 func (_m *Querier) FeatureDataCreate(ctx context.Context, arg gensql.FeatureDataCreateParams) error {
 	ret := _m.Called(ctx, arg)
@@ -624,19 +648,19 @@ func (_m *Querier) FeatureStatesGet(ctx context.Context, environmentID uuid.UUID
 }
 
 // FeaturesForKind provides a mock function with given fields: ctx, environmentKind
-func (_m *Querier) FeaturesForKind(ctx context.Context, environmentKind string) ([]gensql.Feature, error) {
+func (_m *Querier) FeaturesForKind(ctx context.Context, environmentKind string) ([]gensql.FeaturesForKindRow, error) {
 	ret := _m.Called(ctx, environmentKind)
 
-	var r0 []gensql.Feature
+	var r0 []gensql.FeaturesForKindRow
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) ([]gensql.Feature, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]gensql.FeaturesForKindRow, error)); ok {
 		return rf(ctx, environmentKind)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) []gensql.Feature); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) []gensql.FeaturesForKindRow); ok {
 		r0 = rf(ctx, environmentKind)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]gensql.Feature)
+			r0 = ret.Get(0).([]gensql.FeaturesForKindRow)
 		}
 	}
 
@@ -866,19 +890,19 @@ func (_m *Querier) RolloutCreate(ctx context.Context, arg gensql.RolloutCreatePa
 }
 
 // RolloutsForKind provides a mock function with given fields: ctx, environmentKind
-func (_m *Querier) RolloutsForKind(ctx context.Context, environmentKind string) ([]gensql.Rollout, error) {
+func (_m *Querier) RolloutsForKind(ctx context.Context, environmentKind string) ([]gensql.RolloutsForKindRow, error) {
 	ret := _m.Called(ctx, environmentKind)
 
-	var r0 []gensql.Rollout
+	var r0 []gensql.RolloutsForKindRow
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) ([]gensql.Rollout, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]gensql.RolloutsForKindRow, error)); ok {
 		return rf(ctx, environmentKind)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) []gensql.Rollout); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) []gensql.RolloutsForKindRow); ok {
 		r0 = rf(ctx, environmentKind)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]gensql.Rollout)
+			r0 = ret.Get(0).([]gensql.RolloutsForKindRow)
 		}
 	}
 

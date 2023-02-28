@@ -7,7 +7,6 @@ package graph
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/graph/graphgen"
@@ -83,11 +82,11 @@ func (r *globalConfigurationResolver) ChartValue(ctx context.Context, obj *model
 
 // ConfigurationCreate is the resolver for the configurationCreate field.
 func (r *mutationResolver) ConfigurationCreate(ctx context.Context, configuration model.NewConfiguration) (model.Configuration, error) {
-	if err := r.Features.ValidConfig(configuration.Feature, configuration.Key, configuration.Value); err != nil {
-		return nil, fmt.Errorf("invalid configuration %q for %q: %w", configuration.Key, configuration.Feature, err)
-	}
+	// if err := r.Features.ValidConfig(configuration.Feature, configuration.Key, configuration.Value); err != nil {
+	// 	return nil, fmt.Errorf("invalid configuration %q for %q: %w", configuration.Key, configuration.Feature, err)
+	// }
 
-	configuration.Secret = r.Features.IsSecret(configuration.Feature, configuration.Key)
+	// configuration.Secret = r.Features.IsSecret(configuration.Feature, configuration.Key)
 	return r.Repo.ConfigCreate(ctx, configuration)
 }
 
@@ -213,51 +212,55 @@ func (r *queryResolver) Configuration(ctx context.Context, feature string, envID
 
 // EnvConfig is the resolver for the envConfig field.
 func (r *queryResolver) EnvConfig(ctx context.Context, feature string, envID uuid.UUID) (*model.EnvConfig, error) {
-	env, err := r.Repo.EnvironmentGet(ctx, envID)
-	if err != nil {
-		return nil, err
-	}
-	config, err := r.Repo.EnvConfig(ctx, feature, envID)
-	if err != nil {
-		return nil, err
-	}
-
-	ret := &model.EnvConfig{
-		Configuration: config,
-	}
-
-	f := r.Resolver.Features.Get(feature)
-	ret.Configuration = removeIgnoredKinds(ret.Configuration, f, env.Kind)
-
-	// if f == nil || len(f.Mapping) == 0 {
-	// 	return ret, nil
+	// env, err := r.Repo.EnvironmentGet(ctx, envID)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// config, err := r.Repo.EnvConfig(ctx, feature, envID)
+	// if err != nil {
+	// 	return nil, err
 	// }
 
-	mappingValues, envKind, err := r.Repo.MappingValuesForEnvironment(ctx, envID, false)
-	if err != nil {
-		return nil, err
-	}
+	// ret := &model.EnvConfig{
+	// 	Configuration: config,
+	// }
 
-	ret.Mapping, err = mappingToSlice(f, envKind, mappingValues)
-	if err != nil {
-		return nil, err
-	}
-	return ret, nil
+	// f, err := r.Resolver.resolveFeatureByName(feature)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("resolve feature by name: %w", err)
+	// }
+
+	// // if f == nil || len(f.Mapping) == 0 {
+	// // 	return ret, nil
+	// // }
+
+	// mappingValues, envKind, err := r.Repo.MappingValuesForEnvironment(ctx, envID, false)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// ret.Mapping, err = mappingToSlice(f, envKind, mappingValues)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// return ret, nil
+	panic("not implemented")
 }
 
 // HelmValues is the resolver for the helmValues field.
 func (r *queryResolver) HelmValues(ctx context.Context, feature string, envID uuid.UUID) (json.RawMessage, error) {
-	f := r.Resolver.Features.Get(feature)
-	if f == nil {
-		return json.RawMessage{}, nil
-	}
+	// f := r.Resolver.Features.Get(feature)
+	// if f == nil {
+	// 	return json.RawMessage{}, nil
+	// }
 
-	v, err := r.Repo.HelmValues(ctx, *f, envID)
-	if err != nil {
-		return nil, err
-	}
+	// v, err := r.Repo.HelmValues(ctx, f, envID)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	return json.Marshal(v)
+	// return json.Marshal(v)
+	panic("not implemented")
 }
 
 // EnvConfiguration returns graphgen.EnvConfigurationResolver implementation.
@@ -270,5 +273,7 @@ func (r *Resolver) GlobalConfiguration() graphgen.GlobalConfigurationResolver {
 	return &globalConfigurationResolver{r}
 }
 
-type envConfigurationResolver struct{ *Resolver }
-type globalConfigurationResolver struct{ *Resolver }
+type (
+	envConfigurationResolver    struct{ *Resolver }
+	globalConfigurationResolver struct{ *Resolver }
+)

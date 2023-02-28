@@ -64,7 +64,7 @@ type Feature struct {
 	Description string `yaml:"description,omitempty" json:"description,omitempty"`
 	// Source should be the URL to the helm chart source code.
 	Source     string         `yaml:"source" json:"source"`
-	ValuesYaml map[string]any `yaml:"-" json:"-"`
+	ValuesYAML map[string]any `yaml:"-" json:"-"`
 }
 
 func FromChart(chart, version string) (*Feature, error) {
@@ -115,7 +115,7 @@ func FromChart(chart, version string) (*Feature, error) {
 			if err != nil {
 				return nil, err
 			}
-			f.ValuesYaml = vals
+			f.ValuesYAML = vals
 		}
 	}
 

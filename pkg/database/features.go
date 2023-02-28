@@ -2,27 +2,43 @@ package database
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"sort"
+	"time"
 
-	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database/gensql"
+	feature "github.com/nais/fasit/pkg/feature2"
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
 type FeaturesRepo interface {
-	FeaturesForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]*model.Feature, error)
+	FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, ci bool) ([]*feature.Feature, error)
+	FeatureByName(ctx context.Context, name string) (*model.Feature, error)
 }
 
-func (r *repo) featuresForKind(ctx context.Context, kind model.EnvironmentKind, ci bool) ([]gensql.Feature, error) {
+func (r *repo) FeatureByName(ctx context.Context, name string) (*model.Feature, error) {
+	f, err := r.querier.FeatureByName(ctx, name)
+	if err != nil {
+		return nil, fmt.Errorf("get feature by name from db: %w", err)
+	}
+
+	return &model.Feature{
+		Name:    f.Name,
+		Version: f.Version,
+	}, nil
+}
+
+func (r *repo) FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, ci bool) ([]*feature.Feature, error) {
 	features, err := r.querier.FeaturesForKind(ctx, kind.String())
 	if err != nil {
 		return nil, err
 	}
+
 	if !ci {
-		return features, nil
+		return featuresFromSQL(features)
 	}
 
-	// fetch all rollouts for the given environment kind
 	rollouts, err := r.querier.RolloutsForKind(ctx, kind.String())
 	if err != nil {
 		return nil, err
@@ -30,16 +46,24 @@ func (r *repo) featuresForKind(ctx context.Context, kind model.EnvironmentKind, 
 
 	for _, ro := range rollouts {
 		for i, f := range features {
-			if f.Name == ro.FeatureName {
+			if f.Name == ro.Name {
 				// delete feature from slice
 				features = append(features[:i], features[i+1:]...)
 				break
 			}
 		}
-		features = append(features, gensql.Feature{
-			Name:    ro.FeatureName,
-			Version: ro.Version,
-			Created: ro.Created,
+		features = append(features, gensql.FeaturesForKindRow{
+			Name:          ro.Name,
+			Description:   ro.Description,
+			Version:       ro.Version,
+			Chart:         ro.Chart,
+			Source:        ro.Source,
+			Timeout:       ro.Timeout,
+			Dependencies:  ro.Dependencies,
+			DefaultValues: ro.DefaultValues,
+			Kinds:         ro.Kinds,
+			Values:        ro.Values,
+			Created:       ro.Created,
 		})
 	}
 
@@ -48,5 +72,35 @@ func (r *repo) featuresForKind(ctx context.Context, kind model.EnvironmentKind, 
 		return features[i].Name < features[j].Name
 	})
 
-	return features, nil
+	return featuresFromSQL(features)
+}
+
+func featuresFromSQL(features []gensql.FeaturesForKindRow) ([]*feature.Feature, error) {
+	var ret []*feature.Feature
+	for _, f := range features {
+		deps := feature.Dependencies{}
+		if err := json.Unmarshal(f.Dependencies.Bytes, &deps); err != nil {
+			return nil, fmt.Errorf("unmarshal dependencies: %w", err)
+		}
+
+		valuesYAML := make(map[string]any)
+		if err := json.Unmarshal(f.DefaultValues.Bytes, &valuesYAML); err != nil {
+			return nil, fmt.Errorf("unmarshal default values: %w", err)
+		}
+
+		feature := &feature.Feature{
+			Name:        f.Name,
+			Description: f.Description,
+			Version:     f.Version,
+			Chart:       f.Chart,
+			Source:      f.Source,
+			FeatureYAML: feature.FeatureYAML{
+				Dependencies: deps,
+				Timeout:      time.Duration(f.Timeout.Int64) * time.Microsecond,
+			},
+			ValuesYAML: valuesYAML,
+		}
+		ret = append(ret, feature)
+	}
+	return ret, nil
 }

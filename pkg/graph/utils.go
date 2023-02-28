@@ -40,20 +40,6 @@ func marshalFeature(feat feature.Feature) (*model.Feature, error) {
 	return nil, nil
 }
 
-func removeIgnoredKinds(old []model.Configuration, f *feature.Feature, envKind model.EnvironmentKind) (ret []model.Configuration) {
-	// for key, val := range f.Config {
-	// 	for _, c := range old {
-	// 		if c.GetKey() == key {
-	// 			if val.IgnoreKind.Contains(envKind) {
-	// 				continue
-	// 			}
-	// 			ret = append(ret, c)
-	// 		}
-	// 	}
-	// }
-	return ret
-}
-
 func contains[T comparable](s []T, value T) bool {
 	for _, f := range s {
 		if f == value {

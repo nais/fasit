@@ -2,8 +2,10 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgtype"
 	"github.com/nais/fasit/pkg/database/gensql"
@@ -40,18 +42,22 @@ func (r *repo) FeatureDataCreate(ctx context.Context, feature feature.Feature) e
 	if err != nil {
 		return fmt.Errorf("marshal values to json: %w", err)
 	}
-	defaultVals, err := toJSONB(feature.ValuesYaml)
+	defaultVals, err := toJSONB(feature.ValuesYAML)
 	if err != nil {
 		return fmt.Errorf("marshal default values to json: %w", err)
 	}
 
 	return r.querier.FeatureDataCreate(ctx, gensql.FeatureDataCreateParams{
-		FeatureName:   feature.Name,
-		Version:       feature.Version,
-		Chart:         feature.Chart,
-		Description:   feature.Description,
-		Source:        feature.Source,
-		Kinds:         environmentKindToSQL(feature.EnvironmentKinds),
+		FeatureName: feature.Name,
+		Version:     feature.Version,
+		Chart:       feature.Chart,
+		Description: feature.Description,
+		Source:      feature.Source,
+		Kinds:       environmentKindToSQL(feature.EnvironmentKinds),
+		Timeout: sql.NullInt64{
+			Int64: int64(feature.Timeout / time.Microsecond),
+			Valid: feature.Timeout > 0,
+		},
 		Dependencies:  dep,
 		Values:        vals,
 		DefaultValues: defaultVals,

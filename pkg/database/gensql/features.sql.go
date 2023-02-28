@@ -7,24 +7,74 @@ package gensql
 
 import (
 	"context"
+	"database/sql"
+	"time"
+
+	"github.com/jackc/pgtype"
 )
 
-const featuresForKind = `-- name: FeaturesForKind :many
-SELECT name, version, created, last_modified FROM features WHERE $1::text = ANY(environment_kinds) ORDER BY name
+const featureByName = `-- name: FeatureByName :one
+SELECT name, version, created, last_modified
+FROM features 
+WHERE name = $1
+ORDER BY name
 `
 
-func (q *Queries) FeaturesForKind(ctx context.Context, environmentKind string) ([]Feature, error) {
+func (q *Queries) FeatureByName(ctx context.Context, name string) (Feature, error) {
+	row := q.db.QueryRow(ctx, featureByName, name)
+	var i Feature
+	err := row.Scan(
+		&i.Name,
+		&i.Version,
+		&i.Created,
+		&i.LastModified,
+	)
+	return i, err
+}
+
+const featuresForKind = `-- name: FeaturesForKind :many
+SELECT feature_data.name, feature_data.version, feature_data.chart, feature_data.description, feature_data.source, feature_data.kinds, feature_data.dependencies, feature_data.values, feature_data.timeout, feature_data.default_values, features.created, features.last_modified 
+FROM features 
+JOIN feature_data ON features.name = feature_data.name AND features.version = feature_data.version
+WHERE $1::text = ANY(environment_kinds) 
+ORDER BY features.name
+`
+
+type FeaturesForKindRow struct {
+	Name          string
+	Version       string
+	Chart         string
+	Description   string
+	Source        string
+	Kinds         []EnvironmentKind
+	Dependencies  pgtype.JSONB
+	Values        pgtype.JSONB
+	Timeout       sql.NullInt64
+	DefaultValues pgtype.JSONB
+	Created       time.Time
+	LastModified  time.Time
+}
+
+func (q *Queries) FeaturesForKind(ctx context.Context, environmentKind string) ([]FeaturesForKindRow, error) {
 	rows, err := q.db.Query(ctx, featuresForKind, environmentKind)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []Feature{}
+	items := []FeaturesForKindRow{}
 	for rows.Next() {
-		var i Feature
+		var i FeaturesForKindRow
 		if err := rows.Scan(
 			&i.Name,
 			&i.Version,
+			&i.Chart,
+			&i.Description,
+			&i.Source,
+			&i.Kinds,
+			&i.Dependencies,
+			&i.Values,
+			&i.Timeout,
+			&i.DefaultValues,
 			&i.Created,
 			&i.LastModified,
 		); err != nil {

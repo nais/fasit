@@ -243,9 +243,5 @@ func helmArgs(m message.DeployInstruction, valuesFile string) ([]string, error) 
 		timeout.String(),
 	}
 
-	if m.Repo != "" {
-		args = append(args, "--repo", m.Repo)
-	}
-
 	return args, nil
 }

@@ -13,7 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/auth"
 	"github.com/nais/fasit/pkg/database"
-	"github.com/nais/fasit/pkg/feature"
+	feature "github.com/nais/fasit/pkg/feature2"
 	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/nais/fasit/pkg/message"
 	"github.com/sirupsen/logrus"
@@ -25,14 +25,15 @@ import (
 
 type ReconcilerStore interface {
 	ConfigListen(ctx context.Context, fn database.ListenFunc) error
+	FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, ci bool) ([]*feature.Feature, error)
 	FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *feature.Feature, enabled bool) (*model.FeatureState, error)
 	FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
 	FeatureStatesListen(ctx context.Context, fn database.ListenFunc) error
 	HealthGet(ctx context.Context, environmentID uuid.UUID) (*model.Health, error)
-	HelmValues(ctx context.Context, feature feature.Feature, envID uuid.UUID) (map[string]any, error)
+	HelmValues(ctx context.Context, feature *feature.Feature, envID uuid.UUID) (map[string]any, error)
 	RolloutsListen(ctx context.Context, fn database.ListenFunc) error
 	StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]*model.Status, error)
-	TenantEnvironments(ctx context.Context) ([]*model.TenantEnvironments, error)
+	TenantEnvironments(ctx context.Context) ([]*model.TenantEnvironment, error)
 }
 
 type Publisher interface {
@@ -43,11 +44,10 @@ type Publisher interface {
 type NewPublisher func(projectID, topicID string, log *logrus.Entry) Publisher
 
 type Reconciler struct {
-	repo       ReconcilerStore
-	featureMgr *feature.Manager
-	publisher  NewPublisher
-	log        *logrus.Entry
-	projectID  string
+	repo      ReconcilerStore
+	publisher NewPublisher
+	log       *logrus.Entry
+	projectID string
 
 	lock    sync.Mutex
 	running bool
@@ -59,7 +59,6 @@ type Reconciler struct {
 
 func NewReconciler(
 	repo ReconcilerStore,
-	featureMgr *feature.Manager,
 	publisher NewPublisher,
 	gcpProjectID string,
 	meter metric.Meter,
@@ -76,7 +75,6 @@ func NewReconciler(
 
 	return &Reconciler{
 		repo:           repo,
-		featureMgr:     featureMgr,
 		publisher:      publisher,
 		log:            log,
 		projectID:      gcpProjectID,
@@ -183,7 +181,7 @@ func (r *Reconciler) reconcile(ctx context.Context) error {
 
 func (r *Reconciler) autoInstallNextFeature(
 	ctx context.Context,
-	d *model.TenantEnvironments,
+	d *model.TenantEnvironment,
 	features []feature.Feature,
 	status map[string]*model.Status,
 	featureStates map[string]*model.FeatureState,
@@ -229,7 +227,7 @@ func (r *Reconciler) autoInstallNextFeature(
 	return nil
 }
 
-func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEnvironments) error {
+func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEnvironment) error {
 	metricAttrs := []attribute.KeyValue{
 		attribute.Key("environment").String(d.Name),
 		attribute.Key("tenant").String(d.TenantName),
@@ -248,7 +246,10 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 		return nil
 	}
 
-	features := r.featureMgr.Features()
+	features, err := r.repo.FeaturesForKind(ctx, d.Kind, d.CI)
+	if err != nil {
+		return fmt.Errorf("features for kind: %w", err)
+	}
 
 	envStatus, err := r.repo.StatusForEnvironment(ctx, d.Environment.ID)
 	if err != nil {
@@ -270,11 +271,11 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 		states[s.FeatureName] = s
 	}
 
-	// TODO: handle in separate process
-	err = r.autoInstallNextFeature(ctx, d, features, lookup, states)
-	if err != nil {
-		r.log.WithField("environment", d.Environment.ID).WithError(err).Errorf("unable to auto enable feature")
-	}
+	// // TODO: handle in separate process
+	// err = r.autoInstallNextFeature(ctx, d, features, lookup, states)
+	// if err != nil {
+	// 	r.log.WithField("environment", d.Environment.ID).WithError(err).Errorf("unable to auto enable feature")
+	// }
 
 	mgr := r.publisher(r.projectID, "naisd-"+d.TenantName+"-"+d.Name, r.log)
 	defer mgr.Stop()
@@ -314,10 +315,9 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 
 		r.deployMessages.Add(ctx, 1, append(metricAttrs, attribute.Key("feature").String(f.Name))...)
 		err = mgr.Publish(ctx, message.DeployInstruction{
-			Name:    f.Name,
-			Version: f.Version,
-			Chart:   f.Chart,
-			// Repo:       f.Repo,
+			Name:       f.Name,
+			Version:    f.Version,
+			Chart:      f.Chart,
 			ConfigHash: hash,
 			Timeout:    f.Timeout,
 			Values:     values,
@@ -330,7 +330,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 	return nil
 }
 
-func generateHash(values map[string]any, feature feature.Feature, enabledAt *time.Time) (string, error) {
+func generateHash(values map[string]any, feature *feature.Feature, enabledAt *time.Time) (string, error) {
 	b, err := json.Marshal(values)
 	if err != nil {
 		return "", err

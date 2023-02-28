@@ -41,19 +41,20 @@ func (r *outdatedInfoResolver) Feature(ctx context.Context, obj *model.OutdatedI
 
 // Features is the resolver for the features field.
 func (r *queryResolver) Features(ctx context.Context, kind *model.EnvironmentKind) ([]*model.Feature, error) {
-	features := []*model.Feature{}
-	for _, feature := range r.Resolver.Features.Features() {
-		if kind != nil && !contains(feature.EnvironmentKinds, *kind) {
-			continue
-		}
+	panic("not implemented")
+	// features := []*model.Feature{}
+	// for _, feature := range r.Resolver.Features.Features() {
+	// 	if kind != nil && !contains(feature.EnvironmentKinds, *kind) {
+	// 		continue
+	// 	}
 
-		tmp, err := marshalFeature(feature)
-		if err != nil {
-			return nil, err
-		}
-		features = append(features, tmp)
-	}
-	return features, nil
+	// 	tmp, err := marshalFeature(feature)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	features = append(features, tmp)
+	// }
+	// return features, nil
 }
 
 // Feature is the resolver for the feature field.
@@ -84,6 +85,8 @@ func (r *Resolver) Feature() graphgen.FeatureResolver { return &featureResolver{
 // OutdatedInfo returns graphgen.OutdatedInfoResolver implementation.
 func (r *Resolver) OutdatedInfo() graphgen.OutdatedInfoResolver { return &outdatedInfoResolver{r} }
 
-type configOverrideResolver struct{ *Resolver }
-type featureResolver struct{ *Resolver }
-type outdatedInfoResolver struct{ *Resolver }
+type (
+	configOverrideResolver struct{ *Resolver }
+	featureResolver        struct{ *Resolver }
+	outdatedInfoResolver   struct{ *Resolver }
+)

@@ -128,6 +128,7 @@ type FeatureDatum struct {
 	Kinds         []EnvironmentKind
 	Dependencies  pgtype.JSONB
 	Values        pgtype.JSONB
+	Timeout       sql.NullInt64
 	DefaultValues pgtype.JSONB
 }
 

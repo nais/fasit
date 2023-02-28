@@ -7,6 +7,7 @@ package gensql
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/jackc/pgtype"
 )
@@ -19,6 +20,7 @@ INSERT INTO feature_data (
     description, 
     source, 
     kinds, 
+    timeout,
     dependencies, 
     values, 
     default_values
@@ -29,9 +31,10 @@ INSERT INTO feature_data (
     $4, 
     $5, 
     ($6::text[])::environment_kind[],
-    $7, 
+    $7,
     $8, 
-    $9
+    $9, 
+    $10
 )
 `
 
@@ -42,6 +45,7 @@ type FeatureDataCreateParams struct {
 	Description   string
 	Source        string
 	Kinds         []string
+	Timeout       sql.NullInt64
 	Dependencies  pgtype.JSONB
 	Values        pgtype.JSONB
 	DefaultValues pgtype.JSONB
@@ -55,6 +59,7 @@ func (q *Queries) FeatureDataCreate(ctx context.Context, arg FeatureDataCreatePa
 		arg.Description,
 		arg.Source,
 		arg.Kinds,
+		arg.Timeout,
 		arg.Dependencies,
 		arg.Values,
 		arg.DefaultValues,

@@ -33,11 +33,12 @@ type Querier interface {
 	EnvironmentValueStore(ctx context.Context, arg EnvironmentValueStoreParams) error
 	EnvironmentValuesForEnvironment(ctx context.Context, arg EnvironmentValuesForEnvironmentParams) ([]EnvironmentValuesForEnvironmentRow, error)
 	EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]Environment, error)
+	FeatureByName(ctx context.Context, name string) (Feature, error)
 	FeatureDataCreate(ctx context.Context, arg FeatureDataCreateParams) error
 	FeatureStateCreateOrUpdate(ctx context.Context, arg FeatureStateCreateOrUpdateParams) (FeatureState, error)
 	FeatureStateGet(ctx context.Context, arg FeatureStateGetParams) (FeatureState, error)
 	FeatureStatesGet(ctx context.Context, environmentID uuid.UUID) ([]FeatureStatesGetRow, error)
-	FeaturesForKind(ctx context.Context, environmentKind string) ([]Feature, error)
+	FeaturesForKind(ctx context.Context, environmentKind string) ([]FeaturesForKindRow, error)
 	HealthStatusCreateOrUpdate(ctx context.Context, arg HealthStatusCreateOrUpdateParams) (HealthStatus, error)
 	HealthStatusGet(ctx context.Context, environmentID uuid.UUID) (HealthStatus, error)
 	KubernetesNodeCreateOrUpdate(ctx context.Context, arg KubernetesNodeCreateOrUpdateParams) error
@@ -48,7 +49,7 @@ type Querier interface {
 	ReleaseStatusDeleteByEnvironment(ctx context.Context, environmentID uuid.UUID) error
 	ReleaseStatusesGet(ctx context.Context, environmentID uuid.UUID) ([]ReleaseStatus, error)
 	RolloutCreate(ctx context.Context, arg RolloutCreateParams) (Rollout, error)
-	RolloutsForKind(ctx context.Context, environmentKind string) ([]Rollout, error)
+	RolloutsForKind(ctx context.Context, environmentKind string) ([]RolloutsForKindRow, error)
 	StatusCreateOrUpdate(ctx context.Context, arg StatusCreateOrUpdateParams) error
 	StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]Status, error)
 	StatusForFeature(ctx context.Context, arg StatusForFeatureParams) (Status, error)

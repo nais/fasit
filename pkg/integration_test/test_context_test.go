@@ -96,7 +96,7 @@ func NewTestContext(t *testing.T, features []feature.Feature, envName string, en
 	}
 
 	meter := metric.NewNoopMeterProvider().Meter("")
-	tctx.Reconciler, err = workers.NewReconciler(tctx.Repo, tctx.FeatureManager, newPublisher, "xxx", meter, log)
+	tctx.Reconciler, err = workers.NewReconciler(tctx.Repo, newPublisher, "xxx", meter, log)
 	_ = err
 
 	return tctx, func() {

@@ -37,7 +37,6 @@ func TestDeployReceiver(t *testing.T) {
 					Name:       "feature1",
 					Version:    "1",
 					Chart:      "chart1",
-					Repo:       "repo1",
 					ConfigHash: "hash1",
 					Values:     map[string]any{"val1": "val1"},
 				},

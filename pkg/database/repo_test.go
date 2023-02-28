@@ -57,7 +57,7 @@ func newTestRepo(t testing.TB, stmts ...string) Repo {
 		t.Fatal(err)
 	}
 
-	var txRepo = &transactionRepo{
+	txRepo := &transactionRepo{
 		Repo: newRepo,
 		tx:   tx,
 	}

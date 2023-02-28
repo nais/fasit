@@ -6,7 +6,6 @@ package graph
 
 import (
 	"context"
-	"sort"
 	"time"
 
 	"github.com/google/uuid"
@@ -16,31 +15,32 @@ import (
 
 // FeatureStates is the resolver for the featureStates field.
 func (r *environmentResolver) FeatureStates(ctx context.Context, obj *model.Environment) ([]*model.FeatureState, error) {
-	retVal, err := r.Repo.FeatureStatesGet(ctx, obj.ID)
-	if err != nil {
-		return nil, err
-	}
+	// 	retVal, err := r.Repo.FeatureStatesGet(ctx, obj.ID)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
 
-OUTER:
-	for _, f := range r.Features.Features() {
-		if !contains(f.EnvironmentKinds, obj.Kind) {
-			continue
-		}
+	// OUTER:
+	// 	for _, f := range r.Features.Features() {
+	// 		if !contains(f.EnvironmentKinds, obj.Kind) {
+	// 			continue
+	// 		}
 
-		// Skip elements that are configured
-		for _, c := range retVal {
-			if f.Name == c.FeatureName {
-				continue OUTER
-			}
-		}
-		retVal = append(retVal, &model.FeatureState{FeatureName: f.Name, EnvID: obj.ID})
-	}
+	// 		// Skip elements that are configured
+	// 		for _, c := range retVal {
+	// 			if f.Name == c.FeatureName {
+	// 				continue OUTER
+	// 			}
+	// 		}
+	// 		retVal = append(retVal, &model.FeatureState{FeatureName: f.Name, EnvID: obj.ID})
+	// 	}
 
-	sort.Slice(retVal, func(i, j int) bool {
-		return retVal[i].FeatureName < retVal[j].FeatureName
-	})
+	// 	sort.Slice(retVal, func(i, j int) bool {
+	// 		return retVal[i].FeatureName < retVal[j].FeatureName
+	// 	})
 
-	return retVal, nil
+	// return retVal, nil
+	panic("not implemented")
 }
 
 // Health is the resolver for the health field.
@@ -131,5 +131,7 @@ func (r *Resolver) Environment() graphgen.EnvironmentResolver { return &environm
 // Release returns graphgen.ReleaseResolver implementation.
 func (r *Resolver) Release() graphgen.ReleaseResolver { return &releaseResolver{r} }
 
-type environmentResolver struct{ *Resolver }
-type releaseResolver struct{ *Resolver }
+type (
+	environmentResolver struct{ *Resolver }
+	releaseResolver     struct{ *Resolver }
+)

@@ -1,10 +1,9 @@
 package graph
 
 import (
-	"fmt"
+	"context"
 
 	"github.com/nais/fasit/pkg/database"
-	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/sirupsen/logrus"
 )
@@ -14,16 +13,11 @@ import (
 // It serves as dependency injection for your app, add any dependencies you require here.
 
 type Resolver struct {
-	Repo     database.Repo
-	Features *feature.Manager
-	Log      *logrus.Entry
+	Repo database.Repo
+	Log  *logrus.Entry
 	// HelmChartValues *helminfo.Cache
 }
 
 func (r *Resolver) resolveFeatureByName(name string) (*model.Feature, error) {
-	f := r.Features.Get(name)
-	if f == nil {
-		return nil, fmt.Errorf("feature %v not found", name)
-	}
-	return marshalFeature(*f)
+	return r.Repo.FeatureByName(context.Background(), name)
 }

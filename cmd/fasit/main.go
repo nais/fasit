@@ -168,11 +168,6 @@ func main() {
 	}
 	defer source.Close()
 
-	featureMgr, err := feature.New(source, log.WithField("subsystem", "feature_manager"))
-	if err != nil {
-		log.WithError(err).Fatal("setting up features")
-	}
-
 	statusMgr := message.NewSubscriber[message.Status](pubsubClient, cfg.GCPProjectID, cfg.StatusSubscriptionID)
 
 	receiver := workers.NewReceiver(statusMgr, repo, log.WithField("subsystem", "status"))
@@ -181,7 +176,7 @@ func main() {
 	createPublisher := func(projectID, topicID string, log *logrus.Entry) workers.Publisher {
 		return message.NewPublisher[message.DeployInstruction](pubsubClient, projectID, topicID, log)
 	}
-	reconciler, err := workers.NewReconciler(repo, featureMgr, createPublisher, cfg.GCPProjectID, meter, log.WithField("subsystem", "reconciler"))
+	reconciler, err := workers.NewReconciler(repo, createPublisher, cfg.GCPProjectID, meter, log.WithField("subsystem", "reconciler"))
 	if err != nil {
 		log.WithError(err).Fatal("setting up reconciler")
 	}
@@ -200,9 +195,8 @@ func main() {
 	// go helmChartValues.Run(ctx, 1*time.Hour)
 
 	resolver := &graph.Resolver{
-		Repo:     repo,
-		Features: featureMgr,
-		Log:      log.WithField("subsystem", "graphql"),
+		Repo: repo,
+		Log:  log.WithField("subsystem", "graphql"),
 		// HelmChartValues: helmChartValues,
 	}
 

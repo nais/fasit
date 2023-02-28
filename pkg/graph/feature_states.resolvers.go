@@ -58,11 +58,12 @@ func (r *featureStateResolver) Configuration(ctx context.Context, obj *model.Fea
 
 // FeatureStateSave is the resolver for the featureStateSave field.
 func (r *mutationResolver) FeatureStateSave(ctx context.Context, envID uuid.UUID, enabled bool, feature string) (*model.FeatureState, error) {
-	feat := r.Resolver.Features.Get(feature)
-	if feat == nil {
-		return nil, nil
-	}
-	return r.Repo.FeatureStatesCreateOrUpdate(ctx, envID, feat, enabled)
+	// feat := r.Resolver.Features.Get(feature)
+	// if feat == nil {
+	// 	return nil, nil
+	// }
+	// return r.Repo.FeatureStatesCreateOrUpdate(ctx, envID, feat, enabled)
+	panic("not implemented")
 }
 
 // FeatureState is the resolver for the featureState field.

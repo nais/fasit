@@ -12,12 +12,13 @@ import (
 
 // Values is the resolver for the values field.
 func (r *queryResolver) Values(ctx context.Context, feature string, env uuid.UUID) (map[string]interface{}, error) {
-	f := r.Resolver.Features.Get(feature)
+	panic("not implemented")
+	// f := r.Resolver.Features.Get(feature)
 
-	if f == nil {
-		r.Log.WithField("feature", feature).Warn("feature not found")
-		return map[string]interface{}{}, nil
-	}
-	vals, err := r.Repo.HelmValues(ctx, *f, env)
-	return vals, err
+	// if f == nil {
+	// 	r.Log.WithField("feature", feature).Warn("feature not found")
+	// 	return map[string]interface{}{}, nil
+	// }
+	// vals, err := r.Repo.HelmValues(ctx, *f, env)
+	// return vals, err
 }

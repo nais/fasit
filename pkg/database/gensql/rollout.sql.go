@@ -7,6 +7,10 @@ package gensql
 
 import (
 	"context"
+	"database/sql"
+	"time"
+
+	"github.com/jackc/pgtype"
 )
 
 const rolloutCreate = `-- name: RolloutCreate :one
@@ -31,22 +35,47 @@ func (q *Queries) RolloutCreate(ctx context.Context, arg RolloutCreateParams) (R
 }
 
 const rolloutsForKind = `-- name: RolloutsForKind :many
-SELECT id, feature_name, version, created FROM rollouts WHERE $1::text = ANY(environment_kinds)
+SELECT feature_data.name, feature_data.version, feature_data.chart, feature_data.description, feature_data.source, feature_data.kinds, feature_data.dependencies, feature_data.values, feature_data.timeout, feature_data.default_values, rollouts.created
+FROM rollouts 
+JOIN feature_data ON rollouts.feature_name = feature_data.name AND rollouts.version = feature_data.version
+WHERE $1::text = ANY(environment_kinds) 
+ORDER BY rollouts.features_name
 `
 
-func (q *Queries) RolloutsForKind(ctx context.Context, environmentKind string) ([]Rollout, error) {
+type RolloutsForKindRow struct {
+	Name          string
+	Version       string
+	Chart         string
+	Description   string
+	Source        string
+	Kinds         []EnvironmentKind
+	Dependencies  pgtype.JSONB
+	Values        pgtype.JSONB
+	Timeout       sql.NullInt64
+	DefaultValues pgtype.JSONB
+	Created       time.Time
+}
+
+func (q *Queries) RolloutsForKind(ctx context.Context, environmentKind string) ([]RolloutsForKindRow, error) {
 	rows, err := q.db.Query(ctx, rolloutsForKind, environmentKind)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []Rollout{}
+	items := []RolloutsForKindRow{}
 	for rows.Next() {
-		var i Rollout
+		var i RolloutsForKindRow
 		if err := rows.Scan(
-			&i.ID,
-			&i.FeatureName,
+			&i.Name,
 			&i.Version,
+			&i.Chart,
+			&i.Description,
+			&i.Source,
+			&i.Kinds,
+			&i.Dependencies,
+			&i.Values,
+			&i.Timeout,
+			&i.DefaultValues,
 			&i.Created,
 		); err != nil {
 			return nil, err

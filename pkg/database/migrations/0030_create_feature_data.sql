@@ -11,6 +11,7 @@ CREATE TABLE feature_data (
     "kinds" environment_kind[] NOT NULL,
     "dependencies" JSONB NOT NULL,
     "values" JSONB NOT NULL,
+    "timeout" INTERVAL,
 
     -- values.yaml
     "default_values" JSONB NOT NULL,
