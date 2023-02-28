@@ -14,6 +14,10 @@ mapping:
   tempo.securityContext.seccompProfile.type:
     # Satisfy Kyverno policy
     value: "RuntimeDefault"
+  traces.otlp.http.enabled:
+    template: "true"
+  traces.otlp.grpc.enabled:
+    template: "true"
   storage.trace.backend:
     # https://grafana.com/docs/tempo/latest/configuration/#storage
     value: "gcs"
