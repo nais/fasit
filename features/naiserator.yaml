@@ -186,7 +186,7 @@ mapping:
         effect: "NoSchedule"
       {{ end }}
       {{ if eq .Kind "tenant" }}
-        {{ if or (contains "dev" .Env.name) (contains "staging" .Env.name) }}
+        {{ if or (hasPrefix "dev" .Env.name) (hasPrefix "staging" .Env.name) }}
         - key: "cloud.google.com/gke-spot"
           operator: "Equal"
           value: "true"
