@@ -10,7 +10,7 @@ require (
 	github.com/GoogleCloudPlatform/cloudsql-proxy v1.33.2
 	github.com/GoogleCloudPlatform/k8s-config-connector v1.101.0
 	github.com/Masterminds/semver/v3 v3.2.0
-	github.com/coreos/go-oidc/v3 v3.4.0
+	github.com/coreos/go-oidc/v3 v3.5.0
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/go-chi/chi/v5 v5.0.8
 	github.com/google/go-cmp v0.5.9
@@ -87,6 +87,7 @@ require (
 	github.com/fatih/color v1.13.0 // indirect
 	github.com/go-errors/errors v1.4.2 // indirect
 	github.com/go-gorp/gorp/v3 v3.1.0 // indirect
+	github.com/go-jose/go-jose/v3 v3.0.0 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
@@ -184,7 +185,6 @@ require (
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20230223222841-637eb2293923 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
-	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
 	k8s.io/apiextensions-apiserver v0.26.0 // indirect
 	k8s.io/apiserver v0.26.0 // indirect
 	k8s.io/cli-runtime v0.26.0 // indirect
