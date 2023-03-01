@@ -25,7 +25,7 @@ require (
 	github.com/ory/dockertest/v3 v3.9.1
 	github.com/pressly/goose/v3 v3.9.0
 	github.com/prometheus/client_golang v1.14.0
-	github.com/ravilushqa/otelgqlgen v0.10.0
+	github.com/ravilushqa/otelgqlgen v0.11.0
 	github.com/rs/cors v1.8.3
 	github.com/santhosh-tekuri/jsonschema/v5 v5.1.1
 	github.com/sirupsen/logrus v1.9.0

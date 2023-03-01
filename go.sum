@@ -1038,8 +1038,8 @@ github.com/prometheus/procfs v0.0.2/go.mod h1:TjEm7ze935MbeOT/UhFTIMYKhuLP4wbCsT
 github.com/prometheus/procfs v0.0.3/go.mod h1:4A/X28fw3Fc593LaREMrKMqOKvUAntwMDaekg4FpcdQ=
 github.com/prometheus/procfs v0.9.0 h1:wzCHvIvM5SxWqYvwgVL7yJY8Lz3PKn49KQtpgMYJfhI=
 github.com/prometheus/procfs v0.9.0/go.mod h1:+pB4zwohETzFnmlpe6yd2lSc+0/46IYZRB/chUwxUZY=
-github.com/ravilushqa/otelgqlgen v0.10.0 h1:KDH8NMnOwDb+T7qKCNUeWdE7d3KGDywCQRqe0fMI7aA=
-github.com/ravilushqa/otelgqlgen v0.10.0/go.mod h1:E/8CTI14MmV7fQ2fSBfGo6h0JDWRAilkm4hE8pvPeCc=
+github.com/ravilushqa/otelgqlgen v0.11.0 h1:4BWet8Utf1DdSnV6/ySzoXV1JqPb/6JvdXcjkDu1hps=
+github.com/ravilushqa/otelgqlgen v0.11.0/go.mod h1:fQUw671L7n+NqWO/C4sEOTkgB/LFwcZu0QJTbiQnEi0=
 github.com/remyoudompheng/bigfft v0.0.0-20220927061507-ef77025ab5aa h1:tEkEyxYeZ43TR55QU/hsIt9aRGBxbgGuz9CGykjvogY=
 github.com/rivo/uniseg v0.2.0/go.mod h1:J6wj4VEh+S6ZtnVlnTBMWIodfgj8LQOQFoIToxlJtxc=
 github.com/rivo/uniseg v0.4.3 h1:utMvzDsuh3suAEnhH0RdHmoPbU648o6CvXxTx4SBMOw=
