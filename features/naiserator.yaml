@@ -190,6 +190,7 @@ mapping:
           operator: "Equal"
           value: "true"
           effect: "NoSchedule"
+        {{ end }}
       {{ end }}
     displayName: "Tolerations"
     ignoreKind:
