@@ -1,6 +1,3 @@
-//go:build todo
-// +build todo
-
 package workers
 
 import (
@@ -9,9 +6,8 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database/mocks"
-	"github.com/nais/fasit/pkg/feature"
+	feature "github.com/nais/fasit/pkg/feature2"
 	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/nais/fasit/pkg/message"
 	"github.com/sirupsen/logrus"
@@ -30,7 +26,7 @@ type reconcileTestEnvironment struct {
 }
 
 var reconcileTests = map[string]struct {
-	features          []feature.Feature
+	features          []*feature.Feature
 	environmentHealth *model.Health
 	environments      []*reconcileTestEnvironment
 	want              []message.DeployInstruction
@@ -40,7 +36,7 @@ var reconcileTests = map[string]struct {
 	},
 
 	"no statuses": {
-		features: []feature.Feature{
+		features: []*feature.Feature{
 			{
 				Name:    "feature1",
 				Chart:   "somechart",
@@ -73,7 +69,7 @@ var reconcileTests = map[string]struct {
 	},
 
 	"1 feature without change": {
-		features: []feature.Feature{
+		features: []*feature.Feature{
 			{
 				Name:    "feature1",
 				Chart:   "somechart",
@@ -106,7 +102,7 @@ var reconcileTests = map[string]struct {
 	},
 
 	"2 features 1 disabled": {
-		features: []feature.Feature{
+		features: []*feature.Feature{
 			{
 				Name:    "feature1",
 				Chart:   "somechart",
@@ -148,7 +144,7 @@ var reconcileTests = map[string]struct {
 	},
 
 	"2 features 1 change": {
-		features: []feature.Feature{
+		features: []*feature.Feature{
 			{
 				Name:    "feature1",
 				Chart:   "somechart",
@@ -203,16 +199,17 @@ func TestReconcile(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			repo := mocks.NewRepo(t)
 
-			tes := []*model.TenantEnvironments{}
+			te := []*model.TenantEnvironment{}
 			for _, e := range tt.environments {
-				tes = append(tes, &model.TenantEnvironments{
+				te = append(te, &model.TenantEnvironment{
 					TenantName:  e.TenantName,
 					Environment: e.Environment,
 				})
 			}
-			repo.On("TenantEnvironments", mock.Anything).Return(tes, nil)
+			repo.On("TenantEnvironments", mock.Anything).Return(te, nil)
 
 			for _, te := range tt.environments {
+				repo.On("FeaturesForKind", mock.Anything, te.Environment.Kind, te.Environment.CI).Return(tt.features, nil)
 				repo.On("StatusForEnvironment", mock.Anything, te.Environment.ID).Return(te.Status, nil)
 				repo.On("FeatureStatesGet", mock.Anything, te.Environment.ID).Return(te.FeatureStates, nil)
 				repo.On("HelmValues", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, nil).Maybe()
@@ -232,9 +229,7 @@ func TestReconcile(t *testing.T) {
 				return &mockPublisher{projectID: projectID, topicID: topicID, messages: &messages}
 			}
 
-			featureManager := &feature.Manager{}
-			featureManager.SetFeatures(tt.features)
-			reconciler, err := NewReconciler(repo, featureManager, publisher, "root-project", metric.NewNoopMeter(), logrus.NewEntry(logrus.StandardLogger()))
+			reconciler, err := NewReconciler(repo, publisher, "root-project", metric.NewNoopMeter(), logrus.NewEntry(logrus.StandardLogger()))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -252,179 +247,179 @@ func TestReconcile(t *testing.T) {
 }
 
 func TestReconcile_AutoInstall(t *testing.T) {
-	tests := map[string]struct {
-		features        []feature.Feature
-		expectedFeature string
-		status          map[string]*model.Status
-		states          map[string]*model.FeatureState
-	}{
-		"no features": {
-			features:        []feature.Feature{},
-			expectedFeature: "",
-		},
-		"one feature": {
-			features: []feature.Feature{
-				{
-					Name:        "feature1",
-					AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
-				},
-			},
-			expectedFeature: "feature1",
-		},
-		"one feature which is deployed": {
-			features: []feature.Feature{
-				{
-					Name:        "feature1",
-					AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
-				},
-			},
-			expectedFeature: "",
-			status: map[string]*model.Status{
-				"feature1": {
-					Feature: "feature1",
-					Status:  model.RolloutStatusDeployed,
-				},
-			},
-		},
-		"one feature which is already enabled": {
-			features: []feature.Feature{
-				{
-					Name:        "feature1",
-					AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
-				},
-			},
-			expectedFeature: "",
-			states: map[string]*model.FeatureState{
-				"feature1": {
-					FeatureName: "feature1",
-					Enabled:     true,
-				},
-			},
-		},
-		"one feature which is failed": {
-			features: []feature.Feature{
-				{
-					Name:        "feature1",
-					AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
-				},
-			},
-			expectedFeature: "",
-			status: map[string]*model.Status{
-				"feature1": {
-					Feature: "feature1",
-					Status:  model.RolloutStatusFailed,
-				},
-			},
-		},
-		"one feature which is pending": {
-			features: []feature.Feature{
-				{
-					Name:        "feature1",
-					AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
-				},
-			},
-			expectedFeature: "",
-			status: map[string]*model.Status{
-				"feature1": {
-					Feature: "feature1",
-					Status:  model.RolloutStatusPending,
-				},
-			},
-		},
-		"one tenant feature, one management feature": {
-			features: []feature.Feature{
-				{
-					Name:        "feature_tenant",
-					AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
-				},
-				{
-					Name:        "feature_mgmt",
-					AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
-				},
-			},
-			expectedFeature: "feature_tenant",
-		},
-		"successfull complex case with dependencies and statuses": {
-			features: []feature.Feature{
-				{
-					Name:        "feature1",
-					AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
-					DependsOn:   feature.Dependencies{{AllOf: []string{"feature2"}}},
-				},
-				{
-					Name:        "feature2",
-					AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
-					DependsOn:   feature.Dependencies{{AllOf: []string{"feature3"}}},
-				},
-				{
-					Name:        "feature3",
-					AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
-				},
-			},
-			expectedFeature: "feature2",
-			status: map[string]*model.Status{
-				"feature1": {
-					Feature: "feature1",
-					Status:  model.RolloutStatusDeployed,
-				},
-				"feature3": {
-					Feature: "feature3",
-					Status:  model.RolloutStatusDeployed,
-				},
-			},
-		},
-		"pending complex case with dependencies and statuses": {
-			features: []feature.Feature{
-				{
-					Name:        "feature1",
-					AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
-					DependsOn:   feature.Dependencies{{AllOf: []string{"feature2"}}},
-				},
-				{
-					Name:        "feature2",
-					AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
-					DependsOn:   feature.Dependencies{{AllOf: []string{"feature3"}}},
-				},
-				{
-					Name:        "feature3",
-					AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
-				},
-			},
-			status: map[string]*model.Status{
-				"feature3": {
-					Feature: "feature3",
-					Status:  model.RolloutStatusPending,
-				},
-			},
-		},
-	}
+	// tests := map[string]struct {
+	// 	features        []feature.Feature
+	// 	expectedFeature string
+	// 	status          map[string]*model.Status
+	// 	states          map[string]*model.FeatureState
+	// }{
+	// 	"no features": {
+	// 		features:        []feature.Feature{},
+	// 		expectedFeature: "",
+	// 	},
+	// 	"one feature": {
+	// 		features: []feature.Feature{
+	// 			{
+	// 				Name:        "feature1",
+	// 				AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
+	// 			},
+	// 		},
+	// 		expectedFeature: "feature1",
+	// 	},
+	// 	"one feature which is deployed": {
+	// 		features: []feature.Feature{
+	// 			{
+	// 				Name:        "feature1",
+	// 				AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
+	// 			},
+	// 		},
+	// 		expectedFeature: "",
+	// 		status: map[string]*model.Status{
+	// 			"feature1": {
+	// 				Feature: "feature1",
+	// 				Status:  model.RolloutStatusDeployed,
+	// 			},
+	// 		},
+	// 	},
+	// 	"one feature which is already enabled": {
+	// 		features: []feature.Feature{
+	// 			{
+	// 				Name:        "feature1",
+	// 				AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
+	// 			},
+	// 		},
+	// 		expectedFeature: "",
+	// 		states: map[string]*model.FeatureState{
+	// 			"feature1": {
+	// 				FeatureName: "feature1",
+	// 				Enabled:     true,
+	// 			},
+	// 		},
+	// 	},
+	// 	"one feature which is failed": {
+	// 		features: []feature.Feature{
+	// 			{
+	// 				Name:        "feature1",
+	// 				AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
+	// 			},
+	// 		},
+	// 		expectedFeature: "",
+	// 		status: map[string]*model.Status{
+	// 			"feature1": {
+	// 				Feature: "feature1",
+	// 				Status:  model.RolloutStatusFailed,
+	// 			},
+	// 		},
+	// 	},
+	// 	"one feature which is pending": {
+	// 		features: []feature.Feature{
+	// 			{
+	// 				Name:        "feature1",
+	// 				AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
+	// 			},
+	// 		},
+	// 		expectedFeature: "",
+	// 		status: map[string]*model.Status{
+	// 			"feature1": {
+	// 				Feature: "feature1",
+	// 				Status:  model.RolloutStatusPending,
+	// 			},
+	// 		},
+	// 	},
+	// 	"one tenant feature, one management feature": {
+	// 		features: []feature.Feature{
+	// 			{
+	// 				Name:        "feature_tenant",
+	// 				AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
+	// 			},
+	// 			{
+	// 				Name:        "feature_mgmt",
+	// 				AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
+	// 			},
+	// 		},
+	// 		expectedFeature: "feature_tenant",
+	// 	},
+	// 	"successfull complex case with dependencies and statuses": {
+	// 		features: []feature.Feature{
+	// 			{
+	// 				Name:        "feature1",
+	// 				AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
+	// 				DependsOn:   feature.Dependencies{{AllOf: []string{"feature2"}}},
+	// 			},
+	// 			{
+	// 				Name:        "feature2",
+	// 				AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
+	// 				DependsOn:   feature.Dependencies{{AllOf: []string{"feature3"}}},
+	// 			},
+	// 			{
+	// 				Name:        "feature3",
+	// 				AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
+	// 			},
+	// 		},
+	// 		expectedFeature: "feature2",
+	// 		status: map[string]*model.Status{
+	// 			"feature1": {
+	// 				Feature: "feature1",
+	// 				Status:  model.RolloutStatusDeployed,
+	// 			},
+	// 			"feature3": {
+	// 				Feature: "feature3",
+	// 				Status:  model.RolloutStatusDeployed,
+	// 			},
+	// 		},
+	// 	},
+	// 	"pending complex case with dependencies and statuses": {
+	// 		features: []feature.Feature{
+	// 			{
+	// 				Name:        "feature1",
+	// 				AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
+	// 				DependsOn:   feature.Dependencies{{AllOf: []string{"feature2"}}},
+	// 			},
+	// 			{
+	// 				Name:        "feature2",
+	// 				AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
+	// 				DependsOn:   feature.Dependencies{{AllOf: []string{"feature3"}}},
+	// 			},
+	// 			{
+	// 				Name:        "feature3",
+	// 				AutoInstall: []model.EnvironmentKind{model.EnvironmentKindTenant},
+	// 			},
+	// 		},
+	// 		status: map[string]*model.Status{
+	// 			"feature3": {
+	// 				Feature: "feature3",
+	// 				Status:  model.RolloutStatusPending,
+	// 			},
+	// 		},
+	// 	},
+	// }
 
-	te := &model.TenantEnvironments{
-		Environment: model.Environment{
-			ID:   uuid.New(),
-			Kind: model.EnvironmentKindTenant,
-		},
-	}
+	// te := &model.TenantEnvironments{
+	// 	Environment: model.Environment{
+	// 		ID:   uuid.New(),
+	// 		Kind: model.EnvironmentKindTenant,
+	// 	},
+	// }
 
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			repo := mocks.NewRepo(t)
-			if tt.expectedFeature != "" {
-				repo.On("FeatureStatesCreateOrUpdate",
-					mock.Anything, te.ID, mock.MatchedBy(func(f *feature.Feature) bool { return f.Name == tt.expectedFeature }), true).Return(nil, nil)
-			}
+	// for name, tt := range tests {
+	// 	t.Run(name, func(t *testing.T) {
+	// 		repo := mocks.NewRepo(t)
+	// 		if tt.expectedFeature != "" {
+	// 			repo.On("FeatureStatesCreateOrUpdate",
+	// 				mock.Anything, te.ID, mock.MatchedBy(func(f *feature.Feature) bool { return f.Name == tt.expectedFeature }), true).Return(nil, nil)
+	// 		}
 
-			recociler := &Reconciler{
-				repo: repo,
-				log:  logrus.NewEntry(logrus.StandardLogger()),
-			}
+	// 		recociler := &Reconciler{
+	// 			repo: repo,
+	// 			log:  logrus.NewEntry(logrus.StandardLogger()),
+	// 		}
 
-			ctx := context.Background()
-			if err := recociler.autoInstallNextFeature(ctx, te, tt.features, tt.status, tt.states); err != nil {
-				t.Errorf("reconcile failed: %v", err)
-			}
-		})
-	}
+	// 		ctx := context.Background()
+	// 		if err := recociler.autoInstallNextFeature(ctx, te, tt.features, tt.status, tt.states); err != nil {
+	// 			t.Errorf("reconcile failed: %v", err)
+	// 		}
+	// 	})
+	// }
 }
 
 type mockPublisher struct {
