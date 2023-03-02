@@ -184,14 +184,12 @@ mapping:
         operator: "Equal"
         value: "spot"
         effect: "NoSchedule"
-      {{ end }}
-      {{ if eq .Kind "tenant" }}
+      {{ else if eq .Kind "tenant" }}
         {{ if or (eq "dev" .Env.name) (eq "staging" .Env.name) }}
         - key: "cloud.google.com/gke-spot"
           operator: "Equal"
           value: "true"
           effect: "NoSchedule"
-        {{ end }}
       {{ end }}
     displayName: "Tolerations"
     ignoreKind:
