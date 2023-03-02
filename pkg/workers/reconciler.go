@@ -282,7 +282,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 
 	for _, f := range features {
 		if states[f.Name] == nil || !states[f.Name].Enabled {
-			// r.log.WithField("feature", f.Name).Debug("not enabled")
+			r.log.WithField("feature", f.Name).Debug("not enabled")
 			continue
 		}
 

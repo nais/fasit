@@ -20,8 +20,6 @@ import (
 
 	pgx "github.com/jackc/pgx/v4"
 
-	pkgfeature "github.com/nais/fasit/pkg/feature"
-
 	uuid "github.com/google/uuid"
 )
 
@@ -784,20 +782,20 @@ func (_m *Repo) KubernetesNodesForEnv(ctx context.Context, envID uuid.UUID) ([]*
 }
 
 // MappingValuesForEnvironment provides a mock function with given fields: ctx, envID, showSensitive
-func (_m *Repo) MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) (*pkgfeature.MappingValues, model.EnvironmentKind, error) {
+func (_m *Repo) MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) (*feature.MappingValues, model.EnvironmentKind, error) {
 	ret := _m.Called(ctx, envID, showSensitive)
 
-	var r0 *pkgfeature.MappingValues
+	var r0 *feature.MappingValues
 	var r1 model.EnvironmentKind
 	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, bool) (*pkgfeature.MappingValues, model.EnvironmentKind, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, bool) (*feature.MappingValues, model.EnvironmentKind, error)); ok {
 		return rf(ctx, envID, showSensitive)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, bool) *pkgfeature.MappingValues); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, bool) *feature.MappingValues); ok {
 		r0 = rf(ctx, envID, showSensitive)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*pkgfeature.MappingValues)
+			r0 = ret.Get(0).(*feature.MappingValues)
 		}
 	}
 
