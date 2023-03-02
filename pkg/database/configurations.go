@@ -198,21 +198,21 @@ func (r *repo) ConfigDelete(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-func (r *repo) HelmValues(ctx context.Context, feature *feature.Feature, envID uuid.UUID) (map[string]any, error) {
-	mv, _, err := r.MappingValuesForEnvironment(ctx, envID, true)
+func (r *repo) HelmValues(ctx context.Context, f *feature.Feature, envID uuid.UUID) (map[string]any, error) {
+	mv, envKind, err := r.MappingValuesForEnvironment(ctx, envID, true)
 	if err != nil {
 		return nil, err
 	}
 
 	excludeKeys := []string{}
-	// for key, f := range feature.Config {
-	// 	if f.IgnoreKind.Contains(envKind) {
-	// 		excludeKeys = append(excludeKeys, key)
-	// 	}
-	// }
+	for key, f := range f.Values {
+		if contains(f.IgnoreKind, envKind) {
+			excludeKeys = append(excludeKeys, key)
+		}
+	}
 
 	vals, err := r.querier.EnvConfig(ctx, gensql.EnvConfigParams{
-		Feature:       feature.Name,
+		Feature:       f.Name,
 		EnvironmentID: envID,
 		Excludekeys:   excludeKeys,
 	})
@@ -220,36 +220,35 @@ func (r *repo) HelmValues(ctx context.Context, feature *feature.Feature, envID u
 		return nil, err
 	}
 
-	// missing := validateFields(feature.RequiredFields(envKind), vals)
-	// if len(missing) > 0 {
-	// 	return nil, &ErrMissingRequiredFields{Fields: missing}
-	// }
+	missing := validateFields(f.RequiredFields(envKind), vals)
+	if len(missing) > 0 {
+		return nil, &ErrMissingRequiredFields{Fields: missing}
+	}
 
 	mp, err := makeHelmConfigMap(vals)
 	if err != nil {
 		return nil, err
 	}
 
-	// err = feature.Mapping.Generate(envKind, mv, mp)
-	_ = mv
+	err = feature.Generate(f.Values, envKind, mv, mp)
 	return mp, err
 }
 
 func validateFields(requiredFields []string, values []gensql.EnvConfigRow) []string {
-	fields := map[string]int{}
+	fields := map[string]bool{}
 	for _, req := range requiredFields {
-		fields[req] = 0
+		fields[req] = false
 		for _, k := range values {
 			if k.Key == req {
-				fields[req] = 1
+				fields[req] = true
 			}
 		}
 	}
 
 	var missing []string
-	for k, v := range fields {
-		if v == 0 {
-			missing = append(missing, k)
+	for field, present := range fields {
+		if !present {
+			missing = append(missing, field)
 		}
 	}
 	return missing
@@ -305,4 +304,13 @@ func (r *repo) ConfigOverridesByFeature(ctx context.Context, featureName string)
 		}
 	}
 	return result, nil
+}
+
+func contains[T comparable](s []T, e T) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
 }

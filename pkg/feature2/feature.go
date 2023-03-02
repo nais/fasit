@@ -38,7 +38,8 @@ type Value struct {
 	// Computed is a computed value that will be set if no config is set.
 	Computed *Computed `yaml:"computed,omitempty" json:"computed,omitempty"`
 	// Config specifies how the value should be configured.
-	Config *Config `yaml:"config,omitempty" json:"config,omitempty"`
+	Config     *Config                 `yaml:"config,omitempty" json:"config,omitempty"`
+	IgnoreKind []model.EnvironmentKind `yaml:"ignoreKind,omitempty" json:"ignoreKind,omitempty"`
 }
 
 type FeatureYAML struct {
@@ -136,4 +137,26 @@ func (f *Feature) parseChartYAML(r io.Reader) error {
 	}
 
 	return nil
+}
+
+func (f *Feature) RequiredFields(envKind model.EnvironmentKind) []string {
+	var requiredFields []string
+	for k, v := range f.Values {
+		if contains(v.IgnoreKind, envKind) {
+			continue
+		}
+		if v.Required {
+			requiredFields = append(requiredFields, k)
+		}
+	}
+	return requiredFields
+}
+
+func contains[T comparable](s []T, e T) bool {
+	for _, a := range s {
+		if a == e {
+			return true
+		}
+	}
+	return false
 }

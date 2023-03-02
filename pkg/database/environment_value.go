@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgtype"
 	"github.com/nais/fasit/pkg/database/gensql"
-	"github.com/nais/fasit/pkg/feature"
+	feature "github.com/nais/fasit/pkg/feature2"
 	"github.com/nais/fasit/pkg/graph/model"
 )
 

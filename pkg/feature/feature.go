@@ -144,20 +144,6 @@ func (f *Feature) parseChartYAML(r io.Reader) error {
 	return nil
 }
 
-func (f *Feature) RequiredFields(envKind model.EnvironmentKind) []string {
-	var requiredFields []string
-	// TODO: implement
-	// for k, v := range f.Config {
-	// 	if v.IgnoreKind.Contains(envKind) {
-	// 		continue
-	// 	}
-	// 	if v.Required {
-	// 		requiredFields = append(requiredFields, k)
-	// 	}
-	// }
-	return requiredFields
-}
-
 type Manager struct {
 	lock     sync.RWMutex
 	features []Feature

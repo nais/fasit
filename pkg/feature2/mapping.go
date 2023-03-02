@@ -39,7 +39,7 @@ type MappingValues struct {
 	Configs map[string]any
 }
 
-func (m Mapping) Generate(envKind model.EnvironmentKind, values *MappingValues, target map[string]any) error {
+func Generate(vals Values, kind model.EnvironmentKind, values *MappingValues, target map[string]any) error {
 	if target == nil {
 		return fmt.Errorf("target is nil")
 	}
@@ -49,13 +49,13 @@ func (m Mapping) Generate(envKind model.EnvironmentKind, values *MappingValues, 
 
 	values.Configs = copyMap(target)
 
-	for k, v := range m {
+	for k, v := range vals {
 		keys, err := SmartDotSplit(k)
 		if err != nil {
 			return err
 		}
 
-		if err := addToMap(target, values, keys, v, k); err != nil {
+		if err := addToMap(target, values, keys, v); err != nil {
 			return err
 		}
 	}
@@ -72,7 +72,7 @@ func (m Mapping) DisplayName(key string) string {
 	return ""
 }
 
-func addToMap(target map[string]any, values *MappingValues, key []string, mc MappingConfig, path string) error {
+func addToMap(target map[string]any, values *MappingValues, key []string, v Value) error {
 	if len(key) > 1 {
 		t, ok := target[key[0]]
 		if !ok {
@@ -83,10 +83,10 @@ func addToMap(target map[string]any, values *MappingValues, key []string, mc Map
 		if !ok {
 			return fmt.Errorf("key %v is not nestable", key[0])
 		}
-		return addToMap(tt, values, key[1:], mc, path)
+		return addToMap(tt, values, key[1:], v)
 	}
 
-	val, err := renderTpl(values, mc)
+	val, err := renderTemplate(values, v.Computed.Template)
 	if err != nil {
 		return fmt.Errorf("%v: %w", strings.Join(key, "."), err)
 	}
@@ -99,21 +99,10 @@ func addToMap(target map[string]any, values *MappingValues, key []string, mc Map
 	return nil
 }
 
-func renderTpl(values *MappingValues, mc MappingConfig) (any, error) {
-	switch t := mc.Value.(type) {
-	case string:
-		return renderString(values, t)
-	case []any:
-		return renderSlice(values, t)
-	default:
-		if mc.Template != "" {
-			return renderTemplate(values, mc.Template)
-		}
-		return nil, fmt.Errorf("unsupported type %T", t)
-	}
-}
-
 func renderTemplate(values *MappingValues, tpl string) (any, error) {
+	if tpl == "" {
+		return nil, fmt.Errorf("empty template")
+	}
 	rdr, err := renderString(values, tpl)
 	if err != nil {
 		return nil, err
@@ -143,20 +132,6 @@ func renderString(values *MappingValues, tpl string) (string, error) {
 	}
 
 	return buf.String(), nil
-}
-
-func renderSlice(values *MappingValues, tpl []any) ([]any, error) {
-	ret := make([]any, len(tpl))
-	for i, t := range tpl {
-		val, err := renderTpl(values, MappingConfig{
-			Value: t,
-		})
-		if err != nil {
-			return nil, err
-		}
-		ret[i] = val
-	}
-	return ret, nil
 }
 
 func SmartDotSplit(s string) ([]string, error) {
