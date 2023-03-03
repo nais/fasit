@@ -179,18 +179,16 @@ mapping:
     displayName: "Enable Vault"
   naiserator.tolerations:
     template: |
-      {{ if and (eq .Kind "legacy") (eq .Env.name "dev-gcp") }}
+      {{ if and (eq .Kind "legacy") (ne .Env.name "prod-gcp") }}
       - key: "nais.io/node-type"
         operator: "Equal"
         value: "spot"
         effect: "NoSchedule"
-      {{ else if eq .Kind "tenant" }}
-        {{ if or (eq "dev" .Env.name) (eq "staging" .Env.name) }}
+      {{ else if  and (eq .Kind "tenant") (ne .Env.name "prod") }}
         - key: "cloud.google.com/gke-spot"
           operator: "Equal"
           value: "true"
           effect: "NoSchedule"
-        {{ end }}
       {{ end }}
     displayName: "Tolerations"
     ignoreKind:
