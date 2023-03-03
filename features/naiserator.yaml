@@ -126,7 +126,7 @@ mapping:
       - domainSuffix: .dev.nav.no
         ingressClass: gw-dev-nav-no
       - domainSuffix: .dev.helserefusjon.no
-        ingressClass: nais-ingress
+        ingressClass: gw-dev-helserefusjon-no
       - domainSuffix: .intern.nav.no
         ingressClass: gw-intern-nav-no
       - domainSuffix: .nav.no
