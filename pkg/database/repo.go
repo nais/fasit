@@ -43,6 +43,7 @@ type TXFunc func(repo Repo) error
 
 type Repo interface {
 	AuditRepo
+	AutoInstallsRepo
 	ConfigRepo
 	EnvironmentRepo
 	EnvironmentValueRepo

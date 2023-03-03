@@ -32,6 +32,7 @@ type ReconcilerStore interface {
 	HealthGet(ctx context.Context, environmentID uuid.UUID) (*model.Health, error)
 	HelmValues(ctx context.Context, feature *feature.Feature, envID uuid.UUID) (map[string]any, error)
 	RolloutsListen(ctx context.Context, fn database.ListenFunc) error
+	AutoInstallsListen(ctx context.Context, fn database.ListenFunc) error
 	StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]*model.Status, error)
 	TenantEnvironments(ctx context.Context) ([]*model.TenantEnvironment, error)
 }
@@ -112,6 +113,12 @@ func (r *Reconciler) Listen(ctx context.Context) error {
 	go func() {
 		if err := r.repo.RolloutsListen(ctx, trigger); err != nil {
 			r.log.WithError(err).Error("rollouts listen")
+		}
+	}()
+
+	go func() {
+		if err := r.repo.AutoInstallsListen(ctx, trigger); err != nil {
+			r.log.WithError(err).Error("auto install listen")
 		}
 	}()
 
@@ -271,11 +278,11 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 		states[s.FeatureName] = s
 	}
 
-	// // TODO: handle in separate process
-	// err = r.autoInstallNextFeature(ctx, d, features, lookup, states)
-	// if err != nil {
-	// 	r.log.WithField("environment", d.Environment.ID).WithError(err).Errorf("unable to auto enable feature")
-	// }
+	// TODO: handle in separate process
+	err = r.autoInstallNextFeature(ctx, d, features, lookup, states)
+	if err != nil {
+		r.log.WithField("environment", d.Environment.ID).WithError(err).Errorf("unable to auto enable feature")
+	}
 
 	mgr := r.publisher(r.projectID, "naisd-"+d.TenantName+"-"+d.Name, r.log)
 	defer mgr.Stop()

@@ -54,6 +54,46 @@ func (_m *Repo) AuditForEnvironment(ctx context.Context, id uuid.UUID, featureNa
 	return r0, r1
 }
 
+// AutoInstallsForKind provides a mock function with given fields: ctx, kind
+func (_m *Repo) AutoInstallsForKind(ctx context.Context, kind model.EnvironmentKind) ([]string, error) {
+	ret := _m.Called(ctx, kind)
+
+	var r0 []string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.EnvironmentKind) ([]string, error)); ok {
+		return rf(ctx, kind)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, model.EnvironmentKind) []string); ok {
+		r0 = rf(ctx, kind)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, model.EnvironmentKind) error); ok {
+		r1 = rf(ctx, kind)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// AutoInstallsListen provides a mock function with given fields: ctx, fn
+func (_m *Repo) AutoInstallsListen(ctx context.Context, fn database.ListenFunc) error {
+	ret := _m.Called(ctx, fn)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, database.ListenFunc) error); ok {
+		r0 = rf(ctx, fn)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Close provides a mock function with given fields:
 func (_m *Repo) Close() {
 	_m.Called()
