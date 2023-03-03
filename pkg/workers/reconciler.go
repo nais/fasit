@@ -117,6 +117,7 @@ func (r *Reconciler) Listen(ctx context.Context) error {
 	}()
 
 	go func() {
+		// TODO do something else than just trigger reconcile, we need to update feature states first
 		if err := r.repo.AutoInstallsListen(ctx, trigger); err != nil {
 			r.log.WithError(err).Error("auto install listen")
 		}
@@ -276,12 +277,6 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 	states := map[string]*model.FeatureState{}
 	for _, s := range featureStates {
 		states[s.FeatureName] = s
-	}
-
-	// TODO: handle in separate process
-	err = r.autoInstallNextFeature(ctx, d, features, lookup, states)
-	if err != nil {
-		r.log.WithField("environment", d.Environment.ID).WithError(err).Errorf("unable to auto enable feature")
 	}
 
 	mgr := r.publisher(r.projectID, "naisd-"+d.TenantName+"-"+d.Name, r.log)
