@@ -50,12 +50,15 @@ func Generate(vals Values, kind model.EnvironmentKind, values *MappingValues, ta
 	values.Configs = copyMap(target)
 
 	for k, v := range vals {
+		if v.Computed == nil {
+			continue
+		}
 		keys, err := SmartDotSplit(k)
 		if err != nil {
 			return err
 		}
 
-		if err := addToMap(target, values, keys, v); err != nil {
+		if err := addToMap(target, values, keys, v.Computed.Template); err != nil {
 			return err
 		}
 	}
@@ -72,7 +75,7 @@ func (m Mapping) DisplayName(key string) string {
 	return ""
 }
 
-func addToMap(target map[string]any, values *MappingValues, key []string, v Value) error {
+func addToMap(target map[string]any, values *MappingValues, key []string, v string) error {
 	if len(key) > 1 {
 		t, ok := target[key[0]]
 		if !ok {
@@ -86,7 +89,7 @@ func addToMap(target map[string]any, values *MappingValues, key []string, v Valu
 		return addToMap(tt, values, key[1:], v)
 	}
 
-	val, err := renderTemplate(values, v.Computed.Template)
+	val, err := renderTemplate(values, v)
 	if err != nil {
 		return fmt.Errorf("%v: %w", strings.Join(key, "."), err)
 	}

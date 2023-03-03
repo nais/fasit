@@ -1,6 +1,3 @@
-//go:build todo
-// +build todo
-
 package database
 
 import (
@@ -17,7 +14,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgtype"
 	"github.com/nais/fasit/pkg/database/gensql"
-	"github.com/nais/fasit/pkg/feature"
+	feature "github.com/nais/fasit/pkg/feature2"
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
@@ -328,10 +325,14 @@ func TestRepo_HelmValues_OK(t *testing.T) {
 
 	feature := feature.Feature{
 		Name: "feature5",
-		Config: feature.Config{
-			"my.key": feature.ConfigType{
-				Type:   model.ConfigTypeString,
-				Secret: true,
+		FeatureYAML: feature.FeatureYAML{
+			Values: feature.Values{
+				"my.key": feature.Value{
+					Config: &feature.Config{
+						Type:   model.ConfigTypeString,
+						Secret: true,
+					},
+				},
 			},
 		},
 	}
@@ -349,7 +350,7 @@ func TestRepo_HelmValues_OK(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err := r.HelmValues(context.Background(), feature, envid)
+	got, err := r.HelmValues(context.Background(), &feature, envid)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -375,15 +376,21 @@ func TestRepo_HelmValues_MissingRequiredField(t *testing.T) {
 
 	feature := feature.Feature{
 		Name: "feature5",
-		Config: feature.Config{
-			"my.key": feature.ConfigType{
-				Type:   model.ConfigTypeString,
-				Secret: true,
-			},
-			"no.key": feature.ConfigType{
-				Type:     model.ConfigTypeString,
-				Secret:   true,
-				Required: true,
+		FeatureYAML: feature.FeatureYAML{
+			Values: feature.Values{
+				"my.key": feature.Value{
+					Config: &feature.Config{
+						Type:   model.ConfigTypeString,
+						Secret: true,
+					},
+				},
+				"no.key": feature.Value{
+					Config: &feature.Config{
+						Type:   model.ConfigTypeString,
+						Secret: true,
+					},
+					Required: true,
+				},
 			},
 		},
 	}
@@ -401,7 +408,7 @@ func TestRepo_HelmValues_MissingRequiredField(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = r.HelmValues(context.Background(), feature, envid)
+	_, err = r.HelmValues(context.Background(), &feature, envid)
 	if !errors.Is(err, &ErrMissingRequiredFields{}) {
 		t.Errorf("got: %v, want ErrMissingRequiredFields", err)
 	}
@@ -437,7 +444,7 @@ func TestRepo_HelmValues_InvaldKeyNesting(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = r.HelmValues(context.Background(), feature.Feature{Name: "feature5"}, envid)
+	_, err = r.HelmValues(context.Background(), &feature.Feature{Name: "feature5"}, envid)
 	if err == nil || !strings.HasSuffix(err.Error(), "is not nestable") {
 		t.Errorf("got: %v, want \"key `key` is not nestable\"", err)
 	}
@@ -466,12 +473,34 @@ func TestRepo_HelmValues_WithMappingValues(t *testing.T) {
 
 	f := feature.Feature{
 		Name: "feature5",
-		Mapping: feature.Mapping{
-			"names.tenant":      feature.MappingConfig{Value: "{{ .Tenant.Name }}"},
-			"names.environment": feature.MappingConfig{Value: "{{ .Env.name }}"},
-			"kind":              feature.MappingConfig{Value: "{{ .Kind }}"},
-			"projects.env":      feature.MappingConfig{Value: "{{ .Env.project_id }}"},
-			"projects.mgmt":     feature.MappingConfig{Value: "{{ .Management.project_id }}"},
+		FeatureYAML: feature.FeatureYAML{
+			Values: feature.Values{
+				"names.tenant": feature.Value{
+					Computed: &feature.Computed{
+						Template: "{{ .Tenant.Name }}",
+					},
+				},
+				"names.environment": feature.Value{
+					Computed: &feature.Computed{
+						Template: "{{ .Env.name }}",
+					},
+				},
+				"kind": feature.Value{
+					Computed: &feature.Computed{
+						Template: "{{ .Kind }}",
+					},
+				},
+				"projects.env": feature.Value{
+					Computed: &feature.Computed{
+						Template: "{{ .Env.project_id }}",
+					},
+				},
+				"projects.mgmt": feature.Value{
+					Computed: &feature.Computed{
+						Template: "{{ .Management.project_id }}",
+					},
+				},
+			},
 		},
 	}
 
@@ -482,7 +511,7 @@ func TestRepo_HelmValues_WithMappingValues(t *testing.T) {
 		}
 	}
 
-	got, err := r.HelmValues(context.Background(), f, envid)
+	got, err := r.HelmValues(context.Background(), &f, envid)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -508,17 +537,23 @@ func TestRepo_HelmValues_WithIgnoredKeys_Ignored(t *testing.T) {
 
 	feature := feature.Feature{
 		Name: "feature6",
-		Config: feature.Config{
-			"my.key": feature.ConfigType{
-				Type:   model.ConfigTypeString,
-				Secret: true,
-			},
-			"ignore.key": feature.ConfigType{
-				Type:     model.ConfigTypeString,
-				Secret:   true,
-				Required: true,
-				IgnoreKind: []model.EnvironmentKind{
-					model.EnvironmentKindOnprem,
+		FeatureYAML: feature.FeatureYAML{
+			Values: feature.Values{
+				"my.key": feature.Value{
+					Config: &feature.Config{
+						Type:   model.ConfigTypeString,
+						Secret: true,
+					},
+				},
+				"ignore.key": feature.Value{
+					Required: true,
+					IgnoreKind: []model.EnvironmentKind{
+						model.EnvironmentKindOnprem,
+					},
+					Config: &feature.Config{
+						Type:   model.ConfigTypeString,
+						Secret: true,
+					},
 				},
 			},
 		},
@@ -547,7 +582,7 @@ func TestRepo_HelmValues_WithIgnoredKeys_Ignored(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err := r.HelmValues(context.Background(), feature, envid)
+	got, err := r.HelmValues(context.Background(), &feature, envid)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -573,17 +608,23 @@ func TestRepo_HelmValues_WithIgnoredKeys_NotIgnored(t *testing.T) {
 
 	feature := feature.Feature{
 		Name: "feature6",
-		Config: feature.Config{
-			"my.key": feature.ConfigType{
-				Type:   model.ConfigTypeString,
-				Secret: true,
-			},
-			"ignore.key": feature.ConfigType{
-				Type:     model.ConfigTypeString,
-				Secret:   true,
-				Required: true,
-				IgnoreKind: []model.EnvironmentKind{
-					model.EnvironmentKindOnprem,
+		FeatureYAML: feature.FeatureYAML{
+			Values: feature.Values{
+				"my.key": feature.Value{
+					Config: &feature.Config{
+						Type:   model.ConfigTypeString,
+						Secret: true,
+					},
+				},
+				"ignore.key": feature.Value{
+					Required: true,
+					IgnoreKind: []model.EnvironmentKind{
+						model.EnvironmentKindOnprem,
+					},
+					Config: &feature.Config{
+						Type:   model.ConfigTypeString,
+						Secret: true,
+					},
 				},
 			},
 		},
@@ -612,7 +653,7 @@ func TestRepo_HelmValues_WithIgnoredKeys_NotIgnored(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err := r.HelmValues(context.Background(), feature, envid)
+	got, err := r.HelmValues(context.Background(), &feature, envid)
 	if err != nil {
 		t.Fatal(err)
 	}
