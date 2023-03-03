@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring-management
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring-management
-version: 2.7.0
+version: 2.8.0
 description: "Tenant monitoring services in management cluster (grafana, ...)"
 environmentKinds:
   - "management"
@@ -11,6 +11,9 @@ dependsOn:
       - "nais-probes"
 timeout: 20m
 config:
+  alerts.ignoreClusters:
+    type: string
+    displayName: Ignore alerting on clusters (regex) 
   grafana.grafana\.ini.auth\.jwt.expect_claims:
     type: string
     displayName: Grafana JWT claims
