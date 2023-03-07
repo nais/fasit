@@ -97,6 +97,13 @@ config:
       - "tenant"
       - "onprem"
       - "management"
+  naiserator.toleration.spot.enabled:
+    type: bool
+    displayName: "Enable spot toleration"
+    ignoreKind:
+      - "onprem"
+      - "management"
+      - "legacy"
 
 mapping:
   naiserator.api-server-ip:
@@ -177,20 +184,3 @@ mapping:
   naiserator.features.vault:
     template: '{{eq .Kind "onprem"}}'
     displayName: "Enable Vault"
-  naiserator.tolerations:
-    template: |
-      {{ if and (eq .Kind "legacy") (ne .Env.name "prod-gcp") }}
-      - key: "nais.io/node-type"
-        operator: "Equal"
-        value: "spot"
-        effect: "NoSchedule"
-      {{ else if  and (eq .Kind "tenant") (ne .Env.name "prod") }}
-        - key: "cloud.google.com/gke-spot"
-          operator: "Equal"
-          value: "true"
-          effect: "NoSchedule"
-      {{ end }}
-    displayName: "Tolerations"
-    ignoreKind:
-      - "onprem"
-
