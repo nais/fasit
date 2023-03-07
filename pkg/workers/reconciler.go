@@ -32,7 +32,6 @@ type ReconcilerStore interface {
 	HealthGet(ctx context.Context, environmentID uuid.UUID) (*model.Health, error)
 	HelmValues(ctx context.Context, feature *feature.Feature, envID uuid.UUID) (map[string]any, error)
 	RolloutsListen(ctx context.Context, fn database.ListenFunc) error
-	AutoInstallsListen(ctx context.Context, fn database.ListenFunc) error
 	StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]*model.Status, error)
 	TenantEnvironments(ctx context.Context) ([]*model.TenantEnvironment, error)
 }
@@ -113,13 +112,6 @@ func (r *Reconciler) Listen(ctx context.Context) error {
 	go func() {
 		if err := r.repo.RolloutsListen(ctx, trigger); err != nil {
 			r.log.WithError(err).Error("rollouts listen")
-		}
-	}()
-
-	go func() {
-		// TODO do something else than just trigger reconcile, we need to update feature states first
-		if err := r.repo.AutoInstallsListen(ctx, trigger); err != nil {
-			r.log.WithError(err).Error("auto install listen")
 		}
 	}()
 

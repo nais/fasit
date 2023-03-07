@@ -149,24 +149,25 @@ type Manager struct {
 	features []Feature
 }
 
-func New(source FeatureSource, log logrus.FieldLogger) (*Manager, error) {
-	mgr := &Manager{}
-	features, err := source.Features()
-	if err != nil {
-		return nil, err
-	}
+func New(log logrus.FieldLogger) (*Manager, error) {
+	// mgr := &Manager{}
+	// features, err := source.Features()
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	source.Register(func() {
-		features, err := source.Features()
-		if err != nil {
-			log.WithError(err).Error("failed to reload features")
-			return
-		}
-		mgr.SetFeatures(features)
-	})
+	// source.Register(func() {
+	// 	features, err := source.Features()
+	// 	if err != nil {
+	// 		log.WithError(err).Error("failed to reload features")
+	// 		return
+	// 	}
+	// 	mgr.SetFeatures(features)
+	// })
 
-	mgr.SetFeatures(features)
-	return mgr, nil
+	// mgr.SetFeatures(features)
+	// return mgr, nil
+	panic("not implemented")
 }
 
 func (m *Manager) Features() []Feature {

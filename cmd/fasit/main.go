@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/pubsub"
-	"cloud.google.com/go/storage"
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/extension"
@@ -23,7 +22,6 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/nais/fasit/pkg/auth"
 	"github.com/nais/fasit/pkg/database"
-	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph"
 	"github.com/nais/fasit/pkg/graph/graphgen"
 	"github.com/nais/fasit/pkg/message"
@@ -139,35 +137,6 @@ func main() {
 	repo := database.New(db, log.WithField("subsystem", "repo"))
 	log.Info("-- successfully started database client")
 
-	log.WithField("feature_source", cfg.FeatureSource).Info("starting feature client")
-	var source feature.FeatureSource
-	switch cfg.FeatureSource {
-	case "file":
-		fileSource, err := feature.NewFeatureSourceFilesystem("./features")
-		if err != nil {
-			log.WithError(err).Fatal("setting up feature source")
-		}
-		go fileSource.Watch(ctx)
-		source = fileSource
-	case "bucket":
-		storageClient, err := storage.NewClient(ctx)
-		if err != nil {
-			log.WithError(err).Fatal("setting up storage client")
-		}
-		defer storageClient.Close()
-
-		bucketSource, err := feature.NewFeatureSourceBucket(ctx, storageClient.Bucket(cfg.FeatureBucket), log.WithField("subsystem", "bucketsource"))
-		if err != nil {
-			log.WithError(err).Fatal("setting up feature source")
-		}
-
-		go bucketSource.Watch(ctx, pubsubClient.Subscription(cfg.FeatureSubscription))
-		source = bucketSource
-	default:
-		log.Fatalf("unknown feature source: %s", cfg.FeatureSource)
-	}
-	defer source.Close()
-
 	statusMgr := message.NewSubscriber[message.Status](pubsubClient, cfg.GCPProjectID, cfg.StatusSubscriptionID)
 
 	receiver := workers.NewReceiver(statusMgr, repo, log.WithField("subsystem", "status"))
@@ -187,6 +156,8 @@ func main() {
 		}
 	}()
 	go reconciler.Run(ctx, 10*time.Minute)
+
+	go workers.NewAutoInstaller(repo).Run(ctx, 3*time.Minute)
 
 	// helmChartValues, err := helminfo.New(featureMgr, log.WithField("subsystem", "helm-chart-values"))
 	// if err != nil {

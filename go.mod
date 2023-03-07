@@ -5,12 +5,10 @@ go 1.19
 require (
 	cloud.google.com/go/cloudsqlconn v1.1.1
 	cloud.google.com/go/pubsub v1.28.0
-	cloud.google.com/go/storage v1.29.0
 	github.com/99designs/gqlgen v0.17.22
 	github.com/GoogleCloudPlatform/cloudsql-proxy v1.33.2
 	github.com/coreos/go-oidc/v3 v3.4.0
 	github.com/davecgh/go-spew v1.1.1
-	github.com/fsnotify/fsnotify v1.6.0
 	github.com/go-chi/chi/v5 v5.0.8
 	github.com/google/go-cmp v0.5.9
 	github.com/google/uuid v1.3.0
@@ -178,7 +176,6 @@ require (
 	golang.org/x/text v0.7.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	golang.org/x/tools v0.5.0 // indirect
-	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20230110181048-76db0878b65f // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
