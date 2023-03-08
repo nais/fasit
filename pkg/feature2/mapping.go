@@ -39,7 +39,7 @@ type MappingValues struct {
 	Configs map[string]any
 }
 
-func Generate(vals Values, kind model.EnvironmentKind, values *MappingValues, target map[string]any) error {
+func Generate(vals model.Values, kind model.EnvironmentKind, values *MappingValues, target map[string]any) error {
 	if target == nil {
 		return fmt.Errorf("target is nil")
 	}

@@ -42,13 +42,12 @@ func (r *repo) FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.
 
 	for _, featureState := range featureStates {
 		ret = append(ret, &model.FeatureState{
-			FeatureName:   featureState.Feature,
-			EnabledAt:     nullTimeToPtr(featureState.EnabledAt),
-			Enabled:       featureState.Enabled,
-			Created:       featureState.Created,
-			LastModified:  featureState.LastModified,
-			RolloutStatus: model.RolloutStatus(featureState.RolloutStatus),
-			EnvID:         envID,
+			FeatureName:  featureState.Name,
+			EnabledAt:    nullTimeToPtr(featureState.EnabledAt),
+			Enabled:      featureState.Enabled,
+			Created:      featureState.Created.Time,
+			LastModified: featureState.LastModified.Time,
+			EnvID:        envID,
 		})
 	}
 	return ret, nil
@@ -100,7 +99,7 @@ func (r *repo) FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID,
 		enabledFeatures := []string{}
 		for _, state := range states {
 			if state.Enabled {
-				enabledFeatures = append(enabledFeatures, state.Feature)
+				enabledFeatures = append(enabledFeatures, state.Name)
 			}
 		}
 

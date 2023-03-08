@@ -8,7 +8,6 @@ package gensql
 import (
 	"context"
 	"database/sql"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -77,23 +76,20 @@ func (q *Queries) FeatureStateGet(ctx context.Context, arg FeatureStateGetParams
 }
 
 const featureStatesGet = `-- name: FeatureStatesGet :many
-SELECT fs.environment_id, fs.feature, fs.enabled, fs.created, fs.last_modified, fs.enabled_at, coalesce(s.status, '') AS rollout_status
-FROM feature_states fs
-LEFT JOIN status s
-ON
-	fs.environment_id = s.environment_id AND
-	fs.feature = s.feature
+SELECT fs.environment_id, f.name, coalesce(fs.enabled, false) AS enabled, fs.created, fs.last_modified, fs.enabled_at
+FROM features f
+LEFT JOIN feature_states fs
+ON fs.feature = f.name
 WHERE fs.environment_id = $1
 `
 
 type FeatureStatesGetRow struct {
-	EnvironmentID uuid.UUID
-	Feature       string
+	EnvironmentID uuid.NullUUID
+	Name          string
 	Enabled       bool
-	Created       time.Time
-	LastModified  time.Time
+	Created       sql.NullTime
+	LastModified  sql.NullTime
 	EnabledAt     sql.NullTime
-	RolloutStatus string
 }
 
 func (q *Queries) FeatureStatesGet(ctx context.Context, environmentID uuid.UUID) ([]FeatureStatesGetRow, error) {
@@ -107,12 +103,11 @@ func (q *Queries) FeatureStatesGet(ctx context.Context, environmentID uuid.UUID)
 		var i FeatureStatesGetRow
 		if err := rows.Scan(
 			&i.EnvironmentID,
-			&i.Feature,
+			&i.Name,
 			&i.Enabled,
 			&i.Created,
 			&i.LastModified,
 			&i.EnabledAt,
-			&i.RolloutStatus,
 		); err != nil {
 			return nil, err
 		}

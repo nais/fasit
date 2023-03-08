@@ -8,6 +8,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -42,36 +43,42 @@ func (r *queryResolver) FeatureStatus(ctx context.Context, envID uuid.UUID, feat
 
 // MissingDependencies is the resolver for the missingDependencies field.
 func (r *statusResolver) MissingDependencies(ctx context.Context, obj *model.Status) ([]*model.Feature, error) {
-	// f := r.Features.Get(obj.Feature)
+	f, err := r.Repo.FeatureByName(ctx, obj.Feature)
+	if err != nil {
+		return nil, err
+	}
 
-	// states, err := r.Repo.FeatureStatesGet(ctx, obj.EnvironmentID)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	states, err := r.Repo.FeatureStatesGet(ctx, obj.EnvironmentID)
+	if err != nil {
+		return nil, err
+	}
 
-	// enabledFeatures := []string{}
-	// for _, s := range states {
-	// 	if s.Enabled && s.RolloutStatus == model.RolloutStatusDeployed {
-	// 		enabledFeatures = append(enabledFeatures, s.FeatureName)
-	// 	}
-	// }
+	enabledFeatures := []string{}
+	for _, s := range states {
+		if s.Enabled {
+			enabledFeatures = append(enabledFeatures, s.FeatureName)
+		}
+	}
 
-	// ret := []*model.Feature{}
+	ret := []*model.Feature{}
 
-	// _ = f
-	// // for _, d := range f.DependsOn.FindMissing(enabledFeatures) {
-	// // 	feat := r.Features.Get(d)
-	// // 	if feat == nil {
-	// // 		return nil, fmt.Errorf("invalid dependency %v", d)
-	// // 	}
-	// // 	f, err := marshalFeature(*feat)
-	// // 	if err != nil {
-	// // 		return nil, err
-	// // 	}
-	// // 	ret = append(ret, f)
-	// // }
-	// return ret, nil
-	panic("not implemented")
+	for _, d := range f.Dependencies {
+		if !contains(enabledFeatures, d) {
+			ret = append(ret, r.Repo.FeatureByName(ctx, d))
+		}
+	}
+	for _, d := range f.DependsOn.FindMissing(enabledFeatures) {
+		feat := r.Features.Get(d)
+		if feat == nil {
+			return nil, fmt.Errorf("invalid dependency %v", d)
+		}
+		f, err := marshalFeature(*feat)
+		if err != nil {
+			return nil, err
+		}
+		ret = append(ret, f)
+	}
+	return ret, nil
 }
 
 // Status is the resolver for the status field.

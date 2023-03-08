@@ -13,7 +13,8 @@ import (
 type Querier interface {
 	AuditCreate(ctx context.Context, arg AuditCreateParams) error
 	AuditForEnvironment(ctx context.Context, arg AuditForEnvironmentParams) ([]Audit, error)
-	AutoInstallsForKind(ctx context.Context, environmentKind EnvironmentKind) ([]string, error)
+	AutoInstallNamesForKind(ctx context.Context, environmentKind EnvironmentKind) ([]string, error)
+	AutoInstallsForKind(ctx context.Context, environmentKind EnvironmentKind) ([]AutoInstall, error)
 	ConfigDelete(ctx context.Context, id uuid.UUID) error
 	ConfigEnvUpdateOrCreate(ctx context.Context, arg ConfigEnvUpdateOrCreateParams) (ConfigurationsEnvironment, error)
 	ConfigGet(ctx context.Context, feature string) ([]ConfigurationsGlobal, error)

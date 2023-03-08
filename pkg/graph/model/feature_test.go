@@ -1,6 +1,7 @@
-package feature
+package model
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
@@ -13,4 +14,5 @@ func TestFeature(t *testing.T) {
 	}
 
 	spew.Dump(f)
+	fmt.Println(f.Chart)
 }

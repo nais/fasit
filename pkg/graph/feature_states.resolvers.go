@@ -30,24 +30,17 @@ func (r *featureStateResolver) MissingDependencies(ctx context.Context, obj *mod
 
 	enabledFeatures := []string{}
 	for _, s := range states {
-		if s.Enabled && s.RolloutStatus == model.RolloutStatusDeployed {
+		if s.Enabled {
 			enabledFeatures = append(enabledFeatures, s.FeatureName)
 		}
 	}
 
 	ret := []*model.Feature{}
 
-	// for _, d := range f.DependsOn.FindMissing(enabledFeatures) {
-	// 	feat := r.Features.Get(d)
-	// 	if feat == nil {
-	// 		return nil, fmt.Errorf("invalid dependency %v", d)
-	// 	}
-	// 	f, err := marshalFeature(*feat)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	ret = append(ret, f)
-	// }
+	for _, d := range {
+
+	}
+
 	return ret, nil
 }
 
@@ -70,12 +63,6 @@ func (r *mutationResolver) FeatureStateSave(ctx context.Context, envID uuid.UUID
 func (r *queryResolver) FeatureState(ctx context.Context, envID uuid.UUID, feature string) (*model.FeatureState, error) {
 	fs, err := r.Repo.FeatureStateGet(ctx, envID, feature)
 	if err == nil {
-		status, err := r.Repo.StatusForFeature(ctx, envID, feature)
-		if err == nil {
-			// Don't fail if we can't get status
-			fs.RolloutStatus = status.Status
-		}
-
 		return fs, nil
 	}
 
@@ -85,10 +72,9 @@ func (r *queryResolver) FeatureState(ctx context.Context, envID uuid.UUID, featu
 
 	// If no feature state exists, return a default feature state
 	fs = &model.FeatureState{
-		FeatureName:   feature,
-		Enabled:       false,
-		RolloutStatus: model.RolloutStatusUnknown,
-		EnvID:         envID,
+		FeatureName: feature,
+		Enabled:     false,
+		EnvID:       envID,
 	}
 	return fs, nil
 }

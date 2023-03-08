@@ -9,12 +9,12 @@ import (
 	"context"
 )
 
-const autoInstallsForKind = `-- name: AutoInstallsForKind :many
+const autoInstallNamesForKind = `-- name: AutoInstallNamesForKind :many
 SELECT feature FROM auto_installs WHERE kind = $1 ORDER BY feature
 `
 
-func (q *Queries) AutoInstallsForKind(ctx context.Context, environmentKind EnvironmentKind) ([]string, error) {
-	rows, err := q.db.Query(ctx, autoInstallsForKind, environmentKind)
+func (q *Queries) AutoInstallNamesForKind(ctx context.Context, environmentKind EnvironmentKind) ([]string, error) {
+	rows, err := q.db.Query(ctx, autoInstallNamesForKind, environmentKind)
 	if err != nil {
 		return nil, err
 	}
@@ -26,6 +26,30 @@ func (q *Queries) AutoInstallsForKind(ctx context.Context, environmentKind Envir
 			return nil, err
 		}
 		items = append(items, feature)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const autoInstallsForKind = `-- name: AutoInstallsForKind :many
+SELECT kind, feature, created  FROM auto_installs WHERE kind = $1 ORDER BY feature
+`
+
+func (q *Queries) AutoInstallsForKind(ctx context.Context, environmentKind EnvironmentKind) ([]AutoInstall, error) {
+	rows, err := q.db.Query(ctx, autoInstallsForKind, environmentKind)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AutoInstall{}
+	for rows.Next() {
+		var i AutoInstall
+		if err := rows.Scan(&i.Kind, &i.Feature, &i.Created); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

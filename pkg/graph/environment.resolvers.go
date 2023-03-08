@@ -15,32 +15,7 @@ import (
 
 // FeatureStates is the resolver for the featureStates field.
 func (r *environmentResolver) FeatureStates(ctx context.Context, obj *model.Environment) ([]*model.FeatureState, error) {
-	// 	retVal, err := r.Repo.FeatureStatesGet(ctx, obj.ID)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-
-	// OUTER:
-	// 	for _, f := range r.Features.Features() {
-	// 		if !contains(f.EnvironmentKinds, obj.Kind) {
-	// 			continue
-	// 		}
-
-	// 		// Skip elements that are configured
-	// 		for _, c := range retVal {
-	// 			if f.Name == c.FeatureName {
-	// 				continue OUTER
-	// 			}
-	// 		}
-	// 		retVal = append(retVal, &model.FeatureState{FeatureName: f.Name, EnvID: obj.ID})
-	// 	}
-
-	// 	sort.Slice(retVal, func(i, j int) bool {
-	// 		return retVal[i].FeatureName < retVal[j].FeatureName
-	// 	})
-
-	// return retVal, nil
-	panic("not implemented")
+	return r.Repo.FeatureStatesGet(ctx, obj.ID)
 }
 
 // Health is the resolver for the health field.

@@ -1,6 +1,3 @@
-//go:build todo
-// +build todo
-
 package graph
 
 import (
@@ -21,34 +18,29 @@ func Test_statusResolver_MissingDependencies(t *testing.T) {
 	ctx := context.Background()
 
 	featureName := &model.FeatureState{
-		FeatureName:   "featureName",
-		Enabled:       true,
-		RolloutStatus: model.RolloutStatusDeployed,
-		EnvID:         env.ID,
+		FeatureName: "featureName",
+		Enabled:     true,
+		EnvID:       env.ID,
 	}
 	deployedDep := &model.FeatureState{
-		FeatureName:   "deployedDep",
-		Enabled:       true,
-		RolloutStatus: model.RolloutStatusDeployed,
-		EnvID:         env.ID,
+		FeatureName: "deployedDep",
+		Enabled:     true,
+		EnvID:       env.ID,
 	}
 	pendingDep := &model.FeatureState{
-		FeatureName:   "pendingDep",
-		Enabled:       true,
-		RolloutStatus: model.RolloutStatusPending,
-		EnvID:         env.ID,
+		FeatureName: "pendingDep",
+		Enabled:     true,
+		EnvID:       env.ID,
 	}
 	notEnabledDep := &model.FeatureState{
-		FeatureName:   "notEnabledDep",
-		Enabled:       false,
-		RolloutStatus: model.RolloutStatusDeployed,
-		EnvID:         env.ID,
+		FeatureName: "notEnabledDep",
+		Enabled:     false,
+		EnvID:       env.ID,
 	}
 	enabledDep := &model.FeatureState{
-		FeatureName:   "enabledDep",
-		Enabled:       true,
-		RolloutStatus: model.RolloutStatusDeployed,
-		EnvID:         env.ID,
+		FeatureName: "enabledDep",
+		Enabled:     true,
+		EnvID:       env.ID,
 	}
 
 	features := []*model.FeatureState{featureName, deployedDep, pendingDep, notEnabledDep, enabledDep}
@@ -58,19 +50,20 @@ func Test_statusResolver_MissingDependencies(t *testing.T) {
 
 	r := statusResolver{
 		Resolver: &Resolver{
-			Repo:     repo,
-			Features: &feature.Manager{},
+			Repo: repo,
 		},
 	}
 
-	r.Features.SetFeatures([]feature.Feature{
+	feats := []feature.Feature{
 		{
-			Name:             featureName.FeatureName,
-			EnvironmentKinds: []model.EnvironmentKind{model.EnvironmentKindTenant},
-			DependsOn: feature.Dependencies{feature.Dependency{
-				AnyOf: []string{},
-				AllOf: []string{deployedDep.FeatureName, pendingDep.FeatureName},
-			}},
+			Name: featureName.FeatureName,
+			FeatureYAML: feature.FeatureYAML{
+				EnvironmentKinds: []model.EnvironmentKind{model.EnvironmentKindTenant},
+				Dependencies: feature.Dependencies{feature.Dependency{
+					AnyOf: []string{},
+					AllOf: []string{deployedDep.FeatureName, pendingDep.FeatureName},
+				}},
+			},
 		},
 		{
 			Name:             deployedDep.FeatureName,
@@ -92,7 +85,7 @@ func Test_statusResolver_MissingDependencies(t *testing.T) {
 			Name:             enabledDep.FeatureName,
 			EnvironmentKinds: []model.EnvironmentKind{model.EnvironmentKindTenant},
 		},
-	})
+	}
 
 	t.Run("Pending dep is missing", func(t *testing.T) {
 		status := &model.Status{
@@ -107,7 +100,7 @@ func Test_statusResolver_MissingDependencies(t *testing.T) {
 			{
 				Name:             pendingDep.FeatureName,
 				EnvironmentKinds: []model.EnvironmentKind{model.EnvironmentKindTenant},
-				DependsOn:        []*model.Dependency{},
+				Dependencies:     []*model.Dependency{},
 				Config:           json.RawMessage("{}"),
 			},
 		}

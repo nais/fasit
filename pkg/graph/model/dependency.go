@@ -1,4 +1,4 @@
-package feature
+package model
 
 type Dependencies []Dependency
 
@@ -8,11 +8,6 @@ func (d Dependencies) FindMissing(features []string) []string {
 		ret = append(ret, dep.FindMissing(features)...)
 	}
 	return ret
-}
-
-type Dependency struct {
-	Any []string `json:"any,omitempty" yaml:"any,omitempty"`
-	All []string `json:"all,omitempty" yaml:"all,omitempty"`
 }
 
 func (d *Dependency) FindMissing(features []string) []string {
@@ -26,8 +21,8 @@ func (d *Dependency) FindMissing(features []string) []string {
 	}
 
 	missing := []string{}
-	if len(d.All) > 0 {
-		for _, f := range d.All {
+	if len(d.AllOf) > 0 {
+		for _, f := range d.AllOf {
 			if !contains(features, f) {
 				missing = append(missing, f)
 			}
@@ -35,7 +30,7 @@ func (d *Dependency) FindMissing(features []string) []string {
 	}
 
 	anyOfMissing := []string{}
-	for _, f := range d.Any {
+	for _, f := range d.AnyOf {
 		if contains(features, f) {
 			anyOfMissing = []string{}
 			break

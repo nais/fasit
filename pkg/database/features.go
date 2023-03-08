@@ -7,6 +7,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database/gensql"
 	feature "github.com/nais/fasit/pkg/feature2"
 	"github.com/nais/fasit/pkg/graph/model"
@@ -15,6 +16,7 @@ import (
 type FeaturesRepo interface {
 	FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, ci bool) ([]*feature.Feature, error)
 	FeatureByName(ctx context.Context, name string) (*model.Feature, error)
+	MissingDependencies(ctx context.Context, envID uuid.UUID, feature *model.Feature) ([]string, error)
 }
 
 func (r *repo) FeatureByName(ctx context.Context, name string) (*model.Feature, error) {
@@ -29,7 +31,7 @@ func (r *repo) FeatureByName(ctx context.Context, name string) (*model.Feature, 
 	}, nil
 }
 
-func (r *repo) FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, ci bool) ([]*feature.Feature, error) {
+func (r *repo) FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, ci bool) ([]*model.Feature, error) {
 	features, err := r.querier.FeaturesForKind(ctx, kind.String())
 	if err != nil {
 		return nil, err
@@ -73,6 +75,27 @@ func (r *repo) FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, 
 	})
 
 	return featuresFromSQL(features)
+}
+
+func (r *repo) MissingDependencies(ctx context.Context, envID uuid.UUID, feature *model.Feature) ([]*model.Feature, error) {
+	states, err := r.querier.FeatureStatesGet(ctx, envID)
+	if err != nil {
+		return nil, err
+	}
+
+	enabledFeatures := []string{}
+	for _, state := range states {
+		if state.Enabled {
+			enabledFeatures = append(enabledFeatures, state.Name)
+		}
+	}
+
+	f, err := r.querier.FeatureByName(ctx, feature.Name)
+	if err != nil {
+		return nil, fmt.Errorf("get feature by name from db: %w", err)
+	}
+
+	return feature.Dependencies.FindMissing(enabledFeatures), nil
 }
 
 func featuresFromSQL(features []gensql.FeaturesForKindRow) ([]*feature.Feature, error) {

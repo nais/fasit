@@ -67,6 +67,14 @@ func (m Mapping) Generate(envKind model.EnvironmentKind, values *MappingValues, 
 	return nil
 }
 
+func (m Mapping) GenerateJSON(envKind model.EnvironmentKind, values *MappingValues) (string, error) {
+	target := make(map[string]any)
+	if err := m.Generate(envKind, values, target); err != nil {
+		return "", err
+	}
+	return "", nil
+}
+
 func (m Mapping) DisplayName(key string) string {
 	for k, v := range m {
 		if k == key {

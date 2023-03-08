@@ -1,4 +1,4 @@
-package feature
+package model
 
 import (
 	"testing"
@@ -19,7 +19,7 @@ func TestDependencies_FindMissing(t *testing.T) {
 		"any of": {
 			dep: Dependencies{
 				{
-					Any: []string{"foo", "bar"},
+					AnyOf: []string{"foo", "bar"},
 				},
 			},
 			features: []string{"foo"},
@@ -28,7 +28,7 @@ func TestDependencies_FindMissing(t *testing.T) {
 		"all of": {
 			dep: Dependencies{
 				{
-					All: []string{"foo", "bar"},
+					AllOf: []string{"foo", "bar"},
 				},
 			},
 			features: []string{"foo", "bar"},
@@ -37,8 +37,8 @@ func TestDependencies_FindMissing(t *testing.T) {
 		"all of and any of": {
 			dep: Dependencies{
 				{
-					All: []string{"foo", "bar"},
-					Any: []string{"baz", "qux"},
+					AllOf: []string{"foo", "bar"},
+					AnyOf: []string{"baz", "qux"},
 				},
 			},
 			features: []string{"foo", "bar", "baz"},
@@ -47,8 +47,8 @@ func TestDependencies_FindMissing(t *testing.T) {
 		"all of and any of, not satisfied": {
 			dep: Dependencies{
 				{
-					All: []string{"foo", "bar"},
-					Any: []string{"baz", "qux"},
+					AllOf: []string{"foo", "bar"},
+					AnyOf: []string{"baz", "qux"},
 				},
 			},
 			features: []string{"foo", "bar"},
@@ -57,7 +57,7 @@ func TestDependencies_FindMissing(t *testing.T) {
 		"all of, not satisfied": {
 			dep: Dependencies{
 				{
-					All: []string{"foo", "bar"},
+					AllOf: []string{"foo", "bar"},
 				},
 			},
 			features: []string{"foo", "baz"},
@@ -66,7 +66,7 @@ func TestDependencies_FindMissing(t *testing.T) {
 		"all of, not satisfied, no features": {
 			dep: Dependencies{
 				{
-					All: []string{"foo", "bar"},
+					AllOf: []string{"foo", "bar"},
 				},
 			},
 			features: []string{},

@@ -1,10 +1,8 @@
 -- name: FeatureStatesGet :many
-SELECT fs.*, coalesce(s.status, '') AS rollout_status
-FROM feature_states fs
-LEFT JOIN status s
-ON
-	fs.environment_id = s.environment_id AND
-	fs.feature = s.feature
+SELECT fs.environment_id, f.name, coalesce(fs.enabled, false) AS enabled, fs.created, fs.last_modified, fs.enabled_at
+FROM features f
+LEFT JOIN feature_states fs
+ON fs.feature = f.name
 WHERE fs.environment_id = @environment_id;
 
 -- name: FeatureStateGet :one

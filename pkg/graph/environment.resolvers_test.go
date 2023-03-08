@@ -1,6 +1,3 @@
-//go:build todo
-// +build todo
-
 package graph
 
 import (
@@ -32,8 +29,7 @@ func Test_environmentResolver_FeatureStates_FeatureStateMerge_Works(t *testing.T
 
 	r := environmentResolver{
 		Resolver: &Resolver{
-			Repo:     repo,
-			Features: &feature.Manager{},
+			Repo: repo,
 		},
 	}
 
