@@ -97,7 +97,7 @@ config:
       - "tenant"
       - "onprem"
       - "management"
-  naiserator.toleration.spot.enabled:
+  naiserator.features.spot-toleration:
     type: bool
     displayName: "Enable spot toleration"
     ignoreKind:
