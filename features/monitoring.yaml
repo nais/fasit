@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring
-version: 1.51.1
+version: 1.52.1
 description: "Monitoring stack for nais"
 environmentKinds:
   - "tenant"
@@ -12,6 +12,9 @@ autoInstall:
   - "management"
 timeout: 20m
 config:
+  alerts.naisVakt.ping:
+    type: bool
+    displayName: "Enable nais-vakt pinging on alerts"
   alerts.proxy:
     type: string
     displayName: "Alerts proxy URL"

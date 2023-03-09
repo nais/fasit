@@ -30,7 +30,7 @@ config:
 mapping:
   customPolicies.denyImageRegistries.extraArgs:
     template: |
-      - "europe-north1-docker.pkg.dev/{{ .Management.project_id }}/nais-repository/*"
+      - "europe-north1-docker.pkg.dev/{{ .Management.project_id }}/*"
     description: "A default list of additional registries to allow"
     displayName: "Additional registries allowed"
     ignoreKind:

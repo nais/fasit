@@ -1,0 +1,20 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/pull-metrics
+source: https://github.com/nais/pull-metrics/tree/main/charts/pull-metrics
+version: 0.1.0
+description: "Creates metrics for image pull times"
+environmentKinds:
+  - "legacy"
+dependsOn:
+  - allOf:
+      - naiserator
+      - nais-system
+config:
+  image.tag:
+    type: string
+    required: true
+    displayName: "Image tag"
+    description: "pull-metrics image"
+mapping:
+  apiserverIP:
+    value: "{{ .Env.apiserver_endpoint }}"
+    displayName: "API server IP"
