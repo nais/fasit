@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/wonderwall
 source: https://github.com/nais/helm-charts/tree/main/charts/wonderwall
-version: 0.1.1
+version: 0.2.0
 description: "Configuration for Wonderwall; a reverse proxy sidecar implementing OIDC auth. Depends on feature toggle in naiserator."
 environmentKinds:
   - "tenant"
@@ -10,11 +10,40 @@ dependsOn:
     - "replicator"
     - "naiserator"
     - "fqdn-policy"
-    #- "azurerator-nav" - TODO: not enabled in legacy yet
-    #- "digdirator" - TODO: not enabled in legacy yet
+    - "digdirator"
 config:
+  image.tag:
+    type: string
+  idporten.cookieName:
+    type: string
+    required: true
+    description: Cookie name for SSO sessions.
+  idporten.encryptionKey:
+    type: string
+    required: true
+    description: Cookie encryption key, 256 bits encoded with standard base64.
   idporten.postLogoutRedirectURL:
     type: string
+    required: true
+    description: Where to redirect the user after global logout.
+  idporten.ssoDefaultRedirectURL:
+    type: string
+    required: true
+    description: Fallback URL for invalid SSO redirects.
+  idporten.ssoDomain:
+    type: string
+    required: true
+    description: Allowed domain for SSO (for cookies, CORS and redirect URL validation).
+  idporten.ssoServerHost:
+    type: string
+    required: true
+    description: Host for SSO server.
+  idporten.ssoReplicasMin:
+    type: int
+    description: Minimum replicas for SSO server.
+  idporten.ssoReplicasMax:
+    type: int
+    description: Maximum replicas for SSO server.
   loginstatus.cookieDomain:
     type: string
     required: true
