@@ -21,7 +21,7 @@ type ConfigRepo interface {
 	ConfigOverridesByFeature(ctx context.Context, featureName string) ([]*model.ConfigOverride, error)
 	ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration) (model.Configuration, error)
 	EnvConfig(ctx context.Context, feature string, envID uuid.UUID) ([]model.Configuration, error)
-	HelmValues(ctx context.Context, feature *feature.Feature, envID uuid.UUID) (values map[string]any, err error)
+	HelmValues(ctx context.Context, feature *model.Feature, envID uuid.UUID) (values map[string]any, err error)
 }
 
 func environmentConfigurationFromSQL(c gensql.ConfigurationsEnvironment) *model.EnvConfiguration {
@@ -198,7 +198,7 @@ func (r *repo) ConfigDelete(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-func (r *repo) HelmValues(ctx context.Context, f *feature.Feature, envID uuid.UUID) (map[string]any, error) {
+func (r *repo) HelmValues(ctx context.Context, f *model.Feature, envID uuid.UUID) (map[string]any, error) {
 	mv, envKind, err := r.MappingValuesForEnvironment(ctx, envID, true)
 	if err != nil {
 		return nil, err

@@ -62,21 +62,12 @@ func (r *statusResolver) MissingDependencies(ctx context.Context, obj *model.Sta
 
 	ret := []*model.Feature{}
 
-	for _, d := range f.Dependencies {
-		if !contains(enabledFeatures, d) {
-			ret = append(ret, r.Repo.FeatureByName(ctx, d))
-		}
-	}
-	for _, d := range f.DependsOn.FindMissing(enabledFeatures) {
-		feat := r.Features.Get(d)
-		if feat == nil {
-			return nil, fmt.Errorf("invalid dependency %v", d)
-		}
-		f, err := marshalFeature(*feat)
+	for _, missing := range f.Dependencies.FindMissing(enabledFeatures) {
+		mf, err := r.Repo.FeatureByName(ctx, missing)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("getting feature by name: %v: %w", missing, err)
 		}
-		ret = append(ret, f)
+		ret = append(ret, mf)
 	}
 	return ret, nil
 }

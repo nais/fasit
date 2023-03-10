@@ -18,7 +18,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/instrument"
-	"go.opentelemetry.io/otel/metric/instrument/syncint64"
 )
 
 type (
@@ -74,7 +73,7 @@ type repo struct {
 	db      *pgxpool.Pool
 	log     *logrus.Entry
 
-	auditErrorCount syncint64.Counter
+	auditErrorCount instrument.Int64Counter
 }
 
 func (r *repo) Metrics(meter metric.Meter) (err error) {

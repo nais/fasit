@@ -80,20 +80,6 @@ func (_m *Repo) AutoInstallsForKind(ctx context.Context, kind model.EnvironmentK
 	return r0, r1
 }
 
-// AutoInstallsListen provides a mock function with given fields: ctx, fn
-func (_m *Repo) AutoInstallsListen(ctx context.Context, fn database.ListenFunc) error {
-	ret := _m.Called(ctx, fn)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, database.ListenFunc) error); ok {
-		r0 = rf(ctx, fn)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // Close provides a mock function with given fields:
 func (_m *Repo) Close() {
 	_m.Called()
@@ -584,11 +570,11 @@ func (_m *Repo) FeatureByName(ctx context.Context, name string) (*model.Feature,
 }
 
 // FeatureDataCreate provides a mock function with given fields: _a0, _a1
-func (_m *Repo) FeatureDataCreate(_a0 context.Context, _a1 feature.Feature) error {
+func (_m *Repo) FeatureDataCreate(_a0 context.Context, _a1 model.Feature) error {
 	ret := _m.Called(_a0, _a1)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, feature.Feature) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, model.Feature) error); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		r0 = ret.Error(0)
@@ -624,15 +610,15 @@ func (_m *Repo) FeatureStateGet(ctx context.Context, envID uuid.UUID, featureNam
 }
 
 // FeatureStatesCreateOrUpdate provides a mock function with given fields: ctx, envID, _a2, enabled
-func (_m *Repo) FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, _a2 *feature.Feature, enabled bool) (*model.FeatureState, error) {
+func (_m *Repo) FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, _a2 *model.Feature, enabled bool) (*model.FeatureState, error) {
 	ret := _m.Called(ctx, envID, _a2, enabled)
 
 	var r0 *model.FeatureState
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, *feature.Feature, bool) (*model.FeatureState, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, *model.Feature, bool) (*model.FeatureState, error)); ok {
 		return rf(ctx, envID, _a2, enabled)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, *feature.Feature, bool) *model.FeatureState); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, *model.Feature, bool) *model.FeatureState); ok {
 		r0 = rf(ctx, envID, _a2, enabled)
 	} else {
 		if ret.Get(0) != nil {
@@ -640,7 +626,7 @@ func (_m *Repo) FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, *feature.Feature, bool) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, *model.Feature, bool) error); ok {
 		r1 = rf(ctx, envID, _a2, enabled)
 	} else {
 		r1 = ret.Error(1)
@@ -690,19 +676,19 @@ func (_m *Repo) FeatureStatesListen(ctx context.Context, fn database.ListenFunc)
 }
 
 // FeaturesForKind provides a mock function with given fields: ctx, kind, ci
-func (_m *Repo) FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, ci bool) ([]*feature.Feature, error) {
+func (_m *Repo) FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, ci bool) ([]*model.Feature, error) {
 	ret := _m.Called(ctx, kind, ci)
 
-	var r0 []*feature.Feature
+	var r0 []*model.Feature
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, model.EnvironmentKind, bool) ([]*feature.Feature, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, model.EnvironmentKind, bool) ([]*model.Feature, error)); ok {
 		return rf(ctx, kind, ci)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, model.EnvironmentKind, bool) []*feature.Feature); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, model.EnvironmentKind, bool) []*model.Feature); ok {
 		r0 = rf(ctx, kind, ci)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*feature.Feature)
+			r0 = ret.Get(0).([]*model.Feature)
 		}
 	}
 
@@ -756,15 +742,15 @@ func (_m *Repo) HealthStatusCreateOrUpdate(ctx context.Context, environmentID uu
 }
 
 // HelmValues provides a mock function with given fields: ctx, _a1, envID
-func (_m *Repo) HelmValues(ctx context.Context, _a1 *feature.Feature, envID uuid.UUID) (map[string]interface{}, error) {
+func (_m *Repo) HelmValues(ctx context.Context, _a1 *model.Feature, envID uuid.UUID) (map[string]interface{}, error) {
 	ret := _m.Called(ctx, _a1, envID)
 
 	var r0 map[string]interface{}
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *feature.Feature, uuid.UUID) (map[string]interface{}, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *model.Feature, uuid.UUID) (map[string]interface{}, error)); ok {
 		return rf(ctx, _a1, envID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *feature.Feature, uuid.UUID) map[string]interface{}); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *model.Feature, uuid.UUID) map[string]interface{}); ok {
 		r0 = rf(ctx, _a1, envID)
 	} else {
 		if ret.Get(0) != nil {
@@ -772,7 +758,7 @@ func (_m *Repo) HelmValues(ctx context.Context, _a1 *feature.Feature, envID uuid
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *feature.Feature, uuid.UUID) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *model.Feature, uuid.UUID) error); ok {
 		r1 = rf(ctx, _a1, envID)
 	} else {
 		r1 = ret.Error(1)

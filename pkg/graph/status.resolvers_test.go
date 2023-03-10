@@ -2,14 +2,13 @@ package graph
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database/mocks"
-	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func Test_statusResolver_MissingDependencies(t *testing.T) {
@@ -17,18 +16,18 @@ func Test_statusResolver_MissingDependencies(t *testing.T) {
 	env := &model.Environment{ID: id, Kind: model.EnvironmentKindTenant}
 	ctx := context.Background()
 
-	featureName := &model.FeatureState{
-		FeatureName: "featureName",
+	anyof := &model.FeatureState{
+		FeatureName: "anyof",
 		Enabled:     true,
 		EnvID:       env.ID,
 	}
-	deployedDep := &model.FeatureState{
-		FeatureName: "deployedDep",
+	allof := &model.FeatureState{
+		FeatureName: "allof",
 		Enabled:     true,
 		EnvID:       env.ID,
 	}
-	pendingDep := &model.FeatureState{
-		FeatureName: "pendingDep",
+	enabledDep := &model.FeatureState{
+		FeatureName: "enabledDep",
 		Enabled:     true,
 		EnvID:       env.ID,
 	}
@@ -37,80 +36,60 @@ func Test_statusResolver_MissingDependencies(t *testing.T) {
 		Enabled:     false,
 		EnvID:       env.ID,
 	}
-	enabledDep := &model.FeatureState{
-		FeatureName: "enabledDep",
-		Enabled:     true,
-		EnvID:       env.ID,
-	}
 
-	features := []*model.FeatureState{featureName, deployedDep, pendingDep, notEnabledDep, enabledDep}
+	features := []*model.FeatureState{anyof, notEnabledDep, enabledDep}
 
 	repo := mocks.NewRepo(t)
-	repo.On("FeatureStatesGet", ctx, id).Return(features, nil).Times(3)
+	repo.On("FeatureStatesGet", ctx, id).Return(features, nil)
+
+	feats := map[string]*model.Feature{
+		anyof.FeatureName: {
+			Name: anyof.FeatureName,
+			FeatureYAML: model.FeatureYAML{
+				EnvironmentKinds: []model.EnvironmentKind{model.EnvironmentKindTenant},
+				Dependencies: model.Dependencies{model.Dependency{
+					AnyOf: []string{enabledDep.FeatureName, notEnabledDep.FeatureName},
+					AllOf: []string{},
+				}},
+			},
+		},
+		allof.FeatureName: {
+			Name: allof.FeatureName,
+			FeatureYAML: model.FeatureYAML{
+				EnvironmentKinds: []model.EnvironmentKind{model.EnvironmentKindTenant},
+				Dependencies: model.Dependencies{model.Dependency{
+					AnyOf: []string{},
+					AllOf: []string{enabledDep.FeatureName, notEnabledDep.FeatureName},
+				}},
+			},
+		},
+		notEnabledDep.FeatureName: {
+			Name: notEnabledDep.FeatureName,
+			FeatureYAML: model.FeatureYAML{
+				EnvironmentKinds: []model.EnvironmentKind{model.EnvironmentKindTenant},
+			},
+		},
+		enabledDep.FeatureName: {
+			Name: enabledDep.FeatureName,
+			FeatureYAML: model.FeatureYAML{
+				EnvironmentKinds: []model.EnvironmentKind{model.EnvironmentKindTenant},
+			},
+		},
+	}
+
+	repo.On("FeatureByName", ctx, mock.AnythingOfType("string")).Return(func(ctx context.Context, name string) (*model.Feature, error) {
+		return feats[name], nil
+	}, nil)
 
 	r := statusResolver{
 		Resolver: &Resolver{
 			Repo: repo,
 		},
 	}
-
-	feats := []feature.Feature{
-		{
-			Name: featureName.FeatureName,
-			FeatureYAML: feature.FeatureYAML{
-				EnvironmentKinds: []model.EnvironmentKind{model.EnvironmentKindTenant},
-				Dependencies: feature.Dependencies{feature.Dependency{
-					AnyOf: []string{},
-					AllOf: []string{deployedDep.FeatureName, pendingDep.FeatureName},
-				}},
-			},
-		},
-		{
-			Name:             deployedDep.FeatureName,
-			EnvironmentKinds: []model.EnvironmentKind{model.EnvironmentKindTenant},
-			DependsOn: feature.Dependencies{feature.Dependency{
-				AnyOf: []string{enabledDep.FeatureName, notEnabledDep.FeatureName},
-				AllOf: []string{},
-			}},
-		},
-		{
-			Name:             pendingDep.FeatureName,
-			EnvironmentKinds: []model.EnvironmentKind{model.EnvironmentKindTenant},
-		},
-		{
-			Name:             notEnabledDep.FeatureName,
-			EnvironmentKinds: []model.EnvironmentKind{model.EnvironmentKindTenant},
-		},
-		{
-			Name:             enabledDep.FeatureName,
-			EnvironmentKinds: []model.EnvironmentKind{model.EnvironmentKindTenant},
-		},
-	}
-
-	t.Run("Pending dep is missing", func(t *testing.T) {
+	t.Run("having one of AnyOf gives no missing dependencies", func(t *testing.T) {
 		status := &model.Status{
 			EnvironmentID: env.ID,
-			Feature:       featureName.FeatureName,
-		}
-		got, err := r.MissingDependencies(ctx, status)
-
-		assert.NoError(t, err)
-
-		want := []*model.Feature{
-			{
-				Name:             pendingDep.FeatureName,
-				EnvironmentKinds: []model.EnvironmentKind{model.EnvironmentKindTenant},
-				Dependencies:     []*model.Dependency{},
-				Config:           json.RawMessage("{}"),
-			},
-		}
-
-		assert.Equal(t, want, got)
-	})
-	t.Run("one of AnyOf is running gives no missing dependencies", func(t *testing.T) {
-		status := &model.Status{
-			EnvironmentID: env.ID,
-			Feature:       deployedDep.FeatureName,
+			Feature:       anyof.FeatureName,
 		}
 
 		got, err := r.MissingDependencies(ctx, status)
@@ -120,16 +99,16 @@ func Test_statusResolver_MissingDependencies(t *testing.T) {
 
 		assert.Equal(t, want, got)
 	})
-	t.Run("no dependencies gives no missing", func(t *testing.T) {
+	t.Run("having one of AllOf gives one missing dependency", func(t *testing.T) {
 		status := &model.Status{
 			EnvironmentID: env.ID,
-			Feature:       enabledDep.FeatureName,
+			Feature:       allof.FeatureName,
 		}
 
 		got, err := r.MissingDependencies(ctx, status)
 		assert.NoError(t, err)
 
-		want := []*model.Feature{}
+		want := []*model.Feature{feats[notEnabledDep.FeatureName]}
 
 		assert.Equal(t, want, got)
 	})

@@ -14,7 +14,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgtype"
 	"github.com/nais/fasit/pkg/database/gensql"
-	feature "github.com/nais/fasit/pkg/feature2"
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
@@ -323,12 +322,12 @@ func TestRepo_HelmValues_OK(t *testing.T) {
 	r := newTestRepo(t, fmt.Sprintf(q1, tenantid), fmt.Sprintf(q2, envid, tenantid))
 	defer r.Close()
 
-	feature := feature.Feature{
+	feature := model.Feature{
 		Name: "feature5",
-		FeatureYAML: feature.FeatureYAML{
-			Values: feature.Values{
-				"my.key": feature.Value{
-					Config: &feature.Config{
+		FeatureYAML: model.FeatureYAML{
+			Values: model.Values{
+				"my.key": model.Value{
+					Config: &model.Config{
 						Type:   model.ConfigTypeString,
 						Secret: true,
 					},
@@ -374,18 +373,18 @@ func TestRepo_HelmValues_MissingRequiredField(t *testing.T) {
 	r := newTestRepo(t, fmt.Sprintf(q1, tenantid), fmt.Sprintf(q2, envid, tenantid))
 	defer r.Close()
 
-	feature := feature.Feature{
+	feature := model.Feature{
 		Name: "feature5",
-		FeatureYAML: feature.FeatureYAML{
-			Values: feature.Values{
-				"my.key": feature.Value{
-					Config: &feature.Config{
+		FeatureYAML: model.FeatureYAML{
+			Values: model.Values{
+				"my.key": model.Value{
+					Config: &model.Config{
 						Type:   model.ConfigTypeString,
 						Secret: true,
 					},
 				},
-				"no.key": feature.Value{
-					Config: &feature.Config{
+				"no.key": model.Value{
+					Config: &model.Config{
 						Type:   model.ConfigTypeString,
 						Secret: true,
 					},
@@ -444,7 +443,7 @@ func TestRepo_HelmValues_InvaldKeyNesting(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = r.HelmValues(context.Background(), &feature.Feature{Name: "feature5"}, envid)
+	_, err = r.HelmValues(context.Background(), &model.Feature{Name: "feature5"}, envid)
 	if err == nil || !strings.HasSuffix(err.Error(), "is not nestable") {
 		t.Errorf("got: %v, want \"key `key` is not nestable\"", err)
 	}
@@ -471,32 +470,32 @@ func TestRepo_HelmValues_WithMappingValues(t *testing.T) {
 		{envid, "some_secret", json.RawMessage(`"hideme"`), true},
 	}
 
-	f := feature.Feature{
+	f := model.Feature{
 		Name: "feature5",
-		FeatureYAML: feature.FeatureYAML{
-			Values: feature.Values{
-				"names.tenant": feature.Value{
-					Computed: &feature.Computed{
+		FeatureYAML: model.FeatureYAML{
+			Values: model.Values{
+				"names.tenant": model.Value{
+					Computed: &model.Computed{
 						Template: "{{ .Tenant.Name }}",
 					},
 				},
-				"names.environment": feature.Value{
-					Computed: &feature.Computed{
+				"names.environment": model.Value{
+					Computed: &model.Computed{
 						Template: "{{ .Env.name }}",
 					},
 				},
-				"kind": feature.Value{
-					Computed: &feature.Computed{
+				"kind": model.Value{
+					Computed: &model.Computed{
 						Template: "{{ .Kind }}",
 					},
 				},
-				"projects.env": feature.Value{
-					Computed: &feature.Computed{
+				"projects.env": model.Value{
+					Computed: &model.Computed{
 						Template: "{{ .Env.project_id }}",
 					},
 				},
-				"projects.mgmt": feature.Value{
-					Computed: &feature.Computed{
+				"projects.mgmt": model.Value{
+					Computed: &model.Computed{
 						Template: "{{ .Management.project_id }}",
 					},
 				},
@@ -535,22 +534,22 @@ func TestRepo_HelmValues_WithIgnoredKeys_Ignored(t *testing.T) {
 	r := newTestRepo(t, fmt.Sprintf(q1, tenantid), fmt.Sprintf(q2, envid, tenantid))
 	defer r.Close()
 
-	feature := feature.Feature{
+	feature := model.Feature{
 		Name: "feature6",
-		FeatureYAML: feature.FeatureYAML{
-			Values: feature.Values{
-				"my.key": feature.Value{
-					Config: &feature.Config{
+		FeatureYAML: model.FeatureYAML{
+			Values: model.Values{
+				"my.key": model.Value{
+					Config: &model.Config{
 						Type:   model.ConfigTypeString,
 						Secret: true,
 					},
 				},
-				"ignore.key": feature.Value{
+				"ignore.key": model.Value{
 					Required: true,
 					IgnoreKind: []model.EnvironmentKind{
 						model.EnvironmentKindOnprem,
 					},
-					Config: &feature.Config{
+					Config: &model.Config{
 						Type:   model.ConfigTypeString,
 						Secret: true,
 					},
@@ -606,22 +605,22 @@ func TestRepo_HelmValues_WithIgnoredKeys_NotIgnored(t *testing.T) {
 	r := newTestRepo(t, fmt.Sprintf(q1, tenantid), fmt.Sprintf(q2, envid, tenantid))
 	defer r.Close()
 
-	feature := feature.Feature{
+	feature := model.Feature{
 		Name: "feature6",
-		FeatureYAML: feature.FeatureYAML{
-			Values: feature.Values{
-				"my.key": feature.Value{
-					Config: &feature.Config{
+		FeatureYAML: model.FeatureYAML{
+			Values: model.Values{
+				"my.key": model.Value{
+					Config: &model.Config{
 						Type:   model.ConfigTypeString,
 						Secret: true,
 					},
 				},
-				"ignore.key": feature.Value{
+				"ignore.key": model.Value{
 					Required: true,
 					IgnoreKind: []model.EnvironmentKind{
 						model.EnvironmentKindOnprem,
 					},
-					Config: &feature.Config{
+					Config: &model.Config{
 						Type:   model.ConfigTypeString,
 						Secret: true,
 					},

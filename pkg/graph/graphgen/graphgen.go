@@ -50,7 +50,6 @@ type ResolverRoot interface {
 	GlobalConfiguration() GlobalConfigurationResolver
 	Mutation() MutationResolver
 	NaisdWarning() NaisdWarningResolver
-	OutdatedInfo() OutdatedInfoResolver
 	Query() QueryResolver
 	Release() ReleaseResolver
 	Rollout() RolloutResolver
@@ -317,6 +316,9 @@ type EnvironmentResolver interface {
 	AuditLog(ctx context.Context, obj *model.Environment, featureName *string) ([]*model.AuditLog, error)
 }
 type FeatureResolver interface {
+	Dependencies(ctx context.Context, obj *model.Feature) ([]*model.Dependency, error)
+	Config(ctx context.Context, obj *model.Feature) (json.RawMessage, error)
+
 	Configoverrides(ctx context.Context, obj *model.Feature) ([]*model.ConfigOverride, error)
 	OutdatedInfo(ctx context.Context, obj *model.Feature) ([]*model.OutdatedInfo, error)
 }
@@ -346,9 +348,6 @@ type MutationResolver interface {
 }
 type NaisdWarningResolver interface {
 	Environment(ctx context.Context, obj *model.NaisdWarning) (*model.Environment, error)
-}
-type OutdatedInfoResolver interface {
-	Feature(ctx context.Context, obj *model.OutdatedInfo) (*model.Feature, error)
 }
 type QueryResolver interface {
 	Tenants(ctx context.Context) ([]*model.Tenant, error)
@@ -4704,7 +4703,7 @@ func (ec *executionContext) _Feature_dependencies(ctx context.Context, field gra
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Dependencies, nil
+		return ec.resolvers.Feature().Dependencies(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4725,8 +4724,8 @@ func (ec *executionContext) fieldContext_Feature_dependencies(ctx context.Contex
 	fc = &graphql.FieldContext{
 		Object:     "Feature",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "anyOf":
@@ -4754,7 +4753,7 @@ func (ec *executionContext) _Feature_config(ctx context.Context, field graphql.C
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Config, nil
+		return ec.resolvers.Feature().Config(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4775,8 +4774,8 @@ func (ec *executionContext) fieldContext_Feature_config(ctx context.Context, fie
 	fc = &graphql.FieldContext{
 		Object:     "Feature",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type RawMessage does not have child fields")
 		},
@@ -7715,7 +7714,7 @@ func (ec *executionContext) _OutdatedInfo_feature(ctx context.Context, field gra
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.OutdatedInfo().Feature(rctx, obj)
+		return obj.Feature, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7736,8 +7735,8 @@ func (ec *executionContext) fieldContext_OutdatedInfo_feature(ctx context.Contex
 	fc = &graphql.FieldContext{
 		Object:     "OutdatedInfo",
 		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
+		IsMethod:   false,
+		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "name":
@@ -13196,19 +13195,45 @@ func (ec *executionContext) _Feature(ctx context.Context, sel ast.SelectionSet, 
 				atomic.AddUint32(&invalids, 1)
 			}
 		case "dependencies":
+			field := field
 
-			out.Values[i] = ec._Feature_dependencies(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Feature_dependencies(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
 			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		case "config":
+			field := field
 
-			out.Values[i] = ec._Feature_config(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Feature_config(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
 			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		case "environmentKinds":
 
 			out.Values[i] = ec._Feature_environmentKinds(ctx, field, obj)
@@ -13994,45 +14019,32 @@ func (ec *executionContext) _OutdatedInfo(ctx context.Context, sel ast.Selection
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("OutdatedInfo")
 		case "feature":
-			field := field
 
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._OutdatedInfo_feature(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
+			out.Values[i] = ec._OutdatedInfo_feature(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
 			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		case "dependency":
 
 			out.Values[i] = ec._OutdatedInfo_dependency(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		case "dependencyName":
 
 			out.Values[i] = ec._OutdatedInfo_dependencyName(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		case "newVersion":
 
 			out.Values[i] = ec._OutdatedInfo_newVersion(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))

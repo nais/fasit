@@ -7,16 +7,13 @@ import (
 	"sort"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database/gensql"
-	feature "github.com/nais/fasit/pkg/feature2"
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
 type FeaturesRepo interface {
-	FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, ci bool) ([]*feature.Feature, error)
+	FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, ci bool) ([]*model.Feature, error)
 	FeatureByName(ctx context.Context, name string) (*model.Feature, error)
-	MissingDependencies(ctx context.Context, envID uuid.UUID, feature *model.Feature) ([]string, error)
 }
 
 func (r *repo) FeatureByName(ctx context.Context, name string) (*model.Feature, error) {
@@ -77,31 +74,31 @@ func (r *repo) FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, 
 	return featuresFromSQL(features)
 }
 
-func (r *repo) MissingDependencies(ctx context.Context, envID uuid.UUID, feature *model.Feature) ([]*model.Feature, error) {
-	states, err := r.querier.FeatureStatesGet(ctx, envID)
-	if err != nil {
-		return nil, err
-	}
+// func (r *repo) MissingDependencies(ctx context.Context, envID uuid.UUID, feature *model.Feature) ([]*model.Feature, error) {
+// 	states, err := r.querier.FeatureStatesGet(ctx, envID)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	enabledFeatures := []string{}
-	for _, state := range states {
-		if state.Enabled {
-			enabledFeatures = append(enabledFeatures, state.Name)
-		}
-	}
+// 	enabledFeatures := []string{}
+// 	for _, state := range states {
+// 		if state.Enabled {
+// 			enabledFeatures = append(enabledFeatures, state.Name)
+// 		}
+// 	}
 
-	f, err := r.querier.FeatureByName(ctx, feature.Name)
-	if err != nil {
-		return nil, fmt.Errorf("get feature by name from db: %w", err)
-	}
+// 	f, err := r.querier.FeatureByName(ctx, feature.Name)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("get feature by name from db: %w", err)
+// 	}
 
-	return feature.Dependencies.FindMissing(enabledFeatures), nil
-}
+// 	return feature.Dependencies.FindMissing(enabledFeatures), nil
+// }
 
-func featuresFromSQL(features []gensql.FeaturesForKindRow) ([]*feature.Feature, error) {
-	var ret []*feature.Feature
+func featuresFromSQL(features []gensql.FeaturesForKindRow) ([]*model.Feature, error) {
+	var ret []*model.Feature
 	for _, f := range features {
-		deps := feature.Dependencies{}
+		deps := model.Dependencies{}
 		if err := json.Unmarshal(f.Dependencies.Bytes, &deps); err != nil {
 			return nil, fmt.Errorf("unmarshal dependencies: %w", err)
 		}
@@ -111,13 +108,13 @@ func featuresFromSQL(features []gensql.FeaturesForKindRow) ([]*feature.Feature, 
 			return nil, fmt.Errorf("unmarshal default values: %w", err)
 		}
 
-		feature := &feature.Feature{
+		feature := &model.Feature{
 			Name:        f.Name,
 			Description: f.Description,
 			Version:     f.Version,
 			Chart:       f.Chart,
 			Source:      f.Source,
-			FeatureYAML: feature.FeatureYAML{
+			FeatureYAML: model.FeatureYAML{
 				Dependencies: deps,
 				Timeout:      time.Duration(f.Timeout.Int64) * time.Microsecond,
 			},

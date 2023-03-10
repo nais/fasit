@@ -6,6 +6,8 @@ package graph
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 
 	"github.com/nais/fasit/pkg/graph/graphgen"
 	"github.com/nais/fasit/pkg/graph/model"
@@ -13,65 +15,42 @@ import (
 
 // Environment is the resolver for the environment field.
 func (r *configOverrideResolver) Environment(ctx context.Context, obj *model.ConfigOverride) (*model.Environment, error) {
-	return r.Repo.EnvironmentGet(ctx, obj.EnvironmentID)
+	panic(fmt.Errorf("not implemented: Environment - environment"))
+}
+
+// Dependencies is the resolver for the dependencies field.
+func (r *featureResolver) Dependencies(ctx context.Context, obj *model.Feature) ([]*model.Dependency, error) {
+	panic(fmt.Errorf("not implemented: Dependencies - dependencies"))
+}
+
+// Config is the resolver for the config field.
+func (r *featureResolver) Config(ctx context.Context, obj *model.Feature) (json.RawMessage, error) {
+	panic(fmt.Errorf("not implemented: Config - config"))
 }
 
 // Configoverrides is the resolver for the configoverrides field.
 func (r *featureResolver) Configoverrides(ctx context.Context, obj *model.Feature) ([]*model.ConfigOverride, error) {
-	return r.Repo.ConfigOverridesByFeature(ctx, obj.Name)
+	panic(fmt.Errorf("not implemented: Configoverrides - configoverrides"))
 }
 
 // OutdatedInfo is the resolver for the outdatedInfo field.
 func (r *featureResolver) OutdatedInfo(ctx context.Context, obj *model.Feature) ([]*model.OutdatedInfo, error) {
-	// version := r.HelmChartValues.GetVersion(obj.Name)
-
-	// outdated := makeOutdatedInfo(obj.Name, version)
-
-	// sort.Slice(outdated, func(i, j int) bool {
-	// 	return outdated[i].FeatureName < outdated[j].FeatureName
-	// })
-	// return outdated, nil
-	panic("not implemented featureResolver.OutdatedInfo")
-}
-
-// Feature is the resolver for the feature field.
-func (r *outdatedInfoResolver) Feature(ctx context.Context, obj *model.OutdatedInfo) (*model.Feature, error) {
-	return r.resolveFeatureByName(obj.FeatureName)
+	panic(fmt.Errorf("not implemented: OutdatedInfo - outdatedInfo"))
 }
 
 // Features is the resolver for the features field.
 func (r *queryResolver) Features(ctx context.Context, kind *model.EnvironmentKind) ([]*model.Feature, error) {
-	panic("not implemented")
-	// features := []*model.Feature{}
-	// for _, feature := range r.Resolver.Features.Features() {
-	// 	if kind != nil && !contains(feature.EnvironmentKinds, *kind) {
-	// 		continue
-	// 	}
-
-	// 	tmp, err := marshalFeature(feature)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	features = append(features, tmp)
-	// }
-	// return features, nil
+	panic(fmt.Errorf("not implemented: Features - features"))
 }
 
 // Feature is the resolver for the feature field.
 func (r *queryResolver) Feature(ctx context.Context, name string) (*model.Feature, error) {
-	return r.resolveFeatureByName(name)
+	panic(fmt.Errorf("not implemented: Feature - feature"))
 }
 
 // OutdatedInfo is the resolver for the outdatedInfo field.
 func (r *queryResolver) OutdatedInfo(ctx context.Context) ([]*model.OutdatedInfo, error) {
-	// versions := r.HelmChartValues.AllVersions()
-	// ret := []*model.OutdatedInfo{}
-	// for name, version := range versions {
-	// 	ret = append(ret, makeOutdatedInfo(name, version)...)
-	// }
-
-	// return ret, nil
-	panic("not implemented queryResolver.OutdatedInfo")
+	panic(fmt.Errorf("not implemented: OutdatedInfo - outdatedInfo"))
 }
 
 // ConfigOverride returns graphgen.ConfigOverrideResolver implementation.
@@ -82,11 +61,7 @@ func (r *Resolver) ConfigOverride() graphgen.ConfigOverrideResolver {
 // Feature returns graphgen.FeatureResolver implementation.
 func (r *Resolver) Feature() graphgen.FeatureResolver { return &featureResolver{r} }
 
-// OutdatedInfo returns graphgen.OutdatedInfoResolver implementation.
-func (r *Resolver) OutdatedInfo() graphgen.OutdatedInfoResolver { return &outdatedInfoResolver{r} }
-
 type (
 	configOverrideResolver struct{ *Resolver }
 	featureResolver        struct{ *Resolver }
-	outdatedInfoResolver   struct{ *Resolver }
 )

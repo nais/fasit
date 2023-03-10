@@ -9,13 +9,12 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v4"
 	"github.com/nais/fasit/pkg/database/gensql"
-	feature "github.com/nais/fasit/pkg/feature2"
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
 type FeatureStateRepo interface {
 	FeatureStateGet(ctx context.Context, envID uuid.UUID, featureName string) (*model.FeatureState, error)
-	FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *feature.Feature, enabled bool) (*model.FeatureState, error)
+	FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *model.Feature, enabled bool) (*model.FeatureState, error)
 	FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
 	FeatureStatesListen(ctx context.Context, fn ListenFunc) error
 }
@@ -89,7 +88,7 @@ func (r *repo) FeatureStateGet(ctx context.Context, envID uuid.UUID, featureName
 	return fs, nil
 }
 
-func (r *repo) FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *feature.Feature, enabled bool) (*model.FeatureState, error) {
+func (r *repo) FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *model.Feature, enabled bool) (*model.FeatureState, error) {
 	if len(feature.Dependencies) > 0 {
 		states, err := r.querier.FeatureStatesGet(ctx, envID)
 		if err != nil {

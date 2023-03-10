@@ -12,5 +12,5 @@ type AutoInstallsRepo interface {
 }
 
 func (r *repo) AutoInstallsForKind(ctx context.Context, kind model.EnvironmentKind) ([]string, error) {
-	return r.querier.AutoInstallsForKind(ctx, gensql.EnvironmentKind(kind.String()))
+	return r.querier.AutoInstallNamesForKind(ctx, gensql.EnvironmentKind(kind.String()))
 }

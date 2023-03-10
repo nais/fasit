@@ -14,16 +14,20 @@ import (
 )
 
 type Feature struct {
-	Name             string            `json:"name"`
-	Chart            string            `json:"chart"`
-	Version          string            `json:"version"`
-	Description      string            `json:"description"`
-	ValuesYAML       map[string]any    `json:"-"`
+	FeatureYAML
+	Name        string         `json:"name"`
+	Chart       string         `json:"chart"`
+	Version     string         `json:"version"`
+	Description string         `json:"description"`
+	ValuesYAML  map[string]any `json:"-"`
+	Source      string         `json:"source"`
+}
+
+type FeatureYAML struct {
 	Dependencies     Dependencies      `json:"dependencies"`
 	EnvironmentKinds []EnvironmentKind `json:"environmentKinds" jsonschema:"enum=management,enum=tenant,enum=onprem,enum=legacy,required"`
-	Source           string            `json:"source"`
-	Timeout          time.Duration     `json:"timeout,omitempty" jsonschema:"omitempty,type=string,pattern=^(\\d+h)?(\\d+m)?(\\d+s)?$"`
 	Values           Values            `json:"values"`
+	Timeout          time.Duration     `json:"timeout,omitempty" jsonschema:"omitempty,type=string,pattern=^(\\d+h)?(\\d+m)?(\\d+s)?$"`
 }
 
 type Values map[string]Value

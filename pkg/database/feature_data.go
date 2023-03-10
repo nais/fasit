@@ -9,12 +9,11 @@ import (
 
 	"github.com/jackc/pgtype"
 	"github.com/nais/fasit/pkg/database/gensql"
-	feature "github.com/nais/fasit/pkg/feature2"
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
 type FeatureDataRepo interface {
-	FeatureDataCreate(context.Context, feature.Feature) error
+	FeatureDataCreate(context.Context, model.Feature) error
 }
 
 func environmentKindToSQL(kinds []model.EnvironmentKind) []string {
@@ -33,7 +32,7 @@ func toJSONB(v any) (pgtype.JSONB, error) {
 	return pgtype.JSONB{Bytes: b, Status: pgtype.Present}, nil
 }
 
-func (r *repo) FeatureDataCreate(ctx context.Context, feature feature.Feature) error {
+func (r *repo) FeatureDataCreate(ctx context.Context, feature model.Feature) error {
 	dep, err := toJSONB(feature.Dependencies)
 	if err != nil {
 		return fmt.Errorf("marshal dependencies to json: %w", err)

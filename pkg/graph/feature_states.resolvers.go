@@ -37,10 +37,6 @@ func (r *featureStateResolver) MissingDependencies(ctx context.Context, obj *mod
 
 	ret := []*model.Feature{}
 
-	for _, d := range {
-
-	}
-
 	return ret, nil
 }
 
