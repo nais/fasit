@@ -2,6 +2,9 @@ package database
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
+	"time"
 
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/graph/model"
@@ -10,6 +13,7 @@ import (
 type RolloutRepo interface {
 	RolloutCreate(ctx context.Context, name, version string) (*model.Rollout, error)
 	RolloutsListen(ctx context.Context, fn ListenFunc) error
+	RolloutByName(ctx context.Context, name string) (*model.Feature, error)
 }
 
 func (r *repo) RolloutCreate(ctx context.Context, name, version string) (*model.Rollout, error) {
@@ -28,4 +32,34 @@ func (r *repo) RolloutCreate(ctx context.Context, name, version string) (*model.
 
 func (r *repo) RolloutsListen(ctx context.Context, fn ListenFunc) error {
 	return r.ListenNotify(ctx, "rollout_notify", fn)
+}
+
+func (r *repo) RolloutByName(ctx context.Context, name string) (*model.Feature, error) {
+	f, err := r.querier.FeatureByName(ctx, name)
+	if err != nil {
+		return nil, fmt.Errorf("get feature by name from db: %w", err)
+	}
+
+	deps := model.Dependencies{}
+	if err := json.Unmarshal(f.Dependencies.Bytes, &deps); err != nil {
+		return nil, fmt.Errorf("unmarshal dependencies: %w", err)
+	}
+
+	valuesYAML := make(map[string]any)
+	if err := json.Unmarshal(f.DefaultValues.Bytes, &valuesYAML); err != nil {
+		return nil, fmt.Errorf("unmarshal default values: %w", err)
+	}
+
+	return &model.Feature{
+		Name:        f.Name,
+		Description: f.Description,
+		Version:     f.Version,
+		Chart:       f.Chart,
+		Source:      f.Source,
+		FeatureYAML: model.FeatureYAML{
+			Dependencies: deps,
+			Timeout:      time.Duration(f.Timeout.Int64) * time.Microsecond,
+		},
+		ValuesYAML: valuesYAML,
+	}, nil
 }

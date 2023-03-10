@@ -5,18 +5,27 @@ enum ConfigType {
   STRING_ARRAY
 }
 
-type MappingValue {
+type ComputedValue {
   key: String!
   value: RawMessage!
   displayName: String!
 }
 
-type EnvConfig {
+"""
+Configurations contains configuration and computed values for one feature
+"""
+type Configurations {
   configuration: [Configuration!]!
-  mapping: [MappingValue!]!
+  computed: [ComputedValue!]!
 }
 
-interface Configuration {
+enum ConfigSource {
+  GLOBAL
+  ENV
+  HELM
+}
+
+type Configuration {
   id: ID!
   feature: Feature!
   description: String!
@@ -26,37 +35,8 @@ interface Configuration {
   created: Time!
   type: ConfigType!
   displayName: String!
-  chartValue: RawMessage!
   required: Boolean!
-}
-
-type GlobalConfiguration implements Configuration {
-  id: ID!
-  feature: Feature!
-  description: String!
-  key: String!
-  value: RawMessage!
-  secret: Boolean!
-  created: Time!
-  type: ConfigType!
-  displayName: String!
-  chartValue: RawMessage!
-  required: Boolean!
-}
-
-type EnvConfiguration implements Configuration {
-  id: ID!
-  environment: Environment!
-  feature: Feature!
-  description: String!
-  key: String!
-  value: RawMessage!
-  secret: Boolean!
-  created: Time!
-  type: ConfigType!
-  displayName: String!
-  chartValue: RawMessage!
-  required: Boolean!
+  source: ConfigSource!
 }
 
 input NewConfiguration {
@@ -73,8 +53,7 @@ input UpdateConfiguration {
 }
 
 extend type Query {
-  configuration(feature: String!, envID: ID): EnvConfig!
-  envConfig(feature: String!, envID: ID!): EnvConfig!
+  configuration(feature: String!, envID: ID): Configurations!
   helmValues(feature: String!, envID: ID!): RawMessage!
 }
 

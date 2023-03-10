@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"sort"
-	"time"
 
+	"github.com/jackc/pgtype"
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/graph/model"
 )
@@ -22,9 +22,19 @@ func (r *repo) FeatureByName(ctx context.Context, name string) (*model.Feature, 
 		return nil, fmt.Errorf("get feature by name from db: %w", err)
 	}
 
+	fyaml, defaultValues, err := makeFeatureYAML(f.Kinds, f.Dependencies, f.Values, f.DefaultValues)
+	if err != nil {
+		return nil, fmt.Errorf("make feature yaml: %w", err)
+	}
+
 	return &model.Feature{
-		Name:    f.Name,
-		Version: f.Version,
+		Name:        f.Name,
+		Description: f.Description,
+		Version:     f.Version,
+		Chart:       f.Chart,
+		Source:      f.Source,
+		FeatureYAML: fyaml,
+		ValuesYAML:  defaultValues,
 	}, nil
 }
 
@@ -98,14 +108,9 @@ func (r *repo) FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, 
 func featuresFromSQL(features []gensql.FeaturesForKindRow) ([]*model.Feature, error) {
 	var ret []*model.Feature
 	for _, f := range features {
-		deps := model.Dependencies{}
-		if err := json.Unmarshal(f.Dependencies.Bytes, &deps); err != nil {
-			return nil, fmt.Errorf("unmarshal dependencies: %w", err)
-		}
-
-		valuesYAML := make(map[string]any)
-		if err := json.Unmarshal(f.DefaultValues.Bytes, &valuesYAML); err != nil {
-			return nil, fmt.Errorf("unmarshal default values: %w", err)
+		fyaml, defaultValues, err := makeFeatureYAML(f.Kinds, f.Dependencies, f.Values, f.DefaultValues)
+		if err != nil {
+			return nil, fmt.Errorf("make feature yaml: %w", err)
 		}
 
 		feature := &model.Feature{
@@ -114,13 +119,38 @@ func featuresFromSQL(features []gensql.FeaturesForKindRow) ([]*model.Feature, er
 			Version:     f.Version,
 			Chart:       f.Chart,
 			Source:      f.Source,
-			FeatureYAML: model.FeatureYAML{
-				Dependencies: deps,
-				Timeout:      time.Duration(f.Timeout.Int64) * time.Microsecond,
-			},
-			ValuesYAML: valuesYAML,
+			FeatureYAML: fyaml,
+			ValuesYAML:  defaultValues,
 		}
 		ret = append(ret, feature)
 	}
 	return ret, nil
+}
+
+func makeFeatureYAML(kinds []string, deps, values, defaultValues pgtype.JSONB) (model.FeatureYAML, map[string]any, error) {
+	ret := model.FeatureYAML{}
+	if err := json.Unmarshal(deps.Bytes, &ret.Dependencies); err != nil {
+		return ret, nil, fmt.Errorf("unmarshal dependencies: %w", err)
+	}
+
+	retDefaultVals := map[string]any{}
+
+	if err := json.Unmarshal(defaultValues.Bytes, &retDefaultVals); err != nil {
+		fmt.Println("####")
+		fmt.Println(string(defaultValues.Bytes))
+		fmt.Println("####")
+
+		return ret, nil, fmt.Errorf("unmarshal default values: %w", err)
+	}
+
+	ret.EnvironmentKinds = make([]model.EnvironmentKind, len(kinds))
+	for i, k := range kinds {
+		ret.EnvironmentKinds[i] = model.EnvironmentKind(k)
+	}
+
+	if err := json.Unmarshal(values.Bytes, &ret.Values); err != nil {
+		return ret, nil, fmt.Errorf("unmarshal values: %w", err)
+	}
+
+	return ret, retDefaultVals, nil
 }

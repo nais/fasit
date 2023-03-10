@@ -1,12 +1,44 @@
 -- name: FeatureByName :one
-SELECT *
-FROM features 
-WHERE name = @name
-ORDER BY name;
+SELECT
+  fd.name,
+  fd.version,
+  fd.chart,
+  fd.description,
+  fd.source,
+  fd.kinds::text[] AS kinds,
+  fd.dependencies,
+  fd.values,
+  fd.timeout,
+  fd.default_values,
+  features.created,
+  features.last_modified
+FROM features
+JOIN feature_data fd ON features.name = fd.name AND features.version = fd.version
+WHERE fd.name = @name
+;
+
+-- name: FeatureGetForEnv :many
+SELECT fd.*, features.created, features.last_modified
+FROM features
+JOIN feature_data fd ON features.name = fd.name AND features.version = fd.version
+WHERE @environment_kind::text = ANY(environment_kinds)
+ORDER BY features.name;
 
 -- name: FeaturesForKind :many
-SELECT feature_data.*, features.created, features.last_modified 
-FROM features 
-JOIN feature_data ON features.name = feature_data.name AND features.version = feature_data.version
-WHERE @environment_kind::text = ANY(environment_kinds) 
+SELECT
+  fd.name,
+  fd.version,
+  fd.chart,
+  fd.description,
+  fd.source,
+  fd.kinds::text[] AS kinds,
+  fd.dependencies,
+  fd.values,
+  fd.timeout,
+  fd.default_values,
+  features.created,
+  features.last_modified
+FROM features
+JOIN feature_data fd ON features.name = fd.name AND features.version = fd.version
+WHERE @environment_kind::text = ANY(environment_kinds)
 ORDER BY features.name;

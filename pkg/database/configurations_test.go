@@ -117,7 +117,7 @@ func TestRepo_ConfigGet(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := []*model.GlobalConfiguration{
+	want := []*model.Configuration{
 		{
 			ID:          id,
 			FeatureName: "feature3",
@@ -125,6 +125,7 @@ func TestRepo_ConfigGet(t *testing.T) {
 			Value:       []byte(`"stringval"`),
 			Created:     created,
 			Secret:      true,
+			Source:      model.ConfigSourceGlobal,
 		},
 	}
 
@@ -160,7 +161,7 @@ func TestRepo_ConfigGetForEnv(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := []*model.EnvConfiguration{
+	want := []*model.Configuration{
 		{
 			ID:            id,
 			EnvironmentID: envid,
@@ -169,6 +170,7 @@ func TestRepo_ConfigGetForEnv(t *testing.T) {
 			Value:         []byte(`"stringval"`),
 			Created:       created,
 			Secret:        true,
+			Source:        model.ConfigSourceEnv,
 		},
 	}
 
@@ -198,15 +200,16 @@ func TestRepo_ConfigCreate_Environment(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := &model.EnvConfiguration{
+	want := &model.Configuration{
 		EnvironmentID: *config.EnvironmentID,
 		FeatureName:   config.Feature,
 		Key:           config.Key,
 		Value:         config.Value,
 		Secret:        config.Secret,
+		Source:        model.ConfigSourceEnv,
 	}
 
-	opts := cmpopts.IgnoreFields(model.EnvConfiguration{}, "ID", "Created")
+	opts := cmpopts.IgnoreFields(model.Configuration{}, "ID", "Created")
 	if !cmp.Equal(want, got, opts) {
 		t.Errorf("diff -want +got:\n%v", cmp.Diff(want, got, opts))
 	}
@@ -229,14 +232,15 @@ func TestRepo_ConfigCreate_Global(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := &model.GlobalConfiguration{
+	want := &model.Configuration{
 		FeatureName: config.Feature,
 		Key:         config.Key,
 		Value:       config.Value,
 		Secret:      config.Secret,
+		Source:      model.ConfigSourceGlobal,
 	}
 
-	opts := cmpopts.IgnoreFields(model.GlobalConfiguration{}, "ID", "Created")
+	opts := cmpopts.IgnoreFields(model.Configuration{}, "ID", "Created")
 	if !cmp.Equal(want, got, opts) {
 		t.Errorf("diff -want +got:\n%v", cmp.Diff(want, got, opts))
 	}
@@ -259,21 +263,22 @@ func TestRepo_ConfigUpdate_Global(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err = repo.ConfigUpdate(context.Background(), got.(*model.GlobalConfiguration).ID, model.UpdateConfiguration{
+	got, err = repo.ConfigUpdate(context.Background(), got.ID, model.UpdateConfiguration{
 		Value: []byte(`"newval"`),
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	want := &model.GlobalConfiguration{
+	want := &model.Configuration{
 		FeatureName: config.Feature,
 		Key:         config.Key,
 		Value:       []byte(`"newval"`),
 		Secret:      config.Secret,
+		Source:      model.ConfigSourceGlobal,
 	}
 
-	opts := cmpopts.IgnoreFields(model.GlobalConfiguration{}, "ID", "Created")
+	opts := cmpopts.IgnoreFields(model.Configuration{}, "ID", "Created")
 	if !cmp.Equal(want, got, opts) {
 		t.Errorf("diff -want +got:\n%v", cmp.Diff(want, got, opts))
 	}
@@ -294,7 +299,7 @@ func TestRepo_ConfigDelete(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	gotID := got.(*model.GlobalConfiguration).ID
+	gotID := got.ID
 	err = r.ConfigDelete(context.Background(), gotID)
 	if err != nil {
 		t.Fatal(err)

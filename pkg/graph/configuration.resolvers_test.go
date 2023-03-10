@@ -78,7 +78,7 @@ func Test_queryResolver_Configuration_With_Environment_ID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := &model.EnvConfig{
+	want := &model.Configurations{
 		Configuration: []model.Configuration{
 			&model.EnvConfiguration{
 				Key:         "bool",
@@ -155,7 +155,7 @@ func Test_queryResolver_Configuration_Empty_Defaults_Are_Set(t *testing.T) {
 		t.Fatalf("Configuration(ctx, %q, nil) err = %v, want nil", featureName, err)
 	}
 
-	want := &model.EnvConfig{
+	want := &model.Configurations{
 		Configuration: []model.Configuration{
 			&model.GlobalConfiguration{FeatureName: "feature", Key: "string", Value: json.RawMessage("stringValue"), Type: model.ConfigTypeString},
 			&model.GlobalConfiguration{FeatureName: "feature", Key: "int", Value: json.RawMessage("intValue"), Type: model.ConfigTypeInt},

@@ -562,18 +562,18 @@ func (_m *Querier) EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]g
 }
 
 // FeatureByName provides a mock function with given fields: ctx, name
-func (_m *Querier) FeatureByName(ctx context.Context, name string) (gensql.Feature, error) {
+func (_m *Querier) FeatureByName(ctx context.Context, name string) (gensql.FeatureByNameRow, error) {
 	ret := _m.Called(ctx, name)
 
-	var r0 gensql.Feature
+	var r0 gensql.FeatureByNameRow
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (gensql.Feature, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) (gensql.FeatureByNameRow, error)); ok {
 		return rf(ctx, name)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) gensql.Feature); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) gensql.FeatureByNameRow); ok {
 		r0 = rf(ctx, name)
 	} else {
-		r0 = ret.Get(0).(gensql.Feature)
+		r0 = ret.Get(0).(gensql.FeatureByNameRow)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
@@ -597,6 +597,32 @@ func (_m *Querier) FeatureDataCreate(ctx context.Context, arg gensql.FeatureData
 	}
 
 	return r0
+}
+
+// FeatureGetForEnv provides a mock function with given fields: ctx, environmentKind
+func (_m *Querier) FeatureGetForEnv(ctx context.Context, environmentKind string) ([]gensql.FeatureGetForEnvRow, error) {
+	ret := _m.Called(ctx, environmentKind)
+
+	var r0 []gensql.FeatureGetForEnvRow
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]gensql.FeatureGetForEnvRow, error)); ok {
+		return rf(ctx, environmentKind)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) []gensql.FeatureGetForEnvRow); ok {
+		r0 = rf(ctx, environmentKind)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gensql.FeatureGetForEnvRow)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, environmentKind)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // FeatureStateCreateOrUpdate provides a mock function with given fields: ctx, arg
@@ -884,6 +910,30 @@ func (_m *Querier) ReleaseStatusesGet(ctx context.Context, environmentID uuid.UU
 
 	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
 		r1 = rf(ctx, environmentID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// RolloutByName provides a mock function with given fields: ctx, name
+func (_m *Querier) RolloutByName(ctx context.Context, name string) (gensql.RolloutByNameRow, error) {
+	ret := _m.Called(ctx, name)
+
+	var r0 gensql.RolloutByNameRow
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (gensql.RolloutByNameRow, error)); ok {
+		return rf(ctx, name)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) gensql.RolloutByNameRow); ok {
+		r0 = rf(ctx, name)
+	} else {
+		r0 = ret.Get(0).(gensql.RolloutByNameRow)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, name)
 	} else {
 		r1 = ret.Error(1)
 	}

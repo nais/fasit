@@ -61,7 +61,5 @@ func (r *Resolver) ConfigOverride() graphgen.ConfigOverrideResolver {
 // Feature returns graphgen.FeatureResolver implementation.
 func (r *Resolver) Feature() graphgen.FeatureResolver { return &featureResolver{r} }
 
-type (
-	configOverrideResolver struct{ *Resolver }
-	featureResolver        struct{ *Resolver }
-)
+type configOverrideResolver struct{ *Resolver }
+type featureResolver struct{ *Resolver }

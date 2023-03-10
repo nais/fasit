@@ -4,6 +4,9 @@ package model
 
 import (
 	"encoding/json"
+	"fmt"
+	"io"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -22,14 +25,15 @@ type AuditLog struct {
 	CreatedAt   time.Time `json:"createdAt"`
 }
 
+type ComputedValue struct {
+	Key         string          `json:"key"`
+	Value       json.RawMessage `json:"value"`
+	DisplayName string          `json:"displayName"`
+}
+
 type Dependency struct {
 	AnyOf []string `json:"anyOf"`
 	AllOf []string `json:"allOf"`
-}
-
-type EnvConfig struct {
-	Configuration []Configuration `json:"configuration"`
-	Mapping       []*MappingValue `json:"mapping"`
 }
 
 // EnvironmentCreate contains metadata for creating an environment
@@ -44,12 +48,6 @@ type EnvironmentCreate struct {
 type EnvironmentUpdate struct {
 	// description of the environment
 	Description *string `json:"description"`
-}
-
-type MappingValue struct {
-	Key         string          `json:"key"`
-	Value       json.RawMessage `json:"value"`
-	DisplayName string          `json:"displayName"`
 }
 
 type OutdatedInfo struct {
@@ -71,4 +69,47 @@ type UpdateConfiguration struct {
 
 type UserInfo struct {
 	Email string `json:"email"`
+}
+
+type ConfigSource string
+
+const (
+	ConfigSourceGlobal ConfigSource = "GLOBAL"
+	ConfigSourceEnv    ConfigSource = "ENV"
+	ConfigSourceHelm   ConfigSource = "HELM"
+)
+
+var AllConfigSource = []ConfigSource{
+	ConfigSourceGlobal,
+	ConfigSourceEnv,
+	ConfigSourceHelm,
+}
+
+func (e ConfigSource) IsValid() bool {
+	switch e {
+	case ConfigSourceGlobal, ConfigSourceEnv, ConfigSourceHelm:
+		return true
+	}
+	return false
+}
+
+func (e ConfigSource) String() string {
+	return string(e)
+}
+
+func (e *ConfigSource) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ConfigSource(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ConfigSource", str)
+	}
+	return nil
+}
+
+func (e ConfigSource) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
 }

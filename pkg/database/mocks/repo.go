@@ -86,19 +86,19 @@ func (_m *Repo) Close() {
 }
 
 // ConfigCreate provides a mock function with given fields: ctx, c
-func (_m *Repo) ConfigCreate(ctx context.Context, c model.NewConfiguration) (model.Configuration, error) {
+func (_m *Repo) ConfigCreate(ctx context.Context, c model.NewConfiguration) (*model.Configuration, error) {
 	ret := _m.Called(ctx, c)
 
-	var r0 model.Configuration
+	var r0 *model.Configuration
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, model.NewConfiguration) (model.Configuration, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, model.NewConfiguration) (*model.Configuration, error)); ok {
 		return rf(ctx, c)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, model.NewConfiguration) model.Configuration); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, model.NewConfiguration) *model.Configuration); ok {
 		r0 = rf(ctx, c)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(model.Configuration)
+			r0 = ret.Get(0).(*model.Configuration)
 		}
 	}
 
@@ -126,19 +126,19 @@ func (_m *Repo) ConfigDelete(ctx context.Context, id uuid.UUID) error {
 }
 
 // ConfigGet provides a mock function with given fields: ctx, _a1
-func (_m *Repo) ConfigGet(ctx context.Context, _a1 string) ([]*model.GlobalConfiguration, error) {
+func (_m *Repo) ConfigGet(ctx context.Context, _a1 string) ([]*model.Configuration, error) {
 	ret := _m.Called(ctx, _a1)
 
-	var r0 []*model.GlobalConfiguration
+	var r0 []*model.Configuration
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.GlobalConfiguration, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.Configuration, error)); ok {
 		return rf(ctx, _a1)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.GlobalConfiguration); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.Configuration); ok {
 		r0 = rf(ctx, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.GlobalConfiguration)
+			r0 = ret.Get(0).([]*model.Configuration)
 		}
 	}
 
@@ -152,19 +152,19 @@ func (_m *Repo) ConfigGet(ctx context.Context, _a1 string) ([]*model.GlobalConfi
 }
 
 // ConfigGetForEnv provides a mock function with given fields: ctx, _a1, envID
-func (_m *Repo) ConfigGetForEnv(ctx context.Context, _a1 string, envID uuid.UUID) ([]*model.EnvConfiguration, error) {
+func (_m *Repo) ConfigGetForEnv(ctx context.Context, _a1 string, envID uuid.UUID) ([]*model.Configuration, error) {
 	ret := _m.Called(ctx, _a1, envID)
 
-	var r0 []*model.EnvConfiguration
+	var r0 []*model.Configuration
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, uuid.UUID) ([]*model.EnvConfiguration, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, uuid.UUID) ([]*model.Configuration, error)); ok {
 		return rf(ctx, _a1, envID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, uuid.UUID) []*model.EnvConfiguration); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, uuid.UUID) []*model.Configuration); ok {
 		r0 = rf(ctx, _a1, envID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.EnvConfiguration)
+			r0 = ret.Get(0).([]*model.Configuration)
 		}
 	}
 
@@ -218,19 +218,19 @@ func (_m *Repo) ConfigOverridesByFeature(ctx context.Context, featureName string
 }
 
 // ConfigUpdate provides a mock function with given fields: ctx, id, c
-func (_m *Repo) ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration) (model.Configuration, error) {
+func (_m *Repo) ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration) (*model.Configuration, error) {
 	ret := _m.Called(ctx, id, c)
 
-	var r0 model.Configuration
+	var r0 *model.Configuration
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, model.UpdateConfiguration) (model.Configuration, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, model.UpdateConfiguration) (*model.Configuration, error)); ok {
 		return rf(ctx, id, c)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, model.UpdateConfiguration) model.Configuration); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, model.UpdateConfiguration) *model.Configuration); ok {
 		r0 = rf(ctx, id, c)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(model.Configuration)
+			r0 = ret.Get(0).(*model.Configuration)
 		}
 	}
 
@@ -244,19 +244,19 @@ func (_m *Repo) ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateCo
 }
 
 // EnvConfig provides a mock function with given fields: ctx, _a1, envID
-func (_m *Repo) EnvConfig(ctx context.Context, _a1 string, envID uuid.UUID) ([]model.Configuration, error) {
+func (_m *Repo) EnvConfig(ctx context.Context, _a1 string, envID uuid.UUID) ([]*model.Configuration, error) {
 	ret := _m.Called(ctx, _a1, envID)
 
-	var r0 []model.Configuration
+	var r0 []*model.Configuration
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, uuid.UUID) ([]model.Configuration, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, uuid.UUID) ([]*model.Configuration, error)); ok {
 		return rf(ctx, _a1, envID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, uuid.UUID) []model.Configuration); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, uuid.UUID) []*model.Configuration); ok {
 		r0 = rf(ctx, _a1, envID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]model.Configuration)
+			r0 = ret.Get(0).([]*model.Configuration)
 		}
 	}
 
@@ -901,6 +901,32 @@ func (_m *Repo) ReleaseStatusesGet(ctx context.Context, environmentID uuid.UUID)
 
 	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
 		r1 = rf(ctx, environmentID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// RolloutByName provides a mock function with given fields: ctx, name
+func (_m *Repo) RolloutByName(ctx context.Context, name string) (*model.Feature, error) {
+	ret := _m.Called(ctx, name)
+
+	var r0 *model.Feature
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.Feature, error)); ok {
+		return rf(ctx, name)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Feature); ok {
+		r0 = rf(ctx, name)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Feature)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, name)
 	} else {
 		r1 = ret.Error(1)
 	}

@@ -19,13 +19,13 @@ type Feature struct {
 	Chart       string         `json:"chart"`
 	Version     string         `json:"version"`
 	Description string         `json:"description"`
-	ValuesYAML  map[string]any `json:"-"`
 	Source      string         `json:"source"`
+	ValuesYAML  map[string]any `json:"-"`
 }
 
 type FeatureYAML struct {
 	Dependencies     Dependencies      `json:"dependencies"`
-	EnvironmentKinds []EnvironmentKind `json:"environmentKinds" jsonschema:"enum=management,enum=tenant,enum=onprem,enum=legacy,required"`
+	EnvironmentKinds []EnvironmentKind `json:"environmentKinds" yaml:"environmentKinds" jsonschema:"enum=management,enum=tenant,enum=onprem,enum=legacy,required"`
 	Values           Values            `json:"values"`
 	Timeout          time.Duration     `json:"timeout,omitempty" jsonschema:"omitempty,type=string,pattern=^(\\d+h)?(\\d+m)?(\\d+s)?$"`
 }
@@ -86,7 +86,7 @@ func FromChart(chart, version string) (*Feature, error) {
 				return nil, err
 			}
 		case "Feature.yaml":
-			if err := yaml.NewDecoder(r).Decode(&f); err != nil {
+			if err := yaml.NewDecoder(r).Decode(&f.FeatureYAML); err != nil {
 				return nil, err
 			}
 		case "values.yaml":

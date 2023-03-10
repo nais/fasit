@@ -4,8 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 func WithNow(ctx context.Context, now func() time.Time) context.Context {
@@ -46,21 +44,4 @@ func nullTimeToPtr(nt sql.NullTime) *time.Time {
 		return nil
 	}
 	return &nt.Time
-}
-
-func ptrToNullUUID(id *uuid.UUID) uuid.NullUUID {
-	if id == nil {
-		return uuid.NullUUID{}
-	}
-	return uuid.NullUUID{
-		UUID:  *id,
-		Valid: true,
-	}
-}
-
-func nullUUIDToPtr(nu uuid.NullUUID) *uuid.UUID {
-	if !nu.Valid {
-		return nil
-	}
-	return &nu.UUID
 }

@@ -13,19 +13,19 @@ import (
 )
 
 type ConfigRepo interface {
-	ConfigCreate(ctx context.Context, c model.NewConfiguration) (model.Configuration, error)
+	ConfigCreate(ctx context.Context, c model.NewConfiguration) (*model.Configuration, error)
 	ConfigDelete(ctx context.Context, id uuid.UUID) error
-	ConfigGet(ctx context.Context, feature string) ([]*model.GlobalConfiguration, error)
-	ConfigGetForEnv(ctx context.Context, feature string, envID uuid.UUID) ([]*model.EnvConfiguration, error)
+	ConfigGet(ctx context.Context, feature string) ([]*model.Configuration, error)
+	ConfigGetForEnv(ctx context.Context, feature string, envID uuid.UUID) ([]*model.Configuration, error)
 	ConfigListen(ctx context.Context, fn ListenFunc) error
 	ConfigOverridesByFeature(ctx context.Context, featureName string) ([]*model.ConfigOverride, error)
-	ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration) (model.Configuration, error)
-	EnvConfig(ctx context.Context, feature string, envID uuid.UUID) ([]model.Configuration, error)
+	ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration) (*model.Configuration, error)
+	EnvConfig(ctx context.Context, feature string, envID uuid.UUID) ([]*model.Configuration, error)
 	HelmValues(ctx context.Context, feature *model.Feature, envID uuid.UUID) (values map[string]any, err error)
 }
 
-func environmentConfigurationFromSQL(c gensql.ConfigurationsEnvironment) *model.EnvConfiguration {
-	return &model.EnvConfiguration{
+func environmentConfigurationFromSQL(c gensql.ConfigurationsEnvironment) *model.Configuration {
+	return &model.Configuration{
 		ID:            c.ID,
 		EnvironmentID: c.EnvironmentID,
 		FeatureName:   c.Feature,
@@ -34,11 +34,12 @@ func environmentConfigurationFromSQL(c gensql.ConfigurationsEnvironment) *model.
 		Value:   c.Value.Bytes,
 		Secret:  c.Secret,
 		Created: c.Created,
+		Source:  model.ConfigSourceEnv,
 	}
 }
 
-func globalConfigFromSQL(c gensql.ConfigurationsGlobal) *model.GlobalConfiguration {
-	return &model.GlobalConfiguration{
+func globalConfigFromSQL(c gensql.ConfigurationsGlobal) *model.Configuration {
+	return &model.Configuration{
 		ID:          c.ID,
 		FeatureName: c.Feature,
 		// Description: nullStringToPtr(c.Description),
@@ -46,18 +47,20 @@ func globalConfigFromSQL(c gensql.ConfigurationsGlobal) *model.GlobalConfigurati
 		Value:   c.Value.Bytes,
 		Secret:  c.Secret,
 		Created: c.Created,
+		Source:  model.ConfigSourceGlobal,
 	}
 }
 
-func (r *repo) EnvConfig(ctx context.Context, feature string, envID uuid.UUID) ([]model.Configuration, error) {
+func (r *repo) EnvConfig(ctx context.Context, feature string, envID uuid.UUID) ([]*model.Configuration, error) {
 	config, err := r.querier.EnvConfig(ctx, gensql.EnvConfigParams{
 		Feature:       feature,
 		EnvironmentID: envID,
+		Excludekeys:   []string{""},
 	})
 	if err != nil {
 		return nil, err
 	}
-	retVal := []model.Configuration{}
+	retVal := []*model.Configuration{}
 	for _, conf := range config {
 		retVal = append(retVal, envConfigFromSQL(conf))
 	}
@@ -65,33 +68,31 @@ func (r *repo) EnvConfig(ctx context.Context, feature string, envID uuid.UUID) (
 	return retVal, nil
 }
 
-func envConfigFromSQL(conf gensql.EnvConfigRow) model.Configuration {
-	if conf.EnvironmentID.Valid {
-		return &model.EnvConfiguration{
-			ID:            conf.ID,
-			EnvironmentID: conf.EnvironmentID.UUID,
-			FeatureName:   conf.Feature,
-			// Description:   nullStringToPtr(conf.Description),
-			Key:   conf.Key,
-			Value: conf.Value.Bytes,
-		}
+func envConfigFromSQL(conf gensql.EnvConfigRow) *model.Configuration {
+	ret := &model.Configuration{
+		ID:            conf.ID,
+		EnvironmentID: conf.EnvironmentID.UUID,
+		FeatureName:   conf.Feature,
+		// Description:   nullStringToPtr(conf.Description),
+		Key:    conf.Key,
+		Value:  conf.Value.Bytes,
+		Source: model.ConfigSourceGlobal,
 	}
 
-	return &model.GlobalConfiguration{
-		ID:          conf.ID,
-		FeatureName: conf.Feature,
-		// Description: nullStringToPtr(conf.Description),
-		Key:   conf.Key,
-		Value: conf.Value.Bytes,
+	if conf.EnvironmentID.Valid {
+		ret.Source = model.ConfigSourceEnv
+		ret.EnvironmentID = conf.EnvironmentID.UUID
 	}
+
+	return ret
 }
 
-func (r *repo) ConfigGet(ctx context.Context, feature string) ([]*model.GlobalConfiguration, error) {
+func (r *repo) ConfigGet(ctx context.Context, feature string) ([]*model.Configuration, error) {
 	config, err := r.querier.ConfigGet(ctx, feature)
 	if err != nil {
 		return nil, err
 	}
-	retVal := []*model.GlobalConfiguration{}
+	retVal := []*model.Configuration{}
 	for _, conf := range config {
 		retVal = append(retVal, globalConfigFromSQL(conf))
 	}
@@ -99,7 +100,7 @@ func (r *repo) ConfigGet(ctx context.Context, feature string) ([]*model.GlobalCo
 	return retVal, nil
 }
 
-func (r *repo) ConfigGetForEnv(ctx context.Context, feature string, envID uuid.UUID) ([]*model.EnvConfiguration, error) {
+func (r *repo) ConfigGetForEnv(ctx context.Context, feature string, envID uuid.UUID) ([]*model.Configuration, error) {
 	params := gensql.ConfigGetForEnvParams{
 		Feature:       feature,
 		EnvironmentID: envID,
@@ -109,7 +110,7 @@ func (r *repo) ConfigGetForEnv(ctx context.Context, feature string, envID uuid.U
 		return nil, err
 	}
 
-	retVal := []*model.EnvConfiguration{}
+	retVal := []*model.Configuration{}
 	for _, conf := range config {
 		retVal = append(retVal, environmentConfigurationFromSQL(conf))
 	}
@@ -117,7 +118,7 @@ func (r *repo) ConfigGetForEnv(ctx context.Context, feature string, envID uuid.U
 	return retVal, nil
 }
 
-func (r *repo) ConfigCreate(ctx context.Context, c model.NewConfiguration) (model.Configuration, error) {
+func (r *repo) ConfigCreate(ctx context.Context, c model.NewConfiguration) (*model.Configuration, error) {
 	value, err := json.Marshal(c.Value)
 	if err != nil {
 		return nil, err
@@ -130,7 +131,7 @@ func (r *repo) ConfigCreate(ctx context.Context, c model.NewConfiguration) (mode
 	return r.configGlobalCreate(ctx, c, value)
 }
 
-func (r *repo) configEnvCreate(ctx context.Context, c model.NewConfiguration, value []byte) (*model.EnvConfiguration, error) {
+func (r *repo) configEnvCreate(ctx context.Context, c model.NewConfiguration, value []byte) (*model.Configuration, error) {
 	config, err := r.querier.ConfigEnvUpdateOrCreate(ctx, gensql.ConfigEnvUpdateOrCreateParams{
 		EnvironmentID: *c.EnvironmentID,
 		Feature:       c.Feature,
@@ -151,7 +152,7 @@ func (r *repo) configEnvCreate(ctx context.Context, c model.NewConfiguration, va
 	return environmentConfigurationFromSQL(config), nil
 }
 
-func (r *repo) configGlobalCreate(ctx context.Context, c model.NewConfiguration, value []byte) (*model.GlobalConfiguration, error) {
+func (r *repo) configGlobalCreate(ctx context.Context, c model.NewConfiguration, value []byte) (*model.Configuration, error) {
 	config, err := r.querier.ConfigGlobalUpdateOrCreate(ctx, gensql.ConfigGlobalUpdateOrCreateParams{
 		Feature:     c.Feature,
 		Description: ptrToNullString(c.Description),
@@ -171,7 +172,7 @@ func (r *repo) configGlobalCreate(ctx context.Context, c model.NewConfiguration,
 	return globalConfigFromSQL(config), nil
 }
 
-func (r *repo) ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration) (model.Configuration, error) {
+func (r *repo) ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration) (*model.Configuration, error) {
 	conf, err := r.querier.ConfigUpdate(ctx, gensql.ConfigUpdateParams{
 		Description: ptrToNullString(c.Description),
 		Value: pgtype.JSONB{

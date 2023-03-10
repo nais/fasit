@@ -41,7 +41,7 @@ func (r *featureStateResolver) MissingDependencies(ctx context.Context, obj *mod
 }
 
 // Configuration is the resolver for the configuration field.
-func (r *featureStateResolver) Configuration(ctx context.Context, obj *model.FeatureState) (*model.EnvConfig, error) {
+func (r *featureStateResolver) Configuration(ctx context.Context, obj *model.FeatureState) (*model.Configurations, error) {
 	return r.Resolver.Query().Configuration(ctx, obj.FeatureName, &obj.EnvID)
 }
 

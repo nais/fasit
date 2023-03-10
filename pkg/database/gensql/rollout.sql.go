@@ -10,8 +10,63 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgtype"
 )
+
+const rolloutByName = `-- name: RolloutByName :one
+SELECT
+  rollouts.id,
+  fd.name,
+  fd.version,
+  fd.chart,
+  fd.description,
+  fd.source,
+  fd.kinds::text[] AS kinds,
+  fd.dependencies,
+  fd.values,
+  fd.timeout,
+  fd.default_values,
+  rollouts.created
+FROM rollouts
+JOIN feature_data fd ON rollouts.name = fd.name AND rollouts.version = fd.version
+WHERE fd.name = $1
+`
+
+type RolloutByNameRow struct {
+	ID            uuid.UUID
+	Name          string
+	Version       string
+	Chart         string
+	Description   string
+	Source        string
+	Kinds         []string
+	Dependencies  pgtype.JSONB
+	Values        pgtype.JSONB
+	Timeout       sql.NullInt64
+	DefaultValues pgtype.JSONB
+	Created       time.Time
+}
+
+func (q *Queries) RolloutByName(ctx context.Context, name string) (RolloutByNameRow, error) {
+	row := q.db.QueryRow(ctx, rolloutByName, name)
+	var i RolloutByNameRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Version,
+		&i.Chart,
+		&i.Description,
+		&i.Source,
+		&i.Kinds,
+		&i.Dependencies,
+		&i.Values,
+		&i.Timeout,
+		&i.DefaultValues,
+		&i.Created,
+	)
+	return i, err
+}
 
 const rolloutCreate = `-- name: RolloutCreate :one
 INSERT INTO rollouts (feature_name, version) VALUES ($1, $2) RETURNING id, feature_name, version, created
@@ -35,20 +90,33 @@ func (q *Queries) RolloutCreate(ctx context.Context, arg RolloutCreateParams) (R
 }
 
 const rolloutsForKind = `-- name: RolloutsForKind :many
-SELECT feature_data.name, feature_data.version, feature_data.chart, feature_data.description, feature_data.source, feature_data.kinds, feature_data.dependencies, feature_data.values, feature_data.timeout, feature_data.default_values, rollouts.created
-FROM rollouts 
-JOIN feature_data ON rollouts.feature_name = feature_data.name AND rollouts.version = feature_data.version
-WHERE $1::text = ANY(environment_kinds) 
+SELECT
+  rollouts.id,
+  fd.name,
+  fd.version,
+  fd.chart,
+  fd.description,
+  fd.source,
+  fd.kinds::text[] AS kinds,
+  fd.dependencies,
+  fd.values,
+  fd.timeout,
+  fd.default_values,
+  rollouts.created
+FROM rollouts
+JOIN feature_data fd ON rollouts.feature_name = fd.name AND rollouts.version = fd.version
+WHERE $1::text = ANY(environment_kinds)
 ORDER BY rollouts.features_name
 `
 
 type RolloutsForKindRow struct {
+	ID            uuid.UUID
 	Name          string
 	Version       string
 	Chart         string
 	Description   string
 	Source        string
-	Kinds         []EnvironmentKind
+	Kinds         []string
 	Dependencies  pgtype.JSONB
 	Values        pgtype.JSONB
 	Timeout       sql.NullInt64
@@ -66,6 +134,7 @@ func (q *Queries) RolloutsForKind(ctx context.Context, environmentKind string) (
 	for rows.Next() {
 		var i RolloutsForKindRow
 		if err := rows.Scan(
+			&i.ID,
 			&i.Name,
 			&i.Version,
 			&i.Chart,

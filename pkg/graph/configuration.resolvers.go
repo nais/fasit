@@ -7,81 +7,118 @@ package graph
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
+	"sort"
 
 	"github.com/google/uuid"
+	pgx "github.com/jackc/pgx/v4"
 	"github.com/nais/fasit/pkg/graph/graphgen"
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
-// Environment is the resolver for the environment field.
-func (r *envConfigurationResolver) Environment(ctx context.Context, obj *model.EnvConfiguration) (*model.Environment, error) {
-	return r.Repo.EnvironmentGet(ctx, obj.EnvironmentID)
-}
-
 // Feature is the resolver for the feature field.
-func (r *envConfigurationResolver) Feature(ctx context.Context, obj *model.EnvConfiguration) (*model.Feature, error) {
+func (r *configurationResolver) Feature(ctx context.Context, obj *model.Configuration) (*model.Feature, error) {
 	return r.resolveFeatureByName(obj.FeatureName)
 }
 
-// ChartValue is the resolver for the chartValue field.
-func (r *envConfigurationResolver) ChartValue(ctx context.Context, obj *model.EnvConfiguration) (json.RawMessage, error) {
-	// vals := r.HelmChartValues.GetValues(obj.FeatureName)
-	// if vals == nil {
-	// 	return json.RawMessage(`"Empty?"`), nil
-	// }
+// Configuration is the resolver for the configuration field.
+func (r *configurationsResolver) Configuration(ctx context.Context, obj *model.Configurations) ([]*model.Configuration, error) {
+	var configs []*model.Configuration
+	var err error
+	var feature *model.Feature
 
-	// paths, err := feature.SmartDotSplit(obj.Key)
-	// if err != nil {
-	// 	return json.RawMessage(`"error!"`), nil
-	// }
+	if obj.EnvID != nil {
+		configs, err = r.Repo.EnvConfig(ctx, obj.FeatureName, *obj.EnvID)
+		if err != nil {
+			return nil, err
+		}
 
-	// var ok bool
-	// for i, path := range paths {
-	// 	if i == len(paths)-1 {
-	// 		return json.Marshal(vals[path])
-	// 	}
-	// 	vals, ok = vals[path].(map[string]interface{})
-	// 	if !ok {
-	// 		return json.RawMessage(`"error!"`), nil
-	// 	}
-	// }
+		env, err := r.Repo.EnvironmentGet(ctx, *obj.EnvID)
+		if err != nil {
+			return nil, err
+		}
 
-	return json.RawMessage(`"error!"`), nil
+		if env.CI {
+			feature, err = r.Repo.FeatureByName(ctx, obj.FeatureName)
+			if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+				return nil, err
+			}
+		}
+	} else {
+		configs, err = r.Repo.ConfigGet(ctx, obj.FeatureName)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// If env is not ci, or if no rollout is found, get normal feature
+	if feature == nil {
+		feature, err = r.Repo.FeatureByName(ctx, obj.FeatureName)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+OUTER:
+	for key, val := range feature.Values {
+		if val.Config == nil {
+			continue
+		}
+
+		for _, c := range configs {
+			if c.Key == key {
+				c.Type = val.Config.Type
+				c.DisplayName = val.DisplayName
+				c.Description = val.Description
+				c.Required = val.Required
+				continue OUTER
+			}
+		}
+		configs = append(configs, &model.Configuration{
+			FeatureName: obj.FeatureName,
+			Key:         key,
+			Value:       []byte("null"),
+			Secret:      val.Config.Secret,
+			Type:        val.Config.Type,
+			DisplayName: val.DisplayName,
+			Description: val.Description,
+			Required:    val.Required,
+			Source:      model.ConfigSourceHelm,
+		})
+	}
+	// configs = removeIgnoredKinds(configs, feature, envKind)
+
+	sourceWeight := func(c *model.Configuration) int {
+		switch c.Source {
+		case model.ConfigSourceEnv:
+			return 2
+		case model.ConfigSourceGlobal:
+			return 1
+		default:
+			return 0
+		}
+	}
+
+	sort.Slice(configs, func(i, j int) bool {
+		tsi := sourceWeight(configs[i])
+		tsj := sourceWeight(configs[j])
+		if tsi == tsj {
+			return configs[i].Key < configs[j].Key
+		}
+		return tsi < tsj
+	})
+
+	return configs, nil
 }
 
-// Feature is the resolver for the feature field.
-func (r *globalConfigurationResolver) Feature(ctx context.Context, obj *model.GlobalConfiguration) (*model.Feature, error) {
-	return r.resolveFeatureByName(obj.FeatureName)
-}
-
-// ChartValue is the resolver for the chartValue field.
-func (r *globalConfigurationResolver) ChartValue(ctx context.Context, obj *model.GlobalConfiguration) (json.RawMessage, error) {
-	// vals := r.HelmChartValues.GetValues(obj.FeatureName)
-	// if vals == nil {
-	// 	return json.RawMessage(`"Empty?"`), nil
-	// }
-
-	// paths, err := feature.SmartDotSplit(obj.Key)
-	// if err != nil {
-	// 	return json.RawMessage(`"error!"`), nil
-	// }
-
-	// var ok bool
-	// for i, path := range paths {
-	// 	if i == len(paths)-1 {
-	// 		return json.Marshal(vals[path])
-	// 	}
-	// 	vals, ok = vals[path].(map[string]interface{})
-	// 	if !ok {
-	// 		return json.RawMessage(`"error!"`), nil
-	// 	}
-	// }
-
-	return json.RawMessage(`"error!"`), nil
+// Computed is the resolver for the computed field.
+func (r *configurationsResolver) Computed(ctx context.Context, obj *model.Configurations) ([]*model.ComputedValue, error) {
+	panic(fmt.Errorf("not implemented: Computed - computed"))
 }
 
 // ConfigurationCreate is the resolver for the configurationCreate field.
-func (r *mutationResolver) ConfigurationCreate(ctx context.Context, configuration model.NewConfiguration) (model.Configuration, error) {
+func (r *mutationResolver) ConfigurationCreate(ctx context.Context, configuration model.NewConfiguration) (*model.Configuration, error) {
 	// if err := r.Features.ValidConfig(configuration.Feature, configuration.Key, configuration.Value); err != nil {
 	// 	return nil, fmt.Errorf("invalid configuration %q for %q: %w", configuration.Key, configuration.Feature, err)
 	// }
@@ -91,7 +128,7 @@ func (r *mutationResolver) ConfigurationCreate(ctx context.Context, configuratio
 }
 
 // ConfigurationUpdate is the resolver for the configurationUpdate field.
-func (r *mutationResolver) ConfigurationUpdate(ctx context.Context, id uuid.UUID, configuration model.UpdateConfiguration) (model.Configuration, error) {
+func (r *mutationResolver) ConfigurationUpdate(ctx context.Context, id uuid.UUID, configuration model.UpdateConfiguration) (*model.Configuration, error) {
 	return r.Repo.ConfigUpdate(ctx, id, configuration)
 }
 
@@ -105,7 +142,11 @@ func (r *mutationResolver) ConfigurationDelete(ctx context.Context, id uuid.UUID
 }
 
 // Configuration is the resolver for the configuration field.
-func (r *queryResolver) Configuration(ctx context.Context, feature string, envID *uuid.UUID) (*model.EnvConfig, error) {
+func (r *queryResolver) Configuration(ctx context.Context, feature string, envID *uuid.UUID) (*model.Configurations, error) {
+	return &model.Configurations{
+		FeatureName: feature,
+		EnvID:       envID,
+	}, nil
 	// 	envKind := model.EnvironmentKind("")
 	// 	ret := &model.EnvConfig{}
 	// 	if envID != nil {
@@ -206,45 +247,7 @@ func (r *queryResolver) Configuration(ctx context.Context, feature string, envID
 	//	sort.Slice(ret.Mapping, func(i, j int) bool {
 	//		return ret.Mapping[i].Key < ret.Mapping[j].Key
 	//	})
-	panic("not implemented")
 	// return ret, nil
-}
-
-// EnvConfig is the resolver for the envConfig field.
-func (r *queryResolver) EnvConfig(ctx context.Context, feature string, envID uuid.UUID) (*model.EnvConfig, error) {
-	// env, err := r.Repo.EnvironmentGet(ctx, envID)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// config, err := r.Repo.EnvConfig(ctx, feature, envID)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// ret := &model.EnvConfig{
-	// 	Configuration: config,
-	// }
-
-	// f, err := r.Resolver.resolveFeatureByName(feature)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("resolve feature by name: %w", err)
-	// }
-
-	// // if f == nil || len(f.Mapping) == 0 {
-	// // 	return ret, nil
-	// // }
-
-	// mappingValues, envKind, err := r.Repo.MappingValuesForEnvironment(ctx, envID, false)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	// ret.Mapping, err = mappingToSlice(f, envKind, mappingValues)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// return ret, nil
-	panic("not implemented")
 }
 
 // HelmValues is the resolver for the helmValues field.
@@ -263,17 +266,15 @@ func (r *queryResolver) HelmValues(ctx context.Context, feature string, envID uu
 	panic("not implemented")
 }
 
-// EnvConfiguration returns graphgen.EnvConfigurationResolver implementation.
-func (r *Resolver) EnvConfiguration() graphgen.EnvConfigurationResolver {
-	return &envConfigurationResolver{r}
-}
+// Configuration returns graphgen.ConfigurationResolver implementation.
+func (r *Resolver) Configuration() graphgen.ConfigurationResolver { return &configurationResolver{r} }
 
-// GlobalConfiguration returns graphgen.GlobalConfigurationResolver implementation.
-func (r *Resolver) GlobalConfiguration() graphgen.GlobalConfigurationResolver {
-	return &globalConfigurationResolver{r}
+// Configurations returns graphgen.ConfigurationsResolver implementation.
+func (r *Resolver) Configurations() graphgen.ConfigurationsResolver {
+	return &configurationsResolver{r}
 }
 
 type (
-	envConfigurationResolver    struct{ *Resolver }
-	globalConfigurationResolver struct{ *Resolver }
+	configurationResolver  struct{ *Resolver }
+	configurationsResolver struct{ *Resolver }
 )
