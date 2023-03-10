@@ -62,7 +62,7 @@ func TestDeployReceiver(t *testing.T) {
 						"--install", "feature1", "chart1",
 						"--namespace", "nais-system", "--create-namespace",
 						"--version", "1", "-f", "/tmp/values.yaml",
-						"--timeout", "5m0s", "--repo", "repo1",
+						"--timeout", "5m0s",
 						"--kube-apiserver", "somehost", "--kube-ca-file", "cafile",
 						"--kube-token", "bearertoken", "--atomic", "--cleanup-on-fail",
 					},

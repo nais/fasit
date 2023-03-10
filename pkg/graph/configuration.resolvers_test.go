@@ -1,6 +1,3 @@
-//go:build todo
-// +build todo
-
 package graph
 
 import (
@@ -54,8 +51,7 @@ func Test_queryResolver_Configuration_With_Environment_ID(t *testing.T) {
 
 	r := &queryResolver{
 		Resolver: &Resolver{
-			Repo:     repo,
-			Features: &feature.Manager{},
+			Repo: repo,
 		},
 	}
 
