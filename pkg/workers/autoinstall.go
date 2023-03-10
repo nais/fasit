@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/nais/fasit/pkg/database"
-	feature "github.com/nais/fasit/pkg/feature2"
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
@@ -81,7 +80,7 @@ func (a *AutoInstaller) ensureEnvironment(ctx context.Context, env *model.Tenant
 	return nil
 }
 
-func (a *AutoInstaller) desiredFeaturesForEnv(ctx context.Context, env *model.TenantEnvironment) ([]*feature.Feature, error) {
+func (a *AutoInstaller) desiredFeaturesForEnv(ctx context.Context, env *model.TenantEnvironment) ([]*model.Feature, error) {
 	features, err := a.repo.FeaturesForKind(ctx, env.Kind, env.CI)
 	if err != nil {
 		return nil, fmt.Errorf("get features for kind %s: %w", env.Kind, err)
@@ -92,7 +91,7 @@ func (a *AutoInstaller) desiredFeaturesForEnv(ctx context.Context, env *model.Te
 		return nil, fmt.Errorf("get auto installs for kind %s: %w", env.Kind, err)
 	}
 
-	ret := []*feature.Feature{}
+	ret := []*model.Feature{}
 
 	for _, ai := range autoInstalls {
 		for _, feature := range features {

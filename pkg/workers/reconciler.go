@@ -13,24 +13,22 @@ import (
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/auth"
 	"github.com/nais/fasit/pkg/database"
-	feature "github.com/nais/fasit/pkg/feature2"
 	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/nais/fasit/pkg/message"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/instrument"
-	"go.opentelemetry.io/otel/metric/instrument/syncint64"
 )
 
 type ReconcilerStore interface {
 	ConfigListen(ctx context.Context, fn database.ListenFunc) error
-	FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, ci bool) ([]*feature.Feature, error)
-	FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *feature.Feature, enabled bool) (*model.FeatureState, error)
+	FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, ci bool) ([]*model.Feature, error)
+	FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *model.Feature, enabled bool) (*model.FeatureState, error)
 	FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
 	FeatureStatesListen(ctx context.Context, fn database.ListenFunc) error
 	HealthGet(ctx context.Context, environmentID uuid.UUID) (*model.Health, error)
-	HelmValues(ctx context.Context, feature *feature.Feature, envID uuid.UUID) (map[string]any, error)
+	HelmValues(ctx context.Context, feature *model.Feature, envID uuid.UUID) (map[string]any, error)
 	RolloutsListen(ctx context.Context, fn database.ListenFunc) error
 	StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]*model.Status, error)
 	TenantEnvironments(ctx context.Context) ([]*model.TenantEnvironment, error)
@@ -53,8 +51,8 @@ type Reconciler struct {
 	running bool
 
 	// Metrics
-	reconcileTime  syncint64.Histogram
-	deployMessages syncint64.Counter
+	reconcileTime  instrument.Int64Histogram
+	deployMessages instrument.Int64Counter
 }
 
 func NewReconciler(
@@ -179,54 +177,6 @@ func (r *Reconciler) reconcile(ctx context.Context) error {
 	return nil
 }
 
-func (r *Reconciler) autoInstallNextFeature(
-	ctx context.Context,
-	d *model.TenantEnvironment,
-	features []feature.Feature,
-	status map[string]*model.Status,
-	featureStates map[string]*model.FeatureState,
-) error {
-	r.log.Debug("Auto install next feature")
-	enabledFeatures := []string{}
-	for _, s := range status {
-		if s.Status == model.RolloutStatusDeployed {
-			enabledFeatures = append(enabledFeatures, s.Feature)
-		}
-	}
-
-	for _, f := range features {
-		// if !contains(f.AutoInstall, d.Kind) {
-		// 	continue
-		// }
-
-		// Feature already enabled and rolled out to environment successfully
-		if s, ok := status[f.Name]; ok && s.Status == model.RolloutStatusDeployed {
-			continue
-		} else if ok {
-			// Feature already enabled but not yet deployed to environment
-			break
-		}
-
-		if _, ok := featureStates[f.Name]; ok {
-			r.log.WithField("feature", f.Name).Info("feature state already exists, skipping auto install for environment")
-			return nil
-		}
-
-		// Dependency not enabled
-		// if len(f.DependsOn.FindMissing(enabledFeatures)) > 0 {
-		// 	continue
-		// }
-
-		r.log.WithField("feature", f.Name).Info("Auto install feature")
-		_, err := r.repo.FeatureStatesCreateOrUpdate(ctx, d.ID, &f, true)
-		if err != nil {
-			return fmt.Errorf("unable to enable feature %s: %w", f.Name, err)
-		}
-		return nil
-	}
-	return nil
-}
-
 func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEnvironment) error {
 	metricAttrs := []attribute.KeyValue{
 		attribute.Key("environment").String(d.Name),
@@ -324,7 +274,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 	return nil
 }
 
-func generateHash(values map[string]any, feature *feature.Feature, enabledAt *time.Time) (string, error) {
+func generateHash(values map[string]any, feature *model.Feature, enabledAt *time.Time) (string, error) {
 	b, err := json.Marshal(values)
 	if err != nil {
 		return "", err
@@ -339,13 +289,4 @@ func generateHash(values map[string]any, feature *feature.Feature, enabledAt *ti
 
 	hash := sha256.Sum256(b)
 	return hex.EncodeToString(hash[:]), nil
-}
-
-func contains[T comparable](a []T, x T) bool {
-	for _, n := range a {
-		if n == x {
-			return true
-		}
-	}
-	return false
 }

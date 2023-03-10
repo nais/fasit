@@ -10,7 +10,6 @@ import (
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/nais/fasit/pkg/auth"
 	"github.com/nais/fasit/pkg/database"
-	feature "github.com/nais/fasit/pkg/feature2"
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
@@ -78,7 +77,7 @@ func (r *Rollout) Rollout(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	feature, err := feature.FromChart(body.Chart, body.Version)
+	feature, err := model.FromChart(body.Chart, body.Version)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return

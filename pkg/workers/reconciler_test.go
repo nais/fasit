@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/nais/fasit/pkg/database/mocks"
-	feature "github.com/nais/fasit/pkg/feature2"
 	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/nais/fasit/pkg/message"
 	"github.com/sirupsen/logrus"
@@ -26,7 +25,7 @@ type reconcileTestEnvironment struct {
 }
 
 var reconcileTests = map[string]struct {
-	features          []*feature.Feature
+	features          []*model.Feature
 	environmentHealth *model.Health
 	environments      []*reconcileTestEnvironment
 	want              []message.DeployInstruction
@@ -36,7 +35,7 @@ var reconcileTests = map[string]struct {
 	},
 
 	"no statuses": {
-		features: []*feature.Feature{
+		features: []*model.Feature{
 			{
 				Name:    "feature1",
 				Chart:   "somechart",
@@ -69,7 +68,7 @@ var reconcileTests = map[string]struct {
 	},
 
 	"1 feature without change": {
-		features: []*feature.Feature{
+		features: []*model.Feature{
 			{
 				Name:    "feature1",
 				Chart:   "somechart",
@@ -102,7 +101,7 @@ var reconcileTests = map[string]struct {
 	},
 
 	"2 features 1 disabled": {
-		features: []*feature.Feature{
+		features: []*model.Feature{
 			{
 				Name:    "feature1",
 				Chart:   "somechart",
@@ -144,7 +143,7 @@ var reconcileTests = map[string]struct {
 	},
 
 	"2 features 1 change": {
-		features: []*feature.Feature{
+		features: []*model.Feature{
 			{
 				Name:    "feature1",
 				Chart:   "somechart",
