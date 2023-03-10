@@ -69,6 +69,13 @@ config:
     displayName: "Enable Wonderwall"
     ignoreKind:
       - "onprem"
+  naiserator.features.gar-toleration:
+    type: bool
+    displayName: "Enable GAR images"
+    ignoreKind:
+      - "onprem"
+      - "tenant"
+      - "management"
   naiserator.fqdn-policy.enabled:
     type: bool
     displayName: "Enable FQDN policy"
