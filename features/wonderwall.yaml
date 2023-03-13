@@ -14,6 +14,7 @@ dependsOn:
 config:
   image.tag:
     type: string
+    required: true
   idporten.cookieName:
     type: string
     required: true
