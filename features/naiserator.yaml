@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/naiserator
 source: https://github.com/nais/naiserator/tree/master/charts
-version: 1.1.4
+version: 1.2.0
 rolloutSource:
   - org: nais
     repo: naiserator
@@ -69,6 +69,13 @@ config:
     displayName: "Enable Wonderwall"
     ignoreKind:
       - "onprem"
+  naiserator.features.gar-toleration:
+    type: bool
+    displayName: "Enable GAR images"
+    ignoreKind:
+      - "onprem"
+      - "tenant"
+      - "management"
   naiserator.fqdn-policy.enabled:
     type: bool
     displayName: "Enable FQDN policy"

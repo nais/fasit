@@ -344,7 +344,7 @@ func (c *ConsoleManager) deleteNamespace(ctx context.Context, msg message.Consol
 	data := message.DeleteNamespace{}
 	err := json.Unmarshal(msg.Data, &data)
 	if err != nil {
-		return fmt.Errorf("unmarshal create namespace: %w", err)
+		return fmt.Errorf("unmarshal delete namespace: %w", err)
 	}
 
 	switch data.Name {
