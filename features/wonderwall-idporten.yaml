@@ -1,0 +1,18 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/wonderwall-idporten
+source: https://github.com/nais/helm-charts/tree/main/charts/wonderwall-idporten
+version: 0.1.0
+description: "ID-porten client setup for Wonderwall SSO."
+environmentKinds:
+  - "tenant"
+  - "legacy"
+dependsOn:
+  - allOf:
+    - "digdirator"
+config:
+  host:
+    type: string
+    required: true
+    description: Host for SSO server.
+  clientURI:
+    type: string
+    description: Client URI for the ID-porten client. Used by ID-porten when displaying errors and back-buttons.
