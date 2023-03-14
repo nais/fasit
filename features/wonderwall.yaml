@@ -32,6 +32,7 @@ config:
   idporten.sessionCookieEncryptionKey:
     type: string
     required: true
+    secret: true
     description: Cookie encryption key, 256 bits encoded with standard base64.
   idporten.ssoDefaultRedirectURL:
     type: string
