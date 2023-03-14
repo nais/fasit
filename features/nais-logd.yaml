@@ -36,6 +36,9 @@ config:
     displayName: Throttle drop logs
 
 mapping:
+  apiServerIP:
+    value: "{{ .Env.apiserver_endpoint }}/32"
+    displayName: "API server cidr"
   cluster.name:
     value: "{{.Env.name}}"
     displayName: Cluster name
