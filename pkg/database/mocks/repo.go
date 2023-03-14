@@ -569,6 +569,32 @@ func (_m *Repo) FeatureByName(ctx context.Context, name string) (*model.Feature,
 	return r0, r1
 }
 
+// FeatureByNameForEnv provides a mock function with given fields: ctx, name, envID
+func (_m *Repo) FeatureByNameForEnv(ctx context.Context, name string, envID uuid.UUID) (*model.Feature, error) {
+	ret := _m.Called(ctx, name, envID)
+
+	var r0 *model.Feature
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, uuid.UUID) (*model.Feature, error)); ok {
+		return rf(ctx, name, envID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, uuid.UUID) *model.Feature); ok {
+		r0 = rf(ctx, name, envID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Feature)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, uuid.UUID) error); ok {
+		r1 = rf(ctx, name, envID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // FeatureDataCreate provides a mock function with given fields: _a0, _a1
 func (_m *Repo) FeatureDataCreate(_a0 context.Context, _a1 model.Feature) error {
 	ret := _m.Called(_a0, _a1)

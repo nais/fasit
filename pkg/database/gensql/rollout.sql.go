@@ -29,7 +29,7 @@ SELECT
   fd.default_values,
   rollouts.created
 FROM rollouts
-JOIN feature_data fd ON rollouts.name = fd.name AND rollouts.version = fd.version
+JOIN feature_data fd ON rollouts.feature_name = fd.name AND rollouts.version = fd.version
 WHERE fd.name = $1
 `
 

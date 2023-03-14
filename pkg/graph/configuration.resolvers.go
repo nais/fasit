@@ -19,7 +19,10 @@ import (
 
 // Feature is the resolver for the feature field.
 func (r *configurationResolver) Feature(ctx context.Context, obj *model.Configuration) (*model.Feature, error) {
-	return r.resolveFeatureByName(obj.FeatureName)
+	if obj.EnvironmentID == nil {
+		return r.Repo.FeatureByName(ctx, obj.FeatureName)
+	}
+	return r.Repo.FeatureByNameForEnv(ctx, obj.FeatureName, *obj.EnvironmentID)
 }
 
 // Configuration is the resolver for the configuration field.
@@ -76,15 +79,16 @@ OUTER:
 			}
 		}
 		configs = append(configs, &model.Configuration{
-			FeatureName: obj.FeatureName,
-			Key:         key,
-			Value:       []byte("null"),
-			Secret:      val.Config.Secret,
-			Type:        val.Config.Type,
-			DisplayName: val.DisplayName,
-			Description: val.Description,
-			Required:    val.Required,
-			Source:      model.ConfigSourceHelm,
+			FeatureName:   obj.FeatureName,
+			Key:           key,
+			Value:         []byte("null"),
+			Secret:        val.Config.Secret,
+			Type:          val.Config.Type,
+			DisplayName:   val.DisplayName,
+			Description:   val.Description,
+			Required:      val.Required,
+			Source:        model.ConfigSourceHelm,
+			EnvironmentID: obj.EnvID,
 		})
 	}
 	// configs = removeIgnoredKinds(configs, feature, envKind)

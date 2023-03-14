@@ -27,7 +27,7 @@ type ConfigRepo interface {
 func environmentConfigurationFromSQL(c gensql.ConfigurationsEnvironment) *model.Configuration {
 	return &model.Configuration{
 		ID:            c.ID,
-		EnvironmentID: c.EnvironmentID,
+		EnvironmentID: &c.EnvironmentID,
 		FeatureName:   c.Feature,
 		// Description:   nullStringToPtr(c.Description),
 		Key:     c.Key,
@@ -71,7 +71,7 @@ func (r *repo) EnvConfig(ctx context.Context, feature string, envID uuid.UUID) (
 func envConfigFromSQL(conf gensql.EnvConfigRow) *model.Configuration {
 	ret := &model.Configuration{
 		ID:            conf.ID,
-		EnvironmentID: conf.EnvironmentID.UUID,
+		EnvironmentID: nullUUIDToPtr(conf.EnvironmentID),
 		FeatureName:   conf.Feature,
 		// Description:   nullStringToPtr(conf.Description),
 		Key:    conf.Key,
@@ -81,7 +81,7 @@ func envConfigFromSQL(conf gensql.EnvConfigRow) *model.Configuration {
 
 	if conf.EnvironmentID.Valid {
 		ret.Source = model.ConfigSourceEnv
-		ret.EnvironmentID = conf.EnvironmentID.UUID
+		ret.EnvironmentID = &conf.EnvironmentID.UUID
 	}
 
 	return ret

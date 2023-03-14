@@ -97,6 +97,6 @@ type Configuration struct {
 	Required    bool            `json:"required"`
 	Source      ConfigSource    `json:"source"`
 
-	EnvironmentID uuid.UUID `json:"-"`
-	FeatureName   string    `json:"-"`
+	EnvironmentID *uuid.UUID `json:"-"`
+	FeatureName   string     `json:"-"`
 }

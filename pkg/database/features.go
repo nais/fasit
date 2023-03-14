@@ -3,10 +3,13 @@ package database
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgtype"
+	"github.com/jackc/pgx/v4"
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/graph/model"
 )
@@ -14,6 +17,7 @@ import (
 type FeaturesRepo interface {
 	FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, ci bool) ([]*model.Feature, error)
 	FeatureByName(ctx context.Context, name string) (*model.Feature, error)
+	FeatureByNameForEnv(ctx context.Context, name string, envID uuid.UUID) (*model.Feature, error)
 }
 
 func (r *repo) FeatureByName(ctx context.Context, name string) (*model.Feature, error) {
@@ -82,6 +86,26 @@ func (r *repo) FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, 
 	})
 
 	return featuresFromSQL(features)
+}
+
+func (r *repo) FeatureByNameForEnv(ctx context.Context, name string, envID uuid.UUID) (*model.Feature, error) {
+	env, err := r.querier.EnvironmentGet(ctx, envID)
+	if err != nil {
+		return nil, fmt.Errorf("get environment from db: %w", err)
+	}
+
+	if env.Ci {
+		roll, err := r.RolloutByName(ctx, name)
+		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+			return nil, fmt.Errorf("get rollout by name from db: %w", err)
+		}
+
+		if roll != nil {
+			return roll, nil
+		}
+	}
+
+	return r.FeatureByName(ctx, name)
 }
 
 // func (r *repo) MissingDependencies(ctx context.Context, envID uuid.UUID, feature *model.Feature) ([]*model.Feature, error) {
