@@ -104,6 +104,13 @@ config:
       - "tenant"
       - "onprem"
       - "management"
+  naiserator.features.spot-toleration:
+    type: bool
+    displayName: "Enable spot toleration"
+    ignoreKind:
+      - "onprem"
+      - "management"
+      - "legacy"
 
 mapping:
   naiserator.api-server-ip:
