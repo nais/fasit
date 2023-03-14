@@ -1,7 +1,7 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/wonderwall
 source: https://github.com/nais/helm-charts/tree/main/charts/wonderwall
-version: 0.2.0
-description: "Configuration for Wonderwall; a reverse proxy sidecar implementing OIDC auth. Depends on feature toggle in naiserator."
+version: 0.3.0
+description: "Reverse proxy with OIDC auth. Configuration for sidecar proxies and SSO server. Feature toggle in naiserator must be enabled for sidecars to be injected to Applications."
 environmentKinds:
   - "tenant"
   - "legacy"
@@ -10,23 +10,29 @@ dependsOn:
     - "replicator"
     - "naiserator"
     - "fqdn-policy"
-    - "digdirator"
+    - "wonderwall-idporten"
 config:
   image.tag:
     type: string
     required: true
-  idporten.cookieName:
-    type: string
-    required: true
-    description: Cookie name for SSO sessions.
-  idporten.encryptionKey:
-    type: string
-    required: true
-    description: Cookie encryption key, 256 bits encoded with standard base64.
-  idporten.postLogoutRedirectURL:
+  idporten.openidPostLogoutRedirectURL:
     type: string
     required: true
     description: Where to redirect the user after global logout.
+  idporten.replicasMax:
+    type: int
+    description: Maximum replicas for SSO server.
+  idporten.replicasMin:
+    type: int
+    description: Minimum replicas for SSO server.
+  idporten.sessionCookieName:
+    type: string
+    required: true
+    description: Cookie name for SSO sessions.
+  idporten.sessionCookieEncryptionKey:
+    type: string
+    required: true
+    description: Cookie encryption key, 256 bits encoded with standard base64.
   idporten.ssoDefaultRedirectURL:
     type: string
     required: true
@@ -39,12 +45,6 @@ config:
     type: string
     required: true
     description: Host for SSO server.
-  idporten.ssoReplicasMin:
-    type: int
-    description: Minimum replicas for SSO server.
-  idporten.ssoReplicasMax:
-    type: int
-    description: Maximum replicas for SSO server.
   loginstatus.cookieDomain:
     type: string
     required: true
