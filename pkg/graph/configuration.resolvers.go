@@ -119,6 +119,9 @@ OUTER:
 
 // Computed is the resolver for the computed field.
 func (r *configurationsResolver) Computed(ctx context.Context, obj *model.Configurations) ([]*model.ComputedValue, error) {
+	if obj.EnvID == nil {
+		return nil, fmt.Errorf("environment id is required for computed values")
+	}
 	f, err := r.Repo.FeatureByNameForEnv(ctx, obj.FeatureName, *obj.EnvID)
 	if err != nil {
 		return nil, fmt.Errorf("get feature by name for environment: %w", err)
