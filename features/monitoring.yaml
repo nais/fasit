@@ -85,6 +85,8 @@ config:
     type: string
     displayName: Nais prometheus cpu request
 mapping:
+  clusterKind:
+    value: "{{.Kind}}"
   tenantCluster:
     template: "false"
     ignoreKind:
@@ -196,6 +198,18 @@ mapping:
     displayName: "Aiven OpenSearch prometheus sd url"
   kube-prometheus-stack.nodeExporter.enabled:
     template: "true"
+    ignoreKind:
+      - tenant
+      - legacy
+      - management
+  kube-prometheus-stack.prometheusOperator.networkPolicy.enabled:
+    template: "false"
+    ignoreKind:
+      - tenant
+      - legacy
+      - management
+  prometheus-pushgateway.networkPolicy:
+    template: "{}"
     ignoreKind:
       - tenant
       - legacy
