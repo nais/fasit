@@ -32,6 +32,16 @@ type FeatureYAML struct {
 
 type Values map[string]Value
 
+func (v *Values) Computed() map[string]Value {
+	ret := map[string]Value{}
+	for k, v := range *v {
+		if v.Computed != nil {
+			ret[k] = v
+		}
+	}
+	return ret
+}
+
 type Computed struct {
 	Template string `yaml:"template,omitempty" json:"template,omitempty"`
 }

@@ -21,30 +21,34 @@ func Test_queryResolver_Configuration_With_Environment_ID(t *testing.T) {
 	repo := mocks.NewRepo(t)
 	repo.On("EnvironmentGet", ctx, envID).Return(&model.Environment{Kind: model.EnvironmentKindOnprem}, nil).Once()
 
-	mockConfig := []*model.EnvConfiguration{
+	mockConfig := []*model.Configuration{
 		{
 			FeatureName: "feature",
 			Key:         "string",
 			Value:       []byte("stringValue"),
+			Source:      model.ConfigSourceEnv,
 		},
 		{
 			FeatureName: "feature",
 			Key:         "bool",
 			Value:       []byte("true"),
+			Source:      model.ConfigSourceEnv,
 		},
 	}
 	repo.On("ConfigGetForEnv", ctx, "feature", envID).Return(mockConfig, nil).Once()
 
-	mockGlobal := []*model.GlobalConfiguration{
+	mockGlobal := []*model.Configuration{
 		{
 			FeatureName: "feature",
 			Key:         "string",
 			Value:       []byte("stringValue"),
+			Source:      model.ConfigSourceGlobal,
 		},
 		{
 			FeatureName: "feature",
 			Key:         "ignore",
 			Value:       []byte("intValue"),
+			Source:      model.ConfigSourceGlobal,
 		},
 	}
 	repo.On("ConfigGet", ctx, "feature").Return(mockGlobal, nil).Once()

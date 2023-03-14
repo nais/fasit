@@ -11,24 +11,24 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-type Mapping map[string]MappingConfig
+type Computed map[string]ComputedConfig
 
-type MappingConfig struct {
+type ComputedConfig struct {
 	DisplayName string `yaml:"displayName,omitempty" json:"displayName,omitempty"`
 	Description string `yaml:"description,omitempty" json:"description,omitempty"`
 	Value       any    `yaml:"value,omitempty" json:"value,omitempty" jsonschema:"oneof_required=value"`
 	Template    string `yaml:"template,omitempty" json:"template,omitempty" jsonschema:"oneof_required=template"`
 }
 
-type MappingTenant struct {
+type ComputedTenant struct {
 	Name string
 }
 
-type MappingValues struct {
+type ComputedValues struct {
 	// Kind is the kind of environment the feature is deployed to.
 	Kind model.EnvironmentKind
 	// Tenant is information about the tenant that owns the cluster the feature is deployed to.
-	Tenant MappingTenant
+	Tenant ComputedTenant
 	// Management is information about the management cluster for the tenant.
 	Management map[string]any
 	// Env contains information about the cluster the feature is deployed to.
@@ -39,7 +39,7 @@ type MappingValues struct {
 	Configs map[string]any
 }
 
-func Generate(vals model.Values, kind model.EnvironmentKind, values *MappingValues, target map[string]any) error {
+func Generate(vals model.Values, kind model.EnvironmentKind, values *ComputedValues, target map[string]any) error {
 	if target == nil {
 		return fmt.Errorf("target is nil")
 	}
@@ -65,8 +65,8 @@ func Generate(vals model.Values, kind model.EnvironmentKind, values *MappingValu
 	return nil
 }
 
-func (m Mapping) DisplayName(key string) string {
-	for k, v := range m {
+func (c Computed) DisplayName(key string) string {
+	for k, v := range c {
 		if k == key {
 			return v.DisplayName
 		}
@@ -75,7 +75,7 @@ func (m Mapping) DisplayName(key string) string {
 	return ""
 }
 
-func addToMap(target map[string]any, values *MappingValues, key []string, v string) error {
+func addToMap(target map[string]any, values *ComputedValues, key []string, v string) error {
 	if len(key) > 1 {
 		t, ok := target[key[0]]
 		if !ok {
@@ -102,7 +102,7 @@ func addToMap(target map[string]any, values *MappingValues, key []string, v stri
 	return nil
 }
 
-func renderTemplate(values *MappingValues, tpl string) (any, error) {
+func renderTemplate(values *ComputedValues, tpl string) (any, error) {
 	if tpl == "" {
 		return nil, fmt.Errorf("empty template")
 	}
@@ -121,7 +121,7 @@ func renderTemplate(values *MappingValues, tpl string) (any, error) {
 	return v, nil
 }
 
-func renderString(values *MappingValues, tpl string) (string, error) {
+func renderString(values *ComputedValues, tpl string) (string, error) {
 	t := template.New("tpl")
 	t.Funcs(templateFuncs)
 	t, err := t.Parse(tpl)

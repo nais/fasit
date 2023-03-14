@@ -13,6 +13,7 @@ import (
 
 	"github.com/google/uuid"
 	pgx "github.com/jackc/pgx/v4"
+	feature "github.com/nais/fasit/pkg/feature2"
 	"github.com/nais/fasit/pkg/graph/graphgen"
 	"github.com/nais/fasit/pkg/graph/model"
 )
@@ -118,7 +119,36 @@ OUTER:
 
 // Computed is the resolver for the computed field.
 func (r *configurationsResolver) Computed(ctx context.Context, obj *model.Configurations) ([]*model.ComputedValue, error) {
-	panic(fmt.Errorf("not implemented: Computed - computed"))
+	f, err := r.Repo.FeatureByNameForEnv(ctx, obj.FeatureName, *obj.EnvID)
+	if err != nil {
+		return nil, fmt.Errorf("get feature by name for environment: %w", err)
+	}
+	cv, kind, err := r.Repo.MappingValuesForEnvironment(ctx, *obj.EnvID, false)
+	if err != nil {
+		return nil, err
+	}
+
+	computed := f.Values.Computed()
+
+	generated := map[string]any{}
+	if err := feature.Generate(computed, kind, cv, generated); err != nil {
+		return nil, fmt.Errorf("generate computed values: %w", err)
+	}
+
+	ret := []*model.ComputedValue{}
+	for k, v := range computed {
+		rm, err := json.Marshal(generated[k])
+		if err != nil {
+			return nil, fmt.Errorf("marshal computed value: %w", err)
+		}
+		ret = append(ret, &model.ComputedValue{
+			Key:         k,
+			Value:       rm,
+			DisplayName: v.DisplayName,
+		})
+	}
+
+	return ret, nil
 }
 
 // ConfigurationCreate is the resolver for the configurationCreate field.

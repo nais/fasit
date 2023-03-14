@@ -164,7 +164,7 @@ func TestRepo_ConfigGetForEnv(t *testing.T) {
 	want := []*model.Configuration{
 		{
 			ID:            id,
-			EnvironmentID: envid,
+			EnvironmentID: &envid,
 			FeatureName:   "feature3",
 			Key:           "my.key",
 			Value:         []byte(`"stringval"`),
@@ -201,7 +201,7 @@ func TestRepo_ConfigCreate_Environment(t *testing.T) {
 	}
 
 	want := &model.Configuration{
-		EnvironmentID: *config.EnvironmentID,
+		EnvironmentID: config.EnvironmentID,
 		FeatureName:   config.Feature,
 		Key:           config.Key,
 		Value:         config.Value,

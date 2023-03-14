@@ -87,7 +87,7 @@ func prefixedValues(m any, prefix string) []any {
 }
 
 // subdomain returns the subdomain for the active environment.
-func subdomain(m *MappingValues, subdomain string) string {
+func subdomain(m *ComputedValues, subdomain string) string {
 	domain := m.Tenant.Name + ".cloud.nais.io"
 	if m.Kind != model.EnvironmentKindManagement {
 		domain = m.Env["name"].(string) + "." + domain
