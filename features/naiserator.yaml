@@ -133,6 +133,8 @@ mapping:
       {{ if eq .Kind "legacy" }}
       - domainSuffix: .ekstern.dev.nav.no
         ingressClass: nais-ingress-external
+      - domainSuffix: .very.intern.dev.nav.no
+        ingressClass: nais-ingress-very-internal
       - domainSuffix: .dev.intern.nav.no
         ingressClass: gw-dev-intern-nav-no
       - domainSuffix: .dev-gcp.nais.io
