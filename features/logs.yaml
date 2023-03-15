@@ -1,9 +1,9 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/logs
 source: https://github.com/nais/helm-charts/tree/main/charts/logs
-version: 0.2.0
+version: 1.0.0
 environmentKinds:
   - "tenant"
-timeout: 20m
+timeout: 5m
 mapping:
   loki.loki.storage.bucketNames.chunks:
     displayName: "Loki chunks bucket"
@@ -24,3 +24,16 @@ mapping:
   loki.gateway.service.loadBalancerIP:
     displayName: "Loki load balancer IP"
     value: '{{.Env.tenant_loki_ilb_ip}}'
+
+  gateway.enabled:
+    template: "true"
+  gateway.ingress.ingressClassName:
+    template: "nais-ingress"
+  gateway.ingress.enabled:
+    template: "true"
+  gateway.ingress.hosts:
+    template: |
+      - host: '{{ subdomain . "loki" }}'
+        paths:
+          - path: "/"
+            pathType: "ImplementationSpecific"
