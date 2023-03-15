@@ -202,6 +202,7 @@ mapping:
       - tenant
       - legacy
       - management
+# Disable network policies onprem
   kube-prometheus-stack.prometheusOperator.networkPolicy.enabled:
     template: "false"
     ignoreKind:
@@ -210,6 +211,12 @@ mapping:
       - management
   prometheus-pushgateway.networkPolicy:
     template: "{}"
+    ignoreKind:
+      - tenant
+      - legacy
+      - management
+  kube-prometheus-stack.kube-state-metrics.networkPolicy.enabled:
+    template: "false"
     ignoreKind:
       - tenant
       - legacy
