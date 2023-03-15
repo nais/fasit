@@ -87,6 +87,8 @@ config:
 mapping:
   clusterKind:
     value: "{{.Kind}}"
+  apiserverEndpoint:
+    value: "{{ .Env.apiserver_endpoint }}"
   tenantCluster:
     template: "false"
     ignoreKind:
