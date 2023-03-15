@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring
-version: 1.52.2
+version: 1.53.3
 description: "Monitoring stack for nais"
 environmentKinds:
   - "tenant"
@@ -212,7 +212,6 @@ mapping:
         ports:
           - port: 443
             protocol: TCP
-# Disable network policies onprem
   kube-prometheus-stack.prometheusOperator.networkPolicy.enabled:
     template: "false"
     ignoreKind:
