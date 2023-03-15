@@ -219,7 +219,7 @@ mapping:
       - legacy
       - management
   prometheus-pushgateway.networkPolicy:
-    template: "{}"
+    template: "null"
     ignoreKind:
       - tenant
       - legacy
