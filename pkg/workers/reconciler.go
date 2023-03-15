@@ -20,7 +20,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/instrument"
-	"go.opentelemetry.io/otel/metric/instrument/syncint64"
 )
 
 type ReconcilerStore interface {
@@ -54,8 +53,8 @@ type Reconciler struct {
 	running bool
 
 	// Metrics
-	reconcileTime  syncint64.Histogram
-	deployMessages syncint64.Counter
+	reconcileTime  instrument.Int64Histogram
+	deployMessages instrument.Int64Counter
 }
 
 func NewReconciler(

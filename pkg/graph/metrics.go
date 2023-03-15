@@ -9,11 +9,10 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/instrument"
-	"go.opentelemetry.io/otel/metric/instrument/syncint64"
 )
 
 type Metrics struct {
-	resolverTime syncint64.Histogram
+	resolverTime instrument.Int64Histogram
 }
 
 var _ interface {
