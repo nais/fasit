@@ -210,13 +210,6 @@ mapping:
         ports:
           - port: 443
             protocol: TCP
-      - to:
-          - namespaceSelector:
-              matchLabels:
-                kubernetes.io/metadata.name: kube-system
-          - podSelector:
-              matchLabels:
-                k8s-app: kube-dns
 # Disable network policies onprem
   kube-prometheus-stack.prometheusOperator.networkPolicy.enabled:
     template: "false"
