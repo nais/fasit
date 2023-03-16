@@ -26,3 +26,7 @@ config:
   ingress-nginx.controller.metrics.serviceMonitor.enabled:
     type: bool
     displayName: "Enable service monitor"
+mapping:
+  podCIDRRange:
+    value: "{{ .Env.pods_ip_cidr_range }}"
+    displayName: "Pod CIDR range"
