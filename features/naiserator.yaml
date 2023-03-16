@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/naiserator
 source: https://github.com/nais/naiserator/tree/master/charts
-version: 1.2.0
+version: 1.2.1
 rolloutSource:
   - org: nais
     repo: naiserator
@@ -38,6 +38,10 @@ config:
     ignoreKind:
       - "tenant"
       - "legacy"
+  naiserator.features.aiven-shared-secrets:
+    type: bool
+    displayName: "Enable shared Aiven secrets"
+    description: "Every deploy of an application that uses Aiven will share a single secret per week, reusing service users etc."
   naiserator.features.prometheus-operator:
     type: bool
     displayName: "Enable Prometheus Operator"
