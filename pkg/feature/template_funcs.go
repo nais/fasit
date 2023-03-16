@@ -237,6 +237,15 @@ func filter(key string, value, v any) []map[string]any {
 	return out
 }
 
-func base64encode(v string) string {
-	return base64.StdEncoding.EncodeToString([]byte(v))
+func base64encode(v any) string {
+	if v == nil {
+		return ""
+	}
+
+	s, ok := v.(string)
+	if !ok {
+		panic("expected string to b64enc")
+	}
+
+	return base64.StdEncoding.EncodeToString([]byte(s))
 }
