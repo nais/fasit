@@ -1,0 +1,16 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/team-namespaces
+source: https://github.com/nais/helm-charts/tree/main/charts/team-namespaces
+version: 0.1.0
+environmentKinds:
+  - "onprem"
+config:
+  ghdockerconfigjson:
+    name: Docker config for on-prem (GHCR, repo.adeo.no, etc.)
+    type: string
+    secret: true
+    required: true
+mapping:
+  gardockerconfigjson:
+    value: '{"auths":{"europe-north1-docker.pkg.dev/nais-management-233d":{"username":"_json_key","password":"{{.Env.gar_service_account_key}}"}}}'
+  clusterKind:
+    value: '{{ .Kind }}'
