@@ -10,6 +10,7 @@ import (
 	"text/template"
 
 	"github.com/nais/fasit/pkg/graph/model"
+	"gopkg.in/yaml.v2"
 )
 
 var templateFuncs = template.FuncMap{
