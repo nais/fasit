@@ -3,6 +3,8 @@ source: https://github.com/nais/helm-charts/tree/main/charts/team-namespaces
 version: 0.1.0
 environmentKinds:
   - "onprem"
+autoInstall:
+  - "onprem"
 config:
   ghdockerconfigjson:
     description: Docker config for on-prem (GHCR, repo.adeo.no, etc.)
