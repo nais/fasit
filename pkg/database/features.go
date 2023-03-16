@@ -15,6 +15,7 @@ import (
 )
 
 type FeaturesRepo interface {
+	Features(ctx context.Context) ([]*model.Feature, error)
 	FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, ci bool) ([]*model.Feature, error)
 	FeatureByName(ctx context.Context, name string) (*model.Feature, error)
 	FeatureByNameForEnv(ctx context.Context, name string, envID uuid.UUID) (*model.Feature, error)
@@ -40,6 +41,33 @@ func (r *repo) FeatureByName(ctx context.Context, name string) (*model.Feature, 
 		FeatureYAML: fyaml,
 		ValuesYAML:  defaultValues,
 	}, nil
+}
+
+func (r *repo) Features(ctx context.Context) ([]*model.Feature, error) {
+	features, err := r.querier.Features(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("get feature by name from db: %w", err)
+	}
+
+	var ret []*model.Feature
+	for _, f := range features {
+		fyaml, defaultValues, err := makeFeatureYAML(f.Kinds, f.Dependencies, f.Values, f.DefaultValues)
+		if err != nil {
+			return nil, fmt.Errorf("make feature yaml: %w", err)
+		}
+
+		feature := &model.Feature{
+			Name:        f.Name,
+			Description: f.Description,
+			Version:     f.Version,
+			Chart:       f.Chart,
+			Source:      f.Source,
+			FeatureYAML: fyaml,
+			ValuesYAML:  defaultValues,
+		}
+		ret = append(ret, feature)
+	}
+	return ret, nil
 }
 
 func (r *repo) FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, ci bool) ([]*model.Feature, error) {

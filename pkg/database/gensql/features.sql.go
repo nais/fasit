@@ -30,6 +30,7 @@ SELECT
 FROM features
 JOIN feature_data fd ON features.name = fd.name AND features.version = fd.version
 WHERE fd.name = $1
+ORDER BY features.name
 `
 
 type FeatureByNameRow struct {
@@ -99,6 +100,73 @@ func (q *Queries) FeatureGetForEnv(ctx context.Context, environmentKind string) 
 	items := []FeatureGetForEnvRow{}
 	for rows.Next() {
 		var i FeatureGetForEnvRow
+		if err := rows.Scan(
+			&i.Name,
+			&i.Version,
+			&i.Chart,
+			&i.Description,
+			&i.Source,
+			&i.Kinds,
+			&i.Dependencies,
+			&i.Values,
+			&i.Timeout,
+			&i.DefaultValues,
+			&i.Created,
+			&i.LastModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const features = `-- name: Features :many
+SELECT
+  fd.name,
+  fd.version,
+  fd.chart,
+  fd.description,
+  fd.source,
+  fd.kinds::text[] AS kinds,
+  fd.dependencies,
+  fd.values,
+  fd.timeout,
+  fd.default_values,
+  features.created,
+  features.last_modified
+FROM features
+JOIN feature_data fd ON features.name = fd.name AND features.version = fd.version
+ORDER BY features.name
+`
+
+type FeaturesRow struct {
+	Name          string
+	Version       string
+	Chart         string
+	Description   string
+	Source        string
+	Kinds         []string
+	Dependencies  pgtype.JSONB
+	Values        pgtype.JSONB
+	Timeout       sql.NullInt64
+	DefaultValues pgtype.JSONB
+	Created       time.Time
+	LastModified  time.Time
+}
+
+func (q *Queries) Features(ctx context.Context) ([]FeaturesRow, error) {
+	rows, err := q.db.Query(ctx, features)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []FeaturesRow{}
+	for rows.Next() {
+		var i FeaturesRow
 		if err := rows.Scan(
 			&i.Name,
 			&i.Version,

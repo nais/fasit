@@ -699,6 +699,32 @@ func (_m *Querier) FeatureStatesGet(ctx context.Context, environmentID uuid.UUID
 	return r0, r1
 }
 
+// Features provides a mock function with given fields: ctx
+func (_m *Querier) Features(ctx context.Context) ([]gensql.FeaturesRow, error) {
+	ret := _m.Called(ctx)
+
+	var r0 []gensql.FeaturesRow
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) ([]gensql.FeaturesRow, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) []gensql.FeaturesRow); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gensql.FeaturesRow)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // FeaturesForKind provides a mock function with given fields: ctx, environmentKind
 func (_m *Querier) FeaturesForKind(ctx context.Context, environmentKind string) ([]gensql.FeaturesForKindRow, error) {
 	ret := _m.Called(ctx, environmentKind)

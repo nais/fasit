@@ -36,7 +36,7 @@ func (r *featureResolver) Values(ctx context.Context, obj *model.Feature) ([]*mo
 
 // Configoverrides is the resolver for the configoverrides field.
 func (r *featureResolver) Configoverrides(ctx context.Context, obj *model.Feature) ([]*model.ConfigOverride, error) {
-	panic(fmt.Errorf("not implemented: Configoverrides - configoverrides"))
+	return r.Repo.ConfigOverridesByFeature(ctx, obj.Name)
 }
 
 // OutdatedInfo is the resolver for the outdatedInfo field.
@@ -45,13 +45,8 @@ func (r *featureResolver) OutdatedInfo(ctx context.Context, obj *model.Feature) 
 }
 
 // Features is the resolver for the features field.
-func (r *queryResolver) Features(ctx context.Context, kind *model.EnvironmentKind) ([]*model.Feature, error) {
-	panic(fmt.Errorf("not implemented: Features - features"))
-}
-
-// Feature is the resolver for the feature field.
-func (r *queryResolver) Feature(ctx context.Context, name string) (*model.Feature, error) {
-	panic(fmt.Errorf("not implemented: Feature - feature"))
+func (r *queryResolver) Features(ctx context.Context) ([]*model.Feature, error) {
+	return r.Repo.Features(ctx)
 }
 
 // OutdatedInfo is the resolver for the outdatedInfo field.

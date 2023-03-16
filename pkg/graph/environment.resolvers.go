@@ -6,6 +6,7 @@ package graph
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -63,6 +64,16 @@ func (r *environmentResolver) AuditLog(ctx context.Context, obj *model.Environme
 	}
 
 	return r.Repo.AuditForEnvironment(ctx, obj.ID, fn)
+}
+
+// Features is the resolver for the features field.
+func (r *environmentResolver) Features(ctx context.Context, obj *model.Environment) ([]*model.Feature, error) {
+	panic(fmt.Errorf("not implemented: Features - features"))
+}
+
+// Feature is the resolver for the feature field.
+func (r *environmentResolver) Feature(ctx context.Context, obj *model.Environment, name string) (*model.Feature, error) {
+	panic(fmt.Errorf("not implemented: Feature - feature"))
 }
 
 // EnvironmentCreate is the resolver for the environmentCreate field.
