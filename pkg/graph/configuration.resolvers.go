@@ -156,11 +156,20 @@ func (r *configurationsResolver) Computed(ctx context.Context, obj *model.Config
 
 // ConfigurationCreate is the resolver for the configurationCreate field.
 func (r *mutationResolver) ConfigurationCreate(ctx context.Context, configuration model.NewConfiguration) (*model.Configuration, error) {
-	// if err := r.Features.ValidConfig(configuration.Feature, configuration.Key, configuration.Value); err != nil {
-	// 	return nil, fmt.Errorf("invalid configuration %q for %q: %w", configuration.Key, configuration.Feature, err)
-	// }
+	feature, err := r.Repo.FeatureByNameForEnv(ctx, configuration.Feature, *configuration.EnvironmentID)
+	if err != nil {
+		return nil, err
+	}
 
-	// configuration.Secret = r.Features.IsSecret(configuration.Feature, configuration.Key)
+	val, ok := feature.Values[configuration.Key]
+	if !ok {
+		return nil, fmt.Errorf("key not found for feature %q", configuration.Feature)
+	}
+	if err := val.ValidConfig(configuration.Value); err != nil {
+		return nil, fmt.Errorf("invalid configuration %q for %q: %w", configuration.Key, configuration.Feature, err)
+	}
+
+	configuration.Secret = val.Config.Secret
 	return r.Repo.ConfigCreate(ctx, configuration)
 }
 

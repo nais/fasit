@@ -3,6 +3,8 @@ package model
 import (
 	"archive/tar"
 	"compress/gzip"
+	"encoding/json"
+	"fmt"
 	"io"
 	"strings"
 	"time"
@@ -58,6 +60,47 @@ type Value struct {
 	Computed    *Computed         `yaml:"computed,omitempty" json:"computed,omitempty"`
 	Config      *Config           `yaml:"config,omitempty" json:"config,omitempty"`
 	IgnoreKind  []EnvironmentKind `yaml:"ignoreKind,omitempty" json:"ignoreKind,omitempty"`
+}
+
+func (v Value) ValidConfig(value json.RawMessage) error {
+	if v.Config == nil {
+		return fmt.Errorf("not configurable")
+	}
+
+	if v.Config.Type == "" {
+		return fmt.Errorf("type is invalid")
+	}
+
+	var val any
+	if err := json.Unmarshal(value, &val); err != nil {
+		return fmt.Errorf("unable to decode json: %w", err)
+	}
+
+	switch val := val.(type) {
+	case string:
+		if v.Config.Type == ConfigTypeString {
+			return nil
+		}
+	case int, int32, int64, float32, float64:
+		if v.Config.Type == ConfigTypeInt {
+			return nil
+		}
+	case bool:
+		if v.Config.Type == ConfigTypeBool {
+			return nil
+		}
+	case []any:
+		if v.Config.Type == ConfigTypeStringArray {
+			if !isStringArray(val) {
+				return fmt.Errorf("array contains non-string elements")
+			}
+			return nil
+		}
+	}
+	if val == nil {
+		return nil
+	}
+	return fmt.Errorf("value doesn't match the required type. Expected %v, got %T", v.Config.Type, val)
 }
 
 func FromChart(chart, version string) (*Feature, error) {
@@ -151,4 +194,13 @@ func contains[T comparable](s []T, e T) bool {
 		}
 	}
 	return false
+}
+
+func isStringArray(v []any) bool {
+	for _, e := range v {
+		if _, ok := e.(string); !ok {
+			return false
+		}
+	}
+	return true
 }
