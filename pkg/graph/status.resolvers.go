@@ -8,7 +8,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -43,33 +42,7 @@ func (r *queryResolver) FeatureStatus(ctx context.Context, envID uuid.UUID, feat
 
 // MissingDependencies is the resolver for the missingDependencies field.
 func (r *statusResolver) MissingDependencies(ctx context.Context, obj *model.Status) ([]*model.Feature, error) {
-	f, err := r.Repo.FeatureByName(ctx, obj.Feature)
-	if err != nil {
-		return nil, err
-	}
-
-	states, err := r.Repo.FeatureStatesGet(ctx, obj.EnvironmentID)
-	if err != nil {
-		return nil, err
-	}
-
-	enabledFeatures := []string{}
-	for _, s := range states {
-		if s.Enabled {
-			enabledFeatures = append(enabledFeatures, s.FeatureName)
-		}
-	}
-
-	ret := []*model.Feature{}
-
-	for _, missing := range f.Dependencies.FindMissing(enabledFeatures) {
-		mf, err := r.Repo.FeatureByName(ctx, missing)
-		if err != nil {
-			return nil, fmt.Errorf("getting feature by name: %v: %w", missing, err)
-		}
-		ret = append(ret, mf)
-	}
-	return ret, nil
+	return r.missingDependencies(ctx, obj.Feature, obj.EnvironmentID)
 }
 
 // Status is the resolver for the status field.
@@ -106,5 +79,7 @@ func (r *Resolver) Status() graphgen.StatusResolver { return &statusResolver{r} 
 // Subscription returns graphgen.SubscriptionResolver implementation.
 func (r *Resolver) Subscription() graphgen.SubscriptionResolver { return &subscriptionResolver{r} }
 
-type statusResolver struct{ *Resolver }
-type subscriptionResolver struct{ *Resolver }
+type (
+	statusResolver       struct{ *Resolver }
+	subscriptionResolver struct{ *Resolver }
+)

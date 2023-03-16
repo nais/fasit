@@ -21,39 +21,21 @@ func (r *featureStateResolver) Feature(ctx context.Context, obj *model.FeatureSt
 
 // MissingDependencies is the resolver for the missingDependencies field.
 func (r *featureStateResolver) MissingDependencies(ctx context.Context, obj *model.FeatureState) ([]*model.Feature, error) {
-	// f := r.Features.Get(obj.FeatureName)
-
-	states, err := r.Repo.FeatureStatesGet(ctx, obj.EnvID)
-	if err != nil {
-		return nil, err
-	}
-
-	enabledFeatures := []string{}
-	for _, s := range states {
-		if s.Enabled {
-			enabledFeatures = append(enabledFeatures, s.FeatureName)
-		}
-	}
-
-	ret := []*model.Feature{}
-
-	return ret, nil
+	return r.missingDependencies(ctx, obj.FeatureName, obj.EnvID)
 }
 
 // Configuration is the resolver for the configuration field.
 func (r *featureStateResolver) Configuration(ctx context.Context, obj *model.FeatureState) (*model.Configurations, error) {
-	// return r.Resolver.Query().Configuration(ctx, obj.FeatureName, &obj.EnvID)
-	panic("not implemented")
+	return r.Resolver.Query().Configuration(ctx, obj.FeatureName, &obj.EnvID)
 }
 
 // FeatureStateSave is the resolver for the featureStateSave field.
 func (r *mutationResolver) FeatureStateSave(ctx context.Context, envID uuid.UUID, enabled bool, feature string) (*model.FeatureState, error) {
-	// feat := r.Resolver.Features.Get(feature)
-	// if feat == nil {
-	// 	return nil, nil
-	// }
-	// return r.Repo.FeatureStatesCreateOrUpdate(ctx, envID, feat, enabled)
-	panic("not implemented")
+	feat, err := r.Repo.FeatureByNameForEnv(ctx, feature, envID)
+	if err != nil {
+		return nil, err
+	}
+	return r.Repo.FeatureStatesCreateOrUpdate(ctx, envID, feat, enabled)
 }
 
 // FeatureState is the resolver for the featureState field.
