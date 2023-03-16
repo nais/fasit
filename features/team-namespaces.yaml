@@ -5,7 +5,7 @@ environmentKinds:
   - "onprem"
 config:
   ghdockerconfigjson:
-    name: Docker config for on-prem (GHCR, repo.adeo.no, etc.)
+    description: Docker config for on-prem (GHCR, repo.adeo.no, etc.)
     type: string
     secret: true
     required: true
