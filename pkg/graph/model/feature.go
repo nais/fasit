@@ -134,7 +134,7 @@ func (f *Feature) parseChartYAML(r io.Reader) error {
 func (f *Feature) RequiredFields(envKind EnvironmentKind) []string {
 	var requiredFields []string
 	for k, v := range f.Values {
-		if contains(v.IgnoreKind, envKind) {
+		if contains(v.IgnoreKind, envKind) || v.Computed != nil {
 			continue
 		}
 		if v.Required {

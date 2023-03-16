@@ -16,7 +16,6 @@ type ConfigRepo interface {
 	ConfigCreate(ctx context.Context, c model.NewConfiguration) (*model.Configuration, error)
 	ConfigDelete(ctx context.Context, id uuid.UUID) error
 	ConfigGet(ctx context.Context, feature string) ([]*model.Configuration, error)
-	ConfigGetForEnv(ctx context.Context, feature string, envID uuid.UUID) ([]*model.Configuration, error)
 	ConfigListen(ctx context.Context, fn ListenFunc) error
 	ConfigOverridesByFeature(ctx context.Context, featureName string) ([]*model.ConfigOverride, error)
 	ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration) (*model.Configuration, error)
@@ -95,24 +94,6 @@ func (r *repo) ConfigGet(ctx context.Context, feature string) ([]*model.Configur
 	retVal := []*model.Configuration{}
 	for _, conf := range config {
 		retVal = append(retVal, globalConfigFromSQL(conf))
-	}
-
-	return retVal, nil
-}
-
-func (r *repo) ConfigGetForEnv(ctx context.Context, feature string, envID uuid.UUID) ([]*model.Configuration, error) {
-	params := gensql.ConfigGetForEnvParams{
-		Feature:       feature,
-		EnvironmentID: envID,
-	}
-	config, err := r.querier.ConfigGetForEnv(ctx, params)
-	if err != nil {
-		return nil, err
-	}
-
-	retVal := []*model.Configuration{}
-	for _, conf := range config {
-		retVal = append(retVal, environmentConfigurationFromSQL(conf))
 	}
 
 	return retVal, nil
@@ -212,6 +193,10 @@ func (r *repo) HelmValues(ctx context.Context, f *model.Feature, envID uuid.UUID
 		}
 	}
 
+	r.querier.ConfigGetForEnv(ctx, gensql.ConfigGetForEnvParams{
+		Feature:       f.Name,
+		EnvironmentID: envID,
+	})
 	vals, err := r.querier.EnvConfig(ctx, gensql.EnvConfigParams{
 		Feature:       f.Name,
 		EnvironmentID: envID,
@@ -220,6 +205,7 @@ func (r *repo) HelmValues(ctx context.Context, f *model.Feature, envID uuid.UUID
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("mv", mv)
 
 	missing := validateFields(f.RequiredFields(envKind), vals)
 	if len(missing) > 0 {

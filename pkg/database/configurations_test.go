@@ -156,7 +156,7 @@ func TestRepo_ConfigGetForEnv(t *testing.T) {
 	)
 	defer repo.Close()
 
-	got, err := repo.ConfigGetForEnv(context.Background(), "feature3", envid)
+	got, err := repo.EnvConfig(context.Background(), "feature3", envid)
 	if err != nil {
 		t.Fatal(err)
 	}
