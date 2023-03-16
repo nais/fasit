@@ -6,6 +6,7 @@ import (
 	"text/template"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
@@ -673,5 +674,29 @@ func Test_environmentsAsMap(t *testing.T) {
 
 	if !cmp.Equal(output, expectedOutput) {
 		t.Errorf("diff -want +got:\n%v", cmp.Diff(expectedOutput, output))
+	}
+}
+
+func Test_base64encode(t *testing.T) {
+	tests := map[string]struct {
+		arg  string
+		want string
+	}{
+		"empty string": {
+			arg:  "",
+			want: "",
+		},
+		"some value": {
+			arg:  "some value",
+			want: "c29tZSB2YWx1ZQ==",
+		},
+	}
+
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			if got := base64encode(tt.arg); !cmp.Equal(got, tt.want) {
+				t.Errorf("diff -want +got:\n%v", cmp.Diff(tt.want, got))
+			}
+		})
 	}
 }
