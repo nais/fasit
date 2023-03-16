@@ -197,18 +197,17 @@ func (r *queryResolver) Configuration(ctx context.Context, feature string, envID
 
 // HelmValues is the resolver for the helmValues field.
 func (r *queryResolver) HelmValues(ctx context.Context, feature string, envID uuid.UUID) (json.RawMessage, error) {
-	// f := r.Resolver.Features.Get(feature)
-	// if f == nil {
-	// 	return json.RawMessage{}, nil
-	// }
+	f, err := r.Repo.FeatureByNameForEnv(ctx, feature, envID)
+	if err != nil {
+		return nil, err
+	}
 
-	// v, err := r.Repo.HelmValues(ctx, f, envID)
-	// if err != nil {
-	// 	return nil, err
-	// }
+	v, err := r.Repo.HelmValues(ctx, f, envID)
+	if err != nil {
+		return nil, err
+	}
 
-	// return json.Marshal(v)
-	panic("not implemented")
+	return json.Marshal(v)
 }
 
 // Configuration returns graphgen.ConfigurationResolver implementation.
