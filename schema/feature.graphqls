@@ -5,6 +5,23 @@ type OutdatedInfo {
   newVersion: String!
 }
 
+type Computed {
+  template: String!
+}
+type Config {
+  type: ConfigType!
+  secret: Boolean!
+}
+
+type Value {
+  key: String! @goField(name: "GraphQLKey")
+  displayName: String!
+  description: String!
+  required: Boolean!
+  computed: Computed
+  config: Config
+}
+
 type Feature {
   name: String!
   chart: String!
@@ -12,7 +29,7 @@ type Feature {
   source: String!
   description: String!
   dependencies: [Dependency!]!
-  config: RawMessage!
+  values: [Value!]!
   environmentKinds: [EnvironmentKind!]!
   configoverrides: [ConfigOverride!]!
   outdatedInfo: [OutdatedInfo]!

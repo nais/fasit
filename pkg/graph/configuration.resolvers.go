@@ -218,7 +218,5 @@ func (r *Resolver) Configurations() graphgen.ConfigurationsResolver {
 	return &configurationsResolver{r}
 }
 
-type (
-	configurationResolver  struct{ *Resolver }
-	configurationsResolver struct{ *Resolver }
-)
+type configurationResolver struct{ *Resolver }
+type configurationsResolver struct{ *Resolver }

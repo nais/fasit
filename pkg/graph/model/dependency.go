@@ -1,6 +1,6 @@
 package model
 
-type Dependencies []Dependency
+type Dependencies []*Dependency
 
 func (d Dependencies) FindMissing(features []string) []string {
 	ret := []string{}

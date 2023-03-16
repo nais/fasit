@@ -60,6 +60,9 @@ type Value struct {
 	Computed    *Computed         `yaml:"computed,omitempty" json:"computed,omitempty"`
 	Config      *Config           `yaml:"config,omitempty" json:"config,omitempty"`
 	IgnoreKind  []EnvironmentKind `yaml:"ignoreKind,omitempty" json:"ignoreKind,omitempty"`
+
+	// for graphql
+	GraphQLKey string `yaml:"key,omitempty" json:"key,omitempty"`
 }
 
 func (v Value) ValidConfig(value json.RawMessage) error {

@@ -6,7 +6,6 @@ package graph
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/nais/fasit/pkg/graph/graphgen"
@@ -15,17 +14,24 @@ import (
 
 // Environment is the resolver for the environment field.
 func (r *configOverrideResolver) Environment(ctx context.Context, obj *model.ConfigOverride) (*model.Environment, error) {
-	panic(fmt.Errorf("not implemented: Environment - environment"))
+	return r.Repo.EnvironmentGet(ctx, obj.EnvironmentID)
 }
 
 // Dependencies is the resolver for the dependencies field.
 func (r *featureResolver) Dependencies(ctx context.Context, obj *model.Feature) ([]*model.Dependency, error) {
-	panic(fmt.Errorf("not implemented: Dependencies - dependencies"))
+	return obj.Dependencies, nil
 }
 
-// Config is the resolver for the config field.
-func (r *featureResolver) Config(ctx context.Context, obj *model.Feature) (json.RawMessage, error) {
-	panic(fmt.Errorf("not implemented: Config - config"))
+// Values is the resolver for the values field.
+func (r *featureResolver) Values(ctx context.Context, obj *model.Feature) ([]*model.Value, error) {
+	ret := make([]*model.Value, 0, len(obj.Values))
+	for k, v := range obj.Values {
+		cp := v
+		cp.GraphQLKey = k
+		ret = append(ret, &cp)
+	}
+
+	return ret, nil
 }
 
 // Configoverrides is the resolver for the configoverrides field.
@@ -61,5 +67,7 @@ func (r *Resolver) ConfigOverride() graphgen.ConfigOverrideResolver {
 // Feature returns graphgen.FeatureResolver implementation.
 func (r *Resolver) Feature() graphgen.FeatureResolver { return &featureResolver{r} }
 
-type configOverrideResolver struct{ *Resolver }
-type featureResolver struct{ *Resolver }
+type (
+	configOverrideResolver struct{ *Resolver }
+	featureResolver        struct{ *Resolver }
+)
