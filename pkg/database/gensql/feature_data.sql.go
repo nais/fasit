@@ -14,26 +14,26 @@ import (
 
 const featureDataCreate = `-- name: FeatureDataCreate :exec
 INSERT INTO feature_data (
-    name, 
-    version, 
-    chart, 
-    description, 
-    source, 
-    kinds, 
+    name,
+    version,
+    chart,
+    description,
+    source,
+    kinds,
     timeout,
-    dependencies, 
-    values, 
+    dependencies,
+    values,
     default_values
 ) VALUES (
-    $1, 
-    $2, 
-    $3, 
-    $4, 
-    $5, 
+    $1,
+    $2,
+    $3,
+    $4,
+    $5,
     ($6::text[])::environment_kind[],
     $7,
-    $8, 
-    $9, 
+    $8,
+    $9,
     $10
 )
 `

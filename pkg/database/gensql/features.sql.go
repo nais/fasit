@@ -30,7 +30,6 @@ SELECT
 FROM features
 JOIN feature_data fd ON features.name = fd.name AND features.version = fd.version
 WHERE fd.name = $1
-ORDER BY features.name
 `
 
 type FeatureByNameRow struct {

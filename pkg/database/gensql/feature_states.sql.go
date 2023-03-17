@@ -76,15 +76,16 @@ func (q *Queries) FeatureStateGet(ctx context.Context, arg FeatureStateGetParams
 }
 
 const featureStatesGet = `-- name: FeatureStatesGet :many
-SELECT fs.environment_id, f.name, coalesce(fs.enabled, false) AS enabled, fs.created, fs.last_modified, fs.enabled_at
+SELECT $1::uuid AS environment_id, f.name, coalesce(fs.enabled, false) AS enabled, fs.created, fs.last_modified, fs.enabled_at
 FROM features f
+JOIN feature_data fd ON fd.name = f.name AND fd.version = f.version
 LEFT JOIN feature_states fs
-ON fs.feature = f.name
-WHERE fs.environment_id = $1
+ON fs.feature = f.name AND fs.environment_id = $1
+WHERE (SELECT kind FROM environments WHERE id = $1) = any(fd.kinds)
 `
 
 type FeatureStatesGetRow struct {
-	EnvironmentID uuid.NullUUID
+	EnvironmentID uuid.UUID
 	Name          string
 	Enabled       bool
 	Created       sql.NullTime
