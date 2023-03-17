@@ -65,9 +65,6 @@ mapping:
   cluster:
     value: "{{ .Env.name }}"
     displayName: "Cluster name"
-  apiServerIP:
-    value: "{{ .Env.apiserver_endpoint }}/32"
-    displayName: "API server cidr"
   velero.extraVolumeMounts:
     template: |
       - mountPath: /etc/ssl/certs/ca-certificates.crt
