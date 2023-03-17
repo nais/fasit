@@ -17,10 +17,6 @@ type Status {
   missingDependencies: [Feature!]!
 }
 
-type Subscription {
-  status(envID: ID!, feature: String!): Status!
-}
-
 extend type Query {
   featureStatus(envID: ID!, feature: String!): Status!
 }
