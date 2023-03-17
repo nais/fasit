@@ -6,7 +6,6 @@ package graph
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/nais/fasit/pkg/graph/graphgen"
 	"github.com/nais/fasit/pkg/graph/model"
@@ -39,19 +38,9 @@ func (r *featureResolver) Configoverrides(ctx context.Context, obj *model.Featur
 	return r.Repo.ConfigOverridesByFeature(ctx, obj.Name)
 }
 
-// OutdatedInfo is the resolver for the outdatedInfo field.
-func (r *featureResolver) OutdatedInfo(ctx context.Context, obj *model.Feature) ([]*model.OutdatedInfo, error) {
-	panic(fmt.Errorf("not implemented: OutdatedInfo - outdatedInfo"))
-}
-
 // Features is the resolver for the features field.
 func (r *queryResolver) Features(ctx context.Context) ([]*model.Feature, error) {
 	return r.Repo.Features(ctx)
-}
-
-// OutdatedInfo is the resolver for the outdatedInfo field.
-func (r *queryResolver) OutdatedInfo(ctx context.Context) ([]*model.OutdatedInfo, error) {
-	panic(fmt.Errorf("not implemented: OutdatedInfo - outdatedInfo"))
 }
 
 // ConfigOverride returns graphgen.ConfigOverrideResolver implementation.

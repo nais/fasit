@@ -1,10 +1,3 @@
-type OutdatedInfo {
-  feature: Feature!
-  dependency: Boolean!
-  dependencyName: String!
-  newVersion: String!
-}
-
 type Computed {
   template: String!
 }
@@ -32,7 +25,6 @@ type Feature {
   values: [Value!]!
   environmentKinds: [EnvironmentKind!]!
   configoverrides: [ConfigOverride!]!
-  outdatedInfo: [OutdatedInfo]!
 }
 
 type ConfigOverride {
@@ -47,5 +39,4 @@ type Dependency {
 
 extend type Query {
   features: [Feature!]!
-  outdatedInfo: [OutdatedInfo]!
 }

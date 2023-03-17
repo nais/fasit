@@ -143,7 +143,6 @@ type ComplexityRoot struct {
 		Description      func(childComplexity int) int
 		EnvironmentKinds func(childComplexity int) int
 		Name             func(childComplexity int) int
-		OutdatedInfo     func(childComplexity int) int
 		Source           func(childComplexity int) int
 		Values           func(childComplexity int) int
 		Version          func(childComplexity int) int
@@ -214,13 +213,6 @@ type ComplexityRoot struct {
 		Message     func(childComplexity int) int
 	}
 
-	OutdatedInfo struct {
-		Dependency     func(childComplexity int) int
-		DependencyName func(childComplexity int) int
-		Feature        func(childComplexity int) int
-		NewVersion     func(childComplexity int) int
-	}
-
 	Query struct {
 		Configuration      func(childComplexity int, feature string, envID *uuid.UUID) int
 		Environment        func(childComplexity int, id uuid.UUID) int
@@ -230,7 +222,6 @@ type ComplexityRoot struct {
 		FeatureStatus      func(childComplexity int, envID uuid.UUID, feature string) int
 		Features           func(childComplexity int) int
 		HelmValues         func(childComplexity int, feature string, envID uuid.UUID) int
-		OutdatedInfo       func(childComplexity int) int
 		Tenant             func(childComplexity int, id *uuid.UUID, slug *string) int
 		Tenants            func(childComplexity int) int
 		UserInfo           func(childComplexity int) int
@@ -319,7 +310,6 @@ type FeatureResolver interface {
 	Values(ctx context.Context, obj *model.Feature) ([]*model.Value, error)
 
 	Configoverrides(ctx context.Context, obj *model.Feature) ([]*model.ConfigOverride, error)
-	OutdatedInfo(ctx context.Context, obj *model.Feature) ([]*model.OutdatedInfo, error)
 }
 type FeatureStateResolver interface {
 	Feature(ctx context.Context, obj *model.FeatureState) (*model.Feature, error)
@@ -351,7 +341,6 @@ type QueryResolver interface {
 	EnvironmentByNames(ctx context.Context, environmentName string, tenantName string) (*model.Environment, error)
 	Environments(ctx context.Context, tenantID uuid.UUID) ([]*model.Environment, error)
 	Features(ctx context.Context) ([]*model.Feature, error)
-	OutdatedInfo(ctx context.Context) ([]*model.OutdatedInfo, error)
 	FeatureState(ctx context.Context, envID uuid.UUID, feature string) (*model.FeatureState, error)
 	FeatureStatus(ctx context.Context, envID uuid.UUID, feature string) (*model.Status, error)
 	Tenant(ctx context.Context, id *uuid.UUID, slug *string) (*model.Tenant, error)
@@ -761,13 +750,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Feature.Name(childComplexity), true
 
-	case "Feature.outdatedInfo":
-		if e.complexity.Feature.OutdatedInfo == nil {
-			break
-		}
-
-		return e.complexity.Feature.OutdatedInfo(childComplexity), true
-
 	case "Feature.source":
 		if e.complexity.Feature.Source == nil {
 			break
@@ -1111,34 +1093,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.NaisdWarning.Message(childComplexity), true
 
-	case "OutdatedInfo.dependency":
-		if e.complexity.OutdatedInfo.Dependency == nil {
-			break
-		}
-
-		return e.complexity.OutdatedInfo.Dependency(childComplexity), true
-
-	case "OutdatedInfo.dependencyName":
-		if e.complexity.OutdatedInfo.DependencyName == nil {
-			break
-		}
-
-		return e.complexity.OutdatedInfo.DependencyName(childComplexity), true
-
-	case "OutdatedInfo.feature":
-		if e.complexity.OutdatedInfo.Feature == nil {
-			break
-		}
-
-		return e.complexity.OutdatedInfo.Feature(childComplexity), true
-
-	case "OutdatedInfo.newVersion":
-		if e.complexity.OutdatedInfo.NewVersion == nil {
-			break
-		}
-
-		return e.complexity.OutdatedInfo.NewVersion(childComplexity), true
-
 	case "Query.configuration":
 		if e.complexity.Query.Configuration == nil {
 			break
@@ -1229,13 +1183,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.HelmValues(childComplexity, args["feature"].(string), args["envID"].(uuid.UUID)), true
-
-	case "Query.outdatedInfo":
-		if e.complexity.Query.OutdatedInfo == nil {
-			break
-		}
-
-		return e.complexity.Query.OutdatedInfo(childComplexity), true
 
 	case "Query.tenant":
 		if e.complexity.Query.Tenant == nil {
@@ -1766,14 +1713,7 @@ extend type Mutation {
   ): Environment!
 }
 `, BuiltIn: false},
-	{Name: "../../../schema/feature.graphqls", Input: `type OutdatedInfo {
-  feature: Feature!
-  dependency: Boolean!
-  dependencyName: String!
-  newVersion: String!
-}
-
-type Computed {
+	{Name: "../../../schema/feature.graphqls", Input: `type Computed {
   template: String!
 }
 type Config {
@@ -1800,7 +1740,6 @@ type Feature {
   values: [Value!]!
   environmentKinds: [EnvironmentKind!]!
   configoverrides: [ConfigOverride!]!
-  outdatedInfo: [OutdatedInfo]!
 }
 
 type ConfigOverride {
@@ -1815,7 +1754,6 @@ type Dependency {
 
 extend type Query {
   features: [Feature!]!
-  outdatedInfo: [OutdatedInfo]!
 }
 `, BuiltIn: false},
 	{Name: "../../../schema/feature_states.graphqls", Input: `type FeatureState {
@@ -3089,8 +3027,6 @@ func (ec *executionContext) fieldContext_Configuration_feature(ctx context.Conte
 				return ec.fieldContext_Feature_environmentKinds(ctx, field)
 			case "configoverrides":
 				return ec.fieldContext_Feature_configoverrides(ctx, field)
-			case "outdatedInfo":
-				return ec.fieldContext_Feature_outdatedInfo(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
@@ -4479,8 +4415,6 @@ func (ec *executionContext) fieldContext_Environment_features(ctx context.Contex
 				return ec.fieldContext_Feature_environmentKinds(ctx, field)
 			case "configoverrides":
 				return ec.fieldContext_Feature_configoverrides(ctx, field)
-			case "outdatedInfo":
-				return ec.fieldContext_Feature_outdatedInfo(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
@@ -4545,8 +4479,6 @@ func (ec *executionContext) fieldContext_Environment_feature(ctx context.Context
 				return ec.fieldContext_Feature_environmentKinds(ctx, field)
 			case "configoverrides":
 				return ec.fieldContext_Feature_configoverrides(ctx, field)
-			case "outdatedInfo":
-				return ec.fieldContext_Feature_outdatedInfo(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
@@ -5075,60 +5007,6 @@ func (ec *executionContext) fieldContext_Feature_configoverrides(ctx context.Con
 	return fc, nil
 }
 
-func (ec *executionContext) _Feature_outdatedInfo(ctx context.Context, field graphql.CollectedField, obj *model.Feature) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Feature_outdatedInfo(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Feature().OutdatedInfo(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*model.OutdatedInfo)
-	fc.Result = res
-	return ec.marshalNOutdatedInfo2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐOutdatedInfo(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Feature_outdatedInfo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Feature",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "feature":
-				return ec.fieldContext_OutdatedInfo_feature(ctx, field)
-			case "dependency":
-				return ec.fieldContext_OutdatedInfo_dependency(ctx, field)
-			case "dependencyName":
-				return ec.fieldContext_OutdatedInfo_dependencyName(ctx, field)
-			case "newVersion":
-				return ec.fieldContext_OutdatedInfo_newVersion(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type OutdatedInfo", field.Name)
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _FeatureState_feature(ctx context.Context, field graphql.CollectedField, obj *model.FeatureState) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_FeatureState_feature(ctx, field)
 	if err != nil {
@@ -5186,8 +5064,6 @@ func (ec *executionContext) fieldContext_FeatureState_feature(ctx context.Contex
 				return ec.fieldContext_Feature_environmentKinds(ctx, field)
 			case "configoverrides":
 				return ec.fieldContext_Feature_configoverrides(ctx, field)
-			case "outdatedInfo":
-				return ec.fieldContext_Feature_outdatedInfo(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
@@ -5378,8 +5254,6 @@ func (ec *executionContext) fieldContext_FeatureState_missingDependencies(ctx co
 				return ec.fieldContext_Feature_environmentKinds(ctx, field)
 			case "configoverrides":
 				return ec.fieldContext_Feature_configoverrides(ctx, field)
-			case "outdatedInfo":
-				return ec.fieldContext_Feature_outdatedInfo(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
@@ -5538,8 +5412,6 @@ func (ec *executionContext) fieldContext_FeatureWarning_feature(ctx context.Cont
 				return ec.fieldContext_Feature_environmentKinds(ctx, field)
 			case "configoverrides":
 				return ec.fieldContext_Feature_configoverrides(ctx, field)
-			case "outdatedInfo":
-				return ec.fieldContext_Feature_outdatedInfo(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
@@ -7324,204 +7196,6 @@ func (ec *executionContext) fieldContext_NaisdWarning_environment(ctx context.Co
 	return fc, nil
 }
 
-func (ec *executionContext) _OutdatedInfo_feature(ctx context.Context, field graphql.CollectedField, obj *model.OutdatedInfo) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_OutdatedInfo_feature(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Feature, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.Feature)
-	fc.Result = res
-	return ec.marshalNFeature2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐFeature(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_OutdatedInfo_feature(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "OutdatedInfo",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "name":
-				return ec.fieldContext_Feature_name(ctx, field)
-			case "chart":
-				return ec.fieldContext_Feature_chart(ctx, field)
-			case "version":
-				return ec.fieldContext_Feature_version(ctx, field)
-			case "source":
-				return ec.fieldContext_Feature_source(ctx, field)
-			case "description":
-				return ec.fieldContext_Feature_description(ctx, field)
-			case "dependencies":
-				return ec.fieldContext_Feature_dependencies(ctx, field)
-			case "values":
-				return ec.fieldContext_Feature_values(ctx, field)
-			case "environmentKinds":
-				return ec.fieldContext_Feature_environmentKinds(ctx, field)
-			case "configoverrides":
-				return ec.fieldContext_Feature_configoverrides(ctx, field)
-			case "outdatedInfo":
-				return ec.fieldContext_Feature_outdatedInfo(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _OutdatedInfo_dependency(ctx context.Context, field graphql.CollectedField, obj *model.OutdatedInfo) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_OutdatedInfo_dependency(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Dependency, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_OutdatedInfo_dependency(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "OutdatedInfo",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _OutdatedInfo_dependencyName(ctx context.Context, field graphql.CollectedField, obj *model.OutdatedInfo) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_OutdatedInfo_dependencyName(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.DependencyName, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_OutdatedInfo_dependencyName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "OutdatedInfo",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _OutdatedInfo_newVersion(ctx context.Context, field graphql.CollectedField, obj *model.OutdatedInfo) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_OutdatedInfo_newVersion(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.NewVersion, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_OutdatedInfo_newVersion(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "OutdatedInfo",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Query_tenants(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_tenants(ctx, field)
 	if err != nil {
@@ -8022,64 +7696,8 @@ func (ec *executionContext) fieldContext_Query_features(ctx context.Context, fie
 				return ec.fieldContext_Feature_environmentKinds(ctx, field)
 			case "configoverrides":
 				return ec.fieldContext_Feature_configoverrides(ctx, field)
-			case "outdatedInfo":
-				return ec.fieldContext_Feature_outdatedInfo(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_outdatedInfo(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_outdatedInfo(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().OutdatedInfo(rctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*model.OutdatedInfo)
-	fc.Result = res
-	return ec.marshalNOutdatedInfo2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐOutdatedInfo(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_outdatedInfo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "feature":
-				return ec.fieldContext_OutdatedInfo_feature(ctx, field)
-			case "dependency":
-				return ec.fieldContext_OutdatedInfo_dependency(ctx, field)
-			case "dependencyName":
-				return ec.fieldContext_OutdatedInfo_dependencyName(ctx, field)
-			case "newVersion":
-				return ec.fieldContext_OutdatedInfo_newVersion(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type OutdatedInfo", field.Name)
 		},
 	}
 	return fc, nil
@@ -8572,8 +8190,6 @@ func (ec *executionContext) fieldContext_Release_feature(ctx context.Context, fi
 				return ec.fieldContext_Feature_environmentKinds(ctx, field)
 			case "configoverrides":
 				return ec.fieldContext_Feature_configoverrides(ctx, field)
-			case "outdatedInfo":
-				return ec.fieldContext_Feature_outdatedInfo(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
@@ -8946,8 +8562,6 @@ func (ec *executionContext) fieldContext_Rollout_feature(ctx context.Context, fi
 				return ec.fieldContext_Feature_environmentKinds(ctx, field)
 			case "configoverrides":
 				return ec.fieldContext_Feature_configoverrides(ctx, field)
-			case "outdatedInfo":
-				return ec.fieldContext_Feature_outdatedInfo(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
@@ -9496,8 +9110,6 @@ func (ec *executionContext) fieldContext_Status_missingDependencies(ctx context.
 				return ec.fieldContext_Feature_environmentKinds(ctx, field)
 			case "configoverrides":
 				return ec.fieldContext_Feature_configoverrides(ctx, field)
-			case "outdatedInfo":
-				return ec.fieldContext_Feature_outdatedInfo(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
@@ -12995,26 +12607,6 @@ func (ec *executionContext) _Feature(ctx context.Context, sel ast.SelectionSet, 
 				return innerFunc(ctx)
 
 			})
-		case "outdatedInfo":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Feature_outdatedInfo(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -13576,55 +13168,6 @@ func (ec *executionContext) _NaisdWarning(ctx context.Context, sel ast.Selection
 	return out
 }
 
-var outdatedInfoImplementors = []string{"OutdatedInfo"}
-
-func (ec *executionContext) _OutdatedInfo(ctx context.Context, sel ast.SelectionSet, obj *model.OutdatedInfo) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, outdatedInfoImplementors)
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("OutdatedInfo")
-		case "feature":
-
-			out.Values[i] = ec._OutdatedInfo_feature(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "dependency":
-
-			out.Values[i] = ec._OutdatedInfo_dependency(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "dependencyName":
-
-			out.Values[i] = ec._OutdatedInfo_dependencyName(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "newVersion":
-
-			out.Values[i] = ec._OutdatedInfo_newVersion(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
 var queryImplementors = []string{"Query"}
 
 func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -13792,29 +13335,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_features(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return rrm(innerCtx)
-			})
-		case "outdatedInfo":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_outdatedInfo(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -15508,44 +15028,6 @@ func (ec *executionContext) unmarshalNNewConfiguration2githubᚗcomᚋnaisᚋfas
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNOutdatedInfo2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐOutdatedInfo(ctx context.Context, sel ast.SelectionSet, v []*model.OutdatedInfo) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalOOutdatedInfo2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐOutdatedInfo(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	return ret
-}
-
 func (ec *executionContext) unmarshalNRawMessage2encodingᚋjsonᚐRawMessage(ctx context.Context, v interface{}) (json.RawMessage, error) {
 	res, err := graph.UnmarshalRawMessage(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -16197,13 +15679,6 @@ func (ec *executionContext) marshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ct
 	}
 	res := graph.MarshalUUID(*v)
 	return res
-}
-
-func (ec *executionContext) marshalOOutdatedInfo2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐOutdatedInfo(ctx context.Context, sel ast.SelectionSet, v *model.OutdatedInfo) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._OutdatedInfo(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v interface{}) (*string, error) {

@@ -50,13 +50,6 @@ type EnvironmentUpdate struct {
 	Description *string `json:"description"`
 }
 
-type OutdatedInfo struct {
-	Feature        *Feature `json:"feature"`
-	Dependency     bool     `json:"dependency"`
-	DependencyName string   `json:"dependencyName"`
-	NewVersion     string   `json:"newVersion"`
-}
-
 type TenantCreate struct {
 	Name        string  `json:"name"`
 	Description *string `json:"description"`
