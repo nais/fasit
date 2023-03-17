@@ -6,6 +6,9 @@ environmentKinds:
   - "tenant"
   - "legacy"
 mapping:
+  apiServerCIDR:
+    value: "{{ .Env.apiserver_endpoint }}/32"
+    displayName: "API server cidr"
   googleProjectID:
     value: "{{ .Env.project_id }}"
   pubsubSubscriptionName:
