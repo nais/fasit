@@ -68,11 +68,6 @@ mapping:
       - --backgroundScanInterval=3h
       - --clientRateLimitQPS=150
       - --clientRateLimitBurst=300
-  serviceMonitor.enabled:
-    template: "true"
-    ignoreKind:
-      - "onprem"
-      - "legacy"
   config.webhooks:
     # exclude namespaces
     template: |
