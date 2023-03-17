@@ -1,0 +1,16 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/nais-netpols
+source: https://github.com/nais/helm-charts/tree/main/charts/nais-netpols
+version: 0.1.0
+description: "Default NAIS network policies"
+dependsOn: 
+  - allOf:
+      - "nais-crds"
+      - "replicator"
+environmentKinds:
+  - "tenant"
+  - "legacy"
+  - "management"
+mapping:
+  apiServerCIDR:
+    value: "{{ .Env.apiserver_endpoint }}/32"
+    displayName: "API server cidr"
