@@ -10,6 +10,10 @@ environmentKinds:
   - "tenant"
   - "legacy"
   - "management"
+config: 
+  enableDenyAll:
+    type: bool
+    displayName: "Enable deny all egress"
 mapping:
   apiServerCIDR:
     value: "{{ .Env.apiserver_endpoint }}/32"
