@@ -63,26 +63,6 @@ input EnvironmentUpdate {
   description: String
 }
 
-extend type Query {
-  """
-  Environment returns the given environment.
-  """
-  environment("id of the requested environment." id: ID!): Environment!
-  """
-  EnvironmentByName returns the given environment by tenantName and name.
-  """
-  environmentByNames(
-    "name of the requested environment."
-    environmentName: String!
-    "tenantname of the requested environment."
-    tenantName: String!
-  ): Environment!
-  """
-  Environments returns the environments for a tenant.
-  """
-  environments("id of the requested tenant." tenantID: ID!): [Environment!]!
-}
-
 extend type Mutation {
   environmentCreate(environment: EnvironmentCreate!): Environment!
   """

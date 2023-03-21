@@ -3,6 +3,7 @@ type Tenant {
   name: String!
   description: String
   environments: [Environment!]!
+  environment(id: ID, slug: String): Environment!
   created: Time!
   lastModified: Time!
   warnings: [Warning!]!

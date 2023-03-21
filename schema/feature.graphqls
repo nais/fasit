@@ -25,6 +25,8 @@ type Feature {
   values: [Value!]!
   environmentKinds: [EnvironmentKind!]!
   configoverrides: [ConfigOverride!]!
+
+  state: FeatureState
 }
 
 type ConfigOverride {

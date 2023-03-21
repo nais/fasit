@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/helm"
 	"gopkg.in/yaml.v2"
 	"helm.sh/helm/v3/pkg/chart"
@@ -23,6 +24,11 @@ type Feature struct {
 	Description string         `json:"description"`
 	Source      string         `json:"source"`
 	ValuesYAML  map[string]any `json:"-"`
+
+	// for graphql
+	GrapVars struct {
+		EnvironmentID uuid.UUID
+	} `json:"-" yaml:"-"`
 }
 
 type FeatureYAML struct {
