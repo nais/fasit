@@ -119,6 +119,7 @@ type ComplexityRoot struct {
 		Feature       func(childComplexity int, name string) int
 		FeatureStates func(childComplexity int) int
 		Features      func(childComplexity int) int
+		GcpProjectID  func(childComplexity int) int
 		Health        func(childComplexity int) int
 		ID            func(childComplexity int) int
 		Kind          func(childComplexity int) int
@@ -295,6 +296,7 @@ type ConfigurationsResolver interface {
 type EnvironmentResolver interface {
 	FeatureStates(ctx context.Context, obj *model.Environment) ([]*model.FeatureState, error)
 
+	GcpProjectID(ctx context.Context, obj *model.Environment) (*string, error)
 	Health(ctx context.Context, obj *model.Environment) (*model.Health, error)
 	Releases(ctx context.Context, obj *model.Environment) ([]*model.Release, error)
 	Nodes(ctx context.Context, obj *model.Environment) ([]*model.KubernetesNode, error)
@@ -623,6 +625,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Environment.Features(childComplexity), true
+
+	case "Environment.gcpProjectID":
+		if e.complexity.Environment.GcpProjectID == nil {
+			break
+		}
+
+		return e.complexity.Environment.GcpProjectID(childComplexity), true
 
 	case "Environment.health":
 		if e.complexity.Environment.Health == nil {
@@ -1646,6 +1655,7 @@ type Environment {
   created: Time!
   lastModified: Time!
   kind: EnvironmentKind!
+  gcpProjectID: String
   health: Health!
   releases: [Release!]!
   nodes: [KubernetesNode!]!
@@ -2857,6 +2867,8 @@ func (ec *executionContext) fieldContext_ConfigOverride_environment(ctx context.
 				return ec.fieldContext_Environment_lastModified(ctx, field)
 			case "kind":
 				return ec.fieldContext_Environment_kind(ctx, field)
+			case "gcpProjectID":
+				return ec.fieldContext_Environment_gcpProjectID(ctx, field)
 			case "health":
 				return ec.fieldContext_Environment_health(ctx, field)
 			case "releases":
@@ -3952,6 +3964,47 @@ func (ec *executionContext) fieldContext_Environment_kind(ctx context.Context, f
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type EnvironmentKind does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Environment_gcpProjectID(ctx context.Context, field graphql.CollectedField, obj *model.Environment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Environment_gcpProjectID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Environment().GcpProjectID(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Environment_gcpProjectID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Environment",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -5472,6 +5525,8 @@ func (ec *executionContext) fieldContext_FeatureWarning_environment(ctx context.
 				return ec.fieldContext_Environment_lastModified(ctx, field)
 			case "kind":
 				return ec.fieldContext_Environment_kind(ctx, field)
+			case "gcpProjectID":
+				return ec.fieldContext_Environment_gcpProjectID(ctx, field)
 			case "health":
 				return ec.fieldContext_Environment_health(ctx, field)
 			case "releases":
@@ -6880,6 +6935,8 @@ func (ec *executionContext) fieldContext_Mutation_environmentCreate(ctx context.
 				return ec.fieldContext_Environment_lastModified(ctx, field)
 			case "kind":
 				return ec.fieldContext_Environment_kind(ctx, field)
+			case "gcpProjectID":
+				return ec.fieldContext_Environment_gcpProjectID(ctx, field)
 			case "health":
 				return ec.fieldContext_Environment_health(ctx, field)
 			case "releases":
@@ -6969,6 +7026,8 @@ func (ec *executionContext) fieldContext_Mutation_environmentUpdate(ctx context.
 				return ec.fieldContext_Environment_lastModified(ctx, field)
 			case "kind":
 				return ec.fieldContext_Environment_kind(ctx, field)
+			case "gcpProjectID":
+				return ec.fieldContext_Environment_gcpProjectID(ctx, field)
 			case "health":
 				return ec.fieldContext_Environment_health(ctx, field)
 			case "releases":
@@ -7171,6 +7230,8 @@ func (ec *executionContext) fieldContext_NaisdWarning_environment(ctx context.Co
 				return ec.fieldContext_Environment_lastModified(ctx, field)
 			case "kind":
 				return ec.fieldContext_Environment_kind(ctx, field)
+			case "gcpProjectID":
+				return ec.fieldContext_Environment_gcpProjectID(ctx, field)
 			case "health":
 				return ec.fieldContext_Environment_health(ctx, field)
 			case "releases":
@@ -7425,6 +7486,8 @@ func (ec *executionContext) fieldContext_Query_environment(ctx context.Context, 
 				return ec.fieldContext_Environment_lastModified(ctx, field)
 			case "kind":
 				return ec.fieldContext_Environment_kind(ctx, field)
+			case "gcpProjectID":
+				return ec.fieldContext_Environment_gcpProjectID(ctx, field)
 			case "health":
 				return ec.fieldContext_Environment_health(ctx, field)
 			case "releases":
@@ -7514,6 +7577,8 @@ func (ec *executionContext) fieldContext_Query_environmentByNames(ctx context.Co
 				return ec.fieldContext_Environment_lastModified(ctx, field)
 			case "kind":
 				return ec.fieldContext_Environment_kind(ctx, field)
+			case "gcpProjectID":
+				return ec.fieldContext_Environment_gcpProjectID(ctx, field)
 			case "health":
 				return ec.fieldContext_Environment_health(ctx, field)
 			case "releases":
@@ -7603,6 +7668,8 @@ func (ec *executionContext) fieldContext_Query_environments(ctx context.Context,
 				return ec.fieldContext_Environment_lastModified(ctx, field)
 			case "kind":
 				return ec.fieldContext_Environment_kind(ctx, field)
+			case "gcpProjectID":
+				return ec.fieldContext_Environment_gcpProjectID(ctx, field)
 			case "health":
 				return ec.fieldContext_Environment_health(ctx, field)
 			case "releases":
@@ -9299,6 +9366,8 @@ func (ec *executionContext) fieldContext_Tenant_environments(ctx context.Context
 				return ec.fieldContext_Environment_lastModified(ctx, field)
 			case "kind":
 				return ec.fieldContext_Environment_kind(ctx, field)
+			case "gcpProjectID":
+				return ec.fieldContext_Environment_gcpProjectID(ctx, field)
 			case "health":
 				return ec.fieldContext_Environment_health(ctx, field)
 			case "releases":
@@ -12269,6 +12338,23 @@ func (ec *executionContext) _Environment(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "gcpProjectID":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Environment_gcpProjectID(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		case "health":
 			field := field
 

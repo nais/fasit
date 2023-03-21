@@ -28,6 +28,7 @@ type Environment {
   created: Time!
   lastModified: Time!
   kind: EnvironmentKind!
+  gcpProjectID: String
   health: Health!
   releases: [Release!]!
   nodes: [KubernetesNode!]!

@@ -6,10 +6,13 @@ package graph
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v4"
 	"github.com/nais/fasit/pkg/graph/graphgen"
 	"github.com/nais/fasit/pkg/graph/model"
 )
@@ -17,6 +20,30 @@ import (
 // FeatureStates is the resolver for the featureStates field.
 func (r *environmentResolver) FeatureStates(ctx context.Context, obj *model.Environment) ([]*model.FeatureState, error) {
 	return r.Repo.FeatureStatesGet(ctx, obj.ID)
+}
+
+// GcpProjectID is the resolver for the gcpProjectID field.
+func (r *environmentResolver) GcpProjectID(ctx context.Context, obj *model.Environment) (*string, error) {
+	ev, err := r.Repo.EnvironmentValueGet(ctx, obj.ID, "project_id", false)
+	fmt.Println("Get project id", string(ev.Value), err)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return nil, err
+	}
+
+	if ev == nil {
+		return nil, nil
+	}
+
+	var id string
+	if err := json.Unmarshal(ev.Value, &id); err != nil {
+		return nil, err
+	}
+
+	if id == "" {
+		return nil, nil
+	}
+
+	return &id, nil
 }
 
 // Health is the resolver for the health field.
@@ -117,5 +144,7 @@ func (r *Resolver) Environment() graphgen.EnvironmentResolver { return &environm
 // Release returns graphgen.ReleaseResolver implementation.
 func (r *Resolver) Release() graphgen.ReleaseResolver { return &releaseResolver{r} }
 
-type environmentResolver struct{ *Resolver }
-type releaseResolver struct{ *Resolver }
+type (
+	environmentResolver struct{ *Resolver }
+	releaseResolver     struct{ *Resolver }
+)
