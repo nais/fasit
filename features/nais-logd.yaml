@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/nais-logd
 source: https://github.com/nais/nais-logd
-version: 3.9.2
+version: 3.9.3
 environmentKinds:
   - "management"
   - "tenant"
