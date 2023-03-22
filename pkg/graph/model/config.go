@@ -85,18 +85,18 @@ type Configurations struct {
 	EnvID       *uuid.UUID `json:"-"`
 }
 
-type Configuration struct {
-	ID          uuid.UUID       `json:"id"`
-	Description string          `json:"description"`
-	Key         string          `json:"key"`
-	Value       json.RawMessage `json:"value"`
-	Secret      bool            `json:"secret"`
-	Created     time.Time       `json:"created"`
-	Type        ConfigType      `json:"type"`
-	DisplayName string          `json:"displayName"`
-	Required    bool            `json:"required"`
-	Source      ConfigSource    `json:"source"`
+type ConfigurationGraphVars struct {
+	EnvironmentID *uuid.UUID
+	FeatureName   string
+}
 
-	EnvironmentID *uuid.UUID `json:"-"`
-	FeatureName   string     `json:"-"`
+type Configuration struct {
+	ID      uuid.UUID       `json:"id"`
+	Value   *Value          `json:"value"`
+	Content json.RawMessage `json:"content"`
+	Created time.Time       `json:"created"`
+	Source  ConfigSource    `json:"source"`
+	Key     string          `json:"key"`
+
+	GraphVars ConfigurationGraphVars `json:"-" yaml:"-"`
 }

@@ -101,7 +101,7 @@ func (r *environmentResolver) Features(ctx context.Context, obj *model.Environme
 	}
 
 	for _, f := range fs {
-		f.GrapVars.EnvironmentID = obj.ID
+		f.GraphVars.EnvironmentID = obj.ID
 	}
 
 	return fs, nil
@@ -114,7 +114,7 @@ func (r *environmentResolver) Feature(ctx context.Context, obj *model.Environmen
 		return nil, err
 	}
 
-	f.GrapVars.EnvironmentID = obj.ID
+	f.GraphVars.EnvironmentID = obj.ID
 
 	return f, nil
 }

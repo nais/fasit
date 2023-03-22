@@ -22,9 +22,9 @@ type Feature {
   source: String!
   description: String!
   dependencies: [Dependency!]!
-  values: [Value!]!
   environmentKinds: [EnvironmentKind!]!
   configoverrides: [ConfigOverride!]!
+  configuration: Configurations!
 
   state: FeatureState
 }

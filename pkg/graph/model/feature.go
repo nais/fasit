@@ -26,7 +26,7 @@ type Feature struct {
 	ValuesYAML  map[string]any `json:"-"`
 
 	// for graphql
-	GrapVars struct {
+	GraphVars struct {
 		EnvironmentID uuid.UUID
 	} `json:"-" yaml:"-"`
 }

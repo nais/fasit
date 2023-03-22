@@ -119,13 +119,12 @@ func TestRepo_ConfigGet(t *testing.T) {
 
 	want := []*model.Configuration{
 		{
-			ID:          id,
-			FeatureName: "feature3",
-			Key:         "my.key",
-			Value:       []byte(`"stringval"`),
-			Created:     created,
-			Secret:      true,
-			Source:      model.ConfigSourceGlobal,
+			ID:        id,
+			GraphVars: model.ConfigurationGraphVars{FeatureName: "feature3"},
+			Key:       "my.key",
+			Content:   []byte(`"stringval"`),
+			Created:   created,
+			Source:    model.ConfigSourceGlobal,
 		},
 	}
 
@@ -163,14 +162,12 @@ func TestRepo_ConfigGetForEnv(t *testing.T) {
 
 	want := []*model.Configuration{
 		{
-			ID:            id,
-			EnvironmentID: &envid,
-			FeatureName:   "feature3",
-			Key:           "my.key",
-			Value:         []byte(`"stringval"`),
-			Created:       created,
-			Secret:        true,
-			Source:        model.ConfigSourceEnv,
+			ID:        id,
+			GraphVars: model.ConfigurationGraphVars{FeatureName: "feature3", EnvironmentID: &envid},
+			Key:       "my.key",
+			Content:   []byte(`"stringval"`),
+			Created:   created,
+			Source:    model.ConfigSourceEnv,
 		},
 	}
 
@@ -201,12 +198,13 @@ func TestRepo_ConfigCreate_Environment(t *testing.T) {
 	}
 
 	want := &model.Configuration{
-		EnvironmentID: config.EnvironmentID,
-		FeatureName:   config.Feature,
-		Key:           config.Key,
-		Value:         config.Value,
-		Secret:        config.Secret,
-		Source:        model.ConfigSourceEnv,
+		GraphVars: model.ConfigurationGraphVars{
+			FeatureName:   "feature5",
+			EnvironmentID: &envid,
+		},
+		Key:     config.Key,
+		Content: config.Value,
+		Source:  model.ConfigSourceEnv,
 	}
 
 	opts := cmpopts.IgnoreFields(model.Configuration{}, "ID", "Created")
@@ -233,11 +231,12 @@ func TestRepo_ConfigCreate_Global(t *testing.T) {
 	}
 
 	want := &model.Configuration{
-		FeatureName: config.Feature,
-		Key:         config.Key,
-		Value:       config.Value,
-		Secret:      config.Secret,
-		Source:      model.ConfigSourceGlobal,
+		GraphVars: model.ConfigurationGraphVars{
+			FeatureName: "feature5",
+		},
+		Key:     config.Key,
+		Content: config.Value,
+		Source:  model.ConfigSourceGlobal,
 	}
 
 	opts := cmpopts.IgnoreFields(model.Configuration{}, "ID", "Created")
@@ -271,11 +270,10 @@ func TestRepo_ConfigUpdate_Global(t *testing.T) {
 	}
 
 	want := &model.Configuration{
-		FeatureName: config.Feature,
-		Key:         config.Key,
-		Value:       []byte(`"newval"`),
-		Secret:      config.Secret,
-		Source:      model.ConfigSourceGlobal,
+		GraphVars: model.ConfigurationGraphVars{FeatureName: config.Feature},
+		Key:       config.Key,
+		Content:   []byte(`"newval"`),
+		Source:    model.ConfigSourceGlobal,
 	}
 
 	opts := cmpopts.IgnoreFields(model.Configuration{}, "ID", "Created")

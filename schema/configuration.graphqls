@@ -28,14 +28,9 @@ enum ConfigSource {
 type Configuration {
   id: ID!
   feature: Feature!
-  description: String!
-  key: String!
-  value: RawMessage!
-  secret: Boolean!
+  value: Value!
+  content: RawMessage!
   created: Time!
-  type: ConfigType!
-  displayName: String!
-  required: Boolean!
   source: ConfigSource!
 }
 

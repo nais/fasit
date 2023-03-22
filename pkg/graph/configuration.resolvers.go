@@ -20,10 +20,10 @@ import (
 
 // Feature is the resolver for the feature field.
 func (r *configurationResolver) Feature(ctx context.Context, obj *model.Configuration) (*model.Feature, error) {
-	if obj.EnvironmentID == nil {
-		return r.Repo.FeatureByName(ctx, obj.FeatureName)
+	if obj.GraphVars.EnvironmentID == nil {
+		return r.Repo.FeatureByName(ctx, obj.GraphVars.FeatureName)
 	}
-	return r.Repo.FeatureByNameForEnv(ctx, obj.FeatureName, *obj.EnvironmentID)
+	return r.Repo.FeatureByNameForEnv(ctx, obj.GraphVars.FeatureName, *obj.GraphVars.EnvironmentID)
 }
 
 // Configuration is the resolver for the configuration field.
@@ -66,30 +66,28 @@ func (r *configurationsResolver) Configuration(ctx context.Context, obj *model.C
 
 OUTER:
 	for key, val := range feature.Values {
+		val := val
 		if val.Config == nil {
 			continue
 		}
 
 		for _, c := range configs {
 			if c.Key == key {
-				c.Type = val.Config.Type
-				c.DisplayName = val.DisplayName
-				c.Description = val.Description
-				c.Required = val.Required
+				c.Value = &val
 				continue OUTER
 			}
 		}
 		configs = append(configs, &model.Configuration{
-			FeatureName:   obj.FeatureName,
-			Key:           key,
-			Value:         []byte("null"),
-			Secret:        val.Config.Secret,
-			Type:          val.Config.Type,
-			DisplayName:   val.DisplayName,
-			Description:   val.Description,
-			Required:      val.Required,
-			Source:        model.ConfigSourceHelm,
-			EnvironmentID: obj.EnvID,
+			Value:   &val,
+			Content: []byte("null"),
+			Source:  model.ConfigSourceHelm,
+			GraphVars: struct {
+				EnvironmentID *uuid.UUID
+				FeatureName   string
+			}{
+				EnvironmentID: obj.EnvID,
+				FeatureName:   obj.FeatureName,
+			},
 		})
 	}
 	// configs = removeIgnoredKinds(configs, feature, envKind)

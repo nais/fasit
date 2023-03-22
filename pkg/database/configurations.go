@@ -26,13 +26,13 @@ type ConfigRepo interface {
 
 func environmentConfigurationFromSQL(c gensql.ConfigurationsEnvironment) *model.Configuration {
 	return &model.Configuration{
-		ID:            c.ID,
-		EnvironmentID: &c.EnvironmentID,
-		FeatureName:   c.Feature,
-		// Description:   nullStringToPtr(c.Description),
+		ID: c.ID,
+		GraphVars: model.ConfigurationGraphVars{
+			EnvironmentID: &c.EnvironmentID,
+			FeatureName:   c.Feature,
+		},
 		Key:     c.Key,
-		Value:   c.Value.Bytes,
-		Secret:  c.Secret,
+		Content: c.Value.Bytes,
 		Created: c.Created,
 		Source:  model.ConfigSourceEnv,
 	}
@@ -40,12 +40,11 @@ func environmentConfigurationFromSQL(c gensql.ConfigurationsEnvironment) *model.
 
 func globalConfigFromSQL(c gensql.ConfigurationsGlobal) *model.Configuration {
 	return &model.Configuration{
-		ID:          c.ID,
-		FeatureName: c.Feature,
+		ID:        c.ID,
+		GraphVars: model.ConfigurationGraphVars{FeatureName: c.Feature},
 		// Description: nullStringToPtr(c.Description),
 		Key:     c.Key,
-		Value:   c.Value.Bytes,
-		Secret:  c.Secret,
+		Content: c.Value.Bytes,
 		Created: c.Created,
 		Source:  model.ConfigSourceGlobal,
 	}
@@ -70,18 +69,20 @@ func (r *repo) EnvConfig(ctx context.Context, feature string, envID uuid.UUID) (
 
 func envConfigFromSQL(conf gensql.EnvConfigRow) *model.Configuration {
 	ret := &model.Configuration{
-		ID:            conf.ID,
-		EnvironmentID: nullUUIDToPtr(conf.EnvironmentID),
-		FeatureName:   conf.Feature,
+		ID: conf.ID,
+		GraphVars: model.ConfigurationGraphVars{
+			EnvironmentID: nullUUIDToPtr(conf.EnvironmentID),
+			FeatureName:   conf.Feature,
+		},
 		// Description:   nullStringToPtr(conf.Description),
-		Key:    conf.Key,
-		Value:  conf.Value.Bytes,
-		Source: model.ConfigSourceGlobal,
+		Key:     conf.Key,
+		Content: conf.Value.Bytes,
+		Source:  model.ConfigSourceGlobal,
 	}
 
 	if conf.EnvironmentID.Valid {
 		ret.Source = model.ConfigSourceEnv
-		ret.EnvironmentID = &conf.EnvironmentID.UUID
+		ret.GraphVars.EnvironmentID = &conf.EnvironmentID.UUID
 	}
 
 	return ret

@@ -22,30 +22,26 @@ func (r *featureResolver) Dependencies(ctx context.Context, obj *model.Feature) 
 	return obj.Dependencies, nil
 }
 
-// Values is the resolver for the values field.
-func (r *featureResolver) Values(ctx context.Context, obj *model.Feature) ([]*model.Value, error) {
-	ret := make([]*model.Value, 0, len(obj.Values))
-	for k, v := range obj.Values {
-		cp := v
-		cp.GraphQLKey = k
-		ret = append(ret, &cp)
-	}
-
-	return ret, nil
-}
-
 // Configoverrides is the resolver for the configoverrides field.
 func (r *featureResolver) Configoverrides(ctx context.Context, obj *model.Feature) ([]*model.ConfigOverride, error) {
 	return r.Repo.ConfigOverridesByFeature(ctx, obj.Name)
 }
 
+// Configuration is the resolver for the configuration field.
+func (r *featureResolver) Configuration(ctx context.Context, obj *model.Feature) (*model.Configurations, error) {
+	return &model.Configurations{
+		FeatureName: obj.Name,
+		EnvID:       &obj.GraphVars.EnvironmentID,
+	}, nil
+}
+
 // State is the resolver for the state field.
 func (r *featureResolver) State(ctx context.Context, obj *model.Feature) (*model.FeatureState, error) {
-	if obj.GrapVars.EnvironmentID == uuid.Nil {
+	if obj.GraphVars.EnvironmentID == uuid.Nil {
 		return nil, nil
 	}
 
-	return r.Repo.FeatureStateGet(ctx, obj.GrapVars.EnvironmentID, obj.Name)
+	return r.Repo.FeatureStateGet(ctx, obj.GraphVars.EnvironmentID, obj.Name)
 }
 
 // Features is the resolver for the features field.
