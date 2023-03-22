@@ -11,6 +11,7 @@ dependsOn:
       - "aivenator"
       - "naiserator"
       - "reloader"
+      - "replicator"
 config:
   azurerator.azure.clientSecret:
     type: string
