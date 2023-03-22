@@ -18,14 +18,6 @@ import (
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
-// Feature is the resolver for the feature field.
-func (r *configurationResolver) Feature(ctx context.Context, obj *model.Configuration) (*model.Feature, error) {
-	if obj.GraphVars.EnvironmentID == nil {
-		return r.Repo.FeatureByName(ctx, obj.GraphVars.FeatureName)
-	}
-	return r.Repo.FeatureByNameForEnv(ctx, obj.GraphVars.FeatureName, *obj.GraphVars.EnvironmentID)
-}
-
 // Configuration is the resolver for the configuration field.
 func (r *configurationsResolver) Configuration(ctx context.Context, obj *model.Configurations) ([]*model.Configuration, error) {
 	var configs []*model.Configuration
@@ -67,6 +59,7 @@ func (r *configurationsResolver) Configuration(ctx context.Context, obj *model.C
 OUTER:
 	for key, val := range feature.Values {
 		val := val
+		val.GraphQLKey = key
 		if val.Config == nil {
 			continue
 		}
@@ -142,10 +135,11 @@ func (r *configurationsResolver) Computed(ctx context.Context, obj *model.Config
 		if err != nil {
 			return nil, fmt.Errorf("marshal computed value: %w", err)
 		}
+
+		v.GraphQLKey = k
 		ret = append(ret, &model.ComputedValue{
-			Key:         k,
-			Value:       rm,
-			DisplayName: v.DisplayName,
+			Value:   &v,
+			Content: rm,
 		})
 	}
 
@@ -208,13 +202,9 @@ func (r *queryResolver) HelmValues(ctx context.Context, feature string, envID uu
 	return json.Marshal(v)
 }
 
-// Configuration returns graphgen.ConfigurationResolver implementation.
-func (r *Resolver) Configuration() graphgen.ConfigurationResolver { return &configurationResolver{r} }
-
 // Configurations returns graphgen.ConfigurationsResolver implementation.
 func (r *Resolver) Configurations() graphgen.ConfigurationsResolver {
 	return &configurationsResolver{r}
 }
 
-type configurationResolver struct{ *Resolver }
 type configurationsResolver struct{ *Resolver }

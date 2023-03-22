@@ -26,9 +26,8 @@ type AuditLog struct {
 }
 
 type ComputedValue struct {
-	Key         string          `json:"key"`
-	Value       json.RawMessage `json:"value"`
-	DisplayName string          `json:"displayName"`
+	Value   *Value          `json:"value"`
+	Content json.RawMessage `json:"content,omitempty"`
 }
 
 type Dependency struct {

@@ -6,9 +6,8 @@ enum ConfigType {
 }
 
 type ComputedValue {
-  key: String!
-  value: RawMessage!
-  displayName: String!
+  value: Value!
+  content: RawMessage
 }
 
 """
@@ -26,10 +25,9 @@ enum ConfigSource {
 }
 
 type Configuration {
-  id: ID!
-  feature: Feature!
+  id: ID
   value: Value!
-  content: RawMessage!
+  content: RawMessage
   created: Time!
   source: ConfigSource!
 }
