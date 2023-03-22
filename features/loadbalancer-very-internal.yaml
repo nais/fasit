@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/loadbalancer-very-internal
 source: https://github.com/nais/helm-charts/tree/main/charts/loadbalancer-very-internal
-version: 0.0.4
+version: 0.0.5
 description: "Custom NAV ingress controller and loadbalancer for very internal traffic (no naisdevice)"
 timeout: 15m
 environmentKinds:
@@ -28,6 +28,3 @@ mapping:
   apiServerCIDR:
     value: "{{ .Env.apiserver_endpoint }}/32"
     displayName: "API server CIDR"
-  podCIDRRange:
-    value: "{{ .Env.pods_ip_cidr_range }}"
-    displayName: "Pod range CIDR"
