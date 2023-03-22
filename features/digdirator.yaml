@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/digdirator
 source: https://github.com/nais/digdirator/tree/master/charts
-version: 0.2.1
+version: 0.2.2
 description: "Operator that reconciles ID-porten and Maskinporten clients and scopes."
 environmentKinds:
   - "tenant"
@@ -10,6 +10,7 @@ dependsOn:
   - allOf:
       - "naiserator"
       - "nais-crds"
+      - "replicator"
 rolloutSource:
   - org: nais
     repo: digdirator
@@ -19,9 +20,19 @@ config:
     displayName: Image tag
     description: "Image tag for digdirator"
 
+  idportenHosts:
+    displayName: ID-porten hosts
+    description: "Hosts for ID-porten, used for egress network policies for pods with label idporten=enabled"
+    type: string_array
+
+  maskinportenHosts:
+    displayName: Maskinporten hosts
+    description: "Hosts for Maskinporten, used for egress network policies for pods with label maskinporten=enabled"
+    type: string_array
+
   digdirator.outbound.external:
-    displayName: External hosts
-    description: "External hosts to allow outbound traffic to"
+    displayName: Digdirator external hosts
+    description: "Additional external hosts to allow outbound traffic to for Digdirator"
     type: string_array
 
   digdirator.secrets.environment.DIGDIRATOR_DIGDIR_ADMIN_BASE_URL:
