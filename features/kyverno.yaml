@@ -44,18 +44,11 @@ mapping:
     ignoreKind:
       - management
       - tenant
-  podAnnotations.prometheus\.io/scrape:
-    value: "true"
-    displayName: "Prometheus scrape"
-    ignoreKind:
-      - management
-      - tenant
-  podAnnotations.prometheus\.io/port:
-    value: "8000"
-    displayName: "Prometheus port"
-    ignoreKind:
-      - management
-      - tenant
+  serviceMonitor.enabled:
+    template: "true"
+  serviceMonitor.additionalLabels:
+    template: |
+      nais.io/prometheus: nais
   replicaCount:
     template: "3"
     displayName: "Replicas"
@@ -75,11 +68,6 @@ mapping:
       - --backgroundScanInterval=3h
       - --clientRateLimitQPS=150
       - --clientRateLimitBurst=300
-  serviceMonitor.enabled:
-    template: "true"
-    ignoreKind:
-      - "onprem"
-      - "legacy"
   config.webhooks:
     # exclude namespaces
     template: |

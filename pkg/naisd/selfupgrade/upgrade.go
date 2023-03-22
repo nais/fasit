@@ -58,7 +58,8 @@ func StartJob(ctx context.Context, client kubernetes.Interface, msg message.Depl
 
 func createJob(suffix string, msg message.DeployInstruction, naisProjectID, env, tenantName string, spec corev1.PodSpec) *batchv1.Job {
 	lbls := map[string]string{
-		"app": "naisd-self-upgrader",
+		"app":                        "naisd-self-upgrader",
+		"app.kubernetes.io/instance": "naisd",
 	}
 	container := corev1.Container{}
 	containerIndex := 0
@@ -108,6 +109,9 @@ func createJob(suffix string, msg message.DeployInstruction, naisProjectID, env,
 			Completions:             pointer.Int32(1),
 			TTLSecondsAfterFinished: pointer.Int32(int32((3 * time.Hour).Seconds())),
 			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: lbls,
+				},
 				Spec: spec,
 			},
 		},
