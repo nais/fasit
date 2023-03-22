@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/loadbalancer-iap
 source: https://github.com/nais/helm-charts/tree/main/charts/loadbalancer-iap
-version: 0.7.4
+version: 0.7.5
 description: "Ingress controller and loadbalancer with IAP support"
 environmentKinds:
   - "management"
@@ -31,9 +31,3 @@ mapping:
   apiServerCIDR:
     value: "{{ .Env.apiserver_endpoint }}/32"
     displayName: "API server CIDR"
-  podCIDRRange:
-    value: "{{ .Env.pods_ip_cidr_range }}"
-    displayName: "Pod range CIDR"
-  tenantName:
-    value: "{{ .Tenant.Name }}"
-    displayName: "Tenant name used in netpol"
