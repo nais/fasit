@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/loadbalancer
 source: https://github.com/nais/helm-charts/tree/main/charts/loadbalancer
-version: 0.7.2
+version: 0.7.4
 description: "External loadbalancer and ingress controller"
 timeout: 15m
 environmentKinds:
@@ -33,6 +33,3 @@ mapping:
   apiServerCIDR:
     value: "{{ .Env.apiserver_endpoint }}/32"
     displayName: "API server CIDR"
-  podCIDRRange:
-    value: "{{ .Env.pods_ip_cidr_range }}"
-    displayName: "Pod range CIDR"
