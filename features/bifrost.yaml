@@ -25,15 +25,15 @@ mapping:
   backend.unleash.sqlInstanceId:
     value: "{{.Management.bifrost_unleash_sql_instance_id}}"
     displayName: "Unleash sql instance id"
-  backend.unleash.instanceNamespace:
-    value: "{{ .Management.bifrost_unleash_namespace}}"
-    displayName: "Unleash namespace"
   backend.unleash.sqlInstanceAddress:
     value: "{{ .Management.bifrost_unleash_sql_instance_address }}"
     displayName: "Sql instance address"
+  backend.unleash.instanceNamespace:
+    value: "{{ .Management.bifrost_unleash_namespace}}"
+    displayName: "Unleash namespace"
   backend.unleash.kubernetesServiceAccountName:
     value: "{{ .Management.bifrost_unleash_sql_ksa_name }}"
     displayName: "Bifrost kubernetes service account name"
-  gackend.unleash.googleServiceAccountEmail:
+  backend.unleash.googleServiceAccountEmail:
     value: "{{ .Management.bifrost_unleash_sql_gsa_email }}"
     displayName: "Biforst unleash Google service account email"
