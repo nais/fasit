@@ -34,3 +34,6 @@ mapping:
   podCIDRRange:
     value: "{{ .Env.pods_ip_cidr_range }}"
     displayName: "Pod range CIDR"
+  tenantName:
+    value: "{{ .Tenant.Name }}"
+    displayName: "Tenant name used in netpol"
