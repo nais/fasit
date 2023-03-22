@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/azurerator-nav
 source: https://github.com/nais/helm-charts/tree/main/charts/azurerator-nav
-version: 0.1.2
+version: 0.1.3
 description: "NAV-specific setup of Azurerator; operator that reconciles Azure AD applications"
 environmentKinds:
   - "onprem"
