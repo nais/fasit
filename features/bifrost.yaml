@@ -34,6 +34,6 @@ mapping:
   backend.unleash.kubernetesServiceAccountName:
     value: "{{ .Management.bifrost_unleash_sql_ksa_name }}"
     displayName: "Bifrost kubernetes service account name"
-  backend.unleash.ServiceAccountEmail:
+  gackend.unleash.googleServiceAccountEmail:
     value: "{{ .Management.bifrost_unleash_sql_gsa_email }}"
     displayName: "Biforst unleash Google service account email"
