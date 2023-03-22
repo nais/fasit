@@ -14,6 +14,12 @@ config:
   enableDenyAll:
     type: bool
     displayName: "Enable deny all egress"
+  tokenxHost:
+    type: string
+    displayName: "Host for TokenX"
+    ignoreKind:
+      - "tenant"
+      - "management"
 mapping:
   apiServerCIDR:
     value: "{{ .Env.apiserver_endpoint }}/32"
