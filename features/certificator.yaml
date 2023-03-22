@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/certificator
 source: https://github.com/nais/certificator/tree/master/charts/certificator
-version: 0.1.0
+version: 0.1.1
 description: Collect TLS CA certificates from various sources and expose them in PEM and JKS format as Kubernetes configmaps
 environmentKinds:
   - "tenant"
