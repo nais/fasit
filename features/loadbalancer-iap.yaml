@@ -27,3 +27,10 @@ config:
   ingress-nginx.controller.replicaCount:
     type: int
     displayName: "Replicas"
+mapping:
+  apiServerCIDR:
+    value: "{{ .Env.apiserver_endpoint }}/32"
+    displayName: "API server CIDR"
+  podCIDRRange:
+    value: "{{ .Env.pods_ip_cidr_range }}"
+    displayName: "Pod range CIDR"
