@@ -25,13 +25,13 @@ mapping:
     displayName: "Loki load balancer IP"
     value: '{{.Env.tenant_loki_ilb_ip}}'
 
-  gateway.enabled:
+  loki.gateway.enabled:
     template: "true"
-  gateway.ingress.ingressClassName:
+  loki.gateway.ingress.ingressClassName:
     template: "nais-ingress"
-  gateway.ingress.enabled:
+  loki.gateway.ingress.enabled:
     template: "true"
-  gateway.ingress.hosts:
+  loki.gateway.ingress.hosts:
     template: |
       - host: '{{ subdomain . "loki" }}'
         paths:
