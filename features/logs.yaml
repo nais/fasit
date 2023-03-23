@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/logs
 source: https://github.com/nais/helm-charts/tree/main/charts/logs
-version: 1.0.0
+version: 1.0.1
 environmentKinds:
   - "tenant"
 timeout: 5m
