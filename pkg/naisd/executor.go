@@ -13,7 +13,8 @@ type Exec interface {
 }
 
 type MockExecutor struct {
-	Logger *logrus.Entry
+	Logger  *logrus.Entry
+	Timeout time.Duration
 }
 
 func (m *MockExecutor) Execute(cmd *exec.Cmd) error {
@@ -23,7 +24,11 @@ func (m *MockExecutor) Execute(cmd *exec.Cmd) error {
 		fmt.Fprintln(cmd.Stdout, "Start mock executor", time.Now())
 		defer fmt.Fprintln(cmd.Stdout, "end of mock executor")
 	}
-	time.Sleep(3 * time.Second)
+	if m.Timeout > 0 {
+		time.Sleep(m.Timeout)
+	} else {
+		time.Sleep(3 * time.Second)
+	}
 
 	return nil
 }

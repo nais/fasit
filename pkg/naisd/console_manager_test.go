@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	cnrmbeta1 "github.com/GoogleCloudPlatform/k8s-config-connector/operator/pkg/apis/core/v1beta1"
 	"github.com/google/go-cmp/cmp"
@@ -77,6 +78,7 @@ func TestConsoleManager_handler(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			time.Sleep(1 * time.Millisecond)
 			gotErr := m.handler(ctx, message.Console{
 				Type: tt.typ,
 				Data: []byte(tt.data),
@@ -100,7 +102,7 @@ func TestConsoleManager_handler(t *testing.T) {
 
 			// check slackAlertsChannel annotation
 			for _, n := range namespaces.Items {
-				c, _ := n.Annotations["replicator.nais.io/slackAlertsChannel"]
+				c := n.Annotations["replicator.nais.io/slackAlertsChannel"]
 				if c != "#test-alerts" {
 					t.Errorf("namespace annotation %q has unexpected value, expected: %q got: %q", "replicator.nais.io/slackAlertsChannel", "#test-alerts", c)
 				}

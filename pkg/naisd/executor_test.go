@@ -16,7 +16,8 @@ func TestMockExecutor_Execute(t *testing.T) {
 	now := time.Date(2022, time.January, 1, 0, 0, 0, 0, time.UTC)
 
 	m := &MockExecutor{
-		Logger: log.WithTime(now),
+		Logger:  log.WithTime(now),
+		Timeout: 10 * time.Millisecond,
 	}
 	if err := m.Execute(exec.Command("ls")); err != nil {
 		t.Errorf("MockExecutor.Execute() error = %v", err)
