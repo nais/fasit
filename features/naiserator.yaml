@@ -73,6 +73,11 @@ config:
     displayName: "Enable Wonderwall"
     ignoreKind:
       - "onprem"
+  naiserator.features.wonderwall-sso:
+    type: bool
+    displayName: "Enable Wonderwall SSO"
+    ignoreKind:
+      - "onprem"
   naiserator.features.gar-toleration:
     type: bool
     displayName: "Enable GAR images"
