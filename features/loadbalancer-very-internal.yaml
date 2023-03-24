@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/loadbalancer-very-internal
 source: https://github.com/nais/helm-charts/tree/main/charts/loadbalancer-very-internal
-version: 0.0.6
+version: 0.0.7
 description: "Custom NAV ingress controller and loadbalancer for very internal traffic (no naisdevice)"
 timeout: 15m
 environmentKinds:
