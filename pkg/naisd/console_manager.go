@@ -77,14 +77,19 @@ func newConsoleManager(ctx context.Context,
 	go saInf.Informer().Run(ctx.Done())
 	go rbInf.Informer().Run(ctx.Done())
 
-	dynInf := dynamicinformer.NewDynamicSharedInformerFactory(dyncClient, 4*time.Hour)
-	cnrmInf := dynInf.ForResource(cnrmbeta1.GroupVersion.WithResource("configconnectorcontexts"))
-	go cnrmInf.Informer().Run(ctx.Done())
+	var cnrmLister cache.GenericLister
+	if !strings.HasSuffix(envName, "-fss") {
+		log.Info("Skipping setup of CNRM informer")
+		dynInf := dynamicinformer.NewDynamicSharedInformerFactory(dyncClient, 4*time.Hour)
+		cnrmInf := dynInf.ForResource(cnrmbeta1.GroupVersion.WithResource("configconnectorcontexts"))
+		go cnrmInf.Informer().Run(ctx.Done())
+		cnrmLister = cnrmInf.Lister()
+	}
 
 	// wait for caches to sync
 	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
-	if !waitForCacheSync(ctx.Done(), nsInf.Informer().HasSynced, saInf.Informer().HasSynced, rbInf.Informer().HasSynced, cnrmInf.Informer().HasSynced) {
+	if !waitForCacheSync(ctx.Done(), nsInf.Informer().HasSynced, saInf.Informer().HasSynced, rbInf.Informer().HasSynced) {
 		log.Warn("failed to sync caches")
 	}
 
@@ -98,7 +103,7 @@ func newConsoleManager(ctx context.Context,
 		nsList:     nsInf.Lister(),
 		saList:     saInf.Lister(),
 		rbList:     rbInf.Lister(),
-		cnrmConfig: cnrmInf.Lister(),
+		cnrmConfig: cnrmLister,
 	}
 
 	return receiver, nil
