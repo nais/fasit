@@ -1,7 +1,6 @@
-chart: cert-manager
-source: https://github.com/cert-manager/cert-manager
-version: v1.10.0
-repo: https://charts.jetstack.io
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/cert-manager
+source: https://github.com/nais/helm-charts/tree/charts/cert-manager
+version: v1.10.2
 environmentKinds:
   - "tenant"
   - "management"
@@ -17,50 +16,3 @@ mapping:
     displayName: "GCP service account"
     ignoreKind:
       - "onprem"
-  installCRDs:
-    template: "true"
-  global.leaderElection.namespace:
-    value: "nais-system"
-  webhook.containerSecurityContext.seccompProfile.type:
-    value: RuntimeDefault
-    description: Webhook Security profile
-    ignoreKind:
-      - "onprem"
-  cainjector.containerSecurityContext.seccompProfile.type:
-    value: RuntimeDefault
-    description: CA Injector Security profile
-    ignoreKind:
-      - "onprem"
-  startupapicheck.containerSecurityContext.seccompProfile.type:
-    value: RuntimeDefault
-    description: CA Injector Security profile
-    ignoreKind:
-      - "onprem"
-  containerSecurityContext.seccompProfile.type:
-    value: RuntimeDefault
-    description: Security profile
-    ignoreKind:
-      - "onprem"
-  extraArgs:
-    value:
-      - --issuer-ambient-credentials
-      - --dns01-recursive-nameservers=1.1.1.1:53,8.8.8.8:53
-      - --dns01-recursive-nameservers-only
-
-  # The following capabilities might not be necessary after 1.9.2
-  webhook.containerSecurityContext.capabilities.drop:
-    value:
-      - ALL
-    description: Webhook capabilities
-  cainjector.containerSecurityContext.capabilities.drop:
-    value:
-      - ALL
-    description: Cainjector capabilities
-  startupapicheck.containerSecurityContext.capabilities.drop:
-    value:
-      - ALL
-    description: Startupapicheck capabilities
-  containerSecurityContext.capabilities.drop:
-    value:
-      - ALL
-    description: Capabilities
