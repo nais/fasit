@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/smsmanager
 source: https://github.com/nais/smsmanager/tree/master/charts/smsmanager
-version: 1.0.0
+version: 1.1.0
 environmentKinds:
   - "onprem"
   - "tenant"
@@ -9,6 +9,8 @@ environmentKinds:
 mapping:
   cluster:
     value: "{{ .Env.name }}"
+  clusterKind:
+    value: "{{ .Kind }}"
 config:
   image.tag:
     type: string
