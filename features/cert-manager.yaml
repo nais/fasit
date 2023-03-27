@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/cert-manager
 source: https://github.com/nais/helm-charts/tree/main/charts/cert-manager
-version: v1.10.2
+version: 1.10.2
 environmentKinds:
   - "tenant"
   - "management"
