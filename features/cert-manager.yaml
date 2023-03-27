@@ -14,6 +14,8 @@ mapping:
   apiServerCIDR:
     value: "{{ .Env.apiserver_endpoint }}/32"
     displayName: "API server cidr"
+    ignoreKind:
+      - "onprem"
   serviceAccount.annotations.iam\.gke\.io/gcp-service-account:
     value: "{{ .Env.acme_service_account }}"
     displayName: "GCP service account"
