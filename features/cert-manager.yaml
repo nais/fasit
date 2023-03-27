@@ -1,5 +1,5 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/cert-manager
-source: https://github.com/nais/helm-charts/tree/charts/cert-manager
+source: https://github.com/nais/helm-charts/tree/main/charts/cert-manager
 version: v1.10.2
 environmentKinds:
   - "tenant"
@@ -11,6 +11,9 @@ autoInstall:
   - "management"
 timeout: 30m
 mapping:
+  apiServerCIDR:
+    value: "{{ .Env.apiserver_endpoint }}/32"
+    displayName: "API server cidr"
   serviceAccount.annotations.iam\.gke\.io/gcp-service-account:
     value: "{{ .Env.acme_service_account }}"
     displayName: "GCP service account"
