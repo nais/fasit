@@ -5,6 +5,7 @@ environmentKinds:
   - "onprem"
   - "tenant"
   - "legacy"
+  - "management"
 mapping:
   cluster:
     value: "{{ .Env.name }}"
