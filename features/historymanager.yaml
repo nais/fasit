@@ -1,0 +1,22 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/historymanager
+source: https://github.com/nais/historymanager/tree/master/charts/historymanager
+version: 1.0.0
+environmentKinds:
+  - "onprem"
+  - "tenant"
+  - "legacy"
+  - "management"
+config:
+  Image.tag:
+    type: string
+    displayName: Image tag
+  BigQuery.ProjectID:
+    type: string
+    displayName: BigQuery Project ID
+    required: true
+  BigQuery.ServiceAccountToken:
+    type: string
+    displayName: ServiceAccoint JWT
+    required: true
+  Onprem:
+    type: bool
