@@ -7,8 +7,6 @@ environmentKinds:
   - "legacy"
   - "management"
 mapping:
-  cluster:
-    value: "{{ .Env.name }}"
   clusterKind:
     value: "{{ .Kind }}"
 config:
