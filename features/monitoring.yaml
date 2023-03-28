@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring
-version: 1.53.7
+version: 1.54.0
 description: "Monitoring stack for nais"
 environmentKinds:
   - "tenant"
@@ -15,6 +15,9 @@ config:
   alerts.naisVakt.ping:
     type: bool
     displayName: "Enable nais-vakt pinging on alerts"
+  alerts.naisVakt.smsNumber:
+    type: string
+    displayName: "Enable sms alerts for nais-vakt"
   alerts.proxy:
     type: string
     displayName: "Alerts proxy URL"

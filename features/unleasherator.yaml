@@ -1,0 +1,14 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/unleasherator
+source: https://github.com/nais/unleasherator/tree/main/charts/unleasherator
+version: 1.2.0
+description: "Operator for Unleash"
+environmentKinds:
+  - "management"
+  - "tenant"
+  - "legacy"
+dependsOn:
+  - allOf:
+      - unleasherator-crds
+rolloutSource:
+  - org: nais
+    repo: unleasherator

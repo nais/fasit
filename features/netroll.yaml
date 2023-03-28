@@ -5,6 +5,7 @@ description: "Monitors SQLInstance objects and creates network policies to allow
 environmentKinds:
   - "tenant"
   - "management"
+  - "legacy"
 mapping:
   apiserverIP:
     value: "{{ .Env.apiserver_endpoint }}"
