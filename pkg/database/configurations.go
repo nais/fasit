@@ -233,6 +233,17 @@ func (r *repo) HelmValues(ctx context.Context, f *model.Feature, envID uuid.UUID
 	}
 
 	err = feature.Generate(f.Values, envKind, mv, mp)
+
+	mp["fasit"] = map[string]any{
+		"tenant": map[string]string{
+			"name": mv.Tenant.Name,
+		},
+		"env": map[string]string{
+			"name": mv.Env["name"].(string),
+			"kind": envKind.String(),
+		},
+	}
+
 	return mp, err
 }
 
