@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/historymanager
 source: https://github.com/nais/historymanager/tree/master/charts/historymanager
-version: 1.0.3
+version: 1.0.4
 autoInstall:
   - "tenant"
   - "legacy"
@@ -11,17 +11,20 @@ environmentKinds:
   - "legacy"
   - "management"
 config:
-  Image:
+  image.name:
     type: string
-    displayName: Docker Image
-  BigQuery.ProjectID:
+    displayName: Image name
+  image.tag:
+    type: string
+    displayName: Image tag
+  bigQuery.projectID:
     type: string
     displayName: BigQuery Project ID
     required: true
-  BigQuery.ServiceAccountToken:
+  bigQuery.serviceAccountToken:
     type: string
     displayName: ServiceAccoint JWT
     required: true
     secret: true
-  Onprem:
+  onprem:
     type: bool
