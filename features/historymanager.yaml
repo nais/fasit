@@ -11,7 +11,7 @@ environmentKinds:
   - "legacy"
   - "management"
 config:
-  Image.tag:
+  Image:
     type: string
     displayName: Image tag
   BigQuery.ProjectID:
