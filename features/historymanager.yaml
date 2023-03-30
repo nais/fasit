@@ -13,7 +13,7 @@ environmentKinds:
 config:
   Image:
     type: string
-    displayName: Image tag
+    displayName: Docker Image
   BigQuery.ProjectID:
     type: string
     displayName: BigQuery Project ID
