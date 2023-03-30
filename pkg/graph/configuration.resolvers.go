@@ -71,8 +71,9 @@ OUTER:
 			}
 		}
 		configs = append(configs, &model.Configuration{
+			Key:     key,
 			Value:   &val,
-			Content: []byte("null"),
+			Content: pluckFromMap(key, feature.ValuesYAML),
 			Source:  model.ConfigSourceHelm,
 			GraphVars: struct {
 				EnvironmentID *uuid.UUID
@@ -131,7 +132,9 @@ func (r *configurationsResolver) Computed(ctx context.Context, obj *model.Config
 
 	ret := []*model.ComputedValue{}
 	for k, v := range computed {
-		rm, err := json.Marshal(generated[k])
+		k, v := k, v
+
+		rm, err := json.Marshal(pluckFromMap(k, generated))
 		if err != nil {
 			return nil, fmt.Errorf("marshal computed value: %w", err)
 		}
