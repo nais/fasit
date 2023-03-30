@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/nais-netpols
 source: https://github.com/nais/helm-charts/tree/main/charts/nais-netpols
-version: 0.1.2
+version: 0.1.3
 description: "Default NAIS network policies"
 dependsOn: 
   - allOf:
