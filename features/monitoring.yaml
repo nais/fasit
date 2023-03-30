@@ -17,7 +17,7 @@ config:
     displayName: "Enable nais-vakt pinging on alerts"
   alerts.naisVakt.smsNumber:
     type: string
-    displayName: "Enable sms alerts for nais-vakt"
+    displayName: "SMS number for nais-vakt alerts"
   alerts.proxy:
     type: string
     displayName: "Alerts proxy URL"
