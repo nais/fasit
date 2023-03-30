@@ -18,5 +18,6 @@ config:
     type: string
     displayName: ServiceAccoint JWT
     required: true
+    secret: true
   Onprem:
     type: bool
