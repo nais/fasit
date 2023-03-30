@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/historymanager
 source: https://github.com/nais/historymanager/tree/master/charts/historymanager
-version: 1.0.2
+version: 1.0.3
 autoInstall:
   - "tenant"
   - "legacy"
