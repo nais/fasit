@@ -8,12 +8,12 @@ environmentKinds:
 config:
   backend.image.tag:
     type: string
-    displayName: "Image tag"
+    displayName: "Backend image tag"
     description: "dependency-track image"
 
   frontend.image.tag:
     type: string
-    displayName: "Image tag"
+    displayName: "Frontend image tag"
     description: "salsa-storage-frontend image"
 mapping:
   backend.ingress:
@@ -25,7 +25,7 @@ mapping:
     displayName: "Postgresql password"
   backend.postgresql.username:
     value: "{{.Env.salsa_database_user}}"
-    displayName: "Postgresql username"
+    displayName: "Backend Postgresql username"
   backend.postgresql.connectionName:
     value: "{{.Env.salsa_database_instance}}"
     displayName: "Postgresql connection name"
