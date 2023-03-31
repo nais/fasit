@@ -46,10 +46,6 @@ mapping:
     value: "{{.Env.salsa_google_client_id}}"
     displayName: "OIDC client ID"
 
-  frontend.apiBaseUrl:
-    value: "https://salsa.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io"
-    displayName: "API base URL"
-    description: "Base URL for salsa storage backend"
   frontend.ingress:
     value: "salsa.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io"
     displayName: "Frontend Ingress"
