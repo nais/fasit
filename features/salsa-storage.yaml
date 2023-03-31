@@ -12,11 +12,23 @@ config:
     displayName: "Backend image tag"
     description: "dependency-track image"
 
+  # Not possible to automate: https://github.com/hashicorp/terraform-provider-google/issues/6074
+  backend.env.ALPINE_OIDC_CLIENT_ID:
+    type: string
+    required: true
+    displayName: "Backend OIDC client ID"
+
   frontend.image.tag:
     type: string
     required: true
     displayName: "Frontend image tag"
     description: "salsa-storage-frontend image"
+  # Not possible to automate: https://github.com/hashicorp/terraform-provider-google/issues/6074
+  frontend.env.OIDC_CLIENT_ID:
+    type: string
+    required: true
+    displayName: "Frontend OIDC client ID"
+
 mapping:
   backend.ingress:
     value: "salsa-storage-backend.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io"
@@ -43,10 +55,6 @@ mapping:
   backend.env.ALPINE_OIDC_ISSUER:
     value: "https://accounts.google.com"
     displayName: "Backend OIDC issuer"
-  # TODO: Create oidc client in terraform and use fasit terraform output as mapping
-  backend.env.ALPINE_OIDC_CLIENT_ID:
-    value: "{{.Env.salsa_google_client_id}}"
-    displayName: "Backend OIDC client ID"
 
   frontend.ingress:
     value: "salsa.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io"
@@ -59,9 +67,5 @@ mapping:
   frontend.env.OIDC_ISSUER:
     value: https://accounts.google.com
     displayName: "Frontend OIDC issuer"
-  # TODO: Create oidc client in terraform and use fasit terraform output as mapping
-  frontend.env.OIDC_CLIENT_ID:
-    value: "{{.Env.salsa_google_client_id}}"
-    displayName: "Frontend OIDC client ID"
 
 
