@@ -10,7 +10,7 @@ config:
     type: string
     required: true
     displayName: "Backend image tag"
-    description: "dependency-track image"
+    description: "dependency-track backend image"
 
   # Not possible to automate: https://github.com/hashicorp/terraform-provider-google/issues/6074
   backend.env.ALPINE_OIDC_CLIENT_ID:
@@ -22,7 +22,7 @@ config:
     type: string
     required: true
     displayName: "Frontend image tag"
-    description: "salsa-storage-frontend image"
+    description: "dependency-track froentend image"
   # Not possible to automate: https://github.com/hashicorp/terraform-provider-google/issues/6074
   frontend.env.OIDC_CLIENT_ID:
     type: string
@@ -33,25 +33,25 @@ mapping:
   backend.ingress:
     value: "salsa-storage-backend.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io"
     displayName: "Backend Ingress"
-    description: "Ingress for salsa storage backend"
+    description: "Backend Ingress for salsa storage"
   backend.postgresql.password:
     value: "{{.Env.salsa_database_password}}"
-    displayName: "Postgresql password"
+    displayName: "Backend postgresql password"
   backend.postgresql.username:
     value: "{{.Env.salsa_database_user}}"
-    displayName: "Backend Postgresql username"
+    displayName: "Backend postgresql username"
   backend.postgresql.connectionName:
     value: "{{.Env.salsa_database_instance}}"
-    displayName: "Postgresql connection name"
+    displayName: "Backend postgresql connection name"
   backend.postgresql.database:
     value: "{{.Env.salsa_database_name}}"
-    displayName: "Postgresql database"
+    displayName: "Backend postgresql database"
   backend.serviceAccount.googleServiceAccountEmail:
     value: "{{.Env.salsa_google_service_account_email}}"
-    displayName: "Google service account email"
+    displayName: "Backend Google sa email"
   backend.env.ALPINE_CORS_ALLOW_ORIGIN:
     value: "https://salsa-storage.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io"
-    displayName: "CORS allow origin"
+    displayName: "Backend CORS allow origin"
   backend.env.ALPINE_OIDC_ISSUER:
     value: "https://accounts.google.com"
     displayName: "Backend OIDC issuer"
@@ -63,7 +63,7 @@ mapping:
   frontend.env.API_BASE_URL:
     value: "https://salsa-storage-backend.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io"
     displayName: "API base URL"
-    description: "Base URL for salsa storage backend"
+    description: "Frontend Base URL for backend API"
   frontend.env.OIDC_ISSUER:
     value: https://accounts.google.com
     displayName: "Frontend OIDC issuer"

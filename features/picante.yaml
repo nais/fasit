@@ -14,7 +14,7 @@ config:
     displayName: "Image tag"
   config.storage.apiKey:
     type: string
-    displayName: "Storage API key"
+    displayName: "Salsa storage API key"
     required: true
     secret: true
     description: "API key for salsa storage backend"
@@ -31,3 +31,4 @@ mapping:
         subject-reg-exp: ".*@{{.Management.project_id}}.iam.gserviceaccount.com"
       - issuer: "https://accounts.google.com"
         subject-reg-exp: ".*@nais-io.iam.gserviceaccount.com"
+    displayName: "Signature sa Identities"
