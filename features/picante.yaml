@@ -13,6 +13,7 @@ config:
     type: string
     displayName: "Storage API key"
     required: true
+    secret: true
     description: "API key for salsa storage backend"
 mapping:
   apiserverIP:
