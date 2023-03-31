@@ -31,4 +31,6 @@ mapping:
         subject-reg-exp: ".*@{{.Management.project_id}}.iam.gserviceaccount.com"
       - issuer: "https://accounts.google.com"
         subject-reg-exp: ".*@nais-io.iam.gserviceaccount.com"
+      - issuer: "https://accounts.google.com"
+        subject-reg-exp: ".*@nais-management-233d.iam.gserviceaccount.com"
     displayName: "Signature sa Identities"
