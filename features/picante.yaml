@@ -4,6 +4,9 @@ version: 0.0.1
 description: "Picante is an informer for verifying image attestations and upload sbom to salsa storage backend"
 environmentKinds:
   - "tenant"
+dependsOn:
+  - allOf:
+      - salsa-storage
 config:
   image.tag:
     type: string
