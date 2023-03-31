@@ -8,11 +8,13 @@ environmentKinds:
 config:
   backend.image.tag:
     type: string
+    required: true
     displayName: "Backend image tag"
     description: "dependency-track image"
 
   frontend.image.tag:
     type: string
+    required: true
     displayName: "Frontend image tag"
     description: "salsa-storage-frontend image"
 mapping:
