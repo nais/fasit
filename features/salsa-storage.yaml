@@ -40,11 +40,11 @@ mapping:
     displayName: "CORS allow origin"
   backend.env.ALPINE_OIDC_ISSUER:
     value: "https://accounts.google.com"
-    displayName: "OIDC issuer"
+    displayName: "Backend OIDC issuer"
   # TODO: Create oidc client in terraform and use fasit terraform output as mapping
   backend.env.ALPINE_OIDC_CLIENT_ID:
     value: "{{.Env.salsa_google_client_id}}"
-    displayName: "OIDC client ID"
+    displayName: "Backend OIDC client ID"
 
   frontend.ingress:
     value: "salsa.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io"
@@ -56,10 +56,10 @@ mapping:
     description: "Base URL for salsa storage backend"
   frontend.env.OIDC_ISSUER:
     value: https://accounts.google.com
-    displayName: "OIDC issuer"
+    displayName: "Frontend OIDC issuer"
   # TODO: Create oidc client in terraform and use fasit terraform output as mapping
   frontend.env.OIDC_CLIENT_ID:
     value: "{{.Env.salsa_google_client_id}}"
-    displayName: "OIDC client ID"
+    displayName: "Frontend OIDC client ID"
 
 
