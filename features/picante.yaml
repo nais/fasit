@@ -9,7 +9,7 @@ config:
     type: string
     required: true
     displayName: "Image tag"
-  storage.apiKey:
+  config.storage.apiKey:
     type: string
     displayName: "Storage API key"
     required: true
@@ -18,10 +18,10 @@ mapping:
   apiserverIP:
     value: "{{.Env.apiserver_endpoint}}"
     displayName: "API server IP"
-  storage.api:
+  config.storage.api:
     value: "https://salsa-storage-backend.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io"
     displayName: "Salsa storage API"
-  identities:
+  config.identities:
     template: |
       - issuer: "https://accounts.google.com"
         subject-reg-exp: ".*@{{.Management.project_id}}.iam.gserviceaccount.com"
