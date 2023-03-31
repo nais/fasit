@@ -1,0 +1,69 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/salsa-storage
+source: https://github.com/nais/helm-charts/tree/main/charts/salsa-storage
+version: 0.0.2
+description: "Salsa storage is a storage backend for storing sbom and image attestations and viewing vulnerabilities,
+the backend application is dependency-track: https://docs.dependencytrack.org"
+environmentKinds:
+  - "tenant"
+config:
+  backend.image.tag:
+    type: string
+    displayName: "Image tag"
+    description: "dependency-track image"
+
+  frontend.image.tag:
+    type: string
+    displayName: "Image tag"
+    description: "salsa-storage-frontend image"
+mapping:
+  backend.ingress:
+    value: "salsa-storage-backend.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io"
+    displayName: "Backend Ingress"
+    description: "Ingress for salsa storage backend"
+  backend.postgresql.password:
+    value: "{{.Env.salsa_database_password}}"
+    displayName: "Postgresql password"
+  backend.postgresql.username:
+    value: "{{.Env.salsa_database_user}}"
+    displayName: "Postgresql username"
+  backend.postgresql.connectionName:
+    value: "{{.Env.salsa_database_instance}}"
+    displayName: "Postgresql connection name"
+  backend.postgresql.database:
+    value: "{{.Env.salsa_database_name}}"
+    displayName: "Postgresql database"
+  backend.serviceAccount.googleServiceAccountEmail:
+    value: "{{.Env.salsa_google_service_account_email}}"
+    displayName: "Google service account email"
+  backend.env.ALPINE_CORS_ALLOW_ORIGIN:
+    value: "https://salsa-storage.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io"
+    displayName: "CORS allow origin"
+  backend.env.ALPINE_OIDC_ISSUER:
+    value: "https://accounts.google.com"
+    displayName: "OIDC issuer"
+  # TODO: Create oidc client in terraform and use fasit terraform output as mapping
+  backend.env.ALPINE_OIDC_CLIENT_ID:
+    value: "{{.Env.salsa_google_client_id}}"
+    displayName: "OIDC client ID"
+
+  frontend.apiBaseUrl:
+    value: "https://salsa.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io"
+    displayName: "API base URL"
+    description: "Base URL for salsa storage backend"
+  frontend.ingress:
+    value: "salsa.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io"
+    displayName: "Frontend Ingress"
+    description: "Ingress for salsa storage frontend"
+  frontend.env.API_BASE_URL:
+    value: "https://salsa-storage-backend.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io"
+    displayName: "API base URL"
+    description: "Base URL for salsa storage backend"
+  frontend.env.OIDC_ISSUER:
+    value: https://accounts.google.com
+    displayName: "OIDC issuer"
+  # TODO: Create oidc client in terraform and use fasit terraform output as mapping
+  frontend.env.OIDC_CLIENT_ID:
+    value: "{{.Env.salsa_google_client_id}}"
+    displayName: "OIDC client ID"
+
+
