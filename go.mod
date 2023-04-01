@@ -3,7 +3,7 @@ module github.com/nais/fasit
 go 1.19
 
 require (
-	cloud.google.com/go/cloudsqlconn v1.1.1
+	cloud.google.com/go/cloudsqlconn v1.2.2
 	cloud.google.com/go/pubsub v1.28.0
 	cloud.google.com/go/storage v1.29.0
 	github.com/99designs/gqlgen v0.17.25
