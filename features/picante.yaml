@@ -22,7 +22,7 @@ config:
     secret: true
     description: "API key for salsa storage backend"
   onfig.kmsPubKey:
-    type: string
+    type: string_array
     displayName: "KMS public key"
     required: true
     description: "KMS public key for decrypting salsa storage API key"
@@ -44,8 +44,8 @@ mapping:
     displayName: "Signature sa Identities"
   config.kmsPubKey:
     template: |-
-      -----BEGIN PUBLIC KEY-----\n
-      MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEUxgOVWCBlCTpJcKKJxQTLBAkp5F9\n
-      /rKmU0cIhHkBJmbPLcDtmoDX0fX7d9OzpK7eLyBg+c/rRcQgGvZvBCLRKQ==\n
+      -----BEGIN PUBLIC KEY-----
+      MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEUxgOVWCBlCTpJcKKJxQTLBAkp5F9
+      /rKmU0cIhHkBJmbPLcDtmoDX0fX7d9OzpK7eLyBg+c/rRcQgGvZvBCLRKQ==
       -----END PUBLIC KEY-----
     displayName: "KMS public key"
