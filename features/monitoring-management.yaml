@@ -56,13 +56,13 @@ mapping:
             serviceMap:
               dataSourceUid: {{ $cluster.name }}
             lokiSearch:
-              dataSourceUid:   {{ $cluster.name }}-loki
+              dataSourceUid: {{ $cluster.name }}-loki
             traceToLogs:
               datasourceUid: {{ $cluster.name }}-loki
 
-            {{- end }}
-        {{ end }}
-      {{e  nd}}
+        {{- end }}
+       {{ end }}
+      {{ end }}
   grafana.server.domain:
     value: "{{.Tenant.Name}}.cloud.nais.io"
   grafana.server.root_url:
