@@ -47,6 +47,10 @@ mapping:
           type: loki
           url: https://loki.{{ $cluster.name }}.{{ $root.Tenant.Name }}.cloud.nais.io
           access: proxy
+        - name: {{ $cluster.name }}-tempo
+          type: tempo
+          url: https://tempo.{{ $cluster.name }}.{{ $root.Tenant.Name }}.cloud.nais.io
+          access: proxy
         {{- end }}
       {{ end }}
       {{end}}
