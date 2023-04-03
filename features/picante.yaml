@@ -7,6 +7,9 @@ environmentKinds:
 dependsOn:
   - allOf:
       - salsa-storage
+rolloutSource:
+  - org: nais
+    repo: picante
 config:
   image.tag:
     type: string
