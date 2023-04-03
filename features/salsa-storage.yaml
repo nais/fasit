@@ -61,7 +61,7 @@ mapping:
     value: "{{.Env.salsa_google_service_account_email}}"
     displayName: "Backend Google sa email"
   backend.env.ALPINE_CORS_ALLOW_ORIGIN:
-    value: "https://salsa-storage.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io/"
+    value: "https://salsa.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io/"
     displayName: "Backend CORS allow origin"
   backend.env.ALPINE_OIDC_ISSUER:
     value: "https://accounts.google.com"
