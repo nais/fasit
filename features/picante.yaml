@@ -31,11 +31,11 @@ mapping:
   config.identities:
     template: |
       - issuer: "https://accounts.google.com"
-        subject-reg-exp: ".*@{{.Management.project_id}}.iam.gserviceaccount.com"
+        subjectRegExp: ".*@{{.Management.project_id}}.iam.gserviceaccount.com"
       - issuer: "https://accounts.google.com"
-        subject-reg-exp: ".*@nais-io.iam.gserviceaccount.com"
+        subjectRegExp: ".*@nais-io.iam.gserviceaccount.com"
       - issuer: "https://accounts.google.com"
-        subject-reg-exp: ".*@nais-management-233d.iam.gserviceaccount.com"
+        subjectRegExp: ".*@nais-management-233d.iam.gserviceaccount.com"
     displayName: "Signature sa Identities"
   config.kmsPubKey:
     template: |
