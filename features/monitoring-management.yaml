@@ -53,11 +53,12 @@ mapping:
           access: proxy
           # Additional tempo configuration as per https://grafana.com/docs/grafana/latest/datasources  /tempo/
           jsonData:
+            httpMethod: GET
             serviceMap:
               dataSourceUid: {{ $cluster.name }}
             lokiSearch:
               dataSourceUid: {{ $cluster.name }}-loki
-            traceToLogs:
+            tracesToLogs:
               datasourceUid: {{ $cluster.name }}-loki
 
         {{- end }}
