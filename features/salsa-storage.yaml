@@ -18,6 +18,17 @@ config:
     required: true
     displayName: "Backend OIDC client ID"
 
+  backend.postgresql.password:
+    type: string
+    displayName: "Backend postgresql password"
+    secret: true
+    description: "Configure this if you want to use a custom postgresql password"
+
+  backend.postgresql.username:
+    type: string
+    displayName: "Backend postgresql username"
+    description: "Configure this if you want to use a custom postgresql username"
+
   frontend.image.tag:
     type: string
     required: true
