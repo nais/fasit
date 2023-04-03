@@ -37,3 +37,10 @@ mapping:
       - issuer: "https://accounts.google.com"
         subject-reg-exp: ".*@nais-management-233d.iam.gserviceaccount.com"
     displayName: "Signature sa Identities"
+  config.kmsPubKey:
+    template: |
+      -----BEGIN PUBLIC KEY-----
+      MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEUxgOVWCBlCTpJcKKJxQTLBAkp5F9
+      /rKmU0cIhHkBJmbPLcDtmoDX0fX7d9OzpK7eLyBg+c/rRcQgGvZvBCLRKQ==
+      -----END PUBLIC KEY-----
+    displayName: "KMS public key"
