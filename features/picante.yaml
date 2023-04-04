@@ -26,7 +26,7 @@ mapping:
     value: "{{.Env.apiserver_endpoint}}"
     displayName: "API server IP"
   config.storage.api:
-    value: "https://salsa-storage-backend.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io"
+    value: "https://salsa-storage-backend.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io/api/v1"
     displayName: "Salsa storage API"
   config.identities:
     template: |
