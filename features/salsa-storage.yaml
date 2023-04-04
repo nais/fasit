@@ -67,7 +67,7 @@ mapping:
     value: "https://accounts.google.com"
     displayName: "Backend OIDC issuer"
   backend.env.ALPINE_DATABASE_POOL_MAX_LIFETIME:
-    value: "300000"
+    value: "400000"
     displayName: "Backend database pool max lifetime"
 
   frontend.ingress:
