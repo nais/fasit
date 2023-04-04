@@ -30,10 +30,10 @@ mapping:
     displayName: "Salsa storage API"
   config.identities:
     template: |
-        {{ if ne .Management.project_id "nais-management-233d" }}
+      {{ if ne .Management.project_id "nais-management-233d" }}
       - issuer: "https://accounts.google.com"
         subjectRegExp: ".*@{{.Management.project_id}}.iam.gserviceaccount.com"
-        {{ end }}
+      {{ end }}
       - issuer: "https://accounts.google.com"
         subjectRegExp: ".*@nais-io.iam.gserviceaccount.com"
       - issuer: "https://accounts.google.com"
