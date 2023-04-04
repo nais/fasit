@@ -66,6 +66,9 @@ mapping:
   backend.env.ALPINE_OIDC_ISSUER:
     value: "https://accounts.google.com"
     displayName: "Backend OIDC issuer"
+  backend.env.ALPINE_DATABASE_POOL_MAX_LIFETIME:
+    value: "300000"
+    displayName: "Backend database pool max lifetime"
 
   frontend.ingress:
     value: "salsa.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io"
