@@ -1,7 +1,7 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/bifrost
 source: https://github.com/nais/helm-charts/tree/main/charts/bifrost
-version: 1.1.0
-description: "For managing unleash"
+version: 1.2.1
+description: "Portal for managing Frontend Platform resources"
 environmentKinds:
   - "management"
 dependsOn:
@@ -12,6 +12,10 @@ dependsOn:
 rolloutSource:
   - org: nais
     repo: bifrost
+config:
+  backend.google.iapBackendServiceId:
+    type: string
+    description: ID for Backend Service for IAP loadbanacer used for verifying JWT tokens from IAP.
 mapping:
   ingress.host:
     value: '{{ subdomain . "bifrost" }}'
@@ -27,13 +31,28 @@ mapping:
     displayName: "Unleash sql instance id"
   backend.unleash.sqlInstanceAddress:
     value: "{{ .Management.bifrost_unleash_sql_instance_address }}"
-    displayName: "Sql instance address"
+    displayName: "Unleash sql instance address"
+  backend.unleash.sqlInstanceRegion:
+    value: "{{ .Management.bifrost_unleash_sql_instance_region }}"
+    displayName: "Unleash sql instance region"
   backend.unleash.instanceNamespace:
     value: "{{ .Management.bifrost_unleash_namespace}}"
-    displayName: "Unleash namespace"
+    displayName: "Unleash instance namespace"
   backend.unleash.kubernetesServiceAccountName:
     value: "{{ .Management.bifrost_unleash_sql_ksa_name }}"
     displayName: "Bifrost kubernetes service account name"
   backend.unleash.googleServiceAccountEmail:
     value: "{{ .Management.bifrost_unleash_sql_gsa_email }}"
     displayName: "Biforst unleash Google service account email"
+  backend.unleash.webIngressHost:
+    value: '{{ subdomain . "unleash-web" }}'
+    displayName: "Web Ingress Host"
+  backend.unleash.webIngressClass:
+    value: "nais-ingress-iap"
+    displayName: "Web Ingress Class"
+  backend.unleash.apiIngressHost:
+    value: '{{ subdomain . "unleash-api" }}'
+    displayName: "Api Ingress Host"
+  backend.unleash.apiIngressClass:
+    value: "nais-ingress"
+    displayName: "Api Ingress Class"
