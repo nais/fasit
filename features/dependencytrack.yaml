@@ -5,6 +5,9 @@ description: "Dependencytrack is a storage backend for storing sbom and image at
 the backend application is dependency-track: https://docs.dependencytrack.org"
 environmentKinds:
   - "tenant"
+rolloutSource:
+  - org: nais
+    repo: dependencytrack
 config:
 
   bootstrap.image.tag:
