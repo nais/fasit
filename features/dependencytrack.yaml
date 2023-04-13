@@ -1,7 +1,7 @@
-chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/salsa-storage
-source: https://github.com/nais/helm-charts/tree/main/charts/salsa-storage
-version: 0.0.3
-description: "Salsa storage is a storage backend for storing sbom and image attestations and viewing vulnerabilities,
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/dependencytrack
+source: https://github.com/nais/helm-charts/tree/main/charts/dependencytrack
+version: 0.0.1
+description: "Dependencytrack is a storage backend for storing sbom and image attestations and viewing vulnerabilities,
 the backend application is dependency-track: https://docs.dependencytrack.org"
 environmentKinds:
   - "tenant"
@@ -42,23 +42,23 @@ config:
 
 mapping:
   backend.ingress:
-    value: "salsa-storage-backend.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io"
+    value: "dependencytrack-backend.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io"
     displayName: "Backend Ingress"
     description: "Backend Ingress for salsa storage"
   backend.postgresql.password:
-    value: "{{.Env.salsa_database_password}}"
+    value: "{{.Env.dependencytrack_database_password}}"
     displayName: "Backend postgresql password"
   backend.postgresql.username:
-    value: "{{.Env.salsa_database_user}}"
+    value: "{{.Env.dependencytrack_database_user}}"
     displayName: "Backend postgresql username"
   backend.postgresql.connectionName:
-    value: "{{.Env.salsa_database_instance}}"
+    value: "{{.Env.dependencytrack_database_instance}}"
     displayName: "Backend postgresql connection name"
   backend.postgresql.database:
-    value: "{{.Env.salsa_database_name}}"
+    value: "{{.Env.dependencytrack_database_name}}"
     displayName: "Backend postgresql database"
   backend.serviceAccount.googleServiceAccountEmail:
-    value: "{{.Env.salsa_google_service_account_email}}"
+    value: "{{.Env.dependencytrack_google_service_account_email}}"
     displayName: "Backend Google sa email"
   backend.env.ALPINE_CORS_ALLOW_ORIGIN:
     value: "https://salsa.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io"
@@ -75,7 +75,7 @@ mapping:
     displayName: "Frontend Ingress"
     description: "Ingress for salsa storage frontend"
   frontend.env.API_BASE_URL:
-    value: "https://salsa-storage-backend.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io"
+    value: "https://dependencytrack-backend.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io"
     displayName: "API base URL"
     description: "Frontend Base URL for backend API"
   frontend.env.OIDC_ISSUER:
