@@ -51,6 +51,7 @@ func (r *queryResolver) FeatureState(ctx context.Context, envID uuid.UUID, featu
 
 	// If no feature state exists, return a default feature state
 	fs = &model.FeatureState{
+		ID:          model.FeatureStateID(envID, feature),
 		FeatureName: feature,
 		Enabled:     false,
 		EnvID:       envID,

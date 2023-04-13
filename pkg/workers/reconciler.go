@@ -192,7 +192,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 		return fmt.Errorf("health status: %w", err)
 	}
 	if time.Since(health.ReportedAt) > 3*time.Minute {
-		r.log.WithField("environment", d.ID).Infof("naisd is unhealthy - skip reconcile")
+		r.log.WithField("environment", d.ID).Debug("naisd is unhealthy - skip reconcile")
 		return nil
 	}
 
@@ -234,7 +234,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 		if err != nil {
 			var fer *database.ErrMissingRequiredFields
 			if errors.As(err, &fer) {
-				r.log.WithField("feature", f.Name).WithError(err).Info("missing required fields")
+				r.log.WithField("feature", f.Name).WithError(err).Debug("missing required fields")
 				continue
 			}
 			return fmt.Errorf("helm values: %w", err)
@@ -255,7 +255,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 			"feature":     f.Name,
 			"tenant":      d.TenantName,
 			"environment": d.Name,
-		}).Info("publish deploy instruction")
+		}).Debug("publish deploy instruction")
 
 		r.deployMessages.Add(ctx, 1, append(metricAttrs, attribute.Key("feature").String(f.Name))...)
 		err = mgr.Publish(ctx, message.DeployInstruction{

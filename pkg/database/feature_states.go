@@ -21,6 +21,8 @@ type FeatureStateRepo interface {
 
 func featureStateFromSQL(state gensql.FeatureState) *model.FeatureState {
 	return &model.FeatureState{
+		ID:           model.FeatureStateID(state.EnvironmentID, state.Feature),
+		EnvID:        state.EnvironmentID,
 		FeatureName:  state.Feature,
 		EnabledAt:    nullTimeToPtr(state.EnabledAt),
 		Enabled:      state.Enabled,
@@ -41,6 +43,7 @@ func (r *repo) FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.
 
 	for _, featureState := range featureStates {
 		ret = append(ret, &model.FeatureState{
+			ID:           model.FeatureStateID(envID, featureState.Name),
 			FeatureName:  featureState.Name,
 			EnabledAt:    nullTimeToPtr(featureState.EnabledAt),
 			Enabled:      featureState.Enabled,
@@ -67,6 +70,7 @@ func (r *repo) FeatureStateGet(ctx context.Context, envID uuid.UUID, featureName
 	}
 
 	fs := &model.FeatureState{
+		ID:          model.FeatureStateID(envID, featureName),
 		FeatureName: featureName,
 		EnvID:       envID,
 		Enabled:     false,

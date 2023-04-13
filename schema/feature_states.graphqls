@@ -1,4 +1,5 @@
 type FeatureState {
+  id: ID!
   feature: Feature!
   enabled: Boolean!
   created: Time

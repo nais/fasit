@@ -6,8 +6,12 @@ package graph
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"time"
 
 	"github.com/google/uuid"
+	pgx "github.com/jackc/pgx/v4"
 	"github.com/nais/fasit/pkg/graph/graphgen"
 	"github.com/nais/fasit/pkg/graph/model"
 )
@@ -44,9 +48,38 @@ func (r *featureResolver) State(ctx context.Context, obj *model.Feature) (*model
 	return r.Repo.FeatureStateGet(ctx, obj.GraphVars.EnvironmentID, obj.Name)
 }
 
+// Status is the resolver for the status field.
+func (r *featureResolver) Status(ctx context.Context, obj *model.Feature) (*model.Status, error) {
+	status, err := r.Repo.StatusForFeature(ctx, obj.GraphVars.EnvironmentID, obj.Name)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			f, err := r.Repo.FeatureByNameForEnv(ctx, obj.Name, obj.GraphVars.EnvironmentID)
+			if err != nil {
+				return nil, fmt.Errorf("feature %v not found", obj.Name)
+			}
+			return &model.Status{
+				EnvironmentID: obj.GraphVars.EnvironmentID,
+				Feature:       obj.Name,
+				Version:       f.Version,
+				Status:        model.RolloutStatusUnknown,
+				Created:       time.Now(),
+				LastModified:  time.Now(),
+				Log:           "",
+			}, nil
+		}
+		return nil, err
+	}
+	return status, nil
+}
+
 // Features is the resolver for the features field.
 func (r *queryResolver) Features(ctx context.Context) ([]*model.Feature, error) {
 	return r.Repo.Features(ctx)
+}
+
+// Feature is the resolver for the feature field.
+func (r *queryResolver) Feature(ctx context.Context, name string) (*model.Feature, error) {
+	return r.Repo.FeatureByName(ctx, name)
 }
 
 // ConfigOverride returns graphgen.ConfigOverrideResolver implementation.

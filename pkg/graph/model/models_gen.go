@@ -66,20 +66,22 @@ type UserInfo struct {
 type ConfigSource string
 
 const (
-	ConfigSourceGlobal ConfigSource = "GLOBAL"
-	ConfigSourceEnv    ConfigSource = "ENV"
-	ConfigSourceHelm   ConfigSource = "HELM"
+	ConfigSourceGlobal  ConfigSource = "GLOBAL"
+	ConfigSourceEnv     ConfigSource = "ENV"
+	ConfigSourceHelm    ConfigSource = "HELM"
+	ConfigSourceUnknown ConfigSource = "UNKNOWN"
 )
 
 var AllConfigSource = []ConfigSource{
 	ConfigSourceGlobal,
 	ConfigSourceEnv,
 	ConfigSourceHelm,
+	ConfigSourceUnknown,
 }
 
 func (e ConfigSource) IsValid() bool {
 	switch e {
-	case ConfigSourceGlobal, ConfigSourceEnv, ConfigSourceHelm:
+	case ConfigSourceGlobal, ConfigSourceEnv, ConfigSourceHelm, ConfigSourceUnknown:
 		return true
 	}
 	return false

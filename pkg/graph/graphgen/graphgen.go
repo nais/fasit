@@ -51,7 +51,6 @@ type ResolverRoot interface {
 	Query() QueryResolver
 	Release() ReleaseResolver
 	Rollout() RolloutResolver
-	Status() StatusResolver
 	Tenant() TenantResolver
 }
 
@@ -139,6 +138,7 @@ type ComplexityRoot struct {
 		Name             func(childComplexity int) int
 		Source           func(childComplexity int) int
 		State            func(childComplexity int) int
+		Status           func(childComplexity int) int
 		Version          func(childComplexity int) int
 	}
 
@@ -147,6 +147,7 @@ type ComplexityRoot struct {
 		Created             func(childComplexity int) int
 		Enabled             func(childComplexity int) int
 		Feature             func(childComplexity int) int
+		ID                  func(childComplexity int) int
 		LastModified        func(childComplexity int) int
 		MissingDependencies func(childComplexity int) int
 	}
@@ -209,10 +210,10 @@ type ComplexityRoot struct {
 
 	Query struct {
 		Configuration func(childComplexity int, feature string, envID *uuid.UUID) int
+		Feature       func(childComplexity int, name string) int
 		FeatureState  func(childComplexity int, envID uuid.UUID, feature string) int
-		FeatureStatus func(childComplexity int, envID uuid.UUID, feature string) int
 		Features      func(childComplexity int) int
-		HelmValues    func(childComplexity int, feature string, envID uuid.UUID) int
+		HelmValues    func(childComplexity int, feature string, envID *uuid.UUID, env *string, tenant *string) int
 		Tenant        func(childComplexity int, id *uuid.UUID, slug *string) int
 		Tenants       func(childComplexity int) int
 		UserInfo      func(childComplexity int) int
@@ -238,15 +239,12 @@ type ComplexityRoot struct {
 	}
 
 	Status struct {
-		ConfigHash          func(childComplexity int) int
-		Created             func(childComplexity int) int
-		EnvironmentID       func(childComplexity int) int
-		Feature             func(childComplexity int) int
-		LastModified        func(childComplexity int) int
-		Log                 func(childComplexity int) int
-		MissingDependencies func(childComplexity int) int
-		Status              func(childComplexity int) int
-		Version             func(childComplexity int) int
+		Created       func(childComplexity int) int
+		EnvironmentID func(childComplexity int) int
+		LastModified  func(childComplexity int) int
+		Log           func(childComplexity int) int
+		Status        func(childComplexity int) int
+		Version       func(childComplexity int) int
 	}
 
 	Tenant struct {
@@ -301,6 +299,7 @@ type FeatureResolver interface {
 	Configoverrides(ctx context.Context, obj *model.Feature) ([]*model.ConfigOverride, error)
 	Configuration(ctx context.Context, obj *model.Feature) (*model.Configurations, error)
 	State(ctx context.Context, obj *model.Feature) (*model.FeatureState, error)
+	Status(ctx context.Context, obj *model.Feature) (*model.Status, error)
 }
 type FeatureStateResolver interface {
 	Feature(ctx context.Context, obj *model.FeatureState) (*model.Feature, error)
@@ -327,10 +326,10 @@ type NaisdWarningResolver interface {
 type QueryResolver interface {
 	Tenants(ctx context.Context) ([]*model.Tenant, error)
 	Configuration(ctx context.Context, feature string, envID *uuid.UUID) (*model.Configurations, error)
-	HelmValues(ctx context.Context, feature string, envID uuid.UUID) (json.RawMessage, error)
+	HelmValues(ctx context.Context, feature string, envID *uuid.UUID, env *string, tenant *string) (json.RawMessage, error)
 	Features(ctx context.Context) ([]*model.Feature, error)
+	Feature(ctx context.Context, name string) (*model.Feature, error)
 	FeatureState(ctx context.Context, envID uuid.UUID, feature string) (*model.FeatureState, error)
-	FeatureStatus(ctx context.Context, envID uuid.UUID, feature string) (*model.Status, error)
 	Tenant(ctx context.Context, id *uuid.UUID, slug *string) (*model.Tenant, error)
 	UserInfo(ctx context.Context) (*model.UserInfo, error)
 }
@@ -339,9 +338,6 @@ type ReleaseResolver interface {
 }
 type RolloutResolver interface {
 	Feature(ctx context.Context, obj *model.Rollout) (*model.Feature, error)
-}
-type StatusResolver interface {
-	MissingDependencies(ctx context.Context, obj *model.Status) ([]*model.Feature, error)
 }
 type TenantResolver interface {
 	Environments(ctx context.Context, obj *model.Tenant) ([]*model.Environment, error)
@@ -718,6 +714,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Feature.State(childComplexity), true
 
+	case "Feature.status":
+		if e.complexity.Feature.Status == nil {
+			break
+		}
+
+		return e.complexity.Feature.Status(childComplexity), true
+
 	case "Feature.version":
 		if e.complexity.Feature.Version == nil {
 			break
@@ -752,6 +755,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.FeatureState.Feature(childComplexity), true
+
+	case "FeatureState.id":
+		if e.complexity.FeatureState.ID == nil {
+			break
+		}
+
+		return e.complexity.FeatureState.ID(childComplexity), true
 
 	case "FeatureState.lastModified":
 		if e.complexity.FeatureState.LastModified == nil {
@@ -1059,6 +1069,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Configuration(childComplexity, args["feature"].(string), args["envID"].(*uuid.UUID)), true
 
+	case "Query.feature":
+		if e.complexity.Query.Feature == nil {
+			break
+		}
+
+		args, err := ec.field_Query_feature_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Feature(childComplexity, args["name"].(string)), true
+
 	case "Query.featureState":
 		if e.complexity.Query.FeatureState == nil {
 			break
@@ -1070,18 +1092,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.FeatureState(childComplexity, args["envID"].(uuid.UUID), args["feature"].(string)), true
-
-	case "Query.featureStatus":
-		if e.complexity.Query.FeatureStatus == nil {
-			break
-		}
-
-		args, err := ec.field_Query_featureStatus_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.FeatureStatus(childComplexity, args["envID"].(uuid.UUID), args["feature"].(string)), true
 
 	case "Query.features":
 		if e.complexity.Query.Features == nil {
@@ -1100,7 +1110,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.HelmValues(childComplexity, args["feature"].(string), args["envID"].(uuid.UUID)), true
+		return e.complexity.Query.HelmValues(childComplexity, args["feature"].(string), args["envID"].(*uuid.UUID), args["env"].(*string), args["tenant"].(*string)), true
 
 	case "Query.tenant":
 		if e.complexity.Query.Tenant == nil {
@@ -1219,13 +1229,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Rollout.Version(childComplexity), true
 
-	case "Status.configHash":
-		if e.complexity.Status.ConfigHash == nil {
-			break
-		}
-
-		return e.complexity.Status.ConfigHash(childComplexity), true
-
 	case "Status.created":
 		if e.complexity.Status.Created == nil {
 			break
@@ -1240,13 +1243,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Status.EnvironmentID(childComplexity), true
 
-	case "Status.feature":
-		if e.complexity.Status.Feature == nil {
-			break
-		}
-
-		return e.complexity.Status.Feature(childComplexity), true
-
 	case "Status.lastModified":
 		if e.complexity.Status.LastModified == nil {
 			break
@@ -1260,13 +1256,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Status.Log(childComplexity), true
-
-	case "Status.missingDependencies":
-		if e.complexity.Status.MissingDependencies == nil {
-			break
-		}
-
-		return e.complexity.Status.MissingDependencies(childComplexity), true
 
 	case "Status.status":
 		if e.complexity.Status.Status == nil {
@@ -1497,6 +1486,7 @@ enum ConfigSource {
   GLOBAL
   ENV
   HELM
+  UNKNOWN
 }
 
 type Configuration {
@@ -1522,7 +1512,15 @@ input UpdateConfiguration {
 
 extend type Query {
   configuration(feature: String!, envID: ID): Configurations!
-  helmValues(feature: String!, envID: ID!): RawMessage!
+  """
+  Returns the raw helm values for a feature. Requires the feature name, and either the environment ID or the environment and tenant name.
+  """
+  helmValues(
+    feature: String!
+    envID: ID
+    env: String
+    tenant: String
+  ): RawMessage!
 }
 
 extend type Mutation {
@@ -1646,6 +1644,7 @@ type Feature {
   configuration: Configurations!
 
   state: FeatureState
+  status: Status
 }
 
 type ConfigOverride {
@@ -1660,9 +1659,11 @@ type Dependency {
 
 extend type Query {
   features: [Feature!]!
+  feature(name: String!): Feature!
 }
 `, BuiltIn: false},
 	{Name: "../../../schema/feature_states.graphqls", Input: `type FeatureState {
+  id: ID!
   feature: Feature!
   enabled: Boolean!
   created: Time
@@ -1752,18 +1753,11 @@ scalar Time`, BuiltIn: false},
 
 type Status {
   environmentID: ID!
-  feature: String!
   version: String!
   status: RolloutStatus!
-  configHash: String!
   created: Time!
   lastModified: Time!
   log: String!
-  missingDependencies: [Feature!]!
-}
-
-extend type Query {
-  featureStatus(envID: ID!, feature: String!): Status!
 }
 `, BuiltIn: false},
 	{Name: "../../../schema/tenant.graphqls", Input: `type Tenant {
@@ -2063,27 +2057,18 @@ func (ec *executionContext) field_Query_featureState_args(ctx context.Context, r
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_featureStatus_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Query_feature_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 uuid.UUID
-	if tmp, ok := rawArgs["envID"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("envID"))
-		arg0, err = ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, tmp)
+	var arg0 string
+	if tmp, ok := rawArgs["name"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["envID"] = arg0
-	var arg1 string
-	if tmp, ok := rawArgs["feature"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("feature"))
-		arg1, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["feature"] = arg1
+	args["name"] = arg0
 	return args, nil
 }
 
@@ -2099,15 +2084,33 @@ func (ec *executionContext) field_Query_helmValues_args(ctx context.Context, raw
 		}
 	}
 	args["feature"] = arg0
-	var arg1 uuid.UUID
+	var arg1 *uuid.UUID
 	if tmp, ok := rawArgs["envID"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("envID"))
-		arg1, err = ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, tmp)
+		arg1, err = ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
 	args["envID"] = arg1
+	var arg2 *string
+	if tmp, ok := rawArgs["env"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("env"))
+		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["env"] = arg2
+	var arg3 *string
+	if tmp, ok := rawArgs["tenant"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tenant"))
+		arg3, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["tenant"] = arg3
 	return args, nil
 }
 
@@ -3362,6 +3365,8 @@ func (ec *executionContext) fieldContext_Environment_featureStates(ctx context.C
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "id":
+				return ec.fieldContext_FeatureState_id(ctx, field)
 			case "feature":
 				return ec.fieldContext_FeatureState_feature(ctx, field)
 			case "enabled":
@@ -4016,6 +4021,8 @@ func (ec *executionContext) fieldContext_Environment_features(ctx context.Contex
 				return ec.fieldContext_Feature_configuration(ctx, field)
 			case "state":
 				return ec.fieldContext_Feature_state(ctx, field)
+			case "status":
+				return ec.fieldContext_Feature_status(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
@@ -4082,6 +4089,8 @@ func (ec *executionContext) fieldContext_Environment_feature(ctx context.Context
 				return ec.fieldContext_Feature_configuration(ctx, field)
 			case "state":
 				return ec.fieldContext_Feature_state(ctx, field)
+			case "status":
+				return ec.fieldContext_Feature_status(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
@@ -4638,6 +4647,8 @@ func (ec *executionContext) fieldContext_Feature_state(ctx context.Context, fiel
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "id":
+				return ec.fieldContext_FeatureState_id(ctx, field)
 			case "feature":
 				return ec.fieldContext_FeatureState_feature(ctx, field)
 			case "enabled":
@@ -4652,6 +4663,105 @@ func (ec *executionContext) fieldContext_Feature_state(ctx context.Context, fiel
 				return ec.fieldContext_FeatureState_configuration(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type FeatureState", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Feature_status(ctx context.Context, field graphql.CollectedField, obj *model.Feature) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Feature_status(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Feature().Status(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Status)
+	fc.Result = res
+	return ec.marshalOStatus2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Feature_status(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Feature",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "environmentID":
+				return ec.fieldContext_Status_environmentID(ctx, field)
+			case "version":
+				return ec.fieldContext_Status_version(ctx, field)
+			case "status":
+				return ec.fieldContext_Status_status(ctx, field)
+			case "created":
+				return ec.fieldContext_Status_created(ctx, field)
+			case "lastModified":
+				return ec.fieldContext_Status_lastModified(ctx, field)
+			case "log":
+				return ec.fieldContext_Status_log(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Status", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FeatureState_id(ctx context.Context, field graphql.CollectedField, obj *model.FeatureState) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FeatureState_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FeatureState_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FeatureState",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -4716,6 +4826,8 @@ func (ec *executionContext) fieldContext_FeatureState_feature(ctx context.Contex
 				return ec.fieldContext_Feature_configuration(ctx, field)
 			case "state":
 				return ec.fieldContext_Feature_state(ctx, field)
+			case "status":
+				return ec.fieldContext_Feature_status(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
@@ -4908,6 +5020,8 @@ func (ec *executionContext) fieldContext_FeatureState_missingDependencies(ctx co
 				return ec.fieldContext_Feature_configuration(ctx, field)
 			case "state":
 				return ec.fieldContext_Feature_state(ctx, field)
+			case "status":
+				return ec.fieldContext_Feature_status(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
@@ -5068,6 +5182,8 @@ func (ec *executionContext) fieldContext_FeatureWarning_feature(ctx context.Cont
 				return ec.fieldContext_Feature_configuration(ctx, field)
 			case "state":
 				return ec.fieldContext_Feature_state(ctx, field)
+			case "status":
+				return ec.fieldContext_Feature_status(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
@@ -6684,6 +6800,8 @@ func (ec *executionContext) fieldContext_Mutation_featureStateSave(ctx context.C
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "id":
+				return ec.fieldContext_FeatureState_id(ctx, field)
 			case "feature":
 				return ec.fieldContext_FeatureState_feature(ctx, field)
 			case "enabled":
@@ -6975,7 +7093,7 @@ func (ec *executionContext) _Query_helmValues(ctx context.Context, field graphql
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().HelmValues(rctx, fc.Args["feature"].(string), fc.Args["envID"].(uuid.UUID))
+		return ec.resolvers.Query().HelmValues(rctx, fc.Args["feature"].(string), fc.Args["envID"].(*uuid.UUID), fc.Args["env"].(*string), fc.Args["tenant"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -7075,9 +7193,90 @@ func (ec *executionContext) fieldContext_Query_features(ctx context.Context, fie
 				return ec.fieldContext_Feature_configuration(ctx, field)
 			case "state":
 				return ec.fieldContext_Feature_state(ctx, field)
+			case "status":
+				return ec.fieldContext_Feature_status(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_feature(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_feature(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Feature(rctx, fc.Args["name"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Feature)
+	fc.Result = res
+	return ec.marshalNFeature2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐFeature(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_feature(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_Feature_name(ctx, field)
+			case "chart":
+				return ec.fieldContext_Feature_chart(ctx, field)
+			case "version":
+				return ec.fieldContext_Feature_version(ctx, field)
+			case "source":
+				return ec.fieldContext_Feature_source(ctx, field)
+			case "description":
+				return ec.fieldContext_Feature_description(ctx, field)
+			case "dependencies":
+				return ec.fieldContext_Feature_dependencies(ctx, field)
+			case "environmentKinds":
+				return ec.fieldContext_Feature_environmentKinds(ctx, field)
+			case "configoverrides":
+				return ec.fieldContext_Feature_configoverrides(ctx, field)
+			case "configuration":
+				return ec.fieldContext_Feature_configuration(ctx, field)
+			case "state":
+				return ec.fieldContext_Feature_state(ctx, field)
+			case "status":
+				return ec.fieldContext_Feature_status(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_feature_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
 	}
 	return fc, nil
 }
@@ -7121,6 +7320,8 @@ func (ec *executionContext) fieldContext_Query_featureState(ctx context.Context,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "id":
+				return ec.fieldContext_FeatureState_id(ctx, field)
 			case "feature":
 				return ec.fieldContext_FeatureState_feature(ctx, field)
 			case "enabled":
@@ -7145,81 +7346,6 @@ func (ec *executionContext) fieldContext_Query_featureState(ctx context.Context,
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_featureState_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_featureStatus(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_featureStatus(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().FeatureStatus(rctx, fc.Args["envID"].(uuid.UUID), fc.Args["feature"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.Status)
-	fc.Result = res
-	return ec.marshalNStatus2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐStatus(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_featureStatus(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "environmentID":
-				return ec.fieldContext_Status_environmentID(ctx, field)
-			case "feature":
-				return ec.fieldContext_Status_feature(ctx, field)
-			case "version":
-				return ec.fieldContext_Status_version(ctx, field)
-			case "status":
-				return ec.fieldContext_Status_status(ctx, field)
-			case "configHash":
-				return ec.fieldContext_Status_configHash(ctx, field)
-			case "created":
-				return ec.fieldContext_Status_created(ctx, field)
-			case "lastModified":
-				return ec.fieldContext_Status_lastModified(ctx, field)
-			case "log":
-				return ec.fieldContext_Status_log(ctx, field)
-			case "missingDependencies":
-				return ec.fieldContext_Status_missingDependencies(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Status", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_featureStatus_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -7573,6 +7699,8 @@ func (ec *executionContext) fieldContext_Release_feature(ctx context.Context, fi
 				return ec.fieldContext_Feature_configuration(ctx, field)
 			case "state":
 				return ec.fieldContext_Feature_state(ctx, field)
+			case "status":
+				return ec.fieldContext_Feature_status(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
@@ -7947,6 +8075,8 @@ func (ec *executionContext) fieldContext_Rollout_feature(ctx context.Context, fi
 				return ec.fieldContext_Feature_configuration(ctx, field)
 			case "state":
 				return ec.fieldContext_Feature_state(ctx, field)
+			case "status":
+				return ec.fieldContext_Feature_status(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
@@ -8130,50 +8260,6 @@ func (ec *executionContext) fieldContext_Status_environmentID(ctx context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _Status_feature(ctx context.Context, field graphql.CollectedField, obj *model.Status) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Status_feature(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Feature, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Status_feature(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Status",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Status_version(ctx context.Context, field graphql.CollectedField, obj *model.Status) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Status_version(ctx, field)
 	if err != nil {
@@ -8257,50 +8343,6 @@ func (ec *executionContext) fieldContext_Status_status(ctx context.Context, fiel
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type RolloutStatus does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Status_configHash(ctx context.Context, field graphql.CollectedField, obj *model.Status) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Status_configHash(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ConfigHash, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Status_configHash(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Status",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -8433,72 +8475,6 @@ func (ec *executionContext) fieldContext_Status_log(ctx context.Context, field g
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Status_missingDependencies(ctx context.Context, field graphql.CollectedField, obj *model.Status) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Status_missingDependencies(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Status().MissingDependencies(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*model.Feature)
-	fc.Result = res
-	return ec.marshalNFeature2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐFeatureᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Status_missingDependencies(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Status",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "name":
-				return ec.fieldContext_Feature_name(ctx, field)
-			case "chart":
-				return ec.fieldContext_Feature_chart(ctx, field)
-			case "version":
-				return ec.fieldContext_Feature_version(ctx, field)
-			case "source":
-				return ec.fieldContext_Feature_source(ctx, field)
-			case "description":
-				return ec.fieldContext_Feature_description(ctx, field)
-			case "dependencies":
-				return ec.fieldContext_Feature_dependencies(ctx, field)
-			case "environmentKinds":
-				return ec.fieldContext_Feature_environmentKinds(ctx, field)
-			case "configoverrides":
-				return ec.fieldContext_Feature_configoverrides(ctx, field)
-			case "configuration":
-				return ec.fieldContext_Feature_configuration(ctx, field)
-			case "state":
-				return ec.fieldContext_Feature_state(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
 	}
 	return fc, nil
@@ -12050,6 +12026,23 @@ func (ec *executionContext) _Feature(ctx context.Context, sel ast.SelectionSet, 
 				return innerFunc(ctx)
 
 			})
+		case "status":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Feature_status(ctx, field, obj)
+				return res
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -12071,6 +12064,13 @@ func (ec *executionContext) _FeatureState(ctx context.Context, sel ast.Selection
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("FeatureState")
+		case "id":
+
+			out.Values[i] = ec._FeatureState_id(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "feature":
 			field := field
 
@@ -12722,7 +12722,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
-		case "featureState":
+		case "feature":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -12731,7 +12731,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_featureState(ctx, field)
+				res = ec._Query_feature(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -12745,7 +12745,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
-		case "featureStatus":
+		case "featureState":
 			field := field
 
 			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
@@ -12754,7 +12754,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_featureStatus(ctx, field)
+				res = ec._Query_featureState(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -13005,77 +13005,43 @@ func (ec *executionContext) _Status(ctx context.Context, sel ast.SelectionSet, o
 			out.Values[i] = ec._Status_environmentID(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
-		case "feature":
-
-			out.Values[i] = ec._Status_feature(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		case "version":
 
 			out.Values[i] = ec._Status_version(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		case "status":
 
 			out.Values[i] = ec._Status_status(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
-			}
-		case "configHash":
-
-			out.Values[i] = ec._Status_configHash(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		case "created":
 
 			out.Values[i] = ec._Status_created(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		case "lastModified":
 
 			out.Values[i] = ec._Status_lastModified(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
 		case "log":
 
 			out.Values[i] = ec._Status_log(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&invalids, 1)
+				invalids++
 			}
-		case "missingDependencies":
-			field := field
-
-			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Status_missingDependencies(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			}
-
-			out.Concurrently(i, func() graphql.Marshaler {
-				return innerFunc(ctx)
-
-			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -14274,6 +14240,21 @@ func (ec *executionContext) marshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx c
 	return res
 }
 
+func (ec *executionContext) unmarshalNID2string(ctx context.Context, v interface{}) (string, error) {
+	res, err := graphql.UnmarshalString(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
+	res := graphql.MarshalString(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
 func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
 	res, err := graphql.UnmarshalInt(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -14505,20 +14486,6 @@ func (ec *executionContext) unmarshalNRolloutStatus2githubᚗcomᚋnaisᚋfasit�
 
 func (ec *executionContext) marshalNRolloutStatus2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐRolloutStatus(ctx context.Context, sel ast.SelectionSet, v model.RolloutStatus) graphql.Marshaler {
 	return v
-}
-
-func (ec *executionContext) marshalNStatus2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐStatus(ctx context.Context, sel ast.SelectionSet, v model.Status) graphql.Marshaler {
-	return ec._Status(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNStatus2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐStatus(ctx context.Context, sel ast.SelectionSet, v *model.Status) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._Status(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
@@ -15062,6 +15029,13 @@ func (ec *executionContext) marshalORawMessage2encodingᚋjsonᚐRawMessage(ctx 
 	}
 	res := graph.MarshalRawMessage(v)
 	return res
+}
+
+func (ec *executionContext) marshalOStatus2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐStatus(ctx context.Context, sel ast.SelectionSet, v *model.Status) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Status(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v interface{}) (*string, error) {

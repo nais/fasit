@@ -7,16 +7,9 @@ enum RolloutStatus {
 
 type Status {
   environmentID: ID!
-  feature: String!
   version: String!
   status: RolloutStatus!
-  configHash: String!
   created: Time!
   lastModified: Time!
   log: String!
-  missingDependencies: [Feature!]!
-}
-
-extend type Query {
-  featureStatus(envID: ID!, feature: String!): Status!
 }

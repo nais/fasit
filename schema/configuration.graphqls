@@ -22,6 +22,7 @@ enum ConfigSource {
   GLOBAL
   ENV
   HELM
+  UNKNOWN
 }
 
 type Configuration {
@@ -47,7 +48,15 @@ input UpdateConfiguration {
 
 extend type Query {
   configuration(feature: String!, envID: ID): Configurations!
-  helmValues(feature: String!, envID: ID!): RawMessage!
+  """
+  Returns the raw helm values for a feature. Requires the feature name, and either the environment ID or the environment and tenant name.
+  """
+  helmValues(
+    feature: String!
+    envID: ID
+    env: String
+    tenant: String
+  ): RawMessage!
 }
 
 extend type Mutation {

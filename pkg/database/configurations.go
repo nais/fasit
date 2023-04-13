@@ -222,11 +222,6 @@ func (r *repo) HelmValues(ctx context.Context, f *model.Feature, envID uuid.UUID
 		return nil, err
 	}
 
-	missing := validateFields(f.RequiredFields(envKind), vals)
-	if len(missing) > 0 {
-		return nil, &ErrMissingRequiredFields{Fields: missing}
-	}
-
 	mp, err := makeHelmConfigMap(vals)
 	if err != nil {
 		return nil, err
@@ -244,10 +239,17 @@ func (r *repo) HelmValues(ctx context.Context, f *model.Feature, envID uuid.UUID
 		},
 	}
 
+	missing := validateFields(f, envKind, vals, mp)
+	if len(missing) > 0 {
+		return nil, &ErrMissingRequiredFields{Fields: missing}
+	}
+
 	return mp, err
 }
 
-func validateFields(requiredFields []string, values []gensql.EnvConfigRow) []string {
+func validateFields(f *model.Feature, envKind model.EnvironmentKind, values []gensql.EnvConfigRow, mp map[string]any) []string {
+	requiredFields := f.RequiredFields(envKind)
+
 	fields := map[string]bool{}
 	for _, req := range requiredFields {
 		fields[req] = false
@@ -260,8 +262,22 @@ func validateFields(requiredFields []string, values []gensql.EnvConfigRow) []str
 
 	var missing []string
 	for field, present := range fields {
-		if !present {
+		if present {
+			continue
+		}
+
+		parts, _ := feature.SmartDotSplit(field)
+		parent := mp
+		for _, part := range parts {
+			if p, ok := parent[part].(map[string]any); ok {
+				parent = p
+				continue
+			}
+			if _, ok := parent[part]; ok {
+				continue
+			}
 			missing = append(missing, field)
+			break
 		}
 	}
 	return missing

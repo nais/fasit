@@ -24,7 +24,7 @@ func (r *configurationsResolver) Configuration(ctx context.Context, obj *model.C
 	var err error
 	var feature *model.Feature
 
-	if obj.EnvID != nil {
+	if obj.EnvID != nil && *obj.EnvID != uuid.Nil {
 		configs, err = r.Repo.EnvConfig(ctx, obj.FeatureName, *obj.EnvID)
 		if err != nil {
 			return nil, err
@@ -86,14 +86,25 @@ OUTER:
 	}
 	// configs = removeIgnoredKinds(configs, feature, envKind)
 
+	for _, c := range configs {
+		if c.Value == nil {
+			c.Value = &model.Value{
+				GraphQLKey: c.Key,
+			}
+			c.Source = model.ConfigSourceUnknown
+		}
+	}
+
 	sourceWeight := func(c *model.Configuration) int {
 		switch c.Source {
+		case model.ConfigSourceUnknown:
+			return -1
 		case model.ConfigSourceEnv:
-			return 2
+			return 0
 		case model.ConfigSourceGlobal:
 			return 1
 		default:
-			return 0
+			return 2
 		}
 	}
 
@@ -101,6 +112,12 @@ OUTER:
 		tsi := sourceWeight(configs[i])
 		tsj := sourceWeight(configs[j])
 		if tsi == tsj {
+			if configs[i].Value.Required && !configs[j].Value.Required {
+				return true
+			} else if !configs[i].Value.Required && configs[j].Value.Required {
+				return false
+			}
+
 			return configs[i].Key < configs[j].Key
 		}
 		return tsi < tsj
@@ -111,8 +128,8 @@ OUTER:
 
 // Computed is the resolver for the computed field.
 func (r *configurationsResolver) Computed(ctx context.Context, obj *model.Configurations) ([]*model.ComputedValue, error) {
-	if obj.EnvID == nil {
-		return nil, fmt.Errorf("environment id is required for computed values")
+	if obj.EnvID == nil || *obj.EnvID == uuid.Nil {
+		return nil, nil
 	}
 	f, err := r.Repo.FeatureByNameForEnv(ctx, obj.FeatureName, *obj.EnvID)
 	if err != nil {
@@ -151,7 +168,14 @@ func (r *configurationsResolver) Computed(ctx context.Context, obj *model.Config
 
 // ConfigurationCreate is the resolver for the configurationCreate field.
 func (r *mutationResolver) ConfigurationCreate(ctx context.Context, configuration model.NewConfiguration) (*model.Configuration, error) {
-	feature, err := r.Repo.FeatureByNameForEnv(ctx, configuration.Feature, *configuration.EnvironmentID)
+	var feature *model.Feature
+	var err error
+
+	if configuration.EnvironmentID != nil && *configuration.EnvironmentID != uuid.Nil {
+		feature, err = r.Repo.FeatureByNameForEnv(ctx, configuration.Feature, *configuration.EnvironmentID)
+	} else {
+		feature, err = r.Repo.FeatureByName(ctx, configuration.Feature)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -191,13 +215,23 @@ func (r *queryResolver) Configuration(ctx context.Context, feature string, envID
 }
 
 // HelmValues is the resolver for the helmValues field.
-func (r *queryResolver) HelmValues(ctx context.Context, feature string, envID uuid.UUID) (json.RawMessage, error) {
-	f, err := r.Repo.FeatureByNameForEnv(ctx, feature, envID)
+func (r *queryResolver) HelmValues(ctx context.Context, feature string, envID *uuid.UUID, env *string, tenant *string) (json.RawMessage, error) {
+	if envID == nil {
+		if env == nil || tenant == nil {
+			return nil, fmt.Errorf("environment id or name is required for helm values")
+		}
+		e, err := r.Repo.EnvironmentByNames(ctx, *tenant, *env)
+		if err != nil {
+			return nil, err
+		}
+		envID = &e.ID
+	}
+	f, err := r.Repo.FeatureByNameForEnv(ctx, feature, *envID)
 	if err != nil {
 		return nil, err
 	}
 
-	v, err := r.Repo.HelmValues(ctx, f, envID)
+	v, err := r.Repo.HelmValues(ctx, f, *envID)
 	if err != nil {
 		return nil, err
 	}

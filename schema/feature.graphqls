@@ -27,6 +27,7 @@ type Feature {
   configuration: Configurations!
 
   state: FeatureState
+  status: Status
 }
 
 type ConfigOverride {
@@ -41,4 +42,5 @@ type Dependency {
 
 extend type Query {
   features: [Feature!]!
+  feature(name: String!): Feature!
 }

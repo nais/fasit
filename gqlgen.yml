@@ -46,6 +46,7 @@ models:
   ID:
     model:
       - github.com/nais/fasit/pkg/graph/scalars.UUID
+      - github.com/99designs/gqlgen/graphql.String
   RawMessage:
     model:
       - github.com/nais/fasit/pkg/graph/scalars.RawMessage
