@@ -35,7 +35,7 @@ mapping:
     displayName: "Preconfigured signature sa Identities"
   config.teamIdentity:
     template: |
-      {{ if or (eq .Kind "onprem") (eq .Kind "legacy") (eq .Tenant.Name "nav" }}
+      {{ if or (eq .Kind "onprem") (eq .Kind "legacy") (eq .Tenant.Name "nav") }}
         prefix: "gar"
         issuer: "https://accounts.google.com"
         domain: "nais-management-233d.iam.gserviceaccount.com"
