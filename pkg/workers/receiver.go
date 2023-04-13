@@ -5,8 +5,10 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v4"
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/nais/fasit/pkg/message"
@@ -18,12 +20,21 @@ type ReceiverClient interface {
 }
 
 type ReceiverStore interface {
+	EnvironmentByNames(ctx context.Context, tenantName, environmentName string) (*model.Environment, error)
+	EnvironmentCI(ctx context.Context, kind model.EnvironmentKind) (*model.Environment, error)
 	EnvironmentCreate(ctx context.Context, t *model.EnvironmentCreate) (*model.Environment, error)
 	EnvironmentIDByNames(ctx context.Context, tenantName string, environmentName string) (uuid.UUID, error)
+	FeatureVersionUpdate(ctx context.Context, name string, version string) error
 	HealthStatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Health) error
 	KubernetesNodeSync(ctx context.Context, envID uuid.UUID, kn *message.KubernetesNodes) error
 	ReleaseStatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Release) error
+	RolloutByName(ctx context.Context, name string) (*model.Feature, error)
+	RolloutDelete(ctx context.Context, name string) error
+	RolloutEventCreate(ctx context.Context, failure bool, message string) error
+	RolloutStatus(ctx context.Context, name string) (model.RolloutStatus, error)
+	RolloutsUpdateStatus(ctx context.Context, status model.RolloutStatus, name string, completed bool) error
 	StatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Helm) error
+	StatusForFeature(ctx context.Context, environmentID uuid.UUID, feature string) (*model.Status, error)
 	TenantCreate(ctx context.Context, t *model.TenantCreate) (*model.Tenant, error)
 	TenantGetByName(ctx context.Context, name string) (*model.Tenant, error)
 	TxFunc(ctx context.Context, fn database.TXFunc) error
@@ -76,9 +87,9 @@ func (r *Receiver) handlerHelm(ctx context.Context, msg message.Status) error {
 		return nil
 	}
 
-	environmentID, err := r.repo.EnvironmentIDByNames(ctx, msg.Tenant, msg.Environment)
+	env, err := r.repo.EnvironmentByNames(ctx, msg.Tenant, msg.Environment)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, pgx.ErrNoRows) {
 			r.log.WithField("tenant", msg.Tenant).
 				WithField("environment", msg.Environment).
 				Warn("unknown tenant and/or environment")
@@ -86,12 +97,95 @@ func (r *Receiver) handlerHelm(ctx context.Context, msg message.Status) error {
 		}
 		return err
 	}
-	err = r.repo.StatusCreateOrUpdate(ctx, environmentID, helmStatus)
+
+	if env.CI {
+		if err := r.handleCI(ctx, env, helmStatus); err != nil {
+			r.log.WithError(err).Error("handling helm status message for CI environment")
+		}
+	}
+
+	err = r.repo.StatusCreateOrUpdate(ctx, env.ID, helmStatus)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (r *Receiver) handleCI(ctx context.Context, env *model.Environment, helmStatus *message.Helm) error {
+	rollout, err := r.repo.RolloutByName(ctx, helmStatus.Name)
+	if err != nil {
+		if !errors.Is(err, pgx.ErrNoRows) {
+			return fmt.Errorf("getting rollout: %w", err)
+		} else {
+			return nil
+		}
+	}
+
+	if rollout.Version != helmStatus.Version {
+		return nil
+	}
+
+	// At this point, we know the status message is for a active rollout
+	switch helmStatus.RolloutStatus {
+	case model.RolloutStatusPending:
+		r.repo.RolloutEventCreate(ctx, false, "Helm installing...")
+		return nil
+	case model.RolloutStatusFailed:
+		r.repo.RolloutsUpdateStatus(ctx, model.RolloutStatusFailed, rollout.Name, false)
+		r.repo.RolloutEventCreate(ctx, true, "Helm install failed")
+	case model.RolloutStatusDeployed:
+		r.repo.RolloutEventCreate(ctx, false, "Helm install succeeded")
+	default:
+		return fmt.Errorf("invalid helm status: %v", helmStatus.RolloutStatus)
+	}
+
+	last, err := r.last(ctx, env.Kind, rollout)
+	if err != nil {
+		return fmt.Errorf("checking if last: %w", err)
+	}
+	if !last {
+		return nil
+	}
+
+	status, err := r.repo.RolloutStatus(ctx, rollout.Name)
+	if status == model.RolloutStatusFailed {
+		if err := r.repo.RolloutsUpdateStatus(ctx, model.RolloutStatusFailed, rollout.Name, true); err != nil {
+			return fmt.Errorf("updating rollout status: %w", err)
+		}
+	}
+
+	return r.repo.TxFunc(ctx, func(repo database.Repo) error {
+		if err := repo.FeatureVersionUpdate(ctx, rollout.Name, rollout.Version); err != nil {
+			return fmt.Errorf("updating feature version: %w", err)
+		}
+
+		if err := r.repo.RolloutsUpdateStatus(ctx, model.RolloutStatusDeployed, rollout.Name, true); err != nil {
+			return fmt.Errorf("updating rollout status: %w", err)
+		}
+
+		return nil
+	})
+}
+
+func (r *Receiver) last(ctx context.Context, curr model.EnvironmentKind, rollout *model.Feature) (bool, error) {
+	for _, k := range rollout.EnvironmentKinds {
+		if k == curr { // don't mind the current environment kind
+			continue
+		}
+		ciEnv, err := r.repo.EnvironmentCI(ctx, curr)
+		if err != nil {
+			return false, fmt.Errorf("getting CI environment for kind %v: %w", curr.String(), err)
+		}
+		s, err := r.repo.StatusForFeature(ctx, ciEnv.ID, rollout.Name)
+		if err != nil {
+			return false, fmt.Errorf("getting status for feature: %w", err)
+		}
+		if s.Version != rollout.Version {
+			return false, nil
+		}
+	}
+	return true, nil
 }
 
 func (r *Receiver) releaseStatus(ctx context.Context, msg message.Status) error {

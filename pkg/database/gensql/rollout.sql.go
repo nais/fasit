@@ -68,8 +68,17 @@ func (q *Queries) RolloutByName(ctx context.Context, name string) (RolloutByName
 	return i, err
 }
 
+const rolloutComplete = `-- name: RolloutComplete :exec
+UPDATE rollouts SET completed = NOW() WHERE feature_name = $1 and completed IS NULL
+`
+
+func (q *Queries) RolloutComplete(ctx context.Context, featureName string) error {
+	_, err := q.db.Exec(ctx, rolloutComplete, featureName)
+	return err
+}
+
 const rolloutCreate = `-- name: RolloutCreate :one
-INSERT INTO rollouts (feature_name, version) VALUES ($1, $2) RETURNING id, feature_name, version, created
+INSERT INTO rollouts (feature_name, version) VALUES ($1, $2) RETURNING id, feature_name, version, status, created, completed
 `
 
 type RolloutCreateParams struct {
@@ -84,9 +93,60 @@ func (q *Queries) RolloutCreate(ctx context.Context, arg RolloutCreateParams) (R
 		&i.ID,
 		&i.FeatureName,
 		&i.Version,
+		&i.Status,
 		&i.Created,
+		&i.Completed,
 	)
 	return i, err
+}
+
+const rolloutDelete = `-- name: RolloutDelete :exec
+DELETE FROM rollouts WHERE feature_name = $1
+`
+
+func (q *Queries) RolloutDelete(ctx context.Context, featureName string) error {
+	_, err := q.db.Exec(ctx, rolloutDelete, featureName)
+	return err
+}
+
+const rolloutEventCreate = `-- name: RolloutEventCreate :exec
+INSERT INTO rollout_events (rollout_id, failure, message) VALUES ($1, $2::boolean, $3::string) RETURNING id, rollout_id, failure, message, created
+`
+
+type RolloutEventCreateParams struct {
+	RolloutID uuid.UUID
+	Failure   bool
+	Message   string
+}
+
+func (q *Queries) RolloutEventCreate(ctx context.Context, arg RolloutEventCreateParams) error {
+	_, err := q.db.Exec(ctx, rolloutEventCreate, arg.RolloutID, arg.Failure, arg.Message)
+	return err
+}
+
+const rolloutStatus = `-- name: RolloutStatus :one
+SELECT status FROM rollouts WHERE feature_name = $1 and completed IS NULL
+`
+
+func (q *Queries) RolloutStatus(ctx context.Context, featureName string) (string, error) {
+	row := q.db.QueryRow(ctx, rolloutStatus, featureName)
+	var status string
+	err := row.Scan(&status)
+	return status, err
+}
+
+const rolloutUpdateStatus = `-- name: RolloutUpdateStatus :exec
+UPDATE rollouts SET status = $1 WHERE feature_name = $2 and completed IS NOT NULL
+`
+
+type RolloutUpdateStatusParams struct {
+	Status      string
+	FeatureName string
+}
+
+func (q *Queries) RolloutUpdateStatus(ctx context.Context, arg RolloutUpdateStatusParams) error {
+	_, err := q.db.Exec(ctx, rolloutUpdateStatus, arg.Status, arg.FeatureName)
+	return err
 }
 
 const rolloutsForKind = `-- name: RolloutsForKind :many

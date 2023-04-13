@@ -1,3 +1,6 @@
+-- name: RolloutDelete :exec
+DELETE FROM rollouts WHERE feature_name = @feature_name;
+
 -- name: RolloutCreate :one
 INSERT INTO rollouts (feature_name, version) VALUES (@feature_name, @version) RETURNING *;
 
@@ -36,5 +39,16 @@ SELECT
   rollouts.created
 FROM rollouts
 JOIN feature_data fd ON rollouts.feature_name = fd.name AND rollouts.version = fd.version
-WHERE fd.name = @name
-;
+WHERE fd.name = @name;
+
+-- name: RolloutUpdateStatus :exec
+UPDATE rollouts SET status = @status WHERE feature_name = @feature_name and completed IS NOT NULL;
+
+-- name: RolloutEventCreate :exec
+INSERT INTO rollout_events (rollout_id, failure, message) VALUES (@rollout_id, @failure::boolean, @message::string) RETURNING *;
+
+-- name: RolloutStatus :one
+SELECT status FROM rollouts WHERE feature_name = @feature_name and completed IS NULL;
+
+-- name: RolloutComplete :exec
+UPDATE rollouts SET completed = NOW() WHERE feature_name = @feature_name and completed IS NULL;

@@ -123,6 +123,22 @@ func (q *Queries) FeatureGetForEnv(ctx context.Context, environmentKind string) 
 	return items, nil
 }
 
+const featureVersionUpdate = `-- name: FeatureVersionUpdate :exec
+UPDATE features
+SET version = $1
+WHERE name = $2
+`
+
+type FeatureVersionUpdateParams struct {
+	Version string
+	Name    string
+}
+
+func (q *Queries) FeatureVersionUpdate(ctx context.Context, arg FeatureVersionUpdateParams) error {
+	_, err := q.db.Exec(ctx, featureVersionUpdate, arg.Version, arg.Name)
+	return err
+}
+
 const features = `-- name: Features :many
 SELECT
   fd.name,

@@ -179,7 +179,17 @@ type Rollout struct {
 	ID          uuid.UUID
 	FeatureName string
 	Version     string
+	Status      string
 	Created     time.Time
+	Completed   sql.NullTime
+}
+
+type RolloutEvent struct {
+	ID        uuid.UUID
+	RolloutID uuid.UUID
+	Failure   bool
+	Message   pgtype.JSONB
+	Created   time.Time
 }
 
 type Status struct {

@@ -61,3 +61,8 @@ FROM features
 JOIN feature_data fd ON features.name = fd.name AND features.version = fd.version
 WHERE @environment_kind::text = ANY(environment_kinds)
 ORDER BY features.name;
+
+-- name: FeatureVersionUpdate :exec
+UPDATE features
+SET version = @version
+WHERE name = @name;

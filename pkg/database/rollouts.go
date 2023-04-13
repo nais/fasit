@@ -11,9 +11,47 @@ import (
 )
 
 type RolloutRepo interface {
-	RolloutCreate(ctx context.Context, name, version string) (*model.Rollout, error)
-	RolloutsListen(ctx context.Context, fn ListenFunc) error
 	RolloutByName(ctx context.Context, name string) (*model.Feature, error)
+	RolloutCreate(ctx context.Context, name, version string) (*model.Rollout, error)
+	RolloutDelete(ctx context.Context, name string) error
+	RolloutEventCreate(ctx context.Context, failure bool, message string) error
+	RolloutsListen(ctx context.Context, fn ListenFunc) error
+	RolloutStatus(ctx context.Context, name string) (model.RolloutStatus, error)
+	RolloutsUpdateStatus(ctx context.Context, status model.RolloutStatus, name string, completed bool) error
+}
+
+func (r *repo) RolloutComplete(ctx context.Context, name string) error {
+	return r.querier.RolloutComplete(ctx, name)
+}
+
+func (r *repo) RolloutStatus(ctx context.Context, name string) (model.RolloutStatus, error) {
+	status, err := r.querier.RolloutStatus(ctx, name)
+	if err != nil {
+		return "", err
+	}
+
+	return model.RolloutStatus(status), nil
+}
+
+func (r *repo) RolloutEventCreate(ctx context.Context, failure bool, message string) error {
+	return r.querier.RolloutEventCreate(ctx, gensql.RolloutEventCreateParams{Failure: failure, Message: message})
+}
+
+func (r *repo) RolloutsUpdateStatus(ctx context.Context, status model.RolloutStatus, name string, completed bool) error {
+	if err := r.querier.RolloutUpdateStatus(ctx, gensql.RolloutUpdateStatusParams{Status: status.String(), FeatureName: name}); err != nil {
+		return fmt.Errorf("update rollout status: %w", err)
+	}
+	if completed {
+		if err := r.querier.RolloutComplete(ctx, name); err != nil {
+			return fmt.Errorf("complete rollout: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func (r *repo) RolloutDelete(ctx context.Context, name string) error {
+	return r.querier.RolloutDelete(ctx, name)
 }
 
 func (r *repo) RolloutCreate(ctx context.Context, name, version string) (*model.Rollout, error) {

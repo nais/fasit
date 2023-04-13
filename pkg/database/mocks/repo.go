@@ -701,6 +701,20 @@ func (_m *Repo) FeatureStatesListen(ctx context.Context, fn database.ListenFunc)
 	return r0
 }
 
+// FeatureVersionUpdate provides a mock function with given fields: ctx, name, version
+func (_m *Repo) FeatureVersionUpdate(ctx context.Context, name string, version string) error {
+	ret := _m.Called(ctx, name, version)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, name, version)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Features provides a mock function with given fields: ctx
 func (_m *Repo) Features(ctx context.Context) ([]*model.Feature, error) {
 	ret := _m.Called(ctx)
@@ -1012,6 +1026,58 @@ func (_m *Repo) RolloutCreate(ctx context.Context, name string, version string) 
 	return r0, r1
 }
 
+// RolloutDelete provides a mock function with given fields: ctx, name
+func (_m *Repo) RolloutDelete(ctx context.Context, name string) error {
+	ret := _m.Called(ctx, name)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, name)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// RolloutEventCreate provides a mock function with given fields: ctx, failure, _a2
+func (_m *Repo) RolloutEventCreate(ctx context.Context, failure bool, _a2 string) error {
+	ret := _m.Called(ctx, failure, _a2)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, bool, string) error); ok {
+		r0 = rf(ctx, failure, _a2)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// RolloutStatus provides a mock function with given fields: ctx, name
+func (_m *Repo) RolloutStatus(ctx context.Context, name string) (model.RolloutStatus, error) {
+	ret := _m.Called(ctx, name)
+
+	var r0 model.RolloutStatus
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (model.RolloutStatus, error)); ok {
+		return rf(ctx, name)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) model.RolloutStatus); ok {
+		r0 = rf(ctx, name)
+	} else {
+		r0 = ret.Get(0).(model.RolloutStatus)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, name)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // RolloutsListen provides a mock function with given fields: ctx, fn
 func (_m *Repo) RolloutsListen(ctx context.Context, fn database.ListenFunc) error {
 	ret := _m.Called(ctx, fn)
@@ -1019,6 +1085,20 @@ func (_m *Repo) RolloutsListen(ctx context.Context, fn database.ListenFunc) erro
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, database.ListenFunc) error); ok {
 		r0 = rf(ctx, fn)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// RolloutsUpdateStatus provides a mock function with given fields: ctx, status, name, completed
+func (_m *Repo) RolloutsUpdateStatus(ctx context.Context, status model.RolloutStatus, name string, completed bool) error {
+	ret := _m.Called(ctx, status, name, completed)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.RolloutStatus, string, bool) error); ok {
+		r0 = rf(ctx, status, name, completed)
 	} else {
 		r0 = ret.Error(0)
 	}

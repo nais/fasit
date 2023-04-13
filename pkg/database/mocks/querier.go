@@ -699,6 +699,20 @@ func (_m *Querier) FeatureStatesGet(ctx context.Context, environmentID uuid.UUID
 	return r0, r1
 }
 
+// FeatureVersionUpdate provides a mock function with given fields: ctx, arg
+func (_m *Querier) FeatureVersionUpdate(ctx context.Context, arg gensql.FeatureVersionUpdateParams) error {
+	ret := _m.Called(ctx, arg)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.FeatureVersionUpdateParams) error); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Features provides a mock function with given fields: ctx
 func (_m *Querier) Features(ctx context.Context) ([]gensql.FeaturesRow, error) {
 	ret := _m.Called(ctx)
@@ -967,6 +981,20 @@ func (_m *Querier) RolloutByName(ctx context.Context, name string) (gensql.Rollo
 	return r0, r1
 }
 
+// RolloutComplete provides a mock function with given fields: ctx, featureName
+func (_m *Querier) RolloutComplete(ctx context.Context, featureName string) error {
+	ret := _m.Called(ctx, featureName)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, featureName)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // RolloutCreate provides a mock function with given fields: ctx, arg
 func (_m *Querier) RolloutCreate(ctx context.Context, arg gensql.RolloutCreateParams) (gensql.Rollout, error) {
 	ret := _m.Called(ctx, arg)
@@ -989,6 +1017,72 @@ func (_m *Querier) RolloutCreate(ctx context.Context, arg gensql.RolloutCreatePa
 	}
 
 	return r0, r1
+}
+
+// RolloutDelete provides a mock function with given fields: ctx, featureName
+func (_m *Querier) RolloutDelete(ctx context.Context, featureName string) error {
+	ret := _m.Called(ctx, featureName)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, featureName)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// RolloutEventCreate provides a mock function with given fields: ctx, arg
+func (_m *Querier) RolloutEventCreate(ctx context.Context, arg gensql.RolloutEventCreateParams) error {
+	ret := _m.Called(ctx, arg)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.RolloutEventCreateParams) error); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// RolloutStatus provides a mock function with given fields: ctx, featureName
+func (_m *Querier) RolloutStatus(ctx context.Context, featureName string) (string, error) {
+	ret := _m.Called(ctx, featureName)
+
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (string, error)); ok {
+		return rf(ctx, featureName)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
+		r0 = rf(ctx, featureName)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, featureName)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// RolloutUpdateStatus provides a mock function with given fields: ctx, arg
+func (_m *Querier) RolloutUpdateStatus(ctx context.Context, arg gensql.RolloutUpdateStatusParams) error {
+	ret := _m.Called(ctx, arg)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.RolloutUpdateStatusParams) error); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // RolloutsForKind provides a mock function with given fields: ctx, environmentKind

@@ -15,10 +15,18 @@ import (
 )
 
 type FeaturesRepo interface {
-	Features(ctx context.Context) ([]*model.Feature, error)
-	FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, ci bool) ([]*model.Feature, error)
 	FeatureByName(ctx context.Context, name string) (*model.Feature, error)
 	FeatureByNameForEnv(ctx context.Context, name string, envID uuid.UUID) (*model.Feature, error)
+	FeatureVersionUpdate(ctx context.Context, name string, version string) error
+	Features(ctx context.Context) ([]*model.Feature, error)
+	FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, ci bool) ([]*model.Feature, error)
+}
+
+func (r *repo) FeatureVersionUpdate(ctx context.Context, name string, version string) error {
+	return r.querier.FeatureVersionUpdate(ctx, gensql.FeatureVersionUpdateParams{
+		Name:    name,
+		Version: version,
+	})
 }
 
 func (r *repo) FeatureByName(ctx context.Context, name string) (*model.Feature, error) {

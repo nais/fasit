@@ -40,6 +40,7 @@ type Querier interface {
 	FeatureStateCreateOrUpdate(ctx context.Context, arg FeatureStateCreateOrUpdateParams) (FeatureState, error)
 	FeatureStateGet(ctx context.Context, arg FeatureStateGetParams) (FeatureState, error)
 	FeatureStatesGet(ctx context.Context, environmentID uuid.UUID) ([]FeatureStatesGetRow, error)
+	FeatureVersionUpdate(ctx context.Context, arg FeatureVersionUpdateParams) error
 	Features(ctx context.Context) ([]FeaturesRow, error)
 	FeaturesForKind(ctx context.Context, environmentKind string) ([]FeaturesForKindRow, error)
 	HealthStatusCreateOrUpdate(ctx context.Context, arg HealthStatusCreateOrUpdateParams) (HealthStatus, error)
@@ -52,7 +53,12 @@ type Querier interface {
 	ReleaseStatusDeleteByEnvironment(ctx context.Context, environmentID uuid.UUID) error
 	ReleaseStatusesGet(ctx context.Context, environmentID uuid.UUID) ([]ReleaseStatus, error)
 	RolloutByName(ctx context.Context, name string) (RolloutByNameRow, error)
+	RolloutComplete(ctx context.Context, featureName string) error
 	RolloutCreate(ctx context.Context, arg RolloutCreateParams) (Rollout, error)
+	RolloutDelete(ctx context.Context, featureName string) error
+	RolloutEventCreate(ctx context.Context, arg RolloutEventCreateParams) error
+	RolloutStatus(ctx context.Context, featureName string) (string, error)
+	RolloutUpdateStatus(ctx context.Context, arg RolloutUpdateStatusParams) error
 	RolloutsForKind(ctx context.Context, environmentKind string) ([]RolloutsForKindRow, error)
 	StatusCreateOrUpdate(ctx context.Context, arg StatusCreateOrUpdateParams) error
 	StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]Status, error)
