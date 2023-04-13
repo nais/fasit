@@ -8,7 +8,6 @@ environmentKinds:
 config:
   backend.image.tag:
     type: string
-    required: true
     displayName: "Backend image tag"
     description: "dependency-track backend image"
 
@@ -31,7 +30,6 @@ config:
 
   frontend.image.tag:
     type: string
-    required: true
     displayName: "Frontend image tag"
     description: "dependency-track froentend image"
   # Not possible to automate: https://github.com/hashicorp/terraform-provider-google/issues/6074
