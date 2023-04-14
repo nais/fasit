@@ -1,5 +1,5 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/bifrost
-source: https://github.com/nais/helm-charts/tree/main/charts/bifrost
+source: https://github.com/nais/bifrost/tree/main/charts/bifrost
 version: 1.4.2
 description: "Portal for managing Frontend Platform resources"
 environmentKinds:
