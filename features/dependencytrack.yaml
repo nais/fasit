@@ -9,12 +9,10 @@ rolloutSource:
   - org: nais
     repo: dependencytrack
 config:
-
   bootstrap.image.tag:
     type: string
     displayName: "Bootstrap image tag"
     description: "dependency-track bootstrap image"
-
   bootstrap.logLevel:
     type: string
     displayName: "Bootstrap log level"
@@ -24,25 +22,20 @@ config:
     type: string
     secret: true
     displayName: "Bootstrap admin password"
-
-
   backend.image.tag:
     type: string
     displayName: "Backend image tag"
     description: "dependency-track backend image"
-
   # Not possible to automate: https://github.com/hashicorp/terraform-provider-google/issues/6074
   backend.env.ALPINE_OIDC_CLIENT_ID:
     type: string
     required: true
     displayName: "Backend OIDC client ID"
-
   backend.postgresql.password:
     type: string
     displayName: "Backend postgresql password"
     secret: true
     description: "Configure this if you want to use a custom postgresql password"
-
   backend.postgresql.username:
     type: string
     displayName: "Backend postgresql username"
@@ -52,7 +45,7 @@ config:
     type: string
     displayName: "Frontend image tag"
     description: "dependency-track froentend image"
-  # Not possible to automate: https://github.com/hashicorp/terraform-provider-google/issues/6074
+  # Not possible to automate: https://github.com/hashicorp/terraf orm-provider-google/issues/6074
   frontend.env.OIDC_CLIENT_ID:
     type: string
     required: true
@@ -63,8 +56,9 @@ mapping:
     template: |
       - username: "console"
         password: "{{.Env.console_dependencytrack_password}}"
+      - username: "picante"
+        password: "{{.Env.picante_dependencytrack_password}}"
     displayName: "Bootstrap users"
-
   bootstrap.adminPassword:
     value: "{{.Env.dependencytrack_admin_password}}"
     displayName: "Bootstrap admin password"
