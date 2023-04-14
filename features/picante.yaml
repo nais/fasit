@@ -1,12 +1,12 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/picante
 source: https://github.com/nais/picante/tree/main/charts
 version: 0.0.2
-description: "Picante is an informer for verifying image attestations and upload sbom to salsa storage backend"
+description: "Picante is an informer for verifying image attestations and upload sbom to dependencytrack backend"
 environmentKinds:
   - "tenant"
 dependsOn:
   - allOf:
-      - salsa-storage
+      - dependencytrack
 rolloutSource:
   - org: nais
     repo: picante
@@ -17,17 +17,17 @@ config:
     displayName: "Image tag"
   config.storage.apiKey:
     type: string
-    displayName: "Salsa storage API key"
+    displayName: "dependencytrack API key"
     required: true
     secret: true
-    description: "API key for salsa storage backend"
+    description: "API key for dependencytrack backend"
 mapping:
   apiserverIP:
     value: "{{.Env.apiserver_endpoint}}"
     displayName: "API server IP"
   config.storage.api:
     value: "https://salsa-storage-backend.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io/api/v1"
-    displayName: "Salsa storage API"
+    displayName: "dependencytrack API"
   config.identities:
     template: |
       - issuer: "https://accounts.google.com"
