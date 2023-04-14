@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/picante
 source: https://github.com/nais/picante/tree/main/charts
-version: 0.0.3
+version: 0.0.4
 description: "Picante is an informer for verifying image attestations and upload sbom to dependencytrack backend"
 environmentKinds:
   - "tenant"
@@ -25,6 +25,9 @@ mapping:
   apiserverIP:
     value: "{{.Env.apiserver_endpoint}}"
     displayName: "API server IP"
+  config.storage.ingress:
+    value: "dependencytrack-backend.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io"
+    displayName: "dependencytrack API"
   config.identities:
     template: |
       - issuer: "https://accounts.google.com"
