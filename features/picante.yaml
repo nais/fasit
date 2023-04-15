@@ -15,12 +15,6 @@ config:
     type: string
     required: true
     displayName: "Image tag"
-  config.storage.apiKey:
-    type: string
-    displayName: "dependencytrack API key"
-    required: true
-    secret: true
-    description: "API key for dependencytrack backend"
 mapping:
   apiserverIP:
     value: "{{.Env.apiserver_endpoint}}"
@@ -30,7 +24,7 @@ mapping:
     displayName: "dependencytrack Ingress"
   config.storage.password:
     value: "{{.Env.picante_dependencytrack_password}}"
-    displayName: "dependencytrack API key"
+    displayName: "dependencytrack API password"
   config.identities:
     template: |
       - issuer: "https://accounts.google.com"
