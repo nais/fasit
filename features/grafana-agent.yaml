@@ -4,6 +4,7 @@ version: 0.0.1
 description: "Grafana Agent for frontend telemetry collection"
 environmentKinds:
   - "tenant"
+  - "legacy"
 dependsOn:
   - allOf:
     - "monitoring"
