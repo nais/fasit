@@ -7,6 +7,15 @@ ON fs.feature = f.name AND fs.environment_id = @environment_id
 WHERE (SELECT kind FROM environments WHERE id = @environment_id) = any(fd.kinds)
 ;
 
+-- name: RolloutStatesGet :many
+SELECT @environment_id::uuid AS environment_id, r.feature_name, coalesce(fs.enabled, false) AS enabled, fs.created, fs.last_modified, fs.enabled_at
+FROM rollouts r
+JOIN feature_data fd ON fd.name = r.feature_name AND fd.version = r.version
+LEFT JOIN feature_states fs
+ON fs.feature = r.feature_name AND fs.environment_id = @environment_id
+WHERE (SELECT kind FROM environments WHERE id = @environment_id) = any(fd.kinds)
+;
+
 -- name: FeatureStateGet :one
 SELECT *
 FROM feature_states

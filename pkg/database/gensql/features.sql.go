@@ -71,7 +71,7 @@ const featureGetForEnv = `-- name: FeatureGetForEnv :many
 SELECT fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.timeout, fd.default_values, features.created, features.last_modified
 FROM features
 JOIN feature_data fd ON features.name = fd.name AND features.version = fd.version
-WHERE $1::text = ANY(environment_kinds)
+WHERE $1::text = ANY(kinds::text[])
 ORDER BY features.name
 `
 
@@ -124,18 +124,27 @@ func (q *Queries) FeatureGetForEnv(ctx context.Context, environmentKind string) 
 }
 
 const featureVersionUpdate = `-- name: FeatureVersionUpdate :exec
-UPDATE features
-SET version = $1
-WHERE name = $2
+INSERT INTO features
+  (
+    name,
+    version
+  )
+VALUES
+  (
+    $1,
+    $2
+  )
+ON CONFLICT (name) DO
+  UPDATE SET version = EXCLUDED.version
 `
 
 type FeatureVersionUpdateParams struct {
-	Version string
 	Name    string
+	Version string
 }
 
 func (q *Queries) FeatureVersionUpdate(ctx context.Context, arg FeatureVersionUpdateParams) error {
-	_, err := q.db.Exec(ctx, featureVersionUpdate, arg.Version, arg.Name)
+	_, err := q.db.Exec(ctx, featureVersionUpdate, arg.Name, arg.Version)
 	return err
 }
 
@@ -222,7 +231,7 @@ SELECT
   features.last_modified
 FROM features
 JOIN feature_data fd ON features.name = fd.name AND features.version = fd.version
-WHERE $1::text = ANY(environment_kinds)
+WHERE $1::text = ANY(kinds::text[])
 ORDER BY features.name
 `
 

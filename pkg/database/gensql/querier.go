@@ -57,6 +57,7 @@ type Querier interface {
 	RolloutCreate(ctx context.Context, arg RolloutCreateParams) (Rollout, error)
 	RolloutDelete(ctx context.Context, featureName string) error
 	RolloutEventCreate(ctx context.Context, arg RolloutEventCreateParams) error
+	RolloutStatesGet(ctx context.Context, environmentID uuid.UUID) ([]RolloutStatesGetRow, error)
 	RolloutStatus(ctx context.Context, featureName string) (string, error)
 	RolloutUpdateStatus(ctx context.Context, arg RolloutUpdateStatusParams) error
 	RolloutsForKind(ctx context.Context, environmentKind string) ([]RolloutsForKindRow, error)

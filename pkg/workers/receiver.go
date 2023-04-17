@@ -30,7 +30,7 @@ type ReceiverStore interface {
 	ReleaseStatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Release) error
 	RolloutByName(ctx context.Context, name string) (*model.Feature, error)
 	RolloutDelete(ctx context.Context, name string) error
-	RolloutEventCreate(ctx context.Context, failure bool, message string) error
+	RolloutEventCreate(ctx context.Context, rollout uuid.UUID, failure bool, message string) error
 	RolloutStatus(ctx context.Context, name string) (model.RolloutStatus, error)
 	RolloutsUpdateStatus(ctx context.Context, status model.RolloutStatus, name string, completed bool) error
 	StatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Helm) error
@@ -129,13 +129,21 @@ func (r *Receiver) handleCI(ctx context.Context, env *model.Environment, helmSta
 	// At this point, we know the status message is for a active rollout
 	switch helmStatus.RolloutStatus {
 	case model.RolloutStatusPending:
-		r.repo.RolloutEventCreate(ctx, false, "Helm installing...")
+		if err := r.repo.RolloutEventCreate(ctx, rollout.GraphVars.RolloutID, false, "Helm installing..."); err != nil {
+			return fmt.Errorf("creating rollout event: %w", err)
+		}
 		return nil
 	case model.RolloutStatusFailed:
-		r.repo.RolloutsUpdateStatus(ctx, model.RolloutStatusFailed, rollout.Name, false)
-		r.repo.RolloutEventCreate(ctx, true, "Helm install failed")
+		if err := r.repo.RolloutsUpdateStatus(ctx, model.RolloutStatusFailed, rollout.Name, false); err != nil {
+			return fmt.Errorf("updating rollout status: %w", err)
+		}
+		if err := r.repo.RolloutEventCreate(ctx, rollout.GraphVars.RolloutID, true, "Helm install failed"); err != nil {
+			return fmt.Errorf("creating rollout event: %w", err)
+		}
 	case model.RolloutStatusDeployed:
-		r.repo.RolloutEventCreate(ctx, false, "Helm install succeeded")
+		if err := r.repo.RolloutEventCreate(ctx, rollout.GraphVars.RolloutID, false, "Helm install succeeded"); err != nil {
+			return fmt.Errorf("creating rollout event: %w", err)
+		}
 	default:
 		return fmt.Errorf("invalid helm status: %v", helmStatus.RolloutStatus)
 	}
@@ -149,10 +157,18 @@ func (r *Receiver) handleCI(ctx context.Context, env *model.Environment, helmSta
 	}
 
 	status, err := r.repo.RolloutStatus(ctx, rollout.Name)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+		return fmt.Errorf("getting rollout status for %q: %w", rollout.Name, err)
+	}
+
 	if status == model.RolloutStatusFailed {
 		if err := r.repo.RolloutsUpdateStatus(ctx, model.RolloutStatusFailed, rollout.Name, true); err != nil {
 			return fmt.Errorf("updating rollout status: %w", err)
 		}
+		return nil
 	}
 
 	return r.repo.TxFunc(ctx, func(repo database.Repo) error {
@@ -160,7 +176,7 @@ func (r *Receiver) handleCI(ctx context.Context, env *model.Environment, helmSta
 			return fmt.Errorf("updating feature version: %w", err)
 		}
 
-		if err := r.repo.RolloutsUpdateStatus(ctx, model.RolloutStatusDeployed, rollout.Name, true); err != nil {
+		if err := repo.RolloutsUpdateStatus(ctx, model.RolloutStatusDeployed, rollout.Name, true); err != nil {
 			return fmt.Errorf("updating rollout status: %w", err)
 		}
 

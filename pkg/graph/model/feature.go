@@ -28,6 +28,7 @@ type Feature struct {
 	// for graphql
 	GraphVars struct {
 		EnvironmentID uuid.UUID
+		RolloutID     uuid.UUID
 	} `json:"-" yaml:"-"`
 }
 

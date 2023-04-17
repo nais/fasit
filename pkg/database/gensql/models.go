@@ -188,7 +188,8 @@ type RolloutEvent struct {
 	ID        uuid.UUID
 	RolloutID uuid.UUID
 	Failure   bool
-	Message   pgtype.JSONB
+	Message   string
+	Data      pgtype.JSONB
 	Created   time.Time
 }
 

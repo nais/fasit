@@ -17,6 +17,7 @@ type FeatureStateRepo interface {
 	FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *model.Feature, enabled bool) (*model.FeatureState, error)
 	FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
 	FeatureStatesListen(ctx context.Context, fn ListenFunc) error
+	RolloutStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
 }
 
 func featureStateFromSQL(state gensql.FeatureState) *model.FeatureState {
@@ -45,6 +46,30 @@ func (r *repo) FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.
 		ret = append(ret, &model.FeatureState{
 			ID:           model.FeatureStateID(envID, featureState.Name),
 			FeatureName:  featureState.Name,
+			EnabledAt:    nullTimeToPtr(featureState.EnabledAt),
+			Enabled:      featureState.Enabled,
+			Created:      featureState.Created.Time,
+			LastModified: featureState.LastModified.Time,
+			EnvID:        envID,
+		})
+	}
+	return ret, nil
+}
+
+func (r *repo) RolloutStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error) {
+	ret := []*model.FeatureState{}
+	featureStates, err := r.querier.RolloutStatesGet(ctx, envID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ret, nil
+		}
+		return nil, err
+	}
+
+	for _, featureState := range featureStates {
+		ret = append(ret, &model.FeatureState{
+			ID:           model.FeatureStateID(envID, featureState.FeatureName),
+			FeatureName:  featureState.FeatureName,
 			EnabledAt:    nullTimeToPtr(featureState.EnabledAt),
 			Enabled:      featureState.Enabled,
 			Created:      featureState.Created.Time,

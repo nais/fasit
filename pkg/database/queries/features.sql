@@ -40,7 +40,7 @@ ORDER BY features.name
 SELECT fd.*, features.created, features.last_modified
 FROM features
 JOIN feature_data fd ON features.name = fd.name AND features.version = fd.version
-WHERE @environment_kind::text = ANY(environment_kinds)
+WHERE @environment_kind::text = ANY(kinds::text[])
 ORDER BY features.name;
 
 -- name: FeaturesForKind :many
@@ -59,10 +59,19 @@ SELECT
   features.last_modified
 FROM features
 JOIN feature_data fd ON features.name = fd.name AND features.version = fd.version
-WHERE @environment_kind::text = ANY(environment_kinds)
+WHERE @environment_kind::text = ANY(kinds::text[])
 ORDER BY features.name;
 
 -- name: FeatureVersionUpdate :exec
-UPDATE features
-SET version = @version
-WHERE name = @name;
+INSERT INTO features
+  (
+    name,
+    version
+  )
+VALUES
+  (
+    @name,
+    @version
+  )
+ON CONFLICT (name) DO
+  UPDATE SET version = EXCLUDED.version;

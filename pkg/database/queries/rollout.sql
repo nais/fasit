@@ -20,8 +20,8 @@ SELECT
   rollouts.created
 FROM rollouts
 JOIN feature_data fd ON rollouts.feature_name = fd.name AND rollouts.version = fd.version
-WHERE @environment_kind::text = ANY(environment_kinds)
-ORDER BY rollouts.features_name;
+WHERE @environment_kind::text = ANY(kinds::text[])
+ORDER BY rollouts.feature_name;
 
 -- name: RolloutByName :one
 SELECT
@@ -42,10 +42,10 @@ JOIN feature_data fd ON rollouts.feature_name = fd.name AND rollouts.version = f
 WHERE fd.name = @name;
 
 -- name: RolloutUpdateStatus :exec
-UPDATE rollouts SET status = @status WHERE feature_name = @feature_name and completed IS NOT NULL;
+UPDATE rollouts SET status = @status WHERE feature_name = @feature_name and completed IS NULL;
 
 -- name: RolloutEventCreate :exec
-INSERT INTO rollout_events (rollout_id, failure, message) VALUES (@rollout_id, @failure::boolean, @message::string) RETURNING *;
+INSERT INTO rollout_events (rollout_id, failure, message) VALUES (@rollout_id, @failure::boolean, @message);
 
 -- name: RolloutStatus :one
 SELECT status FROM rollouts WHERE feature_name = @feature_name and completed IS NULL;

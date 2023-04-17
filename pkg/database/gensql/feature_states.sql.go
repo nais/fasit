@@ -119,3 +119,48 @@ func (q *Queries) FeatureStatesGet(ctx context.Context, environmentID uuid.UUID)
 	}
 	return items, nil
 }
+
+const rolloutStatesGet = `-- name: RolloutStatesGet :many
+SELECT $1::uuid AS environment_id, r.feature_name, coalesce(fs.enabled, false) AS enabled, fs.created, fs.last_modified, fs.enabled_at
+FROM rollouts r
+JOIN feature_data fd ON fd.name = r.feature_name AND fd.version = r.version
+LEFT JOIN feature_states fs
+ON fs.feature = r.feature_name AND fs.environment_id = $1
+WHERE (SELECT kind FROM environments WHERE id = $1) = any(fd.kinds)
+`
+
+type RolloutStatesGetRow struct {
+	EnvironmentID uuid.UUID
+	FeatureName   string
+	Enabled       bool
+	Created       sql.NullTime
+	LastModified  sql.NullTime
+	EnabledAt     sql.NullTime
+}
+
+func (q *Queries) RolloutStatesGet(ctx context.Context, environmentID uuid.UUID) ([]RolloutStatesGetRow, error) {
+	rows, err := q.db.Query(ctx, rolloutStatesGet, environmentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []RolloutStatesGetRow{}
+	for rows.Next() {
+		var i RolloutStatesGetRow
+		if err := rows.Scan(
+			&i.EnvironmentID,
+			&i.FeatureName,
+			&i.Enabled,
+			&i.Created,
+			&i.LastModified,
+			&i.EnabledAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

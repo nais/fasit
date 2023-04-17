@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/auth"
 	"github.com/nais/fasit/pkg/database"
@@ -32,6 +33,7 @@ type ReconcilerStore interface {
 	RolloutsListen(ctx context.Context, fn database.ListenFunc) error
 	StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]*model.Status, error)
 	TenantEnvironments(ctx context.Context) ([]*model.TenantEnvironment, error)
+	RolloutStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
 }
 
 type Publisher interface {
@@ -201,6 +203,12 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 		return fmt.Errorf("features for kind: %w", err)
 	}
 
+	if d.Environment.Name == "dev" {
+		fmt.Println("#####")
+		spew.Dump(features)
+		fmt.Println("#####")
+	}
+
 	envStatus, err := r.repo.StatusForEnvironment(ctx, d.Environment.ID)
 	if err != nil {
 		return fmt.Errorf("status for environment: %w", err)
@@ -214,6 +222,15 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 	featureStates, err := r.repo.FeatureStatesGet(ctx, d.ID)
 	if err != nil {
 		return fmt.Errorf("feature states: %w", err)
+	}
+
+	if d.CI {
+		rolloutStates, err := r.repo.RolloutStatesGet(ctx, d.ID)
+		if err != nil {
+			return fmt.Errorf("rollout states: %w", err)
+		}
+
+		featureStates = append(featureStates, rolloutStates...)
 	}
 
 	states := map[string]*model.FeatureState{}

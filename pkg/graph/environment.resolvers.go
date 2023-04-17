@@ -95,7 +95,7 @@ func (r *environmentResolver) AuditLog(ctx context.Context, obj *model.Environme
 
 // Features is the resolver for the features field.
 func (r *environmentResolver) Features(ctx context.Context, obj *model.Environment) ([]*model.Feature, error) {
-	fs, err := r.Repo.Features(ctx)
+	fs, err := r.Repo.FeaturesForKind(ctx, obj.Kind, obj.CI)
 	if err != nil {
 		return nil, err
 	}
@@ -145,5 +145,7 @@ func (r *Resolver) Environment() graphgen.EnvironmentResolver { return &environm
 // Release returns graphgen.ReleaseResolver implementation.
 func (r *Resolver) Release() graphgen.ReleaseResolver { return &releaseResolver{r} }
 
-type environmentResolver struct{ *Resolver }
-type releaseResolver struct{ *Resolver }
+type (
+	environmentResolver struct{ *Resolver }
+	releaseResolver     struct{ *Resolver }
+)

@@ -110,7 +110,7 @@ func (q *Queries) RolloutDelete(ctx context.Context, featureName string) error {
 }
 
 const rolloutEventCreate = `-- name: RolloutEventCreate :exec
-INSERT INTO rollout_events (rollout_id, failure, message) VALUES ($1, $2::boolean, $3::string) RETURNING id, rollout_id, failure, message, created
+INSERT INTO rollout_events (rollout_id, failure, message) VALUES ($1, $2::boolean, $3)
 `
 
 type RolloutEventCreateParams struct {
@@ -136,7 +136,7 @@ func (q *Queries) RolloutStatus(ctx context.Context, featureName string) (string
 }
 
 const rolloutUpdateStatus = `-- name: RolloutUpdateStatus :exec
-UPDATE rollouts SET status = $1 WHERE feature_name = $2 and completed IS NOT NULL
+UPDATE rollouts SET status = $1 WHERE feature_name = $2 and completed IS NULL
 `
 
 type RolloutUpdateStatusParams struct {
@@ -165,8 +165,8 @@ SELECT
   rollouts.created
 FROM rollouts
 JOIN feature_data fd ON rollouts.feature_name = fd.name AND rollouts.version = fd.version
-WHERE $1::text = ANY(environment_kinds)
-ORDER BY rollouts.features_name
+WHERE $1::text = ANY(kinds::text[])
+ORDER BY rollouts.feature_name
 `
 
 type RolloutsForKindRow struct {

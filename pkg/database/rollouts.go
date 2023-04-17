@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/graph/model"
 )
@@ -14,7 +15,7 @@ type RolloutRepo interface {
 	RolloutByName(ctx context.Context, name string) (*model.Feature, error)
 	RolloutCreate(ctx context.Context, name, version string) (*model.Rollout, error)
 	RolloutDelete(ctx context.Context, name string) error
-	RolloutEventCreate(ctx context.Context, failure bool, message string) error
+	RolloutEventCreate(ctx context.Context, rollout uuid.UUID, failure bool, message string) error
 	RolloutsListen(ctx context.Context, fn ListenFunc) error
 	RolloutStatus(ctx context.Context, name string) (model.RolloutStatus, error)
 	RolloutsUpdateStatus(ctx context.Context, status model.RolloutStatus, name string, completed bool) error
@@ -33,8 +34,8 @@ func (r *repo) RolloutStatus(ctx context.Context, name string) (model.RolloutSta
 	return model.RolloutStatus(status), nil
 }
 
-func (r *repo) RolloutEventCreate(ctx context.Context, failure bool, message string) error {
-	return r.querier.RolloutEventCreate(ctx, gensql.RolloutEventCreateParams{Failure: failure, Message: message})
+func (r *repo) RolloutEventCreate(ctx context.Context, rolloutID uuid.UUID, failure bool, message string) error {
+	return r.querier.RolloutEventCreate(ctx, gensql.RolloutEventCreateParams{RolloutID: rolloutID, Failure: failure, Message: message})
 }
 
 func (r *repo) RolloutsUpdateStatus(ctx context.Context, status model.RolloutStatus, name string, completed bool) error {
@@ -99,5 +100,11 @@ func (r *repo) RolloutByName(ctx context.Context, name string) (*model.Feature, 
 			Timeout:      time.Duration(f.Timeout.Int64) * time.Microsecond,
 		},
 		ValuesYAML: valuesYAML,
+		GraphVars: struct {
+			EnvironmentID uuid.UUID
+			RolloutID     uuid.UUID
+		}{
+			RolloutID: f.ID,
+		},
 	}, nil
 }

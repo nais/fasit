@@ -1040,18 +1040,44 @@ func (_m *Repo) RolloutDelete(ctx context.Context, name string) error {
 	return r0
 }
 
-// RolloutEventCreate provides a mock function with given fields: ctx, failure, _a2
-func (_m *Repo) RolloutEventCreate(ctx context.Context, failure bool, _a2 string) error {
-	ret := _m.Called(ctx, failure, _a2)
+// RolloutEventCreate provides a mock function with given fields: ctx, rollout, failure, _a3
+func (_m *Repo) RolloutEventCreate(ctx context.Context, rollout uuid.UUID, failure bool, _a3 string) error {
+	ret := _m.Called(ctx, rollout, failure, _a3)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, bool, string) error); ok {
-		r0 = rf(ctx, failure, _a2)
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, bool, string) error); ok {
+		r0 = rf(ctx, rollout, failure, _a3)
 	} else {
 		r0 = ret.Error(0)
 	}
 
 	return r0
+}
+
+// RolloutStatesGet provides a mock function with given fields: ctx, envID
+func (_m *Repo) RolloutStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error) {
+	ret := _m.Called(ctx, envID)
+
+	var r0 []*model.FeatureState
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]*model.FeatureState, error)); ok {
+		return rf(ctx, envID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) []*model.FeatureState); ok {
+		r0 = rf(ctx, envID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.FeatureState)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, envID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // RolloutStatus provides a mock function with given fields: ctx, name

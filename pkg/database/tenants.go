@@ -81,6 +81,7 @@ func (r *repo) TenantEnvironments(ctx context.Context) ([]*model.TenantEnvironme
 			Environment: model.Environment{
 				ID:           d.ID,
 				Name:         d.Name,
+				CI:           d.Ci,
 				Description:  nullStringToPtr(d.Description),
 				Created:      d.Created,
 				LastModified: d.LastModified,
