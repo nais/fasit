@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/fqdn-policy
 source: https://github.com/nais/helm-charts/tree/main/charts/fqdn-policy
-version: 0.0.3
+version: 0.0.4
 description: "Restricts outbound traffic to a set of whitelisted FQDNs"
 environmentKinds:
   - "tenant"
