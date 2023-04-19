@@ -42,7 +42,7 @@ mapping:
             implementation: prometheus
           url: https://alertmanager.{{ $cluster.name }}.{{ $root.Tenant.Name }}.cloud.nais.io
           access: proxy
-        {{- if eq $cluster.kind "tenant" }}
+        {{- if or (eq $cluster.kind "tenant") (eq $cluster.kind "legacy") }}
         - name: {{ $cluster.name }}-loki
           type: loki
           url: https://loki.{{ $cluster.name }}.{{ $root.Tenant.Name }}.cloud.nais.io
