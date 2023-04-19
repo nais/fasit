@@ -1,6 +1,4 @@
-FROM golang:1.20.2-alpine as builder
-
-RUN apk add --no-cache git
+FROM cgr.dev/chainguard/go:1.20 as builder
 
 WORKDIR /workspace
 COPY go.* ./
@@ -12,7 +10,7 @@ COPY . /workspace
 # Build
 RUN CGO_ENABLED=0 go build -a -o fasit ./cmd/fasit
 
-FROM alpine
+FROM cgr.dev/chainguard/static
 WORKDIR /
 
 COPY --from=builder /workspace/fasit .
