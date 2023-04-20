@@ -9,6 +9,11 @@ environmentKinds:
 dependsOn:
   - allOf:
       - "monitoring"
+autoInstall:
+  - "management"
+  - "onprem"
+  - "tenant"
+  - "legacy"
 mapping:
   tenant:
     value: "{{.Tenant.Name}}"
