@@ -9,6 +9,9 @@ environmentKinds:
 dependsOn:
   - allOf:
       - "monitoring"
+    anyOf:
+      - "loadbalancer-internal"
+      - "loadbalancer-onprem"
 autoInstall:
   - "management"
   - "onprem"
