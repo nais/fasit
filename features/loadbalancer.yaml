@@ -13,6 +13,7 @@ autoInstall:
 dependsOn:
   - allOf:
       - "certificates"
+      - "monitoring"
 config:
   certificates:
     type: string_array
