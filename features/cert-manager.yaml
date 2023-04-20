@@ -16,7 +16,7 @@ mapping:
     displayName: "API server cidr"
     ignoreKind:
       - "onprem"
-  serviceAccount.annotations.iam\.gke\.io/gcp-service-account:
+  cert-manager.serviceAccount.annotations.iam\.gke\.io/gcp-service-account:
     value: "{{ .Env.acme_service_account }}"
     displayName: "GCP service account"
     ignoreKind:
