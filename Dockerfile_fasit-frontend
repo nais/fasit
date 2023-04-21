@@ -7,7 +7,6 @@ COPY ./frontend .
 # Revert this once react-tag-autocomplete supports React 18
 RUN npm install --legacy-peer-deps --quiet
 RUN npm run build
-#RUN npm install --quiet
 
 FROM cgr.dev/chainguard/node:18
 

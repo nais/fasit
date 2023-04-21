@@ -1,54 +1,75 @@
-name: Build and deploy fasit-frontend
+name: Build and deploy fasit
 on:
   push:
-    paths:
+    paths-ignore:
+      - "charts/**"
+      - ".github/workflows/*_chart.yaml"
       - ".github/workflows/build_and_push_image_fasit-frontend.yaml"
-      - ".github/actions/helm_install/**"
       - "frontend/**"
-      - "Dockerfile_fasit-frontend"
+      - "features/**"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 env:
-  REGISTRY: europe-north1-docker.pkg.dev/nais-io/nais/images
-  BASEIMG: "cgr.dev/chainguard/node:18"
+  BUILDER_IMG: "cgr.dev/chainguard/go:1.20"
+  RUNNER_IMG: "cgr.dev/chainguard/static"
   BASEIMG_IDENTITY: "https://github.com/chainguard-images/images/.github/workflows/release.yaml@refs/heads/main"
   BASEIMG_ISSUER: "https://token.actions.githubusercontent.com"
 
 jobs:
-  build_and_test_fasit-frontend:
-    if: github.ref != 'refs/heads/main'
+  tests:
+    runs-on: ubuntu-latest-4-cores
+    steps:
+      - uses: actions/checkout@v3.5.0
+      - uses: actions/setup-go@v3
+        with:
+          go-version: ">=1.20.2"
+      - run: go test -cover -tags integration_test ./...
+      - name: Vulnerability check
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...
+
+  build_and_push_backend:
+    if: github.ref == 'refs/heads/main'
+    needs: [tests]
     permissions:
       contents: "read"
       id-token: "write"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        image:
+          - fasit
+          - naisd
     outputs:
       version: ${{ steps.build-push-sign.outputs.version }}"
-    runs-on: ubuntu-latest
     steps:
-      - name: Checkout fasit
+      - name: Checkout
         uses: actions/checkout@v3.5.0
       - name: Install cosign
         uses: sigstore/cosign-installer@9e9de2292db7abb3f51b7f4808d98f0d347a8919 # ratchet:sigstore/cosign-installer@main
         with:
           cosign-release: 'v2.0.0'
-      - name: Verify baseimage
-        run: cosign verify --certificate-identity ${{ env.BASEIMG_IDENTITY }} --certificate-oidc-issuer ${{ env.BASEIMG_ISSUER }} ${{ env.BASEIMG }}
+      - name: Verify builder image
+        run: cosign verify --certificate-identity ${{ env.BASEIMG_IDENTITY }} --certificate-oidc-issuer ${{ env.BASEIMG_ISSUER }} ${{ env.BUILDER_IMG }}
+      - name: Verify runner image
+        run: cosign verify --certificate-identity ${{ env.BASEIMG_IDENTITY }} --certificate-oidc-issuer ${{ env.BASEIMG_ISSUER }} ${{ env.RUNNER_IMG }}
       - uses: nais/platform-build-push-sign@main
         id: build-push-sign
         with:
-          dockerfile: Dockerfile_fasit_frontend
+          dockerfile: Dockerfile_${{ matrix.image }}
           name: ${{ matrix.image }}
           google_service_account: gh-fasit
           workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
           push: ${{ github.actor != 'dependabot[bot]' }}
 
-
-  deploy_fasit-frontend:
+  deploy_fasit:
     if: github.ref == 'refs/heads/main'
     runs-on: ["fasit-deploy"]
-    needs: ["build_and_push_fasit-frontend"]
+    needs: ["build_and_push_backend"]
     permissions:
       contents: "read"
       id-token: "write"
@@ -68,9 +89,9 @@ jobs:
         shell: bash
         run: |
           gcloud container clusters get-credentials nais-io --project nais-io --region europe-north1
-      - name: deploy fasit-frontend
+      - name: deploy fasit
         env:
           VERSION: ${{ needs.build_and_push_backend.outputs.version }}
         shell: bash
         run: |
-          helm upgrade fasit-frontend oci://europe-north1-docker.pkg.dev/nais-io/nais/fasit-frontend --install --wait --version 0.2.0 --set image.tag="sha-${VERSION}" --namespace nais-system
+          helm upgrade fasit-backend oci://europe-north1-docker.pkg.dev/nais-io/nais/fasit --install --wait --version 0.3.1 --set image.tag="${VERSION}" --namespace nais-system --reuse-values
