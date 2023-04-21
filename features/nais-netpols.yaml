@@ -1,22 +1,18 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/nais-netpols
 source: https://github.com/nais/helm-charts/tree/main/charts/nais-netpols
-version: 0.1.5
+version: 0.1.6
 description: "Default NAIS network policies"
-dependsOn: 
-  - allOf:
-      - "nais-crds"
-      - "replicator"
 environmentKinds:
   - "tenant"
   - "legacy"
   - "management"
 config: 
-  enableDenyAll:
-    type: bool
-    displayName: "Enable deny all egress"
   legacyGCP:
     type: bool
     displayName: "Enable legacy netpols"
+  management:
+    type: bool
+    displayName: "Management cluster"
   tokenxHost:
     type: string
     displayName: "Host for TokenX"
