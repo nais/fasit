@@ -13,6 +13,9 @@ concurrency:
 
 env:
   REGISTRY: europe-north1-docker.pkg.dev/nais-io/nais/images
+  RUNNER_IMG: "cgr.dev/chainguard/node:18"
+  BASEIMG_IDENTITY: "https://github.com/chainguard-images/images/.github/workflows/release.yaml@refs/heads/main"
+  BASEIMG_ISSUER: "https://token.actions.githubusercontent.com"
 
 jobs:
   build_and_test_fasit-frontend:
@@ -61,6 +64,12 @@ jobs:
     steps:
       - name: Checkout fasit
         uses: actions/checkout@v3.5.0
+      - name: Install cosign
+        uses: sigstore/cosign-installer@9e9de2292db7abb3f51b7f4808d98f0d347a8919 # ratchet:sigstore/cosign-installer@main
+        with:
+          cosign-release: 'v2.0.0'
+      - name: Verify runner image
+        run: cosign verify --certificate-identity ${{ env.BASEIMG_IDENTITY }} --certificate-oidc-issuer ${{ env.BASEIMG_ISSUER }} ${{ env.RUNNER_IMG }}
       - id: "auth"
         name: "Authenticate to Google Cloud"
         uses: "google-github-actions/auth@v1.0.0"

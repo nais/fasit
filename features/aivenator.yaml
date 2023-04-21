@@ -71,10 +71,6 @@ config:
     type: string
   image.tag:
     type: string
-  extraEnv.AIVENATOR_USE_NATIVE_GENERATOR:
-    type: bool
-    displayName: Use Native Generator
-    description: Use the native generator to generate JVM credentials stores, instead of the executable generator
   extraEnv.HTTPS_PROXY:
     type: string
     displayName: HTTPS proxy
