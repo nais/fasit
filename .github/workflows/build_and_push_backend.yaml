@@ -45,6 +45,8 @@ jobs:
           - fasit
           - naisd
     outputs:
+      fasit: ${{ steps.output.outputs.fasit }}
+      naisd: ${{ steps.output.outputs.naisd }}
       version: ${{ steps.build-push-sign.outputs.version }}
     steps:
       - name: Checkout
@@ -65,14 +67,21 @@ jobs:
           google_service_account: gh-fasit
           workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
           push: ${{ github.actor != 'dependabot[bot]' }}
+      - name: output
+        id: output
+        run: |
+          echo "${{ matrix.image }}=${{ matrix.image }}" >> $GITHUB_OUTPUT
 
   deploy_fasit:
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && ${{ contains("fasit", needs.build_and_push_backend.outputs.fasit) }}
     runs-on: ["fasit-deploy"]
     needs: ["build_and_push_backend"]
     permissions:
       contents: "read"
       id-token: "write"
+    strategy:
+      matrix:
+        option: ${{ needs.build_and_push_backend.outputs.* }}
     steps:
       - name: Checkout fasit
         uses: actions/checkout@v3.5.0
