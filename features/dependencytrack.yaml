@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/dependencytrack
 source: https://github.com/nais/helm-charts/tree/main/charts/dependencytrack
-version: 0.1.0
+version: 0.1.1
 description: "Dependencytrack is a storage backend for storing sbom and image attestations and viewing vulnerabilities,
 the backend application is dependency-track: https://docs.dependencytrack.org"
 environmentKinds:
