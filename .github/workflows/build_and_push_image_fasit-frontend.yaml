@@ -24,7 +24,7 @@ jobs:
       contents: "read"
       id-token: "write"
     outputs:
-      version: ${{ steps.build-push-sign.outputs.version }}"
+      version: ${{ steps.build-push-sign.outputs.version }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout fasit
