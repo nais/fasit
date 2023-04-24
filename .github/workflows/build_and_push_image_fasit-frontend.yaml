@@ -73,4 +73,4 @@ jobs:
           VERSION: ${{ needs.build_and_push_backend.outputs.version }}
         shell: bash
         run: |
-          helm upgrade fasit-frontend oci://europe-north1-docker.pkg.dev/nais-io/nais/fasit-frontend --install --wait --version 0.2.0 --set image.tag="sha-${VERSION}" --namespace nais-system
+          helm upgrade fasit-frontend oci://europe-north1-docker.pkg.dev/nais-io/nais/fasit-frontend --install --wait --version 0.2.0 --set image.tag=${VERSION} --namespace nais-system
