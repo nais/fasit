@@ -70,7 +70,7 @@ jobs:
           gcloud container clusters get-credentials nais-io --project nais-io --region europe-north1
       - name: deploy fasit-frontend
         env:
-          VERSION: ${{ needs.build_and_push_backend.outputs.version }}
+          VERSION: ${{ needs.build_and_test_fasit-frontend.outputs.version }}
         shell: bash
         run: |
           helm upgrade fasit-frontend oci://europe-north1-docker.pkg.dev/nais-io/nais/fasit-frontend --install --wait --version 0.2.0 --set image.tag=${VERSION} --namespace nais-system
