@@ -22,6 +22,9 @@ mapping:
     displayName: "Loki KSA Workload Identity annotation"
     value: 'loki-user@{{.Env.project_id}}.iam.gserviceaccount.com'
 
+  loki.gateway.service.type:
+    value: 'ClusterIP'
+
   loki.gateway.enabled:
     template: "true"
   loki.gateway.ingress.ingressClassName:
