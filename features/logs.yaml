@@ -22,10 +22,6 @@ mapping:
     displayName: "Loki KSA Workload Identity annotation"
     value: 'loki-user@{{.Env.project_id}}.iam.gserviceaccount.com'
 
-  loki.gateway.service.loadBalancerIP:
-    displayName: "Loki load balancer IP"
-    value: '{{.Env.tenant_loki_ilb_ip}}'
-
   loki.gateway.enabled:
     template: "true"
   loki.gateway.ingress.ingressClassName:
