@@ -60,6 +60,17 @@ mapping:
     template: "http://hookd/internal/api/v1/apikey"
   backend.naisDeploy.provisionKey:
     value: "{{.Management.hookd_provision_key}}"
+  backend.dependencytrack.instances:
+    template: |
+      instances:
+        {{ range .Envs }}
+        {{ if ne .name "management" }}
+        - endpoint: "https://dependencytrack-backend.{{ .name }}.{{ .tenant }}.cloud.nais.io"
+          username: console
+          password: {{ .console_dependencytrack_password }}
+        {{ end }}
+        {{ end }}
+
 config:
   backend.image.tag:
     type: string
