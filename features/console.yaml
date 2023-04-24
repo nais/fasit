@@ -62,11 +62,18 @@ mapping:
     value: "{{.Management.hookd_provision_key}}"
   backend.dependencytrack.instances:
     template: |
-      {{ range .Envs }}
-      {{ if ne .name "management" }}
-       "https://dependencytrack-backend.{{ .name }}.{{ .tenant }}.cloud.nais.io"
-      {{ end }}
-      {{ end }}
+      [
+        {{ $tenant_name := .Tenant.Name }}
+        {{ range .Envs }}
+        {{ if ne .kind "management" }}
+        {
+          "endpoint": "https://dependencytrack-backend.{{ .name }}.{{ $tenant_name }}.cloud.nais.io",
+          "username": "console",
+          "password": "{{ .console_dependencytrack_password }}"
+        },
+        {{ end }}
+        {{ end }}
+      ]
 
 config:
   backend.image.tag:
