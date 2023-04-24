@@ -61,7 +61,12 @@ mapping:
   backend.naisDeploy.provisionKey:
     value: "{{.Management.hookd_provision_key}}"
   backend.dependencytrack.instances:
-    template: ""
+    template: |
+      {{ range .Envs }}
+      {{ if ne .name "management" }}
+       "https://dependencytrack-backend.{{ .name }}.{{ .tenant }}.cloud.nais.io"
+      {{ end }}
+      {{ end }}
 
 config:
   backend.image.tag:
