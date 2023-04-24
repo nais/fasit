@@ -85,4 +85,6 @@ jobs:
           VERSION: ${{ steps.build-push-sign.outputs.version }}
         shell: bash
         run: |
+          export USE_GKE_GCLOUD_AUTH_PLUGIN=True
+          gcloud components install gke-gcloud-auth-plugin
           helm upgrade fasit-backend oci://europe-north1-docker.pkg.dev/nais-io/nais/fasit --install --wait --version 0.3.1 --set image.tag=${VERSION} --namespace nais-system --reuse-values
