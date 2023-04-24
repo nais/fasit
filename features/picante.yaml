@@ -42,7 +42,7 @@ mapping:
     displayName: "Preconfigured team identity"
   config.github.organizations:
     template: |
-      {{ if eq .Tenant.Name "nav" }}
+      {{ if or (eq .Tenant.Name "nav") (eq .Tenant.Name "dev-nais") }}
         - nais
         - navikt
       {{ else }}
