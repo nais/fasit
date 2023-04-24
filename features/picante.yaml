@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/picante
 source: https://github.com/nais/picante/tree/main/charts
-version: 0.1.3
+version: 0.1.4
 description: "Picante is an informer for verifying image attestations and upload sbom to dependencytrack backend"
 environmentKinds:
   - "tenant"
@@ -33,12 +33,19 @@ mapping:
   config.teamIdentity:
     template: |
       {{ if or (eq .Kind "onprem") (eq .Kind "legacy") (eq .Tenant.Name "nav") }}
-        prefix: "gar"
         issuer: "https://accounts.google.com"
         domain: "nais-management-233d.iam.gserviceaccount.com"
       {{ else }}
-        prefix: "gar"
         issuer: "https://accounts.google.com"
         domain: "{{.Management.project_id}}.iam.gserviceaccount.com"
       {{ end }}
     displayName: "Preconfigured team identity"
+  config.github.organizations:
+    template: |
+      {{ if eq .Tenant.Name "nav" }}
+        - nais
+        - navikt
+      {{ else }}
+        - "{{.Tenant.Name}}"
+      {{ end }}
+    displayName: "Required GitHub organization(s)"
