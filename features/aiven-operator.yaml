@@ -1,0 +1,27 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/aiven-operator
+source: https://github.com/nais/helm-charts/tree/main/charts/aiven-operator
+version: 0.2.0
+description: "Install the Aiven Operator"
+environmentKinds:
+  - "tenant"
+  - "legacy"
+dependsOn:
+  allOf:
+    - kyverno
+mapping:
+  apiserverIP:
+    value: "{{ .Env.apiserver_endpoint }}"
+    displayName: "API server IP"
+  aiven.project:
+    value: "{{ .Env.aiven_project }}"
+    displayName: Aiven project
+    description: "Aiven project to create services in"
+  location:
+    value: "{{ .Env.location }}"
+    displayName: Cloud location
+config:
+  aiven.token:
+    type: string
+    secret: true
+    description: An API-token with full access to the relevant projects
+    displayName: Aiven API-token
