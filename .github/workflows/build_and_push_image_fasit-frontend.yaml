@@ -48,7 +48,7 @@ jobs:
   deploy_fasit-frontend:
     if: github.ref == 'refs/heads/main'
     runs-on: ["fasit-deploy"]
-    needs: ["build_and_push_fasit-frontend"]
+    needs: ["build_and_test_fasit-frontend"]
     permissions:
       contents: "read"
       id-token: "write"
