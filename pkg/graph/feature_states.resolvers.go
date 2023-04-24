@@ -16,7 +16,7 @@ import (
 
 // Feature is the resolver for the feature field.
 func (r *featureStateResolver) Feature(ctx context.Context, obj *model.FeatureState) (*model.Feature, error) {
-	return r.resolveFeatureByName(obj.FeatureName)
+	return r.Repo.FeatureByNameForEnv(ctx, obj.FeatureName, obj.EnvID)
 }
 
 // MissingDependencies is the resolver for the missingDependencies field.

@@ -149,6 +149,28 @@ func (q *Queries) FeatureVersionUpdate(ctx context.Context, arg FeatureVersionUp
 }
 
 const features = `-- name: Features :many
+WITH combined AS (
+  SELECT null AS id, name, version, created, last_modified
+  FROM features
+
+  UNION
+
+  SELECT DISTINCT ON(feature_name)
+    id,
+    feature_name AS name,
+    version,
+    make_timestamptz(1969, 4, 20, 0, 0, 0) AS created,
+    make_timestamptz(1969, 4, 20, 0, 0, 0) AS last_modified
+  FROM rollouts
+  WHERE status = 'pending'
+  ORDER BY version DESC
+), filtered AS (
+  SELECT DISTINCT ON (name) name AS name, version, created, last_modified
+  FROM combined
+  ORDER BY
+    -- order by id to ensure rollout has precedence over feature
+    name, id
+)
 SELECT
   fd.name,
   fd.version,
@@ -160,11 +182,11 @@ SELECT
   fd.values,
   fd.timeout,
   fd.default_values,
-  features.created,
-  features.last_modified
-FROM features
-JOIN feature_data fd ON features.name = fd.name AND features.version = fd.version
-ORDER BY features.name
+  combined.created,
+  combined.last_modified
+FROM combined
+JOIN feature_data fd ON combined.name = fd.name AND combined.version = fd.version
+ORDER BY combined.name
 `
 
 type FeaturesRow struct {

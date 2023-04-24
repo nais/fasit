@@ -13,7 +13,7 @@ import (
 
 // Feature is the resolver for the feature field.
 func (r *rolloutResolver) Feature(ctx context.Context, obj *model.Rollout) (*model.Feature, error) {
-	return r.resolveFeatureByName(obj.FeatureName)
+	return r.Repo.FeatureByNameForEnv(ctx, obj.FeatureName, obj.GraphVars.EnvironmentID)
 }
 
 // Rollout returns graphgen.RolloutResolver implementation.

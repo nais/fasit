@@ -187,19 +187,14 @@ func featuresFromSQL(features []gensql.FeaturesForKindRow) ([]*model.Feature, er
 	return ret, nil
 }
 
-func makeFeatureYAML(kinds []string, deps, values, defaultValues pgtype.JSONB) (model.FeatureYAML, map[string]any, error) {
+func makeFeatureYAML(kinds []string, deps, values, defaultValues pgtype.JSONB) (model.FeatureYAML, map[string]json.RawMessage, error) {
 	ret := model.FeatureYAML{}
 	if err := json.Unmarshal(deps.Bytes, &ret.Dependencies); err != nil {
 		return ret, nil, fmt.Errorf("unmarshal dependencies: %w", err)
 	}
 
-	retDefaultVals := map[string]any{}
-
+	var retDefaultVals map[string]json.RawMessage
 	if err := json.Unmarshal(defaultValues.Bytes, &retDefaultVals); err != nil {
-		fmt.Println("####")
-		fmt.Println(string(defaultValues.Bytes))
-		fmt.Println("####")
-
 		return ret, nil, fmt.Errorf("unmarshal default values: %w", err)
 	}
 

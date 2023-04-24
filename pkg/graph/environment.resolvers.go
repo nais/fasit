@@ -131,7 +131,7 @@ func (r *mutationResolver) EnvironmentUpdate(ctx context.Context, id uuid.UUID, 
 
 // Feature is the resolver for the feature field.
 func (r *releaseResolver) Feature(ctx context.Context, obj *model.Release) (*model.Feature, error) {
-	f, err := r.resolveFeatureByName(obj.Name)
+	f, err := r.Repo.FeatureByNameForEnv(ctx, obj.Name, obj.GraphVars.EnvironmentID)
 	if err != nil {
 		r.Log.WithError(err).Debug("error getting feature for release, returning nil")
 	}

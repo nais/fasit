@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database/gensql"
@@ -84,9 +83,14 @@ func (r *repo) RolloutByName(ctx context.Context, name string) (*model.Feature, 
 		return nil, fmt.Errorf("unmarshal dependencies: %w", err)
 	}
 
-	valuesYAML := make(map[string]any)
+	valuesYAML := make(map[string]json.RawMessage)
 	if err := json.Unmarshal(f.DefaultValues.Bytes, &valuesYAML); err != nil {
 		return nil, fmt.Errorf("unmarshal default values: %w", err)
+	}
+
+	fyaml, defaultValues, err := makeFeatureYAML(f.Kinds, f.Dependencies, f.Values, f.DefaultValues)
+	if err != nil {
+		return nil, fmt.Errorf("make feature yaml: %w", err)
 	}
 
 	return &model.Feature{
@@ -95,11 +99,8 @@ func (r *repo) RolloutByName(ctx context.Context, name string) (*model.Feature, 
 		Version:     f.Version,
 		Chart:       f.Chart,
 		Source:      f.Source,
-		FeatureYAML: model.FeatureYAML{
-			Dependencies: deps,
-			Timeout:      time.Duration(f.Timeout.Int64) * time.Microsecond,
-		},
-		ValuesYAML: valuesYAML,
+		FeatureYAML: fyaml,
+		ValuesYAML:  defaultValues,
 		GraphVars: struct {
 			EnvironmentID uuid.UUID
 			RolloutID     uuid.UUID

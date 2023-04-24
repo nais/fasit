@@ -3,11 +3,11 @@ package graph
 import (
 	"encoding/json"
 
-	feature "github.com/nais/fasit/pkg/feature2"
+	"github.com/nais/fasit/pkg/feature/featureutil"
 )
 
 func pluckFromMap(key string, mp map[string]any) json.RawMessage {
-	kp, _ := feature.SmartDotSplit(key)
+	kp, _ := featureutil.SmartDotSplit(key)
 
 	for _, k := range kp {
 		v, ok := mp[k]

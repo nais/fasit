@@ -7,7 +7,7 @@ import (
 	"os"
 
 	"github.com/invopop/jsonschema"
-	"github.com/nais/fasit/pkg/feature"
+	feature "github.com/nais/fasit/pkg/feature2"
 )
 
 func main() {
@@ -18,7 +18,7 @@ func main() {
 	r := &jsonschema.Reflector{}
 	r.DoNotReference = true
 	r.BaseSchemaID = "https://fasit.nais.io/schema"
-	r.AddGoComments("github.com/nais/fasit", "./pkg/feature/")
+	r.AddGoComments("github.com/nais/fasit", "./pkg/feature2/")
 	schema := r.Reflect(feature.Feature{})
 
 	b, err := schema.MarshalJSON()

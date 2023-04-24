@@ -76,12 +76,35 @@ func (q *Queries) FeatureStateGet(ctx context.Context, arg FeatureStateGetParams
 }
 
 const featureStatesGet = `-- name: FeatureStatesGet :many
+WITH env AS (
+  SELECT ci, kind
+  FROM environments
+  WHERE id = $1
+), combined AS (
+  SELECT null AS id, name, version, last_modified
+  FROM features
+
+  UNION
+
+  SELECT id, feature_name AS name, version, null AS last_modified
+  FROM rollouts
+	WHERE status = 'pending'
+), filtered AS (
+  SELECT DISTINCT ON (name) name, version
+  FROM combined
+  JOIN env ON 1 = 1
+  ORDER BY
+    name,
+    -- If environment is CI, use definition from rollouts if it exists, otherwise use definition from features
+    CASE WHEN env.ci THEN id END,
+    CASE WHEN NOT ci THEN last_modified END
+)
 SELECT $1::uuid AS environment_id, f.name, coalesce(fs.enabled, false) AS enabled, fs.created, fs.last_modified, fs.enabled_at
-FROM features f
+FROM filtered f
 JOIN feature_data fd ON fd.name = f.name AND fd.version = f.version
 LEFT JOIN feature_states fs
 ON fs.feature = f.name AND fs.environment_id = $1
-WHERE (SELECT kind FROM environments WHERE id = $1) = any(fd.kinds)
+WHERE (SELECT kind FROM env) = any(fd.kinds)
 `
 
 type FeatureStatesGetRow struct {

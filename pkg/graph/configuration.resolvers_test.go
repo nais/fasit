@@ -10,7 +10,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database/mocks"
-	"github.com/nais/fasit/pkg/feature"
+	feature "github.com/nais/fasit/pkg/feature2"
 	"github.com/nais/fasit/pkg/graph/model"
 )
 

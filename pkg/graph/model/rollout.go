@@ -13,4 +13,8 @@ type Rollout struct {
 	Created time.Time `json:"created"`
 
 	FeatureName string `json:"-"`
+
+	GraphVars struct {
+		EnvironmentID uuid.UUID
+	} `json:"-"`
 }

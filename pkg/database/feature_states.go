@@ -53,6 +53,7 @@ func (r *repo) FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.
 			EnvID:        envID,
 		})
 	}
+
 	return ret, nil
 }
 

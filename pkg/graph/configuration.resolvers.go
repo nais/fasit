@@ -30,26 +30,16 @@ func (r *configurationsResolver) Configuration(ctx context.Context, obj *model.C
 			return nil, err
 		}
 
-		env, err := r.Repo.EnvironmentGet(ctx, *obj.EnvID)
-		if err != nil {
+		feature, err = r.Repo.FeatureByNameForEnv(ctx, obj.FeatureName, *obj.EnvID)
+		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 			return nil, err
-		}
-
-		if env.CI {
-			feature, err = r.Repo.FeatureByName(ctx, obj.FeatureName)
-			if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-				return nil, err
-			}
 		}
 	} else {
 		configs, err = r.Repo.ConfigGet(ctx, obj.FeatureName)
 		if err != nil {
 			return nil, err
 		}
-	}
 
-	// If env is not ci, or if no rollout is found, get normal feature
-	if feature == nil {
 		feature, err = r.Repo.FeatureByName(ctx, obj.FeatureName)
 		if err != nil {
 			return nil, err
@@ -58,6 +48,7 @@ func (r *configurationsResolver) Configuration(ctx context.Context, obj *model.C
 
 OUTER:
 	for key, val := range feature.Values {
+		fmt.Println("key: ", key)
 		val := val
 		val.GraphQLKey = key
 		if val.Config == nil {
@@ -73,7 +64,7 @@ OUTER:
 		configs = append(configs, &model.Configuration{
 			Key:     key,
 			Value:   &val,
-			Content: pluckFromMap(key, feature.ValuesYAML),
+			Content: feature.ValuesYAML[key],
 			Source:  model.ConfigSourceHelm,
 			GraphVars: struct {
 				EnvironmentID *uuid.UUID

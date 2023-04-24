@@ -13,7 +13,7 @@ import (
 
 // Feature is the resolver for the feature field.
 func (r *featureWarningResolver) Feature(ctx context.Context, obj *model.FeatureWarning) (*model.Feature, error) {
-	return r.resolveFeatureByName(obj.FeatureName)
+	return r.Repo.FeatureByNameForEnv(ctx, obj.FeatureName, obj.EnvironmentID)
 }
 
 // Environment is the resolver for the environment field.
@@ -34,5 +34,7 @@ func (r *Resolver) FeatureWarning() graphgen.FeatureWarningResolver {
 // NaisdWarning returns graphgen.NaisdWarningResolver implementation.
 func (r *Resolver) NaisdWarning() graphgen.NaisdWarningResolver { return &naisdWarningResolver{r} }
 
-type featureWarningResolver struct{ *Resolver }
-type naisdWarningResolver struct{ *Resolver }
+type (
+	featureWarningResolver struct{ *Resolver }
+	naisdWarningResolver   struct{ *Resolver }
+)

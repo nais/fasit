@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgtype"
 	"github.com/nais/fasit/pkg/database/gensql"
+	"github.com/nais/fasit/pkg/feature/featureutil"
 	feature "github.com/nais/fasit/pkg/feature2"
 	"github.com/nais/fasit/pkg/graph/model"
 )
@@ -266,7 +267,7 @@ func validateFields(f *model.Feature, envKind model.EnvironmentKind, values []ge
 			continue
 		}
 
-		parts, _ := feature.SmartDotSplit(field)
+		parts, _ := featureutil.SmartDotSplit(field)
 		parent := mp
 		for _, part := range parts {
 			if p, ok := parent[part].(map[string]any); ok {
@@ -287,7 +288,7 @@ func makeHelmConfigMap(vals []gensql.EnvConfigRow) (map[string]any, error) {
 	val := make(map[string]any)
 
 	for _, v := range vals {
-		keys, err := feature.SmartDotSplit(v.Key)
+		keys, err := featureutil.SmartDotSplit(v.Key)
 		if err != nil {
 			return nil, err
 		}

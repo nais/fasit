@@ -79,7 +79,13 @@ func (r *queryResolver) Features(ctx context.Context) ([]*model.Feature, error) 
 
 // Feature is the resolver for the feature field.
 func (r *queryResolver) Feature(ctx context.Context, name string) (*model.Feature, error) {
-	return r.Repo.FeatureByName(ctx, name)
+	f, err := r.Repo.FeatureByName(ctx, name)
+
+	if errors.Is(err, pgx.ErrNoRows) {
+		return r.Repo.RolloutByName(ctx, name)
+	}
+
+	return f, err
 }
 
 // ConfigOverride returns graphgen.ConfigOverrideResolver implementation.
@@ -90,5 +96,7 @@ func (r *Resolver) ConfigOverride() graphgen.ConfigOverrideResolver {
 // Feature returns graphgen.FeatureResolver implementation.
 func (r *Resolver) Feature() graphgen.FeatureResolver { return &featureResolver{r} }
 
-type configOverrideResolver struct{ *Resolver }
-type featureResolver struct{ *Resolver }
+type (
+	configOverrideResolver struct{ *Resolver }
+	featureResolver        struct{ *Resolver }
+)

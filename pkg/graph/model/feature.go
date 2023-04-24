@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/nais/fasit/pkg/feature/featureutil"
 	"github.com/nais/fasit/pkg/helm"
 	"gopkg.in/yaml.v2"
 	"helm.sh/helm/v3/pkg/chart"
@@ -18,12 +19,12 @@ import (
 
 type Feature struct {
 	FeatureYAML
-	Name        string         `json:"name"`
-	Chart       string         `json:"chart"`
-	Version     string         `json:"version"`
-	Description string         `json:"description"`
-	Source      string         `json:"source"`
-	ValuesYAML  map[string]any `json:"-"`
+	Name        string                     `json:"name"`
+	Chart       string                     `json:"chart"`
+	Version     string                     `json:"version"`
+	Description string                     `json:"description"`
+	Source      string                     `json:"source"`
+	ValuesYAML  map[string]json.RawMessage `json:"-"`
 
 	// for graphql
 	GraphVars struct {
@@ -129,6 +130,8 @@ func FromChart(chart, version string) (*Feature, error) {
 	}
 
 	r := tar.NewReader(gr)
+
+	var valuesYAML map[string]any
 	for {
 		hdr, err := r.Next()
 		if err != nil {
@@ -161,9 +164,11 @@ func FromChart(chart, version string) (*Feature, error) {
 			if err != nil {
 				return nil, err
 			}
-			f.ValuesYAML = vals
+			valuesYAML = vals
 		}
 	}
+
+	f.normalizedYAML(valuesYAML)
 
 	return f, nil
 }
@@ -195,6 +200,41 @@ func (f *Feature) RequiredFields(envKind EnvironmentKind) []string {
 		}
 	}
 	return requiredFields
+}
+
+func (f *Feature) normalizedYAML(valuesYAML map[string]any) {
+	if len(f.Values) == 0 || valuesYAML == nil {
+		return
+	}
+
+	f.ValuesYAML = map[string]json.RawMessage{}
+	for k, v := range f.Values {
+		if v.Config == nil {
+			continue
+		}
+
+		f.ValuesYAML[k] = pluckFromMap(k, valuesYAML)
+	}
+}
+
+func pluckFromMap(key string, mp map[string]any) json.RawMessage {
+	kp, _ := featureutil.SmartDotSplit(key)
+
+	for _, k := range kp {
+		v, ok := mp[k]
+		if !ok {
+			return nil
+		}
+
+		switch v := v.(type) {
+		case map[string]any:
+			mp = v
+		default:
+			b, _ := json.Marshal(v)
+			return b
+		}
+	}
+	return nil
 }
 
 func contains[T comparable](s []T, e T) bool {

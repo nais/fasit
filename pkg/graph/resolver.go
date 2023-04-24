@@ -20,12 +20,8 @@ type Resolver struct {
 	// HelmChartValues *helminfo.Cache
 }
 
-func (r *Resolver) resolveFeatureByName(name string) (*model.Feature, error) {
-	return r.Repo.FeatureByName(context.Background(), name)
-}
-
 func (r *Resolver) missingDependencies(ctx context.Context, featureName string, envID uuid.UUID) ([]*model.Feature, error) {
-	f, err := r.Repo.FeatureByName(ctx, featureName)
+	f, err := r.Repo.FeatureByNameForEnv(ctx, featureName, envID)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +41,7 @@ func (r *Resolver) missingDependencies(ctx context.Context, featureName string, 
 	ret := []*model.Feature{}
 
 	for _, missing := range f.Dependencies.FindMissing(enabledFeatures) {
-		mf, err := r.Repo.FeatureByName(ctx, missing)
+		mf, err := r.Repo.FeatureByNameForEnv(ctx, missing, envID)
 		if err != nil {
 			return nil, fmt.Errorf("getting feature by name: %v: %w", missing, err)
 		}

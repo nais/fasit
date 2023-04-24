@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/nais/fasit/pkg/feature"
+	feature "github.com/nais/fasit/pkg/feature2"
 )
 
 func main() {
