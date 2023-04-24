@@ -44,10 +44,6 @@ jobs:
         image:
           - fasit
           - naisd
-    outputs:
-      fasit: ${{ steps.output.outputs.fasit }}
-      naisd: ${{ steps.output.outputs.naisd }}
-      version: ${{ steps.build-push-sign.outputs.version }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3.5.0
@@ -67,40 +63,18 @@ jobs:
           google_service_account: gh-fasit
           workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
           push: ${{ github.actor != 'dependabot[bot]' }}
-      - name: output
-        id: output
-        run: |
-          echo "${{ matrix.image }}=${{ matrix.image }}" >> $GITHUB_OUTPUT
-
-  deploy_fasit:
-    if: github.ref == 'refs/heads/main' && ${{ contains("fasit", needs.build_and_push_backend.outputs.fasit) }}
-    runs-on: ["fasit-deploy"]
-    needs: ["build_and_push_backend"]
-    permissions:
-      contents: "read"
-      id-token: "write"
-    strategy:
-      matrix:
-        option: ${{ needs.build_and_push_backend.outputs.* }}
-    steps:
-      - name: Checkout fasit
-        uses: actions/checkout@v3.5.0
-      - id: "auth"
-        name: "Authenticate to Google Cloud"
-        uses: "google-github-actions/auth@v1.0.0"
-        with:
-          workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: "gh-fasit@nais-io.iam.gserviceaccount.com"
-          token_format: "access_token"
       - name: Install prereqs
+        if: ${{ contains("fasit", matrix.image) }}
         uses: ./.github/actions/helm_install
       - name: Get credentials
+        if: ${{ contains("fasit", matrix.image) }}
         shell: bash
         run: |
           gcloud container clusters get-credentials nais-io --project nais-io --region europe-north1
       - name: deploy fasit
+        if: ${{ contains("fasit", matrix.image) }}
         env:
-          VERSION: ${{ needs.build_and_push_backend.outputs.version }}
+          VERSION: ${{ steps.build-push-sign.outputs.version }}
         shell: bash
         run: |
           helm upgrade fasit-backend oci://europe-north1-docker.pkg.dev/nais-io/nais/fasit --install --wait --version 0.3.1 --set image.tag=${VERSION} --namespace nais-system --reuse-values
