@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/dashboard-monitor
 source: https://github.com/nais/dashboard/tree/main/charts/dashboard-monitor
-version: 0.1.0
+version: 0.1.1
 description: "Reads information about the cluster and reports to dashboard in management cluster"
 environmentKinds:
   - "onprem"
