@@ -6,3 +6,6 @@ environmentKinds:
   - "legacy"
 autoInstall:
   - "onprem"
+dependsOn:
+  - allOf:
+      - replicator
