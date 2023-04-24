@@ -65,13 +65,11 @@ mapping:
       [
         {{ $tenant_name := .Tenant.Name }}
         {{ range .Envs }}
-        {{ if ne .kind "management" }}
         {
           "endpoint": "https://dependencytrack-backend.{{ .name }}.{{ $tenant_name }}.cloud.nais.io",
           "username": "console",
           "password": "{{ .console_dependencytrack_password }}"
         },
-        {{ end }}
         {{ end }}
       ]
 
