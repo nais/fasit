@@ -64,15 +64,15 @@ jobs:
           workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
           push: ${{ github.actor != 'dependabot[bot]' }}
       - name: Install prereqs
-        if: ${{ contains("fasit", matrix.image) }}
+        if: ${{ contains('fasit', matrix.image) }}
         uses: ./.github/actions/helm_install
       - name: Get credentials
-        if: ${{ contains("fasit", matrix.image) }}
+        if: ${{ contains('fasit', matrix.image) }}
         shell: bash
         run: |
           gcloud container clusters get-credentials nais-io --project nais-io --region europe-north1
       - name: deploy fasit
-        if: ${{ contains("fasit", matrix.image) }}
+        if: ${{ contains('fasit', matrix.image) }}
         env:
           VERSION: ${{ steps.build-push-sign.outputs.version }}
         shell: bash
