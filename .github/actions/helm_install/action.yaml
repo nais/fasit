@@ -28,10 +28,10 @@ runs:
         sudo chmod +x "/usr/local/bin/kubectl" && break
         done
         set -e
-        - name: test kubectl
-          shell: bash
-          run: |
-            kubectl version --client=true
+    - name: test kubectl
+      shell: bash
+      run: |
+          kubectl version --client=true
     - name: install helm
       shell: bash
       run: |
