@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/aiven-operator
 source: https://github.com/nais/helm-charts/tree/main/charts/aiven-operator
-version: 0.2.2
+version: 0.2.4
 description: "Install the Aiven Operator"
 environmentKinds:
   - "tenant"
@@ -22,6 +22,10 @@ mapping:
   location:
     value: "{{ .Env.location }}"
     displayName: Cloud location
+  tenant.environment:
+    value: "{{ .Env.name }}"
+  tenant.name:
+    value: "{{ .Tenant.Name }}"
 config:
   aiven.token:
     type: string
