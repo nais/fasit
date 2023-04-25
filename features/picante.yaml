@@ -15,6 +15,10 @@ config:
     type: string
     required: true
     displayName: "Image tag"
+  config.github.organizations:
+    type: string
+    displayName: "GitHub organization(s)"
+    description: "Required GitHub organizations to verify image attestations"
 mapping:
   apiserverIP:
     value: "{{.Env.apiserver_endpoint}}"
