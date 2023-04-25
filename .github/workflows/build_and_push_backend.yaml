@@ -32,22 +32,15 @@ jobs:
           go install golang.org/x/vuln/cmd/govulncheck@latest
           govulncheck ./...
 
-  build_and_push_backend:
+  build_and_push_fasit:
     if: github.ref == 'refs/heads/main'
     needs: [tests]
     permissions:
       contents: "read"
       id-token: "write"
     runs-on: ubuntu-latest-4-cores
-    strategy:
-      matrix:
-        image:
-          - fasit
-          - naisd
     outputs:
       version: ${{ steps.build-push-sign.outputs.version }}
-      fasit: ${{ steps.output.outputs.fasit }}
-      naisd: ${{ steps.output.outputs.naisd }}
     steps:
       - name: Checkout
         uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # ratchet:actions/checkout@v3.5.0
@@ -62,27 +55,46 @@ jobs:
       - uses: nais/platform-build-push-sign@075f9d1106e1996789f038b9d7ea1f08dd7fd3c9 # ratchet:nais/platform-build-push-sign@main
         id: build-push-sign
         with:
-          dockerfile: Dockerfile_${{ matrix.image }}
-          name: ${{ matrix.image }}
+          dockerfile: Dockerfile_fasit
+          name: fasit
           google_service_account: gh-fasit
           workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
           push: ${{ github.actor != 'dependabot[bot]' }}
-      - name: output
-        id: output
-        run: |
-          echo "${{ matrix.image }}=${{ matrix.image }}" >> $GITHUB_OUTPUT
 
-
-  deploy_fasit:
-    runs-on: [ "fasit-deploy" ]
-    needs: [ "build_and_push_backend" ]
-    if: github.ref == 'refs/heads/main' && ${{ contains('fasit', needs.build_and_push_backend.outputs.fasit) }}
+  build_and_push_naisd:
+    if: github.ref == 'refs/heads/main'
+    needs: [tests]
     permissions:
       contents: "read"
       id-token: "write"
-    strategy:
-      matrix:
-        option: ${{ needs.build_and_push_backend.outputs.* }}
+    runs-on: ubuntu-latest-4-cores
+    steps:
+      - name: Checkout
+        uses: actions/checkout@8f4b7f84864484a7bf31766abe9204da3cbe65b3 # ratchet:actions/checkout@v3.5.0
+      - name: Install cosign
+        uses: sigstore/cosign-installer@66dd3f388647c8d36a2b8b27371cce115a10e003 # ratchet:sigstore/cosign-installer@main
+        with:
+          cosign-release: 'v2.0.0'
+      - name: Verify builder image
+        run: cosign verify --certificate-identity ${{ env.BASEIMG_IDENTITY }} --certificate-oidc-issuer ${{ env.BASEIMG_ISSUER }} ${{ env.BUILDER_IMG }}
+      - name: Verify runner image
+        run: cosign verify --certificate-identity ${{ env.BASEIMG_IDENTITY }} --certificate-oidc-issuer ${{ env.BASEIMG_ISSUER }} ${{ env.RUNNER_IMG }}
+      - uses: nais/platform-build-push-sign@075f9d1106e1996789f038b9d7ea1f08dd7fd3c9 # ratchet:nais/platform-build-push-sign@main
+        id: build-push-sign
+        with:
+          dockerfile: Dockerfile_naisd
+          name: naisd
+          google_service_account: gh-fasit
+          workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
+          push: ${{ github.actor != 'dependabot[bot]' }}
+
+  deploy_fasit:
+    runs-on: [ "fasit-deploy" ]
+    needs: [ "build_and_push_fasit" ]
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: "read"
+      id-token: "write"
     steps:
       - name: Checkout fasit
         uses: actions/checkout@v3.5.0
@@ -102,6 +114,6 @@ jobs:
       - name: deploy fasit
         shell: bash
         env:
-          VERSION: ${{ needs.build_and_push_backend.outputs.version }}
+          VERSION: ${{ needs.build_and_push_fasit.outputs.version }}
         run: |
           helm upgrade fasit-backend oci://europe-north1-docker.pkg.dev/nais-io/nais/fasit --install --wait --version 0.3.1 --set image.tag="sha-${VERSION}" --namespace nais-system --reuse-values
