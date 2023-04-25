@@ -260,19 +260,19 @@ mapping:
       - tenant
       - legacy
       - management
-  kube-prometheus-stack.kubeApiServer:
+  kube-prometheus-stack.kubeApiServer.enabled:
     template: "true"
     ignoreKind:
       - tenant
       - legacy
       - management
-  kube-prometheus-stack.kubeControllerManager:
+  kube-prometheus-stack.kubeControllerManager.enabled:
     template: "true"
     ignoreKind:
       - tenant
       - legacy
       - management
-  kube-prometheus-stack.kubeScheduler:
+  kube-prometheus-stack.kubeScheduler.enabled:
     template: "true"
     ignoreKind:
       - tenant
