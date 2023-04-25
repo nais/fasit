@@ -266,6 +266,12 @@ mapping:
       - tenant
       - legacy
       - management
+  kube-prometheus-stack.defaultRules.rules.nodeExporterAlerting:
+    template: "true"
+    ignoreKind:
+      - tenant
+      - legacy
+      - management
   kube-prometheus-stack.kubeApiServer.enabled:
     template: "true"
     ignoreKind:
