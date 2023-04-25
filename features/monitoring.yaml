@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring
-version: 1.61.6
+version: 1.61.7
 description: "Monitoring stack for nais"
 environmentKinds:
   - "tenant"
@@ -232,6 +232,48 @@ mapping:
       - management
   kube-prometheus-stack.kube-state-metrics.networkPolicy.enabled:
     template: "false"
+    ignoreKind:
+      - tenant
+      - legacy
+      - management
+  kube-prometheus-stack.defaultRules.rules.kubeControllerManager:
+    template: "true"
+    ignoreKind:
+      - tenant
+      - legacy
+      - management
+  kube-prometheus-stack.defaultRules.rules.kubelet:
+    template: "true"
+    ignoreKind:
+      - tenant
+      - legacy
+      - management
+  kube-prometheus-stack.defaultRules.rules.kubernetesSystem:
+    template: "true"
+    ignoreKind:
+      - tenant
+      - legacy
+      - management
+  kube-prometheus-stack.defaultRules.rules.kubeSchedulerAlerting:
+    template: "true"
+    ignoreKind:
+      - tenant
+      - legacy
+      - management
+  kube-prometheus-stack.kubeApiServer:
+    template: "true"
+    ignoreKind:
+      - tenant
+      - legacy
+      - management
+  kube-prometheus-stack.kubeControllerManager:
+    template: "true"
+    ignoreKind:
+      - tenant
+      - legacy
+      - management
+  kube-prometheus-stack.kubeScheduler:
+    template: "true"
     ignoreKind:
       - tenant
       - legacy
