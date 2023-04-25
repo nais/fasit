@@ -72,6 +72,7 @@ mapping:
         },
         {{ end }}
       ]
+    displayName: "DependencyTrack instances"
 
 config:
   backend.image.tag:
