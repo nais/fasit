@@ -74,12 +74,15 @@ jobs:
 
 
   deploy_fasit:
-    if: github.ref == 'refs/heads/main' && ${{ contains("fasit", needs.build_and_push_backend.outputs.fasit) }}
     runs-on: [ "fasit-deploy" ]
     needs: [ "build_and_push_backend" ]
+    if: github.ref == 'refs/heads/main' && ${{ contains('fasit', needs.build_and_push_backend.outputs.fasit) }}
     permissions:
       contents: "read"
       id-token: "write"
+    strategy:
+      matrix:
+        option: ${{ needs.build_and_push_backend.outputs.* }}
     steps:
       - name: Checkout fasit
         uses: actions/checkout@v3.5.0
