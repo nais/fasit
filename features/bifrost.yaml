@@ -13,8 +13,11 @@ rolloutSource:
   - org: nais
     repo: bifrost
 config:
+  backend.image.tag:
+    type: string
   backend.google.iapBackendServiceId:
     type: string
+    required: true
     description: ID for Backend Service for IAP loadbanacer used for verifying JWT tokens from IAP.
 mapping:
   ingress.host:

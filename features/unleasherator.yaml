@@ -12,3 +12,6 @@ dependsOn:
 rolloutSource:
   - org: nais
     repo: unleasherator
+config:
+  controllerManager.manager.image.tag:
+    type: string
