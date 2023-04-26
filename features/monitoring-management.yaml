@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring-management
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring-management
-version: 2.8.5
+version: 2.8.6
 description: "Tenant monitoring services in management cluster (grafana, ...)"
 environmentKinds:
   - "management"
