@@ -60,7 +60,7 @@ mapping:
         password: "{{.Env.picante_dependencytrack_password}}"
     displayName: "Bootstrap users"
   bootstrap.adminPassword:
-    value: "{{.Env.dependencytrack_admin_password}}"
+    value: "{{.Env.admin_dependencytrack_password}}"
     displayName: "Bootstrap admin password"
 
   backend.ingress:
