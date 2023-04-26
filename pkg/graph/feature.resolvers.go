@@ -36,6 +36,7 @@ func (r *featureResolver) Configuration(ctx context.Context, obj *model.Feature)
 	return &model.Configurations{
 		FeatureName: obj.Name,
 		EnvID:       &obj.GraphVars.EnvironmentID,
+		RolloutID:   obj.GraphVars.RolloutID,
 	}, nil
 }
 

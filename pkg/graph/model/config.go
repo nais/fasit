@@ -83,6 +83,7 @@ func (e *ConfigType) UnmarshalJSON(b []byte) error {
 type Configurations struct {
 	FeatureName string     `json:"-"`
 	EnvID       *uuid.UUID `json:"-"`
+	RolloutID   uuid.UUID  `json:"-"`
 }
 
 type ConfigurationGraphVars struct {

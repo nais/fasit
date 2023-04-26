@@ -40,15 +40,23 @@ func (r *configurationsResolver) Configuration(ctx context.Context, obj *model.C
 			return nil, err
 		}
 
-		feature, err = r.Repo.FeatureByName(ctx, obj.FeatureName)
-		if err != nil {
-			return nil, err
+		if obj.RolloutID != uuid.Nil {
+			feature, err = r.Repo.RolloutByName(ctx, obj.FeatureName)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		if feature == nil {
+			feature, err = r.Repo.FeatureByName(ctx, obj.FeatureName)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
 OUTER:
 	for key, val := range feature.Values {
-		fmt.Println("key: ", key)
 		val := val
 		val.GraphQLKey = key
 		if val.Config == nil {
@@ -166,6 +174,9 @@ func (r *mutationResolver) ConfigurationCreate(ctx context.Context, configuratio
 		feature, err = r.Repo.FeatureByNameForEnv(ctx, configuration.Feature, *configuration.EnvironmentID)
 	} else {
 		feature, err = r.Repo.FeatureByName(ctx, configuration.Feature)
+		if errors.Is(err, pgx.ErrNoRows) {
+			feature, err = r.Repo.RolloutByName(ctx, configuration.Feature)
+		}
 	}
 	if err != nil {
 		return nil, err

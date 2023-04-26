@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/auth"
 	"github.com/nais/fasit/pkg/database"
@@ -201,12 +200,6 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 	features, err := r.repo.FeaturesForKind(ctx, d.Kind, d.CI)
 	if err != nil {
 		return fmt.Errorf("features for kind: %w", err)
-	}
-
-	if d.Environment.Name == "dev" {
-		fmt.Println("#####")
-		spew.Dump(features)
-		fmt.Println("#####")
 	}
 
 	envStatus, err := r.repo.StatusForEnvironment(ctx, d.Environment.ID)

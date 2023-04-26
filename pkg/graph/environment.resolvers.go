@@ -8,7 +8,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -25,7 +24,6 @@ func (r *environmentResolver) FeatureStates(ctx context.Context, obj *model.Envi
 // GcpProjectID is the resolver for the gcpProjectID field.
 func (r *environmentResolver) GcpProjectID(ctx context.Context, obj *model.Environment) (*string, error) {
 	ev, err := r.Repo.EnvironmentValueGet(ctx, obj.ID, "project_id", false)
-	fmt.Println("Get project id", string(ev.Value), err)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return nil, err
 	}
