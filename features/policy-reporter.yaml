@@ -20,7 +20,7 @@ mapping:
               cidr: "{{ .Env.apiserver_endpoint }}/32"
     description: "Allow access to the Kubernetes API server"
 
-  policy-reporter.ingress.hosts:
+  policy-reporter.ui.ingress.hosts:
     template: |
       - host: "policy-reporter.{{ .Tenant.Name }}.cloud.nais.io"
         paths:
