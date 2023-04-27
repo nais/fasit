@@ -9,11 +9,12 @@ dependsOn:
   - allOf:
     - "monitoring"
     - "tempo"
-mapping:
+config:
   ingress.host:
     type: string
     displayName: "Public ingress hostname for telemetry"
     description: "Used in frontend applications and must be reachable by Internet users"
+mapping:
   cors_allowed_origins:
     template: |
       - "*.nav.no"
