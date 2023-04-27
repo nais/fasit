@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/policy-reporter
 source: https://github.com/nais/helm-charts/tree/main/charts/policy-reporter
-version: 0.0.2
+version: 0.0.3
 environmentKinds:
   - "management"
   - "onprem"
@@ -8,3 +8,13 @@ dependsOn:
   - allOf:
       - "kyverno"
       - "kyverno-policies"
+
+mapping:
+  policy-reporter.networkPolicy.ingress:
+    template: |
+      - "{{ .Env.apiserver_endpoint }}/32"
+    description: "Allow access to the Kubernetes API server"
+  policy-reporter.ingress.hosts:
+    template: |
+      - "policy-reporter.{{ .Env.name }}.{{ .Tenant.Name }}.cloud.nais.io"
+    description: "Hosts to add to the ingress"
