@@ -11,7 +11,9 @@ dependsOn:
     - "tempo"
 mapping:
   ingress.host:
-    value: '{{ subdomain . "telemetry" }}'
+    type: string
+    displayName: "Public ingress hostname for telemetry"
+    description: "Used in frontend applications and must be reachable by Internet users"
   cors_allowed_origins:
     template: |
       - "*.nav.no"
