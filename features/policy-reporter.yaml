@@ -22,15 +22,15 @@ mapping:
 
   policy-reporter.ui.ingress.hosts:
     template: |
-      {{ if eq "management" .Kind }}
-      - host: "policy-reporter.{{.Tenant.Name}}.cloud.nais.io"
-        paths:
-          - path: "/"
-            pathType: "ImplementationSpecific"
-      {{ else }}
+      {{- if eq "management" .Kind }}
+        - host: "policy-reporter.{{.Tenant.Name}}.cloud.nais.io"
+          paths:
+            - path: "/"
+              pathType: "ImplementationSpecific"
+      {{- else }}
         - host: "policy-reporter.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io"
             paths:
             - path: "/"
                 pathType: "ImplementationSpecific"
-        {{ end }}
+      {{- end }}
     description: "Allow access to the Policy Reporter API"
