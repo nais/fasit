@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/unleasherator
 source: https://github.com/nais/unleasherator/tree/main/charts/unleasherator
-version: 1.4.0
+version: 1.6.0
 description: "Operator for Unleash"
 environmentKinds:
   - "management"
@@ -12,6 +12,18 @@ dependsOn:
 rolloutSource:
   - org: nais
     repo: unleasherator
+mapping:
+  networkPolicy.enabled:
+    template: '{{ne .Kind "onprem"}}'
+  networkPolicy.allowDNS:
+    value: true
+  networkPolicy.apiServerCIDR:
+    value: "{{ .Env.apiserver_endpoint }}/32"
+    ignoreKind:
+      - onprem
+  networkPolicy.allowedNamespaces:
+    value:
+      - bifrost-unleash
 config:
   controllerManager.manager.image.tag:
     type: string
