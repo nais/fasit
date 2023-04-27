@@ -34,3 +34,28 @@ mapping:
             pathType: "ImplementationSpecific"
       {{ end }}
     description: "Allow access to the Policy Reporter API"
+
+  policy-reporter.kyvernoPlugin.ingress.hosts:
+    template: |
+      {{ if eq .Kind "management" }}
+      - host: "policy-reporter-kyverno-plugin.{{.Tenant.Name}}.cloud.nais.io"
+        paths:
+          - path: "/"
+            pathType: "ImplementationSpecific"
+      {{ else }}
+      - host: "policy-reporter-kyverno-plugin.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io"
+        paths:
+          - path: "/"
+            pathType: "ImplementationSpecific"
+      {{ end }}
+    description: "Allow access to the Policy Reporter API"
+
+  policy-reporter.kyvernoPlugin.networkPolicy.egress:
+    template: |
+      - ports:
+          - port: 443
+            protocol: TCP
+        to:
+          - ipBlock:
+              cidr: "{{ .Env.apiserver_endpoint }}/32"
+    description: "Allow access to the Kubernetes API server"
