@@ -16,7 +16,7 @@ mapping:
   networkPolicy.enabled:
     template: '{{ne .Kind "onprem"}}'
   networkPolicy.allowDNS:
-    value: "true"
+    template: 'true'
   networkPolicy.apiServerCIDR:
     value: "{{ .Env.apiserver_endpoint }}/32"
     ignoreKind:
