@@ -27,6 +27,15 @@ config:
     description: "Run Kyverno policies in background"
     displayName: "Background"
 
+  customPolicies.verifySignedImage.enabled:
+    type: bool
+    description: "Verify that images are signed"
+    displayName: "Verify that images are signed"
+    ignoreKind:
+      - "management"
+      - "onprem"
+      - "legacy"
+
 mapping:
   customPolicies.denyImageRegistries.extraArgs:
     template: |
