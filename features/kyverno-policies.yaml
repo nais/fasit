@@ -28,7 +28,7 @@ config:
     displayName: "Background"
 
   customPolicies.verifySignedImage.enabled:
-    type: bool
+    type: string
     description: "Verify that images are signed"
     displayName: "Verify that images are signed"
     ignoreKind:
