@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/bifrost
 source: https://github.com/nais/bifrost/tree/main/charts/bifrost
-version: 1.5.4
+version: 1.5.5
 description: "Portal for managing Frontend Platform resources"
 environmentKinds:
   - "management"
