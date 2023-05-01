@@ -4,7 +4,7 @@ go 1.19
 
 require (
 	cloud.google.com/go/cloudsqlconn v1.2.2
-	cloud.google.com/go/pubsub v1.28.0
+	cloud.google.com/go/pubsub v1.30.0
 	cloud.google.com/go/storage v1.29.0
 	github.com/99designs/gqlgen v0.17.27
 	github.com/GoogleCloudPlatform/cloudsql-proxy v1.33.5
@@ -183,7 +183,7 @@ require (
 	golang.org/x/tools v0.7.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/genproto v0.0.0-20230306155012-7f2fa6fef1f4 // indirect
+	google.golang.org/genproto v0.0.0-20230320184635-7606e756e683 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	k8s.io/apiextensions-apiserver v0.26.0 // indirect
 	k8s.io/apiserver v0.26.0 // indirect
