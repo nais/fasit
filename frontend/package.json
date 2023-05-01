@@ -30,7 +30,7 @@
     "graphql": "16.6.0",
     "graphql-ws": "^5.11.2",
     "lodash.isequal": "4.5.0",
-    "next": "12.3.1",
+    "next": "13.3.4",
     "next-remove-imports": "1.0.8",
     "react": "18.2.0",
     "react-collapse": "^5.1.1",
