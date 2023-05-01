@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout fasit
-        uses: actions/checkout@v3.5.0
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
       - name: Install cosign
         uses: sigstore/cosign-installer@204a51a57a74d190b284a0ce69b44bc37201f343 # ratchet:sigstore/cosign-installer@main
         with:
@@ -54,7 +54,7 @@ jobs:
       id-token: "write"
     steps:
       - name: Checkout fasit
-        uses: actions/checkout@v3.5.0
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
       - id: "auth"
         name: "Authenticate to Google Cloud"
         uses: "google-github-actions/auth@v1.0.0"
