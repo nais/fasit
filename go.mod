@@ -9,7 +9,7 @@ require (
 	github.com/99designs/gqlgen v0.17.27
 	github.com/GoogleCloudPlatform/cloudsql-proxy v1.33.5
 	github.com/GoogleCloudPlatform/k8s-config-connector v1.101.0
-	github.com/Masterminds/semver/v3 v3.2.0
+	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/coreos/go-oidc/v3 v3.5.0
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/go-chi/chi/v5 v5.0.8
