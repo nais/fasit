@@ -26,7 +26,7 @@ require (
 	github.com/pressly/goose/v3 v3.9.0
 	github.com/prometheus/client_golang v1.15.0
 	github.com/ravilushqa/otelgqlgen v0.11.0
-	github.com/rs/cors v1.8.3
+	github.com/rs/cors v1.9.0
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.0
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stevenle/topsort v0.2.0
