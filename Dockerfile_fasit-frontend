@@ -8,7 +8,7 @@ COPY ./frontend .
 RUN npm install --legacy-peer-deps --quiet
 RUN npm run build
 
-FROM cgr.dev/chainguard/node:18
+FROM cgr.dev/chainguard/node:19
 
 ENV NODE_ENV production
 ENV NEXT_PUBLIC_ENV production
