@@ -7,7 +7,7 @@ require (
 	cloud.google.com/go/pubsub v1.30.0
 	cloud.google.com/go/storage v1.29.0
 	github.com/99designs/gqlgen v0.17.27
-	github.com/GoogleCloudPlatform/cloudsql-proxy v1.33.5
+	github.com/GoogleCloudPlatform/cloudsql-proxy v1.33.6
 	github.com/GoogleCloudPlatform/k8s-config-connector v1.103.0
 	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/coreos/go-oidc/v3 v3.5.0
@@ -21,7 +21,7 @@ require (
 	github.com/jackc/pgconn v1.14.0
 	github.com/jackc/pgtype v1.14.0
 	github.com/jackc/pgx/v4 v4.18.1
-	github.com/lib/pq v1.10.7
+	github.com/lib/pq v1.10.8
 	github.com/ory/dockertest/v3 v3.9.1
 	github.com/pressly/goose/v3 v3.10.0
 	github.com/prometheus/client_golang v1.15.0
@@ -37,7 +37,7 @@ require (
 	go.opentelemetry.io/otel/metric v0.38.0
 	go.opentelemetry.io/otel/sdk/metric v0.38.0
 	golang.org/x/sync v0.1.0
-	google.golang.org/api v0.117.0
+	google.golang.org/api v0.118.0
 	google.golang.org/grpc v1.54.0
 	google.golang.org/protobuf v1.30.0
 	gopkg.in/yaml.v2 v2.4.0
