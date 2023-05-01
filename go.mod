@@ -27,7 +27,7 @@ require (
 	github.com/prometheus/client_golang v1.14.0
 	github.com/ravilushqa/otelgqlgen v0.11.0
 	github.com/rs/cors v1.8.3
-	github.com/santhosh-tekuri/jsonschema/v5 v5.2.0
+	github.com/santhosh-tekuri/jsonschema/v5 v5.3.0
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stevenle/topsort v0.2.0
 	github.com/stretchr/testify v1.8.2
