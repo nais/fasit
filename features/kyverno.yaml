@@ -36,15 +36,17 @@ config:
     description: "CPU request for kyverno pod."
 mapping:
   admissionWebhook.networkPolicy.enabled:
-    template: { { if eq .Kind "onprem" } }false{{ else }}true{{ end }}
+    template: {{ if eq .Kind "onprem" }}false{{ else }}true{{ end }}
   admissionController.networkPolicy.ingressFrom:
     template: |
+      {{ if ne .Kind "onprem" }}
       - ipBlock:
           cidr: "{{ .Env.apiserver_endpoint }}/32"
       - namespaceSelector: {}
         podSelector:
           matchLabels:
             k8s-app: kube-dns
+      {{ end }}
   webhooksCleanup.enabled:
     displayName: "Enable webhook cleanup"
     value: "true"
