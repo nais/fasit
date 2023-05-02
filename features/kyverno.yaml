@@ -42,7 +42,7 @@ mapping:
     template: |
         - ipBlock:
             cidr: "{{ .Env.apiserver_endpoint }}/32"
-        - namespaceSelector: {}
+        - namespaceSelector: "{}"
           podSelector:
             matchLabels:
               k8s-app: kube-dns
