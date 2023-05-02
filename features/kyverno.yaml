@@ -36,7 +36,7 @@ config:
     description: "CPU request for kyverno pod."
 mapping:
   admissionController.networkPolicy.enabled:
-    template: {{ if eq .Kind "onprem" }}false{{ else }}true{{ end }}
+    template: '{{ if eq .Kind onprem }}false{{ else }}true{{ end }}'
     description: "Enable network policy for admission webhook"
   admissionController.networkPolicy.ingressFrom:
     template: |
