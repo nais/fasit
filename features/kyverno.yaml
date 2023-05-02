@@ -40,12 +40,12 @@ mapping:
   admissionController.networkPolicy.ingressFrom:
     template: |
       {{ if ne .Kind "onprem" }}
-      - ipBlock:
-          cidr: "{{ .Env.apiserver_endpoint }}/32"
-      - namespaceSelector: {}
-        podSelector:
-          matchLabels:
-            k8s-app: kube-dns
+        - ipBlock:
+            cidr: "{{ .Env.apiserver_endpoint }}/32"
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
       {{ end }}
   webhooksCleanup.enabled:
     displayName: "Enable webhook cleanup"
