@@ -144,12 +144,8 @@ mapping:
         ingressClass: nais-ingress-external
       - domainSuffix: .very.intern.dev.nav.no
         ingressClass: nais-ingress-very-internal
-      - domainSuffix: .dev.intern.nav.no
-        ingressClass: gw-dev-intern-nav-no
       - domainSuffix: .dev-gcp.nais.io
         ingressClass: gw-dev-gcp-nais-io
-      - domainSuffix: .dev.nav.no
-        ingressClass: gw-dev-nav-no
       - domainSuffix: .dev.helserefusjon.no
         ingressClass: nais-ingress
       - domainSuffix: .intern.nav.no
