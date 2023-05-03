@@ -17,6 +17,9 @@ import (
 	"helm.sh/helm/v3/pkg/chartutil"
 )
 
+// DownloadChartFunc is used to download a chart from a given source. It is a variable so that it can be mocked in tests.
+var DownloadChartFunc = helm.DownloadChart
+
 type Feature struct {
 	FeatureYAML
 	Name        string                     `json:"name"`
@@ -115,7 +118,7 @@ func (v Value) ValidConfig(value json.RawMessage) error {
 }
 
 func FromChart(chart, version string) (*Feature, error) {
-	resp, err := helm.DownloadChart(chart, version, "")
+	resp, err := DownloadChartFunc(chart, version, "")
 	if err != nil {
 		return nil, err
 	}

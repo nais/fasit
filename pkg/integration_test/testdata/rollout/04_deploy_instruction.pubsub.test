@@ -1,0 +1,10 @@
+RETURNS
+
+OPTION topic=naisd
+
+ENDOPTS
+
+{
+  "attributes": {},
+  "message": {}
+}

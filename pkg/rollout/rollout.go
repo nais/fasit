@@ -13,7 +13,7 @@ import (
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
-type store interface {
+type Store interface {
 	database.EnvironmentRepo
 	database.FeatureDataRepo
 	database.FeatureStateRepo
@@ -33,7 +33,7 @@ type Rollout struct {
 	provder  *oidc.Provider
 	verifier *oidc.IDTokenVerifier
 
-	repo store
+	repo Store
 
 	// AllowAll will allow all rollout requests when set to true
 	AllowAll bool
@@ -44,7 +44,7 @@ type Request struct {
 	Version string `json:"version"`
 }
 
-func New(ctx context.Context, repo store) (*Rollout, error) {
+func New(ctx context.Context, repo Store) (*Rollout, error) {
 	provider, err := oidc.NewProvider(ctx, "https://token.actions.githubusercontent.com")
 	if err != nil {
 		return nil, err
@@ -77,6 +77,7 @@ func (r *Rollout) Rollout(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
 	feature, err := model.FromChart(body.Chart, body.Version)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)

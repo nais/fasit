@@ -261,7 +261,7 @@ func Test_queryResolver_Configuration_Feature_Computed(t *testing.T) {
 			Values: model.Values{
 				"key.computed.one": model.Value{
 					Computed: &model.Computed{
-						Template: `{{ .Values.value }}`,
+						Template: `{{ .Env.value }}`,
 					},
 				},
 			},
@@ -269,8 +269,8 @@ func Test_queryResolver_Configuration_Feature_Computed(t *testing.T) {
 	}
 
 	repo := mocks.NewRepo(t)
-	repo.On("EnvironmentGet", mock.Anything, env.ID).Return(env, nil).Once()
-	repo.On("EnvConfig", mock.Anything, f.Name, env.ID).Return([]*model.Configuration{}, nil).Once()
+	// repo.On("EnvironmentGet", mock.Anything, env.ID).Return(env, nil).Once()
+	// repo.On("EnvConfig", mock.Anything, f.Name, env.ID).Return([]*model.Configuration{}, nil).Once()
 	repo.On("FeatureByNameForEnv", mock.Anything, f.Name, env.ID).Return(f, nil).Once()
 	repo.On("MappingValuesForEnvironment", mock.Anything, env.ID, false).Return(
 		&feature.ComputedValues{
@@ -280,6 +280,7 @@ func Test_queryResolver_Configuration_Feature_Computed(t *testing.T) {
 			},
 		},
 		env.Kind,
+		nil,
 	)
 
 	r := &queryResolver{
@@ -294,55 +295,15 @@ func Test_queryResolver_Configuration_Feature_Computed(t *testing.T) {
 		t.Fatalf("Computed(ctx, %q, envID) err = %v, want nil", f.Name, err)
 	}
 
-	want := []*model.Configuration{
-		{
-			Value:   &model.Value{GraphQLKey: "key.unknown"},
-			Content: json.RawMessage(`"shouldn't be set"`),
-			Source:  model.ConfigSourceUnknown,
-			Key:     "key.unknown",
-			GraphVars: model.ConfigurationGraphVars{
-				FeatureName:   f.Name,
-				EnvironmentID: &env.ID,
-			},
-		},
+	want := []*model.ComputedValue{
 		{
 			Value: &model.Value{
-				Config:     &model.Config{Type: model.ConfigTypeString},
-				GraphQLKey: "key.env",
+				Computed: &model.Computed{
+					Template: "{{ .Env.value }}",
+				},
+				GraphQLKey: "key.computed.one",
 			},
-			Content: json.RawMessage(`"env"`),
-			Source:  model.ConfigSourceEnv,
-			Key:     "key.env",
-			GraphVars: model.ConfigurationGraphVars{
-				FeatureName:   f.Name,
-				EnvironmentID: &env.ID,
-			},
-		},
-		{
-			Value: &model.Value{
-				Config:     &model.Config{Type: model.ConfigTypeString},
-				GraphQLKey: "key.set",
-			},
-			Content: json.RawMessage(`"value"`),
-			Source:  model.ConfigSourceGlobal,
-			Key:     "key.set",
-			GraphVars: model.ConfigurationGraphVars{
-				FeatureName:   f.Name,
-				EnvironmentID: &env.ID,
-			},
-		},
-		{
-			Value: &model.Value{
-				Config:     &model.Config{Type: model.ConfigTypeString},
-				GraphQLKey: "another.key",
-			},
-			Content: json.RawMessage(`"helm_value"`),
-			Source:  model.ConfigSourceHelm,
-			Key:     "another.key",
-			GraphVars: model.ConfigurationGraphVars{
-				FeatureName:   f.Name,
-				EnvironmentID: &env.ID,
-			},
+			Content: json.RawMessage(`"computed value"`),
 		},
 	}
 

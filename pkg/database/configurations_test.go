@@ -360,6 +360,10 @@ func TestRepo_HelmValues_OK(t *testing.T) {
 	}
 
 	want := map[string]any{
+		"fasit": map[string]any{
+			"env":    map[string]string{"kind": "tenant", "name": "env1"},
+			"tenant": map[string]string{"name": "tenant1"},
+		},
 		"my": map[string]any{
 			"key": pgtype.JSONB{Bytes: []byte(`"stringval"`), Status: pgtype.Present},
 		},
@@ -521,6 +525,10 @@ func TestRepo_HelmValues_WithMappingValues(t *testing.T) {
 	}
 
 	want := map[string]any{
+		"fasit": map[string]any{
+			"env":    map[string]string{"kind": "tenant", "name": "env1"},
+			"tenant": map[string]string{"name": "tenant1"},
+		},
 		"kind":     "tenant",
 		"names":    map[string]any{"environment": "env1", "tenant": "tenant1"},
 		"projects": map[string]any{"env": "env-project", "mgmt": "my-project"},
@@ -592,6 +600,10 @@ func TestRepo_HelmValues_WithIgnoredKeys_Ignored(t *testing.T) {
 	}
 
 	want := map[string]any{
+		"fasit": map[string]any{
+			"env":    map[string]string{"kind": "onprem", "name": "env1"},
+			"tenant": map[string]string{"name": "tenant1"},
+		},
 		"my": map[string]any{
 			"key": pgtype.JSONB{Bytes: []byte(`"stringval"`), Status: pgtype.Present},
 		},
@@ -663,6 +675,10 @@ func TestRepo_HelmValues_WithIgnoredKeys_NotIgnored(t *testing.T) {
 	}
 
 	want := map[string]any{
+		"fasit": map[string]any{
+			"env":    map[string]string{"kind": "tenant", "name": "env1"},
+			"tenant": map[string]string{"name": "tenant1"},
+		},
 		"my": map[string]any{
 			"key": pgtype.JSONB{Bytes: []byte(`"stringval"`), Status: pgtype.Present},
 		},
