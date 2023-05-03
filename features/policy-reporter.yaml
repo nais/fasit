@@ -20,7 +20,7 @@ mapping:
               cidr: "{{ .Env.apiserver_endpoint }}/32"
     description: "Allow access to the Kubernetes API server"
 
-  ui.ingress.hosts:
+  policy-reporter.ui.ingress.hosts:
     template: |
       {{ if eq .Kind "management" }}
       - host: "policy-reporter.{{.Tenant.Name}}.cloud.nais.io"
@@ -35,7 +35,7 @@ mapping:
       {{ end }}
     description: "Allow access to the Policy Reporter API"
 
-  kyvernoPlugin.ingress.hosts:
+  policy-reporter.kyvernoPlugin.ingress.hosts:
     template: |
       {{ if eq .Kind "management" }}
       - host: "policy-reporter-kyverno-plugin.{{.Tenant.Name}}.cloud.nais.io"
@@ -50,7 +50,7 @@ mapping:
       {{ end }}
     description: "Allow access to the Policy Reporter API"
 
-  kyvernoPlugin.networkPolicy.egress:
+  policy-reporter.kyvernoPlugin.networkPolicy.egress:
     template: |
       - ports:
           - port: 443
