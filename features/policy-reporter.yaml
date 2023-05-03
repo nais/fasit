@@ -4,6 +4,7 @@ version: 0.0.3
 environmentKinds:
   - "management"
   - "onprem"
+  - "tenant"
 dependsOn:
   - allOf:
       - "kyverno"
