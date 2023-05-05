@@ -73,6 +73,14 @@ mapping:
         {{ end }}
       ]
     displayName: "DependencyTrack instances"
+  backend.gitHub.organization:
+    type: string
+    description: The organization slug where the github reconciler will manage teams.
+    value: "{{.Management.hookd_provision_key}}"
+  backend.gitHub.authEndpoint:
+    type: string
+    description: The endpoint for the token service that provisions console with GitHub installation tokens for the correct tenant organization.
+    value: "{{.Management.hookd_provision_key}}"
 
 config:
   backend.image.tag:
