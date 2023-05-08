@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/console
 source: https://github.com/nais/helm-charts/tree/main/charts/console
-version: 0.0.31
+version: 0.0.32
 description: "For managing teams and resources on the platform"
 environmentKinds:
   - "management"
@@ -101,10 +101,3 @@ config:
   backend.firstRunEnableReconcilers:
     type: string
     description: Comma separated list of reconcilers to enable on first run (empty database). Changing this after console has been deployed does nothing.
-  backend.gitHub.appId:
-    type: string
-    description: The ID of the NAIS Console GitHub Application
-  backend.gitHub.privateKeyBase64:
-    type: string
-    secret: true
-    description: Base64 encoded private key (in PEM format) for the NAIS Console GitHub Application
