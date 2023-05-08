@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/naiserator
 source: https://github.com/nais/naiserator/tree/master/charts
-version: 1.2.2
+version: 1.2.3
 rolloutSource:
   - org: nais
     repo: naiserator
@@ -71,11 +71,6 @@ config:
   naiserator.features.wonderwall:
     type: bool
     displayName: "Enable Wonderwall"
-    ignoreKind:
-      - "onprem"
-  naiserator.features.wonderwall-sso:
-    type: bool
-    displayName: "Enable Wonderwall SSO"
     ignoreKind:
       - "onprem"
   naiserator.features.gar-toleration:
