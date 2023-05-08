@@ -75,10 +75,10 @@ mapping:
     displayName: "DependencyTrack instances"
   backend.gitHub.organization:
     description: The organization slug where the github reconciler will manage teams.
-    value: "{{.Management.console_github_auth_endpoint}}"
+    value: "{{.Management.console_github_org}}"
   backend.gitHub.authEndpoint:
     description: The endpoint for the token service that provisions console with GitHub installation tokens for the correct tenant organization.
-    value: "{{.Management.console_github_org}}"
+    value: "{{.Management.console_github_auth_endpoint}}"
 
 config:
   backend.image.tag:
