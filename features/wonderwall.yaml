@@ -46,16 +46,6 @@ config:
     type: string
     required: true
     description: Host for SSO server.
-  idporten.loginstatusHost:
-    type: string
-    required: true
-    description: Host for Loginstatus server. To be removed when SSO is rolled out.
-  loginstatus.cookieDomain:
-    type: string
-    required: true
-  loginstatus.tokenURL:
-    type: string
-    required: true
   networkPolicy.enabled:
     type: bool
   redis.host:
