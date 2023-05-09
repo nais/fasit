@@ -11,6 +11,33 @@ dependsOn:
       - "kyverno-policies"
 
 mapping:
+  policy-reporter.ui.enabled:
+    template: '{{ if eq .Kind "management" }}true{{ else }}false{{ end }}'
+    description: "Enable the UI"
+
+  policy-reporter.ui.clusterName:
+    template: "{{.Tenant.Name}}"
+    description: "Name of the cluster to show in the UI"
+    ignoreKind:
+      - "onprem"
+      - "legacy"
+      - "tenant"
+
+  policy-reporter.ui.clusters:
+    template: |
+        {{ $tenant_name := .Tenant.Name }}
+        {{ range .Envs }}
+          - name: "{{ .name }}"
+            api: "https://policy-reporter.{{ .name }}.{{ $tenant_name }}.cloud.nais.io"
+            kyvernoApi: "https://policy-reporter-kyverno-plugin.{{ .name }}.{{ $tenant_name }}.cloud.nais.io"
+            skipTLS: true
+        {{ end }}
+    description: "List of clusters to show in the UI"
+    ignoreKind:
+      - "onprem"
+      - "legacy"
+      - "tenant"
+
   policy-reporter.networkPolicy.egress:
     template: |
       - ports:
@@ -49,7 +76,7 @@ mapping:
           - path: "/"
             pathType: "ImplementationSpecific"
       {{ end }}
-    description: "Allow access to the Policy Reporter API"
+    description: "Allow access to the kyverno plugin API"
 
   policy-reporter.kyvernoPlugin.networkPolicy.egress:
     template: |
@@ -60,3 +87,13 @@ mapping:
           - ipBlock:
               cidr: "{{ .Env.apiserver_endpoint }}/32"
     description: "Allow access to the Kubernetes API server"
+
+  networkPolicy.fqdn.egressTo:
+    template: |
+      - policy-reporter-kyverno-plugin.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io
+      - policy-reporter.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io
+    description: "Allow access to the Policy Reporter API"
+    ignoreKind:
+      - "onprem"
+      - "legacy"
+      - "tenant"
