@@ -92,6 +92,10 @@ mapping:
               cidr: "{{ .Env.apiserver_endpoint }}/32"
     description: "Allow access to the Kubernetes API server"
 
+  networkPolicy.fqdn.enabled:
+    template: '{{ if eq .Kind "management" }}true{{ else }}false{{ end }}'
+    description: "Enable the FQDN network policy"
+
   networkPolicy.fqdn.egressTo:
     template: |
       - policy-reporter-kyverno-plugin.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io
