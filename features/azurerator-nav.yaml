@@ -40,14 +40,14 @@ config:
 
 mapping:
   azurerator.controller.tenantNameStrictMatching:
-    template: '{{ if or (eq "prod-fss" .Env.name) (eq "prod-gcp" .Env.name) }}false{{ else }}true{{ end }}'
+    template: '{{ if or (eq "prod-fss" .Env.name) (eq "prod-gcp" .Env.name) (eq "prod" .Env.name) }}false{{ else }}true{{ end }}'
     displayName: "Strict resource matching"
     description: "If false, will process any resources that have not explicitly declared azure.tenant.name."
   azurerator-dev.enabled:
-    template: '{{ if or (eq "prod-fss" .Env.name) (eq "prod-gcp" .Env.name) }}false{{ else }}true{{ end }}'
+    template: '{{ if or (eq "prod-fss" .Env.name) (eq "prod-gcp" .Env.name) (eq "prod" .Env.name) }}false{{ else }}true{{ end }}'
     displayName: "Enable azurerator-dev"
   azurerator-dev.controller.tenantNameStrictMatching:
-    template: '{{ if or (eq "dev-fss" .Env.name) (eq "dev-gcp" .Env.name) }}false{{ else }}true{{ end }}'
+    template: '{{ if or (eq "dev-fss" .Env.name) (eq "dev-gcp" .Env.name) (eq "dev" .Env.name) }}false{{ else }}true{{ end }}'
     displayName: "Strict resource matching (dev)"
     description: "If false, will process any resources that have not explicitly declared azure.tenant.name."
   global.clusterName:
