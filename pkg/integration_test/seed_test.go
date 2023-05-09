@@ -16,14 +16,14 @@ func seedTenantEnv(ctx context.Context, db database.Repo, state map[string]any, 
 	}
 
 	tenant, err := db.TenantCreate(ctx, &model.TenantCreate{
-		Name: "tenant1",
+		Name: tenantName,
 	})
 	if err != nil {
 		return fmt.Errorf("seedTenantEnv: unable to create tenant: %w", err)
 	}
 
 	mgmt, err := db.EnvironmentCreate(ctx, &model.EnvironmentCreate{
-		Name:     "management",
+		Name:     envManagementName,
 		Kind:     model.EnvironmentKindManagement,
 		TenantID: tenant.ID,
 	})
@@ -32,7 +32,7 @@ func seedTenantEnv(ctx context.Context, db database.Repo, state map[string]any, 
 	}
 
 	tenantEnv, err := db.EnvironmentCreate(ctx, &model.EnvironmentCreate{
-		Name:     "env_tenant",
+		Name:     envTenantName,
 		Kind:     model.EnvironmentKindTenant,
 		TenantID: tenant.ID,
 	})

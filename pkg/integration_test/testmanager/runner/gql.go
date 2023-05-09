@@ -11,19 +11,19 @@ import (
 	"github.com/nais/fasit/pkg/integration_test/testmanager/parser"
 )
 
-type GQLRunner struct {
+type GQL struct {
 	server http.Handler
 }
 
-func NewGQLRunner(server http.Handler) *GQLRunner {
-	return &GQLRunner{server: server}
+func NewGQLRunner(server http.Handler) *GQL {
+	return &GQL{server: server}
 }
 
-func (r *GQLRunner) Ext() string {
+func (g *GQL) Ext() string {
 	return "gql"
 }
 
-func (r *GQLRunner) Run(ctx context.Context, logf func(format string, args ...any), body []byte, state map[string]any) error {
+func (g *GQL) Run(ctx context.Context, logf func(format string, args ...any), body []byte, state map[string]any) error {
 	f, err := parser.Parse(body, state)
 	if err != nil {
 		return fmt.Errorf("gql.Parse: %w", err)
@@ -54,7 +54,7 @@ func (r *GQLRunner) Run(ctx context.Context, logf func(format string, args ...an
 
 		req.Header.Add("Content-Type", "application/json")
 
-		r.server.ServeHTTP(rec, req)
+		g.server.ServeHTTP(rec, req)
 
 		res := map[string]any{}
 		if err := json.Unmarshal(rec.Body.Bytes(), &res); err != nil {

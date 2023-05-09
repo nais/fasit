@@ -13,15 +13,15 @@ RETURNS
 
 [
   {
-    "tenant_name": "tenant1",
+    "tenant_name": "tenant23",
     "tenant_ci": true,
-    "name": "env_tenant",
+    "name": "management",
     "ci": true
   },
   {
-    "tenant_name": "tenant1",
+    "tenant_name": "tenant23",
     "tenant_ci": true,
-    "name": "management",
+    "name": "testing",
     "ci": true
   }
 ]

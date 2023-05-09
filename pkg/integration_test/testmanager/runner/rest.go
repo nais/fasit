@@ -12,19 +12,19 @@ import (
 	"github.com/nais/fasit/pkg/integration_test/testmanager/parser"
 )
 
-type RestRunner struct {
+type REST struct {
 	server http.Handler
 }
 
-func NewRestRunner(server http.Handler) *RestRunner {
-	return &RestRunner{server: server}
+func NewRestRunner(server http.Handler) *REST {
+	return &REST{server: server}
 }
 
-func (r *RestRunner) Ext() string {
+func (r *REST) Ext() string {
 	return "rest"
 }
 
-func (r *RestRunner) Run(ctx context.Context, logf func(format string, args ...any), body []byte, state map[string]any) error {
+func (r *REST) Run(ctx context.Context, logf func(format string, args ...any), body []byte, state map[string]any) error {
 	f, err := parser.Parse(body, state)
 	if err != nil {
 		return fmt.Errorf("rest.Parse: %w", err)

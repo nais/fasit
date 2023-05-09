@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-type CreateRunnerFunc func(ctx context.Context, config Config, state map[string]any) ([]Runner, func(), error)
+type CreateRunnerFunc func(ctx context.Context, config Config, state map[string]any) (runners []Runner, close func(), opts []Option, err error)
 
 type Runner interface {
 	Ext() string
@@ -16,6 +16,16 @@ type Runner interface {
 type Manager struct {
 	t              *testing.T
 	createRunnerFn CreateRunnerFunc
+
+	beforeHook Hook
+}
+
+type Option func(t *testCase)
+
+func WithBeforeHook(hook Hook) Option {
+	return func(t *testCase) {
+		t.beforeHook = hook
+	}
 }
 
 func New(t *testing.T, createRunners CreateRunnerFunc) *Manager {
@@ -36,7 +46,7 @@ func (m *Manager) Run(ctx context.Context, dir fs.FS) error {
 			continue
 		}
 
-		runTestCase(ctx, m.t, m.createRunnerFn, dir, d.Name())
+		runTestCase(ctx, m, m.createRunnerFn, dir, d.Name())
 	}
 
 	return nil

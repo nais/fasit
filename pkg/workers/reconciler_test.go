@@ -234,7 +234,7 @@ func TestReconcile(t *testing.T) {
 			}
 
 			ctx := context.Background()
-			if err := reconciler.reconcile(ctx); err != nil {
+			if err := reconciler.Reconcile(ctx); err != nil {
 				t.Errorf("reconcile failed: %v", err)
 			}
 

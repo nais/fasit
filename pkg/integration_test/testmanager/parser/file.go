@@ -16,7 +16,7 @@ type File struct {
 	Store   map[string]string
 }
 
-func (f *File) Execute(state map[string]any, ex func() (any, error)) error {
+func (f *File) CmpOpts() ([]cmp.Option, error) {
 	cmpopts := []cmp.Option{}
 	for path, option := range f.Opts {
 		switch option {
@@ -25,10 +25,13 @@ func (f *File) Execute(state map[string]any, ex func() (any, error)) error {
 		case IgnoreOption:
 			cmpopts = append(cmpopts, cmp.FilterPath(ignorePath(path), cmp.Ignore()))
 		default:
-			return fmt.Errorf("unknown option %q for path %q", option, path)
+			return nil, fmt.Errorf("unknown option %q for path %q", option, path)
 		}
 	}
+	return cmpopts, nil
+}
 
+func (f *File) Execute(state map[string]any, ex func() (any, error)) error {
 	val, err := ex()
 	if err != nil {
 		return err
@@ -47,6 +50,10 @@ func (f *File) Execute(state map[string]any, ex func() (any, error)) error {
 		return fmt.Errorf("unable to unmarshal expected returns: %w\n%v", err, f.Returns)
 	}
 
+	cmpopts, err := f.CmpOpts()
+	if err != nil {
+		return err
+	}
 	if !cmp.Equal(val, expected, cmpopts...) {
 		return fmt.Errorf("diff -want +got:\n%v", cmp.Diff(expected, val, cmpopts...))
 	}

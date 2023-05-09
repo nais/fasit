@@ -23,7 +23,7 @@ func Parse(b []byte, state map[string]any) (*File, error) {
 	}
 
 	parts := strings.SplitN(str, "RETURNS", 2)
-	f.Query = string(parts[0])
+	f.Query = strings.TrimSpace(string(parts[0]))
 
 	optParts := strings.SplitN(parts[1], "ENDOPTS", 2)
 	returns := optParts[len(optParts)-1]
@@ -51,7 +51,7 @@ func Parse(b []byte, state map[string]any) (*File, error) {
 		}
 	}
 
-	f.Returns = string(srs[0])
+	f.Returns = strings.TrimSpace(string(srs[0]))
 
 	return f, nil
 }

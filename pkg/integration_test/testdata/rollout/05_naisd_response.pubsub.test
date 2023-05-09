@@ -1,6 +1,18 @@
+RETURNS
+
+OPTION topic=status
+OPTION Data.Log=IGNORE
+
+ENDOPTS
+
 {
-  "attributes": {
-    "",
-  },
-  "message": {},
+  "Tenant": "tenant23",
+  "Environment": "testing",
+  "Type": 2,
+  "Data": {
+    "Name": "clamav",
+    "Version": "0.1.0-feature",
+    "RolloutStatus": "deployed",
+    "ConfigHash": "{{ .hash }}"
+  }
 }

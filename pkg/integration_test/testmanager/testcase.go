@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-type Hook func(ctx context.Context, config map[string]any)
+type Hook func(ctx context.Context)
 
 type testCase struct {
 	t        *testing.T
@@ -18,6 +18,8 @@ type testCase struct {
 	runners  map[string]Runner
 	state    map[string]any
 	hasError bool
+
+	beforeHook Hook
 }
 
 func (m *testCase) Register(runner Runner) error {
@@ -35,8 +37,8 @@ func (m *testCase) Register(runner Runner) error {
 	return nil
 }
 
-func runTestCase(ctx context.Context, t *testing.T, rfn CreateRunnerFunc, dir fs.FS, name string) {
-	t.Run(name, func(t *testing.T) {
+func runTestCase(ctx context.Context, m *Manager, rfn CreateRunnerFunc, dir fs.FS, name string) {
+	m.t.Run(name, func(t *testing.T) {
 		config := map[string]any{}
 		f, _ := fs.ReadFile(dir, filepath.Join(name, "00_config.json"))
 		if f != nil {
@@ -46,12 +48,20 @@ func runTestCase(ctx context.Context, t *testing.T, rfn CreateRunnerFunc, dir fs
 		}
 
 		tc := &testCase{
-			t:     t,
-			dir:   dir,
-			state: map[string]any{},
+			t:          t,
+			dir:        dir,
+			state:      map[string]any{},
+			beforeHook: m.beforeHook,
 		}
 
-		runner, cleanup, err := rfn(ctx, config, tc.state)
+		runner, cleanup, opts, err := rfn(ctx, config, tc.state)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, opt := range opts {
+			opt(tc)
+		}
+
 		if err != nil {
 			t.Fatalf("creating runner: %v", err)
 		}
@@ -88,6 +98,10 @@ func (t *testCase) runTestFile(ctx context.Context, name string) {
 	t.t.Run(name, func(tt *testing.T) {
 		if t.hasError {
 			tt.Skip("previous test failed")
+		}
+
+		if t.beforeHook != nil {
+			t.beforeHook(ctx)
 		}
 
 		runner, ok := t.runners[ext(name)]

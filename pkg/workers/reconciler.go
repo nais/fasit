@@ -99,7 +99,7 @@ func (r *Reconciler) Listen(ctx context.Context) error {
 				flushTimer.Reset(1 * time.Second)
 			case <-flushTimer.C:
 				flushTimer.Stop()
-				r.reconcile(ctx)
+				r.Reconcile(ctx)
 			}
 		}
 	}()
@@ -129,7 +129,7 @@ func (r *Reconciler) Run(ctx context.Context, interval time.Duration) {
 
 	for {
 		r.log.Debug("reconciling")
-		if err := r.reconcile(ctx); err != nil {
+		if err := r.Reconcile(ctx); err != nil {
 			r.log.WithError(err).Error("reconcile")
 		}
 		select {
@@ -140,7 +140,7 @@ func (r *Reconciler) Run(ctx context.Context, interval time.Duration) {
 	}
 }
 
-func (r *Reconciler) reconcile(ctx context.Context) error {
+func (r *Reconciler) Reconcile(ctx context.Context) error {
 	ctx = auth.SetEmail(ctx, "system:reconciler")
 
 	r.lock.Lock()
