@@ -20,6 +20,13 @@ config:
   imageTag:
     type: string
     displayName: "Image tag"
+  naiserator.cluster-name:
+    type: string
+    displayName: "Cluster name"
+    description: "Override for equivalent mapping value"
+    ignoreKind:
+      - "onprem"
+      - "legacy"
   naiserator.vault.address:
     type: string
     required: true
