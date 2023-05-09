@@ -38,6 +38,23 @@ mapping:
       - "legacy"
       - "tenant"
 
+  networkPolicy.fqdn.enabled:
+    template: '{{ if eq .Kind "management" }}true{{ else }}false{{ end }}'
+    description: "Enable the FQDN network policy"
+
+  networkPolicy.fqdn.egressTo:
+    template: |
+      {{ $tenant_name := .Tenant.Name }}
+      {{ range .Envs }}
+        - "policy-reporter-kyverno-plugin.{{ .name }}.{{ $tenant_name }}.cloud.nais.io"
+        - "policy-reporter.{{ .name }}.{{ $tenant_name }}.cloud.nais.io"
+      {{ end }}
+    description: "Allow access to the Policy Reporter API"
+    ignoreKind:
+      - "onprem"
+      - "legacy"
+      - "tenant"
+
   policy-reporter.networkPolicy.egress:
     template: |
       - ports:
@@ -91,17 +108,3 @@ mapping:
           - ipBlock:
               cidr: "{{ .Env.apiserver_endpoint }}/32"
     description: "Allow access to the Kubernetes API server"
-
-  networkPolicy.fqdn.enabled:
-    template: '{{ if eq .Kind "management" }}true{{ else }}false{{ end }}'
-    description: "Enable the FQDN network policy"
-
-  networkPolicy.fqdn.egressTo:
-    template: |
-      - policy-reporter-kyverno-plugin.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io
-      - policy-reporter.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io
-    description: "Allow access to the Policy Reporter API"
-    ignoreKind:
-      - "onprem"
-      - "legacy"
-      - "tenant"
