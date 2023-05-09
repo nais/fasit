@@ -99,6 +99,21 @@ mapping:
       {{ end }}
     description: "Allow access to the kyverno plugin API"
 
+  policy-reporter.ingress.hosts:
+    template: |
+      {{ if eq .Kind "management" }}
+      - host: "policy-reporter.{{.Tenant.Name}}.cloud.nais.io"
+        paths:
+          - path: "/"
+            pathType: "ImplementationSpecific"
+      {{ else }}
+      - host: "policy-reporter.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io"
+        paths:
+          - path: "/"
+            pathType: "ImplementationSpecific"
+      {{ end }}
+    description: "Allow access to the Policy Reporter API"
+
   policy-reporter.kyvernoPlugin.networkPolicy.egress:
     template: |
       - ports:
