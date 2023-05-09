@@ -62,6 +62,10 @@ mapping:
             pathType: "ImplementationSpecific"
       {{ end }}
     description: "Allow access to the Policy Reporter API"
+    ignoreKind:
+      - "onprem"
+      - "legacy"
+      - "tenant"
 
   policy-reporter.kyvernoPlugin.ingress.hosts:
     template: |
