@@ -40,6 +40,11 @@ config:
     description: "Admin base URL for Digdirator"
     type: string
 
+  digdirator.secrets.environment.DIGDIRATOR_CLUSTER_NAME:
+    displayName: Cluster name
+    description: "Cluster name override for equivalent mapping value."
+    type: string
+
   digdirator.secrets.environment.DIGDIRATOR_DIGDIR_IDPORTEN_CERT_CHAIN:
     displayName: ID-porten cert cain
     description: "Secret path for ID-porten cert chain"
