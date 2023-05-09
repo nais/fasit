@@ -3,6 +3,7 @@ source: https://github.com/nais/helm-charts/tree/main/charts/azurerator-nav
 version: 0.1.3
 description: "NAV-specific setup of Azurerator; operator that reconciles Azure AD applications"
 environmentKinds:
+  - "tenant"
   - "onprem"
   - "legacy"
 dependsOn:
@@ -23,6 +24,13 @@ config:
     required: true
     secret: true
     displayName: "Client secret (dev)"
+  global.clusterName:
+    type: string
+    displayName: "Cluster name"
+    description: "Override for equivalent mapping value"
+    ignoreKind:
+      - "onprem"
+      - "legacy"
   global.image.tag:
     type: string
     displayName: "Image tag"
