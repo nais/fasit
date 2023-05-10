@@ -27,13 +27,13 @@ mapping:
 
   policy-reporter.ui.clusters:
     template: |
-        {{ $tenant_name := .Tenant.Name }}
-        {{ range .Envs }}
-          - name: "{{ .name }}"
-            api: "https://policy-reporter.{{ .name }}.{{ $tenant_name }}.cloud.nais.io"
-            kyvernoApi: "https://policy-reporter-kyverno-plugin.{{ .name }}.{{ $tenant_name }}.cloud.nais.io"
-            skipTLS: true
-        {{ end }}
+      {{ $tenant_name := .Tenant.Name }}
+      {{ range .Envs }}
+        - name: "{{ .name }}"
+          api: "https://policy-reporter.{{ .name }}.{{ $tenant_name }}.cloud.nais.io"
+          kyvernoApi: "https://policy-reporter-kyverno-plugin.{{ .name }}.{{ $tenant_name }}.cloud.nais.io"
+          skipTLS: true
+      {{ end }}
     description: "List of clusters to show in the UI"
     ignoreKind:
       - "onprem"
@@ -62,35 +62,35 @@ mapping:
 
   policy-reporter.ui.networkPolicy.egress:
     template: |
-        - to:
-            - ipBlock:
-                cidr: 0.0.0.0/0
-                except:
-                  - 10.0.0.0/8
-                  - 172.16.0.0/12
-                  - 192.168.0.0/16
+      - to:
+          - ipBlock:
+              cidr: 0.0.0.0/0
+              except:
+                - 10.0.0.0/8
+                - 172.16.0.0/12
+                - 192.168.0.0/16
     description: "Allow access to the Policy Reporter API"
     ignoreKind:
       - "onprem"
       - "legacy"
       - "tenant"
 
- #networkPolicy.fqdn.enabled:
- #  template: '{{ if eq .Kind "management" }}true{{ else }}false{{ end }}'
- #  description: "Enable the FQDN network policy"
+  networkPolicy.fqdn.enabled:
+    template: '{{ if eq .Kind "management" }}true{{ else }}false{{ end }}'
+    description: "Enable the FQDN network policy"
 
- #networkPolicy.fqdn.egressTo:
- #  template: |
- #    {{ $tenant_name := .Tenant.Name }}
- #    {{ range .Envs }}
- #      - "policy-reporter-kyverno-plugin.{{ .name }}.{{ $tenant_name }}.cloud.nais.io"
- #      - "policy-reporter.{{ .name }}.{{ $tenant_name }}.cloud.nais.io"
- #    {{ end }}
- #  description: "Allow access to the Policy Reporter API"
- #  ignoreKind:
- #    - "onprem"
- #    - "legacy"
- #    - "tenant"
+  networkPolicy.fqdn.egressTo:
+    template: |
+      {{ $tenant_name := .Tenant.Name }}
+      {{ range .Envs }}
+        - "policy-reporter-kyverno-plugin.{{ .name }}.{{ $tenant_name }}.cloud.nais.io"
+        - "policy-reporter.{{ .name }}.{{ $tenant_name }}.cloud.nais.io"
+      {{ end }}
+    description: "Allow access to the Policy Reporter API"
+    ignoreKind:
+      - "onprem"
+      - "legacy"
+      - "tenant"
 
   # Policy Reporter configuration
   policy-reporter.networkPolicy.egress:
