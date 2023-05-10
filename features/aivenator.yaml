@@ -55,7 +55,6 @@ config:
     displayName: Additional Aiven VPC CIDRs
     ignoreKind:
       - "onprem"
-      - "tenant" # remove if we decide that tenants need an "infrastructure" project
   aiven.token:
     type: string
     secret: true
