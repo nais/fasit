@@ -14,7 +14,7 @@ dependsOn:
 mapping:
   # Policy Reporter UI configuration
   policy-reporter.ui.enabled:
-    template: '{{ if eq .Kind "management" }}true{{ else }}false{{ end }}'
+    template: 'true'
     description: "Enable the UI"
 
   policy-reporter.ui.clusterName:
