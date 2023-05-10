@@ -118,11 +118,13 @@ func (r *Receiver) handleCI(ctx context.Context, env *model.Environment, helmSta
 		if !errors.Is(err, pgx.ErrNoRows) {
 			return fmt.Errorf("getting rollout: %w", err)
 		} else {
+			r.log.WithField("name", helmStatus.Name).Warn("unknown rollout")
 			return nil
 		}
 	}
 
 	if rollout.Version != helmStatus.Version {
+		r.log.WithField("name", helmStatus.Name).Warn("version mismatch")
 		return nil
 	}
 
@@ -153,12 +155,14 @@ func (r *Receiver) handleCI(ctx context.Context, env *model.Environment, helmSta
 		return fmt.Errorf("checking if last: %w", err)
 	}
 	if !last {
+		r.log.WithField("name", helmStatus.Name).Info("not last")
 		return nil
 	}
 
 	status, err := r.repo.RolloutStatus(ctx, rollout.Name)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
+			r.log.WithField("name", helmStatus.Name).Warn("unknown rollout")
 			return nil
 		}
 		return fmt.Errorf("getting rollout status for %q: %w", rollout.Name, err)
@@ -168,6 +172,7 @@ func (r *Receiver) handleCI(ctx context.Context, env *model.Environment, helmSta
 		if err := r.repo.RolloutsUpdateStatus(ctx, model.RolloutStatusFailed, rollout.Name, true); err != nil {
 			return fmt.Errorf("updating rollout status: %w", err)
 		}
+		r.log.WithField("name", helmStatus.Name).Info("rollout failed")
 		return nil
 	}
 
@@ -180,6 +185,7 @@ func (r *Receiver) handleCI(ctx context.Context, env *model.Environment, helmSta
 			return fmt.Errorf("updating rollout status: %w", err)
 		}
 
+		r.log.WithField("name", helmStatus.Name).Info("rollout succeeded")
 		return nil
 	})
 }

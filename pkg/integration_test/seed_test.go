@@ -40,8 +40,18 @@ func seedTenantEnv(ctx context.Context, db database.Repo, state map[string]any, 
 		return fmt.Errorf("seedTenantEnv: unable to create environment: %w", err)
 	}
 
+	nonCIEnv, err := db.EnvironmentCreate(ctx, &model.EnvironmentCreate{
+		Name:     envTenantNonCI,
+		Kind:     model.EnvironmentKindTenant,
+		TenantID: tenant.ID,
+	})
+	if err != nil {
+		return fmt.Errorf("seedTenantEnv: unable to create environment: %w", err)
+	}
+
 	state["tenant"] = tenant
 	state["env"] = tenantEnv
+	state["nonCIEnv"] = nonCIEnv
 	state["mgmt"] = mgmt
 
 	if v, _ := config.Bool("ci"); v {
@@ -53,7 +63,7 @@ func seedTenantEnv(ctx context.Context, db database.Repo, state map[string]any, 
 			if _, err := tx.Exec(ctx, `UPDATE tenants SET ci = true`); err != nil {
 				return err
 			}
-			if _, err := tx.Exec(ctx, `UPDATE environments SET ci = true`); err != nil {
+			if _, err := tx.Exec(ctx, `UPDATE environments SET ci = true WHERE name != $1`, nonCIEnv.Name); err != nil {
 				return err
 			}
 			return nil

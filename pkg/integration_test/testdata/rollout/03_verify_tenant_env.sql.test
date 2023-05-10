@@ -21,6 +21,12 @@ RETURNS
   {
     "tenant_name": "tenant23",
     "tenant_ci": true,
+    "name": "nonci",
+    "ci": false
+  },
+  {
+    "tenant_name": "tenant23",
+    "tenant_ci": true,
     "name": "testing",
     "ci": true
   }

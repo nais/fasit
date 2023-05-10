@@ -32,6 +32,7 @@ const (
 	tenantName        = "tenant23"
 	envManagementName = "management"
 	envTenantName     = "testing"
+	envTenantNonCI    = "nonci"
 )
 
 func TestRunner(t *testing.T) {
@@ -47,7 +48,7 @@ func TestRunner(t *testing.T) {
 		}
 		cleanups = append(cleanups, cleanup)
 
-		naisdRunner, close, err := newNaisd(ctx, config)
+		naisdRunner, close, err := newNaisd(ctx, config, db)
 		if err != nil {
 			return nil, nil, opts, err
 		}
@@ -72,7 +73,6 @@ func TestRunner(t *testing.T) {
 			// log.Level = logrus.DebugLevel
 			log.Out = io.Discard
 			cp := func(projectID, topicID string, log *logrus.Entry) workers.Publisher {
-				fmt.Println("Create publsiher for topic", topicID)
 				p, ok := naisdRunner.reconcilerPublishers[topicID]
 				if !ok {
 					t.Fatalf("no publisher for topic %q", topicID)
@@ -87,6 +87,7 @@ func TestRunner(t *testing.T) {
 				if err := reconciler.Reconcile(ctx); err != nil {
 					t.Fatal(err)
 				}
+				time.Sleep(100 * time.Millisecond)
 			}))
 		}
 

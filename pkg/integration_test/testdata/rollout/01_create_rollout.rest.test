@@ -12,7 +12,7 @@ OPTION responseCode = 201
 ENDOPTS
 
 {
-  "envNotAvailable": ["tenant", "onprem", "legacy"]
+  "envNotAvailable": ["tenant"]
 }
 
 STORE rollout_id=id

@@ -44,8 +44,6 @@ func (p *PubSub) Run(ctx context.Context, logf func(format string, args ...any),
 		return fmt.Errorf("gql.Parse: %w", err)
 	}
 
-	fmt.Println("DO SOME PUBSUB")
-
 	topic, ok := f.Opts["topic"]
 	if !ok {
 		return fmt.Errorf("missing 'topic' option")
@@ -54,8 +52,6 @@ func (p *PubSub) Run(ctx context.Context, logf func(format string, args ...any),
 		return fmt.Errorf("topic %q not registered", topic)
 	}
 	delete(f.Opts, "topic")
-
-	fmt.Println("FOR TOPIC", topic)
 
 	if len(f.Query) > 0 && len(f.Returns) > 0 {
 		return fmt.Errorf("cannot both query and return")
@@ -148,10 +144,6 @@ func (p *PubSub) hasTopic(name string) bool {
 func (p *PubSub) messages(topic string) []PubSubMessage {
 	p.lock.Lock()
 	defer p.lock.Unlock()
-
-	// for _, n := range p.topics {
-	// 	fmt.Println("##########\n", n)
-	// }
 
 	t, ok := p.topics[topic]
 	if !ok {
