@@ -12,6 +12,7 @@ dependsOn:
       - "kyverno-policies"
 
 mapping:
+  # Policy Reporter UI configuration
   policy-reporter.ui.enabled:
     template: '{{ if eq .Kind "management" }}true{{ else }}false{{ end }}'
     description: "Enable the UI"
@@ -39,42 +40,6 @@ mapping:
       - "legacy"
       - "tenant"
 
- #networkPolicy.fqdn.enabled:
- #  template: '{{ if eq .Kind "management" }}true{{ else }}false{{ end }}'
- #  description: "Enable the FQDN network policy"
-
- #networkPolicy.fqdn.egressTo:
- #  template: |
- #    {{ $tenant_name := .Tenant.Name }}
- #    {{ range .Envs }}
- #      - "policy-reporter-kyverno-plugin.{{ .name }}.{{ $tenant_name }}.cloud.nais.io"
- #      - "policy-reporter.{{ .name }}.{{ $tenant_name }}.cloud.nais.io"
- #    {{ end }}
- #  description: "Allow access to the Policy Reporter API"
- #  ignoreKind:
- #    - "onprem"
- #    - "legacy"
- #    - "tenant"
-
-  policy-reporter.networkPolicy.egress:
-    template: |
-      {{ if eq .Kind "management" }}
-      - to:
-        - ipBlock:
-            cidr: 0.0.0.0/0
-            except:
-              - 10.0.0.0/8
-              - 172.16.0.0/12
-              - 192.168.0.0/16
-      {{ end }}
-      - ports:
-          - port: 443
-            protocol: TCP
-        to:
-          - ipBlock:
-              cidr: "{{ .Env.apiserver_endpoint }}/32"
-    description: "Allow access to the Kubernetes API server and access to other clusters"
-
   policy-reporter.ui.ingress.hosts:
     template: |
       {{ if eq .Kind "management" }}
@@ -94,20 +59,49 @@ mapping:
       - "legacy"
       - "tenant"
 
-  policy-reporter.kyvernoPlugin.ingress.hosts:
+
+  policy-reporter.ui.networkPolicy.egress:
     template: |
-      {{ if eq .Kind "management" }}
-      - host: "policy-reporter-kyverno-plugin.{{.Tenant.Name}}.cloud.nais.io"
-        paths:
-          - path: "/"
-            pathType: "ImplementationSpecific"
-      {{ else }}
-      - host: "policy-reporter-kyverno-plugin.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io"
-        paths:
-          - path: "/"
-            pathType: "ImplementationSpecific"
-      {{ end }}
-    description: "Allow access to the kyverno plugin API"
+        - to:
+            - ipBlock:
+                cidr: 0.0.0.0/0
+                except:
+                  - 10.0.0.0/8
+                  - 172.16.0.0/12
+                  - 192.168.0.0/16
+    description: "Allow access to the Policy Reporter API"
+    ignoreKind:
+      - "onprem"
+      - "legacy"
+      - "tenant"
+
+ #networkPolicy.fqdn.enabled:
+ #  template: '{{ if eq .Kind "management" }}true{{ else }}false{{ end }}'
+ #  description: "Enable the FQDN network policy"
+
+ #networkPolicy.fqdn.egressTo:
+ #  template: |
+ #    {{ $tenant_name := .Tenant.Name }}
+ #    {{ range .Envs }}
+ #      - "policy-reporter-kyverno-plugin.{{ .name }}.{{ $tenant_name }}.cloud.nais.io"
+ #      - "policy-reporter.{{ .name }}.{{ $tenant_name }}.cloud.nais.io"
+ #    {{ end }}
+ #  description: "Allow access to the Policy Reporter API"
+ #  ignoreKind:
+ #    - "onprem"
+ #    - "legacy"
+ #    - "tenant"
+
+  # Policy Reporter configuration
+  policy-reporter.networkPolicy.egress:
+    template: |
+      - ports:
+          - port: 443
+            protocol: TCP
+        to:
+          - ipBlock:
+              cidr: "{{ .Env.apiserver_endpoint }}/32"
+    description: "Allow access to the Kubernetes API server and access to other clusters"
 
   policy-reporter.ingress.hosts:
     template: |
@@ -123,6 +117,22 @@ mapping:
             pathType: "ImplementationSpecific"
       {{ end }}
     description: "Allow access to the Policy Reporter API"
+
+  # KyvernoPlugin configuration
+  policy-reporter.kyvernoPlugin.ingress.hosts:
+    template: |
+      {{ if eq .Kind "management" }}
+      - host: "policy-reporter-kyverno-plugin.{{.Tenant.Name}}.cloud.nais.io"
+        paths:
+          - path: "/"
+            pathType: "ImplementationSpecific"
+      {{ else }}
+      - host: "policy-reporter-kyverno-plugin.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io"
+        paths:
+          - path: "/"
+            pathType: "ImplementationSpecific"
+      {{ end }}
+    description: "Allow access to the kyverno plugin API"
 
   policy-reporter.kyvernoPlugin.networkPolicy.egress:
     template: |
