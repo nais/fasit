@@ -105,14 +105,7 @@ mapping:
 
   policy-reporter.networkPolicy.ingress:
     template: |
-      - from:
-          - namespaceSelector:
-              matchLabels:
-                name: nais-system
-            podSelector:
-              matchLabels:
-                app.kubernetes.io/name: ui
-                app.kubernetes.io/instance: policy-reporter
+      - {}
     description: "Allow access from the Policy Reporter UI"
 
   policy-reporter.ingress.hosts:
@@ -158,12 +151,7 @@ mapping:
 
   policy-reporter.kyvernoPlugin.networkPolicy.ingress:
     template: |
-      - from:
-          - namespaceSelector:
-              matchLabels:
-                name: nais-system
-            podSelector:
-              matchLabels:
-                app.kubernetes.io/name: ui
-                app.kubernetes.io/instance: policy-reporter
+      - {}
     description: "Allow access from the Policy Reporter UI"
+    ignoreKind:
+      - "management"
