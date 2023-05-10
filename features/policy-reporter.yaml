@@ -103,6 +103,18 @@ mapping:
               cidr: "{{ .Env.apiserver_endpoint }}/32"
     description: "Allow access to the Kubernetes API server and access to other clusters"
 
+  policy-reporter.networkPolicy.ingress:
+    template: |
+      - from:
+          - namespaceSelector:
+              matchLabels:
+                name: nais-system
+            podSelector:
+              matchLabels:
+                app.kubernetes.io/name: ui
+                app.kubernetes.io/instance: policy-reporter
+    description: "Allow access from the Policy Reporter UI"
+
   policy-reporter.ingress.hosts:
     template: |
       {{ if eq .Kind "management" }}
@@ -143,3 +155,15 @@ mapping:
           - ipBlock:
               cidr: "{{ .Env.apiserver_endpoint }}/32"
     description: "Allow access to the Kubernetes API server"
+
+  policy-reporter.kyvernoPlugin.networkPolicy.ingress:
+    template: |
+      - from:
+          - namespaceSelector:
+              matchLabels:
+                name: nais-system
+            podSelector:
+              matchLabels:
+                app.kubernetes.io/name: ui
+                app.kubernetes.io/instance: policy-reporter
+    description: "Allow access from the Policy Reporter UI"
