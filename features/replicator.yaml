@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/replicator
 source: https://github.com/nais/replicator/tree/main/feature
-version: 2023.2.14-377b578
+version: 2023.5.10-b7b0ecc
 description: "Kubernetes operator that replicates resources, with templating functionality to namespaces matching the provided label selector"
 environmentKinds:
   - "tenant"
