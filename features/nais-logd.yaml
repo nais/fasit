@@ -6,9 +6,7 @@ environmentKinds:
   - "tenant"
   - "onprem"
   - "legacy"
-dependsOn:
-  - allOf:
-      - nais-system
+
 config:
   cluster.envclass:
     type: string
