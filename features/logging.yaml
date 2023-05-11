@@ -1,0 +1,49 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/logging
+source: https://github.com/nais/helm-charts/tree/main/charts/logging
+version: 1.0.0
+description: "Logging operator"
+environmentKinds:
+  - "tenant"
+  - "onprem"
+  - "legacy"
+  - "management"
+dependsOn:
+  - allOf:
+      - "monitoring"
+
+config:
+  nais.envclass:
+    type: string
+    displayName: Environment class
+  elasticsearch.indexName:
+    type: string
+    displayName: Elasticsearch index
+  fluentd.replics:
+    type: string
+    displayName: Number of fluentd replicas
+
+mapping:
+  nais.cluster:
+    value: "{{.Env.name}}"
+    displayName: Cluster name
+  # disable networkpolicies onprem
+  networkPolicy.enabled:
+    template: "false"
+    ignoreKind:
+      - management
+      - tenant
+      - legacy
+  # only include node logs from onprem clusters
+  hostTailer.enabled:
+    template: "true"
+    ignoreKind:
+      - management
+      - tenant
+      - legacy
+  # only include kube-system logs from onprem clusters
+  logs.elastic.kubeSystem:
+    template: "true"
+    ignoreKind:
+      - management
+      - tenant
+      - legacy
