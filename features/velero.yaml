@@ -28,7 +28,7 @@ config:
   velero.configuration.backupStorageLocation:
     type: string
     description: "The name of the bucket where backups will be stored"
-    displayName: "Bucket name"
+    displayName: "Bucket configuration"
     ignoreKind:
       - "tenant"
       - "management"
@@ -84,12 +84,49 @@ mapping:
   velero.configuration.backupStorageLocation:
     template: |
         - provider: gcp
+      {{ if or (eq .Kind "tenant") (eq .Kind "management") }}      
           bucket: "{{.Env.velero_bucket}}"
           config:
             serviceAccount: "{{.Env.velero_service_account}}"
-    displayName: "GCP Bucket name"
+      {{ end }}
+      {{ if eq .Kind "onprem" }}
+        {{ if eq .Env.name "ci-fss" }}
+          bucket: "velero-bck_ci-fss"
+          config:
+            serviceAccount: "velero-ci-fss@nais-ci-e17f.iam.gserviceaccount.com"
+        {{ end }}
+        {{ if eq .Env.name "dev-fss" }}
+          bucket: "velero-bck_dev-fss"
+          config:
+            serviceAccount: "velero-dev-fss@nais-dev-2e7b.iam.gserviceaccount.com"
+        {{ end }}
+        {{ if eq .Env.name "prod-fss" }}
+          bucket: "velero-bck_prod-fss"
+          config:
+            serviceAccount: "velero-prod-fss@nais-prod-020f.iam.gserviceaccount.com"
+        {{ end }}
+      {{ end }}
+      {{ if eq .Kind "legacy" }}
+        {{ if eq .Env.name "ci-gcp" }}
+          bucket: "velero-bck_ci-gcp"
+          config:
+            serviceAccount: "velero@nais-ci-e17f.iam.gserviceaccount.com"
+        {{ end }}
+        {{ if eq .Env.name "dev-gcp" }}
+          bucket: "velero-bck_dev-gcp"
+          config:
+            serviceAccount: "velero@nais-dev-2e7b.iam.gserviceaccount.com"
+        {{ end }}
+        {{ if eq .Env.name "prod-gcp" }}
+          bucket: "velero-bck_prod-gcp"
+          config:
+            serviceAccount: "velero@nais-prod-020f.iam.gserviceaccount.com"
+        {{ end }}
+      {{ end }}
+    displayName: "GCP Bucket configuration"
     ignoreKind:
       - "onprem"
+
   velero.serviceAccount.server.annotations.iam\.gke\.io/gcp-service-account:
     value: "{{.Env.velero_service_account}}"
     displayName: "KSA annotation"
