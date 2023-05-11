@@ -10,6 +10,7 @@ environmentKinds:
 autoInstall:
   - "management"
   - "tenant"
+
 config:
   velero.resources.requests.cpu:
     type: string
@@ -23,17 +24,11 @@ config:
   velero.resources.limits.memory:
     type: string
     displayName: "Memory limit"
-  velero.configuration.backupStorageLocation.bucket:
+    # [{"name": "gcp","provider": "gcp","bucket": "name-on-bucket","config": {"serviceAccount": "velero - service - account"}}]
+  velero.configuration.backupStorageLocation:
     type: string
     description: "The name of the bucket where backups will be stored"
     displayName: "Bucket name"
-    ignoreKind:
-      - "tenant"
-      - "management"
-  velero.configuration.backupStorageLocation.config.serviceAccount:
-    type: string
-    description: "The name of the service account to use for GCS"
-    displayName: "Service account"
     ignoreKind:
       - "tenant"
       - "management"
@@ -86,14 +81,14 @@ mapping:
     ignoreKind:
       - "tenant"
       - "management"
-  velero.configuration.backupStorageLocation.bucket:
-    value: "{{.Env.velero_bucket}}"
+  velero.configuration.backupStorageLocation:
+    template: |
+        - name: gcp
+          provider: gcp
+          bucket: "{{.Env.velero_bucket}}"
+          config:
+            serviceAccount: "{{.Env.velero_service_account}}"
     displayName: "GCP Bucket name"
-    ignoreKind:
-      - "onprem"
-  velero.configuration.backupStorageLocation.config.serviceAccount:
-    value: "{{.Env.velero_service_account}}"
-    displayName: "GCP Service account"
     ignoreKind:
       - "onprem"
   velero.serviceAccount.server.annotations.iam\.gke\.io/gcp-service-account:
