@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/velero
 source: https://github.com/nais/helm-charts/tree/main/charts/velero
-version: 0.6.2
+version: 0.7.0
 description: "Velero backup service"
 environmentKinds:
   - "management"
@@ -24,14 +24,6 @@ config:
   velero.resources.limits.memory:
     type: string
     displayName: "Memory limit"
-    # [{"provider": "gcp","bucket": "name-on-bucket","config": {"serviceAccount": "velero - service - account"}}]
-  velero.configuration.backupStorageLocation:
-    type: string
-    description: "The name of the bucket where backups will be stored"
-    displayName: "Bucket configuration"
-    ignoreKind:
-      - "tenant"
-      - "management"
   velero.credentials.secretContents.cloud:
     type: string
     secret: true
