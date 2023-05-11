@@ -1,0 +1,19 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/clamav-mirror
+source: https://github.com/nais/azurerator/tree/main/charts
+version: 0.0.1
+description: "HTTP server serving as database mirror for clamav"
+environmentKinds:
+  - "management"
+rolloutSource:
+  - org: nais
+    repo: clamav-mirror
+config:
+  image.tag:
+    type: string
+mapping:
+  clusterName:
+    value: "{{.Env.name}}"
+    displayName: "Cluster name"
+  tenantName:
+    value: "{{.Tenant.Name}}"
+    displayName: "Tenant name"
