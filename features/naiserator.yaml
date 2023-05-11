@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/naiserator
 source: https://github.com/nais/naiserator/tree/master/charts
-version: 1.2.3
+version: 1.3.0
 rolloutSource:
   - org: nais
     repo: naiserator
@@ -86,6 +86,12 @@ config:
     ignoreKind:
       - "onprem"
       - "tenant"
+      - "management"
+  naiserator.frontend.telemetry-url:
+    type: string
+    displayName: "URL to public Grafana Agent collector endpoint"
+    ignoreKind:
+      - "onprem"
       - "management"
   naiserator.fqdn-policy.enabled:
     type: bool
