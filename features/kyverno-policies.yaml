@@ -142,12 +142,3 @@ mapping:
   networkPolicy.enabled:
     template: '{{ne .Kind "onprem"}}'
     description: "Enable network policy"
-  networkPolicy.allowDNS:
-    template: 'true'
-    description: "Allow DNS"
-  networkPolicy.apiServerCIDR:
-    value: "{{ .Env.apiserver_endpoint }}/32"
-    description: "API server CIDR"
-    ignoreKind:
-      - onprem
-
