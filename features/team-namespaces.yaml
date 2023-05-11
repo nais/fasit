@@ -3,6 +3,7 @@ source: https://github.com/nais/helm-charts/tree/main/charts/team-namespaces
 version: 0.1.0
 environmentKinds:
   - "onprem"
+  - "tenant"
 autoInstall:
   - "onprem"
 config:
