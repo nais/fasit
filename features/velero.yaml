@@ -130,8 +130,6 @@ mapping:
         {{ end }}
       {{ end }}
     displayName: "GCP Bucket configuration"
-    ignoreKind:
-      - "onprem"
 
   velero.serviceAccount.server.annotations.iam\.gke\.io/gcp-service-account:
     value: "{{.Env.velero_service_account}}"
