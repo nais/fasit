@@ -83,42 +83,42 @@ mapping:
       {{ end }}
       {{ if eq .Kind "onprem" }}
         {{ if eq .Env.name "ci-fss" }}
-            - provider: gcp
-              bucket: "velero-bck_ci-fss"
-              config:
-                serviceAccount: "velero-ci-fss@nais-ci-e17f.iam.gserviceaccount.com"
+          - provider: gcp
+            bucket: "velero-bck_ci-fss"
+            config:
+              serviceAccount: "velero-ci-fss@nais-ci-e17f.iam.gserviceaccount.com"
         {{ end }}
         {{ if eq .Env.name "dev-fss" }}
-            - provider: gcp
-              bucket: "velero-bck_dev-fss"
-              config:
-                serviceAccount: "velero-dev-fss@nais-dev-2e7b.iam.gserviceaccount.com"
+          - provider: gcp
+            bucket: "velero-bck_dev-fss"
+            config:
+              serviceAccount: "velero-dev-fss@nais-dev-2e7b.iam.gserviceaccount.com"
         {{ end }}
         {{ if eq .Env.name "prod-fss" }}
-            - provider: gcp
-              bucket: "velero-bck_prod-fss"
-              config:
-                serviceAccount: "velero-prod-fss@nais-prod-020f.iam.gserviceaccount.com"
+          - provider: gcp
+            bucket: "velero-bck_prod-fss"
+            config:
+              serviceAccount: "velero-prod-fss@nais-prod-020f.iam.gserviceaccount.com"
         {{ end }}
       {{ end }}
       {{ if eq .Kind "legacy" }}
         {{ if eq .Env.name "ci-gcp" }}
-            - provider: gcp
-              bucket: "velero-bck_ci-gcp"
-              config:
-                serviceAccount: "velero@nais-ci-e17f.iam.gserviceaccount.com"
+          - provider: gcp
+            bucket: "velero-bck_ci-gcp"
+            config:
+              serviceAccount: "velero@nais-ci-e17f.iam.gserviceaccount.com"
         {{ end }}
         {{ if eq .Env.name "dev-gcp" }}
-            - provider: gcp
-              bucket: "velero-bck_dev-gcp"
-              config:
-                serviceAccount: "velero@nais-dev-2e7b.iam.gserviceaccount.com"
+          - provider: gcp
+            bucket: "velero-bck_dev-gcp"
+            config:
+              serviceAccount: "velero@nais-dev-2e7b.iam.gserviceaccount.com"
         {{ end }}
         {{ if eq .Env.name "prod-gcp" }}
-            - provider: gcp
-              bucket: "velero-bck_prod-gcp"
-              config:
-                serviceAccount: "velero@nais-prod-020f.iam.gserviceaccount.com"
+          - provider: gcp
+            bucket: "velero-bck_prod-gcp"
+            config:
+              serviceAccount: "velero@nais-prod-020f.iam.gserviceaccount.com"
         {{ end }}
       {{ end }}
     displayName: "GCP Bucket configuration"
