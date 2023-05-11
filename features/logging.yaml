@@ -18,7 +18,7 @@ config:
   elasticsearch.indexName:
     type: string
     displayName: Elasticsearch index
-  fluentd.replics:
+  fluentd.replicas:
     type: string
     displayName: Number of fluentd replicas
 
