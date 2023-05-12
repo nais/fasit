@@ -8,6 +8,5 @@ environmentKinds:
   - "legacy"
 mapping:
   gcp:
-    template: {{eq .Kind "legacy"}}
-    type: bool
+    template: '{{eq .Kind "legacy"}}'
     displayName: "GCP"
