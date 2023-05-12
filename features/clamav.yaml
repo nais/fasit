@@ -10,3 +10,6 @@ mapping:
   gcp:
     template: '{{eq .Kind "legacy"}}'
     displayName: "GCP"
+  onprem:
+    template: '{{eq .Kind "onprem"}}'
+    displayName: "On-prem"
