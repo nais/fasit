@@ -37,10 +37,10 @@ type Feature struct {
 }
 
 type FeatureYAML struct {
-	Dependencies     Dependencies      `json:"dependencies"`
+	Dependencies     Dependencies      `json:"dependencies" yaml:"dependencies,omitempty"`
 	EnvironmentKinds []EnvironmentKind `json:"environmentKinds" yaml:"environmentKinds" jsonschema:"enum=management,enum=tenant,enum=onprem,enum=legacy,required"`
-	Values           Values            `json:"values"`
-	Timeout          time.Duration     `json:"timeout,omitempty" jsonschema:"omitempty,type=string,pattern=^(\\d+h)?(\\d+m)?(\\d+s)?$"`
+	Timeout          time.Duration     `json:"timeout,omitempty" yaml:"timeout,omitempty" jsonschema:"omitempty,type=string,pattern=^(\\d+h)?(\\d+m)?(\\d+s)?$"`
+	Values           Values            `json:"values" yaml:"values,omitempty"`
 }
 
 type Values map[string]Value

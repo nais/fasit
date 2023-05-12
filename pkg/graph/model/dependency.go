@@ -1,5 +1,10 @@
 package model
 
+type Dependency struct {
+	AnyOf []string `json:"anyOf,omitempty" yaml:"anyOf,omitempty"`
+	AllOf []string `json:"allOf,omitempty" yaml:"allOf,omitempty"`
+}
+
 type Dependencies []*Dependency
 
 func (d Dependencies) FindMissing(features []string) []string {

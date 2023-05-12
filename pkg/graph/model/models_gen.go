@@ -30,11 +30,6 @@ type ComputedValue struct {
 	Content json.RawMessage `json:"content,omitempty"`
 }
 
-type Dependency struct {
-	AnyOf []string `json:"anyOf"`
-	AllOf []string `json:"allOf"`
-}
-
 // EnvironmentCreate contains metadata for creating an environment
 type EnvironmentCreate struct {
 	Name        string          `json:"name"`

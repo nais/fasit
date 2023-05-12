@@ -1,8 +1,6 @@
 package feature
 
 import (
-	"archive/tar"
-	"compress/gzip"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -13,135 +11,68 @@ import (
 	"time"
 
 	"github.com/nais/fasit/pkg/graph/model"
-	"github.com/nais/fasit/pkg/helm"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
-	"helm.sh/helm/v3/pkg/chart"
-	"helm.sh/helm/v3/pkg/chartutil"
 )
 
-type Values map[string]Value
-
-type Computed struct {
-	// Template is a Go template which must return a valid YAML element.
-	Template string `yaml:"template,omitempty" json:"template,omitempty"`
+type RolloutSource struct {
+	Org  string `json:"org" yaml:"org"`
+	Repo string `json:"repo" yaml:"repo"`
 }
 
-type Config struct {
-	// Type is the type of the config.
-	Type model.ConfigType `yaml:"type,omitempty" json:"type,omitempty"`
-	// Secret is true if the config is a secret.
-	Secret bool `json:"secret,omitempty" yaml:"secret,omitempty"`
+func (r RolloutSource) String() string {
+	return r.Org + "/" + r.Repo
 }
 
-type Value struct {
-	// Description is a short description of the value.
-	Description string `yaml:"description,omitempty" json:"description,omitempty"`
-	// DisplayName is the name of the value that will be displayed to the user.
-	DisplayName string `yaml:"displayName,omitempty" json:"displayName,omitempty"`
-	// Required is true if the config is required.
-	Required bool `yaml:"required,omitempty" json:"required,omitempty"`
-	// Computed is a computed value that will be set if no config is set.
-	Computed *Computed `yaml:"computed,omitempty" json:"computed,omitempty"`
-	// Config specifies how the value should be configured.
-	Config *Config `yaml:"config,omitempty" json:"config,omitempty"`
-}
-
-type FeatureYAML struct {
-	// Dependencies defines the features that this feature depends on.
-	Dependencies Dependencies `yaml:"dependencies,omitempty" json:"dependencies,omitempty"`
-	// EnvironmentKinds is the list of environments this feature can be used in.
-	EnvironmentKinds []model.EnvironmentKind `yaml:"environmentKinds" json:"environmentKinds" jsonschema:"enum=management,enum=tenant,enum=onprem,enum=legacy,required"`
-	// Timeout is the amount of time helm should wait for the feature to be ready. Defaults to 5m0s
-	Timeout time.Duration `yaml:"timeout,omitempty" json:"timeout,omitempty" jsonschema:"omitempty,type=string,pattern=^(\\d+h)?(\\d+m)?(\\d+s)?$"`
-	// Values is a list of values that can be overridden by the user.
-	Values Values `yaml:"values,omitempty" json:"values,omitempty"`
-}
+type Config map[string]ConfigType
 
 type Feature struct {
-	FeatureYAML
-
 	Name string `yaml:"name" json:"name" jsonschema:"-"`
 	// Chart name if using helm charts or full url if using CRI image chart.
 	Chart string `yaml:"chart" json:"chart"`
 	// Version of the chart.
 	Version string `yaml:"version" json:"version"`
+	// Repo is the repository where the helm chart is located.
+	Repo string `yaml:"repo,omitempty" json:"repo,omitempty"`
+	// RolloutSource is the org and name of repositories which can trigger a rollout.
+	RolloutSource []RolloutSource `yaml:"rolloutSource,omitempty" json:"rolloutSource,omitempty"`
 	// Description is a short description of the feature.
 	Description string `yaml:"description,omitempty" json:"description,omitempty"`
 	// Source should be the URL to the helm chart source code.
-	Source     string         `yaml:"source" json:"source"`
-	ValuesYaml map[string]any `yaml:"-" json:"-"`
+	Source string `yaml:"source" json:"source"`
+	// DependsOn defines the features that this feature depends on.
+	DependsOn Dependencies `yaml:"dependsOn,omitempty" json:"dependsOn,omitempty"`
+	// Config is the list of configuration options for the feature.
+	Config Config `yaml:"config,omitempty" json:"config,omitempty"`
+	// Mapping is the list of mappings from environment values for the feature.
+	Mapping Mapping `yaml:"mapping,omitempty" json:"mapping,omitempty"`
+	// EnvironmentKinds is the list of environments this feature can be used in.
+	EnvironmentKinds []model.EnvironmentKind `yaml:"environmentKinds" json:"environmentKinds" jsonschema:"enum=management,enum=tenant,enum=onprem,enum=legacy,required"`
+	// AutoInstall is the list of environments this feature can be auto-installed in.
+	AutoInstall []model.EnvironmentKind `yaml:"autoInstall,omitempty" json:"autoInstall,omitempty" jsonschema:"enum=management,enum=tenant,enum=onprem,enum=legacy"`
+	// Timeout is the amount of time helm should wait for the feature to be ready. Defaults to 5m0s
+	Timeout time.Duration `yaml:"timeout,omitempty" json:"timeout,omitempty" jsonschema:"omitempty,type=string,pattern=^(\\d+h)?(\\d+m)?(\\d+s)?$"`
 }
 
-func FromChart(chart, version string) (*Feature, error) {
-	resp, err := helm.DownloadChart(chart, version, "")
-	if err != nil {
-		return nil, err
-	}
-
-	gr, err := gzip.NewReader(resp)
-	if err != nil {
-		return nil, err
-	}
-
-	f := &Feature{
-		Chart: chart,
-	}
-
-	r := tar.NewReader(gr)
-	for {
-		hdr, err := r.Next()
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			return nil, err
-		}
-		fname := strings.Split(hdr.Name, "/")
-		// Ensure that the file is in the root of the chart
-		if len(fname) != 2 {
+func (f *Feature) RequiredFields(envKind model.EnvironmentKind) []string {
+	var requiredFields []string
+	for k, v := range f.Config {
+		if v.IgnoreKind.Contains(envKind) {
 			continue
 		}
-
-		switch fname[1] {
-		case "Chart.yaml":
-			if err := f.parseChartYAML(r); err != nil {
-				return nil, err
-			}
-		case "Feature.yaml":
-			if err := yaml.NewDecoder(r).Decode(&f.FeatureYAML); err != nil {
-				return nil, err
-			}
-		case "values.yaml":
-			b, err := io.ReadAll(r)
-			if err != nil {
-				return nil, err
-			}
-			vals, err := chartutil.ReadValues(b)
-			if err != nil {
-				return nil, err
-			}
-			f.ValuesYaml = vals
+		if v.Required {
+			requiredFields = append(requiredFields, k)
 		}
 	}
-
-	return f, nil
+	return requiredFields
 }
 
-func (f *Feature) parseChartYAML(r io.Reader) error {
-	meta := &chart.Metadata{}
-	if err := yaml.NewDecoder(r).Decode(meta); err != nil {
-		return err
-	}
+type FeatureSourceUpdated func()
 
-	f.Name = meta.Name
-	f.Version = meta.Version
-	f.Description = meta.Description
-	if len(meta.Sources) > 0 {
-		f.Source = meta.Sources[0]
-	}
-
-	return nil
+type FeatureSource interface {
+	Features() ([]Feature, error)
+	Register(FeatureSourceUpdated)
+	Close() error
 }
 
 type Manager struct {
@@ -149,25 +80,24 @@ type Manager struct {
 	features []Feature
 }
 
-func New(log logrus.FieldLogger) (*Manager, error) {
-	// mgr := &Manager{}
-	// features, err := source.Features()
-	// if err != nil {
-	// 	return nil, err
-	// }
+func New(source FeatureSource, log logrus.FieldLogger) (*Manager, error) {
+	mgr := &Manager{}
+	features, err := source.Features()
+	if err != nil {
+		return nil, err
+	}
 
-	// source.Register(func() {
-	// 	features, err := source.Features()
-	// 	if err != nil {
-	// 		log.WithError(err).Error("failed to reload features")
-	// 		return
-	// 	}
-	// 	mgr.SetFeatures(features)
-	// })
+	source.Register(func() {
+		features, err := source.Features()
+		if err != nil {
+			log.WithError(err).Error("failed to reload features")
+			return
+		}
+		mgr.SetFeatures(features)
+	})
 
-	// mgr.SetFeatures(features)
-	// return mgr, nil
-	panic("not implemented")
+	mgr.SetFeatures(features)
+	return mgr, nil
 }
 
 func (m *Manager) Features() []Feature {
@@ -192,19 +122,18 @@ func (m *Manager) ValidConfig(feature, key string, value json.RawMessage) error 
 	if f == nil {
 		return fmt.Errorf("%q not a valid feature", feature)
 	}
-	// return f.Config[key].Valid(value)
-	return nil
+	return f.Config[key].Valid(value)
 }
 
 func (m *Manager) IsSecret(feature, key string) bool {
-	// for _, f := range m.Features() {
-	// 	if f.Name == feature {
-	// 		if c, ok := f.Config[key]; ok {
-	// 			return c.Secret
-	// 		}
-	// 		break
-	// 	}
-	// }
+	for _, f := range m.Features() {
+		if f.Name == feature {
+			if c, ok := f.Config[key]; ok {
+				return c.Secret
+			}
+			break
+		}
+	}
 	return false
 }
 
@@ -220,9 +149,6 @@ func (m *Manager) Get(feature string) *Feature {
 func parseFeature(filename string, r io.Reader) (Feature, error) {
 	feature := Feature{
 		Name: strings.TrimSuffix(filepath.Base(filename), ".yaml"),
-		FeatureYAML: FeatureYAML{
-			Timeout: 5 * time.Minute,
-		},
 	}
 
 	if err := yaml.NewDecoder(r).Decode(&feature); err != nil {
