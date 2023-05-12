@@ -8,5 +8,5 @@ environmentKinds:
   - "legacy"
 mapping:
   gcp:
-    template: '"{{ne .Kind "onprem"}}"'
+    template: '"{{eq .Kind "legacy"}}"'
     displayName: "GCP"
