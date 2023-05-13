@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/unleasherator
 source: https://github.com/nais/unleasherator/tree/main/charts/unleasherator
-version: 1.8.1
+version: 1.9.0
 description: "Operator for Unleash"
 environmentKinds:
   - "management"
@@ -24,6 +24,9 @@ mapping:
   networkPolicy.allowedNamespaces:
     value:
       - bifrost-unleash
+  networkPolicy.extraOutboundIPs:
+    template: |
+      - "{{ .Env.management_lb_internal_ip }}"
 config:
   controllerManager.manager.image.tag:
     type: string

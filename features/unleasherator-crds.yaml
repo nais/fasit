@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/unleasherator-crds
 source: https://github.com/nais/unleasherator/tree/main/charts/unleasherator-crds
-version: 1.8.1
+version: 1.9.0
 description: "CRDs for Unleash operator"
 environmentKinds:
   - "management"
