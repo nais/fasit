@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/unleasherator
 source: https://github.com/nais/unleasherator/tree/main/charts/unleasherator
-version: 1.10.0
+version: 1.10.1
 description: "Operator for Unleash"
 environmentKinds:
   - "management"
