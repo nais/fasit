@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/unleasherator
 source: https://github.com/nais/unleasherator/tree/main/charts/unleasherator
-version: 1.9.0
+version: 1.10.0
 description: "Operator for Unleash"
 environmentKinds:
   - "management"
@@ -27,6 +27,10 @@ mapping:
   networkPolicy.extraOutboundIPs:
     template: |
       - "{{ .Env.management_lb_internal_ip }}"
+    ignoreKind:
+      - management
+  controllerManager.manager.env.apiTokenNameSuffix:
+    value: "{{ .Env.name }}"
 config:
   controllerManager.manager.image.tag:
     type: string
