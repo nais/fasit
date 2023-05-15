@@ -21,6 +21,12 @@ config:
   fluentd.replicas:
     type: string
     displayName: Number of fluentd replicas
+  alerts.fluentbit:
+    type: bool
+    displayName: Enable fluentbit alerts
+  alerts.fluentd:
+    type: bool
+    displayName: Enable fluentd alerts
 
 mapping:
   nais.cluster:
