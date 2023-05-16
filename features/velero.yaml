@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/velero
 source: https://github.com/nais/helm-charts/tree/main/charts/velero
-version: 0.7.0
+version: 0.6.2
 description: "Velero backup service"
 environmentKinds:
   - "management"
@@ -10,7 +10,6 @@ environmentKinds:
 autoInstall:
   - "management"
   - "tenant"
-
 config:
   velero.resources.requests.cpu:
     type: string
@@ -24,6 +23,20 @@ config:
   velero.resources.limits.memory:
     type: string
     displayName: "Memory limit"
+  velero.configuration.backupStorageLocation.bucket:
+    type: string
+    description: "The name of the bucket where backups will be stored"
+    displayName: "Bucket name"
+    ignoreKind:
+      - "tenant"
+      - "management"
+  velero.configuration.backupStorageLocation.config.serviceAccount:
+    type: string
+    description: "The name of the service account to use for GCS"
+    displayName: "Service account"
+    ignoreKind:
+      - "tenant"
+      - "management"
   velero.credentials.secretContents.cloud:
     type: string
     secret: true
@@ -73,56 +86,16 @@ mapping:
     ignoreKind:
       - "tenant"
       - "management"
-  velero.configuration.backupStorageLocation:
-    template: |
-      {{ if or (eq .Kind "tenant") (eq .Kind "management") }}    
-          - provider: gcp
-            bucket: "{{.Env.velero_bucket}}"
-            config:
-              serviceAccount: "{{.Env.velero_service_account}}"
-      {{ end }}
-      {{ if eq .Kind "onprem" }}
-        {{ if eq .Env.name "ci-fss" }}
-          - provider: gcp
-            bucket: "velero-bck_ci-fss"
-            config:
-              serviceAccount: "velero-ci-fss@nais-ci-e17f.iam.gserviceaccount.com"
-        {{ end }}
-        {{ if eq .Env.name "dev-fss" }}
-          - provider: gcp
-            bucket: "velero-bck_dev-fss"
-            config:
-              serviceAccount: "velero-dev-fss@nais-dev-2e7b.iam.gserviceaccount.com"
-        {{ end }}
-        {{ if eq .Env.name "prod-fss" }}
-          - provider: gcp
-            bucket: "velero-bck_prod-fss"
-            config:
-              serviceAccount: "velero-prod-fss@nais-prod-020f.iam.gserviceaccount.com"
-        {{ end }}
-      {{ end }}
-      {{ if eq .Kind "legacy" }}
-        {{ if eq .Env.name "ci-gcp" }}
-          - provider: gcp
-            bucket: "velero-bck_ci-gcp"
-            config:
-              serviceAccount: "velero@nais-ci-e17f.iam.gserviceaccount.com"
-        {{ end }}
-        {{ if eq .Env.name "dev-gcp" }}
-          - provider: gcp
-            bucket: "velero-bck_dev-gcp"
-            config:
-              serviceAccount: "velero@nais-dev-2e7b.iam.gserviceaccount.com"
-        {{ end }}
-        {{ if eq .Env.name "prod-gcp" }}
-          - provider: gcp
-            bucket: "velero-bck_prod-gcp"
-            config:
-              serviceAccount: "velero@nais-prod-020f.iam.gserviceaccount.com"
-        {{ end }}
-      {{ end }}
-    displayName: "GCP Bucket configuration"
-
+  velero.configuration.backupStorageLocation.bucket:
+    value: "{{.Env.velero_bucket}}"
+    displayName: "GCP Bucket name"
+    ignoreKind:
+      - "onprem"
+  velero.configuration.backupStorageLocation.config.serviceAccount:
+    value: "{{.Env.velero_service_account}}"
+    displayName: "GCP Service account"
+    ignoreKind:
+      - "onprem"
   velero.serviceAccount.server.annotations.iam\.gke\.io/gcp-service-account:
     value: "{{.Env.velero_service_account}}"
     displayName: "KSA annotation"
