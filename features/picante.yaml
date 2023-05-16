@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/picante
 source: https://github.com/nais/picante/tree/main/charts
-version: 0.1.5
+version: 0.2.0
 description: "Picante is an informer for verifying image attestations and upload sbom to dependencytrack backend"
 environmentKinds:
   - "tenant"
@@ -53,3 +53,6 @@ mapping:
         - "{{.Tenant.Name}}"
       {{ end }}
     displayName: "Required GitHub organization(s)"
+  config.cluster:
+    value: "{{.Env.name}}"
+    displayName: "Current cluster"
