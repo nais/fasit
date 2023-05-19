@@ -39,6 +39,13 @@ mapping:
       - management
       - tenant
       - legacy
+  # only include node logs from onprem clusters
+  hostTailer.enabled:
+    template: "true"
+    ignoreKind:
+      - management
+      - tenant
+      - legacy
   # only include kube-system logs from onprem clusters
   logs.elastic.kubeSystem:
     template: "true"
