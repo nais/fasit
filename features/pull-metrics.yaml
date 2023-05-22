@@ -4,6 +4,7 @@ version: 0.1.0
 description: "Creates metrics for image pull times"
 environmentKinds:
   - "legacy"
+  - "onprem"
 dependsOn:
   - allOf:
       - naiserator
