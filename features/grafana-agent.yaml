@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/grafana-agent
 source: https://github.com/nais/helm-charts/tree/main/charts/grafana-agent
-version: 0.0.2
+version: 0.0.3
 description: "Grafana Agent for frontend telemetry collection"
 environmentKinds:
   - "tenant"
@@ -14,6 +14,9 @@ config:
     type: string
     displayName: "Public ingress hostname for telemetry"
     description: "Used in frontend applications and must be reachable by Internet users"
+  ingress.class:
+    type: string
+    displayName: "k8s ingress class name"
 mapping:
   cors_allowed_origins:
     template: |
