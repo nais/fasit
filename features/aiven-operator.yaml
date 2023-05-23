@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/aiven-operator
 source: https://github.com/nais/helm-charts/tree/main/charts/aiven-operator
-version: 0.2.6
+version: 0.3.0
 description: "Install the Aiven Operator"
 environmentKinds:
   - "tenant"
