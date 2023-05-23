@@ -10,6 +10,7 @@ environmentKinds:
 rolloutSource:
   - org: nais
     repo: dependencytrack
+timeout: 15m
 config:
   bootstrap.image.tag:
     type: string
