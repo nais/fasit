@@ -4,6 +4,8 @@ version: 0.2.0
 description: "Picante is an informer for verifying image attestations and upload sbom to dependencytrack backend"
 environmentKinds:
   - "tenant"
+  - "legacy"
+  - "onprem"
 dependsOn:
   - allOf:
       - dependencytrack
