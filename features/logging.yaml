@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/logging
 source: https://github.com/nais/helm-charts/tree/main/charts/logging
-version: 1.0.0
+version: 1.1.0
 description: "Logging operator"
 environmentKinds:
   - "tenant"
@@ -21,6 +21,12 @@ config:
   fluentd.replicas:
     type: string
     displayName: Number of fluentd replicas
+  fluentd.resources.requests.cpu:
+    type: string
+    displayName: Fluentd cpu request
+  fluentd.resources.requests.memory:
+    type: string
+    displayName: Fluentd memory request
   alerts.fluentbit:
     type: bool
     displayName: Enable fluentbit alerts
