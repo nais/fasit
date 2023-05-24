@@ -20,7 +20,7 @@ config:
     displayName: Elasticsearch index
   fluentd.replicas:
     type: string
-    displayName: Number of fluentd replicas
+    displayName: Fluentd replicas
   fluentd.resources.requests.cpu:
     type: string
     displayName: Fluentd cpu request
