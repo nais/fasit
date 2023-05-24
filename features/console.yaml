@@ -60,9 +60,17 @@ mapping:
     template: "http://hookd/internal/api/v1/apikey"
   backend.naisDeploy.provisionKey:
     value: "{{.Management.hookd_provision_key}}"
+  # TODO: remove if hack when legacy type is converted to tenant
   backend.dependencytrack.instances:
     template: |
       [
+        {{ if or (eq .Kind "legacy") (eq .Kind "onprem") (eq .Tenant.Name "nav") }}
+        {
+          "endpoint": "https://dependencytrack-backend.dev-gcp.{{ .Tenant.Name }}.cloud.nais.io/api/v1",
+          "username": "console",
+          "password": "{{ .Env.console_dependencytrack_password }}"
+        }
+        {{ else }}
         {{ $tenant_name := .Tenant.Name }}
         {{ range .Envs }}
         {
@@ -70,6 +78,7 @@ mapping:
           "username": "console",
           "password": "{{ .console_dependencytrack_password }}"
         },
+        {{ end }}
         {{ end }}
       ]
     displayName: "DependencyTrack instances"
