@@ -64,21 +64,13 @@ mapping:
   backend.dependencytrack.instances:
     template: |
       [
-        {{ if or (eq .Kind "legacy") (eq .Kind "onprem") (eq .Tenant.Name "nav") }}
-        {
-          "endpoint": "https://dependencytrack-backend.dev-gcp.{{ .Tenant.Name }}.cloud.nais.io/api/v1",
-          "username": "console",
-          "password": "{{ .Env.console_dependencytrack_password }}"
-        }
-        {{ else }}
         {{ $tenant_name := .Tenant.Name }}
         {{ range .Envs }}
         {
-          "endpoint": "https://dependencytrack-backend.{{ .name }}.{{ $tenant_name }}.cloud.nais.io/api/v1",
+          "endpoint": "https://dependencytrack-backend.{{ .name }}.{{ $tenant_name }}.cloud.nais.io",
           "username": "console",
           "password": "{{ .console_dependencytrack_password }}"
         },
-        {{ end }}
         {{ end }}
       ]
     displayName: "DependencyTrack instances"
