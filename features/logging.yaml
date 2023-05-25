@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/logging
 source: https://github.com/nais/helm-charts/tree/main/charts/logging
-version: 1.1.1
+version: 1.1.2
 description: "Logging operator"
 environmentKinds:
   - "tenant"
