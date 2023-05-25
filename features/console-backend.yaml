@@ -4,3 +4,18 @@ version: 20230523-020138-63704a2
 description: "Backend for NAIS console"
 environmentKinds:
   - "management"
+  
+mapping:
+  teams.token:
+      value: "{{.Management.console_teams_api_key}}"
+      displayName: "teams pre-shared key"
+      description: "The pre-shared key used by console to authenticate against teams"
+  hookd.psk:
+      value: "{{.Management.hookd_frontend_pre_shared_key}}"
+      displayName: "hookd pre-shared key"
+      description: "The pre-shared key used to authenticate against hookd"
+config:
+  kubeconfig:
+    type: string
+    secret: true
+
