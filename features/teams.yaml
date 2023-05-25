@@ -1,7 +1,7 @@
-chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/console
-source: https://github.com/nais/helm-charts/tree/main/charts/console
-version: 0.0.32
-description: "For managing teams and resources on the platform"
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/teams
+source: https://github.com/nais/helm-charts/tree/main/charts/teams
+version: 0.0.33
+description: "For managing teams on the platform"
 environmentKinds:
   - "management"
 dependsOn:
@@ -11,9 +11,9 @@ dependsOn:
       - monitoring
 rolloutSource:
   - org: nais
-    repo: console
+    repo: teams-backend
   - org: nais
-    repo: console-frontend
+    repo: teams-frontend
 mapping:
   backend.database.instance:
     value: "{{.Management.console_database_instance}}"
@@ -37,8 +37,11 @@ mapping:
     value: "{{.Management.tenant_domain}}"
     displayName: "Tenant domain"
   ingress.host:
-    value: '{{ subdomain . "console" }}'
+    value: '{{ subdomain . "teams" }}'
     displayName: "Ingress URL"
+  ingress.oldHost:
+    value: '{{ subdomain . "console" }}'
+    displayName: "Ingress URL, remove later"
   backend.gcp.clusters:
     value: '{{ (filter "kind" "tenant" .Envs | environmentsAsMap "teams_folder_id,project_id") | toJSON }}'
     displayName: Cluster information
@@ -78,7 +81,7 @@ mapping:
     description: The organization slug where the github reconciler will manage teams.
     value: "{{.Management.console_github_org}}"
   backend.gitHub.authEndpoint:
-    description: The endpoint for the token service that provisions console with GitHub installation tokens for the correct tenant organization.
+    description: The endpoint for the token service that provisions teams-backend with GitHub installation tokens for the correct tenant organization.
     value: "{{.Management.console_github_auth_endpoint}}"
 
 config:
@@ -101,4 +104,4 @@ config:
     description: Frontend image tag
   backend.firstRunEnableReconcilers:
     type: string
-    description: Comma separated list of reconcilers to enable on first run (empty database). Changing this after console has been deployed does nothing.
+    description: Comma separated list of reconcilers to enable on first run (empty database). Changing this after teams-backend has been deployed does nothing.
