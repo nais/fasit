@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/nais-probes
 source: https://github.com/nais/helm-charts/tree/main/charts/nais-probes
-version: 1.10.1
+version: 1.10.2
 environmentKinds:
   - "management"
   - "onprem"
