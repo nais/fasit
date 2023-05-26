@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/teams
 source: https://github.com/nais/helm-charts/tree/main/charts/teams
-version: 0.0.33
+version: 0.0.34
 description: "For managing teams on the platform"
 environmentKinds:
   - "management"
