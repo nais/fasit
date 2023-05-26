@@ -21,6 +21,11 @@ config:
     type: string
     displayName: "GitHub organization(s)"
     description: "Required GitHub organizations to verify image attestations"
+  dockerconfigjson:
+    type: string
+    secret: true
+    displayName: "Docker config json"
+
 mapping:
   apiserverIP:
     value: "{{.Env.apiserver_endpoint}}"
