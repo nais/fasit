@@ -5,6 +5,12 @@ description: A mutating admission controller for Kubernetes that will enforce ce
 environmentKinds:
   - "tenant"
   - "legacy"
+autoInstall:
+  - "tenant"
+  - "legacy"
+dependsOn:
+  - allOf:
+      - "aiven-operator"
 rolloutSource:
   - org: nais
     repo: mutilator
