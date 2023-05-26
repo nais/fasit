@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/mutilator
 source: https://github.com/nais/mutilator/tree/master/charts/mutilator
-version: 0.2.5
+version: 0.2.6
 description: A mutating admission controller for Kubernetes that will enforce certain fields in resources belonging to the Aiven Operator.
 environmentKinds:
   - "tenant"
@@ -12,9 +12,6 @@ config:
   image.tag:
     type: string
     displayName: Image tag
-  plan:
-    type: string
-    displayName: Default plan to select
 mapping:
   project_vpc_id:
     value: "{{ .Env.aiven_project_vpc_id }}"
