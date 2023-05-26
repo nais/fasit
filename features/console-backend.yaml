@@ -11,7 +11,7 @@ mapping:
     displayName: "teams pre-shared key"
     description: "The pre-shared key used by console to authenticate against teams"
   serviceaccount.email:
-    value: "{{.Management.console-backend_serviceaccount_email}}"
+    value: "{{.Management.console_backend_serviceaccount_email}}"
     displayName: "console-backend service account email"
   hookd.psk:
     value: "{{.Management.hookd_frontend_pre_shared_key}}"
