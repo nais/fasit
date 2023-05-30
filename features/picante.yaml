@@ -24,6 +24,7 @@ config:
   dockerconfigjson:
     type: string
     secret: true
+    required: true
     displayName: "Docker config json"
 
 mapping:
