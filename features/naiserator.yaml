@@ -197,9 +197,6 @@ mapping:
   naiserator.features.gcp:
     template: '{{ne .Kind "onprem"}}'
     displayName: "Enable GCP"
-  naiserator.features.seccomp:
-    template: "true"
-    displayName: "Enable Seccomp"
   naiserator.features.network-policy:
     template: '{{ne .Kind "onprem"}}'
     displayName: "Enable Network Policy"
