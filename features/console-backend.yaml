@@ -17,7 +17,10 @@ mapping:
     value: "{{.Management.hookd_frontend_pre_shared_key}}"
     displayName: "hookd pre-shared key"
     description: "The pre-shared key used to authenticate against hookd"
-  kubernetes.projects:
+  tenant:
+    value: "{{ .Tenant.Name }}"
+    displayName: "Tenant name"
+  kubernetes.clusters:
     template: | 
-      {{ eachOf (filter "kind" "tenant" .Envs) "project_id" | toJSON }}
+      {{ eachOf (filter "kind" "tenant" .Envs) "name" | toJSON }}
 
