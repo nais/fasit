@@ -16,19 +16,19 @@ rolloutSource:
     repo: teams-frontend
 mapping:
   backend.database.instance:
-    value: "{{.Management.console_database_instance}}"
+    value: "{{.Management.teams_database_instance}}"
     displayName: "Database instance"
   backend.database.user:
-    value: "{{.Management.console_database_user}}"
+    value: "{{.Management.teams_database_user}}"
     displayName: "Database user"
   backend.database.name:
-    value: "{{.Management.console_database_name}}"
+    value: "{{.Management.teams_database_name}}"
     displayName: "Database name"
   backend.googleManagementProjectID:
     value: "{{.Management.project_id}}"
     displayName: "Google management project ID"
   backend.google.serviceAccountEmail:
-    value: "{{.Management.console_google_service_account_email}}"
+    value: "{{.Management.teams_google_service_account_email}}"
     displayName: "Google service account"
   backend.tenantName:
     value: "{{.Tenant.Name}}"
@@ -46,7 +46,7 @@ mapping:
     value: '{{ (filter "kind" "tenant" .Envs | environmentsAsMap "teams_folder_id,project_id") | toJSON }}'
     displayName: Cluster information
   backend.staticServiceAccounts:
-    value: "{{.Management.console_static_service_accounts}}"
+    value: "{{.Management.teams_static_service_accounts}}"
     displayName: JSON-encoded list of static service accounts
   backend.gcp.cnrmRole:
     value: "organizations/{{ .Management.org_id }}/roles/{{ .Management.cnrm_role }}"
@@ -79,10 +79,10 @@ mapping:
     displayName: "DependencyTrack instances"
   backend.gitHub.organization:
     description: The organization slug where the github reconciler will manage teams.
-    value: "{{.Management.console_github_org}}"
+    value: "{{.Management.teams_github_org}}"
   backend.gitHub.authEndpoint:
     description: The endpoint for the token service that provisions teams-backend with GitHub installation tokens for the correct tenant organization.
-    value: "{{.Management.console_github_auth_endpoint}}"
+    value: "{{.Management.teams_github_auth_endpoint}}"
 
 config:
   backend.image.tag:
