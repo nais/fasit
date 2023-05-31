@@ -1,33 +1,10 @@
-chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/console-backend
-source: https://github.com/nais/console-backend/tree/main/charts
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/console-frontend
+source: https://github.com/nais/console-frontend/tree/main/charts
 version: 20230531-023419-007f075
 description: "Frontend for NAIS console"
 environmentKinds:
   - "management"
   
 mapping:
-  teams.token:
-    value: "{{.Management.console_teams_api_key}}"
-    displayName: "teams pre-shared key"
-    description: "The pre-shared key used by console to authenticate against teams"
-  serviceaccount.email:
-    value: "{{.Management.console_backend_serviceaccount_email}}"
-    displayName: "console-backend service account email"
-  hookd.psk:
-    value: "{{.Management.hookd_frontend_pre_shared_key}}"
-    displayName: "hookd pre-shared key"
-    description: "The pre-shared key used to authenticate against hookd"
-  tenant:
-    value: "{{ .Tenant.Name }}"
-    displayName: "Tenant name"
-  kubernetes.clusters:
-    template: | 
-      {{ eachOf (filter "kind" "tenant" .Envs) "name" | toJSON }}
   host:
     template: '{{ subdomain . "console" }}'
-config:
-  audience:
-    type: string
-    required: true
-    displayName: "IAP audience"
-    
