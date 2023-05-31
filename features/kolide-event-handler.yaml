@@ -26,7 +26,7 @@ config:
 
 mapping:
   ingress.hosts:
-    value:
+    template: |
       - '{{ subdomain . "kolide-event-handler" }}'
     displayName: "DNS names"
 

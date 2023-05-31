@@ -1,8 +1,6 @@
 package feature
 
 import (
-	"encoding/json"
-	"fmt"
 	"io"
 	"path/filepath"
 	"sort"
@@ -67,17 +65,9 @@ func (f *Feature) RequiredFields(envKind model.EnvironmentKind) []string {
 	return requiredFields
 }
 
-type FeatureSourceUpdated func()
-
-type FeatureSource interface {
-	Features() ([]Feature, error)
-	Register(FeatureSourceUpdated)
-	Close() error
-}
-
 type Manager struct {
 	lock     sync.RWMutex
-	features []Feature
+	features []*model.Feature
 }
 
 func New(source FeatureSource, log logrus.FieldLogger) (*Manager, error) {
@@ -87,26 +77,45 @@ func New(source FeatureSource, log logrus.FieldLogger) (*Manager, error) {
 		return nil, err
 	}
 
+	convertAndSet := func(features []Feature) {
+		v2f := make([]*model.Feature, len(features))
+		for i, f := range features {
+			f := f
+			v2 := FeatureV2(&f, false)
+			v2f[i] = &model.Feature{
+				Name:        f.Name,
+				Chart:       f.Chart,
+				Version:     f.Version,
+				Description: f.Description,
+				Source:      f.Source,
+				FeatureYAML: *v2,
+			}
+		}
+
+		mgr.SetFeatures(v2f)
+	}
+
 	source.Register(func() {
 		features, err := source.Features()
 		if err != nil {
 			log.WithError(err).Error("failed to reload features")
 			return
 		}
-		mgr.SetFeatures(features)
+
+		convertAndSet(features)
 	})
 
-	mgr.SetFeatures(features)
+	convertAndSet(features)
 	return mgr, nil
 }
 
-func (m *Manager) Features() []Feature {
+func (m *Manager) Features() []*model.Feature {
 	m.lock.RLock()
 	defer m.lock.RUnlock()
 	return m.features[:]
 }
 
-func (m *Manager) SetFeatures(features []Feature) {
+func (m *Manager) SetFeatures(features []*model.Feature) {
 	// sorted because we want to be deterministic
 	sort.Slice(features, func(i, j int) bool {
 		return features[i].Name < features[j].Name
@@ -117,30 +126,30 @@ func (m *Manager) SetFeatures(features []Feature) {
 	m.features = features
 }
 
-func (m *Manager) ValidConfig(feature, key string, value json.RawMessage) error {
-	f := m.Get(feature)
-	if f == nil {
-		return fmt.Errorf("%q not a valid feature", feature)
-	}
-	return f.Config[key].Valid(value)
-}
+// func (m *Manager) ValidConfig(feature, key string, value json.RawMessage) error {
+// 	f := m.Get(feature)
+// 	if f == nil {
+// 		return fmt.Errorf("%q not a valid feature", feature)
+// 	}
+// 	return f.Config[key].Valid(value)
+// }
 
-func (m *Manager) IsSecret(feature, key string) bool {
+// func (m *Manager) IsSecret(feature, key string) bool {
+// 	for _, f := range m.Features() {
+// 		if f.Name == feature {
+// 			if c, ok := f.Config[key]; ok {
+// 				return c.Secret
+// 			}
+// 			break
+// 		}
+// 	}
+// 	return false
+// }
+
+func (m *Manager) Get(feature string) *model.Feature {
 	for _, f := range m.Features() {
 		if f.Name == feature {
-			if c, ok := f.Config[key]; ok {
-				return c.Secret
-			}
-			break
-		}
-	}
-	return false
-}
-
-func (m *Manager) Get(feature string) *Feature {
-	for _, f := range m.Features() {
-		if f.Name == feature {
-			return &f
+			return f
 		}
 	}
 	return nil
@@ -148,7 +157,8 @@ func (m *Manager) Get(feature string) *Feature {
 
 func parseFeature(filename string, r io.Reader) (Feature, error) {
 	feature := Feature{
-		Name: strings.TrimSuffix(filepath.Base(filename), ".yaml"),
+		Name:    strings.TrimSuffix(filepath.Base(filename), ".yaml"),
+		Timeout: 5 * time.Minute,
 	}
 
 	if err := yaml.NewDecoder(r).Decode(&feature); err != nil {

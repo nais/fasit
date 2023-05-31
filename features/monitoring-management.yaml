@@ -51,7 +51,8 @@ mapping:
   grafana.server.root_url:
     value: '{{ subdomain . "grafana" }}'
   grafana.ingress.hosts:
-    value: ['{{ subdomain . "grafana" }}']
+    template: |-
+      ['{{ subdomain . "grafana" }}']
     displayName: "Grafana hosts"
   tenant.name:
     value: "{{.Tenant.Name}}"

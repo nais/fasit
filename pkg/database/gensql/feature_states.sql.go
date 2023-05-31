@@ -8,6 +8,7 @@ package gensql
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -132,6 +133,57 @@ func (q *Queries) FeatureStatesGet(ctx context.Context, environmentID uuid.UUID)
 			&i.Created,
 			&i.LastModified,
 			&i.EnabledAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const featureStatesGetOld = `-- name: FeatureStatesGetOld :many
+SELECT environment_id, feature, enabled, feature_states.created, feature_states.last_modified, enabled_at, name, version, features.created, features.last_modified
+FROM feature_states
+LEFT JOIN features ON features.name = feature_states.feature
+WHERE environment_id = $1 AND features.name IS NULL
+`
+
+type FeatureStatesGetOldRow struct {
+	EnvironmentID  uuid.UUID
+	Feature        string
+	Enabled        bool
+	Created        time.Time
+	LastModified   time.Time
+	EnabledAt      sql.NullTime
+	Name           sql.NullString
+	Version        sql.NullString
+	Created_2      sql.NullTime
+	LastModified_2 sql.NullTime
+}
+
+func (q *Queries) FeatureStatesGetOld(ctx context.Context, environmentID uuid.UUID) ([]FeatureStatesGetOldRow, error) {
+	rows, err := q.db.Query(ctx, featureStatesGetOld, environmentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []FeatureStatesGetOldRow{}
+	for rows.Next() {
+		var i FeatureStatesGetOldRow
+		if err := rows.Scan(
+			&i.EnvironmentID,
+			&i.Feature,
+			&i.Enabled,
+			&i.Created,
+			&i.LastModified,
+			&i.EnabledAt,
+			&i.Name,
+			&i.Version,
+			&i.Created_2,
+			&i.LastModified_2,
 		); err != nil {
 			return nil, err
 		}

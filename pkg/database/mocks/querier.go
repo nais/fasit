@@ -699,6 +699,32 @@ func (_m *Querier) FeatureStatesGet(ctx context.Context, environmentID uuid.UUID
 	return r0, r1
 }
 
+// FeatureStatesGetOld provides a mock function with given fields: ctx, environmentID
+func (_m *Querier) FeatureStatesGetOld(ctx context.Context, environmentID uuid.UUID) ([]gensql.FeatureStatesGetOldRow, error) {
+	ret := _m.Called(ctx, environmentID)
+
+	var r0 []gensql.FeatureStatesGetOldRow
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]gensql.FeatureStatesGetOldRow, error)); ok {
+		return rf(ctx, environmentID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) []gensql.FeatureStatesGetOldRow); ok {
+		r0 = rf(ctx, environmentID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gensql.FeatureStatesGetOldRow)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, environmentID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // FeatureVersionUpdate provides a mock function with given fields: ctx, arg
 func (_m *Querier) FeatureVersionUpdate(ctx context.Context, arg gensql.FeatureVersionUpdateParams) error {
 	ret := _m.Called(ctx, arg)

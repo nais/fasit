@@ -14,6 +14,7 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/nais/fasit/pkg/database/gensql"
+	"github.com/nais/fasit/pkg/feature"
 	"github.com/pressly/goose/v3"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/metric"
@@ -69,9 +70,10 @@ type Transaction interface {
 }
 
 type repo struct {
-	querier Querier
-	db      *pgxpool.Pool
-	log     *logrus.Entry
+	querier     Querier
+	db          *pgxpool.Pool
+	log         *logrus.Entry
+	oldFeatures *feature.Manager
 
 	auditErrorCount instrument.Int64Counter
 }
@@ -90,11 +92,12 @@ type Querier interface {
 	WithTx(tx pgx.Tx) *gensql.Queries
 }
 
-func New(db *pgxpool.Pool, log *logrus.Entry) Repo {
+func New(db *pgxpool.Pool, mgr *feature.Manager, log *logrus.Entry) Repo {
 	return &repo{
-		querier: gensql.New(db),
-		db:      db,
-		log:     log,
+		querier:     gensql.New(db),
+		db:          db,
+		log:         log,
+		oldFeatures: mgr,
 	}
 }
 

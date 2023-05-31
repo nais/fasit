@@ -30,6 +30,13 @@ ON fs.feature = f.name AND fs.environment_id = @environment_id
 WHERE (SELECT kind FROM env) = any(fd.kinds)
 ;
 
+-- name: FeatureStatesGetOld :many
+SELECT *
+FROM feature_states
+LEFT JOIN features ON features.name = feature_states.feature
+WHERE environment_id = @environment_id AND features.name IS NULL
+;
+
 -- name: RolloutStatesGet :many
 SELECT @environment_id::uuid AS environment_id, r.feature_name, coalesce(fs.enabled, false) AS enabled, fs.created, fs.last_modified, fs.enabled_at
 FROM rollouts r

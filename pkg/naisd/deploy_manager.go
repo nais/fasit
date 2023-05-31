@@ -3,6 +3,7 @@ package naisd
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -211,6 +212,9 @@ func (d *DeployManager) makeHelmValues(m message.DeployInstruction) (string, err
 	if err := enc.Encode(m.Values); err != nil {
 		return "", err
 	}
+
+	b, _ := os.ReadFile(file.Name())
+	fmt.Println(string(b))
 
 	return file.Name(), nil
 }

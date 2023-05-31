@@ -42,25 +42,25 @@ mapping:
     ignoreKind:
       - "onprem"
   extraArgs:
-    value:
+    template: |
       - --issuer-ambient-credentials
       - --dns01-recursive-nameservers=1.1.1.1:53,8.8.8.8:53
       - --dns01-recursive-nameservers-only
 
   # The following capabilities might not be necessary after 1.9.2
   webhook.containerSecurityContext.capabilities.drop:
-    value:
+    template: |
       - ALL
     description: Webhook capabilities
   cainjector.containerSecurityContext.capabilities.drop:
-    value:
+    template: |
       - ALL
     description: Cainjector capabilities
   startupapicheck.containerSecurityContext.capabilities.drop:
-    value:
+    template: |
       - ALL
     description: Startupapicheck capabilities
   containerSecurityContext.capabilities.drop:
-    value:
+    template: |
       - ALL
     description: Capabilities

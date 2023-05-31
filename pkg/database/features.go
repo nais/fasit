@@ -29,9 +29,25 @@ func (r *repo) FeatureVersionUpdate(ctx context.Context, name string, version st
 	})
 }
 
+// TODO: remove
+func (r *repo) getOldFeature(name string) (*model.Feature, error) {
+	f := r.oldFeatures.Get(name)
+	if f == nil {
+		return nil, fmt.Errorf("feature %q not found", name)
+	}
+	return f, nil
+}
+
+// TODO: end remove
+
 func (r *repo) FeatureByName(ctx context.Context, name string) (*model.Feature, error) {
 	f, err := r.querier.FeatureByName(ctx, name)
 	if err != nil {
+		// TODO: remove
+		if errors.Is(err, pgx.ErrNoRows) {
+			return r.getOldFeature(name)
+		}
+		// TODO: end remove
 		return nil, fmt.Errorf("get feature by name from db: %w", err)
 	}
 
@@ -75,6 +91,24 @@ func (r *repo) Features(ctx context.Context) ([]*model.Feature, error) {
 		}
 		ret = append(ret, feature)
 	}
+
+	// TODO: remove
+	exists := map[string]struct{}{}
+	for _, f := range ret {
+		exists[f.Name] = struct{}{}
+	}
+
+	for _, f := range r.oldFeatures.Features() {
+		if _, ok := exists[f.Name]; !ok {
+			ret = append(ret, f)
+		}
+	}
+
+	sort.Slice(ret, func(i, j int) bool {
+		return ret[i].Name < ret[j].Name
+	})
+	// TODO: end remove
+
 	return ret, nil
 }
 
@@ -85,7 +119,30 @@ func (r *repo) FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, 
 	}
 
 	if !ci {
-		return featuresFromSQL(features)
+		// TODO: remove
+		ret, err := featuresFromSQL(features)
+		if err != nil {
+			return nil, err
+		}
+
+		exists := map[string]struct{}{}
+		for _, f := range ret {
+			exists[f.Name] = struct{}{}
+		}
+
+		for _, f := range r.oldFeatures.Features() {
+			if _, ok := exists[f.Name]; !ok {
+				if contains(f.EnvironmentKinds, kind) {
+					ret = append(ret, f)
+				}
+			}
+		}
+
+		sort.Slice(ret, func(i, j int) bool {
+			return ret[i].Name < ret[j].Name
+		})
+		// TODO: end remove
+		return ret, nil
 	}
 
 	rollouts, err := r.querier.RolloutsForKind(ctx, kind.String())
@@ -121,7 +178,31 @@ func (r *repo) FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, 
 		return features[i].Name < features[j].Name
 	})
 
-	return featuresFromSQL(features)
+	ret, err := featuresFromSQL(features)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: remove
+	exists := map[string]struct{}{}
+	for _, f := range ret {
+		exists[f.Name] = struct{}{}
+	}
+
+	for _, f := range r.oldFeatures.Features() {
+		if _, ok := exists[f.Name]; !ok {
+			if contains(f.EnvironmentKinds, kind) {
+				ret = append(ret, f)
+			}
+		}
+	}
+
+	sort.Slice(ret, func(i, j int) bool {
+		return ret[i].Name < ret[j].Name
+	})
+	// TODO: end remove
+
+	return ret, nil
 }
 
 func (r *repo) FeatureByNameForEnv(ctx context.Context, name string, envID uuid.UUID) (*model.Feature, error) {

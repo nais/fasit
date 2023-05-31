@@ -7,7 +7,6 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/nais/fasit/pkg/feature/featureutil"
 	"github.com/nais/fasit/pkg/graph/model"
 	"gopkg.in/yaml.v2"
 )
@@ -52,7 +51,7 @@ func (m Mapping) Generate(envKind model.EnvironmentKind, values *MappingValues, 
 	values.Configs = copyMap(target)
 
 	for k, v := range m {
-		keys, err := featureutil.SmartDotSplit(k)
+		keys, err := SmartDotSplit(k)
 		if err != nil {
 			return err
 		}
@@ -66,14 +65,6 @@ func (m Mapping) Generate(envKind model.EnvironmentKind, values *MappingValues, 
 		}
 	}
 	return nil
-}
-
-func (m Mapping) GenerateJSON(envKind model.EnvironmentKind, values *MappingValues) (string, error) {
-	target := make(map[string]any)
-	if err := m.Generate(envKind, values, target); err != nil {
-		return "", err
-	}
-	return "", nil
 }
 
 func (m Mapping) DisplayName(key string) string {
@@ -171,6 +162,36 @@ func renderSlice(values *MappingValues, tpl []any) ([]any, error) {
 		ret[i] = val
 	}
 	return ret, nil
+}
+
+func SmartDotSplit(s string) ([]string, error) {
+	if strings.HasSuffix(s, ".") {
+		return nil, fmt.Errorf("cannot end with `.`")
+	}
+	if strings.HasPrefix(s, ".") {
+		return nil, fmt.Errorf("cannot start with `.`")
+	}
+
+	str := ""
+	var ret []string
+	for i, ch := range s {
+		switch ch {
+		case '.':
+			if len(str) == 0 || i == 0 {
+				return nil, fmt.Errorf("invalid `.` on position %v", i)
+			}
+			if s[i-1] == '\\' {
+				str = str[:len(str)-1]
+				str += "."
+			} else {
+				ret = append(ret, str)
+				str = ""
+			}
+		default:
+			str += string(ch)
+		}
+	}
+	return append(ret, str), nil
 }
 
 func repairMapAny(v any) any {

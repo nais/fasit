@@ -3,9 +3,11 @@ package feature
 import (
 	"context"
 	"io/fs"
+	"log"
 	"os"
 	"path/filepath"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/sirupsen/logrus"
 )
 
@@ -15,10 +17,23 @@ type FeatureSourceFilesystem struct {
 	log       logrus.FieldLogger
 	directory string
 	callbacks []FeatureSourceUpdated
+	watcher   *fsnotify.Watcher
 }
 
-func NewFeatureSourceFilesystem(directory string) (*FeatureSourceFilesystem, error) {
+func NewFeatureSourceFilesystem(directory string, log logrus.FieldLogger) (*FeatureSourceFilesystem, error) {
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		return nil, err
+	}
+
+	err = watcher.Add(directory)
+	if err != nil {
+		return nil, err
+	}
+
 	return &FeatureSourceFilesystem{
+		log:       log,
+		watcher:   watcher,
 		directory: directory,
 	}, nil
 }
@@ -61,8 +76,35 @@ func (f *FeatureSourceFilesystem) Features() ([]Feature, error) {
 }
 
 func (f *FeatureSourceFilesystem) Watch(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case event, ok := <-f.watcher.Events:
+			if !ok {
+				f.log.Error("filesystem watcher closed (events)")
+				return
+			}
+
+			if filepath.Ext(event.Name) != ".yaml" {
+				continue
+			}
+
+			if event.Has(fsnotify.Write) || event.Has(fsnotify.Create) || event.Has(fsnotify.Remove) {
+				for _, callback := range f.callbacks {
+					callback()
+				}
+			}
+		case err, ok := <-f.watcher.Errors:
+			if !ok {
+				f.log.Error("filesystem watcher closed (errors)")
+				return
+			}
+			log.Println("error:", err)
+		}
+	}
 }
 
 func (f *FeatureSourceFilesystem) Close() error {
-	return nil
+	return f.watcher.Close()
 }

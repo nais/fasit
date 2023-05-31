@@ -17,6 +17,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/database/dbtest"
+	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph"
 	"github.com/nais/fasit/pkg/graph/graphgen"
 	"github.com/nais/fasit/pkg/integration_test/testmanager"
@@ -164,7 +165,7 @@ func newDB(ctx context.Context, config testmanager.Config, state map[string]any)
 	log := logrus.New()
 	log.Out = io.Discard
 
-	db := database.New(pool, logrus.NewEntry(log))
+	db := database.New(pool, &feature.Manager{}, logrus.NewEntry(log))
 	if err := database.Migrate("pgx", connStr, logrus.NewEntry(log)); err != nil {
 		cleanup()
 		close.Close()

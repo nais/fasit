@@ -71,7 +71,7 @@ mapping:
   excludeKyvernoNamespace:
     template: "false"
   extraArgs:
-    value:
+    template: |
       - --backgroundScanInterval=3h
       - --clientRateLimitQPS=150
       - --clientRateLimitBurst=300
@@ -97,7 +97,7 @@ mapping:
               {{ if ne .Kind "onprem" }}- configconnector-operator-system{{ end }}
   config.resourceFilters:
     displayName: Resource filters
-    value:
+    template: |
       - "[Event,*,*]"
       - "[*,kube-system,*]"
       - "[*,kube-public,*]"

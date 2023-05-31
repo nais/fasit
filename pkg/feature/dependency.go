@@ -1,7 +1,5 @@
 package feature
 
-import "fmt"
-
 type Dependencies []Dependency
 
 func (d Dependencies) FindMissing(features []string) []string {
@@ -44,12 +42,5 @@ func (d *Dependency) FindMissing(features []string) []string {
 		}
 		anyOfMissing = append(anyOfMissing, f)
 	}
-	if something("boo") {
-		fmt.Println("")
-	}
 	return append(missing, anyOfMissing...)
-}
-
-func something(s string) bool {
-	return true
 }
