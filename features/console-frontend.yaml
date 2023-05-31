@@ -23,6 +23,8 @@ mapping:
   kubernetes.clusters:
     template: | 
       {{ eachOf (filter "kind" "tenant" .Envs) "name" | toJSON }}
+  host:
+    template: '{{ subdomain . "console" }}'
 config:
   audience:
     type: string
