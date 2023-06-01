@@ -21,7 +21,7 @@ require (
 	github.com/jackc/pgconn v1.14.0
 	github.com/jackc/pgtype v1.14.0
 	github.com/jackc/pgx/v4 v4.18.1
-	github.com/lib/pq v1.10.8
+	github.com/lib/pq v1.10.9
 	github.com/ory/dockertest/v3 v3.9.1
 	github.com/pressly/goose/v3 v3.10.0
 	github.com/prometheus/client_golang v1.15.0
