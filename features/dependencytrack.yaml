@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/dependencytrack
 source: https://github.com/nais/helm-charts/tree/main/charts/dependencytrack
-version: 0.1.1
+version: 0.1.2
 description: "Dependencytrack is a storage backend for storing sbom and image attestations and viewing vulnerabilities,
 the backend application is dependency-track: https://docs.dependencytrack.org"
 environmentKinds:
@@ -96,6 +96,9 @@ mapping:
   backend.env.ALPINE_DATABASE_POOL_MAX_LIFETIME:
     value: "400000"
     displayName: "Backend database pool max lifetime"
+  backend.fqdn.google.internal:
+    value: '{{ if or (eq .Kind "onprem") (eq .Kind "legacy") }}false{{ else }}true{{ end }}'
+    displayName: "Add fqdn for metadata.google.internal"
 
   frontend.ingress:
     value: "salsa.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io"
