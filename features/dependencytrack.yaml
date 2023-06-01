@@ -97,7 +97,7 @@ mapping:
     value: "400000"
     displayName: "Backend database pool max lifetime"
   backend.fqdn.google.internal:
-    value: '{{ if or (eq .Kind "onprem") (eq .Kind "legacy") }}false{{ else }}true{{ end }}'
+    template: '{{ if or (eq .Kind "onprem") (eq .Kind "legacy") }}false{{ else }}true{{ end }}'
     displayName: "Add fqdn for metadata.google.internal"
 
   frontend.ingress:
