@@ -1,10 +1,16 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/console-frontend
 source: https://github.com/nais/console-frontend/tree/main/charts
-version: 20230531-023419-007f075
+version: 20230601-110555-69248ea
 description: "Frontend for NAIS console"
 environmentKinds:
   - "management"
-  
+
+config: 
+  host:
+    type: string
+    displayName: override hostname during testing
 mapping:
   host:
     template: '{{ subdomain . "console" }}'
+  tenantDomain:
+    template: '{{ subdomain . "" }}'

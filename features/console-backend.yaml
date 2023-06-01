@@ -1,10 +1,14 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/console-backend
 source: https://github.com/nais/console-backend/tree/main/charts
-version: 20230531-023332-a293fa7
+version: 20230531-033502-1009e00
 description: "Backend for NAIS console"
 environmentKinds:
   - "management"
   
+config: 
+  host:
+    type: string
+    displayName: override hostname during testing
 mapping:
   teams.token:
     value: "{{.Management.console_teams_api_key}}"
