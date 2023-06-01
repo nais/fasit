@@ -30,11 +30,11 @@ require (
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.0
 	github.com/sirupsen/logrus v1.9.2
 	github.com/stevenle/topsort v0.2.0
-	github.com/stretchr/testify v1.8.2
+	github.com/stretchr/testify v1.8.3
 	github.com/vektah/gqlparser/v2 v2.5.1
-	go.opentelemetry.io/otel v1.15.1
+	go.opentelemetry.io/otel v1.16.0
 	go.opentelemetry.io/otel/exporters/prometheus v0.38.0
-	go.opentelemetry.io/otel/metric v0.38.0
+	go.opentelemetry.io/otel/metric v1.16.0
 	go.opentelemetry.io/otel/sdk/metric v0.38.0
 	golang.org/x/sync v0.1.0
 	google.golang.org/api v0.118.0
@@ -171,7 +171,7 @@ require (
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/contrib v1.16.1 // indirect
 	go.opentelemetry.io/otel/sdk v1.15.1 // indirect
-	go.opentelemetry.io/otel/trace v1.15.1 // indirect
+	go.opentelemetry.io/otel/trace v1.16.0 // indirect
 	go.starlark.net v0.0.0-20221205180719-3fd0dac74452 // indirect
 	go.uber.org/atomic v1.10.0 // indirect
 	go.uber.org/multierr v1.9.0 // indirect
