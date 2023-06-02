@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/console-backend
 source: https://github.com/nais/console-backend/tree/main/charts
-version: 20230602-022348-4e06d36
+version: 20230602-035401-77881f8
 description: "Backend for NAIS console"
 environmentKinds:
   - "management"
@@ -35,7 +35,10 @@ config:
     type: string
     required: true
     displayName: "IAP audience"
-  resources.limits.memory:
+  resources.memory:
     type: string
-    displayName: "Memory limit (when too OOMKill)"
+    displayName: "CPU requirements (request == limit, because Autopilot)"
+  resources.cpu:
+    type: string
+    displayName: "Memory requirements (request == limit, because Autopilot)"
     
