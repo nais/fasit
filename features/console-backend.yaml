@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/console-backend
 source: https://github.com/nais/console-backend/tree/main/charts
-version: 20230601-010403-30c7fa8
+version: 20230602-073712-e2a6004
 description: "Backend for NAIS console"
 environmentKinds:
   - "management"
