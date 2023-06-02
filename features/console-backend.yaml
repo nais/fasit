@@ -35,4 +35,7 @@ config:
     type: string
     required: true
     displayName: "IAP audience"
+  resources.limits.memory:
+    type: string
+    displayName: "Memory limit (when too OOMKill)"
     
