@@ -37,8 +37,8 @@ config:
     displayName: "IAP audience"
   resources.memory:
     type: string
-    displayName: "CPU requirements (request == limit, because Autopilot)"
+    displayName: "Memory requirements (request == limit, because Autopilot)"
   resources.cpu:
     type: string
-    displayName: "Memory requirements (request == limit, because Autopilot)"
+    displayName: "CPU requirements (request == limit, because Autopilot)"
     
