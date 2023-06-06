@@ -34,9 +34,6 @@ mapping:
   google.serviceAccountEmail:
     value: "{{.Env.picante_service_account}}"
     displayName: "Google service account email"
-  config.storage.api:
-    value: "https://dependencytrack-backend.{{.Env.name}}.{{.Tenant.Name}}.cloud.nais.io"
-    displayName: "dependencytrack Ingress"
   config.storage.password:
     value: "{{.Env.picante_dependencytrack_password}}"
     displayName: "dependencytrack API password"
