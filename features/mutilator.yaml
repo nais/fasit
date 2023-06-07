@@ -21,9 +21,13 @@ config:
   project_vpc_id:
     type: string
     description: Override mapped project vpc id. (<aiven project>/<uuid>)
+    ignoreKind:
+      - "tenant"
   location:
     type: string
     description: Override cloud location. Ex. europe-north1
+    ignoreKind:
+      - "tenant"
 mapping:
   project_vpc_id:
     value: "{{ .Env.aiven_project_vpc_id }}"
@@ -36,6 +40,6 @@ mapping:
     ignoreKind:
       - "legacy"
   tenant.environment:
-    value: "{{ .Env.name }}"
+    value: '{{ if eq .Kind "legacy" }}{{ replace .Env.name "-gcp" "" }}{{ else }}{{ .Env.name }}{{ end }}'
   tenant.name:
     value: "{{ .Tenant.Name }}"

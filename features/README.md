@@ -112,9 +112,9 @@ By convention, all values are defined in `fasit.tf` files in both `module-tenant
 #### Functions
 
 | Function                                                   | Description                                                                                                                |
-| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+|------------------------------------------------------------| -------------------------------------------------------------------------------------------------------------------------- |
 | `mapOf(ikey, ivalue string, envs []map[string]any)`        | Creates a new map with key being the value of `ikey` and value being the value of `ivalue` from each env in `envs`.        |
-| ` replace(s, old, new string)`                             | Replaces all occurrences of `old` with `new` in `s`.                                                                       |
+| `replace(s, old, new string)`                              | Replaces all occurrences of `old` with `new` in `s`.                                                                       |
 | `mapJoin(sep string, m any)`                               | For each key-value pair in `m`, the key and value is joined with `sep` and all returned as a slice                         |
 | `prefixedValues(m any, prefix string)`                     | Return a slice with values from `m` where the key has the prefix `prefix`                                                  |
 | `subdomain(m *MappingValues, subdomain string)`            | Returns the subdomain for the environment. It will return a subdomain for the environment it's installed in.               |
