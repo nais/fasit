@@ -18,13 +18,23 @@ config:
   image.tag:
     type: string
     displayName: Image tag
+  project_vpc_id:
+    type: string
+    description: Override mapped project vpc id. (<aiven project>/<uuid>)
+  location:
+    type: string
+    description: Override cloud location. Ex. europe-north1
 mapping:
   project_vpc_id:
     value: "{{ .Env.aiven_project_vpc_id }}"
     displayName: Aiven VPC ID
+    ignoreKind:
+      - "legacy"
   location:
     value: "{{ .Env.location }}"
     displayName: Cloud location
+    ignoreKind:
+      - "legacy"
   tenant.environment:
     value: "{{ .Env.name }}"
   tenant.name:
