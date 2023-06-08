@@ -1,6 +1,6 @@
 chart: kyverno
 repo: https://kyverno.github.io/kyverno/
-version: v2.7.0
+version: v2.7.5
 source: https://github.com/kyverno/kyverno/tree/main/charts/kyverno
 description: "Policy engine for Kubernetes"
 environmentKinds:
@@ -78,7 +78,7 @@ mapping:
   extraArgs:
     value:
       - --backgroundScanInterval=3h
-      - --clientRateLimitQPS=150
+      - --clientRateLimitQPS=300
       - --clientRateLimitBurst=300
   config.webhooks:
     # exclude namespaces
@@ -111,8 +111,10 @@ mapping:
       - "[SelfSubjectAccessReview,*,*]"
       - "[Binding,*,*]"
       - "[ReplicaSet,*,*]"
-      - "[ReportChangeRequest,*,*]"
-      - "[ClusterReportChangeRequest,*,*]"
+      - "AdmissionReport,*,*"
+      - "[ClusterAdmissionReport,*,*]"
+      - "[BackgroundScanReport,*,*]"
+      - "[ClusterBackgroundScanReport,*,*]]"
       # exclude resources from the chart
       - '[ClusterRole,*,{{ "{{" }} template "kyverno.fullname" . {{ "}}" }}:*]'
       - '[ClusterRoleBinding,*,{{ "{{" }} template "kyverno.fullname" . {{ "}}" }}:*]'
