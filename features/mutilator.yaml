@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/mutilator
 source: https://github.com/nais/mutilator/tree/master/charts/mutilator
-version: 0.2.8
+version: 0.2.9
 description: A mutating admission controller for Kubernetes that will enforce certain fields in resources belonging to the Aiven Operator.
 environmentKinds:
   - "tenant"
@@ -18,6 +18,9 @@ config:
   image.tag:
     type: string
     displayName: Image tag
+  otlp_endpoint:
+    type: string
+    displayName: OpenTelemetry endpoint
   project_vpc_id:
     type: string
     description: Override mapped project vpc id. (<aiven project>/<uuid>)
