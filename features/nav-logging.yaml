@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/nav-logging
 source: https://github.com/nais/helm-charts/tree/main/charts/nav-logging
-version: 1.0.0
+version: 1.0.1
 description: "Additional logging setup for NAV"
 environmentKinds:
   - "tenant"
