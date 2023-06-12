@@ -32,18 +32,17 @@ jobs:
       - name: Install cosign
         uses: sigstore/cosign-installer@204a51a57a74d190b284a0ce69b44bc37201f343 # ratchet:sigstore/cosign-installer@main
         with:
-          cosign-release: 'v2.0.0'
+          cosign-release: "v2.0.0"
       - name: Verify baseimage
         run: cosign verify --certificate-identity ${{ env.BASEIMG_IDENTITY }} --certificate-oidc-issuer ${{ env.BASEIMG_ISSUER }} ${{ env.BASEIMG }}
       - uses: nais/platform-build-push-sign@main
         id: build-push-sign
         with:
           dockerfile: Dockerfile_fasit_frontend
-          name: ${{ matrix.image }}
+          name: fasit-frontend
           google_service_account: gh-fasit
           workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
           push: ${{ github.actor != 'dependabot[bot]' }}
-
 
   deploy_fasit-frontend:
     if: github.ref == 'refs/heads/main'
