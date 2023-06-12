@@ -35,7 +35,6 @@ func featureStateFromSQL(state gensql.FeatureState) *model.FeatureState {
 }
 
 func (r *repo) FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error) {
-	fmt.Println("Feature states get")
 	ret := []*model.FeatureState{}
 	featureStates, err := r.querier.FeatureStatesGet(ctx, envID)
 	if err != nil {

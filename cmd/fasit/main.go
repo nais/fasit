@@ -48,6 +48,8 @@ import (
 
 var cfg = DefaultConfig()
 
+const slowQueryEndpoint = false
+
 func init() {
 	flag.StringVar(&cfg.BindAddress, "bind-address", cfg.BindAddress, "Bind address")
 	flag.StringVar(&cfg.GRPCBindAddress, "grpc-bind-address", cfg.GRPCBindAddress, "Bind address")
@@ -193,14 +195,6 @@ func main() {
 	}()
 	go reconciler.Run(ctx, 10*time.Minute)
 
-	go workers.NewAutoInstaller(repo).Run(ctx, 3*time.Minute)
-
-	// helmChartValues, err := helminfo.New(featureMgr, log.WithField("subsystem", "helm-chart-values"))
-	// if err != nil {
-	// 	log.WithError(err).Fatal("setting up helm chart values")
-	// }
-	// go helmChartValues.Run(ctx, 1*time.Hour)
-
 	resolver := &graph.Resolver{
 		Repo: repo,
 		Log:  log.WithField("subsystem", "graphql"),
@@ -233,9 +227,18 @@ func main() {
 		iapMW = auth.InsecureValidateMW
 	}
 
+	slowDownQuery := func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if slowQueryEndpoint {
+				time.Sleep(2 * time.Second)
+			}
+			h.ServeHTTP(w, r)
+		})
+	}
+
 	router := chi.NewMux()
 	router.Handle("/", iapMW(playground.Handler("GraphQL playground", "/query")))
-	router.Handle("/query", iapMW(corsMW.Handler(srv)))
+	router.Handle("/query", slowDownQuery(iapMW(corsMW.Handler(srv))))
 	router.Handle("/metrics", promhttp.Handler())
 
 	rout, err := rollout.New(ctx, repo)

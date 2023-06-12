@@ -103,6 +103,7 @@ type Environment struct {
 	Created      time.Time
 	LastModified time.Time
 	Ci           bool
+	Reconcile    bool
 }
 
 type EnvironmentValue struct {

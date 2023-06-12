@@ -55,9 +55,13 @@ func (q *Queries) TenantCreate(ctx context.Context, arg TenantCreateParams) (Ten
 }
 
 const tenantEnvironments = `-- name: TenantEnvironments :many
-SELECT e.id, e.tenant_id, e.name, e.kind, e.description, e.created, e.last_modified, e.ci, p.name AS tenant_name
+SELECT e.id, e.tenant_id, e.name, e.kind, e.description, e.created, e.last_modified, e.ci, e.reconcile, p.name AS tenant_name
 FROM environments e
 JOIN tenants p ON e.tenant_id = p.id
+WHERE
+  -- If @all is false, only return environments with reconcile enabled
+  CASE WHEN true = $1::boolean THEN true
+  ELSE e.reconcile = true END
 ORDER BY p.name, e.name
 `
 
@@ -70,11 +74,12 @@ type TenantEnvironmentsRow struct {
 	Created      time.Time
 	LastModified time.Time
 	Ci           bool
+	Reconcile    bool
 	TenantName   string
 }
 
-func (q *Queries) TenantEnvironments(ctx context.Context) ([]TenantEnvironmentsRow, error) {
-	rows, err := q.db.Query(ctx, tenantEnvironments)
+func (q *Queries) TenantEnvironments(ctx context.Context, all bool) ([]TenantEnvironmentsRow, error) {
+	rows, err := q.db.Query(ctx, tenantEnvironments, all)
 	if err != nil {
 		return nil, err
 	}
@@ -91,6 +96,7 @@ func (q *Queries) TenantEnvironments(ctx context.Context) ([]TenantEnvironmentsR
 			&i.Created,
 			&i.LastModified,
 			&i.Ci,
+			&i.Reconcile,
 			&i.TenantName,
 		); err != nil {
 			return nil, err

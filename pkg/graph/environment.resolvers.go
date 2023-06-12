@@ -127,6 +127,11 @@ func (r *mutationResolver) EnvironmentUpdate(ctx context.Context, id uuid.UUID, 
 	return r.Repo.EnvironmentUpdate(ctx, id, &input)
 }
 
+// EnvironmentSetReconcile is the resolver for the environmentSetReconcile field.
+func (r *mutationResolver) EnvironmentSetReconcile(ctx context.Context, id uuid.UUID, reconcile bool) (*model.Environment, error) {
+	return r.Repo.EnvironmentSetReconcile(ctx, id, reconcile)
+}
+
 // Feature is the resolver for the feature field.
 func (r *releaseResolver) Feature(ctx context.Context, obj *model.Release) (*model.Feature, error) {
 	f, err := r.Repo.FeatureByNameForEnv(ctx, obj.Name, obj.GraphVars.EnvironmentID)

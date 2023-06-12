@@ -5,26 +5,15 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 
 	feature "github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph/model"
-	"github.com/sirupsen/logrus"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
 )
 
 func main() {
-	logr := logrus.New()
-	fileSource, err := feature.NewFeatureSourceFilesystem("./features")
-	if err != nil {
-		panic(err)
-	}
-
-	mgr, err := feature.New(fileSource, logr)
-	if err != nil {
-		panic(err)
-	}
-
 	var oldFeature *feature.Feature
 	app := &cli.App{
 		Name:  "convert",
@@ -36,10 +25,15 @@ func main() {
 			},
 		},
 		Before: func(c *cli.Context) error {
-			oldFeature = mgr.Get(c.Args().Get(0))
-			if oldFeature == nil {
-				return fmt.Errorf("feature %q not found", c.Args().Get(1))
+			b, err := os.ReadFile(filepath.Join("features", c.Args().Get(0)+".yaml"))
+			if err != nil {
+				return err
 			}
+
+			if err := yaml.Unmarshal(b, &oldFeature); err != nil {
+				return err
+			}
+			oldFeature.Name = c.Args().Get(0)
 			return nil
 		},
 		Action: func(c *cli.Context) error {

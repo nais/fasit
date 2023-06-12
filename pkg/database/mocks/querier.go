@@ -447,6 +447,30 @@ func (_m *Querier) EnvironmentIDByNames(ctx context.Context, arg gensql.Environm
 	return r0, r1
 }
 
+// EnvironmentSetReconcile provides a mock function with given fields: ctx, arg
+func (_m *Querier) EnvironmentSetReconcile(ctx context.Context, arg gensql.EnvironmentSetReconcileParams) (gensql.Environment, error) {
+	ret := _m.Called(ctx, arg)
+
+	var r0 gensql.Environment
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.EnvironmentSetReconcileParams) (gensql.Environment, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.EnvironmentSetReconcileParams) gensql.Environment); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(gensql.Environment)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, gensql.EnvironmentSetReconcileParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // EnvironmentUpdate provides a mock function with given fields: ctx, arg
 func (_m *Querier) EnvironmentUpdate(ctx context.Context, arg gensql.EnvironmentUpdateParams) (gensql.Environment, error) {
 	ret := _m.Called(ctx, arg)
@@ -1275,25 +1299,25 @@ func (_m *Querier) TenantCreate(ctx context.Context, arg gensql.TenantCreatePara
 	return r0, r1
 }
 
-// TenantEnvironments provides a mock function with given fields: ctx
-func (_m *Querier) TenantEnvironments(ctx context.Context) ([]gensql.TenantEnvironmentsRow, error) {
-	ret := _m.Called(ctx)
+// TenantEnvironments provides a mock function with given fields: ctx, all
+func (_m *Querier) TenantEnvironments(ctx context.Context, all bool) ([]gensql.TenantEnvironmentsRow, error) {
+	ret := _m.Called(ctx, all)
 
 	var r0 []gensql.TenantEnvironmentsRow
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) ([]gensql.TenantEnvironmentsRow, error)); ok {
-		return rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, bool) ([]gensql.TenantEnvironmentsRow, error)); ok {
+		return rf(ctx, all)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) []gensql.TenantEnvironmentsRow); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, bool) []gensql.TenantEnvironmentsRow); ok {
+		r0 = rf(ctx, all)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]gensql.TenantEnvironmentsRow)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
+	if rf, ok := ret.Get(1).(func(context.Context, bool) error); ok {
+		r1 = rf(ctx, all)
 	} else {
 		r1 = ret.Error(1)
 	}

@@ -205,7 +205,7 @@ func TestReconcile(t *testing.T) {
 					Environment: e.Environment,
 				})
 			}
-			repo.On("TenantEnvironments", mock.Anything).Return(te, nil)
+			repo.On("TenantEnvironments", mock.Anything, true).Return(te, nil)
 
 			for _, te := range tt.environments {
 				repo.On("FeaturesForKind", mock.Anything, te.Environment.Kind, te.Environment.CI).Return(tt.features, nil)

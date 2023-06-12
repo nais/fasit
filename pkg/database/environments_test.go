@@ -34,6 +34,7 @@ func TestRepo_EnvironmentGet(t *testing.T) {
 		Name:        "testname",
 		Description: stringToPtr("testdesc"),
 		Kind:        model.EnvironmentKindTenant,
+		Reconcile:   true,
 	}
 
 	opts := cmpopts.IgnoreFields(model.Environment{}, "Created", "LastModified")
@@ -70,6 +71,7 @@ func TestRepo_EnvironmentsGet(t *testing.T) {
 			Name:        fmt.Sprintf("testname%v", i),
 			Description: stringToPtr("testdesc"),
 			Kind:        model.EnvironmentKindManagement,
+			Reconcile:   true,
 		})
 	}
 
@@ -103,6 +105,7 @@ func TestRepo_EnvironmentCreate(t *testing.T) {
 		Name:        "somename",
 		Description: stringToPtr("somedesc"),
 		Kind:        model.EnvironmentKindTenant,
+		Reconcile:   true,
 	}
 
 	opts := cmpopts.IgnoreFields(model.Environment{}, "ID", "Created", "LastModified")
@@ -142,6 +145,7 @@ func TestRepo_EnvironmentUpdate(t *testing.T) {
 		Name:        "somename",
 		Description: stringToPtr("somedesc2"),
 		Kind:        model.EnvironmentKindTenant,
+		Reconcile:   true,
 	}
 
 	opts := cmpopts.IgnoreFields(model.Environment{}, "ID", "Created", "LastModified")
@@ -158,6 +162,7 @@ func TestRepo_EnvironmentUpdate(t *testing.T) {
 		Name:        "somename",
 		Description: stringToPtr("somedesc2"),
 		Kind:        model.EnvironmentKindTenant,
+		Reconcile:   true,
 	}
 
 	if !cmp.Equal(want2, got, opts) {

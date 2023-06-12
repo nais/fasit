@@ -425,6 +425,32 @@ func (_m *Repo) EnvironmentIDByNames(ctx context.Context, tenantName string, env
 	return r0, r1
 }
 
+// EnvironmentSetReconcile provides a mock function with given fields: ctx, environmentID, reconcile
+func (_m *Repo) EnvironmentSetReconcile(ctx context.Context, environmentID uuid.UUID, reconcile bool) (*model.Environment, error) {
+	ret := _m.Called(ctx, environmentID, reconcile)
+
+	var r0 *model.Environment
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, bool) (*model.Environment, error)); ok {
+		return rf(ctx, environmentID, reconcile)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, bool) *model.Environment); ok {
+		r0 = rf(ctx, environmentID, reconcile)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Environment)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, bool) error); ok {
+		r1 = rf(ctx, environmentID, reconcile)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // EnvironmentUpdate provides a mock function with given fields: ctx, environmentID, p
 func (_m *Repo) EnvironmentUpdate(ctx context.Context, environmentID uuid.UUID, p *model.EnvironmentUpdate) (*model.Environment, error) {
 	ret := _m.Called(ctx, environmentID, p)
@@ -1250,25 +1276,25 @@ func (_m *Repo) TenantCreate(ctx context.Context, t *model.TenantCreate) (*model
 	return r0, r1
 }
 
-// TenantEnvironments provides a mock function with given fields: ctx
-func (_m *Repo) TenantEnvironments(ctx context.Context) ([]*model.TenantEnvironment, error) {
-	ret := _m.Called(ctx)
+// TenantEnvironments provides a mock function with given fields: ctx, onlyReconciled
+func (_m *Repo) TenantEnvironments(ctx context.Context, onlyReconciled bool) ([]*model.TenantEnvironment, error) {
+	ret := _m.Called(ctx, onlyReconciled)
 
 	var r0 []*model.TenantEnvironment
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) ([]*model.TenantEnvironment, error)); ok {
-		return rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, bool) ([]*model.TenantEnvironment, error)); ok {
+		return rf(ctx, onlyReconciled)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) []*model.TenantEnvironment); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, bool) []*model.TenantEnvironment); ok {
+		r0 = rf(ctx, onlyReconciled)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*model.TenantEnvironment)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
+	if rf, ok := ret.Get(1).(func(context.Context, bool) error); ok {
+		r1 = rf(ctx, onlyReconciled)
 	} else {
 		r1 = ret.Error(1)
 	}

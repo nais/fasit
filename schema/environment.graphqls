@@ -38,6 +38,7 @@ type Environment {
   auditLog(featureName: String): [AuditLog!]!
   features: [Feature!]!
   feature(name: String!): Feature!
+  reconcile: Boolean!
 }
 
 type EnvironmentValue {
@@ -74,4 +75,9 @@ extend type Mutation {
     "input contains information about the updated environment."
     input: EnvironmentUpdate!
   ): Environment!
+
+  """
+  Change the reconcile flag for an environment
+  """
+  environmentSetReconcile(id: ID!, reconcile: Boolean!): Environment!
 }

@@ -34,7 +34,5 @@ func (r *Resolver) FeatureWarning() graphgen.FeatureWarningResolver {
 // NaisdWarning returns graphgen.NaisdWarningResolver implementation.
 func (r *Resolver) NaisdWarning() graphgen.NaisdWarningResolver { return &naisdWarningResolver{r} }
 
-type (
-	featureWarningResolver struct{ *Resolver }
-	naisdWarningResolver   struct{ *Resolver }
-)
+type featureWarningResolver struct{ *Resolver }
+type naisdWarningResolver struct{ *Resolver }

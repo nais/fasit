@@ -88,7 +88,7 @@ func TestNew(t *testing.T) {
 		},
 	}
 
-	source, err := NewFeatureSourceFilesystem("./testdata")
+	source, err := NewFeatureSourceFilesystem("./testdata", logrus.StandardLogger())
 	if err != nil {
 		t.Fatal(err)
 	}

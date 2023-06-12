@@ -29,6 +29,7 @@ type Querier interface {
 	EnvironmentGet(ctx context.Context, id uuid.UUID) (Environment, error)
 	EnvironmentGetByName(ctx context.Context, arg EnvironmentGetByNameParams) (Environment, error)
 	EnvironmentIDByNames(ctx context.Context, arg EnvironmentIDByNamesParams) (uuid.UUID, error)
+	EnvironmentSetReconcile(ctx context.Context, arg EnvironmentSetReconcileParams) (Environment, error)
 	EnvironmentUpdate(ctx context.Context, arg EnvironmentUpdateParams) (Environment, error)
 	EnvironmentValueGet(ctx context.Context, arg EnvironmentValueGetParams) (EnvironmentValueGetRow, error)
 	EnvironmentValueStore(ctx context.Context, arg EnvironmentValueStoreParams) error
@@ -67,7 +68,7 @@ type Querier interface {
 	StatusForFeature(ctx context.Context, arg StatusForFeatureParams) (Status, error)
 	TenantCI(ctx context.Context) (Tenant, error)
 	TenantCreate(ctx context.Context, arg TenantCreateParams) (Tenant, error)
-	TenantEnvironments(ctx context.Context) ([]TenantEnvironmentsRow, error)
+	TenantEnvironments(ctx context.Context, all bool) ([]TenantEnvironmentsRow, error)
 	TenantGet(ctx context.Context, id uuid.UUID) (Tenant, error)
 	TenantGetByName(ctx context.Context, name string) (Tenant, error)
 	TenantsGet(ctx context.Context) ([]Tenant, error)

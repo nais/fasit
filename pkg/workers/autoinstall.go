@@ -34,7 +34,7 @@ func (a *AutoInstaller) Run(ctx context.Context, interval time.Duration) error {
 }
 
 func (a *AutoInstaller) ensure(ctx context.Context) error {
-	envs, err := a.repo.TenantEnvironments(ctx)
+	envs, err := a.repo.TenantEnvironments(ctx, true)
 	if err != nil {
 		return fmt.Errorf("get all tenants environments: %w", err)
 	}

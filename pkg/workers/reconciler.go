@@ -31,7 +31,7 @@ type ReconcilerStore interface {
 	HelmValues(ctx context.Context, feature *model.Feature, envID uuid.UUID) (map[string]any, error)
 	RolloutsListen(ctx context.Context, fn database.ListenFunc) error
 	StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]*model.Status, error)
-	TenantEnvironments(ctx context.Context) ([]*model.TenantEnvironment, error)
+	TenantEnvironments(ctx context.Context, onlyReconciled bool) ([]*model.TenantEnvironment, error)
 	RolloutStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
 }
 
@@ -158,7 +158,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		r.lock.Unlock()
 	}()
 
-	data, err := r.repo.TenantEnvironments(ctx)
+	data, err := r.repo.TenantEnvironments(ctx, true)
 	if err != nil {
 		return err
 	}

@@ -5,9 +5,6 @@ environmentKinds:
   - "tenant"
   - "management"
   - "legacy"
-autoInstall:
-  - "tenant"
-  - "management"
 dependsOn:
   - allOf:
       - "cert-manager"
@@ -15,21 +12,12 @@ config:
   acme.email:
     type: string
     displayName: "email"
-  acme.api:
-    type: string
-    displayName: "api url"
   dnsNames:
     type: string_array
 mapping:
   cloudDNS.zone:
     value: "{{.Management.cloud_dns_zone}}"
     displayName: "Cloud DNS zone"
-  cloudDNS.project:
-    value: "{{.Management.project_id}}"
-    displayName: "Cloud DNS project"
-  tenant:
-    value: "{{.Tenant.Name}}"
-    displayName: "Tenant"
   dnsNames:
     template: |
       - '{{ subdomain . "*" }}'

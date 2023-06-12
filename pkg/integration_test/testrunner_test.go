@@ -56,7 +56,7 @@ func TestRunner(t *testing.T) {
 
 		if naisdRunner != nil {
 			cleanups = append(cleanups, close)
-			tes, err := db.TenantEnvironments(ctx)
+			tes, err := db.TenantEnvironments(ctx, false)
 			if err != nil {
 				return nil, nil, opts, err
 			}
