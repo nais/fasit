@@ -22,7 +22,7 @@ import (
 	"github.com/nais/fasit/pkg/rollout"
 	"github.com/nais/fasit/pkg/workers"
 	"github.com/sirupsen/logrus"
-	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/metric/noop"
 )
 
 type naisd interface {
@@ -108,7 +108,7 @@ func NewTestContext(t *testing.T, features []feature.Feature, envName string, en
 		return tctx.Naisd
 	}
 
-	meter := metric.NewNoopMeterProvider().Meter("")
+	meter := noop.NewMeterProvider().Meter("")
 	tctx.Reconciler, err = workers.NewReconciler(tctx.Repo, tctx.FeatureManager, newPublisher, "xxx", meter, log)
 	_ = err
 

@@ -17,7 +17,6 @@ import (
 	"github.com/pressly/goose/v3"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/metric/instrument"
 )
 
 type (
@@ -65,11 +64,11 @@ type repo struct {
 	db      *pgxpool.Pool
 	log     *logrus.Entry
 
-	auditErrorCount instrument.Int64Counter
+	auditErrorCount metric.Int64Counter
 }
 
 func (r *repo) Metrics(meter metric.Meter) (err error) {
-	r.auditErrorCount, err = meter.Int64Counter("audit_errors", instrument.WithDescription("Number of audit errors"))
+	r.auditErrorCount, err = meter.Int64Counter("audit_errors", metric.WithDescription("Number of audit errors"))
 	if err != nil {
 		return fmt.Errorf("failed to create audit_errors counter: %w", err)
 	}

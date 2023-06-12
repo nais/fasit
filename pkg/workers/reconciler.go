@@ -19,7 +19,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/metric/instrument"
 )
 
 type ReconcilerStore interface {
@@ -53,8 +52,8 @@ type Reconciler struct {
 	running bool
 
 	// Metrics
-	reconcileTime  instrument.Int64Histogram
-	deployMessages instrument.Int64Counter
+	reconcileTime  metric.Int64Histogram
+	deployMessages metric.Int64Counter
 }
 
 func NewReconciler(
@@ -65,11 +64,11 @@ func NewReconciler(
 	meter metric.Meter,
 	log *logrus.Entry,
 ) (*Reconciler, error) {
-	reconcileTime, err := meter.Int64Histogram("reconcile_time", instrument.WithDescription("Time spent reconciling"), instrument.WithUnit("ms"))
+	reconcileTime, err := meter.Int64Histogram("reconcile_time", metric.WithDescription("Time spent reconciling"), metric.WithUnit("ms"))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create reconcile_time histogram: %w", err)
 	}
-	deployMessages, err := meter.Int64Counter("deploy_messages", instrument.WithDescription("Deploy messages sent"))
+	deployMessages, err := meter.Int64Counter("deploy_messages", metric.WithDescription("Deploy messages sent"))
 	if err != nil {
 		return nil, fmt.Errorf("unable to create deploy_messages counter: %w", err)
 	}
@@ -230,7 +229,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 	}
 	start := time.Now()
 	defer func() {
-		r.reconcileTime.Record(ctx, time.Since(start).Milliseconds(), metricAttrs...)
+		r.reconcileTime.Record(ctx, time.Since(start).Milliseconds(), metric.WithAttributes(metricAttrs...))
 	}()
 
 	health, err := r.repo.HealthGet(ctx, d.ID)
@@ -341,7 +340,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 			"environment": d.Name,
 		}).Info("publish deploy instruction")
 
-		r.deployMessages.Add(ctx, 1, append(metricAttrs, attribute.Key("feature").String(f.Name))...)
+		r.deployMessages.Add(ctx, 1, metric.WithAttributes(append(metricAttrs, attribute.Key("feature").String(f.Name))...))
 		err = mgr.Publish(ctx, message.DeployInstruction{
 			Name:       f.Name,
 			Version:    f.Version,

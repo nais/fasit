@@ -38,7 +38,7 @@ type EnvConfig struct {
 // EnvironmentCreate contains metadata for creating an environment
 type EnvironmentCreate struct {
 	Name        string          `json:"name"`
-	Description *string         `json:"description"`
+	Description *string         `json:"description,omitempty"`
 	TenantID    uuid.UUID       `json:"tenantID"`
 	Kind        EnvironmentKind `json:"kind"`
 }
@@ -46,7 +46,7 @@ type EnvironmentCreate struct {
 // UpdateEnvironment contains metadata for updating an environment
 type EnvironmentUpdate struct {
 	// description of the environment
-	Description *string `json:"description"`
+	Description *string `json:"description,omitempty"`
 }
 
 type MappingValue struct {
@@ -57,11 +57,11 @@ type MappingValue struct {
 
 type TenantCreate struct {
 	Name        string  `json:"name"`
-	Description *string `json:"description"`
+	Description *string `json:"description,omitempty"`
 }
 
 type UpdateConfiguration struct {
-	Description *string         `json:"description"`
+	Description *string         `json:"description,omitempty"`
 	Value       json.RawMessage `json:"value"`
 }
 

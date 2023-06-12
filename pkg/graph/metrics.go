@@ -8,11 +8,10 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/metric/instrument"
 )
 
 type Metrics struct {
-	resolverTime instrument.Int64Histogram
+	resolverTime metric.Int64Histogram
 }
 
 var _ interface {
@@ -22,7 +21,7 @@ var _ interface {
 } = &Metrics{}
 
 func NewMetrics(meter metric.Meter) (*Metrics, error) {
-	resTime, err := meter.Int64Histogram("gql_query_time", instrument.WithDescription("graphql gql query time"), instrument.WithUnit("ms"))
+	resTime, err := meter.Int64Histogram("gql_query_time", metric.WithDescription("graphql gql query time"), metric.WithUnit("ms"))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create gql_query_time histogram: %w", err)
 	}
@@ -53,6 +52,6 @@ func (a *Metrics) InterceptField(ctx context.Context, next graphql.Resolver) (in
 	start := time.Now()
 	res, err := next(ctx)
 	attr := attribute.Key("resolver").String(fc.Field.ObjectDefinition.Name + "/" + fc.Field.Name)
-	a.resolverTime.Record(ctx, time.Since(start).Milliseconds(), attr)
+	a.resolverTime.Record(ctx, time.Since(start).Milliseconds(), metric.WithAttributes(attr))
 	return res, err
 }
