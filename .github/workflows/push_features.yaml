@@ -9,7 +9,7 @@ env:
   BUCKET: "fasit-features"
 
 jobs:
-  tests:
+  feature_tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
@@ -28,7 +28,7 @@ jobs:
 
   build_and_push_fasit:
     if: github.ref == 'refs/heads/main'
-    needs: [tests]
+    needs: [feature_tests]
     permissions:
       contents: "read"
       id-token: "write"
