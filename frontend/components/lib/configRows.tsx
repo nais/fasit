@@ -19,7 +19,7 @@ import {
 import { navGronn, navRod } from '../../styles/constants'
 import * as React from 'react'
 import styled from 'styled-components'
-import ReactTooltip from 'react-tooltip'
+import { Tooltip } from 'react-tooltip'
 import ValuesCollapse from '../tenant/valuesCollapse'
 
 const Center = styled.div`
@@ -127,15 +127,15 @@ const ConfigRows = ({
               ) : (
                 <FileContent data-tip data-for="helm" />
               )}
-              <ReactTooltip id="local" place="top" type="dark" effect="solid">
+              <Tooltip id="local" place="top" variant="dark">
                 {'Local value'}
-              </ReactTooltip>
-              <ReactTooltip id="global" place="top" type="dark" effect="solid">
+              </Tooltip>
+              <Tooltip id="global" place="top" variant="dark">
                 {'Global value'}
-              </ReactTooltip>
-              <ReactTooltip id="helm" place="top" type="dark" effect="solid">
+              </Tooltip>
+              <Tooltip id="helm" place="top" variant="dark">
                 {'Helm default'}
-              </ReactTooltip>
+              </Tooltip>
             </Table.DataCell>
             <Table.DataCell align={'center'}>
               {conf.required && (
@@ -165,9 +165,9 @@ const ConfigRows = ({
                 )}
               </StyledConfigKey>
               {conf.description ? (
-                <ReactTooltip id={conf.key} aria-haspopup="true">
+                <Tooltip id={conf.key} aria-haspopup="true">
                   <p>{conf.description}</p>
-                </ReactTooltip>
+                </Tooltip>
               ) : (
                 ''
               )}
@@ -197,22 +197,12 @@ const ConfigRows = ({
                         setShowDelete(true)
                       }}
                     />
-                    <ReactTooltip
-                      id="modify"
-                      place="top"
-                      type="dark"
-                      effect="solid"
-                    >
+                    <Tooltip id="modify" place="top" variant="dark">
                       {'Modify'}
-                    </ReactTooltip>
-                    <ReactTooltip
-                      id="delete"
-                      place="top"
-                      type="dark"
-                      effect="solid"
-                    >
+                    </Tooltip>
+                    <Tooltip id="delete" place="top" variant="dark">
                       {'Delete'}
-                    </ReactTooltip>
+                    </Tooltip>
                   </>
                 ) : (
                   <>
@@ -224,14 +214,9 @@ const ConfigRows = ({
                         setShowCreate(true)
                       }}
                     />
-                    <ReactTooltip
-                      id="add"
-                      place="top"
-                      type="dark"
-                      effect="solid"
-                    >
+                    <Tooltip id="add" place="top" variant="dark">
                       {'Add'}
-                    </ReactTooltip>
+                    </Tooltip>
                   </>
                 )}
               </Center>
