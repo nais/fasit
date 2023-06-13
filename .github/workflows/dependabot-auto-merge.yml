@@ -15,9 +15,15 @@ jobs:
         uses: dependabot/fetch-metadata@v1.4.0
         with:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
+      - uses: navikt/github-app-token-generator@v1
+        id: get-token
+        with:
+          private-key: "${{ secrets.NAIS_APP_PRIVATE_KEY }}" # Private key from NAIS team app
+          app-id: ${{ secrets.NAIS_APP_ID }} # App ID from NAIS team app
+          repo: nais/fasit # a repository that NAIS team app is installed on
       - name: Enable auto-merge for Dependabot PRs
         if: steps.metadata.outputs.update-type != 'version-update:semver-major'
         run: gh pr comment "$PR_URL" --body "@dependabot merge"
         env:
           PR_URL: ${{github.event.pull_request.html_url}}
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+          GITHUB_TOKEN: ${{ steps.get-token.outputs.token }}

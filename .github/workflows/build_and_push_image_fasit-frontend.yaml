@@ -38,12 +38,11 @@ jobs:
       - uses: nais/platform-build-push-sign@main
         id: build-push-sign
         with:
-          dockerfile: Dockerfile_fasit_frontend
+          dockerfile: Dockerfile_fasit-frontend
           name: fasit-frontend
           google_service_account: gh-fasit
           workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
           push: ${{ github.actor != 'dependabot[bot]' }}
-          context: frontend
 
   deploy_fasit-frontend:
     if: github.ref == 'refs/heads/main'
