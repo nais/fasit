@@ -19,7 +19,6 @@ env:
 
 jobs:
   build_and_test_fasit-frontend:
-    if: github.ref != 'refs/heads/main'
     permissions:
       contents: "read"
       id-token: "write"
