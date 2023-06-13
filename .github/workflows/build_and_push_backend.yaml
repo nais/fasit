@@ -7,6 +7,7 @@ on:
       - ".github/workflows/build_and_push_image_fasit-frontend.yaml"
       - "frontend/**"
       - "features/**"
+  pull_request:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

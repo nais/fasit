@@ -6,6 +6,7 @@ on:
       - ".github/actions/helm_install/**"
       - "frontend/**"
       - "Dockerfile_fasit-frontend"
+  pull_request:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
