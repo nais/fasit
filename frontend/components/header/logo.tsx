@@ -13,9 +13,9 @@ const LogoBox = styled.div`
 export const Logo = () => (
     <LogoBox>
         <Link href="/">
-            <a>
-              <FasitLogo/>
-            </a>
+
+            <FasitLogo/>
+
         </Link>
     </LogoBox>
 )

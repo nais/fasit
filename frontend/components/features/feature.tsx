@@ -117,7 +117,7 @@ const Feature = ({ featureName }: FeatureProps) => {
               })}
             </WarningBox>
           )}
-          {feature.description && <div>description: {' '}{feature.description}</div>}
+          {feature.description && <div>description: {feature.description}</div>}
         </div>
       </FeatureStatus>
 
@@ -151,7 +151,7 @@ const Feature = ({ featureName }: FeatureProps) => {
         <Tabs.Panel value="rollouts" className="h-24 w-full bg-gray-50 p-8">
           <h3>Rollouts</h3>
           {feature.rolloutSummaries?.map((r, i) => (
-            <Link key={i} href={`/rollout/${r.id}`}>
+            <Link key={i} href={`/rollout/${r.id}`} legacyBehavior>
               <RolloutLink href={`/rollout/${r.id}`}>
                 {rolloutStatus(r.status)}{' '}
                 {humanizeDate(r.created, 'PPPP', true)}
@@ -173,11 +173,7 @@ const Feature = ({ featureName }: FeatureProps) => {
                 <Link
                   href={`/tenant/${e.environment.tenant.name}/${e.environment.name}?feature=${feature.name}`}
                 >
-                  <a
-                    href={`/tenant/${e.environment.tenant.name}/${e.environment.name}?feature=${feature.name}`}
-                  >
-                    {e.environment.tenant.name} - {e.environment.name}
-                  </a>
+                  {e.environment.tenant.name} - {e.environment.name}
                 </Link>
                 <OverrideKeys>{e.keys.join('\n')}</OverrideKeys>
               </div>

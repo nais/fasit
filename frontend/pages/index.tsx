@@ -84,30 +84,30 @@ const Home: NextPage = () => {
       {tenants.length > 0 ? (
         <Links>
           {tenants.map((p) => (
-            <Link href={`/tenant/${p.name}`} key={p.name}>
-              <a>
-                <CategoryCard>
-                  {p.warnings.length > 0 && (
-                    <WarningDot>{p.warnings.length}</WarningDot>
-                  )}
-                  <IconBox size={50}>{GetLogo(p.name)}</IconBox>
-                  <CategoryCardTitle>{p.name}</CategoryCardTitle>
-                </CategoryCard>
-              </a>
-            </Link>
+            (<Link href={`/tenant/${p.name}`} key={p.name}>
+
+              <CategoryCard>
+                {p.warnings.length > 0 && (
+                  <WarningDot>{p.warnings.length}</WarningDot>
+                )}
+                <IconBox size={50}>{GetLogo(p.name)}</IconBox>
+                <CategoryCardTitle>{p.name}</CategoryCardTitle>
+              </CategoryCard>
+
+            </Link>)
           ))}
           <Link href={'/features/'}>
-            <a>
-              <CategoryCard>
-                {tenantsGetQuery.data.outdatedInfo.length > 0 && (
-                  <WarningDotOrange />
-                )}
-                <IconBox size={50}>
-                  <FeatureLogo />
-                </IconBox>
-                <CategoryCardTitle>features</CategoryCardTitle>
-              </CategoryCard>
-            </a>
+
+            <CategoryCard>
+              {tenantsGetQuery.data.outdatedInfo.length > 0 && (
+                <WarningDotOrange />
+              )}
+              <IconBox size={50}>
+                <FeatureLogo />
+              </IconBox>
+              <CategoryCardTitle>features</CategoryCardTitle>
+            </CategoryCard>
+
           </Link>
         </Links>
       ) : (
@@ -115,20 +115,20 @@ const Home: NextPage = () => {
           <p>No tenants, compadre!</p>
           <Links>
             <Link href={'/features/'}>
-              <a>
-                <CategoryCard>
-                  <IconBox size={50}>
-                    <FeatureLogo />
-                  </IconBox>
-                  <CategoryCardTitle>features</CategoryCardTitle>
-                </CategoryCard>
-              </a>
+
+              <CategoryCard>
+                <IconBox size={50}>
+                  <FeatureLogo />
+                </IconBox>
+                <CategoryCardTitle>features</CategoryCardTitle>
+              </CategoryCard>
+
             </Link>
           </Links>
         </div>
       )}
     </StyledMain>
-  )
+  );
 }
 
 export default Home

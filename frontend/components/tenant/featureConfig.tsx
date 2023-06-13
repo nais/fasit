@@ -1,7 +1,7 @@
 import { AutomaticSystem, ExpandFilled, Wrench } from '@navikt/ds-icons'
 import { Table } from '@navikt/ds-react'
 import { useEffect, useState } from 'react'
-import ReactTooltip from 'react-tooltip'
+import { Tooltip } from 'react-tooltip'
 import styled from 'styled-components'
 import { FeatureStateQuery } from '../../lib/schema/graphql'
 import { navBla, navGronn } from '../../styles/constants'
@@ -152,14 +152,9 @@ const FeatureConfig = ({ featureState, envID }: FeatureConfigProps) => {
                       data-for="mapping"
                       title={'Mapping value'}
                     />
-                    <ReactTooltip
-                      id="mapping"
-                      place="top"
-                      type="dark"
-                      effect="solid"
-                    >
+                    <Tooltip id="mapping" place="top" variant="dark">
                       {'Mapping value'}
-                    </ReactTooltip>
+                    </Tooltip>
                   </Table.DataCell>
                   <Table.DataCell />
                   <Table.DataCell style={{ overflowWrap: 'break-word' }}>
