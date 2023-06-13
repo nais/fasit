@@ -2,7 +2,7 @@ import { Switch } from '@navikt/ds-react'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
 import * as React from 'react'
-import ReactTooltip from 'react-tooltip'
+import { Tooltip } from 'react-tooltip'
 import styled from 'styled-components'
 import { FeatureStateQuery, RolloutStatus } from '../../lib/schema/graphql'
 import { navBla, navGronn, navOransje, navRod } from '../../styles/constants'
@@ -78,7 +78,7 @@ const FeatureStatus = ({
   featureState,
   setShowVerify,
   setShowRedeploy,
-  description
+  description,
 }: FeatureProps) => {
   const router = useRouter()
   const tenantName = router.query.tenantName as string
@@ -136,23 +136,22 @@ const FeatureStatus = ({
               dependencies:{' '}
               {dependencies.map((d) => {
                 return (
-                  (<Link
+                  <Link
                     href={`/tenant/${tenantName}/${envName}?feature=${d}`}
                     key={d}
                     style={{
                       color: missingDependencies.find((a) => a.name === d)
                         ? navRod
                         : navGronn,
-                    }}>
-
+                    }}
+                  >
                     {d + ' '}
-
-                  </Link>)
-                );
+                  </Link>
+                )
               })}
             </div>
           )}
-          {description && <div>description: {' '} {description}</div>}
+          {description && <div>description: {description}</div>}
         </div>
         <EnableFeatureBox>
           <div>Enabled</div>
@@ -170,15 +169,10 @@ const FeatureStatus = ({
             {''}
           </Switch>
           {(missingDependencies.length || 0) > 0 && 'Missing dependencies'}
-          <ReactTooltip
-            id="enable_feature"
-            place="bottom"
-            type="info"
-            effect="solid"
-          >
+          <Tooltip id="enable_feature" place="bottom" variant="info">
             {featureState?.enabled ? 'Disable' : 'Enable'} reconciling this
             feature
-          </ReactTooltip>
+          </Tooltip>
           {featureState?.enabled && (
             <FlatButton onClick={() => setShowRedeploy(true)}>
               Redeploy
@@ -187,6 +181,6 @@ const FeatureStatus = ({
         </EnableFeatureBox>
       </div>
     </FeatureStatusContainer>
-  );
+  )
 }
 export default FeatureStatus
