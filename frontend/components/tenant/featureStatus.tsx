@@ -136,21 +136,19 @@ const FeatureStatus = ({
               dependencies:{' '}
               {dependencies.map((d) => {
                 return (
-                  <Link
+                  (<Link
                     href={`/tenant/${tenantName}/${envName}?feature=${d}`}
                     key={d}
-                  >
-                    <a
-                      style={{
-                        color: missingDependencies.find((a) => a.name === d)
-                          ? navRod
-                          : navGronn,
-                      }}
-                    >
-                      {d + ' '}
-                    </a>
-                  </Link>
-                )
+                    style={{
+                      color: missingDependencies.find((a) => a.name === d)
+                        ? navRod
+                        : navGronn,
+                    }}>
+
+                    {d + ' '}
+
+                  </Link>)
+                );
               })}
             </div>
           )}
@@ -189,6 +187,6 @@ const FeatureStatus = ({
         </EnableFeatureBox>
       </div>
     </FeatureStatusContainer>
-  )
+  );
 }
 export default FeatureStatus

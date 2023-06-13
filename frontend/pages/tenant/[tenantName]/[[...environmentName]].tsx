@@ -58,33 +58,36 @@ const warningLink = (
 ) => {
   if (w.__typename === 'NaisdWarning') {
     return (
-      <Link href={`/tenant/${tenant.name}/${w.environment.name}`} key={i}>
+      <Link
+        href={`/tenant/${tenant.name}/${w.environment.name}`}
+        key={i}
+        legacyBehavior>
         <WarningLink>
           {`${w.message} in `}
           <strong>{w.environment.name}</strong>
         </WarningLink>
       </Link>
-    )
+    );
   }
   if (w.__typename === 'FeatureWarning') {
     return (
       <Link
         href={`/tenant/${tenant.name}/${w.environment.name}?feature=${w.feature.name}`}
         key={i}
-      >
+        legacyBehavior>
         <WarningLink>
           <strong>{w.feature.name}</strong>
           {` in `}
           <strong>{w.environment.name}</strong>: {w.message}
         </WarningLink>
       </Link>
-    )
+    );
   }
   return (
-    <Link key={i} href="#">
+    <Link key={i} href="#" legacyBehavior>
       <WarningLink key={i}>{w.message}</WarningLink>
     </Link>
-  )
+  );
 }
 
 const Tenant = () => {

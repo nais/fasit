@@ -65,18 +65,18 @@ const warningLink = (
       <Link
         href={`/tenant/${tenantName}/${environmentName}?feature=${w.feature.name}`}
         key={i}
-      >
+        legacyBehavior>
         <WarningLink>
           <strong>{w.feature.name}</strong>: {w.message}
         </WarningLink>
       </Link>
-    )
+    );
   }
   return (
-    <Link key={i} href="#">
+    <Link key={i} href="#" legacyBehavior>
       <WarningLink key={i}>{w.message}</WarningLink>
     </Link>
-  )
+  );
 }
 
 const EnvironmentStatusPage = ({
@@ -115,7 +115,7 @@ const EnvironmentStatusPage = ({
             <Link
               href={`/tenant/${tenantName}/${env.name}?feature=naisd&tab=helm_values`}
             >
-              <a>More info here.</a>
+              More info here.
             </Link>
           </h3>
         </>
@@ -158,6 +158,6 @@ const EnvironmentStatusPage = ({
         </Tabs.Panel>
       </Tabs>
     </EnvironmentStatus>
-  )
+  );
 }
 export default EnvironmentStatusPage

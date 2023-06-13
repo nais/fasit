@@ -68,21 +68,21 @@ const FeaturesMenu = ({ env }: FeaturesMenuProps) => {
   ) => {
     const f = fs.feature
     return (
-      <Link
+      (<Link
         href={router.asPath.split('?')[0] + '?feature=' + f.name}
         key={f.name}
       >
-        <a>
-          <MenuItem
-            active={f.name === feature}
-            enabled={fs.enabled}
-            failed={fs.rolloutStatus === RolloutStatus.Failed}
-          >
-            {f.name}
-          </MenuItem>
-        </a>
-      </Link>
-    )
+
+        <MenuItem
+          active={f.name === feature}
+          enabled={fs.enabled}
+          failed={fs.rolloutStatus === RolloutStatus.Failed}
+        >
+          {f.name}
+        </MenuItem>
+
+      </Link>)
+    );
   }
 
   return (
