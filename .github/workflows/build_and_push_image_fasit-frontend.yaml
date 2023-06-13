@@ -43,6 +43,7 @@ jobs:
           google_service_account: gh-fasit
           workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
           push: ${{ github.actor != 'dependabot[bot]' }}
+          context: frontend
 
   deploy_fasit-frontend:
     if: github.ref == 'refs/heads/main'
