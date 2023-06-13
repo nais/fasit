@@ -1,6 +1,7 @@
 name: Build and deploy fasit
 on:
   push:
+    branches-ignore: [dependabot/**]
     paths-ignore:
       - "charts/**"
       - ".github/workflows/*_chart.yaml"
