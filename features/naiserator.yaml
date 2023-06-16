@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/naiserator
 source: https://github.com/nais/naiserator/tree/master/charts
-version: 1.4.1
+version: 1.4.2
 rolloutSource:
   - org: nais
     repo: naiserator
@@ -180,6 +180,9 @@ mapping:
   naiserator.aiven-range:
     value: "{{.Env.aiven_vpc_cidr}}"
     displayName: "Aiven VPC CIDR"
+  naiserator.aiven-project:
+    value: "{{.Env.aiven_project}}"
+    displayName: "Aiven project"
   naiserator.cluster-name:
     value: "{{.Env.name}}"
     displayName: "Cluster name"
