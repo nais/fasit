@@ -43,7 +43,7 @@ mapping:
     value: '{{ subdomain . "console" }}'
     displayName: "Ingress URL, remove later"
   backend.gcp.clusters:
-    template: |
+    value: |
       {{ if (eq .Tenant.Name "nav") }}
       {{ filter "kind" "legacy" .Envs | environmentsAsMap "teams_folder_id,project_id" | toJSON }}
       {{ else }}
