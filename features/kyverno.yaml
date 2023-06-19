@@ -34,13 +34,10 @@ config:
     type: string
     displayName: "CPU request"
     description: "CPU request for kyverno pod."
-  features.omitEvents.eventTypes:
-    type: string_array
-    displayName: "Omit events"
-    description: "Omit events of these types from the audit log."
 mapping:
   admissionController.networkPolicy.enabled:
     template: '{{ if eq .Kind "onprem" }}false{{ else }}true{{ end }}'
+    displayName: "Enable network policy"
     description: "Enable network policy for admission webhook"
   admissionController.networkPolicy.ingressFrom:
     template: |
@@ -50,6 +47,7 @@ mapping:
           podSelector:
             matchLabels:
               k8s-app: kube-dns
+    displayName: "Ingress from"
     description: "Allow access from the Kubernetes API server"
   webhooksCleanup.enabled:
     displayName: "Enable webhook cleanup"
@@ -62,9 +60,11 @@ mapping:
       - tenant
   serviceMonitor.enabled:
     template: "true"
+    displayName: "Enable service monitor"
   serviceMonitor.additionalLabels:
     template: |
       nais.io/prometheus: nais
+    displayName: "Additional labels"
   replicaCount:
     template: "3"
     displayName: "Replicas"
@@ -79,11 +79,13 @@ mapping:
     displayName: "CPU request"
   excludeKyvernoNamespace:
     template: "false"
+    displayName: "Exclude Kyverno namespace"
   extraArgs:
     value:
       - --backgroundScanInterval=3h
       - --clientRateLimitQPS=300
       - --clientRateLimitBurst=300
+    displayName: "Extra args"
   config.webhooks:
     # exclude namespaces
     template: |
@@ -99,6 +101,7 @@ mapping:
               {{ if eq .Kind "onprem" }}- kube-flannel{{ end }}
               {{ if ne .Kind "onprem" }}- cnrm-system{{ end }}
               {{ if ne .Kind "onprem" }}- configconnector-operator-system{{ end }}
+    displayName: "Webhook namespaces"
   config.resourceFilters:
     displayName: Resource filters
     value:
