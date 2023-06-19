@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/kyverno-policies
 source: https://github.com/nais/helm-charts/tree/main/charts/kyverno-policies
-version: 1.1.0
+version: 1.2.0
 description: "Sane cluster defaults - should be on in all clusters"
 environmentKinds:
   - "tenant"
@@ -108,6 +108,11 @@ mapping:
     ignoreKind:
       - "management"
       - "onprem"
+
+  customPolicies.ephemeralContainer.enabled:
+    template: '{{ if and (eq "tenant" .Kind) (eq "dev-nais" .Env.name) }}true{{ else }}false{{ end }}'
+    description: "Enable ephemeral-container policy"
+    displayName: "Ephemeral container"
 
   kyverno-policies.background:
     value: "false"
