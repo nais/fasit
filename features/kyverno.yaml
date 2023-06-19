@@ -34,6 +34,10 @@ config:
     type: string
     displayName: "CPU request"
     description: "CPU request for kyverno pod."
+  features.omitEvents.eventTypes:
+    type: string_array
+    displayName: "Omit events"
+    description: "Omit events of these types from the audit log."
 mapping:
   admissionController.networkPolicy.enabled:
     template: '{{ if eq .Kind "onprem" }}false{{ else }}true{{ end }}'
