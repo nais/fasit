@@ -42,8 +42,6 @@ mapping:
       - "europe-north1-docker.pkg.dev/{{ .Management.project_id }}/*"
     description: "A default list of additional registries to allow"
     displayName: "Additional registries allowed"
-    ignoreKind:
-      - "management"
 
   customPolicies.denyImageRegistries.legacy.enabled:
     template: '{{ if or (eq "onprem" .Kind) (eq "legacy" .Kind) }}true{{ else }}false{{ end }}'
@@ -54,11 +52,10 @@ mapping:
       - "tenant"
 
   customPolicies.denyImageRegistries.tenant.enabled:
-    template: '{{ if eq "tenant" .Kind }}true{{ else }}false{{ end }}'
+    template: '{{ if or (eq "tenant" .Kind) (eq "management" .Kind) }}true{{ else }}false{{ end }}'
     description: "Enable a default allow list policy for image registries in tenant clusters"
     displayName: "Default allow list policy for tenant clusters"
     ignoreKind:
-      - "management"
       - "onprem"
       - "legacy"
 
