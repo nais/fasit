@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/kyverno-policies
 source: https://github.com/nais/helm-charts/tree/main/charts/kyverno-policies
-version: 1.3.0
+version: 1.4.0
 description: "Sane cluster defaults - should be on in all clusters"
 environmentKinds:
   - "tenant"
@@ -35,11 +35,6 @@ config:
       - "management"
       - "onprem"
       - "legacy"
-
-  customPolicies.ephemeralContainer.enabled:
-    type: string
-    description: "Enable ephemeral-container validation policy"
-    displayName: "Ephemeral container"
 
 mapping:
   customPolicies.denyImageRegistries.extraArgs:
@@ -115,9 +110,9 @@ mapping:
       - "onprem"
 
   customPolicies.ephemeralContainer.enabled:
-    value: "false"
+    value: "true"
     description: "Enable ephemeral-container validation policy"
-    displayName: "Ephemeral container"
+    displayName: "Validate ephemeral containers"
 
   kyverno-policies.background:
     value: "false"
