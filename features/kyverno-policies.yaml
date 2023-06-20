@@ -52,7 +52,7 @@ mapping:
       - "tenant"
 
   customPolicies.denyImageRegistries.tenant.enabled:
-    template: '{{ if or (eq "tenant" .Kind) (eq "management" .Kind) }}true{{ else }}false{{ end }}'
+    template: '{{ if or (ne "onprem" .Kind) (ne "legacy" .Kind) }}true{{ else }}false{{ end }}'
     description: "Enable a default allow list policy for image registries in tenant clusters"
     displayName: "Default allow list policy for tenant clusters"
     ignoreKind:
