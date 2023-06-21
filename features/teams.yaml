@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/teams
 source: https://github.com/nais/helm-charts/tree/main/charts/teams
-version: 0.0.34
+version: 0.0.35
 description: "For managing teams on the platform"
 environmentKinds:
   - "management"
@@ -101,6 +101,9 @@ config:
     displayName: Google OAuth 2.0 Client Secret
   backend.legacyNaisNamespaceMapping:
     type: string
+  backend.onpremClusters:
+    type: string
+    description: Comma separated list of clusters that only exists onprem
   backend.naisNamespace.azureEnabled:
     type: bool
     displayName: Enable use of Azure groups for Kubernetes team namespaces
