@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/logs
 source: https://github.com/nais/helm-charts/tree/main/charts/logs
-version: 1.1.0
+version: 1.2.4
 environmentKinds:
   - "tenant"
   - "legacy"
@@ -8,22 +8,22 @@ timeout: 5m
 mapping:
   loki.loki.storage.bucketNames.chunks:
     displayName: "Loki chunks bucket"
-    value: 'loki-chunks-{{.Tenant.Name}}-{{.Env.name}}'
+    value: "loki-chunks-{{.Tenant.Name}}-{{.Env.name}}"
 
   loki.loki.storage.bucketNames.ruler:
     displayName: "Loki ruler bucket"
-    value: 'loki-ruler-{{.Tenant.Name}}-{{.Env.name}}'
+    value: "loki-ruler-{{.Tenant.Name}}-{{.Env.name}}"
 
   loki.loki.storage.bucketNames.admin:
     displayName: "Loki admin bucket"
-    value: 'loki-admin-{{.Tenant.Name}}-{{.Env.name}}'
+    value: "loki-admin-{{.Tenant.Name}}-{{.Env.name}}"
 
   loki.serviceAccount.annotations.iam\.gke\.io/gcp-service-account:
     displayName: "Loki KSA Workload Identity annotation"
-    value: 'loki-user@{{.Env.project_id}}.iam.gserviceaccount.com'
+    value: "loki-user@{{.Env.project_id}}.iam.gserviceaccount.com"
 
   loki.gateway.service.type:
-    value: 'ClusterIP'
+    value: "ClusterIP"
 
   loki.gateway.enabled:
     template: "true"
