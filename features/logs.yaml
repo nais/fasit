@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/logs
 source: https://github.com/nais/helm-charts/tree/main/charts/logs
-version: 1.2.4
+version: 1.2.5
 environmentKinds:
   - "tenant"
   - "legacy"
