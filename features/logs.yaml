@@ -1,10 +1,10 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/logs
 source: https://github.com/nais/helm-charts/tree/main/charts/logs
-version: 1.2.5
+version: 1.2.6
 environmentKinds:
   - "tenant"
   - "legacy"
-timeout: 5m
+timeout: 15m
 mapping:
   loki.loki.storage.bucketNames.chunks:
     displayName: "Loki chunks bucket"
