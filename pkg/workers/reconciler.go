@@ -295,6 +295,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 		if err != nil {
 			return fmt.Errorf("publish deploy instruction: %w", err)
 		}
+		break
 	}
 
 	return nil
