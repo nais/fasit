@@ -31,6 +31,10 @@ func FeatureV2(f *Feature, debug bool) *model.FeatureYAML {
 
 	for k, c := range f.Mapping {
 		t, ok := fy.Values[k]
+
+		if debug && len(t.IgnoreKind) > 0 && len(c.IgnoreKind) > 0 {
+			fmt.Printf("DOUBLE CHECK: %v - %v\n", f.Name, k)
+		}
 		if !ok {
 			t = model.Value{
 				Description: c.Description,

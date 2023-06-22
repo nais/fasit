@@ -111,8 +111,6 @@ config:
     type: string
     displayName: "API server cidr"
     description: "cidr address of the Kubernetes API server must be set for legacy GCP clusters"
-    ignoreKind:
-      - "tenant"
   naiserator.features.legacy-gcp:
     type: bool
     displayName: "Enable legacy GCP mode"

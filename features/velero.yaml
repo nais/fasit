@@ -27,16 +27,10 @@ config:
     type: string
     description: "The name of the bucket where backups will be stored"
     displayName: "Bucket name"
-    ignoreKind:
-      - "tenant"
-      - "management"
   velero.configuration.backupStorageLocation.config.serviceAccount:
     type: string
     description: "The name of the service account to use for GCS"
     displayName: "Service account"
-    ignoreKind:
-      - "tenant"
-      - "management"
   velero.credentials.secretContents.cloud:
     type: string
     secret: true
@@ -59,8 +53,6 @@ config:
   velero.serviceAccount.server.annotations.iam\.gke\.io/gcp-service-account:
     type: string
     displayName: "KSA annotation"
-    ignoreKind:
-      - "onprem"
 mapping:
   cluster:
     value: "{{ .Env.name }}"
@@ -89,19 +81,12 @@ mapping:
   velero.configuration.backupStorageLocation.bucket:
     value: "{{.Env.velero_bucket}}"
     displayName: "GCP Bucket name"
-    ignoreKind:
-      - "onprem"
   velero.configuration.backupStorageLocation.config.serviceAccount:
     value: "{{.Env.velero_service_account}}"
     displayName: "GCP Service account"
-    ignoreKind:
-      - "onprem"
   velero.serviceAccount.server.annotations.iam\.gke\.io/gcp-service-account:
     value: "{{.Env.velero_service_account}}"
     displayName: "KSA annotation"
-    ignoreKind:
-      - "onprem"
-      - "legacy"
   velero.credentials.useSecret:
     template: "true"
     displayName: "Use secret"
