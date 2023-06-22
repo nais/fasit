@@ -168,7 +168,7 @@ func (r *repo) FeatureStateGet(ctx context.Context, envID uuid.UUID, featureName
 
 func (r *repo) FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *model.Feature, enabled bool) (*model.FeatureState, error) {
 	if len(feature.Dependencies) > 0 {
-		states, err := r.querier.FeatureStatesGet(ctx, envID)
+		states, err := r.FeatureStatesGet(ctx, envID)
 		if err != nil {
 			return nil, err
 		}
@@ -176,10 +176,11 @@ func (r *repo) FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID,
 		enabledFeatures := []string{}
 		for _, state := range states {
 			if state.Enabled {
-				enabledFeatures = append(enabledFeatures, state.Name)
+				enabledFeatures = append(enabledFeatures, state.FeatureName)
 			}
 		}
 
+		fmt.Printf("enabled features: %v\n", enabledFeatures)
 		missingFeatures := feature.Dependencies.FindMissing(enabledFeatures)
 		if len(missingFeatures) > 0 {
 			return nil, fmt.Errorf("dependency '%v' not enabled", missingFeatures)
