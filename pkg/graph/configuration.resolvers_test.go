@@ -175,6 +175,7 @@ func Test_queryResolver_Configuration_Feature_Configurations(t *testing.T) {
 		},
 	}, nil).Once()
 	repo.On("FeatureByNameForEnv", mock.Anything, feature.Name, env.ID).Return(feature, nil).Once()
+	repo.On("EnvironmentGet", mock.Anything, env.ID).Return(env, nil).Once()
 
 	r := &queryResolver{
 		Resolver: &Resolver{

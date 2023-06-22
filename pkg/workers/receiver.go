@@ -118,7 +118,7 @@ func (r *Receiver) handleCI(ctx context.Context, env *model.Environment, helmSta
 		if !errors.Is(err, pgx.ErrNoRows) {
 			return fmt.Errorf("getting rollout: %w", err)
 		} else {
-			r.log.WithField("name", helmStatus.Name).Warn("unknown rollout")
+			r.log.WithField("name", helmStatus.Name).Debug("not part of a rollout")
 			return nil
 		}
 	}

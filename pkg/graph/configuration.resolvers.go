@@ -22,7 +22,9 @@ import (
 func (r *configurationsResolver) Configuration(ctx context.Context, obj *model.Configurations) ([]*model.Configuration, error) {
 	var configs []*model.Configuration
 	var err error
-	var feature *model.Feature
+	var feat *model.Feature
+
+	var kind model.EnvironmentKind
 
 	if obj.EnvID != nil && *obj.EnvID != uuid.Nil {
 		configs, err = r.Repo.EnvConfig(ctx, obj.FeatureName, *obj.EnvID)
@@ -30,10 +32,16 @@ func (r *configurationsResolver) Configuration(ctx context.Context, obj *model.C
 			return nil, err
 		}
 
-		feature, err = r.Repo.FeatureByNameForEnv(ctx, obj.FeatureName, *obj.EnvID)
+		feat, err = r.Repo.FeatureByNameForEnv(ctx, obj.FeatureName, *obj.EnvID)
 		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 			return nil, err
 		}
+
+		env, err := r.Repo.EnvironmentGet(ctx, *obj.EnvID)
+		if err != nil {
+			return nil, err
+		}
+		kind = env.Kind
 	} else {
 		configs, err = r.Repo.ConfigGet(ctx, obj.FeatureName)
 		if err != nil {
@@ -41,14 +49,14 @@ func (r *configurationsResolver) Configuration(ctx context.Context, obj *model.C
 		}
 
 		if obj.RolloutID != uuid.Nil {
-			feature, err = r.Repo.RolloutByName(ctx, obj.FeatureName)
+			feat, err = r.Repo.RolloutByName(ctx, obj.FeatureName)
 			if err != nil {
 				return nil, err
 			}
 		}
 
-		if feature == nil {
-			feature, err = r.Repo.FeatureByName(ctx, obj.FeatureName)
+		if feat == nil {
+			feat, err = r.Repo.FeatureByName(ctx, obj.FeatureName)
 			if err != nil {
 				return nil, err
 			}
@@ -56,7 +64,7 @@ func (r *configurationsResolver) Configuration(ctx context.Context, obj *model.C
 	}
 
 OUTER:
-	for key, val := range feature.Values {
+	for key, val := range feat.Values {
 		val := val
 		val.GraphQLKey = key
 		if val.Config == nil {
@@ -72,7 +80,7 @@ OUTER:
 		configs = append(configs, &model.Configuration{
 			Key:     key,
 			Value:   &val,
-			Content: feature.ValuesYAML[key],
+			Content: feat.ValuesYAML[key],
 			Source:  model.ConfigSourceHelm,
 			GraphVars: struct {
 				EnvironmentID *uuid.UUID
@@ -83,7 +91,6 @@ OUTER:
 			},
 		})
 	}
-	// configs = removeIgnoredKinds(configs, feature, envKind)
 
 	for _, c := range configs {
 		if c.Value == nil {
@@ -122,6 +129,7 @@ OUTER:
 		return tsi < tsj
 	})
 
+	configs = removeIgnoredKinds(configs, feat, kind)
 	return configs, nil
 }
 
@@ -162,7 +170,7 @@ func (r *configurationsResolver) Computed(ctx context.Context, obj *model.Config
 		})
 	}
 
-	return ret, nil
+	return removeComputedIgnoredKinds(ret, f, kind), nil
 }
 
 // ConfigurationCreate is the resolver for the configurationCreate field.

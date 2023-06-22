@@ -54,6 +54,9 @@ func Generate(vals model.Values, kind model.EnvironmentKind, values *ComputedVal
 		if v.Computed == nil {
 			continue
 		}
+		if ContainsKind(v.IgnoreKind, kind) {
+			continue
+		}
 		keys, err := featureutil.SmartDotSplit(k)
 		if err != nil {
 			return err
@@ -162,4 +165,13 @@ func copyMap(m map[string]any) map[string]any {
 	b, _ := json.Marshal(m)
 	_ = json.Unmarshal(b, &ret)
 	return ret
+}
+
+func ContainsKind(kinds []model.EnvironmentKind, kind model.EnvironmentKind) bool {
+	for _, k := range kinds {
+		if k == kind {
+			return true
+		}
+	}
+	return false
 }
