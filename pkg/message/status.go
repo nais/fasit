@@ -1,7 +1,6 @@
 package message
 
 import (
-	"encoding/json"
 	"time"
 
 	"github.com/nais/fasit/pkg/graph/model"
@@ -11,7 +10,7 @@ type Status struct {
 	Tenant      string
 	Environment string
 	Type        StatusType
-	Data        json.RawMessage
+	Data        []byte
 }
 
 type StatusType int
