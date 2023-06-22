@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"text/template"
 
@@ -113,6 +114,10 @@ func renderTemplate(values *ComputedValues, tpl string) (any, error) {
 	rdr, err := renderString(values, tpl)
 	if err != nil {
 		return nil, err
+	}
+
+	if len(rdr) > 0 && rdr[0] == '*' {
+		rdr = strconv.Quote(rdr)
 	}
 
 	var v any
