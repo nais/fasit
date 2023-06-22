@@ -5,58 +5,32 @@ enum ConfigType {
   STRING_ARRAY
 }
 
-type MappingValue {
-  key: String!
-  value: RawMessage!
-  displayName: String!
+type ComputedValue {
+  value: Value!
+  content: RawMessage
 }
 
-type EnvConfig {
+"""
+Configurations contains configuration and computed values for one feature
+"""
+type Configurations {
   configuration: [Configuration!]!
-  mapping: [MappingValue!]!
+  computed: [ComputedValue!]!
 }
 
-interface Configuration {
-  id: ID!
-  feature: Feature!
-  description: String!
-  key: String!
-  value: RawMessage!
-  secret: Boolean!
-  created: Time!
-  type: ConfigType!
-  displayName: String!
-  chartValue: RawMessage!
-  required: Boolean!
+enum ConfigSource {
+  GLOBAL
+  ENV
+  HELM
+  UNKNOWN
 }
 
-type GlobalConfiguration implements Configuration {
-  id: ID!
-  feature: Feature!
-  description: String!
-  key: String!
-  value: RawMessage!
-  secret: Boolean!
+type Configuration {
+  id: ID
+  value: Value!
+  content: RawMessage
   created: Time!
-  type: ConfigType!
-  displayName: String!
-  chartValue: RawMessage!
-  required: Boolean!
-}
-
-type EnvConfiguration implements Configuration {
-  id: ID!
-  environment: Environment!
-  feature: Feature!
-  description: String!
-  key: String!
-  value: RawMessage!
-  secret: Boolean!
-  created: Time!
-  type: ConfigType!
-  displayName: String!
-  chartValue: RawMessage!
-  required: Boolean!
+  source: ConfigSource!
 }
 
 input NewConfiguration {
@@ -73,9 +47,16 @@ input UpdateConfiguration {
 }
 
 extend type Query {
-  configuration(feature: String!, envID: ID): EnvConfig!
-  envConfig(feature: String!, envID: ID!): EnvConfig!
-  helmValues(feature: String!, envID: ID!): RawMessage!
+  configuration(feature: String!, envID: ID): Configurations!
+  """
+  Returns the raw helm values for a feature. Requires the feature name, and either the environment ID or the environment and tenant name.
+  """
+  helmValues(
+    feature: String!
+    envID: ID
+    env: String
+    tenant: String
+  ): RawMessage!
 }
 
 extend type Mutation {

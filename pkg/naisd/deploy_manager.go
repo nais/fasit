@@ -3,6 +3,7 @@ package naisd
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"os"
@@ -136,7 +137,6 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 		Version:       msg.Version,
 		ConfigHash:    msg.ConfigHash,
 		RolloutStatus: model.RolloutStatusPending,
-		RolloutIDs:    msg.RolloutIDs,
 	}
 
 	_ = d.publishStatus(ctx, helmStatus)
@@ -213,6 +213,9 @@ func (d *DeployManager) makeHelmValues(m message.DeployInstruction) (string, err
 		return "", err
 	}
 
+	b, _ := os.ReadFile(file.Name())
+	fmt.Println(string(b))
+
 	return file.Name(), nil
 }
 
@@ -242,10 +245,6 @@ func helmArgs(m message.DeployInstruction, valuesFile string) ([]string, error) 
 		valuesFile,
 		"--timeout",
 		timeout.String(),
-	}
-
-	if m.Repo != "" {
-		args = append(args, "--repo", m.Repo)
 	}
 
 	return args, nil

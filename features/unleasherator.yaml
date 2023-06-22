@@ -17,13 +17,13 @@ mapping:
   networkPolicy.enabled:
     template: '{{ne .Kind "onprem"}}'
   networkPolicy.allowDNS:
-    template: 'true'
+    template: "true"
   networkPolicy.apiServerCIDR:
     value: "{{ .Env.apiserver_endpoint }}/32"
     ignoreKind:
       - onprem
   networkPolicy.allowedNamespaces:
-    value:
+    template: |
       - bifrost-unleash
   networkPolicy.extraOutboundIPs:
     template: |

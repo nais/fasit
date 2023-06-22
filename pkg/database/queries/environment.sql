@@ -40,3 +40,10 @@ WHERE
 
 -- name: EnvironmentCI :one
 SELECT * FROM environments WHERE ci = true AND kind = @kind;
+
+-- name: EnvironmentSetReconcile :one
+UPDATE environments
+SET reconcile = @reconcile
+WHERE
+    id = @id
+RETURNING *;

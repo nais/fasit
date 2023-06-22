@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgtype"
 	"github.com/nais/fasit/pkg/database/gensql"
-	"github.com/nais/fasit/pkg/feature"
+	feature "github.com/nais/fasit/pkg/feature2"
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
@@ -18,7 +18,7 @@ type EnvironmentValueRepo interface {
 	EnvironmentValueGet(ctx context.Context, environmentID uuid.UUID, key string, showSensitive bool) (*model.EnvironmentValue, error)
 	EnvironmentValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) ([]*model.EnvironmentValue, error)
 	EnvironmentValueStore(ctx context.Context, environmentID uuid.UUID, key string, value json.RawMessage, secret bool) error
-	MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) (*feature.MappingValues, model.EnvironmentKind, error)
+	MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) (*feature.ComputedValues, model.EnvironmentKind, error)
 }
 
 func (r *repo) EnvironmentValueStore(ctx context.Context, environmentID uuid.UUID, key string, value json.RawMessage, secret bool) error {
@@ -80,7 +80,7 @@ func (r *repo) EnvironmentValuesForEnvironment(ctx context.Context, envID uuid.U
 	return ret, nil
 }
 
-func (r *repo) MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) (*feature.MappingValues, model.EnvironmentKind, error) {
+func (r *repo) MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) (*feature.ComputedValues, model.EnvironmentKind, error) {
 	env, err := r.querier.EnvironmentGet(ctx, envID)
 	if err != nil {
 		return nil, "", fmt.Errorf("envValuesForEnv: failed to get environment: %w", err)
@@ -90,9 +90,9 @@ func (r *repo) MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID,
 	if err != nil {
 		return nil, model.EnvironmentKind(env.Kind), fmt.Errorf("envValuesForEnv: failed to get tenant: %w", err)
 	}
-	mv := &feature.MappingValues{
+	mv := &feature.ComputedValues{
 		Kind: model.EnvironmentKind(env.Kind),
-		Tenant: feature.MappingTenant{
+		Tenant: feature.ComputedTenant{
 			Name: tenant.Name,
 		},
 	}

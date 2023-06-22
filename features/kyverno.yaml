@@ -81,7 +81,7 @@ mapping:
     template: "false"
     displayName: "Exclude Kyverno namespace"
   extraArgs:
-    value:
+    template: |
       - --backgroundScanInterval=3h
       - --clientRateLimitQPS=300
       - --clientRateLimitBurst=300
@@ -104,7 +104,7 @@ mapping:
     displayName: "Webhook namespaces"
   config.resourceFilters:
     displayName: Resource filters
-    value:
+    template: |
       - "[Event,*,*]"
       - "[*,kube-system,*]"
       - "[*,kube-public,*]"

@@ -11,7 +11,7 @@ import (
 type TenantRepo interface {
 	TenantCI(ctx context.Context) (*model.Tenant, error)
 	TenantCreate(ctx context.Context, t *model.TenantCreate) (*model.Tenant, error)
-	TenantEnvironments(ctx context.Context) ([]*model.TenantEnvironments, error)
+	TenantEnvironments(ctx context.Context, onlyReconciled bool) ([]*model.TenantEnvironment, error)
 	TenantGet(ctx context.Context, id uuid.UUID) (*model.Tenant, error)
 	TenantGetByName(ctx context.Context, name string) (*model.Tenant, error)
 	TenantsGet(ctx context.Context) ([]*model.Tenant, error)
@@ -69,18 +69,19 @@ func (r *repo) TenantsGet(ctx context.Context) ([]*model.Tenant, error) {
 	return tenantSlice, nil
 }
 
-func (r *repo) TenantEnvironments(ctx context.Context) ([]*model.TenantEnvironments, error) {
-	data, err := r.querier.TenantEnvironments(ctx)
+func (r *repo) TenantEnvironments(ctx context.Context, onlyReconciled bool) ([]*model.TenantEnvironment, error) {
+	data, err := r.querier.TenantEnvironments(ctx, !onlyReconciled)
 	if err != nil {
 		return nil, err
 	}
 
-	var ret []*model.TenantEnvironments
+	var ret []*model.TenantEnvironment
 	for _, d := range data {
-		ret = append(ret, &model.TenantEnvironments{
+		ret = append(ret, &model.TenantEnvironment{
 			Environment: model.Environment{
 				ID:           d.ID,
 				Name:         d.Name,
+				CI:           d.Ci,
 				Description:  nullStringToPtr(d.Description),
 				Created:      d.Created,
 				LastModified: d.LastModified,

@@ -1,8 +1,11 @@
 package helm
 
 import (
+	"fmt"
+
 	"github.com/sirupsen/logrus"
 	"helm.sh/helm/v3/pkg/action"
+	"helm.sh/helm/v3/pkg/cli"
 	"helm.sh/helm/v3/pkg/release"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/client-go/discovery"
@@ -23,6 +26,28 @@ func New(restConfig *rest.Config, namespace string, log *logrus.Entry) *Client {
 	return &Client{
 		cfg: cfg,
 	}
+}
+
+type ChartVersion struct {
+	Name         string
+	NewVersion   string `json:"version"`
+	Current      string
+	Dependencies []ChartVersion `json:"dependencies"`
+}
+
+func (c *Client) Pull(version, chartRef string) error {
+	p := action.NewPull()
+	p.Settings = &cli.EnvSettings{}
+	p.Version = version
+	p.DestDir = "/tmp"
+	r, err := p.Run(chartRef)
+	fmt.Println("Chart pulled: ", r)
+	if err != nil {
+		fmt.Println("Error pulling chart: ", err)
+		return err
+	}
+
+	return nil
 }
 
 func (c *Client) List() ([]*release.Release, error) {

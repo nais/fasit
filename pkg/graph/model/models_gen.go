@@ -25,14 +25,9 @@ type AuditLog struct {
 	CreatedAt   time.Time `json:"createdAt"`
 }
 
-type Dependency struct {
-	AnyOf []string `json:"anyOf"`
-	AllOf []string `json:"allOf"`
-}
-
-type EnvConfig struct {
-	Configuration []Configuration `json:"configuration"`
-	Mapping       []*MappingValue `json:"mapping"`
+type ComputedValue struct {
+	Value   *Value          `json:"value"`
+	Content json.RawMessage `json:"content,omitempty"`
 }
 
 // EnvironmentCreate contains metadata for creating an environment
@@ -49,12 +44,6 @@ type EnvironmentUpdate struct {
 	Description *string `json:"description,omitempty"`
 }
 
-type MappingValue struct {
-	Key         string          `json:"key"`
-	Value       json.RawMessage `json:"value"`
-	DisplayName string          `json:"displayName"`
-}
-
 type TenantCreate struct {
 	Name        string  `json:"name"`
 	Description *string `json:"description,omitempty"`
@@ -69,51 +58,47 @@ type UserInfo struct {
 	Email string `json:"email"`
 }
 
-type RolloutEventType string
+type ConfigSource string
 
 const (
-	RolloutEventTypeProcessed     RolloutEventType = "PROCESSED"
-	RolloutEventTypeInProgress    RolloutEventType = "IN_PROGRESS"
-	RolloutEventTypeHelmCompleted RolloutEventType = "HELM_COMPLETED"
-	RolloutEventTypeFailed        RolloutEventType = "FAILED"
-	RolloutEventTypeRolledBack    RolloutEventType = "ROLLED_BACK"
-	RolloutEventTypeSuccess       RolloutEventType = "SUCCESS"
+	ConfigSourceGlobal  ConfigSource = "GLOBAL"
+	ConfigSourceEnv     ConfigSource = "ENV"
+	ConfigSourceHelm    ConfigSource = "HELM"
+	ConfigSourceUnknown ConfigSource = "UNKNOWN"
 )
 
-var AllRolloutEventType = []RolloutEventType{
-	RolloutEventTypeProcessed,
-	RolloutEventTypeInProgress,
-	RolloutEventTypeHelmCompleted,
-	RolloutEventTypeFailed,
-	RolloutEventTypeRolledBack,
-	RolloutEventTypeSuccess,
+var AllConfigSource = []ConfigSource{
+	ConfigSourceGlobal,
+	ConfigSourceEnv,
+	ConfigSourceHelm,
+	ConfigSourceUnknown,
 }
 
-func (e RolloutEventType) IsValid() bool {
+func (e ConfigSource) IsValid() bool {
 	switch e {
-	case RolloutEventTypeProcessed, RolloutEventTypeInProgress, RolloutEventTypeHelmCompleted, RolloutEventTypeFailed, RolloutEventTypeRolledBack, RolloutEventTypeSuccess:
+	case ConfigSourceGlobal, ConfigSourceEnv, ConfigSourceHelm, ConfigSourceUnknown:
 		return true
 	}
 	return false
 }
 
-func (e RolloutEventType) String() string {
+func (e ConfigSource) String() string {
 	return string(e)
 }
 
-func (e *RolloutEventType) UnmarshalGQL(v interface{}) error {
+func (e *ConfigSource) UnmarshalGQL(v interface{}) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
 	}
 
-	*e = RolloutEventType(str)
+	*e = ConfigSource(str)
 	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid RolloutEventType", str)
+		return fmt.Errorf("%s is not a valid ConfigSource", str)
 	}
 	return nil
 }
 
-func (e RolloutEventType) MarshalGQL(w io.Writer) {
+func (e ConfigSource) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }

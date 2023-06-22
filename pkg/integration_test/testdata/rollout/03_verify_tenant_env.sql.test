@@ -1,0 +1,33 @@
+SELECT
+  t.name AS tenant_name,
+  t.ci AS tenant_ci,
+
+  e.name AS name,
+  e.ci AS ci
+FROM tenants t
+JOIN environments e ON e.tenant_id = t.id
+ORDER BY e.name
+
+
+RETURNS
+
+[
+  {
+    "tenant_name": "tenant23",
+    "tenant_ci": true,
+    "name": "management",
+    "ci": true
+  },
+  {
+    "tenant_name": "tenant23",
+    "tenant_ci": true,
+    "name": "nonci",
+    "ci": false
+  },
+  {
+    "tenant_name": "tenant23",
+    "tenant_ci": true,
+    "name": "testing",
+    "ci": true
+  }
+]

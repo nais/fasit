@@ -43,6 +43,10 @@ func (r *repo) ReleaseStatusesGet(ctx context.Context, environmentID uuid.UUID) 
 			LastDeployed: r.LastDeployed,
 			Created:      r.Created,
 			LastModified: r.LastModified,
+
+			GraphVars: struct{ EnvironmentID uuid.UUID }{
+				EnvironmentID: environmentID,
+			},
 		}
 	}
 

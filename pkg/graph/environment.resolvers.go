@@ -6,41 +6,42 @@ package graph
 
 import (
 	"context"
-	"sort"
+	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
+	pgx "github.com/jackc/pgx/v4"
 	"github.com/nais/fasit/pkg/graph/graphgen"
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
 // FeatureStates is the resolver for the featureStates field.
 func (r *environmentResolver) FeatureStates(ctx context.Context, obj *model.Environment) ([]*model.FeatureState, error) {
-	retVal, err := r.Repo.FeatureStatesGet(ctx, obj.ID)
-	if err != nil {
+	return r.Repo.FeatureStatesGet(ctx, obj.ID)
+}
+
+// GcpProjectID is the resolver for the gcpProjectID field.
+func (r *environmentResolver) GcpProjectID(ctx context.Context, obj *model.Environment) (*string, error) {
+	ev, err := r.Repo.EnvironmentValueGet(ctx, obj.ID, "project_id", false)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return nil, err
 	}
 
-OUTER:
-	for _, f := range r.Features.Features() {
-		if !contains(f.EnvironmentKinds, obj.Kind) {
-			continue
-		}
-
-		// Skip elements that are configured
-		for _, c := range retVal {
-			if f.Name == c.FeatureName {
-				continue OUTER
-			}
-		}
-		retVal = append(retVal, &model.FeatureState{FeatureName: f.Name, EnvID: obj.ID})
+	if ev == nil {
+		return nil, nil
 	}
 
-	sort.Slice(retVal, func(i, j int) bool {
-		return retVal[i].FeatureName < retVal[j].FeatureName
-	})
+	var id string
+	if err := json.Unmarshal(ev.Value, &id); err != nil {
+		return nil, err
+	}
 
-	return retVal, nil
+	if id == "" {
+		return nil, nil
+	}
+
+	return &id, nil
 }
 
 // Health is the resolver for the health field.
@@ -90,6 +91,32 @@ func (r *environmentResolver) AuditLog(ctx context.Context, obj *model.Environme
 	return r.Repo.AuditForEnvironment(ctx, obj.ID, fn)
 }
 
+// Features is the resolver for the features field.
+func (r *environmentResolver) Features(ctx context.Context, obj *model.Environment) ([]*model.Feature, error) {
+	fs, err := r.Repo.FeaturesForKind(ctx, obj.Kind, obj.CI)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, f := range fs {
+		f.GraphVars.EnvironmentID = obj.ID
+	}
+
+	return fs, nil
+}
+
+// Feature is the resolver for the feature field.
+func (r *environmentResolver) Feature(ctx context.Context, obj *model.Environment, name string) (*model.Feature, error) {
+	f, err := r.Repo.FeatureByNameForEnv(ctx, name, obj.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	f.GraphVars.EnvironmentID = obj.ID
+
+	return f, nil
+}
+
 // EnvironmentCreate is the resolver for the environmentCreate field.
 func (r *mutationResolver) EnvironmentCreate(ctx context.Context, environment model.EnvironmentCreate) (*model.Environment, error) {
 	return r.Repo.EnvironmentCreate(ctx, &environment)
@@ -100,24 +127,14 @@ func (r *mutationResolver) EnvironmentUpdate(ctx context.Context, id uuid.UUID, 
 	return r.Repo.EnvironmentUpdate(ctx, id, &input)
 }
 
-// Environment is the resolver for the environment field.
-func (r *queryResolver) Environment(ctx context.Context, id uuid.UUID) (*model.Environment, error) {
-	return r.Repo.EnvironmentGet(ctx, id)
-}
-
-// EnvironmentByNames is the resolver for the environmentByNames field.
-func (r *queryResolver) EnvironmentByNames(ctx context.Context, environmentName string, tenantName string) (*model.Environment, error) {
-	return r.Repo.EnvironmentByNames(ctx, tenantName, environmentName)
-}
-
-// Environments is the resolver for the environments field.
-func (r *queryResolver) Environments(ctx context.Context, tenantID uuid.UUID) ([]*model.Environment, error) {
-	return r.Repo.EnvironmentsGet(ctx, tenantID)
+// EnvironmentSetReconcile is the resolver for the environmentSetReconcile field.
+func (r *mutationResolver) EnvironmentSetReconcile(ctx context.Context, id uuid.UUID, reconcile bool) (*model.Environment, error) {
+	return r.Repo.EnvironmentSetReconcile(ctx, id, reconcile)
 }
 
 // Feature is the resolver for the feature field.
 func (r *releaseResolver) Feature(ctx context.Context, obj *model.Release) (*model.Feature, error) {
-	f, err := r.resolveFeatureByName(obj.Name)
+	f, err := r.Repo.FeatureByNameForEnv(ctx, obj.Name, obj.GraphVars.EnvironmentID)
 	if err != nil {
 		r.Log.WithError(err).Debug("error getting feature for release, returning nil")
 	}

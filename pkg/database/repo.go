@@ -14,6 +14,7 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/nais/fasit/pkg/database/gensql"
+	"github.com/nais/fasit/pkg/feature"
 	"github.com/pressly/goose/v3"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/metric"
@@ -41,9 +42,12 @@ type TXFunc func(repo Repo) error
 
 type Repo interface {
 	AuditRepo
+	AutoInstallsRepo
 	ConfigRepo
 	EnvironmentRepo
 	EnvironmentValueRepo
+	FeatureDataRepo
+	FeaturesRepo
 	FeatureStateRepo
 	HealthRepo
 	KubernetesNodeRepo
@@ -53,16 +57,22 @@ type Repo interface {
 	TenantRepo
 	WarningRepo
 
+	Transaction
+
 	Close()
 	Metrics(meter metric.Meter) error
 	WithTx(ctx context.Context) (Repo, pgx.Tx, error)
+}
+
+type Transaction interface {
 	TxFunc(ctx context.Context, fn TXFunc) error
 }
 
 type repo struct {
-	querier Querier
-	db      *pgxpool.Pool
-	log     *logrus.Entry
+	querier     Querier
+	db          *pgxpool.Pool
+	log         *logrus.Entry
+	oldFeatures *feature.Manager
 
 	auditErrorCount metric.Int64Counter
 }
@@ -81,11 +91,12 @@ type Querier interface {
 	WithTx(tx pgx.Tx) *gensql.Queries
 }
 
-func New(db *pgxpool.Pool, log *logrus.Entry) Repo {
+func New(db *pgxpool.Pool, mgr *feature.Manager, log *logrus.Entry) Repo {
 	return &repo{
-		querier: gensql.New(db),
-		db:      db,
-		log:     log,
+		querier:     gensql.New(db),
+		db:          db,
+		log:         log,
+		oldFeatures: mgr,
 	}
 }
 

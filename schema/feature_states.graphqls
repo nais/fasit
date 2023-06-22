@@ -1,11 +1,11 @@
 type FeatureState {
+  id: ID!
   feature: Feature!
   enabled: Boolean!
   created: Time
   lastModified: Time
-  rolloutStatus: RolloutStatus!
   missingDependencies: [Feature!]!
-  configuration: EnvConfig!
+  configuration: Configurations!
 }
 
 extend type Mutation {

@@ -21,3 +21,53 @@ mapping:
     displayName: "GCP service account"
     ignoreKind:
       - "onprem"
+<<<<<<< HEAD
+  installCRDs:
+    template: "true"
+  global.leaderElection.namespace:
+    value: "nais-system"
+  webhook.containerSecurityContext.seccompProfile.type:
+    value: RuntimeDefault
+    description: Webhook Security profile
+    ignoreKind:
+      - "onprem"
+  cainjector.containerSecurityContext.seccompProfile.type:
+    value: RuntimeDefault
+    description: CA Injector Security profile
+    ignoreKind:
+      - "onprem"
+  startupapicheck.containerSecurityContext.seccompProfile.type:
+    value: RuntimeDefault
+    description: CA Injector Security profile
+    ignoreKind:
+      - "onprem"
+  containerSecurityContext.seccompProfile.type:
+    value: RuntimeDefault
+    description: Security profile
+    ignoreKind:
+      - "onprem"
+  extraArgs:
+    template: |
+      - --issuer-ambient-credentials
+      - --dns01-recursive-nameservers=1.1.1.1:53,8.8.8.8:53
+      - --dns01-recursive-nameservers-only
+
+  # The following capabilities might not be necessary after 1.9.2
+  webhook.containerSecurityContext.capabilities.drop:
+    template: |
+      - ALL
+    description: Webhook capabilities
+  cainjector.containerSecurityContext.capabilities.drop:
+    template: |
+      - ALL
+    description: Cainjector capabilities
+  startupapicheck.containerSecurityContext.capabilities.drop:
+    template: |
+      - ALL
+    description: Startupapicheck capabilities
+  containerSecurityContext.capabilities.drop:
+    template: |
+      - ALL
+    description: Capabilities
+=======
+>>>>>>> main

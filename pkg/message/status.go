@@ -1,9 +1,9 @@
 package message
 
 import (
+	"encoding/json"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
@@ -11,7 +11,7 @@ type Status struct {
 	Tenant      string
 	Environment string
 	Type        StatusType
-	Data        []byte
+	Data        json.RawMessage
 }
 
 type StatusType int
@@ -32,7 +32,6 @@ type Helm struct {
 	RolloutStatus model.RolloutStatus
 	ConfigHash    string
 	Log           string
-	RolloutIDs    []uuid.UUID
 }
 
 type Health struct {

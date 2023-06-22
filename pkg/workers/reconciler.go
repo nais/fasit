@@ -13,7 +13,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/auth"
 	"github.com/nais/fasit/pkg/database"
-	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/nais/fasit/pkg/message"
 	"github.com/sirupsen/logrus"
@@ -23,15 +22,16 @@ import (
 
 type ReconcilerStore interface {
 	ConfigListen(ctx context.Context, fn database.ListenFunc) error
-	FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *feature.Feature, enabled bool) (*model.FeatureState, error)
+	FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, ci bool) ([]*model.Feature, error)
+	FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *model.Feature, enabled bool) (*model.FeatureState, error)
 	FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
 	FeatureStatesListen(ctx context.Context, fn database.ListenFunc) error
 	HealthGet(ctx context.Context, environmentID uuid.UUID) (*model.Health, error)
-	HelmValues(ctx context.Context, feature feature.Feature, envID uuid.UUID) (map[string]any, []uuid.UUID, error)
-	RolloutEventCreate(ctx context.Context, event *model.RolloutEvent) error
-	RolloutEventsGetByRolloutIDAndType(ctx context.Context, rolloutID uuid.UUID, eventType model.RolloutEventType) ([]*model.RolloutEvent, error)
+	HelmValues(ctx context.Context, feature *model.Feature, envID uuid.UUID) (map[string]any, error)
+	RolloutsListen(ctx context.Context, fn database.ListenFunc) error
 	StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]*model.Status, error)
-	TenantEnvironments(ctx context.Context) ([]*model.TenantEnvironments, error)
+	TenantEnvironments(ctx context.Context, onlyReconciled bool) ([]*model.TenantEnvironment, error)
+	RolloutStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
 }
 
 type Publisher interface {
@@ -42,11 +42,10 @@ type Publisher interface {
 type NewPublisher func(projectID, topicID string, log *logrus.Entry) Publisher
 
 type Reconciler struct {
-	repo       ReconcilerStore
-	featureMgr *feature.Manager
-	publisher  NewPublisher
-	log        *logrus.Entry
-	projectID  string
+	repo      ReconcilerStore
+	publisher NewPublisher
+	log       *logrus.Entry
+	projectID string
 
 	lock    sync.Mutex
 	running bool
@@ -58,7 +57,6 @@ type Reconciler struct {
 
 func NewReconciler(
 	repo ReconcilerStore,
-	featureMgr *feature.Manager,
 	publisher NewPublisher,
 	gcpProjectID string,
 	meter metric.Meter,
@@ -75,7 +73,6 @@ func NewReconciler(
 
 	return &Reconciler{
 		repo:           repo,
-		featureMgr:     featureMgr,
 		publisher:      publisher,
 		log:            log,
 		projectID:      gcpProjectID,
@@ -101,7 +98,7 @@ func (r *Reconciler) Listen(ctx context.Context) error {
 				flushTimer.Reset(1 * time.Second)
 			case <-flushTimer.C:
 				flushTimer.Stop()
-				r.reconcile(ctx)
+				r.Reconcile(ctx)
 			}
 		}
 	}()
@@ -109,6 +106,12 @@ func (r *Reconciler) Listen(ctx context.Context) error {
 	trigger := func(ctx context.Context, id uuid.UUID) {
 		ch <- struct{}{}
 	}
+
+	go func() {
+		if err := r.repo.RolloutsListen(ctx, trigger); err != nil {
+			r.log.WithError(err).Error("rollouts listen")
+		}
+	}()
 
 	go func() {
 		if err := r.repo.FeatureStatesListen(ctx, trigger); err != nil {
@@ -125,7 +128,7 @@ func (r *Reconciler) Run(ctx context.Context, interval time.Duration) {
 
 	for {
 		r.log.Debug("reconciling")
-		if err := r.reconcile(ctx); err != nil {
+		if err := r.Reconcile(ctx); err != nil {
 			r.log.WithError(err).Error("reconcile")
 		}
 		select {
@@ -136,7 +139,7 @@ func (r *Reconciler) Run(ctx context.Context, interval time.Duration) {
 	}
 }
 
-func (r *Reconciler) reconcile(ctx context.Context) error {
+func (r *Reconciler) Reconcile(ctx context.Context) error {
 	ctx = auth.SetEmail(ctx, "system:reconciler")
 
 	r.lock.Lock()
@@ -154,7 +157,7 @@ func (r *Reconciler) reconcile(ctx context.Context) error {
 		r.lock.Unlock()
 	}()
 
-	data, err := r.repo.TenantEnvironments(ctx)
+	data, err := r.repo.TenantEnvironments(ctx, true)
 	if err != nil {
 		return err
 	}
@@ -174,55 +177,19 @@ func (r *Reconciler) reconcile(ctx context.Context) error {
 	return nil
 }
 
-func (r *Reconciler) autoInstallNextFeature(
-	ctx context.Context,
-	d *model.TenantEnvironments,
-	features []feature.Feature,
-	status map[string]*model.Status,
-	featureStates map[string]*model.FeatureState,
-) error {
-	r.log.Debug("Auto install next feature")
-	enabledFeatures := []string{}
-	for _, s := range status {
-		if s.Status == model.RolloutStatusDeployed {
-			enabledFeatures = append(enabledFeatures, s.Feature)
-		}
+func dlog(ctx context.Context, msg string, v ...any) {
+	_, ok := ctx.Value("environmentasdfasdfasf").(bool)
+	if !ok {
+		return
 	}
-
-	for _, f := range features {
-		if !contains(f.AutoInstall, d.Kind) {
-			continue
-		}
-
-		// Feature already enabled and rolled out to environment successfully
-		if s, ok := status[f.Name]; ok && s.Status == model.RolloutStatusDeployed {
-			continue
-		} else if ok {
-			// Feature already enabled but not yet deployed to environment
-			break
-		}
-
-		if _, ok := featureStates[f.Name]; ok {
-			r.log.WithField("feature", f.Name).Info("feature state already exists, skipping auto install for environment")
-			return nil
-		}
-
-		// Dependency not enabled
-		if len(f.DependsOn.FindMissing(enabledFeatures)) > 0 {
-			continue
-		}
-
-		r.log.WithField("feature", f.Name).Info("Auto install feature")
-		_, err := r.repo.FeatureStatesCreateOrUpdate(ctx, d.ID, &f, true)
-		if err != nil {
-			return fmt.Errorf("unable to enable feature %s: %w", f.Name, err)
-		}
-		return nil
-	}
-	return nil
+	fmt.Printf("####"+msg+"\n", v...)
 }
 
-func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEnvironments) error {
+func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEnvironment) error {
+	if d.Environment.Name == "dev" {
+		ctx = context.WithValue(ctx, "environmentasdfasdfasf", true)
+	}
+
 	metricAttrs := []attribute.KeyValue{
 		attribute.Key("environment").String(d.Name),
 		attribute.Key("tenant").String(d.TenantName),
@@ -237,17 +204,23 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 		return fmt.Errorf("health status: %w", err)
 	}
 	if time.Since(health.ReportedAt) > 3*time.Minute {
-		r.log.WithField("environment", d.ID).Infof("naisd is unhealthy - skip reconcile")
+		r.log.WithField("environment", d.Name).Debug("naisd is unhealthy - skip reconcile")
 		return nil
 	}
 
-	features := r.featureMgr.Features()
+	dlog(ctx, "features for kind")
+	features, err := r.repo.FeaturesForKind(ctx, d.Kind, d.CI)
+	if err != nil {
+		return fmt.Errorf("features for kind: %w", err)
+	}
 
+	dlog(ctx, "status for env")
 	envStatus, err := r.repo.StatusForEnvironment(ctx, d.Environment.ID)
 	if err != nil {
 		return fmt.Errorf("status for environment: %w", err)
 	}
 
+	dlog(ctx, "lookup")
 	lookup := make(map[string]*model.Status)
 	for _, s := range envStatus {
 		lookup[s.Feature] = s
@@ -258,78 +231,48 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 		return fmt.Errorf("feature states: %w", err)
 	}
 
+	if d.CI {
+		rolloutStates, err := r.repo.RolloutStatesGet(ctx, d.ID)
+		if err != nil {
+			return fmt.Errorf("rollout states: %w", err)
+		}
+
+		featureStates = append(featureStates, rolloutStates...)
+	}
+
 	states := map[string]*model.FeatureState{}
 	for _, s := range featureStates {
 		states[s.FeatureName] = s
 	}
-
-	err = r.autoInstallNextFeature(ctx, d, features, lookup, states)
-	if err != nil {
-		r.log.WithField("environment", d.Environment.ID).WithError(err).Errorf("unable to auto enable feature")
-	}
+	dlog(ctx, "Feature states: %v", len(features))
 
 	mgr := r.publisher(r.projectID, "naisd-"+d.TenantName+"-"+d.Name, r.log)
 	defer mgr.Stop()
 
 	for _, f := range features {
+		dlog(ctx, "feature %v enabled: %v", f.Name, states[f.Name] == nil && states[f.Name].Enabled)
 		if states[f.Name] == nil || !states[f.Name].Enabled {
-			// r.log.WithField("feature", f.Name).Debug("not enabled")
+			r.log.WithField("feature", f.Name).Debug("not enabled")
 			continue
 		}
 
-		values, rolloutIDs, err := r.repo.HelmValues(ctx, f, d.ID)
+		values, err := r.repo.HelmValues(ctx, f, d.ID)
 		if err != nil {
 			var fer *database.ErrMissingRequiredFields
 			if errors.As(err, &fer) {
-				r.log.WithField("feature", f.Name).WithError(err).Info("missing required fields")
+				r.log.WithField("feature", f.Name).WithError(err).Debug("missing required fields")
 				continue
 			}
 			return fmt.Errorf("helm values: %w", err)
 		}
 
-		createRolloutEvent := func(typ model.RolloutEventType, data map[string]any, ignoreIfFoundType ...model.RolloutEventType) {
-			var (
-				b   []byte
-				err error
-			)
-
-			if data != nil {
-				b, err = json.Marshal(data)
-				if err != nil {
-					r.log.WithError(err).Error("unable to marshal rollout event data")
-					return
-				}
-			}
-
-		OUTER:
-			for _, rid := range rolloutIDs {
-				for _, t := range ignoreIfFoundType {
-					if rs, err := r.repo.RolloutEventsGetByRolloutIDAndType(ctx, rid, t); err == nil && len(rs) > 0 {
-						continue OUTER
-					}
-				}
-				_ = r.repo.RolloutEventCreate(ctx, &model.RolloutEvent{
-					RolloutID: rid,
-					Type:      typ,
-					Data:      b,
-				})
-			}
-		}
-
 		hash, err := generateHash(values, f, states[f.Name].EnabledAt)
 		if err != nil {
-			createRolloutEvent(model.RolloutEventTypeFailed, map[string]any{
-				"error": err.Error(),
-			})
-
 			return fmt.Errorf("generate hash: %w", err)
 		}
 
 		if status, ok := lookup[f.Name]; ok {
 			if status.Version == f.Version && status.ConfigHash == hash {
-				createRolloutEvent(model.RolloutEventTypeFailed, map[string]any{
-					"error": "no changes",
-				}, model.RolloutEventTypeInProgress)
 				continue
 			}
 		}
@@ -338,33 +281,26 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 			"feature":     f.Name,
 			"tenant":      d.TenantName,
 			"environment": d.Name,
-		}).Info("publish deploy instruction")
+		}).Debug("publish deploy instruction")
 
 		r.deployMessages.Add(ctx, 1, metric.WithAttributes(append(metricAttrs, attribute.Key("feature").String(f.Name))...))
 		err = mgr.Publish(ctx, message.DeployInstruction{
 			Name:       f.Name,
 			Version:    f.Version,
 			Chart:      f.Chart,
-			Repo:       f.Repo,
 			ConfigHash: hash,
 			Timeout:    f.Timeout,
 			Values:     values,
-			RolloutIDs: rolloutIDs,
 		})
 		if err != nil {
-			createRolloutEvent(model.RolloutEventTypeFailed, map[string]any{
-				"error": err.Error(),
-			})
 			return fmt.Errorf("publish deploy instruction: %w", err)
 		}
-
-		createRolloutEvent(model.RolloutEventTypeInProgress, nil)
 	}
 
 	return nil
 }
 
-func generateHash(values map[string]any, feature feature.Feature, enabledAt *time.Time) (string, error) {
+func generateHash(values map[string]any, feature *model.Feature, enabledAt *time.Time) (string, error) {
 	b, err := json.Marshal(values)
 	if err != nil {
 		return "", err
@@ -375,17 +311,8 @@ func generateHash(values map[string]any, feature feature.Feature, enabledAt *tim
 		at = enabledAt.UTC().Format(time.RFC3339)
 	}
 
-	b = append(b, []byte(feature.Version+feature.Chart+feature.Repo+at)...)
+	b = append(b, []byte(feature.Version+feature.Chart+at)...)
 
 	hash := sha256.Sum256(b)
 	return hex.EncodeToString(hash[:]), nil
-}
-
-func contains[T comparable](a []T, x T) bool {
-	for _, n := range a {
-		if n == x {
-			return true
-		}
-	}
-	return false
 }

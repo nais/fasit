@@ -20,7 +20,7 @@ type FeatureSourceFilesystem struct {
 	watcher   *fsnotify.Watcher
 }
 
-func NewFeatureSourceFilesystem(directory string) (*FeatureSourceFilesystem, error) {
+func NewFeatureSourceFilesystem(directory string, log logrus.FieldLogger) (*FeatureSourceFilesystem, error) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		return nil, err
@@ -32,6 +32,7 @@ func NewFeatureSourceFilesystem(directory string) (*FeatureSourceFilesystem, err
 	}
 
 	return &FeatureSourceFilesystem{
+		log:       log,
 		watcher:   watcher,
 		directory: directory,
 	}, nil

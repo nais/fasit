@@ -39,6 +39,17 @@ func (r *tenantResolver) Environments(ctx context.Context, obj *model.Tenant) ([
 	return r.Repo.EnvironmentsGet(ctx, obj.ID)
 }
 
+// Environment is the resolver for the environment field.
+func (r *tenantResolver) Environment(ctx context.Context, obj *model.Tenant, id *uuid.UUID, slug *string) (*model.Environment, error) {
+	if id != nil {
+		return r.Repo.EnvironmentGet(ctx, *id)
+	}
+	if slug != nil {
+		return r.Repo.EnvironmentGetByName(ctx, obj.ID, *slug)
+	}
+	return nil, fmt.Errorf("either ID or slug must be specified")
+}
+
 // Warnings is the resolver for the warnings field.
 func (r *tenantResolver) Warnings(ctx context.Context, obj *model.Tenant) ([]model.Warning, error) {
 	return r.Repo.Warnings(ctx, nil, &obj.ID)

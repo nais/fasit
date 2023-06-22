@@ -63,104 +63,32 @@ func TestFeature_RequiredFields(t *testing.T) {
 	}
 }
 
-func TestManager_ValidConfig(t *testing.T) {
-	mgr := Manager{
-		features: []Feature{
-			{
-				Name: "foo",
-				Config: Config{
-					"key": ConfigType{
-						Type: model.ConfigTypeString,
-					},
-				},
-			},
-		},
-	}
-
-	if err := mgr.ValidConfig("foo", "key", []byte(`"value"`)); err != nil {
-		t.Error(err)
-	}
-	if err := mgr.ValidConfig("foo", "key", []byte(`123`)); err == nil {
-		t.Error("expected error, but got none")
-	}
-	if err := mgr.ValidConfig("bar", "key", []byte(`123`)); err == nil {
-		t.Error("expected error, but got none")
-	}
-}
-
-func TestManager_IsSecret(t *testing.T) {
-	mgr := Manager{
-		features: []Feature{
-			{
-				Name: "foo",
-				Config: Config{
-					"sensitive": ConfigType{
-						Secret: true,
-					},
-					"public": ConfigType{
-						Secret: false,
-					},
-				},
-			},
-		},
-	}
-
-	if !mgr.IsSecret("foo", "sensitive") {
-		t.Error("expected secret to be true")
-	}
-
-	if mgr.IsSecret("foo", "public") {
-		t.Error("expected secret to be false")
-	}
-
-	if mgr.IsSecret("foo", "nonexisting") {
-		t.Error("expected secret to be false")
-	}
-}
-
-func TestManager_Get(t *testing.T) {
-	mgr := Manager{
-		features: []Feature{
-			{Name: "foo"},
-		},
-	}
-
-	f := mgr.Get("foo")
-	if f == nil {
-		t.Error("expected feature to be found")
-	}
-
-	f = mgr.Get("bar")
-	if f != nil {
-		t.Error("expected feature to not be found")
-	}
-}
-
 func TestNew(t *testing.T) {
-	expected := []Feature{
+	expected := []*model.Feature{
 		{
 			Name:    "cert-manager",
 			Chart:   "cert-manager",
 			Version: "v1.7.2",
-			Repo:    "https://charts.jetstack.io",
 			Source:  "https://github.com/cert-manager/cert-manager",
-			Config: Config{
-				"global.podSecurityPolicy.enabled": {Type: model.ConfigTypeBool},
-				"installCRDs":                      {Type: model.ConfigTypeBool},
-			},
-			Timeout: 15 * time.Minute,
+			FeatureYAML: model.FeatureYAML{Timeout: 15 * time.Minute, Values: model.Values{
+				"global.podSecurityPolicy.enabled": model.Value{
+					Config: &model.Config{
+						Type: "bool",
+					},
+				},
+				"installCRDs": {Config: &model.Config{Type: "bool"}},
+			}},
 		},
 		{
-			Name:    "nais-crds",
-			Chart:   "oci://europe-north1-docker.pkg.dev/nais-io/nais/nais-crds",
-			Version: "0.1.0",
-			Source:  "https://github.com/nais/liberator/tree/main/charts",
-			Config:  Config{},
-			Timeout: 5 * time.Minute, // default
+			Name:        "nais-crds",
+			Chart:       "oci://europe-north1-docker.pkg.dev/nais-io/nais/nais-crds",
+			Version:     "0.1.0",
+			Source:      "https://github.com/nais/liberator/tree/main/charts",
+			FeatureYAML: model.FeatureYAML{Timeout: 5 * time.Minute, Values: model.Values{}},
 		},
 	}
 
-	source, err := NewFeatureSourceFilesystem("./testdata")
+	source, err := NewFeatureSourceFilesystem("./testdata", logrus.StandardLogger())
 	if err != nil {
 		t.Fatal(err)
 	}

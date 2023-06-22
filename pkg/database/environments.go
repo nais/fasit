@@ -17,6 +17,7 @@ type EnvironmentRepo interface {
 	EnvironmentIDByNames(ctx context.Context, tenantName, environmentName string) (uuid.UUID, error)
 	EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]*model.Environment, error)
 	EnvironmentUpdate(ctx context.Context, environmentID uuid.UUID, p *model.EnvironmentUpdate) (*model.Environment, error)
+	EnvironmentSetReconcile(ctx context.Context, environmentID uuid.UUID, reconcile bool) (*model.Environment, error)
 }
 
 func environmentFromSQL(p gensql.Environment) *model.Environment {
@@ -28,6 +29,8 @@ func environmentFromSQL(p gensql.Environment) *model.Environment {
 		LastModified: p.LastModified,
 		Kind:         model.EnvironmentKind(p.Kind),
 		TenantID:     p.TenantID,
+		CI:           p.Ci,
+		Reconcile:    p.Reconcile,
 	}
 }
 
@@ -118,4 +121,23 @@ func (r *repo) EnvironmentCI(ctx context.Context, kind model.EnvironmentKind) (*
 		return nil, err
 	}
 	return environmentFromSQL(res), nil
+}
+
+func (r *repo) EnvironmentSetReconcile(ctx context.Context, environmentID uuid.UUID, reconcile bool) (*model.Environment, error) {
+	env, err := r.querier.EnvironmentSetReconcile(ctx, gensql.EnvironmentSetReconcileParams{
+		ID:        environmentID,
+		Reconcile: reconcile,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	txt := "enabled"
+	if !reconcile {
+		txt = "disabled"
+	}
+
+	r.createAudit(ctx, "environment reconcile "+txt, "environments", env.ID.String())
+
+	return environmentFromSQL(env), nil
 }

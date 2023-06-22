@@ -5,26 +5,24 @@ WHERE feature = @feature;
 
 -- name: ConfigEnvUpdateOrCreate :one
 INSERT INTO configurations_environment
-	(environment_id, feature, description, secret, key, value, rollout_id)
+	(environment_id, feature, description, secret, key, value)
 VALUES
-	(@environment_id, @feature, @description, @secret, @key, @value, @rollout_id)
+	(@environment_id, @feature, @description, @secret, @key, @value)
 ON CONFLICT (environment_id, feature, key) DO UPDATE
 	SET
 		value = EXCLUDED.value,
-		description = EXCLUDED.description,
-		rollout_id = EXCLUDED.rollout_id
+		description = EXCLUDED.description
 RETURNING *;
 
 -- name: ConfigGlobalUpdateOrCreate :one
 INSERT INTO configurations_global
-	(feature, description, secret, key, value, rollout_id)
+	(feature, description, secret, key, value)
 VALUES
-	(@feature, @description, @secret, @key, @value, @rollout_id)
+	(@feature, @description, @secret, @key, @value)
 ON CONFLICT (feature, key) DO UPDATE
 	SET
 		value = EXCLUDED.value,
-		description = EXCLUDED.description,
-		rollout_id = EXCLUDED.rollout_id
+		description = EXCLUDED.description
 RETURNING *;
 
 -- name: ConfigGetForEnv :many
@@ -34,14 +32,14 @@ WHERE feature = @feature AND environment_id = @environment_id;
 
 -- name: EnvConfig :many
 WITH "combined" AS (
-		SELECT "id", "feature", "key", "value", "rollout_id", NULL::uuid AS environment_id
+		SELECT "id", "feature", "key", "value", NULL::uuid AS environment_id
 		FROM ONLY configurations_global glob
 		WHERE glob.feature = @feature
 		AND glob.key != ALL(@excludeKeys::text[])
 
 		UNION
 
-		SELECT "id", "feature", "key", "value", "rollout_id", "environment_id"
+		SELECT "id", "feature", "key", "value", "environment_id"
 		FROM ONLY configurations_environment env
 		WHERE env.feature = @feature
 		AND environment_id = @environment_id
@@ -55,14 +53,12 @@ WITH "combined" AS (
 	)
 SELECT *
 FROM filtered
-WHERE RANK = 1
-;
+WHERE RANK = 1;
 
 -- name: ConfigUpdate :one
 UPDATE configurations_global
 SET description = @description,
-	value = @value,
-	rollout_id = NULL
+	value = @value
 WHERE id = @id
 RETURNING *;
 
@@ -70,13 +66,8 @@ RETURNING *;
 DELETE FROM configurations_global
 WHERE id = @id;
 
--- name: ConfigDeleteByRolloutID :exec
-DELETE FROM configurations_environment
-WHERE rollout_id = @rollout_id;
-
 -- name: ConfigOverridesByFeature :many
 SELECT environment_id, array_agg(key)::text[] AS keys
 FROM configurations_environment
 WHERE feature = @feature
-GROUP BY environment_id
-;
+GROUP BY environment_id;

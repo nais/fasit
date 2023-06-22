@@ -17,6 +17,7 @@ func TestReceiver(t *testing.T) {
 	uid := uuid.New()
 	tests := map[string]struct {
 		envID                          uuid.UUID
+		helmStatus                     bool
 		statuses                       []message.Status
 		numStatusCreateOrUpdate        int
 		numReleaseStatusCreateOrUpdate int
@@ -28,7 +29,8 @@ func TestReceiver(t *testing.T) {
 			statuses: []message.Status{},
 		},
 		"helm one": {
-			envID: uid,
+			envID:      uid,
+			helmStatus: true,
 			statuses: []message.Status{
 				{
 					Type:        message.StatusTypeHelm,
@@ -40,7 +42,8 @@ func TestReceiver(t *testing.T) {
 			numStatusCreateOrUpdate: 1,
 		},
 		"helm missing tenant": {
-			envID: uuid.Nil,
+			envID:      uuid.Nil,
+			helmStatus: true,
 			statuses: []message.Status{
 				{
 					Type:        message.StatusTypeHelm,
@@ -92,7 +95,13 @@ func TestReceiver(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			repo := mocks.NewRepo(t)
-			repo.On("EnvironmentIDByNames", mock.Anything, "tenant", "env").Return(tc.envID, nil).Maybe().Times(len(tc.statuses))
+
+			if tc.helmStatus {
+				repo.On("EnvironmentByNames", mock.Anything, "tenant", "env").Return(&model.Environment{ID: tc.envID}, nil).Maybe().Times(len(tc.statuses))
+			} else {
+				repo.On("EnvironmentIDByNames", mock.Anything, "tenant", "env").Return(tc.envID, nil).Maybe().Times(len(tc.statuses))
+			}
+
 			if tc.numStatusCreateOrUpdate > 0 {
 				repo.On("StatusCreateOrUpdate", mock.Anything, tc.envID, mock.Anything).Return(nil).Times(tc.numStatusCreateOrUpdate)
 			}
@@ -113,7 +122,6 @@ func TestReceiver(t *testing.T) {
 			rec := NewReceiver(
 				&mockReceiverClient{messages: tc.statuses},
 				repo,
-				func(ctx context.Context, id uuid.UUID, status model.RolloutStatus) error { return nil },
 				logrus.NewEntry(logrus.StandardLogger()),
 			)
 

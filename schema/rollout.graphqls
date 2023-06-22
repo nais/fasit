@@ -1,43 +1,7 @@
 type Rollout {
   id: ID!
-  status: RolloutStatus!
-  changeset: RolloutChangeset!
-  environment: Environment!
-  created: Time!
-  lastModified: Time!
-  events: [RolloutEvent!]!
-}
-
-enum RolloutEventType {
-  PROCESSED
-  IN_PROGRESS
-  HELM_COMPLETED
-  FAILED
-  ROLLED_BACK
-  SUCCESS
-}
-
-type RolloutChangeset {
-  new: RawMessage!
-  old: RawMessage
-}
-
-type RolloutEvent {
-  id: ID!
-  type: RolloutEventType!
-  data: RawMessage!
-  created: Time!
-}
-
-type RolloutSummary {
-  id: ID!
   feature: Feature!
-  status: RolloutStatus!
-  rollouts: [Rollout!]!
+  version: String!
+  chart: String!
   created: Time!
-  lastModified: Time!
-}
-
-extend type Query {
-  rolloutSummary(id: ID!): RolloutSummary!
 }

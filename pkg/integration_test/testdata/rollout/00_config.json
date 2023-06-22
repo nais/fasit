@@ -1,0 +1,6 @@
+{
+  "no_naisd": false,
+  "no_tenants": false,
+  "reconcile": true,
+  "ci": true
+}

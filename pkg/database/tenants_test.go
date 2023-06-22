@@ -123,12 +123,12 @@ func TestRepo_TenantEnvironments(t *testing.T) {
 		}
 	}
 
-	got, err := repo.TenantEnvironments(ctx)
+	got, err := repo.TenantEnvironments(ctx, true)
 	if err != nil {
 		t.Fatalf("TenantEnvironments(ctx) err = %v, want nil", err)
 	}
 
-	want := []*model.TenantEnvironments{
+	want := []*model.TenantEnvironment{
 		{
 			Environment: model.Environment{
 				ID:          eids[0],

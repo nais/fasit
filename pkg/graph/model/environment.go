@@ -17,6 +17,8 @@ type Environment struct {
 	Created      time.Time       `json:"created"`
 	LastModified time.Time       `json:"lastModified"`
 	Kind         EnvironmentKind `json:"kind"`
+	CI           bool            `json:"ci"`
+	Reconcile    bool            `json:"reconciled"`
 
 	TenantID uuid.UUID `json:"tenantID"`
 }

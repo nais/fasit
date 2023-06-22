@@ -24,7 +24,6 @@ import (
 	"github.com/nais/fasit/pkg/auth"
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/feature"
-	"github.com/nais/fasit/pkg/feature/helminfo"
 	"github.com/nais/fasit/pkg/graph"
 	"github.com/nais/fasit/pkg/graph/graphgen"
 	"github.com/nais/fasit/pkg/message"
@@ -48,6 +47,8 @@ import (
 )
 
 var cfg = DefaultConfig()
+
+const slowQueryEndpoint = false
 
 func init() {
 	flag.StringVar(&cfg.BindAddress, "bind-address", cfg.BindAddress, "Bind address")
@@ -137,14 +138,11 @@ func main() {
 		log.WithError(err).Fatal("migrating database")
 	}
 
-	repo := database.New(db, log.WithField("subsystem", "repo"))
-	log.Info("-- successfully started database client")
-
 	log.WithField("feature_source", cfg.FeatureSource).Info("starting feature client")
 	var source feature.FeatureSource
 	switch cfg.FeatureSource {
 	case "file":
-		fileSource, err := feature.NewFeatureSourceFilesystem("./features")
+		fileSource, err := feature.NewFeatureSourceFilesystem("./features", log.WithField("subsystem", "filesystem"))
 		if err != nil {
 			log.WithError(err).Fatal("setting up feature source")
 		}
@@ -174,23 +172,18 @@ func main() {
 		log.WithError(err).Fatal("setting up features")
 	}
 
+	repo := database.New(db, featureMgr, log.WithField("subsystem", "repo"))
+	log.Info("-- successfully started database client")
+
 	statusMgr := message.NewSubscriber[message.Status](pubsubClient, cfg.GCPProjectID, cfg.StatusSubscriptionID)
 
-	rolloutWorker := workers.NewRollout(repo, log.WithField("subsystem", "rollout"))
-	go func() {
-		if err := rolloutWorker.Listen(ctx); err != nil {
-			log.WithError(err).Fatal("rollout worker listener")
-		}
-	}()
-	go rolloutWorker.Run(ctx, 10*time.Minute)
-
-	receiver := workers.NewReceiver(statusMgr, repo, rolloutWorker.Notify, log.WithField("subsystem", "status"))
+	receiver := workers.NewReceiver(statusMgr, repo, log.WithField("subsystem", "status"))
 	go receiver.Run(ctx)
 
 	createPublisher := func(projectID, topicID string, log *logrus.Entry) workers.Publisher {
 		return message.NewPublisher[message.DeployInstruction](pubsubClient, projectID, topicID, log)
 	}
-	reconciler, err := workers.NewReconciler(repo, featureMgr, createPublisher, cfg.GCPProjectID, meter, log.WithField("subsystem", "reconciler"))
+	reconciler, err := workers.NewReconciler(repo, createPublisher, cfg.GCPProjectID, meter, log.WithField("subsystem", "reconciler"))
 	if err != nil {
 		log.WithError(err).Fatal("setting up reconciler")
 	}
@@ -202,17 +195,10 @@ func main() {
 	}()
 	go reconciler.Run(ctx, 10*time.Minute)
 
-	helmChartValues, err := helminfo.New(featureMgr, log.WithField("subsystem", "helm-chart-values"))
-	if err != nil {
-		log.WithError(err).Fatal("setting up helm chart values")
-	}
-	go helmChartValues.Run(ctx, 1*time.Hour)
-
 	resolver := &graph.Resolver{
-		Repo:            repo,
-		Features:        featureMgr,
-		Log:             log.WithField("subsystem", "graphql"),
-		HelmChartValues: helmChartValues,
+		Repo: repo,
+		Log:  log.WithField("subsystem", "graphql"),
+		// HelmChartValues: helmChartValues,
 	}
 
 	srv := newServer(graphgen.NewExecutableSchema(graphgen.Config{Resolvers: resolver}))
@@ -241,17 +227,26 @@ func main() {
 		iapMW = auth.InsecureValidateMW
 	}
 
+	slowDownQuery := func(h http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if slowQueryEndpoint {
+				time.Sleep(2 * time.Second)
+			}
+			h.ServeHTTP(w, r)
+		})
+	}
+
 	router := chi.NewMux()
 	router.Handle("/", iapMW(playground.Handler("GraphQL playground", "/query")))
-	router.Handle("/query", iapMW(corsMW.Handler(srv)))
+	router.Handle("/query", slowDownQuery(iapMW(corsMW.Handler(srv))))
 	router.Handle("/metrics", promhttp.Handler())
 
-	rout, err := rollout.New(ctx, featureMgr, repo)
+	rout, err := rollout.New(ctx, repo)
 	if err != nil {
 		log.WithError(err).Fatal("setting up rollout")
 	}
 	rout.AllowAll = cfg.InsecureSkipTokenCheck
-	router.Post("/github/deploy/{feature}", rout.Rollout)
+	router.Post("/github/rollout", rout.Rollout)
 
 	go func() {
 		if err := runGRPC(ctx, repo); err != nil {

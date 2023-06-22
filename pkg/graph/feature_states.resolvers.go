@@ -7,7 +7,6 @@ package graph
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/google/uuid"
 	pgx "github.com/jackc/pgx/v4"
@@ -17,51 +16,24 @@ import (
 
 // Feature is the resolver for the feature field.
 func (r *featureStateResolver) Feature(ctx context.Context, obj *model.FeatureState) (*model.Feature, error) {
-	return r.resolveFeatureByName(obj.FeatureName)
+	return r.Repo.FeatureByNameForEnv(ctx, obj.FeatureName, obj.EnvID)
 }
 
 // MissingDependencies is the resolver for the missingDependencies field.
 func (r *featureStateResolver) MissingDependencies(ctx context.Context, obj *model.FeatureState) ([]*model.Feature, error) {
-	f := r.Features.Get(obj.FeatureName)
-
-	states, err := r.Repo.FeatureStatesGet(ctx, obj.EnvID)
-	if err != nil {
-		return nil, err
-	}
-
-	enabledFeatures := []string{}
-	for _, s := range states {
-		if s.Enabled && s.RolloutStatus == model.RolloutStatusDeployed {
-			enabledFeatures = append(enabledFeatures, s.FeatureName)
-		}
-	}
-
-	ret := []*model.Feature{}
-
-	for _, d := range f.DependsOn.FindMissing(enabledFeatures) {
-		feat := r.Features.Get(d)
-		if feat == nil {
-			return nil, fmt.Errorf("invalid dependency %v", d)
-		}
-		f, err := marshalFeature(*feat)
-		if err != nil {
-			return nil, err
-		}
-		ret = append(ret, f)
-	}
-	return ret, nil
+	return r.missingDependencies(ctx, obj.FeatureName, obj.EnvID)
 }
 
 // Configuration is the resolver for the configuration field.
-func (r *featureStateResolver) Configuration(ctx context.Context, obj *model.FeatureState) (*model.EnvConfig, error) {
+func (r *featureStateResolver) Configuration(ctx context.Context, obj *model.FeatureState) (*model.Configurations, error) {
 	return r.Resolver.Query().Configuration(ctx, obj.FeatureName, &obj.EnvID)
 }
 
 // FeatureStateSave is the resolver for the featureStateSave field.
 func (r *mutationResolver) FeatureStateSave(ctx context.Context, envID uuid.UUID, enabled bool, feature string) (*model.FeatureState, error) {
-	feat := r.Resolver.Features.Get(feature)
-	if feat == nil {
-		return nil, nil
+	feat, err := r.Repo.FeatureByNameForEnv(ctx, feature, envID)
+	if err != nil {
+		return nil, err
 	}
 	return r.Repo.FeatureStatesCreateOrUpdate(ctx, envID, feat, enabled)
 }
@@ -70,12 +42,6 @@ func (r *mutationResolver) FeatureStateSave(ctx context.Context, envID uuid.UUID
 func (r *queryResolver) FeatureState(ctx context.Context, envID uuid.UUID, feature string) (*model.FeatureState, error) {
 	fs, err := r.Repo.FeatureStateGet(ctx, envID, feature)
 	if err == nil {
-		status, err := r.Repo.StatusForFeature(ctx, envID, feature)
-		if err == nil {
-			// Don't fail if we can't get status
-			fs.RolloutStatus = status.Status
-		}
-
 		return fs, nil
 	}
 
@@ -85,10 +51,10 @@ func (r *queryResolver) FeatureState(ctx context.Context, envID uuid.UUID, featu
 
 	// If no feature state exists, return a default feature state
 	fs = &model.FeatureState{
-		FeatureName:   feature,
-		Enabled:       false,
-		RolloutStatus: model.RolloutStatusUnknown,
-		EnvID:         envID,
+		ID:          model.FeatureStateID(envID, feature),
+		FeatureName: feature,
+		Enabled:     false,
+		EnvID:       envID,
 	}
 	return fs, nil
 }

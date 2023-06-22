@@ -16,7 +16,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgtype"
 	"github.com/nais/fasit/pkg/database/gensql"
-	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
@@ -120,14 +119,14 @@ func TestRepo_ConfigGet(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := []*model.GlobalConfiguration{
+	want := []*model.Configuration{
 		{
-			ID:          id,
-			FeatureName: "feature3",
-			Key:         "my.key",
-			Value:       []byte(`"stringval"`),
-			Created:     created,
-			Secret:      true,
+			ID:        id,
+			GraphVars: model.ConfigurationGraphVars{FeatureName: "feature3"},
+			Key:       "my.key",
+			Content:   []byte(`"stringval"`),
+			Created:   created,
+			Source:    model.ConfigSourceGlobal,
 		},
 	}
 
@@ -163,15 +162,14 @@ func TestRepo_ConfigGetForEnv(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := []*model.EnvConfiguration{
+	want := []*model.Configuration{
 		{
-			ID:            id,
-			EnvironmentID: envid,
-			FeatureName:   "feature3",
-			Key:           "my.key",
-			Value:         []byte(`"stringval"`),
-			Created:       created,
-			Secret:        true,
+			ID:        id,
+			GraphVars: model.ConfigurationGraphVars{FeatureName: "feature3", EnvironmentID: &envid},
+			Key:       "my.key",
+			Content:   []byte(`"stringval"`),
+			Created:   created,
+			Source:    model.ConfigSourceEnv,
 		},
 	}
 
@@ -201,15 +199,17 @@ func TestRepo_ConfigCreate_Environment(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := &model.EnvConfiguration{
-		EnvironmentID: *config.EnvironmentID,
-		FeatureName:   config.Feature,
-		Key:           config.Key,
-		Value:         config.Value,
-		Secret:        config.Secret,
+	want := &model.Configuration{
+		GraphVars: model.ConfigurationGraphVars{
+			FeatureName:   "feature5",
+			EnvironmentID: &envid,
+		},
+		Key:     config.Key,
+		Content: config.Value,
+		Source:  model.ConfigSourceEnv,
 	}
 
-	opts := cmpopts.IgnoreFields(model.EnvConfiguration{}, "ID", "Created")
+	opts := cmpopts.IgnoreFields(model.Configuration{}, "ID", "Created")
 	if !cmp.Equal(want, got, opts) {
 		t.Errorf("diff -want +got:\n%v", cmp.Diff(want, got, opts))
 	}
@@ -232,14 +232,16 @@ func TestRepo_ConfigCreate_Global(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := &model.GlobalConfiguration{
-		FeatureName: config.Feature,
-		Key:         config.Key,
-		Value:       config.Value,
-		Secret:      config.Secret,
+	want := &model.Configuration{
+		GraphVars: model.ConfigurationGraphVars{
+			FeatureName: "feature5",
+		},
+		Key:     config.Key,
+		Content: config.Value,
+		Source:  model.ConfigSourceGlobal,
 	}
 
-	opts := cmpopts.IgnoreFields(model.GlobalConfiguration{}, "ID", "Created")
+	opts := cmpopts.IgnoreFields(model.Configuration{}, "ID", "Created")
 	if !cmp.Equal(want, got, opts) {
 		t.Errorf("diff -want +got:\n%v", cmp.Diff(want, got, opts))
 	}
@@ -262,21 +264,21 @@ func TestRepo_ConfigUpdate_Global(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err = repo.ConfigUpdate(context.Background(), got.(*model.GlobalConfiguration).ID, model.UpdateConfiguration{
+	got, err = repo.ConfigUpdate(context.Background(), got.ID, model.UpdateConfiguration{
 		Value: []byte(`"newval"`),
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	want := &model.GlobalConfiguration{
-		FeatureName: config.Feature,
-		Key:         config.Key,
-		Value:       []byte(`"newval"`),
-		Secret:      config.Secret,
+	want := &model.Configuration{
+		GraphVars: model.ConfigurationGraphVars{FeatureName: config.Feature},
+		Key:       config.Key,
+		Content:   []byte(`"newval"`),
+		Source:    model.ConfigSourceGlobal,
 	}
 
-	opts := cmpopts.IgnoreFields(model.GlobalConfiguration{}, "ID", "Created")
+	opts := cmpopts.IgnoreFields(model.Configuration{}, "ID", "Created")
 	if !cmp.Equal(want, got, opts) {
 		t.Errorf("diff -want +got:\n%v", cmp.Diff(want, got, opts))
 	}
@@ -297,7 +299,7 @@ func TestRepo_ConfigDelete(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	gotID := got.(*model.GlobalConfiguration).ID
+	gotID := got.ID
 	err = r.ConfigDelete(context.Background(), gotID)
 	if err != nil {
 		t.Fatal(err)
@@ -325,12 +327,16 @@ func TestRepo_HelmValues_OK(t *testing.T) {
 	r := newTestRepo(t, fmt.Sprintf(q1, tenantid), fmt.Sprintf(q2, envid, tenantid))
 	defer r.Close()
 
-	feature := feature.Feature{
+	feature := model.Feature{
 		Name: "feature5",
-		Config: feature.Config{
-			"my.key": feature.ConfigType{
-				Type:   model.ConfigTypeString,
-				Secret: true,
+		FeatureYAML: model.FeatureYAML{
+			Values: model.Values{
+				"my.key": model.Value{
+					Config: &model.Config{
+						Type:   model.ConfigTypeString,
+						Secret: true,
+					},
+				},
 			},
 		},
 	}
@@ -348,12 +354,16 @@ func TestRepo_HelmValues_OK(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, _, err := r.HelmValues(context.Background(), feature, envid)
+	got, err := r.HelmValues(context.Background(), &feature, envid)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	want := map[string]any{
+		"fasit": map[string]any{
+			"env":    map[string]string{"kind": "tenant", "name": "env1"},
+			"tenant": map[string]string{"name": "tenant1"},
+		},
 		"my": map[string]any{
 			"key": pgtype.JSONB{Bytes: []byte(`"stringval"`), Status: pgtype.Present},
 		},
@@ -372,17 +382,23 @@ func TestRepo_HelmValues_MissingRequiredField(t *testing.T) {
 	r := newTestRepo(t, fmt.Sprintf(q1, tenantid), fmt.Sprintf(q2, envid, tenantid))
 	defer r.Close()
 
-	feature := feature.Feature{
+	feature := model.Feature{
 		Name: "feature5",
-		Config: feature.Config{
-			"my.key": feature.ConfigType{
-				Type:   model.ConfigTypeString,
-				Secret: true,
-			},
-			"no.key": feature.ConfigType{
-				Type:     model.ConfigTypeString,
-				Secret:   true,
-				Required: true,
+		FeatureYAML: model.FeatureYAML{
+			Values: model.Values{
+				"my.key": model.Value{
+					Config: &model.Config{
+						Type:   model.ConfigTypeString,
+						Secret: true,
+					},
+				},
+				"no.key": model.Value{
+					Config: &model.Config{
+						Type:   model.ConfigTypeString,
+						Secret: true,
+					},
+					Required: true,
+				},
 			},
 		},
 	}
@@ -400,7 +416,7 @@ func TestRepo_HelmValues_MissingRequiredField(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, _, err = r.HelmValues(context.Background(), feature, envid)
+	_, err = r.HelmValues(context.Background(), &feature, envid)
 	if !errors.Is(err, &ErrMissingRequiredFields{}) {
 		t.Errorf("got: %v, want ErrMissingRequiredFields", err)
 	}
@@ -436,7 +452,7 @@ func TestRepo_HelmValues_InvaldKeyNesting(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, _, err = r.HelmValues(context.Background(), feature.Feature{Name: "feature5"}, envid)
+	_, err = r.HelmValues(context.Background(), &model.Feature{Name: "feature5"}, envid)
 	if err == nil || !strings.HasSuffix(err.Error(), "is not nestable") {
 		t.Errorf("got: %v, want \"key `key` is not nestable\"", err)
 	}
@@ -463,14 +479,36 @@ func TestRepo_HelmValues_WithMappingValues(t *testing.T) {
 		{envid, "some_secret", json.RawMessage(`"hideme"`), true},
 	}
 
-	f := feature.Feature{
+	f := model.Feature{
 		Name: "feature5",
-		Mapping: feature.Mapping{
-			"names.tenant":      feature.MappingConfig{Value: "{{ .Tenant.Name }}"},
-			"names.environment": feature.MappingConfig{Value: "{{ .Env.name }}"},
-			"kind":              feature.MappingConfig{Value: "{{ .Kind }}"},
-			"projects.env":      feature.MappingConfig{Value: "{{ .Env.project_id }}"},
-			"projects.mgmt":     feature.MappingConfig{Value: "{{ .Management.project_id }}"},
+		FeatureYAML: model.FeatureYAML{
+			Values: model.Values{
+				"names.tenant": model.Value{
+					Computed: &model.Computed{
+						Template: "{{ .Tenant.Name }}",
+					},
+				},
+				"names.environment": model.Value{
+					Computed: &model.Computed{
+						Template: "{{ .Env.name }}",
+					},
+				},
+				"kind": model.Value{
+					Computed: &model.Computed{
+						Template: "{{ .Kind }}",
+					},
+				},
+				"projects.env": model.Value{
+					Computed: &model.Computed{
+						Template: "{{ .Env.project_id }}",
+					},
+				},
+				"projects.mgmt": model.Value{
+					Computed: &model.Computed{
+						Template: "{{ .Management.project_id }}",
+					},
+				},
+			},
 		},
 	}
 
@@ -481,12 +519,16 @@ func TestRepo_HelmValues_WithMappingValues(t *testing.T) {
 		}
 	}
 
-	got, _, err := r.HelmValues(context.Background(), f, envid)
+	got, err := r.HelmValues(context.Background(), &f, envid)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	want := map[string]any{
+		"fasit": map[string]any{
+			"env":    map[string]string{"kind": "tenant", "name": "env1"},
+			"tenant": map[string]string{"name": "tenant1"},
+		},
 		"kind":     "tenant",
 		"names":    map[string]any{"environment": "env1", "tenant": "tenant1"},
 		"projects": map[string]any{"env": "env-project", "mgmt": "my-project"},
@@ -505,19 +547,25 @@ func TestRepo_HelmValues_WithIgnoredKeys_Ignored(t *testing.T) {
 	r := newTestRepo(t, fmt.Sprintf(q1, tenantid), fmt.Sprintf(q2, envid, tenantid))
 	defer r.Close()
 
-	feature := feature.Feature{
+	feature := model.Feature{
 		Name: "feature6",
-		Config: feature.Config{
-			"my.key": feature.ConfigType{
-				Type:   model.ConfigTypeString,
-				Secret: true,
-			},
-			"ignore.key": feature.ConfigType{
-				Type:     model.ConfigTypeString,
-				Secret:   true,
-				Required: true,
-				IgnoreKind: []model.EnvironmentKind{
-					model.EnvironmentKindOnprem,
+		FeatureYAML: model.FeatureYAML{
+			Values: model.Values{
+				"my.key": model.Value{
+					Config: &model.Config{
+						Type:   model.ConfigTypeString,
+						Secret: true,
+					},
+				},
+				"ignore.key": model.Value{
+					Required: true,
+					IgnoreKind: []model.EnvironmentKind{
+						model.EnvironmentKindOnprem,
+					},
+					Config: &model.Config{
+						Type:   model.ConfigTypeString,
+						Secret: true,
+					},
 				},
 			},
 		},
@@ -546,12 +594,16 @@ func TestRepo_HelmValues_WithIgnoredKeys_Ignored(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, _, err := r.HelmValues(context.Background(), feature, envid)
+	got, err := r.HelmValues(context.Background(), &feature, envid)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	want := map[string]any{
+		"fasit": map[string]any{
+			"env":    map[string]string{"kind": "onprem", "name": "env1"},
+			"tenant": map[string]string{"name": "tenant1"},
+		},
 		"my": map[string]any{
 			"key": pgtype.JSONB{Bytes: []byte(`"stringval"`), Status: pgtype.Present},
 		},
@@ -570,19 +622,25 @@ func TestRepo_HelmValues_WithIgnoredKeys_NotIgnored(t *testing.T) {
 	r := newTestRepo(t, fmt.Sprintf(q1, tenantid), fmt.Sprintf(q2, envid, tenantid))
 	defer r.Close()
 
-	feature := feature.Feature{
+	feature := model.Feature{
 		Name: "feature6",
-		Config: feature.Config{
-			"my.key": feature.ConfigType{
-				Type:   model.ConfigTypeString,
-				Secret: true,
-			},
-			"ignore.key": feature.ConfigType{
-				Type:     model.ConfigTypeString,
-				Secret:   true,
-				Required: true,
-				IgnoreKind: []model.EnvironmentKind{
-					model.EnvironmentKindOnprem,
+		FeatureYAML: model.FeatureYAML{
+			Values: model.Values{
+				"my.key": model.Value{
+					Config: &model.Config{
+						Type:   model.ConfigTypeString,
+						Secret: true,
+					},
+				},
+				"ignore.key": model.Value{
+					Required: true,
+					IgnoreKind: []model.EnvironmentKind{
+						model.EnvironmentKindOnprem,
+					},
+					Config: &model.Config{
+						Type:   model.ConfigTypeString,
+						Secret: true,
+					},
 				},
 			},
 		},
@@ -611,12 +669,16 @@ func TestRepo_HelmValues_WithIgnoredKeys_NotIgnored(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, _, err := r.HelmValues(context.Background(), feature, envid)
+	got, err := r.HelmValues(context.Background(), &feature, envid)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	want := map[string]any{
+		"fasit": map[string]any{
+			"env":    map[string]string{"kind": "tenant", "name": "env1"},
+			"tenant": map[string]string{"name": "tenant1"},
+		},
 		"my": map[string]any{
 			"key": pgtype.JSONB{Bytes: []byte(`"stringval"`), Status: pgtype.Present},
 		},

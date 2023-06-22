@@ -1,23 +1,33 @@
-type OutdatedInfo {
-  feature: Feature!
-  dependency: Boolean!
-  dependencyName: String!
-  newVersion: String!
+type Computed {
+  template: String!
+}
+type Config {
+  type: ConfigType!
+  secret: Boolean!
+}
+
+type Value {
+  key: String! @goField(name: "GraphQLKey")
+  displayName: String!
+  description: String!
+  required: Boolean!
+  computed: Computed
+  config: Config
 }
 
 type Feature {
   name: String!
   chart: String!
   version: String!
-  repo: String!
   source: String!
   description: String!
-  dependsOn: [Dependency!]!
-  config: RawMessage!
+  dependencies: [Dependency!]!
   environmentKinds: [EnvironmentKind!]!
-  rolloutSummaries: [RolloutSummary!]!
   configoverrides: [ConfigOverride!]!
-  outdatedInfo: [OutdatedInfo]!
+  configuration: Configurations!
+
+  state: FeatureState
+  status: Status
 }
 
 type ConfigOverride {
@@ -31,7 +41,6 @@ type Dependency {
 }
 
 extend type Query {
-  features(kind: EnvironmentKind): [Feature!]!
+  features: [Feature!]!
   feature(name: String!): Feature!
-  outdatedInfo: [OutdatedInfo]!
 }

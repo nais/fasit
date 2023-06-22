@@ -1,11 +1,11 @@
 package graph
 
 import (
+	"context"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database"
-	"github.com/nais/fasit/pkg/feature"
-	"github.com/nais/fasit/pkg/feature/helminfo"
 	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/sirupsen/logrus"
 )
@@ -15,16 +15,37 @@ import (
 // It serves as dependency injection for your app, add any dependencies you require here.
 
 type Resolver struct {
-	Repo            database.Repo
-	Features        *feature.Manager
-	Log             *logrus.Entry
-	HelmChartValues *helminfo.Cache
+	Repo database.Repo
+	Log  *logrus.Entry
+	// HelmChartValues *helminfo.Cache
 }
 
-func (r *Resolver) resolveFeatureByName(name string) (*model.Feature, error) {
-	f := r.Features.Get(name)
-	if f == nil {
-		return nil, fmt.Errorf("feature %v not found", name)
+func (r *Resolver) missingDependencies(ctx context.Context, featureName string, envID uuid.UUID) ([]*model.Feature, error) {
+	f, err := r.Repo.FeatureByNameForEnv(ctx, featureName, envID)
+	if err != nil {
+		return nil, err
 	}
-	return marshalFeature(*f)
+
+	states, err := r.Repo.FeatureStatesGet(ctx, envID)
+	if err != nil {
+		return nil, err
+	}
+
+	enabledFeatures := []string{}
+	for _, s := range states {
+		if s.Enabled {
+			enabledFeatures = append(enabledFeatures, s.FeatureName)
+		}
+	}
+
+	ret := []*model.Feature{}
+
+	for _, missing := range f.Dependencies.FindMissing(enabledFeatures) {
+		mf, err := r.Repo.FeatureByNameForEnv(ctx, missing, envID)
+		if err != nil {
+			return nil, fmt.Errorf("getting feature by name: %v: %w", missing, err)
+		}
+		ret = append(ret, mf)
+	}
+	return ret, nil
 }

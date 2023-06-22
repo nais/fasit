@@ -6,8 +6,12 @@ package graph
 
 import (
 	"context"
-	"sort"
+	"errors"
+	"fmt"
+	"time"
 
+	"github.com/google/uuid"
+	pgx "github.com/jackc/pgx/v4"
 	"github.com/nais/fasit/pkg/graph/graphgen"
 	"github.com/nais/fasit/pkg/graph/model"
 )
@@ -17,9 +21,9 @@ func (r *configOverrideResolver) Environment(ctx context.Context, obj *model.Con
 	return r.Repo.EnvironmentGet(ctx, obj.EnvironmentID)
 }
 
-// RolloutSummaries is the resolver for the rolloutSummaries field.
-func (r *featureResolver) RolloutSummaries(ctx context.Context, obj *model.Feature) ([]*model.RolloutSummary, error) {
-	return r.Repo.RolloutSummariesByFeature(ctx, obj.Name)
+// Dependencies is the resolver for the dependencies field.
+func (r *featureResolver) Dependencies(ctx context.Context, obj *model.Feature) ([]*model.Dependency, error) {
+	return obj.Dependencies, nil
 }
 
 // Configoverrides is the resolver for the configoverrides field.
@@ -27,54 +31,62 @@ func (r *featureResolver) Configoverrides(ctx context.Context, obj *model.Featur
 	return r.Repo.ConfigOverridesByFeature(ctx, obj.Name)
 }
 
-// OutdatedInfo is the resolver for the outdatedInfo field.
-func (r *featureResolver) OutdatedInfo(ctx context.Context, obj *model.Feature) ([]*model.OutdatedInfo, error) {
-	version := r.HelmChartValues.GetVersion(obj.Name)
-
-	outdated := makeOutdatedInfo(obj.Name, version)
-
-	sort.Slice(outdated, func(i, j int) bool {
-		return outdated[i].FeatureName < outdated[j].FeatureName
-	})
-	return outdated, nil
+// Configuration is the resolver for the configuration field.
+func (r *featureResolver) Configuration(ctx context.Context, obj *model.Feature) (*model.Configurations, error) {
+	return &model.Configurations{
+		FeatureName: obj.Name,
+		EnvID:       &obj.GraphVars.EnvironmentID,
+		RolloutID:   obj.GraphVars.RolloutID,
+	}, nil
 }
 
-// Feature is the resolver for the feature field.
-func (r *outdatedInfoResolver) Feature(ctx context.Context, obj *model.OutdatedInfo) (*model.Feature, error) {
-	return r.resolveFeatureByName(obj.FeatureName)
+// State is the resolver for the state field.
+func (r *featureResolver) State(ctx context.Context, obj *model.Feature) (*model.FeatureState, error) {
+	if obj.GraphVars.EnvironmentID == uuid.Nil {
+		return nil, nil
+	}
+
+	return r.Repo.FeatureStateGet(ctx, obj.GraphVars.EnvironmentID, obj.Name)
+}
+
+// Status is the resolver for the status field.
+func (r *featureResolver) Status(ctx context.Context, obj *model.Feature) (*model.Status, error) {
+	status, err := r.Repo.StatusForFeature(ctx, obj.GraphVars.EnvironmentID, obj.Name)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			f, err := r.Repo.FeatureByNameForEnv(ctx, obj.Name, obj.GraphVars.EnvironmentID)
+			if err != nil {
+				return nil, fmt.Errorf("feature %v not found", obj.Name)
+			}
+			return &model.Status{
+				EnvironmentID: obj.GraphVars.EnvironmentID,
+				Feature:       obj.Name,
+				Version:       f.Version,
+				Status:        model.RolloutStatusUnknown,
+				Created:       time.Now(),
+				LastModified:  time.Now(),
+				Log:           "",
+			}, nil
+		}
+		return nil, err
+	}
+	return status, nil
 }
 
 // Features is the resolver for the features field.
-func (r *queryResolver) Features(ctx context.Context, kind *model.EnvironmentKind) ([]*model.Feature, error) {
-	features := []*model.Feature{}
-	for _, feature := range r.Resolver.Features.Features() {
-		if kind != nil && !contains(feature.EnvironmentKinds, *kind) {
-			continue
-		}
-
-		tmp, err := marshalFeature(feature)
-		if err != nil {
-			return nil, err
-		}
-		features = append(features, tmp)
-	}
-	return features, nil
+func (r *queryResolver) Features(ctx context.Context) ([]*model.Feature, error) {
+	return r.Repo.Features(ctx)
 }
 
 // Feature is the resolver for the feature field.
 func (r *queryResolver) Feature(ctx context.Context, name string) (*model.Feature, error) {
-	return r.resolveFeatureByName(name)
-}
+	f, err := r.Repo.FeatureByName(ctx, name)
 
-// OutdatedInfo is the resolver for the outdatedInfo field.
-func (r *queryResolver) OutdatedInfo(ctx context.Context) ([]*model.OutdatedInfo, error) {
-	versions := r.HelmChartValues.AllVersions()
-	ret := []*model.OutdatedInfo{}
-	for name, version := range versions {
-		ret = append(ret, makeOutdatedInfo(name, version)...)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return r.Repo.RolloutByName(ctx, name)
 	}
 
-	return ret, nil
+	return f, err
 }
 
 // ConfigOverride returns graphgen.ConfigOverrideResolver implementation.
@@ -85,9 +97,5 @@ func (r *Resolver) ConfigOverride() graphgen.ConfigOverrideResolver {
 // Feature returns graphgen.FeatureResolver implementation.
 func (r *Resolver) Feature() graphgen.FeatureResolver { return &featureResolver{r} }
 
-// OutdatedInfo returns graphgen.OutdatedInfoResolver implementation.
-func (r *Resolver) OutdatedInfo() graphgen.OutdatedInfoResolver { return &outdatedInfoResolver{r} }
-
 type configOverrideResolver struct{ *Resolver }
 type featureResolver struct{ *Resolver }
-type outdatedInfoResolver struct{ *Resolver }

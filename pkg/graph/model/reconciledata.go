@@ -2,7 +2,7 @@ package model
 
 import "github.com/google/uuid"
 
-type TenantEnvironments struct {
+type TenantEnvironment struct {
 	Environment
 	TenantName string
 	TenantID   uuid.UUID
