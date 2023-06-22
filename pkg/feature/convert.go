@@ -43,7 +43,7 @@ func FeatureV2(f *Feature, debug bool) *model.FeatureYAML {
 		if tpl == "" {
 			switch t := c.Value.(type) {
 			case string:
-				tpl = t
+				tpl = `"` + t + `"`
 			default:
 				panic(fmt.Errorf("unsupported mapping type for %q: %T", k, t))
 			}
