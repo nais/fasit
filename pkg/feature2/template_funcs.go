@@ -1,6 +1,7 @@
 package feature
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -25,6 +26,7 @@ var templateFuncs = template.FuncMap{
 	"join":              join,
 	"filter":            filter,
 	"replace":           replace,
+	"b64enc":            base64encode,
 }
 
 // mapOf creates a new map from a list of map[string]any with the given key as the key in the new map,
@@ -233,4 +235,17 @@ func filter(key string, value, v any) []map[string]any {
 		}
 	}
 	return out
+}
+
+func base64encode(v any) string {
+	if v == nil {
+		return ""
+	}
+
+	s, ok := v.(string)
+	if !ok {
+		panic("expected string to b64enc")
+	}
+
+	return base64.StdEncoding.EncodeToString([]byte(s))
 }
