@@ -2,6 +2,7 @@ package feature
 
 import (
 	"context"
+	"fmt"
 	"io/fs"
 	"log"
 	"os"
@@ -64,7 +65,7 @@ func (f *FeatureSourceFilesystem) Features() ([]Feature, error) {
 
 		feature, err := parseFeature(path, f)
 		if err != nil {
-			return err
+			return fmt.Errorf("%v: %w", path, err)
 		}
 
 		features = append(features, feature)
