@@ -66,12 +66,18 @@ func TestFullRun(t *testing.T) {
 	secretMap := objToMap(t, secret)
 
 	wantJob := map[string]any{
-		"metadata": map[string]any{"creationTimestamp": nil, "labels": map[string]any{"app": string("naisd-self-upgrader")}, "name": string("naisd-self-upgrader-20200101-000000"), "namespace": string("nais-system")},
+		"metadata": map[string]any{"creationTimestamp": nil, "labels": map[string]any{"app": string("naisd-self-upgrader"), "app.kubernetes.io/instance": string("naisd")}, "name": string("naisd-self-upgrader-20200101-000000"), "namespace": string("nais-system")},
 		"spec": map[string]any{
 			"backoffLimit": float64(1),
 			"completions":  float64(1),
 			"template": map[string]any{
-				"metadata": map[string]any{"creationTimestamp": nil},
+				"metadata": map[string]any{
+					"creationTimestamp": nil,
+					"labels": map[string]any{
+						"app":                        string("naisd-self-upgrader"),
+						"app.kubernetes.io/instance": string("naisd"),
+					},
+				},
 				"spec": map[string]any{
 					"containers": []any{
 						map[string]any{

@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/loadbalancer-iap
 source: https://github.com/nais/helm-charts/tree/main/charts/loadbalancer-iap
-version: 0.6.0
+version: 0.8.0
 description: "Ingress controller and loadbalancer with IAP support"
 environmentKinds:
   - "management"
@@ -27,3 +27,7 @@ config:
   ingress-nginx.controller.replicaCount:
     type: int
     displayName: "Replicas"
+mapping:
+  apiServerCIDR:
+    value: "{{ .Env.apiserver_endpoint }}/32"
+    displayName: "API server CIDR"

@@ -9,13 +9,13 @@ env:
   BUCKET: "fasit-features"
 
 jobs:
-  tests:
+  feature_tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3.3.0
-      - uses: actions/setup-go@v3
+      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
+      - uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753
         with:
-          go-version: ">=1.19.4"
+          go-version: ">=1.20.5"
       - uses: actions/cache@v3
         with:
           path: |
@@ -28,17 +28,17 @@ jobs:
 
   build_and_push_fasit:
     if: github.ref == 'refs/heads/main'
-    needs: [tests]
+    needs: [feature_tests]
     permissions:
       contents: "read"
       id-token: "write"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3.3.0
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
       - id: "auth"
         name: "Authenticate to Google Cloud"
-        uses: "google-github-actions/auth@v1.0.0"
+        uses: "google-github-actions/auth@v1.1.1"
         with:
           workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: "gh-fasit@nais-io.iam.gserviceaccount.com"

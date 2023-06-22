@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/aivenator
 source: https://github.com/nais/aivenator/tree/main/charts/aivenator
-version: 0.2.4
+version: 0.2.6
 description: "Kubernetes operator that provisions credentials for Aiven services"
 environmentKinds:
   - "tenant"
@@ -34,6 +34,8 @@ mapping:
       - "tenant"
   clusterName:
     value: "{{.Env.name}}"
+  tenant:
+    value: "{{.Tenant.Name}}"
   replicationConfig:
     template: "true"
     displayName: Enable ReplicationConfig
@@ -53,12 +55,15 @@ config:
     displayName: Additional Aiven VPC CIDRs
     ignoreKind:
       - "onprem"
-      - "tenant" # remove if we decide that tenants need an "infrastructure" project
   aiven.token:
     type: string
     secret: true
     description: An API-token with full access to the relevant projects
     displayName: Aiven API-token
+  aiven.serviceUserLimit:
+    type: int
+    description: The limit on the number of Service Users in the main project (set by Aiven)
+    displayName: Service User limit
   image.repository:
     type: string
   image.pullPolicy:

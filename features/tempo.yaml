@@ -1,31 +1,37 @@
-chart: tempo-distributed
-repo: https://grafana.github.io/helm-charts
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/tempo
+source: https://github.com/nais/helm-charts/tree/main/charts/tempo
 version: 1.0.0
-source: https://github.com/grafana/helm-charts/tree/main/charts/tempo-distributed
-description: "Grafana Tempo in MicroService mode"
+description: "Grafana Tempo for OTLP trace collection"
 environmentKinds:
   - "tenant"
+  - "legacy"
 dependsOn:
   - allOf:
     - "monitoring"
 mapping:
-  minio.enabled:
+  tempo-distributed.minio.enabled:
     template: "false"
-  tempo.securityContext.seccompProfile.type:
+  tempo-distributed.tempo.securityContext.seccompProfile.type:
     # Satisfy Kyverno policy
     value: "RuntimeDefault"
-  storage.trace.backend:
+  tempo-distributed.traces.otlp.http.enabled:
+    template: "true"
+  tempo-distributed.traces.otlp.grpc.enabled:
+    template: "true"
+  tempo-distributed.storage.trace.backend:
     # https://grafana.com/docs/tempo/latest/configuration/#storage
     value: "gcs"
-  storage.trace.gcs.bucket_name:
+  tempo-distributed.storage.trace.gcs.bucket_name:
     value: "{{.Env.tempo_bucket_traces}}"
-  serviceAccount.annotations.iam\.gke\.io/gcp-service-account:
+  tempo-distributed.serviceAccount.annotations.iam\.gke\.io/gcp-service-account:
     value: "{{.Env.tempo_service_account}}"
-  gateway.enabled:
+  tempo-distributed.gateway.enabled:
     template: "true"
-  gateway.ingress.enabled:
+  tempo-distributed.gateway.ingress.ingressClassName:
+    template: "nais-ingress"
+  tempo-distributed.gateway.ingress.enabled:
     template: "true"
-  gateway.ingress.hosts:
+  tempo-distributed.gateway.ingress.hosts:
     template: |
       - host: '{{ subdomain . "tempo" }}'
         paths:

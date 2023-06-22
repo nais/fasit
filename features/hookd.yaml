@@ -1,12 +1,12 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/hookd
 source: https://github.com/nais/helm-charts/tree/main/charts/hookd
-version: 0.1.2
+version: 0.1.5
 description: "Receives deploy instructions, verifies authenticity and sends to deployd in the desired cluster."
 environmentKinds:
   - "management"
 dependsOn:
   - allOf:
-      - "console"
+      - "teams"
 rolloutSource:
   - org: nais
     repo: deploy
@@ -91,3 +91,5 @@ config:
   backend.github.privateKeyPemBase64:
     type: string
     secret: true
+  backend.logLinkFormatter:
+    type: string

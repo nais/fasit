@@ -1,26 +1,40 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/logs
 source: https://github.com/nais/helm-charts/tree/main/charts/logs
-version: 0.2.0
+version: 1.2.11
+
 environmentKinds:
   - "tenant"
-timeout: 20m
+  - "legacy"
+timeout: 30m
 mapping:
   loki.loki.storage.bucketNames.chunks:
     displayName: "Loki chunks bucket"
-    value: 'loki-chunks-{{.Tenant.Name}}-{{.Env.name}}'
+    value: "loki-chunks-{{.Tenant.Name}}-{{.Env.name}}"
 
   loki.loki.storage.bucketNames.ruler:
     displayName: "Loki ruler bucket"
-    value: 'loki-ruler-{{.Tenant.Name}}-{{.Env.name}}'
+    value: "loki-ruler-{{.Tenant.Name}}-{{.Env.name}}"
 
   loki.loki.storage.bucketNames.admin:
     displayName: "Loki admin bucket"
-    value: 'loki-admin-{{.Tenant.Name}}-{{.Env.name}}'
+    value: "loki-admin-{{.Tenant.Name}}-{{.Env.name}}"
 
   loki.serviceAccount.annotations.iam\.gke\.io/gcp-service-account:
     displayName: "Loki KSA Workload Identity annotation"
-    value: 'loki-user@{{.Env.project_id}}.iam.gserviceaccount.com'
+    value: "loki-user@{{.Env.project_id}}.iam.gserviceaccount.com"
 
-  loki.gateway.service.loadBalancerIP:
-    displayName: "Loki load balancer IP"
-    value: '{{.Env.tenant_loki_ilb_ip}}'
+  loki.gateway.service.type:
+    value: "ClusterIP"
+
+  loki.gateway.enabled:
+    template: "true"
+  loki.gateway.ingress.ingressClassName:
+    template: "nais-ingress"
+  loki.gateway.ingress.enabled:
+    template: "true"
+  loki.gateway.ingress.hosts:
+    template: |
+      - host: '{{ subdomain . "loki" }}'
+        paths:
+          - path: "/"
+            pathType: "ImplementationSpecific"

@@ -1,0 +1,50 @@
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/mutilator
+source: https://github.com/nais/mutilator/tree/master/charts/mutilator
+version: 0.3.0
+description: A mutating admission controller for Kubernetes that will enforce certain fields in resources belonging to the Aiven Operator.
+environmentKinds:
+  - "tenant"
+  - "legacy"
+autoInstall:
+  - "tenant"
+  - "legacy"
+dependsOn:
+  - allOf:
+      - "aiven-operator"
+rolloutSource:
+  - org: nais
+    repo: mutilator
+config:
+  image.tag:
+    type: string
+    displayName: Image tag
+  otlp_endpoint:
+    type: string
+    displayName: OpenTelemetry endpoint
+  project_vpc_id:
+    type: string
+    description: Override mapped project vpc id. (<aiven project>/<uuid>)
+    ignoreKind:
+      - "tenant"
+  location:
+    type: string
+    description: Override cloud location. Ex. europe-north1
+    ignoreKind:
+      - "tenant"
+mapping:
+  project_vpc_id:
+    value: "{{ .Env.aiven_project_vpc_id }}"
+    displayName: Aiven VPC ID
+    ignoreKind:
+      - "legacy"
+  location:
+    value: "{{ .Env.location }}"
+    displayName: Cloud location
+    ignoreKind:
+      - "legacy"
+  tenant.environment:
+    value: '{{ if eq .Kind "legacy" }}{{ replace .Env.name "-gcp" "" }}{{ else }}{{ .Env.name }}{{ end }}'
+  tenant.name:
+    value: "{{ .Tenant.Name }}"
+  cluster_name:
+    value: "{{ .Env.name }}"

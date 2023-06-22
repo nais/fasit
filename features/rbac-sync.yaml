@@ -4,7 +4,6 @@ version: 1.0.0
 description: "Syncs team members from google groups to rolebindings"
 environmentKinds:
   - "onprem"
-  - "legacy"
 dependsOn:
   - allOf:
       - "nais-roles"

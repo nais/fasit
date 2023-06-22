@@ -1,0 +1,77 @@
+name: Build and deploy fasit-frontend
+on:
+  push:
+    branches-ignore: [dependabot/**]
+    paths:
+      - ".github/workflows/build_and_push_image_fasit-frontend.yaml"
+      - ".github/actions/helm_install/**"
+      - "frontend/**"
+      - "Dockerfile_fasit-frontend"
+  pull_request:
+    types: [opened, reopened, synchronize, edited]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: europe-north1-docker.pkg.dev/nais-io/nais/images
+  BASEIMG: "cgr.dev/chainguard/node:18"
+  BASEIMG_IDENTITY: "https://github.com/chainguard-images/images/.github/workflows/release.yaml@refs/heads/main"
+  BASEIMG_ISSUER: "https://token.actions.githubusercontent.com"
+
+jobs:
+  build_and_test_fasit-frontend:
+    permissions:
+      contents: "read"
+      id-token: "write"
+    outputs:
+      version: ${{ steps.build-push-sign.outputs.version }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout fasit
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
+      - name: Install cosign
+        uses: sigstore/cosign-installer@ef0e9691595ea19ec990a46b1a591dcafe568f34 # ratchet:sigstore/cosign-installer@main
+        with:
+          cosign-release: "v2.0.0"
+      - name: Verify baseimage
+        run: cosign verify --certificate-identity ${{ env.BASEIMG_IDENTITY }} --certificate-oidc-issuer ${{ env.BASEIMG_ISSUER }} ${{ env.BASEIMG }}
+      - uses: nais/platform-build-push-sign@main
+        id: build-push-sign
+        with:
+          dockerfile: Dockerfile_fasit-frontend
+          name: fasit-frontend
+          google_service_account: gh-fasit
+          workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
+          push: ${{ github.actor != 'dependabot[bot]' }}
+
+  deploy_fasit-frontend:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ["fasit-deploy"]
+    needs: ["build_and_test_fasit-frontend"]
+    permissions:
+      contents: "read"
+      id-token: "write"
+    steps:
+      - name: Checkout fasit
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
+      - id: "auth"
+        name: "Authenticate to Google Cloud"
+        uses: "google-github-actions/auth@v1.1.1"
+        with:
+          workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: "gh-fasit@nais-io.iam.gserviceaccount.com"
+          token_format: "access_token"
+      - name: Install prereqs
+        uses: ./.github/actions/helm_install
+      - name: Get credentials
+        shell: bash
+        run: |
+          gcloud container clusters get-credentials nais-io --project nais-io --region europe-north1
+      - name: deploy fasit-frontend
+        env:
+          VERSION: ${{ needs.build_and_test_fasit-frontend.outputs.version }}
+        shell: bash
+        run: |
+          helm upgrade fasit-frontend oci://europe-north1-docker.pkg.dev/nais-io/nais/fasit-frontend --install --wait --version 0.2.0 --set image.tag=${VERSION} --namespace nais-system

@@ -5,28 +5,28 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
+	cnrmbeta1 "github.com/GoogleCloudPlatform/k8s-config-connector/operator/pkg/apis/core/v1beta1"
+	"github.com/google/go-cmp/cmp"
+	"github.com/nais/fasit/pkg/message"
 	"github.com/sirupsen/logrus"
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/dynamic/dynamicinformer"
+	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
+	v1lister "k8s.io/client-go/listers/core/v1"
+	rbacv1lister "k8s.io/client-go/listers/rbac/v1"
 	"k8s.io/client-go/rest"
-
-	"github.com/nais/fasit/pkg/message"
+	"k8s.io/client-go/tools/cache"
 )
 
 var ErrDeleteRequiredNamespace = fmt.Errorf("namespace is required, cannot be deleted")
-
-var cnrmConfigGroupVersionResource = schema.GroupVersionResource{
-	Group:    "core.cnrm.cloud.google.com",
-	Version:  "v1beta1",
-	Resource: "configconnectorcontexts",
-}
 
 type ConsoleReceiver interface {
 	Name() string
@@ -41,9 +41,13 @@ type ConsoleManager struct {
 	projectID  string
 	log        *logrus.Entry
 	env        string
+	nsList     v1lister.NamespaceLister
+	saList     v1lister.ServiceAccountLister
+	rbList     rbacv1lister.RoleBindingLister
+	cnrmConfig cache.GenericLister
 }
 
-func NewConsoleManager(ConsoleSubscriber ConsoleReceiver, config *rest.Config, projectID string, envName string, log *logrus.Entry) (*ConsoleManager, error) {
+func NewConsoleManager(ctx context.Context, ConsoleSubscriber ConsoleReceiver, config *rest.Config, projectID string, envName string, log *logrus.Entry) (*ConsoleManager, error) {
 	kubeClient, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		return nil, fmt.Errorf("creating kubernetes client: %w", err)
@@ -52,6 +56,43 @@ func NewConsoleManager(ConsoleSubscriber ConsoleReceiver, config *rest.Config, p
 	if err != nil {
 		return nil, fmt.Errorf("creating dynamic client: %w", err)
 	}
+
+	return newConsoleManager(ctx, kubeClient, dyncClient, ConsoleSubscriber, config, projectID, envName, log)
+}
+
+func newConsoleManager(ctx context.Context,
+	kubeClient kubernetes.Interface,
+	dyncClient dynamic.Interface,
+	ConsoleSubscriber ConsoleReceiver,
+	config *rest.Config,
+	projectID string,
+	envName string,
+	log *logrus.Entry,
+) (*ConsoleManager, error) {
+	inf := informers.NewSharedInformerFactory(kubeClient, 4*time.Hour)
+	nsInf := inf.Core().V1().Namespaces()
+	saInf := inf.Core().V1().ServiceAccounts()
+	rbInf := inf.Rbac().V1().RoleBindings()
+	go nsInf.Informer().Run(ctx.Done())
+	go saInf.Informer().Run(ctx.Done())
+	go rbInf.Informer().Run(ctx.Done())
+
+	var cnrmLister cache.GenericLister
+	if !strings.HasSuffix(envName, "-fss") {
+		log.Info("Skipping setup of CNRM informer")
+		dynInf := dynamicinformer.NewDynamicSharedInformerFactory(dyncClient, 4*time.Hour)
+		cnrmInf := dynInf.ForResource(cnrmbeta1.GroupVersion.WithResource("configconnectorcontexts"))
+		go cnrmInf.Informer().Run(ctx.Done())
+		cnrmLister = cnrmInf.Lister()
+	}
+
+	// wait for caches to sync
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+	if !waitForCacheSync(ctx.Done(), nsInf.Informer().HasSynced, saInf.Informer().HasSynced, rbInf.Informer().HasSynced) {
+		log.Warn("failed to sync caches")
+	}
+
 	receiver := &ConsoleManager{
 		Consoles:   ConsoleSubscriber,
 		kubeClient: kubeClient,
@@ -59,6 +100,10 @@ func NewConsoleManager(ConsoleSubscriber ConsoleReceiver, config *rest.Config, p
 		log:        log,
 		projectID:  projectID,
 		env:        envName,
+		nsList:     nsInf.Lister(),
+		saList:     saInf.Lister(),
+		rbList:     rbInf.Lister(),
+		cnrmConfig: cnrmLister,
 	}
 
 	return receiver, nil
@@ -140,7 +185,7 @@ func (c *ConsoleManager) createNamespace(ctx context.Context, data message.Creat
 
 	metav1.SetMetaDataLabel(&ns.ObjectMeta, "team", data.Name)
 
-	existing, err := c.kubeClient.CoreV1().Namespaces().Get(ctx, data.Name, metav1.GetOptions{})
+	existing, err := c.nsList.Get(data.Name)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			_, err := c.kubeClient.CoreV1().Namespaces().Create(ctx, ns, metav1.CreateOptions{})
@@ -152,6 +197,8 @@ func (c *ConsoleManager) createNamespace(ctx context.Context, data message.Creat
 		}
 		return fmt.Errorf("getting namespace: %w", err)
 	}
+
+	existing = existing.DeepCopy()
 
 	// cases where we should update the namespace.
 	switch {
@@ -185,7 +232,7 @@ func (c *ConsoleManager) createServiceAccounts(ctx context.Context, data message
 		},
 	}
 
-	_, err := c.kubeClient.CoreV1().ServiceAccounts(svcAccount.GetNamespace()).Get(ctx, svcAccount.GetName(), metav1.GetOptions{})
+	_, err := c.saList.ServiceAccounts(svcAccount.GetNamespace()).Get(svcAccount.GetName())
 	if err != nil {
 		if errors.IsNotFound(err) {
 			_, err := c.kubeClient.CoreV1().ServiceAccounts(svcAccount.GetNamespace()).Create(ctx, &svcAccount, metav1.CreateOptions{})
@@ -262,7 +309,7 @@ func (c *ConsoleManager) createTeamRolebindings(ctx context.Context, data messag
 }
 
 func (c *ConsoleManager) createOrUpdateRoleBinding(ctx context.Context, roleBinding rbacv1.RoleBinding, log logrus.FieldLogger) error {
-	existing, err := c.kubeClient.RbacV1().RoleBindings(roleBinding.GetNamespace()).Get(ctx, roleBinding.GetName(), metav1.GetOptions{})
+	existing, err := c.rbList.RoleBindings(roleBinding.GetNamespace()).Get(roleBinding.GetName())
 	if err != nil {
 		if errors.IsNotFound(err) {
 			_, err := c.kubeClient.RbacV1().RoleBindings(roleBinding.GetNamespace()).Create(ctx, &roleBinding, metav1.CreateOptions{})
@@ -278,6 +325,14 @@ func (c *ConsoleManager) createOrUpdateRoleBinding(ctx context.Context, roleBind
 		}
 	} else {
 		roleBinding.ObjectMeta = existing.ObjectMeta
+
+		if cmp.Equal(roleBinding.RoleRef, existing.RoleRef) && cmp.Equal(roleBinding.Subjects, existing.Subjects) {
+			log.WithFields(logrus.Fields{
+				"name": roleBinding.GetName(),
+				"ns":   roleBinding.GetNamespace(),
+			}).Debug("no changes to role binding")
+			return nil
+		}
 		_, err := c.kubeClient.RbacV1().RoleBindings(roleBinding.GetNamespace()).Update(ctx, &roleBinding, metav1.UpdateOptions{})
 		if err != nil {
 			return fmt.Errorf("update role binding: %w", err)
@@ -294,7 +349,7 @@ func (c *ConsoleManager) deleteNamespace(ctx context.Context, msg message.Consol
 	data := message.DeleteNamespace{}
 	err := json.Unmarshal(msg.Data, &data)
 	if err != nil {
-		return fmt.Errorf("unmarshal create namespace: %w", err)
+		return fmt.Errorf("unmarshal delete namespace: %w", err)
 	}
 
 	switch data.Name {
@@ -322,11 +377,12 @@ func (c *ConsoleManager) createCNRMConfig(ctx context.Context, data message.Crea
 		c.log.Info("Skipping CNRM config for FSS")
 		return nil
 	}
-	cnrmClient := c.dynClient.Resource(cnrmConfigGroupVersionResource).Namespace(data.Name)
+	cnrmClient := c.dynClient.Resource(cnrmbeta1.GroupVersion.WithResource("configconnectorcontexts")).Namespace(data.Name)
 
 	const contextName = "configconnectorcontext.core.cnrm.cloud.google.com"
 
-	res, err := cnrmClient.Get(ctx, contextName, metav1.GetOptions{})
+	// res, err := cnrmClient.Get(ctx, contextName, metav1.GetOptions{})
+	res, err := c.cnrmConfig.ByNamespace(data.Name).Get(contextName)
 	if err != nil {
 		if !errors.IsNotFound(err) {
 			return fmt.Errorf("getting config connector context: %w", err)
@@ -349,10 +405,54 @@ func (c *ConsoleManager) createCNRMConfig(ctx context.Context, data message.Crea
 		return nil
 	}
 
-	res.Object["spec"] = map[string]any{
+	obj := res.DeepCopyObject().(*unstructured.Unstructured)
+
+	// Check if we need to update the CNRM email
+	if spec, ok := obj.Object["spec"]; ok {
+		if specMap, ok := spec.(map[string]any); ok {
+			if specMap["googleServiceAccount"] == data.CNRMEmail {
+				return nil
+			}
+		}
+	}
+	obj.Object["spec"] = map[string]any{
 		"googleServiceAccount": data.CNRMEmail,
 	}
 
-	_, err = cnrmClient.Update(ctx, res, metav1.UpdateOptions{})
+	_, err = cnrmClient.Update(ctx, obj, metav1.UpdateOptions{})
 	return err
+}
+
+func waitForCacheSync(stop <-chan struct{}, cacheSyncs ...cache.InformerSynced) bool {
+	max := time.Millisecond * 100
+	delay := time.Millisecond
+	f := func() bool {
+		for _, syncFunc := range cacheSyncs {
+			if !syncFunc() {
+				return false
+			}
+		}
+		return true
+	}
+	for {
+		select {
+		case <-stop:
+			return false
+		default:
+		}
+		res := f()
+		if res {
+			return true
+		}
+		delay *= 2
+		if delay > max {
+			delay = max
+		}
+
+		select {
+		case <-stop:
+			return false
+		case <-time.After(delay):
+		}
+	}
 }

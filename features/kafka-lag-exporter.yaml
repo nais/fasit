@@ -1,14 +1,16 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/kafka-lag-exporter
 source: https://github.com/nais/helm-charts/tree/main/charts/kafka-lag-exporter
 version: 0.4.7
+description: Kafka Lag Exporter exposes consumer offset metrics and is used by teams to track consumer lag for Aiven Kafka clusters
 environmentKinds:
   - "tenant"
-  - "onprem"
   - "legacy"
-  - "management"
 dependsOn:
   - allOf:
       - "aivenator"
+autoInstall:
+  - tenant
+  - legacy
 mapping:
   kafka-lag-exporter.clusters:
     template: |

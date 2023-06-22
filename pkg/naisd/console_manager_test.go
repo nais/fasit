@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
+	cnrmbeta1 "github.com/GoogleCloudPlatform/k8s-config-connector/operator/pkg/apis/core/v1beta1"
 	"github.com/google/go-cmp/cmp"
 	"github.com/nais/fasit/pkg/message"
 	"github.com/sirupsen/logrus"
@@ -64,16 +66,19 @@ func TestConsoleManager_handler(t *testing.T) {
 	ctx := context.Background()
 
 	cs := fake.NewSimpleClientset()
-	dynClient := dynFake.NewSimpleDynamicClient(&runtime.Scheme{})
-	m := &ConsoleManager{
-		kubeClient: cs,
-		dynClient:  dynClient,
-		log:        logrus.NewEntry(logrus.New()),
-		projectID:  "test-project",
+
+	scheme := runtime.NewScheme()
+	cnrmbeta1.AddToScheme(scheme)
+	dynClient := dynFake.NewSimpleDynamicClient(scheme)
+
+	m, err := newConsoleManager(ctx, cs, dynClient, nil, nil, "test-proj", "test", logrus.NewEntry(logrus.New()))
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			time.Sleep(1 * time.Millisecond)
 			gotErr := m.handler(ctx, message.Console{
 				Type: tt.typ,
 				Data: []byte(tt.data),
@@ -97,7 +102,7 @@ func TestConsoleManager_handler(t *testing.T) {
 
 			// check slackAlertsChannel annotation
 			for _, n := range namespaces.Items {
-				c, _ := n.Annotations["replicator.nais.io/slackAlertsChannel"]
+				c := n.Annotations["replicator.nais.io/slackAlertsChannel"]
 				if c != "#test-alerts" {
 					t.Errorf("namespace annotation %q has unexpected value, expected: %q got: %q", "replicator.nais.io/slackAlertsChannel", "#test-alerts", c)
 				}
@@ -117,7 +122,7 @@ func TestConsoleManager_handler(t *testing.T) {
 
 			// Check cnrm config
 			for _, namespace := range tt.expectedNamespaces {
-				cc, err := dynClient.Resource(cnrmConfigGroupVersionResource).Namespace(namespace).Get(ctx, "configconnectorcontext.core.cnrm.cloud.google.com", metav1.GetOptions{})
+				cc, err := dynClient.Resource(cnrmbeta1.GroupVersion.WithResource("configconnectorcontexts")).Namespace(namespace).Get(ctx, "configconnectorcontext.core.cnrm.cloud.google.com", metav1.GetOptions{})
 				if err != nil {
 					t.Errorf("error getting cnrm context = %v, wantErr %v", err, tt.wantErr)
 				}

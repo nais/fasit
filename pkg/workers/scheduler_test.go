@@ -2,6 +2,7 @@ package workers
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -28,19 +29,28 @@ func TestScheduler(t *testing.T) {
 
 	<-ctx.Done()
 
-	if tw1.runs != 2 {
-		t.Errorf("expected test worker to run twice, but ran %v times", tw1.runs)
+	if tw1.NumRuns() != 2 {
+		t.Errorf("expected test worker to run twice, but ran %v times", tw1.NumRuns())
 	}
-	if tw2.runs != 1 {
-		t.Errorf("expected test worker to run once, but ran %v times", tw2.runs)
+	if tw2.NumRuns() != 1 {
+		t.Errorf("expected test worker to run once, but ran %v times", tw2.NumRuns())
 	}
 }
 
 type testWorker struct {
+	sync.Mutex
 	runs int
 }
 
 func (t *testWorker) Run(ctx context.Context) error {
+	t.Lock()
+	defer t.Unlock()
 	t.runs++
 	return nil
+}
+
+func (t *testWorker) NumRuns() int {
+	t.Lock()
+	defer t.Unlock()
+	return t.runs
 }

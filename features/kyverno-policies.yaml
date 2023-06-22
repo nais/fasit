@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/kyverno-policies
 source: https://github.com/nais/helm-charts/tree/main/charts/kyverno-policies
-version: 1.0.0
+version: 1.4.1
 description: "Sane cluster defaults - should be on in all clusters"
 environmentKinds:
   - "tenant"
@@ -27,10 +27,19 @@ config:
     description: "Run Kyverno policies in background"
     displayName: "Background"
 
+  customPolicies.verifySignedImage.enabled:
+    type: string
+    description: "Verify that images are signed"
+    displayName: "Verify that images are signed"
+    ignoreKind:
+      - "management"
+      - "onprem"
+      - "legacy"
+
 mapping:
   customPolicies.denyImageRegistries.extraArgs:
     template: |
-      - "europe-north1-docker.pkg.dev/{{ .Management.project_id }}/nais-repository/*"
+      - "europe-north1-docker.pkg.dev/{{ .Management.project_id }}/*"
     description: "A default list of additional registries to allow"
     displayName: "Additional registries allowed"
     ignoreKind:
@@ -100,6 +109,11 @@ mapping:
       - "management"
       - "onprem"
 
+  customPolicies.ephemeralContainer.enabled:
+    value: "true"
+    description: "Enable ephemeral-container validation policy"
+    displayName: "Validate ephemeral containers"
+
   kyverno-policies.background:
     value: "false"
     description: "Run Kyverno policies in background"
@@ -130,3 +144,6 @@ mapping:
       - "tenant"
       - "management"
       - "onprem"
+  networkPolicy.enabled:
+    template: '{{ne .Kind "onprem"}}'
+    description: "Enable network policy"

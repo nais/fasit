@@ -1,7 +1,6 @@
-chart: cert-manager
-source: https://github.com/cert-manager/cert-manager
-version: v1.10.0
-repo: https://charts.jetstack.io
+chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/cert-manager
+source: https://github.com/nais/helm-charts/tree/main/charts/cert-manager
+version: 1.10.2
 environmentKinds:
   - "tenant"
   - "management"
@@ -12,11 +11,17 @@ autoInstall:
   - "management"
 timeout: 30m
 mapping:
-  serviceAccount.annotations.iam\.gke\.io/gcp-service-account:
+  apiServerCIDR:
+    value: "{{ .Env.apiserver_endpoint }}/32"
+    displayName: "API server cidr"
+    ignoreKind:
+      - "onprem"
+  cert-manager.serviceAccount.annotations.iam\.gke\.io/gcp-service-account:
     value: "{{ .Env.acme_service_account }}"
     displayName: "GCP service account"
     ignoreKind:
       - "onprem"
+<<<<<<< HEAD
   installCRDs:
     template: "true"
   global.leaderElection.namespace:
@@ -64,3 +69,5 @@ mapping:
     template: |
       - ALL
     description: Capabilities
+=======
+>>>>>>> main

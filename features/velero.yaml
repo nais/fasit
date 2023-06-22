@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/velero
 source: https://github.com/nais/helm-charts/tree/main/charts/velero
-version: 0.6.1
+version: 0.6.2
 description: "Velero backup service"
 environmentKinds:
   - "management"
@@ -65,6 +65,9 @@ mapping:
   cluster:
     value: "{{ .Env.name }}"
     displayName: "Cluster name"
+  apiServerIP:
+    value: "{{ .Env.apiserver_endpoint }}/32"
+    displayName: "API server cidr"
   velero.extraVolumeMounts:
     template: |
       - mountPath: /etc/ssl/certs/ca-certificates.crt

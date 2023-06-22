@@ -1,6 +1,7 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/azurerator
 source: https://github.com/nais/azurerator/tree/master/charts
-version: 0.4.2
+version: 0.4.3
+description: "Operator that reconciles Azure AD applications. Should not be used by NAV"
 environmentKinds:
   - "tenant"
 dependsOn:

@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/aiven-poke
 source: https://github.com/nais/aiven-poke
-version: 0.4.3
+version: 0.4.4
 description: Poke teams about Aiven related issues (NAV only).
 environmentKinds:
   - "legacy"
@@ -28,6 +28,8 @@ config:
   image.tag:
     type: string
   image.pullPolicy:
+    type: string
+  image.repository:
     type: string
   schedule:
     type: string

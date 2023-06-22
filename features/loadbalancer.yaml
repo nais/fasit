@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/loadbalancer
 source: https://github.com/nais/helm-charts/tree/main/charts/loadbalancer
-version: 0.6.0
+version: 0.8.0
 description: "External loadbalancer and ingress controller"
 timeout: 15m
 environmentKinds:
@@ -13,6 +13,7 @@ autoInstall:
 dependsOn:
   - allOf:
       - "certificates"
+      - "monitoring"
 config:
   certificates:
     type: string_array
@@ -29,3 +30,7 @@ config:
   ingress-nginx.controller.metrics.serviceMonitor.enabled:
     type: bool
     displayName: "Enable service monitor"
+mapping:
+  apiServerCIDR:
+    value: "{{ .Env.apiserver_endpoint }}/32"
+    displayName: "API server CIDR"

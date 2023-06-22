@@ -8,7 +8,7 @@ dependsOn:
   - allOf:
       - "loadbalancer-iap"
       - "monitoring-management"
-      - "console"
+      - "teams"
 rolloutSource:
   - org: nais
     repo: dashboard

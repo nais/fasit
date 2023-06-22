@@ -1,6 +1,6 @@
 chart: kyverno
 repo: https://kyverno.github.io/kyverno/
-version: v2.7.0
+version: v2.7.5
 source: https://github.com/kyverno/kyverno/tree/main/charts/kyverno
 description: "Policy engine for Kubernetes"
 environmentKinds:
@@ -35,6 +35,20 @@ config:
     displayName: "CPU request"
     description: "CPU request for kyverno pod."
 mapping:
+  admissionController.networkPolicy.enabled:
+    template: '{{ if eq .Kind "onprem" }}false{{ else }}true{{ end }}'
+    displayName: "Enable network policy"
+    description: "Enable network policy for admission webhook"
+  admissionController.networkPolicy.ingressFrom:
+    template: |
+        - ipBlock:
+            cidr: "{{ .Env.apiserver_endpoint }}/32"
+        - namespaceSelector: "{}"
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+    displayName: "Ingress from"
+    description: "Allow access from the Kubernetes API server"
   webhooksCleanup.enabled:
     displayName: "Enable webhook cleanup"
     value: "true"
@@ -44,18 +58,13 @@ mapping:
     ignoreKind:
       - management
       - tenant
-  podAnnotations.prometheus\.io/scrape:
-    value: "true"
-    displayName: "Prometheus scrape"
-    ignoreKind:
-      - management
-      - tenant
-  podAnnotations.prometheus\.io/port:
-    value: "8000"
-    displayName: "Prometheus port"
-    ignoreKind:
-      - management
-      - tenant
+  serviceMonitor.enabled:
+    template: "true"
+    displayName: "Enable service monitor"
+  serviceMonitor.additionalLabels:
+    template: |
+      nais.io/prometheus: nais
+    displayName: "Additional labels"
   replicaCount:
     template: "3"
     displayName: "Replicas"
@@ -70,16 +79,13 @@ mapping:
     displayName: "CPU request"
   excludeKyvernoNamespace:
     template: "false"
+    displayName: "Exclude Kyverno namespace"
   extraArgs:
     template: |
       - --backgroundScanInterval=3h
-      - --clientRateLimitQPS=150
+      - --clientRateLimitQPS=300
       - --clientRateLimitBurst=300
-  serviceMonitor.enabled:
-    template: "true"
-    ignoreKind:
-      - "onprem"
-      - "legacy"
+    displayName: "Extra args"
   config.webhooks:
     # exclude namespaces
     template: |
@@ -95,6 +101,7 @@ mapping:
               {{ if eq .Kind "onprem" }}- kube-flannel{{ end }}
               {{ if ne .Kind "onprem" }}- cnrm-system{{ end }}
               {{ if ne .Kind "onprem" }}- configconnector-operator-system{{ end }}
+    displayName: "Webhook namespaces"
   config.resourceFilters:
     displayName: Resource filters
     template: |
@@ -111,8 +118,10 @@ mapping:
       - "[SelfSubjectAccessReview,*,*]"
       - "[Binding,*,*]"
       - "[ReplicaSet,*,*]"
-      - "[ReportChangeRequest,*,*]"
-      - "[ClusterReportChangeRequest,*,*]"
+      - "AdmissionReport,*,*"
+      - "[ClusterAdmissionReport,*,*]"
+      - "[BackgroundScanReport,*,*]"
+      - "[ClusterBackgroundScanReport,*,*]]"
       # exclude resources from the chart
       - '[ClusterRole,*,{{ "{{" }} template "kyverno.fullname" . {{ "}}" }}:*]'
       - '[ClusterRoleBinding,*,{{ "{{" }} template "kyverno.fullname" . {{ "}}" }}:*]'

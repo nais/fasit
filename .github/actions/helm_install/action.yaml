@@ -1,34 +1,37 @@
 name: "Install prereqs"
-description: "install kubectl/helm"
+description: "install gcloud/helm"
 
 runs:
   using: composite
   steps:
-    - name: install gke-gcloud-auth-plugin
+    - name: install gcloud auth plugin
       shell: bash
-      run: sudo apt-get install -y google-cloud-sdk-gke-gcloud-auth-plugin
+      run: |
+        echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
+        curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key --keyring /usr/share/keyrings/cloud.google.gpg add -
+        sudo apt-get update && sudo apt-get install -y google-cloud-sdk-gke-gcloud-auth-plugin
     - name: install kubectl
       shell: bash
       env:
-        KUBECTL_VERSION: "v1.21.9"
+        KUBECTL_VERSION: "v1.24.10"
       run: |
         kubectl version --client=true -o json | grep -q "$KUBECTL_VERSION" && exit 0
         set +e
         for i in 1 2 3; do
-          echo "attempt $i"
-          ls -la /usr/local/bin/kubectl
-          kubectl version --client=true
-          sleep 1
-          k=$(mktemp)
-          curl -L "https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" -o "$k"
-          sudo cp "$k" "/usr/local/bin/kubectl" || continue
-          sudo chmod +x "/usr/local/bin/kubectl" && break
+        echo "attempt $i"
+        ls -la /usr/local/bin/kubectl
+        kubectl version --client=true
+        sleep 1
+        k=$(mktemp)
+        curl -L "https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl" -o "$k"
+        sudo cp "$k" "/usr/local/bin/kubectl" || continue
+        sudo chmod +x "/usr/local/bin/kubectl" && break
         done
         set -e
     - name: test kubectl
       shell: bash
       run: |
-        kubectl version --client=true
+          kubectl version --client=true
     - name: install helm
       shell: bash
       run: |

@@ -11,7 +11,7 @@ import (
 	"github.com/nais/fasit/pkg/message"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/mock"
-	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/metric/noop"
 )
 
 var atTime = time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC)
@@ -228,7 +228,7 @@ func TestReconcile(t *testing.T) {
 				return &mockPublisher{projectID: projectID, topicID: topicID, messages: &messages}
 			}
 
-			reconciler, err := NewReconciler(repo, publisher, "root-project", metric.NewNoopMeter(), logrus.NewEntry(logrus.StandardLogger()))
+			reconciler, err := NewReconciler(repo, publisher, "root-project", noop.NewMeterProvider().Meter(""), logrus.NewEntry(logrus.StandardLogger()))
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -1,7 +1,9 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/azurerator-nav
 source: https://github.com/nais/helm-charts/tree/main/charts/azurerator-nav
-version: 0.1.2
+version: 0.1.3
+description: "NAV-specific setup of Azurerator; operator that reconciles Azure AD applications"
 environmentKinds:
+  - "tenant"
   - "onprem"
   - "legacy"
 dependsOn:
@@ -10,6 +12,7 @@ dependsOn:
       - "aivenator"
       - "naiserator"
       - "reloader"
+      - "replicator"
 config:
   azurerator.azure.clientSecret:
     type: string
@@ -21,6 +24,13 @@ config:
     required: true
     secret: true
     displayName: "Client secret (dev)"
+  global.clusterName:
+    type: string
+    displayName: "Cluster name"
+    description: "Override for equivalent mapping value"
+    ignoreKind:
+      - "onprem"
+      - "legacy"
   global.image.tag:
     type: string
     displayName: "Image tag"
@@ -30,14 +40,14 @@ config:
 
 mapping:
   azurerator.controller.tenantNameStrictMatching:
-    template: '{{ if or (eq "prod-fss" .Env.name) (eq "prod-gcp" .Env.name) }}false{{ else }}true{{ end }}'
+    template: '{{ if or (eq "prod-fss" .Env.name) (eq "prod-gcp" .Env.name) (eq "prod" .Env.name) }}false{{ else }}true{{ end }}'
     displayName: "Strict resource matching"
     description: "If false, will process any resources that have not explicitly declared azure.tenant.name."
   azurerator-dev.enabled:
-    template: '{{ if or (eq "prod-fss" .Env.name) (eq "prod-gcp" .Env.name) }}false{{ else }}true{{ end }}'
+    template: '{{ if or (eq "prod-fss" .Env.name) (eq "prod-gcp" .Env.name) (eq "prod" .Env.name) }}false{{ else }}true{{ end }}'
     displayName: "Enable azurerator-dev"
   azurerator-dev.controller.tenantNameStrictMatching:
-    template: '{{ if or (eq "dev-fss" .Env.name) (eq "dev-gcp" .Env.name) }}false{{ else }}true{{ end }}'
+    template: '{{ if or (eq "dev-fss" .Env.name) (eq "dev-gcp" .Env.name) (eq "dev" .Env.name) }}false{{ else }}true{{ end }}'
     displayName: "Strict resource matching (dev)"
     description: "If false, will process any resources that have not explicitly declared azure.tenant.name."
   global.clusterName:

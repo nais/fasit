@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring-management
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring-management
-version: 2.5.0
+version: 2.8.7
 description: "Tenant monitoring services in management cluster (grafana, ...)"
 environmentKinds:
   - "management"
@@ -8,8 +8,12 @@ dependsOn:
   - allOf:
       - "loadbalancer-iap"
       - "monitoring"
+      - "nais-probes"
 timeout: 20m
 config:
+  alerts.probes.ignoreClusters:
+    type: string_array
+    displayName: Ignore probe alerts on clusters
   grafana.grafana\.ini.auth\.jwt.expect_claims:
     type: string
     displayName: Grafana JWT claims
@@ -38,14 +42,28 @@ mapping:
             implementation: prometheus
           url: https://alertmanager.{{ $cluster.name }}.{{ $root.Tenant.Name }}.cloud.nais.io
           access: proxy
-        {{- if eq $cluster.kind "tenant" }}
+        {{- if or (eq $cluster.kind "tenant") (eq $cluster.kind "legacy") }}
         - name: {{ $cluster.name }}-loki
           type: loki
           url: https://loki.{{ $cluster.name }}.{{ $root.Tenant.Name }}.cloud.nais.io
           access: proxy
+        - name: {{ $cluster.name }}-tempo
+          type: tempo
+          url: https://tempo.{{ $cluster.name }}.{{ $root.Tenant.Name }}.cloud.nais.io
+          access: proxy
+          # Additional tempo configuration as per https://grafana.com/docs/grafana/latest/datasources  /tempo/
+          jsonData:
+            httpMethod: GET
+            serviceMap:
+              dataSourceUid: {{ $cluster.name }}
+            lokiSearch:
+              dataSourceUid: {{ $cluster.name }}-loki
+            tracesToLogs:
+              datasourceUid: {{ $cluster.name }}-loki
+
         {{- end }}
+       {{ end }}
       {{ end }}
-      {{end}}
   grafana.server.domain:
     value: "{{.Tenant.Name}}.cloud.nais.io"
   grafana.server.root_url:

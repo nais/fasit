@@ -1,7 +1,7 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/wonderwall
 source: https://github.com/nais/helm-charts/tree/main/charts/wonderwall
-version: 0.1.1
-description: "Configuration for Wonderwall; a reverse proxy sidecar implementing OIDC auth. Depends on feature toggle in naiserator."
+version: 0.4.0
+description: "Reverse proxy with OIDC auth. Configuration for sidecar proxies and SSO server. Feature toggle in naiserator must be enabled for sidecars to be injected to Applications."
 environmentKinds:
   - "tenant"
   - "legacy"
@@ -10,17 +10,42 @@ dependsOn:
     - "replicator"
     - "naiserator"
     - "fqdn-policy"
-    #- "azurerator-nav" - TODO: not enabled in legacy yet
-    #- "digdirator" - TODO: not enabled in legacy yet
+    - "wonderwall-idporten"
 config:
-  idporten.postLogoutRedirectURL:
-    type: string
-  loginstatus.cookieDomain:
+  image.tag:
     type: string
     required: true
-  loginstatus.tokenURL:
+  idporten.openidPostLogoutRedirectURL:
     type: string
     required: true
+    description: Where to redirect the user after global logout.
+  idporten.replicasMax:
+    type: int
+    description: Maximum replicas for SSO server.
+  idporten.replicasMin:
+    type: int
+    description: Minimum replicas for SSO server.
+  idporten.sessionCookieName:
+    type: string
+    required: true
+    description: Cookie name for SSO sessions.
+  idporten.sessionCookieEncryptionKey:
+    type: string
+    required: true
+    secret: true
+    description: Cookie encryption key, 256 bits encoded with standard base64.
+  idporten.ssoDefaultRedirectURL:
+    type: string
+    required: true
+    description: Fallback URL for invalid SSO redirects.
+  idporten.ssoDomain:
+    type: string
+    required: true
+    description: Allowed domain for SSO (for cookies, CORS and redirect URL validation).
+  idporten.ssoServerHost:
+    type: string
+    required: true
+    description: Host for SSO server.
   networkPolicy.enabled:
     type: bool
   redis.host:

@@ -26,7 +26,7 @@ import (
 	"github.com/nais/fasit/pkg/rollout"
 	"github.com/nais/fasit/pkg/workers"
 	"github.com/sirupsen/logrus"
-	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/metric/noop"
 )
 
 const (
@@ -80,7 +80,7 @@ func TestRunner(t *testing.T) {
 				}
 				return p
 			}
-			reconciler, err := workers.NewReconciler(db, cp, "", metric.NewNoopMeter(), logrus.NewEntry(log))
+			reconciler, err := workers.NewReconciler(db, cp, "", noop.NewMeterProvider().Meter(""), logrus.NewEntry(log))
 			if err != nil {
 				return nil, nil, opts, err
 			}

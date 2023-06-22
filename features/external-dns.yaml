@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/external-dns
 source: https://github.com/nais/helm-charts/tree/main/charts/external-dns
-version: 1.12.0
+version: 1.13.0
 description: "External DNS"
 environmentKinds:
   - "onprem"

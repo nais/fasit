@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/nais-roles
 source: https://github.com/nais/helm-charts/tree/main/charts/nais-roles
-version: 0.2.0
+version: 0.3.3
 description: "Base nais roles"
 environmentKinds:
   - "tenant"
@@ -8,3 +8,7 @@ environmentKinds:
   - "legacy"
 autoInstall:
   - "tenant"
+config:
+  enable_deployer:
+    type: bool
+    displayName: Enable the nais:deployer role

@@ -1,21 +1,24 @@
-FROM node:18-alpine AS node-with-deps
+FROM node:20-alpine AS builder
 
-WORKDIR /usr/app
+WORKDIR /usr/src/app
 
-COPY frontend/package*.json .
+COPY ./frontend .
 
 # Revert this once react-tag-autocomplete supports React 18
 RUN npm install --legacy-peer-deps --quiet
-#RUN npm install --quiet
+RUN npm run build
 
-FROM node-with-deps
-
-COPY frontend .
+FROM cgr.dev/chainguard/node:18
 
 ENV NODE_ENV production
 ENV NEXT_PUBLIC_ENV production
 ENV NEXT_PUBLIC_BACKEND http://fasit/api
 
-RUN npm run build
+WORKDIR /app
+COPY --from=builder --chown=node:node /usr/src/app/.next/standalone ./
+COPY --from=builder --chown=node:node /usr/src/app/public ./public/
+COPY --from=builder --chown=node:node /usr/src/app/.next/static ./.next/static
 
-CMD npm run start
+EXPOSE 3000
+
+CMD ["server.js"]

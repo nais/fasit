@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/monitoring
 source: https://github.com/nais/helm-charts/tree/main/charts/monitoring
-version: 1.45.6
+version: 1.62.4
 description: "Monitoring stack for nais"
 environmentKinds:
   - "tenant"
@@ -12,6 +12,15 @@ autoInstall:
   - "management"
 timeout: 20m
 config:
+  alerts.naisVakt.ping:
+    type: bool
+    displayName: "Enable nais-vakt pinging on alerts"
+  alerts.naisVakt.smsNumber:
+    type: string
+    displayName: "SMS number for nais-vakt alerts"
+  alerts.iconUrl:
+    type: string
+    displayName: "Slack alerts icon url"
   alerts.proxy:
     type: string
     displayName: "Alerts proxy URL"
@@ -82,6 +91,10 @@ config:
     type: string
     displayName: Nais prometheus cpu request
 mapping:
+  clusterKind:
+    value: "{{.Kind}}"
+  apiserverEndpoint:
+    value: "{{ .Env.apiserver_endpoint }}"
   tenantCluster:
     template: "false"
     ignoreKind:
@@ -178,7 +191,100 @@ mapping:
     template: |
       - url: "https://storage.googleapis.com/io-nais-aiven-prometheus-scrapeconfigs/{{ .Env.aiven_project }}.kafka.json"
     displayName: "Aiven Kafka prometheus sd url"
+  additionalScrapeConfigs.aivenOpenSearch.enabled:
+    template: "{{ if .Env.aiven_prometheus_username }}true{{ else }}false{{ end }}"
+    displayName: "Aiven OpenSearch scraping enabled"
+  additionalScrapeConfigs.aivenOpenSearch.scrapeConfig.basic_auth.username:
+    value: "{{ .Env.aiven_prometheus_username }}"
+    displayName: "Aiven OpenSearch prometheus username"
+  additionalScrapeConfigs.aivenOpenSearch.scrapeConfig.basic_auth.password:
+    value: "{{ .Env.aiven_prometheus_password }}"
+    displayName: "Aiven OpenSearch prometheus password"
+  additionalScrapeConfigs.aivenOpenSearch.scrapeConfig.http_sd_configs:
+    template: |
+      - url: "https://storage.googleapis.com/io-nais-aiven-prometheus-scrapeconfigs/{{ .Env.aiven_project }}.opensearch.json"
+    displayName: "Aiven OpenSearch prometheus sd url"
   kube-prometheus-stack.nodeExporter.enabled:
+    template: "true"
+    ignoreKind:
+      - tenant
+      - legacy
+      - management
+  kube-prometheus-stack.kube-state-metrics.networkPolicy.egress:
+    template: |
+      - to:
+          - ipBlock:
+              cidr: {{ .Env.apiserver_endpoint }}/32
+        ports:
+          - port: 443
+            protocol: TCP
+  kube-prometheus-stack.prometheusOperator.networkPolicy.enabled:
+    template: "false"
+    ignoreKind:
+      - tenant
+      - legacy
+      - management
+  prometheus-pushgateway.networkPolicy:
+    template: "null"
+    ignoreKind:
+      - tenant
+      - legacy
+      - management
+  kube-prometheus-stack.kube-state-metrics.networkPolicy.enabled:
+    template: "false"
+    ignoreKind:
+      - tenant
+      - legacy
+      - management
+  kube-prometheus-stack.defaultRules.rules.kubeControllerManager:
+    template: "true"
+    ignoreKind:
+      - tenant
+      - legacy
+      - management
+  kube-prometheus-stack.defaultRules.rules.kubelet:
+    template: "true"
+    ignoreKind:
+      - tenant
+      - legacy
+      - management
+  kube-prometheus-stack.defaultRules.rules.kubernetesSystem:
+    template: "true"
+    ignoreKind:
+      - tenant
+      - legacy
+      - management
+  kube-prometheus-stack.defaultRules.rules.kubeSchedulerAlerting:
+    template: "true"
+    ignoreKind:
+      - tenant
+      - legacy
+      - management
+  kube-prometheus-stack.defaultRules.rules.network:
+    template: "true"
+    ignoreKind:
+      - tenant
+      - legacy
+      - management
+  kube-prometheus-stack.defaultRules.rules.nodeExporterAlerting:
+    template: "true"
+    ignoreKind:
+      - tenant
+      - legacy
+      - management
+  kube-prometheus-stack.kubeApiServer.enabled:
+    template: "true"
+    ignoreKind:
+      - tenant
+      - legacy
+      - management
+  kube-prometheus-stack.kubeControllerManager.enabled:
+    template: "true"
+    ignoreKind:
+      - tenant
+      - legacy
+      - management
+  kube-prometheus-stack.kubeScheduler.enabled:
     template: "true"
     ignoreKind:
       - tenant
