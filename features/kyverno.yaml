@@ -1,5 +1,5 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/kyverno
-version: 1.0.3
+version: 1.0.4
 source: https://github.com/nais/helm-charts/tree/main/charts/kyverno
 description: "Policy engine for Kubernetes"
 environmentKinds:
@@ -33,6 +33,12 @@ config:
     type: string
     displayName: "CPU request"
     description: "CPU request for kyverno pod."
+
+  kyverno.reportsController.resouces.limits.memory:
+    type: string
+    displayName: "Reporter Memory limit"
+    description: "Memory limit for kyverno reports pod."
+
 mapping:
   kyverno.config.webhooks:
     # exclude namespaces
