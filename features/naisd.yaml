@@ -29,7 +29,7 @@ mapping:
     template: '{{ eq .Kind "onprem" }}'
   google.serviceAccountKey:
     displayName: "Use service account key?"
-    value: "{{ .Env.naisd_key }}"
+    template: "{{ .Env.naisd_key | quote }}"
   no_proxy:
     displayName: "No proxy"
     value: "10.254.0.1"
