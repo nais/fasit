@@ -17,24 +17,24 @@ dependsOn:
       - "monitoring"
 timeout: 20m
 config:
-  admissionController.replicas:
+  kyverno.admissionController.replicas:
     type: int
     displayName: "Replicas"
     description: "Number of replicas, min 3 for HA."
-  admissionController.container.resouces.limits.memory:
+  kyverno.admissionController.container.resouces.limits.memory:
     type: string
     displayName: "Memory limit"
     description: "Memory limit for kyverno pod."
-  admissionController.container.resouces.requests.memory:
+  kyverno.admissionController.container.resouces.requests.memory:
     type: string
     displayName: "Memory request"
     description: "Memory request for kyverno pod."
-  admissionController.container.resouces.requests.cpu:
+  kyverno.admissionController.container.resouces.requests.cpu:
     type: string
     displayName: "CPU request"
     description: "CPU request for kyverno pod."
 mapping:
-  config.webhooks:
+  kyverno.config.webhooks:
     # exclude namespaces
     template: |
       - namespaceSelector:
