@@ -34,6 +34,10 @@ func FeatureV2(f *Feature, debug bool) *model.FeatureYAML {
 
 		if debug && len(t.IgnoreKind) > 0 && len(c.IgnoreKind) > 0 {
 			fmt.Printf("DOUBLE CHECK: %v - %v\n", f.Name, k)
+		} else if debug && len(t.IgnoreKind) > 0 {
+			fmt.Printf("CHECK: %v - %v\n", f.Name, k)
+		} else if debug && ok && len(t.IgnoreKind) == 0 && len(c.IgnoreKind) > 0 {
+			fmt.Printf("CHECK: %v - %v\n", f.Name, k)
 		}
 		if !ok {
 			t = model.Value{

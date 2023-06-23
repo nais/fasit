@@ -28,9 +28,6 @@ config:
     type: string
     displayName: "Cluster name"
     description: "Override for equivalent mapping value"
-    ignoreKind:
-      - "onprem"
-      - "legacy"
   global.image.tag:
     type: string
     displayName: "Image tag"

@@ -47,8 +47,6 @@ config:
     description: Setting this overrides the mapping value (only needed for legacy/onprem environments)
     type: string
     required: true
-    ignoreKind:
-      - "tenant"
 
   tokendings.outbound:
     displayName: Tokendings external hosts

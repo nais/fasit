@@ -24,9 +24,6 @@ config:
     type: string
     displayName: "Cluster name"
     description: "Override for equivalent mapping value"
-    ignoreKind:
-      - "onprem"
-      - "legacy"
   naiserator.vault.address:
     type: string
     required: true
@@ -115,10 +112,6 @@ config:
     type: bool
     displayName: "Enable legacy GCP mode"
     description: "Configure Naiserator to work with legacy GCP clusters (override mapping for migration)"
-    ignoreKind:
-      - "tenant"
-      - "onprem"
-      - "management"
   naiserator.features.spot-toleration:
     type: bool
     displayName: "Enable spot toleration"
