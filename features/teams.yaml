@@ -45,13 +45,13 @@ mapping:
   backend.gcp.clusters:
     template: |
       {{ if (eq .Tenant.Name "nav") }}
-      '{{ filter "kind" "legacy" .Envs | environmentsAsMap "teams_folder_id,project_id" | toJSON }}'
+      {{ filter "kind" "legacy" .Envs | environmentsAsMap "teams_folder_id,project_id" | toJSON | quote }}
       {{ else }}
-      '{{ filter "kind" "tenant" .Envs | environmentsAsMap "teams_folder_id,project_id" | toJSON}}'
+      {{ filter "kind" "tenant" .Envs | environmentsAsMap "teams_folder_id,project_id" | toJSON | quote }}
       {{ end }}
     displayName: Cluster information
   backend.staticServiceAccounts:
-    value: "{{.Management.teams_static_service_accounts}}"
+    template: "{{.Management.teams_static_service_accounts | quote}}"
     displayName: JSON-encoded list of static service accounts
   backend.gcp.cnrmRole:
     value: "organizations/{{ .Management.org_id }}/roles/{{ .Management.cnrm_role }}"

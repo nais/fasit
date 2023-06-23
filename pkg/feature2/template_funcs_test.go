@@ -541,6 +541,26 @@ func Test_usage(t *testing.T) {
 			},
 			want: "c29tZSB2YWx1ZQ==",
 		},
+
+		"quote": {
+			template: `{{ quote .Env.some_key }}`,
+			values: &ComputedValues{
+				Env: map[string]any{
+					"some_key": "some value",
+				},
+			},
+			want: `"some value"`,
+		},
+
+		"quote pipe": {
+			template: `{{ .Env.some_key | quote }}`,
+			values: &ComputedValues{
+				Env: map[string]any{
+					"some_key": "some value",
+				},
+			},
+			want: `"some value"`,
+		},
 	}
 
 	for name, tt := range tests {

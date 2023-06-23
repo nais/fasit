@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strconv"
 	"strings"
 	"text/template"
 
@@ -27,6 +28,7 @@ var templateFuncs = template.FuncMap{
 	"filter":            filter,
 	"replace":           replace,
 	"b64enc":            base64encode,
+	"quote":             quote,
 }
 
 // mapOf creates a new map from a list of map[string]any with the given key as the key in the new map,
@@ -248,4 +250,17 @@ func base64encode(v any) string {
 	}
 
 	return base64.StdEncoding.EncodeToString([]byte(s))
+}
+
+func quote(v any) string {
+	if v == nil {
+		return ""
+	}
+
+	s, ok := v.(string)
+	if !ok {
+		panic("expected string to quote")
+	}
+
+	return strconv.Quote(s)
 }
