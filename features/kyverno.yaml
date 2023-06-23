@@ -1,5 +1,5 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/kyverno
-version: 1.0.0
+version: 1.0.1
 source: https://github.com/nais/helm-charts/tree/main/charts/kyverno
 description: "Policy engine for Kubernetes"
 environmentKinds:
