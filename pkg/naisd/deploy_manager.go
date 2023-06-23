@@ -180,12 +180,12 @@ func (d *DeployManager) runHelm(ctx context.Context, args []string) (string, err
 	helmFlags := []string{
 		"--atomic",
 		"--cleanup-on-fail",
+		"--debug",
 	}
 
 	helmArgs := append(args, append(connectionFlags, helmFlags...)...)
 
 	environment := append(getEnvironment(),
-		"HELM_EXPERIMENTAL_OCI=1",
 		"HELM_CACHE_HOME="+d.helmCache,
 	)
 
