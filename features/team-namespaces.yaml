@@ -15,6 +15,7 @@ config:
     required: true
 mapping:
   gardockerconfigjson:
-    value: '{"auths":{"europe-north1-docker.pkg.dev/nais-management-233d":{"username":"_json_key_base64","password":"{{.Env.gar_service_account_key | b64enc }}"}}}'
+    template: |-
+      '{"auths":{"europe-north1-docker.pkg.dev/nais-management-233d":{"username":"_json_key_base64","password":"{{.Env.gar_service_account_key | b64enc }}"}}}'
   clusterKind:
-    value: '{{ .Kind }}'
+    value: "{{ .Kind }}"
