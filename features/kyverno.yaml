@@ -21,20 +21,20 @@ config:
     type: int
     displayName: "Replicas"
     description: "Number of replicas, min 3 for HA."
-  kyverno.admissionController.container.resouces.limits.memory:
+  kyverno.admissionController.container.resources.limits.memory:
     type: string
     displayName: "Memory limit"
     description: "Memory limit for kyverno pod."
-  kyverno.admissionController.container.resouces.requests.memory:
+  kyverno.admissionController.container.resources.requests.memory:
     type: string
     displayName: "Memory request"
     description: "Memory request for kyverno pod."
-  kyverno.admissionController.container.resouces.requests.cpu:
+  kyverno.admissionController.container.resources.requests.cpu:
     type: string
     displayName: "CPU request"
     description: "CPU request for kyverno pod."
 
-  kyverno.reportsController.resouces.limits.memory:
+  kyverno.reportsController.resources.limits.memory:
     type: string
     displayName: "Reporter Memory limit"
     description: "Memory limit for kyverno reports pod."
