@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/kyverno-policies
 source: https://github.com/nais/helm-charts/tree/main/charts/kyverno-policies
-version: 1.4.1
+version: 2.0.0
 description: "Sane cluster defaults - should be on in all clusters"
 environmentKinds:
   - "tenant"
@@ -83,14 +83,6 @@ mapping:
     value: "true"
     description: "Enable deny service types policy"
     displayName: "Deny service types"
-
-  customPolicies.addTeamAIToleration.enabled:
-    template: '{{eq .Kind "legacy"}}'
-    description: "Enable add-team-ai-toleration policy"
-    displayName: "Add team ai toleration"
-    ignoreKind:
-      - "management"
-      - "onprem"
 
   customPolicies.addSpotToleration.enabled:
     template: '{{ if and (eq "prod-gcp" .Env.name) (eq "legacy" .Kind) }}false{{ else }}true{{ end }}'
