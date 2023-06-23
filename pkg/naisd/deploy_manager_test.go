@@ -66,7 +66,7 @@ func TestDeployReceiver(t *testing.T) {
 						"--kube-apiserver", "somehost", "--kube-ca-file", "cafile",
 						"--kube-token", "bearertoken", "--atomic", "--cleanup-on-fail",
 					},
-					Env: []string{"FOO=bar", "HELM_EXPERIMENTAL_OCI=1", "HELM_CACHE_HOME=/tmp/naisd-helm"},
+					Env: []string{"FOO=bar", "HELM_CACHE_HOME=/tmp/naisd-helm"},
 				},
 			},
 		},

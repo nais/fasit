@@ -180,7 +180,10 @@ func (d *DeployManager) runHelm(ctx context.Context, args []string) (string, err
 	helmFlags := []string{
 		"--atomic",
 		"--cleanup-on-fail",
-		"--debug",
+	}
+
+	if _, ok := os.LookupEnv("DEBUG"); ok {
+		helmFlags = append(helmFlags, "--debug")
 	}
 
 	helmArgs := append(args, append(connectionFlags, helmFlags...)...)
