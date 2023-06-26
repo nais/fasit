@@ -36,6 +36,11 @@ config:
       - "onprem"
       - "legacy"
 
+  kyverno-policies.failurePolicy:
+    type: string
+    description: "Failure policy for Kyverno policies"
+    displayName: "Failure policy"
+
 mapping:
   customPolicies.denyImageRegistries.extraArgs:
     template: |
