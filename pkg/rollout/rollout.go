@@ -104,6 +104,11 @@ func (r *Rollout) Rollout(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
+	if _, err := r.repo.RolloutByName(ctx, feature.Name); err == nil {
+		http.Error(w, "Rollout with this feature name is already in progress", http.StatusConflict)
+		return
+	}
+
 	// if len(envNotAvailable) >= len(feature.EnvironmentKinds) {
 	// 	w.WriteHeader(http.StatusBadRequest)
 	// 	_ = json.NewEncoder(w).Encode(map[string]interface{}{

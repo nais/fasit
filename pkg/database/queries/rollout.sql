@@ -54,3 +54,14 @@ SELECT status FROM rollouts WHERE feature_name = @feature_name and completed IS 
 
 -- name: RolloutComplete :exec
 UPDATE rollouts SET completed = NOW() WHERE feature_name = @feature_name and completed IS NULL;
+
+-- name: RolloutsForFeature :many
+SELECT *
+FROM rollouts
+WHERE feature_name = @feature_name;
+
+-- name: RolloutEventForRollout :many
+SELECT *
+FROM rollout_events
+WHERE rollout_id = @rollout_id
+ORDER BY created DESC;

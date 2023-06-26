@@ -6,14 +6,26 @@ package graph
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/graph/graphgen"
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
-// Feature is the resolver for the feature field.
-func (r *rolloutResolver) Feature(ctx context.Context, obj *model.Rollout) (*model.Feature, error) {
-	return r.Repo.FeatureByNameForEnv(ctx, obj.FeatureName, obj.GraphVars.EnvironmentID)
+// Rollouts is the resolver for the rollouts field.
+func (r *queryResolver) Rollouts(ctx context.Context, feature string) ([]*model.Rollout, error) {
+	return r.Repo.RolloutsForFeature(ctx, feature)
+}
+
+// Rollout is the resolver for the rollout field.
+func (r *queryResolver) Rollout(ctx context.Context, id uuid.UUID) (*model.Rollout, error) {
+	panic(fmt.Errorf("not implemented: Rollout - rollout"))
+}
+
+// Events is the resolver for the events field.
+func (r *rolloutResolver) Events(ctx context.Context, obj *model.Rollout) ([]*model.RolloutEvent, error) {
+	panic(fmt.Errorf("not implemented: Events - events"))
 }
 
 // Rollout returns graphgen.RolloutResolver implementation.

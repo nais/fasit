@@ -15,6 +15,7 @@ type RolloutRepo interface {
 	RolloutCreate(ctx context.Context, name, version string) (*model.Rollout, error)
 	RolloutDelete(ctx context.Context, name string) error
 	RolloutEventCreate(ctx context.Context, rollout uuid.UUID, failure bool, message string) error
+	RolloutsForFeature(ctx context.Context, name string) ([]*model.Rollout, error)
 	RolloutsListen(ctx context.Context, fn ListenFunc) error
 	RolloutStatus(ctx context.Context, name string) (model.RolloutStatus, error)
 	RolloutsUpdateStatus(ctx context.Context, status model.RolloutStatus, name string, completed bool) error
@@ -108,4 +109,25 @@ func (r *repo) RolloutByName(ctx context.Context, name string) (*model.Feature, 
 			RolloutID: f.ID,
 		},
 	}, nil
+}
+
+func (r *repo) RolloutsForFeature(ctx context.Context, name string) ([]*model.Rollout, error) {
+	rollouts, err := r.querier.RolloutsForFeature(ctx, name)
+	if err != nil {
+		return nil, fmt.Errorf("get rollouts for feature: %w", err)
+	}
+
+	var res []*model.Rollout
+	for _, ro := range rollouts {
+		res = append(res, &model.Rollout{
+			ID:          ro.ID,
+			Version:     ro.Version,
+			Created:     ro.Created,
+			FeatureName: ro.FeatureName,
+			Completed:   nullTimeToPtr(ro.Completed),
+			Status:      model.RolloutStatus(ro.Status),
+		})
+	}
+
+	return res, nil
 }

@@ -1161,6 +1161,32 @@ func (_m *Querier) RolloutUpdateStatus(ctx context.Context, arg gensql.RolloutUp
 	return r0
 }
 
+// RolloutsForFeature provides a mock function with given fields: ctx, featureName
+func (_m *Querier) RolloutsForFeature(ctx context.Context, featureName string) ([]gensql.Rollout, error) {
+	ret := _m.Called(ctx, featureName)
+
+	var r0 []gensql.Rollout
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]gensql.Rollout, error)); ok {
+		return rf(ctx, featureName)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) []gensql.Rollout); ok {
+		r0 = rf(ctx, featureName)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gensql.Rollout)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, featureName)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // RolloutsForKind provides a mock function with given fields: ctx, environmentKind
 func (_m *Querier) RolloutsForKind(ctx context.Context, environmentKind string) ([]gensql.RolloutsForKindRow, error) {
 	ret := _m.Called(ctx, environmentKind)

@@ -216,6 +216,8 @@ type ComplexityRoot struct {
 		FeatureState  func(childComplexity int, envID uuid.UUID, feature string) int
 		Features      func(childComplexity int) int
 		HelmValues    func(childComplexity int, feature string, envID *uuid.UUID, env *string, tenant *string) int
+		Rollout       func(childComplexity int, id uuid.UUID) int
+		Rollouts      func(childComplexity int, feature string) int
 		Tenant        func(childComplexity int, id *uuid.UUID, slug *string) int
 		Tenants       func(childComplexity int) int
 		UserInfo      func(childComplexity int) int
@@ -233,11 +235,19 @@ type ComplexityRoot struct {
 	}
 
 	Rollout struct {
-		Chart   func(childComplexity int) int
+		Completed func(childComplexity int) int
+		Created   func(childComplexity int) int
+		Events    func(childComplexity int) int
+		ID        func(childComplexity int) int
+		Status    func(childComplexity int) int
+		Version   func(childComplexity int) int
+	}
+
+	RolloutEvent struct {
 		Created func(childComplexity int) int
-		Feature func(childComplexity int) int
+		Failure func(childComplexity int) int
 		ID      func(childComplexity int) int
-		Version func(childComplexity int) int
+		Message func(childComplexity int) int
 	}
 
 	Status struct {
@@ -333,6 +343,8 @@ type QueryResolver interface {
 	Features(ctx context.Context) ([]*model.Feature, error)
 	Feature(ctx context.Context, name string) (*model.Feature, error)
 	FeatureState(ctx context.Context, envID uuid.UUID, feature string) (*model.FeatureState, error)
+	Rollouts(ctx context.Context, feature string) ([]*model.Rollout, error)
+	Rollout(ctx context.Context, id uuid.UUID) (*model.Rollout, error)
 	Tenant(ctx context.Context, id *uuid.UUID, slug *string) (*model.Tenant, error)
 	UserInfo(ctx context.Context) (*model.UserInfo, error)
 }
@@ -340,7 +352,7 @@ type ReleaseResolver interface {
 	Feature(ctx context.Context, obj *model.Release) (*model.Feature, error)
 }
 type RolloutResolver interface {
-	Feature(ctx context.Context, obj *model.Rollout) (*model.Feature, error)
+	Events(ctx context.Context, obj *model.Rollout) ([]*model.RolloutEvent, error)
 }
 type TenantResolver interface {
 	Environments(ctx context.Context, obj *model.Tenant) ([]*model.Environment, error)
@@ -1134,6 +1146,30 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.HelmValues(childComplexity, args["feature"].(string), args["envID"].(*uuid.UUID), args["env"].(*string), args["tenant"].(*string)), true
 
+	case "Query.rollout":
+		if e.complexity.Query.Rollout == nil {
+			break
+		}
+
+		args, err := ec.field_Query_rollout_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Rollout(childComplexity, args["id"].(uuid.UUID)), true
+
+	case "Query.rollouts":
+		if e.complexity.Query.Rollouts == nil {
+			break
+		}
+
+		args, err := ec.field_Query_rollouts_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Rollouts(childComplexity, args["feature"].(string)), true
+
 	case "Query.tenant":
 		if e.complexity.Query.Tenant == nil {
 			break
@@ -1216,12 +1252,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Release.Version(childComplexity), true
 
-	case "Rollout.chart":
-		if e.complexity.Rollout.Chart == nil {
+	case "Rollout.completed":
+		if e.complexity.Rollout.Completed == nil {
 			break
 		}
 
-		return e.complexity.Rollout.Chart(childComplexity), true
+		return e.complexity.Rollout.Completed(childComplexity), true
 
 	case "Rollout.created":
 		if e.complexity.Rollout.Created == nil {
@@ -1230,12 +1266,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Rollout.Created(childComplexity), true
 
-	case "Rollout.feature":
-		if e.complexity.Rollout.Feature == nil {
+	case "Rollout.events":
+		if e.complexity.Rollout.Events == nil {
 			break
 		}
 
-		return e.complexity.Rollout.Feature(childComplexity), true
+		return e.complexity.Rollout.Events(childComplexity), true
 
 	case "Rollout.id":
 		if e.complexity.Rollout.ID == nil {
@@ -1244,12 +1280,47 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Rollout.ID(childComplexity), true
 
+	case "Rollout.status":
+		if e.complexity.Rollout.Status == nil {
+			break
+		}
+
+		return e.complexity.Rollout.Status(childComplexity), true
+
 	case "Rollout.version":
 		if e.complexity.Rollout.Version == nil {
 			break
 		}
 
 		return e.complexity.Rollout.Version(childComplexity), true
+
+	case "RolloutEvent.created":
+		if e.complexity.RolloutEvent.Created == nil {
+			break
+		}
+
+		return e.complexity.RolloutEvent.Created(childComplexity), true
+
+	case "RolloutEvent.failure":
+		if e.complexity.RolloutEvent.Failure == nil {
+			break
+		}
+
+		return e.complexity.RolloutEvent.Failure(childComplexity), true
+
+	case "RolloutEvent.id":
+		if e.complexity.RolloutEvent.ID == nil {
+			break
+		}
+
+		return e.complexity.RolloutEvent.ID(childComplexity), true
+
+	case "RolloutEvent.message":
+		if e.complexity.RolloutEvent.Message == nil {
+			break
+		}
+
+		return e.complexity.RolloutEvent.Message(childComplexity), true
 
 	case "Status.created":
 		if e.complexity.Status.Created == nil {
@@ -1796,10 +1867,24 @@ type KubernetesNode {
 `, BuiltIn: false},
 	{Name: "../../../schema/rollout.graphqls", Input: `type Rollout {
   id: ID!
-  feature: Feature!
   version: String!
-  chart: String!
   created: Time!
+  completed: Time
+  status: RolloutStatus!
+
+  events: [RolloutEvent!]!
+}
+
+type RolloutEvent {
+  id: ID!
+  failure: Boolean!
+  message: String!
+  created: Time!
+}
+
+extend type Query {
+  rollouts(feature: String!): [Rollout!]!
+  rollout(id: ID!): Rollout!
 }
 `, BuiltIn: false},
 	{Name: "../../../schema/scalars.graphqls", Input: `scalar Map
@@ -2200,6 +2285,36 @@ func (ec *executionContext) field_Query_helmValues_args(ctx context.Context, raw
 		}
 	}
 	args["tenant"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_rollout_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 uuid.UUID
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_rollouts_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["feature"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("feature"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["feature"] = arg0
 	return args, nil
 }
 
@@ -7588,6 +7703,144 @@ func (ec *executionContext) fieldContext_Query_featureState(ctx context.Context,
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_rollouts(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_rollouts(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Rollouts(rctx, fc.Args["feature"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.Rollout)
+	fc.Result = res
+	return ec.marshalNRollout2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐRolloutᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_rollouts(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Rollout_id(ctx, field)
+			case "version":
+				return ec.fieldContext_Rollout_version(ctx, field)
+			case "created":
+				return ec.fieldContext_Rollout_created(ctx, field)
+			case "completed":
+				return ec.fieldContext_Rollout_completed(ctx, field)
+			case "status":
+				return ec.fieldContext_Rollout_status(ctx, field)
+			case "events":
+				return ec.fieldContext_Rollout_events(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Rollout", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_rollouts_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_rollout(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_rollout(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Rollout(rctx, fc.Args["id"].(uuid.UUID))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Rollout)
+	fc.Result = res
+	return ec.marshalNRollout2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐRollout(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_rollout(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Rollout_id(ctx, field)
+			case "version":
+				return ec.fieldContext_Rollout_version(ctx, field)
+			case "created":
+				return ec.fieldContext_Rollout_created(ctx, field)
+			case "completed":
+				return ec.fieldContext_Rollout_completed(ctx, field)
+			case "status":
+				return ec.fieldContext_Rollout_status(ctx, field)
+			case "events":
+				return ec.fieldContext_Rollout_events(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Rollout", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_rollout_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_tenant(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_tenant(ctx, field)
 	if err != nil {
@@ -8252,74 +8505,6 @@ func (ec *executionContext) fieldContext_Rollout_id(ctx context.Context, field g
 	return fc, nil
 }
 
-func (ec *executionContext) _Rollout_feature(ctx context.Context, field graphql.CollectedField, obj *model.Rollout) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Rollout_feature(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Rollout().Feature(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*model.Feature)
-	fc.Result = res
-	return ec.marshalNFeature2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐFeature(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Rollout_feature(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Rollout",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "name":
-				return ec.fieldContext_Feature_name(ctx, field)
-			case "chart":
-				return ec.fieldContext_Feature_chart(ctx, field)
-			case "version":
-				return ec.fieldContext_Feature_version(ctx, field)
-			case "source":
-				return ec.fieldContext_Feature_source(ctx, field)
-			case "description":
-				return ec.fieldContext_Feature_description(ctx, field)
-			case "dependencies":
-				return ec.fieldContext_Feature_dependencies(ctx, field)
-			case "environmentKinds":
-				return ec.fieldContext_Feature_environmentKinds(ctx, field)
-			case "configoverrides":
-				return ec.fieldContext_Feature_configoverrides(ctx, field)
-			case "configuration":
-				return ec.fieldContext_Feature_configuration(ctx, field)
-			case "state":
-				return ec.fieldContext_Feature_state(ctx, field)
-			case "status":
-				return ec.fieldContext_Feature_status(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Rollout_version(ctx context.Context, field graphql.CollectedField, obj *model.Rollout) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Rollout_version(ctx, field)
 	if err != nil {
@@ -8352,50 +8537,6 @@ func (ec *executionContext) _Rollout_version(ctx context.Context, field graphql.
 }
 
 func (ec *executionContext) fieldContext_Rollout_version(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Rollout",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Rollout_chart(ctx context.Context, field graphql.CollectedField, obj *model.Rollout) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Rollout_chart(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Chart, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Rollout_chart(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Rollout",
 		Field:      field,
@@ -8442,6 +8583,321 @@ func (ec *executionContext) _Rollout_created(ctx context.Context, field graphql.
 func (ec *executionContext) fieldContext_Rollout_created(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Rollout",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Rollout_completed(ctx context.Context, field graphql.CollectedField, obj *model.Rollout) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Rollout_completed(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Completed, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*time.Time)
+	fc.Result = res
+	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Rollout_completed(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Rollout",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Rollout_status(ctx context.Context, field graphql.CollectedField, obj *model.Rollout) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Rollout_status(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.RolloutStatus)
+	fc.Result = res
+	return ec.marshalNRolloutStatus2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐRolloutStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Rollout_status(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Rollout",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type RolloutStatus does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Rollout_events(ctx context.Context, field graphql.CollectedField, obj *model.Rollout) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Rollout_events(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Rollout().Events(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.RolloutEvent)
+	fc.Result = res
+	return ec.marshalNRolloutEvent2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐRolloutEventᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Rollout_events(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Rollout",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_RolloutEvent_id(ctx, field)
+			case "failure":
+				return ec.fieldContext_RolloutEvent_failure(ctx, field)
+			case "message":
+				return ec.fieldContext_RolloutEvent_message(ctx, field)
+			case "created":
+				return ec.fieldContext_RolloutEvent_created(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type RolloutEvent", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RolloutEvent_id(ctx context.Context, field graphql.CollectedField, obj *model.RolloutEvent) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RolloutEvent_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(uuid.UUID)
+	fc.Result = res
+	return ec.marshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RolloutEvent_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RolloutEvent",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RolloutEvent_failure(ctx context.Context, field graphql.CollectedField, obj *model.RolloutEvent) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RolloutEvent_failure(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Failure, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RolloutEvent_failure(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RolloutEvent",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RolloutEvent_message(ctx context.Context, field graphql.CollectedField, obj *model.RolloutEvent) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RolloutEvent_message(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Message, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RolloutEvent_message(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RolloutEvent",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RolloutEvent_created(ctx context.Context, field graphql.CollectedField, obj *model.RolloutEvent) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RolloutEvent_created(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Created, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RolloutEvent_created(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RolloutEvent",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -13538,6 +13994,50 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "rollouts":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_rollouts(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "rollout":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_rollout(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "tenant":
 			field := field
 
@@ -13728,7 +14228,24 @@ func (ec *executionContext) _Rollout(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
-		case "feature":
+		case "version":
+			out.Values[i] = ec._Rollout_version(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "created":
+			out.Values[i] = ec._Rollout_created(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "completed":
+			out.Values[i] = ec._Rollout_completed(ctx, field, obj)
+		case "status":
+			out.Values[i] = ec._Rollout_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "events":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -13737,7 +14254,7 @@ func (ec *executionContext) _Rollout(ctx context.Context, sel ast.SelectionSet, 
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Rollout_feature(ctx, field, obj)
+				res = ec._Rollout_events(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -13764,20 +14281,59 @@ func (ec *executionContext) _Rollout(ctx context.Context, sel ast.SelectionSet, 
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "version":
-			out.Values[i] = ec._Rollout_version(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var rolloutEventImplementors = []string{"RolloutEvent"}
+
+func (ec *executionContext) _RolloutEvent(ctx context.Context, sel ast.SelectionSet, obj *model.RolloutEvent) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, rolloutEventImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RolloutEvent")
+		case "id":
+			out.Values[i] = ec._RolloutEvent_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+				out.Invalids++
 			}
-		case "chart":
-			out.Values[i] = ec._Rollout_chart(ctx, field, obj)
+		case "failure":
+			out.Values[i] = ec._RolloutEvent_failure(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+				out.Invalids++
+			}
+		case "message":
+			out.Values[i] = ec._RolloutEvent_message(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
 			}
 		case "created":
-			out.Values[i] = ec._Rollout_created(ctx, field, obj)
+			out.Values[i] = ec._RolloutEvent_created(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+				out.Invalids++
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -15362,6 +15918,118 @@ func (ec *executionContext) marshalNRelease2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkg
 	return ec._Release(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNRollout2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐRollout(ctx context.Context, sel ast.SelectionSet, v model.Rollout) graphql.Marshaler {
+	return ec._Rollout(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNRollout2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐRolloutᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Rollout) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNRollout2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐRollout(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNRollout2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐRollout(ctx context.Context, sel ast.SelectionSet, v *model.Rollout) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Rollout(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNRolloutEvent2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐRolloutEventᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.RolloutEvent) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNRolloutEvent2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐRolloutEvent(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNRolloutEvent2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐRolloutEvent(ctx context.Context, sel ast.SelectionSet, v *model.RolloutEvent) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._RolloutEvent(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNRolloutStatus2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐRolloutStatus(ctx context.Context, v interface{}) (model.RolloutStatus, error) {
 	var res model.RolloutStatus
 	err := res.UnmarshalGQL(v)
@@ -15945,6 +16613,22 @@ func (ec *executionContext) unmarshalOTime2timeᚐTime(ctx context.Context, v in
 
 func (ec *executionContext) marshalOTime2timeᚐTime(ctx context.Context, sel ast.SelectionSet, v time.Time) graphql.Marshaler {
 	res := graphql.MarshalTime(v)
+	return res
+}
+
+func (ec *executionContext) unmarshalOTime2ᚖtimeᚐTime(ctx context.Context, v interface{}) (*time.Time, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalTime(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOTime2ᚖtimeᚐTime(ctx context.Context, sel ast.SelectionSet, v *time.Time) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	res := graphql.MarshalTime(*v)
 	return res
 }
 

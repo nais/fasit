@@ -1,7 +1,21 @@
 type Rollout {
   id: ID!
-  feature: Feature!
   version: String!
-  chart: String!
   created: Time!
+  completed: Time
+  status: RolloutStatus!
+
+  events: [RolloutEvent!]!
+}
+
+type RolloutEvent {
+  id: ID!
+  failure: Boolean!
+  message: String!
+  created: Time!
+}
+
+extend type Query {
+  rollouts(feature: String!): [Rollout!]!
+  rollout(id: ID!): Rollout!
 }

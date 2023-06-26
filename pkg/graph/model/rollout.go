@@ -7,10 +7,11 @@ import (
 )
 
 type Rollout struct {
-	ID      uuid.UUID `json:"id"`
-	Version string    `json:"version"`
-	Chart   string    `json:"chart"`
-	Created time.Time `json:"created"`
+	ID        uuid.UUID     `json:"id"`
+	Version   string        `json:"version"`
+	Created   time.Time     `json:"created"`
+	Completed *time.Time    `json:"completed"`
+	Status    RolloutStatus `json:"status"`
 
 	FeatureName string `json:"-"`
 
