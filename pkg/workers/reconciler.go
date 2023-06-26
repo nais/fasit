@@ -177,19 +177,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	return nil
 }
 
-func dlog(ctx context.Context, msg string, v ...any) {
-	_, ok := ctx.Value("environmentasdfasdfasf").(bool)
-	if !ok {
-		return
-	}
-	fmt.Printf("####"+msg+"\n", v...)
-}
-
 func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEnvironment) error {
-	if d.Environment.Name == "dev" {
-		ctx = context.WithValue(ctx, "environmentasdfasdfasf", true)
-	}
-
 	metricAttrs := []attribute.KeyValue{
 		attribute.Key("environment").String(d.Name),
 		attribute.Key("tenant").String(d.TenantName),
@@ -208,19 +196,16 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 		return nil
 	}
 
-	dlog(ctx, "features for kind")
 	features, err := r.repo.FeaturesForKind(ctx, d.Kind, d.CI)
 	if err != nil {
 		return fmt.Errorf("features for kind: %w", err)
 	}
 
-	dlog(ctx, "status for env")
 	envStatus, err := r.repo.StatusForEnvironment(ctx, d.Environment.ID)
 	if err != nil {
 		return fmt.Errorf("status for environment: %w", err)
 	}
 
-	dlog(ctx, "lookup")
 	lookup := make(map[string]*model.Status)
 	for _, s := range envStatus {
 		lookup[s.Feature] = s
@@ -244,13 +229,11 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 	for _, s := range featureStates {
 		states[s.FeatureName] = s
 	}
-	dlog(ctx, "Feature states: %v", len(features))
 
 	mgr := r.publisher(r.projectID, "naisd-"+d.TenantName+"-"+d.Name, r.log)
 	defer mgr.Stop()
 
 	for _, f := range features {
-		dlog(ctx, "feature %v enabled: %v", f.Name, states[f.Name] == nil && states[f.Name].Enabled)
 		if states[f.Name] == nil || !states[f.Name].Enabled {
 			r.log.WithField("feature", f.Name).Debug("not enabled")
 			continue
