@@ -37,7 +37,7 @@ config:
     type: string
     displayName: "Reporter Memory limit"
     description: "Memory limit for kyverno reports pod."
-  kyverno.cleanUpController.resources.limits.memory:
+  kyverno.cleanupController.resources.limits.memory:
     type: string
     displayName: "Cleaner Memory limit"
     description: "Memory limit for kyverno cleaner pod."
