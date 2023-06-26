@@ -2,10 +2,8 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/jackc/pgtype"
 	"github.com/nais/fasit/pkg/database/gensql"
@@ -47,16 +45,12 @@ func (r *repo) FeatureDataCreate(ctx context.Context, feature model.Feature) err
 	}
 
 	return r.querier.FeatureDataCreate(ctx, gensql.FeatureDataCreateParams{
-		FeatureName: feature.Name,
-		Version:     feature.Version,
-		Chart:       feature.Chart,
-		Description: feature.Description,
-		Source:      feature.Source,
-		Kinds:       environmentKindToSQL(feature.EnvironmentKinds),
-		Timeout: sql.NullInt64{
-			Int64: int64(feature.Timeout / time.Microsecond),
-			Valid: feature.Timeout > 0,
-		},
+		FeatureName:   feature.Name,
+		Version:       feature.Version,
+		Chart:         feature.Chart,
+		Description:   feature.Description,
+		Source:        feature.Source,
+		Kinds:         environmentKindToSQL(feature.EnvironmentKinds),
 		Dependencies:  dep,
 		Values:        vals,
 		DefaultValues: defaultVals,

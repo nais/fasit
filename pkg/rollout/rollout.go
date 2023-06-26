@@ -74,13 +74,13 @@ func (r *Rollout) Rollout(w http.ResponseWriter, req *http.Request) {
 	body := &Request{}
 	err := json.NewDecoder(req.Body).Decode(body)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, "Unable to decode JSON body: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	feature, err := model.FromChart(body.Chart, body.Version)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, "Unable to convert oci chart: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -114,18 +114,18 @@ func (r *Rollout) Rollout(w http.ResponseWriter, req *http.Request) {
 
 	err = r.repo.TxFunc(ctx, func(repo database.Repo) error {
 		if err := repo.FeatureDataCreate(ctx, *feature); err != nil {
-			return err
+			return fmt.Errorf("feature data: %w", err)
 		}
 
 		if _, err := repo.RolloutCreate(ctx, feature.Name, body.Version); err != nil {
-			return err
+			return fmt.Errorf("rollout: %w", err)
 		}
 
 		return nil
 	})
 
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, "unable to create rollout: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 

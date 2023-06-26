@@ -15,7 +15,6 @@ SELECT
   fd.kinds::text[] AS kinds,
   fd.dependencies,
   fd.values,
-  fd.timeout,
   fd.default_values,
   rollouts.created
 FROM rollouts
@@ -34,7 +33,6 @@ SELECT
   fd.kinds::text[] AS kinds,
   fd.dependencies,
   fd.values,
-  fd.timeout,
   fd.default_values,
   rollouts.created
 FROM rollouts

@@ -7,7 +7,6 @@ package gensql
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
 	"github.com/jackc/pgtype"
@@ -23,7 +22,6 @@ SELECT
   fd.kinds::text[] AS kinds,
   fd.dependencies,
   fd.values,
-  fd.timeout,
   fd.default_values,
   features.created,
   features.last_modified
@@ -41,7 +39,6 @@ type FeatureByNameRow struct {
 	Kinds         []string
 	Dependencies  pgtype.JSONB
 	Values        pgtype.JSONB
-	Timeout       sql.NullInt64
 	DefaultValues pgtype.JSONB
 	Created       time.Time
 	LastModified  time.Time
@@ -59,7 +56,6 @@ func (q *Queries) FeatureByName(ctx context.Context, name string) (FeatureByName
 		&i.Kinds,
 		&i.Dependencies,
 		&i.Values,
-		&i.Timeout,
 		&i.DefaultValues,
 		&i.Created,
 		&i.LastModified,
@@ -68,7 +64,7 @@ func (q *Queries) FeatureByName(ctx context.Context, name string) (FeatureByName
 }
 
 const featureGetForEnv = `-- name: FeatureGetForEnv :many
-SELECT fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.timeout, fd.default_values, features.created, features.last_modified
+SELECT fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, features.created, features.last_modified
 FROM features
 JOIN feature_data fd ON features.name = fd.name AND features.version = fd.version
 WHERE $1::text = ANY(kinds::text[])
@@ -84,7 +80,6 @@ type FeatureGetForEnvRow struct {
 	Kinds         []EnvironmentKind
 	Dependencies  pgtype.JSONB
 	Values        pgtype.JSONB
-	Timeout       sql.NullInt64
 	DefaultValues pgtype.JSONB
 	Created       time.Time
 	LastModified  time.Time
@@ -108,7 +103,6 @@ func (q *Queries) FeatureGetForEnv(ctx context.Context, environmentKind string) 
 			&i.Kinds,
 			&i.Dependencies,
 			&i.Values,
-			&i.Timeout,
 			&i.DefaultValues,
 			&i.Created,
 			&i.LastModified,
@@ -180,7 +174,6 @@ SELECT
   fd.kinds::text[] AS kinds,
   fd.dependencies,
   fd.values,
-  fd.timeout,
   fd.default_values,
   combined.created,
   combined.last_modified
@@ -198,7 +191,6 @@ type FeaturesRow struct {
 	Kinds         []string
 	Dependencies  pgtype.JSONB
 	Values        pgtype.JSONB
-	Timeout       sql.NullInt64
 	DefaultValues pgtype.JSONB
 	Created       time.Time
 	LastModified  time.Time
@@ -222,7 +214,6 @@ func (q *Queries) Features(ctx context.Context) ([]FeaturesRow, error) {
 			&i.Kinds,
 			&i.Dependencies,
 			&i.Values,
-			&i.Timeout,
 			&i.DefaultValues,
 			&i.Created,
 			&i.LastModified,
@@ -247,7 +238,6 @@ SELECT
   fd.kinds::text[] AS kinds,
   fd.dependencies,
   fd.values,
-  fd.timeout,
   fd.default_values,
   features.created,
   features.last_modified
@@ -266,7 +256,6 @@ type FeaturesForKindRow struct {
 	Kinds         []string
 	Dependencies  pgtype.JSONB
 	Values        pgtype.JSONB
-	Timeout       sql.NullInt64
 	DefaultValues pgtype.JSONB
 	Created       time.Time
 	LastModified  time.Time
@@ -290,7 +279,6 @@ func (q *Queries) FeaturesForKind(ctx context.Context, environmentKind string) (
 			&i.Kinds,
 			&i.Dependencies,
 			&i.Values,
-			&i.Timeout,
 			&i.DefaultValues,
 			&i.Created,
 			&i.LastModified,

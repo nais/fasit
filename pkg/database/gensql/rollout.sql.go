@@ -7,7 +7,6 @@ package gensql
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
@@ -25,7 +24,6 @@ SELECT
   fd.kinds::text[] AS kinds,
   fd.dependencies,
   fd.values,
-  fd.timeout,
   fd.default_values,
   rollouts.created
 FROM rollouts
@@ -44,7 +42,6 @@ type RolloutByNameRow struct {
 	Kinds         []string
 	Dependencies  pgtype.JSONB
 	Values        pgtype.JSONB
-	Timeout       sql.NullInt64
 	DefaultValues pgtype.JSONB
 	Created       time.Time
 }
@@ -62,7 +59,6 @@ func (q *Queries) RolloutByName(ctx context.Context, name string) (RolloutByName
 		&i.Kinds,
 		&i.Dependencies,
 		&i.Values,
-		&i.Timeout,
 		&i.DefaultValues,
 		&i.Created,
 	)
@@ -161,7 +157,6 @@ SELECT
   fd.kinds::text[] AS kinds,
   fd.dependencies,
   fd.values,
-  fd.timeout,
   fd.default_values,
   rollouts.created
 FROM rollouts
@@ -180,7 +175,6 @@ type RolloutsForKindRow struct {
 	Kinds         []string
 	Dependencies  pgtype.JSONB
 	Values        pgtype.JSONB
-	Timeout       sql.NullInt64
 	DefaultValues pgtype.JSONB
 	Created       time.Time
 }
@@ -204,7 +198,6 @@ func (q *Queries) RolloutsForKind(ctx context.Context, environmentKind string) (
 			&i.Kinds,
 			&i.Dependencies,
 			&i.Values,
-			&i.Timeout,
 			&i.DefaultValues,
 			&i.Created,
 		); err != nil {
