@@ -8,7 +8,6 @@ SELECT
   fd.kinds::text[] AS kinds,
   fd.dependencies,
   fd.values,
-  fd.timeout,
   fd.default_values,
   features.created,
   features.last_modified
@@ -49,7 +48,6 @@ SELECT
   fd.kinds::text[] AS kinds,
   fd.dependencies,
   fd.values,
-  fd.timeout,
   fd.default_values,
   combined.created,
   combined.last_modified
@@ -75,7 +73,6 @@ SELECT
   fd.kinds::text[] AS kinds,
   fd.dependencies,
   fd.values,
-  fd.timeout,
   fd.default_values,
   features.created,
   features.last_modified

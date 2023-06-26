@@ -6,7 +6,6 @@ INSERT INTO feature_data (
     description,
     source,
     kinds,
-    timeout,
     dependencies,
     values,
     default_values
@@ -17,7 +16,6 @@ INSERT INTO feature_data (
     @description,
     @source,
     (@kinds::text[])::environment_kind[],
-    @timeout,
     @dependencies,
     @values,
     @default_values
