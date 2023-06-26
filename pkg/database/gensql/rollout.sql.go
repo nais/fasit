@@ -31,6 +31,7 @@ SELECT
 FROM rollouts
 JOIN feature_data fd ON rollouts.feature_name = fd.name AND rollouts.version = fd.version
 WHERE fd.name = $1
+AND rollouts.status = 'pending'
 `
 
 type RolloutByNameRow struct {

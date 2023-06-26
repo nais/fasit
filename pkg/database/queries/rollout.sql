@@ -39,7 +39,9 @@ SELECT
   rollouts.created
 FROM rollouts
 JOIN feature_data fd ON rollouts.feature_name = fd.name AND rollouts.version = fd.version
-WHERE fd.name = @name;
+WHERE fd.name = @name
+AND rollouts.status = 'pending'
+;
 
 -- name: RolloutUpdateStatus :exec
 UPDATE rollouts SET status = @status WHERE feature_name = @feature_name and completed IS NULL;
