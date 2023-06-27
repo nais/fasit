@@ -47,7 +47,7 @@ func (r *repo) FeatureByName(ctx context.Context, name string) (*model.Feature, 
 			r, err := r.RolloutByName(ctx, name)
 			if err == nil {
 				return r, nil
-			} else if err != nil && errors.Is(err, pgx.ErrNoRows) {
+			} else if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 				return nil, fmt.Errorf("get feature by name from db: %w", err)
 			}
 
