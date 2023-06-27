@@ -43,6 +43,16 @@ func (r *repo) getOldFeature(name string) (*model.Feature, error) {
 func (r *repo) FeatureByName(ctx context.Context, name string) (*model.Feature, error) {
 	f, err := r.querier.FeatureByName(ctx, name)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			r, err := r.RolloutByName(ctx, name)
+			if err == nil {
+				return r, nil
+			} else if err != nil && errors.Is(err, pgx.ErrNoRows) {
+				return nil, fmt.Errorf("get feature by name from db: %w", err)
+			}
+
+		}
+
 		// TODO: remove
 		if errors.Is(err, pgx.ErrNoRows) {
 			return r.getOldFeature(name)
