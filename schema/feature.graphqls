@@ -19,6 +19,7 @@ type Feature {
   name: String!
   chart: String!
   version: String!
+  activeVersion: String!
   source: String!
   description: String!
   dependencies: [Dependency!]!

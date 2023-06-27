@@ -130,6 +130,7 @@ type ComplexityRoot struct {
 	}
 
 	Feature struct {
+		ActiveVersion    func(childComplexity int) int
 		Chart            func(childComplexity int) int
 		Configoverrides  func(childComplexity int) int
 		Configuration    func(childComplexity int) int
@@ -307,6 +308,8 @@ type EnvironmentResolver interface {
 	Feature(ctx context.Context, obj *model.Environment, name string) (*model.Feature, error)
 }
 type FeatureResolver interface {
+	ActiveVersion(ctx context.Context, obj *model.Feature) (string, error)
+
 	Dependencies(ctx context.Context, obj *model.Feature) ([]*model.Dependency, error)
 
 	Configoverrides(ctx context.Context, obj *model.Feature) ([]*model.ConfigOverride, error)
@@ -673,6 +676,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.EnvironmentValue.Value(childComplexity), true
+
+	case "Feature.activeVersion":
+		if e.complexity.Feature.ActiveVersion == nil {
+			break
+		}
+
+		return e.complexity.Feature.ActiveVersion(childComplexity), true
 
 	case "Feature.chart":
 		if e.complexity.Feature.Chart == nil {
@@ -1780,6 +1790,7 @@ type Feature {
   name: String!
   chart: String!
   version: String!
+  activeVersion: String!
   source: String!
   description: String!
   dependencies: [Dependency!]!
@@ -4231,6 +4242,8 @@ func (ec *executionContext) fieldContext_Environment_features(ctx context.Contex
 				return ec.fieldContext_Feature_chart(ctx, field)
 			case "version":
 				return ec.fieldContext_Feature_version(ctx, field)
+			case "activeVersion":
+				return ec.fieldContext_Feature_activeVersion(ctx, field)
 			case "source":
 				return ec.fieldContext_Feature_source(ctx, field)
 			case "description":
@@ -4299,6 +4312,8 @@ func (ec *executionContext) fieldContext_Environment_feature(ctx context.Context
 				return ec.fieldContext_Feature_chart(ctx, field)
 			case "version":
 				return ec.fieldContext_Feature_version(ctx, field)
+			case "activeVersion":
+				return ec.fieldContext_Feature_activeVersion(ctx, field)
 			case "source":
 				return ec.fieldContext_Feature_source(ctx, field)
 			case "description":
@@ -4590,6 +4605,50 @@ func (ec *executionContext) fieldContext_Feature_version(ctx context.Context, fi
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Feature_activeVersion(ctx context.Context, field graphql.CollectedField, obj *model.Feature) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Feature_activeVersion(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Feature().ActiveVersion(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Feature_activeVersion(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Feature",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
 		},
@@ -5080,6 +5139,8 @@ func (ec *executionContext) fieldContext_FeatureState_feature(ctx context.Contex
 				return ec.fieldContext_Feature_chart(ctx, field)
 			case "version":
 				return ec.fieldContext_Feature_version(ctx, field)
+			case "activeVersion":
+				return ec.fieldContext_Feature_activeVersion(ctx, field)
 			case "source":
 				return ec.fieldContext_Feature_source(ctx, field)
 			case "description":
@@ -5274,6 +5335,8 @@ func (ec *executionContext) fieldContext_FeatureState_missingDependencies(ctx co
 				return ec.fieldContext_Feature_chart(ctx, field)
 			case "version":
 				return ec.fieldContext_Feature_version(ctx, field)
+			case "activeVersion":
+				return ec.fieldContext_Feature_activeVersion(ctx, field)
 			case "source":
 				return ec.fieldContext_Feature_source(ctx, field)
 			case "description":
@@ -5436,6 +5499,8 @@ func (ec *executionContext) fieldContext_FeatureWarning_feature(ctx context.Cont
 				return ec.fieldContext_Feature_chart(ctx, field)
 			case "version":
 				return ec.fieldContext_Feature_version(ctx, field)
+			case "activeVersion":
+				return ec.fieldContext_Feature_activeVersion(ctx, field)
 			case "source":
 				return ec.fieldContext_Feature_source(ctx, field)
 			case "description":
@@ -7548,6 +7613,8 @@ func (ec *executionContext) fieldContext_Query_features(ctx context.Context, fie
 				return ec.fieldContext_Feature_chart(ctx, field)
 			case "version":
 				return ec.fieldContext_Feature_version(ctx, field)
+			case "activeVersion":
+				return ec.fieldContext_Feature_activeVersion(ctx, field)
 			case "source":
 				return ec.fieldContext_Feature_source(ctx, field)
 			case "description":
@@ -7616,6 +7683,8 @@ func (ec *executionContext) fieldContext_Query_feature(ctx context.Context, fiel
 				return ec.fieldContext_Feature_chart(ctx, field)
 			case "version":
 				return ec.fieldContext_Feature_version(ctx, field)
+			case "activeVersion":
+				return ec.fieldContext_Feature_activeVersion(ctx, field)
 			case "source":
 				return ec.fieldContext_Feature_source(ctx, field)
 			case "description":
@@ -8192,6 +8261,8 @@ func (ec *executionContext) fieldContext_Release_feature(ctx context.Context, fi
 				return ec.fieldContext_Feature_chart(ctx, field)
 			case "version":
 				return ec.fieldContext_Feature_version(ctx, field)
+			case "activeVersion":
+				return ec.fieldContext_Feature_activeVersion(ctx, field)
 			case "source":
 				return ec.fieldContext_Feature_source(ctx, field)
 			case "description":
@@ -13001,6 +13072,42 @@ func (ec *executionContext) _Feature(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "activeVersion":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Feature_activeVersion(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "source":
 			out.Values[i] = ec._Feature_source(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

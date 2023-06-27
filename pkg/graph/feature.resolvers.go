@@ -21,6 +21,19 @@ func (r *configOverrideResolver) Environment(ctx context.Context, obj *model.Con
 	return r.Repo.EnvironmentGet(ctx, obj.EnvironmentID)
 }
 
+// ActiveVersion is the resolver for the activeVersion field.
+func (r *featureResolver) ActiveVersion(ctx context.Context, obj *model.Feature) (string, error) {
+	status, err := r.Repo.StatusForFeature(ctx, obj.GraphVars.EnvironmentID, obj.Name)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return "", nil
+		}
+		return "", err
+	}
+
+	return status.Version, nil
+}
+
 // Dependencies is the resolver for the dependencies field.
 func (r *featureResolver) Dependencies(ctx context.Context, obj *model.Feature) ([]*model.Dependency, error) {
 	return obj.Dependencies, nil
@@ -97,5 +110,7 @@ func (r *Resolver) ConfigOverride() graphgen.ConfigOverrideResolver {
 // Feature returns graphgen.FeatureResolver implementation.
 func (r *Resolver) Feature() graphgen.FeatureResolver { return &featureResolver{r} }
 
-type configOverrideResolver struct{ *Resolver }
-type featureResolver struct{ *Resolver }
+type (
+	configOverrideResolver struct{ *Resolver }
+	featureResolver        struct{ *Resolver }
+)
