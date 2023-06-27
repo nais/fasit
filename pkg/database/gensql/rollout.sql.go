@@ -216,6 +216,8 @@ const rolloutsForFeature = `-- name: RolloutsForFeature :many
 SELECT id, feature_name, version, status, created, completed
 FROM rollouts
 WHERE feature_name = $1
+ORDER BY created DESC
+LIMIT 30
 `
 
 func (q *Queries) RolloutsForFeature(ctx context.Context, featureName string) ([]Rollout, error) {

@@ -56,7 +56,10 @@ UPDATE rollouts SET completed = NOW() WHERE feature_name = @feature_name and com
 -- name: RolloutsForFeature :many
 SELECT *
 FROM rollouts
-WHERE feature_name = @feature_name;
+WHERE feature_name = @feature_name
+ORDER BY created DESC
+LIMIT 30
+;
 
 -- name: RolloutByNameAndVersion :one
 SELECT *
