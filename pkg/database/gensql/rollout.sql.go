@@ -65,6 +65,32 @@ func (q *Queries) RolloutByName(ctx context.Context, name string) (RolloutByName
 	return i, err
 }
 
+const rolloutByNameAndVersion = `-- name: RolloutByNameAndVersion :one
+SELECT id, feature_name, version, status, created, completed
+FROM rollouts
+WHERE feature_name = $1
+AND version = $2
+`
+
+type RolloutByNameAndVersionParams struct {
+	FeatureName string
+	Version     string
+}
+
+func (q *Queries) RolloutByNameAndVersion(ctx context.Context, arg RolloutByNameAndVersionParams) (Rollout, error) {
+	row := q.db.QueryRow(ctx, rolloutByNameAndVersion, arg.FeatureName, arg.Version)
+	var i Rollout
+	err := row.Scan(
+		&i.ID,
+		&i.FeatureName,
+		&i.Version,
+		&i.Status,
+		&i.Created,
+		&i.Completed,
+	)
+	return i, err
+}
+
 const rolloutComplete = `-- name: RolloutComplete :exec
 UPDATE rollouts SET completed = NOW() WHERE feature_name = $1 and completed IS NULL
 `
@@ -107,18 +133,58 @@ func (q *Queries) RolloutDelete(ctx context.Context, featureName string) error {
 }
 
 const rolloutEventCreate = `-- name: RolloutEventCreate :exec
-INSERT INTO rollout_events (rollout_id, failure, message) VALUES ($1, $2::boolean, $3)
+INSERT INTO rollout_events (rollout_id, failure, message, data) VALUES ($1, $2::boolean, $3, $4)
 `
 
 type RolloutEventCreateParams struct {
 	RolloutID uuid.UUID
 	Failure   bool
 	Message   string
+	Data      pgtype.JSONB
 }
 
 func (q *Queries) RolloutEventCreate(ctx context.Context, arg RolloutEventCreateParams) error {
-	_, err := q.db.Exec(ctx, rolloutEventCreate, arg.RolloutID, arg.Failure, arg.Message)
+	_, err := q.db.Exec(ctx, rolloutEventCreate,
+		arg.RolloutID,
+		arg.Failure,
+		arg.Message,
+		arg.Data,
+	)
 	return err
+}
+
+const rolloutEventForRollout = `-- name: RolloutEventForRollout :many
+SELECT id, rollout_id, failure, message, data, created
+FROM rollout_events
+WHERE rollout_id = $1
+ORDER BY created ASC
+`
+
+func (q *Queries) RolloutEventForRollout(ctx context.Context, rolloutID uuid.UUID) ([]RolloutEvent, error) {
+	rows, err := q.db.Query(ctx, rolloutEventForRollout, rolloutID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []RolloutEvent{}
+	for rows.Next() {
+		var i RolloutEvent
+		if err := rows.Scan(
+			&i.ID,
+			&i.RolloutID,
+			&i.Failure,
+			&i.Message,
+			&i.Data,
+			&i.Created,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const rolloutStatus = `-- name: RolloutStatus :one

@@ -13,9 +13,10 @@ type RolloutEvent {
   failure: Boolean!
   message: String!
   created: Time!
+  data: RawMessage
 }
 
 extend type Query {
   rollouts(feature: String!): [Rollout!]!
-  rollout(id: ID!): Rollout!
+  rollout(feature: String!, version: String!): Rollout!
 }

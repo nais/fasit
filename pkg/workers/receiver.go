@@ -30,7 +30,7 @@ type ReceiverStore interface {
 	ReleaseStatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Release) error
 	RolloutByName(ctx context.Context, name string) (*model.Feature, error)
 	RolloutDelete(ctx context.Context, name string) error
-	RolloutEventCreate(ctx context.Context, rollout uuid.UUID, failure bool, message string) error
+	RolloutEventCreate(ctx context.Context, rollout uuid.UUID, failure bool, message string, data map[string]any) error
 	RolloutStatus(ctx context.Context, name string) (model.RolloutStatus, error)
 	RolloutsUpdateStatus(ctx context.Context, status model.RolloutStatus, name string, completed bool) error
 	StatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Helm) error
@@ -99,7 +99,7 @@ func (r *Receiver) handlerHelm(ctx context.Context, msg message.Status) error {
 	}
 
 	if env.CI {
-		if err := r.handleCI(ctx, env, helmStatus); err != nil {
+		if err := r.handleCI(ctx, env, helmStatus, msg.Tenant); err != nil {
 			r.log.WithError(err).Error("handling helm status message for CI environment")
 		}
 	}
@@ -112,7 +112,7 @@ func (r *Receiver) handlerHelm(ctx context.Context, msg message.Status) error {
 	return nil
 }
 
-func (r *Receiver) handleCI(ctx context.Context, env *model.Environment, helmStatus *message.Helm) error {
+func (r *Receiver) handleCI(ctx context.Context, env *model.Environment, helmStatus *message.Helm, tenant string) error {
 	rollout, err := r.repo.RolloutByName(ctx, helmStatus.Name)
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
@@ -128,10 +128,19 @@ func (r *Receiver) handleCI(ctx context.Context, env *model.Environment, helmSta
 		return nil
 	}
 
+	eventData := map[string]any{
+		"environment": env.Name,
+		"tenant":      tenant,
+	}
+
+	if len(helmStatus.Log) > 0 {
+		eventData["log"] = helmStatus.Log
+	}
+
 	// At this point, we know the status message is for a active rollout
 	switch helmStatus.RolloutStatus {
 	case model.RolloutStatusPending:
-		if err := r.repo.RolloutEventCreate(ctx, rollout.GraphVars.RolloutID, false, "Helm installing..."); err != nil {
+		if err := r.repo.RolloutEventCreate(ctx, rollout.GraphVars.RolloutID, false, "Installing helm chart...", eventData); err != nil {
 			return fmt.Errorf("creating rollout event: %w", err)
 		}
 		return nil
@@ -139,11 +148,11 @@ func (r *Receiver) handleCI(ctx context.Context, env *model.Environment, helmSta
 		if err := r.repo.RolloutsUpdateStatus(ctx, model.RolloutStatusFailed, rollout.Name, false); err != nil {
 			return fmt.Errorf("updating rollout status: %w", err)
 		}
-		if err := r.repo.RolloutEventCreate(ctx, rollout.GraphVars.RolloutID, true, "Helm install failed"); err != nil {
+		if err := r.repo.RolloutEventCreate(ctx, rollout.GraphVars.RolloutID, true, "Helm install failed", eventData); err != nil {
 			return fmt.Errorf("creating rollout event: %w", err)
 		}
 	case model.RolloutStatusDeployed:
-		if err := r.repo.RolloutEventCreate(ctx, rollout.GraphVars.RolloutID, false, "Helm install succeeded"); err != nil {
+		if err := r.repo.RolloutEventCreate(ctx, rollout.GraphVars.RolloutID, false, "Helm install succeeded", eventData); err != nil {
 			return fmt.Errorf("creating rollout event: %w", err)
 		}
 	default:

@@ -45,10 +45,11 @@ type EnvironmentUpdate struct {
 }
 
 type RolloutEvent struct {
-	ID      uuid.UUID `json:"id"`
-	Failure bool      `json:"failure"`
-	Message string    `json:"message"`
-	Created time.Time `json:"created"`
+	ID      uuid.UUID       `json:"id"`
+	Failure bool            `json:"failure"`
+	Message string          `json:"message"`
+	Created time.Time       `json:"created"`
+	Data    json.RawMessage `json:"data,omitempty"`
 }
 
 type TenantCreate struct {

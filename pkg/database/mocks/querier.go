@@ -1031,6 +1031,30 @@ func (_m *Querier) RolloutByName(ctx context.Context, name string) (gensql.Rollo
 	return r0, r1
 }
 
+// RolloutByNameAndVersion provides a mock function with given fields: ctx, arg
+func (_m *Querier) RolloutByNameAndVersion(ctx context.Context, arg gensql.RolloutByNameAndVersionParams) (gensql.Rollout, error) {
+	ret := _m.Called(ctx, arg)
+
+	var r0 gensql.Rollout
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.RolloutByNameAndVersionParams) (gensql.Rollout, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.RolloutByNameAndVersionParams) gensql.Rollout); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(gensql.Rollout)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, gensql.RolloutByNameAndVersionParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // RolloutComplete provides a mock function with given fields: ctx, featureName
 func (_m *Querier) RolloutComplete(ctx context.Context, featureName string) error {
 	ret := _m.Called(ctx, featureName)
@@ -1095,6 +1119,32 @@ func (_m *Querier) RolloutEventCreate(ctx context.Context, arg gensql.RolloutEve
 	}
 
 	return r0
+}
+
+// RolloutEventForRollout provides a mock function with given fields: ctx, rolloutID
+func (_m *Querier) RolloutEventForRollout(ctx context.Context, rolloutID uuid.UUID) ([]gensql.RolloutEvent, error) {
+	ret := _m.Called(ctx, rolloutID)
+
+	var r0 []gensql.RolloutEvent
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]gensql.RolloutEvent, error)); ok {
+		return rf(ctx, rolloutID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) []gensql.RolloutEvent); ok {
+		r0 = rf(ctx, rolloutID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gensql.RolloutEvent)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, rolloutID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // RolloutStatesGet provides a mock function with given fields: ctx, environmentID

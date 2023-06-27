@@ -1026,6 +1026,32 @@ func (_m *Repo) RolloutByName(ctx context.Context, name string) (*model.Feature,
 	return r0, r1
 }
 
+// RolloutByNameAndVersion provides a mock function with given fields: ctx, name, version
+func (_m *Repo) RolloutByNameAndVersion(ctx context.Context, name string, version string) (*model.Rollout, error) {
+	ret := _m.Called(ctx, name, version)
+
+	var r0 *model.Rollout
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.Rollout, error)); ok {
+		return rf(ctx, name, version)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Rollout); ok {
+		r0 = rf(ctx, name, version)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Rollout)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, name, version)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // RolloutCreate provides a mock function with given fields: ctx, name, version
 func (_m *Repo) RolloutCreate(ctx context.Context, name string, version string) (*model.Rollout, error) {
 	ret := _m.Called(ctx, name, version)
@@ -1066,18 +1092,44 @@ func (_m *Repo) RolloutDelete(ctx context.Context, name string) error {
 	return r0
 }
 
-// RolloutEventCreate provides a mock function with given fields: ctx, rollout, failure, _a3
-func (_m *Repo) RolloutEventCreate(ctx context.Context, rollout uuid.UUID, failure bool, _a3 string) error {
-	ret := _m.Called(ctx, rollout, failure, _a3)
+// RolloutEventCreate provides a mock function with given fields: ctx, rollout, failure, _a3, data
+func (_m *Repo) RolloutEventCreate(ctx context.Context, rollout uuid.UUID, failure bool, _a3 string, data map[string]interface{}) error {
+	ret := _m.Called(ctx, rollout, failure, _a3, data)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, bool, string) error); ok {
-		r0 = rf(ctx, rollout, failure, _a3)
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, bool, string, map[string]interface{}) error); ok {
+		r0 = rf(ctx, rollout, failure, _a3, data)
 	} else {
 		r0 = ret.Error(0)
 	}
 
 	return r0
+}
+
+// RolloutEvents provides a mock function with given fields: ctx, rolloutID
+func (_m *Repo) RolloutEvents(ctx context.Context, rolloutID uuid.UUID) ([]*model.RolloutEvent, error) {
+	ret := _m.Called(ctx, rolloutID)
+
+	var r0 []*model.RolloutEvent
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]*model.RolloutEvent, error)); ok {
+		return rf(ctx, rolloutID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) []*model.RolloutEvent); ok {
+		r0 = rf(ctx, rolloutID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.RolloutEvent)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, rolloutID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // RolloutStatesGet provides a mock function with given fields: ctx, envID

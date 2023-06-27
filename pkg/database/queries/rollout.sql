@@ -45,7 +45,7 @@ AND rollouts.status = 'pending'
 UPDATE rollouts SET status = @status WHERE feature_name = @feature_name and completed IS NULL;
 
 -- name: RolloutEventCreate :exec
-INSERT INTO rollout_events (rollout_id, failure, message) VALUES (@rollout_id, @failure::boolean, @message);
+INSERT INTO rollout_events (rollout_id, failure, message, data) VALUES (@rollout_id, @failure::boolean, @message, @data);
 
 -- name: RolloutStatus :one
 SELECT status FROM rollouts WHERE feature_name = @feature_name and completed IS NULL;
@@ -58,8 +58,14 @@ SELECT *
 FROM rollouts
 WHERE feature_name = @feature_name;
 
+-- name: RolloutByNameAndVersion :one
+SELECT *
+FROM rollouts
+WHERE feature_name = @feature_name
+AND version = @version;
+
 -- name: RolloutEventForRollout :many
 SELECT *
 FROM rollout_events
 WHERE rollout_id = @rollout_id
-ORDER BY created DESC;
+ORDER BY created ASC;

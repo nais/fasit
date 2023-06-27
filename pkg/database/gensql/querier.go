@@ -55,10 +55,12 @@ type Querier interface {
 	ReleaseStatusDeleteByEnvironment(ctx context.Context, environmentID uuid.UUID) error
 	ReleaseStatusesGet(ctx context.Context, environmentID uuid.UUID) ([]ReleaseStatus, error)
 	RolloutByName(ctx context.Context, name string) (RolloutByNameRow, error)
+	RolloutByNameAndVersion(ctx context.Context, arg RolloutByNameAndVersionParams) (Rollout, error)
 	RolloutComplete(ctx context.Context, featureName string) error
 	RolloutCreate(ctx context.Context, arg RolloutCreateParams) (Rollout, error)
 	RolloutDelete(ctx context.Context, featureName string) error
 	RolloutEventCreate(ctx context.Context, arg RolloutEventCreateParams) error
+	RolloutEventForRollout(ctx context.Context, rolloutID uuid.UUID) ([]RolloutEvent, error)
 	RolloutStatesGet(ctx context.Context, environmentID uuid.UUID) ([]RolloutStatesGetRow, error)
 	RolloutStatus(ctx context.Context, featureName string) (string, error)
 	RolloutUpdateStatus(ctx context.Context, arg RolloutUpdateStatusParams) error
