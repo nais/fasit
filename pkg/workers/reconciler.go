@@ -267,14 +267,16 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 		}).Debug("publish deploy instruction")
 
 		r.deployMessages.Add(ctx, 1, metric.WithAttributes(append(metricAttrs, attribute.Key("feature").String(f.Name))...))
-		err = mgr.Publish(ctx, message.DeployInstruction{
+		di := message.DeployInstruction{
 			Name:       f.Name,
 			Version:    f.Version,
 			Chart:      f.Chart,
 			ConfigHash: hash,
 			Timeout:    f.Timeout,
 			Values:     values,
-		})
+		}
+		r.log.Debugf("publishing deploy instruction: %#v", di)
+		err = mgr.Publish(ctx, di)
 		if err != nil {
 			return fmt.Errorf("publish deploy instruction: %w", err)
 		}
