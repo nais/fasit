@@ -1,6 +1,6 @@
 module github.com/nais/fasit
 
-go 1.19
+go 1.20
 
 require (
 	cloud.google.com/go/cloudsqlconn v1.3.0
