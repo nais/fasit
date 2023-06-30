@@ -263,6 +263,7 @@ SELECT
 FROM rollouts
 JOIN feature_data fd ON rollouts.feature_name = fd.name AND rollouts.version = fd.version
 WHERE $1::text = ANY(kinds::text[])
+AND rollouts.status = 'pending'
 ORDER BY rollouts.feature_name
 `
 

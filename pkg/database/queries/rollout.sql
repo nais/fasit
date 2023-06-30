@@ -20,6 +20,7 @@ SELECT
 FROM rollouts
 JOIN feature_data fd ON rollouts.feature_name = fd.name AND rollouts.version = fd.version
 WHERE @environment_kind::text = ANY(kinds::text[])
+AND rollouts.status = 'pending'
 ORDER BY rollouts.feature_name;
 
 -- name: RolloutByName :one
@@ -38,8 +39,7 @@ SELECT
 FROM rollouts
 JOIN feature_data fd ON rollouts.feature_name = fd.name AND rollouts.version = fd.version
 WHERE fd.name = @name
-AND rollouts.status = 'pending'
-;
+AND rollouts.status = 'pending';
 
 -- name: RolloutUpdateStatus :exec
 UPDATE rollouts SET status = @status WHERE feature_name = @feature_name and completed IS NULL;
