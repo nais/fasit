@@ -4,11 +4,6 @@ version: 20230619-010042-ae685f3
 description: "Backend for NAIS console"
 environmentKinds:
   - "management"
-  
-config: 
-  host:
-    type: string
-    displayName: override hostname during testing
 mapping:
   teams.token:
     value: "{{.Management.console_teams_api_key}}"
