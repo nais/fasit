@@ -235,7 +235,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 
 	for _, f := range features {
 		if states[f.Name] == nil || !states[f.Name].Enabled {
-			r.log.WithField("feature", f.Name).Debug("not enabled")
+			r.log.WithField("feature", f.Name).Trace("not enabled")
 			continue
 		}
 
@@ -264,19 +264,18 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 			"feature":     f.Name,
 			"tenant":      d.TenantName,
 			"environment": d.Name,
-		}).Debug("publish deploy instruction")
+			"version":     f.Version,
+		}).Debug("publishing deploy instruction")
 
 		r.deployMessages.Add(ctx, 1, metric.WithAttributes(append(metricAttrs, attribute.Key("feature").String(f.Name))...))
-		di := message.DeployInstruction{
+		err = mgr.Publish(ctx, message.DeployInstruction{
 			Name:       f.Name,
 			Version:    f.Version,
 			Chart:      f.Chart,
 			ConfigHash: hash,
 			Timeout:    f.Timeout,
 			Values:     values,
-		}
-		r.log.Debugf("publishing deploy instruction: %#v", di)
-		err = mgr.Publish(ctx, di)
+		})
 		if err != nil {
 			return fmt.Errorf("publish deploy instruction: %w", err)
 		}
