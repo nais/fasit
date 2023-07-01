@@ -8,7 +8,7 @@ require (
 	cloud.google.com/go/storage v1.30.1
 	github.com/99designs/gqlgen v0.17.32
 	github.com/GoogleCloudPlatform/cloudsql-proxy v1.33.7
-	github.com/GoogleCloudPlatform/k8s-config-connector v1.97.0
+	github.com/GoogleCloudPlatform/k8s-config-connector v1.105.0
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/coreos/go-oidc/v3 v3.6.0
 	github.com/fsnotify/fsnotify v1.6.0
@@ -206,4 +206,5 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
+
 replace github.com/hashicorp/terraform-provider-google-beta => github.com/GoogleCloudPlatform/k8s-config-connector/third_party/github.com/hashicorp/terraform-provider-google-beta v0.0.0-20221206183754-68062425bd5f
