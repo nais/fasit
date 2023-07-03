@@ -162,46 +162,41 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return err
 	}
 
-	for _, d := range data {
+	for _, e := range data {
 		log := r.log.WithFields(logrus.Fields{
-			"environment": d.Name,
-			"tenant":      d.TenantName,
+			"environment": e.Name,
+			"tenant":      e.TenantName,
 		})
 
 		log.Debug("reconcile environment")
 
-		if err := r.reconcileEnvironment(ctx, d); err != nil {
+		if err := r.reconcileEnvironment(ctx, e, log); err != nil {
 			log.WithError(err).Error("unable to reconcile environment")
 		}
 	}
 	return nil
 }
 
-func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEnvironment) error {
+func (r *Reconciler) reconcileEnvironment(ctx context.Context, e *model.TenantEnvironment, log *logrus.Entry) error {
 	metricAttrs := []attribute.KeyValue{
-		attribute.Key("environment").String(d.Name),
-		attribute.Key("tenant").String(d.TenantName),
+		attribute.Key("environment").String(e.Name),
+		attribute.Key("tenant").String(e.TenantName),
 	}
 	start := time.Now()
 	defer func() {
 		r.reconcileTime.Record(ctx, time.Since(start).Milliseconds(), metric.WithAttributes(metricAttrs...))
 	}()
 
-	health, err := r.repo.HealthGet(ctx, d.ID)
+	health, err := r.repo.HealthGet(ctx, e.ID)
 	if err != nil {
 		return fmt.Errorf("health status: %w", err)
 	}
 	if time.Since(health.ReportedAt) > 3*time.Minute {
-		r.log.WithField("environment", d.Name).Debug("naisd is unhealthy - skip reconcile")
+		log.Debug("naisd is unhealthy - skip reconcile")
 		return nil
 	}
 
-	features, err := r.repo.FeaturesForKind(ctx, d.Kind, d.CI)
-	if err != nil {
-		return fmt.Errorf("features for kind: %w", err)
-	}
-
-	envStatus, err := r.repo.StatusForEnvironment(ctx, d.Environment.ID)
+	envStatus, err := r.repo.StatusForEnvironment(ctx, e.Environment.ID)
 	if err != nil {
 		return fmt.Errorf("status for environment: %w", err)
 	}
@@ -211,13 +206,13 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 		lookup[s.Feature] = s
 	}
 
-	featureStates, err := r.repo.FeatureStatesGet(ctx, d.ID)
+	featureStates, err := r.repo.FeatureStatesGet(ctx, e.ID)
 	if err != nil {
 		return fmt.Errorf("feature states: %w", err)
 	}
 
-	if d.CI {
-		rolloutStates, err := r.repo.RolloutStatesGet(ctx, d.ID)
+	if e.CI {
+		rolloutStates, err := r.repo.RolloutStatesGet(ctx, e.ID)
 		if err != nil {
 			return fmt.Errorf("rollout states: %w", err)
 		}
@@ -230,20 +225,28 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 		states[s.FeatureName] = s
 	}
 
-	mgr := r.publisher(r.projectID, "naisd-"+d.TenantName+"-"+d.Name, r.log)
+	mgr := r.publisher(r.projectID, "naisd-"+e.TenantName+"-"+e.Name, r.log)
 	defer mgr.Stop()
 
+	features, err := r.repo.FeaturesForKind(ctx, e.Kind, e.CI)
+	if err != nil {
+		return fmt.Errorf("features for kind: %w", err)
+	}
+
 	for _, f := range features {
+		log = log.WithField("feature", f.Name)
+		log.Debug("reconcile feature")
+
 		if states[f.Name] == nil || !states[f.Name].Enabled {
-			r.log.WithField("feature", f.Name).Trace("not enabled")
+			log.Debug("not enabled")
 			continue
 		}
 
-		values, err := r.repo.HelmValues(ctx, f, d.ID)
+		values, err := r.repo.HelmValues(ctx, f, e.ID)
 		if err != nil {
 			var fer *database.ErrMissingRequiredFields
 			if errors.As(err, &fer) {
-				r.log.WithField("feature", f.Name).WithError(err).Debug("missing required fields")
+				log.WithError(err).Debug("missing required fields")
 				continue
 			}
 			return fmt.Errorf("helm values: %w", err)
@@ -256,16 +259,12 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 
 		if status, ok := lookup[f.Name]; ok {
 			if status.Version == f.Version && status.ConfigHash == hash {
+				log.Debug("no changes")
 				continue
 			}
 		}
 
-		r.log.WithFields(logrus.Fields{
-			"feature":     f.Name,
-			"tenant":      d.TenantName,
-			"environment": d.Name,
-			"version":     f.Version,
-		}).Debug("publishing deploy instruction")
+		r.log.WithField("version", f.Version).Debug("publishing deploy instruction")
 
 		r.deployMessages.Add(ctx, 1, metric.WithAttributes(append(metricAttrs, attribute.Key("feature").String(f.Name))...))
 		err = mgr.Publish(ctx, message.DeployInstruction{
