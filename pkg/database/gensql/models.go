@@ -130,6 +130,7 @@ type FeatureDatum struct {
 	Dependencies  pgtype.JSONB
 	Values        pgtype.JSONB
 	DefaultValues pgtype.JSONB
+	Timeout       int64
 }
 
 type FeatureState struct {

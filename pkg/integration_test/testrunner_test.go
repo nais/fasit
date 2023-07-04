@@ -130,7 +130,6 @@ func newGQLRunner(ctx context.Context, t *testing.T, db database.Repo) testmanag
 	resolver := &graph.Resolver{
 		Repo: db,
 		Log:  logrus.NewEntry(log),
-		// HelmChartValues: helmChartValues,
 	}
 
 	newServer := func(es graphql.ExecutableSchema) *handler.Server {

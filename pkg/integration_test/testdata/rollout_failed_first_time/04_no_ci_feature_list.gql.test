@@ -1,0 +1,19 @@
+{
+	tenant(slug: "tenant23") {
+		environment(slug: "nonci") {
+			features {name, version}
+		}
+	}
+}
+
+RETURNS
+
+{
+	"data": {
+		"tenant": {
+			"environment": {
+				"features": []
+			}
+		}
+	}
+}

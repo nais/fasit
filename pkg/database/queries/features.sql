@@ -9,6 +9,7 @@ SELECT
   fd.dependencies,
   fd.values,
   fd.default_values,
+  fd.timeout,
   features.created,
   features.last_modified
 FROM features
@@ -49,6 +50,7 @@ SELECT
   fd.dependencies,
   fd.values,
   fd.default_values,
+  fd.timeout,
   combined.created,
   combined.last_modified
 FROM combined
@@ -74,6 +76,7 @@ SELECT
   fd.dependencies,
   fd.values,
   fd.default_values,
+  fd.timeout,
   features.created,
   features.last_modified
 FROM features

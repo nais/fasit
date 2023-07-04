@@ -108,7 +108,7 @@ func (r *repo) RolloutByName(ctx context.Context, name string) (*model.Feature, 
 		return nil, fmt.Errorf("unmarshal default values: %w", err)
 	}
 
-	fyaml, defaultValues, err := makeFeatureYAML(f.Kinds, f.Dependencies, f.Values, f.DefaultValues)
+	fyaml, defaultValues, err := makeFeatureYAML(f.Kinds, f.Dependencies, f.Values, f.DefaultValues, f.Timeout)
 	if err != nil {
 		return nil, fmt.Errorf("make feature yaml: %w", err)
 	}

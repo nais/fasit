@@ -8,7 +8,7 @@ ENDOPTS
 {
   "Chart": "oci://clamav",
   "Name": "clamav",
-  "Timeout": 0,
+  "Timeout": 600000000000,
   "Values": {
     "fasit": {
       "env": {

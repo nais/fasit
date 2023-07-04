@@ -180,7 +180,6 @@ func (r *repo) FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID,
 			}
 		}
 
-		fmt.Printf("enabled features: %v\n", enabledFeatures)
 		missingFeatures := feature.Dependencies.FindMissing(enabledFeatures)
 		if len(missingFeatures) > 0 {
 			return nil, fmt.Errorf("dependency '%v' not enabled", missingFeatures)

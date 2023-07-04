@@ -54,5 +54,6 @@ func (r *repo) FeatureDataCreate(ctx context.Context, feature model.Feature) err
 		Dependencies:  dep,
 		Values:        vals,
 		DefaultValues: defaultVals,
+		Timeout:       feature.Timeout.Milliseconds(),
 	})
 }

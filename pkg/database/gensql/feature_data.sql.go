@@ -21,7 +21,8 @@ INSERT INTO feature_data (
     kinds,
     dependencies,
     values,
-    default_values
+    default_values,
+    timeout
 ) VALUES (
     $1,
     $2,
@@ -31,7 +32,8 @@ INSERT INTO feature_data (
     ($6::text[])::environment_kind[],
     $7,
     $8,
-    $9
+    $9,
+    $10
 )
 `
 
@@ -45,6 +47,7 @@ type FeatureDataCreateParams struct {
 	Dependencies  pgtype.JSONB
 	Values        pgtype.JSONB
 	DefaultValues pgtype.JSONB
+	Timeout       int64
 }
 
 func (q *Queries) FeatureDataCreate(ctx context.Context, arg FeatureDataCreateParams) error {
@@ -58,6 +61,7 @@ func (q *Queries) FeatureDataCreate(ctx context.Context, arg FeatureDataCreatePa
 		arg.Dependencies,
 		arg.Values,
 		arg.DefaultValues,
+		arg.Timeout,
 	)
 	return err
 }

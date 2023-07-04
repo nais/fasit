@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgtype"
@@ -61,7 +62,7 @@ func (r *repo) FeatureByName(ctx context.Context, name string) (*model.Feature, 
 		return nil, fmt.Errorf("get feature by name from db: %w", err)
 	}
 
-	fyaml, defaultValues, err := makeFeatureYAML(f.Kinds, f.Dependencies, f.Values, f.DefaultValues)
+	fyaml, defaultValues, err := makeFeatureYAML(f.Kinds, f.Dependencies, f.Values, f.DefaultValues, f.Timeout)
 	if err != nil {
 		return nil, fmt.Errorf("make feature yaml: %w", err)
 	}
@@ -85,7 +86,7 @@ func (r *repo) Features(ctx context.Context) ([]*model.Feature, error) {
 
 	var ret []*model.Feature
 	for _, f := range features {
-		fyaml, defaultValues, err := makeFeatureYAML(f.Kinds, f.Dependencies, f.Values, f.DefaultValues)
+		fyaml, defaultValues, err := makeFeatureYAML(f.Kinds, f.Dependencies, f.Values, f.DefaultValues, f.Timeout)
 		if err != nil {
 			return nil, fmt.Errorf("make feature yaml: %w", err)
 		}
@@ -179,6 +180,7 @@ func (r *repo) FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, 
 			Kinds:         ro.Kinds,
 			Values:        ro.Values,
 			Created:       ro.Created,
+			Timeout:       ro.Timeout,
 		})
 	}
 
@@ -258,7 +260,7 @@ func (r *repo) FeatureByNameForEnv(ctx context.Context, name string, envID uuid.
 func featuresFromSQL(features []gensql.FeaturesForKindRow) ([]*model.Feature, error) {
 	var ret []*model.Feature
 	for _, f := range features {
-		fyaml, defaultValues, err := makeFeatureYAML(f.Kinds, f.Dependencies, f.Values, f.DefaultValues)
+		fyaml, defaultValues, err := makeFeatureYAML(f.Kinds, f.Dependencies, f.Values, f.DefaultValues, f.Timeout)
 		if err != nil {
 			return nil, fmt.Errorf("make feature yaml: %w", err)
 		}
@@ -277,8 +279,10 @@ func featuresFromSQL(features []gensql.FeaturesForKindRow) ([]*model.Feature, er
 	return ret, nil
 }
 
-func makeFeatureYAML(kinds []string, deps, values, defaultValues pgtype.JSONB) (model.FeatureYAML, map[string]json.RawMessage, error) {
-	ret := model.FeatureYAML{}
+func makeFeatureYAML(kinds []string, deps, values, defaultValues pgtype.JSONB, timeout int64) (model.FeatureYAML, map[string]json.RawMessage, error) {
+	ret := model.FeatureYAML{
+		Timeout: time.Duration(timeout) * time.Millisecond,
+	}
 	if err := json.Unmarshal(deps.Bytes, &ret.Dependencies); err != nil {
 		return ret, nil, fmt.Errorf("unmarshal dependencies: %w", err)
 	}

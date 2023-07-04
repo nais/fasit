@@ -37,6 +37,15 @@ local-naisd:
 	--env dev \
 	--log-level=debug
 
+local-naisd-failing:
+	PUBSUB_EMULATOR_HOST=localhost:8086 go run ./cmd/naisd \
+	--env-project-id local-test-partner-dev \
+	--nais-project-id nais-local-dev \
+	--tenant-name test-partner \
+	--env dev \
+	--log-level=debug \
+	--mock-failing=true
+
 test:
 	go test -cover ./...
 

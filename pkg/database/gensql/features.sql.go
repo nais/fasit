@@ -23,6 +23,7 @@ SELECT
   fd.dependencies,
   fd.values,
   fd.default_values,
+  fd.timeout,
   features.created,
   features.last_modified
 FROM features
@@ -40,6 +41,7 @@ type FeatureByNameRow struct {
 	Dependencies  pgtype.JSONB
 	Values        pgtype.JSONB
 	DefaultValues pgtype.JSONB
+	Timeout       int64
 	Created       time.Time
 	LastModified  time.Time
 }
@@ -57,6 +59,7 @@ func (q *Queries) FeatureByName(ctx context.Context, name string) (FeatureByName
 		&i.Dependencies,
 		&i.Values,
 		&i.DefaultValues,
+		&i.Timeout,
 		&i.Created,
 		&i.LastModified,
 	)
@@ -64,7 +67,7 @@ func (q *Queries) FeatureByName(ctx context.Context, name string) (FeatureByName
 }
 
 const featureGetForEnv = `-- name: FeatureGetForEnv :many
-SELECT fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, features.created, features.last_modified
+SELECT fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, features.created, features.last_modified
 FROM features
 JOIN feature_data fd ON features.name = fd.name AND features.version = fd.version
 WHERE $1::text = ANY(kinds::text[])
@@ -81,6 +84,7 @@ type FeatureGetForEnvRow struct {
 	Dependencies  pgtype.JSONB
 	Values        pgtype.JSONB
 	DefaultValues pgtype.JSONB
+	Timeout       int64
 	Created       time.Time
 	LastModified  time.Time
 }
@@ -104,6 +108,7 @@ func (q *Queries) FeatureGetForEnv(ctx context.Context, environmentKind string) 
 			&i.Dependencies,
 			&i.Values,
 			&i.DefaultValues,
+			&i.Timeout,
 			&i.Created,
 			&i.LastModified,
 		); err != nil {
@@ -175,6 +180,7 @@ SELECT
   fd.dependencies,
   fd.values,
   fd.default_values,
+  fd.timeout,
   combined.created,
   combined.last_modified
 FROM combined
@@ -192,6 +198,7 @@ type FeaturesRow struct {
 	Dependencies  pgtype.JSONB
 	Values        pgtype.JSONB
 	DefaultValues pgtype.JSONB
+	Timeout       int64
 	Created       time.Time
 	LastModified  time.Time
 }
@@ -215,6 +222,7 @@ func (q *Queries) Features(ctx context.Context) ([]FeaturesRow, error) {
 			&i.Dependencies,
 			&i.Values,
 			&i.DefaultValues,
+			&i.Timeout,
 			&i.Created,
 			&i.LastModified,
 		); err != nil {
@@ -239,6 +247,7 @@ SELECT
   fd.dependencies,
   fd.values,
   fd.default_values,
+  fd.timeout,
   features.created,
   features.last_modified
 FROM features
@@ -257,6 +266,7 @@ type FeaturesForKindRow struct {
 	Dependencies  pgtype.JSONB
 	Values        pgtype.JSONB
 	DefaultValues pgtype.JSONB
+	Timeout       int64
 	Created       time.Time
 	LastModified  time.Time
 }
@@ -280,6 +290,7 @@ func (q *Queries) FeaturesForKind(ctx context.Context, environmentKind string) (
 			&i.Dependencies,
 			&i.Values,
 			&i.DefaultValues,
+			&i.Timeout,
 			&i.Created,
 			&i.LastModified,
 		); err != nil {

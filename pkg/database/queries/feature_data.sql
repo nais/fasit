@@ -8,7 +8,8 @@ INSERT INTO feature_data (
     kinds,
     dependencies,
     values,
-    default_values
+    default_values,
+    timeout
 ) VALUES (
     @feature_name,
     @version,
@@ -18,5 +19,6 @@ INSERT INTO feature_data (
     (@kinds::text[])::environment_kind[],
     @dependencies,
     @values,
-    @default_values
+    @default_values,
+    @timeout
 );

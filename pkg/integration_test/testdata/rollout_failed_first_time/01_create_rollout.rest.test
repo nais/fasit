@@ -1,0 +1,18 @@
+POST /github/rollout
+
+{
+  "chart": "oci://clamav",
+  "version": "0.1.0-feature"
+}
+
+RETURNS
+
+OPTION responseCode = 201
+
+ENDOPTS
+
+{
+  "envNotAvailable": ["tenant"]
+}
+
+STORE rollout_id=id

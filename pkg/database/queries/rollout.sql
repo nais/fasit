@@ -16,11 +16,22 @@ SELECT
   fd.dependencies,
   fd.values,
   fd.default_values,
+  fd.timeout,
   rollouts.created
 FROM rollouts
 JOIN feature_data fd ON rollouts.feature_name = fd.name AND rollouts.version = fd.version
 WHERE @environment_kind::text = ANY(kinds::text[])
-AND rollouts.status = 'pending'
+AND (
+  rollouts.status = 'pending'
+  -- Ensure that the latest rollout is returned if it's the only one remaining
+  OR NOT EXISTS (
+    SELECT 1
+    FROM rollouts r2
+    WHERE r2.feature_name = rollouts.feature_name
+    AND r2.status IN ('pending', 'in_progress', 'deployed')
+    AND r2.created > rollouts.created
+  )
+)
 ORDER BY rollouts.feature_name;
 
 -- name: RolloutByName :one
@@ -35,6 +46,7 @@ SELECT
   fd.dependencies,
   fd.values,
   fd.default_values,
+  fd.timeout,
   rollouts.created
 FROM rollouts
 JOIN feature_data fd ON rollouts.feature_name = fd.name AND rollouts.version = fd.version

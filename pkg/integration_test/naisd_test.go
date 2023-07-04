@@ -120,12 +120,18 @@ func newNaisdForEnv(done <-chan struct{}, config testmanager.Config, env string,
 	logr.Level = logrus.DebugLevel
 	logr.Out = os.Stdout
 	logr.Out = io.Discard
+
+	var returnError error
+	if v, _ := config.Bool("fail_execution"); v {
+		returnError = fmt.Errorf("execution failed")
+	}
+
 	return naisd.NewDeployManager(
 		deploySubscriber,
 		statusPublisher,
 		tenantName,
 		env,
-		&naisd.MockExecutor{Logger: logrus.NewEntry(logr), Timeout: 1 * time.Millisecond},
+		&naisd.MockExecutor{Logger: logrus.NewEntry(logr), Timeout: 1 * time.Millisecond, ReturnError: returnError},
 		nil,
 		&rest.Config{},
 		"",
