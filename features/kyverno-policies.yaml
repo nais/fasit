@@ -136,12 +136,6 @@ mapping:
       - restrict-apparmor-profiles
       - restrict-seccomp
       - restrict-sysctls
-  #    - restrict-volume-types
-  #    - disallow-privilege-escalation
-  #    - require-run-as-non-root-user
-  #    - require-run-as-nonroot
-  #    - restrict-seccomp-strict
-  #    - restrict-volume-types
       {{- end }}
     ignoreKind:
       - "tenant"
@@ -150,3 +144,10 @@ mapping:
   networkPolicy.enabled:
     template: '{{ne .Kind "onprem"}}'
     description: "Enable network policy"
+
+    #    - restrict-volume-types
+    #    - disallow-privilege-escalation
+    #    - require-run-as-non-root-user
+    #    - require-run-as-nonroot
+    #    - restrict-seccomp-strict
+    #    - restrict-volume-types
