@@ -134,8 +134,14 @@ mapping:
       - disallow-selinux
       - disallow-privilege-escalation
       - restrict-apparmor-profiles
+      - restrict-seccomp
       - restrict-sysctls
-      - restrict-volume-types
+  #    - restrict-volume-types
+  #    - disallow-privilege-escalation
+  #    - require-run-as-non-root-user
+  #    - require-run-as-nonroot
+  #    - restrict-seccomp-strict
+  #    - restrict-volume-types
       {{- end }}
     ignoreKind:
       - "tenant"
