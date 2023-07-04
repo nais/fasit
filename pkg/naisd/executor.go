@@ -30,7 +30,7 @@ func (m *MockExecutor) Execute(cmd *exec.Cmd) error {
 		time.Sleep(3 * time.Second)
 	}
 
-	return nil
+	return fmt.Errorf("FAiled (mock)")
 }
 
 type Executor struct{}

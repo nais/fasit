@@ -34,7 +34,19 @@ func (r *repo) Warnings(ctx context.Context, environmentID *uuid.UUID, tenantID 
 		return nil, err
 	}
 
-	return warningsFromSQL(warnings)
+	// Ensure that warnings are only returned for features that are actually in the environment
+	ws := []gensql.WarningsRow{}
+	for _, w := range warnings {
+		if w.FeatureDataName != "" {
+			ws = append(ws, w)
+		} else if r.oldFeatures.Get(w.Feature) != nil {
+			ws = append(ws, w)
+		} else {
+			fmt.Println("Removed warning for feature", w.Feature)
+		}
+	}
+
+	return warningsFromSQL(ws)
 }
 
 func warningsFromSQL(warnings []gensql.WarningsRow) ([]model.Warning, error) {

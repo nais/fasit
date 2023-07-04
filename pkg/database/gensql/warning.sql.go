@@ -12,9 +12,10 @@ import (
 )
 
 const warnings = `-- name: Warnings :many
-SELECT 'feature_status' as "type", environment_id, environment.tenant_id, feature
+SELECT 'feature_status' as "type", environment_id, environment.tenant_id, feature, CASE WHEN fd.name IS NULL THEN '' ELSE fd.name END as feature_data_name
 FROM status
 JOIN environments environment ON environment.id = status.environment_id
+LEFT JOIN feature_data fd ON fd.name = status.feature AND fd.version = status.version
 WHERE status = 'failed'
 AND (
   environment.id = $1
@@ -23,7 +24,7 @@ AND (
 
 UNION
 
-SELECT 'naisd', environment.id, environment.tenant_id, ''
+SELECT 'naisd', environment.id, environment.tenant_id, '', 'naisd'
 FROM health_statuses hs
 RIGHT JOIN environments environment ON environment.id = hs.environment_id
 WHERE (
@@ -42,10 +43,11 @@ type WarningsParams struct {
 }
 
 type WarningsRow struct {
-	Type          interface{}
-	EnvironmentID uuid.UUID
-	TenantID      uuid.UUID
-	Feature       string
+	Type            interface{}
+	EnvironmentID   uuid.UUID
+	TenantID        uuid.UUID
+	Feature         string
+	FeatureDataName interface{}
 }
 
 func (q *Queries) Warnings(ctx context.Context, arg WarningsParams) ([]WarningsRow, error) {
@@ -62,6 +64,7 @@ func (q *Queries) Warnings(ctx context.Context, arg WarningsParams) ([]WarningsR
 			&i.EnvironmentID,
 			&i.TenantID,
 			&i.Feature,
+			&i.FeatureDataName,
 		); err != nil {
 			return nil, err
 		}
