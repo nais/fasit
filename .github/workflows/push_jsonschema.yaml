@@ -30,4 +30,4 @@ jobs:
         uses: "google-github-actions/setup-gcloud@v1"
       - name: Sync jsonschema to GCS
         run: |-
-          gsutil -m rsync schema/jsonschema/feature.json gs://${{ env.BUCKET }}
+          gsutil cp schema/jsonschema/feature.json gs://${{ env.BUCKET }}
