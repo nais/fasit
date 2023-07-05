@@ -17,7 +17,7 @@ import (
 )
 
 func TestFeaturesSchema(t *testing.T) {
-	schemaFile, err := os.OpenFile("schema/jsonschema/feature.json", os.O_RDONLY, 0o644)
+	schemaFile, err := os.OpenFile("schema/jsonschema/featurev1.json", os.O_RDONLY, 0o644)
 	if err != nil {
 		t.Fatal(err)
 	}
