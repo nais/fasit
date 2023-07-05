@@ -47,7 +47,12 @@
 					"anyOf": [
 						{
 							"required": [
-								"computed",
+								"computed"
+							],
+							"title": "computed"
+						},
+						{
+							"required": [
 								"config"
 							],
 							"title": "config"
