@@ -68,7 +68,7 @@ type Value struct {
 	Description string            `yaml:"description,omitempty" json:"description,omitempty"`
 	DisplayName string            `yaml:"displayName,omitempty" json:"displayName,omitempty"`
 	Required    bool              `yaml:"required,omitempty" json:"required,omitempty"`
-	Computed    *Computed         `yaml:"computed,omitempty" json:"computed,omitempty" jsonschema:"anyof_required=config"`
+	Computed    *Computed         `yaml:"computed,omitempty" json:"computed,omitempty" jsonschema:"anyof_required=computed"`
 	Config      *Config           `yaml:"config,omitempty" json:"config,omitempty" jsonschema:"anyof_required=config"`
 	IgnoreKind  []EnvironmentKind `yaml:"ignoreKind,omitempty" json:"ignoreKind,omitempty"`
 
