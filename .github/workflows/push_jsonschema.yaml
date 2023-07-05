@@ -1,0 +1,33 @@
+name: Push features to GCS
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "schema/jsonschema/feature.json"
+      - ".github/workflows/push_jsonschema.yaml"
+
+env:
+  BUCKET: "fasit-jsonschema"
+
+jobs:
+  upload_jsonschema:
+    permissions:
+      contents: "read"
+      id-token: "write"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
+      - id: "auth"
+        name: "Authenticate to Google Cloud"
+        uses: "google-github-actions/auth@v1.1.1"
+        with:
+          workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: "gh-fasit@nais-io.iam.gserviceaccount.com"
+          token_format: "access_token"
+      - name: "Set up Cloud SDK"
+        uses: "google-github-actions/setup-gcloud@v1"
+      - name: Sync jsonschema to GCS
+        run: |-
+          gsutil -m rsync schema/jsonschema/feature.json gs://${{ env.BUCKET }}
