@@ -19,7 +19,7 @@ func main() {
 	r.DoNotReference = true
 	r.BaseSchemaID = "https://fasit.nais.io/schema"
 	r.AddGoComments("github.com/nais/fasit", "./pkg/graph/model/")
-	schema := r.Reflect(model.Feature{})
+	schema := r.Reflect(model.FeatureYAML{})
 
 	b, err := schema.MarshalJSON()
 	if err != nil {

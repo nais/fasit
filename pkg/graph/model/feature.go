@@ -37,10 +37,10 @@ type Feature struct {
 }
 
 type FeatureYAML struct {
-	Dependencies     Dependencies      `json:"dependencies" yaml:"dependencies,omitempty"`
+	Dependencies     Dependencies      `json:"dependencies,omitempty" yaml:"dependencies,omitempty" jsonschema:"omitempty"`
 	EnvironmentKinds []EnvironmentKind `json:"environmentKinds" yaml:"environmentKinds" jsonschema:"enum=management,enum=tenant,enum=onprem,enum=legacy,required"`
 	Timeout          time.Duration     `json:"timeout,omitempty" yaml:"timeout,omitempty" jsonschema:"omitempty,type=string,pattern=^(\\d+h)?(\\d+m)?(\\d+s)?$"`
-	Values           Values            `json:"values" yaml:"values,omitempty"`
+	Values           Values            `json:"values,omitempty" yaml:"values,omitempty" jsonschema:"omitempty"`
 }
 
 type Values map[string]Value
@@ -68,12 +68,12 @@ type Value struct {
 	Description string            `yaml:"description,omitempty" json:"description,omitempty"`
 	DisplayName string            `yaml:"displayName,omitempty" json:"displayName,omitempty"`
 	Required    bool              `yaml:"required,omitempty" json:"required,omitempty"`
-	Computed    *Computed         `yaml:"computed,omitempty" json:"computed,omitempty"`
-	Config      *Config           `yaml:"config,omitempty" json:"config,omitempty"`
+	Computed    *Computed         `yaml:"computed,omitempty" json:"computed,omitempty" jsonschema:"anyof_required=config"`
+	Config      *Config           `yaml:"config,omitempty" json:"config,omitempty" jsonschema:"anyof_required=config"`
 	IgnoreKind  []EnvironmentKind `yaml:"ignoreKind,omitempty" json:"ignoreKind,omitempty"`
 
 	// for graphql
-	GraphQLKey string `yaml:"key,omitempty" json:"key,omitempty"`
+	GraphQLKey string `yaml:"key,omitempty" json:"key,omitempty" jsonschema:"-"`
 }
 
 func (v Value) ValidConfig(value json.RawMessage) error {
