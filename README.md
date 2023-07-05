@@ -6,6 +6,13 @@ Fasit contains a set of features that can be enabled for a tenant. Each feature 
 
 Documentation for each feature can be found in [`features/README.md`](./features/README.md).
 
+### JSON schema
+
+To enable autocompletion and validation you can add the following json schema to your IDE:
+`https://storage.googleapis.com/fasit-jsonschema/feature.json`
+
+Follow the guide on https://docs.nais.io/appendix/json-schema/ on how to add a json schema.
+
 ## local dev setup
 
 ```
