@@ -21,6 +21,7 @@ type naisdRunner struct {
 	*runner.PubSub
 	topics               map[string]chan pubsubMockMsg
 	reconcilerPublishers map[string]workers.Publisher
+	successfullMessages  int
 }
 
 func newNaisd(ctx context.Context, config testmanager.Config, db database.Repo) (*naisdRunner, func(), error) {
@@ -35,6 +36,12 @@ func newNaisd(ctx context.Context, config testmanager.Config, db database.Repo) 
 	if v, _ := config.Bool("no_tenants"); v {
 		return nil, func() {}, nil
 	}
+
+	success, ok := config.Int("naisd_successfull_messages")
+	if !ok {
+		success = 100000
+	}
+	naisdRunner.successfullMessages = success
 
 	statusCh := make(chan pubsubMockMsg)
 	mgmt, err := newNaisdForEnv(ctx.Done(), config, envManagementName, naisdRunner, statusCh)
@@ -121,17 +128,12 @@ func newNaisdForEnv(done <-chan struct{}, config testmanager.Config, env string,
 	logr.Out = os.Stdout
 	logr.Out = io.Discard
 
-	var returnError error
-	if v, _ := config.Bool("fail_execution"); v {
-		returnError = fmt.Errorf("execution failed")
-	}
-
 	return naisd.NewDeployManager(
 		deploySubscriber,
 		statusPublisher,
 		tenantName,
 		env,
-		&naisd.MockExecutor{Logger: logrus.NewEntry(logr), Timeout: 1 * time.Millisecond, ReturnError: returnError},
+		&naisd.MockExecutor{Logger: logrus.NewEntry(logr), Timeout: 1 * time.Millisecond, NumSuccessful: &naisdRunner.successfullMessages},
 		nil,
 		&rest.Config{},
 		"",

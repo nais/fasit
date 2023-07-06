@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"flag"
-	"fmt"
 	"os"
 	"os/signal"
 	"time"
@@ -159,12 +158,13 @@ func sharedDependencies(ctx context.Context, log *logrus.Logger) (*naisd.DeployM
 	)
 
 	kubeConfig := local.RESTConfig()
-	var returnError error
+
+	var numSuccessful *int
 	if cfg.MockFailing {
-		returnError = fmt.Errorf("mock error")
+		numSuccessful = new(int)
 	}
 
-	var executor naisd.Exec = &naisd.MockExecutor{Logger: log.WithField("subsystem", "executor"), ReturnError: returnError}
+	var executor naisd.Exec = &naisd.MockExecutor{Logger: log.WithField("subsystem", "executor"), NumSuccessful: numSuccessful}
 	helmClient := local.NewHelmClient()
 	k8sClient := local.NewKubernetesClient()
 	if cfg.Production {
