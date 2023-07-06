@@ -44,6 +44,18 @@ type EnvironmentUpdate struct {
 	Description *string `json:"description,omitempty"`
 }
 
+type Playground struct {
+	Result *string  `json:"result,omitempty"`
+	Errors []string `json:"errors"`
+}
+
+type PlaygroundInput struct {
+	TenantSlug  string `json:"tenantSlug"`
+	EnvSlug     string `json:"envSlug"`
+	ShowSecrets *bool  `json:"showSecrets,omitempty"`
+	Code        string `json:"code"`
+}
+
 type RolloutEvent struct {
 	ID      uuid.UUID       `json:"id"`
 	Failure bool            `json:"failure"`

@@ -1,0 +1,15 @@
+type Playground {
+  result: String
+  errors: [String!]!
+}
+
+input PlaygroundInput {
+  tenantSlug: String!
+  envSlug: String!
+  showSecrets: Boolean
+  code: String!
+}
+
+extend type Mutation {
+  playground(input: PlaygroundInput!): Playground!
+}

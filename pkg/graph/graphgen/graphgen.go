@@ -203,12 +203,18 @@ type ComplexityRoot struct {
 		EnvironmentSetReconcile func(childComplexity int, id uuid.UUID, reconcile bool) int
 		EnvironmentUpdate       func(childComplexity int, id uuid.UUID, input model.EnvironmentUpdate) int
 		FeatureStateSave        func(childComplexity int, envID uuid.UUID, enabled bool, feature string) int
+		Playground              func(childComplexity int, input model.PlaygroundInput) int
 		TenantCreate            func(childComplexity int, tenant model.TenantCreate) int
 	}
 
 	NaisdWarning struct {
 		Environment func(childComplexity int) int
 		Message     func(childComplexity int) int
+	}
+
+	Playground struct {
+		Errors func(childComplexity int) int
+		Result func(childComplexity int) int
 	}
 
 	Query struct {
@@ -336,6 +342,7 @@ type MutationResolver interface {
 	EnvironmentUpdate(ctx context.Context, id uuid.UUID, input model.EnvironmentUpdate) (*model.Environment, error)
 	EnvironmentSetReconcile(ctx context.Context, id uuid.UUID, reconcile bool) (*model.Environment, error)
 	FeatureStateSave(ctx context.Context, envID uuid.UUID, enabled bool, feature string) (*model.FeatureState, error)
+	Playground(ctx context.Context, input model.PlaygroundInput) (*model.Playground, error)
 }
 type NaisdWarningResolver interface {
 	Environment(ctx context.Context, obj *model.NaisdWarning) (*model.Environment, error)
@@ -1076,6 +1083,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.FeatureStateSave(childComplexity, args["envID"].(uuid.UUID), args["enabled"].(bool), args["feature"].(string)), true
 
+	case "Mutation.playground":
+		if e.complexity.Mutation.Playground == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_playground_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.Playground(childComplexity, args["input"].(model.PlaygroundInput)), true
+
 	case "Mutation.tenantCreate":
 		if e.complexity.Mutation.TenantCreate == nil {
 			break
@@ -1101,6 +1120,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.NaisdWarning.Message(childComplexity), true
+
+	case "Playground.errors":
+		if e.complexity.Playground.Errors == nil {
+			break
+		}
+
+		return e.complexity.Playground.Errors(childComplexity), true
+
+	case "Playground.result":
+		if e.complexity.Playground.Result == nil {
+			break
+		}
+
+		return e.complexity.Playground.Result(childComplexity), true
 
 	case "Query.configuration":
 		if e.complexity.Query.Configuration == nil {
@@ -1503,6 +1536,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputEnvironmentCreate,
 		ec.unmarshalInputEnvironmentUpdate,
 		ec.unmarshalInputNewConfiguration,
+		ec.unmarshalInputPlaygroundInput,
 		ec.unmarshalInputTenantCreate,
 		ec.unmarshalInputUpdateConfiguration,
 	)
@@ -1884,6 +1918,22 @@ type KubernetesNode {
   internalIP: String!
 }
 `, BuiltIn: false},
+	{Name: "../../../schema/playground.graphqls", Input: `type Playground {
+  result: String
+  errors: [String!]!
+}
+
+input PlaygroundInput {
+  tenantSlug: String!
+  envSlug: String!
+  showSecrets: Boolean
+  code: String!
+}
+
+extend type Mutation {
+  playground(input: PlaygroundInput!): Playground!
+}
+`, BuiltIn: false},
 	{Name: "../../../schema/rollout.graphqls", Input: `type Rollout {
   id: ID!
   version: String!
@@ -2170,6 +2220,21 @@ func (ec *executionContext) field_Mutation_featureStateSave_args(ctx context.Con
 		}
 	}
 	args["feature"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_playground_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 model.PlaygroundInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalNPlaygroundInput2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐPlaygroundInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
 	return args, nil
 }
 
@@ -7264,6 +7329,67 @@ func (ec *executionContext) fieldContext_Mutation_featureStateSave(ctx context.C
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_playground(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_playground(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().Playground(rctx, fc.Args["input"].(model.PlaygroundInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Playground)
+	fc.Result = res
+	return ec.marshalNPlayground2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐPlayground(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_playground(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "result":
+				return ec.fieldContext_Playground_result(ctx, field)
+			case "errors":
+				return ec.fieldContext_Playground_errors(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Playground", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_playground_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _NaisdWarning_message(ctx context.Context, field graphql.CollectedField, obj *model.NaisdWarning) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_NaisdWarning_message(ctx, field)
 	if err != nil {
@@ -7385,6 +7511,91 @@ func (ec *executionContext) fieldContext_NaisdWarning_environment(ctx context.Co
 				return ec.fieldContext_Environment_reconcile(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Playground_result(ctx context.Context, field graphql.CollectedField, obj *model.Playground) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Playground_result(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Result, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Playground_result(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Playground",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Playground_errors(ctx context.Context, field graphql.CollectedField, obj *model.Playground) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Playground_errors(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Errors, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Playground_errors(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Playground",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -11975,6 +12186,62 @@ func (ec *executionContext) unmarshalInputNewConfiguration(ctx context.Context, 
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputPlaygroundInput(ctx context.Context, obj interface{}) (model.PlaygroundInput, error) {
+	var it model.PlaygroundInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"tenantSlug", "envSlug", "showSecrets", "code"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "tenantSlug":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tenantSlug"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TenantSlug = data
+		case "envSlug":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("envSlug"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.EnvSlug = data
+		case "showSecrets":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("showSecrets"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ShowSecrets = data
+		case "code":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("code"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Code = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputTenantCreate(ctx context.Context, obj interface{}) (model.TenantCreate, error) {
 	var it model.TenantCreate
 	asMap := map[string]interface{}{}
@@ -13913,6 +14180,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "playground":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_playground(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -13988,6 +14262,47 @@ func (ec *executionContext) _NaisdWarning(ctx context.Context, sel ast.Selection
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var playgroundImplementors = []string{"Playground"}
+
+func (ec *executionContext) _Playground(ctx context.Context, sel ast.SelectionSet, obj *model.Playground) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, playgroundImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Playground")
+		case "result":
+			out.Values[i] = ec._Playground_result(ctx, field, obj)
+		case "errors":
+			out.Values[i] = ec._Playground_errors(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -16010,6 +16325,25 @@ func (ec *executionContext) marshalNKubernetesNodeResources2ᚖgithubᚗcomᚋna
 
 func (ec *executionContext) unmarshalNNewConfiguration2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐNewConfiguration(ctx context.Context, v interface{}) (model.NewConfiguration, error) {
 	res, err := ec.unmarshalInputNewConfiguration(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNPlayground2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐPlayground(ctx context.Context, sel ast.SelectionSet, v model.Playground) graphql.Marshaler {
+	return ec._Playground(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNPlayground2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐPlayground(ctx context.Context, sel ast.SelectionSet, v *model.Playground) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Playground(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNPlaygroundInput2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐPlaygroundInput(ctx context.Context, v interface{}) (model.PlaygroundInput, error) {
+	res, err := ec.unmarshalInputPlaygroundInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
