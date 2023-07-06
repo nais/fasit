@@ -1,0 +1,13 @@
+RETURNS
+
+OPTION topic=status
+OPTION Data=IGNORE
+
+ENDOPTS
+
+{
+  "Tenant": "tenant23",
+  "Environment": "testing",
+  "Type": 2,
+  "Data": "ingored"
+}

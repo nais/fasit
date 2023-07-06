@@ -3,5 +3,5 @@
   "no_tenants": false,
   "reconcile": true,
   "ci": true,
-  "naisd_successfull_messages": 0
+  "naisd_successfull_messages": 1
 }
