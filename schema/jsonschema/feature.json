@@ -75,9 +75,18 @@
 									"type": "boolean"
 								},
 								"type": {
+									"enum": [
+										"string",
+										"int",
+										"bool",
+										"string_array"
+									],
 									"type": "string"
 								}
 							},
+							"required": [
+								"type"
+							],
 							"type": "object"
 						},
 						"description": {
@@ -88,6 +97,12 @@
 						},
 						"ignoreKind": {
 							"items": {
+								"enum": [
+									"management",
+									"tenant",
+									"onprem",
+									"legacy"
+								],
 								"type": "string"
 							},
 							"type": "array"

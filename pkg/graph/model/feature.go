@@ -60,7 +60,7 @@ type Computed struct {
 }
 
 type Config struct {
-	Type   ConfigType `yaml:"type,omitempty" json:"type,omitempty"`
+	Type   ConfigType `yaml:"type,omitempty" json:"type"  jsonschema:"enum=string,enum=int,enum=bool,enum=string_array,required"`
 	Secret bool       `json:"secret,omitempty" yaml:"secret,omitempty"`
 }
 
@@ -70,7 +70,7 @@ type Value struct {
 	Required    bool              `yaml:"required,omitempty" json:"required,omitempty"`
 	Computed    *Computed         `yaml:"computed,omitempty" json:"computed,omitempty" jsonschema:"anyof_required=computed"`
 	Config      *Config           `yaml:"config,omitempty" json:"config,omitempty" jsonschema:"anyof_required=config"`
-	IgnoreKind  []EnvironmentKind `yaml:"ignoreKind,omitempty" json:"ignoreKind,omitempty"`
+	IgnoreKind  []EnvironmentKind `yaml:"ignoreKind,omitempty" json:"ignoreKind,omitempty" jsonschema:"enum=management,enum=tenant,enum=onprem,enum=legacy"`
 
 	// for graphql
 	GraphQLKey string `yaml:"key,omitempty" json:"key,omitempty" jsonschema:"-"`

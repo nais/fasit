@@ -8,6 +8,8 @@ on:
       - ".github/workflows/build_and_push_image_fasit-frontend.yaml"
       - "frontend/**"
       - "features/**"
+      - "schema/jsonschema/**"
+      - "cmd/generate_schema/**"
   pull_request:
     types: [opened, reopened, synchronize, edited]
 
