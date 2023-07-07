@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/grafana-agent
 source: https://github.com/nais/helm-charts/tree/main/charts/grafana-agent
-version: 0.0.5
+version: 0.0.6
 description: "Grafana Agent for frontend telemetry collection"
 environmentKinds:
   - "tenant"
