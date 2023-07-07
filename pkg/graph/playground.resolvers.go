@@ -31,6 +31,13 @@ func (r *mutationResolver) Playground(ctx context.Context, input model.Playgroun
 		return retErr(err)
 	}
 
+	// We have to unset required fields to make this work correctly
+	for k := range fyaml.Values {
+		a := fyaml.Values[k]
+		a.Required = false
+		fyaml.Values[k] = a
+	}
+
 	f := &model.Feature{
 		FeatureYAML: fyaml,
 	}
