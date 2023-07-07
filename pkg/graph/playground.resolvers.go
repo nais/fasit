@@ -8,8 +8,9 @@ import (
 	"bytes"
 	"context"
 
+	"github.com/nais/fasit/pkg/feature/featureutil"
 	"github.com/nais/fasit/pkg/graph/model"
-	"gopkg.in/yaml.v3"
+	yaml "gopkg.in/yaml.v3"
 )
 
 // Playground is the resolver for the playground field.
@@ -36,6 +37,32 @@ func (r *mutationResolver) Playground(ctx context.Context, input model.Playgroun
 	vals, err := r.Repo.HelmValues(ctx, f, env.ID)
 	if err != nil {
 		return retErr(err)
+	}
+
+	if input.IncludeUnsetConfig != nil && *input.IncludeUnsetConfig {
+		for k, v := range f.Values {
+			if v.Config == nil || v.Computed != nil {
+				continue
+			}
+
+			parts, err := featureutil.SmartDotSplit(k)
+			if err != nil {
+				return retErr(err)
+			}
+
+			outer := vals
+			for i, part := range parts {
+				if i == len(parts)-1 {
+					outer[part] = nil
+					break
+				}
+
+				if _, ok := outer[part]; !ok {
+					outer[part] = map[string]any{}
+				}
+				outer = outer[part].(map[string]any)
+			}
+		}
 	}
 
 	buf := &bytes.Buffer{}

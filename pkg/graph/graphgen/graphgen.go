@@ -1927,6 +1927,7 @@ input PlaygroundInput {
   tenantSlug: String!
   envSlug: String!
   showSecrets: Boolean
+  includeUnsetConfig: Boolean
   code: String!
 }
 
@@ -12193,7 +12194,7 @@ func (ec *executionContext) unmarshalInputPlaygroundInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"tenantSlug", "envSlug", "showSecrets", "code"}
+	fieldsInOrder := [...]string{"tenantSlug", "envSlug", "showSecrets", "includeUnsetConfig", "code"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -12227,6 +12228,15 @@ func (ec *executionContext) unmarshalInputPlaygroundInput(ctx context.Context, o
 				return it, err
 			}
 			it.ShowSecrets = data
+		case "includeUnsetConfig":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("includeUnsetConfig"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IncludeUnsetConfig = data
 		case "code":
 			var err error
 

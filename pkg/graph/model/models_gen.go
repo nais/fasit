@@ -50,10 +50,11 @@ type Playground struct {
 }
 
 type PlaygroundInput struct {
-	TenantSlug  string `json:"tenantSlug"`
-	EnvSlug     string `json:"envSlug"`
-	ShowSecrets *bool  `json:"showSecrets,omitempty"`
-	Code        string `json:"code"`
+	TenantSlug         string `json:"tenantSlug"`
+	EnvSlug            string `json:"envSlug"`
+	ShowSecrets        *bool  `json:"showSecrets,omitempty"`
+	IncludeUnsetConfig *bool  `json:"includeUnsetConfig,omitempty"`
+	Code               string `json:"code"`
 }
 
 type RolloutEvent struct {
