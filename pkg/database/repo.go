@@ -161,11 +161,6 @@ func NewDB(ctx context.Context, dbConnDSN string, cloudsql bool) (*pgxpool.Pool,
 		closers = append(closers, cleanup)
 	}
 
-	config.AfterConnect = func(ctx context.Context, conn *pgx.Conn) error {
-		fmt.Println("Connected to database")
-		return nil
-	}
-
 	// Interact with the dirver directly as you normally would
 	conn, err := pgxpool.NewWithConfig(context.Background(), config)
 	if err != nil {
