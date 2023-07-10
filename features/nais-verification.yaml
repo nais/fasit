@@ -8,7 +8,7 @@ autoInstall:
   - "management"
 dependsOn:
   - allOf:
-      - teams # Create team and get deploy key
+      - teams-backend # Create team and get deploy key
       - hookd # Provision deploy key
 rolloutSource:
   - org: nais
