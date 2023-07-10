@@ -23,16 +23,17 @@ WITH combined AS (
   FROM features
 
   UNION
-
-  SELECT DISTINCT ON(feature_name)
-    id,
-    feature_name AS name,
-    version,
-    make_timestamptz(1969, 4, 20, 0, 0, 0) AS created,
-    make_timestamptz(1969, 4, 20, 0, 0, 0) AS last_modified
-  FROM rollouts
-  WHERE status = 'pending'
-  ORDER BY version DESC
+  (
+    SELECT DISTINCT ON(feature_name)
+      id,
+      feature_name AS name,
+      version,
+      make_timestamptz(1969, 4, 20, 0, 0, 0) AS created,
+      make_timestamptz(1969, 4, 20, 0, 0, 0) AS last_modified
+    FROM rollouts
+    WHERE status = 'pending'
+    ORDER BY "version" DESC
+  )
 ), filtered AS (
   SELECT DISTINCT ON (name) name AS name, version, created, last_modified
   FROM combined

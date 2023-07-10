@@ -1,5 +1,5 @@
 .PHONY: test integration-test local-with-auth local linux-build docker-build docker-push run-postgres-test stop-postgres-test install-sqlc
-SQLC_VERSION ?= "v1.17.2"
+SQLC_VERSION ?= "v1.19.0"
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -9,9 +9,14 @@ else
 endif
 
 install-sqlc:
-	go install github.com/kyleconroy/sqlc/cmd/sqlc@$(SQLC_VERSION)
+	@if [ "$(shell sqlc version)" != "$(SQLC_VERSION)" ]; then \
+		echo "Installing sqlc $(SQLC_VERSION)"; \
+		go install github.com/kyleconroy/sqlc/cmd/sqlc@$(SQLC_VERSION); \
+	else \
+		echo "sqlc $(SQLC_VERSION) already installed"; \
+	fi
 
-generate-sql:
+generate-sql: install-sqlc
 	$(GOBIN)/sqlc generate
 	$(MAKE) mocks
 
@@ -68,4 +73,4 @@ generate-feature-schema:
 	go run cmd/generate_schema/main.go
 
 playground:
-	cd cmd/mapping_playground && go run .
+	echo "Playground has moved to Fasit: https://fasit.nais.io/playground"
