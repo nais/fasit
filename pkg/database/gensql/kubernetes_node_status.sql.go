@@ -9,7 +9,6 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgtype"
 )
 
 const kubernetesNodeCreateOrUpdate = `-- name: KubernetesNodeCreateOrUpdate :exec
@@ -70,9 +69,9 @@ type KubernetesNodeCreateOrUpdateParams struct {
 	KubeProxyVersion        string
 	OperatingSystem         string
 	Architecture            string
-	Conditions              pgtype.JSONB
-	Allocatable             pgtype.JSONB
-	Capacity                pgtype.JSONB
+	Conditions              []byte
+	Allocatable             []byte
+	Capacity                []byte
 	InternalIp              string
 }
 

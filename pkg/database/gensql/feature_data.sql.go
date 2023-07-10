@@ -7,8 +7,6 @@ package gensql
 
 import (
 	"context"
-
-	"github.com/jackc/pgtype"
 )
 
 const featureDataCreate = `-- name: FeatureDataCreate :exec
@@ -44,9 +42,9 @@ type FeatureDataCreateParams struct {
 	Description   string
 	Source        string
 	Kinds         []string
-	Dependencies  pgtype.JSONB
-	Values        pgtype.JSONB
-	DefaultValues pgtype.JSONB
+	Dependencies  []byte
+	Values        []byte
+	DefaultValues []byte
 	Timeout       int64
 }
 

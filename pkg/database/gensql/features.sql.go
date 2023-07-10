@@ -7,9 +7,8 @@ package gensql
 
 import (
 	"context"
-	"time"
 
-	"github.com/jackc/pgtype"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const featureByName = `-- name: FeatureByName :one
@@ -38,12 +37,12 @@ type FeatureByNameRow struct {
 	Description   string
 	Source        string
 	Kinds         []string
-	Dependencies  pgtype.JSONB
-	Values        pgtype.JSONB
-	DefaultValues pgtype.JSONB
+	Dependencies  []byte
+	Values        []byte
+	DefaultValues []byte
 	Timeout       int64
-	Created       time.Time
-	LastModified  time.Time
+	Created       pgtype.Timestamptz
+	LastModified  pgtype.Timestamptz
 }
 
 func (q *Queries) FeatureByName(ctx context.Context, name string) (FeatureByNameRow, error) {
@@ -81,12 +80,12 @@ type FeatureGetForEnvRow struct {
 	Description   string
 	Source        string
 	Kinds         []EnvironmentKind
-	Dependencies  pgtype.JSONB
-	Values        pgtype.JSONB
-	DefaultValues pgtype.JSONB
+	Dependencies  []byte
+	Values        []byte
+	DefaultValues []byte
 	Timeout       int64
-	Created       time.Time
-	LastModified  time.Time
+	Created       pgtype.Timestamptz
+	LastModified  pgtype.Timestamptz
 }
 
 func (q *Queries) FeatureGetForEnv(ctx context.Context, environmentKind string) ([]FeatureGetForEnvRow, error) {
@@ -196,12 +195,12 @@ type FeaturesRow struct {
 	Description   string
 	Source        string
 	Kinds         []string
-	Dependencies  pgtype.JSONB
-	Values        pgtype.JSONB
-	DefaultValues pgtype.JSONB
+	Dependencies  []byte
+	Values        []byte
+	DefaultValues []byte
 	Timeout       int64
-	Created       time.Time
-	LastModified  time.Time
+	Created       pgtype.Timestamptz
+	LastModified  pgtype.Timestamptz
 }
 
 func (q *Queries) Features(ctx context.Context) ([]FeaturesRow, error) {
@@ -264,12 +263,12 @@ type FeaturesForKindRow struct {
 	Description   string
 	Source        string
 	Kinds         []string
-	Dependencies  pgtype.JSONB
-	Values        pgtype.JSONB
-	DefaultValues pgtype.JSONB
+	Dependencies  []byte
+	Values        []byte
+	DefaultValues []byte
 	Timeout       int64
-	Created       time.Time
-	LastModified  time.Time
+	Created       pgtype.Timestamptz
+	LastModified  pgtype.Timestamptz
 }
 
 func (q *Queries) FeaturesForKind(ctx context.Context, environmentKind string) ([]FeaturesForKindRow, error) {

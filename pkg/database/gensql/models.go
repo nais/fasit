@@ -5,13 +5,11 @@
 package gensql
 
 import (
-	"database/sql"
 	"database/sql/driver"
 	"fmt"
-	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgtype"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type EnvironmentKind string
@@ -64,23 +62,23 @@ type Audit struct {
 	Description string
 	ObjectType  string
 	ObjectID    string
-	CreatedAt   time.Time
+	CreatedAt   pgtype.Timestamptz
 }
 
 type AutoInstall struct {
 	Kind    EnvironmentKind
 	Feature string
-	Created time.Time
+	Created pgtype.Timestamptz
 }
 
 type ConfigurationsEnvironment struct {
 	ID            uuid.UUID
 	Feature       string
 	Key           string
-	Value         pgtype.JSONB
-	Description   sql.NullString
+	Value         []byte
+	Description   pgtype.Text
 	Secret        bool
-	Created       time.Time
+	Created       pgtype.Timestamptz
 	EnvironmentID uuid.UUID
 }
 
@@ -88,10 +86,10 @@ type ConfigurationsGlobal struct {
 	ID          uuid.UUID
 	Feature     string
 	Key         string
-	Value       pgtype.JSONB
-	Description sql.NullString
+	Value       []byte
+	Description pgtype.Text
 	Secret      bool
-	Created     time.Time
+	Created     pgtype.Timestamptz
 }
 
 type Environment struct {
@@ -99,9 +97,9 @@ type Environment struct {
 	TenantID     uuid.UUID
 	Name         string
 	Kind         EnvironmentKind
-	Description  sql.NullString
-	Created      time.Time
-	LastModified time.Time
+	Description  pgtype.Text
+	Created      pgtype.Timestamptz
+	LastModified pgtype.Timestamptz
 	Ci           bool
 	Reconcile    bool
 }
@@ -109,15 +107,15 @@ type Environment struct {
 type EnvironmentValue struct {
 	EnvironmentID uuid.UUID
 	Key           string
-	Value         pgtype.JSONB
+	Value         []byte
 	Secret        bool
 }
 
 type Feature struct {
 	Name         string
 	Version      string
-	Created      time.Time
-	LastModified time.Time
+	Created      pgtype.Timestamptz
+	LastModified pgtype.Timestamptz
 }
 
 type FeatureDatum struct {
@@ -127,9 +125,9 @@ type FeatureDatum struct {
 	Description   string
 	Source        string
 	Kinds         []EnvironmentKind
-	Dependencies  pgtype.JSONB
-	Values        pgtype.JSONB
-	DefaultValues pgtype.JSONB
+	Dependencies  []byte
+	Values        []byte
+	DefaultValues []byte
 	Timeout       int64
 }
 
@@ -137,14 +135,14 @@ type FeatureState struct {
 	EnvironmentID uuid.UUID
 	Feature       string
 	Enabled       bool
-	Created       time.Time
-	LastModified  time.Time
-	EnabledAt     sql.NullTime
+	Created       pgtype.Timestamptz
+	LastModified  pgtype.Timestamptz
+	EnabledAt     pgtype.Timestamptz
 }
 
 type HealthStatus struct {
 	EnvironmentID uuid.UUID
-	ReportedAt    time.Time
+	ReportedAt    pgtype.Timestamptz
 }
 
 type KubernetesNodeStatus struct {
@@ -157,11 +155,11 @@ type KubernetesNodeStatus struct {
 	KubeProxyVersion        string
 	OperatingSystem         string
 	Architecture            string
-	Conditions              pgtype.JSONB
-	Allocatable             pgtype.JSONB
-	Capacity                pgtype.JSONB
-	Created                 time.Time
-	LastModified            time.Time
+	Conditions              []byte
+	Allocatable             []byte
+	Capacity                []byte
+	Created                 pgtype.Timestamptz
+	LastModified            pgtype.Timestamptz
 	InternalIp              string
 }
 
@@ -171,9 +169,9 @@ type ReleaseStatus struct {
 	Version       string
 	Status        string
 	Revision      int32
-	LastDeployed  time.Time
-	Created       time.Time
-	LastModified  time.Time
+	LastDeployed  pgtype.Timestamptz
+	Created       pgtype.Timestamptz
+	LastModified  pgtype.Timestamptz
 }
 
 type Rollout struct {
@@ -181,8 +179,8 @@ type Rollout struct {
 	FeatureName string
 	Version     string
 	Status      string
-	Created     time.Time
-	Completed   sql.NullTime
+	Created     pgtype.Timestamptz
+	Completed   pgtype.Timestamptz
 }
 
 type RolloutEvent struct {
@@ -190,8 +188,8 @@ type RolloutEvent struct {
 	RolloutID uuid.UUID
 	Failure   bool
 	Message   string
-	Data      pgtype.JSONB
-	Created   time.Time
+	Data      []byte
+	Created   pgtype.Timestamptz
 }
 
 type Status struct {
@@ -200,16 +198,16 @@ type Status struct {
 	Version       string
 	Status        string
 	ConfigHash    string
-	Created       time.Time
-	LastModified  time.Time
+	Created       pgtype.Timestamptz
+	LastModified  pgtype.Timestamptz
 	Log           string
 }
 
 type Tenant struct {
 	ID           uuid.UUID
 	Name         string
-	Description  sql.NullString
-	Created      time.Time
-	LastModified time.Time
+	Description  pgtype.Text
+	Created      pgtype.Timestamptz
+	LastModified pgtype.Timestamptz
 	Ci           bool
 }

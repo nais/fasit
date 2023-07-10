@@ -6,7 +6,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/nais/fasit/pkg/message"
@@ -20,7 +21,10 @@ type HealthRepo interface {
 func (r *repo) HealthStatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Health) error {
 	_, err := r.querier.HealthStatusCreateOrUpdate(ctx, gensql.HealthStatusCreateOrUpdateParams{
 		EnvironmentID: environmentID,
-		ReportedAt:    h.ReportedAt,
+		ReportedAt: pgtype.Timestamptz{
+			Time:  h.ReportedAt,
+			Valid: true,
+		},
 	})
 
 	return err
@@ -38,6 +42,6 @@ func (r *repo) HealthGet(ctx context.Context, environmentID uuid.UUID) (*model.H
 	}
 	return &model.Health{
 		EnvironmentID: res.EnvironmentID,
-		ReportedAt:    res.ReportedAt,
+		ReportedAt:    res.ReportedAt.Time,
 	}, nil
 }

@@ -7,6 +7,9 @@ packages:
     queries: "pkg/database/queries"
     emit_interface: true
     emit_empty_slices: true
-    sql_package: pgx/v4
+    sql_package: pgx/v5
+    overrides:
+      - db_type: "uuid"
+        go_type: "github.com/google/uuid.UUID"
     # Might want this for v1.11
     # emit_result_struct_pointers: true

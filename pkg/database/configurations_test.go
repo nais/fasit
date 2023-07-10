@@ -14,18 +14,14 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
-	"github.com/jackc/pgtype"
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
 func TestHelmConfigMap(t *testing.T) {
-	jsonify := func(v any) pgtype.JSONB {
+	jsonify := func(v any) []byte {
 		b, _ := json.Marshal(v)
-		return pgtype.JSONB{
-			Bytes:  b,
-			Status: pgtype.Present,
-		}
+		return b
 	}
 	tests := map[string]struct {
 		input    []gensql.EnvConfigRow
@@ -365,7 +361,7 @@ func TestRepo_HelmValues_OK(t *testing.T) {
 			"tenant": map[string]string{"name": "tenant1"},
 		},
 		"my": map[string]any{
-			"key": pgtype.JSONB{Bytes: []byte(`"stringval"`), Status: pgtype.Present},
+			"key": []byte(`"stringval"`),
 		},
 	}
 
@@ -605,7 +601,7 @@ func TestRepo_HelmValues_WithIgnoredKeys_Ignored(t *testing.T) {
 			"tenant": map[string]string{"name": "tenant1"},
 		},
 		"my": map[string]any{
-			"key": pgtype.JSONB{Bytes: []byte(`"stringval"`), Status: pgtype.Present},
+			"key": []byte(`"stringval"`),
 		},
 	}
 
@@ -680,10 +676,10 @@ func TestRepo_HelmValues_WithIgnoredKeys_NotIgnored(t *testing.T) {
 			"tenant": map[string]string{"name": "tenant1"},
 		},
 		"my": map[string]any{
-			"key": pgtype.JSONB{Bytes: []byte(`"stringval"`), Status: pgtype.Present},
+			"key": []byte(`"stringval"`),
 		},
 		"ignore": map[string]any{
-			"key": pgtype.JSONB{Bytes: []uint8(`"ignore"`), Status: pgtype.Present},
+			"key": []uint8(`"ignore"`),
 		},
 	}
 

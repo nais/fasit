@@ -18,7 +18,7 @@ import (
 
 	model "github.com/nais/fasit/pkg/graph/model"
 
-	pgx "github.com/jackc/pgx/v4"
+	pgx "github.com/jackc/pgx/v5"
 
 	uuid "github.com/google/uuid"
 )

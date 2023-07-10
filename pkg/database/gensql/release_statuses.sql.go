@@ -7,9 +7,9 @@ package gensql
 
 import (
 	"context"
-	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const releaseStatusCreateOrUpdate = `-- name: ReleaseStatusCreateOrUpdate :one
@@ -32,7 +32,7 @@ type ReleaseStatusCreateOrUpdateParams struct {
 	Version       string
 	Status        string
 	Revision      int32
-	LastDeployed  time.Time
+	LastDeployed  pgtype.Timestamptz
 }
 
 func (q *Queries) ReleaseStatusCreateOrUpdate(ctx context.Context, arg ReleaseStatusCreateOrUpdateParams) (ReleaseStatus, error) {

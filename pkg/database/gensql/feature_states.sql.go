@@ -7,10 +7,9 @@ package gensql
 
 import (
 	"context"
-	"database/sql"
-	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const featureStateCreateOrUpdate = `-- name: FeatureStateCreateOrUpdate :one
@@ -29,7 +28,7 @@ type FeatureStateCreateOrUpdateParams struct {
 	EnvironmentID uuid.UUID
 	Feature       string
 	Enabled       bool
-	Enabledat     sql.NullTime
+	Enabledat     pgtype.Timestamptz
 }
 
 func (q *Queries) FeatureStateCreateOrUpdate(ctx context.Context, arg FeatureStateCreateOrUpdateParams) (FeatureState, error) {
@@ -112,9 +111,9 @@ type FeatureStatesGetRow struct {
 	EnvironmentID uuid.UUID
 	Name          string
 	Enabled       bool
-	Created       sql.NullTime
-	LastModified  sql.NullTime
-	EnabledAt     sql.NullTime
+	Created       pgtype.Timestamptz
+	LastModified  pgtype.Timestamptz
+	EnabledAt     pgtype.Timestamptz
 }
 
 func (q *Queries) FeatureStatesGet(ctx context.Context, environmentID uuid.UUID) ([]FeatureStatesGetRow, error) {
@@ -155,13 +154,13 @@ type FeatureStatesGetOldRow struct {
 	EnvironmentID  uuid.UUID
 	Feature        string
 	Enabled        bool
-	Created        time.Time
-	LastModified   time.Time
-	EnabledAt      sql.NullTime
-	Name           sql.NullString
-	Version        sql.NullString
-	Created_2      sql.NullTime
-	LastModified_2 sql.NullTime
+	Created        pgtype.Timestamptz
+	LastModified   pgtype.Timestamptz
+	EnabledAt      pgtype.Timestamptz
+	Name           pgtype.Text
+	Version        pgtype.Text
+	Created_2      pgtype.Timestamptz
+	LastModified_2 pgtype.Timestamptz
 }
 
 func (q *Queries) FeatureStatesGetOld(ctx context.Context, environmentID uuid.UUID) ([]FeatureStatesGetOldRow, error) {
@@ -208,9 +207,9 @@ type RolloutStatesGetRow struct {
 	EnvironmentID uuid.UUID
 	FeatureName   string
 	Enabled       bool
-	Created       sql.NullTime
-	LastModified  sql.NullTime
-	EnabledAt     sql.NullTime
+	Created       pgtype.Timestamptz
+	LastModified  pgtype.Timestamptz
+	EnabledAt     pgtype.Timestamptz
 }
 
 func (q *Queries) RolloutStatesGet(ctx context.Context, environmentID uuid.UUID) ([]RolloutStatesGetRow, error) {

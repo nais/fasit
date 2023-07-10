@@ -2,10 +2,10 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 func WithNow(ctx context.Context, now func() time.Time) context.Context {
@@ -19,17 +19,17 @@ func Now(ctx context.Context) time.Time {
 	return time.Now()
 }
 
-func ptrToNullString(str *string) sql.NullString {
+func ptrToNullString(str *string) pgtype.Text {
 	if str == nil {
-		return sql.NullString{}
+		return pgtype.Text{}
 	}
-	return sql.NullString{
+	return pgtype.Text{
 		String: *str,
 		Valid:  true,
 	}
 }
 
-func nullStringToPtr(ns sql.NullString) *string {
+func nullStringToPtr(ns pgtype.Text) *string {
 	if !ns.Valid {
 		return nil
 	}
@@ -41,16 +41,17 @@ func stringToPtr(s string) *string {
 	return &s
 }
 
-func nullTimeToPtr(nt sql.NullTime) *time.Time {
+func nullTimeToPtr(nt pgtype.Timestamptz) *time.Time {
 	if !nt.Valid {
 		return nil
 	}
 	return &nt.Time
 }
 
-func nullUUIDToPtr(nu uuid.NullUUID) *uuid.UUID {
+func nullUUIDToPtr(nu pgtype.UUID) *uuid.UUID {
 	if !nu.Valid {
 		return nil
 	}
-	return &nu.UUID
+	uid := uuid.UUID(nu.Bytes)
+	return &uid
 }

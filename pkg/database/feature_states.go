@@ -9,7 +9,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/graph/model"
 )
@@ -29,8 +30,8 @@ func featureStateFromSQL(state gensql.FeatureState) *model.FeatureState {
 		FeatureName:  state.Feature,
 		EnabledAt:    nullTimeToPtr(state.EnabledAt),
 		Enabled:      state.Enabled,
-		Created:      state.Created,
-		LastModified: state.LastModified,
+		Created:      state.Created.Time,
+		LastModified: state.LastModified.Time,
 	}
 }
 
@@ -85,9 +86,9 @@ func (r *repo) FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.
 				ID:           model.FeatureStateID(envID, f.Name),
 				FeatureName:  f.Name,
 				Enabled:      lookup[f.Name].Enabled,
-				Created:      lookup[f.Name].Created,
+				Created:      lookup[f.Name].Created.Time,
 				EnabledAt:    nullTimeToPtr(lookup[f.Name].EnabledAt),
-				LastModified: lookup[f.Name].LastModified,
+				LastModified: lookup[f.Name].LastModified.Time,
 				EnvID:        envID,
 			})
 		}
@@ -190,7 +191,7 @@ func (r *repo) FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID,
 		EnvironmentID: envID,
 		Feature:       feature.Name,
 		Enabled:       enabled,
-		Enabledat: sql.NullTime{
+		Enabledat: pgtype.Timestamptz{
 			Time:  Now(ctx),
 			Valid: enabled,
 		},

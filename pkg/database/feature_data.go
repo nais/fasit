@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/jackc/pgtype"
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/graph/model"
 )
@@ -22,24 +21,17 @@ func environmentKindToSQL(kinds []model.EnvironmentKind) []string {
 	return ret
 }
 
-func toJSONB(v any) (pgtype.JSONB, error) {
-	b, err := json.Marshal(v)
-	if err != nil {
-		return pgtype.JSONB{}, err
-	}
-	return pgtype.JSONB{Bytes: b, Status: pgtype.Present}, nil
-}
-
 func (r *repo) FeatureDataCreate(ctx context.Context, feature model.Feature) error {
-	dep, err := toJSONB(feature.Dependencies)
+	// TODO: Use pgx v5 instead of []byte
+	dep, err := json.Marshal(feature.Dependencies)
 	if err != nil {
 		return fmt.Errorf("marshal dependencies to json: %w", err)
 	}
-	vals, err := toJSONB(feature.Values)
+	vals, err := json.Marshal(feature.Values)
 	if err != nil {
 		return fmt.Errorf("marshal values to json: %w", err)
 	}
-	defaultVals, err := toJSONB(feature.ValuesYAML)
+	defaultVals, err := json.Marshal(feature.ValuesYAML)
 	if err != nil {
 		return fmt.Errorf("marshal default values to json: %w", err)
 	}

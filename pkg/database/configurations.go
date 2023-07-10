@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgtype"
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/feature/featureutil"
 	feature "github.com/nais/fasit/pkg/feature2"
@@ -33,8 +32,8 @@ func environmentConfigurationFromSQL(c gensql.ConfigurationsEnvironment) *model.
 			FeatureName:   c.Feature,
 		},
 		Key:     c.Key,
-		Content: c.Value.Bytes,
-		Created: c.Created,
+		Content: c.Value,
+		Created: c.Created.Time,
 		Source:  model.ConfigSourceEnv,
 	}
 }
@@ -45,8 +44,8 @@ func globalConfigFromSQL(c gensql.ConfigurationsGlobal) *model.Configuration {
 		GraphVars: model.ConfigurationGraphVars{FeatureName: c.Feature},
 		// Description: nullStringToPtr(c.Description),
 		Key:     c.Key,
-		Content: c.Value.Bytes,
-		Created: c.Created,
+		Content: c.Value,
+		Created: c.Created.Time,
 		Source:  model.ConfigSourceGlobal,
 	}
 }
@@ -77,13 +76,13 @@ func envConfigFromSQL(conf gensql.EnvConfigRow) *model.Configuration {
 		},
 		// Description:   nullStringToPtr(conf.Description),
 		Key:     conf.Key,
-		Content: conf.Value.Bytes,
+		Content: conf.Value,
 		Source:  model.ConfigSourceGlobal,
 	}
 
 	if conf.EnvironmentID.Valid {
 		ret.Source = model.ConfigSourceEnv
-		ret.GraphVars.EnvironmentID = &conf.EnvironmentID.UUID
+		ret.GraphVars.EnvironmentID = nullUUIDToPtr(conf.EnvironmentID)
 	}
 
 	return ret
@@ -140,10 +139,7 @@ func (r *repo) configEnvCreate(ctx context.Context, c model.NewConfiguration, va
 		Description:   ptrToNullString(c.Description),
 		Secret:        c.Secret,
 		Key:           c.Key,
-		Value: pgtype.JSONB{
-			Bytes:  value,
-			Status: pgtype.Present,
-		},
+		Value:         value,
 	})
 	if err != nil {
 		return nil, err
@@ -160,10 +156,7 @@ func (r *repo) configGlobalCreate(ctx context.Context, c model.NewConfiguration,
 		Description: ptrToNullString(c.Description),
 		Secret:      c.Secret,
 		Key:         c.Key,
-		Value: pgtype.JSONB{
-			Bytes:  value,
-			Status: pgtype.Present,
-		},
+		Value:       value,
 	})
 	if err != nil {
 		return nil, err
@@ -177,11 +170,8 @@ func (r *repo) configGlobalCreate(ctx context.Context, c model.NewConfiguration,
 func (r *repo) ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration) (*model.Configuration, error) {
 	conf, err := r.querier.ConfigUpdate(ctx, gensql.ConfigUpdateParams{
 		Description: ptrToNullString(c.Description),
-		Value: pgtype.JSONB{
-			Bytes:  c.Value,
-			Status: pgtype.Present,
-		},
-		ID: id,
+		Value:       c.Value,
+		ID:          id,
 	})
 	if err != nil {
 		return nil, err

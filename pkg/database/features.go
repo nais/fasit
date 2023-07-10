@@ -9,8 +9,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgtype"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/graph/model"
 )
@@ -279,16 +278,16 @@ func featuresFromSQL(features []gensql.FeaturesForKindRow) ([]*model.Feature, er
 	return ret, nil
 }
 
-func makeFeatureYAML(kinds []string, deps, values, defaultValues pgtype.JSONB, timeout int64) (model.FeatureYAML, map[string]json.RawMessage, error) {
+func makeFeatureYAML(kinds []string, deps, values, defaultValues []byte, timeout int64) (model.FeatureYAML, map[string]json.RawMessage, error) {
 	ret := model.FeatureYAML{
 		Timeout: time.Duration(timeout) * time.Millisecond,
 	}
-	if err := json.Unmarshal(deps.Bytes, &ret.Dependencies); err != nil {
+	if err := json.Unmarshal(deps, &ret.Dependencies); err != nil {
 		return ret, nil, fmt.Errorf("unmarshal dependencies: %w", err)
 	}
 
 	var retDefaultVals map[string]json.RawMessage
-	if err := json.Unmarshal(defaultValues.Bytes, &retDefaultVals); err != nil {
+	if err := json.Unmarshal(defaultValues, &retDefaultVals); err != nil {
 		return ret, nil, fmt.Errorf("unmarshal default values: %w", err)
 	}
 
@@ -297,7 +296,7 @@ func makeFeatureYAML(kinds []string, deps, values, defaultValues pgtype.JSONB, t
 		ret.EnvironmentKinds[i] = model.EnvironmentKind(k)
 	}
 
-	if err := json.Unmarshal(values.Bytes, &ret.Values); err != nil {
+	if err := json.Unmarshal(values, &ret.Values); err != nil {
 		return ret, nil, fmt.Errorf("unmarshal values: %w", err)
 	}
 

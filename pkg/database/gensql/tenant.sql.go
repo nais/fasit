@@ -7,10 +7,9 @@ package gensql
 
 import (
 	"context"
-	"database/sql"
-	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const tenantCI = `-- name: TenantCI :one
@@ -37,7 +36,7 @@ INSERT INTO tenants (name, description) VALUES ($1, $2) RETURNING id, name, desc
 
 type TenantCreateParams struct {
 	Name        string
-	Description sql.NullString
+	Description pgtype.Text
 }
 
 func (q *Queries) TenantCreate(ctx context.Context, arg TenantCreateParams) (Tenant, error) {
@@ -70,9 +69,9 @@ type TenantEnvironmentsRow struct {
 	TenantID     uuid.UUID
 	Name         string
 	Kind         EnvironmentKind
-	Description  sql.NullString
-	Created      time.Time
-	LastModified time.Time
+	Description  pgtype.Text
+	Created      pgtype.Timestamptz
+	LastModified pgtype.Timestamptz
 	Ci           bool
 	Reconcile    bool
 	TenantName   string

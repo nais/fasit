@@ -14,7 +14,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/go-chi/chi/v5"
 	"github.com/gorilla/websocket"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/database/dbtest"
 	"github.com/nais/fasit/pkg/feature"

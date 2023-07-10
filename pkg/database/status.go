@@ -45,8 +45,8 @@ func (r *repo) StatusForEnvironment(ctx context.Context, environmentID uuid.UUID
 			Version:       s.Version,
 			Status:        model.RolloutStatus(s.Status),
 			ConfigHash:    s.ConfigHash,
-			Created:       s.Created,
-			LastModified:  s.LastModified,
+			Created:       s.Created.Time,
+			LastModified:  s.LastModified.Time,
 			Log:           s.Log,
 		})
 	}
@@ -69,8 +69,8 @@ func (r *repo) StatusForFeature(ctx context.Context, environmentID uuid.UUID, fe
 		Version:       s.Version,
 		Status:        model.RolloutStatus(s.Status),
 		ConfigHash:    s.ConfigHash,
-		Created:       s.Created,
-		LastModified:  s.LastModified,
+		Created:       s.Created.Time,
+		LastModified:  s.LastModified.Time,
 		Log:           s.Log,
 	}, nil
 }

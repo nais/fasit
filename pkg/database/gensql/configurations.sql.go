@@ -7,10 +7,9 @@ package gensql
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgtype"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const configDelete = `-- name: ConfigDelete :exec
@@ -38,10 +37,10 @@ RETURNING id, feature, key, value, description, secret, created, environment_id
 type ConfigEnvUpdateOrCreateParams struct {
 	EnvironmentID uuid.UUID
 	Feature       string
-	Description   sql.NullString
+	Description   pgtype.Text
 	Secret        bool
 	Key           string
-	Value         pgtype.JSONB
+	Value         []byte
 }
 
 func (q *Queries) ConfigEnvUpdateOrCreate(ctx context.Context, arg ConfigEnvUpdateOrCreateParams) (ConfigurationsEnvironment, error) {
@@ -155,10 +154,10 @@ RETURNING id, feature, key, value, description, secret, created
 
 type ConfigGlobalUpdateOrCreateParams struct {
 	Feature     string
-	Description sql.NullString
+	Description pgtype.Text
 	Secret      bool
 	Key         string
-	Value       pgtype.JSONB
+	Value       []byte
 }
 
 func (q *Queries) ConfigGlobalUpdateOrCreate(ctx context.Context, arg ConfigGlobalUpdateOrCreateParams) (ConfigurationsGlobal, error) {
@@ -223,8 +222,8 @@ RETURNING id, feature, key, value, description, secret, created
 `
 
 type ConfigUpdateParams struct {
-	Description sql.NullString
-	Value       pgtype.JSONB
+	Description pgtype.Text
+	Value       []byte
 	ID          uuid.UUID
 }
 
@@ -279,8 +278,8 @@ type EnvConfigRow struct {
 	ID            uuid.UUID
 	Feature       string
 	Key           string
-	Value         pgtype.JSONB
-	EnvironmentID uuid.NullUUID
+	Value         []byte
+	EnvironmentID pgtype.UUID
 	Rank          int64
 }
 

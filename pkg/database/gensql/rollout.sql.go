@@ -7,10 +7,9 @@ package gensql
 
 import (
 	"context"
-	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgtype"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const rolloutByName = `-- name: RolloutByName :one
@@ -41,11 +40,11 @@ type RolloutByNameRow struct {
 	Description   string
 	Source        string
 	Kinds         []string
-	Dependencies  pgtype.JSONB
-	Values        pgtype.JSONB
-	DefaultValues pgtype.JSONB
+	Dependencies  []byte
+	Values        []byte
+	DefaultValues []byte
 	Timeout       int64
-	Created       time.Time
+	Created       pgtype.Timestamptz
 }
 
 func (q *Queries) RolloutByName(ctx context.Context, name string) (RolloutByNameRow, error) {
@@ -143,7 +142,7 @@ type RolloutEventCreateParams struct {
 	RolloutID uuid.UUID
 	Failure   bool
 	Message   string
-	Data      pgtype.JSONB
+	Data      []byte
 }
 
 func (q *Queries) RolloutEventCreate(ctx context.Context, arg RolloutEventCreateParams) error {
@@ -289,11 +288,11 @@ type RolloutsForKindRow struct {
 	Description   string
 	Source        string
 	Kinds         []string
-	Dependencies  pgtype.JSONB
-	Values        pgtype.JSONB
-	DefaultValues pgtype.JSONB
+	Dependencies  []byte
+	Values        []byte
+	DefaultValues []byte
 	Timeout       int64
-	Created       time.Time
+	Created       pgtype.Timestamptz
 }
 
 func (q *Queries) RolloutsForKind(ctx context.Context, environmentKind string) ([]RolloutsForKindRow, error) {

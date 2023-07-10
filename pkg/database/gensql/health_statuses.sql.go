@@ -7,9 +7,9 @@ package gensql
 
 import (
 	"context"
-	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const healthStatusCreateOrUpdate = `-- name: HealthStatusCreateOrUpdate :one
@@ -25,7 +25,7 @@ RETURNING environment_id, reported_at
 
 type HealthStatusCreateOrUpdateParams struct {
 	EnvironmentID uuid.UUID
-	ReportedAt    time.Time
+	ReportedAt    pgtype.Timestamptz
 }
 
 func (q *Queries) HealthStatusCreateOrUpdate(ctx context.Context, arg HealthStatusCreateOrUpdateParams) (HealthStatus, error) {

@@ -7,9 +7,9 @@ package gensql
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const environmentByNames = `-- name: EnvironmentByNames :one
@@ -69,7 +69,7 @@ INSERT INTO environments (name, description, tenant_id, kind) VALUES ($1, $2, $3
 
 type EnvironmentCreateParams struct {
 	Name        string
-	Description sql.NullString
+	Description pgtype.Text
 	TenantID    uuid.UUID
 	Kind        EnvironmentKind
 }
@@ -207,7 +207,7 @@ WHERE
 `
 
 type EnvironmentUpdateParams struct {
-	Description sql.NullString
+	Description pgtype.Text
 	ID          uuid.UUID
 }
 

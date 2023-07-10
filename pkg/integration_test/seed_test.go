@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/nais/fasit/pkg/integration_test/testmanager"
@@ -59,7 +59,7 @@ func seedTenantEnv(ctx context.Context, db database.Repo, state map[string]any, 
 		if err != nil {
 			return fmt.Errorf("seedTenantEnv: unable to create transaction: %w", err)
 		}
-		err = tx.BeginFunc(ctx, func(tx pgx.Tx) error {
+		err = pgx.BeginFunc(ctx, tx, func(tx pgx.Tx) error {
 			if _, err := tx.Exec(ctx, `UPDATE tenants SET ci = true`); err != nil {
 				return err
 			}
