@@ -76,7 +76,7 @@ func (r *featureResolver) State(ctx context.Context, obj *model.Feature) (*model
 		return nil, nil
 	}
 
-	return r.Repo.FeatureStateGet(ctx, env.ID, obj.Name)
+	return r.Repo.FeatureStateGet(ctx, obj.GraphVars.EnvironmentID, obj.Name)
 }
 
 // Status is the resolver for the status field.

@@ -112,9 +112,20 @@ func (r *environmentResolver) Feature(ctx context.Context, obj *model.Environmen
 		return nil, err
 	}
 
-	f.GraphVars.EnvironmentID = obj.ID
+	// copy
+	b, err := json.Marshal(f)
+	if err != nil {
+		return nil, err
+	}
 
-	return f, nil
+	ret := &model.Feature{}
+	if err := json.Unmarshal(b, ret); err != nil {
+		return nil, err
+	}
+
+	ret.GraphVars.EnvironmentID = obj.ID
+
+	return ret, nil
 }
 
 // EnvironmentCreate is the resolver for the environmentCreate field.
