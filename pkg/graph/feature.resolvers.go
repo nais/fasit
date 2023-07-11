@@ -59,7 +59,24 @@ func (r *featureResolver) State(ctx context.Context, obj *model.Feature) (*model
 		return nil, nil
 	}
 
-	return r.Repo.FeatureStateGet(ctx, obj.GraphVars.EnvironmentID, obj.Name)
+	env, err := r.Repo.EnvironmentGet(ctx, obj.GraphVars.EnvironmentID)
+	if err != nil {
+		return nil, fmt.Errorf("get environment: %w", err)
+	}
+	ok := false
+	for _, kind := range obj.EnvironmentKinds {
+		if env.Kind == kind {
+			ok = true
+			break
+		}
+	}
+
+	if !ok {
+		// Not a valid environment for this feature
+		return nil, nil
+	}
+
+	return r.Repo.FeatureStateGet(ctx, env.ID, obj.Name)
 }
 
 // Status is the resolver for the status field.

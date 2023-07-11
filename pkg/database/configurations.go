@@ -285,7 +285,7 @@ func makeHelmConfigMap(vals []gensql.EnvConfigRow) (map[string]any, error) {
 		parent := val
 		for index, key := range keys {
 			if index == len(keys)-1 {
-				parent[key] = v.Value
+				parent[key] = json.RawMessage(v.Value)
 				continue
 			}
 			if e, ok := parent[key]; ok {

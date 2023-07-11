@@ -48,7 +48,7 @@ func (r *repo) FeatureByName(ctx context.Context, name string) (*model.Feature, 
 			if err == nil {
 				return r, nil
 			} else if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-				return nil, fmt.Errorf("get feature by name from db: %w", err)
+				return nil, fmt.Errorf("get rollout by name from db: %w", err)
 			}
 
 		}
@@ -80,7 +80,7 @@ func (r *repo) FeatureByName(ctx context.Context, name string) (*model.Feature, 
 func (r *repo) Features(ctx context.Context) ([]*model.Feature, error) {
 	features, err := r.querier.Features(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("get feature by name from db: %w", err)
+		return nil, fmt.Errorf("get features from db: %w", err)
 	}
 
 	var ret []*model.Feature

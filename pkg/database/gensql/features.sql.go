@@ -161,7 +161,7 @@ WITH combined AS (
       make_timestamptz(1969, 4, 20, 0, 0, 0) AS last_modified
     FROM rollouts
     WHERE status = 'pending'
-    ORDER BY "version" DESC
+    ORDER BY feature_name, "version" DESC
   )
 ), filtered AS (
   SELECT DISTINCT ON (name) name AS name, version, created, last_modified

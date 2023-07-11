@@ -676,14 +676,25 @@ func TestRepo_HelmValues_WithIgnoredKeys_NotIgnored(t *testing.T) {
 			"tenant": map[string]string{"name": "tenant1"},
 		},
 		"my": map[string]any{
-			"key": []byte(`"stringval"`),
+			"key": json.RawMessage(`"stringval"`),
 		},
 		"ignore": map[string]any{
-			"key": []uint8(`"ignore"`),
+			"key": json.RawMessage(`"ignore"`),
 		},
 	}
 
 	if !cmp.Equal(want, got) {
 		t.Errorf("diff -want +got:\n%v", cmp.Diff(want, got))
+	}
+
+	b, err := json.Marshal(got)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expectedJSON := `{"fasit":{"env":{"kind":"tenant","name":"env1"},"tenant":{"name":"tenant1"}},"ignore":{"key":"ignore"},"my":{"key":"stringval"}}`
+
+	if !cmp.Equal(string(b), expectedJSON) {
+		t.Errorf("diff -want +got:\n%v", cmp.Diff(expectedJSON, string(b)))
 	}
 }

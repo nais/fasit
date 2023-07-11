@@ -89,7 +89,7 @@ func (r *repo) RolloutsListen(ctx context.Context, fn ListenFunc) error {
 func (r *repo) RolloutByName(ctx context.Context, name string) (*model.Feature, error) {
 	f, err := r.querier.RolloutByName(ctx, name)
 	if err != nil {
-		return nil, fmt.Errorf("get feature by name from db: %w", err)
+		return nil, fmt.Errorf("get rollout by name from db: %w", err)
 	}
 
 	deps := model.Dependencies{}
