@@ -12,7 +12,8 @@ AND name = @name;
 -- name: EnvironmentsGet :many
 SELECT *
 FROM environments
-WHERE tenant_id = @tenant_id;
+WHERE tenant_id = @tenant_id
+ORDER BY name ASC;
 
 -- name: EnvironmentByNames :one
 SELECT e.*

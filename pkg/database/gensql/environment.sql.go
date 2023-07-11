@@ -232,6 +232,7 @@ const environmentsGet = `-- name: EnvironmentsGet :many
 SELECT id, tenant_id, name, kind, description, created, last_modified, ci, reconcile
 FROM environments
 WHERE tenant_id = $1
+ORDER BY name ASC
 `
 
 func (q *Queries) EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]Environment, error) {
