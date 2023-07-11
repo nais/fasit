@@ -17,7 +17,6 @@ type ConfigRepo interface {
 	ConfigDelete(ctx context.Context, id uuid.UUID) error
 	ConfigGet(ctx context.Context, feature string) ([]*model.Configuration, error)
 	ConfigGetForEnv(ctx context.Context, feature string, envID uuid.UUID) ([]*model.Configuration, error)
-	ConfigListen(ctx context.Context, fn ListenFunc) error
 	ConfigOverridesByFeature(ctx context.Context, featureName string) ([]*model.ConfigOverride, error)
 	ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration) (*model.Configuration, error)
 	EnvConfig(ctx context.Context, feature string, envID uuid.UUID) ([]*model.Configuration, error)
@@ -304,10 +303,6 @@ func makeHelmConfigMap(vals []gensql.EnvConfigRow) (map[string]any, error) {
 		}
 	}
 	return val, nil
-}
-
-func (r *repo) ConfigListen(ctx context.Context, fn ListenFunc) error {
-	return r.ListenNotify(ctx, "configurations_notify", fn)
 }
 
 func (r *repo) ConfigOverridesByFeature(ctx context.Context, featureName string) ([]*model.ConfigOverride, error) {

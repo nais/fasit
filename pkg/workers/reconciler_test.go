@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/nais/fasit/pkg/database/mocks"
+	"github.com/nais/fasit/pkg/database/notifier"
 	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/nais/fasit/pkg/message"
 	"github.com/sirupsen/logrus"
@@ -228,7 +229,7 @@ func TestReconcile(t *testing.T) {
 				return &mockPublisher{projectID: projectID, topicID: topicID, messages: &messages}
 			}
 
-			reconciler, err := NewReconciler(repo, publisher, "root-project", noop.NewMeterProvider().Meter(""), logrus.NewEntry(logrus.StandardLogger()))
+			reconciler, err := NewReconciler(repo, publisher, &mockNotifier{}, "root-project", noop.NewMeterProvider().Meter(""), logrus.NewEntry(logrus.StandardLogger()))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -433,3 +434,9 @@ func (m *mockPublisher) Publish(ctx context.Context, msg message.DeployInstructi
 }
 
 func (m *mockPublisher) Stop() {}
+
+type mockNotifier struct{}
+
+func (m *mockNotifier) Listen(table string, filters ...notifier.Filter) <-chan notifier.Payload {
+	return nil
+}

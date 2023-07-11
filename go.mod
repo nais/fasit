@@ -19,7 +19,6 @@ require (
 	github.com/iancoleman/strcase v0.2.0
 	github.com/invopop/jsonschema v0.7.0
 	github.com/jackc/pgconn v1.14.0
-	github.com/jackc/pgtype v1.14.0
 	github.com/jackc/pgx/v5 v5.4.1
 	github.com/lib/pq v1.10.9
 	github.com/ory/dockertest/v3 v3.10.0
@@ -121,6 +120,7 @@ require (
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgproto3/v2 v2.3.2 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
+	github.com/jackc/pgtype v1.14.0 // indirect
 	github.com/jackc/pgx/v4 v4.18.1 // indirect
 	github.com/jackc/puddle/v2 v2.2.0 // indirect
 	github.com/jmoiron/sqlx v1.3.5 // indirect

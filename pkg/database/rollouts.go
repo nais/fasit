@@ -17,7 +17,6 @@ type RolloutRepo interface {
 	RolloutDelete(ctx context.Context, name string) error
 	RolloutEventCreate(ctx context.Context, rollout uuid.UUID, failure bool, message string, data map[string]any) error
 	RolloutsForFeature(ctx context.Context, name string) ([]*model.Rollout, error)
-	RolloutsListen(ctx context.Context, fn ListenFunc) error
 	RolloutStatus(ctx context.Context, name string) (model.RolloutStatus, error)
 	RolloutsUpdateStatus(ctx context.Context, status model.RolloutStatus, name string, completed bool) error
 
@@ -80,10 +79,6 @@ func (r *repo) RolloutCreate(ctx context.Context, name, version string) (*model.
 		Created:     ro.Created.Time,
 		FeatureName: ro.FeatureName,
 	}, nil
-}
-
-func (r *repo) RolloutsListen(ctx context.Context, fn ListenFunc) error {
-	return r.ListenNotify(ctx, "rollout_notify", fn)
 }
 
 func (r *repo) RolloutByName(ctx context.Context, name string) (*model.Feature, error) {

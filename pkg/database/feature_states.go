@@ -19,7 +19,6 @@ type FeatureStateRepo interface {
 	FeatureStateGet(ctx context.Context, envID uuid.UUID, featureName string) (*model.FeatureState, error)
 	FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *model.Feature, enabled bool) (*model.FeatureState, error)
 	FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
-	FeatureStatesListen(ctx context.Context, fn ListenFunc) error
 	RolloutStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
 }
 
@@ -208,8 +207,4 @@ func (r *repo) FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID,
 	r.createAudit(ctx, msg, "feature_states", envID.String()+":"+feature.Name)
 
 	return featureStateFromSQL(res), nil
-}
-
-func (r *repo) FeatureStatesListen(ctx context.Context, fn ListenFunc) error {
-	return r.ListenNotify(ctx, "feature_states_notify", fn)
 }

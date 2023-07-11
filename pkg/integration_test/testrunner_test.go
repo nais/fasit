@@ -17,6 +17,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/database/dbtest"
+	"github.com/nais/fasit/pkg/database/notifier"
 	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph"
 	"github.com/nais/fasit/pkg/graph/graphgen"
@@ -80,11 +81,14 @@ func TestRunner(t *testing.T) {
 				}
 				return p
 			}
-			reconciler, err := workers.NewReconciler(db, cp, "", noop.NewMeterProvider().Meter(""), logrus.NewEntry(log))
+
+			notifierService := notifier.New(pool, logrus.NewEntry(log))
+			reconciler, err := workers.NewReconciler(db, cp, notifierService, "", noop.NewMeterProvider().Meter(""), logrus.NewEntry(log))
 			if err != nil {
 				return nil, nil, opts, err
 			}
 			opts = append(opts, testmanager.WithBeforeHook(func(ctx context.Context) {
+				// TODO : Can we avoid this sleep, and maybe use the notifier instead?
 				if err := reconciler.Reconcile(ctx); err != nil {
 					t.Fatal(err)
 				}

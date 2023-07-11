@@ -177,20 +177,6 @@ func (_m *Repo) ConfigGetForEnv(ctx context.Context, _a1 string, envID uuid.UUID
 	return r0, r1
 }
 
-// ConfigListen provides a mock function with given fields: ctx, fn
-func (_m *Repo) ConfigListen(ctx context.Context, fn database.ListenFunc) error {
-	ret := _m.Called(ctx, fn)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, database.ListenFunc) error); ok {
-		r0 = rf(ctx, fn)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // ConfigOverridesByFeature provides a mock function with given fields: ctx, featureName
 func (_m *Repo) ConfigOverridesByFeature(ctx context.Context, featureName string) ([]*model.ConfigOverride, error) {
 	ret := _m.Called(ctx, featureName)
@@ -713,20 +699,6 @@ func (_m *Repo) FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model
 	return r0, r1
 }
 
-// FeatureStatesListen provides a mock function with given fields: ctx, fn
-func (_m *Repo) FeatureStatesListen(ctx context.Context, fn database.ListenFunc) error {
-	ret := _m.Called(ctx, fn)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, database.ListenFunc) error); ok {
-		r0 = rf(ctx, fn)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // FeatureVersionUpdate provides a mock function with given fields: ctx, name, version
 func (_m *Repo) FeatureVersionUpdate(ctx context.Context, name string, version string) error {
 	ret := _m.Called(ctx, name, version)
@@ -1206,20 +1178,6 @@ func (_m *Repo) RolloutsForFeature(ctx context.Context, name string) ([]*model.R
 	}
 
 	return r0, r1
-}
-
-// RolloutsListen provides a mock function with given fields: ctx, fn
-func (_m *Repo) RolloutsListen(ctx context.Context, fn database.ListenFunc) error {
-	ret := _m.Called(ctx, fn)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, database.ListenFunc) error); ok {
-		r0 = rf(ctx, fn)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
 }
 
 // RolloutsUpdateStatus provides a mock function with given fields: ctx, status, name, completed

@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/auth"
 	"github.com/nais/fasit/pkg/database"
+	"github.com/nais/fasit/pkg/database/notifier"
 	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/nais/fasit/pkg/message"
 	"github.com/sirupsen/logrus"
@@ -21,14 +22,11 @@ import (
 )
 
 type ReconcilerStore interface {
-	ConfigListen(ctx context.Context, fn database.ListenFunc) error
 	FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, ci bool) ([]*model.Feature, error)
 	FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *model.Feature, enabled bool) (*model.FeatureState, error)
 	FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
-	FeatureStatesListen(ctx context.Context, fn database.ListenFunc) error
 	HealthGet(ctx context.Context, environmentID uuid.UUID) (*model.Health, error)
 	HelmValues(ctx context.Context, feature *model.Feature, envID uuid.UUID) (map[string]any, error)
-	RolloutsListen(ctx context.Context, fn database.ListenFunc) error
 	StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]*model.Status, error)
 	TenantEnvironments(ctx context.Context, onlyReconciled bool) ([]*model.TenantEnvironment, error)
 	RolloutStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
@@ -41,11 +39,16 @@ type Publisher interface {
 
 type NewPublisher func(projectID, topicID string, log *logrus.Entry) Publisher
 
+type Notifier interface {
+	Listen(table string, filters ...notifier.Filter) <-chan notifier.Payload
+}
+
 type Reconciler struct {
 	repo      ReconcilerStore
 	publisher NewPublisher
 	log       *logrus.Entry
 	projectID string
+	notifier  Notifier
 
 	lock    sync.Mutex
 	running bool
@@ -58,6 +61,7 @@ type Reconciler struct {
 func NewReconciler(
 	repo ReconcilerStore,
 	publisher NewPublisher,
+	notifier Notifier,
 	gcpProjectID string,
 	meter metric.Meter,
 	log *logrus.Entry,
@@ -78,6 +82,7 @@ func NewReconciler(
 		projectID:      gcpProjectID,
 		reconcileTime:  reconcileTime,
 		deployMessages: deployMessages,
+		notifier:       notifier,
 	}, nil
 }
 
@@ -103,23 +108,29 @@ func (r *Reconciler) Listen(ctx context.Context) error {
 		}
 	}()
 
-	trigger := func(ctx context.Context, id uuid.UUID) {
-		ch <- struct{}{}
-	}
+	cfgGlobal := r.notifier.Listen("configurations_global")
+	cfgEnv := r.notifier.Listen("configurations_environment")
+	rollouts := r.notifier.Listen("rollouts")
+	featureStates := r.notifier.Listen("feature_states")
 
 	go func() {
-		if err := r.repo.RolloutsListen(ctx, trigger); err != nil {
-			r.log.WithError(err).Error("rollouts listen")
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-cfgGlobal:
+				ch <- struct{}{}
+			case <-cfgEnv:
+				ch <- struct{}{}
+			case <-rollouts:
+				ch <- struct{}{}
+			case <-featureStates:
+				ch <- struct{}{}
+			}
 		}
 	}()
 
-	go func() {
-		if err := r.repo.FeatureStatesListen(ctx, trigger); err != nil {
-			r.log.WithError(err).Error("feature states listen")
-		}
-	}()
-
-	return r.repo.ConfigListen(ctx, trigger)
+	return nil
 }
 
 func (r *Reconciler) Run(ctx context.Context, interval time.Duration) {
@@ -235,10 +246,8 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, e *model.TenantEn
 
 	for _, f := range features {
 		log = log.WithField("feature", f.Name)
-		log.Debug("reconcile feature")
 
 		if states[f.Name] == nil || !states[f.Name].Enabled {
-			log.Debug("not enabled")
 			continue
 		}
 
@@ -259,7 +268,6 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, e *model.TenantEn
 
 		if status, ok := lookup[f.Name]; ok {
 			if status.Version == f.Version && status.ConfigHash == hash {
-				log.Debug("no changes")
 				continue
 			}
 		}

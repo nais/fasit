@@ -23,6 +23,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/nais/fasit/pkg/auth"
 	"github.com/nais/fasit/pkg/database"
+	"github.com/nais/fasit/pkg/database/notifier"
 	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph"
 	"github.com/nais/fasit/pkg/graph/graphgen"
@@ -180,10 +181,13 @@ func main() {
 	receiver := workers.NewReceiver(statusMgr, repo, log.WithField("subsystem", "status"))
 	go receiver.Run(ctx)
 
+	notifierService := notifier.New(db, log.WithField("subsystem", "notifier"))
+	go notifierService.Run(ctx)
+
 	createPublisher := func(projectID, topicID string, log *logrus.Entry) workers.Publisher {
 		return message.NewPublisher[message.DeployInstruction](pubsubClient, projectID, topicID, log)
 	}
-	reconciler, err := workers.NewReconciler(repo, createPublisher, cfg.GCPProjectID, meter, log.WithField("subsystem", "reconciler"))
+	reconciler, err := workers.NewReconciler(repo, createPublisher, notifierService, cfg.GCPProjectID, meter, log.WithField("subsystem", "reconciler"))
 	if err != nil {
 		log.WithError(err).Fatal("setting up reconciler")
 	}
