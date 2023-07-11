@@ -19,7 +19,7 @@ import (
 )
 
 func TestHelmConfigMap(t *testing.T) {
-	jsonify := func(v any) []byte {
+	jsonify := func(v any) json.RawMessage {
 		b, _ := json.Marshal(v)
 		return b
 	}
@@ -361,7 +361,7 @@ func TestRepo_HelmValues_OK(t *testing.T) {
 			"tenant": map[string]string{"name": "tenant1"},
 		},
 		"my": map[string]any{
-			"key": []byte(`"stringval"`),
+			"key": json.RawMessage(`"stringval"`),
 		},
 	}
 
@@ -571,7 +571,7 @@ func TestRepo_HelmValues_WithIgnoredKeys_Ignored(t *testing.T) {
 		EnvironmentID: &envid,
 		Feature:       feature.Name,
 		Key:           "my.key",
-		Value:         []byte(`"stringval"`),
+		Value:         json.RawMessage(`"stringval"`),
 		Secret:        true,
 	}
 	_, err := r.ConfigCreate(context.Background(), config)
@@ -601,7 +601,7 @@ func TestRepo_HelmValues_WithIgnoredKeys_Ignored(t *testing.T) {
 			"tenant": map[string]string{"name": "tenant1"},
 		},
 		"my": map[string]any{
-			"key": []byte(`"stringval"`),
+			"key": json.RawMessage(`"stringval"`),
 		},
 	}
 
