@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"testing"
 	"time"
 
 	"github.com/nais/fasit/pkg/database"
@@ -86,9 +87,12 @@ func newNaisd(ctx context.Context, config testmanager.Config, db database.Repo) 
 	}
 
 	log := logrus.New()
-	// log.Out = os.Stdout
-	// log.Level = logrus.DebugLevel
-	log.Out = io.Discard
+	if testing.Verbose() {
+		log.Out = os.Stdout
+		log.Level = logrus.DebugLevel
+	} else {
+		log.Out = io.Discard
+	}
 	rec := workers.NewReceiver(statusMgr, db, logrus.NewEntry(log))
 
 	go mgmt.Run(ctx)

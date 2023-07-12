@@ -5,11 +5,17 @@ enum RolloutStatus {
   FAILED
 }
 
+type LogLine {
+  id: ID!
+  timestamp: Time!
+  message: String!
+}
+
 type Status {
   environmentID: ID!
   version: String!
   status: RolloutStatus!
   created: Time!
   lastModified: Time!
-  log: String!
+  log: [LogLine!]!
 }

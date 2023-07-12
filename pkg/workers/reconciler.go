@@ -30,6 +30,7 @@ type ReconcilerStore interface {
 	StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]*model.Status, error)
 	TenantEnvironments(ctx context.Context, onlyReconciled bool) ([]*model.TenantEnvironment, error)
 	RolloutStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
+	DeployInstructionCreate(ctx context.Context, envID uuid.UUID, featureName, featureVersion, hash string) (uuid.UUID, error)
 }
 
 type Publisher interface {
@@ -275,7 +276,13 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, e *model.TenantEn
 		r.log.WithField("version", f.Version).Debug("publishing deploy instruction")
 
 		r.deployMessages.Add(ctx, 1, metric.WithAttributes(append(metricAttrs, attribute.Key("feature").String(f.Name))...))
+
+		id, err := r.repo.DeployInstructionCreate(ctx, e.ID, f.Name, f.Version, hash)
+		if err != nil {
+			return fmt.Errorf("create deploy instruction: %w", err)
+		}
 		err = mgr.Publish(ctx, message.DeployInstruction{
+			ID:         id,
 			Name:       f.Name,
 			Version:    f.Version,
 			Chart:      f.Chart,

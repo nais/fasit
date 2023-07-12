@@ -3,6 +3,7 @@ package message
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
@@ -21,9 +22,12 @@ const (
 	StatusTypeHelmReleases
 	StatusTypeHealth
 	StatusKubernetesNodes
+	StatusTypeLog
 )
 
 type Helm struct {
+	// DIID is the unique identifier for the deployment instruction
+	DIID uuid.UUID
 	// Name is the name of the feature
 	Name string
 	// Version is the chart version
@@ -106,4 +110,15 @@ type KubernetesNode struct {
 	Allocatable             KubernetesNodeResources
 	Capacity                KubernetesNodeResources
 	InternalIP              string
+}
+
+type LogLine struct {
+	Time time.Time `json:"time"`
+	Msg  string    `json:"msg"`
+}
+
+type StatusLog struct {
+	// DIID is the unique identifier for the deployment instruction
+	DIID uuid.UUID `json:"diid"`
+	Logs []LogLine `json:"logs"`
 }

@@ -10,6 +10,7 @@ import (
 
 type publisherConfig struct {
 	waitForPublish bool
+	attributes     map[string]string
 }
 
 type publisherOpts func(*publisherConfig)
@@ -17,6 +18,12 @@ type publisherOpts func(*publisherConfig)
 func WithWaithForPublish() publisherOpts {
 	return func(c *publisherConfig) {
 		c.waitForPublish = true
+	}
+}
+
+func WithAttributes(attrs map[string]string) publisherOpts {
+	return func(c *publisherConfig) {
+		c.attributes = attrs
 	}
 }
 
@@ -53,7 +60,8 @@ func (p *Publisher[T]) Publish(ctx context.Context, msg T) error {
 
 	p.log.WithField("topic", p.topic.String()).Debug("Published message")
 	res := p.topic.Publish(ctx, &pubsub.Message{
-		Data: data,
+		Data:       data,
+		Attributes: p.config.attributes,
 	})
 
 	if p.config.waitForPublish {

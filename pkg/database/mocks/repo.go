@@ -229,6 +229,58 @@ func (_m *Repo) ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateCo
 	return r0, r1
 }
 
+// DeployInstructionCreate provides a mock function with given fields: ctx, envID, featureName, featureVersion, hash
+func (_m *Repo) DeployInstructionCreate(ctx context.Context, envID uuid.UUID, featureName string, featureVersion string, hash string) (uuid.UUID, error) {
+	ret := _m.Called(ctx, envID, featureName, featureVersion, hash)
+
+	var r0 uuid.UUID
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, string, string, string) (uuid.UUID, error)); ok {
+		return rf(ctx, envID, featureName, featureVersion, hash)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, string, string, string) uuid.UUID); ok {
+		r0 = rf(ctx, envID, featureName, featureVersion, hash)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(uuid.UUID)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, string, string, string) error); ok {
+		r1 = rf(ctx, envID, featureName, featureVersion, hash)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// DeployInstructionGet provides a mock function with given fields: ctx, id
+func (_m *Repo) DeployInstructionGet(ctx context.Context, id uuid.UUID) (*model.DeployInstruction, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *model.DeployInstruction
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) (*model.DeployInstruction, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) *model.DeployInstruction); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.DeployInstruction)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // EnvConfig provides a mock function with given fields: ctx, _a1, envID
 func (_m *Repo) EnvConfig(ctx context.Context, _a1 string, envID uuid.UUID) ([]*model.Configuration, error) {
 	ret := _m.Called(ctx, _a1, envID)
@@ -869,6 +921,20 @@ func (_m *Repo) KubernetesNodesForEnv(ctx context.Context, envID uuid.UUID) ([]*
 	}
 
 	return r0, r1
+}
+
+// LogCreate provides a mock function with given fields: ctx, deployInstructionID, lines
+func (_m *Repo) LogCreate(ctx context.Context, deployInstructionID uuid.UUID, lines []message.LogLine) error {
+	ret := _m.Called(ctx, deployInstructionID, lines)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, []message.LogLine) error); ok {
+		r0 = rf(ctx, deployInstructionID, lines)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // MappingValuesForEnvironment provides a mock function with given fields: ctx, envID, showSensitive

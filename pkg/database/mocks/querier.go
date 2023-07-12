@@ -275,6 +275,56 @@ func (_m *Querier) ConfigUpdate(ctx context.Context, arg gensql.ConfigUpdatePara
 	return r0, r1
 }
 
+// DeployInstructionsByID provides a mock function with given fields: ctx, id
+func (_m *Querier) DeployInstructionsByID(ctx context.Context, id uuid.UUID) (gensql.DeployInstruction, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 gensql.DeployInstruction
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) (gensql.DeployInstruction, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) gensql.DeployInstruction); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Get(0).(gensql.DeployInstruction)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// DeployInstructionsCreate provides a mock function with given fields: ctx, arg
+func (_m *Querier) DeployInstructionsCreate(ctx context.Context, arg gensql.DeployInstructionsCreateParams) (uuid.UUID, error) {
+	ret := _m.Called(ctx, arg)
+
+	var r0 uuid.UUID
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.DeployInstructionsCreateParams) (uuid.UUID, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.DeployInstructionsCreateParams) uuid.UUID); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(uuid.UUID)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, gensql.DeployInstructionsCreateParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // EnvConfig provides a mock function with given fields: ctx, arg
 func (_m *Querier) EnvConfig(ctx context.Context, arg gensql.EnvConfigParams) ([]gensql.EnvConfigRow, error) {
 	ret := _m.Called(ctx, arg)
@@ -915,6 +965,22 @@ func (_m *Querier) KubernetesNodeStatuses(ctx context.Context, environmentID uui
 	}
 
 	return r0, r1
+}
+
+// LogsCreate provides a mock function with given fields: ctx, arg
+func (_m *Querier) LogsCreate(ctx context.Context, arg []gensql.LogsCreateParams) *gensql.LogsCreateBatchResults {
+	ret := _m.Called(ctx, arg)
+
+	var r0 *gensql.LogsCreateBatchResults
+	if rf, ok := ret.Get(0).(func(context.Context, []gensql.LogsCreateParams) *gensql.LogsCreateBatchResults); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*gensql.LogsCreateBatchResults)
+		}
+	}
+
+	return r0
 }
 
 // MappingValuesForTenant provides a mock function with given fields: ctx, arg

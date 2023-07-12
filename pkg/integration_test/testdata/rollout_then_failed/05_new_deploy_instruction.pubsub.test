@@ -2,6 +2,7 @@ RETURNS
 
 OPTION topic=naisd-tenant23-testing
 OPTION ConfigHash=IGNORE
+OPTION ID=IGNORE
 
 ENDOPTS
 

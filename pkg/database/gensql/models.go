@@ -92,6 +92,14 @@ type ConfigurationsGlobal struct {
 	Created     pgtype.Timestamptz
 }
 
+type DeployInstruction struct {
+	ID             uuid.UUID
+	EnvironmentID  uuid.UUID
+	FeatureName    string
+	FeatureVersion string
+	Hash           string
+}
+
 type Environment struct {
 	ID           uuid.UUID
 	TenantID     uuid.UUID
@@ -161,6 +169,13 @@ type KubernetesNodeStatus struct {
 	Created                 pgtype.Timestamptz
 	LastModified            pgtype.Timestamptz
 	InternalIp              string
+}
+
+type Log struct {
+	ID                int64
+	DeployInstruction uuid.UUID
+	Time              pgtype.Timestamptz
+	Message           string
 }
 
 type ReleaseStatus struct {

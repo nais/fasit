@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database/mocks"
 	"github.com/nais/fasit/pkg/database/notifier"
 	"github.com/nais/fasit/pkg/graph/model"
@@ -60,6 +61,7 @@ var reconcileTests = map[string]struct {
 		},
 		want: []message.DeployInstruction{
 			{
+				ID:         uuid.New(),
 				Name:       "feature1",
 				Version:    "1",
 				Chart:      "somechart",
@@ -135,6 +137,7 @@ var reconcileTests = map[string]struct {
 		},
 		want: []message.DeployInstruction{
 			{
+				ID:         uuid.New(),
 				Name:       "feature1",
 				Version:    "1",
 				Chart:      "somechart",
@@ -185,6 +188,7 @@ var reconcileTests = map[string]struct {
 		},
 		want: []message.DeployInstruction{
 			{
+				ID:         uuid.New(),
 				Name:       "feature2",
 				Version:    "2",
 				Chart:      "somechart",
@@ -206,9 +210,13 @@ func TestReconcile(t *testing.T) {
 					Environment: e.Environment,
 				})
 			}
+
 			repo.On("TenantEnvironments", mock.Anything, true).Return(te, nil)
 
 			for _, te := range tt.environments {
+				if len(tt.want) > 0 {
+					repo.On("DeployInstructionCreate", mock.Anything, te.Environment.ID, mock.IsType(""), mock.IsType(""), mock.IsType("")).Return(tt.want[0].ID, nil).Once()
+				}
 				repo.On("FeaturesForKind", mock.Anything, te.Environment.Kind, te.Environment.CI).Return(tt.features, nil)
 				repo.On("StatusForEnvironment", mock.Anything, te.Environment.ID).Return(te.Status, nil)
 				repo.On("FeatureStatesGet", mock.Anything, te.Environment.ID).Return(te.FeatureStates, nil)

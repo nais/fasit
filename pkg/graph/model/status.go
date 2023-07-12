@@ -75,3 +75,9 @@ func (r RolloutStatus) MarshalGQL(w io.Writer) {
 	}
 	fmt.Fprint(w, strconv.Quote(strings.ToUpper(str)))
 }
+
+type LogLine struct {
+	ID        string    `json:"id"`
+	Timestamp time.Time `json:"timestamp"`
+	Message   string    `json:"message"`
+}

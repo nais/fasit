@@ -155,6 +155,10 @@ func sharedDependencies(ctx context.Context, log *logrus.Logger) (*naisd.DeployM
 		naisStatusTopic,
 		log.WithField("subsystem", "status-pubsub"),
 		message.WithWaithForPublish(),
+		message.WithAttributes(map[string]string{
+			"tenant":      cfg.TenantName,
+			"environment": cfg.Env,
+		}),
 	)
 
 	kubeConfig := local.RESTConfig()
