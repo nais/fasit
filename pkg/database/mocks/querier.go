@@ -175,6 +175,30 @@ func (_m *Querier) ConfigGet(ctx context.Context, feature string) ([]gensql.Conf
 	return r0, r1
 }
 
+// ConfigGetByID provides a mock function with given fields: ctx, id
+func (_m *Querier) ConfigGetByID(ctx context.Context, id uuid.UUID) (gensql.ConfigurationsGlobal, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 gensql.ConfigurationsGlobal
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) (gensql.ConfigurationsGlobal, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) gensql.ConfigurationsGlobal); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Get(0).(gensql.ConfigurationsGlobal)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ConfigGetForEnv provides a mock function with given fields: ctx, arg
 func (_m *Querier) ConfigGetForEnv(ctx context.Context, arg gensql.ConfigGetForEnvParams) ([]gensql.ConfigurationsEnvironment, error) {
 	ret := _m.Called(ctx, arg)

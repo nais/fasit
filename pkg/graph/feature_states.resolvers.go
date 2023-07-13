@@ -16,7 +16,12 @@ import (
 
 // Feature is the resolver for the feature field.
 func (r *featureStateResolver) Feature(ctx context.Context, obj *model.FeatureState) (*model.Feature, error) {
-	return r.Repo.FeatureByNameForEnv(ctx, obj.FeatureName, obj.EnvID)
+	f, err := r.Repo.FeatureByNameForEnv(ctx, obj.FeatureName, obj.EnvID)
+	if err != nil {
+		return nil, err
+	}
+	f.GraphVars.EnvironmentID = obj.EnvID
+	return f, nil
 }
 
 // MissingDependencies is the resolver for the missingDependencies field.

@@ -12,6 +12,10 @@ import (
 	"github.com/google/uuid"
 )
 
+type Update interface {
+	IsUpdate()
+}
+
 type Warning interface {
 	IsWarning()
 	GetMessage() string

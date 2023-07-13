@@ -1,0 +1,26 @@
+{
+  "aiven": {
+    "cidrs": "WyIxMC43LjQuMC8yNCJd",
+    "mainCidr": "10.6.3.0/24",
+    "mainProject": "Im5hdi1kZXYi",
+    "projects": "Im5hdi1kZXYgbmF2LWluZnJhc3RydWN0dXJlIg==",
+    "serviceUserLimit": "MjcwMA==",
+    "token": "Ik5vZFVFSGFTN3loMUZ4eS8zVEdNNnV6Q1R5dUljdExuc3dPZS9qaGpla2NxaWNwNSs4UEswckh0Zm9jQzlrejQ1bS9aOFRHdGhud0lkSXVkcFN3WHdYR1pMSkZpV2FRRXZvc3gyemx6MDFTcmdvNFdieFB0ZzdyOEkrNTQvT2JFR09GdnBvZ2c4SU5tMG9ic3cybjg5bGRObXpIMDhNTUFhbGw0VW1VV0xaL1E5bFBCVC85V3ZYMGt4WmhvSTJhVDBoQVBZTmxvRGlRcHBoREVGNWJucngvK3dDTjI4d0FrL0lWbmZWRktRMDNOaFphL05ma1p1VkZDdmk3anZLQmFCTTNMeE9ramJqd3JtVEE5cnpLYlFzUm9PellkYURHaDJhUXNoU3hscmRrN3JSQXJ2RzhiR2NvVWlPenZJM2J4Z01XZGRBK3FJc2l5c3JYSHlTNGlUYi9GMTJicmorNm1PMUFMTmJaQ2tXeFBicnZsdGJtMG1jOXci"
+  },
+  "clusterName": "dev",
+  "fasit": {
+    "env": {
+      "kind": "tenant",
+      "name": "dev"
+    },
+    "tenant": {
+      "name": "test-partner"
+    }
+  },
+  "image": {
+    "pullPolicy": "IklmTm90UHJlc2VudCI=",
+    "tag": "IjIwMjMwNjIwLTEwMjIyMS05NzA2YTU5Ig=="
+  },
+  "replicationConfig": true,
+  "tenant": "test-partner"
+}

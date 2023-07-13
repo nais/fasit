@@ -23,6 +23,8 @@ type Status struct {
 	DeployInstructionID uuid.UUID `json:"-"`
 }
 
+func (s *Status) IsUpdate() {}
+
 type RolloutStatus string
 
 const (

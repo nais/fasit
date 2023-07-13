@@ -97,7 +97,7 @@ func (r *featureResolver) Status(ctx context.Context, obj *model.Feature) (*mode
 				if errors.Is(err, pgx.ErrNoRows) {
 					f, err := r.Repo.FeatureByNameForEnv(ctx, obj.Name, obj.GraphVars.EnvironmentID)
 					if err != nil {
-						return nil, fmt.Errorf("feature %v not found", obj.Name)
+						return nil, fmt.Errorf("feature %v not found: %v", obj.Name, err)
 					}
 					return &model.Status{
 						EnvironmentID: obj.GraphVars.EnvironmentID,
@@ -117,7 +117,6 @@ func (r *featureResolver) Status(ctx context.Context, obj *model.Feature) (*mode
 	}
 
 	return &model.Status{
-		DeployInstructionID: di.ID,
 		EnvironmentID:       di.EnvironmentID,
 		Feature:             di.FeatureName,
 		Version:             di.FeatureVersion,
@@ -125,6 +124,7 @@ func (r *featureResolver) Status(ctx context.Context, obj *model.Feature) (*mode
 		ConfigHash:          di.Hash,
 		Created:             di.Created,
 		LastModified:        di.LastModified,
+		DeployInstructionID: di.ID,
 	}, nil
 }
 

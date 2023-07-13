@@ -22,6 +22,7 @@ type Resolver struct {
 
 	notifier    *notifier.Notifier
 	logNotifier *logNotifier
+	diNotifier  *updateNotifier
 }
 
 func NewResolver(ctx context.Context, repo database.Repo, notifier *notifier.Notifier, log *logrus.Entry) *Resolver {
@@ -29,6 +30,7 @@ func NewResolver(ctx context.Context, repo database.Repo, notifier *notifier.Not
 		Repo:        repo,
 		Log:         log,
 		logNotifier: newLogNotifier(ctx, notifier, repo),
+		diNotifier:  newDeployInstructionsNotifier(ctx, notifier, repo),
 	}
 }
 

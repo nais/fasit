@@ -17,6 +17,11 @@ import (
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
+// ID is the resolver for the id field.
+func (r *statusResolver) ID(ctx context.Context, obj *model.Status) (string, error) {
+	return obj.EnvironmentID.String() + "_" + obj.Feature, nil
+}
+
 // Log is the resolver for the log field.
 func (r *statusResolver) Log(ctx context.Context, obj *model.Status) ([]*model.LogLine, error) {
 	// TODO: remove this when all naisds are upgraded
@@ -106,6 +111,22 @@ func (r *subscriptionResolver) Logs(ctx context.Context, environmentID uuid.UUID
 				}
 			}
 		}
+	}()
+
+	return ret, nil
+}
+
+// Updates is the resolver for the updates field.
+func (r *subscriptionResolver) Updates(ctx context.Context) (<-chan model.Update, error) {
+	ret := make(chan model.Update, 1)
+	r.diNotifier.Subscribe(ret)
+	fmt.Println("Subscribed to updates")
+
+	go func() {
+		<-ctx.Done()
+		fmt.Println("Unsubscribing from updates")
+		r.diNotifier.Unsubscribe(ret)
+		close(ret)
 	}()
 
 	return ret, nil

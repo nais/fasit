@@ -16,6 +16,7 @@ type ConfigRepo interface {
 	ConfigCreate(ctx context.Context, c model.NewConfiguration) (*model.Configuration, error)
 	ConfigDelete(ctx context.Context, id uuid.UUID) error
 	ConfigGet(ctx context.Context, feature string) ([]*model.Configuration, error)
+	ConfigGetByID(ctx context.Context, id uuid.UUID) (*model.Configuration, error)
 	ConfigGetForEnv(ctx context.Context, feature string, envID uuid.UUID) ([]*model.Configuration, error)
 	ConfigOverridesByFeature(ctx context.Context, featureName string) ([]*model.ConfigOverride, error)
 	ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration) (*model.Configuration, error)
@@ -319,6 +320,15 @@ func (r *repo) ConfigOverridesByFeature(ctx context.Context, featureName string)
 		}
 	}
 	return result, nil
+}
+
+func (r *repo) ConfigGetByID(ctx context.Context, id uuid.UUID) (*model.Configuration, error) {
+	config, err := r.querier.ConfigGetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return globalConfigFromSQL(config), nil
 }
 
 func contains[T comparable](s []T, e T) bool {

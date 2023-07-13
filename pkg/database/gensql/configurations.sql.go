@@ -100,6 +100,27 @@ func (q *Queries) ConfigGet(ctx context.Context, feature string) ([]Configuratio
 	return items, nil
 }
 
+const configGetByID = `-- name: ConfigGetByID :one
+SELECT id, feature, key, value, description, secret, created
+FROM configurations_global
+WHERE id = $1
+`
+
+func (q *Queries) ConfigGetByID(ctx context.Context, id uuid.UUID) (ConfigurationsGlobal, error) {
+	row := q.db.QueryRow(ctx, configGetByID, id)
+	var i ConfigurationsGlobal
+	err := row.Scan(
+		&i.ID,
+		&i.Feature,
+		&i.Key,
+		&i.Value,
+		&i.Description,
+		&i.Secret,
+		&i.Created,
+	)
+	return i, err
+}
+
 const configGetForEnv = `-- name: ConfigGetForEnv :many
 SELECT id, feature, key, value, description, secret, created, environment_id
 FROM configurations_environment

@@ -28,6 +28,11 @@ CREATE TRIGGER deploy_instructions_set_modified
     FOR EACH ROW
     EXECUTE PROCEDURE update_modified_timestamp();
 
+CREATE TRIGGER deploy_instructions_notify
+  AFTER INSERT OR UPDATE
+  ON deploy_instructions
+  FOR EACH ROW
+  EXECUTE PROCEDURE fasit_notify("id");
 
 -- Copy over old data
 INSERT INTO deploy_instructions

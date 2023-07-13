@@ -1,0 +1,14 @@
+{
+  "env": "ci",
+  "envProjectId": "nais-ci-2a63",
+  "fasit":
+    {
+      "env": { "kind": "tenant", "name": "ci" },
+      "tenant": { "name": "dev-nais" },
+    },
+  "google":
+    { "serviceAccountKey": "<no value>", "useServiceAccountKey": false },
+  "image": { "tag": "sha-17de661" },
+  "management": "false",
+  "tenantName": "dev-nais",
+}

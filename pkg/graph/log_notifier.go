@@ -17,7 +17,7 @@ type logNotifier struct {
 	msgs chan *notifier.Payload
 
 	lock        sync.RWMutex
-	subscribers map[string]map[chan *model.LogLine]struct{}
+	subscribers map[string]map[chan<- *model.LogLine]struct{}
 }
 
 func newLogNotifier(ctx context.Context, not *notifier.Notifier, repo database.Repo) *logNotifier {
@@ -25,7 +25,7 @@ func newLogNotifier(ctx context.Context, not *notifier.Notifier, repo database.R
 
 	lf := &logNotifier{
 		repo:        repo,
-		subscribers: make(map[string]map[chan *model.LogLine]struct{}),
+		subscribers: make(map[string]map[chan<- *model.LogLine]struct{}),
 	}
 
 	go lf.run(ctx, ch)
@@ -33,18 +33,18 @@ func newLogNotifier(ctx context.Context, not *notifier.Notifier, repo database.R
 	return lf
 }
 
-func (n *logNotifier) Subscribe(diid string, ch chan *model.LogLine) {
+func (n *logNotifier) Subscribe(diid string, ch chan<- *model.LogLine) {
 	n.lock.Lock()
 	defer n.lock.Unlock()
 
 	if _, ok := n.subscribers[diid]; !ok {
-		n.subscribers[diid] = make(map[chan *model.LogLine]struct{})
+		n.subscribers[diid] = make(map[chan<- *model.LogLine]struct{})
 	}
 
 	n.subscribers[diid][ch] = struct{}{}
 }
 
-func (n *logNotifier) Unsubscribe(diid string, ch chan *model.LogLine) {
+func (n *logNotifier) Unsubscribe(diid string, ch chan<- *model.LogLine) {
 	n.lock.Lock()
 	defer n.lock.Unlock()
 

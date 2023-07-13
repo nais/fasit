@@ -1,0 +1,29 @@
+{
+  "aiven": {
+    "cidrs": [
+      "10.7.4.0/24"
+    ],
+    "mainCidr": "10.6.3.0/24",
+    "mainProject": "nav-dev",
+    "projects": "nav-dev nav-infrastructure",
+    "serviceUserLimit": 2700,
+    "token": "NodUEHaS7yh1Fxy/3TGM6uzCTyuIctLnswOe/jhjekcqicp5+8PK0rHtfocC9kz45m/Z8TGthnwIdIudpSwXwXGZLJFiWaQEvosx2zlz01Srgo4WbxPtg7r8I+54/ObEGOFvpogg8INm0obsw2n89ldNmzH08MMAall4UmUWLZ/Q9lPBT/9WvX0kxZhoI2aT0hAPYNloDiQpphDEF5bnrx/+wCN28wAk/IVnfVFKQ03NhZa/NfkZuVFCvi7jvKBaBM3LxOkjbjwrmTA9rzKbQsRoOzYdaDGh2aQshSxlrdk7rRArvG8bGcoUiOzvI3bxgMWddA+qIsiysrXHyS4iTb/F12brj+6mO1ALNbZCkWxPbrvltbm0mc9w"
+  },
+  "caBundle": true,
+  "clusterName": "dev-gcp",
+  "fasit": {
+    "env": {
+      "kind": "legacy",
+      "name": "dev-gcp"
+    },
+    "tenant": {
+      "name": "nav"
+    }
+  },
+  "image": {
+    "pullPolicy": "IfNotPresent",
+    "tag": "20230620-102221-9706a59"
+  },
+  "replicationConfig": true,
+  "tenant": "nav"
+}

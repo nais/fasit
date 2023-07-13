@@ -13,6 +13,7 @@ type LogLine {
 }
 
 type Status {
+  id: ID!
   environmentID: ID!
   version: String!
   status: RolloutStatus!
@@ -21,6 +22,13 @@ type Status {
   log: [LogLine!]!
 }
 
+union Update = Status | Configuration
+
 type Subscription {
   logs(environmentID: ID!, featureName: String!, lastLogID: String): LogLine!
+
+  """
+  Updates notifies whenever a feature state has been changed.
+  """
+  updates: Update!
 }
