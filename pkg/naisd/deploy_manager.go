@@ -191,7 +191,9 @@ func (d *DeployManager) runHelm(ctx context.Context, args []string, msg message.
 		"HELM_CACHE_HOME="+d.helmCache,
 	)
 
-	buf := newPubsubLogger(msg.ID, d.statuses)
+	buf := newPubsubLogger(msg.ID, d.statuses, d.log)
+
+	go buf.Run(ctx)
 
 	cmd := exec.CommandContext(ctx, "helm", helmArgs...)
 	cmd.Env = append(cmd.Env, environment...)

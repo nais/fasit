@@ -21,6 +21,7 @@ type ReceiverClient interface {
 
 type ReceiverStore interface {
 	DeployInstructionGet(ctx context.Context, id uuid.UUID) (*model.DeployInstruction, error)
+	DeployInstructionUpdateStatus(ctx context.Context, id uuid.UUID, status model.RolloutStatus) error
 	EnvironmentByNames(ctx context.Context, tenantName, environmentName string) (*model.Environment, error)
 	EnvironmentCI(ctx context.Context, kind model.EnvironmentKind) (*model.Environment, error)
 	EnvironmentCreate(ctx context.Context, t *model.EnvironmentCreate) (*model.Environment, error)
@@ -136,12 +137,11 @@ func (r *Receiver) handlerHelm(ctx context.Context, msg message.Status) error {
 		}
 	}
 
-	err = r.repo.StatusCreateOrUpdate(ctx, env.ID, helmStatus)
-	if err != nil {
-		return err
+	if helmStatus.DIID == uuid.Nil {
+		return r.repo.StatusCreateOrUpdate(ctx, env.ID, helmStatus)
 	}
 
-	return nil
+	return r.repo.DeployInstructionUpdateStatus(ctx, helmStatus.DIID, helmStatus.RolloutStatus)
 }
 
 func (r *Receiver) handleCI(ctx context.Context, env *model.Environment, di *model.DeployInstruction, helmStatus *message.Helm, tenant string) error {

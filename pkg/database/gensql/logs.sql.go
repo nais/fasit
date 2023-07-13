@@ -5,4 +5,59 @@
 
 package gensql
 
-import ()
+import (
+	"context"
+
+	"github.com/google/uuid"
+)
+
+const logsByDeployInstruction = `-- name: LogsByDeployInstruction :many
+SELECT id, deploy_instruction, time, message
+FROM logs
+WHERE deploy_instruction = $1
+ORDER BY time
+ASC
+`
+
+func (q *Queries) LogsByDeployInstruction(ctx context.Context, deployInstruction uuid.UUID) ([]Log, error) {
+	rows, err := q.db.Query(ctx, logsByDeployInstruction, deployInstruction)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Log{}
+	for rows.Next() {
+		var i Log
+		if err := rows.Scan(
+			&i.ID,
+			&i.DeployInstruction,
+			&i.Time,
+			&i.Message,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const logsByID = `-- name: LogsByID :one
+SELECT id, deploy_instruction, time, message
+FROM logs
+WHERE id = $1
+`
+
+func (q *Queries) LogsByID(ctx context.Context, id int64) (Log, error) {
+	row := q.db.QueryRow(ctx, logsByID, id)
+	var i Log
+	err := row.Scan(
+		&i.ID,
+		&i.DeployInstruction,
+		&i.Time,
+		&i.Message,
+	)
+	return i, err
+}

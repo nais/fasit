@@ -6,18 +6,118 @@ package graph
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
 
+	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/graph/graphgen"
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
 // Log is the resolver for the log field.
 func (r *statusResolver) Log(ctx context.Context, obj *model.Status) ([]*model.LogLine, error) {
-	panic(fmt.Errorf("not implemented: Log - log"))
+	// TODO: remove this when all naisds are upgraded
+	if obj.Log != "" || obj.DeployInstructionID == uuid.Nil {
+		lines := []struct {
+			Time time.Time
+			Msg  string
+		}{}
+		if err := json.Unmarshal([]byte(obj.Log), &lines); err != nil {
+			return nil, fmt.Errorf("unmarshal log: %w", err)
+		}
+
+		logLines := make([]*model.LogLine, len(lines))
+		for i, line := range lines {
+			logLines[i] = &model.LogLine{
+				ID:        obj.ConfigHash + strconv.Itoa(i),
+				Timestamp: line.Time,
+				Message:   line.Msg,
+			}
+		}
+
+		return logLines, nil
+	}
+
+	return r.Repo.LogsGet(ctx, obj.DeployInstructionID)
+}
+
+// Logs is the resolver for the logs field.
+func (r *subscriptionResolver) Logs(ctx context.Context, environmentID uuid.UUID, featureName string, lastLogID *string) (<-chan *model.LogLine, error) {
+	di, err := r.Repo.DeployInstructionsLatestForFeature(ctx, environmentID, featureName)
+	if err != nil {
+		return nil, err
+	}
+
+	if di == nil {
+		return nil, fmt.Errorf("no deploy instructions found for feature %s in environment %s", featureName, environmentID)
+	}
+
+	lastID := 0
+	extraLogs := []*model.LogLine{}
+	if lastLogID != nil {
+		parts := strings.Split(*lastLogID, "-")
+		if len(parts) == 1 {
+			return nil, fmt.Errorf("invalid lastLogID: %s", *lastLogID)
+		}
+
+		lastID, err = strconv.Atoi(parts[len(parts)-1])
+		if err != nil {
+			return nil, fmt.Errorf("invalid lastLogID: %s", *lastLogID)
+		}
+
+		logs, err := r.Repo.LogsGet(ctx, di.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, log := range logs {
+			if log.IntID > lastID {
+				extraLogs = append(extraLogs, log)
+			}
+		}
+	}
+
+	notch := make(chan *model.LogLine, 10)
+	r.logNotifier.Subscribe(di.ID.String(), notch)
+
+	ret := make(chan *model.LogLine, 1)
+
+	go func() {
+		for _, log := range extraLogs {
+			select {
+			case <-ctx.Done():
+			case ret <- log:
+			}
+		}
+
+		for {
+			select {
+			case <-ctx.Done():
+				r.logNotifier.Unsubscribe(di.ID.String(), notch)
+				close(ret)
+				close(notch)
+				return
+			case msg, ok := <-notch:
+				if ok && msg.IntID > lastID {
+					ret <- msg
+				}
+			}
+		}
+	}()
+
+	return ret, nil
 }
 
 // Status returns graphgen.StatusResolver implementation.
 func (r *Resolver) Status() graphgen.StatusResolver { return &statusResolver{r} }
 
-type statusResolver struct{ *Resolver }
+// Subscription returns graphgen.SubscriptionResolver implementation.
+func (r *Resolver) Subscription() graphgen.SubscriptionResolver { return &subscriptionResolver{r} }
+
+type (
+	statusResolver       struct{ *Resolver }
+	subscriptionResolver struct{ *Resolver }
+)

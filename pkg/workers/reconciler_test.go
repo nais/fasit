@@ -22,7 +22,7 @@ type reconcileTestEnvironment struct {
 	Environment     model.Environment
 	TenantName      string
 	NaisdReportedAt time.Time
-	Status          []*model.Status
+	Status          []*model.DeployInstruction
 	FeatureStates   []*model.FeatureState
 }
 
@@ -91,11 +91,13 @@ var reconcileTests = map[string]struct {
 					Name: "prod",
 				},
 				TenantName: "tenant1",
-				Status: []*model.Status{
+				Status: []*model.DeployInstruction{
 					{
-						Feature:    "feature1",
-						Version:    "1",
-						ConfigHash: "c5f057e78616cfea744cf031f52d7f772e00190d27383dbf6c0c6e7f128cf67b",
+						ID:             uuid.New(),
+						FeatureName:    "feature1",
+						FeatureVersion: "1",
+						Hash:           "c5f057e78616cfea744cf031f52d7f772e00190d27383dbf6c0c6e7f128cf67b",
+						Status:         model.RolloutStatusDeployed,
 					},
 				},
 			},
@@ -177,11 +179,13 @@ var reconcileTests = map[string]struct {
 						EnabledAt:   &atTime,
 					},
 				},
-				Status: []*model.Status{
+				Status: []*model.DeployInstruction{
 					{
-						Feature:    "feature1",
-						Version:    "1",
-						ConfigHash: "c5f057e78616cfea744cf031f52d7f772e00190d27383dbf6c0c6e7f128cf67b",
+						ID:             uuid.New(),
+						FeatureName:    "feature1",
+						FeatureVersion: "1",
+						Hash:           "c5f057e78616cfea744cf031f52d7f772e00190d27383dbf6c0c6e7f128cf67b",
+						Status:         model.RolloutStatusDeployed,
 					},
 				},
 			},
@@ -218,7 +222,7 @@ func TestReconcile(t *testing.T) {
 					repo.On("DeployInstructionCreate", mock.Anything, te.Environment.ID, mock.IsType(""), mock.IsType(""), mock.IsType("")).Return(tt.want[0].ID, nil).Once()
 				}
 				repo.On("FeaturesForKind", mock.Anything, te.Environment.Kind, te.Environment.CI).Return(tt.features, nil)
-				repo.On("StatusForEnvironment", mock.Anything, te.Environment.ID).Return(te.Status, nil)
+				repo.On("DeployInstructionsLatestForEnvironment", mock.Anything, te.Environment.ID).Return(te.Status, nil)
 				repo.On("FeatureStatesGet", mock.Anything, te.Environment.ID).Return(te.FeatureStates, nil)
 				repo.On("HelmValues", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, nil).Maybe()
 

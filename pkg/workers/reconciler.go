@@ -22,15 +22,15 @@ import (
 )
 
 type ReconcilerStore interface {
+	DeployInstructionCreate(ctx context.Context, envID uuid.UUID, featureName, featureVersion, hash string) (uuid.UUID, error)
+	DeployInstructionsLatestForEnvironment(ctx context.Context, envID uuid.UUID) ([]*model.DeployInstruction, error)
 	FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, ci bool) ([]*model.Feature, error)
 	FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *model.Feature, enabled bool) (*model.FeatureState, error)
 	FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
 	HealthGet(ctx context.Context, environmentID uuid.UUID) (*model.Health, error)
 	HelmValues(ctx context.Context, feature *model.Feature, envID uuid.UUID) (map[string]any, error)
-	StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]*model.Status, error)
-	TenantEnvironments(ctx context.Context, onlyReconciled bool) ([]*model.TenantEnvironment, error)
 	RolloutStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
-	DeployInstructionCreate(ctx context.Context, envID uuid.UUID, featureName, featureVersion, hash string) (uuid.UUID, error)
+	TenantEnvironments(ctx context.Context, onlyReconciled bool) ([]*model.TenantEnvironment, error)
 }
 
 type Publisher interface {
@@ -208,14 +208,14 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, e *model.TenantEn
 		return nil
 	}
 
-	envStatus, err := r.repo.StatusForEnvironment(ctx, e.Environment.ID)
+	envInstructions, err := r.repo.DeployInstructionsLatestForEnvironment(ctx, e.Environment.ID)
 	if err != nil {
 		return fmt.Errorf("status for environment: %w", err)
 	}
 
-	lookup := make(map[string]*model.Status)
-	for _, s := range envStatus {
-		lookup[s.Feature] = s
+	lookup := make(map[string]*model.DeployInstruction)
+	for _, ins := range envInstructions {
+		lookup[ins.FeatureName] = ins
 	}
 
 	featureStates, err := r.repo.FeatureStatesGet(ctx, e.ID)
@@ -252,6 +252,11 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, e *model.TenantEn
 			continue
 		}
 
+		if l, ok := lookup[f.Name]; ok && (l.Status == model.RolloutStatusCreated || l.Status == model.RolloutStatusPending) {
+			log.WithField("status", l.Status).Debug("deploy instruction already in progress")
+			continue
+		}
+
 		values, err := r.repo.HelmValues(ctx, f, e.ID)
 		if err != nil {
 			var fer *database.ErrMissingRequiredFields
@@ -268,7 +273,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, e *model.TenantEn
 		}
 
 		if status, ok := lookup[f.Name]; ok {
-			if status.Version == f.Version && status.ConfigHash == hash {
+			if status.FeatureVersion == f.Version && status.Hash == hash {
 				continue
 			}
 		}

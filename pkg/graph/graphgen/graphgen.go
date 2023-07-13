@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"strconv"
 	"sync"
 	"sync/atomic"
@@ -52,6 +53,7 @@ type ResolverRoot interface {
 	Release() ReleaseResolver
 	Rollout() RolloutResolver
 	Status() StatusResolver
+	Subscription() SubscriptionResolver
 	Tenant() TenantResolver
 }
 
@@ -274,6 +276,10 @@ type ComplexityRoot struct {
 		Version       func(childComplexity int) int
 	}
 
+	Subscription struct {
+		Logs func(childComplexity int, environmentID uuid.UUID, featureName string, lastLogID *string) int
+	}
+
 	Tenant struct {
 		Created      func(childComplexity int) int
 		Description  func(childComplexity int) int
@@ -374,6 +380,9 @@ type RolloutResolver interface {
 }
 type StatusResolver interface {
 	Log(ctx context.Context, obj *model.Status) ([]*model.LogLine, error)
+}
+type SubscriptionResolver interface {
+	Logs(ctx context.Context, environmentID uuid.UUID, featureName string, lastLogID *string) (<-chan *model.LogLine, error)
 }
 type TenantResolver interface {
 	Environments(ctx context.Context, obj *model.Tenant) ([]*model.Environment, error)
@@ -1446,6 +1455,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Status.Version(childComplexity), true
 
+	case "Subscription.logs":
+		if e.complexity.Subscription.Logs == nil {
+			break
+		}
+
+		args, err := ec.field_Subscription_logs_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Subscription.Logs(childComplexity, args["environmentID"].(uuid.UUID), args["featureName"].(string), args["lastLogID"].(*string)), true
+
 	case "Tenant.created":
 		if e.complexity.Tenant.Created == nil {
 			break
@@ -1613,6 +1634,23 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 			ctx = graphql.WithUnmarshalerMap(ctx, inputUnmarshalMap)
 			data := ec._Mutation(ctx, rc.Operation.SelectionSet)
 			var buf bytes.Buffer
+			data.MarshalGQL(&buf)
+
+			return &graphql.Response{
+				Data: buf.Bytes(),
+			}
+		}
+	case ast.Subscription:
+		next := ec._Subscription(ctx, rc.Operation.SelectionSet)
+
+		var buf bytes.Buffer
+		return func(ctx context.Context) *graphql.Response {
+			buf.Reset()
+			data := next(ctx)
+
+			if data == nil {
+				return nil
+			}
 			data.MarshalGQL(&buf)
 
 			return &graphql.Response{
@@ -1998,6 +2036,7 @@ Time is a string in [RFC 3339](https://rfc-editor.org/rfc/rfc3339.html) format, 
 scalar Time`, BuiltIn: false},
 	{Name: "../../../schema/status.graphqls", Input: `enum RolloutStatus {
   UNKNOWN
+  CREATED
   PENDING
   DEPLOYED
   FAILED
@@ -2016,6 +2055,10 @@ type Status {
   created: Time!
   lastModified: Time!
   log: [LogLine!]!
+}
+
+type Subscription {
+  logs(environmentID: ID!, featureName: String!, lastLogID: String): LogLine!
 }
 `, BuiltIn: false},
 	{Name: "../../../schema/tenant.graphqls", Input: `type Tenant {
@@ -2471,6 +2514,39 @@ func (ec *executionContext) field_Query_tenant_args(ctx context.Context, rawArgs
 		}
 	}
 	args["slug"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Subscription_logs_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 uuid.UUID
+	if tmp, ok := rawArgs["environmentID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("environmentID"))
+		arg0, err = ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["environmentID"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["featureName"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("featureName"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["featureName"] = arg1
+	var arg2 *string
+	if tmp, ok := rawArgs["lastLogID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("lastLogID"))
+		arg2, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["lastLogID"] = arg2
 	return args, nil
 }
 
@@ -9693,6 +9769,83 @@ func (ec *executionContext) fieldContext_Status_log(ctx context.Context, field g
 	return fc, nil
 }
 
+func (ec *executionContext) _Subscription_logs(ctx context.Context, field graphql.CollectedField) (ret func(ctx context.Context) graphql.Marshaler) {
+	fc, err := ec.fieldContext_Subscription_logs(ctx, field)
+	if err != nil {
+		return nil
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = nil
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Subscription().Logs(rctx, fc.Args["environmentID"].(uuid.UUID), fc.Args["featureName"].(string), fc.Args["lastLogID"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return nil
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return nil
+	}
+	return func(ctx context.Context) graphql.Marshaler {
+		select {
+		case res, ok := <-resTmp.(<-chan *model.LogLine):
+			if !ok {
+				return nil
+			}
+			return graphql.WriterFunc(func(w io.Writer) {
+				w.Write([]byte{'{'})
+				graphql.MarshalString(field.Alias).MarshalGQL(w)
+				w.Write([]byte{':'})
+				ec.marshalNLogLine2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐLogLine(ctx, field.Selections, res).MarshalGQL(w)
+				w.Write([]byte{'}'})
+			})
+		case <-ctx.Done():
+			return nil
+		}
+	}
+}
+
+func (ec *executionContext) fieldContext_Subscription_logs(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Subscription",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_LogLine_id(ctx, field)
+			case "timestamp":
+				return ec.fieldContext_LogLine_timestamp(ctx, field)
+			case "message":
+				return ec.fieldContext_LogLine_message(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LogLine", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Subscription_logs_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Tenant_id(ctx context.Context, field graphql.CollectedField, obj *model.Tenant) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Tenant_id(ctx, field)
 	if err != nil {
@@ -15174,6 +15327,26 @@ func (ec *executionContext) _Status(ctx context.Context, sel ast.SelectionSet, o
 	return out
 }
 
+var subscriptionImplementors = []string{"Subscription"}
+
+func (ec *executionContext) _Subscription(ctx context.Context, sel ast.SelectionSet) func(ctx context.Context) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, subscriptionImplementors)
+	ctx = graphql.WithFieldContext(ctx, &graphql.FieldContext{
+		Object: "Subscription",
+	})
+	if len(fields) != 1 {
+		ec.Errorf(ctx, "must subscribe to exactly one stream")
+		return nil
+	}
+
+	switch fields[0].Name {
+	case "logs":
+		return ec._Subscription_logs(ctx, fields[0])
+	default:
+		panic("unknown field " + strconv.Quote(fields[0].Name))
+	}
+}
+
 var tenantImplementors = []string{"Tenant"}
 
 func (ec *executionContext) _Tenant(ctx context.Context, sel ast.SelectionSet, obj *model.Tenant) graphql.Marshaler {
@@ -16588,6 +16761,10 @@ func (ec *executionContext) marshalNKubernetesNodeResources2ᚖgithubᚗcomᚋna
 		return graphql.Null
 	}
 	return ec._KubernetesNodeResources(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNLogLine2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐLogLine(ctx context.Context, sel ast.SelectionSet, v model.LogLine) graphql.Marshaler {
+	return ec._LogLine(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNLogLine2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐLogLineᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.LogLine) graphql.Marshaler {

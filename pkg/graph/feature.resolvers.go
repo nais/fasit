@@ -23,15 +23,23 @@ func (r *configOverrideResolver) Environment(ctx context.Context, obj *model.Con
 
 // ActiveVersion is the resolver for the activeVersion field.
 func (r *featureResolver) ActiveVersion(ctx context.Context, obj *model.Feature) (string, error) {
-	status, err := r.Repo.StatusForFeature(ctx, obj.GraphVars.EnvironmentID, obj.Name)
+	di, err := r.Repo.DeployInstructionsLatestForFeature(ctx, obj.GraphVars.EnvironmentID, obj.Name)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return "", nil
+			status, err := r.Repo.StatusForFeature(ctx, obj.GraphVars.EnvironmentID, obj.Name)
+			if err != nil {
+				if errors.Is(err, pgx.ErrNoRows) {
+					return "", nil
+				}
+				return "", err
+			}
+			return status.Version, nil
 		}
+
 		return "", err
 	}
 
-	return status.Version, nil
+	return di.FeatureVersion, nil
 }
 
 // Dependencies is the resolver for the dependencies field.
@@ -81,26 +89,43 @@ func (r *featureResolver) State(ctx context.Context, obj *model.Feature) (*model
 
 // Status is the resolver for the status field.
 func (r *featureResolver) Status(ctx context.Context, obj *model.Feature) (*model.Status, error) {
-	status, err := r.Repo.StatusForFeature(ctx, obj.GraphVars.EnvironmentID, obj.Name)
+	di, err := r.Repo.DeployInstructionsLatestForFeature(ctx, obj.GraphVars.EnvironmentID, obj.Name)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			f, err := r.Repo.FeatureByNameForEnv(ctx, obj.Name, obj.GraphVars.EnvironmentID)
+			status, err := r.Repo.StatusForFeature(ctx, obj.GraphVars.EnvironmentID, obj.Name)
 			if err != nil {
-				return nil, fmt.Errorf("feature %v not found", obj.Name)
+				if errors.Is(err, pgx.ErrNoRows) {
+					f, err := r.Repo.FeatureByNameForEnv(ctx, obj.Name, obj.GraphVars.EnvironmentID)
+					if err != nil {
+						return nil, fmt.Errorf("feature %v not found", obj.Name)
+					}
+					return &model.Status{
+						EnvironmentID: obj.GraphVars.EnvironmentID,
+						Feature:       obj.Name,
+						Version:       f.Version,
+						Status:        model.RolloutStatusUnknown,
+						Created:       time.Now(),
+						LastModified:  time.Now(),
+						Log:           "",
+					}, nil
+				}
+				return nil, err
 			}
-			return &model.Status{
-				EnvironmentID: obj.GraphVars.EnvironmentID,
-				Feature:       obj.Name,
-				Version:       f.Version,
-				Status:        model.RolloutStatusUnknown,
-				Created:       time.Now(),
-				LastModified:  time.Now(),
-				Log:           "",
-			}, nil
+			return status, nil
 		}
 		return nil, err
 	}
-	return status, nil
+
+	return &model.Status{
+		DeployInstructionID: di.ID,
+		EnvironmentID:       di.EnvironmentID,
+		Feature:             di.FeatureName,
+		Version:             di.FeatureVersion,
+		Status:              di.Status,
+		ConfigHash:          di.Hash,
+		Created:             di.Created,
+		LastModified:        di.LastModified,
+	}, nil
 }
 
 // Features is the resolver for the features field.

@@ -15,3 +15,27 @@ INSERT INTO deploy_instructions (
 )
 RETURNING id
 ;
+
+-- name: DeployInstructionsUpdateStatus :exec
+UPDATE deploy_instructions
+SET status = @status
+WHERE id = @id
+;
+
+-- name: DeployInstructionsLatestForFeature :one
+SELECT * FROM deploy_instructions
+WHERE feature_name = @feature_name
+AND environment_id = @environment_id
+ORDER BY created DESC
+LIMIT 1
+;
+
+-- name: DeployInstructionsLatestForEnvironment :many
+SELECT * FROM deploy_instructions
+WHERE id IN (
+  SELECT DISTINCT ON (feature_name) id
+  FROM deploy_instructions di
+  WHERE di.environment_id = @environment_id
+  ORDER BY feature_name, created DESC
+)
+;

@@ -1,5 +1,6 @@
 enum RolloutStatus {
   UNKNOWN
+  CREATED
   PENDING
   DEPLOYED
   FAILED
@@ -18,4 +19,8 @@ type Status {
   created: Time!
   lastModified: Time!
   log: [LogLine!]!
+}
+
+type Subscription {
+  logs(environmentID: ID!, featureName: String!, lastLogID: String): LogLine!
 }

@@ -12,7 +12,7 @@ import (
 )
 
 const deployInstructionsByID = `-- name: DeployInstructionsByID :one
-SELECT id, environment_id, feature_name, feature_version, hash FROM deploy_instructions WHERE id = $1
+SELECT id, environment_id, feature_name, feature_version, status, hash, created, last_modified FROM deploy_instructions WHERE id = $1
 `
 
 func (q *Queries) DeployInstructionsByID(ctx context.Context, id uuid.UUID) (DeployInstruction, error) {
@@ -23,7 +23,10 @@ func (q *Queries) DeployInstructionsByID(ctx context.Context, id uuid.UUID) (Dep
 		&i.EnvironmentID,
 		&i.FeatureName,
 		&i.FeatureVersion,
+		&i.Status,
 		&i.Hash,
+		&i.Created,
+		&i.LastModified,
 	)
 	return i, err
 }
@@ -60,4 +63,88 @@ func (q *Queries) DeployInstructionsCreate(ctx context.Context, arg DeployInstru
 	var id uuid.UUID
 	err := row.Scan(&id)
 	return id, err
+}
+
+const deployInstructionsLatestForEnvironment = `-- name: DeployInstructionsLatestForEnvironment :many
+SELECT id, environment_id, feature_name, feature_version, status, hash, created, last_modified FROM deploy_instructions
+WHERE id IN (
+  SELECT DISTINCT ON (feature_name) id
+  FROM deploy_instructions di
+  WHERE di.environment_id = $1
+  ORDER BY feature_name, created DESC
+)
+`
+
+func (q *Queries) DeployInstructionsLatestForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]DeployInstruction, error) {
+	rows, err := q.db.Query(ctx, deployInstructionsLatestForEnvironment, environmentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []DeployInstruction{}
+	for rows.Next() {
+		var i DeployInstruction
+		if err := rows.Scan(
+			&i.ID,
+			&i.EnvironmentID,
+			&i.FeatureName,
+			&i.FeatureVersion,
+			&i.Status,
+			&i.Hash,
+			&i.Created,
+			&i.LastModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const deployInstructionsLatestForFeature = `-- name: DeployInstructionsLatestForFeature :one
+SELECT id, environment_id, feature_name, feature_version, status, hash, created, last_modified FROM deploy_instructions
+WHERE feature_name = $1
+AND environment_id = $2
+ORDER BY created DESC
+LIMIT 1
+`
+
+type DeployInstructionsLatestForFeatureParams struct {
+	FeatureName   string
+	EnvironmentID uuid.UUID
+}
+
+func (q *Queries) DeployInstructionsLatestForFeature(ctx context.Context, arg DeployInstructionsLatestForFeatureParams) (DeployInstruction, error) {
+	row := q.db.QueryRow(ctx, deployInstructionsLatestForFeature, arg.FeatureName, arg.EnvironmentID)
+	var i DeployInstruction
+	err := row.Scan(
+		&i.ID,
+		&i.EnvironmentID,
+		&i.FeatureName,
+		&i.FeatureVersion,
+		&i.Status,
+		&i.Hash,
+		&i.Created,
+		&i.LastModified,
+	)
+	return i, err
+}
+
+const deployInstructionsUpdateStatus = `-- name: DeployInstructionsUpdateStatus :exec
+UPDATE deploy_instructions
+SET status = $1
+WHERE id = $2
+`
+
+type DeployInstructionsUpdateStatusParams struct {
+	Status string
+	ID     uuid.UUID
+}
+
+func (q *Queries) DeployInstructionsUpdateStatus(ctx context.Context, arg DeployInstructionsUpdateStatusParams) error {
+	_, err := q.db.Exec(ctx, deployInstructionsUpdateStatus, arg.Status, arg.ID)
+	return err
 }

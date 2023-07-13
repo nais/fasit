@@ -97,7 +97,10 @@ type DeployInstruction struct {
 	EnvironmentID  uuid.UUID
 	FeatureName    string
 	FeatureVersion string
+	Status         string
 	Hash           string
+	Created        pgtype.Timestamptz
+	LastModified   pgtype.Timestamptz
 }
 
 type Environment struct {

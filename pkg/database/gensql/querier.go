@@ -24,6 +24,9 @@ type Querier interface {
 	ConfigUpdate(ctx context.Context, arg ConfigUpdateParams) (ConfigurationsGlobal, error)
 	DeployInstructionsByID(ctx context.Context, id uuid.UUID) (DeployInstruction, error)
 	DeployInstructionsCreate(ctx context.Context, arg DeployInstructionsCreateParams) (uuid.UUID, error)
+	DeployInstructionsLatestForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]DeployInstruction, error)
+	DeployInstructionsLatestForFeature(ctx context.Context, arg DeployInstructionsLatestForFeatureParams) (DeployInstruction, error)
+	DeployInstructionsUpdateStatus(ctx context.Context, arg DeployInstructionsUpdateStatusParams) error
 	EnvConfig(ctx context.Context, arg EnvConfigParams) ([]EnvConfigRow, error)
 	EnvironmentByNames(ctx context.Context, arg EnvironmentByNamesParams) (Environment, error)
 	EnvironmentCI(ctx context.Context, kind EnvironmentKind) (Environment, error)
@@ -52,6 +55,8 @@ type Querier interface {
 	KubernetesNodeCreateOrUpdate(ctx context.Context, arg KubernetesNodeCreateOrUpdateParams) error
 	KubernetesNodeDeleteObsolete(ctx context.Context, environmentID uuid.UUID) error
 	KubernetesNodeStatuses(ctx context.Context, environmentID uuid.UUID) ([]KubernetesNodeStatus, error)
+	LogsByDeployInstruction(ctx context.Context, deployInstruction uuid.UUID) ([]Log, error)
+	LogsByID(ctx context.Context, id int64) (Log, error)
 	LogsCreate(ctx context.Context, arg []LogsCreateParams) *LogsCreateBatchResults
 	MappingValuesForTenant(ctx context.Context, arg MappingValuesForTenantParams) ([]MappingValuesForTenantRow, error)
 	ReleaseStatusCreateOrUpdate(ctx context.Context, arg ReleaseStatusCreateOrUpdateParams) (ReleaseStatus, error)

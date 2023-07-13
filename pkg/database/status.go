@@ -12,8 +12,17 @@ import (
 )
 
 type StatusRepo interface {
+	// StatusCreateOrUpdate creates or updates a status for a feature in an environment.
+	//
+	// Deprecated: Use DeployInstructions instead.
 	StatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Helm) error
+	// StatusForEnvironment returns all statuses for a given environment.
+	//
+	// Deprecated: Use DeployInstructions instead.
 	StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]*model.Status, error)
+	// StatusForFeature returns the latest status for a given feature in an environment.
+	//
+	// Deprecated: Use DeployInstructions instead.
 	StatusForFeature(ctx context.Context, environmentID uuid.UUID, feature string) (*model.Status, error)
 }
 

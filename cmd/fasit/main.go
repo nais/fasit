@@ -20,7 +20,6 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/go-chi/chi/v5"
-	"github.com/gorilla/websocket"
 	"github.com/nais/fasit/pkg/auth"
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/database/notifier"
@@ -69,17 +68,9 @@ func init() {
 
 func newServer(es graphql.ExecutableSchema) *handler.Server {
 	srv := handler.New(es)
-
-	srv.AddTransport(transport.Websocket{
-		KeepAlivePingInterval: 10 * time.Second,
-		Upgrader: websocket.Upgrader{CheckOrigin: func(r *http.Request) bool {
-			return true
-		}},
-	})
+	srv.AddTransport(transport.SSE{}) // Support subscriptions
 	srv.AddTransport(transport.Options{})
-	srv.AddTransport(transport.GET{})
 	srv.AddTransport(transport.POST{})
-	srv.AddTransport(transport.MultipartForm{})
 
 	srv.SetQueryCache(lru.New(1000))
 
@@ -199,11 +190,7 @@ func main() {
 	}()
 	go reconciler.Run(ctx, 10*time.Minute)
 
-	resolver := &graph.Resolver{
-		Repo: repo,
-		Log:  log.WithField("subsystem", "graphql"),
-		// HelmChartValues: helmChartValues,
-	}
+	resolver := graph.NewResolver(ctx, repo, notifierService, log.WithField("subsystem", "graphql"))
 
 	srv := newServer(graphgen.NewExecutableSchema(graphgen.Config{Resolvers: resolver}))
 	srv.Use(otelgqlgen.Middleware())

@@ -2,9 +2,11 @@
 
 CREATE TABLE logs (
   id BIGSERIAL PRIMARY KEY NOT NULL,
-  deploy_instruction UUID NOT NULL REFERENCES deploy_instructions(id),
+  deploy_instruction UUID NOT NULL,
   time TIMESTAMPTZ NOT NULL,
-  message TEXT NOT NULL
+  message TEXT NOT NULL,
+
+  FOREIGN KEY (deploy_instruction) REFERENCES deploy_instructions (id) ON DELETE CASCADE
 );
 
 CREATE TRIGGER logs_notify

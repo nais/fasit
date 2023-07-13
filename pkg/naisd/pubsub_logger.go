@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/message"
+	"github.com/sirupsen/logrus"
 )
 
 type pubsubLogger struct {
@@ -16,17 +17,20 @@ type pubsubLogger struct {
 	topic StatusPublisher
 	lock  sync.Mutex
 	lines []message.LogLine
+
+	log logrus.FieldLogger
 }
 
-func newPubsubLogger(diid uuid.UUID, topic StatusPublisher) *pubsubLogger {
+func newPubsubLogger(diid uuid.UUID, topic StatusPublisher, log logrus.FieldLogger) *pubsubLogger {
 	return &pubsubLogger{
 		diid:  diid,
 		topic: topic,
+		log:   log,
 	}
 }
 
 func (p *pubsubLogger) Write(b []byte) (n int, err error) {
-	lines := bytes.Split(b, []byte("\n"))
+	lines := bytes.Split(bytes.TrimSpace(b), []byte("\n"))
 
 	p.lock.Lock()
 	defer p.lock.Unlock()
@@ -41,8 +45,20 @@ func (p *pubsubLogger) Write(b []byte) (n int, err error) {
 	return len(b), nil
 }
 
-func (p *pubsubLogger) Start(context.Context) error {
-	return nil
+func (p *pubsubLogger) Run(ctx context.Context) {
+	ticker := time.NewTicker(2 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ticker.C:
+			if err := p.Publish(context.Background()); err != nil {
+				p.log.WithError(err).Error("publishing logs")
+			}
+		case <-ctx.Done():
+			return
+		}
+	}
 }
 
 func (p *pubsubLogger) Publish(ctx context.Context) error {

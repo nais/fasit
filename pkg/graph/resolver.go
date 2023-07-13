@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database"
+	"github.com/nais/fasit/pkg/database/notifier"
 	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/sirupsen/logrus"
 )
@@ -18,6 +19,17 @@ type Resolver struct {
 	Repo database.Repo
 	Log  *logrus.Entry
 	// HelmChartValues *helminfo.Cache
+
+	notifier    *notifier.Notifier
+	logNotifier *logNotifier
+}
+
+func NewResolver(ctx context.Context, repo database.Repo, notifier *notifier.Notifier, log *logrus.Entry) *Resolver {
+	return &Resolver{
+		Repo:        repo,
+		Log:         log,
+		logNotifier: newLogNotifier(ctx, notifier, repo),
+	}
 }
 
 func (r *Resolver) missingDependencies(ctx context.Context, featureName string, envID uuid.UUID) ([]*model.Feature, error) {

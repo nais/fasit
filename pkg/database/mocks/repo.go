@@ -281,6 +281,72 @@ func (_m *Repo) DeployInstructionGet(ctx context.Context, id uuid.UUID) (*model.
 	return r0, r1
 }
 
+// DeployInstructionUpdateStatus provides a mock function with given fields: ctx, id, status
+func (_m *Repo) DeployInstructionUpdateStatus(ctx context.Context, id uuid.UUID, status model.RolloutStatus) error {
+	ret := _m.Called(ctx, id, status)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, model.RolloutStatus) error); ok {
+		r0 = rf(ctx, id, status)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// DeployInstructionsLatestForEnvironment provides a mock function with given fields: ctx, envID
+func (_m *Repo) DeployInstructionsLatestForEnvironment(ctx context.Context, envID uuid.UUID) ([]*model.DeployInstruction, error) {
+	ret := _m.Called(ctx, envID)
+
+	var r0 []*model.DeployInstruction
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]*model.DeployInstruction, error)); ok {
+		return rf(ctx, envID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) []*model.DeployInstruction); ok {
+		r0 = rf(ctx, envID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.DeployInstruction)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, envID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// DeployInstructionsLatestForFeature provides a mock function with given fields: ctx, envID, featureName
+func (_m *Repo) DeployInstructionsLatestForFeature(ctx context.Context, envID uuid.UUID, featureName string) (*model.DeployInstruction, error) {
+	ret := _m.Called(ctx, envID, featureName)
+
+	var r0 *model.DeployInstruction
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, string) (*model.DeployInstruction, error)); ok {
+		return rf(ctx, envID, featureName)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, string) *model.DeployInstruction); ok {
+		r0 = rf(ctx, envID, featureName)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.DeployInstruction)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, string) error); ok {
+		r1 = rf(ctx, envID, featureName)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // EnvConfig provides a mock function with given fields: ctx, _a1, envID
 func (_m *Repo) EnvConfig(ctx context.Context, _a1 string, envID uuid.UUID) ([]*model.Configuration, error) {
 	ret := _m.Called(ctx, _a1, envID)
@@ -935,6 +1001,58 @@ func (_m *Repo) LogCreate(ctx context.Context, deployInstructionID uuid.UUID, li
 	}
 
 	return r0
+}
+
+// LogsByID provides a mock function with given fields: ctx, id
+func (_m *Repo) LogsByID(ctx context.Context, id int) (*model.LogLine, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *model.LogLine
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, int) (*model.LogLine, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, int) *model.LogLine); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.LogLine)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, int) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// LogsGet provides a mock function with given fields: ctx, deployInstructionID
+func (_m *Repo) LogsGet(ctx context.Context, deployInstructionID uuid.UUID) ([]*model.LogLine, error) {
+	ret := _m.Called(ctx, deployInstructionID)
+
+	var r0 []*model.LogLine
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]*model.LogLine, error)); ok {
+		return rf(ctx, deployInstructionID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) []*model.LogLine); ok {
+		r0 = rf(ctx, deployInstructionID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.LogLine)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, deployInstructionID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // MappingValuesForEnvironment provides a mock function with given fields: ctx, envID, showSensitive

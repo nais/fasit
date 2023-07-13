@@ -19,12 +19,15 @@ type Status struct {
 	Created       time.Time     `json:"created"`
 	LastModified  time.Time     `json:"lastModified"`
 	Log           string        `json:"log"`
+
+	DeployInstructionID uuid.UUID `json:"-"`
 }
 
 type RolloutStatus string
 
 const (
 	RolloutStatusUnknown  RolloutStatus = ""
+	RolloutStatusCreated  RolloutStatus = "created"
 	RolloutStatusPending  RolloutStatus = "pending"
 	RolloutStatusDeployed RolloutStatus = "deployed"
 	RolloutStatusFailed   RolloutStatus = "failed"
@@ -32,6 +35,7 @@ const (
 
 var AllRolloutStatus = []RolloutStatus{
 	RolloutStatusUnknown,
+	RolloutStatusCreated,
 	RolloutStatusPending,
 	RolloutStatusDeployed,
 	RolloutStatusFailed,
@@ -39,7 +43,7 @@ var AllRolloutStatus = []RolloutStatus{
 
 func (r RolloutStatus) IsValid() bool {
 	switch r {
-	case RolloutStatusUnknown, RolloutStatusPending, RolloutStatusDeployed, RolloutStatusFailed:
+	case RolloutStatusUnknown, RolloutStatusCreated, RolloutStatusPending, RolloutStatusDeployed, RolloutStatusFailed:
 		return true
 	}
 	return false
@@ -80,4 +84,7 @@ type LogLine struct {
 	ID        string    `json:"id"`
 	Timestamp time.Time `json:"timestamp"`
 	Message   string    `json:"message"`
+
+	IntID               int       `json:"-"`
+	DeployInstructionID uuid.UUID `json:"-"`
 }
