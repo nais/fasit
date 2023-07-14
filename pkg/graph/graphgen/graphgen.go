@@ -381,7 +381,7 @@ type RolloutResolver interface {
 	Events(ctx context.Context, obj *model.Rollout) ([]*model.RolloutEvent, error)
 }
 type StatusResolver interface {
-	ID(ctx context.Context, obj *model.Status) (string, error)
+	ID(ctx context.Context, obj *model.Status) (uuid.UUID, error)
 
 	Log(ctx context.Context, obj *model.Status) ([]*model.LogLine, error)
 }
@@ -1760,7 +1760,7 @@ enum ConfigSource {
 }
 
 type Configuration {
-  id: ID
+  id: ID!
   value: Value!
   content: RawMessage
   created: Time!
@@ -2068,7 +2068,7 @@ type LogLine {
 }
 
 type Status {
-  id: String!
+  id: ID!
   environmentID: ID!
   version: String!
   status: RolloutStatus!
@@ -2077,7 +2077,7 @@ type Status {
   log: [LogLine!]!
 }
 
-union Update = Status | Configuration
+union Update = Status | Configuration | FeatureState
 
 type Subscription {
   logs(environmentID: ID!, featureName: String!, lastLogID: String): LogLine!
@@ -3237,11 +3237,14 @@ func (ec *executionContext) _Configuration_id(ctx context.Context, field graphql
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
 	res := resTmp.(uuid.UUID)
 	fc.Result = res
-	return ec.marshalOID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, field.Selections, res)
+	return ec.marshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Configuration_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9552,9 +9555,9 @@ func (ec *executionContext) _Status_id(ctx context.Context, field graphql.Collec
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(uuid.UUID)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Status_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -9564,7 +9567,7 @@ func (ec *executionContext) fieldContext_Status_id(ctx context.Context, field gr
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type ID does not have child fields")
 		},
 	}
 	return fc, nil
@@ -12807,6 +12810,11 @@ func (ec *executionContext) _Update(ctx context.Context, sel ast.SelectionSet, o
 			return graphql.Null
 		}
 		return ec._Configuration(ctx, sel, obj)
+	case *model.FeatureState:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._FeatureState(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -13110,6 +13118,9 @@ func (ec *executionContext) _Configuration(ctx context.Context, sel ast.Selectio
 			out.Values[i] = graphql.MarshalString("Configuration")
 		case "id":
 			out.Values[i] = ec._Configuration_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "value":
 			out.Values[i] = ec._Configuration_value(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -14077,7 +14088,7 @@ func (ec *executionContext) _Feature(ctx context.Context, sel ast.SelectionSet, 
 	return out
 }
 
-var featureStateImplementors = []string{"FeatureState"}
+var featureStateImplementors = []string{"FeatureState", "Update"}
 
 func (ec *executionContext) _FeatureState(ctx context.Context, sel ast.SelectionSet, obj *model.FeatureState) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, featureStateImplementors)
@@ -17739,16 +17750,6 @@ func (ec *executionContext) marshalOFeatureState2ᚖgithubᚗcomᚋnaisᚋfasit�
 		return graphql.Null
 	}
 	return ec._FeatureState(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx context.Context, v interface{}) (uuid.UUID, error) {
-	res, err := graph.UnmarshalUUID(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalOID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx context.Context, sel ast.SelectionSet, v uuid.UUID) graphql.Marshaler {
-	res := graph.MarshalUUID(v)
-	return res
 }
 
 func (ec *executionContext) unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx context.Context, v interface{}) (*uuid.UUID, error) {

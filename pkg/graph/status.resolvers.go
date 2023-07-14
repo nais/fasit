@@ -18,8 +18,8 @@ import (
 )
 
 // ID is the resolver for the id field.
-func (r *statusResolver) ID(ctx context.Context, obj *model.Status) (string, error) {
-	return obj.EnvironmentID.String() + "_" + obj.Feature, nil
+func (r *statusResolver) ID(ctx context.Context, obj *model.Status) (uuid.UUID, error) {
+	return fakeUUID(obj.EnvironmentID.String(), obj.Feature), nil
 }
 
 // Log is the resolver for the log field.
@@ -138,7 +138,5 @@ func (r *Resolver) Status() graphgen.StatusResolver { return &statusResolver{r} 
 // Subscription returns graphgen.SubscriptionResolver implementation.
 func (r *Resolver) Subscription() graphgen.SubscriptionResolver { return &subscriptionResolver{r} }
 
-type (
-	statusResolver       struct{ *Resolver }
-	subscriptionResolver struct{ *Resolver }
-)
+type statusResolver struct{ *Resolver }
+type subscriptionResolver struct{ *Resolver }

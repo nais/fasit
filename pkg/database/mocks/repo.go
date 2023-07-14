@@ -151,6 +151,32 @@ func (_m *Repo) ConfigGet(ctx context.Context, _a1 string) ([]*model.Configurati
 	return r0, r1
 }
 
+// ConfigGetByID provides a mock function with given fields: ctx, id
+func (_m *Repo) ConfigGetByID(ctx context.Context, id uuid.UUID) (*model.Configuration, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *model.Configuration
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) (*model.Configuration, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) *model.Configuration); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Configuration)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ConfigGetForEnv provides a mock function with given fields: ctx, _a1, envID
 func (_m *Repo) ConfigGetForEnv(ctx context.Context, _a1 string, envID uuid.UUID) ([]*model.Configuration, error) {
 	ret := _m.Called(ctx, _a1, envID)

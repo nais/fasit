@@ -78,6 +78,7 @@ OUTER:
 			}
 		}
 		configs = append(configs, &model.Configuration{
+			ID:      fakeUUID(feat.Name, key),
 			Key:     key,
 			Value:   &val,
 			Content: feat.ValuesYAML[key],

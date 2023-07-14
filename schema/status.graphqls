@@ -22,7 +22,7 @@ type Status {
   log: [LogLine!]!
 }
 
-union Update = Status | Configuration
+union Update = Status | Configuration | FeatureState
 
 type Subscription {
   logs(environmentID: ID!, featureName: String!, lastLogID: String): LogLine!

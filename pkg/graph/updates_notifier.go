@@ -2,6 +2,7 @@ package graph
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/google/uuid"
@@ -23,13 +24,14 @@ func newDeployInstructionsNotifier(ctx context.Context, not *notifier.Notifier, 
 	chDI := not.Listen("deploy_instructions")
 	chCfgGlobal := not.Listen("configurations_global")
 	chCfgEnv := not.Listen("configurations_environment")
+	states := not.Listen("feature_states")
 
 	lf := &updateNotifier{
 		repo:        repo,
 		subscribers: make(map[chan<- model.Update]struct{}),
 	}
 
-	go lf.run(ctx, chDI, chCfgGlobal, chCfgEnv)
+	go lf.run(ctx, chDI, chCfgGlobal, chCfgEnv, states)
 
 	return lf
 }
@@ -48,50 +50,33 @@ func (d *updateNotifier) Unsubscribe(ch chan<- model.Update) {
 	delete(d.subscribers, ch)
 }
 
-func (d *updateNotifier) run(ctx context.Context, ch, global, env <-chan notifier.Payload) {
+func (d *updateNotifier) run(ctx context.Context, di, global, env, states <-chan notifier.Payload) {
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case msg := <-ch:
-			d.handleMessage(ctx, msg)
+		case msg := <-di:
+			d.handleDeployInstruction(ctx, msg)
 		case msg := <-global:
-			d.handleMessage(ctx, msg)
+			d.handleConfig(ctx, msg)
 		case msg := <-env:
-			d.handleMessage(ctx, msg)
+			d.handleConfig(ctx, msg)
+		case msg := <-states:
+			d.handleFeatureState(ctx, msg)
 		}
 	}
 }
 
-func (d *updateNotifier) handleMessage(ctx context.Context, msg notifier.Payload) {
-	lid, ok := msg.Data["id"]
-	if !ok || lid == nil {
-		logrus.Debug("missing id in message")
-		return
-	}
-	lidstr, ok := lid.(string)
-	if !ok {
-		logrus.Debug("id is not a number")
-		return
-	}
-
-	diid, err := uuid.Parse(lidstr)
-	if err != nil {
-		logrus.Debug("invalid id")
-		return
-	}
-
-	switch msg.Table {
-	case "deploy_instructions":
-		d.handleDeployInstruction(ctx, diid)
-	case "configurations_global", "configurations_environment":
-		d.handleConfig(ctx, diid, msg.Table == "configurations_environment")
-	}
-}
-
-func (d *updateNotifier) handleDeployInstruction(ctx context.Context, id uuid.UUID) {
+func (d *updateNotifier) handleDeployInstruction(ctx context.Context, msg notifier.Payload) {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
+
+	id, err := d.getAsUUID("id", msg)
+	if err != nil {
+		logrus.Debug("failed to get deploy instruction id")
+		return
+	}
+
 	di, err := d.repo.DeployInstructionGet(ctx, id)
 	if err != nil {
 		logrus.Debug("failed to get deploy instruction")
@@ -116,9 +101,15 @@ func (d *updateNotifier) handleDeployInstruction(ctx context.Context, id uuid.UU
 	}
 }
 
-func (d *updateNotifier) handleConfig(ctx context.Context, id uuid.UUID, env bool) {
+func (d *updateNotifier) handleConfig(ctx context.Context, msg notifier.Payload) {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
+
+	id, err := d.getAsUUID("id", msg)
+	if err != nil {
+		logrus.Debug("failed to get config id")
+		return
+	}
 
 	cfg, err := d.repo.ConfigGetByID(ctx, id)
 	if err != nil {
@@ -126,7 +117,7 @@ func (d *updateNotifier) handleConfig(ctx context.Context, id uuid.UUID, env boo
 		return
 	}
 
-	if env {
+	if msg.Table == "configurations_environment" {
 		cfg.Source = model.ConfigSourceEnv
 	}
 
@@ -137,4 +128,57 @@ func (d *updateNotifier) handleConfig(ctx context.Context, id uuid.UUID, env boo
 			logrus.Debug("subscriber blocked")
 		}
 	}
+}
+
+func (d *updateNotifier) handleFeatureState(ctx context.Context, msg notifier.Payload) {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
+
+	envid, err := d.getAsUUID("environment_id", msg)
+	if err != nil {
+		logrus.Debug("failed to get feature state id")
+		return
+	}
+
+	feature, err := d.getAsString("feature", msg)
+	if err != nil {
+		logrus.Debug("failed to get feature state feature")
+		return
+	}
+
+	fs, err := d.repo.FeatureStateGet(ctx, envid, feature)
+	if err != nil {
+		logrus.Debug("failed to get feature state")
+		return
+	}
+
+	for sub := range d.subscribers {
+		select {
+		case sub <- fs:
+		default:
+			logrus.Debug("subscriber blocked")
+		}
+	}
+}
+
+func (d *updateNotifier) getAsUUID(field string, msg notifier.Payload) (uuid.UUID, error) {
+	str, err := d.getAsString(field, msg)
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	return uuid.Parse(str)
+}
+
+func (d *updateNotifier) getAsString(field string, msg notifier.Payload) (string, error) {
+	v, ok := msg.Data[field]
+	if !ok || v == nil {
+		return "", fmt.Errorf("missing id in message")
+	}
+	str, ok := v.(string)
+	if !ok {
+		return "", fmt.Errorf("id is not a number")
+	}
+
+	return str, nil
 }
