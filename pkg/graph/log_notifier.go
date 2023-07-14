@@ -2,7 +2,6 @@ package graph
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"sync"
 
@@ -104,7 +103,6 @@ func (n *logNotifier) handleMessage(ctx context.Context, msg notifier.Payload) {
 	if err != nil {
 		return
 	}
-	fmt.Println("RECEIVED MESSAGE", msg.Data)
 
 	for sub := range subs {
 		select {

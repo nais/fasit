@@ -120,11 +120,12 @@ func (r *subscriptionResolver) Logs(ctx context.Context, environmentID uuid.UUID
 func (r *subscriptionResolver) Updates(ctx context.Context) (<-chan model.Update, error) {
 	ret := make(chan model.Update, 1)
 	r.diNotifier.Subscribe(ret)
-	fmt.Println("Subscribed to updates")
+
+	fmt.Println("Start updates")
 
 	go func() {
 		<-ctx.Done()
-		fmt.Println("Unsubscribing from updates")
+		fmt.Println("Done updates")
 		r.diNotifier.Unsubscribe(ret)
 		close(ret)
 	}()
@@ -138,5 +139,7 @@ func (r *Resolver) Status() graphgen.StatusResolver { return &statusResolver{r} 
 // Subscription returns graphgen.SubscriptionResolver implementation.
 func (r *Resolver) Subscription() graphgen.SubscriptionResolver { return &subscriptionResolver{r} }
 
-type statusResolver struct{ *Resolver }
-type subscriptionResolver struct{ *Resolver }
+type (
+	statusResolver       struct{ *Resolver }
+	subscriptionResolver struct{ *Resolver }
+)

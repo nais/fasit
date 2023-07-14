@@ -7,8 +7,10 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
 	"runtime"
 	"strings"
+	"syscall"
 	"time"
 
 	"cloud.google.com/go/pubsub"
@@ -44,6 +46,10 @@ import (
 	// Supported database drivers.
 	_ "github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/postgres"
 	_ "github.com/lib/pq"
+
+	// Automatically set GOMAXPROCS to number of available CPUs. Might improve
+	// performance in a containerized environment.
+	_ "go.uber.org/automaxprocs"
 )
 
 var cfg = DefaultConfig()
@@ -85,13 +91,10 @@ func newServer(es graphql.ExecutableSchema) *handler.Server {
 func main() {
 	flag.Parse()
 
-	// ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	ctx := context.Background()
 	// defer cancel()
 
 	log := newLogger()
-
-	log.Info("CPUs available", runtime.NumCPU())
 
 	log.Info("starting pubsub client")
 	pubsubClient, err := pubsub.NewClient(ctx, cfg.GCPProjectID)
@@ -245,8 +248,35 @@ func main() {
 		}
 	}()
 
-	log.Printf("connect to http://%s/ for GraphQL playground", cfg.BindAddress)
-	log.Fatal(http.ListenAndServe(cfg.BindAddress, router))
+	serverCtx, serverCancel := context.WithCancel(ctx)
+	server := &http.Server{
+		Addr:              cfg.BindAddress,
+		Handler:           router,
+		ReadHeaderTimeout: 2 * time.Second,
+		BaseContext: func(net.Listener) context.Context {
+			return serverCtx
+		},
+	}
+
+	go func() {
+		log.Printf("connect to http://%s/ for GraphQL playground", cfg.BindAddress)
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.WithError(err).Fatal("running server")
+		}
+	}()
+
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	defer cancel()
+	<-ctx.Done()
+	serverCancel()
+	log.Info("Shutting down")
+
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(timeoutCtx); err != nil {
+		log.WithError(err).Error("shutting down server")
+	}
 }
 
 func newLogger() *logrus.Logger {
