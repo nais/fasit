@@ -321,6 +321,32 @@ func (_m *Repo) DeployInstructionUpdateStatus(ctx context.Context, id uuid.UUID,
 	return r0
 }
 
+// DeployInstructionsForFeature provides a mock function with given fields: ctx, envID, featureName, offset
+func (_m *Repo) DeployInstructionsForFeature(ctx context.Context, envID uuid.UUID, featureName string, offset int) ([]*model.DeployInstruction, error) {
+	ret := _m.Called(ctx, envID, featureName, offset)
+
+	var r0 []*model.DeployInstruction
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, string, int) ([]*model.DeployInstruction, error)); ok {
+		return rf(ctx, envID, featureName, offset)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, string, int) []*model.DeployInstruction); ok {
+		r0 = rf(ctx, envID, featureName, offset)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.DeployInstruction)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, string, int) error); ok {
+		r1 = rf(ctx, envID, featureName, offset)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // DeployInstructionsLatestForEnvironment provides a mock function with given fields: ctx, envID
 func (_m *Repo) DeployInstructionsLatestForEnvironment(ctx context.Context, envID uuid.UUID) ([]*model.DeployInstruction, error) {
 	ret := _m.Called(ctx, envID)

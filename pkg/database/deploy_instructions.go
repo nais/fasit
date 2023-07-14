@@ -12,6 +12,7 @@ import (
 type DeployInstructionRepo interface {
 	DeployInstructionCreate(ctx context.Context, envID uuid.UUID, featureName, featureVersion, hash string) (uuid.UUID, error)
 	DeployInstructionGet(ctx context.Context, id uuid.UUID) (*model.DeployInstruction, error)
+	DeployInstructionsForFeature(ctx context.Context, envID uuid.UUID, featureName string, offset int) ([]*model.DeployInstruction, error)
 	DeployInstructionsLatestForEnvironment(ctx context.Context, envID uuid.UUID) ([]*model.DeployInstruction, error)
 	DeployInstructionsLatestForFeature(ctx context.Context, envID uuid.UUID, featureName string) (*model.DeployInstruction, error)
 	DeployInstructionUpdateStatus(ctx context.Context, id uuid.UUID, status model.RolloutStatus) error
@@ -34,6 +35,24 @@ func (r *repo) DeployInstructionUpdateStatus(ctx context.Context, id uuid.UUID, 
 		ID:     id,
 		Status: status.String(),
 	})
+}
+
+func (r *repo) DeployInstructionsForFeature(ctx context.Context, envID uuid.UUID, featureName string, offset int) ([]*model.DeployInstruction, error) {
+	dis, err := r.querier.DeployInstructionsForFeature(ctx, gensql.DeployInstructionsForFeatureParams{
+		EnvironmentID: envID,
+		FeatureName:   featureName,
+		Offset:        int32(offset),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	instructions := make([]*model.DeployInstruction, len(dis))
+	for i, di := range dis {
+		instructions[i] = deployInstructionFromSQL(di)
+	}
+
+	return instructions, nil
 }
 
 func (r *repo) DeployInstructionGet(ctx context.Context, id uuid.UUID) (*model.DeployInstruction, error) {

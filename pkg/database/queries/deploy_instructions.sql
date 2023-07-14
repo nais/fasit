@@ -39,3 +39,11 @@ WHERE id IN (
   ORDER BY feature_name, created DESC
 )
 ;
+
+-- name: DeployInstructionsForFeature :many
+SELECT * FROM deploy_instructions
+WHERE feature_name = @feature_name
+AND environment_id = @environment_id
+ORDER BY created DESC
+LIMIT 10 OFFSET sqlc.arg('offset')
+;

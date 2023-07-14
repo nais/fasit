@@ -29,6 +29,7 @@ type Feature {
 
   state: FeatureState
   status: Status
+  history: [FeatureHistory!]!
 }
 
 type ConfigOverride {
@@ -39,6 +40,15 @@ type ConfigOverride {
 type Dependency {
   anyOf: [String!]!
   allOf: [String!]!
+}
+
+type FeatureHistory {
+  id: ID!
+  version: String!
+  status: RolloutStatus!
+  created: Time!
+  lastModified: Time!
+  log: [LogLine!]!
 }
 
 extend type Query {

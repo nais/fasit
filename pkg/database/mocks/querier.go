@@ -349,6 +349,32 @@ func (_m *Querier) DeployInstructionsCreate(ctx context.Context, arg gensql.Depl
 	return r0, r1
 }
 
+// DeployInstructionsForFeature provides a mock function with given fields: ctx, arg
+func (_m *Querier) DeployInstructionsForFeature(ctx context.Context, arg gensql.DeployInstructionsForFeatureParams) ([]gensql.DeployInstruction, error) {
+	ret := _m.Called(ctx, arg)
+
+	var r0 []gensql.DeployInstruction
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.DeployInstructionsForFeatureParams) ([]gensql.DeployInstruction, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.DeployInstructionsForFeatureParams) []gensql.DeployInstruction); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gensql.DeployInstruction)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, gensql.DeployInstructionsForFeatureParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // DeployInstructionsLatestForEnvironment provides a mock function with given fields: ctx, environmentID
 func (_m *Querier) DeployInstructionsLatestForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]gensql.DeployInstruction, error) {
 	ret := _m.Called(ctx, environmentID)

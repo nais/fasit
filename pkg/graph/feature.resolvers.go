@@ -128,6 +128,32 @@ func (r *featureResolver) Status(ctx context.Context, obj *model.Feature) (*mode
 	}, nil
 }
 
+// History is the resolver for the history field.
+func (r *featureResolver) History(ctx context.Context, obj *model.Feature) ([]*model.FeatureHistory, error) {
+	dis, err := r.Repo.DeployInstructionsForFeature(ctx, obj.GraphVars.EnvironmentID, obj.Name, 1)
+	if err != nil {
+		return nil, err
+	}
+
+	history := make([]*model.FeatureHistory, len(dis))
+	for i, di := range dis {
+		history[i] = &model.FeatureHistory{
+			ID:           di.ID,
+			Version:      di.FeatureVersion,
+			Status:       di.Status,
+			Created:      di.Created,
+			LastModified: di.LastModified,
+		}
+	}
+
+	return history, nil
+}
+
+// Log is the resolver for the log field.
+func (r *featureHistoryResolver) Log(ctx context.Context, obj *model.FeatureHistory) ([]*model.LogLine, error) {
+	return r.Repo.LogsGet(ctx, obj.ID)
+}
+
 // Features is the resolver for the features field.
 func (r *queryResolver) Features(ctx context.Context) ([]*model.Feature, error) {
 	return r.Repo.Features(ctx)
@@ -152,5 +178,13 @@ func (r *Resolver) ConfigOverride() graphgen.ConfigOverrideResolver {
 // Feature returns graphgen.FeatureResolver implementation.
 func (r *Resolver) Feature() graphgen.FeatureResolver { return &featureResolver{r} }
 
-type configOverrideResolver struct{ *Resolver }
-type featureResolver struct{ *Resolver }
+// FeatureHistory returns graphgen.FeatureHistoryResolver implementation.
+func (r *Resolver) FeatureHistory() graphgen.FeatureHistoryResolver {
+	return &featureHistoryResolver{r}
+}
+
+type (
+	configOverrideResolver struct{ *Resolver }
+	featureResolver        struct{ *Resolver }
+	featureHistoryResolver struct{ *Resolver }
+)
