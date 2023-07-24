@@ -8,7 +8,7 @@ require (
 	cloud.google.com/go/storage v1.31.0
 	github.com/99designs/gqlgen v0.17.34
 	github.com/GoogleCloudPlatform/cloudsql-proxy v1.33.7
-	github.com/GoogleCloudPlatform/k8s-config-connector v1.105.0
+	github.com/GoogleCloudPlatform/k8s-config-connector v1.106.0
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/coreos/go-oidc/v3 v3.6.0
 	github.com/fsnotify/fsnotify v1.6.0
@@ -77,7 +77,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/cli v24.0.2+incompatible // indirect
 	github.com/docker/distribution v2.8.1+incompatible // indirect
-	github.com/docker/docker v23.0.1+incompatible // indirect
+	github.com/docker/docker v23.0.3+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.7.0 // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-metrics v0.0.1 // indirect
