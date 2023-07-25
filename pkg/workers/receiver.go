@@ -20,21 +20,24 @@ type ReceiverClient interface {
 }
 
 type ReceiverStore interface {
+	DeployInstructionGet(ctx context.Context, id uuid.UUID) (*model.DeployInstruction, error)
+	DeployInstructionsLatestForFeature(ctx context.Context, envID uuid.UUID, featureName string) (*model.DeployInstruction, error)
+	DeployInstructionUpdateStatus(ctx context.Context, id uuid.UUID, status model.RolloutStatus) error
 	EnvironmentByNames(ctx context.Context, tenantName, environmentName string) (*model.Environment, error)
 	EnvironmentCI(ctx context.Context, kind model.EnvironmentKind) (*model.Environment, error)
 	EnvironmentCreate(ctx context.Context, t *model.EnvironmentCreate) (*model.Environment, error)
+	EnvironmentGet(ctx context.Context, id uuid.UUID) (*model.Environment, error)
 	EnvironmentIDByNames(ctx context.Context, tenantName string, environmentName string) (uuid.UUID, error)
 	FeatureVersionUpdate(ctx context.Context, name string, version string) error
 	HealthStatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Health) error
 	KubernetesNodeSync(ctx context.Context, envID uuid.UUID, kn *message.KubernetesNodes) error
+	LogCreate(ctx context.Context, deployInstructionID uuid.UUID, lines []message.LogLine) error
 	ReleaseStatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Release) error
 	RolloutByName(ctx context.Context, name string) (*model.Feature, error)
 	RolloutDelete(ctx context.Context, name string) error
 	RolloutEventCreate(ctx context.Context, rollout uuid.UUID, failure bool, message string, data map[string]any) error
 	RolloutStatus(ctx context.Context, name string) (model.RolloutStatus, error)
 	RolloutsUpdateStatus(ctx context.Context, status model.RolloutStatus, name string, completed bool) error
-	StatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Helm) error
-	StatusForFeature(ctx context.Context, environmentID uuid.UUID, feature string) (*model.Status, error)
 	TenantCreate(ctx context.Context, t *model.TenantCreate) (*model.Tenant, error)
 	TenantGetByName(ctx context.Context, name string) (*model.Tenant, error)
 	TxFunc(ctx context.Context, fn database.TXFunc) error
@@ -72,6 +75,8 @@ func (r *Receiver) handler(ctx context.Context, msg message.Status) error {
 		return r.healthStatus(ctx, msg)
 	case message.StatusKubernetesNodes:
 		return r.kubernetesNodes(ctx, msg)
+	case message.StatusTypeLog:
+		return r.handleStatusLog(ctx, msg)
 	default:
 		r.log.WithField("type", msg.Type).Warn("unknown status type")
 	}
@@ -87,44 +92,75 @@ func (r *Receiver) handlerHelm(ctx context.Context, msg message.Status) error {
 		return nil
 	}
 
-	env, err := r.repo.EnvironmentByNames(ctx, msg.Tenant, msg.Environment)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			r.log.WithField("tenant", msg.Tenant).
-				WithField("environment", msg.Environment).
-				Warn("unknown tenant and/or environment")
-			return nil
+	// We have two cases of helm messages, one for older version which included
+	// tenant and environment in the message, and a newer version which includes
+	// the deployment instruction ID instead.
+
+	var env *model.Environment
+	var di *model.DeployInstruction
+	if helmStatus.DIID != uuid.Nil {
+		di, err = r.repo.DeployInstructionGet(ctx, helmStatus.DIID)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				r.log.WithField("diid", helmStatus.DIID).Warn("unknown deploy instruction")
+				return nil
+			}
+			return err
 		}
-		return err
+
+		env, err = r.repo.EnvironmentGet(ctx, di.EnvironmentID)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				r.log.WithField("deploy_instruction", helmStatus.DIID).
+					Warn("unknown deploy instruction")
+				return nil
+			}
+			return err
+		}
+	} else {
+		env, err = r.repo.EnvironmentByNames(ctx, msg.Tenant, msg.Environment)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				r.log.WithField("tenant", msg.Tenant).
+					WithField("environment", msg.Environment).
+					Warn("unknown tenant and/or environment")
+				return nil
+			}
+			return err
+		}
 	}
 
 	if env.CI {
-		if err := r.handleCI(ctx, env, helmStatus, msg.Tenant); err != nil {
+		if err := r.handleCI(ctx, env, di, helmStatus, msg.Tenant); err != nil {
 			r.log.WithError(err).Error("handling helm status message for CI environment")
 		}
 	}
 
-	err = r.repo.StatusCreateOrUpdate(ctx, env.ID, helmStatus)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return r.repo.DeployInstructionUpdateStatus(ctx, helmStatus.DIID, helmStatus.RolloutStatus)
 }
 
-func (r *Receiver) handleCI(ctx context.Context, env *model.Environment, helmStatus *message.Helm, tenant string) error {
-	rollout, err := r.repo.RolloutByName(ctx, helmStatus.Name)
+func (r *Receiver) handleCI(ctx context.Context, env *model.Environment, di *model.DeployInstruction, helmStatus *message.Helm, tenant string) error {
+	featureName := helmStatus.Name
+	if di != nil {
+		featureName = di.FeatureName
+	}
+	featureVersion := helmStatus.Version
+	if di != nil {
+		featureVersion = di.FeatureVersion
+	}
+
+	rollout, err := r.repo.RolloutByName(ctx, featureName)
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
 			return fmt.Errorf("getting rollout: %w", err)
 		} else {
-			r.log.WithField("name", helmStatus.Name).Debug("not part of a rollout")
+			r.log.WithField("name", featureName).Debug("not part of a rollout")
 			return nil
 		}
 	}
 
-	if rollout.Version != helmStatus.Version {
-		r.log.WithField("name", helmStatus.Name).Warn("version mismatch")
+	if rollout.Version != featureVersion {
+		r.log.WithField("name", featureName).Warn("version mismatch")
 		return nil
 	}
 
@@ -208,11 +244,11 @@ func (r *Receiver) last(ctx context.Context, curr model.EnvironmentKind, rollout
 		if err != nil {
 			return false, fmt.Errorf("getting CI environment for kind %v: %w", curr.String(), err)
 		}
-		s, err := r.repo.StatusForFeature(ctx, ciEnv.ID, rollout.Name)
+		s, err := r.repo.DeployInstructionsLatestForFeature(ctx, ciEnv.ID, rollout.Name)
 		if err != nil {
 			return false, fmt.Errorf("getting status for feature: %w", err)
 		}
-		if s.Version != rollout.Version {
+		if s.FeatureVersion != rollout.Version {
 			return false, nil
 		}
 	}
@@ -293,6 +329,16 @@ func (r *Receiver) kubernetesNodes(ctx context.Context, msg message.Status) erro
 		return err
 	}
 
-	r.log.WithField("nodes", len(status.Nodes)).Debug("received kubernetes nodes")
 	return r.repo.KubernetesNodeSync(ctx, environmentID, status)
+}
+
+func (r *Receiver) handleStatusLog(ctx context.Context, msg message.Status) error {
+	status := &message.StatusLog{}
+
+	if err := json.Unmarshal(msg.Data, status); err != nil {
+		r.log.WithError(err).Errorf("invalid json")
+		return nil
+	}
+
+	return r.repo.LogCreate(ctx, status.DIID, status.Logs)
 }

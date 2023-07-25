@@ -44,6 +44,7 @@ type Repo interface {
 	AuditRepo
 	AutoInstallsRepo
 	ConfigRepo
+	DeployInstructionRepo
 	EnvironmentRepo
 	EnvironmentValueRepo
 	FeatureDataRepo
@@ -51,9 +52,9 @@ type Repo interface {
 	FeatureStateRepo
 	HealthRepo
 	KubernetesNodeRepo
+	LogRepo
 	ReleaseStatusRepo
 	RolloutRepo
-	StatusRepo
 	TenantRepo
 	WarningRepo
 

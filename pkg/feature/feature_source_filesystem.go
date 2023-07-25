@@ -2,9 +2,9 @@ package feature
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/fs"
-	"log"
 	"os"
 	"path/filepath"
 
@@ -97,11 +97,10 @@ func (f *FeatureSourceFilesystem) Watch(ctx context.Context) {
 				}
 			}
 		case err, ok := <-f.watcher.Errors:
-			if !ok {
-				f.log.Error("filesystem watcher closed (errors)")
+			if !ok || errors.Is(err, context.Canceled) {
 				return
 			}
-			log.Println("error:", err)
+			f.log.WithError(err).Println("error from filesystem watcher")
 		}
 	}
 }

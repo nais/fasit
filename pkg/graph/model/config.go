@@ -101,3 +101,5 @@ type Configuration struct {
 
 	GraphVars ConfigurationGraphVars `json:"-" yaml:"-"`
 }
+
+func (c *Configuration) IsUpdate() {}

@@ -175,6 +175,30 @@ func (_m *Querier) ConfigGet(ctx context.Context, feature string) ([]gensql.Conf
 	return r0, r1
 }
 
+// ConfigGetByID provides a mock function with given fields: ctx, id
+func (_m *Querier) ConfigGetByID(ctx context.Context, id uuid.UUID) (gensql.ConfigurationsGlobal, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 gensql.ConfigurationsGlobal
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) (gensql.ConfigurationsGlobal, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) gensql.ConfigurationsGlobal); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Get(0).(gensql.ConfigurationsGlobal)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ConfigGetForEnv provides a mock function with given fields: ctx, arg
 func (_m *Querier) ConfigGetForEnv(ctx context.Context, arg gensql.ConfigGetForEnvParams) ([]gensql.ConfigurationsEnvironment, error) {
 	ret := _m.Called(ctx, arg)
@@ -273,6 +297,146 @@ func (_m *Querier) ConfigUpdate(ctx context.Context, arg gensql.ConfigUpdatePara
 	}
 
 	return r0, r1
+}
+
+// DeployInstructionsByID provides a mock function with given fields: ctx, id
+func (_m *Querier) DeployInstructionsByID(ctx context.Context, id uuid.UUID) (gensql.DeployInstruction, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 gensql.DeployInstruction
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) (gensql.DeployInstruction, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) gensql.DeployInstruction); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Get(0).(gensql.DeployInstruction)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// DeployInstructionsCreate provides a mock function with given fields: ctx, arg
+func (_m *Querier) DeployInstructionsCreate(ctx context.Context, arg gensql.DeployInstructionsCreateParams) (uuid.UUID, error) {
+	ret := _m.Called(ctx, arg)
+
+	var r0 uuid.UUID
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.DeployInstructionsCreateParams) (uuid.UUID, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.DeployInstructionsCreateParams) uuid.UUID); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(uuid.UUID)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, gensql.DeployInstructionsCreateParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// DeployInstructionsForFeature provides a mock function with given fields: ctx, arg
+func (_m *Querier) DeployInstructionsForFeature(ctx context.Context, arg gensql.DeployInstructionsForFeatureParams) ([]gensql.DeployInstruction, error) {
+	ret := _m.Called(ctx, arg)
+
+	var r0 []gensql.DeployInstruction
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.DeployInstructionsForFeatureParams) ([]gensql.DeployInstruction, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.DeployInstructionsForFeatureParams) []gensql.DeployInstruction); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gensql.DeployInstruction)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, gensql.DeployInstructionsForFeatureParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// DeployInstructionsLatestForEnvironment provides a mock function with given fields: ctx, environmentID
+func (_m *Querier) DeployInstructionsLatestForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]gensql.DeployInstruction, error) {
+	ret := _m.Called(ctx, environmentID)
+
+	var r0 []gensql.DeployInstruction
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]gensql.DeployInstruction, error)); ok {
+		return rf(ctx, environmentID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) []gensql.DeployInstruction); ok {
+		r0 = rf(ctx, environmentID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gensql.DeployInstruction)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, environmentID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// DeployInstructionsLatestForFeature provides a mock function with given fields: ctx, arg
+func (_m *Querier) DeployInstructionsLatestForFeature(ctx context.Context, arg gensql.DeployInstructionsLatestForFeatureParams) (gensql.DeployInstruction, error) {
+	ret := _m.Called(ctx, arg)
+
+	var r0 gensql.DeployInstruction
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.DeployInstructionsLatestForFeatureParams) (gensql.DeployInstruction, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.DeployInstructionsLatestForFeatureParams) gensql.DeployInstruction); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(gensql.DeployInstruction)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, gensql.DeployInstructionsLatestForFeatureParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// DeployInstructionsUpdateStatus provides a mock function with given fields: ctx, arg
+func (_m *Querier) DeployInstructionsUpdateStatus(ctx context.Context, arg gensql.DeployInstructionsUpdateStatusParams) error {
+	ret := _m.Called(ctx, arg)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.DeployInstructionsUpdateStatusParams) error); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // EnvConfig provides a mock function with given fields: ctx, arg
@@ -917,6 +1081,72 @@ func (_m *Querier) KubernetesNodeStatuses(ctx context.Context, environmentID uui
 	return r0, r1
 }
 
+// LogsByDeployInstruction provides a mock function with given fields: ctx, deployInstruction
+func (_m *Querier) LogsByDeployInstruction(ctx context.Context, deployInstruction uuid.UUID) ([]gensql.Log, error) {
+	ret := _m.Called(ctx, deployInstruction)
+
+	var r0 []gensql.Log
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]gensql.Log, error)); ok {
+		return rf(ctx, deployInstruction)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) []gensql.Log); ok {
+		r0 = rf(ctx, deployInstruction)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gensql.Log)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, deployInstruction)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// LogsByID provides a mock function with given fields: ctx, id
+func (_m *Querier) LogsByID(ctx context.Context, id int64) (gensql.Log, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 gensql.Log
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, int64) (gensql.Log, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, int64) gensql.Log); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Get(0).(gensql.Log)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// LogsCreate provides a mock function with given fields: ctx, arg
+func (_m *Querier) LogsCreate(ctx context.Context, arg []gensql.LogsCreateParams) *gensql.LogsCreateBatchResults {
+	ret := _m.Called(ctx, arg)
+
+	var r0 *gensql.LogsCreateBatchResults
+	if rf, ok := ret.Get(0).(func(context.Context, []gensql.LogsCreateParams) *gensql.LogsCreateBatchResults); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*gensql.LogsCreateBatchResults)
+		}
+	}
+
+	return r0
+}
+
 // MappingValuesForTenant provides a mock function with given fields: ctx, arg
 func (_m *Querier) MappingValuesForTenant(ctx context.Context, arg gensql.MappingValuesForTenantParams) ([]gensql.MappingValuesForTenantRow, error) {
 	ret := _m.Called(ctx, arg)
@@ -1256,70 +1486,6 @@ func (_m *Querier) RolloutsForKind(ctx context.Context, environmentKind string) 
 
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, environmentKind)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// StatusCreateOrUpdate provides a mock function with given fields: ctx, arg
-func (_m *Querier) StatusCreateOrUpdate(ctx context.Context, arg gensql.StatusCreateOrUpdateParams) error {
-	ret := _m.Called(ctx, arg)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, gensql.StatusCreateOrUpdateParams) error); ok {
-		r0 = rf(ctx, arg)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// StatusForEnvironment provides a mock function with given fields: ctx, environmentID
-func (_m *Querier) StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]gensql.Status, error) {
-	ret := _m.Called(ctx, environmentID)
-
-	var r0 []gensql.Status
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]gensql.Status, error)); ok {
-		return rf(ctx, environmentID)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) []gensql.Status); ok {
-		r0 = rf(ctx, environmentID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]gensql.Status)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
-		r1 = rf(ctx, environmentID)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// StatusForFeature provides a mock function with given fields: ctx, arg
-func (_m *Querier) StatusForFeature(ctx context.Context, arg gensql.StatusForFeatureParams) (gensql.Status, error) {
-	ret := _m.Called(ctx, arg)
-
-	var r0 gensql.Status
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, gensql.StatusForFeatureParams) (gensql.Status, error)); ok {
-		return rf(ctx, arg)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, gensql.StatusForFeatureParams) gensql.Status); ok {
-		r0 = rf(ctx, arg)
-	} else {
-		r0 = ret.Get(0).(gensql.Status)
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, gensql.StatusForFeatureParams) error); ok {
-		r1 = rf(ctx, arg)
 	} else {
 		r1 = ret.Error(1)
 	}

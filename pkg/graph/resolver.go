@@ -2,10 +2,11 @@ package graph
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/99designs/gqlgen/graphql"
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database"
+	"github.com/nais/fasit/pkg/database/notifier"
 	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/sirupsen/logrus"
 )
@@ -18,6 +19,19 @@ type Resolver struct {
 	Repo database.Repo
 	Log  *logrus.Entry
 	// HelmChartValues *helminfo.Cache
+
+	notifier    *notifier.Notifier
+	logNotifier *logNotifier
+	diNotifier  *updateNotifier
+}
+
+func NewResolver(ctx context.Context, repo database.Repo, notifier *notifier.Notifier, log *logrus.Entry) *Resolver {
+	return &Resolver{
+		Repo:        repo,
+		Log:         log,
+		logNotifier: newLogNotifier(ctx, notifier, repo),
+		diNotifier:  newDeployInstructionsNotifier(ctx, notifier, repo),
+	}
 }
 
 func (r *Resolver) missingDependencies(ctx context.Context, featureName string, envID uuid.UUID) ([]*model.Feature, error) {
@@ -43,7 +57,8 @@ func (r *Resolver) missingDependencies(ctx context.Context, featureName string, 
 	for _, missing := range f.Dependencies.FindMissing(enabledFeatures) {
 		mf, err := r.Repo.FeatureByNameForEnv(ctx, missing, envID)
 		if err != nil {
-			return nil, fmt.Errorf("getting feature by name: %v: %w", missing, err)
+			graphql.AddErrorf(ctx, "getting feature by name: %v: %w", missing, err)
+			continue
 		}
 		ret = append(ret, mf)
 	}

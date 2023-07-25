@@ -2,9 +2,12 @@ package message
 
 import (
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type DeployInstruction struct {
+	ID uuid.UUID `json:",omitempty"`
 	// Name is the name of the feature
 	Name string
 	// Version is the chart version

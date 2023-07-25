@@ -92,6 +92,17 @@ type ConfigurationsGlobal struct {
 	Created     pgtype.Timestamptz
 }
 
+type DeployInstruction struct {
+	ID             uuid.UUID
+	EnvironmentID  uuid.UUID
+	FeatureName    string
+	FeatureVersion string
+	Status         string
+	Hash           string
+	Created        pgtype.Timestamptz
+	LastModified   pgtype.Timestamptz
+}
+
 type Environment struct {
 	ID           uuid.UUID
 	TenantID     uuid.UUID
@@ -163,6 +174,13 @@ type KubernetesNodeStatus struct {
 	InternalIp              string
 }
 
+type Log struct {
+	ID                int64
+	DeployInstruction uuid.UUID
+	Time              pgtype.Timestamptz
+	Message           string
+}
+
 type ReleaseStatus struct {
 	EnvironmentID uuid.UUID
 	Feature       string
@@ -190,17 +208,6 @@ type RolloutEvent struct {
 	Message   string
 	Data      []byte
 	Created   pgtype.Timestamptz
-}
-
-type Status struct {
-	EnvironmentID uuid.UUID
-	Feature       string
-	Version       string
-	Status        string
-	ConfigHash    string
-	Created       pgtype.Timestamptz
-	LastModified  pgtype.Timestamptz
-	Log           string
 }
 
 type Tenant struct {

@@ -26,7 +26,7 @@ enum ConfigSource {
 }
 
 type Configuration {
-  id: ID
+  id: ID!
   value: Value!
   content: RawMessage
   created: Time!

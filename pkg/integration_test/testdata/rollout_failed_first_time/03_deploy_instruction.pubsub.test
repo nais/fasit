@@ -9,7 +9,7 @@ ENDOPTS
 {
   "Chart": "oci://clamav",
   "Name": "clamav",
-  "Timeout": 600000000000,
+  "Timeout": 0,
   "Values": {
     "fasit": {
       "env": {
@@ -22,7 +22,7 @@ ENDOPTS
     },
     "gcp": "true"
   },
-  "Version": "0.1.1-feature"
+  "Version": "0.1.0-feature"
 }
 
-STORE new_hash=ConfigHash
+STORE diid=ID

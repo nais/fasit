@@ -172,6 +172,10 @@ func (n *Notifier) distibute(payload Payload) {
 			continue
 		}
 
-		listener.ch <- payload
+		select {
+		case listener.ch <- payload:
+		default:
+			n.log.WithField("table", payload.Table).Warn("listener channel full, dropping notification")
+		}
 	}
 }

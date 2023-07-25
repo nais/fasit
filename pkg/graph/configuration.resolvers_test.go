@@ -94,6 +94,7 @@ func Test_queryResolver_Configuration_Global_Configurations(t *testing.T) {
 			GraphVars: model.ConfigurationGraphVars{FeatureName: feature.Name},
 		},
 		{
+			ID:        fakeUUID(feature.Name, "another.key"),
 			Value:     &model.Value{Config: &model.Config{Type: model.ConfigTypeString}, GraphQLKey: "another.key"},
 			Content:   json.RawMessage(`"helm_value"`),
 			Source:    model.ConfigSourceHelm,

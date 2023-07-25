@@ -2,6 +2,7 @@ package naisd
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"time"
 
@@ -23,6 +24,14 @@ func (m *MockExecutor) Execute(cmd *exec.Cmd) error {
 
 	if cmd.Stdout != nil {
 		fmt.Fprintln(cmd.Stdout, "Start mock executor", time.Now())
+		start := time.Now()
+		if _, ok := os.LookupEnv("MOCK_EXECUTOR_SLOW"); ok {
+			for time.Since(start) < 1*time.Minute {
+				fmt.Fprintln(cmd.Stdout, "mock executor is running", time.Now())
+				time.Sleep(5 * time.Second)
+			}
+		}
+
 		defer fmt.Fprintln(cmd.Stdout, "end of mock executor")
 	}
 	if m.Timeout > 0 {

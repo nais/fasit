@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"net/http"
 	"os"
 	"testing"
 	"time"
@@ -13,7 +12,6 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/go-chi/chi/v5"
-	"github.com/gorilla/websocket"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/database/dbtest"
@@ -71,9 +69,13 @@ func TestRunner(t *testing.T) {
 
 		if v, _ := config.Bool("reconcile"); v {
 			log := logrus.New()
-			// log.Out = os.Stdout
-			// log.Level = logrus.DebugLevel
+
 			log.Out = io.Discard
+			if testing.Verbose() {
+				log.Out = os.Stdout
+				log.Level = logrus.DebugLevel
+			}
+
 			cp := func(projectID, topicID string, log *logrus.Entry) workers.Publisher {
 				p, ok := naisdRunner.reconcilerPublishers[topicID]
 				if !ok {
@@ -138,13 +140,7 @@ func newGQLRunner(ctx context.Context, t *testing.T, db database.Repo) testmanag
 
 	newServer := func(es graphql.ExecutableSchema) *handler.Server {
 		srv := handler.New(es)
-
-		srv.AddTransport(transport.Websocket{
-			KeepAlivePingInterval: 10 * time.Second,
-			Upgrader: websocket.Upgrader{CheckOrigin: func(r *http.Request) bool {
-				return true
-			}},
-		})
+		srv.AddTransport(transport.SSE{})
 		srv.AddTransport(transport.GET{})
 		srv.AddTransport(transport.POST{})
 

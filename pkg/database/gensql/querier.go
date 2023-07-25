@@ -18,10 +18,17 @@ type Querier interface {
 	ConfigDelete(ctx context.Context, id uuid.UUID) error
 	ConfigEnvUpdateOrCreate(ctx context.Context, arg ConfigEnvUpdateOrCreateParams) (ConfigurationsEnvironment, error)
 	ConfigGet(ctx context.Context, feature string) ([]ConfigurationsGlobal, error)
+	ConfigGetByID(ctx context.Context, id uuid.UUID) (ConfigurationsGlobal, error)
 	ConfigGetForEnv(ctx context.Context, arg ConfigGetForEnvParams) ([]ConfigurationsEnvironment, error)
 	ConfigGlobalUpdateOrCreate(ctx context.Context, arg ConfigGlobalUpdateOrCreateParams) (ConfigurationsGlobal, error)
 	ConfigOverridesByFeature(ctx context.Context, feature string) ([]ConfigOverridesByFeatureRow, error)
 	ConfigUpdate(ctx context.Context, arg ConfigUpdateParams) (ConfigurationsGlobal, error)
+	DeployInstructionsByID(ctx context.Context, id uuid.UUID) (DeployInstruction, error)
+	DeployInstructionsCreate(ctx context.Context, arg DeployInstructionsCreateParams) (uuid.UUID, error)
+	DeployInstructionsForFeature(ctx context.Context, arg DeployInstructionsForFeatureParams) ([]DeployInstruction, error)
+	DeployInstructionsLatestForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]DeployInstruction, error)
+	DeployInstructionsLatestForFeature(ctx context.Context, arg DeployInstructionsLatestForFeatureParams) (DeployInstruction, error)
+	DeployInstructionsUpdateStatus(ctx context.Context, arg DeployInstructionsUpdateStatusParams) error
 	EnvConfig(ctx context.Context, arg EnvConfigParams) ([]EnvConfigRow, error)
 	EnvironmentByNames(ctx context.Context, arg EnvironmentByNamesParams) (Environment, error)
 	EnvironmentCI(ctx context.Context, kind EnvironmentKind) (Environment, error)
@@ -50,6 +57,9 @@ type Querier interface {
 	KubernetesNodeCreateOrUpdate(ctx context.Context, arg KubernetesNodeCreateOrUpdateParams) error
 	KubernetesNodeDeleteObsolete(ctx context.Context, environmentID uuid.UUID) error
 	KubernetesNodeStatuses(ctx context.Context, environmentID uuid.UUID) ([]KubernetesNodeStatus, error)
+	LogsByDeployInstruction(ctx context.Context, deployInstruction uuid.UUID) ([]Log, error)
+	LogsByID(ctx context.Context, id int64) (Log, error)
+	LogsCreate(ctx context.Context, arg []LogsCreateParams) *LogsCreateBatchResults
 	MappingValuesForTenant(ctx context.Context, arg MappingValuesForTenantParams) ([]MappingValuesForTenantRow, error)
 	ReleaseStatusCreateOrUpdate(ctx context.Context, arg ReleaseStatusCreateOrUpdateParams) (ReleaseStatus, error)
 	ReleaseStatusDeleteByEnvironment(ctx context.Context, environmentID uuid.UUID) error
@@ -66,9 +76,6 @@ type Querier interface {
 	RolloutUpdateStatus(ctx context.Context, arg RolloutUpdateStatusParams) error
 	RolloutsForFeature(ctx context.Context, featureName string) ([]Rollout, error)
 	RolloutsForKind(ctx context.Context, environmentKind string) ([]RolloutsForKindRow, error)
-	StatusCreateOrUpdate(ctx context.Context, arg StatusCreateOrUpdateParams) error
-	StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]Status, error)
-	StatusForFeature(ctx context.Context, arg StatusForFeatureParams) (Status, error)
 	TenantCI(ctx context.Context) (Tenant, error)
 	TenantCreate(ctx context.Context, arg TenantCreateParams) (Tenant, error)
 	TenantEnvironments(ctx context.Context, all bool) ([]TenantEnvironmentsRow, error)

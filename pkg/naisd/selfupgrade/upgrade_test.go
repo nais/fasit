@@ -10,6 +10,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/message"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
@@ -32,6 +33,7 @@ func TestFullRun(t *testing.T) {
 	})
 
 	deployInstruction := message.DeployInstruction{
+		ID:         uuid.New(),
 		Name:       "naisd",
 		Version:    "1.2.3",
 		Chart:      "oci://asdf",
@@ -124,7 +126,7 @@ func TestFullRun(t *testing.T) {
 			},
 		},
 		"stringData": map[string]any{
-			"deploy_instruction.json": "{\"Name\":\"naisd\",\"Version\":\"1.2.3\",\"Chart\":\"oci://asdf\",\"ConfigHash\":\"123\",\"Timeout\":60000000000,\"Values\":{\"image\":{\"tag\":\"newtag\"}}}\n",
+			"deploy_instruction.json": "{\"ID\":\"" + deployInstruction.ID.String() + "\",\"Name\":\"naisd\",\"Version\":\"1.2.3\",\"Chart\":\"oci://asdf\",\"ConfigHash\":\"123\",\"Timeout\":60000000000,\"Values\":{\"image\":{\"tag\":\"newtag\"}}}\n",
 		},
 	}
 	if !cmp.Equal(wantSecret, secretMap) {

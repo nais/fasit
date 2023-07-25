@@ -71,3 +71,9 @@ SELECT environment_id, array_agg(key)::text[] AS keys
 FROM configurations_environment
 WHERE feature = @feature
 GROUP BY environment_id;
+
+-- name: ConfigGetByID :one
+SELECT *
+FROM configurations_global
+WHERE id = @id
+;
