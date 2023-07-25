@@ -55,7 +55,6 @@ type Repo interface {
 	LogRepo
 	ReleaseStatusRepo
 	RolloutRepo
-	StatusRepo
 	TenantRepo
 	WarningRepo
 

@@ -121,11 +121,8 @@ func (r *subscriptionResolver) Updates(ctx context.Context) (<-chan model.Update
 	ret := make(chan model.Update, 1)
 	r.diNotifier.Subscribe(ret)
 
-	fmt.Println("Start updates")
-
 	go func() {
 		<-ctx.Done()
-		fmt.Println("Done updates")
 		r.diNotifier.Unsubscribe(ret)
 		close(ret)
 	}()

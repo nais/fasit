@@ -39,10 +39,10 @@ func (r *repo) Warnings(ctx context.Context, environmentID *uuid.UUID, tenantID 
 	for _, w := range warnings {
 		if w.FeatureDataName != "" {
 			ws = append(ws, w)
-		} else if r.oldFeatures.Get(w.Feature) != nil {
+		} else if r.oldFeatures.Get(w.FeatureName) != nil {
 			ws = append(ws, w)
 		} else {
-			fmt.Println("Removed warning for feature", w.Feature)
+			fmt.Println("Removed warning for feature", w.FeatureName)
 		}
 	}
 
@@ -57,7 +57,7 @@ func warningsFromSQL(warnings []gensql.WarningsRow) ([]model.Warning, error) {
 			result = append(result, model.FeatureWarning{
 				Message:       "feature not reconciled correctly",
 				EnvironmentID: w.EnvironmentID,
-				FeatureName:   w.Feature,
+				FeatureName:   w.FeatureName,
 			})
 
 		case "naisd":

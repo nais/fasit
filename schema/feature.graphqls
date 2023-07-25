@@ -29,7 +29,7 @@ type Feature {
 
   state: FeatureState
   status: Status
-  history: [FeatureHistory!]!
+  histories: [FeatureHistory!]!
 }
 
 type ConfigOverride {
@@ -54,4 +54,5 @@ type FeatureHistory {
 extend type Query {
   features: [Feature!]!
   feature(name: String!): Feature!
+  history(id: ID!): FeatureHistory!
 }

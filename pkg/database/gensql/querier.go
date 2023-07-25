@@ -76,9 +76,6 @@ type Querier interface {
 	RolloutUpdateStatus(ctx context.Context, arg RolloutUpdateStatusParams) error
 	RolloutsForFeature(ctx context.Context, featureName string) ([]Rollout, error)
 	RolloutsForKind(ctx context.Context, environmentKind string) ([]RolloutsForKindRow, error)
-	StatusCreateOrUpdate(ctx context.Context, arg StatusCreateOrUpdateParams) error
-	StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]Status, error)
-	StatusForFeature(ctx context.Context, arg StatusForFeatureParams) (Status, error)
 	TenantCI(ctx context.Context) (Tenant, error)
 	TenantCreate(ctx context.Context, arg TenantCreateParams) (Tenant, error)
 	TenantEnvironments(ctx context.Context, all bool) ([]TenantEnvironmentsRow, error)

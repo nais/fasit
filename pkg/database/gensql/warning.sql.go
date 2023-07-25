@@ -12,15 +12,32 @@ import (
 )
 
 const warnings = `-- name: Warnings :many
-SELECT 'feature_status' as "type", environment_id, environment.tenant_id, feature, CASE WHEN fd.name IS NULL THEN '' ELSE fd.name END as feature_data_name
-FROM status
-JOIN environments environment ON environment.id = status.environment_id
-LEFT JOIN feature_data fd ON fd.name = status.feature AND fd.version = status.version
-WHERE status = 'failed'
-AND (
-  environment.id = $1
-  OR environment.tenant_id = $2
+
+WITH latest_di AS (
+  SELECT DISTINCT ON (feature_name, environment_id)
+    'feature_status' as "type",
+    environment_id,
+    environment.tenant_id,
+    feature_name,
+    CASE WHEN fd.name IS NULL THEN '' ELSE fd.name END as feature_data_name,
+    status
+  FROM deploy_instructions di
+  JOIN environments environment ON environment.id = di.environment_id
+  LEFT JOIN feature_data fd ON fd.name = di.feature_name AND fd.version = di.feature_version
+  WHERE (
+    environment.id = $1
+    OR environment.tenant_id = $2
+  )
+  ORDER BY feature_name, environment_id, di.last_modified DESC
 )
+SELECT
+  type,
+  environment_id,
+  tenant_id,
+  feature_name,
+  feature_data_name
+FROM latest_di
+WHERE status = 'failed'
 
 UNION
 
@@ -46,7 +63,7 @@ type WarningsRow struct {
 	Type            string
 	EnvironmentID   uuid.UUID
 	TenantID        uuid.UUID
-	Feature         string
+	FeatureName     string
 	FeatureDataName interface{}
 }
 
@@ -63,7 +80,7 @@ func (q *Queries) Warnings(ctx context.Context, arg WarningsParams) ([]WarningsR
 			&i.Type,
 			&i.EnvironmentID,
 			&i.TenantID,
-			&i.Feature,
+			&i.FeatureName,
 			&i.FeatureDataName,
 		); err != nil {
 			return nil, err

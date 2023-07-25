@@ -210,17 +210,6 @@ type RolloutEvent struct {
 	Created   pgtype.Timestamptz
 }
 
-type Status struct {
-	EnvironmentID uuid.UUID
-	Feature       string
-	Version       string
-	Status        string
-	ConfigHash    string
-	Created       pgtype.Timestamptz
-	LastModified  pgtype.Timestamptz
-	Log           string
-}
-
 type Tenant struct {
 	ID           uuid.UUID
 	Name         string

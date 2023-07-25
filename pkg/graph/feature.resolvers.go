@@ -26,17 +26,9 @@ func (r *featureResolver) ActiveVersion(ctx context.Context, obj *model.Feature)
 	di, err := r.Repo.DeployInstructionsLatestForFeature(ctx, obj.GraphVars.EnvironmentID, obj.Name)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			status, err := r.Repo.StatusForFeature(ctx, obj.GraphVars.EnvironmentID, obj.Name)
-			if err != nil {
-				if errors.Is(err, pgx.ErrNoRows) {
-					return "", nil
-				}
-				return "", err
-			}
-			return status.Version, nil
+			return "", nil
 		}
-
-		return "", err
+		return "", fmt.Errorf("get latest deploy instruction: %w", err)
 	}
 
 	return di.FeatureVersion, nil
@@ -92,26 +84,19 @@ func (r *featureResolver) Status(ctx context.Context, obj *model.Feature) (*mode
 	di, err := r.Repo.DeployInstructionsLatestForFeature(ctx, obj.GraphVars.EnvironmentID, obj.Name)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			status, err := r.Repo.StatusForFeature(ctx, obj.GraphVars.EnvironmentID, obj.Name)
+			f, err := r.Repo.FeatureByNameForEnv(ctx, obj.Name, obj.GraphVars.EnvironmentID)
 			if err != nil {
-				if errors.Is(err, pgx.ErrNoRows) {
-					f, err := r.Repo.FeatureByNameForEnv(ctx, obj.Name, obj.GraphVars.EnvironmentID)
-					if err != nil {
-						return nil, fmt.Errorf("feature %v not found: %v", obj.Name, err)
-					}
-					return &model.Status{
-						EnvironmentID: obj.GraphVars.EnvironmentID,
-						Feature:       obj.Name,
-						Version:       f.Version,
-						Status:        model.RolloutStatusUnknown,
-						Created:       time.Now(),
-						LastModified:  time.Now(),
-						Log:           "",
-					}, nil
-				}
-				return nil, err
+				return nil, fmt.Errorf("feature %v not found: %v", obj.Name, err)
 			}
-			return status, nil
+			return &model.Status{
+				EnvironmentID: obj.GraphVars.EnvironmentID,
+				Feature:       obj.Name,
+				Version:       f.Version,
+				Status:        model.RolloutStatusUnknown,
+				Created:       time.Now(),
+				LastModified:  time.Now(),
+				Log:           "",
+			}, nil
 		}
 		return nil, err
 	}
@@ -128,8 +113,8 @@ func (r *featureResolver) Status(ctx context.Context, obj *model.Feature) (*mode
 	}, nil
 }
 
-// History is the resolver for the history field.
-func (r *featureResolver) History(ctx context.Context, obj *model.Feature) ([]*model.FeatureHistory, error) {
+// Histories is the resolver for the histories field.
+func (r *featureResolver) Histories(ctx context.Context, obj *model.Feature) ([]*model.FeatureHistory, error) {
 	dis, err := r.Repo.DeployInstructionsForFeature(ctx, obj.GraphVars.EnvironmentID, obj.Name, 1)
 	if err != nil {
 		return nil, err
@@ -168,6 +153,22 @@ func (r *queryResolver) Feature(ctx context.Context, name string) (*model.Featur
 	}
 
 	return f, err
+}
+
+// History is the resolver for the history field.
+func (r *queryResolver) History(ctx context.Context, id uuid.UUID) (*model.FeatureHistory, error) {
+	di, err := r.Repo.DeployInstructionGet(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.FeatureHistory{
+		ID:           di.ID,
+		Version:      di.FeatureVersion,
+		Status:       di.Status,
+		Created:      di.Created,
+		LastModified: di.LastModified,
+	}, nil
 }
 
 // ConfigOverride returns graphgen.ConfigOverrideResolver implementation.

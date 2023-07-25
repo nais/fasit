@@ -2,8 +2,8 @@ package graph
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/99designs/gqlgen/graphql"
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/database/notifier"
@@ -57,7 +57,8 @@ func (r *Resolver) missingDependencies(ctx context.Context, featureName string, 
 	for _, missing := range f.Dependencies.FindMissing(enabledFeatures) {
 		mf, err := r.Repo.FeatureByNameForEnv(ctx, missing, envID)
 		if err != nil {
-			return nil, fmt.Errorf("getting feature by name: %v: %w", missing, err)
+			graphql.AddErrorf(ctx, "getting feature by name: %v: %w", missing, err)
+			continue
 		}
 		ret = append(ret, mf)
 	}

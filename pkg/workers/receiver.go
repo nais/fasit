@@ -21,6 +21,7 @@ type ReceiverClient interface {
 
 type ReceiverStore interface {
 	DeployInstructionGet(ctx context.Context, id uuid.UUID) (*model.DeployInstruction, error)
+	DeployInstructionsLatestForFeature(ctx context.Context, envID uuid.UUID, featureName string) (*model.DeployInstruction, error)
 	DeployInstructionUpdateStatus(ctx context.Context, id uuid.UUID, status model.RolloutStatus) error
 	EnvironmentByNames(ctx context.Context, tenantName, environmentName string) (*model.Environment, error)
 	EnvironmentCI(ctx context.Context, kind model.EnvironmentKind) (*model.Environment, error)
@@ -37,8 +38,6 @@ type ReceiverStore interface {
 	RolloutEventCreate(ctx context.Context, rollout uuid.UUID, failure bool, message string, data map[string]any) error
 	RolloutStatus(ctx context.Context, name string) (model.RolloutStatus, error)
 	RolloutsUpdateStatus(ctx context.Context, status model.RolloutStatus, name string, completed bool) error
-	StatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Helm) error
-	StatusForFeature(ctx context.Context, environmentID uuid.UUID, feature string) (*model.Status, error)
 	TenantCreate(ctx context.Context, t *model.TenantCreate) (*model.Tenant, error)
 	TenantGetByName(ctx context.Context, name string) (*model.Tenant, error)
 	TxFunc(ctx context.Context, fn database.TXFunc) error
@@ -135,10 +134,6 @@ func (r *Receiver) handlerHelm(ctx context.Context, msg message.Status) error {
 		if err := r.handleCI(ctx, env, di, helmStatus, msg.Tenant); err != nil {
 			r.log.WithError(err).Error("handling helm status message for CI environment")
 		}
-	}
-
-	if helmStatus.DIID == uuid.Nil {
-		return r.repo.StatusCreateOrUpdate(ctx, env.ID, helmStatus)
 	}
 
 	return r.repo.DeployInstructionUpdateStatus(ctx, helmStatus.DIID, helmStatus.RolloutStatus)
@@ -249,11 +244,11 @@ func (r *Receiver) last(ctx context.Context, curr model.EnvironmentKind, rollout
 		if err != nil {
 			return false, fmt.Errorf("getting CI environment for kind %v: %w", curr.String(), err)
 		}
-		s, err := r.repo.StatusForFeature(ctx, ciEnv.ID, rollout.Name)
+		s, err := r.repo.DeployInstructionsLatestForFeature(ctx, ciEnv.ID, rollout.Name)
 		if err != nil {
 			return false, fmt.Errorf("getting status for feature: %w", err)
 		}
-		if s.Version != rollout.Version {
+		if s.FeatureVersion != rollout.Version {
 			return false, nil
 		}
 	}
