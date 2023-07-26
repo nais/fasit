@@ -3,19 +3,20 @@
 WITH latest_di AS (
   SELECT DISTINCT ON (feature_name, environment_id)
     'feature_status' as "type",
-    environment_id,
+    di.environment_id,
     environment.tenant_id,
     feature_name,
     CASE WHEN fd.name IS NULL THEN '' ELSE fd.name END as feature_data_name,
     status
   FROM deploy_instructions di
   JOIN environments environment ON environment.id = di.environment_id
+  JOIN feature_states fs ON fs.environment_id = di.environment_id AND fs.feature = di.feature_name AND fs.enabled = true
   LEFT JOIN feature_data fd ON fd.name = di.feature_name AND fd.version = di.feature_version
   WHERE (
     environment.id = @environment_id
     OR environment.tenant_id = @tenant_id
   )
-  ORDER BY feature_name, environment_id, di.last_modified DESC
+  ORDER BY feature_name, di.environment_id, di.last_modified DESC
 )
 SELECT
   type,

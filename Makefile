@@ -1,5 +1,5 @@
 .PHONY: test integration-test local-with-auth local linux-build docker-build docker-push run-postgres-test stop-postgres-test install-sqlc
-SQLC_VERSION ?= "v1.19.0"
+SQLC_VERSION ?= "v1.19.1"
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -12,6 +12,9 @@ install-sqlc:
 	@if [ "$(shell sqlc version)" != "$(SQLC_VERSION)" ]; then \
 		echo "Installing sqlc $(SQLC_VERSION)"; \
 		go install github.com/kyleconroy/sqlc/cmd/sqlc@$(SQLC_VERSION); \
+		if command -v asdf > /dev/null; then\
+			asdf reshim golang;\
+		fi;\
 	else \
 		echo "sqlc $(SQLC_VERSION) already installed"; \
 	fi

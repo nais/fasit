@@ -11,5 +11,14 @@ packages:
     overrides:
       - db_type: "uuid"
         go_type: "github.com/google/uuid.UUID"
+    rules:
+      - always-order-by
     # Might want this for v1.11
     # emit_result_struct_pointers: true
+
+rules:
+  - name: always-order-by
+    rule: |
+      query.cmd == ":exec"
+    message: |
+      SELECT statements must have an ORDER BY clause
