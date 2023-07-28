@@ -697,6 +697,32 @@ func (_m *Querier) EnvironmentValueStore(ctx context.Context, arg gensql.Environ
 	return r0
 }
 
+// EnvironmentValuesAcrossEnvs provides a mock function with given fields: ctx, key
+func (_m *Querier) EnvironmentValuesAcrossEnvs(ctx context.Context, key string) ([]gensql.EnvironmentValuesAcrossEnvsRow, error) {
+	ret := _m.Called(ctx, key)
+
+	var r0 []gensql.EnvironmentValuesAcrossEnvsRow
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]gensql.EnvironmentValuesAcrossEnvsRow, error)); ok {
+		return rf(ctx, key)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) []gensql.EnvironmentValuesAcrossEnvsRow); ok {
+		r0 = rf(ctx, key)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gensql.EnvironmentValuesAcrossEnvsRow)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, key)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // EnvironmentValuesForEnvironment provides a mock function with given fields: ctx, arg
 func (_m *Querier) EnvironmentValuesForEnvironment(ctx context.Context, arg gensql.EnvironmentValuesForEnvironmentParams) ([]gensql.EnvironmentValuesForEnvironmentRow, error) {
 	ret := _m.Called(ctx, arg)

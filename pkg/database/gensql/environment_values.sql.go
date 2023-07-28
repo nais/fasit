@@ -67,6 +67,60 @@ func (q *Queries) EnvironmentValueStore(ctx context.Context, arg EnvironmentValu
 	return err
 }
 
+const environmentValuesAcrossEnvs = `-- name: EnvironmentValuesAcrossEnvs :many
+SELECT
+  ev.environment_id,
+  ev.key,
+  ev.secret,
+  ev.value,
+  t.id AS tenant_id,
+  t.name AS tenant_name,
+  e.name AS environment_name
+FROM environment_values ev
+JOIN environments e ON e.id = ev.environment_id
+JOIN tenants t ON t.id = e.tenant_id
+WHERE ev.key = $1
+ORDER BY e.name ASC
+`
+
+type EnvironmentValuesAcrossEnvsRow struct {
+	EnvironmentID   uuid.UUID
+	Key             string
+	Secret          bool
+	Value           []byte
+	TenantID        uuid.UUID
+	TenantName      string
+	EnvironmentName string
+}
+
+func (q *Queries) EnvironmentValuesAcrossEnvs(ctx context.Context, key string) ([]EnvironmentValuesAcrossEnvsRow, error) {
+	rows, err := q.db.Query(ctx, environmentValuesAcrossEnvs, key)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []EnvironmentValuesAcrossEnvsRow{}
+	for rows.Next() {
+		var i EnvironmentValuesAcrossEnvsRow
+		if err := rows.Scan(
+			&i.EnvironmentID,
+			&i.Key,
+			&i.Secret,
+			&i.Value,
+			&i.TenantID,
+			&i.TenantName,
+			&i.EnvironmentName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const environmentValuesForEnvironment = `-- name: EnvironmentValuesForEnvironment :many
 SELECT
 "environment_id",

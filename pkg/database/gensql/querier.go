@@ -40,6 +40,7 @@ type Querier interface {
 	EnvironmentUpdate(ctx context.Context, arg EnvironmentUpdateParams) (Environment, error)
 	EnvironmentValueGet(ctx context.Context, arg EnvironmentValueGetParams) (EnvironmentValueGetRow, error)
 	EnvironmentValueStore(ctx context.Context, arg EnvironmentValueStoreParams) error
+	EnvironmentValuesAcrossEnvs(ctx context.Context, key string) ([]EnvironmentValuesAcrossEnvsRow, error)
 	EnvironmentValuesForEnvironment(ctx context.Context, arg EnvironmentValuesForEnvironmentParams) ([]EnvironmentValuesForEnvironmentRow, error)
 	EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]Environment, error)
 	FeatureByName(ctx context.Context, name string) (FeatureByNameRow, error)

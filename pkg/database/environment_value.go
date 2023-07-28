@@ -18,6 +18,8 @@ type EnvironmentValueRepo interface {
 	EnvironmentValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) ([]*model.EnvironmentValue, error)
 	EnvironmentValueStore(ctx context.Context, environmentID uuid.UUID, key string, value json.RawMessage, secret bool) error
 	MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) (*feature.ComputedValues, model.EnvironmentKind, error)
+
+	EnvironmentValuesAcrossEnvs(ctx context.Context, key string) ([]gensql.EnvironmentValuesAcrossEnvsRow, error)
 }
 
 func (r *repo) EnvironmentValueStore(ctx context.Context, environmentID uuid.UUID, key string, value json.RawMessage, secret bool) error {
@@ -123,4 +125,8 @@ func (r *repo) MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID,
 	}
 
 	return mv, model.EnvironmentKind(env.Kind), nil
+}
+
+func (r *repo) EnvironmentValuesAcrossEnvs(ctx context.Context, key string) ([]gensql.EnvironmentValuesAcrossEnvsRow, error) {
+	return r.querier.EnvironmentValuesAcrossEnvs(ctx, key)
 }

@@ -8,7 +8,6 @@ package protogen
 
 import (
 	context "context"
-
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -29,6 +28,7 @@ type ProviderClient interface {
 	GetEnvironment(ctx context.Context, in *GetEnvironmentRequest, opts ...grpc.CallOption) (*EnvironmentResponse, error)
 	CreateOrUpdateEnvironmentValue(ctx context.Context, in *CreateOrUpdateEnvironmentValueRequest, opts ...grpc.CallOption) (*CreateOrUpdateEnvironmentValueResponse, error)
 	GetEnvironmentValue(ctx context.Context, in *GetEnvironmentValueRequest, opts ...grpc.CallOption) (*EnvironmentValueResponse, error)
+	GetEnvironmentValuesAcrossEnvs(ctx context.Context, in *GetEnvironmentValuesAcrossEnvsRequest, opts ...grpc.CallOption) (*EnvironmentValuesAcrossEnvsResponse, error)
 }
 
 type providerClient struct {
@@ -93,6 +93,15 @@ func (c *providerClient) GetEnvironmentValue(ctx context.Context, in *GetEnviron
 	return out, nil
 }
 
+func (c *providerClient) GetEnvironmentValuesAcrossEnvs(ctx context.Context, in *GetEnvironmentValuesAcrossEnvsRequest, opts ...grpc.CallOption) (*EnvironmentValuesAcrossEnvsResponse, error) {
+	out := new(EnvironmentValuesAcrossEnvsResponse)
+	err := c.cc.Invoke(ctx, "/Provider/GetEnvironmentValuesAcrossEnvs", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ProviderServer is the server API for Provider service.
 // All implementations must embed UnimplementedProviderServer
 // for forward compatibility
@@ -103,6 +112,7 @@ type ProviderServer interface {
 	GetEnvironment(context.Context, *GetEnvironmentRequest) (*EnvironmentResponse, error)
 	CreateOrUpdateEnvironmentValue(context.Context, *CreateOrUpdateEnvironmentValueRequest) (*CreateOrUpdateEnvironmentValueResponse, error)
 	GetEnvironmentValue(context.Context, *GetEnvironmentValueRequest) (*EnvironmentValueResponse, error)
+	GetEnvironmentValuesAcrossEnvs(context.Context, *GetEnvironmentValuesAcrossEnvsRequest) (*EnvironmentValuesAcrossEnvsResponse, error)
 	mustEmbedUnimplementedProviderServer()
 }
 
@@ -127,6 +137,9 @@ func (UnimplementedProviderServer) CreateOrUpdateEnvironmentValue(context.Contex
 }
 func (UnimplementedProviderServer) GetEnvironmentValue(context.Context, *GetEnvironmentValueRequest) (*EnvironmentValueResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetEnvironmentValue not implemented")
+}
+func (UnimplementedProviderServer) GetEnvironmentValuesAcrossEnvs(context.Context, *GetEnvironmentValuesAcrossEnvsRequest) (*EnvironmentValuesAcrossEnvsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetEnvironmentValuesAcrossEnvs not implemented")
 }
 func (UnimplementedProviderServer) mustEmbedUnimplementedProviderServer() {}
 
@@ -249,6 +262,24 @@ func _Provider_GetEnvironmentValue_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Provider_GetEnvironmentValuesAcrossEnvs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetEnvironmentValuesAcrossEnvsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProviderServer).GetEnvironmentValuesAcrossEnvs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Provider/GetEnvironmentValuesAcrossEnvs",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProviderServer).GetEnvironmentValuesAcrossEnvs(ctx, req.(*GetEnvironmentValuesAcrossEnvsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Provider_ServiceDesc is the grpc.ServiceDesc for Provider service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -279,6 +310,10 @@ var Provider_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetEnvironmentValue",
 			Handler:    _Provider_GetEnvironmentValue_Handler,
+		},
+		{
+			MethodName: "GetEnvironmentValuesAcrossEnvs",
+			Handler:    _Provider_GetEnvironmentValuesAcrossEnvs_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

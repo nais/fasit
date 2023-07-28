@@ -140,12 +140,50 @@ func (s *Server) GetEnvironmentValue(ctx context.Context, in *protogen.GetEnviro
 		return nil, status.Error(codes.NotFound, "Environment not found")
 	}
 
+	env, err := s.repo.EnvironmentGet(ctx, envID)
+	if err != nil {
+		return nil, status.Error(codes.NotFound, "Environment not found")
+	}
+
+	tenant, err := s.repo.TenantGet(ctx, env.TenantID)
+	if err != nil {
+		return nil, status.Error(codes.NotFound, "Tenant not found")
+	}
+
 	return &protogen.EnvironmentValueResponse{
-		EnvironmentId: envID.String(),
-		Key:           ev.Key,
-		Value:         ev.Value,
-		Secret:        ev.Secret,
+		EnvironmentId:   envID.String(),
+		Key:             ev.Key,
+		Value:           ev.Value,
+		Secret:          ev.Secret,
+		TenantId:        tenant.ID.String(),
+		TenantName:      tenant.Name,
+		EnvironmentName: env.Name,
 	}, nil
+}
+
+func (s *Server) GetEnvironmentValuesAcrossEnvs(ctx context.Context, input *protogen.GetEnvironmentValuesAcrossEnvsRequest) (*protogen.EnvironmentValuesAcrossEnvsResponse, error) {
+	es, err := s.repo.EnvironmentValuesAcrossEnvs(ctx, input.GetKey())
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	ret := &protogen.EnvironmentValuesAcrossEnvsResponse{
+		Values: make([]*protogen.EnvironmentValueResponse, len(es)),
+	}
+
+	for i, e := range es {
+		ret.Values[i] = &protogen.EnvironmentValueResponse{
+			EnvironmentId:   e.EnvironmentID.String(),
+			Key:             e.Key,
+			Value:           e.Value,
+			Secret:          e.Secret,
+			TenantId:        e.TenantID.String(),
+			TenantName:      e.TenantName,
+			EnvironmentName: e.EnvironmentName,
+		}
+	}
+
+	return ret, nil
 }
 
 func toEnvironmentKind(kind protogen.EnvironmentKind) (model.EnvironmentKind, error) {
