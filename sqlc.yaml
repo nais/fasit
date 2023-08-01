@@ -19,6 +19,6 @@ packages:
 rules:
   - name: always-order-by
     rule: |
-      query.cmd == ":exec"
+      query.cmd == "many" && !query.sql.contains("ORDER BY")
     message: |
       SELECT statements must have an ORDER BY clause

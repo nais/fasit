@@ -1,7 +1,8 @@
 -- name: ConfigGet :many
 SELECT *
 FROM ONLY configurations_global
-WHERE feature = @feature;
+WHERE feature = @feature
+ORDER BY key ASC;
 
 -- name: ConfigEnvUpdateOrCreate :one
 INSERT INTO configurations_environment
@@ -28,7 +29,8 @@ RETURNING *;
 -- name: ConfigGetForEnv :many
 SELECT *
 FROM configurations_environment
-WHERE feature = @feature AND environment_id = @environment_id;
+WHERE feature = @feature AND environment_id = @environment_id
+ORDER BY key ASC;
 
 -- name: EnvConfig :many
 WITH "combined" AS (
@@ -70,7 +72,9 @@ WHERE id = @id;
 SELECT environment_id, array_agg(key)::text[] AS keys
 FROM configurations_environment
 WHERE feature = @feature
-GROUP BY environment_id;
+GROUP BY environment_id
+ORDER BY environment_id ASC
+;
 
 -- name: ConfigGetByID :one
 SELECT *

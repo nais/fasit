@@ -28,6 +28,7 @@ JOIN feature_data fd ON fd.name = f.name AND fd.version = f.version
 LEFT JOIN feature_states fs
 ON fs.feature = f.name AND fs.environment_id = @environment_id
 WHERE (SELECT kind FROM env) = any(fd.kinds)
+ORDER BY f.name ASC
 ;
 
 -- name: FeatureStatesGetOld :many
@@ -35,6 +36,7 @@ SELECT *
 FROM feature_states
 LEFT JOIN features ON features.name = feature_states.feature
 WHERE environment_id = @environment_id AND features.name IS NULL
+ORDER BY feature ASC
 ;
 
 -- name: RolloutStatesGet :many
@@ -44,6 +46,7 @@ JOIN feature_data fd ON fd.name = r.feature_name AND fd.version = r.version
 LEFT JOIN feature_states fs
 ON fs.feature = r.feature_name AND fs.environment_id = @environment_id
 WHERE (SELECT kind FROM environments WHERE id = @environment_id) = any(fd.kinds)
+ORDER BY r.feature_name ASC
 ;
 
 -- name: FeatureStateGet :one

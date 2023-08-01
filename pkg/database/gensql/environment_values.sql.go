@@ -191,6 +191,7 @@ FROM environments
 LEFT JOIN mappings ON mappings.environment_id = environments.id
 WHERE environments.tenant_id = $1
 GROUP BY "id", "name", "kind"
+ORDER BY "name" ASC
 `
 
 type MappingValuesForTenantParams struct {

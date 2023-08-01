@@ -71,6 +71,7 @@ func (q *Queries) ReleaseStatusDeleteByEnvironment(ctx context.Context, environm
 const releaseStatusesGet = `-- name: ReleaseStatusesGet :many
 SELECT environment_id, feature, version, status, revision, last_deployed, created, last_modified FROM release_statuses
 WHERE environment_id = $1
+ORDER BY last_deployed DESC
 `
 
 func (q *Queries) ReleaseStatusesGet(ctx context.Context, environmentID uuid.UUID) ([]ReleaseStatus, error) {

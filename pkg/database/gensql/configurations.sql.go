@@ -70,6 +70,7 @@ const configGet = `-- name: ConfigGet :many
 SELECT id, feature, key, value, description, secret, created
 FROM ONLY configurations_global
 WHERE feature = $1
+ORDER BY key ASC
 `
 
 func (q *Queries) ConfigGet(ctx context.Context, feature string) ([]ConfigurationsGlobal, error) {
@@ -125,6 +126,7 @@ const configGetForEnv = `-- name: ConfigGetForEnv :many
 SELECT id, feature, key, value, description, secret, created, environment_id
 FROM configurations_environment
 WHERE feature = $1 AND environment_id = $2
+ORDER BY key ASC
 `
 
 type ConfigGetForEnvParams struct {
@@ -207,6 +209,7 @@ SELECT environment_id, array_agg(key)::text[] AS keys
 FROM configurations_environment
 WHERE feature = $1
 GROUP BY environment_id
+ORDER BY environment_id ASC
 `
 
 type ConfigOverridesByFeatureRow struct {

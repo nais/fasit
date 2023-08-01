@@ -43,6 +43,7 @@ FROM environments
 LEFT JOIN mappings ON mappings.environment_id = environments.id
 WHERE environments.tenant_id = @tenantID
 GROUP BY "id", "name", "kind"
+ORDER BY "name" ASC
 ;
 
 -- name: EnvironmentValuesAcrossEnvs :many

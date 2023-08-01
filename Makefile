@@ -19,7 +19,7 @@ install-sqlc:
 		echo "sqlc $(SQLC_VERSION) already installed"; \
 	fi
 
-generate-sql: install-sqlc
+generate-sql: install-sqlc sqlc-vet
 	$(GOBIN)/sqlc generate
 	$(MAKE) mocks
 
@@ -63,11 +63,14 @@ local-naisd-failing:
 	--log-level=debug \
 	--mock-failing=true
 
-test:
+test: sqlc-vet
 	go test -cover ./...
 
-integration-test:
+integration-test: sqlc-vet
 	go test -tags integration_test -cover ./...
+
+sqlc-vet:
+	$(GOBIN)/sqlc vet
 
 mocks:
 	mockery --case underscore --name Repo --dir pkg/database/ --outpkg mocks --output pkg/database/mocks

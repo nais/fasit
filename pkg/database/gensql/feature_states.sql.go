@@ -105,6 +105,7 @@ JOIN feature_data fd ON fd.name = f.name AND fd.version = f.version
 LEFT JOIN feature_states fs
 ON fs.feature = f.name AND fs.environment_id = $1
 WHERE (SELECT kind FROM env) = any(fd.kinds)
+ORDER BY f.name ASC
 `
 
 type FeatureStatesGetRow struct {
@@ -148,6 +149,7 @@ SELECT environment_id, feature, enabled, feature_states.created, feature_states.
 FROM feature_states
 LEFT JOIN features ON features.name = feature_states.feature
 WHERE environment_id = $1 AND features.name IS NULL
+ORDER BY feature ASC
 `
 
 type FeatureStatesGetOldRow struct {
@@ -201,6 +203,7 @@ JOIN feature_data fd ON fd.name = r.feature_name AND fd.version = r.version
 LEFT JOIN feature_states fs
 ON fs.feature = r.feature_name AND fs.environment_id = $1
 WHERE (SELECT kind FROM environments WHERE id = $1) = any(fd.kinds)
+ORDER BY r.feature_name ASC
 `
 
 type RolloutStatesGetRow struct {

@@ -106,6 +106,7 @@ func (q *Queries) KubernetesNodeDeleteObsolete(ctx context.Context, environmentI
 const kubernetesNodeStatuses = `-- name: KubernetesNodeStatuses :many
 SELECT environment_id, name, kernel_version, os_image, container_runtime_version, kubelet_version, kube_proxy_version, operating_system, architecture, conditions, allocatable, capacity, created, last_modified, internal_ip FROM kubernetes_node_statuses
 WHERE environment_id = $1
+ORDER BY name ASC
 `
 
 func (q *Queries) KubernetesNodeStatuses(ctx context.Context, environmentID uuid.UUID) ([]KubernetesNodeStatus, error) {
