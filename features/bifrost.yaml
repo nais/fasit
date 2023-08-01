@@ -1,6 +1,6 @@
 chart: oci://europe-north1-docker.pkg.dev/nais-io/nais/bifrost
 source: https://github.com/nais/bifrost/tree/main/charts/bifrost
-version: 1.5.6
+version: 1.6.0
 description: "Portal for managing Frontend Platform resources"
 environmentKinds:
   - "management"
@@ -62,6 +62,12 @@ mapping:
   backend.unleash.apiIngressClass:
     value: "nais-ingress"
     displayName: "Api Ingress Class"
+  backend.unleash.teamsApiToken:
+    value: '{{ .Management.unleash_teams_api_key }}'
+    displayName: "Teams API key for Unleash instances"
+  backend.teams.apiToken:
+    value: '{{ .Management.bifrost_teams_api_key }}'
+    displayName: "Teams API key for Bifrost backend"
   networkPolicy.enabled:
     template: '{{ne .Kind "onprem"}}'
   networkPolicy.allowDNS:
