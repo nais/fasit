@@ -79,6 +79,11 @@ jobs:
             ${{ steps.go-cache.outputs.gomodcache }}
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
 
+      - name: Init commands
+        run: |
+          go mod download
+          make install-sqlc
+
       - name: Check generated code
         run: |
           make generate-feature-schema > /dev/null
@@ -86,7 +91,7 @@ jobs:
           make generate-proto > /dev/null
           make generate-sql > /dev/null
 
-          git diff --exit-code --name-only
+          git diff --exit-code --name-only && echo "All files are up to date"
 
   build_and_push_fasit:
     if: github.ref == 'refs/heads/main'
