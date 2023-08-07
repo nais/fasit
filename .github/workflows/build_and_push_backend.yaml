@@ -81,10 +81,10 @@ jobs:
 
       - name: Check generated code
         run: |
-          make generate-feature-schema
-          make generate-graphql
-          make generate-proto
-          make generate-sql
+          make generate-feature-schema > /dev/null
+          make generate-graphql > /dev/null
+          make generate-proto > /dev/null
+          make generate-sql > /dev/null
 
           git diff --exit-code --name-only
 

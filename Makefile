@@ -25,6 +25,7 @@ generate-sql: install-sqlc sqlc-vet
 
 generate-graphql:
 	go run github.com/99designs/gqlgen generate
+	go run mvdan.cc/gofumpt@latest -w .
 
 setup:
 	go run cmd/setup_local_env/main.go
