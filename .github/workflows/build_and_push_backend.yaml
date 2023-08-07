@@ -1,7 +1,7 @@
 name: Build and deploy fasit
 on:
   push:
-    branches-ignore: [dependabot/**]
+    branches: [main]
     paths-ignore:
       - "charts/**"
       - ".github/workflows/*_chart.yaml"
@@ -39,9 +39,63 @@ jobs:
           go install golang.org/x/vuln/cmd/govulncheck@latest
           govulncheck ./...
 
+  generated_code:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install asdf
+        uses: asdf-vm/actions/setup@v2
+
+      - name: asdf cache
+        id: asdf-cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.asdf/
+          key: ${{ runner.os }}-asdf-${{ hashFiles('**/.tool-versions') }}
+
+      - name: Install CD tools from .tool-versions
+        if: steps.asdf-cache.outputs.cache-hit != 'true'
+        uses: asdf-vm/actions/install@v2
+        with:
+          # Go is a dependency on two of the tools, so we install it first.
+          before_install: |
+            asdf install golang latest
+            asdf global golang latest
+
+      - name: Find go cache dir
+        id: go-cache
+        run: |
+          # Clear cache dirs to avoid error when restoring
+          go clean -cache -modcache
+          echo "gocache=$(go env GOCACHE)" >> $GITHUB_OUTPUT
+          echo "gomodcache=$(go env GOMODCACHE)" >> $GITHUB_OUTPUT
+
+      - name: Cache go modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ${{ steps.go-cache.outputs.gocache }}
+            ${{ steps.go-cache.outputs.gomodcache }}
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+
+      - name: Init commands
+        run: |
+          go mod download
+          make install-sqlc
+
+      - name: Check generated code
+        run: |
+          make generate-feature-schema > /dev/null
+          make generate-graphql > /dev/null
+          make generate-proto > /dev/null
+          make generate-sql > /dev/null
+
+          git diff --exit-code --name-only && echo "All files are up to date"
+
   build_and_push_fasit:
     if: github.ref == 'refs/heads/main'
-    needs: [tests]
+    needs: [tests, generated_code]
     permissions:
       contents: "read"
       id-token: "write"
@@ -70,7 +124,7 @@ jobs:
 
   build_and_push_naisd:
     if: github.ref == 'refs/heads/main'
-    needs: [tests]
+    needs: [tests, generated_code]
     permissions:
       contents: "read"
       id-token: "write"
