@@ -74,6 +74,7 @@ func (r *repo) FeatureByName(ctx context.Context, name string) (*model.Feature, 
 		Source:      f.Source,
 		FeatureYAML: fyaml,
 		ValuesYAML:  defaultValues,
+		SpecVersion: "v2",
 	}, nil
 }
 
@@ -98,6 +99,7 @@ func (r *repo) Features(ctx context.Context) ([]*model.Feature, error) {
 			Source:      f.Source,
 			FeatureYAML: fyaml,
 			ValuesYAML:  defaultValues,
+			SpecVersion: "v2",
 		}
 		ret = append(ret, feature)
 	}
@@ -272,6 +274,7 @@ func featuresFromSQL(features []gensql.FeaturesForKindRow) ([]*model.Feature, er
 			Source:      f.Source,
 			FeatureYAML: fyaml,
 			ValuesYAML:  defaultValues,
+			SpecVersion: "v2",
 		}
 		ret = append(ret, feature)
 	}

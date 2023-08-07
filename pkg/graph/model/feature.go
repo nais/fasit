@@ -29,6 +29,9 @@ type Feature struct {
 	Source      string                     `json:"source"`
 	ValuesYAML  map[string]json.RawMessage `json:"-"`
 
+	// SpecVersion is used to determine which version of the feature spec is used.
+	SpecVersion string `json:"specVersion"`
+
 	// for graphql
 	GraphVars struct {
 		EnvironmentID uuid.UUID

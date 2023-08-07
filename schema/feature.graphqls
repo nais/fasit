@@ -26,6 +26,7 @@ type Feature {
   environmentKinds: [EnvironmentKind!]!
   configoverrides: [ConfigOverride!]!
   configuration: Configurations!
+  specVersion: String!
 
   state: FeatureState
   status: Status

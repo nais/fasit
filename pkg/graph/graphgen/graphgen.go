@@ -144,6 +144,7 @@ type ComplexityRoot struct {
 		Histories        func(childComplexity int) int
 		Name             func(childComplexity int) int
 		Source           func(childComplexity int) int
+		SpecVersion      func(childComplexity int) int
 		State            func(childComplexity int) int
 		Status           func(childComplexity int) int
 		Version          func(childComplexity int) int
@@ -347,6 +348,7 @@ type FeatureResolver interface {
 
 	Configoverrides(ctx context.Context, obj *model.Feature) ([]*model.ConfigOverride, error)
 	Configuration(ctx context.Context, obj *model.Feature) (*model.Configurations, error)
+
 	State(ctx context.Context, obj *model.Feature) (*model.FeatureState, error)
 	Status(ctx context.Context, obj *model.Feature) (*model.Status, error)
 	Histories(ctx context.Context, obj *model.Feature) ([]*model.FeatureHistory, error)
@@ -794,6 +796,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Feature.Source(childComplexity), true
+
+	case "Feature.specVersion":
+		if e.complexity.Feature.SpecVersion == nil {
+			break
+		}
+
+		return e.complexity.Feature.SpecVersion(childComplexity), true
 
 	case "Feature.state":
 		if e.complexity.Feature.State == nil {
@@ -1997,6 +2006,7 @@ type Feature {
   environmentKinds: [EnvironmentKind!]!
   configoverrides: [ConfigOverride!]!
   configuration: Configurations!
+  specVersion: String!
 
   state: FeatureState
   status: Status
@@ -4569,6 +4579,8 @@ func (ec *executionContext) fieldContext_Environment_features(ctx context.Contex
 				return ec.fieldContext_Feature_configoverrides(ctx, field)
 			case "configuration":
 				return ec.fieldContext_Feature_configuration(ctx, field)
+			case "specVersion":
+				return ec.fieldContext_Feature_specVersion(ctx, field)
 			case "state":
 				return ec.fieldContext_Feature_state(ctx, field)
 			case "status":
@@ -4641,6 +4653,8 @@ func (ec *executionContext) fieldContext_Environment_feature(ctx context.Context
 				return ec.fieldContext_Feature_configoverrides(ctx, field)
 			case "configuration":
 				return ec.fieldContext_Feature_configuration(ctx, field)
+			case "specVersion":
+				return ec.fieldContext_Feature_specVersion(ctx, field)
 			case "state":
 				return ec.fieldContext_Feature_state(ctx, field)
 			case "status":
@@ -5255,6 +5269,50 @@ func (ec *executionContext) fieldContext_Feature_configuration(ctx context.Conte
 	return fc, nil
 }
 
+func (ec *executionContext) _Feature_specVersion(ctx context.Context, field graphql.CollectedField, obj *model.Feature) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Feature_specVersion(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SpecVersion, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Feature_specVersion(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Feature",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Feature_state(ctx context.Context, field graphql.CollectedField, obj *model.Feature) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Feature_state(ctx, field)
 	if err != nil {
@@ -5802,6 +5860,8 @@ func (ec *executionContext) fieldContext_FeatureState_feature(ctx context.Contex
 				return ec.fieldContext_Feature_configoverrides(ctx, field)
 			case "configuration":
 				return ec.fieldContext_Feature_configuration(ctx, field)
+			case "specVersion":
+				return ec.fieldContext_Feature_specVersion(ctx, field)
 			case "state":
 				return ec.fieldContext_Feature_state(ctx, field)
 			case "status":
@@ -6000,6 +6060,8 @@ func (ec *executionContext) fieldContext_FeatureState_missingDependencies(ctx co
 				return ec.fieldContext_Feature_configoverrides(ctx, field)
 			case "configuration":
 				return ec.fieldContext_Feature_configuration(ctx, field)
+			case "specVersion":
+				return ec.fieldContext_Feature_specVersion(ctx, field)
 			case "state":
 				return ec.fieldContext_Feature_state(ctx, field)
 			case "status":
@@ -6166,6 +6228,8 @@ func (ec *executionContext) fieldContext_FeatureWarning_feature(ctx context.Cont
 				return ec.fieldContext_Feature_configoverrides(ctx, field)
 			case "configuration":
 				return ec.fieldContext_Feature_configuration(ctx, field)
+			case "specVersion":
+				return ec.fieldContext_Feature_specVersion(ctx, field)
 			case "state":
 				return ec.fieldContext_Feature_state(ctx, field)
 			case "status":
@@ -8560,6 +8624,8 @@ func (ec *executionContext) fieldContext_Query_features(ctx context.Context, fie
 				return ec.fieldContext_Feature_configoverrides(ctx, field)
 			case "configuration":
 				return ec.fieldContext_Feature_configuration(ctx, field)
+			case "specVersion":
+				return ec.fieldContext_Feature_specVersion(ctx, field)
 			case "state":
 				return ec.fieldContext_Feature_state(ctx, field)
 			case "status":
@@ -8632,6 +8698,8 @@ func (ec *executionContext) fieldContext_Query_feature(ctx context.Context, fiel
 				return ec.fieldContext_Feature_configoverrides(ctx, field)
 			case "configuration":
 				return ec.fieldContext_Feature_configuration(ctx, field)
+			case "specVersion":
+				return ec.fieldContext_Feature_specVersion(ctx, field)
 			case "state":
 				return ec.fieldContext_Feature_state(ctx, field)
 			case "status":
@@ -9281,6 +9349,8 @@ func (ec *executionContext) fieldContext_Release_feature(ctx context.Context, fi
 				return ec.fieldContext_Feature_configoverrides(ctx, field)
 			case "configuration":
 				return ec.fieldContext_Feature_configuration(ctx, field)
+			case "specVersion":
+				return ec.fieldContext_Feature_specVersion(ctx, field)
 			case "state":
 				return ec.fieldContext_Feature_state(ctx, field)
 			case "status":
@@ -14518,6 +14588,11 @@ func (ec *executionContext) _Feature(ctx context.Context, sel ast.SelectionSet, 
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "specVersion":
+			out.Values[i] = ec._Feature_specVersion(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		case "state":
 			field := field
 

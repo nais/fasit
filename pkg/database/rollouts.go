@@ -110,6 +110,7 @@ func (r *repo) RolloutByName(ctx context.Context, name string) (*model.Feature, 
 		Source:      f.Source,
 		FeatureYAML: fyaml,
 		ValuesYAML:  defaultValues,
+		SpecVersion: "v2",
 		GraphVars: struct {
 			EnvironmentID uuid.UUID
 			RolloutID     uuid.UUID
