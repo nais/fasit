@@ -39,7 +39,7 @@ require (
 	go.uber.org/automaxprocs v1.5.2
 	golang.org/x/sync v0.3.0
 	google.golang.org/api v0.134.0
-	google.golang.org/grpc v1.56.2
+	google.golang.org/grpc v1.57.0
 	google.golang.org/protobuf v1.31.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
