@@ -1,7 +1,7 @@
 name: Build and deploy fasit
 on:
   push:
-    branches-ignore: [dependabot/**]
+    branches: [main]
     paths-ignore:
       - "charts/**"
       - ".github/workflows/*_chart.yaml"
@@ -38,6 +38,42 @@ jobs:
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@latest
           govulncheck ./...
+
+  generated-code:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Find Go version
+        id: go_version
+        run: |
+          echo "GO_VERSION=$(grep golang .tool-versions | awk '{print $2}')" >> $GITHUB_OUTPUT
+      - uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # ratchet:actions/setup-go@v4
+        with:
+          go-version: ${{ steps.go_version.outputs.GO_VERSION }}
+
+      - name: Install asdf
+        uses: asdf-vm/actions/setup@v2
+
+      - name: asdf cache
+        id: asdf-cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.asdf/
+          key: ${{ runner.os }}-asdf-${{ hashFiles('**/.tool-versions') }}
+
+      - name: Install CD tools from .tool-versions
+        if: steps.asdf-cache.outputs.cache-hit != 'true'
+        uses: asdf-vm/actions/install@v2
+
+      - name: Check generated code
+        run: |
+          make generate-feature-schema
+          make generate-graphql
+          make generate-proto
+          make generate-sql
+
+          git diff --exit-code --name-only
 
   build_and_push_fasit:
     if: github.ref == 'refs/heads/main'
