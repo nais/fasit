@@ -22,7 +22,7 @@ require (
 	github.com/jackc/pgx/v5 v5.4.3
 	github.com/lib/pq v1.10.9
 	github.com/ory/dockertest/v3 v3.10.0
-	github.com/pressly/goose/v3 v3.14.0
+	github.com/pressly/goose/v3 v3.11.1
 	github.com/prometheus/client_golang v1.16.0
 	github.com/ravilushqa/otelgqlgen v0.13.1
 	github.com/rs/cors v1.9.0
@@ -43,7 +43,7 @@ require (
 	google.golang.org/protobuf v1.31.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
-	helm.sh/helm/v3 v3.12.2
+	helm.sh/helm/v3 v3.12.0
 	k8s.io/api v0.27.4
 	k8s.io/apimachinery v0.27.4
 	k8s.io/client-go v0.27.4
@@ -76,8 +76,8 @@ require (
 	github.com/cyphar/filepath-securejoin v0.2.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/cli v24.0.2+incompatible // indirect
-	github.com/docker/distribution v2.8.2+incompatible // indirect
-	github.com/docker/docker v24.0.2+incompatible // indirect
+	github.com/docker/distribution v2.8.1+incompatible // indirect
+	github.com/docker/docker v23.0.3+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.7.0 // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-metrics v0.0.1 // indirect
@@ -208,7 +208,3 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
-
-replace github.com/hashicorp/terraform-provider-google-beta => github.com/GoogleCloudPlatform/k8s-config-connector/third_party/github.com/hashicorp/terraform-provider-google-beta v0.0.0-20221206183754-68062425bd5f
-
-replace oras.land/oras-go => oras.land/oras-go v1.2.3
