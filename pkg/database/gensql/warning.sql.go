@@ -24,7 +24,7 @@ WITH latest_di AS (
   FROM deploy_instructions di
   JOIN environments environment ON environment.id = di.environment_id
   JOIN feature_states fs ON fs.environment_id = di.environment_id AND fs.feature = di.feature_name AND fs.enabled = true
-  LEFT JOIN feature_data fd ON fd.name = di.feature_name AND fd.version = di.feature_version
+  LEFT JOIN features fd ON fd.name = di.feature_name AND fd.version = di.feature_version
   WHERE (
     environment.id = $1
     OR environment.tenant_id = $2

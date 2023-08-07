@@ -18,9 +18,3 @@ updates:
       interval: "monthly"
     reviewers:
       - "@nais/core-dependabot-reviewers"
-  - package-ecosystem: "npm"
-    directory: "/frontend"
-    schedule:
-      interval: "monthly"
-    reviewers:
-      - "@nais/core-dependabot-reviewers"

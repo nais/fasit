@@ -14,7 +14,7 @@ RETURNING *;
 -- name: ReleaseStatusesGet :many
 SELECT * FROM release_statuses
 WHERE environment_id = @environment_ID
-ORDER BY last_deployed DESC
+ORDER BY feature ASC
 ;
 
 -- name: ReleaseStatusDeleteByEnvironment :exec
