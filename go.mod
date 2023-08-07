@@ -7,7 +7,7 @@ require (
 	cloud.google.com/go/pubsub v1.33.0
 	cloud.google.com/go/storage v1.31.0
 	github.com/99designs/gqlgen v0.17.36
-	github.com/GoogleCloudPlatform/cloudsql-proxy v1.33.7
+	github.com/GoogleCloudPlatform/cloudsql-proxy v1.33.9
 	github.com/GoogleCloudPlatform/k8s-config-connector v1.107.0
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/coreos/go-oidc/v3 v3.6.0
