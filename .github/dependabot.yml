@@ -18,3 +18,8 @@ updates:
       interval: "monthly"
     reviewers:
       - "@nais/core-dependabot-reviewers"
+    groups:
+      gomod:
+        patterns:
+          - "k8s.io*"
+          - "*"
