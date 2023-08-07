@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	cloud.google.com/go/cloudsqlconn v1.4.0
-	cloud.google.com/go/pubsub v1.32.0
+	cloud.google.com/go/pubsub v1.33.0
 	cloud.google.com/go/storage v1.31.0
 	github.com/99designs/gqlgen v0.17.36
 	github.com/GoogleCloudPlatform/cloudsql-proxy v1.33.7
