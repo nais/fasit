@@ -18,8 +18,15 @@ updates:
       interval: "monthly"
     reviewers:
       - "@nais/core-dependabot-reviewers"
+    ignore:
+      # We need to ignore oras-go until helm is upgraded
+      - dependency-name: "oras.land/oras-go"
     groups:
       gomod:
         patterns:
-          - "k8s.io*"
           - "*"
+        exclude-patterns:
+          - "k8s.io*"
+      k8s:
+        patterns:
+          - "k8s.io*"
