@@ -66,7 +66,7 @@ jobs:
           version: ${{ env.HELM_VERSION }}
 
       - name: Build Chart
-        id: build-chart
+        id: build_chart
         run: |-
           suffix="$(date +%Y%m%d%H%M%S)"
           orig_version=$(yq '.version' < "${{ env.CHART_PATH}}/Chart.yaml")
@@ -95,9 +95,12 @@ jobs:
 
       - name: Push Chart
         run: |-
-          chart="${{ steps.build-chart.chart }}"
+          chart="${{ steps.build_chart.outputs.chart }}"
           echo "Pushing: $chart"
           helm push "$chart" oci://${{ env.GOOGLE_REGISTRY }}/nais-io/nais/feature
+    outputs:
+      name: ${{ steps.build_chart.outputs.name }}
+      version: ${{ steps.build_chart.outputs.version }}  
 
   rollout:
     needs:
@@ -109,8 +112,8 @@ jobs:
       - uses: nais/fasit-deploy@v2
         with:
           chart: oci://${{ env.GOOGLE_REGISTRY }}/nais-io/nais/feature/${{ steps.build_push.outputs.name }}
-          version: ${{ steps.build_push.outputs.version }}
-          feature_name: ${{ steps.build_push.outputs.name }}
+          feature_name: ${{ needs.build_push.outputs.name }}
+          version: ${{ needs.build_push.outputs.version }}
 ```
 
 ## Your first rollout
