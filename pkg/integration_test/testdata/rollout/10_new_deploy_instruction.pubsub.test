@@ -1,6 +1,6 @@
 RETURNS
 
-OPTION topic=naisd-tenant23-testing
+OPTION topic=naisd-tenant1-e1
 OPTION ConfigHash=IGNORE
 OPTION ID=IGNORE
 
@@ -14,10 +14,10 @@ ENDOPTS
     "fasit": {
       "env": {
         "kind": "tenant",
-        "name": "testing"
+        "name": "e1"
       },
       "tenant": {
-        "name": "tenant23"
+        "name": "tenant1"
       }
     },
     "gcp": "true"

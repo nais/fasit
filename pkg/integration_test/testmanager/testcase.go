@@ -2,12 +2,13 @@ package testmanager
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io/fs"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"gopkg.in/yaml.v3"
 )
 
 type Hook func(ctx context.Context)
@@ -37,12 +38,12 @@ func (m *testCase) Register(runner Runner) error {
 	return nil
 }
 
-func runTestCase(ctx context.Context, m *Manager, rfn CreateRunnerFunc, dir fs.FS, name string) {
+func runTestCase[T any](ctx context.Context, m *Manager[T], rfn CreateRunnerFunc[T], dir fs.FS, name string) {
 	m.t.Run(name, func(t *testing.T) {
-		config := map[string]any{}
-		f, _ := fs.ReadFile(dir, filepath.Join(name, "00_config.json"))
+		config := new(T)
+		f, _ := fs.ReadFile(dir, filepath.Join(name, "00_config.yaml"))
 		if f != nil {
-			if err := json.Unmarshal(f, &config); err != nil {
+			if err := yaml.Unmarshal(f, &config); err != nil {
 				t.Fatalf("unmarshaling config: %v", err)
 			}
 		}
@@ -54,7 +55,7 @@ func runTestCase(ctx context.Context, m *Manager, rfn CreateRunnerFunc, dir fs.F
 			beforeHook: m.beforeHook,
 		}
 
-		runner, cleanup, opts, err := rfn(ctx, config, tc.state)
+		runner, cleanup, opts, err := rfn(ctx, *config, tc.state)
 		if err != nil {
 			t.Fatal(err)
 		}

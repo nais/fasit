@@ -7,73 +7,101 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/graph/model"
-	"github.com/nais/fasit/pkg/integration_test/testmanager"
+	integration "github.com/nais/fasit/pkg/integration_test"
 )
 
-func seedTenantEnv(ctx context.Context, db database.Repo, state map[string]any, config testmanager.Config) error {
-	if v, ok := config.Bool("no_tenants"); ok && v {
-		return nil
+type seedTenantEnvs struct {
+	*model.Tenant
+	Env map[string]*model.Environment
+}
+
+func seedTenantEnv(ctx context.Context, db database.Repo, state map[string]any, config *integration.Config) error {
+	if config == nil {
+		return fmt.Errorf("no config defined. Does the test have a `00_config.yaml`?")
+	}
+	tenantState := map[string]*seedTenantEnvs{}
+	for _, t := range config.Tenants {
+		tenant, err := seedTenant(ctx, db, t)
+		if err != nil {
+			return err
+		}
+		tenantState[t.Name] = tenant
 	}
 
-	tenant, err := db.TenantCreate(ctx, &model.TenantCreate{
-		Name: tenantName,
+	state["Tenant"] = tenantState
+	return nil
+}
+
+func seedTenant(ctx context.Context, db database.Repo, tenant integration.Tenant) (*seedTenantEnvs, error) {
+	t, err := db.TenantCreate(ctx, &model.TenantCreate{
+		Name: tenant.Name,
 	})
 	if err != nil {
-		return fmt.Errorf("seedTenantEnv: unable to create tenant: %w", err)
+		return nil, fmt.Errorf("seedTenantEnv: unable to create tenant %v: %w", tenant.Name, err)
 	}
 
-	mgmt, err := db.EnvironmentCreate(ctx, &model.EnvironmentCreate{
-		Name:     envManagementName,
-		Kind:     model.EnvironmentKindManagement,
-		TenantID: tenant.ID,
-	})
-	if err != nil {
-		return fmt.Errorf("seedTenantEnv: unable to create management environment: %w", err)
-	}
-
-	tenantEnv, err := db.EnvironmentCreate(ctx, &model.EnvironmentCreate{
-		Name:     envTenantName,
-		Kind:     model.EnvironmentKindTenant,
-		TenantID: tenant.ID,
-	})
-	if err != nil {
-		return fmt.Errorf("seedTenantEnv: unable to create environment: %w", err)
-	}
-
-	nonCIEnv, err := db.EnvironmentCreate(ctx, &model.EnvironmentCreate{
-		Name:     envTenantNonCI,
-		Kind:     model.EnvironmentKindTenant,
-		TenantID: tenant.ID,
-	})
-	if err != nil {
-		return fmt.Errorf("seedTenantEnv: unable to create environment: %w", err)
-	}
-
-	state["tenant"] = tenant
-	state["env"] = tenantEnv
-	state["nonCIEnv"] = nonCIEnv
-	state["mgmt"] = mgmt
-
-	if v, _ := config.Bool("ci"); v {
+	if tenant.CI {
 		_, tx, err := db.WithTx(ctx)
 		if err != nil {
-			return fmt.Errorf("seedTenantEnv: unable to create transaction: %w", err)
+			return nil, fmt.Errorf("seedTenantEnv: unable to create tenant %v transaction: %w", tenant.Name, err)
 		}
 		err = pgx.BeginFunc(ctx, tx, func(tx pgx.Tx) error {
-			if _, err := tx.Exec(ctx, `UPDATE tenants SET ci = true`); err != nil {
-				return err
-			}
-			if _, err := tx.Exec(ctx, `UPDATE environments SET ci = true WHERE name != $1`, nonCIEnv.Name); err != nil {
+			if _, err := tx.Exec(ctx, `UPDATE tenants SET ci = true WHERE id = $1`, t.ID); err != nil {
 				return err
 			}
 			return nil
 		})
 		if err != nil {
 			tx.Rollback(ctx)
-			return err
+			return nil, err
 		}
-		return tx.Commit(ctx)
+		if err := tx.Commit(ctx); err != nil {
+			return nil, err
+		}
 	}
 
-	return nil
+	ret := &seedTenantEnvs{
+		Tenant: t,
+		Env:    map[string]*model.Environment{},
+	}
+
+	for _, e := range tenant.Envs {
+		env, err := seedEnvironment(ctx, db, t, e)
+		if err != nil {
+			return nil, err
+		}
+		ret.Env[env.Name] = env
+	}
+	return ret, nil
+}
+
+func seedEnvironment(ctx context.Context, db database.Repo, tenant *model.Tenant, env integration.Env) (*model.Environment, error) {
+	e, err := db.EnvironmentCreate(ctx, &model.EnvironmentCreate{
+		Name:     env.Name,
+		Kind:     env.Kind,
+		TenantID: tenant.ID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("seedTenantEnv: unable to create %v environment: %w", env.Name, err)
+	}
+
+	if env.CI {
+		_, tx, err := db.WithTx(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("seedTenantEnv: unable to create environment %v transaction: %w", env.Name, err)
+		}
+		err = pgx.BeginFunc(ctx, tx, func(tx pgx.Tx) error {
+			if _, err := tx.Exec(ctx, `UPDATE environments SET ci = true WHERE id = $1`, e.ID); err != nil {
+				return err
+			}
+			return nil
+		})
+		if err != nil {
+			tx.Rollback(ctx)
+			return nil, err
+		}
+		return e, tx.Commit(ctx)
+	}
+
+	return e, nil
 }

@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/nais/fasit/pkg/database"
-	"github.com/nais/fasit/pkg/integration_test/testmanager"
+	integration "github.com/nais/fasit/pkg/integration_test"
 	"github.com/nais/fasit/pkg/integration_test/testmanager/runner"
 	"github.com/nais/fasit/pkg/message"
 	"github.com/nais/fasit/pkg/naisd"
@@ -23,49 +23,54 @@ type naisdRunner struct {
 	topics               map[string]chan pubsubMockMsg
 	reconcilerPublishers map[string]workers.Publisher
 	successfullMessages  int
+
+	statusCh chan pubsubMockMsg
 }
 
-func newNaisd(ctx context.Context, config testmanager.Config, db database.Repo) (*naisdRunner, func(), error) {
-	naisdRunner := &naisdRunner{}
-	pubsub := runner.NewPubSub(naisdRunner.doPublish)
-	naisdRunner.PubSub = pubsub
+func newNaisd(ctx context.Context, config *integration.Config, db database.Repo) (*naisdRunner, func(), error) {
+	naisdRunner := &naisdRunner{
+		statusCh: make(chan pubsubMockMsg),
+	}
+	naisdRunner.PubSub = runner.NewPubSub(naisdRunner.doPublish)
+	naisdRunner.registerTopic("status", naisdRunner.statusCh)
 
-	if v, _ := config.Bool("no_naisd"); v {
-		return nil, func() {}, nil
+	return naisdRunner, func() {}, nil
+}
+
+func (n *naisdRunner) start(ctx context.Context, config *integration.Config, db database.Repo) error {
+	for _, t := range config.Tenants {
+		for _, env := range t.Envs {
+			if err := n.configureEnv(ctx, config, db, t, env); err != nil {
+				return err
+			}
+		}
 	}
 
-	if v, _ := config.Bool("no_tenants"); v {
-		return nil, func() {}, nil
+	log := logrus.New()
+	if testing.Verbose() {
+		log.Out = os.Stdout
+		log.Level = logrus.DebugLevel
+	} else {
+		log.Out = io.Discard
 	}
 
-	success, ok := config.Int("naisd_successfull_messages")
-	if !ok {
-		success = 100000
+	statusMgr := &mockSubscriber[message.Status]{
+		topic:    "status",
+		messages: n.statusCh,
+		done:     ctx.Done(),
+		pubsub:   n.PubSub,
 	}
-	naisdRunner.successfullMessages = success
+	rec := workers.NewReceiver(statusMgr, db, logrus.NewEntry(log))
+	go rec.Run(ctx)
+	return nil
+}
 
-	statusCh := make(chan pubsubMockMsg)
-	mgmt, err := newNaisdForEnv(ctx.Done(), config, envManagementName, naisdRunner, statusCh)
+func (n *naisdRunner) configureEnv(ctx context.Context, config *integration.Config, db database.Repo, tenant integration.Tenant, env integration.Env) error {
+	mgr, err := newNaisdForEnv(ctx.Done(), config, tenant.Name, env, n, n.statusCh)
 	if err != nil {
-		close(statusCh)
-		return nil, func() {}, err
+		return err
 	}
 
-	envTenant, err := newNaisdForEnv(ctx.Done(), config, envTenantName, naisdRunner, statusCh)
-	if err != nil {
-		close(statusCh)
-		return nil, func() {}, err
-	}
-
-	envNonCI, err := newNaisdForEnv(ctx.Done(), config, envTenantNonCI, naisdRunner, statusCh)
-	if err != nil {
-		close(statusCh)
-		return nil, func() {}, err
-	}
-
-	close := func() {
-		close(statusCh)
-	}
 	// go func() {
 	// 	for msg := range statusCh {
 	// 		mp := make(map[string]any)
@@ -79,41 +84,22 @@ func newNaisd(ctx context.Context, config testmanager.Config, db database.Repo) 
 	// 	}
 	// }()
 
-	statusMgr := &mockSubscriber[message.Status]{
-		topic:    "status",
-		messages: statusCh,
-		done:     ctx.Done(),
-		pubsub:   naisdRunner.PubSub,
-	}
+	go mgr.Run(ctx)
 
-	log := logrus.New()
-	if testing.Verbose() {
-		log.Out = os.Stdout
-		log.Level = logrus.DebugLevel
-	} else {
-		log.Out = io.Discard
-	}
-	rec := workers.NewReceiver(statusMgr, db, logrus.NewEntry(log))
-
-	go mgmt.Run(ctx)
-	go envTenant.Run(ctx)
-	go envNonCI.Run(ctx)
-	go rec.Run(ctx)
-
-	return naisdRunner, close, nil
+	return nil
 }
 
-func newNaisdForEnv(done <-chan struct{}, config testmanager.Config, env string, naisdRunner *naisdRunner, statusCh chan pubsubMockMsg) (*naisd.DeployManager, error) {
+func newNaisdForEnv(done <-chan struct{}, config *integration.Config, tenant string, env integration.Env, naisdRunner *naisdRunner, statusCh chan pubsubMockMsg) (*naisd.DeployManager, error) {
 	reconCh := make(chan pubsubMockMsg)
 	reconPublisher := &mockPublisher[message.DeployInstruction]{
-		topic:    "naisd-" + tenantName + "-" + env,
+		topic:    "naisd-" + tenant + "-" + env.Name,
 		pubsub:   naisdRunner.PubSub,
 		messages: reconCh,
 	}
-	naisdRunner.registerReconcilerPublisher("naisd-"+tenantName+"-"+env, reconPublisher)
+	naisdRunner.registerReconcilerPublisher("naisd-"+tenant+"-"+env.Name, reconPublisher)
 
 	deploySubscriber := &mockSubscriber[message.DeployInstruction]{
-		topic:    "naisd-" + tenantName + "-" + env,
+		topic:    "naisd-" + tenant + "-" + env.Name,
 		messages: reconCh,
 		done:     done,
 		pubsub:   naisdRunner.PubSub,
@@ -125,7 +111,6 @@ func newNaisdForEnv(done <-chan struct{}, config testmanager.Config, env string,
 		pubsub:   naisdRunner.PubSub,
 		messages: statusCh,
 	}
-	naisdRunner.registerTopic("status", statusCh)
 
 	logr := logrus.New()
 	logr.Level = logrus.DebugLevel
@@ -135,9 +120,9 @@ func newNaisdForEnv(done <-chan struct{}, config testmanager.Config, env string,
 	return naisd.NewDeployManager(
 		deploySubscriber,
 		statusPublisher,
-		tenantName,
-		env,
-		&naisd.MockExecutor{Logger: logrus.NewEntry(logr), Timeout: 1 * time.Millisecond, NumSuccessful: &naisdRunner.successfullMessages},
+		tenant,
+		env.Name,
+		&naisd.MockExecutor{Logger: logrus.NewEntry(logr), Timeout: 1 * time.Millisecond, NumSuccessful: &env.NAISD.SuccessfullMessages},
 		nil,
 		&rest.Config{},
 		"",

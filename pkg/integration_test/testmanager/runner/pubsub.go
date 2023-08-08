@@ -49,7 +49,7 @@ func (p *PubSub) Run(ctx context.Context, logf func(format string, args ...any),
 		return fmt.Errorf("missing 'topic' option")
 	}
 	if !p.hasTopic(topic) {
-		return fmt.Errorf("topic %q not registered", topic)
+		return fmt.Errorf("topic %q not registered, has: %v", topic, p.topicsNames())
 	}
 	delete(f.Opts, "topic")
 
@@ -139,6 +139,18 @@ func (p *PubSub) hasTopic(name string) bool {
 
 	_, ok := p.topics[name]
 	return ok
+}
+
+func (p *PubSub) topicsNames() []string {
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
+	names := []string{}
+	for k := range p.topics {
+		names = append(names, k)
+	}
+
+	return names
 }
 
 func (p *PubSub) messages(topic string) []PubSubMessage {
