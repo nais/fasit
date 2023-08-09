@@ -41,8 +41,6 @@ func (r *repo) Warnings(ctx context.Context, environmentID *uuid.UUID, tenantID 
 			ws = append(ws, w)
 		} else if r.oldFeatures.Get(w.FeatureName) != nil {
 			ws = append(ws, w)
-		} else {
-			fmt.Println("Removed warning for feature", w.FeatureName)
 		}
 	}
 

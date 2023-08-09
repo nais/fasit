@@ -1,0 +1,21 @@
+mutation {
+  featureStateSave(envID: "{{ .Tenant.tenant23.Env.testing.ID }}", enabled: true, feature: "allenvs") {
+    enabled
+  }
+	mgmt : featureStateSave(envID: "{{ .Tenant.tenant23.Env.management.ID }}", enabled: true, feature: "allenvs") {
+    enabled
+  }
+}
+
+RETURNS
+
+{
+	"data": {
+		"featureStateSave": {
+			"enabled": true
+		},
+		"mgmt": {
+			"enabled": true
+		}
+	}
+}

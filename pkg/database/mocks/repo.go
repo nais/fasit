@@ -1288,6 +1288,30 @@ func (_m *Repo) RolloutByNameAndVersion(ctx context.Context, name string, versio
 	return r0, r1
 }
 
+// RolloutCalculateDone provides a mock function with given fields: ctx, rolloutID
+func (_m *Repo) RolloutCalculateDone(ctx context.Context, rolloutID uuid.UUID) (bool, error) {
+	ret := _m.Called(ctx, rolloutID)
+
+	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) (bool, error)); ok {
+		return rf(ctx, rolloutID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) bool); ok {
+		r0 = rf(ctx, rolloutID)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, rolloutID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // RolloutCreate provides a mock function with given fields: ctx, name, version
 func (_m *Repo) RolloutCreate(ctx context.Context, name string, version string) (*model.Rollout, error) {
 	ret := _m.Called(ctx, name, version)

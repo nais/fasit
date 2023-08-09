@@ -34,6 +34,7 @@ type ReceiverStore interface {
 	LogCreate(ctx context.Context, deployInstructionID uuid.UUID, lines []message.LogLine) error
 	ReleaseStatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Release) error
 	RolloutByName(ctx context.Context, name string) (*model.Feature, error)
+	RolloutCalculateDone(ctx context.Context, rolloutID uuid.UUID) (bool, error)
 	RolloutDelete(ctx context.Context, name string) error
 	RolloutEventCreate(ctx context.Context, rollout uuid.UUID, failure bool, message string, data map[string]any) error
 	RolloutStatus(ctx context.Context, name string) (model.RolloutStatus, error)
@@ -130,13 +131,17 @@ func (r *Receiver) handlerHelm(ctx context.Context, msg message.Status) error {
 		}
 	}
 
+	if err := r.repo.DeployInstructionUpdateStatus(ctx, helmStatus.DIID, helmStatus.RolloutStatus); err != nil {
+		return fmt.Errorf("updating deploy instruction status: %w", err)
+	}
+
 	if env.CI {
 		if err := r.handleCI(ctx, env, di, helmStatus, msg.Tenant); err != nil {
 			r.log.WithError(err).Error("handling helm status message for CI environment")
 		}
 	}
 
-	return r.repo.DeployInstructionUpdateStatus(ctx, helmStatus.DIID, helmStatus.RolloutStatus)
+	return nil
 }
 
 func (r *Receiver) handleCI(ctx context.Context, env *model.Environment, di *model.DeployInstruction, helmStatus *message.Helm, tenant string) error {
@@ -195,19 +200,19 @@ func (r *Receiver) handleCI(ctx context.Context, env *model.Environment, di *mod
 		return fmt.Errorf("invalid helm status: %v", helmStatus.RolloutStatus)
 	}
 
-	last, err := r.last(ctx, env.Kind, rollout)
+	last, err := r.repo.RolloutCalculateDone(ctx, rollout.GraphVars.RolloutID)
 	if err != nil {
 		return fmt.Errorf("checking if last: %w", err)
 	}
 	if !last {
-		r.log.WithField("name", helmStatus.Name).Info("not last")
+		r.log.WithField("name", featureName).Info("not last")
 		return nil
 	}
 
 	status, err := r.repo.RolloutStatus(ctx, rollout.Name)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			r.log.WithField("name", helmStatus.Name).Warn("unknown rollout")
+			r.log.WithField("name", featureName).Warn("unknown rollout")
 			return nil
 		}
 		return fmt.Errorf("getting rollout status for %q: %w", rollout.Name, err)
@@ -217,7 +222,7 @@ func (r *Receiver) handleCI(ctx context.Context, env *model.Environment, di *mod
 		if err := r.repo.RolloutsUpdateStatus(ctx, model.RolloutStatusFailed, rollout.Name, true); err != nil {
 			return fmt.Errorf("updating rollout status: %w", err)
 		}
-		r.log.WithField("name", helmStatus.Name).Info("rollout failed")
+		r.log.WithField("name", featureName).Info("rollout failed")
 		return nil
 	}
 
@@ -230,29 +235,9 @@ func (r *Receiver) handleCI(ctx context.Context, env *model.Environment, di *mod
 			return fmt.Errorf("updating rollout status: %w", err)
 		}
 
-		r.log.WithField("name", helmStatus.Name).Info("rollout succeeded")
+		r.log.WithField("name", featureName).Info("rollout succeeded")
 		return nil
 	})
-}
-
-func (r *Receiver) last(ctx context.Context, curr model.EnvironmentKind, rollout *model.Feature) (bool, error) {
-	for _, k := range rollout.EnvironmentKinds {
-		if k == curr { // don't mind the current environment kind
-			continue
-		}
-		ciEnv, err := r.repo.EnvironmentCI(ctx, curr)
-		if err != nil {
-			return false, fmt.Errorf("getting CI environment for kind %v: %w", curr.String(), err)
-		}
-		s, err := r.repo.DeployInstructionsLatestForFeature(ctx, ciEnv.ID, rollout.Name)
-		if err != nil {
-			return false, fmt.Errorf("getting status for feature: %w", err)
-		}
-		if s.FeatureVersion != rollout.Version {
-			return false, nil
-		}
-	}
-	return true, nil
 }
 
 func (r *Receiver) releaseStatus(ctx context.Context, msg message.Status) error {

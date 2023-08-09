@@ -20,7 +20,7 @@ type PubSubMessage struct {
 	Attributes map[string]string `json:"attributes"`
 }
 
-type PubSubHook func(topic string, msg PubSubMessage)
+type PubSubHook func(topic string, msg PubSubMessage) error
 
 type PubSub struct {
 	lock      sync.Mutex
@@ -62,8 +62,8 @@ func (p *PubSub) Run(ctx context.Context, logf func(format string, args ...any),
 		if err := json.Unmarshal([]byte(f.Query), &psm); err != nil {
 			return err
 		}
-		p.doPublish(topic, psm)
-		return nil
+
+		return p.doPublish(topic, psm)
 	}
 
 	// When RETURNS is defined

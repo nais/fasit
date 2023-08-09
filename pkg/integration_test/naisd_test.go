@@ -2,6 +2,7 @@ package integration_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -66,30 +67,25 @@ func (n *naisdRunner) start(ctx context.Context, config *integration.Config, db 
 }
 
 func (n *naisdRunner) configureEnv(ctx context.Context, config *integration.Config, db database.Repo, tenant integration.Tenant, env integration.Env) error {
-	mgr, err := newNaisdForEnv(ctx.Done(), config, tenant.Name, env, n, n.statusCh)
+	ch, mgr, err := newNaisdForEnv(ctx.Done(), config, tenant.Name, env, n, n.statusCh)
 	if err != nil {
 		return err
 	}
 
-	// go func() {
-	// 	for msg := range statusCh {
-	// 		mp := make(map[string]any)
-	// 		if err := json.Unmarshal(msg.msg, &mp); err != nil {
-	// 			return
-	// 		}
-
-	// 		naisdRunner.Receive("status", runner.PubSubMessage{
-	// 			Msg: mp,
-	// 		})
-	// 	}
-	// }()
-
-	go mgr.Run(ctx)
+	if env.NAISD.Enabled {
+		go mgr.Run(ctx)
+	} else {
+		go func() {
+			for range ch {
+				// drain channel
+			}
+		}()
+	}
 
 	return nil
 }
 
-func newNaisdForEnv(done <-chan struct{}, config *integration.Config, tenant string, env integration.Env, naisdRunner *naisdRunner, statusCh chan pubsubMockMsg) (*naisd.DeployManager, error) {
+func newNaisdForEnv(done <-chan struct{}, config *integration.Config, tenant string, env integration.Env, naisdRunner *naisdRunner, statusCh chan pubsubMockMsg) (chan pubsubMockMsg, *naisd.DeployManager, error) {
 	reconCh := make(chan pubsubMockMsg)
 	reconPublisher := &mockPublisher[message.DeployInstruction]{
 		topic:    "naisd-" + tenant + "-" + env.Name,
@@ -117,7 +113,7 @@ func newNaisdForEnv(done <-chan struct{}, config *integration.Config, tenant str
 	logr.Out = os.Stdout
 	logr.Out = io.Discard
 
-	return naisd.NewDeployManager(
+	mgr, err := naisd.NewDeployManager(
 		deploySubscriber,
 		statusPublisher,
 		tenant,
@@ -129,6 +125,7 @@ func newNaisdForEnv(done <-chan struct{}, config *integration.Config, tenant str
 		"",
 		logrus.NewEntry(logr),
 	)
+	return reconCh, mgr, err
 }
 
 func (n *naisdRunner) registerReconcilerPublisher(name string, pub workers.Publisher) {
@@ -145,6 +142,20 @@ func (n *naisdRunner) registerTopic(name string, ch chan pubsubMockMsg) {
 	n.topics[name] = ch
 }
 
-func (n *naisdRunner) doPublish(topic string, msg runner.PubSubMessage) {
-	fmt.Println("DO PUBLISH")
+func (n *naisdRunner) doPublish(topic string, msg runner.PubSubMessage) error {
+	b, err := json.Marshal(msg.Msg)
+	if err != nil {
+		return err
+	}
+
+	if ch, ok := n.topics[topic]; ok {
+		ch <- pubsubMockMsg{
+			topic: topic,
+			msg:   b,
+		}
+
+		return nil
+	}
+
+	return fmt.Errorf("no such topic: %s", topic)
 }

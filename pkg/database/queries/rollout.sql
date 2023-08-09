@@ -84,3 +84,29 @@ SELECT *
 FROM rollout_events
 WHERE rollout_id = @rollout_id
 ORDER BY created ASC;
+
+-- name: RolloutCalculateDone :one
+WITH rollout AS (
+  SELECT * FROM rollouts WHERE rollouts.id = @rollout_id
+), dis AS (
+  SELECT di.*
+  FROM deploy_instructions di
+  INNER JOIN rollout ON di.feature_name = rollout.feature_name AND di.feature_version = rollout.version
+  WHERE di.status IN ('deployed', 'failed')
+), cienvs AS (
+  SELECT id
+  FROM environments
+  WHERE ci = true
+), feature_states AS (
+  SELECT count(1)
+  FROM feature_states
+  WHERE feature = (SELECT feature_name FROM rollout)
+  AND environment_id IN (SELECT id FROM cienvs)
+  AND enabled = true
+)
+SELECT (
+  SELECT count(1) FROM dis
+) = (
+  SELECT * FROM feature_states
+) AS done
+;

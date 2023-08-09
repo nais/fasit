@@ -85,6 +85,11 @@ func seedEnvironment(ctx context.Context, db database.Repo, tenant *model.Tenant
 		return nil, fmt.Errorf("seedTenantEnv: unable to create %v environment: %w", env.Name, err)
 	}
 
+	e, err = db.EnvironmentSetReconcile(ctx, e.ID, env.Reconcile)
+	if err != nil {
+		return nil, fmt.Errorf("seedTenantEnv: unable to set reconcile for %v environment: %w", env.Name, err)
+	}
+
 	if env.CI {
 		_, tx, err := db.WithTx(ctx)
 		if err != nil {
