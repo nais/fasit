@@ -19,6 +19,7 @@ import (
 	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph"
 	"github.com/nais/fasit/pkg/graph/graphgen"
+	integration "github.com/nais/fasit/pkg/integration_test"
 	"github.com/nais/fasit/pkg/integration_test/testmanager"
 	"github.com/nais/fasit/pkg/integration_test/testmanager/runner"
 	"github.com/nais/fasit/pkg/message"
@@ -36,13 +37,13 @@ const (
 )
 
 func TestRunner(t *testing.T) {
-	mgr := testmanager.New(t, func(ctx context.Context, config testmanager.Config, state map[string]any) ([]testmanager.Runner, func(), []testmanager.Option, error) {
+	mgr := testmanager.New(t, func(ctx context.Context, config *integration.Config, state map[string]any) ([]testmanager.Runner, func(), []testmanager.Option, error) {
 		ctx, done := context.WithCancel(ctx)
 		cleanups := []func(){done}
 
 		opts := []testmanager.Option{}
 
-		db, pool, cleanup, err := newDB(ctx, config, state)
+		db, pool, cleanup, err := newDB(ctx, state, config)
 		if err != nil {
 			return nil, nil, opts, err
 		}
@@ -53,61 +54,63 @@ func TestRunner(t *testing.T) {
 			return nil, nil, opts, err
 		}
 
+		cleanups = append(cleanups, close)
+		tes, err := db.TenantEnvironments(ctx, false)
+		if err != nil {
+			return nil, nil, opts, err
+		}
+
+		for _, te := range tes {
+			db.HealthStatusCreateOrUpdate(ctx, te.Environment.ID, &message.Health{
+				ReportedAt: time.Now(),
+			})
+		}
+
+		naisdRunner.start(ctx, config, db)
+
+		log := logrus.New()
+
+		log.Out = io.Discard
+		if testing.Verbose() {
+			log.Out = os.Stdout
+			log.Level = logrus.DebugLevel
+		}
+
+		cp := func(projectID, topicID string, log *logrus.Entry) workers.Publisher {
+			p, ok := naisdRunner.reconcilerPublishers[topicID]
+			if !ok {
+				t.Fatalf("no publisher for topic %q", topicID)
+			}
+			return p
+		}
+
+		notifierService := notifier.New(pool, logrus.NewEntry(log))
+		reconciler, err := workers.NewReconciler(db, cp, notifierService, "", noop.NewMeterProvider().Meter(""), logrus.NewEntry(log))
+		if err != nil {
+			return nil, nil, opts, err
+		}
+		opts = append(opts, testmanager.WithBeforeHook(func(ctx context.Context) {
+			// TODO : Can we avoid this sleep, and maybe use the notifier instead?
+			if err := reconciler.Reconcile(ctx); err != nil {
+				t.Fatal(err)
+			}
+			time.Sleep(100 * time.Millisecond)
+		}))
+
+		runners := []testmanager.Runner{
+			newRestRunner(ctx, t, db),
+			newGQLRunner(ctx, t, db),
+			runner.NewSQLRunner(pool),
+		}
 		if naisdRunner != nil {
-			cleanups = append(cleanups, close)
-			tes, err := db.TenantEnvironments(ctx, false)
-			if err != nil {
-				return nil, nil, opts, err
-			}
-
-			for _, te := range tes {
-				db.HealthStatusCreateOrUpdate(ctx, te.Environment.ID, &message.Health{
-					ReportedAt: time.Now(),
-				})
-			}
+			runners = append(runners, naisdRunner)
 		}
 
-		if v, _ := config.Bool("reconcile"); v {
-			log := logrus.New()
-
-			log.Out = io.Discard
-			if testing.Verbose() {
-				log.Out = os.Stdout
-				log.Level = logrus.DebugLevel
+		return runners, func() {
+			for _, cleanup := range cleanups {
+				cleanup()
 			}
-
-			cp := func(projectID, topicID string, log *logrus.Entry) workers.Publisher {
-				p, ok := naisdRunner.reconcilerPublishers[topicID]
-				if !ok {
-					t.Fatalf("no publisher for topic %q", topicID)
-				}
-				return p
-			}
-
-			notifierService := notifier.New(pool, logrus.NewEntry(log))
-			reconciler, err := workers.NewReconciler(db, cp, notifierService, "", noop.NewMeterProvider().Meter(""), logrus.NewEntry(log))
-			if err != nil {
-				return nil, nil, opts, err
-			}
-			opts = append(opts, testmanager.WithBeforeHook(func(ctx context.Context) {
-				// TODO : Can we avoid this sleep, and maybe use the notifier instead?
-				if err := reconciler.Reconcile(ctx); err != nil {
-					t.Fatal(err)
-				}
-				time.Sleep(100 * time.Millisecond)
-			}))
-		}
-
-		return []testmanager.Runner{
-				newRestRunner(ctx, t, db),
-				newGQLRunner(ctx, t, db),
-				runner.NewSQLRunner(pool),
-				naisdRunner,
-			}, func() {
-				for _, cleanup := range cleanups {
-					cleanup()
-				}
-			}, opts, nil
+		}, opts, nil
 	})
 
 	ctx := context.Background()
@@ -152,7 +155,7 @@ func newGQLRunner(ctx context.Context, t *testing.T, db database.Repo) testmanag
 	return runner.NewGQLRunner(srv)
 }
 
-func newDB(ctx context.Context, config testmanager.Config, state map[string]any) (database.Repo, *pgxpool.Pool, func(), error) {
+func newDB(ctx context.Context, state map[string]any, config *integration.Config) (database.Repo, *pgxpool.Pool, func(), error) {
 	connStr, cleanup := dbtest.DockerSQLPool()
 
 	pool, close, err := database.NewDB(ctx, connStr, false)

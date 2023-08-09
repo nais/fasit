@@ -2,6 +2,7 @@ package integration_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -9,7 +10,7 @@ import (
 	"time"
 
 	"github.com/nais/fasit/pkg/database"
-	"github.com/nais/fasit/pkg/integration_test/testmanager"
+	integration "github.com/nais/fasit/pkg/integration_test"
 	"github.com/nais/fasit/pkg/integration_test/testmanager/runner"
 	"github.com/nais/fasit/pkg/message"
 	"github.com/nais/fasit/pkg/naisd"
@@ -23,67 +24,27 @@ type naisdRunner struct {
 	topics               map[string]chan pubsubMockMsg
 	reconcilerPublishers map[string]workers.Publisher
 	successfullMessages  int
+
+	statusCh chan pubsubMockMsg
 }
 
-func newNaisd(ctx context.Context, config testmanager.Config, db database.Repo) (*naisdRunner, func(), error) {
-	naisdRunner := &naisdRunner{}
-	pubsub := runner.NewPubSub(naisdRunner.doPublish)
-	naisdRunner.PubSub = pubsub
-
-	if v, _ := config.Bool("no_naisd"); v {
-		return nil, func() {}, nil
+func newNaisd(ctx context.Context, config *integration.Config, db database.Repo) (*naisdRunner, func(), error) {
+	naisdRunner := &naisdRunner{
+		statusCh: make(chan pubsubMockMsg),
 	}
+	naisdRunner.PubSub = runner.NewPubSub(naisdRunner.doPublish)
+	naisdRunner.registerTopic("status", naisdRunner.statusCh)
 
-	if v, _ := config.Bool("no_tenants"); v {
-		return nil, func() {}, nil
-	}
+	return naisdRunner, func() {}, nil
+}
 
-	success, ok := config.Int("naisd_successfull_messages")
-	if !ok {
-		success = 100000
-	}
-	naisdRunner.successfullMessages = success
-
-	statusCh := make(chan pubsubMockMsg)
-	mgmt, err := newNaisdForEnv(ctx.Done(), config, envManagementName, naisdRunner, statusCh)
-	if err != nil {
-		close(statusCh)
-		return nil, func() {}, err
-	}
-
-	envTenant, err := newNaisdForEnv(ctx.Done(), config, envTenantName, naisdRunner, statusCh)
-	if err != nil {
-		close(statusCh)
-		return nil, func() {}, err
-	}
-
-	envNonCI, err := newNaisdForEnv(ctx.Done(), config, envTenantNonCI, naisdRunner, statusCh)
-	if err != nil {
-		close(statusCh)
-		return nil, func() {}, err
-	}
-
-	close := func() {
-		close(statusCh)
-	}
-	// go func() {
-	// 	for msg := range statusCh {
-	// 		mp := make(map[string]any)
-	// 		if err := json.Unmarshal(msg.msg, &mp); err != nil {
-	// 			return
-	// 		}
-
-	// 		naisdRunner.Receive("status", runner.PubSubMessage{
-	// 			Msg: mp,
-	// 		})
-	// 	}
-	// }()
-
-	statusMgr := &mockSubscriber[message.Status]{
-		topic:    "status",
-		messages: statusCh,
-		done:     ctx.Done(),
-		pubsub:   naisdRunner.PubSub,
+func (n *naisdRunner) start(ctx context.Context, config *integration.Config, db database.Repo) error {
+	for _, t := range config.Tenants {
+		for _, env := range t.Envs {
+			if err := n.configureEnv(ctx, config, db, t, env); err != nil {
+				return err
+			}
+		}
 	}
 
 	log := logrus.New()
@@ -93,27 +54,48 @@ func newNaisd(ctx context.Context, config testmanager.Config, db database.Repo) 
 	} else {
 		log.Out = io.Discard
 	}
+
+	statusMgr := &mockSubscriber[message.Status]{
+		topic:    "status",
+		messages: n.statusCh,
+		done:     ctx.Done(),
+		pubsub:   n.PubSub,
+	}
 	rec := workers.NewReceiver(statusMgr, db, logrus.NewEntry(log))
-
-	go mgmt.Run(ctx)
-	go envTenant.Run(ctx)
-	go envNonCI.Run(ctx)
 	go rec.Run(ctx)
-
-	return naisdRunner, close, nil
+	return nil
 }
 
-func newNaisdForEnv(done <-chan struct{}, config testmanager.Config, env string, naisdRunner *naisdRunner, statusCh chan pubsubMockMsg) (*naisd.DeployManager, error) {
+func (n *naisdRunner) configureEnv(ctx context.Context, config *integration.Config, db database.Repo, tenant integration.Tenant, env integration.Env) error {
+	ch, mgr, err := newNaisdForEnv(ctx.Done(), config, tenant.Name, env, n, n.statusCh)
+	if err != nil {
+		return err
+	}
+
+	if env.NAISD.Enabled {
+		go mgr.Run(ctx)
+	} else {
+		go func() {
+			for range ch {
+				// drain channel
+			}
+		}()
+	}
+
+	return nil
+}
+
+func newNaisdForEnv(done <-chan struct{}, config *integration.Config, tenant string, env integration.Env, naisdRunner *naisdRunner, statusCh chan pubsubMockMsg) (chan pubsubMockMsg, *naisd.DeployManager, error) {
 	reconCh := make(chan pubsubMockMsg)
 	reconPublisher := &mockPublisher[message.DeployInstruction]{
-		topic:    "naisd-" + tenantName + "-" + env,
+		topic:    "naisd-" + tenant + "-" + env.Name,
 		pubsub:   naisdRunner.PubSub,
 		messages: reconCh,
 	}
-	naisdRunner.registerReconcilerPublisher("naisd-"+tenantName+"-"+env, reconPublisher)
+	naisdRunner.registerReconcilerPublisher("naisd-"+tenant+"-"+env.Name, reconPublisher)
 
 	deploySubscriber := &mockSubscriber[message.DeployInstruction]{
-		topic:    "naisd-" + tenantName + "-" + env,
+		topic:    "naisd-" + tenant + "-" + env.Name,
 		messages: reconCh,
 		done:     done,
 		pubsub:   naisdRunner.PubSub,
@@ -125,25 +107,25 @@ func newNaisdForEnv(done <-chan struct{}, config testmanager.Config, env string,
 		pubsub:   naisdRunner.PubSub,
 		messages: statusCh,
 	}
-	naisdRunner.registerTopic("status", statusCh)
 
 	logr := logrus.New()
 	logr.Level = logrus.DebugLevel
 	logr.Out = os.Stdout
 	logr.Out = io.Discard
 
-	return naisd.NewDeployManager(
+	mgr, err := naisd.NewDeployManager(
 		deploySubscriber,
 		statusPublisher,
-		tenantName,
-		env,
-		&naisd.MockExecutor{Logger: logrus.NewEntry(logr), Timeout: 1 * time.Millisecond, NumSuccessful: &naisdRunner.successfullMessages},
+		tenant,
+		env.Name,
+		&naisd.MockExecutor{Logger: logrus.NewEntry(logr), Timeout: 1 * time.Millisecond, NumSuccessful: &env.NAISD.SuccessfullMessages},
 		nil,
 		&rest.Config{},
 		"",
 		"",
 		logrus.NewEntry(logr),
 	)
+	return reconCh, mgr, err
 }
 
 func (n *naisdRunner) registerReconcilerPublisher(name string, pub workers.Publisher) {
@@ -160,6 +142,20 @@ func (n *naisdRunner) registerTopic(name string, ch chan pubsubMockMsg) {
 	n.topics[name] = ch
 }
 
-func (n *naisdRunner) doPublish(topic string, msg runner.PubSubMessage) {
-	fmt.Println("DO PUBLISH")
+func (n *naisdRunner) doPublish(topic string, msg runner.PubSubMessage) error {
+	b, err := json.Marshal(msg.Msg)
+	if err != nil {
+		return err
+	}
+
+	if ch, ok := n.topics[topic]; ok {
+		ch <- pubsubMockMsg{
+			topic: topic,
+			msg:   b,
+		}
+
+		return nil
+	}
+
+	return fmt.Errorf("no such topic: %s", topic)
 }

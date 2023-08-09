@@ -6,8 +6,8 @@ OPTION Data=IGNORE
 ENDOPTS
 
 {
-  "Tenant": "tenant23",
-  "Environment": "testing",
+  "Tenant": "tenant1",
+  "Environment": "e1",
   "Type": 2,
   "Data": "c29tZWJhc2U2NAo="
 }

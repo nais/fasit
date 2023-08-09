@@ -278,7 +278,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, e *model.TenantEn
 			}
 		}
 
-		r.log.WithField("version", f.Version).Debug("publishing deploy instruction")
+		log.WithField("version", f.Version).Debug("publishing deploy instruction")
 
 		r.deployMessages.Add(ctx, 1, metric.WithAttributes(append(metricAttrs, attribute.Key("feature").String(f.Name))...))
 

@@ -1,0 +1,84 @@
+{
+	"$id": "https://fasit.nais.io/schema/config",
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"additionalProperties": false,
+	"properties": {
+		"tenants": {
+			"description": "List of tenants",
+			"items": {
+				"additionalProperties": false,
+				"properties": {
+					"ci": {
+						"description": "CI is a flag that indicates whether the tenant should be targeted by rollouts",
+						"type": "boolean"
+					},
+					"envs": {
+						"description": "Envs is a list of environments for the tenant",
+						"items": {
+							"additionalProperties": false,
+							"properties": {
+								"ci": {
+									"description": "CI is a flag that indicates whether the environment should be targeted by rollouts",
+									"type": "boolean"
+								},
+								"kind": {
+									"description": "Kind is the environment kind",
+									"enum": [
+										"management",
+										"tenant",
+										"onprem",
+										"legacy"
+									],
+									"type": "string"
+								},
+								"naisd": {
+									"additionalProperties": false,
+									"description": "Naisd is a flag that indicates whether the environment should be reconciled by naisd",
+									"properties": {
+										"enabled": {
+											"description": "Enabled is a flag that indicates whether naisd should be enabled",
+											"type": "boolean"
+										},
+										"successfullMessages": {
+											"description": "SuccessfullMessages is the number of successfull messages before naisd starts to fail",
+											"type": "integer"
+										}
+									},
+									"required": [
+										"enabled"
+									],
+									"type": "object"
+								},
+								"name": {
+									"description": "Environment name",
+									"type": "string"
+								},
+								"reconcile": {
+									"description": "Reconcile is a flag that indicates whether the environment should be reconciled",
+									"type": "boolean"
+								}
+							},
+							"required": [
+								"name",
+								"kind"
+							],
+							"type": "object"
+						},
+						"type": "array"
+					},
+					"name": {
+						"description": "Tenant name",
+						"type": "string"
+					}
+				},
+				"required": [
+					"name",
+					"envs"
+				],
+				"type": "object"
+			},
+			"type": "array"
+		}
+	},
+	"type": "object"
+}

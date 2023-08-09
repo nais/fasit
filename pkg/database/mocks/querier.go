@@ -1311,6 +1311,30 @@ func (_m *Querier) RolloutByNameAndVersion(ctx context.Context, arg gensql.Rollo
 	return r0, r1
 }
 
+// RolloutCalculateDone provides a mock function with given fields: ctx, rolloutID
+func (_m *Querier) RolloutCalculateDone(ctx context.Context, rolloutID uuid.UUID) (bool, error) {
+	ret := _m.Called(ctx, rolloutID)
+
+	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) (bool, error)); ok {
+		return rf(ctx, rolloutID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) bool); ok {
+		r0 = rf(ctx, rolloutID)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, rolloutID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // RolloutComplete provides a mock function with given fields: ctx, featureName
 func (_m *Querier) RolloutComplete(ctx context.Context, featureName string) error {
 	ret := _m.Called(ctx, featureName)

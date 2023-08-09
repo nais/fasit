@@ -109,7 +109,7 @@ func (n *Notifier) Listen(table string, filters ...Filter) <-chan Payload {
 
 	n.log.WithField("table", table).Debug("registering listener")
 
-	ch := make(chan Payload, 5)
+	ch := make(chan Payload, 20)
 	n.listeners[table] = append(n.listeners[table], listener{
 		filters: filters,
 		ch:      ch,

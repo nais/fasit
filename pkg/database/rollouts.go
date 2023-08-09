@@ -13,6 +13,7 @@ import (
 type RolloutRepo interface {
 	RolloutByName(ctx context.Context, name string) (*model.Feature, error)
 	RolloutByNameAndVersion(ctx context.Context, name, version string) (*model.Rollout, error)
+	RolloutCalculateDone(ctx context.Context, rolloutID uuid.UUID) (bool, error)
 	RolloutCreate(ctx context.Context, name, version string) (*model.Rollout, error)
 	RolloutDelete(ctx context.Context, name string) error
 	RolloutEventCreate(ctx context.Context, rollout uuid.UUID, failure bool, message string, data map[string]any) error
@@ -182,4 +183,8 @@ func (r *repo) RolloutEvents(ctx context.Context, rolloutID uuid.UUID) ([]*model
 	}
 
 	return res, nil
+}
+
+func (r *repo) RolloutCalculateDone(ctx context.Context, rolloutID uuid.UUID) (bool, error) {
+	return r.querier.RolloutCalculateDone(ctx, rolloutID)
 }

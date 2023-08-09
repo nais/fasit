@@ -93,6 +93,39 @@ func (q *Queries) RolloutByNameAndVersion(ctx context.Context, arg RolloutByName
 	return i, err
 }
 
+const rolloutCalculateDone = `-- name: RolloutCalculateDone :one
+WITH rollout AS (
+  SELECT id, feature_name, version, status, created, completed FROM rollouts WHERE rollouts.id = $1
+), dis AS (
+  SELECT di.id, di.environment_id, di.feature_name, di.feature_version, di.status, di.hash, di.created, di.last_modified
+  FROM deploy_instructions di
+  INNER JOIN rollout ON di.feature_name = rollout.feature_name AND di.feature_version = rollout.version
+  WHERE di.status IN ('deployed', 'failed')
+), cienvs AS (
+  SELECT id
+  FROM environments
+  WHERE ci = true
+), feature_states AS (
+  SELECT count(1)
+  FROM feature_states
+  WHERE feature = (SELECT feature_name FROM rollout)
+  AND environment_id IN (SELECT id FROM cienvs)
+  AND enabled = true
+)
+SELECT (
+  SELECT count(1) FROM dis
+) = (
+  SELECT count FROM feature_states
+) AS done
+`
+
+func (q *Queries) RolloutCalculateDone(ctx context.Context, rolloutID uuid.UUID) (bool, error) {
+	row := q.db.QueryRow(ctx, rolloutCalculateDone, rolloutID)
+	var done bool
+	err := row.Scan(&done)
+	return done, err
+}
+
 const rolloutComplete = `-- name: RolloutComplete :exec
 UPDATE rollouts SET completed = NOW() WHERE feature_name = $1 and completed IS NULL
 `
