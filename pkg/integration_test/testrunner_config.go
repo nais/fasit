@@ -6,7 +6,7 @@ type NAISD struct {
 	// Enabled is a flag that indicates whether naisd should be enabled
 	Enabled bool `json:"enabled"`
 	// SuccessfullMessages is the number of successfull messages before naisd starts to fail
-	SuccessfullMessages int `yaml:"successfullMessages,omitempty"`
+	SuccessfullMessages int `yaml:"successfullMessages,omitempty" json:"successfullMessages,omitempty"`
 }
 
 type Env struct {
