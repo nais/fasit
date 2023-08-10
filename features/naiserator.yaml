@@ -156,7 +156,7 @@ mapping:
       - domainSuffix: .nais.io
         ingressClass: gw-nais-io
       - domainSuffix: .helserefusjon.no
-        ingressClass: gw-helserefusjon-no
+        ingressClass: nais-ingress-external
       {{ end }}
     displayName: "Gateway mappings"
   naiserator.features.kafkarator:
