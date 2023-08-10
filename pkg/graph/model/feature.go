@@ -156,10 +156,12 @@ func FromChart(chart, version string) (*Feature, error) {
 
 		switch fname[1] {
 		case "Chart.yaml":
+			hasChartYAML = true
 			if err := f.parseChartYAML(r); err != nil {
 				return nil, err
 			}
 		case "Feature.yaml":
+			hasFeatureYAML = true
 			if err := yaml.NewDecoder(r).Decode(&f.FeatureYAML); err != nil {
 				return nil, err
 			}
