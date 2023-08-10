@@ -138,6 +138,8 @@ func FromChart(chart, version string) (*Feature, error) {
 	r := tar.NewReader(gr)
 
 	var valuesYAML map[string]any
+	var hasChartYAML bool
+	var hasFeatureYAML bool
 	for {
 		hdr, err := r.Next()
 		if err != nil {
@@ -172,6 +174,14 @@ func FromChart(chart, version string) (*Feature, error) {
 			}
 			valuesYAML = vals
 		}
+	}
+
+	if !hasChartYAML {
+		return nil, fmt.Errorf("file Chart.yaml not found")
+	}
+
+	if !hasFeatureYAML {
+		return nil, fmt.Errorf("file Feature.yaml not found")
 	}
 
 	f.normalizedYAML(valuesYAML)

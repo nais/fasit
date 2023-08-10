@@ -84,6 +84,16 @@ func (r *Rollout) Rollout(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	if feature.EnvironmentKinds == nil || len(feature.EnvironmentKinds) == 0 {
+		http.Error(w, "No environments to test in", http.StatusBadRequest)
+		return
+	}
+
+	if feature.Source == "" {
+		http.Error(w, "No source url found in Chart.yaml", http.StatusBadRequest)
+		return
+	}
+
 	envNotAvailable := []model.EnvironmentKind{}
 	for _, env := range feature.EnvironmentKinds {
 		e, err := r.repo.EnvironmentCI(ctx, env)
