@@ -54,7 +54,6 @@ func (r *repo) EnvConfig(ctx context.Context, feature string, envID uuid.UUID) (
 	config, err := r.querier.EnvConfig(ctx, gensql.EnvConfigParams{
 		Feature:       feature,
 		EnvironmentID: envID,
-		Excludekeys:   []string{""},
 	})
 	if err != nil {
 		return nil, err
@@ -197,17 +196,17 @@ func (r *repo) HelmValues(ctx context.Context, f *model.Feature, envID uuid.UUID
 		return nil, err
 	}
 
-	excludeKeys := []string{}
+	includeKeys := []string{}
 	for key, f := range f.Values {
-		if contains(f.IgnoreKind, envKind) {
-			excludeKeys = append(excludeKeys, key)
+		if f.Config != nil && !contains(f.IgnoreKind, envKind) {
+			includeKeys = append(includeKeys, key)
 		}
 	}
 
-	vals, err := r.querier.EnvConfig(ctx, gensql.EnvConfigParams{
+	vals, err := r.querier.EnvConfigOnlyKnown(ctx, gensql.EnvConfigOnlyKnownParams{
 		Feature:       f.Name,
 		EnvironmentID: envID,
-		Excludekeys:   excludeKeys,
+		Includedkeys:  includeKeys,
 	})
 	if err != nil {
 		return nil, err
@@ -238,7 +237,7 @@ func (r *repo) HelmValues(ctx context.Context, f *model.Feature, envID uuid.UUID
 	return mp, err
 }
 
-func validateFields(f *model.Feature, envKind model.EnvironmentKind, values []gensql.EnvConfigRow, mp map[string]any) []string {
+func validateFields(f *model.Feature, envKind model.EnvironmentKind, values []gensql.EnvConfigOnlyKnownRow, mp map[string]any) []string {
 	requiredFields := f.RequiredFields(envKind)
 
 	fields := map[string]bool{}
@@ -274,7 +273,7 @@ func validateFields(f *model.Feature, envKind model.EnvironmentKind, values []ge
 	return missing
 }
 
-func makeHelmConfigMap(vals []gensql.EnvConfigRow) (map[string]any, error) {
+func makeHelmConfigMap(vals []gensql.EnvConfigOnlyKnownRow) (map[string]any, error) {
 	val := make(map[string]any)
 
 	for _, v := range vals {

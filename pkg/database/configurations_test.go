@@ -24,7 +24,7 @@ func TestHelmConfigMap(t *testing.T) {
 		return b
 	}
 	tests := map[string]struct {
-		input    []gensql.EnvConfigRow
+		input    []gensql.EnvConfigOnlyKnownRow
 		expected map[string]any
 	}{
 		"empty": {
@@ -32,7 +32,7 @@ func TestHelmConfigMap(t *testing.T) {
 			expected: make(map[string]any),
 		},
 		"single_level": {
-			input: []gensql.EnvConfigRow{
+			input: []gensql.EnvConfigOnlyKnownRow{
 				{
 					Key:   "test1",
 					Value: jsonify("value1"),
@@ -48,7 +48,7 @@ func TestHelmConfigMap(t *testing.T) {
 			},
 		},
 		"multi_level": {
-			input: []gensql.EnvConfigRow{
+			input: []gensql.EnvConfigOnlyKnownRow{
 				{
 					Key:   "test.a",
 					Value: jsonify("value_a"),
@@ -66,7 +66,7 @@ func TestHelmConfigMap(t *testing.T) {
 			},
 		},
 		"escaped dots": {
-			input: []gensql.EnvConfigRow{
+			input: []gensql.EnvConfigOnlyKnownRow{
 				{
 					Key:   "test.a",
 					Value: jsonify("value_a"),
@@ -448,7 +448,24 @@ func TestRepo_HelmValues_InvaldKeyNesting(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = r.HelmValues(context.Background(), &model.Feature{Name: "feature5"}, envid)
+	feature := &model.Feature{
+		Name: "feature5",
+		FeatureYAML: model.FeatureYAML{
+			Values: model.Values{
+				"my.key": model.Value{
+					Config: &model.Config{
+						Type: model.ConfigTypeString,
+					},
+				},
+				"my": model.Value{
+					Config: &model.Config{
+						Type: model.ConfigTypeString,
+					},
+				},
+			},
+		},
+	}
+	_, err = r.HelmValues(context.Background(), feature, envid)
 	if err == nil || !strings.HasSuffix(err.Error(), "is not nestable") {
 		t.Errorf("got: %v, want \"key `key` is not nestable\"", err)
 	}
