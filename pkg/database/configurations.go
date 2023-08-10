@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgtype"
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/feature/featureutil"
 	feature "github.com/nais/fasit/pkg/feature2"
@@ -17,8 +16,8 @@ type ConfigRepo interface {
 	ConfigCreate(ctx context.Context, c model.NewConfiguration) (*model.Configuration, error)
 	ConfigDelete(ctx context.Context, id uuid.UUID) error
 	ConfigGet(ctx context.Context, feature string) ([]*model.Configuration, error)
+	ConfigGetByID(ctx context.Context, id uuid.UUID) (*model.Configuration, error)
 	ConfigGetForEnv(ctx context.Context, feature string, envID uuid.UUID) ([]*model.Configuration, error)
-	ConfigListen(ctx context.Context, fn ListenFunc) error
 	ConfigOverridesByFeature(ctx context.Context, featureName string) ([]*model.ConfigOverride, error)
 	ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration) (*model.Configuration, error)
 	EnvConfig(ctx context.Context, feature string, envID uuid.UUID) ([]*model.Configuration, error)
@@ -33,8 +32,8 @@ func environmentConfigurationFromSQL(c gensql.ConfigurationsEnvironment) *model.
 			FeatureName:   c.Feature,
 		},
 		Key:     c.Key,
-		Content: c.Value.Bytes,
-		Created: c.Created,
+		Content: c.Value,
+		Created: c.Created.Time,
 		Source:  model.ConfigSourceEnv,
 	}
 }
@@ -45,8 +44,8 @@ func globalConfigFromSQL(c gensql.ConfigurationsGlobal) *model.Configuration {
 		GraphVars: model.ConfigurationGraphVars{FeatureName: c.Feature},
 		// Description: nullStringToPtr(c.Description),
 		Key:     c.Key,
-		Content: c.Value.Bytes,
-		Created: c.Created,
+		Content: c.Value,
+		Created: c.Created.Time,
 		Source:  model.ConfigSourceGlobal,
 	}
 }
@@ -77,13 +76,13 @@ func envConfigFromSQL(conf gensql.EnvConfigRow) *model.Configuration {
 		},
 		// Description:   nullStringToPtr(conf.Description),
 		Key:     conf.Key,
-		Content: conf.Value.Bytes,
+		Content: conf.Value,
 		Source:  model.ConfigSourceGlobal,
 	}
 
 	if conf.EnvironmentID.Valid {
 		ret.Source = model.ConfigSourceEnv
-		ret.GraphVars.EnvironmentID = &conf.EnvironmentID.UUID
+		ret.GraphVars.EnvironmentID = nullUUIDToPtr(conf.EnvironmentID)
 	}
 
 	return ret
@@ -140,10 +139,7 @@ func (r *repo) configEnvCreate(ctx context.Context, c model.NewConfiguration, va
 		Description:   ptrToNullString(c.Description),
 		Secret:        c.Secret,
 		Key:           c.Key,
-		Value: pgtype.JSONB{
-			Bytes:  value,
-			Status: pgtype.Present,
-		},
+		Value:         value,
 	})
 	if err != nil {
 		return nil, err
@@ -160,10 +156,7 @@ func (r *repo) configGlobalCreate(ctx context.Context, c model.NewConfiguration,
 		Description: ptrToNullString(c.Description),
 		Secret:      c.Secret,
 		Key:         c.Key,
-		Value: pgtype.JSONB{
-			Bytes:  value,
-			Status: pgtype.Present,
-		},
+		Value:       value,
 	})
 	if err != nil {
 		return nil, err
@@ -177,11 +170,8 @@ func (r *repo) configGlobalCreate(ctx context.Context, c model.NewConfiguration,
 func (r *repo) ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration) (*model.Configuration, error) {
 	conf, err := r.querier.ConfigUpdate(ctx, gensql.ConfigUpdateParams{
 		Description: ptrToNullString(c.Description),
-		Value: pgtype.JSONB{
-			Bytes:  c.Value,
-			Status: pgtype.Present,
-		},
-		ID: id,
+		Value:       c.Value,
+		ID:          id,
 	})
 	if err != nil {
 		return nil, err
@@ -295,7 +285,7 @@ func makeHelmConfigMap(vals []gensql.EnvConfigRow) (map[string]any, error) {
 		parent := val
 		for index, key := range keys {
 			if index == len(keys)-1 {
-				parent[key] = v.Value
+				parent[key] = json.RawMessage(v.Value)
 				continue
 			}
 			if e, ok := parent[key]; ok {
@@ -316,10 +306,6 @@ func makeHelmConfigMap(vals []gensql.EnvConfigRow) (map[string]any, error) {
 	return val, nil
 }
 
-func (r *repo) ConfigListen(ctx context.Context, fn ListenFunc) error {
-	return r.ListenNotify(ctx, "configurations_notify", fn)
-}
-
 func (r *repo) ConfigOverridesByFeature(ctx context.Context, featureName string) ([]*model.ConfigOverride, error) {
 	overrides, err := r.querier.ConfigOverridesByFeature(ctx, featureName)
 	if err != nil {
@@ -334,6 +320,15 @@ func (r *repo) ConfigOverridesByFeature(ctx context.Context, featureName string)
 		}
 	}
 	return result, nil
+}
+
+func (r *repo) ConfigGetByID(ctx context.Context, id uuid.UUID) (*model.Configuration, error) {
+	config, err := r.querier.ConfigGetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return globalConfigFromSQL(config), nil
 }
 
 func contains[T comparable](s []T, e T) bool {

@@ -6,16 +6,16 @@ import (
 	"testing"
 )
 
-type CreateRunnerFunc func(ctx context.Context, config Config, state map[string]any) (runners []Runner, close func(), opts []Option, err error)
+type CreateRunnerFunc[T any] func(ctx context.Context, config T, state map[string]any) (runners []Runner, close func(), opts []Option, err error)
 
 type Runner interface {
 	Ext() string
 	Run(ctx context.Context, logf func(format string, args ...any), body []byte, state map[string]any) error
 }
 
-type Manager struct {
+type Manager[T any] struct {
 	t              *testing.T
-	createRunnerFn CreateRunnerFunc
+	createRunnerFn CreateRunnerFunc[T]
 
 	beforeHook Hook
 }
@@ -28,14 +28,14 @@ func WithBeforeHook(hook Hook) Option {
 	}
 }
 
-func New(t *testing.T, createRunners CreateRunnerFunc) *Manager {
-	return &Manager{
+func New[T any](t *testing.T, createRunners CreateRunnerFunc[T]) *Manager[T] {
+	return &Manager[T]{
 		t:              t,
 		createRunnerFn: createRunners,
 	}
 }
 
-func (m *Manager) Run(ctx context.Context, dir fs.FS) error {
+func (m *Manager[T]) Run(ctx context.Context, dir fs.FS) error {
 	entries, err := fs.ReadDir(dir, ".")
 	if err != nil {
 		m.t.Fatal("reading fs directory", err)

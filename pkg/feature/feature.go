@@ -89,6 +89,7 @@ func New(source FeatureSource, log logrus.FieldLogger) (*Manager, error) {
 				Description: f.Description,
 				Source:      f.Source,
 				FeatureYAML: *v2,
+				SpecVersion: "v1",
 			}
 		}
 

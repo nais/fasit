@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/nais/fasit/pkg/message"
@@ -22,7 +23,10 @@ func (r *repo) ReleaseStatusCreateOrUpdate(ctx context.Context, environmentID uu
 		Version:       h.Version,
 		Status:        h.Status,
 		Revision:      int32(h.Revision),
-		LastDeployed:  h.LastDeployed,
+		LastDeployed: pgtype.Timestamptz{
+			Time:  h.LastDeployed,
+			Valid: true,
+		},
 	})
 
 	return err
@@ -40,9 +44,9 @@ func (r *repo) ReleaseStatusesGet(ctx context.Context, environmentID uuid.UUID) 
 			Version:      r.Version,
 			Status:       r.Status,
 			Revision:     int(r.Revision),
-			LastDeployed: r.LastDeployed,
-			Created:      r.Created,
-			LastModified: r.LastModified,
+			LastDeployed: r.LastDeployed.Time,
+			Created:      r.Created.Time,
+			LastModified: r.LastModified.Time,
 
 			GraphVars: struct{ EnvironmentID uuid.UUID }{
 				EnvironmentID: environmentID,

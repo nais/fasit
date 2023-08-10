@@ -2,9 +2,17 @@
 
 ## Features
 
-Fasit contains a set of features that can be enabled for a tenant. Each feature has a definition in the `features` directory.
+Fasit contains a set of features that can be enabled for a tenant.
+Each feature is defined as an OCI chart with a file called `Feature.yaml` besides the `Chart.yaml` file.
 
-Documentation for each feature can be found in [`features/README.md`](./features/README.md).
+Documentation for how to define a feature can be found in [`docs/feature.md`](./docs/feature.md).
+
+### JSON schema
+
+To enable autocompletion and validation you can add the following json schema to your IDE:
+`https://storage.googleapis.com/fasit-jsonschema/feature.json`
+
+Follow the guide on https://docs.nais.io/appendix/json-schema/ on how to add a json schema.
 
 ## local dev setup
 
@@ -19,41 +27,15 @@ make setup
 
 # Run naisd
 make local-naisd
-
-# Run frontend
-cd frontend
-echo "NEXT_PUBLIC_ENV=development" > .env.development.local
-npm run install
-npm run dev
 ```
 
-# Enroll tenant
+## Testing
 
-These are some manual steps and configurations to do when enrolling a new tenant
+Run all tests in the project with `make integration-test`.
 
-## Management cluster
+### Integration tests
 
-### feature: cert-manager
+This package contains a custom integration framework that let's you test
+the entire system using a folder with test files.
 
-| key                                                           | value                                                |
-| ------------------------------------------------------------- | ---------------------------------------------------- |
-| `global.leaderElection.namespace`                             | `nai-system`                                         |
-| `installCRDs`                                                 | `true`                                               |
-| `serviceAccount.annotations.iam\.gke\.io/gcp-service-account` | `acme-user@{ENV_PROJECT_ID}.iam.gserviceaccount.com` |
-| `extraArgs`                                                   | `--issuer-ambient-credentials`                       |
-
-### feature: management-certificates
-
-| key                | value                          |
-| ------------------ | ------------------------------ |
-| `cloudDNS.project` | `{ENV_PROJECT_ID}`             |
-| `cloudDNS.zone`    | `{PARTNER_NAME}-cloud-nais-io` |
-| `partner`          | `{PARTNER_NAME}`               |
-
-### feature: loadbalancer
-
-Before enabling the loadbalancer feature, create a cloud armor policy in the GCP project of the cluster.
-
-| key            | value                  |
-| -------------- | ---------------------- |
-| `certificates` | `wc-cloud-nais-io-tls` |
+Read more about the integration test framework in [`pkg/integration_test/README.md`](./pkg/integration_test/README.md).

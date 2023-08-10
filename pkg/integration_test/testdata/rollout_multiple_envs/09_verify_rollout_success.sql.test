@@ -1,0 +1,8 @@
+SELECT count(1)::float AS count
+FROM rollouts
+WHERE status = 'deployed'
+  AND feature_name = 'allenvs';
+
+RETURNS
+
+[{"count": 1}]

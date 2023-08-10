@@ -8,6 +8,8 @@ import (
 	database "github.com/nais/fasit/pkg/database"
 	feature "github.com/nais/fasit/pkg/feature2"
 
+	gensql "github.com/nais/fasit/pkg/database/gensql"
+
 	json "encoding/json"
 
 	message "github.com/nais/fasit/pkg/message"
@@ -18,7 +20,7 @@ import (
 
 	model "github.com/nais/fasit/pkg/graph/model"
 
-	pgx "github.com/jackc/pgx/v4"
+	pgx "github.com/jackc/pgx/v5"
 
 	uuid "github.com/google/uuid"
 )
@@ -151,6 +153,32 @@ func (_m *Repo) ConfigGet(ctx context.Context, _a1 string) ([]*model.Configurati
 	return r0, r1
 }
 
+// ConfigGetByID provides a mock function with given fields: ctx, id
+func (_m *Repo) ConfigGetByID(ctx context.Context, id uuid.UUID) (*model.Configuration, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *model.Configuration
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) (*model.Configuration, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) *model.Configuration); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Configuration)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ConfigGetForEnv provides a mock function with given fields: ctx, _a1, envID
 func (_m *Repo) ConfigGetForEnv(ctx context.Context, _a1 string, envID uuid.UUID) ([]*model.Configuration, error) {
 	ret := _m.Called(ctx, _a1, envID)
@@ -175,20 +203,6 @@ func (_m *Repo) ConfigGetForEnv(ctx context.Context, _a1 string, envID uuid.UUID
 	}
 
 	return r0, r1
-}
-
-// ConfigListen provides a mock function with given fields: ctx, fn
-func (_m *Repo) ConfigListen(ctx context.Context, fn database.ListenFunc) error {
-	ret := _m.Called(ctx, fn)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, database.ListenFunc) error); ok {
-		r0 = rf(ctx, fn)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
 }
 
 // ConfigOverridesByFeature provides a mock function with given fields: ctx, featureName
@@ -236,6 +250,150 @@ func (_m *Repo) ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateCo
 
 	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, model.UpdateConfiguration) error); ok {
 		r1 = rf(ctx, id, c)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// DeployInstructionCreate provides a mock function with given fields: ctx, envID, featureName, featureVersion, hash
+func (_m *Repo) DeployInstructionCreate(ctx context.Context, envID uuid.UUID, featureName string, featureVersion string, hash string) (uuid.UUID, error) {
+	ret := _m.Called(ctx, envID, featureName, featureVersion, hash)
+
+	var r0 uuid.UUID
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, string, string, string) (uuid.UUID, error)); ok {
+		return rf(ctx, envID, featureName, featureVersion, hash)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, string, string, string) uuid.UUID); ok {
+		r0 = rf(ctx, envID, featureName, featureVersion, hash)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(uuid.UUID)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, string, string, string) error); ok {
+		r1 = rf(ctx, envID, featureName, featureVersion, hash)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// DeployInstructionGet provides a mock function with given fields: ctx, id
+func (_m *Repo) DeployInstructionGet(ctx context.Context, id uuid.UUID) (*model.DeployInstruction, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *model.DeployInstruction
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) (*model.DeployInstruction, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) *model.DeployInstruction); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.DeployInstruction)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// DeployInstructionUpdateStatus provides a mock function with given fields: ctx, id, status
+func (_m *Repo) DeployInstructionUpdateStatus(ctx context.Context, id uuid.UUID, status model.RolloutStatus) error {
+	ret := _m.Called(ctx, id, status)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, model.RolloutStatus) error); ok {
+		r0 = rf(ctx, id, status)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// DeployInstructionsForFeature provides a mock function with given fields: ctx, envID, featureName, offset
+func (_m *Repo) DeployInstructionsForFeature(ctx context.Context, envID uuid.UUID, featureName string, offset int) ([]*model.DeployInstruction, error) {
+	ret := _m.Called(ctx, envID, featureName, offset)
+
+	var r0 []*model.DeployInstruction
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, string, int) ([]*model.DeployInstruction, error)); ok {
+		return rf(ctx, envID, featureName, offset)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, string, int) []*model.DeployInstruction); ok {
+		r0 = rf(ctx, envID, featureName, offset)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.DeployInstruction)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, string, int) error); ok {
+		r1 = rf(ctx, envID, featureName, offset)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// DeployInstructionsLatestForEnvironment provides a mock function with given fields: ctx, envID
+func (_m *Repo) DeployInstructionsLatestForEnvironment(ctx context.Context, envID uuid.UUID) ([]*model.DeployInstruction, error) {
+	ret := _m.Called(ctx, envID)
+
+	var r0 []*model.DeployInstruction
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]*model.DeployInstruction, error)); ok {
+		return rf(ctx, envID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) []*model.DeployInstruction); ok {
+		r0 = rf(ctx, envID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.DeployInstruction)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, envID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// DeployInstructionsLatestForFeature provides a mock function with given fields: ctx, envID, featureName
+func (_m *Repo) DeployInstructionsLatestForFeature(ctx context.Context, envID uuid.UUID, featureName string) (*model.DeployInstruction, error) {
+	ret := _m.Called(ctx, envID, featureName)
+
+	var r0 *model.DeployInstruction
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, string) (*model.DeployInstruction, error)); ok {
+		return rf(ctx, envID, featureName)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, string) *model.DeployInstruction); ok {
+		r0 = rf(ctx, envID, featureName)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.DeployInstruction)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, string) error); ok {
+		r1 = rf(ctx, envID, featureName)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -517,6 +675,32 @@ func (_m *Repo) EnvironmentValueStore(ctx context.Context, environmentID uuid.UU
 	return r0
 }
 
+// EnvironmentValuesAcrossEnvs provides a mock function with given fields: ctx, key
+func (_m *Repo) EnvironmentValuesAcrossEnvs(ctx context.Context, key string) ([]gensql.EnvironmentValuesAcrossEnvsRow, error) {
+	ret := _m.Called(ctx, key)
+
+	var r0 []gensql.EnvironmentValuesAcrossEnvsRow
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]gensql.EnvironmentValuesAcrossEnvsRow, error)); ok {
+		return rf(ctx, key)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) []gensql.EnvironmentValuesAcrossEnvsRow); ok {
+		r0 = rf(ctx, key)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gensql.EnvironmentValuesAcrossEnvsRow)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, key)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // EnvironmentValuesForEnvironment provides a mock function with given fields: ctx, envID, showSensitive
 func (_m *Repo) EnvironmentValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) ([]*model.EnvironmentValue, error) {
 	ret := _m.Called(ctx, envID, showSensitive)
@@ -713,20 +897,6 @@ func (_m *Repo) FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model
 	return r0, r1
 }
 
-// FeatureStatesListen provides a mock function with given fields: ctx, fn
-func (_m *Repo) FeatureStatesListen(ctx context.Context, fn database.ListenFunc) error {
-	ret := _m.Called(ctx, fn)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, database.ListenFunc) error); ok {
-		r0 = rf(ctx, fn)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // FeatureVersionUpdate provides a mock function with given fields: ctx, name, version
 func (_m *Repo) FeatureVersionUpdate(ctx context.Context, name string, version string) error {
 	ret := _m.Called(ctx, name, version)
@@ -899,6 +1069,72 @@ func (_m *Repo) KubernetesNodesForEnv(ctx context.Context, envID uuid.UUID) ([]*
 	return r0, r1
 }
 
+// LogCreate provides a mock function with given fields: ctx, deployInstructionID, lines
+func (_m *Repo) LogCreate(ctx context.Context, deployInstructionID uuid.UUID, lines []message.LogLine) error {
+	ret := _m.Called(ctx, deployInstructionID, lines)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, []message.LogLine) error); ok {
+		r0 = rf(ctx, deployInstructionID, lines)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// LogsByID provides a mock function with given fields: ctx, id
+func (_m *Repo) LogsByID(ctx context.Context, id int) (*model.LogLine, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *model.LogLine
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, int) (*model.LogLine, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, int) *model.LogLine); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.LogLine)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, int) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// LogsGet provides a mock function with given fields: ctx, deployInstructionID
+func (_m *Repo) LogsGet(ctx context.Context, deployInstructionID uuid.UUID) ([]*model.LogLine, error) {
+	ret := _m.Called(ctx, deployInstructionID)
+
+	var r0 []*model.LogLine
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]*model.LogLine, error)); ok {
+		return rf(ctx, deployInstructionID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) []*model.LogLine); ok {
+		r0 = rf(ctx, deployInstructionID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.LogLine)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, deployInstructionID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // MappingValuesForEnvironment provides a mock function with given fields: ctx, envID, showSensitive
 func (_m *Repo) MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) (*feature.ComputedValues, model.EnvironmentKind, error) {
 	ret := _m.Called(ctx, envID, showSensitive)
@@ -1045,6 +1281,30 @@ func (_m *Repo) RolloutByNameAndVersion(ctx context.Context, name string, versio
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, name, version)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// RolloutCalculateDone provides a mock function with given fields: ctx, rolloutID
+func (_m *Repo) RolloutCalculateDone(ctx context.Context, rolloutID uuid.UUID) (bool, error) {
+	ret := _m.Called(ctx, rolloutID)
+
+	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) (bool, error)); ok {
+		return rf(ctx, rolloutID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) bool); ok {
+		r0 = rf(ctx, rolloutID)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, rolloutID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1208,20 +1468,6 @@ func (_m *Repo) RolloutsForFeature(ctx context.Context, name string) ([]*model.R
 	return r0, r1
 }
 
-// RolloutsListen provides a mock function with given fields: ctx, fn
-func (_m *Repo) RolloutsListen(ctx context.Context, fn database.ListenFunc) error {
-	ret := _m.Called(ctx, fn)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, database.ListenFunc) error); ok {
-		r0 = rf(ctx, fn)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // RolloutsUpdateStatus provides a mock function with given fields: ctx, status, name, completed
 func (_m *Repo) RolloutsUpdateStatus(ctx context.Context, status model.RolloutStatus, name string, completed bool) error {
 	ret := _m.Called(ctx, status, name, completed)
@@ -1234,72 +1480,6 @@ func (_m *Repo) RolloutsUpdateStatus(ctx context.Context, status model.RolloutSt
 	}
 
 	return r0
-}
-
-// StatusCreateOrUpdate provides a mock function with given fields: ctx, environmentID, h
-func (_m *Repo) StatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Helm) error {
-	ret := _m.Called(ctx, environmentID, h)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, *message.Helm) error); ok {
-		r0 = rf(ctx, environmentID, h)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// StatusForEnvironment provides a mock function with given fields: ctx, environmentID
-func (_m *Repo) StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]*model.Status, error) {
-	ret := _m.Called(ctx, environmentID)
-
-	var r0 []*model.Status
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]*model.Status, error)); ok {
-		return rf(ctx, environmentID)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) []*model.Status); ok {
-		r0 = rf(ctx, environmentID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.Status)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
-		r1 = rf(ctx, environmentID)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// StatusForFeature provides a mock function with given fields: ctx, environmentID, _a2
-func (_m *Repo) StatusForFeature(ctx context.Context, environmentID uuid.UUID, _a2 string) (*model.Status, error) {
-	ret := _m.Called(ctx, environmentID, _a2)
-
-	var r0 *model.Status
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, string) (*model.Status, error)); ok {
-		return rf(ctx, environmentID, _a2)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, string) *model.Status); ok {
-		r0 = rf(ctx, environmentID, _a2)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.Status)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, string) error); ok {
-		r1 = rf(ctx, environmentID, _a2)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
 }
 
 // TenantCI provides a mock function with given fields: ctx

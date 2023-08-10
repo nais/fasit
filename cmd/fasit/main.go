@@ -7,8 +7,10 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
 	"runtime"
 	"strings"
+	"syscall"
 	"time"
 
 	"cloud.google.com/go/pubsub"
@@ -20,9 +22,9 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/go-chi/chi/v5"
-	"github.com/gorilla/websocket"
 	"github.com/nais/fasit/pkg/auth"
 	"github.com/nais/fasit/pkg/database"
+	"github.com/nais/fasit/pkg/database/notifier"
 	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph"
 	"github.com/nais/fasit/pkg/graph/graphgen"
@@ -44,6 +46,10 @@ import (
 	// Supported database drivers.
 	_ "github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/postgres"
 	_ "github.com/lib/pq"
+
+	// Automatically set GOMAXPROCS to number of available CPUs. Might improve
+	// performance in a containerized environment.
+	_ "go.uber.org/automaxprocs"
 )
 
 var cfg = DefaultConfig()
@@ -68,17 +74,9 @@ func init() {
 
 func newServer(es graphql.ExecutableSchema) *handler.Server {
 	srv := handler.New(es)
-
-	srv.AddTransport(transport.Websocket{
-		KeepAlivePingInterval: 10 * time.Second,
-		Upgrader: websocket.Upgrader{CheckOrigin: func(r *http.Request) bool {
-			return true
-		}},
-	})
+	srv.AddTransport(transport.SSE{}) // Support subscriptions
 	srv.AddTransport(transport.Options{})
-	srv.AddTransport(transport.GET{})
 	srv.AddTransport(transport.POST{})
-	srv.AddTransport(transport.MultipartForm{})
 
 	srv.SetQueryCache(lru.New(1000))
 
@@ -93,13 +91,10 @@ func newServer(es graphql.ExecutableSchema) *handler.Server {
 func main() {
 	flag.Parse()
 
-	// ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	ctx := context.Background()
 	// defer cancel()
 
 	log := newLogger()
-
-	log.Info("CPUs available", runtime.NumCPU())
 
 	log.Info("starting pubsub client")
 	pubsubClient, err := pubsub.NewClient(ctx, cfg.GCPProjectID)
@@ -180,10 +175,13 @@ func main() {
 	receiver := workers.NewReceiver(statusMgr, repo, log.WithField("subsystem", "status"))
 	go receiver.Run(ctx)
 
+	notifierService := notifier.New(db, log.WithField("subsystem", "notifier"))
+	go notifierService.Run(ctx)
+
 	createPublisher := func(projectID, topicID string, log *logrus.Entry) workers.Publisher {
 		return message.NewPublisher[message.DeployInstruction](pubsubClient, projectID, topicID, log)
 	}
-	reconciler, err := workers.NewReconciler(repo, createPublisher, cfg.GCPProjectID, meter, log.WithField("subsystem", "reconciler"))
+	reconciler, err := workers.NewReconciler(repo, createPublisher, notifierService, cfg.GCPProjectID, meter, log.WithField("subsystem", "reconciler"))
 	if err != nil {
 		log.WithError(err).Fatal("setting up reconciler")
 	}
@@ -195,11 +193,7 @@ func main() {
 	}()
 	go reconciler.Run(ctx, 10*time.Minute)
 
-	resolver := &graph.Resolver{
-		Repo: repo,
-		Log:  log.WithField("subsystem", "graphql"),
-		// HelmChartValues: helmChartValues,
-	}
+	resolver := graph.NewResolver(ctx, repo, notifierService, log.WithField("subsystem", "graphql"))
 
 	srv := newServer(graphgen.NewExecutableSchema(graphgen.Config{Resolvers: resolver}))
 	srv.Use(otelgqlgen.Middleware())
@@ -254,8 +248,35 @@ func main() {
 		}
 	}()
 
-	log.Printf("connect to http://%s/ for GraphQL playground", cfg.BindAddress)
-	log.Fatal(http.ListenAndServe(cfg.BindAddress, router))
+	serverCtx, serverCancel := context.WithCancel(ctx)
+	server := &http.Server{
+		Addr:              cfg.BindAddress,
+		Handler:           router,
+		ReadHeaderTimeout: 2 * time.Second,
+		BaseContext: func(net.Listener) context.Context {
+			return serverCtx
+		},
+	}
+
+	go func() {
+		log.Printf("connect to http://%s/ for GraphQL playground", cfg.BindAddress)
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.WithError(err).Fatal("running server")
+		}
+	}()
+
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	defer cancel()
+	<-ctx.Done()
+	serverCancel()
+	log.Info("Shutting down")
+
+	timeoutCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(timeoutCtx); err != nil {
+		log.WithError(err).Error("shutting down server")
+	}
 }
 
 func newLogger() *logrus.Logger {

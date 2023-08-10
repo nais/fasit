@@ -12,11 +12,15 @@ jobs:
   feature_tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
-      - uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # ratchet:actions/checkout@v3
+      - name: Find Go version
+        id: go_version
+        run: |
+          echo "GO_VERSION=$(grep golang .tool-versions | awk '{print $2}')" >> $GITHUB_OUTPUT
+      - uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # ratchet:actions/setup-go@v4
         with:
-          go-version: ">=1.20.5"
-      - uses: actions/cache@v3
+          go-version: ${{ steps.go_version.outputs.GO_VERSION }}
+      - uses: actions/cache@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # ratchet:actions/cache@v3
         with:
           path: |
             ~/.cache/go-build
@@ -35,16 +39,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # ratchet:actions/checkout@v3
       - id: "auth"
         name: "Authenticate to Google Cloud"
-        uses: "google-github-actions/auth@v1.1.1"
+        uses: "google-github-actions/auth@35b0e87d162680511bf346c299f71c9c5c379033" # ratchet:google-github-actions/auth@v1.1.1
         with:
           workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: "gh-fasit@nais-io.iam.gserviceaccount.com"
           token_format: "access_token"
       - name: "Set up Cloud SDK"
-        uses: "google-github-actions/setup-gcloud@v1"
+        uses: "google-github-actions/setup-gcloud@e30db14379863a8c79331b04a9969f4c1e225e0b" # ratchet:google-github-actions/setup-gcloud@v1
       - name: Sync features to GCS
         run: |-
           gsutil -m rsync -d -r features gs://${{ env.BUCKET }}

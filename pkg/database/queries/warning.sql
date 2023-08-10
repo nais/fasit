@@ -1,16 +1,35 @@
 -- name: Warnings :many
-SELECT 'feature_status' as "type", environment_id, environment.tenant_id, feature
-FROM status
-JOIN environments environment ON environment.id = status.environment_id
-WHERE status = 'failed'
-AND (
-  environment.id = @environment_id
-  OR environment.tenant_id = @tenant_id
+
+WITH latest_di AS (
+  SELECT DISTINCT ON (feature_name, environment_id)
+    'feature_status' as "type",
+    di.environment_id,
+    environment.tenant_id,
+    feature_name,
+    CASE WHEN fd.name IS NULL THEN '' ELSE fd.name END as feature_data_name,
+    status
+  FROM deploy_instructions di
+  JOIN environments environment ON environment.id = di.environment_id
+  JOIN feature_states fs ON fs.environment_id = di.environment_id AND fs.feature = di.feature_name AND fs.enabled = true
+  LEFT JOIN features fd ON fd.name = di.feature_name AND fd.version = di.feature_version
+  WHERE (
+    environment.id = @environment_id
+    OR environment.tenant_id = @tenant_id
+  )
+  ORDER BY feature_name, di.environment_id, di.last_modified DESC
 )
+SELECT
+  type,
+  environment_id,
+  tenant_id,
+  feature_name,
+  feature_data_name
+FROM latest_di
+WHERE status = 'failed'
 
 UNION
 
-SELECT 'naisd', environment.id, environment.tenant_id, ''
+SELECT 'naisd', environment.id, environment.tenant_id, '', 'naisd'
 FROM health_statuses hs
 RIGHT JOIN environments environment ON environment.id = hs.environment_id
 WHERE (

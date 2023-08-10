@@ -1,5 +1,5 @@
 mutation {
-  featureStateSave(envID: "{{ .env.ID }}", enabled: true, feature: "clamav") {
+  featureStateSave(envID: "{{ .Tenant.tenant1.Env.e1.ID }}", enabled: true, feature: "clamav") {
     id
     enabled
   }

@@ -1,0 +1,20 @@
+mutation {
+  featureStateSave(envID: "{{ .Tenant.tenant23.Env.testing.ID }}", enabled: true, feature: "clamav") {
+    id
+    enabled
+  }
+}
+
+RETURNS
+
+OPTION data.featureStateSave.id=IGNORE
+
+ENDOPTS
+
+{
+	"data": {
+		"featureStateSave": {
+			"enabled": true
+		}
+	}
+}

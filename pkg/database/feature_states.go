@@ -9,7 +9,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/graph/model"
 )
@@ -18,7 +19,6 @@ type FeatureStateRepo interface {
 	FeatureStateGet(ctx context.Context, envID uuid.UUID, featureName string) (*model.FeatureState, error)
 	FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *model.Feature, enabled bool) (*model.FeatureState, error)
 	FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
-	FeatureStatesListen(ctx context.Context, fn ListenFunc) error
 	RolloutStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
 }
 
@@ -29,8 +29,8 @@ func featureStateFromSQL(state gensql.FeatureState) *model.FeatureState {
 		FeatureName:  state.Feature,
 		EnabledAt:    nullTimeToPtr(state.EnabledAt),
 		Enabled:      state.Enabled,
-		Created:      state.Created,
-		LastModified: state.LastModified,
+		Created:      state.Created.Time,
+		LastModified: state.LastModified.Time,
 	}
 }
 
@@ -85,9 +85,9 @@ func (r *repo) FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.
 				ID:           model.FeatureStateID(envID, f.Name),
 				FeatureName:  f.Name,
 				Enabled:      lookup[f.Name].Enabled,
-				Created:      lookup[f.Name].Created,
+				Created:      lookup[f.Name].Created.Time,
 				EnabledAt:    nullTimeToPtr(lookup[f.Name].EnabledAt),
-				LastModified: lookup[f.Name].LastModified,
+				LastModified: lookup[f.Name].LastModified.Time,
 				EnvID:        envID,
 			})
 		}
@@ -180,7 +180,6 @@ func (r *repo) FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID,
 			}
 		}
 
-		fmt.Printf("enabled features: %v\n", enabledFeatures)
 		missingFeatures := feature.Dependencies.FindMissing(enabledFeatures)
 		if len(missingFeatures) > 0 {
 			return nil, fmt.Errorf("dependency '%v' not enabled", missingFeatures)
@@ -191,7 +190,7 @@ func (r *repo) FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID,
 		EnvironmentID: envID,
 		Feature:       feature.Name,
 		Enabled:       enabled,
-		Enabledat: sql.NullTime{
+		Enabledat: pgtype.Timestamptz{
 			Time:  Now(ctx),
 			Valid: enabled,
 		},
@@ -208,8 +207,4 @@ func (r *repo) FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID,
 	r.createAudit(ctx, msg, "feature_states", envID.String()+":"+feature.Name)
 
 	return featureStateFromSQL(res), nil
-}
-
-func (r *repo) FeatureStatesListen(ctx context.Context, fn ListenFunc) error {
-	return r.ListenNotify(ctx, "feature_states_notify", fn)
 }

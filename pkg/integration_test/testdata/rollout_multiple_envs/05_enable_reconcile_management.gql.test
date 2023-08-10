@@ -1,0 +1,15 @@
+mutation {
+  environmentSetReconcile(id: "{{ .Tenant.tenant23.Env.management.ID }}", reconcile: true) {
+    reconcile
+  }
+}
+
+RETURNS
+
+{
+  "data": {
+    "environmentSetReconcile": {
+      "reconcile": true
+    }
+  }
+}

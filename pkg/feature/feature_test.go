@@ -78,6 +78,7 @@ func TestNew(t *testing.T) {
 				},
 				"installCRDs": {Config: &model.Config{Type: "bool"}},
 			}},
+			SpecVersion: "v1",
 		},
 		{
 			Name:        "nais-crds",
@@ -85,6 +86,7 @@ func TestNew(t *testing.T) {
 			Version:     "0.1.0",
 			Source:      "https://github.com/nais/liberator/tree/main/charts",
 			FeatureYAML: model.FeatureYAML{Timeout: 5 * time.Minute, Values: model.Values{}},
+			SpecVersion: "v1",
 		},
 	}
 

@@ -1,13 +1,13 @@
 name: Build and deploy fasit
 on:
   push:
-    branches-ignore: [dependabot/**]
+    branches: [main]
     paths-ignore:
       - "charts/**"
       - ".github/workflows/*_chart.yaml"
-      - ".github/workflows/build_and_push_image_fasit-frontend.yaml"
-      - "frontend/**"
       - "features/**"
+      - "schema/jsonschema/**"
+      - "cmd/generate_schema/**"
   pull_request:
     types: [opened, reopened, synchronize, edited]
 
@@ -25,19 +25,77 @@ jobs:
   tests:
     runs-on: ubuntu-latest-4-cores
     steps:
-      - uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # ratchet:actions/checkout@v3.5.2
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # ratchet:actions/checkout@v3
+      - name: Find Go version
+        id: go_version
+        run: |
+          echo "GO_VERSION=$(grep golang .tool-versions | awk '{print $2}')" >> $GITHUB_OUTPUT
       - uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # ratchet:actions/setup-go@v4
         with:
-          go-version: ">=1.20.5"
+          go-version: ${{ steps.go_version.outputs.GO_VERSION }}
       - run: go test -cover -tags integration_test ./...
       - name: Vulnerability check
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@latest
           govulncheck ./...
 
+  generated_code:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install asdf
+        uses: asdf-vm/actions/setup@v2
+
+      - name: asdf cache
+        id: asdf-cache
+        uses: actions/cache@v3
+        with:
+          path: ~/.asdf/
+          key: ${{ runner.os }}-asdf-${{ hashFiles('**/.tool-versions') }}
+
+      - name: Install CD tools from .tool-versions
+        if: steps.asdf-cache.outputs.cache-hit != 'true'
+        uses: asdf-vm/actions/install@v2
+        with:
+          # Go is a dependency on two of the tools, so we install it first.
+          before_install: |
+            asdf install golang latest
+            asdf global golang latest
+
+      - name: Find go cache dir
+        id: go-cache
+        run: |
+          # Clear cache dirs to avoid error when restoring
+          go clean -cache -modcache
+          echo "gocache=$(go env GOCACHE)" >> $GITHUB_OUTPUT
+          echo "gomodcache=$(go env GOMODCACHE)" >> $GITHUB_OUTPUT
+
+      - name: Cache go modules
+        uses: actions/cache@v3
+        with:
+          path: |
+            ${{ steps.go-cache.outputs.gocache }}
+            ${{ steps.go-cache.outputs.gomodcache }}
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+
+      - name: Init commands
+        run: |
+          go mod download
+          make install-sqlc
+
+      - name: Check generated code
+        run: |
+          make generate-feature-schema > /dev/null
+          make generate-graphql > /dev/null
+          make generate-proto > /dev/null
+          make generate-sql > /dev/null
+
+          git diff --exit-code --name-only && echo "All files are up to date"
+
   build_and_push_fasit:
     if: github.ref == 'refs/heads/main'
-    needs: [tests]
+    needs: [tests, generated_code]
     permissions:
       contents: "read"
       id-token: "write"
@@ -46,16 +104,16 @@ jobs:
       version: ${{ steps.build-push-sign.outputs.version }}
     steps:
       - name: Checkout
-        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # ratchet:actions/checkout@v3.5.2
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # ratchet:actions/checkout@v3
       - name: Install cosign
-        uses: sigstore/cosign-installer@ef0e9691595ea19ec990a46b1a591dcafe568f34 # ratchet:sigstore/cosign-installer@main
+        uses: sigstore/cosign-installer@a5d81fb6bdbcbb3d239e864d6552820420254494 # ratchet:sigstore/cosign-installer@main
         with:
           cosign-release: "v2.0.0"
       - name: Verify builder image
         run: cosign verify --certificate-identity ${{ env.BASEIMG_IDENTITY }} --certificate-oidc-issuer ${{ env.BASEIMG_ISSUER }} ${{ env.BUILDER_IMG }}
       - name: Verify runner image
         run: cosign verify --certificate-identity ${{ env.BASEIMG_IDENTITY }} --certificate-oidc-issuer ${{ env.BASEIMG_ISSUER }} ${{ env.RUNNER_IMG }}
-      - uses: nais/platform-build-push-sign@075f9d1106e1996789f038b9d7ea1f08dd7fd3c9 # ratchet:nais/platform-build-push-sign@main
+      - uses: nais/platform-build-push-sign@fb7da39ee56c8904ed15c02705a1780cb278a65b # ratchet:nais/platform-build-push-sign@main
         id: build-push-sign
         with:
           dockerfile: Dockerfile_fasit
@@ -66,23 +124,23 @@ jobs:
 
   build_and_push_naisd:
     if: github.ref == 'refs/heads/main'
-    needs: [tests]
+    needs: [tests, generated_code]
     permissions:
       contents: "read"
       id-token: "write"
     runs-on: ubuntu-latest-4-cores
     steps:
       - name: Checkout
-        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab # ratchet:actions/checkout@v3.5.2
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # ratchet:actions/checkout@v3.5.3
       - name: Install cosign
-        uses: sigstore/cosign-installer@ef0e9691595ea19ec990a46b1a591dcafe568f34 # ratchet:sigstore/cosign-installer@main
+        uses: sigstore/cosign-installer@a5d81fb6bdbcbb3d239e864d6552820420254494 # ratchet:sigstore/cosign-installer@main
         with:
           cosign-release: "v2.0.0"
       - name: Verify builder image
         run: cosign verify --certificate-identity ${{ env.BASEIMG_IDENTITY }} --certificate-oidc-issuer ${{ env.BASEIMG_ISSUER }} ${{ env.BUILDER_IMG }}
       - name: Verify runner image
         run: cosign verify --certificate-identity ${{ env.BASEIMG_IDENTITY }} --certificate-oidc-issuer ${{ env.BASEIMG_ISSUER }} ${{ env.RUNNER_IMG }}
-      - uses: nais/platform-build-push-sign@075f9d1106e1996789f038b9d7ea1f08dd7fd3c9 # ratchet:nais/platform-build-push-sign@main
+      - uses: nais/platform-build-push-sign@fb7da39ee56c8904ed15c02705a1780cb278a65b # ratchet:nais/platform-build-push-sign@main
         id: build-push-sign
         with:
           dockerfile: Dockerfile_naisd
@@ -100,10 +158,10 @@ jobs:
       id-token: "write"
     steps:
       - name: Checkout fasit
-        uses: actions/checkout@8e5e7e5ab8b370d6c329ec480221332ada57f0ab
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9
       - id: "auth"
         name: "Authenticate to Google Cloud"
-        uses: "google-github-actions/auth@v1.1.1"
+        uses: "google-github-actions/auth@35b0e87d162680511bf346c299f71c9c5c379033" # ratchet:google-github-actions/auth@v1.1.1
         with:
           workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: "gh-fasit@nais-io.iam.gserviceaccount.com"

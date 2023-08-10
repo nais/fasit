@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/auth"
 	"github.com/nais/fasit/pkg/database"
+	"github.com/nais/fasit/pkg/database/notifier"
 	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/nais/fasit/pkg/message"
 	"github.com/sirupsen/logrus"
@@ -21,17 +22,15 @@ import (
 )
 
 type ReconcilerStore interface {
-	ConfigListen(ctx context.Context, fn database.ListenFunc) error
+	DeployInstructionCreate(ctx context.Context, envID uuid.UUID, featureName, featureVersion, hash string) (uuid.UUID, error)
+	DeployInstructionsLatestForEnvironment(ctx context.Context, envID uuid.UUID) ([]*model.DeployInstruction, error)
 	FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, ci bool) ([]*model.Feature, error)
 	FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *model.Feature, enabled bool) (*model.FeatureState, error)
 	FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
-	FeatureStatesListen(ctx context.Context, fn database.ListenFunc) error
 	HealthGet(ctx context.Context, environmentID uuid.UUID) (*model.Health, error)
 	HelmValues(ctx context.Context, feature *model.Feature, envID uuid.UUID) (map[string]any, error)
-	RolloutsListen(ctx context.Context, fn database.ListenFunc) error
-	StatusForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]*model.Status, error)
-	TenantEnvironments(ctx context.Context, onlyReconciled bool) ([]*model.TenantEnvironment, error)
 	RolloutStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
+	TenantEnvironments(ctx context.Context, onlyReconciled bool) ([]*model.TenantEnvironment, error)
 }
 
 type Publisher interface {
@@ -41,11 +40,16 @@ type Publisher interface {
 
 type NewPublisher func(projectID, topicID string, log *logrus.Entry) Publisher
 
+type Notifier interface {
+	Listen(table string, filters ...notifier.Filter) <-chan notifier.Payload
+}
+
 type Reconciler struct {
 	repo      ReconcilerStore
 	publisher NewPublisher
 	log       *logrus.Entry
 	projectID string
+	notifier  Notifier
 
 	lock    sync.Mutex
 	running bool
@@ -58,6 +62,7 @@ type Reconciler struct {
 func NewReconciler(
 	repo ReconcilerStore,
 	publisher NewPublisher,
+	notifier Notifier,
 	gcpProjectID string,
 	meter metric.Meter,
 	log *logrus.Entry,
@@ -78,6 +83,7 @@ func NewReconciler(
 		projectID:      gcpProjectID,
 		reconcileTime:  reconcileTime,
 		deployMessages: deployMessages,
+		notifier:       notifier,
 	}, nil
 }
 
@@ -103,23 +109,29 @@ func (r *Reconciler) Listen(ctx context.Context) error {
 		}
 	}()
 
-	trigger := func(ctx context.Context, id uuid.UUID) {
-		ch <- struct{}{}
-	}
+	cfgGlobal := r.notifier.Listen("configurations_global")
+	cfgEnv := r.notifier.Listen("configurations_environment")
+	rollouts := r.notifier.Listen("rollouts")
+	featureStates := r.notifier.Listen("feature_states")
 
 	go func() {
-		if err := r.repo.RolloutsListen(ctx, trigger); err != nil {
-			r.log.WithError(err).Error("rollouts listen")
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-cfgGlobal:
+				ch <- struct{}{}
+			case <-cfgEnv:
+				ch <- struct{}{}
+			case <-rollouts:
+				ch <- struct{}{}
+			case <-featureStates:
+				ch <- struct{}{}
+			}
 		}
 	}()
 
-	go func() {
-		if err := r.repo.FeatureStatesListen(ctx, trigger); err != nil {
-			r.log.WithError(err).Error("feature states listen")
-		}
-	}()
-
-	return r.repo.ConfigListen(ctx, trigger)
+	return nil
 }
 
 func (r *Reconciler) Run(ctx context.Context, interval time.Duration) {
@@ -162,62 +174,57 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return err
 	}
 
-	for _, d := range data {
+	for _, e := range data {
 		log := r.log.WithFields(logrus.Fields{
-			"environment": d.Name,
-			"tenant":      d.TenantName,
+			"environment": e.Name,
+			"tenant":      e.TenantName,
 		})
 
 		log.Debug("reconcile environment")
 
-		if err := r.reconcileEnvironment(ctx, d); err != nil {
+		if err := r.reconcileEnvironment(ctx, e, log); err != nil {
 			log.WithError(err).Error("unable to reconcile environment")
 		}
 	}
 	return nil
 }
 
-func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEnvironment) error {
+func (r *Reconciler) reconcileEnvironment(ctx context.Context, e *model.TenantEnvironment, log *logrus.Entry) error {
 	metricAttrs := []attribute.KeyValue{
-		attribute.Key("environment").String(d.Name),
-		attribute.Key("tenant").String(d.TenantName),
+		attribute.Key("environment").String(e.Name),
+		attribute.Key("tenant").String(e.TenantName),
 	}
 	start := time.Now()
 	defer func() {
 		r.reconcileTime.Record(ctx, time.Since(start).Milliseconds(), metric.WithAttributes(metricAttrs...))
 	}()
 
-	health, err := r.repo.HealthGet(ctx, d.ID)
+	health, err := r.repo.HealthGet(ctx, e.ID)
 	if err != nil {
 		return fmt.Errorf("health status: %w", err)
 	}
 	if time.Since(health.ReportedAt) > 3*time.Minute {
-		r.log.WithField("environment", d.Name).Debug("naisd is unhealthy - skip reconcile")
+		log.Debug("naisd is unhealthy - skip reconcile")
 		return nil
 	}
 
-	features, err := r.repo.FeaturesForKind(ctx, d.Kind, d.CI)
-	if err != nil {
-		return fmt.Errorf("features for kind: %w", err)
-	}
-
-	envStatus, err := r.repo.StatusForEnvironment(ctx, d.Environment.ID)
+	envInstructions, err := r.repo.DeployInstructionsLatestForEnvironment(ctx, e.Environment.ID)
 	if err != nil {
 		return fmt.Errorf("status for environment: %w", err)
 	}
 
-	lookup := make(map[string]*model.Status)
-	for _, s := range envStatus {
-		lookup[s.Feature] = s
+	lookup := make(map[string]*model.DeployInstruction)
+	for _, ins := range envInstructions {
+		lookup[ins.FeatureName] = ins
 	}
 
-	featureStates, err := r.repo.FeatureStatesGet(ctx, d.ID)
+	featureStates, err := r.repo.FeatureStatesGet(ctx, e.ID)
 	if err != nil {
 		return fmt.Errorf("feature states: %w", err)
 	}
 
-	if d.CI {
-		rolloutStates, err := r.repo.RolloutStatesGet(ctx, d.ID)
+	if e.CI {
+		rolloutStates, err := r.repo.RolloutStatesGet(ctx, e.ID)
 		if err != nil {
 			return fmt.Errorf("rollout states: %w", err)
 		}
@@ -230,20 +237,31 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 		states[s.FeatureName] = s
 	}
 
-	mgr := r.publisher(r.projectID, "naisd-"+d.TenantName+"-"+d.Name, r.log)
+	mgr := r.publisher(r.projectID, "naisd-"+e.TenantName+"-"+e.Name, r.log)
 	defer mgr.Stop()
 
+	features, err := r.repo.FeaturesForKind(ctx, e.Kind, e.CI)
+	if err != nil {
+		return fmt.Errorf("features for kind: %w", err)
+	}
+
 	for _, f := range features {
+		log = log.WithField("feature", f.Name)
+
 		if states[f.Name] == nil || !states[f.Name].Enabled {
-			r.log.WithField("feature", f.Name).Trace("not enabled")
 			continue
 		}
 
-		values, err := r.repo.HelmValues(ctx, f, d.ID)
+		if l, ok := lookup[f.Name]; ok && (l.Status == model.RolloutStatusCreated || l.Status == model.RolloutStatusPending) {
+			log.WithField("status", l.Status).Debug("deploy instruction already in progress")
+			continue
+		}
+
+		values, err := r.repo.HelmValues(ctx, f, e.ID)
 		if err != nil {
 			var fer *database.ErrMissingRequiredFields
 			if errors.As(err, &fer) {
-				r.log.WithField("feature", f.Name).WithError(err).Debug("missing required fields")
+				log.WithError(err).Debug("missing required fields")
 				continue
 			}
 			return fmt.Errorf("helm values: %w", err)
@@ -255,20 +273,21 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, d *model.TenantEn
 		}
 
 		if status, ok := lookup[f.Name]; ok {
-			if status.Version == f.Version && status.ConfigHash == hash {
+			if status.FeatureVersion == f.Version && status.Hash == hash {
 				continue
 			}
 		}
 
-		r.log.WithFields(logrus.Fields{
-			"feature":     f.Name,
-			"tenant":      d.TenantName,
-			"environment": d.Name,
-			"version":     f.Version,
-		}).Debug("publishing deploy instruction")
+		log.WithField("version", f.Version).Debug("publishing deploy instruction")
 
 		r.deployMessages.Add(ctx, 1, metric.WithAttributes(append(metricAttrs, attribute.Key("feature").String(f.Name))...))
+
+		id, err := r.repo.DeployInstructionCreate(ctx, e.ID, f.Name, f.Version, hash)
+		if err != nil {
+			return fmt.Errorf("create deploy instruction: %w", err)
+		}
 		err = mgr.Publish(ctx, message.DeployInstruction{
+			ID:         id,
 			Name:       f.Name,
 			Version:    f.Version,
 			Chart:      f.Chart,

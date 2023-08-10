@@ -1,5 +1,5 @@
 .PHONY: test integration-test local-with-auth local linux-build docker-build docker-push run-postgres-test stop-postgres-test install-sqlc
-SQLC_VERSION ?= "v1.17.2"
+SQLC_VERSION ?= "v1.20.0"
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -9,14 +9,23 @@ else
 endif
 
 install-sqlc:
-	go install github.com/kyleconroy/sqlc/cmd/sqlc@$(SQLC_VERSION)
+	@if [ "$(shell sqlc version)" != "$(SQLC_VERSION)" ]; then \
+		echo "Installing sqlc $(SQLC_VERSION)"; \
+		go install github.com/sqlc-dev/sqlc/cmd/sqlc@$(SQLC_VERSION); \
+		if command -v asdf > /dev/null; then\
+			asdf reshim golang;\
+		fi;\
+	else \
+		echo "sqlc $(SQLC_VERSION) already installed"; \
+	fi
 
-generate-sql:
+generate-sql: install-sqlc sqlc-vet
 	$(GOBIN)/sqlc generate
 	$(MAKE) mocks
 
 generate-graphql:
 	go run github.com/99designs/gqlgen generate
+	go run mvdan.cc/gofumpt@latest -w .
 
 setup:
 	go run cmd/setup_local_env/main.go
@@ -37,11 +46,42 @@ local-naisd:
 	--env dev \
 	--log-level=debug
 
-test:
+local-naisd-failing:
+	PUBSUB_EMULATOR_HOST=localhost:8086 go run ./cmd/naisd \
+	--env-project-id local-test-partner-dev \
+	--nais-project-id nais-local-dev \
+	--tenant-name test-partner \
+	--env dev \
+	--log-level=debug \
+	--mock-failing=true
+
+local-naisd-management:
+	PUBSUB_EMULATOR_HOST=localhost:8086 go run ./cmd/naisd \
+	--env-project-id local-test-partner-management \
+	--nais-project-id nais-local-dev \
+	--tenant-name test-partner \
+	--env management \
+	--management=true \
+	--log-level=debug
+
+local-naisd-management-failing:
+	PUBSUB_EMULATOR_HOST=localhost:8086 go run ./cmd/naisd \
+	--env-project-id local-test-partner-management \
+	--nais-project-id nais-local-dev \
+	--tenant-name test-partner \
+	--env management \
+	--management=true \
+	--log-level=debug \
+	--mock-failing=true
+
+test: sqlc-vet
 	go test -cover ./...
 
-integration-test:
+integration-test: sqlc-vet
 	go test -tags integration_test -cover ./...
+
+sqlc-vet:
+	$(GOBIN)/sqlc vet
 
 mocks:
 	mockery --case underscore --name Repo --dir pkg/database/ --outpkg mocks --output pkg/database/mocks
@@ -59,4 +99,4 @@ generate-feature-schema:
 	go run cmd/generate_schema/main.go
 
 playground:
-	cd cmd/mapping_playground && go run .
+	echo "Playground has moved to Fasit: https://fasit.nais.io/playground"

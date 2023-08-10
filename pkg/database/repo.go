@@ -11,8 +11,8 @@ import (
 
 	"cloud.google.com/go/cloudsqlconn"
 	cloudsqlpgx "cloud.google.com/go/cloudsqlconn/postgres/pgxv4"
-	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/feature"
 	"github.com/pressly/goose/v3"
@@ -44,6 +44,7 @@ type Repo interface {
 	AuditRepo
 	AutoInstallsRepo
 	ConfigRepo
+	DeployInstructionRepo
 	EnvironmentRepo
 	EnvironmentValueRepo
 	FeatureDataRepo
@@ -51,9 +52,9 @@ type Repo interface {
 	FeatureStateRepo
 	HealthRepo
 	KubernetesNodeRepo
+	LogRepo
 	ReleaseStatusRepo
 	RolloutRepo
-	StatusRepo
 	TenantRepo
 	WarningRepo
 
@@ -113,7 +114,7 @@ func (r *repo) WithTx(ctx context.Context) (Repo, pgx.Tx, error) {
 }
 
 func (r *repo) TxFunc(ctx context.Context, fn TXFunc) error {
-	return r.db.BeginFunc(ctx, func(tx pgx.Tx) error {
+	return pgx.BeginFunc(ctx, r.db, func(tx pgx.Tx) error {
 		return fn(&repo{
 			querier: r.querier.WithTx(tx),
 			db:      r.db,
@@ -162,7 +163,7 @@ func NewDB(ctx context.Context, dbConnDSN string, cloudsql bool) (*pgxpool.Pool,
 	}
 
 	// Interact with the dirver directly as you normally would
-	conn, err := pgxpool.ConnectConfig(context.Background(), config)
+	conn, err := pgxpool.NewWithConfig(context.Background(), config)
 	if err != nil {
 		return nil, closers, fmt.Errorf("failed to connect: %w", err)
 	}

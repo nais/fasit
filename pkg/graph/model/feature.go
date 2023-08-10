@@ -29,6 +29,9 @@ type Feature struct {
 	Source      string                     `json:"source"`
 	ValuesYAML  map[string]json.RawMessage `json:"-"`
 
+	// SpecVersion is used to determine which version of the feature spec is used.
+	SpecVersion string `json:"specVersion"`
+
 	// for graphql
 	GraphVars struct {
 		EnvironmentID uuid.UUID
@@ -37,10 +40,10 @@ type Feature struct {
 }
 
 type FeatureYAML struct {
-	Dependencies     Dependencies      `json:"dependencies" yaml:"dependencies,omitempty"`
+	Dependencies     Dependencies      `json:"dependencies,omitempty" yaml:"dependencies,omitempty" jsonschema:"omitempty"`
 	EnvironmentKinds []EnvironmentKind `json:"environmentKinds" yaml:"environmentKinds" jsonschema:"enum=management,enum=tenant,enum=onprem,enum=legacy,required"`
 	Timeout          time.Duration     `json:"timeout,omitempty" yaml:"timeout,omitempty" jsonschema:"omitempty,type=string,pattern=^(\\d+h)?(\\d+m)?(\\d+s)?$"`
-	Values           Values            `json:"values" yaml:"values,omitempty"`
+	Values           Values            `json:"values,omitempty" yaml:"values,omitempty" jsonschema:"omitempty"`
 }
 
 type Values map[string]Value
@@ -60,7 +63,7 @@ type Computed struct {
 }
 
 type Config struct {
-	Type   ConfigType `yaml:"type,omitempty" json:"type,omitempty"`
+	Type   ConfigType `yaml:"type,omitempty" json:"type"  jsonschema:"enum=string,enum=int,enum=bool,enum=string_array,required"`
 	Secret bool       `json:"secret,omitempty" yaml:"secret,omitempty"`
 }
 
@@ -68,12 +71,12 @@ type Value struct {
 	Description string            `yaml:"description,omitempty" json:"description,omitempty"`
 	DisplayName string            `yaml:"displayName,omitempty" json:"displayName,omitempty"`
 	Required    bool              `yaml:"required,omitempty" json:"required,omitempty"`
-	Computed    *Computed         `yaml:"computed,omitempty" json:"computed,omitempty"`
-	Config      *Config           `yaml:"config,omitempty" json:"config,omitempty"`
-	IgnoreKind  []EnvironmentKind `yaml:"ignoreKind,omitempty" json:"ignoreKind,omitempty"`
+	Computed    *Computed         `yaml:"computed,omitempty" json:"computed,omitempty" jsonschema:"anyof_required=computed"`
+	Config      *Config           `yaml:"config,omitempty" json:"config,omitempty" jsonschema:"anyof_required=config"`
+	IgnoreKind  []EnvironmentKind `yaml:"ignoreKind,omitempty" json:"ignoreKind,omitempty" jsonschema:"enum=management,enum=tenant,enum=onprem,enum=legacy"`
 
 	// for graphql
-	GraphQLKey string `yaml:"key,omitempty" json:"key,omitempty"`
+	GraphQLKey string `yaml:"key,omitempty" json:"key,omitempty" jsonschema:"-"`
 }
 
 func (v Value) ValidConfig(value json.RawMessage) error {
@@ -218,6 +221,14 @@ func (f *Feature) normalizedYAML(valuesYAML map[string]any) {
 
 		f.ValuesYAML[k] = pluckFromMap(k, valuesYAML)
 	}
+}
+
+type FeatureHistory struct {
+	ID           uuid.UUID     `json:"id"`
+	Version      string        `json:"version"`
+	Status       RolloutStatus `json:"status"`
+	Created      time.Time     `json:"created"`
+	LastModified time.Time     `json:"lastModified"`
 }
 
 func pluckFromMap(key string, mp map[string]any) json.RawMessage {

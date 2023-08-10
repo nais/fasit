@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgtype"
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/graph/model"
 )
@@ -14,11 +13,11 @@ import (
 type RolloutRepo interface {
 	RolloutByName(ctx context.Context, name string) (*model.Feature, error)
 	RolloutByNameAndVersion(ctx context.Context, name, version string) (*model.Rollout, error)
+	RolloutCalculateDone(ctx context.Context, rolloutID uuid.UUID) (bool, error)
 	RolloutCreate(ctx context.Context, name, version string) (*model.Rollout, error)
 	RolloutDelete(ctx context.Context, name string) error
 	RolloutEventCreate(ctx context.Context, rollout uuid.UUID, failure bool, message string, data map[string]any) error
 	RolloutsForFeature(ctx context.Context, name string) ([]*model.Rollout, error)
-	RolloutsListen(ctx context.Context, fn ListenFunc) error
 	RolloutStatus(ctx context.Context, name string) (model.RolloutStatus, error)
 	RolloutsUpdateStatus(ctx context.Context, status model.RolloutStatus, name string, completed bool) error
 
@@ -39,19 +38,14 @@ func (r *repo) RolloutStatus(ctx context.Context, name string) (model.RolloutSta
 }
 
 func (r *repo) RolloutEventCreate(ctx context.Context, rolloutID uuid.UUID, failure bool, message string, data map[string]any) error {
-	d := pgtype.JSONB{
-		Status: pgtype.Null,
-	}
+	d := []byte(nil)
 	if data != nil {
 		b, err := json.Marshal(data)
 		if err != nil {
 			return fmt.Errorf("marshal data: %w", err)
 		}
 
-		d = pgtype.JSONB{
-			Bytes:  b,
-			Status: pgtype.Present,
-		}
+		d = b
 	}
 
 	return r.querier.RolloutEventCreate(ctx, gensql.RolloutEventCreateParams{RolloutID: rolloutID, Failure: failure, Message: message, Data: d})
@@ -83,32 +77,28 @@ func (r *repo) RolloutCreate(ctx context.Context, name, version string) (*model.
 	return &model.Rollout{
 		ID:          ro.ID,
 		Version:     ro.Version,
-		Created:     ro.Created,
+		Created:     ro.Created.Time,
 		FeatureName: ro.FeatureName,
 	}, nil
-}
-
-func (r *repo) RolloutsListen(ctx context.Context, fn ListenFunc) error {
-	return r.ListenNotify(ctx, "rollout_notify", fn)
 }
 
 func (r *repo) RolloutByName(ctx context.Context, name string) (*model.Feature, error) {
 	f, err := r.querier.RolloutByName(ctx, name)
 	if err != nil {
-		return nil, fmt.Errorf("get feature by name from db: %w", err)
+		return nil, fmt.Errorf("get rollout by name from db: %w", err)
 	}
 
 	deps := model.Dependencies{}
-	if err := json.Unmarshal(f.Dependencies.Bytes, &deps); err != nil {
+	if err := json.Unmarshal(f.Dependencies, &deps); err != nil {
 		return nil, fmt.Errorf("unmarshal dependencies: %w", err)
 	}
 
 	valuesYAML := make(map[string]json.RawMessage)
-	if err := json.Unmarshal(f.DefaultValues.Bytes, &valuesYAML); err != nil {
+	if err := json.Unmarshal(f.DefaultValues, &valuesYAML); err != nil {
 		return nil, fmt.Errorf("unmarshal default values: %w", err)
 	}
 
-	fyaml, defaultValues, err := makeFeatureYAML(f.Kinds, f.Dependencies, f.Values, f.DefaultValues)
+	fyaml, defaultValues, err := makeFeatureYAML(f.Kinds, f.Dependencies, f.Values, f.DefaultValues, f.Timeout)
 	if err != nil {
 		return nil, fmt.Errorf("make feature yaml: %w", err)
 	}
@@ -121,6 +111,7 @@ func (r *repo) RolloutByName(ctx context.Context, name string) (*model.Feature, 
 		Source:      f.Source,
 		FeatureYAML: fyaml,
 		ValuesYAML:  defaultValues,
+		SpecVersion: "v2",
 		GraphVars: struct {
 			EnvironmentID uuid.UUID
 			RolloutID     uuid.UUID
@@ -141,7 +132,7 @@ func (r *repo) RolloutsForFeature(ctx context.Context, name string) ([]*model.Ro
 		res = append(res, &model.Rollout{
 			ID:          ro.ID,
 			Version:     ro.Version,
-			Created:     ro.Created,
+			Created:     ro.Created.Time,
 			FeatureName: ro.FeatureName,
 			Completed:   nullTimeToPtr(ro.Completed),
 			Status:      model.RolloutStatus(ro.Status),
@@ -163,7 +154,7 @@ func (r *repo) RolloutByNameAndVersion(ctx context.Context, name, version string
 	return &model.Rollout{
 		ID:          ro.ID,
 		Version:     ro.Version,
-		Created:     ro.Created,
+		Created:     ro.Created.Time,
 		FeatureName: ro.FeatureName,
 		Completed:   nullTimeToPtr(ro.Completed),
 		Status:      model.RolloutStatus(ro.Status),
@@ -179,17 +170,21 @@ func (r *repo) RolloutEvents(ctx context.Context, rolloutID uuid.UUID) ([]*model
 	var res []*model.RolloutEvent
 	for _, e := range events {
 		var data json.RawMessage
-		if e.Data.Status == pgtype.Present {
-			data = json.RawMessage(e.Data.Bytes)
+		if e.Data != nil {
+			data = json.RawMessage(e.Data)
 		}
 		res = append(res, &model.RolloutEvent{
 			ID:      e.ID,
 			Failure: e.Failure,
 			Message: e.Message,
-			Created: e.Created,
+			Created: e.Created.Time,
 			Data:    data,
 		})
 	}
 
 	return res, nil
+}
+
+func (r *repo) RolloutCalculateDone(ctx context.Context, rolloutID uuid.UUID) (bool, error) {
+	return r.querier.RolloutCalculateDone(ctx, rolloutID)
 }

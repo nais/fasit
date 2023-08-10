@@ -5,19 +5,20 @@ option go_package = "pkg/provider/protogen;protogen";
 service Provider {
   rpc CreateTenant(CreateTenantRequest) returns (TenantResponse) {}
   rpc GetTenant(GetTenantRequest) returns (TenantResponse) {}
-  rpc CreateEnvironment(CreateEnvironmentRequest) returns (EnvironmentResponse) {}
+  rpc CreateEnvironment(CreateEnvironmentRequest)
+      returns (EnvironmentResponse) {}
   rpc GetEnvironment(GetEnvironmentRequest) returns (EnvironmentResponse) {}
-  rpc CreateOrUpdateEnvironmentValue(CreateOrUpdateEnvironmentValueRequest) returns (CreateOrUpdateEnvironmentValueResponse) {}
-  rpc GetEnvironmentValue(GetEnvironmentValueRequest) returns (EnvironmentValueResponse) {}
+  rpc CreateOrUpdateEnvironmentValue(CreateOrUpdateEnvironmentValueRequest)
+      returns (CreateOrUpdateEnvironmentValueResponse) {}
+  rpc GetEnvironmentValue(GetEnvironmentValueRequest)
+      returns (EnvironmentValueResponse) {}
+  rpc GetEnvironmentValuesAcrossEnvs(GetEnvironmentValuesAcrossEnvsRequest)
+      returns (EnvironmentValuesAcrossEnvsResponse) {}
 }
 
-message CreateTenantRequest {
-  string name = 1;
-}
+message CreateTenantRequest { string name = 1; }
 
-message GetTenantRequest {
-  string name = 1;
-}
+message GetTenantRequest { string name = 1; }
 
 message TenantResponse {
   string id = 1;
@@ -55,9 +56,7 @@ message CreateOrUpdateEnvironmentValueRequest {
   bool secret = 4;
 }
 
-message CreateOrUpdateEnvironmentValueResponse {
-  bool success = 1;
-}
+message CreateOrUpdateEnvironmentValueResponse { bool success = 1; }
 
 message GetEnvironmentValueRequest {
   string environment_id = 1;
@@ -69,4 +68,13 @@ message EnvironmentValueResponse {
   string key = 2;
   bytes value = 3;
   bool secret = 4;
+  string tenant_id = 5;
+  string environment_name = 6;
+  string tenant_name = 7;
+}
+
+message GetEnvironmentValuesAcrossEnvsRequest { string key = 1; }
+
+message EnvironmentValuesAcrossEnvsResponse {
+  repeated EnvironmentValueResponse values = 1;
 }

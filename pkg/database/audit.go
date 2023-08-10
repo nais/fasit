@@ -58,7 +58,7 @@ func auditLogsFromSQL(auditLogs []gensql.Audit) []*model.AuditLog {
 			Description: auditLog.Description,
 			ObjectType:  auditLog.ObjectType,
 			ObjectID:    auditLog.ObjectID,
-			CreatedAt:   auditLog.CreatedAt,
+			CreatedAt:   auditLog.CreatedAt.Time,
 		})
 	}
 	return result

@@ -36,6 +36,7 @@ func init() {
 	flag.StringVar(&cfg.Env, "env", "dev", "cluster environment")
 	flag.BoolVar(&cfg.Production, "production", false, "When in production, actually run helm install")
 	flag.BoolVar(&cfg.Management, "management", false, "if naisd is running in a management cluster")
+	flag.BoolVar(&cfg.MockFailing, "mock-failing", false, "fail execution of helm command when running locally")
 }
 
 func main() {
@@ -154,10 +155,20 @@ func sharedDependencies(ctx context.Context, log *logrus.Logger) (*naisd.DeployM
 		naisStatusTopic,
 		log.WithField("subsystem", "status-pubsub"),
 		message.WithWaithForPublish(),
+		message.WithAttributes(map[string]string{
+			"tenant":      cfg.TenantName,
+			"environment": cfg.Env,
+		}),
 	)
 
 	kubeConfig := local.RESTConfig()
-	var executor naisd.Exec = &naisd.MockExecutor{Logger: log.WithField("subsystem", "executor")}
+
+	var numSuccessful *int
+	if cfg.MockFailing {
+		numSuccessful = new(int)
+	}
+
+	var executor naisd.Exec = &naisd.MockExecutor{Logger: log.WithField("subsystem", "executor"), NumSuccessful: numSuccessful}
 	helmClient := local.NewHelmClient()
 	k8sClient := local.NewKubernetesClient()
 	if cfg.Production {

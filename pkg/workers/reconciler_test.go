@@ -6,7 +6,9 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database/mocks"
+	"github.com/nais/fasit/pkg/database/notifier"
 	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/nais/fasit/pkg/message"
 	"github.com/sirupsen/logrus"
@@ -20,7 +22,7 @@ type reconcileTestEnvironment struct {
 	Environment     model.Environment
 	TenantName      string
 	NaisdReportedAt time.Time
-	Status          []*model.Status
+	Status          []*model.DeployInstruction
 	FeatureStates   []*model.FeatureState
 }
 
@@ -59,6 +61,7 @@ var reconcileTests = map[string]struct {
 		},
 		want: []message.DeployInstruction{
 			{
+				ID:         uuid.New(),
 				Name:       "feature1",
 				Version:    "1",
 				Chart:      "somechart",
@@ -88,11 +91,13 @@ var reconcileTests = map[string]struct {
 					Name: "prod",
 				},
 				TenantName: "tenant1",
-				Status: []*model.Status{
+				Status: []*model.DeployInstruction{
 					{
-						Feature:    "feature1",
-						Version:    "1",
-						ConfigHash: "c5f057e78616cfea744cf031f52d7f772e00190d27383dbf6c0c6e7f128cf67b",
+						ID:             uuid.New(),
+						FeatureName:    "feature1",
+						FeatureVersion: "1",
+						Hash:           "c5f057e78616cfea744cf031f52d7f772e00190d27383dbf6c0c6e7f128cf67b",
+						Status:         model.RolloutStatusDeployed,
 					},
 				},
 			},
@@ -134,6 +139,7 @@ var reconcileTests = map[string]struct {
 		},
 		want: []message.DeployInstruction{
 			{
+				ID:         uuid.New(),
 				Name:       "feature1",
 				Version:    "1",
 				Chart:      "somechart",
@@ -173,17 +179,20 @@ var reconcileTests = map[string]struct {
 						EnabledAt:   &atTime,
 					},
 				},
-				Status: []*model.Status{
+				Status: []*model.DeployInstruction{
 					{
-						Feature:    "feature1",
-						Version:    "1",
-						ConfigHash: "c5f057e78616cfea744cf031f52d7f772e00190d27383dbf6c0c6e7f128cf67b",
+						ID:             uuid.New(),
+						FeatureName:    "feature1",
+						FeatureVersion: "1",
+						Hash:           "c5f057e78616cfea744cf031f52d7f772e00190d27383dbf6c0c6e7f128cf67b",
+						Status:         model.RolloutStatusDeployed,
 					},
 				},
 			},
 		},
 		want: []message.DeployInstruction{
 			{
+				ID:         uuid.New(),
 				Name:       "feature2",
 				Version:    "2",
 				Chart:      "somechart",
@@ -205,11 +214,15 @@ func TestReconcile(t *testing.T) {
 					Environment: e.Environment,
 				})
 			}
+
 			repo.On("TenantEnvironments", mock.Anything, true).Return(te, nil)
 
 			for _, te := range tt.environments {
+				if len(tt.want) > 0 {
+					repo.On("DeployInstructionCreate", mock.Anything, te.Environment.ID, mock.IsType(""), mock.IsType(""), mock.IsType("")).Return(tt.want[0].ID, nil).Once()
+				}
 				repo.On("FeaturesForKind", mock.Anything, te.Environment.Kind, te.Environment.CI).Return(tt.features, nil)
-				repo.On("StatusForEnvironment", mock.Anything, te.Environment.ID).Return(te.Status, nil)
+				repo.On("DeployInstructionsLatestForEnvironment", mock.Anything, te.Environment.ID).Return(te.Status, nil)
 				repo.On("FeatureStatesGet", mock.Anything, te.Environment.ID).Return(te.FeatureStates, nil)
 				repo.On("HelmValues", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, nil).Maybe()
 
@@ -228,7 +241,7 @@ func TestReconcile(t *testing.T) {
 				return &mockPublisher{projectID: projectID, topicID: topicID, messages: &messages}
 			}
 
-			reconciler, err := NewReconciler(repo, publisher, "root-project", noop.NewMeterProvider().Meter(""), logrus.NewEntry(logrus.StandardLogger()))
+			reconciler, err := NewReconciler(repo, publisher, &mockNotifier{}, "root-project", noop.NewMeterProvider().Meter(""), logrus.NewEntry(logrus.StandardLogger()))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -433,3 +446,9 @@ func (m *mockPublisher) Publish(ctx context.Context, msg message.DeployInstructi
 }
 
 func (m *mockPublisher) Stop() {}
+
+type mockNotifier struct{}
+
+func (m *mockNotifier) Listen(table string, filters ...notifier.Filter) <-chan notifier.Payload {
+	return nil
+}

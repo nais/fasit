@@ -22,8 +22,8 @@ func tenantFromSQL(t gensql.Tenant) *model.Tenant {
 		ID:           t.ID,
 		Name:         t.Name,
 		Description:  nullStringToPtr(t.Description),
-		Created:      t.Created,
-		LastModified: t.LastModified,
+		Created:      t.Created.Time,
+		LastModified: t.LastModified.Time,
 	}
 }
 
@@ -83,8 +83,8 @@ func (r *repo) TenantEnvironments(ctx context.Context, onlyReconciled bool) ([]*
 				Name:         d.Name,
 				CI:           d.Ci,
 				Description:  nullStringToPtr(d.Description),
-				Created:      d.Created,
-				LastModified: d.LastModified,
+				Created:      d.Created.Time,
+				LastModified: d.LastModified.Time,
 				Kind:         model.EnvironmentKind(d.Kind),
 			},
 			TenantName: d.TenantName,

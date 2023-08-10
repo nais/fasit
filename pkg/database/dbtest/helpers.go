@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 	_ "github.com/lib/pq"
 
 	"github.com/ory/dockertest/v3"

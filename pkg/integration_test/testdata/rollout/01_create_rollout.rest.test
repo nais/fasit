@@ -8,6 +8,7 @@ POST /github/rollout
 RETURNS
 
 OPTION responseCode = 201
+OPTION id=IGNORE
 
 ENDOPTS
 

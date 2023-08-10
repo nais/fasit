@@ -132,15 +132,14 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 	}
 
 	helmStatus := message.Helm{
-		Name:          msg.Name,
-		Version:       msg.Version,
+		DIID:          msg.ID,
 		ConfigHash:    msg.ConfigHash,
 		RolloutStatus: model.RolloutStatusPending,
 	}
 
 	_ = d.publishStatus(ctx, helmStatus)
 
-	helmStatus.Log, err = d.runHelm(ctx, args)
+	helmStatus.Log, err = d.runHelm(ctx, args, msg)
 	if err != nil {
 		log.Printf("failed to run helm %s: %s", msg.Name, err)
 		helmStatus.RolloutStatus = model.RolloutStatusFailed
@@ -167,7 +166,7 @@ func (d *DeployManager) publishStatus(ctx context.Context, msg message.Helm) err
 	return d.statuses.Publish(ctx, statusUpdate)
 }
 
-func (d *DeployManager) runHelm(ctx context.Context, args []string) (string, error) {
+func (d *DeployManager) runHelm(ctx context.Context, args []string, msg message.DeployInstruction) (string, error) {
 	connectionFlags := []string{
 		"--kube-apiserver",
 		d.kubeConfig.Host,
@@ -192,7 +191,9 @@ func (d *DeployManager) runHelm(ctx context.Context, args []string) (string, err
 		"HELM_CACHE_HOME="+d.helmCache,
 	)
 
-	buf := &timeLogger{}
+	buf := newPubsubLogger(msg.ID, d.statuses, d.log)
+
+	go buf.Run(ctx)
 
 	cmd := exec.CommandContext(ctx, "helm", helmArgs...)
 	cmd.Env = append(cmd.Env, environment...)
@@ -200,7 +201,8 @@ func (d *DeployManager) runHelm(ctx context.Context, args []string) (string, err
 	cmd.Stderr = io.MultiWriter(buf, os.Stderr)
 
 	err := d.executor.Execute(cmd)
-	return buf.String(), err
+	buf.Publish(ctx)
+	return "", err
 }
 
 func (d *DeployManager) makeHelmValues(m message.DeployInstruction) (string, error) {

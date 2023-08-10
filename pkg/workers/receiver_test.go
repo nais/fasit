@@ -36,7 +36,7 @@ func TestReceiver(t *testing.T) {
 					Type:        message.StatusTypeHelm,
 					Tenant:      "tenant",
 					Environment: "env",
-					Data:        []byte(`{"name":"test","namespace":"test","status":"deployed","chart":"test","version":"1.0.0","appVersion":"1.0.0","values":{}}`),
+					Data:        []byte(`{"name":"test","rolloutStatus":"deployed","version":"1.0.0"}`),
 				},
 			},
 			numStatusCreateOrUpdate: 1,
@@ -49,7 +49,7 @@ func TestReceiver(t *testing.T) {
 					Type:        message.StatusTypeHelm,
 					Tenant:      "tenant",
 					Environment: "env",
-					Data:        []byte(`{"name":"test","namespace":"test","status":"deployed","chart":"test","version":"1.0.0","appVersion":"1.0.0","values":{}}`),
+					Data:        []byte(`{"name":"test","rolloutStatus":"deployed","version":"1.0.0"}`),
 				},
 			},
 			numStatusCreateOrUpdate: 1,
@@ -103,7 +103,7 @@ func TestReceiver(t *testing.T) {
 			}
 
 			if tc.numStatusCreateOrUpdate > 0 {
-				repo.On("StatusCreateOrUpdate", mock.Anything, tc.envID, mock.Anything).Return(nil).Times(tc.numStatusCreateOrUpdate)
+				repo.On("DeployInstructionUpdateStatus", mock.Anything, mock.Anything, model.RolloutStatusDeployed).Return(nil).Times(tc.numStatusCreateOrUpdate)
 			}
 			if tc.numReleaseStatusCreateOrUpdate > 0 {
 				repo.On("ReleaseStatusDeleteByEnvironmentID", mock.Anything, tc.envID).Return(nil).Times(tc.numReleaseStatusCreateOrUpdate)

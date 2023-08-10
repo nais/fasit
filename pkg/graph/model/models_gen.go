@@ -12,6 +12,10 @@ import (
 	"github.com/google/uuid"
 )
 
+type Update interface {
+	IsUpdate()
+}
+
 type Warning interface {
 	IsWarning()
 	GetMessage() string
@@ -42,6 +46,19 @@ type EnvironmentCreate struct {
 type EnvironmentUpdate struct {
 	// description of the environment
 	Description *string `json:"description,omitempty"`
+}
+
+type Playground struct {
+	Result *string  `json:"result,omitempty"`
+	Errors []string `json:"errors"`
+}
+
+type PlaygroundInput struct {
+	TenantSlug         string `json:"tenantSlug"`
+	EnvSlug            string `json:"envSlug"`
+	ShowSecrets        *bool  `json:"showSecrets,omitempty"`
+	IncludeUnsetConfig *bool  `json:"includeUnsetConfig,omitempty"`
+	Code               string `json:"code"`
 }
 
 type RolloutEvent struct {

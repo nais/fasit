@@ -1,0 +1,28 @@
+RETURNS
+
+OPTION topic=naisd-tenant23-testing
+OPTION ConfigHash=IGNORE
+OPTION ID=IGNORE
+
+ENDOPTS
+
+{
+  "Chart": "oci://clamav",
+  "Name": "clamav",
+  "Timeout": 600000000000,
+  "Values": {
+    "fasit": {
+      "env": {
+        "kind": "tenant",
+        "name": "testing"
+      },
+      "tenant": {
+        "name": "tenant23"
+      }
+    },
+    "gcp": "true"
+  },
+  "Version": "0.1.1-feature"
+}
+
+STORE new_hash=ConfigHash

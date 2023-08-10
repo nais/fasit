@@ -10,6 +10,7 @@ type Config struct {
 	NaisProjectID   string
 	Production      bool
 	Management      bool
+	MockFailing     bool
 }
 
 func DefaultConfig() Config {

@@ -51,4 +51,6 @@ DELETE FROM kubernetes_node_statuses WHERE environment_id = @environment_id AND 
 
 -- name: KubernetesNodeStatuses :many
 SELECT * FROM kubernetes_node_statuses
-WHERE environment_id = @environment_ID;
+WHERE environment_id = @environment_ID
+ORDER BY name ASC
+;

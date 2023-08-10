@@ -1,0 +1,16 @@
+-- type: row
+SELECT id
+FROM deploy_instructions
+WHERE feature_name = 'allenvs'
+  AND environment_id = '{{ .Tenant.tenant23.Env.management.ID }}'
+LIMIT 1
+;
+
+RETURNS
+
+OPTION id=IGNORE
+ENDOPTS
+
+{}
+
+STORE mgmt_di=id

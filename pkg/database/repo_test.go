@@ -10,7 +10,7 @@ import (
 
 	_ "github.com/lib/pq"
 
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/pkg/database/dbtest"
 	"github.com/nais/fasit/pkg/feature"
 	"github.com/sirupsen/logrus"

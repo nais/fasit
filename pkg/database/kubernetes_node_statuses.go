@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgtype"
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/nais/fasit/pkg/message"
@@ -76,35 +75,26 @@ func kubernetesNodeParams(envID uuid.UUID, n message.KubernetesNode) (gensql.Kub
 		KubeProxyVersion:        n.KubeProxyVersion,
 		OperatingSystem:         n.OperatingSystem,
 		Architecture:            n.Architecture,
-		Conditions: pgtype.JSONB{
-			Bytes:  conditions,
-			Status: pgtype.Present,
-		},
-		Allocatable: pgtype.JSONB{
-			Bytes:  allocatable,
-			Status: pgtype.Present,
-		},
-		Capacity: pgtype.JSONB{
-			Bytes:  capacity,
-			Status: pgtype.Present,
-		},
-		InternalIp: n.InternalIP,
+		Conditions:              conditions,
+		Allocatable:             allocatable,
+		Capacity:                capacity,
+		InternalIp:              n.InternalIP,
 	}, nil
 }
 
 func kubernetesNodeFromSQL(n gensql.KubernetesNodeStatus) (*model.KubernetesNode, error) {
 	conditions := []*model.KubernetesNodeCondition{}
-	if err := json.Unmarshal(n.Conditions.Bytes, &conditions); err != nil {
+	if err := json.Unmarshal(n.Conditions, &conditions); err != nil {
 		return nil, err
 	}
 
 	allocatable := &model.KubernetesNodeResources{}
-	if err := json.Unmarshal(n.Allocatable.Bytes, allocatable); err != nil {
+	if err := json.Unmarshal(n.Allocatable, allocatable); err != nil {
 		return nil, err
 	}
 
 	capacity := &model.KubernetesNodeResources{}
-	if err := json.Unmarshal(n.Capacity.Bytes, capacity); err != nil {
+	if err := json.Unmarshal(n.Capacity, capacity); err != nil {
 		return nil, err
 	}
 

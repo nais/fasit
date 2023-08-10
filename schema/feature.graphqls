@@ -26,9 +26,11 @@ type Feature {
   environmentKinds: [EnvironmentKind!]!
   configoverrides: [ConfigOverride!]!
   configuration: Configurations!
+  specVersion: String!
 
   state: FeatureState
   status: Status
+  histories: [FeatureHistory!]!
 }
 
 type ConfigOverride {
@@ -41,7 +43,17 @@ type Dependency {
   allOf: [String!]!
 }
 
+type FeatureHistory {
+  id: ID!
+  version: String!
+  status: RolloutStatus!
+  created: Time!
+  lastModified: Time!
+  log: [LogLine!]!
+}
+
 extend type Query {
   features: [Feature!]!
   feature(name: String!): Feature!
+  history(id: ID!): FeatureHistory!
 }

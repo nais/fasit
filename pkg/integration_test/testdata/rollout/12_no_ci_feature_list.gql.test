@@ -1,5 +1,5 @@
 {
-	tenant(slug: "tenant23") {
+	tenant(slug: "tenant1") {
 		environment(slug: "nonci") {
 			features {name, version}
 		}
