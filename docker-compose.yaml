@@ -9,8 +9,8 @@ services:
     command: ["postgres", "-c", "log_statement=all"]
     ports:
       - 5432:5432
-    tmpfs:
-      - /var/lib/postgresql/data:rw
+    volumes:
+      - db-data:/var/lib/postgresql/data
 
   adminer:
     image: adminer
@@ -28,3 +28,6 @@ services:
       - --host-port=0.0.0.0:8085
     ports:
       - 8086:8085
+
+volumes:
+  db-data:
