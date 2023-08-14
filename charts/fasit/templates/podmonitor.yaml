@@ -2,7 +2,11 @@ apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
   name: {{ include "fasit.fullname" . }}
+  labels:
+    {{- include "fasit.labels" . | nindent 4 }}
+    release: monitoring
 spec:
+  jobLabel: app.kubernetes.io/name
   selector:
     matchLabels:
       {{- include "fasit.selectorLabels" . | nindent 6}}
