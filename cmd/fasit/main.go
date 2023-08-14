@@ -243,7 +243,7 @@ func main() {
 	router.Post("/github/rollout", rout.Rollout)
 
 	go func() {
-		if err := runGRPC(ctx, repo); err != nil {
+		if err := runGRPC(ctx, repo, log); err != nil {
 			panic(err)
 		}
 	}()
@@ -298,8 +298,8 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
-func runGRPC(ctx context.Context, repo database.Repo) error {
-	fmt.Println("GRPC serving on port", cfg.GRPCBindAddress)
+func runGRPC(ctx context.Context, repo database.Repo, log logrus.FieldLogger) error {
+	log.Info("GRPC serving on port", cfg.GRPCBindAddress)
 	lis, err := net.Listen("tcp", cfg.GRPCBindAddress)
 	if err != nil {
 		return fmt.Errorf("failed to listen: %w", err)
