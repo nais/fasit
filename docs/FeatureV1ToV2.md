@@ -100,7 +100,7 @@ jobs:
           helm push "$chart" oci://${{ env.GOOGLE_REGISTRY }}/nais-io/nais/feature
     outputs:
       name: ${{ steps.build_chart.outputs.name }}
-      version: ${{ steps.build_chart.outputs.version }}  
+      version: ${{ steps.build_chart.outputs.version }}
 
   rollout:
     needs:
@@ -112,7 +112,6 @@ jobs:
       - uses: nais/fasit-deploy@v2
         with:
           chart: oci://${{ env.GOOGLE_REGISTRY }}/nais-io/nais/feature/${{ steps.build_push.outputs.name }}
-          feature_name: ${{ needs.build_push.outputs.name }}
           version: ${{ needs.build_push.outputs.version }}
 ```
 
