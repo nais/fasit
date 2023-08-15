@@ -271,15 +271,13 @@ WITH "combined" AS (
 		SELECT "id", "feature", "key", "value", NULL::uuid AS environment_id
 		FROM ONLY configurations_global glob
 		WHERE glob.feature = $1
-		AND glob.key != ALL($2::text[])
 
 		UNION
 
 		SELECT "id", "feature", "key", "value", "environment_id"
 		FROM ONLY configurations_environment env
 		WHERE env.feature = $1
-		AND environment_id = $3
-		AND env.key != ALL($2::text[])
+		AND environment_id = $2
 	), "filtered" AS (
 		SELECT id, feature, key, value, environment_id, RANK() OVER (
 				PARTITION BY "key"
@@ -294,7 +292,6 @@ WHERE RANK = 1
 
 type EnvConfigParams struct {
 	Feature       string
-	Excludekeys   []string
 	EnvironmentID uuid.UUID
 }
 
@@ -308,7 +305,7 @@ type EnvConfigRow struct {
 }
 
 func (q *Queries) EnvConfig(ctx context.Context, arg EnvConfigParams) ([]EnvConfigRow, error) {
-	rows, err := q.db.Query(ctx, envConfig, arg.Feature, arg.Excludekeys, arg.EnvironmentID)
+	rows, err := q.db.Query(ctx, envConfig, arg.Feature, arg.EnvironmentID)
 	if err != nil {
 		return nil, err
 	}
@@ -316,6 +313,74 @@ func (q *Queries) EnvConfig(ctx context.Context, arg EnvConfigParams) ([]EnvConf
 	items := []EnvConfigRow{}
 	for rows.Next() {
 		var i EnvConfigRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Feature,
+			&i.Key,
+			&i.Value,
+			&i.EnvironmentID,
+			&i.Rank,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const envConfigOnlyKnown = `-- name: EnvConfigOnlyKnown :many
+WITH "combined" AS (
+		SELECT "id", "feature", "key", "value", NULL::uuid AS environment_id
+		FROM ONLY configurations_global glob
+		WHERE glob.feature = $1
+		AND glob.key = ANY($2::text[])
+
+		UNION
+
+		SELECT "id", "feature", "key", "value", "environment_id"
+		FROM ONLY configurations_environment env
+		WHERE env.feature = $1
+		AND environment_id = $3
+		AND env.key = ANY($2::text[])
+	), "filtered" AS (
+		SELECT id, feature, key, value, environment_id, RANK() OVER (
+				PARTITION BY "key"
+				ORDER BY environment_id ASC, key ASC
+			)
+		FROM "combined"
+	)
+SELECT id, feature, key, value, environment_id, rank
+FROM filtered
+WHERE RANK = 1
+`
+
+type EnvConfigOnlyKnownParams struct {
+	Feature       string
+	Includedkeys  []string
+	EnvironmentID uuid.UUID
+}
+
+type EnvConfigOnlyKnownRow struct {
+	ID            uuid.UUID
+	Feature       string
+	Key           string
+	Value         []byte
+	EnvironmentID pgtype.UUID
+	Rank          int64
+}
+
+func (q *Queries) EnvConfigOnlyKnown(ctx context.Context, arg EnvConfigOnlyKnownParams) ([]EnvConfigOnlyKnownRow, error) {
+	rows, err := q.db.Query(ctx, envConfigOnlyKnown, arg.Feature, arg.Includedkeys, arg.EnvironmentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []EnvConfigOnlyKnownRow{}
+	for rows.Next() {
+		var i EnvConfigOnlyKnownRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.Feature,

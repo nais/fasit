@@ -465,6 +465,32 @@ func (_m *Querier) EnvConfig(ctx context.Context, arg gensql.EnvConfigParams) ([
 	return r0, r1
 }
 
+// EnvConfigOnlyKnown provides a mock function with given fields: ctx, arg
+func (_m *Querier) EnvConfigOnlyKnown(ctx context.Context, arg gensql.EnvConfigOnlyKnownParams) ([]gensql.EnvConfigOnlyKnownRow, error) {
+	ret := _m.Called(ctx, arg)
+
+	var r0 []gensql.EnvConfigOnlyKnownRow
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.EnvConfigOnlyKnownParams) ([]gensql.EnvConfigOnlyKnownRow, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.EnvConfigOnlyKnownParams) []gensql.EnvConfigOnlyKnownRow); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gensql.EnvConfigOnlyKnownRow)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, gensql.EnvConfigOnlyKnownParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // EnvironmentByNames provides a mock function with given fields: ctx, arg
 func (_m *Querier) EnvironmentByNames(ctx context.Context, arg gensql.EnvironmentByNamesParams) (gensql.Environment, error) {
 	ret := _m.Called(ctx, arg)
