@@ -39,3 +39,16 @@ This package contains a custom integration framework that let's you test
 the entire system using a folder with test files.
 
 Read more about the integration test framework in [`pkg/integration_test/README.md`](./pkg/integration_test/README.md).
+
+# Releasing
+
+## Fasit
+
+Fasit is released whenever a new push to main is done.
+
+The action will build a new image, push it to GAR and then deploy it using helm.
+
+## naisd
+
+naisd is released by pushing a tag in the format `naisd-<version>`.
+This will build a new image, push it to GAR and then roll it out using Fasit.

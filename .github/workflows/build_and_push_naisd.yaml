@@ -1,0 +1,122 @@
+name: Build and deploy naisd
+on:
+  push:
+    tags:
+      - "naisd-*"
+
+env:
+  CHART_PATH: "features/naisd"
+  HELM_VERSION: "3.10.2"
+  GOOGLE_REGISTRY: "europe-north1-docker.pkg.dev"
+  RUNNER_IMG: "gcr.io/distroless/static-debian11:nonroot"
+  BASEIMG_IDENTITY: "keyless@distroless.iam.gserviceaccount.com"
+  BASEIMG_ISSUER: "https://accounts.google.com"
+
+jobs:
+  naisd_tests:
+    runs-on: ubuntu-latest-4-cores
+    steps:
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # ratchet:actions/checkout@v3
+      - name: Find Go version
+        id: go_version
+        run: |
+          echo "GO_VERSION=$(grep golang .tool-versions | awk '{print $2}')" >> $GITHUB_OUTPUT
+      - uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # ratchet:actions/setup-go@v4
+        with:
+          go-version: ${{ steps.go_version.outputs.GO_VERSION }}
+      - run: go test -cover -tags integration_test ./...
+      - name: Vulnerability check
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...
+
+  build_and_push_naisd:
+    if: github.ref == 'refs/heads/main'
+    needs: [naisd_tests]
+    permissions:
+      contents: "read"
+      id-token: "write"
+    outputs:
+      version: ${{ steps.build-push-sign.outputs.version }}
+    runs-on: ubuntu-latest-4-cores
+    steps:
+      - name: Checkout
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # ratchet:actions/checkout@v3.5.3
+      - name: Install cosign
+        uses: sigstore/cosign-installer@a5d81fb6bdbcbb3d239e864d6552820420254494 # ratchet:sigstore/cosign-installer@main
+        with:
+          cosign-release: "v2.0.0"
+      - name: Verify runner image
+        run: cosign verify --certificate-identity ${{ env.BASEIMG_IDENTITY }} --certificate-oidc-issuer ${{ env.BASEIMG_ISSUER }} ${{ env.RUNNER_IMG }}
+      - uses: nais/platform-build-push-sign@fb7da39ee56c8904ed15c02705a1780cb278a65b # ratchet:nais/platform-build-push-sign@main
+        id: build-push-sign
+        with:
+          dockerfile: Dockerfile_naisd
+          name: naisd
+          google_service_account: gh-fasit
+          workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
+          push: ${{ github.actor != 'dependabot[bot]' }}
+
+  build_push_naisd_chart:
+    name: Build and push chart
+    needs: [naisd_tests]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: "read"
+      actions: "read"
+      id-token: "write"
+    outputs:
+      name: ${{ steps.build_chart.outputs.name }}
+      version: ${{ steps.build_chart.outputs.version }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: azure/setup-helm@v3
+        name: "Setup Helm"
+        with:
+          version: ${{ env.HELM_VERSION }}
+
+      - name: Build Chart
+        id: build_chart
+        run: |-
+          suffix="$(date +%Y%m%d%H%M%S)"
+          orig_version=$(yq '.version' < "${{ env.CHART_PATH}}/Chart.yaml")
+          new_version="${orig_version}-$suffix"
+          sed -i "s/^version: .*/version: $new_version/g" "${{ env.CHART_PATH}}/Chart.yaml"
+
+          helm dependency update "${{ env.CHART_PATH}}"
+          helm package "${{ env.CHART_PATH}}" --destination .
+
+          name=$(yq '.name' < "${{ env.CHART_PATH}}/Chart.yaml")
+          echo "name=$name" >> $GITHUB_OUTPUT
+          echo "chart=$name-$new_version.tgz" > $GITHUB_OUTPUT
+          echo "version=$new_version" >> $GITHUB_OUTPUT
+
+      - id: "auth"
+        name: "Authenticate to Google Cloud"
+        uses: "google-github-actions/auth@v1.1.0"
+        with:
+          workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: "gh-fasit@nais-io.iam.gserviceaccount.com"
+          token_format: "access_token"
+
+      - name: "Log in to Google Artifact Registry"
+        run: |-
+          echo '${{ steps.auth.outputs.access_token }}' | docker login -u oauth2accesstoken --password-stdin https://${{ env.GOOGLE_REGISTRY }}
+
+      - name: Push Chart
+        run: |-
+          chart="${{ steps.build_chart.outputs.chart }}"
+          echo "Pushing: $chart"
+          helm push "$chart" oci://${{ env.GOOGLE_REGISTRY }}/nais-io/nais/feature
+
+  rollout_naisd:
+    needs: [build_push_naisd_chart, build_and_push_naisd]
+    runs-on: fasit-deploy
+    permissions:
+      id-token: write
+    steps:
+      - uses: nais/fasit-deploy@v2
+        with:
+          chart: oci://${{ env.GOOGLE_REGISTRY }}/nais-io/nais/feature/${{ needs.build_push_naisd_chart.outputs.name }}
+          version: ${{ needs.build_push_naisd_chart.outputs.version }}

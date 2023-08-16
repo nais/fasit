@@ -111,7 +111,7 @@ jobs:
     steps:
       - uses: nais/fasit-deploy@v2
         with:
-          chart: oci://${{ env.GOOGLE_REGISTRY }}/nais-io/nais/feature/${{ steps.build_push.outputs.name }}
+          chart: oci://${{ env.GOOGLE_REGISTRY }}/nais-io/nais/feature/${{ needs.build_push.outputs.name }}
           version: ${{ needs.build_push.outputs.version }}
 ```
 
