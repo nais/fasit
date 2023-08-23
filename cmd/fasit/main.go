@@ -193,6 +193,13 @@ func main() {
 	}()
 	go reconciler.Run(ctx, 10*time.Minute)
 
+	costUpdater, err := workers.NewCostUpdater(ctx, repo, log.WithField("subsystem", "cost_updater"))
+	if err != nil {
+		log.WithError(err).Error("setting up cost updater. You might need to run `gcloud auth --update-adc` if running locally")
+	} else {
+		go costUpdater.Run(ctx, 1*time.Minute)
+	}
+
 	resolver := graph.NewResolver(ctx, repo, notifierService, log.WithField("subsystem", "graphql"))
 
 	srv := newServer(graphgen.NewExecutableSchema(graphgen.Config{Resolvers: resolver}))

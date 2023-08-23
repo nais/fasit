@@ -1,0 +1,40 @@
+enum CostFilterGroupBy {
+  TENANT
+  ENV
+}
+
+input CostFilter {
+  """
+  Tenants to return costs for
+  Defaults to all tenants
+  """
+  tenant: ID
+
+  """
+  Start date for costs
+  Defaults to 7 days ago
+  """
+  startDate: Time
+
+  """
+  End date for costs
+  Defaults to today
+  """
+  endDate: Time
+
+  """
+  Group costs by
+  """
+  groupBy: CostFilterGroupBy = TENANT
+}
+
+type Cost {
+  tenant: Tenant!
+  env: Environment
+  date: Time!
+  cost: Float!
+}
+
+extend type Query {
+  cost(filter: CostFilter): [Cost!]!
+}

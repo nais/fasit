@@ -103,6 +103,13 @@ type DeployInstruction struct {
 	LastModified   pgtype.Timestamptz
 }
 
+type EnvCost struct {
+	TenantID uuid.UUID
+	EnvID    uuid.UUID
+	Date     pgtype.Date
+	Cost     float32
+}
+
 type Environment struct {
 	ID           uuid.UUID
 	TenantID     uuid.UUID
