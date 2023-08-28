@@ -36,7 +36,7 @@ jobs:
       contents: "read"
       id-token: "write"
     outputs:
-      tag: ${{ steps.build-push-sign.outputs.tag }}
+      version: ${{ steps.build-push-sign.outputs.version }}
     runs-on: ubuntu-latest-4-cores
     steps:
       - name: Checkout
@@ -83,7 +83,7 @@ jobs:
           new_version="${orig_version}-$suffix"
 
           sed -i "s/^version: .*/version: $new_version/g" "${{ env.CHART_PATH}}/Chart.yaml"
-          yq e -i '.image.tag = "${{ needs.build_and_push_naisd.outputs.tag }}"' "${{ env.CHART_PATH}}/values.yaml"
+          yq e -i '.image.tag = "${{ needs.build_and_push_naisd.outputs.version }}"' "${{ env.CHART_PATH}}/values.yaml"
 
           helm dependency update "${{ env.CHART_PATH}}"
           helm package "${{ env.CHART_PATH}}" --destination .
