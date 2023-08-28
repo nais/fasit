@@ -8,8 +8,12 @@ if [ -n "$(git status --untracked-files=no --porcelain=v1)" ] || [ -n "$(git log
   exit 1
 fi
 
+tag="naisd-$(date +%Y%m%d%H%M%S)"
 # If there's no changes locally, tag the release with `naisd-[datetime]` and push it to origin
-git tag -a "naisd-$(date +%Y%m%d%H%M%S)" -m "Release naisd"
+git tag -a "$tag" -m "Release naisd"
 
 # Push the tag to origin
 git push origin --tags
+
+# Delete the tag locally
+git tag -d "$tag"

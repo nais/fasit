@@ -5,7 +5,7 @@ on:
       - "naisd-*"
 
 env:
-  CHART_PATH: "features/naisd"
+  CHART_PATH: "charts/naisd"
   HELM_VERSION: "3.10.2"
   GOOGLE_REGISTRY: "europe-north1-docker.pkg.dev"
   RUNNER_IMG: "gcr.io/distroless/static-debian11:nonroot"
@@ -31,7 +31,6 @@ jobs:
           govulncheck ./...
 
   build_and_push_naisd:
-    if: github.ref == 'refs/heads/main'
     needs: [naisd_tests]
     permissions:
       contents: "read"

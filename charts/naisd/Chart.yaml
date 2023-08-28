@@ -1,6 +1,9 @@
 apiVersion: v2
 name: naisd
-description: A Helm chart for Kubernetes
+description: Install and upgrade features based on requests from Fasit
+
+sources:
+  - https://github.com/nais/fasit/tree/main/charts/naisd
 
 # A chart can be either an 'application' or a 'library' chart.
 #

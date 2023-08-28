@@ -1,0 +1,50 @@
+environmentKinds:
+  - tenant
+  - management
+  - onprem
+  - legacy
+values:
+  env:
+    displayName: Env
+    computed:
+      template: "{{.Env.name}}"
+  envProjectId:
+    displayName: Env project id
+    computed:
+      template: "{{.Env.project_id}}"
+  google.serviceAccountKey:
+    displayName: Use service account key?
+    computed:
+      template: "{{ .Env.naisd_key | quote }}"
+  google.useServiceAccountKey:
+    displayName: Use service account key?
+    computed:
+      template: '{{ eq .Kind "onprem" }}'
+  https_proxy:
+    displayName: HTTPS proxy
+    computed:
+      template: '"http://webproxy-nais.nav.no:8088"'
+    ignoreKind:
+      - tenant
+      - management
+      - legacy
+  image.tag:
+    displayName: Image tag
+    config:
+      type: string
+  management:
+    displayName: Management Cluster?
+    computed:
+      template: '"{{eq .Kind "management"}}"'
+  no_proxy:
+    displayName: No proxy
+    computed:
+      template: '"10.254.0.1"'
+    ignoreKind:
+      - tenant
+      - management
+      - legacy
+  tenantName:
+    displayName: Tenant name
+    computed:
+      template: "{{.Tenant.Name}}"
