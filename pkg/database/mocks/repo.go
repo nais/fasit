@@ -6,7 +6,7 @@ import (
 	context "context"
 
 	database "github.com/nais/fasit/pkg/database"
-	feature "github.com/nais/fasit/pkg/feature2"
+	feature "github.com/nais/fasit/pkg/feature"
 
 	gensql "github.com/nais/fasit/pkg/database/gensql"
 

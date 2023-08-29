@@ -39,8 +39,6 @@ func (r *repo) Warnings(ctx context.Context, environmentID *uuid.UUID, tenantID 
 	for _, w := range warnings {
 		if w.FeatureDataName != "" {
 			ws = append(ws, w)
-		} else if r.oldFeatures.Get(w.FeatureName) != nil {
-			ws = append(ws, w)
 		}
 	}
 

@@ -12,7 +12,6 @@ type Config struct {
 	InsecureSkipTokenCheck bool
 	IAPAudience            string
 
-	FeatureSource       string
 	FeatureBucket       string
 	FeatureSubscription string
 }
@@ -23,7 +22,6 @@ func DefaultConfig() Config {
 		GRPCBindAddress: ":4444",
 		LogLevel:        "info",
 
-		FeatureSource:       "file",
 		FeatureBucket:       "fasit-features",
 		FeatureSubscription: "fasit-features-subscription",
 	}

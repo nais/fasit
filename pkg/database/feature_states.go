@@ -5,8 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"sort"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -55,48 +53,6 @@ func (r *repo) FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.
 			EnvID:        envID,
 		})
 	}
-
-	// TODO: remove
-	exists := map[string]struct{}{}
-	for _, f := range ret {
-		if f.LastModified.After(time.Now().Add(-5 * 365 * 24 * time.Hour)) {
-			exists[f.FeatureName] = struct{}{}
-		}
-	}
-
-	fsOld, err := r.querier.FeatureStatesGetOld(ctx, envID)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return ret, nil
-		}
-		return nil, err
-	}
-
-	lookup := map[string]gensql.FeatureStatesGetOldRow{}
-	if len(fsOld) > 0 {
-		for _, f := range fsOld {
-			lookup[f.Feature] = f
-		}
-	}
-
-	for _, f := range r.oldFeatures.Features() {
-		if _, ok := exists[f.Name]; !ok {
-			ret = append(ret, &model.FeatureState{
-				ID:           model.FeatureStateID(envID, f.Name),
-				FeatureName:  f.Name,
-				Enabled:      lookup[f.Name].Enabled,
-				Created:      lookup[f.Name].Created.Time,
-				EnabledAt:    nullTimeToPtr(lookup[f.Name].EnabledAt),
-				LastModified: lookup[f.Name].LastModified.Time,
-				EnvID:        envID,
-			})
-		}
-	}
-
-	sort.Slice(ret, func(i, j int) bool {
-		return ret[i].FeatureName < ret[j].FeatureName
-	})
-	// TODO: end remove
 
 	return ret, nil
 }

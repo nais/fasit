@@ -6,11 +6,9 @@ package graph
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/graph/graphgen"
@@ -24,28 +22,6 @@ func (r *statusResolver) ID(ctx context.Context, obj *model.Status) (uuid.UUID, 
 
 // Log is the resolver for the log field.
 func (r *statusResolver) Log(ctx context.Context, obj *model.Status) ([]*model.LogLine, error) {
-	// TODO: remove this when all naisds are upgraded
-	if obj.Log != "" || obj.DeployInstructionID == uuid.Nil {
-		lines := []struct {
-			Time time.Time
-			Msg  string
-		}{}
-		if err := json.Unmarshal([]byte(obj.Log), &lines); err != nil {
-			return nil, fmt.Errorf("unmarshal log: %w", err)
-		}
-
-		logLines := make([]*model.LogLine, len(lines))
-		for i, line := range lines {
-			logLines[i] = &model.LogLine{
-				ID:        obj.ConfigHash + strconv.Itoa(i),
-				Timestamp: line.Time,
-				Message:   line.Msg,
-			}
-		}
-
-		return logLines, nil
-	}
-
 	return r.Repo.LogsGet(ctx, obj.DeployInstructionID)
 }
 

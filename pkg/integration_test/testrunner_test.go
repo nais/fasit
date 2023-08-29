@@ -16,7 +16,6 @@ import (
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/database/dbtest"
 	"github.com/nais/fasit/pkg/database/notifier"
-	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph"
 	"github.com/nais/fasit/pkg/graph/graphgen"
 	integration "github.com/nais/fasit/pkg/integration_test"
@@ -167,7 +166,7 @@ func newDB(ctx context.Context, state map[string]any, config *integration.Config
 	log := logrus.New()
 	log.Out = io.Discard
 
-	db := database.New(pool, &feature.Manager{}, logrus.NewEntry(log))
+	db := database.New(pool, logrus.NewEntry(log))
 	if err := database.Migrate("pgx", connStr, logrus.NewEntry(log)); err != nil {
 		cleanup()
 		close.Close()
