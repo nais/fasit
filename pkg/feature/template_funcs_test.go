@@ -6,7 +6,6 @@ import (
 	"text/template"
 
 	"github.com/google/go-cmp/cmp"
-
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
@@ -218,7 +217,7 @@ func Test_prefixedValues(t *testing.T) {
 
 func Test_subdomain(t *testing.T) {
 	type args struct {
-		m      *MappingValues
+		m      *ComputedValues
 		prefix string
 	}
 	tests := map[string]struct {
@@ -227,9 +226,9 @@ func Test_subdomain(t *testing.T) {
 	}{
 		"management": {
 			args: args{
-				m: &MappingValues{
+				m: &ComputedValues{
 					Kind: model.EnvironmentKindManagement,
-					Tenant: MappingTenant{
+					Tenant: ComputedTenant{
 						Name: "tenant",
 					},
 				},
@@ -239,12 +238,12 @@ func Test_subdomain(t *testing.T) {
 		},
 		"non-management": {
 			args: args{
-				m: &MappingValues{
+				m: &ComputedValues{
 					Kind: model.EnvironmentKindTenant,
 					Env: map[string]any{
 						"name": "bar",
 					},
-					Tenant: MappingTenant{
+					Tenant: ComputedTenant{
 						Name: "baz",
 					},
 				},
@@ -451,12 +450,12 @@ func Test_toYAML(t *testing.T) {
 func Test_usage(t *testing.T) {
 	tests := map[string]struct {
 		template string
-		values   *MappingValues
+		values   *ComputedValues
 		want     string
 	}{
 		"eachOf piped to toJSON": {
 			template: `{{ eachOf .Envs "foo" | toJSON }}`,
-			values: &MappingValues{
+			values: &ComputedValues{
 				Envs: []map[string]any{
 					{
 						"foo": "bar",
@@ -471,7 +470,7 @@ func Test_usage(t *testing.T) {
 
 		"mapOf piped to mapJoin piped to join": {
 			template: `{{ mapOf "name" "project_id" .Envs | mapJoin "=" | join "," }}`,
-			values: &MappingValues{
+			values: &ComputedValues{
 				Envs: []map[string]any{
 					{
 						"name":       "foo",
@@ -488,7 +487,7 @@ func Test_usage(t *testing.T) {
 
 		"filter envs and mapOf piped to toJSON": {
 			template: `{{ ( filter  "name" "foo" .Envs | mapOf "name" "project_id" ) | toJSON }}`,
-			values: &MappingValues{
+			values: &ComputedValues{
 				Envs: []map[string]any{
 					{
 						"name":       "foo",
@@ -505,7 +504,7 @@ func Test_usage(t *testing.T) {
 
 		"map environment slice to a map keyed by cluster name": {
 			template: `{{ (filter "kind" "tenant" .Envs | environmentsAsMap "value1,value2") | toJSON }}`,
-			values: &MappingValues{
+			values: &ComputedValues{
 				Envs: []map[string]any{
 					{
 						"name":   "dev",
@@ -535,12 +534,32 @@ func Test_usage(t *testing.T) {
 
 		"base64 encode": {
 			template: `{{ .Env.some_key | b64enc }}`,
-			values: &MappingValues{
+			values: &ComputedValues{
 				Env: map[string]any{
 					"some_key": "some value",
 				},
 			},
 			want: "c29tZSB2YWx1ZQ==",
+		},
+
+		"quote": {
+			template: `{{ quote .Env.some_key }}`,
+			values: &ComputedValues{
+				Env: map[string]any{
+					"some_key": "some value",
+				},
+			},
+			want: `"some value"`,
+		},
+
+		"quote pipe": {
+			template: `{{ .Env.some_key | quote }}`,
+			values: &ComputedValues{
+				Env: map[string]any{
+					"some_key": "some value",
+				},
+			},
+			want: `"some value"`,
 		},
 	}
 
@@ -652,7 +671,7 @@ func Test_filter(t *testing.T) {
 }
 
 func Test_environmentsAsMap(t *testing.T) {
-	input := &MappingValues{
+	input := &ComputedValues{
 		Envs: []map[string]any{
 			{
 				"name":   "dev",
@@ -684,29 +703,5 @@ func Test_environmentsAsMap(t *testing.T) {
 
 	if !cmp.Equal(output, expectedOutput) {
 		t.Errorf("diff -want +got:\n%v", cmp.Diff(expectedOutput, output))
-	}
-}
-
-func Test_base64encode(t *testing.T) {
-	tests := map[string]struct {
-		arg  string
-		want string
-	}{
-		"empty string": {
-			arg:  "",
-			want: "",
-		},
-		"some value": {
-			arg:  "some value",
-			want: "c29tZSB2YWx1ZQ==",
-		},
-	}
-
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			if got := base64encode(tt.arg); !cmp.Equal(got, tt.want) {
-				t.Errorf("diff -want +got:\n%v", cmp.Diff(tt.want, got))
-			}
-		})
 	}
 }

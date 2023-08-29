@@ -1,7 +1,7 @@
 package graph
 
 import (
-	feature "github.com/nais/fasit/pkg/feature2"
+	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph/model"
 )
 

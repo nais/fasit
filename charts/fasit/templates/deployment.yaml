@@ -41,7 +41,6 @@ spec:
             - nais-io
             - --iap-audience
             - {{ .Values.iapAudience }}
-            - --feature-source=bucket
           volumeMounts:
           - mountPath: /tmp
             name: tmp

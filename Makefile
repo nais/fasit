@@ -100,3 +100,6 @@ generate-feature-schema:
 
 playground:
 	echo "Playground has moved to Fasit: https://fasit.nais.io/playground"
+
+release-naisd:
+	./hack/release-naisd.sh

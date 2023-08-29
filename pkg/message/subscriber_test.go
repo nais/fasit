@@ -32,7 +32,6 @@ func TestSubscriber(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer client.Close()
-	_ = client // TODO: Use the client.
 
 	topic, err := client.CreateTopic(ctx, "topic")
 	if err != nil {

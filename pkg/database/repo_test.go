@@ -12,7 +12,6 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/pkg/database/dbtest"
-	"github.com/nais/fasit/pkg/feature"
 	"github.com/sirupsen/logrus"
 )
 
@@ -41,7 +40,7 @@ func TestMain(m *testing.M) {
 		log.Fatalf("Could not migrate: %v", err)
 	}
 
-	repository = New(db, &feature.Manager{}, logrus.NewEntry(log)).(*repo)
+	repository = New(db, logrus.NewEntry(log)).(*repo)
 
 	code := m.Run()
 

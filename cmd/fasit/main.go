@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/pubsub"
-	"cloud.google.com/go/storage"
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/extension"
@@ -25,7 +24,6 @@ import (
 	"github.com/nais/fasit/pkg/auth"
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/database/notifier"
-	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph"
 	"github.com/nais/fasit/pkg/graph/graphgen"
 	"github.com/nais/fasit/pkg/message"
@@ -67,7 +65,6 @@ func init() {
 	flag.BoolVar(&cfg.InsecureSkipProxy, "insecure-skip-proxy", false, "Insecure, but allows the server to not require iap")
 	flag.BoolVar(&cfg.InsecureSkipTokenCheck, "insecure-skip-token-check", false, "Insecure, but allows the server ignore token check")
 
-	flag.StringVar(&cfg.FeatureSource, "feature-source", cfg.FeatureSource, "Source of features, one of: file, bucket")
 	flag.StringVar(&cfg.FeatureBucket, "feature-bucket", cfg.FeatureBucket, "Bucket for features when feature-source is bucket")
 	flag.StringVar(&cfg.FeatureSubscription, "feature-subscription", cfg.FeatureSubscription, "Pub/sub subscription for features when feature-source is bucket")
 }
@@ -133,41 +130,7 @@ func main() {
 		log.WithError(err).Fatal("migrating database")
 	}
 
-	log.WithField("feature_source", cfg.FeatureSource).Info("starting feature client")
-	var source feature.FeatureSource
-	switch cfg.FeatureSource {
-	case "file":
-		fileSource, err := feature.NewFeatureSourceFilesystem("./features", log.WithField("subsystem", "filesystem"))
-		if err != nil {
-			log.WithError(err).Fatal("setting up feature source")
-		}
-		go fileSource.Watch(ctx)
-		source = fileSource
-	case "bucket":
-		storageClient, err := storage.NewClient(ctx)
-		if err != nil {
-			log.WithError(err).Fatal("setting up storage client")
-		}
-		defer storageClient.Close()
-
-		bucketSource, err := feature.NewFeatureSourceBucket(ctx, storageClient.Bucket(cfg.FeatureBucket), log.WithField("subsystem", "bucketsource"))
-		if err != nil {
-			log.WithError(err).Fatal("setting up feature source")
-		}
-
-		go bucketSource.Watch(ctx, pubsubClient.Subscription(cfg.FeatureSubscription))
-		source = bucketSource
-	default:
-		log.Fatalf("unknown feature source: %s", cfg.FeatureSource)
-	}
-	defer source.Close()
-
-	featureMgr, err := feature.New(source, log.WithField("subsystem", "feature_manager"))
-	if err != nil {
-		log.WithError(err).Fatal("setting up features")
-	}
-
-	repo := database.New(db, featureMgr, log.WithField("subsystem", "repo"))
+	repo := database.New(db, log.WithField("subsystem", "repo"))
 	log.Info("-- successfully started database client")
 
 	statusMgr := message.NewSubscriber[message.Status](pubsubClient, cfg.GCPProjectID, cfg.StatusSubscriptionID)

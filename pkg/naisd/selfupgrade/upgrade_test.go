@@ -1,6 +1,7 @@
 package selfupgrade
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"os"
@@ -11,12 +12,24 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
+	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/nais/fasit/pkg/message"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes/fake"
 )
 
 func TestFullRun(t *testing.T) {
+	oldFunc := model.DownloadChartFunc
+	defer func() { model.DownloadChartFunc = oldFunc }()
+	model.DownloadChartFunc = func(chart, version, repo string) (*bytes.Buffer, error) {
+		b, err := os.ReadFile("./testdata/naisd.tgz")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		return bytes.NewBuffer(b), nil
+	}
+
 	ctx := context.Background()
 	hostname, err := os.Hostname()
 	if err != nil {
@@ -39,11 +52,6 @@ func TestFullRun(t *testing.T) {
 		Chart:      "oci://asdf",
 		ConfigHash: "123",
 		Timeout:    time.Minute,
-		Values: map[string]any{
-			"image": map[string]any{
-				"tag": "newtag",
-			},
-		},
 	}
 
 	now = func() time.Time {
@@ -126,7 +134,7 @@ func TestFullRun(t *testing.T) {
 			},
 		},
 		"stringData": map[string]any{
-			"deploy_instruction.json": "{\"ID\":\"" + deployInstruction.ID.String() + "\",\"Name\":\"naisd\",\"Version\":\"1.2.3\",\"Chart\":\"oci://asdf\",\"ConfigHash\":\"123\",\"Timeout\":60000000000,\"Values\":{\"image\":{\"tag\":\"newtag\"}}}\n",
+			"deploy_instruction.json": "{\"ID\":\"" + deployInstruction.ID.String() + "\",\"Name\":\"naisd\",\"Version\":\"1.2.3\",\"Chart\":\"oci://asdf\",\"ConfigHash\":\"123\",\"Timeout\":60000000000,\"Values\":null}\n",
 		},
 	}
 	if !cmp.Equal(wantSecret, secretMap) {
@@ -136,37 +144,18 @@ func TestFullRun(t *testing.T) {
 
 func Test_image(t *testing.T) {
 	tests := map[string]struct {
-		values map[string]any
+		values map[string]json.RawMessage
 		want   string
 	}{
 		"no values": {
 			values: nil,
-			want:   defaultImage + ":" + defaultTag,
+			want:   imageName + ":latest",
 		},
 		"with tag": {
-			values: map[string]any{
-				"image": map[string]any{
-					"tag": "1.0.0",
-				},
+			values: map[string]json.RawMessage{
+				"image.tag": []byte(`"1.0.0"`),
 			},
-			want: defaultImage + ":1.0.0",
-		},
-		"with repository": {
-			values: map[string]any{
-				"image": map[string]any{
-					"repository": "naisd/self-upgrader",
-				},
-			},
-			want: "naisd/self-upgrader:" + defaultTag,
-		},
-		"with tag and repository": {
-			values: map[string]any{
-				"image": map[string]any{
-					"tag":        "1.0.0",
-					"repository": "naisd/self-upgrader",
-				},
-			},
-			want: "naisd/self-upgrader:1.0.0",
+			want: imageName + ":1.0.0",
 		},
 	}
 	for name, tt := range tests {

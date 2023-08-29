@@ -5,9 +5,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"time"
 
+	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/nais/fasit/pkg/message"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -20,12 +22,16 @@ import (
 var now = time.Now
 
 const (
-	namespace    = "nais-system"
-	defaultImage = "europe-north1-docker.pkg.dev/nais-io/nais/images/naisd"
-	defaultTag   = "main"
+	namespace = "nais-system"
+	imageName = "europe-north1-docker.pkg.dev/nais-io/nais/images/naisd"
 )
 
 func StartJob(ctx context.Context, client kubernetes.Interface, msg message.DeployInstruction, naisProjectID, env, tenantName string) error {
+	feature, err := model.FromChart(msg.Chart, msg.Version)
+	if err != nil {
+		return err
+	}
+
 	suffix := now().UTC().Format("20060102-150405")
 	hostname, err := os.Hostname()
 	if err != nil {
@@ -36,7 +42,7 @@ func StartJob(ctx context.Context, client kubernetes.Interface, msg message.Depl
 		return fmt.Errorf("failed to get pod spec: %w", err)
 	}
 
-	job := createJob(suffix, msg, naisProjectID, env, tenantName, podSpec.Spec)
+	job := createJob(suffix, msg, naisProjectID, env, tenantName, podSpec.Spec, feature.ValuesYAML)
 
 	newJob, err := client.BatchV1().Jobs(namespace).Create(ctx, job, metav1.CreateOptions{})
 	if err != nil {
@@ -56,7 +62,7 @@ func StartJob(ctx context.Context, client kubernetes.Interface, msg message.Depl
 	return nil
 }
 
-func createJob(suffix string, msg message.DeployInstruction, naisProjectID, env, tenantName string, spec corev1.PodSpec) *batchv1.Job {
+func createJob(suffix string, msg message.DeployInstruction, naisProjectID, env, tenantName string, spec corev1.PodSpec, vals map[string]json.RawMessage) *batchv1.Job {
 	lbls := map[string]string{
 		"app":                        "naisd-self-upgrader",
 		"app.kubernetes.io/instance": "naisd",
@@ -79,7 +85,7 @@ func createJob(suffix string, msg message.DeployInstruction, naisProjectID, env,
 		tenantName,
 		"upgrade",
 	}
-	container.Image = image(msg.Values)
+	container.Image = image(vals)
 	container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
 		Name:      "instruction",
 		ReadOnly:  true,
@@ -146,30 +152,11 @@ func createSecretValues(suffix string, values message.DeployInstruction, uid typ
 	}, nil
 }
 
-func imageTag(v map[string]any) string {
-	image, ok := v["image"].(map[string]any)
-	if !ok {
-		return defaultTag
+func image(v map[string]json.RawMessage) string {
+	tag := "latest"
+	if err := json.Unmarshal(v["image.tag"], &tag); err != nil {
+		log.Println("Error when getting image tag", err, "Using tag", tag)
 	}
-	tag, ok := image["tag"].(string)
-	if !ok {
-		return defaultTag
-	}
-	return tag
-}
 
-func imageRepo(v map[string]any) string {
-	image, ok := v["image"].(map[string]any)
-	if !ok {
-		return defaultImage
-	}
-	tag, ok := image["repository"].(string)
-	if !ok {
-		return defaultImage
-	}
-	return tag
-}
-
-func image(v map[string]any) string {
-	return imageRepo(v) + ":" + imageTag(v)
+	return imageName + ":" + tag
 }
