@@ -18,19 +18,71 @@ SELECT MAX(date)::DATE AS "date"
 FROM env_cost
 ;
 
--- name: CostByTenant :many
+-- name: CostForTenant :many
+WITH envs AS (
+  SELECT
+    id
+  FROM environments
+  WHERE environments.tenant_id = @tenant_id
+), datasource AS (
+SELECT
+  t.id as env_id,
+  t.tdate::DATE AS "date",
+  COALESCE(SUM(cost)::REAL, 0.0) AS cost
+FROM (
+  SELECT
+    "day" AS "tdate",
+    id AS "id"
+  FROM
+  generate_series(
+    @start_date::DATE,
+    @end_date::DATE,
+    interval  '1 day') AS t(day),
+  envs
+) AS t
+LEFT JOIN env_cost ON env_id = t.id AND "date"::DATE = t.tdate
+GROUP BY t.tdate, t.id
+ORDER BY t.tdate, t.id
+)
+
+SELECT
+  env_id,
+  array_agg(cost)::REAL[] AS cost
+FROM datasource
+GROUP BY env_id
+ORDER BY env_id
+;
+
+-- name: Cost :many
+WITH tenant_ids AS (
+  SELECT
+    id
+  FROM tenants
+), datasource AS (
+SELECT
+  t.id as tenant_id,
+  t.tdate::DATE AS "date",
+  COALESCE(SUM(cost)::REAL, 0.0) AS cost
+FROM (
+  SELECT
+    "day" AS "tdate",
+    id AS "id"
+  FROM
+  generate_series(
+    @start_date::DATE,
+    @end_date::DATE,
+    interval  '1 day') AS t(day),
+  tenant_ids
+) AS t
+LEFT JOIN env_cost ON tenant_id = t.id AND "date"::DATE = t.tdate
+GROUP BY t.tdate, t.id
+ORDER BY t.tdate, t.id
+)
+
 SELECT
   tenant_id,
-  "date",
-  SUM(cost)::REAL AS cost
-FROM env_cost
-WHERE
-  (
-    tenant_id = sqlc.narg('tenant_id') OR
-    sqlc.narg('tenant_id') IS NULL
-  )
-  AND "date" >= @start_date
-  AND "date" <= @end_date
-GROUP BY "date", tenant_id
-ORDER BY "date", tenant_id
+  array_agg(cost)::REAL[] AS cost
+FROM datasource
+GROUP BY tenant_id
+ORDER BY tenant_id
 ;

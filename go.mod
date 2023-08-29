@@ -7,13 +7,11 @@ require (
 	cloud.google.com/go/bigquery v1.54.0
 	cloud.google.com/go/cloudsqlconn v1.4.0
 	cloud.google.com/go/pubsub v1.33.0
-	cloud.google.com/go/storage v1.31.0
 	github.com/99designs/gqlgen v0.17.36
 	github.com/GoogleCloudPlatform/cloudsql-proxy v1.33.9
 	github.com/GoogleCloudPlatform/k8s-config-connector v1.107.0
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/coreos/go-oidc/v3 v3.6.0
-	github.com/fsnotify/fsnotify v1.6.0
 	github.com/go-chi/chi/v5 v5.0.10
 	github.com/google/go-cmp v0.5.9
 	github.com/google/uuid v1.3.0
@@ -28,11 +26,8 @@ require (
 	github.com/prometheus/client_golang v1.16.0
 	github.com/ravilushqa/otelgqlgen v0.13.1
 	github.com/rs/cors v1.9.0
-	github.com/santhosh-tekuri/jsonschema/v5 v5.3.1
 	github.com/sirupsen/logrus v1.9.3
-	github.com/stevenle/topsort v0.2.0
 	github.com/stretchr/testify v1.8.4
-	github.com/urfave/cli/v2 v2.25.7
 	github.com/vektah/gqlparser/v2 v2.5.8
 	go.opentelemetry.io/otel v1.16.0
 	go.opentelemetry.io/otel/exporters/prometheus v0.39.0
@@ -56,6 +51,7 @@ require (
 	cloud.google.com/go/compute v1.20.1 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
 	cloud.google.com/go/iam v1.1.0 // indirect
+	cloud.google.com/go/storage v1.31.0 // indirect
 	github.com/AdaLogics/go-fuzz-headers v0.0.0-20230106234847-43070de90fa1 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/BurntSushi/toml v1.3.2 // indirect
@@ -176,6 +172,7 @@ require (
 	github.com/spf13/cobra v1.6.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
+	github.com/urfave/cli/v2 v2.25.7 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect

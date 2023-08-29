@@ -12,7 +12,8 @@ import (
 )
 
 type CostRepo interface {
-	CostByTenant(ctx context.Context, tenant uuid.UUID, start, end time.Time) ([]*model.Cost, error)
+	Cost(ctx context.Context, start, end time.Time) (*model.Cost, error)
+	CostForTenant(ctx context.Context, tenant uuid.UUID, start, end time.Time) (*model.TenantCosts, error)
 	CostLastDate(ctx context.Context) (time.Time, error)
 	CostUpsert(ctx context.Context, rows []gensql.CostUpsertParams) error
 }
@@ -37,24 +38,59 @@ func (r *repo) CostLastDate(ctx context.Context) (time.Time, error) {
 	return d.Time, nil
 }
 
-func (r *repo) CostByTenant(ctx context.Context, tenant uuid.UUID, start, end time.Time) ([]*model.Cost, error) {
-	rows, err := r.querier.CostByTenant(ctx, gensql.CostByTenantParams{
+func (r *repo) CostForTenant(ctx context.Context, tenant uuid.UUID, start, end time.Time) (*model.TenantCosts, error) {
+	rows, err := r.querier.CostForTenant(ctx, gensql.CostForTenantParams{
 		StartDate: pgtype.Date{Time: start, Valid: true},
 		EndDate:   pgtype.Date{Time: end, Valid: true},
-		TenantID:  pgtype.UUID{Bytes: tenant, Valid: tenant != uuid.Nil},
+		TenantID:  tenant,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	ret := make([]*model.Cost, len(rows))
-	for i, row := range rows {
-		ret[i] = &model.Cost{
-			TenantID: row.TenantID,
-			Date:     row.Date.Time,
-			Cost:     float64(row.Cost),
-		}
+	ret := &model.TenantCosts{
+		From: start,
+		To:   end,
+	}
+
+	for _, r := range rows {
+		ret.Series = append(ret.Series, &model.EnvSeries{
+			EnvID: r.EnvID,
+			Data:  convertFloat(r.Cost),
+		})
 	}
 
 	return ret, nil
+}
+
+func (r *repo) Cost(ctx context.Context, start, end time.Time) (*model.Cost, error) {
+	rows, err := r.querier.Cost(ctx, gensql.CostParams{
+		StartDate: pgtype.Date{Time: start, Valid: true},
+		EndDate:   pgtype.Date{Time: end, Valid: true},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	ret := &model.Cost{
+		From: start,
+		To:   end,
+	}
+
+	for _, r := range rows {
+		ret.Series = append(ret.Series, &model.CostSeries{
+			TenantID: r.TenantID,
+			Data:     convertFloat(r.Cost),
+		})
+	}
+
+	return ret, nil
+}
+
+func convertFloat(i []float32) []float64 {
+	ret := make([]float64, len(i))
+	for idx, v := range i {
+		ret[idx] = float64(v)
+	}
+	return ret
 }

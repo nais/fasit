@@ -25,7 +25,7 @@ SELECT
 FROM
   ` + "`nais-io.nais_billing_regional.cost_breakdown_total_daily_update`" + `
 WHERE
-  dato >= TIMESTAMP_SUB(CURRENT_DATE(), INTERVAL 7 DAY)
+  dato >= TIMESTAMP_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
   AND team = 'nais'
 GROUP BY
   tenant,

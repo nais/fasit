@@ -1,15 +1,13 @@
 package model
 
-import (
-	"time"
+import "github.com/google/uuid"
 
-	"github.com/google/uuid"
-)
+type CostSeries struct {
+	Data     []float64 `json:"data"`
+	TenantID uuid.UUID `json:"-"`
+}
 
-type Cost struct {
-	Date time.Time `json:"date"`
-	Cost float64   `json:"cost"`
-
-	TenantID uuid.UUID `json:"tenantId"`
-	EnvID    uuid.UUID `json:"envId"`
+type EnvSeries struct {
+	Data  []float64 `json:"data"`
+	EnvID uuid.UUID `json:"-"`
 }

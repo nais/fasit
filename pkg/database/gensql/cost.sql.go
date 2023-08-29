@@ -12,45 +12,126 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const costByTenant = `-- name: CostByTenant :many
+const cost = `-- name: Cost :many
+WITH tenant_ids AS (
+  SELECT
+    id
+  FROM tenants
+), datasource AS (
+SELECT
+  t.id as tenant_id,
+  t.tdate::DATE AS "date",
+  COALESCE(SUM(cost)::REAL, 0.0) AS cost
+FROM (
+  SELECT
+    "day" AS "tdate",
+    id AS "id"
+  FROM
+  generate_series(
+    $1::DATE,
+    $2::DATE,
+    interval  '1 day') AS t(day),
+  tenant_ids
+) AS t
+LEFT JOIN env_cost ON tenant_id = t.id AND "date"::DATE = t.tdate
+GROUP BY t.tdate, t.id
+ORDER BY t.tdate, t.id
+)
+
 SELECT
   tenant_id,
-  "date",
-  SUM(cost)::REAL AS cost
-FROM env_cost
-WHERE
-  (
-    tenant_id = $1 OR
-    $1 IS NULL
-  )
-  AND "date" >= $2
-  AND "date" <= $3
-GROUP BY "date", tenant_id
-ORDER BY "date", tenant_id
+  array_agg(cost)::REAL[] AS cost
+FROM datasource
+GROUP BY tenant_id
+ORDER BY tenant_id
 `
 
-type CostByTenantParams struct {
-	TenantID  pgtype.UUID
+type CostParams struct {
 	StartDate pgtype.Date
 	EndDate   pgtype.Date
 }
 
-type CostByTenantRow struct {
+type CostRow struct {
 	TenantID uuid.UUID
-	Date     pgtype.Date
-	Cost     float32
+	Cost     []float32
 }
 
-func (q *Queries) CostByTenant(ctx context.Context, arg CostByTenantParams) ([]CostByTenantRow, error) {
-	rows, err := q.db.Query(ctx, costByTenant, arg.TenantID, arg.StartDate, arg.EndDate)
+func (q *Queries) Cost(ctx context.Context, arg CostParams) ([]CostRow, error) {
+	rows, err := q.db.Query(ctx, cost, arg.StartDate, arg.EndDate)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []CostByTenantRow{}
+	items := []CostRow{}
 	for rows.Next() {
-		var i CostByTenantRow
-		if err := rows.Scan(&i.TenantID, &i.Date, &i.Cost); err != nil {
+		var i CostRow
+		if err := rows.Scan(&i.TenantID, &i.Cost); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const costForTenant = `-- name: CostForTenant :many
+WITH envs AS (
+  SELECT
+    id
+  FROM environments
+  WHERE environments.tenant_id = $1
+), datasource AS (
+SELECT
+  t.id as env_id,
+  t.tdate::DATE AS "date",
+  COALESCE(SUM(cost)::REAL, 0.0) AS cost
+FROM (
+  SELECT
+    "day" AS "tdate",
+    id AS "id"
+  FROM
+  generate_series(
+    $2::DATE,
+    $3::DATE,
+    interval  '1 day') AS t(day),
+  envs
+) AS t
+LEFT JOIN env_cost ON env_id = t.id AND "date"::DATE = t.tdate
+GROUP BY t.tdate, t.id
+ORDER BY t.tdate, t.id
+)
+
+SELECT
+  env_id,
+  array_agg(cost)::REAL[] AS cost
+FROM datasource
+GROUP BY env_id
+ORDER BY env_id
+`
+
+type CostForTenantParams struct {
+	TenantID  uuid.UUID
+	StartDate pgtype.Date
+	EndDate   pgtype.Date
+}
+
+type CostForTenantRow struct {
+	EnvID uuid.UUID
+	Cost  []float32
+}
+
+func (q *Queries) CostForTenant(ctx context.Context, arg CostForTenantParams) ([]CostForTenantRow, error) {
+	rows, err := q.db.Query(ctx, costForTenant, arg.TenantID, arg.StartDate, arg.EndDate)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []CostForTenantRow{}
+	for rows.Next() {
+		var i CostForTenantRow
+		if err := rows.Scan(&i.EnvID, &i.Cost); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

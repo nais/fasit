@@ -301,24 +301,50 @@ func (_m *Querier) ConfigUpdate(ctx context.Context, arg gensql.ConfigUpdatePara
 	return r0, r1
 }
 
-// CostByTenant provides a mock function with given fields: ctx, arg
-func (_m *Querier) CostByTenant(ctx context.Context, arg gensql.CostByTenantParams) ([]gensql.CostByTenantRow, error) {
+// Cost provides a mock function with given fields: ctx, arg
+func (_m *Querier) Cost(ctx context.Context, arg gensql.CostParams) ([]gensql.CostRow, error) {
 	ret := _m.Called(ctx, arg)
 
-	var r0 []gensql.CostByTenantRow
+	var r0 []gensql.CostRow
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, gensql.CostByTenantParams) ([]gensql.CostByTenantRow, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.CostParams) ([]gensql.CostRow, error)); ok {
 		return rf(ctx, arg)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, gensql.CostByTenantParams) []gensql.CostByTenantRow); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.CostParams) []gensql.CostRow); ok {
 		r0 = rf(ctx, arg)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]gensql.CostByTenantRow)
+			r0 = ret.Get(0).([]gensql.CostRow)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, gensql.CostByTenantParams) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, gensql.CostParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// CostForTenant provides a mock function with given fields: ctx, arg
+func (_m *Querier) CostForTenant(ctx context.Context, arg gensql.CostForTenantParams) ([]gensql.CostForTenantRow, error) {
+	ret := _m.Called(ctx, arg)
+
+	var r0 []gensql.CostForTenantRow
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.CostForTenantParams) ([]gensql.CostForTenantRow, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.CostForTenantParams) []gensql.CostForTenantRow); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gensql.CostForTenantRow)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, gensql.CostForTenantParams) error); ok {
 		r1 = rf(ctx, arg)
 	} else {
 		r1 = ret.Error(1)

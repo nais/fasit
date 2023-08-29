@@ -259,20 +259,46 @@ func (_m *Repo) ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateCo
 	return r0, r1
 }
 
-// CostByTenant provides a mock function with given fields: ctx, tenant, start, end
-func (_m *Repo) CostByTenant(ctx context.Context, tenant uuid.UUID, start time.Time, end time.Time) ([]*model.Cost, error) {
+// Cost provides a mock function with given fields: ctx, start, end
+func (_m *Repo) Cost(ctx context.Context, start time.Time, end time.Time) (*model.Cost, error) {
+	ret := _m.Called(ctx, start, end)
+
+	var r0 *model.Cost
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, time.Time, time.Time) (*model.Cost, error)); ok {
+		return rf(ctx, start, end)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, time.Time, time.Time) *model.Cost); ok {
+		r0 = rf(ctx, start, end)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Cost)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, time.Time, time.Time) error); ok {
+		r1 = rf(ctx, start, end)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// CostForTenant provides a mock function with given fields: ctx, tenant, start, end
+func (_m *Repo) CostForTenant(ctx context.Context, tenant uuid.UUID, start time.Time, end time.Time) (*model.TenantCosts, error) {
 	ret := _m.Called(ctx, tenant, start, end)
 
-	var r0 []*model.Cost
+	var r0 *model.TenantCosts
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, time.Time, time.Time) ([]*model.Cost, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, time.Time, time.Time) (*model.TenantCosts, error)); ok {
 		return rf(ctx, tenant, start, end)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, time.Time, time.Time) []*model.Cost); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, time.Time, time.Time) *model.TenantCosts); ok {
 		r0 = rf(ctx, tenant, start, end)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.Cost)
+			r0 = ret.Get(0).(*model.TenantCosts)
 		}
 	}
 

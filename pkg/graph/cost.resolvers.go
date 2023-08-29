@@ -14,25 +14,19 @@ import (
 )
 
 // Tenant is the resolver for the tenant field.
-func (r *costResolver) Tenant(ctx context.Context, obj *model.Cost) (*model.Tenant, error) {
+func (r *costSeriesResolver) Tenant(ctx context.Context, obj *model.CostSeries) (*model.Tenant, error) {
 	return r.Repo.TenantGet(ctx, obj.TenantID)
 }
 
-// Env is the resolver for the env field.
-func (r *costResolver) Env(ctx context.Context, obj *model.Cost) (*model.Environment, error) {
-	if obj.EnvID == uuid.Nil {
-		return nil, nil
-	}
+// Environment is the resolver for the environment field.
+func (r *envSeriesResolver) Environment(ctx context.Context, obj *model.EnvSeries) (*model.Environment, error) {
 	return r.Repo.EnvironmentGet(ctx, obj.EnvID)
 }
 
-// Cost is the resolver for the cost field.
-func (r *queryResolver) Cost(ctx context.Context, filter *model.CostFilter) ([]*model.Cost, error) {
+// CostForTenant is the resolver for the costForTenant field.
+func (r *queryResolver) CostForTenant(ctx context.Context, tenantID uuid.UUID, filter *model.CostFilter) (*model.TenantCosts, error) {
 	start := time.Now().Add(-24 * 7 * time.Hour)
 	end := time.Now()
-
-	byTenant := true
-	tenant := uuid.Nil
 
 	if filter != nil {
 		if filter.StartDate != nil {
@@ -41,24 +35,35 @@ func (r *queryResolver) Cost(ctx context.Context, filter *model.CostFilter) ([]*
 		if filter.EndDate != nil {
 			end = *filter.EndDate
 		}
-
-		if filter.GroupBy != nil && *filter.GroupBy == model.CostFilterGroupByEnv {
-			byTenant = false
-		}
-
-		if filter.Tenant != nil && *filter.Tenant != uuid.Nil {
-			tenant = *filter.Tenant
-		}
 	}
 
-	if byTenant {
-		return r.Repo.CostByTenant(ctx, tenant, start, end)
-	}
-
-	panic("not implemented")
+	return r.Repo.CostForTenant(ctx, tenantID, start, end)
 }
 
-// Cost returns graphgen.CostResolver implementation.
-func (r *Resolver) Cost() graphgen.CostResolver { return &costResolver{r} }
+// Cost is the resolver for the cost field.
+func (r *queryResolver) Cost(ctx context.Context, filter *model.CostFilter) (*model.Cost, error) {
+	start := time.Now().Add(-24 * 7 * time.Hour)
+	end := time.Now()
 
-type costResolver struct{ *Resolver }
+	if filter != nil {
+		if filter.StartDate != nil {
+			start = *filter.StartDate
+		}
+		if filter.EndDate != nil {
+			end = *filter.EndDate
+		}
+	}
+
+	return r.Repo.Cost(ctx, start, end)
+}
+
+// CostSeries returns graphgen.CostSeriesResolver implementation.
+func (r *Resolver) CostSeries() graphgen.CostSeriesResolver { return &costSeriesResolver{r} }
+
+// EnvSeries returns graphgen.EnvSeriesResolver implementation.
+func (r *Resolver) EnvSeries() graphgen.EnvSeriesResolver { return &envSeriesResolver{r} }
+
+type (
+	costSeriesResolver struct{ *Resolver }
+	envSeriesResolver  struct{ *Resolver }
+)
