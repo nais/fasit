@@ -184,6 +184,8 @@ func (r *Resolver) FeatureHistory() graphgen.FeatureHistoryResolver {
 	return &featureHistoryResolver{r}
 }
 
-type configOverrideResolver struct{ *Resolver }
-type featureResolver struct{ *Resolver }
-type featureHistoryResolver struct{ *Resolver }
+type (
+	configOverrideResolver struct{ *Resolver }
+	featureResolver        struct{ *Resolver }
+	featureHistoryResolver struct{ *Resolver }
+)

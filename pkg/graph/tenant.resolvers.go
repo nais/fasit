@@ -64,6 +64,8 @@ func (r *Resolver) Query() graphgen.QueryResolver { return &queryResolver{r} }
 // Tenant returns graphgen.TenantResolver implementation.
 func (r *Resolver) Tenant() graphgen.TenantResolver { return &tenantResolver{r} }
 
-type mutationResolver struct{ *Resolver }
-type queryResolver struct{ *Resolver }
-type tenantResolver struct{ *Resolver }
+type (
+	mutationResolver struct{ *Resolver }
+	queryResolver    struct{ *Resolver }
+	tenantResolver   struct{ *Resolver }
+)
