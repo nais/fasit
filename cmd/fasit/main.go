@@ -160,7 +160,7 @@ func main() {
 	if err != nil {
 		log.WithError(err).Error("setting up cost updater. You might need to run `gcloud auth --update-adc` if running locally")
 	} else {
-		go costUpdater.Run(ctx, 1*time.Minute)
+		go costUpdater.Run(ctx, 1*time.Hour)
 	}
 
 	resolver := graph.NewResolver(ctx, repo, notifierService, log.WithField("subsystem", "graphql"))
