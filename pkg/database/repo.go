@@ -43,6 +43,7 @@ type Repo interface {
 	AuditRepo
 	AutoInstallsRepo
 	ConfigRepo
+	CostRepo
 	DeployInstructionRepo
 	EnvironmentRepo
 	EnvironmentValueRepo

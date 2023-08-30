@@ -9,6 +9,8 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
+	pgtype "github.com/jackc/pgx/v5/pgtype"
+
 	pgx "github.com/jackc/pgx/v5"
 
 	uuid "github.com/google/uuid"
@@ -297,6 +299,98 @@ func (_m *Querier) ConfigUpdate(ctx context.Context, arg gensql.ConfigUpdatePara
 	}
 
 	return r0, r1
+}
+
+// Cost provides a mock function with given fields: ctx, arg
+func (_m *Querier) Cost(ctx context.Context, arg gensql.CostParams) ([]gensql.CostRow, error) {
+	ret := _m.Called(ctx, arg)
+
+	var r0 []gensql.CostRow
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.CostParams) ([]gensql.CostRow, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.CostParams) []gensql.CostRow); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gensql.CostRow)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, gensql.CostParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// CostForTenant provides a mock function with given fields: ctx, arg
+func (_m *Querier) CostForTenant(ctx context.Context, arg gensql.CostForTenantParams) ([]gensql.CostForTenantRow, error) {
+	ret := _m.Called(ctx, arg)
+
+	var r0 []gensql.CostForTenantRow
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.CostForTenantParams) ([]gensql.CostForTenantRow, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.CostForTenantParams) []gensql.CostForTenantRow); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gensql.CostForTenantRow)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, gensql.CostForTenantParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// CostLastDate provides a mock function with given fields: ctx
+func (_m *Querier) CostLastDate(ctx context.Context) (pgtype.Date, error) {
+	ret := _m.Called(ctx)
+
+	var r0 pgtype.Date
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) (pgtype.Date, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) pgtype.Date); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Get(0).(pgtype.Date)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// CostUpsert provides a mock function with given fields: ctx, arg
+func (_m *Querier) CostUpsert(ctx context.Context, arg []gensql.CostUpsertParams) *gensql.CostUpsertBatchResults {
+	ret := _m.Called(ctx, arg)
+
+	var r0 *gensql.CostUpsertBatchResults
+	if rf, ok := ret.Get(0).(func(context.Context, []gensql.CostUpsertParams) *gensql.CostUpsertBatchResults); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*gensql.CostUpsertBatchResults)
+		}
+	}
+
+	return r0
 }
 
 // DeployInstructionsByID provides a mock function with given fields: ctx, id

@@ -22,6 +22,8 @@ import (
 
 	pgx "github.com/jackc/pgx/v5"
 
+	time "time"
+
 	uuid "github.com/google/uuid"
 )
 
@@ -255,6 +257,96 @@ func (_m *Repo) ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateCo
 	}
 
 	return r0, r1
+}
+
+// Cost provides a mock function with given fields: ctx, start, end
+func (_m *Repo) Cost(ctx context.Context, start time.Time, end time.Time) (*model.Cost, error) {
+	ret := _m.Called(ctx, start, end)
+
+	var r0 *model.Cost
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, time.Time, time.Time) (*model.Cost, error)); ok {
+		return rf(ctx, start, end)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, time.Time, time.Time) *model.Cost); ok {
+		r0 = rf(ctx, start, end)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Cost)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, time.Time, time.Time) error); ok {
+		r1 = rf(ctx, start, end)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// CostForTenant provides a mock function with given fields: ctx, tenant, start, end
+func (_m *Repo) CostForTenant(ctx context.Context, tenant uuid.UUID, start time.Time, end time.Time) (*model.TenantCosts, error) {
+	ret := _m.Called(ctx, tenant, start, end)
+
+	var r0 *model.TenantCosts
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, time.Time, time.Time) (*model.TenantCosts, error)); ok {
+		return rf(ctx, tenant, start, end)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, time.Time, time.Time) *model.TenantCosts); ok {
+		r0 = rf(ctx, tenant, start, end)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.TenantCosts)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, time.Time, time.Time) error); ok {
+		r1 = rf(ctx, tenant, start, end)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// CostLastDate provides a mock function with given fields: ctx
+func (_m *Repo) CostLastDate(ctx context.Context) (time.Time, error) {
+	ret := _m.Called(ctx)
+
+	var r0 time.Time
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) (time.Time, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) time.Time); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Get(0).(time.Time)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// CostUpsert provides a mock function with given fields: ctx, rows
+func (_m *Repo) CostUpsert(ctx context.Context, rows []gensql.CostUpsertParams) error {
+	ret := _m.Called(ctx, rows)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, []gensql.CostUpsertParams) error); ok {
+		r0 = rf(ctx, rows)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 // DeployInstructionCreate provides a mock function with given fields: ctx, envID, featureName, featureVersion, hash

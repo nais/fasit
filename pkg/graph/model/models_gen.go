@@ -34,6 +34,21 @@ type ComputedValue struct {
 	Content json.RawMessage `json:"content,omitempty"`
 }
 
+type Cost struct {
+	From   time.Time     `json:"from"`
+	To     time.Time     `json:"to"`
+	Series []*CostSeries `json:"series"`
+}
+
+type CostFilter struct {
+	// Start date for costs
+	// Defaults to 7 days ago
+	StartDate *time.Time `json:"startDate,omitempty"`
+	// End date for costs
+	// Defaults to today
+	EndDate *time.Time `json:"endDate,omitempty"`
+}
+
 // EnvironmentCreate contains metadata for creating an environment
 type EnvironmentCreate struct {
 	Name        string          `json:"name"`
@@ -67,6 +82,12 @@ type RolloutEvent struct {
 	Message string          `json:"message"`
 	Created time.Time       `json:"created"`
 	Data    json.RawMessage `json:"data,omitempty"`
+}
+
+type TenantCosts struct {
+	From   time.Time    `json:"from"`
+	To     time.Time    `json:"to"`
+	Series []*EnvSeries `json:"series"`
 }
 
 type TenantCreate struct {
