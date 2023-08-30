@@ -25,8 +25,8 @@ func (r *envSeriesResolver) Environment(ctx context.Context, obj *model.EnvSerie
 
 // CostForTenant is the resolver for the costForTenant field.
 func (r *queryResolver) CostForTenant(ctx context.Context, tenantID uuid.UUID, filter *model.CostFilter) (*model.TenantCosts, error) {
-	start := time.Now().Add(-24 * 7 * time.Hour)
-	end := time.Now()
+	start := time.Now().Add(-24 * 30 * time.Hour)
+	end := time.Now().Add(-24 * time.Hour)
 
 	if filter != nil {
 		if filter.StartDate != nil {
@@ -42,8 +42,8 @@ func (r *queryResolver) CostForTenant(ctx context.Context, tenantID uuid.UUID, f
 
 // Cost is the resolver for the cost field.
 func (r *queryResolver) Cost(ctx context.Context, filter *model.CostFilter) (*model.Cost, error) {
-	start := time.Now().Add(-24 * 7 * time.Hour)
-	end := time.Now()
+	start := time.Now().Add(-24 * 30 * time.Hour)
+	end := time.Now().Add(-24 * time.Hour)
 
 	if filter != nil {
 		if filter.StartDate != nil {
