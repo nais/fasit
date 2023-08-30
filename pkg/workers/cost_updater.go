@@ -71,7 +71,9 @@ func NewCostUpdater(ctx context.Context, repo database.Repo, log logrus.FieldLog
 func (c *CostUpdater) Run(ctx context.Context, schedule time.Duration) {
 	ticker := time.NewTicker(schedule)
 	for {
-		c.updateCosts(ctx)
+		if err := c.updateCosts(ctx); err != nil {
+			c.log.WithError(err).Error("failed to update costs")
+		}
 		select {
 		case <-ctx.Done():
 			return
