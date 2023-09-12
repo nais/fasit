@@ -1,5 +1,5 @@
 .PHONY: test integration-test local-with-auth local linux-build docker-build docker-push run-postgres-test stop-postgres-test install-sqlc
-SQLC_VERSION ?= "v1.20.0"
+SQLC_VERSION ?= "v1.21.0"
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
