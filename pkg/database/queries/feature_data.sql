@@ -9,7 +9,8 @@ INSERT INTO feature_data (
     dependencies,
     values,
     default_values,
-    timeout
+    timeout,
+    tpl_details
 ) VALUES (
     @feature_name,
     @version,
@@ -20,5 +21,6 @@ INSERT INTO feature_data (
     @dependencies,
     @values,
     @default_values,
-    @timeout
+    @timeout,
+    @tpl_details
 );

@@ -897,13 +897,13 @@ func (_m *Repo) FeatureByNameForEnv(ctx context.Context, name string, envID uuid
 	return r0, r1
 }
 
-// FeatureDataCreate provides a mock function with given fields: _a0, _a1
-func (_m *Repo) FeatureDataCreate(_a0 context.Context, _a1 model.Feature) error {
-	ret := _m.Called(_a0, _a1)
+// FeatureDataCreate provides a mock function with given fields: _a0, _a1, _a2
+func (_m *Repo) FeatureDataCreate(_a0 context.Context, _a1 model.Feature, _a2 *feature.FeatureTemplateDetails) error {
+	ret := _m.Called(_a0, _a1, _a2)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, model.Feature) error); ok {
-		r0 = rf(_a0, _a1)
+	if rf, ok := ret.Get(0).(func(context.Context, model.Feature, *feature.FeatureTemplateDetails) error); ok {
+		r0 = rf(_a0, _a1, _a2)
 	} else {
 		r0 = ret.Error(0)
 	}

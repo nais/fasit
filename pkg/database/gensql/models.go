@@ -129,6 +129,12 @@ type EnvironmentValue struct {
 	Secret        bool
 }
 
+type EnvironmentValuesStat struct {
+	Key   string
+	Kind  interface{}
+	Count int64
+}
+
 type Feature struct {
 	Name         string
 	Version      string
@@ -147,6 +153,7 @@ type FeatureDatum struct {
 	Values        []byte
 	DefaultValues []byte
 	Timeout       int64
+	TplDetails    []byte
 }
 
 type FeatureState struct {

@@ -72,6 +72,7 @@ func (r *repo) EnvironmentValuesForEnvironment(ctx context.Context, envID uuid.U
 			Key:           ev.Key,
 			Value:         ev.Value,
 			Secret:        ev.Secret,
+			KnownUses:     int(ev.Count),
 		}
 	}
 

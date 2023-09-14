@@ -13,11 +13,15 @@ FROM environment_values WHERE "environment_id" = @envID AND "key" = @key;
 -- name: EnvironmentValuesForEnvironment :many
 SELECT
 "environment_id",
-"key",
+"environment_values"."key",
 "secret",
-(CASE WHEN secret THEN CASE WHEN @showSensitive::bool THEN value ELSE '"*****"' END ELSE value END)::jsonb AS "value"
-FROM environment_values WHERE "environment_id" = @envID
-ORDER BY "key" ASC
+(CASE WHEN secret THEN CASE WHEN @showSensitive::bool THEN value ELSE '"*****"' END ELSE value END)::jsonb AS "value",
+COALESCE("evs"."count", 0) AS "count"
+FROM environment_values
+LEFT JOIN environments ON environments.id = environment_values.environment_id
+LEFT JOIN environment_values_stats evs ON evs.key = environment_values.key AND evs.kind = environments.kind
+WHERE "environment_id" = @envID
+ORDER BY "environment_values"."key" ASC
 ;
 
 -- name: MappingValuesForTenant :many

@@ -10,6 +10,7 @@ import (
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/nais/fasit/pkg/auth"
 	"github.com/nais/fasit/pkg/database"
+	"github.com/nais/fasit/pkg/feature"
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
@@ -78,31 +79,31 @@ func (r *Rollout) Rollout(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	feature, err := model.FromChart(body.Chart, body.Version)
+	feat, err := model.FromChart(body.Chart, body.Version)
 	if err != nil {
 		http.Error(w, "Unable to convert oci chart: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	if feature.EnvironmentKinds == nil || len(feature.EnvironmentKinds) == 0 {
+	if feat.EnvironmentKinds == nil || len(feat.EnvironmentKinds) == 0 {
 		http.Error(w, "No environments defined in Feature.yaml", http.StatusBadRequest)
 		return
 	}
 
-	if feature.Source == "" {
+	if feat.Source == "" {
 		http.Error(w, "No source url found in Chart.yaml", http.StatusBadRequest)
 		return
 	}
 
 	envNotAvailable := []model.EnvironmentKind{}
-	for _, env := range feature.EnvironmentKinds {
+	for _, env := range feat.EnvironmentKinds {
 		e, err := r.repo.EnvironmentCI(ctx, env)
 		if err != nil {
 			envNotAvailable = append(envNotAvailable, env)
 			continue
 		}
 
-		fs, err := r.repo.FeatureStateGet(ctx, e.ID, feature.Name)
+		fs, err := r.repo.FeatureStateGet(ctx, e.ID, feat.Name)
 		if err != nil {
 			envNotAvailable = append(envNotAvailable, env)
 			continue
@@ -114,7 +115,7 @@ func (r *Rollout) Rollout(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	if _, err := r.repo.RolloutByName(ctx, feature.Name); err == nil {
+	if _, err := r.repo.RolloutByName(ctx, feat.Name); err == nil {
 		http.Error(w, "Rollout with this feature name is already in progress", http.StatusConflict)
 		return
 	}
@@ -127,12 +128,18 @@ func (r *Rollout) Rollout(w http.ResponseWriter, req *http.Request) {
 	// 	return
 	// }
 
+	details, err := feature.ParseTemplateDetails(feat.FeatureYAML.Values)
+	if err != nil {
+		http.Error(w, "Unable to parse feature template details: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	err = r.repo.TxFunc(ctx, func(repo database.Repo) error {
-		if err := repo.FeatureDataCreate(ctx, *feature); err != nil {
+		if err := repo.FeatureDataCreate(ctx, *feat, details); err != nil {
 			return fmt.Errorf("feature data: %w", err)
 		}
 
-		if _, err := repo.RolloutCreate(ctx, feature.Name, body.Version); err != nil {
+		if _, err := repo.RolloutCreate(ctx, feat.Name, body.Version); err != nil {
 			return fmt.Errorf("rollout: %w", err)
 		}
 

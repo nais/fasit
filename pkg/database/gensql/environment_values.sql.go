@@ -124,11 +124,15 @@ func (q *Queries) EnvironmentValuesAcrossEnvs(ctx context.Context, key string) (
 const environmentValuesForEnvironment = `-- name: EnvironmentValuesForEnvironment :many
 SELECT
 "environment_id",
-"key",
+"environment_values"."key",
 "secret",
-(CASE WHEN secret THEN CASE WHEN $1::bool THEN value ELSE '"*****"' END ELSE value END)::jsonb AS "value"
-FROM environment_values WHERE "environment_id" = $2
-ORDER BY "key" ASC
+(CASE WHEN secret THEN CASE WHEN $1::bool THEN value ELSE '"*****"' END ELSE value END)::jsonb AS "value",
+COALESCE("evs"."count", 0) AS "count"
+FROM environment_values
+LEFT JOIN environments ON environments.id = environment_values.environment_id
+LEFT JOIN environment_values_stats evs ON evs.key = environment_values.key AND evs.kind = environments.kind
+WHERE "environment_id" = $2
+ORDER BY "environment_values"."key" ASC
 `
 
 type EnvironmentValuesForEnvironmentParams struct {
@@ -141,6 +145,7 @@ type EnvironmentValuesForEnvironmentRow struct {
 	Key           string
 	Secret        bool
 	Value         []byte
+	Count         int64
 }
 
 func (q *Queries) EnvironmentValuesForEnvironment(ctx context.Context, arg EnvironmentValuesForEnvironmentParams) ([]EnvironmentValuesForEnvironmentRow, error) {
@@ -157,6 +162,7 @@ func (q *Queries) EnvironmentValuesForEnvironment(ctx context.Context, arg Envir
 			&i.Key,
 			&i.Secret,
 			&i.Value,
+			&i.Count,
 		); err != nil {
 			return nil, err
 		}

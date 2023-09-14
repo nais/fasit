@@ -44,6 +44,7 @@ type Environment {
 type EnvironmentValue {
   key: String!
   value: RawMessage!
+  knownUses: Int!
 }
 
 """
