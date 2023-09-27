@@ -24,10 +24,6 @@ type RolloutRepo interface {
 	RolloutEvents(ctx context.Context, rolloutID uuid.UUID) ([]*model.RolloutEvent, error)
 }
 
-func (r *repo) RolloutComplete(ctx context.Context, name string) error {
-	return r.querier.RolloutComplete(ctx, name)
-}
-
 func (r *repo) RolloutStatus(ctx context.Context, name string) (model.RolloutStatus, error) {
 	status, err := r.querier.RolloutStatus(ctx, name)
 	if err != nil {

@@ -178,55 +178,55 @@ func (r *Receiver) handleCI(ctx context.Context, env *model.Environment, di *mod
 		eventData["log"] = helmStatus.Log
 	}
 
-	// At this point, we know the status message is for a active rollout
-	switch helmStatus.RolloutStatus {
-	case model.RolloutStatusPending:
-		if err := r.repo.RolloutEventCreate(ctx, rollout.GraphVars.RolloutID, false, "Installing helm chart...", eventData); err != nil {
-			return fmt.Errorf("creating rollout event: %w", err)
+	return r.repo.TxFunc(ctx, func(repo database.Repo) error {
+		// At this point, we know the status message is for a active rollout
+		switch helmStatus.RolloutStatus {
+		case model.RolloutStatusPending:
+			if err := r.repo.RolloutEventCreate(ctx, rollout.GraphVars.RolloutID, false, "Installing helm chart...", eventData); err != nil {
+				return fmt.Errorf("creating rollout event: %w", err)
+			}
+			return nil
+		case model.RolloutStatusFailed:
+			if err := r.repo.RolloutsUpdateStatus(ctx, model.RolloutStatusFailed, rollout.Name, false); err != nil {
+				return fmt.Errorf("updating rollout status: %w", err)
+			}
+			if err := r.repo.RolloutEventCreate(ctx, rollout.GraphVars.RolloutID, true, "Helm install failed", eventData); err != nil {
+				return fmt.Errorf("creating rollout event: %w", err)
+			}
+		case model.RolloutStatusDeployed:
+			if err := r.repo.RolloutEventCreate(ctx, rollout.GraphVars.RolloutID, false, "Helm install succeeded", eventData); err != nil {
+				return fmt.Errorf("creating rollout event: %w", err)
+			}
+		default:
+			return fmt.Errorf("invalid helm status: %v", helmStatus.RolloutStatus)
 		}
-		return nil
-	case model.RolloutStatusFailed:
-		if err := r.repo.RolloutsUpdateStatus(ctx, model.RolloutStatusFailed, rollout.Name, false); err != nil {
-			return fmt.Errorf("updating rollout status: %w", err)
-		}
-		if err := r.repo.RolloutEventCreate(ctx, rollout.GraphVars.RolloutID, true, "Helm install failed", eventData); err != nil {
-			return fmt.Errorf("creating rollout event: %w", err)
-		}
-	case model.RolloutStatusDeployed:
-		if err := r.repo.RolloutEventCreate(ctx, rollout.GraphVars.RolloutID, false, "Helm install succeeded", eventData); err != nil {
-			return fmt.Errorf("creating rollout event: %w", err)
-		}
-	default:
-		return fmt.Errorf("invalid helm status: %v", helmStatus.RolloutStatus)
-	}
 
-	last, err := r.repo.RolloutCalculateDone(ctx, rollout.GraphVars.RolloutID)
-	if err != nil {
-		return fmt.Errorf("checking if last: %w", err)
-	}
-	if !last {
-		r.log.WithField("name", featureName).Info("not last")
-		return nil
-	}
-
-	status, err := r.repo.RolloutStatus(ctx, rollout.Name)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			r.log.WithField("name", featureName).Warn("unknown rollout")
+		last, err := r.repo.RolloutCalculateDone(ctx, rollout.GraphVars.RolloutID)
+		if err != nil {
+			return fmt.Errorf("checking if last: %w", err)
+		}
+		if !last {
+			r.log.WithField("name", featureName).Info("not last")
 			return nil
 		}
-		return fmt.Errorf("getting rollout status for %q: %w", rollout.Name, err)
-	}
 
-	if status == model.RolloutStatusFailed {
-		if err := r.repo.RolloutsUpdateStatus(ctx, model.RolloutStatusFailed, rollout.Name, true); err != nil {
-			return fmt.Errorf("updating rollout status: %w", err)
+		status, err := r.repo.RolloutStatus(ctx, rollout.Name)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				r.log.WithField("name", featureName).Warn("unknown rollout")
+				return nil
+			}
+			return fmt.Errorf("getting rollout status for %q: %w", rollout.Name, err)
 		}
-		r.log.WithField("name", featureName).Info("rollout failed")
-		return nil
-	}
 
-	return r.repo.TxFunc(ctx, func(repo database.Repo) error {
+		if status == model.RolloutStatusFailed {
+			if err := r.repo.RolloutsUpdateStatus(ctx, model.RolloutStatusFailed, rollout.Name, true); err != nil {
+				return fmt.Errorf("updating rollout status: %w", err)
+			}
+			r.log.WithField("name", featureName).Info("rollout failed")
+			return nil
+		}
+
 		if err := repo.FeatureVersionUpdate(ctx, rollout.Name, rollout.Version); err != nil {
 			return fmt.Errorf("updating feature version: %w", err)
 		}
