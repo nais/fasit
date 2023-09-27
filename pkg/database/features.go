@@ -119,6 +119,9 @@ func (r *repo) FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, 
 				break
 			}
 		}
+	}
+
+	for _, ro := range rollouts {
 		features = append(features, gensql.FeaturesForKindRow{
 			Name:          ro.Name,
 			Description:   ro.Description,
