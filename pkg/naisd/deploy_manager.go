@@ -3,6 +3,7 @@ package naisd
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"log"
 	"os"
@@ -18,6 +19,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
+
+var errRestartRequired = errors.New("restart required")
 
 var getEnvironment = os.Environ
 
@@ -92,10 +95,23 @@ func (d *DeployManager) Run(ctx context.Context) {
 	d.log.WithField("subscription", d.deployments.Name()).Info("Starting deploy receiver")
 	d.deployments.Synchronous()
 	ctx, d.stop = context.WithCancel(ctx)
-	err := d.deployments.Receive(ctx, d.handler)
-	if err != nil {
-		d.log.WithError(err).Error("receive status messages")
-		// retry logic? This should only trigger when an upgrade is triggered.
+	for {
+		err := d.deployments.Receive(ctx, d.handler)
+		if err != nil {
+			if errors.Is(err, errRestartRequired) {
+				d.log.Info("Restarting deploy receiver")
+				return
+			}
+			d.log.WithError(err).Error("receive status messages")
+			// retry logic? This should only trigger when an upgrade is triggered.
+		}
+		select {
+		case <-ctx.Done():
+			d.log.Info("Stopping deploy receiver")
+			return
+		default:
+			time.Sleep(5 * time.Second)
+		}
 	}
 }
 
@@ -117,7 +133,7 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 		message.ForceAck(ctx)
 		time.Sleep(1 * time.Second)
 		d.stop()
-		return nil
+		return errRestartRequired
 	}
 
 	valuesFile, err := d.makeHelmValues(msg)
