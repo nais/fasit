@@ -52,6 +52,7 @@ type DeployManager struct {
 	tenantName            string
 	executor              Exec
 	createTempFile        func(string, string) (file, error)
+	runOnlyOnce           bool
 
 	performNaisdUpgrades bool
 	stop                 context.CancelFunc
@@ -105,6 +106,11 @@ func (d *DeployManager) Run(ctx context.Context) {
 			d.log.WithError(err).Error("receive status messages")
 			// retry logic? This should only trigger when an upgrade is triggered.
 		}
+
+		if d.runOnlyOnce {
+			break
+		}
+
 		select {
 		case <-ctx.Done():
 			d.log.Info("Stopping deploy receiver")
@@ -234,6 +240,10 @@ func (d *DeployManager) makeHelmValues(m message.DeployInstruction) (string, err
 	}
 
 	return file.Name(), nil
+}
+
+func (d *DeployManager) runOnce() {
+	d.runOnlyOnce = true
 }
 
 func helmArgs(m message.DeployInstruction, valuesFile string) ([]string, error) {

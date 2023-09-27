@@ -107,6 +107,7 @@ func TestDeployReceiver(t *testing.T) {
 			ctx := context.Background()
 			ctx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
 			defer cancel()
+			dr.runOnce()
 			dr.helmCache = "/tmp/naisd-helm"
 			dr.createTempFile = func(s1, s2 string) (file, error) {
 				return &mockfile{}, nil
