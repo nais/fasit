@@ -283,6 +283,34 @@ func (q *Queries) RolloutsForFeature(ctx context.Context, featureName string) ([
 }
 
 const rolloutsForKind = `-- name: RolloutsForKind :many
+WITH success AS (
+  SELECT DISTINCT ON (rollouts.feature_name)
+    id,
+    feature_name
+  FROM rollouts
+  JOIN feature_data fd ON rollouts.feature_name = fd.name AND rollouts.version = fd.version
+  WHERE $1::environment_kind = ANY(kinds)
+  AND (
+    rollouts.status IN ('pending', 'in_progress', 'deployed')
+  )
+  ORDER BY rollouts.feature_name, rollouts.created DESC
+), failed AS (
+  SELECT DISTINCT ON (rollouts.feature_name)
+    rollouts.id
+  FROM rollouts
+  LEFT OUTER JOIN success ON success.feature_name = rollouts.feature_name
+  JOIN feature_data fd ON rollouts.feature_name = fd.name AND rollouts.version = fd.version
+  WHERE success.id IS NULL
+  AND $1::environment_kind = ANY(kinds)
+  AND (
+    rollouts.status IN ('failed')
+  )
+  ORDER BY rollouts.feature_name, rollouts.created DESC
+), all_rollouts AS (
+  SELECT id FROM success
+  UNION
+  SELECT id FROM failed
+)
 SELECT
   rollouts.id,
   fd.name,
@@ -297,20 +325,9 @@ SELECT
   fd.timeout,
   rollouts.created
 FROM rollouts
+JOIN all_rollouts ar ON ar.id = rollouts.id
 JOIN feature_data fd ON rollouts.feature_name = fd.name AND rollouts.version = fd.version
-WHERE $1::text = ANY(kinds::text[])
-AND (
-  rollouts.status = 'pending'
-  -- Ensure that the latest rollout is returned if it's the only one remaining
-  OR NOT EXISTS (
-    SELECT 1
-    FROM rollouts r2
-    WHERE r2.feature_name = rollouts.feature_name
-    AND r2.status IN ('pending', 'in_progress', 'deployed')
-    AND r2.created > rollouts.created
-  )
-)
-ORDER BY rollouts.feature_name
+ORDER BY rollouts.feature_name ASC
 `
 
 type RolloutsForKindRow struct {
@@ -328,7 +345,7 @@ type RolloutsForKindRow struct {
 	Created       pgtype.Timestamptz
 }
 
-func (q *Queries) RolloutsForKind(ctx context.Context, environmentKind string) ([]RolloutsForKindRow, error) {
+func (q *Queries) RolloutsForKind(ctx context.Context, environmentKind EnvironmentKind) ([]RolloutsForKindRow, error) {
 	rows, err := q.db.Query(ctx, rolloutsForKind, environmentKind)
 	if err != nil {
 		return nil, err

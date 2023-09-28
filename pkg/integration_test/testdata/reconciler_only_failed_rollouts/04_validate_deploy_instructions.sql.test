@@ -1,0 +1,24 @@
+SELECT
+  (SELECT name FROM environments WHERE environments.id = environment_id) AS environment,
+  feature_name,
+  feature_version,
+  status
+FROM deploy_instructions
+ORDER BY environment, feature_name, feature_version
+
+RETURNS
+
+[
+  {
+    "environment": "management",
+    "feature_name": "feature1",
+    "feature_version": "3",
+    "status": "deployed"
+  },
+  {
+    "environment": "testing",
+    "feature_name": "feature1",
+    "feature_version": "3",
+    "status": "deployed"
+  }
+]

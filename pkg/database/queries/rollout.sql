@@ -5,6 +5,34 @@ DELETE FROM rollouts WHERE feature_name = @feature_name;
 INSERT INTO rollouts (feature_name, version) VALUES (@feature_name, @version) RETURNING *;
 
 -- name: RolloutsForKind :many
+WITH success AS (
+  SELECT DISTINCT ON (rollouts.feature_name)
+    id,
+    feature_name
+  FROM rollouts
+  JOIN feature_data fd ON rollouts.feature_name = fd.name AND rollouts.version = fd.version
+  WHERE @environment_kind::environment_kind = ANY(kinds)
+  AND (
+    rollouts.status IN ('pending', 'in_progress', 'deployed')
+  )
+  ORDER BY rollouts.feature_name, rollouts.created DESC
+), failed AS (
+  SELECT DISTINCT ON (rollouts.feature_name)
+    rollouts.id
+  FROM rollouts
+  LEFT OUTER JOIN success ON success.feature_name = rollouts.feature_name
+  JOIN feature_data fd ON rollouts.feature_name = fd.name AND rollouts.version = fd.version
+  WHERE success.id IS NULL
+  AND @environment_kind::environment_kind = ANY(kinds)
+  AND (
+    rollouts.status IN ('failed')
+  )
+  ORDER BY rollouts.feature_name, rollouts.created DESC
+), all_rollouts AS (
+  SELECT id FROM success
+  UNION
+  SELECT id FROM failed
+)
 SELECT
   rollouts.id,
   fd.name,
@@ -19,20 +47,10 @@ SELECT
   fd.timeout,
   rollouts.created
 FROM rollouts
+JOIN all_rollouts ar ON ar.id = rollouts.id
 JOIN feature_data fd ON rollouts.feature_name = fd.name AND rollouts.version = fd.version
-WHERE @environment_kind::text = ANY(kinds::text[])
-AND (
-  rollouts.status = 'pending'
-  -- Ensure that the latest rollout is returned if it's the only one remaining
-  OR NOT EXISTS (
-    SELECT 1
-    FROM rollouts r2
-    WHERE r2.feature_name = rollouts.feature_name
-    AND r2.status IN ('pending', 'in_progress', 'deployed')
-    AND r2.created > rollouts.created
-  )
-)
-ORDER BY rollouts.feature_name;
+ORDER BY rollouts.feature_name ASC
+;
 
 -- name: RolloutByName :one
 SELECT

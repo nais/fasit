@@ -106,7 +106,7 @@ func (r *repo) FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, 
 		return ret, nil
 	}
 
-	rollouts, err := r.querier.RolloutsForKind(ctx, kind.String())
+	rollouts, err := r.querier.RolloutsForKind(ctx, gensql.EnvironmentKind(kind))
 	if err != nil {
 		return nil, err
 	}

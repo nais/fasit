@@ -1,0 +1,10 @@
+INSERT INTO features (
+  name,
+  version
+) VALUES
+  ('feature1', '1')
+;
+
+RETURNS
+
+[]

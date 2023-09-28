@@ -130,9 +130,10 @@ type EnvironmentValue struct {
 }
 
 type EnvironmentValuesStat struct {
-	Key   string
-	Kind  interface{}
-	Count int64
+	Key      string
+	Kind     interface{}
+	Count    int64
+	Features interface{}
 }
 
 type Feature struct {

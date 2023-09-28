@@ -1,0 +1,28 @@
+INSERT INTO feature_states (
+	environment_id,
+	feature,
+	enabled,
+	enabled_at
+) VALUES
+(
+	'{{ .Tenant.tenant23.Env.testing.ID }}',
+	'feature1',
+	true,
+	now()
+),
+(
+	'{{ .Tenant.tenant23.Env.management.ID }}',
+	'feature1',
+	true,
+	now()
+),
+(
+	'{{ .Tenant.tenant23.Env.nonci.ID }}',
+	'feature1',
+	true,
+	now()
+)
+
+RETURNS
+
+[]

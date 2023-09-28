@@ -1,0 +1,46 @@
+query {
+  tenants {
+    environments {
+      name
+      features {
+        name
+        version
+      }
+    }
+  }
+}
+
+RETURNS
+
+{
+  "data": {
+    "tenants": [
+      {
+        "environments": [
+          {
+            "name": "management",
+            "features": [
+              {
+                "name": "feature1",
+                "version": "3"
+              }
+            ]
+          },
+          {
+            "name": "nonci",
+            "features": []
+          },
+          {
+            "name": "testing",
+            "features": [
+              {
+                "name": "feature1",
+                "version": "3"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
