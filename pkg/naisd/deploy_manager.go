@@ -95,6 +95,7 @@ func NewDeployManager(
 func (d *DeployManager) Run(ctx context.Context) {
 	d.log.WithField("subscription", d.deployments.Name()).Info("Starting deploy receiver")
 	d.deployments.Synchronous()
+
 	ctx, d.stop = context.WithCancel(ctx)
 	for {
 		err := d.deployments.Receive(ctx, d.handler)
@@ -115,8 +116,7 @@ func (d *DeployManager) Run(ctx context.Context) {
 		case <-ctx.Done():
 			d.log.Info("Stopping deploy receiver")
 			return
-		default:
-			time.Sleep(5 * time.Second)
+		case <-time.After(3 * time.Second):
 		}
 	}
 }
