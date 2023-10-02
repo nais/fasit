@@ -18,7 +18,8 @@ type pubsubLogger struct {
 	lock  sync.Mutex
 	lines []message.LogLine
 
-	log logrus.FieldLogger
+	log   logrus.FieldLogger
+	close chan struct{}
 }
 
 func newPubsubLogger(diid uuid.UUID, topic StatusPublisher, log logrus.FieldLogger) *pubsubLogger {
@@ -26,6 +27,7 @@ func newPubsubLogger(diid uuid.UUID, topic StatusPublisher, log logrus.FieldLogg
 		diid:  diid,
 		topic: topic,
 		log:   log,
+		close: make(chan struct{}),
 	}
 }
 
@@ -57,6 +59,9 @@ func (p *pubsubLogger) Run(ctx context.Context) {
 			}
 		case <-ctx.Done():
 			return
+		case <-p.close:
+			p.Publish(context.Background())
+			return
 		}
 	}
 }
@@ -85,4 +90,9 @@ func (p *pubsubLogger) Publish(ctx context.Context) error {
 		Type: message.StatusTypeLog,
 		Data: b,
 	})
+}
+
+func (p *pubsubLogger) Close() error {
+	close(p.close)
+	return p.Publish(context.Background())
 }

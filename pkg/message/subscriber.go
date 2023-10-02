@@ -3,12 +3,15 @@ package message
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log"
 
 	"cloud.google.com/go/pubsub"
 )
 
 type contextKey int
+
+var ErrNack = errors.New("nack")
 
 const ackContext = contextKey(1)
 
@@ -49,7 +52,9 @@ func (s *Subscriber[T]) Receive(ctx context.Context, f func(ctx context.Context,
 		}
 
 		if err := f(ctx, t); err != nil {
-			log.Println(err)
+			if !errors.Is(err, ErrNack) {
+				log.Println(err)
+			}
 			msg.Nack()
 			return
 		}

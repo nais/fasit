@@ -4,11 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log"
+	"log/slog"
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/nais/fasit/pkg/graph/model"
@@ -20,9 +23,38 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-var errRestartRequired = errors.New("restart required")
+var (
+	errRestartRequired = errors.New("restart required")
+	errPostpone        = fmt.Errorf("postpone: %w", message.ErrNack)
+	getEnvironment     = os.Environ
+)
 
-var getEnvironment = os.Environ
+type lockedInt struct {
+	sync.Mutex
+	value int
+}
+
+func (i *lockedInt) Inc() {
+	i.Lock()
+	defer i.Unlock()
+	i.value++
+}
+
+func (i *lockedInt) Dec() {
+	i.Lock()
+	defer i.Unlock()
+	i.value--
+	if i.value < 0 {
+		slog.Info("negative progress count, resetting to 0")
+		i.value = 0
+	}
+}
+
+func (i *lockedInt) Value() int {
+	i.Lock()
+	defer i.Unlock()
+	return i.value
+}
 
 type DeploymentReceiver interface {
 	Name() string
@@ -53,6 +85,10 @@ type DeployManager struct {
 	executor              Exec
 	createTempFile        func(string, string) (file, error)
 	runOnlyOnce           bool
+
+	// We need to keep track of how many deployments are in progress, so that we can
+	// postpone the upgrade of naisd until all other deployments are done.
+	inProgress lockedInt
 
 	performNaisdUpgrades bool
 	stop                 context.CancelFunc
@@ -128,7 +164,18 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 		"version": msg.Version,
 	}).Debug("Received instruction")
 
+	pubsubLog := newPubsubLogger(msg.ID, d.statuses, d.log)
+
+	go pubsubLog.Run(ctx)
+	defer pubsubLog.Close()
+
 	if msg.Name == "naisd" && !d.performNaisdUpgrades {
+		if d.inProgress.Value() > 0 {
+			d.log.WithField("inProgress", d.inProgress.Value()).Debug("Postponing naisd upgrade")
+			fmt.Fprintf(pubsubLog, "Postponing naisd upgrade, %d deployments in progress\n", d.inProgress.Value())
+			return errPostpone
+		}
+
 		d.log.Debug("Offloading naisd upgrade")
 		err := selfupgrade.StartJob(ctx, d.k8sClient, msg, d.naisProjectID, d.env, d.tenantName)
 		if err != nil {
@@ -141,6 +188,9 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 		d.stop()
 		return errRestartRequired
 	}
+
+	d.inProgress.Inc()
+	defer d.inProgress.Dec()
 
 	valuesFile, err := d.makeHelmValues(msg)
 	if err != nil {
@@ -161,7 +211,7 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 
 	_ = d.publishStatus(ctx, helmStatus)
 
-	helmStatus.Log, err = d.runHelm(ctx, args, msg)
+	helmStatus.Log, err = d.runHelm(ctx, pubsubLog, args, msg)
 	if err != nil {
 		log.Printf("failed to run helm %s: %s", msg.Name, err)
 		helmStatus.RolloutStatus = model.RolloutStatusFailed
@@ -188,7 +238,7 @@ func (d *DeployManager) publishStatus(ctx context.Context, msg message.Helm) err
 	return d.statuses.Publish(ctx, statusUpdate)
 }
 
-func (d *DeployManager) runHelm(ctx context.Context, args []string, msg message.DeployInstruction) (string, error) {
+func (d *DeployManager) runHelm(ctx context.Context, pubsubLog *pubsubLogger, args []string, msg message.DeployInstruction) (string, error) {
 	connectionFlags := []string{
 		"--kube-apiserver",
 		d.kubeConfig.Host,
@@ -213,17 +263,12 @@ func (d *DeployManager) runHelm(ctx context.Context, args []string, msg message.
 		"HELM_CACHE_HOME="+d.helmCache,
 	)
 
-	buf := newPubsubLogger(msg.ID, d.statuses, d.log)
-
-	go buf.Run(ctx)
-
 	cmd := exec.CommandContext(ctx, "helm", helmArgs...)
 	cmd.Env = append(cmd.Env, environment...)
-	cmd.Stdout = io.MultiWriter(buf, os.Stdout)
-	cmd.Stderr = io.MultiWriter(buf, os.Stderr)
+	cmd.Stdout = io.MultiWriter(pubsubLog, os.Stdout)
+	cmd.Stderr = io.MultiWriter(pubsubLog, os.Stderr)
 
 	err := d.executor.Execute(cmd)
-	buf.Publish(ctx)
 	return "", err
 }
 
