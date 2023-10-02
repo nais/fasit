@@ -71,7 +71,7 @@ func TestConsoleManager_handler(t *testing.T) {
 	cnrmbeta1.AddToScheme(scheme)
 	dynClient := dynFake.NewSimpleDynamicClient(scheme)
 
-	m, err := newConsoleManager(ctx, cs, dynClient, nil, nil, "test-proj", "test", logrus.NewEntry(logrus.New()))
+	m, err := newConsoleManager(ctx, cs, dynClient, nil, nil, "test-proj", "dev-gcp", logrus.NewEntry(logrus.New()))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -105,6 +105,14 @@ func TestConsoleManager_handler(t *testing.T) {
 				c := n.Annotations["replicator.nais.io/slackAlertsChannel"]
 				if c != "#test-alerts" {
 					t.Errorf("namespace annotation %q has unexpected value, expected: %q got: %q", "replicator.nais.io/slackAlertsChannel", "#test-alerts", c)
+				}
+			}
+
+			// check linkerd annotation
+			for _, n := range namespaces.Items {
+				c := n.Annotations["linkerd.io/inject"]
+				if c != "enabled" {
+					t.Errorf("namespace annotation %q has unexpected value, expected: %q got: %q", "linkerd/inject", "enabled", c)
 				}
 			}
 
