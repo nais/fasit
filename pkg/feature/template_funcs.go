@@ -10,26 +10,30 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/Masterminds/sprig/v3"
 	"github.com/nais/fasit/pkg/graph/model"
 	"gopkg.in/yaml.v2"
 )
 
-var templateFuncs = template.FuncMap{
-	"mapOf":             mapOf,
-	"mapJoin":           mapJoin,
-	"environmentsAsMap": environmentsAsMap,
-	"prefixedValues":    prefixedValues,
-	"subdomain":         subdomain,
-	"eachOf":            eachOf,
-	"toJSON":            toJSON,
-	"fromJSON":          fromJSON,
-	"toYAML":            toYAML,
-	"join":              join,
-	"filter":            filter,
-	"replace":           replace,
-	"b64enc":            base64encode,
-	"quote":             quote,
-}
+var templateFuncs = func() template.FuncMap {
+	fm := sprig.GenericFuncMap()
+	fm["mapOf"] = mapOf
+	fm["mapJoin"] = mapJoin
+	fm["environmentsAsMap"] = environmentsAsMap
+	fm["prefixedValues"] = prefixedValues
+	fm["subdomain"] = subdomain
+	fm["eachOf"] = eachOf
+	fm["toJSON"] = toJSON
+	fm["fromJSON"] = fromJSON
+	fm["toYAML"] = toYAML
+	fm["join"] = join
+	fm["filter"] = filter
+	fm["replace"] = replace
+	fm["b64enc"] = base64encode
+	fm["quote"] = quote
+
+	return fm
+}()
 
 // mapOf creates a new map from a list of map[string]any with the given key as the key in the new map,
 // and the given valueKey as the value in the new map.
