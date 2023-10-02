@@ -56,6 +56,23 @@ func (i *lockedInt) Value() int {
 	return i.value
 }
 
+type lockedTime struct {
+	sync.Mutex
+	value time.Time
+}
+
+func (t *lockedTime) Set() {
+	t.Lock()
+	defer t.Unlock()
+	t.value = time.Now()
+}
+
+func (t *lockedTime) Get() time.Time {
+	t.Lock()
+	defer t.Unlock()
+	return t.value
+}
+
 type DeploymentReceiver interface {
 	Name() string
 	Synchronous()
@@ -88,7 +105,8 @@ type DeployManager struct {
 
 	// We need to keep track of how many deployments are in progress, so that we can
 	// postpone the upgrade of naisd until all other deployments are done.
-	inProgress lockedInt
+	inProgress  lockedInt
+	lastChecked lockedTime
 
 	performNaisdUpgrades bool
 	stop                 context.CancelFunc
@@ -171,22 +189,29 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 
 	if msg.Name == "naisd" && !d.performNaisdUpgrades {
 		if d.inProgress.Value() > 0 {
-			d.log.WithField("inProgress", d.inProgress.Value()).Debug("Postponing naisd upgrade")
-			fmt.Fprintf(pubsubLog, "Postponing naisd upgrade, %d deployments in progress\n", d.inProgress.Value())
+			if d.lastChecked.Get().Add(15 * time.Second).Before(time.Now()) {
+				d.log.WithField("inProgress", d.inProgress.Value()).Debug("Postponing naisd upgrade")
+				fmt.Fprintf(pubsubLog, "Postponing naisd upgrade, %d deployments in progress\n", d.inProgress.Value())
+				d.lastChecked.Set()
+			}
 			return errPostpone
 		}
 
 		d.log.Debug("Offloading naisd upgrade")
-		err := selfupgrade.StartJob(ctx, d.k8sClient, msg, d.naisProjectID, d.env, d.tenantName)
-		if err != nil {
-			return err
-		}
+		if _, ok := d.executor.(*MockExecutor); ok {
+			fmt.Fprintln(pubsubLog, "MockExecutor, not starting regular naisd upgrade")
+		} else {
+			err := selfupgrade.StartJob(ctx, d.k8sClient, msg, d.naisProjectID, d.env, d.tenantName)
+			if err != nil {
+				return err
+			}
 
-		// Some hacks to try to reduce number of upgrades.
-		message.ForceAck(ctx)
-		time.Sleep(1 * time.Second)
-		d.stop()
-		return errRestartRequired
+			// Some hacks to try to reduce number of upgrades.
+			message.ForceAck(ctx)
+			time.Sleep(1 * time.Second)
+			d.stop()
+			return errRestartRequired
+		}
 	}
 
 	d.inProgress.Inc()

@@ -28,7 +28,7 @@ func (m *MockExecutor) Execute(cmd *exec.Cmd) error {
 		if _, ok := os.LookupEnv("MOCK_EXECUTOR_SLOW"); ok {
 			for time.Since(start) < 1*time.Minute {
 				fmt.Fprintln(cmd.Stdout, "mock executor is running", time.Now())
-				time.Sleep(5 * time.Second)
+				time.Sleep(15 * time.Second)
 			}
 		}
 
