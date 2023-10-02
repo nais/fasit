@@ -170,7 +170,7 @@ func (c *ConsoleManager) create(ctx context.Context, msg message.Console, log lo
 
 func (c *ConsoleManager) createNamespace(ctx context.Context, data message.CreateNamespace, log logrus.FieldLogger) error {
 	linkerd := false
-	if c.env == "prod-gcp" || c.env == "dev-gcp" {
+	if c.env == "prod-gcp" || c.env == "dev-gcp" || c.env == "ci-gcp" {
 		linkerd = true
 	}
 
