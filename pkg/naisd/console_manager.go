@@ -175,6 +175,8 @@ func (c *ConsoleManager) createNamespace(ctx context.Context, data message.Creat
 		},
 	}
 
+	metav1.SetMetaDataAnnotation(&ns.ObjectMeta, "linkerd.io/inject", "true")
+
 	if data.GCPProject != "" {
 		metav1.SetMetaDataAnnotation(&ns.ObjectMeta, "cnrm.cloud.google.com/project-id", data.GCPProject)
 	}
@@ -205,6 +207,7 @@ func (c *ConsoleManager) createNamespace(ctx context.Context, data message.Creat
 	case existing.Annotations == nil:
 	case existing.Annotations["cnrm.cloud.google.com/project-id"] != data.GCPProject:
 	case existing.Annotations["replicator.nais.io/slackAlertsChannel"] != data.SlackAlertsChannel:
+	case existing.Annotations["linkerd.io/inject"] != "true":
 	case existing.Labels == nil:
 	case existing.Labels["team"] != data.Name:
 	default:
@@ -214,6 +217,7 @@ func (c *ConsoleManager) createNamespace(ctx context.Context, data message.Creat
 
 	metav1.SetMetaDataAnnotation(&existing.ObjectMeta, "cnrm.cloud.google.com/project-id", data.GCPProject)
 	metav1.SetMetaDataAnnotation(&existing.ObjectMeta, "replicator.nais.io/slackAlertsChannel", data.SlackAlertsChannel)
+	metav1.SetMetaDataAnnotation(&existing.ObjectMeta, "linkerd.io/inject", "true")
 	metav1.SetMetaDataLabel(&existing.ObjectMeta, "team", data.Name)
 
 	_, err = c.kubeClient.CoreV1().Namespaces().Update(ctx, existing, metav1.UpdateOptions{})
