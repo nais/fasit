@@ -108,6 +108,14 @@ func TestConsoleManager_handler(t *testing.T) {
 				}
 			}
 
+			// check linkerd annotation
+			for _, n := range namespaces.Items {
+				c := n.Annotations["linkerd.io/inject"]
+				if c != "enabled" {
+					t.Errorf("namespace annotation %q has unexpected value, expected: %q got: %q", "linkerd/inject", "enabled", c)
+				}
+			}
+
 			// Check service accounts
 			for _, namespace := range tt.expectedNamespaces {
 				_, err = cs.CoreV1().ServiceAccounts(namespace).Get(ctx, fmt.Sprintf("serviceuser-%s", namespace), metav1.GetOptions{})
