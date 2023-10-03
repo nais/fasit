@@ -93,42 +93,23 @@ func (r *Receiver) handlerHelm(ctx context.Context, msg message.Status) error {
 		return nil
 	}
 
-	// We have two cases of helm messages, one for older version which included
-	// tenant and environment in the message, and a newer version which includes
-	// the deployment instruction ID instead.
+	di, err := r.repo.DeployInstructionGet(ctx, helmStatus.DIID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			r.log.WithField("diid", helmStatus.DIID).Warn("unknown deploy instruction")
+			return nil
+		}
+		return err
+	}
 
-	var env *model.Environment
-	var di *model.DeployInstruction
-	if helmStatus.DIID != uuid.Nil {
-		di, err = r.repo.DeployInstructionGet(ctx, helmStatus.DIID)
-		if err != nil {
-			if errors.Is(err, pgx.ErrNoRows) {
-				r.log.WithField("diid", helmStatus.DIID).Warn("unknown deploy instruction")
-				return nil
-			}
-			return err
+	env, err := r.repo.EnvironmentGet(ctx, di.EnvironmentID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			r.log.WithField("deploy_instruction", helmStatus.DIID).
+				Warn("unknown deploy instruction")
+			return nil
 		}
-
-		env, err = r.repo.EnvironmentGet(ctx, di.EnvironmentID)
-		if err != nil {
-			if errors.Is(err, pgx.ErrNoRows) {
-				r.log.WithField("deploy_instruction", helmStatus.DIID).
-					Warn("unknown deploy instruction")
-				return nil
-			}
-			return err
-		}
-	} else {
-		env, err = r.repo.EnvironmentByNames(ctx, msg.Tenant, msg.Environment)
-		if err != nil {
-			if errors.Is(err, pgx.ErrNoRows) {
-				r.log.WithField("tenant", msg.Tenant).
-					WithField("environment", msg.Environment).
-					Warn("unknown tenant and/or environment")
-				return nil
-			}
-			return err
-		}
+		return err
 	}
 
 	if err := r.repo.DeployInstructionUpdateStatus(ctx, helmStatus.DIID, helmStatus.RolloutStatus); err != nil {
@@ -145,14 +126,8 @@ func (r *Receiver) handlerHelm(ctx context.Context, msg message.Status) error {
 }
 
 func (r *Receiver) handleCI(ctx context.Context, env *model.Environment, di *model.DeployInstruction, helmStatus *message.Helm, tenant string) error {
-	featureName := helmStatus.Name
-	if di != nil {
-		featureName = di.FeatureName
-	}
-	featureVersion := helmStatus.Version
-	if di != nil {
-		featureVersion = di.FeatureVersion
-	}
+	featureName := di.FeatureName
+	featureVersion := di.FeatureVersion
 
 	rollout, err := r.repo.RolloutByName(ctx, featureName)
 	if err != nil {
@@ -174,43 +149,43 @@ func (r *Receiver) handleCI(ctx context.Context, env *model.Environment, di *mod
 		"tenant":      tenant,
 	}
 
-	if len(helmStatus.Log) > 0 {
-		eventData["log"] = helmStatus.Log
+	status := model.RolloutStatusUnknown
+	switch helmStatus.RolloutStatus {
+	case model.RolloutStatusPending:
+		if err := r.repo.RolloutEventCreate(ctx, rollout.GraphVars.RolloutID, false, "Installing helm chart...", eventData); err != nil {
+			return fmt.Errorf("creating rollout event: %w", err)
+		}
+		// We have nothing more to do here as it's still pending
+		return nil
+	case model.RolloutStatusFailed:
+		status = model.RolloutStatusFailed
+		if err := r.repo.RolloutEventCreate(ctx, rollout.GraphVars.RolloutID, true, "Helm install failed", eventData); err != nil {
+			return fmt.Errorf("creating rollout event: %w", err)
+		}
+	case model.RolloutStatusDeployed:
+		status = model.RolloutStatusDeployed
+		if err := r.repo.RolloutEventCreate(ctx, rollout.GraphVars.RolloutID, false, "Helm install succeeded", eventData); err != nil {
+			return fmt.Errorf("creating rollout event: %w", err)
+		}
+	default:
+		return fmt.Errorf("invalid helm status: %v", helmStatus.RolloutStatus)
 	}
 
+	// At this point the rollout is either failed or deployed
 	return r.repo.TxFunc(ctx, func(repo database.Repo) error {
-		// At this point, we know the status message is for a active rollout
-		switch helmStatus.RolloutStatus {
-		case model.RolloutStatusPending:
-			if err := r.repo.RolloutEventCreate(ctx, rollout.GraphVars.RolloutID, false, "Installing helm chart...", eventData); err != nil {
-				return fmt.Errorf("creating rollout event: %w", err)
-			}
-			return nil
-		case model.RolloutStatusFailed:
-			if err := r.repo.RolloutsUpdateStatus(ctx, model.RolloutStatusFailed, rollout.Name, false); err != nil {
-				return fmt.Errorf("updating rollout status: %w", err)
-			}
-			if err := r.repo.RolloutEventCreate(ctx, rollout.GraphVars.RolloutID, true, "Helm install failed", eventData); err != nil {
-				return fmt.Errorf("creating rollout event: %w", err)
-			}
-		case model.RolloutStatusDeployed:
-			if err := r.repo.RolloutEventCreate(ctx, rollout.GraphVars.RolloutID, false, "Helm install succeeded", eventData); err != nil {
-				return fmt.Errorf("creating rollout event: %w", err)
-			}
-		default:
-			return fmt.Errorf("invalid helm status: %v", helmStatus.RolloutStatus)
-		}
-
 		last, err := r.repo.RolloutCalculateDone(ctx, rollout.GraphVars.RolloutID)
 		if err != nil {
 			return fmt.Errorf("checking if last: %w", err)
 		}
 		if !last {
-			r.log.WithField("name", featureName).Info("not last")
+			r.log.WithField("name", featureName).Debug("not last")
 			return nil
 		}
 
-		status, err := r.repo.RolloutStatus(ctx, rollout.Name)
+		r.log.WithField("name", featureName).Debug("last")
+
+		// Calculate proper rollout status
+		rolloutStatus, err := r.repo.RolloutStatus(ctx, rollout.Name)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				r.log.WithField("name", featureName).Warn("unknown rollout")
@@ -219,7 +194,7 @@ func (r *Receiver) handleCI(ctx context.Context, env *model.Environment, di *mod
 			return fmt.Errorf("getting rollout status for %q: %w", rollout.Name, err)
 		}
 
-		if status == model.RolloutStatusFailed {
+		if status == model.RolloutStatusFailed || rolloutStatus == model.RolloutStatusFailed {
 			if err := r.repo.RolloutsUpdateStatus(ctx, model.RolloutStatusFailed, rollout.Name, true); err != nil {
 				return fmt.Errorf("updating rollout status: %w", err)
 			}

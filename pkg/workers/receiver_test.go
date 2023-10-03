@@ -15,8 +15,10 @@ import (
 
 func TestReceiver(t *testing.T) {
 	uid := uuid.New()
+	diid := uuid.New()
 	tests := map[string]struct {
 		envID                          uuid.UUID
+		deployInstructionID            uuid.UUID
 		helmStatus                     bool
 		statuses                       []message.Status
 		numStatusCreateOrUpdate        int
@@ -25,37 +27,41 @@ func TestReceiver(t *testing.T) {
 		numKubernetesNodeSync          int
 	}{
 		"empty": {
-			envID:    uid,
-			statuses: []message.Status{},
+			envID:               uid,
+			deployInstructionID: diid,
+			statuses:            []message.Status{},
 		},
 		"helm one": {
-			envID:      uid,
-			helmStatus: true,
+			envID:               uid,
+			deployInstructionID: diid,
+			helmStatus:          true,
 			statuses: []message.Status{
 				{
 					Type:        message.StatusTypeHelm,
 					Tenant:      "tenant",
 					Environment: "env",
-					Data:        []byte(`{"name":"test","rolloutStatus":"deployed","version":"1.0.0"}`),
+					Data:        []byte(`{"name":"test","rolloutStatus":"deployed","version":"1.0.0","DIID":"` + diid.String() + `"}`),
 				},
 			},
 			numStatusCreateOrUpdate: 1,
 		},
 		"helm missing tenant": {
-			envID:      uuid.Nil,
-			helmStatus: true,
+			envID:               uuid.Nil,
+			deployInstructionID: diid,
+			helmStatus:          true,
 			statuses: []message.Status{
 				{
 					Type:        message.StatusTypeHelm,
 					Tenant:      "tenant",
 					Environment: "env",
-					Data:        []byte(`{"name":"test","rolloutStatus":"deployed","version":"1.0.0"}`),
+					Data:        []byte(`{"name":"test","rolloutStatus":"deployed","version":"1.0.0","DIID":"` + diid.String() + `"}`),
 				},
 			},
 			numStatusCreateOrUpdate: 1,
 		},
 		"helm releases": {
-			envID: uid,
+			envID:               uid,
+			deployInstructionID: diid,
 			statuses: []message.Status{
 				{
 					Type:        message.StatusTypeHelmReleases,
@@ -67,7 +73,8 @@ func TestReceiver(t *testing.T) {
 			numReleaseStatusCreateOrUpdate: 1,
 		},
 		"health status": {
-			envID: uid,
+			envID:               uid,
+			deployInstructionID: diid,
 			statuses: []message.Status{
 				{
 					Type:        message.StatusTypeHealth,
@@ -79,7 +86,8 @@ func TestReceiver(t *testing.T) {
 			numHealthStatusCreateOrUpdate: 1,
 		},
 		"kubernetes nodes": {
-			envID: uid,
+			envID:               uid,
+			deployInstructionID: diid,
 			statuses: []message.Status{
 				{
 					Type:        message.StatusKubernetesNodes,
@@ -96,9 +104,10 @@ func TestReceiver(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			repo := mocks.NewRepo(t)
 
-			if tc.helmStatus {
-				repo.On("EnvironmentByNames", mock.Anything, "tenant", "env").Return(&model.Environment{ID: tc.envID}, nil).Maybe().Times(len(tc.statuses))
-			} else {
+			repo.On("DeployInstructionGet", mock.Anything, tc.deployInstructionID).Return(&model.DeployInstruction{ID: tc.deployInstructionID, EnvironmentID: tc.envID}, nil).Maybe()
+			repo.On("EnvironmentGet", mock.Anything, tc.envID).Return(&model.Environment{ID: tc.envID}, nil).Maybe()
+
+			if !tc.helmStatus {
 				repo.On("EnvironmentIDByNames", mock.Anything, "tenant", "env").Return(tc.envID, nil).Maybe().Times(len(tc.statuses))
 			}
 

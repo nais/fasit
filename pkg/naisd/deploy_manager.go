@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"log/slog"
 	"os"
 	"os/exec"
@@ -238,7 +237,8 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 
 	helmStatus.Log, err = d.runHelm(ctx, pubsubLog, args, msg)
 	if err != nil {
-		log.Printf("failed to run helm %s: %s", msg.Name, err)
+
+		d.log.WithField("feature", msg.Name).WithError(err).Warn("failed to run helm")
 		helmStatus.RolloutStatus = model.RolloutStatusFailed
 	} else {
 		helmStatus.RolloutStatus = model.RolloutStatusDeployed
