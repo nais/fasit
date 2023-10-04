@@ -111,3 +111,8 @@ The following template funcs are available:
 | `subdomain(root, subdomain) `    | Return a subdomain for the given context. Will create a `[subdomain].tenant.cloud.nais.io` if the target environment is `management`, and `[subdomain].environment.tenant.nais.io` otherwise. |
 | `toJSON(value)`                  | Converts the value to JSON.                                                                                                                                                                   |
 | `toYAML(value)`                  | Converts the value to YAML.                                                                                                                                                                   |
+
+We also includes all functions from [Sprig](https://masterminds.github.io/sprig/).
+
+> [!IMPORTANT]
+> If any function from Sprig has the same name as one of our functions, our function will be used.
