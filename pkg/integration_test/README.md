@@ -9,25 +9,69 @@ the system using:
 - SQL
 - PubSub
 
+After each file is run, the reconciliation loop is run to ensure that the
+system is in a stable state before running the next test.
+To disable this, set the `reconcile` flag to `false` in the config on each environment.
+
 ## How to use it
 
 Within the `testdata` folder you can create a folder with the name of the
 test you want to run. Within that folder you can create one or more files
 defining your test cases as described below.
 
+### Templating
+
+The entire test file is run through a templating engine before being run.
+This means that you can use the following variables in your test files:
+
+| Variable                          | Description                                                     |
+| --------------------------------- | --------------------------------------------------------------- |
+| `{{ .Tenant }}`                   | A map of tenants defined in the config file.                    |
+| `{{ .Tenant.<name> }}`            | A specific tenant defined in the config file.                   |
+| `{{ .Tenant.<name>.Env }}`        | A map of environments defined on the tenant in the config file. |
+| `{{ .Tenant.<name>.Env.<name> }}` | A specific environment.                                         |
+
+Both `.Tenant.<name>` and `.Tenant<name>.Env.<name>` contains information about that object, e.g.:
+
+| Variable | Description            |
+| -------- | ---------------------- |
+| `.ID`    | The ID of the object   |
+| `.Name`  | The name of the object |
+
+If you store fields from the response of a test, using `STORE <key>=<response key>`, you can access them using `{{ .<key> }}`.
+
 ## Configuration
 
-You can configure the test framework using a file called `00_config.json`.
+You can configure the test framework using a file called `00_config.yaml`.
 
-The following options are available:
+To see the full list of configuration options, see the `Config` struct in
+[`testrunner_config.go`](./testrunner_config.go)
 
-| Option                       | Type   | Description                                                                                                                                 |
-| ---------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `no_naisd`                   | `bool` | If set to `true`, naisd will not run for this test case.                                                                                    |
-| `no_tenants`                 | `bool` | If set to `true`, No seed data for tenants and environments will be created.                                                                |
-| `ci`                         | `bool` | If set to `true`, the seeded tenant and environment named `ci` will be marked as `ci`.                                                      |
-| `reconcile`                  | `bool` | If set to `true`, the reconciler will run for this test case.                                                                               |
-| `naisd_successfull_messages` | `int`  | If set, the number of successfull messages naisd will send to the reconciler before sending failures. Will allways be successfull if unset. |
+### Example
+
+```yaml
+# List of tenants within the test
+tenants:
+  - name: tenant23
+    ci: true # This tenant has the CI flag set to true
+    envs:
+      # List of environments within the tenant
+      - kind: management # One of management, tenant, onprem, legacy
+        name: management
+        ci: true # This environment has the CI flag set to true
+        naisd: # Configuration for the naisd component
+          enabled: true # Enable naisd
+          successfullMessages: 100 # How many successfull messages to return until starting to return errors
+        reconcile: true # Set the reconcile flag to true
+
+      - kind: tenant
+        name: nonci
+        ci: false
+        naisd:
+          enabled: true
+          successfullMessages: 100
+        reconcile: true
+```
 
 ## REST
 
