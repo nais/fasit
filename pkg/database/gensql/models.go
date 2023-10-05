@@ -101,6 +101,7 @@ type DeployInstruction struct {
 	Hash           string
 	Created        pgtype.Timestamptz
 	LastModified   pgtype.Timestamptz
+	Values         []byte
 }
 
 type EnvCost struct {

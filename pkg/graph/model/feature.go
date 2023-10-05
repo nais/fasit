@@ -236,11 +236,12 @@ func (f *Feature) normalizedYAML(valuesYAML map[string]any) {
 }
 
 type FeatureHistory struct {
-	ID           uuid.UUID     `json:"id"`
-	Version      string        `json:"version"`
-	Status       RolloutStatus `json:"status"`
-	Created      time.Time     `json:"created"`
-	LastModified time.Time     `json:"lastModified"`
+	ID           uuid.UUID          `json:"id"`
+	Version      string             `json:"version"`
+	Status       RolloutStatus      `json:"status"`
+	Created      time.Time          `json:"created"`
+	LastModified time.Time          `json:"lastModified"`
+	Di           *DeployInstruction `json:"-"`
 }
 
 func pluckFromMap(key string, mp map[string]any) json.RawMessage {

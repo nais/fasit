@@ -6,12 +6,14 @@ INSERT INTO deploy_instructions (
   environment_id,
   feature_name,
   feature_version,
-  hash
+  hash,
+  values
 ) VALUES (
   @environment_id,
   @feature_name,
   @feature_version,
-  @hash
+  @hash,
+  @values
 )
 RETURNING id
 ;
@@ -46,4 +48,18 @@ WHERE feature_name = @feature_name
 AND environment_id = @environment_id
 ORDER BY created DESC
 LIMIT 10 OFFSET sqlc.arg('offset')
+;
+
+-- name: DeployInstructionsPrevious :one
+WITH current AS (
+  SELECT di.*
+  FROM deploy_instructions di
+  WHERE di.id = @id
+)
+SELECT * FROM deploy_instructions
+WHERE feature_name = (SELECT feature_name FROM current)
+AND environment_id = (SELECT environment_id FROM current)
+AND created < (SELECT created FROM current)
+ORDER BY created DESC
+LIMIT 1
 ;

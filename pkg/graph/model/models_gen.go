@@ -63,6 +63,11 @@ type EnvironmentUpdate struct {
 	Description *string `json:"description,omitempty"`
 }
 
+type HelmValueDiff struct {
+	Difference HelmValueDifference `json:"difference"`
+	Diff       string              `json:"diff"`
+}
+
 type Playground struct {
 	Result *string  `json:"result,omitempty"`
 	Errors []string `json:"errors"`
@@ -146,5 +151,50 @@ func (e *ConfigSource) UnmarshalGQL(v interface{}) error {
 }
 
 func (e ConfigSource) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type HelmValueDifference string
+
+const (
+	HelmValueDifferenceFullMatch     HelmValueDifference = "FULL_MATCH"
+	HelmValueDifferenceSupersetMatch HelmValueDifference = "SUPERSET_MATCH"
+	HelmValueDifferenceNoMatch       HelmValueDifference = "NO_MATCH"
+	HelmValueDifferenceInvalidJSON   HelmValueDifference = "INVALID_JSON"
+)
+
+var AllHelmValueDifference = []HelmValueDifference{
+	HelmValueDifferenceFullMatch,
+	HelmValueDifferenceSupersetMatch,
+	HelmValueDifferenceNoMatch,
+	HelmValueDifferenceInvalidJSON,
+}
+
+func (e HelmValueDifference) IsValid() bool {
+	switch e {
+	case HelmValueDifferenceFullMatch, HelmValueDifferenceSupersetMatch, HelmValueDifferenceNoMatch, HelmValueDifferenceInvalidJSON:
+		return true
+	}
+	return false
+}
+
+func (e HelmValueDifference) String() string {
+	return string(e)
+}
+
+func (e *HelmValueDifference) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = HelmValueDifference(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid HelmValueDifference", str)
+	}
+	return nil
+}
+
+func (e HelmValueDifference) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }

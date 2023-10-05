@@ -12,7 +12,7 @@ import (
 )
 
 const deployInstructionsByID = `-- name: DeployInstructionsByID :one
-SELECT id, environment_id, feature_name, feature_version, status, hash, created, last_modified FROM deploy_instructions WHERE id = $1
+SELECT id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values FROM deploy_instructions WHERE id = $1
 `
 
 func (q *Queries) DeployInstructionsByID(ctx context.Context, id uuid.UUID) (DeployInstruction, error) {
@@ -27,6 +27,7 @@ func (q *Queries) DeployInstructionsByID(ctx context.Context, id uuid.UUID) (Dep
 		&i.Hash,
 		&i.Created,
 		&i.LastModified,
+		&i.Values,
 	)
 	return i, err
 }
@@ -36,12 +37,14 @@ INSERT INTO deploy_instructions (
   environment_id,
   feature_name,
   feature_version,
-  hash
+  hash,
+  values
 ) VALUES (
   $1,
   $2,
   $3,
-  $4
+  $4,
+  $5
 )
 RETURNING id
 `
@@ -51,6 +54,7 @@ type DeployInstructionsCreateParams struct {
 	FeatureName    string
 	FeatureVersion string
 	Hash           string
+	Values         []byte
 }
 
 func (q *Queries) DeployInstructionsCreate(ctx context.Context, arg DeployInstructionsCreateParams) (uuid.UUID, error) {
@@ -59,6 +63,7 @@ func (q *Queries) DeployInstructionsCreate(ctx context.Context, arg DeployInstru
 		arg.FeatureName,
 		arg.FeatureVersion,
 		arg.Hash,
+		arg.Values,
 	)
 	var id uuid.UUID
 	err := row.Scan(&id)
@@ -66,7 +71,7 @@ func (q *Queries) DeployInstructionsCreate(ctx context.Context, arg DeployInstru
 }
 
 const deployInstructionsForFeature = `-- name: DeployInstructionsForFeature :many
-SELECT id, environment_id, feature_name, feature_version, status, hash, created, last_modified FROM deploy_instructions
+SELECT id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values FROM deploy_instructions
 WHERE feature_name = $1
 AND environment_id = $2
 ORDER BY created DESC
@@ -97,6 +102,7 @@ func (q *Queries) DeployInstructionsForFeature(ctx context.Context, arg DeployIn
 			&i.Hash,
 			&i.Created,
 			&i.LastModified,
+			&i.Values,
 		); err != nil {
 			return nil, err
 		}
@@ -109,7 +115,7 @@ func (q *Queries) DeployInstructionsForFeature(ctx context.Context, arg DeployIn
 }
 
 const deployInstructionsLatestForEnvironment = `-- name: DeployInstructionsLatestForEnvironment :many
-SELECT id, environment_id, feature_name, feature_version, status, hash, created, last_modified FROM deploy_instructions
+SELECT id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values FROM deploy_instructions
 WHERE id IN (
   SELECT DISTINCT ON (feature_name) id
   FROM deploy_instructions di
@@ -136,6 +142,7 @@ func (q *Queries) DeployInstructionsLatestForEnvironment(ctx context.Context, en
 			&i.Hash,
 			&i.Created,
 			&i.LastModified,
+			&i.Values,
 		); err != nil {
 			return nil, err
 		}
@@ -148,7 +155,7 @@ func (q *Queries) DeployInstructionsLatestForEnvironment(ctx context.Context, en
 }
 
 const deployInstructionsLatestForFeature = `-- name: DeployInstructionsLatestForFeature :one
-SELECT id, environment_id, feature_name, feature_version, status, hash, created, last_modified FROM deploy_instructions
+SELECT id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values FROM deploy_instructions
 WHERE feature_name = $1
 AND environment_id = $2
 ORDER BY created DESC
@@ -172,6 +179,38 @@ func (q *Queries) DeployInstructionsLatestForFeature(ctx context.Context, arg De
 		&i.Hash,
 		&i.Created,
 		&i.LastModified,
+		&i.Values,
+	)
+	return i, err
+}
+
+const deployInstructionsPrevious = `-- name: DeployInstructionsPrevious :one
+WITH current AS (
+  SELECT di.id, di.environment_id, di.feature_name, di.feature_version, di.status, di.hash, di.created, di.last_modified, di.values
+  FROM deploy_instructions di
+  WHERE di.id = $1
+)
+SELECT id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values FROM deploy_instructions
+WHERE feature_name = (SELECT feature_name FROM current)
+AND environment_id = (SELECT environment_id FROM current)
+AND created < (SELECT created FROM current)
+ORDER BY created DESC
+LIMIT 1
+`
+
+func (q *Queries) DeployInstructionsPrevious(ctx context.Context, id uuid.UUID) (DeployInstruction, error) {
+	row := q.db.QueryRow(ctx, deployInstructionsPrevious, id)
+	var i DeployInstruction
+	err := row.Scan(
+		&i.ID,
+		&i.EnvironmentID,
+		&i.FeatureName,
+		&i.FeatureVersion,
+		&i.Status,
+		&i.Hash,
+		&i.Created,
+		&i.LastModified,
+		&i.Values,
 	)
 	return i, err
 }

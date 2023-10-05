@@ -160,6 +160,7 @@ type ComplexityRoot struct {
 		Dependencies     func(childComplexity int) int
 		Description      func(childComplexity int) int
 		EnvironmentKinds func(childComplexity int) int
+		HelmValueDiff    func(childComplexity int) int
 		Histories        func(childComplexity int) int
 		Name             func(childComplexity int) int
 		Source           func(childComplexity int) int
@@ -170,12 +171,13 @@ type ComplexityRoot struct {
 	}
 
 	FeatureHistory struct {
-		Created      func(childComplexity int) int
-		ID           func(childComplexity int) int
-		LastModified func(childComplexity int) int
-		Log          func(childComplexity int) int
-		Status       func(childComplexity int) int
-		Version      func(childComplexity int) int
+		Created       func(childComplexity int) int
+		HelmValueDiff func(childComplexity int) int
+		ID            func(childComplexity int) int
+		LastModified  func(childComplexity int) int
+		Log           func(childComplexity int) int
+		Status        func(childComplexity int) int
+		Version       func(childComplexity int) int
 	}
 
 	FeatureState struct {
@@ -196,6 +198,11 @@ type ComplexityRoot struct {
 
 	Health struct {
 		ReportedAt func(childComplexity int) int
+	}
+
+	HelmValueDiff struct {
+		Diff       func(childComplexity int) int
+		Difference func(childComplexity int) int
 	}
 
 	KubernetesNode struct {
@@ -385,9 +392,11 @@ type FeatureResolver interface {
 	State(ctx context.Context, obj *model.Feature) (*model.FeatureState, error)
 	Status(ctx context.Context, obj *model.Feature) (*model.Status, error)
 	Histories(ctx context.Context, obj *model.Feature) ([]*model.FeatureHistory, error)
+	HelmValueDiff(ctx context.Context, obj *model.Feature) (*model.HelmValueDiff, error)
 }
 type FeatureHistoryResolver interface {
 	Log(ctx context.Context, obj *model.FeatureHistory) ([]*model.LogLine, error)
+	HelmValueDiff(ctx context.Context, obj *model.FeatureHistory) (*model.HelmValueDiff, error)
 }
 type FeatureStateResolver interface {
 	Feature(ctx context.Context, obj *model.FeatureState) (*model.Feature, error)
@@ -867,6 +876,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Feature.EnvironmentKinds(childComplexity), true
 
+	case "Feature.helmValueDiff":
+		if e.complexity.Feature.HelmValueDiff == nil {
+			break
+		}
+
+		return e.complexity.Feature.HelmValueDiff(childComplexity), true
+
 	case "Feature.histories":
 		if e.complexity.Feature.Histories == nil {
 			break
@@ -922,6 +938,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.FeatureHistory.Created(childComplexity), true
+
+	case "FeatureHistory.helmValueDiff":
+		if e.complexity.FeatureHistory.HelmValueDiff == nil {
+			break
+		}
+
+		return e.complexity.FeatureHistory.HelmValueDiff(childComplexity), true
 
 	case "FeatureHistory.id":
 		if e.complexity.FeatureHistory.ID == nil {
@@ -1034,6 +1057,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Health.ReportedAt(childComplexity), true
+
+	case "HelmValueDiff.diff":
+		if e.complexity.HelmValueDiff.Diff == nil {
+			break
+		}
+
+		return e.complexity.HelmValueDiff.Diff(childComplexity), true
+
+	case "HelmValueDiff.difference":
+		if e.complexity.HelmValueDiff.Difference == nil {
+			break
+		}
+
+		return e.complexity.HelmValueDiff.Difference(childComplexity), true
 
 	case "KubernetesNode.allocatable":
 		if e.complexity.KubernetesNode.Allocatable == nil {
@@ -2174,6 +2211,18 @@ type Value {
   config: Config
 }
 
+enum HelmValueDifference {
+  FULL_MATCH
+  SUPERSET_MATCH
+  NO_MATCH
+  INVALID_JSON
+}
+
+type HelmValueDiff {
+  difference: HelmValueDifference!
+  diff: String!
+}
+
 type Feature {
   name: String!
   chart: String!
@@ -2190,6 +2239,7 @@ type Feature {
   state: FeatureState
   status: Status
   histories: [FeatureHistory!]!
+  helmValueDiff: HelmValueDiff!
 }
 
 type ConfigOverride {
@@ -2209,6 +2259,7 @@ type FeatureHistory {
   created: Time!
   lastModified: Time!
   log: [LogLine!]!
+  helmValueDiff: HelmValueDiff!
 }
 
 extend type Query {
@@ -5177,6 +5228,8 @@ func (ec *executionContext) fieldContext_Environment_features(ctx context.Contex
 				return ec.fieldContext_Feature_status(ctx, field)
 			case "histories":
 				return ec.fieldContext_Feature_histories(ctx, field)
+			case "helmValueDiff":
+				return ec.fieldContext_Feature_helmValueDiff(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
@@ -5251,6 +5304,8 @@ func (ec *executionContext) fieldContext_Environment_feature(ctx context.Context
 				return ec.fieldContext_Feature_status(ctx, field)
 			case "histories":
 				return ec.fieldContext_Feature_histories(ctx, field)
+			case "helmValueDiff":
+				return ec.fieldContext_Feature_helmValueDiff(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
@@ -6112,8 +6167,60 @@ func (ec *executionContext) fieldContext_Feature_histories(ctx context.Context, 
 				return ec.fieldContext_FeatureHistory_lastModified(ctx, field)
 			case "log":
 				return ec.fieldContext_FeatureHistory_log(ctx, field)
+			case "helmValueDiff":
+				return ec.fieldContext_FeatureHistory_helmValueDiff(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type FeatureHistory", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Feature_helmValueDiff(ctx context.Context, field graphql.CollectedField, obj *model.Feature) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Feature_helmValueDiff(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Feature().HelmValueDiff(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.HelmValueDiff)
+	fc.Result = res
+	return ec.marshalNHelmValueDiff2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐHelmValueDiff(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Feature_helmValueDiff(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Feature",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "difference":
+				return ec.fieldContext_HelmValueDiff_difference(ctx, field)
+			case "diff":
+				return ec.fieldContext_HelmValueDiff_diff(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type HelmValueDiff", field.Name)
 		},
 	}
 	return fc, nil
@@ -6391,6 +6498,56 @@ func (ec *executionContext) fieldContext_FeatureHistory_log(ctx context.Context,
 	return fc, nil
 }
 
+func (ec *executionContext) _FeatureHistory_helmValueDiff(ctx context.Context, field graphql.CollectedField, obj *model.FeatureHistory) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FeatureHistory_helmValueDiff(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.FeatureHistory().HelmValueDiff(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.HelmValueDiff)
+	fc.Result = res
+	return ec.marshalNHelmValueDiff2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐHelmValueDiff(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FeatureHistory_helmValueDiff(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FeatureHistory",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "difference":
+				return ec.fieldContext_HelmValueDiff_difference(ctx, field)
+			case "diff":
+				return ec.fieldContext_HelmValueDiff_diff(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type HelmValueDiff", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _FeatureState_id(ctx context.Context, field graphql.CollectedField, obj *model.FeatureState) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_FeatureState_id(ctx, field)
 	if err != nil {
@@ -6502,6 +6659,8 @@ func (ec *executionContext) fieldContext_FeatureState_feature(ctx context.Contex
 				return ec.fieldContext_Feature_status(ctx, field)
 			case "histories":
 				return ec.fieldContext_Feature_histories(ctx, field)
+			case "helmValueDiff":
+				return ec.fieldContext_Feature_helmValueDiff(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
@@ -6702,6 +6861,8 @@ func (ec *executionContext) fieldContext_FeatureState_missingDependencies(ctx co
 				return ec.fieldContext_Feature_status(ctx, field)
 			case "histories":
 				return ec.fieldContext_Feature_histories(ctx, field)
+			case "helmValueDiff":
+				return ec.fieldContext_Feature_helmValueDiff(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
@@ -6870,6 +7031,8 @@ func (ec *executionContext) fieldContext_FeatureWarning_feature(ctx context.Cont
 				return ec.fieldContext_Feature_status(ctx, field)
 			case "histories":
 				return ec.fieldContext_Feature_histories(ctx, field)
+			case "helmValueDiff":
+				return ec.fieldContext_Feature_helmValueDiff(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
@@ -6998,6 +7161,94 @@ func (ec *executionContext) fieldContext_Health_reportedAt(ctx context.Context, 
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _HelmValueDiff_difference(ctx context.Context, field graphql.CollectedField, obj *model.HelmValueDiff) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_HelmValueDiff_difference(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Difference, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(model.HelmValueDifference)
+	fc.Result = res
+	return ec.marshalNHelmValueDifference2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐHelmValueDifference(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_HelmValueDiff_difference(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "HelmValueDiff",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type HelmValueDifference does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _HelmValueDiff_diff(ctx context.Context, field graphql.CollectedField, obj *model.HelmValueDiff) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_HelmValueDiff_diff(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Diff, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_HelmValueDiff_diff(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "HelmValueDiff",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -9392,6 +9643,8 @@ func (ec *executionContext) fieldContext_Query_features(ctx context.Context, fie
 				return ec.fieldContext_Feature_status(ctx, field)
 			case "histories":
 				return ec.fieldContext_Feature_histories(ctx, field)
+			case "helmValueDiff":
+				return ec.fieldContext_Feature_helmValueDiff(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
@@ -9466,6 +9719,8 @@ func (ec *executionContext) fieldContext_Query_feature(ctx context.Context, fiel
 				return ec.fieldContext_Feature_status(ctx, field)
 			case "histories":
 				return ec.fieldContext_Feature_histories(ctx, field)
+			case "helmValueDiff":
+				return ec.fieldContext_Feature_helmValueDiff(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
@@ -9535,6 +9790,8 @@ func (ec *executionContext) fieldContext_Query_history(ctx context.Context, fiel
 				return ec.fieldContext_FeatureHistory_lastModified(ctx, field)
 			case "log":
 				return ec.fieldContext_FeatureHistory_log(ctx, field)
+			case "helmValueDiff":
+				return ec.fieldContext_FeatureHistory_helmValueDiff(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type FeatureHistory", field.Name)
 		},
@@ -10117,6 +10374,8 @@ func (ec *executionContext) fieldContext_Release_feature(ctx context.Context, fi
 				return ec.fieldContext_Feature_status(ctx, field)
 			case "histories":
 				return ec.fieldContext_Feature_histories(ctx, field)
+			case "helmValueDiff":
+				return ec.fieldContext_Feature_helmValueDiff(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Feature", field.Name)
 		},
@@ -15835,6 +16094,42 @@ func (ec *executionContext) _Feature(ctx context.Context, sel ast.SelectionSet, 
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "helmValueDiff":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Feature_helmValueDiff(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -15904,6 +16199,42 @@ func (ec *executionContext) _FeatureHistory(ctx context.Context, sel ast.Selecti
 					}
 				}()
 				res = ec._FeatureHistory_log(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "helmValueDiff":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._FeatureHistory_helmValueDiff(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -16233,6 +16564,50 @@ func (ec *executionContext) _Health(ctx context.Context, sel ast.SelectionSet, o
 			out.Values[i] = graphql.MarshalString("Health")
 		case "reportedAt":
 			out.Values[i] = ec._Health_reportedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var helmValueDiffImplementors = []string{"HelmValueDiff"}
+
+func (ec *executionContext) _HelmValueDiff(ctx context.Context, sel ast.SelectionSet, obj *model.HelmValueDiff) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, helmValueDiffImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("HelmValueDiff")
+		case "difference":
+			out.Values[i] = ec._HelmValueDiff_difference(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "diff":
+			out.Values[i] = ec._HelmValueDiff_diff(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -18994,6 +19369,30 @@ func (ec *executionContext) marshalNHealth2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkg�
 		return graphql.Null
 	}
 	return ec._Health(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNHelmValueDiff2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐHelmValueDiff(ctx context.Context, sel ast.SelectionSet, v model.HelmValueDiff) graphql.Marshaler {
+	return ec._HelmValueDiff(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNHelmValueDiff2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐHelmValueDiff(ctx context.Context, sel ast.SelectionSet, v *model.HelmValueDiff) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._HelmValueDiff(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNHelmValueDifference2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐHelmValueDifference(ctx context.Context, v interface{}) (model.HelmValueDifference, error) {
+	var res model.HelmValueDifference
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNHelmValueDifference2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐHelmValueDifference(ctx context.Context, sel ast.SelectionSet, v model.HelmValueDifference) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx context.Context, v interface{}) (uuid.UUID, error) {

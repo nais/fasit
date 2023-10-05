@@ -97,7 +97,7 @@ const rolloutCalculateDone = `-- name: RolloutCalculateDone :one
 WITH rollout AS (
   SELECT id, feature_name, version, status, created, completed FROM rollouts WHERE rollouts.id = $1
 ), dis AS (
-  SELECT di.id, di.environment_id, di.feature_name, di.feature_version, di.status, di.hash, di.created, di.last_modified
+  SELECT di.id, di.environment_id, di.feature_name, di.feature_version, di.status, di.hash, di.created, di.last_modified, di.values
   FROM deploy_instructions di
   INNER JOIN rollout ON di.feature_name = rollout.feature_name AND di.feature_version = rollout.version
   WHERE di.status IN ('deployed', 'failed')

@@ -15,4 +15,7 @@ type DeployInstruction struct {
 	Hash           string        `json:"-"`
 	Created        time.Time     `json:"created"`
 	LastModified   time.Time     `json:"lastModified"`
+
+	// Helm values for this deploy instruction.
+	Values []byte `json:"-"`
 }

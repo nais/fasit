@@ -33,6 +33,7 @@ type Querier interface {
 	DeployInstructionsForFeature(ctx context.Context, arg DeployInstructionsForFeatureParams) ([]DeployInstruction, error)
 	DeployInstructionsLatestForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]DeployInstruction, error)
 	DeployInstructionsLatestForFeature(ctx context.Context, arg DeployInstructionsLatestForFeatureParams) (DeployInstruction, error)
+	DeployInstructionsPrevious(ctx context.Context, id uuid.UUID) (DeployInstruction, error)
 	DeployInstructionsUpdateStatus(ctx context.Context, arg DeployInstructionsUpdateStatusParams) error
 	EnvConfig(ctx context.Context, arg EnvConfigParams) ([]EnvConfigRow, error)
 	EnvConfigOnlyKnown(ctx context.Context, arg EnvConfigOnlyKnownParams) ([]EnvConfigOnlyKnownRow, error)

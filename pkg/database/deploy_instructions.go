@@ -2,11 +2,15 @@ package database
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/graph/model"
+	"github.com/nsf/jsondiff"
 )
 
 type DeployInstructionRepo interface {
@@ -16,14 +20,31 @@ type DeployInstructionRepo interface {
 	DeployInstructionsLatestForEnvironment(ctx context.Context, envID uuid.UUID) ([]*model.DeployInstruction, error)
 	DeployInstructionsLatestForFeature(ctx context.Context, envID uuid.UUID, featureName string) (*model.DeployInstruction, error)
 	DeployInstructionUpdateStatus(ctx context.Context, id uuid.UUID, status model.RolloutStatus) error
+	HelmValueDiffGet(ctx context.Context, di *model.DeployInstruction) (*model.HelmValueDiff, error)
 }
 
 func (r *repo) DeployInstructionCreate(ctx context.Context, envID uuid.UUID, featureName, featureVersion, hash string) (uuid.UUID, error) {
+	feature, err := r.FeatureByNameForEnv(ctx, featureName, envID)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("get feature: %w", err)
+	}
+
+	vals, err := r.HelmValues(ctx, feature, envID)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("get helm values: %w", err)
+	}
+
+	values, err := json.Marshal(vals)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("marshal helm values: %w", err)
+	}
+
 	return r.querier.DeployInstructionsCreate(ctx, gensql.DeployInstructionsCreateParams{
 		EnvironmentID:  envID,
 		FeatureName:    featureName,
 		FeatureVersion: featureVersion,
 		Hash:           hash,
+		Values:         values,
 	})
 }
 
@@ -90,6 +111,38 @@ func (r *repo) DeployInstructionsLatestForEnvironment(ctx context.Context, envID
 	return instructions, nil
 }
 
+func (r *repo) HelmValueDiffGet(ctx context.Context, di *model.DeployInstruction) (*model.HelmValueDiff, error) {
+	ret := &model.HelmValueDiff{
+		Difference: model.HelmValueDifferenceNoMatch,
+	}
+
+	prev, err := r.querier.DeployInstructionsPrevious(ctx, di.ID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ret, nil
+		}
+		return nil, fmt.Errorf("failed to get previous deploy instruction: %w", err)
+	}
+
+	opts := jsondiff.DefaultHTMLOptions()
+	opts.Indent = "\t"
+	opts.PrintTypes = true
+	opts.SkipMatches = true
+	diff, diff2 := jsondiff.Compare(prev.Values, di.Values, &opts)
+	ret.Diff = diff2
+
+	switch diff {
+	case jsondiff.FullMatch:
+		ret.Difference = model.HelmValueDifferenceFullMatch
+	case jsondiff.SupersetMatch:
+		ret.Difference = model.HelmValueDifferenceSupersetMatch
+	case jsondiff.BothArgsAreInvalidJson, jsondiff.FirstArgIsInvalidJson, jsondiff.SecondArgIsInvalidJson:
+		ret.Difference = model.HelmValueDifferenceInvalidJSON
+	}
+
+	return ret, nil
+}
+
 func deployInstructionFromSQL(di gensql.DeployInstruction) *model.DeployInstruction {
 	return &model.DeployInstruction{
 		ID:             di.ID,
@@ -100,5 +153,6 @@ func deployInstructionFromSQL(di gensql.DeployInstruction) *model.DeployInstruct
 		Hash:           di.Hash,
 		Created:        di.Created.Time,
 		LastModified:   di.LastModified.Time,
+		Values:         di.Values,
 	}
 }

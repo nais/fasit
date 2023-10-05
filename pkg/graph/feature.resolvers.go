@@ -128,15 +128,41 @@ func (r *featureResolver) Histories(ctx context.Context, obj *model.Feature) ([]
 			Status:       di.Status,
 			Created:      di.Created,
 			LastModified: di.LastModified,
+			Di:           di,
 		}
 	}
 
 	return history, nil
 }
 
+// HelmValueDiff is the resolver for the helmValueDiff field.
+func (r *featureResolver) HelmValueDiff(ctx context.Context, obj *model.Feature) (*model.HelmValueDiff, error) {
+	di, err := r.Repo.DeployInstructionsLatestForFeature(ctx, obj.GraphVars.EnvironmentID, obj.Name)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return &model.HelmValueDiff{
+				Difference: model.HelmValueDifferenceNoMatch,
+			}, nil
+		}
+		return nil, fmt.Errorf("get latest deploy instruction: %w", err)
+	}
+
+	prev, err := r.Repo.HelmValueDiffGet(ctx, di)
+	if err != nil {
+		return nil, fmt.Errorf("get value diff: %w", err)
+	}
+
+	return prev, nil
+}
+
 // Log is the resolver for the log field.
 func (r *featureHistoryResolver) Log(ctx context.Context, obj *model.FeatureHistory) ([]*model.LogLine, error) {
 	return r.Repo.LogsGet(ctx, obj.ID)
+}
+
+// HelmValueDiff is the resolver for the helmValueDiff field.
+func (r *featureHistoryResolver) HelmValueDiff(ctx context.Context, obj *model.FeatureHistory) (*model.HelmValueDiff, error) {
+	return r.Repo.HelmValueDiffGet(ctx, obj.Di)
 }
 
 // Features is the resolver for the features field.
@@ -168,6 +194,7 @@ func (r *queryResolver) History(ctx context.Context, id uuid.UUID) (*model.Featu
 		Status:       di.Status,
 		Created:      di.Created,
 		LastModified: di.LastModified,
+		Di:           di,
 	}, nil
 }
 

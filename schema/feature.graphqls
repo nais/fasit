@@ -15,6 +15,18 @@ type Value {
   config: Config
 }
 
+enum HelmValueDifference {
+  FULL_MATCH
+  SUPERSET_MATCH
+  NO_MATCH
+  INVALID_JSON
+}
+
+type HelmValueDiff {
+  difference: HelmValueDifference!
+  diff: String!
+}
+
 type Feature {
   name: String!
   chart: String!
@@ -31,6 +43,7 @@ type Feature {
   state: FeatureState
   status: Status
   histories: [FeatureHistory!]!
+  helmValueDiff: HelmValueDiff!
 }
 
 type ConfigOverride {
@@ -50,6 +63,7 @@ type FeatureHistory {
   created: Time!
   lastModified: Time!
   log: [LogLine!]!
+  helmValueDiff: HelmValueDiff!
 }
 
 extend type Query {

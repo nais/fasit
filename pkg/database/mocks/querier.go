@@ -519,6 +519,30 @@ func (_m *Querier) DeployInstructionsLatestForFeature(ctx context.Context, arg g
 	return r0, r1
 }
 
+// DeployInstructionsPrevious provides a mock function with given fields: ctx, id
+func (_m *Querier) DeployInstructionsPrevious(ctx context.Context, id uuid.UUID) (gensql.DeployInstruction, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 gensql.DeployInstruction
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) (gensql.DeployInstruction, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) gensql.DeployInstruction); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Get(0).(gensql.DeployInstruction)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // DeployInstructionsUpdateStatus provides a mock function with given fields: ctx, arg
 func (_m *Querier) DeployInstructionsUpdateStatus(ctx context.Context, arg gensql.DeployInstructionsUpdateStatusParams) error {
 	ret := _m.Called(ctx, arg)
