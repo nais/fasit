@@ -5,11 +5,11 @@ go 1.20
 require (
 	cloud.google.com/go v0.110.8
 	cloud.google.com/go/bigquery v1.55.0
-	cloud.google.com/go/cloudsqlconn v1.4.3
+	cloud.google.com/go/cloudsqlconn v1.4.4
 	cloud.google.com/go/pubsub v1.33.0
-	github.com/99designs/gqlgen v0.17.37
-	github.com/GoogleCloudPlatform/cloudsql-proxy v1.33.10
-	github.com/GoogleCloudPlatform/k8s-config-connector v1.109.0
+	github.com/99designs/gqlgen v0.17.38
+	github.com/GoogleCloudPlatform/cloudsql-proxy v1.33.11
+	github.com/GoogleCloudPlatform/k8s-config-connector v1.110.0
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/coreos/go-oidc/v3 v3.6.0
 	github.com/go-chi/chi/v5 v5.0.10
@@ -17,27 +17,27 @@ require (
 	github.com/google/uuid v1.3.1
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/iancoleman/strcase v0.3.0
-	github.com/invopop/jsonschema v0.8.0
+	github.com/invopop/jsonschema v0.12.0
 	github.com/jackc/pgconn v1.14.1
 	github.com/jackc/pgx/v5 v5.4.3
 	github.com/lib/pq v1.10.9
 	github.com/nsf/jsondiff v0.0.0-20230430225905-43f6cf3098c1
 	github.com/ory/dockertest/v3 v3.10.0
-	github.com/pressly/goose/v3 v3.11.1
-	github.com/prometheus/client_golang v1.16.0
+	github.com/pressly/goose/v3 v3.15.0
+	github.com/prometheus/client_golang v1.17.0
 	github.com/ravilushqa/otelgqlgen v0.13.1
-	github.com/rs/cors v1.10.0
+	github.com/rs/cors v1.10.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.8.4
-	github.com/vektah/gqlparser/v2 v2.5.9
-	go.opentelemetry.io/otel v1.17.0
-	go.opentelemetry.io/otel/exporters/prometheus v0.40.0
-	go.opentelemetry.io/otel/metric v1.17.0
-	go.opentelemetry.io/otel/sdk/metric v0.40.0
+	github.com/vektah/gqlparser/v2 v2.5.10
+	go.opentelemetry.io/otel v1.19.0
+	go.opentelemetry.io/otel/exporters/prometheus v0.42.0
+	go.opentelemetry.io/otel/metric v1.19.0
+	go.opentelemetry.io/otel/sdk/metric v1.19.0
 	go.uber.org/automaxprocs v1.5.3
 	golang.org/x/sync v0.3.0
-	google.golang.org/api v0.140.0
-	google.golang.org/grpc v1.58.0
+	google.golang.org/api v0.144.0
+	google.golang.org/grpc v1.58.2
 	google.golang.org/protobuf v1.31.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -67,7 +67,9 @@ require (
 	github.com/apache/arrow/go/v12 v12.0.1 // indirect
 	github.com/apache/thrift v0.19.0 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
+	github.com/bahlo/generic-list-go v0.2.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
+	github.com/buger/jsonparser v1.1.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/chai2010/gettext-go v1.0.2 // indirect
@@ -78,7 +80,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/cli v24.0.2+incompatible // indirect
 	github.com/docker/distribution v2.8.2+incompatible // indirect
-	github.com/docker/docker v23.0.3+incompatible // indirect
+	github.com/docker/docker v24.0.2+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.7.0 // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-metrics v0.0.1 // indirect
@@ -108,7 +110,7 @@ require (
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/s2a-go v0.1.7 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
-	github.com/googleapis/enterprise-certificate-proxy v0.2.5 // indirect
+	github.com/googleapis/enterprise-certificate-proxy v0.3.1 // indirect
 	github.com/googleapis/gax-go/v2 v2.12.0 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
@@ -117,7 +119,6 @@ require (
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.6 // indirect
 	github.com/huandu/xstrings v1.4.0 // indirect
-	github.com/iancoleman/orderedmap v0.3.0 // indirect
 	github.com/imdario/mergo v0.3.16 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
@@ -163,7 +164,7 @@ require (
 	github.com/pierrec/lz4/v4 v4.1.18 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/prometheus/client_model v0.4.0 // indirect
+	github.com/prometheus/client_model v0.4.1-0.20230718164431-9a2bf3000d16 // indirect
 	github.com/prometheus/common v0.44.0 // indirect
 	github.com/prometheus/procfs v0.11.1 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
@@ -175,6 +176,7 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/objx v0.5.1 // indirect
 	github.com/urfave/cli/v2 v2.25.7 // indirect
+	github.com/wk8/go-ordered-map/v2 v2.1.8 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
@@ -183,8 +185,8 @@ require (
 	github.com/zeebo/xxh3 v1.0.2 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/contrib v1.18.0 // indirect
-	go.opentelemetry.io/otel/sdk v1.17.0 // indirect
-	go.opentelemetry.io/otel/trace v1.17.0 // indirect
+	go.opentelemetry.io/otel/sdk v1.19.0 // indirect
+	go.opentelemetry.io/otel/trace v1.19.0 // indirect
 	go.starlark.net v0.0.0-20230911222709-95963e010017 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.25.0 // indirect
@@ -199,9 +201,9 @@ require (
 	golang.org/x/tools v0.13.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
-	google.golang.org/genproto v0.0.0-20230911183012-2d3300fd4832 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20230911183012-2d3300fd4832 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20230911183012-2d3300fd4832 // indirect
+	google.golang.org/genproto v0.0.0-20230913181813-007df8e322eb // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20230913181813-007df8e322eb // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20230920204549-e6e6cdab5c13 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	k8s.io/apiextensions-apiserver v0.28.1 // indirect
 	k8s.io/apiserver v0.28.1 // indirect
