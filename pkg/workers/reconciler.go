@@ -22,7 +22,7 @@ import (
 )
 
 type ReconcilerStore interface {
-	DeployInstructionCreate(ctx context.Context, envID uuid.UUID, featureName, featureVersion, hash string) (uuid.UUID, error)
+	DeployInstructionCreate(ctx context.Context, envID uuid.UUID, feature *model.Feature, hash string) (uuid.UUID, error)
 	DeployInstructionsLatestForEnvironment(ctx context.Context, envID uuid.UUID) ([]*model.DeployInstruction, error)
 	FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, ci bool) ([]*model.Feature, error)
 	FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *model.Feature, enabled bool) (*model.FeatureState, error)
@@ -282,7 +282,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, e *model.TenantEn
 
 		r.deployMessages.Add(ctx, 1, metric.WithAttributes(append(metricAttrs, attribute.Key("feature").String(f.Name))...))
 
-		id, err := r.repo.DeployInstructionCreate(ctx, e.ID, f.Name, f.Version, hash)
+		id, err := r.repo.DeployInstructionCreate(ctx, e.ID, f, hash)
 		if err != nil {
 			return fmt.Errorf("create deploy instruction: %w", err)
 		}

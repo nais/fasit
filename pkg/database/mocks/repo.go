@@ -349,25 +349,25 @@ func (_m *Repo) CostUpsert(ctx context.Context, rows []gensql.CostUpsertParams) 
 	return r0
 }
 
-// DeployInstructionCreate provides a mock function with given fields: ctx, envID, featureName, featureVersion, hash
-func (_m *Repo) DeployInstructionCreate(ctx context.Context, envID uuid.UUID, featureName string, featureVersion string, hash string) (uuid.UUID, error) {
-	ret := _m.Called(ctx, envID, featureName, featureVersion, hash)
+// DeployInstructionCreate provides a mock function with given fields: ctx, envID, _a2, hash
+func (_m *Repo) DeployInstructionCreate(ctx context.Context, envID uuid.UUID, _a2 *model.Feature, hash string) (uuid.UUID, error) {
+	ret := _m.Called(ctx, envID, _a2, hash)
 
 	var r0 uuid.UUID
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, string, string, string) (uuid.UUID, error)); ok {
-		return rf(ctx, envID, featureName, featureVersion, hash)
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, *model.Feature, string) (uuid.UUID, error)); ok {
+		return rf(ctx, envID, _a2, hash)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, string, string, string) uuid.UUID); ok {
-		r0 = rf(ctx, envID, featureName, featureVersion, hash)
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, *model.Feature, string) uuid.UUID); ok {
+		r0 = rf(ctx, envID, _a2, hash)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(uuid.UUID)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, string, string, string) error); ok {
-		r1 = rf(ctx, envID, featureName, featureVersion, hash)
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, *model.Feature, string) error); ok {
+		r1 = rf(ctx, envID, _a2, hash)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1093,6 +1093,32 @@ func (_m *Repo) HealthStatusCreateOrUpdate(ctx context.Context, environmentID uu
 	}
 
 	return r0
+}
+
+// HelmValueDiffGet provides a mock function with given fields: ctx, di
+func (_m *Repo) HelmValueDiffGet(ctx context.Context, di *model.DeployInstruction) (*model.HelmValueDiff, error) {
+	ret := _m.Called(ctx, di)
+
+	var r0 *model.HelmValueDiff
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.DeployInstruction) (*model.HelmValueDiff, error)); ok {
+		return rf(ctx, di)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *model.DeployInstruction) *model.HelmValueDiff); ok {
+		r0 = rf(ctx, di)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.HelmValueDiff)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *model.DeployInstruction) error); ok {
+		r1 = rf(ctx, di)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // HelmValues provides a mock function with given fields: ctx, _a1, envID
