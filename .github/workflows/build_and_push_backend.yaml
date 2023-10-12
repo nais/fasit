@@ -21,6 +21,8 @@ env:
 
 jobs:
   tests:
+    outputs:
+      go_version: ${{ steps.go_version.outputs.GO_VERSION }}
     runs-on: ubuntu-latest-4-cores
     steps:
       - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # ratchet:actions/checkout@v3
@@ -60,6 +62,8 @@ jobs:
         with:
           dockerfile: Dockerfile_fasit
           name: fasit
+          build_args: |
+            GO_VERSION=${{ needs.tests.outputs.go_version }}
           google_service_account: gh-fasit
           workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
           push: ${{ github.actor != 'dependabot[bot]' }}
