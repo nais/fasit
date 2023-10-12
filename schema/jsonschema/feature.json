@@ -41,78 +41,76 @@
 			"type": "string"
 		},
 		"values": {
-			"patternProperties": {
-				".*": {
-					"additionalProperties": false,
-					"anyOf": [
-						{
-							"required": [
-								"computed"
-							],
-							"title": "computed"
+			"additionalProperties": {
+				"additionalProperties": false,
+				"anyOf": [
+					{
+						"required": [
+							"computed"
+						],
+						"title": "computed"
+					},
+					{
+						"required": [
+							"config"
+						],
+						"title": "config"
+					}
+				],
+				"properties": {
+					"computed": {
+						"additionalProperties": false,
+						"properties": {
+							"template": {
+								"type": "string"
+							}
 						},
-						{
-							"required": [
-								"config"
-							],
-							"title": "config"
-						}
-					],
-					"properties": {
-						"computed": {
-							"additionalProperties": false,
-							"properties": {
-								"template": {
-									"type": "string"
-								}
+						"type": "object"
+					},
+					"config": {
+						"additionalProperties": false,
+						"properties": {
+							"secret": {
+								"type": "boolean"
 							},
-							"type": "object"
-						},
-						"config": {
-							"additionalProperties": false,
-							"properties": {
-								"secret": {
-									"type": "boolean"
-								},
-								"type": {
-									"enum": [
-										"string",
-										"int",
-										"bool",
-										"string_array"
-									],
-									"type": "string"
-								}
-							},
-							"required": [
-								"type"
-							],
-							"type": "object"
-						},
-						"description": {
-							"type": "string"
-						},
-						"displayName": {
-							"type": "string"
-						},
-						"ignoreKind": {
-							"items": {
+							"type": {
 								"enum": [
-									"management",
-									"tenant",
-									"onprem",
-									"legacy"
+									"string",
+									"int",
+									"bool",
+									"string_array"
 								],
 								"type": "string"
-							},
-							"type": "array"
+							}
 						},
-						"required": {
-							"type": "boolean"
-						}
+						"required": [
+							"type"
+						],
+						"type": "object"
 					},
-					"type": "object"
-				}
+					"description": {
+						"type": "string"
+					},
+					"displayName": {
+						"type": "string"
+					},
+					"ignoreKind": {
+						"items": {
+							"enum": [
+								"management",
+								"tenant",
+								"onprem",
+								"legacy"
+							],
+							"type": "string"
+						},
+						"type": "array"
+					},
+					"required": {
+						"type": "boolean"
+					}
+				},
+				"type": "object"
 			},
 			"type": "object"
 		}
