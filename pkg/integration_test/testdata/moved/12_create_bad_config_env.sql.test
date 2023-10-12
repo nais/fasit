@@ -1,0 +1,7 @@
+-- Create some configuration values that shouldn't be moved, because the target key already exists from the earlier steps
+
+INSERT INTO configurations_environment (feature, key, value, environment_id) VALUES ('moved', 'nested.key', '"oldVal"', '{{ .Tenant.tenant1.Env.management.ID }}');
+
+RETURNS
+
+[]

@@ -106,3 +106,30 @@ SELECT *
 FROM configurations_global
 WHERE id = @id
 ;
+
+-- name: ConfigRenameGlobal :exec
+UPDATE ONLY configurations_global
+SET key = @to_key
+WHERE configurations_global.key = @from_key
+AND configurations_global.feature = @feature
+AND NOT EXISTS (
+	SELECT 1
+	FROM ONLY configurations_global nested
+	WHERE nested.feature = @feature
+	AND nested.key = @to_key
+)
+;
+
+-- name: ConfigRenameEnv :exec
+UPDATE ONLY configurations_environment
+SET key = @to_key
+WHERE
+configurations_environment.key = @from_key
+AND NOT EXISTS (
+	SELECT 1
+	FROM ONLY configurations_environment nested
+	WHERE configurations_environment.feature = @feature
+	AND nested.key = @to_key
+	AND nested.environment_id = configurations_environment.environment_id
+)
+;

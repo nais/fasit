@@ -65,6 +65,7 @@ SELECT
   fd.values,
   fd.default_values,
   fd.timeout,
+  fd.moved,
   rollouts.created
 FROM rollouts
 JOIN feature_data fd ON rollouts.feature_name = fd.name AND rollouts.version = fd.version

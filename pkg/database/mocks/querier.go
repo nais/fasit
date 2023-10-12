@@ -277,6 +277,34 @@ func (_m *Querier) ConfigOverridesByFeature(ctx context.Context, feature string)
 	return r0, r1
 }
 
+// ConfigRenameEnv provides a mock function with given fields: ctx, arg
+func (_m *Querier) ConfigRenameEnv(ctx context.Context, arg gensql.ConfigRenameEnvParams) error {
+	ret := _m.Called(ctx, arg)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.ConfigRenameEnvParams) error); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// ConfigRenameGlobal provides a mock function with given fields: ctx, arg
+func (_m *Querier) ConfigRenameGlobal(ctx context.Context, arg gensql.ConfigRenameGlobalParams) error {
+	ret := _m.Called(ctx, arg)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.ConfigRenameGlobalParams) error); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // ConfigUpdate provides a mock function with given fields: ctx, arg
 func (_m *Querier) ConfigUpdate(ctx context.Context, arg gensql.ConfigUpdateParams) (gensql.ConfigurationsGlobal, error) {
 	ret := _m.Called(ctx, arg)

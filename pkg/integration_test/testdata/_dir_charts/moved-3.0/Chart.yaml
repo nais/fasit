@@ -1,0 +1,5 @@
+apiVersion: v2
+name: "moved"
+version: "3.0"
+sources:
+  - "http://nais.io"

@@ -3,6 +3,7 @@ package testmanager
 import (
 	"context"
 	"io/fs"
+	"slices"
 	"testing"
 )
 
@@ -35,7 +36,7 @@ func New[T any](t *testing.T, createRunners CreateRunnerFunc[T]) *Manager[T] {
 	}
 }
 
-func (m *Manager[T]) Run(ctx context.Context, dir fs.FS) error {
+func (m *Manager[T]) Run(ctx context.Context, dir fs.FS, skipDirs ...string) error {
 	entries, err := fs.ReadDir(dir, ".")
 	if err != nil {
 		m.t.Fatal("reading fs directory", err)
@@ -43,6 +44,10 @@ func (m *Manager[T]) Run(ctx context.Context, dir fs.FS) error {
 
 	for _, d := range entries {
 		if !d.IsDir() {
+			continue
+		}
+
+		if slices.Contains(skipDirs, d.Name()) {
 			continue
 		}
 

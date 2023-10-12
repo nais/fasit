@@ -143,7 +143,7 @@ func Test_queryResolver_Configuration_Feature_Configurations(t *testing.T) {
 	}
 
 	repo := mocks.NewRepo(t)
-	repo.On("EnvConfig", mock.Anything, feature.Name, env.ID).Return([]*model.Configuration{
+	repo.On("EnvConfig", mock.Anything, mock.IsType(feature), env.ID).Return([]*model.Configuration{
 		{
 			ID:      uuid.New(),
 			Key:     "key.set",

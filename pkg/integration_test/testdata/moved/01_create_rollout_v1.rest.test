@@ -1,0 +1,19 @@
+POST /github/rollout
+
+{
+  "chart": "oci://moved",
+  "version": "1.0"
+}
+
+RETURNS
+
+OPTION responseCode = 201
+OPTION id=IGNORE
+
+ENDOPTS
+
+{
+  "envNotAvailable": ["tenant", "management"]
+}
+
+STORE rollout_id=id

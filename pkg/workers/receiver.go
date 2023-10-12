@@ -178,11 +178,11 @@ func (r *Receiver) handleCI(ctx context.Context, env *model.Environment, di *mod
 			return fmt.Errorf("checking if last: %w", err)
 		}
 		if !last {
-			r.log.WithField("name", featureName).Debug("not last")
+			r.log.WithField("name", featureName).Debug("not last rollout for ci")
 			return nil
 		}
 
-		r.log.WithField("name", featureName).Debug("last")
+		r.log.WithField("name", featureName).Debug("last rollout for ci")
 
 		// Calculate proper rollout status
 		rolloutStatus, err := r.repo.RolloutStatus(ctx, rollout.Name)
@@ -195,8 +195,8 @@ func (r *Receiver) handleCI(ctx context.Context, env *model.Environment, di *mod
 		}
 
 		if status == model.RolloutStatusFailed || rolloutStatus == model.RolloutStatusFailed {
-			if err := r.repo.RolloutsUpdateStatus(ctx, model.RolloutStatusFailed, rollout.Name, true); err != nil {
-				return fmt.Errorf("updating rollout status: %w", err)
+			if err := repo.RolloutsUpdateStatus(ctx, model.RolloutStatusFailed, rollout.Name, true); err != nil {
+				return fmt.Errorf("updating rollout status (failed): %w", err)
 			}
 			r.log.WithField("name", featureName).Info("rollout failed")
 			return nil
@@ -204,6 +204,12 @@ func (r *Receiver) handleCI(ctx context.Context, env *model.Environment, di *mod
 
 		if err := repo.FeatureVersionUpdate(ctx, rollout.Name, rollout.Version); err != nil {
 			return fmt.Errorf("updating feature version: %w", err)
+		}
+
+		if len(rollout.Moved) > 0 {
+			if err := repo.ConfigMove(ctx, rollout.Name, rollout.Moved); err != nil {
+				return fmt.Errorf("moving config: %w", err)
+			}
 		}
 
 		if err := repo.RolloutsUpdateStatus(ctx, model.RolloutStatusDeployed, rollout.Name, true); err != nil {
@@ -231,19 +237,19 @@ func (r *Receiver) releaseStatus(ctx context.Context, msg message.Status) error 
 				Warn("unknown tenant and/or environment")
 			return nil
 		}
-		return err
+		return fmt.Errorf("getting environment id: %w", err)
 	}
 
 	return r.repo.TxFunc(ctx, func(repo database.Repo) error {
 		err = repo.ReleaseStatusDeleteByEnvironmentID(ctx, environmentID)
 		if err != nil {
-			return err
+			return fmt.Errorf("deleting release status: %w", err)
 		}
 
 		for _, rel := range status.Releases {
 			err = repo.ReleaseStatusCreateOrUpdate(ctx, environmentID, &rel)
 			if err != nil {
-				return err
+				return fmt.Errorf("creating release status: %w", err)
 			}
 		}
 		return nil

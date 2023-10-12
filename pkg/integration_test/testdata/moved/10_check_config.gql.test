@@ -1,0 +1,88 @@
+ {
+	tenants {
+    name
+    environments {
+      name
+      feature(name:"moved") {
+        configuration {
+          configuration {
+            content
+            value {
+              key
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+RETURNS
+
+{{ $movedKeys := list "moved.myValue" "moved.nested.key" "moved.nested.computed.key" | sortAlpha }}
+
+{
+  "data": {
+    "tenants": [
+      {
+        "name": "tenant1",
+        "environments": [
+          {
+            "name": "e1",
+            "feature": {
+              "configuration": {
+                "configuration": [
+                  {{ range $index, $key := $movedKeys }}
+                  {{ if $index }},{{end}}
+                    {
+                      "content": {{ cat $key "value" | trimPrefix "moved." | quote }},
+                      "value": {
+                        "key": {{ $key | quote }}
+                      }
+                    }
+                  {{ end }}
+                ]
+              }
+            }
+          },
+          {
+            "name": "management",
+            "feature": {
+              "configuration": {
+                "configuration": [
+                  {{ range $index, $key := $movedKeys }}
+                  {{ if $index }},{{end}}
+                    {
+                      "content": {{ cat $key "value2" | trimPrefix "moved." | quote }},
+                      "value": {
+                        "key": {{ $key | quote }}
+                      }
+                    }
+                  {{ end }}
+                ]
+              }
+            }
+          },
+          {
+            "name": "nonci",
+            "feature": {
+              "configuration": {
+                "configuration": [
+                  {{ range $index, $key := $movedKeys }}
+                  {{ if $index }},{{end}}
+                    {
+                      "content": {{ cat $key "value3" | trimPrefix "moved." | quote }},
+                      "value": {
+                        "key": {{ $key | quote }}
+                      }
+                    }
+                  {{ end }}
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

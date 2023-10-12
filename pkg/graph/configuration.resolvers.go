@@ -27,13 +27,13 @@ func (r *configurationsResolver) Configuration(ctx context.Context, obj *model.C
 	var kind model.EnvironmentKind
 
 	if obj.EnvID != nil && *obj.EnvID != uuid.Nil {
-		configs, err = r.Repo.EnvConfig(ctx, obj.FeatureName, *obj.EnvID)
-		if err != nil {
+		feat, err = r.Repo.FeatureByNameForEnv(ctx, obj.FeatureName, *obj.EnvID)
+		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 			return nil, err
 		}
 
-		feat, err = r.Repo.FeatureByNameForEnv(ctx, obj.FeatureName, *obj.EnvID)
-		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		configs, err = r.Repo.EnvConfig(ctx, feat, *obj.EnvID)
+		if err != nil {
 			return nil, err
 		}
 

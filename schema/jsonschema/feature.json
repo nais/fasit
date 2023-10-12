@@ -36,83 +36,103 @@
 			},
 			"type": "array"
 		},
+		"moved": {
+			"description": "Moved is a list of values that have been moved to another key. This is an opperation that will be done when the rollout is created.\nIf the key is found, it will be renamed to the new key unless the new key already exists.\nWhen this has been completely rolled out, it's safe to remove the moved statements.\nIt is only populated if read from a chart, or if the feature is a rollout.",
+			"items": {
+				"additionalProperties": false,
+				"properties": {
+					"from": {
+						"description": "From is the old key name",
+						"type": "string"
+					},
+					"to": {
+						"description": "To is the new key name",
+						"type": "string"
+					}
+				},
+				"required": [
+					"from",
+					"to"
+				],
+				"type": "object"
+			},
+			"type": "array"
+		},
 		"timeout": {
 			"pattern": "^(\\d+h)?(\\d+m)?(\\d+s)?$",
 			"type": "string"
 		},
 		"values": {
-			"patternProperties": {
-				".*": {
-					"additionalProperties": false,
-					"anyOf": [
-						{
-							"required": [
-								"computed"
-							],
-							"title": "computed"
+			"additionalProperties": {
+				"additionalProperties": false,
+				"anyOf": [
+					{
+						"required": [
+							"computed"
+						],
+						"title": "computed"
+					},
+					{
+						"required": [
+							"config"
+						],
+						"title": "config"
+					}
+				],
+				"properties": {
+					"computed": {
+						"additionalProperties": false,
+						"properties": {
+							"template": {
+								"type": "string"
+							}
 						},
-						{
-							"required": [
-								"config"
-							],
-							"title": "config"
-						}
-					],
-					"properties": {
-						"computed": {
-							"additionalProperties": false,
-							"properties": {
-								"template": {
-									"type": "string"
-								}
+						"type": "object"
+					},
+					"config": {
+						"additionalProperties": false,
+						"properties": {
+							"secret": {
+								"type": "boolean"
 							},
-							"type": "object"
-						},
-						"config": {
-							"additionalProperties": false,
-							"properties": {
-								"secret": {
-									"type": "boolean"
-								},
-								"type": {
-									"enum": [
-										"string",
-										"int",
-										"bool",
-										"string_array"
-									],
-									"type": "string"
-								}
-							},
-							"required": [
-								"type"
-							],
-							"type": "object"
-						},
-						"description": {
-							"type": "string"
-						},
-						"displayName": {
-							"type": "string"
-						},
-						"ignoreKind": {
-							"items": {
+							"type": {
 								"enum": [
-									"management",
-									"tenant",
-									"onprem",
-									"legacy"
+									"string",
+									"int",
+									"bool",
+									"string_array"
 								],
 								"type": "string"
-							},
-							"type": "array"
+							}
 						},
-						"required": {
-							"type": "boolean"
-						}
+						"required": [
+							"type"
+						],
+						"type": "object"
 					},
-					"type": "object"
-				}
+					"description": {
+						"type": "string"
+					},
+					"displayName": {
+						"type": "string"
+					},
+					"ignoreKind": {
+						"items": {
+							"enum": [
+								"management",
+								"tenant",
+								"onprem",
+								"legacy"
+							],
+							"type": "string"
+						},
+						"type": "array"
+					},
+					"required": {
+						"type": "boolean"
+					}
+				},
+				"type": "object"
 			},
 			"type": "object"
 		}

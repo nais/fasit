@@ -44,6 +44,11 @@ func (r *repo) FeatureDataCreate(ctx context.Context, feat model.Feature, detail
 		return fmt.Errorf("marshal details to json: %w", err)
 	}
 
+	moved, err := json.Marshal(feat.Moved)
+	if err != nil {
+		return fmt.Errorf("marshal moved to json: %w", err)
+	}
+
 	return r.querier.FeatureDataCreate(ctx, gensql.FeatureDataCreateParams{
 		FeatureName:   feat.Name,
 		Version:       feat.Version,
@@ -56,5 +61,6 @@ func (r *repo) FeatureDataCreate(ctx context.Context, feat model.Feature, detail
 		DefaultValues: defaultVals,
 		Timeout:       feat.Timeout.Milliseconds(),
 		TplDetails:    detailsBytes,
+		Moved:         moved,
 	})
 }

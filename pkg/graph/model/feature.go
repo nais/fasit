@@ -39,11 +39,24 @@ type Feature struct {
 	} `json:"-" yaml:"-"`
 }
 
+type Moved struct {
+	// From is the old key name
+	From string `json:"from"`
+	// To is the new key name
+	To string `json:"to"`
+}
+
 type FeatureYAML struct {
 	Dependencies     Dependencies      `json:"dependencies,omitempty" yaml:"dependencies,omitempty" jsonschema:"omitempty"`
 	EnvironmentKinds []EnvironmentKind `json:"environmentKinds" yaml:"environmentKinds" jsonschema:"enum=management,enum=tenant,enum=onprem,enum=legacy,required"`
 	Timeout          time.Duration     `json:"timeout,omitempty" yaml:"timeout,omitempty" jsonschema:"omitempty,type=string,pattern=^(\\d+h)?(\\d+m)?(\\d+s)?$"`
 	Values           Values            `json:"values,omitempty" yaml:"values,omitempty" jsonschema:"omitempty"`
+
+	// Moved is a list of values that have been moved to another key. This is an opperation that will be done when the rollout is created.
+	// If the key is found, it will be renamed to the new key unless the new key already exists.
+	// When this has been completely rolled out, it's safe to remove the moved statements.
+	// It is only populated if read from a chart, or if the feature is a rollout.
+	Moved []Moved `json:"moved,omitempty" yaml:"moved,omitempty" jsonschema:"omitempty"`
 }
 
 type Values map[string]Value

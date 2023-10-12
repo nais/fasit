@@ -237,6 +237,55 @@ func (q *Queries) ConfigOverridesByFeature(ctx context.Context, feature string) 
 	return items, nil
 }
 
+const configRenameEnv = `-- name: ConfigRenameEnv :exec
+UPDATE ONLY configurations_environment
+SET key = $1
+WHERE
+configurations_environment.key = $2
+AND NOT EXISTS (
+	SELECT 1
+	FROM ONLY configurations_environment nested
+	WHERE configurations_environment.feature = $3
+	AND nested.key = $1
+	AND nested.environment_id = configurations_environment.environment_id
+)
+`
+
+type ConfigRenameEnvParams struct {
+	ToKey   string
+	FromKey string
+	Feature string
+}
+
+func (q *Queries) ConfigRenameEnv(ctx context.Context, arg ConfigRenameEnvParams) error {
+	_, err := q.db.Exec(ctx, configRenameEnv, arg.ToKey, arg.FromKey, arg.Feature)
+	return err
+}
+
+const configRenameGlobal = `-- name: ConfigRenameGlobal :exec
+UPDATE ONLY configurations_global
+SET key = $1
+WHERE configurations_global.key = $2
+AND configurations_global.feature = $3
+AND NOT EXISTS (
+	SELECT 1
+	FROM ONLY configurations_global nested
+	WHERE nested.feature = $3
+	AND nested.key = $1
+)
+`
+
+type ConfigRenameGlobalParams struct {
+	ToKey   string
+	FromKey string
+	Feature string
+}
+
+func (q *Queries) ConfigRenameGlobal(ctx context.Context, arg ConfigRenameGlobalParams) error {
+	_, err := q.db.Exec(ctx, configRenameGlobal, arg.ToKey, arg.FromKey, arg.Feature)
+	return err
+}
+
 const configUpdate = `-- name: ConfigUpdate :one
 UPDATE configurations_global
 SET description = $1,

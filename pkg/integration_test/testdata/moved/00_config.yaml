@@ -1,0 +1,25 @@
+tenants:
+  - name: tenant1
+    ci: true
+    envs:
+      - name: management
+        ci: true
+        naisd:
+          enabled: true
+          successfullMessages: 10
+        reconcile: true
+        kind: management
+      - name: e1
+        ci: true
+        naisd:
+          enabled: true
+          successfullMessages: 10
+        reconcile: true
+        kind: tenant
+      - name: nonci
+        ci: false
+        naisd:
+          enabled: true
+          successfullMessages: 10
+        reconcile: true
+        kind: tenant

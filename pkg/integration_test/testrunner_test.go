@@ -114,7 +114,8 @@ func TestRunner(t *testing.T) {
 
 	ctx := context.Background()
 
-	mgr.Run(ctx, os.DirFS("./testdata"))
+	// Skip dir_charts, as it is not a test case but a directory of directory based charts
+	mgr.Run(ctx, os.DirFS("./testdata"), "_dir_charts")
 }
 
 func newRestRunner(ctx context.Context, t *testing.T, db rollout.Store) testmanager.Runner {
