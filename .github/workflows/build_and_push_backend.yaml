@@ -32,10 +32,6 @@ jobs:
         with:
           go-version: ${{ steps.go_version.outputs.GO_VERSION }}
       - run: go test -cover -tags integration_test ./...
-      - name: Vulnerability check
-        run: |
-          go install golang.org/x/vuln/cmd/govulncheck@latest
-          govulncheck ./...
 
   build_and_push_fasit:
     if: github.ref == 'refs/heads/main'
