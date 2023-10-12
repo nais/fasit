@@ -80,7 +80,7 @@ test: sqlc-vet
 integration-test: sqlc-vet
 	go test -tags integration_test -cover ./...
 
-sqlc-vet:
+sqlc-vet: install-sqlc
 	$(GOBIN)/sqlc vet
 
 mocks:
