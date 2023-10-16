@@ -1,5 +1,5 @@
 apiVersion: v2
-name: "moved"
-version: "1.0"
+name: "rename"
+version: "3.0"
 sources:
   - "http://nais.io"

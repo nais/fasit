@@ -3,7 +3,7 @@
     name
     environments {
       name
-      feature(name: "moved") {
+      feature(name: "rename") {
         status {
           status
           version

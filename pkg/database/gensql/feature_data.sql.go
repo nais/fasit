@@ -22,7 +22,7 @@ INSERT INTO feature_data (
     default_values,
     timeout,
     tpl_details,
-    moved
+    rename
 ) VALUES (
     $1,
     $2,
@@ -51,7 +51,7 @@ type FeatureDataCreateParams struct {
 	DefaultValues []byte
 	Timeout       int64
 	TplDetails    []byte
-	Moved         []byte
+	Rename        []byte
 }
 
 func (q *Queries) FeatureDataCreate(ctx context.Context, arg FeatureDataCreateParams) error {
@@ -67,7 +67,7 @@ func (q *Queries) FeatureDataCreate(ctx context.Context, arg FeatureDataCreatePa
 		arg.DefaultValues,
 		arg.Timeout,
 		arg.TplDetails,
-		arg.Moved,
+		arg.Rename,
 	)
 	return err
 }

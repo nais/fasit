@@ -206,8 +206,8 @@ func (r *Receiver) handleCI(ctx context.Context, env *model.Environment, di *mod
 			return fmt.Errorf("updating feature version: %w", err)
 		}
 
-		if len(rollout.Moved) > 0 {
-			if err := repo.ConfigMove(ctx, rollout.Name, rollout.Moved); err != nil {
+		if len(rollout.Rename) > 0 {
+			if err := repo.ConfigMove(ctx, rollout.Name, rollout.Rename); err != nil {
 				return fmt.Errorf("moving config: %w", err)
 			}
 		}

@@ -214,7 +214,7 @@ func featuresFromSQL(features []gensql.FeaturesForKindRow) ([]*model.Feature, er
 	return ret, nil
 }
 
-func makeFeatureYAML(kinds []string, deps, values, defaultValues, moved []byte, timeout int64) (model.FeatureYAML, map[string]json.RawMessage, error) {
+func makeFeatureYAML(kinds []string, deps, values, defaultValues, rename []byte, timeout int64) (model.FeatureYAML, map[string]json.RawMessage, error) {
 	ret := model.FeatureYAML{
 		Timeout: time.Duration(timeout) * time.Millisecond,
 	}
@@ -236,9 +236,9 @@ func makeFeatureYAML(kinds []string, deps, values, defaultValues, moved []byte, 
 		return ret, nil, fmt.Errorf("unmarshal values: %w", err)
 	}
 
-	if len(moved) > 0 {
-		if err := json.Unmarshal(moved, &ret.Moved); err != nil {
-			return ret, nil, fmt.Errorf("unmarshal moved: %w", err)
+	if len(rename) > 0 {
+		if err := json.Unmarshal(rename, &ret.Rename); err != nil {
+			return ret, nil, fmt.Errorf("unmarshal rename: %w", err)
 		}
 	}
 

@@ -3,7 +3,7 @@
     name
     environments {
       name
-      feature(name:"moved") {
+      feature(name:"rename") {
         configuration {
           configuration {
             content
@@ -19,7 +19,7 @@
 
 RETURNS
 
-{{ $keys := list "myValue" "nested.key" "nested.computed.key" | sortAlpha }}
+{{ $renamedKeys := list "rename.myValue" "rename.nested.key" "rename.nested.computed.key" | sortAlpha }}
 
 {
   "data": {
@@ -32,10 +32,10 @@ RETURNS
             "feature": {
               "configuration": {
                 "configuration": [
-                  {{ range $index, $key := $keys }}
+                  {{ range $index, $key := $renamedKeys }}
                   {{ if $index }},{{end}}
                     {
-                      "content": {{ cat $key "value" | quote }},
+                      "content": {{ cat $key "value" | trimPrefix "rename." | quote }},
                       "value": {
                         "key": {{ $key | quote }}
                       }
@@ -50,10 +50,10 @@ RETURNS
             "feature": {
               "configuration": {
                 "configuration": [
-                  {{ range $index, $key := $keys }}
+                  {{ range $index, $key := $renamedKeys }}
                   {{ if $index }},{{end}}
                     {
-                      "content": {{ cat $key "value2" | quote }},
+                      "content": {{ cat $key "value2" | trimPrefix "rename." | quote }},
                       "value": {
                         "key": {{ $key | quote }}
                       }
@@ -68,10 +68,10 @@ RETURNS
             "feature": {
               "configuration": {
                 "configuration": [
-                  {{ range $index, $key := $keys }}
+                  {{ range $index, $key := $renamedKeys }}
                   {{ if $index }},{{end}}
                     {
-                      "content": {{ cat $key "value3" | quote }},
+                      "content": {{ cat $key "value3" | trimPrefix "rename." | quote }},
                       "value": {
                         "key": {{ $key | quote }}
                       }

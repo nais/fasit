@@ -9,27 +9,27 @@
 
 mutation {
 	{{ range $i, $key := $keys }}
-		tc_{{ $i }}: configurationCreate(configuration: {environmentID: {{ $tenantID | quote}}, feature:"moved", key: {{ $key | quote }}, value: {{ cat $key "value" | quote }}}) {
+		tc_{{ $i }}: configurationCreate(configuration: {environmentID: {{ $tenantID | quote}}, feature:"rename", key: {{ $key | quote }}, value: {{ cat $key "value" | quote }}}) {
 			source
 		}
-		mc_{{ $i }}: configurationCreate(configuration: {environmentID: {{ $mgmtID | quote}}, feature:"moved", key: {{ $key | quote }}, value: {{ cat $key "value2" | quote }}}) {
+		mc_{{ $i }}: configurationCreate(configuration: {environmentID: {{ $mgmtID | quote}}, feature:"rename", key: {{ $key | quote }}, value: {{ cat $key "value2" | quote }}}) {
 			source
 		}
-		nonci_{{ $i }}: configurationCreate(configuration: {environmentID: {{ $nonciID | quote}}, feature:"moved", key: {{ $key | quote }}, value: {{ cat $key "value3" | quote }}}) {
+		nonci_{{ $i }}: configurationCreate(configuration: {environmentID: {{ $nonciID | quote}}, feature:"rename", key: {{ $key | quote }}, value: {{ cat $key "value3" | quote }}}) {
 			source
 		}
 
-		glob_{{ $i }}: configurationCreate(configuration: {feature:"moved", key: {{ $key | quote }}, value: {{ cat $key "glob_value" | quote }}}) {
+		glob_{{ $i }}: configurationCreate(configuration: {feature:"rename", key: {{ $key | quote }}, value: {{ cat $key "glob_value" | quote }}}) {
 			source
 		}
 	{{ end }}
-  featureStateSave(envID: "{{ $tenantID }}", enabled: true, feature: "moved") {
+  featureStateSave(envID: "{{ $tenantID }}", enabled: true, feature: "rename") {
     enabled
   }
-  mgmt: featureStateSave(envID: "{{ $mgmtID }}", enabled: true, feature: "moved") {
+  mgmt: featureStateSave(envID: "{{ $mgmtID }}", enabled: true, feature: "rename") {
     enabled
   }
-  nonci: featureStateSave(envID: "{{ $nonciID }}", enabled: true, feature: "moved") {
+  nonci: featureStateSave(envID: "{{ $nonciID }}", enabled: true, feature: "rename") {
     enabled
   }
 }

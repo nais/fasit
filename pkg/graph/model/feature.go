@@ -39,7 +39,7 @@ type Feature struct {
 	} `json:"-" yaml:"-"`
 }
 
-type Moved struct {
+type Rename struct {
 	// From is the old key name
 	From string `json:"from"`
 	// To is the new key name
@@ -52,11 +52,11 @@ type FeatureYAML struct {
 	Timeout          time.Duration     `json:"timeout,omitempty" yaml:"timeout,omitempty" jsonschema:"omitempty,type=string,pattern=^(\\d+h)?(\\d+m)?(\\d+s)?$"`
 	Values           Values            `json:"values,omitempty" yaml:"values,omitempty" jsonschema:"omitempty"`
 
-	// Moved is a list of values that have been moved to another key. This is an opperation that will be done when the rollout is created.
+	// Rename is a list of values that have been renamed to another key. This is an opperation that will be done when the rollout is created.
 	// If the key is found, it will be renamed to the new key unless the new key already exists.
-	// When this has been completely rolled out, it's safe to remove the moved statements.
+	// When this has been completely rolled out, it's safe to remove the rename statements.
 	// It is only populated if read from a chart, or if the feature is a rollout.
-	Moved []Moved `json:"moved,omitempty" yaml:"moved,omitempty" jsonschema:"omitempty"`
+	Rename []Rename `json:"rename,omitempty" yaml:"rename,omitempty" jsonschema:"omitempty"`
 }
 
 type Values map[string]Value

@@ -11,7 +11,7 @@ INSERT INTO feature_data (
     default_values,
     timeout,
     tpl_details,
-    moved
+    rename
 ) VALUES (
     @feature_name,
     @version,
@@ -24,5 +24,5 @@ INSERT INTO feature_data (
     @default_values,
     @timeout,
     @tpl_details,
-    @moved
+    @rename
 );

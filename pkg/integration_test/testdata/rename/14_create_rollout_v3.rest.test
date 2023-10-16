@@ -1,7 +1,7 @@
 POST /github/rollout
 
 {
-  "chart": "oci://moved",
+  "chart": "oci://rename",
   "version": "3.0"
 }
 

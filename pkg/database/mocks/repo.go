@@ -208,11 +208,11 @@ func (_m *Repo) ConfigGetForEnv(ctx context.Context, _a1 string, envID uuid.UUID
 }
 
 // ConfigMove provides a mock function with given fields: ctx, _a1, moves
-func (_m *Repo) ConfigMove(ctx context.Context, _a1 string, moves []model.Moved) error {
+func (_m *Repo) ConfigMove(ctx context.Context, _a1 string, moves []model.Rename) error {
 	ret := _m.Called(ctx, _a1, moves)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, []model.Moved) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, []model.Rename) error); ok {
 		r0 = rf(ctx, _a1, moves)
 	} else {
 		r0 = ret.Error(0)

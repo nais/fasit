@@ -18,7 +18,7 @@ type ConfigRepo interface {
 	ConfigGet(ctx context.Context, feature string) ([]*model.Configuration, error)
 	ConfigGetByID(ctx context.Context, id uuid.UUID) (*model.Configuration, error)
 	ConfigGetForEnv(ctx context.Context, feature string, envID uuid.UUID) ([]*model.Configuration, error)
-	ConfigMove(ctx context.Context, feature string, moves []model.Moved) error
+	ConfigMove(ctx context.Context, feature string, moves []model.Rename) error
 	ConfigOverridesByFeature(ctx context.Context, featureName string) ([]*model.ConfigOverride, error)
 	ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration) (*model.Configuration, error)
 	EnvConfig(ctx context.Context, feature *model.Feature, envID uuid.UUID) ([]*model.Configuration, error)
@@ -66,7 +66,7 @@ func (r *repo) EnvConfig(ctx context.Context, feature *model.Feature, envID uuid
 		knownKeys[conf.Key] = struct{}{}
 	}
 
-	for _, m := range feature.Moved {
+	for _, m := range feature.Rename {
 		for _, rv := range retVal {
 			if rv.Key == m.From {
 				_, ok := knownKeys[m.To]
@@ -204,7 +204,7 @@ func (r *repo) ConfigDelete(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-func (r *repo) ConfigMove(ctx context.Context, feature string, moves []model.Moved) error {
+func (r *repo) ConfigMove(ctx context.Context, feature string, moves []model.Rename) error {
 	for _, m := range moves {
 		err := r.querier.ConfigRenameEnv(ctx, gensql.ConfigRenameEnvParams{
 			FromKey: m.From,

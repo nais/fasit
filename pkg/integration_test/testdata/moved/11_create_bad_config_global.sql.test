@@ -1,7 +1,0 @@
--- Create some configuration values that shouldn't be moved, because the target key already exists from the earlier steps
-
-INSERT INTO configurations_global (feature, key, value) VALUES ('moved', 'myValue', '"oldVal"');
-
-RETURNS
-
-[]

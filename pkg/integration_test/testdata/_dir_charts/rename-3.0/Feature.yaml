@@ -3,24 +3,24 @@ environmentKinds:
   - "management"
 
 values:
-  moved.myValue:
+  rename.myValue:
     config:
       type: string
-  moved.nested.key:
+  rename.nested.key:
     config:
       type: string
 
-  moved.nested.computed.key:
+  rename.nested.computed.key:
     config:
       type: string
       secret: true
     computed:
       template: "{{ .Env.kind }}"
 
-moved:
+rename:
   - from: myValue
-    to: moved.myValue
+    to: rename.myValue
   - from: nested.key
-    to: moved.nested.key
+    to: rename.nested.key
   - from: nested.computed.key
-    to: moved.nested.computed.key
+    to: rename.nested.computed.key

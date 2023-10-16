@@ -66,7 +66,7 @@ func (q *Queries) FeatureByName(ctx context.Context, name string) (FeatureByName
 }
 
 const featureGetForEnv = `-- name: FeatureGetForEnv :many
-SELECT fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.moved, features.created, features.last_modified
+SELECT fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.rename, features.created, features.last_modified
 FROM features
 JOIN feature_data fd ON features.name = fd.name AND features.version = fd.version
 WHERE $1::text = ANY(kinds::text[])
@@ -85,7 +85,7 @@ type FeatureGetForEnvRow struct {
 	DefaultValues []byte
 	Timeout       int64
 	TplDetails    []byte
-	Moved         []byte
+	Rename        []byte
 	Created       pgtype.Timestamptz
 	LastModified  pgtype.Timestamptz
 }
@@ -111,7 +111,7 @@ func (q *Queries) FeatureGetForEnv(ctx context.Context, environmentKind string) 
 			&i.DefaultValues,
 			&i.Timeout,
 			&i.TplDetails,
-			&i.Moved,
+			&i.Rename,
 			&i.Created,
 			&i.LastModified,
 		); err != nil {
