@@ -222,6 +222,22 @@ func (q *Queries) RolloutEventForRollout(ctx context.Context, rolloutID uuid.UUI
 	return items, nil
 }
 
+const rolloutMarkFailed = `-- name: RolloutMarkFailed :execrows
+UPDATE rollouts
+SET status = 'failed',
+    completed = NOW()
+WHERE id = $1
+AND status NOT IN ('deployed', 'failed')
+`
+
+func (q *Queries) RolloutMarkFailed(ctx context.Context, rolloutID uuid.UUID) (int64, error) {
+	result, err := q.db.Exec(ctx, rolloutMarkFailed, rolloutID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const rolloutStatus = `-- name: RolloutStatus :one
 SELECT status FROM rollouts WHERE feature_name = $1 and completed IS NULL
 `

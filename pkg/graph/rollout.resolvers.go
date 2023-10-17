@@ -11,6 +11,22 @@ import (
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
+// RolloutMarkFailed is the resolver for the rolloutMarkFailed field.
+func (r *mutationResolver) RolloutMarkFailed(ctx context.Context, feature string, version string) (*model.Rollout, error) {
+	rollout, err := r.Repo.RolloutByNameAndVersion(ctx, feature, version)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := r.Repo.RolloutMarkFailed(ctx, rollout.ID); err != nil {
+		return nil, err
+	}
+
+	rollout.Status = model.RolloutStatusFailed
+
+	return rollout, nil
+}
+
 // Rollouts is the resolver for the rollouts field.
 func (r *queryResolver) Rollouts(ctx context.Context, feature string) ([]*model.Rollout, error) {
 	return r.Repo.RolloutsForFeature(ctx, feature)

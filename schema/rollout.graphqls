@@ -20,3 +20,7 @@ extend type Query {
   rollouts(feature: String!): [Rollout!]!
   rollout(feature: String!, version: String!): Rollout!
 }
+
+extend type Mutation {
+  rolloutMarkFailed(feature: String!, version: String!): Rollout!
+}
