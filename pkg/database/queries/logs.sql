@@ -4,12 +4,14 @@ INSERT INTO
 (
   deploy_instruction,
   time,
-  message
+  message,
+  kind
 )
 VALUES (
   @deploy_instruction,
   @time,
-  @message
+  @message,
+  @kind
 )
 ;
 

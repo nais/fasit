@@ -28,6 +28,7 @@ func (r *repo) LogCreate(ctx context.Context, deployInstructionID uuid.UUID, lin
 				Valid: true,
 			},
 			Message: line.Msg,
+			Kind:    string(line.Kind),
 		}
 	}
 

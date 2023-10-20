@@ -195,6 +195,7 @@ type Log struct {
 	DeployInstruction uuid.UUID
 	Time              pgtype.Timestamptz
 	Message           string
+	Kind              string
 }
 
 type ReleaseStatus struct {

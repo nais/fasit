@@ -66,13 +66,14 @@ func TestDeployReceiver(t *testing.T) {
 			cmds: []cmd{
 				{
 					Args: []string{
-						"helm", "upgrade", "--atomic",
+						"helm", "upgrade",
 						"--install", "feature1", "chart1",
 						"--namespace", "nais-system", "--create-namespace",
 						"--version", "1", "-f", "/tmp/values.yaml",
 						"--timeout", "5m0s",
 						"--kube-apiserver", "somehost", "--kube-ca-file", "cafile",
 						"--kube-token", "bearertoken", "--atomic", "--cleanup-on-fail",
+						"--history-max", "10",
 					},
 					Env: []string{"FOO=bar", "HELM_CACHE_HOME=/tmp/naisd-helm"},
 				},
