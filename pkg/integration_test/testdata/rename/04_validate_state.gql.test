@@ -1,0 +1,56 @@
+{
+  tenants {
+    name
+    environments {
+      name
+      feature(name: "rename") {
+        status {
+          status
+          version
+        }
+      }
+    }
+  }
+}
+
+RETURNS
+
+
+{
+  "data": {
+    "tenants": [
+      {
+        "name": "tenant1",
+        "environments": [
+          {
+            "name": "e1",
+            "feature": {
+              "status": {
+                "status": "DEPLOYED",
+                "version": "1.0"
+              }
+            }
+          },
+          {
+            "name": "management",
+            "feature": {
+              "status": {
+                "status": "DEPLOYED",
+                "version": "1.0"
+              }
+            }
+          },
+          {
+            "name": "nonci",
+            "feature": {
+              "status": {
+                "status": "DEPLOYED",
+                "version": "1.0"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

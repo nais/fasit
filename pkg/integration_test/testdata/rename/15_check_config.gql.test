@@ -1,0 +1,92 @@
+ {
+	tenants {
+    name
+    environments {
+      name
+      feature(name:"rename") {
+        configuration {
+          configuration {
+            content
+            value {
+              key
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+RETURNS
+
+{{ $renamedKeys := list "rename.myValue" "rename.nested.key" "rename.nested.computed.key" | sortAlpha }}
+
+{
+  "data": {
+    "tenants": [
+      {
+        "name": "tenant1",
+        "environments": [
+          {
+            "name": "e1",
+            "feature": {
+              "configuration": {
+                "configuration": [
+                  {"content": "oldVal", "value": {"key": "myValue"}}
+                  {{ range $index, $key := $renamedKeys }}
+                  ,
+                    {
+                      "content": {{ cat $key "value" | trimPrefix "rename." | quote }},
+                      "value": {
+                        "key": {{ $key | quote }}
+                      }
+                    }
+                  {{ end }}
+                ]
+              }
+            }
+          },
+          {
+            "name": "management",
+            "feature": {
+              "configuration": {
+                "configuration": [
+                  {"content": "oldVal", "value": {"key": "myValue"}},
+                  {"content": "oldVal", "value": {"key": "nested.key"}}
+                  {{ range $index, $key := $renamedKeys }}
+                  ,
+                    {
+                      "content": {{ cat $key "value2" | trimPrefix "rename." | quote }},
+                      "value": {
+                        "key": {{ $key | quote }}
+                      }
+                    }
+                  {{ end }}
+                ]
+              }
+            }
+          },
+          {
+            "name": "nonci",
+            "feature": {
+              "configuration": {
+                "configuration": [
+                  {"content": "oldVal", "value": {"key": "myValue"}}
+                  {{ range $index, $key := $renamedKeys }}
+                  ,
+                    {
+                      "content": {{ cat $key "value3" | trimPrefix "rename." | quote }},
+                      "value": {
+                        "key": {{ $key | quote }}
+                      }
+                    }
+                  {{ end }}
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

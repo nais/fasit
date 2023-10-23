@@ -1,0 +1,88 @@
+ {
+	tenants {
+    name
+    environments {
+      name
+      feature(name:"rename") {
+        configuration {
+          configuration {
+            content
+            value {
+              key
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+RETURNS
+
+{{ $keys := list "myValue" "nested.key" "nested.computed.key" | sortAlpha }}
+
+{
+  "data": {
+    "tenants": [
+      {
+        "name": "tenant1",
+        "environments": [
+          {
+            "name": "e1",
+            "feature": {
+              "configuration": {
+                "configuration": [
+                  {{ range $index, $key := $keys }}
+                  {{ if $index }},{{end}}
+                    {
+                      "content": {{ cat $key "value" | quote }},
+                      "value": {
+                        "key": {{ $key | quote }}
+                      }
+                    }
+                  {{ end }}
+                ]
+              }
+            }
+          },
+          {
+            "name": "management",
+            "feature": {
+              "configuration": {
+                "configuration": [
+                  {{ range $index, $key := $keys }}
+                  {{ if $index }},{{end}}
+                    {
+                      "content": {{ cat $key "value2" | quote }},
+                      "value": {
+                        "key": {{ $key | quote }}
+                      }
+                    }
+                  {{ end }}
+                ]
+              }
+            }
+          },
+          {
+            "name": "nonci",
+            "feature": {
+              "configuration": {
+                "configuration": [
+                  {{ range $index, $key := $keys }}
+                  {{ if $index }},{{end}}
+                    {
+                      "content": {{ cat $key "value3" | quote }},
+                      "value": {
+                        "key": {{ $key | quote }}
+                      }
+                    }
+                  {{ end }}
+                ]
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

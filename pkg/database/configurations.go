@@ -18,9 +18,10 @@ type ConfigRepo interface {
 	ConfigGet(ctx context.Context, feature string) ([]*model.Configuration, error)
 	ConfigGetByID(ctx context.Context, id uuid.UUID) (*model.Configuration, error)
 	ConfigGetForEnv(ctx context.Context, feature string, envID uuid.UUID) ([]*model.Configuration, error)
+	ConfigMove(ctx context.Context, feature string, moves []model.Rename) error
 	ConfigOverridesByFeature(ctx context.Context, featureName string) ([]*model.ConfigOverride, error)
 	ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration) (*model.Configuration, error)
-	EnvConfig(ctx context.Context, feature string, envID uuid.UUID) ([]*model.Configuration, error)
+	EnvConfig(ctx context.Context, feature *model.Feature, envID uuid.UUID) ([]*model.Configuration, error)
 	HelmValues(ctx context.Context, feature *model.Feature, envID uuid.UUID) (values map[string]any, err error)
 }
 
@@ -50,23 +51,37 @@ func globalConfigFromSQL(c gensql.ConfigurationsGlobal) *model.Configuration {
 	}
 }
 
-func (r *repo) EnvConfig(ctx context.Context, feature string, envID uuid.UUID) ([]*model.Configuration, error) {
+func (r *repo) EnvConfig(ctx context.Context, feature *model.Feature, envID uuid.UUID) ([]*model.Configuration, error) {
 	config, err := r.querier.EnvConfig(ctx, gensql.EnvConfigParams{
-		Feature:       feature,
+		Feature:       feature.Name,
 		EnvironmentID: envID,
 	})
 	if err != nil {
 		return nil, err
 	}
 	retVal := []*model.Configuration{}
+	knownKeys := make(map[string]struct{}, len(config))
 	for _, conf := range config {
-		retVal = append(retVal, envConfigFromSQL(conf))
+		retVal = append(retVal, envConfigFromSQL(feature, conf))
+		knownKeys[conf.Key] = struct{}{}
+	}
+
+	for _, m := range feature.Rename {
+		for _, rv := range retVal {
+			if rv.Key == m.From {
+				_, ok := knownKeys[m.To]
+				if !ok {
+					rv.Key = m.To
+				}
+				break
+			}
+		}
 	}
 
 	return retVal, nil
 }
 
-func envConfigFromSQL(conf gensql.EnvConfigRow) *model.Configuration {
+func envConfigFromSQL(feature *model.Feature, conf gensql.EnvConfigRow) *model.Configuration {
 	ret := &model.Configuration{
 		ID: conf.ID,
 		GraphVars: model.ConfigurationGraphVars{
@@ -83,7 +98,6 @@ func envConfigFromSQL(conf gensql.EnvConfigRow) *model.Configuration {
 		ret.Source = model.ConfigSourceEnv
 		ret.GraphVars.EnvironmentID = nullUUIDToPtr(conf.EnvironmentID)
 	}
-
 	return ret
 }
 
@@ -187,6 +201,30 @@ func (r *repo) ConfigDelete(ctx context.Context, id uuid.UUID) error {
 	}
 
 	r.createAudit(ctx, "config deleted", "configurations_global", id.String())
+	return nil
+}
+
+func (r *repo) ConfigMove(ctx context.Context, feature string, moves []model.Rename) error {
+	for _, m := range moves {
+		err := r.querier.ConfigRenameEnv(ctx, gensql.ConfigRenameEnvParams{
+			FromKey: m.From,
+			ToKey:   m.To,
+			Feature: feature,
+		})
+		if err != nil {
+			return fmt.Errorf("rename env config: %w", err)
+		}
+
+		err = r.querier.ConfigRenameGlobal(ctx, gensql.ConfigRenameGlobalParams{
+			FromKey: m.From,
+			ToKey:   m.To,
+			Feature: feature,
+		})
+		if err != nil {
+			return fmt.Errorf("rename global config: %w", err)
+		}
+	}
+
 	return nil
 }
 

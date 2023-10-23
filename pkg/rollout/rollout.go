@@ -134,13 +134,17 @@ func (r *Rollout) Rollout(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	id := ""
+
 	err = r.repo.TxFunc(ctx, func(repo database.Repo) error {
 		if err := repo.FeatureDataCreate(ctx, *feat, details); err != nil {
 			return fmt.Errorf("feature data: %w", err)
 		}
 
-		if _, err := repo.RolloutCreate(ctx, feat.Name, body.Version); err != nil {
+		if r, err := repo.RolloutCreate(ctx, feat.Name, body.Version); err != nil {
 			return fmt.Errorf("rollout: %w", err)
+		} else {
+			id = r.ID.String()
 		}
 
 		return nil
@@ -153,6 +157,7 @@ func (r *Rollout) Rollout(w http.ResponseWriter, req *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(map[string]any{
+		"id":              id,
 		"envNotAvailable": envNotAvailable,
 	})
 }

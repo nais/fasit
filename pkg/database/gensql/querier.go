@@ -23,6 +23,8 @@ type Querier interface {
 	ConfigGetForEnv(ctx context.Context, arg ConfigGetForEnvParams) ([]ConfigurationsEnvironment, error)
 	ConfigGlobalUpdateOrCreate(ctx context.Context, arg ConfigGlobalUpdateOrCreateParams) (ConfigurationsGlobal, error)
 	ConfigOverridesByFeature(ctx context.Context, feature string) ([]ConfigOverridesByFeatureRow, error)
+	ConfigRenameEnv(ctx context.Context, arg ConfigRenameEnvParams) error
+	ConfigRenameGlobal(ctx context.Context, arg ConfigRenameGlobalParams) error
 	ConfigUpdate(ctx context.Context, arg ConfigUpdateParams) (ConfigurationsGlobal, error)
 	Cost(ctx context.Context, arg CostParams) ([]CostRow, error)
 	CostForTenant(ctx context.Context, arg CostForTenantParams) ([]CostForTenantRow, error)

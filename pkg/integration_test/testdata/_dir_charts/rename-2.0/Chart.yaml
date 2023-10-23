@@ -1,0 +1,5 @@
+apiVersion: v2
+name: "rename"
+version: "2.0"
+sources:
+  - "http://nais.io"

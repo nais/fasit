@@ -1,14 +1,14 @@
 POST /github/rollout
 
 {
-  "chart": "oci://clamav",
-  "version": "0.1.1-feature"
+  "chart": "oci://rename",
+  "version": "2.0"
 }
 
 RETURNS
 
 OPTION responseCode = 201
-OPTION id = IGNORE
+OPTION id=IGNORE
 
 ENDOPTS
 
@@ -16,4 +16,4 @@ ENDOPTS
   "envNotAvailable": []
 }
 
-STORE rollout_id=id
+STORE rolloutv2_id=id

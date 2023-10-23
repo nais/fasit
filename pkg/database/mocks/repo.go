@@ -207,6 +207,20 @@ func (_m *Repo) ConfigGetForEnv(ctx context.Context, _a1 string, envID uuid.UUID
 	return r0, r1
 }
 
+// ConfigMove provides a mock function with given fields: ctx, _a1, moves
+func (_m *Repo) ConfigMove(ctx context.Context, _a1 string, moves []model.Rename) error {
+	ret := _m.Called(ctx, _a1, moves)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []model.Rename) error); ok {
+		r0 = rf(ctx, _a1, moves)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // ConfigOverridesByFeature provides a mock function with given fields: ctx, featureName
 func (_m *Repo) ConfigOverridesByFeature(ctx context.Context, featureName string) ([]*model.ConfigOverride, error) {
 	ret := _m.Called(ctx, featureName)
@@ -494,15 +508,15 @@ func (_m *Repo) DeployInstructionsLatestForFeature(ctx context.Context, envID uu
 }
 
 // EnvConfig provides a mock function with given fields: ctx, _a1, envID
-func (_m *Repo) EnvConfig(ctx context.Context, _a1 string, envID uuid.UUID) ([]*model.Configuration, error) {
+func (_m *Repo) EnvConfig(ctx context.Context, _a1 *model.Feature, envID uuid.UUID) ([]*model.Configuration, error) {
 	ret := _m.Called(ctx, _a1, envID)
 
 	var r0 []*model.Configuration
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, uuid.UUID) ([]*model.Configuration, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *model.Feature, uuid.UUID) ([]*model.Configuration, error)); ok {
 		return rf(ctx, _a1, envID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, uuid.UUID) []*model.Configuration); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *model.Feature, uuid.UUID) []*model.Configuration); ok {
 		r0 = rf(ctx, _a1, envID)
 	} else {
 		if ret.Get(0) != nil {
@@ -510,7 +524,7 @@ func (_m *Repo) EnvConfig(ctx context.Context, _a1 string, envID uuid.UUID) ([]*
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, uuid.UUID) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *model.Feature, uuid.UUID) error); ok {
 		r1 = rf(ctx, _a1, envID)
 	} else {
 		r1 = ret.Error(1)
