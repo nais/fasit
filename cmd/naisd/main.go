@@ -80,7 +80,7 @@ func run(ctx context.Context, log *logrus.Logger) error {
 	kubernetesReporter := naisd.NewKubernetesReporter(cfg.TenantName, cfg.Env, k8sClient, statusPublisher)
 	s.Register("helm-list", helmListReporter, 15*time.Minute)
 	s.Register("health", healthReporter, 1*time.Minute)
-	s.Register("kubernetes", kubernetesReporter, 3*time.Minute)
+	s.Register("kubernetes", kubernetesReporter, 10*time.Minute)
 	s.Start(ctx)
 
 	if !cfg.Management {
@@ -92,8 +92,9 @@ func run(ctx context.Context, log *logrus.Logger) error {
 			}
 			go consoleMgr.Run(ctx)
 		}
-
 	}
+
+	receiver.RepublishHelmList = helmListReporter.Trigger
 
 	log.Info("Receiver started")
 	receiver.Run(ctx)

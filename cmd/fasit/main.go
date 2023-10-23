@@ -141,10 +141,10 @@ func main() {
 	notifierService := notifier.New(db, log.WithField("subsystem", "notifier"))
 	go notifierService.Run(ctx)
 
-	createPublisher := func(projectID, topicID string, log *logrus.Entry) workers.Publisher {
-		return message.NewPublisher[message.DeployInstruction](pubsubClient, projectID, topicID, log)
+	createPublisher := func(topicID string, log *logrus.Entry) workers.Publisher {
+		return message.NewPublisher[message.DeployInstruction](pubsubClient, cfg.GCPProjectID, topicID, log)
 	}
-	reconciler, err := workers.NewReconciler(repo, createPublisher, notifierService, cfg.GCPProjectID, meter, log.WithField("subsystem", "reconciler"))
+	reconciler, err := workers.NewReconciler(repo, createPublisher, notifierService, meter, log.WithField("subsystem", "reconciler"))
 	if err != nil {
 		log.WithError(err).Fatal("setting up reconciler")
 	}
@@ -163,7 +163,7 @@ func main() {
 		go costUpdater.Run(ctx, 1*time.Hour)
 	}
 
-	resolver := graph.NewResolver(ctx, repo, notifierService, log.WithField("subsystem", "graphql"))
+	resolver := graph.NewResolver(ctx, repo, notifierService, createPublisher, log.WithField("subsystem", "graphql"))
 
 	srv := newServer(graphgen.NewExecutableSchema(graphgen.Config{Resolvers: resolver}))
 	srv.Use(otelgqlgen.Middleware())

@@ -2,12 +2,15 @@ package graph
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/database/notifier"
 	"github.com/nais/fasit/pkg/graph/model"
+	"github.com/nais/fasit/pkg/message"
+	"github.com/nais/fasit/pkg/workers"
 	"github.com/sirupsen/logrus"
 )
 
@@ -18,19 +21,20 @@ import (
 type Resolver struct {
 	Repo database.Repo
 	Log  *logrus.Entry
-	// HelmChartValues *helminfo.Cache
 
-	notifier    *notifier.Notifier
-	logNotifier *logNotifier
-	diNotifier  *updateNotifier
+	notifier        *notifier.Notifier
+	logNotifier     *logNotifier
+	diNotifier      *updateNotifier
+	createPublisher workers.NewPublisher
 }
 
-func NewResolver(ctx context.Context, repo database.Repo, notifier *notifier.Notifier, log *logrus.Entry) *Resolver {
+func NewResolver(ctx context.Context, repo database.Repo, notifier *notifier.Notifier, naisdPublisher workers.NewPublisher, log *logrus.Entry) *Resolver {
 	return &Resolver{
-		Repo:        repo,
-		Log:         log,
-		logNotifier: newLogNotifier(ctx, notifier, repo),
-		diNotifier:  newDeployInstructionsNotifier(ctx, notifier, repo),
+		Repo:            repo,
+		Log:             log,
+		createPublisher: naisdPublisher,
+		logNotifier:     newLogNotifier(ctx, notifier, repo),
+		diNotifier:      newDeployInstructionsNotifier(ctx, notifier, repo),
 	}
 }
 
@@ -63,4 +67,18 @@ func (r *Resolver) missingDependencies(ctx context.Context, featureName string, 
 		ret = append(ret, mf)
 	}
 	return ret, nil
+}
+
+func (r *Resolver) deleteHelmInstallation(ctx context.Context, env *model.Environment, name string) error {
+	tenant, err := r.Repo.TenantGet(ctx, env.TenantID)
+	if err != nil {
+		return fmt.Errorf("getting tenant: %w", err)
+	}
+
+	pub := r.createPublisher(workers.NaisdTopicID(tenant.Name, env.Name), r.Log)
+
+	return pub.Publish(ctx, message.DeployInstruction{
+		Name:      name,
+		Uninstall: true,
+	})
 }

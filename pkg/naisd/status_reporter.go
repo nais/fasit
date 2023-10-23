@@ -62,3 +62,7 @@ func (s *StatusReporter) Run(ctx context.Context) error {
 		Data:        hrb,
 	})
 }
+
+func (s *StatusReporter) Trigger() {
+	s.Run(context.Background())
+}

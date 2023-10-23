@@ -38,7 +38,7 @@ type Publisher interface {
 	Stop()
 }
 
-type NewPublisher func(projectID, topicID string, log *logrus.Entry) Publisher
+type NewPublisher func(topicID string, log *logrus.Entry) Publisher
 
 type Notifier interface {
 	Listen(table string, filters ...notifier.Filter) <-chan notifier.Payload
@@ -48,7 +48,6 @@ type Reconciler struct {
 	repo      ReconcilerStore
 	publisher NewPublisher
 	log       *logrus.Entry
-	projectID string
 	notifier  Notifier
 
 	lock    sync.Mutex
@@ -63,7 +62,6 @@ func NewReconciler(
 	repo ReconcilerStore,
 	publisher NewPublisher,
 	notifier Notifier,
-	gcpProjectID string,
 	meter metric.Meter,
 	log *logrus.Entry,
 ) (*Reconciler, error) {
@@ -80,7 +78,6 @@ func NewReconciler(
 		repo:           repo,
 		publisher:      publisher,
 		log:            log,
-		projectID:      gcpProjectID,
 		reconcileTime:  reconcileTime,
 		deployMessages: deployMessages,
 		notifier:       notifier,
@@ -237,7 +234,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, e *model.TenantEn
 		states[s.FeatureName] = s
 	}
 
-	mgr := r.publisher(r.projectID, "naisd-"+e.TenantName+"-"+e.Name, r.log)
+	mgr := r.publisher(NaisdTopicID(e.TenantName, e.Name), r.log)
 	defer mgr.Stop()
 
 	features, err := r.repo.FeaturesForKind(ctx, e.Kind, e.CI)
@@ -318,4 +315,8 @@ func generateHash(values map[string]any, feature *model.Feature, enabledAt *time
 
 	hash := sha256.Sum256(b)
 	return hex.EncodeToString(hash[:]), nil
+}
+
+func NaisdTopicID(tenantName, envName string) string {
+	return "naisd-" + tenantName + "-" + envName
 }

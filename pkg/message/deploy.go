@@ -16,4 +16,5 @@ type DeployInstruction struct {
 	ConfigHash string
 	Timeout    time.Duration
 	Values     map[string]any
+	Uninstall  bool `json:",omitempty"`
 }

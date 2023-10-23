@@ -32,6 +32,11 @@ type Repo struct {
 	mock.Mock
 }
 
+// AuditDeleteHelmInstall provides a mock function with given fields: ctx, envID, name
+func (_m *Repo) AuditDeleteHelmInstall(ctx context.Context, envID uuid.UUID, name string) {
+	_m.Called(ctx, envID, name)
+}
+
 // AuditForEnvironment provides a mock function with given fields: ctx, id, featureName
 func (_m *Repo) AuditForEnvironment(ctx context.Context, id uuid.UUID, featureName string) ([]*model.AuditLog, error) {
 	ret := _m.Called(ctx, id, featureName)

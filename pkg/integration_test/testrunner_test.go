@@ -75,7 +75,7 @@ func TestRunner(t *testing.T) {
 			log.Level = logrus.DebugLevel
 		}
 
-		cp := func(projectID, topicID string, log *logrus.Entry) workers.Publisher {
+		cp := func(topicID string, log *logrus.Entry) workers.Publisher {
 			p, ok := naisdRunner.reconcilerPublishers[topicID]
 			if !ok {
 				t.Fatalf("no publisher for topic %q", topicID)
@@ -84,7 +84,7 @@ func TestRunner(t *testing.T) {
 		}
 
 		notifierService := notifier.New(pool, logrus.NewEntry(log))
-		reconciler, err := workers.NewReconciler(db, cp, notifierService, "", noop.NewMeterProvider().Meter(""), logrus.NewEntry(log))
+		reconciler, err := workers.NewReconciler(db, cp, notifierService, noop.NewMeterProvider().Meter(""), logrus.NewEntry(log))
 		if err != nil {
 			return nil, nil, opts, err
 		}

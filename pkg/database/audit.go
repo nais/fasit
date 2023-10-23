@@ -12,6 +12,7 @@ import (
 
 type AuditRepo interface {
 	AuditForEnvironment(ctx context.Context, id uuid.UUID, featureName string) ([]*model.AuditLog, error)
+	AuditDeleteHelmInstall(ctx context.Context, envID uuid.UUID, name string)
 }
 
 // AuditForEnvironment returns all audit logs for a given environment. If featureName is provided, only logs for that feature are returned.
@@ -26,6 +27,10 @@ func (r *repo) AuditForEnvironment(ctx context.Context, id uuid.UUID, featureNam
 	}
 
 	return auditLogsFromSQL(auditLogs), nil
+}
+
+func (r *repo) AuditDeleteHelmInstall(ctx context.Context, envID uuid.UUID, name string) {
+	r.createAudit(ctx, "delete helm install "+name, "environments", envID.String())
 }
 
 func (r *repo) createAudit(ctx context.Context, description, objectType, objectID string) {

@@ -2,7 +2,6 @@ package local
 
 import (
 	"math/rand"
-	"time"
 
 	"github.com/nais/fasit/pkg/naisd"
 	"helm.sh/helm/v3/pkg/chart"
@@ -20,10 +19,6 @@ var statuses = []release.Status{
 	release.StatusPendingInstall,
 	release.StatusPendingUpgrade,
 	release.StatusPendingRollback,
-}
-
-func init() {
-	rand.Seed(time.Now().UnixNano())
 }
 
 type helmClient struct{}

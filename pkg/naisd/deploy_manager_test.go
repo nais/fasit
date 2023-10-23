@@ -67,13 +67,37 @@ func TestDeployReceiver(t *testing.T) {
 				{
 					Args: []string{
 						"helm", "upgrade",
+						"--atomic",
+						"--cleanup-on-fail",
+						"--history-max", "10",
 						"--install", "feature1", "chart1",
 						"--namespace", "nais-system", "--create-namespace",
 						"--version", "1", "-f", "/tmp/values.yaml",
 						"--timeout", "5m0s",
 						"--kube-apiserver", "somehost", "--kube-ca-file", "cafile",
-						"--kube-token", "bearertoken", "--atomic", "--cleanup-on-fail",
-						"--history-max", "10",
+						"--kube-token", "bearertoken",
+					},
+					Env: []string{"FOO=bar", "HELM_CACHE_HOME=/tmp/naisd-helm"},
+				},
+			},
+		},
+		"helm_uinstall": {
+			messages: []message.DeployInstruction{
+				{
+					Name:      "feature13",
+					Timeout:   10 * time.Minute,
+					Uninstall: true,
+				},
+			},
+			cmds: []cmd{
+				{
+					Args: []string{
+						"helm", "uninstall",
+						"--namespace", "nais-system",
+						"--timeout", "10m0s",
+						"feature13",
+						"--kube-apiserver", "somehost", "--kube-ca-file", "cafile",
+						"--kube-token", "bearertoken",
 					},
 					Env: []string{"FOO=bar", "HELM_CACHE_HOME=/tmp/naisd-helm"},
 				},

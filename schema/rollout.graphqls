@@ -23,4 +23,5 @@ extend type Query {
 
 extend type Mutation {
   rolloutMarkFailed(feature: String!, version: String!): Rollout!
+  deleteHelmInstall(envID: ID!, name: String!): Boolean!
 }

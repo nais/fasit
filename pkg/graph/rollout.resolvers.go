@@ -6,7 +6,11 @@ package graph
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/pkg/graph/graphgen"
 	"github.com/nais/fasit/pkg/graph/model"
 )
@@ -25,6 +29,41 @@ func (r *mutationResolver) RolloutMarkFailed(ctx context.Context, feature string
 	rollout.Status = model.RolloutStatusFailed
 
 	return rollout, nil
+}
+
+// DeleteHelmInstall is the resolver for the deleteHelmInstall field.
+func (r *mutationResolver) DeleteHelmInstall(ctx context.Context, envID uuid.UUID, name string) (bool, error) {
+	env, err := r.Repo.EnvironmentGet(ctx, envID)
+	if err != nil {
+		return false, err
+	}
+
+	_, err = r.Repo.FeatureByNameForEnv(ctx, name, env.ID)
+	if err != nil {
+		// If feature is not found, we allow deletion of helm install
+		if !errors.Is(err, pgx.ErrNoRows) {
+			return false, err
+		}
+	}
+
+	state, err := r.Repo.FeatureStateGet(ctx, env.ID, name)
+	if err != nil {
+		// If feature state is not found, we allow deletion of helm install
+		if !errors.Is(err, pgx.ErrNoRows) {
+			return false, err
+		}
+	}
+
+	if state != nil && state.Enabled {
+		return false, fmt.Errorf("feature %q is enabled, cannot delete helm install", name)
+	}
+
+	if err := r.deleteHelmInstallation(ctx, env, name); err != nil {
+		return false, err
+	}
+
+	r.Repo.AuditDeleteHelmInstall(ctx, env.ID, name)
+	return true, err
 }
 
 // Rollouts is the resolver for the rollouts field.

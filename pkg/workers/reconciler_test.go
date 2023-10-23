@@ -237,11 +237,11 @@ func TestReconcile(t *testing.T) {
 
 			messages := []message.DeployInstruction{}
 
-			publisher := func(projectID, topicID string, log *logrus.Entry) Publisher {
-				return &mockPublisher{projectID: projectID, topicID: topicID, messages: &messages}
+			publisher := func(topicID string, log *logrus.Entry) Publisher {
+				return &mockPublisher{topicID: topicID, messages: &messages}
 			}
 
-			reconciler, err := NewReconciler(repo, publisher, &mockNotifier{}, "root-project", noop.NewMeterProvider().Meter(""), logrus.NewEntry(logrus.StandardLogger()))
+			reconciler, err := NewReconciler(repo, publisher, &mockNotifier{}, noop.NewMeterProvider().Meter(""), logrus.NewEntry(logrus.StandardLogger()))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -435,9 +435,8 @@ func TestReconcile_AutoInstall(t *testing.T) {
 }
 
 type mockPublisher struct {
-	projectID string
-	topicID   string
-	messages  *[]message.DeployInstruction
+	topicID  string
+	messages *[]message.DeployInstruction
 }
 
 func (m *mockPublisher) Publish(ctx context.Context, msg message.DeployInstruction) error {

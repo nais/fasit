@@ -150,6 +150,12 @@ func (r *releaseResolver) Feature(ctx context.Context, obj *model.Release) (*mod
 		r.Log.WithError(err).Debug("error getting feature for release, returning nil")
 	}
 
+	if f == nil {
+		return nil, nil
+	}
+
+	f.GraphVars.EnvironmentID = obj.GraphVars.EnvironmentID
+
 	return f, nil
 }
 

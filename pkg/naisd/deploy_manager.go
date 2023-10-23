@@ -104,6 +104,7 @@ type DeployManager struct {
 	executor              Exec
 	createTempFile        func(string, string) (file, error)
 	runOnlyOnce           bool
+	RepublishHelmList     func()
 
 	// We need to keep track of how many deployments are in progress, so that we can
 	// postpone the upgrade of naisd until all other deployments are done.
@@ -143,6 +144,7 @@ func NewDeployManager(
 		naisProjectID:         naisProjectID,
 		k8sServiceAccountName: k8sServiceAccountName,
 		createTempFile:        func(prefix, suffix string) (file, error) { return os.CreateTemp(prefix, suffix) },
+		RepublishHelmList:     func() {},
 	}
 
 	return receiver, nil
@@ -178,6 +180,10 @@ func (d *DeployManager) Run(ctx context.Context) {
 }
 
 func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstruction) error {
+	if msg.Uninstall {
+		return d.uninstallHandler(ctx, msg)
+	}
+
 	d.log.WithFields(logrus.Fields{
 		"name":    msg.Name,
 		"chart":   msg.Chart,
@@ -225,12 +231,9 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 	}
 	defer os.Remove(valuesFile)
 
-	namespace := "nais-system"
-	if strings.HasPrefix(msg.Name, "kyverno") {
-		namespace = "kyverno"
-	}
+	namespace := namespaceFor(msg.Name)
 
-	args, err := helmArgs(msg, namespace, valuesFile)
+	args, err := helmUpgradeArgs(msg, namespace, valuesFile)
 	if err != nil {
 		return err
 	}
@@ -330,26 +333,10 @@ func (d *DeployManager) publishStatus(ctx context.Context, msg message.Helm) err
 }
 
 func (d *DeployManager) runHelm(ctx context.Context, pubsubLog *pubsubLogger, args []string, msg message.DeployInstruction) (string, error) {
-	connectionFlags := []string{
-		"--kube-apiserver",
-		d.kubeConfig.Host,
-		"--kube-ca-file",
-		d.kubeConfig.CAFile,
-		"--kube-token",
-		d.kubeConfig.BearerToken,
+	helmArgs := append(args, d.connectionFlags()...)
+	if _, ok := os.LookupEnv("DEBUG"); ok {
+		helmArgs = append(helmArgs, "--debug")
 	}
-
-	helmFlags := []string{
-		"--atomic",
-		"--cleanup-on-fail",
-		"--history-max", "10",
-	}
-
-	if _, ok := os.LookupEnv("DEBUG"); ok || strings.HasSuffix(d.env, "-ci") {
-		helmFlags = append(helmFlags, "--debug")
-	}
-
-	helmArgs := append(args, append(connectionFlags, helmFlags...)...)
 
 	environment := append(getEnvironment(),
 		"HELM_CACHE_HOME="+d.helmCache,
@@ -357,8 +344,13 @@ func (d *DeployManager) runHelm(ctx context.Context, pubsubLog *pubsubLogger, ar
 
 	cmd := exec.CommandContext(ctx, "helm", helmArgs...)
 	cmd.Env = append(cmd.Env, environment...)
-	cmd.Stdout = io.MultiWriter(pubsubLog, os.Stdout)
-	cmd.Stderr = io.MultiWriter(pubsubLog, os.Stderr)
+	if pubsubLog != nil {
+		cmd.Stdout = io.MultiWriter(pubsubLog, os.Stdout)
+		cmd.Stderr = io.MultiWriter(pubsubLog, os.Stderr)
+	} else {
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+	}
 
 	err := d.executor.Execute(cmd)
 	return "", err
@@ -383,14 +375,54 @@ func (d *DeployManager) runOnce() {
 	d.runOnlyOnce = true
 }
 
-func helmArgs(m message.DeployInstruction, namespace, valuesFile string) ([]string, error) {
+func (d *DeployManager) uninstallHandler(ctx context.Context, msg message.DeployInstruction) error {
+	log := d.log.WithFields(logrus.Fields{"feature": msg.Name, "method": "uninstall"})
+	if msg.Name == "naisd" || msg.Name == "" {
+		log.Warn("will not uninstall")
+		return nil
+	}
+
+	timeout := 5 * time.Minute
+	if msg.Timeout.Seconds() > 10 {
+		timeout = msg.Timeout
+	}
+
+	args := []string{
+		"uninstall",
+		"--namespace",
+		namespaceFor(msg.Name),
+		"--timeout", timeout.String(),
+		msg.Name,
+	}
+
+	_, err := d.runHelm(ctx, nil, args, msg)
+
+	d.RepublishHelmList()
+
+	return err
+}
+
+func (d *DeployManager) connectionFlags() []string {
+	return []string{
+		"--kube-apiserver",
+		d.kubeConfig.Host,
+		"--kube-ca-file",
+		d.kubeConfig.CAFile,
+		"--kube-token",
+		d.kubeConfig.BearerToken,
+	}
+}
+
+func helmUpgradeArgs(m message.DeployInstruction, namespace, valuesFile string) ([]string, error) {
 	timeout := 5 * time.Minute
 	if m.Timeout.Seconds() > 10 {
 		timeout = m.Timeout
 	}
-
 	args := []string{
 		"upgrade",
+		"--atomic",
+		"--cleanup-on-fail",
+		"--history-max", "10",
 		"--install",
 		m.Name,
 		m.Chart,
@@ -406,4 +438,11 @@ func helmArgs(m message.DeployInstruction, namespace, valuesFile string) ([]stri
 	}
 
 	return args, nil
+}
+
+func namespaceFor(featureName string) string {
+	if strings.HasPrefix(featureName, "kyverno") {
+		return "kyverno"
+	}
+	return "nais-system"
 }

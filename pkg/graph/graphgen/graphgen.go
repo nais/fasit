@@ -248,6 +248,7 @@ type ComplexityRoot struct {
 		ConfigurationCreate     func(childComplexity int, configuration model.NewConfiguration) int
 		ConfigurationDelete     func(childComplexity int, id uuid.UUID) int
 		ConfigurationUpdate     func(childComplexity int, id uuid.UUID, configuration model.UpdateConfiguration) int
+		DeleteHelmInstall       func(childComplexity int, envID uuid.UUID, name string) int
 		EnvironmentCreate       func(childComplexity int, environment model.EnvironmentCreate) int
 		EnvironmentSetReconcile func(childComplexity int, id uuid.UUID, reconcile bool) int
 		EnvironmentUpdate       func(childComplexity int, id uuid.UUID, input model.EnvironmentUpdate) int
@@ -422,6 +423,7 @@ type MutationResolver interface {
 	FeatureStateSave(ctx context.Context, envID uuid.UUID, enabled bool, feature string) (*model.FeatureState, error)
 	Playground(ctx context.Context, input model.PlaygroundInput) (*model.Playground, error)
 	RolloutMarkFailed(ctx context.Context, feature string, version string) (*model.Rollout, error)
+	DeleteHelmInstall(ctx context.Context, envID uuid.UUID, name string) (bool, error)
 }
 type NaisdWarningResolver interface {
 	Environment(ctx context.Context, obj *model.NaisdWarning) (*model.Environment, error)
@@ -1290,6 +1292,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.ConfigurationUpdate(childComplexity, args["id"].(uuid.UUID), args["configuration"].(model.UpdateConfiguration)), true
+
+	case "Mutation.deleteHelmInstall":
+		if e.complexity.Mutation.DeleteHelmInstall == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteHelmInstall_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteHelmInstall(childComplexity, args["envID"].(uuid.UUID), args["name"].(string)), true
 
 	case "Mutation.environmentCreate":
 		if e.complexity.Mutation.EnvironmentCreate == nil {
@@ -2397,6 +2411,7 @@ extend type Query {
 
 extend type Mutation {
   rolloutMarkFailed(feature: String!, version: String!): Rollout!
+  deleteHelmInstall(envID: ID!, name: String!): Boolean!
 }
 `, BuiltIn: false},
 	{Name: "../../../schema/scalars.graphqls", Input: `scalar Map
@@ -2585,6 +2600,30 @@ func (ec *executionContext) field_Mutation_configurationUpdate_args(ctx context.
 		}
 	}
 	args["configuration"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteHelmInstall_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 uuid.UUID
+	if tmp, ok := rawArgs["envID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("envID"))
+		arg0, err = ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["envID"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["name"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["name"] = arg1
 	return args, nil
 }
 
@@ -9172,6 +9211,61 @@ func (ec *executionContext) fieldContext_Mutation_rolloutMarkFailed(ctx context.
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_rolloutMarkFailed_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteHelmInstall(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_deleteHelmInstall(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteHelmInstall(rctx, fc.Args["envID"].(uuid.UUID), fc.Args["name"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_deleteHelmInstall(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteHelmInstall_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -17097,6 +17191,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "rolloutMarkFailed":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_rolloutMarkFailed(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteHelmInstall":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteHelmInstall(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
