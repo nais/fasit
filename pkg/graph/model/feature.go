@@ -1,12 +1,9 @@
 package model
 
 import (
-	"archive/tar"
-	"compress/gzip"
+	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -14,6 +11,7 @@ import (
 	"github.com/nais/fasit/pkg/helm"
 	"gopkg.in/yaml.v2"
 	"helm.sh/helm/v3/pkg/chart"
+	"helm.sh/helm/v3/pkg/chart/loader"
 	"helm.sh/helm/v3/pkg/chartutil"
 )
 
@@ -133,83 +131,49 @@ func (v Value) ValidConfig(value json.RawMessage) error {
 	return fmt.Errorf("value doesn't match the required type. Expected %v, got %T", v.Config.Type, val)
 }
 
-func FromChart(chart, version string) (*Feature, error) {
-	resp, err := DownloadChartFunc(chart, version, "")
+func FromChart(chartURL, version string) (*Feature, error) {
+	resp, err := DownloadChartFunc(chartURL, version, "")
 	if err != nil {
 		return nil, err
 	}
 
-	gr, err := gzip.NewReader(resp)
+	chart, err := loader.LoadArchive(resp)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unable to load chart: %w", err)
 	}
 
-	f := &Feature{
-		Chart: chart,
+	feat := &Feature{
+		Chart: chartURL,
 	}
 
-	r := tar.NewReader(gr)
-
-	var valuesYAML map[string]any
-	var hasChartYAML bool
 	var hasFeatureYAML bool
-	for {
-		hdr, err := r.Next()
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			return nil, err
-		}
-		fname := strings.Split(hdr.Name, "/")
-		// Ensure that the file is in the root of the chart
-		if len(fname) != 2 {
-			continue
-		}
-
-		switch fname[1] {
-		case "Chart.yaml":
-			hasChartYAML = true
-			if err := f.parseChartYAML(r); err != nil {
-				return nil, err
-			}
-		case "Feature.yaml":
+	for _, f := range chart.Files {
+		if f.Name == "Feature.yaml" {
 			hasFeatureYAML = true
-			if err := yaml.NewDecoder(r).Decode(&f.FeatureYAML); err != nil {
+			if err := yaml.NewDecoder(bytes.NewReader(f.Data)).Decode(&feat.FeatureYAML); err != nil {
 				return nil, err
 			}
-		case "values.yaml":
-			b, err := io.ReadAll(r)
-			if err != nil {
-				return nil, err
-			}
-			vals, err := chartutil.ReadValues(b)
-			if err != nil {
-				return nil, err
-			}
-			valuesYAML = vals
+			break
 		}
 	}
-
-	if !hasChartYAML {
-		return nil, fmt.Errorf("file Chart.yaml not found")
-	}
-
 	if !hasFeatureYAML {
 		return nil, fmt.Errorf("file Feature.yaml not found")
 	}
 
-	f.normalizedYAML(valuesYAML)
-
-	return f, nil
-}
-
-func (f *Feature) parseChartYAML(r io.Reader) error {
-	meta := &chart.Metadata{}
-	if err := yaml.NewDecoder(r).Decode(meta); err != nil {
-		return err
+	if err := feat.parseChartYAML(chart.Metadata); err != nil {
+		return nil, err
+	}
+	// Combine all values
+	if err := chartutil.ProcessDependencies(chart, chart.Values); err != nil {
+		return nil, fmt.Errorf("unable to process dependencies: %w", err)
 	}
 
+	feat.normalizedYAML(chart.Values)
+
+	return feat, nil
+}
+
+func (f *Feature) parseChartYAML(meta *chart.Metadata) error {
 	f.Name = meta.Name
 	f.Version = meta.Version
 	f.Description = meta.Description

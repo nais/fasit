@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/message"
 	"github.com/sirupsen/logrus"
+	corev1 "k8s.io/api/core/v1"
 )
 
 type pubsubLogger struct {
@@ -45,6 +47,25 @@ func (p *pubsubLogger) Write(b []byte) (n int, err error) {
 	}
 
 	return len(b), nil
+}
+
+func (p *pubsubLogger) AddEvent(event *corev1.Event) {
+	b := strings.Builder{}
+	b.WriteString(event.InvolvedObject.Name)
+	b.WriteString(" (")
+	b.WriteString(event.InvolvedObject.APIVersion)
+	b.WriteString(event.InvolvedObject.Kind)
+	b.WriteString("): ")
+	b.WriteString(event.Message)
+
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
+	p.lines = append(p.lines, message.LogLine{
+		Time: time.Now(),
+		Msg:  b.String(),
+		Kind: "event",
+	})
 }
 
 func (p *pubsubLogger) Run(ctx context.Context) {

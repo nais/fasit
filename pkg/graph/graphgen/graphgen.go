@@ -253,6 +253,7 @@ type ComplexityRoot struct {
 		EnvironmentUpdate       func(childComplexity int, id uuid.UUID, input model.EnvironmentUpdate) int
 		FeatureStateSave        func(childComplexity int, envID uuid.UUID, enabled bool, feature string) int
 		Playground              func(childComplexity int, input model.PlaygroundInput) int
+		RolloutMarkFailed       func(childComplexity int, feature string, version string) int
 		TenantCreate            func(childComplexity int, tenant model.TenantCreate) int
 	}
 
@@ -420,6 +421,7 @@ type MutationResolver interface {
 	EnvironmentSetReconcile(ctx context.Context, id uuid.UUID, reconcile bool) (*model.Environment, error)
 	FeatureStateSave(ctx context.Context, envID uuid.UUID, enabled bool, feature string) (*model.FeatureState, error)
 	Playground(ctx context.Context, input model.PlaygroundInput) (*model.Playground, error)
+	RolloutMarkFailed(ctx context.Context, feature string, version string) (*model.Rollout, error)
 }
 type NaisdWarningResolver interface {
 	Environment(ctx context.Context, obj *model.NaisdWarning) (*model.Environment, error)
@@ -1348,6 +1350,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.Playground(childComplexity, args["input"].(model.PlaygroundInput)), true
+
+	case "Mutation.rolloutMarkFailed":
+		if e.complexity.Mutation.RolloutMarkFailed == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_rolloutMarkFailed_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RolloutMarkFailed(childComplexity, args["feature"].(string), args["version"].(string)), true
 
 	case "Mutation.tenantCreate":
 		if e.complexity.Mutation.TenantCreate == nil {
@@ -2380,6 +2394,10 @@ extend type Query {
   rollouts(feature: String!): [Rollout!]!
   rollout(feature: String!, version: String!): Rollout!
 }
+
+extend type Mutation {
+  rolloutMarkFailed(feature: String!, version: String!): Rollout!
+}
 `, BuiltIn: false},
 	{Name: "../../../schema/scalars.graphqls", Input: `scalar Map
 scalar RawMessage
@@ -2678,6 +2696,30 @@ func (ec *executionContext) field_Mutation_playground_args(ctx context.Context, 
 		}
 	}
 	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_rolloutMarkFailed_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["feature"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("feature"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["feature"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["version"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("version"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["version"] = arg1
 	return args, nil
 }
 
@@ -9061,6 +9103,75 @@ func (ec *executionContext) fieldContext_Mutation_playground(ctx context.Context
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_playground_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_rolloutMarkFailed(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_rolloutMarkFailed(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().RolloutMarkFailed(rctx, fc.Args["feature"].(string), fc.Args["version"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Rollout)
+	fc.Result = res
+	return ec.marshalNRollout2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐRollout(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_rolloutMarkFailed(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Rollout_id(ctx, field)
+			case "version":
+				return ec.fieldContext_Rollout_version(ctx, field)
+			case "created":
+				return ec.fieldContext_Rollout_created(ctx, field)
+			case "completed":
+				return ec.fieldContext_Rollout_completed(ctx, field)
+			case "status":
+				return ec.fieldContext_Rollout_status(ctx, field)
+			case "events":
+				return ec.fieldContext_Rollout_events(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Rollout", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_rolloutMarkFailed_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -16979,6 +17090,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "playground":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_playground(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "rolloutMarkFailed":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_rolloutMarkFailed(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++

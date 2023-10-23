@@ -12,7 +12,7 @@ import (
 )
 
 const logsByDeployInstruction = `-- name: LogsByDeployInstruction :many
-SELECT id, deploy_instruction, time, message
+SELECT id, deploy_instruction, time, message, kind
 FROM logs
 WHERE deploy_instruction = $1
 ORDER BY time
@@ -33,6 +33,7 @@ func (q *Queries) LogsByDeployInstruction(ctx context.Context, deployInstruction
 			&i.DeployInstruction,
 			&i.Time,
 			&i.Message,
+			&i.Kind,
 		); err != nil {
 			return nil, err
 		}
@@ -45,7 +46,7 @@ func (q *Queries) LogsByDeployInstruction(ctx context.Context, deployInstruction
 }
 
 const logsByID = `-- name: LogsByID :one
-SELECT id, deploy_instruction, time, message
+SELECT id, deploy_instruction, time, message, kind
 FROM logs
 WHERE id = $1
 `
@@ -58,6 +59,7 @@ func (q *Queries) LogsByID(ctx context.Context, id int64) (Log, error) {
 		&i.DeployInstruction,
 		&i.Time,
 		&i.Message,
+		&i.Kind,
 	)
 	return i, err
 }

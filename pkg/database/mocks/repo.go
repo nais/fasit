@@ -1524,6 +1524,20 @@ func (_m *Repo) RolloutEvents(ctx context.Context, rolloutID uuid.UUID) ([]*mode
 	return r0, r1
 }
 
+// RolloutMarkFailed provides a mock function with given fields: ctx, rolloutID
+func (_m *Repo) RolloutMarkFailed(ctx context.Context, rolloutID uuid.UUID) error {
+	ret := _m.Called(ctx, rolloutID)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) error); ok {
+		r0 = rf(ctx, rolloutID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // RolloutStatesGet provides a mock function with given fields: ctx, envID
 func (_m *Repo) RolloutStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error) {
 	ret := _m.Called(ctx, envID)

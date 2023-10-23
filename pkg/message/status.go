@@ -112,9 +112,19 @@ type KubernetesNode struct {
 	InternalIP              string
 }
 
+type LogLineKind string
+
+const (
+	LogLineKindEvent LogLineKind = "event"
+)
+
 type LogLine struct {
 	Time time.Time `json:"time"`
 	Msg  string    `json:"msg"`
+
+	// Kind can be empty, which means it's a regular log line.
+	// Other values are "event"
+	Kind LogLineKind `json:"kind,omitempty"`
 }
 
 type StatusLog struct {

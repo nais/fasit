@@ -22,6 +22,7 @@ type RolloutRepo interface {
 	RolloutsUpdateStatus(ctx context.Context, status model.RolloutStatus, name string, completed bool) error
 
 	RolloutEvents(ctx context.Context, rolloutID uuid.UUID) ([]*model.RolloutEvent, error)
+	RolloutMarkFailed(ctx context.Context, rolloutID uuid.UUID) error
 }
 
 func (r *repo) RolloutStatus(ctx context.Context, name string) (model.RolloutStatus, error) {
@@ -183,4 +184,17 @@ func (r *repo) RolloutEvents(ctx context.Context, rolloutID uuid.UUID) ([]*model
 
 func (r *repo) RolloutCalculateDone(ctx context.Context, rolloutID uuid.UUID) (bool, error) {
 	return r.querier.RolloutCalculateDone(ctx, rolloutID)
+}
+
+func (r *repo) RolloutMarkFailed(ctx context.Context, rolloutID uuid.UUID) error {
+	affected, err := r.querier.RolloutMarkFailed(ctx, rolloutID)
+	if err != nil {
+		return err
+	}
+
+	if affected == 0 {
+		return fmt.Errorf("rollout already completed")
+	}
+
+	return nil
 }

@@ -18,6 +18,9 @@ import (
 	"github.com/nais/fasit/pkg/naisd/selfupgrade"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 )
@@ -222,7 +225,12 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 	}
 	defer os.Remove(valuesFile)
 
-	args, err := helmArgs(msg, valuesFile)
+	namespace := "nais-system"
+	if strings.HasPrefix(msg.Name, "kyverno") {
+		namespace = "kyverno"
+	}
+
+	args, err := helmArgs(msg, namespace, valuesFile)
 	if err != nil {
 		return err
 	}
@@ -235,9 +243,10 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 
 	_ = d.publishStatus(ctx, helmStatus)
 
+	go d.listenForEvents(ctx, pubsubLog, msg, namespace)
+
 	helmStatus.Log, err = d.runHelm(ctx, pubsubLog, args, msg)
 	if err != nil {
-
 		d.log.WithField("feature", msg.Name).WithError(err).Warn("failed to run helm")
 		helmStatus.RolloutStatus = model.RolloutStatusFailed
 	} else {
@@ -245,6 +254,63 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 	}
 
 	return d.publishStatus(ctx, helmStatus)
+}
+
+func (d *DeployManager) listenForEvents(ctx context.Context, pubsubLog *pubsubLogger, msg message.DeployInstruction, namespace string) {
+	d.log.Warn("Start listen for events")
+	if d.k8sClient == nil {
+		d.log.Warn("k8sClient is nil")
+		// This should only happen in tests, but is not a critical state either way.
+		return
+	}
+
+	opts := metav1.ListOptions{}
+	watcher, err := d.k8sClient.CoreV1().Events(namespace).Watch(ctx, opts)
+	if err != nil {
+		fmt.Fprintf(pubsubLog, "failed to watch events: %s\n", err)
+		d.log.Warnf("failed to watch events: %v", err)
+		return
+	}
+
+	defer watcher.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			d.log.Warn("Stop listen for events, context done")
+			return
+		case event, ok := <-watcher.ResultChan():
+			d.log.WithField("event.Type", event.Type).Warn("ResultChan event")
+			if !ok {
+				// channel closed
+				d.log.Warn("Stop listen for events, channel closed")
+				return
+			}
+			if event.Type != watch.Added {
+				d.log.Warn("Ignore event, not added")
+				// we only care about new events
+				continue
+			}
+
+			e, ok := event.Object.(*corev1.Event)
+			if !ok {
+				d.log.Warn("Ignore event, not an event")
+				// not an event
+				continue
+			}
+
+			if e.Type != "Error" && e.Type != "Warning" {
+				// we only care about errors and warnings
+				d.log.Warn("Ignore event, not an error or warning")
+				continue
+			}
+
+			if strings.Contains(e.InvolvedObject.Name, msg.Name) {
+				d.log.WithField("event", e.Message).Warn("Add event")
+				pubsubLog.AddEvent(e)
+			}
+		}
+	}
 }
 
 func (d *DeployManager) publishStatus(ctx context.Context, msg message.Helm) error {
@@ -276,9 +342,10 @@ func (d *DeployManager) runHelm(ctx context.Context, pubsubLog *pubsubLogger, ar
 	helmFlags := []string{
 		"--atomic",
 		"--cleanup-on-fail",
+		"--history-max", "10",
 	}
 
-	if _, ok := os.LookupEnv("DEBUG"); ok {
+	if _, ok := os.LookupEnv("DEBUG"); ok || strings.HasSuffix(d.env, "-ci") {
 		helmFlags = append(helmFlags, "--debug")
 	}
 
@@ -316,20 +383,14 @@ func (d *DeployManager) runOnce() {
 	d.runOnlyOnce = true
 }
 
-func helmArgs(m message.DeployInstruction, valuesFile string) ([]string, error) {
+func helmArgs(m message.DeployInstruction, namespace, valuesFile string) ([]string, error) {
 	timeout := 5 * time.Minute
 	if m.Timeout.Seconds() > 10 {
 		timeout = m.Timeout
 	}
 
-	namespace := "nais-system"
-	if strings.HasPrefix(m.Name, "kyverno") {
-		namespace = "kyverno"
-	}
-
 	args := []string{
 		"upgrade",
-		"--atomic",
 		"--install",
 		m.Name,
 		m.Chart,

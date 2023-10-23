@@ -1,0 +1,2 @@
+-- +goose Up
+ALTER TABLE logs ADD COLUMN kind TEXT NOT NULL DEFAULT '';

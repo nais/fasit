@@ -88,12 +88,14 @@ INSERT INTO
 (
   deploy_instruction,
   time,
-  message
+  message,
+  kind
 )
 VALUES (
   $1,
   $2,
-  $3
+  $3,
+  $4
 )
 `
 
@@ -107,6 +109,7 @@ type LogsCreateParams struct {
 	DeployInstruction uuid.UUID
 	Time              pgtype.Timestamptz
 	Message           string
+	Kind              string
 }
 
 func (q *Queries) LogsCreate(ctx context.Context, arg []LogsCreateParams) *LogsCreateBatchResults {
@@ -116,6 +119,7 @@ func (q *Queries) LogsCreate(ctx context.Context, arg []LogsCreateParams) *LogsC
 			a.DeployInstruction,
 			a.Time,
 			a.Message,
+			a.Kind,
 		}
 		batch.Queue(logsCreate, vals...)
 	}

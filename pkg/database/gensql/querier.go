@@ -82,6 +82,7 @@ type Querier interface {
 	RolloutDelete(ctx context.Context, featureName string) error
 	RolloutEventCreate(ctx context.Context, arg RolloutEventCreateParams) error
 	RolloutEventForRollout(ctx context.Context, rolloutID uuid.UUID) ([]RolloutEvent, error)
+	RolloutMarkFailed(ctx context.Context, rolloutID uuid.UUID) (int64, error)
 	RolloutStatesGet(ctx context.Context, environmentID uuid.UUID) ([]RolloutStatesGetRow, error)
 	RolloutStatus(ctx context.Context, featureName string) (string, error)
 	RolloutUpdateStatus(ctx context.Context, arg RolloutUpdateStatusParams) error

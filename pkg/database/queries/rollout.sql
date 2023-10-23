@@ -129,3 +129,11 @@ SELECT (
   SELECT * FROM feature_states
 ) AS done
 ;
+
+-- name: RolloutMarkFailed :execrows
+UPDATE rollouts
+SET status = 'failed',
+    completed = NOW()
+WHERE id = @rollout_id
+AND status NOT IN ('deployed', 'failed')
+;
