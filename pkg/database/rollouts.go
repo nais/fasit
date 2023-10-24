@@ -17,6 +17,7 @@ type RolloutRepo interface {
 	RolloutCreate(ctx context.Context, name, version string) (*model.Rollout, error)
 	RolloutDelete(ctx context.Context, name string) error
 	RolloutEventCreate(ctx context.Context, rollout uuid.UUID, failure bool, message string, data map[string]any) error
+	Rollouts(ctx context.Context, limit int) ([]*model.Rollout, error)
 	RolloutsForFeature(ctx context.Context, name string) ([]*model.Rollout, error)
 	RolloutStatus(ctx context.Context, name string) (model.RolloutStatus, error)
 	RolloutsUpdateStatus(ctx context.Context, status model.RolloutStatus, name string, completed bool) error
@@ -126,14 +127,7 @@ func (r *repo) RolloutsForFeature(ctx context.Context, name string) ([]*model.Ro
 
 	var res []*model.Rollout
 	for _, ro := range rollouts {
-		res = append(res, &model.Rollout{
-			ID:          ro.ID,
-			Version:     ro.Version,
-			Created:     ro.Created.Time,
-			FeatureName: ro.FeatureName,
-			Completed:   nullTimeToPtr(ro.Completed),
-			Status:      model.RolloutStatus(ro.Status),
-		})
+		res = append(res, rolloutFromSQL(ro))
 	}
 
 	return res, nil
@@ -148,14 +142,7 @@ func (r *repo) RolloutByNameAndVersion(ctx context.Context, name, version string
 		return nil, fmt.Errorf("get rollout by name and version: %w", err)
 	}
 
-	return &model.Rollout{
-		ID:          ro.ID,
-		Version:     ro.Version,
-		Created:     ro.Created.Time,
-		FeatureName: ro.FeatureName,
-		Completed:   nullTimeToPtr(ro.Completed),
-		Status:      model.RolloutStatus(ro.Status),
-	}, nil
+	return rolloutFromSQL(ro), nil
 }
 
 func (r *repo) RolloutEvents(ctx context.Context, rolloutID uuid.UUID) ([]*model.RolloutEvent, error) {
@@ -197,4 +184,29 @@ func (r *repo) RolloutMarkFailed(ctx context.Context, rolloutID uuid.UUID) error
 	}
 
 	return nil
+}
+
+func (r *repo) Rollouts(ctx context.Context, limit int) ([]*model.Rollout, error) {
+	rollouts, err := r.querier.Rollouts(ctx, int32(limit))
+	if err != nil {
+		return nil, err
+	}
+
+	var res []*model.Rollout
+	for _, ro := range rollouts {
+		res = append(res, rolloutFromSQL(ro))
+	}
+
+	return res, nil
+}
+
+func rolloutFromSQL(ro gensql.Rollout) *model.Rollout {
+	return &model.Rollout{
+		ID:          ro.ID,
+		Version:     ro.Version,
+		Created:     ro.Created.Time,
+		FeatureName: ro.FeatureName,
+		Completed:   nullTimeToPtr(ro.Completed),
+		Status:      model.RolloutStatus(ro.Status),
+	}
 }

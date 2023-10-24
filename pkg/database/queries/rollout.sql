@@ -137,3 +137,10 @@ SET status = 'failed',
 WHERE id = @rollout_id
 AND status NOT IN ('deployed', 'failed')
 ;
+
+-- name: Rollouts :many
+SELECT *
+FROM rollouts
+ORDER BY created DESC
+LIMIT sqlc.arg('limit')
+;

@@ -278,7 +278,7 @@ type ComplexityRoot struct {
 		HelmValues    func(childComplexity int, feature string, envID *uuid.UUID, env *string, tenant *string) int
 		History       func(childComplexity int, id uuid.UUID) int
 		Rollout       func(childComplexity int, feature string, version string) int
-		Rollouts      func(childComplexity int, feature string) int
+		Rollouts      func(childComplexity int, feature *string) int
 		Tenant        func(childComplexity int, id *uuid.UUID, slug *string) int
 		Tenants       func(childComplexity int) int
 		UserInfo      func(childComplexity int) int
@@ -296,12 +296,13 @@ type ComplexityRoot struct {
 	}
 
 	Rollout struct {
-		Completed func(childComplexity int) int
-		Created   func(childComplexity int) int
-		Events    func(childComplexity int) int
-		ID        func(childComplexity int) int
-		Status    func(childComplexity int) int
-		Version   func(childComplexity int) int
+		Completed   func(childComplexity int) int
+		Created     func(childComplexity int) int
+		Events      func(childComplexity int) int
+		FeatureName func(childComplexity int) int
+		ID          func(childComplexity int) int
+		Status      func(childComplexity int) int
+		Version     func(childComplexity int) int
 	}
 
 	RolloutEvent struct {
@@ -438,7 +439,7 @@ type QueryResolver interface {
 	Feature(ctx context.Context, name string) (*model.Feature, error)
 	History(ctx context.Context, id uuid.UUID) (*model.FeatureHistory, error)
 	FeatureState(ctx context.Context, envID uuid.UUID, feature string) (*model.FeatureState, error)
-	Rollouts(ctx context.Context, feature string) ([]*model.Rollout, error)
+	Rollouts(ctx context.Context, feature *string) ([]*model.Rollout, error)
 	Rollout(ctx context.Context, feature string, version string) (*model.Rollout, error)
 	Tenant(ctx context.Context, id *uuid.UUID, slug *string) (*model.Tenant, error)
 	UserInfo(ctx context.Context) (*model.UserInfo, error)
@@ -1530,7 +1531,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Rollouts(childComplexity, args["feature"].(string)), true
+		return e.complexity.Query.Rollouts(childComplexity, args["feature"].(*string)), true
 
 	case "Query.tenant":
 		if e.complexity.Query.Tenant == nil {
@@ -1634,6 +1635,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Rollout.Events(childComplexity), true
+
+	case "Rollout.featureName":
+		if e.complexity.Rollout.FeatureName == nil {
+			break
+		}
+
+		return e.complexity.Rollout.FeatureName(childComplexity), true
 
 	case "Rollout.id":
 		if e.complexity.Rollout.ID == nil {
@@ -2392,6 +2400,7 @@ extend type Mutation {
   created: Time!
   completed: Time
   status: RolloutStatus!
+  featureName: String!
 
   events: [RolloutEvent!]!
 }
@@ -2405,7 +2414,7 @@ type RolloutEvent {
 }
 
 extend type Query {
-  rollouts(feature: String!): [Rollout!]!
+  rollouts(feature: String): [Rollout!]!
   rollout(feature: String!, version: String!): Rollout!
 }
 
@@ -2978,10 +2987,10 @@ func (ec *executionContext) field_Query_rollout_args(ctx context.Context, rawArg
 func (ec *executionContext) field_Query_rollouts_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 string
+	var arg0 *string
 	if tmp, ok := rawArgs["feature"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("feature"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -9197,6 +9206,8 @@ func (ec *executionContext) fieldContext_Mutation_rolloutMarkFailed(ctx context.
 				return ec.fieldContext_Rollout_completed(ctx, field)
 			case "status":
 				return ec.fieldContext_Rollout_status(ctx, field)
+			case "featureName":
+				return ec.fieldContext_Rollout_featureName(ctx, field)
 			case "events":
 				return ec.fieldContext_Rollout_events(ctx, field)
 			}
@@ -10106,7 +10117,7 @@ func (ec *executionContext) _Query_rollouts(ctx context.Context, field graphql.C
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Rollouts(rctx, fc.Args["feature"].(string))
+		return ec.resolvers.Query().Rollouts(rctx, fc.Args["feature"].(*string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10141,6 +10152,8 @@ func (ec *executionContext) fieldContext_Query_rollouts(ctx context.Context, fie
 				return ec.fieldContext_Rollout_completed(ctx, field)
 			case "status":
 				return ec.fieldContext_Rollout_status(ctx, field)
+			case "featureName":
+				return ec.fieldContext_Rollout_featureName(ctx, field)
 			case "events":
 				return ec.fieldContext_Rollout_events(ctx, field)
 			}
@@ -10210,6 +10223,8 @@ func (ec *executionContext) fieldContext_Query_rollout(ctx context.Context, fiel
 				return ec.fieldContext_Rollout_completed(ctx, field)
 			case "status":
 				return ec.fieldContext_Rollout_status(ctx, field)
+			case "featureName":
+				return ec.fieldContext_Rollout_featureName(ctx, field)
 			case "events":
 				return ec.fieldContext_Rollout_events(ctx, field)
 			}
@@ -11070,6 +11085,50 @@ func (ec *executionContext) fieldContext_Rollout_status(ctx context.Context, fie
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type RolloutStatus does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Rollout_featureName(ctx context.Context, field graphql.CollectedField, obj *model.Rollout) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Rollout_featureName(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FeatureName, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Rollout_featureName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Rollout",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -17806,6 +17865,11 @@ func (ec *executionContext) _Rollout(ctx context.Context, sel ast.SelectionSet, 
 			out.Values[i] = ec._Rollout_completed(ctx, field, obj)
 		case "status":
 			out.Values[i] = ec._Rollout_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "featureName":
+			out.Values[i] = ec._Rollout_featureName(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}

@@ -4,6 +4,7 @@ type Rollout {
   created: Time!
   completed: Time
   status: RolloutStatus!
+  featureName: String!
 
   events: [RolloutEvent!]!
 }
@@ -17,7 +18,7 @@ type RolloutEvent {
 }
 
 extend type Query {
-  rollouts(feature: String!): [Rollout!]!
+  rollouts(feature: String): [Rollout!]!
   rollout(feature: String!, version: String!): Rollout!
 }
 

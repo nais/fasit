@@ -86,6 +86,7 @@ type Querier interface {
 	RolloutStatesGet(ctx context.Context, environmentID uuid.UUID) ([]RolloutStatesGetRow, error)
 	RolloutStatus(ctx context.Context, featureName string) (string, error)
 	RolloutUpdateStatus(ctx context.Context, arg RolloutUpdateStatusParams) error
+	Rollouts(ctx context.Context, limit int32) ([]Rollout, error)
 	RolloutsForFeature(ctx context.Context, featureName string) ([]Rollout, error)
 	RolloutsForKind(ctx context.Context, environmentKind EnvironmentKind) ([]RolloutsForKindRow, error)
 	TenantCI(ctx context.Context) (Tenant, error)

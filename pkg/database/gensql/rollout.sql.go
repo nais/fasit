@@ -266,6 +266,40 @@ func (q *Queries) RolloutUpdateStatus(ctx context.Context, arg RolloutUpdateStat
 	return err
 }
 
+const rollouts = `-- name: Rollouts :many
+SELECT id, feature_name, version, status, created, completed
+FROM rollouts
+ORDER BY created DESC
+LIMIT $1
+`
+
+func (q *Queries) Rollouts(ctx context.Context, limit int32) ([]Rollout, error) {
+	rows, err := q.db.Query(ctx, rollouts, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Rollout{}
+	for rows.Next() {
+		var i Rollout
+		if err := rows.Scan(
+			&i.ID,
+			&i.FeatureName,
+			&i.Version,
+			&i.Status,
+			&i.Created,
+			&i.Completed,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const rolloutsForFeature = `-- name: RolloutsForFeature :many
 SELECT id, feature_name, version, status, created, completed
 FROM rollouts

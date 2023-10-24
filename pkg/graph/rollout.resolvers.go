@@ -10,7 +10,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
+	pgx "github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/pkg/graph/graphgen"
 	"github.com/nais/fasit/pkg/graph/model"
 )
@@ -67,8 +67,12 @@ func (r *mutationResolver) DeleteHelmInstall(ctx context.Context, envID uuid.UUI
 }
 
 // Rollouts is the resolver for the rollouts field.
-func (r *queryResolver) Rollouts(ctx context.Context, feature string) ([]*model.Rollout, error) {
-	return r.Repo.RolloutsForFeature(ctx, feature)
+func (r *queryResolver) Rollouts(ctx context.Context, feature *string) ([]*model.Rollout, error) {
+	if feature == nil {
+		return r.Repo.Rollouts(ctx, 100)
+	}
+
+	return r.Repo.RolloutsForFeature(ctx, *feature)
 }
 
 // Rollout is the resolver for the rollout field.
