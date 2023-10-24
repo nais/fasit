@@ -246,7 +246,10 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 
 	_ = d.publishStatus(ctx, helmStatus)
 
-	go d.listenForEvents(ctx, pubsubLog, msg, namespace)
+	eventsCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	go d.listenForEvents(eventsCtx, pubsubLog, msg, namespace)
 
 	helmStatus.Log, err = d.runHelm(ctx, pubsubLog, args, msg)
 	if err != nil {
@@ -260,7 +263,7 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 }
 
 func (d *DeployManager) listenForEvents(ctx context.Context, pubsubLog *pubsubLogger, msg message.DeployInstruction, namespace string) {
-	d.log.Warn("Start listen for events")
+	d.log.Debug("Start listen for events")
 	if d.k8sClient == nil {
 		d.log.Warn("k8sClient is nil")
 		// This should only happen in tests, but is not a critical state either way.
@@ -280,17 +283,16 @@ func (d *DeployManager) listenForEvents(ctx context.Context, pubsubLog *pubsubLo
 	for {
 		select {
 		case <-ctx.Done():
-			d.log.Warn("Stop listen for events, context done")
+			d.log.Debug("Stop listen for events, context done")
 			return
 		case event, ok := <-watcher.ResultChan():
-			d.log.WithField("event.Type", event.Type).Warn("ResultChan event")
 			if !ok {
 				// channel closed
-				d.log.Warn("Stop listen for events, channel closed")
+				d.log.Debug("Stop listen for events, channel closed")
 				return
 			}
 			if event.Type != watch.Added {
-				d.log.Warn("Ignore event, not added")
+				d.log.Info("Ignore event, not added")
 				// we only care about new events
 				continue
 			}
@@ -304,12 +306,12 @@ func (d *DeployManager) listenForEvents(ctx context.Context, pubsubLog *pubsubLo
 
 			if e.Type != "Error" && e.Type != "Warning" {
 				// we only care about errors and warnings
-				d.log.Warn("Ignore event, not an error or warning")
+				d.log.Info("Ignore event, not an error or warning")
 				continue
 			}
 
 			if strings.Contains(e.InvolvedObject.Name, msg.Name) {
-				d.log.WithField("event", e.Message).Warn("Add event")
+				d.log.WithField("event", e.Message).Info("Add event")
 				pubsubLog.AddEvent(e)
 			}
 		}
