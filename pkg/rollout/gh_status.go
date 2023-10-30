@@ -23,8 +23,8 @@ type GHStatusReporter struct {
 
 func NewGHStatusReporter(log logrus.FieldLogger, repo database.RolloutRepo, notif *notifier.Notifier, pemPath string) (*GHStatusReporter, error) {
 	const appID = 415736
-
-	itr, err := ghinstallation.NewAppsTransportKeyFromFile(http.DefaultTransport, appID, pemPath)
+	const installationID = 43469445
+	itr, err := ghinstallation.NewKeyFromFile(http.DefaultTransport, appID, installationID, pemPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create installation transport: %w", err)
 	}
