@@ -2,7 +2,7 @@
 DELETE FROM rollouts WHERE feature_name = @feature_name;
 
 -- name: RolloutCreate :one
-INSERT INTO rollouts (feature_name, version) VALUES (@feature_name, @version) RETURNING *;
+INSERT INTO rollouts (feature_name, version, gh_ref) VALUES (@feature_name, @version, @gh_ref) RETURNING *;
 
 -- name: RolloutsForKind :many
 WITH success AS (
@@ -71,6 +71,14 @@ FROM rollouts
 JOIN feature_data fd ON rollouts.feature_name = fd.name AND rollouts.version = fd.version
 WHERE fd.name = @name
 AND rollouts.status = 'pending';
+
+
+
+-- name: RolloutByID :one
+SELECT *
+FROM rollouts
+WHERE id = @id
+;
 
 -- name: RolloutUpdateStatus :exec
 UPDATE rollouts SET status = @status WHERE feature_name = @feature_name and completed IS NULL;

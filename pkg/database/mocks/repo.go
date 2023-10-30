@@ -1373,6 +1373,32 @@ func (_m *Repo) ReleaseStatusesGet(ctx context.Context, environmentID uuid.UUID)
 	return r0, r1
 }
 
+// RolloutByID provides a mock function with given fields: ctx, id
+func (_m *Repo) RolloutByID(ctx context.Context, id uuid.UUID) (*model.Rollout, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *model.Rollout
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) (*model.Rollout, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) *model.Rollout); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Rollout)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // RolloutByName provides a mock function with given fields: ctx, name
 func (_m *Repo) RolloutByName(ctx context.Context, name string) (*model.Feature, error) {
 	ret := _m.Called(ctx, name)
@@ -1449,25 +1475,25 @@ func (_m *Repo) RolloutCalculateDone(ctx context.Context, rolloutID uuid.UUID) (
 	return r0, r1
 }
 
-// RolloutCreate provides a mock function with given fields: ctx, name, version
-func (_m *Repo) RolloutCreate(ctx context.Context, name string, version string) (*model.Rollout, error) {
-	ret := _m.Called(ctx, name, version)
+// RolloutCreate provides a mock function with given fields: ctx, name, version, ref
+func (_m *Repo) RolloutCreate(ctx context.Context, name string, version string, ref *model.GHRef) (*model.Rollout, error) {
+	ret := _m.Called(ctx, name, version, ref)
 
 	var r0 *model.Rollout
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.Rollout, error)); ok {
-		return rf(ctx, name, version)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.GHRef) (*model.Rollout, error)); ok {
+		return rf(ctx, name, version, ref)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Rollout); ok {
-		r0 = rf(ctx, name, version)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.GHRef) *model.Rollout); ok {
+		r0 = rf(ctx, name, version, ref)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.Rollout)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, name, version)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, *model.GHRef) error); ok {
+		r1 = rf(ctx, name, version, ref)
 	} else {
 		r1 = ret.Error(1)
 	}

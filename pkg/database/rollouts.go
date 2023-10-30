@@ -11,10 +11,11 @@ import (
 )
 
 type RolloutRepo interface {
+	RolloutByID(ctx context.Context, id uuid.UUID) (*model.Rollout, error)
 	RolloutByName(ctx context.Context, name string) (*model.Feature, error)
 	RolloutByNameAndVersion(ctx context.Context, name, version string) (*model.Rollout, error)
 	RolloutCalculateDone(ctx context.Context, rolloutID uuid.UUID) (bool, error)
-	RolloutCreate(ctx context.Context, name, version string) (*model.Rollout, error)
+	RolloutCreate(ctx context.Context, name, version string, ref *model.GHRef) (*model.Rollout, error)
 	RolloutDelete(ctx context.Context, name string) error
 	RolloutEventCreate(ctx context.Context, rollout uuid.UUID, failure bool, message string, data map[string]any) error
 	Rollouts(ctx context.Context, limit int) ([]*model.Rollout, error)
@@ -66,8 +67,22 @@ func (r *repo) RolloutDelete(ctx context.Context, name string) error {
 	return r.querier.RolloutDelete(ctx, name)
 }
 
-func (r *repo) RolloutCreate(ctx context.Context, name, version string) (*model.Rollout, error) {
-	ro, err := r.querier.RolloutCreate(ctx, gensql.RolloutCreateParams{FeatureName: name, Version: version})
+func (r *repo) RolloutCreate(ctx context.Context, name, version string, ref *model.GHRef) (*model.Rollout, error) {
+	var ghRef []byte
+	if ref != nil {
+		b, err := json.Marshal(ref)
+		if err != nil {
+			return nil, fmt.Errorf("marshal gh ref: %w", err)
+		}
+
+		ghRef = b
+	}
+
+	ro, err := r.querier.RolloutCreate(ctx, gensql.RolloutCreateParams{
+		FeatureName: name,
+		Version:     version,
+		GhRef:       ghRef,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -78,6 +93,15 @@ func (r *repo) RolloutCreate(ctx context.Context, name, version string) (*model.
 		Created:     ro.Created.Time,
 		FeatureName: ro.FeatureName,
 	}, nil
+}
+
+func (r *repo) RolloutByID(ctx context.Context, id uuid.UUID) (*model.Rollout, error) {
+	ro, err := r.querier.RolloutByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return rolloutFromSQL(ro), nil
 }
 
 func (r *repo) RolloutByName(ctx context.Context, name string) (*model.Feature, error) {
@@ -201,6 +225,15 @@ func (r *repo) Rollouts(ctx context.Context, limit int) ([]*model.Rollout, error
 }
 
 func rolloutFromSQL(ro gensql.Rollout) *model.Rollout {
+	var ghRef *model.GHRef
+
+	if len(ro.GhRef) > 0 {
+		ghRef = &model.GHRef{}
+		if err := json.Unmarshal(ro.GhRef, ghRef); err != nil {
+			panic(fmt.Errorf("unmarshal gh ref: %w", err))
+		}
+	}
+
 	return &model.Rollout{
 		ID:          ro.ID,
 		Version:     ro.Version,
@@ -208,5 +241,6 @@ func rolloutFromSQL(ro gensql.Rollout) *model.Rollout {
 		FeatureName: ro.FeatureName,
 		Completed:   nullTimeToPtr(ro.Completed),
 		Status:      model.RolloutStatus(ro.Status),
+		GHRef:       ghRef,
 	}
 }

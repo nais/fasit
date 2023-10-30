@@ -41,8 +41,9 @@ type Rollout struct {
 }
 
 type Request struct {
-	Chart   string `json:"chart"`
-	Version string `json:"version"`
+	Chart   string       `json:"chart"`
+	Version string       `json:"version"`
+	Ref     *model.GHRef `json:"ref"`
 }
 
 func New(ctx context.Context, repo Store) (*Rollout, error) {
@@ -141,7 +142,16 @@ func (r *Rollout) Rollout(w http.ResponseWriter, req *http.Request) {
 			return fmt.Errorf("feature data: %w", err)
 		}
 
-		if r, err := repo.RolloutCreate(ctx, feat.Name, body.Version); err != nil {
+		ref := body.Ref
+		if ref != nil {
+			// Make sure all fields are set
+			if ref.Owner == "" || ref.Repo == "" || ref.Ref == "" {
+				http.Error(w, "invalid ref, missing owner, repo or ref", http.StatusBadRequest)
+				return nil
+			}
+		}
+
+		if r, err := repo.RolloutCreate(ctx, feat.Name, body.Version, body.Ref); err != nil {
 			return fmt.Errorf("rollout: %w", err)
 		} else {
 			id = r.ID.String()

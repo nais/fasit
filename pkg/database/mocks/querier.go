@@ -1435,6 +1435,30 @@ func (_m *Querier) ReleaseStatusesGet(ctx context.Context, environmentID uuid.UU
 	return r0, r1
 }
 
+// RolloutByID provides a mock function with given fields: ctx, id
+func (_m *Querier) RolloutByID(ctx context.Context, id uuid.UUID) (gensql.Rollout, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 gensql.Rollout
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) (gensql.Rollout, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) gensql.Rollout); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Get(0).(gensql.Rollout)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // RolloutByName provides a mock function with given fields: ctx, name
 func (_m *Querier) RolloutByName(ctx context.Context, name string) (gensql.RolloutByNameRow, error) {
 	ret := _m.Called(ctx, name)

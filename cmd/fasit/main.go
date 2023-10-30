@@ -200,6 +200,15 @@ func main() {
 		})
 	}
 
+	if os.Getenv("GH_PEM") != "" {
+		log.Info("GitHub status reporter enabled")
+		ghstatus, err := rollout.NewGHStatusReporter(log.WithField("subsystem", "gh_status"), repo, notifierService, os.Getenv("GH_PEM"))
+		if err != nil {
+			log.WithError(err).Fatal("setting up gh status reporter")
+		}
+		go ghstatus.Run(ctx)
+	}
+
 	router := chi.NewMux()
 	router.Handle("/", iapMW(playground.Handler("GraphQL playground", "/query")))
 	router.Handle("/query", slowDownQuery(iapMW(corsMW.Handler(srv))))

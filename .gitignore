@@ -1,3 +1,4 @@
 .idea
 charts/fasit.yaml
 .DS_Store
+.envrc

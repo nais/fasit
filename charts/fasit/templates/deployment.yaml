@@ -44,6 +44,9 @@ spec:
           volumeMounts:
           - mountPath: /tmp
             name: tmp
+          - mountPath: /var/run/secrets/nais.io/gh
+            name: gh-app-pem
+            readOnly: true
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           envFrom:
@@ -52,6 +55,9 @@ spec:
       volumes:
       - name: tmp
         emptyDir: {}
+      - name: gh-app-pem
+        secret:
+          secretName: fasit-gh-pem
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

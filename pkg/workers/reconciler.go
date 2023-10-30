@@ -108,7 +108,7 @@ func (r *Reconciler) Listen(ctx context.Context) error {
 
 	cfgGlobal := r.notifier.Listen("configurations_global")
 	cfgEnv := r.notifier.Listen("configurations_environment")
-	rollouts := r.notifier.Listen("rollouts")
+	rollouts := r.notifier.Listen("rollouts", notifier.WithOperations("INSERT"))
 	featureStates := r.notifier.Listen("feature_states")
 
 	go func() {
