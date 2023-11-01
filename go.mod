@@ -3,20 +3,20 @@ module github.com/nais/fasit
 go 1.21
 
 require (
-	cloud.google.com/go v0.110.8
-	cloud.google.com/go/bigquery v1.56.0
-	cloud.google.com/go/cloudsqlconn v1.4.5
+	cloud.google.com/go v0.110.10
+	cloud.google.com/go/bigquery v1.57.1
+	cloud.google.com/go/cloudsqlconn v1.5.0
 	cloud.google.com/go/pubsub v1.33.0
-	github.com/99designs/gqlgen v0.17.39
-	github.com/GoogleCloudPlatform/cloudsql-proxy v1.33.11
-	github.com/GoogleCloudPlatform/k8s-config-connector v1.110.0
+	github.com/99designs/gqlgen v0.17.40
+	github.com/GoogleCloudPlatform/cloudsql-proxy v1.33.13
+	github.com/GoogleCloudPlatform/k8s-config-connector v1.111.0
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/bradleyfalzon/ghinstallation/v2 v2.8.0
-	github.com/coreos/go-oidc/v3 v3.6.0
+	github.com/coreos/go-oidc/v3 v3.7.0
 	github.com/go-chi/chi/v5 v5.0.10
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-github/v56 v56.0.0
-	github.com/google/uuid v1.3.1
+	github.com/google/uuid v1.4.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/iancoleman/strcase v0.3.0
 	github.com/invopop/jsonschema v0.12.0
@@ -38,8 +38,8 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v1.19.0
 	go.uber.org/automaxprocs v1.5.3
 	golang.org/x/sync v0.4.0
-	google.golang.org/api v0.146.0
-	google.golang.org/grpc v1.58.3
+	google.golang.org/api v0.149.0
+	google.golang.org/grpc v1.59.0
 	google.golang.org/protobuf v1.31.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -51,9 +51,9 @@ require (
 )
 
 require (
-	cloud.google.com/go/compute v1.23.0 // indirect
+	cloud.google.com/go/compute v1.23.1 // indirect
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
-	cloud.google.com/go/iam v1.1.2 // indirect
+	cloud.google.com/go/iam v1.1.3 // indirect
 	cloud.google.com/go/storage v1.33.0 // indirect
 	github.com/AdaLogics/go-fuzz-headers v0.0.0-20230811130428-ced1acdcaa24 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
@@ -117,7 +117,7 @@ require (
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/s2a-go v0.1.7 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
-	github.com/googleapis/enterprise-certificate-proxy v0.3.1 // indirect
+	github.com/googleapis/enterprise-certificate-proxy v0.3.2 // indirect
 	github.com/googleapis/gax-go/v2 v2.12.0 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/gorilla/websocket v1.5.0 // indirect
@@ -209,9 +209,9 @@ require (
 	golang.org/x/tools v0.14.0 // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
-	google.golang.org/genproto v0.0.0-20231009173412-8bfb1ae86b6c // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20231009173412-8bfb1ae86b6c // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20231009173412-8bfb1ae86b6c // indirect
+	google.golang.org/genproto v0.0.0-20231016165738-49dd2c1f3d0b // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20231016165738-49dd2c1f3d0b // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20231016165738-49dd2c1f3d0b // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	k8s.io/apiextensions-apiserver v0.28.1 // indirect
 	k8s.io/apiserver v0.28.2 // indirect
