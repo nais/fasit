@@ -10,6 +10,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/nais/fasit/pkg/message"
 	"github.com/sirupsen/logrus"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	dynFake "k8s.io/client-go/dynamic/fake"
@@ -139,6 +141,23 @@ func TestConsoleManager_handler(t *testing.T) {
 					"googleServiceAccount": "cnrm@proj.iam.gserviceaccounts.com",
 				}
 				got := cc.Object["spec"]
+
+				if !cmp.Equal(want, got) {
+					t.Errorf("diff -want +got:\n%v", cmp.Diff(want, got))
+				}
+			}
+
+			// Check ResourceQuota
+			for _, namespace := range tt.expectedNamespaces {
+				rq, err := cs.CoreV1().ResourceQuotas(namespace).Get(ctx, "nais-quota", metav1.GetOptions{})
+				if err != nil {
+					t.Fatalf("error getting ResourceQuota = %v, wantErr %v", err, tt.wantErr)
+				}
+
+				want := v1.ResourceList{
+					v1.ResourcePods: resource.MustParse("200"),
+				}
+				got := rq.Spec.Hard
 
 				if !cmp.Equal(want, got) {
 					t.Errorf("diff -want +got:\n%v", cmp.Diff(want, got))
