@@ -14,6 +14,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/client-go/dynamic"
@@ -44,6 +45,7 @@ type ConsoleManager struct {
 	nsList     v1lister.NamespaceLister
 	saList     v1lister.ServiceAccountLister
 	rbList     rbacv1lister.RoleBindingLister
+	rqList     v1lister.ResourceQuotaLister
 	cnrmConfig cache.GenericLister
 }
 
@@ -73,9 +75,11 @@ func newConsoleManager(ctx context.Context,
 	nsInf := inf.Core().V1().Namespaces()
 	saInf := inf.Core().V1().ServiceAccounts()
 	rbInf := inf.Rbac().V1().RoleBindings()
+	rqInf := inf.Core().V1().ResourceQuotas()
 	go nsInf.Informer().Run(ctx.Done())
 	go saInf.Informer().Run(ctx.Done())
 	go rbInf.Informer().Run(ctx.Done())
+	go rqInf.Informer().Run(ctx.Done())
 
 	var cnrmLister cache.GenericLister
 	if !strings.HasSuffix(envName, "-fss") {
@@ -89,7 +93,7 @@ func newConsoleManager(ctx context.Context,
 	// wait for caches to sync
 	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
-	if !waitForCacheSync(ctx.Done(), nsInf.Informer().HasSynced, saInf.Informer().HasSynced, rbInf.Informer().HasSynced) {
+	if !waitForCacheSync(ctx.Done(), nsInf.Informer().HasSynced, saInf.Informer().HasSynced, rbInf.Informer().HasSynced, rqInf.Informer().HasSynced) {
 		log.Warn("failed to sync caches")
 	}
 
@@ -103,6 +107,7 @@ func newConsoleManager(ctx context.Context,
 		nsList:     nsInf.Lister(),
 		saList:     saInf.Lister(),
 		rbList:     rbInf.Lister(),
+		rqList:     rqInf.Lister(),
 		cnrmConfig: cnrmLister,
 	}
 
@@ -161,6 +166,11 @@ func (c *ConsoleManager) create(ctx context.Context, msg message.Console, log lo
 	}
 
 	err = c.createTeamRolebindings(ctx, data, log)
+	if err != nil {
+		return err
+	}
+
+	err = c.createResourceQuota(ctx, data, log)
 	if err != nil {
 		return err
 	}
@@ -435,6 +445,39 @@ func (c *ConsoleManager) createCNRMConfig(ctx context.Context, data message.Crea
 
 	_, err = cnrmClient.Update(ctx, obj, metav1.UpdateOptions{})
 	return err
+}
+
+func (c *ConsoleManager) createResourceQuota(ctx context.Context, data message.CreateNamespace, log logrus.FieldLogger) error {
+	const quotaName = "nais-quota"
+
+	_, err := c.rqList.ResourceQuotas(data.Name).Get(quotaName)
+	if err == nil {
+		// don't override existing quota
+		return nil
+	}
+
+	if errors.IsNotFound(err) {
+		quota := &v1.ResourceQuota{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      quotaName,
+				Namespace: data.Name,
+			},
+			Spec: v1.ResourceQuotaSpec{
+				Hard: v1.ResourceList{
+					v1.ResourcePods: resource.MustParse("200"),
+				},
+			},
+		}
+
+		_, err := c.kubeClient.CoreV1().ResourceQuotas(data.Name).Create(ctx, quota, metav1.CreateOptions{})
+		if err != nil {
+			return fmt.Errorf("creating resource quota: %w", err)
+		}
+		log.WithField("ns", data.Name).Debug("Created resource quota")
+		return nil
+	}
+
+	return fmt.Errorf("getting resource quota: %w", err)
 }
 
 func waitForCacheSync(stop <-chan struct{}, cacheSyncs ...cache.InformerSynced) bool {
