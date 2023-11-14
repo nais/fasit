@@ -70,7 +70,9 @@ func TestConsoleManager_handler(t *testing.T) {
 	cs := fake.NewSimpleClientset()
 
 	scheme := runtime.NewScheme()
-	cnrmbeta1.AddToScheme(scheme)
+	if err := cnrmbeta1.AddToScheme(scheme); err != nil {
+		t.Fatal(err)
+	}
 	dynClient := dynFake.NewSimpleDynamicClient(scheme)
 
 	m, err := newConsoleManager(ctx, cs, dynClient, nil, nil, "test-proj", "dev-gcp", logrus.NewEntry(logrus.New()))

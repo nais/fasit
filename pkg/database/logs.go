@@ -34,12 +34,14 @@ func (r *repo) LogCreate(ctx context.Context, deployInstructionID uuid.UUID, lin
 
 	br := r.querier.LogsCreate(ctx, params)
 
-	var err error
+	var outerErr error
 	br.Exec(func(i int, err error) {
-		err = multierror.Append(err, err)
+		if err != nil {
+			outerErr = multierror.Append(outerErr, err)
+		}
 	})
 
-	return err
+	return outerErr
 }
 
 func (r *repo) LogsGet(ctx context.Context, deployInstructionID uuid.UUID) ([]*model.LogLine, error) {

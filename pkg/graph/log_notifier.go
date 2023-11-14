@@ -13,7 +13,6 @@ import (
 
 type logNotifier struct {
 	repo database.Repo
-	msgs chan *notifier.Payload
 
 	lock        sync.RWMutex
 	subscribers map[string]map[chan<- *model.LogLine]struct{}

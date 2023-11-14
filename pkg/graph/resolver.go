@@ -22,7 +22,6 @@ type Resolver struct {
 	Repo database.Repo
 	Log  *logrus.Entry
 
-	notifier        *notifier.Notifier
 	logNotifier     *logNotifier
 	diNotifier      *updateNotifier
 	createPublisher workers.NewPublisher

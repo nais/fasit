@@ -23,7 +23,6 @@ type naisdRunner struct {
 	*runner.PubSub
 	topics               map[string]chan pubsubMockMsg
 	reconcilerPublishers map[string]workers.Publisher
-	successfullMessages  int
 
 	statusCh chan pubsubMockMsg
 }

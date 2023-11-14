@@ -14,7 +14,9 @@ func NewKubernetesClient() kubernetes.Interface {
 	objs := []runtime.Object{}
 	for i := 0; i < 5; i++ {
 		n := &corev1.Node{}
-		yaml.Unmarshal(nodeYAML, n)
+		if err := yaml.Unmarshal(nodeYAML, n); err != nil {
+			panic(err)
+		}
 		objs = append(objs, n)
 
 		n.Name = fmt.Sprintf("node-%v", i)

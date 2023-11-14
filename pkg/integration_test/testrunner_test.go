@@ -28,13 +28,6 @@ import (
 	"go.opentelemetry.io/otel/metric/noop"
 )
 
-const (
-	tenantName        = "tenant23"
-	envManagementName = "management"
-	envTenantName     = "testing"
-	envTenantNonCI    = "nonci"
-)
-
 func TestRunner(t *testing.T) {
 	mgr := testmanager.New(t, func(ctx context.Context, config *integration.Config, state map[string]any) ([]testmanager.Runner, func(), []testmanager.Option, error) {
 		ctx, done := context.WithCancel(ctx)
@@ -65,7 +58,9 @@ func TestRunner(t *testing.T) {
 			})
 		}
 
-		naisdRunner.start(ctx, config, db)
+		if err := naisdRunner.start(ctx, config, db); err != nil {
+			t.Fatalf("unable to start naisd: %v", err)
+		}
 
 		log := logrus.New()
 
@@ -115,7 +110,9 @@ func TestRunner(t *testing.T) {
 	ctx := context.Background()
 
 	// Skip dir_charts, as it is not a test case but a directory of directory based charts
-	mgr.Run(ctx, os.DirFS("./testdata"), "_dir_charts")
+	if err := mgr.Run(ctx, os.DirFS("./testdata"), "_dir_charts"); err != nil {
+		t.Fatal(err)
+	}
 }
 
 func newRestRunner(ctx context.Context, t *testing.T, db rollout.Store) testmanager.Runner {

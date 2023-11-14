@@ -50,9 +50,9 @@ func dirChart(name string, version string, repo string) (*bytes.Buffer, error) {
 		return nil, err
 	}
 
-	if err := os.WriteFile("./test_asdf.tgz", buf.Bytes(), 0o644); err != nil {
-		panic(err)
-	}
+	// if err := os.WriteFile("./test_asdf.tgz", buf.Bytes(), 0o644); err != nil {
+	// 	panic(err)
+	// }
 
 	return &buf, nil
 }

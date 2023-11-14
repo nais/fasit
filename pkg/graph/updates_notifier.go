@@ -14,7 +14,6 @@ import (
 
 type updateNotifier struct {
 	repo database.Repo
-	msgs chan *notifier.Payload
 
 	lock        sync.RWMutex
 	subscribers map[chan<- model.Update]struct{}

@@ -49,11 +49,14 @@ func TestSubscriber(t *testing.T) {
 
 	ctx, done := context.WithCancel(ctx)
 	msgs := []testmsg{}
-	sub.Receive(ctx, func(ctx context.Context, msg testmsg) error {
+	err = sub.Receive(ctx, func(ctx context.Context, msg testmsg) error {
 		msgs = append(msgs, msg)
 		done()
 		return nil
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	<-ctx.Done()
 

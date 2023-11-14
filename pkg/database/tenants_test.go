@@ -176,26 +176,3 @@ func TestRepo_TenantEnvironments(t *testing.T) {
 		t.Errorf("diff -want +got:\n%v", cmp.Diff(want, got, opts))
 	}
 }
-
-func tenantWithEnv(t *testing.T, name string, repo Repo) (*model.Tenant, *model.Environment) {
-	t.Helper()
-
-	ctx := context.Background()
-	p, err := repo.TenantCreate(ctx, &model.TenantCreate{
-		Name: name,
-	})
-	if err != nil {
-		t.Fatalf("TenantCreate(ctx, tenant) err = %v, want nil", err)
-	}
-
-	env, err := repo.EnvironmentCreate(ctx, &model.EnvironmentCreate{
-		Name:     "test-env",
-		TenantID: p.ID,
-		Kind:     model.EnvironmentKindTenant,
-	})
-	if err != nil {
-		t.Fatalf("EnvironmentCreate(ctx, env) err = %v, want nil", err)
-	}
-
-	return p, env
-}

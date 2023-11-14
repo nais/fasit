@@ -26,7 +26,9 @@ func genSchema(out string, v any, pkg, pkgPath string) error {
 	r := &jsonschema.Reflector{}
 	r.DoNotReference = true
 	r.BaseSchemaID = "https://fasit.nais.io/schema"
-	r.AddGoComments(pkg, pkgPath)
+	if err := r.AddGoComments(pkg, pkgPath); err != nil {
+		return err
+	}
 	schema := r.Reflect(v)
 
 	b, err := schema.MarshalJSON()

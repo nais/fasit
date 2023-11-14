@@ -12,11 +12,11 @@ import (
 func MarshalUUID(id uuid.UUID) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
 		if id == uuid.Nil {
-			w.Write([]byte("null"))
+			_, _ = w.Write([]byte("null"))
 			return
 		}
 		b, _ := json.Marshal(id)
-		w.Write(b)
+		_, _ = w.Write(b)
 	})
 }
 
@@ -31,7 +31,7 @@ func UnmarshalUUID(v any) (uuid.UUID, error) {
 
 func MarshalRawMessage(msg json.RawMessage) graphql.Marshaler {
 	return graphql.WriterFunc(func(w io.Writer) {
-		w.Write(msg)
+		_, _ = w.Write(msg)
 	})
 }
 

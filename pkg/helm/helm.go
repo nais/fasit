@@ -22,7 +22,9 @@ type Client struct {
 
 func New(restConfig *rest.Config, namespace string, log *logrus.Entry) *Client {
 	cfg := &action.Configuration{}
-	cfg.Init(&K8sClient{cfg: restConfig}, namespace, "", log.Debugf)
+
+	// Init cannot error, it will panic if something goes wrong
+	_ = cfg.Init(&K8sClient{cfg: restConfig}, namespace, "", log.Debugf)
 	return &Client{
 		cfg: cfg,
 	}

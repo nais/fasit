@@ -64,5 +64,7 @@ func (s *StatusReporter) Run(ctx context.Context) error {
 }
 
 func (s *StatusReporter) Trigger() {
-	s.Run(context.Background())
+	if err := s.Run(context.Background()); err != nil {
+		fmt.Println("Error reporting status: ", err)
+	}
 }

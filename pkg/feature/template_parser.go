@@ -81,7 +81,9 @@ func ParseTemplateDetails(content model.Values) (*FeatureTemplateDetails, error)
 
 	for _, cv := range content {
 		if cv.Computed != nil {
-			parseComputedDetails(eviu, cv.Computed)
+			if err := parseComputedDetails(eviu, cv.Computed); err != nil {
+				return nil, fmt.Errorf("parse computed: %w", err)
+			}
 		}
 	}
 

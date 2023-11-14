@@ -52,7 +52,9 @@ func seedTenant(ctx context.Context, db database.Repo, tenant integration.Tenant
 			return nil
 		})
 		if err != nil {
-			tx.Rollback(ctx)
+			if txerr := tx.Rollback(ctx); txerr != nil {
+				return nil, fmt.Errorf("seedTenantEnv: unable to rollback tenant %v transaction: %w", tenant.Name, txerr)
+			}
 			return nil, err
 		}
 		if err := tx.Commit(ctx); err != nil {
@@ -102,7 +104,9 @@ func seedEnvironment(ctx context.Context, db database.Repo, tenant *model.Tenant
 			return nil
 		})
 		if err != nil {
-			tx.Rollback(ctx)
+			if txerr := tx.Rollback(ctx); err != nil {
+				return nil, fmt.Errorf("seedTenantEnv: unable to rollback environment %v transaction: %w", env.Name, txerr)
+			}
 			return nil, err
 		}
 		return e, tx.Commit(ctx)

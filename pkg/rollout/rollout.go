@@ -166,7 +166,7 @@ func (r *Rollout) Rollout(w http.ResponseWriter, req *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]any{
+	_ = json.NewEncoder(w).Encode(map[string]any{
 		"id":              id,
 		"envNotAvailable": envNotAvailable,
 	})

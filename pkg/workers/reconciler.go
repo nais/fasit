@@ -101,7 +101,9 @@ func (r *Reconciler) Listen(ctx context.Context) error {
 				flushTimer.Reset(1 * time.Second)
 			case <-flushTimer.C:
 				flushTimer.Stop()
-				r.Reconcile(ctx)
+				if err := r.Reconcile(ctx); err != nil {
+					r.log.WithError(err).Error("reconcile")
+				}
 			}
 		}
 	}()

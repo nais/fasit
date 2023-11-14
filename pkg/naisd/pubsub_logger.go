@@ -81,7 +81,9 @@ func (p *pubsubLogger) Run(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-p.close:
-			p.Publish(context.Background())
+			if err := p.Publish(context.Background()); err != nil {
+				p.log.WithError(err).Error("publishing logs")
+			}
 			return
 		}
 	}
