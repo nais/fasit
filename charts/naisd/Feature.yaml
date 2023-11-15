@@ -22,8 +22,8 @@ values:
       template: '{{ eq .Kind "onprem" }}'
   https_proxy:
     displayName: HTTPS proxy
-    computed:
-      template: '"http://webproxy-nais.nav.no:8088"'
+    config:
+      type: string
     ignoreKind:
       - tenant
       - management
@@ -38,8 +38,8 @@ values:
       template: '"{{eq .Kind "management"}}"'
   no_proxy:
     displayName: No proxy
-    computed:
-      template: '"10.254.0.1"'
+    config:
+      type: string
     ignoreKind:
       - tenant
       - management
