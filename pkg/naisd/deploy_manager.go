@@ -292,7 +292,6 @@ func (d *DeployManager) listenForEvents(ctx context.Context, pubsubLog *pubsubLo
 				return
 			}
 			if event.Type != watch.Added {
-				d.log.Info("Ignore event, not added")
 				// we only care about new events
 				continue
 			}
@@ -306,7 +305,6 @@ func (d *DeployManager) listenForEvents(ctx context.Context, pubsubLog *pubsubLo
 
 			if e.Type != "Error" && e.Type != "Warning" {
 				// we only care about errors and warnings
-				d.log.Info("Ignore event, not an error or warning")
 				continue
 			}
 
