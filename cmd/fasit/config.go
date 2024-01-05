@@ -11,9 +11,6 @@ type Config struct {
 	InsecureSkipProxy      bool
 	InsecureSkipTokenCheck bool
 	IAPAudience            string
-
-	FeatureBucket       string
-	FeatureSubscription string
 }
 
 func DefaultConfig() Config {
@@ -21,8 +18,5 @@ func DefaultConfig() Config {
 		BindAddress:     ":8080",
 		GRPCBindAddress: ":4444",
 		LogLevel:        "info",
-
-		FeatureBucket:       "fasit-features",
-		FeatureSubscription: "fasit-features-subscription",
 	}
 }
