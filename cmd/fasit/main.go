@@ -64,9 +64,6 @@ func init() {
 	flag.StringVar(&cfg.IAPAudience, "iap-audience", "", "IAP audience string")
 	flag.BoolVar(&cfg.InsecureSkipProxy, "insecure-skip-proxy", false, "Insecure, but allows the server to not require iap")
 	flag.BoolVar(&cfg.InsecureSkipTokenCheck, "insecure-skip-token-check", false, "Insecure, but allows the server ignore token check")
-
-	flag.StringVar(&cfg.FeatureBucket, "feature-bucket", cfg.FeatureBucket, "Bucket for features when feature-source is bucket")
-	flag.StringVar(&cfg.FeatureSubscription, "feature-subscription", cfg.FeatureSubscription, "Pub/sub subscription for features when feature-source is bucket")
 }
 
 func newServer(es graphql.ExecutableSchema) *handler.Server {
