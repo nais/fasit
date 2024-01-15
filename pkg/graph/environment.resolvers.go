@@ -131,24 +131,35 @@ func (r *environmentResolver) Feature(ctx context.Context, obj *model.Environmen
 
 // Versions is the resolver for the versions field.
 func (r *environmentResolver) Versions(ctx context.Context, obj *model.Environment) (*model.Versions, error) {
-
 	projectId, err := r.Environment().GcpProjectID(ctx, obj)
 	if err != nil {
 		return nil, err
 	}
 
-	fmt.Println("projectId", *projectId)
+	if projectId == nil {
+		return nil, fmt.Errorf("projectId is nil")
+	}
 
-	channel, err := r.UpgraderClient.GetReleaseChannel(ctx, "nais-dev-2e7b", obj.Name)
+	channel, err := r.UpgraderClient.GetReleaseChannel(ctx, *projectId, obj.Name)
+	if err != nil {
+		fmt.Println("error", err)
+		return nil, err
+	}
+	currentMasterVersion, err := r.UpgraderClient.GetCurrentMasterVersion(ctx, *projectId, obj.Name)
+	if err != nil {
+		fmt.Println("error", err)
+		return nil, err
+	}
+	availableVersions, err := r.UpgraderClient.GetAvailableVersions(ctx, *projectId, obj.Name, channel)
 	if err != nil {
 		fmt.Println("error", err)
 		return nil, err
 	}
 
-	fmt.Println("channel", channel)
-
 	return &model.Versions{
-		Channel: channel,
+		Channel:           channel,
+		Apiserver:         currentMasterVersion,
+		AvailableVersions: availableVersions,
 	}, nil
 }
 
