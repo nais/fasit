@@ -1,8 +1,6 @@
 module github.com/nais/fasit
 
-go 1.21.4
-
-toolchain go1.21.5
+go 1.21.5
 
 require (
 	cloud.google.com/go v0.111.0
@@ -236,3 +234,8 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.3.0 // indirect
 	sigs.k8s.io/yaml v1.3.0 // indirect
 )
+
+// This is to fix Idea
+replace github.com/GoogleCloudPlatform/k8s-config-connector/mockgcp => github.com/GoogleCloudPlatform/k8s-config-connector/mockgcp v0.0.0-20240112214631-1f3c7230e591
+
+replace github.com/hashicorp/terraform-provider-google-beta => github.com/GoogleCloudPlatform/k8s-config-connector/third_party/github.com/hashicorp/terraform-provider-google-beta v0.0.0-20240112214631-1f3c7230e591

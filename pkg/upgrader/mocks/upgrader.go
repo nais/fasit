@@ -13,6 +13,14 @@ type Upgrader struct {
 	mock.Mock
 }
 
+type Upgrader_Expecter struct {
+	mock *mock.Mock
+}
+
+func (_m *Upgrader) EXPECT() *Upgrader_Expecter {
+	return &Upgrader_Expecter{mock: &_m.Mock}
+}
+
 // GetReleaseChannel provides a mock function with given fields: ctx, projectId, clusterName
 func (_m *Upgrader) GetReleaseChannel(ctx context.Context, projectId string, clusterName string) (string, error) {
 	ret := _m.Called(ctx, projectId, clusterName)
@@ -39,6 +47,36 @@ func (_m *Upgrader) GetReleaseChannel(ctx context.Context, projectId string, clu
 	}
 
 	return r0, r1
+}
+
+// Upgrader_GetReleaseChannel_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetReleaseChannel'
+type Upgrader_GetReleaseChannel_Call struct {
+	*mock.Call
+}
+
+// GetReleaseChannel is a helper method to define mock.On call
+//   - ctx context.Context
+//   - projectId string
+//   - clusterName string
+func (_e *Upgrader_Expecter) GetReleaseChannel(ctx interface{}, projectId interface{}, clusterName interface{}) *Upgrader_GetReleaseChannel_Call {
+	return &Upgrader_GetReleaseChannel_Call{Call: _e.mock.On("GetReleaseChannel", ctx, projectId, clusterName)}
+}
+
+func (_c *Upgrader_GetReleaseChannel_Call) Run(run func(ctx context.Context, projectId string, clusterName string)) *Upgrader_GetReleaseChannel_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(string))
+	})
+	return _c
+}
+
+func (_c *Upgrader_GetReleaseChannel_Call) Return(_a0 string, _a1 error) *Upgrader_GetReleaseChannel_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Upgrader_GetReleaseChannel_Call) RunAndReturn(run func(context.Context, string, string) (string, error)) *Upgrader_GetReleaseChannel_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // NewUpgrader creates a new instance of Upgrader. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
