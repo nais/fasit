@@ -145,6 +145,7 @@ type ComplexityRoot struct {
 		Releases      func(childComplexity int) int
 		Tenant        func(childComplexity int) int
 		Values        func(childComplexity int) int
+		Versions      func(childComplexity int) int
 		Warnings      func(childComplexity int) int
 	}
 
@@ -354,6 +355,12 @@ type ComplexityRoot struct {
 		Required    func(childComplexity int) int
 	}
 
+	Versions struct {
+		Apiserver         func(childComplexity int) int
+		AvailableVersions func(childComplexity int) int
+		Channel           func(childComplexity int) int
+	}
+
 	UserInfo struct {
 		Email func(childComplexity int) int
 	}
@@ -385,6 +392,8 @@ type EnvironmentResolver interface {
 	AuditLog(ctx context.Context, obj *model.Environment, featureName *string) ([]*model.AuditLog, error)
 	Features(ctx context.Context, obj *model.Environment) ([]*model.Feature, error)
 	Feature(ctx context.Context, obj *model.Environment, name string) (*model.Feature, error)
+
+	Versions(ctx context.Context, obj *model.Environment) (*model.Versions, error)
 }
 type FeatureResolver interface {
 	ActiveVersion(ctx context.Context, obj *model.Feature) (string, error)
@@ -809,6 +818,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Environment.Values(childComplexity), true
+
+	case "Environment.versions":
+		if e.complexity.Environment.Versions == nil {
+			break
+		}
+
+		return e.complexity.Environment.Versions(childComplexity), true
 
 	case "Environment.warnings":
 		if e.complexity.Environment.Warnings == nil {
@@ -1891,6 +1907,27 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Value.Required(childComplexity), true
 
+	case "Versions.apiserver":
+		if e.complexity.Versions.Apiserver == nil {
+			break
+		}
+
+		return e.complexity.Versions.Apiserver(childComplexity), true
+
+	case "Versions.availableVersions":
+		if e.complexity.Versions.AvailableVersions == nil {
+			break
+		}
+
+		return e.complexity.Versions.AvailableVersions(childComplexity), true
+
+	case "Versions.channel":
+		if e.complexity.Versions.Channel == nil {
+			break
+		}
+
+		return e.complexity.Versions.Channel(childComplexity), true
+
 	case "userInfo.email":
 		if e.complexity.UserInfo.Email == nil {
 			break
@@ -2192,6 +2229,13 @@ type Environment {
   features: [Feature!]!
   feature(name: String!): Feature!
   reconcile: Boolean!
+  versions: Versions!
+}
+
+type Versions {
+  apiserver: String!
+  availableVersions: [String!]!
+  channel: String!
 }
 
 type EnvironmentValue {
@@ -3644,6 +3688,8 @@ func (ec *executionContext) fieldContext_ConfigOverride_environment(ctx context.
 				return ec.fieldContext_Environment_feature(ctx, field)
 			case "reconcile":
 				return ec.fieldContext_Environment_reconcile(ctx, field)
+			case "versions":
+				return ec.fieldContext_Environment_versions(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -4439,6 +4485,8 @@ func (ec *executionContext) fieldContext_EnvSeries_environment(ctx context.Conte
 				return ec.fieldContext_Environment_feature(ctx, field)
 			case "reconcile":
 				return ec.fieldContext_Environment_reconcile(ctx, field)
+			case "versions":
+				return ec.fieldContext_Environment_versions(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -5459,6 +5507,58 @@ func (ec *executionContext) fieldContext_Environment_reconcile(ctx context.Conte
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Environment_versions(ctx context.Context, field graphql.CollectedField, obj *model.Environment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Environment_versions(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Environment().Versions(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Versions)
+	fc.Result = res
+	return ec.marshalNVersions2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐVersions(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Environment_versions(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Environment",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "apiserver":
+				return ec.fieldContext_Versions_apiserver(ctx, field)
+			case "availableVersions":
+				return ec.fieldContext_Versions_availableVersions(ctx, field)
+			case "channel":
+				return ec.fieldContext_Versions_channel(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Versions", field.Name)
 		},
 	}
 	return fc, nil
@@ -7211,6 +7311,8 @@ func (ec *executionContext) fieldContext_FeatureWarning_environment(ctx context.
 				return ec.fieldContext_Environment_feature(ctx, field)
 			case "reconcile":
 				return ec.fieldContext_Environment_reconcile(ctx, field)
+			case "versions":
+				return ec.fieldContext_Environment_versions(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -8821,6 +8923,8 @@ func (ec *executionContext) fieldContext_Mutation_environmentCreate(ctx context.
 				return ec.fieldContext_Environment_feature(ctx, field)
 			case "reconcile":
 				return ec.fieldContext_Environment_reconcile(ctx, field)
+			case "versions":
+				return ec.fieldContext_Environment_versions(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -8914,6 +9018,8 @@ func (ec *executionContext) fieldContext_Mutation_environmentUpdate(ctx context.
 				return ec.fieldContext_Environment_feature(ctx, field)
 			case "reconcile":
 				return ec.fieldContext_Environment_reconcile(ctx, field)
+			case "versions":
+				return ec.fieldContext_Environment_versions(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -9007,6 +9113,8 @@ func (ec *executionContext) fieldContext_Mutation_environmentSetReconcile(ctx co
 				return ec.fieldContext_Environment_feature(ctx, field)
 			case "reconcile":
 				return ec.fieldContext_Environment_reconcile(ctx, field)
+			case "versions":
+				return ec.fieldContext_Environment_versions(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -9402,6 +9510,8 @@ func (ec *executionContext) fieldContext_NaisdWarning_environment(ctx context.Co
 				return ec.fieldContext_Environment_feature(ctx, field)
 			case "reconcile":
 				return ec.fieldContext_Environment_reconcile(ctx, field)
+			case "versions":
+				return ec.fieldContext_Environment_versions(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -12062,6 +12172,8 @@ func (ec *executionContext) fieldContext_Tenant_environments(ctx context.Context
 				return ec.fieldContext_Environment_feature(ctx, field)
 			case "reconcile":
 				return ec.fieldContext_Environment_reconcile(ctx, field)
+			case "versions":
+				return ec.fieldContext_Environment_versions(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -12144,6 +12256,8 @@ func (ec *executionContext) fieldContext_Tenant_environment(ctx context.Context,
 				return ec.fieldContext_Environment_feature(ctx, field)
 			case "reconcile":
 				return ec.fieldContext_Environment_reconcile(ctx, field)
+			case "versions":
+				return ec.fieldContext_Environment_versions(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -12695,6 +12809,138 @@ func (ec *executionContext) fieldContext_Value_config(ctx context.Context, field
 				return ec.fieldContext_Config_secret(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Config", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Versions_apiserver(ctx context.Context, field graphql.CollectedField, obj *model.Versions) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Versions_apiserver(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Apiserver, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Versions_apiserver(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Versions",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Versions_availableVersions(ctx context.Context, field graphql.CollectedField, obj *model.Versions) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Versions_availableVersions(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.AvailableVersions, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Versions_availableVersions(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Versions",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Versions_channel(ctx context.Context, field graphql.CollectedField, obj *model.Versions) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Versions_channel(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Channel, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Versions_channel(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Versions",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -14532,8 +14778,6 @@ func (ec *executionContext) unmarshalInputCostFilter(ctx context.Context, obj in
 		}
 		switch k {
 		case "startDate":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("startDate"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -14541,8 +14785,6 @@ func (ec *executionContext) unmarshalInputCostFilter(ctx context.Context, obj in
 			}
 			it.StartDate = data
 		case "endDate":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("endDate"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -14570,8 +14812,6 @@ func (ec *executionContext) unmarshalInputEnvironmentCreate(ctx context.Context,
 		}
 		switch k {
 		case "name":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
 			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
@@ -14579,8 +14819,6 @@ func (ec *executionContext) unmarshalInputEnvironmentCreate(ctx context.Context,
 			}
 			it.Name = data
 		case "description":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -14588,8 +14826,6 @@ func (ec *executionContext) unmarshalInputEnvironmentCreate(ctx context.Context,
 			}
 			it.Description = data
 		case "tenantID":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tenantID"))
 			data, err := ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
 			if err != nil {
@@ -14597,8 +14833,6 @@ func (ec *executionContext) unmarshalInputEnvironmentCreate(ctx context.Context,
 			}
 			it.TenantID = data
 		case "kind":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("kind"))
 			data, err := ec.unmarshalNEnvironmentKind2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentKind(ctx, v)
 			if err != nil {
@@ -14626,8 +14860,6 @@ func (ec *executionContext) unmarshalInputEnvironmentUpdate(ctx context.Context,
 		}
 		switch k {
 		case "description":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -14655,8 +14887,6 @@ func (ec *executionContext) unmarshalInputNewConfiguration(ctx context.Context, 
 		}
 		switch k {
 		case "environmentID":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("environmentID"))
 			data, err := ec.unmarshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
 			if err != nil {
@@ -14664,8 +14894,6 @@ func (ec *executionContext) unmarshalInputNewConfiguration(ctx context.Context, 
 			}
 			it.EnvironmentID = data
 		case "feature":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("feature"))
 			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
@@ -14673,8 +14901,6 @@ func (ec *executionContext) unmarshalInputNewConfiguration(ctx context.Context, 
 			}
 			it.Feature = data
 		case "description":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -14682,8 +14908,6 @@ func (ec *executionContext) unmarshalInputNewConfiguration(ctx context.Context, 
 			}
 			it.Description = data
 		case "key":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("key"))
 			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
@@ -14691,8 +14915,6 @@ func (ec *executionContext) unmarshalInputNewConfiguration(ctx context.Context, 
 			}
 			it.Key = data
 		case "value":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("value"))
 			data, err := ec.unmarshalNRawMessage2encodingᚋjsonᚐRawMessage(ctx, v)
 			if err != nil {
@@ -14720,8 +14942,6 @@ func (ec *executionContext) unmarshalInputPlaygroundInput(ctx context.Context, o
 		}
 		switch k {
 		case "tenantSlug":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tenantSlug"))
 			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
@@ -14729,8 +14949,6 @@ func (ec *executionContext) unmarshalInputPlaygroundInput(ctx context.Context, o
 			}
 			it.TenantSlug = data
 		case "envSlug":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("envSlug"))
 			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
@@ -14738,8 +14956,6 @@ func (ec *executionContext) unmarshalInputPlaygroundInput(ctx context.Context, o
 			}
 			it.EnvSlug = data
 		case "showSecrets":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("showSecrets"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
@@ -14747,8 +14963,6 @@ func (ec *executionContext) unmarshalInputPlaygroundInput(ctx context.Context, o
 			}
 			it.ShowSecrets = data
 		case "includeUnsetConfig":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("includeUnsetConfig"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
@@ -14756,8 +14970,6 @@ func (ec *executionContext) unmarshalInputPlaygroundInput(ctx context.Context, o
 			}
 			it.IncludeUnsetConfig = data
 		case "code":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("code"))
 			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
@@ -14785,8 +14997,6 @@ func (ec *executionContext) unmarshalInputTenantCreate(ctx context.Context, obj 
 		}
 		switch k {
 		case "name":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
 			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
@@ -14794,8 +15004,6 @@ func (ec *executionContext) unmarshalInputTenantCreate(ctx context.Context, obj 
 			}
 			it.Name = data
 		case "description":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -14823,8 +15031,6 @@ func (ec *executionContext) unmarshalInputUpdateConfiguration(ctx context.Contex
 		}
 		switch k {
 		case "description":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -14832,8 +15038,6 @@ func (ec *executionContext) unmarshalInputUpdateConfiguration(ctx context.Contex
 			}
 			it.Description = data
 		case "value":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("value"))
 			data, err := ec.unmarshalNRawMessage2encodingᚋjsonᚐRawMessage(ctx, v)
 			if err != nil {
@@ -16000,6 +16204,42 @@ func (ec *executionContext) _Environment(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "versions":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Environment_versions(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -18412,6 +18652,55 @@ func (ec *executionContext) _Value(ctx context.Context, sel ast.SelectionSet, ob
 	return out
 }
 
+var versionsImplementors = []string{"Versions"}
+
+func (ec *executionContext) _Versions(ctx context.Context, sel ast.SelectionSet, obj *model.Versions) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, versionsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Versions")
+		case "apiserver":
+			out.Values[i] = ec._Versions_apiserver(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "availableVersions":
+			out.Values[i] = ec._Versions_availableVersions(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "channel":
+			out.Values[i] = ec._Versions_channel(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var __DirectiveImplementors = []string{"__Directive"}
 
 func (ec *executionContext) ___Directive(ctx context.Context, sel ast.SelectionSet, obj *introspection.Directive) graphql.Marshaler {
@@ -20298,6 +20587,20 @@ func (ec *executionContext) marshalNValue2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkg�
 		return graphql.Null
 	}
 	return ec._Value(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNVersions2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐVersions(ctx context.Context, sel ast.SelectionSet, v model.Versions) graphql.Marshaler {
+	return ec._Versions(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNVersions2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐVersions(ctx context.Context, sel ast.SelectionSet, v *model.Versions) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Versions(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNWarning2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐWarning(ctx context.Context, sel ast.SelectionSet, v model.Warning) graphql.Marshaler {

@@ -30,6 +30,7 @@ import (
 	"github.com/nais/fasit/pkg/provider"
 	"github.com/nais/fasit/pkg/provider/protogen"
 	"github.com/nais/fasit/pkg/rollout"
+	"github.com/nais/fasit/pkg/upgrader"
 	"github.com/nais/fasit/pkg/workers"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/ravilushqa/otelgqlgen"
@@ -97,6 +98,11 @@ func main() {
 	}
 	log.Info("-- successfully started pubsub client")
 
+	googleClient, err := upgrader.New(ctx)
+	if err != nil {
+		log.WithError(err).Fatal("setting up google client")
+	}
+
 	meter, err := newMetricsProvider()
 	if err != nil {
 		log.WithError(err).Fatal("setting up metrics provider")
@@ -160,7 +166,7 @@ func main() {
 		go costUpdater.Run(ctx, 1*time.Hour)
 	}
 
-	resolver := graph.NewResolver(ctx, repo, notifierService, createPublisher, log.WithField("subsystem", "graphql"))
+	resolver := graph.NewResolver(ctx, repo, notifierService, createPublisher, googleClient, log.WithField("subsystem", "graphql"))
 
 	srv := newServer(graphgen.NewExecutableSchema(graphgen.Config{Resolvers: resolver}))
 	srv.Use(otelgqlgen.Middleware())

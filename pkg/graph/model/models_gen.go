@@ -68,6 +68,9 @@ type HelmValueDiff struct {
 	Diff       string              `json:"diff"`
 }
 
+type Mutation struct {
+}
+
 type Playground struct {
 	Result *string  `json:"result,omitempty"`
 	Errors []string `json:"errors"`
@@ -81,12 +84,18 @@ type PlaygroundInput struct {
 	Code               string `json:"code"`
 }
 
+type Query struct {
+}
+
 type RolloutEvent struct {
 	ID      uuid.UUID       `json:"id"`
 	Failure bool            `json:"failure"`
 	Message string          `json:"message"`
 	Created time.Time       `json:"created"`
 	Data    json.RawMessage `json:"data,omitempty"`
+}
+
+type Subscription struct {
 }
 
 type TenantCosts struct {
@@ -103,6 +112,12 @@ type TenantCreate struct {
 type UpdateConfiguration struct {
 	Description *string         `json:"description,omitempty"`
 	Value       json.RawMessage `json:"value"`
+}
+
+type Versions struct {
+	Apiserver         string   `json:"apiserver"`
+	AvailableVersions []string `json:"availableVersions"`
+	Channel           string   `json:"channel"`
 }
 
 type UserInfo struct {

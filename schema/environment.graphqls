@@ -39,6 +39,13 @@ type Environment {
   features: [Feature!]!
   feature(name: String!): Feature!
   reconcile: Boolean!
+  versions: Versions!
+}
+
+type Versions {
+  apiserver: String!
+  availableVersions: [String!]!
+  channel: String!
 }
 
 type EnvironmentValue {
