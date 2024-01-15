@@ -132,6 +132,7 @@ func (r *environmentResolver) Feature(ctx context.Context, obj *model.Environmen
 // Versions is the resolver for the versions field.
 func (r *environmentResolver) Versions(ctx context.Context, obj *model.Environment) (*model.Versions, error) {
 	projectId, err := r.Environment().GcpProjectID(ctx, obj)
+	fmt.Println("projectId", *projectId)
 	if err != nil {
 		return nil, err
 	}

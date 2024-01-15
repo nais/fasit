@@ -11,6 +11,8 @@ type Config struct {
 	InsecureSkipProxy      bool
 	InsecureSkipTokenCheck bool
 	IAPAudience            string
+
+	UseFakeClients bool
 }
 
 func DefaultConfig() Config {

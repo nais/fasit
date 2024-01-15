@@ -13,10 +13,6 @@ type Client struct {
 	client *container.ClusterManagerClient
 }
 
-type Upgrader interface {
-	GetReleaseChannel(ctx context.Context, projectId, clusterName string) (string, error)
-}
-
 func New(ctx context.Context) (*Client, error) {
 	cmClient, err := container.NewClusterManagerClient(ctx)
 	if err != nil {
