@@ -62,6 +62,8 @@ spec:
             - --nais-project-id
             - {{ .Values.naisProjectId }}
             - --management={{ .Values.management }}
+            - --deploy-subscription={{ .Values.deploySubscription | quote }}
+            - --teams-subscription={{ .Values.teamsSubscription | quote }}
           # livenessProbe:
           #   httpGet:
           #     path: /
