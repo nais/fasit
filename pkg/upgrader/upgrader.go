@@ -24,6 +24,10 @@ func New(ctx context.Context) (*Client, error) {
 	}, nil
 }
 
+func (c *Client) GetRunningOperations(ctx context.Context, projectId, clusterName string) ([]*containerpb.Operation, error) {
+	panic("not implemented")
+}
+
 func (c *Client) GetReleaseChannel(ctx context.Context, projectId, clusterName string) (string, error) {
 	cluster, err := c.getCluster(ctx, projectId, clusterName)
 	if err != nil {
@@ -70,12 +74,46 @@ func (c *Client) GetAvailableVersions(ctx context.Context, projectId, clusterNam
 	return versions, nil
 }
 
+func (c *Client) UpgradeMaster(ctx context.Context, projectId, clusterName, version string) (*containerpb.Operation, error) {
+	return c.client.UpdateMaster(ctx, &containerpb.UpdateMasterRequest{
+		Name:          c.getName(projectId, clusterName),
+		MasterVersion: version,
+	})
+}
+
+func (c *Client) UpgradeNodePool(ctx context.Context, projectId, clusterName, nodePoolName, version string) (*containerpb.Operation, error) {
+	return c.client.UpdateNodePool(ctx, &containerpb.UpdateNodePoolRequest{
+		Name:        c.getNodePoolName(projectId, clusterName, nodePoolName),
+		NodeVersion: version,
+	})
+}
+
+func (c *Client) Upgrade(ctx context.Context, projectId, clusterName, version string) error {
+	_, err := c.client.UpdateCluster(ctx, &containerpb.UpdateClusterRequest{
+		Name:      c.getName(projectId, clusterName),
+		Update:    &containerpb.ClusterUpdate{DesiredMasterVersion: version},
+		ProjectId: projectId,
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (c *Client) GetCurrentMasterVersion(ctx context.Context, projectId, clusterName string) (string, error) {
 	cluster, err := c.getCluster(ctx, projectId, clusterName)
 	if err != nil {
 		return "", err
 	}
 	return cluster.CurrentMasterVersion, nil
+}
+
+func (c *Client) GetNodePools(ctx context.Context, projectId, clusterName string) ([]*containerpb.NodePool, error) {
+	cluster, err := c.getCluster(ctx, projectId, clusterName)
+	if err != nil {
+		return nil, err
+	}
+	return cluster.NodePools, nil
 }
 
 func (c *Client) getServerConfig(ctx context.Context, projectId, clusterName string) (*containerpb.ServerConfig, error) {
@@ -97,6 +135,10 @@ func (c *Client) getCluster(ctx context.Context, projectId, clusterName string) 
 		return nil, err
 	}
 	return cluster, nil
+}
+
+func (c *Client) getNodePoolName(projectId, clusterName, nodePoolName string) string {
+	return "projects/" + projectId + "/locations/europe-north1/clusters/" + clusterName + "/nodePools/" + nodePoolName
 }
 
 func (c *Client) getName(projectId, clusterName string) string {

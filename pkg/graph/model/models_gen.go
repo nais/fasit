@@ -84,6 +84,15 @@ type PlaygroundInput struct {
 	Code               string `json:"code"`
 }
 
+type Progress struct {
+	Metrics []*ProgressMetric `json:"metrics"`
+}
+
+type ProgressMetric struct {
+	Name  string `json:"name"`
+	Value int    `json:"value"`
+}
+
 type Query struct {
 }
 

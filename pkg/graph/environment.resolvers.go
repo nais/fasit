@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"time"
 
+	"cloud.google.com/go/container/apiv1/containerpb"
 	"github.com/google/uuid"
 	pgx "github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/pkg/graph/graphgen"
@@ -132,7 +133,6 @@ func (r *environmentResolver) Feature(ctx context.Context, obj *model.Environmen
 // Versions is the resolver for the versions field.
 func (r *environmentResolver) Versions(ctx context.Context, obj *model.Environment) (*model.Versions, error) {
 	projectId, err := r.Environment().GcpProjectID(ctx, obj)
-	fmt.Println("projectId", *projectId)
 	if err != nil {
 		return nil, err
 	}
@@ -164,6 +164,48 @@ func (r *environmentResolver) Versions(ctx context.Context, obj *model.Environme
 	}, nil
 }
 
+// RunningOperations is the resolver for the runningOperations field.
+func (r *environmentResolver) RunningOperations(ctx context.Context, obj *model.Environment) ([]*model.Operation, error) {
+	projectId, err := r.Environment().GcpProjectID(ctx, obj)
+	if err != nil {
+		return nil, err
+	}
+
+	if projectId == nil {
+		return nil, fmt.Errorf("projectId is nil")
+	}
+
+	var ret []*model.Operation
+
+	ops, err := r.UpgraderClient.GetRunningOperations(ctx, *projectId, obj.Name)
+	for _, op := range ops {
+		startTime, err := time.Parse(time.RFC3339, op.StartTime)
+		if err != nil {
+			return nil, err
+		}
+		var metrics []*model.ProgressMetric
+		for _, m := range op.Progress.Metrics {
+			metrics = append(metrics, &model.ProgressMetric{
+				Name:  m.Name,
+				Value: int(m.Value.(*containerpb.OperationProgress_Metric_IntValue).IntValue),
+			})
+		}
+
+		ret = append(ret, &model.Operation{
+			ID:        op.Name,
+			Status:    op.Status.String(),
+			Type:      op.OperationType.String(),
+			Detail:    op.Detail,
+			StartTime: startTime,
+			Progress: &model.Progress{
+				Metrics: metrics,
+			},
+		})
+	}
+
+	return ret, nil
+}
+
 // EnvironmentCreate is the resolver for the environmentCreate field.
 func (r *mutationResolver) EnvironmentCreate(ctx context.Context, environment model.EnvironmentCreate) (*model.Environment, error) {
 	return r.Repo.EnvironmentCreate(ctx, &environment)
@@ -177,6 +219,11 @@ func (r *mutationResolver) EnvironmentUpdate(ctx context.Context, id uuid.UUID, 
 // EnvironmentSetReconcile is the resolver for the environmentSetReconcile field.
 func (r *mutationResolver) EnvironmentSetReconcile(ctx context.Context, id uuid.UUID, reconcile bool) (*model.Environment, error) {
 	return r.Repo.EnvironmentSetReconcile(ctx, id, reconcile)
+}
+
+// EnvironmentUpgrade is the resolver for the environmentUpgrade field.
+func (r *mutationResolver) EnvironmentUpgrade(ctx context.Context, id uuid.UUID, k8sVersion string) (*model.Environment, error) {
+	panic(fmt.Errorf("not implemented: EnvironmentUpgrade - environmentUpgrade"))
 }
 
 // Feature is the resolver for the feature field.

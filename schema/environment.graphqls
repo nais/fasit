@@ -40,6 +40,25 @@ type Environment {
   feature(name: String!): Feature!
   reconcile: Boolean!
   versions: Versions!
+  runningOperations: [Operation!]!
+}
+
+type Operation {
+  id: String!
+  status: String!
+  type: String!
+  detail: String!
+  startTime: Time!
+  progress: Progress!
+}
+
+type Progress {
+  metrics: [ProgressMetric!]!
+}
+
+type ProgressMetric {
+  name: String!
+  value: Int!
 }
 
 type Versions {
@@ -88,4 +107,9 @@ extend type Mutation {
   Change the reconcile flag for an environment
   """
   environmentSetReconcile(id: ID!, reconcile: Boolean!): Environment!
+
+  """
+  Upgrade environment k8s cluster
+  """
+  environmentUpgrade(id: ID!, k8sVersion: String!): Environment!
 }

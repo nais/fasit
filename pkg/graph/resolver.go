@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"cloud.google.com/go/container/apiv1/containerpb"
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database"
@@ -22,6 +23,8 @@ type Upgrader interface {
 	GetReleaseChannel(ctx context.Context, projectId, clusterName string) (string, error)
 	GetCurrentMasterVersion(ctx context.Context, projectId, clusterName string) (string, error)
 	GetAvailableVersions(ctx context.Context, projectId, clusterName, releaseChannel string) ([]string, error)
+	Upgrade(ctx context.Context, projectId, clusterName, version string) error
+	GetRunningOperations(ctx context.Context, projectId, clusterName string) ([]*containerpb.Operation, error)
 }
 
 type Resolver struct {

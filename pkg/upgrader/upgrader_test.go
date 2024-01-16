@@ -2,9 +2,10 @@ package upgrader
 
 import (
 	"context"
+	"testing"
+
 	"github.com/nais/fasit/pkg/upgrader/mocks"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestClient_GetReleaseChannel(t *testing.T) {
