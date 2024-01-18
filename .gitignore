@@ -2,3 +2,5 @@
 charts/fasit.yaml
 .DS_Store
 .envrc
+.vscode/launch.json
+.env
