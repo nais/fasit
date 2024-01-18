@@ -71,6 +71,22 @@ type AutoInstall struct {
 	Created pgtype.Timestamptz
 }
 
+type ClusterUpgrade struct {
+	OperationID         string
+	TenantID            uuid.UUID
+	EnvironmentID       uuid.UUID
+	Status              string
+	Type                string
+	MasterVersion       pgtype.Text
+	NodesTotal          int32
+	NodesFailed         int32
+	NodesCompleted      int32
+	NodesDone           int32
+	NodePdbDelaySeconds int32
+	StartTime           pgtype.Timestamptz
+	LastModified        pgtype.Timestamptz
+}
+
 type ConfigurationsEnvironment struct {
 	ID            uuid.UUID
 	Feature       string

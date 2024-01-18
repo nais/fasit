@@ -5,7 +5,10 @@ package mocks
 import (
 	context "context"
 
+	containerpb "cloud.google.com/go/container/apiv1/containerpb"
+
 	database "github.com/nais/fasit/pkg/database"
+
 	feature "github.com/nais/fasit/pkg/feature"
 
 	gensql "github.com/nais/fasit/pkg/database/gensql"
@@ -222,6 +225,66 @@ func (_c *Repo_Close_Call) Return() *Repo_Close_Call {
 }
 
 func (_c *Repo_Close_Call) RunAndReturn(run func()) *Repo_Close_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ClusterOperationCreateOrUpdate provides a mock function with given fields: ctx, tenantId, envId, masterVersion, op
+func (_m *Repo) ClusterOperationCreateOrUpdate(ctx context.Context, tenantId uuid.UUID, envId uuid.UUID, masterVersion string, op *containerpb.Operation) (gensql.ClusterUpgrade, error) {
+	ret := _m.Called(ctx, tenantId, envId, masterVersion, op)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ClusterOperationCreateOrUpdate")
+	}
+
+	var r0 gensql.ClusterUpgrade
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID, string, *containerpb.Operation) (gensql.ClusterUpgrade, error)); ok {
+		return rf(ctx, tenantId, envId, masterVersion, op)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID, string, *containerpb.Operation) gensql.ClusterUpgrade); ok {
+		r0 = rf(ctx, tenantId, envId, masterVersion, op)
+	} else {
+		r0 = ret.Get(0).(gensql.ClusterUpgrade)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, uuid.UUID, string, *containerpb.Operation) error); ok {
+		r1 = rf(ctx, tenantId, envId, masterVersion, op)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Repo_ClusterOperationCreateOrUpdate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ClusterOperationCreateOrUpdate'
+type Repo_ClusterOperationCreateOrUpdate_Call struct {
+	*mock.Call
+}
+
+// ClusterOperationCreateOrUpdate is a helper method to define mock.On call
+//   - ctx context.Context
+//   - tenantId uuid.UUID
+//   - envId uuid.UUID
+//   - masterVersion string
+//   - op *containerpb.Operation
+func (_e *Repo_Expecter) ClusterOperationCreateOrUpdate(ctx interface{}, tenantId interface{}, envId interface{}, masterVersion interface{}, op interface{}) *Repo_ClusterOperationCreateOrUpdate_Call {
+	return &Repo_ClusterOperationCreateOrUpdate_Call{Call: _e.mock.On("ClusterOperationCreateOrUpdate", ctx, tenantId, envId, masterVersion, op)}
+}
+
+func (_c *Repo_ClusterOperationCreateOrUpdate_Call) Run(run func(ctx context.Context, tenantId uuid.UUID, envId uuid.UUID, masterVersion string, op *containerpb.Operation)) *Repo_ClusterOperationCreateOrUpdate_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uuid.UUID), args[2].(uuid.UUID), args[3].(string), args[4].(*containerpb.Operation))
+	})
+	return _c
+}
+
+func (_c *Repo_ClusterOperationCreateOrUpdate_Call) Return(_a0 gensql.ClusterUpgrade, _a1 error) *Repo_ClusterOperationCreateOrUpdate_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Repo_ClusterOperationCreateOrUpdate_Call) RunAndReturn(run func(context.Context, uuid.UUID, uuid.UUID, string, *containerpb.Operation) (gensql.ClusterUpgrade, error)) *Repo_ClusterOperationCreateOrUpdate_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -20,6 +20,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/lru"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/davecgh/go-spew/spew"
 	"github.com/go-chi/chi/v5"
 	"github.com/nais/fasit/pkg/auth"
 	"github.com/nais/fasit/pkg/database"
@@ -88,6 +89,8 @@ func newServer(es graphql.ExecutableSchema) *handler.Server {
 func main() {
 	flag.Parse()
 
+	spew.Dump(flag.Args())
+
 	ctx := context.Background()
 	// defer cancel()
 
@@ -99,16 +102,6 @@ func main() {
 		log.WithError(err).Fatal("setting up pubsub client")
 	}
 	log.Info("-- successfully started pubsub client")
-
-	var googleClient graph.Upgrader
-	if cfg.UseFakeClients {
-		googleClient = fake.NewUpgrader()
-	} else {
-		googleClient, err = upgrader.New(ctx)
-		if err != nil {
-			log.WithError(err).Fatal("setting up google client")
-		}
-	}
 
 	meter, err := newMetricsProvider()
 	if err != nil {
@@ -158,6 +151,7 @@ func main() {
 	if err != nil {
 		log.WithError(err).Fatal("setting up reconciler")
 	}
+
 	go func() {
 		defer log.Error("reconciler listener stopped")
 		if err := reconciler.Listen(ctx); err != nil {
@@ -173,6 +167,15 @@ func main() {
 		go costUpdater.Run(ctx, 1*time.Hour)
 	}
 
+	var googleClient graph.Upgrader
+	if cfg.UseFakeClients {
+		googleClient = fake.NewUpgrader()
+	} else {
+		googleClient, err = upgrader.New(ctx)
+		if err != nil {
+			log.WithError(err).Fatal("setting up google client")
+		}
+	}
 	resolver := graph.NewResolver(ctx, repo, notifierService, createPublisher, googleClient, log.WithField("subsystem", "graphql"))
 
 	srv := newServer(graphgen.NewExecutableSchema(graphgen.Config{Resolvers: resolver}))
@@ -254,6 +257,10 @@ func main() {
 		}
 	}()
 
+	if err := run(ctx, log, googleClient, repo); err != nil {
+		log.Fatal(err)
+	}
+
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	defer cancel()
 	<-ctx.Done()
@@ -317,4 +324,14 @@ func newMetricsProvider() (metric.Meter, error) {
 	}
 	provider := metricsdk.NewMeterProvider(metricsdk.WithReader(exporter))
 	return provider.Meter("github.com/nais/fasit"), nil
+}
+
+func run(ctx context.Context, log *logrus.Logger, googleClient graph.Upgrader, repo database.Repo) error {
+	s := workers.NewScheduler(log.WithField("subsystem", "scheduler"))
+	clusterReporter := upgrader.NewClusterUpgrader(repo, log, googleClient)
+	s.Register("cluster-reporter", clusterReporter, 30*time.Second)
+	s.Start(ctx)
+
+	log.Info("Done")
+	return nil
 }

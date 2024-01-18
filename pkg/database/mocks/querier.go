@@ -253,6 +253,63 @@ func (_c *Querier_AutoInstallsForKind_Call) RunAndReturn(run func(context.Contex
 	return _c
 }
 
+// ClusterOperationCreateOrUpdate provides a mock function with given fields: ctx, arg
+func (_m *Querier) ClusterOperationCreateOrUpdate(ctx context.Context, arg gensql.ClusterOperationCreateOrUpdateParams) (gensql.ClusterUpgrade, error) {
+	ret := _m.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ClusterOperationCreateOrUpdate")
+	}
+
+	var r0 gensql.ClusterUpgrade
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.ClusterOperationCreateOrUpdateParams) (gensql.ClusterUpgrade, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.ClusterOperationCreateOrUpdateParams) gensql.ClusterUpgrade); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(gensql.ClusterUpgrade)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, gensql.ClusterOperationCreateOrUpdateParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Querier_ClusterOperationCreateOrUpdate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ClusterOperationCreateOrUpdate'
+type Querier_ClusterOperationCreateOrUpdate_Call struct {
+	*mock.Call
+}
+
+// ClusterOperationCreateOrUpdate is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg gensql.ClusterOperationCreateOrUpdateParams
+func (_e *Querier_Expecter) ClusterOperationCreateOrUpdate(ctx interface{}, arg interface{}) *Querier_ClusterOperationCreateOrUpdate_Call {
+	return &Querier_ClusterOperationCreateOrUpdate_Call{Call: _e.mock.On("ClusterOperationCreateOrUpdate", ctx, arg)}
+}
+
+func (_c *Querier_ClusterOperationCreateOrUpdate_Call) Run(run func(ctx context.Context, arg gensql.ClusterOperationCreateOrUpdateParams)) *Querier_ClusterOperationCreateOrUpdate_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(gensql.ClusterOperationCreateOrUpdateParams))
+	})
+	return _c
+}
+
+func (_c *Querier_ClusterOperationCreateOrUpdate_Call) Return(_a0 gensql.ClusterUpgrade, _a1 error) *Querier_ClusterOperationCreateOrUpdate_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Querier_ClusterOperationCreateOrUpdate_Call) RunAndReturn(run func(context.Context, gensql.ClusterOperationCreateOrUpdateParams) (gensql.ClusterUpgrade, error)) *Querier_ClusterOperationCreateOrUpdate_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ConfigDelete provides a mock function with given fields: ctx, id
 func (_m *Querier) ConfigDelete(ctx context.Context, id uuid.UUID) error {
 	ret := _m.Called(ctx, id)

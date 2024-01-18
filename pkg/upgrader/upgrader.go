@@ -24,6 +24,10 @@ func New(ctx context.Context) (*Client, error) {
 	}, nil
 }
 
+func (c *Client) Close() error {
+	return c.client.Close()
+}
+
 func (c *Client) GetRunningOperations(ctx context.Context, projectId, clusterName string) ([]*containerpb.Operation, error) {
 	panic("not implemented")
 }

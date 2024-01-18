@@ -30,6 +30,28 @@ func (c *Upgrader) Upgrade(ctx context.Context, projectId, clusterName, version 
 	return nil
 }
 
+func (c *Upgrader) UpgradeMaster(ctx context.Context, projectId, clusterName, version string) (*containerpb.Operation, error) {
+	ret := containerpb.Operation{}
+	fmt.Println("Upgrade master", projectId, clusterName, version)
+
+	return &ret, nil
+}
+
+func (c *Upgrader) UpgradeNodePool(ctx context.Context, projectId, clusterName, nodePoolName, version string) (*containerpb.Operation, error) {
+	ret := containerpb.Operation{}
+	fmt.Println("Upgrade nodepool", projectId, clusterName, nodePoolName, version)
+
+	return &ret, nil
+}
+
+func (c *Upgrader) GetNodePools(ctx context.Context, projectId, clusterName string) ([]*containerpb.NodePool, error) {
+	return []*containerpb.NodePool{
+		{
+			Name: "nap-e2-standard-16-1x43ive2",
+		},
+	}, nil
+}
+
 func (c *Upgrader) GetRunningOperations(ctx context.Context, projectId, clusterName string) ([]*containerpb.Operation, error) {
 	ret := []*containerpb.Operation{}
 	if clusterName == "dev-gcp" && projectId == "nais-dev-gcp" {
@@ -55,15 +77,15 @@ func (c *Upgrader) GetRunningOperations(ctx context.Context, projectId, clusterN
 					},
 					{
 						Name:  "NODES_COMPLETE",
-						Value: &containerpb.OperationProgress_Metric_IntValue{IntValue: 18},
+						Value: &containerpb.OperationProgress_Metric_IntValue{IntValue: 19},
 					},
 					{
 						Name:  "NODES_DONE",
-						Value: &containerpb.OperationProgress_Metric_IntValue{IntValue: 18},
+						Value: &containerpb.OperationProgress_Metric_IntValue{IntValue: 19},
 					},
 					{
 						Name:  "NODE_PDB_DELAY_SECONDS",
-						Value: &containerpb.OperationProgress_Metric_IntValue{IntValue: 14395},
+						Value: &containerpb.OperationProgress_Metric_IntValue{IntValue: 14145},
 					},
 				},
 			},
