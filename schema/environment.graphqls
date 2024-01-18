@@ -5,6 +5,14 @@ enum EnvironmentKind {
   LEGACY
 }
 
+enum UpgradeStatus {
+  CREATED
+  MASTER_UPGRADE
+  NODE_UPGRADE
+  FAILED
+  DONE
+}
+
 type Health {
   reportedAt: Time!
 }
@@ -39,32 +47,33 @@ type Environment {
   features: [Feature!]!
   feature(name: String!): Feature!
   reconcile: Boolean!
-  versions: Versions!
-  runningOperations: [Operation!]!
+  versions: EnvironmentVersions!
+  runningOperations: [EnvironmentOperation!]!
 }
 
-type Operation {
+type EnvironmentOperation {
   id: String!
   status: String!
   type: String!
   detail: String!
   startTime: Time!
-  progress: Progress!
+  progress: EnvironmentOperationProgress!
 }
 
-type Progress {
-  metrics: [ProgressMetric!]!
+type EnvironmentOperationProgress {
+  metrics: [EnvironmentOperationProgressMetric!]!
 }
 
-type ProgressMetric {
+type EnvironmentOperationProgressMetric {
   name: String!
   value: Int!
 }
 
-type Versions {
+type EnvironmentVersions {
   apiserver: String!
   availableVersions: [String!]!
   channel: String!
+  upgradeStatus: String!
 }
 
 type EnvironmentValue {
@@ -91,6 +100,15 @@ input EnvironmentUpdate {
   description: String
 }
 
+"""
+EnvironmentUpgrade contains metadata for upgrading an environment
+"""
+input EnvironmentUpgrade {
+  "k8s version to upgrade to"
+  version: String!
+  envID: ID!
+}
+
 extend type Mutation {
   environmentCreate(environment: EnvironmentCreate!): Environment!
   """
@@ -111,5 +129,5 @@ extend type Mutation {
   """
   Upgrade environment k8s cluster
   """
-  environmentUpgrade(id: ID!, k8sVersion: String!): Environment!
+  environmentUpgrade(upgrade: EnvironmentUpgrade): Environment!
 }
