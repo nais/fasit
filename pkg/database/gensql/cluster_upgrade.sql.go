@@ -9,24 +9,22 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const clusterOperationCreateOrUpdate = `-- name: ClusterOperationCreateOrUpdate :one
 INSERT INTO cluster_upgrade
-("operation_id", "tenant_id", "environment_id", "status", "type", "master_version", "nodes_total", "nodes_failed","nodes_completed", "nodes_done", "node_pdb_delay_seconds")
+("operation_id", "tenant_id", "environment_id", "status", "type", "nodes_total", "nodes_failed","nodes_completed", "nodes_done", "node_pdb_delay_seconds")
 VALUES
-($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 ON CONFLICT ("operation_id", "tenant_id", "environment_id") DO
 UPDATE SET
     "status" = EXCLUDED.status,
-    "master_version" = EXCLUDED.master_version,
     "nodes_total" = EXCLUDED.nodes_total,
     "nodes_failed" = EXCLUDED.nodes_failed,
     "nodes_completed" = EXCLUDED.nodes_completed,
     "nodes_done" = EXCLUDED.nodes_done,
     "node_pdb_delay_seconds" = EXCLUDED.node_pdb_delay_seconds
-RETURNING operation_id, tenant_id, environment_id, status, type, master_version, nodes_total, nodes_failed, nodes_completed, nodes_done, node_pdb_delay_seconds, start_time, last_modified
+RETURNING operation_id, tenant_id, environment_id, version_id, status, type, nodes_total, nodes_failed, nodes_completed, nodes_done, node_pdb_delay_seconds, start_time, last_modified
 `
 
 type ClusterOperationCreateOrUpdateParams struct {
@@ -35,7 +33,6 @@ type ClusterOperationCreateOrUpdateParams struct {
 	Envid               uuid.UUID
 	Status              string
 	Type                string
-	Masterversion       pgtype.Text
 	Nodestotal          int32
 	Nodesfailed         int32
 	Nodescompleted      int32
@@ -50,7 +47,6 @@ func (q *Queries) ClusterOperationCreateOrUpdate(ctx context.Context, arg Cluste
 		arg.Envid,
 		arg.Status,
 		arg.Type,
-		arg.Masterversion,
 		arg.Nodestotal,
 		arg.Nodesfailed,
 		arg.Nodescompleted,
@@ -62,9 +58,9 @@ func (q *Queries) ClusterOperationCreateOrUpdate(ctx context.Context, arg Cluste
 		&i.OperationID,
 		&i.TenantID,
 		&i.EnvironmentID,
+		&i.VersionID,
 		&i.Status,
 		&i.Type,
-		&i.MasterVersion,
 		&i.NodesTotal,
 		&i.NodesFailed,
 		&i.NodesCompleted,
@@ -74,4 +70,49 @@ func (q *Queries) ClusterOperationCreateOrUpdate(ctx context.Context, arg Cluste
 		&i.LastModified,
 	)
 	return i, err
+}
+
+const clusterOperationsGet = `-- name: ClusterOperationsGet :many
+SELECT operation_id, tenant_id, environment_id, version_id, status, type, nodes_total, nodes_failed, nodes_completed, nodes_done, node_pdb_delay_seconds, start_time, last_modified FROM cluster_upgrade WHERE "tenant_id" = $1 AND "environment_id" = $2 AND "status" = $3
+ORDER BY "start_time" DESC
+`
+
+type ClusterOperationsGetParams struct {
+	Tenantid uuid.UUID
+	Envid    uuid.UUID
+	Status   string
+}
+
+func (q *Queries) ClusterOperationsGet(ctx context.Context, arg ClusterOperationsGetParams) ([]ClusterUpgrade, error) {
+	rows, err := q.db.Query(ctx, clusterOperationsGet, arg.Tenantid, arg.Envid, arg.Status)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ClusterUpgrade{}
+	for rows.Next() {
+		var i ClusterUpgrade
+		if err := rows.Scan(
+			&i.OperationID,
+			&i.TenantID,
+			&i.EnvironmentID,
+			&i.VersionID,
+			&i.Status,
+			&i.Type,
+			&i.NodesTotal,
+			&i.NodesFailed,
+			&i.NodesCompleted,
+			&i.NodesDone,
+			&i.NodePdbDelaySeconds,
+			&i.StartTime,
+			&i.LastModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

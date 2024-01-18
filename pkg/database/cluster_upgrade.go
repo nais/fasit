@@ -5,15 +5,28 @@ import (
 
 	"cloud.google.com/go/container/apiv1/containerpb"
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/nais/fasit/pkg/database/gensql"
 )
 
 type ClusterUpgraderRepo interface {
-	ClusterOperationCreateOrUpdate(ctx context.Context, tenantId, envId uuid.UUID, masterVersion string, op *containerpb.Operation) (gensql.ClusterUpgrade, error)
+	CreateOrUpdateClusterOperation(ctx context.Context, tenantId, envId uuid.UUID, op *containerpb.Operation) (gensql.ClusterUpgrade, error)
+	GetRunningClusterOperations(ctx context.Context, tenantId, envId uuid.UUID) ([]gensql.ClusterUpgrade, error)
+	CreateClusterVersion(ctx context.Context, tenantId, envId uuid.UUID, version string) error
 }
 
-func (r *repo) ClusterOperationCreateOrUpdate(ctx context.Context, tenantId, envId uuid.UUID, masterVersion string, op *containerpb.Operation) (gensql.ClusterUpgrade, error) {
+func (r *repo) CreateClusterVersion(ctx context.Context, tenantId, envId uuid.UUID, version string) error {
+	return nil
+}
+
+func (r *repo) GetRunningClusterOperations(ctx context.Context, tenantId, envId uuid.UUID) ([]gensql.ClusterUpgrade, error) {
+	return r.querier.ClusterOperationsGet(ctx, gensql.ClusterOperationsGetParams{
+		Tenantid: tenantId,
+		Envid:    envId,
+		Status:   "RUNNING",
+	})
+}
+
+func (r *repo) CreateOrUpdateClusterOperation(ctx context.Context, tenantId, envId uuid.UUID, op *containerpb.Operation) (gensql.ClusterUpgrade, error) {
 	nodes_total := 0
 	nodes_failed := 0
 	nodes_complete := 0
@@ -44,7 +57,6 @@ func (r *repo) ClusterOperationCreateOrUpdate(ctx context.Context, tenantId, env
 		Tenantid:            tenantId,
 		Envid:               envId,
 		Type:                op.OperationType.String(),
-		Masterversion:       pgtype.Text{String: masterVersion, Valid: true},
 		Nodestotal:          int32(nodes_total),
 		Nodesfailed:         int32(nodes_failed),
 		Nodescompleted:      int32(nodes_complete),

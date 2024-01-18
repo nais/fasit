@@ -28,6 +28,7 @@ type Upgrader interface {
 	UpgradeMaster(ctx context.Context, projectId, clusterName, version string) (*containerpb.Operation, error)
 	UpgradeNodePool(ctx context.Context, projectId, clusterName, nodePoolName, version string) (*containerpb.Operation, error)
 	GetNodePools(ctx context.Context, projectId, clusterName string) ([]*containerpb.NodePool, error)
+	GetOperation(ctx context.Context, projectId, operationId string) (*containerpb.Operation, error)
 }
 
 type Resolver struct {

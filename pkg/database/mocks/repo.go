@@ -229,66 +229,6 @@ func (_c *Repo_Close_Call) RunAndReturn(run func()) *Repo_Close_Call {
 	return _c
 }
 
-// ClusterOperationCreateOrUpdate provides a mock function with given fields: ctx, tenantId, envId, masterVersion, op
-func (_m *Repo) ClusterOperationCreateOrUpdate(ctx context.Context, tenantId uuid.UUID, envId uuid.UUID, masterVersion string, op *containerpb.Operation) (gensql.ClusterUpgrade, error) {
-	ret := _m.Called(ctx, tenantId, envId, masterVersion, op)
-
-	if len(ret) == 0 {
-		panic("no return value specified for ClusterOperationCreateOrUpdate")
-	}
-
-	var r0 gensql.ClusterUpgrade
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID, string, *containerpb.Operation) (gensql.ClusterUpgrade, error)); ok {
-		return rf(ctx, tenantId, envId, masterVersion, op)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID, string, *containerpb.Operation) gensql.ClusterUpgrade); ok {
-		r0 = rf(ctx, tenantId, envId, masterVersion, op)
-	} else {
-		r0 = ret.Get(0).(gensql.ClusterUpgrade)
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, uuid.UUID, string, *containerpb.Operation) error); ok {
-		r1 = rf(ctx, tenantId, envId, masterVersion, op)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// Repo_ClusterOperationCreateOrUpdate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ClusterOperationCreateOrUpdate'
-type Repo_ClusterOperationCreateOrUpdate_Call struct {
-	*mock.Call
-}
-
-// ClusterOperationCreateOrUpdate is a helper method to define mock.On call
-//   - ctx context.Context
-//   - tenantId uuid.UUID
-//   - envId uuid.UUID
-//   - masterVersion string
-//   - op *containerpb.Operation
-func (_e *Repo_Expecter) ClusterOperationCreateOrUpdate(ctx interface{}, tenantId interface{}, envId interface{}, masterVersion interface{}, op interface{}) *Repo_ClusterOperationCreateOrUpdate_Call {
-	return &Repo_ClusterOperationCreateOrUpdate_Call{Call: _e.mock.On("ClusterOperationCreateOrUpdate", ctx, tenantId, envId, masterVersion, op)}
-}
-
-func (_c *Repo_ClusterOperationCreateOrUpdate_Call) Run(run func(ctx context.Context, tenantId uuid.UUID, envId uuid.UUID, masterVersion string, op *containerpb.Operation)) *Repo_ClusterOperationCreateOrUpdate_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(uuid.UUID), args[2].(uuid.UUID), args[3].(string), args[4].(*containerpb.Operation))
-	})
-	return _c
-}
-
-func (_c *Repo_ClusterOperationCreateOrUpdate_Call) Return(_a0 gensql.ClusterUpgrade, _a1 error) *Repo_ClusterOperationCreateOrUpdate_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *Repo_ClusterOperationCreateOrUpdate_Call) RunAndReturn(run func(context.Context, uuid.UUID, uuid.UUID, string, *containerpb.Operation) (gensql.ClusterUpgrade, error)) *Repo_ClusterOperationCreateOrUpdate_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // ConfigCreate provides a mock function with given fields: ctx, c
 func (_m *Repo) ConfigCreate(ctx context.Context, c model.NewConfiguration) (*model.Configuration, error) {
 	ret := _m.Called(ctx, c)
@@ -960,6 +900,114 @@ func (_c *Repo_CostUpsert_Call) Return(_a0 error) *Repo_CostUpsert_Call {
 }
 
 func (_c *Repo_CostUpsert_Call) RunAndReturn(run func(context.Context, []gensql.CostUpsertParams) error) *Repo_CostUpsert_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// CreateClusterVersion provides a mock function with given fields: ctx, tenantId, envId, version
+func (_m *Repo) CreateClusterVersion(ctx context.Context, tenantId uuid.UUID, envId uuid.UUID, version string) error {
+	ret := _m.Called(ctx, tenantId, envId, version)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CreateClusterVersion")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID, string) error); ok {
+		r0 = rf(ctx, tenantId, envId, version)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Repo_CreateClusterVersion_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateClusterVersion'
+type Repo_CreateClusterVersion_Call struct {
+	*mock.Call
+}
+
+// CreateClusterVersion is a helper method to define mock.On call
+//   - ctx context.Context
+//   - tenantId uuid.UUID
+//   - envId uuid.UUID
+//   - version string
+func (_e *Repo_Expecter) CreateClusterVersion(ctx interface{}, tenantId interface{}, envId interface{}, version interface{}) *Repo_CreateClusterVersion_Call {
+	return &Repo_CreateClusterVersion_Call{Call: _e.mock.On("CreateClusterVersion", ctx, tenantId, envId, version)}
+}
+
+func (_c *Repo_CreateClusterVersion_Call) Run(run func(ctx context.Context, tenantId uuid.UUID, envId uuid.UUID, version string)) *Repo_CreateClusterVersion_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uuid.UUID), args[2].(uuid.UUID), args[3].(string))
+	})
+	return _c
+}
+
+func (_c *Repo_CreateClusterVersion_Call) Return(_a0 error) *Repo_CreateClusterVersion_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Repo_CreateClusterVersion_Call) RunAndReturn(run func(context.Context, uuid.UUID, uuid.UUID, string) error) *Repo_CreateClusterVersion_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// CreateOrUpdateClusterOperation provides a mock function with given fields: ctx, tenantId, envId, op
+func (_m *Repo) CreateOrUpdateClusterOperation(ctx context.Context, tenantId uuid.UUID, envId uuid.UUID, op *containerpb.Operation) (gensql.ClusterUpgrade, error) {
+	ret := _m.Called(ctx, tenantId, envId, op)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CreateOrUpdateClusterOperation")
+	}
+
+	var r0 gensql.ClusterUpgrade
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID, *containerpb.Operation) (gensql.ClusterUpgrade, error)); ok {
+		return rf(ctx, tenantId, envId, op)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID, *containerpb.Operation) gensql.ClusterUpgrade); ok {
+		r0 = rf(ctx, tenantId, envId, op)
+	} else {
+		r0 = ret.Get(0).(gensql.ClusterUpgrade)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, uuid.UUID, *containerpb.Operation) error); ok {
+		r1 = rf(ctx, tenantId, envId, op)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Repo_CreateOrUpdateClusterOperation_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateOrUpdateClusterOperation'
+type Repo_CreateOrUpdateClusterOperation_Call struct {
+	*mock.Call
+}
+
+// CreateOrUpdateClusterOperation is a helper method to define mock.On call
+//   - ctx context.Context
+//   - tenantId uuid.UUID
+//   - envId uuid.UUID
+//   - op *containerpb.Operation
+func (_e *Repo_Expecter) CreateOrUpdateClusterOperation(ctx interface{}, tenantId interface{}, envId interface{}, op interface{}) *Repo_CreateOrUpdateClusterOperation_Call {
+	return &Repo_CreateOrUpdateClusterOperation_Call{Call: _e.mock.On("CreateOrUpdateClusterOperation", ctx, tenantId, envId, op)}
+}
+
+func (_c *Repo_CreateOrUpdateClusterOperation_Call) Run(run func(ctx context.Context, tenantId uuid.UUID, envId uuid.UUID, op *containerpb.Operation)) *Repo_CreateOrUpdateClusterOperation_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uuid.UUID), args[2].(uuid.UUID), args[3].(*containerpb.Operation))
+	})
+	return _c
+}
+
+func (_c *Repo_CreateOrUpdateClusterOperation_Call) Return(_a0 gensql.ClusterUpgrade, _a1 error) *Repo_CreateOrUpdateClusterOperation_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Repo_CreateOrUpdateClusterOperation_Call) RunAndReturn(run func(context.Context, uuid.UUID, uuid.UUID, *containerpb.Operation) (gensql.ClusterUpgrade, error)) *Repo_CreateOrUpdateClusterOperation_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -2647,6 +2695,66 @@ func (_c *Repo_FeaturesForKind_Call) Return(_a0 []*model.Feature, _a1 error) *Re
 }
 
 func (_c *Repo_FeaturesForKind_Call) RunAndReturn(run func(context.Context, model.EnvironmentKind, bool) ([]*model.Feature, error)) *Repo_FeaturesForKind_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetRunningClusterOperations provides a mock function with given fields: ctx, tenantId, envId
+func (_m *Repo) GetRunningClusterOperations(ctx context.Context, tenantId uuid.UUID, envId uuid.UUID) ([]gensql.ClusterUpgrade, error) {
+	ret := _m.Called(ctx, tenantId, envId)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetRunningClusterOperations")
+	}
+
+	var r0 []gensql.ClusterUpgrade
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID) ([]gensql.ClusterUpgrade, error)); ok {
+		return rf(ctx, tenantId, envId)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID) []gensql.ClusterUpgrade); ok {
+		r0 = rf(ctx, tenantId, envId)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gensql.ClusterUpgrade)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, uuid.UUID) error); ok {
+		r1 = rf(ctx, tenantId, envId)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Repo_GetRunningClusterOperations_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetRunningClusterOperations'
+type Repo_GetRunningClusterOperations_Call struct {
+	*mock.Call
+}
+
+// GetRunningClusterOperations is a helper method to define mock.On call
+//   - ctx context.Context
+//   - tenantId uuid.UUID
+//   - envId uuid.UUID
+func (_e *Repo_Expecter) GetRunningClusterOperations(ctx interface{}, tenantId interface{}, envId interface{}) *Repo_GetRunningClusterOperations_Call {
+	return &Repo_GetRunningClusterOperations_Call{Call: _e.mock.On("GetRunningClusterOperations", ctx, tenantId, envId)}
+}
+
+func (_c *Repo_GetRunningClusterOperations_Call) Run(run func(ctx context.Context, tenantId uuid.UUID, envId uuid.UUID)) *Repo_GetRunningClusterOperations_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uuid.UUID), args[2].(uuid.UUID))
+	})
+	return _c
+}
+
+func (_c *Repo_GetRunningClusterOperations_Call) Return(_a0 []gensql.ClusterUpgrade, _a1 error) *Repo_GetRunningClusterOperations_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Repo_GetRunningClusterOperations_Call) RunAndReturn(run func(context.Context, uuid.UUID, uuid.UUID) ([]gensql.ClusterUpgrade, error)) *Repo_GetRunningClusterOperations_Call {
 	_c.Call.Return(run)
 	return _c
 }

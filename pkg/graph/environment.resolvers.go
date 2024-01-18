@@ -131,7 +131,7 @@ func (r *environmentResolver) Feature(ctx context.Context, obj *model.Environmen
 }
 
 // Versions is the resolver for the versions field.
-func (r *environmentResolver) Versions(ctx context.Context, obj *model.Environment) (*model.Versions, error) {
+func (r *environmentResolver) Versions(ctx context.Context, obj *model.Environment) (*model.EnvironmentVersions, error) {
 	projectId, err := r.Environment().GcpProjectID(ctx, obj)
 	if err != nil {
 		return nil, err
@@ -157,15 +157,16 @@ func (r *environmentResolver) Versions(ctx context.Context, obj *model.Environme
 		return nil, err
 	}
 
-	return &model.Versions{
+	return &model.EnvironmentVersions{
 		Channel:           channel,
 		Apiserver:         currentMasterVersion,
 		AvailableVersions: availableVersions,
+		UpgradeStatus:     "N/A - TODO",
 	}, nil
 }
 
 // RunningOperations is the resolver for the runningOperations field.
-func (r *environmentResolver) RunningOperations(ctx context.Context, obj *model.Environment) ([]*model.Operation, error) {
+func (r *environmentResolver) RunningOperations(ctx context.Context, obj *model.Environment) ([]*model.EnvironmentOperation, error) {
 	projectId, err := r.Environment().GcpProjectID(ctx, obj)
 	if err != nil {
 		return nil, err
@@ -175,7 +176,7 @@ func (r *environmentResolver) RunningOperations(ctx context.Context, obj *model.
 		return nil, fmt.Errorf("projectId is nil")
 	}
 
-	var ret []*model.Operation
+	var ret []*model.EnvironmentOperation
 
 	ops, err := r.UpgraderClient.GetRunningOperations(ctx, *projectId, obj.Name)
 	for _, op := range ops {
@@ -183,21 +184,21 @@ func (r *environmentResolver) RunningOperations(ctx context.Context, obj *model.
 		if err != nil {
 			return nil, err
 		}
-		var metrics []*model.ProgressMetric
+		var metrics []*model.EnvironmentOperationProgressMetric
 		for _, m := range op.Progress.Metrics {
-			metrics = append(metrics, &model.ProgressMetric{
+			metrics = append(metrics, &model.EnvironmentOperationProgressMetric{
 				Name:  m.Name,
 				Value: int(m.Value.(*containerpb.OperationProgress_Metric_IntValue).IntValue),
 			})
 		}
 
-		ret = append(ret, &model.Operation{
+		ret = append(ret, &model.EnvironmentOperation{
 			ID:        op.Name,
 			Status:    op.Status.String(),
 			Type:      op.OperationType.String(),
 			Detail:    op.Detail,
 			StartTime: startTime,
-			Progress: &model.Progress{
+			Progress: &model.EnvironmentOperationProgress{
 				Metrics: metrics,
 			},
 		})
@@ -222,8 +223,15 @@ func (r *mutationResolver) EnvironmentSetReconcile(ctx context.Context, id uuid.
 }
 
 // EnvironmentUpgrade is the resolver for the environmentUpgrade field.
-func (r *mutationResolver) EnvironmentUpgrade(ctx context.Context, id uuid.UUID, k8sVersion string) (*model.Environment, error) {
-	panic(fmt.Errorf("not implemented: EnvironmentUpgrade - environmentUpgrade"))
+func (r *mutationResolver) EnvironmentUpgrade(ctx context.Context, upgrade *model.EnvironmentUpgrade) (*model.Environment, error) {
+	env, err := r.Repo.EnvironmentGet(ctx, upgrade.EnvID)
+	if err != nil {
+		return nil, err
+	}
+
+	r.Repo.CreateClusterVersion(ctx, env.TenantID, upgrade.EnvID, upgrade.Version)
+
+	return r.Repo.EnvironmentGet(ctx, upgrade.EnvID)
 }
 
 // Feature is the resolver for the feature field.

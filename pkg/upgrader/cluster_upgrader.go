@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/graph"
 
@@ -31,47 +32,91 @@ func (c *ClusterUpgrader) Run(ctx context.Context) error {
 		return err
 	}
 	for _, tenant := range tenants {
-		c.log.Infof("Upgrading clusters for tenant %s", tenant.Name)
 		envs, err := c.repo.EnvironmentsGet(ctx, tenant.ID)
 		if err != nil {
 			return err
 		}
 		for _, env := range envs {
-			c.log.Infof("Upgrading %s", env.Name)
+			// TODO: Check if cluster is upgradable
+			// er det kjørende operasjoner i dben
+			// er det kjørende operasjoner på clusteret?
+			// er master versjonen den samme som den nyeste tilgjengelige?
+			// er nodepool versjonen den samme som master versjonen?
 
-			projectId, err := c.repo.EnvironmentValueGet(ctx, env.ID, "project_id", false)
+			// sjekk operations i clusteret -> upgrade master -> kall til google -> opprett operasjon i db
+			// fant running op i db -> kall til google (getOperation) -> oppdater operasjon i db
+			// done -> oppgrader nodepool
+
+			c.log.Infof("Upgrading clusters for tenant %s, env %s", tenant.Name, env.Name)
+			projectId, err := getProjectId(ctx, c, env.ID)
+
+			runningOperations, err := c.repo.GetRunningClusterOperations(ctx, tenant.ID, env.ID)
 			if err != nil {
 				return err
 			}
 
-			pid, err := projectId.Value.MarshalJSON()
-			if err != nil {
-				return err
-			}
-
-			pid_string := string(pid[1 : len(pid)-1])
-			fmt.Println("projectId", pid_string)
-
-			master_version, err := c.client.GetCurrentMasterVersion(ctx, pid_string, env.Name)
-			if err != nil {
-				return err
-			}
-
-			ops, err := c.client.GetRunningOperations(ctx, pid_string, env.Name)
-			if err != nil {
-				return err
-			}
-
-			for _, op := range ops {
-				fmt.Println("Operation", op.Name)
-				u, err := c.repo.ClusterOperationCreateOrUpdate(ctx, tenant.ID, env.ID, master_version, op)
+			if len(runningOperations) == 1 {
+				runningOperation := runningOperations[0]
+				op, err := c.client.GetOperation(ctx, projectId, runningOperation.OperationID)
 				if err != nil {
 					return err
 				}
-				fmt.Println("ClusterOperationCreateOrUpdate", u)
+
+				c.repo.CreateOrUpdateClusterOperation(ctx, tenant.ID, env.ID, op)
+				continue
+
+			} else if len(runningOperations) > 1 {
+				// TODO: metric / alert på denne
+				return fmt.Errorf("found %d running operations for tenant %s, env %s. should be only one", len(runningOperations), tenant.Name, env.Name)
 			}
+
+			availableVersions, err := c.client.GetAvailableVersions(ctx, projectId, env.Name, "STABLE")
+			if err != nil {
+				return err
+			}
+
+			fmt.Println("Available versions", availableVersions)
+
+			/*
+
+				master_version, err := c.client.GetCurrentMasterVersion(ctx, pid_string, env.Name)
+				if err != nil {
+					return err
+				}
+
+				_, err := c.client.GetAvailableVersions(ctx, pid_string, env.Name, "STABLE")
+				if err != nil {
+					return err
+				}
+
+
+
+				for _, op := range ops {
+					fmt.Println("Operation", op.Name)
+					u, err := c.repo.ClusterOperationCreateOrUpdate(ctx, tenant.ID, env.ID, master_version, op)
+					if err != nil {
+						return err
+					}
+					fmt.Println("ClusterOperationCreateOrUpdate", u)
+				}*/
 		}
 
 	}
 	return nil
+}
+
+// TODO: thomas er dette ok?
+func getProjectId(ctx context.Context, c *ClusterUpgrader, environmentId uuid.UUID) (string, error) {
+	projectId, err := c.repo.EnvironmentValueGet(ctx, environmentId, "project_id", false)
+	if err != nil {
+		return "", err
+	}
+
+	pid, err := projectId.Value.MarshalJSON()
+	if err != nil {
+		return "", err
+	}
+
+	pid_string := string(pid[1 : len(pid)-1])
+	return pid_string, nil
 }

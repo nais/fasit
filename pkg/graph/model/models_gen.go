@@ -57,10 +57,42 @@ type EnvironmentCreate struct {
 	Kind        EnvironmentKind `json:"kind"`
 }
 
+type EnvironmentOperation struct {
+	ID        string                        `json:"id"`
+	Status    string                        `json:"status"`
+	Type      string                        `json:"type"`
+	Detail    string                        `json:"detail"`
+	StartTime time.Time                     `json:"startTime"`
+	Progress  *EnvironmentOperationProgress `json:"progress"`
+}
+
+type EnvironmentOperationProgress struct {
+	Metrics []*EnvironmentOperationProgressMetric `json:"metrics"`
+}
+
+type EnvironmentOperationProgressMetric struct {
+	Name  string `json:"name"`
+	Value int    `json:"value"`
+}
+
 // UpdateEnvironment contains metadata for updating an environment
 type EnvironmentUpdate struct {
 	// description of the environment
 	Description *string `json:"description,omitempty"`
+}
+
+// EnvironmentUpgrade contains metadata for upgrading an environment
+type EnvironmentUpgrade struct {
+	// k8s version to upgrade to
+	Version string    `json:"version"`
+	EnvID   uuid.UUID `json:"envID"`
+}
+
+type EnvironmentVersions struct {
+	Apiserver         string   `json:"apiserver"`
+	AvailableVersions []string `json:"availableVersions"`
+	Channel           string   `json:"channel"`
+	UpgradeStatus     string   `json:"upgradeStatus"`
 }
 
 type HelmValueDiff struct {
@@ -82,15 +114,6 @@ type PlaygroundInput struct {
 	ShowSecrets        *bool  `json:"showSecrets,omitempty"`
 	IncludeUnsetConfig *bool  `json:"includeUnsetConfig,omitempty"`
 	Code               string `json:"code"`
-}
-
-type Progress struct {
-	Metrics []*ProgressMetric `json:"metrics"`
-}
-
-type ProgressMetric struct {
-	Name  string `json:"name"`
-	Value int    `json:"value"`
 }
 
 type Query struct {
@@ -121,12 +144,6 @@ type TenantCreate struct {
 type UpdateConfiguration struct {
 	Description *string         `json:"description,omitempty"`
 	Value       json.RawMessage `json:"value"`
-}
-
-type Versions struct {
-	Apiserver         string   `json:"apiserver"`
-	AvailableVersions []string `json:"availableVersions"`
-	Channel           string   `json:"channel"`
 }
 
 type UserInfo struct {
@@ -220,5 +237,52 @@ func (e *HelmValueDifference) UnmarshalGQL(v interface{}) error {
 }
 
 func (e HelmValueDifference) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type UpgradeStatus string
+
+const (
+	UpgradeStatusCreated       UpgradeStatus = "CREATED"
+	UpgradeStatusMasterUpgrade UpgradeStatus = "MASTER_UPGRADE"
+	UpgradeStatusNodeUpgrade   UpgradeStatus = "NODE_UPGRADE"
+	UpgradeStatusFailed        UpgradeStatus = "FAILED"
+	UpgradeStatusDone          UpgradeStatus = "DONE"
+)
+
+var AllUpgradeStatus = []UpgradeStatus{
+	UpgradeStatusCreated,
+	UpgradeStatusMasterUpgrade,
+	UpgradeStatusNodeUpgrade,
+	UpgradeStatusFailed,
+	UpgradeStatusDone,
+}
+
+func (e UpgradeStatus) IsValid() bool {
+	switch e {
+	case UpgradeStatusCreated, UpgradeStatusMasterUpgrade, UpgradeStatusNodeUpgrade, UpgradeStatusFailed, UpgradeStatusDone:
+		return true
+	}
+	return false
+}
+
+func (e UpgradeStatus) String() string {
+	return string(e)
+}
+
+func (e *UpgradeStatus) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = UpgradeStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid UpgradeStatus", str)
+	}
+	return nil
+}
+
+func (e UpgradeStatus) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }

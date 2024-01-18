@@ -12,6 +12,51 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type ClusterVersionStatus string
+
+const (
+	ClusterVersionStatusCreated       ClusterVersionStatus = "created"
+	ClusterVersionStatusMasterUpgrade ClusterVersionStatus = "master_upgrade"
+	ClusterVersionStatusNodeUpgrade   ClusterVersionStatus = "node_upgrade"
+	ClusterVersionStatusFailed        ClusterVersionStatus = "failed"
+	ClusterVersionStatusDone          ClusterVersionStatus = "done"
+)
+
+func (e *ClusterVersionStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = ClusterVersionStatus(s)
+	case string:
+		*e = ClusterVersionStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for ClusterVersionStatus: %T", src)
+	}
+	return nil
+}
+
+type NullClusterVersionStatus struct {
+	ClusterVersionStatus ClusterVersionStatus
+	Valid                bool // Valid is true if ClusterVersionStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullClusterVersionStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.ClusterVersionStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.ClusterVersionStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullClusterVersionStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.ClusterVersionStatus), nil
+}
+
 type EnvironmentKind string
 
 const (
@@ -75,9 +120,9 @@ type ClusterUpgrade struct {
 	OperationID         string
 	TenantID            uuid.UUID
 	EnvironmentID       uuid.UUID
+	VersionID           uuid.UUID
 	Status              string
 	Type                string
-	MasterVersion       pgtype.Text
 	NodesTotal          int32
 	NodesFailed         int32
 	NodesCompleted      int32
@@ -85,6 +130,15 @@ type ClusterUpgrade struct {
 	NodePdbDelaySeconds int32
 	StartTime           pgtype.Timestamptz
 	LastModified        pgtype.Timestamptz
+}
+
+type ClusterVersion struct {
+	ID            uuid.UUID
+	TenantID      uuid.UUID
+	EnvironmentID uuid.UUID
+	Version       string
+	Status        ClusterVersionStatus
+	LastModified  pgtype.Timestamptz
 }
 
 type ConfigurationsEnvironment struct {

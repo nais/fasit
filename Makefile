@@ -88,7 +88,7 @@ sqlc-vet: install-sqlc
 mocks:
 	mockery --case underscore --name Repo --dir pkg/database/ --outpkg mocks --output pkg/database/mocks --with-expecter
 	mockery --case underscore --name Querier --dir pkg/database/ --outpkg mocks --output pkg/database/mocks --with-expecter
-	mockery --case underscore --name Upgrader --dir pkg/upgrader/ --outpkg mocks --output pkg/upgrader/mocks --with-expecter
+	mockery --case underscore --name Upgrader --dir pkg/graph/ --outpkg mocks --output pkg/upgrader/mocks --with-expecter
 
 generate-proto:
 	mkdir -p pkg/provider/protogen

@@ -29,7 +29,30 @@ func (c *Client) Close() error {
 }
 
 func (c *Client) GetRunningOperations(ctx context.Context, projectId, clusterName string) ([]*containerpb.Operation, error) {
-	panic("not implemented")
+	parent := c.getParent(projectId)
+	operations, err := c.client.ListOperations(ctx, &containerpb.ListOperationsRequest{
+		Parent: parent,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var runningOps []*containerpb.Operation
+
+	for _, op := range operations.Operations {
+		if op.Status == containerpb.Operation_RUNNING {
+			fmt.Println(op.Name)
+			runningOps = append(runningOps, op)
+		}
+	}
+
+	return operations.Operations, nil
+}
+
+func (c *Client) GetOperation(ctx context.Context, projectId, operationId string) (*containerpb.Operation, error) {
+	return c.client.GetOperation(ctx, &containerpb.GetOperationRequest{
+		Name: fmt.Sprintf("projects/"+projectId+"/locations/europe-north1/operations/%s", projectId, operationId),
+	})
 }
 
 func (c *Client) GetReleaseChannel(ctx context.Context, projectId, clusterName string) (string, error) {
@@ -62,7 +85,7 @@ func (c *Client) GetAvailableVersions(ctx context.Context, projectId, clusterNam
 		if channel.Channel.String() != releaseChannel {
 			continue
 		}
-		index := 0
+		index := -1
 		for _, v := range channel.ValidVersions {
 			versionObj, err := version.NewVersion(v)
 			if err != nil {
@@ -147,4 +170,8 @@ func (c *Client) getNodePoolName(projectId, clusterName, nodePoolName string) st
 
 func (c *Client) getName(projectId, clusterName string) string {
 	return "projects/" + projectId + "/locations/europe-north1/clusters/" + clusterName
+}
+
+func (c *Client) getParent(projectId string) string {
+	return "projects/" + projectId + "/locations/europe-north1"
 }
