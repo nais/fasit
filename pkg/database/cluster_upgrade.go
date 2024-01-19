@@ -11,11 +11,21 @@ import (
 type ClusterUpgraderRepo interface {
 	CreateOrUpdateClusterOperation(ctx context.Context, tenantId, envId uuid.UUID, op *containerpb.Operation) (gensql.ClusterUpgrade, error)
 	GetRunningClusterOperations(ctx context.Context, tenantId, envId uuid.UUID) ([]gensql.ClusterUpgrade, error)
-	CreateClusterVersion(ctx context.Context, tenantId, envId uuid.UUID, version string) error
+	CreateClusterVersion(ctx context.Context, tenantId, envId uuid.UUID, version string) (gensql.ClusterVersion, error)
 }
 
-func (r *repo) CreateClusterVersion(ctx context.Context, tenantId, envId uuid.UUID, version string) error {
-	return nil
+func (r *repo) CreateClusterVersion(ctx context.Context, tenantId, envId uuid.UUID, version string) (gensql.ClusterVersion, error) {
+	clusterVersion, err := r.querier.ClusterVersionCreate(ctx, gensql.ClusterVersionCreateParams{
+		Tenantid: tenantId,
+		Envid:    envId,
+		Version:  version,
+	})
+
+	if err != nil {
+		return gensql.ClusterVersion{}, err
+	}
+
+	return clusterVersion, nil
 }
 
 func (r *repo) GetRunningClusterOperations(ctx context.Context, tenantId, envId uuid.UUID) ([]gensql.ClusterUpgrade, error) {
