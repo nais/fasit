@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 
+	"cloud.google.com/go/container/apiv1/containerpb"
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v4"
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/graph"
@@ -42,113 +42,83 @@ func (c *ClusterUpgrader) Run(ctx context.Context) error {
 			return err
 		}
 		for _, env := range envs {
-			// TODO: Check if cluster is upgradable
-			// er det kjørende operasjoner i dben
-			// er det kjørende operasjoner på clusteret?
-			// er master versjonen den samme som den nyeste tilgjengelige?
-			// er nodepool versjonen den samme som master versjonen?
-
-			// sjekk operations i clusteret -> upgrade master -> kall til google -> opprett operasjon i db
-			// fant running op i db -> kall til google (getOperation) -> oppdater operasjon i db
-			// done -> oppgrader nodepool
-
-			c.log.Debugf("checking for cluster upgrade %q/%q", tenant.Name, env.Name)
 			projectId, err := getProjectId(ctx, c, env.ID)
 			if err != nil {
 				return err
 			}
+
+			c.log.Debugf("checking for cluster upgrade %s/%s", tenant.Name, env.Name)
 
 			clusterUpgrade, err := c.repo.ClusterUpgradeGet(ctx, env.TenantID, env.ID)
 			if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 				return err
 			}
 
-			if clusterUpgrade == nil || clusterUpgrade.UpgradeStatus == "" || clusterUpgrade.UpgradeStatus == model.UpgradeStatusDone {
+			// nothing to do
+			if clusterUpgrade == nil {
 				continue
 			}
 
-			if clusterUpgrade.UpgradeStatus == model.UpgradeStatusMasterUpgrade || clusterUpgrade.UpgradeStatus == model.UpgradeStatusNodeUpgrade {
-				/*c.log.Debugf("cluster upgrade running - %q/%q", tenant.Name, env.Name)
+			// check status on ongoing master upgrade
+			if clusterUpgrade.UpgradeStatus == model.UpgradeStatusMasterUpgrade {
+				co, err := c.repo.ClusterOperationsGetByUpgradeID(ctx, clusterUpgrade.ID)
+				if err != nil {
+					return err
+				}
+
+				op, err := c.client.GetOperation(ctx, projectId, co.ID)
+				if err != nil {
+					return err
+				}
+
+				_, err = c.repo.CreateOrUpdateClusterOperation(ctx, env.TenantID, env.ID, clusterUpgrade.ID, op)
+				if err != nil {
+					return err
+				}
+
+				if op.Status == containerpb.Operation_DONE {
+					upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatusNODEUPGRADE, clusterUpgrade.Version)
+					if err != nil {
+						return err
+					}
+					c.log.Infof("api server upgrade (%s) done - %s/%s", tenant.Name, env.Name, upgradeStatus.Version)
+					continue
+				}
+			}
+
+			// upgrade master
+			if clusterUpgrade.UpgradeStatus == model.UpgradeStatusCreated {
+				c.log.Debugf("cluster upgrade created - %q/%q", tenant.Name, env.Name)
 				ops, err := c.client.GetRunningOperations(ctx, projectId, env.Name)
 				if err != nil {
 					return err
 				}
-				for _, op := range ops {
-					fmt.Println("Operation", op.Name)
-				}*/
-				c.log.Error("not implemented")
-				continue
-			}
 
-			if clusterUpgrade.UpgradeStatus == model.UpgradeStatusCreated {
-				// TODO: c.repo.ClusterVersionGet()
+				if len(ops) > 0 {
+					c.log.Debugf("found %d running operations for tenant %s, env %s", len(ops), tenant.Name, env.Name)
+					continue
+				}
+
 				op, err := c.client.UpgradeMaster(ctx, projectId, env.Name, clusterUpgrade.Version)
 				if err != nil {
 					return err
 				}
-				co, err := c.repo.CreateOrUpdateClusterOperation(ctx, env.TenantID, env.ID, clusterUpgrade.ID, op)
-				if err != nil {
-					return err
-				}
-				c.log.Debugf("cluster upgrade operation started - %s/%s/%s", tenant.Name, env.Name, co.ID)
 
-				c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatusMASTERUPGRADE, clusterUpgrade.Version)
-
-				c.log.Debugf("cluster upgrade started - %q/%q", tenant.Name, env.Name)
-			}
-
-			fmt.Println("ProjectId", projectId)
-			fmt.Printf("%#v\n", clusterUpgrade)
-
-			/*runningOperations, err := c.repo.GetRunningClusterOperations(ctx, tenant.ID, env.ID)
-			if err != nil {
-				return err
-			}
-
-			if len(runningOperations) == 1 {
-				runningOperation := runningOperations[0]
-				op, err := c.client.GetOperation(ctx, projectId, runningOperation.OperationID)
+				_, err = c.repo.CreateOrUpdateClusterOperation(ctx, env.TenantID, env.ID, clusterUpgrade.ID, op)
 				if err != nil {
 					return err
 				}
 
-				c.repo.CreateOrUpdateClusterOperation(ctx, tenant.ID, env.ID, op)
-				continue
-
-			} else if len(runningOperations) > 1 {
-				// TODO: metric / alert på denne
-				return fmt.Errorf("found %d running operations for tenant %s, env %s. should be only one", len(runningOperations), tenant.Name, env.Name)
-			}
-
-			availableVersions, err := c.client.GetAvailableVersions(ctx, projectId, env.Name, "STABLE")
-			if err != nil {
-				return err
-			}
-
-			fmt.Println("Available versions", availableVersions)
-
-			/*
-
-				master_version, err := c.client.GetCurrentMasterVersion(ctx, pid_string, env.Name)
+				upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatusMASTERUPGRADE, clusterUpgrade.Version)
 				if err != nil {
 					return err
 				}
+				c.log.Infof("api server upgrade (%s) started - %s/%s", tenant.Name, env.Name, upgradeStatus.Version)
+			}
 
-				_, err := c.client.GetAvailableVersions(ctx, pid_string, env.Name, "STABLE")
-				if err != nil {
-					return err
-				}
+			// upgrade nodes
+			// TODO: check if upgrade is done
 
-
-
-				for _, op := range ops {
-					fmt.Println("Operation", op.Name)
-					u, err := c.repo.ClusterOperationCreateOrUpdate(ctx, tenant.ID, env.ID, master_version, op)
-					if err != nil {
-						return err
-					}
-					fmt.Println("ClusterOperationCreateOrUpdate", u)
-				}*/
 		}
 
 	}

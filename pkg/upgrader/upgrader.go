@@ -29,7 +29,9 @@ func (c *Client) Close() error {
 }
 
 func (c *Client) GetRunningOperations(ctx context.Context, projectId, clusterName string) ([]*containerpb.Operation, error) {
+	var runningOps []*containerpb.Operation
 	parent := c.getParent(projectId)
+
 	operations, err := c.client.ListOperations(ctx, &containerpb.ListOperationsRequest{
 		Parent: parent,
 	})
@@ -37,21 +39,20 @@ func (c *Client) GetRunningOperations(ctx context.Context, projectId, clusterNam
 		return nil, err
 	}
 
-	var runningOps []*containerpb.Operation
-
-	for _, op := range operations.Operations {
-		if op.Status == containerpb.Operation_RUNNING {
-			fmt.Println(op.Name)
-			runningOps = append(runningOps, op)
+	if operations.Operations != nil {
+		for _, op := range operations.Operations {
+			if op.Status == containerpb.Operation_RUNNING {
+				fmt.Println(op.Name)
+				runningOps = append(runningOps, op)
+			}
 		}
 	}
-
-	return operations.Operations, nil
+	return runningOps, nil
 }
 
 func (c *Client) GetOperation(ctx context.Context, projectId, operationId string) (*containerpb.Operation, error) {
 	return c.client.GetOperation(ctx, &containerpb.GetOperationRequest{
-		Name: fmt.Sprintf("projects/"+projectId+"/locations/europe-north1/operations/%s", projectId, operationId),
+		Name: fmt.Sprintf("projects/%s/locations/europe-north1/operations/%s", projectId, operationId),
 	})
 }
 
