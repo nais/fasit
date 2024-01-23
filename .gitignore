@@ -4,3 +4,4 @@ charts/fasit.yaml
 .envrc
 .vscode/launch.json
 .env
+bin/fasit
