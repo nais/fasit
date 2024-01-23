@@ -112,5 +112,7 @@ func (r *Resolver) Status() graphgen.StatusResolver { return &statusResolver{r} 
 // Subscription returns graphgen.SubscriptionResolver implementation.
 func (r *Resolver) Subscription() graphgen.SubscriptionResolver { return &subscriptionResolver{r} }
 
-type statusResolver struct{ *Resolver }
-type subscriptionResolver struct{ *Resolver }
+type (
+	statusResolver       struct{ *Resolver }
+	subscriptionResolver struct{ *Resolver }
+)

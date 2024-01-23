@@ -137,6 +137,10 @@ func (r *environmentResolver) ClusterUpgradeStatus(ctx context.Context, obj *mod
 		return nil, err
 	}
 
+	if cu == nil {
+		return nil, nil
+	}
+
 	ret := &model.ClusterUpgradeStatus{
 		ID:            cu.ID,
 		UpgradeStatus: cu.UpgradeStatus,
@@ -276,5 +280,7 @@ func (r *Resolver) Environment() graphgen.EnvironmentResolver { return &environm
 // Release returns graphgen.ReleaseResolver implementation.
 func (r *Resolver) Release() graphgen.ReleaseResolver { return &releaseResolver{r} }
 
-type environmentResolver struct{ *Resolver }
-type releaseResolver struct{ *Resolver }
+type (
+	environmentResolver struct{ *Resolver }
+	releaseResolver     struct{ *Resolver }
+)
