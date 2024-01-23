@@ -37,7 +37,6 @@ local:
 	--log-level=debug \
 	--insecure-skip-proxy \
 	--insecure-skip-token-check \
-	--use-fake-clients
 
 local-naisd:
 	PUBSUB_EMULATOR_HOST=localhost:8086 go run ./cmd/naisd \
