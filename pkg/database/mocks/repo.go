@@ -229,6 +229,65 @@ func (_c *Repo_Close_Call) RunAndReturn(run func()) *Repo_Close_Call {
 	return _c
 }
 
+// ClusterOperationsGetByUpgradeID provides a mock function with given fields: ctx, upgradeId
+func (_m *Repo) ClusterOperationsGetByUpgradeID(ctx context.Context, upgradeId uuid.UUID) (*model.ClusterOperation, error) {
+	ret := _m.Called(ctx, upgradeId)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ClusterOperationsGetByUpgradeID")
+	}
+
+	var r0 *model.ClusterOperation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) (*model.ClusterOperation, error)); ok {
+		return rf(ctx, upgradeId)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) *model.ClusterOperation); ok {
+		r0 = rf(ctx, upgradeId)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.ClusterOperation)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, upgradeId)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Repo_ClusterOperationsGetByUpgradeID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ClusterOperationsGetByUpgradeID'
+type Repo_ClusterOperationsGetByUpgradeID_Call struct {
+	*mock.Call
+}
+
+// ClusterOperationsGetByUpgradeID is a helper method to define mock.On call
+//   - ctx context.Context
+//   - upgradeId uuid.UUID
+func (_e *Repo_Expecter) ClusterOperationsGetByUpgradeID(ctx interface{}, upgradeId interface{}) *Repo_ClusterOperationsGetByUpgradeID_Call {
+	return &Repo_ClusterOperationsGetByUpgradeID_Call{Call: _e.mock.On("ClusterOperationsGetByUpgradeID", ctx, upgradeId)}
+}
+
+func (_c *Repo_ClusterOperationsGetByUpgradeID_Call) Run(run func(ctx context.Context, upgradeId uuid.UUID)) *Repo_ClusterOperationsGetByUpgradeID_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uuid.UUID))
+	})
+	return _c
+}
+
+func (_c *Repo_ClusterOperationsGetByUpgradeID_Call) Return(_a0 *model.ClusterOperation, _a1 error) *Repo_ClusterOperationsGetByUpgradeID_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Repo_ClusterOperationsGetByUpgradeID_Call) RunAndReturn(run func(context.Context, uuid.UUID) (*model.ClusterOperation, error)) *Repo_ClusterOperationsGetByUpgradeID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ClusterUpgradeGet provides a mock function with given fields: ctx, tenantId, envId
 func (_m *Repo) ClusterUpgradeGet(ctx context.Context, tenantId uuid.UUID, envId uuid.UUID) (*model.ClusterUpgradeStatus, error) {
 	ret := _m.Called(ctx, tenantId, envId)

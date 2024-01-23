@@ -5,12 +5,12 @@ VALUES
 (@tenantId, @envID, @version)
 RETURNING *;
 
--- name: ClusterUpgradesGet :one
+-- name: ClusterUpgradesGet :many
 SELECT * FROM cluster_upgrades
 WHERE tenant_id = @tenantId
 AND environment_id = @envID
-ORDER BY last_modified DESC
-LIMIT 1;
+AND status != 'DONE'
+ORDER BY last_modified DESC;
 
 -- name: ClusterUpgradesUpdateStatus :one
 UPDATE cluster_upgrades

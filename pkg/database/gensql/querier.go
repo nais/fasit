@@ -18,8 +18,9 @@ type Querier interface {
 	AutoInstallsForKind(ctx context.Context, environmentKind EnvironmentKind) ([]AutoInstall, error)
 	ClusterOperationCreateOrUpdate(ctx context.Context, arg ClusterOperationCreateOrUpdateParams) (ClusterOperation, error)
 	ClusterOperationsGet(ctx context.Context, arg ClusterOperationsGetParams) ([]ClusterOperation, error)
+	ClusterOperationsGetByUpgradeID(ctx context.Context, upgradeID uuid.UUID) (ClusterOperation, error)
 	ClusterUpgradesCreate(ctx context.Context, arg ClusterUpgradesCreateParams) (ClusterUpgrade, error)
-	ClusterUpgradesGet(ctx context.Context, arg ClusterUpgradesGetParams) (ClusterUpgrade, error)
+	ClusterUpgradesGet(ctx context.Context, arg ClusterUpgradesGetParams) ([]ClusterUpgrade, error)
 	ClusterUpgradesGetByID(ctx context.Context, id uuid.UUID) (ClusterUpgrade, error)
 	ClusterUpgradesUpdateStatus(ctx context.Context, arg ClusterUpgradesUpdateStatusParams) (ClusterUpgrade, error)
 	ConfigDelete(ctx context.Context, id uuid.UUID) error

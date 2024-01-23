@@ -118,3 +118,28 @@ func (q *Queries) ClusterOperationsGet(ctx context.Context, arg ClusterOperation
 	}
 	return items, nil
 }
+
+const clusterOperationsGetByUpgradeID = `-- name: ClusterOperationsGetByUpgradeID :one
+SELECT id, tenant_id, environment_id, upgrade_id, status, type, nodes_total, nodes_failed, nodes_completed, nodes_done, node_pdb_delay_seconds, start_time, last_modified FROM cluster_operations WHERE "upgrade_id" = $1
+`
+
+func (q *Queries) ClusterOperationsGetByUpgradeID(ctx context.Context, upgradeID uuid.UUID) (ClusterOperation, error) {
+	row := q.db.QueryRow(ctx, clusterOperationsGetByUpgradeID, upgradeID)
+	var i ClusterOperation
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.EnvironmentID,
+		&i.UpgradeID,
+		&i.Status,
+		&i.Type,
+		&i.NodesTotal,
+		&i.NodesFailed,
+		&i.NodesCompleted,
+		&i.NodesDone,
+		&i.NodePdbDelaySeconds,
+		&i.StartTime,
+		&i.LastModified,
+	)
+	return i, err
+}

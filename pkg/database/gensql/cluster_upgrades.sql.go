@@ -39,12 +39,12 @@ func (q *Queries) ClusterUpgradesCreate(ctx context.Context, arg ClusterUpgrades
 	return i, err
 }
 
-const clusterUpgradesGet = `-- name: ClusterUpgradesGet :one
+const clusterUpgradesGet = `-- name: ClusterUpgradesGet :many
 SELECT id, tenant_id, environment_id, version, status, last_modified FROM cluster_upgrades
 WHERE tenant_id = $1
 AND environment_id = $2
+AND status != 'DONE'
 ORDER BY last_modified DESC
-LIMIT 1
 `
 
 type ClusterUpgradesGetParams struct {
@@ -52,18 +52,31 @@ type ClusterUpgradesGetParams struct {
 	Envid    uuid.UUID
 }
 
-func (q *Queries) ClusterUpgradesGet(ctx context.Context, arg ClusterUpgradesGetParams) (ClusterUpgrade, error) {
-	row := q.db.QueryRow(ctx, clusterUpgradesGet, arg.Tenantid, arg.Envid)
-	var i ClusterUpgrade
-	err := row.Scan(
-		&i.ID,
-		&i.TenantID,
-		&i.EnvironmentID,
-		&i.Version,
-		&i.Status,
-		&i.LastModified,
-	)
-	return i, err
+func (q *Queries) ClusterUpgradesGet(ctx context.Context, arg ClusterUpgradesGetParams) ([]ClusterUpgrade, error) {
+	rows, err := q.db.Query(ctx, clusterUpgradesGet, arg.Tenantid, arg.Envid)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ClusterUpgrade{}
+	for rows.Next() {
+		var i ClusterUpgrade
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.EnvironmentID,
+			&i.Version,
+			&i.Status,
+			&i.LastModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const clusterUpgradesGetByID = `-- name: ClusterUpgradesGetByID :one

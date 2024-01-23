@@ -19,6 +19,7 @@ type ClusterUpgraderRepo interface {
 	ClusterUpgradeGet(ctx context.Context, tenantId, envId uuid.UUID) (*model.ClusterUpgradeStatus, error)
 	UpdateClusterUpgradeStatus(ctx context.Context, tenantId, envId uuid.UUID, status gensql.ClusterUpgradesStatus, version string) (*model.ClusterUpgradeStatus, error)
 	ClusterUpgradeGetByID(ctx context.Context, id uuid.UUID) (*model.ClusterUpgradeStatus, error)
+	ClusterOperationsGetByUpgradeID(ctx context.Context, upgradeId uuid.UUID) (*model.ClusterOperation, error)
 }
 
 func clusterUpgradeFromSQL(p gensql.ClusterUpgrade) *model.ClusterUpgradeStatus {
@@ -48,6 +49,14 @@ func clusterOperationFromSQL(p gensql.ClusterOperation) *model.ClusterOperation 
 	}
 }
 
+func (r *repo) ClusterOperationsGetByUpgradeID(ctx context.Context, upgradeId uuid.UUID) (*model.ClusterOperation, error) {
+	clusterOperation, err := r.querier.ClusterOperationsGetByUpgradeID(ctx, upgradeId)
+	if err != nil {
+		return nil, err
+	}
+	return clusterOperationFromSQL(clusterOperation), nil
+}
+
 func (r *repo) ClusterUpgradeGetByID(ctx context.Context, id uuid.UUID) (*model.ClusterUpgradeStatus, error) {
 	clusterVersion, err := r.querier.ClusterUpgradesGetByID(ctx, id)
 	if err != nil {
@@ -73,17 +82,22 @@ func (r *repo) UpdateClusterUpgradeStatus(ctx context.Context, tenantId, envId u
 }
 
 func (r *repo) ClusterUpgradeGet(ctx context.Context, tenantId, envId uuid.UUID) (*model.ClusterUpgradeStatus, error) {
-	clusterVersion, err := r.querier.ClusterUpgradesGet(ctx, gensql.ClusterUpgradesGetParams{
+	clusterUpgrades, err := r.querier.ClusterUpgradesGet(ctx, gensql.ClusterUpgradesGetParams{
 		Tenantid: tenantId,
 		Envid:    envId,
 	})
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, err
-		}
 		return nil, err
 	}
-	return clusterUpgradeFromSQL(clusterVersion), nil
+
+	if len(clusterUpgrades) == 0 {
+		return nil, nil
+	}
+
+	if len(clusterUpgrades) > 1 {
+		return nil, errors.New("found more than one cluster upgrade")
+	}
+	return clusterUpgradeFromSQL(clusterUpgrades[0]), nil
 }
 
 func (r *repo) CreateClusterUpgrade(ctx context.Context, tenantId, envId uuid.UUID, version string) (*model.ClusterUpgradeStatus, error) {

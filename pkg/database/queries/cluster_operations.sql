@@ -16,3 +16,6 @@ RETURNING *;
 -- name: ClusterOperationsGet :many
 SELECT * FROM cluster_operations WHERE "tenant_id" = @tenantId AND "environment_id" = @envID AND "status" = @status
 ORDER BY "start_time" DESC;
+
+-- name: ClusterOperationsGetByUpgradeID :one
+SELECT * FROM cluster_operations WHERE "upgrade_id" = @upgrade_id;
