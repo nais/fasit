@@ -12,49 +12,49 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type ClusterVersionStatus string
+type ClusterUpgradesStatus string
 
 const (
-	ClusterVersionStatusCreated       ClusterVersionStatus = "created"
-	ClusterVersionStatusMasterUpgrade ClusterVersionStatus = "master_upgrade"
-	ClusterVersionStatusNodeUpgrade   ClusterVersionStatus = "node_upgrade"
-	ClusterVersionStatusFailed        ClusterVersionStatus = "failed"
-	ClusterVersionStatusDone          ClusterVersionStatus = "done"
+	ClusterUpgradesStatusCREATED       ClusterUpgradesStatus = "CREATED"
+	ClusterUpgradesStatusMASTERUPGRADE ClusterUpgradesStatus = "MASTER_UPGRADE"
+	ClusterUpgradesStatusNODEUPGRADE   ClusterUpgradesStatus = "NODE_UPGRADE"
+	ClusterUpgradesStatusFAILED        ClusterUpgradesStatus = "FAILED"
+	ClusterUpgradesStatusDONE          ClusterUpgradesStatus = "DONE"
 )
 
-func (e *ClusterVersionStatus) Scan(src interface{}) error {
+func (e *ClusterUpgradesStatus) Scan(src interface{}) error {
 	switch s := src.(type) {
 	case []byte:
-		*e = ClusterVersionStatus(s)
+		*e = ClusterUpgradesStatus(s)
 	case string:
-		*e = ClusterVersionStatus(s)
+		*e = ClusterUpgradesStatus(s)
 	default:
-		return fmt.Errorf("unsupported scan type for ClusterVersionStatus: %T", src)
+		return fmt.Errorf("unsupported scan type for ClusterUpgradesStatus: %T", src)
 	}
 	return nil
 }
 
-type NullClusterVersionStatus struct {
-	ClusterVersionStatus ClusterVersionStatus
-	Valid                bool // Valid is true if ClusterVersionStatus is not NULL
+type NullClusterUpgradesStatus struct {
+	ClusterUpgradesStatus ClusterUpgradesStatus
+	Valid                 bool // Valid is true if ClusterUpgradesStatus is not NULL
 }
 
 // Scan implements the Scanner interface.
-func (ns *NullClusterVersionStatus) Scan(value interface{}) error {
+func (ns *NullClusterUpgradesStatus) Scan(value interface{}) error {
 	if value == nil {
-		ns.ClusterVersionStatus, ns.Valid = "", false
+		ns.ClusterUpgradesStatus, ns.Valid = "", false
 		return nil
 	}
 	ns.Valid = true
-	return ns.ClusterVersionStatus.Scan(value)
+	return ns.ClusterUpgradesStatus.Scan(value)
 }
 
 // Value implements the driver Valuer interface.
-func (ns NullClusterVersionStatus) Value() (driver.Value, error) {
+func (ns NullClusterUpgradesStatus) Value() (driver.Value, error) {
 	if !ns.Valid {
 		return nil, nil
 	}
-	return string(ns.ClusterVersionStatus), nil
+	return string(ns.ClusterUpgradesStatus), nil
 }
 
 type EnvironmentKind string
@@ -116,11 +116,11 @@ type AutoInstall struct {
 	Created pgtype.Timestamptz
 }
 
-type ClusterUpgrade struct {
-	OperationID         string
+type ClusterOperation struct {
+	ID                  string
 	TenantID            uuid.UUID
 	EnvironmentID       uuid.UUID
-	VersionID           uuid.UUID
+	UpgradeID           uuid.UUID
 	Status              string
 	Type                string
 	NodesTotal          int32
@@ -132,12 +132,12 @@ type ClusterUpgrade struct {
 	LastModified        pgtype.Timestamptz
 }
 
-type ClusterVersion struct {
+type ClusterUpgrade struct {
 	ID            uuid.UUID
 	TenantID      uuid.UUID
 	EnvironmentID uuid.UUID
 	Version       string
-	Status        ClusterVersionStatus
+	Status        ClusterUpgradesStatus
 	LastModified  pgtype.Timestamptz
 }
 

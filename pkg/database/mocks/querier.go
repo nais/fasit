@@ -254,22 +254,22 @@ func (_c *Querier_AutoInstallsForKind_Call) RunAndReturn(run func(context.Contex
 }
 
 // ClusterOperationCreateOrUpdate provides a mock function with given fields: ctx, arg
-func (_m *Querier) ClusterOperationCreateOrUpdate(ctx context.Context, arg gensql.ClusterOperationCreateOrUpdateParams) (gensql.ClusterUpgrade, error) {
+func (_m *Querier) ClusterOperationCreateOrUpdate(ctx context.Context, arg gensql.ClusterOperationCreateOrUpdateParams) (gensql.ClusterOperation, error) {
 	ret := _m.Called(ctx, arg)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ClusterOperationCreateOrUpdate")
 	}
 
-	var r0 gensql.ClusterUpgrade
+	var r0 gensql.ClusterOperation
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, gensql.ClusterOperationCreateOrUpdateParams) (gensql.ClusterUpgrade, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.ClusterOperationCreateOrUpdateParams) (gensql.ClusterOperation, error)); ok {
 		return rf(ctx, arg)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, gensql.ClusterOperationCreateOrUpdateParams) gensql.ClusterUpgrade); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.ClusterOperationCreateOrUpdateParams) gensql.ClusterOperation); ok {
 		r0 = rf(ctx, arg)
 	} else {
-		r0 = ret.Get(0).(gensql.ClusterUpgrade)
+		r0 = ret.Get(0).(gensql.ClusterOperation)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, gensql.ClusterOperationCreateOrUpdateParams) error); ok {
@@ -300,34 +300,34 @@ func (_c *Querier_ClusterOperationCreateOrUpdate_Call) Run(run func(ctx context.
 	return _c
 }
 
-func (_c *Querier_ClusterOperationCreateOrUpdate_Call) Return(_a0 gensql.ClusterUpgrade, _a1 error) *Querier_ClusterOperationCreateOrUpdate_Call {
+func (_c *Querier_ClusterOperationCreateOrUpdate_Call) Return(_a0 gensql.ClusterOperation, _a1 error) *Querier_ClusterOperationCreateOrUpdate_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Querier_ClusterOperationCreateOrUpdate_Call) RunAndReturn(run func(context.Context, gensql.ClusterOperationCreateOrUpdateParams) (gensql.ClusterUpgrade, error)) *Querier_ClusterOperationCreateOrUpdate_Call {
+func (_c *Querier_ClusterOperationCreateOrUpdate_Call) RunAndReturn(run func(context.Context, gensql.ClusterOperationCreateOrUpdateParams) (gensql.ClusterOperation, error)) *Querier_ClusterOperationCreateOrUpdate_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // ClusterOperationsGet provides a mock function with given fields: ctx, arg
-func (_m *Querier) ClusterOperationsGet(ctx context.Context, arg gensql.ClusterOperationsGetParams) ([]gensql.ClusterUpgrade, error) {
+func (_m *Querier) ClusterOperationsGet(ctx context.Context, arg gensql.ClusterOperationsGetParams) ([]gensql.ClusterOperation, error) {
 	ret := _m.Called(ctx, arg)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ClusterOperationsGet")
 	}
 
-	var r0 []gensql.ClusterUpgrade
+	var r0 []gensql.ClusterOperation
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, gensql.ClusterOperationsGetParams) ([]gensql.ClusterUpgrade, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.ClusterOperationsGetParams) ([]gensql.ClusterOperation, error)); ok {
 		return rf(ctx, arg)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, gensql.ClusterOperationsGetParams) []gensql.ClusterUpgrade); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.ClusterOperationsGetParams) []gensql.ClusterOperation); ok {
 		r0 = rf(ctx, arg)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]gensql.ClusterUpgrade)
+			r0 = ret.Get(0).([]gensql.ClusterOperation)
 		}
 	}
 
@@ -359,36 +359,36 @@ func (_c *Querier_ClusterOperationsGet_Call) Run(run func(ctx context.Context, a
 	return _c
 }
 
-func (_c *Querier_ClusterOperationsGet_Call) Return(_a0 []gensql.ClusterUpgrade, _a1 error) *Querier_ClusterOperationsGet_Call {
+func (_c *Querier_ClusterOperationsGet_Call) Return(_a0 []gensql.ClusterOperation, _a1 error) *Querier_ClusterOperationsGet_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Querier_ClusterOperationsGet_Call) RunAndReturn(run func(context.Context, gensql.ClusterOperationsGetParams) ([]gensql.ClusterUpgrade, error)) *Querier_ClusterOperationsGet_Call {
+func (_c *Querier_ClusterOperationsGet_Call) RunAndReturn(run func(context.Context, gensql.ClusterOperationsGetParams) ([]gensql.ClusterOperation, error)) *Querier_ClusterOperationsGet_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// ClusterVersionCreate provides a mock function with given fields: ctx, arg
-func (_m *Querier) ClusterVersionCreate(ctx context.Context, arg gensql.ClusterVersionCreateParams) (gensql.ClusterVersion, error) {
+// ClusterUpgradesCreate provides a mock function with given fields: ctx, arg
+func (_m *Querier) ClusterUpgradesCreate(ctx context.Context, arg gensql.ClusterUpgradesCreateParams) (gensql.ClusterUpgrade, error) {
 	ret := _m.Called(ctx, arg)
 
 	if len(ret) == 0 {
-		panic("no return value specified for ClusterVersionCreate")
+		panic("no return value specified for ClusterUpgradesCreate")
 	}
 
-	var r0 gensql.ClusterVersion
+	var r0 gensql.ClusterUpgrade
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, gensql.ClusterVersionCreateParams) (gensql.ClusterVersion, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.ClusterUpgradesCreateParams) (gensql.ClusterUpgrade, error)); ok {
 		return rf(ctx, arg)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, gensql.ClusterVersionCreateParams) gensql.ClusterVersion); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.ClusterUpgradesCreateParams) gensql.ClusterUpgrade); ok {
 		r0 = rf(ctx, arg)
 	} else {
-		r0 = ret.Get(0).(gensql.ClusterVersion)
+		r0 = ret.Get(0).(gensql.ClusterUpgrade)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, gensql.ClusterVersionCreateParams) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, gensql.ClusterUpgradesCreateParams) error); ok {
 		r1 = rf(ctx, arg)
 	} else {
 		r1 = ret.Error(1)
@@ -397,55 +397,55 @@ func (_m *Querier) ClusterVersionCreate(ctx context.Context, arg gensql.ClusterV
 	return r0, r1
 }
 
-// Querier_ClusterVersionCreate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ClusterVersionCreate'
-type Querier_ClusterVersionCreate_Call struct {
+// Querier_ClusterUpgradesCreate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ClusterUpgradesCreate'
+type Querier_ClusterUpgradesCreate_Call struct {
 	*mock.Call
 }
 
-// ClusterVersionCreate is a helper method to define mock.On call
+// ClusterUpgradesCreate is a helper method to define mock.On call
 //   - ctx context.Context
-//   - arg gensql.ClusterVersionCreateParams
-func (_e *Querier_Expecter) ClusterVersionCreate(ctx interface{}, arg interface{}) *Querier_ClusterVersionCreate_Call {
-	return &Querier_ClusterVersionCreate_Call{Call: _e.mock.On("ClusterVersionCreate", ctx, arg)}
+//   - arg gensql.ClusterUpgradesCreateParams
+func (_e *Querier_Expecter) ClusterUpgradesCreate(ctx interface{}, arg interface{}) *Querier_ClusterUpgradesCreate_Call {
+	return &Querier_ClusterUpgradesCreate_Call{Call: _e.mock.On("ClusterUpgradesCreate", ctx, arg)}
 }
 
-func (_c *Querier_ClusterVersionCreate_Call) Run(run func(ctx context.Context, arg gensql.ClusterVersionCreateParams)) *Querier_ClusterVersionCreate_Call {
+func (_c *Querier_ClusterUpgradesCreate_Call) Run(run func(ctx context.Context, arg gensql.ClusterUpgradesCreateParams)) *Querier_ClusterUpgradesCreate_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(gensql.ClusterVersionCreateParams))
+		run(args[0].(context.Context), args[1].(gensql.ClusterUpgradesCreateParams))
 	})
 	return _c
 }
 
-func (_c *Querier_ClusterVersionCreate_Call) Return(_a0 gensql.ClusterVersion, _a1 error) *Querier_ClusterVersionCreate_Call {
+func (_c *Querier_ClusterUpgradesCreate_Call) Return(_a0 gensql.ClusterUpgrade, _a1 error) *Querier_ClusterUpgradesCreate_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Querier_ClusterVersionCreate_Call) RunAndReturn(run func(context.Context, gensql.ClusterVersionCreateParams) (gensql.ClusterVersion, error)) *Querier_ClusterVersionCreate_Call {
+func (_c *Querier_ClusterUpgradesCreate_Call) RunAndReturn(run func(context.Context, gensql.ClusterUpgradesCreateParams) (gensql.ClusterUpgrade, error)) *Querier_ClusterUpgradesCreate_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// ClusterVersionGet provides a mock function with given fields: ctx, arg
-func (_m *Querier) ClusterVersionGet(ctx context.Context, arg gensql.ClusterVersionGetParams) (gensql.ClusterVersion, error) {
+// ClusterUpgradesGet provides a mock function with given fields: ctx, arg
+func (_m *Querier) ClusterUpgradesGet(ctx context.Context, arg gensql.ClusterUpgradesGetParams) (gensql.ClusterUpgrade, error) {
 	ret := _m.Called(ctx, arg)
 
 	if len(ret) == 0 {
-		panic("no return value specified for ClusterVersionGet")
+		panic("no return value specified for ClusterUpgradesGet")
 	}
 
-	var r0 gensql.ClusterVersion
+	var r0 gensql.ClusterUpgrade
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, gensql.ClusterVersionGetParams) (gensql.ClusterVersion, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.ClusterUpgradesGetParams) (gensql.ClusterUpgrade, error)); ok {
 		return rf(ctx, arg)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, gensql.ClusterVersionGetParams) gensql.ClusterVersion); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.ClusterUpgradesGetParams) gensql.ClusterUpgrade); ok {
 		r0 = rf(ctx, arg)
 	} else {
-		r0 = ret.Get(0).(gensql.ClusterVersion)
+		r0 = ret.Get(0).(gensql.ClusterUpgrade)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, gensql.ClusterVersionGetParams) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, gensql.ClusterUpgradesGetParams) error); ok {
 		r1 = rf(ctx, arg)
 	} else {
 		r1 = ret.Error(1)
@@ -454,78 +454,145 @@ func (_m *Querier) ClusterVersionGet(ctx context.Context, arg gensql.ClusterVers
 	return r0, r1
 }
 
-// Querier_ClusterVersionGet_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ClusterVersionGet'
-type Querier_ClusterVersionGet_Call struct {
+// Querier_ClusterUpgradesGet_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ClusterUpgradesGet'
+type Querier_ClusterUpgradesGet_Call struct {
 	*mock.Call
 }
 
-// ClusterVersionGet is a helper method to define mock.On call
+// ClusterUpgradesGet is a helper method to define mock.On call
 //   - ctx context.Context
-//   - arg gensql.ClusterVersionGetParams
-func (_e *Querier_Expecter) ClusterVersionGet(ctx interface{}, arg interface{}) *Querier_ClusterVersionGet_Call {
-	return &Querier_ClusterVersionGet_Call{Call: _e.mock.On("ClusterVersionGet", ctx, arg)}
+//   - arg gensql.ClusterUpgradesGetParams
+func (_e *Querier_Expecter) ClusterUpgradesGet(ctx interface{}, arg interface{}) *Querier_ClusterUpgradesGet_Call {
+	return &Querier_ClusterUpgradesGet_Call{Call: _e.mock.On("ClusterUpgradesGet", ctx, arg)}
 }
 
-func (_c *Querier_ClusterVersionGet_Call) Run(run func(ctx context.Context, arg gensql.ClusterVersionGetParams)) *Querier_ClusterVersionGet_Call {
+func (_c *Querier_ClusterUpgradesGet_Call) Run(run func(ctx context.Context, arg gensql.ClusterUpgradesGetParams)) *Querier_ClusterUpgradesGet_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(gensql.ClusterVersionGetParams))
+		run(args[0].(context.Context), args[1].(gensql.ClusterUpgradesGetParams))
 	})
 	return _c
 }
 
-func (_c *Querier_ClusterVersionGet_Call) Return(_a0 gensql.ClusterVersion, _a1 error) *Querier_ClusterVersionGet_Call {
+func (_c *Querier_ClusterUpgradesGet_Call) Return(_a0 gensql.ClusterUpgrade, _a1 error) *Querier_ClusterUpgradesGet_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Querier_ClusterVersionGet_Call) RunAndReturn(run func(context.Context, gensql.ClusterVersionGetParams) (gensql.ClusterVersion, error)) *Querier_ClusterVersionGet_Call {
+func (_c *Querier_ClusterUpgradesGet_Call) RunAndReturn(run func(context.Context, gensql.ClusterUpgradesGetParams) (gensql.ClusterUpgrade, error)) *Querier_ClusterUpgradesGet_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// ClusterVersionUpdateStatus provides a mock function with given fields: ctx, arg
-func (_m *Querier) ClusterVersionUpdateStatus(ctx context.Context, arg gensql.ClusterVersionUpdateStatusParams) error {
-	ret := _m.Called(ctx, arg)
+// ClusterUpgradesGetByID provides a mock function with given fields: ctx, id
+func (_m *Querier) ClusterUpgradesGetByID(ctx context.Context, id uuid.UUID) (gensql.ClusterUpgrade, error) {
+	ret := _m.Called(ctx, id)
 
 	if len(ret) == 0 {
-		panic("no return value specified for ClusterVersionUpdateStatus")
+		panic("no return value specified for ClusterUpgradesGetByID")
 	}
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, gensql.ClusterVersionUpdateStatusParams) error); ok {
-		r0 = rf(ctx, arg)
+	var r0 gensql.ClusterUpgrade
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) (gensql.ClusterUpgrade, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) gensql.ClusterUpgrade); ok {
+		r0 = rf(ctx, id)
 	} else {
-		r0 = ret.Error(0)
+		r0 = ret.Get(0).(gensql.ClusterUpgrade)
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
-// Querier_ClusterVersionUpdateStatus_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ClusterVersionUpdateStatus'
-type Querier_ClusterVersionUpdateStatus_Call struct {
+// Querier_ClusterUpgradesGetByID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ClusterUpgradesGetByID'
+type Querier_ClusterUpgradesGetByID_Call struct {
 	*mock.Call
 }
 
-// ClusterVersionUpdateStatus is a helper method to define mock.On call
+// ClusterUpgradesGetByID is a helper method to define mock.On call
 //   - ctx context.Context
-//   - arg gensql.ClusterVersionUpdateStatusParams
-func (_e *Querier_Expecter) ClusterVersionUpdateStatus(ctx interface{}, arg interface{}) *Querier_ClusterVersionUpdateStatus_Call {
-	return &Querier_ClusterVersionUpdateStatus_Call{Call: _e.mock.On("ClusterVersionUpdateStatus", ctx, arg)}
+//   - id uuid.UUID
+func (_e *Querier_Expecter) ClusterUpgradesGetByID(ctx interface{}, id interface{}) *Querier_ClusterUpgradesGetByID_Call {
+	return &Querier_ClusterUpgradesGetByID_Call{Call: _e.mock.On("ClusterUpgradesGetByID", ctx, id)}
 }
 
-func (_c *Querier_ClusterVersionUpdateStatus_Call) Run(run func(ctx context.Context, arg gensql.ClusterVersionUpdateStatusParams)) *Querier_ClusterVersionUpdateStatus_Call {
+func (_c *Querier_ClusterUpgradesGetByID_Call) Run(run func(ctx context.Context, id uuid.UUID)) *Querier_ClusterUpgradesGetByID_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(gensql.ClusterVersionUpdateStatusParams))
+		run(args[0].(context.Context), args[1].(uuid.UUID))
 	})
 	return _c
 }
 
-func (_c *Querier_ClusterVersionUpdateStatus_Call) Return(_a0 error) *Querier_ClusterVersionUpdateStatus_Call {
-	_c.Call.Return(_a0)
+func (_c *Querier_ClusterUpgradesGetByID_Call) Return(_a0 gensql.ClusterUpgrade, _a1 error) *Querier_ClusterUpgradesGetByID_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Querier_ClusterVersionUpdateStatus_Call) RunAndReturn(run func(context.Context, gensql.ClusterVersionUpdateStatusParams) error) *Querier_ClusterVersionUpdateStatus_Call {
+func (_c *Querier_ClusterUpgradesGetByID_Call) RunAndReturn(run func(context.Context, uuid.UUID) (gensql.ClusterUpgrade, error)) *Querier_ClusterUpgradesGetByID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ClusterUpgradesUpdateStatus provides a mock function with given fields: ctx, arg
+func (_m *Querier) ClusterUpgradesUpdateStatus(ctx context.Context, arg gensql.ClusterUpgradesUpdateStatusParams) (gensql.ClusterUpgrade, error) {
+	ret := _m.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ClusterUpgradesUpdateStatus")
+	}
+
+	var r0 gensql.ClusterUpgrade
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.ClusterUpgradesUpdateStatusParams) (gensql.ClusterUpgrade, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.ClusterUpgradesUpdateStatusParams) gensql.ClusterUpgrade); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(gensql.ClusterUpgrade)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, gensql.ClusterUpgradesUpdateStatusParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Querier_ClusterUpgradesUpdateStatus_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ClusterUpgradesUpdateStatus'
+type Querier_ClusterUpgradesUpdateStatus_Call struct {
+	*mock.Call
+}
+
+// ClusterUpgradesUpdateStatus is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg gensql.ClusterUpgradesUpdateStatusParams
+func (_e *Querier_Expecter) ClusterUpgradesUpdateStatus(ctx interface{}, arg interface{}) *Querier_ClusterUpgradesUpdateStatus_Call {
+	return &Querier_ClusterUpgradesUpdateStatus_Call{Call: _e.mock.On("ClusterUpgradesUpdateStatus", ctx, arg)}
+}
+
+func (_c *Querier_ClusterUpgradesUpdateStatus_Call) Run(run func(ctx context.Context, arg gensql.ClusterUpgradesUpdateStatusParams)) *Querier_ClusterUpgradesUpdateStatus_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(gensql.ClusterUpgradesUpdateStatusParams))
+	})
+	return _c
+}
+
+func (_c *Querier_ClusterUpgradesUpdateStatus_Call) Return(_a0 gensql.ClusterUpgrade, _a1 error) *Querier_ClusterUpgradesUpdateStatus_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Querier_ClusterUpgradesUpdateStatus_Call) RunAndReturn(run func(context.Context, gensql.ClusterUpgradesUpdateStatusParams) (gensql.ClusterUpgrade, error)) *Querier_ClusterUpgradesUpdateStatus_Call {
 	_c.Call.Return(run)
 	return _c
 }

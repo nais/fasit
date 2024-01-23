@@ -16,11 +16,12 @@ type Querier interface {
 	AuditForEnvironment(ctx context.Context, arg AuditForEnvironmentParams) ([]Audit, error)
 	AutoInstallNamesForKind(ctx context.Context, environmentKind EnvironmentKind) ([]string, error)
 	AutoInstallsForKind(ctx context.Context, environmentKind EnvironmentKind) ([]AutoInstall, error)
-	ClusterOperationCreateOrUpdate(ctx context.Context, arg ClusterOperationCreateOrUpdateParams) (ClusterUpgrade, error)
-	ClusterOperationsGet(ctx context.Context, arg ClusterOperationsGetParams) ([]ClusterUpgrade, error)
-	ClusterVersionCreate(ctx context.Context, arg ClusterVersionCreateParams) (ClusterVersion, error)
-	ClusterVersionGet(ctx context.Context, arg ClusterVersionGetParams) (ClusterVersion, error)
-	ClusterVersionUpdateStatus(ctx context.Context, arg ClusterVersionUpdateStatusParams) error
+	ClusterOperationCreateOrUpdate(ctx context.Context, arg ClusterOperationCreateOrUpdateParams) (ClusterOperation, error)
+	ClusterOperationsGet(ctx context.Context, arg ClusterOperationsGetParams) ([]ClusterOperation, error)
+	ClusterUpgradesCreate(ctx context.Context, arg ClusterUpgradesCreateParams) (ClusterUpgrade, error)
+	ClusterUpgradesGet(ctx context.Context, arg ClusterUpgradesGetParams) (ClusterUpgrade, error)
+	ClusterUpgradesGetByID(ctx context.Context, id uuid.UUID) (ClusterUpgrade, error)
+	ClusterUpgradesUpdateStatus(ctx context.Context, arg ClusterUpgradesUpdateStatusParams) (ClusterUpgrade, error)
 	ConfigDelete(ctx context.Context, id uuid.UUID) error
 	ConfigEnvUpdateOrCreate(ctx context.Context, arg ConfigEnvUpdateOrCreateParams) (ConfigurationsEnvironment, error)
 	ConfigGet(ctx context.Context, feature string) ([]ConfigurationsGlobal, error)
