@@ -54,8 +54,15 @@ func (c *Upgrader) Upgrade(ctx context.Context, projectId, clusterName, version 
 }
 
 func (c *Upgrader) UpgradeMaster(ctx context.Context, projectId, clusterName, version string) (*containerpb.Operation, error) {
-	ret := containerpb.Operation{}
-	fmt.Println("Upgrade master", projectId, clusterName, version)
+	ret := containerpb.Operation{
+		Name:          "operation-1704958496609-d23dbf0f-fb3c-46e1-80f6-7922d321ddee",
+		Zone:          "europe-north1",
+		OperationType: containerpb.Operation_UPGRADE_MASTER,
+		Status:        containerpb.Operation_RUNNING,
+		StartTime:     "2024-01-11T07:34:56.609426745Z",
+		SelfLink:      "https://container.googleapis.com/v1/projects/501288000449/locations/europe-north1/operations/operation-1704958496609-d23dbf0f-fb3c-46e1-80f6-7922d321ddee",
+		TargetLink:    "https://container.googleapis.com/v1/projects/501288000449/locations/europe-north1/clusters/ci-gcp",
+	}
 
 	return &ret, nil
 }
@@ -76,8 +83,9 @@ func (c *Upgrader) GetNodePools(ctx context.Context, projectId, clusterName stri
 }
 
 func (c *Upgrader) GetRunningOperations(ctx context.Context, projectId, clusterName string) ([]*containerpb.Operation, error) {
+	fmt.Printf("GetRunningOperations %s %s\n", projectId, clusterName)
 	ret := []*containerpb.Operation{}
-	if clusterName == "dev-gcp" && projectId == "nais-dev-gcp" {
+	if clusterName == "dev" && projectId == "nais-dev" {
 		operation := &containerpb.Operation{
 			Name:          "operation-1705388564221-30db27fc-fd46-4b7c-b8ba-50be2adfe2c2",
 			Zone:          "europe-north1",

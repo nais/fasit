@@ -63,7 +63,5 @@ func (r *Resolver) CostSeries() graphgen.CostSeriesResolver { return &costSeries
 // EnvSeries returns graphgen.EnvSeriesResolver implementation.
 func (r *Resolver) EnvSeries() graphgen.EnvSeriesResolver { return &envSeriesResolver{r} }
 
-type (
-	costSeriesResolver struct{ *Resolver }
-	envSeriesResolver  struct{ *Resolver }
-)
+type costSeriesResolver struct{ *Resolver }
+type envSeriesResolver struct{ *Resolver }

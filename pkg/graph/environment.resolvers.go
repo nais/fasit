@@ -130,6 +130,23 @@ func (r *environmentResolver) Feature(ctx context.Context, obj *model.Environmen
 	return ret, nil
 }
 
+// ClusterUpgradeStatus is the resolver for the clusterUpgradeStatus field.
+func (r *environmentResolver) ClusterUpgradeStatus(ctx context.Context, obj *model.Environment) (*model.ClusterUpgradeStatus, error) {
+	cu, err := r.Repo.ClusterUpgradeGet(ctx, obj.TenantID, obj.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := &model.ClusterUpgradeStatus{
+		ID:            cu.ID,
+		UpgradeStatus: cu.UpgradeStatus,
+		Version:       cu.Version,
+		LastModified:  cu.LastModified,
+	}
+
+	return ret, nil
+}
+
 // Versions is the resolver for the versions field.
 func (r *environmentResolver) Versions(ctx context.Context, obj *model.Environment) (*model.EnvironmentVersions, error) {
 	projectId, err := r.Environment().GcpProjectID(ctx, obj)
@@ -161,7 +178,6 @@ func (r *environmentResolver) Versions(ctx context.Context, obj *model.Environme
 		Channel:           channel,
 		Apiserver:         currentMasterVersion,
 		AvailableVersions: availableVersions,
-		UpgradeStatus:     "N/A - TODO",
 	}, nil
 }
 
@@ -230,7 +246,7 @@ func (r *mutationResolver) EnvironmentUpgrade(ctx context.Context, upgrade *mode
 		return nil, err
 	}
 
-	_, err = r.Repo.CreateClusterVersion(ctx, env.TenantID, upgrade.EnvID, upgrade.Version)
+	_, err = r.Repo.CreateClusterUpgrade(ctx, env.TenantID, upgrade.EnvID, upgrade.Version)
 	if err != nil {
 		return nil, err
 	}
@@ -260,7 +276,5 @@ func (r *Resolver) Environment() graphgen.EnvironmentResolver { return &environm
 // Release returns graphgen.ReleaseResolver implementation.
 func (r *Resolver) Release() graphgen.ReleaseResolver { return &releaseResolver{r} }
 
-type (
-	environmentResolver struct{ *Resolver }
-	releaseResolver     struct{ *Resolver }
-)
+type environmentResolver struct{ *Resolver }
+type releaseResolver struct{ *Resolver }

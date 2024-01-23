@@ -2,11 +2,16 @@ package upgrader
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/pkg/database"
+	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/graph"
+	"github.com/nais/fasit/pkg/graph/model"
 
 	"github.com/sirupsen/logrus"
 )
@@ -47,10 +52,55 @@ func (c *ClusterUpgrader) Run(ctx context.Context) error {
 			// fant running op i db -> kall til google (getOperation) -> oppdater operasjon i db
 			// done -> oppgrader nodepool
 
-			c.log.Infof("Upgrading clusters for tenant %s, env %s", tenant.Name, env.Name)
+			c.log.Debugf("checking for cluster upgrade %q/%q", tenant.Name, env.Name)
 			projectId, err := getProjectId(ctx, c, env.ID)
+			if err != nil {
+				return err
+			}
 
-			runningOperations, err := c.repo.GetRunningClusterOperations(ctx, tenant.ID, env.ID)
+			clusterUpgrade, err := c.repo.ClusterUpgradeGet(ctx, env.TenantID, env.ID)
+			if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+				return err
+			}
+
+			if clusterUpgrade == nil || clusterUpgrade.UpgradeStatus == "" || clusterUpgrade.UpgradeStatus == model.UpgradeStatusDone {
+				continue
+			}
+
+			if clusterUpgrade.UpgradeStatus == model.UpgradeStatusMasterUpgrade || clusterUpgrade.UpgradeStatus == model.UpgradeStatusNodeUpgrade {
+				/*c.log.Debugf("cluster upgrade running - %q/%q", tenant.Name, env.Name)
+				ops, err := c.client.GetRunningOperations(ctx, projectId, env.Name)
+				if err != nil {
+					return err
+				}
+				for _, op := range ops {
+					fmt.Println("Operation", op.Name)
+				}*/
+				c.log.Error("not implemented")
+				continue
+			}
+
+			if clusterUpgrade.UpgradeStatus == model.UpgradeStatusCreated {
+				// TODO: c.repo.ClusterVersionGet()
+				op, err := c.client.UpgradeMaster(ctx, projectId, env.Name, clusterUpgrade.Version)
+				if err != nil {
+					return err
+				}
+				co, err := c.repo.CreateOrUpdateClusterOperation(ctx, env.TenantID, env.ID, clusterUpgrade.ID, op)
+				if err != nil {
+					return err
+				}
+				c.log.Debugf("cluster upgrade operation started - %s/%s/%s", tenant.Name, env.Name, co.ID)
+
+				c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatusMASTERUPGRADE, clusterUpgrade.Version)
+
+				c.log.Debugf("cluster upgrade started - %q/%q", tenant.Name, env.Name)
+			}
+
+			fmt.Println("ProjectId", projectId)
+			fmt.Printf("%#v\n", clusterUpgrade)
+
+			/*runningOperations, err := c.repo.GetRunningClusterOperations(ctx, tenant.ID, env.ID)
 			if err != nil {
 				return err
 			}
@@ -105,18 +155,16 @@ func (c *ClusterUpgrader) Run(ctx context.Context) error {
 	return nil
 }
 
-// TODO: thomas er dette ok?
 func getProjectId(ctx context.Context, c *ClusterUpgrader, environmentId uuid.UUID) (string, error) {
 	projectId, err := c.repo.EnvironmentValueGet(ctx, environmentId, "project_id", false)
 	if err != nil {
 		return "", err
 	}
 
-	pid, err := projectId.Value.MarshalJSON()
-	if err != nil {
+	id := ""
+	if err := json.Unmarshal(projectId.Value, &id); err != nil {
 		return "", err
 	}
 
-	pid_string := string(pid[1 : len(pid)-1])
-	return pid_string, nil
+	return id, nil
 }

@@ -22,8 +22,7 @@ type Status {
   log: [LogLine!]!
 }
 
-union Update = Status | Configuration | FeatureState
-
+union Update = Status | Configuration | FeatureState | ClusterUpgradeStatus
 type Subscription {
   logs(environmentID: ID!, featureName: String!, lastLogID: String): LogLine!
 

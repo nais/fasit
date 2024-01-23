@@ -29,6 +29,15 @@ type AuditLog struct {
 	CreatedAt   time.Time `json:"createdAt"`
 }
 
+type ClusterUpgradeStatus struct {
+	ID            uuid.UUID     `json:"id"`
+	UpgradeStatus UpgradeStatus `json:"upgradeStatus"`
+	Version       string        `json:"version"`
+	LastModified  time.Time     `json:"lastModified"`
+}
+
+func (ClusterUpgradeStatus) IsUpdate() {}
+
 type ComputedValue struct {
 	Value   *Value          `json:"value"`
 	Content json.RawMessage `json:"content,omitempty"`
@@ -92,7 +101,6 @@ type EnvironmentVersions struct {
 	Apiserver         string   `json:"apiserver"`
 	AvailableVersions []string `json:"availableVersions"`
 	Channel           string   `json:"channel"`
-	UpgradeStatus     string   `json:"upgradeStatus"`
 }
 
 type HelmValueDiff struct {
