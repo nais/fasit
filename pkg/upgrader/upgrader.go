@@ -116,18 +116,6 @@ func (c *Client) UpgradeNodePool(ctx context.Context, projectId, clusterName, no
 	})
 }
 
-func (c *Client) Upgrade(ctx context.Context, projectId, clusterName, version string) error {
-	_, err := c.client.UpdateCluster(ctx, &containerpb.UpdateClusterRequest{
-		Name:      c.getName(projectId, clusterName),
-		Update:    &containerpb.ClusterUpdate{DesiredMasterVersion: version},
-		ProjectId: projectId,
-	})
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func (c *Client) GetCurrentMasterVersion(ctx context.Context, projectId, clusterName string) (string, error) {
 	cluster, err := c.getCluster(ctx, projectId, clusterName)
 	if err != nil {
