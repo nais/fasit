@@ -14,6 +14,8 @@ service Provider {
       returns (EnvironmentValueResponse) {}
   rpc GetEnvironmentValuesAcrossEnvs(GetEnvironmentValuesAcrossEnvsRequest)
       returns (EnvironmentValuesAcrossEnvsResponse) {}
+  rpc DeleteEnvironmentValue(DeleteEnvironmentValueRequest)
+      returns (DeleteEnvironmentValueResponse) {}
 }
 
 message CreateTenantRequest { string name = 1; }
@@ -78,3 +80,10 @@ message GetEnvironmentValuesAcrossEnvsRequest { string key = 1; }
 message EnvironmentValuesAcrossEnvsResponse {
   repeated EnvironmentValueResponse values = 1;
 }
+
+message DeleteEnvironmentValueRequest {
+  string environment_id = 1;
+  string key = 2;
+}
+
+message DeleteEnvironmentValueResponse { bool success = 1; }

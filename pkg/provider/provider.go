@@ -186,6 +186,21 @@ func (s *Server) GetEnvironmentValuesAcrossEnvs(ctx context.Context, input *prot
 	return ret, nil
 }
 
+func (s *Server) DeleteEnvironmentValue(ctx context.Context, req *protogen.DeleteEnvironmentValueRequest) (*protogen.DeleteEnvironmentValueResponse, error) {
+	ctx = auth.SetEmail(ctx, "system:provider")
+
+	uid, err := uuid.Parse(req.EnvironmentId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "Invalid environment id")
+	}
+
+	if err := s.repo.EnvironmentValueDelete(ctx, uid, req.Key); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &protogen.DeleteEnvironmentValueResponse{Success: true}, nil
+}
+
 func toEnvironmentKind(kind protogen.EnvironmentKind) (model.EnvironmentKind, error) {
 	switch kind {
 	case protogen.EnvironmentKind_MANAGEMENT:

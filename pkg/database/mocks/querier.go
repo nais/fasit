@@ -971,6 +971,24 @@ func (_m *Querier) EnvironmentUpdate(ctx context.Context, arg gensql.Environment
 	return r0, r1
 }
 
+// EnvironmentValueDelete provides a mock function with given fields: ctx, arg
+func (_m *Querier) EnvironmentValueDelete(ctx context.Context, arg gensql.EnvironmentValueDeleteParams) error {
+	ret := _m.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for EnvironmentValueDelete")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.EnvironmentValueDeleteParams) error); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // EnvironmentValueGet provides a mock function with given fields: ctx, arg
 func (_m *Querier) EnvironmentValueGet(ctx context.Context, arg gensql.EnvironmentValueGetParams) (gensql.EnvironmentValueGetRow, error) {
 	ret := _m.Called(ctx, arg)

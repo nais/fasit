@@ -862,6 +862,24 @@ func (_m *Repo) EnvironmentUpdate(ctx context.Context, environmentID uuid.UUID, 
 	return r0, r1
 }
 
+// EnvironmentValueDelete provides a mock function with given fields: ctx, environmentID, key
+func (_m *Repo) EnvironmentValueDelete(ctx context.Context, environmentID uuid.UUID, key string) error {
+	ret := _m.Called(ctx, environmentID, key)
+
+	if len(ret) == 0 {
+		panic("no return value specified for EnvironmentValueDelete")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, string) error); ok {
+		r0 = rf(ctx, environmentID, key)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // EnvironmentValueGet provides a mock function with given fields: ctx, environmentID, key, showSensitive
 func (_m *Repo) EnvironmentValueGet(ctx context.Context, environmentID uuid.UUID, key string, showSensitive bool) (*model.EnvironmentValue, error) {
 	ret := _m.Called(ctx, environmentID, key, showSensitive)
