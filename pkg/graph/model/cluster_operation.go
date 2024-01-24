@@ -7,7 +7,8 @@ import (
 )
 
 type ClusterOperation struct {
-	ID                  string
+	ID                  uuid.UUID
+	OperationName       string
 	TenantID            uuid.UUID
 	EnvironmentID       uuid.UUID
 	UpgradeID           uuid.UUID

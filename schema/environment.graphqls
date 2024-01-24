@@ -60,10 +60,11 @@ type Environment {
 }
 
 type EnvironmentOperation {
-  id: String!
-  status: String!
-  type: String!
-  detail: String!
+  id: ID!
+  environmentOperationName: String!
+  environmentOperationStatus: String!
+  operationType: String!
+  operationDetail: String!
   startTime: Time!
   progress: EnvironmentOperationProgress!
 }

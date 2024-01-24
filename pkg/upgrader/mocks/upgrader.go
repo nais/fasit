@@ -380,55 +380,6 @@ func (_c *Upgrader_GetRunningOperations_Call) RunAndReturn(run func(context.Cont
 	return _c
 }
 
-// Upgrade provides a mock function with given fields: ctx, projectId, clusterName, version
-func (_m *Upgrader) Upgrade(ctx context.Context, projectId string, clusterName string, version string) error {
-	ret := _m.Called(ctx, projectId, clusterName, version)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Upgrade")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) error); ok {
-		r0 = rf(ctx, projectId, clusterName, version)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// Upgrader_Upgrade_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Upgrade'
-type Upgrader_Upgrade_Call struct {
-	*mock.Call
-}
-
-// Upgrade is a helper method to define mock.On call
-//   - ctx context.Context
-//   - projectId string
-//   - clusterName string
-//   - version string
-func (_e *Upgrader_Expecter) Upgrade(ctx interface{}, projectId interface{}, clusterName interface{}, version interface{}) *Upgrader_Upgrade_Call {
-	return &Upgrader_Upgrade_Call{Call: _e.mock.On("Upgrade", ctx, projectId, clusterName, version)}
-}
-
-func (_c *Upgrader_Upgrade_Call) Run(run func(ctx context.Context, projectId string, clusterName string, version string)) *Upgrader_Upgrade_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(string))
-	})
-	return _c
-}
-
-func (_c *Upgrader_Upgrade_Call) Return(_a0 error) *Upgrader_Upgrade_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Upgrader_Upgrade_Call) RunAndReturn(run func(context.Context, string, string, string) error) *Upgrader_Upgrade_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // UpgradeMaster provides a mock function with given fields: ctx, projectId, clusterName, version
 func (_m *Upgrader) UpgradeMaster(ctx context.Context, projectId string, clusterName string, version string) (*containerpb.Operation, error) {
 	ret := _m.Called(ctx, projectId, clusterName, version)

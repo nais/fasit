@@ -67,13 +67,16 @@ type EnvironmentCreate struct {
 }
 
 type EnvironmentOperation struct {
-	ID        string                        `json:"id"`
-	Status    string                        `json:"status"`
-	Type      string                        `json:"type"`
-	Detail    string                        `json:"detail"`
-	StartTime time.Time                     `json:"startTime"`
-	Progress  *EnvironmentOperationProgress `json:"progress"`
+	ID                         uuid.UUID                     `json:"id"`
+	EnvironmentOperationName   string                        `json:"environmentOperationName"`
+	EnvironmentOperationStatus string                        `json:"environmentOperationStatus"`
+	OperationType              string                        `json:"operationType"`
+	OperationDetail            string                        `json:"operationDetail"`
+	StartTime                  time.Time                     `json:"startTime"`
+	Progress                   *EnvironmentOperationProgress `json:"progress"`
 }
+
+func (EnvironmentOperation) IsUpdate() {}
 
 type EnvironmentOperationProgress struct {
 	Metrics []*EnvironmentOperationProgressMetric `json:"metrics"`

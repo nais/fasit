@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/container/apiv1/containerpb"
@@ -214,12 +215,19 @@ func (r *environmentResolver) RunningOperations(ctx context.Context, obj *model.
 			}
 		}
 
+		uu := strings.SplitAfterN(op.Name, "-", 3)[2]
+		id, err := uuid.Parse(uu)
+		if err != nil {
+			return nil, err
+		}
+
 		ret = append(ret, &model.EnvironmentOperation{
-			ID:        op.Name,
-			Status:    op.Status.String(),
-			Type:      op.OperationType.String(),
-			Detail:    op.Detail,
-			StartTime: startTime,
+			ID:                         id,
+			EnvironmentOperationName:   op.Name,
+			EnvironmentOperationStatus: op.Status.String(),
+			OperationType:              op.OperationType.String(),
+			OperationDetail:            op.Detail,
+			StartTime:                  startTime,
 			Progress: &model.EnvironmentOperationProgress{
 				Metrics: metrics,
 			},
