@@ -205,11 +205,13 @@ func (r *environmentResolver) RunningOperations(ctx context.Context, obj *model.
 			return nil, err
 		}
 		var metrics []*model.EnvironmentOperationProgressMetric
-		for _, m := range op.Progress.Metrics {
-			metrics = append(metrics, &model.EnvironmentOperationProgressMetric{
-				Name:  m.Name,
-				Value: int(m.Value.(*containerpb.OperationProgress_Metric_IntValue).IntValue),
-			})
+		if op.Progress != nil {
+			for _, m := range op.Progress.Metrics {
+				metrics = append(metrics, &model.EnvironmentOperationProgressMetric{
+					Name:  m.Name,
+					Value: int(m.Value.(*containerpb.OperationProgress_Metric_IntValue).IntValue),
+				})
+			}
 		}
 
 		ret = append(ret, &model.EnvironmentOperation{

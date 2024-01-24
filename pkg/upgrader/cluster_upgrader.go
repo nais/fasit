@@ -117,7 +117,30 @@ func (c *ClusterUpgrader) Run(ctx context.Context) error {
 			}
 
 			// upgrade nodes
-			// TODO: check if upgrade is done
+			if clusterUpgrade.UpgradeStatus == model.UpgradeStatusNodeUpgrade {
+				c.log.Debugf("cluster upgrade node upgrade - %q/%q", tenant.Name, env.Name)
+				nodePools, err := c.client.GetNodePools(ctx, projectId, env.Name)
+				if err != nil {
+					return err
+				}
+
+				for _, np := range nodePools {
+					if np.Version == clusterUpgrade.Version {
+						continue
+					} else {
+						c.log.Debugf("upgrade node pool %s to %s", np.Name, clusterUpgrade.Version)
+						/*op, err := c.client.UpgradeNodePool(ctx, projectId, env.Name, np.Name, clusterUpgrade.Version)
+						if err != nil {
+							return err
+						}
+
+						_, err = c.repo.CreateOrUpdateClusterOperation(ctx, env.TenantID, env.ID, clusterUpgrade.ID, op)
+						if err != nil {
+							return err
+						}*/
+					}
+				}
+			}
 
 		}
 
