@@ -117,12 +117,14 @@ type AutoInstall struct {
 }
 
 type ClusterOperation struct {
-	ID                  string
+	ID                  uuid.UUID
+	OperationName       string
 	TenantID            uuid.UUID
 	EnvironmentID       uuid.UUID
 	UpgradeID           uuid.UUID
 	Status              string
 	Type                string
+	Detail              string
 	NodesTotal          int32
 	NodesFailed         int32
 	NodesCompleted      int32

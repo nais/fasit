@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"cloud.google.com/go/container/apiv1/containerpb"
 	"github.com/google/uuid"
@@ -34,6 +35,7 @@ func clusterUpgradeFromSQL(p gensql.ClusterUpgrade) *model.ClusterUpgradeStatus 
 func clusterOperationFromSQL(p gensql.ClusterOperation) *model.ClusterOperation {
 	return &model.ClusterOperation{
 		ID:                  p.ID,
+		OperationName:       p.OperationName,
 		TenantID:            p.TenantID,
 		EnvironmentID:       p.EnvironmentID,
 		UpgradeID:           p.UpgradeID,
@@ -51,8 +53,12 @@ func clusterOperationFromSQL(p gensql.ClusterOperation) *model.ClusterOperation 
 
 func (r *repo) ClusterOperationsGetByUpgradeID(ctx context.Context, upgradeId uuid.UUID) (*model.ClusterOperation, error) {
 	clusterOperation, err := r.querier.ClusterOperationsGetByUpgradeID(ctx, upgradeId)
-	if err != nil {
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return nil, err
+	}
+
+	if clusterOperation.EnvironmentID == uuid.Nil {
+		return &model.ClusterOperation{}, nil
 	}
 	return clusterOperationFromSQL(clusterOperation), nil
 }
@@ -121,7 +127,7 @@ func (r *repo) GetRunningClusterOperations(ctx context.Context, tenantId, envId 
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, err
+			return nil, nil
 		}
 		return nil, err
 	}
@@ -159,13 +165,21 @@ func (r *repo) CreateOrUpdateClusterOperation(ctx context.Context, tenantId, env
 		}
 	}
 
+	uu := strings.SplitAfterN(op.Name, "-", 3)[2]
+	id, err := uuid.Parse(uu)
+	if err != nil {
+		return nil, err
+	}
+
 	co, err := r.querier.ClusterOperationCreateOrUpdate(ctx, gensql.ClusterOperationCreateOrUpdateParams{
-		ID:                  op.Name,
+		ID:                  id,
+		OperationName:       op.Name,
 		Status:              op.Status.String(),
 		TenantID:            tenantId,
 		EnvID:               envId,
 		UpgradeID:           upgradeId,
 		Type:                op.OperationType.String(),
+		Detail:              op.Detail,
 		NodesTotal:          int32(nodes_total),
 		NodesFailed:         int32(nodes_failed),
 		NodesCompleted:      int32(nodes_complete),
