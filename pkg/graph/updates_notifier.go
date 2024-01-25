@@ -25,13 +25,14 @@ func newDeployInstructionsNotifier(ctx context.Context, not *notifier.Notifier, 
 	chCfgEnv := not.Listen("configurations_environment")
 	states := not.Listen("feature_states")
 	versions := not.Listen("cluster_upgrades")
+	operations := not.Listen("cluster_operations")
 
 	lf := &updateNotifier{
 		repo:        repo,
 		subscribers: make(map[chan<- model.Update]struct{}),
 	}
 
-	go lf.run(ctx, chDI, chCfgGlobal, chCfgEnv, states, versions)
+	go lf.run(ctx, chDI, chCfgGlobal, chCfgEnv, states, versions, operations)
 
 	return lf
 }
@@ -50,7 +51,7 @@ func (d *updateNotifier) Unsubscribe(ch chan<- model.Update) {
 	delete(d.subscribers, ch)
 }
 
-func (d *updateNotifier) run(ctx context.Context, di, global, env, states, versions <-chan notifier.Payload) {
+func (d *updateNotifier) run(ctx context.Context, di, global, env, states, versions, operations <-chan notifier.Payload) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -65,6 +66,66 @@ func (d *updateNotifier) run(ctx context.Context, di, global, env, states, versi
 			d.handleFeatureState(ctx, msg)
 		case msg := <-versions:
 			d.handleClusterUpgrades(ctx, msg)
+		case msg := <-operations:
+			d.handleClusterOperations(ctx, msg)
+		}
+	}
+}
+
+func (d *updateNotifier) handleClusterOperations(ctx context.Context, msg notifier.Payload) {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
+
+	id, err := d.getAsUUID("id", msg)
+	if err != nil {
+		logrus.Debug("failed to get operation id")
+		return
+	}
+
+	clusterOperation, err := d.repo.ClusterOperationsGetByID(ctx, id)
+	if err != nil {
+		logrus.Debug("failed to get cluster operation")
+		return
+	}
+
+	operation := &model.EnvironmentOperation{
+		ID:                         clusterOperation.ID,
+		EnvironmentOperationName:   clusterOperation.OperationName,
+		EnvironmentOperationStatus: clusterOperation.Status,
+		OperationType:              clusterOperation.Type,
+		OperationDetail:            clusterOperation.Detail,
+		StartTime:                  clusterOperation.StartTime,
+		Progress: &model.EnvironmentOperationProgress{
+			Metrics: []*model.EnvironmentOperationProgressMetric{
+				{
+					Name:  "NodesTotal",
+					Value: clusterOperation.NodesTotal,
+				},
+				{
+					Name:  "NodesFailed",
+					Value: clusterOperation.NodesFailed,
+				},
+				{
+					Name:  "NodesCompleted",
+					Value: clusterOperation.NodesCompleted,
+				},
+				{
+					Name:  "NodesDone",
+					Value: clusterOperation.NodesDone,
+				},
+				{
+					Name:  "NodePdbDelaySeconds",
+					Value: clusterOperation.NodePdbDelaySeconds,
+				},
+			},
+		},
+	}
+
+	for sub := range d.subscribers {
+		select {
+		case sub <- operation:
+		default:
+			logrus.Debug("subscriber blocked")
 		}
 	}
 }
@@ -115,11 +176,9 @@ func (d *updateNotifier) handleClusterUpgrades(ctx context.Context, msg notifier
 
 	clusterUpgradeStatus, err := d.repo.ClusterUpgradeGetByID(ctx, id)
 	if err != nil {
-		logrus.Debug("--------> failed to get cluster upgrade status <------------")
+		logrus.Debug("failed to get cluster upgrade status")
 		return
 	}
-
-	fmt.Printf("clusterUpgradeStatus: %+v\n", clusterUpgradeStatus)
 
 	for sub := range d.subscribers {
 		select {

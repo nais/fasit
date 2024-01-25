@@ -14,6 +14,7 @@ type ClusterOperation struct {
 	UpgradeID           uuid.UUID
 	Status              string
 	Type                string
+	Detail              string
 	NodesTotal          int
 	NodesFailed         int
 	NodesCompleted      int

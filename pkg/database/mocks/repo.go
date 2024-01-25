@@ -229,6 +229,65 @@ func (_c *Repo_Close_Call) RunAndReturn(run func()) *Repo_Close_Call {
 	return _c
 }
 
+// ClusterOperationsGetByID provides a mock function with given fields: ctx, id
+func (_m *Repo) ClusterOperationsGetByID(ctx context.Context, id uuid.UUID) (*model.ClusterOperation, error) {
+	ret := _m.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ClusterOperationsGetByID")
+	}
+
+	var r0 *model.ClusterOperation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) (*model.ClusterOperation, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) *model.ClusterOperation); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.ClusterOperation)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Repo_ClusterOperationsGetByID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ClusterOperationsGetByID'
+type Repo_ClusterOperationsGetByID_Call struct {
+	*mock.Call
+}
+
+// ClusterOperationsGetByID is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id uuid.UUID
+func (_e *Repo_Expecter) ClusterOperationsGetByID(ctx interface{}, id interface{}) *Repo_ClusterOperationsGetByID_Call {
+	return &Repo_ClusterOperationsGetByID_Call{Call: _e.mock.On("ClusterOperationsGetByID", ctx, id)}
+}
+
+func (_c *Repo_ClusterOperationsGetByID_Call) Run(run func(ctx context.Context, id uuid.UUID)) *Repo_ClusterOperationsGetByID_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uuid.UUID))
+	})
+	return _c
+}
+
+func (_c *Repo_ClusterOperationsGetByID_Call) Return(_a0 *model.ClusterOperation, _a1 error) *Repo_ClusterOperationsGetByID_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Repo_ClusterOperationsGetByID_Call) RunAndReturn(run func(context.Context, uuid.UUID) (*model.ClusterOperation, error)) *Repo_ClusterOperationsGetByID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ClusterOperationsGetByUpgradeID provides a mock function with given fields: ctx, upgradeId
 func (_m *Repo) ClusterOperationsGetByUpgradeID(ctx context.Context, upgradeId uuid.UUID) (*model.ClusterOperation, error) {
 	ret := _m.Called(ctx, upgradeId)

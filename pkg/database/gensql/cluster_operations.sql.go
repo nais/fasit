@@ -128,6 +128,34 @@ func (q *Queries) ClusterOperationsGet(ctx context.Context, arg ClusterOperation
 	return items, nil
 }
 
+const clusterOperationsGetByID = `-- name: ClusterOperationsGetByID :one
+SELECT id, operation_name, tenant_id, environment_id, upgrade_id, status, type, detail, nodes_total, nodes_failed, nodes_completed, nodes_done, node_pdb_delay_seconds, start_time, last_modified FROM cluster_operations
+WHERE id = $1
+`
+
+func (q *Queries) ClusterOperationsGetByID(ctx context.Context, id uuid.UUID) (ClusterOperation, error) {
+	row := q.db.QueryRow(ctx, clusterOperationsGetByID, id)
+	var i ClusterOperation
+	err := row.Scan(
+		&i.ID,
+		&i.OperationName,
+		&i.TenantID,
+		&i.EnvironmentID,
+		&i.UpgradeID,
+		&i.Status,
+		&i.Type,
+		&i.Detail,
+		&i.NodesTotal,
+		&i.NodesFailed,
+		&i.NodesCompleted,
+		&i.NodesDone,
+		&i.NodePdbDelaySeconds,
+		&i.StartTime,
+		&i.LastModified,
+	)
+	return i, err
+}
+
 const clusterOperationsGetByUpgradeID = `-- name: ClusterOperationsGetByUpgradeID :one
 SELECT id, operation_name, tenant_id, environment_id, upgrade_id, status, type, detail, nodes_total, nodes_failed, nodes_completed, nodes_done, node_pdb_delay_seconds, start_time, last_modified FROM cluster_operations WHERE "upgrade_id" = $1 ORDER BY "start_time" DESC LIMIT 1
 `

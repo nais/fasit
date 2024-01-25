@@ -9,7 +9,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/pkg/database/gensql"
-
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
@@ -20,6 +19,7 @@ type ClusterUpgraderRepo interface {
 	ClusterUpgradeGet(ctx context.Context, tenantId, envId uuid.UUID) (*model.ClusterUpgradeStatus, error)
 	UpdateClusterUpgradeStatus(ctx context.Context, tenantId, envId uuid.UUID, status gensql.ClusterUpgradesStatus, version string) (*model.ClusterUpgradeStatus, error)
 	ClusterUpgradeGetByID(ctx context.Context, id uuid.UUID) (*model.ClusterUpgradeStatus, error)
+	ClusterOperationsGetByID(ctx context.Context, id uuid.UUID) (*model.ClusterOperation, error)
 	ClusterOperationsGetByUpgradeID(ctx context.Context, upgradeId uuid.UUID) (*model.ClusterOperation, error)
 }
 
@@ -49,6 +49,18 @@ func clusterOperationFromSQL(p gensql.ClusterOperation) *model.ClusterOperation 
 		StartTime:           p.StartTime.Time,
 		LastModified:        p.LastModified.Time,
 	}
+}
+
+func (r *repo) ClusterOperationsGetByID(ctx context.Context, id uuid.UUID) (*model.ClusterOperation, error) {
+	clusterOperation, err := r.querier.ClusterOperationsGetByID(ctx, id)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return nil, err
+	}
+
+	if clusterOperation.EnvironmentID == uuid.Nil {
+		return &model.ClusterOperation{}, nil
+	}
+	return clusterOperationFromSQL(clusterOperation), nil
 }
 
 func (r *repo) ClusterOperationsGetByUpgradeID(ctx context.Context, upgradeId uuid.UUID) (*model.ClusterOperation, error) {

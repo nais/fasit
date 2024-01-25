@@ -20,3 +20,7 @@ ORDER BY "start_time" DESC;
 
 -- name: ClusterOperationsGetByUpgradeID :one
 SELECT * FROM cluster_operations WHERE "upgrade_id" = @upgrade_id ORDER BY "start_time" DESC LIMIT 1;
+
+-- name: ClusterOperationsGetByID :one
+SELECT * FROM cluster_operations
+WHERE id = @id;
