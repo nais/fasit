@@ -92,7 +92,7 @@ func (c *ClusterUpgrader) Run(ctx context.Context) error {
 
 			// check status on ongoing master upgrade
 			if clusterUpgrade.UpgradeStatus == model.UpgradeStatusMasterUpgrade {
-				op, err := c.getAndUpdateOperation(ctx, projectId, env.TenantID, env.ID, clusterUpgrade.ID, co.EnvironmentOperationName)
+				op, err := c.getAndUpdateOperation(ctx, projectId, env.TenantID, env.ID, clusterUpgrade.ID, co.Name)
 				if err != nil {
 					return err
 				}
@@ -109,7 +109,7 @@ func (c *ClusterUpgrader) Run(ctx context.Context) error {
 
 			// check status on ongoing node upgrade
 			if clusterUpgrade.UpgradeStatus == model.UpgradeStatusNodeUpgrade {
-				op, err := c.getAndUpdateOperation(ctx, projectId, env.TenantID, env.ID, clusterUpgrade.ID, co.EnvironmentOperationName)
+				op, err := c.getAndUpdateOperation(ctx, projectId, env.TenantID, env.ID, clusterUpgrade.ID, co.Name)
 				if err != nil {
 					return err
 				}
@@ -144,7 +144,7 @@ func (c *ClusterUpgrader) Run(ctx context.Context) error {
 						continue
 					}
 				} else if op.Status == containerpb.Operation_RUNNING {
-					_, err := c.getAndUpdateOperation(ctx, projectId, env.TenantID, env.ID, clusterUpgrade.ID, co.EnvironmentOperationName)
+					_, err := c.getAndUpdateOperation(ctx, projectId, env.TenantID, env.ID, clusterUpgrade.ID, co.Name)
 					if err != nil {
 						return err
 					}

@@ -89,18 +89,18 @@ func (d *updateNotifier) handleClusterOperations(ctx context.Context, msg notifi
 	}
 
 	operation := &model.EnvironmentOperation{
-		ID:                         clusterOperation.ID,
-		EnvironmentOperationName:   clusterOperation.EnvironmentOperationName,
-		EnvironmentOperationStatus: clusterOperation.EnvironmentOperationStatus,
-		OperationType:              clusterOperation.OperationType,
-		OperationDetail:            clusterOperation.OperationDetail,
-		StartTime:                  clusterOperation.StartTime,
-		LastModified:               clusterOperation.LastModified,
-		NodesTotal:                 clusterOperation.NodesTotal,
-		NodesFailed:                clusterOperation.NodesFailed,
-		NodesCompleted:             clusterOperation.NodesCompleted,
-		NodesDone:                  clusterOperation.NodesDone,
-		NodePdbDelaySeconds:        clusterOperation.NodePdbDelaySeconds,
+		ID:                  clusterOperation.ID,
+		Name:                clusterOperation.Name,
+		Status:              clusterOperation.Status,
+		Type:                clusterOperation.Type,
+		Detail:              clusterOperation.Detail,
+		StartTime:           clusterOperation.StartTime,
+		LastModified:        clusterOperation.LastModified,
+		NodesTotal:          clusterOperation.NodesTotal,
+		NodesFailed:         clusterOperation.NodesFailed,
+		NodesCompleted:      clusterOperation.NodesCompleted,
+		NodesDone:           clusterOperation.NodesDone,
+		NodePdbDelaySeconds: clusterOperation.NodePdbDelaySeconds,
 	}
 
 	for sub := range d.subscribers {

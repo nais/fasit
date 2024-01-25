@@ -67,18 +67,18 @@ type EnvironmentCreate struct {
 }
 
 type EnvironmentOperation struct {
-	ID                         uuid.UUID `json:"id"`
-	EnvironmentOperationName   string    `json:"environmentOperationName"`
-	EnvironmentOperationStatus string    `json:"environmentOperationStatus"`
-	OperationType              string    `json:"operationType"`
-	OperationDetail            string    `json:"operationDetail"`
-	StartTime                  time.Time `json:"startTime"`
-	LastModified               time.Time `json:"lastModified"`
-	NodesTotal                 int       `json:"nodesTotal"`
-	NodesFailed                int       `json:"nodesFailed"`
-	NodesCompleted             int       `json:"nodesCompleted"`
-	NodesDone                  int       `json:"nodesDone"`
-	NodePdbDelaySeconds        int       `json:"nodePdbDelaySeconds"`
+	ID                  uuid.UUID `json:"id"`
+	Name                string    `json:"name"`
+	Status              string    `json:"status"`
+	Type                string    `json:"type"`
+	Detail              string    `json:"detail"`
+	StartTime           time.Time `json:"startTime"`
+	LastModified        time.Time `json:"lastModified"`
+	NodesTotal          int       `json:"nodesTotal"`
+	NodesFailed         int       `json:"nodesFailed"`
+	NodesCompleted      int       `json:"nodesCompleted"`
+	NodesDone           int       `json:"nodesDone"`
+	NodePdbDelaySeconds int       `json:"nodePdbDelaySeconds"`
 }
 
 func (EnvironmentOperation) IsUpdate() {}

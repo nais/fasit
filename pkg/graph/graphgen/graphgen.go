@@ -159,18 +159,18 @@ type ComplexityRoot struct {
 	}
 
 	EnvironmentOperation struct {
-		EnvironmentOperationName   func(childComplexity int) int
-		EnvironmentOperationStatus func(childComplexity int) int
-		ID                         func(childComplexity int) int
-		LastModified               func(childComplexity int) int
-		NodePdbDelaySeconds        func(childComplexity int) int
-		NodesCompleted             func(childComplexity int) int
-		NodesDone                  func(childComplexity int) int
-		NodesFailed                func(childComplexity int) int
-		NodesTotal                 func(childComplexity int) int
-		OperationDetail            func(childComplexity int) int
-		OperationType              func(childComplexity int) int
-		StartTime                  func(childComplexity int) int
+		Detail              func(childComplexity int) int
+		ID                  func(childComplexity int) int
+		LastModified        func(childComplexity int) int
+		Name                func(childComplexity int) int
+		NodePdbDelaySeconds func(childComplexity int) int
+		NodesCompleted      func(childComplexity int) int
+		NodesDone           func(childComplexity int) int
+		NodesFailed         func(childComplexity int) int
+		NodesTotal          func(childComplexity int) int
+		StartTime           func(childComplexity int) int
+		Status              func(childComplexity int) int
+		Type                func(childComplexity int) int
 	}
 
 	EnvironmentValue struct {
@@ -903,19 +903,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Environment.Warnings(childComplexity), true
 
-	case "EnvironmentOperation.environmentOperationName":
-		if e.complexity.EnvironmentOperation.EnvironmentOperationName == nil {
+	case "EnvironmentOperation.detail":
+		if e.complexity.EnvironmentOperation.Detail == nil {
 			break
 		}
 
-		return e.complexity.EnvironmentOperation.EnvironmentOperationName(childComplexity), true
-
-	case "EnvironmentOperation.environmentOperationStatus":
-		if e.complexity.EnvironmentOperation.EnvironmentOperationStatus == nil {
-			break
-		}
-
-		return e.complexity.EnvironmentOperation.EnvironmentOperationStatus(childComplexity), true
+		return e.complexity.EnvironmentOperation.Detail(childComplexity), true
 
 	case "EnvironmentOperation.id":
 		if e.complexity.EnvironmentOperation.ID == nil {
@@ -930,6 +923,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.EnvironmentOperation.LastModified(childComplexity), true
+
+	case "EnvironmentOperation.name":
+		if e.complexity.EnvironmentOperation.Name == nil {
+			break
+		}
+
+		return e.complexity.EnvironmentOperation.Name(childComplexity), true
 
 	case "EnvironmentOperation.nodePdbDelaySeconds":
 		if e.complexity.EnvironmentOperation.NodePdbDelaySeconds == nil {
@@ -966,26 +966,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.EnvironmentOperation.NodesTotal(childComplexity), true
 
-	case "EnvironmentOperation.operationDetail":
-		if e.complexity.EnvironmentOperation.OperationDetail == nil {
-			break
-		}
-
-		return e.complexity.EnvironmentOperation.OperationDetail(childComplexity), true
-
-	case "EnvironmentOperation.operationType":
-		if e.complexity.EnvironmentOperation.OperationType == nil {
-			break
-		}
-
-		return e.complexity.EnvironmentOperation.OperationType(childComplexity), true
-
 	case "EnvironmentOperation.startTime":
 		if e.complexity.EnvironmentOperation.StartTime == nil {
 			break
 		}
 
 		return e.complexity.EnvironmentOperation.StartTime(childComplexity), true
+
+	case "EnvironmentOperation.status":
+		if e.complexity.EnvironmentOperation.Status == nil {
+			break
+		}
+
+		return e.complexity.EnvironmentOperation.Status(childComplexity), true
+
+	case "EnvironmentOperation.type":
+		if e.complexity.EnvironmentOperation.Type == nil {
+			break
+		}
+
+		return e.complexity.EnvironmentOperation.Type(childComplexity), true
 
 	case "EnvironmentValue.key":
 		if e.complexity.EnvironmentValue.Key == nil {
@@ -2418,10 +2418,10 @@ type Environment {
 
 type EnvironmentOperation {
   id: ID!
-  environmentOperationName: String!
-  environmentOperationStatus: String!
-  operationType: String!
-  operationDetail: String!
+  name: String!
+  status: String!
+  type: String!
+  detail: String!
   startTime: Time!
   lastModified: Time!
   nodesTotal: Int!
@@ -6073,14 +6073,14 @@ func (ec *executionContext) fieldContext_Environment_runningOperation(ctx contex
 			switch field.Name {
 			case "id":
 				return ec.fieldContext_EnvironmentOperation_id(ctx, field)
-			case "environmentOperationName":
-				return ec.fieldContext_EnvironmentOperation_environmentOperationName(ctx, field)
-			case "environmentOperationStatus":
-				return ec.fieldContext_EnvironmentOperation_environmentOperationStatus(ctx, field)
-			case "operationType":
-				return ec.fieldContext_EnvironmentOperation_operationType(ctx, field)
-			case "operationDetail":
-				return ec.fieldContext_EnvironmentOperation_operationDetail(ctx, field)
+			case "name":
+				return ec.fieldContext_EnvironmentOperation_name(ctx, field)
+			case "status":
+				return ec.fieldContext_EnvironmentOperation_status(ctx, field)
+			case "type":
+				return ec.fieldContext_EnvironmentOperation_type(ctx, field)
+			case "detail":
+				return ec.fieldContext_EnvironmentOperation_detail(ctx, field)
 			case "startTime":
 				return ec.fieldContext_EnvironmentOperation_startTime(ctx, field)
 			case "lastModified":
@@ -6146,8 +6146,8 @@ func (ec *executionContext) fieldContext_EnvironmentOperation_id(ctx context.Con
 	return fc, nil
 }
 
-func (ec *executionContext) _EnvironmentOperation_environmentOperationName(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentOperation) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_EnvironmentOperation_environmentOperationName(ctx, field)
+func (ec *executionContext) _EnvironmentOperation_name(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentOperation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EnvironmentOperation_name(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -6160,7 +6160,7 @@ func (ec *executionContext) _EnvironmentOperation_environmentOperationName(ctx c
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.EnvironmentOperationName, nil
+		return obj.Name, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6177,7 +6177,7 @@ func (ec *executionContext) _EnvironmentOperation_environmentOperationName(ctx c
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_EnvironmentOperation_environmentOperationName(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_EnvironmentOperation_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "EnvironmentOperation",
 		Field:      field,
@@ -6190,8 +6190,8 @@ func (ec *executionContext) fieldContext_EnvironmentOperation_environmentOperati
 	return fc, nil
 }
 
-func (ec *executionContext) _EnvironmentOperation_environmentOperationStatus(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentOperation) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_EnvironmentOperation_environmentOperationStatus(ctx, field)
+func (ec *executionContext) _EnvironmentOperation_status(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentOperation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EnvironmentOperation_status(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -6204,7 +6204,7 @@ func (ec *executionContext) _EnvironmentOperation_environmentOperationStatus(ctx
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.EnvironmentOperationStatus, nil
+		return obj.Status, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6221,7 +6221,7 @@ func (ec *executionContext) _EnvironmentOperation_environmentOperationStatus(ctx
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_EnvironmentOperation_environmentOperationStatus(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_EnvironmentOperation_status(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "EnvironmentOperation",
 		Field:      field,
@@ -6234,8 +6234,8 @@ func (ec *executionContext) fieldContext_EnvironmentOperation_environmentOperati
 	return fc, nil
 }
 
-func (ec *executionContext) _EnvironmentOperation_operationType(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentOperation) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_EnvironmentOperation_operationType(ctx, field)
+func (ec *executionContext) _EnvironmentOperation_type(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentOperation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EnvironmentOperation_type(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -6248,7 +6248,7 @@ func (ec *executionContext) _EnvironmentOperation_operationType(ctx context.Cont
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.OperationType, nil
+		return obj.Type, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6265,7 +6265,7 @@ func (ec *executionContext) _EnvironmentOperation_operationType(ctx context.Cont
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_EnvironmentOperation_operationType(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_EnvironmentOperation_type(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "EnvironmentOperation",
 		Field:      field,
@@ -6278,8 +6278,8 @@ func (ec *executionContext) fieldContext_EnvironmentOperation_operationType(ctx 
 	return fc, nil
 }
 
-func (ec *executionContext) _EnvironmentOperation_operationDetail(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentOperation) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_EnvironmentOperation_operationDetail(ctx, field)
+func (ec *executionContext) _EnvironmentOperation_detail(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentOperation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EnvironmentOperation_detail(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -6292,7 +6292,7 @@ func (ec *executionContext) _EnvironmentOperation_operationDetail(ctx context.Co
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.OperationDetail, nil
+		return obj.Detail, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6309,7 +6309,7 @@ func (ec *executionContext) _EnvironmentOperation_operationDetail(ctx context.Co
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_EnvironmentOperation_operationDetail(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_EnvironmentOperation_detail(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "EnvironmentOperation",
 		Field:      field,
@@ -17643,23 +17643,23 @@ func (ec *executionContext) _EnvironmentOperation(ctx context.Context, sel ast.S
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "environmentOperationName":
-			out.Values[i] = ec._EnvironmentOperation_environmentOperationName(ctx, field, obj)
+		case "name":
+			out.Values[i] = ec._EnvironmentOperation_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "environmentOperationStatus":
-			out.Values[i] = ec._EnvironmentOperation_environmentOperationStatus(ctx, field, obj)
+		case "status":
+			out.Values[i] = ec._EnvironmentOperation_status(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "operationType":
-			out.Values[i] = ec._EnvironmentOperation_operationType(ctx, field, obj)
+		case "type":
+			out.Values[i] = ec._EnvironmentOperation_type(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "operationDetail":
-			out.Values[i] = ec._EnvironmentOperation_operationDetail(ctx, field, obj)
+		case "detail":
+			out.Values[i] = ec._EnvironmentOperation_detail(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

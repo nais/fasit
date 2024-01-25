@@ -34,18 +34,18 @@ func clusterUpgradeFromSQL(p gensql.ClusterUpgrade) *model.ClusterUpgradeStatus 
 
 func clusterOperationFromSQL(p gensql.ClusterOperation) *model.EnvironmentOperation {
 	return &model.EnvironmentOperation{
-		ID:                         p.ID,
-		EnvironmentOperationName:   p.OperationName,
-		EnvironmentOperationStatus: p.Status,
-		OperationType:              p.Type,
-		OperationDetail:            p.Detail,
-		NodesTotal:                 int(p.NodesTotal),
-		NodesFailed:                int(p.NodesFailed),
-		NodesCompleted:             int(p.NodesCompleted),
-		NodesDone:                  int(p.NodesDone),
-		NodePdbDelaySeconds:        int(p.NodePdbDelaySeconds),
-		StartTime:                  p.StartTime.Time,
-		LastModified:               p.LastModified.Time,
+		ID:                  p.ID,
+		Name:                p.OperationName,
+		Status:              p.Status,
+		Type:                p.Type,
+		Detail:              p.Detail,
+		NodesTotal:          int(p.NodesTotal),
+		NodesFailed:         int(p.NodesFailed),
+		NodesCompleted:      int(p.NodesCompleted),
+		NodesDone:           int(p.NodesDone),
+		NodePdbDelaySeconds: int(p.NodePdbDelaySeconds),
+		StartTime:           p.StartTime.Time,
+		LastModified:        p.LastModified.Time,
 	}
 }
 

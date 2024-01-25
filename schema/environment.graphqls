@@ -61,10 +61,10 @@ type Environment {
 
 type EnvironmentOperation {
   id: ID!
-  environmentOperationName: String!
-  environmentOperationStatus: String!
-  operationType: String!
-  operationDetail: String!
+  name: String!
+  status: String!
+  type: String!
+  detail: String!
   startTime: Time!
   lastModified: Time!
   nodesTotal: Int!
