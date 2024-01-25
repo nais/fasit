@@ -230,23 +230,23 @@ func (_c *Repo_Close_Call) RunAndReturn(run func()) *Repo_Close_Call {
 }
 
 // ClusterOperationsGetByID provides a mock function with given fields: ctx, id
-func (_m *Repo) ClusterOperationsGetByID(ctx context.Context, id uuid.UUID) (*model.ClusterOperation, error) {
+func (_m *Repo) ClusterOperationsGetByID(ctx context.Context, id uuid.UUID) (*model.EnvironmentOperation, error) {
 	ret := _m.Called(ctx, id)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ClusterOperationsGetByID")
 	}
 
-	var r0 *model.ClusterOperation
+	var r0 *model.EnvironmentOperation
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) (*model.ClusterOperation, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) (*model.EnvironmentOperation, error)); ok {
 		return rf(ctx, id)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) *model.ClusterOperation); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) *model.EnvironmentOperation); ok {
 		r0 = rf(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.ClusterOperation)
+			r0 = ret.Get(0).(*model.EnvironmentOperation)
 		}
 	}
 
@@ -278,34 +278,34 @@ func (_c *Repo_ClusterOperationsGetByID_Call) Run(run func(ctx context.Context, 
 	return _c
 }
 
-func (_c *Repo_ClusterOperationsGetByID_Call) Return(_a0 *model.ClusterOperation, _a1 error) *Repo_ClusterOperationsGetByID_Call {
+func (_c *Repo_ClusterOperationsGetByID_Call) Return(_a0 *model.EnvironmentOperation, _a1 error) *Repo_ClusterOperationsGetByID_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Repo_ClusterOperationsGetByID_Call) RunAndReturn(run func(context.Context, uuid.UUID) (*model.ClusterOperation, error)) *Repo_ClusterOperationsGetByID_Call {
+func (_c *Repo_ClusterOperationsGetByID_Call) RunAndReturn(run func(context.Context, uuid.UUID) (*model.EnvironmentOperation, error)) *Repo_ClusterOperationsGetByID_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // ClusterOperationsGetByUpgradeID provides a mock function with given fields: ctx, upgradeId
-func (_m *Repo) ClusterOperationsGetByUpgradeID(ctx context.Context, upgradeId uuid.UUID) (*model.ClusterOperation, error) {
+func (_m *Repo) ClusterOperationsGetByUpgradeID(ctx context.Context, upgradeId uuid.UUID) (*model.EnvironmentOperation, error) {
 	ret := _m.Called(ctx, upgradeId)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ClusterOperationsGetByUpgradeID")
 	}
 
-	var r0 *model.ClusterOperation
+	var r0 *model.EnvironmentOperation
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) (*model.ClusterOperation, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) (*model.EnvironmentOperation, error)); ok {
 		return rf(ctx, upgradeId)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) *model.ClusterOperation); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) *model.EnvironmentOperation); ok {
 		r0 = rf(ctx, upgradeId)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.ClusterOperation)
+			r0 = ret.Get(0).(*model.EnvironmentOperation)
 		}
 	}
 
@@ -337,12 +337,12 @@ func (_c *Repo_ClusterOperationsGetByUpgradeID_Call) Run(run func(ctx context.Co
 	return _c
 }
 
-func (_c *Repo_ClusterOperationsGetByUpgradeID_Call) Return(_a0 *model.ClusterOperation, _a1 error) *Repo_ClusterOperationsGetByUpgradeID_Call {
+func (_c *Repo_ClusterOperationsGetByUpgradeID_Call) Return(_a0 *model.EnvironmentOperation, _a1 error) *Repo_ClusterOperationsGetByUpgradeID_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Repo_ClusterOperationsGetByUpgradeID_Call) RunAndReturn(run func(context.Context, uuid.UUID) (*model.ClusterOperation, error)) *Repo_ClusterOperationsGetByUpgradeID_Call {
+func (_c *Repo_ClusterOperationsGetByUpgradeID_Call) RunAndReturn(run func(context.Context, uuid.UUID) (*model.EnvironmentOperation, error)) *Repo_ClusterOperationsGetByUpgradeID_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1203,23 +1203,23 @@ func (_c *Repo_CreateClusterUpgrade_Call) RunAndReturn(run func(context.Context,
 }
 
 // CreateOrUpdateClusterOperation provides a mock function with given fields: ctx, tenantId, envId, versionId, op
-func (_m *Repo) CreateOrUpdateClusterOperation(ctx context.Context, tenantId uuid.UUID, envId uuid.UUID, versionId uuid.UUID, op *containerpb.Operation) (*model.ClusterOperation, error) {
+func (_m *Repo) CreateOrUpdateClusterOperation(ctx context.Context, tenantId uuid.UUID, envId uuid.UUID, versionId uuid.UUID, op *containerpb.Operation) (*model.EnvironmentOperation, error) {
 	ret := _m.Called(ctx, tenantId, envId, versionId, op)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateOrUpdateClusterOperation")
 	}
 
-	var r0 *model.ClusterOperation
+	var r0 *model.EnvironmentOperation
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID, uuid.UUID, *containerpb.Operation) (*model.ClusterOperation, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID, uuid.UUID, *containerpb.Operation) (*model.EnvironmentOperation, error)); ok {
 		return rf(ctx, tenantId, envId, versionId, op)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID, uuid.UUID, *containerpb.Operation) *model.ClusterOperation); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID, uuid.UUID, *containerpb.Operation) *model.EnvironmentOperation); ok {
 		r0 = rf(ctx, tenantId, envId, versionId, op)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.ClusterOperation)
+			r0 = ret.Get(0).(*model.EnvironmentOperation)
 		}
 	}
 
@@ -1254,12 +1254,12 @@ func (_c *Repo_CreateOrUpdateClusterOperation_Call) Run(run func(ctx context.Con
 	return _c
 }
 
-func (_c *Repo_CreateOrUpdateClusterOperation_Call) Return(_a0 *model.ClusterOperation, _a1 error) *Repo_CreateOrUpdateClusterOperation_Call {
+func (_c *Repo_CreateOrUpdateClusterOperation_Call) Return(_a0 *model.EnvironmentOperation, _a1 error) *Repo_CreateOrUpdateClusterOperation_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Repo_CreateOrUpdateClusterOperation_Call) RunAndReturn(run func(context.Context, uuid.UUID, uuid.UUID, uuid.UUID, *containerpb.Operation) (*model.ClusterOperation, error)) *Repo_CreateOrUpdateClusterOperation_Call {
+func (_c *Repo_CreateOrUpdateClusterOperation_Call) RunAndReturn(run func(context.Context, uuid.UUID, uuid.UUID, uuid.UUID, *containerpb.Operation) (*model.EnvironmentOperation, error)) *Repo_CreateOrUpdateClusterOperation_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -2951,24 +2951,24 @@ func (_c *Repo_FeaturesForKind_Call) RunAndReturn(run func(context.Context, mode
 	return _c
 }
 
-// GetRunningClusterOperations provides a mock function with given fields: ctx, tenantId, envId
-func (_m *Repo) GetRunningClusterOperations(ctx context.Context, tenantId uuid.UUID, envId uuid.UUID) ([]*model.ClusterOperation, error) {
+// GetRunningClusterOperation provides a mock function with given fields: ctx, tenantId, envId
+func (_m *Repo) GetRunningClusterOperation(ctx context.Context, tenantId uuid.UUID, envId uuid.UUID) (*model.EnvironmentOperation, error) {
 	ret := _m.Called(ctx, tenantId, envId)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetRunningClusterOperations")
+		panic("no return value specified for GetRunningClusterOperation")
 	}
 
-	var r0 []*model.ClusterOperation
+	var r0 *model.EnvironmentOperation
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID) ([]*model.ClusterOperation, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID) (*model.EnvironmentOperation, error)); ok {
 		return rf(ctx, tenantId, envId)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID) []*model.ClusterOperation); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID) *model.EnvironmentOperation); ok {
 		r0 = rf(ctx, tenantId, envId)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.ClusterOperation)
+			r0 = ret.Get(0).(*model.EnvironmentOperation)
 		}
 	}
 
@@ -2981,32 +2981,32 @@ func (_m *Repo) GetRunningClusterOperations(ctx context.Context, tenantId uuid.U
 	return r0, r1
 }
 
-// Repo_GetRunningClusterOperations_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetRunningClusterOperations'
-type Repo_GetRunningClusterOperations_Call struct {
+// Repo_GetRunningClusterOperation_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetRunningClusterOperation'
+type Repo_GetRunningClusterOperation_Call struct {
 	*mock.Call
 }
 
-// GetRunningClusterOperations is a helper method to define mock.On call
+// GetRunningClusterOperation is a helper method to define mock.On call
 //   - ctx context.Context
 //   - tenantId uuid.UUID
 //   - envId uuid.UUID
-func (_e *Repo_Expecter) GetRunningClusterOperations(ctx interface{}, tenantId interface{}, envId interface{}) *Repo_GetRunningClusterOperations_Call {
-	return &Repo_GetRunningClusterOperations_Call{Call: _e.mock.On("GetRunningClusterOperations", ctx, tenantId, envId)}
+func (_e *Repo_Expecter) GetRunningClusterOperation(ctx interface{}, tenantId interface{}, envId interface{}) *Repo_GetRunningClusterOperation_Call {
+	return &Repo_GetRunningClusterOperation_Call{Call: _e.mock.On("GetRunningClusterOperation", ctx, tenantId, envId)}
 }
 
-func (_c *Repo_GetRunningClusterOperations_Call) Run(run func(ctx context.Context, tenantId uuid.UUID, envId uuid.UUID)) *Repo_GetRunningClusterOperations_Call {
+func (_c *Repo_GetRunningClusterOperation_Call) Run(run func(ctx context.Context, tenantId uuid.UUID, envId uuid.UUID)) *Repo_GetRunningClusterOperation_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(uuid.UUID), args[2].(uuid.UUID))
 	})
 	return _c
 }
 
-func (_c *Repo_GetRunningClusterOperations_Call) Return(_a0 []*model.ClusterOperation, _a1 error) *Repo_GetRunningClusterOperations_Call {
+func (_c *Repo_GetRunningClusterOperation_Call) Return(_a0 *model.EnvironmentOperation, _a1 error) *Repo_GetRunningClusterOperation_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Repo_GetRunningClusterOperations_Call) RunAndReturn(run func(context.Context, uuid.UUID, uuid.UUID) ([]*model.ClusterOperation, error)) *Repo_GetRunningClusterOperations_Call {
+func (_c *Repo_GetRunningClusterOperation_Call) RunAndReturn(run func(context.Context, uuid.UUID, uuid.UUID) (*model.EnvironmentOperation, error)) *Repo_GetRunningClusterOperation_Call {
 	_c.Call.Return(run)
 	return _c
 }

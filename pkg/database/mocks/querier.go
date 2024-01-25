@@ -310,6 +310,63 @@ func (_c *Querier_ClusterOperationCreateOrUpdate_Call) RunAndReturn(run func(con
 	return _c
 }
 
+// ClusterOperationGet provides a mock function with given fields: ctx, arg
+func (_m *Querier) ClusterOperationGet(ctx context.Context, arg gensql.ClusterOperationGetParams) (gensql.ClusterOperation, error) {
+	ret := _m.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ClusterOperationGet")
+	}
+
+	var r0 gensql.ClusterOperation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.ClusterOperationGetParams) (gensql.ClusterOperation, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.ClusterOperationGetParams) gensql.ClusterOperation); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(gensql.ClusterOperation)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, gensql.ClusterOperationGetParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Querier_ClusterOperationGet_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ClusterOperationGet'
+type Querier_ClusterOperationGet_Call struct {
+	*mock.Call
+}
+
+// ClusterOperationGet is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg gensql.ClusterOperationGetParams
+func (_e *Querier_Expecter) ClusterOperationGet(ctx interface{}, arg interface{}) *Querier_ClusterOperationGet_Call {
+	return &Querier_ClusterOperationGet_Call{Call: _e.mock.On("ClusterOperationGet", ctx, arg)}
+}
+
+func (_c *Querier_ClusterOperationGet_Call) Run(run func(ctx context.Context, arg gensql.ClusterOperationGetParams)) *Querier_ClusterOperationGet_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(gensql.ClusterOperationGetParams))
+	})
+	return _c
+}
+
+func (_c *Querier_ClusterOperationGet_Call) Return(_a0 gensql.ClusterOperation, _a1 error) *Querier_ClusterOperationGet_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Querier_ClusterOperationGet_Call) RunAndReturn(run func(context.Context, gensql.ClusterOperationGetParams) (gensql.ClusterOperation, error)) *Querier_ClusterOperationGet_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ClusterOperationsGet provides a mock function with given fields: ctx, arg
 func (_m *Querier) ClusterOperationsGet(ctx context.Context, arg gensql.ClusterOperationsGetParams) ([]gensql.ClusterOperation, error) {
 	ret := _m.Called(ctx, arg)
