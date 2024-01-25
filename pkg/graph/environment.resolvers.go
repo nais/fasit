@@ -9,10 +9,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
-	"cloud.google.com/go/container/apiv1/containerpb"
 	"github.com/google/uuid"
 	pgx "github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/pkg/graph/graphgen"
@@ -187,54 +185,8 @@ func (r *environmentResolver) Versions(ctx context.Context, obj *model.Environme
 }
 
 // RunningOperations is the resolver for the runningOperations field.
-func (r *environmentResolver) RunningOperations(ctx context.Context, obj *model.Environment) ([]*model.EnvironmentOperation, error) {
-	projectId, err := r.Environment().GcpProjectID(ctx, obj)
-	if err != nil {
-		return nil, err
-	}
-
-	if projectId == nil {
-		return nil, fmt.Errorf("projectId is nil")
-	}
-
-	var ret []*model.EnvironmentOperation
-
-	ops, err := r.UpgraderClient.GetRunningOperations(ctx, *projectId, obj.Name)
-	for _, op := range ops {
-		startTime, err := time.Parse(time.RFC3339, op.StartTime)
-		if err != nil {
-			return nil, err
-		}
-		var metrics []*model.EnvironmentOperationProgressMetric
-		if op.Progress != nil {
-			for _, m := range op.Progress.Metrics {
-				metrics = append(metrics, &model.EnvironmentOperationProgressMetric{
-					Name:  m.Name,
-					Value: int(m.Value.(*containerpb.OperationProgress_Metric_IntValue).IntValue),
-				})
-			}
-		}
-
-		uu := strings.SplitAfterN(op.Name, "-", 3)[2]
-		id, err := uuid.Parse(uu)
-		if err != nil {
-			return nil, err
-		}
-
-		ret = append(ret, &model.EnvironmentOperation{
-			ID:                         id,
-			EnvironmentOperationName:   op.Name,
-			EnvironmentOperationStatus: op.Status.String(),
-			OperationType:              op.OperationType.String(),
-			OperationDetail:            op.Detail,
-			StartTime:                  startTime,
-			Progress: &model.EnvironmentOperationProgress{
-				Metrics: metrics,
-			},
-		})
-	}
-
-	return ret, nil
+func (r *environmentResolver) RunningOperation(ctx context.Context, obj *model.Environment) (*model.EnvironmentOperation, error) {
+	return r.Repo.GetRunningClusterOperation(ctx, obj.TenantID, obj.ID)
 }
 
 // EnvironmentCreate is the resolver for the environmentCreate field.

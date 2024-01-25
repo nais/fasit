@@ -151,7 +151,7 @@ type ComplexityRoot struct {
 		Nodes                func(childComplexity int) int
 		Reconcile            func(childComplexity int) int
 		Releases             func(childComplexity int) int
-		RunningOperations    func(childComplexity int) int
+		RunningOperation     func(childComplexity int) int
 		Tenant               func(childComplexity int) int
 		Values               func(childComplexity int) int
 		Versions             func(childComplexity int) int
@@ -162,19 +162,15 @@ type ComplexityRoot struct {
 		EnvironmentOperationName   func(childComplexity int) int
 		EnvironmentOperationStatus func(childComplexity int) int
 		ID                         func(childComplexity int) int
+		LastModified               func(childComplexity int) int
+		NodePdbDelaySeconds        func(childComplexity int) int
+		NodesCompleted             func(childComplexity int) int
+		NodesDone                  func(childComplexity int) int
+		NodesFailed                func(childComplexity int) int
+		NodesTotal                 func(childComplexity int) int
 		OperationDetail            func(childComplexity int) int
 		OperationType              func(childComplexity int) int
-		Progress                   func(childComplexity int) int
 		StartTime                  func(childComplexity int) int
-	}
-
-	EnvironmentOperationProgress struct {
-		Metrics func(childComplexity int) int
-	}
-
-	EnvironmentOperationProgressMetric struct {
-		Name  func(childComplexity int) int
-		Value func(childComplexity int) int
 	}
 
 	EnvironmentValue struct {
@@ -424,7 +420,7 @@ type EnvironmentResolver interface {
 
 	ClusterUpgradeStatus(ctx context.Context, obj *model.Environment) (*model.ClusterUpgradeStatus, error)
 	Versions(ctx context.Context, obj *model.Environment) (*model.EnvironmentVersions, error)
-	RunningOperations(ctx context.Context, obj *model.Environment) ([]*model.EnvironmentOperation, error)
+	RunningOperation(ctx context.Context, obj *model.Environment) (*model.EnvironmentOperation, error)
 }
 type FeatureResolver interface {
 	ActiveVersion(ctx context.Context, obj *model.Feature) (string, error)
@@ -872,12 +868,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Environment.Releases(childComplexity), true
 
-	case "Environment.runningOperations":
-		if e.complexity.Environment.RunningOperations == nil {
+	case "Environment.runningOperation":
+		if e.complexity.Environment.RunningOperation == nil {
 			break
 		}
 
-		return e.complexity.Environment.RunningOperations(childComplexity), true
+		return e.complexity.Environment.RunningOperation(childComplexity), true
 
 	case "Environment.tenant":
 		if e.complexity.Environment.Tenant == nil {
@@ -928,6 +924,48 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.EnvironmentOperation.ID(childComplexity), true
 
+	case "EnvironmentOperation.lastModified":
+		if e.complexity.EnvironmentOperation.LastModified == nil {
+			break
+		}
+
+		return e.complexity.EnvironmentOperation.LastModified(childComplexity), true
+
+	case "EnvironmentOperation.nodePdbDelaySeconds":
+		if e.complexity.EnvironmentOperation.NodePdbDelaySeconds == nil {
+			break
+		}
+
+		return e.complexity.EnvironmentOperation.NodePdbDelaySeconds(childComplexity), true
+
+	case "EnvironmentOperation.nodesCompleted":
+		if e.complexity.EnvironmentOperation.NodesCompleted == nil {
+			break
+		}
+
+		return e.complexity.EnvironmentOperation.NodesCompleted(childComplexity), true
+
+	case "EnvironmentOperation.nodesDone":
+		if e.complexity.EnvironmentOperation.NodesDone == nil {
+			break
+		}
+
+		return e.complexity.EnvironmentOperation.NodesDone(childComplexity), true
+
+	case "EnvironmentOperation.nodesFailed":
+		if e.complexity.EnvironmentOperation.NodesFailed == nil {
+			break
+		}
+
+		return e.complexity.EnvironmentOperation.NodesFailed(childComplexity), true
+
+	case "EnvironmentOperation.nodesTotal":
+		if e.complexity.EnvironmentOperation.NodesTotal == nil {
+			break
+		}
+
+		return e.complexity.EnvironmentOperation.NodesTotal(childComplexity), true
+
 	case "EnvironmentOperation.operationDetail":
 		if e.complexity.EnvironmentOperation.OperationDetail == nil {
 			break
@@ -942,40 +980,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.EnvironmentOperation.OperationType(childComplexity), true
 
-	case "EnvironmentOperation.progress":
-		if e.complexity.EnvironmentOperation.Progress == nil {
-			break
-		}
-
-		return e.complexity.EnvironmentOperation.Progress(childComplexity), true
-
 	case "EnvironmentOperation.startTime":
 		if e.complexity.EnvironmentOperation.StartTime == nil {
 			break
 		}
 
 		return e.complexity.EnvironmentOperation.StartTime(childComplexity), true
-
-	case "EnvironmentOperationProgress.metrics":
-		if e.complexity.EnvironmentOperationProgress.Metrics == nil {
-			break
-		}
-
-		return e.complexity.EnvironmentOperationProgress.Metrics(childComplexity), true
-
-	case "EnvironmentOperationProgressMetric.name":
-		if e.complexity.EnvironmentOperationProgressMetric.Name == nil {
-			break
-		}
-
-		return e.complexity.EnvironmentOperationProgressMetric.Name(childComplexity), true
-
-	case "EnvironmentOperationProgressMetric.value":
-		if e.complexity.EnvironmentOperationProgressMetric.Value == nil {
-			break
-		}
-
-		return e.complexity.EnvironmentOperationProgressMetric.Value(childComplexity), true
 
 	case "EnvironmentValue.key":
 		if e.complexity.EnvironmentValue.Key == nil {
@@ -2403,7 +2413,7 @@ type Environment {
   reconcile: Boolean!
   clusterUpgradeStatus: ClusterUpgradeStatus
   versions: EnvironmentVersions!
-  runningOperations: [EnvironmentOperation!]!
+  runningOperation: EnvironmentOperation!
 }
 
 type EnvironmentOperation {
@@ -2413,16 +2423,12 @@ type EnvironmentOperation {
   operationType: String!
   operationDetail: String!
   startTime: Time!
-  progress: EnvironmentOperationProgress!
-}
-
-type EnvironmentOperationProgress {
-  metrics: [EnvironmentOperationProgressMetric!]!
-}
-
-type EnvironmentOperationProgressMetric {
-  name: String!
-  value: Int!
+  lastModified: Time!
+  nodesTotal: Int!
+  nodesFailed: Int!
+  nodesCompleted: Int!
+  nodesDone: Int!
+  nodePdbDelaySeconds: Int!
 }
 
 type EnvironmentVersions {
@@ -4095,8 +4101,8 @@ func (ec *executionContext) fieldContext_ConfigOverride_environment(ctx context.
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
-			case "runningOperations":
-				return ec.fieldContext_Environment_runningOperations(ctx, field)
+			case "runningOperation":
+				return ec.fieldContext_Environment_runningOperation(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -4896,8 +4902,8 @@ func (ec *executionContext) fieldContext_EnvSeries_environment(ctx context.Conte
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
-			case "runningOperations":
-				return ec.fieldContext_Environment_runningOperations(ctx, field)
+			case "runningOperation":
+				return ec.fieldContext_Environment_runningOperation(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -6026,8 +6032,8 @@ func (ec *executionContext) fieldContext_Environment_versions(ctx context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _Environment_runningOperations(ctx context.Context, field graphql.CollectedField, obj *model.Environment) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Environment_runningOperations(ctx, field)
+func (ec *executionContext) _Environment_runningOperation(ctx context.Context, field graphql.CollectedField, obj *model.Environment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Environment_runningOperation(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -6040,7 +6046,7 @@ func (ec *executionContext) _Environment_runningOperations(ctx context.Context, 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Environment().RunningOperations(rctx, obj)
+		return ec.resolvers.Environment().RunningOperation(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6052,12 +6058,12 @@ func (ec *executionContext) _Environment_runningOperations(ctx context.Context, 
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.EnvironmentOperation)
+	res := resTmp.(*model.EnvironmentOperation)
 	fc.Result = res
-	return ec.marshalNEnvironmentOperation2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentOperationᚄ(ctx, field.Selections, res)
+	return ec.marshalNEnvironmentOperation2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentOperation(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Environment_runningOperations(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Environment_runningOperation(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Environment",
 		Field:      field,
@@ -6077,8 +6083,18 @@ func (ec *executionContext) fieldContext_Environment_runningOperations(ctx conte
 				return ec.fieldContext_EnvironmentOperation_operationDetail(ctx, field)
 			case "startTime":
 				return ec.fieldContext_EnvironmentOperation_startTime(ctx, field)
-			case "progress":
-				return ec.fieldContext_EnvironmentOperation_progress(ctx, field)
+			case "lastModified":
+				return ec.fieldContext_EnvironmentOperation_lastModified(ctx, field)
+			case "nodesTotal":
+				return ec.fieldContext_EnvironmentOperation_nodesTotal(ctx, field)
+			case "nodesFailed":
+				return ec.fieldContext_EnvironmentOperation_nodesFailed(ctx, field)
+			case "nodesCompleted":
+				return ec.fieldContext_EnvironmentOperation_nodesCompleted(ctx, field)
+			case "nodesDone":
+				return ec.fieldContext_EnvironmentOperation_nodesDone(ctx, field)
+			case "nodePdbDelaySeconds":
+				return ec.fieldContext_EnvironmentOperation_nodePdbDelaySeconds(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type EnvironmentOperation", field.Name)
 		},
@@ -6350,8 +6366,8 @@ func (ec *executionContext) fieldContext_EnvironmentOperation_startTime(ctx cont
 	return fc, nil
 }
 
-func (ec *executionContext) _EnvironmentOperation_progress(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentOperation) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_EnvironmentOperation_progress(ctx, field)
+func (ec *executionContext) _EnvironmentOperation_lastModified(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentOperation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EnvironmentOperation_lastModified(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -6364,7 +6380,7 @@ func (ec *executionContext) _EnvironmentOperation_progress(ctx context.Context, 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Progress, nil
+		return obj.LastModified, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6376,30 +6392,26 @@ func (ec *executionContext) _EnvironmentOperation_progress(ctx context.Context, 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.EnvironmentOperationProgress)
+	res := resTmp.(time.Time)
 	fc.Result = res
-	return ec.marshalNEnvironmentOperationProgress2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentOperationProgress(ctx, field.Selections, res)
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_EnvironmentOperation_progress(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_EnvironmentOperation_lastModified(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "EnvironmentOperation",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "metrics":
-				return ec.fieldContext_EnvironmentOperationProgress_metrics(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type EnvironmentOperationProgress", field.Name)
+			return nil, errors.New("field of type Time does not have child fields")
 		},
 	}
 	return fc, nil
 }
 
-func (ec *executionContext) _EnvironmentOperationProgress_metrics(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentOperationProgress) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_EnvironmentOperationProgress_metrics(ctx, field)
+func (ec *executionContext) _EnvironmentOperation_nodesTotal(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentOperation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EnvironmentOperation_nodesTotal(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -6412,101 +6424,7 @@ func (ec *executionContext) _EnvironmentOperationProgress_metrics(ctx context.Co
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Metrics, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*model.EnvironmentOperationProgressMetric)
-	fc.Result = res
-	return ec.marshalNEnvironmentOperationProgressMetric2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentOperationProgressMetricᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_EnvironmentOperationProgress_metrics(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "EnvironmentOperationProgress",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "name":
-				return ec.fieldContext_EnvironmentOperationProgressMetric_name(ctx, field)
-			case "value":
-				return ec.fieldContext_EnvironmentOperationProgressMetric_value(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type EnvironmentOperationProgressMetric", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _EnvironmentOperationProgressMetric_name(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentOperationProgressMetric) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_EnvironmentOperationProgressMetric_name(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Name, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_EnvironmentOperationProgressMetric_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "EnvironmentOperationProgressMetric",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _EnvironmentOperationProgressMetric_value(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentOperationProgressMetric) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_EnvironmentOperationProgressMetric_value(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Value, nil
+		return obj.NodesTotal, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6523,9 +6441,185 @@ func (ec *executionContext) _EnvironmentOperationProgressMetric_value(ctx contex
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_EnvironmentOperationProgressMetric_value(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_EnvironmentOperation_nodesTotal(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
-		Object:     "EnvironmentOperationProgressMetric",
+		Object:     "EnvironmentOperation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EnvironmentOperation_nodesFailed(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentOperation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EnvironmentOperation_nodesFailed(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NodesFailed, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EnvironmentOperation_nodesFailed(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EnvironmentOperation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EnvironmentOperation_nodesCompleted(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentOperation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EnvironmentOperation_nodesCompleted(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NodesCompleted, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EnvironmentOperation_nodesCompleted(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EnvironmentOperation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EnvironmentOperation_nodesDone(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentOperation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EnvironmentOperation_nodesDone(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NodesDone, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EnvironmentOperation_nodesDone(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EnvironmentOperation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EnvironmentOperation_nodePdbDelaySeconds(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentOperation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EnvironmentOperation_nodePdbDelaySeconds(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NodePdbDelaySeconds, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EnvironmentOperation_nodePdbDelaySeconds(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EnvironmentOperation",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -8419,8 +8513,8 @@ func (ec *executionContext) fieldContext_FeatureWarning_environment(ctx context.
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
-			case "runningOperations":
-				return ec.fieldContext_Environment_runningOperations(ctx, field)
+			case "runningOperation":
+				return ec.fieldContext_Environment_runningOperation(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -10035,8 +10129,8 @@ func (ec *executionContext) fieldContext_Mutation_environmentCreate(ctx context.
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
-			case "runningOperations":
-				return ec.fieldContext_Environment_runningOperations(ctx, field)
+			case "runningOperation":
+				return ec.fieldContext_Environment_runningOperation(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -10134,8 +10228,8 @@ func (ec *executionContext) fieldContext_Mutation_environmentUpdate(ctx context.
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
-			case "runningOperations":
-				return ec.fieldContext_Environment_runningOperations(ctx, field)
+			case "runningOperation":
+				return ec.fieldContext_Environment_runningOperation(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -10233,8 +10327,8 @@ func (ec *executionContext) fieldContext_Mutation_environmentSetReconcile(ctx co
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
-			case "runningOperations":
-				return ec.fieldContext_Environment_runningOperations(ctx, field)
+			case "runningOperation":
+				return ec.fieldContext_Environment_runningOperation(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -10332,8 +10426,8 @@ func (ec *executionContext) fieldContext_Mutation_environmentUpgrade(ctx context
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
-			case "runningOperations":
-				return ec.fieldContext_Environment_runningOperations(ctx, field)
+			case "runningOperation":
+				return ec.fieldContext_Environment_runningOperation(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -10733,8 +10827,8 @@ func (ec *executionContext) fieldContext_NaisdWarning_environment(ctx context.Co
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
-			case "runningOperations":
-				return ec.fieldContext_Environment_runningOperations(ctx, field)
+			case "runningOperation":
+				return ec.fieldContext_Environment_runningOperation(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -13399,8 +13493,8 @@ func (ec *executionContext) fieldContext_Tenant_environments(ctx context.Context
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
-			case "runningOperations":
-				return ec.fieldContext_Environment_runningOperations(ctx, field)
+			case "runningOperation":
+				return ec.fieldContext_Environment_runningOperation(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -13487,8 +13581,8 @@ func (ec *executionContext) fieldContext_Tenant_environment(ctx context.Context,
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
-			case "runningOperations":
-				return ec.fieldContext_Environment_runningOperations(ctx, field)
+			case "runningOperation":
+				return ec.fieldContext_Environment_runningOperation(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -17474,7 +17568,7 @@ func (ec *executionContext) _Environment(ctx context.Context, sel ast.SelectionS
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "runningOperations":
+		case "runningOperation":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -17483,7 +17577,7 @@ func (ec *executionContext) _Environment(ctx context.Context, sel ast.SelectionS
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Environment_runningOperations(ctx, field, obj)
+				res = ec._Environment_runningOperation(ctx, field, obj)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -17574,91 +17668,33 @@ func (ec *executionContext) _EnvironmentOperation(ctx context.Context, sel ast.S
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "progress":
-			out.Values[i] = ec._EnvironmentOperation_progress(ctx, field, obj)
+		case "lastModified":
+			out.Values[i] = ec._EnvironmentOperation_lastModified(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
-var environmentOperationProgressImplementors = []string{"EnvironmentOperationProgress"}
-
-func (ec *executionContext) _EnvironmentOperationProgress(ctx context.Context, sel ast.SelectionSet, obj *model.EnvironmentOperationProgress) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, environmentOperationProgressImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("EnvironmentOperationProgress")
-		case "metrics":
-			out.Values[i] = ec._EnvironmentOperationProgress_metrics(ctx, field, obj)
+		case "nodesTotal":
+			out.Values[i] = ec._EnvironmentOperation_nodesTotal(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
-var environmentOperationProgressMetricImplementors = []string{"EnvironmentOperationProgressMetric"}
-
-func (ec *executionContext) _EnvironmentOperationProgressMetric(ctx context.Context, sel ast.SelectionSet, obj *model.EnvironmentOperationProgressMetric) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, environmentOperationProgressMetricImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("EnvironmentOperationProgressMetric")
-		case "name":
-			out.Values[i] = ec._EnvironmentOperationProgressMetric_name(ctx, field, obj)
+		case "nodesFailed":
+			out.Values[i] = ec._EnvironmentOperation_nodesFailed(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "value":
-			out.Values[i] = ec._EnvironmentOperationProgressMetric_value(ctx, field, obj)
+		case "nodesCompleted":
+			out.Values[i] = ec._EnvironmentOperation_nodesCompleted(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "nodesDone":
+			out.Values[i] = ec._EnvironmentOperation_nodesDone(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "nodePdbDelaySeconds":
+			out.Values[i] = ec._EnvironmentOperation_nodePdbDelaySeconds(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -21084,48 +21120,8 @@ func (ec *executionContext) marshalNEnvironmentKind2ᚕgithubᚗcomᚋnaisᚋfas
 	return ret
 }
 
-func (ec *executionContext) marshalNEnvironmentOperation2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentOperationᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.EnvironmentOperation) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNEnvironmentOperation2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentOperation(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
+func (ec *executionContext) marshalNEnvironmentOperation2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentOperation(ctx context.Context, sel ast.SelectionSet, v model.EnvironmentOperation) graphql.Marshaler {
+	return ec._EnvironmentOperation(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNEnvironmentOperation2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentOperation(ctx context.Context, sel ast.SelectionSet, v *model.EnvironmentOperation) graphql.Marshaler {
@@ -21136,70 +21132,6 @@ func (ec *executionContext) marshalNEnvironmentOperation2ᚖgithubᚗcomᚋnais�
 		return graphql.Null
 	}
 	return ec._EnvironmentOperation(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNEnvironmentOperationProgress2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentOperationProgress(ctx context.Context, sel ast.SelectionSet, v *model.EnvironmentOperationProgress) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._EnvironmentOperationProgress(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNEnvironmentOperationProgressMetric2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentOperationProgressMetricᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.EnvironmentOperationProgressMetric) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNEnvironmentOperationProgressMetric2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentOperationProgressMetric(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
-}
-
-func (ec *executionContext) marshalNEnvironmentOperationProgressMetric2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentOperationProgressMetric(ctx context.Context, sel ast.SelectionSet, v *model.EnvironmentOperationProgressMetric) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._EnvironmentOperationProgressMetric(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNEnvironmentUpdate2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentUpdate(ctx context.Context, v interface{}) (model.EnvironmentUpdate, error) {

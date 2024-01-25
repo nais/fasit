@@ -67,25 +67,21 @@ type EnvironmentCreate struct {
 }
 
 type EnvironmentOperation struct {
-	ID                         uuid.UUID                     `json:"id"`
-	EnvironmentOperationName   string                        `json:"environmentOperationName"`
-	EnvironmentOperationStatus string                        `json:"environmentOperationStatus"`
-	OperationType              string                        `json:"operationType"`
-	OperationDetail            string                        `json:"operationDetail"`
-	StartTime                  time.Time                     `json:"startTime"`
-	Progress                   *EnvironmentOperationProgress `json:"progress"`
+	ID                         uuid.UUID `json:"id"`
+	EnvironmentOperationName   string    `json:"environmentOperationName"`
+	EnvironmentOperationStatus string    `json:"environmentOperationStatus"`
+	OperationType              string    `json:"operationType"`
+	OperationDetail            string    `json:"operationDetail"`
+	StartTime                  time.Time `json:"startTime"`
+	LastModified               time.Time `json:"lastModified"`
+	NodesTotal                 int       `json:"nodesTotal"`
+	NodesFailed                int       `json:"nodesFailed"`
+	NodesCompleted             int       `json:"nodesCompleted"`
+	NodesDone                  int       `json:"nodesDone"`
+	NodePdbDelaySeconds        int       `json:"nodePdbDelaySeconds"`
 }
 
 func (EnvironmentOperation) IsUpdate() {}
-
-type EnvironmentOperationProgress struct {
-	Metrics []*EnvironmentOperationProgressMetric `json:"metrics"`
-}
-
-type EnvironmentOperationProgressMetric struct {
-	Name  string `json:"name"`
-	Value int    `json:"value"`
-}
 
 // UpdateEnvironment contains metadata for updating an environment
 type EnvironmentUpdate struct {

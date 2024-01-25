@@ -56,7 +56,7 @@ type Environment {
   reconcile: Boolean!
   clusterUpgradeStatus: ClusterUpgradeStatus
   versions: EnvironmentVersions!
-  runningOperations: [EnvironmentOperation!]!
+  runningOperation: EnvironmentOperation!
 }
 
 type EnvironmentOperation {
@@ -66,16 +66,12 @@ type EnvironmentOperation {
   operationType: String!
   operationDetail: String!
   startTime: Time!
-  progress: EnvironmentOperationProgress!
-}
-
-type EnvironmentOperationProgress {
-  metrics: [EnvironmentOperationProgressMetric!]!
-}
-
-type EnvironmentOperationProgressMetric {
-  name: String!
-  value: Int!
+  lastModified: Time!
+  nodesTotal: Int!
+  nodesFailed: Int!
+  nodesCompleted: Int!
+  nodesDone: Int!
+  nodePdbDelaySeconds: Int!
 }
 
 type EnvironmentVersions {
