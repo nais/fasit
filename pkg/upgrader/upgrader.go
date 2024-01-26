@@ -3,6 +3,7 @@ package upgrader
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	container "cloud.google.com/go/container/apiv1"
 	"cloud.google.com/go/container/apiv1/containerpb"
@@ -41,8 +42,7 @@ func (c *Client) GetRunningOperations(ctx context.Context, projectId, clusterNam
 
 	if operations.Operations != nil {
 		for _, op := range operations.Operations {
-			if op.Status == containerpb.Operation_RUNNING {
-				fmt.Println(op.Name)
+			if strings.Contains(op.TargetLink, clusterName) && op.Status == containerpb.Operation_RUNNING {
 				runningOps = append(runningOps, op)
 			}
 		}
