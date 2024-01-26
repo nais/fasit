@@ -125,6 +125,7 @@ type ClusterOperation struct {
 	Status              string
 	Type                string
 	Detail              string
+	Target              string
 	NodesTotal          int32
 	NodesFailed         int32
 	NodesCompleted      int32
@@ -140,6 +141,7 @@ type ClusterUpgrade struct {
 	EnvironmentID uuid.UUID
 	Version       string
 	Status        ClusterUpgradesStatus
+	StartTime     pgtype.Timestamptz
 	LastModified  pgtype.Timestamptz
 }
 

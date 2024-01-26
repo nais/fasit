@@ -7,6 +7,7 @@ CREATE TABLE cluster_upgrades (
     "environment_id" UUID NOT NULL,
     "version" text NOT NULL,
     "status" cluster_upgrades_status NOT NULL DEFAULT 'CREATED',
+    "start_time" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     "last_modified" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     PRIMARY KEY (id),
     CONSTRAINT fk_cluster_upgrades_tenant

@@ -13,9 +13,9 @@ import (
 
 const clusterOperationCreateOrUpdate = `-- name: ClusterOperationCreateOrUpdate :one
 INSERT INTO cluster_operations
-("id", "operation_name", "tenant_id", "environment_id", "upgrade_id", "status", "type", "detail", "nodes_total", "nodes_failed", "nodes_completed", "nodes_done", "node_pdb_delay_seconds")
+("id", "operation_name", "tenant_id", "environment_id", "upgrade_id", "status", "target", "type", "detail", "nodes_total", "nodes_failed", "nodes_completed", "nodes_done", "node_pdb_delay_seconds")
 VALUES
-($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
 ON CONFLICT ("id") DO
 UPDATE SET
     "status" = EXCLUDED.status,
@@ -25,7 +25,7 @@ UPDATE SET
     "nodes_completed" = EXCLUDED.nodes_completed,
     "nodes_done" = EXCLUDED.nodes_done,
     "node_pdb_delay_seconds" = EXCLUDED.node_pdb_delay_seconds
-RETURNING id, operation_name, tenant_id, environment_id, upgrade_id, status, type, detail, nodes_total, nodes_failed, nodes_completed, nodes_done, node_pdb_delay_seconds, start_time, last_modified
+RETURNING id, operation_name, tenant_id, environment_id, upgrade_id, status, type, detail, target, nodes_total, nodes_failed, nodes_completed, nodes_done, node_pdb_delay_seconds, start_time, last_modified
 `
 
 type ClusterOperationCreateOrUpdateParams struct {
@@ -35,6 +35,7 @@ type ClusterOperationCreateOrUpdateParams struct {
 	EnvID               uuid.UUID
 	UpgradeID           uuid.UUID
 	Status              string
+	Target              string
 	Type                string
 	Detail              string
 	NodesTotal          int32
@@ -52,6 +53,7 @@ func (q *Queries) ClusterOperationCreateOrUpdate(ctx context.Context, arg Cluste
 		arg.EnvID,
 		arg.UpgradeID,
 		arg.Status,
+		arg.Target,
 		arg.Type,
 		arg.Detail,
 		arg.NodesTotal,
@@ -70,6 +72,7 @@ func (q *Queries) ClusterOperationCreateOrUpdate(ctx context.Context, arg Cluste
 		&i.Status,
 		&i.Type,
 		&i.Detail,
+		&i.Target,
 		&i.NodesTotal,
 		&i.NodesFailed,
 		&i.NodesCompleted,
@@ -82,7 +85,7 @@ func (q *Queries) ClusterOperationCreateOrUpdate(ctx context.Context, arg Cluste
 }
 
 const clusterOperationGet = `-- name: ClusterOperationGet :one
-SELECT id, operation_name, tenant_id, environment_id, upgrade_id, status, type, detail, nodes_total, nodes_failed, nodes_completed, nodes_done, node_pdb_delay_seconds, start_time, last_modified FROM cluster_operations WHERE "tenant_id" = $1 AND "environment_id" = $2 AND "status" = $3
+SELECT id, operation_name, tenant_id, environment_id, upgrade_id, status, type, detail, target, nodes_total, nodes_failed, nodes_completed, nodes_done, node_pdb_delay_seconds, start_time, last_modified FROM cluster_operations WHERE "tenant_id" = $1 AND "environment_id" = $2 AND "status" = $3
 ORDER BY "start_time" DESC LIMIT 1
 `
 
@@ -104,6 +107,7 @@ func (q *Queries) ClusterOperationGet(ctx context.Context, arg ClusterOperationG
 		&i.Status,
 		&i.Type,
 		&i.Detail,
+		&i.Target,
 		&i.NodesTotal,
 		&i.NodesFailed,
 		&i.NodesCompleted,
@@ -116,7 +120,7 @@ func (q *Queries) ClusterOperationGet(ctx context.Context, arg ClusterOperationG
 }
 
 const clusterOperationsGet = `-- name: ClusterOperationsGet :many
-SELECT id, operation_name, tenant_id, environment_id, upgrade_id, status, type, detail, nodes_total, nodes_failed, nodes_completed, nodes_done, node_pdb_delay_seconds, start_time, last_modified FROM cluster_operations WHERE "tenant_id" = $1 AND "environment_id" = $2 AND "status" = $3
+SELECT id, operation_name, tenant_id, environment_id, upgrade_id, status, type, detail, target, nodes_total, nodes_failed, nodes_completed, nodes_done, node_pdb_delay_seconds, start_time, last_modified FROM cluster_operations WHERE "tenant_id" = $1 AND "environment_id" = $2 AND "status" = $3
 ORDER BY "start_time" DESC
 `
 
@@ -144,6 +148,7 @@ func (q *Queries) ClusterOperationsGet(ctx context.Context, arg ClusterOperation
 			&i.Status,
 			&i.Type,
 			&i.Detail,
+			&i.Target,
 			&i.NodesTotal,
 			&i.NodesFailed,
 			&i.NodesCompleted,
@@ -163,7 +168,7 @@ func (q *Queries) ClusterOperationsGet(ctx context.Context, arg ClusterOperation
 }
 
 const clusterOperationsGetByID = `-- name: ClusterOperationsGetByID :one
-SELECT id, operation_name, tenant_id, environment_id, upgrade_id, status, type, detail, nodes_total, nodes_failed, nodes_completed, nodes_done, node_pdb_delay_seconds, start_time, last_modified FROM cluster_operations
+SELECT id, operation_name, tenant_id, environment_id, upgrade_id, status, type, detail, target, nodes_total, nodes_failed, nodes_completed, nodes_done, node_pdb_delay_seconds, start_time, last_modified FROM cluster_operations
 WHERE id = $1
 `
 
@@ -179,6 +184,7 @@ func (q *Queries) ClusterOperationsGetByID(ctx context.Context, id uuid.UUID) (C
 		&i.Status,
 		&i.Type,
 		&i.Detail,
+		&i.Target,
 		&i.NodesTotal,
 		&i.NodesFailed,
 		&i.NodesCompleted,
@@ -190,12 +196,58 @@ func (q *Queries) ClusterOperationsGetByID(ctx context.Context, id uuid.UUID) (C
 	return i, err
 }
 
-const clusterOperationsGetByUpgradeID = `-- name: ClusterOperationsGetByUpgradeID :one
-SELECT id, operation_name, tenant_id, environment_id, upgrade_id, status, type, detail, nodes_total, nodes_failed, nodes_completed, nodes_done, node_pdb_delay_seconds, start_time, last_modified FROM cluster_operations WHERE "upgrade_id" = $1 ORDER BY "start_time" DESC LIMIT 1
+const clusterOperationsGetByUpgradeID = `-- name: ClusterOperationsGetByUpgradeID :many
+SELECT id, operation_name, tenant_id, environment_id, upgrade_id, status, type, detail, target, nodes_total, nodes_failed, nodes_completed, nodes_done, node_pdb_delay_seconds, start_time, last_modified FROM cluster_operations WHERE "upgrade_id" = $1 ORDER BY "start_time" DESC
 `
 
-func (q *Queries) ClusterOperationsGetByUpgradeID(ctx context.Context, upgradeID uuid.UUID) (ClusterOperation, error) {
-	row := q.db.QueryRow(ctx, clusterOperationsGetByUpgradeID, upgradeID)
+func (q *Queries) ClusterOperationsGetByUpgradeID(ctx context.Context, upgradeID uuid.UUID) ([]ClusterOperation, error) {
+	rows, err := q.db.Query(ctx, clusterOperationsGetByUpgradeID, upgradeID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ClusterOperation{}
+	for rows.Next() {
+		var i ClusterOperation
+		if err := rows.Scan(
+			&i.ID,
+			&i.OperationName,
+			&i.TenantID,
+			&i.EnvironmentID,
+			&i.UpgradeID,
+			&i.Status,
+			&i.Type,
+			&i.Detail,
+			&i.Target,
+			&i.NodesTotal,
+			&i.NodesFailed,
+			&i.NodesCompleted,
+			&i.NodesDone,
+			&i.NodePdbDelaySeconds,
+			&i.StartTime,
+			&i.LastModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const clusterOperationsGetByUpgradeIDAndStatus = `-- name: ClusterOperationsGetByUpgradeIDAndStatus :one
+SELECT id, operation_name, tenant_id, environment_id, upgrade_id, status, type, detail, target, nodes_total, nodes_failed, nodes_completed, nodes_done, node_pdb_delay_seconds, start_time, last_modified FROM cluster_operations WHERE "upgrade_id" = $1 AND "status" = $2 ORDER BY "start_time" DESC LIMIT 1
+`
+
+type ClusterOperationsGetByUpgradeIDAndStatusParams struct {
+	UpgradeID uuid.UUID
+	Status    string
+}
+
+func (q *Queries) ClusterOperationsGetByUpgradeIDAndStatus(ctx context.Context, arg ClusterOperationsGetByUpgradeIDAndStatusParams) (ClusterOperation, error) {
+	row := q.db.QueryRow(ctx, clusterOperationsGetByUpgradeIDAndStatus, arg.UpgradeID, arg.Status)
 	var i ClusterOperation
 	err := row.Scan(
 		&i.ID,
@@ -206,6 +258,41 @@ func (q *Queries) ClusterOperationsGetByUpgradeID(ctx context.Context, upgradeID
 		&i.Status,
 		&i.Type,
 		&i.Detail,
+		&i.Target,
+		&i.NodesTotal,
+		&i.NodesFailed,
+		&i.NodesCompleted,
+		&i.NodesDone,
+		&i.NodePdbDelaySeconds,
+		&i.StartTime,
+		&i.LastModified,
+	)
+	return i, err
+}
+
+const clusterOperationsGetByUpgradeIDAndStatusAndType = `-- name: ClusterOperationsGetByUpgradeIDAndStatusAndType :one
+SELECT id, operation_name, tenant_id, environment_id, upgrade_id, status, type, detail, target, nodes_total, nodes_failed, nodes_completed, nodes_done, node_pdb_delay_seconds, start_time, last_modified FROM cluster_operations WHERE "upgrade_id" = $1 AND "status" = $2 AND "type" = $3 ORDER BY "start_time" DESC LIMIT 1
+`
+
+type ClusterOperationsGetByUpgradeIDAndStatusAndTypeParams struct {
+	UpgradeID uuid.UUID
+	Status    string
+	Type      string
+}
+
+func (q *Queries) ClusterOperationsGetByUpgradeIDAndStatusAndType(ctx context.Context, arg ClusterOperationsGetByUpgradeIDAndStatusAndTypeParams) (ClusterOperation, error) {
+	row := q.db.QueryRow(ctx, clusterOperationsGetByUpgradeIDAndStatusAndType, arg.UpgradeID, arg.Status, arg.Type)
+	var i ClusterOperation
+	err := row.Scan(
+		&i.ID,
+		&i.OperationName,
+		&i.TenantID,
+		&i.EnvironmentID,
+		&i.UpgradeID,
+		&i.Status,
+		&i.Type,
+		&i.Detail,
+		&i.Target,
 		&i.NodesTotal,
 		&i.NodesFailed,
 		&i.NodesCompleted,

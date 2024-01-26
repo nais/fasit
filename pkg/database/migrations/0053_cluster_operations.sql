@@ -8,6 +8,7 @@ CREATE TABLE cluster_operations (
     "status" TEXT NOT NULL,
     "type" TEXT NOT NULL,
     "detail" TEXT NOT NULL,
+    "target" TEXT NOT NULL,
     "nodes_total" INT NOT NULL,
     "nodes_failed" INT NOT NULL,
     "nodes_completed" INT NOT NULL,
@@ -31,9 +32,3 @@ CREATE TRIGGER cluster_operations_set_modified
     ON cluster_operations
     FOR EACH ROW
     EXECUTE PROCEDURE update_modified_timestamp();
-
-CREATE TRIGGER cluster_operations_notify
-  AFTER INSERT OR UPDATE
-  ON cluster_operations
-  FOR EACH ROW
-  EXECUTE PROCEDURE fasit_notify("id");

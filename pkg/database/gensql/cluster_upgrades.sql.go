@@ -16,7 +16,7 @@ INSERT INTO cluster_upgrades
 ("tenant_id", "environment_id", "version")
 VALUES
 ($1, $2, $3)
-RETURNING id, tenant_id, environment_id, version, status, last_modified
+RETURNING id, tenant_id, environment_id, version, status, start_time, last_modified
 `
 
 type ClusterUpgradesCreateParams struct {
@@ -34,13 +34,14 @@ func (q *Queries) ClusterUpgradesCreate(ctx context.Context, arg ClusterUpgrades
 		&i.EnvironmentID,
 		&i.Version,
 		&i.Status,
+		&i.StartTime,
 		&i.LastModified,
 	)
 	return i, err
 }
 
 const clusterUpgradesGet = `-- name: ClusterUpgradesGet :many
-SELECT id, tenant_id, environment_id, version, status, last_modified FROM cluster_upgrades
+SELECT id, tenant_id, environment_id, version, status, start_time, last_modified FROM cluster_upgrades
 WHERE tenant_id = $1
 AND environment_id = $2
 AND status != 'DONE'
@@ -67,6 +68,7 @@ func (q *Queries) ClusterUpgradesGet(ctx context.Context, arg ClusterUpgradesGet
 			&i.EnvironmentID,
 			&i.Version,
 			&i.Status,
+			&i.StartTime,
 			&i.LastModified,
 		); err != nil {
 			return nil, err
@@ -80,7 +82,7 @@ func (q *Queries) ClusterUpgradesGet(ctx context.Context, arg ClusterUpgradesGet
 }
 
 const clusterUpgradesGetByID = `-- name: ClusterUpgradesGetByID :one
-SELECT id, tenant_id, environment_id, version, status, last_modified FROM cluster_upgrades
+SELECT id, tenant_id, environment_id, version, status, start_time, last_modified FROM cluster_upgrades
 WHERE id = $1
 `
 
@@ -93,6 +95,7 @@ func (q *Queries) ClusterUpgradesGetByID(ctx context.Context, id uuid.UUID) (Clu
 		&i.EnvironmentID,
 		&i.Version,
 		&i.Status,
+		&i.StartTime,
 		&i.LastModified,
 	)
 	return i, err
@@ -104,7 +107,7 @@ SET "status" = $1
 WHERE "tenant_id" = $2
 AND "environment_id" = $3
 AND "version" = $4
-RETURNING id, tenant_id, environment_id, version, status, last_modified
+RETURNING id, tenant_id, environment_id, version, status, start_time, last_modified
 `
 
 type ClusterUpgradesUpdateStatusParams struct {
@@ -128,6 +131,7 @@ func (q *Queries) ClusterUpgradesUpdateStatus(ctx context.Context, arg ClusterUp
 		&i.EnvironmentID,
 		&i.Version,
 		&i.Status,
+		&i.StartTime,
 		&i.LastModified,
 	)
 	return i, err
