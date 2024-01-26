@@ -140,11 +140,18 @@ func (r *environmentResolver) ClusterUpgradeStatus(ctx context.Context, obj *mod
 		return nil, nil
 	}
 
+	ops, err := r.Repo.ClusterOperationsGetByUpgradeID(ctx, cu.ID)
+	if err != nil {
+		return nil, err
+	}
+
 	ret := &model.ClusterUpgradeStatus{
-		ID:            cu.ID,
-		UpgradeStatus: cu.UpgradeStatus,
-		Version:       cu.Version,
-		LastModified:  cu.LastModified,
+		ID:                cu.ID,
+		UpgradeStatus:     cu.UpgradeStatus,
+		Version:           cu.Version,
+		LastModified:      cu.LastModified,
+		StartTime:         cu.StartTime,
+		RunningOperations: ops,
 	}
 
 	return ret, nil
@@ -184,9 +191,9 @@ func (r *environmentResolver) Versions(ctx context.Context, obj *model.Environme
 	}, nil
 }
 
-// RunningOperations is the resolver for the runningOperations field.
-func (r *environmentResolver) RunningOperation(ctx context.Context, obj *model.Environment) (*model.EnvironmentOperation, error) {
-	return r.Repo.GetRunningClusterOperation(ctx, obj.TenantID, obj.ID)
+// LastUpgraded is the resolver for the lastUpgraded field.
+func (r *environmentResolver) LastUpgraded(ctx context.Context, obj *model.Environment) (*time.Time, error) {
+	panic(fmt.Errorf("not implemented: LastUpgraded - lastUpgraded"))
 }
 
 // EnvironmentCreate is the resolver for the environmentCreate field.
@@ -246,3 +253,13 @@ type (
 	environmentResolver struct{ *Resolver }
 	releaseResolver     struct{ *Resolver }
 )
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//     it when you're done.
+//   - You have helper methods in this file. Move them out to keep these resolver files clean.
+func (r *environmentResolver) RunningOperation(ctx context.Context, obj *model.Environment) (*model.EnvironmentOperation, error) {
+	return r.Repo.GetRunningClusterOperation(ctx, obj.TenantID, obj.ID)
+}

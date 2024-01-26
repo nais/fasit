@@ -30,10 +30,12 @@ type AuditLog struct {
 }
 
 type ClusterUpgradeStatus struct {
-	ID            uuid.UUID     `json:"id"`
-	UpgradeStatus UpgradeStatus `json:"upgradeStatus"`
-	Version       string        `json:"version"`
-	LastModified  time.Time     `json:"lastModified"`
+	ID                uuid.UUID               `json:"id"`
+	UpgradeStatus     UpgradeStatus           `json:"upgradeStatus"`
+	Version           string                  `json:"version"`
+	LastModified      time.Time               `json:"lastModified"`
+	StartTime         time.Time               `json:"startTime"`
+	RunningOperations []*EnvironmentOperation `json:"runningOperations"`
 }
 
 func (ClusterUpgradeStatus) IsUpdate() {}
@@ -71,6 +73,7 @@ type EnvironmentOperation struct {
 	Name                string    `json:"name"`
 	Status              string    `json:"status"`
 	Type                string    `json:"type"`
+	Target              string    `json:"target"`
 	Detail              string    `json:"detail"`
 	StartTime           time.Time `json:"startTime"`
 	LastModified        time.Time `json:"lastModified"`
@@ -80,8 +83,6 @@ type EnvironmentOperation struct {
 	NodesDone           int       `json:"nodesDone"`
 	NodePdbDelaySeconds int       `json:"nodePdbDelaySeconds"`
 }
-
-func (EnvironmentOperation) IsUpdate() {}
 
 // UpdateEnvironment contains metadata for updating an environment
 type EnvironmentUpdate struct {

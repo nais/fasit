@@ -58,23 +58,29 @@ func (c *ClusterUpgrader) Run(ctx context.Context) error {
 				continue
 			}
 
+			// checks if there are any running operations for the environment
 			runningOperations, err := c.client.GetRunningOperations(ctx, projectId, env.Name)
 			if err != nil {
 				return err
 			}
 
-			// checks type of operation. if differnet from UPGRADE_NODES or UPGRADE_MASTER, then skip, else update operation in db
+			// checks type of operation. if different from UPGRADE_NODES or UPGRADE_MASTER, then skip, else update operation in db
 			skipEnv := false
 			if len(runningOperations) > 0 {
 				c.log.WithFields(logrus.Fields{"tenant": tenant.Name, "environment": env.Name}).Infof("found %d running operation(s) for environment", len(runningOperations))
 				for _, op := range runningOperations {
-					if op.OperationType == containerpb.Operation_UPGRADE_NODES || op.OperationType == containerpb.Operation_UPGRADE_MASTER {
-						_, err := c.repo.CreateOrUpdateClusterOperation(ctx, env.TenantID, env.ID, clusterUpgrade.ID, op)
-						if err != nil {
-							return err
-						}
-					} else {
+					if op.OperationType != containerpb.Operation_UPGRADE_NODES && op.OperationType != containerpb.Operation_UPGRADE_MASTER {
 						skipEnv = true
+					}
+
+					_, err := c.repo.CreateOrUpdateClusterOperation(ctx, env.TenantID, env.ID, clusterUpgrade.ID, op)
+					if err != nil {
+						return err
+					}
+
+					_, err = c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatus(clusterUpgrade.UpgradeStatus), clusterUpgrade.Version)
+					if err != nil {
+						return err
 					}
 				}
 			}
@@ -82,17 +88,39 @@ func (c *ClusterUpgrader) Run(ctx context.Context) error {
 				continue
 			}
 
-			c.log.WithFields(logrus.Fields{"tenant": tenant.Name, "environment": env.Name}).Debug("cluster upgrade")
+			c.log.WithFields(logrus.Fields{"tenant": tenant.Name, "environment": env.Name}).Debug("upgrade cluster")
 
 			// get cluster operation for cluster upgrade from db
-			co, err := c.repo.ClusterOperationsGetByUpgradeID(ctx, clusterUpgrade.ID)
+			/*co, err := c.repo.ClusterOperationsGetByUpgradeIDAndStatus(ctx, clusterUpgrade.ID, containerpb.Operation_RUNNING.String())
 			if err != nil {
 				return err
 			}
 
+			/*
+				if co == nil && clusterUpgrade.UpgradeStatus != model.UpgradeStatusCreated {
+					c.log.WithFields(logrus.Fields{"tenant": tenant.Name, "environment": env.Name}).Warning("no running cluster operation found, forcing next step")
+					var status gensql.ClusterUpgradesStatus
+					if clusterUpgrade.UpgradeStatus == model.UpgradeStatusMasterUpgrade {
+						status = gensql.ClusterUpgradesStatusNODEUPGRADE
+					} else if clusterUpgrade.UpgradeStatus == model.UpgradeStatusNodeUpgrade {
+						status = gensql.ClusterUpgradesStatusDONE
+					}
+					clusterUpgrade, err = c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, status, clusterUpgrade.Version)
+					if err != nil {
+						return err
+					}
+					continue
+				}*/
+
 			// check status on ongoing master upgrade
+
 			if clusterUpgrade.UpgradeStatus == model.UpgradeStatusMasterUpgrade {
-				op, err := c.getAndUpdateOperation(ctx, projectId, env.TenantID, env.ID, clusterUpgrade.ID, co.Name)
+				rop, err := c.repo.GetRunningClusterOperation(ctx, env.TenantID, env.ID)
+				if err != nil {
+					return err
+				}
+
+				op, err := c.getAndUpdateOperation(ctx, projectId, env.TenantID, env.ID, clusterUpgrade.ID, rop.Name)
 				if err != nil {
 					return err
 				}
@@ -109,47 +137,54 @@ func (c *ClusterUpgrader) Run(ctx context.Context) error {
 
 			// check status on ongoing node upgrade
 			if clusterUpgrade.UpgradeStatus == model.UpgradeStatusNodeUpgrade {
-				op, err := c.getAndUpdateOperation(ctx, projectId, env.TenantID, env.ID, clusterUpgrade.ID, co.Name)
+				rop, err := c.repo.GetRunningClusterOperation(ctx, env.TenantID, env.ID)
 				if err != nil {
 					return err
 				}
 
-				if op.Status == containerpb.Operation_DONE && op.OperationType == containerpb.Operation_UPGRADE_NODES {
-					done := true
-					nodepools, err := c.client.GetNodePools(ctx, projectId, env.Name)
+				if rop != nil {
+					op, err := c.getAndUpdateOperation(ctx, projectId, env.TenantID, env.ID, clusterUpgrade.ID, rop.Name)
 					if err != nil {
 						return err
 					}
 
-					clusterUpgraderVersionObj, err := version.NewVersion(clusterUpgrade.Version)
-					if err != nil {
-						return err
-					}
+					if op.Status == containerpb.Operation_DONE && op.OperationType == containerpb.Operation_UPGRADE_NODES {
+						done := true
+						nodepools, err := c.client.GetNodePools(ctx, projectId, env.Name)
+						if err != nil {
+							return err
+						}
 
-					for _, np := range nodepools {
-						npVersionObj, err := version.NewVersion(np.Version)
+						clusterUpgraderVersionObj, err := version.NewVersion(clusterUpgrade.Version)
 						if err != nil {
 							return err
 						}
-						if npVersionObj.LessThan(clusterUpgraderVersionObj) {
-							done = false
+
+						for _, np := range nodepools {
+							npVersionObj, err := version.NewVersion(np.Version)
+							if err != nil {
+								return err
+							}
+							if npVersionObj.LessThan(clusterUpgraderVersionObj) {
+								done = false
+							}
 						}
-					}
-					if done {
-						upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatusDONE, clusterUpgrade.Version)
+						if done {
+							upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatusDONE, clusterUpgrade.Version)
+							if err != nil {
+								return err
+							}
+							c.log.WithFields(logrus.Fields{"tenant": tenant.Name, "environment": env.Name}).Infof("nodepool upgrade to (%s) done", upgradeStatus.Version)
+							continue
+						}
+					} else if op.Status == containerpb.Operation_RUNNING {
+						_, err := c.getAndUpdateOperation(ctx, projectId, env.TenantID, env.ID, clusterUpgrade.ID, rop.Name)
 						if err != nil {
 							return err
 						}
-						c.log.WithFields(logrus.Fields{"tenant": tenant.Name, "environment": env.Name}).Infof("nodepool upgrade to (%s) done", upgradeStatus.Version)
+						c.log.WithFields(logrus.Fields{"tenant": tenant.Name, "environment": env.Name}).Infof("nodepool upgrade to (%s) running", clusterUpgrade.Version)
 						continue
 					}
-				} else if op.Status == containerpb.Operation_RUNNING {
-					_, err := c.getAndUpdateOperation(ctx, projectId, env.TenantID, env.ID, clusterUpgrade.ID, co.Name)
-					if err != nil {
-						return err
-					}
-					c.log.WithFields(logrus.Fields{"tenant": tenant.Name, "environment": env.Name}).Infof("nodepool upgrade to (%s) running", clusterUpgrade.Version)
-					continue
 				}
 			}
 
@@ -185,6 +220,16 @@ func (c *ClusterUpgrader) Run(ctx context.Context) error {
 
 			// upgrade nodes
 			if clusterUpgrade.UpgradeStatus == model.UpgradeStatusNodeUpgrade {
+				nodeUpgradeRunning := false
+				for _, op := range runningOperations {
+					if op.OperationType == containerpb.Operation_UPGRADE_NODES {
+						nodeUpgradeRunning = true
+					}
+				}
+				if nodeUpgradeRunning {
+					c.log.WithFields(logrus.Fields{"tenant": tenant.Name, "environment": env.Name}).Infof("nodepool upgrade to (%s) running", clusterUpgrade.Version)
+					continue
+				}
 				nodePools, err := c.client.GetNodePools(ctx, projectId, env.Name)
 				if err != nil {
 					return err
@@ -214,9 +259,14 @@ func (c *ClusterUpgrader) Run(ctx context.Context) error {
 						if err != nil {
 							return err
 						}
+
+						_, err = c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatus(clusterUpgrade.UpgradeStatus), clusterUpgrade.Version)
+						if err != nil {
+							return err
+						}
+
 						c.log.WithFields(logrus.Fields{"tenant": tenant.Name, "environment": env.Name}).Infof("started upgrade of nodepool %s to %s", np.Name, clusterUpgrade.Version)
-					} else if npVersionObj.GreaterThanOrEqual(clusterUpgraderVersionObj) {
-						c.log.WithFields(logrus.Fields{"tenant": tenant.Name, "environment": env.Name}).Infof("nodepool %s already on version %s", np.Name, clusterUpgrade.Version)
+						break
 					}
 
 				}

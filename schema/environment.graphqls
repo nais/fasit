@@ -18,6 +18,8 @@ type ClusterUpgradeStatus {
   upgradeStatus: UpgradeStatus!
   version: String!
   lastModified: Time!
+  startTime: Time!
+  runningOperations: [EnvironmentOperation]!
 }
 
 type Health {
@@ -56,7 +58,8 @@ type Environment {
   reconcile: Boolean!
   clusterUpgradeStatus: ClusterUpgradeStatus
   versions: EnvironmentVersions!
-  runningOperation: EnvironmentOperation!
+
+  lastUpgraded: Time
 }
 
 type EnvironmentOperation {
@@ -64,6 +67,7 @@ type EnvironmentOperation {
   name: String!
   status: String!
   type: String!
+  target: String!
   detail: String!
   startTime: Time!
   lastModified: Time!
