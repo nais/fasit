@@ -40,11 +40,9 @@ func (c *Client) GetRunningOperations(ctx context.Context, projectId, clusterNam
 		return nil, err
 	}
 
-	if operations.Operations != nil {
-		for _, op := range operations.Operations {
-			if strings.Contains(op.TargetLink, clusterName) && op.Status == containerpb.Operation_RUNNING {
-				runningOps = append(runningOps, op)
-			}
+	for _, op := range operations.Operations {
+		if strings.Contains(op.TargetLink, clusterName) && op.Status == containerpb.Operation_RUNNING {
+			runningOps = append(runningOps, op)
 		}
 	}
 	return runningOps, nil
