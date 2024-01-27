@@ -168,6 +168,11 @@ func (c *ClusterUpgrader) Run(ctx context.Context) error {
 					continue ENVS
 				}
 
+				op, err := c.client.UpgradeMaster(ctx, projectId, env.Name, clusterUpgrade.Version)
+				if err != nil {
+					return err
+				}
+
 				metricAttrs := []attribute.KeyValue{
 					attribute.String("environment", env.Name),
 					attribute.String("tenant", tenant.Name),
@@ -175,10 +180,6 @@ func (c *ClusterUpgrader) Run(ctx context.Context) error {
 					attribute.String("target", "master"),
 				}
 				c.upgradeInProgress.Add(ctx, 1, metric.WithAttributes(metricAttrs...))
-				op, err := c.client.UpgradeMaster(ctx, projectId, env.Name, clusterUpgrade.Version)
-				if err != nil {
-					return err
-				}
 
 				_, err = c.repo.CreateOrUpdateClusterOperation(ctx, env.TenantID, env.ID, clusterUpgrade.ID, op)
 				if err != nil {
