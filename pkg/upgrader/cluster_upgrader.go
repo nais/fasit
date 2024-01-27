@@ -7,6 +7,7 @@ import (
 
 	"cloud.google.com/go/container/apiv1/containerpb"
 	"github.com/google/uuid"
+	"github.com/googleapis/gax-go/v2/apierror"
 	version "github.com/hashicorp/go-version"
 	"github.com/jackc/pgx/v4"
 	"github.com/nais/fasit/pkg/database"
@@ -15,6 +16,7 @@ import (
 	"github.com/nais/fasit/pkg/graph/model"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+	"google.golang.org/grpc/codes"
 
 	"github.com/sirupsen/logrus"
 )
@@ -170,6 +172,15 @@ func (c *ClusterUpgrader) Run(ctx context.Context) error {
 
 				op, err := c.client.UpgradeMaster(ctx, projectId, env.Name, clusterUpgrade.Version)
 				if err != nil {
+					if e, ok := err.(*apierror.APIError); ok {
+						if e.GRPCStatus().Code() == codes.InvalidArgument {
+							c.log.WithFields(logrus.Fields{"tenant": tenant.Name, "environment": env.Name}).Infof("invalid argument: %s", e.GRPCStatus().Message())
+							_, err = c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatusFAILED, clusterUpgrade.Version)
+							if err != nil {
+								return err
+							}
+						}
+					}
 					return err
 				}
 
