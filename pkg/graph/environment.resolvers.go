@@ -193,7 +193,11 @@ func (r *environmentResolver) Versions(ctx context.Context, obj *model.Environme
 
 // LastUpgraded is the resolver for the lastUpgraded field.
 func (r *environmentResolver) LastUpgraded(ctx context.Context, obj *model.Environment) (*time.Time, error) {
-	panic(fmt.Errorf("not implemented: LastUpgraded - lastUpgraded"))
+	cu, err := r.Repo.ClusterUpgradesLastDone(ctx, obj.TenantID, obj.ID)
+	if err != nil {
+		return nil, err
+	}
+	return &cu.LastModified, nil
 }
 
 // EnvironmentCreate is the resolver for the environmentCreate field.

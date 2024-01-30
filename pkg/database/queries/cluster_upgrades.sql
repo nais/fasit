@@ -23,3 +23,11 @@ RETURNING *;
 -- name: ClusterUpgradesGetByID :one
 SELECT * FROM cluster_upgrades
 WHERE id = @id;
+
+-- name: ClusterUpgradesLastDone :one
+SELECT * FROM cluster_upgrades
+WHERE tenant_id = @tenantId
+AND environment_id = @envID
+AND status = 'DONE'
+ORDER BY last_modified DESC
+LIMIT 1;
