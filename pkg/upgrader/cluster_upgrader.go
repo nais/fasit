@@ -116,23 +116,23 @@ func (c *ClusterUpgrader) Run(ctx context.Context) error {
 					}
 				}
 
-				// check status on node upgrade and update
-				done, err := c.nodeUpgradeStatus(ctx, env, clusterUpgrade, projectId, tenant.Name)
-				if err != nil {
-					return err
-				}
-
-				if !done {
-					us, err := c.upgradeNodes(ctx, env, clusterUpgrade, projectId, tenant.Name)
+				// check status on node upgrade
+				if done, err := c.nodeUpgradeStatus(ctx, env, clusterUpgrade, projectId, tenant.Name); !done {
 					if err != nil {
 						return err
 					}
 
-					if us != nil {
+					// update
+					if un, err := c.upgradeNodes(ctx, env, clusterUpgrade, projectId, tenant.Name); un != nil {
+						if err != nil {
+							return err
+						}
+						// we have an upgrade in progress
 						continue ENVS
 					}
 				}
 
+				// node upgrade done, update status
 				upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatusDONE, clusterUpgrade.Version)
 				if err != nil {
 					return err
