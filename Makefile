@@ -36,7 +36,7 @@ local:
 	--grpc-bind-address=127.0.0.1:4444 \
 	--log-level=debug \
 	--insecure-skip-proxy \
-	--insecure-skip-token-check \
+	--insecure-skip-token-check
 
 local-naisd:
 	PUBSUB_EMULATOR_HOST=localhost:8086 go run ./cmd/naisd \
