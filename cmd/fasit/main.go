@@ -20,7 +20,6 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/lru"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/go-chi/chi/v5"
 	"github.com/nais/fasit/pkg/auth"
 	"github.com/nais/fasit/pkg/database"
@@ -86,8 +85,6 @@ func newServer(es graphql.ExecutableSchema) *handler.Server {
 
 func main() {
 	flag.Parse()
-
-	spew.Dump(flag.Args())
 
 	ctx := context.Background()
 	// defer cancel()
