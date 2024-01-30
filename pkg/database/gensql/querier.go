@@ -58,6 +58,7 @@ type Querier interface {
 	EnvironmentIDByNames(ctx context.Context, arg EnvironmentIDByNamesParams) (uuid.UUID, error)
 	EnvironmentSetReconcile(ctx context.Context, arg EnvironmentSetReconcileParams) (Environment, error)
 	EnvironmentUpdate(ctx context.Context, arg EnvironmentUpdateParams) (Environment, error)
+	EnvironmentValueDelete(ctx context.Context, arg EnvironmentValueDeleteParams) error
 	EnvironmentValueGet(ctx context.Context, arg EnvironmentValueGetParams) (EnvironmentValueGetRow, error)
 	EnvironmentValueStore(ctx context.Context, arg EnvironmentValueStoreParams) error
 	EnvironmentValuesAcrossEnvs(ctx context.Context, key string) ([]EnvironmentValuesAcrossEnvsRow, error)

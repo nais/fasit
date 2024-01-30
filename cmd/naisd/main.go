@@ -20,9 +20,7 @@ import (
 )
 
 const (
-	deploySubscriptionID  = "naisd-subscription"
-	consoleSubscriptionID = "naisd-console-subscription"
-	naisStatusTopic       = "status"
+	naisStatusTopic = "status"
 )
 
 var cfg = DefaultConfig()
@@ -34,6 +32,8 @@ func init() {
 	flag.StringVar(&cfg.NaisProjectID, "nais-project-id", "nais-local-dev", "Nais project ID")
 	flag.StringVar(&cfg.TenantName, "tenant-name", "test", "tenant name")
 	flag.StringVar(&cfg.Env, "env", "dev", "cluster environment")
+	flag.StringVar(&cfg.DeploySubscription, "deploy-subscription", "naisd-subscription", "name of subscription with deploy instructions from Fasit")
+	flag.StringVar(&cfg.TeamsSubscription, "teams-subscription", "naisd-console-subscription", "name of subscription with namespace creation reqeuests from NAIS Teams")
 	flag.BoolVar(&cfg.Production, "production", false, "When in production, actually run helm install")
 	flag.BoolVar(&cfg.Management, "management", false, "if naisd is running in a management cluster")
 	flag.BoolVar(&cfg.MockFailing, "mock-failing", false, "fail execution of helm command when running locally")
@@ -84,7 +84,7 @@ func run(ctx context.Context, log *logrus.Logger) error {
 	s.Start(ctx)
 
 	if !cfg.Management {
-		namespaceSubscriber := message.NewSubscriber[message.Console](deployClient, cfg.EnvProjectID, consoleSubscriptionID)
+		namespaceSubscriber := message.NewSubscriber[message.Console](deployClient, cfg.EnvProjectID, cfg.TeamsSubscription)
 		if cfg.Production {
 			consoleMgr, err := naisd.NewConsoleManager(ctx, namespaceSubscriber, restConfig, cfg.EnvProjectID, cfg.Env, log.WithField("subsystem", "console"))
 			if err != nil {
@@ -149,7 +149,7 @@ func sharedDependencies(ctx context.Context, log *logrus.Logger) (*naisd.DeployM
 		log.WithError(err).Fatal("setting up new pub/sub client")
 	}
 
-	deploySubscriber := message.NewSubscriber[message.DeployInstruction](deployClient, cfg.EnvProjectID, deploySubscriptionID)
+	deploySubscriber := message.NewSubscriber[message.DeployInstruction](deployClient, cfg.EnvProjectID, cfg.DeploySubscription)
 	statusPublisher := message.NewPublisher[message.Status](
 		deployClient,
 		cfg.NaisProjectID,
