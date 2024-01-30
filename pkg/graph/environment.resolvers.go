@@ -208,7 +208,6 @@ func (r *mutationResolver) EnvironmentSetReconcile(ctx context.Context, id uuid.
 
 // EnvironmentUpgrade is the resolver for the environmentUpgrade field.
 func (r *mutationResolver) EnvironmentUpgrade(ctx context.Context, upgrade *model.EnvironmentUpgrade) (*model.Environment, error) {
-	fmt.Println("upgrade", upgrade)
 	env, err := r.Repo.EnvironmentGet(ctx, upgrade.EnvID)
 	if err != nil {
 		return nil, err

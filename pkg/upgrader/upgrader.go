@@ -57,7 +57,6 @@ func (c *Client) GetOperation(ctx context.Context, projectId, operationId string
 func (c *Client) GetReleaseChannel(ctx context.Context, projectId, clusterName string) (string, error) {
 	cluster, err := c.getCluster(ctx, projectId, clusterName)
 	if err != nil {
-		fmt.Println("getRelChan: error", err)
 		return "", err
 	}
 	return cluster.ReleaseChannel.Channel.String(), nil
