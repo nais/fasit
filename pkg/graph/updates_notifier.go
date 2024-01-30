@@ -24,14 +24,14 @@ func newDeployInstructionsNotifier(ctx context.Context, not *notifier.Notifier, 
 	chCfgGlobal := not.Listen("configurations_global")
 	chCfgEnv := not.Listen("configurations_environment")
 	states := not.Listen("feature_states")
-	versions := not.Listen("cluster_upgrades")
+	clusterUpgrades := not.Listen("cluster_upgrades")
 
 	lf := &updateNotifier{
 		repo:        repo,
 		subscribers: make(map[chan<- model.Update]struct{}),
 	}
 
-	go lf.run(ctx, chDI, chCfgGlobal, chCfgEnv, states, versions)
+	go lf.run(ctx, chDI, chCfgGlobal, chCfgEnv, states, clusterUpgrades)
 
 	return lf
 }
@@ -50,7 +50,7 @@ func (d *updateNotifier) Unsubscribe(ch chan<- model.Update) {
 	delete(d.subscribers, ch)
 }
 
-func (d *updateNotifier) run(ctx context.Context, di, global, env, states, versions <-chan notifier.Payload) {
+func (d *updateNotifier) run(ctx context.Context, di, global, env, states, clusterUpgrades <-chan notifier.Payload) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -63,7 +63,7 @@ func (d *updateNotifier) run(ctx context.Context, di, global, env, states, versi
 			d.handleConfig(ctx, msg)
 		case msg := <-states:
 			d.handleFeatureState(ctx, msg)
-		case msg := <-versions:
+		case msg := <-clusterUpgrades:
 			d.handleClusterUpgrades(ctx, msg)
 		}
 	}
