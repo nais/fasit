@@ -207,10 +207,14 @@ func (r *repo) CreateOrUpdateClusterOperation(ctx context.Context, tenantId, env
 		}
 	}
 
-	uu := strings.SplitAfterN(op.Name, "-", 3)[2]
-	id, err := uuid.Parse(uu)
-	if err != nil {
-		return nil, err
+	var id uuid.UUID
+	var err error
+	if op.Name != "" {
+		uu := strings.SplitAfterN(op.Name, "-", 3)[2]
+		id, err = uuid.Parse(uu)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	co, err := r.querier.ClusterOperationCreateOrUpdate(ctx, gensql.ClusterOperationCreateOrUpdateParams{

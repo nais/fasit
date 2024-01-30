@@ -32,7 +32,6 @@ import (
 	"github.com/nais/fasit/pkg/provider/protogen"
 	"github.com/nais/fasit/pkg/rollout"
 	"github.com/nais/fasit/pkg/upgrader"
-	"github.com/nais/fasit/pkg/upgrader/fake"
 	"github.com/nais/fasit/pkg/workers"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/ravilushqa/otelgqlgen"
@@ -67,7 +66,6 @@ func init() {
 	flag.StringVar(&cfg.IAPAudience, "iap-audience", "", "IAP audience string")
 	flag.BoolVar(&cfg.InsecureSkipProxy, "insecure-skip-proxy", false, "Insecure, but allows the server to not require iap")
 	flag.BoolVar(&cfg.InsecureSkipTokenCheck, "insecure-skip-token-check", false, "Insecure, but allows the server ignore token check")
-	flag.BoolVar(&cfg.UseFakeClients, "use-fake-clients", false, "Use fake clients for Google services")
 }
 
 func newServer(es graphql.ExecutableSchema) *handler.Server {
@@ -167,14 +165,9 @@ func main() {
 		go costUpdater.Run(ctx, 1*time.Hour)
 	}
 
-	var googleClient graph.Upgrader
-	if cfg.UseFakeClients {
-		googleClient = fake.NewUpgrader()
-	} else {
-		googleClient, err = upgrader.New(ctx)
-		if err != nil {
-			log.WithError(err).Fatal("setting up google client")
-		}
+	googleClient, err := upgrader.New(ctx)
+	if err != nil {
+		log.WithError(err).Fatal("setting up google client")
 	}
 	resolver := graph.NewResolver(ctx, repo, notifierService, createPublisher, googleClient, log.WithField("subsystem", "graphql"))
 
