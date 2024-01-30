@@ -101,35 +101,6 @@ func (q *Queries) ClusterUpgradesGetByID(ctx context.Context, id uuid.UUID) (Clu
 	return i, err
 }
 
-const clusterUpgradesLastDone = `-- name: ClusterUpgradesLastDone :one
-SELECT id, tenant_id, environment_id, version, status, start_time, last_modified FROM cluster_upgrades
-WHERE tenant_id = $1
-AND environment_id = $2
-AND status = 'DONE'
-ORDER BY last_modified DESC
-LIMIT 1
-`
-
-type ClusterUpgradesLastDoneParams struct {
-	Tenantid uuid.UUID
-	Envid    uuid.UUID
-}
-
-func (q *Queries) ClusterUpgradesLastDone(ctx context.Context, arg ClusterUpgradesLastDoneParams) (ClusterUpgrade, error) {
-	row := q.db.QueryRow(ctx, clusterUpgradesLastDone, arg.Tenantid, arg.Envid)
-	var i ClusterUpgrade
-	err := row.Scan(
-		&i.ID,
-		&i.TenantID,
-		&i.EnvironmentID,
-		&i.Version,
-		&i.Status,
-		&i.StartTime,
-		&i.LastModified,
-	)
-	return i, err
-}
-
 const clusterUpgradesUpdateStatus = `-- name: ClusterUpgradesUpdateStatus :one
 UPDATE cluster_upgrades
 SET "status" = $1

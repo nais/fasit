@@ -191,15 +191,6 @@ func (r *environmentResolver) Versions(ctx context.Context, obj *model.Environme
 	}, nil
 }
 
-// LastUpgraded is the resolver for the lastUpgraded field.
-func (r *environmentResolver) LastUpgraded(ctx context.Context, obj *model.Environment) (*time.Time, error) {
-	cu, err := r.Repo.ClusterUpgradesLastDone(ctx, obj.TenantID, obj.ID)
-	if err != nil {
-		return nil, err
-	}
-	return &cu.LastModified, nil
-}
-
 // EnvironmentCreate is the resolver for the environmentCreate field.
 func (r *mutationResolver) EnvironmentCreate(ctx context.Context, environment model.EnvironmentCreate) (*model.Environment, error) {
 	return r.Repo.EnvironmentCreate(ctx, &environment)
@@ -257,13 +248,3 @@ type (
 	environmentResolver struct{ *Resolver }
 	releaseResolver     struct{ *Resolver }
 )
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//     it when you're done.
-//   - You have helper methods in this file. Move them out to keep these resolver files clean.
-func (r *environmentResolver) RunningOperation(ctx context.Context, obj *model.Environment) (*model.EnvironmentOperation, error) {
-	return r.Repo.GetRunningClusterOperation(ctx, obj.TenantID, obj.ID)
-}

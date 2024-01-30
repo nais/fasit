@@ -149,7 +149,6 @@ type ComplexityRoot struct {
 		ID                   func(childComplexity int) int
 		Kind                 func(childComplexity int) int
 		LastModified         func(childComplexity int) int
-		LastUpgraded         func(childComplexity int) int
 		Name                 func(childComplexity int) int
 		Nodes                func(childComplexity int) int
 		Reconcile            func(childComplexity int) int
@@ -423,7 +422,6 @@ type EnvironmentResolver interface {
 
 	ClusterUpgradeStatus(ctx context.Context, obj *model.Environment) (*model.ClusterUpgradeStatus, error)
 	Versions(ctx context.Context, obj *model.Environment) (*model.EnvironmentVersions, error)
-	LastUpgraded(ctx context.Context, obj *model.Environment) (*time.Time, error)
 }
 type FeatureResolver interface {
 	ActiveVersion(ctx context.Context, obj *model.Feature) (string, error)
@@ -856,13 +854,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Environment.LastModified(childComplexity), true
-
-	case "Environment.lastUpgraded":
-		if e.complexity.Environment.LastUpgraded == nil {
-			break
-		}
-
-		return e.complexity.Environment.LastUpgraded(childComplexity), true
 
 	case "Environment.name":
 		if e.complexity.Environment.Name == nil {
@@ -2439,8 +2430,6 @@ type Environment {
   reconcile: Boolean!
   clusterUpgradeStatus: ClusterUpgradeStatus
   versions: EnvironmentVersions!
-
-  lastUpgraded: Time
 }
 
 type EnvironmentOperation {
@@ -4240,8 +4229,6 @@ func (ec *executionContext) fieldContext_ConfigOverride_environment(ctx context.
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
-			case "lastUpgraded":
-				return ec.fieldContext_Environment_lastUpgraded(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -5041,8 +5028,6 @@ func (ec *executionContext) fieldContext_EnvSeries_environment(ctx context.Conte
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
-			case "lastUpgraded":
-				return ec.fieldContext_Environment_lastUpgraded(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -6170,47 +6155,6 @@ func (ec *executionContext) fieldContext_Environment_versions(ctx context.Contex
 				return ec.fieldContext_EnvironmentVersions_channel(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type EnvironmentVersions", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Environment_lastUpgraded(ctx context.Context, field graphql.CollectedField, obj *model.Environment) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Environment_lastUpgraded(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Environment().LastUpgraded(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*time.Time)
-	fc.Result = res
-	return ec.marshalOTime2ᚖtimeᚐTime(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Environment_lastUpgraded(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Environment",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Time does not have child fields")
 		},
 	}
 	return fc, nil
@@ -8671,8 +8615,6 @@ func (ec *executionContext) fieldContext_FeatureWarning_environment(ctx context.
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
-			case "lastUpgraded":
-				return ec.fieldContext_Environment_lastUpgraded(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -10287,8 +10229,6 @@ func (ec *executionContext) fieldContext_Mutation_environmentCreate(ctx context.
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
-			case "lastUpgraded":
-				return ec.fieldContext_Environment_lastUpgraded(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -10386,8 +10326,6 @@ func (ec *executionContext) fieldContext_Mutation_environmentUpdate(ctx context.
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
-			case "lastUpgraded":
-				return ec.fieldContext_Environment_lastUpgraded(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -10485,8 +10423,6 @@ func (ec *executionContext) fieldContext_Mutation_environmentSetReconcile(ctx co
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
-			case "lastUpgraded":
-				return ec.fieldContext_Environment_lastUpgraded(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -10584,8 +10520,6 @@ func (ec *executionContext) fieldContext_Mutation_environmentUpgrade(ctx context
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
-			case "lastUpgraded":
-				return ec.fieldContext_Environment_lastUpgraded(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -10985,8 +10919,6 @@ func (ec *executionContext) fieldContext_NaisdWarning_environment(ctx context.Co
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
-			case "lastUpgraded":
-				return ec.fieldContext_Environment_lastUpgraded(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -13651,8 +13583,6 @@ func (ec *executionContext) fieldContext_Tenant_environments(ctx context.Context
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
-			case "lastUpgraded":
-				return ec.fieldContext_Environment_lastUpgraded(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -13739,8 +13669,6 @@ func (ec *executionContext) fieldContext_Tenant_environment(ctx context.Context,
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
-			case "lastUpgraded":
-				return ec.fieldContext_Environment_lastUpgraded(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -17706,39 +17634,6 @@ func (ec *executionContext) _Environment(ctx context.Context, sel ast.SelectionS
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "lastUpgraded":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Environment_lastUpgraded(ctx, field, obj)
 				return res
 			}
 

@@ -58,7 +58,6 @@ type Environment {
   reconcile: Boolean!
   clusterUpgradeStatus: ClusterUpgradeStatus
   versions: EnvironmentVersions!
-  lastUpgraded: Time
 }
 
 type EnvironmentOperation {

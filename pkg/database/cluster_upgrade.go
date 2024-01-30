@@ -15,7 +15,6 @@ import (
 type ClusterUpgraderRepo interface {
 	CreateOrUpdateClusterOperation(ctx context.Context, tenantId, envId, versionId uuid.UUID, op *containerpb.Operation) (*model.EnvironmentOperation, error)
 	GetRunningClusterOperation(ctx context.Context, tenantId, envId uuid.UUID) (*model.EnvironmentOperation, error)
-	ClusterUpgradesLastDone(ctx context.Context, tenantId, envId uuid.UUID) (*model.ClusterUpgradeStatus, error)
 	CreateClusterUpgrade(ctx context.Context, tenantId, envId uuid.UUID, version string) (*model.ClusterUpgradeStatus, error)
 	ClusterUpgradeGet(ctx context.Context, tenantId, envId uuid.UUID) (*model.ClusterUpgradeStatus, error)
 	UpdateClusterUpgradeStatus(ctx context.Context, tenantId, envId uuid.UUID, status gensql.ClusterUpgradesStatus, version string) (*model.ClusterUpgradeStatus, error)
@@ -52,17 +51,6 @@ func clusterOperationFromSQL(p gensql.ClusterOperation) *model.EnvironmentOperat
 		StartTime:           p.StartTime.Time,
 		LastModified:        p.LastModified.Time,
 	}
-}
-
-func (r *repo) ClusterUpgradesLastDone(ctx context.Context, tenantId, envId uuid.UUID) (*model.ClusterUpgradeStatus, error) {
-	clusterUpgrade, err := r.querier.ClusterUpgradesLastDone(ctx, gensql.ClusterUpgradesLastDoneParams{
-		Tenantid: tenantId,
-		Envid:    envId,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return clusterUpgradeFromSQL(clusterUpgrade), nil
 }
 
 func (r *repo) ClusterOperationsGetByUpgradeIDAndStatus(ctx context.Context, upgradeId uuid.UUID, status string) (*model.EnvironmentOperation, error) {
