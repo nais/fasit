@@ -98,7 +98,7 @@ func (r *repo) ClusterOperationsGetByID(ctx context.Context, id uuid.UUID) (*mod
 
 func (r *repo) ClusterOperationsGetByUpgradeID(ctx context.Context, upgradeId uuid.UUID) ([]*model.EnvironmentOperation, error) {
 	clusterOperations, err := r.querier.ClusterOperationsGetByUpgradeID(ctx, upgradeId)
-	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+	if err != nil {
 		return nil, err
 	}
 
