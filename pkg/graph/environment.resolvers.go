@@ -170,17 +170,14 @@ func (r *environmentResolver) Versions(ctx context.Context, obj *model.Environme
 
 	channel, err := r.UpgraderClient.GetReleaseChannel(ctx, *projectId, obj.Name)
 	if err != nil {
-		fmt.Println("error", err)
 		return nil, err
 	}
 	currentMasterVersion, err := r.UpgraderClient.GetCurrentMasterVersion(ctx, *projectId, obj.Name)
 	if err != nil {
-		fmt.Println("error", err)
 		return nil, err
 	}
 	availableVersions, err := r.UpgraderClient.GetAvailableVersions(ctx, *projectId, obj.Name, channel)
 	if err != nil {
-		fmt.Println("error", err)
 		return nil, err
 	}
 
