@@ -112,7 +112,7 @@ func (c *ClusterUpgrader) Run(ctx context.Context) error {
 				}
 
 				// check status on node upgrade
-				if done, err := c.nodeUpgradeStatus(ctx, env, clusterUpgrade, projectId, tenant.Name); !done {
+				if done, err := c.nodeUpgradeStatus(ctx, env, clusterUpgrade, projectId); !done {
 					if err != nil {
 						return err
 					}
@@ -201,7 +201,7 @@ func (c *ClusterUpgrader) upgradeNodes(ctx context.Context, env *model.Environme
 	return nil, nil
 }
 
-func (c *ClusterUpgrader) nodeUpgradeStatus(ctx context.Context, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus, projectId, tenantName string) (bool, error) {
+func (c *ClusterUpgrader) nodeUpgradeStatus(ctx context.Context, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus, projectId string) (bool, error) {
 	rop, err := c.repo.GetRunningClusterOperation(ctx, env.TenantID, env.ID)
 	if err != nil {
 		return false, err
