@@ -10,6 +10,17 @@ import (
 	version "github.com/hashicorp/go-version"
 )
 
+type Upgrader interface {
+	GetReleaseChannel(ctx context.Context, projectId, clusterName string) (string, error)
+	GetCurrentMasterVersion(ctx context.Context, projectId, clusterName string) (string, error)
+	GetAvailableVersions(ctx context.Context, projectId, clusterName, releaseChannel string) ([]string, error)
+	GetRunningOperations(ctx context.Context, projectId, clusterName string) ([]*containerpb.Operation, error)
+	UpgradeMaster(ctx context.Context, projectId, clusterName, version string) (*containerpb.Operation, error)
+	UpgradeNodePool(ctx context.Context, projectId, clusterName, nodePoolName, version string) (*containerpb.Operation, error)
+	GetNodePools(ctx context.Context, projectId, clusterName string) ([]*containerpb.NodePool, error)
+	GetOperation(ctx context.Context, projectId, operationId string) (*containerpb.Operation, error)
+}
+
 type Client struct {
 	client *container.ClusterManagerClient
 }

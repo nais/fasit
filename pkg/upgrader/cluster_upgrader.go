@@ -12,7 +12,6 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/database/gensql"
-	"github.com/nais/fasit/pkg/graph"
 	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
@@ -23,13 +22,13 @@ import (
 type ClusterUpgrader struct {
 	log    logrus.FieldLogger
 	repo   database.Repo
-	client graph.Upgrader
+	client Upgrader
 
 	// Metrics
 	upgradeInProgress metric.Int64Counter
 }
 
-func NewClusterUpgrader(repo database.Repo, log logrus.FieldLogger, upgrader graph.Upgrader, meter metric.Meter) *ClusterUpgrader {
+func NewClusterUpgrader(repo database.Repo, log logrus.FieldLogger, upgrader Upgrader, meter metric.Meter) *ClusterUpgrader {
 	counter, err := meter.Int64Counter("upgrade_in_progress", metric.WithDescription("Upgrade in progress"))
 	if err != nil {
 		log.Fatal(err)
@@ -44,8 +43,6 @@ func NewClusterUpgrader(repo database.Repo, log logrus.FieldLogger, upgrader gra
 }
 
 func (c *ClusterUpgrader) Run(ctx context.Context) error {
-	c.log.Debug("running scheduled cluster upgrader")
-
 	tenants, err := c.repo.TenantsGet(ctx)
 	if err != nil {
 		return err

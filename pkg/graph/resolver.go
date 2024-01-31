@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"cloud.google.com/go/container/apiv1/containerpb"
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/database/notifier"
 	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/nais/fasit/pkg/message"
+	"github.com/nais/fasit/pkg/upgrader"
 	"github.com/nais/fasit/pkg/workers"
 	"github.com/sirupsen/logrus"
 )
@@ -19,28 +19,17 @@ import (
 //
 // It serves as dependency injection for your app, add any dependencies you require here.
 
-type Upgrader interface {
-	GetReleaseChannel(ctx context.Context, projectId, clusterName string) (string, error)
-	GetCurrentMasterVersion(ctx context.Context, projectId, clusterName string) (string, error)
-	GetAvailableVersions(ctx context.Context, projectId, clusterName, releaseChannel string) ([]string, error)
-	GetRunningOperations(ctx context.Context, projectId, clusterName string) ([]*containerpb.Operation, error)
-	UpgradeMaster(ctx context.Context, projectId, clusterName, version string) (*containerpb.Operation, error)
-	UpgradeNodePool(ctx context.Context, projectId, clusterName, nodePoolName, version string) (*containerpb.Operation, error)
-	GetNodePools(ctx context.Context, projectId, clusterName string) ([]*containerpb.NodePool, error)
-	GetOperation(ctx context.Context, projectId, operationId string) (*containerpb.Operation, error)
-}
-
 type Resolver struct {
 	Repo           database.Repo
 	Log            *logrus.Entry
-	UpgraderClient Upgrader
+	UpgraderClient upgrader.Upgrader
 
 	logNotifier     *logNotifier
 	diNotifier      *updateNotifier
 	createPublisher workers.NewPublisher
 }
 
-func NewResolver(ctx context.Context, repo database.Repo, notifier *notifier.Notifier, naisdPublisher workers.NewPublisher, upgraderClient Upgrader, log *logrus.Entry) *Resolver {
+func NewResolver(ctx context.Context, repo database.Repo, notifier *notifier.Notifier, naisdPublisher workers.NewPublisher, upgraderClient upgrader.Upgrader, log *logrus.Entry) *Resolver {
 	return &Resolver{
 		Repo:            repo,
 		Log:             log,
