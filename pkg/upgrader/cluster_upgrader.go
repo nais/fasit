@@ -1,10 +1,11 @@
 package upgrader
 
 import (
-	"cloud.google.com/go/container/apiv1/containerpb"
 	"context"
 	"encoding/json"
 	"errors"
+
+	"cloud.google.com/go/container/apiv1/containerpb"
 	"github.com/google/uuid"
 	"github.com/googleapis/gax-go/v2/apierror"
 	version "github.com/hashicorp/go-version"
@@ -13,11 +14,10 @@ import (
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/graph"
 	"github.com/nais/fasit/pkg/graph/model"
+	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"google.golang.org/grpc/codes"
-
-	"github.com/sirupsen/logrus"
 )
 
 type ClusterUpgrader struct {
@@ -57,6 +57,7 @@ func (c *ClusterUpgrader) Run(ctx context.Context) error {
 		}
 	ENVS:
 		for _, env := range envs {
+			log := c.log.WithFields(logrus.Fields{"tenant": tenant.Name, "environment": env.Name})
 			projectId, err := getProjectId(ctx, c, env.ID)
 			if err != nil {
 				return err
@@ -79,26 +80,23 @@ func (c *ClusterUpgrader) Run(ctx context.Context) error {
 			}
 
 			// checks type of operation. if different from UPGRADE_NODES or UPGRADE_MASTER, then skip, else update operation in db
-			if len(runningOperations) > 0 {
-				c.log.WithFields(logrus.Fields{"tenant": tenant.Name, "environment": env.Name}).Infof("found %d running operation(s) for environment", len(runningOperations))
-				for _, op := range runningOperations {
-					if op.OperationType != containerpb.Operation_UPGRADE_NODES && op.OperationType != containerpb.Operation_UPGRADE_MASTER {
-						continue ENVS
-					}
+			for _, op := range runningOperations {
+				if op.OperationType != containerpb.Operation_UPGRADE_NODES && op.OperationType != containerpb.Operation_UPGRADE_MASTER {
+					continue ENVS
+				}
 
-					_, err := c.repo.CreateOrUpdateClusterOperation(ctx, env.TenantID, env.ID, clusterUpgrade.ID, op)
-					if err != nil {
-						return err
-					}
+				_, err := c.repo.CreateOrUpdateClusterOperation(ctx, env.TenantID, env.ID, clusterUpgrade.ID, op)
+				if err != nil {
+					return err
+				}
 
-					_, err = c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatus(clusterUpgrade.UpgradeStatus), clusterUpgrade.Version)
-					if err != nil {
-						return err
-					}
+				_, err = c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatus(clusterUpgrade.UpgradeStatus), clusterUpgrade.Version)
+				if err != nil {
+					return err
 				}
 			}
 
-			c.log.WithFields(logrus.Fields{"tenant": tenant.Name, "environment": env.Name}).Debug("upgrade cluster")
+			log.Debug("upgrade cluster")
 			switch clusterUpgrade.UpgradeStatus {
 			case model.UpgradeStatusMasterUpgrade:
 				// check status on ongoing master upgrade
@@ -111,7 +109,7 @@ func (c *ClusterUpgrader) Run(ctx context.Context) error {
 				// check if there are any running operations for the environment
 				for _, op := range runningOperations {
 					if op.Status == containerpb.Operation_RUNNING {
-						c.log.WithFields(logrus.Fields{"tenant": tenant.Name, "environment": env.Name}).Infof("found %s/%s running for environment, skipping", op.Name, op.OperationType)
+						log.WithFields(logrus.Fields{"name": op.Name, "type": op.OperationType}).Info("found running operation for environment, skipping")
 						continue ENVS
 					}
 				}
@@ -138,18 +136,18 @@ func (c *ClusterUpgrader) Run(ctx context.Context) error {
 					return err
 				}
 				c.upgradeInProgress.Add(ctx, -1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "nodePools")...))
-				c.log.WithFields(logrus.Fields{"tenant": tenant.Name, "environment": env.Name}).Infof("nodepool upgrade to (%s) done", upgradeStatus.Version)
+				log.WithField("target_version", upgradeStatus.Version).Info("nodepool upgrade done")
 
 			case model.UpgradeStatusCreated:
 				// initial state, upgrade master
-				c.log.Debugf("cluster upgrade created - %s/%s", tenant.Name, env.Name)
+				log.Info("cluster upgrade created")
 				ops, err := c.client.GetRunningOperations(ctx, projectId, env.Name)
 				if err != nil {
 					return err
 				}
 
 				if len(ops) > 0 {
-					c.log.WithFields(logrus.Fields{"tenant": tenant.Name, "environment": env.Name}).Infof("found %d running operations for environment, skipping", len(ops))
+					log.WithField("operations", len(ops)).Infof("found running operations for environment, skipping")
 					continue ENVS
 				}
 
