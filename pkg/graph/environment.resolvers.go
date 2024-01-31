@@ -215,7 +215,7 @@ func (r *mutationResolver) EnvironmentUpgrade(ctx context.Context, upgrade *mode
 		return nil, err
 	}
 
-	return r.Repo.EnvironmentGet(ctx, upgrade.EnvID)
+	return env, nil
 }
 
 // Feature is the resolver for the feature field.
