@@ -247,7 +247,7 @@ func main() {
 		}
 	}()
 
-	if err := run(ctx, log, googleClient, repo, meter); err != nil {
+	if err := runClusterUpgrader(ctx, log, googleClient, repo, meter); err != nil {
 		log.Fatal(err)
 	}
 
@@ -316,7 +316,7 @@ func newMetricsProvider() (metric.Meter, error) {
 	return provider.Meter("github.com/nais/fasit"), nil
 }
 
-func run(ctx context.Context, log *logrus.Logger, googleClient graph.Upgrader, repo database.Repo, meter metric.Meter) error {
+func runClusterUpgrader(ctx context.Context, log *logrus.Logger, googleClient graph.Upgrader, repo database.Repo, meter metric.Meter) error {
 	s := workers.NewScheduler(log.WithField("subsystem", "scheduler"))
 	clusterReporter := upgrader.NewClusterUpgrader(repo, log, googleClient, meter)
 	s.Register("cluster-reporter", clusterReporter, 30*time.Second)
