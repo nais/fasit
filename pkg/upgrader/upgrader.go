@@ -94,6 +94,9 @@ func (c *Client) GetAvailableVersions(ctx context.Context, projectId, clusterNam
 			}
 
 		}
+		if index == -1 {
+			return nil, nil
+		}
 		versions = append(versions, channel.ValidVersions[0:index]...)
 	}
 	return versions, nil
