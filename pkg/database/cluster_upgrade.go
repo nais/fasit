@@ -120,7 +120,7 @@ func (r *repo) ClusterUpgradeGetByID(ctx context.Context, id uuid.UUID) (*model.
 }
 
 func (r *repo) UpdateClusterUpgradeStatus(ctx context.Context, tenantId, envId uuid.UUID, status gensql.ClusterUpgradesStatus, version string) (*model.ClusterUpgradeStatus, error) {
-	clusterVersion, err := r.querier.ClusterUpgradesUpdateStatus(ctx, gensql.ClusterUpgradesUpdateStatusParams{
+	clusterUpgrade, err := r.querier.ClusterUpgradesUpdateStatus(ctx, gensql.ClusterUpgradesUpdateStatusParams{
 		Status:   status,
 		Tenantid: tenantId,
 		Envid:    envId,
@@ -129,10 +129,8 @@ func (r *repo) UpdateClusterUpgradeStatus(ctx context.Context, tenantId, envId u
 	if err != nil {
 		return nil, err
 	}
-	if clusterVersion.ID == uuid.Nil {
-		return nil, nil
-	}
-	return clusterUpgradeFromSQL(clusterVersion), nil
+
+	return clusterUpgradeFromSQL(clusterUpgrade), nil
 }
 
 func (r *repo) ClusterUpgradeGet(ctx context.Context, tenantId, envId uuid.UUID) (*model.ClusterUpgradeStatus, error) {
