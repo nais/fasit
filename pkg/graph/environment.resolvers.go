@@ -146,12 +146,12 @@ func (r *environmentResolver) ClusterUpgradeStatus(ctx context.Context, obj *mod
 	}
 
 	ret := &model.ClusterUpgradeStatus{
-		ID:                cu.ID,
-		UpgradeStatus:     cu.UpgradeStatus,
-		Version:           cu.Version,
-		LastModified:      cu.LastModified,
-		StartTime:         cu.StartTime,
-		RunningOperations: ops,
+		ID:            cu.ID,
+		UpgradeStatus: cu.UpgradeStatus,
+		Version:       cu.Version,
+		LastModified:  cu.LastModified,
+		StartTime:     cu.StartTime,
+		Operations:    ops,
 	}
 
 	return ret, nil

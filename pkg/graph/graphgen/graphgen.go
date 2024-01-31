@@ -75,12 +75,12 @@ type ComplexityRoot struct {
 	}
 
 	ClusterUpgradeStatus struct {
-		ID                func(childComplexity int) int
-		LastModified      func(childComplexity int) int
-		RunningOperations func(childComplexity int) int
-		StartTime         func(childComplexity int) int
-		UpgradeStatus     func(childComplexity int) int
-		Version           func(childComplexity int) int
+		ID            func(childComplexity int) int
+		LastModified  func(childComplexity int) int
+		Operations    func(childComplexity int) int
+		StartTime     func(childComplexity int) int
+		UpgradeStatus func(childComplexity int) int
+		Version       func(childComplexity int) int
 	}
 
 	Computed struct {
@@ -572,12 +572,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ClusterUpgradeStatus.LastModified(childComplexity), true
 
-	case "ClusterUpgradeStatus.runningOperations":
-		if e.complexity.ClusterUpgradeStatus.RunningOperations == nil {
+	case "ClusterUpgradeStatus.operations":
+		if e.complexity.ClusterUpgradeStatus.Operations == nil {
 			break
 		}
 
-		return e.complexity.ClusterUpgradeStatus.RunningOperations(childComplexity), true
+		return e.complexity.ClusterUpgradeStatus.Operations(childComplexity), true
 
 	case "ClusterUpgradeStatus.startTime":
 		if e.complexity.ClusterUpgradeStatus.StartTime == nil {
@@ -2391,7 +2391,7 @@ type ClusterUpgradeStatus {
   version: String!
   lastModified: Time!
   startTime: Time!
-  runningOperations: [EnvironmentOperation]!
+  operations: [EnvironmentOperation!]!
 }
 
 type Health {
@@ -3847,8 +3847,8 @@ func (ec *executionContext) fieldContext_ClusterUpgradeStatus_startTime(ctx cont
 	return fc, nil
 }
 
-func (ec *executionContext) _ClusterUpgradeStatus_runningOperations(ctx context.Context, field graphql.CollectedField, obj *model.ClusterUpgradeStatus) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_ClusterUpgradeStatus_runningOperations(ctx, field)
+func (ec *executionContext) _ClusterUpgradeStatus_operations(ctx context.Context, field graphql.CollectedField, obj *model.ClusterUpgradeStatus) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ClusterUpgradeStatus_operations(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -3861,7 +3861,7 @@ func (ec *executionContext) _ClusterUpgradeStatus_runningOperations(ctx context.
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.RunningOperations, nil
+		return obj.Operations, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3875,10 +3875,10 @@ func (ec *executionContext) _ClusterUpgradeStatus_runningOperations(ctx context.
 	}
 	res := resTmp.([]*model.EnvironmentOperation)
 	fc.Result = res
-	return ec.marshalNEnvironmentOperation2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentOperation(ctx, field.Selections, res)
+	return ec.marshalNEnvironmentOperation2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentOperationᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_ClusterUpgradeStatus_runningOperations(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ClusterUpgradeStatus_operations(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ClusterUpgradeStatus",
 		Field:      field,
@@ -6099,8 +6099,8 @@ func (ec *executionContext) fieldContext_Environment_clusterUpgradeStatus(ctx co
 				return ec.fieldContext_ClusterUpgradeStatus_lastModified(ctx, field)
 			case "startTime":
 				return ec.fieldContext_ClusterUpgradeStatus_startTime(ctx, field)
-			case "runningOperations":
-				return ec.fieldContext_ClusterUpgradeStatus_runningOperations(ctx, field)
+			case "operations":
+				return ec.fieldContext_ClusterUpgradeStatus_operations(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ClusterUpgradeStatus", field.Name)
 		},
@@ -16520,8 +16520,8 @@ func (ec *executionContext) _ClusterUpgradeStatus(ctx context.Context, sel ast.S
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "runningOperations":
-			out.Values[i] = ec._ClusterUpgradeStatus_runningOperations(ctx, field, obj)
+		case "operations":
+			out.Values[i] = ec._ClusterUpgradeStatus_operations(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -21178,7 +21178,7 @@ func (ec *executionContext) marshalNEnvironmentKind2ᚕgithubᚗcomᚋnaisᚋfas
 	return ret
 }
 
-func (ec *executionContext) marshalNEnvironmentOperation2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentOperation(ctx context.Context, sel ast.SelectionSet, v []*model.EnvironmentOperation) graphql.Marshaler {
+func (ec *executionContext) marshalNEnvironmentOperation2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentOperationᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.EnvironmentOperation) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -21202,7 +21202,7 @@ func (ec *executionContext) marshalNEnvironmentOperation2ᚕᚖgithubᚗcomᚋna
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalOEnvironmentOperation2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentOperation(ctx, sel, v[i])
+			ret[i] = ec.marshalNEnvironmentOperation2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentOperation(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -21213,7 +21213,23 @@ func (ec *executionContext) marshalNEnvironmentOperation2ᚕᚖgithubᚗcomᚋna
 	}
 	wg.Wait()
 
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
 	return ret
+}
+
+func (ec *executionContext) marshalNEnvironmentOperation2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentOperation(ctx context.Context, sel ast.SelectionSet, v *model.EnvironmentOperation) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._EnvironmentOperation(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNEnvironmentUpdate2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentUpdate(ctx context.Context, v interface{}) (model.EnvironmentUpdate, error) {
@@ -22534,13 +22550,6 @@ func (ec *executionContext) unmarshalOCostFilter2ᚖgithubᚗcomᚋnaisᚋfasit�
 	}
 	res, err := ec.unmarshalInputCostFilter(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalOEnvironmentOperation2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentOperation(ctx context.Context, sel ast.SelectionSet, v *model.EnvironmentOperation) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._EnvironmentOperation(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOEnvironmentUpgrade2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentUpgrade(ctx context.Context, v interface{}) (*model.EnvironmentUpgrade, error) {

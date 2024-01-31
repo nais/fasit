@@ -125,7 +125,7 @@ func (d *updateNotifier) handleClusterUpgrades(ctx context.Context, msg notifier
 		return
 	}
 
-	clusterUpgradeStatus.RunningOperations = ops
+	clusterUpgradeStatus.Operations = ops
 
 	for sub := range d.subscribers {
 		select {

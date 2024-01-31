@@ -30,12 +30,12 @@ type AuditLog struct {
 }
 
 type ClusterUpgradeStatus struct {
-	ID                uuid.UUID               `json:"id"`
-	UpgradeStatus     UpgradeStatus           `json:"upgradeStatus"`
-	Version           string                  `json:"version"`
-	LastModified      time.Time               `json:"lastModified"`
-	StartTime         time.Time               `json:"startTime"`
-	RunningOperations []*EnvironmentOperation `json:"runningOperations"`
+	ID            uuid.UUID               `json:"id"`
+	UpgradeStatus UpgradeStatus           `json:"upgradeStatus"`
+	Version       string                  `json:"version"`
+	LastModified  time.Time               `json:"lastModified"`
+	StartTime     time.Time               `json:"startTime"`
+	Operations    []*EnvironmentOperation `json:"operations"`
 }
 
 func (ClusterUpgradeStatus) IsUpdate() {}

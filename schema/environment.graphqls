@@ -19,7 +19,7 @@ type ClusterUpgradeStatus {
   version: String!
   lastModified: Time!
   startTime: Time!
-  runningOperations: [EnvironmentOperation]!
+  operations: [EnvironmentOperation!]!
 }
 
 type Health {

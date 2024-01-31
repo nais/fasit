@@ -1,17 +1,20 @@
 package upgrader
 
 import (
-	"cloud.google.com/go/container/apiv1/containerpb"
 	"context"
 	"fmt"
 	"testing"
+
+	"cloud.google.com/go/container/apiv1/containerpb"
 
 	"github.com/nais/fasit/pkg/upgrader/mocks"
 	"github.com/stretchr/testify/assert"
 )
 
-var projectId = "projectId"
-var clusterName = "clusterName"
+var (
+	projectId   = "projectId"
+	clusterName = "clusterName"
+)
 
 func TestClient_GetReleaseChannel(t *testing.T) {
 	ctx := context.Background()

@@ -3,10 +3,11 @@ package upgrader
 import (
 	"context"
 	"fmt"
-	"github.com/nais/fasit/pkg/database/gensql"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/nais/fasit/pkg/database/gensql"
+	"github.com/stretchr/testify/assert"
 
 	"cloud.google.com/go/container/apiv1/containerpb"
 
@@ -75,7 +76,7 @@ func (s *testSuite) mockRunTenantForLoop(upgradeStatus model.UpgradeStatus) {
 			Value: []byte(`"1234"`),
 		}, nil).Once()
 
-	var clusterUpgrade = &model.ClusterUpgradeStatus{
+	clusterUpgrade := &model.ClusterUpgradeStatus{
 		ID:            uuid.New(),
 		UpgradeStatus: model.UpgradeStatusCreated,
 		Version:       "1.2.4",
@@ -152,6 +153,7 @@ func Test_Run_NodeUpgradeDone(t *testing.T) {
 		}
 	})
 }
+
 func Test_Run_NodeUpgradeStart(t *testing.T) {
 	suite := newTestSuite(t)
 	upgrade := newUpgrade(suite)
@@ -453,7 +455,7 @@ func Test_UpgradeNodes(t *testing.T) {
 		assert.Equal(t, model.UpgradeStatusNodeUpgrade, cu.UpgradeStatus)
 		assert.Equal(t, clusterUpgradeStatus.StartTime, cu.StartTime)
 		assert.Equal(t, clusterUpgradeStatus.LastModified, cu.LastModified)
-		assert.Equal(t, clusterUpgradeStatus.RunningOperations, cu.RunningOperations)
+		assert.Equal(t, clusterUpgradeStatus.Operations, cu.Operations)
 		assert.Equal(t, clusterUpgradeStatus.ID, cu.ID)
 	})
 }
@@ -494,12 +496,12 @@ func Test_NodeUpgradeStatus(t *testing.T) {
 			Return(operation, nil).Once()
 
 		clusterUpgradeStatus := &model.ClusterUpgradeStatus{
-			ID:                uuid.New(),
-			UpgradeStatus:     model.UpgradeStatusNodeUpgrade,
-			Version:           "1.2.4",
-			LastModified:      time.Now(),
-			StartTime:         time.Now(),
-			RunningOperations: nil,
+			ID:            uuid.New(),
+			UpgradeStatus: model.UpgradeStatusNodeUpgrade,
+			Version:       "1.2.4",
+			LastModified:  time.Now(),
+			StartTime:     time.Now(),
+			Operations:    nil,
 		}
 		suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantId, suite.env.id, clusterUpgradeStatus.ID, operation).
 			Return(&model.EnvironmentOperation{
@@ -553,12 +555,12 @@ func Test_ClusterNodePoolsCompleted(t *testing.T) {
 			LastModified: time.Now(),
 		},
 			&model.ClusterUpgradeStatus{
-				ID:                uuid.New(),
-				UpgradeStatus:     model.UpgradeStatusNodeUpgrade,
-				Version:           "1.2.4",
-				LastModified:      time.Now(),
-				StartTime:         time.Now(),
-				RunningOperations: nil,
+				ID:            uuid.New(),
+				UpgradeStatus: model.UpgradeStatusNodeUpgrade,
+				Version:       "1.2.4",
+				LastModified:  time.Now(),
+				StartTime:     time.Now(),
+				Operations:    nil,
 			})
 		if err != nil {
 			t.Errorf("got %v, want nil", err)
@@ -587,12 +589,12 @@ func Test_ClusterNodePoolsCompleted(t *testing.T) {
 			LastModified: time.Now(),
 		},
 			&model.ClusterUpgradeStatus{
-				ID:                uuid.New(),
-				UpgradeStatus:     model.UpgradeStatusNodeUpgrade,
-				Version:           "1.2.4",
-				LastModified:      time.Now(),
-				StartTime:         time.Now(),
-				RunningOperations: nil,
+				ID:            uuid.New(),
+				UpgradeStatus: model.UpgradeStatusNodeUpgrade,
+				Version:       "1.2.4",
+				LastModified:  time.Now(),
+				StartTime:     time.Now(),
+				Operations:    nil,
 			})
 		if err != nil {
 			t.Errorf("got %v, want nil", err)
@@ -607,12 +609,12 @@ func Test_MasterUpgrade(t *testing.T) {
 
 	t.Run("should update master and update cluster upgrade status", func(t *testing.T) {
 		clusterUpgradeStatus := &model.ClusterUpgradeStatus{
-			ID:                uuid.New(),
-			UpgradeStatus:     model.UpgradeStatusCreated,
-			Version:           "1.2.3",
-			LastModified:      time.Now(),
-			StartTime:         time.Now(),
-			RunningOperations: nil,
+			ID:            uuid.New(),
+			UpgradeStatus: model.UpgradeStatusCreated,
+			Version:       "1.2.3",
+			LastModified:  time.Now(),
+			StartTime:     time.Now(),
+			Operations:    nil,
 		}
 		operation := &containerpb.Operation{
 			Name:          "operation",
@@ -646,10 +648,11 @@ func Test_MasterUpgrade(t *testing.T) {
 		assert.Equal(t, model.UpgradeStatusMasterUpgrade, cus.UpgradeStatus)
 		assert.Equal(t, clusterUpgradeStatus.StartTime, cus.StartTime)
 		assert.Equal(t, clusterUpgradeStatus.LastModified, cus.LastModified)
-		assert.Equal(t, clusterUpgradeStatus.RunningOperations, cus.RunningOperations)
+		assert.Equal(t, clusterUpgradeStatus.Operations, cus.Operations)
 		assert.Equal(t, clusterUpgradeStatus.ID, cus.ID)
 	})
 }
+
 func Test_MasterUpgradeStatus(t *testing.T) {
 	suite := newTestSuite(t)
 	upgrade := newUpgrade(suite)
@@ -683,16 +686,16 @@ func Test_MasterUpgradeStatus(t *testing.T) {
 			envOp.Status = status.String()
 			operation.Status = status
 			clusterUpgradeStatus := &model.ClusterUpgradeStatus{
-				ID:                uuid.New(),
-				UpgradeStatus:     model.UpgradeStatusMasterUpgrade,
-				Version:           "1.2.3",
-				LastModified:      time.Now(),
-				StartTime:         time.Now(),
-				RunningOperations: nil,
+				ID:            uuid.New(),
+				UpgradeStatus: model.UpgradeStatusMasterUpgrade,
+				Version:       "1.2.3",
+				LastModified:  time.Now(),
+				StartTime:     time.Now(),
+				Operations:    nil,
 			}
 			suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantId, suite.env.id, clusterUpgradeStatus.ID, operation).
 				Return(envOp, nil).Once()
-			clusterUpgradeStatus.RunningOperations = []*model.EnvironmentOperation{envOp}
+			clusterUpgradeStatus.Operations = []*model.EnvironmentOperation{envOp}
 
 			// Master upgrade finished - start node upgrade
 			if status == containerpb.Operation_DONE {
@@ -725,7 +728,7 @@ func Test_MasterUpgradeStatus(t *testing.T) {
 				assert.Equal(t, model.UpgradeStatusNodeUpgrade, cus.UpgradeStatus)
 				assert.Equal(t, clusterUpgradeStatus.StartTime, cus.StartTime)
 				assert.Equal(t, clusterUpgradeStatus.LastModified, cus.LastModified)
-				assert.Equal(t, clusterUpgradeStatus.RunningOperations, cus.RunningOperations)
+				assert.Equal(t, clusterUpgradeStatus.Operations, cus.Operations)
 				assert.Equal(t, clusterUpgradeStatus.ID, cus.ID)
 			}
 		}
