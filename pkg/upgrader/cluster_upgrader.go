@@ -8,7 +8,7 @@ import (
 	"cloud.google.com/go/container/apiv1/containerpb"
 	"github.com/google/uuid"
 	"github.com/googleapis/gax-go/v2/apierror"
-	version "github.com/hashicorp/go-version"
+	"github.com/hashicorp/go-version"
 	"github.com/jackc/pgx/v4"
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/database/gensql"
@@ -43,6 +43,7 @@ func NewClusterUpgrader(repo database.Repo, log logrus.FieldLogger, upgrader Upg
 }
 
 func (c *ClusterUpgrader) Run(ctx context.Context) error {
+	var err error
 	tenants, err := c.repo.TenantsGet(ctx)
 	if err != nil {
 		return err
@@ -52,111 +53,136 @@ func (c *ClusterUpgrader) Run(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
-	ENVS:
 		for _, env := range envs {
-			log := c.log.WithFields(logrus.Fields{"tenant": tenant.Name, "environment": env.Name})
-			projectId, err := getProjectId(ctx, c, env.ID)
-			if err != nil {
+			if err := c.upgradeEnvironment(ctx, tenant, env); err != nil {
 				return err
 			}
-
-			clusterUpgrade, err := c.repo.ClusterUpgradeGet(ctx, env.TenantID, env.ID)
-			if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-				return err
-			}
-
-			// nothing to do
-			if clusterUpgrade == nil {
-				continue ENVS
-			}
-
-			// checks if there are any running operations for the environment
-			runningOperations, err := c.client.GetRunningOperations(ctx, projectId, env.Name)
-			if err != nil {
-				return err
-			}
-
-			// checks type of operation. if different from UPGRADE_NODES or UPGRADE_MASTER, then skip, else update operation in db
-			for _, op := range runningOperations {
-				if op.OperationType != containerpb.Operation_UPGRADE_NODES && op.OperationType != containerpb.Operation_UPGRADE_MASTER {
-					continue ENVS
-				}
-
-				_, err := c.repo.CreateOrUpdateClusterOperation(ctx, env.TenantID, env.ID, clusterUpgrade.ID, op)
-				if err != nil {
-					return err
-				}
-
-				_, err = c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatus(clusterUpgrade.UpgradeStatus), clusterUpgrade.Version)
-				if err != nil {
-					return err
-				}
-			}
-
-			log.Debug("upgrade cluster")
-			switch clusterUpgrade.UpgradeStatus {
-			case model.UpgradeStatusMasterUpgrade:
-				// check status on ongoing master upgrade
-				_, err := c.masterUpgradeStatus(ctx, env, clusterUpgrade, projectId, tenant.Name)
-				if err != nil {
-					return err
-				}
-				continue ENVS
-			case model.UpgradeStatusNodeUpgrade:
-				// check if there are any running operations for the environment
-				for _, op := range runningOperations {
-					if op.Status == containerpb.Operation_RUNNING {
-						log.WithFields(logrus.Fields{"name": op.Name, "type": op.OperationType}).Info("found running operation for environment, skipping")
-						continue ENVS
-					}
-				}
-
-				// check status on node upgrade
-				if done, err := c.nodeUpgradeStatus(ctx, env, clusterUpgrade, projectId); !done {
-					if err != nil {
-						return err
-					}
-
-					// update
-					if un, err := c.upgradeNodes(ctx, env, clusterUpgrade, projectId, tenant.Name); un != nil {
-						if err != nil {
-							return err
-						}
-						// we have an upgrade in progress
-						continue ENVS
-					}
-				}
-
-				// node upgrade done, update status
-				upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatusDONE, clusterUpgrade.Version)
-				if err != nil {
-					return err
-				}
-				c.upgradeInProgress.Add(ctx, -1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "nodePools")...))
-				log.WithField("target_version", upgradeStatus.Version).Info("nodepool upgrade done")
-
-			case model.UpgradeStatusCreated:
-				// initial state, upgrade master
-				log.Info("cluster upgrade created")
-				ops, err := c.client.GetRunningOperations(ctx, projectId, env.Name)
-				if err != nil {
-					return err
-				}
-
-				if len(ops) > 0 {
-					log.WithField("operations", len(ops)).Infof("found running operations for environment, skipping")
-					continue ENVS
-				}
-
-				_, err = c.masterUpgrade(ctx, env, clusterUpgrade, tenant.Name, projectId)
-				if err != nil {
-					return err
-				}
-				continue ENVS
-			}
+			continue
 		}
 	}
 	return nil
+}
+
+func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.Tenant, env *model.Environment) error {
+	log := c.log.WithFields(logrus.Fields{"tenant": tenant.Name, "environment": env.Name})
+	projectId, err := getProjectId(ctx, c, env.ID)
+	if err != nil {
+		return err
+	}
+
+	clusterUpgrade, err := c.repo.ClusterUpgradeGet(ctx, env.TenantID, env.ID)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return err
+	}
+
+	if clusterUpgrade == nil {
+		return nil
+	}
+
+	// check and update running operations for the environment
+	runningOperations, err := c.getAndUpdateRunningOperations(ctx, projectId, env, clusterUpgrade)
+
+	log.Debug("upgrade cluster")
+	switch clusterUpgrade.UpgradeStatus {
+	case model.UpgradeStatusMasterUpgrade:
+		// check status on ongoing master upgrade
+		status, err := c.masterUpgradeStatus(ctx, env, clusterUpgrade, projectId, tenant.Name)
+		if err != nil {
+			return err
+		}
+		if status == nil {
+			// upgrade not done
+			return nil
+		}
+		log.Debug("master upgrade done")
+	case model.UpgradeStatusNodeUpgrade:
+		// check if there are any running operations for the environment
+		if isRunning(runningOperations) {
+			log.Debug("found running operations for environment, skipping")
+			return nil
+		}
+
+		// check status on node upgrade
+		if done, err := c.nodeUpgradeStatus(ctx, env, clusterUpgrade, projectId); !done {
+			if err != nil {
+				return err
+			}
+
+			// update
+			un, err := c.upgradeNodes(ctx, env, clusterUpgrade, projectId, tenant.Name)
+			if err != nil {
+				return err
+			}
+			if un != nil {
+				// we started a upgrade
+				log.WithField("target_version", un.Version).Info("nodepool upgrade started")
+				return nil
+			}
+		}
+
+		// node upgrade done, update status
+		log.Debug("node upgrade done")
+		upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatusDONE, clusterUpgrade.Version)
+		if err != nil {
+			return err
+		}
+		c.upgradeInProgress.Add(ctx, -1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "nodePools")...))
+		log.WithField("target_version", upgradeStatus.Version).Info("nodepool upgrade done")
+
+	case model.UpgradeStatusCreated:
+		// initial state, upgrade master
+		log.Info("cluster upgrade created")
+		ops, err := c.client.GetRunningOperations(ctx, projectId, env.Name)
+		if err != nil {
+			return err
+		}
+
+		if len(ops) > 0 {
+			log.WithField("operations", len(ops)).Infof("found running operations for environment, skipping")
+			return nil
+		}
+
+		_, err = c.masterUpgrade(ctx, env, clusterUpgrade, tenant.Name, projectId)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func isRunning(runningOperations []*containerpb.Operation) bool {
+	for _, op := range runningOperations {
+		if op.Status == containerpb.Operation_RUNNING {
+			return true
+		}
+	}
+	return false
+}
+
+func (c *ClusterUpgrader) getAndUpdateRunningOperations(ctx context.Context, projectId string, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus) ([]*containerpb.Operation, error) {
+	// checks if there are any running operations for the environment
+	runningOperations, err := c.client.GetRunningOperations(ctx, projectId, env.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	// checks type of operation. if different from UPGRADE_NODES or UPGRADE_MASTER, then skip, else update operation in db
+	for _, op := range runningOperations {
+		if op.OperationType != containerpb.Operation_UPGRADE_NODES && op.OperationType != containerpb.Operation_UPGRADE_MASTER {
+			return nil, nil
+		}
+
+		_, err := c.repo.CreateOrUpdateClusterOperation(ctx, env.TenantID, env.ID, clusterUpgrade.ID, op)
+		if err != nil {
+			return nil, err
+		}
+
+		_, err = c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatus(clusterUpgrade.UpgradeStatus), clusterUpgrade.Version)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return runningOperations, nil
 }
 
 func (c *ClusterUpgrader) upgradeNodes(ctx context.Context, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus, projectId, tenantName string) (*model.ClusterUpgradeStatus, error) {
