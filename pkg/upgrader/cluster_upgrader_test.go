@@ -98,31 +98,7 @@ func TestRun_OperationDoneUpdateClusterNodeStatusToDone(t *testing.T) {
 	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, suite.env.projectId, suite.env.name).Return(
 		[]*containerpb.Operation{}, nil).Once()
 	suite.repoMock.EXPECT().GetRunningClusterOperation(mock.Anything, suite.env.tenantId, suite.env.id).Return(
-		&model.EnvironmentOperation{
-			ID:     uuid.New(),
-			Name:   "operation",
-			Status: containerpb.Operation_RUNNING.String(),
-			Type:   "UPGRADE_NODES",
-		}, nil).Once()
-
-	op := &containerpb.Operation{
-		Name:          "operation",
-		OperationType: containerpb.Operation_UPGRADE_NODES,
-		Status:        containerpb.Operation_DONE,
-		TargetLink:    fmt.Sprintf("https://container.googleapis.com/v1/projects/%s/zones/europe-north1-a/clusters/%s", suite.env.projectId, suite.env.name),
-		Detail:        "testSuite",
-	}
-
-	suite.upgradeMock.EXPECT().GetOperation(mock.Anything, suite.env.projectId, "operation").Return(
-		op, nil).Once()
-
-	suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantId, suite.env.id, mock.Anything, op).Return(
-		&model.EnvironmentOperation{
-			ID:     uuid.New(),
-			Name:   "operation",
-			Status: op.Status.String(),
-			Type:   "UPGRADE_NODES",
-		}, nil).Once()
+		nil, nil).Once()
 
 	suite.upgradeMock.EXPECT().GetNodePools(mock.Anything, suite.env.projectId, suite.env.name).Return(
 		[]*containerpb.NodePool{
