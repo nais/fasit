@@ -144,24 +144,15 @@ func (c *Client) GetNodePools(ctx context.Context, projectId, clusterName string
 }
 
 func (c *Client) getServerConfig(ctx context.Context, projectId, clusterName string) (*containerpb.ServerConfig, error) {
-	config, err := c.client.GetServerConfig(ctx, &containerpb.GetServerConfigRequest{
+	return c.client.GetServerConfig(ctx, &containerpb.GetServerConfigRequest{
 		Name: c.getName(projectId, clusterName),
 	})
-	if err != nil {
-		return nil, err
-	}
-
-	return config, nil
 }
 
 func (c *Client) getCluster(ctx context.Context, projectId, clusterName string) (*containerpb.Cluster, error) {
-	cluster, err := c.client.GetCluster(ctx, &containerpb.GetClusterRequest{
+	return c.client.GetCluster(ctx, &containerpb.GetClusterRequest{
 		Name: c.getName(projectId, clusterName),
 	})
-	if err != nil {
-		return nil, err
-	}
-	return cluster, nil
 }
 
 func (c *Client) getNodePoolName(projectId, clusterName, nodePoolName string) string {
