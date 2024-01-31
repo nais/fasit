@@ -75,6 +75,7 @@ type ComplexityRoot struct {
 	}
 
 	ClusterUpgradeStatus struct {
+		Environment   func(childComplexity int) int
 		ID            func(childComplexity int) int
 		LastModified  func(childComplexity int) int
 		Operations    func(childComplexity int) int
@@ -557,6 +558,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.AuditLog.ObjectType(childComplexity), true
+
+	case "ClusterUpgradeStatus.environment":
+		if e.complexity.ClusterUpgradeStatus.Environment == nil {
+			break
+		}
+
+		return e.complexity.ClusterUpgradeStatus.Environment(childComplexity), true
 
 	case "ClusterUpgradeStatus.id":
 		if e.complexity.ClusterUpgradeStatus.ID == nil {
@@ -2392,6 +2400,7 @@ type ClusterUpgradeStatus {
   lastModified: Time!
   startTime: Time!
   operations: [EnvironmentOperation!]!
+  environment: Environment!
 }
 
 type Health {
@@ -3914,6 +3923,92 @@ func (ec *executionContext) fieldContext_ClusterUpgradeStatus_operations(ctx con
 				return ec.fieldContext_EnvironmentOperation_nodePdbDelaySeconds(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type EnvironmentOperation", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ClusterUpgradeStatus_environment(ctx context.Context, field graphql.CollectedField, obj *model.ClusterUpgradeStatus) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ClusterUpgradeStatus_environment(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Environment, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Environment)
+	fc.Result = res
+	return ec.marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironment(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ClusterUpgradeStatus_environment(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ClusterUpgradeStatus",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Environment_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Environment_name(ctx, field)
+			case "description":
+				return ec.fieldContext_Environment_description(ctx, field)
+			case "featureStates":
+				return ec.fieldContext_Environment_featureStates(ctx, field)
+			case "created":
+				return ec.fieldContext_Environment_created(ctx, field)
+			case "lastModified":
+				return ec.fieldContext_Environment_lastModified(ctx, field)
+			case "kind":
+				return ec.fieldContext_Environment_kind(ctx, field)
+			case "gcpProjectID":
+				return ec.fieldContext_Environment_gcpProjectID(ctx, field)
+			case "health":
+				return ec.fieldContext_Environment_health(ctx, field)
+			case "releases":
+				return ec.fieldContext_Environment_releases(ctx, field)
+			case "nodes":
+				return ec.fieldContext_Environment_nodes(ctx, field)
+			case "values":
+				return ec.fieldContext_Environment_values(ctx, field)
+			case "tenant":
+				return ec.fieldContext_Environment_tenant(ctx, field)
+			case "warnings":
+				return ec.fieldContext_Environment_warnings(ctx, field)
+			case "auditLog":
+				return ec.fieldContext_Environment_auditLog(ctx, field)
+			case "features":
+				return ec.fieldContext_Environment_features(ctx, field)
+			case "feature":
+				return ec.fieldContext_Environment_feature(ctx, field)
+			case "reconcile":
+				return ec.fieldContext_Environment_reconcile(ctx, field)
+			case "clusterUpgradeStatus":
+				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
+			case "versions":
+				return ec.fieldContext_Environment_versions(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
 	}
 	return fc, nil
@@ -6101,6 +6196,8 @@ func (ec *executionContext) fieldContext_Environment_clusterUpgradeStatus(ctx co
 				return ec.fieldContext_ClusterUpgradeStatus_startTime(ctx, field)
 			case "operations":
 				return ec.fieldContext_ClusterUpgradeStatus_operations(ctx, field)
+			case "environment":
+				return ec.fieldContext_ClusterUpgradeStatus_environment(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ClusterUpgradeStatus", field.Name)
 		},
@@ -16522,6 +16619,11 @@ func (ec *executionContext) _ClusterUpgradeStatus(ctx context.Context, sel ast.S
 			}
 		case "operations":
 			out.Values[i] = ec._ClusterUpgradeStatus_operations(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "environment":
+			out.Values[i] = ec._ClusterUpgradeStatus_environment(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

@@ -36,6 +36,7 @@ type ClusterUpgradeStatus struct {
 	LastModified  time.Time               `json:"lastModified"`
 	StartTime     time.Time               `json:"startTime"`
 	Operations    []*EnvironmentOperation `json:"operations"`
+	Environment   *Environment            `json:"environment"`
 }
 
 func (ClusterUpgradeStatus) IsUpdate() {}

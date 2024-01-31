@@ -152,6 +152,7 @@ func (r *environmentResolver) ClusterUpgradeStatus(ctx context.Context, obj *mod
 		LastModified:  cu.LastModified,
 		StartTime:     cu.StartTime,
 		Operations:    ops,
+		Environment:   obj,
 	}
 
 	return ret, nil

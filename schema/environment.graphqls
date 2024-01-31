@@ -20,6 +20,7 @@ type ClusterUpgradeStatus {
   lastModified: Time!
   startTime: Time!
   operations: [EnvironmentOperation!]!
+  environment: Environment!
 }
 
 type Health {
