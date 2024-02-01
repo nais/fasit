@@ -422,9 +422,6 @@ func Test_EqualVersionsForAllNodes(t *testing.T) {
 	if model.UpgradeStatusNodeUpgrade != cu.UpgradeStatus {
 		t.Errorf("got %v, want %v", clusterUpgradeStatus.UpgradeStatus, cu.UpgradeStatus)
 	}
-	if len(clusterUpgradeStatus.Operations) != len(cu.Operations) {
-		t.Errorf("got %v, want %v", clusterUpgradeStatus.Operations, cu.Operations)
-	}
 }
 
 func Test_NodelPoolDiff(t *testing.T) {
@@ -467,7 +464,6 @@ func Test_NodelPoolDiff(t *testing.T) {
 		Version:       "1.2.4",
 		LastModified:  time.Now(),
 		StartTime:     time.Now(),
-		Operations:    nil,
 	}
 	suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantId, suite.env.id, clusterUpgradeStatus.ID, operation).
 		Return(&model.EnvironmentOperation{
@@ -526,7 +522,6 @@ func Test_ClusterNodePoolsCompleted(t *testing.T) {
 			Version:       "1.2.4",
 			LastModified:  time.Now(),
 			StartTime:     time.Now(),
-			Operations:    nil,
 		})
 	if err != nil {
 		t.Errorf("got %v, want nil", err)
@@ -562,7 +557,6 @@ func Test_ClusterNodePoolsCompleted(t *testing.T) {
 			Version:       "1.2.4",
 			LastModified:  time.Now(),
 			StartTime:     time.Now(),
-			Operations:    nil,
 		})
 	if err != nil {
 		t.Errorf("got %v, want nil", err)
@@ -582,7 +576,6 @@ func Test_MasterUpgrade(t *testing.T) {
 		Version:       "1.2.3",
 		LastModified:  time.Now(),
 		StartTime:     time.Now(),
-		Operations:    nil,
 	}
 	operation := &containerpb.Operation{
 		Name:          "operation",
@@ -620,9 +613,6 @@ func Test_MasterUpgrade(t *testing.T) {
 	}
 	if model.UpgradeStatusMasterUpgrade != cus.UpgradeStatus {
 		t.Errorf("got %v, want %v", clusterUpgradeStatus.UpgradeStatus, cus.UpgradeStatus)
-	}
-	if len(clusterUpgradeStatus.Operations) != len(cus.Operations) {
-		t.Errorf("got %v, want %v", clusterUpgradeStatus.Operations, cus.Operations)
 	}
 }
 
@@ -663,11 +653,9 @@ func Test_MasterUpgradeStatusIsDone(t *testing.T) {
 			Version:       "1.2.3",
 			LastModified:  time.Now(),
 			StartTime:     time.Now(),
-			Operations:    nil,
 		}
 		suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantId, suite.env.id, clusterUpgradeStatus.ID, operation).
 			Return(envOp, nil).Once()
-		clusterUpgradeStatus.Operations = []*model.EnvironmentOperation{envOp}
 
 		// Master upgrade finished - start node upgrade
 		if status == containerpb.Operation_DONE {
@@ -690,9 +678,6 @@ func Test_MasterUpgradeStatusIsDone(t *testing.T) {
 			}
 			if model.UpgradeStatusNodeUpgrade != cus.UpgradeStatus {
 				t.Errorf("got %v, want %v", clusterUpgradeStatus.UpgradeStatus, cus.UpgradeStatus)
-			}
-			if len(clusterUpgradeStatus.Operations) != len(cus.Operations) {
-				t.Errorf("got %v, want %v", clusterUpgradeStatus.Operations, cus.Operations)
 			}
 		}
 	}
