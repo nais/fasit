@@ -17,6 +17,18 @@ import (
 	"github.com/nais/fasit/pkg/graph/model"
 )
 
+// Operations is the resolver for the operations field.
+func (r *clusterUpgradeStatusResolver) Operations(ctx context.Context, obj *model.ClusterUpgradeStatus) ([]*model.EnvironmentOperation, error) {
+	return r.Repo.ClusterOperationsGetByUpgradeID(ctx, obj.ID)
+}
+
+// Environment is the resolver for the environment field.
+func (r *clusterUpgradeStatusResolver) Environment(ctx context.Context, obj *model.ClusterUpgradeStatus) (*model.Environment, error) {
+	fmt.Println("envId", obj.EnvironmentID)
+
+	return r.Repo.EnvironmentGet(ctx, obj.EnvironmentID)
+}
+
 // FeatureStates is the resolver for the featureStates field.
 func (r *environmentResolver) FeatureStates(ctx context.Context, obj *model.Environment) ([]*model.FeatureState, error) {
 	return r.Repo.FeatureStatesGet(ctx, obj.ID)
@@ -140,19 +152,13 @@ func (r *environmentResolver) ClusterUpgradeStatus(ctx context.Context, obj *mod
 		return nil, nil
 	}
 
-	ops, err := r.Repo.ClusterOperationsGetByUpgradeID(ctx, cu.ID)
-	if err != nil {
-		return nil, err
-	}
-
 	ret := &model.ClusterUpgradeStatus{
 		ID:            cu.ID,
 		UpgradeStatus: cu.UpgradeStatus,
 		Version:       cu.Version,
 		LastModified:  cu.LastModified,
 		StartTime:     cu.StartTime,
-		Operations:    ops,
-		Environment:   obj,
+		EnvironmentID: cu.EnvironmentID,
 	}
 
 	return ret, nil
@@ -182,10 +188,25 @@ func (r *environmentResolver) Versions(ctx context.Context, obj *model.Environme
 		return nil, err
 	}
 
+	nodePools, err := r.UpgraderClient.GetNodePools(ctx, *projectId, obj.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	var nodePoolVersions []*model.NodePool
+
+	for _, np := range nodePools {
+		nodePoolVersions = append(nodePoolVersions, &model.NodePool{
+			Name:    np.Name,
+			Version: np.Version,
+		})
+	}
+
 	return &model.EnvironmentVersions{
 		Channel:           channel,
 		Apiserver:         currentMasterVersion,
 		AvailableVersions: availableVersions,
+		NodePools:         nodePoolVersions,
 	}, nil
 }
 
@@ -235,6 +256,11 @@ func (r *releaseResolver) Feature(ctx context.Context, obj *model.Release) (*mod
 	return f, nil
 }
 
+// ClusterUpgradeStatus returns graphgen.ClusterUpgradeStatusResolver implementation.
+func (r *Resolver) ClusterUpgradeStatus() graphgen.ClusterUpgradeStatusResolver {
+	return &clusterUpgradeStatusResolver{r}
+}
+
 // Environment returns graphgen.EnvironmentResolver implementation.
 func (r *Resolver) Environment() graphgen.EnvironmentResolver { return &environmentResolver{r} }
 
@@ -242,6 +268,7 @@ func (r *Resolver) Environment() graphgen.EnvironmentResolver { return &environm
 func (r *Resolver) Release() graphgen.ReleaseResolver { return &releaseResolver{r} }
 
 type (
-	environmentResolver struct{ *Resolver }
-	releaseResolver     struct{ *Resolver }
+	clusterUpgradeStatusResolver struct{ *Resolver }
+	environmentResolver          struct{ *Resolver }
+	releaseResolver              struct{ *Resolver }
 )

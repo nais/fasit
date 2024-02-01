@@ -29,18 +29,6 @@ type AuditLog struct {
 	CreatedAt   time.Time `json:"createdAt"`
 }
 
-type ClusterUpgradeStatus struct {
-	ID            uuid.UUID               `json:"id"`
-	UpgradeStatus UpgradeStatus           `json:"upgradeStatus"`
-	Version       string                  `json:"version"`
-	LastModified  time.Time               `json:"lastModified"`
-	StartTime     time.Time               `json:"startTime"`
-	Operations    []*EnvironmentOperation `json:"operations"`
-	Environment   *Environment            `json:"environment"`
-}
-
-func (ClusterUpgradeStatus) IsUpdate() {}
-
 type ComputedValue struct {
 	Value   *Value          `json:"value"`
 	Content json.RawMessage `json:"content,omitempty"`
@@ -99,9 +87,10 @@ type EnvironmentUpgrade struct {
 }
 
 type EnvironmentVersions struct {
-	Apiserver         string   `json:"apiserver"`
-	AvailableVersions []string `json:"availableVersions"`
-	Channel           string   `json:"channel"`
+	Apiserver         string      `json:"apiserver"`
+	AvailableVersions []string    `json:"availableVersions"`
+	Channel           string      `json:"channel"`
+	NodePools         []*NodePool `json:"nodePools"`
 }
 
 type HelmValueDiff struct {
@@ -110,6 +99,11 @@ type HelmValueDiff struct {
 }
 
 type Mutation struct {
+}
+
+type NodePool struct {
+	Name    string `json:"name"`
+	Version string `json:"version"`
 }
 
 type Playground struct {

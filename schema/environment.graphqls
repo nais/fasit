@@ -81,6 +81,12 @@ type EnvironmentVersions {
   apiserver: String!
   availableVersions: [String!]!
   channel: String!
+  nodePools: [NodePool!]!
+}
+
+type NodePool {
+  name: String!
+  version: String!
 }
 
 type EnvironmentValue {

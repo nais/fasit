@@ -128,7 +128,6 @@ func TestRun_OperationDoneUpdateClusterNodeStatusToDone(t *testing.T) {
 }
 
 func TestRun_StartNodeUpgradeClusterStatusNodeUpgrade(t *testing.T) {
-
 	suite := newTestSuite(t)
 	upgrade := newUpgrade(suite)
 	suite.mockRunTenantForLoop(model.UpgradeStatusNodeUpgrade)
@@ -534,7 +533,6 @@ func Test_ClusterNodePoolsCompleted(t *testing.T) {
 	}
 	if !completed {
 		t.Errorf("got %v, want true", completed)
-
 	}
 
 	nodepools = []*containerpb.NodePool{

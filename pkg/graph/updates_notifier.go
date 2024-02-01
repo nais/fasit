@@ -119,14 +119,6 @@ func (d *updateNotifier) handleClusterUpgrades(ctx context.Context, msg notifier
 		return
 	}
 
-	ops, err := d.repo.ClusterOperationsGetByUpgradeID(ctx, id)
-	if err != nil {
-		logrus.Debug("failed to get cluster operations from db")
-		return
-	}
-
-	clusterUpgradeStatus.Operations = ops
-
 	for sub := range d.subscribers {
 		select {
 		case sub <- clusterUpgradeStatus:

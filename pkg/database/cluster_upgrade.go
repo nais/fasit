@@ -32,6 +32,7 @@ func clusterUpgradeFromSQL(p gensql.ClusterUpgrade) *model.ClusterUpgradeStatus 
 		UpgradeStatus: model.UpgradeStatus(p.Status),
 		LastModified:  p.LastModified.Time,
 		StartTime:     p.StartTime.Time,
+		EnvironmentID: p.EnvironmentID,
 	}
 }
 

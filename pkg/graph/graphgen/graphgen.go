@@ -43,6 +43,7 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	ClusterUpgradeStatus() ClusterUpgradeStatusResolver
 	ConfigOverride() ConfigOverrideResolver
 	Configurations() ConfigurationsResolver
 	CostSeries() CostSeriesResolver
@@ -186,6 +187,7 @@ type ComplexityRoot struct {
 		Apiserver         func(childComplexity int) int
 		AvailableVersions func(childComplexity int) int
 		Channel           func(childComplexity int) int
+		NodePools         func(childComplexity int) int
 	}
 
 	Feature struct {
@@ -298,6 +300,11 @@ type ComplexityRoot struct {
 		Message     func(childComplexity int) int
 	}
 
+	NodePool struct {
+		Name    func(childComplexity int) int
+		Version func(childComplexity int) int
+	}
+
 	Playground struct {
 		Errors func(childComplexity int) int
 		Result func(childComplexity int) int
@@ -394,6 +401,10 @@ type ComplexityRoot struct {
 	}
 }
 
+type ClusterUpgradeStatusResolver interface {
+	Operations(ctx context.Context, obj *model.ClusterUpgradeStatus) ([]*model.EnvironmentOperation, error)
+	Environment(ctx context.Context, obj *model.ClusterUpgradeStatus) (*model.Environment, error)
+}
 type ConfigOverrideResolver interface {
 	Environment(ctx context.Context, obj *model.ConfigOverride) (*model.Environment, error)
 }
@@ -1052,6 +1063,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.EnvironmentVersions.Channel(childComplexity), true
 
+	case "EnvironmentVersions.nodePools":
+		if e.complexity.EnvironmentVersions.NodePools == nil {
+			break
+		}
+
+		return e.complexity.EnvironmentVersions.NodePools(childComplexity), true
+
 	case "Feature.activeVersion":
 		if e.complexity.Feature.ActiveVersion == nil {
 			break
@@ -1629,6 +1647,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.NaisdWarning.Message(childComplexity), true
+
+	case "NodePool.name":
+		if e.complexity.NodePool.Name == nil {
+			break
+		}
+
+		return e.complexity.NodePool.Name(childComplexity), true
+
+	case "NodePool.version":
+		if e.complexity.NodePool.Version == nil {
+			break
+		}
+
+		return e.complexity.NodePool.Version(childComplexity), true
 
 	case "Playground.errors":
 		if e.complexity.Playground.Errors == nil {
@@ -2461,6 +2493,12 @@ type EnvironmentVersions {
   apiserver: String!
   availableVersions: [String!]!
   channel: String!
+  nodePools: [NodePool!]!
+}
+
+type NodePool {
+  name: String!
+  version: String!
 }
 
 type EnvironmentValue {
@@ -3870,7 +3908,7 @@ func (ec *executionContext) _ClusterUpgradeStatus_operations(ctx context.Context
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Operations, nil
+		return ec.resolvers.ClusterUpgradeStatus().Operations(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3891,8 +3929,8 @@ func (ec *executionContext) fieldContext_ClusterUpgradeStatus_operations(ctx con
 	fc = &graphql.FieldContext{
 		Object:     "ClusterUpgradeStatus",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
@@ -3942,7 +3980,7 @@ func (ec *executionContext) _ClusterUpgradeStatus_environment(ctx context.Contex
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Environment, nil
+		return ec.resolvers.ClusterUpgradeStatus().Environment(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3963,8 +4001,8 @@ func (ec *executionContext) fieldContext_ClusterUpgradeStatus_environment(ctx co
 	fc = &graphql.FieldContext{
 		Object:     "ClusterUpgradeStatus",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
@@ -6250,6 +6288,8 @@ func (ec *executionContext) fieldContext_Environment_versions(ctx context.Contex
 				return ec.fieldContext_EnvironmentVersions_availableVersions(ctx, field)
 			case "channel":
 				return ec.fieldContext_EnvironmentVersions_channel(ctx, field)
+			case "nodePools":
+				return ec.fieldContext_EnvironmentVersions_nodePools(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type EnvironmentVersions", field.Name)
 		},
@@ -7088,6 +7128,56 @@ func (ec *executionContext) fieldContext_EnvironmentVersions_channel(ctx context
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EnvironmentVersions_nodePools(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentVersions) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_EnvironmentVersions_nodePools(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.NodePools, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.NodePool)
+	fc.Result = res
+	return ec.marshalNNodePool2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐNodePoolᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_EnvironmentVersions_nodePools(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EnvironmentVersions",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_NodePool_name(ctx, field)
+			case "version":
+				return ec.fieldContext_NodePool_version(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type NodePool", field.Name)
 		},
 	}
 	return fc, nil
@@ -11018,6 +11108,94 @@ func (ec *executionContext) fieldContext_NaisdWarning_environment(ctx context.Co
 				return ec.fieldContext_Environment_versions(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NodePool_name(ctx context.Context, field graphql.CollectedField, obj *model.NodePool) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NodePool_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NodePool_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NodePool",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NodePool_version(ctx context.Context, field graphql.CollectedField, obj *model.NodePool) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_NodePool_version(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Version, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_NodePool_version(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NodePool",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -16595,38 +16773,100 @@ func (ec *executionContext) _ClusterUpgradeStatus(ctx context.Context, sel ast.S
 		case "id":
 			out.Values[i] = ec._ClusterUpgradeStatus_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "upgradeStatus":
 			out.Values[i] = ec._ClusterUpgradeStatus_upgradeStatus(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "version":
 			out.Values[i] = ec._ClusterUpgradeStatus_version(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "lastModified":
 			out.Values[i] = ec._ClusterUpgradeStatus_lastModified(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "startTime":
 			out.Values[i] = ec._ClusterUpgradeStatus_startTime(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				out.Invalids++
+				atomic.AddUint32(&out.Invalids, 1)
 			}
 		case "operations":
-			out.Values[i] = ec._ClusterUpgradeStatus_operations(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ClusterUpgradeStatus_operations(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
 			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "environment":
-			out.Values[i] = ec._ClusterUpgradeStatus_environment(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ClusterUpgradeStatus_environment(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
 			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -17956,6 +18196,11 @@ func (ec *executionContext) _EnvironmentVersions(ctx context.Context, sel ast.Se
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "nodePools":
+			out.Values[i] = ec._EnvironmentVersions_nodePools(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -19250,6 +19495,50 @@ func (ec *executionContext) _NaisdWarning(ctx context.Context, sel ast.Selection
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var nodePoolImplementors = []string{"NodePool"}
+
+func (ec *executionContext) _NodePool(ctx context.Context, sel ast.SelectionSet, obj *model.NodePool) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, nodePoolImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("NodePool")
+		case "name":
+			out.Values[i] = ec._NodePool_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "version":
+			out.Values[i] = ec._NodePool_version(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -21900,6 +22189,60 @@ func (ec *executionContext) marshalNLogLine2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkg
 func (ec *executionContext) unmarshalNNewConfiguration2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐNewConfiguration(ctx context.Context, v interface{}) (model.NewConfiguration, error) {
 	res, err := ec.unmarshalInputNewConfiguration(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNNodePool2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐNodePoolᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.NodePool) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNNodePool2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐNodePool(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNNodePool2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐNodePool(ctx context.Context, sel ast.SelectionSet, v *model.NodePool) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._NodePool(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNPlayground2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐPlayground(ctx context.Context, sel ast.SelectionSet, v model.Playground) graphql.Marshaler {
