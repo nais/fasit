@@ -57,15 +57,53 @@ type EnvironmentCreate struct {
 	Kind        EnvironmentKind `json:"kind"`
 }
 
+type EnvironmentOperation struct {
+	ID                  uuid.UUID `json:"id"`
+	Name                string    `json:"name"`
+	Status              string    `json:"status"`
+	Type                string    `json:"type"`
+	Target              string    `json:"target"`
+	Detail              string    `json:"detail"`
+	StartTime           time.Time `json:"startTime"`
+	LastModified        time.Time `json:"lastModified"`
+	NodesTotal          int       `json:"nodesTotal"`
+	NodesFailed         int       `json:"nodesFailed"`
+	NodesCompleted      int       `json:"nodesCompleted"`
+	NodesDone           int       `json:"nodesDone"`
+	NodePdbDelaySeconds int       `json:"nodePdbDelaySeconds"`
+}
+
 // UpdateEnvironment contains metadata for updating an environment
 type EnvironmentUpdate struct {
 	// description of the environment
 	Description *string `json:"description,omitempty"`
 }
 
+// EnvironmentUpgrade contains metadata for upgrading an environment
+type EnvironmentUpgrade struct {
+	// k8s version to upgrade to
+	Version string    `json:"version"`
+	EnvID   uuid.UUID `json:"envID"`
+}
+
+type EnvironmentVersions struct {
+	Apiserver         string      `json:"apiserver"`
+	AvailableVersions []string    `json:"availableVersions"`
+	Channel           string      `json:"channel"`
+	NodePools         []*NodePool `json:"nodePools"`
+}
+
 type HelmValueDiff struct {
 	Difference HelmValueDifference `json:"difference"`
 	Diff       string              `json:"diff"`
+}
+
+type Mutation struct {
+}
+
+type NodePool struct {
+	Name    string `json:"name"`
+	Version string `json:"version"`
 }
 
 type Playground struct {
@@ -81,12 +119,18 @@ type PlaygroundInput struct {
 	Code               string `json:"code"`
 }
 
+type Query struct {
+}
+
 type RolloutEvent struct {
 	ID      uuid.UUID       `json:"id"`
 	Failure bool            `json:"failure"`
 	Message string          `json:"message"`
 	Created time.Time       `json:"created"`
 	Data    json.RawMessage `json:"data,omitempty"`
+}
+
+type Subscription struct {
 }
 
 type TenantCosts struct {
@@ -196,5 +240,52 @@ func (e *HelmValueDifference) UnmarshalGQL(v interface{}) error {
 }
 
 func (e HelmValueDifference) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type UpgradeStatus string
+
+const (
+	UpgradeStatusCreated       UpgradeStatus = "CREATED"
+	UpgradeStatusMasterUpgrade UpgradeStatus = "MASTER_UPGRADE"
+	UpgradeStatusNodeUpgrade   UpgradeStatus = "NODE_UPGRADE"
+	UpgradeStatusFailed        UpgradeStatus = "FAILED"
+	UpgradeStatusDone          UpgradeStatus = "DONE"
+)
+
+var AllUpgradeStatus = []UpgradeStatus{
+	UpgradeStatusCreated,
+	UpgradeStatusMasterUpgrade,
+	UpgradeStatusNodeUpgrade,
+	UpgradeStatusFailed,
+	UpgradeStatusDone,
+}
+
+func (e UpgradeStatus) IsValid() bool {
+	switch e {
+	case UpgradeStatusCreated, UpgradeStatusMasterUpgrade, UpgradeStatusNodeUpgrade, UpgradeStatusFailed, UpgradeStatusDone:
+		return true
+	}
+	return false
+}
+
+func (e UpgradeStatus) String() string {
+	return string(e)
+}
+
+func (e *UpgradeStatus) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = UpgradeStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid UpgradeStatus", str)
+	}
+	return nil
+}
+
+func (e UpgradeStatus) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }

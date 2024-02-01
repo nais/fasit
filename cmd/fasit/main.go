@@ -30,6 +30,7 @@ import (
 	"github.com/nais/fasit/pkg/provider"
 	"github.com/nais/fasit/pkg/provider/protogen"
 	"github.com/nais/fasit/pkg/rollout"
+	"github.com/nais/fasit/pkg/upgrader"
 	"github.com/nais/fasit/pkg/workers"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/ravilushqa/otelgqlgen"
@@ -145,6 +146,7 @@ func main() {
 	if err != nil {
 		log.WithError(err).Fatal("setting up reconciler")
 	}
+
 	go func() {
 		defer log.Error("reconciler listener stopped")
 		if err := reconciler.Listen(ctx); err != nil {
@@ -160,7 +162,11 @@ func main() {
 		go costUpdater.Run(ctx, 1*time.Hour)
 	}
 
-	resolver := graph.NewResolver(ctx, repo, notifierService, createPublisher, log.WithField("subsystem", "graphql"))
+	googleClient, err := upgrader.New(ctx)
+	if err != nil {
+		log.WithError(err).Fatal("setting up google client")
+	}
+	resolver := graph.NewResolver(ctx, repo, notifierService, createPublisher, googleClient, log.WithField("subsystem", "graphql"))
 
 	srv := newServer(graphgen.NewExecutableSchema(graphgen.Config{Resolvers: resolver}))
 	srv.Use(otelgqlgen.Middleware())
@@ -241,6 +247,10 @@ func main() {
 		}
 	}()
 
+	if err := runClusterUpgrader(ctx, log, googleClient, repo, meter); err != nil {
+		log.Fatal(err)
+	}
+
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	defer cancel()
 	<-ctx.Done()
@@ -304,4 +314,14 @@ func newMetricsProvider() (metric.Meter, error) {
 	}
 	provider := metricsdk.NewMeterProvider(metricsdk.WithReader(exporter))
 	return provider.Meter("github.com/nais/fasit"), nil
+}
+
+func runClusterUpgrader(ctx context.Context, log *logrus.Logger, googleClient upgrader.Upgrader, repo database.Repo, meter metric.Meter) error {
+	s := workers.NewScheduler(log.WithField("subsystem", "scheduler"))
+	clusterUpgrader := upgrader.NewClusterUpgrader(repo, log, googleClient, meter)
+	s.Register("cluster-upgrader", clusterUpgrader, 30*time.Second)
+	s.Start(ctx)
+
+	log.Info("Done")
+	return nil
 }
