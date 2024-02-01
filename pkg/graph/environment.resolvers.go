@@ -24,8 +24,6 @@ func (r *clusterUpgradeStatusResolver) Operations(ctx context.Context, obj *mode
 
 // Environment is the resolver for the environment field.
 func (r *clusterUpgradeStatusResolver) Environment(ctx context.Context, obj *model.ClusterUpgradeStatus) (*model.Environment, error) {
-	fmt.Println("envId", obj.EnvironmentID)
-
 	return r.Repo.EnvironmentGet(ctx, obj.EnvironmentID)
 }
 
