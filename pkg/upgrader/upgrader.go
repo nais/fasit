@@ -179,7 +179,7 @@ func (c *Client) getClusterName(environment *model.Environment) string {
 		return "nais-" + environment.Name
 	}
 	if environment.Kind == model.EnvironmentKindManagement {
-		return "nais-" + environment.Name
+		return "nais-" + environment.Name + "-v2"
 	}
 	return environment.Name
 }
