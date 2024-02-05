@@ -2470,7 +2470,7 @@ type Environment {
   feature(name: String!): Feature!
   reconcile: Boolean!
   clusterUpgradeStatus: ClusterUpgradeStatus
-  versions: EnvironmentVersions!
+  versions: EnvironmentVersions
 }
 
 type EnvironmentOperation {
@@ -6264,14 +6264,11 @@ func (ec *executionContext) _Environment_versions(ctx context.Context, field gra
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.(*model.EnvironmentVersions)
 	fc.Result = res
-	return ec.marshalNEnvironmentVersions2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentVersions(ctx, field.Selections, res)
+	return ec.marshalOEnvironmentVersions2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentVersions(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Environment_versions(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -17973,9 +17970,6 @@ func (ec *executionContext) _Environment(ctx context.Context, sel ast.SelectionS
 					}
 				}()
 				res = ec._Environment_versions(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
 				return res
 			}
 
@@ -21682,20 +21676,6 @@ func (ec *executionContext) marshalNEnvironmentValue2ᚖgithubᚗcomᚋnaisᚋfa
 	return ec._EnvironmentValue(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNEnvironmentVersions2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentVersions(ctx context.Context, sel ast.SelectionSet, v model.EnvironmentVersions) graphql.Marshaler {
-	return ec._EnvironmentVersions(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNEnvironmentVersions2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentVersions(ctx context.Context, sel ast.SelectionSet, v *model.EnvironmentVersions) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._EnvironmentVersions(ctx, sel, v)
-}
-
 func (ec *executionContext) marshalNFeature2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐFeature(ctx context.Context, sel ast.SelectionSet, v model.Feature) graphql.Marshaler {
 	return ec._Feature(ctx, sel, &v)
 }
@@ -23003,6 +22983,13 @@ func (ec *executionContext) unmarshalOEnvironmentUpgrade2ᚖgithubᚗcomᚋnais�
 	}
 	res, err := ec.unmarshalInputEnvironmentUpgrade(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOEnvironmentVersions2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironmentVersions(ctx context.Context, sel ast.SelectionSet, v *model.EnvironmentVersions) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._EnvironmentVersions(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOFeature2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐFeature(ctx context.Context, sel ast.SelectionSet, v *model.Feature) graphql.Marshaler {

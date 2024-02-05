@@ -58,7 +58,7 @@ type Environment {
   feature(name: String!): Feature!
   reconcile: Boolean!
   clusterUpgradeStatus: ClusterUpgradeStatus
-  versions: EnvironmentVersions!
+  versions: EnvironmentVersions
 }
 
 type EnvironmentOperation {
