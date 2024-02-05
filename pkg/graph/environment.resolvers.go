@@ -173,20 +173,29 @@ func (r *environmentResolver) Versions(ctx context.Context, obj *model.Environme
 		return nil, fmt.Errorf("projectId is nil")
 	}
 
-	channel, err := r.UpgraderClient.GetReleaseChannel(ctx, *projectId, obj.Name)
-	if err != nil {
-		return nil, err
-	}
-	currentMasterVersion, err := r.UpgraderClient.GetCurrentMasterVersion(ctx, *projectId, obj.Name)
-	if err != nil {
-		return nil, err
-	}
-	availableVersions, err := r.UpgraderClient.GetAvailableVersions(ctx, *projectId, obj.Name, channel)
+	env, err := r.Repo.EnvironmentGet(ctx, obj.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	nodePools, err := r.UpgraderClient.GetNodePools(ctx, *projectId, obj.Name)
+	if env.Kind == model.EnvironmentKindOnprem {
+		return nil, nil
+	}
+
+	channel, err := r.UpgraderClient.GetReleaseChannel(ctx, *projectId, obj)
+	if err != nil {
+		return nil, err
+	}
+	currentMasterVersion, err := r.UpgraderClient.GetCurrentMasterVersion(ctx, *projectId, obj)
+	if err != nil {
+		return nil, err
+	}
+	availableVersions, err := r.UpgraderClient.GetAvailableVersions(ctx, *projectId, obj, channel)
+	if err != nil {
+		return nil, err
+	}
+
+	nodePools, err := r.UpgraderClient.GetNodePools(ctx, *projectId, obj)
 	if err != nil {
 		return nil, err
 	}
@@ -228,6 +237,10 @@ func (r *mutationResolver) EnvironmentUpgrade(ctx context.Context, upgrade *mode
 	env, err := r.Repo.EnvironmentGet(ctx, upgrade.EnvID)
 	if err != nil {
 		return nil, err
+	}
+
+	if env.Kind == model.EnvironmentKindOnprem {
+		return nil, fmt.Errorf("environment %s is onprem", env.Name)
 	}
 
 	_, err = r.Repo.CreateClusterUpgrade(ctx, env.TenantID, upgrade.EnvID, upgrade.Version)
