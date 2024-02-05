@@ -7,20 +7,28 @@ import (
 
 	"cloud.google.com/go/container/apiv1/containerpb"
 
+	"github.com/google/uuid"
+	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/nais/fasit/pkg/upgrader/mocks"
 )
 
 var (
 	projectId   = "projectId"
 	clusterName = "clusterName"
+	environment = model.Environment{
+		ID:       uuid.New(),
+		Name:     "t1",
+		Kind:     model.EnvironmentKindTenant,
+		TenantID: uuid.New(),
+	}
 )
 
 func TestClient_GetReleaseChannel(t *testing.T) {
 	ctx := context.Background()
 	mock := mocks.NewUpgrader(t)
 
-	mock.EXPECT().GetReleaseChannel(ctx, projectId, clusterName).Return("STABLE", nil)
-	channel, err := mock.GetReleaseChannel(ctx, projectId, clusterName)
+	mock.EXPECT().GetReleaseChannel(ctx, projectId, &environment).Return("STABLE", nil)
+	channel, err := mock.GetReleaseChannel(ctx, projectId, &environment)
 	if err != nil {
 		t.Errorf("got %v, want nil", err)
 	}
@@ -42,8 +50,8 @@ func TestClient_GetRunningOperations(t *testing.T) {
 		},
 	}
 
-	mock.EXPECT().GetRunningOperations(ctx, projectId, clusterName).Return(operations, nil)
-	ops, err := mock.GetRunningOperations(ctx, projectId, clusterName)
+	mock.EXPECT().GetRunningOperations(ctx, projectId, &environment).Return(operations, nil)
+	ops, err := mock.GetRunningOperations(ctx, projectId, &environment)
 	if err != nil {
 		t.Errorf("got %v, want nil", err)
 	}
@@ -67,8 +75,8 @@ func TestClient_GetAvailableVersions(t *testing.T) {
 	mock := mocks.NewUpgrader(t)
 	versions := []string{"1.18.17-gke.1900", "1.19.9-gke.1900", "1.20.5-gke.1900"}
 
-	mock.EXPECT().GetAvailableVersions(ctx, projectId, clusterName, "STABLE").Return(versions, nil)
-	availableVersions, err := mock.GetAvailableVersions(ctx, projectId, clusterName, "STABLE")
+	mock.EXPECT().GetAvailableVersions(ctx, projectId, &environment, "STABLE").Return(versions, nil)
+	availableVersions, err := mock.GetAvailableVersions(ctx, projectId, &environment, "STABLE")
 	if err != nil {
 		t.Errorf("got %v, want nil", err)
 	}

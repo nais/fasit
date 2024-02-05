@@ -31,18 +31,26 @@ type testSuite struct {
 	repoMock    *mocks.Repo
 	upgradeMock *upgdradermock.Upgrader
 	env         *env
+	environment *model.Environment
 }
 
 func newTestSuite(t *testing.T) *testSuite {
+	tenantID := uuid.New()
+	envID := uuid.New()
 	return &testSuite{
 		repoMock:    mocks.NewRepo(t),
 		upgradeMock: upgdradermock.NewUpgrader(t),
 		env: &env{
-			tenantId:          uuid.New(),
+			tenantId:          tenantID,
 			projectId:         "1234",
-			id:                uuid.New(),
+			id:                envID,
 			name:              "t1",
 			clusterUpgraderId: uuid.New(),
+		},
+		environment: &model.Environment{
+			ID:       envID,
+			Name:     "t1",
+			TenantID: tenantID,
 		},
 	}
 }
@@ -95,12 +103,12 @@ func TestRun_OperationDoneUpdateClusterNodeStatusToDone(t *testing.T) {
 	upgrade := newUpgrade(suite)
 	suite.mockRunTenantForLoop(model.UpgradeStatusNodeUpgrade)
 
-	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, suite.env.projectId, suite.env.name).Return(
+	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, suite.env.projectId, suite.environment).Return(
 		[]*containerpb.Operation{}, nil).Once()
 	suite.repoMock.EXPECT().GetRunningClusterOperation(mock.Anything, suite.env.tenantId, suite.env.id).Return(
 		nil, nil).Once()
 
-	suite.upgradeMock.EXPECT().GetNodePools(mock.Anything, suite.env.projectId, suite.env.name).Return(
+	suite.upgradeMock.EXPECT().GetNodePools(mock.Anything, suite.env.projectId, suite.environment).Return(
 		[]*containerpb.NodePool{
 			{
 				Name:    "nodepool1",
@@ -132,9 +140,9 @@ func TestRun_StartNodeUpgradeClusterStatusNodeUpgrade(t *testing.T) {
 	upgrade := newUpgrade(suite)
 	suite.mockRunTenantForLoop(model.UpgradeStatusNodeUpgrade)
 
-	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, suite.env.projectId, suite.env.name).Return(
+	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, suite.env.projectId, suite.environment).Return(
 		[]*containerpb.Operation{}, nil).Once()
-	suite.repoMock.EXPECT().GetRunningClusterOperation(mock.Anything, suite.env.tenantId, suite.env.id).Return(
+	suite.repoMock.EXPECT().GetRunningClusterOperation(mock.Anything, suite.env.tenantId, suite.environment.ID).Return(
 		&model.EnvironmentOperation{
 			ID:     uuid.New(),
 			Name:   "operation",
@@ -161,7 +169,7 @@ func TestRun_StartNodeUpgradeClusterStatusNodeUpgrade(t *testing.T) {
 			Type:   "UPGRADE_NODES",
 		}, nil).Once()
 
-	suite.upgradeMock.EXPECT().GetNodePools(mock.Anything, suite.env.projectId, suite.env.name).Return(
+	suite.upgradeMock.EXPECT().GetNodePools(mock.Anything, suite.env.projectId, suite.environment).Return(
 		[]*containerpb.NodePool{
 			{
 				Name:    "nodepool1",
@@ -181,7 +189,7 @@ func TestRun_StartNodeUpgradeClusterStatusNodeUpgrade(t *testing.T) {
 		Detail:        "testSuite",
 	}
 
-	suite.upgradeMock.EXPECT().UpgradeNodePool(mock.Anything, suite.env.projectId, suite.env.name, "nodepool1", "1.2.4").Return(
+	suite.upgradeMock.EXPECT().UpgradeNodePool(mock.Anything, suite.env.projectId, suite.environment, "nodepool1", "1.2.4").Return(
 		op2, nil).Once()
 	id := uuid.New()
 	suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantId, suite.env.id, mock.Anything, op2).Return(
@@ -212,10 +220,10 @@ func TestRun_StartClusterUpgradeMasterStatusCreated(t *testing.T) {
 	upgrade := newUpgrade(suite)
 	suite.mockRunTenantForLoop(model.UpgradeStatusCreated)
 
-	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, suite.env.name).Return(
+	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, suite.environment).Return(
 		[]*containerpb.Operation{}, nil).Twice()
 
-	suite.upgradeMock.EXPECT().UpgradeMaster(mock.Anything, mock.Anything, suite.env.name, "1.2.4").Return(
+	suite.upgradeMock.EXPECT().UpgradeMaster(mock.Anything, mock.Anything, suite.environment, "1.2.4").Return(
 		&containerpb.Operation{
 			Name:          "operation",
 			OperationType: containerpb.Operation_UPGRADE_MASTER,
@@ -253,7 +261,7 @@ func TestRun_UpdateClusterStatusToNodeUpgradeWhenOperationDoneOnMasterUpgrade(t 
 	upgrade := newUpgrade(suite)
 	suite.mockRunTenantForLoop(model.UpgradeStatusMasterUpgrade)
 
-	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, suite.env.name).Return(
+	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, suite.environment).Return(
 		[]*containerpb.Operation{}, nil).Once()
 
 	suite.repoMock.EXPECT().GetRunningClusterOperation(mock.Anything, suite.env.tenantId, suite.env.id).Return(
@@ -302,7 +310,7 @@ func TestRun_MasterUpgradeIsRunning(t *testing.T) {
 	upgrade := newUpgrade(suite)
 	suite.mockRunTenantForLoop(model.UpgradeStatusMasterUpgrade)
 
-	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, suite.env.projectId, suite.env.name).Return(
+	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, suite.env.projectId, suite.environment).Return(
 		[]*containerpb.Operation{
 			{
 				Name:          "operation",
@@ -373,7 +381,7 @@ func Test_EqualVersionsForAllNodes(t *testing.T) {
 			Version: "1.2.4",
 		},
 	}
-	suite.upgradeMock.EXPECT().GetNodePools(mock.Anything, suite.env.projectId, suite.env.name).
+	suite.upgradeMock.EXPECT().GetNodePools(mock.Anything, suite.env.projectId, suite.environment).
 		Return(nodepools, nil).Once()
 	clusterUpgradeStatus := &model.ClusterUpgradeStatus{
 		ID:            uuid.New(),
@@ -390,7 +398,7 @@ func Test_EqualVersionsForAllNodes(t *testing.T) {
 		Detail:        "testSuite",
 	}
 	// We hit the one with the nodepool1 version 1.2.3
-	suite.upgradeMock.EXPECT().UpgradeNodePool(mock.Anything, suite.env.projectId, suite.env.name, nodepools[0].Name, clusterUpgradeStatus.Version).
+	suite.upgradeMock.EXPECT().UpgradeNodePool(mock.Anything, suite.env.projectId, suite.environment, nodepools[0].Name, clusterUpgradeStatus.Version).
 		Return(operation, nil).Once()
 
 	suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantId, suite.env.id, clusterUpgradeStatus.ID, operation).
@@ -406,11 +414,9 @@ func Test_EqualVersionsForAllNodes(t *testing.T) {
 		Return(clusterUpgradeStatus, nil).Once()
 
 	cu, err := upgrade.upgradeNodes(context.Background(), &model.Environment{
-		ID:           suite.env.id,
-		TenantID:     suite.env.tenantId,
-		Name:         suite.env.name,
-		Created:      time.Now(),
-		LastModified: time.Now(),
+		ID:       suite.env.id,
+		TenantID: suite.env.tenantId,
+		Name:     suite.env.name,
 	}, clusterUpgradeStatus, suite.env.projectId, suite.env.name)
 	if err != nil {
 		t.Errorf("got %v, want nil", err)
@@ -472,16 +478,14 @@ func Test_NodelPoolDiff(t *testing.T) {
 			Status: containerpb.Operation_RUNNING.String(),
 			Type:   "UPGRADE_NODES",
 		}, nil).Once()
-	suite.upgradeMock.EXPECT().GetNodePools(mock.Anything, suite.env.projectId, suite.env.name).
+	suite.upgradeMock.EXPECT().GetNodePools(mock.Anything, suite.env.projectId, suite.environment).
 		Return(nodepools, nil).Once()
 
 	done, err := upgrade.nodeUpgradeStatus(context.Background(), &model.Environment{
-		ID:           suite.env.id,
-		TenantID:     suite.env.tenantId,
-		Name:         suite.env.name,
-		Description:  nil,
-		Created:      time.Now(),
-		LastModified: time.Now(),
+		ID:          suite.env.id,
+		TenantID:    suite.env.tenantId,
+		Name:        suite.env.name,
+		Description: nil,
 	}, clusterUpgradeStatus, suite.env.projectId)
 	if err != nil {
 		t.Errorf("got %v, want nil", err)
@@ -505,16 +509,13 @@ func Test_ClusterNodePoolsCompleted(t *testing.T) {
 			Version: "1.2.4",
 		},
 	}
-	suite.upgradeMock.EXPECT().GetNodePools(mock.Anything, suite.env.projectId, suite.env.name).
+	suite.upgradeMock.EXPECT().GetNodePools(mock.Anything, suite.env.projectId, suite.environment).
 		Return(nodepools, nil).Once()
 
 	completed, err := upgrade.clusterNodePoolsCompleted(context.Background(), suite.env.projectId, &model.Environment{
-		ID:           suite.env.id,
-		TenantID:     suite.env.tenantId,
-		Name:         suite.env.name,
-		Description:  nil,
-		Created:      time.Now(),
-		LastModified: time.Now(),
+		ID:       suite.env.id,
+		TenantID: suite.env.tenantId,
+		Name:     suite.env.name,
 	},
 		&model.ClusterUpgradeStatus{
 			ID:            uuid.New(),
@@ -540,16 +541,14 @@ func Test_ClusterNodePoolsCompleted(t *testing.T) {
 			Version: "1.2.4",
 		},
 	}
-	suite.upgradeMock.EXPECT().GetNodePools(mock.Anything, suite.env.projectId, suite.env.name).
+	suite.upgradeMock.EXPECT().GetNodePools(mock.Anything, suite.env.projectId, suite.environment).
 		Return(nodepools, nil).Once()
 
 	completed, err = upgrade.clusterNodePoolsCompleted(context.Background(), suite.env.projectId, &model.Environment{
-		ID:           suite.env.id,
-		TenantID:     suite.env.tenantId,
-		Name:         suite.env.name,
-		Description:  nil,
-		Created:      time.Now(),
-		LastModified: time.Now(),
+		ID:          suite.env.id,
+		TenantID:    suite.env.tenantId,
+		Name:        suite.env.name,
+		Description: nil,
 	},
 		&model.ClusterUpgradeStatus{
 			ID:            uuid.New(),
@@ -584,7 +583,7 @@ func Test_MasterUpgrade(t *testing.T) {
 		TargetLink:    fmt.Sprintf("https://container.googleapis.com/v1/projects/%s/zones/europe-north1-a/clusters/%s", suite.env.projectId, suite.env.name),
 		Detail:        "testSuite",
 	}
-	suite.upgradeMock.EXPECT().UpgradeMaster(mock.Anything, suite.env.projectId, suite.env.name, clusterUpgradeStatus.Version).
+	suite.upgradeMock.EXPECT().UpgradeMaster(mock.Anything, suite.env.projectId, suite.environment, clusterUpgradeStatus.Version).
 		Return(operation, nil).Once()
 	suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantId, suite.env.id, clusterUpgradeStatus.ID, operation).
 		Return(nil, nil).Once()
@@ -598,12 +597,10 @@ func Test_MasterUpgrade(t *testing.T) {
 		Return(clusterUpgradeStatus, nil).Once()
 
 	cus, err := upgrade.masterUpgrade(context.Background(), &model.Environment{
-		ID:           suite.env.id,
-		TenantID:     suite.env.tenantId,
-		Name:         suite.env.name,
-		Description:  nil,
-		Created:      time.Now(),
-		LastModified: time.Now(),
+		ID:          suite.env.id,
+		TenantID:    suite.env.tenantId,
+		Name:        suite.env.name,
+		Description: nil,
 	}, clusterUpgradeStatus, suite.env.name, suite.env.projectId)
 	if err != nil {
 		t.Errorf("got %v, want nil", err)
