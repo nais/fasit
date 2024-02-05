@@ -2240,6 +2240,36 @@ func (_m *Repo) EnvironmentUpdate(ctx context.Context, environmentID uuid.UUID, 
 	return r0, r1
 }
 
+// Repo_EnvironmentUpdate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'EnvironmentUpdate'
+type Repo_EnvironmentUpdate_Call struct {
+	*mock.Call
+}
+
+// EnvironmentUpdate is a helper method to define mock.On call
+//   - ctx context.Context
+//   - environmentID uuid.UUID
+//   - p *model.EnvironmentUpdate
+func (_e *Repo_Expecter) EnvironmentUpdate(ctx interface{}, environmentID interface{}, p interface{}) *Repo_EnvironmentUpdate_Call {
+	return &Repo_EnvironmentUpdate_Call{Call: _e.mock.On("EnvironmentUpdate", ctx, environmentID, p)}
+}
+
+func (_c *Repo_EnvironmentUpdate_Call) Run(run func(ctx context.Context, environmentID uuid.UUID, p *model.EnvironmentUpdate)) *Repo_EnvironmentUpdate_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uuid.UUID), args[2].(*model.EnvironmentUpdate))
+	})
+	return _c
+}
+
+func (_c *Repo_EnvironmentUpdate_Call) Return(_a0 *model.Environment, _a1 error) *Repo_EnvironmentUpdate_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Repo_EnvironmentUpdate_Call) RunAndReturn(run func(context.Context, uuid.UUID, *model.EnvironmentUpdate) (*model.Environment, error)) *Repo_EnvironmentUpdate_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // EnvironmentValueDelete provides a mock function with given fields: ctx, environmentID, key
 func (_m *Repo) EnvironmentValueDelete(ctx context.Context, environmentID uuid.UUID, key string) error {
 	ret := _m.Called(ctx, environmentID, key)
@@ -2256,6 +2286,36 @@ func (_m *Repo) EnvironmentValueDelete(ctx context.Context, environmentID uuid.U
 	}
 
 	return r0
+}
+
+// Repo_EnvironmentValueDelete_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'EnvironmentValueDelete'
+type Repo_EnvironmentValueDelete_Call struct {
+	*mock.Call
+}
+
+// EnvironmentValueDelete is a helper method to define mock.On call
+//   - ctx context.Context
+//   - environmentID uuid.UUID
+//   - key string
+func (_e *Repo_Expecter) EnvironmentValueDelete(ctx interface{}, environmentID interface{}, key interface{}) *Repo_EnvironmentValueDelete_Call {
+	return &Repo_EnvironmentValueDelete_Call{Call: _e.mock.On("EnvironmentValueDelete", ctx, environmentID, key)}
+}
+
+func (_c *Repo_EnvironmentValueDelete_Call) Run(run func(ctx context.Context, environmentID uuid.UUID, key string)) *Repo_EnvironmentValueDelete_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uuid.UUID), args[2].(string))
+	})
+	return _c
+}
+
+func (_c *Repo_EnvironmentValueDelete_Call) Return(_a0 error) *Repo_EnvironmentValueDelete_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Repo_EnvironmentValueDelete_Call) RunAndReturn(run func(context.Context, uuid.UUID, string) error) *Repo_EnvironmentValueDelete_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // EnvironmentValueGet provides a mock function with given fields: ctx, environmentID, key, showSensitive

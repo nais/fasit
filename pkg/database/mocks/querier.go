@@ -2597,6 +2597,35 @@ func (_m *Querier) EnvironmentUpdate(ctx context.Context, arg gensql.Environment
 	return r0, r1
 }
 
+// Querier_EnvironmentUpdate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'EnvironmentUpdate'
+type Querier_EnvironmentUpdate_Call struct {
+	*mock.Call
+}
+
+// EnvironmentUpdate is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg gensql.EnvironmentUpdateParams
+func (_e *Querier_Expecter) EnvironmentUpdate(ctx interface{}, arg interface{}) *Querier_EnvironmentUpdate_Call {
+	return &Querier_EnvironmentUpdate_Call{Call: _e.mock.On("EnvironmentUpdate", ctx, arg)}
+}
+
+func (_c *Querier_EnvironmentUpdate_Call) Run(run func(ctx context.Context, arg gensql.EnvironmentUpdateParams)) *Querier_EnvironmentUpdate_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(gensql.EnvironmentUpdateParams))
+	})
+	return _c
+}
+
+func (_c *Querier_EnvironmentUpdate_Call) Return(_a0 gensql.Environment, _a1 error) *Querier_EnvironmentUpdate_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Querier_EnvironmentUpdate_Call) RunAndReturn(run func(context.Context, gensql.EnvironmentUpdateParams) (gensql.Environment, error)) *Querier_EnvironmentUpdate_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // EnvironmentValueDelete provides a mock function with given fields: ctx, arg
 func (_m *Querier) EnvironmentValueDelete(ctx context.Context, arg gensql.EnvironmentValueDeleteParams) error {
 	ret := _m.Called(ctx, arg)
@@ -2613,6 +2642,35 @@ func (_m *Querier) EnvironmentValueDelete(ctx context.Context, arg gensql.Enviro
 	}
 
 	return r0
+}
+
+// Querier_EnvironmentValueDelete_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'EnvironmentValueDelete'
+type Querier_EnvironmentValueDelete_Call struct {
+	*mock.Call
+}
+
+// EnvironmentValueDelete is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg gensql.EnvironmentValueDeleteParams
+func (_e *Querier_Expecter) EnvironmentValueDelete(ctx interface{}, arg interface{}) *Querier_EnvironmentValueDelete_Call {
+	return &Querier_EnvironmentValueDelete_Call{Call: _e.mock.On("EnvironmentValueDelete", ctx, arg)}
+}
+
+func (_c *Querier_EnvironmentValueDelete_Call) Run(run func(ctx context.Context, arg gensql.EnvironmentValueDeleteParams)) *Querier_EnvironmentValueDelete_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(gensql.EnvironmentValueDeleteParams))
+	})
+	return _c
+}
+
+func (_c *Querier_EnvironmentValueDelete_Call) Return(_a0 error) *Querier_EnvironmentValueDelete_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Querier_EnvironmentValueDelete_Call) RunAndReturn(run func(context.Context, gensql.EnvironmentValueDeleteParams) error) *Querier_EnvironmentValueDelete_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // EnvironmentValueGet provides a mock function with given fields: ctx, arg
