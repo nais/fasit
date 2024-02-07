@@ -398,7 +398,7 @@ func (c *ConsoleManager) deleteNamespace(ctx context.Context, msg message.Consol
 
 func (c *ConsoleManager) createCNRMConfig(ctx context.Context, data message.CreateNamespace, log logrus.FieldLogger) error {
 	if strings.HasSuffix(c.env, "-fss") {
-		c.log.Info("Skipping CNRM config for FSS")
+		c.log.Debug("Skipping CNRM config for FSS")
 		return nil
 	}
 	cnrmClient := c.dynClient.Resource(cnrmbeta1.GroupVersion.WithResource("configconnectorcontexts")).Namespace(data.Name)
