@@ -25,7 +25,7 @@ func CreateClusterConfigMap(ctx context.Context, repo database.Repo) (ClusterCon
 		configs[env.Name] = rest.Config{
 			Host: fmt.Sprintf("https://apiserver.%s.%s.cloud.nais.io", env, env.TenantName),
 			AuthProvider: &api.AuthProviderConfig{
-				Name: "google",
+				Name: googleAuthPlugin,
 			},
 			WrapTransport: func(rt http.RoundTripper) http.RoundTripper {
 				return otelhttp.NewTransport(rt, otelhttp.WithServerName(env.Name))
