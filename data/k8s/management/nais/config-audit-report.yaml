@@ -1,0 +1,138 @@
+apiVersion: aquasecurity.github.io/v1alpha1
+kind: ConfigAuditReport
+metadata:
+  annotations:
+    trivy-operator.aquasecurity.github.io/report-ttl: 24h0m0s
+  creationTimestamp: "2024-02-16T13:53:16Z"
+  generation: 1
+  labels:
+    plugin-config-hash: 659b7b9c46
+    resource-spec-hash: 6bb6974999
+    trivy-operator.resource.kind: ReplicaSet
+    trivy-operator.resource.name: yolo-krakend-7b66599696
+    trivy-operator.resource.namespace: nais
+  name: replicaset-yolo-krakend-7b66599696
+  namespace: nais
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: false
+      controller: true
+      kind: ReplicaSet
+      name: yolo-krakend-7b66599696
+      uid: 36c355f2-c663-4267-9fac-cb20bc746570
+  resourceVersion: "1605042220"
+  uid: cf75a315-5188-4eb9-afca-db8e1826b2c9
+report:
+  checks:
+    - category: Kubernetes Security Check
+      checkID: KSV011
+      description: Enforcing CPU limits prevents DoS via resource exhaustion.
+      messages:
+        - Container 'yolo-krakend' of ReplicaSet 'yolo-krakend-7b66599696' should set
+          'resources.limits.cpu'
+      remediation: Set a limit value under 'containers[].resources.limits.cpu'.
+      severity: LOW
+      success: false
+      title: CPU not limited
+    - category: Kubernetes Security Check
+      checkID: KSV015
+      description: When containers have resource requests specified, the scheduler can
+        make better decisions about which nodes to place pods on, and how to deal with
+        resource contention.
+      messages:
+        - Container 'yolo-krakend' of ReplicaSet 'yolo-krakend-7b66599696' should set
+          'resources.requests.cpu'
+      remediation: Set 'containers[].resources.requests.cpu'.
+      severity: LOW
+      success: false
+      title: CPU requests not specified
+    - category: Kubernetes Security Check
+      checkID: KSV016
+      description: When containers have memory requests specified, the scheduler can
+        make better decisions about which nodes to place pods on, and how to deal with
+        resource contention.
+      messages:
+        - Container 'yolo-krakend' of ReplicaSet 'yolo-krakend-7b66599696' should set
+          'resources.requests.memory'
+      remediation: Set 'containers[].resources.requests.memory'.
+      severity: LOW
+      success: false
+      title: Memory requests not specified
+    - category: Kubernetes Security Check
+      checkID: KSV018
+      description: Enforcing memory limits prevents DoS via resource exhaustion.
+      messages:
+        - Container 'yolo-krakend' of ReplicaSet 'yolo-krakend-7b66599696' should set
+          'resources.limits.memory'
+      remediation: Set a limit value under 'containers[].resources.limits.memory'.
+      severity: LOW
+      success: false
+      title: Memory not limited
+    - category: Kubernetes Security Check
+      checkID: KSV020
+      description: Force the container to run with user ID > 10000 to avoid conflicts
+        with the host’s user table.
+      messages:
+        - Container 'yolo-krakend' of ReplicaSet 'yolo-krakend-7b66599696' should set
+          'securityContext.runAsUser' > 10000
+      remediation: Set 'containers[].securityContext.runAsUser' to an integer > 10000.
+      severity: LOW
+      success: false
+      title: Runs with UID <= 10000
+    - category: Kubernetes Security Check
+      checkID: KSV021
+      description: Force the container to run with group ID > 10000 to avoid conflicts
+        with the host’s user table.
+      messages:
+        - Container 'yolo-krakend' of ReplicaSet 'yolo-krakend-7b66599696' should set
+          'securityContext.runAsGroup' > 10000
+      remediation: Set 'containers[].securityContext.runAsGroup' to an integer > 10000.
+      severity: LOW
+      success: false
+      title: Runs with GID <= 10000
+    - category: Kubernetes Security Check
+      checkID: KSV022
+      description: According to pod security standard 'Capabilities', capabilities beyond
+        the default set must not be added.
+      messages:
+        - Container 'yolo-krakend' of ReplicaSet 'yolo-krakend-7b66599696' should not
+          set 'securityContext.capabilities.add'
+      remediation: Do not set spec.containers[*].securityContext.capabilities.add and
+        spec.initContainers[*].securityContext.capabilities.add.
+      severity: MEDIUM
+      success: false
+      title: Specific capabilities added
+    - category: Kubernetes Security Check
+      checkID: KSV104
+      description: A program inside the container can bypass Seccomp protection policies.
+      messages:
+        - container yolo-krakend of replicaset yolo-krakend-7b66599696 in yolo namespace
+          should specify a seccomp profile
+      remediation: Specify seccomp either by annotation or by seccomp profile type having
+        allowed values as per pod security standards
+      severity: MEDIUM
+      success: false
+      title: Seccomp policies disabled
+    - category: Kubernetes Security Check
+      checkID: KSV116
+      description: According to pod security standard 'Non-root groups', containers
+        should be forbidden from running with a root primary or supplementary GID.
+      messages:
+        - replicaset yolo-krakend-7b66599696 in yolo namespace should set spec.securityContext.runAsGroup,
+          spec.securityContext.supplementalGroups[*] and spec.securityContext.fsGroup
+          to integer greater than 0
+      remediation: Set 'containers[].securityContext.runAsGroup' to a non-zero integer
+        or leave undefined.
+      severity: LOW
+      success: false
+      title: Runs with a root primary or supplementary GID
+  scanner:
+    name: Trivy
+    vendor: Aqua Security
+    version: 0.18.5
+  summary:
+    criticalCount: 0
+    highCount: 0
+    lowCount: 7
+    mediumCount: 2
+  updateTimestamp: "2024-02-16T13:53:16Z"

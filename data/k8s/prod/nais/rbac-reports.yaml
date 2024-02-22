@@ -1,0 +1,69 @@
+apiVersion: aquasecurity.github.io/v1alpha1
+kind: RbacAssessmentReport
+metadata:
+  annotations:
+    trivy-operator.aquasecurity.github.io/report-ttl: 24h0m0s
+  creationTimestamp: "2024-02-16T14:04:51Z"
+  generation: 1
+  labels:
+    plugin-config-hash: 659b7b9c46
+    resource-spec-hash: 6c59dd5c8c
+    trivy-operator.resource.kind: Role
+    trivy-operator.resource.name: velero-server
+    trivy-operator.resource.namespace: nais
+  name: role-velero-server
+  namespace: nais
+  ownerReferences:
+    - apiVersion: rbac.authorization.k8s.io/v1
+      blockOwnerDeletion: false
+      controller: true
+      kind: Role
+      name: velero-server
+      uid: 044796f2-be4b-49b1-a098-b1078181b403
+  resourceVersion: "1605070186"
+  uid: 234b214a-93f1-4256-8b03-99cf2cd00ab3
+report:
+  checks:
+    - category: Kubernetes Security Check
+      checkID: KSV044
+      description: Check whether role permits wildcard verb on wildcard resource
+      messages:
+        - Role permits wildcard verb on wildcard resource
+      remediation: Create a role which does not permit wildcard verb on wildcard resource
+      severity: CRITICAL
+      success: false
+      title: No wildcard verb and resource roles
+    - category: Kubernetes Security Check
+      checkID: KSV112
+      description: Full control of the resources within a namespace.  In some cluster
+        configurations, this is excessive. In others, this is normal (a gitops deployment
+        operator like flux)
+      messages:
+        - Role 'velero-server' shouldn't manage all resources at the namespace 'nais-system'
+      remediation: Remove '*' from 'rules.resources'. Provide specific list of resources
+        to be managed by role in namespace
+      severity: CRITICAL
+      success: false
+      title: Manage all resources at the namespace
+    - category: Kubernetes Security Check
+      checkID: KSV116
+      description: According to pod security standard 'Non-root groups', containers
+        should be forbidden from running with a root primary or supplementary GID.
+      messages:
+        - role velero-server in nais-system namespace should set spec.securityContext.runAsGroup,
+          spec.securityContext.supplementalGroups[*] and spec.securityContext.fsGroup
+          to integer greater than 0
+      remediation: Set 'containers[].securityContext.runAsGroup' to a non-zero integer
+        or leave undefined.
+      severity: LOW
+      success: false
+      title: Runs with a root primary or supplementary GID
+  scanner:
+    name: Trivy
+    vendor: Aqua Security
+    version: 0.18.5
+  summary:
+    criticalCount: 2
+    highCount: 0
+    lowCount: 1
+    mediumCount: 0

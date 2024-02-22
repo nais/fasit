@@ -75,6 +75,46 @@ type ComplexityRoot struct {
 		ObjectType  func(childComplexity int) int
 	}
 
+	CheckResults struct {
+		Category    func(childComplexity int) int
+		Description func(childComplexity int) int
+		Messages    func(childComplexity int) int
+		Remediation func(childComplexity int) int
+		ScopeType   func(childComplexity int) int
+		ScopeValue  func(childComplexity int) int
+		Severity    func(childComplexity int) int
+		Success     func(childComplexity int) int
+		Title       func(childComplexity int) int
+		TotalFail   func(childComplexity int) int
+	}
+
+	ClusterAuditReport struct {
+		Checks    func(childComplexity int) int
+		Name      func(childComplexity int) int
+		Namespace func(childComplexity int) int
+		Summary   func(childComplexity int) int
+		Updated   func(childComplexity int) int
+	}
+
+	ClusterComplianceReport struct {
+		FailCount func(childComplexity int) int
+		Name      func(childComplexity int) int
+		Namespace func(childComplexity int) int
+		PassCount func(childComplexity int) int
+		Summary   func(childComplexity int) int
+		Updated   func(childComplexity int) int
+	}
+
+	ClusterComplianceReportSummaryReport struct {
+		ClusterComplianceCheckResults func(childComplexity int) int
+		Title                         func(childComplexity int) int
+	}
+
+	ClusterComplianceTotalSummaryReport struct {
+		FailCount func(childComplexity int) int
+		PassCount func(childComplexity int) int
+	}
+
 	ClusterUpgradeStatus struct {
 		Environment   func(childComplexity int) int
 		ID            func(childComplexity int) int
@@ -139,26 +179,32 @@ type ComplexityRoot struct {
 	}
 
 	Environment struct {
-		AuditLog             func(childComplexity int, featureName *string) int
-		ClusterUpgradeStatus func(childComplexity int) int
-		Created              func(childComplexity int) int
-		Description          func(childComplexity int) int
-		Feature              func(childComplexity int, name string) int
-		FeatureStates        func(childComplexity int) int
-		Features             func(childComplexity int) int
-		GcpProjectID         func(childComplexity int) int
-		Health               func(childComplexity int) int
-		ID                   func(childComplexity int) int
-		Kind                 func(childComplexity int) int
-		LastModified         func(childComplexity int) int
-		Name                 func(childComplexity int) int
-		Nodes                func(childComplexity int) int
-		Reconcile            func(childComplexity int) int
-		Releases             func(childComplexity int) int
-		Tenant               func(childComplexity int) int
-		Values               func(childComplexity int) int
-		Versions             func(childComplexity int) int
-		Warnings             func(childComplexity int) int
+		AuditLog                      func(childComplexity int, featureName *string) int
+		ClusterAuditReports           func(childComplexity int) int
+		ClusterAuditTotalSummary      func(childComplexity int) int
+		ClusterComplianceReports      func(childComplexity int) int
+		ClusterComplianceTotalSummary func(childComplexity int) int
+		ClusterUpgradeStatus          func(childComplexity int) int
+		Created                       func(childComplexity int) int
+		Description                   func(childComplexity int) int
+		Feature                       func(childComplexity int, name string) int
+		FeatureStates                 func(childComplexity int) int
+		Features                      func(childComplexity int) int
+		GcpProjectID                  func(childComplexity int) int
+		Health                        func(childComplexity int) int
+		ID                            func(childComplexity int) int
+		Kind                          func(childComplexity int) int
+		LastModified                  func(childComplexity int) int
+		Name                          func(childComplexity int) int
+		Nodes                         func(childComplexity int) int
+		RbacAssessmentReports         func(childComplexity int) int
+		RbacTotalSummary              func(childComplexity int) int
+		Reconcile                     func(childComplexity int) int
+		Releases                      func(childComplexity int) int
+		Tenant                        func(childComplexity int) int
+		Values                        func(childComplexity int) int
+		Versions                      func(childComplexity int) int
+		Warnings                      func(childComplexity int) int
 	}
 
 	EnvironmentOperation struct {
@@ -326,6 +372,13 @@ type ComplexityRoot struct {
 		UserInfo      func(childComplexity int) int
 	}
 
+	RbacAssessmentReport struct {
+		Name          func(childComplexity int) int
+		Namespace     func(childComplexity int) int
+		SummaryReport func(childComplexity int) int
+		TotalSummary  func(childComplexity int) int
+	}
+
 	Release struct {
 		Created      func(childComplexity int) int
 		Feature      func(childComplexity int) int
@@ -335,6 +388,13 @@ type ComplexityRoot struct {
 		Revision     func(childComplexity int) int
 		Status       func(childComplexity int) int
 		Version      func(childComplexity int) int
+	}
+
+	ReportSummary struct {
+		Critical func(childComplexity int) int
+		High     func(childComplexity int) int
+		Low      func(childComplexity int) int
+		Medium   func(childComplexity int) int
 	}
 
 	Rollout struct {
@@ -434,6 +494,12 @@ type EnvironmentResolver interface {
 
 	ClusterUpgradeStatus(ctx context.Context, obj *model.Environment) (*model.ClusterUpgradeStatus, error)
 	Versions(ctx context.Context, obj *model.Environment) (*model.EnvironmentVersions, error)
+	ClusterAuditReports(ctx context.Context, obj *model.Environment) ([]*model.ClusterAuditReport, error)
+	ClusterAuditTotalSummary(ctx context.Context, obj *model.Environment) (*model.ReportSummary, error)
+	ClusterComplianceReports(ctx context.Context, obj *model.Environment) ([]*model.ClusterComplianceReport, error)
+	ClusterComplianceTotalSummary(ctx context.Context, obj *model.Environment) (*model.ClusterComplianceTotalSummaryReport, error)
+	RbacAssessmentReports(ctx context.Context, obj *model.Environment) ([]*model.RbacAssessmentReport, error)
+	RbacTotalSummary(ctx context.Context, obj *model.Environment) (*model.ReportSummary, error)
 }
 type FeatureResolver interface {
 	ActiveVersion(ctx context.Context, obj *model.Feature) (string, error)
@@ -569,6 +635,181 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.AuditLog.ObjectType(childComplexity), true
+
+	case "CheckResults.category":
+		if e.complexity.CheckResults.Category == nil {
+			break
+		}
+
+		return e.complexity.CheckResults.Category(childComplexity), true
+
+	case "CheckResults.description":
+		if e.complexity.CheckResults.Description == nil {
+			break
+		}
+
+		return e.complexity.CheckResults.Description(childComplexity), true
+
+	case "CheckResults.messages":
+		if e.complexity.CheckResults.Messages == nil {
+			break
+		}
+
+		return e.complexity.CheckResults.Messages(childComplexity), true
+
+	case "CheckResults.remediation":
+		if e.complexity.CheckResults.Remediation == nil {
+			break
+		}
+
+		return e.complexity.CheckResults.Remediation(childComplexity), true
+
+	case "CheckResults.scopeType":
+		if e.complexity.CheckResults.ScopeType == nil {
+			break
+		}
+
+		return e.complexity.CheckResults.ScopeType(childComplexity), true
+
+	case "CheckResults.scopeValue":
+		if e.complexity.CheckResults.ScopeValue == nil {
+			break
+		}
+
+		return e.complexity.CheckResults.ScopeValue(childComplexity), true
+
+	case "CheckResults.severity":
+		if e.complexity.CheckResults.Severity == nil {
+			break
+		}
+
+		return e.complexity.CheckResults.Severity(childComplexity), true
+
+	case "CheckResults.success":
+		if e.complexity.CheckResults.Success == nil {
+			break
+		}
+
+		return e.complexity.CheckResults.Success(childComplexity), true
+
+	case "CheckResults.title":
+		if e.complexity.CheckResults.Title == nil {
+			break
+		}
+
+		return e.complexity.CheckResults.Title(childComplexity), true
+
+	case "CheckResults.totalFail":
+		if e.complexity.CheckResults.TotalFail == nil {
+			break
+		}
+
+		return e.complexity.CheckResults.TotalFail(childComplexity), true
+
+	case "ClusterAuditReport.checks":
+		if e.complexity.ClusterAuditReport.Checks == nil {
+			break
+		}
+
+		return e.complexity.ClusterAuditReport.Checks(childComplexity), true
+
+	case "ClusterAuditReport.name":
+		if e.complexity.ClusterAuditReport.Name == nil {
+			break
+		}
+
+		return e.complexity.ClusterAuditReport.Name(childComplexity), true
+
+	case "ClusterAuditReport.namespace":
+		if e.complexity.ClusterAuditReport.Namespace == nil {
+			break
+		}
+
+		return e.complexity.ClusterAuditReport.Namespace(childComplexity), true
+
+	case "ClusterAuditReport.summary":
+		if e.complexity.ClusterAuditReport.Summary == nil {
+			break
+		}
+
+		return e.complexity.ClusterAuditReport.Summary(childComplexity), true
+
+	case "ClusterAuditReport.updated":
+		if e.complexity.ClusterAuditReport.Updated == nil {
+			break
+		}
+
+		return e.complexity.ClusterAuditReport.Updated(childComplexity), true
+
+	case "ClusterComplianceReport.failCount":
+		if e.complexity.ClusterComplianceReport.FailCount == nil {
+			break
+		}
+
+		return e.complexity.ClusterComplianceReport.FailCount(childComplexity), true
+
+	case "ClusterComplianceReport.name":
+		if e.complexity.ClusterComplianceReport.Name == nil {
+			break
+		}
+
+		return e.complexity.ClusterComplianceReport.Name(childComplexity), true
+
+	case "ClusterComplianceReport.namespace":
+		if e.complexity.ClusterComplianceReport.Namespace == nil {
+			break
+		}
+
+		return e.complexity.ClusterComplianceReport.Namespace(childComplexity), true
+
+	case "ClusterComplianceReport.passCount":
+		if e.complexity.ClusterComplianceReport.PassCount == nil {
+			break
+		}
+
+		return e.complexity.ClusterComplianceReport.PassCount(childComplexity), true
+
+	case "ClusterComplianceReport.summary":
+		if e.complexity.ClusterComplianceReport.Summary == nil {
+			break
+		}
+
+		return e.complexity.ClusterComplianceReport.Summary(childComplexity), true
+
+	case "ClusterComplianceReport.updated":
+		if e.complexity.ClusterComplianceReport.Updated == nil {
+			break
+		}
+
+		return e.complexity.ClusterComplianceReport.Updated(childComplexity), true
+
+	case "ClusterComplianceReportSummaryReport.clusterComplianceCheckResults":
+		if e.complexity.ClusterComplianceReportSummaryReport.ClusterComplianceCheckResults == nil {
+			break
+		}
+
+		return e.complexity.ClusterComplianceReportSummaryReport.ClusterComplianceCheckResults(childComplexity), true
+
+	case "ClusterComplianceReportSummaryReport.title":
+		if e.complexity.ClusterComplianceReportSummaryReport.Title == nil {
+			break
+		}
+
+		return e.complexity.ClusterComplianceReportSummaryReport.Title(childComplexity), true
+
+	case "ClusterComplianceTotalSummaryReport.failCount":
+		if e.complexity.ClusterComplianceTotalSummaryReport.FailCount == nil {
+			break
+		}
+
+		return e.complexity.ClusterComplianceTotalSummaryReport.FailCount(childComplexity), true
+
+	case "ClusterComplianceTotalSummaryReport.passCount":
+		if e.complexity.ClusterComplianceTotalSummaryReport.PassCount == nil {
+			break
+		}
+
+		return e.complexity.ClusterComplianceTotalSummaryReport.PassCount(childComplexity), true
 
 	case "ClusterUpgradeStatus.environment":
 		if e.complexity.ClusterUpgradeStatus.Environment == nil {
@@ -792,6 +1033,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Environment.AuditLog(childComplexity, args["featureName"].(*string)), true
 
+	case "Environment.clusterAuditReports":
+		if e.complexity.Environment.ClusterAuditReports == nil {
+			break
+		}
+
+		return e.complexity.Environment.ClusterAuditReports(childComplexity), true
+
+	case "Environment.clusterAuditTotalSummary":
+		if e.complexity.Environment.ClusterAuditTotalSummary == nil {
+			break
+		}
+
+		return e.complexity.Environment.ClusterAuditTotalSummary(childComplexity), true
+
+	case "Environment.clusterComplianceReports":
+		if e.complexity.Environment.ClusterComplianceReports == nil {
+			break
+		}
+
+		return e.complexity.Environment.ClusterComplianceReports(childComplexity), true
+
+	case "Environment.clusterComplianceTotalSummary":
+		if e.complexity.Environment.ClusterComplianceTotalSummary == nil {
+			break
+		}
+
+		return e.complexity.Environment.ClusterComplianceTotalSummary(childComplexity), true
+
 	case "Environment.clusterUpgradeStatus":
 		if e.complexity.Environment.ClusterUpgradeStatus == nil {
 			break
@@ -887,6 +1156,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Environment.Nodes(childComplexity), true
+
+	case "Environment.rbacAssessmentReports":
+		if e.complexity.Environment.RbacAssessmentReports == nil {
+			break
+		}
+
+		return e.complexity.Environment.RbacAssessmentReports(childComplexity), true
+
+	case "Environment.rbacTotalSummary":
+		if e.complexity.Environment.RbacTotalSummary == nil {
+			break
+		}
+
+		return e.complexity.Environment.RbacTotalSummary(childComplexity), true
 
 	case "Environment.reconcile":
 		if e.complexity.Environment.Reconcile == nil {
@@ -1817,6 +2100,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.UserInfo(childComplexity), true
 
+	case "RbacAssessmentReport.name":
+		if e.complexity.RbacAssessmentReport.Name == nil {
+			break
+		}
+
+		return e.complexity.RbacAssessmentReport.Name(childComplexity), true
+
+	case "RbacAssessmentReport.namespace":
+		if e.complexity.RbacAssessmentReport.Namespace == nil {
+			break
+		}
+
+		return e.complexity.RbacAssessmentReport.Namespace(childComplexity), true
+
+	case "RbacAssessmentReport.summaryReport":
+		if e.complexity.RbacAssessmentReport.SummaryReport == nil {
+			break
+		}
+
+		return e.complexity.RbacAssessmentReport.SummaryReport(childComplexity), true
+
+	case "RbacAssessmentReport.totalSummary":
+		if e.complexity.RbacAssessmentReport.TotalSummary == nil {
+			break
+		}
+
+		return e.complexity.RbacAssessmentReport.TotalSummary(childComplexity), true
+
 	case "Release.created":
 		if e.complexity.Release.Created == nil {
 			break
@@ -1872,6 +2183,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Release.Version(childComplexity), true
+
+	case "ReportSummary.critical":
+		if e.complexity.ReportSummary.Critical == nil {
+			break
+		}
+
+		return e.complexity.ReportSummary.Critical(childComplexity), true
+
+	case "ReportSummary.high":
+		if e.complexity.ReportSummary.High == nil {
+			break
+		}
+
+		return e.complexity.ReportSummary.High(childComplexity), true
+
+	case "ReportSummary.low":
+		if e.complexity.ReportSummary.Low == nil {
+			break
+		}
+
+		return e.complexity.ReportSummary.Low(childComplexity), true
+
+	case "ReportSummary.medium":
+		if e.complexity.ReportSummary.Medium == nil {
+			break
+		}
+
+		return e.complexity.ReportSummary.Medium(childComplexity), true
 
 	case "Rollout.completed":
 		if e.complexity.Rollout.Completed == nil {
@@ -2411,150 +2750,210 @@ extend type Query {
 ) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
 `, BuiltIn: false},
 	{Name: "../../../schema/environment.graphqls", Input: `enum EnvironmentKind {
-  TENANT
-  MANAGEMENT
-  ONPREM
-  LEGACY
+    TENANT
+    MANAGEMENT
+    ONPREM
+    LEGACY
 }
 
 enum UpgradeStatus {
-  CREATED
-  MASTER_UPGRADE
-  NODE_UPGRADE
-  FAILED
-  DONE
+    CREATED
+    MASTER_UPGRADE
+    NODE_UPGRADE
+    FAILED
+    DONE
 }
 
 type ClusterUpgradeStatus {
-  id: ID!
-  upgradeStatus: UpgradeStatus!
-  version: String!
-  lastModified: Time!
-  startTime: Time!
-  operations: [EnvironmentOperation!]!
-  environment: Environment!
+    id: ID!
+    upgradeStatus: UpgradeStatus!
+    version: String!
+    lastModified: Time!
+    startTime: Time!
+    operations: [EnvironmentOperation!]!
+    environment: Environment!
 }
 
 type Health {
-  reportedAt: Time!
+    reportedAt: Time!
 }
 
 type Release {
-  name: String!
-  feature: Feature
-  version: String!
-  status: String!
-  revision: Int!
-  lastDeployed: Time!
-  created: Time!
-  lastModified: Time!
+    name: String!
+    feature: Feature
+    version: String!
+    status: String!
+    revision: Int!
+    lastDeployed: Time!
+    created: Time!
+    lastModified: Time!
 }
 
 type Environment {
-  id: ID!
-  name: String!
-  description: String
-  featureStates: [FeatureState!]!
-  created: Time!
-  lastModified: Time!
-  kind: EnvironmentKind!
-  gcpProjectID: String
-  health: Health!
-  releases: [Release!]!
-  nodes: [KubernetesNode!]!
-  values: [EnvironmentValue!]!
-  tenant: Tenant!
-  warnings: [Warning!]!
-  auditLog(featureName: String): [AuditLog!]!
-  features: [Feature!]!
-  feature(name: String!): Feature!
-  reconcile: Boolean!
-  clusterUpgradeStatus: ClusterUpgradeStatus
-  versions: EnvironmentVersions
+    id: ID!
+    name: String!
+    description: String
+    featureStates: [FeatureState!]!
+    created: Time!
+    lastModified: Time!
+    kind: EnvironmentKind!
+    gcpProjectID: String
+    health: Health!
+    releases: [Release!]!
+    nodes: [KubernetesNode!]!
+    values: [EnvironmentValue!]!
+    tenant: Tenant!
+    warnings: [Warning!]!
+    auditLog(featureName: String): [AuditLog!]!
+    features: [Feature!]!
+    feature(name: String!): Feature!
+    reconcile: Boolean!
+    clusterUpgradeStatus: ClusterUpgradeStatus
+    versions: EnvironmentVersions
+    clusterAuditReports: [ClusterAuditReport!]!
+    clusterAuditTotalSummary: ReportSummary!
+    clusterComplianceReports: [ClusterComplianceReport!]!
+    clusterComplianceTotalSummary: ClusterComplianceTotalSummaryReport!
+    rbacAssessmentReports: [RbacAssessmentReport!]!
+    rbacTotalSummary: ReportSummary!
 }
 
 type EnvironmentOperation {
-  id: ID!
-  name: String!
-  status: String!
-  type: String!
-  target: String!
-  detail: String!
-  startTime: Time!
-  lastModified: Time!
-  nodesTotal: Int!
-  nodesFailed: Int!
-  nodesCompleted: Int!
-  nodesDone: Int!
-  nodePdbDelaySeconds: Int!
+    id: ID!
+    name: String!
+    status: String!
+    type: String!
+    target: String!
+    detail: String!
+    startTime: Time!
+    lastModified: Time!
+    nodesTotal: Int!
+    nodesFailed: Int!
+    nodesCompleted: Int!
+    nodesDone: Int!
+    nodePdbDelaySeconds: Int!
 }
 
 type EnvironmentVersions {
-  apiserver: String!
-  availableVersions: [String!]!
-  channel: String!
-  nodePools: [NodePool!]!
+    apiserver: String!
+    availableVersions: [String!]!
+    channel: String!
+    nodePools: [NodePool!]!
 }
 
 type NodePool {
-  name: String!
-  version: String!
+    name: String!
+    version: String!
 }
 
 type EnvironmentValue {
-  key: String!
-  value: RawMessage!
-  knownUses: Int!
+    key: String!
+    value: RawMessage!
+    knownUses: Int!
+}
+
+type ClusterAuditReport {
+    name: String!
+    updated: Time!
+    namespace: String!
+    summary: ReportSummary!
+    checks: [CheckResults!]!
+}
+
+type ReportSummary {
+    critical: Int!
+    high: Int!
+    medium: Int!
+    low: Int!
+}
+
+type ClusterComplianceReport {
+    name: String!
+    updated: Time!
+    namespace: String!
+    failCount: Int!
+    passCount: Int!
+    summary: ClusterComplianceReportSummaryReport!
+}
+
+type ClusterComplianceTotalSummaryReport {
+    failCount: Int!
+    passCount: Int!
+}
+
+type ClusterComplianceReportSummaryReport {
+    title: String!
+    clusterComplianceCheckResults: [CheckResults!]!
+}
+
+type RbacAssessmentReport {
+    name: String!
+    namespace: String!
+    summaryReport: [CheckResults!]!
+    totalSummary: ReportSummary!
+}
+
+type CheckResults {
+    title: String!
+    description: String!
+    messages: [String!]!
+    severity: String!
+    category: String!
+    remediation: String!
+    success: Boolean!
+    scopeType: String!
+    scopeValue: String!
+    totalFail: Int!
 }
 
 """
 EnvironmentCreate contains metadata for creating an environment
 """
 input EnvironmentCreate {
-  name: String!
-  description: String
-  tenantID: ID!
-  kind: EnvironmentKind!
+    name: String!
+    description: String
+    tenantID: ID!
+    kind: EnvironmentKind!
 }
 
 """
 UpdateEnvironment contains metadata for updating an environment
 """
 input EnvironmentUpdate {
-  "description of the environment"
-  description: String
+    "description of the environment"
+    description: String
 }
 
 """
 EnvironmentUpgrade contains metadata for upgrading an environment
 """
 input EnvironmentUpgrade {
-  "k8s version to upgrade to"
-  version: String!
-  envID: ID!
+    "k8s version to upgrade to"
+    version: String!
+    envID: ID!
 }
 
 extend type Mutation {
-  environmentCreate(environment: EnvironmentCreate!): Environment!
-  """
-  updateEnvironment updates an existing environment
-  """
-  environmentUpdate(
-    "id of requested environment."
-    id: ID!
-    "input contains information about the updated environment."
-    input: EnvironmentUpdate!
-  ): Environment!
+    environmentCreate(environment: EnvironmentCreate!): Environment!
+    """
+    updateEnvironment updates an existing environment
+    """
+    environmentUpdate(
+        "id of requested environment."
+        id: ID!
+        "input contains information about the updated environment."
+        input: EnvironmentUpdate!
+    ): Environment!
 
-  """
-  Change the reconcile flag for an environment
-  """
-  environmentSetReconcile(id: ID!, reconcile: Boolean!): Environment!
+    """
+    Change the reconcile flag for an environment
+    """
+    environmentSetReconcile(id: ID!, reconcile: Boolean!): Environment!
 
-  """
-  Upgrade environment k8s cluster
-  """
-  environmentUpgrade(upgrade: EnvironmentUpgrade): Environment!
+    """
+    Upgrade environment k8s cluster
+    """
+    environmentUpgrade(upgrade: EnvironmentUpgrade): Environment!
 }
 `, BuiltIn: false},
 	{Name: "../../../schema/feature.graphqls", Input: `type Computed {
@@ -3674,6 +4073,1166 @@ func (ec *executionContext) fieldContext_AuditLog_createdAt(ctx context.Context,
 	return fc, nil
 }
 
+func (ec *executionContext) _CheckResults_title(ctx context.Context, field graphql.CollectedField, obj *model.CheckResults) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CheckResults_title(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Title, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CheckResults_title(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CheckResults",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CheckResults_description(ctx context.Context, field graphql.CollectedField, obj *model.CheckResults) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CheckResults_description(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Description, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CheckResults_description(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CheckResults",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CheckResults_messages(ctx context.Context, field graphql.CollectedField, obj *model.CheckResults) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CheckResults_messages(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Messages, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalNString2ᚕstringᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CheckResults_messages(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CheckResults",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CheckResults_severity(ctx context.Context, field graphql.CollectedField, obj *model.CheckResults) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CheckResults_severity(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Severity, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CheckResults_severity(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CheckResults",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CheckResults_category(ctx context.Context, field graphql.CollectedField, obj *model.CheckResults) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CheckResults_category(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Category, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CheckResults_category(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CheckResults",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CheckResults_remediation(ctx context.Context, field graphql.CollectedField, obj *model.CheckResults) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CheckResults_remediation(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Remediation, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CheckResults_remediation(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CheckResults",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CheckResults_success(ctx context.Context, field graphql.CollectedField, obj *model.CheckResults) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CheckResults_success(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Success, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CheckResults_success(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CheckResults",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CheckResults_scopeType(ctx context.Context, field graphql.CollectedField, obj *model.CheckResults) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CheckResults_scopeType(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ScopeType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CheckResults_scopeType(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CheckResults",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CheckResults_scopeValue(ctx context.Context, field graphql.CollectedField, obj *model.CheckResults) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CheckResults_scopeValue(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ScopeValue, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CheckResults_scopeValue(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CheckResults",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CheckResults_totalFail(ctx context.Context, field graphql.CollectedField, obj *model.CheckResults) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CheckResults_totalFail(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalFail, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CheckResults_totalFail(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CheckResults",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ClusterAuditReport_name(ctx context.Context, field graphql.CollectedField, obj *model.ClusterAuditReport) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ClusterAuditReport_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ClusterAuditReport_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ClusterAuditReport",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ClusterAuditReport_updated(ctx context.Context, field graphql.CollectedField, obj *model.ClusterAuditReport) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ClusterAuditReport_updated(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Updated, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ClusterAuditReport_updated(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ClusterAuditReport",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ClusterAuditReport_namespace(ctx context.Context, field graphql.CollectedField, obj *model.ClusterAuditReport) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ClusterAuditReport_namespace(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Namespace, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ClusterAuditReport_namespace(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ClusterAuditReport",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ClusterAuditReport_summary(ctx context.Context, field graphql.CollectedField, obj *model.ClusterAuditReport) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ClusterAuditReport_summary(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Summary, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.ReportSummary)
+	fc.Result = res
+	return ec.marshalNReportSummary2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐReportSummary(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ClusterAuditReport_summary(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ClusterAuditReport",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "critical":
+				return ec.fieldContext_ReportSummary_critical(ctx, field)
+			case "high":
+				return ec.fieldContext_ReportSummary_high(ctx, field)
+			case "medium":
+				return ec.fieldContext_ReportSummary_medium(ctx, field)
+			case "low":
+				return ec.fieldContext_ReportSummary_low(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReportSummary", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ClusterAuditReport_checks(ctx context.Context, field graphql.CollectedField, obj *model.ClusterAuditReport) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ClusterAuditReport_checks(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Checks, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.CheckResults)
+	fc.Result = res
+	return ec.marshalNCheckResults2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐCheckResultsᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ClusterAuditReport_checks(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ClusterAuditReport",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "title":
+				return ec.fieldContext_CheckResults_title(ctx, field)
+			case "description":
+				return ec.fieldContext_CheckResults_description(ctx, field)
+			case "messages":
+				return ec.fieldContext_CheckResults_messages(ctx, field)
+			case "severity":
+				return ec.fieldContext_CheckResults_severity(ctx, field)
+			case "category":
+				return ec.fieldContext_CheckResults_category(ctx, field)
+			case "remediation":
+				return ec.fieldContext_CheckResults_remediation(ctx, field)
+			case "success":
+				return ec.fieldContext_CheckResults_success(ctx, field)
+			case "scopeType":
+				return ec.fieldContext_CheckResults_scopeType(ctx, field)
+			case "scopeValue":
+				return ec.fieldContext_CheckResults_scopeValue(ctx, field)
+			case "totalFail":
+				return ec.fieldContext_CheckResults_totalFail(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type CheckResults", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ClusterComplianceReport_name(ctx context.Context, field graphql.CollectedField, obj *model.ClusterComplianceReport) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ClusterComplianceReport_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ClusterComplianceReport_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ClusterComplianceReport",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ClusterComplianceReport_updated(ctx context.Context, field graphql.CollectedField, obj *model.ClusterComplianceReport) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ClusterComplianceReport_updated(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Updated, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(time.Time)
+	fc.Result = res
+	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ClusterComplianceReport_updated(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ClusterComplianceReport",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ClusterComplianceReport_namespace(ctx context.Context, field graphql.CollectedField, obj *model.ClusterComplianceReport) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ClusterComplianceReport_namespace(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Namespace, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ClusterComplianceReport_namespace(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ClusterComplianceReport",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ClusterComplianceReport_failCount(ctx context.Context, field graphql.CollectedField, obj *model.ClusterComplianceReport) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ClusterComplianceReport_failCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FailCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ClusterComplianceReport_failCount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ClusterComplianceReport",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ClusterComplianceReport_passCount(ctx context.Context, field graphql.CollectedField, obj *model.ClusterComplianceReport) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ClusterComplianceReport_passCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PassCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ClusterComplianceReport_passCount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ClusterComplianceReport",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ClusterComplianceReport_summary(ctx context.Context, field graphql.CollectedField, obj *model.ClusterComplianceReport) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ClusterComplianceReport_summary(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Summary, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.ClusterComplianceReportSummaryReport)
+	fc.Result = res
+	return ec.marshalNClusterComplianceReportSummaryReport2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐClusterComplianceReportSummaryReport(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ClusterComplianceReport_summary(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ClusterComplianceReport",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "title":
+				return ec.fieldContext_ClusterComplianceReportSummaryReport_title(ctx, field)
+			case "clusterComplianceCheckResults":
+				return ec.fieldContext_ClusterComplianceReportSummaryReport_clusterComplianceCheckResults(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ClusterComplianceReportSummaryReport", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ClusterComplianceReportSummaryReport_title(ctx context.Context, field graphql.CollectedField, obj *model.ClusterComplianceReportSummaryReport) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ClusterComplianceReportSummaryReport_title(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Title, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ClusterComplianceReportSummaryReport_title(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ClusterComplianceReportSummaryReport",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ClusterComplianceReportSummaryReport_clusterComplianceCheckResults(ctx context.Context, field graphql.CollectedField, obj *model.ClusterComplianceReportSummaryReport) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ClusterComplianceReportSummaryReport_clusterComplianceCheckResults(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ClusterComplianceCheckResults, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.CheckResults)
+	fc.Result = res
+	return ec.marshalNCheckResults2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐCheckResultsᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ClusterComplianceReportSummaryReport_clusterComplianceCheckResults(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ClusterComplianceReportSummaryReport",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "title":
+				return ec.fieldContext_CheckResults_title(ctx, field)
+			case "description":
+				return ec.fieldContext_CheckResults_description(ctx, field)
+			case "messages":
+				return ec.fieldContext_CheckResults_messages(ctx, field)
+			case "severity":
+				return ec.fieldContext_CheckResults_severity(ctx, field)
+			case "category":
+				return ec.fieldContext_CheckResults_category(ctx, field)
+			case "remediation":
+				return ec.fieldContext_CheckResults_remediation(ctx, field)
+			case "success":
+				return ec.fieldContext_CheckResults_success(ctx, field)
+			case "scopeType":
+				return ec.fieldContext_CheckResults_scopeType(ctx, field)
+			case "scopeValue":
+				return ec.fieldContext_CheckResults_scopeValue(ctx, field)
+			case "totalFail":
+				return ec.fieldContext_CheckResults_totalFail(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type CheckResults", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ClusterComplianceTotalSummaryReport_failCount(ctx context.Context, field graphql.CollectedField, obj *model.ClusterComplianceTotalSummaryReport) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ClusterComplianceTotalSummaryReport_failCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FailCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ClusterComplianceTotalSummaryReport_failCount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ClusterComplianceTotalSummaryReport",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ClusterComplianceTotalSummaryReport_passCount(ctx context.Context, field graphql.CollectedField, obj *model.ClusterComplianceTotalSummaryReport) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ClusterComplianceTotalSummaryReport_passCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PassCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ClusterComplianceTotalSummaryReport_passCount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ClusterComplianceTotalSummaryReport",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _ClusterUpgradeStatus_id(ctx context.Context, field graphql.CollectedField, obj *model.ClusterUpgradeStatus) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_ClusterUpgradeStatus_id(ctx, field)
 	if err != nil {
@@ -4045,6 +5604,18 @@ func (ec *executionContext) fieldContext_ClusterUpgradeStatus_environment(ctx co
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
+			case "clusterAuditReports":
+				return ec.fieldContext_Environment_clusterAuditReports(ctx, field)
+			case "clusterAuditTotalSummary":
+				return ec.fieldContext_Environment_clusterAuditTotalSummary(ctx, field)
+			case "clusterComplianceReports":
+				return ec.fieldContext_Environment_clusterComplianceReports(ctx, field)
+			case "clusterComplianceTotalSummary":
+				return ec.fieldContext_Environment_clusterComplianceTotalSummary(ctx, field)
+			case "rbacAssessmentReports":
+				return ec.fieldContext_Environment_rbacAssessmentReports(ctx, field)
+			case "rbacTotalSummary":
+				return ec.fieldContext_Environment_rbacTotalSummary(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -4362,6 +5933,18 @@ func (ec *executionContext) fieldContext_ConfigOverride_environment(ctx context.
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
+			case "clusterAuditReports":
+				return ec.fieldContext_Environment_clusterAuditReports(ctx, field)
+			case "clusterAuditTotalSummary":
+				return ec.fieldContext_Environment_clusterAuditTotalSummary(ctx, field)
+			case "clusterComplianceReports":
+				return ec.fieldContext_Environment_clusterComplianceReports(ctx, field)
+			case "clusterComplianceTotalSummary":
+				return ec.fieldContext_Environment_clusterComplianceTotalSummary(ctx, field)
+			case "rbacAssessmentReports":
+				return ec.fieldContext_Environment_rbacAssessmentReports(ctx, field)
+			case "rbacTotalSummary":
+				return ec.fieldContext_Environment_rbacTotalSummary(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -5161,6 +6744,18 @@ func (ec *executionContext) fieldContext_EnvSeries_environment(ctx context.Conte
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
+			case "clusterAuditReports":
+				return ec.fieldContext_Environment_clusterAuditReports(ctx, field)
+			case "clusterAuditTotalSummary":
+				return ec.fieldContext_Environment_clusterAuditTotalSummary(ctx, field)
+			case "clusterComplianceReports":
+				return ec.fieldContext_Environment_clusterComplianceReports(ctx, field)
+			case "clusterComplianceTotalSummary":
+				return ec.fieldContext_Environment_clusterComplianceTotalSummary(ctx, field)
+			case "rbacAssessmentReports":
+				return ec.fieldContext_Environment_rbacAssessmentReports(ctx, field)
+			case "rbacTotalSummary":
+				return ec.fieldContext_Environment_rbacTotalSummary(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -6289,6 +7884,332 @@ func (ec *executionContext) fieldContext_Environment_versions(ctx context.Contex
 				return ec.fieldContext_EnvironmentVersions_nodePools(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type EnvironmentVersions", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Environment_clusterAuditReports(ctx context.Context, field graphql.CollectedField, obj *model.Environment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Environment_clusterAuditReports(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Environment().ClusterAuditReports(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.ClusterAuditReport)
+	fc.Result = res
+	return ec.marshalNClusterAuditReport2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐClusterAuditReportᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Environment_clusterAuditReports(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Environment",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_ClusterAuditReport_name(ctx, field)
+			case "updated":
+				return ec.fieldContext_ClusterAuditReport_updated(ctx, field)
+			case "namespace":
+				return ec.fieldContext_ClusterAuditReport_namespace(ctx, field)
+			case "summary":
+				return ec.fieldContext_ClusterAuditReport_summary(ctx, field)
+			case "checks":
+				return ec.fieldContext_ClusterAuditReport_checks(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ClusterAuditReport", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Environment_clusterAuditTotalSummary(ctx context.Context, field graphql.CollectedField, obj *model.Environment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Environment_clusterAuditTotalSummary(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Environment().ClusterAuditTotalSummary(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.ReportSummary)
+	fc.Result = res
+	return ec.marshalNReportSummary2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐReportSummary(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Environment_clusterAuditTotalSummary(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Environment",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "critical":
+				return ec.fieldContext_ReportSummary_critical(ctx, field)
+			case "high":
+				return ec.fieldContext_ReportSummary_high(ctx, field)
+			case "medium":
+				return ec.fieldContext_ReportSummary_medium(ctx, field)
+			case "low":
+				return ec.fieldContext_ReportSummary_low(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReportSummary", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Environment_clusterComplianceReports(ctx context.Context, field graphql.CollectedField, obj *model.Environment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Environment_clusterComplianceReports(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Environment().ClusterComplianceReports(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.ClusterComplianceReport)
+	fc.Result = res
+	return ec.marshalNClusterComplianceReport2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐClusterComplianceReportᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Environment_clusterComplianceReports(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Environment",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_ClusterComplianceReport_name(ctx, field)
+			case "updated":
+				return ec.fieldContext_ClusterComplianceReport_updated(ctx, field)
+			case "namespace":
+				return ec.fieldContext_ClusterComplianceReport_namespace(ctx, field)
+			case "failCount":
+				return ec.fieldContext_ClusterComplianceReport_failCount(ctx, field)
+			case "passCount":
+				return ec.fieldContext_ClusterComplianceReport_passCount(ctx, field)
+			case "summary":
+				return ec.fieldContext_ClusterComplianceReport_summary(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ClusterComplianceReport", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Environment_clusterComplianceTotalSummary(ctx context.Context, field graphql.CollectedField, obj *model.Environment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Environment_clusterComplianceTotalSummary(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Environment().ClusterComplianceTotalSummary(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.ClusterComplianceTotalSummaryReport)
+	fc.Result = res
+	return ec.marshalNClusterComplianceTotalSummaryReport2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐClusterComplianceTotalSummaryReport(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Environment_clusterComplianceTotalSummary(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Environment",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "failCount":
+				return ec.fieldContext_ClusterComplianceTotalSummaryReport_failCount(ctx, field)
+			case "passCount":
+				return ec.fieldContext_ClusterComplianceTotalSummaryReport_passCount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ClusterComplianceTotalSummaryReport", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Environment_rbacAssessmentReports(ctx context.Context, field graphql.CollectedField, obj *model.Environment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Environment_rbacAssessmentReports(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Environment().RbacAssessmentReports(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.RbacAssessmentReport)
+	fc.Result = res
+	return ec.marshalNRbacAssessmentReport2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐRbacAssessmentReportᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Environment_rbacAssessmentReports(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Environment",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_RbacAssessmentReport_name(ctx, field)
+			case "namespace":
+				return ec.fieldContext_RbacAssessmentReport_namespace(ctx, field)
+			case "summaryReport":
+				return ec.fieldContext_RbacAssessmentReport_summaryReport(ctx, field)
+			case "totalSummary":
+				return ec.fieldContext_RbacAssessmentReport_totalSummary(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type RbacAssessmentReport", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Environment_rbacTotalSummary(ctx context.Context, field graphql.CollectedField, obj *model.Environment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Environment_rbacTotalSummary(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Environment().RbacTotalSummary(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.ReportSummary)
+	fc.Result = res
+	return ec.marshalNReportSummary2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐReportSummary(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Environment_rbacTotalSummary(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Environment",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "critical":
+				return ec.fieldContext_ReportSummary_critical(ctx, field)
+			case "high":
+				return ec.fieldContext_ReportSummary_high(ctx, field)
+			case "medium":
+				return ec.fieldContext_ReportSummary_medium(ctx, field)
+			case "low":
+				return ec.fieldContext_ReportSummary_low(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReportSummary", field.Name)
 		},
 	}
 	return fc, nil
@@ -8799,6 +10720,18 @@ func (ec *executionContext) fieldContext_FeatureWarning_environment(ctx context.
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
+			case "clusterAuditReports":
+				return ec.fieldContext_Environment_clusterAuditReports(ctx, field)
+			case "clusterAuditTotalSummary":
+				return ec.fieldContext_Environment_clusterAuditTotalSummary(ctx, field)
+			case "clusterComplianceReports":
+				return ec.fieldContext_Environment_clusterComplianceReports(ctx, field)
+			case "clusterComplianceTotalSummary":
+				return ec.fieldContext_Environment_clusterComplianceTotalSummary(ctx, field)
+			case "rbacAssessmentReports":
+				return ec.fieldContext_Environment_rbacAssessmentReports(ctx, field)
+			case "rbacTotalSummary":
+				return ec.fieldContext_Environment_rbacTotalSummary(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -10413,6 +12346,18 @@ func (ec *executionContext) fieldContext_Mutation_environmentCreate(ctx context.
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
+			case "clusterAuditReports":
+				return ec.fieldContext_Environment_clusterAuditReports(ctx, field)
+			case "clusterAuditTotalSummary":
+				return ec.fieldContext_Environment_clusterAuditTotalSummary(ctx, field)
+			case "clusterComplianceReports":
+				return ec.fieldContext_Environment_clusterComplianceReports(ctx, field)
+			case "clusterComplianceTotalSummary":
+				return ec.fieldContext_Environment_clusterComplianceTotalSummary(ctx, field)
+			case "rbacAssessmentReports":
+				return ec.fieldContext_Environment_rbacAssessmentReports(ctx, field)
+			case "rbacTotalSummary":
+				return ec.fieldContext_Environment_rbacTotalSummary(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -10510,6 +12455,18 @@ func (ec *executionContext) fieldContext_Mutation_environmentUpdate(ctx context.
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
+			case "clusterAuditReports":
+				return ec.fieldContext_Environment_clusterAuditReports(ctx, field)
+			case "clusterAuditTotalSummary":
+				return ec.fieldContext_Environment_clusterAuditTotalSummary(ctx, field)
+			case "clusterComplianceReports":
+				return ec.fieldContext_Environment_clusterComplianceReports(ctx, field)
+			case "clusterComplianceTotalSummary":
+				return ec.fieldContext_Environment_clusterComplianceTotalSummary(ctx, field)
+			case "rbacAssessmentReports":
+				return ec.fieldContext_Environment_rbacAssessmentReports(ctx, field)
+			case "rbacTotalSummary":
+				return ec.fieldContext_Environment_rbacTotalSummary(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -10607,6 +12564,18 @@ func (ec *executionContext) fieldContext_Mutation_environmentSetReconcile(ctx co
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
+			case "clusterAuditReports":
+				return ec.fieldContext_Environment_clusterAuditReports(ctx, field)
+			case "clusterAuditTotalSummary":
+				return ec.fieldContext_Environment_clusterAuditTotalSummary(ctx, field)
+			case "clusterComplianceReports":
+				return ec.fieldContext_Environment_clusterComplianceReports(ctx, field)
+			case "clusterComplianceTotalSummary":
+				return ec.fieldContext_Environment_clusterComplianceTotalSummary(ctx, field)
+			case "rbacAssessmentReports":
+				return ec.fieldContext_Environment_rbacAssessmentReports(ctx, field)
+			case "rbacTotalSummary":
+				return ec.fieldContext_Environment_rbacTotalSummary(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -10704,6 +12673,18 @@ func (ec *executionContext) fieldContext_Mutation_environmentUpgrade(ctx context
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
+			case "clusterAuditReports":
+				return ec.fieldContext_Environment_clusterAuditReports(ctx, field)
+			case "clusterAuditTotalSummary":
+				return ec.fieldContext_Environment_clusterAuditTotalSummary(ctx, field)
+			case "clusterComplianceReports":
+				return ec.fieldContext_Environment_clusterComplianceReports(ctx, field)
+			case "clusterComplianceTotalSummary":
+				return ec.fieldContext_Environment_clusterComplianceTotalSummary(ctx, field)
+			case "rbacAssessmentReports":
+				return ec.fieldContext_Environment_rbacAssessmentReports(ctx, field)
+			case "rbacTotalSummary":
+				return ec.fieldContext_Environment_rbacTotalSummary(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -11103,6 +13084,18 @@ func (ec *executionContext) fieldContext_NaisdWarning_environment(ctx context.Co
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
+			case "clusterAuditReports":
+				return ec.fieldContext_Environment_clusterAuditReports(ctx, field)
+			case "clusterAuditTotalSummary":
+				return ec.fieldContext_Environment_clusterAuditTotalSummary(ctx, field)
+			case "clusterComplianceReports":
+				return ec.fieldContext_Environment_clusterComplianceReports(ctx, field)
+			case "clusterComplianceTotalSummary":
+				return ec.fieldContext_Environment_clusterComplianceTotalSummary(ctx, field)
+			case "rbacAssessmentReports":
+				return ec.fieldContext_Environment_rbacAssessmentReports(ctx, field)
+			case "rbacTotalSummary":
+				return ec.fieldContext_Environment_rbacTotalSummary(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -12281,6 +14274,214 @@ func (ec *executionContext) fieldContext_Query___schema(ctx context.Context, fie
 	return fc, nil
 }
 
+func (ec *executionContext) _RbacAssessmentReport_name(ctx context.Context, field graphql.CollectedField, obj *model.RbacAssessmentReport) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RbacAssessmentReport_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RbacAssessmentReport_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RbacAssessmentReport",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RbacAssessmentReport_namespace(ctx context.Context, field graphql.CollectedField, obj *model.RbacAssessmentReport) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RbacAssessmentReport_namespace(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Namespace, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RbacAssessmentReport_namespace(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RbacAssessmentReport",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RbacAssessmentReport_summaryReport(ctx context.Context, field graphql.CollectedField, obj *model.RbacAssessmentReport) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RbacAssessmentReport_summaryReport(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SummaryReport, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.CheckResults)
+	fc.Result = res
+	return ec.marshalNCheckResults2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐCheckResultsᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RbacAssessmentReport_summaryReport(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RbacAssessmentReport",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "title":
+				return ec.fieldContext_CheckResults_title(ctx, field)
+			case "description":
+				return ec.fieldContext_CheckResults_description(ctx, field)
+			case "messages":
+				return ec.fieldContext_CheckResults_messages(ctx, field)
+			case "severity":
+				return ec.fieldContext_CheckResults_severity(ctx, field)
+			case "category":
+				return ec.fieldContext_CheckResults_category(ctx, field)
+			case "remediation":
+				return ec.fieldContext_CheckResults_remediation(ctx, field)
+			case "success":
+				return ec.fieldContext_CheckResults_success(ctx, field)
+			case "scopeType":
+				return ec.fieldContext_CheckResults_scopeType(ctx, field)
+			case "scopeValue":
+				return ec.fieldContext_CheckResults_scopeValue(ctx, field)
+			case "totalFail":
+				return ec.fieldContext_CheckResults_totalFail(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type CheckResults", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _RbacAssessmentReport_totalSummary(ctx context.Context, field graphql.CollectedField, obj *model.RbacAssessmentReport) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_RbacAssessmentReport_totalSummary(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalSummary, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.ReportSummary)
+	fc.Result = res
+	return ec.marshalNReportSummary2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐReportSummary(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_RbacAssessmentReport_totalSummary(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "RbacAssessmentReport",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "critical":
+				return ec.fieldContext_ReportSummary_critical(ctx, field)
+			case "high":
+				return ec.fieldContext_ReportSummary_high(ctx, field)
+			case "medium":
+				return ec.fieldContext_ReportSummary_medium(ctx, field)
+			case "low":
+				return ec.fieldContext_ReportSummary_low(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ReportSummary", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Release_name(ctx context.Context, field graphql.CollectedField, obj *model.Release) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Release_name(ctx, field)
 	if err != nil {
@@ -12657,6 +14858,182 @@ func (ec *executionContext) fieldContext_Release_lastModified(ctx context.Contex
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ReportSummary_critical(ctx context.Context, field graphql.CollectedField, obj *model.ReportSummary) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReportSummary_critical(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Critical, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReportSummary_critical(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReportSummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ReportSummary_high(ctx context.Context, field graphql.CollectedField, obj *model.ReportSummary) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReportSummary_high(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.High, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReportSummary_high(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReportSummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ReportSummary_medium(ctx context.Context, field graphql.CollectedField, obj *model.ReportSummary) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReportSummary_medium(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Medium, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReportSummary_medium(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReportSummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ReportSummary_low(ctx context.Context, field graphql.CollectedField, obj *model.ReportSummary) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ReportSummary_low(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Low, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ReportSummary_low(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ReportSummary",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -13855,6 +16232,18 @@ func (ec *executionContext) fieldContext_Tenant_environments(ctx context.Context
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
+			case "clusterAuditReports":
+				return ec.fieldContext_Environment_clusterAuditReports(ctx, field)
+			case "clusterAuditTotalSummary":
+				return ec.fieldContext_Environment_clusterAuditTotalSummary(ctx, field)
+			case "clusterComplianceReports":
+				return ec.fieldContext_Environment_clusterComplianceReports(ctx, field)
+			case "clusterComplianceTotalSummary":
+				return ec.fieldContext_Environment_clusterComplianceTotalSummary(ctx, field)
+			case "rbacAssessmentReports":
+				return ec.fieldContext_Environment_rbacAssessmentReports(ctx, field)
+			case "rbacTotalSummary":
+				return ec.fieldContext_Environment_rbacTotalSummary(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -13941,6 +16330,18 @@ func (ec *executionContext) fieldContext_Tenant_environment(ctx context.Context,
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
+			case "clusterAuditReports":
+				return ec.fieldContext_Environment_clusterAuditReports(ctx, field)
+			case "clusterAuditTotalSummary":
+				return ec.fieldContext_Environment_clusterAuditTotalSummary(ctx, field)
+			case "clusterComplianceReports":
+				return ec.fieldContext_Environment_clusterComplianceReports(ctx, field)
+			case "clusterComplianceTotalSummary":
+				return ec.fieldContext_Environment_clusterComplianceTotalSummary(ctx, field)
+			case "rbacAssessmentReports":
+				return ec.fieldContext_Environment_rbacAssessmentReports(ctx, field)
+			case "rbacTotalSummary":
+				return ec.fieldContext_Environment_rbacTotalSummary(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -16756,6 +19157,301 @@ func (ec *executionContext) _AuditLog(ctx context.Context, sel ast.SelectionSet,
 	return out
 }
 
+var checkResultsImplementors = []string{"CheckResults"}
+
+func (ec *executionContext) _CheckResults(ctx context.Context, sel ast.SelectionSet, obj *model.CheckResults) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, checkResultsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("CheckResults")
+		case "title":
+			out.Values[i] = ec._CheckResults_title(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "description":
+			out.Values[i] = ec._CheckResults_description(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "messages":
+			out.Values[i] = ec._CheckResults_messages(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "severity":
+			out.Values[i] = ec._CheckResults_severity(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "category":
+			out.Values[i] = ec._CheckResults_category(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "remediation":
+			out.Values[i] = ec._CheckResults_remediation(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "success":
+			out.Values[i] = ec._CheckResults_success(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "scopeType":
+			out.Values[i] = ec._CheckResults_scopeType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "scopeValue":
+			out.Values[i] = ec._CheckResults_scopeValue(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalFail":
+			out.Values[i] = ec._CheckResults_totalFail(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var clusterAuditReportImplementors = []string{"ClusterAuditReport"}
+
+func (ec *executionContext) _ClusterAuditReport(ctx context.Context, sel ast.SelectionSet, obj *model.ClusterAuditReport) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, clusterAuditReportImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ClusterAuditReport")
+		case "name":
+			out.Values[i] = ec._ClusterAuditReport_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updated":
+			out.Values[i] = ec._ClusterAuditReport_updated(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "namespace":
+			out.Values[i] = ec._ClusterAuditReport_namespace(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "summary":
+			out.Values[i] = ec._ClusterAuditReport_summary(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "checks":
+			out.Values[i] = ec._ClusterAuditReport_checks(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var clusterComplianceReportImplementors = []string{"ClusterComplianceReport"}
+
+func (ec *executionContext) _ClusterComplianceReport(ctx context.Context, sel ast.SelectionSet, obj *model.ClusterComplianceReport) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, clusterComplianceReportImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ClusterComplianceReport")
+		case "name":
+			out.Values[i] = ec._ClusterComplianceReport_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updated":
+			out.Values[i] = ec._ClusterComplianceReport_updated(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "namespace":
+			out.Values[i] = ec._ClusterComplianceReport_namespace(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "failCount":
+			out.Values[i] = ec._ClusterComplianceReport_failCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "passCount":
+			out.Values[i] = ec._ClusterComplianceReport_passCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "summary":
+			out.Values[i] = ec._ClusterComplianceReport_summary(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var clusterComplianceReportSummaryReportImplementors = []string{"ClusterComplianceReportSummaryReport"}
+
+func (ec *executionContext) _ClusterComplianceReportSummaryReport(ctx context.Context, sel ast.SelectionSet, obj *model.ClusterComplianceReportSummaryReport) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, clusterComplianceReportSummaryReportImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ClusterComplianceReportSummaryReport")
+		case "title":
+			out.Values[i] = ec._ClusterComplianceReportSummaryReport_title(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "clusterComplianceCheckResults":
+			out.Values[i] = ec._ClusterComplianceReportSummaryReport_clusterComplianceCheckResults(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var clusterComplianceTotalSummaryReportImplementors = []string{"ClusterComplianceTotalSummaryReport"}
+
+func (ec *executionContext) _ClusterComplianceTotalSummaryReport(ctx context.Context, sel ast.SelectionSet, obj *model.ClusterComplianceTotalSummaryReport) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, clusterComplianceTotalSummaryReportImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ClusterComplianceTotalSummaryReport")
+		case "failCount":
+			out.Values[i] = ec._ClusterComplianceTotalSummaryReport_failCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "passCount":
+			out.Values[i] = ec._ClusterComplianceTotalSummaryReport_passCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var clusterUpgradeStatusImplementors = []string{"ClusterUpgradeStatus", "Update"}
 
 func (ec *executionContext) _ClusterUpgradeStatus(ctx context.Context, sel ast.SelectionSet, obj *model.ClusterUpgradeStatus) graphql.Marshaler {
@@ -17970,6 +20666,222 @@ func (ec *executionContext) _Environment(ctx context.Context, sel ast.SelectionS
 					}
 				}()
 				res = ec._Environment_versions(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "clusterAuditReports":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Environment_clusterAuditReports(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "clusterAuditTotalSummary":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Environment_clusterAuditTotalSummary(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "clusterComplianceReports":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Environment_clusterComplianceReports(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "clusterComplianceTotalSummary":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Environment_clusterComplianceTotalSummary(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "rbacAssessmentReports":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Environment_rbacAssessmentReports(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "rbacTotalSummary":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Environment_rbacTotalSummary(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
 				return res
 			}
 
@@ -19930,6 +22842,60 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 	return out
 }
 
+var rbacAssessmentReportImplementors = []string{"RbacAssessmentReport"}
+
+func (ec *executionContext) _RbacAssessmentReport(ctx context.Context, sel ast.SelectionSet, obj *model.RbacAssessmentReport) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, rbacAssessmentReportImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("RbacAssessmentReport")
+		case "name":
+			out.Values[i] = ec._RbacAssessmentReport_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "namespace":
+			out.Values[i] = ec._RbacAssessmentReport_namespace(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "summaryReport":
+			out.Values[i] = ec._RbacAssessmentReport_summaryReport(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalSummary":
+			out.Values[i] = ec._RbacAssessmentReport_totalSummary(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var releaseImplementors = []string{"Release"}
 
 func (ec *executionContext) _Release(ctx context.Context, sel ast.SelectionSet, obj *model.Release) graphql.Marshaler {
@@ -20008,6 +22974,60 @@ func (ec *executionContext) _Release(ctx context.Context, sel ast.SelectionSet, 
 			out.Values[i] = ec._Release_lastModified(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var reportSummaryImplementors = []string{"ReportSummary"}
+
+func (ec *executionContext) _ReportSummary(ctx context.Context, sel ast.SelectionSet, obj *model.ReportSummary) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, reportSummaryImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ReportSummary")
+		case "critical":
+			out.Values[i] = ec._ReportSummary_critical(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "high":
+			out.Values[i] = ec._ReportSummary_high(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "medium":
+			out.Values[i] = ec._ReportSummary_medium(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "low":
+			out.Values[i] = ec._ReportSummary_low(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
 			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
@@ -21041,6 +24061,192 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNCheckResults2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐCheckResultsᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.CheckResults) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNCheckResults2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐCheckResults(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNCheckResults2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐCheckResults(ctx context.Context, sel ast.SelectionSet, v *model.CheckResults) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._CheckResults(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNClusterAuditReport2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐClusterAuditReportᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ClusterAuditReport) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNClusterAuditReport2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐClusterAuditReport(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNClusterAuditReport2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐClusterAuditReport(ctx context.Context, sel ast.SelectionSet, v *model.ClusterAuditReport) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ClusterAuditReport(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNClusterComplianceReport2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐClusterComplianceReportᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ClusterComplianceReport) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNClusterComplianceReport2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐClusterComplianceReport(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNClusterComplianceReport2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐClusterComplianceReport(ctx context.Context, sel ast.SelectionSet, v *model.ClusterComplianceReport) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ClusterComplianceReport(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNClusterComplianceReportSummaryReport2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐClusterComplianceReportSummaryReport(ctx context.Context, sel ast.SelectionSet, v *model.ClusterComplianceReportSummaryReport) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ClusterComplianceReportSummaryReport(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNClusterComplianceTotalSummaryReport2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐClusterComplianceTotalSummaryReport(ctx context.Context, sel ast.SelectionSet, v model.ClusterComplianceTotalSummaryReport) graphql.Marshaler {
+	return ec._ClusterComplianceTotalSummaryReport(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNClusterComplianceTotalSummaryReport2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐClusterComplianceTotalSummaryReport(ctx context.Context, sel ast.SelectionSet, v *model.ClusterComplianceTotalSummaryReport) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ClusterComplianceTotalSummaryReport(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNComputedValue2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐComputedValueᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ComputedValue) graphql.Marshaler {
@@ -22265,6 +25471,60 @@ func (ec *executionContext) marshalNRawMessage2encodingᚋjsonᚐRawMessage(ctx 
 	return res
 }
 
+func (ec *executionContext) marshalNRbacAssessmentReport2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐRbacAssessmentReportᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.RbacAssessmentReport) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNRbacAssessmentReport2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐRbacAssessmentReport(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNRbacAssessmentReport2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐRbacAssessmentReport(ctx context.Context, sel ast.SelectionSet, v *model.RbacAssessmentReport) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._RbacAssessmentReport(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalNRelease2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐReleaseᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Release) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
@@ -22317,6 +25577,20 @@ func (ec *executionContext) marshalNRelease2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkg
 		return graphql.Null
 	}
 	return ec._Release(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNReportSummary2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐReportSummary(ctx context.Context, sel ast.SelectionSet, v model.ReportSummary) graphql.Marshaler {
+	return ec._ReportSummary(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNReportSummary2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐReportSummary(ctx context.Context, sel ast.SelectionSet, v *model.ReportSummary) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ReportSummary(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNRollout2githubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐRollout(ctx context.Context, sel ast.SelectionSet, v model.Rollout) graphql.Marshaler {

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"net"
@@ -12,6 +13,12 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/nais/fasit/pkg/k8s/fake"
+
+	"github.com/nais/fasit/pkg/k8s"
+	"github.com/nais/fasit/pkg/thirdparty/trivy"
+	"golang.org/x/oauth2/google"
 
 	"cloud.google.com/go/pubsub"
 	"github.com/99designs/gqlgen/graphql"
@@ -41,7 +48,6 @@ import (
 	metricsdk "go.opentelemetry.io/otel/sdk/metric"
 	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc"
-
 	// Supported database drivers.
 	_ "github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/postgres"
 	_ "github.com/lib/pq"
@@ -65,6 +71,8 @@ func init() {
 	flag.StringVar(&cfg.IAPAudience, "iap-audience", "", "IAP audience string")
 	flag.BoolVar(&cfg.InsecureSkipProxy, "insecure-skip-proxy", false, "Insecure, but allows the server to not require iap")
 	flag.BoolVar(&cfg.InsecureSkipTokenCheck, "insecure-skip-token-check", false, "Insecure, but allows the server ignore token check")
+	flag.BoolVar(&cfg.ClusterReportersEnabled, "cluster-reporters-enabled", false, "Enable cluster reporters")
+	flag.BoolVar(&cfg.WithFakeClients, "with-fake-clients", false, "Use fake k8s clients")
 }
 
 func newServer(es graphql.ExecutableSchema) *handler.Server {
@@ -166,7 +174,37 @@ func main() {
 	if err != nil {
 		log.WithError(err).Fatal("setting up google client")
 	}
-	resolver := graph.NewResolver(ctx, repo, notifierService, createPublisher, googleClient, log.WithField("subsystem", "graphql"))
+
+	trivyReporter := &trivy.Client{}
+	if cfg.ClusterReportersEnabled {
+		k8sOpts := []k8s.Opt{}
+		if cfg.WithFakeClients {
+			k8sOpts = append(k8sOpts, k8s.WithClientsCreator(fake.Clients(os.DirFS("./data/k8s"))))
+		}
+
+		k8sClient, err := k8s.New(
+			ctx,
+			repo,
+			log.WithField("client", "k8s"),
+			k8sOpts...,
+		)
+		if err != nil {
+			var authErr *google.AuthenticationError
+			if errors.As(err, &authErr) {
+				log.WithError(err).Fatal("unable to create k8s client. You should probably run `gcloud auth login --update-adc` and authenticate with your @nais.io-account before starting api")
+			}
+			log.WithError(err).Fatal("unable to create k8s client")
+		}
+
+		// k8s informers
+		if err := k8sClient.Informers().Start(ctx, log); err != nil {
+			log.WithError(err).Fatal("start k8s informers")
+		}
+		trivyReporter = trivy.NewReporter(k8sClient, log)
+		log.Info("-- successfully started reporter clients")
+	}
+
+	resolver := graph.NewResolver(ctx, repo, notifierService, createPublisher, googleClient, trivyReporter, log.WithField("subsystem", "graphql"))
 
 	srv := newServer(graphgen.NewExecutableSchema(graphgen.Config{Resolvers: resolver}))
 	srv.Use(otelgqlgen.Middleware())

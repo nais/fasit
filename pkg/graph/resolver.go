@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/nais/fasit/pkg/thirdparty/trivy"
+
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database"
@@ -23,17 +25,19 @@ type Resolver struct {
 	Repo           database.Repo
 	Log            *logrus.Entry
 	UpgraderClient upgrader.Upgrader
+	reporterClient trivy.Reporter
 
 	logNotifier     *logNotifier
 	diNotifier      *updateNotifier
 	createPublisher workers.NewPublisher
 }
 
-func NewResolver(ctx context.Context, repo database.Repo, notifier *notifier.Notifier, naisdPublisher workers.NewPublisher, upgraderClient upgrader.Upgrader, log *logrus.Entry) *Resolver {
+func NewResolver(ctx context.Context, repo database.Repo, notifier *notifier.Notifier, naisdPublisher workers.NewPublisher, upgraderClient upgrader.Upgrader, reporter trivy.Reporter, log *logrus.Entry) *Resolver {
 	return &Resolver{
 		Repo:            repo,
 		Log:             log,
 		UpgraderClient:  upgraderClient,
+		reporterClient:  reporter,
 		createPublisher: naisdPublisher,
 		logNotifier:     newLogNotifier(ctx, notifier, repo),
 		diNotifier:      newDeployInstructionsNotifier(ctx, notifier, repo),

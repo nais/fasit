@@ -217,6 +217,205 @@ func (r *environmentResolver) Versions(ctx context.Context, obj *model.Environme
 	}, nil
 }
 
+// ClusterAuditReports is the resolver for the clusterAuditReports field.
+func (r *environmentResolver) ClusterAuditReports(ctx context.Context, obj *model.Environment) ([]*model.ClusterAuditReport, error) {
+	env, err := r.Repo.EnvironmentGet(ctx, obj.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	reports, err := r.reporterClient.GetConfigAuditReports(env.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := []*model.ClusterAuditReport{}
+	for _, rs := range reports {
+		checks := []*model.CheckResults{}
+		for _, c := range rs.Report.Checks {
+			check := &model.CheckResults{
+				Title:       c.Title,
+				Description: c.Description,
+				Severity:    string(c.Severity),
+				Category:    c.Category,
+				Remediation: c.Remediation,
+				Success:     c.Success,
+			}
+			if c.Scope != nil {
+				check.ScopeValue = c.Scope.Value
+				check.ScopeType = c.Scope.Type
+			}
+			checks = append(checks, check)
+		}
+
+		ret = append(ret, &model.ClusterAuditReport{
+			Name:      rs.Name,
+			Namespace: rs.Namespace,
+			Updated:   rs.Report.UpdateTimestamp.Time.UTC(),
+			Summary: &model.ReportSummary{
+				Critical: rs.Report.Summary.CriticalCount,
+				High:     rs.Report.Summary.HighCount,
+				Medium:   rs.Report.Summary.MediumCount,
+				Low:      rs.Report.Summary.LowCount,
+			},
+			Checks: checks,
+		})
+	}
+
+	return ret, nil
+}
+
+// ClusterAuditTotalSummary is the resolver for the clusterAuditTotalSummary field.
+func (r *environmentResolver) ClusterAuditTotalSummary(ctx context.Context, obj *model.Environment) (*model.ReportSummary, error) {
+	env, err := r.Repo.EnvironmentGet(ctx, obj.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	reports, err := r.reporterClient.GetConfigAuditReports(env.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	total := r.reporterClient.ConfigAuditReportsSummaryTotal(reports)
+
+	return &model.ReportSummary{
+		Critical: total.CriticalCount,
+		High:     total.HighCount,
+		Medium:   total.MediumCount,
+		Low:      total.LowCount,
+	}, nil
+}
+
+// ClusterComplianceReports is the resolver for the clusterComplianceReports field.
+func (r *environmentResolver) ClusterComplianceReports(ctx context.Context, obj *model.Environment) ([]*model.ClusterComplianceReport, error) {
+	env, err := r.Repo.EnvironmentGet(ctx, obj.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	reports, err := r.reporterClient.GetClusterComplianceReports(env.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := []*model.ClusterComplianceReport{}
+	for _, rs := range reports {
+		ccr := &model.ClusterComplianceReport{
+			Name:      rs.Name,
+			Namespace: rs.Namespace,
+			Updated:   rs.Status.UpdateTimestamp.Time.UTC(),
+			FailCount: rs.Status.Summary.FailCount,
+			PassCount: rs.Status.Summary.PassCount,
+		}
+
+		if rs.Status.SummaryReport != nil {
+			ccr.Summary = &model.ClusterComplianceReportSummaryReport{
+				Title: rs.Status.SummaryReport.Title,
+			}
+
+			for _, c := range rs.Status.SummaryReport.SummaryControls {
+				checkResult := &model.CheckResults{
+					Title:    c.Name,
+					Severity: c.Severity,
+				}
+				if c.TotalFail != nil {
+					checkResult.TotalFail = *c.TotalFail
+				}
+				for _, control := range rs.Spec.Complaince.Controls {
+					if control.ID == c.ID {
+						checkResult.Description = control.Description
+					}
+				}
+				ccr.Summary.ClusterComplianceCheckResults = append(ccr.Summary.ClusterComplianceCheckResults, checkResult)
+			}
+		}
+		ret = append(ret, ccr)
+	}
+	return ret, nil
+}
+
+// ClusterComplianceTotalSummary is the resolver for the clusterComplianceTotalSummary field.
+func (r *environmentResolver) ClusterComplianceTotalSummary(ctx context.Context, obj *model.Environment) (*model.ClusterComplianceTotalSummaryReport, error) {
+	env, err := r.Repo.EnvironmentGet(ctx, obj.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	reports, err := r.reporterClient.GetClusterComplianceReports(env.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	total := r.reporterClient.ClusterComplianceReportsSummaryTotal(reports)
+
+	return &model.ClusterComplianceTotalSummaryReport{
+		PassCount: total.PassCount,
+		FailCount: total.FailCount,
+	}, nil
+}
+
+// RbacAssessmentReports is the resolver for the RbacAssessmentReports field.
+func (r *environmentResolver) RbacAssessmentReports(ctx context.Context, obj *model.Environment) ([]*model.RbacAssessmentReport, error) {
+	env, err := r.Repo.EnvironmentGet(ctx, obj.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	reports, err := r.reporterClient.GetClusterRbacReports(env.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := []*model.RbacAssessmentReport{}
+	for _, rs := range reports {
+		crr := &model.RbacAssessmentReport{
+			Name:      rs.Name,
+			Namespace: rs.Namespace,
+			TotalSummary: &model.ReportSummary{
+				Critical: rs.Report.Summary.CriticalCount,
+				High:     rs.Report.Summary.HighCount,
+				Medium:   rs.Report.Summary.MediumCount,
+				Low:      rs.Report.Summary.LowCount,
+			},
+		}
+		for _, c := range rs.Report.Checks {
+			crr.SummaryReport = append(crr.SummaryReport, &model.CheckResults{
+				Title:       c.Title,
+				Description: c.Description,
+				Severity:    string(c.Severity),
+				Success:     c.Success,
+				Remediation: c.Remediation,
+				Messages:    c.Messages,
+			})
+		}
+		ret = append(ret, crr)
+	}
+	return ret, nil
+}
+
+// RbacTotalSummary is the resolver for the rbacTotalSummary field.
+func (r *environmentResolver) RbacTotalSummary(ctx context.Context, obj *model.Environment) (*model.ReportSummary, error) {
+	env, err := r.Repo.EnvironmentGet(ctx, obj.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	reports, err := r.reporterClient.GetClusterRbacReports(env.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	total := r.reporterClient.RbacAssessmentSummaryTotal(reports)
+
+	return &model.ReportSummary{
+		Critical: total.CriticalCount,
+		High:     total.HighCount,
+		Medium:   total.MediumCount,
+		Low:      total.LowCount,
+	}, nil
+}
+
 // EnvironmentCreate is the resolver for the environmentCreate field.
 func (r *mutationResolver) EnvironmentCreate(ctx context.Context, environment model.EnvironmentCreate) (*model.Environment, error) {
 	return r.Repo.EnvironmentCreate(ctx, &environment)

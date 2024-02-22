@@ -29,6 +29,46 @@ type AuditLog struct {
 	CreatedAt   time.Time `json:"createdAt"`
 }
 
+type CheckResults struct {
+	Title       string   `json:"title"`
+	Description string   `json:"description"`
+	Messages    []string `json:"messages"`
+	Severity    string   `json:"severity"`
+	Category    string   `json:"category"`
+	Remediation string   `json:"remediation"`
+	Success     bool     `json:"success"`
+	ScopeType   string   `json:"scopeType"`
+	ScopeValue  string   `json:"scopeValue"`
+	TotalFail   int      `json:"totalFail"`
+}
+
+type ClusterAuditReport struct {
+	Name      string          `json:"name"`
+	Updated   time.Time       `json:"updated"`
+	Namespace string          `json:"namespace"`
+	Summary   *ReportSummary  `json:"summary"`
+	Checks    []*CheckResults `json:"checks"`
+}
+
+type ClusterComplianceReport struct {
+	Name      string                                `json:"name"`
+	Updated   time.Time                             `json:"updated"`
+	Namespace string                                `json:"namespace"`
+	FailCount int                                   `json:"failCount"`
+	PassCount int                                   `json:"passCount"`
+	Summary   *ClusterComplianceReportSummaryReport `json:"summary"`
+}
+
+type ClusterComplianceReportSummaryReport struct {
+	Title                         string          `json:"title"`
+	ClusterComplianceCheckResults []*CheckResults `json:"clusterComplianceCheckResults"`
+}
+
+type ClusterComplianceTotalSummaryReport struct {
+	FailCount int `json:"failCount"`
+	PassCount int `json:"passCount"`
+}
+
 type ComputedValue struct {
 	Value   *Value          `json:"value"`
 	Content json.RawMessage `json:"content,omitempty"`
@@ -120,6 +160,20 @@ type PlaygroundInput struct {
 }
 
 type Query struct {
+}
+
+type RbacAssessmentReport struct {
+	Name          string          `json:"name"`
+	Namespace     string          `json:"namespace"`
+	SummaryReport []*CheckResults `json:"summaryReport"`
+	TotalSummary  *ReportSummary  `json:"totalSummary"`
+}
+
+type ReportSummary struct {
+	Critical int `json:"critical"`
+	High     int `json:"high"`
+	Medium   int `json:"medium"`
+	Low      int `json:"low"`
 }
 
 type RolloutEvent struct {

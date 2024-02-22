@@ -1,0 +1,116 @@
+apiVersion: aquasecurity.github.io/v1alpha1
+kind: ConfigAuditReport
+metadata:
+  annotations:
+    trivy-operator.aquasecurity.github.io/report-ttl: 24h0m0s
+  creationTimestamp: "2024-02-16T14:06:02Z"
+  generation: 1
+  labels:
+    plugin-config-hash: 659b7b9c46
+    resource-spec-hash: 6c999b6645
+    trivy-operator.resource.kind: ReplicaSet
+    trivy-operator.resource.name: naisd-775c85566
+    trivy-operator.resource.namespace: nais
+  name: replicaset-naisd-775c85566
+  namespace: nais
+  ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: false
+      controller: true
+      kind: ReplicaSet
+      name: naisd-775c85566
+      uid: 953deb9b-c586-4d88-bcb3-f0225cdf8acd
+  resourceVersion: "1605072979"
+  uid: 5bad7c53-b2e4-49ff-b5c5-e9e15a5ea523
+report:
+  checks:
+    - category: Kubernetes Security Check
+      checkID: KSV011
+      description: Enforcing CPU limits prevents DoS via resource exhaustion.
+      messages:
+        - Container 'naisd' of ReplicaSet 'naisd-775c85566' should set 'resources.limits.cpu'
+      remediation: Set a limit value under 'containers[].resources.limits.cpu'.
+      severity: LOW
+      success: false
+      title: CPU not limited
+    - category: Kubernetes Security Check
+      checkID: KSV015
+      description: When containers have resource requests specified, the scheduler can
+        make better decisions about which nodes to place pods on, and how to deal with
+        resource contention.
+      messages:
+        - Container 'naisd' of ReplicaSet 'naisd-775c85566' should set 'resources.requests.cpu'
+      remediation: Set 'containers[].resources.requests.cpu'.
+      severity: LOW
+      success: false
+      title: CPU requests not specified
+    - category: Kubernetes Security Check
+      checkID: KSV016
+      description: When containers have memory requests specified, the scheduler can
+        make better decisions about which nodes to place pods on, and how to deal with
+        resource contention.
+      messages:
+        - Container 'naisd' of ReplicaSet 'naisd-775c85566' should set 'resources.requests.memory'
+      remediation: Set 'containers[].resources.requests.memory'.
+      severity: LOW
+      success: false
+      title: Memory requests not specified
+    - category: Kubernetes Security Check
+      checkID: KSV018
+      description: Enforcing memory limits prevents DoS via resource exhaustion.
+      messages:
+        - Container 'naisd' of ReplicaSet 'naisd-775c85566' should set 'resources.limits.memory'
+      remediation: Set a limit value under 'containers[].resources.limits.memory'.
+      severity: LOW
+      success: false
+      title: Memory not limited
+    - category: Kubernetes Security Check
+      checkID: KSV021
+      description: Force the container to run with group ID > 10000 to avoid conflicts
+        with the host’s user table.
+      messages:
+        - Container 'naisd' of ReplicaSet 'naisd-775c85566' should set 'securityContext.runAsGroup'
+          > 10000
+      remediation: Set 'containers[].securityContext.runAsGroup' to an integer > 10000.
+      severity: LOW
+      success: false
+      title: Runs with GID <= 10000
+    - category: Kubernetes Security Check
+      checkID: KSV116
+      description: According to pod security standard 'Non-root groups', containers
+        should be forbidden from running with a root primary or supplementary GID.
+      messages:
+        - replicaset naisd-775c85566 in nais-system namespace should set spec.securityContext.runAsGroup,
+          spec.securityContext.supplementalGroups[*] and spec.securityContext.fsGroup
+          to integer greater than 0
+      remediation: Set 'containers[].securityContext.runAsGroup' to a non-zero integer
+        or leave undefined.
+      severity: LOW
+      success: false
+      title: Runs with a root primary or supplementary GID
+    - category: Kubernetes Security Check
+      checkID: KSV118
+      description: Security context controls the allocation of security parameters for
+        the pod/container/volume, ensuring the appropriate level of protection. Relying
+        on default security context may expose vulnerabilities to potential attacks
+        that rely on privileged access.
+      messages:
+        - replicaset naisd-775c85566 in nais-system namespace is using the default security
+          context, which allows root privileges
+      remediation: To enhance security, it is strongly recommended not to rely on the
+        default security context. Instead, it is advisable to explicitly define the
+        required security parameters (such as runAsNonRoot, capabilities, readOnlyRootFilesystem,
+        etc.) within the security context.
+      severity: HIGH
+      success: false
+      title: Default security context configured
+  scanner:
+    name: Trivy
+    vendor: Aqua Security
+    version: 0.18.5
+  summary:
+    criticalCount: 0
+    highCount: 1
+    lowCount: 6
+    mediumCount: 0
+  updateTimestamp: "2024-02-16T14:06:02Z"
