@@ -87,7 +87,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		// checks if there are any running operations for the environment
 		// if there are, we skip the upgrade until they are done
 		if c.hasRunningOperations(ctx, projectId, env, clusterUpgrade) {
-			log.WithFields(logrus.Fields{"target_version": clusterUpgrade.Version}).Info("has running operations, skipping...")
+			log.WithFields(logrus.Fields{"target_version": clusterUpgrade.Version}).Debug("has running operations, skipping...")
 			return nil
 		}
 
@@ -111,7 +111,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 	case model.UpgradeStatusNodeUpgrade:
 		// check status on node upgrade
 		if c.hasRunningOperations(ctx, projectId, env, clusterUpgrade) {
-			log.WithFields(logrus.Fields{"target_version": clusterUpgrade.Version}).Info("has running operations, skipping upgrade")
+			log.WithFields(logrus.Fields{"target_version": clusterUpgrade.Version}).Debug("has running operations, skipping...")
 			return nil
 		}
 
