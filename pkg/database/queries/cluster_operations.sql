@@ -25,12 +25,6 @@ ORDER BY "start_time" DESC LIMIT 1;
 -- name: ClusterOperationsGetByUpgradeID :many
 SELECT * FROM cluster_operations WHERE "upgrade_id" = @upgrade_id ORDER BY "start_time" DESC;
 
--- name: ClusterOperationsGetByUpgradeIDAndStatus :one
-SELECT * FROM cluster_operations WHERE "upgrade_id" = @upgrade_id AND "status" = @status ORDER BY "start_time" DESC LIMIT 1;
-
--- name: ClusterOperationsGetByUpgradeIDAndStatusAndType :one
-SELECT * FROM cluster_operations WHERE "upgrade_id" = @upgrade_id AND "status" = @status AND "type" = @type ORDER BY "start_time" DESC LIMIT 1;
-
 -- name: ClusterOperationsGetByID :one
 SELECT * FROM cluster_operations
 WHERE id = @id;
