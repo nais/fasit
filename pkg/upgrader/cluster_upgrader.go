@@ -79,14 +79,17 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		return nil
 	}
 
+	runningOperations, err := c.getAndUpdateRunningOperations(ctx, projectId, env, clusterUpgrade)
+	if err != nil {
+		return err
+	}
+
 	log.WithFields(logrus.Fields{"target_version": clusterUpgrade.Version, "status": clusterUpgrade.UpgradeStatus}).Debug("cluster upgrade status")
 	switch clusterUpgrade.UpgradeStatus {
 	case model.UpgradeStatusCreated:
 		// initial state, upgrade master
 		log.WithFields(logrus.Fields{"target_version": clusterUpgrade.Version}).Info("starting master upgrade")
-		// checks if there are any running operations for the environment
-		// if there are, we skip the upgrade until they are done
-		if c.hasRunningOperations(ctx, projectId, env, clusterUpgrade) {
+		if clusterHas(runningOperations) {
 			log.WithFields(logrus.Fields{"target_version": clusterUpgrade.Version}).Debug("has running operations, skipping...")
 			return nil
 		}
@@ -109,12 +112,12 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		log.WithFields(logrus.Fields{"target_version": status.Version}).Info("master upgrade done")
 
 	case model.UpgradeStatusNodeUpgrade:
-		// check status on node upgrade
-		if c.hasRunningOperations(ctx, projectId, env, clusterUpgrade) {
+		if clusterHas(runningOperations) {
 			log.WithFields(logrus.Fields{"target_version": clusterUpgrade.Version}).Debug("has running operations, skipping...")
 			return nil
 		}
 
+		// check status on node upgrade
 		if done, err := c.nodeUpgradeStatus(ctx, env, clusterUpgrade, projectId); !done {
 			if err != nil {
 				return err
@@ -144,12 +147,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 	return nil
 }
 
-func (c *ClusterUpgrader) hasRunningOperations(ctx context.Context, projectId string, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus) bool {
-	runningOperations, err := c.getAndUpdateRunningOperations(ctx, projectId, env, clusterUpgrade)
-	if err != nil {
-		c.log.WithError(err).Error("error getting running operations")
-		return false
-	}
+func clusterHas(runningOperations []*containerpb.Operation) bool {
 	for _, op := range runningOperations {
 		if op.Status == containerpb.Operation_RUNNING {
 			return true
