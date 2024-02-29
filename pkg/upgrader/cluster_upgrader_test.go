@@ -221,7 +221,7 @@ func TestRun_StartClusterUpgradeMasterStatusCreated(t *testing.T) {
 	suite.mockRunTenantForLoop(model.UpgradeStatusCreated)
 
 	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, suite.environment).Return(
-		[]*containerpb.Operation{}, nil).Twice()
+		[]*containerpb.Operation{}, nil).Once()
 
 	suite.upgradeMock.EXPECT().UpgradeMaster(mock.Anything, mock.Anything, suite.environment, "1.2.4").Return(
 		&containerpb.Operation{
