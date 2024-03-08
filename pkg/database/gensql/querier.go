@@ -21,8 +21,6 @@ type Querier interface {
 	ClusterOperationsGet(ctx context.Context, arg ClusterOperationsGetParams) ([]ClusterOperation, error)
 	ClusterOperationsGetByID(ctx context.Context, id uuid.UUID) (ClusterOperation, error)
 	ClusterOperationsGetByUpgradeID(ctx context.Context, upgradeID uuid.UUID) ([]ClusterOperation, error)
-	ClusterOperationsGetByUpgradeIDAndStatus(ctx context.Context, arg ClusterOperationsGetByUpgradeIDAndStatusParams) (ClusterOperation, error)
-	ClusterOperationsGetByUpgradeIDAndStatusAndType(ctx context.Context, arg ClusterOperationsGetByUpgradeIDAndStatusAndTypeParams) (ClusterOperation, error)
 	ClusterUpgradesCreate(ctx context.Context, arg ClusterUpgradesCreateParams) (ClusterUpgrade, error)
 	ClusterUpgradesGet(ctx context.Context, arg ClusterUpgradesGetParams) ([]ClusterUpgrade, error)
 	ClusterUpgradesGetByID(ctx context.Context, id uuid.UUID) (ClusterUpgrade, error)

@@ -79,11 +79,26 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		return nil
 	}
 
-	// check and update running operations for the environment
 	runningOperations, err := c.getAndUpdateRunningOperations(ctx, projectId, env, clusterUpgrade)
+	if err != nil {
+		return err
+	}
 
-	log.Debug("upgrade cluster")
+	log.WithFields(logrus.Fields{"target_version": clusterUpgrade.Version, "status": clusterUpgrade.UpgradeStatus}).Debug("cluster upgrade status")
 	switch clusterUpgrade.UpgradeStatus {
+	case model.UpgradeStatusCreated:
+		// initial state, upgrade master
+		log.WithFields(logrus.Fields{"target_version": clusterUpgrade.Version}).Info("starting master upgrade")
+		if clusterHas(runningOperations) {
+			log.WithFields(logrus.Fields{"target_version": clusterUpgrade.Version}).Debug("has running operations, skipping...")
+			return nil
+		}
+
+		_, err = c.masterUpgrade(ctx, env, clusterUpgrade, tenant.Name, projectId)
+		if err != nil {
+			return err
+		}
+
 	case model.UpgradeStatusMasterUpgrade:
 		// check status on ongoing master upgrade
 		status, err := c.masterUpgradeStatus(ctx, env, clusterUpgrade, projectId, tenant.Name)
@@ -94,11 +109,11 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 			// upgrade not done
 			return nil
 		}
-		log.Debug("master upgrade done")
+		log.WithFields(logrus.Fields{"target_version": status.Version}).Info("master upgrade done")
+
 	case model.UpgradeStatusNodeUpgrade:
-		// check if there are any running operations for the environment
-		if isRunning(runningOperations) {
-			log.Debug("found running operations for environment, skipping")
+		if clusterHas(runningOperations) {
+			log.WithFields(logrus.Fields{"target_version": clusterUpgrade.Version}).Debug("has running operations, skipping...")
 			return nil
 		}
 
@@ -128,29 +143,11 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		}
 		c.upgradeInProgress.Add(ctx, -1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "nodePools")...))
 		log.WithField("target_version", upgradeStatus.Version).Info("nodepool upgrade done")
-
-	case model.UpgradeStatusCreated:
-		// initial state, upgrade master
-		log.Info("cluster upgrade created")
-		ops, err := c.client.GetRunningOperations(ctx, projectId, env)
-		if err != nil {
-			return err
-		}
-
-		if len(ops) > 0 {
-			log.WithField("operations", len(ops)).Infof("found running operations for environment, skipping")
-			return nil
-		}
-
-		_, err = c.masterUpgrade(ctx, env, clusterUpgrade, tenant.Name, projectId)
-		if err != nil {
-			return err
-		}
 	}
 	return nil
 }
 
-func isRunning(runningOperations []*containerpb.Operation) bool {
+func clusterHas(runningOperations []*containerpb.Operation) bool {
 	for _, op := range runningOperations {
 		if op.Status == containerpb.Operation_RUNNING {
 			return true

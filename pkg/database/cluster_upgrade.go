@@ -21,8 +21,6 @@ type ClusterUpgraderRepo interface {
 	ClusterUpgradeGetByID(ctx context.Context, id uuid.UUID) (*model.ClusterUpgradeStatus, error)
 	ClusterOperationsGetByID(ctx context.Context, id uuid.UUID) (*model.EnvironmentOperation, error)
 	ClusterOperationsGetByUpgradeID(ctx context.Context, upgradeId uuid.UUID) ([]*model.EnvironmentOperation, error)
-	ClusterOperationsGetByUpgradeIDAndStatus(ctx context.Context, upgradeId uuid.UUID, status string) (*model.EnvironmentOperation, error)
-	ClusterOperationsGetByUpgradeIDAndStatusAndType(ctx context.Context, upgradeId uuid.UUID, status string, operationType string) (*model.EnvironmentOperation, error)
 }
 
 func clusterUpgradeFromSQL(p gensql.ClusterUpgrade) *model.ClusterUpgradeStatus {
@@ -52,37 +50,6 @@ func clusterOperationFromSQL(p gensql.ClusterOperation) *model.EnvironmentOperat
 		StartTime:           p.StartTime.Time,
 		LastModified:        p.LastModified.Time,
 	}
-}
-
-func (r *repo) ClusterOperationsGetByUpgradeIDAndStatus(ctx context.Context, upgradeId uuid.UUID, status string) (*model.EnvironmentOperation, error) {
-	clusterOperation, err := r.querier.ClusterOperationsGetByUpgradeIDAndStatus(ctx, gensql.ClusterOperationsGetByUpgradeIDAndStatusParams{
-		UpgradeID: upgradeId,
-		Status:    status,
-	})
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	return clusterOperationFromSQL(clusterOperation), nil
-}
-
-func (r *repo) ClusterOperationsGetByUpgradeIDAndStatusAndType(ctx context.Context, upgradeId uuid.UUID, status string, operationType string) (*model.EnvironmentOperation, error) {
-	clusterOperation, err := r.querier.ClusterOperationsGetByUpgradeIDAndStatusAndType(ctx, gensql.ClusterOperationsGetByUpgradeIDAndStatusAndTypeParams{
-		UpgradeID: upgradeId,
-		Status:    status,
-		Type:      operationType,
-	})
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	return clusterOperationFromSQL(clusterOperation), nil
 }
 
 func (r *repo) ClusterOperationsGetByID(ctx context.Context, id uuid.UUID) (*model.EnvironmentOperation, error) {
