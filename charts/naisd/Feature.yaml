@@ -12,6 +12,14 @@ values:
     displayName: Env project id
     computed:
       template: "{{.Env.project_id}}"
+  deploySubscription:
+    displayName: Subscription to fetch deploy instructions from
+    config:
+      type: string
+  teamsSubscription:
+    displayName: Subscription to fetch namespace creation instructions from
+    config:
+      type: string
   google.serviceAccountKey:
     displayName: Use service account key?
     computed:

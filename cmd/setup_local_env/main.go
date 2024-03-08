@@ -32,7 +32,6 @@ var (
 			"prod-gcp":   protogen.EnvironmentKind_LEGACY,
 		},
 		"ssb":      {"dev": protogen.EnvironmentKind_TENANT, "management": protogen.EnvironmentKind_MANAGEMENT},
-		"mtpilot":  {"dev": protogen.EnvironmentKind_TENANT, "prod": protogen.EnvironmentKind_TENANT, "management": protogen.EnvironmentKind_MANAGEMENT},
 		"fhi":      {"dev": protogen.EnvironmentKind_TENANT, "management": protogen.EnvironmentKind_MANAGEMENT},
 		"dev-nais": {"dev": protogen.EnvironmentKind_TENANT, "management": protogen.EnvironmentKind_MANAGEMENT},
 	}

@@ -65,3 +65,6 @@ JOIN tenants t ON t.id = e.tenant_id
 WHERE ev.key = @key
 ORDER BY e.name ASC
 ;
+
+-- name: EnvironmentValueDelete :exec
+DELETE FROM environment_values WHERE "environment_id" = @envID AND "key" = @key;

@@ -29,6 +29,7 @@ type ProviderClient interface {
 	CreateOrUpdateEnvironmentValue(ctx context.Context, in *CreateOrUpdateEnvironmentValueRequest, opts ...grpc.CallOption) (*CreateOrUpdateEnvironmentValueResponse, error)
 	GetEnvironmentValue(ctx context.Context, in *GetEnvironmentValueRequest, opts ...grpc.CallOption) (*EnvironmentValueResponse, error)
 	GetEnvironmentValuesAcrossEnvs(ctx context.Context, in *GetEnvironmentValuesAcrossEnvsRequest, opts ...grpc.CallOption) (*EnvironmentValuesAcrossEnvsResponse, error)
+	DeleteEnvironmentValue(ctx context.Context, in *DeleteEnvironmentValueRequest, opts ...grpc.CallOption) (*DeleteEnvironmentValueResponse, error)
 }
 
 type providerClient struct {
@@ -102,6 +103,15 @@ func (c *providerClient) GetEnvironmentValuesAcrossEnvs(ctx context.Context, in 
 	return out, nil
 }
 
+func (c *providerClient) DeleteEnvironmentValue(ctx context.Context, in *DeleteEnvironmentValueRequest, opts ...grpc.CallOption) (*DeleteEnvironmentValueResponse, error) {
+	out := new(DeleteEnvironmentValueResponse)
+	err := c.cc.Invoke(ctx, "/Provider/DeleteEnvironmentValue", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ProviderServer is the server API for Provider service.
 // All implementations must embed UnimplementedProviderServer
 // for forward compatibility
@@ -113,6 +123,7 @@ type ProviderServer interface {
 	CreateOrUpdateEnvironmentValue(context.Context, *CreateOrUpdateEnvironmentValueRequest) (*CreateOrUpdateEnvironmentValueResponse, error)
 	GetEnvironmentValue(context.Context, *GetEnvironmentValueRequest) (*EnvironmentValueResponse, error)
 	GetEnvironmentValuesAcrossEnvs(context.Context, *GetEnvironmentValuesAcrossEnvsRequest) (*EnvironmentValuesAcrossEnvsResponse, error)
+	DeleteEnvironmentValue(context.Context, *DeleteEnvironmentValueRequest) (*DeleteEnvironmentValueResponse, error)
 	mustEmbedUnimplementedProviderServer()
 }
 
@@ -140,6 +151,9 @@ func (UnimplementedProviderServer) GetEnvironmentValue(context.Context, *GetEnvi
 }
 func (UnimplementedProviderServer) GetEnvironmentValuesAcrossEnvs(context.Context, *GetEnvironmentValuesAcrossEnvsRequest) (*EnvironmentValuesAcrossEnvsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetEnvironmentValuesAcrossEnvs not implemented")
+}
+func (UnimplementedProviderServer) DeleteEnvironmentValue(context.Context, *DeleteEnvironmentValueRequest) (*DeleteEnvironmentValueResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteEnvironmentValue not implemented")
 }
 func (UnimplementedProviderServer) mustEmbedUnimplementedProviderServer() {}
 
@@ -280,6 +294,24 @@ func _Provider_GetEnvironmentValuesAcrossEnvs_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Provider_DeleteEnvironmentValue_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteEnvironmentValueRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProviderServer).DeleteEnvironmentValue(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Provider/DeleteEnvironmentValue",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProviderServer).DeleteEnvironmentValue(ctx, req.(*DeleteEnvironmentValueRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Provider_ServiceDesc is the grpc.ServiceDesc for Provider service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -314,6 +346,10 @@ var Provider_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetEnvironmentValuesAcrossEnvs",
 			Handler:    _Provider_GetEnvironmentValuesAcrossEnvs_Handler,
+		},
+		{
+			MethodName: "DeleteEnvironmentValue",
+			Handler:    _Provider_DeleteEnvironmentValue_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

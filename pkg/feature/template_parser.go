@@ -220,7 +220,9 @@ func (s *scope) AddPipe(pipe *parse.PipeNode) {
 	}
 
 	if len(pipe.Decl) > 1 {
-		panic("more than one pipe decl not supported")
+		return
+		// TODO: Add support for this
+		// panic("more than one pipe decl not supported")
 	}
 
 	if len(pipe.Cmds) > 1 {

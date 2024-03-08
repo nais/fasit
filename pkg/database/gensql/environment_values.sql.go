@@ -11,6 +11,20 @@ import (
 	"github.com/google/uuid"
 )
 
+const environmentValueDelete = `-- name: EnvironmentValueDelete :exec
+DELETE FROM environment_values WHERE "environment_id" = $1 AND "key" = $2
+`
+
+type EnvironmentValueDeleteParams struct {
+	Envid uuid.UUID
+	Key   string
+}
+
+func (q *Queries) EnvironmentValueDelete(ctx context.Context, arg EnvironmentValueDeleteParams) error {
+	_, err := q.db.Exec(ctx, environmentValueDelete, arg.Envid, arg.Key)
+	return err
+}
+
 const environmentValueGet = `-- name: EnvironmentValueGet :one
 SELECT
 "environment_id",

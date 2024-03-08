@@ -159,7 +159,6 @@ func (r *Rollout) Rollout(w http.ResponseWriter, req *http.Request) {
 
 		return nil
 	})
-
 	if err != nil {
 		http.Error(w, "unable to create rollout: "+err.Error(), http.StatusBadRequest)
 		return

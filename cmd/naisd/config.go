@@ -1,16 +1,18 @@
 package main
 
 type Config struct {
-	BindAddress     string
-	DBConnectionDSN string
-	LogLevel        string
-	EnvProjectID    string
-	Env             string
-	TenantName      string
-	NaisProjectID   string
-	Production      bool
-	Management      bool
-	MockFailing     bool
+	BindAddress        string
+	DBConnectionDSN    string
+	LogLevel           string
+	EnvProjectID       string
+	Env                string
+	TenantName         string
+	NaisProjectID      string
+	DeploySubscription string
+	TeamsSubscription  string
+	Production         bool
+	Management         bool
+	MockFailing        bool
 }
 
 func DefaultConfig() Config {

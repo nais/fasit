@@ -16,6 +16,15 @@ type Querier interface {
 	AuditForEnvironment(ctx context.Context, arg AuditForEnvironmentParams) ([]Audit, error)
 	AutoInstallNamesForKind(ctx context.Context, environmentKind EnvironmentKind) ([]string, error)
 	AutoInstallsForKind(ctx context.Context, environmentKind EnvironmentKind) ([]AutoInstall, error)
+	ClusterOperationCreateOrUpdate(ctx context.Context, arg ClusterOperationCreateOrUpdateParams) (ClusterOperation, error)
+	ClusterOperationGet(ctx context.Context, arg ClusterOperationGetParams) (ClusterOperation, error)
+	ClusterOperationsGet(ctx context.Context, arg ClusterOperationsGetParams) ([]ClusterOperation, error)
+	ClusterOperationsGetByID(ctx context.Context, id uuid.UUID) (ClusterOperation, error)
+	ClusterOperationsGetByUpgradeID(ctx context.Context, upgradeID uuid.UUID) ([]ClusterOperation, error)
+	ClusterUpgradesCreate(ctx context.Context, arg ClusterUpgradesCreateParams) (ClusterUpgrade, error)
+	ClusterUpgradesGet(ctx context.Context, arg ClusterUpgradesGetParams) ([]ClusterUpgrade, error)
+	ClusterUpgradesGetByID(ctx context.Context, id uuid.UUID) (ClusterUpgrade, error)
+	ClusterUpgradesUpdateStatus(ctx context.Context, arg ClusterUpgradesUpdateStatusParams) (ClusterUpgrade, error)
 	ConfigDelete(ctx context.Context, id uuid.UUID) error
 	ConfigEnvUpdateOrCreate(ctx context.Context, arg ConfigEnvUpdateOrCreateParams) (ConfigurationsEnvironment, error)
 	ConfigGet(ctx context.Context, feature string) ([]ConfigurationsGlobal, error)
@@ -47,6 +56,7 @@ type Querier interface {
 	EnvironmentIDByNames(ctx context.Context, arg EnvironmentIDByNamesParams) (uuid.UUID, error)
 	EnvironmentSetReconcile(ctx context.Context, arg EnvironmentSetReconcileParams) (Environment, error)
 	EnvironmentUpdate(ctx context.Context, arg EnvironmentUpdateParams) (Environment, error)
+	EnvironmentValueDelete(ctx context.Context, arg EnvironmentValueDeleteParams) error
 	EnvironmentValueGet(ctx context.Context, arg EnvironmentValueGetParams) (EnvironmentValueGetRow, error)
 	EnvironmentValueStore(ctx context.Context, arg EnvironmentValueStoreParams) error
 	EnvironmentValuesAcrossEnvs(ctx context.Context, key string) ([]EnvironmentValuesAcrossEnvsRow, error)

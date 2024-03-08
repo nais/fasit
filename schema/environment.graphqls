@@ -5,6 +5,24 @@ enum EnvironmentKind {
   LEGACY
 }
 
+enum UpgradeStatus {
+  CREATED
+  MASTER_UPGRADE
+  NODE_UPGRADE
+  FAILED
+  DONE
+}
+
+type ClusterUpgradeStatus {
+  id: ID!
+  upgradeStatus: UpgradeStatus!
+  version: String!
+  lastModified: Time!
+  startTime: Time!
+  operations: [EnvironmentOperation!]!
+  environment: Environment!
+}
+
 type Health {
   reportedAt: Time!
 }
@@ -39,6 +57,36 @@ type Environment {
   features: [Feature!]!
   feature(name: String!): Feature!
   reconcile: Boolean!
+  clusterUpgradeStatus: ClusterUpgradeStatus
+  versions: EnvironmentVersions
+}
+
+type EnvironmentOperation {
+  id: ID!
+  name: String!
+  status: String!
+  type: String!
+  target: String!
+  detail: String!
+  startTime: Time!
+  lastModified: Time!
+  nodesTotal: Int!
+  nodesFailed: Int!
+  nodesCompleted: Int!
+  nodesDone: Int!
+  nodePdbDelaySeconds: Int!
+}
+
+type EnvironmentVersions {
+  apiserver: String!
+  availableVersions: [String!]!
+  channel: String!
+  nodePools: [NodePool!]!
+}
+
+type NodePool {
+  name: String!
+  version: String!
 }
 
 type EnvironmentValue {
@@ -65,6 +113,15 @@ input EnvironmentUpdate {
   description: String
 }
 
+"""
+EnvironmentUpgrade contains metadata for upgrading an environment
+"""
+input EnvironmentUpgrade {
+  "k8s version to upgrade to"
+  version: String!
+  envID: ID!
+}
+
 extend type Mutation {
   environmentCreate(environment: EnvironmentCreate!): Environment!
   """
@@ -81,4 +138,9 @@ extend type Mutation {
   Change the reconcile flag for an environment
   """
   environmentSetReconcile(id: ID!, reconcile: Boolean!): Environment!
+
+  """
+  Upgrade environment k8s cluster
+  """
+  environmentUpgrade(upgrade: EnvironmentUpgrade): Environment!
 }

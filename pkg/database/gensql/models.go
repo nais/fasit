@@ -12,6 +12,51 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type ClusterUpgradesStatus string
+
+const (
+	ClusterUpgradesStatusCREATED       ClusterUpgradesStatus = "CREATED"
+	ClusterUpgradesStatusMASTERUPGRADE ClusterUpgradesStatus = "MASTER_UPGRADE"
+	ClusterUpgradesStatusNODEUPGRADE   ClusterUpgradesStatus = "NODE_UPGRADE"
+	ClusterUpgradesStatusFAILED        ClusterUpgradesStatus = "FAILED"
+	ClusterUpgradesStatusDONE          ClusterUpgradesStatus = "DONE"
+)
+
+func (e *ClusterUpgradesStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = ClusterUpgradesStatus(s)
+	case string:
+		*e = ClusterUpgradesStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for ClusterUpgradesStatus: %T", src)
+	}
+	return nil
+}
+
+type NullClusterUpgradesStatus struct {
+	ClusterUpgradesStatus ClusterUpgradesStatus
+	Valid                 bool // Valid is true if ClusterUpgradesStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullClusterUpgradesStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.ClusterUpgradesStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.ClusterUpgradesStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullClusterUpgradesStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.ClusterUpgradesStatus), nil
+}
+
 type EnvironmentKind string
 
 const (
@@ -69,6 +114,35 @@ type AutoInstall struct {
 	Kind    EnvironmentKind
 	Feature string
 	Created pgtype.Timestamptz
+}
+
+type ClusterOperation struct {
+	ID                  uuid.UUID
+	OperationName       string
+	TenantID            uuid.UUID
+	EnvironmentID       uuid.UUID
+	UpgradeID           uuid.UUID
+	Status              string
+	Type                string
+	Detail              string
+	Target              string
+	NodesTotal          int32
+	NodesFailed         int32
+	NodesCompleted      int32
+	NodesDone           int32
+	NodePdbDelaySeconds int32
+	StartTime           pgtype.Timestamptz
+	LastModified        pgtype.Timestamptz
+}
+
+type ClusterUpgrade struct {
+	ID            uuid.UUID
+	TenantID      uuid.UUID
+	EnvironmentID uuid.UUID
+	Version       string
+	Status        ClusterUpgradesStatus
+	StartTime     pgtype.Timestamptz
+	LastModified  pgtype.Timestamptz
 }
 
 type ConfigurationsEnvironment struct {

@@ -83,9 +83,11 @@ integration-test: sqlc-vet
 sqlc-vet: install-sqlc
 	$(GOBIN)/sqlc vet
 
+
 mocks:
-	mockery --case underscore --name Repo --dir pkg/database/ --outpkg mocks --output pkg/database/mocks
-	mockery --case underscore --name Querier --dir pkg/database/ --outpkg mocks --output pkg/database/mocks
+	mockery --case underscore --name Repo --dir pkg/database/ --outpkg mocks --output pkg/database/mocks --with-expecter
+	mockery --case underscore --name Querier --dir pkg/database/ --outpkg mocks --output pkg/database/mocks --with-expecter
+	mockery --case underscore --name Upgrader --dir pkg/upgrader/ --outpkg mocks --output pkg/upgrader/mocks --with-expecter
 
 generate-proto:
 	mkdir -p pkg/provider/protogen

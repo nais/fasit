@@ -7,6 +7,8 @@ env:
 envProjectId:
 naisProjectId: nais-io
 management: "false"
+deploySubscription: "naisd-subscription"
+teamsSubscription: "naisd-console-subscription"
 
 image:
   repository: europe-north1-docker.pkg.dev/nais-io/nais/images/naisd

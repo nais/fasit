@@ -14,6 +14,7 @@ import (
 )
 
 type EnvironmentValueRepo interface {
+	EnvironmentValueDelete(ctx context.Context, environmentID uuid.UUID, key string) error
 	EnvironmentValueGet(ctx context.Context, environmentID uuid.UUID, key string, showSensitive bool) (*model.EnvironmentValue, error)
 	EnvironmentValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) ([]*model.EnvironmentValue, error)
 	EnvironmentValueStore(ctx context.Context, environmentID uuid.UUID, key string, value json.RawMessage, secret bool) error
@@ -130,4 +131,18 @@ func (r *repo) MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID,
 
 func (r *repo) EnvironmentValuesAcrossEnvs(ctx context.Context, key string) ([]gensql.EnvironmentValuesAcrossEnvsRow, error) {
 	return r.querier.EnvironmentValuesAcrossEnvs(ctx, key)
+}
+
+func (r *repo) EnvironmentValueDelete(ctx context.Context, environmentID uuid.UUID, key string) error {
+	err := r.querier.EnvironmentValueDelete(ctx, gensql.EnvironmentValueDeleteParams{
+		Envid: environmentID,
+		Key:   key,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to delete environment value: %w", err)
+	}
+
+	r.createAudit(ctx, "deleted", "environment_values", environmentID.String()+":"+key)
+
+	return nil
 }
