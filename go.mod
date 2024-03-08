@@ -1,6 +1,6 @@
 module github.com/nais/fasit
 
-go 1.21.5
+go 1.22.1
 
 require (
 	cloud.google.com/go v0.111.0
@@ -40,7 +40,7 @@ require (
 	golang.org/x/sync v0.5.0
 	google.golang.org/api v0.154.0
 	google.golang.org/grpc v1.60.1
-	google.golang.org/protobuf v1.32.0
+	google.golang.org/protobuf v1.33.0
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
 	helm.sh/helm/v3 v3.14.2
