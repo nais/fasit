@@ -12,8 +12,27 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const rolloutAssignDeployInstruction = `-- name: RolloutAssignDeployInstruction :exec
+UPDATE rollouts
+SET deploy_instructions = array_append(deploy_instructions, $1)
+WHERE feature_name = $2
+AND version = $3
+AND status = 'pending'
+`
+
+type RolloutAssignDeployInstructionParams struct {
+	DeployInstructionID interface{}
+	FeatureName         string
+	Version             string
+}
+
+func (q *Queries) RolloutAssignDeployInstruction(ctx context.Context, arg RolloutAssignDeployInstructionParams) error {
+	_, err := q.db.Exec(ctx, rolloutAssignDeployInstruction, arg.DeployInstructionID, arg.FeatureName, arg.Version)
+	return err
+}
+
 const rolloutByID = `-- name: RolloutByID :one
-SELECT id, feature_name, version, status, created, completed, gh_ref
+SELECT id, feature_name, version, status, created, completed, gh_ref, deploy_instructions
 FROM rollouts
 WHERE id = $1
 `
@@ -29,6 +48,7 @@ func (q *Queries) RolloutByID(ctx context.Context, id uuid.UUID) (Rollout, error
 		&i.Created,
 		&i.Completed,
 		&i.GhRef,
+		&i.DeployInstructions,
 	)
 	return i, err
 }
@@ -92,7 +112,7 @@ func (q *Queries) RolloutByName(ctx context.Context, name string) (RolloutByName
 }
 
 const rolloutByNameAndVersion = `-- name: RolloutByNameAndVersion :one
-SELECT id, feature_name, version, status, created, completed, gh_ref
+SELECT id, feature_name, version, status, created, completed, gh_ref, deploy_instructions
 FROM rollouts
 WHERE feature_name = $1
 AND version = $2
@@ -114,13 +134,14 @@ func (q *Queries) RolloutByNameAndVersion(ctx context.Context, arg RolloutByName
 		&i.Created,
 		&i.Completed,
 		&i.GhRef,
+		&i.DeployInstructions,
 	)
 	return i, err
 }
 
 const rolloutCalculateDone = `-- name: RolloutCalculateDone :one
 WITH rollout AS (
-  SELECT id, feature_name, version, status, created, completed, gh_ref FROM rollouts WHERE rollouts.id = $1
+  SELECT id, feature_name, version, status, created, completed, gh_ref, deploy_instructions FROM rollouts WHERE rollouts.id = $1
 ), dis AS (
   SELECT di.id, di.environment_id, di.feature_name, di.feature_version, di.status, di.hash, di.created, di.last_modified, di.values
   FROM deploy_instructions di
@@ -161,7 +182,7 @@ func (q *Queries) RolloutComplete(ctx context.Context, featureName string) error
 }
 
 const rolloutCreate = `-- name: RolloutCreate :one
-INSERT INTO rollouts (feature_name, version, gh_ref) VALUES ($1, $2, $3) RETURNING id, feature_name, version, status, created, completed, gh_ref
+INSERT INTO rollouts (feature_name, version, gh_ref) VALUES ($1, $2, $3) RETURNING id, feature_name, version, status, created, completed, gh_ref, deploy_instructions
 `
 
 type RolloutCreateParams struct {
@@ -181,6 +202,7 @@ func (q *Queries) RolloutCreate(ctx context.Context, arg RolloutCreateParams) (R
 		&i.Created,
 		&i.Completed,
 		&i.GhRef,
+		&i.DeployInstructions,
 	)
 	return i, err
 }
@@ -291,7 +313,7 @@ func (q *Queries) RolloutUpdateStatus(ctx context.Context, arg RolloutUpdateStat
 }
 
 const rollouts = `-- name: Rollouts :many
-SELECT id, feature_name, version, status, created, completed, gh_ref
+SELECT id, feature_name, version, status, created, completed, gh_ref, deploy_instructions
 FROM rollouts
 ORDER BY created DESC
 LIMIT $1
@@ -314,6 +336,7 @@ func (q *Queries) Rollouts(ctx context.Context, limit int32) ([]Rollout, error) 
 			&i.Created,
 			&i.Completed,
 			&i.GhRef,
+			&i.DeployInstructions,
 		); err != nil {
 			return nil, err
 		}
@@ -326,7 +349,7 @@ func (q *Queries) Rollouts(ctx context.Context, limit int32) ([]Rollout, error) 
 }
 
 const rolloutsForFeature = `-- name: RolloutsForFeature :many
-SELECT id, feature_name, version, status, created, completed, gh_ref
+SELECT id, feature_name, version, status, created, completed, gh_ref, deploy_instructions
 FROM rollouts
 WHERE feature_name = $1
 ORDER BY created DESC
@@ -350,6 +373,7 @@ func (q *Queries) RolloutsForFeature(ctx context.Context, featureName string) ([
 			&i.Created,
 			&i.Completed,
 			&i.GhRef,
+			&i.DeployInstructions,
 		); err != nil {
 			return nil, err
 		}

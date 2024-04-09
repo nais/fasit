@@ -72,7 +72,12 @@ JOIN feature_data fd ON rollouts.feature_name = fd.name AND rollouts.version = f
 WHERE fd.name = @name
 AND rollouts.status = 'pending';
 
-
+-- name: RolloutAssignDeployInstruction :exec
+UPDATE rollouts
+SET deploy_instructions = array_append(deploy_instructions, @deploy_instruction_id)
+WHERE feature_name = @feature_name
+AND version = @version
+AND status = 'pending';
 
 -- name: RolloutByID :one
 SELECT *

@@ -17,7 +17,8 @@ type Rollout struct {
 	FeatureName string `json:"-"`
 
 	GraphVars struct {
-		EnvironmentID uuid.UUID
+		EnvironmentID      uuid.UUID
+		DeployInstructions []uuid.UUID
 	} `json:"-"`
 }
 

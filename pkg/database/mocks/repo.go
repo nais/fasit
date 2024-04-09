@@ -3671,6 +3671,70 @@ func (_c *Repo_Metrics_Call) RunAndReturn(run func(metric.Meter) error) *Repo_Me
 	return _c
 }
 
+// NamesFromDeployInstruction provides a mock function with given fields: ctx, id
+func (_m *Repo) NamesFromDeployInstruction(ctx context.Context, id uuid.UUID) (string, string, error) {
+	ret := _m.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for NamesFromDeployInstruction")
+	}
+
+	var r0 string
+	var r1 string
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) (string, string, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) string); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) string); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Get(1).(string)
+	}
+
+	if rf, ok := ret.Get(2).(func(context.Context, uuid.UUID) error); ok {
+		r2 = rf(ctx, id)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
+// Repo_NamesFromDeployInstruction_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'NamesFromDeployInstruction'
+type Repo_NamesFromDeployInstruction_Call struct {
+	*mock.Call
+}
+
+// NamesFromDeployInstruction is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id uuid.UUID
+func (_e *Repo_Expecter) NamesFromDeployInstruction(ctx interface{}, id interface{}) *Repo_NamesFromDeployInstruction_Call {
+	return &Repo_NamesFromDeployInstruction_Call{Call: _e.mock.On("NamesFromDeployInstruction", ctx, id)}
+}
+
+func (_c *Repo_NamesFromDeployInstruction_Call) Run(run func(ctx context.Context, id uuid.UUID)) *Repo_NamesFromDeployInstruction_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uuid.UUID))
+	})
+	return _c
+}
+
+func (_c *Repo_NamesFromDeployInstruction_Call) Return(tenantName string, environmentName string, err error) *Repo_NamesFromDeployInstruction_Call {
+	_c.Call.Return(tenantName, environmentName, err)
+	return _c
+}
+
+func (_c *Repo_NamesFromDeployInstruction_Call) RunAndReturn(run func(context.Context, uuid.UUID) (string, string, error)) *Repo_NamesFromDeployInstruction_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ReleaseStatusCreateOrUpdate provides a mock function with given fields: ctx, environmentID, h
 func (_m *Repo) ReleaseStatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Release) error {
 	ret := _m.Called(ctx, environmentID, h)
@@ -3821,6 +3885,55 @@ func (_c *Repo_ReleaseStatusesGet_Call) Return(_a0 []*model.Release, _a1 error) 
 }
 
 func (_c *Repo_ReleaseStatusesGet_Call) RunAndReturn(run func(context.Context, uuid.UUID) ([]*model.Release, error)) *Repo_ReleaseStatusesGet_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// RolloutAssignDeployInstruction provides a mock function with given fields: ctx, featureName, featureVersion, deployInstruction
+func (_m *Repo) RolloutAssignDeployInstruction(ctx context.Context, featureName string, featureVersion string, deployInstruction uuid.UUID) error {
+	ret := _m.Called(ctx, featureName, featureVersion, deployInstruction)
+
+	if len(ret) == 0 {
+		panic("no return value specified for RolloutAssignDeployInstruction")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, uuid.UUID) error); ok {
+		r0 = rf(ctx, featureName, featureVersion, deployInstruction)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Repo_RolloutAssignDeployInstruction_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RolloutAssignDeployInstruction'
+type Repo_RolloutAssignDeployInstruction_Call struct {
+	*mock.Call
+}
+
+// RolloutAssignDeployInstruction is a helper method to define mock.On call
+//   - ctx context.Context
+//   - featureName string
+//   - featureVersion string
+//   - deployInstruction uuid.UUID
+func (_e *Repo_Expecter) RolloutAssignDeployInstruction(ctx interface{}, featureName interface{}, featureVersion interface{}, deployInstruction interface{}) *Repo_RolloutAssignDeployInstruction_Call {
+	return &Repo_RolloutAssignDeployInstruction_Call{Call: _e.mock.On("RolloutAssignDeployInstruction", ctx, featureName, featureVersion, deployInstruction)}
+}
+
+func (_c *Repo_RolloutAssignDeployInstruction_Call) Run(run func(ctx context.Context, featureName string, featureVersion string, deployInstruction uuid.UUID)) *Repo_RolloutAssignDeployInstruction_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(uuid.UUID))
+	})
+	return _c
+}
+
+func (_c *Repo_RolloutAssignDeployInstruction_Call) Return(_a0 error) *Repo_RolloutAssignDeployInstruction_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Repo_RolloutAssignDeployInstruction_Call) RunAndReturn(run func(context.Context, string, string, uuid.UUID) error) *Repo_RolloutAssignDeployInstruction_Call {
 	_c.Call.Return(run)
 	return _c
 }

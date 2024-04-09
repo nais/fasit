@@ -21,6 +21,7 @@ type DeployInstructionRepo interface {
 	DeployInstructionsLatestForFeature(ctx context.Context, envID uuid.UUID, featureName string) (*model.DeployInstruction, error)
 	DeployInstructionUpdateStatus(ctx context.Context, id uuid.UUID, status model.RolloutStatus) error
 	HelmValueDiffGet(ctx context.Context, di *model.DeployInstruction) (*model.HelmValueDiff, error)
+	NamesFromDeployInstruction(ctx context.Context, id uuid.UUID) (tenantName, environmentName string, err error)
 }
 
 func (r *repo) DeployInstructionCreate(ctx context.Context, envID uuid.UUID, feature *model.Feature, hash string) (uuid.UUID, error) {
@@ -136,6 +137,15 @@ func (r *repo) HelmValueDiffGet(ctx context.Context, di *model.DeployInstruction
 	}
 
 	return ret, nil
+}
+
+func (r *repo) NamesFromDeployInstruction(ctx context.Context, id uuid.UUID) (tenantName, environmentName string, err error) {
+	row, err := r.querier.NamesFromDeployInstruction(ctx, id)
+	if err != nil {
+		return "", "", err
+	}
+
+	return row.TenantName, row.EnvironmentName, nil
 }
 
 func deployInstructionFromSQL(di gensql.DeployInstruction) *model.DeployInstruction {

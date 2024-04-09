@@ -114,6 +114,34 @@ func (q *Queries) DeployInstructionsForFeature(ctx context.Context, arg DeployIn
 	return items, nil
 }
 
+const deployInstructionsForNameVersion = `-- name: DeployInstructionsForNameVersion :one
+SELECT id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values FROM deploy_instructions
+WHERE feature_name = $1
+AND feature_version = $2
+`
+
+type DeployInstructionsForNameVersionParams struct {
+	FeatureName    string
+	FeatureVersion string
+}
+
+func (q *Queries) DeployInstructionsForNameVersion(ctx context.Context, arg DeployInstructionsForNameVersionParams) (DeployInstruction, error) {
+	row := q.db.QueryRow(ctx, deployInstructionsForNameVersion, arg.FeatureName, arg.FeatureVersion)
+	var i DeployInstruction
+	err := row.Scan(
+		&i.ID,
+		&i.EnvironmentID,
+		&i.FeatureName,
+		&i.FeatureVersion,
+		&i.Status,
+		&i.Hash,
+		&i.Created,
+		&i.LastModified,
+		&i.Values,
+	)
+	return i, err
+}
+
 const deployInstructionsLatestForEnvironment = `-- name: DeployInstructionsLatestForEnvironment :many
 SELECT id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values FROM deploy_instructions
 WHERE id IN (
@@ -229,4 +257,25 @@ type DeployInstructionsUpdateStatusParams struct {
 func (q *Queries) DeployInstructionsUpdateStatus(ctx context.Context, arg DeployInstructionsUpdateStatusParams) error {
 	_, err := q.db.Exec(ctx, deployInstructionsUpdateStatus, arg.Status, arg.ID)
 	return err
+}
+
+const namesFromDeployInstruction = `-- name: NamesFromDeployInstruction :one
+SELECT environments.name as environment_name,
+  tenants.name as tenant_name
+FROM deploy_instructions
+JOIN environments ON deploy_instructions.environment_id = environments.id
+JOIN tenants ON environments.tenant_id = tenants.id
+WHERE deploy_instructions.id = $1
+`
+
+type NamesFromDeployInstructionRow struct {
+	EnvironmentName string
+	TenantName      string
+}
+
+func (q *Queries) NamesFromDeployInstruction(ctx context.Context, id uuid.UUID) (NamesFromDeployInstructionRow, error) {
+	row := q.db.QueryRow(ctx, namesFromDeployInstruction, id)
+	var i NamesFromDeployInstructionRow
+	err := row.Scan(&i.EnvironmentName, &i.TenantName)
+	return i, err
 }

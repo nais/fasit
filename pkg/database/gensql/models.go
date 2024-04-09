@@ -285,13 +285,14 @@ type ReleaseStatus struct {
 }
 
 type Rollout struct {
-	ID          uuid.UUID
-	FeatureName string
-	Version     string
-	Status      string
-	Created     pgtype.Timestamptz
-	Completed   pgtype.Timestamptz
-	GhRef       []byte
+	ID                 uuid.UUID
+	FeatureName        string
+	Version            string
+	Status             string
+	Created            pgtype.Timestamptz
+	Completed          pgtype.Timestamptz
+	GhRef              []byte
+	DeployInstructions []uuid.UUID
 }
 
 type RolloutEvent struct {

@@ -225,6 +225,7 @@ func TestReconcile(t *testing.T) {
 				repo.On("DeployInstructionsLatestForEnvironment", mock.Anything, te.Environment.ID).Return(te.Status, nil)
 				repo.On("FeatureStatesGet", mock.Anything, te.Environment.ID).Return(te.FeatureStates, nil)
 				repo.On("HelmValues", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, nil).Maybe()
+				repo.EXPECT().RolloutAssignDeployInstruction(mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
 
 				reportAt := time.Now()
 				if !te.NaisdReportedAt.IsZero() {

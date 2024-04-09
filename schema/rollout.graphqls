@@ -7,6 +7,14 @@ type Rollout {
   featureName: String!
 
   events: [RolloutEvent!]!
+  logs: [RolloutLog!]!
+}
+
+type RolloutLog {
+  id: ID!
+  tenantName: String!
+  environment: String!
+  lines: [LogLine!]!
 }
 
 type RolloutEvent {

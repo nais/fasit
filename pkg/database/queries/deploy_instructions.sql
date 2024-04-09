@@ -50,6 +50,12 @@ ORDER BY created DESC
 LIMIT 10 OFFSET sqlc.arg('offset')
 ;
 
+-- name: DeployInstructionsForNameVersion :one
+SELECT * FROM deploy_instructions
+WHERE feature_name = @feature_name
+AND feature_version = @feature_version
+;
+
 -- name: DeployInstructionsPrevious :one
 WITH current AS (
   SELECT di.*
@@ -62,4 +68,13 @@ AND environment_id = (SELECT environment_id FROM current)
 AND created < (SELECT created FROM current)
 ORDER BY created DESC
 LIMIT 1
+;
+
+-- name: NamesFromDeployInstruction :one
+SELECT environments.name as environment_name,
+  tenants.name as tenant_name
+FROM deploy_instructions
+JOIN environments ON deploy_instructions.environment_id = environments.id
+JOIN tenants ON environments.tenant_id = tenants.id
+WHERE deploy_instructions.id = @id
 ;

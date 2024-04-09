@@ -130,6 +130,13 @@ type RolloutEvent struct {
 	Data    json.RawMessage `json:"data,omitempty"`
 }
 
+type RolloutLog struct {
+	ID          uuid.UUID  `json:"id"`
+	TenantName  string     `json:"tenantName"`
+	Environment string     `json:"environment"`
+	Lines       []*LogLine `json:"lines"`
+}
+
 type Subscription struct {
 }
 

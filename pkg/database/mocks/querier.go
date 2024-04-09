@@ -1716,6 +1716,63 @@ func (_c *Querier_DeployInstructionsForFeature_Call) RunAndReturn(run func(conte
 	return _c
 }
 
+// DeployInstructionsForNameVersion provides a mock function with given fields: ctx, arg
+func (_m *Querier) DeployInstructionsForNameVersion(ctx context.Context, arg gensql.DeployInstructionsForNameVersionParams) (gensql.DeployInstruction, error) {
+	ret := _m.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeployInstructionsForNameVersion")
+	}
+
+	var r0 gensql.DeployInstruction
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.DeployInstructionsForNameVersionParams) (gensql.DeployInstruction, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.DeployInstructionsForNameVersionParams) gensql.DeployInstruction); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(gensql.DeployInstruction)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, gensql.DeployInstructionsForNameVersionParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Querier_DeployInstructionsForNameVersion_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeployInstructionsForNameVersion'
+type Querier_DeployInstructionsForNameVersion_Call struct {
+	*mock.Call
+}
+
+// DeployInstructionsForNameVersion is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg gensql.DeployInstructionsForNameVersionParams
+func (_e *Querier_Expecter) DeployInstructionsForNameVersion(ctx interface{}, arg interface{}) *Querier_DeployInstructionsForNameVersion_Call {
+	return &Querier_DeployInstructionsForNameVersion_Call{Call: _e.mock.On("DeployInstructionsForNameVersion", ctx, arg)}
+}
+
+func (_c *Querier_DeployInstructionsForNameVersion_Call) Run(run func(ctx context.Context, arg gensql.DeployInstructionsForNameVersionParams)) *Querier_DeployInstructionsForNameVersion_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(gensql.DeployInstructionsForNameVersionParams))
+	})
+	return _c
+}
+
+func (_c *Querier_DeployInstructionsForNameVersion_Call) Return(_a0 gensql.DeployInstruction, _a1 error) *Querier_DeployInstructionsForNameVersion_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Querier_DeployInstructionsForNameVersion_Call) RunAndReturn(run func(context.Context, gensql.DeployInstructionsForNameVersionParams) (gensql.DeployInstruction, error)) *Querier_DeployInstructionsForNameVersion_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // DeployInstructionsLatestForEnvironment provides a mock function with given fields: ctx, environmentID
 func (_m *Querier) DeployInstructionsLatestForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]gensql.DeployInstruction, error) {
 	ret := _m.Called(ctx, environmentID)
@@ -3890,6 +3947,63 @@ func (_c *Querier_MappingValuesForTenant_Call) RunAndReturn(run func(context.Con
 	return _c
 }
 
+// NamesFromDeployInstruction provides a mock function with given fields: ctx, id
+func (_m *Querier) NamesFromDeployInstruction(ctx context.Context, id uuid.UUID) (gensql.NamesFromDeployInstructionRow, error) {
+	ret := _m.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for NamesFromDeployInstruction")
+	}
+
+	var r0 gensql.NamesFromDeployInstructionRow
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) (gensql.NamesFromDeployInstructionRow, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) gensql.NamesFromDeployInstructionRow); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Get(0).(gensql.NamesFromDeployInstructionRow)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Querier_NamesFromDeployInstruction_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'NamesFromDeployInstruction'
+type Querier_NamesFromDeployInstruction_Call struct {
+	*mock.Call
+}
+
+// NamesFromDeployInstruction is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id uuid.UUID
+func (_e *Querier_Expecter) NamesFromDeployInstruction(ctx interface{}, id interface{}) *Querier_NamesFromDeployInstruction_Call {
+	return &Querier_NamesFromDeployInstruction_Call{Call: _e.mock.On("NamesFromDeployInstruction", ctx, id)}
+}
+
+func (_c *Querier_NamesFromDeployInstruction_Call) Run(run func(ctx context.Context, id uuid.UUID)) *Querier_NamesFromDeployInstruction_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uuid.UUID))
+	})
+	return _c
+}
+
+func (_c *Querier_NamesFromDeployInstruction_Call) Return(_a0 gensql.NamesFromDeployInstructionRow, _a1 error) *Querier_NamesFromDeployInstruction_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Querier_NamesFromDeployInstruction_Call) RunAndReturn(run func(context.Context, uuid.UUID) (gensql.NamesFromDeployInstructionRow, error)) *Querier_NamesFromDeployInstruction_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ReleaseStatusCreateOrUpdate provides a mock function with given fields: ctx, arg
 func (_m *Querier) ReleaseStatusCreateOrUpdate(ctx context.Context, arg gensql.ReleaseStatusCreateOrUpdateParams) (gensql.ReleaseStatus, error) {
 	ret := _m.Called(ctx, arg)
@@ -4049,6 +4163,53 @@ func (_c *Querier_ReleaseStatusesGet_Call) Return(_a0 []gensql.ReleaseStatus, _a
 }
 
 func (_c *Querier_ReleaseStatusesGet_Call) RunAndReturn(run func(context.Context, uuid.UUID) ([]gensql.ReleaseStatus, error)) *Querier_ReleaseStatusesGet_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// RolloutAssignDeployInstruction provides a mock function with given fields: ctx, arg
+func (_m *Querier) RolloutAssignDeployInstruction(ctx context.Context, arg gensql.RolloutAssignDeployInstructionParams) error {
+	ret := _m.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for RolloutAssignDeployInstruction")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.RolloutAssignDeployInstructionParams) error); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Querier_RolloutAssignDeployInstruction_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RolloutAssignDeployInstruction'
+type Querier_RolloutAssignDeployInstruction_Call struct {
+	*mock.Call
+}
+
+// RolloutAssignDeployInstruction is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg gensql.RolloutAssignDeployInstructionParams
+func (_e *Querier_Expecter) RolloutAssignDeployInstruction(ctx interface{}, arg interface{}) *Querier_RolloutAssignDeployInstruction_Call {
+	return &Querier_RolloutAssignDeployInstruction_Call{Call: _e.mock.On("RolloutAssignDeployInstruction", ctx, arg)}
+}
+
+func (_c *Querier_RolloutAssignDeployInstruction_Call) Run(run func(ctx context.Context, arg gensql.RolloutAssignDeployInstructionParams)) *Querier_RolloutAssignDeployInstruction_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(gensql.RolloutAssignDeployInstructionParams))
+	})
+	return _c
+}
+
+func (_c *Querier_RolloutAssignDeployInstruction_Call) Return(_a0 error) *Querier_RolloutAssignDeployInstruction_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Querier_RolloutAssignDeployInstruction_Call) RunAndReturn(run func(context.Context, gensql.RolloutAssignDeployInstructionParams) error) *Querier_RolloutAssignDeployInstruction_Call {
 	_c.Call.Return(run)
 	return _c
 }
