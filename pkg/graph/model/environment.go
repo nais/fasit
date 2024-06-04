@@ -19,6 +19,7 @@ type Environment struct {
 	Kind         EnvironmentKind `json:"kind"`
 	CI           bool            `json:"ci"`
 	Reconcile    bool            `json:"reconciled"`
+	AutoUpgrade  bool            `json:"autoUpgrade"`
 
 	TenantID uuid.UUID `json:"tenantID"`
 }

@@ -31,6 +31,7 @@ func environmentFromSQL(p gensql.Environment) *model.Environment {
 		TenantID:     p.TenantID,
 		CI:           p.Ci,
 		Reconcile:    p.Reconcile,
+		AutoUpgrade:  p.AutoUpgrade,
 	}
 }
 

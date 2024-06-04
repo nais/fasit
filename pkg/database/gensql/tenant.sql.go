@@ -54,7 +54,7 @@ func (q *Queries) TenantCreate(ctx context.Context, arg TenantCreateParams) (Ten
 }
 
 const tenantEnvironments = `-- name: TenantEnvironments :many
-SELECT e.id, e.tenant_id, e.name, e.kind, e.description, e.created, e.last_modified, e.ci, e.reconcile, t.name AS tenant_name
+SELECT e.id, e.tenant_id, e.name, e.kind, e.description, e.created, e.last_modified, e.ci, e.reconcile, e.auto_upgrade, t.name AS tenant_name
 FROM environments e
 JOIN tenants t ON e.tenant_id = t.id
 WHERE
@@ -74,6 +74,7 @@ type TenantEnvironmentsRow struct {
 	LastModified pgtype.Timestamptz
 	Ci           bool
 	Reconcile    bool
+	AutoUpgrade  bool
 	TenantName   string
 }
 
@@ -96,6 +97,7 @@ func (q *Queries) TenantEnvironments(ctx context.Context, all bool) ([]TenantEnv
 			&i.LastModified,
 			&i.Ci,
 			&i.Reconcile,
+			&i.AutoUpgrade,
 			&i.TenantName,
 		); err != nil {
 			return nil, err

@@ -195,6 +195,7 @@ type Environment struct {
 	LastModified pgtype.Timestamptz
 	Ci           bool
 	Reconcile    bool
+	AutoUpgrade  bool
 }
 
 type EnvironmentValue struct {
