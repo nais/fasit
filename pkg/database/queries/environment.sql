@@ -55,3 +55,9 @@ SET auto_upgrade = @auto_upgrade
 WHERE
     id = @id
 RETURNING *;
+
+-- name: EnvironmentsGetByAutoUpgrade :many
+SELECT *
+FROM environments
+WHERE auto_upgrade = true
+ORDER BY name ASC;

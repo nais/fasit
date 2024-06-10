@@ -16,6 +16,7 @@ type EnvironmentRepo interface {
 	EnvironmentGetByName(ctx context.Context, tenantID uuid.UUID, name string) (*model.Environment, error)
 	EnvironmentIDByNames(ctx context.Context, tenantName, environmentName string) (uuid.UUID, error)
 	EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]*model.Environment, error)
+	EnvironmentsGetByAutoUpgrade(ctx context.Context) ([]*model.Environment, error)
 	EnvironmentUpdate(ctx context.Context, environmentID uuid.UUID, p *model.EnvironmentUpdate) (*model.Environment, error)
 	EnvironmentSetAutoUpgrade(ctx context.Context, environmentID uuid.UUID, autoUpgrade bool) (*model.Environment, error)
 	EnvironmentSetReconcile(ctx context.Context, environmentID uuid.UUID, reconcile bool) (*model.Environment, error)
@@ -57,6 +58,18 @@ func (r *repo) EnvironmentGetByName(ctx context.Context, tenantID uuid.UUID, nam
 
 func (r *repo) EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]*model.Environment, error) {
 	envs, err := r.querier.EnvironmentsGet(ctx, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	environmentSlice := []*model.Environment{}
+	for _, env := range envs {
+		environmentSlice = append(environmentSlice, environmentFromSQL(env))
+	}
+	return environmentSlice, nil
+}
+
+func (r *repo) EnvironmentsGetByAutoUpgrade(ctx context.Context) ([]*model.Environment, error) {
+	envs, err := r.querier.EnvironmentsGetByAutoUpgrade(ctx)
 	if err != nil {
 		return nil, err
 	}

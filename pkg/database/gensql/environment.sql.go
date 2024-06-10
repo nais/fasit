@@ -303,3 +303,41 @@ func (q *Queries) EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]En
 	}
 	return items, nil
 }
+
+const environmentsGetByAutoUpgrade = `-- name: EnvironmentsGetByAutoUpgrade :many
+SELECT id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade
+FROM environments
+WHERE auto_upgrade = true
+ORDER BY name ASC
+`
+
+func (q *Queries) EnvironmentsGetByAutoUpgrade(ctx context.Context) ([]Environment, error) {
+	rows, err := q.db.Query(ctx, environmentsGetByAutoUpgrade)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Environment{}
+	for rows.Next() {
+		var i Environment
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.Name,
+			&i.Kind,
+			&i.Description,
+			&i.Created,
+			&i.LastModified,
+			&i.Ci,
+			&i.Reconcile,
+			&i.AutoUpgrade,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
