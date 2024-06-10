@@ -232,6 +232,11 @@ func (r *mutationResolver) EnvironmentSetReconcile(ctx context.Context, id uuid.
 	return r.Repo.EnvironmentSetReconcile(ctx, id, reconcile)
 }
 
+// EnvironmentSetAutoUpgrade is the resolver for the environmentSetAutoUpgrade field.
+func (r *mutationResolver) EnvironmentSetAutoUpgrade(ctx context.Context, id uuid.UUID, autoUpgrade bool) (*model.Environment, error) {
+	return r.Repo.EnvironmentSetAutoUpgrade(ctx, id, autoUpgrade)
+}
+
 // EnvironmentUpgrade is the resolver for the environmentUpgrade field.
 func (r *mutationResolver) EnvironmentUpgrade(ctx context.Context, upgrade *model.EnvironmentUpgrade) (*model.Environment, error) {
 	env, err := r.Repo.EnvironmentGet(ctx, upgrade.EnvID)

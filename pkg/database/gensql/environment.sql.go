@@ -173,6 +173,37 @@ func (q *Queries) EnvironmentIDByNames(ctx context.Context, arg EnvironmentIDByN
 	return id, err
 }
 
+const environmentSetAutoUpgrade = `-- name: EnvironmentSetAutoUpgrade :one
+UPDATE environments
+SET auto_upgrade = $1
+WHERE
+    id = $2
+RETURNING id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade
+`
+
+type EnvironmentSetAutoUpgradeParams struct {
+	AutoUpgrade bool
+	ID          uuid.UUID
+}
+
+func (q *Queries) EnvironmentSetAutoUpgrade(ctx context.Context, arg EnvironmentSetAutoUpgradeParams) (Environment, error) {
+	row := q.db.QueryRow(ctx, environmentSetAutoUpgrade, arg.AutoUpgrade, arg.ID)
+	var i Environment
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.Name,
+		&i.Kind,
+		&i.Description,
+		&i.Created,
+		&i.LastModified,
+		&i.Ci,
+		&i.Reconcile,
+		&i.AutoUpgrade,
+	)
+	return i, err
+}
+
 const environmentSetReconcile = `-- name: EnvironmentSetReconcile :one
 UPDATE environments
 SET reconcile = $1

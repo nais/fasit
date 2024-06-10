@@ -17,6 +17,7 @@ type EnvironmentRepo interface {
 	EnvironmentIDByNames(ctx context.Context, tenantName, environmentName string) (uuid.UUID, error)
 	EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]*model.Environment, error)
 	EnvironmentUpdate(ctx context.Context, environmentID uuid.UUID, p *model.EnvironmentUpdate) (*model.Environment, error)
+	EnvironmentSetAutoUpgrade(ctx context.Context, environmentID uuid.UUID, autoUpgrade bool) (*model.Environment, error)
 	EnvironmentSetReconcile(ctx context.Context, environmentID uuid.UUID, reconcile bool) (*model.Environment, error)
 }
 
@@ -139,6 +140,25 @@ func (r *repo) EnvironmentSetReconcile(ctx context.Context, environmentID uuid.U
 	}
 
 	r.createAudit(ctx, "environment reconcile "+txt, "environments", env.ID.String())
+
+	return environmentFromSQL(env), nil
+}
+
+func (r *repo) EnvironmentSetAutoUpgrade(ctx context.Context, environmentID uuid.UUID, autoUpgrade bool) (*model.Environment, error) {
+	env, err := r.querier.EnvironmentSetAutoUpgrade(ctx, gensql.EnvironmentSetAutoUpgradeParams{
+		ID:          environmentID,
+		AutoUpgrade: autoUpgrade,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	txt := "enabled"
+	if !autoUpgrade {
+		txt = "disabled"
+	}
+
+	r.createAudit(ctx, "environment auto upgrade "+txt, "environments", env.ID.String())
 
 	return environmentFromSQL(env), nil
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 
 	"cloud.google.com/go/container/apiv1/containerpb"
 	"github.com/google/uuid"
@@ -361,4 +362,34 @@ func getProjectId(ctx context.Context, c *ClusterUpgrader, environmentId uuid.UU
 	}
 
 	return id, nil
+}
+
+func (c *ClusterUpgrader) IsNewerPatchRelease(current, new string) bool {
+	v1, err := version.NewVersion(current)
+	if err != nil {
+		c.log.Fatalf("Error parsing version1: %s", err)
+	}
+
+	v2, err := version.NewVersion(new)
+	if err != nil {
+		c.log.Fatalf("Error parsing version2: %s", err)
+	}
+
+	// Split versions to extract major.minor.patch
+	v1Segments := strings.Split(v1.String(), "-")[0]
+	v2Segments := strings.Split(v2.String(), "-")[0]
+
+	v1Parts := strings.Split(v1Segments, ".")
+	v2Parts := strings.Split(v2Segments, ".")
+
+	if len(v1Parts) < 3 || len(v2Parts) < 3 {
+		c.log.Fatalf("Invalid version format, must include major.minor.patch")
+	}
+
+	// Compare major and minor versions
+	if v1Parts[0] == v2Parts[0] && v1Parts[1] == v2Parts[1] {
+		return v2.GreaterThan(v1)
+	}
+
+	return false
 }

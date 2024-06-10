@@ -124,6 +124,8 @@ func main() {
 		}
 	}()
 
+	log.Infof("migrating database with connection %s", cfg.DBConnectionDSN)
+
 	if err := database.Migrate(dbDriver, cfg.DBConnectionDSN, log.WithField("subsystem", "migrate")); err != nil {
 		log.WithError(err).Fatal("migrating database")
 	}

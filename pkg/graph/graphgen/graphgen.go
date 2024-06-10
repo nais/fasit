@@ -282,18 +282,19 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		ConfigurationCreate     func(childComplexity int, configuration model.NewConfiguration) int
-		ConfigurationDelete     func(childComplexity int, id uuid.UUID) int
-		ConfigurationUpdate     func(childComplexity int, id uuid.UUID, configuration model.UpdateConfiguration) int
-		DeleteHelmInstall       func(childComplexity int, envID uuid.UUID, name string) int
-		EnvironmentCreate       func(childComplexity int, environment model.EnvironmentCreate) int
-		EnvironmentSetReconcile func(childComplexity int, id uuid.UUID, reconcile bool) int
-		EnvironmentUpdate       func(childComplexity int, id uuid.UUID, input model.EnvironmentUpdate) int
-		EnvironmentUpgrade      func(childComplexity int, upgrade *model.EnvironmentUpgrade) int
-		FeatureStateSave        func(childComplexity int, envID uuid.UUID, enabled bool, feature string) int
-		Playground              func(childComplexity int, input model.PlaygroundInput) int
-		RolloutMarkFailed       func(childComplexity int, feature string, version string) int
-		TenantCreate            func(childComplexity int, tenant model.TenantCreate) int
+		ConfigurationCreate       func(childComplexity int, configuration model.NewConfiguration) int
+		ConfigurationDelete       func(childComplexity int, id uuid.UUID) int
+		ConfigurationUpdate       func(childComplexity int, id uuid.UUID, configuration model.UpdateConfiguration) int
+		DeleteHelmInstall         func(childComplexity int, envID uuid.UUID, name string) int
+		EnvironmentCreate         func(childComplexity int, environment model.EnvironmentCreate) int
+		EnvironmentSetAutoUpgrade func(childComplexity int, id uuid.UUID, autoUpgrade bool) int
+		EnvironmentSetReconcile   func(childComplexity int, id uuid.UUID, reconcile bool) int
+		EnvironmentUpdate         func(childComplexity int, id uuid.UUID, input model.EnvironmentUpdate) int
+		EnvironmentUpgrade        func(childComplexity int, upgrade *model.EnvironmentUpgrade) int
+		FeatureStateSave          func(childComplexity int, envID uuid.UUID, enabled bool, feature string) int
+		Playground                func(childComplexity int, input model.PlaygroundInput) int
+		RolloutMarkFailed         func(childComplexity int, feature string, version string) int
+		TenantCreate              func(childComplexity int, tenant model.TenantCreate) int
 	}
 
 	NaisdWarning struct {
@@ -480,6 +481,7 @@ type MutationResolver interface {
 	EnvironmentUpdate(ctx context.Context, id uuid.UUID, input model.EnvironmentUpdate) (*model.Environment, error)
 	EnvironmentSetReconcile(ctx context.Context, id uuid.UUID, reconcile bool) (*model.Environment, error)
 	EnvironmentUpgrade(ctx context.Context, upgrade *model.EnvironmentUpgrade) (*model.Environment, error)
+	EnvironmentSetAutoUpgrade(ctx context.Context, id uuid.UUID, autoUpgrade bool) (*model.Environment, error)
 	FeatureStateSave(ctx context.Context, envID uuid.UUID, enabled bool, feature string) (*model.FeatureState, error)
 	Playground(ctx context.Context, input model.PlaygroundInput) (*model.Playground, error)
 	RolloutMarkFailed(ctx context.Context, feature string, version string) (*model.Rollout, error)
@@ -1567,6 +1569,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.EnvironmentCreate(childComplexity, args["environment"].(model.EnvironmentCreate)), true
 
+	case "Mutation.environmentSetAutoUpgrade":
+		if e.complexity.Mutation.EnvironmentSetAutoUpgrade == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_environmentSetAutoUpgrade_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.EnvironmentSetAutoUpgrade(childComplexity, args["id"].(uuid.UUID), args["autoUpgrade"].(bool)), true
+
 	case "Mutation.environmentSetReconcile":
 		if e.complexity.Mutation.EnvironmentSetReconcile == nil {
 			break
@@ -2608,6 +2622,11 @@ extend type Mutation {
   Upgrade environment k8s cluster
   """
   environmentUpgrade(upgrade: EnvironmentUpgrade): Environment!
+
+  """
+  Change the autoUpgrade flag for an environment
+  """
+  environmentSetAutoUpgrade(id: ID!, autoUpgrade: Boolean!): Environment!
 }
 `, BuiltIn: false},
 	{Name: "../../../schema/feature.graphqls", Input: `type Computed {
@@ -3030,6 +3049,30 @@ func (ec *executionContext) field_Mutation_environmentCreate_args(ctx context.Co
 		}
 	}
 	args["environment"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_environmentSetAutoUpgrade_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 uuid.UUID
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
+	var arg1 bool
+	if tmp, ok := rawArgs["autoUpgrade"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("autoUpgrade"))
+		arg1, err = ec.unmarshalNBoolean2bool(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["autoUpgrade"] = arg1
 	return args, nil
 }
 
@@ -10837,6 +10880,105 @@ func (ec *executionContext) fieldContext_Mutation_environmentUpgrade(ctx context
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_environmentUpgrade_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_environmentSetAutoUpgrade(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_environmentSetAutoUpgrade(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().EnvironmentSetAutoUpgrade(rctx, fc.Args["id"].(uuid.UUID), fc.Args["autoUpgrade"].(bool))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Environment)
+	fc.Result = res
+	return ec.marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐEnvironment(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_environmentSetAutoUpgrade(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Environment_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Environment_name(ctx, field)
+			case "description":
+				return ec.fieldContext_Environment_description(ctx, field)
+			case "featureStates":
+				return ec.fieldContext_Environment_featureStates(ctx, field)
+			case "created":
+				return ec.fieldContext_Environment_created(ctx, field)
+			case "lastModified":
+				return ec.fieldContext_Environment_lastModified(ctx, field)
+			case "kind":
+				return ec.fieldContext_Environment_kind(ctx, field)
+			case "gcpProjectID":
+				return ec.fieldContext_Environment_gcpProjectID(ctx, field)
+			case "health":
+				return ec.fieldContext_Environment_health(ctx, field)
+			case "releases":
+				return ec.fieldContext_Environment_releases(ctx, field)
+			case "nodes":
+				return ec.fieldContext_Environment_nodes(ctx, field)
+			case "values":
+				return ec.fieldContext_Environment_values(ctx, field)
+			case "tenant":
+				return ec.fieldContext_Environment_tenant(ctx, field)
+			case "warnings":
+				return ec.fieldContext_Environment_warnings(ctx, field)
+			case "auditLog":
+				return ec.fieldContext_Environment_auditLog(ctx, field)
+			case "features":
+				return ec.fieldContext_Environment_features(ctx, field)
+			case "feature":
+				return ec.fieldContext_Environment_feature(ctx, field)
+			case "reconcile":
+				return ec.fieldContext_Environment_reconcile(ctx, field)
+			case "autoUpgrade":
+				return ec.fieldContext_Environment_autoUpgrade(ctx, field)
+			case "clusterUpgradeStatus":
+				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
+			case "versions":
+				return ec.fieldContext_Environment_versions(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_environmentSetAutoUpgrade_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -19758,6 +19900,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "environmentUpgrade":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_environmentUpgrade(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "environmentSetAutoUpgrade":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_environmentSetAutoUpgrade(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
