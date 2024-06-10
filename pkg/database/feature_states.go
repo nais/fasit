@@ -123,7 +123,7 @@ func (r *repo) FeatureStateGet(ctx context.Context, envID uuid.UUID, featureName
 }
 
 func (r *repo) FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *model.Feature, enabled bool) (*model.FeatureState, error) {
-	if len(feature.Dependencies) > 0 {
+	if len(feature.Dependencies) > 0 && enabled {
 		states, err := r.FeatureStatesGet(ctx, envID)
 		if err != nil {
 			return nil, err
