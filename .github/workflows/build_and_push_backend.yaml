@@ -3,7 +3,7 @@ on:
   push:
     branches: [main]
     paths-ignore:
-      - "charts/**"
+      - "charts/naisd/**"
       - ".github/workflows/*_chart.yaml"
       - ".github/workflows/build_and_push_naisd.yaml"
       - ".github/workflows/dependabot-auto-merge.yaml"
