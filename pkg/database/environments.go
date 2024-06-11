@@ -16,7 +16,9 @@ type EnvironmentRepo interface {
 	EnvironmentGetByName(ctx context.Context, tenantID uuid.UUID, name string) (*model.Environment, error)
 	EnvironmentIDByNames(ctx context.Context, tenantName, environmentName string) (uuid.UUID, error)
 	EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]*model.Environment, error)
+	EnvironmentsGetByAutoUpgrade(ctx context.Context) ([]*model.Environment, error)
 	EnvironmentUpdate(ctx context.Context, environmentID uuid.UUID, p *model.EnvironmentUpdate) (*model.Environment, error)
+	EnvironmentSetAutoUpgrade(ctx context.Context, environmentID uuid.UUID, autoUpgrade bool) (*model.Environment, error)
 	EnvironmentSetReconcile(ctx context.Context, environmentID uuid.UUID, reconcile bool) (*model.Environment, error)
 }
 
@@ -31,6 +33,7 @@ func environmentFromSQL(p gensql.Environment) *model.Environment {
 		TenantID:     p.TenantID,
 		CI:           p.Ci,
 		Reconcile:    p.Reconcile,
+		AutoUpgrade:  p.AutoUpgrade,
 	}
 }
 
@@ -55,6 +58,18 @@ func (r *repo) EnvironmentGetByName(ctx context.Context, tenantID uuid.UUID, nam
 
 func (r *repo) EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]*model.Environment, error) {
 	envs, err := r.querier.EnvironmentsGet(ctx, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	environmentSlice := []*model.Environment{}
+	for _, env := range envs {
+		environmentSlice = append(environmentSlice, environmentFromSQL(env))
+	}
+	return environmentSlice, nil
+}
+
+func (r *repo) EnvironmentsGetByAutoUpgrade(ctx context.Context) ([]*model.Environment, error) {
+	envs, err := r.querier.EnvironmentsGetByAutoUpgrade(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -138,6 +153,25 @@ func (r *repo) EnvironmentSetReconcile(ctx context.Context, environmentID uuid.U
 	}
 
 	r.createAudit(ctx, "environment reconcile "+txt, "environments", env.ID.String())
+
+	return environmentFromSQL(env), nil
+}
+
+func (r *repo) EnvironmentSetAutoUpgrade(ctx context.Context, environmentID uuid.UUID, autoUpgrade bool) (*model.Environment, error) {
+	env, err := r.querier.EnvironmentSetAutoUpgrade(ctx, gensql.EnvironmentSetAutoUpgradeParams{
+		ID:          environmentID,
+		AutoUpgrade: autoUpgrade,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	txt := "enabled"
+	if !autoUpgrade {
+		txt = "disabled"
+	}
+
+	r.createAudit(ctx, "environment auto upgrade "+txt, "environments", env.ID.String())
 
 	return environmentFromSQL(env), nil
 }

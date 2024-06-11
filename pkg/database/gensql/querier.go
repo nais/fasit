@@ -55,6 +55,7 @@ type Querier interface {
 	EnvironmentGet(ctx context.Context, id uuid.UUID) (Environment, error)
 	EnvironmentGetByName(ctx context.Context, arg EnvironmentGetByNameParams) (Environment, error)
 	EnvironmentIDByNames(ctx context.Context, arg EnvironmentIDByNamesParams) (uuid.UUID, error)
+	EnvironmentSetAutoUpgrade(ctx context.Context, arg EnvironmentSetAutoUpgradeParams) (Environment, error)
 	EnvironmentSetReconcile(ctx context.Context, arg EnvironmentSetReconcileParams) (Environment, error)
 	EnvironmentUpdate(ctx context.Context, arg EnvironmentUpdateParams) (Environment, error)
 	EnvironmentValueDelete(ctx context.Context, arg EnvironmentValueDeleteParams) error
@@ -63,6 +64,7 @@ type Querier interface {
 	EnvironmentValuesAcrossEnvs(ctx context.Context, key string) ([]EnvironmentValuesAcrossEnvsRow, error)
 	EnvironmentValuesForEnvironment(ctx context.Context, arg EnvironmentValuesForEnvironmentParams) ([]EnvironmentValuesForEnvironmentRow, error)
 	EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]Environment, error)
+	EnvironmentsGetByAutoUpgrade(ctx context.Context) ([]Environment, error)
 	FeatureByName(ctx context.Context, name string) (FeatureByNameRow, error)
 	FeatureDataCreate(ctx context.Context, arg FeatureDataCreateParams) error
 	FeatureGetForEnv(ctx context.Context, environmentKind string) ([]FeatureGetForEnvRow, error)

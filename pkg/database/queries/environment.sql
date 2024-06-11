@@ -48,3 +48,16 @@ SET reconcile = @reconcile
 WHERE
     id = @id
 RETURNING *;
+
+-- name: EnvironmentSetAutoUpgrade :one
+UPDATE environments
+SET auto_upgrade = @auto_upgrade
+WHERE
+    id = @id
+RETURNING *;
+
+-- name: EnvironmentsGetByAutoUpgrade :many
+SELECT *
+FROM environments
+WHERE auto_upgrade = true
+ORDER BY name ASC;

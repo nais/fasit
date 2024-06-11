@@ -30,6 +30,7 @@ import (
 	"github.com/nais/fasit/pkg/provider"
 	"github.com/nais/fasit/pkg/provider/protogen"
 	"github.com/nais/fasit/pkg/rollout"
+	"github.com/nais/fasit/pkg/slack"
 	"github.com/nais/fasit/pkg/upgrader"
 	"github.com/nais/fasit/pkg/workers"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -65,6 +66,8 @@ func init() {
 	flag.StringVar(&cfg.IAPAudience, "iap-audience", "", "IAP audience string")
 	flag.BoolVar(&cfg.InsecureSkipProxy, "insecure-skip-proxy", false, "Insecure, but allows the server to not require iap")
 	flag.BoolVar(&cfg.InsecureSkipTokenCheck, "insecure-skip-token-check", false, "Insecure, but allows the server ignore token check")
+	flag.StringVar(&cfg.SlackClusterUpgradeChannel, "slack-cluster-upgrade-channel", os.Getenv("SLACK_CLUSTER_UPGRADE_CHANNEL"), "Slack channel to send message to")
+	flag.StringVar(&cfg.SlackAPIToken, "slack-api-token", os.Getenv("SLACK_API_TOKEN"), "Slack API token")
 }
 
 func newServer(es graphql.ExecutableSchema) *handler.Server {
@@ -102,6 +105,8 @@ func main() {
 	if err != nil {
 		log.WithError(err).Fatal("setting up metrics provider")
 	}
+
+	slackClient := slack.New(cfg.SlackAPIToken)
 
 	log.Info("starting database client")
 	dbDriver := "pgx"
@@ -247,7 +252,7 @@ func main() {
 		}
 	}()
 
-	if err := runClusterUpgrader(ctx, log, googleClient, repo, meter); err != nil {
+	if err := runClusterUpgrader(ctx, log, googleClient, repo, meter, slackClient); err != nil {
 		log.Fatal(err)
 	}
 
@@ -316,12 +321,14 @@ func newMetricsProvider() (metric.Meter, error) {
 	return provider.Meter("github.com/nais/fasit"), nil
 }
 
-func runClusterUpgrader(ctx context.Context, log *logrus.Logger, googleClient upgrader.Upgrader, repo database.Repo, meter metric.Meter) error {
+func runClusterUpgrader(ctx context.Context, log *logrus.Logger, googleClient upgrader.Upgrader, repo database.Repo, meter metric.Meter, slack *slack.Slack) error {
 	s := workers.NewScheduler(log.WithField("subsystem", "scheduler"))
-	clusterUpgrader := upgrader.NewClusterUpgrader(repo, log, googleClient, meter)
+	clusterUpgrader := upgrader.NewClusterUpgrader(repo, log, googleClient, meter, slack, cfg.SlackClusterUpgradeChannel)
+	autoUpgrader := upgrader.NewAutoUpgrader(repo, log, googleClient)
+
 	s.Register("cluster-upgrader", clusterUpgrader, 30*time.Second)
+	s.Register("auto-upgrader", autoUpgrader, 1*time.Hour)
 	s.Start(ctx)
 
-	log.Info("Done")
 	return nil
 }

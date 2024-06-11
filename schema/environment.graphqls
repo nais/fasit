@@ -57,6 +57,7 @@ type Environment {
   features: [Feature!]!
   feature(name: String!): Feature!
   reconcile: Boolean!
+  autoUpgrade: Boolean!
   clusterUpgradeStatus: ClusterUpgradeStatus
   versions: EnvironmentVersions
 }
@@ -143,4 +144,9 @@ extend type Mutation {
   Upgrade environment k8s cluster
   """
   environmentUpgrade(upgrade: EnvironmentUpgrade): Environment!
+
+  """
+  Change the autoUpgrade flag for an environment
+  """
+  environmentSetAutoUpgrade(id: ID!, autoUpgrade: Boolean!): Environment!
 }

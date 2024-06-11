@@ -382,6 +382,53 @@ func (_c *Upgrader_GetRunningOperations_Call) RunAndReturn(run func(context.Cont
 	return _c
 }
 
+// IsTimeInRange provides a mock function with given fields: start, end
+func (_m *Upgrader) IsTimeInRange(start int, end int) bool {
+	ret := _m.Called(start, end)
+
+	if len(ret) == 0 {
+		panic("no return value specified for IsTimeInRange")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func(int, int) bool); ok {
+		r0 = rf(start, end)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// Upgrader_IsTimeInRange_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'IsTimeInRange'
+type Upgrader_IsTimeInRange_Call struct {
+	*mock.Call
+}
+
+// IsTimeInRange is a helper method to define mock.On call
+//   - start int
+//   - end int
+func (_e *Upgrader_Expecter) IsTimeInRange(start interface{}, end interface{}) *Upgrader_IsTimeInRange_Call {
+	return &Upgrader_IsTimeInRange_Call{Call: _e.mock.On("IsTimeInRange", start, end)}
+}
+
+func (_c *Upgrader_IsTimeInRange_Call) Run(run func(start int, end int)) *Upgrader_IsTimeInRange_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(int), args[1].(int))
+	})
+	return _c
+}
+
+func (_c *Upgrader_IsTimeInRange_Call) Return(_a0 bool) *Upgrader_IsTimeInRange_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Upgrader_IsTimeInRange_Call) RunAndReturn(run func(int, int) bool) *Upgrader_IsTimeInRange_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // UpgradeMaster provides a mock function with given fields: ctx, projectId, environment, version
 func (_m *Upgrader) UpgradeMaster(ctx context.Context, projectId string, environment *model.Environment, version string) (*containerpb.Operation, error) {
 	ret := _m.Called(ctx, projectId, environment, version)

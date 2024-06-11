@@ -62,7 +62,7 @@ func (r *repo) EnvConfig(ctx context.Context, feature *model.Feature, envID uuid
 	retVal := []*model.Configuration{}
 	knownKeys := make(map[string]struct{}, len(config))
 	for _, conf := range config {
-		retVal = append(retVal, envConfigFromSQL(feature, conf))
+		retVal = append(retVal, envConfigFromSQL(conf))
 		knownKeys[conf.Key] = struct{}{}
 	}
 
@@ -81,7 +81,7 @@ func (r *repo) EnvConfig(ctx context.Context, feature *model.Feature, envID uuid
 	return retVal, nil
 }
 
-func envConfigFromSQL(feature *model.Feature, conf gensql.EnvConfigRow) *model.Configuration {
+func envConfigFromSQL(conf gensql.EnvConfigRow) *model.Configuration {
 	ret := &model.Configuration{
 		ID: conf.ID,
 		GraphVars: model.ConfigurationGraphVars{

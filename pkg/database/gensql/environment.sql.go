@@ -13,7 +13,7 @@ import (
 )
 
 const environmentByNames = `-- name: EnvironmentByNames :one
-SELECT e.id, e.tenant_id, e.name, e.kind, e.description, e.created, e.last_modified, e.ci, e.reconcile
+SELECT e.id, e.tenant_id, e.name, e.kind, e.description, e.created, e.last_modified, e.ci, e.reconcile, e.auto_upgrade
 FROM tenants t
          JOIN environments e ON e.tenant_id = t.id AND e.name = $1
 WHERE t.name = $2
@@ -38,12 +38,13 @@ func (q *Queries) EnvironmentByNames(ctx context.Context, arg EnvironmentByNames
 		&i.LastModified,
 		&i.Ci,
 		&i.Reconcile,
+		&i.AutoUpgrade,
 	)
 	return i, err
 }
 
 const environmentCI = `-- name: EnvironmentCI :one
-SELECT id, tenant_id, name, kind, description, created, last_modified, ci, reconcile FROM environments WHERE ci = true AND kind = $1
+SELECT id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade FROM environments WHERE ci = true AND kind = $1
 `
 
 func (q *Queries) EnvironmentCI(ctx context.Context, kind EnvironmentKind) (Environment, error) {
@@ -59,12 +60,13 @@ func (q *Queries) EnvironmentCI(ctx context.Context, kind EnvironmentKind) (Envi
 		&i.LastModified,
 		&i.Ci,
 		&i.Reconcile,
+		&i.AutoUpgrade,
 	)
 	return i, err
 }
 
 const environmentCreate = `-- name: EnvironmentCreate :one
-INSERT INTO environments (name, description, tenant_id, kind) VALUES ($1, $2, $3, $4) RETURNING id, tenant_id, name, kind, description, created, last_modified, ci, reconcile
+INSERT INTO environments (name, description, tenant_id, kind) VALUES ($1, $2, $3, $4) RETURNING id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade
 `
 
 type EnvironmentCreateParams struct {
@@ -92,12 +94,13 @@ func (q *Queries) EnvironmentCreate(ctx context.Context, arg EnvironmentCreatePa
 		&i.LastModified,
 		&i.Ci,
 		&i.Reconcile,
+		&i.AutoUpgrade,
 	)
 	return i, err
 }
 
 const environmentGet = `-- name: EnvironmentGet :one
-SELECT id, tenant_id, name, kind, description, created, last_modified, ci, reconcile
+SELECT id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade
 FROM environments
 WHERE id = $1
 `
@@ -115,12 +118,13 @@ func (q *Queries) EnvironmentGet(ctx context.Context, id uuid.UUID) (Environment
 		&i.LastModified,
 		&i.Ci,
 		&i.Reconcile,
+		&i.AutoUpgrade,
 	)
 	return i, err
 }
 
 const environmentGetByName = `-- name: EnvironmentGetByName :one
-SELECT id, tenant_id, name, kind, description, created, last_modified, ci, reconcile
+SELECT id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade
 FROM environments
 WHERE tenant_id = $1
 AND name = $2
@@ -144,6 +148,7 @@ func (q *Queries) EnvironmentGetByName(ctx context.Context, arg EnvironmentGetBy
 		&i.LastModified,
 		&i.Ci,
 		&i.Reconcile,
+		&i.AutoUpgrade,
 	)
 	return i, err
 }
@@ -168,12 +173,43 @@ func (q *Queries) EnvironmentIDByNames(ctx context.Context, arg EnvironmentIDByN
 	return id, err
 }
 
+const environmentSetAutoUpgrade = `-- name: EnvironmentSetAutoUpgrade :one
+UPDATE environments
+SET auto_upgrade = $1
+WHERE
+    id = $2
+RETURNING id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade
+`
+
+type EnvironmentSetAutoUpgradeParams struct {
+	AutoUpgrade bool
+	ID          uuid.UUID
+}
+
+func (q *Queries) EnvironmentSetAutoUpgrade(ctx context.Context, arg EnvironmentSetAutoUpgradeParams) (Environment, error) {
+	row := q.db.QueryRow(ctx, environmentSetAutoUpgrade, arg.AutoUpgrade, arg.ID)
+	var i Environment
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.Name,
+		&i.Kind,
+		&i.Description,
+		&i.Created,
+		&i.LastModified,
+		&i.Ci,
+		&i.Reconcile,
+		&i.AutoUpgrade,
+	)
+	return i, err
+}
+
 const environmentSetReconcile = `-- name: EnvironmentSetReconcile :one
 UPDATE environments
 SET reconcile = $1
 WHERE
     id = $2
-RETURNING id, tenant_id, name, kind, description, created, last_modified, ci, reconcile
+RETURNING id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade
 `
 
 type EnvironmentSetReconcileParams struct {
@@ -194,6 +230,7 @@ func (q *Queries) EnvironmentSetReconcile(ctx context.Context, arg EnvironmentSe
 		&i.LastModified,
 		&i.Ci,
 		&i.Reconcile,
+		&i.AutoUpgrade,
 	)
 	return i, err
 }
@@ -203,7 +240,7 @@ UPDATE environments
 SET description = $1
 WHERE
     id = $2
-    RETURNING id, tenant_id, name, kind, description, created, last_modified, ci, reconcile
+    RETURNING id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade
 `
 
 type EnvironmentUpdateParams struct {
@@ -224,12 +261,13 @@ func (q *Queries) EnvironmentUpdate(ctx context.Context, arg EnvironmentUpdatePa
 		&i.LastModified,
 		&i.Ci,
 		&i.Reconcile,
+		&i.AutoUpgrade,
 	)
 	return i, err
 }
 
 const environmentsGet = `-- name: EnvironmentsGet :many
-SELECT id, tenant_id, name, kind, description, created, last_modified, ci, reconcile
+SELECT id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade
 FROM environments
 WHERE tenant_id = $1
 ORDER BY name ASC
@@ -254,6 +292,45 @@ func (q *Queries) EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]En
 			&i.LastModified,
 			&i.Ci,
 			&i.Reconcile,
+			&i.AutoUpgrade,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const environmentsGetByAutoUpgrade = `-- name: EnvironmentsGetByAutoUpgrade :many
+SELECT id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade
+FROM environments
+WHERE auto_upgrade = true
+ORDER BY name ASC
+`
+
+func (q *Queries) EnvironmentsGetByAutoUpgrade(ctx context.Context) ([]Environment, error) {
+	rows, err := q.db.Query(ctx, environmentsGetByAutoUpgrade)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Environment{}
+	for rows.Next() {
+		var i Environment
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.Name,
+			&i.Kind,
+			&i.Description,
+			&i.Created,
+			&i.LastModified,
+			&i.Ci,
+			&i.Reconcile,
+			&i.AutoUpgrade,
 		); err != nil {
 			return nil, err
 		}

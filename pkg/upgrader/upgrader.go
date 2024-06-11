@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	container "cloud.google.com/go/container/apiv1"
 	"cloud.google.com/go/container/apiv1/containerpb"
@@ -20,6 +21,7 @@ type Upgrader interface {
 	UpgradeNodePool(ctx context.Context, projectId string, environment *model.Environment, nodePoolName, version string) (*containerpb.Operation, error)
 	GetNodePools(ctx context.Context, projectId string, environment *model.Environment) ([]*containerpb.NodePool, error)
 	GetOperation(ctx context.Context, projectId, operationId string) (*containerpb.Operation, error)
+	IsTimeInRange(start, end int) bool
 }
 
 type Client struct {
@@ -39,6 +41,23 @@ func New(ctx context.Context) (*Client, error) {
 
 func (c *Client) Close() error {
 	return c.client.Close()
+}
+
+func (c *Client) IsTimeInRange(start, end int) bool {
+	location, err := time.LoadLocation("Europe/Oslo")
+	if err != nil {
+		fmt.Println("Error loading location:", err)
+		return false
+	}
+
+	upgradeWindowStart := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), start, 0, 0, 0, location)
+	upgradeWindowEnd := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), end, 0, 0, 0, location)
+
+	if time.Now().Before(upgradeWindowStart) || time.Now().After(upgradeWindowEnd) {
+		return false
+	}
+
+	return true
 }
 
 func (c *Client) GetRunningOperations(ctx context.Context, projectId string, environment *model.Environment) ([]*containerpb.Operation, error) {
