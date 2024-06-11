@@ -26,62 +26,67 @@ func NewAutoUpgrader(repo database.Repo, log logrus.FieldLogger, upgrader Upgrad
 }
 
 func (c *AutoUpgrader) Run(ctx context.Context) error {
-	c.log.Info("Starting auto-upgrader")
-	defer c.log.Info("Auto-upgrader stopped")
+	c.log.Debug("starting auto-upgrader")
+	defer c.log.Debug("auto-upgrader stopped")
+
+	if !c.client.IsTimeInRange(9, 16) {
+		c.log.Debug("not in time range for auto-upgrade")
+		return nil
+	}
 
 	envs, err := c.repo.EnvironmentsGetByAutoUpgrade(ctx)
 	if err != nil {
-		c.log.WithError(err).Error("Failed to get environments")
+		c.log.WithError(err).Error("failed to get environments")
 		return err
 	}
 
 	for _, env := range envs {
 		projectId, err := c.getProjectId(ctx, env.ID)
 		if err != nil {
-			c.log.WithError(err).Error("Failed to get project id")
+			c.log.WithFields(logrus.Fields{"environment": env.Name}).WithError(err).Error("failed to get project id")
 			continue
 		}
 		tenant, err := c.repo.TenantGet(ctx, env.TenantID)
 		if err != nil {
-			c.log.WithError(err).Error("Failed to get tenant")
+			c.log.WithFields(logrus.Fields{"tenant": tenant.Name, "environment": env.Name}).WithError(err).Error("failed to get tenant")
 			continue
 		}
 		masterVer, err := c.client.GetCurrentMasterVersion(ctx, projectId, env)
 		if err != nil {
-			c.log.WithError(err).Error("Failed to get current master version")
+			c.log.WithFields(logrus.Fields{"tenant": tenant.Name, "environment": env.Name}).WithError(err).Error("failed to get current master version")
 			continue
 		}
 		channel, err := c.client.GetReleaseChannel(ctx, projectId, env)
 		if err != nil {
-			c.log.WithError(err).Error("Failed to get release channel")
+			c.log.WithFields(logrus.Fields{"tenant": tenant.Name, "environment": env.Name}).WithError(err).Error("failed to get release channel")
 			continue
 		}
 		availableVersions, err := c.client.GetAvailableVersions(ctx, projectId, env, channel)
 		if err != nil {
-			c.log.WithError(err).Error("Failed to get available versions")
+			c.log.WithFields(logrus.Fields{"tenant": tenant.Name, "environment": env.Name}).WithError(err).Error("failed to get available versions")
 			continue
 		}
 
 		for _, version := range availableVersions {
 			if c.IsNewerPatchRelease(masterVer, version) {
-				c.log.Infof("Upgrading %s:%s to version %s", tenant.Name, env.Name, version)
+				c.log.WithFields(logrus.Fields{"tenant": tenant.Name, "environment": env.Name}).Infof("upgrading to version %s", version)
 
 				status, err := c.repo.ClusterUpgradeGet(ctx, env.TenantID, env.ID)
 				if err != nil {
-					c.log.WithError(err).Error("Failed to get cluster upgrade status")
+					c.log.WithFields(logrus.Fields{"tenant": tenant.Name, "environment": env.Name}).WithError(err).Error("failed to get cluster upgrade status")
 					break
 				}
 				if status != nil {
-					c.log.Infof("Cluster upgrade already in progress for %s:%s", tenant.Name, env.Name)
+					c.log.WithFields(logrus.Fields{"tenant": tenant.Name, "environment": env.Name}).Info("cluster upgrade already in progress")
 					break
 				}
 
 				upgrade, err := c.repo.CreateClusterUpgrade(ctx, env.TenantID, env.ID, version)
 				if err != nil {
-					c.log.WithError(err).Error("Failed to create cluster upgrade")
+					c.log.WithFields(logrus.Fields{"tenant": tenant.Name, "environment": env.Name}).WithError(err).Error("Failed to create cluster upgrade")
 					break
 				}
-				c.log.Infof("Cluster upgrade created for %s:%s: %v", tenant.Name, env.Name, upgrade)
+				c.log.WithFields(logrus.Fields{"tenant": tenant.Name, "environment": env.Name}).Debugf("cluster upgrade created for: %s", upgrade.ID)
 			}
 		}
 	}
@@ -92,12 +97,12 @@ func (c *AutoUpgrader) Run(ctx context.Context) error {
 func (c *AutoUpgrader) IsNewerPatchRelease(current, new string) bool {
 	v1, err := version.NewVersion(current)
 	if err != nil {
-		c.log.Fatalf("Error parsing version1: %s", err)
+		c.log.WithError(err).Fatalf("error parsing version1: %s", err)
 	}
 
 	v2, err := version.NewVersion(new)
 	if err != nil {
-		c.log.Fatalf("Error parsing version2: %s", err)
+		c.log.WithError(err).Fatalf("error parsing version2: %s", err)
 	}
 
 	// Split versions to extract major.minor.patch
@@ -108,7 +113,7 @@ func (c *AutoUpgrader) IsNewerPatchRelease(current, new string) bool {
 	v2Parts := strings.Split(v2Segments, ".")
 
 	if len(v1Parts) < 3 || len(v2Parts) < 3 {
-		c.log.Fatalf("Invalid version format, must include major.minor.patch")
+		c.log.Fatalf("invalid version format, must include major.minor.patch")
 	}
 
 	// Compare major and minor versions
