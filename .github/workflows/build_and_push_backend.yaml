@@ -95,5 +95,6 @@ jobs:
         shell: bash
         env:
           VERSION: ${{ needs.build_and_push_fasit.outputs.version }}
+          SLACK_API_TOKEN: ${{ secrets.SLACK_API_TOKEN }}
         run: |
-          helm upgrade fasit-backend oci://europe-north1-docker.pkg.dev/nais-io/nais/fasit --install --atomic --wait --version 0.3.1 --set image.tag="${VERSION}" --namespace nais-system --reuse-values
+          helm upgrade fasit-backend oci://europe-north1-docker.pkg.dev/nais-io/nais/fasit --install --atomic --wait --version 0.3.1 --set image.tag="${VERSION}" --set slackToken="${SLACK_API_TOKEN}" --namespace nais-system --reuse-values
