@@ -129,7 +129,6 @@ func main() {
 		}
 	}()
 
-
 	if err := database.Migrate(dbDriver, cfg.DBConnectionDSN, log.WithField("subsystem", "migrate")); err != nil {
 		log.WithError(err).Fatal("migrating database")
 	}
@@ -257,10 +256,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err := runAutoUpgrader(ctx, log, googleClient, repo); err != nil {
-		log.Fatal(err)
-	}
-
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	defer cancel()
 	<-ctx.Done()
@@ -329,19 +324,11 @@ func newMetricsProvider() (metric.Meter, error) {
 func runClusterUpgrader(ctx context.Context, log *logrus.Logger, googleClient upgrader.Upgrader, repo database.Repo, meter metric.Meter, slack *slack.Slack) error {
 	s := workers.NewScheduler(log.WithField("subsystem", "scheduler"))
 	clusterUpgrader := upgrader.NewClusterUpgrader(repo, log, googleClient, meter, slack, cfg.SlackClusterUpgradeChannel)
-	s.Register("cluster-upgrader", clusterUpgrader, 30*time.Second)
-	s.Start(ctx)
-
-	log.Info("Done")
-	return nil
-}
-
-func runAutoUpgrader(ctx context.Context, log *logrus.Logger, googleClient upgrader.Upgrader, repo database.Repo) error {
-	s := workers.NewScheduler(log.WithField("subsystem", "scheduler"))
 	autoUpgrader := upgrader.NewAutoUpgrader(repo, log, googleClient)
+
+	s.Register("cluster-upgrader", clusterUpgrader, 30*time.Second)
 	s.Register("auto-upgrader", autoUpgrader, 1*time.Hour)
 	s.Start(ctx)
 
-	log.Info("Done")
 	return nil
 }
