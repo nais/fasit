@@ -340,8 +340,7 @@ func runClusterUpgrader(ctx context.Context, log *logrus.Logger, googleClient up
 func runAutoUpgrader(ctx context.Context, log *logrus.Logger, googleClient upgrader.Upgrader, repo database.Repo) error {
 	s := workers.NewScheduler(log.WithField("subsystem", "scheduler"))
 	autoUpgrader := upgrader.NewAutoUpgrader(repo, log, googleClient)
-	//s.Register("auto-upgrader", autoUpgrader, 24*time.Hour)
-	s.Register("auto-upgrader", autoUpgrader, 1*time.Minute)
+	s.Register("auto-upgrader", autoUpgrader, 1*time.Hour)
 	s.Start(ctx)
 
 	log.Info("Done")
