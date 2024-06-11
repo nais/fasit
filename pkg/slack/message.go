@@ -6,14 +6,6 @@ import (
 	slackapi "github.com/slack-go/slack"
 )
 
-var severityColors = map[string]string{
-	"CRITICAL":             "#C30000",
-	"HIGH":                 "#FFA500",
-	"MEDIUM":               "#FFD700",
-	"LOW":                  "#32CD32",
-	"SEVERITY_UNSPECIFIED": "#808080",
-}
-
 func (s *Slack) GetClusterUpgradeNotificationMessageOptions(tenant, environment, version, clusterComponent string) []slackapi.MsgOption {
 	blocks := []slackapi.Block{}
 	headerBlock := slackapi.NewHeaderBlock(slackapi.NewTextBlockObject("plain_text", ":kubernetes: K8s auto-upgrade", true, false))
