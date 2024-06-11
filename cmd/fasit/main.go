@@ -66,8 +66,8 @@ func init() {
 	flag.StringVar(&cfg.IAPAudience, "iap-audience", "", "IAP audience string")
 	flag.BoolVar(&cfg.InsecureSkipProxy, "insecure-skip-proxy", false, "Insecure, but allows the server to not require iap")
 	flag.BoolVar(&cfg.InsecureSkipTokenCheck, "insecure-skip-token-check", false, "Insecure, but allows the server ignore token check")
-	flag.StringVar(&cfg.SlackClusterUpgradeChannel, "slackChannel", os.Getenv("SLACK_CLUSTER_UPGRADE_CHANNEL"), "Slack channel to send message to")
-	flag.StringVar(&cfg.SlackAPIToken, "slackAPIToken", os.Getenv("SLACK_API_TOKEN"), "Slack API token")
+	flag.StringVar(&cfg.SlackClusterUpgradeChannel, "slack-cluster-upgrade-channel", os.Getenv("SLACK_CLUSTER_UPGRADE_CHANNEL"), "Slack channel to send message to")
+	flag.StringVar(&cfg.SlackAPIToken, "slack-api-token", os.Getenv("SLACK_API_TOKEN"), "Slack API token")
 }
 
 func newServer(es graphql.ExecutableSchema) *handler.Server {
