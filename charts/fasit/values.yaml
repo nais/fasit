@@ -6,7 +6,7 @@ dbConnString:
 ingressHost: "fasit.nais.io"
 ingressClassName: "nais-ingress-iap"
 iapAudience:
-clusterUpgradeSlackChannel: "nais-alerts-info"
+slackClusterUpgradeChannel: "nais-alerts-info"
 slackToken:
 
 
