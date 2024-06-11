@@ -11,6 +11,9 @@ type Config struct {
 	InsecureSkipProxy      bool
 	InsecureSkipTokenCheck bool
 	IAPAudience            string
+
+	SlackAPIToken              string
+	SlackClusterUpgradeChannel string
 }
 
 func DefaultConfig() Config {

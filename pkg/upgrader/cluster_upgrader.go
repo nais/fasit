@@ -13,6 +13,7 @@ import (
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/graph/model"
+	"github.com/nais/fasit/pkg/slack"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
@@ -20,15 +21,17 @@ import (
 )
 
 type ClusterUpgrader struct {
-	log    logrus.FieldLogger
-	repo   database.Repo
-	client Upgrader
+	log          logrus.FieldLogger
+	repo         database.Repo
+	client       Upgrader
+	slack        *slack.Slack
+	slackChannel string
 
 	// Metrics
 	upgradeInProgress metric.Int64Counter
 }
 
-func NewClusterUpgrader(repo database.Repo, log logrus.FieldLogger, upgrader Upgrader, meter metric.Meter) *ClusterUpgrader {
+func NewClusterUpgrader(repo database.Repo, log logrus.FieldLogger, upgrader Upgrader, meter metric.Meter, slack *slack.Slack, slackChannel string) *ClusterUpgrader {
 	counter, err := meter.Int64Counter("upgrade_in_progress", metric.WithDescription("Upgrade in progress"))
 	if err != nil {
 		log.Fatal(err)
@@ -39,6 +42,8 @@ func NewClusterUpgrader(repo database.Repo, log logrus.FieldLogger, upgrader Upg
 		repo:              repo,
 		client:            upgrader,
 		upgradeInProgress: counter,
+		slack:             slack,
+		slackChannel:      slackChannel,
 	}
 }
 
@@ -99,6 +104,13 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 			return err
 		}
 
+		msg := c.slack.GetClusterUpgradeNotificationMessageOptions(tenant.Name, env.Name, clusterUpgrade.Version, "master")
+
+		err = c.slack.PostMessage(c.slackChannel, msg)
+		if err != nil {
+			c.log.WithFields(logrus.Fields{"error": err}).Error("failed to post message to slack")
+		}
+
 	case model.UpgradeStatusMasterUpgrade:
 		// check status on ongoing master upgrade
 		status, err := c.masterUpgradeStatus(ctx, env, clusterUpgrade, projectId, tenant.Name)
@@ -133,6 +145,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 				log.WithField("target_version", un.Version).Info("nodepool upgrade started")
 				return nil
 			}
+
 		}
 
 		// node upgrade done, update status
@@ -141,6 +154,14 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		if err != nil {
 			return err
 		}
+
+		msg := c.slack.GetClusterUpgradeDoneNotificationMessageOptions(tenant.Name, env.Name)
+
+		err = c.slack.PostMessage(c.slackChannel, msg)
+		if err != nil {
+			c.log.WithFields(logrus.Fields{"error": err}).Error("failed to post message to slack")
+		}
+
 		c.upgradeInProgress.Add(ctx, -1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "nodePools")...))
 		log.WithField("target_version", upgradeStatus.Version).Info("nodepool upgrade done")
 	}
@@ -206,6 +227,13 @@ func (c *ClusterUpgrader) upgradeNodes(ctx context.Context, env *model.Environme
 		op, err := c.client.UpgradeNodePool(ctx, projectId, env, np.Name, clusterUpgrade.Version)
 		if err != nil {
 			return nil, err
+		}
+
+		msg := c.slack.GetClusterUpgradeNotificationMessageOptions(tenantName, env.Name, clusterUpgrade.Version, np.Name)
+
+		err = c.slack.PostMessage(c.slackChannel, msg)
+		if err != nil {
+			c.log.WithFields(logrus.Fields{"error": err}).Error("failed to post message to slack")
 		}
 
 		c.upgradeInProgress.Add(ctx, 1, metric.WithAttributes(setMetricsAttrs(env.Name, tenantName, clusterUpgrade.Version, "nodePools")...))

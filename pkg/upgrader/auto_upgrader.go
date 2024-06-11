@@ -69,22 +69,21 @@ func (c *AutoUpgrader) Run(ctx context.Context) error {
 				status, err := c.repo.ClusterUpgradeGet(ctx, env.TenantID, env.ID)
 				if err != nil {
 					c.log.WithError(err).Error("Failed to get cluster upgrade status")
-					continue
+					break
 				}
 				if status != nil {
 					c.log.Infof("Cluster upgrade already in progress for %s:%s", tenant.Name, env.Name)
-					continue
+					break
 				}
 
 				upgrade, err := c.repo.CreateClusterUpgrade(ctx, env.TenantID, env.ID, version)
 				if err != nil {
 					c.log.WithError(err).Error("Failed to create cluster upgrade")
-					continue
+					break
 				}
 				c.log.Infof("Cluster upgrade created for %s:%s: %v", tenant.Name, env.Name, upgrade)
 			}
 		}
-
 	}
 
 	return nil

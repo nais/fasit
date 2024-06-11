@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/nais/fasit/pkg/database/gensql"
+	"github.com/nais/fasit/pkg/slack"
 
 	"cloud.google.com/go/container/apiv1/containerpb"
 
@@ -58,7 +59,8 @@ func newTestSuite(t *testing.T) *testSuite {
 func newUpgrade(suite *testSuite) *ClusterUpgrader {
 	log := logrus.New().WithField("testSuite", "upgrade")
 	meter := metricsdk.NewMeterProvider().Meter("testSuite")
-	return NewClusterUpgrader(suite.repoMock, log, suite.upgradeMock, meter)
+	slack := slack.New("token")
+	return NewClusterUpgrader(suite.repoMock, log, suite.upgradeMock, meter, slack, "channel")
 }
 
 func (s *testSuite) mockRunTenantForLoop(upgradeStatus model.UpgradeStatus) {
