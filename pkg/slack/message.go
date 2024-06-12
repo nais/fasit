@@ -8,7 +8,7 @@ import (
 
 func (s *Slack) GetClusterUpgradeNotificationMessageOptions(tenant, environment, version, clusterComponent string) []slackapi.MsgOption {
 	blocks := []slackapi.Block{}
-	headerBlock := slackapi.NewHeaderBlock(slackapi.NewTextBlockObject("plain_text", ":kubernetes: K8s auto-upgrade", true, false))
+	headerBlock := slackapi.NewHeaderBlock(slackapi.NewTextBlockObject("plain_text", ":kubernetes: K8s auto-upgrade", false, false))
 	text := slackapi.NewSectionBlock(slackapi.NewTextBlockObject("mrkdwn", fmt.Sprintf("*Tenant:* %s\n*Environment:* %s\n*Component:* %s\n*Version:* %s\n*Progress*: <https://fasit.nais.io/clusters#%s|Fasit>", tenant, environment, clusterComponent, version, tenant), false, false), nil, nil)
 	blocks = append(blocks, headerBlock, text)
 
@@ -19,8 +19,8 @@ func (s *Slack) GetClusterUpgradeNotificationMessageOptions(tenant, environment,
 
 func (s *Slack) GetClusterUpgradeDoneNotificationMessageOptions(tenant, environment string) []slackapi.MsgOption {
 	blocks := []slackapi.Block{}
-	headerBlock := slackapi.NewHeaderBlock(slackapi.NewTextBlockObject("plain_text", ":kubernetes: K8s auto-upgrade", false, false))
-	text := slackapi.NewSectionBlock(slackapi.NewTextBlockObject("mrkdwn", fmt.Sprintf("Upgrade completed! :tada: \n\n*Tenant:* %s\n*Cluster:* %s", tenant, environment), true, false), nil, nil)
+	headerBlock := slackapi.NewHeaderBlock(slackapi.NewTextBlockObject("plain_text", ":kubernetes: K8s auto-upgrade completed", false, false))
+	text := slackapi.NewSectionBlock(slackapi.NewTextBlockObject("mrkdwn", fmt.Sprintf("Upgrade completed! :tada:\n\n*Tenant:* %s\n*Cluster:* %s", tenant, environment), false, false), nil, nil)
 	blocks = append(blocks, headerBlock, text)
 
 	return []slackapi.MsgOption{
