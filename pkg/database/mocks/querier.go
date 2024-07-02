@@ -715,6 +715,63 @@ func (_c *Querier_ClusterUpgradesGetByID_Call) RunAndReturn(run func(context.Con
 	return _c
 }
 
+// ClusterUpgradesSetSlackMessage provides a mock function with given fields: ctx, arg
+func (_m *Querier) ClusterUpgradesSetSlackMessage(ctx context.Context, arg gensql.ClusterUpgradesSetSlackMessageParams) (gensql.ClusterUpgrade, error) {
+	ret := _m.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ClusterUpgradesSetSlackMessage")
+	}
+
+	var r0 gensql.ClusterUpgrade
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.ClusterUpgradesSetSlackMessageParams) (gensql.ClusterUpgrade, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, gensql.ClusterUpgradesSetSlackMessageParams) gensql.ClusterUpgrade); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(gensql.ClusterUpgrade)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, gensql.ClusterUpgradesSetSlackMessageParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Querier_ClusterUpgradesSetSlackMessage_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ClusterUpgradesSetSlackMessage'
+type Querier_ClusterUpgradesSetSlackMessage_Call struct {
+	*mock.Call
+}
+
+// ClusterUpgradesSetSlackMessage is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg gensql.ClusterUpgradesSetSlackMessageParams
+func (_e *Querier_Expecter) ClusterUpgradesSetSlackMessage(ctx interface{}, arg interface{}) *Querier_ClusterUpgradesSetSlackMessage_Call {
+	return &Querier_ClusterUpgradesSetSlackMessage_Call{Call: _e.mock.On("ClusterUpgradesSetSlackMessage", ctx, arg)}
+}
+
+func (_c *Querier_ClusterUpgradesSetSlackMessage_Call) Run(run func(ctx context.Context, arg gensql.ClusterUpgradesSetSlackMessageParams)) *Querier_ClusterUpgradesSetSlackMessage_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(gensql.ClusterUpgradesSetSlackMessageParams))
+	})
+	return _c
+}
+
+func (_c *Querier_ClusterUpgradesSetSlackMessage_Call) Return(_a0 gensql.ClusterUpgrade, _a1 error) *Querier_ClusterUpgradesSetSlackMessage_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Querier_ClusterUpgradesSetSlackMessage_Call) RunAndReturn(run func(context.Context, gensql.ClusterUpgradesSetSlackMessageParams) (gensql.ClusterUpgrade, error)) *Querier_ClusterUpgradesSetSlackMessage_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ClusterUpgradesUpdateStatus provides a mock function with given fields: ctx, arg
 func (_m *Querier) ClusterUpgradesUpdateStatus(ctx context.Context, arg gensql.ClusterUpgradesUpdateStatusParams) (gensql.ClusterUpgrade, error) {
 	ret := _m.Called(ctx, arg)

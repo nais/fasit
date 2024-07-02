@@ -9,6 +9,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const clusterUpgradesCreate = `-- name: ClusterUpgradesCreate :one
@@ -16,7 +17,7 @@ INSERT INTO cluster_upgrades
 ("tenant_id", "environment_id", "version")
 VALUES
 ($1, $2, $3)
-RETURNING id, tenant_id, environment_id, version, status, start_time, last_modified
+RETURNING id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message, slack_channel_id
 `
 
 type ClusterUpgradesCreateParams struct {
@@ -36,12 +37,14 @@ func (q *Queries) ClusterUpgradesCreate(ctx context.Context, arg ClusterUpgrades
 		&i.Status,
 		&i.StartTime,
 		&i.LastModified,
+		&i.SlackMessage,
+		&i.SlackChannelID,
 	)
 	return i, err
 }
 
 const clusterUpgradesGet = `-- name: ClusterUpgradesGet :many
-SELECT id, tenant_id, environment_id, version, status, start_time, last_modified FROM cluster_upgrades
+SELECT id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message, slack_channel_id FROM cluster_upgrades
 WHERE tenant_id = $1
 AND environment_id = $2
 AND status != 'DONE'
@@ -70,6 +73,8 @@ func (q *Queries) ClusterUpgradesGet(ctx context.Context, arg ClusterUpgradesGet
 			&i.Status,
 			&i.StartTime,
 			&i.LastModified,
+			&i.SlackMessage,
+			&i.SlackChannelID,
 		); err != nil {
 			return nil, err
 		}
@@ -82,7 +87,7 @@ func (q *Queries) ClusterUpgradesGet(ctx context.Context, arg ClusterUpgradesGet
 }
 
 const clusterUpgradesGetByID = `-- name: ClusterUpgradesGetByID :one
-SELECT id, tenant_id, environment_id, version, status, start_time, last_modified FROM cluster_upgrades
+SELECT id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message, slack_channel_id FROM cluster_upgrades
 WHERE id = $1
 `
 
@@ -97,6 +102,39 @@ func (q *Queries) ClusterUpgradesGetByID(ctx context.Context, id uuid.UUID) (Clu
 		&i.Status,
 		&i.StartTime,
 		&i.LastModified,
+		&i.SlackMessage,
+		&i.SlackChannelID,
+	)
+	return i, err
+}
+
+const clusterUpgradesSetSlackMessage = `-- name: ClusterUpgradesSetSlackMessage :one
+UPDATE cluster_upgrades
+SET "slack_message" = $1
+AND "slack_channel_id" = $2
+WHERE "id" = $3
+RETURNING id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message, slack_channel_id
+`
+
+type ClusterUpgradesSetSlackMessageParams struct {
+	Slackmessage   pgtype.Text
+	Slackchannelid pgtype.Text
+	ID             uuid.UUID
+}
+
+func (q *Queries) ClusterUpgradesSetSlackMessage(ctx context.Context, arg ClusterUpgradesSetSlackMessageParams) (ClusterUpgrade, error) {
+	row := q.db.QueryRow(ctx, clusterUpgradesSetSlackMessage, arg.Slackmessage, arg.Slackchannelid, arg.ID)
+	var i ClusterUpgrade
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.EnvironmentID,
+		&i.Version,
+		&i.Status,
+		&i.StartTime,
+		&i.LastModified,
+		&i.SlackMessage,
+		&i.SlackChannelID,
 	)
 	return i, err
 }
@@ -107,7 +145,7 @@ SET "status" = $1
 WHERE "tenant_id" = $2
 AND "environment_id" = $3
 AND "version" = $4
-RETURNING id, tenant_id, environment_id, version, status, start_time, last_modified
+RETURNING id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message, slack_channel_id
 `
 
 type ClusterUpgradesUpdateStatusParams struct {
@@ -133,6 +171,8 @@ func (q *Queries) ClusterUpgradesUpdateStatus(ctx context.Context, arg ClusterUp
 		&i.Status,
 		&i.StartTime,
 		&i.LastModified,
+		&i.SlackMessage,
+		&i.SlackChannelID,
 	)
 	return i, err
 }

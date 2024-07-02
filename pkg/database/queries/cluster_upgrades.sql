@@ -12,6 +12,13 @@ AND environment_id = @envID
 AND status != 'DONE'
 ORDER BY last_modified DESC;
 
+-- name: ClusterUpgradesSetSlackMessage :one
+UPDATE cluster_upgrades
+SET "slack_message" = @slackMessage
+AND "slack_channel_id" = @slackChannelID
+WHERE "id" = @id
+RETURNING *;
+
 -- name: ClusterUpgradesUpdateStatus :one
 UPDATE cluster_upgrades
 SET "status" = @status
