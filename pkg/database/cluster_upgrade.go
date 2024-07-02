@@ -21,16 +21,19 @@ type ClusterUpgraderRepo interface {
 	ClusterUpgradeGetByID(ctx context.Context, id uuid.UUID) (*model.ClusterUpgradeStatus, error)
 	ClusterOperationsGetByID(ctx context.Context, id uuid.UUID) (*model.EnvironmentOperation, error)
 	ClusterOperationsGetByUpgradeID(ctx context.Context, upgradeId uuid.UUID) ([]*model.EnvironmentOperation, error)
+	SetClusterUpgradesSlackMessage(ctx context.Context, id uuid.UUID, slackMessageTs, channelID string) (*model.ClusterUpgradeStatus, error)
 }
 
 func clusterUpgradeFromSQL(p gensql.ClusterUpgrade) *model.ClusterUpgradeStatus {
 	return &model.ClusterUpgradeStatus{
-		ID:            p.ID,
-		Version:       p.Version,
-		UpgradeStatus: model.UpgradeStatus(p.Status),
-		LastModified:  p.LastModified.Time,
-		StartTime:     p.StartTime.Time,
-		EnvironmentID: p.EnvironmentID,
+		ID:                    p.ID,
+		Version:               p.Version,
+		UpgradeStatus:         model.UpgradeStatus(p.Status),
+		LastModified:          p.LastModified.Time,
+		StartTime:             p.StartTime.Time,
+		EnvironmentID:         p.EnvironmentID,
+		SlackMessageTimestamp: p.SlackMessageTimestamp.String,
+		SlackChannelID:        p.SlackChannelID.String,
 	}
 }
 
@@ -85,6 +88,19 @@ func (r *repo) ClusterUpgradeGetByID(ctx context.Context, id uuid.UUID) (*model.
 		return nil, err
 	}
 	return clusterUpgradeFromSQL(clusterVersion), nil
+}
+
+func (r *repo) SetClusterUpgradesSlackMessage(ctx context.Context, id uuid.UUID, slackMessageTs, channelID string) (*model.ClusterUpgradeStatus, error) {
+	clusterUpgrade, err := r.querier.ClusterUpgradesSetSlackMessage(ctx, gensql.ClusterUpgradesSetSlackMessageParams{
+		Slackmessagetimestamp: ptrToNullString(&slackMessageTs),
+		Slackchannelid:        ptrToNullString(&channelID),
+		ID:                    id,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return clusterUpgradeFromSQL(clusterUpgrade), nil
+
 }
 
 func (r *repo) UpdateClusterUpgradeStatus(ctx context.Context, tenantId, envId uuid.UUID, status gensql.ClusterUpgradesStatus, version string) (*model.ClusterUpgradeStatus, error) {

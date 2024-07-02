@@ -4838,6 +4838,67 @@ func (_c *Repo_RolloutsUpdateStatus_Call) RunAndReturn(run func(context.Context,
 	return _c
 }
 
+// SetClusterUpgradesSlackMessage provides a mock function with given fields: ctx, id, slackMessageTs, channelID
+func (_m *Repo) SetClusterUpgradesSlackMessage(ctx context.Context, id uuid.UUID, slackMessageTs string, channelID string) (*model.ClusterUpgradeStatus, error) {
+	ret := _m.Called(ctx, id, slackMessageTs, channelID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SetClusterUpgradesSlackMessage")
+	}
+
+	var r0 *model.ClusterUpgradeStatus
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, string, string) (*model.ClusterUpgradeStatus, error)); ok {
+		return rf(ctx, id, slackMessageTs, channelID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, string, string) *model.ClusterUpgradeStatus); ok {
+		r0 = rf(ctx, id, slackMessageTs, channelID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.ClusterUpgradeStatus)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, string, string) error); ok {
+		r1 = rf(ctx, id, slackMessageTs, channelID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Repo_SetClusterUpgradesSlackMessage_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetClusterUpgradesSlackMessage'
+type Repo_SetClusterUpgradesSlackMessage_Call struct {
+	*mock.Call
+}
+
+// SetClusterUpgradesSlackMessage is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id uuid.UUID
+//   - slackMessageTs string
+//   - channelID string
+func (_e *Repo_Expecter) SetClusterUpgradesSlackMessage(ctx interface{}, id interface{}, slackMessageTs interface{}, channelID interface{}) *Repo_SetClusterUpgradesSlackMessage_Call {
+	return &Repo_SetClusterUpgradesSlackMessage_Call{Call: _e.mock.On("SetClusterUpgradesSlackMessage", ctx, id, slackMessageTs, channelID)}
+}
+
+func (_c *Repo_SetClusterUpgradesSlackMessage_Call) Run(run func(ctx context.Context, id uuid.UUID, slackMessageTs string, channelID string)) *Repo_SetClusterUpgradesSlackMessage_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uuid.UUID), args[2].(string), args[3].(string))
+	})
+	return _c
+}
+
+func (_c *Repo_SetClusterUpgradesSlackMessage_Call) Return(_a0 *model.ClusterUpgradeStatus, _a1 error) *Repo_SetClusterUpgradesSlackMessage_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Repo_SetClusterUpgradesSlackMessage_Call) RunAndReturn(run func(context.Context, uuid.UUID, string, string) (*model.ClusterUpgradeStatus, error)) *Repo_SetClusterUpgradesSlackMessage_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // TenantCI provides a mock function with given fields: ctx
 func (_m *Repo) TenantCI(ctx context.Context) (*model.Tenant, error) {
 	ret := _m.Called(ctx)

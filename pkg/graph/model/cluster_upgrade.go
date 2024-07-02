@@ -7,12 +7,15 @@ import (
 )
 
 type ClusterUpgradeStatus struct {
-	ID            uuid.UUID     `json:"id"`
-	UpgradeStatus UpgradeStatus `json:"upgradeStatus"`
-	Version       string        `json:"version"`
-	LastModified  time.Time     `json:"lastModified"`
-	StartTime     time.Time     `json:"startTime"`
-	EnvironmentID uuid.UUID     `json:"-"`
+	ID                    uuid.UUID     `json:"id"`
+	UpgradeStatus         UpgradeStatus `json:"upgradeStatus"`
+	Version               string        `json:"version"`
+	LastModified          time.Time     `json:"lastModified"`
+	StartTime             time.Time     `json:"startTime"`
+	SlackMessageTimestamp string        `json:"slackMessageTimestamp"`
+	SlackChannelID        string        `json:"slackChannelID"`
+
+	EnvironmentID uuid.UUID `json:"-"`
 }
 
 func (ClusterUpgradeStatus) IsUpdate() {}

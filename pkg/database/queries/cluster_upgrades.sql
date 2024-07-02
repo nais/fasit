@@ -14,8 +14,8 @@ ORDER BY last_modified DESC;
 
 -- name: ClusterUpgradesSetSlackMessage :one
 UPDATE cluster_upgrades
-SET "slack_message" = @slackMessage
-AND "slack_channel_id" = @slackChannelID
+SET "slack_message_timestamp" = @slackMessageTimestamp,
+"slack_channel_id" = @slackChannelID
 WHERE "id" = @id
 RETURNING *;
 
