@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/googleapis/gax-go/v2/apierror"
 	"github.com/hashicorp/go-version"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/graph/model"
@@ -106,9 +106,13 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 
 		msg := c.slack.GetClusterUpgradeNotificationMessageOptions(tenant.Name, env.Name, clusterUpgrade.Version, "control plane")
 
-		err = c.slack.PostMessage(c.slackChannel, msg)
+		channelID, timestamp, err := c.slack.PostMessage(c.slackChannel, msg)
 		if err != nil {
 			c.log.WithFields(logrus.Fields{"error": err}).Error("failed to post message to slack")
+		}
+		_, err = c.repo.SetClusterUpgradesSlackMessage(ctx, clusterUpgrade.ID, timestamp, channelID)
+		if err != nil {
+			c.log.WithField("error", err).Error("failed to set slack message")
 		}
 
 	case model.UpgradeStatusMasterUpgrade:
@@ -157,9 +161,14 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 
 		msg := c.slack.GetClusterUpgradeDoneNotificationMessageOptions(tenant.Name, env.Name)
 
-		err = c.slack.PostMessage(c.slackChannel, msg)
+		err = c.slack.PostComment(c.slackChannel, clusterUpgrade.SlackMessageTimestamp, msg)
 		if err != nil {
-			c.log.WithFields(logrus.Fields{"error": err}).Error("failed to post message to slack")
+			c.log.WithFields(logrus.Fields{"error": err}).Error("failed to post comment to slack")
+		}
+
+		err = c.slack.AddReaction(upgradeStatus.SlackChannelID, upgradeStatus.SlackMessageTimestamp, "white_check_mark")
+		if err != nil {
+			c.log.WithFields(logrus.Fields{"error": err}).Error("failed to add reaction to slack")
 		}
 
 		c.upgradeInProgress.Add(ctx, -1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "nodePools")...))
@@ -231,9 +240,9 @@ func (c *ClusterUpgrader) upgradeNodes(ctx context.Context, env *model.Environme
 
 		msg := c.slack.GetClusterUpgradeNotificationMessageOptions(tenantName, env.Name, clusterUpgrade.Version, np.Name)
 
-		err = c.slack.PostMessage(c.slackChannel, msg)
+		err = c.slack.PostComment(c.slackChannel, clusterUpgrade.SlackMessageTimestamp, msg)
 		if err != nil {
-			c.log.WithFields(logrus.Fields{"error": err}).Error("failed to post message to slack")
+			c.log.WithFields(logrus.Fields{"error": err}).Error("failed to post comment to slack")
 		}
 
 		c.upgradeInProgress.Add(ctx, 1, metric.WithAttributes(setMetricsAttrs(env.Name, tenantName, clusterUpgrade.Version, "nodePools")...))

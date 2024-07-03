@@ -234,6 +234,8 @@ func TestRun_StartClusterUpgradeMasterStatusCreated(t *testing.T) {
 			Detail:        "testSuite",
 		}, nil).Once()
 
+	suite.repoMock.EXPECT().SetClusterUpgradesSlackMessage(mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil).Once()
+
 	id := uuid.New()
 	suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantId, suite.env.id, mock.Anything, mock.Anything).Return(
 		&model.EnvironmentOperation{

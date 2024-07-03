@@ -1,5 +1,5 @@
 .PHONY: test integration-test local-with-auth local linux-build docker-build docker-push run-postgres-test stop-postgres-test install-sqlc
-SQLC_VERSION ?= "v1.24.0"
+SQLC_VERSION ?= "v1.26.0"
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -105,3 +105,14 @@ playground:
 
 release-naisd:
 	./hack/release-naisd.sh
+
+check: staticcheck vulncheck deadcode
+
+staticcheck:
+	go run honnef.co/go/tools/cmd/staticcheck@latest ./...
+
+vulncheck:
+	go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+
+deadcode:
+	go run golang.org/x/tools/cmd/deadcode@latest -test ./...

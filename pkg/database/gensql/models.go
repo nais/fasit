@@ -136,13 +136,15 @@ type ClusterOperation struct {
 }
 
 type ClusterUpgrade struct {
-	ID            uuid.UUID
-	TenantID      uuid.UUID
-	EnvironmentID uuid.UUID
-	Version       string
-	Status        ClusterUpgradesStatus
-	StartTime     pgtype.Timestamptz
-	LastModified  pgtype.Timestamptz
+	ID                    uuid.UUID
+	TenantID              uuid.UUID
+	EnvironmentID         uuid.UUID
+	Version               string
+	Status                ClusterUpgradesStatus
+	StartTime             pgtype.Timestamptz
+	LastModified          pgtype.Timestamptz
+	SlackMessageTimestamp pgtype.Text
+	SlackChannelID        pgtype.Text
 }
 
 type ConfigurationsEnvironment struct {
