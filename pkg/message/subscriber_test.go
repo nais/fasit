@@ -21,7 +21,7 @@ func TestSubscriber(t *testing.T) {
 	srv := pstest.NewServer()
 	defer srv.Close()
 	// Connect to the server without using TLS.
-	conn, err := grpc.Dial(srv.Addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(srv.Addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		t.Fatal(err)
 	}

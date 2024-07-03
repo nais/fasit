@@ -9,7 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/googleapis/gax-go/v2/apierror"
 	"github.com/hashicorp/go-version"
-	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/graph/model"

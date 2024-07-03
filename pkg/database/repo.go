@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"cloud.google.com/go/cloudsqlconn"
-	cloudsqlpgx "cloud.google.com/go/cloudsqlconn/postgres/pgxv4"
+	cloudsqlpgx "cloud.google.com/go/cloudsqlconn/postgres/pgxv5"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/pkg/database/gensql"
