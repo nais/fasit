@@ -104,7 +104,12 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 			return err
 		}
 
-		msg := c.slack.GetClusterUpgradeNotificationMessageOptions(tenant.Name, env.Name, clusterUpgrade.Version, "control plane")
+		mentions, err := getUpgradeMentions(ctx, c, env.ID)
+		if err != nil {
+			c.log.WithField("error", err).Error("failed to get upgrade mentions")
+		}
+
+		msg := c.slack.GetClusterUpgradeNotificationMessageOptions(tenant.Name, env.Name, clusterUpgrade.Version, "control plane", mentions)
 
 		channelID, timestamp, err := c.slack.PostMessage(c.slackChannel, msg)
 		if err != nil {
@@ -238,7 +243,7 @@ func (c *ClusterUpgrader) upgradeNodes(ctx context.Context, env *model.Environme
 			return nil, err
 		}
 
-		msg := c.slack.GetClusterUpgradeNotificationMessageOptions(tenantName, env.Name, clusterUpgrade.Version, np.Name)
+		msg := c.slack.GetClusterUpgradeNotificationMessageOptions(tenantName, env.Name, clusterUpgrade.Version, np.Name, "")
 
 		err = c.slack.PostComment(c.slackChannel, clusterUpgrade.SlackMessageTimestamp, msg)
 		if err != nil {
@@ -398,4 +403,18 @@ func getProjectId(ctx context.Context, c *ClusterUpgrader, environmentId uuid.UU
 	}
 
 	return id, nil
+}
+
+func getUpgradeMentions(ctx context.Context, c *ClusterUpgrader, environmentId uuid.UUID) (string, error) {
+	notifications, err := c.repo.EnvironmentValueGet(ctx, environmentId, "slack_upgrade_mentions", false)
+	if err != nil {
+		return "", err
+	}
+
+	notificationsString := ""
+	if err := json.Unmarshal(notifications.Value, &notificationsString); err != nil {
+		return "", err
+	}
+
+	return notificationsString, nil
 }

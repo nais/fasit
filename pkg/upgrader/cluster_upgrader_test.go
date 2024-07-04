@@ -234,6 +234,12 @@ func TestRun_StartClusterUpgradeMasterStatusCreated(t *testing.T) {
 			Detail:        "testSuite",
 		}, nil).Once()
 
+	suite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, suite.env.id, "slack_upgrade_mentions", false).Return(
+		&model.EnvironmentValue{
+			Key:   projectId,
+			Value: []byte(`"<@U01J9J9J9J9>"`),
+		}, nil).Once()
+
 	suite.repoMock.EXPECT().SetClusterUpgradesSlackMessage(mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil).Once()
 
 	id := uuid.New()
