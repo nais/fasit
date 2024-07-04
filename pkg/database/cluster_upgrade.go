@@ -100,7 +100,6 @@ func (r *repo) SetClusterUpgradesSlackMessage(ctx context.Context, id uuid.UUID,
 		return nil, err
 	}
 	return clusterUpgradeFromSQL(clusterUpgrade), nil
-
 }
 
 func (r *repo) UpdateClusterUpgradeStatus(ctx context.Context, tenantId, envId uuid.UUID, status gensql.ClusterUpgradesStatus, version string) (*model.ClusterUpgradeStatus, error) {
