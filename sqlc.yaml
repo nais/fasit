@@ -1,20 +1,28 @@
-version: 1
-packages:
-  - path: "pkg/database/gensql"
-    name: "gensql"
-    engine: "postgresql"
+version: "2"
+sql:
+  - engine: postgresql
     schema: "pkg/database/migrations"
     queries: "pkg/database/queries"
-    emit_interface: true
-    emit_empty_slices: true
-    sql_package: pgx/v5
-    overrides:
-      - db_type: "uuid"
-        go_type: "github.com/google/uuid.UUID"
+    gen:
+      go:
+        package: gensql
+        out: "pkg/database/gensql"
+        sql_package: pgx/v5
+        emit_interface: true
+        #emit_result_struct_pointers: true
+        #emit_prepared_queries: true
+        #emit_all_enum_values: true
+        #emit_enum_valid_method: true
+        #emit_pointers_for_null_types: true
+        emit_empty_slices: true
+        #json_tags_id_uppercase: true
+        #omit_unused_structs: true
+        omit_sqlc_version: true
+        overrides:
+          - db_type: "uuid"
+            go_type: "github.com/google/uuid.UUID"
     rules:
       - always-order-by
-    # Might want this for v1.11
-    # emit_result_struct_pointers: true
 
 rules:
   - name: always-order-by
