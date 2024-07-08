@@ -40,7 +40,6 @@ func (r *repo) ClusterUpgradeHistoryGet(ctx context.Context, tenantId, envId uui
 	}
 
 	return upgrades, nil
-
 }
 
 func clusterUpgradeFromSQL(p gensql.ClusterUpgrade) *model.ClusterUpgradeStatus {
