@@ -139,6 +139,16 @@ func (r *environmentResolver) Feature(ctx context.Context, obj *model.Environmen
 	return ret, nil
 }
 
+// ClusterUpgradeHistory is the resolver for the clusterUpgradeHistory field.
+func (r *environmentResolver) ClusterUpgradeHistory(ctx context.Context, obj *model.Environment) ([]*model.ClusterUpgradeStatus, error) {
+	cus, err := r.Repo.ClusterUpgradeHistoryGet(ctx, obj.TenantID, obj.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return cus, nil
+}
+
 // ClusterUpgradeStatus is the resolver for the clusterUpgradeStatus field.
 func (r *environmentResolver) ClusterUpgradeStatus(ctx context.Context, obj *model.Environment) (*model.ClusterUpgradeStatus, error) {
 	cu, err := r.Repo.ClusterUpgradeGet(ctx, obj.TenantID, obj.ID)

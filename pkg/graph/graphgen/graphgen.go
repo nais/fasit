@@ -139,27 +139,28 @@ type ComplexityRoot struct {
 	}
 
 	Environment struct {
-		AuditLog             func(childComplexity int, featureName *string) int
-		AutoUpgrade          func(childComplexity int) int
-		ClusterUpgradeStatus func(childComplexity int) int
-		Created              func(childComplexity int) int
-		Description          func(childComplexity int) int
-		Feature              func(childComplexity int, name string) int
-		FeatureStates        func(childComplexity int) int
-		Features             func(childComplexity int) int
-		GcpProjectID         func(childComplexity int) int
-		Health               func(childComplexity int) int
-		ID                   func(childComplexity int) int
-		Kind                 func(childComplexity int) int
-		LastModified         func(childComplexity int) int
-		Name                 func(childComplexity int) int
-		Nodes                func(childComplexity int) int
-		Reconcile            func(childComplexity int) int
-		Releases             func(childComplexity int) int
-		Tenant               func(childComplexity int) int
-		Values               func(childComplexity int) int
-		Versions             func(childComplexity int) int
-		Warnings             func(childComplexity int) int
+		AuditLog              func(childComplexity int, featureName *string) int
+		AutoUpgrade           func(childComplexity int) int
+		ClusterUpgradeHistory func(childComplexity int) int
+		ClusterUpgradeStatus  func(childComplexity int) int
+		Created               func(childComplexity int) int
+		Description           func(childComplexity int) int
+		Feature               func(childComplexity int, name string) int
+		FeatureStates         func(childComplexity int) int
+		Features              func(childComplexity int) int
+		GcpProjectID          func(childComplexity int) int
+		Health                func(childComplexity int) int
+		ID                    func(childComplexity int) int
+		Kind                  func(childComplexity int) int
+		LastModified          func(childComplexity int) int
+		Name                  func(childComplexity int) int
+		Nodes                 func(childComplexity int) int
+		Reconcile             func(childComplexity int) int
+		Releases              func(childComplexity int) int
+		Tenant                func(childComplexity int) int
+		Values                func(childComplexity int) int
+		Versions              func(childComplexity int) int
+		Warnings              func(childComplexity int) int
 	}
 
 	EnvironmentOperation struct {
@@ -442,6 +443,7 @@ type EnvironmentResolver interface {
 	Features(ctx context.Context, obj *model.Environment) ([]*model.Feature, error)
 	Feature(ctx context.Context, obj *model.Environment, name string) (*model.Feature, error)
 
+	ClusterUpgradeHistory(ctx context.Context, obj *model.Environment) ([]*model.ClusterUpgradeStatus, error)
 	ClusterUpgradeStatus(ctx context.Context, obj *model.Environment) (*model.ClusterUpgradeStatus, error)
 	Versions(ctx context.Context, obj *model.Environment) (*model.EnvironmentVersions, error)
 }
@@ -810,6 +812,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Environment.AutoUpgrade(childComplexity), true
+
+	case "Environment.clusterUpgradeHistory":
+		if e.complexity.Environment.ClusterUpgradeHistory == nil {
+			break
+		}
+
+		return e.complexity.Environment.ClusterUpgradeHistory(childComplexity), true
 
 	case "Environment.clusterUpgradeStatus":
 		if e.complexity.Environment.ClusterUpgradeStatus == nil {
@@ -2536,6 +2545,7 @@ type Environment {
   feature(name: String!): Feature!
   reconcile: Boolean!
   autoUpgrade: Boolean!
+  clusterUpgradeHistory: [ClusterUpgradeStatus!]!
   clusterUpgradeStatus: ClusterUpgradeStatus
   versions: EnvironmentVersions
 }
@@ -4147,6 +4157,8 @@ func (ec *executionContext) fieldContext_ClusterUpgradeStatus_environment(_ cont
 				return ec.fieldContext_Environment_reconcile(ctx, field)
 			case "autoUpgrade":
 				return ec.fieldContext_Environment_autoUpgrade(ctx, field)
+			case "clusterUpgradeHistory":
+				return ec.fieldContext_Environment_clusterUpgradeHistory(ctx, field)
 			case "clusterUpgradeStatus":
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
@@ -4466,6 +4478,8 @@ func (ec *executionContext) fieldContext_ConfigOverride_environment(_ context.Co
 				return ec.fieldContext_Environment_reconcile(ctx, field)
 			case "autoUpgrade":
 				return ec.fieldContext_Environment_autoUpgrade(ctx, field)
+			case "clusterUpgradeHistory":
+				return ec.fieldContext_Environment_clusterUpgradeHistory(ctx, field)
 			case "clusterUpgradeStatus":
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
@@ -5267,6 +5281,8 @@ func (ec *executionContext) fieldContext_EnvSeries_environment(_ context.Context
 				return ec.fieldContext_Environment_reconcile(ctx, field)
 			case "autoUpgrade":
 				return ec.fieldContext_Environment_autoUpgrade(ctx, field)
+			case "clusterUpgradeHistory":
+				return ec.fieldContext_Environment_clusterUpgradeHistory(ctx, field)
 			case "clusterUpgradeStatus":
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
@@ -6335,6 +6351,66 @@ func (ec *executionContext) fieldContext_Environment_autoUpgrade(_ context.Conte
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Environment_clusterUpgradeHistory(ctx context.Context, field graphql.CollectedField, obj *model.Environment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Environment_clusterUpgradeHistory(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Environment().ClusterUpgradeHistory(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*model.ClusterUpgradeStatus)
+	fc.Result = res
+	return ec.marshalNClusterUpgradeStatus2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐClusterUpgradeStatusᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Environment_clusterUpgradeHistory(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Environment",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_ClusterUpgradeStatus_id(ctx, field)
+			case "upgradeStatus":
+				return ec.fieldContext_ClusterUpgradeStatus_upgradeStatus(ctx, field)
+			case "version":
+				return ec.fieldContext_ClusterUpgradeStatus_version(ctx, field)
+			case "lastModified":
+				return ec.fieldContext_ClusterUpgradeStatus_lastModified(ctx, field)
+			case "startTime":
+				return ec.fieldContext_ClusterUpgradeStatus_startTime(ctx, field)
+			case "operations":
+				return ec.fieldContext_ClusterUpgradeStatus_operations(ctx, field)
+			case "environment":
+				return ec.fieldContext_ClusterUpgradeStatus_environment(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ClusterUpgradeStatus", field.Name)
 		},
 	}
 	return fc, nil
@@ -8951,6 +9027,8 @@ func (ec *executionContext) fieldContext_FeatureWarning_environment(_ context.Co
 				return ec.fieldContext_Environment_reconcile(ctx, field)
 			case "autoUpgrade":
 				return ec.fieldContext_Environment_autoUpgrade(ctx, field)
+			case "clusterUpgradeHistory":
+				return ec.fieldContext_Environment_clusterUpgradeHistory(ctx, field)
 			case "clusterUpgradeStatus":
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
@@ -10567,6 +10645,8 @@ func (ec *executionContext) fieldContext_Mutation_environmentCreate(ctx context.
 				return ec.fieldContext_Environment_reconcile(ctx, field)
 			case "autoUpgrade":
 				return ec.fieldContext_Environment_autoUpgrade(ctx, field)
+			case "clusterUpgradeHistory":
+				return ec.fieldContext_Environment_clusterUpgradeHistory(ctx, field)
 			case "clusterUpgradeStatus":
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
@@ -10666,6 +10746,8 @@ func (ec *executionContext) fieldContext_Mutation_environmentUpdate(ctx context.
 				return ec.fieldContext_Environment_reconcile(ctx, field)
 			case "autoUpgrade":
 				return ec.fieldContext_Environment_autoUpgrade(ctx, field)
+			case "clusterUpgradeHistory":
+				return ec.fieldContext_Environment_clusterUpgradeHistory(ctx, field)
 			case "clusterUpgradeStatus":
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
@@ -10765,6 +10847,8 @@ func (ec *executionContext) fieldContext_Mutation_environmentSetReconcile(ctx co
 				return ec.fieldContext_Environment_reconcile(ctx, field)
 			case "autoUpgrade":
 				return ec.fieldContext_Environment_autoUpgrade(ctx, field)
+			case "clusterUpgradeHistory":
+				return ec.fieldContext_Environment_clusterUpgradeHistory(ctx, field)
 			case "clusterUpgradeStatus":
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
@@ -10864,6 +10948,8 @@ func (ec *executionContext) fieldContext_Mutation_environmentUpgrade(ctx context
 				return ec.fieldContext_Environment_reconcile(ctx, field)
 			case "autoUpgrade":
 				return ec.fieldContext_Environment_autoUpgrade(ctx, field)
+			case "clusterUpgradeHistory":
+				return ec.fieldContext_Environment_clusterUpgradeHistory(ctx, field)
 			case "clusterUpgradeStatus":
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
@@ -10963,6 +11049,8 @@ func (ec *executionContext) fieldContext_Mutation_environmentSetAutoUpgrade(ctx 
 				return ec.fieldContext_Environment_reconcile(ctx, field)
 			case "autoUpgrade":
 				return ec.fieldContext_Environment_autoUpgrade(ctx, field)
+			case "clusterUpgradeHistory":
+				return ec.fieldContext_Environment_clusterUpgradeHistory(ctx, field)
 			case "clusterUpgradeStatus":
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
@@ -11366,6 +11454,8 @@ func (ec *executionContext) fieldContext_NaisdWarning_environment(_ context.Cont
 				return ec.fieldContext_Environment_reconcile(ctx, field)
 			case "autoUpgrade":
 				return ec.fieldContext_Environment_autoUpgrade(ctx, field)
+			case "clusterUpgradeHistory":
+				return ec.fieldContext_Environment_clusterUpgradeHistory(ctx, field)
 			case "clusterUpgradeStatus":
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
@@ -14362,6 +14452,8 @@ func (ec *executionContext) fieldContext_Tenant_environments(_ context.Context, 
 				return ec.fieldContext_Environment_reconcile(ctx, field)
 			case "autoUpgrade":
 				return ec.fieldContext_Environment_autoUpgrade(ctx, field)
+			case "clusterUpgradeHistory":
+				return ec.fieldContext_Environment_clusterUpgradeHistory(ctx, field)
 			case "clusterUpgradeStatus":
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
@@ -14450,6 +14542,8 @@ func (ec *executionContext) fieldContext_Tenant_environment(ctx context.Context,
 				return ec.fieldContext_Environment_reconcile(ctx, field)
 			case "autoUpgrade":
 				return ec.fieldContext_Environment_autoUpgrade(ctx, field)
+			case "clusterUpgradeHistory":
+				return ec.fieldContext_Environment_clusterUpgradeHistory(ctx, field)
 			case "clusterUpgradeStatus":
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
@@ -18445,6 +18539,42 @@ func (ec *executionContext) _Environment(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "clusterUpgradeHistory":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Environment_clusterUpgradeHistory(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "clusterUpgradeStatus":
 			field := field
 
@@ -21656,6 +21786,60 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNClusterUpgradeStatus2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐClusterUpgradeStatusᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ClusterUpgradeStatus) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNClusterUpgradeStatus2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐClusterUpgradeStatus(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNClusterUpgradeStatus2ᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐClusterUpgradeStatus(ctx context.Context, sel ast.SelectionSet, v *model.ClusterUpgradeStatus) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ClusterUpgradeStatus(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNComputedValue2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋpkgᚋgraphᚋmodelᚐComputedValueᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ComputedValue) graphql.Marshaler {
