@@ -30,3 +30,9 @@ RETURNING *;
 -- name: ClusterUpgradesGetByID :one
 SELECT * FROM cluster_upgrades
 WHERE id = @id;
+
+-- name: ClusterUpgradesHistoryGetByEnvironmentID :many
+SELECT * FROM cluster_upgrades
+WHERE tenant_id = @tenantId AND
+environment_id = @envID
+ORDER BY last_modified DESC;

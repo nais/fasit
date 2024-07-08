@@ -106,6 +106,48 @@ func (q *Queries) ClusterUpgradesGetByID(ctx context.Context, id uuid.UUID) (Clu
 	return i, err
 }
 
+const clusterUpgradesHistoryGetByEnvironmentID = `-- name: ClusterUpgradesHistoryGetByEnvironmentID :many
+SELECT id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id FROM cluster_upgrades
+WHERE tenant_id = $1 AND
+environment_id = $2
+ORDER BY last_modified DESC
+`
+
+type ClusterUpgradesHistoryGetByEnvironmentIDParams struct {
+	Tenantid uuid.UUID
+	Envid    uuid.UUID
+}
+
+func (q *Queries) ClusterUpgradesHistoryGetByEnvironmentID(ctx context.Context, arg ClusterUpgradesHistoryGetByEnvironmentIDParams) ([]ClusterUpgrade, error) {
+	rows, err := q.db.Query(ctx, clusterUpgradesHistoryGetByEnvironmentID, arg.Tenantid, arg.Envid)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ClusterUpgrade{}
+	for rows.Next() {
+		var i ClusterUpgrade
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.EnvironmentID,
+			&i.Version,
+			&i.Status,
+			&i.StartTime,
+			&i.LastModified,
+			&i.SlackMessageTimestamp,
+			&i.SlackChannelID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const clusterUpgradesSetSlackMessage = `-- name: ClusterUpgradesSetSlackMessage :one
 UPDATE cluster_upgrades
 SET "slack_message_timestamp" = $1,

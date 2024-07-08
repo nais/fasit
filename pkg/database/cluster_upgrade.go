@@ -17,11 +17,30 @@ type ClusterUpgraderRepo interface {
 	GetRunningClusterOperation(ctx context.Context, tenantId, envId uuid.UUID) (*model.EnvironmentOperation, error)
 	CreateClusterUpgrade(ctx context.Context, tenantId, envId uuid.UUID, version string) (*model.ClusterUpgradeStatus, error)
 	ClusterUpgradeGet(ctx context.Context, tenantId, envId uuid.UUID) (*model.ClusterUpgradeStatus, error)
+	ClusterUpgradeHistoryGet(ctx context.Context, tenantId, envId uuid.UUID) ([]*model.ClusterUpgradeStatus, error)
 	UpdateClusterUpgradeStatus(ctx context.Context, tenantId, envId uuid.UUID, status gensql.ClusterUpgradesStatus, version string) (*model.ClusterUpgradeStatus, error)
 	ClusterUpgradeGetByID(ctx context.Context, id uuid.UUID) (*model.ClusterUpgradeStatus, error)
 	ClusterOperationsGetByID(ctx context.Context, id uuid.UUID) (*model.EnvironmentOperation, error)
 	ClusterOperationsGetByUpgradeID(ctx context.Context, upgradeId uuid.UUID) ([]*model.EnvironmentOperation, error)
 	SetClusterUpgradesSlackMessage(ctx context.Context, id uuid.UUID, slackMessageTs, channelID string) (*model.ClusterUpgradeStatus, error)
+}
+
+func (r *repo) ClusterUpgradeHistoryGet(ctx context.Context, tenantId, envId uuid.UUID) ([]*model.ClusterUpgradeStatus, error) {
+	clusterUpgrades, err := r.querier.ClusterUpgradesHistoryGetByEnvironmentID(ctx, gensql.ClusterUpgradesHistoryGetByEnvironmentIDParams{
+		Tenantid: tenantId,
+		Envid:    envId,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var upgrades []*model.ClusterUpgradeStatus
+	for _, upgrade := range clusterUpgrades {
+		upgrades = append(upgrades, clusterUpgradeFromSQL(upgrade))
+	}
+
+	return upgrades, nil
+
 }
 
 func clusterUpgradeFromSQL(p gensql.ClusterUpgrade) *model.ClusterUpgradeStatus {

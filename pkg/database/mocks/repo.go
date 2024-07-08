@@ -466,6 +466,66 @@ func (_c *Repo_ClusterUpgradeGetByID_Call) RunAndReturn(run func(context.Context
 	return _c
 }
 
+// ClusterUpgradeHistoryGet provides a mock function with given fields: ctx, tenantId, envId
+func (_m *Repo) ClusterUpgradeHistoryGet(ctx context.Context, tenantId uuid.UUID, envId uuid.UUID) ([]*model.ClusterUpgradeStatus, error) {
+	ret := _m.Called(ctx, tenantId, envId)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ClusterUpgradeHistoryGet")
+	}
+
+	var r0 []*model.ClusterUpgradeStatus
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID) ([]*model.ClusterUpgradeStatus, error)); ok {
+		return rf(ctx, tenantId, envId)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID) []*model.ClusterUpgradeStatus); ok {
+		r0 = rf(ctx, tenantId, envId)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.ClusterUpgradeStatus)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, uuid.UUID) error); ok {
+		r1 = rf(ctx, tenantId, envId)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Repo_ClusterUpgradeHistoryGet_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ClusterUpgradeHistoryGet'
+type Repo_ClusterUpgradeHistoryGet_Call struct {
+	*mock.Call
+}
+
+// ClusterUpgradeHistoryGet is a helper method to define mock.On call
+//   - ctx context.Context
+//   - tenantId uuid.UUID
+//   - envId uuid.UUID
+func (_e *Repo_Expecter) ClusterUpgradeHistoryGet(ctx interface{}, tenantId interface{}, envId interface{}) *Repo_ClusterUpgradeHistoryGet_Call {
+	return &Repo_ClusterUpgradeHistoryGet_Call{Call: _e.mock.On("ClusterUpgradeHistoryGet", ctx, tenantId, envId)}
+}
+
+func (_c *Repo_ClusterUpgradeHistoryGet_Call) Run(run func(ctx context.Context, tenantId uuid.UUID, envId uuid.UUID)) *Repo_ClusterUpgradeHistoryGet_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uuid.UUID), args[2].(uuid.UUID))
+	})
+	return _c
+}
+
+func (_c *Repo_ClusterUpgradeHistoryGet_Call) Return(_a0 []*model.ClusterUpgradeStatus, _a1 error) *Repo_ClusterUpgradeHistoryGet_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Repo_ClusterUpgradeHistoryGet_Call) RunAndReturn(run func(context.Context, uuid.UUID, uuid.UUID) ([]*model.ClusterUpgradeStatus, error)) *Repo_ClusterUpgradeHistoryGet_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ConfigCreate provides a mock function with given fields: ctx, c
 func (_m *Repo) ConfigCreate(ctx context.Context, c model.NewConfiguration) (*model.Configuration, error) {
 	ret := _m.Called(ctx, c)
