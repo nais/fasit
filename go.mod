@@ -6,11 +6,11 @@ toolchain go1.22.5
 
 require (
 	cloud.google.com/go v0.115.0
-	cloud.google.com/go/bigquery v1.61.0
-	cloud.google.com/go/cloudsqlconn v1.11.0
+	cloud.google.com/go/bigquery v1.62.0
+	cloud.google.com/go/cloudsqlconn v1.11.1
 	cloud.google.com/go/pubsub v1.40.0
 	github.com/99designs/gqlgen v0.17.49
-	github.com/GoogleCloudPlatform/cloudsql-proxy v1.35.4
+	github.com/GoogleCloudPlatform/cloudsql-proxy v1.36.0
 	github.com/GoogleCloudPlatform/k8s-config-connector v1.120.1
 	github.com/Masterminds/sprig/v3 v3.2.3
 	github.com/bradleyfalzon/ghinstallation/v2 v2.11.0
@@ -40,12 +40,12 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v1.28.0
 	go.uber.org/automaxprocs v1.5.3
 	golang.org/x/sync v0.7.0
-	google.golang.org/api v0.187.0
+	google.golang.org/api v0.189.0
 	google.golang.org/grpc v1.65.0
 	google.golang.org/protobuf v1.34.2
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
-	helm.sh/helm/v3 v3.15.2
+	helm.sh/helm/v3 v3.15.3
 	k8s.io/api v0.30.2
 	k8s.io/apimachinery v0.30.2
 	k8s.io/client-go v0.30.2
@@ -64,10 +64,10 @@ require (
 )
 
 require (
-	cloud.google.com/go/auth v0.6.1 // indirect
-	cloud.google.com/go/auth/oauth2adapt v0.2.2 // indirect
-	cloud.google.com/go/compute/metadata v0.4.0 // indirect
-	cloud.google.com/go/container v1.37.2
+	cloud.google.com/go/auth v0.7.2 // indirect
+	cloud.google.com/go/auth/oauth2adapt v0.2.3 // indirect
+	cloud.google.com/go/compute/metadata v0.5.0 // indirect
+	cloud.google.com/go/container v1.38.0
 	cloud.google.com/go/iam v1.1.10 // indirect
 	github.com/AdaLogics/go-fuzz-headers v0.0.0-20230811130428-ced1acdcaa24 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
@@ -130,7 +130,7 @@ require (
 	github.com/google/s2a-go v0.1.7 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.3.2 // indirect
-	github.com/googleapis/gax-go/v2 v2.12.5
+	github.com/googleapis/gax-go/v2 v2.13.0
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
 	github.com/gosuri/uitable v0.0.4 // indirect
@@ -188,7 +188,7 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sethvargo/go-retry v0.2.4 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
-	github.com/slack-go/slack v0.13.0
+	github.com/slack-go/slack v0.13.1
 	github.com/sosodev/duration v1.3.1 // indirect
 	github.com/spf13/cast v1.6.0 // indirect
 	github.com/spf13/cobra v1.8.1 // indirect
@@ -223,9 +223,9 @@ require (
 	golang.org/x/time v0.5.0 // indirect
 	golang.org/x/tools v0.23.0 // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
-	google.golang.org/genproto v0.0.0-20240708141625-4ad9e859172b // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20240708141625-4ad9e859172b // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20240708141625-4ad9e859172b // indirect
+	google.golang.org/genproto v0.0.0-20240722135656-d784300faade // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20240722135656-d784300faade // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20240722135656-d784300faade // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	k8s.io/apiextensions-apiserver v0.30.2 // indirect
 	k8s.io/apiserver v0.30.2 // indirect
