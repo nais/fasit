@@ -67,6 +67,7 @@ func init() {
 	flag.BoolVar(&cfg.InsecureSkipProxy, "insecure-skip-proxy", false, "Insecure, but allows the server to not require iap")
 	flag.BoolVar(&cfg.InsecureSkipTokenCheck, "insecure-skip-token-check", false, "Insecure, but allows the server ignore token check")
 	flag.StringVar(&cfg.SlackClusterUpgradeChannel, "slack-cluster-upgrade-channel", os.Getenv("SLACK_CLUSTER_UPGRADE_CHANNEL"), "Slack channel to send message to")
+	flag.StringVar(&cfg.SlackChannelFeatureAlerts, "slack-channel-feature-alerts", os.Getenv("SLACK_CHANNEL_FEATURE_ALERTS"), "Slack channel to send feature alerts to")
 	flag.StringVar(&cfg.SlackAPIToken, "slack-api-token", os.Getenv("SLACK_API_TOKEN"), "Slack API token")
 }
 
@@ -138,7 +139,7 @@ func main() {
 
 	statusMgr := message.NewSubscriber[message.Status](pubsubClient, cfg.GCPProjectID, cfg.StatusSubscriptionID)
 
-	receiver := workers.NewReceiver(statusMgr, repo, log.WithField("subsystem", "status"))
+	receiver := workers.NewReceiver(statusMgr, repo, log.WithField("subsystem", "status"), slackClient, cfg.SlackChannelFeatureAlerts)
 	go receiver.Run(ctx)
 
 	notifierService := notifier.New(db, log.WithField("subsystem", "notifier"))

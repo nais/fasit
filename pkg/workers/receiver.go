@@ -12,6 +12,7 @@ import (
 	"github.com/nais/fasit/pkg/database"
 	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/nais/fasit/pkg/message"
+	"github.com/nais/fasit/pkg/slack"
 	"github.com/sirupsen/logrus"
 )
 
@@ -40,21 +41,26 @@ type ReceiverStore interface {
 	RolloutStatus(ctx context.Context, name string) (model.RolloutStatus, error)
 	RolloutsUpdateStatus(ctx context.Context, status model.RolloutStatus, name string, completed bool) error
 	TenantCreate(ctx context.Context, t *model.TenantCreate) (*model.Tenant, error)
+	TenantGet(ctx context.Context, id uuid.UUID) (*model.Tenant, error)
 	TenantGetByName(ctx context.Context, name string) (*model.Tenant, error)
 	TxFunc(ctx context.Context, fn database.TXFunc) error
 }
 
 type Receiver struct {
-	manager ReceiverClient
-	repo    ReceiverStore
-	log     *logrus.Entry
+	manager      ReceiverClient
+	repo         ReceiverStore
+	log          *logrus.Entry
+	slack        *slack.Slack
+	slackChannel string
 }
 
-func NewReceiver(mgr ReceiverClient, repo ReceiverStore, log *logrus.Entry) *Receiver {
+func NewReceiver(mgr ReceiverClient, repo ReceiverStore, log *logrus.Entry, slackClient *slack.Slack, slackChannel string) *Receiver {
 	receiver := &Receiver{
-		manager: mgr,
-		repo:    repo,
-		log:     log,
+		manager:      mgr,
+		repo:         repo,
+		log:          log,
+		slack:        slackClient,
+		slackChannel: slackChannel,
 	}
 	return receiver
 }
@@ -110,6 +116,18 @@ func (r *Receiver) handlerHelm(ctx context.Context, msg message.Status) error {
 			return nil
 		}
 		return err
+	}
+
+	if helmStatus.RolloutStatus == model.RolloutStatusFailed {
+		tenant, err := r.repo.TenantGet(ctx, env.TenantID)
+		if err != nil {
+			return fmt.Errorf("getting tenant: %w", err)
+		}
+
+		slackMsg := r.slack.GetFeatureDeployFailed(di.FeatureName, tenant.Name, env.Name)
+		if _, _, err := r.slack.PostMessage(r.slackChannel, slackMsg); err != nil {
+			fmt.Println(err)
+		}
 	}
 
 	if err := r.repo.DeployInstructionUpdateStatus(ctx, helmStatus.DIID, helmStatus.RolloutStatus); err != nil {

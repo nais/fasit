@@ -34,3 +34,14 @@ func (s *Slack) GetClusterUpgradeDoneNotificationMessageOptions(tenant, environm
 		slackapi.MsgOptionBlocks(blocks...),
 	}
 }
+
+func (s *Slack) GetFeatureDeployFailed(feature, tenant, environment string) []slackapi.MsgOption {
+	blocks := []slackapi.Block{}
+	headerBlock := slackapi.NewHeaderBlock(slackapi.NewTextBlockObject("plain_text", ":warning: Feature deploy failed", false, false))
+	text := slackapi.NewSectionBlock(slackapi.NewTextBlockObject("mrkdwn", fmt.Sprintf("*Feature:* %s\n*Tenant:* %s\n*Environment:* %s", feature, tenant, environment), false, false), nil, nil)
+	blocks = append(blocks, headerBlock, text)
+
+	return []slackapi.MsgOption{
+		slackapi.MsgOptionBlocks(blocks...),
+	}
+}
