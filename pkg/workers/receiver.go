@@ -124,7 +124,7 @@ func (r *Receiver) handlerHelm(ctx context.Context, msg message.Status) error {
 			return fmt.Errorf("getting tenant: %w", err)
 		}
 
-		slackMsg := r.slack.GetFeatureDeployFailed(di.FeatureName, tenant.Name, env.Name)
+		slackMsg := r.slack.GetFeatureDeployFailedMessageOptions(di.FeatureName, tenant.Name, env.Name)
 		if _, _, err := r.slack.PostMessage(r.slackChannel, slackMsg); err != nil {
 			r.log.WithError(err).Error("sending slack message")
 		}

@@ -15,7 +15,7 @@ type SlackClient interface {
 	AddReaction(channelId, timestamp, reaction string) error
 	GetClusterUpgradeNotificationMessageOptions(tenant, environment, version, clusterComponent, mentions string) []slack.MsgOption
 	GetClusterUpgradeDoneNotificationMessageOptions(tenant, environment string) []slack.MsgOption
-	GetFeatureDeployFailed(feature, tenant, environment string) []slack.MsgOption
+	GetFeatureDeployFailedMessageOptions(feature, tenant, environment string) []slack.MsgOption
 }
 
 // New creates a new Slack client

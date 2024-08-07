@@ -32,6 +32,6 @@ func (f *FakeSlackClient) GetClusterUpgradeFailedNotificationMessageOptions(tena
 	return nil
 }
 
-func (f *FakeSlackClient) GetFeatureDeployFailed(feature, tenant, environment string) []slack.MsgOption {
+func (f *FakeSlackClient) GetFeatureDeployFailedMessageOptions(feature, tenant, environment string) []slack.MsgOption {
 	return nil
 }

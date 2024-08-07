@@ -35,7 +35,7 @@ func (s *Slack) GetClusterUpgradeDoneNotificationMessageOptions(tenant, environm
 	}
 }
 
-func (s *Slack) GetFeatureDeployFailed(feature, tenant, environment string) []slack.MsgOption {
+func (s *Slack) GetFeatureDeployFailedMessageOptions(feature, tenant, environment string) []slack.MsgOption {
 	blocks := []slack.Block{}
 	headerBlock := slack.NewHeaderBlock(slack.NewTextBlockObject("plain_text", ":warning: Feature deploy failed", false, false))
 	text := slack.NewSectionBlock(slack.NewTextBlockObject("mrkdwn", fmt.Sprintf("*Feature:* %s\n*Tenant:* %s\n*Environment:* %s", feature, tenant, environment), false, false), nil, nil)
