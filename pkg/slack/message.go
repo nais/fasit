@@ -3,45 +3,45 @@ package slack
 import (
 	"fmt"
 
-	slackapi "github.com/slack-go/slack"
+	"github.com/slack-go/slack"
 )
 
-func (s *Slack) GetClusterUpgradeNotificationMessageOptions(tenant, environment, version, clusterComponent, mentions string) []slackapi.MsgOption {
-	blocks := []slackapi.Block{}
-	headerBlock := slackapi.NewHeaderBlock(slackapi.NewTextBlockObject("plain_text", ":kubernetes: K8s auto-upgrade", false, false))
-	text := slackapi.NewSectionBlock(slackapi.NewTextBlockObject("mrkdwn", fmt.Sprintf("*Tenant:* %s\n*Environment:* %s\n*Component:* %s\n*Version:* %s\n*Progress*: <https://fasit.nais.io/clusters#%s|Fasit>", tenant, environment, clusterComponent, version, tenant), false, false), nil, nil)
+func (s *Slack) GetClusterUpgradeNotificationMessageOptions(tenant, environment, version, clusterComponent, mentions string) []slack.MsgOption {
+	blocks := []slack.Block{}
+	headerBlock := slack.NewHeaderBlock(slack.NewTextBlockObject("plain_text", ":kubernetes: K8s auto-upgrade", false, false))
+	text := slack.NewSectionBlock(slack.NewTextBlockObject("mrkdwn", fmt.Sprintf("*Tenant:* %s\n*Environment:* %s\n*Component:* %s\n*Version:* %s\n*Progress*: <https://fasit.nais.io/clusters#%s|Fasit>", tenant, environment, clusterComponent, version, tenant), false, false), nil, nil)
 	blocks = append(blocks, headerBlock, text)
 
-	var mentionsBlock *slackapi.SectionBlock
+	var mentionsBlock *slack.SectionBlock
 
 	if mentions != "" {
-		mentionsBlock = slackapi.NewSectionBlock(slackapi.NewTextBlockObject("mrkdwn", fmt.Sprintf("\n%s", mentions), false, false), nil, nil)
+		mentionsBlock = slack.NewSectionBlock(slack.NewTextBlockObject("mrkdwn", fmt.Sprintf("\n%s", mentions), false, false), nil, nil)
 		blocks = append(blocks, mentionsBlock)
 	}
 
-	return []slackapi.MsgOption{
-		slackapi.MsgOptionBlocks(blocks...),
+	return []slack.MsgOption{
+		slack.MsgOptionBlocks(blocks...),
 	}
 }
 
-func (s *Slack) GetClusterUpgradeDoneNotificationMessageOptions(tenant, environment string) []slackapi.MsgOption {
-	blocks := []slackapi.Block{}
-	headerBlock := slackapi.NewHeaderBlock(slackapi.NewTextBlockObject("plain_text", ":kubernetes: K8s auto-upgrade completed", false, false))
-	text := slackapi.NewSectionBlock(slackapi.NewTextBlockObject("mrkdwn", fmt.Sprintf("Upgrade completed! :tada:\n\n*Tenant:* %s\n*Cluster:* %s", tenant, environment), false, false), nil, nil)
+func (s *Slack) GetClusterUpgradeDoneNotificationMessageOptions(tenant, environment string) []slack.MsgOption {
+	blocks := []slack.Block{}
+	headerBlock := slack.NewHeaderBlock(slack.NewTextBlockObject("plain_text", ":kubernetes: K8s auto-upgrade completed", false, false))
+	text := slack.NewSectionBlock(slack.NewTextBlockObject("mrkdwn", fmt.Sprintf("Upgrade completed! :tada:\n\n*Tenant:* %s\n*Cluster:* %s", tenant, environment), false, false), nil, nil)
 	blocks = append(blocks, headerBlock, text)
 
-	return []slackapi.MsgOption{
-		slackapi.MsgOptionBlocks(blocks...),
+	return []slack.MsgOption{
+		slack.MsgOptionBlocks(blocks...),
 	}
 }
 
-func (s *Slack) GetFeatureDeployFailed(feature, tenant, environment string) []slackapi.MsgOption {
-	blocks := []slackapi.Block{}
-	headerBlock := slackapi.NewHeaderBlock(slackapi.NewTextBlockObject("plain_text", ":warning: Feature deploy failed", false, false))
-	text := slackapi.NewSectionBlock(slackapi.NewTextBlockObject("mrkdwn", fmt.Sprintf("*Feature:* %s\n*Tenant:* %s\n*Environment:* %s", feature, tenant, environment), false, false), nil, nil)
+func (s *Slack) GetFeatureDeployFailed(feature, tenant, environment string) []slack.MsgOption {
+	blocks := []slack.Block{}
+	headerBlock := slack.NewHeaderBlock(slack.NewTextBlockObject("plain_text", ":warning: Feature deploy failed", false, false))
+	text := slack.NewSectionBlock(slack.NewTextBlockObject("mrkdwn", fmt.Sprintf("*Feature:* %s\n*Tenant:* %s\n*Environment:* %s", feature, tenant, environment), false, false), nil, nil)
 	blocks = append(blocks, headerBlock, text)
 
-	return []slackapi.MsgOption{
-		slackapi.MsgOptionBlocks(blocks...),
+	return []slack.MsgOption{
+		slack.MsgOptionBlocks(blocks...),
 	}
 }
