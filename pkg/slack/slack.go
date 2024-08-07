@@ -9,8 +9,17 @@ type Slack struct {
 	client *slack.Client
 }
 
+type SlackClient interface {
+	PostMessage(channelName string, msgOptions []slack.MsgOption) (string, string, error)
+	PostComment(channelName, messageTs string, msgOptions []slack.MsgOption) error
+	AddReaction(channelId, timestamp, reaction string) error
+	GetClusterUpgradeNotificationMessageOptions(tenant, environment, version, clusterComponent, mentions string) []slack.MsgOption
+	GetClusterUpgradeDoneNotificationMessageOptions(tenant, environment string) []slack.MsgOption
+	GetFeatureDeployFailed(feature, tenant, environment string) []slack.MsgOption
+}
+
 // New creates a new Slack client
-func New(token string) *Slack {
+func New(token string) SlackClient {
 	return &Slack{
 		client: slack.New(token),
 	}

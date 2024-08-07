@@ -50,11 +50,11 @@ type Receiver struct {
 	manager      ReceiverClient
 	repo         ReceiverStore
 	log          *logrus.Entry
-	slack        *slack.Slack
+	slack        slack.SlackClient
 	slackChannel string
 }
 
-func NewReceiver(mgr ReceiverClient, repo ReceiverStore, log *logrus.Entry, slackClient *slack.Slack, slackChannel string) *Receiver {
+func NewReceiver(mgr ReceiverClient, repo ReceiverStore, log *logrus.Entry, slackClient slack.SlackClient, slackChannel string) *Receiver {
 	receiver := &Receiver{
 		manager:      mgr,
 		repo:         repo,
@@ -126,7 +126,7 @@ func (r *Receiver) handlerHelm(ctx context.Context, msg message.Status) error {
 
 		slackMsg := r.slack.GetFeatureDeployFailed(di.FeatureName, tenant.Name, env.Name)
 		if _, _, err := r.slack.PostMessage(r.slackChannel, slackMsg); err != nil {
-			fmt.Println(err)
+			r.log.WithError(err).Error("sending slack message")
 		}
 	}
 

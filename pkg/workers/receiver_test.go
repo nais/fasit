@@ -9,7 +9,7 @@ import (
 	"github.com/nais/fasit/pkg/database/mocks"
 	"github.com/nais/fasit/pkg/graph/model"
 	"github.com/nais/fasit/pkg/message"
-	"github.com/nais/fasit/pkg/slack"
+	"github.com/nais/fasit/pkg/slack/fake"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/mock"
 )
@@ -133,7 +133,7 @@ func TestReceiver(t *testing.T) {
 				&mockReceiverClient{messages: tc.statuses},
 				repo,
 				logrus.NewEntry(logrus.StandardLogger()),
-				slack.New("token"),
+				fake.NewFakeSlackClient(),
 				"test",
 			)
 

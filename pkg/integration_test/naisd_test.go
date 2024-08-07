@@ -14,7 +14,7 @@ import (
 	"github.com/nais/fasit/pkg/integration_test/testmanager/runner"
 	"github.com/nais/fasit/pkg/message"
 	"github.com/nais/fasit/pkg/naisd"
-	"github.com/nais/fasit/pkg/slack"
+	"github.com/nais/fasit/pkg/slack/fake"
 	"github.com/nais/fasit/pkg/workers"
 	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/rest"
@@ -61,7 +61,7 @@ func (n *naisdRunner) start(ctx context.Context, config *integration.Config, db 
 		done:     ctx.Done(),
 		pubsub:   n.PubSub,
 	}
-	rec := workers.NewReceiver(statusMgr, db, logrus.NewEntry(log), slack.New("token"), "test")
+	rec := workers.NewReceiver(statusMgr, db, logrus.NewEntry(log), fake.NewFakeSlackClient(), "test")
 	go rec.Run(ctx)
 	return nil
 }

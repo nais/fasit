@@ -322,7 +322,7 @@ func newMetricsProvider() (metric.Meter, error) {
 	return provider.Meter("github.com/nais/fasit"), nil
 }
 
-func runClusterUpgrader(ctx context.Context, log *logrus.Logger, googleClient upgrader.Upgrader, repo database.Repo, meter metric.Meter, slack *slack.Slack) error {
+func runClusterUpgrader(ctx context.Context, log *logrus.Logger, googleClient upgrader.Upgrader, repo database.Repo, meter metric.Meter, slack slack.SlackClient) error {
 	s := workers.NewScheduler(log.WithField("subsystem", "scheduler"))
 	clusterUpgrader := upgrader.NewClusterUpgrader(repo, log, googleClient, meter, slack, cfg.SlackClusterUpgradeChannel)
 	autoUpgrader := upgrader.NewAutoUpgrader(repo, log, googleClient)
