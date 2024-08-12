@@ -24,14 +24,14 @@ type ClusterUpgrader struct {
 	log          logrus.FieldLogger
 	repo         database.Repo
 	client       Upgrader
-	slack        *slack.Slack
+	slack        slack.SlackClient
 	slackChannel string
 
 	// Metrics
 	upgradeInProgress metric.Int64Counter
 }
 
-func NewClusterUpgrader(repo database.Repo, log logrus.FieldLogger, upgrader Upgrader, meter metric.Meter, slack *slack.Slack, slackChannel string) *ClusterUpgrader {
+func NewClusterUpgrader(repo database.Repo, log logrus.FieldLogger, upgrader Upgrader, meter metric.Meter, slack slack.SlackClient, slackChannel string) *ClusterUpgrader {
 	counter, err := meter.Int64Counter("upgrade_in_progress", metric.WithDescription("Upgrade in progress"))
 	if err != nil {
 		log.Fatal(err)

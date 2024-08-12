@@ -14,6 +14,7 @@ type Config struct {
 
 	SlackAPIToken              string
 	SlackClusterUpgradeChannel string
+	SlackChannelFeatureAlerts  string
 }
 
 func DefaultConfig() Config {
