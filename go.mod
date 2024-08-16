@@ -32,8 +32,10 @@ require (
 	github.com/ravilushqa/otelgqlgen v0.16.0
 	github.com/rs/cors v1.11.0
 	github.com/sirupsen/logrus v1.9.3
+	github.com/sqlc-dev/sqlc v1.26.0
 	github.com/stretchr/testify v1.9.0
 	github.com/vektah/gqlparser/v2 v2.5.16
+	github.com/vektra/mockery/v2 v2.44.1
 	go.opentelemetry.io/otel v1.28.0
 	go.opentelemetry.io/otel/exporters/prometheus v0.50.0
 	go.opentelemetry.io/otel/metric v1.28.0
@@ -42,6 +44,7 @@ require (
 	golang.org/x/sync v0.8.0
 	google.golang.org/api v0.191.0
 	google.golang.org/grpc v1.65.0
+	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.5.1
 	google.golang.org/protobuf v1.34.2
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -88,14 +91,11 @@ require (
 	github.com/spf13/afero v1.9.3 // indirect
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/viper v1.15.0 // indirect
-	github.com/sqlc-dev/sqlc v1.26.0 // indirect
 	github.com/stoewer/go-strcase v1.3.0 // indirect
 	github.com/subosito/gotenv v1.4.2 // indirect
 	github.com/tetratelabs/wazero v1.7.0 // indirect
-	github.com/vektra/mockery/v2 v2.44.1 // indirect
 	github.com/wasilibs/go-pgquery v0.0.0-20240319230125-b9b2e95c69a7 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
-	google.golang.org/grpc/cmd/protoc-gen-go-grpc v1.5.1 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.12.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
