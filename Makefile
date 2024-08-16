@@ -2,6 +2,7 @@
 
 PROTOC = $(shell which protoc)
 SQLC = go run github.com/sqlc-dev/sqlc/cmd/sqlc
+MOCKERY = go run github.com/vektra/mockery/v2
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -76,9 +77,9 @@ sqlc-vet:
 
 
 mocks:
-	mockery --case underscore --name Repo --dir pkg/database/ --outpkg mocks --output pkg/database/mocks --with-expecter
-	mockery --case underscore --name Querier --dir pkg/database/ --outpkg mocks --output pkg/database/mocks --with-expecter
-	mockery --case underscore --name Upgrader --dir pkg/upgrader/ --outpkg mocks --output pkg/upgrader/mocks --with-expecter
+	$(MOCKERY) --case underscore --name Repo --dir pkg/database/ --outpkg mocks --output pkg/database/mocks --with-expecter
+	$(MOCKERY) --case underscore --name Querier --dir pkg/database/ --outpkg mocks --output pkg/database/mocks --with-expecter
+	$(MOCKERY) --case underscore --name Upgrader --dir pkg/upgrader/ --outpkg mocks --output pkg/upgrader/mocks --with-expecter
 
 install-protobuf-go:
 	go install google.golang.org/protobuf/cmd/protoc-gen-go
