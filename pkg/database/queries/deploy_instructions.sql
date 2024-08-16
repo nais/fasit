@@ -24,6 +24,13 @@ SET status = @status
 WHERE id = @id
 ;
 
+-- name: TimeoutDeployInstructions :exec
+UPDATE deploy_instructions
+SET status = 'failed'
+WHERE status = 'pending'
+AND created < NOW() - INTERVAL '1 hour'
+;
+
 -- name: DeployInstructionsLatestForFeature :one
 SELECT * FROM deploy_instructions
 WHERE feature_name = @feature_name

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -16,6 +17,7 @@ import (
 type DeployInstructionRepo interface {
 	DeployInstructionCreate(ctx context.Context, envID uuid.UUID, feature *model.Feature, hash string) (uuid.UUID, error)
 	DeployInstructionGet(ctx context.Context, id uuid.UUID) (*model.DeployInstruction, error)
+	TimeoutDeployInstructions(ctx context.Context, interval time.Duration)
 	DeployInstructionsForFeature(ctx context.Context, envID uuid.UUID, featureName string, offset int) ([]*model.DeployInstruction, error)
 	DeployInstructionsLatestForEnvironment(ctx context.Context, envID uuid.UUID) ([]*model.DeployInstruction, error)
 	DeployInstructionsLatestForFeature(ctx context.Context, envID uuid.UUID, featureName string) (*model.DeployInstruction, error)
@@ -105,6 +107,24 @@ func (r *repo) DeployInstructionsLatestForEnvironment(ctx context.Context, envID
 	}
 
 	return instructions, nil
+}
+
+func (r *repo) TimeoutDeployInstructions(ctx context.Context, interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	for {
+		err := r.querier.TimeoutDeployInstructions(ctx)
+		if err != nil {
+			r.log.WithError(err).Error("failed to timeout deploy instructions")
+		}
+
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		}
+	}
 }
 
 func (r *repo) HelmValueDiffGet(ctx context.Context, di *model.DeployInstruction) (*model.HelmValueDiff, error) {

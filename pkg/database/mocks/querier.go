@@ -5671,6 +5671,52 @@ func (_c *Querier_TenantsGet_Call) RunAndReturn(run func(context.Context) ([]gen
 	return _c
 }
 
+// TimeoutDeployInstructions provides a mock function with given fields: ctx
+func (_m *Querier) TimeoutDeployInstructions(ctx context.Context) error {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for TimeoutDeployInstructions")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Querier_TimeoutDeployInstructions_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TimeoutDeployInstructions'
+type Querier_TimeoutDeployInstructions_Call struct {
+	*mock.Call
+}
+
+// TimeoutDeployInstructions is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *Querier_Expecter) TimeoutDeployInstructions(ctx interface{}) *Querier_TimeoutDeployInstructions_Call {
+	return &Querier_TimeoutDeployInstructions_Call{Call: _e.mock.On("TimeoutDeployInstructions", ctx)}
+}
+
+func (_c *Querier_TimeoutDeployInstructions_Call) Run(run func(ctx context.Context)) *Querier_TimeoutDeployInstructions_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *Querier_TimeoutDeployInstructions_Call) Return(_a0 error) *Querier_TimeoutDeployInstructions_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Querier_TimeoutDeployInstructions_Call) RunAndReturn(run func(context.Context) error) *Querier_TimeoutDeployInstructions_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Warnings provides a mock function with given fields: ctx, arg
 func (_m *Querier) Warnings(ctx context.Context, arg gensql.WarningsParams) ([]gensql.WarningsRow, error) {
 	ret := _m.Called(ctx, arg)

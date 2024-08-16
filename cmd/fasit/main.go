@@ -135,6 +135,7 @@ func main() {
 	}
 
 	repo := database.New(db, log.WithField("subsystem", "repo"))
+	go repo.TimeoutDeployInstructions(ctx, 1*time.Hour)
 	log.Info("-- successfully started database client")
 
 	statusMgr := message.NewSubscriber[message.Status](pubsubClient, cfg.GCPProjectID, cfg.StatusSubscriptionID)

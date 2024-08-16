@@ -277,3 +277,15 @@ func (q *Queries) NamesFromDeployInstruction(ctx context.Context, id uuid.UUID) 
 	err := row.Scan(&i.EnvironmentName, &i.TenantName)
 	return i, err
 }
+
+const timeoutDeployInstructions = `-- name: TimeoutDeployInstructions :exec
+UPDATE deploy_instructions
+SET status = 'failed'
+WHERE status = 'pending'
+AND created < NOW() - INTERVAL '1 hour'
+`
+
+func (q *Queries) TimeoutDeployInstructions(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, timeoutDeployInstructions)
+	return err
+}

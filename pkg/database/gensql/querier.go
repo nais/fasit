@@ -111,6 +111,7 @@ type Querier interface {
 	TenantGet(ctx context.Context, id uuid.UUID) (Tenant, error)
 	TenantGetByName(ctx context.Context, name string) (Tenant, error)
 	TenantsGet(ctx context.Context) ([]Tenant, error)
+	TimeoutDeployInstructions(ctx context.Context) error
 	Warnings(ctx context.Context, arg WarningsParams) ([]WarningsRow, error)
 }
 

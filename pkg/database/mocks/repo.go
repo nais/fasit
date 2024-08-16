@@ -5311,6 +5311,40 @@ func (_c *Repo_TenantsGet_Call) RunAndReturn(run func(context.Context) ([]*model
 	return _c
 }
 
+// TimeoutDeployInstructions provides a mock function with given fields: ctx, interval
+func (_m *Repo) TimeoutDeployInstructions(ctx context.Context, interval time.Duration) {
+	_m.Called(ctx, interval)
+}
+
+// Repo_TimeoutDeployInstructions_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TimeoutDeployInstructions'
+type Repo_TimeoutDeployInstructions_Call struct {
+	*mock.Call
+}
+
+// TimeoutDeployInstructions is a helper method to define mock.On call
+//   - ctx context.Context
+//   - interval time.Duration
+func (_e *Repo_Expecter) TimeoutDeployInstructions(ctx interface{}, interval interface{}) *Repo_TimeoutDeployInstructions_Call {
+	return &Repo_TimeoutDeployInstructions_Call{Call: _e.mock.On("TimeoutDeployInstructions", ctx, interval)}
+}
+
+func (_c *Repo_TimeoutDeployInstructions_Call) Run(run func(ctx context.Context, interval time.Duration)) *Repo_TimeoutDeployInstructions_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(time.Duration))
+	})
+	return _c
+}
+
+func (_c *Repo_TimeoutDeployInstructions_Call) Return() *Repo_TimeoutDeployInstructions_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Repo_TimeoutDeployInstructions_Call) RunAndReturn(run func(context.Context, time.Duration)) *Repo_TimeoutDeployInstructions_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // TxFunc provides a mock function with given fields: ctx, fn
 func (_m *Repo) TxFunc(ctx context.Context, fn database.TXFunc) error {
 	ret := _m.Called(ctx, fn)
