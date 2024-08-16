@@ -28,7 +28,7 @@ WHERE id = @id
 UPDATE deploy_instructions
 SET status = 'failed'
 WHERE status = 'pending'
-AND created < NOW() - INTERVAL '1 hour'
+AND last_updated < NOW() - INTERVAL '1 hour'
 ;
 
 -- name: DeployInstructionsLatestForFeature :one
