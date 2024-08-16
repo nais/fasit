@@ -62,3 +62,17 @@ The action will build a new image, push it to GAR and then deploy it using helm.
 
 naisd is released by pushing a tag in the format `naisd-<version>`.
 This will build a new image, push it to GAR and then roll it out using Fasit.
+
+## Access production postgres
+
+Retrieve password (require connecting to nais-io tenant):
+
+```
+kubectl --context nais-io -n nais-system get secrets fasit-backend -o json | jq -r '.data.FASIT_DBCONN_STRING' | base64 -d | awk -F '=' '{print $6}'
+```
+
+Connect to postgres:
+
+```
+gcloud sql connect fasit --project nais-io --user fasit
+```
