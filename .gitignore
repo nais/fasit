@@ -5,3 +5,4 @@ charts/fasit.yaml
 .vscode/
 .env
 bin/
+.direnv
