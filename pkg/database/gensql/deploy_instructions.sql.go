@@ -282,7 +282,7 @@ const timeoutDeployInstructions = `-- name: TimeoutDeployInstructions :exec
 UPDATE deploy_instructions
 SET status = 'failed'
 WHERE status = 'pending'
-AND last_updated < NOW() - INTERVAL '1 hour'
+AND last_modified < NOW() - INTERVAL '1 hour'
 `
 
 func (q *Queries) TimeoutDeployInstructions(ctx context.Context) error {
