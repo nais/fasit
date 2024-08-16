@@ -1,6 +1,8 @@
 .PHONY: test integration-test local-with-auth local linux-build docker-build docker-push run-postgres-test stop-postgres-test install-sqlc
 SQLC_VERSION ?= "v1.26.0"
 
+PROTOC = $(shell which protoc)
+
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
 	GOBIN=$(shell go env GOPATH)/bin
@@ -89,9 +91,13 @@ mocks:
 	mockery --case underscore --name Querier --dir pkg/database/ --outpkg mocks --output pkg/database/mocks --with-expecter
 	mockery --case underscore --name Upgrader --dir pkg/upgrader/ --outpkg mocks --output pkg/upgrader/mocks --with-expecter
 
-generate-proto:
+install-protobuf-go:
+	go install google.golang.org/protobuf/cmd/protoc-gen-go
+	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc
+
+generate-proto: install-protobuf-go
 	mkdir -p pkg/provider/protogen
-	protoc \
+	PATH="${PATH}:$(shell go env GOPATH)/bin" ${PROTOC} \
 		-I schema/protobuf/ \
 		./schema/protobuf/*.proto \
 		--go_out=. \
