@@ -116,18 +116,18 @@ func (c *Client) GetAvailableVersions(ctx context.Context, projectId string, env
 		if channel.Channel.String() != releaseChannel {
 			continue
 		}
-		index := -1
+		index := 0
 		for _, v := range channel.ValidVersions {
 			versionObj, err := version.NewVersion(v)
 			if err != nil {
 				return nil, err
 			}
-			if versionObj.GreaterThanOrEqual(masterVersionObj) {
+			if versionObj.GreaterThan(masterVersionObj) {
 				index++
 			}
 
 		}
-		if index == -1 {
+		if index == 0 {
 			return nil, nil
 		}
 		versions = append(versions, channel.ValidVersions[0:index]...)
