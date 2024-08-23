@@ -32,6 +32,7 @@
           gotools
           go-tools
           gnumake
+          protobuf
         ];
       };
     });
