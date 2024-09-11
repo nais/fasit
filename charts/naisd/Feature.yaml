@@ -14,12 +14,12 @@ values:
       template: "{{.Env.project_id}}"
   deploySubscription:
     displayName: Subscription to fetch deploy instructions from
-    config:
-      type: string
+    computed:
+      template: "naisd-fasit-{{.Env.name}}"
   teamsSubscription:
     displayName: Subscription to fetch namespace creation instructions from
-    config:
-      type: string
+    computed:
+      template: "naisd-api-reconcilers-{{.Env.name}}"
   google.serviceAccountKey:
     displayName: Use service account key?
     computed:
