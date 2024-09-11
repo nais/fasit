@@ -5,11 +5,11 @@
 
   outputs = {nixpkgs, ...}: let
     goOverlay = final: prev: {
-      go = prev.go.overrideAttrs (old: {
-        version = "1.23.0";
+      go = prev.go.overrideAttrs (old: rec {
+        version = "1.23.1";
         src = prev.fetchurl {
-          url = "https://go.dev/dl/go1.23.0.src.tar.gz";
-          hash = "sha256-Qreo6A2AXaoDAi7T/eQyHUw78smQoUQWXQHu7Nb2mcY=";
+          url = "https://go.dev/dl/go${version}.src.tar.gz";
+          hash = "sha256-buROKYN50Ual5aprHFtdX10KM2XqvdcHQebiE0DsOw0=";
         };
       });
     };
