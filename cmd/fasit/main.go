@@ -59,7 +59,7 @@ const slowQueryEndpoint = false
 func init() {
 	flag.StringVar(&cfg.BindAddress, "bind-address", cfg.BindAddress, "Bind address")
 	flag.StringVar(&cfg.GRPCBindAddress, "grpc-bind-address", cfg.GRPCBindAddress, "Bind address")
-	flag.StringVar(&cfg.DBConnectionDSN, "db-connection-dsn", getEnv("FASIT_DBCONN_STRING", "postgres://postgres:postgres@127.0.0.1:5432/fasit?sslmode=disable"), "database connection DSN")
+	flag.StringVar(&cfg.DBConnectionDSN, "db-connection-dsn", getEnv("FASIT_DBCONN_STRING", "postgres://postgres:postgres@localhost:5432/fasit?sslmode=disable"), "database connection DSN")
 	flag.StringVar(&cfg.LogLevel, "log-level", "info", "which log level to output")
 	flag.StringVar(&cfg.GCPProjectID, "project-id", "nais-local-dev", "Google project ID")
 	flag.StringVar(&cfg.StatusSubscriptionID, "status-subscription-id", "fasit-subscription", "Pub/sub subscription for status")
