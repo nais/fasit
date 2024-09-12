@@ -28,6 +28,7 @@ var templateFuncs = func() template.FuncMap {
 	fm["toYAML"] = toYAML
 	fm["join"] = join
 	fm["filter"] = filter
+	fm["exclude"] = exclude
 	fm["replace"] = replace
 	fm["b64enc"] = base64encode
 	fm["quote"] = quote
@@ -224,6 +225,23 @@ func join(sep string, v any) string {
 		out[i] = fmt.Sprintf("%v", val.Index(i))
 	}
 	return strings.Join(out, sep)
+}
+
+func exclude(key string, value, v any) []map[string]any {
+	typ := reflect.TypeOf(v)
+	if typ.Kind() != reflect.Slice {
+		panic(fmt.Sprintf("exclude: expected slice or array, got %T", v))
+	}
+
+	val := reflect.ValueOf(v)
+	out := make([]map[string]any, 0)
+	for i := 0; i < val.Len(); i++ {
+		mp := val.Index(i).Interface().(map[string]any)
+		if mp[key] != value {
+			out = append(out, mp)
+		}
+	}
+	return out
 }
 
 func filter(key string, value, v any) []map[string]any {
