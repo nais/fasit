@@ -615,6 +615,58 @@ func Test_join(t *testing.T) {
 	}
 }
 
+func Test_exclude(t *testing.T) {
+	type args struct {
+		m   any
+		key string
+		val any
+	}
+	tests := map[string]struct {
+		args args
+		want []map[string]any
+	}{
+		"empty map": {
+			args: args{
+				m:   []map[string]any{},
+				key: "foo",
+				val: "bar",
+			},
+			want: []map[string]any{},
+		},
+		"map with one matching key": {
+			args: args{
+				m: []map[string]any{
+					{"foo": "bar"},
+				},
+				key: "foo",
+				val: "bar",
+			},
+			want: []map[string]any{},
+		},
+		"map with two matching keys": {
+			args: args{
+				m: []map[string]any{
+					{"foo": "bar", "baz": "qux"},
+					{"foo": "bar", "baz": "quux"},
+					{"bar": "qux"},
+				},
+				key: "foo",
+				val: "bar",
+			},
+			want: []map[string]any{
+				{"bar": "qux"},
+			},
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			if got := exclude(tt.args.key, tt.args.val, tt.args.m); !cmp.Equal(got, tt.want) {
+				t.Errorf("diff -want +got:\n%v", cmp.Diff(tt.want, got))
+			}
+		})
+	}
+}
+
 func Test_filter(t *testing.T) {
 	type args struct {
 		m    any
