@@ -23,7 +23,7 @@ jobs:
         id: go_version
         run: |
           echo "GO_VERSION=$(grep golang .tool-versions | awk '{print $2}')" >> $GITHUB_OUTPUT
-      - uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # ratchet:actions/setup-go@v4
+      - uses: actions/setup-go@41dfa10bad2bb2ae585af6ee5bb4d7d973ad74ed # ratchet:actions/setup-go@v4
         with:
           go-version: ${{ steps.go_version.outputs.GO_VERSION }}
       - run: go test -cover -tags integration_test ./...
