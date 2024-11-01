@@ -27,7 +27,7 @@ jobs:
           token_format: "access_token"
 
       - name: "Set up Cloud SDK"
-        uses: "google-github-actions/setup-gcloud@f0990588f1e5b5af6827153b93673613abdc6ec7" # ratchet:google-github-actions/setup-gcloud@v1
+        uses: "google-github-actions/setup-gcloud@6189d56e4096ee891640bb02ac264be376592d6a" # ratchet:google-github-actions/setup-gcloud@v1
       - name: "Log in to Google Artifact Registry"
         run: |-
           echo '${{ steps.auth.outputs.access_token }}' | docker login -u oauth2accesstoken --password-stdin https://europe-north1-docker.pkg.dev

@@ -27,7 +27,7 @@ jobs:
           service_account: "gh-fasit@nais-io.iam.gserviceaccount.com"
           token_format: "access_token"
       - name: "Set up Cloud SDK"
-        uses: "google-github-actions/setup-gcloud@f0990588f1e5b5af6827153b93673613abdc6ec7" # ratchet:google-github-actions/setup-gcloud@v1
+        uses: "google-github-actions/setup-gcloud@6189d56e4096ee891640bb02ac264be376592d6a" # ratchet:google-github-actions/setup-gcloud@v1
       - name: Sync jsonschema to GCS
         run: |-
           gsutil cp schema/jsonschema/feature.json gs://${{ env.BUCKET }}
