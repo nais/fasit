@@ -37,6 +37,7 @@ import (
 	"github.com/ravilushqa/otelgqlgen"
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
+	"github.com/vektah/gqlparser/v2/ast"
 	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/metric"
 	metricsdk "go.opentelemetry.io/otel/sdk/metric"
@@ -77,11 +78,11 @@ func newServer(es graphql.ExecutableSchema) *handler.Server {
 	srv.AddTransport(transport.Options{})
 	srv.AddTransport(transport.POST{})
 
-	srv.SetQueryCache(lru.New(1000))
+	srv.SetQueryCache(lru.New[*ast.QueryDocument](1000))
 
 	srv.Use(extension.Introspection{})
 	srv.Use(extension.AutomaticPersistedQuery{
-		Cache: lru.New(100),
+		Cache: lru.New[string](100),
 	})
 
 	return srv
