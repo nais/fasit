@@ -249,9 +249,6 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, e *model.TenantEn
 		log = log.WithField("feature", f.Name)
 
 		if states[f.Name] == nil || !states[f.Name].Enabled {
-			if e.Name == "ci" && e.TenantName == "nav" {
-				log.Debug("FEATURE IS DISABLED")
-			}
 			continue
 		}
 
@@ -277,7 +274,6 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, e *model.TenantEn
 
 		if status, ok := lookup[f.Name]; ok {
 			if status.FeatureVersion == f.Version && status.Hash == hash {
-				log.Debug("latest deploy instruction is up to date")
 				continue
 			}
 		}
