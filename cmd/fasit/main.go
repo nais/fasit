@@ -38,6 +38,7 @@ import (
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
 	"github.com/vektah/gqlparser/v2/ast"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/metric"
 	metricsdk "go.opentelemetry.io/otel/sdk/metric"
@@ -259,6 +260,8 @@ func main() {
 		log.Fatal(err)
 	}
 
+	go clustersMetrics(ctx, repo, meter, log.WithField("subsystem", "cluster_info"))
+
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	defer cancel()
 	<-ctx.Done()
@@ -334,4 +337,42 @@ func runClusterUpgrader(ctx context.Context, log *logrus.Logger, googleClient up
 	s.Start(ctx)
 
 	return nil
+}
+
+func clustersMetrics(ctx context.Context, repo database.Repo, meter metric.Meter, log logrus.FieldLogger) {
+	gauge, err := meter.Int64Gauge("cluster_info")
+	if err != nil {
+		return
+	}
+
+	for {
+		tenants, err := repo.TenantsGet(ctx)
+		if err != nil {
+			log.WithError(err).Error("getting tenants")
+			return
+		}
+
+		for _, tenant := range tenants {
+			environments, err := repo.EnvironmentsGet(ctx, tenant.ID)
+			if err != nil {
+				log.WithError(err).Error("getting environments")
+				return
+			}
+
+			for _, env := range environments {
+				attr := []attribute.KeyValue{
+					attribute.String("tenant", tenant.Name),
+					attribute.String("environment", env.Name),
+					attribute.String("kind", env.Kind.String()),
+				}
+				gauge.Record(ctx, 1, metric.WithAttributes(attr...))
+			}
+		}
+
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(5 * time.Minute):
+		}
+	}
 }
