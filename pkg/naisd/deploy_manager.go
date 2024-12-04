@@ -251,7 +251,7 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 
 	go d.listenForEvents(eventsCtx, pubsubLog, msg, namespace)
 
-	helmStatus.Log, err = d.runHelm(ctx, pubsubLog, args, msg)
+	helmStatus.Log, err = d.runHelm(ctx, pubsubLog, args)
 	if err != nil {
 		d.log.WithField("feature", msg.Name).WithError(err).Warn("failed to run helm")
 		helmStatus.RolloutStatus = model.RolloutStatusFailed
@@ -332,7 +332,7 @@ func (d *DeployManager) publishStatus(ctx context.Context, msg message.Helm) err
 	return d.statuses.Publish(ctx, statusUpdate)
 }
 
-func (d *DeployManager) runHelm(ctx context.Context, pubsubLog *pubsubLogger, args []string, msg message.DeployInstruction) (string, error) {
+func (d *DeployManager) runHelm(ctx context.Context, pubsubLog *pubsubLogger, args []string) (string, error) {
 	helmArgs := append(args, d.connectionFlags()...)
 	if _, ok := os.LookupEnv("DEBUG"); ok {
 		helmArgs = append(helmArgs, "--debug")
@@ -395,7 +395,7 @@ func (d *DeployManager) uninstallHandler(ctx context.Context, msg message.Deploy
 		msg.Name,
 	}
 
-	_, err := d.runHelm(ctx, nil, args, msg)
+	_, err := d.runHelm(ctx, nil, args)
 
 	d.RepublishHelmList()
 

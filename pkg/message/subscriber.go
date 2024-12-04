@@ -7,6 +7,7 @@ import (
 	"log"
 
 	"cloud.google.com/go/pubsub"
+	"github.com/sirupsen/logrus"
 )
 
 type contextKey int
@@ -25,11 +26,13 @@ func ForceAck(ctx context.Context) {
 
 type Subscriber[T any] struct {
 	subscription *pubsub.Subscription
+	log          logrus.FieldLogger
 }
 
-func NewSubscriber[T any](client *pubsub.Client, projectID, subscriptionID string) *Subscriber[T] {
+func NewSubscriber[T any](client *pubsub.Client, projectID, subscriptionID string, log logrus.FieldLogger) *Subscriber[T] {
 	return &Subscriber[T]{
 		subscription: client.SubscriptionInProject(subscriptionID, projectID),
+		log:          log,
 	}
 }
 
@@ -42,6 +45,19 @@ func (s *Subscriber[T]) Synchronous() {
 }
 
 func (s *Subscriber[T]) Receive(ctx context.Context, f func(ctx context.Context, msg T) error) error {
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		default:
+		}
+		if err := s.receive(ctx, f); err != nil {
+			s.log.WithError(err).Error("subscriber error during receive")
+		}
+	}
+}
+
+func (s *Subscriber[T]) receive(ctx context.Context, f func(ctx context.Context, msg T) error) error {
 	return s.subscription.Receive(ctx, func(ctx context.Context, msg *pubsub.Message) {
 		ctx = context.WithValue(ctx, ackContext, msg)
 		var t T

@@ -49,7 +49,7 @@ type ConsoleManager struct {
 	cnrmConfig cache.GenericLister
 }
 
-func NewConsoleManager(ctx context.Context, ConsoleSubscriber ConsoleReceiver, config *rest.Config, projectID string, envName string, log *logrus.Entry) (*ConsoleManager, error) {
+func NewConsoleManager(ctx context.Context, consoleSubscriber ConsoleReceiver, config *rest.Config, projectID string, envName string, log *logrus.Entry) (*ConsoleManager, error) {
 	kubeClient, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		return nil, fmt.Errorf("creating kubernetes client: %w", err)
@@ -59,14 +59,13 @@ func NewConsoleManager(ctx context.Context, ConsoleSubscriber ConsoleReceiver, c
 		return nil, fmt.Errorf("creating dynamic client: %w", err)
 	}
 
-	return newConsoleManager(ctx, kubeClient, dyncClient, ConsoleSubscriber, config, projectID, envName, log)
+	return newConsoleManager(ctx, kubeClient, dyncClient, consoleSubscriber, projectID, envName, log)
 }
 
 func newConsoleManager(ctx context.Context,
 	kubeClient kubernetes.Interface,
 	dyncClient dynamic.Interface,
-	ConsoleSubscriber ConsoleReceiver,
-	config *rest.Config,
+	consoleSubscriber ConsoleReceiver,
 	projectID string,
 	envName string,
 	log *logrus.Entry,
@@ -98,7 +97,7 @@ func newConsoleManager(ctx context.Context,
 	}
 
 	receiver := &ConsoleManager{
-		Consoles:   ConsoleSubscriber,
+		Consoles:   consoleSubscriber,
 		kubeClient: kubeClient,
 		dynClient:  dyncClient,
 		log:        log,

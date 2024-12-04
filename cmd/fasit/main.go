@@ -140,7 +140,7 @@ func main() {
 	go repo.TimeoutDeployInstructions(ctx)
 	log.Info("-- successfully started database client")
 
-	statusMgr := message.NewSubscriber[message.Status](pubsubClient, cfg.GCPProjectID, cfg.StatusSubscriptionID)
+	statusMgr := message.NewSubscriber[message.Status](pubsubClient, cfg.GCPProjectID, cfg.StatusSubscriptionID, log.WithField("subsystem", "status-subscriber"))
 
 	receiver := workers.NewReceiver(statusMgr, repo, log.WithField("subsystem", "status"), slackClient, cfg.SlackChannelFeatureAlerts)
 	go receiver.Run(ctx)

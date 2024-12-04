@@ -84,7 +84,7 @@ func run(ctx context.Context, log *logrus.Logger) error {
 	s.Start(ctx)
 
 	if !cfg.Management {
-		namespaceSubscriber := message.NewSubscriber[message.Console](deployClient, cfg.EnvProjectID, cfg.TeamsSubscription)
+		namespaceSubscriber := message.NewSubscriber[message.Console](deployClient, cfg.EnvProjectID, cfg.TeamsSubscription, log.WithField("subsystem", "namespace-subscriber"))
 		if cfg.Production {
 			consoleMgr, err := naisd.NewConsoleManager(ctx, namespaceSubscriber, restConfig, cfg.EnvProjectID, cfg.Env, log.WithField("subsystem", "console"))
 			if err != nil {
@@ -149,7 +149,7 @@ func sharedDependencies(ctx context.Context, log *logrus.Logger) (*naisd.DeployM
 		log.WithError(err).Fatal("setting up new pub/sub client")
 	}
 
-	deploySubscriber := message.NewSubscriber[message.DeployInstruction](deployClient, cfg.EnvProjectID, cfg.DeploySubscription)
+	deploySubscriber := message.NewSubscriber[message.DeployInstruction](deployClient, cfg.EnvProjectID, cfg.DeploySubscription, log.WithField("subsystem", "instruction-subscriber"))
 	statusPublisher := message.NewPublisher[message.Status](
 		deployClient,
 		cfg.NaisProjectID,

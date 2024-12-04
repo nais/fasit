@@ -2,11 +2,13 @@ package message
 
 import (
 	"context"
+	"io"
 	"testing"
 	"time"
 
 	"cloud.google.com/go/pubsub"
 	"cloud.google.com/go/pubsub/pstest"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -44,7 +46,9 @@ func TestSubscriber(t *testing.T) {
 	topic.Publish(ctx, &pubsub.Message{Data: []byte(`{"Name":"test"}`)})
 
 	type testmsg struct{ Name string }
-	sub := NewSubscriber[testmsg](client, "project", "subscription")
+	log := logrus.New()
+	log.SetOutput(io.Discard)
+	sub := NewSubscriber[testmsg](client, "project", "subscription", log)
 	sub.Synchronous()
 
 	ctx, done := context.WithCancel(ctx)
