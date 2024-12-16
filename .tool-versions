@@ -1,2 +1,4 @@
-golang 1.23.2
+golang 1.23.4
 protoc 25.3
+protoc-gen-go-grpc 1.5.1
+protoc-gen-go 1.35.2

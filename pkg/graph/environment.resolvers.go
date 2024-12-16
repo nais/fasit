@@ -32,8 +32,8 @@ func (r *environmentResolver) FeatureStates(ctx context.Context, obj *model.Envi
 	return r.Repo.FeatureStatesGet(ctx, obj.ID)
 }
 
-// GcpProjectID is the resolver for the gcpProjectID field.
-func (r *environmentResolver) GcpProjectID(ctx context.Context, obj *model.Environment) (*string, error) {
+// GCPProjectID is the resolver for the gcpProjectID field.
+func (r *environmentResolver) GCPProjectID(ctx context.Context, obj *model.Environment) (*string, error) {
 	ev, err := r.Repo.EnvironmentValueGet(ctx, obj.ID, "project_id", false)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return nil, err
@@ -174,7 +174,7 @@ func (r *environmentResolver) ClusterUpgradeStatus(ctx context.Context, obj *mod
 
 // Versions is the resolver for the versions field.
 func (r *environmentResolver) Versions(ctx context.Context, obj *model.Environment) (*model.EnvironmentVersions, error) {
-	projectId, err := r.Environment().GcpProjectID(ctx, obj)
+	projectId, err := r.Environment().GCPProjectID(ctx, obj)
 	if err != nil {
 		return nil, err
 	}
