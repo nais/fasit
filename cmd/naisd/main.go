@@ -33,7 +33,6 @@ func init() {
 	flag.StringVar(&cfg.TenantName, "tenant-name", "test", "tenant name")
 	flag.StringVar(&cfg.Env, "env", "dev", "cluster environment")
 	flag.StringVar(&cfg.DeploySubscription, "deploy-subscription", "naisd-subscription", "name of subscription with deploy instructions from Fasit")
-	flag.StringVar(&cfg.TeamsSubscription, "teams-subscription", "naisd-console-subscription", "name of subscription with namespace creation reqeuests from NAIS Teams")
 	flag.BoolVar(&cfg.Production, "production", false, "When in production, actually run helm install")
 	flag.BoolVar(&cfg.Management, "management", false, "if naisd is running in a management cluster")
 	flag.BoolVar(&cfg.MockFailing, "mock-failing", false, "fail execution of helm command when running locally")

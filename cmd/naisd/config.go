@@ -9,7 +9,6 @@ type Config struct {
 	TenantName         string
 	NaisProjectID      string
 	DeploySubscription string
-	TeamsSubscription  string
 	Production         bool
 	Management         bool
 	MockFailing        bool

@@ -16,10 +16,6 @@ values:
     displayName: Subscription to fetch deploy instructions from
     computed:
       template: "naisd-fasit-{{.Env.name}}"
-  teamsSubscription:
-    displayName: Subscription to fetch namespace creation instructions from
-    computed:
-      template: "naisd-api-reconcilers-{{.Env.name}}"
   google.serviceAccountKey:
     displayName: Use service account key?
     computed:
