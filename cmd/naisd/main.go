@@ -72,7 +72,7 @@ func main() {
 }
 
 func run(ctx context.Context, log *logrus.Logger) error {
-	receiver, helmClient, k8sClient, restConfig, deployClient, statusPublisher := sharedDependencies(ctx, log)
+	receiver, helmClient, k8sClient, statusPublisher := sharedDependencies(ctx, log)
 
 	s := workers.NewScheduler(log.WithField("subsystem", "scheduler"))
 	helmListReporter := naisd.NewStatusReporter(cfg.TenantName, cfg.Env, helmClient, statusPublisher)
@@ -82,17 +82,6 @@ func run(ctx context.Context, log *logrus.Logger) error {
 	s.Register("health", healthReporter, 1*time.Minute)
 	s.Register("kubernetes", kubernetesReporter, 10*time.Minute)
 	s.Start(ctx)
-
-	if !cfg.Management {
-		namespaceSubscriber := message.NewSubscriber[message.Console](deployClient, cfg.EnvProjectID, cfg.TeamsSubscription, log.WithField("subsystem", "namespace-subscriber"))
-		if cfg.Production {
-			consoleMgr, err := naisd.NewConsoleManager(ctx, namespaceSubscriber, restConfig, cfg.EnvProjectID, cfg.Env, log.WithField("subsystem", "console"))
-			if err != nil {
-				return err
-			}
-			go consoleMgr.Run(ctx)
-		}
-	}
 
 	receiver.RepublishHelmList = helmListReporter.Trigger
 
@@ -130,7 +119,7 @@ func newLogger() *logrus.Logger {
 
 func upgrade(ctx context.Context, log *logrus.Logger) {
 	log.Info("Upgrading naisd")
-	receiver, _, _, _, _, _ := sharedDependencies(ctx, log)
+	receiver, _, _, _ := sharedDependencies(ctx, log)
 
 	err := naisd.Upgrade(ctx, receiver, log.WithField("subsystem", "self-upgrade"))
 	if err != nil {
@@ -143,7 +132,7 @@ func upgrade(ctx context.Context, log *logrus.Logger) {
 	log.Info("Done")
 }
 
-func sharedDependencies(ctx context.Context, log *logrus.Logger) (*naisd.DeployManager, naisd.HelmClient, kubernetes.Interface, *rest.Config, *pubsub.Client, *message.Publisher[message.Status]) {
+func sharedDependencies(ctx context.Context, log *logrus.Logger) (*naisd.DeployManager, naisd.HelmClient, kubernetes.Interface, *message.Publisher[message.Status]) {
 	deployClient, err := pubsub.NewClient(ctx, cfg.EnvProjectID)
 	if err != nil {
 		log.WithError(err).Fatal("setting up new pub/sub client")
@@ -205,5 +194,5 @@ func sharedDependencies(ctx context.Context, log *logrus.Logger) (*naisd.DeployM
 		log.WithError(err).Fatal("setting up worker")
 	}
 
-	return receiver, helmClient, k8sClient, kubeConfig, deployClient, statusPublisher
+	return receiver, helmClient, k8sClient, statusPublisher
 }
