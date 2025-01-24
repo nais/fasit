@@ -7,9 +7,8 @@ ingressHost: "fasit.nais.io"
 ingressClassName: "nais-ingress-iap"
 iapAudience:
 slackClusterUpgradeChannel: "nais-alerts-info"
-slackChannelFeatureAlerts: "naas-alerts"
+slackChannelFeatureAlerts: "nais-alerts-info"
 slackToken:
-
 
 image:
   repository: europe-north1-docker.pkg.dev/nais-io/nais/images/fasit
