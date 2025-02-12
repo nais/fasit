@@ -268,7 +268,11 @@ const environmentsGet = `-- name: EnvironmentsGet :many
 SELECT id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade
 FROM environments
 WHERE tenant_id = $1
-ORDER BY name ASC
+ORDER BY CASE
+    WHEN name = 'management' THEN 1
+    ELSE 2
+END,
+name ASC
 `
 
 func (q *Queries) EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]Environment, error) {
@@ -306,7 +310,11 @@ const environmentsGetByAutoUpgrade = `-- name: EnvironmentsGetByAutoUpgrade :man
 SELECT id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade
 FROM environments
 WHERE auto_upgrade = true
-ORDER BY name ASC
+ORDER BY CASE
+    WHEN name = 'management' THEN 1
+    ELSE 2
+END,
+name ASC
 `
 
 func (q *Queries) EnvironmentsGetByAutoUpgrade(ctx context.Context) ([]Environment, error) {

@@ -13,7 +13,11 @@ AND name = @name;
 SELECT *
 FROM environments
 WHERE tenant_id = @tenant_id
-ORDER BY name ASC;
+ORDER BY CASE
+    WHEN name = 'management' THEN 1
+    ELSE 2
+END,
+name ASC;
 
 -- name: EnvironmentByNames :one
 SELECT e.*
@@ -60,4 +64,8 @@ RETURNING *;
 SELECT *
 FROM environments
 WHERE auto_upgrade = true
-ORDER BY name ASC;
+ORDER BY CASE
+    WHEN name = 'management' THEN 1
+    ELSE 2
+END,
+name ASC;
