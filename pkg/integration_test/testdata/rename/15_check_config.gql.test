@@ -28,25 +28,6 @@ RETURNS
         "name": "tenant1",
         "environments": [
           {
-            "name": "e1",
-            "feature": {
-              "configuration": {
-                "configuration": [
-                  {"content": "oldVal", "value": {"key": "myValue"}}
-                  {{ range $index, $key := $renamedKeys }}
-                  ,
-                    {
-                      "content": {{ cat $key "value" | trimPrefix "rename." | quote }},
-                      "value": {
-                        "key": {{ $key | quote }}
-                      }
-                    }
-                  {{ end }}
-                ]
-              }
-            }
-          },
-          {
             "name": "management",
             "feature": {
               "configuration": {
@@ -57,6 +38,25 @@ RETURNS
                   ,
                     {
                       "content": {{ cat $key "value2" | trimPrefix "rename." | quote }},
+                      "value": {
+                        "key": {{ $key | quote }}
+                      }
+                    }
+                  {{ end }}
+                ]
+              }
+            }
+          },
+          {
+            "name": "e1",
+            "feature": {
+              "configuration": {
+                "configuration": [
+                  {"content": "oldVal", "value": {"key": "myValue"}}
+                  {{ range $index, $key := $renamedKeys }}
+                  ,
+                    {
+                      "content": {{ cat $key "value" | trimPrefix "rename." | quote }},
                       "value": {
                         "key": {{ $key | quote }}
                       }

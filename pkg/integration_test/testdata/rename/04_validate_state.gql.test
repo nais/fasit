@@ -23,7 +23,7 @@ RETURNS
         "name": "tenant1",
         "environments": [
           {
-            "name": "e1",
+            "name": "management",
             "feature": {
               "status": {
                 "status": "DEPLOYED",
@@ -32,7 +32,7 @@ RETURNS
             }
           },
           {
-            "name": "management",
+            "name": "e1",
             "feature": {
               "status": {
                 "status": "DEPLOYED",
