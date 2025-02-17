@@ -27,7 +27,7 @@ func getInstructionFromFile() (message.DeployInstruction, error) {
 	const instructionFile = "/etc/naisd/self-upgrade/deploy_instruction.json"
 
 	msg := message.DeployInstruction{}
-	f, err := os.OpenFile(instructionFile, os.O_RDONLY, 0o644)
+	f, err := os.OpenFile(instructionFile, os.O_RDONLY, 0o600)
 	if err != nil {
 		return message.DeployInstruction{}, err
 	}

@@ -60,7 +60,7 @@ func (r *repo) DeployInstructionsForFeature(ctx context.Context, envID uuid.UUID
 	dis, err := r.querier.DeployInstructionsForFeature(ctx, gensql.DeployInstructionsForFeatureParams{
 		EnvironmentID: envID,
 		FeatureName:   featureName,
-		Offset:        int32(offset),
+		Offset:        int32(offset), // #nosec G115
 	})
 	if err != nil {
 		return nil, err

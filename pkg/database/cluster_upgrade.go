@@ -227,11 +227,11 @@ func (r *repo) CreateOrUpdateClusterOperation(ctx context.Context, tenantId, env
 		Type:                op.OperationType.String(),
 		Target:              op.TargetLink,
 		Detail:              op.Detail,
-		NodesTotal:          int32(nodes_total),
-		NodesFailed:         int32(nodes_failed),
-		NodesCompleted:      int32(nodes_complete),
-		NodesDone:           int32(nodes_done),
-		NodePdbDelaySeconds: int32(node_pdb_delay_seconds),
+		NodesTotal:          int32(nodes_total),            // #nosec G115
+		NodesFailed:         int32(nodes_failed),           // #nosec G115
+		NodesCompleted:      int32(nodes_complete),         // #nosec G115
+		NodesDone:           int32(nodes_done),             // #nosec G115
+		NodePdbDelaySeconds: int32(node_pdb_delay_seconds), // #nosec G115
 	})
 	if err != nil {
 		return &model.EnvironmentOperation{}, err

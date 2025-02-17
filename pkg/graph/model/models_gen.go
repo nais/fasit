@@ -188,7 +188,7 @@ func (e ConfigSource) String() string {
 	return string(e)
 }
 
-func (e *ConfigSource) UnmarshalGQL(v interface{}) error {
+func (e *ConfigSource) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -233,7 +233,7 @@ func (e HelmValueDifference) String() string {
 	return string(e)
 }
 
-func (e *HelmValueDifference) UnmarshalGQL(v interface{}) error {
+func (e *HelmValueDifference) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -280,7 +280,7 @@ func (e UpgradeStatus) String() string {
 	return string(e)
 }
 
-func (e *UpgradeStatus) UnmarshalGQL(v interface{}) error {
+func (e *UpgradeStatus) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")

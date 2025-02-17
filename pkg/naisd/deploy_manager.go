@@ -342,7 +342,7 @@ func (d *DeployManager) runHelm(ctx context.Context, pubsubLog *pubsubLogger, ar
 		"HELM_CACHE_HOME="+d.helmCache,
 	)
 
-	cmd := exec.CommandContext(ctx, "helm", helmArgs...)
+	cmd := exec.CommandContext(ctx, "helm", helmArgs...) // #nosec G204
 	cmd.Env = append(cmd.Env, environment...)
 	if pubsubLog != nil {
 		cmd.Stdout = io.MultiWriter(pubsubLog, os.Stdout)

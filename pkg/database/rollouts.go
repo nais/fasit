@@ -212,7 +212,7 @@ func (r *repo) RolloutMarkFailed(ctx context.Context, rolloutID uuid.UUID) error
 }
 
 func (r *repo) Rollouts(ctx context.Context, limit int) ([]*model.Rollout, error) {
-	rollouts, err := r.querier.Rollouts(ctx, int32(limit))
+	rollouts, err := r.querier.Rollouts(ctx, int32(limit)) // #nosec G115
 	if err != nil {
 		return nil, err
 	}

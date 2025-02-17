@@ -22,7 +22,7 @@ func (r *repo) ReleaseStatusCreateOrUpdate(ctx context.Context, environmentID uu
 		Feature:       h.Name,
 		Version:       h.Version,
 		Status:        h.Status,
-		Revision:      int32(h.Revision),
+		Revision:      int32(h.Revision), // #nosec G115
 		LastDeployed: pgtype.Timestamptz{
 			Time:  h.LastDeployed,
 			Valid: true,

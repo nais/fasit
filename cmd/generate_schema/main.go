@@ -40,5 +40,5 @@ func genSchema(out string, v any, pkg, pkgPath string) error {
 	_ = json.Unmarshal(b, &res)
 	b, _ = json.MarshalIndent(res, "", "\t")
 
-	return os.WriteFile(out, b, 0o664)
+	return os.WriteFile(out, b, 0o664) // #nosec G306
 }

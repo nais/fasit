@@ -1,7 +1,7 @@
 package local
 
 import (
-	"math/rand"
+	"math/rand/v2"
 
 	"github.com/nais/fasit/pkg/naisd"
 	"helm.sh/helm/v3/pkg/chart"
@@ -30,13 +30,13 @@ func NewHelmClient() naisd.HelmClient {
 func (h *helmClient) List() ([]*release.Release, error) {
 	res := []*release.Release{}
 	features := []string{"up", "naisd"}
-	for _, feature := range features {
+	for i, feature := range features {
 		r := &release.Release{
 			Name:    feature,
-			Version: rand.Intn(100),
+			Version: i,
 			Info: &release.Info{
 				LastDeployed: htime.Now(),
-				Status:       statuses[rand.Intn(len(statuses))],
+				Status:       statuses[rand.IntN(len(statuses))], // #nosec G404
 			},
 			Chart: &chart.Chart{
 				Metadata: &chart.Metadata{
