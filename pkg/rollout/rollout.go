@@ -86,7 +86,7 @@ func (r *Rollout) Rollout(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if feat.EnvironmentKinds == nil || len(feat.EnvironmentKinds) == 0 {
+	if len(feat.EnvironmentKinds) == 0 {
 		http.Error(w, "No environments defined in Feature.yaml", http.StatusBadRequest)
 		return
 	}

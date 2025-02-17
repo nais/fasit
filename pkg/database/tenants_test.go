@@ -11,6 +11,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/graph/model"
+	"k8s.io/utils/ptr"
 )
 
 func Test_repo_TenantCreate(t *testing.T) {
@@ -21,7 +22,7 @@ func Test_repo_TenantCreate(t *testing.T) {
 
 	_, err := repo.TenantCreate(ctx, &model.TenantCreate{
 		Name:        "test-name",
-		Description: stringToPtr("description"),
+		Description: ptr.To("description"),
 	})
 	if err != nil {
 		t.Fatalf("TenantCreate(ctx, tenant) err = %v, want nil", err)
@@ -36,7 +37,7 @@ func Test_repo_TenantGet(t *testing.T) {
 
 	p, err := repo.TenantCreate(ctx, &model.TenantCreate{
 		Name:        "test-name",
-		Description: stringToPtr("description"),
+		Description: ptr.To("description"),
 	})
 	if err != nil {
 		t.Fatalf("TenantCreate(ctx, tenant) err = %v, want nil", err)
@@ -112,7 +113,7 @@ func TestRepo_TenantEnvironments(t *testing.T) {
 		for j := 0; j < 2; j++ {
 			e, err := repo.EnvironmentCreate(ctx, &model.EnvironmentCreate{
 				Name:        fmt.Sprintf("test-env-%v", j),
-				Description: stringToPtr("description"),
+				Description: ptr.To("description"),
 				TenantID:    p.ID,
 				Kind:        model.EnvironmentKindTenant,
 			})
@@ -133,7 +134,7 @@ func TestRepo_TenantEnvironments(t *testing.T) {
 			Environment: model.Environment{
 				ID:          eids[0],
 				Name:        "test-env-0",
-				Description: stringToPtr("description"),
+				Description: ptr.To("description"),
 				Kind:        model.EnvironmentKindTenant,
 			},
 			TenantName: "test-tenant-0",
@@ -143,7 +144,7 @@ func TestRepo_TenantEnvironments(t *testing.T) {
 			Environment: model.Environment{
 				ID:          eids[1],
 				Name:        "test-env-1",
-				Description: stringToPtr("description"),
+				Description: ptr.To("description"),
 				Kind:        model.EnvironmentKindTenant,
 			},
 			TenantName: "test-tenant-0",
@@ -153,7 +154,7 @@ func TestRepo_TenantEnvironments(t *testing.T) {
 			Environment: model.Environment{
 				ID:          eids[2],
 				Name:        "test-env-0",
-				Description: stringToPtr("description"),
+				Description: ptr.To("description"),
 				Kind:        model.EnvironmentKindTenant,
 			},
 			TenantName: "test-tenant-1",
@@ -163,7 +164,7 @@ func TestRepo_TenantEnvironments(t *testing.T) {
 			Environment: model.Environment{
 				ID:          eids[3],
 				Name:        "test-env-1",
-				Description: stringToPtr("description"),
+				Description: ptr.To("description"),
 				Kind:        model.EnvironmentKindTenant,
 			},
 			TenantName: "test-tenant-1",

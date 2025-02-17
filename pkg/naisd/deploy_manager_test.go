@@ -145,11 +145,11 @@ func TestDeployReceiver(t *testing.T) {
 			dr.Run(ctx)
 
 			if !cmp.Equal(tt.statuses, pub.messages) {
-				t.Errorf(cmp.Diff(tt.statuses, pub.messages))
+				t.Error(cmp.Diff(tt.statuses, pub.messages))
 			}
 			if !cmp.Equal(tt.cmds, executor.cmds, cmpopts.IgnoreUnexported(exec.Cmd{})) {
 				fmt.Printf("%#v\n", executor.cmds[0].Args)
-				t.Errorf(cmp.Diff(tt.cmds, executor.cmds))
+				t.Error(cmp.Diff(tt.cmds, executor.cmds))
 			}
 		})
 	}
