@@ -75,7 +75,6 @@ integration-test: sqlc-vet
 sqlc-vet:
 	$(SQLC) vet
 
-
 mocks:
 	$(MOCKERY) --case underscore --name Repo --dir pkg/database/ --outpkg mocks --output pkg/database/mocks --with-expecter
 	$(MOCKERY) --case underscore --name Querier --dir pkg/database/ --outpkg mocks --output pkg/database/mocks --with-expecter
@@ -112,3 +111,11 @@ vulncheck:
 
 deadcode:
 	go tool golang.org/x/tools/cmd/deadcode -test ./...
+
+build: build-fasit build-naisd
+
+build-fasit:
+	go build -o ./bin/fasit ./cmd/fasit/
+
+build-naisd:
+	go build -o ./bin/naisd ./cmd/naisd/
