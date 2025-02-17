@@ -1,6 +1,14 @@
+all: generate test check build helm-lint
+
+helm-lint:
+	helm lint --strict ./charts/fasit
+	helm lint --strict ./charts/naisd
+
+generate: generate-graphql generate-sql generate-feature-schema
+
 generate-sql: sqlc-vet
 	go tool github.com/sqlc-dev/sqlc/cmd/sqlc generate
-	$(MAKE) mocks
+	$(MAKE) generate-mocks
 
 generate-graphql:
 	go tool github.com/99designs/gqlgen generate
@@ -53,16 +61,16 @@ local-naisd-management-failing:
 	--log-level=debug \
 	--mock-failing=true
 
-test: sqlc-vet
-	go test -cover ./...
-
-integration-test: sqlc-vet
+test:
 	go test -tags integration_test -cover ./...
+
+unit-test:
+	go test -cover ./...
 
 sqlc-vet:
 	go tool github.com/sqlc-dev/sqlc/cmd/sqlc vet
 
-mocks:
+generate-mocks:
 	go tool github.com/vektra/mockery/v2
 
 generate-proto:
@@ -79,7 +87,7 @@ generate-feature-schema:
 release-naisd:
 	./hack/release-naisd.sh
 
-check: staticcheck vulncheck deadcode
+check: staticcheck vulncheck deadcode gosec
 
 staticcheck:
 	go tool honnef.co/go/tools/cmd/staticcheck ./...
@@ -90,10 +98,19 @@ vulncheck:
 deadcode:
 	go tool golang.org/x/tools/cmd/deadcode -test ./...
 
-build: build-fasit build-naisd
+gosec:
+	go tool github.com/securego/gosec/v2/cmd/gosec --exclude-generated -terse ./...
+
+build: build-fasit build-naisd build-generate-schema build-setup-local-env
 
 build-fasit:
 	go build -o ./bin/fasit ./cmd/fasit/
 
 build-naisd:
 	go build -o ./bin/naisd ./cmd/naisd/
+
+build-generate-schema:
+	go build -o ./bin/generate_schema ./cmd/generate_schema/
+
+build-setup-local-env:
+	go build -o ./bin/setup_local_env ./cmd/setup_local_env/
