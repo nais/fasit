@@ -16,6 +16,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/nais/fasit/pkg/database/gensql"
 	"github.com/nais/fasit/pkg/graph/model"
+	"k8s.io/utils/ptr"
 )
 
 func TestHelmConfigMap(t *testing.T) {
@@ -185,7 +186,7 @@ func TestRepo_ConfigCreate_Environment(t *testing.T) {
 	config := model.NewConfiguration{
 		EnvironmentID: &envid,
 		Feature:       "feature5",
-		Description:   stringToPtr("description"),
+		Description:   ptr.To("description"),
 		Key:           "my.key",
 		Value:         []byte(`"stringval"`),
 		Secret:        true,
@@ -218,7 +219,7 @@ func TestRepo_ConfigCreate_Global(t *testing.T) {
 	config := model.NewConfiguration{
 		EnvironmentID: &envid,
 		Feature:       "feature5",
-		Description:   stringToPtr("description"),
+		Description:   ptr.To("description"),
 		Key:           "my.key",
 		Value:         []byte(`"stringval"`),
 		Secret:        true,
@@ -249,7 +250,7 @@ func TestRepo_ConfigUpdate_Global(t *testing.T) {
 
 	config := model.NewConfiguration{
 		Feature:     "feature5",
-		Description: stringToPtr("description"),
+		Description: ptr.To("description"),
 		Key:         "my.key",
 		Value:       []byte(`"stringval"`),
 		Secret:      true,

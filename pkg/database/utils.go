@@ -8,10 +8,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-func WithNow(ctx context.Context, now func() time.Time) context.Context {
-	return context.WithValue(ctx, ctxKey("nowfunc"), now)
-}
-
 func Now(ctx context.Context) time.Time {
 	if now, ok := ctx.Value(ctxKey("nowfunc")).(func() time.Time); ok {
 		return now()
@@ -35,10 +31,6 @@ func nullStringToPtr(ns pgtype.Text) *string {
 	}
 
 	return &ns.String
-}
-
-func stringToPtr(s string) *string {
-	return &s
 }
 
 func nullTimeToPtr(nt pgtype.Timestamptz) *time.Time {

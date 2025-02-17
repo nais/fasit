@@ -103,7 +103,6 @@ type KubernetesNode struct {
 	OSImage                 string
 	ContainerRuntimeVersion string
 	KubeletVersion          string
-	KubeProxyVersion        string
 	OperatingSystem         string
 	Architecture            string
 	Conditions              []KubernetesNodeCondition

@@ -84,7 +84,6 @@ func (k *KubernetesReporter) createMessage(n corev1.Node) message.KubernetesNode
 		OSImage:                 n.Status.NodeInfo.OSImage,
 		ContainerRuntimeVersion: n.Status.NodeInfo.ContainerRuntimeVersion,
 		KubeletVersion:          n.Status.NodeInfo.KubeletVersion,
-		KubeProxyVersion:        n.Status.NodeInfo.KubeProxyVersion,
 		OperatingSystem:         n.Status.NodeInfo.OperatingSystem,
 		Architecture:            n.Status.NodeInfo.Architecture,
 		Allocatable:             k.nodeResource(n.Status.Allocatable),

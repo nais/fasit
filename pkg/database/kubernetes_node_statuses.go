@@ -72,7 +72,6 @@ func kubernetesNodeParams(envID uuid.UUID, n message.KubernetesNode) (gensql.Kub
 		OsImage:                 n.OSImage,
 		ContainerRuntimeVersion: n.ContainerRuntimeVersion,
 		KubeletVersion:          n.KubeletVersion,
-		KubeProxyVersion:        n.KubeProxyVersion,
 		OperatingSystem:         n.OperatingSystem,
 		Architecture:            n.Architecture,
 		Conditions:              conditions,
