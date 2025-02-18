@@ -1,0 +1,18 @@
+environmentKinds:
+  - "tenant"
+  - "management"
+
+values:
+  myValue:
+    config:
+      type: string
+  nested.key:
+    config:
+      type: string
+
+  nested.computed.key:
+    config:
+      type: string
+      secret: true
+    computed:
+      template: "{{ .Env.kind }}"

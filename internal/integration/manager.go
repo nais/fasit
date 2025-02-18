@@ -13,6 +13,7 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/database"
@@ -22,6 +23,7 @@ import (
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/naisd"
+	"github.com/nais/fasit/internal/rollout"
 	"github.com/nais/fasit/internal/slack/fake"
 	"github.com/nais/fasit/internal/workers"
 	testmanager "github.com/nais/tester/lua"
@@ -48,7 +50,7 @@ const (
 )
 
 func TestRunner(ctx context.Context, skipSetup bool) (*testmanager.Manager, error) {
-	mgr, err := testmanager.New(newConfig, newManager(ctx, skipSetup), &runner.GQL{}, &runner.SQL{}, &runner.PubSub{})
+	mgr, err := testmanager.New(newConfig, newManager(ctx, skipSetup), &runner.GQL{}, &runner.SQL{}, &runner.PubSub{}, &runner.REST{})
 	if err != nil {
 		return nil, err
 	}
@@ -243,14 +245,14 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 		}
 
 		topic := newPubsubRunner()
-		// gqlRunner, err := newGQLRunner(ctx, config, pool, topic)
-		// if err != nil {
-		// 	done()
-		// 	return nil, nil, err
-		// }
+		restRunner, err := newRestRunner(ctx, pool)
+		if err != nil {
+			done()
+			return ctx, nil, nil, err
+		}
 
 		runners := []spec.Runner{
-			// gqlRunner,
+			restRunner,
 			newGQLRunner(pool),
 			runner.NewSQLRunner(pool),
 			topic,
@@ -297,6 +299,22 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 			done()
 		}, nil
 	}
+}
+
+func newRestRunner(ctx context.Context, pool *pgxpool.Pool) (*runner.REST, error) {
+	router := chi.NewMux()
+	// router.Handle("/query", iapMW(corsMW.Handler(srv)))
+
+	db := database.New(pool, logrus.New())
+
+	rout, err := rollout.New(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+	rout.AllowAll = true
+	router.Post("/github/rollout", rout.Rollout)
+
+	return runner.NewRestRunner(router), nil
 }
 
 func newGQLRunner(pool *pgxpool.Pool) spec.Runner {

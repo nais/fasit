@@ -95,11 +95,30 @@ function TestFunctionTpubsub.check(topic, resp)
   print("check")
 end
 
+---@class TestFunctionTrest
+local TestFunctionTrest = {}
+
+--- Send http request
+---@param method "GET" | "POST" | "PUT" | "DELETE" | "PATCH" | "OPTIONS" | "HEAD"
+---@param path string
+---@param body? string|table
+function TestFunctionTrest.send(method, path, body)
+  print("send")
+end
+
+--- Check the response done by send
+---@param status_code number
+---@param resp table
+function TestFunctionTrest.check(status_code, resp)
+  print("check")
+end
+
 --- Test case
 ---@class Test
 ---@field gql fun(name: string, fn: fun(t: TestFunctionTgql))
 ---@field sql fun(name: string, fn: fun(t: TestFunctionTsql))
 ---@field pubsub fun(name: string, fn: fun(t: TestFunctionTpubsub))
+---@field rest fun(name: string, fn: fun(t: TestFunctionTrest))
 Test = {}
 
 --- Helper functions

@@ -16,6 +16,7 @@ func main() {
 	flag.BoolVar(&ui, "ui", ui, "run with UI")
 	flag.Parse()
 
+	integration.RootDir = dir
 	ctx := context.Background()
 	mgr, err := integration.TestRunner(ctx, false)
 	if err != nil {
