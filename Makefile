@@ -1,11 +1,12 @@
+LUA_FORMATTER_VERSION = 1.5.6
+BIN_DIR := $(shell pwd)/bin
+LUAFMT=$(BIN_DIR)/luafmt-$(LUA_FORMATTER_VERSION)
+
 all: generate test check build helm-lint
 
 helm-lint:
 	helm lint --strict ./charts/fasit
 	helm lint --strict ./charts/naisd
-
-fmt:
-	go tool mvdan.cc/gofumpt -w .
 
 generate: generate-graphql generate-sql generate-feature-schema tester_spec
 
@@ -123,3 +124,48 @@ integration_test_ui:
 
 tester_spec:
 	go run ./cmd/tester_spec
+
+prettier:
+	npm install
+	npx prettier --write .
+
+fmt: prettier install-lua-formatter
+	go tool mvdan.cc/gofumpt -w ./
+	$(LUAFMT)/bin/CodeFormat format -w . --ignores-file ".gitignore" -c ./integration_tests/.editorconfig
+
+LUA_FORMATTER_URL := https://github.com/CppCXY/EmmyLuaCodeStyle/releases/download/$(LUA_FORMATTER_VERSION)
+OS := $(shell uname -s)
+ARCH := $(shell uname -m)
+
+ifeq ($(OS), Darwin)
+  ifeq ($(ARCH), x86_64)
+    LUA_FORMATTER_FILE := darwin-x64
+  else
+    ifeq ($(ARCH), arm64)
+      LUA_FORMATTER_FILE := darwin-arm64
+    else
+      $(error Unsupported architecture: $(ARCH) on macOS)
+    endif
+  endif
+else ifeq ($(OS), Linux)
+  ifeq ($(ARCH), x86_64)
+    LUA_FORMATTER_FILE := linux-x64
+  else
+    ifeq ($(ARCH), aarch64)
+      LUA_FORMATTER_FILE := linux-aarch64
+    else
+      $(error Unsupported architecture: $(ARCH) on Linux)
+    endif
+  endif
+else
+  $(error Unsupported OS: $(OS))
+endif
+
+install-lua-formatter: $(LUAFMT)
+$(LUAFMT):
+	@mkdir -p $(LUAFMT)
+	@curl -L $(LUA_FORMATTER_URL)/$(LUA_FORMATTER_FILE).tar.gz -o /tmp/luafmt.tar.gz
+	@tar -xzf /tmp/luafmt.tar.gz -C $(LUAFMT)
+	@rm /tmp/luafmt.tar.gz
+	@mv $(LUAFMT)/$(LUA_FORMATTER_FILE)/* $(LUAFMT)/
+	@rmdir $(LUAFMT)/$(LUA_FORMATTER_FILE)

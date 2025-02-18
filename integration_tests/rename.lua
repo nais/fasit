@@ -13,7 +13,7 @@ Test.rest("create rollout v1", function(t)
 
 	t.check(201, {
 		id = Save("rollout_id"),
-		envNotAvailable = { "tenant", "management" }
+		envNotAvailable = { "tenant", "management" },
 	})
 end)
 
@@ -44,7 +44,7 @@ Test.gql("enable feature", function(t)
 			["%managementID"] = managementID,
 			["%nonciID"] = nonciID,
 			["%key"] = key,
-			["%value"] = key .. "_value"
+			["%value"] = key .. "_value",
 		}))
 	end
 
@@ -67,32 +67,32 @@ Test.gql("enable feature", function(t)
 
 
 	local checkData = {
-		data = {}
+		data = {},
 	}
 
 	for i, key in ipairs(keys) do
 		checkData["data"]["tc_" .. i] = {
-			source = "ENV"
+			source = "ENV",
 		}
 		checkData["data"]["mc_" .. i] = {
-			source = "ENV"
+			source = "ENV",
 		}
 		checkData["data"]["nonci_" .. i] = {
-			source = "ENV"
+			source = "ENV",
 		}
 		checkData["data"]["glob_" .. i] = {
-			source = "GLOBAL"
+			source = "GLOBAL",
 		}
 	end
 
 	checkData["data"]["featureStateSave"] = {
-		enabled = true
+		enabled = true,
 	}
 	checkData["data"]["mgmt"] = {
-		enabled = true
+		enabled = true,
 	}
 	checkData["data"]["nonci"] = {
-		enabled = true
+		enabled = true,
 	}
 
 	t.check(checkData)
@@ -134,24 +134,24 @@ Test.gql("validate configs", function(t)
 										{
 											content = "myValue_value",
 											value = {
-												key = "myValue"
-											}
+												key = "myValue",
+											},
 										},
 										{
 											content = "nested.computed.key_value",
 											value = {
-												key = "nested.computed.key"
-											}
+												key = "nested.computed.key",
+											},
 										},
 										{
 											content = "nested.key_value",
 											value = {
-												key = "nested.key"
-											}
+												key = "nested.key",
+											},
 										},
-									}
-								}
-							}
+									},
+								},
+							},
 						},
 						{
 							name = "e1",
@@ -161,24 +161,24 @@ Test.gql("validate configs", function(t)
 										{
 											content = "myValue_value",
 											value = {
-												key = "myValue"
-											}
+												key = "myValue",
+											},
 										},
 										{
 											content = "nested.computed.key_value",
 											value = {
-												key = "nested.computed.key"
-											}
+												key = "nested.computed.key",
+											},
 										},
 										{
 											content = "nested.key_value",
 											value = {
-												key = "nested.key"
-											}
+												key = "nested.key",
+											},
 										},
-									}
-								}
-							}
+									},
+								},
+							},
 						},
 						{
 							name = "nonci",
@@ -188,29 +188,29 @@ Test.gql("validate configs", function(t)
 										{
 											content = "myValue_value",
 											value = {
-												key = "myValue"
-											}
+												key = "myValue",
+											},
 										},
 										{
 											content = "nested.computed.key_value",
 											value = {
-												key = "nested.computed.key"
-											}
+												key = "nested.computed.key",
+											},
 										},
 										{
 											content = "nested.key_value",
 											value = {
-												key = "nested.key"
-											}
+												key = "nested.key",
+											},
 										},
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 end)
 
@@ -247,32 +247,32 @@ Test.gql("validate state", function(t)
 							feature = {
 								status = {
 									status = "DEPLOYED",
-									version = "1.0"
-								}
-							}
+									version = "1.0",
+								},
+							},
 						},
 						{
 							name = "e1",
 							feature = {
 								status = {
 									status = "DEPLOYED",
-									version = "1.0"
-								}
-							}
+									version = "1.0",
+								},
+							},
 						},
 						{
 							name = "nonci",
 							feature = {
 								status = {
 									status = "DEPLOYED",
-									version = "1.0"
-								}
-							}
+									version = "1.0",
+								},
+							},
 						},
-					}
-				}
-			}
-		}
+					},
+				},
+			},
+		},
 	}
 end)
 
@@ -289,7 +289,7 @@ Test.rest("create rollout v2", function(t)
 
 	t.check(201, {
 		id = Save("rolloutv2_id"),
-		envNotAvailable = {}
+		envNotAvailable = {},
 	})
 end)
 
@@ -330,24 +330,24 @@ Test.gql("check config", function(t)
 										{
 											content = "myValue_value",
 											value = {
-												key = "rename.myValue"
-											}
+												key = "rename.myValue",
+											},
 										},
 										{
 											content = "nested.computed.key_value",
 											value = {
-												key = "rename.nested.computed.key"
-											}
+												key = "rename.nested.computed.key",
+											},
 										},
 										{
 											content = "nested.key_value",
 											value = {
-												key = "rename.nested.key"
-											}
+												key = "rename.nested.key",
+											},
 										},
-									}
-								}
-							}
+									},
+								},
+							},
 						},
 						{
 							name = "e1",
@@ -357,24 +357,24 @@ Test.gql("check config", function(t)
 										{
 											content = "myValue_value",
 											value = {
-												key = "rename.myValue"
-											}
+												key = "rename.myValue",
+											},
 										},
 										{
 											content = "nested.computed.key_value",
 											value = {
-												key = "rename.nested.computed.key"
-											}
+												key = "rename.nested.computed.key",
+											},
 										},
 										{
 											content = "nested.key_value",
 											value = {
-												key = "rename.nested.key"
-											}
+												key = "rename.nested.key",
+											},
 										},
-									}
-								}
-							}
+									},
+								},
+							},
 						},
 						{
 							name = "nonci",
@@ -384,29 +384,29 @@ Test.gql("check config", function(t)
 										{
 											content = "myValue_value",
 											value = {
-												key = "myValue"
-											}
+												key = "myValue",
+											},
 										},
 										{
 											content = "nested.computed.key_value",
 											value = {
-												key = "nested.computed.key"
-											}
+												key = "nested.computed.key",
+											},
 										},
 										{
 											content = "nested.key_value",
 											value = {
-												key = "nested.key"
-											}
+												key = "nested.key",
+											},
 										},
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 end)
 
@@ -422,7 +422,7 @@ Test.sql("validate rollout", function(t)
 
 	t.check({
 		status = "deployed",
-		version = "2.0"
+		version = "2.0",
 	})
 end)
 
@@ -462,24 +462,24 @@ Test.gql("check config after rollout", function(t)
 										{
 											content = "myValue_value",
 											value = {
-												key = "rename.myValue"
-											}
+												key = "rename.myValue",
+											},
 										},
 										{
 											content = "nested.computed.key_value",
 											value = {
-												key = "rename.nested.computed.key"
-											}
+												key = "rename.nested.computed.key",
+											},
 										},
 										{
 											content = "nested.key_value",
 											value = {
-												key = "rename.nested.key"
-											}
+												key = "rename.nested.key",
+											},
 										},
-									}
-								}
-							}
+									},
+								},
+							},
 						},
 						{
 							name = "e1",
@@ -489,24 +489,24 @@ Test.gql("check config after rollout", function(t)
 										{
 											content = "myValue_value",
 											value = {
-												key = "rename.myValue"
-											}
+												key = "rename.myValue",
+											},
 										},
 										{
 											content = "nested.computed.key_value",
 											value = {
-												key = "rename.nested.computed.key"
-											}
+												key = "rename.nested.computed.key",
+											},
 										},
 										{
 											content = "nested.key_value",
 											value = {
-												key = "rename.nested.key"
-											}
+												key = "rename.nested.key",
+											},
 										},
-									}
-								}
-							}
+									},
+								},
+							},
 						},
 						{
 							name = "nonci",
@@ -516,29 +516,29 @@ Test.gql("check config after rollout", function(t)
 										{
 											content = "myValue_value",
 											value = {
-												key = "rename.myValue"
-											}
+												key = "rename.myValue",
+											},
 										},
 										{
 											content = "nested.computed.key_value",
 											value = {
-												key = "rename.nested.computed.key"
-											}
+												key = "rename.nested.computed.key",
+											},
 										},
 										{
 											content = "nested.key_value",
 											value = {
-												key = "rename.nested.key"
-											}
+												key = "rename.nested.key",
+											},
 										},
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 end)
 
@@ -587,36 +587,36 @@ Test.gql("check config with non-renamed configs", function(t)
 										{
 											content = "oldVal",
 											value = {
-												key = "myValue"
-											}
+												key = "myValue",
+											},
 										},
 										{
 											content = "oldVal",
 											value = {
-												key = "nested.key"
-											}
+												key = "nested.key",
+											},
 										},
 										{
 											content = "myValue_value",
 											value = {
-												key = "rename.myValue"
-											}
+												key = "rename.myValue",
+											},
 										},
 										{
 											content = "nested.computed.key_value",
 											value = {
-												key = "rename.nested.computed.key"
-											}
+												key = "rename.nested.computed.key",
+											},
 										},
 										{
 											content = "nested.key_value",
 											value = {
-												key = "rename.nested.key"
-											}
+												key = "rename.nested.key",
+											},
 										},
-									}
-								}
-							}
+									},
+								},
+							},
 						},
 						{
 							name = "e1",
@@ -626,30 +626,30 @@ Test.gql("check config with non-renamed configs", function(t)
 										{
 											content = "oldVal",
 											value = {
-												key = "myValue"
-											}
+												key = "myValue",
+											},
 										},
 										{
 											content = "myValue_value",
 											value = {
-												key = "rename.myValue"
-											}
+												key = "rename.myValue",
+											},
 										},
 										{
 											content = "nested.computed.key_value",
 											value = {
-												key = "rename.nested.computed.key"
-											}
+												key = "rename.nested.computed.key",
+											},
 										},
 										{
 											content = "nested.key_value",
 											value = {
-												key = "rename.nested.key"
-											}
+												key = "rename.nested.key",
+											},
 										},
-									}
-								}
-							}
+									},
+								},
+							},
 						},
 						{
 							name = "nonci",
@@ -659,26 +659,26 @@ Test.gql("check config with non-renamed configs", function(t)
 										{
 											content = "oldVal",
 											value = {
-												key = "myValue"
-											}
+												key = "myValue",
+											},
 										},
 										{
 											content = "myValue_value",
 											value = {
-												key = "rename.myValue"
-											}
+												key = "rename.myValue",
+											},
 										},
 										{
 											content = "nested.computed.key_value",
 											value = {
-												key = "rename.nested.computed.key"
-											}
+												key = "rename.nested.computed.key",
+											},
 										},
 										{
 											content = "nested.key_value",
 											value = {
-												key = "rename.nested.key"
-											}
+												key = "rename.nested.key",
+											},
 										},
 									},
 								},
@@ -701,7 +701,7 @@ Test.rest("create rollout v3", function(t)
 
 	t.check(201, {
 		id = Save("rollout_id"),
-		envNotAvailable = {}
+		envNotAvailable = {},
 	})
 end)
 
@@ -743,36 +743,36 @@ Test.gql("check config after v3", function(t)
 										{
 											content = "oldVal",
 											value = {
-												key = "myValue"
-											}
+												key = "myValue",
+											},
 										},
 										{
 											content = "oldVal",
 											value = {
-												key = "nested.key"
-											}
+												key = "nested.key",
+											},
 										},
 										{
 											content = "myValue_value",
 											value = {
-												key = "rename.myValue"
-											}
+												key = "rename.myValue",
+											},
 										},
 										{
 											content = "nested.computed.key_value",
 											value = {
-												key = "rename.nested.computed.key"
-											}
+												key = "rename.nested.computed.key",
+											},
 										},
 										{
 											content = "nested.key_value",
 											value = {
-												key = "rename.nested.key"
-											}
+												key = "rename.nested.key",
+											},
 										},
-									}
-								}
-							}
+									},
+								},
+							},
 						},
 						{
 							name = "e1",
@@ -782,30 +782,30 @@ Test.gql("check config after v3", function(t)
 										{
 											content = "oldVal",
 											value = {
-												key = "myValue"
-											}
+												key = "myValue",
+											},
 										},
 										{
 											content = "myValue_value",
 											value = {
-												key = "rename.myValue"
-											}
+												key = "rename.myValue",
+											},
 										},
 										{
 											content = "nested.computed.key_value",
 											value = {
-												key = "rename.nested.computed.key"
-											}
+												key = "rename.nested.computed.key",
+											},
 										},
 										{
 											content = "nested.key_value",
 											value = {
-												key = "rename.nested.key"
-											}
+												key = "rename.nested.key",
+											},
 										},
-									}
-								}
-							}
+									},
+								},
+							},
 						},
 						{
 							name = "nonci",
@@ -815,26 +815,26 @@ Test.gql("check config after v3", function(t)
 										{
 											content = "oldVal",
 											value = {
-												key = "myValue"
-											}
+												key = "myValue",
+											},
 										},
 										{
 											content = "myValue_value",
 											value = {
-												key = "rename.myValue"
-											}
+												key = "rename.myValue",
+											},
 										},
 										{
 											content = "nested.computed.key_value",
 											value = {
-												key = "rename.nested.computed.key"
-											}
+												key = "rename.nested.computed.key",
+											},
 										},
 										{
 											content = "nested.key_value",
 											value = {
-												key = "rename.nested.key"
-											}
+												key = "rename.nested.key",
+											},
 										},
 									},
 								},

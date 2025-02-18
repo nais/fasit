@@ -1,21 +1,17 @@
 type FeatureState {
-  id: ID!
-  feature: Feature!
-  enabled: Boolean!
-  created: Time
-  lastModified: Time
-  missingDependencies: [Feature!]!
-  configuration: Configurations!
+	id: ID!
+	feature: Feature!
+	enabled: Boolean!
+	created: Time
+	lastModified: Time
+	missingDependencies: [Feature!]!
+	configuration: Configurations!
 }
 
 extend type Mutation {
-  featureStateSave(
-    envID: ID!
-    enabled: Boolean!
-    feature: String!
-  ): FeatureState!
+	featureStateSave(envID: ID!, enabled: Boolean!, feature: String!): FeatureState!
 }
 
 extend type Query {
-  featureState(envID: ID!, feature: String!): FeatureState!
+	featureState(envID: ID!, feature: String!): FeatureState!
 }

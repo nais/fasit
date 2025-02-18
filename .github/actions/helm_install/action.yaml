@@ -31,7 +31,7 @@ runs:
     - name: test kubectl
       shell: bash
       run: |
-          kubectl version --client=true
+        kubectl version --client=true
     - name: install helm
       shell: bash
       run: |

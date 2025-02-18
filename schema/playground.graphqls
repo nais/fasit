@@ -1,16 +1,16 @@
 type Playground {
-  result: String
-  errors: [String!]!
+	result: String
+	errors: [String!]!
 }
 
 input PlaygroundInput {
-  tenantSlug: String!
-  envSlug: String!
-  showSecrets: Boolean
-  includeUnsetConfig: Boolean
-  code: String!
+	tenantSlug: String!
+	envSlug: String!
+	showSecrets: Boolean
+	includeUnsetConfig: Boolean
+	code: String!
 }
 
 extend type Mutation {
-  playground(input: PlaygroundInput!): Playground!
+	playground(input: PlaygroundInput!): Playground!
 }

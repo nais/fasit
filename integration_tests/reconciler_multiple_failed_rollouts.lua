@@ -65,15 +65,15 @@ Test.gql("enable features", function(t)
 	t.check {
 		data = {
 			testing = {
-				enabled = true
+				enabled = true,
 			},
 			mgmt = {
-				enabled = true
+				enabled = true,
 			},
 			nonci = {
-				enabled = true
-			}
-		}
+				enabled = true,
+			},
+		},
 	}
 end)
 
@@ -95,19 +95,19 @@ Test.sql("validate deploy instructions", function(t)
 			environment = "management",
 			feature_name = "feature1",
 			feature_version = "1",
-			status = "deployed"
+			status = "deployed",
 		},
 		{
 			environment = "nonci",
 			feature_name = "feature1",
 			feature_version = "1",
-			status = "deployed"
+			status = "deployed",
 		},
 		{
 			environment = "testing",
 			feature_name = "feature1",
 			feature_version = "1",
-			status = "deployed"
-		}
+			status = "deployed",
+		},
 	}
 end)

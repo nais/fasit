@@ -121,15 +121,15 @@ Test.pubsub("deploy instruction", function(t)
 				fasit = {
 					env = {
 						kind = "tenant",
-						name = "e1"
+						name = "e1",
 					},
 					tenant = {
-						name = "tenant1"
-					}
+						name = "tenant1",
+					},
 				},
-				gcp = "true"
+				gcp = "true",
 			},
-			Version = "0.1.0-feature"
+			Version = "0.1.0-feature",
 		},
 	})
 end)
@@ -199,7 +199,7 @@ Test.rest("create new rollout", function(t)
 
 	t.check(201, {
 		id = Save("rollout_id"),
-		envNotAvailable = {}
+		envNotAvailable = {},
 	})
 end)
 
@@ -218,15 +218,15 @@ Test.pubsub("new deploy instruction", function(t)
 				fasit = {
 					env = {
 						kind = "tenant",
-						name = "e1"
+						name = "e1",
 					},
 					tenant = {
-						name = "tenant1"
-					}
+						name = "tenant1",
+					},
 				},
-				gcp = "true"
+				gcp = "true",
 			},
-			Version = "0.1.1-feature"
+			Version = "0.1.1-feature",
 		},
 	})
 end)

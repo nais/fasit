@@ -26,9 +26,9 @@ Test.gql("List tenants with environment", function(t)
 						{ name = "management", kind = "MANAGEMENT" },
 						{ name = "nonci",      kind = "TENANT" },
 						{ name = "testing",    kind = "TENANT" },
-					}
-				}
-			}
-		}
+					},
+				},
+			},
+		},
 	})
 end)

@@ -8,33 +8,37 @@ import (
 )
 
 const featureDataCreate = `-- name: FeatureDataCreate :exec
-INSERT INTO feature_data (
-    name,
-    version,
-    chart,
-    description,
-    source,
-    kinds,
-    dependencies,
-    values,
-    default_values,
-    timeout,
-    tpl_details,
-    rename
-) VALUES (
-    $1,
-    $2,
-    $3,
-    $4,
-    $5,
-    ($6::text[])::environment_kind[],
-    $7,
-    $8,
-    $9,
-    $10,
-    $11,
-    $12
-)
+INSERT INTO
+	feature_data (
+		name,
+		version,
+		chart,
+		description,
+		source,
+		kinds,
+		dependencies,
+		VALUES
+,
+			default_values,
+			timeout,
+			tpl_details,
+		RENAME
+	)
+VALUES
+	(
+		$1,
+		$2,
+		$3,
+		$4,
+		$5,
+		($6::TEXT[])::environment_kind[],
+		$7,
+		$8,
+		$9,
+		$10,
+		$11,
+		$12
+	)
 `
 
 type FeatureDataCreateParams struct {

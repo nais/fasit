@@ -1,2 +1,4 @@
 -- +goose Up
-ALTER TABLE status ADD COLUMN log text NOT NULL DEFAULT '';
+ALTER TABLE status
+ADD COLUMN log TEXT NOT NULL DEFAULT ''
+;

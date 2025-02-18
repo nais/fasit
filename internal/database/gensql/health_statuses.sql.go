@@ -11,14 +11,15 @@ import (
 )
 
 const healthStatusCreateOrUpdate = `-- name: HealthStatusCreateOrUpdate :one
-INSERT INTO health_statuses
-	(environment_id, reported_at)
+INSERT INTO
+	health_statuses (environment_id, reported_at)
 VALUES
 	($1, $2)
 ON CONFLICT (environment_id) DO UPDATE
-	SET
-    reported_at = EXCLUDED.reported_at
-RETURNING environment_id, reported_at
+SET
+	reported_at = EXCLUDED.reported_at
+RETURNING
+	environment_id, reported_at
 `
 
 type HealthStatusCreateOrUpdateParams struct {
@@ -34,8 +35,12 @@ func (q *Queries) HealthStatusCreateOrUpdate(ctx context.Context, arg HealthStat
 }
 
 const healthStatusGet = `-- name: HealthStatusGet :one
-SELECT environment_id, reported_at FROM health_statuses
-WHERE environment_id = $1
+SELECT
+	environment_id, reported_at
+FROM
+	health_statuses
+WHERE
+	environment_id = $1
 `
 
 func (q *Queries) HealthStatusGet(ctx context.Context, environmentID uuid.UUID) (HealthStatus, error) {

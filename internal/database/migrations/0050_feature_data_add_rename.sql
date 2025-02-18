@@ -1,2 +1,5 @@
 -- +goose Up
-ALTER TABLE feature_data ADD COLUMN rename JSONB NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE feature_data
+ADD COLUMN
+RENAME JSONB NOT NULL DEFAULT '[]'::jsonb
+;

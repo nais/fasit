@@ -1,30 +1,30 @@
 type Tenant {
-  id: ID!
-  name: String!
-  description: String
-  environments: [Environment!]!
-  environment(id: ID, slug: String): Environment!
-  created: Time!
-  lastModified: Time!
-  warnings: [Warning!]!
+	id: ID!
+	name: String!
+	description: String
+	environments: [Environment!]!
+	environment(id: ID, slug: String): Environment!
+	created: Time!
+	lastModified: Time!
+	warnings: [Warning!]!
 }
 
 type Query {
-  tenants: [Tenant!]!
+	tenants: [Tenant!]!
 }
 
 input TenantCreate {
-  name: String!
-  description: String
+	name: String!
+	description: String
 }
 
 type Mutation {
-  tenantCreate(tenant: TenantCreate!): Tenant!
+	tenantCreate(tenant: TenantCreate!): Tenant!
 }
 
 extend type Query {
-  """
-  tenant returns the given tenant.
-  """
-  tenant("id of the requested tenant." id: ID, slug: String): Tenant!
+	"""
+	tenant returns the given tenant.
+	"""
+	tenant("id of the requested tenant." id: ID, slug: String): Tenant!
 }

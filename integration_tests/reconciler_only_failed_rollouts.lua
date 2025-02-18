@@ -80,14 +80,14 @@ Test.sql("Validate deploy instructions", function(t)
 			environment = "management",
 			feature_name = "feature1",
 			feature_version = "3",
-			status = "deployed"
+			status = "deployed",
 		},
 		{
 			environment = "testing",
 			feature_name = "feature1",
 			feature_version = "3",
-			status = "deployed"
-		}
+			status = "deployed",
+		},
 	}
 end)
 
@@ -116,23 +116,23 @@ Test.gql("list features", function(t)
 							features = {
 								{
 									name = "feature1",
-									version = "3"
-								}
-							}
+									version = "3",
+								},
+							},
 						},
 						{
 							name = "nonci",
-							features = {}
+							features = {},
 						},
 						{
 							name = "testing",
 							features = {
 								{
 									name = "feature1",
-									version = "3"
-								}
-							}
-						}
+									version = "3",
+								},
+							},
+						},
 					},
 				},
 			},

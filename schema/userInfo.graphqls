@@ -1,10 +1,9 @@
 type userInfo {
-    email: String!
+	email: String!
 }
 extend type Query {
-    """
-    userInfo returns the user.
-    """
-    userInfo: userInfo
-
+	"""
+	userInfo returns the user.
+	"""
+	userInfo: userInfo
 }

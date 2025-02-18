@@ -8,17 +8,10 @@ import (
 )
 
 const auditCreate = `-- name: AuditCreate :exec
-INSERT INTO audits (
-  actor,
-  description,
-  object_type,
-  object_id
-) VALUES (
-  $1,
-  $2,
-  $3,
-  $4
-)
+INSERT INTO
+	audits (actor, description, object_type, object_id)
+VALUES
+	($1, $2, $3, $4)
 `
 
 type AuditCreateParams struct {
@@ -39,15 +32,19 @@ func (q *Queries) AuditCreate(ctx context.Context, arg AuditCreateParams) error 
 }
 
 const auditForEnvironment = `-- name: AuditForEnvironment :many
-SELECT id, actor, description, object_type, object_id, created_at
-FROM audits
-WHERE CASE WHEN $1::text != '' THEN
-  object_id = concat($2::text, ':', $1::text)
-ELSE
-  starts_with(object_id, $2::text)
-END
-ORDER BY created_at DESC
-LIMIT $3
+SELECT
+	id, actor, description, object_type, object_id, created_at
+FROM
+	audits
+WHERE
+	CASE
+		WHEN $1::TEXT != '' THEN object_id = CONCAT($2::TEXT, ':', $1::TEXT)
+		ELSE STARTS_WITH(object_id, $2::TEXT)
+	END
+ORDER BY
+	created_at DESC
+LIMIT
+	$3
 `
 
 type AuditForEnvironmentParams struct {

@@ -1,36 +1,36 @@
 type Rollout {
-  id: ID!
-  version: String!
-  created: Time!
-  completed: Time
-  status: RolloutStatus!
-  featureName: String!
+	id: ID!
+	version: String!
+	created: Time!
+	completed: Time
+	status: RolloutStatus!
+	featureName: String!
 
-  events: [RolloutEvent!]!
-  logs: [RolloutLog!]!
+	events: [RolloutEvent!]!
+	logs: [RolloutLog!]!
 }
 
 type RolloutLog {
-  id: ID!
-  tenantName: String!
-  environment: String!
-  lines: [LogLine!]!
+	id: ID!
+	tenantName: String!
+	environment: String!
+	lines: [LogLine!]!
 }
 
 type RolloutEvent {
-  id: ID!
-  failure: Boolean!
-  message: String!
-  created: Time!
-  data: RawMessage
+	id: ID!
+	failure: Boolean!
+	message: String!
+	created: Time!
+	data: RawMessage
 }
 
 extend type Query {
-  rollouts(feature: String): [Rollout!]!
-  rollout(feature: String!, version: String!): Rollout!
+	rollouts(feature: String): [Rollout!]!
+	rollout(feature: String!, version: String!): Rollout!
 }
 
 extend type Mutation {
-  rolloutMarkFailed(feature: String!, version: String!): Rollout!
-  deleteHelmInstall(envID: ID!, name: String!): Boolean!
+	rolloutMarkFailed(feature: String!, version: String!): Rollout!
+	deleteHelmInstall(envID: ID!, name: String!): Boolean!
 }

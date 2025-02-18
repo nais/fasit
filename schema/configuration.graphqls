@@ -1,69 +1,61 @@
 enum ConfigType {
-  STRING
-  INT
-  BOOL
-  STRING_ARRAY
+	STRING
+	INT
+	BOOL
+	STRING_ARRAY
 }
 
 type ComputedValue {
-  value: Value!
-  content: RawMessage
+	value: Value!
+	content: RawMessage
 }
 
 """
 Configurations contains configuration and computed values for one feature
 """
 type Configurations {
-  configuration: [Configuration!]!
-  computed: [ComputedValue!]!
+	configuration: [Configuration!]!
+	computed: [ComputedValue!]!
 }
 
 enum ConfigSource {
-  GLOBAL
-  ENV
-  HELM
-  UNKNOWN
+	GLOBAL
+	ENV
+	HELM
+	UNKNOWN
 }
 
 type Configuration {
-  id: ID!
-  value: Value!
-  content: RawMessage
-  created: Time!
-  source: ConfigSource!
+	id: ID!
+	value: Value!
+	content: RawMessage
+	created: Time!
+	source: ConfigSource!
 }
 
 input NewConfiguration {
-  environmentID: ID
-  feature: String!
-  description: String
-  key: String!
-  value: RawMessage!
+	environmentID: ID
+	feature: String!
+	description: String
+	key: String!
+	value: RawMessage!
 }
 
 input UpdateConfiguration {
-  description: String
-  value: RawMessage!
+	description: String
+	value: RawMessage!
 }
 
 extend type Query {
-  configuration(feature: String!, envID: ID): Configurations!
-  """
-  Returns the raw helm values for a feature. Requires the feature name, and either the environment ID or the environment and tenant name.
-  """
-  helmValues(
-    feature: String!
-    envID: ID
-    env: String
-    tenant: String
-  ): RawMessage!
+	configuration(feature: String!, envID: ID): Configurations!
+	"""
+	Returns the raw helm values for a feature. Requires the feature name, and either the environment ID or the environment and tenant name.
+	"""
+	helmValues(feature: String!, envID: ID, env: String, tenant: String): RawMessage!
 }
 
 extend type Mutation {
-  configurationCreate(configuration: NewConfiguration!): Configuration!
-  configurationUpdate(
-    id: ID!
-    configuration: UpdateConfiguration!
-  ): Configuration!
-  configurationDelete(id: ID!): Boolean!
+	configurationCreate(configuration: NewConfiguration!): Configuration!
+	configurationUpdate(id: ID!, configuration: UpdateConfiguration!): Configuration!
+	configurationDelete(id: ID!): Boolean!
 }

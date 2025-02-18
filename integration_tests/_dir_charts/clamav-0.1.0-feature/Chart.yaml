@@ -3,6 +3,6 @@ appVersion: 1.16.0
 description: Antivirus scanning
 name: clamav
 sources:
-- https://github.com/nais/helm-charts/tree/main/features/clamav
+  - https://github.com/nais/helm-charts/tree/main/features/clamav
 type: application
 version: 0.1.0-feature

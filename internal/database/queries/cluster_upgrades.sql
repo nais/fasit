@@ -1,38 +1,65 @@
 -- name: ClusterUpgradesCreate :one
-INSERT INTO cluster_upgrades
-("tenant_id", "environment_id", "version")
+INSERT INTO
+	cluster_upgrades ("tenant_id", "environment_id", "version")
 VALUES
-(@tenantId, @envID, @version)
-RETURNING *;
+	(@tenantId, @envID, @version)
+RETURNING
+	*
+;
 
 -- name: ClusterUpgradesGet :many
-SELECT * FROM cluster_upgrades
-WHERE tenant_id = @tenantId
-AND environment_id = @envID
-AND status != 'DONE'
-ORDER BY last_modified DESC;
+SELECT
+	*
+FROM
+	cluster_upgrades
+WHERE
+	tenant_id = @tenantId
+	AND environment_id = @envID
+	AND status != 'DONE'
+ORDER BY
+	last_modified DESC
+;
 
 -- name: ClusterUpgradesSetSlackMessage :one
 UPDATE cluster_upgrades
-SET "slack_message_timestamp" = @slackMessageTimestamp,
-"slack_channel_id" = @slackChannelID
-WHERE "id" = @id
-RETURNING *;
+SET
+	"slack_message_timestamp" = @slackMessageTimestamp,
+	"slack_channel_id" = @slackChannelID
+WHERE
+	"id" = @id
+RETURNING
+	*
+;
 
 -- name: ClusterUpgradesUpdateStatus :one
 UPDATE cluster_upgrades
-SET "status" = @status
-WHERE "tenant_id" = @tenantId
-AND "environment_id" = @envID
-AND "version" = @version
-RETURNING *;
+SET
+	"status" = @status
+WHERE
+	"tenant_id" = @tenantId
+	AND "environment_id" = @envID
+	AND "version" = @version
+RETURNING
+	*
+;
 
 -- name: ClusterUpgradesGetByID :one
-SELECT * FROM cluster_upgrades
-WHERE id = @id;
+SELECT
+	*
+FROM
+	cluster_upgrades
+WHERE
+	id = @id
+;
 
 -- name: ClusterUpgradesHistoryGetByEnvironmentID :many
-SELECT * FROM cluster_upgrades
-WHERE tenant_id = @tenantId AND
-environment_id = @envID
-ORDER BY last_modified DESC;
+SELECT
+	*
+FROM
+	cluster_upgrades
+WHERE
+	tenant_id = @tenantId
+	AND environment_id = @envID
+ORDER BY
+	last_modified DESC
+;

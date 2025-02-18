@@ -7,3 +7,4 @@ charts/fasit.yaml
 bin/
 .direnv
 flake.*
+node_modules

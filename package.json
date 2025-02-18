@@ -1,0 +1,9 @@
+{
+	"type": "module",
+	"devDependencies": {
+		"@graphql-eslint/eslint-plugin": "4.0.0-alpha.13",
+		"eslint": "^9.15.0",
+		"prettier": "^3.3.3",
+		"prettier-plugin-sql-custom": "git+https://github.com/nais/prettier-plugin-sql.git"
+	}
+}
