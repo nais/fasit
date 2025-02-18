@@ -35,8 +35,6 @@ import (
 	"github.com/testcontainers/testcontainers-go/wait"
 	lua "github.com/yuin/gopher-lua"
 	"go.opentelemetry.io/otel/metric/noop"
-	"google.golang.org/protobuf/encoding/protojson"
-	"google.golang.org/protobuf/reflect/protoreflect"
 	"k8s.io/client-go/rest"
 	"k8s.io/utils/ptr"
 )
@@ -244,21 +242,11 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 			log.Level = logrus.DebugLevel
 		}
 
-		topic := newPubsubRunner()
 		restRunner, err := newRestRunner(ctx, pool)
 		if err != nil {
 			done()
 			return ctx, nil, nil, err
 		}
-
-		runners := []spec.Runner{
-			restRunner,
-			newGQLRunner(pool),
-			runner.NewSQLRunner(pool),
-			topic,
-		}
-
-		ctx = context.WithValue(ctx, poolKey, pool)
 
 		db := database.New(pool, log)
 		naisdRunner, close, err := newNaisd(ctx, db)
@@ -271,6 +259,14 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 			done()
 			return ctx, nil, nil, err
 		}
+		runners := []spec.Runner{
+			naisdRunner,
+			restRunner,
+			newGQLRunner(pool),
+			runner.NewSQLRunner(pool),
+		}
+
+		ctx = context.WithValue(ctx, poolKey, pool)
 
 		cp := func(topicID string, log *logrus.Entry) workers.Publisher {
 			p, ok := naisdRunner.reconcilerPublishers[topicID]
@@ -403,39 +399,6 @@ func newDB(ctx context.Context, container *postgres.PostgresContainer, connStr s
 	}
 
 	return pool, cleanup, nil
-}
-
-type pubsubRunner struct {
-	*runner.PubSub
-}
-
-func newPubsubRunner() *pubsubRunner {
-	ret := &pubsubRunner{}
-	ret.PubSub = runner.NewPubSub(nil)
-	return ret
-}
-
-func (p *pubsubRunner) Publish(ctx context.Context, msg protoreflect.ProtoMessage, attrs map[string]string) (string, error) {
-	b, err := protojson.Marshal(msg)
-	if err != nil {
-		return "", err
-	}
-
-	mp := make(map[string]any)
-	if err := json.Unmarshal(b, &mp); err != nil {
-		return "", err
-	}
-
-	p.Receive("topic", runner.PubSubMessage{
-		Msg:        mp,
-		Attributes: attrs,
-	})
-
-	return "123", nil
-}
-
-func (p *pubsubRunner) String() string {
-	return "topic"
 }
 
 type naisdRunner struct {
