@@ -64,21 +64,21 @@ Test.sql("verify tenant env", function(t)
 		{
 			{
 				tenant_name = "tenant1",
-                tenant_ci = true,
-                name = "e1",
-                ci = true,
-			},
-			{
-			 	tenant_name = "tenant1",
-                tenant_ci = true,
-                name = "management",
-                ci = true,
+				tenant_ci = true,
+				name = "e1",
+				ci = true,
 			},
 			{
 				tenant_name = "tenant1",
-                tenant_ci = true,
-                name = "nonci",
-                ci = false,
+				tenant_ci = true,
+				name = "management",
+				ci = true,
+			},
+			{
+				tenant_name = "tenant1",
+				tenant_ci = true,
+				name = "nonci",
+				ci = false,
 			},
 		}
 	)
@@ -96,13 +96,13 @@ Test.gql("enable feature", function(t)
 
 	t.check(
 		{
-        	data = {
-        		featureStateSave = {
-        			id = NotNull(),
-        			enabled = true,
-        		},
-        	},
-        }
+			data = {
+				featureStateSave = {
+					id = NotNull(),
+					enabled = true,
+				},
+			},
+		}
 	)
 end)
 
@@ -112,38 +112,39 @@ Test.pubsub("deploy instruction", function(t)
 	t.check("naisd-tenant1-e1", {
 		attributes = Null,
 		data = {
-		ConfigHash = Save("hash"),
-        			ID = Save("diid"),
-			Chart= "oci://clamav",
-		  Name= "clamav",
-		  Timeout= 0,
-              Values= {
-               fasit= {
-                  env= {
-                    kind= "tenant",
-                    name= "e1"
-                  },
-                  tenant= {
-                    name= "tenant1"
-                  }
-                },
-                gcp= "true"
-              },
-              Version= "0.1.0-feature"
+			ConfigHash = Save("hash"),
+			ID = Save("diid"),
+			Chart = "oci://clamav",
+			Name = "clamav",
+			Timeout = 0,
+			Values = {
+				fasit = {
+					env = {
+						kind = "tenant",
+						name = "e1"
+					},
+					tenant = {
+						name = "tenant1"
+					}
+				},
+				gcp = "true"
+			},
+			Version = "0.1.0-feature"
 		},
 	})
 end)
 
 Test.pubsub("naisd response", function(t)
 	t.check("status", {
-	attributes = Null,
-	data = {
-                                  Tenant= "tenant1",
-                                  Environment= "e1",
-                                  Type= 2,
-                                  Data= NotNull(),
-                                },}
-)
+		attributes = Null,
+		data = {
+			Tenant = "tenant1",
+			Environment = "e1",
+			Type = 2,
+			Data = NotNull(),
+		},
+	}
+	)
 end)
 
 Test.sql("verify rollout success", function(t)
@@ -153,7 +154,7 @@ Test.sql("verify rollout success", function(t)
 	t.check(
 		{
 			{
-			count = 1,
+				count = 1,
 			},
 
 		}
@@ -198,48 +199,49 @@ Test.rest("create new rollout", function(t)
 
 	t.check(201, {
 		id = Save("rollout_id"),
-		envNotAvailable = {  }
+		envNotAvailable = {}
 	})
 end)
 
 Test.pubsub("new deploy instruction", function(t)
 	Helper.Reconcile()
 
-    	t.check("naisd-tenant1-e1", {
-    		attributes = Null,
-    		data = {
-    							 ConfigHash= Save("new_hash"),
-    							 ID = NotNull(),
-                     Chart= "oci://clamav",
-                     Name= "clamav",
-                     Timeout= 600000000000,
-                     Values= {
-                       fasit= {
-                         env= {
-                           kind= "tenant",
-                           name= "e1"
-                         },
-                         tenant= {
-                           name= "tenant1"
-                         }
-                       },
-                       gcp= "true"
-                     },
-                     Version= "0.1.1-feature"
-                   },
-    	})
+	t.check("naisd-tenant1-e1", {
+		attributes = Null,
+		data = {
+			ConfigHash = Save("new_hash"),
+			ID = NotNull(),
+			Chart = "oci://clamav",
+			Name = "clamav",
+			Timeout = 600000000000,
+			Values = {
+				fasit = {
+					env = {
+						kind = "tenant",
+						name = "e1"
+					},
+					tenant = {
+						name = "tenant1"
+					}
+				},
+				gcp = "true"
+			},
+			Version = "0.1.1-feature"
+		},
+	})
 end)
 
 Test.pubsub("new naisd response", function(t)
 	t.check("status", {
-	attributes = Null,
-	data = {
-                                  Tenant= "tenant1",
-                                  Environment= "e1",
-                                  Type= 2,
-                                  Data= NotNull(),
-                                },}
-)
+		attributes = Null,
+		data = {
+			Tenant = "tenant1",
+			Environment = "e1",
+			Type = 2,
+			Data = NotNull(),
+		},
+	}
+	)
 end)
 
 Test.gql("no ci another updated feature list", function(t)
