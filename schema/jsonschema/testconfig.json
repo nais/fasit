@@ -23,12 +23,7 @@
 								},
 								"kind": {
 									"description": "Kind is the environment kind",
-									"enum": [
-										"management",
-										"tenant",
-										"onprem",
-										"legacy"
-									],
+									"enum": ["management", "tenant", "onprem", "legacy"],
 									"type": "string"
 								},
 								"naisd": {
@@ -44,9 +39,7 @@
 											"type": "integer"
 										}
 									},
-									"required": [
-										"enabled"
-									],
+									"required": ["enabled"],
 									"type": "object"
 								},
 								"name": {
@@ -58,10 +51,7 @@
 									"type": "boolean"
 								}
 							},
-							"required": [
-								"name",
-								"kind"
-							],
+							"required": ["name", "kind"],
 							"type": "object"
 						},
 						"type": "array"
@@ -71,10 +61,7 @@
 						"type": "string"
 					}
 				},
-				"required": [
-					"name",
-					"envs"
-				],
+				"required": ["name", "envs"],
 				"type": "object"
 			},
 			"type": "array"

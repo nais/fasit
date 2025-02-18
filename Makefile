@@ -2,7 +2,7 @@ LUA_FORMATTER_VERSION = 1.5.6
 BIN_DIR := $(shell pwd)/bin
 LUAFMT=$(BIN_DIR)/luafmt-$(LUA_FORMATTER_VERSION)
 
-all: generate test check build helm-lint
+all: generate fmt test check build helm-lint
 
 helm-lint:
 	helm lint --strict ./charts/fasit
