@@ -37,7 +37,7 @@ require (
 	github.com/jackc/pgconn v1.14.3
 	github.com/jackc/pgx/v5 v5.7.2
 	github.com/lib/pq v1.10.9
-	github.com/nais/tester v0.1.0-pre.9
+	github.com/nais/tester v0.1.0-pre.11
 	github.com/nsf/jsondiff v0.0.0-20230430225905-43f6cf3098c1
 	github.com/ory/dockertest/v3 v3.11.0
 	github.com/pressly/goose/v3 v3.24.1
@@ -327,5 +327,3 @@ require (
 replace github.com/GoogleCloudPlatform/k8s-config-connector/mockgcp => github.com/GoogleCloudPlatform/k8s-config-connector/mockgcp v0.0.0-20240112214631-1f3c7230e591
 
 replace github.com/hashicorp/terraform-provider-google-beta => github.com/GoogleCloudPlatform/k8s-config-connector/third_party/github.com/hashicorp/terraform-provider-google-beta v0.0.0-20240112214631-1f3c7230e591
-
-replace github.com/nais/tester => ../tester

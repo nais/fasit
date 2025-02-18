@@ -7,7 +7,7 @@ helm-lint:
 fmt:
 	go tool mvdan.cc/gofumpt -w .
 
-generate: generate-graphql generate-sql generate-feature-schema
+generate: generate-graphql generate-sql generate-feature-schema tester_spec
 
 generate-sql: sqlc-vet
 	go tool github.com/sqlc-dev/sqlc/cmd/sqlc generate
@@ -117,3 +117,9 @@ build-generate-schema:
 
 build-setup-local-env:
 	go build -o ./bin/setup_local_env ./cmd/setup_local_env/
+
+integration_test_ui:
+	go run ./cmd/tester_run --ui
+
+tester_spec:
+	go run ./cmd/tester_spec

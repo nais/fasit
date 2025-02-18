@@ -595,6 +595,8 @@ github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f h1:y5//uYreIhSUg3J
 github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f/go.mod h1:ZdcZmHo+o7JKHSa8/e818NopupXU1YMK5fe1lsApnBw=
 github.com/nais/tester v0.1.0-pre.9 h1:DoHN9I15fPUHoyWXOUIR+p9k4uiU1Eb7798Gqpwz6kY=
 github.com/nais/tester v0.1.0-pre.9/go.mod h1:GKSia4rbGxxRO9S7fPRK+/nFRxtYvqVwuviw80r38tY=
+github.com/nais/tester v0.1.0-pre.11 h1:M8bqQ8Uu19L75TfWZcloj5nhUPNIy8mcoCgxGuED39M=
+github.com/nais/tester v0.1.0-pre.11/go.mod h1:J7hMdvCK9dx2L1BMpVjgNIkNyRDEK1c46L056bzsxB8=
 github.com/ncruces/go-strftime v0.1.9 h1:bY0MQC28UADQmHmaF5dgpLmImcShSi2kHU9XLdhx/f4=
 github.com/ncruces/go-strftime v0.1.9/go.mod h1:Fwc5htZGVVkseilnfgOVb9mKy6w1naJmn9CehxcKcls=
 github.com/nsf/jsondiff v0.0.0-20230430225905-43f6cf3098c1 h1:dOYG7LS/WK00RWZc8XGgcUTlTxpp3mKhdR2Q9z9HbXM=
