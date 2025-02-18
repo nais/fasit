@@ -71,13 +71,13 @@ func tarGz(name string, w io.Writer, path string) error {
 			return fmt.Errorf("creating tar header: %w", err)
 		}
 
-		hdr.Name = filepath.Join(name, hdr.Name)
+		hdr.Name = filepath.Join(name, hdr.Name) // #nosec G305
 
 		if err := tw.WriteHeader(hdr); err != nil {
 			return fmt.Errorf("writing tar header: %w", err)
 		}
 
-		f, err := os.Open(path)
+		f, err := os.Open(path) // #nosec G304
 		if err != nil {
 			return fmt.Errorf("opening file %q: %w", path, err)
 		}
