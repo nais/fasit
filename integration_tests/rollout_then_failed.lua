@@ -13,7 +13,7 @@ Test.rest("create rollout", function(t)
 
 	t.check(201, {
 		id = NotNull(),
-		envNotAvailable = { "tenant" }
+		envNotAvailable = { "tenant" },
 	})
 end)
 
@@ -31,9 +31,9 @@ Test.gql("enable feature", function(t)
 		data = {
 			featureStateSave = {
 				id = NotNull(),
-				enabled = true
-			}
-		}
+				enabled = true,
+			},
+		},
 	}
 end)
 
@@ -59,7 +59,7 @@ Test.rest("create new rollout", function(t)
 
 	t.check(201, {
 		id = NotNull(),
-		envNotAvailable = {}
+		envNotAvailable = {},
 	})
 end)
 
@@ -78,16 +78,16 @@ Test.pubsub("new deployment instruction", function(t)
 				fasit = {
 					env = {
 						kind = "tenant",
-						name = "testing"
+						name = "testing",
 					},
 					tenant = {
-						name = "tenant23"
-					}
+						name = "tenant23",
+					},
 				},
-				gcp = "true"
+				gcp = "true",
 			},
-			Version = "0.1.1-feature"
-		}
+			Version = "0.1.1-feature",
+		},
 	})
 end)
 
@@ -98,8 +98,8 @@ Test.pubsub("naisd response", function(t)
 			Tenant      = "tenant23",
 			Environment = "testing",
 			Type        = 2,
-			Data        = NotNull()
-		}
+			Data        = NotNull(),
+		},
 	})
 end)
 
@@ -130,11 +130,11 @@ Test.gql("no ci feature list", function(t)
 					features = {
 						{
 							name = "clamav",
-							version = "0.1.0-feature"
-						}
-					}
-				}
-			}
-		}
+							version = "0.1.0-feature",
+						},
+					},
+				},
+			},
+		},
 	}
 end)

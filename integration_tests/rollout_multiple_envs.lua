@@ -15,7 +15,7 @@ Test.rest("create rollout", function(t)
 
 	t.check(201, {
 		id = NotNull(),
-		envNotAvailable = { "tenant", "management", "legacy", "onprem" }
+		envNotAvailable = { "tenant", "management", "legacy", "onprem" },
 	})
 end)
 
@@ -35,12 +35,12 @@ Test.gql("enable features", function(t)
 		{
 			data = {
 				featureStateSave = {
-					enabled = true
+					enabled = true,
 				},
 				mgmt = {
-					enabled = true
-				}
-			}
+					enabled = true,
+				},
+			},
 		})
 end)
 
@@ -72,9 +72,9 @@ Test.gql("enable reconcile of management", function(t)
 	t.check {
 		data = {
 			environmentSetReconcile = {
-				reconcile = true
-			}
-		}
+				reconcile = true,
+			},
+		},
 	}
 end)
 
