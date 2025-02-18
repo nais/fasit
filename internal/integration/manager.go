@@ -614,7 +614,7 @@ func (m *mockPublisher[T]) Publish(ctx context.Context, msg T) error {
 	if err := json.Unmarshal(b, &mp); err != nil {
 		return err
 	}
-	m.pubsub.Send(m.topic, runner.PubSubMessage{Msg: mp})
+	m.pubsub.Receive(m.topic, runner.PubSubMessage{Msg: mp})
 
 	return nil
 }
