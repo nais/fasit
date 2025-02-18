@@ -1,0 +1,104 @@
+package database
+
+import (
+	"context"
+
+	"github.com/google/uuid"
+	"github.com/nais/fasit/internal/database/gensql"
+	"github.com/nais/fasit/internal/graph/model"
+)
+
+type TenantRepo interface {
+	TenantCI(ctx context.Context) (*model.Tenant, error)
+	TenantCreate(ctx context.Context, t *model.TenantCreate) (*model.Tenant, error)
+	TenantEnvironments(ctx context.Context, onlyReconciled bool) ([]*model.TenantEnvironment, error)
+	TenantGet(ctx context.Context, id uuid.UUID) (*model.Tenant, error)
+	TenantGetByName(ctx context.Context, name string) (*model.Tenant, error)
+	TenantsGet(ctx context.Context) ([]*model.Tenant, error)
+}
+
+func tenantFromSQL(t gensql.Tenant) *model.Tenant {
+	return &model.Tenant{
+		ID:           t.ID,
+		Name:         t.Name,
+		Description:  nullStringToPtr(t.Description),
+		Created:      t.Created.Time,
+		LastModified: t.LastModified.Time,
+	}
+}
+
+func (r *repo) TenantCreate(ctx context.Context, t *model.TenantCreate) (*model.Tenant, error) {
+	tenant, err := r.querier.TenantCreate(ctx, gensql.TenantCreateParams{
+		Name:        t.Name,
+		Description: ptrToNullString(t.Description),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	r.createAudit(ctx, "created", "tenants", tenant.ID.String())
+
+	return tenantFromSQL(tenant), nil
+}
+
+func (r *repo) TenantGet(ctx context.Context, id uuid.UUID) (*model.Tenant, error) {
+	tenant, err := r.querier.TenantGet(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return tenantFromSQL(tenant), nil
+}
+
+func (r *repo) TenantGetByName(ctx context.Context, name string) (*model.Tenant, error) {
+	tenant, err := r.querier.TenantGetByName(ctx, name)
+	if err != nil {
+		return nil, err
+	}
+	return tenantFromSQL(tenant), nil
+}
+
+func (r *repo) TenantsGet(ctx context.Context) ([]*model.Tenant, error) {
+	tenants, err := r.querier.TenantsGet(ctx)
+	if err != nil {
+		return nil, err
+	}
+	tenantSlice := []*model.Tenant{}
+	for _, tenant := range tenants {
+		tenantSlice = append(tenantSlice, tenantFromSQL(tenant))
+	}
+	return tenantSlice, nil
+}
+
+func (r *repo) TenantEnvironments(ctx context.Context, onlyReconciled bool) ([]*model.TenantEnvironment, error) {
+	data, err := r.querier.TenantEnvironments(ctx, !onlyReconciled)
+	if err != nil {
+		return nil, err
+	}
+
+	var ret []*model.TenantEnvironment
+	for _, d := range data {
+		ret = append(ret, &model.TenantEnvironment{
+			Environment: model.Environment{
+				ID:           d.ID,
+				Name:         d.Name,
+				CI:           d.Ci,
+				Description:  nullStringToPtr(d.Description),
+				Created:      d.Created.Time,
+				LastModified: d.LastModified.Time,
+				Kind:         model.EnvironmentKind(d.Kind),
+			},
+			TenantName: d.TenantName,
+			TenantID:   d.TenantID,
+		})
+	}
+
+	return ret, nil
+}
+
+func (r *repo) TenantCI(ctx context.Context) (*model.Tenant, error) {
+	tenant, err := r.querier.TenantCI(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return tenantFromSQL(tenant), nil
+}

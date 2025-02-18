@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/pubsub"
-	"github.com/nais/fasit/pkg/provider/protogen"
+	"github.com/nais/fasit/internal/provider/protogen"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )

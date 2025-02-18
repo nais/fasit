@@ -1,0 +1,148 @@
+package database
+
+import (
+	"context"
+	"database/sql"
+	"encoding/json"
+	"errors"
+	"fmt"
+
+	"github.com/google/uuid"
+	"github.com/nais/fasit/internal/database/gensql"
+	"github.com/nais/fasit/internal/feature"
+	"github.com/nais/fasit/internal/graph/model"
+)
+
+type EnvironmentValueRepo interface {
+	EnvironmentValueDelete(ctx context.Context, environmentID uuid.UUID, key string) error
+	EnvironmentValueGet(ctx context.Context, environmentID uuid.UUID, key string, showSensitive bool) (*model.EnvironmentValue, error)
+	EnvironmentValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) ([]*model.EnvironmentValue, error)
+	EnvironmentValueStore(ctx context.Context, environmentID uuid.UUID, key string, value json.RawMessage, secret bool) error
+	MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) (*feature.ComputedValues, model.EnvironmentKind, error)
+
+	EnvironmentValuesAcrossEnvs(ctx context.Context, key string) ([]gensql.EnvironmentValuesAcrossEnvsRow, error)
+}
+
+func (r *repo) EnvironmentValueStore(ctx context.Context, environmentID uuid.UUID, key string, value json.RawMessage, secret bool) error {
+	err := r.querier.EnvironmentValueStore(ctx, gensql.EnvironmentValueStoreParams{
+		Envid:  environmentID,
+		Key:    key,
+		Value:  value,
+		Secret: secret,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to store environment value: %w", err)
+	}
+
+	r.createAudit(ctx, "created or updated", "environment_values", environmentID.String()+":"+key)
+
+	return nil
+}
+
+func (r *repo) EnvironmentValueGet(ctx context.Context, environmentID uuid.UUID, key string, showSensitive bool) (*model.EnvironmentValue, error) {
+	ev, err := r.querier.EnvironmentValueGet(ctx, gensql.EnvironmentValueGetParams{
+		Envid:         environmentID,
+		Key:           key,
+		Showsensitive: showSensitive,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.EnvironmentValue{
+		EnvironmentID: ev.EnvironmentID,
+		Key:           ev.Key,
+		Value:         ev.Value,
+		Secret:        ev.Secret,
+	}, nil
+}
+
+func (r *repo) EnvironmentValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) ([]*model.EnvironmentValue, error) {
+	values, err := r.querier.EnvironmentValuesForEnvironment(ctx, gensql.EnvironmentValuesForEnvironmentParams{
+		Envid:         envID,
+		Showsensitive: showSensitive,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]*model.EnvironmentValue, len(values))
+	for i, ev := range values {
+		ret[i] = &model.EnvironmentValue{
+			EnvironmentID: ev.EnvironmentID,
+			Key:           ev.Key,
+			Value:         ev.Value,
+			Secret:        ev.Secret,
+			KnownUses:     int(ev.Count),
+		}
+	}
+
+	return ret, nil
+}
+
+func (r *repo) MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) (*feature.ComputedValues, model.EnvironmentKind, error) {
+	env, err := r.querier.EnvironmentGet(ctx, envID)
+	if err != nil {
+		return nil, "", fmt.Errorf("envValuesForEnv: failed to get environment: %w", err)
+	}
+
+	tenant, err := r.TenantGet(ctx, env.TenantID)
+	if err != nil {
+		return nil, model.EnvironmentKind(env.Kind), fmt.Errorf("envValuesForEnv: failed to get tenant: %w", err)
+	}
+	mv := &feature.ComputedValues{
+		Kind: model.EnvironmentKind(env.Kind),
+		Tenant: feature.ComputedTenant{
+			Name: tenant.Name,
+		},
+	}
+
+	values, err := r.querier.MappingValuesForTenant(ctx, gensql.MappingValuesForTenantParams{
+		Tenantid:      tenant.ID,
+		Showsensitive: showSensitive,
+	})
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return mv, model.EnvironmentKind(env.Kind), nil
+		}
+		return nil, model.EnvironmentKind(env.Kind), fmt.Errorf("envValuesForEnv: failed to get environment values: %w", err)
+	}
+
+	for _, env := range values {
+		val := map[string]any{}
+		if err := json.Unmarshal(env.Values, &val); err != nil {
+			return nil, model.EnvironmentKind(env.Kind), fmt.Errorf("envValuesForEnv: failed to unmarshal values for %q: %w", env.Name, err)
+		}
+		val["name"] = env.Name
+		val["kind"] = string(env.Kind)
+
+		if env.ID == envID {
+			mv.Env = val
+		}
+		if env.Kind == gensql.EnvironmentKind(model.EnvironmentKindManagement) {
+			mv.Management = val
+		} else {
+			mv.Envs = append(mv.Envs, val)
+		}
+	}
+
+	return mv, model.EnvironmentKind(env.Kind), nil
+}
+
+func (r *repo) EnvironmentValuesAcrossEnvs(ctx context.Context, key string) ([]gensql.EnvironmentValuesAcrossEnvsRow, error) {
+	return r.querier.EnvironmentValuesAcrossEnvs(ctx, key)
+}
+
+func (r *repo) EnvironmentValueDelete(ctx context.Context, environmentID uuid.UUID, key string) error {
+	err := r.querier.EnvironmentValueDelete(ctx, gensql.EnvironmentValueDeleteParams{
+		Envid: environmentID,
+		Key:   key,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to delete environment value: %w", err)
+	}
+
+	r.createAudit(ctx, "deleted", "environment_values", environmentID.String()+":"+key)
+
+	return nil
+}

@@ -77,7 +77,7 @@ generate-mocks:
 	go tool github.com/vektra/mockery/v2
 
 generate-proto:
-	mkdir -p pkg/provider/protogen
+	mkdir -p internal/provider/protogen
 	protoc \
 		-I schema/protobuf/ \
 		./schema/protobuf/*.proto \

@@ -7,10 +7,10 @@ filename: "{{.InterfaceNameSnake}}.go"
 mockname: "{{.InterfaceName}}"
 outpkg: mocks
 packages:
-  github.com/nais/fasit/pkg/database:
+  github.com/nais/fasit/internal/database:
     interfaces:
       Repo:
       Querier:
-  github.com/nais/fasit/pkg/upgrader:
+  github.com/nais/fasit/internal/upgrader:
     interfaces:
       Upgrader:

@@ -3,7 +3,7 @@ package local
 import (
 	"math/rand/v2"
 
-	"github.com/nais/fasit/pkg/naisd"
+	"github.com/nais/fasit/internal/naisd"
 	"helm.sh/helm/v3/pkg/chart"
 	"helm.sh/helm/v3/pkg/release"
 	htime "helm.sh/helm/v3/pkg/time"

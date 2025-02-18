@@ -4,7 +4,7 @@ schema:
 
 # Where should the generated server code go?
 exec:
-  filename: pkg/graph/graphgen/graphgen.go
+  filename: internal/graph/graphgen/graphgen.go
   package: graphgen
 
 # Uncomment to enable federation
@@ -14,13 +14,13 @@ exec:
 
 # Where should any generated models go?
 model:
-  filename: pkg/graph/model/models_gen.go
+  filename: internal/graph/model/models_gen.go
   package: model
 
 # Where should the resolver implementations go?
 resolver:
   layout: follow-schema
-  dir: pkg/graph
+  dir: internal/graph
   package: graph
 
 # Optional: turn on to exclude the gqlgen version in the generated file notice. No effect if `omit_gqlgen_file_notice` is true.
@@ -38,7 +38,7 @@ omit_gqlgen_version_in_file_notice: true
 # gqlgen will search for any type names in the schema in these go packages
 # if they match it will use them, otherwise it will generate them.
 autobind:
-  - "github.com/nais/fasit/pkg/graph/model"
+  - "github.com/nais/fasit/internal/graph/model"
 
 # This section declares type mapping between the GraphQL and go type systems
 #
@@ -48,11 +48,11 @@ autobind:
 models:
   ID:
     model:
-      - github.com/nais/fasit/pkg/graph/scalars.UUID
+      - github.com/nais/fasit/internal/graph/scalars.UUID
       - github.com/99designs/gqlgen/graphql.String
   RawMessage:
     model:
-      - github.com/nais/fasit/pkg/graph/scalars.RawMessage
+      - github.com/nais/fasit/internal/graph/scalars.RawMessage
   Int:
     model:
       - github.com/99designs/gqlgen/graphql.Int

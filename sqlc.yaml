@@ -1,12 +1,12 @@
 version: "2"
 sql:
   - engine: postgresql
-    schema: "pkg/database/migrations"
-    queries: "pkg/database/queries"
+    schema: "internal/database/migrations"
+    queries: "internal/database/queries"
     gen:
       go:
         package: gensql
-        out: "pkg/database/gensql"
+        out: "internal/database/gensql"
         sql_package: pgx/v5
         emit_interface: true
         #emit_result_struct_pointers: true
