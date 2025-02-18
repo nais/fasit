@@ -4,6 +4,9 @@ helm-lint:
 	helm lint --strict ./charts/fasit
 	helm lint --strict ./charts/naisd
 
+fmt:
+	go tool mvdan.cc/gofumpt -w .
+
 generate: generate-graphql generate-sql generate-feature-schema
 
 generate-sql: sqlc-vet
@@ -62,7 +65,7 @@ local-naisd-management-failing:
 	--mock-failing=true
 
 test:
-	go test -tags integration_test -cover ./...
+	go test -race -tags integration_test -cover ./...
 
 unit-test:
 	go test -cover ./...

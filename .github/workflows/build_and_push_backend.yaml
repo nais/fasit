@@ -1,7 +1,8 @@
 name: Build and deploy fasit backend
 on:
   push:
-    branches: [main]
+    branches:
+      - main
     paths-ignore:
       - "charts/naisd/**"
       - ".github/workflows/*_chart.yaml"
@@ -12,51 +13,80 @@ on:
       - "schema/jsonschema/**"
       - "cmd/generate_schema/**"
   pull_request:
-    types: [opened, reopened, synchronize, edited]
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - edited
 
 env:
-  RUNNER_IMG: "gcr.io/distroless/static-debian11:nonroot"
+  RUNNER_IMG: "gcr.io/distroless/base:nonroot"
   BASEIMG_IDENTITY: "keyless@distroless.iam.gserviceaccount.com"
   BASEIMG_ISSUER: "https://accounts.google.com"
+
+permissions:
+  contents: "read"
+  id-token: "write"
 
 jobs:
   tests:
     outputs:
       go_version: ${{ steps.go_version.outputs.GO_VERSION }}
-    runs-on: ubuntu-latest-4-cores
+    runs-on: ubuntu-latest-16-cores
     steps:
       - uses: actions/checkout@v4
       - name: Find Go version
         id: go_version
         run: |
           echo "GO_VERSION=$(grep golang .tool-versions | awk '{print $2}')" >> $GITHUB_OUTPUT
-      - uses: actions/setup-go@v5
+      - uses: asdf-vm/actions/setup@v3
+      - id: asdf-cache
+        uses: actions/cache@v4
         with:
-          go-version: ${{ steps.go_version.outputs.GO_VERSION }}
-      - run: go test -cover -tags integration_test ./...
-      - name: Vulnerability check
+          path: ~/.asdf/
+          key: ${{ runner.os }}-asdf-${{ hashFiles('**/.tool-versions') }}
+      - uses: asdf-vm/actions/install@v3
+        if: steps.asdf-cache.outputs.cache-hit != 'true'
+        with:
+          before_install: |
+            rm ~/.asdf/.tool-versions
+            asdf install golang latest
+            asdf global golang latest
+      - name: Find go cache dir
+        id: go-cache
         run: |
-          go install golang.org/x/vuln/cmd/govulncheck@latest
-          govulncheck ./...
+          go version
+          # Clear cache dirs to avoid error when restoring
+          go clean -cache -modcache
+          echo "gocache=$(go env GOCACHE)" >> $GITHUB_OUTPUT
+          echo "gomodcache=$(go env GOMODCACHE)" >> $GITHUB_OUTPUT
+      - name: Cache go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ steps.go-cache.outputs.gocache }}
+            ${{ steps.go-cache.outputs.gomodcache }}
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+      - run: make test
+      - run: make check
+      - run: make helm-lint
+      - name: Check code format and run code generators
+        run: |
+          make fmt
+          make generate
+          echo "checking for diff after running formatters, if this fails, run 'make fmt'"
+          git diff --exit-code --name-only
 
   build_and_push_fasit:
-    if: github.ref == 'refs/heads/main'
-    needs: [tests]
-    permissions:
-      contents: "read"
-      id-token: "write"
-    runs-on: ubuntu-latest-4-cores
+    needs:
+      - tests
+    runs-on: ubuntu-latest-16-cores
     outputs:
       version: ${{ steps.build-push-sign.outputs.version }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Install cosign
-        uses: sigstore/cosign-installer@v3
-        with:
-          cosign-release: "v2.2.1"
-      - name: Verify runner image
-        run: cosign verify --certificate-identity ${{ env.BASEIMG_IDENTITY }} --certificate-oidc-issuer ${{ env.BASEIMG_ISSUER }} ${{ env.RUNNER_IMG }}
+      - uses: actions/checkout@v4
+      - uses: sigstore/cosign-installer@v3
+      - run: cosign verify --certificate-identity ${{ env.BASEIMG_IDENTITY }} --certificate-oidc-issuer ${{ env.BASEIMG_ISSUER }} ${{ env.RUNNER_IMG }}
       - uses: nais/platform-build-push-sign@main
         id: build-push-sign
         with:
@@ -69,12 +99,11 @@ jobs:
           push: ${{ github.actor != 'dependabot[bot]' }}
 
   deploy_fasit:
-    runs-on: ["fasit-deploy"]
-    needs: ["build_and_push_fasit"]
     if: github.ref == 'refs/heads/main'
-    permissions:
-      contents: "read"
-      id-token: "write"
+    name: Deploy fasit on push to main
+    runs-on: fasit-deploy
+    needs:
+      - build_and_push_fasit
     steps:
       - name: Checkout fasit
         uses: actions/checkout@v4
