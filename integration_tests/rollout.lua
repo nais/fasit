@@ -12,7 +12,7 @@ Test.rest("create rollout v1", function(t)
 	]])
 
 	t.check(201, {
-		id = Save("rollout_id"),
+		id = NotNull(),
 		envNotAvailable = {
 			"tenant",
 		},
@@ -58,6 +58,7 @@ Test.sql("verify tenant env", function(t)
 			JOIN environments e ON e.tenant_id = t.id
 		ORDER BY
 			e.name
+		;
 	]]
 
 	t.check(
@@ -87,7 +88,11 @@ end)
 Test.gql("enable feature", function(t)
 	t.query(string.format([[
 		mutation {
-  			featureStateSave(envID: "%s", enabled: true, feature: "clamav") {
+  			featureStateSave(
+  				envID: "%s"
+  				enabled: true
+  				feature: "clamav"
+			) {
     			id
     			enabled
   			}
@@ -112,8 +117,8 @@ Test.pubsub("deploy instruction", function(t)
 	t.check("naisd-tenant1-e1", {
 		attributes = Null,
 		data = {
-			ConfigHash = Save("hash"),
-			ID = Save("diid"),
+			ConfigHash = NotNull(),
+			ID = NotNull(),
 			Chart = "oci://clamav",
 			Name = "clamav",
 			Timeout = 0,
@@ -143,20 +148,25 @@ Test.pubsub("naisd response", function(t)
 			Type = 2,
 			Data = NotNull(),
 		},
-	}
-	)
+	})
 end)
 
 Test.sql("verify rollout success", function(t)
 	t.query [[
-		SELECT count(1)::float AS count FROM rollouts WHERE status = 'deployed';
+		SELECT
+			COUNT(1)::float AS count
+		FROM
+			rollouts
+		WHERE
+			status = 'deployed'
+		;
 	]]
+
 	t.check(
 		{
 			{
 				count = 1,
 			},
-
 		}
 	)
 end)
@@ -164,13 +174,17 @@ end)
 Test.gql("no ci updated feature list", function(t)
 	t.query [[
 		{
-	tenant(slug: "tenant1") {
-		environment(slug: "nonci") {
-			features {name, version}
+			tenant(slug: "tenant1") {
+				environment(slug: "nonci") {
+					features {
+						name
+						version
+					}
+				}
+			}
 		}
-	}
-}
 	]]
+
 	t.check(
 		{
 			data = {
@@ -191,14 +205,14 @@ end)
 
 Test.rest("create new rollout", function(t)
 	t.send("POST", "/github/rollout", [[
-	{
-		"chart": "oci://clamav",
-		"version": "0.1.1-feature"
-	}
-]])
+		{
+			"chart": "oci://clamav",
+			"version": "0.1.1-feature"
+		}
+	]])
 
 	t.check(201, {
-		id = Save("rollout_id"),
+		id = NotNull(),
 		envNotAvailable = {},
 	})
 end)
@@ -209,7 +223,7 @@ Test.pubsub("new deploy instruction", function(t)
 	t.check("naisd-tenant1-e1", {
 		attributes = Null,
 		data = {
-			ConfigHash = Save("new_hash"),
+			ConfigHash = NotNull(),
 			ID = NotNull(),
 			Chart = "oci://clamav",
 			Name = "clamav",
@@ -247,12 +261,15 @@ end)
 Test.gql("no ci another updated feature list", function(t)
 	t.query [[
 		{
-	tenant(slug: "tenant1") {
-		environment(slug: "nonci") {
-			features {name, version}
+			tenant(slug: "tenant1") {
+				environment(slug: "nonci") {
+					features {
+						name
+						version
+					}
+				}
+			}
 		}
-	}
-}
 	]]
 	t.check(
 		{
