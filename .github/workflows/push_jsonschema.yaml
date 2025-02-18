@@ -1,4 +1,4 @@
-name: Push features to GCS
+name: Push JSON schema to GCS
 on:
   push:
     branches:
@@ -28,6 +28,6 @@ jobs:
           token_format: "access_token"
       - name: "Set up Cloud SDK"
         uses: google-github-actions/setup-gcloud@v2
-      - name: Sync jsonschema to GCS
+      - name: Push JSON schema to GCS
         run: |-
           gsutil cp schema/jsonschema/feature.json gs://${{ env.BUCKET }}
