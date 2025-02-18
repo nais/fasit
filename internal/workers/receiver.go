@@ -49,12 +49,12 @@ type ReceiverStore interface {
 type Receiver struct {
 	manager      ReceiverClient
 	repo         ReceiverStore
-	log          *logrus.Entry
+	log          logrus.FieldLogger
 	slack        slack.SlackClient
 	slackChannel string
 }
 
-func NewReceiver(mgr ReceiverClient, repo ReceiverStore, log *logrus.Entry, slackClient slack.SlackClient, slackChannel string) *Receiver {
+func NewReceiver(mgr ReceiverClient, repo ReceiverStore, log logrus.FieldLogger, slackClient slack.SlackClient, slackChannel string) *Receiver {
 	receiver := &Receiver{
 		manager:      mgr,
 		repo:         repo,
