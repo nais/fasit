@@ -84,10 +84,13 @@ func TestRunner(ctx context.Context, skipSetup bool) (*testmanager.Manager, erro
 			}
 
 			if ci {
-				pool.AcquireFunc(ctx, func(c *pgxpool.Conn) error {
+				err := pool.AcquireFunc(ctx, func(c *pgxpool.Conn) error {
 					_, err := c.Exec(ctx, `UPDATE tenants SET ci = true WHERE id = $1`, tenant.ID)
 					return err
 				})
+				if err != nil {
+					L.RaiseError("failed to make tenant ci: %s", err)
+				}
 			}
 
 			L.Push(lua.LString(tenant.ID.String()))
@@ -161,16 +164,22 @@ func TestRunner(ctx context.Context, skipSetup bool) (*testmanager.Manager, erro
 			}
 
 			if ci {
-				pool.AcquireFunc(ctx, func(c *pgxpool.Conn) error {
+				err := pool.AcquireFunc(ctx, func(c *pgxpool.Conn) error {
 					_, err := c.Exec(ctx, `UPDATE environments SET ci = true WHERE id = $1`, env.ID)
 					return err
 				})
+				if err != nil {
+					L.RaiseError("failed to make environment ci: %s", err)
+				}
 			}
 
 			if !unhealthy {
-				repo.HealthStatusCreateOrUpdate(ctx, env.ID, &message.Health{
+				err := repo.HealthStatusCreateOrUpdate(ctx, env.ID, &message.Health{
 					ReportedAt: time.Now(),
 				})
+				if err != nil {
+					L.RaiseError("failed to create health status: %s", err)
+				}
 			}
 
 			naisd := L.Context().Value(naisdKey).(*naisdRunner)
@@ -345,7 +354,9 @@ func startPostgresql(ctx context.Context) (*postgres.PostgresContainer, string, 
 	}
 
 	pool.Close()
-	close.Close()
+	if err := close.Close(); err != nil {
+		return nil, "", fmt.Errorf("failed to close pool: %w", err)
+	}
 
 	if err := container.Snapshot(ctx, postgres.WithSnapshotName("migrated")); err != nil {
 		return nil, "", fmt.Errorf("failed to snapshot: %w", err)
@@ -365,7 +376,9 @@ func newDB(ctx context.Context, container *postgres.PostgresContainer, connStr s
 
 	cleanup := func() {
 		pool.Close()
-		close.Close()
+		if err := close.Close(); err != nil {
+			log.Fatalf("failed to close pool: %s", err)
+		}
 		if err := container.Restore(ctx, postgres.WithSnapshotName("migrated")); err != nil {
 			log.Fatalf("failed to restore: %s", err)
 		}
