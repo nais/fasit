@@ -36,7 +36,6 @@ import (
 	lua "github.com/yuin/gopher-lua"
 	"go.opentelemetry.io/otel/metric/noop"
 	"k8s.io/client-go/rest"
-	"k8s.io/utils/ptr"
 )
 
 type ctxKey int
@@ -183,7 +182,7 @@ func TestRunner(ctx context.Context, skipSetup bool) (*testmanager.Manager, erro
 			}
 
 			naisd := L.Context().Value(naisdKey).(*naisdRunner)
-			if err := naisd.configureEnv(ctx, repo, tenant.Name, env.Name); err != nil {
+			if err := naisd.configureEnv(ctx, tenant.Name, env.Name); err != nil {
 				L.RaiseError("failed to configure environment: %s", err)
 			}
 
@@ -203,6 +202,55 @@ func TestRunner(ctx context.Context, skipSetup bool) (*testmanager.Manager, erro
 			}
 
 			time.Sleep(100 * time.Millisecond)
+
+			return 0
+		},
+	})
+
+	mgr.AddHelper(&spec.Function{
+		Name: "NaisdEnvironmentFailing",
+		Doc:  "Fail an environment in naisd",
+		Args: []spec.Argument{
+			{
+				Name: "env_id",
+				Type: []spec.ArgumentType{spec.ArgumentTypeString},
+				Doc:  "ID of the environment",
+			},
+			{
+				Name: "failing?",
+				Type: []spec.ArgumentType{spec.ArgumentTypeBoolean},
+				Doc:  "Whether the environment should be failing, default is true",
+			},
+		},
+		Func: func(L *lua.LState) int {
+			envIDStr := L.CheckString(1)
+			failing := L.OptBool(2, true)
+
+			pool := L.Context().Value(poolKey).(*pgxpool.Pool)
+			repo := database.New(pool, logrus.New())
+
+			envID, err := uuid.Parse(envIDStr)
+			if err != nil {
+				L.RaiseError("failed to parse environment ID: %s", err)
+			}
+
+			env, err := repo.EnvironmentGet(ctx, envID)
+			if err != nil {
+				L.RaiseError("failed to get environment: %s", err)
+			}
+
+			tenant, err := repo.TenantGet(ctx, env.TenantID)
+			if err != nil {
+				L.RaiseError("failed to get tenant: %s", err)
+			}
+
+			naisd := L.Context().Value(naisdKey).(*naisdRunner)
+			executor, ok := naisd.executors[tenant.Name+"-"+env.Name]
+			if !ok {
+				L.RaiseError("no executor for environment")
+			}
+
+			executor.Fail = failing
 
 			return 0
 		},
@@ -249,7 +297,7 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 		}
 
 		db := database.New(pool, log)
-		naisdRunner, close, err := newNaisd(ctx, db)
+		naisdRunner, close, err := newNaisd()
 		if err != nil {
 			done()
 			return ctx, nil, nil, err
@@ -407,6 +455,8 @@ type naisdRunner struct {
 	reconcilerPublishers map[string]workers.Publisher
 
 	statusCh chan pubsubMockMsg
+
+	executors map[string]*naisd.MockExecutor
 }
 
 type statusReceiver struct {
@@ -431,9 +481,10 @@ func (s *statusReceiver) Receive(ctx context.Context, f func(ctx context.Context
 	}
 }
 
-func newNaisd(ctx context.Context, db database.Repo) (*naisdRunner, func(), error) {
+func newNaisd() (*naisdRunner, func(), error) {
 	naisdRunner := &naisdRunner{
-		statusCh: make(chan pubsubMockMsg),
+		statusCh:  make(chan pubsubMockMsg),
+		executors: map[string]*naisd.MockExecutor{},
 	}
 	naisdRunner.PubSub = runner.NewPubSub(naisdRunner.doPublish)
 	naisdRunner.registerTopic("status", naisdRunner.statusCh)
@@ -442,14 +493,6 @@ func newNaisd(ctx context.Context, db database.Repo) (*naisdRunner, func(), erro
 }
 
 func (n *naisdRunner) start(ctx context.Context, db database.Repo) error {
-	// for _, t := range config.Tenants {
-	// 	for _, env := range t.Envs {
-	// 		if err := n.configureEnv(ctx, config, db, t, env); err != nil {
-	// 			return err
-	// 		}
-	// 	}
-	// }
-
 	log := logrus.New()
 	if testing.Verbose() {
 		log.Out = os.Stdout
@@ -463,19 +506,20 @@ func (n *naisdRunner) start(ctx context.Context, db database.Repo) error {
 	return nil
 }
 
-func (n *naisdRunner) configureEnv(ctx context.Context, db database.Repo, tenant, env string) error {
-	ch, mgr, err := newNaisdForEnv(ctx.Done(), tenant, env, n, n.statusCh)
+func (n *naisdRunner) configureEnv(ctx context.Context, tenant, env string) error {
+	mgr, executor, err := newNaisdForEnv(ctx.Done(), tenant, env, n, n.statusCh)
 	if err != nil {
 		return err
 	}
-	_ = ch
 
 	go mgr.Run(ctx)
+
+	n.executors[tenant+"-"+env] = executor
 
 	return nil
 }
 
-func newNaisdForEnv(done <-chan struct{}, tenant, env string, naisdRunner *naisdRunner, statusCh chan pubsubMockMsg) (chan pubsubMockMsg, *naisd.DeployManager, error) {
+func newNaisdForEnv(done <-chan struct{}, tenant, env string, naisdRunner *naisdRunner, statusCh chan pubsubMockMsg) (*naisd.DeployManager, *naisd.MockExecutor, error) {
 	reconCh := make(chan pubsubMockMsg)
 	reconPublisher := &mockPublisher[message.DeployInstruction]{
 		topic:    "naisd-" + tenant + "-" + env,
@@ -503,19 +547,20 @@ func newNaisdForEnv(done <-chan struct{}, tenant, env string, naisdRunner *naisd
 	logr.Out = os.Stdout
 	logr.Out = io.Discard
 
+	executor := &naisd.MockExecutor{Logger: logrus.NewEntry(logr), Timeout: 1 * time.Millisecond}
 	mgr, err := naisd.NewDeployManager(
 		deploySubscriber,
 		statusPublisher,
 		tenant,
 		env,
-		&naisd.MockExecutor{Logger: logrus.NewEntry(logr), Timeout: 1 * time.Millisecond, NumSuccessful: ptr.To(100)},
+		executor,
 		nil,
 		&rest.Config{},
 		"",
 		"",
 		logrus.NewEntry(logr),
 	)
-	return reconCh, mgr, err
+	return mgr, executor, err
 }
 
 func (n *naisdRunner) registerReconcilerPublisher(name string, pub workers.Publisher) {

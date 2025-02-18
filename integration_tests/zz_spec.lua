@@ -181,3 +181,10 @@ end
 function Helper.Reconcile()
 	print("Reconcile")
 end
+
+--- Fail an environment in naisd
+---@param env_id string
+---@param failing? boolean
+function Helper.NaisdEnvironmentFailing(env_id, failing)
+	print("NaisdEnvironmentFailing")
+end
