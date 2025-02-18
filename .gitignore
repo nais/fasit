@@ -6,3 +6,4 @@ charts/fasit.yaml
 .env
 bin/
 .direnv
+flake.*
