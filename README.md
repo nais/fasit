@@ -41,14 +41,20 @@ You will also need to update `test-partner` `dev` to be a CI environment.
 
 ## Testing
 
-Run all tests in the project with `make integration-test`.
+Run all tests in the project with `make test`.
 
 ### Integration tests
 
-This package contains a custom integration framework that let's you test
-the entire system using a folder with test files.
+We are using [tester](https://github.com/nais/tester) for integration tests.
+These tests are written in Lua and can be found in the `integration_tests` directory.
 
-Read more about the integration test framework in [`pkg/integration_test/README.md`](./pkg/integration_test/README.md).
+A spec file is generated to support auto-completion using the Lua language server.
+
+When running `make test` the integration tests will be run as part of the test suite.
+
+To run the integration tests in watch mode, run `make integration_test_ui`.
+This will start a web server on `localhost:9876` where you can see the test results.
+They will be re-run every time you save a `.lua` file.
 
 # Releasing
 
