@@ -1,5 +1,0 @@
-SELECT status FROM rollouts WHERE id = '{{ .rolloutv2_id }}';
-
-RETURNS
-
-[{"status":"deployed"}]

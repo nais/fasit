@@ -7,16 +7,10 @@ import (
 
 	"github.com/invopop/jsonschema"
 	"github.com/nais/fasit/internal/graph/model"
-	integration "github.com/nais/fasit/internal/integration_test"
 )
 
 func main() {
 	err := genSchema("./schema/jsonschema/feature.json", model.FeatureYAML{}, "github.com/nais/fasit", "./internal/graph/model/")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = genSchema("./schema/jsonschema/testconfig.json", integration.Config{}, "github.com/nais/fasit", "./internal/integration_test/")
 	if err != nil {
 		log.Fatal(err)
 	}

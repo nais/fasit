@@ -1,8 +1,0 @@
--- type: row
-SELECT status FROM deploy_instructions WHERE id = '{{ .mgmt_di }}';
-
-RETURNS
-
-{
-  "status": "deployed"
-}

@@ -1,5 +1,0 @@
-SELECT count(1)::float AS count FROM deploy_instructions WHERE status = 'deployed';
-
-RETURNS
-
-[{"count": 1}]
