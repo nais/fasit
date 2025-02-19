@@ -1,5 +1,0 @@
-SELECT count(1)::float AS count FROM rollouts WHERE status = 'deployed';
-
-RETURNS
-
-[{"count": 0}]

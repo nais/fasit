@@ -11,11 +11,12 @@ import (
 )
 
 const clusterUpgradesCreate = `-- name: ClusterUpgradesCreate :one
-INSERT INTO cluster_upgrades
-("tenant_id", "environment_id", "version")
+INSERT INTO
+	cluster_upgrades ("tenant_id", "environment_id", "version")
 VALUES
-($1, $2, $3)
-RETURNING id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id
+	($1, $2, $3)
+RETURNING
+	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id
 `
 
 type ClusterUpgradesCreateParams struct {
@@ -42,11 +43,16 @@ func (q *Queries) ClusterUpgradesCreate(ctx context.Context, arg ClusterUpgrades
 }
 
 const clusterUpgradesGet = `-- name: ClusterUpgradesGet :many
-SELECT id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id FROM cluster_upgrades
-WHERE tenant_id = $1
-AND environment_id = $2
-AND status != 'DONE'
-ORDER BY last_modified DESC
+SELECT
+	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id
+FROM
+	cluster_upgrades
+WHERE
+	tenant_id = $1
+	AND environment_id = $2
+	AND status != 'DONE'
+ORDER BY
+	last_modified DESC
 `
 
 type ClusterUpgradesGetParams struct {
@@ -85,8 +91,12 @@ func (q *Queries) ClusterUpgradesGet(ctx context.Context, arg ClusterUpgradesGet
 }
 
 const clusterUpgradesGetByID = `-- name: ClusterUpgradesGetByID :one
-SELECT id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id FROM cluster_upgrades
-WHERE id = $1
+SELECT
+	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id
+FROM
+	cluster_upgrades
+WHERE
+	id = $1
 `
 
 func (q *Queries) ClusterUpgradesGetByID(ctx context.Context, id uuid.UUID) (ClusterUpgrade, error) {
@@ -107,10 +117,15 @@ func (q *Queries) ClusterUpgradesGetByID(ctx context.Context, id uuid.UUID) (Clu
 }
 
 const clusterUpgradesHistoryGetByEnvironmentID = `-- name: ClusterUpgradesHistoryGetByEnvironmentID :many
-SELECT id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id FROM cluster_upgrades
-WHERE tenant_id = $1 AND
-environment_id = $2
-ORDER BY last_modified DESC
+SELECT
+	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id
+FROM
+	cluster_upgrades
+WHERE
+	tenant_id = $1
+	AND environment_id = $2
+ORDER BY
+	last_modified DESC
 `
 
 type ClusterUpgradesHistoryGetByEnvironmentIDParams struct {
@@ -150,10 +165,13 @@ func (q *Queries) ClusterUpgradesHistoryGetByEnvironmentID(ctx context.Context, 
 
 const clusterUpgradesSetSlackMessage = `-- name: ClusterUpgradesSetSlackMessage :one
 UPDATE cluster_upgrades
-SET "slack_message_timestamp" = $1,
-"slack_channel_id" = $2
-WHERE "id" = $3
-RETURNING id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id
+SET
+	"slack_message_timestamp" = $1,
+	"slack_channel_id" = $2
+WHERE
+	"id" = $3
+RETURNING
+	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id
 `
 
 type ClusterUpgradesSetSlackMessageParams struct {
@@ -181,11 +199,14 @@ func (q *Queries) ClusterUpgradesSetSlackMessage(ctx context.Context, arg Cluste
 
 const clusterUpgradesUpdateStatus = `-- name: ClusterUpgradesUpdateStatus :one
 UPDATE cluster_upgrades
-SET "status" = $1
-WHERE "tenant_id" = $2
-AND "environment_id" = $3
-AND "version" = $4
-RETURNING id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id
+SET
+	"status" = $1
+WHERE
+	"tenant_id" = $2
+	AND "environment_id" = $3
+	AND "version" = $4
+RETURNING
+	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id
 `
 
 type ClusterUpgradesUpdateStatusParams struct {

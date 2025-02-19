@@ -2362,476 +2362,464 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 
 var sources = []*ast.Source{
 	{Name: "../../../schema/audit.graphqls", Input: `type AuditLog {
-  actor: String!
-  description: String!
-  objectType: String!
-  objectId: String!
-  createdAt: Time!
+	actor: String!
+	description: String!
+	objectType: String!
+	objectId: String!
+	createdAt: Time!
 }
 `, BuiltIn: false},
 	{Name: "../../../schema/configuration.graphqls", Input: `enum ConfigType {
-  STRING
-  INT
-  BOOL
-  STRING_ARRAY
+	STRING
+	INT
+	BOOL
+	STRING_ARRAY
 }
 
 type ComputedValue {
-  value: Value!
-  content: RawMessage
+	value: Value!
+	content: RawMessage
 }
 
 """
 Configurations contains configuration and computed values for one feature
 """
 type Configurations {
-  configuration: [Configuration!]!
-  computed: [ComputedValue!]!
+	configuration: [Configuration!]!
+	computed: [ComputedValue!]!
 }
 
 enum ConfigSource {
-  GLOBAL
-  ENV
-  HELM
-  UNKNOWN
+	GLOBAL
+	ENV
+	HELM
+	UNKNOWN
 }
 
 type Configuration {
-  id: ID!
-  value: Value!
-  content: RawMessage
-  created: Time!
-  source: ConfigSource!
+	id: ID!
+	value: Value!
+	content: RawMessage
+	created: Time!
+	source: ConfigSource!
 }
 
 input NewConfiguration {
-  environmentID: ID
-  feature: String!
-  description: String
-  key: String!
-  value: RawMessage!
+	environmentID: ID
+	feature: String!
+	description: String
+	key: String!
+	value: RawMessage!
 }
 
 input UpdateConfiguration {
-  description: String
-  value: RawMessage!
+	description: String
+	value: RawMessage!
 }
 
 extend type Query {
-  configuration(feature: String!, envID: ID): Configurations!
-  """
-  Returns the raw helm values for a feature. Requires the feature name, and either the environment ID or the environment and tenant name.
-  """
-  helmValues(
-    feature: String!
-    envID: ID
-    env: String
-    tenant: String
-  ): RawMessage!
+	configuration(feature: String!, envID: ID): Configurations!
+	"""
+	Returns the raw helm values for a feature. Requires the feature name, and either the environment ID or the environment and tenant name.
+	"""
+	helmValues(feature: String!, envID: ID, env: String, tenant: String): RawMessage!
 }
 
 extend type Mutation {
-  configurationCreate(configuration: NewConfiguration!): Configuration!
-  configurationUpdate(
-    id: ID!
-    configuration: UpdateConfiguration!
-  ): Configuration!
-  configurationDelete(id: ID!): Boolean!
+	configurationCreate(configuration: NewConfiguration!): Configuration!
+	configurationUpdate(id: ID!, configuration: UpdateConfiguration!): Configuration!
+	configurationDelete(id: ID!): Boolean!
 }
 `, BuiltIn: false},
 	{Name: "../../../schema/cost.graphqls", Input: `input CostFilter {
-  """
-  Start date for costs
-  Defaults to 7 days ago
-  """
-  startDate: Time
+	"""
+	Start date for costs
+	Defaults to 7 days ago
+	"""
+	startDate: Time
 
-  """
-  End date for costs
-  Defaults to today
-  """
-  endDate: Time
+	"""
+	End date for costs
+	Defaults to today
+	"""
+	endDate: Time
 }
 
 type Cost {
-  from: Time!
-  to: Time!
-  series: [CostSeries!]!
+	from: Time!
+	to: Time!
+	series: [CostSeries!]!
 }
 
 type CostSeries {
-  tenant: Tenant!
-  data: [Float!]!
+	tenant: Tenant!
+	data: [Float!]!
 }
 
 type TenantCosts {
-  from: Time!
-  to: Time!
-  series: [EnvSeries!]!
+	from: Time!
+	to: Time!
+	series: [EnvSeries!]!
 }
 
 type EnvSeries {
-  environment: Environment!
-  data: [Float!]!
+	environment: Environment!
+	data: [Float!]!
 }
 
 extend type Query {
-  costForTenant(tenantID: ID!, filter: CostFilter): TenantCosts!
-  cost(filter: CostFilter): Cost!
+	costForTenant(tenantID: ID!, filter: CostFilter): TenantCosts!
+	cost(filter: CostFilter): Cost!
 }
 `, BuiltIn: false},
 	{Name: "../../../schema/directives.graphqls", Input: `directive @goField(
-  forceResolver: Boolean
-  name: String
+	forceResolver: Boolean
+	name: String
 ) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
 `, BuiltIn: false},
 	{Name: "../../../schema/environment.graphqls", Input: `enum EnvironmentKind {
-  TENANT
-  MANAGEMENT
-  ONPREM
-  LEGACY
+	TENANT
+	MANAGEMENT
+	ONPREM
+	LEGACY
 }
 
 enum UpgradeStatus {
-  CREATED
-  MASTER_UPGRADE
-  NODE_UPGRADE
-  FAILED
-  DONE
+	CREATED
+	MASTER_UPGRADE
+	NODE_UPGRADE
+	FAILED
+	DONE
 }
 
 type ClusterUpgradeStatus {
-  id: ID!
-  upgradeStatus: UpgradeStatus!
-  version: String!
-  lastModified: Time!
-  startTime: Time!
-  operations: [EnvironmentOperation!]!
-  environment: Environment!
+	id: ID!
+	upgradeStatus: UpgradeStatus!
+	version: String!
+	lastModified: Time!
+	startTime: Time!
+	operations: [EnvironmentOperation!]!
+	environment: Environment!
 }
 
 type Health {
-  reportedAt: Time!
+	reportedAt: Time!
 }
 
 type Release {
-  name: String!
-  feature: Feature
-  version: String!
-  status: String!
-  revision: Int!
-  lastDeployed: Time!
-  created: Time!
-  lastModified: Time!
+	name: String!
+	feature: Feature
+	version: String!
+	status: String!
+	revision: Int!
+	lastDeployed: Time!
+	created: Time!
+	lastModified: Time!
 }
 
 type Environment {
-  id: ID!
-  name: String!
-  description: String
-  featureStates: [FeatureState!]!
-  created: Time!
-  lastModified: Time!
-  kind: EnvironmentKind!
-  gcpProjectID: String
-  health: Health!
-  releases: [Release!]!
-  nodes: [KubernetesNode!]!
-  values: [EnvironmentValue!]!
-  tenant: Tenant!
-  warnings: [Warning!]!
-  auditLog(featureName: String): [AuditLog!]!
-  features: [Feature!]!
-  feature(name: String!): Feature!
-  reconcile: Boolean!
-  autoUpgrade: Boolean!
-  clusterUpgradeHistory: [ClusterUpgradeStatus!]!
-  clusterUpgradeStatus: ClusterUpgradeStatus
-  versions: EnvironmentVersions
+	id: ID!
+	name: String!
+	description: String
+	featureStates: [FeatureState!]!
+	created: Time!
+	lastModified: Time!
+	kind: EnvironmentKind!
+	gcpProjectID: String
+	health: Health!
+	releases: [Release!]!
+	nodes: [KubernetesNode!]!
+	values: [EnvironmentValue!]!
+	tenant: Tenant!
+	warnings: [Warning!]!
+	auditLog(featureName: String): [AuditLog!]!
+	features: [Feature!]!
+	feature(name: String!): Feature!
+	reconcile: Boolean!
+	autoUpgrade: Boolean!
+	clusterUpgradeHistory: [ClusterUpgradeStatus!]!
+	clusterUpgradeStatus: ClusterUpgradeStatus
+	versions: EnvironmentVersions
 }
 
 type EnvironmentOperation {
-  id: ID!
-  name: String!
-  status: String!
-  type: String!
-  target: String!
-  detail: String!
-  startTime: Time!
-  lastModified: Time!
-  nodesTotal: Int!
-  nodesFailed: Int!
-  nodesCompleted: Int!
-  nodesDone: Int!
-  nodePdbDelaySeconds: Int!
+	id: ID!
+	name: String!
+	status: String!
+	type: String!
+	target: String!
+	detail: String!
+	startTime: Time!
+	lastModified: Time!
+	nodesTotal: Int!
+	nodesFailed: Int!
+	nodesCompleted: Int!
+	nodesDone: Int!
+	nodePdbDelaySeconds: Int!
 }
 
 type EnvironmentVersions {
-  apiserver: String!
-  availableVersions: [String!]!
-  channel: String!
-  nodePools: [NodePool!]!
+	apiserver: String!
+	availableVersions: [String!]!
+	channel: String!
+	nodePools: [NodePool!]!
 }
 
 type NodePool {
-  name: String!
-  version: String!
+	name: String!
+	version: String!
 }
 
 type EnvironmentValue {
-  key: String!
-  value: RawMessage!
-  knownUses: Int!
+	key: String!
+	value: RawMessage!
+	knownUses: Int!
 }
 
 """
 EnvironmentCreate contains metadata for creating an environment
 """
 input EnvironmentCreate {
-  name: String!
-  description: String
-  tenantID: ID!
-  kind: EnvironmentKind!
+	name: String!
+	description: String
+	tenantID: ID!
+	kind: EnvironmentKind!
 }
 
 """
 UpdateEnvironment contains metadata for updating an environment
 """
 input EnvironmentUpdate {
-  "description of the environment"
-  description: String
+	"description of the environment"
+	description: String
 }
 
 """
 EnvironmentUpgrade contains metadata for upgrading an environment
 """
 input EnvironmentUpgrade {
-  "k8s version to upgrade to"
-  version: String!
-  envID: ID!
+	"k8s version to upgrade to"
+	version: String!
+	envID: ID!
 }
 
 extend type Mutation {
-  environmentCreate(environment: EnvironmentCreate!): Environment!
-  """
-  updateEnvironment updates an existing environment
-  """
-  environmentUpdate(
-    "id of requested environment."
-    id: ID!
-    "input contains information about the updated environment."
-    input: EnvironmentUpdate!
-  ): Environment!
+	environmentCreate(environment: EnvironmentCreate!): Environment!
+	"""
+	updateEnvironment updates an existing environment
+	"""
+	environmentUpdate(
+		"id of requested environment."
+		id: ID!
+		"input contains information about the updated environment."
+		input: EnvironmentUpdate!
+	): Environment!
 
-  """
-  Change the reconcile flag for an environment
-  """
-  environmentSetReconcile(id: ID!, reconcile: Boolean!): Environment!
+	"""
+	Change the reconcile flag for an environment
+	"""
+	environmentSetReconcile(id: ID!, reconcile: Boolean!): Environment!
 
-  """
-  Upgrade environment k8s cluster
-  """
-  environmentUpgrade(upgrade: EnvironmentUpgrade): Environment!
+	"""
+	Upgrade environment k8s cluster
+	"""
+	environmentUpgrade(upgrade: EnvironmentUpgrade): Environment!
 
-  """
-  Change the autoUpgrade flag for an environment
-  """
-  environmentSetAutoUpgrade(id: ID!, autoUpgrade: Boolean!): Environment!
+	"""
+	Change the autoUpgrade flag for an environment
+	"""
+	environmentSetAutoUpgrade(id: ID!, autoUpgrade: Boolean!): Environment!
 }
 `, BuiltIn: false},
 	{Name: "../../../schema/feature.graphqls", Input: `type Computed {
-  template: String!
+	template: String!
 }
 type Config {
-  type: ConfigType!
-  secret: Boolean!
+	type: ConfigType!
+	secret: Boolean!
 }
 
 type Value {
-  key: String! @goField(name: "GraphQLKey")
-  displayName: String!
-  description: String!
-  required: Boolean!
-  computed: Computed
-  config: Config
+	key: String! @goField(name: "GraphQLKey")
+	displayName: String!
+	description: String!
+	required: Boolean!
+	computed: Computed
+	config: Config
 }
 
 enum HelmValueDifference {
-  FULL_MATCH
-  SUPERSET_MATCH
-  NO_MATCH
-  INVALID_JSON
+	FULL_MATCH
+	SUPERSET_MATCH
+	NO_MATCH
+	INVALID_JSON
 }
 
 type HelmValueDiff {
-  difference: HelmValueDifference!
-  diff: String!
+	difference: HelmValueDifference!
+	diff: String!
 }
 
 type Feature {
-  name: String!
-  chart: String!
-  version: String!
-  activeVersion: String!
-  source: String!
-  description: String!
-  dependencies: [Dependency!]!
-  environmentKinds: [EnvironmentKind!]!
-  configoverrides: [ConfigOverride!]!
-  configuration: Configurations!
-  specVersion: String!
+	name: String!
+	chart: String!
+	version: String!
+	activeVersion: String!
+	source: String!
+	description: String!
+	dependencies: [Dependency!]!
+	environmentKinds: [EnvironmentKind!]!
+	configoverrides: [ConfigOverride!]!
+	configuration: Configurations!
+	specVersion: String!
 
-  state: FeatureState
-  status: Status
-  histories: [FeatureHistory!]!
-  helmValueDiff: HelmValueDiff!
+	state: FeatureState
+	status: Status
+	histories: [FeatureHistory!]!
+	helmValueDiff: HelmValueDiff!
 }
 
 type ConfigOverride {
-  environment: Environment!
-  keys: [String!]!
+	environment: Environment!
+	keys: [String!]!
 }
 
 type Dependency {
-  anyOf: [String!]!
-  allOf: [String!]!
+	anyOf: [String!]!
+	allOf: [String!]!
 }
 
 type FeatureHistory {
-  id: ID!
-  version: String!
-  status: RolloutStatus!
-  created: Time!
-  lastModified: Time!
-  log: [LogLine!]!
-  helmValueDiff: HelmValueDiff!
+	id: ID!
+	version: String!
+	status: RolloutStatus!
+	created: Time!
+	lastModified: Time!
+	log: [LogLine!]!
+	helmValueDiff: HelmValueDiff!
 }
 
 extend type Query {
-  features: [Feature!]!
-  feature(name: String!): Feature!
-  history(id: ID!): FeatureHistory!
+	features: [Feature!]!
+	feature(name: String!): Feature!
+	history(id: ID!): FeatureHistory!
 }
 `, BuiltIn: false},
 	{Name: "../../../schema/feature_states.graphqls", Input: `type FeatureState {
-  id: ID!
-  feature: Feature!
-  enabled: Boolean!
-  created: Time
-  lastModified: Time
-  missingDependencies: [Feature!]!
-  configuration: Configurations!
+	id: ID!
+	feature: Feature!
+	enabled: Boolean!
+	created: Time
+	lastModified: Time
+	missingDependencies: [Feature!]!
+	configuration: Configurations!
 }
 
 extend type Mutation {
-  featureStateSave(
-    envID: ID!
-    enabled: Boolean!
-    feature: String!
-  ): FeatureState!
+	featureStateSave(envID: ID!, enabled: Boolean!, feature: String!): FeatureState!
 }
 
 extend type Query {
-  featureState(envID: ID!, feature: String!): FeatureState!
+	featureState(envID: ID!, feature: String!): FeatureState!
 }
 `, BuiltIn: false},
 	{Name: "../../../schema/kubernetes_node_status.graphqls", Input: `enum KubernetesNodeConditionType {
-  READY
-  MEMORY_PRESSURE
-  DISK_PRESSURE
-  PID_PRESSURE
-  NETWORK_UNAVAILABLE
+	READY
+	MEMORY_PRESSURE
+	DISK_PRESSURE
+	PID_PRESSURE
+	NETWORK_UNAVAILABLE
 }
 
 enum ConditionStatus {
-  TRUE
-  FALSE
-  UNKNOWN
+	TRUE
+	FALSE
+	UNKNOWN
 }
 
 type KubernetesNodeCondition {
-  type: KubernetesNodeConditionType!
-  status: ConditionStatus!
-  reason: String!
-  message: String!
-  lastHeartbeat: Time!
-  lastTransition: Time!
+	type: KubernetesNodeConditionType!
+	status: ConditionStatus!
+	reason: String!
+	message: String!
+	lastHeartbeat: Time!
+	lastTransition: Time!
 }
 
 type KubernetesNodeResources {
-  cpu: Int!
-  memory: Int!
-  storage: Int!
-  pods: Int!
+	cpu: Int!
+	memory: Int!
+	storage: Int!
+	pods: Int!
 }
 
 type KubernetesNode {
-  name: String!
-  kernelVersion: String!
-  osImage: String!
-  containerRuntimeVersion: String!
-  kubeletVersion: String!
-  kubeProxyVersion: String!
-  operatingSystem: String!
-  architecture: String!
-  conditions: [KubernetesNodeCondition!]!
-  allocatable: KubernetesNodeResources!
-  capacity: KubernetesNodeResources!
-  internalIP: String!
+	name: String!
+	kernelVersion: String!
+	osImage: String!
+	containerRuntimeVersion: String!
+	kubeletVersion: String!
+	kubeProxyVersion: String!
+	operatingSystem: String!
+	architecture: String!
+	conditions: [KubernetesNodeCondition!]!
+	allocatable: KubernetesNodeResources!
+	capacity: KubernetesNodeResources!
+	internalIP: String!
 }
 `, BuiltIn: false},
 	{Name: "../../../schema/playground.graphqls", Input: `type Playground {
-  result: String
-  errors: [String!]!
+	result: String
+	errors: [String!]!
 }
 
 input PlaygroundInput {
-  tenantSlug: String!
-  envSlug: String!
-  showSecrets: Boolean
-  includeUnsetConfig: Boolean
-  code: String!
+	tenantSlug: String!
+	envSlug: String!
+	showSecrets: Boolean
+	includeUnsetConfig: Boolean
+	code: String!
 }
 
 extend type Mutation {
-  playground(input: PlaygroundInput!): Playground!
+	playground(input: PlaygroundInput!): Playground!
 }
 `, BuiltIn: false},
 	{Name: "../../../schema/rollout.graphqls", Input: `type Rollout {
-  id: ID!
-  version: String!
-  created: Time!
-  completed: Time
-  status: RolloutStatus!
-  featureName: String!
+	id: ID!
+	version: String!
+	created: Time!
+	completed: Time
+	status: RolloutStatus!
+	featureName: String!
 
-  events: [RolloutEvent!]!
-  logs: [RolloutLog!]!
+	events: [RolloutEvent!]!
+	logs: [RolloutLog!]!
 }
 
 type RolloutLog {
-  id: ID!
-  tenantName: String!
-  environment: String!
-  lines: [LogLine!]!
+	id: ID!
+	tenantName: String!
+	environment: String!
+	lines: [LogLine!]!
 }
 
 type RolloutEvent {
-  id: ID!
-  failure: Boolean!
-  message: String!
-  created: Time!
-  data: RawMessage
+	id: ID!
+	failure: Boolean!
+	message: String!
+	created: Time!
+	data: RawMessage
 }
 
 extend type Query {
-  rollouts(feature: String): [Rollout!]!
-  rollout(feature: String!, version: String!): Rollout!
+	rollouts(feature: String): [Rollout!]!
+	rollout(feature: String!, version: String!): Rollout!
 }
 
 extend type Mutation {
-  rolloutMarkFailed(feature: String!, version: String!): Rollout!
-  deleteHelmInstall(envID: ID!, name: String!): Boolean!
+	rolloutMarkFailed(feature: String!, version: String!): Rollout!
+	deleteHelmInstall(envID: ID!, name: String!): Boolean!
 }
 `, BuiltIn: false},
 	{Name: "../../../schema/scalars.graphqls", Input: `scalar Map
@@ -2840,96 +2828,97 @@ scalar RawMessage
 """
 Time is a string in [RFC 3339](https://rfc-editor.org/rfc/rfc3339.html) format, with sub-second precision added if present.
 """
-scalar Time`, BuiltIn: false},
+scalar Time
+`, BuiltIn: false},
 	{Name: "../../../schema/status.graphqls", Input: `enum RolloutStatus {
-  UNKNOWN
-  CREATED
-  PENDING
-  DEPLOYED
-  FAILED
+	UNKNOWN
+	CREATED
+	PENDING
+	DEPLOYED
+	FAILED
 }
 
 type LogLine {
-  id: ID!
-  timestamp: Time!
-  message: String!
+	id: ID!
+	timestamp: Time!
+	message: String!
 }
 
 type Status {
-  id: ID!
-  environmentID: ID!
-  version: String!
-  status: RolloutStatus!
-  created: Time!
-  lastModified: Time!
-  log: [LogLine!]!
+	id: ID!
+	environmentID: ID!
+	version: String!
+	status: RolloutStatus!
+	created: Time!
+	lastModified: Time!
+	log: [LogLine!]!
 }
 
 union Update = Status | Configuration | FeatureState | ClusterUpgradeStatus
 
 type Subscription {
-  logs(environmentID: ID!, featureName: String!, lastLogID: String): LogLine!
+	logs(environmentID: ID!, featureName: String!, lastLogID: String): LogLine!
 
-  """
-  Updates notifies whenever a feature state has been changed.
-  """
-  updates: Update!
+	"""
+	Updates notifies whenever a feature state has been changed.
+	"""
+	updates: Update!
 }
 `, BuiltIn: false},
 	{Name: "../../../schema/tenant.graphqls", Input: `type Tenant {
-  id: ID!
-  name: String!
-  description: String
-  environments: [Environment!]!
-  environment(id: ID, slug: String): Environment!
-  created: Time!
-  lastModified: Time!
-  warnings: [Warning!]!
+	id: ID!
+	name: String!
+	description: String
+	environments: [Environment!]!
+	environment(id: ID, slug: String): Environment!
+	created: Time!
+	lastModified: Time!
+	warnings: [Warning!]!
 }
 
 type Query {
-  tenants: [Tenant!]!
+	tenants: [Tenant!]!
 }
 
 input TenantCreate {
-  name: String!
-  description: String
+	name: String!
+	description: String
 }
 
 type Mutation {
-  tenantCreate(tenant: TenantCreate!): Tenant!
+	tenantCreate(tenant: TenantCreate!): Tenant!
 }
 
 extend type Query {
-  """
-  tenant returns the given tenant.
-  """
-  tenant("id of the requested tenant." id: ID, slug: String): Tenant!
+	"""
+	tenant returns the given tenant.
+	"""
+	tenant("id of the requested tenant." id: ID, slug: String): Tenant!
 }
 `, BuiltIn: false},
 	{Name: "../../../schema/userInfo.graphqls", Input: `type userInfo {
-    email: String!
+	email: String!
 }
 extend type Query {
-    """
-    userInfo returns the user.
-    """
-    userInfo: userInfo
-
-}`, BuiltIn: false},
+	"""
+	userInfo returns the user.
+	"""
+	userInfo: userInfo
+}
+`, BuiltIn: false},
 	{Name: "../../../schema/warning.graphqls", Input: `interface Warning {
-  message: String!
+	message: String!
 }
 
 type FeatureWarning implements Warning {
-  message: String!
-  feature: Feature!
-  environment: Environment!
+	message: String!
+	feature: Feature!
+	environment: Environment!
 }
 
 type NaisdWarning implements Warning {
-  message: String!
-  environment: Environment!
+	message: String!
+	environment: Environment!
 }
 `, BuiltIn: false},
 }

@@ -1,14 +1,14 @@
 interface Warning {
-  message: String!
+	message: String!
 }
 
 type FeatureWarning implements Warning {
-  message: String!
-  feature: Feature!
-  environment: Environment!
+	message: String!
+	feature: Feature!
+	environment: Environment!
 }
 
 type NaisdWarning implements Warning {
-  message: String!
-  environment: Environment!
+	message: String!
+	environment: Environment!
 }

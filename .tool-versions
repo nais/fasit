@@ -3,3 +3,4 @@ protoc 25.3
 protoc-gen-go-grpc 1.5.1
 protoc-gen-go 1.35.2
 helm 3.17.1
+nodejs 20.18.0

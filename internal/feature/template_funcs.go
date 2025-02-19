@@ -12,7 +12,7 @@ import (
 
 	"github.com/Masterminds/sprig/v3"
 	"github.com/nais/fasit/internal/graph/model"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 var templateFuncs = func() template.FuncMap {

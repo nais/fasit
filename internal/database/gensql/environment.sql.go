@@ -11,11 +11,16 @@ import (
 )
 
 const environmentByNames = `-- name: EnvironmentByNames :one
-SELECT e.id, e.tenant_id, e.name, e.kind, e.description, e.created, e.last_modified, e.ci, e.reconcile, e.auto_upgrade
-FROM tenants t
-         JOIN environments e ON e.tenant_id = t.id AND e.name = $1
-WHERE t.name = $2
-    LIMIT 1
+SELECT
+	e.id, e.tenant_id, e.name, e.kind, e.description, e.created, e.last_modified, e.ci, e.reconcile, e.auto_upgrade
+FROM
+	tenants t
+	JOIN environments e ON e.tenant_id = t.id
+	AND e.name = $1
+WHERE
+	t.name = $2
+LIMIT
+	1
 `
 
 type EnvironmentByNamesParams struct {
@@ -42,7 +47,13 @@ func (q *Queries) EnvironmentByNames(ctx context.Context, arg EnvironmentByNames
 }
 
 const environmentCI = `-- name: EnvironmentCI :one
-SELECT id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade FROM environments WHERE ci = true AND kind = $1
+SELECT
+	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade
+FROM
+	environments
+WHERE
+	ci = TRUE
+	AND kind = $1
 `
 
 func (q *Queries) EnvironmentCI(ctx context.Context, kind EnvironmentKind) (Environment, error) {
@@ -64,7 +75,12 @@ func (q *Queries) EnvironmentCI(ctx context.Context, kind EnvironmentKind) (Envi
 }
 
 const environmentCreate = `-- name: EnvironmentCreate :one
-INSERT INTO environments (name, description, tenant_id, kind) VALUES ($1, $2, $3, $4) RETURNING id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade
+INSERT INTO
+	environments (name, description, tenant_id, kind)
+VALUES
+	($1, $2, $3, $4)
+RETURNING
+	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade
 `
 
 type EnvironmentCreateParams struct {
@@ -98,9 +114,12 @@ func (q *Queries) EnvironmentCreate(ctx context.Context, arg EnvironmentCreatePa
 }
 
 const environmentGet = `-- name: EnvironmentGet :one
-SELECT id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade
-FROM environments
-WHERE id = $1
+SELECT
+	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade
+FROM
+	environments
+WHERE
+	id = $1
 `
 
 func (q *Queries) EnvironmentGet(ctx context.Context, id uuid.UUID) (Environment, error) {
@@ -122,10 +141,13 @@ func (q *Queries) EnvironmentGet(ctx context.Context, id uuid.UUID) (Environment
 }
 
 const environmentGetByName = `-- name: EnvironmentGetByName :one
-SELECT id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade
-FROM environments
-WHERE tenant_id = $1
-AND name = $2
+SELECT
+	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade
+FROM
+	environments
+WHERE
+	tenant_id = $1
+	AND name = $2
 `
 
 type EnvironmentGetByNameParams struct {
@@ -152,11 +174,16 @@ func (q *Queries) EnvironmentGetByName(ctx context.Context, arg EnvironmentGetBy
 }
 
 const environmentIDByNames = `-- name: EnvironmentIDByNames :one
-SELECT e.id
-FROM tenants p
-JOIN environments e ON e.tenant_id = p.id AND e.name = $1
-WHERE p.name = $2
-LIMIT 1
+SELECT
+	e.id
+FROM
+	tenants p
+	JOIN environments e ON e.tenant_id = p.id
+	AND e.name = $1
+WHERE
+	p.name = $2
+LIMIT
+	1
 `
 
 type EnvironmentIDByNamesParams struct {
@@ -173,10 +200,12 @@ func (q *Queries) EnvironmentIDByNames(ctx context.Context, arg EnvironmentIDByN
 
 const environmentSetAutoUpgrade = `-- name: EnvironmentSetAutoUpgrade :one
 UPDATE environments
-SET auto_upgrade = $1
+SET
+	auto_upgrade = $1
 WHERE
-    id = $2
-RETURNING id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade
+	id = $2
+RETURNING
+	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade
 `
 
 type EnvironmentSetAutoUpgradeParams struct {
@@ -204,10 +233,12 @@ func (q *Queries) EnvironmentSetAutoUpgrade(ctx context.Context, arg Environment
 
 const environmentSetReconcile = `-- name: EnvironmentSetReconcile :one
 UPDATE environments
-SET reconcile = $1
+SET
+	reconcile = $1
 WHERE
-    id = $2
-RETURNING id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade
+	id = $2
+RETURNING
+	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade
 `
 
 type EnvironmentSetReconcileParams struct {
@@ -235,10 +266,12 @@ func (q *Queries) EnvironmentSetReconcile(ctx context.Context, arg EnvironmentSe
 
 const environmentUpdate = `-- name: EnvironmentUpdate :one
 UPDATE environments
-SET description = $1
+SET
+	description = $1
 WHERE
-    id = $2
-    RETURNING id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade
+	id = $2
+RETURNING
+	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade
 `
 
 type EnvironmentUpdateParams struct {
@@ -265,14 +298,18 @@ func (q *Queries) EnvironmentUpdate(ctx context.Context, arg EnvironmentUpdatePa
 }
 
 const environmentsGet = `-- name: EnvironmentsGet :many
-SELECT id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade
-FROM environments
-WHERE tenant_id = $1
-ORDER BY CASE
-    WHEN name = 'management' THEN 1
-    ELSE 2
-END,
-name ASC
+SELECT
+	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade
+FROM
+	environments
+WHERE
+	tenant_id = $1
+ORDER BY
+	CASE
+		WHEN name = 'management' THEN 1
+		ELSE 2
+	END,
+	name ASC
 `
 
 func (q *Queries) EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]Environment, error) {
@@ -307,14 +344,18 @@ func (q *Queries) EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]En
 }
 
 const environmentsGetByAutoUpgrade = `-- name: EnvironmentsGetByAutoUpgrade :many
-SELECT id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade
-FROM environments
-WHERE auto_upgrade = true
-ORDER BY CASE
-    WHEN name = 'management' THEN 1
-    ELSE 2
-END,
-name ASC
+SELECT
+	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade
+FROM
+	environments
+WHERE
+	auto_upgrade = TRUE
+ORDER BY
+	CASE
+		WHEN name = 'management' THEN 1
+		ELSE 2
+	END,
+	name ASC
 `
 
 func (q *Queries) EnvironmentsGetByAutoUpgrade(ctx context.Context) ([]Environment, error) {

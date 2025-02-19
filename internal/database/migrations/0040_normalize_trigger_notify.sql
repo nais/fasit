@@ -1,7 +1,6 @@
 -- +goose Up
-
 -- +goose StatementBegin
-CREATE OR REPLACE FUNCTION fasit_notify() RETURNS trigger AS $$
+CREATE OR REPLACE FUNCTION fasit_notify () RETURNS trigger AS $$
 BEGIN
   -- We accept a number of keys as arguments, and will read the values using NEW if it is set, or OLD if it is not.
   -- We will then send a notification to fasit_notify with a JSON object containing the keys and values, as well as
@@ -37,34 +36,44 @@ BEGIN
   END;
 RETURN NULL;
 END;
-$$ LANGUAGE plpgsql;
--- +goose StatementEnd
+$$ LANGUAGE plpgsql
+;
 
-DROP TRIGGER IF EXISTS configurations_global_notify ON configurations_global;
-DROP TRIGGER IF EXISTS configurations_environment_notify ON configurations_environment;
-DROP TRIGGER IF EXISTS feature_states_notify ON feature_states;
-DROP TRIGGER IF EXISTS rollouts_notify ON rollouts;
+-- +goose StatementEnd
+DROP TRIGGER IF EXISTS configurations_global_notify ON configurations_global
+;
+
+DROP TRIGGER IF EXISTS configurations_environment_notify ON configurations_environment
+;
+
+DROP TRIGGER IF EXISTS feature_states_notify ON feature_states
+;
+
+DROP TRIGGER IF EXISTS rollouts_notify ON rollouts
+;
 
 CREATE TRIGGER configurations_global_notify
-  AFTER INSERT OR UPDATE
-  ON configurations_global
-  FOR EACH ROW
-  EXECUTE PROCEDURE fasit_notify("id", "feature");
+AFTER INSERT
+OR
+UPDATE ON configurations_global FOR EACH ROW
+EXECUTE PROCEDURE fasit_notify ("id", "feature")
+;
 
 CREATE TRIGGER configurations_environment_notify
-  AFTER INSERT OR UPDATE
-  ON configurations_environment
-  FOR EACH ROW
-  EXECUTE PROCEDURE fasit_notify("id", "feature", "environment_id");
+AFTER INSERT
+OR
+UPDATE ON configurations_environment FOR EACH ROW
+EXECUTE PROCEDURE fasit_notify ("id", "feature", "environment_id")
+;
 
 CREATE TRIGGER feature_states_notify
-  AFTER INSERT OR UPDATE
-  ON feature_states
-  FOR EACH ROW
-  EXECUTE PROCEDURE fasit_notify("environment_id", "feature", "enabled");
+AFTER INSERT
+OR
+UPDATE ON feature_states FOR EACH ROW
+EXECUTE PROCEDURE fasit_notify ("environment_id", "feature", "enabled")
+;
 
 CREATE TRIGGER rollouts_notify
-  AFTER INSERT
-  ON rollouts
-  FOR EACH ROW
-  EXECUTE PROCEDURE fasit_notify("id", "feature_name", "status");
+AFTER INSERT ON rollouts FOR EACH ROW
+EXECUTE PROCEDURE fasit_notify ("id", "feature_name", "status")
+;

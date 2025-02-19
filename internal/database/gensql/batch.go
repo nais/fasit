@@ -17,18 +17,13 @@ var (
 )
 
 const costUpsert = `-- name: CostUpsert :batchexec
-INSERT INTO env_cost (
-  tenant_id,
-  env_id,
-  date,
-  cost
-) VALUES (
-  $1,
-  $2,
-  $3,
-  $4
-) ON CONFLICT (tenant_id, env_id, date) DO UPDATE SET
-  cost = EXCLUDED.cost
+INSERT INTO
+	env_cost (tenant_id, env_id, date, cost)
+VALUES
+	($1, $2, $3, $4)
+ON CONFLICT (tenant_id, env_id, date) DO UPDATE
+SET
+	cost = EXCLUDED.cost
 `
 
 type CostUpsertBatchResults struct {
@@ -82,19 +77,9 @@ func (b *CostUpsertBatchResults) Close() error {
 
 const logsCreate = `-- name: LogsCreate :batchexec
 INSERT INTO
-  logs
-(
-  deploy_instruction,
-  time,
-  message,
-  kind
-)
-VALUES (
-  $1,
-  $2,
-  $3,
-  $4
-)
+	logs (deploy_instruction, TIME, message, kind)
+VALUES
+	($1, $2, $3, $4)
 `
 
 type LogsCreateBatchResults struct {

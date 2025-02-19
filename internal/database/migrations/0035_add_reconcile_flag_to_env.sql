@@ -1,4 +1,9 @@
 -- +goose Up
-ALTER TABLE environments ADD COLUMN reconcile bool NOT NULL DEFAULT true;
+ALTER TABLE environments
+ADD COLUMN reconcile BOOL NOT NULL DEFAULT TRUE
+;
 
-UPDATE environments SET reconcile = false;
+UPDATE environments
+SET
+	reconcile = FALSE
+;

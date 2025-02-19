@@ -8,7 +8,14 @@ import (
 )
 
 const autoInstallNamesForKind = `-- name: AutoInstallNamesForKind :many
-SELECT feature FROM auto_installs WHERE kind = $1 ORDER BY feature
+SELECT
+	feature
+FROM
+	auto_installs
+WHERE
+	kind = $1
+ORDER BY
+	feature
 `
 
 func (q *Queries) AutoInstallNamesForKind(ctx context.Context, environmentKind EnvironmentKind) ([]string, error) {
@@ -32,7 +39,14 @@ func (q *Queries) AutoInstallNamesForKind(ctx context.Context, environmentKind E
 }
 
 const autoInstallsForKind = `-- name: AutoInstallsForKind :many
-SELECT kind, feature, created  FROM auto_installs WHERE kind = $1 ORDER BY feature
+SELECT
+	kind, feature, created
+FROM
+	auto_installs
+WHERE
+	kind = $1
+ORDER BY
+	feature
 `
 
 func (q *Queries) AutoInstallsForKind(ctx context.Context, environmentKind EnvironmentKind) ([]AutoInstall, error) {

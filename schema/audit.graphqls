@@ -1,7 +1,7 @@
 type AuditLog {
-  actor: String!
-  description: String!
-  objectType: String!
-  objectId: String!
-  createdAt: Time!
+	actor: String!
+	description: String!
+	objectType: String!
+	objectId: String!
+	createdAt: Time!
 }

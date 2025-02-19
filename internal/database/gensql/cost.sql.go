@@ -11,37 +11,49 @@ import (
 )
 
 const cost = `-- name: Cost :many
-WITH tenant_ids AS (
-  SELECT
-    id
-  FROM tenants
-), datasource AS (
+WITH
+	tenant_ids AS (
+		SELECT
+			id
+		FROM
+			tenants
+	),
+	datasource AS (
+		SELECT
+			t.id AS tenant_id,
+			t.tdate::DATE AS "date",
+			COALESCE(SUM(cost)::REAL, 0.0) AS cost
+		FROM
+			(
+				SELECT
+					"day" AS "tdate",
+					id AS "id"
+				FROM
+					GENERATE_SERIES(
+						$1::DATE,
+						$2::DATE,
+						INTERVAL '1 day'
+					) AS t (DAY),
+					tenant_ids
+			) AS t
+			LEFT JOIN env_cost ON tenant_id = t.id
+			AND "date"::DATE = t.tdate
+		GROUP BY
+			t.tdate,
+			t.id
+		ORDER BY
+			t.tdate,
+			t.id
+	)
 SELECT
-  t.id as tenant_id,
-  t.tdate::DATE AS "date",
-  COALESCE(SUM(cost)::REAL, 0.0) AS cost
-FROM (
-  SELECT
-    "day" AS "tdate",
-    id AS "id"
-  FROM
-  generate_series(
-    $1::DATE,
-    $2::DATE,
-    interval  '1 day') AS t(day),
-  tenant_ids
-) AS t
-LEFT JOIN env_cost ON tenant_id = t.id AND "date"::DATE = t.tdate
-GROUP BY t.tdate, t.id
-ORDER BY t.tdate, t.id
-)
-
-SELECT
-  tenant_id,
-  array_agg(cost)::REAL[] AS cost
-FROM datasource
-GROUP BY tenant_id
-ORDER BY tenant_id
+	tenant_id,
+	ARRAY_AGG(cost)::REAL[] AS cost
+FROM
+	datasource
+GROUP BY
+	tenant_id
+ORDER BY
+	tenant_id
 `
 
 type CostParams struct {
@@ -75,38 +87,51 @@ func (q *Queries) Cost(ctx context.Context, arg CostParams) ([]CostRow, error) {
 }
 
 const costForTenant = `-- name: CostForTenant :many
-WITH envs AS (
-  SELECT
-    id
-  FROM environments
-  WHERE environments.tenant_id = $1
-), datasource AS (
+WITH
+	envs AS (
+		SELECT
+			id
+		FROM
+			environments
+		WHERE
+			environments.tenant_id = $1
+	),
+	datasource AS (
+		SELECT
+			t.id AS env_id,
+			t.tdate::DATE AS "date",
+			COALESCE(SUM(cost)::REAL, 0.0) AS cost
+		FROM
+			(
+				SELECT
+					"day" AS "tdate",
+					id AS "id"
+				FROM
+					GENERATE_SERIES(
+						$2::DATE,
+						$3::DATE,
+						INTERVAL '1 day'
+					) AS t (DAY),
+					envs
+			) AS t
+			LEFT JOIN env_cost ON env_id = t.id
+			AND "date"::DATE = t.tdate
+		GROUP BY
+			t.tdate,
+			t.id
+		ORDER BY
+			t.tdate,
+			t.id
+	)
 SELECT
-  t.id as env_id,
-  t.tdate::DATE AS "date",
-  COALESCE(SUM(cost)::REAL, 0.0) AS cost
-FROM (
-  SELECT
-    "day" AS "tdate",
-    id AS "id"
-  FROM
-  generate_series(
-    $2::DATE,
-    $3::DATE,
-    interval  '1 day') AS t(day),
-  envs
-) AS t
-LEFT JOIN env_cost ON env_id = t.id AND "date"::DATE = t.tdate
-GROUP BY t.tdate, t.id
-ORDER BY t.tdate, t.id
-)
-
-SELECT
-  env_id,
-  array_agg(cost)::REAL[] AS cost
-FROM datasource
-GROUP BY env_id
-ORDER BY env_id
+	env_id,
+	ARRAY_AGG(cost)::REAL[] AS cost
+FROM
+	datasource
+GROUP BY
+	env_id
+ORDER BY
+	env_id
 `
 
 type CostForTenantParams struct {
@@ -141,8 +166,10 @@ func (q *Queries) CostForTenant(ctx context.Context, arg CostForTenantParams) ([
 }
 
 const costLastDate = `-- name: CostLastDate :one
-SELECT MAX(date)::DATE AS "date"
-FROM env_cost
+SELECT
+	MAX(date)::DATE AS "date"
+FROM
+	env_cost
 `
 
 func (q *Queries) CostLastDate(ctx context.Context) (pgtype.Date, error) {

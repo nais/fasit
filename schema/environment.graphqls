@@ -1,153 +1,153 @@
 enum EnvironmentKind {
-  TENANT
-  MANAGEMENT
-  ONPREM
-  LEGACY
+	TENANT
+	MANAGEMENT
+	ONPREM
+	LEGACY
 }
 
 enum UpgradeStatus {
-  CREATED
-  MASTER_UPGRADE
-  NODE_UPGRADE
-  FAILED
-  DONE
+	CREATED
+	MASTER_UPGRADE
+	NODE_UPGRADE
+	FAILED
+	DONE
 }
 
 type ClusterUpgradeStatus {
-  id: ID!
-  upgradeStatus: UpgradeStatus!
-  version: String!
-  lastModified: Time!
-  startTime: Time!
-  operations: [EnvironmentOperation!]!
-  environment: Environment!
+	id: ID!
+	upgradeStatus: UpgradeStatus!
+	version: String!
+	lastModified: Time!
+	startTime: Time!
+	operations: [EnvironmentOperation!]!
+	environment: Environment!
 }
 
 type Health {
-  reportedAt: Time!
+	reportedAt: Time!
 }
 
 type Release {
-  name: String!
-  feature: Feature
-  version: String!
-  status: String!
-  revision: Int!
-  lastDeployed: Time!
-  created: Time!
-  lastModified: Time!
+	name: String!
+	feature: Feature
+	version: String!
+	status: String!
+	revision: Int!
+	lastDeployed: Time!
+	created: Time!
+	lastModified: Time!
 }
 
 type Environment {
-  id: ID!
-  name: String!
-  description: String
-  featureStates: [FeatureState!]!
-  created: Time!
-  lastModified: Time!
-  kind: EnvironmentKind!
-  gcpProjectID: String
-  health: Health!
-  releases: [Release!]!
-  nodes: [KubernetesNode!]!
-  values: [EnvironmentValue!]!
-  tenant: Tenant!
-  warnings: [Warning!]!
-  auditLog(featureName: String): [AuditLog!]!
-  features: [Feature!]!
-  feature(name: String!): Feature!
-  reconcile: Boolean!
-  autoUpgrade: Boolean!
-  clusterUpgradeHistory: [ClusterUpgradeStatus!]!
-  clusterUpgradeStatus: ClusterUpgradeStatus
-  versions: EnvironmentVersions
+	id: ID!
+	name: String!
+	description: String
+	featureStates: [FeatureState!]!
+	created: Time!
+	lastModified: Time!
+	kind: EnvironmentKind!
+	gcpProjectID: String
+	health: Health!
+	releases: [Release!]!
+	nodes: [KubernetesNode!]!
+	values: [EnvironmentValue!]!
+	tenant: Tenant!
+	warnings: [Warning!]!
+	auditLog(featureName: String): [AuditLog!]!
+	features: [Feature!]!
+	feature(name: String!): Feature!
+	reconcile: Boolean!
+	autoUpgrade: Boolean!
+	clusterUpgradeHistory: [ClusterUpgradeStatus!]!
+	clusterUpgradeStatus: ClusterUpgradeStatus
+	versions: EnvironmentVersions
 }
 
 type EnvironmentOperation {
-  id: ID!
-  name: String!
-  status: String!
-  type: String!
-  target: String!
-  detail: String!
-  startTime: Time!
-  lastModified: Time!
-  nodesTotal: Int!
-  nodesFailed: Int!
-  nodesCompleted: Int!
-  nodesDone: Int!
-  nodePdbDelaySeconds: Int!
+	id: ID!
+	name: String!
+	status: String!
+	type: String!
+	target: String!
+	detail: String!
+	startTime: Time!
+	lastModified: Time!
+	nodesTotal: Int!
+	nodesFailed: Int!
+	nodesCompleted: Int!
+	nodesDone: Int!
+	nodePdbDelaySeconds: Int!
 }
 
 type EnvironmentVersions {
-  apiserver: String!
-  availableVersions: [String!]!
-  channel: String!
-  nodePools: [NodePool!]!
+	apiserver: String!
+	availableVersions: [String!]!
+	channel: String!
+	nodePools: [NodePool!]!
 }
 
 type NodePool {
-  name: String!
-  version: String!
+	name: String!
+	version: String!
 }
 
 type EnvironmentValue {
-  key: String!
-  value: RawMessage!
-  knownUses: Int!
+	key: String!
+	value: RawMessage!
+	knownUses: Int!
 }
 
 """
 EnvironmentCreate contains metadata for creating an environment
 """
 input EnvironmentCreate {
-  name: String!
-  description: String
-  tenantID: ID!
-  kind: EnvironmentKind!
+	name: String!
+	description: String
+	tenantID: ID!
+	kind: EnvironmentKind!
 }
 
 """
 UpdateEnvironment contains metadata for updating an environment
 """
 input EnvironmentUpdate {
-  "description of the environment"
-  description: String
+	"description of the environment"
+	description: String
 }
 
 """
 EnvironmentUpgrade contains metadata for upgrading an environment
 """
 input EnvironmentUpgrade {
-  "k8s version to upgrade to"
-  version: String!
-  envID: ID!
+	"k8s version to upgrade to"
+	version: String!
+	envID: ID!
 }
 
 extend type Mutation {
-  environmentCreate(environment: EnvironmentCreate!): Environment!
-  """
-  updateEnvironment updates an existing environment
-  """
-  environmentUpdate(
-    "id of requested environment."
-    id: ID!
-    "input contains information about the updated environment."
-    input: EnvironmentUpdate!
-  ): Environment!
+	environmentCreate(environment: EnvironmentCreate!): Environment!
+	"""
+	updateEnvironment updates an existing environment
+	"""
+	environmentUpdate(
+		"id of requested environment."
+		id: ID!
+		"input contains information about the updated environment."
+		input: EnvironmentUpdate!
+	): Environment!
 
-  """
-  Change the reconcile flag for an environment
-  """
-  environmentSetReconcile(id: ID!, reconcile: Boolean!): Environment!
+	"""
+	Change the reconcile flag for an environment
+	"""
+	environmentSetReconcile(id: ID!, reconcile: Boolean!): Environment!
 
-  """
-  Upgrade environment k8s cluster
-  """
-  environmentUpgrade(upgrade: EnvironmentUpgrade): Environment!
+	"""
+	Upgrade environment k8s cluster
+	"""
+	environmentUpgrade(upgrade: EnvironmentUpgrade): Environment!
 
-  """
-  Change the autoUpgrade flag for an environment
-  """
-  environmentSetAutoUpgrade(id: ID!, autoUpgrade: Boolean!): Environment!
+	"""
+	Change the autoUpgrade flag for an environment
+	"""
+	environmentSetAutoUpgrade(id: ID!, autoUpgrade: Boolean!): Environment!
 }

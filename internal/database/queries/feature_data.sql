@@ -1,28 +1,33 @@
 -- name: FeatureDataCreate :exec
-INSERT INTO feature_data (
-    name,
-    version,
-    chart,
-    description,
-    source,
-    kinds,
-    dependencies,
-    values,
-    default_values,
-    timeout,
-    tpl_details,
-    rename
-) VALUES (
-    @feature_name,
-    @version,
-    @chart,
-    @description,
-    @source,
-    (@kinds::text[])::environment_kind[],
-    @dependencies,
-    @values,
-    @default_values,
-    @timeout,
-    @tpl_details,
-    @rename
-);
+INSERT INTO
+	feature_data (
+		name,
+		version,
+		chart,
+		description,
+		source,
+		kinds,
+		dependencies,
+		VALUES
+,
+			default_values,
+			timeout,
+			tpl_details,
+		RENAME
+	)
+VALUES
+	(
+		@feature_name,
+		@version,
+		@chart,
+		@description,
+		@source,
+		(@kinds::TEXT[])::environment_kind[],
+		@dependencies,
+		@values,
+		@default_values,
+		@timeout,
+		@tpl_details,
+		@rename
+	)
+;

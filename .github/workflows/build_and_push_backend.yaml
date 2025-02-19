@@ -72,8 +72,8 @@ jobs:
       - run: make helm-lint
       - name: Check code format and run code generators
         run: |
-          make fmt
           make generate
+          make fmt
           echo "checking for diff after running formatters, if this fails, run 'make fmt'"
           git diff --exit-code --name-only
 

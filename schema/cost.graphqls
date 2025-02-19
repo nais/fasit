@@ -1,40 +1,40 @@
 input CostFilter {
-  """
-  Start date for costs
-  Defaults to 7 days ago
-  """
-  startDate: Time
+	"""
+	Start date for costs
+	Defaults to 7 days ago
+	"""
+	startDate: Time
 
-  """
-  End date for costs
-  Defaults to today
-  """
-  endDate: Time
+	"""
+	End date for costs
+	Defaults to today
+	"""
+	endDate: Time
 }
 
 type Cost {
-  from: Time!
-  to: Time!
-  series: [CostSeries!]!
+	from: Time!
+	to: Time!
+	series: [CostSeries!]!
 }
 
 type CostSeries {
-  tenant: Tenant!
-  data: [Float!]!
+	tenant: Tenant!
+	data: [Float!]!
 }
 
 type TenantCosts {
-  from: Time!
-  to: Time!
-  series: [EnvSeries!]!
+	from: Time!
+	to: Time!
+	series: [EnvSeries!]!
 }
 
 type EnvSeries {
-  environment: Environment!
-  data: [Float!]!
+	environment: Environment!
+	data: [Float!]!
 }
 
 extend type Query {
-  costForTenant(tenantID: ID!, filter: CostFilter): TenantCosts!
-  cost(filter: CostFilter): Cost!
+	costForTenant(tenantID: ID!, filter: CostFilter): TenantCosts!
+	cost(filter: CostFilter): Cost!
 }

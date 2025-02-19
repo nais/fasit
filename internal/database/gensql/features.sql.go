@@ -11,21 +11,24 @@ import (
 
 const featureByName = `-- name: FeatureByName :one
 SELECT
-  fd.name,
-  fd.version,
-  fd.chart,
-  fd.description,
-  fd.source,
-  fd.kinds::text[] AS kinds,
-  fd.dependencies,
-  fd.values,
-  fd.default_values,
-  fd.timeout,
-  features.created,
-  features.last_modified
-FROM features
-JOIN feature_data fd ON features.name = fd.name AND features.version = fd.version
-WHERE fd.name = $1
+	fd.name,
+	fd.version,
+	fd.chart,
+	fd.description,
+	fd.source,
+	fd.kinds::TEXT[] AS kinds,
+	fd.dependencies,
+	fd.values,
+	fd.default_values,
+	fd.timeout,
+	features.created,
+	features.last_modified
+FROM
+	features
+	JOIN feature_data fd ON features.name = fd.name
+	AND features.version = fd.version
+WHERE
+	fd.name = $1
 `
 
 type FeatureByNameRow struct {
@@ -64,11 +67,18 @@ func (q *Queries) FeatureByName(ctx context.Context, name string) (FeatureByName
 }
 
 const featureGetForEnv = `-- name: FeatureGetForEnv :many
-SELECT fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.rename, features.created, features.last_modified
-FROM features
-JOIN feature_data fd ON features.name = fd.name AND features.version = fd.version
-WHERE $1::text = ANY(kinds::text[])
-ORDER BY features.name
+SELECT
+	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.rename,
+	features.created,
+	features.last_modified
+FROM
+	features
+	JOIN feature_data fd ON features.name = fd.name
+	AND features.version = fd.version
+WHERE
+	$1::TEXT = ANY (kinds::TEXT[])
+ORDER BY
+	features.name
 `
 
 type FeatureGetForEnvRow struct {
@@ -124,18 +134,13 @@ func (q *Queries) FeatureGetForEnv(ctx context.Context, environmentKind string) 
 }
 
 const featureVersionUpdate = `-- name: FeatureVersionUpdate :exec
-INSERT INTO features
-  (
-    name,
-    version
-  )
+INSERT INTO
+	features (name, version)
 VALUES
-  (
-    $1,
-    $2
-  )
-ON CONFLICT (name) DO
-  UPDATE SET version = EXCLUDED.version
+	($1, $2)
+ON CONFLICT (name) DO UPDATE
+SET
+	version = EXCLUDED.version
 `
 
 type FeatureVersionUpdateParams struct {
@@ -149,45 +154,65 @@ func (q *Queries) FeatureVersionUpdate(ctx context.Context, arg FeatureVersionUp
 }
 
 const features = `-- name: Features :many
-WITH combined AS (
-  SELECT null AS id, name, version, created, last_modified
-  FROM features
-
-  UNION
-  (
-    SELECT DISTINCT ON(feature_name)
-      id,
-      feature_name AS name,
-      version,
-      make_timestamptz(1969, 4, 20, 0, 0, 0) AS created,
-      make_timestamptz(1969, 4, 20, 0, 0, 0) AS last_modified
-    FROM rollouts
-    WHERE status = 'pending'
-    ORDER BY feature_name, "version" DESC
-  )
-), filtered AS (
-  SELECT DISTINCT ON (name) name AS name, version, created, last_modified
-  FROM combined
-  ORDER BY
-    -- order by id to ensure rollout has precedence over feature
-    name, id
-)
+WITH
+	combined AS (
+		SELECT
+			NULL AS id,
+			name,
+			version,
+			created,
+			last_modified
+		FROM
+			features
+		UNION
+		(
+			SELECT DISTINCT
+				ON (feature_name) id,
+				feature_name AS name,
+				version,
+				MAKE_TIMESTAMPTZ(1969, 4, 20, 0, 0, 0) AS created,
+				MAKE_TIMESTAMPTZ(1969, 4, 20, 0, 0, 0) AS last_modified
+			FROM
+				rollouts
+			WHERE
+				status = 'pending'
+			ORDER BY
+				feature_name,
+				"version" DESC
+		)
+	),
+	filtered AS (
+		SELECT DISTINCT
+			ON (name) name AS name,
+			version,
+			created,
+			last_modified
+		FROM
+			combined
+		ORDER BY
+			-- order by id to ensure rollout has precedence over feature
+			name,
+			id
+	)
 SELECT
-  fd.name,
-  fd.version,
-  fd.chart,
-  fd.description,
-  fd.source,
-  fd.kinds::text[] AS kinds,
-  fd.dependencies,
-  fd.values,
-  fd.default_values,
-  fd.timeout,
-  combined.created,
-  combined.last_modified
-FROM combined
-JOIN feature_data fd ON combined.name = fd.name AND combined.version = fd.version
-ORDER BY combined.name
+	fd.name,
+	fd.version,
+	fd.chart,
+	fd.description,
+	fd.source,
+	fd.kinds::TEXT[] AS kinds,
+	fd.dependencies,
+	fd.values,
+	fd.default_values,
+	fd.timeout,
+	combined.created,
+	combined.last_modified
+FROM
+	combined
+	JOIN feature_data fd ON combined.name = fd.name
+	AND combined.version = fd.version
+ORDER BY
+	combined.name
 `
 
 type FeaturesRow struct {
@@ -240,22 +265,26 @@ func (q *Queries) Features(ctx context.Context) ([]FeaturesRow, error) {
 
 const featuresForKind = `-- name: FeaturesForKind :many
 SELECT
-  fd.name,
-  fd.version,
-  fd.chart,
-  fd.description,
-  fd.source,
-  fd.kinds::text[] AS kinds,
-  fd.dependencies,
-  fd.values,
-  fd.default_values,
-  fd.timeout,
-  features.created,
-  features.last_modified
-FROM features
-JOIN feature_data fd ON features.name = fd.name AND features.version = fd.version
-WHERE $1::text = ANY(kinds::text[])
-ORDER BY features.name
+	fd.name,
+	fd.version,
+	fd.chart,
+	fd.description,
+	fd.source,
+	fd.kinds::TEXT[] AS kinds,
+	fd.dependencies,
+	fd.values,
+	fd.default_values,
+	fd.timeout,
+	features.created,
+	features.last_modified
+FROM
+	features
+	JOIN feature_data fd ON features.name = fd.name
+	AND features.version = fd.version
+WHERE
+	$1::TEXT = ANY (kinds::TEXT[])
+ORDER BY
+	features.name
 `
 
 type FeaturesForKindRow struct {

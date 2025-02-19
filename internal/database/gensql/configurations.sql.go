@@ -12,7 +12,8 @@ import (
 
 const configDelete = `-- name: ConfigDelete :exec
 DELETE FROM configurations_global
-WHERE id = $1
+WHERE
+	id = $1
 `
 
 func (q *Queries) ConfigDelete(ctx context.Context, id uuid.UUID) error {
@@ -21,15 +22,30 @@ func (q *Queries) ConfigDelete(ctx context.Context, id uuid.UUID) error {
 }
 
 const configEnvUpdateOrCreate = `-- name: ConfigEnvUpdateOrCreate :one
-INSERT INTO configurations_environment
-	(environment_id, feature, description, secret, key, value)
+INSERT INTO
+	configurations_environment (
+		environment_id,
+		feature,
+		description,
+		secret,
+		key,
+		value
+	)
 VALUES
-	($1, $2, $3, $4, $5, $6)
+	(
+		$1,
+		$2,
+		$3,
+		$4,
+		$5,
+		$6
+	)
 ON CONFLICT (environment_id, feature, key) DO UPDATE
-	SET
-		value = EXCLUDED.value,
-		description = EXCLUDED.description
-RETURNING id, feature, key, value, description, secret, created, environment_id
+SET
+	value = EXCLUDED.value,
+	description = EXCLUDED.description
+RETURNING
+	id, feature, key, value, description, secret, created, environment_id
 `
 
 type ConfigEnvUpdateOrCreateParams struct {
@@ -65,10 +81,14 @@ func (q *Queries) ConfigEnvUpdateOrCreate(ctx context.Context, arg ConfigEnvUpda
 }
 
 const configGet = `-- name: ConfigGet :many
-SELECT id, feature, key, value, description, secret, created
-FROM ONLY configurations_global
-WHERE feature = $1
-ORDER BY key ASC
+SELECT
+	id, feature, key, value, description, secret, created
+FROM
+	ONLY configurations_global
+WHERE
+	feature = $1
+ORDER BY
+	key ASC
 `
 
 func (q *Queries) ConfigGet(ctx context.Context, feature string) ([]ConfigurationsGlobal, error) {
@@ -100,9 +120,12 @@ func (q *Queries) ConfigGet(ctx context.Context, feature string) ([]Configuratio
 }
 
 const configGetByID = `-- name: ConfigGetByID :one
-SELECT id, feature, key, value, description, secret, created
-FROM configurations_global
-WHERE id = $1
+SELECT
+	id, feature, key, value, description, secret, created
+FROM
+	configurations_global
+WHERE
+	id = $1
 `
 
 func (q *Queries) ConfigGetByID(ctx context.Context, id uuid.UUID) (ConfigurationsGlobal, error) {
@@ -121,10 +144,15 @@ func (q *Queries) ConfigGetByID(ctx context.Context, id uuid.UUID) (Configuratio
 }
 
 const configGetForEnv = `-- name: ConfigGetForEnv :many
-SELECT id, feature, key, value, description, secret, created, environment_id
-FROM configurations_environment
-WHERE feature = $1 AND environment_id = $2
-ORDER BY key ASC
+SELECT
+	id, feature, key, value, description, secret, created, environment_id
+FROM
+	configurations_environment
+WHERE
+	feature = $1
+	AND environment_id = $2
+ORDER BY
+	key ASC
 `
 
 type ConfigGetForEnvParams struct {
@@ -162,15 +190,16 @@ func (q *Queries) ConfigGetForEnv(ctx context.Context, arg ConfigGetForEnvParams
 }
 
 const configGlobalUpdateOrCreate = `-- name: ConfigGlobalUpdateOrCreate :one
-INSERT INTO configurations_global
-	(feature, description, secret, key, value)
+INSERT INTO
+	configurations_global (feature, description, secret, key, value)
 VALUES
 	($1, $2, $3, $4, $5)
 ON CONFLICT (feature, key) DO UPDATE
-	SET
-		value = EXCLUDED.value,
-		description = EXCLUDED.description
-RETURNING id, feature, key, value, description, secret, created
+SET
+	value = EXCLUDED.value,
+	description = EXCLUDED.description
+RETURNING
+	id, feature, key, value, description, secret, created
 `
 
 type ConfigGlobalUpdateOrCreateParams struct {
@@ -203,11 +232,17 @@ func (q *Queries) ConfigGlobalUpdateOrCreate(ctx context.Context, arg ConfigGlob
 }
 
 const configOverridesByFeature = `-- name: ConfigOverridesByFeature :many
-SELECT environment_id, array_agg(key)::text[] AS keys
-FROM configurations_environment
-WHERE feature = $1
-GROUP BY environment_id
-ORDER BY environment_id ASC
+SELECT
+	environment_id,
+	ARRAY_AGG(key)::TEXT[] AS keys
+FROM
+	configurations_environment
+WHERE
+	feature = $1
+GROUP BY
+	environment_id
+ORDER BY
+	environment_id ASC
 `
 
 type ConfigOverridesByFeatureRow struct {
@@ -237,16 +272,20 @@ func (q *Queries) ConfigOverridesByFeature(ctx context.Context, feature string) 
 
 const configRenameEnv = `-- name: ConfigRenameEnv :exec
 UPDATE ONLY configurations_environment
-SET key = $1
+SET
+	key = $1
 WHERE
-configurations_environment.key = $2
-AND NOT EXISTS (
-	SELECT 1
-	FROM ONLY configurations_environment nested
-	WHERE configurations_environment.feature = $3
-	AND nested.key = $1
-	AND nested.environment_id = configurations_environment.environment_id
-)
+	configurations_environment.key = $2
+	AND NOT EXISTS (
+		SELECT
+			1
+		FROM
+			ONLY configurations_environment nested
+		WHERE
+			configurations_environment.feature = $3
+			AND nested.key = $1
+			AND nested.environment_id = configurations_environment.environment_id
+	)
 `
 
 type ConfigRenameEnvParams struct {
@@ -262,15 +301,20 @@ func (q *Queries) ConfigRenameEnv(ctx context.Context, arg ConfigRenameEnvParams
 
 const configRenameGlobal = `-- name: ConfigRenameGlobal :exec
 UPDATE ONLY configurations_global
-SET key = $1
-WHERE configurations_global.key = $2
-AND configurations_global.feature = $3
-AND NOT EXISTS (
-	SELECT 1
-	FROM ONLY configurations_global nested
-	WHERE nested.feature = $3
-	AND nested.key = $1
-)
+SET
+	key = $1
+WHERE
+	configurations_global.key = $2
+	AND configurations_global.feature = $3
+	AND NOT EXISTS (
+		SELECT
+			1
+		FROM
+			ONLY configurations_global nested
+		WHERE
+			nested.feature = $3
+			AND nested.key = $1
+	)
 `
 
 type ConfigRenameGlobalParams struct {
@@ -286,10 +330,13 @@ func (q *Queries) ConfigRenameGlobal(ctx context.Context, arg ConfigRenameGlobal
 
 const configUpdate = `-- name: ConfigUpdate :one
 UPDATE configurations_global
-SET description = $1,
+SET
+	description = $1,
 	value = $2
-WHERE id = $3
-RETURNING id, feature, key, value, description, secret, created
+WHERE
+	id = $3
+RETURNING
+	id, feature, key, value, description, secret, created
 `
 
 type ConfigUpdateParams struct {
@@ -314,27 +361,50 @@ func (q *Queries) ConfigUpdate(ctx context.Context, arg ConfigUpdateParams) (Con
 }
 
 const envConfig = `-- name: EnvConfig :many
-WITH "combined" AS (
-		SELECT "id", "feature", "key", "value", NULL::uuid AS environment_id
-		FROM ONLY configurations_global glob
-		WHERE glob.feature = $1
-
+WITH
+	"combined" AS (
+		SELECT
+			"id",
+			"feature",
+			"key",
+			"value",
+			NULL::uuid AS environment_id
+		FROM
+			ONLY configurations_global glob
+		WHERE
+			glob.feature = $1
 		UNION
-
-		SELECT "id", "feature", "key", "value", "environment_id"
-		FROM ONLY configurations_environment env
-		WHERE env.feature = $1
-		AND environment_id = $2
-	), "filtered" AS (
-		SELECT id, feature, key, value, environment_id, RANK() OVER (
-				PARTITION BY "key"
-				ORDER BY environment_id ASC, key ASC
+		SELECT
+			"id",
+			"feature",
+			"key",
+			"value",
+			"environment_id"
+		FROM
+			ONLY configurations_environment env
+		WHERE
+			env.feature = $1
+			AND environment_id = $2
+	),
+	"filtered" AS (
+		SELECT
+			id, feature, key, value, environment_id,
+			RANK() OVER (
+				PARTITION BY
+					"key"
+				ORDER BY
+					environment_id ASC,
+					key ASC
 			)
-		FROM "combined"
+		FROM
+			"combined"
 	)
-SELECT id, feature, key, value, environment_id, rank
-FROM filtered
-WHERE RANK = 1
+SELECT
+	id, feature, key, value, environment_id, rank
+FROM
+	filtered
+WHERE
+	RANK = 1
 `
 
 type EnvConfigParams struct {
@@ -379,29 +449,52 @@ func (q *Queries) EnvConfig(ctx context.Context, arg EnvConfigParams) ([]EnvConf
 }
 
 const envConfigOnlyKnown = `-- name: EnvConfigOnlyKnown :many
-WITH "combined" AS (
-		SELECT "id", "feature", "key", "value", NULL::uuid AS environment_id
-		FROM ONLY configurations_global glob
-		WHERE glob.feature = $1
-		AND glob.key = ANY($2::text[])
-
+WITH
+	"combined" AS (
+		SELECT
+			"id",
+			"feature",
+			"key",
+			"value",
+			NULL::uuid AS environment_id
+		FROM
+			ONLY configurations_global glob
+		WHERE
+			glob.feature = $1
+			AND glob.key = ANY ($2::TEXT[])
 		UNION
-
-		SELECT "id", "feature", "key", "value", "environment_id"
-		FROM ONLY configurations_environment env
-		WHERE env.feature = $1
-		AND environment_id = $3
-		AND env.key = ANY($2::text[])
-	), "filtered" AS (
-		SELECT id, feature, key, value, environment_id, RANK() OVER (
-				PARTITION BY "key"
-				ORDER BY environment_id ASC, key ASC
+		SELECT
+			"id",
+			"feature",
+			"key",
+			"value",
+			"environment_id"
+		FROM
+			ONLY configurations_environment env
+		WHERE
+			env.feature = $1
+			AND environment_id = $3
+			AND env.key = ANY ($2::TEXT[])
+	),
+	"filtered" AS (
+		SELECT
+			id, feature, key, value, environment_id,
+			RANK() OVER (
+				PARTITION BY
+					"key"
+				ORDER BY
+					environment_id ASC,
+					key ASC
 			)
-		FROM "combined"
+		FROM
+			"combined"
 	)
-SELECT id, feature, key, value, environment_id, rank
-FROM filtered
-WHERE RANK = 1
+SELECT
+	id, feature, key, value, environment_id, rank
+FROM
+	filtered
+WHERE
+	RANK = 1
 `
 
 type EnvConfigOnlyKnownParams struct {

@@ -11,7 +11,12 @@ import (
 )
 
 const tenantCI = `-- name: TenantCI :one
-SELECT id, name, description, created, last_modified, ci FROM tenants WHERE ci = true
+SELECT
+	id, name, description, created, last_modified, ci
+FROM
+	tenants
+WHERE
+	ci = TRUE
 `
 
 func (q *Queries) TenantCI(ctx context.Context) (Tenant, error) {
@@ -29,7 +34,12 @@ func (q *Queries) TenantCI(ctx context.Context) (Tenant, error) {
 }
 
 const tenantCreate = `-- name: TenantCreate :one
-INSERT INTO tenants (name, description) VALUES ($1, $2) RETURNING id, name, description, created, last_modified, ci
+INSERT INTO
+	tenants (name, description)
+VALUES
+	($1, $2)
+RETURNING
+	id, name, description, created, last_modified, ci
 `
 
 type TenantCreateParams struct {
@@ -52,14 +62,21 @@ func (q *Queries) TenantCreate(ctx context.Context, arg TenantCreateParams) (Ten
 }
 
 const tenantEnvironments = `-- name: TenantEnvironments :many
-SELECT e.id, e.tenant_id, e.name, e.kind, e.description, e.created, e.last_modified, e.ci, e.reconcile, e.auto_upgrade, t.name AS tenant_name
-FROM environments e
-JOIN tenants t ON e.tenant_id = t.id
+SELECT
+	e.id, e.tenant_id, e.name, e.kind, e.description, e.created, e.last_modified, e.ci, e.reconcile, e.auto_upgrade,
+	t.name AS tenant_name
+FROM
+	environments e
+	JOIN tenants t ON e.tenant_id = t.id
 WHERE
-  -- If @all is false, only return environments with reconcile enabled
-  CASE WHEN true = $1::boolean THEN true
-  ELSE e.reconcile = true END
-ORDER BY t.name, e.name
+	-- If @all is false, only return environments with reconcile enabled
+	CASE
+		WHEN TRUE = $1::BOOLEAN THEN TRUE
+		ELSE e.reconcile = TRUE
+	END
+ORDER BY
+	t.name,
+	e.name
 `
 
 type TenantEnvironmentsRow struct {
@@ -109,9 +126,12 @@ func (q *Queries) TenantEnvironments(ctx context.Context, all bool) ([]TenantEnv
 }
 
 const tenantGet = `-- name: TenantGet :one
-SELECT id, name, description, created, last_modified, ci
-FROM tenants
-WHERE id = $1
+SELECT
+	id, name, description, created, last_modified, ci
+FROM
+	tenants
+WHERE
+	id = $1
 `
 
 func (q *Queries) TenantGet(ctx context.Context, id uuid.UUID) (Tenant, error) {
@@ -129,9 +149,12 @@ func (q *Queries) TenantGet(ctx context.Context, id uuid.UUID) (Tenant, error) {
 }
 
 const tenantGetByName = `-- name: TenantGetByName :one
-SELECT id, name, description, created, last_modified, ci
-FROM tenants
-WHERE name = $1
+SELECT
+	id, name, description, created, last_modified, ci
+FROM
+	tenants
+WHERE
+	name = $1
 `
 
 func (q *Queries) TenantGetByName(ctx context.Context, name string) (Tenant, error) {
@@ -149,9 +172,13 @@ func (q *Queries) TenantGetByName(ctx context.Context, name string) (Tenant, err
 }
 
 const tenantsGet = `-- name: TenantsGet :many
-SELECT id, name, description, created, last_modified, ci
-FROM tenants
-ORDER BY created DESC, name ASC
+SELECT
+	id, name, description, created, last_modified, ci
+FROM
+	tenants
+ORDER BY
+	created DESC,
+	name ASC
 `
 
 func (q *Queries) TenantsGet(ctx context.Context) ([]Tenant, error) {

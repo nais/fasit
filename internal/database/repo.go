@@ -73,7 +73,7 @@ type Transaction interface {
 type repo struct {
 	querier Querier
 	db      *pgxpool.Pool
-	log     *logrus.Entry
+	log     logrus.FieldLogger
 
 	auditErrorCount metric.Int64Counter
 }
@@ -92,7 +92,7 @@ type Querier interface {
 	WithTx(tx pgx.Tx) *gensql.Queries
 }
 
-func New(db *pgxpool.Pool, log *logrus.Entry) Repo {
+func New(db *pgxpool.Pool, log logrus.FieldLogger) Repo {
 	return &repo{
 		querier: gensql.New(db),
 		db:      db,
@@ -169,7 +169,7 @@ func NewDB(ctx context.Context, dbConnDSN string, cloudsql bool) (*pgxpool.Pool,
 	return conn, closers, nil
 }
 
-func Migrate(driver, dsn string, log *logrus.Entry) error {
+func Migrate(driver, dsn string, log logrus.FieldLogger) error {
 	goose.SetBaseFS(embedMigrations)
 	goose.SetLogger(log)
 

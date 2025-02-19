@@ -12,10 +12,12 @@ import (
 
 const rolloutAssignDeployInstruction = `-- name: RolloutAssignDeployInstruction :exec
 UPDATE rollouts
-SET deploy_instructions = array_append(deploy_instructions, $1)
-WHERE feature_name = $2
-AND version = $3
-AND status = 'pending'
+SET
+	deploy_instructions = ARRAY_APPEND(deploy_instructions, $1)
+WHERE
+	feature_name = $2
+	AND version = $3
+	AND status = 'pending'
 `
 
 type RolloutAssignDeployInstructionParams struct {
@@ -30,9 +32,12 @@ func (q *Queries) RolloutAssignDeployInstruction(ctx context.Context, arg Rollou
 }
 
 const rolloutByID = `-- name: RolloutByID :one
-SELECT id, feature_name, version, status, created, completed, gh_ref, deploy_instructions
-FROM rollouts
-WHERE id = $1
+SELECT
+	id, feature_name, version, status, created, completed, gh_ref, deploy_instructions
+FROM
+	rollouts
+WHERE
+	id = $1
 `
 
 func (q *Queries) RolloutByID(ctx context.Context, id uuid.UUID) (Rollout, error) {
@@ -53,23 +58,26 @@ func (q *Queries) RolloutByID(ctx context.Context, id uuid.UUID) (Rollout, error
 
 const rolloutByName = `-- name: RolloutByName :one
 SELECT
-  rollouts.id,
-  fd.name,
-  fd.version,
-  fd.chart,
-  fd.description,
-  fd.source,
-  fd.kinds::text[] AS kinds,
-  fd.dependencies,
-  fd.values,
-  fd.default_values,
-  fd.timeout,
-  fd.rename,
-  rollouts.created
-FROM rollouts
-JOIN feature_data fd ON rollouts.feature_name = fd.name AND rollouts.version = fd.version
-WHERE fd.name = $1
-AND rollouts.status = 'pending'
+	rollouts.id,
+	fd.name,
+	fd.version,
+	fd.chart,
+	fd.description,
+	fd.source,
+	fd.kinds::TEXT[] AS kinds,
+	fd.dependencies,
+	fd.values,
+	fd.default_values,
+	fd.timeout,
+	fd.rename,
+	rollouts.created
+FROM
+	rollouts
+	JOIN feature_data fd ON rollouts.feature_name = fd.name
+	AND rollouts.version = fd.version
+WHERE
+	fd.name = $1
+	AND rollouts.status = 'pending'
 `
 
 type RolloutByNameRow struct {
@@ -110,10 +118,13 @@ func (q *Queries) RolloutByName(ctx context.Context, name string) (RolloutByName
 }
 
 const rolloutByNameAndVersion = `-- name: RolloutByNameAndVersion :one
-SELECT id, feature_name, version, status, created, completed, gh_ref, deploy_instructions
-FROM rollouts
-WHERE feature_name = $1
-AND version = $2
+SELECT
+	id, feature_name, version, status, created, completed, gh_ref, deploy_instructions
+FROM
+	rollouts
+WHERE
+	feature_name = $1
+	AND version = $2
 `
 
 type RolloutByNameAndVersionParams struct {
@@ -138,29 +149,65 @@ func (q *Queries) RolloutByNameAndVersion(ctx context.Context, arg RolloutByName
 }
 
 const rolloutCalculateDone = `-- name: RolloutCalculateDone :one
-WITH rollout AS (
-  SELECT id, feature_name, version, status, created, completed, gh_ref, deploy_instructions FROM rollouts WHERE rollouts.id = $1
-), dis AS (
-  SELECT di.id, di.environment_id, di.feature_name, di.feature_version, di.status, di.hash, di.created, di.last_modified, di.values
-  FROM deploy_instructions di
-  INNER JOIN rollout ON di.feature_name = rollout.feature_name AND di.feature_version = rollout.version
-  WHERE di.status IN ('deployed', 'failed')
-), cienvs AS (
-  SELECT id
-  FROM environments
-  WHERE ci = true
-), feature_states AS (
-  SELECT count(1)
-  FROM feature_states
-  WHERE feature = (SELECT feature_name FROM rollout)
-  AND environment_id IN (SELECT id FROM cienvs)
-  AND enabled = true
-)
-SELECT (
-  SELECT count(1) FROM dis
-) = (
-  SELECT count FROM feature_states
-) AS done
+WITH
+	rollout AS (
+		SELECT
+			id, feature_name, version, status, created, completed, gh_ref, deploy_instructions
+		FROM
+			rollouts
+		WHERE
+			rollouts.id = $1
+	),
+	dis AS (
+		SELECT
+			di.id, di.environment_id, di.feature_name, di.feature_version, di.status, di.hash, di.created, di.last_modified, di.values
+		FROM
+			deploy_instructions di
+			INNER JOIN rollout ON di.feature_name = rollout.feature_name
+			AND di.feature_version = rollout.version
+		WHERE
+			di.status IN ('deployed', 'failed')
+	),
+	cienvs AS (
+		SELECT
+			id
+		FROM
+			environments
+		WHERE
+			ci = TRUE
+	),
+	feature_states AS (
+		SELECT
+			COUNT(1)
+		FROM
+			feature_states
+		WHERE
+			feature = (
+				SELECT
+					feature_name
+				FROM
+					rollout
+			)
+			AND environment_id IN (
+				SELECT
+					id
+				FROM
+					cienvs
+			)
+			AND enabled = TRUE
+	)
+SELECT
+	(
+		SELECT
+			COUNT(1)
+		FROM
+			dis
+	) = (
+		SELECT
+			count
+		FROM
+			feature_states
+	) AS done
 `
 
 func (q *Queries) RolloutCalculateDone(ctx context.Context, rolloutID uuid.UUID) (bool, error) {
@@ -171,7 +218,12 @@ func (q *Queries) RolloutCalculateDone(ctx context.Context, rolloutID uuid.UUID)
 }
 
 const rolloutComplete = `-- name: RolloutComplete :exec
-UPDATE rollouts SET completed = NOW() WHERE feature_name = $1 and completed IS NULL
+UPDATE rollouts
+SET
+	completed = NOW()
+WHERE
+	feature_name = $1
+	AND completed IS NULL
 `
 
 func (q *Queries) RolloutComplete(ctx context.Context, featureName string) error {
@@ -180,7 +232,12 @@ func (q *Queries) RolloutComplete(ctx context.Context, featureName string) error
 }
 
 const rolloutCreate = `-- name: RolloutCreate :one
-INSERT INTO rollouts (feature_name, version, gh_ref) VALUES ($1, $2, $3) RETURNING id, feature_name, version, status, created, completed, gh_ref, deploy_instructions
+INSERT INTO
+	rollouts (feature_name, version, gh_ref)
+VALUES
+	($1, $2, $3)
+RETURNING
+	id, feature_name, version, status, created, completed, gh_ref, deploy_instructions
 `
 
 type RolloutCreateParams struct {
@@ -206,7 +263,9 @@ func (q *Queries) RolloutCreate(ctx context.Context, arg RolloutCreateParams) (R
 }
 
 const rolloutDelete = `-- name: RolloutDelete :exec
-DELETE FROM rollouts WHERE feature_name = $1
+DELETE FROM rollouts
+WHERE
+	feature_name = $1
 `
 
 func (q *Queries) RolloutDelete(ctx context.Context, featureName string) error {
@@ -215,7 +274,10 @@ func (q *Queries) RolloutDelete(ctx context.Context, featureName string) error {
 }
 
 const rolloutEventCreate = `-- name: RolloutEventCreate :exec
-INSERT INTO rollout_events (rollout_id, failure, message, data) VALUES ($1, $2::boolean, $3, $4)
+INSERT INTO
+	rollout_events (rollout_id, failure, message, data)
+VALUES
+	($1, $2::BOOLEAN, $3, $4)
 `
 
 type RolloutEventCreateParams struct {
@@ -236,10 +298,14 @@ func (q *Queries) RolloutEventCreate(ctx context.Context, arg RolloutEventCreate
 }
 
 const rolloutEventForRollout = `-- name: RolloutEventForRollout :many
-SELECT id, rollout_id, failure, message, data, created
-FROM rollout_events
-WHERE rollout_id = $1
-ORDER BY created ASC
+SELECT
+	id, rollout_id, failure, message, data, created
+FROM
+	rollout_events
+WHERE
+	rollout_id = $1
+ORDER BY
+	created ASC
 `
 
 func (q *Queries) RolloutEventForRollout(ctx context.Context, rolloutID uuid.UUID) ([]RolloutEvent, error) {
@@ -271,10 +337,12 @@ func (q *Queries) RolloutEventForRollout(ctx context.Context, rolloutID uuid.UUI
 
 const rolloutMarkFailed = `-- name: RolloutMarkFailed :execrows
 UPDATE rollouts
-SET status = 'failed',
-    completed = NOW()
-WHERE id = $1
-AND status NOT IN ('deployed', 'failed')
+SET
+	status = 'failed',
+	completed = NOW()
+WHERE
+	id = $1
+	AND status NOT IN ('deployed', 'failed')
 `
 
 func (q *Queries) RolloutMarkFailed(ctx context.Context, rolloutID uuid.UUID) (int64, error) {
@@ -286,7 +354,13 @@ func (q *Queries) RolloutMarkFailed(ctx context.Context, rolloutID uuid.UUID) (i
 }
 
 const rolloutStatus = `-- name: RolloutStatus :one
-SELECT status FROM rollouts WHERE feature_name = $1 and completed IS NULL
+SELECT
+	status
+FROM
+	rollouts
+WHERE
+	feature_name = $1
+	AND completed IS NULL
 `
 
 func (q *Queries) RolloutStatus(ctx context.Context, featureName string) (string, error) {
@@ -297,7 +371,12 @@ func (q *Queries) RolloutStatus(ctx context.Context, featureName string) (string
 }
 
 const rolloutUpdateStatus = `-- name: RolloutUpdateStatus :exec
-UPDATE rollouts SET status = $1 WHERE feature_name = $2 and completed IS NULL
+UPDATE rollouts
+SET
+	status = $1
+WHERE
+	feature_name = $2
+	AND completed IS NULL
 `
 
 type RolloutUpdateStatusParams struct {
@@ -311,10 +390,14 @@ func (q *Queries) RolloutUpdateStatus(ctx context.Context, arg RolloutUpdateStat
 }
 
 const rollouts = `-- name: Rollouts :many
-SELECT id, feature_name, version, status, created, completed, gh_ref, deploy_instructions
-FROM rollouts
-ORDER BY created DESC
-LIMIT $1
+SELECT
+	id, feature_name, version, status, created, completed, gh_ref, deploy_instructions
+FROM
+	rollouts
+ORDER BY
+	created DESC
+LIMIT
+	$1
 `
 
 func (q *Queries) Rollouts(ctx context.Context, limit int32) ([]Rollout, error) {
@@ -347,11 +430,16 @@ func (q *Queries) Rollouts(ctx context.Context, limit int32) ([]Rollout, error) 
 }
 
 const rolloutsForFeature = `-- name: RolloutsForFeature :many
-SELECT id, feature_name, version, status, created, completed, gh_ref, deploy_instructions
-FROM rollouts
-WHERE feature_name = $1
-ORDER BY created DESC
-LIMIT 30
+SELECT
+	id, feature_name, version, status, created, completed, gh_ref, deploy_instructions
+FROM
+	rollouts
+WHERE
+	feature_name = $1
+ORDER BY
+	created DESC
+LIMIT
+	30
 `
 
 func (q *Queries) RolloutsForFeature(ctx context.Context, featureName string) ([]Rollout, error) {
@@ -384,51 +472,71 @@ func (q *Queries) RolloutsForFeature(ctx context.Context, featureName string) ([
 }
 
 const rolloutsForKind = `-- name: RolloutsForKind :many
-WITH success AS (
-  SELECT DISTINCT ON (rollouts.feature_name)
-    id,
-    feature_name
-  FROM rollouts
-  JOIN feature_data fd ON rollouts.feature_name = fd.name AND rollouts.version = fd.version
-  WHERE $1::environment_kind = ANY(kinds)
-  AND (
-    rollouts.status IN ('pending', 'in_progress', 'deployed')
-  )
-  ORDER BY rollouts.feature_name, rollouts.created DESC
-), failed AS (
-  SELECT DISTINCT ON (rollouts.feature_name)
-    rollouts.id
-  FROM rollouts
-  LEFT OUTER JOIN success ON success.feature_name = rollouts.feature_name
-  JOIN feature_data fd ON rollouts.feature_name = fd.name AND rollouts.version = fd.version
-  WHERE success.id IS NULL
-  AND $1::environment_kind = ANY(kinds)
-  AND (
-    rollouts.status IN ('failed')
-  )
-  ORDER BY rollouts.feature_name, rollouts.created DESC
-), all_rollouts AS (
-  SELECT id FROM success
-  UNION
-  SELECT id FROM failed
-)
+WITH
+	success AS (
+		SELECT DISTINCT
+			ON (rollouts.feature_name) id,
+			feature_name
+		FROM
+			rollouts
+			JOIN feature_data fd ON rollouts.feature_name = fd.name
+			AND rollouts.version = fd.version
+		WHERE
+			$1::environment_kind = ANY (kinds)
+			AND (
+				rollouts.status IN ('pending', 'in_progress', 'deployed')
+			)
+		ORDER BY
+			rollouts.feature_name,
+			rollouts.created DESC
+	),
+	failed AS (
+		SELECT DISTINCT
+			ON (rollouts.feature_name) rollouts.id
+		FROM
+			rollouts
+			LEFT OUTER JOIN success ON success.feature_name = rollouts.feature_name
+			JOIN feature_data fd ON rollouts.feature_name = fd.name
+			AND rollouts.version = fd.version
+		WHERE
+			success.id IS NULL
+			AND $1::environment_kind = ANY (kinds)
+			AND (rollouts.status IN ('failed'))
+		ORDER BY
+			rollouts.feature_name,
+			rollouts.created DESC
+	),
+	all_rollouts AS (
+		SELECT
+			id
+		FROM
+			success
+		UNION
+		SELECT
+			id
+		FROM
+			failed
+	)
 SELECT
-  rollouts.id,
-  fd.name,
-  fd.version,
-  fd.chart,
-  fd.description,
-  fd.source,
-  fd.kinds::text[] AS kinds,
-  fd.dependencies,
-  fd.values,
-  fd.default_values,
-  fd.timeout,
-  rollouts.created
-FROM rollouts
-JOIN all_rollouts ar ON ar.id = rollouts.id
-JOIN feature_data fd ON rollouts.feature_name = fd.name AND rollouts.version = fd.version
-ORDER BY rollouts.feature_name ASC
+	rollouts.id,
+	fd.name,
+	fd.version,
+	fd.chart,
+	fd.description,
+	fd.source,
+	fd.kinds::TEXT[] AS kinds,
+	fd.dependencies,
+	fd.values,
+	fd.default_values,
+	fd.timeout,
+	rollouts.created
+FROM
+	rollouts
+	JOIN all_rollouts ar ON ar.id = rollouts.id
+	JOIN feature_data fd ON rollouts.feature_name = fd.name
+	AND rollouts.version = fd.version
+ORDER BY
+	rollouts.feature_name ASC
 `
 
 type RolloutsForKindRow struct {

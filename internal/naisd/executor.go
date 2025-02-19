@@ -17,6 +17,7 @@ type MockExecutor struct {
 	Logger        *logrus.Entry
 	Timeout       time.Duration
 	NumSuccessful *int
+	Fail          bool
 }
 
 func (m *MockExecutor) Execute(cmd *exec.Cmd) error {
@@ -41,7 +42,9 @@ func (m *MockExecutor) Execute(cmd *exec.Cmd) error {
 	}
 
 	var err error
-	if m.NumSuccessful != nil {
+	if m.Fail {
+		err = fmt.Errorf("execution failed")
+	} else if m.NumSuccessful != nil {
 		if *m.NumSuccessful <= 0 {
 			err = fmt.Errorf("execution failed")
 		}

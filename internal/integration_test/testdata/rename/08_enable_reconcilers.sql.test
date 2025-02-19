@@ -1,5 +1,0 @@
-UPDATE environments SET reconcile = true;
-
-RETURNS
-
-[]

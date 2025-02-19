@@ -10,11 +10,14 @@ import (
 )
 
 const logsByDeployInstruction = `-- name: LogsByDeployInstruction :many
-SELECT id, deploy_instruction, time, message, kind
-FROM logs
-WHERE deploy_instruction = $1
-ORDER BY time
-ASC
+SELECT
+	id, deploy_instruction, time, message, kind
+FROM
+	logs
+WHERE
+	deploy_instruction = $1
+ORDER BY
+	TIME ASC
 `
 
 func (q *Queries) LogsByDeployInstruction(ctx context.Context, deployInstruction uuid.UUID) ([]Log, error) {
@@ -44,9 +47,12 @@ func (q *Queries) LogsByDeployInstruction(ctx context.Context, deployInstruction
 }
 
 const logsByID = `-- name: LogsByID :one
-SELECT id, deploy_instruction, time, message, kind
-FROM logs
-WHERE id = $1
+SELECT
+	id, deploy_instruction, time, message, kind
+FROM
+	logs
+WHERE
+	id = $1
 `
 
 func (q *Queries) LogsByID(ctx context.Context, id int64) (Log, error) {
