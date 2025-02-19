@@ -8,9 +8,8 @@ import (
 	"os"
 	"testing"
 
-	_ "github.com/lib/pq"
-
 	"github.com/jackc/pgx/v5"
+	_ "github.com/lib/pq"
 	"github.com/nais/fasit/internal/database/dbtest"
 	"github.com/sirupsen/logrus"
 )
@@ -21,7 +20,7 @@ var (
 )
 
 func TestMain(m *testing.M) {
-	dbs, cleanup := dbtest.DockerSQLPool()
+	dbs, cleanup := dbtest.DockerSQLPool(context.Background())
 	dbString = dbs
 
 	log := logrus.New()
