@@ -19,10 +19,10 @@ jobs:
     runs-on: ubuntu-latest-4-cores
     steps:
       - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v2
       - name: Find Go version
         id: go_version
-        run: |
-          echo "GO_VERSION=$(grep golang .tool-versions | awk '{print $2}')" >> $GITHUB_OUTPUT
+        run: echo "go_version=$(mise current go)" >> $GITHUB_OUTPUT
       - uses: actions/setup-go@v5
         with:
           go-version: ${{ steps.go_version.outputs.GO_VERSION }}
