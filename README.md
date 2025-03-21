@@ -27,6 +27,9 @@ make setup
 
 # Run naisd
 make local-naisd
+
+# Install tools
+mise install
 ```
 
 ### Test local rollout
