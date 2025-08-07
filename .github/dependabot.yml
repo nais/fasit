@@ -4,20 +4,14 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
-    reviewers:
-      - "@nais/core-dependabot-reviewers"
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
       interval: "monthly"
-    reviewers:
-      - "@nais/core-dependabot-reviewers"
   - package-ecosystem: "gomod"
     directory: "/"
     schedule:
       interval: "monthly"
-    reviewers:
-      - "@nais/core-dependabot-reviewers"
     ignore:
       # We need to ignore oras-go until helm is upgraded
       - dependency-name: "oras.land/oras-go"
