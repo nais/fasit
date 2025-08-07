@@ -12,11 +12,6 @@ updates:
     directory: "/"
     schedule:
       interval: "monthly"
-    ignore:
-      # We need to ignore oras-go until helm is upgraded
-      - dependency-name: "oras.land/oras-go"
-        versions:
-          - "v2"
     groups:
       gomod:
         patterns:
