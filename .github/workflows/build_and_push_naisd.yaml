@@ -18,7 +18,7 @@ jobs:
       go_version: ${{ steps.go_version.outputs.GO_VERSION }}
     runs-on: ubuntu-latest-4-cores
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: jdx/mise-action@v2
       - name: Find Go version
         id: go_version
@@ -42,7 +42,7 @@ jobs:
     runs-on: ubuntu-latest-4-cores
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Install cosign
         uses: sigstore/cosign-installer@v3
         with:
@@ -72,7 +72,7 @@ jobs:
       name: ${{ steps.build_chart.outputs.name }}
       version: ${{ steps.build_chart.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: azure/setup-helm@v4
         name: "Setup Helm"

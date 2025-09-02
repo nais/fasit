@@ -34,7 +34,7 @@ jobs:
       go_version: ${{ steps.go_version.outputs.GO_VERSION }}
     runs-on: ubuntu-latest-4-cores
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: jdx/mise-action@v2
       - name: Find Go version
         id: go_version
@@ -71,7 +71,7 @@ jobs:
     outputs:
       version: ${{ steps.build-push-sign.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: sigstore/cosign-installer@v3
       - run: cosign verify --certificate-identity ${{ env.BASEIMG_IDENTITY }} --certificate-oidc-issuer ${{ env.BASEIMG_ISSUER }} ${{ env.RUNNER_IMG }}
       - uses: nais/platform-build-push-sign@main
@@ -93,7 +93,7 @@ jobs:
       - build_and_push_fasit
     steps:
       - name: Checkout fasit
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - id: "auth"
         name: "Authenticate to Google Cloud"
         uses: google-github-actions/auth@v2
