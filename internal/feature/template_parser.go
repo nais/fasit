@@ -158,6 +158,10 @@ func parseComputedDetails(eviu *FeatureTemplateDetails, cv *model.Computed) erro
 		case *parse.ChainNode:
 			// ignore
 		case *parse.NilNode:
+		// ignore
+		case *parse.ContinueNode:
+			// ignore
+		case *parse.BreakNode:
 			// ignore
 		default:
 			unknownNodes = append(unknownNodes, n)
