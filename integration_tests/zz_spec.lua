@@ -62,6 +62,13 @@ function TestFunctionTgql.check(resp)
 	print("check")
 end
 
+--- Add a header to the request
+---@param key string
+---@param value string
+function TestFunctionTgql.addHeader(key, value)
+	print("addHeader")
+end
+
 ---@class TestFunctionTsql
 local TestFunctionTsql = {}
 
