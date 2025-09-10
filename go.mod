@@ -20,6 +20,7 @@ require (
 	cloud.google.com/go/cloudsqlconn v1.18.1
 	cloud.google.com/go/container v1.44.0
 	cloud.google.com/go/pubsub v1.50.1
+	cloud.google.com/go/pubsub/v2 v2.0.0
 	github.com/99designs/gqlgen v0.17.78
 	github.com/GoogleCloudPlatform/cloudsql-proxy v1.37.9
 	github.com/Masterminds/sprig/v3 v3.3.0
@@ -74,7 +75,6 @@ require (
 	cloud.google.com/go/compute/metadata v0.8.0 // indirect
 	cloud.google.com/go/iam v1.5.2 // indirect
 	cloud.google.com/go/longrunning v0.6.7 // indirect
-	cloud.google.com/go/pubsub/v2 v2.0.0 // indirect
 	dario.cat/mergo v1.0.2 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c // indirect

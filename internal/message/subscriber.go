@@ -6,7 +6,7 @@ import (
 	"errors"
 	"log"
 
-	"cloud.google.com/go/pubsub"
+	"cloud.google.com/go/pubsub/v2"
 	"github.com/sirupsen/logrus"
 )
 
@@ -25,13 +25,13 @@ func ForceAck(ctx context.Context) {
 }
 
 type Subscriber[T any] struct {
-	subscription *pubsub.Subscription
+	subscription *pubsub.Subscriber
 	log          logrus.FieldLogger
 }
 
 func NewSubscriber[T any](client *pubsub.Client, projectID, subscriptionID string, log logrus.FieldLogger) *Subscriber[T] {
 	return &Subscriber[T]{
-		subscription: client.SubscriptionInProject(subscriptionID, projectID),
+		subscription: client.Subscriber("projects/" + projectID + "/subscriptions/" + subscriptionID),
 		log:          log,
 	}
 }
@@ -41,7 +41,7 @@ func (s *Subscriber[T]) Name() string {
 }
 
 func (s *Subscriber[T]) Synchronous() {
-	s.subscription.ReceiveSettings.Synchronous = true
+	s.subscription.ReceiveSettings.MaxOutstandingMessages = 1
 }
 
 func (s *Subscriber[T]) Receive(ctx context.Context, f func(ctx context.Context, msg T) error) error {

@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
-	"cloud.google.com/go/pubsub"
+	"cloud.google.com/go/pubsub/v2"
 	"github.com/sirupsen/logrus"
 )
 
@@ -46,7 +46,7 @@ func NewPublisher[T any](client *pubsub.Client, projectID, topicID string, log *
 	}
 
 	return &Publisher[T]{
-		topic:  client.TopicInProject(topicID, projectID),
+		topic:  client.Publisher("projects/" + projectID + "/topics/" + topicID),
 		log:    log,
 		config: cfg,
 	}

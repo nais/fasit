@@ -2,12 +2,12 @@ package message
 
 import (
 	"context"
-	"io"
 	"testing"
 	"time"
 
-	"cloud.google.com/go/pubsub"
 	"cloud.google.com/go/pubsub/pstest"
+	"cloud.google.com/go/pubsub/v2"
+	"cloud.google.com/go/pubsub/v2/apiv1/pubsubpb"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"
@@ -35,19 +35,27 @@ func TestSubscriber(t *testing.T) {
 	}
 	defer client.Close()
 
-	topic, err := client.CreateTopic(ctx, "topic")
+	topicRes, err := client.TopicAdminClient.CreateTopic(ctx, &pubsubpb.Topic{
+		Name: "projects/project/topics/topic",
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = client.CreateSubscription(ctx, "subscription", pubsub.SubscriptionConfig{Topic: client.Topic("topic")})
+
+	_, err = client.SubscriptionAdminClient.CreateSubscription(ctx, &pubsubpb.Subscription{
+		Name:  "projects/project/subscriptions/subscription",
+		Topic: topicRes.GetName(),
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	topic := client.Publisher(topicRes.GetName())
 	topic.Publish(ctx, &pubsub.Message{Data: []byte(`{"Name":"test"}`)})
 
 	type testmsg struct{ Name string }
 	log := logrus.New()
-	log.SetOutput(io.Discard)
+	// log.SetOutput(io.Discard)
 	sub := NewSubscriber[testmsg](client, "project", "subscription", log)
 	sub.Synchronous()
 

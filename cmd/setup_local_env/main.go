@@ -9,7 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"cloud.google.com/go/pubsub"
+	"cloud.google.com/go/pubsub/v2"
+	"cloud.google.com/go/pubsub/v2/apiv1/pubsubpb"
 	"github.com/nais/fasit/internal/provider/protogen"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -101,13 +102,15 @@ func main() {
 		log.Fatal(err)
 	}
 
-	_, err = client.CreateTopic(ctx, statusTopic)
+	topicRes, err := client.TopicAdminClient.CreateTopic(ctx, &pubsubpb.Topic{
+		Name: "projects/" + naisProjectID + "/topics/" + statusTopic,
+	})
 	if err != nil {
 		log.Println(err)
 	}
-
-	_, err = client.CreateSubscription(ctx, statusSubscription, pubsub.SubscriptionConfig{
-		Topic: client.Topic(statusTopic),
+	_, err = client.SubscriptionAdminClient.CreateSubscription(ctx, &pubsubpb.Subscription{
+		Name:  "projects/" + naisProjectID + "/subscriptions/" + statusSubscription,
+		Topic: topicRes.GetName(),
 	})
 	if err != nil {
 		log.Println(err)
@@ -115,10 +118,10 @@ func main() {
 
 	for tenant, envs := range envs {
 		for env := range envs {
-			topic := fmt.Sprintf("naisd-%v-%v", tenant, env)
-			subscription := "naisd-subscription"
+			topic := fmt.Sprintf("projects/%v/topics/naisd-%v-%v", naisProjectID, tenant, env)
+			subscription := fmt.Sprintf("projects/%v/subscriptions/naisd-subscription", "local-"+tenant+"-"+env)
 
-			_, err = client.CreateTopic(ctx, topic)
+			_, err = client.TopicAdminClient.CreateTopic(ctx, &pubsubpb.Topic{Name: topic})
 			if err != nil {
 				log.Println(err)
 			}
@@ -127,8 +130,9 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
-			_, err = envClient.CreateSubscription(ctx, subscription, pubsub.SubscriptionConfig{
-				Topic: envClient.TopicInProject(topic, naisProjectID),
+			_, err = envClient.SubscriptionAdminClient.CreateSubscription(ctx, &pubsubpb.Subscription{
+				Name:  subscription,
+				Topic: topic,
 			})
 			if err != nil {
 				log.Println(err)
@@ -136,7 +140,7 @@ func main() {
 		}
 	}
 
-	topics := client.Topics(ctx)
+	topics := client.TopicAdminClient.ListTopics(ctx, &pubsubpb.ListTopicsRequest{})
 	fmt.Println("TOPICS:")
 	for {
 		ts, err := topics.Next()
@@ -148,7 +152,7 @@ func main() {
 		log.Println(ts.String())
 	}
 
-	subs := client.Subscriptions(ctx)
+	subs := client.SubscriptionAdminClient.ListSubscriptions(ctx, &pubsubpb.ListSubscriptionsRequest{})
 	fmt.Println("SUBSCRIPTIONS:")
 	for {
 		ts, err := subs.Next()

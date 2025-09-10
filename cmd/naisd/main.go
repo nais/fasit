@@ -7,7 +7,7 @@ import (
 	"os/signal"
 	"time"
 
-	"cloud.google.com/go/pubsub"
+	"cloud.google.com/go/pubsub/v2"
 	"github.com/nais/fasit/cmd/naisd/local"
 	"github.com/nais/fasit/internal/helm"
 	"github.com/nais/fasit/internal/message"
