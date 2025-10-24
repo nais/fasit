@@ -13,14 +13,14 @@ import (
 )
 
 type Upgrader interface {
-	GetReleaseChannel(ctx context.Context, projectId string, environment *model.Environment) (string, error)
-	GetCurrentMasterVersion(ctx context.Context, projectId string, environment *model.Environment) (string, error)
-	GetAvailableVersions(ctx context.Context, projectId string, environment *model.Environment, releaseChannel string) ([]string, error)
-	GetRunningOperations(ctx context.Context, projectId string, environment *model.Environment) ([]*containerpb.Operation, error)
-	UpgradeMaster(ctx context.Context, projectId string, environment *model.Environment, version string) (*containerpb.Operation, error)
-	UpgradeNodePool(ctx context.Context, projectId string, environment *model.Environment, nodePoolName, version string) (*containerpb.Operation, error)
-	GetNodePools(ctx context.Context, projectId string, environment *model.Environment) ([]*containerpb.NodePool, error)
-	GetOperation(ctx context.Context, projectId, operationId string) (*containerpb.Operation, error)
+	GetReleaseChannel(ctx context.Context, projectID string, environment *model.Environment) (string, error)
+	GetCurrentMasterVersion(ctx context.Context, projectID string, environment *model.Environment) (string, error)
+	GetAvailableVersions(ctx context.Context, projectID string, environment *model.Environment, releaseChannel string) ([]string, error)
+	GetRunningOperations(ctx context.Context, projectID string, environment *model.Environment) ([]*containerpb.Operation, error)
+	UpgradeMaster(ctx context.Context, projectID string, environment *model.Environment, version string) (*containerpb.Operation, error)
+	UpgradeNodePool(ctx context.Context, projectID string, environment *model.Environment, nodePoolName, version string) (*containerpb.Operation, error)
+	GetNodePools(ctx context.Context, projectID string, environment *model.Environment) ([]*containerpb.NodePool, error)
+	GetOperation(ctx context.Context, projectID, operationID string) (*containerpb.Operation, error)
 	IsTimeInRange(start, end int) bool
 }
 
@@ -60,9 +60,9 @@ func (c *Client) IsTimeInRange(start, end int) bool {
 	return true
 }
 
-func (c *Client) GetRunningOperations(ctx context.Context, projectId string, environment *model.Environment) ([]*containerpb.Operation, error) {
+func (c *Client) GetRunningOperations(ctx context.Context, projectID string, environment *model.Environment) ([]*containerpb.Operation, error) {
 	var runningOps []*containerpb.Operation
-	parent := c.getParent(projectId)
+	parent := c.getParent(projectID)
 
 	operations, err := c.client.ListOperations(ctx, &containerpb.ListOperationsRequest{
 		Parent: parent,
@@ -81,27 +81,27 @@ func (c *Client) GetRunningOperations(ctx context.Context, projectId string, env
 	return runningOps, nil
 }
 
-func (c *Client) GetOperation(ctx context.Context, projectId, operationId string) (*containerpb.Operation, error) {
+func (c *Client) GetOperation(ctx context.Context, projectID, operationID string) (*containerpb.Operation, error) {
 	return c.client.GetOperation(ctx, &containerpb.GetOperationRequest{
-		Name: fmt.Sprintf("projects/%s/locations/europe-north1/operations/%s", projectId, operationId),
+		Name: fmt.Sprintf("projects/%s/locations/europe-north1/operations/%s", projectID, operationID),
 	})
 }
 
-func (c *Client) GetReleaseChannel(ctx context.Context, projectId string, environment *model.Environment) (string, error) {
-	cluster, err := c.getCluster(ctx, projectId, environment)
+func (c *Client) GetReleaseChannel(ctx context.Context, projectID string, environment *model.Environment) (string, error) {
+	cluster, err := c.getCluster(ctx, projectID, environment)
 	if err != nil {
 		return "", err
 	}
 	return cluster.ReleaseChannel.Channel.String(), nil
 }
 
-func (c *Client) GetAvailableVersions(ctx context.Context, projectId string, environment *model.Environment, releaseChannel string) ([]string, error) {
-	config, err := c.getServerConfig(ctx, projectId, environment)
+func (c *Client) GetAvailableVersions(ctx context.Context, projectID string, environment *model.Environment, releaseChannel string) ([]string, error) {
+	config, err := c.getServerConfig(ctx, projectID, environment)
 	if err != nil {
 		return nil, err
 	}
 
-	currentMasterVer, err := c.GetCurrentMasterVersion(ctx, projectId, environment)
+	currentMasterVer, err := c.GetCurrentMasterVersion(ctx, projectID, environment)
 	if err != nil {
 		return nil, err
 	}
@@ -135,62 +135,62 @@ func (c *Client) GetAvailableVersions(ctx context.Context, projectId string, env
 	return versions, nil
 }
 
-func (c *Client) UpgradeMaster(ctx context.Context, projectId string, environment *model.Environment, version string) (*containerpb.Operation, error) {
+func (c *Client) UpgradeMaster(ctx context.Context, projectID string, environment *model.Environment, version string) (*containerpb.Operation, error) {
 	clusterName := c.getClusterName(environment)
 	return c.client.UpdateMaster(ctx, &containerpb.UpdateMasterRequest{
-		Name:          c.getName(projectId, clusterName),
+		Name:          c.getName(projectID, clusterName),
 		MasterVersion: version,
 	})
 }
 
-func (c *Client) UpgradeNodePool(ctx context.Context, projectId string, environment *model.Environment, nodePoolName, version string) (*containerpb.Operation, error) {
+func (c *Client) UpgradeNodePool(ctx context.Context, projectID string, environment *model.Environment, nodePoolName, version string) (*containerpb.Operation, error) {
 	clusterName := c.getClusterName(environment)
 	return c.client.UpdateNodePool(ctx, &containerpb.UpdateNodePoolRequest{
-		Name:        c.getNodePoolName(projectId, clusterName, nodePoolName),
+		Name:        c.getNodePoolName(projectID, clusterName, nodePoolName),
 		NodeVersion: version,
 	})
 }
 
-func (c *Client) GetCurrentMasterVersion(ctx context.Context, projectId string, environment *model.Environment) (string, error) {
-	cluster, err := c.getCluster(ctx, projectId, environment)
+func (c *Client) GetCurrentMasterVersion(ctx context.Context, projectID string, environment *model.Environment) (string, error) {
+	cluster, err := c.getCluster(ctx, projectID, environment)
 	if err != nil {
 		return "", err
 	}
 	return cluster.CurrentMasterVersion, nil
 }
 
-func (c *Client) GetNodePools(ctx context.Context, projectId string, environment *model.Environment) ([]*containerpb.NodePool, error) {
-	cluster, err := c.getCluster(ctx, projectId, environment)
+func (c *Client) GetNodePools(ctx context.Context, projectID string, environment *model.Environment) ([]*containerpb.NodePool, error) {
+	cluster, err := c.getCluster(ctx, projectID, environment)
 	if err != nil {
 		return nil, err
 	}
 	return cluster.NodePools, nil
 }
 
-func (c *Client) getServerConfig(ctx context.Context, projectId string, environment *model.Environment) (*containerpb.ServerConfig, error) {
+func (c *Client) getServerConfig(ctx context.Context, projectID string, environment *model.Environment) (*containerpb.ServerConfig, error) {
 	clusterName := c.getClusterName(environment)
 	return c.client.GetServerConfig(ctx, &containerpb.GetServerConfigRequest{
-		Name: c.getName(projectId, clusterName),
+		Name: c.getName(projectID, clusterName),
 	})
 }
 
-func (c *Client) getCluster(ctx context.Context, projectId string, environment *model.Environment) (*containerpb.Cluster, error) {
+func (c *Client) getCluster(ctx context.Context, projectID string, environment *model.Environment) (*containerpb.Cluster, error) {
 	clusterName := c.getClusterName(environment)
 	return c.client.GetCluster(ctx, &containerpb.GetClusterRequest{
-		Name: c.getName(projectId, clusterName),
+		Name: c.getName(projectID, clusterName),
 	})
 }
 
-func (c *Client) getNodePoolName(projectId, clusterName, nodePoolName string) string {
-	return "projects/" + projectId + "/locations/europe-north1/clusters/" + clusterName + "/nodePools/" + nodePoolName
+func (c *Client) getNodePoolName(projectID, clusterName, nodePoolName string) string {
+	return "projects/" + projectID + "/locations/europe-north1/clusters/" + clusterName + "/nodePools/" + nodePoolName
 }
 
-func (c *Client) getName(projectId, clusterName string) string {
-	return "projects/" + projectId + "/locations/europe-north1/clusters/" + clusterName
+func (c *Client) getName(projectID, clusterName string) string {
+	return "projects/" + projectID + "/locations/europe-north1/clusters/" + clusterName
 }
 
-func (c *Client) getParent(projectId string) string {
-	return "projects/" + projectId + "/locations/europe-north1"
+func (c *Client) getParent(projectID string) string {
+	return "projects/" + projectID + "/locations/europe-north1"
 }
 
 func (c *Client) getClusterName(environment *model.Environment) string {

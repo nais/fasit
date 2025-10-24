@@ -70,7 +70,7 @@ func (c *ClusterUpgrader) Run(ctx context.Context) error {
 
 func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.Tenant, env *model.Environment) error {
 	log := c.log.WithFields(logrus.Fields{"tenant": tenant.Name, "environment": env.Name})
-	projectId, err := getProjectId(ctx, c, env.ID)
+	projectID, err := getProjectID(ctx, c, env.ID)
 	if err != nil {
 		return err
 	}
@@ -84,7 +84,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		return nil
 	}
 
-	runningOperations, err := c.getAndUpdateRunningOperations(ctx, projectId, env, clusterUpgrade)
+	runningOperations, err := c.getAndUpdateRunningOperations(ctx, projectID, env, clusterUpgrade)
 	if err != nil {
 		return err
 	}
@@ -99,7 +99,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 			return nil
 		}
 
-		_, err = c.masterUpgrade(ctx, env, clusterUpgrade, tenant.Name, projectId)
+		_, err = c.masterUpgrade(ctx, env, clusterUpgrade, tenant.Name, projectID)
 		if err != nil {
 			return err
 		}
@@ -122,7 +122,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 
 	case model.UpgradeStatusMasterUpgrade:
 		// check status on ongoing master upgrade
-		status, err := c.masterUpgradeStatus(ctx, env, clusterUpgrade, projectId, tenant.Name)
+		status, err := c.masterUpgradeStatus(ctx, env, clusterUpgrade, projectID, tenant.Name)
 		if err != nil {
 			return err
 		}
@@ -139,13 +139,13 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		}
 
 		// check status on node upgrade
-		if done, err := c.nodeUpgradeStatus(ctx, env, clusterUpgrade, projectId); !done {
+		if done, err := c.nodeUpgradeStatus(ctx, env, clusterUpgrade, projectID); !done {
 			if err != nil {
 				return err
 			}
 
 			// update
-			un, err := c.upgradeNodes(ctx, env, clusterUpgrade, projectId, tenant.Name)
+			un, err := c.upgradeNodes(ctx, env, clusterUpgrade, projectID, tenant.Name)
 			if err != nil {
 				return err
 			}
@@ -191,9 +191,9 @@ func clusterHas(runningOperations []*containerpb.Operation) bool {
 	return false
 }
 
-func (c *ClusterUpgrader) getAndUpdateRunningOperations(ctx context.Context, projectId string, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus) ([]*containerpb.Operation, error) {
+func (c *ClusterUpgrader) getAndUpdateRunningOperations(ctx context.Context, projectID string, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus) ([]*containerpb.Operation, error) {
 	// checks if there are any running operations for the environment
-	runningOperations, err := c.client.GetRunningOperations(ctx, projectId, env)
+	runningOperations, err := c.client.GetRunningOperations(ctx, projectID, env)
 	if err != nil {
 		return nil, err
 	}
@@ -217,8 +217,8 @@ func (c *ClusterUpgrader) getAndUpdateRunningOperations(ctx context.Context, pro
 	return runningOperations, nil
 }
 
-func (c *ClusterUpgrader) upgradeNodes(ctx context.Context, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus, projectId, tenantName string) (*model.ClusterUpgradeStatus, error) {
-	nodePools, err := c.client.GetNodePools(ctx, projectId, env)
+func (c *ClusterUpgrader) upgradeNodes(ctx context.Context, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus, projectID, tenantName string) (*model.ClusterUpgradeStatus, error) {
+	nodePools, err := c.client.GetNodePools(ctx, projectID, env)
 	if err != nil {
 		return nil, err
 	}
@@ -238,7 +238,7 @@ func (c *ClusterUpgrader) upgradeNodes(ctx context.Context, env *model.Environme
 			continue
 		}
 
-		op, err := c.client.UpgradeNodePool(ctx, projectId, env, np.Name, clusterUpgrade.Version)
+		op, err := c.client.UpgradeNodePool(ctx, projectID, env, np.Name, clusterUpgrade.Version)
 		if err != nil {
 			return nil, err
 		}
@@ -266,20 +266,20 @@ func (c *ClusterUpgrader) upgradeNodes(ctx context.Context, env *model.Environme
 	return nil, nil
 }
 
-func (c *ClusterUpgrader) nodeUpgradeStatus(ctx context.Context, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus, projectId string) (bool, error) {
+func (c *ClusterUpgrader) nodeUpgradeStatus(ctx context.Context, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus, projectID string) (bool, error) {
 	rop, err := c.repo.GetRunningClusterOperation(ctx, env.TenantID, env.ID)
 	if err != nil {
 		return false, err
 	}
 
 	if rop != nil {
-		_, err := c.getAndUpdateOperation(ctx, projectId, env.TenantID, env.ID, clusterUpgrade.ID, rop.Name)
+		_, err := c.getAndUpdateOperation(ctx, projectID, env.TenantID, env.ID, clusterUpgrade.ID, rop.Name)
 		if err != nil {
 			return false, err
 		}
 	}
 
-	done, err := c.clusterNodePoolsCompleted(ctx, projectId, env, clusterUpgrade)
+	done, err := c.clusterNodePoolsCompleted(ctx, projectID, env, clusterUpgrade)
 	if err != nil {
 		return done, err
 	}
@@ -287,13 +287,13 @@ func (c *ClusterUpgrader) nodeUpgradeStatus(ctx context.Context, env *model.Envi
 	return done, nil
 }
 
-func (c *ClusterUpgrader) masterUpgradeStatus(ctx context.Context, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus, projectId, tenantName string) (*model.ClusterUpgradeStatus, error) {
+func (c *ClusterUpgrader) masterUpgradeStatus(ctx context.Context, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus, projectID, tenantName string) (*model.ClusterUpgradeStatus, error) {
 	rop, err := c.repo.GetRunningClusterOperation(ctx, env.TenantID, env.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	op, err := c.getAndUpdateOperation(ctx, projectId, env.TenantID, env.ID, clusterUpgrade.ID, rop.Name)
+	op, err := c.getAndUpdateOperation(ctx, projectID, env.TenantID, env.ID, clusterUpgrade.ID, rop.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -312,8 +312,8 @@ func (c *ClusterUpgrader) masterUpgradeStatus(ctx context.Context, env *model.En
 	return upgradeStatus, nil
 }
 
-func (c *ClusterUpgrader) masterUpgrade(ctx context.Context, env *model.Environment, upgrade *model.ClusterUpgradeStatus, tenantName, projectId string) (*model.ClusterUpgradeStatus, error) {
-	op, err := c.client.UpgradeMaster(ctx, projectId, env, upgrade.Version)
+func (c *ClusterUpgrader) masterUpgrade(ctx context.Context, env *model.Environment, upgrade *model.ClusterUpgradeStatus, tenantName, projectID string) (*model.ClusterUpgradeStatus, error) {
+	op, err := c.client.UpgradeMaster(ctx, projectID, env, upgrade.Version)
 	if err != nil {
 		if e, ok := err.(*apierror.APIError); ok {
 			if e.GRPCStatus().Code() == codes.InvalidArgument {
@@ -353,8 +353,8 @@ func setMetricsAttrs(envName, tenantName, version, target string) []attribute.Ke
 	return metricAttrs
 }
 
-func (c *ClusterUpgrader) clusterNodePoolsCompleted(ctx context.Context, projectId string, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus) (bool, error) {
-	nodepools, err := c.client.GetNodePools(ctx, projectId, env)
+func (c *ClusterUpgrader) clusterNodePoolsCompleted(ctx context.Context, projectID string, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus) (bool, error) {
+	nodepools, err := c.client.GetNodePools(ctx, projectID, env)
 	if err != nil {
 		return false, err
 	}
@@ -377,13 +377,13 @@ func (c *ClusterUpgrader) clusterNodePoolsCompleted(ctx context.Context, project
 	return done, nil
 }
 
-func (c *ClusterUpgrader) getAndUpdateOperation(ctx context.Context, projectId string, tenantId, envId, clusterUpgradeId uuid.UUID, operationName string) (*containerpb.Operation, error) {
-	op, err := c.client.GetOperation(ctx, projectId, operationName)
+func (c *ClusterUpgrader) getAndUpdateOperation(ctx context.Context, projectID string, tenantID, envID, clusterUpgradeID uuid.UUID, operationName string) (*containerpb.Operation, error) {
+	op, err := c.client.GetOperation(ctx, projectID, operationName)
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = c.repo.CreateOrUpdateClusterOperation(ctx, tenantId, envId, clusterUpgradeId, op)
+	_, err = c.repo.CreateOrUpdateClusterOperation(ctx, tenantID, envID, clusterUpgradeID, op)
 	if err != nil {
 		return nil, err
 	}
@@ -391,22 +391,22 @@ func (c *ClusterUpgrader) getAndUpdateOperation(ctx context.Context, projectId s
 	return op, nil
 }
 
-func getProjectId(ctx context.Context, c *ClusterUpgrader, environmentId uuid.UUID) (string, error) {
-	projectId, err := c.repo.EnvironmentValueGet(ctx, environmentId, "project_id", false)
+func getProjectID(ctx context.Context, c *ClusterUpgrader, environmentID uuid.UUID) (string, error) {
+	projectID, err := c.repo.EnvironmentValueGet(ctx, environmentID, "project_id", false)
 	if err != nil {
 		return "", err
 	}
 
 	id := ""
-	if err := json.Unmarshal(projectId.Value, &id); err != nil {
+	if err := json.Unmarshal(projectID.Value, &id); err != nil {
 		return "", err
 	}
 
 	return id, nil
 }
 
-func getUpgradeMentions(ctx context.Context, c *ClusterUpgrader, environmentId uuid.UUID) (string, error) {
-	notifications, err := c.repo.EnvironmentValueGet(ctx, environmentId, "slack_upgrade_mentions", false)
+func getUpgradeMentions(ctx context.Context, c *ClusterUpgrader, environmentID uuid.UUID) (string, error) {
+	notifications, err := c.repo.EnvironmentValueGet(ctx, environmentID, "slack_upgrade_mentions", false)
 	if err != nil {
 		return "", err
 	}

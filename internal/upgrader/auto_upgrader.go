@@ -41,7 +41,7 @@ func (c *AutoUpgrader) Run(ctx context.Context) error {
 	}
 
 	for _, env := range envs {
-		projectId, err := c.getProjectId(ctx, env.ID)
+		projectID, err := c.getProjectID(ctx, env.ID)
 		if err != nil {
 			c.log.WithFields(logrus.Fields{"environment": env.Name}).WithError(err).Error("failed to get project id")
 			continue
@@ -51,17 +51,17 @@ func (c *AutoUpgrader) Run(ctx context.Context) error {
 			c.log.WithFields(logrus.Fields{"tenant": tenant.Name, "environment": env.Name}).WithError(err).Error("failed to get tenant")
 			continue
 		}
-		masterVer, err := c.client.GetCurrentMasterVersion(ctx, projectId, env)
+		masterVer, err := c.client.GetCurrentMasterVersion(ctx, projectID, env)
 		if err != nil {
 			c.log.WithFields(logrus.Fields{"tenant": tenant.Name, "environment": env.Name}).WithError(err).Error("failed to get current master version")
 			continue
 		}
-		channel, err := c.client.GetReleaseChannel(ctx, projectId, env)
+		channel, err := c.client.GetReleaseChannel(ctx, projectID, env)
 		if err != nil {
 			c.log.WithFields(logrus.Fields{"tenant": tenant.Name, "environment": env.Name}).WithError(err).Error("failed to get release channel")
 			continue
 		}
-		availableVersions, err := c.client.GetAvailableVersions(ctx, projectId, env, channel)
+		availableVersions, err := c.client.GetAvailableVersions(ctx, projectID, env, channel)
 		if err != nil {
 			c.log.WithFields(logrus.Fields{"tenant": tenant.Name, "environment": env.Name}).WithError(err).Error("failed to get available versions")
 			continue
@@ -124,14 +124,14 @@ func (c *AutoUpgrader) IsNewerPatchRelease(current, new string) bool {
 	return false
 }
 
-func (c *AutoUpgrader) getProjectId(ctx context.Context, environmentId uuid.UUID) (string, error) {
-	projectId, err := c.repo.EnvironmentValueGet(ctx, environmentId, "project_id", false)
+func (c *AutoUpgrader) getProjectID(ctx context.Context, environmentID uuid.UUID) (string, error) {
+	projectID, err := c.repo.EnvironmentValueGet(ctx, environmentID, "project_id", false)
 	if err != nil {
 		return "", err
 	}
 
 	id := ""
-	if err := json.Unmarshal(projectId.Value, &id); err != nil {
+	if err := json.Unmarshal(projectID.Value, &id); err != nil {
 		return "", err
 	}
 

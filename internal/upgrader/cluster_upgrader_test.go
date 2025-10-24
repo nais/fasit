@@ -21,11 +21,11 @@ import (
 )
 
 type env struct {
-	tenantId          uuid.UUID
-	projectId         string
+	tenantID          uuid.UUID
+	projectID         string
 	id                uuid.UUID
 	name              string
-	clusterUpgraderId uuid.UUID
+	clusterUpgraderID uuid.UUID
 }
 
 type testSuite struct {
@@ -42,11 +42,11 @@ func newTestSuite(t *testing.T) *testSuite {
 		repoMock:    mocks.NewRepo(t),
 		upgradeMock: upgdradermock.NewUpgrader(t),
 		env: &env{
-			tenantId:          tenantID,
-			projectId:         "1234",
+			tenantID:          tenantID,
+			projectID:         "1234",
 			id:                envID,
 			name:              "t1",
-			clusterUpgraderId: uuid.New(),
+			clusterUpgraderID: uuid.New(),
 		},
 		environment: &model.Environment{
 			ID:       envID,
@@ -66,22 +66,22 @@ func newUpgrade(suite *testSuite) *ClusterUpgrader {
 func (s *testSuite) mockRunTenantForLoop(upgradeStatus model.UpgradeStatus) {
 	s.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{
 		{
-			ID:   s.env.tenantId,
+			ID:   s.env.tenantID,
 			Name: s.env.name,
 		},
 	}, nil).Once()
 
-	s.repoMock.EXPECT().EnvironmentsGet(mock.Anything, s.env.tenantId).Return([]*model.Environment{
+	s.repoMock.EXPECT().EnvironmentsGet(mock.Anything, s.env.tenantID).Return([]*model.Environment{
 		{
 			ID:       s.env.id,
-			TenantID: s.env.tenantId,
+			TenantID: s.env.tenantID,
 			Name:     s.env.name,
 		},
 	}, nil).Once()
 
 	s.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, mock.Anything, mock.Anything, false).Return(
 		&model.EnvironmentValue{
-			Key:   projectId,
+			Key:   projectID,
 			Value: []byte(`"1234"`),
 		}, nil).Once()
 
@@ -97,7 +97,7 @@ func (s *testSuite) mockRunTenantForLoop(upgradeStatus model.UpgradeStatus) {
 		clusterUpgrade.UpgradeStatus = upgradeStatus
 	}
 
-	s.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, s.env.tenantId, s.env.id).Return(clusterUpgrade, nil).Once()
+	s.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, s.env.tenantID, s.env.id).Return(clusterUpgrade, nil).Once()
 }
 
 func TestRun_OperationDoneUpdateClusterNodeStatusToDone(t *testing.T) {
@@ -105,12 +105,12 @@ func TestRun_OperationDoneUpdateClusterNodeStatusToDone(t *testing.T) {
 	upgrade := newUpgrade(suite)
 	suite.mockRunTenantForLoop(model.UpgradeStatusNodeUpgrade)
 
-	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, suite.env.projectId, suite.environment).Return(
+	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, suite.env.projectID, suite.environment).Return(
 		[]*containerpb.Operation{}, nil).Once()
-	suite.repoMock.EXPECT().GetRunningClusterOperation(mock.Anything, suite.env.tenantId, suite.env.id).Return(
+	suite.repoMock.EXPECT().GetRunningClusterOperation(mock.Anything, suite.env.tenantID, suite.env.id).Return(
 		nil, nil).Once()
 
-	suite.upgradeMock.EXPECT().GetNodePools(mock.Anything, suite.env.projectId, suite.environment).Return(
+	suite.upgradeMock.EXPECT().GetNodePools(mock.Anything, suite.env.projectID, suite.environment).Return(
 		[]*containerpb.NodePool{
 			{
 				Name:    "nodepool1",
@@ -122,7 +122,7 @@ func TestRun_OperationDoneUpdateClusterNodeStatusToDone(t *testing.T) {
 			},
 		}, nil).Once()
 
-	suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantId, suite.env.id, gensql.ClusterUpgradesStatusDONE, "1.2.4").Return(
+	suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, gensql.ClusterUpgradesStatusDONE, "1.2.4").Return(
 		&model.ClusterUpgradeStatus{
 			ID:            uuid.New(),
 			UpgradeStatus: model.UpgradeStatusDone,
@@ -142,9 +142,9 @@ func TestRun_StartNodeUpgradeClusterStatusNodeUpgrade(t *testing.T) {
 	upgrade := newUpgrade(suite)
 	suite.mockRunTenantForLoop(model.UpgradeStatusNodeUpgrade)
 
-	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, suite.env.projectId, suite.environment).Return(
+	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, suite.env.projectID, suite.environment).Return(
 		[]*containerpb.Operation{}, nil).Once()
-	suite.repoMock.EXPECT().GetRunningClusterOperation(mock.Anything, suite.env.tenantId, suite.environment.ID).Return(
+	suite.repoMock.EXPECT().GetRunningClusterOperation(mock.Anything, suite.env.tenantID, suite.environment.ID).Return(
 		&model.EnvironmentOperation{
 			ID:     uuid.New(),
 			Name:   "operation",
@@ -156,14 +156,14 @@ func TestRun_StartNodeUpgradeClusterStatusNodeUpgrade(t *testing.T) {
 		Name:          "operation",
 		OperationType: containerpb.Operation_UPGRADE_NODES,
 		Status:        containerpb.Operation_RUNNING,
-		TargetLink:    fmt.Sprintf("https://container.googleapis.com/v1/projects/%s/zones/europe-north1-a/clusters/%s", suite.env.projectId, suite.env.name),
+		TargetLink:    fmt.Sprintf("https://container.googleapis.com/v1/projects/%s/zones/europe-north1-a/clusters/%s", suite.env.projectID, suite.env.name),
 		Detail:        "testSuite",
 	}
 
-	suite.upgradeMock.EXPECT().GetOperation(mock.Anything, suite.env.projectId, "operation").Return(
+	suite.upgradeMock.EXPECT().GetOperation(mock.Anything, suite.env.projectID, "operation").Return(
 		op, nil).Once()
 
-	suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantId, suite.env.id, mock.Anything, op).Return(
+	suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantID, suite.env.id, mock.Anything, op).Return(
 		&model.EnvironmentOperation{
 			ID:     uuid.New(),
 			Name:   "operation",
@@ -171,7 +171,7 @@ func TestRun_StartNodeUpgradeClusterStatusNodeUpgrade(t *testing.T) {
 			Type:   "UPGRADE_NODES",
 		}, nil).Once()
 
-	suite.upgradeMock.EXPECT().GetNodePools(mock.Anything, suite.env.projectId, suite.environment).Return(
+	suite.upgradeMock.EXPECT().GetNodePools(mock.Anything, suite.env.projectID, suite.environment).Return(
 		[]*containerpb.NodePool{
 			{
 				Name:    "nodepool1",
@@ -187,14 +187,14 @@ func TestRun_StartNodeUpgradeClusterStatusNodeUpgrade(t *testing.T) {
 		Name:          "operation",
 		OperationType: containerpb.Operation_UPGRADE_NODES,
 		Status:        containerpb.Operation_RUNNING,
-		TargetLink:    fmt.Sprintf("https://container.googleapis.com/v1/projects/%s/zones/europe-north1-a/clusters/%s", suite.env.projectId, suite.env.name),
+		TargetLink:    fmt.Sprintf("https://container.googleapis.com/v1/projects/%s/zones/europe-north1-a/clusters/%s", suite.env.projectID, suite.env.name),
 		Detail:        "testSuite",
 	}
 
-	suite.upgradeMock.EXPECT().UpgradeNodePool(mock.Anything, suite.env.projectId, suite.environment, "nodepool1", "1.2.4").Return(
+	suite.upgradeMock.EXPECT().UpgradeNodePool(mock.Anything, suite.env.projectID, suite.environment, "nodepool1", "1.2.4").Return(
 		op2, nil).Once()
 	id := uuid.New()
-	suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantId, suite.env.id, mock.Anything, op2).Return(
+	suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantID, suite.env.id, mock.Anything, op2).Return(
 		&model.EnvironmentOperation{
 			ID:     id,
 			Name:   "operation",
@@ -202,7 +202,7 @@ func TestRun_StartNodeUpgradeClusterStatusNodeUpgrade(t *testing.T) {
 			Type:   "UPGRADE_NODES",
 		}, nil).Once()
 
-	suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantId, suite.env.id, gensql.ClusterUpgradesStatusNODEUPGRADE, "1.2.4").Return(
+	suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, gensql.ClusterUpgradesStatusNODEUPGRADE, "1.2.4").Return(
 		&model.ClusterUpgradeStatus{
 			ID:            uuid.New(),
 			UpgradeStatus: model.UpgradeStatusNodeUpgrade,
@@ -230,20 +230,20 @@ func TestRun_StartClusterUpgradeMasterStatusCreated(t *testing.T) {
 			Name:          "operation",
 			OperationType: containerpb.Operation_UPGRADE_MASTER,
 			Status:        containerpb.Operation_RUNNING,
-			TargetLink:    fmt.Sprintf("https://container.googleapis.com/v1/projects/%s/zones/europe-north1-a/clusters/%s", suite.env.projectId, suite.env.name),
+			TargetLink:    fmt.Sprintf("https://container.googleapis.com/v1/projects/%s/zones/europe-north1-a/clusters/%s", suite.env.projectID, suite.env.name),
 			Detail:        "testSuite",
 		}, nil).Once()
 
 	suite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, suite.env.id, "slack_upgrade_mentions", false).Return(
 		&model.EnvironmentValue{
-			Key:   projectId,
+			Key:   projectID,
 			Value: []byte(`"<@U01J9J9J9J9>"`),
 		}, nil).Once()
 
 	suite.repoMock.EXPECT().SetClusterUpgradesSlackMessage(mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil).Once()
 
 	id := uuid.New()
-	suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantId, suite.env.id, mock.Anything, mock.Anything).Return(
+	suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantID, suite.env.id, mock.Anything, mock.Anything).Return(
 		&model.EnvironmentOperation{
 			ID:     id,
 			Name:   "operation",
@@ -251,7 +251,7 @@ func TestRun_StartClusterUpgradeMasterStatusCreated(t *testing.T) {
 			Type:   "UPGRADE_MASTER",
 		}, nil).Once()
 
-	suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantId, suite.env.id, gensql.ClusterUpgradesStatusMASTERUPGRADE, "1.2.4").Return(
+	suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, gensql.ClusterUpgradesStatusMASTERUPGRADE, "1.2.4").Return(
 		&model.ClusterUpgradeStatus{
 			ID:            uuid.New(),
 			UpgradeStatus: model.UpgradeStatusMasterUpgrade,
@@ -274,7 +274,7 @@ func TestRun_UpdateClusterStatusToNodeUpgradeWhenOperationDoneOnMasterUpgrade(t 
 	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, suite.environment).Return(
 		[]*containerpb.Operation{}, nil).Once()
 
-	suite.repoMock.EXPECT().GetRunningClusterOperation(mock.Anything, suite.env.tenantId, suite.env.id).Return(
+	suite.repoMock.EXPECT().GetRunningClusterOperation(mock.Anything, suite.env.tenantID, suite.env.id).Return(
 		&model.EnvironmentOperation{
 			ID:     uuid.New(),
 			Name:   "operation",
@@ -286,13 +286,13 @@ func TestRun_UpdateClusterStatusToNodeUpgradeWhenOperationDoneOnMasterUpgrade(t 
 		Name:          "operation",
 		OperationType: containerpb.Operation_UPGRADE_MASTER,
 		Status:        containerpb.Operation_DONE,
-		TargetLink:    fmt.Sprintf("https://container.googleapis.com/v1/projects/%s/zones/europe-north1-a/clusters/%s", suite.env.projectId, suite.env.name),
+		TargetLink:    fmt.Sprintf("https://container.googleapis.com/v1/projects/%s/zones/europe-north1-a/clusters/%s", suite.env.projectID, suite.env.name),
 		Detail:        "testSuite",
 	}
-	suite.upgradeMock.EXPECT().GetOperation(mock.Anything, suite.env.projectId, "operation").Return(
+	suite.upgradeMock.EXPECT().GetOperation(mock.Anything, suite.env.projectID, "operation").Return(
 		op, nil).Once()
 
-	suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantId, suite.env.id, mock.Anything, op).Return(
+	suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantID, suite.env.id, mock.Anything, op).Return(
 		&model.EnvironmentOperation{
 			ID:     uuid.New(),
 			Name:   "operation",
@@ -300,7 +300,7 @@ func TestRun_UpdateClusterStatusToNodeUpgradeWhenOperationDoneOnMasterUpgrade(t 
 			Type:   "UPGRADE_MASTER",
 		}, nil).Once()
 
-	suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantId, suite.env.id, gensql.ClusterUpgradesStatusNODEUPGRADE, "1.2.4").Return(
+	suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, gensql.ClusterUpgradesStatusNODEUPGRADE, "1.2.4").Return(
 		&model.ClusterUpgradeStatus{
 			ID:            uuid.New(),
 			UpgradeStatus: model.UpgradeStatusNodeUpgrade,
@@ -320,17 +320,17 @@ func TestRun_MasterUpgradeIsRunning(t *testing.T) {
 	upgrade := newUpgrade(suite)
 	suite.mockRunTenantForLoop(model.UpgradeStatusMasterUpgrade)
 
-	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, suite.env.projectId, suite.environment).Return(
+	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, suite.env.projectID, suite.environment).Return(
 		[]*containerpb.Operation{
 			{
 				Name:          "operation",
 				OperationType: containerpb.Operation_UPGRADE_MASTER,
 				Status:        containerpb.Operation_RUNNING,
-				TargetLink:    fmt.Sprintf("https://container.googleapis.com/v1/projects/%s/zones/europe-north1-a/clusters/%s", suite.env.projectId, suite.env.name),
+				TargetLink:    fmt.Sprintf("https://container.googleapis.com/v1/projects/%s/zones/europe-north1-a/clusters/%s", suite.env.projectID, suite.env.name),
 				Detail:        "testSuite",
 			},
 		}, nil).Once()
-	suite.repoMock.EXPECT().GetRunningClusterOperation(mock.Anything, suite.env.tenantId, suite.env.id).Return(
+	suite.repoMock.EXPECT().GetRunningClusterOperation(mock.Anything, suite.env.tenantID, suite.env.id).Return(
 		&model.EnvironmentOperation{
 			ID:     uuid.New(),
 			Name:   "operation",
@@ -342,19 +342,19 @@ func TestRun_MasterUpgradeIsRunning(t *testing.T) {
 		Name:          "operation",
 		OperationType: containerpb.Operation_UPGRADE_MASTER,
 		Status:        containerpb.Operation_RUNNING,
-		TargetLink:    fmt.Sprintf("https://container.googleapis.com/v1/projects/%s/zones/europe-north1-a/clusters/%s", suite.env.projectId, suite.env.name),
+		TargetLink:    fmt.Sprintf("https://container.googleapis.com/v1/projects/%s/zones/europe-north1-a/clusters/%s", suite.env.projectID, suite.env.name),
 		Detail:        "testSuite",
 	}
-	suite.upgradeMock.EXPECT().GetOperation(mock.Anything, suite.env.projectId, "operation").Return(
+	suite.upgradeMock.EXPECT().GetOperation(mock.Anything, suite.env.projectID, "operation").Return(
 		op, nil).Once()
-	suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantId, suite.env.id, mock.Anything, op).Return(
+	suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantID, suite.env.id, mock.Anything, op).Return(
 		&model.EnvironmentOperation{
 			ID:     uuid.New(),
 			Name:   "operation",
 			Status: containerpb.Operation_RUNNING.String(),
 			Type:   "UPGRADE_MASTER",
 		}, nil).Once()
-	suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantId, suite.env.id, gensql.ClusterUpgradesStatusMASTERUPGRADE, "1.2.4").Return(
+	suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, gensql.ClusterUpgradesStatusMASTERUPGRADE, "1.2.4").Return(
 		&model.ClusterUpgradeStatus{
 			ID:            uuid.New(),
 			UpgradeStatus: model.UpgradeStatusMasterUpgrade,
@@ -363,7 +363,7 @@ func TestRun_MasterUpgradeIsRunning(t *testing.T) {
 			StartTime:     time.Now(),
 		}, nil).Once()
 
-	suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantId, suite.env.id, mock.Anything, mock.Anything).Return(
+	suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantID, suite.env.id, mock.Anything, mock.Anything).Return(
 		&model.EnvironmentOperation{
 			ID:     uuid.New(),
 			Name:   "operation",
@@ -391,7 +391,7 @@ func Test_EqualVersionsForAllNodes(t *testing.T) {
 			Version: "1.2.4",
 		},
 	}
-	suite.upgradeMock.EXPECT().GetNodePools(mock.Anything, suite.env.projectId, suite.environment).
+	suite.upgradeMock.EXPECT().GetNodePools(mock.Anything, suite.env.projectID, suite.environment).
 		Return(nodepools, nil).Once()
 	clusterUpgradeStatus := &model.ClusterUpgradeStatus{
 		ID:            uuid.New(),
@@ -404,14 +404,14 @@ func Test_EqualVersionsForAllNodes(t *testing.T) {
 		Name:          "operation",
 		OperationType: containerpb.Operation_UPGRADE_NODES,
 		Status:        containerpb.Operation_RUNNING,
-		TargetLink:    fmt.Sprintf("https://container.googleapis.com/v1/projects/%s/zones/europe-north1-a/clusters/%s", suite.env.projectId, suite.env.name),
+		TargetLink:    fmt.Sprintf("https://container.googleapis.com/v1/projects/%s/zones/europe-north1-a/clusters/%s", suite.env.projectID, suite.env.name),
 		Detail:        "testSuite",
 	}
 	// We hit the one with the nodepool1 version 1.2.3
-	suite.upgradeMock.EXPECT().UpgradeNodePool(mock.Anything, suite.env.projectId, suite.environment, nodepools[0].Name, clusterUpgradeStatus.Version).
+	suite.upgradeMock.EXPECT().UpgradeNodePool(mock.Anything, suite.env.projectID, suite.environment, nodepools[0].Name, clusterUpgradeStatus.Version).
 		Return(operation, nil).Once()
 
-	suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantId, suite.env.id, clusterUpgradeStatus.ID, operation).
+	suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantID, suite.env.id, clusterUpgradeStatus.ID, operation).
 		Return(&model.EnvironmentOperation{
 			ID:     uuid.New(),
 			Name:   "operation",
@@ -420,14 +420,14 @@ func Test_EqualVersionsForAllNodes(t *testing.T) {
 		}, nil).Once()
 
 	clusterUpgradeStatus.UpgradeStatus = model.UpgradeStatusNodeUpgrade
-	suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantId, suite.env.id, gensql.ClusterUpgradesStatusNODEUPGRADE, clusterUpgradeStatus.Version).
+	suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, gensql.ClusterUpgradesStatusNODEUPGRADE, clusterUpgradeStatus.Version).
 		Return(clusterUpgradeStatus, nil).Once()
 
 	cu, err := upgrade.upgradeNodes(context.Background(), &model.Environment{
 		ID:       suite.env.id,
-		TenantID: suite.env.tenantId,
+		TenantID: suite.env.tenantID,
 		Name:     suite.env.name,
-	}, clusterUpgradeStatus, suite.env.projectId, suite.env.name)
+	}, clusterUpgradeStatus, suite.env.projectID, suite.env.name)
 	if err != nil {
 		t.Errorf("got %v, want nil", err)
 	}
@@ -455,7 +455,7 @@ func Test_NodelPoolDiff(t *testing.T) {
 		},
 	}
 
-	suite.repoMock.EXPECT().GetRunningClusterOperation(mock.Anything, suite.env.tenantId, suite.env.id).
+	suite.repoMock.EXPECT().GetRunningClusterOperation(mock.Anything, suite.env.tenantID, suite.env.id).
 		Return(&model.EnvironmentOperation{
 			ID:     uuid.New(),
 			Name:   "operation",
@@ -467,11 +467,11 @@ func Test_NodelPoolDiff(t *testing.T) {
 		Name:          "operation",
 		OperationType: containerpb.Operation_UPGRADE_NODES,
 		Status:        containerpb.Operation_DONE,
-		TargetLink:    fmt.Sprintf("https://container.googleapis.com/v1/projects/%s/zones/europe-north1-a/clusters/%s", suite.env.projectId, suite.env.name),
+		TargetLink:    fmt.Sprintf("https://container.googleapis.com/v1/projects/%s/zones/europe-north1-a/clusters/%s", suite.env.projectID, suite.env.name),
 		Detail:        "testSuite",
 	}
 
-	suite.upgradeMock.EXPECT().GetOperation(mock.Anything, suite.env.projectId, operation.Name).
+	suite.upgradeMock.EXPECT().GetOperation(mock.Anything, suite.env.projectID, operation.Name).
 		Return(operation, nil).Once()
 
 	clusterUpgradeStatus := &model.ClusterUpgradeStatus{
@@ -481,22 +481,22 @@ func Test_NodelPoolDiff(t *testing.T) {
 		LastModified:  time.Now(),
 		StartTime:     time.Now(),
 	}
-	suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantId, suite.env.id, clusterUpgradeStatus.ID, operation).
+	suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantID, suite.env.id, clusterUpgradeStatus.ID, operation).
 		Return(&model.EnvironmentOperation{
 			ID:     uuid.New(),
 			Name:   "operation",
 			Status: containerpb.Operation_RUNNING.String(),
 			Type:   "UPGRADE_NODES",
 		}, nil).Once()
-	suite.upgradeMock.EXPECT().GetNodePools(mock.Anything, suite.env.projectId, suite.environment).
+	suite.upgradeMock.EXPECT().GetNodePools(mock.Anything, suite.env.projectID, suite.environment).
 		Return(nodepools, nil).Once()
 
 	done, err := upgrade.nodeUpgradeStatus(context.Background(), &model.Environment{
 		ID:          suite.env.id,
-		TenantID:    suite.env.tenantId,
+		TenantID:    suite.env.tenantID,
 		Name:        suite.env.name,
 		Description: nil,
-	}, clusterUpgradeStatus, suite.env.projectId)
+	}, clusterUpgradeStatus, suite.env.projectID)
 	if err != nil {
 		t.Errorf("got %v, want nil", err)
 	}
@@ -519,12 +519,12 @@ func Test_ClusterNodePoolsCompleted(t *testing.T) {
 			Version: "1.2.4",
 		},
 	}
-	suite.upgradeMock.EXPECT().GetNodePools(mock.Anything, suite.env.projectId, suite.environment).
+	suite.upgradeMock.EXPECT().GetNodePools(mock.Anything, suite.env.projectID, suite.environment).
 		Return(nodepools, nil).Once()
 
-	completed, err := upgrade.clusterNodePoolsCompleted(context.Background(), suite.env.projectId, &model.Environment{
+	completed, err := upgrade.clusterNodePoolsCompleted(context.Background(), suite.env.projectID, &model.Environment{
 		ID:       suite.env.id,
-		TenantID: suite.env.tenantId,
+		TenantID: suite.env.tenantID,
 		Name:     suite.env.name,
 	},
 		&model.ClusterUpgradeStatus{
@@ -551,12 +551,12 @@ func Test_ClusterNodePoolsCompleted(t *testing.T) {
 			Version: "1.2.4",
 		},
 	}
-	suite.upgradeMock.EXPECT().GetNodePools(mock.Anything, suite.env.projectId, suite.environment).
+	suite.upgradeMock.EXPECT().GetNodePools(mock.Anything, suite.env.projectID, suite.environment).
 		Return(nodepools, nil).Once()
 
-	completed, err = upgrade.clusterNodePoolsCompleted(context.Background(), suite.env.projectId, &model.Environment{
+	completed, err = upgrade.clusterNodePoolsCompleted(context.Background(), suite.env.projectID, &model.Environment{
 		ID:          suite.env.id,
-		TenantID:    suite.env.tenantId,
+		TenantID:    suite.env.tenantID,
 		Name:        suite.env.name,
 		Description: nil,
 	},
@@ -590,12 +590,12 @@ func Test_MasterUpgrade(t *testing.T) {
 		Name:          "operation",
 		OperationType: containerpb.Operation_UPGRADE_MASTER,
 		Status:        containerpb.Operation_RUNNING,
-		TargetLink:    fmt.Sprintf("https://container.googleapis.com/v1/projects/%s/zones/europe-north1-a/clusters/%s", suite.env.projectId, suite.env.name),
+		TargetLink:    fmt.Sprintf("https://container.googleapis.com/v1/projects/%s/zones/europe-north1-a/clusters/%s", suite.env.projectID, suite.env.name),
 		Detail:        "testSuite",
 	}
-	suite.upgradeMock.EXPECT().UpgradeMaster(mock.Anything, suite.env.projectId, suite.environment, clusterUpgradeStatus.Version).
+	suite.upgradeMock.EXPECT().UpgradeMaster(mock.Anything, suite.env.projectID, suite.environment, clusterUpgradeStatus.Version).
 		Return(operation, nil).Once()
-	suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantId, suite.env.id, clusterUpgradeStatus.ID, operation).
+	suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantID, suite.env.id, clusterUpgradeStatus.ID, operation).
 		Return(nil, nil).Once()
 
 	if clusterUpgradeStatus.UpgradeStatus != model.UpgradeStatusCreated {
@@ -603,15 +603,15 @@ func Test_MasterUpgrade(t *testing.T) {
 	}
 
 	clusterUpgradeStatus.UpgradeStatus = model.UpgradeStatusMasterUpgrade
-	suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantId, suite.env.id, gensql.ClusterUpgradesStatusMASTERUPGRADE, clusterUpgradeStatus.Version).
+	suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, gensql.ClusterUpgradesStatusMASTERUPGRADE, clusterUpgradeStatus.Version).
 		Return(clusterUpgradeStatus, nil).Once()
 
 	cus, err := upgrade.masterUpgrade(context.Background(), &model.Environment{
 		ID:          suite.env.id,
-		TenantID:    suite.env.tenantId,
+		TenantID:    suite.env.tenantID,
 		Name:        suite.env.name,
 		Description: nil,
-	}, clusterUpgradeStatus, suite.env.name, suite.env.projectId)
+	}, clusterUpgradeStatus, suite.env.name, suite.env.projectID)
 	if err != nil {
 		t.Errorf("got %v, want nil", err)
 	}
@@ -641,16 +641,16 @@ func Test_MasterUpgradeStatusIsDone(t *testing.T) {
 		}
 
 		// Get cluster upgrade status
-		suite.repoMock.EXPECT().GetRunningClusterOperation(mock.Anything, suite.env.tenantId, suite.env.id).
+		suite.repoMock.EXPECT().GetRunningClusterOperation(mock.Anything, suite.env.tenantID, suite.env.id).
 			Return(envOp, nil).Once()
 		operation := &containerpb.Operation{
 			Name:          "operation",
 			OperationType: containerpb.Operation_UPGRADE_MASTER,
 			Status:        containerpb.Operation_RUNNING,
-			TargetLink:    fmt.Sprintf("https://container.googleapis.com/v1/projects/%s/zones/europe-north1-a/clusters/%s", suite.env.projectId, suite.env.name),
+			TargetLink:    fmt.Sprintf("https://container.googleapis.com/v1/projects/%s/zones/europe-north1-a/clusters/%s", suite.env.projectID, suite.env.name),
 			Detail:        "testSuite",
 		}
-		suite.upgradeMock.EXPECT().GetOperation(mock.Anything, suite.env.projectId, operation.Name).
+		suite.upgradeMock.EXPECT().GetOperation(mock.Anything, suite.env.projectID, operation.Name).
 			Return(operation, nil).Once()
 		envOp.Status = status.String()
 		operation.Status = status
@@ -661,21 +661,21 @@ func Test_MasterUpgradeStatusIsDone(t *testing.T) {
 			LastModified:  time.Now(),
 			StartTime:     time.Now(),
 		}
-		suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantId, suite.env.id, clusterUpgradeStatus.ID, operation).
+		suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantID, suite.env.id, clusterUpgradeStatus.ID, operation).
 			Return(envOp, nil).Once()
 
 		// Master upgrade finished - start node upgrade
 		if status == containerpb.Operation_DONE {
 			fmt.Println("status is done")
 			clusterUpgradeStatus.UpgradeStatus = model.UpgradeStatusNodeUpgrade
-			suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantId, suite.env.id, gensql.ClusterUpgradesStatusNODEUPGRADE, clusterUpgradeStatus.Version).
+			suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, gensql.ClusterUpgradesStatusNODEUPGRADE, clusterUpgradeStatus.Version).
 				Return(clusterUpgradeStatus, nil).Once()
 		}
 		cus, err := upgrade.masterUpgradeStatus(context.Background(), &model.Environment{
 			ID:       suite.env.id,
-			TenantID: suite.env.tenantId,
+			TenantID: suite.env.tenantID,
 			Name:     suite.env.name,
-		}, clusterUpgradeStatus, suite.env.projectId, suite.env.name)
+		}, clusterUpgradeStatus, suite.env.projectID, suite.env.name)
 		if err != nil {
 			t.Errorf("got %v, want nil", err)
 		}
