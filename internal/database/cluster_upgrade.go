@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"errors"
+	"math"
 	"strings"
 
 	"cloud.google.com/go/container/apiv1/containerpb"
@@ -11,6 +12,17 @@ import (
 	"github.com/nais/fasit/internal/database/gensql"
 	"github.com/nais/fasit/internal/graph/model"
 )
+
+// toInt32 safely converts int to int32, clamping to int32 bounds if needed
+func toInt32(val int) int32 {
+	if val > math.MaxInt32 {
+		return math.MaxInt32
+	}
+	if val < math.MinInt32 {
+		return math.MinInt32
+	}
+	return int32(val)
+}
 
 type ClusterUpgraderRepo interface {
 	CreateOrUpdateClusterOperation(ctx context.Context, tenantID, envID, versionID uuid.UUID, op *containerpb.Operation) (*model.EnvironmentOperation, error)
@@ -183,26 +195,19 @@ func (r *repo) GetRunningClusterOperation(ctx context.Context, tenantID, envID u
 }
 
 func (r *repo) CreateOrUpdateClusterOperation(ctx context.Context, tenantID, envID, upgradeID uuid.UUID, op *containerpb.Operation) (*model.EnvironmentOperation, error) {
-	nodesTotal := 0
-	nodesFailed := 0
-	nodesComplete := 0
-	nodesDone := 0
-	nodePdbDelaySeconds := 0
+	var nodesTotal, nodesFailed, nodesComplete, nodesDone, nodePdbDelaySeconds int
 
 	for _, metric := range op.Progress.GetMetrics() {
-		if metric.Name == "NODES_TOTAL" {
+		switch metric.Name {
+		case "NODES_TOTAL":
 			nodesTotal = int(metric.GetIntValue())
-		}
-		if metric.Name == "NODES_FAILED" {
+		case "NODES_FAILED":
 			nodesFailed = int(metric.GetIntValue())
-		}
-		if metric.Name == "NODES_COMPLETE" {
+		case "NODES_COMPLETE":
 			nodesComplete = int(metric.GetIntValue())
-		}
-		if metric.Name == "NODES_DONE" {
+		case "NODES_DONE":
 			nodesDone = int(metric.GetIntValue())
-		}
-		if metric.Name == "NODE_PDB_DELAY_SECONDS" {
+		case "NODE_PDB_DELAY_SECONDS":
 			nodePdbDelaySeconds = int(metric.GetIntValue())
 		}
 	}
@@ -227,11 +232,11 @@ func (r *repo) CreateOrUpdateClusterOperation(ctx context.Context, tenantID, env
 		Type:                op.OperationType.String(),
 		Target:              op.TargetLink,
 		Detail:              op.Detail,
-		NodesTotal:          int32(nodesTotal),
-		NodesFailed:         int32(nodesFailed),
-		NodesCompleted:      int32(nodesComplete),
-		NodesDone:           int32(nodesDone),
-		NodePdbDelaySeconds: int32(nodePdbDelaySeconds),
+		NodesTotal:          toInt32(nodesTotal),
+		NodesFailed:         toInt32(nodesFailed),
+		NodesCompleted:      toInt32(nodesComplete),
+		NodesDone:           toInt32(nodesDone),
+		NodePdbDelaySeconds: toInt32(nodePdbDelaySeconds),
 	})
 	if err != nil {
 		return &model.EnvironmentOperation{}, err
