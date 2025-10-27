@@ -15,7 +15,7 @@ FROM
 WHERE
 	tenant_id = @tenantId
 	AND environment_id = @envID
-	AND status != 'DONE'
+	AND status NOT IN ('DONE', 'FAILED')
 ORDER BY
 	last_modified DESC
 ;

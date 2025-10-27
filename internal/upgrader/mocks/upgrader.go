@@ -25,9 +25,9 @@ func (_m *Upgrader) EXPECT() *Upgrader_Expecter {
 	return &Upgrader_Expecter{mock: &_m.Mock}
 }
 
-// GetAvailableVersions provides a mock function with given fields: ctx, projectId, environment, releaseChannel
-func (_m *Upgrader) GetAvailableVersions(ctx context.Context, projectId string, environment *model.Environment, releaseChannel string) ([]string, error) {
-	ret := _m.Called(ctx, projectId, environment, releaseChannel)
+// GetAvailableVersions provides a mock function with given fields: ctx, projectID, environment, releaseChannel
+func (_m *Upgrader) GetAvailableVersions(ctx context.Context, projectID string, environment *model.Environment, releaseChannel string) ([]string, error) {
+	ret := _m.Called(ctx, projectID, environment, releaseChannel)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetAvailableVersions")
@@ -36,10 +36,10 @@ func (_m *Upgrader) GetAvailableVersions(ctx context.Context, projectId string, 
 	var r0 []string
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Environment, string) ([]string, error)); ok {
-		return rf(ctx, projectId, environment, releaseChannel)
+		return rf(ctx, projectID, environment, releaseChannel)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Environment, string) []string); ok {
-		r0 = rf(ctx, projectId, environment, releaseChannel)
+		r0 = rf(ctx, projectID, environment, releaseChannel)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]string)
@@ -47,7 +47,7 @@ func (_m *Upgrader) GetAvailableVersions(ctx context.Context, projectId string, 
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, *model.Environment, string) error); ok {
-		r1 = rf(ctx, projectId, environment, releaseChannel)
+		r1 = rf(ctx, projectID, environment, releaseChannel)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -62,14 +62,14 @@ type Upgrader_GetAvailableVersions_Call struct {
 
 // GetAvailableVersions is a helper method to define mock.On call
 //   - ctx context.Context
-//   - projectId string
+//   - projectID string
 //   - environment *model.Environment
 //   - releaseChannel string
-func (_e *Upgrader_Expecter) GetAvailableVersions(ctx interface{}, projectId interface{}, environment interface{}, releaseChannel interface{}) *Upgrader_GetAvailableVersions_Call {
-	return &Upgrader_GetAvailableVersions_Call{Call: _e.mock.On("GetAvailableVersions", ctx, projectId, environment, releaseChannel)}
+func (_e *Upgrader_Expecter) GetAvailableVersions(ctx interface{}, projectID interface{}, environment interface{}, releaseChannel interface{}) *Upgrader_GetAvailableVersions_Call {
+	return &Upgrader_GetAvailableVersions_Call{Call: _e.mock.On("GetAvailableVersions", ctx, projectID, environment, releaseChannel)}
 }
 
-func (_c *Upgrader_GetAvailableVersions_Call) Run(run func(ctx context.Context, projectId string, environment *model.Environment, releaseChannel string)) *Upgrader_GetAvailableVersions_Call {
+func (_c *Upgrader_GetAvailableVersions_Call) Run(run func(ctx context.Context, projectID string, environment *model.Environment, releaseChannel string)) *Upgrader_GetAvailableVersions_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(string), args[2].(*model.Environment), args[3].(string))
 	})
@@ -86,9 +86,9 @@ func (_c *Upgrader_GetAvailableVersions_Call) RunAndReturn(run func(context.Cont
 	return _c
 }
 
-// GetCurrentMasterVersion provides a mock function with given fields: ctx, projectId, environment
-func (_m *Upgrader) GetCurrentMasterVersion(ctx context.Context, projectId string, environment *model.Environment) (string, error) {
-	ret := _m.Called(ctx, projectId, environment)
+// GetCurrentMasterVersion provides a mock function with given fields: ctx, projectID, environment
+func (_m *Upgrader) GetCurrentMasterVersion(ctx context.Context, projectID string, environment *model.Environment) (string, error) {
+	ret := _m.Called(ctx, projectID, environment)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetCurrentMasterVersion")
@@ -97,16 +97,16 @@ func (_m *Upgrader) GetCurrentMasterVersion(ctx context.Context, projectId strin
 	var r0 string
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Environment) (string, error)); ok {
-		return rf(ctx, projectId, environment)
+		return rf(ctx, projectID, environment)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Environment) string); ok {
-		r0 = rf(ctx, projectId, environment)
+		r0 = rf(ctx, projectID, environment)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, *model.Environment) error); ok {
-		r1 = rf(ctx, projectId, environment)
+		r1 = rf(ctx, projectID, environment)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -121,13 +121,13 @@ type Upgrader_GetCurrentMasterVersion_Call struct {
 
 // GetCurrentMasterVersion is a helper method to define mock.On call
 //   - ctx context.Context
-//   - projectId string
+//   - projectID string
 //   - environment *model.Environment
-func (_e *Upgrader_Expecter) GetCurrentMasterVersion(ctx interface{}, projectId interface{}, environment interface{}) *Upgrader_GetCurrentMasterVersion_Call {
-	return &Upgrader_GetCurrentMasterVersion_Call{Call: _e.mock.On("GetCurrentMasterVersion", ctx, projectId, environment)}
+func (_e *Upgrader_Expecter) GetCurrentMasterVersion(ctx interface{}, projectID interface{}, environment interface{}) *Upgrader_GetCurrentMasterVersion_Call {
+	return &Upgrader_GetCurrentMasterVersion_Call{Call: _e.mock.On("GetCurrentMasterVersion", ctx, projectID, environment)}
 }
 
-func (_c *Upgrader_GetCurrentMasterVersion_Call) Run(run func(ctx context.Context, projectId string, environment *model.Environment)) *Upgrader_GetCurrentMasterVersion_Call {
+func (_c *Upgrader_GetCurrentMasterVersion_Call) Run(run func(ctx context.Context, projectID string, environment *model.Environment)) *Upgrader_GetCurrentMasterVersion_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(string), args[2].(*model.Environment))
 	})
@@ -144,9 +144,9 @@ func (_c *Upgrader_GetCurrentMasterVersion_Call) RunAndReturn(run func(context.C
 	return _c
 }
 
-// GetNodePools provides a mock function with given fields: ctx, projectId, environment
-func (_m *Upgrader) GetNodePools(ctx context.Context, projectId string, environment *model.Environment) ([]*containerpb.NodePool, error) {
-	ret := _m.Called(ctx, projectId, environment)
+// GetNodePools provides a mock function with given fields: ctx, projectID, environment
+func (_m *Upgrader) GetNodePools(ctx context.Context, projectID string, environment *model.Environment) ([]*containerpb.NodePool, error) {
+	ret := _m.Called(ctx, projectID, environment)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetNodePools")
@@ -155,10 +155,10 @@ func (_m *Upgrader) GetNodePools(ctx context.Context, projectId string, environm
 	var r0 []*containerpb.NodePool
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Environment) ([]*containerpb.NodePool, error)); ok {
-		return rf(ctx, projectId, environment)
+		return rf(ctx, projectID, environment)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Environment) []*containerpb.NodePool); ok {
-		r0 = rf(ctx, projectId, environment)
+		r0 = rf(ctx, projectID, environment)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*containerpb.NodePool)
@@ -166,7 +166,7 @@ func (_m *Upgrader) GetNodePools(ctx context.Context, projectId string, environm
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, *model.Environment) error); ok {
-		r1 = rf(ctx, projectId, environment)
+		r1 = rf(ctx, projectID, environment)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -181,13 +181,13 @@ type Upgrader_GetNodePools_Call struct {
 
 // GetNodePools is a helper method to define mock.On call
 //   - ctx context.Context
-//   - projectId string
+//   - projectID string
 //   - environment *model.Environment
-func (_e *Upgrader_Expecter) GetNodePools(ctx interface{}, projectId interface{}, environment interface{}) *Upgrader_GetNodePools_Call {
-	return &Upgrader_GetNodePools_Call{Call: _e.mock.On("GetNodePools", ctx, projectId, environment)}
+func (_e *Upgrader_Expecter) GetNodePools(ctx interface{}, projectID interface{}, environment interface{}) *Upgrader_GetNodePools_Call {
+	return &Upgrader_GetNodePools_Call{Call: _e.mock.On("GetNodePools", ctx, projectID, environment)}
 }
 
-func (_c *Upgrader_GetNodePools_Call) Run(run func(ctx context.Context, projectId string, environment *model.Environment)) *Upgrader_GetNodePools_Call {
+func (_c *Upgrader_GetNodePools_Call) Run(run func(ctx context.Context, projectID string, environment *model.Environment)) *Upgrader_GetNodePools_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(string), args[2].(*model.Environment))
 	})
@@ -204,9 +204,9 @@ func (_c *Upgrader_GetNodePools_Call) RunAndReturn(run func(context.Context, str
 	return _c
 }
 
-// GetOperation provides a mock function with given fields: ctx, projectId, operationId
-func (_m *Upgrader) GetOperation(ctx context.Context, projectId string, operationId string) (*containerpb.Operation, error) {
-	ret := _m.Called(ctx, projectId, operationId)
+// GetOperation provides a mock function with given fields: ctx, projectID, operationID
+func (_m *Upgrader) GetOperation(ctx context.Context, projectID string, operationID string) (*containerpb.Operation, error) {
+	ret := _m.Called(ctx, projectID, operationID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetOperation")
@@ -215,10 +215,10 @@ func (_m *Upgrader) GetOperation(ctx context.Context, projectId string, operatio
 	var r0 *containerpb.Operation
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*containerpb.Operation, error)); ok {
-		return rf(ctx, projectId, operationId)
+		return rf(ctx, projectID, operationID)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *containerpb.Operation); ok {
-		r0 = rf(ctx, projectId, operationId)
+		r0 = rf(ctx, projectID, operationID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*containerpb.Operation)
@@ -226,7 +226,7 @@ func (_m *Upgrader) GetOperation(ctx context.Context, projectId string, operatio
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
-		r1 = rf(ctx, projectId, operationId)
+		r1 = rf(ctx, projectID, operationID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -241,13 +241,13 @@ type Upgrader_GetOperation_Call struct {
 
 // GetOperation is a helper method to define mock.On call
 //   - ctx context.Context
-//   - projectId string
-//   - operationId string
-func (_e *Upgrader_Expecter) GetOperation(ctx interface{}, projectId interface{}, operationId interface{}) *Upgrader_GetOperation_Call {
-	return &Upgrader_GetOperation_Call{Call: _e.mock.On("GetOperation", ctx, projectId, operationId)}
+//   - projectID string
+//   - operationID string
+func (_e *Upgrader_Expecter) GetOperation(ctx interface{}, projectID interface{}, operationID interface{}) *Upgrader_GetOperation_Call {
+	return &Upgrader_GetOperation_Call{Call: _e.mock.On("GetOperation", ctx, projectID, operationID)}
 }
 
-func (_c *Upgrader_GetOperation_Call) Run(run func(ctx context.Context, projectId string, operationId string)) *Upgrader_GetOperation_Call {
+func (_c *Upgrader_GetOperation_Call) Run(run func(ctx context.Context, projectID string, operationID string)) *Upgrader_GetOperation_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(string), args[2].(string))
 	})
@@ -264,9 +264,9 @@ func (_c *Upgrader_GetOperation_Call) RunAndReturn(run func(context.Context, str
 	return _c
 }
 
-// GetReleaseChannel provides a mock function with given fields: ctx, projectId, environment
-func (_m *Upgrader) GetReleaseChannel(ctx context.Context, projectId string, environment *model.Environment) (string, error) {
-	ret := _m.Called(ctx, projectId, environment)
+// GetReleaseChannel provides a mock function with given fields: ctx, projectID, environment
+func (_m *Upgrader) GetReleaseChannel(ctx context.Context, projectID string, environment *model.Environment) (string, error) {
+	ret := _m.Called(ctx, projectID, environment)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetReleaseChannel")
@@ -275,16 +275,16 @@ func (_m *Upgrader) GetReleaseChannel(ctx context.Context, projectId string, env
 	var r0 string
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Environment) (string, error)); ok {
-		return rf(ctx, projectId, environment)
+		return rf(ctx, projectID, environment)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Environment) string); ok {
-		r0 = rf(ctx, projectId, environment)
+		r0 = rf(ctx, projectID, environment)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, *model.Environment) error); ok {
-		r1 = rf(ctx, projectId, environment)
+		r1 = rf(ctx, projectID, environment)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -299,13 +299,13 @@ type Upgrader_GetReleaseChannel_Call struct {
 
 // GetReleaseChannel is a helper method to define mock.On call
 //   - ctx context.Context
-//   - projectId string
+//   - projectID string
 //   - environment *model.Environment
-func (_e *Upgrader_Expecter) GetReleaseChannel(ctx interface{}, projectId interface{}, environment interface{}) *Upgrader_GetReleaseChannel_Call {
-	return &Upgrader_GetReleaseChannel_Call{Call: _e.mock.On("GetReleaseChannel", ctx, projectId, environment)}
+func (_e *Upgrader_Expecter) GetReleaseChannel(ctx interface{}, projectID interface{}, environment interface{}) *Upgrader_GetReleaseChannel_Call {
+	return &Upgrader_GetReleaseChannel_Call{Call: _e.mock.On("GetReleaseChannel", ctx, projectID, environment)}
 }
 
-func (_c *Upgrader_GetReleaseChannel_Call) Run(run func(ctx context.Context, projectId string, environment *model.Environment)) *Upgrader_GetReleaseChannel_Call {
+func (_c *Upgrader_GetReleaseChannel_Call) Run(run func(ctx context.Context, projectID string, environment *model.Environment)) *Upgrader_GetReleaseChannel_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(string), args[2].(*model.Environment))
 	})
@@ -322,9 +322,9 @@ func (_c *Upgrader_GetReleaseChannel_Call) RunAndReturn(run func(context.Context
 	return _c
 }
 
-// GetRunningOperations provides a mock function with given fields: ctx, projectId, environment
-func (_m *Upgrader) GetRunningOperations(ctx context.Context, projectId string, environment *model.Environment) ([]*containerpb.Operation, error) {
-	ret := _m.Called(ctx, projectId, environment)
+// GetRunningOperations provides a mock function with given fields: ctx, projectID, environment
+func (_m *Upgrader) GetRunningOperations(ctx context.Context, projectID string, environment *model.Environment) ([]*containerpb.Operation, error) {
+	ret := _m.Called(ctx, projectID, environment)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetRunningOperations")
@@ -333,10 +333,10 @@ func (_m *Upgrader) GetRunningOperations(ctx context.Context, projectId string, 
 	var r0 []*containerpb.Operation
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Environment) ([]*containerpb.Operation, error)); ok {
-		return rf(ctx, projectId, environment)
+		return rf(ctx, projectID, environment)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Environment) []*containerpb.Operation); ok {
-		r0 = rf(ctx, projectId, environment)
+		r0 = rf(ctx, projectID, environment)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*containerpb.Operation)
@@ -344,7 +344,7 @@ func (_m *Upgrader) GetRunningOperations(ctx context.Context, projectId string, 
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, *model.Environment) error); ok {
-		r1 = rf(ctx, projectId, environment)
+		r1 = rf(ctx, projectID, environment)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -359,13 +359,13 @@ type Upgrader_GetRunningOperations_Call struct {
 
 // GetRunningOperations is a helper method to define mock.On call
 //   - ctx context.Context
-//   - projectId string
+//   - projectID string
 //   - environment *model.Environment
-func (_e *Upgrader_Expecter) GetRunningOperations(ctx interface{}, projectId interface{}, environment interface{}) *Upgrader_GetRunningOperations_Call {
-	return &Upgrader_GetRunningOperations_Call{Call: _e.mock.On("GetRunningOperations", ctx, projectId, environment)}
+func (_e *Upgrader_Expecter) GetRunningOperations(ctx interface{}, projectID interface{}, environment interface{}) *Upgrader_GetRunningOperations_Call {
+	return &Upgrader_GetRunningOperations_Call{Call: _e.mock.On("GetRunningOperations", ctx, projectID, environment)}
 }
 
-func (_c *Upgrader_GetRunningOperations_Call) Run(run func(ctx context.Context, projectId string, environment *model.Environment)) *Upgrader_GetRunningOperations_Call {
+func (_c *Upgrader_GetRunningOperations_Call) Run(run func(ctx context.Context, projectID string, environment *model.Environment)) *Upgrader_GetRunningOperations_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(string), args[2].(*model.Environment))
 	})
@@ -429,9 +429,9 @@ func (_c *Upgrader_IsTimeInRange_Call) RunAndReturn(run func(int, int) bool) *Up
 	return _c
 }
 
-// UpgradeMaster provides a mock function with given fields: ctx, projectId, environment, version
-func (_m *Upgrader) UpgradeMaster(ctx context.Context, projectId string, environment *model.Environment, version string) (*containerpb.Operation, error) {
-	ret := _m.Called(ctx, projectId, environment, version)
+// UpgradeMaster provides a mock function with given fields: ctx, projectID, environment, version
+func (_m *Upgrader) UpgradeMaster(ctx context.Context, projectID string, environment *model.Environment, version string) (*containerpb.Operation, error) {
+	ret := _m.Called(ctx, projectID, environment, version)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpgradeMaster")
@@ -440,10 +440,10 @@ func (_m *Upgrader) UpgradeMaster(ctx context.Context, projectId string, environ
 	var r0 *containerpb.Operation
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Environment, string) (*containerpb.Operation, error)); ok {
-		return rf(ctx, projectId, environment, version)
+		return rf(ctx, projectID, environment, version)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Environment, string) *containerpb.Operation); ok {
-		r0 = rf(ctx, projectId, environment, version)
+		r0 = rf(ctx, projectID, environment, version)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*containerpb.Operation)
@@ -451,7 +451,7 @@ func (_m *Upgrader) UpgradeMaster(ctx context.Context, projectId string, environ
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, *model.Environment, string) error); ok {
-		r1 = rf(ctx, projectId, environment, version)
+		r1 = rf(ctx, projectID, environment, version)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -466,14 +466,14 @@ type Upgrader_UpgradeMaster_Call struct {
 
 // UpgradeMaster is a helper method to define mock.On call
 //   - ctx context.Context
-//   - projectId string
+//   - projectID string
 //   - environment *model.Environment
 //   - version string
-func (_e *Upgrader_Expecter) UpgradeMaster(ctx interface{}, projectId interface{}, environment interface{}, version interface{}) *Upgrader_UpgradeMaster_Call {
-	return &Upgrader_UpgradeMaster_Call{Call: _e.mock.On("UpgradeMaster", ctx, projectId, environment, version)}
+func (_e *Upgrader_Expecter) UpgradeMaster(ctx interface{}, projectID interface{}, environment interface{}, version interface{}) *Upgrader_UpgradeMaster_Call {
+	return &Upgrader_UpgradeMaster_Call{Call: _e.mock.On("UpgradeMaster", ctx, projectID, environment, version)}
 }
 
-func (_c *Upgrader_UpgradeMaster_Call) Run(run func(ctx context.Context, projectId string, environment *model.Environment, version string)) *Upgrader_UpgradeMaster_Call {
+func (_c *Upgrader_UpgradeMaster_Call) Run(run func(ctx context.Context, projectID string, environment *model.Environment, version string)) *Upgrader_UpgradeMaster_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(string), args[2].(*model.Environment), args[3].(string))
 	})
@@ -490,9 +490,9 @@ func (_c *Upgrader_UpgradeMaster_Call) RunAndReturn(run func(context.Context, st
 	return _c
 }
 
-// UpgradeNodePool provides a mock function with given fields: ctx, projectId, environment, nodePoolName, version
-func (_m *Upgrader) UpgradeNodePool(ctx context.Context, projectId string, environment *model.Environment, nodePoolName string, version string) (*containerpb.Operation, error) {
-	ret := _m.Called(ctx, projectId, environment, nodePoolName, version)
+// UpgradeNodePool provides a mock function with given fields: ctx, projectID, environment, nodePoolName, version
+func (_m *Upgrader) UpgradeNodePool(ctx context.Context, projectID string, environment *model.Environment, nodePoolName string, version string) (*containerpb.Operation, error) {
+	ret := _m.Called(ctx, projectID, environment, nodePoolName, version)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpgradeNodePool")
@@ -501,10 +501,10 @@ func (_m *Upgrader) UpgradeNodePool(ctx context.Context, projectId string, envir
 	var r0 *containerpb.Operation
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Environment, string, string) (*containerpb.Operation, error)); ok {
-		return rf(ctx, projectId, environment, nodePoolName, version)
+		return rf(ctx, projectID, environment, nodePoolName, version)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Environment, string, string) *containerpb.Operation); ok {
-		r0 = rf(ctx, projectId, environment, nodePoolName, version)
+		r0 = rf(ctx, projectID, environment, nodePoolName, version)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*containerpb.Operation)
@@ -512,7 +512,7 @@ func (_m *Upgrader) UpgradeNodePool(ctx context.Context, projectId string, envir
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, *model.Environment, string, string) error); ok {
-		r1 = rf(ctx, projectId, environment, nodePoolName, version)
+		r1 = rf(ctx, projectID, environment, nodePoolName, version)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -527,15 +527,15 @@ type Upgrader_UpgradeNodePool_Call struct {
 
 // UpgradeNodePool is a helper method to define mock.On call
 //   - ctx context.Context
-//   - projectId string
+//   - projectID string
 //   - environment *model.Environment
 //   - nodePoolName string
 //   - version string
-func (_e *Upgrader_Expecter) UpgradeNodePool(ctx interface{}, projectId interface{}, environment interface{}, nodePoolName interface{}, version interface{}) *Upgrader_UpgradeNodePool_Call {
-	return &Upgrader_UpgradeNodePool_Call{Call: _e.mock.On("UpgradeNodePool", ctx, projectId, environment, nodePoolName, version)}
+func (_e *Upgrader_Expecter) UpgradeNodePool(ctx interface{}, projectID interface{}, environment interface{}, nodePoolName interface{}, version interface{}) *Upgrader_UpgradeNodePool_Call {
+	return &Upgrader_UpgradeNodePool_Call{Call: _e.mock.On("UpgradeNodePool", ctx, projectID, environment, nodePoolName, version)}
 }
 
-func (_c *Upgrader_UpgradeNodePool_Call) Run(run func(ctx context.Context, projectId string, environment *model.Environment, nodePoolName string, version string)) *Upgrader_UpgradeNodePool_Call {
+func (_c *Upgrader_UpgradeNodePool_Call) Run(run func(ctx context.Context, projectID string, environment *model.Environment, nodePoolName string, version string)) *Upgrader_UpgradeNodePool_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(string), args[2].(*model.Environment), args[3].(string), args[4].(string))
 	})
