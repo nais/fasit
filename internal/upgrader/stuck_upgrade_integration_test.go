@@ -50,6 +50,12 @@ func TestStuckUpgradeIntegration(t *testing.T) {
 
 		suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(stuckUpgrade, nil).Once()
 
+		// Mock GetRunningOperations call from stuck detection logic
+		suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{}, nil).Once()
+
+		// Mock GetCurrentMasterVersion call from completion checking (for MASTER_UPGRADE status)
+		suite.upgradeMock.EXPECT().GetCurrentMasterVersion(mock.Anything, mock.Anything, mock.Anything).Return("1.24.0", nil).Once()
+
 		// Mock the EnvironmentValueGet call that happens in updateSlackProgress for mentions
 		suite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, suite.env.id, "slack_upgrade_mentions", false).Return(
 			&model.EnvironmentValue{
@@ -95,6 +101,14 @@ func TestStuckUpgradeIntegration(t *testing.T) {
 			}, nil).Once()
 
 		suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(stuckUpgrade, nil).Once()
+
+		// Mock GetRunningOperations call from stuck detection logic
+		suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{}, nil).Once()
+
+		// Mock GetNodePools call from completion checking (for NODE_UPGRADE status)
+		suite.upgradeMock.EXPECT().GetNodePools(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.NodePool{
+			{Name: "pool1", Version: "1.24.0"}, // Different version to trigger stuck detection
+		}, nil).Once()
 
 		// Expect stuck upgrade to be marked as failed
 		suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, gensql.ClusterUpgradesStatusFAILED, "1.25.0").Return(stuckUpgrade, nil).Once()
@@ -149,7 +163,10 @@ func TestStuckUpgradeIntegration(t *testing.T) {
 		testSuite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, testSuite.env.tenantID, testSuite.env.id).Return(notStuckUpgrade, nil).Once()
 
 		// System will first check for running operations
-		testSuite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{}, nil).Once()
+		testSuite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{}, nil).Times(2) // Called during stuck detection and main logic
+
+		// Mock GetCurrentMasterVersion call from completion checking (for MASTER_UPGRADE status)
+		testSuite.upgradeMock.EXPECT().GetCurrentMasterVersion(mock.Anything, mock.Anything, mock.Anything).Return("1.25.0", nil).Once() // Return target version to indicate completion
 
 		// Mock the master upgrade status check
 		testSuite.repoMock.EXPECT().GetRunningClusterOperation(mock.Anything, testSuite.env.tenantID, testSuite.env.id).Return(

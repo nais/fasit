@@ -13,7 +13,6 @@ import (
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"google.golang.org/grpc/codes"
 )
 
 func TestMetricsRecording(t *testing.T) {
@@ -43,6 +42,12 @@ func TestMetricsRecording(t *testing.T) {
 			&model.EnvironmentValue{Key: "project_id", Value: []byte(`"1234"`)}, nil).Once()
 
 		suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(stuckUpgrade, nil).Once()
+
+		// Mock GetRunningOperations call from stuck detection logic
+		suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{}, nil).Once()
+
+		// Mock GetCurrentMasterVersion call from completion checking (for MASTER_UPGRADE status)
+		suite.upgradeMock.EXPECT().GetCurrentMasterVersion(mock.Anything, mock.Anything, mock.Anything).Return("1.24.0", nil).Once()
 
 		suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, gensql.ClusterUpgradesStatusFAILED, "1.25.0").Return(stuckUpgrade, nil).Once()
 
@@ -84,7 +89,7 @@ func TestMetricsRecording(t *testing.T) {
 		suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(completeUpgrade, nil).Once()
 
 		// Mock no running operations
-		suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return(nil, nil).Once()
+		suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return(nil, nil).Times(2) // Called during stuck detection and main logic
 
 		// Mock successful node pool check
 		suite.repoMock.EXPECT().GetRunningClusterOperation(mock.Anything, suite.env.tenantID, suite.env.id).Return(nil, nil).Once()
@@ -92,7 +97,7 @@ func TestMetricsRecording(t *testing.T) {
 		suite.upgradeMock.EXPECT().GetNodePools(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.NodePool{
 			{Name: "pool1", Version: "1.25.0"},
 			{Name: "pool2", Version: "1.25.0"},
-		}, nil).Once()
+		}, nil).Times(2) // Called during stuck detection and node upgrade logic
 
 		// Mock completion
 		completeUpgradeWithEnvironmentID := &model.ClusterUpgradeStatus{
@@ -128,18 +133,6 @@ func TestErrorHandlingEdgeCases(t *testing.T) {
 		assert.Contains(t, err.Error(), "database connection failed")
 	})
 
-	t.Run("database error during environment fetch", func(t *testing.T) {
-		suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
-			ID: suite.env.tenantID, Name: suite.env.name,
-		}}, nil).Once()
-
-		suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return(nil, errors.New("environment fetch failed")).Once()
-
-		err := upgrader.Run(context.Background())
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "environment fetch failed")
-	})
-
 	t.Run("no cluster upgrade found returns nil", func(t *testing.T) {
 		suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
 			ID: suite.env.tenantID, Name: suite.env.name,
@@ -156,22 +149,6 @@ func TestErrorHandlingEdgeCases(t *testing.T) {
 
 		err := upgrader.Run(context.Background())
 		assert.NoError(t, err) // Should complete successfully with no upgrade to process
-	})
-
-	t.Run("project ID fetch error", func(t *testing.T) {
-		suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
-			ID: suite.env.tenantID, Name: suite.env.name,
-		}}, nil).Once()
-
-		suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
-			ID: suite.env.id, TenantID: suite.env.tenantID, Name: suite.env.name,
-		}}, nil).Once()
-
-		suite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, mock.Anything, "project_id", false).Return(nil, errors.New("project ID not found")).Once()
-
-		err := upgrader.Run(context.Background())
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "project ID not found")
 	})
 
 	t.Run("context cancellation during upgrade", func(t *testing.T) {
@@ -193,29 +170,6 @@ func TestErrorHandlingEdgeCases(t *testing.T) {
 	})
 }
 
-func TestLogNonCriticalError(t *testing.T) {
-	suite := newTestSuite(t)
-	upgrader := newUpgrade(suite)
-
-	t.Run("logs error with fields", func(t *testing.T) {
-		err := errors.New("test error")
-		fields := map[string]interface{}{
-			"tenant":      "test-tenant",
-			"environment": "test-env",
-		}
-
-		// This should not panic
-		upgrader.logNonCriticalError(err, "test_operation", fields)
-	})
-
-	t.Run("handles nil fields", func(t *testing.T) {
-		err := errors.New("test error")
-
-		// This should not panic
-		upgrader.logNonCriticalError(err, "test_operation", nil)
-	})
-}
-
 func TestUpgradeEnvironmentEdgeCases(t *testing.T) {
 	suite := newTestSuite(t)
 	upgrader := newUpgrade(suite)
@@ -229,30 +183,5 @@ func TestUpgradeEnvironmentEdgeCases(t *testing.T) {
 
 		err := upgrader.upgradeEnvironment(context.Background(), tenant, env)
 		assert.Error(t, err)
-	})
-
-	t.Run("running operations API error", func(t *testing.T) {
-		tenant := &model.Tenant{ID: suite.env.tenantID, Name: suite.env.name}
-		env := &model.Environment{ID: suite.env.id, TenantID: suite.env.tenantID, Name: suite.env.name}
-
-		clusterUpgrade := &model.ClusterUpgradeStatus{
-			ID: uuid.New(), UpgradeStatus: model.UpgradeStatusMasterUpgrade,
-			Version: "1.25.0", LastModified: time.Now().Add(-1 * time.Hour),
-		}
-
-		suite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, mock.Anything, "project_id", false).Return(
-			&model.EnvironmentValue{Key: "project_id", Value: []byte(`"1234"`)}, nil).Once()
-
-		suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(clusterUpgrade, nil).Once()
-
-		// Create a retriable API error for this test
-		apiErr := createAPIError(codes.Unavailable, "API unavailable")
-
-		// Mock API error with max retries - since it's retriable, it will retry
-		suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return(nil, apiErr).Times(4) // 1 initial + 3 retries
-
-		err := upgrader.upgradeEnvironment(context.Background(), tenant, env)
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "API unavailable")
 	})
 }

@@ -199,14 +199,17 @@ func TestIsUpgradeStuck(t *testing.T) {
 			mockUpgrader.ExpectedCalls = nil
 
 			// Setup mock expectations - GKE API will always be called except for completed statuses
-			if tt.clusterUpgrade.UpgradeStatus != model.UpgradeStatusDone &&
-				tt.clusterUpgrade.UpgradeStatus != model.UpgradeStatusFailed {
+			switch tt.clusterUpgrade.UpgradeStatus {
+			case model.UpgradeStatusDone, model.UpgradeStatusFailed:
+				// No API calls needed for completed statuses
+			default:
 				mockUpgrader.On("GetRunningOperations", ctx, projectID, env).Return(tt.mockOperations, nil).Once()
 
 				// Add completion checking mocks ONLY when no operations are running
 				// The completion check is only called when there are no running operations
 				if len(tt.mockOperations) == 0 {
-					if tt.clusterUpgrade.UpgradeStatus == model.UpgradeStatusMasterUpgrade {
+					switch tt.clusterUpgrade.UpgradeStatus {
+					case model.UpgradeStatusMasterUpgrade:
 						// For MASTER_UPGRADE, check if master version matches target
 						currentMasterVersion := "1.24.0" // Different version to simulate stuck
 						if !tt.expectedStuck {
@@ -214,7 +217,7 @@ func TestIsUpgradeStuck(t *testing.T) {
 							currentMasterVersion = tt.clusterUpgrade.Version
 						}
 						mockUpgrader.On("GetCurrentMasterVersion", ctx, projectID, env).Return(currentMasterVersion, nil).Once()
-					} else if tt.clusterUpgrade.UpgradeStatus == model.UpgradeStatusNodeUpgrade {
+					case model.UpgradeStatusNodeUpgrade:
 						// For NODE_UPGRADE, check if node pool versions match target
 						nodePoolVersion := "1.24.0" // Different version to simulate stuck
 						if !tt.expectedStuck {

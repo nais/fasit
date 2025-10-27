@@ -71,52 +71,20 @@ func TestSlackProgressStates(t *testing.T) {
 	upgrader := newUpgrade(suite)
 
 	testCases := []struct {
-		name          string
-		currentPhase  string
-		status        string
-		shouldContain []string
+		name   string
+		status model.UpgradeStatus
 	}{
 		{
-			name:          "master starting",
-			currentPhase:  "master",
-			status:        "starting",
-			shouldContain: []string{"Starting control plane"},
+			name:   "master upgrade status",
+			status: model.UpgradeStatusMasterUpgrade,
 		},
 		{
-			name:          "master in progress",
-			currentPhase:  "master",
-			status:        "in_progress",
-			shouldContain: []string{"Control plane upgrade in progress"},
+			name:   "node upgrade status",
+			status: model.UpgradeStatusNodeUpgrade,
 		},
 		{
-			name:          "master completed",
-			currentPhase:  "master",
-			status:        "completed",
-			shouldContain: []string{"Control plane upgrade completed", "Starting node pools"},
-		},
-		{
-			name:          "nodepool in progress",
-			currentPhase:  "nodepool",
-			status:        "in_progress",
-			shouldContain: []string{"Control plane upgrade completed", "Node pools upgrade in progress"},
-		},
-		{
-			name:          "upgrade completed",
-			currentPhase:  "completed",
-			status:        "completed",
-			shouldContain: []string{"upgrade completed", "completed successfully"},
-		},
-		{
-			name:          "upgrade failed",
-			currentPhase:  "failed",
-			status:        "failed",
-			shouldContain: []string{"failed"},
-		},
-		{
-			name:          "upgrade stuck",
-			currentPhase:  "stuck",
-			status:        "failed",
-			shouldContain: []string{"stuck", "24h"},
+			name:   "completed status",
+			status: model.UpgradeStatusDone,
 		},
 	}
 
@@ -124,26 +92,23 @@ func TestSlackProgressStates(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			clusterUpgrade := &model.ClusterUpgradeStatus{
 				ID:                    uuid.New(),
-				UpgradeStatus:         model.UpgradeStatusMasterUpgrade,
+				UpgradeStatus:         tc.status,
 				Version:               "1.25.0",
 				LastModified:          time.Now(),
 				SlackChannelID:        "C123456",
 				SlackMessageTimestamp: "1234567890.123456",
-				EnvironmentID:         uuid.New(), // Need this for mentions retrieval
+				EnvironmentID:         uuid.New(),
 			}
 
 			// Mock the EnvironmentValueGet call that now happens in updateSlackProgress
 			suite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, clusterUpgrade.EnvironmentID, "slack_upgrade_mentions", false).Return(
 				&model.EnvironmentValue{
 					Key:   "slack_upgrade_mentions",
-					Value: []byte(`"<@U123456>"`), // Some test mentions
+					Value: []byte(`"<@U123456>"`),
 				}, nil).Once()
 
 			// Test that the function doesn't panic
 			upgrader.updateSlackProgress("tenant1", "env1", clusterUpgrade)
-
-			// Test passes if no panic - actual message content testing would require
-			// more sophisticated mocking of the Slack client interface
 		})
 	}
 }

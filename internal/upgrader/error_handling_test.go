@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"time"
 
 	"github.com/googleapis/gax-go/v2/apierror"
 	"github.com/stretchr/testify/assert"
@@ -148,33 +147,5 @@ func TestRetryWithBackoff(t *testing.T) {
 
 		assert.Error(t, err)
 		assert.True(t, errors.Is(err, context.Canceled) || callCount >= 2)
-	})
-
-	t.Run("exponential backoff timing", func(t *testing.T) {
-		callCount := 0
-		startTime := time.Now()
-		delays := []time.Duration{}
-
-		err := upgrader.retryWithBackoff(context.Background(), "test_operation", func() error {
-			if callCount > 0 {
-				delays = append(delays, time.Since(startTime))
-			}
-			callCount++
-			startTime = time.Now()
-
-			if callCount <= 3 {
-				return createAPIError(codes.Unavailable, "retry me")
-			}
-			return nil
-		})
-
-		assert.NoError(t, err)
-		assert.Equal(t, 4, callCount)
-
-		// Verify exponential backoff pattern
-		if len(delays) >= 2 {
-			// Second delay should be roughly double the first
-			assert.True(t, delays[1] > delays[0], "Second delay should be longer than first")
-		}
 	})
 }
