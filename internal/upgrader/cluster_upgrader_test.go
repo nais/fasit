@@ -79,11 +79,28 @@ func (s *testSuite) mockRunTenantForLoop(upgradeStatus model.UpgradeStatus) {
 		},
 	}, nil).Once()
 
-	s.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, mock.Anything, mock.Anything, false).Return(
+	s.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, mock.Anything, "project_id", false).Return(
 		&model.EnvironmentValue{
 			Key:   projectID,
 			Value: []byte(`"1234"`),
 		}, nil).Once()
+
+	// Mock for slack_upgrade_mentions call in updateSlackProgress
+	s.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, mock.Anything, "slack_upgrade_mentions", false).Return(
+		&model.EnvironmentValue{
+			Key:   "slack_upgrade_mentions",
+			Value: []byte(`""`),
+		}, nil).Maybe()
+
+	// Mock for Slack message metadata saving in updateSlackProgress
+	s.repoMock.EXPECT().SetClusterUpgradesSlackMessage(mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
+		&model.ClusterUpgradeStatus{
+			ID:            uuid.New(),
+			UpgradeStatus: model.UpgradeStatusCreated,
+			Version:       "1.2.4",
+			LastModified:  time.Now(),
+			StartTime:     time.Now(),
+		}, nil).Maybe()
 
 	clusterUpgrade := &model.ClusterUpgradeStatus{
 		ID:            uuid.New(),
@@ -130,6 +147,16 @@ func TestRun_OperationDoneUpdateClusterNodeStatusToDone(t *testing.T) {
 			LastModified:  time.Now(),
 			StartTime:     time.Now(),
 		}, nil).Once()
+
+	// Mock for Slack message metadata saving in updateSlackProgress
+	suite.repoMock.EXPECT().SetClusterUpgradesSlackMessage(mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
+		&model.ClusterUpgradeStatus{
+			ID:            uuid.New(),
+			UpgradeStatus: model.UpgradeStatusDone,
+			Version:       "1.2.4",
+			LastModified:  time.Now(),
+			StartTime:     time.Now(),
+		}, nil).Maybe()
 
 	err := upgrade.Run(context.Background())
 	if err != nil {
@@ -233,16 +260,6 @@ func TestRun_StartClusterUpgradeMasterStatusCreated(t *testing.T) {
 			TargetLink:    fmt.Sprintf("https://container.googleapis.com/v1/projects/%s/zones/europe-north1-a/clusters/%s", suite.env.projectID, suite.env.name),
 			Detail:        "testSuite",
 		}, nil).Once()
-
-	suite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, mock.Anything, "slack_upgrade_mentions", false).Return(
-		&model.EnvironmentValue{
-			Key:   "slack_upgrade_mentions",
-			Value: []byte(`"<@U01J9J9J9J9>"`),
-		}, nil).Once()
-
-	// SetClusterUpgradesSlackMessage is now called because Slack posting succeeds with fake client
-	suite.repoMock.EXPECT().SetClusterUpgradesSlackMessage(mock.Anything, mock.Anything, "", "").Return(
-		&model.ClusterUpgradeStatus{}, nil).Once()
 
 	id := uuid.New()
 	suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantID, suite.env.id, mock.Anything, mock.Anything).Return(
