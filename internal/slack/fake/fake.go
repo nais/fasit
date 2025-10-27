@@ -24,15 +24,11 @@ func (f *FakeSlackClient) UpdateMessage(channelID, timestamp string, msgOptions 
 	return "", "", "", errors.New("invalid_auth")
 }
 
-func (f *FakeSlackClient) AddReaction(channelID, timestamp, reaction string) error {
+func (f *FakeSlackClient) AddReaction(channelId, timestamp, reaction string) error {
 	return nil
 }
 
-func (f *FakeSlackClient) GetClusterUpgradeNotificationMessageOptions(tenant, environment, version, clusterComponent, mentions string) []slack.MsgOption {
-	return nil
-}
-
-func (f *FakeSlackClient) GetClusterUpgradeDoneNotificationMessageOptions(tenant, environment string) []slack.MsgOption {
+func (f *FakeSlackClient) GetClusterUpgradeStuckNotificationMessageOptions(tenant, environment, version, status, lastModified string) []slack.MsgOption {
 	return nil
 }
 
@@ -40,14 +36,6 @@ func (f *FakeSlackClient) GetClusterUpgradeProgressMessageOptions(tenant, enviro
 	return nil
 }
 
-func (f *FakeSlackClient) GetClusterUpgradeFailedNotificationMessageOptions(tenant, environment, version, clusterComponent, mentions string) []slack.MsgOption {
-	return nil
-}
-
 func (f *FakeSlackClient) GetFeatureDeployFailedMessageOptions(feature, tenant, environment string) []slack.MsgOption {
-	return nil
-}
-
-func (f *FakeSlackClient) GetClusterUpgradeStuckNotificationMessageOptions(tenant, environment, version, status, lastModified string) []slack.MsgOption {
 	return nil
 }

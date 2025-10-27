@@ -14,8 +14,6 @@ type SlackClient interface {
 	PostComment(channelName, messageTS string, msgOptions []slack.MsgOption) error
 	UpdateMessage(channelID, timestamp string, msgOptions []slack.MsgOption) (string, string, string, error)
 	AddReaction(channelID, timestamp, reaction string) error
-	GetClusterUpgradeNotificationMessageOptions(tenant, environment, version, clusterComponent, mentions string) []slack.MsgOption
-	GetClusterUpgradeDoneNotificationMessageOptions(tenant, environment string) []slack.MsgOption
 	GetClusterUpgradeStuckNotificationMessageOptions(tenant, environment, version, status, lastModified string) []slack.MsgOption
 	GetClusterUpgradeProgressMessageOptions(tenant, environment, version, currentPhase, status string, startTime string, mentions string) []slack.MsgOption
 	GetFeatureDeployFailedMessageOptions(feature, tenant, environment string) []slack.MsgOption
