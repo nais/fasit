@@ -139,30 +139,4 @@ func main() {
 			}
 		}
 	}
-
-	topics := client.TopicAdminClient.ListTopics(ctx, &pubsubpb.ListTopicsRequest{})
-	fmt.Println("TOPICS:")
-	for {
-		ts, err := topics.Next()
-		if err != nil {
-			log.Println(err)
-			break
-		}
-
-		log.Println(ts.String())
-	}
-
-	subs := client.SubscriptionAdminClient.ListSubscriptions(ctx, &pubsubpb.ListSubscriptionsRequest{})
-	fmt.Println("SUBSCRIPTIONS:")
-	for {
-		ts, err := subs.Next()
-		if err != nil {
-			log.Println(err)
-			break
-		}
-
-		log.Println(ts.String())
-	}
-
-	fmt.Println("ok")
 }
