@@ -19,11 +19,23 @@ func TestSlackNotificationFlow(t *testing.T) {
 			UpgradeStatus:         model.UpgradeStatusMasterUpgrade,
 			Version:               "1.25.0",
 			LastModified:          time.Now(),
-			SlackChannelID:        "", // No channel ID
-			SlackMessageTimestamp: "", // No timestamp
+			SlackChannelID:        "",         // No channel ID
+			SlackMessageTimestamp: "",         // No timestamp
+			EnvironmentID:         uuid.New(), // Need this for the fallback
 		}
 
-		// This should not cause any panic or error - just return early
+		// Mock the EnvironmentValueGet call that happens in getUpgradeMentions during fallback
+		suite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, clusterUpgrade.EnvironmentID, "slack_upgrade_mentions", false).Return(
+			&model.EnvironmentValue{
+				Key:   "slack_upgrade_mentions",
+				Value: []byte(`""`), // Empty mentions
+			}, nil).Once()
+
+		// Mock the SetClusterUpgradesSlackMessage call that happens when fallback posts a new message
+		suite.repoMock.EXPECT().SetClusterUpgradesSlackMessage(mock.Anything, clusterUpgrade.ID, "", "").Return(
+			&model.ClusterUpgradeStatus{}, nil).Once()
+
+		// This should not cause any panic or error - should post a new message via fallback
 		upgrader.updateSlackProgress("tenant1", "env1", clusterUpgrade, "master", "completed")
 
 		// Test passes if no panic occurs

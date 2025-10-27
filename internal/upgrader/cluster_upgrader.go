@@ -267,10 +267,23 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		}
 
 		// Only post new Slack message if we don't already have one
+		log.WithFields(logrus.Fields{
+			"slack_channel_id":        clusterUpgrade.SlackChannelID,
+			"slack_message_timestamp": clusterUpgrade.SlackMessageTimestamp,
+			"should_post_new_message": clusterUpgrade.SlackChannelID == "" || clusterUpgrade.SlackMessageTimestamp == "",
+		}).Debug("checking if initial Slack message should be posted")
+
 		if clusterUpgrade.SlackChannelID == "" || clusterUpgrade.SlackMessageTimestamp == "" {
 			// Create initial progress message
 			startTime := time.Now().Format("2006-01-02 15:04")
 			msg := c.slack.GetClusterUpgradeProgressMessageOptions(tenant.Name, env.Name, clusterUpgrade.Version, "master", "starting", startTime, mentions)
+
+			log.WithFields(logrus.Fields{
+				"slack_channel": c.slackChannel,
+				"tenant":        tenant.Name,
+				"environment":   env.Name,
+				"version":       clusterUpgrade.Version,
+			}).Info("posting initial Slack message for cluster upgrade")
 
 			channelID, timestamp, err := c.slack.PostMessage(c.slackChannel, msg)
 			if err != nil {
@@ -280,6 +293,13 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 					"version":     clusterUpgrade.Version,
 				})
 			} else {
+				log.WithFields(logrus.Fields{
+					"channel_id":  channelID,
+					"timestamp":   timestamp,
+					"tenant":      tenant.Name,
+					"environment": env.Name,
+				}).Info("Slack message posted successfully, saving metadata")
+
 				// Save Slack metadata only if posting succeeded
 				_, err = c.repo.SetClusterUpgradesSlackMessage(ctx, clusterUpgrade.ID, timestamp, channelID)
 				if err != nil {
@@ -291,6 +311,13 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 				}
 			}
 		} else {
+			log.WithFields(logrus.Fields{
+				"slack_channel_id":        clusterUpgrade.SlackChannelID,
+				"slack_message_timestamp": clusterUpgrade.SlackMessageTimestamp,
+				"tenant":                  tenant.Name,
+				"environment":             env.Name,
+			}).Info("skipping initial Slack message - existing metadata found, updating instead")
+
 			// Update existing Slack message with current status
 			c.updateSlackProgress(tenant.Name, env.Name, clusterUpgrade, "master", "in_progress")
 		}

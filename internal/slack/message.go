@@ -7,10 +7,12 @@ import (
 )
 
 func (s *Slack) GetFeatureDeployFailedMessageOptions(feature, tenant, environment string) []slack.MsgOption {
-	blocks := []slack.Block{}
-	headerBlock := slack.NewHeaderBlock(slack.NewTextBlockObject("mrkdwn", ":warning: Feature deploy failed", false, false))
-	text := slack.NewSectionBlock(slack.NewTextBlockObject("mrkdwn", fmt.Sprintf("*Feature:* %s\n*Tenant:* %s\n*Environment:* %s", feature, tenant, environment), false, false), nil, nil)
-	blocks = append(blocks, headerBlock, text)
+	blocks := []slack.Block{
+		slack.NewSectionBlock(
+			slack.NewTextBlockObject("mrkdwn", fmt.Sprintf("*:x: Feature deploy failed*\n\n*Feature:* %s\n*Tenant:* %s\n*Environment:* %s", feature, tenant, environment), false, false),
+			nil, nil,
+		),
+	}
 
 	return []slack.MsgOption{
 		slack.MsgOptionBlocks(blocks...),
@@ -18,8 +20,13 @@ func (s *Slack) GetFeatureDeployFailedMessageOptions(feature, tenant, environmen
 }
 
 func (s *Slack) GetClusterUpgradeProgressMessageOptions(tenant, environment, version, currentPhase, status string, startTime string, mentions string) []slack.MsgOption {
-	blocks := []slack.Block{}
-	headerBlock := slack.NewHeaderBlock(slack.NewTextBlockObject("mrkdwn", ":kubernetes: K8s auto-upgrade", false, false))
+	// Use a simple, basic structure that should always work
+	blocks := []slack.Block{
+		slack.NewSectionBlock(
+			slack.NewTextBlockObject("mrkdwn", fmt.Sprintf("*:kubernetes: K8s auto-upgrade*\n\n*Tenant:* %s\n*Environment:* %s\n*Version:* %s\n*Started:* %s", tenant, environment, version, startTime), false, false),
+			nil, nil,
+		),
+	}
 
 	// Build progress indicators
 	var progressText string
@@ -52,11 +59,19 @@ func (s *Slack) GetClusterUpgradeProgressMessageOptions(tenant, environment, ver
 		progressText = ":hourglass_flowing_sand: Upgrade starting..."
 	}
 
-	text := slack.NewSectionBlock(slack.NewTextBlockObject("mrkdwn", fmt.Sprintf("*Tenant:* %s\n*Environment:* %s\n*Version:* %s\n*Started:* %s\n\n%s\n\n*Progress*: <https://fasit.nais.io/clusters#%s|Fasit>", tenant, environment, version, startTime, progressText, tenant), false, false), nil, nil)
-	blocks = append(blocks, headerBlock, text)
+	// Add progress section
+	progressBlock := slack.NewSectionBlock(
+		slack.NewTextBlockObject("mrkdwn", fmt.Sprintf("%s\n\n*Progress*: <https://fasit.nais.io/clusters#%s|Fasit>", progressText, tenant), false, false),
+		nil, nil,
+	)
+	blocks = append(blocks, progressBlock)
 
+	// Add mentions if provided
 	if mentions != "" {
-		mentionsBlock := slack.NewSectionBlock(slack.NewTextBlockObject("mrkdwn", fmt.Sprintf("\n%s", mentions), false, false), nil, nil)
+		mentionsBlock := slack.NewSectionBlock(
+			slack.NewTextBlockObject("mrkdwn", mentions, false, false),
+			nil, nil,
+		)
 		blocks = append(blocks, mentionsBlock)
 	}
 
@@ -66,10 +81,12 @@ func (s *Slack) GetClusterUpgradeProgressMessageOptions(tenant, environment, ver
 }
 
 func (s *Slack) GetClusterUpgradeStuckNotificationMessageOptions(tenant, environment, version, status, lastModified string) []slack.MsgOption {
-	blocks := []slack.Block{}
-	headerBlock := slack.NewHeaderBlock(slack.NewTextBlockObject("mrkdwn", ":warning: K8s upgrade stuck", false, false))
-	text := slack.NewSectionBlock(slack.NewTextBlockObject("mrkdwn", fmt.Sprintf("🚨 Cluster upgrade has been stuck for more than 24 hours and was marked as FAILED.\n\n*Tenant:* %s\n*Environment:* %s\n*Target version:* %s\n*Status:* %s\n*Last modified:* %s\n\n<https://fasit.nais.io/clusters#%s|View in Fasit>", tenant, environment, version, status, lastModified, tenant), false, false), nil, nil)
-	blocks = append(blocks, headerBlock, text)
+	blocks := []slack.Block{
+		slack.NewSectionBlock(
+			slack.NewTextBlockObject("mrkdwn", fmt.Sprintf("*:warning: K8s upgrade stuck*\n\n🚨 Cluster upgrade has been stuck for more than 24 hours and was marked as FAILED.\n\n*Tenant:* %s\n*Environment:* %s\n*Target version:* %s\n*Status:* %s\n*Last modified:* %s\n\n<https://fasit.nais.io/clusters#%s|View in Fasit>", tenant, environment, version, status, lastModified, tenant), false, false),
+			nil, nil,
+		),
+	}
 
 	return []slack.MsgOption{
 		slack.MsgOptionBlocks(blocks...),

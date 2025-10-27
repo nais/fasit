@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/nais/fasit/internal/database/gensql"
-	"github.com/nais/fasit/internal/slack"
+	"github.com/nais/fasit/internal/slack/fake"
 
 	"cloud.google.com/go/container/apiv1/containerpb"
 
@@ -59,8 +59,8 @@ func newTestSuite(t *testing.T) *testSuite {
 func newUpgrade(suite *testSuite) *ClusterUpgrader {
 	log := logrus.New().WithField("testSuite", "upgrade")
 	meter := metricsdk.NewMeterProvider().Meter("testSuite")
-	slack := slack.New("token")
-	return NewClusterUpgrader(suite.repoMock, log, suite.upgradeMock, meter, slack, "channel")
+	slackClient := fake.NewFakeSlackClient()
+	return NewClusterUpgrader(suite.repoMock, log, suite.upgradeMock, meter, slackClient, "channel")
 }
 
 func (s *testSuite) mockRunTenantForLoop(upgradeStatus model.UpgradeStatus) {
@@ -240,8 +240,9 @@ func TestRun_StartClusterUpgradeMasterStatusCreated(t *testing.T) {
 			Value: []byte(`"<@U01J9J9J9J9>"`),
 		}, nil).Once()
 
-	// Note: SetClusterUpgradesSlackMessage is NOT called because Slack posting fails with invalid_auth
-	// This is correct behavior - we shouldn't save metadata for failed posts
+	// SetClusterUpgradesSlackMessage is now called because Slack posting succeeds with fake client
+	suite.repoMock.EXPECT().SetClusterUpgradesSlackMessage(mock.Anything, mock.Anything, "", "").Return(
+		&model.ClusterUpgradeStatus{}, nil).Once()
 
 	id := uuid.New()
 	suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantID, suite.env.id, mock.Anything, mock.Anything).Return(
