@@ -30,15 +30,15 @@ type ClusterUpgrader struct {
 	slackChannel string
 
 	// Metrics
-	upgradeInProgress     metric.Int64Counter
-	upgradeStarted        metric.Int64Counter
-	upgradeCompleted      metric.Int64Counter
-	upgradeFailed         metric.Int64Counter
-	upgradeStuck          metric.Int64Counter
-	gkeApiCalls           metric.Int64Counter
-	gkeApiErrors          metric.Int64Counter
-	retryAttempts         metric.Int64Counter
-	upgradeDuration       metric.Float64Histogram
+	upgradeInProgress metric.Int64Counter
+	upgradeStarted    metric.Int64Counter
+	upgradeCompleted  metric.Int64Counter
+	upgradeFailed     metric.Int64Counter
+	upgradeStuck      metric.Int64Counter
+	gkeApiCalls       metric.Int64Counter
+	gkeApiErrors      metric.Int64Counter
+	retryAttempts     metric.Int64Counter
+	upgradeDuration   metric.Float64Histogram
 }
 
 func NewClusterUpgrader(repo database.Repo, log logrus.FieldLogger, upgrader Upgrader, meter metric.Meter, slack slack.SlackClient, slackChannel string) *ClusterUpgrader {
@@ -108,28 +108,28 @@ func NewClusterUpgrader(repo database.Repo, log logrus.FieldLogger, upgrader Upg
 func (c *ClusterUpgrader) Run(ctx context.Context) error {
 	c.log.Info("starting cluster upgrader run")
 	startTime := time.Now()
-	
+
 	var err error
 	tenants, err := c.repo.TenantsGet(ctx)
 	if err != nil {
 		c.log.WithError(err).Error("failed to get tenants")
 		return err
 	}
-	
+
 	c.log.WithField("tenant_count", len(tenants)).Info("processing tenants for cluster upgrades")
-	
+
 	totalEnvironments := 0
 	processedEnvironments := 0
-	
+
 	for _, tenant := range tenants {
 		envs, err := c.repo.EnvironmentsGet(ctx, tenant.ID)
 		if err != nil {
 			c.log.WithError(err).WithField("tenant", tenant.Name).Error("failed to get environments for tenant")
 			return err
 		}
-		
+
 		totalEnvironments += len(envs)
-		
+
 		for _, env := range envs {
 			if err := c.upgradeEnvironment(ctx, tenant, env); err != nil {
 				c.log.WithError(err).WithFields(logrus.Fields{
@@ -142,16 +142,16 @@ func (c *ClusterUpgrader) Run(ctx context.Context) error {
 			continue
 		}
 	}
-	
+
 	runDuration := time.Since(startTime)
 	c.log.WithFields(logrus.Fields{
-		"total_tenants":               len(tenants),
-		"total_environments":          totalEnvironments,
-		"processed_environments":      processedEnvironments,
-		"run_duration_seconds":        runDuration.Seconds(),
-		"avg_environment_processing":  runDuration.Seconds() / float64(max(processedEnvironments, 1)),
+		"total_tenants":              len(tenants),
+		"total_environments":         totalEnvironments,
+		"processed_environments":     processedEnvironments,
+		"run_duration_seconds":       runDuration.Seconds(),
+		"avg_environment_processing": runDuration.Seconds() / float64(max(processedEnvironments, 1)),
 	}).Info("cluster upgrader run completed")
-	
+
 	return nil
 }
 
@@ -169,9 +169,9 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		"tenant_id":   tenant.ID,
 		"env_id":      env.ID,
 	})
-	
+
 	log.Debug("checking environment for cluster upgrades")
-	
+
 	projectID, err := getProjectID(ctx, c, env.ID)
 	if err != nil {
 		log.WithError(err).Error("failed to get project ID for environment")
@@ -195,7 +195,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		"upgrade_id":     clusterUpgrade.ID,
 		"last_modified":  clusterUpgrade.LastModified.Format("2006-01-02 15:04:05"),
 	})
-	
+
 	log.Debug("processing cluster upgrade")
 
 	// Check if upgrade is stuck (> 24 hours in same state)
@@ -219,8 +219,12 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		// Record failed upgrade metric
 		c.upgradeFailed.Add(ctx, 1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "stuck_timeout")...))
 
-		// Send Slack notification about stuck upgrade
-		c.notifyStuckUpgrade(tenant.Name, env.Name, clusterUpgrade)
+		// Send Slack notification about stuck upgrade - update existing message if possible
+		if clusterUpgrade.SlackChannelID != "" && clusterUpgrade.SlackMessageTimestamp != "" {
+			c.updateSlackProgress(tenant.Name, env.Name, clusterUpgrade, "stuck", "failed")
+		} else {
+			c.notifyStuckUpgrade(tenant.Name, env.Name, clusterUpgrade)
+		}
 		return nil
 	}
 
@@ -262,7 +266,9 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 			mentions = "" // Use empty mentions as fallback
 		}
 
-		msg := c.slack.GetClusterUpgradeNotificationMessageOptions(tenant.Name, env.Name, clusterUpgrade.Version, "control plane", mentions)
+		// Create initial progress message
+		startTime := time.Now().Format("2006-01-02 15:04")
+		msg := c.slack.GetClusterUpgradeProgressMessageOptions(tenant.Name, env.Name, clusterUpgrade.Version, "master", "starting", startTime, mentions)
 
 		channelID, timestamp, err := c.slack.PostMessage(c.slackChannel, msg)
 		if err != nil {
@@ -292,6 +298,9 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 			return nil
 		}
 		log.WithFields(logrus.Fields{"target_version": status.Version}).Info("master upgrade done")
+		
+		// Update Slack with master completion
+		c.updateSlackProgress(tenant.Name, env.Name, status, "master", "completed")
 
 	case model.UpgradeStatusNodeUpgrade:
 		if clusterHas(runningOperations) {
@@ -313,6 +322,9 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 			if un != nil {
 				// we started a upgrade
 				log.WithField("target_version", un.Version).Info("nodepool upgrade started")
+				
+				// Update Slack with nodepool start
+				c.updateSlackProgress(tenant.Name, env.Name, un, "nodepool", "in_progress")
 				return nil
 			}
 
@@ -324,7 +336,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 			"tenant":         tenant.Name,
 			"environment":    env.Name,
 		}).Info("cluster upgrade completed successfully")
-		
+
 		upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatusDONE, clusterUpgrade.Version)
 		if err != nil {
 			return err
@@ -332,21 +344,13 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 
 		// Record successful completion metrics
 		c.upgradeCompleted.Add(ctx, 1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "complete")...))
-		
+
 		// Record upgrade duration
 		upgradeDuration := time.Since(clusterUpgrade.LastModified).Seconds()
 		c.upgradeDuration.Record(ctx, upgradeDuration, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "total")...))
 
-		msg := c.slack.GetClusterUpgradeDoneNotificationMessageOptions(tenant.Name, env.Name)
-
-		err = c.slack.PostComment(c.slackChannel, clusterUpgrade.SlackMessageTimestamp, msg)
-		if err != nil {
-			c.logNonCriticalError(err, "slack_post_comment", logrus.Fields{
-				"tenant":      tenant.Name,
-				"environment": env.Name,
-				"operation":   "upgrade_complete",
-			})
-		}
+		// Update Slack with completion
+		c.updateSlackProgress(tenant.Name, env.Name, upgradeStatus, "completed", "completed")
 
 		err = c.slack.AddReaction(upgradeStatus.SlackChannelID, upgradeStatus.SlackMessageTimestamp, "white_check_mark")
 		if err != nil {
@@ -438,18 +442,6 @@ func (c *ClusterUpgrader) upgradeNodes(ctx context.Context, env *model.Environme
 		})
 		if retryErr != nil {
 			return nil, retryErr
-		}
-
-		msg := c.slack.GetClusterUpgradeNotificationMessageOptions(tenantName, env.Name, clusterUpgrade.Version, np.Name, "")
-
-		err = c.slack.PostComment(c.slackChannel, clusterUpgrade.SlackMessageTimestamp, msg)
-		if err != nil {
-			c.logNonCriticalError(err, "slack_post_comment", logrus.Fields{
-				"tenant":      tenantName,
-				"environment": env.Name,
-				"nodepool":    np.Name,
-				"operation":   "nodepool_upgrade_start",
-			})
 		}
 
 		c.upgradeInProgress.Add(ctx, 1, metric.WithAttributes(setMetricsAttrs(env.Name, tenantName, clusterUpgrade.Version, "nodePools")...))
@@ -772,6 +764,33 @@ func (c *ClusterUpgrader) isUpgradeStuck(clusterUpgrade *model.ClusterUpgradeSta
 	// Check if upgrade has been running for more than 24 hours
 	stuckThreshold := 24 * time.Hour
 	return time.Since(clusterUpgrade.LastModified) > stuckThreshold
+}
+
+// updateSlackProgress updates the existing Slack message with current upgrade progress
+func (c *ClusterUpgrader) updateSlackProgress(tenantName, envName string, clusterUpgrade *model.ClusterUpgradeStatus, currentPhase, status string) {
+	if clusterUpgrade.SlackChannelID == "" || clusterUpgrade.SlackMessageTimestamp == "" {
+		return // No existing message to update
+	}
+
+	startTime := clusterUpgrade.LastModified.Format("2006-01-02 15:04")
+	progressMsg := c.slack.GetClusterUpgradeProgressMessageOptions(
+		tenantName,
+		envName,
+		clusterUpgrade.Version,
+		currentPhase,
+		status,
+		startTime,
+		"") // No mentions for updates
+
+	_, _, _, err := c.slack.UpdateMessage(clusterUpgrade.SlackChannelID, clusterUpgrade.SlackMessageTimestamp, progressMsg)
+	if err != nil {
+		c.logNonCriticalError(err, "slack_update_progress", logrus.Fields{
+			"tenant":      tenantName,
+			"environment": envName,
+			"phase":       currentPhase,
+			"status":      status,
+		})
+	}
 }
 
 // notifyStuckUpgrade sends a Slack notification about a stuck upgrade

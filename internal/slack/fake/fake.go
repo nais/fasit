@@ -1,6 +1,10 @@
 package fake
 
-import "github.com/slack-go/slack"
+import (
+	"errors"
+
+	"github.com/slack-go/slack"
+)
 
 type FakeSlackClient struct{}
 
@@ -16,6 +20,10 @@ func (f *FakeSlackClient) PostComment(channelName, messageTS string, msgOptions 
 	return nil
 }
 
+func (f *FakeSlackClient) UpdateMessage(channelID, timestamp string, msgOptions []slack.MsgOption) (string, string, string, error) {
+	return "", "", "", errors.New("invalid_auth")
+}
+
 func (f *FakeSlackClient) AddReaction(channelID, timestamp, reaction string) error {
 	return nil
 }
@@ -25,6 +33,10 @@ func (f *FakeSlackClient) GetClusterUpgradeNotificationMessageOptions(tenant, en
 }
 
 func (f *FakeSlackClient) GetClusterUpgradeDoneNotificationMessageOptions(tenant, environment string) []slack.MsgOption {
+	return nil
+}
+
+func (f *FakeSlackClient) GetClusterUpgradeProgressMessageOptions(tenant, environment, version, currentPhase, status string, startTime string, mentions string) []slack.MsgOption {
 	return nil
 }
 

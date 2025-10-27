@@ -12,10 +12,12 @@ type Slack struct {
 type SlackClient interface {
 	PostMessage(channelName string, msgOptions []slack.MsgOption) (string, string, error)
 	PostComment(channelName, messageTS string, msgOptions []slack.MsgOption) error
+	UpdateMessage(channelID, timestamp string, msgOptions []slack.MsgOption) (string, string, string, error)
 	AddReaction(channelID, timestamp, reaction string) error
 	GetClusterUpgradeNotificationMessageOptions(tenant, environment, version, clusterComponent, mentions string) []slack.MsgOption
 	GetClusterUpgradeDoneNotificationMessageOptions(tenant, environment string) []slack.MsgOption
 	GetClusterUpgradeStuckNotificationMessageOptions(tenant, environment, version, status, lastModified string) []slack.MsgOption
+	GetClusterUpgradeProgressMessageOptions(tenant, environment, version, currentPhase, status string, startTime string, mentions string) []slack.MsgOption
 	GetFeatureDeployFailedMessageOptions(feature, tenant, environment string) []slack.MsgOption
 }
 
@@ -39,6 +41,10 @@ func (s *Slack) PostComment(channelName, messageTS string, msgOptions []slack.Ms
 	msgOptions = append(msgOptions, slack.MsgOptionTS(messageTS))
 	_, _, err := s.client.PostMessage(channelName, msgOptions...)
 	return err
+}
+
+func (s *Slack) UpdateMessage(channelID, timestamp string, msgOptions []slack.MsgOption) (string, string, string, error) {
+	return s.client.UpdateMessage(channelID, timestamp, msgOptions...)
 }
 
 func (s *Slack) AddReaction(channelID, timestamp, reaction string) error {
