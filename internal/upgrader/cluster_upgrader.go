@@ -266,25 +266,33 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 			mentions = "" // Use empty mentions as fallback
 		}
 
-		// Create initial progress message
-		startTime := time.Now().Format("2006-01-02 15:04")
-		msg := c.slack.GetClusterUpgradeProgressMessageOptions(tenant.Name, env.Name, clusterUpgrade.Version, "master", "starting", startTime, mentions)
+		// Only post new Slack message if we don't already have one
+		if clusterUpgrade.SlackChannelID == "" || clusterUpgrade.SlackMessageTimestamp == "" {
+			// Create initial progress message
+			startTime := time.Now().Format("2006-01-02 15:04")
+			msg := c.slack.GetClusterUpgradeProgressMessageOptions(tenant.Name, env.Name, clusterUpgrade.Version, "master", "starting", startTime, mentions)
 
-		channelID, timestamp, err := c.slack.PostMessage(c.slackChannel, msg)
-		if err != nil {
-			c.logNonCriticalError(err, "slack_post_message", logrus.Fields{
-				"tenant":      tenant.Name,
-				"environment": env.Name,
-				"version":     clusterUpgrade.Version,
-			})
-		}
-		_, err = c.repo.SetClusterUpgradesSlackMessage(ctx, clusterUpgrade.ID, timestamp, channelID)
-		if err != nil {
-			c.logNonCriticalError(err, "set_slack_message_metadata", logrus.Fields{
-				"tenant":             tenant.Name,
-				"environment":        env.Name,
-				"cluster_upgrade_id": clusterUpgrade.ID,
-			})
+			channelID, timestamp, err := c.slack.PostMessage(c.slackChannel, msg)
+			if err != nil {
+				c.logNonCriticalError(err, "slack_post_message", logrus.Fields{
+					"tenant":      tenant.Name,
+					"environment": env.Name,
+					"version":     clusterUpgrade.Version,
+				})
+			} else {
+				// Save Slack metadata only if posting succeeded
+				_, err = c.repo.SetClusterUpgradesSlackMessage(ctx, clusterUpgrade.ID, timestamp, channelID)
+				if err != nil {
+					c.logNonCriticalError(err, "set_slack_message_metadata", logrus.Fields{
+						"tenant":             tenant.Name,
+						"environment":        env.Name,
+						"cluster_upgrade_id": clusterUpgrade.ID,
+					})
+				}
+			}
+		} else {
+			// Update existing Slack message with current status
+			c.updateSlackProgress(tenant.Name, env.Name, clusterUpgrade, "master", "in_progress")
 		}
 
 	case model.UpgradeStatusMasterUpgrade:
@@ -630,6 +638,43 @@ func getUpgradeMentions(ctx context.Context, c *ClusterUpgrader, environmentID u
 	return notificationsString, nil
 }
 
+// postNewSlackMessage posts a new Slack message for the upgrade (used when metadata is missing)
+func (c *ClusterUpgrader) postNewSlackMessage(tenantName, envName string, clusterUpgrade *model.ClusterUpgradeStatus, currentPhase, status string) {
+	mentions, err := getUpgradeMentions(context.Background(), c, clusterUpgrade.EnvironmentID)
+	if err != nil {
+		c.logNonCriticalError(err, "get_upgrade_mentions_fallback", logrus.Fields{
+			"tenant":      tenantName,
+			"environment": envName,
+		})
+		mentions = "" // Use empty mentions as fallback
+	}
+
+	startTime := clusterUpgrade.StartTime.Format("2006-01-02 15:04")
+	msg := c.slack.GetClusterUpgradeProgressMessageOptions(tenantName, envName, clusterUpgrade.Version, currentPhase, status, startTime, mentions)
+
+	channelID, timestamp, err := c.slack.PostMessage(c.slackChannel, msg)
+	if err != nil {
+		c.logNonCriticalError(err, "slack_post_message_fallback", logrus.Fields{
+			"tenant":      tenantName,
+			"environment": envName,
+			"version":     clusterUpgrade.Version,
+			"phase":       currentPhase,
+			"status":      status,
+		})
+		return
+	}
+
+	// Save Slack metadata for future updates
+	_, err = c.repo.SetClusterUpgradesSlackMessage(context.Background(), clusterUpgrade.ID, timestamp, channelID)
+	if err != nil {
+		c.logNonCriticalError(err, "set_slack_message_metadata_fallback", logrus.Fields{
+			"tenant":             tenantName,
+			"environment":        envName,
+			"cluster_upgrade_id": clusterUpgrade.ID,
+		})
+	}
+}
+
 // isRetriableError checks if an error should be retried
 func isRetriableError(err error) bool {
 	if err == nil {
@@ -769,7 +814,11 @@ func (c *ClusterUpgrader) isUpgradeStuck(clusterUpgrade *model.ClusterUpgradeSta
 // updateSlackProgress updates the existing Slack message with current upgrade progress
 func (c *ClusterUpgrader) updateSlackProgress(tenantName, envName string, clusterUpgrade *model.ClusterUpgradeStatus, currentPhase, status string) {
 	if clusterUpgrade.SlackChannelID == "" || clusterUpgrade.SlackMessageTimestamp == "" {
-		return // No existing message to update
+		// No existing message to update - post a new one if we're not at the very beginning
+		if currentPhase != "master" || status != "starting" {
+			c.postNewSlackMessage(tenantName, envName, clusterUpgrade, currentPhase, status)
+		}
+		return
 	}
 
 	startTime := clusterUpgrade.LastModified.Format("2006-01-02 15:04")
