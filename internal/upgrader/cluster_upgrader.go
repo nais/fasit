@@ -35,8 +35,8 @@ type ClusterUpgrader struct {
 	upgradeCompleted  metric.Int64Counter
 	upgradeFailed     metric.Int64Counter
 	upgradeStuck      metric.Int64Counter
-	gkeApiCalls       metric.Int64Counter
-	gkeApiErrors      metric.Int64Counter
+	gkeAPICalls       metric.Int64Counter
+	gkeAPIErrors      metric.Int64Counter
 	retryAttempts     metric.Int64Counter
 	upgradeDuration   metric.Float64Histogram
 }
@@ -67,12 +67,12 @@ func NewClusterUpgrader(repo database.Repo, log logrus.FieldLogger, upgrader Upg
 		log.Fatal(err)
 	}
 
-	gkeApiCalls, err := meter.Int64Counter("gke_api_calls_total", metric.WithDescription("Total number of GKE API calls made"))
+	gkeAPICalls, err := meter.Int64Counter("gke_api_calls_total", metric.WithDescription("Total number of GKE API calls made"))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	gkeApiErrors, err := meter.Int64Counter("gke_api_errors_total", metric.WithDescription("Total number of GKE API errors encountered"))
+	gkeAPIErrors, err := meter.Int64Counter("gke_api_errors_total", metric.WithDescription("Total number of GKE API errors encountered"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -96,8 +96,8 @@ func NewClusterUpgrader(repo database.Repo, log logrus.FieldLogger, upgrader Upg
 		upgradeCompleted:  upgradeCompleted,
 		upgradeFailed:     upgradeFailed,
 		upgradeStuck:      upgradeStuck,
-		gkeApiCalls:       gkeApiCalls,
-		gkeApiErrors:      gkeApiErrors,
+		gkeAPICalls:       gkeAPICalls,
+		gkeAPIErrors:      gkeAPIErrors,
 		retryAttempts:     retryAttempts,
 		upgradeDuration:   upgradeDuration,
 		slack:             slack,
@@ -688,7 +688,7 @@ func (c *ClusterUpgrader) retryWithBackoff(ctx context.Context, operation string
 	const maxDelay = 30 * time.Second
 
 	// Record API call metric
-	c.gkeApiCalls.Add(ctx, 1, metric.WithAttributes(attribute.String("operation", operation)))
+	c.gkeAPICalls.Add(ctx, 1, metric.WithAttributes(attribute.String("operation", operation)))
 
 	var lastErr error
 	for attempt := 0; attempt <= maxRetries; attempt++ {
@@ -708,7 +708,7 @@ func (c *ClusterUpgrader) retryWithBackoff(ctx context.Context, operation string
 		lastErr = err
 
 		// Record API error metric
-		c.gkeApiErrors.Add(ctx, 1, metric.WithAttributes(
+		c.gkeAPIErrors.Add(ctx, 1, metric.WithAttributes(
 			attribute.String("operation", operation),
 			attribute.Bool("retriable", isRetriableError(err)),
 		))

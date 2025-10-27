@@ -25,7 +25,7 @@ func (f *FakeSlackClient) UpdateMessage(channelID, timestamp string, msgOptions 
 	return "", "", "", errors.New("invalid_auth")
 }
 
-func (f *FakeSlackClient) AddReaction(channelId, timestamp, reaction string) error {
+func (f *FakeSlackClient) AddReaction(channelID, timestamp, reaction string) error {
 	return nil
 }
 
