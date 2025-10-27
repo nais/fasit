@@ -58,12 +58,6 @@ func TestSlackNotificationFlow(t *testing.T) {
 	})
 }
 
-// Helper interface to satisfy the test requirements
-type testRepoWithLogger struct {
-	*mock.Mock
-	logger interface{}
-}
-
 func TestSlackProgressStates(t *testing.T) {
 	suite := newTestSuite(t)
 	upgrader := newUpgrade(suite)
