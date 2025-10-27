@@ -810,7 +810,7 @@ func (c *ClusterUpgrader) validateUpgradeAgainstGKE(ctx context.Context, cluster
 		// only consider stuck if it's been at least 30 minutes to avoid false positives
 		if time.Since(clusterUpgrade.LastModified) > 30*time.Minute {
 			log.WithField("duration_since_created", time.Since(clusterUpgrade.LastModified)).
-				Debug("upgrade in CREATED status for >30min with no expected GKE operations - marking as stuck")
+				Warn("upgrade stuck in CREATED status")
 			return true
 		}
 		return false
@@ -819,26 +819,30 @@ func (c *ClusterUpgrader) validateUpgradeAgainstGKE(ctx context.Context, cluster
 		if !hasUpgradeOperations {
 			// Before marking as stuck, check if master upgrade actually completed
 			if c.isMasterUpgradeComplete(ctx, clusterUpgrade, projectID, env, log) {
-				log.Info("master upgrade appears to be complete - upgrade should proceed to node upgrade phase")
 				return false
 			}
-			log.Warn("upgrade in MASTER_UPGRADE status but no running master upgrade operations found in GKE - marking as stuck")
+			log.Warn("master upgrade stuck - no running operations in GKE")
 			return true
 		}
-		log.Debug("upgrade in MASTER_UPGRADE status with running GKE operations - not stuck")
 		return false
 
 	case model.UpgradeStatusNodeUpgrade:
 		if !hasUpgradeOperations {
 			// Before marking as stuck, check if node upgrade actually completed
 			if c.isNodeUpgradeComplete(ctx, clusterUpgrade, projectID, env, log) {
-				log.Info("node upgrade appears to be complete - upgrade should be marked as done")
 				return false
 			}
-			log.Warn("upgrade in NODE_UPGRADE status but no running node upgrade operations found in GKE - marking as stuck")
-			return true
+			// Check if nodes need upgrading - if so, this is normal (not stuck)
+			needsNodeUpgrade, err := c.checkIfNodesNeedUpgrade(ctx, clusterUpgrade, projectID, env, log)
+			if err != nil {
+				log.WithError(err).Debug("failed to check node upgrade status")
+				return false
+			}
+			if needsNodeUpgrade {
+				return false // Normal state - will start node upgrades
+			}
+			return false // Let main logic handle edge cases
 		}
-		log.Debug("upgrade in NODE_UPGRADE status with running GKE operations - not stuck")
 		return false
 
 	default:
@@ -869,13 +873,40 @@ func (c *ClusterUpgrader) isMasterUpgradeComplete(ctx context.Context, clusterUp
 	}
 
 	isComplete := currentVersionObj.GreaterThanOrEqual(targetVersionObj)
-	log.WithFields(logrus.Fields{
-		"current_master_version": currentMasterVersion,
-		"target_version":         clusterUpgrade.Version,
-		"upgrade_complete":       isComplete,
-	}).Debug("checked master upgrade completion status")
+	if !isComplete {
+		log.WithFields(logrus.Fields{
+			"current_version": currentMasterVersion,
+			"target_version":  clusterUpgrade.Version,
+		}).Debug("master upgrade not yet complete")
+	}
 
 	return isComplete
+}
+
+// checkIfNodesNeedUpgrade checks if there are any node pools that need upgrading to the target version
+func (c *ClusterUpgrader) checkIfNodesNeedUpgrade(ctx context.Context, clusterUpgrade *model.ClusterUpgradeStatus, projectID string, env *model.Environment, log logrus.FieldLogger) (bool, error) {
+	nodePools, err := c.client.GetNodePools(ctx, projectID, env)
+	if err != nil {
+		return false, err
+	}
+
+	targetVersionObj, err := version.NewVersion(clusterUpgrade.Version)
+	if err != nil {
+		return false, err
+	}
+
+	for _, np := range nodePools {
+		npVersionObj, err := version.NewVersion(np.Version)
+		if err != nil {
+			return false, err
+		}
+
+		if npVersionObj.LessThan(targetVersionObj) {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 // isNodeUpgradeComplete checks if all node pools have been upgraded to the target version
@@ -896,24 +927,14 @@ func (c *ClusterUpgrader) isNodeUpgradeComplete(ctx context.Context, clusterUpgr
 	for _, np := range nodePools {
 		npVersionObj, err := version.NewVersion(np.Version)
 		if err != nil {
-			log.WithError(err).WithField("nodepool", np.Name).Warn("failed to parse nodepool version, assuming upgrade not complete")
+			log.WithError(err).WithField("nodepool", np.Name).Warn("failed to parse nodepool version")
 			return false
 		}
 
 		if !npVersionObj.GreaterThanOrEqual(targetVersionObj) {
-			log.WithFields(logrus.Fields{
-				"nodepool":        np.Name,
-				"current_version": np.Version,
-				"target_version":  clusterUpgrade.Version,
-			}).Debug("nodepool not yet at target version")
 			allComplete = false
 		}
 	}
-
-	log.WithFields(logrus.Fields{
-		"target_version":         clusterUpgrade.Version,
-		"all_nodepools_complete": allComplete,
-	}).Debug("checked node upgrade completion status")
 
 	return allComplete
 }
