@@ -198,8 +198,8 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 
 	log.Debug("processing cluster upgrade")
 
-	// Check if upgrade is stuck (> 24 hours in same state)
-	if c.isUpgradeStuck(clusterUpgrade) {
+	// Check if upgrade is stuck (timeouts + GKE validation)
+	if c.isUpgradeStuck(ctx, clusterUpgrade, projectID, env) {
 		log.WithFields(logrus.Fields{
 			"target_version": clusterUpgrade.Version,
 			"status":         clusterUpgrade.UpgradeStatus,
@@ -768,16 +768,72 @@ func (c *ClusterUpgrader) retryWithBackoff(ctx context.Context, operation string
 	return lastErr
 }
 
-// isUpgradeStuck checks if a cluster upgrade has been in the same state for more than 24 hours
-func (c *ClusterUpgrader) isUpgradeStuck(clusterUpgrade *model.ClusterUpgradeStatus) bool {
-	// Don't consider DONE or FAILED as stuck
+func (c *ClusterUpgrader) isUpgradeStuck(ctx context.Context, clusterUpgrade *model.ClusterUpgradeStatus, projectID string, env *model.Environment) bool {
 	if clusterUpgrade.UpgradeStatus == model.UpgradeStatusDone || clusterUpgrade.UpgradeStatus == model.UpgradeStatusFailed {
 		return false
 	}
 
-	// Check if upgrade has been running for more than 24 hours
-	stuckThreshold := 24 * time.Hour
-	return time.Since(clusterUpgrade.LastModified) > stuckThreshold
+	return c.validateUpgradeAgainstGKE(ctx, clusterUpgrade, projectID, env)
+}
+
+func (c *ClusterUpgrader) validateUpgradeAgainstGKE(ctx context.Context, clusterUpgrade *model.ClusterUpgradeStatus, projectID string, env *model.Environment) bool {
+	log := c.log.WithFields(logrus.Fields{
+		"tenant":         env.TenantID,
+		"environment":    env.Name,
+		"upgrade_status": clusterUpgrade.UpgradeStatus,
+		"upgrade_id":     clusterUpgrade.ID,
+	})
+
+	runningOperations, err := c.client.GetRunningOperations(ctx, projectID, env)
+	if err != nil {
+		log.WithError(err).Warn("failed to get running operations from GKE, assuming upgrade is not stuck")
+		return false
+	}
+
+	// check if there are any upgrade-related operations running
+	hasUpgradeOperations := false
+	for _, op := range runningOperations {
+		if op.OperationType == containerpb.Operation_UPGRADE_MASTER || op.OperationType == containerpb.Operation_UPGRADE_NODES {
+			hasUpgradeOperations = true
+			log.WithFields(logrus.Fields{
+				"operation_name":   op.Name,
+				"operation_type":   op.OperationType,
+				"operation_status": op.Status,
+			}).Debug("found running upgrade operation in GKE")
+			break
+		}
+	}
+
+	switch clusterUpgrade.UpgradeStatus {
+	case model.UpgradeStatusCreated:
+		// only consider stuck if it's been at least 30 minutes to avoid false positives
+		if time.Since(clusterUpgrade.LastModified) > 30*time.Minute {
+			log.WithField("duration_since_created", time.Since(clusterUpgrade.LastModified)).
+				Debug("upgrade in CREATED status for >30min with no expected GKE operations - marking as stuck")
+			return true
+		}
+		return false
+
+	case model.UpgradeStatusMasterUpgrade:
+		if !hasUpgradeOperations {
+			log.Warn("upgrade in MASTER_UPGRADE status but no running master upgrade operations found in GKE - marking as stuck")
+			return true
+		}
+		log.Debug("upgrade in MASTER_UPGRADE status with running GKE operations - not stuck")
+		return false
+
+	case model.UpgradeStatusNodeUpgrade:
+		if !hasUpgradeOperations {
+			log.Warn("upgrade in NODE_UPGRADE status but no running node upgrade operations found in GKE - marking as stuck")
+			return true
+		}
+		log.Debug("upgrade in NODE_UPGRADE status with running GKE operations - not stuck")
+		return false
+
+	default:
+		log.Debug("unknown upgrade status - not marking as stuck")
+		return false
+	}
 }
 
 // updateSlackProgress updates the existing Slack message with current upgrade progress
