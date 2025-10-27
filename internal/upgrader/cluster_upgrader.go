@@ -848,6 +848,16 @@ func (c *ClusterUpgrader) updateSlackProgress(tenantName, envName string, cluste
 		return
 	}
 
+	// Retrieve mentions to maintain them through message updates
+	mentions, err := getUpgradeMentions(context.Background(), c, clusterUpgrade.EnvironmentID)
+	if err != nil {
+		c.logNonCriticalError(err, "get_upgrade_mentions_update", logrus.Fields{
+			"tenant":      tenantName,
+			"environment": envName,
+		})
+		mentions = "" // Use empty mentions as fallback
+	}
+
 	startTime := clusterUpgrade.LastModified.Format("2006-01-02 15:04")
 	progressMsg := c.slack.GetClusterUpgradeProgressMessageOptions(
 		tenantName,
@@ -856,9 +866,9 @@ func (c *ClusterUpgrader) updateSlackProgress(tenantName, envName string, cluste
 		currentPhase,
 		status,
 		startTime,
-		"") // No mentions for updates
+		mentions) // Include mentions to keep message in Activity tab
 
-	_, _, _, err := c.slack.UpdateMessage(clusterUpgrade.SlackChannelID, clusterUpgrade.SlackMessageTimestamp, progressMsg)
+	_, _, _, err = c.slack.UpdateMessage(clusterUpgrade.SlackChannelID, clusterUpgrade.SlackMessageTimestamp, progressMsg)
 	if err != nil {
 		c.logNonCriticalError(err, "slack_update_progress", logrus.Fields{
 			"tenant":      tenantName,

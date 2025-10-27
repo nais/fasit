@@ -49,7 +49,15 @@ func TestSlackNotificationFlow(t *testing.T) {
 			LastModified:          time.Now(),
 			SlackChannelID:        "C123456",
 			SlackMessageTimestamp: "1234567890.123456",
+			EnvironmentID:         uuid.New(), // Need this for mentions retrieval
 		}
+
+		// Mock the EnvironmentValueGet call that now happens in updateSlackProgress
+		suite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, clusterUpgrade.EnvironmentID, "slack_upgrade_mentions", false).Return(
+			&model.EnvironmentValue{
+				Key:   "slack_upgrade_mentions",
+				Value: []byte(`"<@U123456>"`), // Some test mentions
+			}, nil).Once()
 
 		// This should attempt to update the message
 		upgrader.updateSlackProgress("tenant1", "env1", clusterUpgrade, "master", "completed")
@@ -121,7 +129,15 @@ func TestSlackProgressStates(t *testing.T) {
 				LastModified:          time.Now(),
 				SlackChannelID:        "C123456",
 				SlackMessageTimestamp: "1234567890.123456",
+				EnvironmentID:         uuid.New(), // Need this for mentions retrieval
 			}
+
+			// Mock the EnvironmentValueGet call that now happens in updateSlackProgress
+			suite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, clusterUpgrade.EnvironmentID, "slack_upgrade_mentions", false).Return(
+				&model.EnvironmentValue{
+					Key:   "slack_upgrade_mentions",
+					Value: []byte(`"<@U123456>"`), // Some test mentions
+				}, nil).Once()
 
 			// Test that the function doesn't panic
 			upgrader.updateSlackProgress("tenant1", "env1", clusterUpgrade, tc.currentPhase, tc.status)

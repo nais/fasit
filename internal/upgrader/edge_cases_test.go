@@ -87,10 +87,20 @@ func TestMetricsRecording(t *testing.T) {
 		}, nil).Once()
 
 		// Mock completion
+		completeUpgradeWithEnvironmentID := &model.ClusterUpgradeStatus{
+			ID: uuid.New(), UpgradeStatus: model.UpgradeStatusDone, Version: "1.25.0",
+			LastModified: time.Now(), SlackChannelID: "C123", SlackMessageTimestamp: "123",
+			EnvironmentID: suite.env.id, // Need this for mentions retrieval
+		}
+
 		suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, gensql.ClusterUpgradesStatusDONE, "1.25.0").Return(
-			&model.ClusterUpgradeStatus{
-				ID: uuid.New(), UpgradeStatus: model.UpgradeStatusDone, Version: "1.25.0",
-				LastModified: time.Now(), SlackChannelID: "C123", SlackMessageTimestamp: "123",
+			completeUpgradeWithEnvironmentID, nil).Once()
+
+		// Mock the EnvironmentValueGet call that happens in updateSlackProgress for mentions
+		suite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, suite.env.id, "slack_upgrade_mentions", false).Return(
+			&model.EnvironmentValue{
+				Key:   "slack_upgrade_mentions",
+				Value: []byte(`""`), // Empty mentions
 			}, nil).Once()
 
 		err := upgrader.Run(context.Background())

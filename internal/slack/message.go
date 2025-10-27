@@ -33,12 +33,14 @@ func (s *Slack) GetClusterUpgradeProgressMessageOptions(tenant, environment, ver
 	switch currentPhase {
 	case "master":
 		switch status {
+		case "starting":
+			progressText = ":rocket: Starting control plane upgrade..."
 		case "in_progress":
 			progressText = ":hourglass_flowing_sand: Control plane upgrade in progress..."
 		case "completed":
 			progressText = ":white_check_mark: Control plane upgrade completed\n:hourglass_flowing_sand: Starting node pools upgrade..."
 		default:
-			progressText = ":hourglass_flowing_sand: Starting control plane upgrade..."
+			progressText = ":question: Control plane upgrade status unknown"
 		}
 	case "nodepool":
 		switch status {
@@ -47,7 +49,7 @@ func (s *Slack) GetClusterUpgradeProgressMessageOptions(tenant, environment, ver
 		case "completed":
 			progressText = ":white_check_mark: Control plane upgrade completed\n:white_check_mark: Node pools upgrade completed\n:tada: Upgrade completed successfully!"
 		default:
-			progressText = ":white_check_mark: Control plane upgrade completed\n:hourglass_flowing_sand: Preparing node pools upgrade..."
+			progressText = ":white_check_mark: Control plane upgrade completed\n:question: Node pools upgrade status unknown"
 		}
 	case "completed":
 		progressText = ":white_check_mark: Control plane upgrade completed\n:white_check_mark: Node pools upgrade completed\n:tada: Upgrade completed successfully!"

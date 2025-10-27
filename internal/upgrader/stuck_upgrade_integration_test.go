@@ -27,6 +27,7 @@ func TestStuckUpgradeIntegration(t *testing.T) {
 			StartTime:             time.Now().Add(-25 * time.Hour),
 			SlackChannelID:        "C123456",
 			SlackMessageTimestamp: "1234567890.123456",
+			EnvironmentID:         suite.env.id, // Need this for mentions retrieval
 		}
 
 		// Mock tenant and environment setup
@@ -48,6 +49,13 @@ func TestStuckUpgradeIntegration(t *testing.T) {
 			}, nil).Once()
 
 		suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(stuckUpgrade, nil).Once()
+
+		// Mock the EnvironmentValueGet call that happens in updateSlackProgress for mentions
+		suite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, suite.env.id, "slack_upgrade_mentions", false).Return(
+			&model.EnvironmentValue{
+				Key:   "slack_upgrade_mentions",
+				Value: []byte(`""`), // Empty mentions
+			}, nil).Once()
 
 		// Expect stuck upgrade to be marked as failed
 		suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, gensql.ClusterUpgradesStatusFAILED, "1.25.0").Return(stuckUpgrade, nil).Once()
