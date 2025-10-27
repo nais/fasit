@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"math"
 	"time"
 
 	"cloud.google.com/go/container/apiv1/containerpb"
@@ -127,7 +128,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		mentions, err := getUpgradeMentions(ctx, c, env.ID)
 		if err != nil {
 			c.logNonCriticalError(err, "get_upgrade_mentions", logrus.Fields{
-				"tenant": tenant.Name,
+				"tenant":      tenant.Name,
 				"environment": env.Name,
 			})
 			mentions = "" // Use empty mentions as fallback
@@ -138,16 +139,16 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		channelID, timestamp, err := c.slack.PostMessage(c.slackChannel, msg)
 		if err != nil {
 			c.logNonCriticalError(err, "slack_post_message", logrus.Fields{
-				"tenant": tenant.Name, 
+				"tenant":      tenant.Name,
 				"environment": env.Name,
-				"version": clusterUpgrade.Version,
+				"version":     clusterUpgrade.Version,
 			})
 		}
 		_, err = c.repo.SetClusterUpgradesSlackMessage(ctx, clusterUpgrade.ID, timestamp, channelID)
 		if err != nil {
 			c.logNonCriticalError(err, "set_slack_message_metadata", logrus.Fields{
-				"tenant": tenant.Name,
-				"environment": env.Name,
+				"tenant":             tenant.Name,
+				"environment":        env.Name,
 				"cluster_upgrade_id": clusterUpgrade.ID,
 			})
 		}
@@ -201,18 +202,18 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		err = c.slack.PostComment(c.slackChannel, clusterUpgrade.SlackMessageTimestamp, msg)
 		if err != nil {
 			c.logNonCriticalError(err, "slack_post_comment", logrus.Fields{
-				"tenant": tenant.Name,
+				"tenant":      tenant.Name,
 				"environment": env.Name,
-				"operation": "upgrade_complete",
+				"operation":   "upgrade_complete",
 			})
 		}
 
 		err = c.slack.AddReaction(upgradeStatus.SlackChannelID, upgradeStatus.SlackMessageTimestamp, "white_check_mark")
 		if err != nil {
 			c.logNonCriticalError(err, "slack_add_reaction", logrus.Fields{
-				"tenant": tenant.Name,
+				"tenant":      tenant.Name,
 				"environment": env.Name,
-				"reaction": "white_check_mark",
+				"reaction":    "white_check_mark",
 			})
 		}
 
@@ -233,7 +234,12 @@ func clusterHas(runningOperations []*containerpb.Operation) bool {
 
 func (c *ClusterUpgrader) getAndUpdateRunningOperations(ctx context.Context, projectID string, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus) ([]*containerpb.Operation, error) {
 	// checks if there are any running operations for the environment
-	runningOperations, err := c.client.GetRunningOperations(ctx, projectID, env)
+	var runningOperations []*containerpb.Operation
+	err := c.retryWithBackoff(ctx, "get_running_operations", func() error {
+		var retryErr error
+		runningOperations, retryErr = c.client.GetRunningOperations(ctx, projectID, env)
+		return retryErr
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -258,7 +264,12 @@ func (c *ClusterUpgrader) getAndUpdateRunningOperations(ctx context.Context, pro
 }
 
 func (c *ClusterUpgrader) upgradeNodes(ctx context.Context, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus, projectID, tenantName string) (*model.ClusterUpgradeStatus, error) {
-	nodePools, err := c.client.GetNodePools(ctx, projectID, env)
+	var nodePools []*containerpb.NodePool
+	err := c.retryWithBackoff(ctx, "get_node_pools", func() error {
+		var retryErr error
+		nodePools, retryErr = c.client.GetNodePools(ctx, projectID, env)
+		return retryErr
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -278,9 +289,15 @@ func (c *ClusterUpgrader) upgradeNodes(ctx context.Context, env *model.Environme
 			continue
 		}
 
-		op, err := c.client.UpgradeNodePool(ctx, projectID, env, np.Name, clusterUpgrade.Version)
-		if err != nil {
-			return nil, err
+		var op *containerpb.Operation
+		// Retry the GKE nodepool upgrade API call with exponential backoff
+		retryErr := c.retryWithBackoff(ctx, "upgrade_nodepool", func() error {
+			var err error
+			op, err = c.client.UpgradeNodePool(ctx, projectID, env, np.Name, clusterUpgrade.Version)
+			return err
+		})
+		if retryErr != nil {
+			return nil, retryErr
 		}
 
 		msg := c.slack.GetClusterUpgradeNotificationMessageOptions(tenantName, env.Name, clusterUpgrade.Version, np.Name, "")
@@ -288,10 +305,10 @@ func (c *ClusterUpgrader) upgradeNodes(ctx context.Context, env *model.Environme
 		err = c.slack.PostComment(c.slackChannel, clusterUpgrade.SlackMessageTimestamp, msg)
 		if err != nil {
 			c.logNonCriticalError(err, "slack_post_comment", logrus.Fields{
-				"tenant": tenantName,
+				"tenant":      tenantName,
 				"environment": env.Name,
-				"nodepool": np.Name,
-				"operation": "nodepool_upgrade_start",
+				"nodepool":    np.Name,
+				"operation":   "nodepool_upgrade_start",
 			})
 		}
 
@@ -358,7 +375,15 @@ func (c *ClusterUpgrader) masterUpgradeStatus(ctx context.Context, env *model.En
 }
 
 func (c *ClusterUpgrader) masterUpgrade(ctx context.Context, env *model.Environment, upgrade *model.ClusterUpgradeStatus, tenantName, projectID string) (*model.ClusterUpgradeStatus, error) {
-	op, err := c.client.UpgradeMaster(ctx, projectID, env, upgrade.Version)
+	var op *containerpb.Operation
+	
+	// Retry the GKE API call with exponential backoff
+	err := c.retryWithBackoff(ctx, "upgrade_master", func() error {
+		var retryErr error
+		op, retryErr = c.client.UpgradeMaster(ctx, projectID, env, upgrade.Version)
+		return retryErr
+	})
+	
 	if err != nil {
 		if e, ok := err.(*apierror.APIError); ok {
 			if e.GRPCStatus().Code() == codes.InvalidArgument {
@@ -399,7 +424,12 @@ func setMetricsAttrs(envName, tenantName, version, target string) []attribute.Ke
 }
 
 func (c *ClusterUpgrader) clusterNodePoolsCompleted(ctx context.Context, projectID string, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus) (bool, error) {
-	nodepools, err := c.client.GetNodePools(ctx, projectID, env)
+	var nodepools []*containerpb.NodePool
+	err := c.retryWithBackoff(ctx, "get_node_pools_status", func() error {
+		var retryErr error
+		nodepools, retryErr = c.client.GetNodePools(ctx, projectID, env)
+		return retryErr
+	})
 	if err != nil {
 		return false, err
 	}
@@ -423,7 +453,12 @@ func (c *ClusterUpgrader) clusterNodePoolsCompleted(ctx context.Context, project
 }
 
 func (c *ClusterUpgrader) getAndUpdateOperation(ctx context.Context, projectID string, tenantID, envID, clusterUpgradeID uuid.UUID, operationName string) (*containerpb.Operation, error) {
-	op, err := c.client.GetOperation(ctx, projectID, operationName)
+	var op *containerpb.Operation
+	err := c.retryWithBackoff(ctx, "get_operation_status", func() error {
+		var retryErr error
+		op, retryErr = c.client.GetOperation(ctx, projectID, operationName)
+		return retryErr
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -497,8 +532,76 @@ func (c *ClusterUpgrader) logNonCriticalError(err error, operation string, field
 	}
 	fields["operation"] = operation
 	fields["retriable"] = isRetriableError(err)
-	
+
 	c.log.WithFields(fields).WithError(err).Warn("non-critical operation failed")
+}
+
+// retryWithBackoff executes a function with exponential backoff for retriable errors
+func (c *ClusterUpgrader) retryWithBackoff(ctx context.Context, operation string, fn func() error) error {
+	const maxRetries = 3
+	const baseDelay = 1 * time.Second
+	const maxDelay = 30 * time.Second
+
+	var lastErr error
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		err := fn()
+		if err == nil {
+			if attempt > 0 {
+				c.log.WithFields(logrus.Fields{
+					"operation": operation,
+					"attempt":   attempt + 1,
+					"success":   true,
+				}).Info("operation succeeded after retry")
+			}
+			return nil
+		}
+
+		lastErr = err
+		
+		// Don't retry non-retriable errors
+		if !isRetriableError(err) {
+			c.log.WithFields(logrus.Fields{
+				"operation": operation,
+				"attempt":   attempt + 1,
+				"retriable": false,
+			}).WithError(err).Debug("non-retriable error, not retrying")
+			return err
+		}
+
+		// Don't retry on last attempt
+		if attempt == maxRetries {
+			break
+		}
+
+		// Calculate delay with exponential backoff and jitter
+		delay := time.Duration(float64(baseDelay) * math.Pow(2, float64(attempt)))
+		if delay > maxDelay {
+			delay = maxDelay
+		}
+
+		c.log.WithFields(logrus.Fields{
+			"operation":    operation,
+			"attempt":      attempt + 1,
+			"next_attempt": attempt + 2,
+			"delay":        delay.String(),
+		}).WithError(err).Warn("retriable error, retrying after delay")
+
+		// Wait with context cancellation support
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(delay):
+			// Continue to next attempt
+		}
+	}
+
+	c.log.WithFields(logrus.Fields{
+		"operation":    operation,
+		"max_attempts": maxRetries + 1,
+		"final_error":  lastErr,
+	}).Error("operation failed after all retry attempts")
+
+	return lastErr
 }
 
 // isUpgradeStuck checks if a cluster upgrade has been in the same state for more than 24 hours
@@ -528,9 +631,9 @@ func (c *ClusterUpgrader) notifyStuckUpgrade(tenantName, envName string, cluster
 		err := c.slack.PostComment(c.slackChannel, clusterUpgrade.SlackMessageTimestamp, stuckMsg)
 		if err != nil {
 			c.logNonCriticalError(err, "slack_post_stuck_comment", logrus.Fields{
-				"tenant": tenantName,
+				"tenant":      tenantName,
 				"environment": envName,
-				"operation": "stuck_upgrade_notification",
+				"operation":   "stuck_upgrade_notification",
 			})
 		}
 	} else {
@@ -538,9 +641,9 @@ func (c *ClusterUpgrader) notifyStuckUpgrade(tenantName, envName string, cluster
 		_, _, err := c.slack.PostMessage(c.slackChannel, stuckMsg)
 		if err != nil {
 			c.logNonCriticalError(err, "slack_post_stuck_message", logrus.Fields{
-				"tenant": tenantName,
+				"tenant":      tenantName,
 				"environment": envName,
-				"operation": "stuck_upgrade_notification",
+				"operation":   "stuck_upgrade_notification",
 			})
 		}
 	}
