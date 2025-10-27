@@ -88,11 +88,11 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 	// Check if upgrade is stuck (> 24 hours in same state)
 	if c.isUpgradeStuck(clusterUpgrade) {
 		log.WithFields(logrus.Fields{
-			"target_version": clusterUpgrade.Version, 
-			"status": clusterUpgrade.UpgradeStatus,
-			"last_modified": clusterUpgrade.LastModified,
+			"target_version": clusterUpgrade.Version,
+			"status":         clusterUpgrade.UpgradeStatus,
+			"last_modified":  clusterUpgrade.LastModified,
 		}).Warn("cluster upgrade stuck, marking as failed")
-		
+
 		_, err = c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatusFAILED, clusterUpgrade.Version)
 		if err != nil {
 			log.WithError(err).Error("failed to mark stuck upgrade as failed")
@@ -100,7 +100,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		}
 
 		// Send Slack notification about stuck upgrade
-		c.notifyStuckUpgrade(ctx, tenant.Name, env.Name, clusterUpgrade)
+		c.notifyStuckUpgrade(tenant.Name, env.Name, clusterUpgrade)
 		return nil
 	}
 
@@ -126,18 +126,30 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 
 		mentions, err := getUpgradeMentions(ctx, c, env.ID)
 		if err != nil {
-			c.log.WithField("error", err).Error("failed to get upgrade mentions")
+			c.logNonCriticalError(err, "get_upgrade_mentions", logrus.Fields{
+				"tenant": tenant.Name,
+				"environment": env.Name,
+			})
+			mentions = "" // Use empty mentions as fallback
 		}
 
 		msg := c.slack.GetClusterUpgradeNotificationMessageOptions(tenant.Name, env.Name, clusterUpgrade.Version, "control plane", mentions)
 
 		channelID, timestamp, err := c.slack.PostMessage(c.slackChannel, msg)
 		if err != nil {
-			c.log.WithFields(logrus.Fields{"error": err}).Error("failed to post message to slack")
+			c.logNonCriticalError(err, "slack_post_message", logrus.Fields{
+				"tenant": tenant.Name, 
+				"environment": env.Name,
+				"version": clusterUpgrade.Version,
+			})
 		}
 		_, err = c.repo.SetClusterUpgradesSlackMessage(ctx, clusterUpgrade.ID, timestamp, channelID)
 		if err != nil {
-			c.log.WithField("error", err).Error("failed to set slack message")
+			c.logNonCriticalError(err, "set_slack_message_metadata", logrus.Fields{
+				"tenant": tenant.Name,
+				"environment": env.Name,
+				"cluster_upgrade_id": clusterUpgrade.ID,
+			})
 		}
 
 	case model.UpgradeStatusMasterUpgrade:
@@ -188,12 +200,20 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 
 		err = c.slack.PostComment(c.slackChannel, clusterUpgrade.SlackMessageTimestamp, msg)
 		if err != nil {
-			c.log.WithFields(logrus.Fields{"error": err}).Error("failed to post comment to slack")
+			c.logNonCriticalError(err, "slack_post_comment", logrus.Fields{
+				"tenant": tenant.Name,
+				"environment": env.Name,
+				"operation": "upgrade_complete",
+			})
 		}
 
 		err = c.slack.AddReaction(upgradeStatus.SlackChannelID, upgradeStatus.SlackMessageTimestamp, "white_check_mark")
 		if err != nil {
-			c.log.WithFields(logrus.Fields{"error": err}).Error("failed to add reaction to slack")
+			c.logNonCriticalError(err, "slack_add_reaction", logrus.Fields{
+				"tenant": tenant.Name,
+				"environment": env.Name,
+				"reaction": "white_check_mark",
+			})
 		}
 
 		c.upgradeInProgress.Add(ctx, -1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "nodePools")...))
@@ -267,7 +287,12 @@ func (c *ClusterUpgrader) upgradeNodes(ctx context.Context, env *model.Environme
 
 		err = c.slack.PostComment(c.slackChannel, clusterUpgrade.SlackMessageTimestamp, msg)
 		if err != nil {
-			c.log.WithFields(logrus.Fields{"error": err}).Error("failed to post comment to slack")
+			c.logNonCriticalError(err, "slack_post_comment", logrus.Fields{
+				"tenant": tenantName,
+				"environment": env.Name,
+				"nodepool": np.Name,
+				"operation": "nodepool_upgrade_start",
+			})
 		}
 
 		c.upgradeInProgress.Add(ctx, 1, metric.WithAttributes(setMetricsAttrs(env.Name, tenantName, clusterUpgrade.Version, "nodePools")...))
@@ -439,6 +464,43 @@ func getUpgradeMentions(ctx context.Context, c *ClusterUpgrader, environmentID u
 	return notificationsString, nil
 }
 
+// isRetriableError checks if an error should be retried
+func isRetriableError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	// Check if it's a GKE API error
+	if apiErr, ok := err.(*apierror.APIError); ok {
+		// Retriable errors: rate limits, temporary unavailable, etc.
+		switch apiErr.GRPCStatus().Code() {
+		case codes.Unavailable, codes.DeadlineExceeded, codes.Aborted:
+			return true
+		case codes.InvalidArgument, codes.NotFound, codes.PermissionDenied:
+			return false // Permanent errors
+		}
+	}
+
+	// Database connection errors are typically retriable
+	if errors.Is(err, context.DeadlineExceeded) {
+		return true
+	}
+
+	// Default to non-retriable for safety
+	return false
+}
+
+// logNonCriticalError logs errors that don't stop the operation but should be noted
+func (c *ClusterUpgrader) logNonCriticalError(err error, operation string, fields logrus.Fields) {
+	if fields == nil {
+		fields = logrus.Fields{}
+	}
+	fields["operation"] = operation
+	fields["retriable"] = isRetriableError(err)
+	
+	c.log.WithFields(fields).WithError(err).Warn("non-critical operation failed")
+}
+
 // isUpgradeStuck checks if a cluster upgrade has been in the same state for more than 24 hours
 func (c *ClusterUpgrader) isUpgradeStuck(clusterUpgrade *model.ClusterUpgradeStatus) bool {
 	// Don't consider DONE or FAILED as stuck
@@ -452,12 +514,12 @@ func (c *ClusterUpgrader) isUpgradeStuck(clusterUpgrade *model.ClusterUpgradeSta
 }
 
 // notifyStuckUpgrade sends a Slack notification about a stuck upgrade
-func (c *ClusterUpgrader) notifyStuckUpgrade(ctx context.Context, tenantName, envName string, clusterUpgrade *model.ClusterUpgradeStatus) {
+func (c *ClusterUpgrader) notifyStuckUpgrade(tenantName, envName string, clusterUpgrade *model.ClusterUpgradeStatus) {
 	// Build Slack message using the same pattern as other notifications
 	stuckMsg := c.slack.GetClusterUpgradeStuckNotificationMessageOptions(
-		tenantName, 
-		envName, 
-		clusterUpgrade.Version, 
+		tenantName,
+		envName,
+		clusterUpgrade.Version,
 		string(clusterUpgrade.UpgradeStatus),
 		clusterUpgrade.LastModified.Format("2006-01-02 15:04:05"))
 
@@ -465,13 +527,21 @@ func (c *ClusterUpgrader) notifyStuckUpgrade(ctx context.Context, tenantName, en
 		// Reply to existing upgrade message
 		err := c.slack.PostComment(c.slackChannel, clusterUpgrade.SlackMessageTimestamp, stuckMsg)
 		if err != nil {
-			c.log.WithError(err).Error("failed to post stuck upgrade comment to slack")
+			c.logNonCriticalError(err, "slack_post_stuck_comment", logrus.Fields{
+				"tenant": tenantName,
+				"environment": envName,
+				"operation": "stuck_upgrade_notification",
+			})
 		}
 	} else {
 		// Post new message
 		_, _, err := c.slack.PostMessage(c.slackChannel, stuckMsg)
 		if err != nil {
-			c.log.WithError(err).Error("failed to post stuck upgrade message to slack")
+			c.logNonCriticalError(err, "slack_post_stuck_message", logrus.Fields{
+				"tenant": tenantName,
+				"environment": envName,
+				"operation": "stuck_upgrade_notification",
+			})
 		}
 	}
 }

@@ -12,9 +12,9 @@ func TestIsUpgradeStuck(t *testing.T) {
 	upgrader := &ClusterUpgrader{}
 
 	tests := []struct {
-		name            string
-		clusterUpgrade  *model.ClusterUpgradeStatus
-		expectedStuck   bool
+		name           string
+		clusterUpgrade *model.ClusterUpgradeStatus
+		expectedStuck  bool
 	}{
 		{
 			name: "upgrade stuck for more than 24 hours",

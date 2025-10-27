@@ -12,11 +12,11 @@ func (f *FakeSlackClient) PostMessage(channelName string, msgOptions []slack.Msg
 	return "", "", nil
 }
 
-func (f *FakeSlackClient) PostComment(channelName, messageTs string, msgOptions []slack.MsgOption) error {
+func (f *FakeSlackClient) PostComment(channelName, messageTS string, msgOptions []slack.MsgOption) error {
 	return nil
 }
 
-func (f *FakeSlackClient) AddReaction(channelId, timestamp, reaction string) error {
+func (f *FakeSlackClient) AddReaction(channelID, timestamp, reaction string) error {
 	return nil
 }
 
