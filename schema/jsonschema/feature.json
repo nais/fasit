@@ -26,12 +26,7 @@
 		},
 		"environmentKinds": {
 			"items": {
-				"enum": [
-					"management",
-					"tenant",
-					"onprem",
-					"legacy"
-				],
+				"enum": ["management", "tenant", "onprem", "legacy"],
 				"type": "string"
 			},
 			"type": "array"
@@ -50,10 +45,7 @@
 						"type": "string"
 					}
 				},
-				"required": [
-					"from",
-					"to"
-				],
+				"required": ["from", "to"],
 				"type": "object"
 			},
 			"type": "array"
@@ -67,15 +59,11 @@
 				"additionalProperties": false,
 				"anyOf": [
 					{
-						"required": [
-							"computed"
-						],
+						"required": ["computed"],
 						"title": "computed"
 					},
 					{
-						"required": [
-							"config"
-						],
+						"required": ["config"],
 						"title": "config"
 					}
 				],
@@ -96,18 +84,11 @@
 								"type": "boolean"
 							},
 							"type": {
-								"enum": [
-									"string",
-									"int",
-									"bool",
-									"string_array"
-								],
+								"enum": ["string", "int", "bool", "string_array"],
 								"type": "string"
 							}
 						},
-						"required": [
-							"type"
-						],
+						"required": ["type"],
 						"type": "object"
 					},
 					"description": {
@@ -118,12 +99,7 @@
 					},
 					"ignoreKind": {
 						"items": {
-							"enum": [
-								"management",
-								"tenant",
-								"onprem",
-								"legacy"
-							],
+							"enum": ["management", "tenant", "onprem", "legacy"],
 							"type": "string"
 						},
 						"type": "array"
@@ -137,8 +113,6 @@
 			"type": "object"
 		}
 	},
-	"required": [
-		"environmentKinds"
-	],
+	"required": ["environmentKinds"],
 	"type": "object"
 }
