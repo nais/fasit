@@ -46,6 +46,14 @@ func TestMetricsRecording(t *testing.T) {
 
 		suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, gensql.ClusterUpgradesStatusFAILED, "1.25.0").Return(stuckUpgrade, nil).Once()
 
+		// Mock the Slack mentions retrieval for updateSlackProgress
+		suite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, mock.Anything, "slack_upgrade_mentions", false).Return(
+			&model.EnvironmentValue{Key: "slack_upgrade_mentions", Value: []byte(`"<@U123456>"`)}, nil).Once()
+
+		// Mock the SetClusterUpgradesSlackMessage call for postNewSlackMessage
+		suite.repoMock.EXPECT().SetClusterUpgradesSlackMessage(mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
+			&model.ClusterUpgradeStatus{}, nil).Once()
+
 		err := upgrader.Run(context.Background())
 		assert.NoError(t, err)
 

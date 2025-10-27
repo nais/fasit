@@ -3,6 +3,7 @@ package slack
 import (
 	"fmt"
 
+	"github.com/nais/fasit/internal/graph/model"
 	"github.com/slack-go/slack"
 )
 
@@ -19,7 +20,7 @@ func (s *Slack) GetFeatureDeployFailedMessageOptions(feature, tenant, environmen
 	}
 }
 
-func (s *Slack) GetClusterUpgradeProgressMessageOptions(tenant, environment, version, currentPhase, status string, startTime string, mentions string) []slack.MsgOption {
+func (s *Slack) GetClusterUpgradeProgressMessageOptions(tenant, environment, version string, upgradeStatus model.UpgradeStatus, startTime, mentions string) []slack.MsgOption {
 	// Use a simple, basic structure that should always work
 	blocks := []slack.Block{
 		slack.NewSectionBlock(
@@ -28,35 +29,19 @@ func (s *Slack) GetClusterUpgradeProgressMessageOptions(tenant, environment, ver
 		),
 	}
 
-	// Build progress indicators
+	// Build progress indicators based on UpgradeStatus
 	var progressText string
-	switch currentPhase {
-	case "master":
-		switch status {
-		case "starting":
-			progressText = ":rocket: Starting control plane upgrade..."
-		case "in_progress":
-			progressText = ":hourglass_flowing_sand: Control plane upgrade in progress..."
-		case "completed":
-			progressText = ":white_check_mark: Control plane upgrade completed\n:hourglass_flowing_sand: Starting node pools upgrade..."
-		default:
-			progressText = ":question: Control plane upgrade status unknown"
-		}
-	case "nodepool":
-		switch status {
-		case "in_progress":
-			progressText = ":white_check_mark: Control plane upgrade completed\n:hourglass_flowing_sand: Node pools upgrade in progress..."
-		case "completed":
-			progressText = ":white_check_mark: Control plane upgrade completed\n:white_check_mark: Node pools upgrade completed\n:tada: Upgrade completed successfully!"
-		default:
-			progressText = ":white_check_mark: Control plane upgrade completed\n:question: Node pools upgrade status unknown"
-		}
-	case "completed":
+	switch upgradeStatus {
+	case model.UpgradeStatusCreated:
+		progressText = ":rocket: Starting control plane upgrade..."
+	case model.UpgradeStatusMasterUpgrade:
+		progressText = ":hourglass_flowing_sand: Control plane upgrade in progress..."
+	case model.UpgradeStatusNodeUpgrade:
+		progressText = ":white_check_mark: Control plane upgrade completed\n:hourglass_flowing_sand: Node pools upgrade in progress..."
+	case model.UpgradeStatusDone:
 		progressText = ":white_check_mark: Control plane upgrade completed\n:white_check_mark: Node pools upgrade completed\n:tada: Upgrade completed successfully!"
-	case "failed":
+	case model.UpgradeStatusFailed:
 		progressText = ":x: Upgrade failed"
-	case "stuck":
-		progressText = ":warning: Upgrade stuck (>24h) - marked as failed"
 	default:
 		progressText = ":hourglass_flowing_sand: Upgrade starting..."
 	}
@@ -75,19 +60,6 @@ func (s *Slack) GetClusterUpgradeProgressMessageOptions(tenant, environment, ver
 			nil, nil,
 		)
 		blocks = append(blocks, mentionsBlock)
-	}
-
-	return []slack.MsgOption{
-		slack.MsgOptionBlocks(blocks...),
-	}
-}
-
-func (s *Slack) GetClusterUpgradeStuckNotificationMessageOptions(tenant, environment, version, status, lastModified string) []slack.MsgOption {
-	blocks := []slack.Block{
-		slack.NewSectionBlock(
-			slack.NewTextBlockObject("mrkdwn", fmt.Sprintf("*:warning: K8s upgrade stuck*\n\n🚨 Cluster upgrade has been stuck for more than 24 hours and was marked as FAILED.\n\n*Tenant:* %s\n*Environment:* %s\n*Target version:* %s\n*Status:* %s\n*Last modified:* %s\n\n<https://fasit.nais.io/clusters#%s|View in Fasit>", tenant, environment, version, status, lastModified, tenant), false, false),
-			nil, nil,
-		),
 	}
 
 	return []slack.MsgOption{

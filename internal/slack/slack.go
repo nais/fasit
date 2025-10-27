@@ -1,6 +1,7 @@
 package slack
 
 import (
+	"github.com/nais/fasit/internal/graph/model"
 	"github.com/slack-go/slack"
 )
 
@@ -14,8 +15,7 @@ type SlackClient interface {
 	PostComment(channelName, messageTS string, msgOptions []slack.MsgOption) error
 	UpdateMessage(channelID, timestamp string, msgOptions []slack.MsgOption) (string, string, string, error)
 	AddReaction(channelID, timestamp, reaction string) error
-	GetClusterUpgradeStuckNotificationMessageOptions(tenant, environment, version, status, lastModified string) []slack.MsgOption
-	GetClusterUpgradeProgressMessageOptions(tenant, environment, version, currentPhase, status string, startTime string, mentions string) []slack.MsgOption
+	GetClusterUpgradeProgressMessageOptions(tenant, environment, version string, upgradeStatus model.UpgradeStatus, startTime, mentions string) []slack.MsgOption
 	GetFeatureDeployFailedMessageOptions(feature, tenant, environment string) []slack.MsgOption
 }
 

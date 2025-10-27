@@ -3,6 +3,7 @@ package fake
 import (
 	"errors"
 
+	"github.com/nais/fasit/internal/graph/model"
 	"github.com/slack-go/slack"
 )
 
@@ -28,11 +29,7 @@ func (f *FakeSlackClient) AddReaction(channelId, timestamp, reaction string) err
 	return nil
 }
 
-func (f *FakeSlackClient) GetClusterUpgradeStuckNotificationMessageOptions(tenant, environment, version, status, lastModified string) []slack.MsgOption {
-	return nil
-}
-
-func (f *FakeSlackClient) GetClusterUpgradeProgressMessageOptions(tenant, environment, version, currentPhase, status string, startTime string, mentions string) []slack.MsgOption {
+func (f *FakeSlackClient) GetClusterUpgradeProgressMessageOptions(tenant, environment, version string, upgradeStatus model.UpgradeStatus, startTime, mentions string) []slack.MsgOption {
 	return nil
 }
 

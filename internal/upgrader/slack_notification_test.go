@@ -36,7 +36,7 @@ func TestSlackNotificationFlow(t *testing.T) {
 			&model.ClusterUpgradeStatus{}, nil).Once()
 
 		// This should not cause any panic or error - should post a new message via fallback
-		upgrader.updateSlackProgress("tenant1", "env1", clusterUpgrade, "master", "completed")
+		upgrader.updateSlackProgress("tenant1", "env1", clusterUpgrade)
 
 		// Test passes if no panic occurs
 	})
@@ -60,7 +60,7 @@ func TestSlackNotificationFlow(t *testing.T) {
 			}, nil).Once()
 
 		// This should attempt to update the message
-		upgrader.updateSlackProgress("tenant1", "env1", clusterUpgrade, "master", "completed")
+		upgrader.updateSlackProgress("tenant1", "env1", clusterUpgrade)
 
 		// Test passes if no panic occurs (fake client returns error which is logged)
 	})
@@ -140,7 +140,7 @@ func TestSlackProgressStates(t *testing.T) {
 				}, nil).Once()
 
 			// Test that the function doesn't panic
-			upgrader.updateSlackProgress("tenant1", "env1", clusterUpgrade, tc.currentPhase, tc.status)
+			upgrader.updateSlackProgress("tenant1", "env1", clusterUpgrade)
 
 			// Test passes if no panic - actual message content testing would require
 			// more sophisticated mocking of the Slack client interface
