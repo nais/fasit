@@ -816,6 +816,11 @@ func (c *ClusterUpgrader) validateUpgradeAgainstGKE(ctx context.Context, cluster
 
 	case model.UpgradeStatusMasterUpgrade:
 		if !hasUpgradeOperations {
+			// Before marking as stuck, check if master upgrade actually completed
+			if c.isMasterUpgradeComplete(ctx, clusterUpgrade, projectID, env, log) {
+				log.Info("master upgrade appears to be complete - upgrade should proceed to node upgrade phase")
+				return false
+			}
 			log.Warn("upgrade in MASTER_UPGRADE status but no running master upgrade operations found in GKE - marking as stuck")
 			return true
 		}
@@ -824,6 +829,11 @@ func (c *ClusterUpgrader) validateUpgradeAgainstGKE(ctx context.Context, cluster
 
 	case model.UpgradeStatusNodeUpgrade:
 		if !hasUpgradeOperations {
+			// Before marking as stuck, check if node upgrade actually completed
+			if c.isNodeUpgradeComplete(ctx, clusterUpgrade, projectID, env, log) {
+				log.Info("node upgrade appears to be complete - upgrade should be marked as done")
+				return false
+			}
 			log.Warn("upgrade in NODE_UPGRADE status but no running node upgrade operations found in GKE - marking as stuck")
 			return true
 		}
@@ -834,6 +844,77 @@ func (c *ClusterUpgrader) validateUpgradeAgainstGKE(ctx context.Context, cluster
 		log.Debug("unknown upgrade status - not marking as stuck")
 		return false
 	}
+}
+
+// isMasterUpgradeComplete checks if the master/apiserver upgrade has actually completed
+// by comparing the current master version with the target version
+func (c *ClusterUpgrader) isMasterUpgradeComplete(ctx context.Context, clusterUpgrade *model.ClusterUpgradeStatus, projectID string, env *model.Environment, log logrus.FieldLogger) bool {
+	currentMasterVersion, err := c.client.GetCurrentMasterVersion(ctx, projectID, env)
+	if err != nil {
+		log.WithError(err).Warn("failed to get current master version, assuming upgrade not complete")
+		return false
+	}
+
+	targetVersionObj, err := version.NewVersion(clusterUpgrade.Version)
+	if err != nil {
+		log.WithError(err).Warn("failed to parse target version, assuming upgrade not complete")
+		return false
+	}
+
+	currentVersionObj, err := version.NewVersion(currentMasterVersion)
+	if err != nil {
+		log.WithError(err).Warn("failed to parse current master version, assuming upgrade not complete")
+		return false
+	}
+
+	isComplete := currentVersionObj.GreaterThanOrEqual(targetVersionObj)
+	log.WithFields(logrus.Fields{
+		"current_master_version": currentMasterVersion,
+		"target_version":         clusterUpgrade.Version,
+		"upgrade_complete":       isComplete,
+	}).Debug("checked master upgrade completion status")
+
+	return isComplete
+}
+
+// isNodeUpgradeComplete checks if all node pools have been upgraded to the target version
+func (c *ClusterUpgrader) isNodeUpgradeComplete(ctx context.Context, clusterUpgrade *model.ClusterUpgradeStatus, projectID string, env *model.Environment, log logrus.FieldLogger) bool {
+	nodePools, err := c.client.GetNodePools(ctx, projectID, env)
+	if err != nil {
+		log.WithError(err).Warn("failed to get node pools, assuming upgrade not complete")
+		return false
+	}
+
+	targetVersionObj, err := version.NewVersion(clusterUpgrade.Version)
+	if err != nil {
+		log.WithError(err).Warn("failed to parse target version, assuming upgrade not complete")
+		return false
+	}
+
+	allComplete := true
+	for _, np := range nodePools {
+		npVersionObj, err := version.NewVersion(np.Version)
+		if err != nil {
+			log.WithError(err).WithField("nodepool", np.Name).Warn("failed to parse nodepool version, assuming upgrade not complete")
+			return false
+		}
+
+		if !npVersionObj.GreaterThanOrEqual(targetVersionObj) {
+			log.WithFields(logrus.Fields{
+				"nodepool":        np.Name,
+				"current_version": np.Version,
+				"target_version":  clusterUpgrade.Version,
+			}).Debug("nodepool not yet at target version")
+			allComplete = false
+		}
+	}
+
+	log.WithFields(logrus.Fields{
+		"target_version":         clusterUpgrade.Version,
+		"all_nodepools_complete": allComplete,
+	}).Debug("checked node upgrade completion status")
+
+	return allComplete
 }
 
 // updateSlackProgress updates the existing Slack message with current upgrade progress

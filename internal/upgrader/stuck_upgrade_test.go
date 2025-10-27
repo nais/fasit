@@ -202,6 +202,34 @@ func TestIsUpgradeStuck(t *testing.T) {
 			if tt.clusterUpgrade.UpgradeStatus != model.UpgradeStatusDone &&
 				tt.clusterUpgrade.UpgradeStatus != model.UpgradeStatusFailed {
 				mockUpgrader.On("GetRunningOperations", ctx, projectID, env).Return(tt.mockOperations, nil).Once()
+
+				// Add completion checking mocks ONLY when no operations are running
+				// The completion check is only called when there are no running operations
+				if len(tt.mockOperations) == 0 {
+					if tt.clusterUpgrade.UpgradeStatus == model.UpgradeStatusMasterUpgrade {
+						// For MASTER_UPGRADE, check if master version matches target
+						currentMasterVersion := "1.24.0" // Different version to simulate stuck
+						if !tt.expectedStuck {
+							// If not expected to be stuck, return target version to simulate completion
+							currentMasterVersion = tt.clusterUpgrade.Version
+						}
+						mockUpgrader.On("GetCurrentMasterVersion", ctx, projectID, env).Return(currentMasterVersion, nil).Once()
+					} else if tt.clusterUpgrade.UpgradeStatus == model.UpgradeStatusNodeUpgrade {
+						// For NODE_UPGRADE, check if node pool versions match target
+						nodePoolVersion := "1.24.0" // Different version to simulate stuck
+						if !tt.expectedStuck {
+							// If not expected to be stuck, return target version to simulate completion
+							nodePoolVersion = tt.clusterUpgrade.Version
+						}
+						mockNodePools := []*containerpb.NodePool{
+							{
+								Name:    "default-pool",
+								Version: nodePoolVersion,
+							},
+						}
+						mockUpgrader.On("GetNodePools", ctx, projectID, env).Return(mockNodePools, nil).Once()
+					}
+				}
 			}
 
 			isStuck := upgrader.isUpgradeStuck(ctx, tt.clusterUpgrade, projectID, env)
