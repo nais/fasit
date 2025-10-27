@@ -30,11 +30,59 @@ type ClusterUpgrader struct {
 	slackChannel string
 
 	// Metrics
-	upgradeInProgress metric.Int64Counter
+	upgradeInProgress     metric.Int64Counter
+	upgradeStarted        metric.Int64Counter
+	upgradeCompleted      metric.Int64Counter
+	upgradeFailed         metric.Int64Counter
+	upgradeStuck          metric.Int64Counter
+	gkeApiCalls           metric.Int64Counter
+	gkeApiErrors          metric.Int64Counter
+	retryAttempts         metric.Int64Counter
+	upgradeDuration       metric.Float64Histogram
 }
 
 func NewClusterUpgrader(repo database.Repo, log logrus.FieldLogger, upgrader Upgrader, meter metric.Meter, slack slack.SlackClient, slackChannel string) *ClusterUpgrader {
 	counter, err := meter.Int64Counter("upgrade_in_progress", metric.WithDescription("Upgrade in progress"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	upgradeStarted, err := meter.Int64Counter("upgrade_started_total", metric.WithDescription("Total number of cluster upgrades started"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	upgradeCompleted, err := meter.Int64Counter("upgrade_completed_total", metric.WithDescription("Total number of cluster upgrades completed successfully"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	upgradeFailed, err := meter.Int64Counter("upgrade_failed_total", metric.WithDescription("Total number of cluster upgrades failed"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	upgradeStuck, err := meter.Int64Counter("upgrade_stuck_total", metric.WithDescription("Total number of cluster upgrades detected as stuck"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	gkeApiCalls, err := meter.Int64Counter("gke_api_calls_total", metric.WithDescription("Total number of GKE API calls made"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	gkeApiErrors, err := meter.Int64Counter("gke_api_errors_total", metric.WithDescription("Total number of GKE API errors encountered"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	retryAttempts, err := meter.Int64Counter("retry_attempts_total", metric.WithDescription("Total number of retry attempts made"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	upgradeDuration, err := meter.Float64Histogram("upgrade_duration_seconds", metric.WithDescription("Duration of cluster upgrades in seconds"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -44,47 +92,111 @@ func NewClusterUpgrader(repo database.Repo, log logrus.FieldLogger, upgrader Upg
 		repo:              repo,
 		client:            upgrader,
 		upgradeInProgress: counter,
+		upgradeStarted:    upgradeStarted,
+		upgradeCompleted:  upgradeCompleted,
+		upgradeFailed:     upgradeFailed,
+		upgradeStuck:      upgradeStuck,
+		gkeApiCalls:       gkeApiCalls,
+		gkeApiErrors:      gkeApiErrors,
+		retryAttempts:     retryAttempts,
+		upgradeDuration:   upgradeDuration,
 		slack:             slack,
 		slackChannel:      slackChannel,
 	}
 }
 
 func (c *ClusterUpgrader) Run(ctx context.Context) error {
+	c.log.Info("starting cluster upgrader run")
+	startTime := time.Now()
+	
 	var err error
 	tenants, err := c.repo.TenantsGet(ctx)
 	if err != nil {
+		c.log.WithError(err).Error("failed to get tenants")
 		return err
 	}
+	
+	c.log.WithField("tenant_count", len(tenants)).Info("processing tenants for cluster upgrades")
+	
+	totalEnvironments := 0
+	processedEnvironments := 0
+	
 	for _, tenant := range tenants {
 		envs, err := c.repo.EnvironmentsGet(ctx, tenant.ID)
 		if err != nil {
+			c.log.WithError(err).WithField("tenant", tenant.Name).Error("failed to get environments for tenant")
 			return err
 		}
+		
+		totalEnvironments += len(envs)
+		
 		for _, env := range envs {
 			if err := c.upgradeEnvironment(ctx, tenant, env); err != nil {
+				c.log.WithError(err).WithFields(logrus.Fields{
+					"tenant":      tenant.Name,
+					"environment": env.Name,
+				}).Error("failed to process environment upgrade")
 				return err
 			}
+			processedEnvironments++
 			continue
 		}
 	}
+	
+	runDuration := time.Since(startTime)
+	c.log.WithFields(logrus.Fields{
+		"total_tenants":               len(tenants),
+		"total_environments":          totalEnvironments,
+		"processed_environments":      processedEnvironments,
+		"run_duration_seconds":        runDuration.Seconds(),
+		"avg_environment_processing":  runDuration.Seconds() / float64(max(processedEnvironments, 1)),
+	}).Info("cluster upgrader run completed")
+	
 	return nil
 }
 
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
 func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.Tenant, env *model.Environment) error {
-	log := c.log.WithFields(logrus.Fields{"tenant": tenant.Name, "environment": env.Name})
+	log := c.log.WithFields(logrus.Fields{
+		"tenant":      tenant.Name,
+		"environment": env.Name,
+		"tenant_id":   tenant.ID,
+		"env_id":      env.ID,
+	})
+	
+	log.Debug("checking environment for cluster upgrades")
+	
 	projectID, err := getProjectID(ctx, c, env.ID)
 	if err != nil {
+		log.WithError(err).Error("failed to get project ID for environment")
 		return err
 	}
 
 	clusterUpgrade, err := c.repo.ClusterUpgradeGet(ctx, env.TenantID, env.ID)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		log.WithError(err).Error("failed to get cluster upgrade status")
 		return err
 	}
 
 	if clusterUpgrade == nil {
+		log.Debug("no cluster upgrade found for environment")
 		return nil
 	}
+
+	log = log.WithFields(logrus.Fields{
+		"target_version": clusterUpgrade.Version,
+		"current_status": clusterUpgrade.UpgradeStatus,
+		"upgrade_id":     clusterUpgrade.ID,
+		"last_modified":  clusterUpgrade.LastModified.Format("2006-01-02 15:04:05"),
+	})
+	
+	log.Debug("processing cluster upgrade")
 
 	// Check if upgrade is stuck (> 24 hours in same state)
 	if c.isUpgradeStuck(clusterUpgrade) {
@@ -92,13 +204,20 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 			"target_version": clusterUpgrade.Version,
 			"status":         clusterUpgrade.UpgradeStatus,
 			"last_modified":  clusterUpgrade.LastModified,
+			"stuck_duration": time.Since(clusterUpgrade.LastModified).String(),
 		}).Warn("cluster upgrade stuck, marking as failed")
+
+		// Record stuck upgrade metric
+		c.upgradeStuck.Add(ctx, 1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, string(clusterUpgrade.UpgradeStatus))...))
 
 		_, err = c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatusFAILED, clusterUpgrade.Version)
 		if err != nil {
 			log.WithError(err).Error("failed to mark stuck upgrade as failed")
 			return err
 		}
+
+		// Record failed upgrade metric
+		c.upgradeFailed.Add(ctx, 1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "stuck_timeout")...))
 
 		// Send Slack notification about stuck upgrade
 		c.notifyStuckUpgrade(tenant.Name, env.Name, clusterUpgrade)
@@ -114,14 +233,23 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 	switch clusterUpgrade.UpgradeStatus {
 	case model.UpgradeStatusCreated:
 		// initial state, upgrade master
-		log.WithFields(logrus.Fields{"target_version": clusterUpgrade.Version}).Info("starting master upgrade")
+		log.WithFields(logrus.Fields{
+			"target_version": clusterUpgrade.Version,
+			"tenant":         tenant.Name,
+			"environment":    env.Name,
+		}).Info("starting master upgrade")
 		if clusterHas(runningOperations) {
 			log.WithFields(logrus.Fields{"target_version": clusterUpgrade.Version}).Debug("has running operations, skipping...")
 			return nil
 		}
 
+		// Record upgrade started metric
+		c.upgradeStarted.Add(ctx, 1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "master")...))
+
 		_, err = c.masterUpgrade(ctx, env, clusterUpgrade, tenant.Name, projectID)
 		if err != nil {
+			// Record failed upgrade metric
+			c.upgradeFailed.Add(ctx, 1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "master_start_failed")...))
 			return err
 		}
 
@@ -191,11 +319,23 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		}
 
 		// node upgrade done, update status
-		log.Debug("node upgrade done")
+		log.WithFields(logrus.Fields{
+			"target_version": clusterUpgrade.Version,
+			"tenant":         tenant.Name,
+			"environment":    env.Name,
+		}).Info("cluster upgrade completed successfully")
+		
 		upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatusDONE, clusterUpgrade.Version)
 		if err != nil {
 			return err
 		}
+
+		// Record successful completion metrics
+		c.upgradeCompleted.Add(ctx, 1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "complete")...))
+		
+		// Record upgrade duration
+		upgradeDuration := time.Since(clusterUpgrade.LastModified).Seconds()
+		c.upgradeDuration.Record(ctx, upgradeDuration, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "total")...))
 
 		msg := c.slack.GetClusterUpgradeDoneNotificationMessageOptions(tenant.Name, env.Name)
 
@@ -376,14 +516,13 @@ func (c *ClusterUpgrader) masterUpgradeStatus(ctx context.Context, env *model.En
 
 func (c *ClusterUpgrader) masterUpgrade(ctx context.Context, env *model.Environment, upgrade *model.ClusterUpgradeStatus, tenantName, projectID string) (*model.ClusterUpgradeStatus, error) {
 	var op *containerpb.Operation
-	
+
 	// Retry the GKE API call with exponential backoff
 	err := c.retryWithBackoff(ctx, "upgrade_master", func() error {
 		var retryErr error
 		op, retryErr = c.client.UpgradeMaster(ctx, projectID, env, upgrade.Version)
 		return retryErr
 	})
-	
 	if err != nil {
 		if e, ok := err.(*apierror.APIError); ok {
 			if e.GRPCStatus().Code() == codes.InvalidArgument {
@@ -542,29 +681,40 @@ func (c *ClusterUpgrader) retryWithBackoff(ctx context.Context, operation string
 	const baseDelay = 1 * time.Second
 	const maxDelay = 30 * time.Second
 
+	// Record API call metric
+	c.gkeApiCalls.Add(ctx, 1, metric.WithAttributes(attribute.String("operation", operation)))
+
 	var lastErr error
 	for attempt := 0; attempt <= maxRetries; attempt++ {
 		err := fn()
 		if err == nil {
 			if attempt > 0 {
 				c.log.WithFields(logrus.Fields{
-					"operation": operation,
-					"attempt":   attempt + 1,
-					"success":   true,
+					"operation":      operation,
+					"attempt":        attempt + 1,
+					"total_attempts": attempt + 1,
+					"success":        true,
 				}).Info("operation succeeded after retry")
 			}
 			return nil
 		}
 
 		lastErr = err
-		
+
+		// Record API error metric
+		c.gkeApiErrors.Add(ctx, 1, metric.WithAttributes(
+			attribute.String("operation", operation),
+			attribute.Bool("retriable", isRetriableError(err)),
+		))
+
 		// Don't retry non-retriable errors
 		if !isRetriableError(err) {
 			c.log.WithFields(logrus.Fields{
 				"operation": operation,
 				"attempt":   attempt + 1,
 				"retriable": false,
-			}).WithError(err).Debug("non-retriable error, not retrying")
+				"error":     err.Error(),
+			}).Warn("non-retriable error, not retrying")
 			return err
 		}
 
@@ -572,6 +722,12 @@ func (c *ClusterUpgrader) retryWithBackoff(ctx context.Context, operation string
 		if attempt == maxRetries {
 			break
 		}
+
+		// Record retry attempt metric
+		c.retryAttempts.Add(ctx, 1, metric.WithAttributes(
+			attribute.String("operation", operation),
+			attribute.Int("attempt", attempt+1),
+		))
 
 		// Calculate delay with exponential backoff and jitter
 		delay := time.Duration(float64(baseDelay) * math.Pow(2, float64(attempt)))
@@ -584,7 +740,8 @@ func (c *ClusterUpgrader) retryWithBackoff(ctx context.Context, operation string
 			"attempt":      attempt + 1,
 			"next_attempt": attempt + 2,
 			"delay":        delay.String(),
-		}).WithError(err).Warn("retriable error, retrying after delay")
+			"error":        err.Error(),
+		}).Warn("retriable error, retrying after delay")
 
 		// Wait with context cancellation support
 		select {
@@ -596,9 +753,10 @@ func (c *ClusterUpgrader) retryWithBackoff(ctx context.Context, operation string
 	}
 
 	c.log.WithFields(logrus.Fields{
-		"operation":    operation,
-		"max_attempts": maxRetries + 1,
-		"final_error":  lastErr,
+		"operation":      operation,
+		"max_attempts":   maxRetries + 1,
+		"total_attempts": maxRetries + 1,
+		"final_error":    lastErr.Error(),
 	}).Error("operation failed after all retry attempts")
 
 	return lastErr
