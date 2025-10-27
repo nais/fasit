@@ -298,7 +298,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 			return nil
 		}
 		log.WithFields(logrus.Fields{"target_version": status.Version}).Info("master upgrade done")
-		
+
 		// Update Slack with master completion
 		c.updateSlackProgress(tenant.Name, env.Name, status, "master", "completed")
 
@@ -322,7 +322,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 			if un != nil {
 				// we started a upgrade
 				log.WithField("target_version", un.Version).Info("nodepool upgrade started")
-				
+
 				// Update Slack with nodepool start
 				c.updateSlackProgress(tenant.Name, env.Name, un, "nodepool", "in_progress")
 				return nil
