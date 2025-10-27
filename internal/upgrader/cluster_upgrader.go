@@ -249,15 +249,15 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		// Record upgrade started metric
 		c.upgradeStarted.Add(ctx, 1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "master")...))
 
-		_, err = c.masterUpgrade(ctx, env, clusterUpgrade, tenant.Name, projectID)
+		updatedStatus, err := c.masterUpgrade(ctx, env, clusterUpgrade, tenant.Name, projectID)
 		if err != nil {
 			// Record failed upgrade metric
 			c.upgradeFailed.Add(ctx, 1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "master_start_failed")...))
 			return err
 		}
 
-		// Always update Slack progress with the current status
-		c.updateSlackProgress(tenant.Name, env.Name, clusterUpgrade)
+		// Always update Slack progress with the updated status
+		c.updateSlackProgress(tenant.Name, env.Name, updatedStatus)
 
 	case model.UpgradeStatusMasterUpgrade:
 		// check status on ongoing master upgrade
@@ -266,7 +266,8 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 			return err
 		}
 		if status == nil {
-			// upgrade not done
+			// upgrade not done - update Slack to refresh timestamp and show ongoing progress
+			c.updateSlackProgress(tenant.Name, env.Name, clusterUpgrade)
 			return nil
 		}
 		log.WithFields(logrus.Fields{"target_version": status.Version}).Info("master upgrade done")
