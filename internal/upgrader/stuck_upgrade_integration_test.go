@@ -70,64 +70,6 @@ func TestStuckUpgradeIntegration(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-	t.Run("stuck upgrade without slack metadata uses fallback", func(t *testing.T) {
-		// Setup stuck cluster upgrade without Slack metadata
-		stuckUpgrade := &model.ClusterUpgradeStatus{
-			ID:                    uuid.New(),
-			UpgradeStatus:         model.UpgradeStatusNodeUpgrade,
-			Version:               "1.25.0",
-			LastModified:          time.Now().Add(-26 * time.Hour),
-			StartTime:             time.Now().Add(-26 * time.Hour),
-			SlackChannelID:        "", // No existing slack message
-			SlackMessageTimestamp: "",
-		}
-
-		// Mock setup
-		suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
-			ID:   suite.env.tenantID,
-			Name: suite.env.name,
-		}}, nil).Once()
-
-		suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
-			ID:       suite.env.id,
-			TenantID: suite.env.tenantID,
-			Name:     suite.env.name,
-		}}, nil).Once()
-
-		suite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, mock.Anything, "project_id", false).Return(
-			&model.EnvironmentValue{
-				Key:   "project_id",
-				Value: []byte(`"1234"`),
-			}, nil).Once()
-
-		suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(stuckUpgrade, nil).Once()
-
-		// Mock GetRunningOperations call from stuck detection logic
-		suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{}, nil).Once()
-
-		// Mock GetNodePools call from completion checking (for NODE_UPGRADE status)
-		suite.upgradeMock.EXPECT().GetNodePools(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.NodePool{
-			{Name: "pool1", Version: "1.24.0"}, // Different version to trigger stuck detection
-		}, nil).Once()
-
-		// Expect stuck upgrade to be marked as failed
-		suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, gensql.ClusterUpgradesStatusFAILED, "1.25.0").Return(stuckUpgrade, nil).Once()
-
-		// Mock the Slack mentions retrieval for updateSlackProgress
-		suite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, mock.Anything, "slack_upgrade_mentions", false).Return(
-			&model.EnvironmentValue{
-				Key:   "slack_upgrade_mentions",
-				Value: []byte(`"<@U123456>"`),
-			}, nil).Once()
-
-		// Mock the SetClusterUpgradesSlackMessage call for postNewSlackMessage
-		suite.repoMock.EXPECT().SetClusterUpgradesSlackMessage(mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
-			&model.ClusterUpgradeStatus{}, nil).Once()
-
-		err := upgrader.Run(context.Background())
-		assert.NoError(t, err)
-	})
-
 	t.Run("not stuck upgrade continues normally", func(t *testing.T) {
 		// Create fresh upgrader for this test
 		testSuite := newTestSuite(t)
@@ -135,11 +77,14 @@ func TestStuckUpgradeIntegration(t *testing.T) {
 
 		// Setup recent upgrade that's not stuck (only 2 hours old)
 		notStuckUpgrade := &model.ClusterUpgradeStatus{
-			ID:            uuid.New(),
-			UpgradeStatus: model.UpgradeStatusMasterUpgrade,
-			Version:       "1.25.0",
-			LastModified:  time.Now().Add(-2 * time.Hour), // Only 2 hours old
-			StartTime:     time.Now().Add(-2 * time.Hour),
+			ID:                    uuid.New(),
+			UpgradeStatus:         model.UpgradeStatusMasterUpgrade,
+			Version:               "1.25.0",
+			LastModified:          time.Now().Add(-2 * time.Hour), // Only 2 hours old
+			StartTime:             time.Now().Add(-2 * time.Hour),
+			EnvironmentID:         testSuite.env.id, // Need this for Slack mentions retrieval
+			SlackChannelID:        "C123456",        // Existing Slack message
+			SlackMessageTimestamp: "1234567890.123456",
 		}
 
 		// Setup mocks for this test
@@ -180,6 +125,13 @@ func TestStuckUpgradeIntegration(t *testing.T) {
 		testSuite.upgradeMock.EXPECT().GetOperation(mock.Anything, mock.Anything, "operation").Return(
 			&containerpb.Operation{Status: containerpb.Operation_RUNNING}, nil).Once()
 		testSuite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil).Once()
+
+		// Mock the EnvironmentValueGet call for Slack mentions that happens in updateSlackProgress
+		testSuite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, mock.Anything, "slack_upgrade_mentions", false).Return(
+			&model.EnvironmentValue{
+				Key:   "slack_upgrade_mentions",
+				Value: []byte(`""`), // Empty mentions
+			}, nil).Once()
 
 		err := upgrader.Run(context.Background())
 		assert.NoError(t, err)

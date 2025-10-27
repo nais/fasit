@@ -186,11 +186,11 @@ func TestRun_StartNodeUpgradeClusterStatusNodeUpgrade(t *testing.T) {
 	upgrade := newUpgrade(suite)
 	suite.mockRunTenantForLoop(model.UpgradeStatusNodeUpgrade)
 
-	// Allow multiple GetRunningOperations calls - we'll fix the exact count later
+	// GetRunningOperations for main logic and stuck detection
 	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, suite.environment).Return(
 		[]*containerpb.Operation{}, nil).Maybe()
 
-	// Mock GetNodePools for stuck detection - return node pools NOT at target version (upgrade not complete)
+	// Mock GetNodePools for stuck detection - return node pools NOT at target version
 	suite.upgradeMock.EXPECT().GetNodePools(mock.Anything, mock.Anything, suite.environment).Return(
 		[]*containerpb.NodePool{
 			{
@@ -203,15 +203,30 @@ func TestRun_StartNodeUpgradeClusterStatusNodeUpgrade(t *testing.T) {
 			},
 		}, nil).Maybe()
 
-	// Since upgrade is not complete, it should be marked as stuck and return early
-	suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, gensql.ClusterUpgradesStatusFAILED, "1.2.4").Return(
+	// Mock GetRunningClusterOperation for nodeUpgradeStatus
+	suite.repoMock.EXPECT().GetRunningClusterOperation(mock.Anything, suite.env.tenantID, suite.env.id).Return(
+		nil, nil).Maybe()
+
+	// Since nodes need upgrading, should start upgrading nodepool1
+	suite.upgradeMock.EXPECT().UpgradeNodePool(mock.Anything, mock.Anything, suite.environment, "nodepool1", "1.2.4").Return(
+		&containerpb.Operation{
+			Name:          "upgrade-nodepool1",
+			OperationType: containerpb.Operation_UPGRADE_NODES,
+			Status:        containerpb.Operation_RUNNING,
+		}, nil).Once()
+
+	// Mock database operations for starting node upgrade
+	suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantID, suite.env.id, mock.Anything, mock.Anything).Return(
+		nil, nil).Maybe()
+
+	suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, gensql.ClusterUpgradesStatusNODEUPGRADE, "1.2.4").Return(
 		&model.ClusterUpgradeStatus{
 			ID:            uuid.New(),
-			UpgradeStatus: model.UpgradeStatusFailed,
+			UpgradeStatus: model.UpgradeStatusNodeUpgrade,
 			Version:       "1.2.4",
 			LastModified:  time.Now(),
 			StartTime:     time.Now(),
-		}, nil).Once()
+		}, nil).Maybe()
 
 	err := upgrade.Run(context.Background())
 	if err != nil {

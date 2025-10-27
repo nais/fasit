@@ -138,7 +138,7 @@ func TestIsUpgradeStuck(t *testing.T) {
 			expectedStuck: false,
 		},
 		{
-			name: "NODE_UPGRADE stuck - no running operations in GKE",
+			name: "NODE_UPGRADE not stuck - nodes need upgrading, no running operations",
 			clusterUpgrade: &model.ClusterUpgradeStatus{
 				ID:            uuid.New(),
 				UpgradeStatus: model.UpgradeStatusNodeUpgrade,
@@ -147,7 +147,7 @@ func TestIsUpgradeStuck(t *testing.T) {
 				StartTime:     time.Now().Add(-1 * time.Hour),
 			},
 			mockOperations: []*containerpb.Operation{}, // No running operations
-			expectedStuck:  true,
+			expectedStuck:  false,                      // Not stuck because nodes need upgrading (normal state)
 		},
 		{
 			name: "NODE_UPGRADE not stuck - has running node upgrade",
@@ -218,10 +218,10 @@ func TestIsUpgradeStuck(t *testing.T) {
 						}
 						mockUpgrader.On("GetCurrentMasterVersion", ctx, projectID, env).Return(currentMasterVersion, nil).Once()
 					case model.UpgradeStatusNodeUpgrade:
-						// For NODE_UPGRADE, check if node pool versions match target
-						nodePoolVersion := "1.24.0" // Different version to simulate stuck
-						if !tt.expectedStuck {
-							// If not expected to be stuck, return target version to simulate completion
+						// For NODE_UPGRADE, check if nodes need upgrading
+						nodePoolVersion := "1.24.0" // Lower than target version = needs upgrading = not stuck
+						if tt.expectedStuck {
+							// If expected to be stuck, all nodes are at target or higher
 							nodePoolVersion = tt.clusterUpgrade.Version
 						}
 						mockNodePools := []*containerpb.NodePool{
@@ -230,7 +230,7 @@ func TestIsUpgradeStuck(t *testing.T) {
 								Version: nodePoolVersion,
 							},
 						}
-						mockUpgrader.On("GetNodePools", ctx, projectID, env).Return(mockNodePools, nil).Once()
+						mockUpgrader.On("GetNodePools", ctx, projectID, env).Return(mockNodePools, nil).Maybe()
 					}
 				}
 			}
