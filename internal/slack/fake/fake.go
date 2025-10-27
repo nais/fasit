@@ -35,3 +35,7 @@ func (f *FakeSlackClient) GetClusterUpgradeFailedNotificationMessageOptions(tena
 func (f *FakeSlackClient) GetFeatureDeployFailedMessageOptions(feature, tenant, environment string) []slack.MsgOption {
 	return nil
 }
+
+func (f *FakeSlackClient) GetClusterUpgradeStuckNotificationMessageOptions(tenant, environment, version, status, lastModified string) []slack.MsgOption {
+	return nil
+}

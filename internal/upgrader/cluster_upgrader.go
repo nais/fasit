@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"time"
 
 	"cloud.google.com/go/container/apiv1/containerpb"
 	"github.com/google/uuid"
@@ -81,6 +82,25 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 	}
 
 	if clusterUpgrade == nil {
+		return nil
+	}
+
+	// Check if upgrade is stuck (> 24 hours in same state)
+	if c.isUpgradeStuck(clusterUpgrade) {
+		log.WithFields(logrus.Fields{
+			"target_version": clusterUpgrade.Version, 
+			"status": clusterUpgrade.UpgradeStatus,
+			"last_modified": clusterUpgrade.LastModified,
+		}).Warn("cluster upgrade stuck, marking as failed")
+		
+		_, err = c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatusFAILED, clusterUpgrade.Version)
+		if err != nil {
+			log.WithError(err).Error("failed to mark stuck upgrade as failed")
+			return err
+		}
+
+		// Send Slack notification about stuck upgrade
+		c.notifyStuckUpgrade(ctx, tenant.Name, env.Name, clusterUpgrade)
 		return nil
 	}
 
@@ -417,4 +437,41 @@ func getUpgradeMentions(ctx context.Context, c *ClusterUpgrader, environmentID u
 	}
 
 	return notificationsString, nil
+}
+
+// isUpgradeStuck checks if a cluster upgrade has been in the same state for more than 24 hours
+func (c *ClusterUpgrader) isUpgradeStuck(clusterUpgrade *model.ClusterUpgradeStatus) bool {
+	// Don't consider DONE or FAILED as stuck
+	if clusterUpgrade.UpgradeStatus == model.UpgradeStatusDone || clusterUpgrade.UpgradeStatus == model.UpgradeStatusFailed {
+		return false
+	}
+
+	// Check if upgrade has been running for more than 24 hours
+	stuckThreshold := 24 * time.Hour
+	return time.Since(clusterUpgrade.LastModified) > stuckThreshold
+}
+
+// notifyStuckUpgrade sends a Slack notification about a stuck upgrade
+func (c *ClusterUpgrader) notifyStuckUpgrade(ctx context.Context, tenantName, envName string, clusterUpgrade *model.ClusterUpgradeStatus) {
+	// Build Slack message using the same pattern as other notifications
+	stuckMsg := c.slack.GetClusterUpgradeStuckNotificationMessageOptions(
+		tenantName, 
+		envName, 
+		clusterUpgrade.Version, 
+		string(clusterUpgrade.UpgradeStatus),
+		clusterUpgrade.LastModified.Format("2006-01-02 15:04:05"))
+
+	if clusterUpgrade.SlackMessageTimestamp != "" {
+		// Reply to existing upgrade message
+		err := c.slack.PostComment(c.slackChannel, clusterUpgrade.SlackMessageTimestamp, stuckMsg)
+		if err != nil {
+			c.log.WithError(err).Error("failed to post stuck upgrade comment to slack")
+		}
+	} else {
+		// Post new message
+		_, _, err := c.slack.PostMessage(c.slackChannel, stuckMsg)
+		if err != nil {
+			c.log.WithError(err).Error("failed to post stuck upgrade message to slack")
+		}
+	}
 }
