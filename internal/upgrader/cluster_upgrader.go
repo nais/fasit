@@ -39,47 +39,47 @@ type ClusterUpgrader struct {
 }
 
 func NewClusterUpgrader(repo database.Repo, log logrus.FieldLogger, upgrader Upgrader, meter metric.Meter, slack slack.SlackClient, slackChannel string) *ClusterUpgrader {
-	counter, err := meter.Int64Counter("upgrade_in_progress", metric.WithDescription("Upgrade in progress"))
+	counter, err := meter.Int64Counter("cluster_upgrade_in_progress", metric.WithDescription("Cluster upgrades currently in progress"))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	upgradeStarted, err := meter.Int64Counter("upgrade_started_total", metric.WithDescription("Total number of cluster upgrades started"))
+	upgradeStarted, err := meter.Int64Counter("cluster_upgrade_started", metric.WithDescription("Number of cluster upgrades started"))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	upgradeCompleted, err := meter.Int64Counter("upgrade_completed_total", metric.WithDescription("Total number of cluster upgrades completed successfully"))
+	upgradeCompleted, err := meter.Int64Counter("cluster_upgrade_completed", metric.WithDescription("Number of cluster upgrades completed successfully"))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	upgradeFailed, err := meter.Int64Counter("upgrade_failed_total", metric.WithDescription("Total number of cluster upgrades failed"))
+	upgradeFailed, err := meter.Int64Counter("cluster_upgrade_failed", metric.WithDescription("Number of cluster upgrades failed"))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	upgradeStuck, err := meter.Int64Counter("upgrade_stuck_total", metric.WithDescription("Total number of cluster upgrades detected as stuck"))
+	upgradeStuck, err := meter.Int64Counter("cluster_upgrade_stuck", metric.WithDescription("Number of cluster upgrades detected as stuck"))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	gkeAPICalls, err := meter.Int64Counter("gke_api_calls_total", metric.WithDescription("Total number of GKE API calls made"))
+	gkeAPICalls, err := meter.Int64Counter("cluster_upgrader_gke_api_calls", metric.WithDescription("Number of GKE API calls made by cluster upgrader"))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	gkeAPIErrors, err := meter.Int64Counter("gke_api_errors_total", metric.WithDescription("Total number of GKE API errors encountered"))
+	gkeAPIErrors, err := meter.Int64Counter("cluster_upgrader_gke_api_errors", metric.WithDescription("Number of GKE API errors encountered by cluster upgrader"))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	retryAttempts, err := meter.Int64Counter("retry_attempts_total", metric.WithDescription("Total number of retry attempts made"))
+	retryAttempts, err := meter.Int64Counter("cluster_upgrader_retry_attempts", metric.WithDescription("Number of retry attempts made by cluster upgrader"))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	upgradeDuration, err := meter.Float64Histogram("upgrade_duration_seconds", metric.WithDescription("Duration of cluster upgrades in seconds"))
+	upgradeDuration, err := meter.Float64Histogram("cluster_upgrade_duration_seconds", metric.WithDescription("Duration of cluster upgrades in seconds"))
 	if err != nil {
 		log.Fatal(err)
 	}

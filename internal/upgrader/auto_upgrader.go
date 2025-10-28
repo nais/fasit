@@ -12,6 +12,7 @@ import (
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 )
 
@@ -30,7 +31,7 @@ func NewAutoUpgrader(repo database.Repo, log logrus.FieldLogger, client Upgrader
 		metric.WithDescription("Number of automatic cluster upgrades scheduled"),
 	)
 	autoUpgradeProcessingTime, _ := meter.Float64Histogram(
-		"auto_upgrade_processing_time",
+		"auto_upgrade_processing_time_seconds",
 		metric.WithDescription("Time taken to process automatic upgrades"),
 		metric.WithUnit("s"),
 	)
@@ -200,6 +201,8 @@ func (c *AutoUpgrader) processEnvironment(ctx context.Context, env *model.Enviro
 
 // evaluateAndScheduleUpgrades checks for newer patch versions and schedules upgrades
 func (c *AutoUpgrader) evaluateAndScheduleUpgrades(ctx context.Context, env *model.Environment, envLogger logrus.FieldLogger, masterVer string, availableVersions []string) (processed, scheduled bool) {
+	tenant, _ := c.repo.TenantGet(ctx, env.TenantID) // Already retrieved in parent, but needed for metrics
+
 	for _, version := range availableVersions {
 		if c.IsNewerPatchRelease(masterVer, version) {
 			envLogger.WithFields(logrus.Fields{
@@ -240,7 +243,12 @@ func (c *AutoUpgrader) evaluateAndScheduleUpgrades(ctx context.Context, env *mod
 			}
 
 			// Record successful scheduling
-			c.autoUpgradesScheduled.Add(ctx, 1)
+			c.autoUpgradesScheduled.Add(ctx, 1, metric.WithAttributes(
+				attribute.String("environment", env.Name),
+				attribute.String("tenant", tenant.Name),
+				attribute.String("current_version", masterVer),
+				attribute.String("target_version", version),
+			))
 
 			envLogger.WithFields(logrus.Fields{
 				"current_version": masterVer,
