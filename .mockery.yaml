@@ -1,11 +1,8 @@
-with-expecter: true
-disable-version-string: true
-resolve-type-alias: false
-issue-845-fix: true
-dir: "{{.InterfaceDir}}/mocks"
-filename: "{{.InterfaceNameSnake}}.go"
-mockname: "{{.InterfaceName}}"
-outpkg: mocks
+pkgname: mocks
+dir: "{{ .InterfaceDir }}/mocks"
+filename: "{{ .InterfaceName | snakecase }}.go"
+structname: "{{ .InterfaceName }}"
+template: testify
 packages:
   github.com/nais/fasit/internal/database:
     interfaces:

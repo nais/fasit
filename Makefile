@@ -75,7 +75,7 @@ sqlc-vet:
 	go tool github.com/sqlc-dev/sqlc/cmd/sqlc vet
 
 generate-mocks:
-	go tool github.com/vektra/mockery/v2
+	go tool github.com/vektra/mockery/v3
 
 generate-proto:
 	mkdir -p internal/provider/protogen
