@@ -712,6 +712,90 @@ func (c *ClusterUpgrader) masterUpgradeStatus(ctx context.Context, env *model.En
 		return nil, err
 	}
 
+	if rop == nil {
+		// No RUNNING operation found - check if there's a completed one or verify with GKE
+		c.log.WithFields(logrus.Fields{
+			"tenant":      tenantName,
+			"environment": env.Name,
+			"upgrade_id":  clusterUpgrade.ID,
+		}).Debug("no running operation in database, checking for completed operations")
+
+		// Check if there are any operations for this upgrade (including DONE ones)
+		ops, err := c.repo.ClusterOperationsGetByUpgradeID(ctx, clusterUpgrade.ID)
+		if err != nil {
+			return nil, err
+		}
+
+		// If we have operations, check if any are DONE
+		var doneOp *model.EnvironmentOperation
+		for _, op := range ops {
+			if op.Status == "DONE" {
+				doneOp = op
+				break
+			}
+		}
+
+		if doneOp != nil {
+			// We have a DONE operation, transition to NODE_UPGRADE
+			c.log.WithFields(logrus.Fields{
+				"tenant":         tenantName,
+				"environment":    env.Name,
+				"operation_name": doneOp.Name,
+			}).Info("found completed master upgrade operation, transitioning to node upgrade")
+
+			c.upgradeInProgress.Add(ctx, -1, metric.WithAttributes(
+				setMetricsAttrs(env.Name, tenantName, clusterUpgrade.Version, "master")...),
+			)
+
+			upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatusNODEUPGRADE, clusterUpgrade.Version)
+			if err != nil {
+				return nil, err
+			}
+			c.log.WithFields(logrus.Fields{"tenant": tenantName, "environment": env.Name}).Infof("api server upgrade to %s done", upgradeStatus.Version)
+			return upgradeStatus, nil
+		}
+
+		// No operations at all - verify with GKE directly
+		c.log.WithFields(logrus.Fields{
+			"tenant":      tenantName,
+			"environment": env.Name,
+		}).Warn("no operations found in database for master upgrade, verifying with GKE")
+
+		var currentVersion string
+		err = c.retryer.WithBackoff(ctx, "get_current_master_version", func() error {
+			var retryErr error
+			currentVersion, retryErr = c.client.GetCurrentMasterVersion(ctx, projectID, env)
+			return retryErr
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		// If the master is already at the target version, mark it as complete
+		if currentVersion == clusterUpgrade.Version {
+			c.log.WithFields(logrus.Fields{
+				"tenant":         tenantName,
+				"environment":    env.Name,
+				"target_version": clusterUpgrade.Version,
+			}).Info("master already at target version, marking upgrade as complete")
+
+			upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatusNODEUPGRADE, clusterUpgrade.Version)
+			if err != nil {
+				return nil, err
+			}
+			return upgradeStatus, nil
+		}
+
+		// Master not at target version and no running operation - stuck
+		c.log.WithFields(logrus.Fields{
+			"tenant":          tenantName,
+			"environment":     env.Name,
+			"current_version": currentVersion,
+			"target_version":  clusterUpgrade.Version,
+		}).Warn("master upgrade stuck - not at target version and no running operation")
+		return nil, nil
+	}
+
 	op, err := c.getAndUpdateOperation(ctx, projectID, env.TenantID, env.ID, clusterUpgrade.ID, rop.Name)
 	if err != nil {
 		return nil, err
