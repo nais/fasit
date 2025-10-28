@@ -177,7 +177,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		"env_id":      env.ID,
 	})
 
-	log.Debug("checking environment for cluster upgrades")
+	log.Debug("checking environment for cluster upgrades...")
 
 	projectID, err := getProjectID(ctx, c, env.ID)
 	if err != nil {
