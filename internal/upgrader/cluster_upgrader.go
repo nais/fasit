@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"math"
 	"time"
 
 	"cloud.google.com/go/container/apiv1/containerpb"
@@ -28,6 +27,7 @@ type ClusterUpgrader struct {
 	client       Upgrader
 	slack        slack.SlackClient
 	slackChannel string
+	retryer      *Retryer
 
 	// Metrics
 	upgradeInProgress metric.Int64Counter
@@ -35,9 +35,6 @@ type ClusterUpgrader struct {
 	upgradeCompleted  metric.Int64Counter
 	upgradeFailed     metric.Int64Counter
 	upgradeStuck      metric.Int64Counter
-	gkeAPICalls       metric.Int64Counter
-	gkeAPIErrors      metric.Int64Counter
-	retryAttempts     metric.Int64Counter
 	upgradeDuration   metric.Float64Histogram
 }
 
@@ -87,6 +84,8 @@ func NewClusterUpgrader(repo database.Repo, log logrus.FieldLogger, upgrader Upg
 		log.Fatal(err)
 	}
 
+	retryer := NewRetryer(log, gkeAPICalls, gkeAPIErrors, retryAttempts, DefaultRetryConfig())
+
 	return &ClusterUpgrader{
 		log:               log,
 		repo:              repo,
@@ -96,12 +95,10 @@ func NewClusterUpgrader(repo database.Repo, log logrus.FieldLogger, upgrader Upg
 		upgradeCompleted:  upgradeCompleted,
 		upgradeFailed:     upgradeFailed,
 		upgradeStuck:      upgradeStuck,
-		gkeAPICalls:       gkeAPICalls,
-		gkeAPIErrors:      gkeAPIErrors,
-		retryAttempts:     retryAttempts,
 		upgradeDuration:   upgradeDuration,
 		slack:             slack,
 		slackChannel:      slackChannel,
+		retryer:           retryer,
 	}
 }
 
@@ -352,7 +349,7 @@ func clusterHas(runningOperations []*containerpb.Operation) bool {
 func (c *ClusterUpgrader) getAndUpdateRunningOperations(ctx context.Context, projectID string, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus) ([]*containerpb.Operation, error) {
 	// checks if there are any running operations for the environment
 	var runningOperations []*containerpb.Operation
-	err := c.retryWithBackoff(ctx, "get_running_operations", func() error {
+	err := c.retryer.WithBackoff(ctx, "get_running_operations", func() error {
 		var retryErr error
 		runningOperations, retryErr = c.client.GetRunningOperations(ctx, projectID, env)
 		return retryErr
@@ -382,7 +379,7 @@ func (c *ClusterUpgrader) getAndUpdateRunningOperations(ctx context.Context, pro
 
 func (c *ClusterUpgrader) upgradeNodes(ctx context.Context, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus, projectID, tenantName string) (*model.ClusterUpgradeStatus, error) {
 	var nodePools []*containerpb.NodePool
-	err := c.retryWithBackoff(ctx, "get_node_pools", func() error {
+	err := c.retryer.WithBackoff(ctx, "get_node_pools", func() error {
 		var retryErr error
 		nodePools, retryErr = c.client.GetNodePools(ctx, projectID, env)
 		return retryErr
@@ -408,7 +405,7 @@ func (c *ClusterUpgrader) upgradeNodes(ctx context.Context, env *model.Environme
 
 		var op *containerpb.Operation
 		// Retry the GKE nodepool upgrade API call with exponential backoff
-		retryErr := c.retryWithBackoff(ctx, "upgrade_nodepool", func() error {
+		retryErr := c.retryer.WithBackoff(ctx, "upgrade_nodepool", func() error {
 			var err error
 			op, err = c.client.UpgradeNodePool(ctx, projectID, env, np.Name, clusterUpgrade.Version)
 			return err
@@ -483,7 +480,7 @@ func (c *ClusterUpgrader) masterUpgrade(ctx context.Context, env *model.Environm
 	var op *containerpb.Operation
 
 	// Retry the GKE API call with exponential backoff
-	err := c.retryWithBackoff(ctx, "upgrade_master", func() error {
+	err := c.retryer.WithBackoff(ctx, "upgrade_master", func() error {
 		var retryErr error
 		op, retryErr = c.client.UpgradeMaster(ctx, projectID, env, upgrade.Version)
 		return retryErr
@@ -529,7 +526,7 @@ func setMetricsAttrs(envName, tenantName, version, target string) []attribute.Ke
 
 func (c *ClusterUpgrader) clusterNodePoolsCompleted(ctx context.Context, projectID string, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus) (bool, error) {
 	var nodepools []*containerpb.NodePool
-	err := c.retryWithBackoff(ctx, "get_node_pools_status", func() error {
+	err := c.retryer.WithBackoff(ctx, "get_node_pools_status", func() error {
 		var retryErr error
 		nodepools, retryErr = c.client.GetNodePools(ctx, projectID, env)
 		return retryErr
@@ -558,7 +555,7 @@ func (c *ClusterUpgrader) clusterNodePoolsCompleted(ctx context.Context, project
 
 func (c *ClusterUpgrader) getAndUpdateOperation(ctx context.Context, projectID string, tenantID, envID, clusterUpgradeID uuid.UUID, operationName string) (*containerpb.Operation, error) {
 	var op *containerpb.Operation
-	err := c.retryWithBackoff(ctx, "get_operation_status", func() error {
+	err := c.retryer.WithBackoff(ctx, "get_operation_status", func() error {
 		var retryErr error
 		op, retryErr = c.client.GetOperation(ctx, projectID, operationName)
 		return retryErr
@@ -645,32 +642,6 @@ func (c *ClusterUpgrader) postNewSlackMessage(tenantName, envName string, cluste
 	}
 }
 
-// isRetriableError checks if an error should be retried
-func isRetriableError(err error) bool {
-	if err == nil {
-		return false
-	}
-
-	// Check if it's a GKE API error
-	if apiErr, ok := err.(*apierror.APIError); ok {
-		// Retriable errors: rate limits, temporary unavailable, etc.
-		switch apiErr.GRPCStatus().Code() {
-		case codes.Unavailable, codes.DeadlineExceeded, codes.Aborted:
-			return true
-		case codes.InvalidArgument, codes.NotFound, codes.PermissionDenied:
-			return false // Permanent errors
-		}
-	}
-
-	// Database connection errors are typically retriable
-	if errors.Is(err, context.DeadlineExceeded) {
-		return true
-	}
-
-	// Default to non-retriable for safety
-	return false
-}
-
 // logNonCriticalError logs errors that don't stop the operation but should be noted
 func (c *ClusterUpgrader) logNonCriticalError(err error, operation string, fields logrus.Fields) {
 	if fields == nil {
@@ -680,93 +651,6 @@ func (c *ClusterUpgrader) logNonCriticalError(err error, operation string, field
 	fields["retriable"] = isRetriableError(err)
 
 	c.log.WithFields(fields).WithError(err).Warn("non-critical operation failed")
-}
-
-// retryWithBackoff executes a function with exponential backoff for retriable errors
-func (c *ClusterUpgrader) retryWithBackoff(ctx context.Context, operation string, fn func() error) error {
-	const maxRetries = 3
-	const baseDelay = 1 * time.Second
-	const maxDelay = 30 * time.Second
-
-	// Record API call metric
-	c.gkeAPICalls.Add(ctx, 1, metric.WithAttributes(attribute.String("operation", operation)))
-
-	var lastErr error
-	for attempt := 0; attempt <= maxRetries; attempt++ {
-		err := fn()
-		if err == nil {
-			if attempt > 0 {
-				c.log.WithFields(logrus.Fields{
-					"operation":      operation,
-					"attempt":        attempt + 1,
-					"total_attempts": attempt + 1,
-					"success":        true,
-				}).Info("operation succeeded after retry")
-			}
-			return nil
-		}
-
-		lastErr = err
-
-		// Record API error metric
-		c.gkeAPIErrors.Add(ctx, 1, metric.WithAttributes(
-			attribute.String("operation", operation),
-			attribute.Bool("retriable", isRetriableError(err)),
-		))
-
-		// Don't retry non-retriable errors
-		if !isRetriableError(err) {
-			c.log.WithFields(logrus.Fields{
-				"operation": operation,
-				"attempt":   attempt + 1,
-				"retriable": false,
-				"error":     err.Error(),
-			}).Warn("non-retriable error, not retrying")
-			return err
-		}
-
-		// Don't retry on last attempt
-		if attempt == maxRetries {
-			break
-		}
-
-		// Record retry attempt metric
-		c.retryAttempts.Add(ctx, 1, metric.WithAttributes(
-			attribute.String("operation", operation),
-			attribute.Int("attempt", attempt+1),
-		))
-
-		// Calculate delay with exponential backoff and jitter
-		delay := time.Duration(float64(baseDelay) * math.Pow(2, float64(attempt)))
-		if delay > maxDelay {
-			delay = maxDelay
-		}
-
-		c.log.WithFields(logrus.Fields{
-			"operation":    operation,
-			"attempt":      attempt + 1,
-			"next_attempt": attempt + 2,
-			"delay":        delay.String(),
-			"error":        err.Error(),
-		}).Warn("retriable error, retrying after delay")
-
-		// Wait with context cancellation support
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-time.After(delay):
-			// Continue to next attempt
-		}
-	}
-
-	c.log.WithFields(logrus.Fields{
-		"operation":      operation,
-		"max_attempts":   maxRetries + 1,
-		"total_attempts": maxRetries + 1,
-		"final_error":    lastErr.Error(),
-	}).Error("operation failed after all retry attempts")
-
-	return lastErr
 }
 
 func (c *ClusterUpgrader) isUpgradeStuck(ctx context.Context, clusterUpgrade *model.ClusterUpgradeStatus, projectID string, env *model.Environment) bool {
@@ -833,7 +717,7 @@ func (c *ClusterUpgrader) validateUpgradeAgainstGKE(ctx context.Context, cluster
 				return false
 			}
 			// Check if nodes need upgrading - if so, this is normal (not stuck)
-			needsNodeUpgrade, err := c.checkIfNodesNeedUpgrade(ctx, clusterUpgrade, projectID, env, log)
+			needsNodeUpgrade, err := c.checkIfNodesNeedUpgrade(ctx, clusterUpgrade, projectID, env)
 			if err != nil {
 				log.WithError(err).Debug("failed to check node upgrade status")
 				return false
@@ -884,7 +768,7 @@ func (c *ClusterUpgrader) isMasterUpgradeComplete(ctx context.Context, clusterUp
 }
 
 // checkIfNodesNeedUpgrade checks if there are any node pools that need upgrading to the target version
-func (c *ClusterUpgrader) checkIfNodesNeedUpgrade(ctx context.Context, clusterUpgrade *model.ClusterUpgradeStatus, projectID string, env *model.Environment, log logrus.FieldLogger) (bool, error) {
+func (c *ClusterUpgrader) checkIfNodesNeedUpgrade(ctx context.Context, clusterUpgrade *model.ClusterUpgradeStatus, projectID string, env *model.Environment) (bool, error) {
 	nodePools, err := c.client.GetNodePools(ctx, projectID, env)
 	if err != nil {
 		return false, err

@@ -85,7 +85,7 @@ func TestRetryWithBackoff(t *testing.T) {
 
 	t.Run("success on first try", func(t *testing.T) {
 		callCount := 0
-		err := upgrader.retryWithBackoff(context.Background(), "test_operation", func() error {
+		err := upgrader.retryer.WithBackoff(context.Background(), "test_operation", func() error {
 			callCount++
 			return nil
 		})
@@ -96,7 +96,7 @@ func TestRetryWithBackoff(t *testing.T) {
 
 	t.Run("success after retries", func(t *testing.T) {
 		callCount := 0
-		err := upgrader.retryWithBackoff(context.Background(), "test_operation", func() error {
+		err := upgrader.retryer.WithBackoff(context.Background(), "test_operation", func() error {
 			callCount++
 			if callCount < 3 {
 				return createAPIError(codes.Unavailable, "temporary failure")
@@ -110,7 +110,7 @@ func TestRetryWithBackoff(t *testing.T) {
 
 	t.Run("non-retriable error stops immediately", func(t *testing.T) {
 		callCount := 0
-		err := upgrader.retryWithBackoff(context.Background(), "test_operation", func() error {
+		err := upgrader.retryer.WithBackoff(context.Background(), "test_operation", func() error {
 			callCount++
 			return createAPIError(codes.InvalidArgument, "invalid argument")
 		})
@@ -122,7 +122,7 @@ func TestRetryWithBackoff(t *testing.T) {
 
 	t.Run("max retries exceeded", func(t *testing.T) {
 		callCount := 0
-		err := upgrader.retryWithBackoff(context.Background(), "test_operation", func() error {
+		err := upgrader.retryer.WithBackoff(context.Background(), "test_operation", func() error {
 			callCount++
 			return createAPIError(codes.Unavailable, "always failing")
 		})
@@ -137,7 +137,7 @@ func TestRetryWithBackoff(t *testing.T) {
 		defer cancel()
 
 		callCount := 0
-		err := upgrader.retryWithBackoff(ctx, "test_operation", func() error {
+		err := upgrader.retryer.WithBackoff(ctx, "test_operation", func() error {
 			callCount++
 			if callCount == 2 {
 				cancel() // Cancel context during retry delay
