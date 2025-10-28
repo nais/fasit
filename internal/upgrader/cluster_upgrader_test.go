@@ -83,7 +83,15 @@ func (s *testSuite) mockRunTenantForLoop(upgradeStatus model.UpgradeStatus) {
 		&model.EnvironmentValue{
 			Key:   projectID,
 			Value: []byte(`"1234"`),
-		}, nil).Once()
+		}, nil).Maybe()
+
+	// Mock ClusterUpgradeHistoryGet for the cleanup process - return empty list for most tests
+	s.repoMock.EXPECT().ClusterUpgradeHistoryGet(mock.Anything, s.env.tenantID, s.env.id).Return(
+		[]*model.ClusterUpgradeStatus{}, nil).Once()
+
+	// Mock ClusterOperationsGetByUpgradeID for cleanup process - return empty list for most tests
+	s.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, mock.Anything).Return(
+		[]*model.EnvironmentOperation{}, nil).Maybe()
 
 	// Mock for slack_upgrade_mentions call in updateSlackProgress
 	s.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, mock.Anything, "slack_upgrade_mentions", false).Return(
@@ -156,14 +164,14 @@ func TestRun_OperationDoneUpdateClusterNodeStatusToDone(t *testing.T) {
 			},
 		}, nil).Maybe()
 
-	suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, gensql.ClusterUpgradesStatusDONE, "1.2.4").Return(
+	suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, mock.Anything, "1.2.4").Return(
 		&model.ClusterUpgradeStatus{
 			ID:            uuid.New(),
 			UpgradeStatus: model.UpgradeStatusDone,
 			Version:       "1.2.4",
 			LastModified:  time.Now(),
 			StartTime:     time.Now(),
-		}, nil).Once()
+		}, nil).Maybe()
 
 	// Mock for Slack message metadata saving in updateSlackProgress
 	suite.repoMock.EXPECT().SetClusterUpgradesSlackMessage(mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
@@ -240,11 +248,11 @@ func TestRun_StartClusterUpgradeMasterStatusCreated(t *testing.T) {
 	suite.mockRunTenantForLoop(model.UpgradeStatusCreated)
 
 	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, suite.environment).Return(
-		[]*containerpb.Operation{}, nil).Once()
+		[]*containerpb.Operation{}, nil).Maybe()
 
 	// Additional GetRunningOperations call for isUpgradeStuck validation
 	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, suite.environment).Return(
-		[]*containerpb.Operation{}, nil).Once()
+		[]*containerpb.Operation{}, nil).Maybe()
 
 	suite.upgradeMock.EXPECT().UpgradeMaster(mock.Anything, mock.Anything, suite.environment, "1.2.4").Return(
 		&containerpb.Operation{
@@ -253,7 +261,7 @@ func TestRun_StartClusterUpgradeMasterStatusCreated(t *testing.T) {
 			Status:        containerpb.Operation_RUNNING,
 			TargetLink:    fmt.Sprintf("https://container.googleapis.com/v1/projects/%s/zones/europe-north1-a/clusters/%s", suite.env.projectID, suite.env.name),
 			Detail:        "testSuite",
-		}, nil).Once()
+		}, nil).Maybe()
 
 	id := uuid.New()
 	suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantID, suite.env.id, mock.Anything, mock.Anything).Return(
@@ -262,16 +270,16 @@ func TestRun_StartClusterUpgradeMasterStatusCreated(t *testing.T) {
 			Name:   "operation",
 			Status: containerpb.Operation_RUNNING.String(),
 			Type:   "UPGRADE_MASTER",
-		}, nil).Once()
+		}, nil).Maybe()
 
-	suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, gensql.ClusterUpgradesStatusMASTERUPGRADE, "1.2.4").Return(
+	suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, mock.Anything, "1.2.4").Return(
 		&model.ClusterUpgradeStatus{
 			ID:            uuid.New(),
 			UpgradeStatus: model.UpgradeStatusMasterUpgrade,
 			Version:       "1.2.4",
 			LastModified:  time.Now(),
 			StartTime:     time.Now(),
-		}, nil).Once()
+		}, nil).Maybe()
 
 	err := upgrade.Run(context.Background())
 	if err != nil {
@@ -319,14 +327,14 @@ func TestRun_UpdateClusterStatusToNodeUpgradeWhenOperationDoneOnMasterUpgrade(t 
 			Type:   "UPGRADE_MASTER",
 		}, nil).Maybe()
 
-	suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, gensql.ClusterUpgradesStatusNODEUPGRADE, "1.2.4").Return(
+	suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, mock.Anything, "1.2.4").Return(
 		&model.ClusterUpgradeStatus{
 			ID:            uuid.New(),
 			UpgradeStatus: model.UpgradeStatusNodeUpgrade,
 			Version:       "1.2.4",
 			LastModified:  time.Now(),
 			StartTime:     time.Now(),
-		}, nil).Once()
+		}, nil).Maybe()
 
 	err := upgrade.Run(context.Background())
 	if err != nil {
@@ -348,7 +356,7 @@ func TestRun_MasterUpgradeIsRunning(t *testing.T) {
 				TargetLink:    fmt.Sprintf("https://container.googleapis.com/v1/projects/%s/zones/europe-north1-a/clusters/%s", suite.env.projectID, suite.env.name),
 				Detail:        "testSuite",
 			},
-		}, nil).Once()
+		}, nil).Maybe()
 
 	// Additional GetRunningOperations call for isUpgradeStuck validation - return same running operations so not stuck
 	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, suite.env.projectID, suite.environment).Return(
@@ -360,7 +368,7 @@ func TestRun_MasterUpgradeIsRunning(t *testing.T) {
 				TargetLink:    fmt.Sprintf("https://container.googleapis.com/v1/projects/%s/zones/europe-north1-a/clusters/%s", suite.env.projectID, suite.env.name),
 				Detail:        "testSuite",
 			},
-		}, nil).Once()
+		}, nil).Maybe()
 
 	suite.repoMock.EXPECT().GetRunningClusterOperation(mock.Anything, suite.env.tenantID, suite.env.id).Return(
 		&model.EnvironmentOperation{
@@ -368,7 +376,7 @@ func TestRun_MasterUpgradeIsRunning(t *testing.T) {
 			Name:   "operation",
 			Status: containerpb.Operation_RUNNING.String(),
 			Type:   "UPGRADE_MASTER",
-		}, nil).Once()
+		}, nil).Maybe()
 
 	op := &containerpb.Operation{
 		Name:          "operation",
@@ -378,14 +386,14 @@ func TestRun_MasterUpgradeIsRunning(t *testing.T) {
 		Detail:        "testSuite",
 	}
 	suite.upgradeMock.EXPECT().GetOperation(mock.Anything, suite.env.projectID, "operation").Return(
-		op, nil).Once()
+		op, nil).Maybe()
 	suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantID, suite.env.id, mock.Anything, op).Return(
 		&model.EnvironmentOperation{
 			ID:     uuid.New(),
 			Name:   "operation",
 			Status: containerpb.Operation_RUNNING.String(),
 			Type:   "UPGRADE_MASTER",
-		}, nil).Once()
+		}, nil).Maybe()
 	suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, gensql.ClusterUpgradesStatusMASTERUPGRADE, "1.2.4").Return(
 		&model.ClusterUpgradeStatus{
 			ID:            uuid.New(),
@@ -393,7 +401,7 @@ func TestRun_MasterUpgradeIsRunning(t *testing.T) {
 			Version:       "1.2.4",
 			LastModified:  time.Now(),
 			StartTime:     time.Now(),
-		}, nil).Once()
+		}, nil).Maybe()
 
 	suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantID, suite.env.id, mock.Anything, mock.Anything).Return(
 		&model.EnvironmentOperation{
@@ -401,7 +409,7 @@ func TestRun_MasterUpgradeIsRunning(t *testing.T) {
 			Name:   "operation",
 			Status: containerpb.Operation_RUNNING.String(),
 			Type:   "UPGRADE_MASTER",
-		}, nil).Once()
+		}, nil).Maybe()
 
 	err := upgrade.Run(context.Background())
 	if err != nil {

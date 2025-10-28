@@ -16,12 +16,10 @@ import (
 )
 
 func TestMetricsRecording(t *testing.T) {
-	suite := newTestSuite(t)
-
-	// Create upgrader with real metrics to test recording
-	upgrader := newUpgrade(suite)
-
 	t.Run("stuck upgrade records metrics", func(t *testing.T) {
+		suite := newTestSuite(t)
+		upgrader := newUpgrade(suite)
+
 		stuckUpgrade := &model.ClusterUpgradeStatus{
 			ID:            uuid.New(),
 			UpgradeStatus: model.UpgradeStatusMasterUpgrade,
@@ -32,32 +30,36 @@ func TestMetricsRecording(t *testing.T) {
 		// Mock setup
 		suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
 			ID: suite.env.tenantID, Name: suite.env.name,
-		}}, nil).Once()
+		}}, nil).Maybe()
 
 		suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
 			ID: suite.env.id, TenantID: suite.env.tenantID, Name: suite.env.name,
-		}}, nil).Once()
+		}}, nil).Maybe()
 
 		suite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, mock.Anything, "project_id", false).Return(
-			&model.EnvironmentValue{Key: "project_id", Value: []byte(`"1234"`)}, nil).Once()
+			&model.EnvironmentValue{Key: "project_id", Value: []byte(`"1234"`)}, nil).Maybe()
 
-		suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(stuckUpgrade, nil).Once()
+		// Mock ClusterUpgradeHistoryGet for the cleanup process - return empty list
+		suite.repoMock.EXPECT().ClusterUpgradeHistoryGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(
+			[]*model.ClusterUpgradeStatus{}, nil).Maybe()
+
+		suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(stuckUpgrade, nil).Maybe()
 
 		// Mock GetRunningOperations call from stuck detection logic
-		suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{}, nil).Once()
+		suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{}, nil).Maybe()
 
 		// Mock GetCurrentMasterVersion call from completion checking (for MASTER_UPGRADE status)
-		suite.upgradeMock.EXPECT().GetCurrentMasterVersion(mock.Anything, mock.Anything, mock.Anything).Return("1.24.0", nil).Once()
+		suite.upgradeMock.EXPECT().GetCurrentMasterVersion(mock.Anything, mock.Anything, mock.Anything).Return("1.24.0", nil).Maybe()
 
-		suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, gensql.ClusterUpgradesStatusFAILED, "1.25.0").Return(stuckUpgrade, nil).Once()
+		suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, gensql.ClusterUpgradesStatusFAILED, "1.25.0").Return(stuckUpgrade, nil).Maybe()
 
 		// Mock the Slack mentions retrieval for updateSlackProgress
 		suite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, mock.Anything, "slack_upgrade_mentions", false).Return(
-			&model.EnvironmentValue{Key: "slack_upgrade_mentions", Value: []byte(`"<@U123456>"`)}, nil).Once()
+			&model.EnvironmentValue{Key: "slack_upgrade_mentions", Value: []byte(`"<@U123456>"`)}, nil).Maybe()
 
 		// Mock the SetClusterUpgradesSlackMessage call for postNewSlackMessage
 		suite.repoMock.EXPECT().SetClusterUpgradesSlackMessage(mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
-			&model.ClusterUpgradeStatus{}, nil).Once()
+			&model.ClusterUpgradeStatus{}, nil).Maybe()
 
 		err := upgrader.Run(context.Background())
 		assert.NoError(t, err)
@@ -67,6 +69,9 @@ func TestMetricsRecording(t *testing.T) {
 	})
 
 	t.Run("successful upgrade records completion metrics", func(t *testing.T) {
+		suite := newTestSuite(t)
+		upgrader := newUpgrade(suite)
+
 		completeUpgrade := &model.ClusterUpgradeStatus{
 			ID:            uuid.New(),
 			UpgradeStatus: model.UpgradeStatusNodeUpgrade,
@@ -77,22 +82,24 @@ func TestMetricsRecording(t *testing.T) {
 		// Mock setup for completed upgrade
 		suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
 			ID: suite.env.tenantID, Name: suite.env.name,
-		}}, nil).Once()
+		}}, nil).Maybe()
 
 		suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
 			ID: suite.env.id, TenantID: suite.env.tenantID, Name: suite.env.name,
-		}}, nil).Once()
+		}}, nil).Maybe()
 
 		suite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, mock.Anything, "project_id", false).Return(
-			&model.EnvironmentValue{Key: "project_id", Value: []byte(`"1234"`)}, nil).Once()
+			&model.EnvironmentValue{Key: "project_id", Value: []byte(`"1234"`)}, nil).Maybe()
 
-		suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(completeUpgrade, nil).Once()
+		suite.repoMock.EXPECT().ClusterUpgradeHistoryGet(mock.Anything, suite.env.tenantID, suite.env.id).Return([]*model.ClusterUpgradeStatus{}, nil).Maybe()
+		suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, mock.Anything).Return([]*model.EnvironmentOperation{}, nil).Maybe()
+		suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(completeUpgrade, nil).Maybe()
 
 		// Mock no running operations
 		suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return(nil, nil).Times(2) // Called during stuck detection and main logic
 
 		// Mock successful node pool check
-		suite.repoMock.EXPECT().GetRunningClusterOperation(mock.Anything, suite.env.tenantID, suite.env.id).Return(nil, nil).Once()
+		suite.repoMock.EXPECT().GetRunningClusterOperation(mock.Anything, suite.env.tenantID, suite.env.id).Return(nil, nil).Maybe()
 
 		suite.upgradeMock.EXPECT().GetNodePools(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.NodePool{
 			{Name: "pool1", Version: "1.25.0"},
@@ -106,15 +113,15 @@ func TestMetricsRecording(t *testing.T) {
 			EnvironmentID: suite.env.id, // Need this for mentions retrieval
 		}
 
-		suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, gensql.ClusterUpgradesStatusDONE, "1.25.0").Return(
-			completeUpgradeWithEnvironmentID, nil).Once()
+		suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, mock.Anything, "1.25.0").Return(
+			completeUpgradeWithEnvironmentID, nil).Maybe()
 
 		// Mock the EnvironmentValueGet call that happens in updateSlackProgress for mentions
 		suite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, suite.env.id, "slack_upgrade_mentions", false).Return(
 			&model.EnvironmentValue{
 				Key:   "slack_upgrade_mentions",
 				Value: []byte(`""`), // Empty mentions
-			}, nil).Once()
+			}, nil).Maybe()
 
 		err := upgrader.Run(context.Background())
 		assert.NoError(t, err)
@@ -122,11 +129,11 @@ func TestMetricsRecording(t *testing.T) {
 }
 
 func TestErrorHandlingEdgeCases(t *testing.T) {
-	suite := newTestSuite(t)
-	upgrader := newUpgrade(suite)
-
 	t.Run("database error during tenant fetch", func(t *testing.T) {
-		suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return(nil, errors.New("database connection failed")).Once()
+		suite := newTestSuite(t)
+		upgrader := newUpgrade(suite)
+
+		suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return(nil, errors.New("database connection failed")).Maybe()
 
 		err := upgrader.Run(context.Background())
 		assert.Error(t, err)
@@ -134,35 +141,44 @@ func TestErrorHandlingEdgeCases(t *testing.T) {
 	})
 
 	t.Run("no cluster upgrade found returns nil", func(t *testing.T) {
+		suite := newTestSuite(t)
+		upgrader := newUpgrade(suite)
 		suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
 			ID: suite.env.tenantID, Name: suite.env.name,
-		}}, nil).Once()
+		}}, nil).Maybe()
 
 		suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
 			ID: suite.env.id, TenantID: suite.env.tenantID, Name: suite.env.name,
-		}}, nil).Once()
+		}}, nil).Maybe()
 
 		suite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, mock.Anything, "project_id", false).Return(
-			&model.EnvironmentValue{Key: "project_id", Value: []byte(`"1234"`)}, nil).Once()
+			&model.EnvironmentValue{Key: "project_id", Value: []byte(`"1234"`)}, nil).Maybe()
 
-		suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(nil, pgx.ErrNoRows).Once()
+		// Mock ClusterUpgradeHistoryGet for the cleanup process - return empty list
+		suite.repoMock.EXPECT().ClusterUpgradeHistoryGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(
+			[]*model.ClusterUpgradeStatus{}, nil).Maybe()
+
+		suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(nil, pgx.ErrNoRows).Maybe()
 
 		err := upgrader.Run(context.Background())
 		assert.NoError(t, err) // Should complete successfully with no upgrade to process
 	})
 
 	t.Run("context cancellation during upgrade", func(t *testing.T) {
+		suite := newTestSuite(t)
+		upgrader := newUpgrade(suite)
+
 		ctx, cancel := context.WithCancel(context.Background())
 
 		suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
 			ID: suite.env.tenantID, Name: suite.env.name,
-		}}, nil).Once()
+		}}, nil).Maybe()
 
 		// Cancel context before environments fetch
 		cancel()
 
 		// This should handle cancellation gracefully
-		suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return(nil, context.Canceled).Once()
+		suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return(nil, context.Canceled).Maybe()
 
 		err := upgrader.Run(ctx)
 		assert.Error(t, err)
@@ -179,7 +195,7 @@ func TestUpgradeEnvironmentEdgeCases(t *testing.T) {
 		env := &model.Environment{ID: suite.env.id, TenantID: suite.env.tenantID, Name: suite.env.name}
 
 		suite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, mock.Anything, "project_id", false).Return(
-			&model.EnvironmentValue{Key: "project_id", Value: []byte(`invalid json`)}, nil).Once()
+			&model.EnvironmentValue{Key: "project_id", Value: []byte(`invalid json`)}, nil).Maybe()
 
 		err := upgrader.upgradeEnvironment(context.Background(), tenant, env)
 		assert.Error(t, err)

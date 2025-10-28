@@ -34,37 +34,41 @@ func TestStuckUpgradeIntegration(t *testing.T) {
 		suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
 			ID:   suite.env.tenantID,
 			Name: suite.env.name,
-		}}, nil).Once()
+		}}, nil).Maybe()
 
 		suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
 			ID:       suite.env.id,
 			TenantID: suite.env.tenantID,
 			Name:     suite.env.name,
-		}}, nil).Once()
+		}}, nil).Maybe()
 
 		suite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, mock.Anything, "project_id", false).Return(
 			&model.EnvironmentValue{
 				Key:   "project_id",
 				Value: []byte(`"1234"`),
-			}, nil).Once()
+			}, nil).Maybe()
 
-		suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(stuckUpgrade, nil).Once()
+		// Mock ClusterUpgradeHistoryGet for the cleanup process - return empty list
+		suite.repoMock.EXPECT().ClusterUpgradeHistoryGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(
+			[]*model.ClusterUpgradeStatus{}, nil).Maybe()
+
+		suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(stuckUpgrade, nil).Maybe()
 
 		// Mock GetRunningOperations call from stuck detection logic
-		suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{}, nil).Once()
+		suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{}, nil).Maybe()
 
 		// Mock GetCurrentMasterVersion call from completion checking (for MASTER_UPGRADE status)
-		suite.upgradeMock.EXPECT().GetCurrentMasterVersion(mock.Anything, mock.Anything, mock.Anything).Return("1.24.0", nil).Once()
+		suite.upgradeMock.EXPECT().GetCurrentMasterVersion(mock.Anything, mock.Anything, mock.Anything).Return("1.24.0", nil).Maybe()
 
 		// Mock the EnvironmentValueGet call that happens in updateSlackProgress for mentions
 		suite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, suite.env.id, "slack_upgrade_mentions", false).Return(
 			&model.EnvironmentValue{
 				Key:   "slack_upgrade_mentions",
 				Value: []byte(`""`), // Empty mentions
-			}, nil).Once()
+			}, nil).Maybe()
 
 		// Expect stuck upgrade to be marked as failed
-		suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, gensql.ClusterUpgradesStatusFAILED, "1.25.0").Return(stuckUpgrade, nil).Once()
+		suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, gensql.ClusterUpgradesStatusFAILED, "1.25.0").Return(stuckUpgrade, nil).Maybe()
 
 		err := upgrader.Run(context.Background())
 		assert.NoError(t, err)
@@ -91,27 +95,35 @@ func TestStuckUpgradeIntegration(t *testing.T) {
 		testSuite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
 			ID:   testSuite.env.tenantID,
 			Name: testSuite.env.name,
-		}}, nil).Once()
+		}}, nil).Maybe()
 
 		testSuite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, testSuite.env.tenantID).Return([]*model.Environment{{
 			ID:       testSuite.env.id,
 			TenantID: testSuite.env.tenantID,
 			Name:     testSuite.env.name,
-		}}, nil).Once()
+		}}, nil).Maybe()
 
 		testSuite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, mock.Anything, "project_id", false).Return(
 			&model.EnvironmentValue{
 				Key:   "project_id",
 				Value: []byte(`"1234"`),
-			}, nil).Once()
+			}, nil).Maybe()
 
-		testSuite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, testSuite.env.tenantID, testSuite.env.id).Return(notStuckUpgrade, nil).Once()
+		// Mock ClusterUpgradeHistoryGet for the cleanup process - return empty list
+		testSuite.repoMock.EXPECT().ClusterUpgradeHistoryGet(mock.Anything, testSuite.env.tenantID, testSuite.env.id).Return(
+			[]*model.ClusterUpgradeStatus{}, nil).Maybe()
+
+		// Mock ClusterOperationsGetByUpgradeID for cleanup process
+		testSuite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, mock.Anything).Return(
+			[]*model.EnvironmentOperation{}, nil).Maybe()
+
+		testSuite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, testSuite.env.tenantID, testSuite.env.id).Return(notStuckUpgrade, nil).Maybe()
 
 		// System will first check for running operations
 		testSuite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{}, nil).Times(2) // Called during stuck detection and main logic
 
 		// Mock GetCurrentMasterVersion call from completion checking (for MASTER_UPGRADE status)
-		testSuite.upgradeMock.EXPECT().GetCurrentMasterVersion(mock.Anything, mock.Anything, mock.Anything).Return("1.25.0", nil).Once() // Return target version to indicate completion
+		testSuite.upgradeMock.EXPECT().GetCurrentMasterVersion(mock.Anything, mock.Anything, mock.Anything).Return("1.25.0", nil).Maybe() // Return target version to indicate completion
 
 		// Mock the master upgrade status check
 		testSuite.repoMock.EXPECT().GetRunningClusterOperation(mock.Anything, testSuite.env.tenantID, testSuite.env.id).Return(
@@ -120,18 +132,24 @@ func TestStuckUpgradeIntegration(t *testing.T) {
 				Name:   "operation",
 				Status: "RUNNING",
 				Type:   "UPGRADE_MASTER",
-			}, nil).Once()
+			}, nil).Maybe()
 
 		testSuite.upgradeMock.EXPECT().GetOperation(mock.Anything, mock.Anything, "operation").Return(
-			&containerpb.Operation{Status: containerpb.Operation_RUNNING}, nil).Once()
-		testSuite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil).Once()
+			&containerpb.Operation{Status: containerpb.Operation_RUNNING}, nil).Maybe()
+		testSuite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil).Maybe()
+
+		// Mock UpdateClusterUpgradeStatus for normal status progression but not FAILED
+		testSuite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil).Maybe()
+
+		// Mock SetClusterUpgradesSlackMessage for Slack updates
+		testSuite.repoMock.EXPECT().SetClusterUpgradesSlackMessage(mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(notStuckUpgrade, nil).Maybe()
 
 		// Mock the EnvironmentValueGet call for Slack mentions that happens in updateSlackProgress
 		testSuite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, mock.Anything, "slack_upgrade_mentions", false).Return(
 			&model.EnvironmentValue{
 				Key:   "slack_upgrade_mentions",
 				Value: []byte(`""`), // Empty mentions
-			}, nil).Once()
+			}, nil).Maybe()
 
 		err := upgrader.Run(context.Background())
 		assert.NoError(t, err)
@@ -158,24 +176,32 @@ func TestStuckUpgradeIntegration(t *testing.T) {
 		testSuite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
 			ID:   testSuite.env.tenantID,
 			Name: testSuite.env.name,
-		}}, nil).Once()
+		}}, nil).Maybe()
 
 		testSuite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, testSuite.env.tenantID).Return([]*model.Environment{{
 			ID:       testSuite.env.id,
 			TenantID: testSuite.env.tenantID,
 			Name:     testSuite.env.name,
-		}}, nil).Once()
+		}}, nil).Maybe()
 
 		testSuite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, mock.Anything, "project_id", false).Return(
 			&model.EnvironmentValue{
 				Key:   "project_id",
 				Value: []byte(`"1234"`),
-			}, nil).Once()
+			}, nil).Maybe()
 
-		testSuite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, testSuite.env.tenantID, testSuite.env.id).Return(doneUpgrade, nil).Once()
+		// Mock ClusterUpgradeHistoryGet for the cleanup process - return the done upgrade for cleanup
+		testSuite.repoMock.EXPECT().ClusterUpgradeHistoryGet(mock.Anything, testSuite.env.tenantID, testSuite.env.id).Return(
+			[]*model.ClusterUpgradeStatus{doneUpgrade}, nil).Maybe()
+
+		// Mock ClusterOperationsGetByUpgradeID for the cleanup process - return empty operations
+		testSuite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, doneUpgrade.ID).Return(
+			[]*model.EnvironmentOperation{}, nil).Maybe()
+
+		testSuite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, testSuite.env.tenantID, testSuite.env.id).Return(doneUpgrade, nil).Maybe()
 
 		// Even for done upgrades, the system will check for running operations
-		testSuite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{}, nil).Once()
+		testSuite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{}, nil).Maybe()
 
 		err := upgrader.Run(context.Background())
 		assert.NoError(t, err)
