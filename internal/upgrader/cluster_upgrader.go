@@ -347,7 +347,13 @@ func clusterHas(runningOperations []*containerpb.Operation) bool {
 }
 
 func (c *ClusterUpgrader) getAndUpdateRunningOperations(ctx context.Context, projectID string, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus) ([]*containerpb.Operation, error) {
-	// checks if there are any running operations for the environment
+	log := c.log.WithFields(logrus.Fields{
+		"tenant_id":   env.TenantID,
+		"environment": env.Name,
+		"upgrade_id":  clusterUpgrade.ID,
+	})
+
+	// Get current running operations from GKE
 	var runningOperations []*containerpb.Operation
 	err := c.retryer.WithBackoff(ctx, "get_running_operations", func() error {
 		var retryErr error
@@ -358,22 +364,90 @@ func (c *ClusterUpgrader) getAndUpdateRunningOperations(ctx context.Context, pro
 		return nil, err
 	}
 
-	// checks type of operation. if different from UPGRADE_NODES or UPGRADE_MASTER, then skip, else update operation in db
+	// Get all existing operations for this upgrade from database
+	existingOps, err := c.repo.ClusterOperationsGetByUpgradeID(ctx, clusterUpgrade.ID)
+	if err != nil {
+		log.WithError(err).Error("failed to get existing cluster operations")
+		return nil, err
+	}
+
+	log.WithFields(logrus.Fields{
+		"gke_running_operations": len(runningOperations),
+		"db_existing_operations": len(existingOps),
+	}).Debug("syncing cluster operations with GKE state")
+
+	// Track which operations are still running
+	runningOpNames := make(map[string]bool)
+
+	// Update/create operations that are currently running in GKE
 	for _, op := range runningOperations {
 		if op.OperationType != containerpb.Operation_UPGRADE_NODES && op.OperationType != containerpb.Operation_UPGRADE_MASTER {
-			return nil, nil
+			continue
 		}
+
+		runningOpNames[op.Name] = true
 
 		_, err := c.repo.CreateOrUpdateClusterOperation(ctx, env.TenantID, env.ID, clusterUpgrade.ID, op)
 		if err != nil {
+			log.WithError(err).WithField("operation", op.Name).Error("failed to update running operation")
 			return nil, err
 		}
 
-		_, err = c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatus(clusterUpgrade.UpgradeStatus), clusterUpgrade.Version)
-		if err != nil {
-			return nil, err
+		log.WithFields(logrus.Fields{
+			"operation": op.Name,
+			"status":    op.Status.String(),
+			"type":      op.OperationType.String(),
+		}).Debug("updated running operation")
+	}
+
+	// Check for operations that are no longer running in GKE and update their status
+	for _, existingOp := range existingOps {
+		if existingOp.Status != "RUNNING" {
+			continue // Skip operations that are already marked as completed/failed
+		}
+
+		if !runningOpNames[existingOp.Name] {
+			// This operation is marked as RUNNING in our DB but not found in GKE
+			// Need to fetch its current status from GKE
+			log.WithField("operation", existingOp.Name).Debug("checking status of operation no longer running")
+
+			err := c.retryer.WithBackoff(ctx, "get_operation_status", func() error {
+				var gkeOp *containerpb.Operation
+				var retryErr error
+				gkeOp, retryErr = c.client.GetOperation(ctx, projectID, existingOp.Name)
+				if retryErr != nil {
+					return retryErr
+				}
+
+				// Update the operation with its final status
+				_, updateErr := c.repo.CreateOrUpdateClusterOperation(ctx, env.TenantID, env.ID, clusterUpgrade.ID, gkeOp)
+				if updateErr != nil {
+					log.WithError(updateErr).WithField("operation", existingOp.Name).Error("failed to update completed operation")
+					return updateErr
+				}
+
+				log.WithFields(logrus.Fields{
+					"operation":  existingOp.Name,
+					"old_status": existingOp.Status,
+					"new_status": gkeOp.Status.String(),
+					"type":       gkeOp.OperationType.String(),
+				}).Info("updated completed operation status")
+
+				return nil
+			})
+			if err != nil {
+				log.WithError(err).WithField("operation", existingOp.Name).Warn("failed to get operation status from GKE, operation may no longer exist")
+				// Continue processing other operations rather than failing entirely
+			}
 		}
 	}
+
+	// Update cluster upgrade status to ensure consistency
+	_, err = c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatus(clusterUpgrade.UpgradeStatus), clusterUpgrade.Version)
+	if err != nil {
+		return nil, err
+	}
+
 	return runningOperations, nil
 }
 
