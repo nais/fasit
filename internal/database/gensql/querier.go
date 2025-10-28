@@ -39,6 +39,7 @@ type Querier interface {
 	CostForTenant(ctx context.Context, arg CostForTenantParams) ([]CostForTenantRow, error)
 	CostLastDate(ctx context.Context) (pgtype.Date, error)
 	CostUpsert(ctx context.Context, arg []CostUpsertParams) *CostUpsertBatchResults
+	DeleteEnvironmentLabels(ctx context.Context, environmentID uuid.UUID) error
 	DeployInstructionsByID(ctx context.Context, id uuid.UUID) (DeployInstruction, error)
 	DeployInstructionsCreate(ctx context.Context, arg DeployInstructionsCreateParams) (uuid.UUID, error)
 	DeployInstructionsForFeature(ctx context.Context, arg DeployInstructionsForFeatureParams) ([]DeployInstruction, error)
@@ -77,6 +78,7 @@ type Querier interface {
 	FeaturesForKind(ctx context.Context, environmentKind string) ([]FeaturesForKindRow, error)
 	HealthStatusCreateOrUpdate(ctx context.Context, arg HealthStatusCreateOrUpdateParams) (HealthStatus, error)
 	HealthStatusGet(ctx context.Context, environmentID uuid.UUID) (HealthStatus, error)
+	InsertEnvironmentLabel(ctx context.Context, arg InsertEnvironmentLabelParams) error
 	KubernetesNodeCreateOrUpdate(ctx context.Context, arg KubernetesNodeCreateOrUpdateParams) error
 	KubernetesNodeDeleteObsolete(ctx context.Context, environmentID uuid.UUID) error
 	KubernetesNodeStatuses(ctx context.Context, environmentID uuid.UUID) ([]KubernetesNodeStatus, error)

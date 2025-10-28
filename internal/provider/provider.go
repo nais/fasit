@@ -87,9 +87,35 @@ func (s *Server) CreateEnvironment(ctx context.Context, in *protogen.CreateEnvir
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
+	if err := s.repo.SetEnvironmentLabels(ctx, environment.ID, in.Labels); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
 	return &protogen.EnvironmentResponse{
 		Id:       environment.ID.String(),
 		TenantId: tenant.ID.String(),
+		Name:     environment.Name,
+	}, nil
+}
+
+func (s *Server) UpdateEnvironment(ctx context.Context, in *protogen.UpdateEnvironmentRequest) (*protogen.EnvironmentResponse, error) {
+	environmentID, err := uuid.Parse(in.EnvironmentId)
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "Invalid environment id")
+	}
+
+	environment, err := s.repo.EnvironmentGet(ctx, environmentID)
+	if err != nil {
+		return nil, status.Error(codes.NotFound, "Environment not found")
+	}
+
+	if err := s.repo.SetEnvironmentLabels(ctx, environment.ID, in.Labels); err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return &protogen.EnvironmentResponse{
+		Id:       environment.ID.String(),
+		TenantId: environment.TenantID.String(),
 		Name:     environment.Name,
 	}, nil
 }

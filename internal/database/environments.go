@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/database/gensql"
 	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nais/fasit/internal/provider/protogen"
 )
 
 type EnvironmentRepo interface {
@@ -20,6 +21,7 @@ type EnvironmentRepo interface {
 	EnvironmentUpdate(ctx context.Context, environmentID uuid.UUID, p *model.EnvironmentUpdate) (*model.Environment, error)
 	EnvironmentSetAutoUpgrade(ctx context.Context, environmentID uuid.UUID, autoUpgrade bool) (*model.Environment, error)
 	EnvironmentSetReconcile(ctx context.Context, environmentID uuid.UUID, reconcile bool) (*model.Environment, error)
+	SetEnvironmentLabels(ctx context.Context, environmentID uuid.UUID, labels *protogen.EnvironmentLabels) error
 }
 
 func environmentFromSQL(p gensql.Environment) *model.Environment {
@@ -155,6 +157,26 @@ func (r *repo) EnvironmentSetReconcile(ctx context.Context, environmentID uuid.U
 	r.createAudit(ctx, "environment reconcile "+txt, "environments", env.ID.String())
 
 	return environmentFromSQL(env), nil
+}
+
+func (r *repo) SetEnvironmentLabels(ctx context.Context, environmentID uuid.UUID, labels *protogen.EnvironmentLabels) error {
+	// TODO: transaction?
+
+	if err := r.querier.DeleteEnvironmentLabels(ctx, environmentID); err != nil {
+		return err
+	}
+
+	for _, l := range labels.Entries {
+		if err := r.querier.InsertEnvironmentLabel(ctx, gensql.InsertEnvironmentLabelParams{
+			EnvironmentID: environmentID,
+			Key:           l.Key,
+			Value:         l.Value,
+		}); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (r *repo) EnvironmentSetAutoUpgrade(ctx context.Context, environmentID uuid.UUID, autoUpgrade bool) (*model.Environment, error) {

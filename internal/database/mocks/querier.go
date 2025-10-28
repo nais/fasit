@@ -1930,6 +1930,63 @@ func (_c *Querier_CostUpsert_Call) RunAndReturn(run func(ctx context.Context, ar
 	return _c
 }
 
+// DeleteEnvironmentLabels provides a mock function for the type Querier
+func (_mock *Querier) DeleteEnvironmentLabels(ctx context.Context, environmentID uuid.UUID) error {
+	ret := _mock.Called(ctx, environmentID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteEnvironmentLabels")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) error); ok {
+		r0 = returnFunc(ctx, environmentID)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// Querier_DeleteEnvironmentLabels_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteEnvironmentLabels'
+type Querier_DeleteEnvironmentLabels_Call struct {
+	*mock.Call
+}
+
+// DeleteEnvironmentLabels is a helper method to define mock.On call
+//   - ctx context.Context
+//   - environmentID uuid.UUID
+func (_e *Querier_Expecter) DeleteEnvironmentLabels(ctx interface{}, environmentID interface{}) *Querier_DeleteEnvironmentLabels_Call {
+	return &Querier_DeleteEnvironmentLabels_Call{Call: _e.mock.On("DeleteEnvironmentLabels", ctx, environmentID)}
+}
+
+func (_c *Querier_DeleteEnvironmentLabels_Call) Run(run func(ctx context.Context, environmentID uuid.UUID)) *Querier_DeleteEnvironmentLabels_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_DeleteEnvironmentLabels_Call) Return(err error) *Querier_DeleteEnvironmentLabels_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *Querier_DeleteEnvironmentLabels_Call) RunAndReturn(run func(ctx context.Context, environmentID uuid.UUID) error) *Querier_DeleteEnvironmentLabels_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // DeployInstructionsByID provides a mock function for the type Querier
 func (_mock *Querier) DeployInstructionsByID(ctx context.Context, id uuid.UUID) (gensql.DeployInstruction, error) {
 	ret := _mock.Called(ctx, id)
@@ -4407,6 +4464,63 @@ func (_c *Querier_HealthStatusGet_Call) Return(healthStatus gensql.HealthStatus,
 }
 
 func (_c *Querier_HealthStatusGet_Call) RunAndReturn(run func(ctx context.Context, environmentID uuid.UUID) (gensql.HealthStatus, error)) *Querier_HealthStatusGet_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// InsertEnvironmentLabel provides a mock function for the type Querier
+func (_mock *Querier) InsertEnvironmentLabel(ctx context.Context, arg gensql.InsertEnvironmentLabelParams) error {
+	ret := _mock.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for InsertEnvironmentLabel")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, gensql.InsertEnvironmentLabelParams) error); ok {
+		r0 = returnFunc(ctx, arg)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// Querier_InsertEnvironmentLabel_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InsertEnvironmentLabel'
+type Querier_InsertEnvironmentLabel_Call struct {
+	*mock.Call
+}
+
+// InsertEnvironmentLabel is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg gensql.InsertEnvironmentLabelParams
+func (_e *Querier_Expecter) InsertEnvironmentLabel(ctx interface{}, arg interface{}) *Querier_InsertEnvironmentLabel_Call {
+	return &Querier_InsertEnvironmentLabel_Call{Call: _e.mock.On("InsertEnvironmentLabel", ctx, arg)}
+}
+
+func (_c *Querier_InsertEnvironmentLabel_Call) Run(run func(ctx context.Context, arg gensql.InsertEnvironmentLabelParams)) *Querier_InsertEnvironmentLabel_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 gensql.InsertEnvironmentLabelParams
+		if args[1] != nil {
+			arg1 = args[1].(gensql.InsertEnvironmentLabelParams)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_InsertEnvironmentLabel_Call) Return(err error) *Querier_InsertEnvironmentLabel_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *Querier_InsertEnvironmentLabel_Call) RunAndReturn(run func(ctx context.Context, arg gensql.InsertEnvironmentLabelParams) error) *Querier_InsertEnvironmentLabel_Call {
 	_c.Call.Return(run)
 	return _c
 }
