@@ -128,6 +128,16 @@ func (c *ClusterUpgrader) Run(ctx context.Context) error {
 		totalEnvironments += len(envs)
 
 		for _, env := range envs {
+			// First clean up any dangling operations from completed upgrades
+			if err := c.cleanupCompletedUpgradeOperations(ctx, tenant, env); err != nil {
+				c.log.WithError(err).WithFields(logrus.Fields{
+					"tenant":      tenant.Name,
+					"environment": env.Name,
+				}).Warn("failed to cleanup completed upgrade operations")
+				// Don't fail the entire process for cleanup issues
+			}
+
+			// Then process active upgrades
 			if err := c.upgradeEnvironment(ctx, tenant, env); err != nil {
 				c.log.WithError(err).WithFields(logrus.Fields{
 					"tenant":      tenant.Name,
@@ -221,6 +231,15 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 
 		// Send Slack notification about stuck upgrade
 		c.updateSlackProgress(tenant.Name, env.Name, clusterUpgrade)
+		return nil
+	}
+
+	// Skip processing for completed upgrades - they're already done
+	if clusterUpgrade.UpgradeStatus == model.UpgradeStatusDone || clusterUpgrade.UpgradeStatus == model.UpgradeStatusFailed {
+		log.WithFields(logrus.Fields{
+			"target_version": clusterUpgrade.Version,
+			"status":         clusterUpgrade.UpgradeStatus,
+		}).Debug("upgrade already completed, skipping")
 		return nil
 	}
 
@@ -333,6 +352,22 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 
 		c.upgradeInProgress.Add(ctx, -1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "nodePools")...))
 		log.WithField("target_version", upgradeStatus.Version).Info("nodepool upgrade done")
+
+	case model.UpgradeStatusDone:
+		// Upgrade is already completed - this should have been handled earlier
+		log.WithFields(logrus.Fields{
+			"target_version": clusterUpgrade.Version,
+			"status":         clusterUpgrade.UpgradeStatus,
+		}).Debug("upgrade already completed")
+		return nil
+
+	case model.UpgradeStatusFailed:
+		// Upgrade has failed - no further action needed
+		log.WithFields(logrus.Fields{
+			"target_version": clusterUpgrade.Version,
+			"status":         clusterUpgrade.UpgradeStatus,
+		}).Debug("upgrade failed, no action needed")
+		return nil
 	}
 	return nil
 }
@@ -402,8 +437,17 @@ func (c *ClusterUpgrader) getAndUpdateRunningOperations(ctx context.Context, pro
 
 	// Check for operations that are no longer running in GKE and update their status
 	for _, existingOp := range existingOps {
+		// Skip operations that are already in a final state
+		if existingOp.Status == "DONE" || existingOp.Status == "ABORTING" || existingOp.Status == "ABORTED" {
+			log.WithFields(logrus.Fields{
+				"operation": existingOp.Name,
+				"status":    existingOp.Status,
+			}).Debug("skipping operation already in final state")
+			continue
+		}
+
 		if existingOp.Status != "RUNNING" {
-			continue // Skip operations that are already marked as completed/failed
+			continue // Skip operations that are not in RUNNING state
 		}
 
 		if !runningOpNames[existingOp.Name] {
@@ -449,6 +493,143 @@ func (c *ClusterUpgrader) getAndUpdateRunningOperations(ctx context.Context, pro
 	}
 
 	return runningOperations, nil
+}
+
+// cleanupDanglingOperations handles cleanup of stale operations for completed upgrades
+func (c *ClusterUpgrader) cleanupDanglingOperations(ctx context.Context, projectID string, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus) error {
+	log := c.log.WithFields(logrus.Fields{
+		"tenant_id":      env.TenantID,
+		"environment":    env.Name,
+		"upgrade_id":     clusterUpgrade.ID,
+		"upgrade_status": clusterUpgrade.UpgradeStatus,
+	})
+
+	// Get all existing operations for this completed upgrade from database
+	existingOps, err := c.repo.ClusterOperationsGetByUpgradeID(ctx, clusterUpgrade.ID)
+	if err != nil {
+		log.WithError(err).Error("failed to get existing cluster operations for cleanup")
+		return err
+	}
+
+	if len(existingOps) == 0 {
+		log.Debug("no operations found for completed upgrade, nothing to cleanup")
+		return nil
+	}
+
+	// Count operations that need cleanup
+	danglingCount := 0
+	for _, op := range existingOps {
+		if op.Status == "RUNNING" {
+			danglingCount++
+		}
+	}
+
+	if danglingCount == 0 {
+		log.WithField("total_operations", len(existingOps)).Debug("all operations for completed upgrade are already in final state")
+		return nil
+	}
+
+	log.WithFields(logrus.Fields{
+		"total_operations": len(existingOps),
+		"dangling_running": danglingCount,
+	}).Info("cleaning up dangling operations for completed upgrade")
+
+	// Process each operation that might be dangling
+	for _, existingOp := range existingOps {
+		// Skip operations that are already in a final state
+		if existingOp.Status == "DONE" || existingOp.Status == "ABORTING" || existingOp.Status == "ABORTED" {
+			continue
+		}
+
+		if existingOp.Status == "RUNNING" {
+			// Try to get the current status from GKE
+			log.WithField("operation", existingOp.Name).Debug("checking final status of dangling operation")
+
+			err := c.retryer.WithBackoff(ctx, "cleanup_operation_status", func() error {
+				var gkeOp *containerpb.Operation
+				var retryErr error
+				gkeOp, retryErr = c.client.GetOperation(ctx, projectID, existingOp.Name)
+				if retryErr != nil {
+					return retryErr
+				}
+
+				// Update the operation with its final status
+				_, updateErr := c.repo.CreateOrUpdateClusterOperation(ctx, env.TenantID, env.ID, clusterUpgrade.ID, gkeOp)
+				if updateErr != nil {
+					log.WithError(updateErr).WithField("operation", existingOp.Name).Error("failed to update dangling operation")
+					return updateErr
+				}
+
+				log.WithFields(logrus.Fields{
+					"operation":    existingOp.Name,
+					"old_status":   existingOp.Status,
+					"final_status": gkeOp.Status.String(),
+					"type":         gkeOp.OperationType.String(),
+				}).Info("cleaned up dangling operation")
+
+				return nil
+			})
+			if err != nil {
+				log.WithError(err).WithField("operation", existingOp.Name).Warn("failed to get operation status from GKE during cleanup, operation may no longer exist")
+				// Continue processing other operations rather than failing entirely
+			}
+		}
+	}
+
+	return nil
+}
+
+// cleanupCompletedUpgradeOperations cleans up dangling operations for completed upgrades
+// This uses the history query to find ALL upgrades (including DONE/FAILED) and clean up their operations
+func (c *ClusterUpgrader) cleanupCompletedUpgradeOperations(ctx context.Context, tenant *model.Tenant, env *model.Environment) error {
+	log := c.log.WithFields(logrus.Fields{
+		"tenant":      tenant.Name,
+		"environment": env.Name,
+	})
+
+	// Get project ID for GKE API calls
+	projectID, err := getProjectID(ctx, c, env.ID)
+	if err != nil {
+		log.WithError(err).Debug("failed to get project ID for cleanup, skipping")
+		return nil // Don't fail cleanup for missing project ID
+	}
+
+	// Get ALL upgrades for this environment (including DONE/FAILED)
+	allUpgrades, err := c.repo.ClusterUpgradeHistoryGet(ctx, env.TenantID, env.ID)
+	if err != nil {
+		log.WithError(err).Debug("failed to get upgrade history for cleanup")
+		return err
+	}
+
+	// Only process completed upgrades that might have stale operations
+	completedUpgrades := make([]*model.ClusterUpgradeStatus, 0)
+	for _, upgrade := range allUpgrades {
+		if upgrade.UpgradeStatus == model.UpgradeStatusDone || upgrade.UpgradeStatus == model.UpgradeStatusFailed {
+			completedUpgrades = append(completedUpgrades, upgrade)
+		}
+	}
+
+	if len(completedUpgrades) == 0 {
+		log.Debug("no completed upgrades found for cleanup")
+		return nil
+	}
+
+	log.WithField("completed_upgrades", len(completedUpgrades)).Debug("checking completed upgrades for dangling operations")
+
+	// Clean up operations for each completed upgrade
+	for _, upgrade := range completedUpgrades {
+		err := c.cleanupDanglingOperations(ctx, projectID, env, upgrade)
+		if err != nil {
+			log.WithError(err).WithFields(logrus.Fields{
+				"upgrade_id":     upgrade.ID,
+				"upgrade_status": upgrade.UpgradeStatus,
+				"version":        upgrade.Version,
+			}).Warn("failed to cleanup operations for completed upgrade")
+			// Continue with other upgrades
+		}
+	}
+
+	return nil
 }
 
 func (c *ClusterUpgrader) upgradeNodes(ctx context.Context, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus, projectID, tenantName string) (*model.ClusterUpgradeStatus, error) {
