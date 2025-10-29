@@ -174,12 +174,12 @@ func (r *environmentResolver) ClusterUpgradeStatus(ctx context.Context, obj *mod
 
 // Versions is the resolver for the versions field.
 func (r *environmentResolver) Versions(ctx context.Context, obj *model.Environment) (*model.EnvironmentVersions, error) {
-	projectId, err := r.Environment().GCPProjectID(ctx, obj)
+	projectID, err := r.Environment().GCPProjectID(ctx, obj)
 	if err != nil {
 		return nil, err
 	}
 
-	if projectId == nil {
+	if projectID == nil {
 		return nil, fmt.Errorf("projectId is nil")
 	}
 
@@ -192,20 +192,20 @@ func (r *environmentResolver) Versions(ctx context.Context, obj *model.Environme
 		return nil, nil
 	}
 
-	channel, err := r.UpgraderClient.GetReleaseChannel(ctx, *projectId, obj)
+	channel, err := r.UpgraderClient.GetReleaseChannel(ctx, *projectID, obj)
 	if err != nil {
 		return nil, err
 	}
-	currentMasterVersion, err := r.UpgraderClient.GetCurrentMasterVersion(ctx, *projectId, obj)
+	currentMasterVersion, err := r.UpgraderClient.GetCurrentMasterVersion(ctx, *projectID, obj)
 	if err != nil {
 		return nil, err
 	}
-	availableVersions, err := r.UpgraderClient.GetAvailableVersions(ctx, *projectId, obj, channel)
+	availableVersions, err := r.UpgraderClient.GetAvailableVersions(ctx, *projectID, obj, channel)
 	if err != nil {
 		return nil, err
 	}
 
-	nodePools, err := r.UpgraderClient.GetNodePools(ctx, *projectId, obj)
+	nodePools, err := r.UpgraderClient.GetNodePools(ctx, *projectID, obj)
 	if err != nil {
 		return nil, err
 	}

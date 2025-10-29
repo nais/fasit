@@ -3,6 +3,8 @@ package database
 import (
 	"context"
 	"errors"
+	"fmt"
+	"math"
 	"strings"
 
 	"cloud.google.com/go/container/apiv1/containerpb"
@@ -12,23 +14,30 @@ import (
 	"github.com/nais/fasit/internal/graph/model"
 )
 
-type ClusterUpgraderRepo interface {
-	CreateOrUpdateClusterOperation(ctx context.Context, tenantId, envId, versionId uuid.UUID, op *containerpb.Operation) (*model.EnvironmentOperation, error)
-	GetRunningClusterOperation(ctx context.Context, tenantId, envId uuid.UUID) (*model.EnvironmentOperation, error)
-	CreateClusterUpgrade(ctx context.Context, tenantId, envId uuid.UUID, version string) (*model.ClusterUpgradeStatus, error)
-	ClusterUpgradeGet(ctx context.Context, tenantId, envId uuid.UUID) (*model.ClusterUpgradeStatus, error)
-	ClusterUpgradeHistoryGet(ctx context.Context, tenantId, envId uuid.UUID) ([]*model.ClusterUpgradeStatus, error)
-	UpdateClusterUpgradeStatus(ctx context.Context, tenantId, envId uuid.UUID, status gensql.ClusterUpgradesStatus, version string) (*model.ClusterUpgradeStatus, error)
-	ClusterUpgradeGetByID(ctx context.Context, id uuid.UUID) (*model.ClusterUpgradeStatus, error)
-	ClusterOperationsGetByID(ctx context.Context, id uuid.UUID) (*model.EnvironmentOperation, error)
-	ClusterOperationsGetByUpgradeID(ctx context.Context, upgradeId uuid.UUID) ([]*model.EnvironmentOperation, error)
-	SetClusterUpgradesSlackMessage(ctx context.Context, id uuid.UUID, slackMessageTs, channelID string) (*model.ClusterUpgradeStatus, error)
+func toInt32(val int) (int32, error) {
+	if val > math.MaxInt32 || val < math.MinInt32 {
+		return 0, fmt.Errorf("toInt32: value %d out of int32 bounds (min: %d, max: %d)", val, math.MinInt32, math.MaxInt32)
+	}
+	return int32(val), nil
 }
 
-func (r *repo) ClusterUpgradeHistoryGet(ctx context.Context, tenantId, envId uuid.UUID) ([]*model.ClusterUpgradeStatus, error) {
+type ClusterUpgraderRepo interface {
+	CreateOrUpdateClusterOperation(ctx context.Context, tenantID, envID, versionID uuid.UUID, op *containerpb.Operation) (*model.EnvironmentOperation, error)
+	GetRunningClusterOperation(ctx context.Context, tenantID, envID uuid.UUID) (*model.EnvironmentOperation, error)
+	CreateClusterUpgrade(ctx context.Context, tenantID, envID uuid.UUID, version string) (*model.ClusterUpgradeStatus, error)
+	ClusterUpgradeGet(ctx context.Context, tenantID, envID uuid.UUID) (*model.ClusterUpgradeStatus, error)
+	ClusterUpgradeHistoryGet(ctx context.Context, tenantID, envID uuid.UUID) ([]*model.ClusterUpgradeStatus, error)
+	UpdateClusterUpgradeStatus(ctx context.Context, tenantID, envID uuid.UUID, status gensql.ClusterUpgradesStatus, version string) (*model.ClusterUpgradeStatus, error)
+	ClusterUpgradeGetByID(ctx context.Context, id uuid.UUID) (*model.ClusterUpgradeStatus, error)
+	ClusterOperationsGetByID(ctx context.Context, id uuid.UUID) (*model.EnvironmentOperation, error)
+	ClusterOperationsGetByUpgradeID(ctx context.Context, upgradeID uuid.UUID) ([]*model.EnvironmentOperation, error)
+	SetClusterUpgradesSlackMessage(ctx context.Context, id uuid.UUID, slackMessageTS, channelID string) (*model.ClusterUpgradeStatus, error)
+}
+
+func (r *repo) ClusterUpgradeHistoryGet(ctx context.Context, tenantID, envID uuid.UUID) ([]*model.ClusterUpgradeStatus, error) {
 	clusterUpgrades, err := r.querier.ClusterUpgradesHistoryGetByEnvironmentID(ctx, gensql.ClusterUpgradesHistoryGetByEnvironmentIDParams{
-		Tenantid: tenantId,
-		Envid:    envId,
+		Tenantid: tenantID,
+		Envid:    envID,
 	})
 	if err != nil {
 		return nil, err
@@ -85,8 +94,8 @@ func (r *repo) ClusterOperationsGetByID(ctx context.Context, id uuid.UUID) (*mod
 	return clusterOperationFromSQL(clusterOperation), nil
 }
 
-func (r *repo) ClusterOperationsGetByUpgradeID(ctx context.Context, upgradeId uuid.UUID) ([]*model.EnvironmentOperation, error) {
-	clusterOperations, err := r.querier.ClusterOperationsGetByUpgradeID(ctx, upgradeId)
+func (r *repo) ClusterOperationsGetByUpgradeID(ctx context.Context, upgradeID uuid.UUID) ([]*model.EnvironmentOperation, error) {
+	clusterOperations, err := r.querier.ClusterOperationsGetByUpgradeID(ctx, upgradeID)
 	if err != nil {
 		return nil, err
 	}
@@ -108,9 +117,9 @@ func (r *repo) ClusterUpgradeGetByID(ctx context.Context, id uuid.UUID) (*model.
 	return clusterUpgradeFromSQL(clusterVersion), nil
 }
 
-func (r *repo) SetClusterUpgradesSlackMessage(ctx context.Context, id uuid.UUID, slackMessageTs, channelID string) (*model.ClusterUpgradeStatus, error) {
+func (r *repo) SetClusterUpgradesSlackMessage(ctx context.Context, id uuid.UUID, slackMessageTS, channelID string) (*model.ClusterUpgradeStatus, error) {
 	clusterUpgrade, err := r.querier.ClusterUpgradesSetSlackMessage(ctx, gensql.ClusterUpgradesSetSlackMessageParams{
-		Slackmessagetimestamp: ptrToNullString(&slackMessageTs),
+		Slackmessagetimestamp: ptrToNullString(&slackMessageTS),
 		Slackchannelid:        ptrToNullString(&channelID),
 		ID:                    id,
 	})
@@ -120,11 +129,11 @@ func (r *repo) SetClusterUpgradesSlackMessage(ctx context.Context, id uuid.UUID,
 	return clusterUpgradeFromSQL(clusterUpgrade), nil
 }
 
-func (r *repo) UpdateClusterUpgradeStatus(ctx context.Context, tenantId, envId uuid.UUID, status gensql.ClusterUpgradesStatus, version string) (*model.ClusterUpgradeStatus, error) {
+func (r *repo) UpdateClusterUpgradeStatus(ctx context.Context, tenantID, envID uuid.UUID, status gensql.ClusterUpgradesStatus, version string) (*model.ClusterUpgradeStatus, error) {
 	clusterUpgrade, err := r.querier.ClusterUpgradesUpdateStatus(ctx, gensql.ClusterUpgradesUpdateStatusParams{
 		Status:   status,
-		Tenantid: tenantId,
-		Envid:    envId,
+		Tenantid: tenantID,
+		Envid:    envID,
 		Version:  version,
 	})
 	if err != nil {
@@ -134,10 +143,10 @@ func (r *repo) UpdateClusterUpgradeStatus(ctx context.Context, tenantId, envId u
 	return clusterUpgradeFromSQL(clusterUpgrade), nil
 }
 
-func (r *repo) ClusterUpgradeGet(ctx context.Context, tenantId, envId uuid.UUID) (*model.ClusterUpgradeStatus, error) {
+func (r *repo) ClusterUpgradeGet(ctx context.Context, tenantID, envID uuid.UUID) (*model.ClusterUpgradeStatus, error) {
 	clusterUpgrades, err := r.querier.ClusterUpgradesGet(ctx, gensql.ClusterUpgradesGetParams{
-		Tenantid: tenantId,
-		Envid:    envId,
+		Tenantid: tenantID,
+		Envid:    envID,
 	})
 	if err != nil {
 		return nil, err
@@ -153,10 +162,10 @@ func (r *repo) ClusterUpgradeGet(ctx context.Context, tenantId, envId uuid.UUID)
 	return clusterUpgradeFromSQL(clusterUpgrades[0]), nil
 }
 
-func (r *repo) CreateClusterUpgrade(ctx context.Context, tenantId, envId uuid.UUID, version string) (*model.ClusterUpgradeStatus, error) {
+func (r *repo) CreateClusterUpgrade(ctx context.Context, tenantID, envID uuid.UUID, version string) (*model.ClusterUpgradeStatus, error) {
 	clusterVersion, err := r.querier.ClusterUpgradesCreate(ctx, gensql.ClusterUpgradesCreateParams{
-		Tenantid: tenantId,
-		Envid:    envId,
+		Tenantid: tenantID,
+		Envid:    envID,
 		Version:  version,
 	})
 	if err != nil {
@@ -166,10 +175,10 @@ func (r *repo) CreateClusterUpgrade(ctx context.Context, tenantId, envId uuid.UU
 	return clusterUpgradeFromSQL(clusterVersion), nil
 }
 
-func (r *repo) GetRunningClusterOperation(ctx context.Context, tenantId, envId uuid.UUID) (*model.EnvironmentOperation, error) {
+func (r *repo) GetRunningClusterOperation(ctx context.Context, tenantID, envID uuid.UUID) (*model.EnvironmentOperation, error) {
 	op, err := r.querier.ClusterOperationGet(ctx, gensql.ClusterOperationGetParams{
-		Tenantid: tenantId,
-		Envid:    envId,
+		Tenantid: tenantID,
+		Envid:    envID,
 		Status:   "RUNNING",
 	})
 	if err != nil {
@@ -182,28 +191,21 @@ func (r *repo) GetRunningClusterOperation(ctx context.Context, tenantId, envId u
 	return clusterOperationFromSQL(op), nil
 }
 
-func (r *repo) CreateOrUpdateClusterOperation(ctx context.Context, tenantId, envId, upgradeId uuid.UUID, op *containerpb.Operation) (*model.EnvironmentOperation, error) {
-	nodes_total := 0
-	nodes_failed := 0
-	nodes_complete := 0
-	nodes_done := 0
-	node_pdb_delay_seconds := 0
+func (r *repo) CreateOrUpdateClusterOperation(ctx context.Context, tenantID, envID, upgradeID uuid.UUID, op *containerpb.Operation) (*model.EnvironmentOperation, error) {
+	var nodesTotal, nodesFailed, nodesComplete, nodesDone, nodePdbDelaySeconds int
 
 	for _, metric := range op.Progress.GetMetrics() {
-		if metric.Name == "NODES_TOTAL" {
-			nodes_total = int(metric.GetIntValue())
-		}
-		if metric.Name == "NODES_FAILED" {
-			nodes_failed = int(metric.GetIntValue())
-		}
-		if metric.Name == "NODES_COMPLETE" {
-			nodes_complete = int(metric.GetIntValue())
-		}
-		if metric.Name == "NODES_DONE" {
-			nodes_done = int(metric.GetIntValue())
-		}
-		if metric.Name == "NODE_PDB_DELAY_SECONDS" {
-			node_pdb_delay_seconds = int(metric.GetIntValue())
+		switch metric.Name {
+		case "NODES_TOTAL":
+			nodesTotal = int(metric.GetIntValue())
+		case "NODES_FAILED":
+			nodesFailed = int(metric.GetIntValue())
+		case "NODES_COMPLETE":
+			nodesComplete = int(metric.GetIntValue())
+		case "NODES_DONE":
+			nodesDone = int(metric.GetIntValue())
+		case "NODE_PDB_DELAY_SECONDS":
+			nodePdbDelaySeconds = int(metric.GetIntValue())
 		}
 	}
 
@@ -217,21 +219,42 @@ func (r *repo) CreateOrUpdateClusterOperation(ctx context.Context, tenantId, env
 		}
 	}
 
+	nodesTotal32, err := toInt32(nodesTotal)
+	if err != nil {
+		return nil, err
+	}
+	nodesFailed32, err := toInt32(nodesFailed)
+	if err != nil {
+		return nil, err
+	}
+	nodesComplete32, err := toInt32(nodesComplete)
+	if err != nil {
+		return nil, err
+	}
+	nodesDone32, err := toInt32(nodesDone)
+	if err != nil {
+		return nil, err
+	}
+	nodePdbDelaySeconds32, err := toInt32(nodePdbDelaySeconds)
+	if err != nil {
+		return nil, err
+	}
+
 	co, err := r.querier.ClusterOperationCreateOrUpdate(ctx, gensql.ClusterOperationCreateOrUpdateParams{
 		ID:                  id,
 		OperationName:       op.Name,
 		Status:              op.Status.String(),
-		TenantID:            tenantId,
-		EnvID:               envId,
-		UpgradeID:           upgradeId,
+		TenantID:            tenantID,
+		EnvID:               envID,
+		UpgradeID:           upgradeID,
 		Type:                op.OperationType.String(),
 		Target:              op.TargetLink,
 		Detail:              op.Detail,
-		NodesTotal:          int32(nodes_total),            // #nosec G115
-		NodesFailed:         int32(nodes_failed),           // #nosec G115
-		NodesCompleted:      int32(nodes_complete),         // #nosec G115
-		NodesDone:           int32(nodes_done),             // #nosec G115
-		NodePdbDelaySeconds: int32(node_pdb_delay_seconds), // #nosec G115
+		NodesTotal:          nodesTotal32,
+		NodesFailed:         nodesFailed32,
+		NodesCompleted:      nodesComplete32,
+		NodesDone:           nodesDone32,
+		NodePdbDelaySeconds: nodePdbDelaySeconds32,
 	})
 	if err != nil {
 		return &model.EnvironmentOperation{}, err

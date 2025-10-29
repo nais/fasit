@@ -250,10 +250,8 @@ func Test_queryResolver_Configuration_Feature_Configurations(t *testing.T) {
 
 func Test_queryResolver_Configuration_Feature_Computed(t *testing.T) {
 	ctx := context.Background()
-
 	env := &model.Environment{
 		ID:   uuid.New(),
-		Name: "env",
 		Kind: model.EnvironmentKindTenant,
 	}
 

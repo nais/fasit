@@ -1,6 +1,11 @@
 package fake
 
-import "github.com/slack-go/slack"
+import (
+	"errors"
+
+	"github.com/nais/fasit/internal/graph/model"
+	"github.com/slack-go/slack"
+)
 
 type FakeSlackClient struct{}
 
@@ -12,23 +17,19 @@ func (f *FakeSlackClient) PostMessage(channelName string, msgOptions []slack.Msg
 	return "", "", nil
 }
 
-func (f *FakeSlackClient) PostComment(channelName, messageTs string, msgOptions []slack.MsgOption) error {
+func (f *FakeSlackClient) PostComment(channelName, messageTS string, msgOptions []slack.MsgOption) error {
 	return nil
 }
 
-func (f *FakeSlackClient) AddReaction(channelId, timestamp, reaction string) error {
+func (f *FakeSlackClient) UpdateMessage(channelID, timestamp string, msgOptions []slack.MsgOption) (string, string, string, error) {
+	return "", "", "", errors.New("invalid_auth")
+}
+
+func (f *FakeSlackClient) AddReaction(channelID, timestamp, reaction string) error {
 	return nil
 }
 
-func (f *FakeSlackClient) GetClusterUpgradeNotificationMessageOptions(tenant, environment, version, clusterComponent, mentions string) []slack.MsgOption {
-	return nil
-}
-
-func (f *FakeSlackClient) GetClusterUpgradeDoneNotificationMessageOptions(tenant, environment string) []slack.MsgOption {
-	return nil
-}
-
-func (f *FakeSlackClient) GetClusterUpgradeFailedNotificationMessageOptions(tenant, environment, version, clusterComponent, mentions string) []slack.MsgOption {
+func (f *FakeSlackClient) GetClusterUpgradeProgressMessageOptions(tenant, environment, version string, upgradeStatus model.UpgradeStatus, startTime, mentions string) []slack.MsgOption {
 	return nil
 }
 

@@ -4,11 +4,13 @@ import (
 	"testing"
 
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/sdk/metric"
 )
 
 func newAutoUpgrader(suite *testSuite) *AutoUpgrader {
 	log := logrus.New().WithField("testSuite", "upgrade")
-	return NewAutoUpgrader(suite.repoMock, log, suite.upgradeMock)
+	meter := metric.NewMeterProvider().Meter("testSuite")
+	return NewAutoUpgrader(suite.repoMock, log, suite.upgradeMock, meter)
 }
 
 func Test_IsNewerPatchRelease(t *testing.T) {
