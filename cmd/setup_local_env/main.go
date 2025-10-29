@@ -66,15 +66,14 @@ func main() {
 				TenantId: tenant.Id,
 				Name:     env,
 				Kind:     kind,
-				Labels: &protogen.EnvironmentLabels{
-					Entries: []*protogen.EnvironmentLabelsEntry{
-						{
-							Key:   "foo",
-							Value: "bar",
-						},
+				Labels: []*protogen.EnvironmentLabel{
+					{
+						Key:   "foo",
+						Value: "bar",
 					},
 				},
-			})
+			},
+			)
 			if err != nil {
 				if !strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
 					log.Fatal(err)

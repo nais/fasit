@@ -33,21 +33,17 @@ message CreateEnvironmentRequest {
   string tenant_id = 1;
   string name = 2;
   EnvironmentKind kind = 3;
-  EnvironmentLabels labels = 4;
+  repeated EnvironmentLabel labels = 4;
 }
 
 message UpdateEnvironmentRequest {
   string environment_id = 1;
-  EnvironmentLabels labels = 2;
+  repeated EnvironmentLabel labels = 2;
 }
 
-message EnvironmentLabels {
-  message entry {
-    string key = 1;
-    string value = 2;
-  }
-
-  repeated entry entries = 1;
+message EnvironmentLabel {
+  string key = 1;
+  string value = 2;
 }
 
 message GetEnvironmentRequest {
@@ -59,7 +55,7 @@ message EnvironmentResponse {
   string id = 1;
   string tenant_id = 2;
   string name = 3;
-  EnvironmentLabels labels = 4;
+  repeated EnvironmentLabel labels = 4;
 }
 
 enum EnvironmentKind {

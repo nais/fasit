@@ -21,7 +21,7 @@ type EnvironmentRepo interface {
 	EnvironmentUpdate(ctx context.Context, environmentID uuid.UUID, p *model.EnvironmentUpdate) (*model.Environment, error)
 	EnvironmentSetAutoUpgrade(ctx context.Context, environmentID uuid.UUID, autoUpgrade bool) (*model.Environment, error)
 	EnvironmentSetReconcile(ctx context.Context, environmentID uuid.UUID, reconcile bool) (*model.Environment, error)
-	SetEnvironmentLabels(ctx context.Context, environmentID uuid.UUID, labels *protogen.EnvironmentLabels) error
+	SetEnvironmentLabels(ctx context.Context, environmentID uuid.UUID, labels []*protogen.EnvironmentLabel) error
 }
 
 func environmentFromSQL(p gensql.Environment) *model.Environment {
@@ -159,17 +159,13 @@ func (r *repo) EnvironmentSetReconcile(ctx context.Context, environmentID uuid.U
 	return environmentFromSQL(env), nil
 }
 
-func (r *repo) SetEnvironmentLabels(ctx context.Context, environmentID uuid.UUID, labels *protogen.EnvironmentLabels) error {
+func (r *repo) SetEnvironmentLabels(ctx context.Context, environmentID uuid.UUID, labels []*protogen.EnvironmentLabel) error {
 	// TODO: transaction?
 	if err := r.querier.DeleteEnvironmentLabels(ctx, environmentID); err != nil {
 		return err
 	}
 
-	if labels == nil {
-		return nil
-	}
-
-	for _, l := range labels.Entries {
+	for _, l := range labels {
 		if err := r.querier.InsertEnvironmentLabel(ctx, gensql.InsertEnvironmentLabelParams{
 			EnvironmentID: environmentID,
 			Key:           l.Key,

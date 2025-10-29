@@ -6046,7 +6046,7 @@ func (_c *Repo_SetClusterUpgradesSlackMessage_Call) RunAndReturn(run func(ctx co
 }
 
 // SetEnvironmentLabels provides a mock function for the type Repo
-func (_mock *Repo) SetEnvironmentLabels(ctx context.Context, environmentID uuid.UUID, labels *protogen.EnvironmentLabels) error {
+func (_mock *Repo) SetEnvironmentLabels(ctx context.Context, environmentID uuid.UUID, labels []*protogen.EnvironmentLabel) error {
 	ret := _mock.Called(ctx, environmentID, labels)
 
 	if len(ret) == 0 {
@@ -6054,7 +6054,7 @@ func (_mock *Repo) SetEnvironmentLabels(ctx context.Context, environmentID uuid.
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, *protogen.EnvironmentLabels) error); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, []*protogen.EnvironmentLabel) error); ok {
 		r0 = returnFunc(ctx, environmentID, labels)
 	} else {
 		r0 = ret.Error(0)
@@ -6070,12 +6070,12 @@ type Repo_SetEnvironmentLabels_Call struct {
 // SetEnvironmentLabels is a helper method to define mock.On call
 //   - ctx context.Context
 //   - environmentID uuid.UUID
-//   - labels *protogen.EnvironmentLabels
+//   - labels []*protogen.EnvironmentLabel
 func (_e *Repo_Expecter) SetEnvironmentLabels(ctx interface{}, environmentID interface{}, labels interface{}) *Repo_SetEnvironmentLabels_Call {
 	return &Repo_SetEnvironmentLabels_Call{Call: _e.mock.On("SetEnvironmentLabels", ctx, environmentID, labels)}
 }
 
-func (_c *Repo_SetEnvironmentLabels_Call) Run(run func(ctx context.Context, environmentID uuid.UUID, labels *protogen.EnvironmentLabels)) *Repo_SetEnvironmentLabels_Call {
+func (_c *Repo_SetEnvironmentLabels_Call) Run(run func(ctx context.Context, environmentID uuid.UUID, labels []*protogen.EnvironmentLabel)) *Repo_SetEnvironmentLabels_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -6085,9 +6085,9 @@ func (_c *Repo_SetEnvironmentLabels_Call) Run(run func(ctx context.Context, envi
 		if args[1] != nil {
 			arg1 = args[1].(uuid.UUID)
 		}
-		var arg2 *protogen.EnvironmentLabels
+		var arg2 []*protogen.EnvironmentLabel
 		if args[2] != nil {
-			arg2 = args[2].(*protogen.EnvironmentLabels)
+			arg2 = args[2].([]*protogen.EnvironmentLabel)
 		}
 		run(
 			arg0,
@@ -6103,7 +6103,7 @@ func (_c *Repo_SetEnvironmentLabels_Call) Return(err error) *Repo_SetEnvironment
 	return _c
 }
 
-func (_c *Repo_SetEnvironmentLabels_Call) RunAndReturn(run func(ctx context.Context, environmentID uuid.UUID, labels *protogen.EnvironmentLabels) error) *Repo_SetEnvironmentLabels_Call {
+func (_c *Repo_SetEnvironmentLabels_Call) RunAndReturn(run func(ctx context.Context, environmentID uuid.UUID, labels []*protogen.EnvironmentLabel) error) *Repo_SetEnvironmentLabels_Call {
 	_c.Call.Return(run)
 	return _c
 }
