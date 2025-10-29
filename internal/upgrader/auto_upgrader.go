@@ -277,7 +277,7 @@ func (c *AutoUpgrader) IsNewerPatchRelease(current, new string) bool {
 			"operation":       "version_comparison",
 			"current_version": current,
 			"error_type":      "parse_current_version",
-		}).WithError(err).Warn("failed to parse current version for comparison, skipping version check")
+		}).WithError(err).Error("failed to parse current cluster version - this indicates a data quality issue")
 		return false
 	}
 
@@ -289,7 +289,7 @@ func (c *AutoUpgrader) IsNewerPatchRelease(current, new string) bool {
 			"current_version": current,
 			"new_version":     new,
 			"error_type":      "parse_new_version",
-		}).WithError(err).Warn("failed to parse new version for comparison, skipping version check")
+		}).WithError(err).Error("failed to parse candidate version from GKE - this may indicate an API issue")
 		return false
 	}
 
@@ -309,7 +309,7 @@ func (c *AutoUpgrader) IsNewerPatchRelease(current, new string) bool {
 			"current_parts":   len(v1Parts),
 			"new_parts":       len(v2Parts),
 			"error_type":      "invalid_version_format",
-		}).Warn("invalid version format detected, versions must include major.minor.patch")
+		}).Error("version format validation failed - versions must include major.minor.patch components")
 		return false
 	}
 
