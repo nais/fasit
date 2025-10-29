@@ -328,7 +328,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		c.upgradeCompleted.Add(ctx, 1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "complete")...))
 
 		// Record upgrade duration
-		upgradeDuration := time.Since(clusterUpgrade.LastModified).Seconds()
+		upgradeDuration := time.Since(clusterUpgrade.StartTime).Seconds()
 		c.upgradeDuration.Record(ctx, upgradeDuration, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "total")...))
 
 		// Update Slack with completion
