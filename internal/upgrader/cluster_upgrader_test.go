@@ -18,6 +18,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/mock"
 	metricsdk "go.opentelemetry.io/otel/sdk/metric"
+	"google.golang.org/grpc/codes"
 )
 
 type env struct {
@@ -415,4 +416,78 @@ func TestRun_MasterUpgradeIsRunning(t *testing.T) {
 	if err != nil {
 		t.Errorf("got %v, want nil", err)
 	}
+}
+
+func TestCleanupDanglingOperations_NotFound(t *testing.T) {
+	// Setup
+	tenantID := uuid.New()
+	envID := uuid.New()
+	upgradeID := uuid.New()
+	operationID := uuid.New()
+	operationName := "operation-1234-old-operation"
+	projectID := "test-project-123"
+
+	repoMock := mocks.NewRepo(t)
+	upgradeMock := upgdradermock.NewUpgrader(t)
+	meterProvider := metricsdk.NewMeterProvider()
+	meter := meterProvider.Meter("test")
+	log := logrus.New()
+	slackClient := fake.NewFakeSlackClient()
+
+	upgrader := NewClusterUpgrader(repoMock, log, upgradeMock, meter, slackClient, "test-channel")
+
+	environment := &model.Environment{
+		ID:       envID,
+		TenantID: tenantID,
+		Name:     "test-env",
+	}
+
+	// Setup: A completed upgrade with a RUNNING operation
+	clusterUpgrade := &model.ClusterUpgradeStatus{
+		ID:            upgradeID,
+		UpgradeStatus: model.UpgradeStatusDone,
+		Version:       "1.30.0",
+		StartTime:     time.Now().Add(-30 * 24 * time.Hour), // 30 days ago
+		LastModified:  time.Now().Add(-29 * 24 * time.Hour),
+	}
+
+	runningOp := &model.EnvironmentOperation{
+		ID:           operationID,
+		Name:         operationName,
+		Status:       "RUNNING", // Stuck in RUNNING
+		Type:         "UPGRADE_MASTER",
+		StartTime:    time.Now().Add(-30 * 24 * time.Hour),
+		LastModified: time.Now().Add(-29 * 24 * time.Hour),
+	}
+
+	// Mock: ClusterOperationsGetByUpgradeID returns the RUNNING operation
+	repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, upgradeID).
+		Return([]*model.EnvironmentOperation{runningOp}, nil).Once()
+
+	// Mock: GetOperation returns NotFound
+	notFoundErr := createAPIError(codes.NotFound, "Not found: "+operationName)
+	upgradeMock.EXPECT().GetOperation(mock.Anything, projectID, operationName).
+		Return(nil, notFoundErr).Once()
+
+	// Mock: CreateOrUpdateClusterOperation should be called with DONE status
+	repoMock.EXPECT().CreateOrUpdateClusterOperation(
+		mock.Anything,
+		tenantID,
+		envID,
+		upgradeID,
+		mock.MatchedBy(func(op *containerpb.Operation) bool {
+			return op.Name == operationName && op.Status == containerpb.Operation_DONE
+		}),
+	).Return(runningOp, nil).Once()
+
+	// Execute cleanup
+	err := upgrader.cleanupDanglingOperations(context.Background(), projectID, environment, clusterUpgrade)
+	// Verify no error was returned
+	if err != nil {
+		t.Errorf("cleanupDanglingOperations() error = %v, want nil", err)
+	}
+
+	// Verify all expectations were met
+	upgradeMock.AssertExpectations(t)
+	repoMock.AssertExpectations(t)
 }

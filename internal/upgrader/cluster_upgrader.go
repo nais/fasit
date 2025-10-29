@@ -563,7 +563,28 @@ func (c *ClusterUpgrader) cleanupDanglingOperations(ctx context.Context, project
 				return nil
 			})
 			if err != nil {
-				log.WithError(err).WithField("operation", existingOp.Name).Warn("failed to get operation status from GKE during cleanup, operation may no longer exist")
+				// Check if operation no longer exists in GKE (NotFound error)
+				if apiErr, ok := err.(*apierror.APIError); ok && apiErr.GRPCStatus().Code() == codes.NotFound {
+					// Operation doesn't exist in GKE anymore - mark it as DONE in our database
+					log.WithFields(logrus.Fields{
+						"operation":      existingOp.Name,
+						"upgrade_id":     clusterUpgrade.ID,
+						"upgrade_status": clusterUpgrade.UpgradeStatus,
+					}).Info("operation no longer exists in GKE, marking as DONE")
+
+					// Create a synthetic DONE operation to update the database
+					doneOp := &containerpb.Operation{
+						Name:   existingOp.Name,
+						Status: containerpb.Operation_DONE,
+					}
+					_, updateErr := c.repo.CreateOrUpdateClusterOperation(ctx, env.TenantID, env.ID, clusterUpgrade.ID, doneOp)
+					if updateErr != nil {
+						log.WithError(updateErr).WithField("operation", existingOp.Name).Error("failed to mark stale operation as DONE")
+						// Continue processing other operations
+					}
+				} else {
+					log.WithError(err).WithField("operation", existingOp.Name).Warn("failed to get operation status from GKE during cleanup")
+				}
 				// Continue processing other operations rather than failing entirely
 			}
 		}
