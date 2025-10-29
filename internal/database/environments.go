@@ -161,9 +161,12 @@ func (r *repo) EnvironmentSetReconcile(ctx context.Context, environmentID uuid.U
 
 func (r *repo) SetEnvironmentLabels(ctx context.Context, environmentID uuid.UUID, labels *protogen.EnvironmentLabels) error {
 	// TODO: transaction?
-
 	if err := r.querier.DeleteEnvironmentLabels(ctx, environmentID); err != nil {
 		return err
+	}
+
+	if labels == nil {
+		return nil
 	}
 
 	for _, l := range labels.Entries {
