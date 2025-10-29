@@ -13,7 +13,6 @@ import (
 	"github.com/nais/fasit/internal/graph/model"
 )
 
-// toInt32 safely converts int to int32, returning an error if out of bounds
 func toInt32(val int) (int32, error) {
 	if val > math.MaxInt32 || val < math.MinInt32 {
 		return 0, errors.New("toInt32: value out of int32 bounds")
@@ -219,6 +218,27 @@ func (r *repo) CreateOrUpdateClusterOperation(ctx context.Context, tenantID, env
 		}
 	}
 
+	nodesTotal32, err := toInt32(nodesTotal)
+	if err != nil {
+		return nil, err
+	}
+	nodesFailed32, err := toInt32(nodesFailed)
+	if err != nil {
+		return nil, err
+	}
+	nodesComplete32, err := toInt32(nodesComplete)
+	if err != nil {
+		return nil, err
+	}
+	nodesDone32, err := toInt32(nodesDone)
+	if err != nil {
+		return nil, err
+	}
+	nodePdbDelaySeconds32, err := toInt32(nodePdbDelaySeconds)
+	if err != nil {
+		return nil, err
+	}
+
 	co, err := r.querier.ClusterOperationCreateOrUpdate(ctx, gensql.ClusterOperationCreateOrUpdateParams{
 		ID:                  id,
 		OperationName:       op.Name,
@@ -229,11 +249,11 @@ func (r *repo) CreateOrUpdateClusterOperation(ctx context.Context, tenantID, env
 		Type:                op.OperationType.String(),
 		Target:              op.TargetLink,
 		Detail:              op.Detail,
-		NodesTotal:          toInt32(nodesTotal),
-		NodesFailed:         toInt32(nodesFailed),
-		NodesCompleted:      toInt32(nodesComplete),
-		NodesDone:           toInt32(nodesDone),
-		NodePdbDelaySeconds: toInt32(nodePdbDelaySeconds),
+		NodesTotal:          nodesTotal32,
+		NodesFailed:         nodesFailed32,
+		NodesCompleted:      nodesComplete32,
+		NodesDone:           nodesDone32,
+		NodePdbDelaySeconds: nodePdbDelaySeconds32,
 	})
 	if err != nil {
 		return &model.EnvironmentOperation{}, err
