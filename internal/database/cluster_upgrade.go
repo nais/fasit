@@ -13,15 +13,12 @@ import (
 	"github.com/nais/fasit/internal/graph/model"
 )
 
-// toInt32 safely converts int to int32, clamping to int32 bounds if needed
-func toInt32(val int) int32 {
-	if val > math.MaxInt32 {
-		return math.MaxInt32
+// toInt32 safely converts int to int32, returning an error if out of bounds
+func toInt32(val int) (int32, error) {
+	if val > math.MaxInt32 || val < math.MinInt32 {
+		return 0, errors.New("toInt32: value out of int32 bounds")
 	}
-	if val < math.MinInt32 {
-		return math.MinInt32
-	}
-	return int32(val)
+	return int32(val), nil
 }
 
 type ClusterUpgraderRepo interface {
