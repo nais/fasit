@@ -162,13 +162,6 @@ func (c *ClusterUpgrader) Run(ctx context.Context) error {
 	return nil
 }
 
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
-
 func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.Tenant, env *model.Environment) error {
 	log := c.log.WithFields(logrus.Fields{
 		"tenant":      tenant.Name,
