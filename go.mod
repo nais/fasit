@@ -16,7 +16,7 @@ tool (
 
 require (
 	cloud.google.com/go v0.123.0
-	cloud.google.com/go/bigquery v1.71.0
+	cloud.google.com/go/bigquery v1.72.0
 	cloud.google.com/go/cloudsqlconn v1.19.0
 	cloud.google.com/go/container v1.45.0
 	cloud.google.com/go/pubsub v1.50.1
@@ -56,7 +56,7 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v1.38.0
 	go.uber.org/automaxprocs v1.6.0
 	golang.org/x/sync v0.17.0
-	google.golang.org/api v0.253.0
+	google.golang.org/api v0.254.0
 	google.golang.org/grpc v1.76.0
 	google.golang.org/protobuf v1.36.10
 	gopkg.in/yaml.v3 v3.0.1
