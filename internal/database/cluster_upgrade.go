@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"errors"
+	"fmt"
 	"math"
 	"strings"
 
@@ -15,7 +16,7 @@ import (
 
 func toInt32(val int) (int32, error) {
 	if val > math.MaxInt32 || val < math.MinInt32 {
-		return 0, errors.New("toInt32: value out of int32 bounds")
+		return 0, fmt.Errorf("toInt32: value %d out of int32 bounds (min: %d, max: %d)", val, math.MinInt32, math.MaxInt32)
 	}
 	return int32(val), nil
 }
