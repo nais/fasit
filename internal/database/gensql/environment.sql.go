@@ -12,7 +12,7 @@ import (
 
 const environmentByNames = `-- name: EnvironmentByNames :one
 SELECT
-	e.id, e.tenant_id, e.name, e.kind, e.description, e.created, e.last_modified, e.ci, e.reconcile, e.auto_upgrade
+	e.id, e.tenant_id, e.name, e.kind, e.description, e.created, e.last_modified, e.ci, e.reconcile, e.auto_upgrade, e.upgrade_delay_days
 FROM
 	tenants t
 	JOIN environments e ON e.tenant_id = t.id
@@ -42,13 +42,14 @@ func (q *Queries) EnvironmentByNames(ctx context.Context, arg EnvironmentByNames
 		&i.Ci,
 		&i.Reconcile,
 		&i.AutoUpgrade,
+		&i.UpgradeDelayDays,
 	)
 	return i, err
 }
 
 const environmentCI = `-- name: EnvironmentCI :one
 SELECT
-	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade
+	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade, upgrade_delay_days
 FROM
 	environments
 WHERE
@@ -70,6 +71,7 @@ func (q *Queries) EnvironmentCI(ctx context.Context, kind EnvironmentKind) (Envi
 		&i.Ci,
 		&i.Reconcile,
 		&i.AutoUpgrade,
+		&i.UpgradeDelayDays,
 	)
 	return i, err
 }
@@ -80,7 +82,7 @@ INSERT INTO
 VALUES
 	($1, $2, $3, $4)
 RETURNING
-	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade
+	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade, upgrade_delay_days
 `
 
 type EnvironmentCreateParams struct {
@@ -109,13 +111,14 @@ func (q *Queries) EnvironmentCreate(ctx context.Context, arg EnvironmentCreatePa
 		&i.Ci,
 		&i.Reconcile,
 		&i.AutoUpgrade,
+		&i.UpgradeDelayDays,
 	)
 	return i, err
 }
 
 const environmentGet = `-- name: EnvironmentGet :one
 SELECT
-	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade
+	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade, upgrade_delay_days
 FROM
 	environments
 WHERE
@@ -136,13 +139,14 @@ func (q *Queries) EnvironmentGet(ctx context.Context, id uuid.UUID) (Environment
 		&i.Ci,
 		&i.Reconcile,
 		&i.AutoUpgrade,
+		&i.UpgradeDelayDays,
 	)
 	return i, err
 }
 
 const environmentGetByName = `-- name: EnvironmentGetByName :one
 SELECT
-	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade
+	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade, upgrade_delay_days
 FROM
 	environments
 WHERE
@@ -169,6 +173,7 @@ func (q *Queries) EnvironmentGetByName(ctx context.Context, arg EnvironmentGetBy
 		&i.Ci,
 		&i.Reconcile,
 		&i.AutoUpgrade,
+		&i.UpgradeDelayDays,
 	)
 	return i, err
 }
@@ -205,7 +210,7 @@ SET
 WHERE
 	id = $2
 RETURNING
-	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade
+	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade, upgrade_delay_days
 `
 
 type EnvironmentSetAutoUpgradeParams struct {
@@ -227,6 +232,7 @@ func (q *Queries) EnvironmentSetAutoUpgrade(ctx context.Context, arg Environment
 		&i.Ci,
 		&i.Reconcile,
 		&i.AutoUpgrade,
+		&i.UpgradeDelayDays,
 	)
 	return i, err
 }
@@ -238,7 +244,7 @@ SET
 WHERE
 	id = $2
 RETURNING
-	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade
+	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade, upgrade_delay_days
 `
 
 type EnvironmentSetReconcileParams struct {
@@ -260,6 +266,41 @@ func (q *Queries) EnvironmentSetReconcile(ctx context.Context, arg EnvironmentSe
 		&i.Ci,
 		&i.Reconcile,
 		&i.AutoUpgrade,
+		&i.UpgradeDelayDays,
+	)
+	return i, err
+}
+
+const environmentSetUpgradeDelayDays = `-- name: EnvironmentSetUpgradeDelayDays :one
+UPDATE environments
+SET
+	upgrade_delay_days = $1
+WHERE
+	id = $2
+RETURNING
+	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade, upgrade_delay_days
+`
+
+type EnvironmentSetUpgradeDelayDaysParams struct {
+	UpgradeDelayDays int32
+	ID               uuid.UUID
+}
+
+func (q *Queries) EnvironmentSetUpgradeDelayDays(ctx context.Context, arg EnvironmentSetUpgradeDelayDaysParams) (Environment, error) {
+	row := q.db.QueryRow(ctx, environmentSetUpgradeDelayDays, arg.UpgradeDelayDays, arg.ID)
+	var i Environment
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.Name,
+		&i.Kind,
+		&i.Description,
+		&i.Created,
+		&i.LastModified,
+		&i.Ci,
+		&i.Reconcile,
+		&i.AutoUpgrade,
+		&i.UpgradeDelayDays,
 	)
 	return i, err
 }
@@ -271,7 +312,7 @@ SET
 WHERE
 	id = $2
 RETURNING
-	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade
+	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade, upgrade_delay_days
 `
 
 type EnvironmentUpdateParams struct {
@@ -293,13 +334,14 @@ func (q *Queries) EnvironmentUpdate(ctx context.Context, arg EnvironmentUpdatePa
 		&i.Ci,
 		&i.Reconcile,
 		&i.AutoUpgrade,
+		&i.UpgradeDelayDays,
 	)
 	return i, err
 }
 
 const environmentsGet = `-- name: EnvironmentsGet :many
 SELECT
-	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade
+	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade, upgrade_delay_days
 FROM
 	environments
 WHERE
@@ -332,6 +374,7 @@ func (q *Queries) EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]En
 			&i.Ci,
 			&i.Reconcile,
 			&i.AutoUpgrade,
+			&i.UpgradeDelayDays,
 		); err != nil {
 			return nil, err
 		}
@@ -345,7 +388,7 @@ func (q *Queries) EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]En
 
 const environmentsGetByAutoUpgrade = `-- name: EnvironmentsGetByAutoUpgrade :many
 SELECT
-	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade
+	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade, upgrade_delay_days
 FROM
 	environments
 WHERE
@@ -378,6 +421,7 @@ func (q *Queries) EnvironmentsGetByAutoUpgrade(ctx context.Context) ([]Environme
 			&i.Ci,
 			&i.Reconcile,
 			&i.AutoUpgrade,
+			&i.UpgradeDelayDays,
 		); err != nil {
 			return nil, err
 		}

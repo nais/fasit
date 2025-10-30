@@ -18,6 +18,11 @@ func (r *mutationResolver) TenantCreate(ctx context.Context, tenant model.Tenant
 	return r.Repo.TenantCreate(ctx, &tenant)
 }
 
+// TenantSetUpgradeDelayDays is the resolver for the tenantSetUpgradeDelayDays field.
+func (r *mutationResolver) TenantSetUpgradeDelayDays(ctx context.Context, tenantID uuid.UUID, delayDays int) (*model.Tenant, error) {
+	return r.Repo.TenantSetUpgradeDelayDays(ctx, tenantID, int32(delayDays))
+}
+
 // Tenants is the resolver for the tenants field.
 func (r *queryResolver) Tenants(ctx context.Context) ([]*model.Tenant, error) {
 	return r.Repo.TenantsGet(ctx)

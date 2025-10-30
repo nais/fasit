@@ -14,6 +14,7 @@ type ClusterUpgradesStatus string
 
 const (
 	ClusterUpgradesStatusCREATED       ClusterUpgradesStatus = "CREATED"
+	ClusterUpgradesStatusWAITING       ClusterUpgradesStatus = "WAITING"
 	ClusterUpgradesStatusMASTERUPGRADE ClusterUpgradesStatus = "MASTER_UPGRADE"
 	ClusterUpgradesStatusNODEUPGRADE   ClusterUpgradesStatus = "NODE_UPGRADE"
 	ClusterUpgradesStatusFAILED        ClusterUpgradesStatus = "FAILED"
@@ -196,6 +197,8 @@ type Environment struct {
 	Ci           bool
 	Reconcile    bool
 	AutoUpgrade  bool
+	// Number of days to delay cluster upgrades for this environment. 0=immediate (test/dev), 1=1 day (default/staging), 2=2 days (production). Delays are additive with tenant-level delays. Total delay = tenant delay + environment delay.
+	UpgradeDelayDays int32
 }
 
 type EnvironmentLabel struct {
@@ -318,4 +321,6 @@ type Tenant struct {
 	Created      pgtype.Timestamptz
 	LastModified pgtype.Timestamptz
 	Ci           bool
+	// Number of days to delay cluster upgrades for all environments in this tenant. 0=immediate (test/dev), 1=1 day (default/staging), 2=2 days (production). Delays are additive with environment-level delays.
+	UpgradeDelayDays int32
 }

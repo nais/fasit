@@ -276,7 +276,7 @@ func TestRun_StartClusterUpgradeMasterStatusCreated(t *testing.T) {
 	suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, mock.Anything, "1.2.4").Return(
 		&model.ClusterUpgradeStatus{
 			ID:            uuid.New(),
-			UpgradeStatus: model.UpgradeStatusMasterUpgrade,
+			UpgradeStatus: model.UpgradeStatusControlPlaneUpgrade,
 			Version:       "1.2.4",
 			LastModified:  time.Now(),
 			StartTime:     time.Now(),
@@ -291,7 +291,7 @@ func TestRun_StartClusterUpgradeMasterStatusCreated(t *testing.T) {
 func TestRun_UpdateClusterStatusToNodeUpgradeWhenOperationDoneOnMasterUpgrade(t *testing.T) {
 	suite := newTestSuite(t)
 	upgrade := newUpgrade(suite)
-	suite.mockRunTenantForLoop(model.UpgradeStatusMasterUpgrade)
+	suite.mockRunTenantForLoop(model.UpgradeStatusControlPlaneUpgrade)
 
 	// Allow multiple GetRunningOperations calls - we'll fix the exact count later
 	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, suite.environment).Return(
@@ -346,7 +346,7 @@ func TestRun_UpdateClusterStatusToNodeUpgradeWhenOperationDoneOnMasterUpgrade(t 
 func TestRun_MasterUpgradeIsRunning(t *testing.T) {
 	suite := newTestSuite(t)
 	upgrade := newUpgrade(suite)
-	suite.mockRunTenantForLoop(model.UpgradeStatusMasterUpgrade)
+	suite.mockRunTenantForLoop(model.UpgradeStatusControlPlaneUpgrade)
 
 	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, suite.env.projectID, suite.environment).Return(
 		[]*containerpb.Operation{
@@ -398,7 +398,7 @@ func TestRun_MasterUpgradeIsRunning(t *testing.T) {
 	suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, gensql.ClusterUpgradesStatusMASTERUPGRADE, "1.2.4").Return(
 		&model.ClusterUpgradeStatus{
 			ID:            uuid.New(),
-			UpgradeStatus: model.UpgradeStatusMasterUpgrade,
+			UpgradeStatus: model.UpgradeStatusControlPlaneUpgrade,
 			Version:       "1.2.4",
 			LastModified:  time.Now(),
 			StartTime:     time.Now(),

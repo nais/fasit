@@ -19,24 +19,26 @@ type EnvironmentRepo interface {
 	EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]*model.Environment, error)
 	EnvironmentsGetByAutoUpgrade(ctx context.Context) ([]*model.Environment, error)
 	EnvironmentUpdate(ctx context.Context, environmentID uuid.UUID, p *model.EnvironmentUpdate) (*model.Environment, error)
-	EnvironmentSetAutoUpgrade(ctx context.Context, environmentID uuid.UUID, autoUpgrade bool) (*model.Environment, error)
+	EnvironmentAutoUpgradeSet(ctx context.Context, environmentID uuid.UUID, autoUpgrade bool) (*model.Environment, error)
 	EnvironmentSetReconcile(ctx context.Context, environmentID uuid.UUID, reconcile bool) (*model.Environment, error)
 	EnvironmentSetLabels(ctx context.Context, environmentID uuid.UUID, labels []*protogen.EnvironmentLabel) error
 	EnvironmentGetLabels(ctx context.Context, environmentID uuid.UUID) ([]*model.EnvironmentLabel, error)
+	EnvironmentSetUpgradeDelayDays(ctx context.Context, id uuid.UUID, delayDays int32) (*model.Environment, error)
 }
 
 func environmentFromSQL(p gensql.Environment) *model.Environment {
 	return &model.Environment{
-		ID:           p.ID,
-		Name:         p.Name,
-		Description:  nullStringToPtr(p.Description),
-		Created:      p.Created.Time,
-		LastModified: p.LastModified.Time,
-		Kind:         model.EnvironmentKind(p.Kind),
-		TenantID:     p.TenantID,
-		CI:           p.Ci,
-		Reconcile:    p.Reconcile,
-		AutoUpgrade:  p.AutoUpgrade,
+		ID:               p.ID,
+		Name:             p.Name,
+		Description:      nullStringToPtr(p.Description),
+		Created:          p.Created.Time,
+		LastModified:     p.LastModified.Time,
+		Kind:             model.EnvironmentKind(p.Kind),
+		TenantID:         p.TenantID,
+		CI:               p.Ci,
+		Reconcile:        p.Reconcile,
+		AutoUpgrade:      p.AutoUpgrade,
+		UpgradeDelayDays: p.UpgradeDelayDays,
 	}
 }
 
@@ -201,7 +203,7 @@ func (r *repo) EnvironmentGetLabels(ctx context.Context, environmentID uuid.UUID
 	return ret, nil
 }
 
-func (r *repo) EnvironmentSetAutoUpgrade(ctx context.Context, environmentID uuid.UUID, autoUpgrade bool) (*model.Environment, error) {
+func (r *repo) EnvironmentAutoUpgradeSet(ctx context.Context, environmentID uuid.UUID, autoUpgrade bool) (*model.Environment, error) {
 	env, err := r.querier.EnvironmentSetAutoUpgrade(ctx, gensql.EnvironmentSetAutoUpgradeParams{
 		ID:          environmentID,
 		AutoUpgrade: autoUpgrade,
@@ -216,6 +218,20 @@ func (r *repo) EnvironmentSetAutoUpgrade(ctx context.Context, environmentID uuid
 	}
 
 	r.createAudit(ctx, "environment auto upgrade "+txt, "environments", env.ID.String())
+
+	return environmentFromSQL(env), nil
+}
+
+func (r *repo) EnvironmentSetUpgradeDelayDays(ctx context.Context, id uuid.UUID, delayDays int32) (*model.Environment, error) {
+	env, err := r.querier.EnvironmentSetUpgradeDelayDays(ctx, gensql.EnvironmentSetUpgradeDelayDaysParams{
+		ID:               id,
+		UpgradeDelayDays: delayDays,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	r.createAudit(ctx, "updated upgrade_delay_days", "environments", env.ID.String())
 
 	return environmentFromSQL(env), nil
 }

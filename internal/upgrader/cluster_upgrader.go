@@ -196,6 +196,11 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		"last_modified":  clusterUpgrade.LastModified.Format("2006-01-02 15:04:05"),
 	})
 
+	// Check if upgrade should be delayed based on priority
+	if c.shouldDelayUpgrade(ctx, tenant, env, clusterUpgrade, log) {
+		return nil
+	}
+
 	log.Debug("processing cluster upgrade")
 
 	// Check if upgrade is stuck (timeouts + GKE validation)
@@ -268,7 +273,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		// Always update Slack progress with the updated status
 		c.updateSlackProgress(ctx, tenant.Name, env.Name, updatedStatus)
 
-	case model.UpgradeStatusMasterUpgrade:
+	case model.UpgradeStatusControlPlaneUpgrade:
 		// check status on ongoing master upgrade
 		status, err := c.masterUpgradeStatus(ctx, env, clusterUpgrade, projectID, tenant.Name)
 		if err != nil {
@@ -1052,7 +1057,7 @@ func (c *ClusterUpgrader) validateUpgradeAgainstGKE(ctx context.Context, cluster
 		}
 		return false
 
-	case model.UpgradeStatusMasterUpgrade:
+	case model.UpgradeStatusControlPlaneUpgrade:
 		if !hasUpgradeOperations {
 			// Before marking as stuck, check if master upgrade actually completed
 			if c.isMasterUpgradeComplete(ctx, clusterUpgrade, projectID, env, log) {
@@ -1174,6 +1179,91 @@ func (c *ClusterUpgrader) isNodeUpgradeComplete(ctx context.Context, clusterUpgr
 	}
 
 	return allComplete
+}
+
+// shouldDelayUpgrade checks if an upgrade should be delayed based on delay_days configuration
+// State transitions:
+// - delay_days 0: CREATED -> MASTER_UPGRADE (immediate)
+// - delay_days > 0: CREATED -> WAITING -> MASTER_UPGRADE (after delay)
+// Priority: environment delay > tenant delay > default (1)
+func (c *ClusterUpgrader) shouldDelayUpgrade(ctx context.Context, tenant *model.Tenant, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus, log logrus.FieldLogger) bool {
+	// Only process CREATED or WAITING status
+	if clusterUpgrade.UpgradeStatus != model.UpgradeStatusCreated && clusterUpgrade.UpgradeStatus != model.UpgradeStatusWaiting {
+		return false
+	}
+
+	// Calculate effective delay by adding tenant and environment delays together
+	// Both tenant and environment delays are additive
+	// Each always has a value (NOT NULL DEFAULT 1 in database)
+	tenantDelay := tenant.UpgradeDelayDays
+	envDelay := env.UpgradeDelayDays
+	delayDays := tenantDelay + envDelay
+
+	// Determine source for logging
+	delaySource := "default"
+	if tenantDelay != 1 && envDelay != 1 {
+		delaySource = "tenant+environment"
+	} else if tenantDelay != 1 {
+		delaySource = "tenant"
+	} else if envDelay != 1 {
+		delaySource = "environment"
+	}
+
+	// If no delay configured (delay_days = 0), proceed immediately
+	if delayDays == 0 {
+		if clusterUpgrade.UpgradeStatus == model.UpgradeStatusCreated {
+			log.WithFields(logrus.Fields{
+				"delay_days":   delayDays,
+				"delay_source": delaySource,
+			}).Info("no delay configured (delay_days=0), proceeding immediately with upgrade")
+		}
+		return false
+	}
+
+	// Calculate required delay
+	requiredDelayHours := time.Duration(delayDays) * 24 * time.Hour
+	timeSinceCreation := time.Since(clusterUpgrade.StartTime)
+
+	// If still in CREATED status and delay > 0, transition to WAITING
+	if clusterUpgrade.UpgradeStatus == model.UpgradeStatusCreated {
+		_, err := c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatusWAITING, clusterUpgrade.Version)
+		if err != nil {
+			log.WithError(err).Error("failed to transition upgrade to WAITING status")
+			// Continue anyway - we'll retry on next run
+		} else {
+			clusterUpgrade.UpgradeStatus = model.UpgradeStatusWaiting
+			log.WithFields(logrus.Fields{
+				"delay_days":     delayDays,
+				"delay_source":   delaySource,
+				"required_delay": requiredDelayHours.String(),
+				"will_start_at":  clusterUpgrade.StartTime.Add(requiredDelayHours).Format("2006-01-02 15:04:05"),
+			}).Info("upgrade transitioned to WAITING status")
+		}
+		return true
+	}
+
+	// Status is WAITING - check if delay has passed
+	if timeSinceCreation < requiredDelayHours {
+		remainingDelay := requiredDelayHours - timeSinceCreation
+		log.WithFields(logrus.Fields{
+			"delay_days":        delayDays,
+			"delay_source":      delaySource,
+			"required_delay":    requiredDelayHours.String(),
+			"time_since_create": timeSinceCreation.String(),
+			"remaining_delay":   remainingDelay.String(),
+			"will_start_at":     clusterUpgrade.StartTime.Add(requiredDelayHours).Format("2006-01-02 15:04:05"),
+		}).Info("upgrade waiting for delay_days to pass")
+		return true
+	}
+
+	// Delay has passed, ready to proceed
+	log.WithFields(logrus.Fields{
+		"delay_days":     delayDays,
+		"delay_source":   delaySource,
+		"required_delay": requiredDelayHours.String(),
+		"waited_for":     timeSinceCreation.String(),
+	}).Info("delay_days satisfied, proceeding with upgrade")
+	return false
 }
 
 // updateSlackProgress updates the existing Slack message with current upgrade progress

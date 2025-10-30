@@ -49,9 +49,10 @@ func Test_repo_TenantGet(t *testing.T) {
 	}
 
 	want := &model.Tenant{
-		ID:          p.ID,
-		Name:        p.Name,
-		Description: p.Description,
+		ID:               p.ID,
+		Name:             p.Name,
+		Description:      p.Description,
+		UpgradeDelayDays: 1,
 	}
 
 	opts := cmpopts.IgnoreFields(model.Tenant{}, "Created", "LastModified")

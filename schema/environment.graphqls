@@ -7,7 +7,8 @@ enum EnvironmentKind {
 
 enum UpgradeStatus {
 	CREATED
-	MASTER_UPGRADE
+	WAITING
+	CONTROL_PLANE_UPGRADE
 	NODE_UPGRADE
 	FAILED
 	DONE
@@ -62,6 +63,7 @@ type Environment {
 	clusterUpgradeStatus: ClusterUpgradeStatus
 	versions: EnvironmentVersions
 	labels: [EnvironmentLabel!]!
+	upgradeDelayDays: Int!
 }
 
 type EnvironmentLabel {
@@ -156,4 +158,9 @@ extend type Mutation {
 	Change the autoUpgrade flag for an environment
 	"""
 	environmentSetAutoUpgrade(id: ID!, autoUpgrade: Boolean!): Environment!
+
+	"""
+	Set the upgrade delay (in days) for an environment.
+	"""
+	environmentSetUpgradeDelayDays(environmentID: ID!, delayDays: Int!): Environment!
 }

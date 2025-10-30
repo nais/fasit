@@ -111,7 +111,7 @@ func TestIsUpgradeStuck(t *testing.T) {
 			name: "MASTER_UPGRADE stuck - no running operations in GKE",
 			clusterUpgrade: &model.ClusterUpgradeStatus{
 				ID:            uuid.New(),
-				UpgradeStatus: model.UpgradeStatusMasterUpgrade,
+				UpgradeStatus: model.UpgradeStatusControlPlaneUpgrade,
 				Version:       "1.25.0",
 				LastModified:  time.Now().Add(-1 * time.Hour), // Time doesn't matter, only GKE state
 				StartTime:     time.Now().Add(-1 * time.Hour),
@@ -123,7 +123,7 @@ func TestIsUpgradeStuck(t *testing.T) {
 			name: "MASTER_UPGRADE not stuck - has running master upgrade",
 			clusterUpgrade: &model.ClusterUpgradeStatus{
 				ID:            uuid.New(),
-				UpgradeStatus: model.UpgradeStatusMasterUpgrade,
+				UpgradeStatus: model.UpgradeStatusControlPlaneUpgrade,
 				Version:       "1.25.0",
 				LastModified:  time.Now().Add(-5 * time.Hour), // Even if it's been hours, trust GKE
 				StartTime:     time.Now().Add(-5 * time.Hour),
@@ -209,7 +209,7 @@ func TestIsUpgradeStuck(t *testing.T) {
 				// The completion check is only called when there are no running operations
 				if len(tt.mockOperations) == 0 {
 					switch tt.clusterUpgrade.UpgradeStatus {
-					case model.UpgradeStatusMasterUpgrade:
+					case model.UpgradeStatusControlPlaneUpgrade:
 						// For MASTER_UPGRADE, check if master version matches target
 						currentMasterVersion := "1.24.0" // Different version to simulate stuck
 						if !tt.expectedStuck {

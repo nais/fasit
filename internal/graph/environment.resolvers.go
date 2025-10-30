@@ -268,7 +268,12 @@ func (r *mutationResolver) EnvironmentUpgrade(ctx context.Context, upgrade *mode
 
 // EnvironmentSetAutoUpgrade is the resolver for the environmentSetAutoUpgrade field.
 func (r *mutationResolver) EnvironmentSetAutoUpgrade(ctx context.Context, id uuid.UUID, autoUpgrade bool) (*model.Environment, error) {
-	return r.Repo.EnvironmentSetAutoUpgrade(ctx, id, autoUpgrade)
+	return r.Repo.EnvironmentAutoUpgradeSet(ctx, id, autoUpgrade)
+}
+
+// EnvironmentSetUpgradeDelayDays is the resolver for the environmentSetUpgradeDelayDays field.
+func (r *mutationResolver) EnvironmentSetUpgradeDelayDays(ctx context.Context, environmentID uuid.UUID, delayDays int) (*model.Environment, error) {
+	return r.Repo.EnvironmentSetUpgradeDelayDays(ctx, environmentID, int32(delayDays))
 }
 
 // Feature is the resolver for the feature field.

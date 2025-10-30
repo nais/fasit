@@ -12,7 +12,7 @@ import (
 
 const tenantCI = `-- name: TenantCI :one
 SELECT
-	id, name, description, created, last_modified, ci
+	id, name, description, created, last_modified, ci, upgrade_delay_days
 FROM
 	tenants
 WHERE
@@ -29,6 +29,7 @@ func (q *Queries) TenantCI(ctx context.Context) (Tenant, error) {
 		&i.Created,
 		&i.LastModified,
 		&i.Ci,
+		&i.UpgradeDelayDays,
 	)
 	return i, err
 }
@@ -39,7 +40,7 @@ INSERT INTO
 VALUES
 	($1, $2)
 RETURNING
-	id, name, description, created, last_modified, ci
+	id, name, description, created, last_modified, ci, upgrade_delay_days
 `
 
 type TenantCreateParams struct {
@@ -57,13 +58,14 @@ func (q *Queries) TenantCreate(ctx context.Context, arg TenantCreateParams) (Ten
 		&i.Created,
 		&i.LastModified,
 		&i.Ci,
+		&i.UpgradeDelayDays,
 	)
 	return i, err
 }
 
 const tenantEnvironments = `-- name: TenantEnvironments :many
 SELECT
-	e.id, e.tenant_id, e.name, e.kind, e.description, e.created, e.last_modified, e.ci, e.reconcile, e.auto_upgrade,
+	e.id, e.tenant_id, e.name, e.kind, e.description, e.created, e.last_modified, e.ci, e.reconcile, e.auto_upgrade, e.upgrade_delay_days,
 	t.name AS tenant_name
 FROM
 	environments e
@@ -80,17 +82,18 @@ ORDER BY
 `
 
 type TenantEnvironmentsRow struct {
-	ID           uuid.UUID
-	TenantID     uuid.UUID
-	Name         string
-	Kind         EnvironmentKind
-	Description  pgtype.Text
-	Created      pgtype.Timestamptz
-	LastModified pgtype.Timestamptz
-	Ci           bool
-	Reconcile    bool
-	AutoUpgrade  bool
-	TenantName   string
+	ID               uuid.UUID
+	TenantID         uuid.UUID
+	Name             string
+	Kind             EnvironmentKind
+	Description      pgtype.Text
+	Created          pgtype.Timestamptz
+	LastModified     pgtype.Timestamptz
+	Ci               bool
+	Reconcile        bool
+	AutoUpgrade      bool
+	UpgradeDelayDays int32
+	TenantName       string
 }
 
 func (q *Queries) TenantEnvironments(ctx context.Context, all bool) ([]TenantEnvironmentsRow, error) {
@@ -113,6 +116,7 @@ func (q *Queries) TenantEnvironments(ctx context.Context, all bool) ([]TenantEnv
 			&i.Ci,
 			&i.Reconcile,
 			&i.AutoUpgrade,
+			&i.UpgradeDelayDays,
 			&i.TenantName,
 		); err != nil {
 			return nil, err
@@ -127,7 +131,7 @@ func (q *Queries) TenantEnvironments(ctx context.Context, all bool) ([]TenantEnv
 
 const tenantGet = `-- name: TenantGet :one
 SELECT
-	id, name, description, created, last_modified, ci
+	id, name, description, created, last_modified, ci, upgrade_delay_days
 FROM
 	tenants
 WHERE
@@ -144,13 +148,14 @@ func (q *Queries) TenantGet(ctx context.Context, id uuid.UUID) (Tenant, error) {
 		&i.Created,
 		&i.LastModified,
 		&i.Ci,
+		&i.UpgradeDelayDays,
 	)
 	return i, err
 }
 
 const tenantGetByName = `-- name: TenantGetByName :one
 SELECT
-	id, name, description, created, last_modified, ci
+	id, name, description, created, last_modified, ci, upgrade_delay_days
 FROM
 	tenants
 WHERE
@@ -167,13 +172,44 @@ func (q *Queries) TenantGetByName(ctx context.Context, name string) (Tenant, err
 		&i.Created,
 		&i.LastModified,
 		&i.Ci,
+		&i.UpgradeDelayDays,
+	)
+	return i, err
+}
+
+const tenantSetUpgradeDelayDays = `-- name: TenantSetUpgradeDelayDays :one
+UPDATE tenants
+SET
+	upgrade_delay_days = $1
+WHERE
+	id = $2
+RETURNING
+	id, name, description, created, last_modified, ci, upgrade_delay_days
+`
+
+type TenantSetUpgradeDelayDaysParams struct {
+	UpgradeDelayDays int32
+	ID               uuid.UUID
+}
+
+func (q *Queries) TenantSetUpgradeDelayDays(ctx context.Context, arg TenantSetUpgradeDelayDaysParams) (Tenant, error) {
+	row := q.db.QueryRow(ctx, tenantSetUpgradeDelayDays, arg.UpgradeDelayDays, arg.ID)
+	var i Tenant
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.Created,
+		&i.LastModified,
+		&i.Ci,
+		&i.UpgradeDelayDays,
 	)
 	return i, err
 }
 
 const tenantsGet = `-- name: TenantsGet :many
 SELECT
-	id, name, description, created, last_modified, ci
+	id, name, description, created, last_modified, ci, upgrade_delay_days
 FROM
 	tenants
 ORDER BY
@@ -197,6 +233,7 @@ func (q *Queries) TenantsGet(ctx context.Context) ([]Tenant, error) {
 			&i.Created,
 			&i.LastModified,
 			&i.Ci,
+			&i.UpgradeDelayDays,
 		); err != nil {
 			return nil, err
 		}

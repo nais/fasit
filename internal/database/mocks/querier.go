@@ -3305,6 +3305,72 @@ func (_c *Querier_EnvironmentSetReconcile_Call) RunAndReturn(run func(ctx contex
 	return _c
 }
 
+// EnvironmentSetUpgradeDelayDays provides a mock function for the type Querier
+func (_mock *Querier) EnvironmentSetUpgradeDelayDays(ctx context.Context, arg gensql.EnvironmentSetUpgradeDelayDaysParams) (gensql.Environment, error) {
+	ret := _mock.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for EnvironmentSetUpgradeDelayDays")
+	}
+
+	var r0 gensql.Environment
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, gensql.EnvironmentSetUpgradeDelayDaysParams) (gensql.Environment, error)); ok {
+		return returnFunc(ctx, arg)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, gensql.EnvironmentSetUpgradeDelayDaysParams) gensql.Environment); ok {
+		r0 = returnFunc(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(gensql.Environment)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, gensql.EnvironmentSetUpgradeDelayDaysParams) error); ok {
+		r1 = returnFunc(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_EnvironmentSetUpgradeDelayDays_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'EnvironmentSetUpgradeDelayDays'
+type Querier_EnvironmentSetUpgradeDelayDays_Call struct {
+	*mock.Call
+}
+
+// EnvironmentSetUpgradeDelayDays is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg gensql.EnvironmentSetUpgradeDelayDaysParams
+func (_e *Querier_Expecter) EnvironmentSetUpgradeDelayDays(ctx interface{}, arg interface{}) *Querier_EnvironmentSetUpgradeDelayDays_Call {
+	return &Querier_EnvironmentSetUpgradeDelayDays_Call{Call: _e.mock.On("EnvironmentSetUpgradeDelayDays", ctx, arg)}
+}
+
+func (_c *Querier_EnvironmentSetUpgradeDelayDays_Call) Run(run func(ctx context.Context, arg gensql.EnvironmentSetUpgradeDelayDaysParams)) *Querier_EnvironmentSetUpgradeDelayDays_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 gensql.EnvironmentSetUpgradeDelayDaysParams
+		if args[1] != nil {
+			arg1 = args[1].(gensql.EnvironmentSetUpgradeDelayDaysParams)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_EnvironmentSetUpgradeDelayDays_Call) Return(environment gensql.Environment, err error) *Querier_EnvironmentSetUpgradeDelayDays_Call {
+	_c.Call.Return(environment, err)
+	return _c
+}
+
+func (_c *Querier_EnvironmentSetUpgradeDelayDays_Call) RunAndReturn(run func(ctx context.Context, arg gensql.EnvironmentSetUpgradeDelayDaysParams) (gensql.Environment, error)) *Querier_EnvironmentSetUpgradeDelayDays_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // EnvironmentUpdate provides a mock function for the type Querier
 func (_mock *Querier) EnvironmentUpdate(ctx context.Context, arg gensql.EnvironmentUpdateParams) (gensql.Environment, error) {
 	ret := _mock.Called(ctx, arg)
@@ -6704,6 +6770,72 @@ func (_c *Querier_TenantGetByName_Call) Return(tenant gensql.Tenant, err error) 
 }
 
 func (_c *Querier_TenantGetByName_Call) RunAndReturn(run func(ctx context.Context, name string) (gensql.Tenant, error)) *Querier_TenantGetByName_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// TenantSetUpgradeDelayDays provides a mock function for the type Querier
+func (_mock *Querier) TenantSetUpgradeDelayDays(ctx context.Context, arg gensql.TenantSetUpgradeDelayDaysParams) (gensql.Tenant, error) {
+	ret := _mock.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for TenantSetUpgradeDelayDays")
+	}
+
+	var r0 gensql.Tenant
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, gensql.TenantSetUpgradeDelayDaysParams) (gensql.Tenant, error)); ok {
+		return returnFunc(ctx, arg)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, gensql.TenantSetUpgradeDelayDaysParams) gensql.Tenant); ok {
+		r0 = returnFunc(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(gensql.Tenant)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, gensql.TenantSetUpgradeDelayDaysParams) error); ok {
+		r1 = returnFunc(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_TenantSetUpgradeDelayDays_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TenantSetUpgradeDelayDays'
+type Querier_TenantSetUpgradeDelayDays_Call struct {
+	*mock.Call
+}
+
+// TenantSetUpgradeDelayDays is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg gensql.TenantSetUpgradeDelayDaysParams
+func (_e *Querier_Expecter) TenantSetUpgradeDelayDays(ctx interface{}, arg interface{}) *Querier_TenantSetUpgradeDelayDays_Call {
+	return &Querier_TenantSetUpgradeDelayDays_Call{Call: _e.mock.On("TenantSetUpgradeDelayDays", ctx, arg)}
+}
+
+func (_c *Querier_TenantSetUpgradeDelayDays_Call) Run(run func(ctx context.Context, arg gensql.TenantSetUpgradeDelayDaysParams)) *Querier_TenantSetUpgradeDelayDays_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 gensql.TenantSetUpgradeDelayDaysParams
+		if args[1] != nil {
+			arg1 = args[1].(gensql.TenantSetUpgradeDelayDaysParams)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_TenantSetUpgradeDelayDays_Call) Return(tenant gensql.Tenant, err error) *Querier_TenantSetUpgradeDelayDays_Call {
+	_c.Call.Return(tenant, err)
+	return _c
+}
+
+func (_c *Querier_TenantSetUpgradeDelayDays_Call) RunAndReturn(run func(ctx context.Context, arg gensql.TenantSetUpgradeDelayDaysParams) (gensql.Tenant, error)) *Querier_TenantSetUpgradeDelayDays_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -2112,6 +2112,80 @@ func (_c *Repo_EnvConfig_Call) RunAndReturn(run func(ctx context.Context, featur
 	return _c
 }
 
+// EnvironmentAutoUpgradeSet provides a mock function for the type Repo
+func (_mock *Repo) EnvironmentAutoUpgradeSet(ctx context.Context, environmentID uuid.UUID, autoUpgrade bool) (*model.Environment, error) {
+	ret := _mock.Called(ctx, environmentID, autoUpgrade)
+
+	if len(ret) == 0 {
+		panic("no return value specified for EnvironmentAutoUpgradeSet")
+	}
+
+	var r0 *model.Environment
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, bool) (*model.Environment, error)); ok {
+		return returnFunc(ctx, environmentID, autoUpgrade)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, bool) *model.Environment); ok {
+		r0 = returnFunc(ctx, environmentID, autoUpgrade)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Environment)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, bool) error); ok {
+		r1 = returnFunc(ctx, environmentID, autoUpgrade)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Repo_EnvironmentAutoUpgradeSet_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'EnvironmentAutoUpgradeSet'
+type Repo_EnvironmentAutoUpgradeSet_Call struct {
+	*mock.Call
+}
+
+// EnvironmentAutoUpgradeSet is a helper method to define mock.On call
+//   - ctx context.Context
+//   - environmentID uuid.UUID
+//   - autoUpgrade bool
+func (_e *Repo_Expecter) EnvironmentAutoUpgradeSet(ctx interface{}, environmentID interface{}, autoUpgrade interface{}) *Repo_EnvironmentAutoUpgradeSet_Call {
+	return &Repo_EnvironmentAutoUpgradeSet_Call{Call: _e.mock.On("EnvironmentAutoUpgradeSet", ctx, environmentID, autoUpgrade)}
+}
+
+func (_c *Repo_EnvironmentAutoUpgradeSet_Call) Run(run func(ctx context.Context, environmentID uuid.UUID, autoUpgrade bool)) *Repo_EnvironmentAutoUpgradeSet_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		var arg2 bool
+		if args[2] != nil {
+			arg2 = args[2].(bool)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *Repo_EnvironmentAutoUpgradeSet_Call) Return(environment *model.Environment, err error) *Repo_EnvironmentAutoUpgradeSet_Call {
+	_c.Call.Return(environment, err)
+	return _c
+}
+
+func (_c *Repo_EnvironmentAutoUpgradeSet_Call) RunAndReturn(run func(ctx context.Context, environmentID uuid.UUID, autoUpgrade bool) (*model.Environment, error)) *Repo_EnvironmentAutoUpgradeSet_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // EnvironmentByNames provides a mock function for the type Repo
 func (_mock *Repo) EnvironmentByNames(ctx context.Context, tenantName string, environmentName string) (*model.Environment, error) {
 	ret := _mock.Called(ctx, tenantName, environmentName)
@@ -2606,80 +2680,6 @@ func (_c *Repo_EnvironmentIDByNames_Call) RunAndReturn(run func(ctx context.Cont
 	return _c
 }
 
-// EnvironmentSetAutoUpgrade provides a mock function for the type Repo
-func (_mock *Repo) EnvironmentSetAutoUpgrade(ctx context.Context, environmentID uuid.UUID, autoUpgrade bool) (*model.Environment, error) {
-	ret := _mock.Called(ctx, environmentID, autoUpgrade)
-
-	if len(ret) == 0 {
-		panic("no return value specified for EnvironmentSetAutoUpgrade")
-	}
-
-	var r0 *model.Environment
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, bool) (*model.Environment, error)); ok {
-		return returnFunc(ctx, environmentID, autoUpgrade)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, bool) *model.Environment); ok {
-		r0 = returnFunc(ctx, environmentID, autoUpgrade)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.Environment)
-		}
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, bool) error); ok {
-		r1 = returnFunc(ctx, environmentID, autoUpgrade)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Repo_EnvironmentSetAutoUpgrade_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'EnvironmentSetAutoUpgrade'
-type Repo_EnvironmentSetAutoUpgrade_Call struct {
-	*mock.Call
-}
-
-// EnvironmentSetAutoUpgrade is a helper method to define mock.On call
-//   - ctx context.Context
-//   - environmentID uuid.UUID
-//   - autoUpgrade bool
-func (_e *Repo_Expecter) EnvironmentSetAutoUpgrade(ctx interface{}, environmentID interface{}, autoUpgrade interface{}) *Repo_EnvironmentSetAutoUpgrade_Call {
-	return &Repo_EnvironmentSetAutoUpgrade_Call{Call: _e.mock.On("EnvironmentSetAutoUpgrade", ctx, environmentID, autoUpgrade)}
-}
-
-func (_c *Repo_EnvironmentSetAutoUpgrade_Call) Run(run func(ctx context.Context, environmentID uuid.UUID, autoUpgrade bool)) *Repo_EnvironmentSetAutoUpgrade_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 uuid.UUID
-		if args[1] != nil {
-			arg1 = args[1].(uuid.UUID)
-		}
-		var arg2 bool
-		if args[2] != nil {
-			arg2 = args[2].(bool)
-		}
-		run(
-			arg0,
-			arg1,
-			arg2,
-		)
-	})
-	return _c
-}
-
-func (_c *Repo_EnvironmentSetAutoUpgrade_Call) Return(environment *model.Environment, err error) *Repo_EnvironmentSetAutoUpgrade_Call {
-	_c.Call.Return(environment, err)
-	return _c
-}
-
-func (_c *Repo_EnvironmentSetAutoUpgrade_Call) RunAndReturn(run func(ctx context.Context, environmentID uuid.UUID, autoUpgrade bool) (*model.Environment, error)) *Repo_EnvironmentSetAutoUpgrade_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // EnvironmentSetLabels provides a mock function for the type Repo
 func (_mock *Repo) EnvironmentSetLabels(ctx context.Context, environmentID uuid.UUID, labels []*protogen.EnvironmentLabel) error {
 	ret := _mock.Called(ctx, environmentID, labels)
@@ -2813,6 +2813,80 @@ func (_c *Repo_EnvironmentSetReconcile_Call) Return(environment *model.Environme
 }
 
 func (_c *Repo_EnvironmentSetReconcile_Call) RunAndReturn(run func(ctx context.Context, environmentID uuid.UUID, reconcile bool) (*model.Environment, error)) *Repo_EnvironmentSetReconcile_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// EnvironmentSetUpgradeDelayDays provides a mock function for the type Repo
+func (_mock *Repo) EnvironmentSetUpgradeDelayDays(ctx context.Context, id uuid.UUID, delayDays int32) (*model.Environment, error) {
+	ret := _mock.Called(ctx, id, delayDays)
+
+	if len(ret) == 0 {
+		panic("no return value specified for EnvironmentSetUpgradeDelayDays")
+	}
+
+	var r0 *model.Environment
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int32) (*model.Environment, error)); ok {
+		return returnFunc(ctx, id, delayDays)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int32) *model.Environment); ok {
+		r0 = returnFunc(ctx, id, delayDays)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Environment)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, int32) error); ok {
+		r1 = returnFunc(ctx, id, delayDays)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Repo_EnvironmentSetUpgradeDelayDays_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'EnvironmentSetUpgradeDelayDays'
+type Repo_EnvironmentSetUpgradeDelayDays_Call struct {
+	*mock.Call
+}
+
+// EnvironmentSetUpgradeDelayDays is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id uuid.UUID
+//   - delayDays int32
+func (_e *Repo_Expecter) EnvironmentSetUpgradeDelayDays(ctx interface{}, id interface{}, delayDays interface{}) *Repo_EnvironmentSetUpgradeDelayDays_Call {
+	return &Repo_EnvironmentSetUpgradeDelayDays_Call{Call: _e.mock.On("EnvironmentSetUpgradeDelayDays", ctx, id, delayDays)}
+}
+
+func (_c *Repo_EnvironmentSetUpgradeDelayDays_Call) Run(run func(ctx context.Context, id uuid.UUID, delayDays int32)) *Repo_EnvironmentSetUpgradeDelayDays_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		var arg2 int32
+		if args[2] != nil {
+			arg2 = args[2].(int32)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *Repo_EnvironmentSetUpgradeDelayDays_Call) Return(environment *model.Environment, err error) *Repo_EnvironmentSetUpgradeDelayDays_Call {
+	_c.Call.Return(environment, err)
+	return _c
+}
+
+func (_c *Repo_EnvironmentSetUpgradeDelayDays_Call) RunAndReturn(run func(ctx context.Context, id uuid.UUID, delayDays int32) (*model.Environment, error)) *Repo_EnvironmentSetUpgradeDelayDays_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -6506,6 +6580,80 @@ func (_c *Repo_TenantGetByName_Call) Return(tenant *model.Tenant, err error) *Re
 }
 
 func (_c *Repo_TenantGetByName_Call) RunAndReturn(run func(ctx context.Context, name string) (*model.Tenant, error)) *Repo_TenantGetByName_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// TenantSetUpgradeDelayDays provides a mock function for the type Repo
+func (_mock *Repo) TenantSetUpgradeDelayDays(ctx context.Context, id uuid.UUID, delayDays int32) (*model.Tenant, error) {
+	ret := _mock.Called(ctx, id, delayDays)
+
+	if len(ret) == 0 {
+		panic("no return value specified for TenantSetUpgradeDelayDays")
+	}
+
+	var r0 *model.Tenant
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int32) (*model.Tenant, error)); ok {
+		return returnFunc(ctx, id, delayDays)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int32) *model.Tenant); ok {
+		r0 = returnFunc(ctx, id, delayDays)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Tenant)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, int32) error); ok {
+		r1 = returnFunc(ctx, id, delayDays)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Repo_TenantSetUpgradeDelayDays_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TenantSetUpgradeDelayDays'
+type Repo_TenantSetUpgradeDelayDays_Call struct {
+	*mock.Call
+}
+
+// TenantSetUpgradeDelayDays is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id uuid.UUID
+//   - delayDays int32
+func (_e *Repo_Expecter) TenantSetUpgradeDelayDays(ctx interface{}, id interface{}, delayDays interface{}) *Repo_TenantSetUpgradeDelayDays_Call {
+	return &Repo_TenantSetUpgradeDelayDays_Call{Call: _e.mock.On("TenantSetUpgradeDelayDays", ctx, id, delayDays)}
+}
+
+func (_c *Repo_TenantSetUpgradeDelayDays_Call) Run(run func(ctx context.Context, id uuid.UUID, delayDays int32)) *Repo_TenantSetUpgradeDelayDays_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		var arg2 int32
+		if args[2] != nil {
+			arg2 = args[2].(int32)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *Repo_TenantSetUpgradeDelayDays_Call) Return(tenant *model.Tenant, err error) *Repo_TenantSetUpgradeDelayDays_Call {
+	_c.Call.Return(tenant, err)
+	return _c
+}
+
+func (_c *Repo_TenantSetUpgradeDelayDays_Call) RunAndReturn(run func(ctx context.Context, id uuid.UUID, delayDays int32) (*model.Tenant, error)) *Repo_TenantSetUpgradeDelayDays_Call {
 	_c.Call.Return(run)
 	return _c
 }
