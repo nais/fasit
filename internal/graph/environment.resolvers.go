@@ -13,6 +13,7 @@ import (
 
 	"github.com/google/uuid"
 	pgx "github.com/jackc/pgx/v5"
+	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/graph/graphgen"
 	"github.com/nais/fasit/internal/graph/model"
 )
@@ -273,7 +274,11 @@ func (r *mutationResolver) EnvironmentSetAutoUpgrade(ctx context.Context, id uui
 
 // EnvironmentSetUpgradeDelayDays is the resolver for the environmentSetUpgradeDelayDays field.
 func (r *mutationResolver) EnvironmentSetUpgradeDelayDays(ctx context.Context, environmentID uuid.UUID, delayDays int) (*model.Environment, error) {
-	return r.Repo.EnvironmentSetUpgradeDelayDays(ctx, environmentID, int32(delayDays))
+	delayDays32, err := database.ToInt32(delayDays)
+	if err != nil {
+		return nil, err
+	}
+	return r.Repo.EnvironmentSetUpgradeDelayDays(ctx, environmentID, delayDays32)
 }
 
 // Feature is the resolver for the feature field.

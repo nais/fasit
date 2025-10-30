@@ -3,8 +3,6 @@ package database
 import (
 	"context"
 	"errors"
-	"fmt"
-	"math"
 	"strings"
 
 	"cloud.google.com/go/container/apiv1/containerpb"
@@ -13,13 +11,6 @@ import (
 	"github.com/nais/fasit/internal/database/gensql"
 	"github.com/nais/fasit/internal/graph/model"
 )
-
-func toInt32(val int) (int32, error) {
-	if val > math.MaxInt32 || val < math.MinInt32 {
-		return 0, fmt.Errorf("toInt32: value %d out of int32 bounds (min: %d, max: %d)", val, math.MinInt32, math.MaxInt32)
-	}
-	return int32(val), nil
-}
 
 type ClusterUpgraderRepo interface {
 	CreateOrUpdateClusterOperation(ctx context.Context, tenantID, envID, versionID uuid.UUID, op *containerpb.Operation) (*model.EnvironmentOperation, error)
@@ -219,23 +210,23 @@ func (r *repo) CreateOrUpdateClusterOperation(ctx context.Context, tenantID, env
 		}
 	}
 
-	nodesTotal32, err := toInt32(nodesTotal)
+	nodesTotal32, err := ToInt32(nodesTotal)
 	if err != nil {
 		return nil, err
 	}
-	nodesFailed32, err := toInt32(nodesFailed)
+	nodesFailed32, err := ToInt32(nodesFailed)
 	if err != nil {
 		return nil, err
 	}
-	nodesComplete32, err := toInt32(nodesComplete)
+	nodesComplete32, err := ToInt32(nodesComplete)
 	if err != nil {
 		return nil, err
 	}
-	nodesDone32, err := toInt32(nodesDone)
+	nodesDone32, err := ToInt32(nodesDone)
 	if err != nil {
 		return nil, err
 	}
-	nodePdbDelaySeconds32, err := toInt32(nodePdbDelaySeconds)
+	nodePdbDelaySeconds32, err := ToInt32(nodePdbDelaySeconds)
 	if err != nil {
 		return nil, err
 	}
