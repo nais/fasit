@@ -2112,80 +2112,6 @@ func (_c *Repo_EnvConfig_Call) RunAndReturn(run func(ctx context.Context, featur
 	return _c
 }
 
-// EnvironmentAutoUpgradeSet provides a mock function for the type Repo
-func (_mock *Repo) EnvironmentAutoUpgradeSet(ctx context.Context, environmentID uuid.UUID, autoUpgrade bool) (*model.Environment, error) {
-	ret := _mock.Called(ctx, environmentID, autoUpgrade)
-
-	if len(ret) == 0 {
-		panic("no return value specified for EnvironmentAutoUpgradeSet")
-	}
-
-	var r0 *model.Environment
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, bool) (*model.Environment, error)); ok {
-		return returnFunc(ctx, environmentID, autoUpgrade)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, bool) *model.Environment); ok {
-		r0 = returnFunc(ctx, environmentID, autoUpgrade)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.Environment)
-		}
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, bool) error); ok {
-		r1 = returnFunc(ctx, environmentID, autoUpgrade)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Repo_EnvironmentAutoUpgradeSet_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'EnvironmentAutoUpgradeSet'
-type Repo_EnvironmentAutoUpgradeSet_Call struct {
-	*mock.Call
-}
-
-// EnvironmentAutoUpgradeSet is a helper method to define mock.On call
-//   - ctx context.Context
-//   - environmentID uuid.UUID
-//   - autoUpgrade bool
-func (_e *Repo_Expecter) EnvironmentAutoUpgradeSet(ctx interface{}, environmentID interface{}, autoUpgrade interface{}) *Repo_EnvironmentAutoUpgradeSet_Call {
-	return &Repo_EnvironmentAutoUpgradeSet_Call{Call: _e.mock.On("EnvironmentAutoUpgradeSet", ctx, environmentID, autoUpgrade)}
-}
-
-func (_c *Repo_EnvironmentAutoUpgradeSet_Call) Run(run func(ctx context.Context, environmentID uuid.UUID, autoUpgrade bool)) *Repo_EnvironmentAutoUpgradeSet_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 uuid.UUID
-		if args[1] != nil {
-			arg1 = args[1].(uuid.UUID)
-		}
-		var arg2 bool
-		if args[2] != nil {
-			arg2 = args[2].(bool)
-		}
-		run(
-			arg0,
-			arg1,
-			arg2,
-		)
-	})
-	return _c
-}
-
-func (_c *Repo_EnvironmentAutoUpgradeSet_Call) Return(environment *model.Environment, err error) *Repo_EnvironmentAutoUpgradeSet_Call {
-	_c.Call.Return(environment, err)
-	return _c
-}
-
-func (_c *Repo_EnvironmentAutoUpgradeSet_Call) RunAndReturn(run func(ctx context.Context, environmentID uuid.UUID, autoUpgrade bool) (*model.Environment, error)) *Repo_EnvironmentAutoUpgradeSet_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // EnvironmentByNames provides a mock function for the type Repo
 func (_mock *Repo) EnvironmentByNames(ctx context.Context, tenantName string, environmentName string) (*model.Environment, error) {
 	ret := _mock.Called(ctx, tenantName, environmentName)
@@ -2676,6 +2602,80 @@ func (_c *Repo_EnvironmentIDByNames_Call) Return(uUID uuid.UUID, err error) *Rep
 }
 
 func (_c *Repo_EnvironmentIDByNames_Call) RunAndReturn(run func(ctx context.Context, tenantName string, environmentName string) (uuid.UUID, error)) *Repo_EnvironmentIDByNames_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// EnvironmentSetAutoUpgrade provides a mock function for the type Repo
+func (_mock *Repo) EnvironmentSetAutoUpgrade(ctx context.Context, environmentID uuid.UUID, autoUpgrade bool) (*model.Environment, error) {
+	ret := _mock.Called(ctx, environmentID, autoUpgrade)
+
+	if len(ret) == 0 {
+		panic("no return value specified for EnvironmentSetAutoUpgrade")
+	}
+
+	var r0 *model.Environment
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, bool) (*model.Environment, error)); ok {
+		return returnFunc(ctx, environmentID, autoUpgrade)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, bool) *model.Environment); ok {
+		r0 = returnFunc(ctx, environmentID, autoUpgrade)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Environment)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, bool) error); ok {
+		r1 = returnFunc(ctx, environmentID, autoUpgrade)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Repo_EnvironmentSetAutoUpgrade_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'EnvironmentSetAutoUpgrade'
+type Repo_EnvironmentSetAutoUpgrade_Call struct {
+	*mock.Call
+}
+
+// EnvironmentSetAutoUpgrade is a helper method to define mock.On call
+//   - ctx context.Context
+//   - environmentID uuid.UUID
+//   - autoUpgrade bool
+func (_e *Repo_Expecter) EnvironmentSetAutoUpgrade(ctx interface{}, environmentID interface{}, autoUpgrade interface{}) *Repo_EnvironmentSetAutoUpgrade_Call {
+	return &Repo_EnvironmentSetAutoUpgrade_Call{Call: _e.mock.On("EnvironmentSetAutoUpgrade", ctx, environmentID, autoUpgrade)}
+}
+
+func (_c *Repo_EnvironmentSetAutoUpgrade_Call) Run(run func(ctx context.Context, environmentID uuid.UUID, autoUpgrade bool)) *Repo_EnvironmentSetAutoUpgrade_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		var arg2 bool
+		if args[2] != nil {
+			arg2 = args[2].(bool)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *Repo_EnvironmentSetAutoUpgrade_Call) Return(environment *model.Environment, err error) *Repo_EnvironmentSetAutoUpgrade_Call {
+	_c.Call.Return(environment, err)
+	return _c
+}
+
+func (_c *Repo_EnvironmentSetAutoUpgrade_Call) RunAndReturn(run func(ctx context.Context, environmentID uuid.UUID, autoUpgrade bool) (*model.Environment, error)) *Repo_EnvironmentSetAutoUpgrade_Call {
 	_c.Call.Return(run)
 	return _c
 }

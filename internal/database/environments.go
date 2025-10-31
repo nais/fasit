@@ -19,7 +19,7 @@ type EnvironmentRepo interface {
 	EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]*model.Environment, error)
 	EnvironmentsGetByAutoUpgrade(ctx context.Context) ([]*model.Environment, error)
 	EnvironmentUpdate(ctx context.Context, environmentID uuid.UUID, p *model.EnvironmentUpdate) (*model.Environment, error)
-	EnvironmentAutoUpgradeSet(ctx context.Context, environmentID uuid.UUID, autoUpgrade bool) (*model.Environment, error)
+	EnvironmentSetAutoUpgrade(ctx context.Context, environmentID uuid.UUID, autoUpgrade bool) (*model.Environment, error)
 	EnvironmentSetReconcile(ctx context.Context, environmentID uuid.UUID, reconcile bool) (*model.Environment, error)
 	EnvironmentSetLabels(ctx context.Context, environmentID uuid.UUID, labels []*protogen.EnvironmentLabel) error
 	EnvironmentGetLabels(ctx context.Context, environmentID uuid.UUID) ([]*model.EnvironmentLabel, error)
@@ -203,7 +203,7 @@ func (r *repo) EnvironmentGetLabels(ctx context.Context, environmentID uuid.UUID
 	return ret, nil
 }
 
-func (r *repo) EnvironmentAutoUpgradeSet(ctx context.Context, environmentID uuid.UUID, autoUpgrade bool) (*model.Environment, error) {
+func (r *repo) EnvironmentSetAutoUpgrade(ctx context.Context, environmentID uuid.UUID, autoUpgrade bool) (*model.Environment, error) {
 	env, err := r.querier.EnvironmentSetAutoUpgrade(ctx, gensql.EnvironmentSetAutoUpgradeParams{
 		ID:          environmentID,
 		AutoUpgrade: autoUpgrade,

@@ -142,7 +142,7 @@ func TestEnvironmentUpgradeConfigEnabled(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	env, err = repo.EnvironmentAutoUpgradeSet(ctx, env.ID, true)
+	env, err = repo.EnvironmentSetAutoUpgrade(ctx, env.ID, true)
 	require.NoError(t, err)
 
 	// Set delay_days
