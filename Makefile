@@ -5,18 +5,15 @@ LUAFMT=$(BIN_DIR)/luafmt-$(LUA_FORMATTER_VERSION)
 all: generate fmt test check build helm-lint
 
 helm-lint:
-	helm lint --strict ./charts/fasit
-	helm lint --strict ./charts/naisd
+	mise run check:helm
 
 generate: generate-graphql generate-sql generate-feature-schema tester_spec
 
-generate-sql: sqlc-vet
-	go tool github.com/sqlc-dev/sqlc/cmd/sqlc generate
-	$(MAKE) generate-mocks
+generate-sql:
+	mise run generate:sqlc
 
 generate-graphql:
-	go tool github.com/99designs/gqlgen generate
-	go tool mvdan.cc/gofumpt -w .
+	mise run generate:graphql
 
 setup:
 	go run cmd/setup_local_env/main.go
@@ -66,16 +63,13 @@ local-naisd-management-failing:
 	--mock-failing=true
 
 test:
-	go test -race -tags integration_test -cover ./...
+	mise run test
 
 unit-test:
-	go test -cover ./...
-
-sqlc-vet:
-	go tool github.com/sqlc-dev/sqlc/cmd/sqlc vet
+	mise run test:unit
 
 generate-mocks:
-	go tool github.com/vektra/mockery/v3
+	mise run generate:mocks
 
 generate-proto:
 	mkdir -p internal/provider/protogen
@@ -94,30 +88,30 @@ release-naisd:
 check: staticcheck vulncheck deadcode gosec
 
 staticcheck:
-	go tool honnef.co/go/tools/cmd/staticcheck ./...
+	mise run check:staticcheck
 
 vulncheck:
-	go tool golang.org/x/vuln/cmd/govulncheck ./...
+	mise run check:govulncheck
 
 deadcode:
-	go tool golang.org/x/tools/cmd/deadcode -test ./...
+	mise run check:deadcode
 
 gosec:
-	go tool github.com/securego/gosec/v2/cmd/gosec --exclude-generated -terse ./...
+	mise run check:gosec
 
 build: build-fasit build-naisd build-generate-schema build-setup-local-env
 
 build-fasit:
-	go build -o ./bin/fasit ./cmd/fasit/
+	mise run build:fasit
 
 build-naisd:
-	go build -o ./bin/naisd ./cmd/naisd/
+	mise run build:naisd
 
 build-generate-schema:
-	go build -o ./bin/generate_schema ./cmd/generate_schema/
+	mise run build:generate-schema
 
 build-setup-local-env:
-	go build -o ./bin/setup_local_env ./cmd/setup_local_env/
+	mise run build:setup-local-env
 
 integration_test_ui:
 	go run ./cmd/tester_run --ui

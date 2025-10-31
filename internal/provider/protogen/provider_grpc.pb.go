@@ -27,6 +27,7 @@ const (
 	Provider_GetEnvironmentValue_FullMethodName            = "/Provider/GetEnvironmentValue"
 	Provider_GetEnvironmentValuesAcrossEnvs_FullMethodName = "/Provider/GetEnvironmentValuesAcrossEnvs"
 	Provider_DeleteEnvironmentValue_FullMethodName         = "/Provider/DeleteEnvironmentValue"
+	Provider_UpdateEnvironment_FullMethodName              = "/Provider/UpdateEnvironment"
 )
 
 // ProviderClient is the client API for Provider service.
@@ -41,6 +42,7 @@ type ProviderClient interface {
 	GetEnvironmentValue(ctx context.Context, in *GetEnvironmentValueRequest, opts ...grpc.CallOption) (*EnvironmentValueResponse, error)
 	GetEnvironmentValuesAcrossEnvs(ctx context.Context, in *GetEnvironmentValuesAcrossEnvsRequest, opts ...grpc.CallOption) (*EnvironmentValuesAcrossEnvsResponse, error)
 	DeleteEnvironmentValue(ctx context.Context, in *DeleteEnvironmentValueRequest, opts ...grpc.CallOption) (*DeleteEnvironmentValueResponse, error)
+	UpdateEnvironment(ctx context.Context, in *UpdateEnvironmentRequest, opts ...grpc.CallOption) (*EnvironmentResponse, error)
 }
 
 type providerClient struct {
@@ -131,6 +133,16 @@ func (c *providerClient) DeleteEnvironmentValue(ctx context.Context, in *DeleteE
 	return out, nil
 }
 
+func (c *providerClient) UpdateEnvironment(ctx context.Context, in *UpdateEnvironmentRequest, opts ...grpc.CallOption) (*EnvironmentResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(EnvironmentResponse)
+	err := c.cc.Invoke(ctx, Provider_UpdateEnvironment_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ProviderServer is the server API for Provider service.
 // All implementations must embed UnimplementedProviderServer
 // for forward compatibility.
@@ -143,6 +155,7 @@ type ProviderServer interface {
 	GetEnvironmentValue(context.Context, *GetEnvironmentValueRequest) (*EnvironmentValueResponse, error)
 	GetEnvironmentValuesAcrossEnvs(context.Context, *GetEnvironmentValuesAcrossEnvsRequest) (*EnvironmentValuesAcrossEnvsResponse, error)
 	DeleteEnvironmentValue(context.Context, *DeleteEnvironmentValueRequest) (*DeleteEnvironmentValueResponse, error)
+	UpdateEnvironment(context.Context, *UpdateEnvironmentRequest) (*EnvironmentResponse, error)
 	mustEmbedUnimplementedProviderServer()
 }
 
@@ -176,6 +189,9 @@ func (UnimplementedProviderServer) GetEnvironmentValuesAcrossEnvs(context.Contex
 }
 func (UnimplementedProviderServer) DeleteEnvironmentValue(context.Context, *DeleteEnvironmentValueRequest) (*DeleteEnvironmentValueResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteEnvironmentValue not implemented")
+}
+func (UnimplementedProviderServer) UpdateEnvironment(context.Context, *UpdateEnvironmentRequest) (*EnvironmentResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateEnvironment not implemented")
 }
 func (UnimplementedProviderServer) mustEmbedUnimplementedProviderServer() {}
 func (UnimplementedProviderServer) testEmbeddedByValue()                  {}
@@ -342,6 +358,24 @@ func _Provider_DeleteEnvironmentValue_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Provider_UpdateEnvironment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateEnvironmentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ProviderServer).UpdateEnvironment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Provider_UpdateEnvironment_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ProviderServer).UpdateEnvironment(ctx, req.(*UpdateEnvironmentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Provider_ServiceDesc is the grpc.ServiceDesc for Provider service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -380,6 +414,10 @@ var Provider_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DeleteEnvironmentValue",
 			Handler:    _Provider_DeleteEnvironmentValue_Handler,
+		},
+		{
+			MethodName: "UpdateEnvironment",
+			Handler:    _Provider_UpdateEnvironment_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -75,6 +75,60 @@ func (b *CostUpsertBatchResults) Close() error {
 	return b.br.Close()
 }
 
+const environmentInsertLabels = `-- name: EnvironmentInsertLabels :batchexec
+INSERT INTO
+	environment_labels ("environment_id", "key", "value")
+VALUES
+	($1, $2, $3)
+`
+
+type EnvironmentInsertLabelsBatchResults struct {
+	br     pgx.BatchResults
+	tot    int
+	closed bool
+}
+
+type EnvironmentInsertLabelsParams struct {
+	EnvironmentID uuid.UUID
+	Key           string
+	Value         string
+}
+
+func (q *Queries) EnvironmentInsertLabels(ctx context.Context, arg []EnvironmentInsertLabelsParams) *EnvironmentInsertLabelsBatchResults {
+	batch := &pgx.Batch{}
+	for _, a := range arg {
+		vals := []interface{}{
+			a.EnvironmentID,
+			a.Key,
+			a.Value,
+		}
+		batch.Queue(environmentInsertLabels, vals...)
+	}
+	br := q.db.SendBatch(ctx, batch)
+	return &EnvironmentInsertLabelsBatchResults{br, len(arg), false}
+}
+
+func (b *EnvironmentInsertLabelsBatchResults) Exec(f func(int, error)) {
+	defer b.br.Close()
+	for t := 0; t < b.tot; t++ {
+		if b.closed {
+			if f != nil {
+				f(t, ErrBatchAlreadyClosed)
+			}
+			continue
+		}
+		_, err := b.br.Exec()
+		if f != nil {
+			f(t, err)
+		}
+	}
+}
+
+func (b *EnvironmentInsertLabelsBatchResults) Close() error {
+	b.closed = true
+	return b.br.Close()
+}
+
 const logsCreate = `-- name: LogsCreate :batchexec
 INSERT INTO
 	logs (deploy_instruction, TIME, message, kind)

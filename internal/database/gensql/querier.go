@@ -52,9 +52,12 @@ type Querier interface {
 	EnvironmentByNames(ctx context.Context, arg EnvironmentByNamesParams) (Environment, error)
 	EnvironmentCI(ctx context.Context, kind EnvironmentKind) (Environment, error)
 	EnvironmentCreate(ctx context.Context, arg EnvironmentCreateParams) (Environment, error)
+	EnvironmentDeleteLabels(ctx context.Context, environmentID uuid.UUID) error
 	EnvironmentGet(ctx context.Context, id uuid.UUID) (Environment, error)
 	EnvironmentGetByName(ctx context.Context, arg EnvironmentGetByNameParams) (Environment, error)
+	EnvironmentGetLabels(ctx context.Context, environmentID uuid.UUID) ([]EnvironmentLabel, error)
 	EnvironmentIDByNames(ctx context.Context, arg EnvironmentIDByNamesParams) (uuid.UUID, error)
+	EnvironmentInsertLabels(ctx context.Context, arg []EnvironmentInsertLabelsParams) *EnvironmentInsertLabelsBatchResults
 	EnvironmentSetAutoUpgrade(ctx context.Context, arg EnvironmentSetAutoUpgradeParams) (Environment, error)
 	EnvironmentSetReconcile(ctx context.Context, arg EnvironmentSetReconcileParams) (Environment, error)
 	EnvironmentUpdate(ctx context.Context, arg EnvironmentUpdateParams) (Environment, error)

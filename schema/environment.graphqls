@@ -61,6 +61,12 @@ type Environment {
 	clusterUpgradeHistory: [ClusterUpgradeStatus!]!
 	clusterUpgradeStatus: ClusterUpgradeStatus
 	versions: EnvironmentVersions
+	labels: [EnvironmentLabel!]!
+}
+
+type EnvironmentLabel {
+	key: String!
+	value: String!
 }
 
 type EnvironmentOperation {

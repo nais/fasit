@@ -198,6 +198,12 @@ type Environment struct {
 	AutoUpgrade  bool
 }
 
+type EnvironmentLabel struct {
+	EnvironmentID uuid.UUID
+	Key           string
+	Value         string
+}
+
 type EnvironmentValue struct {
 	EnvironmentID uuid.UUID
 	Key           string

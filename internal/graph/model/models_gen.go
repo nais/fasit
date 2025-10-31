@@ -58,6 +58,11 @@ type EnvironmentCreate struct {
 	Kind        EnvironmentKind `json:"kind"`
 }
 
+type EnvironmentLabel struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
 type EnvironmentOperation struct {
 	ID                  uuid.UUID `json:"id"`
 	Name                string    `json:"name"`
