@@ -1194,7 +1194,7 @@ func (c *ClusterUpgrader) shouldDelayUpgrade(ctx context.Context, tenant *model.
 
 	// Calculate effective delay by adding tenant and environment delays together
 	// Both tenant and environment delays are additive
-	// Each always has a value (NOT NULL DEFAULT 1 in database)
+	// Each always has a value (NOT NULL DEFAULT 0 in database)
 	tenantDelay := tenant.UpgradeDelayDays
 	envDelay := env.UpgradeDelayDays
 	delayDays := tenantDelay + envDelay
