@@ -13,12 +13,12 @@ import (
 type ClusterUpgradesStatus string
 
 const (
-	ClusterUpgradesStatusCREATED       ClusterUpgradesStatus = "CREATED"
-	ClusterUpgradesStatusWAITING       ClusterUpgradesStatus = "WAITING"
-	ClusterUpgradesStatusMASTERUPGRADE ClusterUpgradesStatus = "MASTER_UPGRADE"
-	ClusterUpgradesStatusNODEUPGRADE   ClusterUpgradesStatus = "NODE_UPGRADE"
-	ClusterUpgradesStatusFAILED        ClusterUpgradesStatus = "FAILED"
-	ClusterUpgradesStatusDONE          ClusterUpgradesStatus = "DONE"
+	ClusterUpgradesStatusCREATED             ClusterUpgradesStatus = "CREATED"
+	ClusterUpgradesStatusWAITING             ClusterUpgradesStatus = "WAITING"
+	ClusterUpgradesStatusCONTROLPLANEUPGRADE ClusterUpgradesStatus = "CONTROL_PLANE_UPGRADE"
+	ClusterUpgradesStatusNODEUPGRADE         ClusterUpgradesStatus = "NODE_UPGRADE"
+	ClusterUpgradesStatusFAILED              ClusterUpgradesStatus = "FAILED"
+	ClusterUpgradesStatusDONE                ClusterUpgradesStatus = "DONE"
 )
 
 func (e *ClusterUpgradesStatus) Scan(src interface{}) error {

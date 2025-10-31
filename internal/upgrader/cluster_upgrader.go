@@ -810,7 +810,7 @@ func (c *ClusterUpgrader) controlPlaneUpgradeStatus(ctx context.Context, env *mo
 		var currentVersion string
 		err = c.retryer.WithBackoff(ctx, "get_current_control_plane_version", func() error {
 			var retryErr error
-			currentVersion, retryErr = c.client.GetCurrentMasterVersion(ctx, projectID, env)
+			currentVersion, retryErr = c.client.GetCurrentControlPlaneVersion(ctx, projectID, env)
 			return retryErr
 		})
 		if err != nil {
@@ -865,9 +865,9 @@ func (c *ClusterUpgrader) controlPlaneUpgrade(ctx context.Context, env *model.En
 	var op *containerpb.Operation
 
 	// Retry the GKE API call with exponential backoff
-	err := c.retryer.WithBackoff(ctx, "upgrade_master", func() error {
+	err := c.retryer.WithBackoff(ctx, "upgrade_control_plane", func() error {
 		var retryErr error
-		op, retryErr = c.client.UpgradeMaster(ctx, projectID, env, upgrade.Version)
+		op, retryErr = c.client.UpgradeControlPlane(ctx, projectID, env, upgrade.Version)
 		return retryErr
 	})
 	if err != nil {
@@ -891,7 +891,7 @@ func (c *ClusterUpgrader) controlPlaneUpgrade(ctx context.Context, env *model.En
 		return nil, err
 	}
 
-	upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatusMASTERUPGRADE, upgrade.Version)
+	upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatusCONTROLPLANEUPGRADE, upgrade.Version)
 	if err != nil {
 		return upgradeStatus, err
 	}
@@ -1092,7 +1092,7 @@ func (c *ClusterUpgrader) validateUpgradeAgainstGKE(ctx context.Context, cluster
 	case model.UpgradeStatusControlPlaneUpgrade:
 		if !hasUpgradeOperations {
 			// Before marking as stuck, check if control plane upgrade actually completed
-			if c.isMasterUpgradeComplete(ctx, clusterUpgrade, projectID, env, log) {
+			if c.isControlPlaneUpgradeComplete(ctx, clusterUpgrade, projectID, env, log) {
 				return false
 			}
 			log.Warn("control plane upgrade stuck - no running operations in GKE")
@@ -1125,10 +1125,10 @@ func (c *ClusterUpgrader) validateUpgradeAgainstGKE(ctx context.Context, cluster
 	}
 }
 
-// isMasterUpgradeComplete checks if the control plane upgrade has actually completed
+// isControlPlaneUpgradeComplete checks if the control plane upgrade has actually completed
 // by comparing the current control plane version with the target version
-func (c *ClusterUpgrader) isMasterUpgradeComplete(ctx context.Context, clusterUpgrade *model.ClusterUpgradeStatus, projectID string, env *model.Environment, log logrus.FieldLogger) bool {
-	currentMasterVersion, err := c.client.GetCurrentMasterVersion(ctx, projectID, env)
+func (c *ClusterUpgrader) isControlPlaneUpgradeComplete(ctx context.Context, clusterUpgrade *model.ClusterUpgradeStatus, projectID string, env *model.Environment, log logrus.FieldLogger) bool {
+	currentControlPlaneVersion, err := c.client.GetCurrentControlPlaneVersion(ctx, projectID, env)
 	if err != nil {
 		log.WithError(err).Warn("failed to get current control plane version, assuming upgrade not complete")
 		return false
@@ -1140,7 +1140,7 @@ func (c *ClusterUpgrader) isMasterUpgradeComplete(ctx context.Context, clusterUp
 		return false
 	}
 
-	currentVersionObj, err := version.NewVersion(currentMasterVersion)
+	currentVersionObj, err := version.NewVersion(currentControlPlaneVersion)
 	if err != nil {
 		log.WithError(err).Warn("failed to parse current control plane version, assuming upgrade not complete")
 		return false
@@ -1149,7 +1149,7 @@ func (c *ClusterUpgrader) isMasterUpgradeComplete(ctx context.Context, clusterUp
 	isComplete := currentVersionObj.GreaterThanOrEqual(targetVersionObj)
 	if !isComplete {
 		log.WithFields(logrus.Fields{
-			"current_version": currentMasterVersion,
+			"current_version": currentControlPlaneVersion,
 			"target_version":  clusterUpgrade.Version,
 		}).Debug("control plane upgrade not yet complete")
 	}
@@ -1215,8 +1215,8 @@ func (c *ClusterUpgrader) isNodeUpgradeComplete(ctx context.Context, clusterUpgr
 
 // shouldDelayUpgrade checks if an upgrade should be delayed based on delay_days configuration
 // State transitions:
-// - delay_days 0: CREATED -> MASTER_UPGRADE (immediate, control plane upgrade begins)
-// - delay_days > 0: CREATED -> WAITING -> MASTER_UPGRADE (after delay, control plane upgrade begins)
+// - delay_days 0: CREATED -> CONTROL_PLANE_UPGRADE (immediate, control plane upgrade begins)
+// - delay_days > 0: CREATED -> WAITING -> CONTROL_PLANE_UPGRADE (after delay, control plane upgrade begins)
 // Delay is additive: tenant delay + environment delay (default for each is 0)
 func (c *ClusterUpgrader) shouldDelayUpgrade(ctx context.Context, tenant *model.Tenant, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus, log logrus.FieldLogger) bool {
 	// Only process CREATED or WAITING status

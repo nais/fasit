@@ -243,7 +243,7 @@ func TestRun_StartNodeUpgradeClusterStatusNodeUpgrade(t *testing.T) {
 	}
 }
 
-func TestRun_StartClusterUpgradeMasterStatusCreated(t *testing.T) {
+func TestRun_StartClusterUpgradeControlPlaneStatusCreated(t *testing.T) {
 	suite := newTestSuite(t)
 	upgrade := newUpgrade(suite)
 	suite.mockRunTenantForLoop(model.UpgradeStatusCreated)
@@ -255,7 +255,7 @@ func TestRun_StartClusterUpgradeMasterStatusCreated(t *testing.T) {
 	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, suite.environment).Return(
 		[]*containerpb.Operation{}, nil).Maybe()
 
-	suite.upgradeMock.EXPECT().UpgradeMaster(mock.Anything, mock.Anything, suite.environment, "1.2.4").Return(
+	suite.upgradeMock.EXPECT().UpgradeControlPlane(mock.Anything, mock.Anything, suite.environment, "1.2.4").Return(
 		&containerpb.Operation{
 			Name:          "operation",
 			OperationType: containerpb.Operation_UPGRADE_MASTER,
@@ -288,7 +288,7 @@ func TestRun_StartClusterUpgradeMasterStatusCreated(t *testing.T) {
 	}
 }
 
-func TestRun_UpdateClusterStatusToNodeUpgradeWhenOperationDoneOnMasterUpgrade(t *testing.T) {
+func TestRun_UpdateClusterStatusToNodeUpgradeWhenOperationDoneOnControlPlaneUpgrade(t *testing.T) {
 	suite := newTestSuite(t)
 	upgrade := newUpgrade(suite)
 	suite.mockRunTenantForLoop(model.UpgradeStatusControlPlaneUpgrade)
@@ -297,11 +297,11 @@ func TestRun_UpdateClusterStatusToNodeUpgradeWhenOperationDoneOnMasterUpgrade(t 
 	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, suite.environment).Return(
 		[]*containerpb.Operation{}, nil).Maybe()
 
-	// Mock GetCurrentMasterVersion for stuck detection - return master at target version (upgrade complete)
-	suite.upgradeMock.EXPECT().GetCurrentMasterVersion(mock.Anything, mock.Anything, suite.environment).Return(
+	// Mock GetCurrentControlPlaneVersion for stuck detection - return control plane at target version (upgrade complete)
+	suite.upgradeMock.EXPECT().GetCurrentControlPlaneVersion(mock.Anything, mock.Anything, suite.environment).Return(
 		"1.2.4", nil).Maybe() // Same as target version
 
-	// Since master upgrade is complete, continue with normal flow to transition to NODE_UPGRADE
+	// Since control plane upgrade is complete, continue with normal flow to transition to NODE_UPGRADE
 	suite.repoMock.EXPECT().GetRunningClusterOperation(mock.Anything, suite.env.tenantID, suite.env.id).Return(
 		&model.EnvironmentOperation{
 			ID:     uuid.New(),
@@ -343,7 +343,7 @@ func TestRun_UpdateClusterStatusToNodeUpgradeWhenOperationDoneOnMasterUpgrade(t 
 	}
 }
 
-func TestRun_MasterUpgradeIsRunning(t *testing.T) {
+func TestRun_ControlPlaneUpgradeIsRunning(t *testing.T) {
 	suite := newTestSuite(t)
 	upgrade := newUpgrade(suite)
 	suite.mockRunTenantForLoop(model.UpgradeStatusControlPlaneUpgrade)
@@ -395,7 +395,7 @@ func TestRun_MasterUpgradeIsRunning(t *testing.T) {
 			Status: containerpb.Operation_RUNNING.String(),
 			Type:   "UPGRADE_MASTER",
 		}, nil).Maybe()
-	suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, gensql.ClusterUpgradesStatusMASTERUPGRADE, "1.2.4").Return(
+	suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, gensql.ClusterUpgradesStatusCONTROLPLANEUPGRADE, "1.2.4").Return(
 		&model.ClusterUpgradeStatus{
 			ID:            uuid.New(),
 			UpgradeStatus: model.UpgradeStatusControlPlaneUpgrade,

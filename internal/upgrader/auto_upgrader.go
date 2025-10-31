@@ -160,7 +160,7 @@ func (c *AutoUpgrader) processEnvironment(ctx context.Context, env *model.Enviro
 		"project_id": projectID,
 	}).Debug("evaluating environment for automatic upgrades")
 
-	controlPlaneVer, err := c.getCurrentMasterVersionWithRetry(ctx, projectID, env)
+	controlPlaneVer, err := c.getCurrentControlPlaneVersionWithRetry(ctx, projectID, env)
 	if err != nil {
 		envLogger.WithFields(logrus.Fields{
 			"project_id": projectID,
@@ -380,14 +380,14 @@ func (c *AutoUpgrader) getProjectID(ctx context.Context, environmentID uuid.UUID
 }
 
 // Helper methods with retry logic for GKE API calls
-func (c *AutoUpgrader) getCurrentMasterVersionWithRetry(ctx context.Context, projectID string, env *model.Environment) (string, error) {
-	var masterVer string
-	err := c.retryer.WithBackoff(ctx, "get_current_master_version", func() error {
+func (c *AutoUpgrader) getCurrentControlPlaneVersionWithRetry(ctx context.Context, projectID string, env *model.Environment) (string, error) {
+	var controlPlaneVer string
+	err := c.retryer.WithBackoff(ctx, "get_current_control_plane_version", func() error {
 		var retryErr error
-		masterVer, retryErr = c.client.GetCurrentMasterVersion(ctx, projectID, env)
+		controlPlaneVer, retryErr = c.client.GetCurrentControlPlaneVersion(ctx, projectID, env)
 		return retryErr
 	})
-	return masterVer, err
+	return controlPlaneVer, err
 }
 
 func (c *AutoUpgrader) getReleaseChannelWithRetry(ctx context.Context, projectID string, env *model.Environment) (string, error) {

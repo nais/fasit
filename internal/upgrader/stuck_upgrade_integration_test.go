@@ -21,7 +21,7 @@ func TestStuckUpgradeIntegration(t *testing.T) {
 		// Setup stuck cluster upgrade (older than 24 hours)
 		stuckUpgrade := &model.ClusterUpgradeStatus{
 			ID:                    uuid.New(),
-			UpgradeStatus:         model.UpgradeStatusMasterUpgrade,
+			UpgradeStatus:         model.UpgradeStatusControlPlaneUpgrade,
 			Version:               "1.25.0",
 			LastModified:          time.Now().Add(-25 * time.Hour),
 			StartTime:             time.Now().Add(-25 * time.Hour),
@@ -56,8 +56,8 @@ func TestStuckUpgradeIntegration(t *testing.T) {
 		// Mock GetRunningOperations call from stuck detection logic
 		suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{}, nil).Once()
 
-		// Mock GetCurrentMasterVersion call from completion checking (for MASTER_UPGRADE status)
-		suite.upgradeMock.EXPECT().GetCurrentMasterVersion(mock.Anything, mock.Anything, mock.Anything).Return("1.24.0", nil).Once()
+		// Mock GetCurrentControlPlaneVersion call from completion checking (for CONTROL_PLANE_UPGRADE status)
+		suite.upgradeMock.EXPECT().GetCurrentControlPlaneVersion(mock.Anything, mock.Anything, mock.Anything).Return("1.24.0", nil).Once()
 
 		// Mock the EnvironmentValueGet call that happens in updateSlackProgress for mentions
 		suite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, suite.env.id, "slack_upgrade_mentions", false).Return(
@@ -81,7 +81,7 @@ func TestStuckUpgradeIntegration(t *testing.T) {
 		// Setup recent upgrade that's not stuck (only 2 hours old)
 		notStuckUpgrade := &model.ClusterUpgradeStatus{
 			ID:                    uuid.New(),
-			UpgradeStatus:         model.UpgradeStatusMasterUpgrade,
+			UpgradeStatus:         model.UpgradeStatusControlPlaneUpgrade,
 			Version:               "1.25.0",
 			LastModified:          time.Now().Add(-2 * time.Hour), // Only 2 hours old
 			StartTime:             time.Now().Add(-2 * time.Hour),
@@ -119,10 +119,10 @@ func TestStuckUpgradeIntegration(t *testing.T) {
 		// System will first check for running operations
 		testSuite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{}, nil).Times(2) // Called during stuck detection and main logic
 
-		// Mock GetCurrentMasterVersion call from completion checking (for MASTER_UPGRADE status)
-		testSuite.upgradeMock.EXPECT().GetCurrentMasterVersion(mock.Anything, mock.Anything, mock.Anything).Return("1.25.0", nil).Once() // Return target version to indicate completion
+		// Mock GetCurrentControlPlaneVersion call from completion checking (for CONTROL_PLANE_UPGRADE status)
+		testSuite.upgradeMock.EXPECT().GetCurrentControlPlaneVersion(mock.Anything, mock.Anything, mock.Anything).Return("1.25.0", nil).Once() // Return target version to indicate completion
 
-		// Mock the master upgrade status check
+		// Mock the control plane upgrade status check
 		testSuite.repoMock.EXPECT().GetRunningClusterOperation(mock.Anything, testSuite.env.tenantID, testSuite.env.id).Return(
 			&model.EnvironmentOperation{
 				ID:     uuid.New(),
@@ -135,8 +135,8 @@ func TestStuckUpgradeIntegration(t *testing.T) {
 			&containerpb.Operation{Status: containerpb.Operation_RUNNING}, nil).Once()
 		testSuite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil).Once()
 
-		// Since GetCurrentMasterVersion returns target version, the upgrader will mark the master upgrade as complete
-		testSuite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, testSuite.env.tenantID, testSuite.env.id, gensql.ClusterUpgradesStatusMASTERUPGRADE, "1.25.0").Return(notStuckUpgrade, nil).Once()
+		// Since GetCurrentControlPlaneVersion returns target version, the upgrader will mark the control plane upgrade as complete
+		testSuite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, testSuite.env.tenantID, testSuite.env.id, gensql.ClusterUpgradesStatusCONTROLPLANEUPGRADE, "1.25.0").Return(notStuckUpgrade, nil).Once()
 
 		// Mock the EnvironmentValueGet call for Slack mentions that happens in updateSlackProgress
 		testSuite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, mock.Anything, "slack_upgrade_mentions", false).Return(

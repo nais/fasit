@@ -22,7 +22,7 @@ func (m *MockUpgrader) GetReleaseChannel(ctx context.Context, projectID string, 
 	return args.String(0), args.Error(1)
 }
 
-func (m *MockUpgrader) GetCurrentMasterVersion(ctx context.Context, projectID string, environment *model.Environment) (string, error) {
+func (m *MockUpgrader) GetCurrentControlPlaneVersion(ctx context.Context, projectID string, environment *model.Environment) (string, error) {
 	args := m.Called(ctx, projectID, environment)
 	return args.String(0), args.Error(1)
 }
@@ -37,7 +37,7 @@ func (m *MockUpgrader) GetRunningOperations(ctx context.Context, projectID strin
 	return args.Get(0).([]*containerpb.Operation), args.Error(1)
 }
 
-func (m *MockUpgrader) UpgradeMaster(ctx context.Context, projectID string, environment *model.Environment, version string) (*containerpb.Operation, error) {
+func (m *MockUpgrader) UpgradeControlPlane(ctx context.Context, projectID string, environment *model.Environment, version string) (*containerpb.Operation, error) {
 	args := m.Called(ctx, projectID, environment, version)
 	return args.Get(0).(*containerpb.Operation), args.Error(1)
 }
@@ -108,7 +108,7 @@ func TestIsUpgradeStuck(t *testing.T) {
 			expectedStuck:  false,
 		},
 		{
-			name: "MASTER_UPGRADE stuck - no running operations in GKE",
+			name: "CONTROL_PLANE_UPGRADE stuck - no running operations in GKE",
 			clusterUpgrade: &model.ClusterUpgradeStatus{
 				ID:            uuid.New(),
 				UpgradeStatus: model.UpgradeStatusControlPlaneUpgrade,
@@ -120,7 +120,7 @@ func TestIsUpgradeStuck(t *testing.T) {
 			expectedStuck:  true,
 		},
 		{
-			name: "MASTER_UPGRADE not stuck - has running master upgrade",
+			name: "CONTROL_PLANE_UPGRADE not stuck - has running control plane upgrade",
 			clusterUpgrade: &model.ClusterUpgradeStatus{
 				ID:            uuid.New(),
 				UpgradeStatus: model.UpgradeStatusControlPlaneUpgrade,
@@ -130,7 +130,7 @@ func TestIsUpgradeStuck(t *testing.T) {
 			},
 			mockOperations: []*containerpb.Operation{
 				{
-					Name:          "upgrade-master-op",
+					Name:          "upgrade-control-plane-op",
 					OperationType: containerpb.Operation_UPGRADE_MASTER,
 					Status:        containerpb.Operation_RUNNING,
 				},
@@ -210,13 +210,13 @@ func TestIsUpgradeStuck(t *testing.T) {
 				if len(tt.mockOperations) == 0 {
 					switch tt.clusterUpgrade.UpgradeStatus {
 					case model.UpgradeStatusControlPlaneUpgrade:
-						// For MASTER_UPGRADE, check if master version matches target
-						currentMasterVersion := "1.24.0" // Different version to simulate stuck
+						// For CONTROL_PLANE_UPGRADE, check if control plane version matches target
+						currentControlPlaneVersion := "1.24.0" // Different version to simulate stuck
 						if !tt.expectedStuck {
 							// If not expected to be stuck, return target version to simulate completion
-							currentMasterVersion = tt.clusterUpgrade.Version
+							currentControlPlaneVersion = tt.clusterUpgrade.Version
 						}
-						mockUpgrader.On("GetCurrentMasterVersion", ctx, projectID, env).Return(currentMasterVersion, nil).Once()
+						mockUpgrader.On("GetCurrentControlPlaneVersion", ctx, projectID, env).Return(currentControlPlaneVersion, nil).Once()
 					case model.UpgradeStatusNodeUpgrade:
 						// For NODE_UPGRADE, check if nodes need upgrading
 						nodePoolVersion := "1.24.0" // Lower than target version = needs upgrading = not stuck

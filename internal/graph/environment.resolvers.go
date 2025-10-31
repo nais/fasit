@@ -197,7 +197,7 @@ func (r *environmentResolver) Versions(ctx context.Context, obj *model.Environme
 	if err != nil {
 		return nil, err
 	}
-	currentMasterVersion, err := r.UpgraderClient.GetCurrentMasterVersion(ctx, *projectID, obj)
+	currentControlPlaneVersion, err := r.UpgraderClient.GetCurrentControlPlaneVersion(ctx, *projectID, obj)
 	if err != nil {
 		return nil, err
 	}
@@ -222,7 +222,7 @@ func (r *environmentResolver) Versions(ctx context.Context, obj *model.Environme
 
 	return &model.EnvironmentVersions{
 		Channel:           channel,
-		Apiserver:         currentMasterVersion,
+		Apiserver:         currentControlPlaneVersion,
 		AvailableVersions: availableVersions,
 		NodePools:         nodePoolVersions,
 	}, nil

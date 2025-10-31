@@ -119,12 +119,12 @@ func (_c *Upgrader_GetAvailableVersions_Call) RunAndReturn(run func(ctx context.
 	return _c
 }
 
-// GetCurrentMasterVersion provides a mock function for the type Upgrader
-func (_mock *Upgrader) GetCurrentMasterVersion(ctx context.Context, projectID string, environment *model.Environment) (string, error) {
+// GetCurrentControlPlaneVersion provides a mock function for the type Upgrader
+func (_mock *Upgrader) GetCurrentControlPlaneVersion(ctx context.Context, projectID string, environment *model.Environment) (string, error) {
 	ret := _mock.Called(ctx, projectID, environment)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetCurrentMasterVersion")
+		panic("no return value specified for GetCurrentControlPlaneVersion")
 	}
 
 	var r0 string
@@ -145,20 +145,20 @@ func (_mock *Upgrader) GetCurrentMasterVersion(ctx context.Context, projectID st
 	return r0, r1
 }
 
-// Upgrader_GetCurrentMasterVersion_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetCurrentMasterVersion'
-type Upgrader_GetCurrentMasterVersion_Call struct {
+// Upgrader_GetCurrentControlPlaneVersion_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetCurrentControlPlaneVersion'
+type Upgrader_GetCurrentControlPlaneVersion_Call struct {
 	*mock.Call
 }
 
-// GetCurrentMasterVersion is a helper method to define mock.On call
+// GetCurrentControlPlaneVersion is a helper method to define mock.On call
 //   - ctx context.Context
 //   - projectID string
 //   - environment *model.Environment
-func (_e *Upgrader_Expecter) GetCurrentMasterVersion(ctx interface{}, projectID interface{}, environment interface{}) *Upgrader_GetCurrentMasterVersion_Call {
-	return &Upgrader_GetCurrentMasterVersion_Call{Call: _e.mock.On("GetCurrentMasterVersion", ctx, projectID, environment)}
+func (_e *Upgrader_Expecter) GetCurrentControlPlaneVersion(ctx interface{}, projectID interface{}, environment interface{}) *Upgrader_GetCurrentControlPlaneVersion_Call {
+	return &Upgrader_GetCurrentControlPlaneVersion_Call{Call: _e.mock.On("GetCurrentControlPlaneVersion", ctx, projectID, environment)}
 }
 
-func (_c *Upgrader_GetCurrentMasterVersion_Call) Run(run func(ctx context.Context, projectID string, environment *model.Environment)) *Upgrader_GetCurrentMasterVersion_Call {
+func (_c *Upgrader_GetCurrentControlPlaneVersion_Call) Run(run func(ctx context.Context, projectID string, environment *model.Environment)) *Upgrader_GetCurrentControlPlaneVersion_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -181,12 +181,12 @@ func (_c *Upgrader_GetCurrentMasterVersion_Call) Run(run func(ctx context.Contex
 	return _c
 }
 
-func (_c *Upgrader_GetCurrentMasterVersion_Call) Return(s string, err error) *Upgrader_GetCurrentMasterVersion_Call {
+func (_c *Upgrader_GetCurrentControlPlaneVersion_Call) Return(s string, err error) *Upgrader_GetCurrentControlPlaneVersion_Call {
 	_c.Call.Return(s, err)
 	return _c
 }
 
-func (_c *Upgrader_GetCurrentMasterVersion_Call) RunAndReturn(run func(ctx context.Context, projectID string, environment *model.Environment) (string, error)) *Upgrader_GetCurrentMasterVersion_Call {
+func (_c *Upgrader_GetCurrentControlPlaneVersion_Call) RunAndReturn(run func(ctx context.Context, projectID string, environment *model.Environment) (string, error)) *Upgrader_GetCurrentControlPlaneVersion_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -542,12 +542,12 @@ func (_c *Upgrader_IsTimeInRange_Call) RunAndReturn(run func(start int, end int)
 	return _c
 }
 
-// UpgradeMaster provides a mock function for the type Upgrader
-func (_mock *Upgrader) UpgradeMaster(ctx context.Context, projectID string, environment *model.Environment, version string) (*containerpb.Operation, error) {
+// UpgradeControlPlane provides a mock function for the type Upgrader
+func (_mock *Upgrader) UpgradeControlPlane(ctx context.Context, projectID string, environment *model.Environment, version string) (*containerpb.Operation, error) {
 	ret := _mock.Called(ctx, projectID, environment, version)
 
 	if len(ret) == 0 {
-		panic("no return value specified for UpgradeMaster")
+		panic("no return value specified for UpgradeControlPlane")
 	}
 
 	var r0 *containerpb.Operation
@@ -570,21 +570,21 @@ func (_mock *Upgrader) UpgradeMaster(ctx context.Context, projectID string, envi
 	return r0, r1
 }
 
-// Upgrader_UpgradeMaster_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpgradeMaster'
-type Upgrader_UpgradeMaster_Call struct {
+// Upgrader_UpgradeControlPlane_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpgradeControlPlane'
+type Upgrader_UpgradeControlPlane_Call struct {
 	*mock.Call
 }
 
-// UpgradeMaster is a helper method to define mock.On call
+// UpgradeControlPlane is a helper method to define mock.On call
 //   - ctx context.Context
 //   - projectID string
 //   - environment *model.Environment
 //   - version string
-func (_e *Upgrader_Expecter) UpgradeMaster(ctx interface{}, projectID interface{}, environment interface{}, version interface{}) *Upgrader_UpgradeMaster_Call {
-	return &Upgrader_UpgradeMaster_Call{Call: _e.mock.On("UpgradeMaster", ctx, projectID, environment, version)}
+func (_e *Upgrader_Expecter) UpgradeControlPlane(ctx interface{}, projectID interface{}, environment interface{}, version interface{}) *Upgrader_UpgradeControlPlane_Call {
+	return &Upgrader_UpgradeControlPlane_Call{Call: _e.mock.On("UpgradeControlPlane", ctx, projectID, environment, version)}
 }
 
-func (_c *Upgrader_UpgradeMaster_Call) Run(run func(ctx context.Context, projectID string, environment *model.Environment, version string)) *Upgrader_UpgradeMaster_Call {
+func (_c *Upgrader_UpgradeControlPlane_Call) Run(run func(ctx context.Context, projectID string, environment *model.Environment, version string)) *Upgrader_UpgradeControlPlane_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -612,12 +612,12 @@ func (_c *Upgrader_UpgradeMaster_Call) Run(run func(ctx context.Context, project
 	return _c
 }
 
-func (_c *Upgrader_UpgradeMaster_Call) Return(operation *containerpb.Operation, err error) *Upgrader_UpgradeMaster_Call {
+func (_c *Upgrader_UpgradeControlPlane_Call) Return(operation *containerpb.Operation, err error) *Upgrader_UpgradeControlPlane_Call {
 	_c.Call.Return(operation, err)
 	return _c
 }
 
-func (_c *Upgrader_UpgradeMaster_Call) RunAndReturn(run func(ctx context.Context, projectID string, environment *model.Environment, version string) (*containerpb.Operation, error)) *Upgrader_UpgradeMaster_Call {
+func (_c *Upgrader_UpgradeControlPlane_Call) RunAndReturn(run func(ctx context.Context, projectID string, environment *model.Environment, version string) (*containerpb.Operation, error)) *Upgrader_UpgradeControlPlane_Call {
 	_c.Call.Return(run)
 	return _c
 }

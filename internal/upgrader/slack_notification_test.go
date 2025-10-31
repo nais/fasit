@@ -74,7 +74,7 @@ func TestSlackProgressStates(t *testing.T) {
 		status model.UpgradeStatus
 	}{
 		{
-			name:   "master upgrade status",
+			name:   "control plane upgrade status",
 			status: model.UpgradeStatusControlPlaneUpgrade,
 		},
 		{
