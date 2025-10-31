@@ -25,5 +25,13 @@ DROP COLUMN upgrade_delay_days
 ;
 
 -- Note: PostgreSQL does not support removing enum values directly.
--- If rollback is needed, a new enum type must be created without 'WAITING'
--- and the cluster_upgrades.status column must be altered to use the new type.
+-- To rollback the addition of 'WAITING' to cluster_upgrades_status, perform the following steps manually:
+-- 1. Create a new enum type without the 'WAITING' value:
+--    CREATE TYPE cluster_upgrades_status_new AS ENUM ('CREATED', 'IN_PROGRESS', 'COMPLETED', 'FAILED');
+-- 2. Alter the cluster_upgrades.status column to use the new type:
+--    ALTER TABLE cluster_upgrades ALTER COLUMN status TYPE cluster_upgrades_status_new USING status::text::cluster_upgrades_status_new;
+-- 3. Drop the old enum type:
+--    DROP TYPE cluster_upgrades_status;
+-- 4. Rename the new type to the original name:
+--    ALTER TYPE cluster_upgrades_status_new RENAME TO cluster_upgrades_status;
+-- Manual intervention is required for this rollback.
