@@ -560,7 +560,6 @@ func (c *ClusterUpgrader) getAndUpdateRunningOperations(ctx context.Context, pro
 
 	return runningOperations, nil
 }
-
 // cleanupDanglingOperations handles cleanup of stale operations for completed upgrades
 func (c *ClusterUpgrader) cleanupDanglingOperations(ctx context.Context, projectID string, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus) error {
 	log := c.log.WithFields(logrus.Fields{
