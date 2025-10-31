@@ -1,7 +1,6 @@
 package upgrader
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -13,7 +12,6 @@ import (
 
 func TestPriorityBasedDelay(t *testing.T) {
 	log := logrus.New()
-	ctx := context.Background()
 
 	t.Run("delay_days 0 - no delay", func(t *testing.T) {
 		suite := newTestSuite(t)
@@ -41,7 +39,7 @@ func TestPriorityBasedDelay(t *testing.T) {
 		}
 
 		// Should not delay - delay_days 0+0 means immediate
-		delayed := upgrader.shouldDelayUpgrade(ctx, tenant, env, clusterUpgrade, log)
+		delayed := upgrader.shouldDelayUpgrade(tenant, env, clusterUpgrade, log)
 		assert.False(t, delayed, "delay_days 0+0 should not delay")
 	})
 
@@ -71,7 +69,7 @@ func TestPriorityBasedDelay(t *testing.T) {
 		}
 
 		// Should delay - need 24 hours for tenant 1 + env 0 = 1 day total
-		delayed := upgrader.shouldDelayUpgrade(ctx, tenant, env, clusterUpgrade, log)
+		delayed := upgrader.shouldDelayUpgrade(tenant, env, clusterUpgrade, log)
 		assert.True(t, delayed, "delay_days 1+0=1 should delay when only 12 hours have passed")
 	})
 
@@ -101,7 +99,7 @@ func TestPriorityBasedDelay(t *testing.T) {
 		}
 
 		// Should not delay - 24+ hours have passed
-		delayed := upgrader.shouldDelayUpgrade(ctx, tenant, env, clusterUpgrade, log)
+		delayed := upgrader.shouldDelayUpgrade(tenant, env, clusterUpgrade, log)
 		assert.False(t, delayed, "delay_days 1+0=1 should not delay when 24+ hours have passed")
 	})
 
@@ -131,7 +129,7 @@ func TestPriorityBasedDelay(t *testing.T) {
 		}
 
 		// Should delay - need 48 hours for tenant 2 + env 0 = 2 days total
-		delayed := upgrader.shouldDelayUpgrade(ctx, tenant, env, clusterUpgrade, log)
+		delayed := upgrader.shouldDelayUpgrade(tenant, env, clusterUpgrade, log)
 		assert.True(t, delayed, "delay_days 2+0=2 should delay when only 36 hours have passed")
 	})
 
@@ -161,7 +159,7 @@ func TestPriorityBasedDelay(t *testing.T) {
 		}
 
 		// Should not delay - 48+ hours have passed
-		delayed := upgrader.shouldDelayUpgrade(ctx, tenant, env, clusterUpgrade, log)
+		delayed := upgrader.shouldDelayUpgrade(tenant, env, clusterUpgrade, log)
 		assert.False(t, delayed, "delay_days 2+0=2 should not delay when 48+ hours have passed")
 	})
 
@@ -191,7 +189,7 @@ func TestPriorityBasedDelay(t *testing.T) {
 		}
 
 		// Should delay - need 96 hours (4 days) total: tenant 2 + environment 2
-		delayed := upgrader.shouldDelayUpgrade(ctx, tenant, env, clusterUpgrade, log)
+		delayed := upgrader.shouldDelayUpgrade(tenant, env, clusterUpgrade, log)
 		assert.True(t, delayed, "tenant delay_days 2 + environment delay_days 2 should require 4 days total")
 	})
 
@@ -221,7 +219,7 @@ func TestPriorityBasedDelay(t *testing.T) {
 		}
 
 		// Should not delay - 96+ hours (4 days) have passed
-		delayed := upgrader.shouldDelayUpgrade(ctx, tenant, env, clusterUpgrade, log)
+		delayed := upgrader.shouldDelayUpgrade(tenant, env, clusterUpgrade, log)
 		assert.False(t, delayed, "should not delay when 4+ days have passed")
 	})
 
@@ -248,7 +246,7 @@ func TestPriorityBasedDelay(t *testing.T) {
 		}
 
 		// Should not delay - already started
-		delayed := upgrader.shouldDelayUpgrade(ctx, tenant, env, clusterUpgrade, log)
+		delayed := upgrader.shouldDelayUpgrade(tenant, env, clusterUpgrade, log)
 		assert.False(t, delayed, "should not delay upgrades that are already in progress")
 	})
 
@@ -275,7 +273,7 @@ func TestPriorityBasedDelay(t *testing.T) {
 		}
 
 		// Should not delay - defaults add up: tenant 0 + environment 0 = 0 days (no delay)
-		delayed := upgrader.shouldDelayUpgrade(ctx, tenant, env, clusterUpgrade, log)
+		delayed := upgrader.shouldDelayUpgrade(tenant, env, clusterUpgrade, log)
 		assert.False(t, delayed, "should use default delay_days 0+0=0 (no delay) when not set")
 	})
 
@@ -307,7 +305,7 @@ func TestPriorityBasedDelay(t *testing.T) {
 		}
 
 		// Should still delay - now needs 4 days total, only 2 days have passed
-		delayed := upgrader.shouldDelayUpgrade(ctx, tenant, env, clusterUpgrade, log)
+		delayed := upgrader.shouldDelayUpgrade(tenant, env, clusterUpgrade, log)
 		assert.True(t, delayed, "should continue waiting when delay_days is increased mid-wait")
 	})
 
@@ -339,7 +337,7 @@ func TestPriorityBasedDelay(t *testing.T) {
 		}
 
 		// Should not delay - only needs 2 days now, and 3 days have already passed
-		delayed := upgrader.shouldDelayUpgrade(ctx, tenant, env, clusterUpgrade, log)
+		delayed := upgrader.shouldDelayUpgrade(tenant, env, clusterUpgrade, log)
 		assert.False(t, delayed, "should proceed immediately when delay_days is decreased and time has passed")
 	})
 
@@ -370,7 +368,7 @@ func TestPriorityBasedDelay(t *testing.T) {
 		}
 
 		// Should not delay - delay_days is now 0, proceed immediately
-		delayed := upgrader.shouldDelayUpgrade(ctx, tenant, env, clusterUpgrade, log)
+		delayed := upgrader.shouldDelayUpgrade(tenant, env, clusterUpgrade, log)
 		assert.False(t, delayed, "should proceed immediately when delay_days is set to 0")
 	})
 }

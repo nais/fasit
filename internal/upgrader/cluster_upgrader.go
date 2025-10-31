@@ -197,7 +197,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 	})
 
 	// Check if upgrade should be delayed based on priority
-	if c.shouldDelayUpgrade(ctx, tenant, env, clusterUpgrade, log) {
+	if c.shouldDelayUpgrade(tenant, env, clusterUpgrade, log) {
 		return nil
 	}
 
@@ -1218,9 +1218,8 @@ func (c *ClusterUpgrader) isNodeUpgradeComplete(ctx context.Context, clusterUpgr
 // - delay_days 0: CREATED -> CONTROL_PLANE_UPGRADE (immediate, control plane upgrade begins)
 // - delay_days > 0: CREATED -> WAITING -> CONTROL_PLANE_UPGRADE (after delay, control plane upgrade begins)
 // Delay is additive: tenant delay + environment delay (default for each is 0)
-func (c *ClusterUpgrader) shouldDelayUpgrade(ctx context.Context, tenant *model.Tenant, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus, log logrus.FieldLogger) bool {
-	// Only process CREATED or WAITING status
-	if clusterUpgrade.UpgradeStatus != model.UpgradeStatusCreated && clusterUpgrade.UpgradeStatus != model.UpgradeStatusWaiting {
+func (c *ClusterUpgrader) shouldDelayUpgrade(tenant *model.Tenant, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus, log logrus.FieldLogger) bool {
+	if clusterUpgrade.UpgradeStatus != model.UpgradeStatusWaiting {
 		return false
 	}
 
@@ -1241,40 +1240,11 @@ func (c *ClusterUpgrader) shouldDelayUpgrade(ctx context.Context, tenant *model.
 		delaySource = "environment"
 	}
 
-	// If no delay configured (delay_days = 0), proceed immediately
-	if delayDays == 0 {
-		if clusterUpgrade.UpgradeStatus == model.UpgradeStatusCreated {
-			log.WithFields(logrus.Fields{
-				"delay_days":   delayDays,
-				"delay_source": delaySource,
-			}).Info("no delay configured (delay_days=0), proceeding immediately with upgrade")
-		}
-		return false
-	}
-
 	// Calculate required delay
 	requiredDelayHours := time.Duration(delayDays) * 24 * time.Hour
 	timeSinceCreation := time.Since(clusterUpgrade.StartTime)
 
-	// If still in CREATED status and delay > 0, transition to WAITING
-	if clusterUpgrade.UpgradeStatus == model.UpgradeStatusCreated {
-		_, err := c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatusWAITING, clusterUpgrade.Version)
-		if err != nil {
-			log.WithError(err).Error("failed to transition upgrade to WAITING status")
-			// Continue anyway - we'll retry on next run
-		} else {
-			clusterUpgrade.UpgradeStatus = model.UpgradeStatusWaiting
-			log.WithFields(logrus.Fields{
-				"delay_days":     delayDays,
-				"delay_source":   delaySource,
-				"required_delay": requiredDelayHours.String(),
-				"will_start_at":  clusterUpgrade.StartTime.Add(requiredDelayHours).Format("2006-01-02 15:04:05"),
-			}).Info("upgrade transitioned to WAITING status")
-		}
-		return true
-	}
-
-	// Status is WAITING - check if delay has passed
+	// Check if delay has passed
 	if timeSinceCreation < requiredDelayHours {
 		remainingDelay := requiredDelayHours - timeSinceCreation
 		log.WithFields(logrus.Fields{
