@@ -275,7 +275,29 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		c.updateSlackProgress(ctx, tenant.Name, env.Name, updatedStatus)
 
 	case model.UpgradeStatusCreated:
-		// initial state, upgrade control plane
+		// Check if delay is configured - if so, transition to WAITING status
+		tenantDelay := tenant.UpgradeDelayDays
+		envDelay := env.UpgradeDelayDays
+		delayDays := tenantDelay + envDelay
+
+		if delayDays > 0 {
+			// Transition status to WAITING and persist
+			upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatusWAITING, clusterUpgrade.Version)
+			if err != nil {
+				log.WithError(err).Error("failed to update upgrade status to WAITING")
+				return err
+			}
+
+			log.WithFields(logrus.Fields{
+				"upgrade_id": clusterUpgrade.ID,
+				"delay_days": delayDays,
+			}).Info("upgrade status transitioned from CREATED to WAITING due to delay configuration")
+
+			c.updateSlackProgress(ctx, tenant.Name, env.Name, upgradeStatus)
+			return nil
+		}
+
+		// No delay configured, proceed with control plane upgrade
 		log.WithFields(logrus.Fields{
 			"target_version": clusterUpgrade.Version,
 			"tenant":         tenant.Name,
@@ -1249,6 +1271,15 @@ func (c *ClusterUpgrader) shouldDelayUpgrade(tenant *model.Tenant, env *model.En
 	envDelay := env.UpgradeDelayDays
 	delayDays := tenantDelay + envDelay
 
+	// No delay configured - ready to proceed
+	if delayDays == 0 {
+		return false
+	}
+
+	requiredDelayHours := time.Duration(delayDays) * 24 * time.Hour
+	timeSinceCreation := time.Since(clusterUpgrade.StartTime)
+
+	// Determine delay source for logging
 	delaySource := "default"
 	if tenantDelay != 0 && envDelay != 0 {
 		delaySource = "tenant+environment"
@@ -1257,9 +1288,6 @@ func (c *ClusterUpgrader) shouldDelayUpgrade(tenant *model.Tenant, env *model.En
 	} else if envDelay != 0 {
 		delaySource = "environment"
 	}
-
-	requiredDelayHours := time.Duration(delayDays) * 24 * time.Hour
-	timeSinceCreation := time.Since(clusterUpgrade.StartTime)
 
 	if timeSinceCreation < requiredDelayHours {
 		remainingDelay := requiredDelayHours - timeSinceCreation
