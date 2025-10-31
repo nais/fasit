@@ -131,12 +131,13 @@ func TestStuckUpgradeIntegration(t *testing.T) {
 				Type:   "UPGRADE_MASTER",
 			}, nil).Once()
 
+		// Operation is now DONE, which will trigger transition to NODE_UPGRADE
 		testSuite.upgradeMock.EXPECT().GetOperation(mock.Anything, mock.Anything, "operation").Return(
-			&containerpb.Operation{Status: containerpb.Operation_RUNNING}, nil).Once()
+			&containerpb.Operation{Status: containerpb.Operation_DONE}, nil).Once()
 		testSuite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil).Once()
 
-		// Since GetCurrentControlPlaneVersion returns target version, the upgrader will mark the control plane upgrade as complete
-		testSuite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, testSuite.env.tenantID, testSuite.env.id, gensql.ClusterUpgradesStatusCONTROLPLANEUPGRADE, "1.25.0").Return(notStuckUpgrade, nil).Once()
+		// Since operation is DONE, the upgrader will transition to NODE_UPGRADE
+		testSuite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, testSuite.env.tenantID, testSuite.env.id, gensql.ClusterUpgradesStatusNODEUPGRADE, "1.25.0").Return(notStuckUpgrade, nil).Once()
 
 		// Mock the EnvironmentValueGet call for Slack mentions that happens in updateSlackProgress
 		testSuite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, mock.Anything, "slack_upgrade_mentions", false).Return(
