@@ -160,21 +160,21 @@ func (c *AutoUpgrader) processEnvironment(ctx context.Context, env *model.Enviro
 		"project_id": projectID,
 	}).Debug("evaluating environment for automatic upgrades")
 
-	masterVer, err := c.getCurrentMasterVersionWithRetry(ctx, projectID, env)
+	controlPlaneVer, err := c.getCurrentMasterVersionWithRetry(ctx, projectID, env)
 	if err != nil {
 		envLogger.WithFields(logrus.Fields{
 			"project_id": projectID,
-			"operation":  "get_master_version",
-		}).WithError(err).Error("failed to retrieve current cluster master version")
+			"operation":  "get_control_plane_version",
+		}).WithError(err).Error("failed to retrieve current cluster control plane version")
 		return true, false
 	}
 
 	channel, err := c.getReleaseChannelWithRetry(ctx, projectID, env)
 	if err != nil {
 		envLogger.WithFields(logrus.Fields{
-			"project_id":     projectID,
-			"master_version": masterVer,
-			"operation":      "get_release_channel",
+			"project_id":            projectID,
+			"control_plane_version": controlPlaneVer,
+			"operation":             "get_release_channel",
 		}).WithError(err).Error("failed to retrieve cluster release channel")
 		return true, false
 	}
@@ -182,31 +182,31 @@ func (c *AutoUpgrader) processEnvironment(ctx context.Context, env *model.Enviro
 	availableVersions, err := c.getAvailableVersionsWithRetry(ctx, projectID, env, channel)
 	if err != nil {
 		envLogger.WithFields(logrus.Fields{
-			"project_id":      projectID,
-			"master_version":  masterVer,
-			"release_channel": channel,
-			"operation":       "get_available_versions",
+			"project_id":            projectID,
+			"control_plane_version": controlPlaneVer,
+			"release_channel":       channel,
+			"operation":             "get_available_versions",
 		}).WithError(err).Error("failed to retrieve available cluster versions")
 		return true, false
 	}
 
 	envLogger.WithFields(logrus.Fields{
-		"master_version":     masterVer,
-		"release_channel":    channel,
-		"available_versions": len(availableVersions),
+		"control_plane_version": controlPlaneVer,
+		"release_channel":       channel,
+		"available_versions":    len(availableVersions),
 	}).Debug("retrieved cluster version information")
 
-	return c.evaluateAndScheduleUpgrades(ctx, env, envLogger, masterVer, availableVersions)
+	return c.evaluateAndScheduleUpgrades(ctx, env, envLogger, controlPlaneVer, availableVersions)
 }
 
 // evaluateAndScheduleUpgrades checks for newer patch versions and schedules upgrades
-func (c *AutoUpgrader) evaluateAndScheduleUpgrades(ctx context.Context, env *model.Environment, envLogger logrus.FieldLogger, masterVer string, availableVersions []string) (processed, scheduled bool) {
+func (c *AutoUpgrader) evaluateAndScheduleUpgrades(ctx context.Context, env *model.Environment, envLogger logrus.FieldLogger, controlPlaneVer string, availableVersions []string) (processed, scheduled bool) {
 	tenant, _ := c.repo.TenantGet(ctx, env.TenantID) // Already retrieved in parent, but needed for metrics
 
 	for _, version := range availableVersions {
-		if c.IsNewerPatchRelease(masterVer, version) {
+		if c.IsNewerPatchRelease(controlPlaneVer, version) {
 			envLogger.WithFields(logrus.Fields{
-				"current_version": masterVer,
+				"current_version": controlPlaneVer,
 				"target_version":  version,
 				"upgrade_type":    "patch",
 			}).Info("newer patch version detected, evaluating for upgrade scheduling")
@@ -223,7 +223,7 @@ func (c *AutoUpgrader) evaluateAndScheduleUpgrades(ctx context.Context, env *mod
 
 			if status != nil {
 				envLogger.WithFields(logrus.Fields{
-					"current_version":  masterVer,
+					"current_version":  controlPlaneVer,
 					"target_version":   version,
 					"existing_upgrade": status.ID,
 					"upgrade_status":   status.UpgradeStatus,
@@ -235,7 +235,7 @@ func (c *AutoUpgrader) evaluateAndScheduleUpgrades(ctx context.Context, env *mod
 			upgrade, err := c.repo.CreateClusterUpgrade(ctx, env.TenantID, env.ID, version)
 			if err != nil {
 				envLogger.WithFields(logrus.Fields{
-					"current_version": masterVer,
+					"current_version": controlPlaneVer,
 					"target_version":  version,
 					"operation":       "create_upgrade",
 				}).WithError(err).Error("failed to schedule automatic cluster upgrade")
@@ -246,12 +246,12 @@ func (c *AutoUpgrader) evaluateAndScheduleUpgrades(ctx context.Context, env *mod
 			c.autoUpgradesScheduled.Add(ctx, 1, metric.WithAttributes(
 				attribute.String("environment", env.Name),
 				attribute.String("tenant", tenant.Name),
-				attribute.String("current_version", masterVer),
+				attribute.String("current_version", controlPlaneVer),
 				attribute.String("target_version", version),
 			))
 
 			envLogger.WithFields(logrus.Fields{
-				"current_version": masterVer,
+				"current_version": controlPlaneVer,
 				"target_version":  version,
 				"upgrade_id":      upgrade.ID,
 				"upgrade_type":    "patch",
@@ -262,8 +262,8 @@ func (c *AutoUpgrader) evaluateAndScheduleUpgrades(ctx context.Context, env *mod
 	}
 
 	envLogger.WithFields(logrus.Fields{
-		"master_version":     masterVer,
-		"evaluated_versions": len(availableVersions),
+		"control_plane_version": controlPlaneVer,
+		"evaluated_versions":    len(availableVersions),
 	}).Debug("no newer patch versions found for automatic upgrade")
 
 	return true, false
