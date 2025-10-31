@@ -249,8 +249,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 	log.WithFields(logrus.Fields{"target_version": clusterUpgrade.Version, "status": clusterUpgrade.UpgradeStatus}).Debug("cluster upgrade status")
 	switch clusterUpgrade.UpgradeStatus {
 	case model.UpgradeStatusWaiting:
-		// Upgrade is waiting for delay period to pass - delay check already done above
-		// If we reach here, the delay has passed and we can proceed with control plane upgrade
+		// delay period has passed, proceed with control plane upgrade
 		log.WithFields(logrus.Fields{
 			"target_version": clusterUpgrade.Version,
 			"tenant":         tenant.Name,
@@ -1213,24 +1212,18 @@ func (c *ClusterUpgrader) isNodeUpgradeComplete(ctx context.Context, clusterUpgr
 	return allComplete
 }
 
-// shouldDelayUpgrade checks if an upgrade should be delayed based on delay_days configuration
-// State transitions:
-// - delay_days 0: CREATED -> CONTROL_PLANE_UPGRADE (immediate, control plane upgrade begins)
-// - delay_days > 0: CREATED -> WAITING -> CONTROL_PLANE_UPGRADE (after delay, control plane upgrade begins)
-// Delay is additive: tenant delay + environment delay (default for each is 0)
+// shouldDelayUpgrade checks if an upgrade should be delayed based on upgrade_delay_days configuration.
+// Only processes WAITING status - delay check returns true if still waiting, false if ready to proceed.
+// Delay is additive: tenant delay + environment delay (default 0 for each).
 func (c *ClusterUpgrader) shouldDelayUpgrade(tenant *model.Tenant, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus, log logrus.FieldLogger) bool {
 	if clusterUpgrade.UpgradeStatus != model.UpgradeStatusWaiting {
 		return false
 	}
 
-	// Calculate effective delay by adding tenant and environment delays together
-	// Both tenant and environment delays are additive
-	// Each always has a value (NOT NULL DEFAULT 0 in database)
 	tenantDelay := tenant.UpgradeDelayDays
 	envDelay := env.UpgradeDelayDays
 	delayDays := tenantDelay + envDelay
 
-	// Determine source for logging
 	delaySource := "default"
 	if tenantDelay != 0 && envDelay != 0 {
 		delaySource = "tenant+environment"
@@ -1240,11 +1233,9 @@ func (c *ClusterUpgrader) shouldDelayUpgrade(tenant *model.Tenant, env *model.En
 		delaySource = "environment"
 	}
 
-	// Calculate required delay
 	requiredDelayHours := time.Duration(delayDays) * 24 * time.Hour
 	timeSinceCreation := time.Since(clusterUpgrade.StartTime)
 
-	// Check if delay has passed
 	if timeSinceCreation < requiredDelayHours {
 		remainingDelay := requiredDelayHours - timeSinceCreation
 		log.WithFields(logrus.Fields{
@@ -1258,7 +1249,6 @@ func (c *ClusterUpgrader) shouldDelayUpgrade(tenant *model.Tenant, env *model.En
 		return true
 	}
 
-	// Delay has passed, ready to proceed
 	log.WithFields(logrus.Fields{
 		"delay_days":     delayDays,
 		"delay_source":   delaySource,
