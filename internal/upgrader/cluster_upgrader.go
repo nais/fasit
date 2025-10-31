@@ -1201,11 +1201,11 @@ func (c *ClusterUpgrader) shouldDelayUpgrade(ctx context.Context, tenant *model.
 
 	// Determine source for logging
 	delaySource := "default"
-	if tenantDelay != 1 && envDelay != 1 {
+	if tenantDelay != 0 && envDelay != 0 {
 		delaySource = "tenant+environment"
-	} else if tenantDelay != 1 {
+	} else if tenantDelay != 0 {
 		delaySource = "tenant"
-	} else if envDelay != 1 {
+	} else if envDelay != 0 {
 		delaySource = "environment"
 	}
 
