@@ -248,6 +248,33 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 
 	log.WithFields(logrus.Fields{"target_version": clusterUpgrade.Version, "status": clusterUpgrade.UpgradeStatus}).Debug("cluster upgrade status")
 	switch clusterUpgrade.UpgradeStatus {
+	case model.UpgradeStatusWaiting:
+		// Upgrade is waiting for delay period to pass - delay check already done above
+		// If we reach here, the delay has passed and we can proceed with master upgrade
+		log.WithFields(logrus.Fields{
+			"target_version": clusterUpgrade.Version,
+			"tenant":         tenant.Name,
+			"environment":    env.Name,
+		}).Info("delay period satisfied, starting master upgrade")
+
+		if clusterHas(runningOperations) {
+			log.WithFields(logrus.Fields{"target_version": clusterUpgrade.Version}).Debug("has running operations, skipping...")
+			return nil
+		}
+
+		// Record upgrade started metric
+		c.upgradeStarted.Add(ctx, 1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "master")...))
+
+		updatedStatus, err := c.masterUpgrade(ctx, env, clusterUpgrade, tenant.Name, projectID)
+		if err != nil {
+			// Record failed upgrade metric
+			c.upgradeFailed.Add(ctx, 1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "master_start_failed")...))
+			return err
+		}
+
+		// Always update Slack progress with the updated status
+		c.updateSlackProgress(ctx, tenant.Name, env.Name, updatedStatus)
+
 	case model.UpgradeStatusCreated:
 		// initial state, upgrade master
 		log.WithFields(logrus.Fields{
@@ -1048,6 +1075,11 @@ func (c *ClusterUpgrader) validateUpgradeAgainstGKE(ctx context.Context, cluster
 	}
 
 	switch clusterUpgrade.UpgradeStatus {
+	case model.UpgradeStatusWaiting:
+		// WAITING status is normal and expected - upgrade is waiting for delay period
+		// This is not stuck, it's intentional delay
+		return false
+
 	case model.UpgradeStatusCreated:
 		// only consider stuck if it's been at least 30 minutes to avoid false positives
 		if time.Since(clusterUpgrade.LastModified) > 30*time.Minute {
