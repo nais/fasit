@@ -196,7 +196,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		"last_modified":  clusterUpgrade.LastModified.Format("2006-01-02 15:04:05"),
 	})
 
-	// Check if upgrade should be delayed based on priority
+	// Check if upgrade should be delayed based on configuration
 	if c.shouldDelayUpgrade(tenant, env, clusterUpgrade, log) {
 		return nil
 	}

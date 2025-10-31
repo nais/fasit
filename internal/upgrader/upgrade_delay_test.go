@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPriorityBasedDelay(t *testing.T) {
+func TestUpgradeDelay(t *testing.T) {
 	log := logrus.New()
 
 	t.Run("delay_days 0 - no delay", func(t *testing.T) {
