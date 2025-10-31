@@ -255,6 +255,10 @@ func TestRun_StartClusterUpgradeControlPlaneStatusCreated(t *testing.T) {
 	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, suite.environment).Return(
 		[]*containerpb.Operation{}, nil).Maybe()
 
+	// Mock GetCurrentControlPlaneVersion check in CREATED state - return different version to proceed with upgrade
+	suite.upgradeMock.EXPECT().GetCurrentControlPlaneVersion(mock.Anything, mock.Anything, suite.environment).Return(
+		"1.2.3", nil).Maybe() // Different from target version "1.2.4"
+
 	suite.upgradeMock.EXPECT().UpgradeControlPlane(mock.Anything, mock.Anything, suite.environment, "1.2.4").Return(
 		&containerpb.Operation{
 			Name:          "operation",
