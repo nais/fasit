@@ -9,31 +9,39 @@ import (
 	"github.com/google/uuid"
 )
 
-const deleteEnvironmentLabels = `-- name: DeleteEnvironmentLabels :exec
+const environmentDeleteLabels = `-- name: EnvironmentDeleteLabels :exec
 DELETE FROM environment_labels
 WHERE
 	environment_id = $1
 `
 
-func (q *Queries) DeleteEnvironmentLabels(ctx context.Context, environmentID uuid.UUID) error {
-	_, err := q.db.Exec(ctx, deleteEnvironmentLabels, environmentID)
+func (q *Queries) EnvironmentDeleteLabels(ctx context.Context, environmentID uuid.UUID) error {
+	_, err := q.db.Exec(ctx, environmentDeleteLabels, environmentID)
 	return err
 }
 
-const insertEnvironmentLabel = `-- name: InsertEnvironmentLabel :exec
-INSERT INTO
-	environment_labels ("environment_id", "key", "value")
-VALUES
-	($1, $2, $3)
+const environmentGetLabels = `-- name: EnvironmentGetLabels :many
+SELECT environment_id, key, value FROM environment_labels
+WHERE environment_id = $1
+ORDER BY "key"
 `
 
-type InsertEnvironmentLabelParams struct {
-	EnvironmentID uuid.UUID
-	Key           string
-	Value         string
-}
-
-func (q *Queries) InsertEnvironmentLabel(ctx context.Context, arg InsertEnvironmentLabelParams) error {
-	_, err := q.db.Exec(ctx, insertEnvironmentLabel, arg.EnvironmentID, arg.Key, arg.Value)
-	return err
+func (q *Queries) EnvironmentGetLabels(ctx context.Context, environmentID uuid.UUID) ([]EnvironmentLabel, error) {
+	rows, err := q.db.Query(ctx, environmentGetLabels, environmentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []EnvironmentLabel{}
+	for rows.Next() {
+		var i EnvironmentLabel
+		if err := rows.Scan(&i.EnvironmentID, &i.Key, &i.Value); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

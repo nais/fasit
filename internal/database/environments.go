@@ -21,7 +21,8 @@ type EnvironmentRepo interface {
 	EnvironmentUpdate(ctx context.Context, environmentID uuid.UUID, p *model.EnvironmentUpdate) (*model.Environment, error)
 	EnvironmentSetAutoUpgrade(ctx context.Context, environmentID uuid.UUID, autoUpgrade bool) (*model.Environment, error)
 	EnvironmentSetReconcile(ctx context.Context, environmentID uuid.UUID, reconcile bool) (*model.Environment, error)
-	SetEnvironmentLabels(ctx context.Context, environmentID uuid.UUID, labels []*protogen.EnvironmentLabel) error
+	EnvironmentSetLabels(ctx context.Context, environmentID uuid.UUID, labels []*protogen.EnvironmentLabel) error
+	EnvironmentGetLabels(ctx context.Context, environmentID uuid.UUID) ([]*model.EnvironmentLabel, error)
 }
 
 func environmentFromSQL(p gensql.Environment) *model.Environment {
@@ -159,22 +160,45 @@ func (r *repo) EnvironmentSetReconcile(ctx context.Context, environmentID uuid.U
 	return environmentFromSQL(env), nil
 }
 
-func (r *repo) SetEnvironmentLabels(ctx context.Context, environmentID uuid.UUID, labels []*protogen.EnvironmentLabel) error {
-	if err := r.querier.DeleteEnvironmentLabels(ctx, environmentID); err != nil {
+func (r *repo) EnvironmentSetLabels(ctx context.Context, environmentID uuid.UUID, labels []*protogen.EnvironmentLabel) error {
+	if err := r.querier.EnvironmentDeleteLabels(ctx, environmentID); err != nil {
 		return err
 	}
 
-	for _, l := range labels {
-		if err := r.querier.InsertEnvironmentLabel(ctx, gensql.InsertEnvironmentLabelParams{
+	p := make([]gensql.EnvironmentInsertLabelsParams, len(labels))
+	for i, l := range labels {
+		p[i] = gensql.EnvironmentInsertLabelsParams{
 			EnvironmentID: environmentID,
 			Key:           l.Key,
 			Value:         l.Value,
-		}); err != nil {
-			return err
 		}
 	}
 
-	return nil
+	var batchErr error
+	r.querier.EnvironmentInsertLabels(ctx, p).Exec(func(i int, err error) {
+		if err != nil {
+			batchErr = err
+		}
+	})
+
+	return batchErr
+}
+
+func (r *repo) EnvironmentGetLabels(ctx context.Context, environmentID uuid.UUID) ([]*model.EnvironmentLabel, error) {
+	rows, err := r.querier.EnvironmentGetLabels(ctx, environmentID)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]*model.EnvironmentLabel, len(rows))
+	for i, row := range rows {
+		ret[i] = &model.EnvironmentLabel{
+			Key:   row.Key,
+			Value: row.Value,
+		}
+	}
+
+	return ret, nil
 }
 
 func (r *repo) EnvironmentSetAutoUpgrade(ctx context.Context, environmentID uuid.UUID, autoUpgrade bool) (*model.Environment, error) {

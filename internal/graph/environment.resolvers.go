@@ -227,6 +227,11 @@ func (r *environmentResolver) Versions(ctx context.Context, obj *model.Environme
 	}, nil
 }
 
+// Labels is the resolver for the labels field.
+func (r *environmentResolver) Labels(ctx context.Context, obj *model.Environment) ([]*model.EnvironmentLabel, error) {
+	return r.Repo.EnvironmentGetLabels(ctx, obj.ID)
+}
+
 // EnvironmentCreate is the resolver for the environmentCreate field.
 func (r *mutationResolver) EnvironmentCreate(ctx context.Context, environment model.EnvironmentCreate) (*model.Environment, error) {
 	return r.Repo.EnvironmentCreate(ctx, &environment)

@@ -151,6 +151,7 @@ type ComplexityRoot struct {
 		Health                func(childComplexity int) int
 		ID                    func(childComplexity int) int
 		Kind                  func(childComplexity int) int
+		Labels                func(childComplexity int) int
 		LastModified          func(childComplexity int) int
 		Name                  func(childComplexity int) int
 		Nodes                 func(childComplexity int) int
@@ -160,6 +161,11 @@ type ComplexityRoot struct {
 		Values                func(childComplexity int) int
 		Versions              func(childComplexity int) int
 		Warnings              func(childComplexity int) int
+	}
+
+	EnvironmentLabel struct {
+		Key   func(childComplexity int) int
+		Value func(childComplexity int) int
 	}
 
 	EnvironmentOperation struct {
@@ -445,6 +451,7 @@ type EnvironmentResolver interface {
 	ClusterUpgradeHistory(ctx context.Context, obj *model.Environment) ([]*model.ClusterUpgradeStatus, error)
 	ClusterUpgradeStatus(ctx context.Context, obj *model.Environment) (*model.ClusterUpgradeStatus, error)
 	Versions(ctx context.Context, obj *model.Environment) (*model.EnvironmentVersions, error)
+	Labels(ctx context.Context, obj *model.Environment) ([]*model.EnvironmentLabel, error)
 }
 type FeatureResolver interface {
 	ActiveVersion(ctx context.Context, obj *model.Feature) (string, error)
@@ -858,6 +865,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Environment.Kind(childComplexity), true
+	case "Environment.labels":
+		if e.complexity.Environment.Labels == nil {
+			break
+		}
+
+		return e.complexity.Environment.Labels(childComplexity), true
 	case "Environment.lastModified":
 		if e.complexity.Environment.LastModified == nil {
 			break
@@ -912,6 +925,19 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Environment.Warnings(childComplexity), true
+
+	case "EnvironmentLabel.key":
+		if e.complexity.EnvironmentLabel.Key == nil {
+			break
+		}
+
+		return e.complexity.EnvironmentLabel.Key(childComplexity), true
+	case "EnvironmentLabel.value":
+		if e.complexity.EnvironmentLabel.Value == nil {
+			break
+		}
+
+		return e.complexity.EnvironmentLabel.Value(childComplexity), true
 
 	case "EnvironmentOperation.detail":
 		if e.complexity.EnvironmentOperation.Detail == nil {
@@ -2359,6 +2385,12 @@ type Environment {
 	clusterUpgradeHistory: [ClusterUpgradeStatus!]!
 	clusterUpgradeStatus: ClusterUpgradeStatus
 	versions: EnvironmentVersions
+    labels: [EnvironmentLabel!]!
+}
+
+type EnvironmentLabel {
+    key: String!
+    value: String!
 }
 
 type EnvironmentOperation {
@@ -3617,6 +3649,8 @@ func (ec *executionContext) fieldContext_ClusterUpgradeStatus_environment(_ cont
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
+			case "labels":
+				return ec.fieldContext_Environment_labels(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -3851,6 +3885,8 @@ func (ec *executionContext) fieldContext_ConfigOverride_environment(_ context.Co
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
+			case "labels":
+				return ec.fieldContext_Environment_labels(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -4417,6 +4453,8 @@ func (ec *executionContext) fieldContext_EnvSeries_environment(_ context.Context
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
+			case "labels":
+				return ec.fieldContext_Environment_labels(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -5318,6 +5356,99 @@ func (ec *executionContext) fieldContext_Environment_versions(_ context.Context,
 				return ec.fieldContext_EnvironmentVersions_nodePools(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type EnvironmentVersions", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Environment_labels(ctx context.Context, field graphql.CollectedField, obj *model.Environment) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Environment_labels,
+		func(ctx context.Context) (any, error) {
+			return ec.resolvers.Environment().Labels(ctx, obj)
+		},
+		nil,
+		ec.marshalNEnvironmentLabel2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironmentLabelᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Environment_labels(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Environment",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "key":
+				return ec.fieldContext_EnvironmentLabel_key(ctx, field)
+			case "value":
+				return ec.fieldContext_EnvironmentLabel_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type EnvironmentLabel", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EnvironmentLabel_key(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentLabel) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_EnvironmentLabel_key,
+		func(ctx context.Context) (any, error) {
+			return obj.Key, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_EnvironmentLabel_key(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EnvironmentLabel",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _EnvironmentLabel_value(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentLabel) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_EnvironmentLabel_value,
+		func(ctx context.Context) (any, error) {
+			return obj.Value, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_EnvironmentLabel_value(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "EnvironmentLabel",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -7064,6 +7195,8 @@ func (ec *executionContext) fieldContext_FeatureWarning_environment(_ context.Co
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
+			case "labels":
+				return ec.fieldContext_Environment_labels(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -8192,6 +8325,8 @@ func (ec *executionContext) fieldContext_Mutation_environmentCreate(ctx context.
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
+			case "labels":
+				return ec.fieldContext_Environment_labels(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -8279,6 +8414,8 @@ func (ec *executionContext) fieldContext_Mutation_environmentUpdate(ctx context.
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
+			case "labels":
+				return ec.fieldContext_Environment_labels(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -8366,6 +8503,8 @@ func (ec *executionContext) fieldContext_Mutation_environmentSetReconcile(ctx co
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
+			case "labels":
+				return ec.fieldContext_Environment_labels(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -8453,6 +8592,8 @@ func (ec *executionContext) fieldContext_Mutation_environmentUpgrade(ctx context
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
+			case "labels":
+				return ec.fieldContext_Environment_labels(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -8540,6 +8681,8 @@ func (ec *executionContext) fieldContext_Mutation_environmentSetAutoUpgrade(ctx 
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
+			case "labels":
+				return ec.fieldContext_Environment_labels(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -8859,6 +9002,8 @@ func (ec *executionContext) fieldContext_NaisdWarning_environment(_ context.Cont
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
+			case "labels":
+				return ec.fieldContext_Environment_labels(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -11012,6 +11157,8 @@ func (ec *executionContext) fieldContext_Tenant_environments(_ context.Context, 
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
+			case "labels":
+				return ec.fieldContext_Environment_labels(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -11088,6 +11235,8 @@ func (ec *executionContext) fieldContext_Tenant_environment(ctx context.Context,
 				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
 			case "versions":
 				return ec.fieldContext_Environment_versions(ctx, field)
+			case "labels":
+				return ec.fieldContext_Environment_labels(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -14665,6 +14814,86 @@ func (ec *executionContext) _Environment(ctx context.Context, sel ast.SelectionS
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "labels":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Environment_labels(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var environmentLabelImplementors = []string{"EnvironmentLabel"}
+
+func (ec *executionContext) _EnvironmentLabel(ctx context.Context, sel ast.SelectionSet, obj *model.EnvironmentLabel) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, environmentLabelImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("EnvironmentLabel")
+		case "key":
+			out.Values[i] = ec._EnvironmentLabel_key(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "value":
+			out.Values[i] = ec._EnvironmentLabel_value(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -18392,6 +18621,60 @@ func (ec *executionContext) marshalNEnvironmentKind2ᚕgithubᚗcomᚋnaisᚋfas
 	}
 
 	return ret
+}
+
+func (ec *executionContext) marshalNEnvironmentLabel2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironmentLabelᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.EnvironmentLabel) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNEnvironmentLabel2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironmentLabel(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNEnvironmentLabel2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironmentLabel(ctx context.Context, sel ast.SelectionSet, v *model.EnvironmentLabel) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._EnvironmentLabel(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNEnvironmentOperation2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironmentOperationᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.EnvironmentOperation) graphql.Marshaler {
