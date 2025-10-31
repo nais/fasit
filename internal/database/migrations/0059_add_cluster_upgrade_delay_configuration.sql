@@ -10,26 +10,14 @@ ALTER TABLE tenants
 ADD COLUMN upgrade_delay_days INT NOT NULL DEFAULT 0
 ;
 
-CREATE INDEX idx_tenants_upgrade_delay ON tenants (upgrade_delay_days)
-;
-
 -- Add upgrade_delay_days column to environments table
 ALTER TABLE environments
 ADD COLUMN upgrade_delay_days INT NOT NULL DEFAULT 0
 ;
 
-CREATE INDEX idx_environments_upgrade_delay ON environments (upgrade_delay_days)
-;
-
 -- +goose Down
-DROP INDEX idx_environments_upgrade_delay
-;
-
 ALTER TABLE environments
 DROP COLUMN upgrade_delay_days
-;
-
-DROP INDEX idx_tenants_upgrade_delay
 ;
 
 ALTER TABLE tenants
