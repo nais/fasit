@@ -34,6 +34,8 @@ func (s *Slack) GetClusterUpgradeProgressMessageOptions(tenant, environment, ver
 	switch upgradeStatus {
 	case model.UpgradeStatusCreated:
 		progressText = ":rocket: Starting control plane upgrade..."
+	case model.UpgradeStatusWaiting:
+		progressText = ":pause_button: Upgrade is waiting for the configured delay period before starting..."
 	case model.UpgradeStatusControlPlaneUpgrade:
 		progressText = ":hourglass_flowing_sand: Control plane upgrade in progress..."
 	case model.UpgradeStatusNodeUpgrade:
