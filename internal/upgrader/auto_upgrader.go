@@ -65,7 +65,7 @@ func (c *AutoUpgrader) Run(ctx context.Context) error {
 	c.log.WithFields(logrus.Fields{
 		"component":   "auto_upgrader",
 		"time_window": "9-16",
-	}).Info("starting auto-upgrader run")
+	}).Debug("starting auto-upgrader run")
 
 	defer func() {
 		duration := time.Since(startTime).Seconds()
@@ -73,7 +73,7 @@ func (c *AutoUpgrader) Run(ctx context.Context) error {
 		c.log.WithFields(logrus.Fields{
 			"component":        "auto_upgrader",
 			"duration_seconds": duration,
-		}).Info("auto-upgrader run completed")
+		}).Debug("auto-upgrader run completed")
 	}()
 
 	if !c.client.IsTimeInRange(9, 16) {
@@ -81,7 +81,7 @@ func (c *AutoUpgrader) Run(ctx context.Context) error {
 			"component":    "auto_upgrader",
 			"time_window":  "9-16",
 			"current_time": time.Now().Format("15:04"),
-		}).Debug("outside configured time window for auto-upgrade")
+		}).Info("outside configured time window for auto-upgrade")
 		return nil
 	}
 
@@ -97,7 +97,7 @@ func (c *AutoUpgrader) Run(ctx context.Context) error {
 	c.log.WithFields(logrus.Fields{
 		"component":         "auto_upgrader",
 		"environment_count": len(envs),
-	}).Info("processing environments for auto-upgrade evaluation")
+	}).Debug("processing environments for auto-upgrade evaluation")
 
 	processedCount := 0
 	scheduledCount := 0
@@ -118,7 +118,7 @@ func (c *AutoUpgrader) Run(ctx context.Context) error {
 		"environments_processed": processedCount,
 		"upgrades_scheduled":     scheduledCount,
 		"total_environments":     len(envs),
-	}).Info("auto-upgrader run summary")
+	}).Debug("auto-upgrader run summary")
 
 	return nil
 }

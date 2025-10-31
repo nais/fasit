@@ -103,7 +103,7 @@ func NewClusterUpgrader(repo database.Repo, log logrus.FieldLogger, upgrader Upg
 }
 
 func (c *ClusterUpgrader) Run(ctx context.Context) error {
-	c.log.Info("starting cluster upgrader run")
+	c.log.Debug("starting cluster upgrader run")
 	startTime := time.Now()
 
 	var err error
@@ -113,7 +113,7 @@ func (c *ClusterUpgrader) Run(ctx context.Context) error {
 		return err
 	}
 
-	c.log.WithField("tenant_count", len(tenants)).Info("processing tenants for cluster upgrades")
+	c.log.WithField("tenant_count", len(tenants)).Debug("processing tenants for cluster upgrades")
 
 	totalEnvironments := 0
 	processedEnvironments := 0
@@ -157,7 +157,7 @@ func (c *ClusterUpgrader) Run(ctx context.Context) error {
 		"processed_environments":     processedEnvironments,
 		"run_duration_seconds":       runDuration.Seconds(),
 		"avg_environment_processing": runDuration.Seconds() / float64(max(processedEnvironments, 1)),
-	}).Info("cluster upgrader run completed")
+	}).Debug("cluster upgrader run completed")
 
 	return nil
 }
@@ -283,6 +283,32 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		}).Info("starting control plane upgrade")
 		if clusterHas(runningOperations) {
 			log.WithFields(logrus.Fields{"target_version": clusterUpgrade.Version}).Debug("has running operations, skipping...")
+			return nil
+		}
+
+		// Check if control plane is already at target version
+		var currentVersion string
+		err = c.retryer.WithBackoff(ctx, "get_current_control_plane_version", func() error {
+			var retryErr error
+			currentVersion, retryErr = c.client.GetCurrentControlPlaneVersion(ctx, projectID, env)
+			return retryErr
+		})
+		if err != nil {
+			log.WithError(err).Error("failed to get current control plane version")
+			return err
+		}
+
+		if currentVersion == clusterUpgrade.Version {
+			log.WithFields(logrus.Fields{
+				"target_version": clusterUpgrade.Version,
+			}).Info("control plane already at target version, skipping to node upgrade")
+
+			upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatusNODEUPGRADE, clusterUpgrade.Version)
+			if err != nil {
+				return err
+			}
+
+			c.updateSlackProgress(ctx, tenant.Name, env.Name, upgradeStatus)
 			return nil
 		}
 
@@ -508,12 +534,6 @@ func (c *ClusterUpgrader) getAndUpdateRunningOperations(ctx context.Context, pro
 				// Continue processing other operations rather than failing entirely
 			}
 		}
-	}
-
-	// Update cluster upgrade status to ensure consistency
-	_, err = c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatus(clusterUpgrade.UpgradeStatus), clusterUpgrade.Version)
-	if err != nil {
-		return nil, err
 	}
 
 	return runningOperations, nil
@@ -757,6 +777,11 @@ func (c *ClusterUpgrader) controlPlaneUpgradeStatus(ctx context.Context, env *mo
 		return nil, err
 	}
 
+	// Ignore UPGRADE_NODES operations - we only care about UPGRADE_MASTER for control plane status
+	if rop != nil && rop.Type != "UPGRADE_MASTER" {
+		rop = nil
+	}
+
 	if rop == nil {
 		// No RUNNING operation found - check if there's a completed one or verify with GKE
 		c.log.WithFields(logrus.Fields{
@@ -786,7 +811,7 @@ func (c *ClusterUpgrader) controlPlaneUpgradeStatus(ctx context.Context, env *mo
 				"tenant":         tenantName,
 				"environment":    env.Name,
 				"operation_name": doneOp.Name,
-			}).Info("found completed control plane upgrade operation, transitioning to node upgrade")
+			}).Debug("found completed control plane upgrade operation, transitioning to node upgrade")
 
 			c.upgradeInProgress.Add(ctx, -1, metric.WithAttributes(
 				setMetricsAttrs(env.Name, tenantName, clusterUpgrade.Version, "control_plane")...),
