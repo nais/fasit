@@ -252,31 +252,31 @@ func TestPriorityBasedDelay(t *testing.T) {
 		assert.False(t, delayed, "should not delay upgrades that are already in progress")
 	})
 
-	t.Run("default delay_days 2 when not set (1+1)", func(t *testing.T) {
+	t.Run("default delay_days 0 when not set (0+0)", func(t *testing.T) {
 		suite := newTestSuite(t)
 		upgrader := newUpgrade(suite)
 
 		tenant := &model.Tenant{
 			ID:               suite.env.tenantID,
 			Name:             "default-tenant",
-			UpgradeDelayDays: 1, // default
+			UpgradeDelayDays: 0, // default
 		}
 		env := &model.Environment{
 			ID:               suite.env.id,
 			TenantID:         suite.env.tenantID,
 			Name:             "default-env",
-			UpgradeDelayDays: 1, // default
+			UpgradeDelayDays: 0, // default
 		}
 		clusterUpgrade := &model.ClusterUpgradeStatus{
 			ID:            uuid.New(),
-			UpgradeStatus: model.UpgradeStatusWaiting,
+			UpgradeStatus: model.UpgradeStatusCreated,
 			Version:       "1.2.4",
-			StartTime:     time.Now().Add(-36 * time.Hour), // 36 hours ago
+			StartTime:     time.Now(),
 		}
 
-		// Should delay - defaults add up: tenant 1 + environment 1 = 2 days (48 hour delay)
+		// Should not delay - defaults add up: tenant 0 + environment 0 = 0 days (no delay)
 		delayed := upgrader.shouldDelayUpgrade(ctx, tenant, env, clusterUpgrade, log)
-		assert.True(t, delayed, "should use default delay_days 1+1=2 (2 day delay) when not set")
+		assert.False(t, delayed, "should use default delay_days 0+0=0 (no delay) when not set")
 	})
 
 	t.Run("changing delay_days while WAITING - increase delay", func(t *testing.T) {

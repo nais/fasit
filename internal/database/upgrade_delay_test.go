@@ -37,12 +37,12 @@ func TestUpgradePriorityOrdering(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	// Set upgrade delay_days: test=0 (immediate), staging=1 (default is already 1), prod=2 (last)
+	// Set upgrade delay_days: test=0 (immediate), staging=0 (default), prod=2 (last)
 	testTenant, err = repo.TenantSetUpgradeDelayDays(ctx, testTenant.ID, 0)
 	require.NoError(t, err)
 	prodTenant, err = repo.TenantSetUpgradeDelayDays(ctx, prodTenant.ID, 2)
 	require.NoError(t, err)
-	// staging keeps default delay_days 1
+	// staging keeps default delay_days 0
 
 	// Verify delay_days values are set correctly
 	assert.Equal(t, int32(0), testTenant.UpgradeDelayDays, "test tenant should have delay_days 0")
@@ -55,7 +55,7 @@ func TestUpgradePriorityOrdering(t *testing.T) {
 
 	fetchedStaging, err := repo.TenantGet(ctx, stagingTenant.ID)
 	require.NoError(t, err)
-	assert.Equal(t, int32(1), fetchedStaging.UpgradeDelayDays, "staging tenant should have default delay_days 1")
+	assert.Equal(t, int32(0), fetchedStaging.UpgradeDelayDays, "staging tenant should have default delay_days 0")
 
 	fetchedProd, err := repo.TenantGet(ctx, prodTenant.ID)
 	require.NoError(t, err)
@@ -102,7 +102,7 @@ func TestEnvironmentUpgradePriorityOrdering(t *testing.T) {
 	require.NoError(t, err)
 	prodEnv, err = repo.EnvironmentSetUpgradeDelayDays(ctx, prodEnv.ID, 2)
 	require.NoError(t, err)
-	// staging keeps default delay_days 1
+	// staging keeps default delay_days 0
 
 	// Verify delay_days values are set correctly
 	assert.Equal(t, int32(0), testEnv.UpgradeDelayDays, "test env should have delay_days 0")
@@ -115,7 +115,7 @@ func TestEnvironmentUpgradePriorityOrdering(t *testing.T) {
 
 	fetchedStaging, err := repo.EnvironmentGet(ctx, stagingEnv.ID)
 	require.NoError(t, err)
-	assert.Equal(t, int32(1), fetchedStaging.UpgradeDelayDays, "staging env should have default delay_days 1")
+	assert.Equal(t, int32(0), fetchedStaging.UpgradeDelayDays, "staging env should have default delay_days 0")
 
 	fetchedProd, err := repo.EnvironmentGet(ctx, prodEnv.ID)
 	require.NoError(t, err)

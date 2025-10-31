@@ -7,10 +7,7 @@ AFTER 'CREATED'
 
 -- Add upgrade_delay_days column to tenants table
 ALTER TABLE tenants
-ADD COLUMN upgrade_delay_days INT NOT NULL DEFAULT 1
-;
-
-COMMENT ON COLUMN tenants.upgrade_delay_days IS 'Number of days to delay cluster upgrades for all environments in this tenant. 0=immediate (test/dev), 1=1 day (default/staging), 2=2 days (production). Delays are additive with environment-level delays.'
+ADD COLUMN upgrade_delay_days INT NOT NULL DEFAULT 0
 ;
 
 CREATE INDEX idx_tenants_upgrade_delay ON tenants (upgrade_delay_days)
@@ -18,10 +15,7 @@ CREATE INDEX idx_tenants_upgrade_delay ON tenants (upgrade_delay_days)
 
 -- Add upgrade_delay_days column to environments table
 ALTER TABLE environments
-ADD COLUMN upgrade_delay_days INT NOT NULL DEFAULT 1
-;
-
-COMMENT ON COLUMN environments.upgrade_delay_days IS 'Number of days to delay cluster upgrades for this environment. 0=immediate (test/dev), 1=1 day (default/staging), 2=2 days (production). Delays are additive with tenant-level delays. Total delay = tenant delay + environment delay.'
+ADD COLUMN upgrade_delay_days INT NOT NULL DEFAULT 0
 ;
 
 CREATE INDEX idx_environments_upgrade_delay ON environments (upgrade_delay_days)

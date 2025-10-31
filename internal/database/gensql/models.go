@@ -187,17 +187,16 @@ type EnvCost struct {
 }
 
 type Environment struct {
-	ID           uuid.UUID
-	TenantID     uuid.UUID
-	Name         string
-	Kind         EnvironmentKind
-	Description  pgtype.Text
-	Created      pgtype.Timestamptz
-	LastModified pgtype.Timestamptz
-	Ci           bool
-	Reconcile    bool
-	AutoUpgrade  bool
-	// Number of days to delay cluster upgrades for this environment. 0=immediate (test/dev), 1=1 day (default/staging), 2=2 days (production). Delays are additive with tenant-level delays. Total delay = tenant delay + environment delay.
+	ID               uuid.UUID
+	TenantID         uuid.UUID
+	Name             string
+	Kind             EnvironmentKind
+	Description      pgtype.Text
+	Created          pgtype.Timestamptz
+	LastModified     pgtype.Timestamptz
+	Ci               bool
+	Reconcile        bool
+	AutoUpgrade      bool
 	UpgradeDelayDays int32
 }
 
@@ -315,12 +314,11 @@ type RolloutEvent struct {
 }
 
 type Tenant struct {
-	ID           uuid.UUID
-	Name         string
-	Description  pgtype.Text
-	Created      pgtype.Timestamptz
-	LastModified pgtype.Timestamptz
-	Ci           bool
-	// Number of days to delay cluster upgrades for all environments in this tenant. 0=immediate (test/dev), 1=1 day (default/staging), 2=2 days (production). Delays are additive with environment-level delays.
+	ID               uuid.UUID
+	Name             string
+	Description      pgtype.Text
+	Created          pgtype.Timestamptz
+	LastModified     pgtype.Timestamptz
+	Ci               bool
 	UpgradeDelayDays int32
 }

@@ -36,7 +36,7 @@ func TestRepo_EnvironmentGet(t *testing.T) {
 		Description:      ptr.To("testdesc"),
 		Kind:             model.EnvironmentKindTenant,
 		Reconcile:        true,
-		UpgradeDelayDays: 1,
+		UpgradeDelayDays: 0,
 	}
 
 	opts := cmpopts.IgnoreFields(model.Environment{}, "Created", "LastModified")
@@ -74,7 +74,7 @@ func TestRepo_EnvironmentsGet(t *testing.T) {
 			Description:      ptr.To("testdesc"),
 			Kind:             model.EnvironmentKindManagement,
 			Reconcile:        true,
-			UpgradeDelayDays: 1,
+			UpgradeDelayDays: 0,
 		})
 	}
 
@@ -109,7 +109,7 @@ func TestRepo_EnvironmentCreate(t *testing.T) {
 		Description:      ptr.To("somedesc"),
 		Kind:             model.EnvironmentKindTenant,
 		Reconcile:        true,
-		UpgradeDelayDays: 1,
+		UpgradeDelayDays: 0,
 	}
 
 	opts := cmpopts.IgnoreFields(model.Environment{}, "ID", "Created", "LastModified")
@@ -150,7 +150,7 @@ func TestRepo_EnvironmentUpdate(t *testing.T) {
 		Description:      ptr.To("somedesc2"),
 		Kind:             model.EnvironmentKindTenant,
 		Reconcile:        true,
-		UpgradeDelayDays: 1,
+		UpgradeDelayDays: 0,
 	}
 
 	opts := cmpopts.IgnoreFields(model.Environment{}, "ID", "Created", "LastModified")
@@ -168,7 +168,7 @@ func TestRepo_EnvironmentUpdate(t *testing.T) {
 		Description:      ptr.To("somedesc2"),
 		Kind:             model.EnvironmentKindTenant,
 		Reconcile:        true,
-		UpgradeDelayDays: 1,
+		UpgradeDelayDays: 0,
 	}
 
 	if !cmp.Equal(want2, got, opts) {
