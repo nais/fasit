@@ -12,7 +12,12 @@ VALUES
 ;
 
 -- name: EnvironmentGetLabels :many
-SELECT * FROM environment_labels
-WHERE environment_id = @environment_id
-ORDER BY "key"
+SELECT
+	*
+FROM
+	environment_labels
+WHERE
+	environment_id = @environment_id
+ORDER BY
+	"key"
 ;

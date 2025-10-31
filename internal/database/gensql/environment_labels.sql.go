@@ -21,9 +21,14 @@ func (q *Queries) EnvironmentDeleteLabels(ctx context.Context, environmentID uui
 }
 
 const environmentGetLabels = `-- name: EnvironmentGetLabels :many
-SELECT environment_id, key, value FROM environment_labels
-WHERE environment_id = $1
-ORDER BY "key"
+SELECT
+	environment_id, key, value
+FROM
+	environment_labels
+WHERE
+	environment_id = $1
+ORDER BY
+	"key"
 `
 
 func (q *Queries) EnvironmentGetLabels(ctx context.Context, environmentID uuid.UUID) ([]EnvironmentLabel, error) {
