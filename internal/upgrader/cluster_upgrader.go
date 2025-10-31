@@ -1185,7 +1185,7 @@ func (c *ClusterUpgrader) isNodeUpgradeComplete(ctx context.Context, clusterUpgr
 // State transitions:
 // - delay_days 0: CREATED -> MASTER_UPGRADE (immediate)
 // - delay_days > 0: CREATED -> WAITING -> MASTER_UPGRADE (after delay)
-// Delay is additive: tenant delay + environment delay (default for each is 1)
+// Delay is additive: tenant delay + environment delay (default for each is 0)
 func (c *ClusterUpgrader) shouldDelayUpgrade(ctx context.Context, tenant *model.Tenant, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus, log logrus.FieldLogger) bool {
 	// Only process CREATED or WAITING status
 	if clusterUpgrade.UpgradeStatus != model.UpgradeStatusCreated && clusterUpgrade.UpgradeStatus != model.UpgradeStatusWaiting {
