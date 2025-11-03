@@ -372,3 +372,76 @@ func TestUpgradeDelay(t *testing.T) {
 		assert.False(t, delayed, "should proceed immediately when delay_days is set to 0")
 	})
 }
+
+func TestCreatedToWaitingTransition(t *testing.T) {
+	log := logrus.New()
+
+	t.Run("CREATED status with delay_days > 0 transitions to WAITING", func(t *testing.T) {
+		suite := newTestSuite(t)
+		upgrader := newUpgrade(suite)
+
+		tenantDelayDays := int32(2)
+		envDelayDays := int32(1) // Total: 3 days
+
+		tenant := &model.Tenant{
+			ID:               suite.env.tenantID,
+			Name:             "prod-tenant",
+			UpgradeDelayDays: tenantDelayDays,
+		}
+		env := &model.Environment{
+			ID:               suite.env.id,
+			TenantID:         suite.env.tenantID,
+			Name:             "prod-env",
+			UpgradeDelayDays: envDelayDays,
+		}
+
+		// Upgrade in CREATED status with delay configured
+		clusterUpgrade := &model.ClusterUpgradeStatus{
+			ID:            uuid.New(),
+			UpgradeStatus: model.UpgradeStatusCreated,
+			Version:       "1.2.4",
+			StartTime:     time.Now(),
+		}
+
+		// Should NOT delay in shouldDelayUpgrade because it only processes WAITING status
+		delayed := upgrader.shouldDelayUpgrade(tenant, env, clusterUpgrade, log)
+		assert.False(t, delayed, "shouldDelayUpgrade should return false for CREATED status")
+
+		// This confirms that the CREATED case in Run() must handle the transition to WAITING
+		// The actual transition happens in the switch statement's CREATED case
+	})
+
+	t.Run("CREATED status with delay_days = 0 does not transition to WAITING", func(t *testing.T) {
+		suite := newTestSuite(t)
+		upgrader := newUpgrade(suite)
+
+		tenantDelayDays := int32(0)
+		envDelayDays := int32(0) // Total: 0 days (no delay)
+
+		tenant := &model.Tenant{
+			ID:               suite.env.tenantID,
+			Name:             "test-tenant",
+			UpgradeDelayDays: tenantDelayDays,
+		}
+		env := &model.Environment{
+			ID:               suite.env.id,
+			TenantID:         suite.env.tenantID,
+			Name:             "test-env",
+			UpgradeDelayDays: envDelayDays,
+		}
+
+		clusterUpgrade := &model.ClusterUpgradeStatus{
+			ID:            uuid.New(),
+			UpgradeStatus: model.UpgradeStatusCreated,
+			Version:       "1.2.4",
+			StartTime:     time.Now(),
+		}
+
+		// Should not delay - no delay configured
+		delayed := upgrader.shouldDelayUpgrade(tenant, env, clusterUpgrade, log)
+		assert.False(t, delayed, "should not delay when delay_days is 0")
+
+		// With delay_days = 0, CREATED case should proceed directly to control plane upgrade
+		// without transitioning to WAITING
+	})
+}
