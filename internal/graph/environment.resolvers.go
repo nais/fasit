@@ -13,6 +13,7 @@ import (
 
 	"github.com/google/uuid"
 	pgx "github.com/jackc/pgx/v5"
+	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/graph/graphgen"
 	"github.com/nais/fasit/internal/graph/model"
 )
@@ -196,7 +197,7 @@ func (r *environmentResolver) Versions(ctx context.Context, obj *model.Environme
 	if err != nil {
 		return nil, err
 	}
-	currentMasterVersion, err := r.UpgraderClient.GetCurrentMasterVersion(ctx, *projectID, obj)
+	currentControlPlaneVersion, err := r.UpgraderClient.GetCurrentControlPlaneVersion(ctx, *projectID, obj)
 	if err != nil {
 		return nil, err
 	}
@@ -221,7 +222,7 @@ func (r *environmentResolver) Versions(ctx context.Context, obj *model.Environme
 
 	return &model.EnvironmentVersions{
 		Channel:           channel,
-		Apiserver:         currentMasterVersion,
+		Apiserver:         currentControlPlaneVersion,
 		AvailableVersions: availableVersions,
 		NodePools:         nodePoolVersions,
 	}, nil
@@ -269,6 +270,15 @@ func (r *mutationResolver) EnvironmentUpgrade(ctx context.Context, upgrade *mode
 // EnvironmentSetAutoUpgrade is the resolver for the environmentSetAutoUpgrade field.
 func (r *mutationResolver) EnvironmentSetAutoUpgrade(ctx context.Context, id uuid.UUID, autoUpgrade bool) (*model.Environment, error) {
 	return r.Repo.EnvironmentSetAutoUpgrade(ctx, id, autoUpgrade)
+}
+
+// EnvironmentSetUpgradeDelayDays is the resolver for the environmentSetUpgradeDelayDays field.
+func (r *mutationResolver) EnvironmentSetUpgradeDelayDays(ctx context.Context, environmentID uuid.UUID, delayDays int) (*model.Environment, error) {
+	delayDays32, err := database.ToInt32(delayDays)
+	if err != nil {
+		return nil, err
+	}
+	return r.Repo.EnvironmentSetUpgradeDelayDays(ctx, environmentID, delayDays32)
 }
 
 // Feature is the resolver for the feature field.

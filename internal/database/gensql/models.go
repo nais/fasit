@@ -13,11 +13,12 @@ import (
 type ClusterUpgradesStatus string
 
 const (
-	ClusterUpgradesStatusCREATED       ClusterUpgradesStatus = "CREATED"
-	ClusterUpgradesStatusMASTERUPGRADE ClusterUpgradesStatus = "MASTER_UPGRADE"
-	ClusterUpgradesStatusNODEUPGRADE   ClusterUpgradesStatus = "NODE_UPGRADE"
-	ClusterUpgradesStatusFAILED        ClusterUpgradesStatus = "FAILED"
-	ClusterUpgradesStatusDONE          ClusterUpgradesStatus = "DONE"
+	ClusterUpgradesStatusCREATED             ClusterUpgradesStatus = "CREATED"
+	ClusterUpgradesStatusWAITING             ClusterUpgradesStatus = "WAITING"
+	ClusterUpgradesStatusCONTROLPLANEUPGRADE ClusterUpgradesStatus = "CONTROL_PLANE_UPGRADE"
+	ClusterUpgradesStatusNODEUPGRADE         ClusterUpgradesStatus = "NODE_UPGRADE"
+	ClusterUpgradesStatusFAILED              ClusterUpgradesStatus = "FAILED"
+	ClusterUpgradesStatusDONE                ClusterUpgradesStatus = "DONE"
 )
 
 func (e *ClusterUpgradesStatus) Scan(src interface{}) error {
@@ -186,16 +187,17 @@ type EnvCost struct {
 }
 
 type Environment struct {
-	ID           uuid.UUID
-	TenantID     uuid.UUID
-	Name         string
-	Kind         EnvironmentKind
-	Description  pgtype.Text
-	Created      pgtype.Timestamptz
-	LastModified pgtype.Timestamptz
-	Ci           bool
-	Reconcile    bool
-	AutoUpgrade  bool
+	ID               uuid.UUID
+	TenantID         uuid.UUID
+	Name             string
+	Kind             EnvironmentKind
+	Description      pgtype.Text
+	Created          pgtype.Timestamptz
+	LastModified     pgtype.Timestamptz
+	Ci               bool
+	Reconcile        bool
+	AutoUpgrade      bool
+	UpgradeDelayDays int32
 }
 
 type EnvironmentLabel struct {
@@ -312,10 +314,11 @@ type RolloutEvent struct {
 }
 
 type Tenant struct {
-	ID           uuid.UUID
-	Name         string
-	Description  pgtype.Text
-	Created      pgtype.Timestamptz
-	LastModified pgtype.Timestamptz
-	Ci           bool
+	ID               uuid.UUID
+	Name             string
+	Description      pgtype.Text
+	Created          pgtype.Timestamptz
+	LastModified     pgtype.Timestamptz
+	Ci               bool
+	UpgradeDelayDays int32
 }

@@ -14,10 +14,10 @@ import (
 
 type Upgrader interface {
 	GetReleaseChannel(ctx context.Context, projectID string, environment *model.Environment) (string, error)
-	GetCurrentMasterVersion(ctx context.Context, projectID string, environment *model.Environment) (string, error)
+	GetCurrentControlPlaneVersion(ctx context.Context, projectID string, environment *model.Environment) (string, error)
 	GetAvailableVersions(ctx context.Context, projectID string, environment *model.Environment, releaseChannel string) ([]string, error)
 	GetRunningOperations(ctx context.Context, projectID string, environment *model.Environment) ([]*containerpb.Operation, error)
-	UpgradeMaster(ctx context.Context, projectID string, environment *model.Environment, version string) (*containerpb.Operation, error)
+	UpgradeControlPlane(ctx context.Context, projectID string, environment *model.Environment, version string) (*containerpb.Operation, error)
 	UpgradeNodePool(ctx context.Context, projectID string, environment *model.Environment, nodePoolName, version string) (*containerpb.Operation, error)
 	GetNodePools(ctx context.Context, projectID string, environment *model.Environment) ([]*containerpb.NodePool, error)
 	GetOperation(ctx context.Context, projectID, operationID string) (*containerpb.Operation, error)
@@ -101,12 +101,12 @@ func (c *Client) GetAvailableVersions(ctx context.Context, projectID string, env
 		return nil, err
 	}
 
-	currentMasterVer, err := c.GetCurrentMasterVersion(ctx, projectID, environment)
+	currentControlPlaneVer, err := c.GetCurrentControlPlaneVersion(ctx, projectID, environment)
 	if err != nil {
 		return nil, err
 	}
 
-	masterVersionObj, err := version.NewVersion(currentMasterVer)
+	controlPlaneVersionObj, err := version.NewVersion(currentControlPlaneVer)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +122,7 @@ func (c *Client) GetAvailableVersions(ctx context.Context, projectID string, env
 			if err != nil {
 				return nil, err
 			}
-			if versionObj.GreaterThan(masterVersionObj) {
+			if versionObj.GreaterThan(controlPlaneVersionObj) {
 				index++
 			}
 
@@ -135,7 +135,7 @@ func (c *Client) GetAvailableVersions(ctx context.Context, projectID string, env
 	return versions, nil
 }
 
-func (c *Client) UpgradeMaster(ctx context.Context, projectID string, environment *model.Environment, version string) (*containerpb.Operation, error) {
+func (c *Client) UpgradeControlPlane(ctx context.Context, projectID string, environment *model.Environment, version string) (*containerpb.Operation, error) {
 	clusterName := c.getClusterName(environment)
 	return c.client.UpdateMaster(ctx, &containerpb.UpdateMasterRequest{
 		Name:          c.getName(projectID, clusterName),
@@ -151,7 +151,7 @@ func (c *Client) UpgradeNodePool(ctx context.Context, projectID string, environm
 	})
 }
 
-func (c *Client) GetCurrentMasterVersion(ctx context.Context, projectID string, environment *model.Environment) (string, error) {
+func (c *Client) GetCurrentControlPlaneVersion(ctx context.Context, projectID string, environment *model.Environment) (string, error) {
 	cluster, err := c.getCluster(ctx, projectID, environment)
 	if err != nil {
 		return "", err

@@ -11,15 +11,16 @@ import (
 )
 
 type Environment struct {
-	ID           uuid.UUID       `json:"id"`
-	Name         string          `json:"name"`
-	Description  *string         `json:"description"`
-	Created      time.Time       `json:"created"`
-	LastModified time.Time       `json:"lastModified"`
-	Kind         EnvironmentKind `json:"kind"`
-	CI           bool            `json:"ci"`
-	Reconcile    bool            `json:"reconciled"`
-	AutoUpgrade  bool            `json:"autoUpgrade"`
+	ID               uuid.UUID       `json:"id"`
+	Name             string          `json:"name"`
+	Description      *string         `json:"description"`
+	Created          time.Time       `json:"created"`
+	LastModified     time.Time       `json:"lastModified"`
+	Kind             EnvironmentKind `json:"kind"`
+	CI               bool            `json:"ci"`
+	Reconcile        bool            `json:"reconciled"`
+	AutoUpgrade      bool            `json:"autoUpgrade"`
+	UpgradeDelayDays int32           `json:"upgradeDelayDays"`
 
 	TenantID uuid.UUID `json:"tenantID"`
 }

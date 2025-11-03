@@ -107,6 +107,16 @@ RETURNING
 	*
 ;
 
+-- name: EnvironmentSetUpgradeDelayDays :one
+UPDATE environments
+SET
+	upgrade_delay_days = @upgrade_delay_days
+WHERE
+	id = @id
+RETURNING
+	*
+;
+
 -- name: EnvironmentsGetByAutoUpgrade :many
 SELECT
 	*

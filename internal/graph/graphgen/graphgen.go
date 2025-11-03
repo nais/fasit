@@ -158,6 +158,7 @@ type ComplexityRoot struct {
 		Reconcile             func(childComplexity int) int
 		Releases              func(childComplexity int) int
 		Tenant                func(childComplexity int) int
+		UpgradeDelayDays      func(childComplexity int) int
 		Values                func(childComplexity int) int
 		Versions              func(childComplexity int) int
 		Warnings              func(childComplexity int) int
@@ -288,19 +289,21 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		ConfigurationCreate       func(childComplexity int, configuration model.NewConfiguration) int
-		ConfigurationDelete       func(childComplexity int, id uuid.UUID) int
-		ConfigurationUpdate       func(childComplexity int, id uuid.UUID, configuration model.UpdateConfiguration) int
-		DeleteHelmInstall         func(childComplexity int, envID uuid.UUID, name string) int
-		EnvironmentCreate         func(childComplexity int, environment model.EnvironmentCreate) int
-		EnvironmentSetAutoUpgrade func(childComplexity int, id uuid.UUID, autoUpgrade bool) int
-		EnvironmentSetReconcile   func(childComplexity int, id uuid.UUID, reconcile bool) int
-		EnvironmentUpdate         func(childComplexity int, id uuid.UUID, input model.EnvironmentUpdate) int
-		EnvironmentUpgrade        func(childComplexity int, upgrade *model.EnvironmentUpgrade) int
-		FeatureStateSave          func(childComplexity int, envID uuid.UUID, enabled bool, feature string) int
-		Playground                func(childComplexity int, input model.PlaygroundInput) int
-		RolloutMarkFailed         func(childComplexity int, feature string, version string) int
-		TenantCreate              func(childComplexity int, tenant model.TenantCreate) int
+		ConfigurationCreate            func(childComplexity int, configuration model.NewConfiguration) int
+		ConfigurationDelete            func(childComplexity int, id uuid.UUID) int
+		ConfigurationUpdate            func(childComplexity int, id uuid.UUID, configuration model.UpdateConfiguration) int
+		DeleteHelmInstall              func(childComplexity int, envID uuid.UUID, name string) int
+		EnvironmentCreate              func(childComplexity int, environment model.EnvironmentCreate) int
+		EnvironmentSetAutoUpgrade      func(childComplexity int, id uuid.UUID, autoUpgrade bool) int
+		EnvironmentSetReconcile        func(childComplexity int, id uuid.UUID, reconcile bool) int
+		EnvironmentSetUpgradeDelayDays func(childComplexity int, environmentID uuid.UUID, delayDays int) int
+		EnvironmentUpdate              func(childComplexity int, id uuid.UUID, input model.EnvironmentUpdate) int
+		EnvironmentUpgrade             func(childComplexity int, upgrade *model.EnvironmentUpgrade) int
+		FeatureStateSave               func(childComplexity int, envID uuid.UUID, enabled bool, feature string) int
+		Playground                     func(childComplexity int, input model.PlaygroundInput) int
+		RolloutMarkFailed              func(childComplexity int, feature string, version string) int
+		TenantCreate                   func(childComplexity int, tenant model.TenantCreate) int
+		TenantSetUpgradeDelayDays      func(childComplexity int, tenantID uuid.UUID, delayDays int) int
 	}
 
 	NaisdWarning struct {
@@ -387,14 +390,15 @@ type ComplexityRoot struct {
 	}
 
 	Tenant struct {
-		Created      func(childComplexity int) int
-		Description  func(childComplexity int) int
-		Environment  func(childComplexity int, id *uuid.UUID, slug *string) int
-		Environments func(childComplexity int) int
-		ID           func(childComplexity int) int
-		LastModified func(childComplexity int) int
-		Name         func(childComplexity int) int
-		Warnings     func(childComplexity int) int
+		Created          func(childComplexity int) int
+		Description      func(childComplexity int) int
+		Environment      func(childComplexity int, id *uuid.UUID, slug *string) int
+		Environments     func(childComplexity int) int
+		ID               func(childComplexity int) int
+		LastModified     func(childComplexity int) int
+		Name             func(childComplexity int) int
+		UpgradeDelayDays func(childComplexity int) int
+		Warnings         func(childComplexity int) int
 	}
 
 	TenantCosts struct {
@@ -482,6 +486,7 @@ type FeatureWarningResolver interface {
 }
 type MutationResolver interface {
 	TenantCreate(ctx context.Context, tenant model.TenantCreate) (*model.Tenant, error)
+	TenantSetUpgradeDelayDays(ctx context.Context, tenantID uuid.UUID, delayDays int) (*model.Tenant, error)
 	ConfigurationCreate(ctx context.Context, configuration model.NewConfiguration) (*model.Configuration, error)
 	ConfigurationUpdate(ctx context.Context, id uuid.UUID, configuration model.UpdateConfiguration) (*model.Configuration, error)
 	ConfigurationDelete(ctx context.Context, id uuid.UUID) (bool, error)
@@ -490,6 +495,7 @@ type MutationResolver interface {
 	EnvironmentSetReconcile(ctx context.Context, id uuid.UUID, reconcile bool) (*model.Environment, error)
 	EnvironmentUpgrade(ctx context.Context, upgrade *model.EnvironmentUpgrade) (*model.Environment, error)
 	EnvironmentSetAutoUpgrade(ctx context.Context, id uuid.UUID, autoUpgrade bool) (*model.Environment, error)
+	EnvironmentSetUpgradeDelayDays(ctx context.Context, environmentID uuid.UUID, delayDays int) (*model.Environment, error)
 	FeatureStateSave(ctx context.Context, envID uuid.UUID, enabled bool, feature string) (*model.FeatureState, error)
 	Playground(ctx context.Context, input model.PlaygroundInput) (*model.Playground, error)
 	RolloutMarkFailed(ctx context.Context, feature string, version string) (*model.Rollout, error)
@@ -907,6 +913,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Environment.Tenant(childComplexity), true
+	case "Environment.upgradeDelayDays":
+		if e.complexity.Environment.UpgradeDelayDays == nil {
+			break
+		}
+
+		return e.complexity.Environment.UpgradeDelayDays(childComplexity), true
 	case "Environment.values":
 		if e.complexity.Environment.Values == nil {
 			break
@@ -1509,6 +1521,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.EnvironmentSetReconcile(childComplexity, args["id"].(uuid.UUID), args["reconcile"].(bool)), true
+	case "Mutation.environmentSetUpgradeDelayDays":
+		if e.complexity.Mutation.EnvironmentSetUpgradeDelayDays == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_environmentSetUpgradeDelayDays_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.EnvironmentSetUpgradeDelayDays(childComplexity, args["environmentID"].(uuid.UUID), args["delayDays"].(int)), true
 	case "Mutation.environmentUpdate":
 		if e.complexity.Mutation.EnvironmentUpdate == nil {
 			break
@@ -1575,6 +1598,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.TenantCreate(childComplexity, args["tenant"].(model.TenantCreate)), true
+	case "Mutation.tenantSetUpgradeDelayDays":
+		if e.complexity.Mutation.TenantSetUpgradeDelayDays == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_tenantSetUpgradeDelayDays_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.TenantSetUpgradeDelayDays(childComplexity, args["tenantID"].(uuid.UUID), args["delayDays"].(int)), true
 
 	case "NaisdWarning.environment":
 		if e.complexity.NaisdWarning.Environment == nil {
@@ -2006,6 +2040,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Tenant.Name(childComplexity), true
+	case "Tenant.upgradeDelayDays":
+		if e.complexity.Tenant.UpgradeDelayDays == nil {
+			break
+		}
+
+		return e.complexity.Tenant.UpgradeDelayDays(childComplexity), true
 	case "Tenant.warnings":
 		if e.complexity.Tenant.Warnings == nil {
 			break
@@ -2331,7 +2371,8 @@ extend type Query {
 
 enum UpgradeStatus {
 	CREATED
-	MASTER_UPGRADE
+	WAITING
+	CONTROL_PLANE_UPGRADE
 	NODE_UPGRADE
 	FAILED
 	DONE
@@ -2386,6 +2427,7 @@ type Environment {
 	clusterUpgradeStatus: ClusterUpgradeStatus
 	versions: EnvironmentVersions
 	labels: [EnvironmentLabel!]!
+	upgradeDelayDays: Int!
 }
 
 type EnvironmentLabel {
@@ -2480,6 +2522,11 @@ extend type Mutation {
 	Change the autoUpgrade flag for an environment
 	"""
 	environmentSetAutoUpgrade(id: ID!, autoUpgrade: Boolean!): Environment!
+
+	"""
+	Set the upgrade delay (in days) for an environment.
+	"""
+	environmentSetUpgradeDelayDays(environmentID: ID!, delayDays: Int!): Environment!
 }
 `, BuiltIn: false},
 	{Name: "../../../schema/feature.graphqls", Input: `type Computed {
@@ -2725,6 +2772,7 @@ type Subscription {
 	created: Time!
 	lastModified: Time!
 	warnings: [Warning!]!
+	upgradeDelayDays: Int!
 }
 
 type Query {
@@ -2738,6 +2786,10 @@ input TenantCreate {
 
 type Mutation {
 	tenantCreate(tenant: TenantCreate!): Tenant!
+	"""
+	Set the upgrade delay (in days) for a tenant.
+	"""
+	tenantSetUpgradeDelayDays(tenantID: ID!, delayDays: Int!): Tenant!
 }
 
 extend type Query {
@@ -2898,6 +2950,22 @@ func (ec *executionContext) field_Mutation_environmentSetReconcile_args(ctx cont
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_environmentSetUpgradeDelayDays_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "environmentID", ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID)
+	if err != nil {
+		return nil, err
+	}
+	args["environmentID"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "delayDays", ec.unmarshalNInt2int)
+	if err != nil {
+		return nil, err
+	}
+	args["delayDays"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_environmentUpdate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -2981,6 +3049,22 @@ func (ec *executionContext) field_Mutation_tenantCreate_args(ctx context.Context
 		return nil, err
 	}
 	args["tenant"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_tenantSetUpgradeDelayDays_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "tenantID", ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID)
+	if err != nil {
+		return nil, err
+	}
+	args["tenantID"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "delayDays", ec.unmarshalNInt2int)
+	if err != nil {
+		return nil, err
+	}
+	args["delayDays"] = arg1
 	return args, nil
 }
 
@@ -3651,6 +3735,8 @@ func (ec *executionContext) fieldContext_ClusterUpgradeStatus_environment(_ cont
 				return ec.fieldContext_Environment_versions(ctx, field)
 			case "labels":
 				return ec.fieldContext_Environment_labels(ctx, field)
+			case "upgradeDelayDays":
+				return ec.fieldContext_Environment_upgradeDelayDays(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -3887,6 +3973,8 @@ func (ec *executionContext) fieldContext_ConfigOverride_environment(_ context.Co
 				return ec.fieldContext_Environment_versions(ctx, field)
 			case "labels":
 				return ec.fieldContext_Environment_labels(ctx, field)
+			case "upgradeDelayDays":
+				return ec.fieldContext_Environment_upgradeDelayDays(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -4291,6 +4379,8 @@ func (ec *executionContext) fieldContext_CostSeries_tenant(_ context.Context, fi
 				return ec.fieldContext_Tenant_lastModified(ctx, field)
 			case "warnings":
 				return ec.fieldContext_Tenant_warnings(ctx, field)
+			case "upgradeDelayDays":
+				return ec.fieldContext_Tenant_upgradeDelayDays(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tenant", field.Name)
 		},
@@ -4455,6 +4545,8 @@ func (ec *executionContext) fieldContext_EnvSeries_environment(_ context.Context
 				return ec.fieldContext_Environment_versions(ctx, field)
 			case "labels":
 				return ec.fieldContext_Environment_labels(ctx, field)
+			case "upgradeDelayDays":
+				return ec.fieldContext_Environment_upgradeDelayDays(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -4951,6 +5043,8 @@ func (ec *executionContext) fieldContext_Environment_tenant(_ context.Context, f
 				return ec.fieldContext_Tenant_lastModified(ctx, field)
 			case "warnings":
 				return ec.fieldContext_Tenant_warnings(ctx, field)
+			case "upgradeDelayDays":
+				return ec.fieldContext_Tenant_upgradeDelayDays(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tenant", field.Name)
 		},
@@ -5391,6 +5485,35 @@ func (ec *executionContext) fieldContext_Environment_labels(_ context.Context, f
 				return ec.fieldContext_EnvironmentLabel_value(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type EnvironmentLabel", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Environment_upgradeDelayDays(ctx context.Context, field graphql.CollectedField, obj *model.Environment) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Environment_upgradeDelayDays,
+		func(ctx context.Context) (any, error) {
+			return obj.UpgradeDelayDays, nil
+		},
+		nil,
+		ec.marshalNInt2int32,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Environment_upgradeDelayDays(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Environment",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -7197,6 +7320,8 @@ func (ec *executionContext) fieldContext_FeatureWarning_environment(_ context.Co
 				return ec.fieldContext_Environment_versions(ctx, field)
 			case "labels":
 				return ec.fieldContext_Environment_labels(ctx, field)
+			case "upgradeDelayDays":
+				return ec.fieldContext_Environment_upgradeDelayDays(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -8091,6 +8216,8 @@ func (ec *executionContext) fieldContext_Mutation_tenantCreate(ctx context.Conte
 				return ec.fieldContext_Tenant_lastModified(ctx, field)
 			case "warnings":
 				return ec.fieldContext_Tenant_warnings(ctx, field)
+			case "upgradeDelayDays":
+				return ec.fieldContext_Tenant_upgradeDelayDays(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tenant", field.Name)
 		},
@@ -8103,6 +8230,67 @@ func (ec *executionContext) fieldContext_Mutation_tenantCreate(ctx context.Conte
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_tenantCreate_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_tenantSetUpgradeDelayDays(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_tenantSetUpgradeDelayDays,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().TenantSetUpgradeDelayDays(ctx, fc.Args["tenantID"].(uuid.UUID), fc.Args["delayDays"].(int))
+		},
+		nil,
+		ec.marshalNTenant2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐTenant,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_tenantSetUpgradeDelayDays(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Tenant_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Tenant_name(ctx, field)
+			case "description":
+				return ec.fieldContext_Tenant_description(ctx, field)
+			case "environments":
+				return ec.fieldContext_Tenant_environments(ctx, field)
+			case "environment":
+				return ec.fieldContext_Tenant_environment(ctx, field)
+			case "created":
+				return ec.fieldContext_Tenant_created(ctx, field)
+			case "lastModified":
+				return ec.fieldContext_Tenant_lastModified(ctx, field)
+			case "warnings":
+				return ec.fieldContext_Tenant_warnings(ctx, field)
+			case "upgradeDelayDays":
+				return ec.fieldContext_Tenant_upgradeDelayDays(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Tenant", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_tenantSetUpgradeDelayDays_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -8327,6 +8515,8 @@ func (ec *executionContext) fieldContext_Mutation_environmentCreate(ctx context.
 				return ec.fieldContext_Environment_versions(ctx, field)
 			case "labels":
 				return ec.fieldContext_Environment_labels(ctx, field)
+			case "upgradeDelayDays":
+				return ec.fieldContext_Environment_upgradeDelayDays(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -8416,6 +8606,8 @@ func (ec *executionContext) fieldContext_Mutation_environmentUpdate(ctx context.
 				return ec.fieldContext_Environment_versions(ctx, field)
 			case "labels":
 				return ec.fieldContext_Environment_labels(ctx, field)
+			case "upgradeDelayDays":
+				return ec.fieldContext_Environment_upgradeDelayDays(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -8505,6 +8697,8 @@ func (ec *executionContext) fieldContext_Mutation_environmentSetReconcile(ctx co
 				return ec.fieldContext_Environment_versions(ctx, field)
 			case "labels":
 				return ec.fieldContext_Environment_labels(ctx, field)
+			case "upgradeDelayDays":
+				return ec.fieldContext_Environment_upgradeDelayDays(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -8594,6 +8788,8 @@ func (ec *executionContext) fieldContext_Mutation_environmentUpgrade(ctx context
 				return ec.fieldContext_Environment_versions(ctx, field)
 			case "labels":
 				return ec.fieldContext_Environment_labels(ctx, field)
+			case "upgradeDelayDays":
+				return ec.fieldContext_Environment_upgradeDelayDays(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -8683,6 +8879,8 @@ func (ec *executionContext) fieldContext_Mutation_environmentSetAutoUpgrade(ctx 
 				return ec.fieldContext_Environment_versions(ctx, field)
 			case "labels":
 				return ec.fieldContext_Environment_labels(ctx, field)
+			case "upgradeDelayDays":
+				return ec.fieldContext_Environment_upgradeDelayDays(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -8695,6 +8893,97 @@ func (ec *executionContext) fieldContext_Mutation_environmentSetAutoUpgrade(ctx 
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_environmentSetAutoUpgrade_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_environmentSetUpgradeDelayDays(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_environmentSetUpgradeDelayDays,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().EnvironmentSetUpgradeDelayDays(ctx, fc.Args["environmentID"].(uuid.UUID), fc.Args["delayDays"].(int))
+		},
+		nil,
+		ec.marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironment,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_environmentSetUpgradeDelayDays(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Environment_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Environment_name(ctx, field)
+			case "description":
+				return ec.fieldContext_Environment_description(ctx, field)
+			case "featureStates":
+				return ec.fieldContext_Environment_featureStates(ctx, field)
+			case "created":
+				return ec.fieldContext_Environment_created(ctx, field)
+			case "lastModified":
+				return ec.fieldContext_Environment_lastModified(ctx, field)
+			case "kind":
+				return ec.fieldContext_Environment_kind(ctx, field)
+			case "gcpProjectID":
+				return ec.fieldContext_Environment_gcpProjectID(ctx, field)
+			case "health":
+				return ec.fieldContext_Environment_health(ctx, field)
+			case "releases":
+				return ec.fieldContext_Environment_releases(ctx, field)
+			case "nodes":
+				return ec.fieldContext_Environment_nodes(ctx, field)
+			case "values":
+				return ec.fieldContext_Environment_values(ctx, field)
+			case "tenant":
+				return ec.fieldContext_Environment_tenant(ctx, field)
+			case "warnings":
+				return ec.fieldContext_Environment_warnings(ctx, field)
+			case "auditLog":
+				return ec.fieldContext_Environment_auditLog(ctx, field)
+			case "features":
+				return ec.fieldContext_Environment_features(ctx, field)
+			case "feature":
+				return ec.fieldContext_Environment_feature(ctx, field)
+			case "reconcile":
+				return ec.fieldContext_Environment_reconcile(ctx, field)
+			case "autoUpgrade":
+				return ec.fieldContext_Environment_autoUpgrade(ctx, field)
+			case "clusterUpgradeHistory":
+				return ec.fieldContext_Environment_clusterUpgradeHistory(ctx, field)
+			case "clusterUpgradeStatus":
+				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
+			case "versions":
+				return ec.fieldContext_Environment_versions(ctx, field)
+			case "labels":
+				return ec.fieldContext_Environment_labels(ctx, field)
+			case "upgradeDelayDays":
+				return ec.fieldContext_Environment_upgradeDelayDays(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_environmentSetUpgradeDelayDays_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -9004,6 +9293,8 @@ func (ec *executionContext) fieldContext_NaisdWarning_environment(_ context.Cont
 				return ec.fieldContext_Environment_versions(ctx, field)
 			case "labels":
 				return ec.fieldContext_Environment_labels(ctx, field)
+			case "upgradeDelayDays":
+				return ec.fieldContext_Environment_upgradeDelayDays(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -9167,6 +9458,8 @@ func (ec *executionContext) fieldContext_Query_tenants(_ context.Context, field 
 				return ec.fieldContext_Tenant_lastModified(ctx, field)
 			case "warnings":
 				return ec.fieldContext_Tenant_warnings(ctx, field)
+			case "upgradeDelayDays":
+				return ec.fieldContext_Tenant_upgradeDelayDays(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tenant", field.Name)
 		},
@@ -9767,6 +10060,8 @@ func (ec *executionContext) fieldContext_Query_tenant(ctx context.Context, field
 				return ec.fieldContext_Tenant_lastModified(ctx, field)
 			case "warnings":
 				return ec.fieldContext_Tenant_warnings(ctx, field)
+			case "upgradeDelayDays":
+				return ec.fieldContext_Tenant_upgradeDelayDays(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tenant", field.Name)
 		},
@@ -11159,6 +11454,8 @@ func (ec *executionContext) fieldContext_Tenant_environments(_ context.Context, 
 				return ec.fieldContext_Environment_versions(ctx, field)
 			case "labels":
 				return ec.fieldContext_Environment_labels(ctx, field)
+			case "upgradeDelayDays":
+				return ec.fieldContext_Environment_upgradeDelayDays(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -11237,6 +11534,8 @@ func (ec *executionContext) fieldContext_Tenant_environment(ctx context.Context,
 				return ec.fieldContext_Environment_versions(ctx, field)
 			case "labels":
 				return ec.fieldContext_Environment_labels(ctx, field)
+			case "upgradeDelayDays":
+				return ec.fieldContext_Environment_upgradeDelayDays(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -11337,6 +11636,35 @@ func (ec *executionContext) fieldContext_Tenant_warnings(_ context.Context, fiel
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("FieldContext.Child cannot be called on type INTERFACE")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Tenant_upgradeDelayDays(ctx context.Context, field graphql.CollectedField, obj *model.Tenant) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Tenant_upgradeDelayDays,
+		func(ctx context.Context) (any, error) {
+			return obj.UpgradeDelayDays, nil
+		},
+		nil,
+		ec.marshalNInt2int32,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Tenant_upgradeDelayDays(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Tenant",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -14850,6 +15178,11 @@ func (ec *executionContext) _Environment(ctx context.Context, sel ast.SelectionS
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "upgradeDelayDays":
+			out.Values[i] = ec._Environment_upgradeDelayDays(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -16238,6 +16571,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "tenantSetUpgradeDelayDays":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_tenantSetUpgradeDelayDays(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "configurationCreate":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_configurationCreate(ctx, field)
@@ -16290,6 +16630,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "environmentSetAutoUpgrade":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_environmentSetAutoUpgrade(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "environmentSetUpgradeDelayDays":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_environmentSetUpgradeDelayDays(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -17477,6 +17824,11 @@ func (ec *executionContext) _Tenant(ctx context.Context, sel ast.SelectionSet, o
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "upgradeDelayDays":
+			out.Values[i] = ec._Tenant_upgradeDelayDays(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -19088,6 +19440,22 @@ func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v any) (int, 
 func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
 	_ = sel
 	res := graphql.MarshalInt(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNInt2int32(ctx context.Context, v any) (int32, error) {
+	res, err := graphql.UnmarshalInt32(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInt2int32(ctx context.Context, sel ast.SelectionSet, v int32) graphql.Marshaler {
+	_ = sel
+	res := graphql.MarshalInt32(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")

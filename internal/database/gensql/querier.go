@@ -60,6 +60,7 @@ type Querier interface {
 	EnvironmentInsertLabels(ctx context.Context, arg []EnvironmentInsertLabelsParams) *EnvironmentInsertLabelsBatchResults
 	EnvironmentSetAutoUpgrade(ctx context.Context, arg EnvironmentSetAutoUpgradeParams) (Environment, error)
 	EnvironmentSetReconcile(ctx context.Context, arg EnvironmentSetReconcileParams) (Environment, error)
+	EnvironmentSetUpgradeDelayDays(ctx context.Context, arg EnvironmentSetUpgradeDelayDaysParams) (Environment, error)
 	EnvironmentUpdate(ctx context.Context, arg EnvironmentUpdateParams) (Environment, error)
 	EnvironmentValueDelete(ctx context.Context, arg EnvironmentValueDeleteParams) error
 	EnvironmentValueGet(ctx context.Context, arg EnvironmentValueGetParams) (EnvironmentValueGetRow, error)
@@ -113,6 +114,7 @@ type Querier interface {
 	TenantEnvironments(ctx context.Context, all bool) ([]TenantEnvironmentsRow, error)
 	TenantGet(ctx context.Context, id uuid.UUID) (Tenant, error)
 	TenantGetByName(ctx context.Context, name string) (Tenant, error)
+	TenantSetUpgradeDelayDays(ctx context.Context, arg TenantSetUpgradeDelayDaysParams) (Tenant, error)
 	TenantsGet(ctx context.Context) ([]Tenant, error)
 	TimeoutDeployInstructions(ctx context.Context) error
 	Warnings(ctx context.Context, arg WarningsParams) ([]WarningsRow, error)

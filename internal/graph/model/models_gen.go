@@ -287,16 +287,18 @@ func (e HelmValueDifference) MarshalJSON() ([]byte, error) {
 type UpgradeStatus string
 
 const (
-	UpgradeStatusCreated       UpgradeStatus = "CREATED"
-	UpgradeStatusMasterUpgrade UpgradeStatus = "MASTER_UPGRADE"
-	UpgradeStatusNodeUpgrade   UpgradeStatus = "NODE_UPGRADE"
-	UpgradeStatusFailed        UpgradeStatus = "FAILED"
-	UpgradeStatusDone          UpgradeStatus = "DONE"
+	UpgradeStatusCreated             UpgradeStatus = "CREATED"
+	UpgradeStatusWaiting             UpgradeStatus = "WAITING"
+	UpgradeStatusControlPlaneUpgrade UpgradeStatus = "CONTROL_PLANE_UPGRADE"
+	UpgradeStatusNodeUpgrade         UpgradeStatus = "NODE_UPGRADE"
+	UpgradeStatusFailed              UpgradeStatus = "FAILED"
+	UpgradeStatusDone                UpgradeStatus = "DONE"
 )
 
 var AllUpgradeStatus = []UpgradeStatus{
 	UpgradeStatusCreated,
-	UpgradeStatusMasterUpgrade,
+	UpgradeStatusWaiting,
+	UpgradeStatusControlPlaneUpgrade,
 	UpgradeStatusNodeUpgrade,
 	UpgradeStatusFailed,
 	UpgradeStatusDone,
@@ -304,7 +306,7 @@ var AllUpgradeStatus = []UpgradeStatus{
 
 func (e UpgradeStatus) IsValid() bool {
 	switch e {
-	case UpgradeStatusCreated, UpgradeStatusMasterUpgrade, UpgradeStatusNodeUpgrade, UpgradeStatusFailed, UpgradeStatusDone:
+	case UpgradeStatusCreated, UpgradeStatusWaiting, UpgradeStatusControlPlaneUpgrade, UpgradeStatusNodeUpgrade, UpgradeStatusFailed, UpgradeStatusDone:
 		return true
 	}
 	return false

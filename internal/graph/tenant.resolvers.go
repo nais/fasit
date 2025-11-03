@@ -9,6 +9,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/graph/graphgen"
 	"github.com/nais/fasit/internal/graph/model"
 )
@@ -16,6 +17,15 @@ import (
 // TenantCreate is the resolver for the tenantCreate field.
 func (r *mutationResolver) TenantCreate(ctx context.Context, tenant model.TenantCreate) (*model.Tenant, error) {
 	return r.Repo.TenantCreate(ctx, &tenant)
+}
+
+// TenantSetUpgradeDelayDays is the resolver for the tenantSetUpgradeDelayDays field.
+func (r *mutationResolver) TenantSetUpgradeDelayDays(ctx context.Context, tenantID uuid.UUID, delayDays int) (*model.Tenant, error) {
+	delayDays32, err := database.ToInt32(delayDays)
+	if err != nil {
+		return nil, err
+	}
+	return r.Repo.TenantSetUpgradeDelayDays(ctx, tenantID, delayDays32)
 }
 
 // Tenants is the resolver for the tenants field.

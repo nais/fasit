@@ -17,7 +17,7 @@ func TestSlackNotificationFlow(t *testing.T) {
 	t.Run("updateSlackProgress handles missing message metadata gracefully", func(t *testing.T) {
 		clusterUpgrade := &model.ClusterUpgradeStatus{
 			ID:                    uuid.New(),
-			UpgradeStatus:         model.UpgradeStatusMasterUpgrade,
+			UpgradeStatus:         model.UpgradeStatusControlPlaneUpgrade,
 			Version:               "1.25.0",
 			LastModified:          time.Now(),
 			SlackChannelID:        "",         // No channel ID
@@ -44,7 +44,7 @@ func TestSlackNotificationFlow(t *testing.T) {
 	t.Run("updateSlackProgress with valid message metadata", func(t *testing.T) {
 		clusterUpgrade := &model.ClusterUpgradeStatus{
 			ID:                    uuid.New(),
-			UpgradeStatus:         model.UpgradeStatusMasterUpgrade,
+			UpgradeStatus:         model.UpgradeStatusControlPlaneUpgrade,
 			Version:               "1.25.0",
 			LastModified:          time.Now(),
 			SlackChannelID:        "C123456",
@@ -74,8 +74,8 @@ func TestSlackProgressStates(t *testing.T) {
 		status model.UpgradeStatus
 	}{
 		{
-			name:   "master upgrade status",
-			status: model.UpgradeStatusMasterUpgrade,
+			name:   "control plane upgrade status",
+			status: model.UpgradeStatusControlPlaneUpgrade,
 		},
 		{
 			name:   "node upgrade status",

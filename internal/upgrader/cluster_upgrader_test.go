@@ -243,7 +243,7 @@ func TestRun_StartNodeUpgradeClusterStatusNodeUpgrade(t *testing.T) {
 	}
 }
 
-func TestRun_StartClusterUpgradeMasterStatusCreated(t *testing.T) {
+func TestRun_StartClusterUpgradeControlPlaneStatusCreated(t *testing.T) {
 	suite := newTestSuite(t)
 	upgrade := newUpgrade(suite)
 	suite.mockRunTenantForLoop(model.UpgradeStatusCreated)
@@ -255,7 +255,11 @@ func TestRun_StartClusterUpgradeMasterStatusCreated(t *testing.T) {
 	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, suite.environment).Return(
 		[]*containerpb.Operation{}, nil).Maybe()
 
-	suite.upgradeMock.EXPECT().UpgradeMaster(mock.Anything, mock.Anything, suite.environment, "1.2.4").Return(
+	// Mock GetCurrentControlPlaneVersion check in CREATED state - return different version to proceed with upgrade
+	suite.upgradeMock.EXPECT().GetCurrentControlPlaneVersion(mock.Anything, mock.Anything, suite.environment).Return(
+		"1.2.3", nil).Maybe() // Different from target version "1.2.4"
+
+	suite.upgradeMock.EXPECT().UpgradeControlPlane(mock.Anything, mock.Anything, suite.environment, "1.2.4").Return(
 		&containerpb.Operation{
 			Name:          "operation",
 			OperationType: containerpb.Operation_UPGRADE_MASTER,
@@ -276,7 +280,7 @@ func TestRun_StartClusterUpgradeMasterStatusCreated(t *testing.T) {
 	suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, mock.Anything, "1.2.4").Return(
 		&model.ClusterUpgradeStatus{
 			ID:            uuid.New(),
-			UpgradeStatus: model.UpgradeStatusMasterUpgrade,
+			UpgradeStatus: model.UpgradeStatusControlPlaneUpgrade,
 			Version:       "1.2.4",
 			LastModified:  time.Now(),
 			StartTime:     time.Now(),
@@ -288,20 +292,20 @@ func TestRun_StartClusterUpgradeMasterStatusCreated(t *testing.T) {
 	}
 }
 
-func TestRun_UpdateClusterStatusToNodeUpgradeWhenOperationDoneOnMasterUpgrade(t *testing.T) {
+func TestRun_UpdateClusterStatusToNodeUpgradeWhenOperationDoneOnControlPlaneUpgrade(t *testing.T) {
 	suite := newTestSuite(t)
 	upgrade := newUpgrade(suite)
-	suite.mockRunTenantForLoop(model.UpgradeStatusMasterUpgrade)
+	suite.mockRunTenantForLoop(model.UpgradeStatusControlPlaneUpgrade)
 
 	// Allow multiple GetRunningOperations calls - we'll fix the exact count later
 	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, suite.environment).Return(
 		[]*containerpb.Operation{}, nil).Maybe()
 
-	// Mock GetCurrentMasterVersion for stuck detection - return master at target version (upgrade complete)
-	suite.upgradeMock.EXPECT().GetCurrentMasterVersion(mock.Anything, mock.Anything, suite.environment).Return(
+	// Mock GetCurrentControlPlaneVersion for stuck detection - return control plane at target version (upgrade complete)
+	suite.upgradeMock.EXPECT().GetCurrentControlPlaneVersion(mock.Anything, mock.Anything, suite.environment).Return(
 		"1.2.4", nil).Maybe() // Same as target version
 
-	// Since master upgrade is complete, continue with normal flow to transition to NODE_UPGRADE
+	// Since control plane upgrade is complete, continue with normal flow to transition to NODE_UPGRADE
 	suite.repoMock.EXPECT().GetRunningClusterOperation(mock.Anything, suite.env.tenantID, suite.env.id).Return(
 		&model.EnvironmentOperation{
 			ID:     uuid.New(),
@@ -343,10 +347,10 @@ func TestRun_UpdateClusterStatusToNodeUpgradeWhenOperationDoneOnMasterUpgrade(t 
 	}
 }
 
-func TestRun_MasterUpgradeIsRunning(t *testing.T) {
+func TestRun_ControlPlaneUpgradeIsRunning(t *testing.T) {
 	suite := newTestSuite(t)
 	upgrade := newUpgrade(suite)
-	suite.mockRunTenantForLoop(model.UpgradeStatusMasterUpgrade)
+	suite.mockRunTenantForLoop(model.UpgradeStatusControlPlaneUpgrade)
 
 	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, suite.env.projectID, suite.environment).Return(
 		[]*containerpb.Operation{
@@ -395,10 +399,10 @@ func TestRun_MasterUpgradeIsRunning(t *testing.T) {
 			Status: containerpb.Operation_RUNNING.String(),
 			Type:   "UPGRADE_MASTER",
 		}, nil).Maybe()
-	suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, gensql.ClusterUpgradesStatusMASTERUPGRADE, "1.2.4").Return(
+	suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, gensql.ClusterUpgradesStatusCONTROLPLANEUPGRADE, "1.2.4").Return(
 		&model.ClusterUpgradeStatus{
 			ID:            uuid.New(),
-			UpgradeStatus: model.UpgradeStatusMasterUpgrade,
+			UpgradeStatus: model.UpgradeStatusControlPlaneUpgrade,
 			Version:       "1.2.4",
 			LastModified:  time.Now(),
 			StartTime:     time.Now(),
@@ -490,4 +494,171 @@ func TestCleanupDanglingOperations_NotFound(t *testing.T) {
 	// Verify all expectations were met
 	upgradeMock.AssertExpectations(t)
 	repoMock.AssertExpectations(t)
+}
+
+func TestRun_CreatedToWaitingTransitionWithDelay(t *testing.T) {
+	suite := newTestSuite(t)
+	upgrade := newUpgrade(suite)
+
+	// Setup tenant and environment with delay configured
+	tenantDelayDays := int32(2)
+	envDelayDays := int32(1)
+
+	suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
+		ID:               suite.env.tenantID,
+		Name:             suite.env.name,
+		UpgradeDelayDays: tenantDelayDays,
+	}}, nil).Once()
+
+	suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
+		ID:               suite.env.id,
+		TenantID:         suite.env.tenantID,
+		Name:             suite.env.name,
+		UpgradeDelayDays: envDelayDays,
+	}}, nil).Once()
+
+	suite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, mock.Anything, "project_id", false).Return(
+		&model.EnvironmentValue{
+			Key:   "project_id",
+			Value: []byte(`"1234"`),
+		}, nil).Twice()
+
+	// Mock ClusterUpgradeGet to return upgrade in CREATED status
+	createdUpgrade := &model.ClusterUpgradeStatus{
+		ID:            uuid.New(),
+		UpgradeStatus: model.UpgradeStatusCreated,
+		Version:       "1.2.4",
+		StartTime:     time.Now(),
+		LastModified:  time.Now(),
+		EnvironmentID: suite.env.id,
+	}
+	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(createdUpgrade, nil).Once()
+
+	suite.repoMock.EXPECT().ClusterUpgradeHistoryGet(mock.Anything, suite.env.tenantID, suite.env.id).Return([]*model.ClusterUpgradeStatus{}, nil).Once()
+
+	// Mock ClusterOperationsGetByUpgradeID for cleanup operations check
+	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{}, nil).Once()
+
+	// Mock GetRunningOperations - called twice: once for stuck check, once in getAndUpdateRunningOperations
+	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{}, nil).Twice()
+
+	// Expect UpdateClusterUpgradeStatus to be called to transition to WAITING
+	waitingUpgrade := &model.ClusterUpgradeStatus{
+		ID:            createdUpgrade.ID,
+		UpgradeStatus: model.UpgradeStatusWaiting,
+		Version:       "1.2.4",
+		StartTime:     createdUpgrade.StartTime,
+		LastModified:  time.Now(),
+		EnvironmentID: suite.env.id,
+	}
+	suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, gensql.ClusterUpgradesStatusWAITING, "1.2.4").
+		Return(waitingUpgrade, nil).Once()
+
+	// Mock SetClusterUpgradesSlackMessage for posting new Slack message
+	suite.repoMock.EXPECT().SetClusterUpgradesSlackMessage(mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil).Maybe()
+
+	// Mock EnvironmentValueGet for slack mentions
+	suite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, suite.env.id, "slack_upgrade_mentions", false).Return(
+		&model.EnvironmentValue{
+			Key:   "slack_upgrade_mentions",
+			Value: []byte(`""`),
+		}, nil).Once()
+
+	err := upgrade.Run(context.Background())
+	if err != nil {
+		t.Errorf("got %v, want nil", err)
+	}
+
+	// Verify that UpdateClusterUpgradeStatus was called with WAITING status
+	suite.repoMock.AssertExpectations(t)
+}
+
+func TestRun_CreatedWithoutDelaySkipsWaiting(t *testing.T) {
+	suite := newTestSuite(t)
+	upgrade := newUpgrade(suite)
+
+	// Setup tenant and environment with NO delay (default 0)
+	tenantDelayDays := int32(0)
+	envDelayDays := int32(0)
+
+	suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
+		ID:               suite.env.tenantID,
+		Name:             suite.env.name,
+		UpgradeDelayDays: tenantDelayDays,
+	}}, nil).Once()
+
+	suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
+		ID:               suite.env.id,
+		TenantID:         suite.env.tenantID,
+		Name:             suite.env.name,
+		UpgradeDelayDays: envDelayDays,
+	}}, nil).Once()
+
+	suite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, mock.Anything, "project_id", false).Return(
+		&model.EnvironmentValue{
+			Key:   "project_id",
+			Value: []byte(`"1234"`),
+		}, nil).Twice()
+
+	// Mock ClusterUpgradeGet to return upgrade in CREATED status
+	createdUpgrade := &model.ClusterUpgradeStatus{
+		ID:            uuid.New(),
+		UpgradeStatus: model.UpgradeStatusCreated,
+		Version:       "1.2.4",
+		StartTime:     time.Now(),
+		LastModified:  time.Now(),
+		EnvironmentID: suite.env.id,
+	}
+	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(createdUpgrade, nil).Once()
+
+	suite.repoMock.EXPECT().ClusterUpgradeHistoryGet(mock.Anything, suite.env.tenantID, suite.env.id).Return([]*model.ClusterUpgradeStatus{}, nil).Once()
+
+	// Mock ClusterOperationsGetByUpgradeID for cleanup operations check
+	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{}, nil).Once()
+
+	// Mock GetRunningOperations for stuck check and main logic
+	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{}, nil).Twice()
+
+	// Mock GetCurrentControlPlaneVersion check in CREATED state
+	suite.upgradeMock.EXPECT().GetCurrentControlPlaneVersion(mock.Anything, mock.Anything, mock.Anything).Return("1.2.3", nil).Once()
+
+	// Mock UpgradeControlPlane to be called (since no delay)
+	suite.upgradeMock.EXPECT().UpgradeControlPlane(mock.Anything, mock.Anything, mock.Anything, "1.2.4").Return(
+		&containerpb.Operation{
+			Name:          "operation",
+			OperationType: containerpb.Operation_UPGRADE_MASTER,
+			Status:        containerpb.Operation_RUNNING,
+		}, nil).Once()
+
+	suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantID, suite.env.id, mock.Anything, mock.Anything).Return(nil, nil).Once()
+
+	suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, gensql.ClusterUpgradesStatusCONTROLPLANEUPGRADE, "1.2.4").
+		Return(&model.ClusterUpgradeStatus{
+			ID:            createdUpgrade.ID,
+			UpgradeStatus: model.UpgradeStatusControlPlaneUpgrade,
+			Version:       "1.2.4",
+			StartTime:     createdUpgrade.StartTime,
+			LastModified:  time.Now(),
+			EnvironmentID: suite.env.id,
+		}, nil).Once()
+
+	// Mock SetClusterUpgradesSlackMessage for posting new Slack message
+	suite.repoMock.EXPECT().SetClusterUpgradesSlackMessage(mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil).Maybe()
+
+	// Mock EnvironmentValueGet for slack mentions
+	suite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, suite.env.id, "slack_upgrade_mentions", false).Return(
+		&model.EnvironmentValue{
+			Key:   "slack_upgrade_mentions",
+			Value: []byte(`""`),
+		}, nil).Once()
+
+	err := upgrade.Run(context.Background())
+	if err != nil {
+		t.Errorf("got %v, want nil", err)
+	}
+
+	// Verify that UpdateClusterUpgradeStatus was NOT called with WAITING status
+	suite.repoMock.AssertNotCalled(t, "UpdateClusterUpgradeStatus", mock.Anything, mock.Anything, mock.Anything, gensql.ClusterUpgradesStatusWAITING, mock.Anything)
+	// Verify that it was called with CONTROL_PLANE_UPGRADE instead
+	suite.repoMock.AssertExpectations(t)
 }

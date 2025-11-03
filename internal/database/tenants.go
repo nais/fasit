@@ -15,15 +15,17 @@ type TenantRepo interface {
 	TenantGet(ctx context.Context, id uuid.UUID) (*model.Tenant, error)
 	TenantGetByName(ctx context.Context, name string) (*model.Tenant, error)
 	TenantsGet(ctx context.Context) ([]*model.Tenant, error)
+	TenantSetUpgradeDelayDays(ctx context.Context, id uuid.UUID, delayDays int32) (*model.Tenant, error)
 }
 
 func tenantFromSQL(t gensql.Tenant) *model.Tenant {
 	return &model.Tenant{
-		ID:           t.ID,
-		Name:         t.Name,
-		Description:  nullStringToPtr(t.Description),
-		Created:      t.Created.Time,
-		LastModified: t.LastModified.Time,
+		ID:               t.ID,
+		Name:             t.Name,
+		Description:      nullStringToPtr(t.Description),
+		Created:          t.Created.Time,
+		LastModified:     t.LastModified.Time,
+		UpgradeDelayDays: t.UpgradeDelayDays,
 	}
 }
 
@@ -67,6 +69,20 @@ func (r *repo) TenantsGet(ctx context.Context) ([]*model.Tenant, error) {
 		tenantSlice = append(tenantSlice, tenantFromSQL(tenant))
 	}
 	return tenantSlice, nil
+}
+
+func (r *repo) TenantSetUpgradeDelayDays(ctx context.Context, id uuid.UUID, delayDays int32) (*model.Tenant, error) {
+	tenant, err := r.querier.TenantSetUpgradeDelayDays(ctx, gensql.TenantSetUpgradeDelayDaysParams{
+		ID:               id,
+		UpgradeDelayDays: delayDays,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	r.createAudit(ctx, "updated upgrade_delay_days", "tenants", tenant.ID.String())
+
+	return tenantFromSQL(tenant), nil
 }
 
 func (r *repo) TenantEnvironments(ctx context.Context, onlyReconciled bool) ([]*model.TenantEnvironment, error) {
