@@ -2587,6 +2587,306 @@ func (_c *Querier_DeployInstructionsUpdateStatus_Call) RunAndReturn(run func(ctx
 	return _c
 }
 
+// DeploymentTargetsCreate provides a mock function for the type Querier
+func (_mock *Querier) DeploymentTargetsCreate(ctx context.Context, arg gensql.DeploymentTargetsCreateParams) error {
+	ret := _mock.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeploymentTargetsCreate")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, gensql.DeploymentTargetsCreateParams) error); ok {
+		r0 = returnFunc(ctx, arg)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// Querier_DeploymentTargetsCreate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeploymentTargetsCreate'
+type Querier_DeploymentTargetsCreate_Call struct {
+	*mock.Call
+}
+
+// DeploymentTargetsCreate is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg gensql.DeploymentTargetsCreateParams
+func (_e *Querier_Expecter) DeploymentTargetsCreate(ctx interface{}, arg interface{}) *Querier_DeploymentTargetsCreate_Call {
+	return &Querier_DeploymentTargetsCreate_Call{Call: _e.mock.On("DeploymentTargetsCreate", ctx, arg)}
+}
+
+func (_c *Querier_DeploymentTargetsCreate_Call) Run(run func(ctx context.Context, arg gensql.DeploymentTargetsCreateParams)) *Querier_DeploymentTargetsCreate_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 gensql.DeploymentTargetsCreateParams
+		if args[1] != nil {
+			arg1 = args[1].(gensql.DeploymentTargetsCreateParams)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_DeploymentTargetsCreate_Call) Return(err error) *Querier_DeploymentTargetsCreate_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *Querier_DeploymentTargetsCreate_Call) RunAndReturn(run func(ctx context.Context, arg gensql.DeploymentTargetsCreateParams) error) *Querier_DeploymentTargetsCreate_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// DeploymentTargetsGet provides a mock function for the type Querier
+func (_mock *Querier) DeploymentTargetsGet(ctx context.Context) ([]gensql.DeploymentTarget, error) {
+	ret := _mock.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeploymentTargetsGet")
+	}
+
+	var r0 []gensql.DeploymentTarget
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context) ([]gensql.DeploymentTarget, error)); ok {
+		return returnFunc(ctx)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context) []gensql.DeploymentTarget); ok {
+		r0 = returnFunc(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gensql.DeploymentTarget)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = returnFunc(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_DeploymentTargetsGet_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeploymentTargetsGet'
+type Querier_DeploymentTargetsGet_Call struct {
+	*mock.Call
+}
+
+// DeploymentTargetsGet is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *Querier_Expecter) DeploymentTargetsGet(ctx interface{}) *Querier_DeploymentTargetsGet_Call {
+	return &Querier_DeploymentTargetsGet_Call{Call: _e.mock.On("DeploymentTargetsGet", ctx)}
+}
+
+func (_c *Querier_DeploymentTargetsGet_Call) Run(run func(ctx context.Context)) *Querier_DeploymentTargetsGet_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_DeploymentTargetsGet_Call) Return(deploymentTargets []gensql.DeploymentTarget, err error) *Querier_DeploymentTargetsGet_Call {
+	_c.Call.Return(deploymentTargets, err)
+	return _c
+}
+
+func (_c *Querier_DeploymentTargetsGet_Call) RunAndReturn(run func(ctx context.Context) ([]gensql.DeploymentTarget, error)) *Querier_DeploymentTargetsGet_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// DeploymentTargetsGetPending provides a mock function for the type Querier
+func (_mock *Querier) DeploymentTargetsGetPending(ctx context.Context) ([]gensql.DeploymentTarget, error) {
+	ret := _mock.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeploymentTargetsGetPending")
+	}
+
+	var r0 []gensql.DeploymentTarget
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context) ([]gensql.DeploymentTarget, error)); ok {
+		return returnFunc(ctx)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context) []gensql.DeploymentTarget); ok {
+		r0 = returnFunc(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gensql.DeploymentTarget)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = returnFunc(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_DeploymentTargetsGetPending_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeploymentTargetsGetPending'
+type Querier_DeploymentTargetsGetPending_Call struct {
+	*mock.Call
+}
+
+// DeploymentTargetsGetPending is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *Querier_Expecter) DeploymentTargetsGetPending(ctx interface{}) *Querier_DeploymentTargetsGetPending_Call {
+	return &Querier_DeploymentTargetsGetPending_Call{Call: _e.mock.On("DeploymentTargetsGetPending", ctx)}
+}
+
+func (_c *Querier_DeploymentTargetsGetPending_Call) Run(run func(ctx context.Context)) *Querier_DeploymentTargetsGetPending_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_DeploymentTargetsGetPending_Call) Return(deploymentTargets []gensql.DeploymentTarget, err error) *Querier_DeploymentTargetsGetPending_Call {
+	_c.Call.Return(deploymentTargets, err)
+	return _c
+}
+
+func (_c *Querier_DeploymentTargetsGetPending_Call) RunAndReturn(run func(ctx context.Context) ([]gensql.DeploymentTarget, error)) *Querier_DeploymentTargetsGetPending_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// DeploymentTargetsUpdate provides a mock function for the type Querier
+func (_mock *Querier) DeploymentTargetsUpdate(ctx context.Context, arg gensql.DeploymentTargetsUpdateParams) error {
+	ret := _mock.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeploymentTargetsUpdate")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, gensql.DeploymentTargetsUpdateParams) error); ok {
+		r0 = returnFunc(ctx, arg)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// Querier_DeploymentTargetsUpdate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeploymentTargetsUpdate'
+type Querier_DeploymentTargetsUpdate_Call struct {
+	*mock.Call
+}
+
+// DeploymentTargetsUpdate is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg gensql.DeploymentTargetsUpdateParams
+func (_e *Querier_Expecter) DeploymentTargetsUpdate(ctx interface{}, arg interface{}) *Querier_DeploymentTargetsUpdate_Call {
+	return &Querier_DeploymentTargetsUpdate_Call{Call: _e.mock.On("DeploymentTargetsUpdate", ctx, arg)}
+}
+
+func (_c *Querier_DeploymentTargetsUpdate_Call) Run(run func(ctx context.Context, arg gensql.DeploymentTargetsUpdateParams)) *Querier_DeploymentTargetsUpdate_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 gensql.DeploymentTargetsUpdateParams
+		if args[1] != nil {
+			arg1 = args[1].(gensql.DeploymentTargetsUpdateParams)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_DeploymentTargetsUpdate_Call) Return(err error) *Querier_DeploymentTargetsUpdate_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *Querier_DeploymentTargetsUpdate_Call) RunAndReturn(run func(ctx context.Context, arg gensql.DeploymentTargetsUpdateParams) error) *Querier_DeploymentTargetsUpdate_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// DeploymentsGet provides a mock function for the type Querier
+func (_mock *Querier) DeploymentsGet(ctx context.Context) ([]gensql.Deployment, error) {
+	ret := _mock.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeploymentsGet")
+	}
+
+	var r0 []gensql.Deployment
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context) ([]gensql.Deployment, error)); ok {
+		return returnFunc(ctx)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context) []gensql.Deployment); ok {
+		r0 = returnFunc(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gensql.Deployment)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = returnFunc(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_DeploymentsGet_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeploymentsGet'
+type Querier_DeploymentsGet_Call struct {
+	*mock.Call
+}
+
+// DeploymentsGet is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *Querier_Expecter) DeploymentsGet(ctx interface{}) *Querier_DeploymentsGet_Call {
+	return &Querier_DeploymentsGet_Call{Call: _e.mock.On("DeploymentsGet", ctx)}
+}
+
+func (_c *Querier_DeploymentsGet_Call) Run(run func(ctx context.Context)) *Querier_DeploymentsGet_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_DeploymentsGet_Call) Return(deployments []gensql.Deployment, err error) *Querier_DeploymentsGet_Call {
+	_c.Call.Return(deployments, err)
+	return _c
+}
+
+func (_c *Querier_DeploymentsGet_Call) RunAndReturn(run func(ctx context.Context) ([]gensql.Deployment, error)) *Querier_DeploymentsGet_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // EnvConfig provides a mock function for the type Querier
 func (_mock *Querier) EnvConfig(ctx context.Context, arg gensql.EnvConfigParams) ([]gensql.EnvConfigRow, error) {
 	ret := _mock.Called(ctx, arg)

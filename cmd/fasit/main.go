@@ -25,6 +25,7 @@ import (
 	"github.com/nais/fasit/internal/cluster"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/notifier"
+	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/graph"
 	"github.com/nais/fasit/internal/graph/graphgen"
 	"github.com/nais/fasit/internal/message"
@@ -154,6 +155,15 @@ func main() {
 	reconciler, err := workers.NewReconciler(repo, createPublisher, notifierService, meter, log.WithField("subsystem", "reconciler"))
 	if err != nil {
 		log.WithError(err).Fatal("setting up reconciler")
+	}
+
+	deployCreatePublisher := func(topicID string, log *logrus.Entry) deployment.Publisher {
+		return message.NewPublisher[message.DeployInstruction](pubsubClient, cfg.GCPProjectID, topicID, log)
+	}
+
+	_, err = deployment.NewReconciler(repo, deployCreatePublisher, notifierService, meter, log.WithField("subsystem", "deployment_reconciler"))
+	if err != nil {
+		log.WithError(err).Fatal("setting up deployment reconciler")
 	}
 
 	go func() {

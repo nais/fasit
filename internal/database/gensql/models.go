@@ -181,6 +181,25 @@ type DeployInstruction struct {
 	Values         []byte
 }
 
+type Deployment struct {
+	ID                 uuid.UUID
+	FeatureName        string
+	Version            string
+	Target             []byte
+	Created            pgtype.Timestamptz
+	GhRef              []byte
+	DeployInstructions []uuid.UUID
+}
+
+type DeploymentTarget struct {
+	DeploymentID  uuid.UUID
+	EnvironmentID uuid.UUID
+	Status        string
+	LastModified  pgtype.Timestamptz
+	Created       pgtype.Timestamptz
+	Hash          string
+}
+
 type EnvCost struct {
 	TenantID uuid.UUID
 	EnvID    uuid.UUID

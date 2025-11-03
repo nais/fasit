@@ -46,11 +46,12 @@ type Repo interface {
 	ConfigRepo
 	CostRepo
 	DeployInstructionRepo
+	DeploymentRepo
 	EnvironmentRepo
 	EnvironmentValueRepo
 	FeatureDataRepo
-	FeaturesRepo
 	FeatureStateRepo
+	FeaturesRepo
 	HealthRepo
 	KubernetesNodeRepo
 	LogRepo
