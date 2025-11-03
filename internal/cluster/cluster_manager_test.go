@@ -1,4 +1,4 @@
-package upgrader
+package cluster
 
 import (
 	"context"
@@ -8,8 +8,8 @@ import (
 	"cloud.google.com/go/container/apiv1/containerpb"
 
 	"github.com/google/uuid"
+	"github.com/nais/fasit/internal/cluster/mocks"
 	"github.com/nais/fasit/internal/graph/model"
-	"github.com/nais/fasit/internal/upgrader/mocks"
 )
 
 var (

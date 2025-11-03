@@ -1,4 +1,4 @@
-package upgrader
+package cluster
 
 import (
 	"context"
@@ -12,9 +12,9 @@ import (
 	"cloud.google.com/go/container/apiv1/containerpb"
 
 	"github.com/google/uuid"
+	clustermock "github.com/nais/fasit/internal/cluster/mocks"
 	"github.com/nais/fasit/internal/database/mocks"
 	"github.com/nais/fasit/internal/graph/model"
-	clustermock "github.com/nais/fasit/internal/upgrader/mocks"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/mock"
 	metricsdk "go.opentelemetry.io/otel/sdk/metric"
