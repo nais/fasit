@@ -54,10 +54,10 @@ func TestStuckUpgradeIntegration(t *testing.T) {
 		suite.repoMock.EXPECT().ClusterUpgradeHistoryGet(mock.Anything, suite.env.tenantID, suite.env.id).Return([]*model.ClusterUpgradeStatus{stuckUpgrade}, nil).Once()
 
 		// Mock GetRunningOperations call from stuck detection logic
-		suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{}, nil).Once()
+		suite.clusterMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{}, nil).Once()
 
 		// Mock GetCurrentControlPlaneVersion call from completion checking (for CONTROL_PLANE_UPGRADE status)
-		suite.upgradeMock.EXPECT().GetCurrentControlPlaneVersion(mock.Anything, mock.Anything, mock.Anything).Return("1.24.0", nil).Once()
+		suite.clusterMock.EXPECT().GetCurrentControlPlaneVersion(mock.Anything, mock.Anything, mock.Anything).Return("1.24.0", nil).Once()
 
 		// Mock the EnvironmentValueGet call that happens in updateSlackProgress for mentions
 		suite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, suite.env.id, "slack_upgrade_mentions", false).Return(
@@ -117,10 +117,10 @@ func TestStuckUpgradeIntegration(t *testing.T) {
 		testSuite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, mock.Anything).Return([]*model.EnvironmentOperation{}, nil).Once()
 
 		// System will first check for running operations
-		testSuite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{}, nil).Times(2) // Called during stuck detection and main logic
+		testSuite.clusterMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{}, nil).Times(2) // Called during stuck detection and main logic
 
 		// Mock GetCurrentControlPlaneVersion call from completion checking (for CONTROL_PLANE_UPGRADE status)
-		testSuite.upgradeMock.EXPECT().GetCurrentControlPlaneVersion(mock.Anything, mock.Anything, mock.Anything).Return("1.25.0", nil).Once() // Return target version to indicate completion
+		testSuite.clusterMock.EXPECT().GetCurrentControlPlaneVersion(mock.Anything, mock.Anything, mock.Anything).Return("1.25.0", nil).Once() // Return target version to indicate completion
 
 		// Mock the control plane upgrade status check
 		testSuite.repoMock.EXPECT().GetRunningClusterOperation(mock.Anything, testSuite.env.tenantID, testSuite.env.id).Return(
@@ -132,7 +132,7 @@ func TestStuckUpgradeIntegration(t *testing.T) {
 			}, nil).Once()
 
 		// Operation is now DONE, which will trigger transition to NODE_UPGRADE
-		testSuite.upgradeMock.EXPECT().GetOperation(mock.Anything, mock.Anything, "operation").Return(
+		testSuite.clusterMock.EXPECT().GetOperation(mock.Anything, mock.Anything, "operation").Return(
 			&containerpb.Operation{Status: containerpb.Operation_DONE}, nil).Once()
 		testSuite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil).Once()
 

@@ -22,18 +22,18 @@ import (
 type Resolver struct {
 	Repo           database.Repo
 	Log            *logrus.Entry
-	UpgraderClient upgrader.Upgrader
+	ClusterManager upgrader.ClusterManager
 
 	logNotifier     *logNotifier
 	diNotifier      *updateNotifier
 	createPublisher workers.NewPublisher
 }
 
-func NewResolver(ctx context.Context, repo database.Repo, notifier *notifier.Notifier, naisdPublisher workers.NewPublisher, upgraderClient upgrader.Upgrader, log *logrus.Entry) *Resolver {
+func NewResolver(ctx context.Context, repo database.Repo, notifier *notifier.Notifier, naisdPublisher workers.NewPublisher, clusterManager upgrader.ClusterManager, log *logrus.Entry) *Resolver {
 	return &Resolver{
 		Repo:            repo,
 		Log:             log,
-		UpgraderClient:  upgraderClient,
+		ClusterManager:  clusterManager,
 		createPublisher: naisdPublisher,
 		logNotifier:     newLogNotifier(ctx, notifier, repo),
 		diNotifier:      newDeployInstructionsNotifier(ctx, notifier, repo),

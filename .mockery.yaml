@@ -10,4 +10,4 @@ packages:
       Querier:
   github.com/nais/fasit/internal/upgrader:
     interfaces:
-      Upgrader:
+      ClusterManager:

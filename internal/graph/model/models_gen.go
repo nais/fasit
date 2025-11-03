@@ -104,6 +104,27 @@ type HelmValueDiff struct {
 	Diff       string              `json:"diff"`
 }
 
+// MaintenanceWindow defines when GKE is allowed to perform maintenance on the cluster.
+// If not set, GKE can perform maintenance at any time.
+type MaintenanceWindow struct {
+	// Start time in 24-hour format (HH:MM), e.g., "02:00" for 2 AM
+	StartTime string `json:"startTime"`
+	// End time in 24-hour format (HH:MM), e.g., "06:00" for 6 AM
+	EndTime string `json:"endTime"`
+	// Days of the week when maintenance is allowed. If empty, all days are allowed.
+	Days []DayOfWeek `json:"days"`
+	// Timezone for the maintenance window, e.g., "Europe/Oslo" or "UTC"
+	Timezone string `json:"timezone"`
+}
+
+// Input for setting a maintenance window
+type MaintenanceWindowInput struct {
+	StartTime string      `json:"startTime"`
+	EndTime   string      `json:"endTime"`
+	Days      []DayOfWeek `json:"days"`
+	Timezone  string      `json:"timezone"`
+}
+
 type Mutation struct {
 }
 
@@ -220,6 +241,71 @@ func (e *ConfigSource) UnmarshalJSON(b []byte) error {
 }
 
 func (e ConfigSource) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type DayOfWeek string
+
+const (
+	DayOfWeekMonday    DayOfWeek = "MONDAY"
+	DayOfWeekTuesday   DayOfWeek = "TUESDAY"
+	DayOfWeekWednesday DayOfWeek = "WEDNESDAY"
+	DayOfWeekThursday  DayOfWeek = "THURSDAY"
+	DayOfWeekFriday    DayOfWeek = "FRIDAY"
+	DayOfWeekSaturday  DayOfWeek = "SATURDAY"
+	DayOfWeekSunday    DayOfWeek = "SUNDAY"
+)
+
+var AllDayOfWeek = []DayOfWeek{
+	DayOfWeekMonday,
+	DayOfWeekTuesday,
+	DayOfWeekWednesday,
+	DayOfWeekThursday,
+	DayOfWeekFriday,
+	DayOfWeekSaturday,
+	DayOfWeekSunday,
+}
+
+func (e DayOfWeek) IsValid() bool {
+	switch e {
+	case DayOfWeekMonday, DayOfWeekTuesday, DayOfWeekWednesday, DayOfWeekThursday, DayOfWeekFriday, DayOfWeekSaturday, DayOfWeekSunday:
+		return true
+	}
+	return false
+}
+
+func (e DayOfWeek) String() string {
+	return string(e)
+}
+
+func (e *DayOfWeek) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = DayOfWeek(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid DayOfWeek", str)
+	}
+	return nil
+}
+
+func (e DayOfWeek) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *DayOfWeek) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e DayOfWeek) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	e.MarshalGQL(&buf)
 	return buf.Bytes(), nil

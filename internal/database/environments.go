@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/database/gensql"
@@ -24,6 +25,8 @@ type EnvironmentRepo interface {
 	EnvironmentSetLabels(ctx context.Context, environmentID uuid.UUID, labels []*protogen.EnvironmentLabel) error
 	EnvironmentGetLabels(ctx context.Context, environmentID uuid.UUID) ([]*model.EnvironmentLabel, error)
 	EnvironmentSetUpgradeDelayDays(ctx context.Context, id uuid.UUID, delayDays int32) (*model.Environment, error)
+	EnvironmentSetMaintenanceWindow(ctx context.Context, id uuid.UUID, window *model.MaintenanceWindow) (*model.Environment, error)
+	EnvironmentGetMaintenanceWindow(ctx context.Context, env *model.Environment) (*model.MaintenanceWindow, error)
 }
 
 func environmentFromSQL(p gensql.Environment) *model.Environment {
@@ -234,4 +237,46 @@ func (r *repo) EnvironmentSetUpgradeDelayDays(ctx context.Context, id uuid.UUID,
 	r.createAudit(ctx, "updated upgrade_delay_days", "environments", env.ID.String())
 
 	return environmentFromSQL(env), nil
+}
+
+func (r *repo) EnvironmentSetMaintenanceWindow(ctx context.Context, id uuid.UUID, window *model.MaintenanceWindow) (*model.Environment, error) {
+	var windowJSON []byte
+	var err error
+
+	if window != nil {
+		windowJSON, err = json.Marshal(window)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	env, err := r.querier.EnvironmentSetMaintenanceWindow(ctx, gensql.EnvironmentSetMaintenanceWindowParams{
+		MaintenanceWindow: windowJSON,
+		ID:                id,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	r.createAudit(ctx, "updated maintenance_window", "environments", env.ID.String())
+
+	return environmentFromSQL(env), nil
+}
+
+func (r *repo) EnvironmentGetMaintenanceWindow(ctx context.Context, env *model.Environment) (*model.MaintenanceWindow, error) {
+	sqlEnv, err := r.querier.EnvironmentGet(ctx, env.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(sqlEnv.MaintenanceWindow) == 0 {
+		return nil, nil
+	}
+
+	var window model.MaintenanceWindow
+	if err := json.Unmarshal(sqlEnv.MaintenanceWindow, &window); err != nil {
+		return nil, err
+	}
+
+	return &window, nil
 }

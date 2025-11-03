@@ -2532,6 +2532,74 @@ func (_c *Repo_EnvironmentGetLabels_Call) RunAndReturn(run func(ctx context.Cont
 	return _c
 }
 
+// EnvironmentGetMaintenanceWindow provides a mock function for the type Repo
+func (_mock *Repo) EnvironmentGetMaintenanceWindow(ctx context.Context, env *model.Environment) (*model.MaintenanceWindow, error) {
+	ret := _mock.Called(ctx, env)
+
+	if len(ret) == 0 {
+		panic("no return value specified for EnvironmentGetMaintenanceWindow")
+	}
+
+	var r0 *model.MaintenanceWindow
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *model.Environment) (*model.MaintenanceWindow, error)); ok {
+		return returnFunc(ctx, env)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *model.Environment) *model.MaintenanceWindow); ok {
+		r0 = returnFunc(ctx, env)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.MaintenanceWindow)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, *model.Environment) error); ok {
+		r1 = returnFunc(ctx, env)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Repo_EnvironmentGetMaintenanceWindow_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'EnvironmentGetMaintenanceWindow'
+type Repo_EnvironmentGetMaintenanceWindow_Call struct {
+	*mock.Call
+}
+
+// EnvironmentGetMaintenanceWindow is a helper method to define mock.On call
+//   - ctx context.Context
+//   - env *model.Environment
+func (_e *Repo_Expecter) EnvironmentGetMaintenanceWindow(ctx interface{}, env interface{}) *Repo_EnvironmentGetMaintenanceWindow_Call {
+	return &Repo_EnvironmentGetMaintenanceWindow_Call{Call: _e.mock.On("EnvironmentGetMaintenanceWindow", ctx, env)}
+}
+
+func (_c *Repo_EnvironmentGetMaintenanceWindow_Call) Run(run func(ctx context.Context, env *model.Environment)) *Repo_EnvironmentGetMaintenanceWindow_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 *model.Environment
+		if args[1] != nil {
+			arg1 = args[1].(*model.Environment)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Repo_EnvironmentGetMaintenanceWindow_Call) Return(maintenanceWindow *model.MaintenanceWindow, err error) *Repo_EnvironmentGetMaintenanceWindow_Call {
+	_c.Call.Return(maintenanceWindow, err)
+	return _c
+}
+
+func (_c *Repo_EnvironmentGetMaintenanceWindow_Call) RunAndReturn(run func(ctx context.Context, env *model.Environment) (*model.MaintenanceWindow, error)) *Repo_EnvironmentGetMaintenanceWindow_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // EnvironmentIDByNames provides a mock function for the type Repo
 func (_mock *Repo) EnvironmentIDByNames(ctx context.Context, tenantName string, environmentName string) (uuid.UUID, error) {
 	ret := _mock.Called(ctx, tenantName, environmentName)
@@ -2739,6 +2807,80 @@ func (_c *Repo_EnvironmentSetLabels_Call) Return(err error) *Repo_EnvironmentSet
 }
 
 func (_c *Repo_EnvironmentSetLabels_Call) RunAndReturn(run func(ctx context.Context, environmentID uuid.UUID, labels []*protogen.EnvironmentLabel) error) *Repo_EnvironmentSetLabels_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// EnvironmentSetMaintenanceWindow provides a mock function for the type Repo
+func (_mock *Repo) EnvironmentSetMaintenanceWindow(ctx context.Context, id uuid.UUID, window *model.MaintenanceWindow) (*model.Environment, error) {
+	ret := _mock.Called(ctx, id, window)
+
+	if len(ret) == 0 {
+		panic("no return value specified for EnvironmentSetMaintenanceWindow")
+	}
+
+	var r0 *model.Environment
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, *model.MaintenanceWindow) (*model.Environment, error)); ok {
+		return returnFunc(ctx, id, window)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, *model.MaintenanceWindow) *model.Environment); ok {
+		r0 = returnFunc(ctx, id, window)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Environment)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, *model.MaintenanceWindow) error); ok {
+		r1 = returnFunc(ctx, id, window)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Repo_EnvironmentSetMaintenanceWindow_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'EnvironmentSetMaintenanceWindow'
+type Repo_EnvironmentSetMaintenanceWindow_Call struct {
+	*mock.Call
+}
+
+// EnvironmentSetMaintenanceWindow is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id uuid.UUID
+//   - window *model.MaintenanceWindow
+func (_e *Repo_Expecter) EnvironmentSetMaintenanceWindow(ctx interface{}, id interface{}, window interface{}) *Repo_EnvironmentSetMaintenanceWindow_Call {
+	return &Repo_EnvironmentSetMaintenanceWindow_Call{Call: _e.mock.On("EnvironmentSetMaintenanceWindow", ctx, id, window)}
+}
+
+func (_c *Repo_EnvironmentSetMaintenanceWindow_Call) Run(run func(ctx context.Context, id uuid.UUID, window *model.MaintenanceWindow)) *Repo_EnvironmentSetMaintenanceWindow_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		var arg2 *model.MaintenanceWindow
+		if args[2] != nil {
+			arg2 = args[2].(*model.MaintenanceWindow)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *Repo_EnvironmentSetMaintenanceWindow_Call) Return(environment *model.Environment, err error) *Repo_EnvironmentSetMaintenanceWindow_Call {
+	_c.Call.Return(environment, err)
+	return _c
+}
+
+func (_c *Repo_EnvironmentSetMaintenanceWindow_Call) RunAndReturn(run func(ctx context.Context, id uuid.UUID, window *model.MaintenanceWindow) (*model.Environment, error)) *Repo_EnvironmentSetMaintenanceWindow_Call {
 	_c.Call.Return(run)
 	return _c
 }

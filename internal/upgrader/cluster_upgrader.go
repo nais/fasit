@@ -24,7 +24,7 @@ import (
 type ClusterUpgrader struct {
 	log          logrus.FieldLogger
 	repo         database.Repo
-	client       Upgrader
+	client       ClusterManager
 	slack        slack.SlackClient
 	slackChannel string
 	retryer      *Retryer
@@ -38,7 +38,7 @@ type ClusterUpgrader struct {
 	upgradeDuration   metric.Float64Histogram
 }
 
-func NewClusterUpgrader(repo database.Repo, log logrus.FieldLogger, upgrader Upgrader, meter metric.Meter, slack slack.SlackClient, slackChannel string) *ClusterUpgrader {
+func NewClusterUpgrader(repo database.Repo, log logrus.FieldLogger, clusterManager ClusterManager, meter metric.Meter, slack slack.SlackClient, slackChannel string) *ClusterUpgrader {
 	counter, err := meter.Int64Counter("cluster_upgrade_in_progress", metric.WithDescription("Cluster upgrades currently in progress"))
 	if err != nil {
 		log.Fatal(err)
@@ -89,7 +89,7 @@ func NewClusterUpgrader(repo database.Repo, log logrus.FieldLogger, upgrader Upg
 	return &ClusterUpgrader{
 		log:               log,
 		repo:              repo,
-		client:            upgrader,
+		client:            clusterManager,
 		upgradeInProgress: counter,
 		upgradeStarted:    upgradeStarted,
 		upgradeCompleted:  upgradeCompleted,

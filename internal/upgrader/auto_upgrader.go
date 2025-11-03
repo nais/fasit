@@ -19,13 +19,13 @@ import (
 type AutoUpgrader struct {
 	repo                      database.Repo
 	log                       logrus.FieldLogger
-	client                    Upgrader
+	client                    ClusterManager
 	autoUpgradesScheduled     metric.Int64Counter
 	autoUpgradeProcessingTime metric.Float64Histogram
 	retryer                   *Retryer
 }
 
-func NewAutoUpgrader(repo database.Repo, log logrus.FieldLogger, client Upgrader, meter metric.Meter) *AutoUpgrader {
+func NewAutoUpgrader(repo database.Repo, log logrus.FieldLogger, client ClusterManager, meter metric.Meter) *AutoUpgrader {
 	autoUpgradesScheduled, _ := meter.Int64Counter(
 		"auto_upgrades_scheduled",
 		metric.WithDescription("Number of automatic cluster upgrades scheduled"),

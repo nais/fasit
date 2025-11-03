@@ -117,6 +117,16 @@ RETURNING
 	*
 ;
 
+-- name: EnvironmentSetMaintenanceWindow :one
+UPDATE environments
+SET
+	maintenance_window = @maintenance_window
+WHERE
+	id = @id
+RETURNING
+	*
+;
+
 -- name: EnvironmentsGetByAutoUpgrade :many
 SELECT
 	*

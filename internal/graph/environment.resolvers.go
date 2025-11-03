@@ -193,20 +193,20 @@ func (r *environmentResolver) Versions(ctx context.Context, obj *model.Environme
 		return nil, nil
 	}
 
-	channel, err := r.UpgraderClient.GetReleaseChannel(ctx, *projectID, obj)
+	channel, err := r.ClusterManager.GetReleaseChannel(ctx, *projectID, obj)
 	if err != nil {
 		return nil, err
 	}
-	currentControlPlaneVersion, err := r.UpgraderClient.GetCurrentControlPlaneVersion(ctx, *projectID, obj)
+	currentControlPlaneVersion, err := r.ClusterManager.GetCurrentControlPlaneVersion(ctx, *projectID, obj)
 	if err != nil {
 		return nil, err
 	}
-	availableVersions, err := r.UpgraderClient.GetAvailableVersions(ctx, *projectID, obj, channel)
+	availableVersions, err := r.ClusterManager.GetAvailableVersions(ctx, *projectID, obj, channel)
 	if err != nil {
 		return nil, err
 	}
 
-	nodePools, err := r.UpgraderClient.GetNodePools(ctx, *projectID, obj)
+	nodePools, err := r.ClusterManager.GetNodePools(ctx, *projectID, obj)
 	if err != nil {
 		return nil, err
 	}
@@ -231,6 +231,11 @@ func (r *environmentResolver) Versions(ctx context.Context, obj *model.Environme
 // Labels is the resolver for the labels field.
 func (r *environmentResolver) Labels(ctx context.Context, obj *model.Environment) ([]*model.EnvironmentLabel, error) {
 	return r.Repo.EnvironmentGetLabels(ctx, obj.ID)
+}
+
+// MaintenanceWindow is the resolver for the maintenanceWindow field.
+func (r *environmentResolver) MaintenanceWindow(ctx context.Context, obj *model.Environment) (*model.MaintenanceWindow, error) {
+	return r.Repo.EnvironmentGetMaintenanceWindow(ctx, obj)
 }
 
 // EnvironmentCreate is the resolver for the environmentCreate field.
@@ -279,6 +284,66 @@ func (r *mutationResolver) EnvironmentSetUpgradeDelayDays(ctx context.Context, e
 		return nil, err
 	}
 	return r.Repo.EnvironmentSetUpgradeDelayDays(ctx, environmentID, delayDays32)
+}
+
+// EnvironmentSetMaintenanceWindow is the resolver for the environmentSetMaintenanceWindow field.
+func (r *mutationResolver) EnvironmentSetMaintenanceWindow(ctx context.Context, environmentID uuid.UUID, window *model.MaintenanceWindowInput) (*model.Environment, error) {
+	// Get environment to check kind and get project ID
+	env, err := r.Repo.EnvironmentGet(ctx, environmentID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get environment: %w", err)
+	}
+
+	// OnPrem clusters don't have maintenance windows in GKE
+	if env.Kind == model.EnvironmentKindOnprem {
+		return nil, fmt.Errorf("maintenance windows are not supported for onprem environments")
+	}
+
+	// Convert input to model
+	var maintenanceWindow *model.MaintenanceWindow
+	if window != nil {
+		maintenanceWindow = &model.MaintenanceWindow{
+			StartTime: window.StartTime,
+			EndTime:   window.EndTime,
+			Days:      window.Days,
+			Timezone:  window.Timezone,
+		}
+	}
+
+	// Save to database first
+	env, err = r.Repo.EnvironmentSetMaintenanceWindow(ctx, environmentID, maintenanceWindow)
+	if err != nil {
+		return nil, fmt.Errorf("failed to save maintenance window: %w", err)
+	}
+
+	// Get project ID for GKE API call
+	projectID, err := r.Environment().GCPProjectID(ctx, env)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get project ID: %w", err)
+	}
+	if projectID == nil {
+		r.Log.WithField("environment_id", environmentID).Warn("no project ID found, skipping GKE API call")
+		return env, nil
+	}
+
+	// Apply maintenance window to GKE cluster
+	_, err = r.ClusterManager.SetMaintenanceWindow(ctx, *projectID, env, maintenanceWindow)
+	if err != nil {
+		// Log error but don't fail - the window is saved in database and can be retried
+		r.Log.WithError(err).WithFields(map[string]interface{}{
+			"environment_id": environmentID,
+			"project_id":     *projectID,
+		}).Error("failed to set maintenance window on GKE cluster")
+		return nil, fmt.Errorf("failed to apply maintenance window to GKE: %w", err)
+	}
+
+	r.Log.WithFields(map[string]interface{}{
+		"environment_id": environmentID,
+		"project_id":     *projectID,
+		"has_window":     maintenanceWindow != nil,
+	}).Info("successfully set maintenance window on GKE cluster")
+
+	return env, nil
 }
 
 // Feature is the resolver for the feature field.

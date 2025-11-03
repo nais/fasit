@@ -25,7 +25,7 @@ var (
 
 func TestClient_GetReleaseChannel(t *testing.T) {
 	ctx := context.Background()
-	mock := mocks.NewUpgrader(t)
+	mock := mocks.NewClusterManager(t)
 
 	mock.EXPECT().GetReleaseChannel(ctx, projectID, &environment).Return("STABLE", nil)
 	channel, err := mock.GetReleaseChannel(ctx, projectID, &environment)
@@ -39,7 +39,7 @@ func TestClient_GetReleaseChannel(t *testing.T) {
 
 func TestClient_GetRunningOperations(t *testing.T) {
 	ctx := context.Background()
-	mock := mocks.NewUpgrader(t)
+	mock := mocks.NewClusterManager(t)
 	operations := []*containerpb.Operation{
 		{
 			Name:          "operation",
@@ -72,7 +72,7 @@ func TestClient_GetRunningOperations(t *testing.T) {
 
 func TestClient_GetAvailableVersions(t *testing.T) {
 	ctx := context.Background()
-	mock := mocks.NewUpgrader(t)
+	mock := mocks.NewClusterManager(t)
 	versions := []string{"1.18.17-gke.1900", "1.19.9-gke.1900", "1.20.5-gke.1900"}
 
 	mock.EXPECT().GetAvailableVersions(ctx, projectID, &environment, "STABLE").Return(versions, nil)

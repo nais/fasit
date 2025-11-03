@@ -12,7 +12,7 @@ import (
 
 const environmentByNames = `-- name: EnvironmentByNames :one
 SELECT
-	e.id, e.tenant_id, e.name, e.kind, e.description, e.created, e.last_modified, e.ci, e.reconcile, e.auto_upgrade, e.upgrade_delay_days
+	e.id, e.tenant_id, e.name, e.kind, e.description, e.created, e.last_modified, e.ci, e.reconcile, e.auto_upgrade, e.upgrade_delay_days, e.maintenance_window
 FROM
 	tenants t
 	JOIN environments e ON e.tenant_id = t.id
@@ -43,13 +43,14 @@ func (q *Queries) EnvironmentByNames(ctx context.Context, arg EnvironmentByNames
 		&i.Reconcile,
 		&i.AutoUpgrade,
 		&i.UpgradeDelayDays,
+		&i.MaintenanceWindow,
 	)
 	return i, err
 }
 
 const environmentCI = `-- name: EnvironmentCI :one
 SELECT
-	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade, upgrade_delay_days
+	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade, upgrade_delay_days, maintenance_window
 FROM
 	environments
 WHERE
@@ -72,6 +73,7 @@ func (q *Queries) EnvironmentCI(ctx context.Context, kind EnvironmentKind) (Envi
 		&i.Reconcile,
 		&i.AutoUpgrade,
 		&i.UpgradeDelayDays,
+		&i.MaintenanceWindow,
 	)
 	return i, err
 }
@@ -82,7 +84,7 @@ INSERT INTO
 VALUES
 	($1, $2, $3, $4)
 RETURNING
-	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade, upgrade_delay_days
+	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade, upgrade_delay_days, maintenance_window
 `
 
 type EnvironmentCreateParams struct {
@@ -112,13 +114,14 @@ func (q *Queries) EnvironmentCreate(ctx context.Context, arg EnvironmentCreatePa
 		&i.Reconcile,
 		&i.AutoUpgrade,
 		&i.UpgradeDelayDays,
+		&i.MaintenanceWindow,
 	)
 	return i, err
 }
 
 const environmentGet = `-- name: EnvironmentGet :one
 SELECT
-	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade, upgrade_delay_days
+	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade, upgrade_delay_days, maintenance_window
 FROM
 	environments
 WHERE
@@ -140,13 +143,14 @@ func (q *Queries) EnvironmentGet(ctx context.Context, id uuid.UUID) (Environment
 		&i.Reconcile,
 		&i.AutoUpgrade,
 		&i.UpgradeDelayDays,
+		&i.MaintenanceWindow,
 	)
 	return i, err
 }
 
 const environmentGetByName = `-- name: EnvironmentGetByName :one
 SELECT
-	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade, upgrade_delay_days
+	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade, upgrade_delay_days, maintenance_window
 FROM
 	environments
 WHERE
@@ -174,6 +178,7 @@ func (q *Queries) EnvironmentGetByName(ctx context.Context, arg EnvironmentGetBy
 		&i.Reconcile,
 		&i.AutoUpgrade,
 		&i.UpgradeDelayDays,
+		&i.MaintenanceWindow,
 	)
 	return i, err
 }
@@ -210,7 +215,7 @@ SET
 WHERE
 	id = $2
 RETURNING
-	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade, upgrade_delay_days
+	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade, upgrade_delay_days, maintenance_window
 `
 
 type EnvironmentSetAutoUpgradeParams struct {
@@ -233,6 +238,42 @@ func (q *Queries) EnvironmentSetAutoUpgrade(ctx context.Context, arg Environment
 		&i.Reconcile,
 		&i.AutoUpgrade,
 		&i.UpgradeDelayDays,
+		&i.MaintenanceWindow,
+	)
+	return i, err
+}
+
+const environmentSetMaintenanceWindow = `-- name: EnvironmentSetMaintenanceWindow :one
+UPDATE environments
+SET
+	maintenance_window = $1
+WHERE
+	id = $2
+RETURNING
+	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade, upgrade_delay_days, maintenance_window
+`
+
+type EnvironmentSetMaintenanceWindowParams struct {
+	MaintenanceWindow []byte
+	ID                uuid.UUID
+}
+
+func (q *Queries) EnvironmentSetMaintenanceWindow(ctx context.Context, arg EnvironmentSetMaintenanceWindowParams) (Environment, error) {
+	row := q.db.QueryRow(ctx, environmentSetMaintenanceWindow, arg.MaintenanceWindow, arg.ID)
+	var i Environment
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.Name,
+		&i.Kind,
+		&i.Description,
+		&i.Created,
+		&i.LastModified,
+		&i.Ci,
+		&i.Reconcile,
+		&i.AutoUpgrade,
+		&i.UpgradeDelayDays,
+		&i.MaintenanceWindow,
 	)
 	return i, err
 }
@@ -244,7 +285,7 @@ SET
 WHERE
 	id = $2
 RETURNING
-	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade, upgrade_delay_days
+	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade, upgrade_delay_days, maintenance_window
 `
 
 type EnvironmentSetReconcileParams struct {
@@ -267,6 +308,7 @@ func (q *Queries) EnvironmentSetReconcile(ctx context.Context, arg EnvironmentSe
 		&i.Reconcile,
 		&i.AutoUpgrade,
 		&i.UpgradeDelayDays,
+		&i.MaintenanceWindow,
 	)
 	return i, err
 }
@@ -278,7 +320,7 @@ SET
 WHERE
 	id = $2
 RETURNING
-	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade, upgrade_delay_days
+	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade, upgrade_delay_days, maintenance_window
 `
 
 type EnvironmentSetUpgradeDelayDaysParams struct {
@@ -301,6 +343,7 @@ func (q *Queries) EnvironmentSetUpgradeDelayDays(ctx context.Context, arg Enviro
 		&i.Reconcile,
 		&i.AutoUpgrade,
 		&i.UpgradeDelayDays,
+		&i.MaintenanceWindow,
 	)
 	return i, err
 }
@@ -312,7 +355,7 @@ SET
 WHERE
 	id = $2
 RETURNING
-	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade, upgrade_delay_days
+	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade, upgrade_delay_days, maintenance_window
 `
 
 type EnvironmentUpdateParams struct {
@@ -335,13 +378,14 @@ func (q *Queries) EnvironmentUpdate(ctx context.Context, arg EnvironmentUpdatePa
 		&i.Reconcile,
 		&i.AutoUpgrade,
 		&i.UpgradeDelayDays,
+		&i.MaintenanceWindow,
 	)
 	return i, err
 }
 
 const environmentsGet = `-- name: EnvironmentsGet :many
 SELECT
-	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade, upgrade_delay_days
+	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade, upgrade_delay_days, maintenance_window
 FROM
 	environments
 WHERE
@@ -375,6 +419,7 @@ func (q *Queries) EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]En
 			&i.Reconcile,
 			&i.AutoUpgrade,
 			&i.UpgradeDelayDays,
+			&i.MaintenanceWindow,
 		); err != nil {
 			return nil, err
 		}
@@ -388,7 +433,7 @@ func (q *Queries) EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]En
 
 const environmentsGetByAutoUpgrade = `-- name: EnvironmentsGetByAutoUpgrade :many
 SELECT
-	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade, upgrade_delay_days
+	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade, upgrade_delay_days, maintenance_window
 FROM
 	environments
 WHERE
@@ -422,6 +467,7 @@ func (q *Queries) EnvironmentsGetByAutoUpgrade(ctx context.Context) ([]Environme
 			&i.Reconcile,
 			&i.AutoUpgrade,
 			&i.UpgradeDelayDays,
+			&i.MaintenanceWindow,
 		); err != nil {
 			return nil, err
 		}

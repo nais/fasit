@@ -12,59 +12,67 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// MockUpgrader for testing
-type MockUpgrader struct {
+// MockClusterManager for testing
+type MockClusterManager struct {
 	mock.Mock
 }
 
-func (m *MockUpgrader) GetReleaseChannel(ctx context.Context, projectID string, environment *model.Environment) (string, error) {
+func (m *MockClusterManager) GetReleaseChannel(ctx context.Context, projectID string, environment *model.Environment) (string, error) {
 	args := m.Called(ctx, projectID, environment)
 	return args.String(0), args.Error(1)
 }
 
-func (m *MockUpgrader) GetCurrentControlPlaneVersion(ctx context.Context, projectID string, environment *model.Environment) (string, error) {
+func (m *MockClusterManager) GetCurrentControlPlaneVersion(ctx context.Context, projectID string, environment *model.Environment) (string, error) {
 	args := m.Called(ctx, projectID, environment)
 	return args.String(0), args.Error(1)
 }
 
-func (m *MockUpgrader) GetAvailableVersions(ctx context.Context, projectID string, environment *model.Environment, releaseChannel string) ([]string, error) {
+func (m *MockClusterManager) GetAvailableVersions(ctx context.Context, projectID string, environment *model.Environment, releaseChannel string) ([]string, error) {
 	args := m.Called(ctx, projectID, environment, releaseChannel)
 	return args.Get(0).([]string), args.Error(1)
 }
 
-func (m *MockUpgrader) GetRunningOperations(ctx context.Context, projectID string, environment *model.Environment) ([]*containerpb.Operation, error) {
+func (m *MockClusterManager) GetRunningOperations(ctx context.Context, projectID string, environment *model.Environment) ([]*containerpb.Operation, error) {
 	args := m.Called(ctx, projectID, environment)
 	return args.Get(0).([]*containerpb.Operation), args.Error(1)
 }
 
-func (m *MockUpgrader) UpgradeControlPlane(ctx context.Context, projectID string, environment *model.Environment, version string) (*containerpb.Operation, error) {
+func (m *MockClusterManager) UpgradeControlPlane(ctx context.Context, projectID string, environment *model.Environment, version string) (*containerpb.Operation, error) {
 	args := m.Called(ctx, projectID, environment, version)
 	return args.Get(0).(*containerpb.Operation), args.Error(1)
 }
 
-func (m *MockUpgrader) UpgradeNodePool(ctx context.Context, projectID string, environment *model.Environment, nodePoolName, version string) (*containerpb.Operation, error) {
+func (m *MockClusterManager) UpgradeNodePool(ctx context.Context, projectID string, environment *model.Environment, nodePoolName, version string) (*containerpb.Operation, error) {
 	args := m.Called(ctx, projectID, environment, nodePoolName, version)
 	return args.Get(0).(*containerpb.Operation), args.Error(1)
 }
 
-func (m *MockUpgrader) GetOperation(ctx context.Context, projectID, operationID string) (*containerpb.Operation, error) {
+func (m *MockClusterManager) GetOperation(ctx context.Context, projectID, operationID string) (*containerpb.Operation, error) {
 	args := m.Called(ctx, projectID, operationID)
 	return args.Get(0).(*containerpb.Operation), args.Error(1)
 }
 
-func (m *MockUpgrader) GetNodePools(ctx context.Context, projectID string, environment *model.Environment) ([]*containerpb.NodePool, error) {
+func (m *MockClusterManager) GetNodePools(ctx context.Context, projectID string, environment *model.Environment) ([]*containerpb.NodePool, error) {
 	args := m.Called(ctx, projectID, environment)
 	return args.Get(0).([]*containerpb.NodePool), args.Error(1)
 }
 
-func (m *MockUpgrader) IsTimeInRange(start, end int) bool {
+func (m *MockClusterManager) IsTimeInRange(start, end int) bool {
 	args := m.Called(start, end)
 	return args.Bool(0)
 }
 
+func (m *MockClusterManager) SetMaintenanceWindow(ctx context.Context, projectID string, environment *model.Environment, window *model.MaintenanceWindow) (*containerpb.Operation, error) {
+	args := m.Called(ctx, projectID, environment, window)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*containerpb.Operation), args.Error(1)
+}
+
 func TestIsUpgradeStuck(t *testing.T) {
 	ctx := context.Background()
-	mockUpgrader := &MockUpgrader{}
+	mockUpgrader := &MockClusterManager{}
 
 	upgrader := &ClusterUpgrader{
 		log:    logrus.New(),

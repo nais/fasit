@@ -65,7 +65,7 @@ func (q *Queries) TenantCreate(ctx context.Context, arg TenantCreateParams) (Ten
 
 const tenantEnvironments = `-- name: TenantEnvironments :many
 SELECT
-	e.id, e.tenant_id, e.name, e.kind, e.description, e.created, e.last_modified, e.ci, e.reconcile, e.auto_upgrade, e.upgrade_delay_days,
+	e.id, e.tenant_id, e.name, e.kind, e.description, e.created, e.last_modified, e.ci, e.reconcile, e.auto_upgrade, e.upgrade_delay_days, e.maintenance_window,
 	t.name AS tenant_name
 FROM
 	environments e
@@ -82,18 +82,19 @@ ORDER BY
 `
 
 type TenantEnvironmentsRow struct {
-	ID               uuid.UUID
-	TenantID         uuid.UUID
-	Name             string
-	Kind             EnvironmentKind
-	Description      pgtype.Text
-	Created          pgtype.Timestamptz
-	LastModified     pgtype.Timestamptz
-	Ci               bool
-	Reconcile        bool
-	AutoUpgrade      bool
-	UpgradeDelayDays int32
-	TenantName       string
+	ID                uuid.UUID
+	TenantID          uuid.UUID
+	Name              string
+	Kind              EnvironmentKind
+	Description       pgtype.Text
+	Created           pgtype.Timestamptz
+	LastModified      pgtype.Timestamptz
+	Ci                bool
+	Reconcile         bool
+	AutoUpgrade       bool
+	UpgradeDelayDays  int32
+	MaintenanceWindow []byte
+	TenantName        string
 }
 
 func (q *Queries) TenantEnvironments(ctx context.Context, all bool) ([]TenantEnvironmentsRow, error) {
@@ -117,6 +118,7 @@ func (q *Queries) TenantEnvironments(ctx context.Context, all bool) ([]TenantEnv
 			&i.Reconcile,
 			&i.AutoUpgrade,
 			&i.UpgradeDelayDays,
+			&i.MaintenanceWindow,
 			&i.TenantName,
 		); err != nil {
 			return nil, err

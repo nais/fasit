@@ -14,7 +14,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/database/mocks"
 	"github.com/nais/fasit/internal/graph/model"
-	upgdradermock "github.com/nais/fasit/internal/upgrader/mocks"
+	clustermock "github.com/nais/fasit/internal/upgrader/mocks"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/mock"
 	metricsdk "go.opentelemetry.io/otel/sdk/metric"
@@ -31,7 +31,7 @@ type env struct {
 
 type testSuite struct {
 	repoMock    *mocks.Repo
-	upgradeMock *upgdradermock.Upgrader
+	clusterMock *clustermock.ClusterManager
 	env         *env
 	environment *model.Environment
 }
@@ -41,7 +41,7 @@ func newTestSuite(t *testing.T) *testSuite {
 	envID := uuid.New()
 	return &testSuite{
 		repoMock:    mocks.NewRepo(t),
-		upgradeMock: upgdradermock.NewUpgrader(t),
+		clusterMock: clustermock.NewClusterManager(t),
 		env: &env{
 			tenantID:          tenantID,
 			projectID:         "1234",
@@ -61,7 +61,7 @@ func newUpgrade(suite *testSuite) *ClusterUpgrader {
 	log := logrus.New().WithField("testSuite", "upgrade")
 	meter := metricsdk.NewMeterProvider().Meter("testSuite")
 	slackClient := fake.NewFakeSlackClient()
-	return NewClusterUpgrader(suite.repoMock, log, suite.upgradeMock, meter, slackClient, "channel")
+	return NewClusterUpgrader(suite.repoMock, log, suite.clusterMock, meter, slackClient, "channel")
 }
 
 func (s *testSuite) mockRunTenantForLoop(upgradeStatus model.UpgradeStatus) {
@@ -132,11 +132,11 @@ func TestRun_OperationDoneUpdateClusterNodeStatusToDone(t *testing.T) {
 	suite.mockRunTenantForLoop(model.UpgradeStatusNodeUpgrade)
 
 	// Allow multiple GetRunningOperations calls - we'll fix the exact count later
-	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, suite.environment).Return(
+	suite.clusterMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, suite.environment).Return(
 		[]*containerpb.Operation{}, nil).Maybe()
 
 	// Mock GetNodePools for stuck detection - return node pools at target version (upgrade complete)
-	suite.upgradeMock.EXPECT().GetNodePools(mock.Anything, mock.Anything, suite.environment).Return(
+	suite.clusterMock.EXPECT().GetNodePools(mock.Anything, mock.Anything, suite.environment).Return(
 		[]*containerpb.NodePool{
 			{
 				Name:    "nodepool1",
@@ -153,7 +153,7 @@ func TestRun_OperationDoneUpdateClusterNodeStatusToDone(t *testing.T) {
 		nil, nil).Maybe()
 
 	// Additional GetNodePools call for the normal node upgrade completion check
-	suite.upgradeMock.EXPECT().GetNodePools(mock.Anything, mock.Anything, suite.environment).Return(
+	suite.clusterMock.EXPECT().GetNodePools(mock.Anything, mock.Anything, suite.environment).Return(
 		[]*containerpb.NodePool{
 			{
 				Name:    "nodepool1",
@@ -196,11 +196,11 @@ func TestRun_StartNodeUpgradeClusterStatusNodeUpgrade(t *testing.T) {
 	suite.mockRunTenantForLoop(model.UpgradeStatusNodeUpgrade)
 
 	// GetRunningOperations for main logic and stuck detection
-	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, suite.environment).Return(
+	suite.clusterMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, suite.environment).Return(
 		[]*containerpb.Operation{}, nil).Maybe()
 
 	// Mock GetNodePools for stuck detection - return node pools NOT at target version
-	suite.upgradeMock.EXPECT().GetNodePools(mock.Anything, mock.Anything, suite.environment).Return(
+	suite.clusterMock.EXPECT().GetNodePools(mock.Anything, mock.Anything, suite.environment).Return(
 		[]*containerpb.NodePool{
 			{
 				Name:    "nodepool1",
@@ -217,7 +217,7 @@ func TestRun_StartNodeUpgradeClusterStatusNodeUpgrade(t *testing.T) {
 		nil, nil).Maybe()
 
 	// Since nodes need upgrading, should start upgrading nodepool1
-	suite.upgradeMock.EXPECT().UpgradeNodePool(mock.Anything, mock.Anything, suite.environment, "nodepool1", "1.2.4").Return(
+	suite.clusterMock.EXPECT().UpgradeNodePool(mock.Anything, mock.Anything, suite.environment, "nodepool1", "1.2.4").Return(
 		&containerpb.Operation{
 			Name:          "upgrade-nodepool1",
 			OperationType: containerpb.Operation_UPGRADE_NODES,
@@ -248,18 +248,18 @@ func TestRun_StartClusterUpgradeControlPlaneStatusCreated(t *testing.T) {
 	upgrade := newUpgrade(suite)
 	suite.mockRunTenantForLoop(model.UpgradeStatusCreated)
 
-	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, suite.environment).Return(
+	suite.clusterMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, suite.environment).Return(
 		[]*containerpb.Operation{}, nil).Maybe()
 
 	// Additional GetRunningOperations call for isUpgradeStuck validation
-	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, suite.environment).Return(
+	suite.clusterMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, suite.environment).Return(
 		[]*containerpb.Operation{}, nil).Maybe()
 
 	// Mock GetCurrentControlPlaneVersion check in CREATED state - return different version to proceed with upgrade
-	suite.upgradeMock.EXPECT().GetCurrentControlPlaneVersion(mock.Anything, mock.Anything, suite.environment).Return(
+	suite.clusterMock.EXPECT().GetCurrentControlPlaneVersion(mock.Anything, mock.Anything, suite.environment).Return(
 		"1.2.3", nil).Maybe() // Different from target version "1.2.4"
 
-	suite.upgradeMock.EXPECT().UpgradeControlPlane(mock.Anything, mock.Anything, suite.environment, "1.2.4").Return(
+	suite.clusterMock.EXPECT().UpgradeControlPlane(mock.Anything, mock.Anything, suite.environment, "1.2.4").Return(
 		&containerpb.Operation{
 			Name:          "operation",
 			OperationType: containerpb.Operation_UPGRADE_MASTER,
@@ -298,11 +298,11 @@ func TestRun_UpdateClusterStatusToNodeUpgradeWhenOperationDoneOnControlPlaneUpgr
 	suite.mockRunTenantForLoop(model.UpgradeStatusControlPlaneUpgrade)
 
 	// Allow multiple GetRunningOperations calls - we'll fix the exact count later
-	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, suite.environment).Return(
+	suite.clusterMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, suite.environment).Return(
 		[]*containerpb.Operation{}, nil).Maybe()
 
 	// Mock GetCurrentControlPlaneVersion for stuck detection - return control plane at target version (upgrade complete)
-	suite.upgradeMock.EXPECT().GetCurrentControlPlaneVersion(mock.Anything, mock.Anything, suite.environment).Return(
+	suite.clusterMock.EXPECT().GetCurrentControlPlaneVersion(mock.Anything, mock.Anything, suite.environment).Return(
 		"1.2.4", nil).Maybe() // Same as target version
 
 	// Since control plane upgrade is complete, continue with normal flow to transition to NODE_UPGRADE
@@ -321,7 +321,7 @@ func TestRun_UpdateClusterStatusToNodeUpgradeWhenOperationDoneOnControlPlaneUpgr
 		TargetLink:    fmt.Sprintf("https://container.googleapis.com/v1/projects/%s/zones/europe-north1-a/clusters/%s", suite.env.projectID, suite.env.name),
 		Detail:        "testSuite",
 	}
-	suite.upgradeMock.EXPECT().GetOperation(mock.Anything, suite.env.projectID, "operation").Return(
+	suite.clusterMock.EXPECT().GetOperation(mock.Anything, suite.env.projectID, "operation").Return(
 		op, nil).Maybe()
 
 	suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantID, suite.env.id, mock.Anything, op).Return(
@@ -352,7 +352,7 @@ func TestRun_ControlPlaneUpgradeIsRunning(t *testing.T) {
 	upgrade := newUpgrade(suite)
 	suite.mockRunTenantForLoop(model.UpgradeStatusControlPlaneUpgrade)
 
-	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, suite.env.projectID, suite.environment).Return(
+	suite.clusterMock.EXPECT().GetRunningOperations(mock.Anything, suite.env.projectID, suite.environment).Return(
 		[]*containerpb.Operation{
 			{
 				Name:          "operation",
@@ -364,7 +364,7 @@ func TestRun_ControlPlaneUpgradeIsRunning(t *testing.T) {
 		}, nil).Maybe()
 
 	// Additional GetRunningOperations call for isUpgradeStuck validation - return same running operations so not stuck
-	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, suite.env.projectID, suite.environment).Return(
+	suite.clusterMock.EXPECT().GetRunningOperations(mock.Anything, suite.env.projectID, suite.environment).Return(
 		[]*containerpb.Operation{
 			{
 				Name:          "operation",
@@ -390,7 +390,7 @@ func TestRun_ControlPlaneUpgradeIsRunning(t *testing.T) {
 		TargetLink:    fmt.Sprintf("https://container.googleapis.com/v1/projects/%s/zones/europe-north1-a/clusters/%s", suite.env.projectID, suite.env.name),
 		Detail:        "testSuite",
 	}
-	suite.upgradeMock.EXPECT().GetOperation(mock.Anything, suite.env.projectID, "operation").Return(
+	suite.clusterMock.EXPECT().GetOperation(mock.Anything, suite.env.projectID, "operation").Return(
 		op, nil).Maybe()
 	suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantID, suite.env.id, mock.Anything, op).Return(
 		&model.EnvironmentOperation{
@@ -432,13 +432,13 @@ func TestCleanupDanglingOperations_NotFound(t *testing.T) {
 	projectID := "test-project-123"
 
 	repoMock := mocks.NewRepo(t)
-	upgradeMock := upgdradermock.NewUpgrader(t)
+	clusterMock := clustermock.NewClusterManager(t)
 	meterProvider := metricsdk.NewMeterProvider()
 	meter := meterProvider.Meter("test")
 	log := logrus.New()
 	slackClient := fake.NewFakeSlackClient()
 
-	upgrader := NewClusterUpgrader(repoMock, log, upgradeMock, meter, slackClient, "test-channel")
+	upgrader := NewClusterUpgrader(repoMock, log, clusterMock, meter, slackClient, "test-channel")
 
 	environment := &model.Environment{
 		ID:       envID,
@@ -470,7 +470,7 @@ func TestCleanupDanglingOperations_NotFound(t *testing.T) {
 
 	// Mock: GetOperation returns NotFound
 	notFoundErr := createAPIError(codes.NotFound, "Not found: "+operationName)
-	upgradeMock.EXPECT().GetOperation(mock.Anything, projectID, operationName).
+	clusterMock.EXPECT().GetOperation(mock.Anything, projectID, operationName).
 		Return(nil, notFoundErr).Once()
 
 	// Mock: CreateOrUpdateClusterOperation should be called with DONE status
@@ -492,7 +492,7 @@ func TestCleanupDanglingOperations_NotFound(t *testing.T) {
 	}
 
 	// Verify all expectations were met
-	upgradeMock.AssertExpectations(t)
+	clusterMock.AssertExpectations(t)
 	repoMock.AssertExpectations(t)
 }
 
@@ -540,7 +540,7 @@ func TestRun_CreatedToWaitingTransitionWithDelay(t *testing.T) {
 	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{}, nil).Once()
 
 	// Mock GetRunningOperations - called twice: once for stuck check, once in getAndUpdateRunningOperations
-	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{}, nil).Twice()
+	suite.clusterMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{}, nil).Twice()
 
 	// Expect UpdateClusterUpgradeStatus to be called to transition to WAITING
 	waitingUpgrade := &model.ClusterUpgradeStatus{
@@ -617,13 +617,13 @@ func TestRun_CreatedWithoutDelaySkipsWaiting(t *testing.T) {
 	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{}, nil).Once()
 
 	// Mock GetRunningOperations for stuck check and main logic
-	suite.upgradeMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{}, nil).Twice()
+	suite.clusterMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{}, nil).Twice()
 
 	// Mock GetCurrentControlPlaneVersion check in CREATED state
-	suite.upgradeMock.EXPECT().GetCurrentControlPlaneVersion(mock.Anything, mock.Anything, mock.Anything).Return("1.2.3", nil).Once()
+	suite.clusterMock.EXPECT().GetCurrentControlPlaneVersion(mock.Anything, mock.Anything, mock.Anything).Return("1.2.3", nil).Once()
 
 	// Mock UpgradeControlPlane to be called (since no delay)
-	suite.upgradeMock.EXPECT().UpgradeControlPlane(mock.Anything, mock.Anything, mock.Anything, "1.2.4").Return(
+	suite.clusterMock.EXPECT().UpgradeControlPlane(mock.Anything, mock.Anything, mock.Anything, "1.2.4").Return(
 		&containerpb.Operation{
 			Name:          "operation",
 			OperationType: containerpb.Operation_UPGRADE_MASTER,
