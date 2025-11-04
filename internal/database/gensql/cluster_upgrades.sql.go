@@ -127,7 +127,8 @@ WHERE
 	AND version = $3
 ORDER BY
 	last_modified DESC
-LIMIT 1
+LIMIT
+	1
 `
 
 type ClusterUpgradesGetByVersionParams struct {
