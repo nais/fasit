@@ -310,12 +310,6 @@ func (r *mutationResolver) EnvironmentSetMaintenanceWindow(ctx context.Context, 
 		}
 	}
 
-	// Save to database first
-	env, err = r.Repo.EnvironmentSetMaintenanceWindow(ctx, environmentID, maintenanceWindow)
-	if err != nil {
-		return nil, fmt.Errorf("failed to save maintenance window: %w", err)
-	}
-
 	// Get project ID for GKE API call
 	projectID, err := r.Environment().GCPProjectID(ctx, env)
 	if err != nil {
@@ -323,10 +317,11 @@ func (r *mutationResolver) EnvironmentSetMaintenanceWindow(ctx context.Context, 
 	}
 	if projectID == nil {
 		r.Log.WithField("environment_id", environmentID).Warn("no project ID found, skipping GKE API call")
-		return env, nil
+		// For environments without project ID, just save to DB
+		return r.Repo.EnvironmentSetMaintenanceWindow(ctx, environmentID, maintenanceWindow)
 	}
 
-	// Apply maintenance window to GKE cluster
+	// Apply maintenance window to GKE cluster FIRST
 	_, err = r.ClusterManager.SetMaintenanceWindow(ctx, *projectID, env, maintenanceWindow)
 	if err != nil {
 		r.Log.WithError(err).WithFields(map[string]interface{}{
@@ -334,6 +329,12 @@ func (r *mutationResolver) EnvironmentSetMaintenanceWindow(ctx context.Context, 
 			"project_id":     *projectID,
 		}).Error("failed to set maintenance window on GKE cluster")
 		return nil, fmt.Errorf("failed to apply maintenance window to GKE: %w", err)
+	}
+
+	// Only save to database if GKE API succeeded
+	env, err = r.Repo.EnvironmentSetMaintenanceWindow(ctx, environmentID, maintenanceWindow)
+	if err != nil {
+		return nil, fmt.Errorf("failed to save maintenance window: %w", err)
 	}
 
 	r.Log.WithFields(map[string]interface{}{
