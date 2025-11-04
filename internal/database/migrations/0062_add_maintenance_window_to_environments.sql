@@ -8,9 +8,10 @@ ADD CONSTRAINT environments_maintenance_window_valid CHECK (
 	maintenance_window IS NULL
 	OR (
 		JSONB_TYPEOF(maintenance_window) = 'object'
-		AND maintenance_window ? 'day'
-		AND maintenance_window ? 'start_time'
-		AND maintenance_window ? 'end_time'
+		AND JSONB_EXISTS (maintenance_window, 'startTime')
+		AND JSONB_EXISTS (maintenance_window, 'endTime')
+		AND JSONB_EXISTS (maintenance_window, 'days')
+		AND JSONB_EXISTS (maintenance_window, 'timezone')
 	)
 )
 ;
