@@ -30,39 +30,28 @@ permissions:
 
 jobs:
   tests:
+    strategy:
+      matrix:
+        mise-task:
+          - check:staticcheck
+          - check:govulncheck
+          - check:deadcode
+          - check:gosec
+          - check:helm
+          - test
+          - ci:fmt
     outputs:
       go_version: ${{ steps.go_version.outputs.GO_VERSION }}
-    runs-on: ubuntu-latest-4-cores
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
       - uses: jdx/mise-action@v3
+        with:
+          cache: false
       - name: Find Go version
         id: go_version
         run: echo "go_version=$(mise current go)" >> $GITHUB_OUTPUT
-      - name: Find go cache dir
-        id: go-cache
-        run: |
-          go version
-          # Clear cache dirs to avoid error when restoring
-          go clean -cache -modcache
-          echo "gocache=$(go env GOCACHE)" >> $GITHUB_OUTPUT
-          echo "gomodcache=$(go env GOMODCACHE)" >> $GITHUB_OUTPUT
-      - name: Cache go modules
-        uses: actions/cache@v4
-        with:
-          path: |
-            ${{ steps.go-cache.outputs.gocache }}
-            ${{ steps.go-cache.outputs.gomodcache }}
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-      - run: make test
-      - run: make check
-      - run: make helm-lint
-      - name: Check code format and run code generators
-        run: |
-          make generate
-          make fmt
-          echo "checking for diff after running formatters, if this fails, run 'make fmt'"
-          git diff --exit-code --name-only
+      - run: mise run ${{ matrix.mise-task }}
 
   build_and_push_fasit:
     needs:
