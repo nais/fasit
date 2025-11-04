@@ -45,6 +45,18 @@ LIMIT
 	1
 ;
 
+-- name: EnvironmentsGetIDWithLabels :many
+SELECT
+	e.id,
+	el.key,
+	el.value
+FROM
+	environments e
+	JOIN environment_labels el ON e.id = el.environment_id
+ORDER BY
+	e.id ASC
+;
+
 -- name: EnvironmentIDByNames :one
 SELECT
 	e.id

@@ -18,6 +18,7 @@ type EnvironmentRepo interface {
 	EnvironmentGetByName(ctx context.Context, tenantID uuid.UUID, name string) (*model.Environment, error)
 	EnvironmentIDByNames(ctx context.Context, tenantName, environmentName string) (uuid.UUID, error)
 	EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]*model.Environment, error)
+	EnvironmentsGetIDWithLabels(ctx context.Context) ([]gensql.EnvironmentsGetIDWithLabelsRow, error)
 	EnvironmentsGetByAutoUpgrade(ctx context.Context) ([]*model.Environment, error)
 	EnvironmentUpdate(ctx context.Context, environmentID uuid.UUID, p *model.EnvironmentUpdate) (*model.Environment, error)
 	EnvironmentSetAutoUpgrade(ctx context.Context, environmentID uuid.UUID, autoUpgrade bool) (*model.Environment, error)
@@ -136,6 +137,10 @@ func (r *repo) EnvironmentIDByNames(ctx context.Context, tenantName, environment
 		TenantName:      tenantName,
 	}
 	return r.querier.EnvironmentIDByNames(ctx, params)
+}
+
+func (r repo) EnvironmentsGetIDWithLabels(ctx context.Context) ([]gensql.EnvironmentsGetIDWithLabelsRow, error) {
+	return r.querier.EnvironmentsGetIDWithLabels(ctx)
 }
 
 func (r *repo) EnvironmentCI(ctx context.Context, kind model.EnvironmentKind) (*model.Environment, error) {

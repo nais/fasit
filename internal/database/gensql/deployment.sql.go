@@ -9,9 +9,36 @@ import (
 	"github.com/google/uuid"
 )
 
+const deploymentCreate = `-- name: DeploymentCreate :exec
+INSERT INTO
+	deployments (feature_name, version, target, gh_ref)
+VALUES
+	($1, $2, $3, $4)
+`
+
+type DeploymentCreateParams struct {
+	FeatureName string
+	Version     string
+	Target      []byte
+	GhRef       []byte
+}
+
+func (q *Queries) DeploymentCreate(ctx context.Context, arg DeploymentCreateParams) error {
+	_, err := q.db.Exec(ctx, deploymentCreate,
+		arg.FeatureName,
+		arg.Version,
+		arg.Target,
+		arg.GhRef,
+	)
+	return err
+}
+
 const deploymentTargetsCreate = `-- name: DeploymentTargetsCreate :exec
-INSERT INTO deployment_targets (deployment_id, environment_id, hash)
-VALUES ($1, $2, $3)
+INSERT INTO
+	deployment_targets (deployment_id, environment_id, hash)
+VALUES
+	($1, $2, $3)
+ON CONFLICT DO NOTHING
 `
 
 type DeploymentTargetsCreateParams struct {
@@ -101,8 +128,12 @@ func (q *Queries) DeploymentTargetsGetPending(ctx context.Context) ([]Deployment
 
 const deploymentTargetsUpdate = `-- name: DeploymentTargetsUpdate :exec
 UPDATE deployment_targets
-SET status = $1, last_modified = now()
-WHERE deployment_id = $2 AND environment_id = $3
+SET
+	status = $1,
+	last_modified = NOW()
+WHERE
+	deployment_id = $2
+	AND environment_id = $3
 `
 
 type DeploymentTargetsUpdateParams struct {
@@ -120,7 +151,7 @@ const deploymentsGet = `-- name: DeploymentsGet :many
 SELECT
 	id, feature_name, version, target, created, gh_ref, deploy_instructions
 FROM
-	deployment
+	deployments
 ORDER BY
 	created ASC
 `

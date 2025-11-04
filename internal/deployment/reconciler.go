@@ -2,24 +2,30 @@ package deployment
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/auth"
+	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/gensql"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/metric"
 )
 
 type ReconcilerStore interface {
+	database.EnvironmentRepo
+	DeploymentCreate(ctx context.Context, featureName, featureVersion string, ghRef []byte, target database.EnvironmentLabels) error
 	DeploymentTargetsGet(ctx context.Context) ([]gensql.DeploymentTarget, error)
 	DeploymentTargetsGetPending(ctx context.Context) ([]gensql.DeploymentTarget, error)
 	DeploymentTargetsCreate(ctx context.Context, deploymentID, environmentID uuid.UUID) error
 	DeploymentTargetsUpdate(ctx context.Context, deploymentID, environmentID uuid.UUID, status string) error
 	DeploymentsGet(ctx context.Context) ([]gensql.Deployment, error)
 }
+
+type lookupMap = map[database.EnvironmentLabelKey]map[database.EnvironmentLabelValue]database.EnvironmentID
 
 type Publisher interface{}
 
@@ -86,21 +92,45 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		return fmt.Errorf("get deployments: %w", err)
 	}
 
+	envs, err := r.repo.EnvironmentsGetIDWithLabels(ctx)
+	if err != nil {
+		return fmt.Errorf("get environments: %w", err)
+	}
+
+	lookup := lookupMap{}
+	for _, env := range envs {
+		if _, exists := lookup[env.Key]; !exists {
+			lookup[env.Key] = map[database.EnvironmentLabelValue]database.EnvironmentID{}
+		}
+		lookup[env.Key][env.Value] = env.ID
+	}
+
 	for _, d := range deployments {
-		if err := r.reconcileDeployment(ctx, d); err != nil {
-			r.log.WithError(err).WithField("deployment", d.ID).Error("reconcile deployment")
+		var target map[string]string
+		err = json.Unmarshal(d.Target, &target)
+		if err != nil {
+			r.log.WithError(err).Error("unmarshal target")
+		}
+
+		for k, v := range target {
+			id, ok := lookup[k][v]
+			if !ok {
+				continue
+			}
+			err = r.createDeploymentTarget(ctx, d, id)
+			if err != nil {
+				r.log.WithError(err).WithField("deployment_id", d.ID).WithField("environment_id", id).Error("reconcile deployment")
+			}
 		}
 	}
 	return nil
 }
 
-func (r *Reconciler) reconcileDeployment(ctx context.Context, _ gensql.Deployment) error {
-	deploymentTargets, err := r.repo.DeploymentTargetsGet(ctx)
+func (r *Reconciler) createDeploymentTarget(ctx context.Context, d gensql.Deployment, envId uuid.UUID) error {
+	err := r.repo.DeploymentTargetsCreate(ctx, d.ID, envId)
 	if err != nil {
-		return fmt.Errorf("get deployment targets: %w", err)
+		return fmt.Errorf("create deployment target: %w", err)
 	}
-
-	_ = deploymentTargets
 
 	return nil
 }

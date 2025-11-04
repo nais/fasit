@@ -478,3 +478,41 @@ func (q *Queries) EnvironmentsGetByAutoUpgrade(ctx context.Context) ([]Environme
 	}
 	return items, nil
 }
+
+const environmentsGetIDWithLabels = `-- name: EnvironmentsGetIDWithLabels :many
+SELECT
+	e.id,
+	el.key,
+	el.value
+FROM
+	environments e
+	JOIN environment_labels el ON e.id = el.environment_id
+ORDER BY
+	e.id ASC
+`
+
+type EnvironmentsGetIDWithLabelsRow struct {
+	ID    uuid.UUID
+	Key   string
+	Value string
+}
+
+func (q *Queries) EnvironmentsGetIDWithLabels(ctx context.Context) ([]EnvironmentsGetIDWithLabelsRow, error) {
+	rows, err := q.db.Query(ctx, environmentsGetIDWithLabels)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []EnvironmentsGetIDWithLabelsRow{}
+	for rows.Next() {
+		var i EnvironmentsGetIDWithLabelsRow
+		if err := rows.Scan(&i.ID, &i.Key, &i.Value); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
