@@ -17,6 +17,7 @@ type ClusterUpgraderRepo interface {
 	GetRunningClusterOperation(ctx context.Context, tenantID, envID uuid.UUID) (*model.EnvironmentOperation, error)
 	CreateClusterUpgrade(ctx context.Context, tenantID, envID uuid.UUID, version string) (*model.ClusterUpgradeStatus, error)
 	ClusterUpgradeGet(ctx context.Context, tenantID, envID uuid.UUID) (*model.ClusterUpgradeStatus, error)
+	ClusterUpgradeGetByVersion(ctx context.Context, tenantID, envID uuid.UUID, version string) (*model.ClusterUpgradeStatus, error)
 	ClusterUpgradeHistoryGet(ctx context.Context, tenantID, envID uuid.UUID) ([]*model.ClusterUpgradeStatus, error)
 	UpdateClusterUpgradeStatus(ctx context.Context, tenantID, envID uuid.UUID, status gensql.ClusterUpgradesStatus, version string) (*model.ClusterUpgradeStatus, error)
 	ClusterUpgradeGetByID(ctx context.Context, id uuid.UUID) (*model.ClusterUpgradeStatus, error)
@@ -151,6 +152,21 @@ func (r *repo) ClusterUpgradeGet(ctx context.Context, tenantID, envID uuid.UUID)
 		return nil, errors.New("found more than one cluster upgrade")
 	}
 	return clusterUpgradeFromSQL(clusterUpgrades[0]), nil
+}
+
+func (r *repo) ClusterUpgradeGetByVersion(ctx context.Context, tenantID, envID uuid.UUID, version string) (*model.ClusterUpgradeStatus, error) {
+	clusterUpgrade, err := r.querier.ClusterUpgradesGetByVersion(ctx, gensql.ClusterUpgradesGetByVersionParams{
+		Tenantid: tenantID,
+		Envid:    envID,
+		Version:  version,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return clusterUpgradeFromSQL(clusterUpgrade), nil
 }
 
 func (r *repo) CreateClusterUpgrade(ctx context.Context, tenantID, envID uuid.UUID, version string) (*model.ClusterUpgradeStatus, error) {

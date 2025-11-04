@@ -116,6 +116,43 @@ func (q *Queries) ClusterUpgradesGetByID(ctx context.Context, id uuid.UUID) (Clu
 	return i, err
 }
 
+const clusterUpgradesGetByVersion = `-- name: ClusterUpgradesGetByVersion :one
+SELECT
+	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id
+FROM
+	cluster_upgrades
+WHERE
+	tenant_id = $1
+	AND environment_id = $2
+	AND version = $3
+ORDER BY
+	last_modified DESC
+LIMIT 1
+`
+
+type ClusterUpgradesGetByVersionParams struct {
+	Tenantid uuid.UUID
+	Envid    uuid.UUID
+	Version  string
+}
+
+func (q *Queries) ClusterUpgradesGetByVersion(ctx context.Context, arg ClusterUpgradesGetByVersionParams) (ClusterUpgrade, error) {
+	row := q.db.QueryRow(ctx, clusterUpgradesGetByVersion, arg.Tenantid, arg.Envid, arg.Version)
+	var i ClusterUpgrade
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.EnvironmentID,
+		&i.Version,
+		&i.Status,
+		&i.StartTime,
+		&i.LastModified,
+		&i.SlackMessageTimestamp,
+		&i.SlackChannelID,
+	)
+	return i, err
+}
+
 const clusterUpgradesHistoryGetByEnvironmentID = `-- name: ClusterUpgradesHistoryGetByEnvironmentID :many
 SELECT
 	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id

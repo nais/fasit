@@ -554,6 +554,86 @@ func (_c *Repo_ClusterUpgradeGetByID_Call) RunAndReturn(run func(ctx context.Con
 	return _c
 }
 
+// ClusterUpgradeGetByVersion provides a mock function for the type Repo
+func (_mock *Repo) ClusterUpgradeGetByVersion(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID, version string) (*model.ClusterUpgradeStatus, error) {
+	ret := _mock.Called(ctx, tenantID, envID, version)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ClusterUpgradeGetByVersion")
+	}
+
+	var r0 *model.ClusterUpgradeStatus
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID, string) (*model.ClusterUpgradeStatus, error)); ok {
+		return returnFunc(ctx, tenantID, envID, version)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID, string) *model.ClusterUpgradeStatus); ok {
+		r0 = returnFunc(ctx, tenantID, envID, version)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.ClusterUpgradeStatus)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, uuid.UUID, string) error); ok {
+		r1 = returnFunc(ctx, tenantID, envID, version)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Repo_ClusterUpgradeGetByVersion_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ClusterUpgradeGetByVersion'
+type Repo_ClusterUpgradeGetByVersion_Call struct {
+	*mock.Call
+}
+
+// ClusterUpgradeGetByVersion is a helper method to define mock.On call
+//   - ctx context.Context
+//   - tenantID uuid.UUID
+//   - envID uuid.UUID
+//   - version string
+func (_e *Repo_Expecter) ClusterUpgradeGetByVersion(ctx interface{}, tenantID interface{}, envID interface{}, version interface{}) *Repo_ClusterUpgradeGetByVersion_Call {
+	return &Repo_ClusterUpgradeGetByVersion_Call{Call: _e.mock.On("ClusterUpgradeGetByVersion", ctx, tenantID, envID, version)}
+}
+
+func (_c *Repo_ClusterUpgradeGetByVersion_Call) Run(run func(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID, version string)) *Repo_ClusterUpgradeGetByVersion_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		var arg2 uuid.UUID
+		if args[2] != nil {
+			arg2 = args[2].(uuid.UUID)
+		}
+		var arg3 string
+		if args[3] != nil {
+			arg3 = args[3].(string)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+		)
+	})
+	return _c
+}
+
+func (_c *Repo_ClusterUpgradeGetByVersion_Call) Return(clusterUpgradeStatus *model.ClusterUpgradeStatus, err error) *Repo_ClusterUpgradeGetByVersion_Call {
+	_c.Call.Return(clusterUpgradeStatus, err)
+	return _c
+}
+
+func (_c *Repo_ClusterUpgradeGetByVersion_Call) RunAndReturn(run func(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID, version string) (*model.ClusterUpgradeStatus, error)) *Repo_ClusterUpgradeGetByVersion_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ClusterUpgradeHistoryGet provides a mock function for the type Repo
 func (_mock *Repo) ClusterUpgradeHistoryGet(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID) ([]*model.ClusterUpgradeStatus, error) {
 	ret := _mock.Called(ctx, tenantID, envID)

@@ -231,6 +231,26 @@ func (c *AutoUpgrader) evaluateAndScheduleUpgrades(ctx context.Context, env *mod
 				return true, false
 			}
 
+			// Check if this version was already attempted and failed/completed
+			existingUpgrade, err := c.repo.ClusterUpgradeGetByVersion(ctx, env.TenantID, env.ID, version)
+			if err != nil {
+				envLogger.WithFields(logrus.Fields{
+					"target_version": version,
+					"operation":      "check_upgrade_history",
+				}).WithError(err).Error("failed to check cluster upgrade history")
+				return true, false
+			}
+
+			if existingUpgrade != nil && (existingUpgrade.UpgradeStatus == model.UpgradeStatusDone || existingUpgrade.UpgradeStatus == model.UpgradeStatusFailed) {
+				envLogger.WithFields(logrus.Fields{
+					"current_version":  controlPlaneVer,
+					"target_version":   version,
+					"existing_upgrade": existingUpgrade.ID,
+					"upgrade_status":   existingUpgrade.UpgradeStatus,
+				}).Info("cluster upgrade for this version already completed or failed, skipping automatic scheduling")
+				return true, false
+			}
+
 			// Schedule the upgrade
 			upgrade, err := c.repo.CreateClusterUpgrade(ctx, env.TenantID, env.ID, version)
 			if err != nil {

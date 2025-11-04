@@ -63,3 +63,18 @@ WHERE
 ORDER BY
 	last_modified DESC
 ;
+
+-- name: ClusterUpgradesGetByVersion :one
+SELECT
+	*
+FROM
+	cluster_upgrades
+WHERE
+	tenant_id = @tenantId
+	AND environment_id = @envID
+	AND version = @version
+ORDER BY
+	last_modified DESC
+LIMIT
+	1
+;
