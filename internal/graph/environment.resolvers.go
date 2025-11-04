@@ -329,7 +329,6 @@ func (r *mutationResolver) EnvironmentSetMaintenanceWindow(ctx context.Context, 
 	// Apply maintenance window to GKE cluster
 	_, err = r.ClusterManager.SetMaintenanceWindow(ctx, *projectID, env, maintenanceWindow)
 	if err != nil {
-		// Log error but don't fail - the window is saved in database and can be retried
 		r.Log.WithError(err).WithFields(map[string]interface{}{
 			"environment_id": environmentID,
 			"project_id":     *projectID,
