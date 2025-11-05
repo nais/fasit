@@ -180,6 +180,9 @@ func (d *DeployManager) Run(ctx context.Context) {
 }
 
 func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstruction) error {
+	// Force ack message to prevent retries for long running tasks
+	message.ForceAck(ctx)
+
 	if msg.Uninstall {
 		return d.uninstallHandler(ctx, msg)
 	}
@@ -214,8 +217,6 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 				return err
 			}
 
-			// Some hacks to try to reduce number of upgrades.
-			message.ForceAck(ctx)
 			time.Sleep(1 * time.Second)
 			d.stop()
 			return errRestartRequired
