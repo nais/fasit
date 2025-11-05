@@ -523,7 +523,7 @@ func TestRun_CreatedToWaitingTransitionWithDelay(t *testing.T) {
 			Value: []byte(`"1234"`),
 		}, nil).Twice()
 
-	// Mock ClusterUpgradeGet to return upgrade in CREATED status
+	// Mock ClusterUpgradeGet to return upgrade in CREATED status (automatic upgrade)
 	createdUpgrade := &model.ClusterUpgradeStatus{
 		ID:            uuid.New(),
 		UpgradeStatus: model.UpgradeStatusCreated,
@@ -531,6 +531,7 @@ func TestRun_CreatedToWaitingTransitionWithDelay(t *testing.T) {
 		StartTime:     time.Now(),
 		LastModified:  time.Now(),
 		EnvironmentID: suite.env.id,
+		IsAutomatic:   true, // This is an automatic upgrade, should respect delays
 	}
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(createdUpgrade, nil).Once()
 
@@ -600,7 +601,7 @@ func TestRun_CreatedWithoutDelaySkipsWaiting(t *testing.T) {
 			Value: []byte(`"1234"`),
 		}, nil).Twice()
 
-	// Mock ClusterUpgradeGet to return upgrade in CREATED status
+	// Mock ClusterUpgradeGet to return upgrade in CREATED status (automatic upgrade with no delay)
 	createdUpgrade := &model.ClusterUpgradeStatus{
 		ID:            uuid.New(),
 		UpgradeStatus: model.UpgradeStatusCreated,
@@ -608,6 +609,7 @@ func TestRun_CreatedWithoutDelaySkipsWaiting(t *testing.T) {
 		StartTime:     time.Now(),
 		LastModified:  time.Now(),
 		EnvironmentID: suite.env.id,
+		IsAutomatic:   true, // Automatic upgrade with no delay should proceed immediately
 	}
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(createdUpgrade, nil).Once()
 
