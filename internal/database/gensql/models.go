@@ -144,8 +144,7 @@ type ClusterUpgrade struct {
 	LastModified          pgtype.Timestamptz
 	SlackMessageTimestamp pgtype.Text
 	SlackChannelID        pgtype.Text
-	// Indicates whether the upgrade was initiated automatically (true) or manually by a user (false)
-	IsAutomatic bool
+	IsAutomatic           bool
 }
 
 type ConfigurationsEnvironment struct {

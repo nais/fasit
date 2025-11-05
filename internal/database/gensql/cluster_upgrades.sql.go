@@ -12,7 +12,12 @@ import (
 
 const clusterUpgradesCreate = `-- name: ClusterUpgradesCreate :one
 INSERT INTO
-	cluster_upgrades ("tenant_id", "environment_id", "version", "is_automatic")
+	cluster_upgrades (
+		"tenant_id",
+		"environment_id",
+		"version",
+		"is_automatic"
+	)
 VALUES
 	($1, $2, $3, $4)
 RETURNING

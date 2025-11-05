@@ -77,6 +77,7 @@ type ComplexityRoot struct {
 	ClusterUpgradeStatus struct {
 		Environment   func(childComplexity int) int
 		ID            func(childComplexity int) int
+		IsAutomatic   func(childComplexity int) int
 		LastModified  func(childComplexity int) int
 		Operations    func(childComplexity int) int
 		StartTime     func(childComplexity int) int
@@ -616,6 +617,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.ClusterUpgradeStatus.ID(childComplexity), true
+	case "ClusterUpgradeStatus.isAutomatic":
+		if e.complexity.ClusterUpgradeStatus.IsAutomatic == nil {
+			break
+		}
+
+		return e.complexity.ClusterUpgradeStatus.IsAutomatic(childComplexity), true
 	case "ClusterUpgradeStatus.lastModified":
 		if e.complexity.ClusterUpgradeStatus.LastModified == nil {
 			break
@@ -2441,6 +2448,7 @@ type ClusterUpgradeStatus {
 	startTime: Time!
 	operations: [EnvironmentOperation!]!
 	environment: Environment!
+	isAutomatic: Boolean!
 }
 
 enum DayOfWeek {
@@ -3864,6 +3872,35 @@ func (ec *executionContext) fieldContext_ClusterUpgradeStatus_environment(_ cont
 				return ec.fieldContext_Environment_maintenanceWindow(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ClusterUpgradeStatus_isAutomatic(ctx context.Context, field graphql.CollectedField, obj *model.ClusterUpgradeStatus) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ClusterUpgradeStatus_isAutomatic,
+		func(ctx context.Context) (any, error) {
+			return obj.IsAutomatic, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ClusterUpgradeStatus_isAutomatic(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ClusterUpgradeStatus",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -5493,6 +5530,8 @@ func (ec *executionContext) fieldContext_Environment_clusterUpgradeHistory(_ con
 				return ec.fieldContext_ClusterUpgradeStatus_operations(ctx, field)
 			case "environment":
 				return ec.fieldContext_ClusterUpgradeStatus_environment(ctx, field)
+			case "isAutomatic":
+				return ec.fieldContext_ClusterUpgradeStatus_isAutomatic(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ClusterUpgradeStatus", field.Name)
 		},
@@ -5538,6 +5577,8 @@ func (ec *executionContext) fieldContext_Environment_clusterUpgradeStatus(_ cont
 				return ec.fieldContext_ClusterUpgradeStatus_operations(ctx, field)
 			case "environment":
 				return ec.fieldContext_ClusterUpgradeStatus_environment(ctx, field)
+			case "isAutomatic":
+				return ec.fieldContext_ClusterUpgradeStatus_isAutomatic(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ClusterUpgradeStatus", field.Name)
 		},
@@ -14417,6 +14458,11 @@ func (ec *executionContext) _ClusterUpgradeStatus(ctx context.Context, sel ast.S
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "isAutomatic":
+			out.Values[i] = ec._ClusterUpgradeStatus_isAutomatic(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
