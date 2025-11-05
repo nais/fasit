@@ -235,21 +235,25 @@ func (q *Queries) DeploymentsGet(ctx context.Context) ([]Deployment, error) {
 	return items, nil
 }
 
-const environmentsTargetedByDeployment = `-- name: EnvironmentsTargetedByDeployment :many
+const environmentsForDeployment = `-- name: EnvironmentsForDeployment :many
 SELECT
 	e.id
 FROM
 	deployments d,
 	environments e
+	JOIN feature_states f ON f.feature_name = d.feature_name
+	AND f.environment_id = e.id
 WHERE
 	d.id = $1
+	AND f.enabled = TRUE
 	AND e.labels @> d.target -- @> operator checks if the JSONB on the left contains the JSONB on the right
 ORDER BY
 	e.id
 `
 
-func (q *Queries) EnvironmentsTargetedByDeployment(ctx context.Context, deploymentID uuid.UUID) ([]uuid.UUID, error) {
-	rows, err := q.db.Query(ctx, environmentsTargetedByDeployment, deploymentID)
+// EnvironmentsForDeployment returns slice of env ids where feature is enabled and targeted by deployment
+func (q *Queries) EnvironmentsForDeployment(ctx context.Context, deploymentID uuid.UUID) ([]uuid.UUID, error) {
+	rows, err := q.db.Query(ctx, environmentsForDeployment, deploymentID)
 	if err != nil {
 		return nil, err
 	}

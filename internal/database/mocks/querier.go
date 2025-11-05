@@ -4327,6 +4327,74 @@ func (_c *Querier_EnvironmentValuesForEnvironment_Call) RunAndReturn(run func(ct
 	return _c
 }
 
+// EnvironmentsForDeployment provides a mock function for the type Querier
+func (_mock *Querier) EnvironmentsForDeployment(ctx context.Context, deploymentID uuid.UUID) ([]uuid.UUID, error) {
+	ret := _mock.Called(ctx, deploymentID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for EnvironmentsForDeployment")
+	}
+
+	var r0 []uuid.UUID
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]uuid.UUID, error)); ok {
+		return returnFunc(ctx, deploymentID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) []uuid.UUID); ok {
+		r0 = returnFunc(ctx, deploymentID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]uuid.UUID)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = returnFunc(ctx, deploymentID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_EnvironmentsForDeployment_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'EnvironmentsForDeployment'
+type Querier_EnvironmentsForDeployment_Call struct {
+	*mock.Call
+}
+
+// EnvironmentsForDeployment is a helper method to define mock.On call
+//   - ctx context.Context
+//   - deploymentID uuid.UUID
+func (_e *Querier_Expecter) EnvironmentsForDeployment(ctx interface{}, deploymentID interface{}) *Querier_EnvironmentsForDeployment_Call {
+	return &Querier_EnvironmentsForDeployment_Call{Call: _e.mock.On("EnvironmentsForDeployment", ctx, deploymentID)}
+}
+
+func (_c *Querier_EnvironmentsForDeployment_Call) Run(run func(ctx context.Context, deploymentID uuid.UUID)) *Querier_EnvironmentsForDeployment_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_EnvironmentsForDeployment_Call) Return(uUIDs []uuid.UUID, err error) *Querier_EnvironmentsForDeployment_Call {
+	_c.Call.Return(uUIDs, err)
+	return _c
+}
+
+func (_c *Querier_EnvironmentsForDeployment_Call) RunAndReturn(run func(ctx context.Context, deploymentID uuid.UUID) ([]uuid.UUID, error)) *Querier_EnvironmentsForDeployment_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // EnvironmentsGet provides a mock function for the type Querier
 func (_mock *Querier) EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]gensql.Environment, error) {
 	ret := _mock.Called(ctx, tenantID)
@@ -4453,74 +4521,6 @@ func (_c *Querier_EnvironmentsGetByAutoUpgrade_Call) Return(environments []gensq
 }
 
 func (_c *Querier_EnvironmentsGetByAutoUpgrade_Call) RunAndReturn(run func(ctx context.Context) ([]gensql.Environment, error)) *Querier_EnvironmentsGetByAutoUpgrade_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// EnvironmentsTargetedByDeployment provides a mock function for the type Querier
-func (_mock *Querier) EnvironmentsTargetedByDeployment(ctx context.Context, deploymentID uuid.UUID) ([]uuid.UUID, error) {
-	ret := _mock.Called(ctx, deploymentID)
-
-	if len(ret) == 0 {
-		panic("no return value specified for EnvironmentsTargetedByDeployment")
-	}
-
-	var r0 []uuid.UUID
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]uuid.UUID, error)); ok {
-		return returnFunc(ctx, deploymentID)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) []uuid.UUID); ok {
-		r0 = returnFunc(ctx, deploymentID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]uuid.UUID)
-		}
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
-		r1 = returnFunc(ctx, deploymentID)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Querier_EnvironmentsTargetedByDeployment_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'EnvironmentsTargetedByDeployment'
-type Querier_EnvironmentsTargetedByDeployment_Call struct {
-	*mock.Call
-}
-
-// EnvironmentsTargetedByDeployment is a helper method to define mock.On call
-//   - ctx context.Context
-//   - deploymentID uuid.UUID
-func (_e *Querier_Expecter) EnvironmentsTargetedByDeployment(ctx interface{}, deploymentID interface{}) *Querier_EnvironmentsTargetedByDeployment_Call {
-	return &Querier_EnvironmentsTargetedByDeployment_Call{Call: _e.mock.On("EnvironmentsTargetedByDeployment", ctx, deploymentID)}
-}
-
-func (_c *Querier_EnvironmentsTargetedByDeployment_Call) Run(run func(ctx context.Context, deploymentID uuid.UUID)) *Querier_EnvironmentsTargetedByDeployment_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 uuid.UUID
-		if args[1] != nil {
-			arg1 = args[1].(uuid.UUID)
-		}
-		run(
-			arg0,
-			arg1,
-		)
-	})
-	return _c
-}
-
-func (_c *Querier_EnvironmentsTargetedByDeployment_Call) Return(uUIDs []uuid.UUID, err error) *Querier_EnvironmentsTargetedByDeployment_Call {
-	_c.Call.Return(uUIDs, err)
-	return _c
-}
-
-func (_c *Querier_EnvironmentsTargetedByDeployment_Call) RunAndReturn(run func(ctx context.Context, deploymentID uuid.UUID) ([]uuid.UUID, error)) *Querier_EnvironmentsTargetedByDeployment_Call {
 	_c.Call.Return(run)
 	return _c
 }

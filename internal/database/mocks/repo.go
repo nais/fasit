@@ -4094,6 +4094,74 @@ func (_c *Repo_EnvironmentValuesForEnvironment_Call) RunAndReturn(run func(ctx c
 	return _c
 }
 
+// EnvironmentsForDeployment provides a mock function for the type Repo
+func (_mock *Repo) EnvironmentsForDeployment(ctx context.Context, deploymentID uuid.UUID) ([]uuid.UUID, error) {
+	ret := _mock.Called(ctx, deploymentID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for EnvironmentsForDeployment")
+	}
+
+	var r0 []uuid.UUID
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]uuid.UUID, error)); ok {
+		return returnFunc(ctx, deploymentID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) []uuid.UUID); ok {
+		r0 = returnFunc(ctx, deploymentID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]uuid.UUID)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = returnFunc(ctx, deploymentID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Repo_EnvironmentsForDeployment_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'EnvironmentsForDeployment'
+type Repo_EnvironmentsForDeployment_Call struct {
+	*mock.Call
+}
+
+// EnvironmentsForDeployment is a helper method to define mock.On call
+//   - ctx context.Context
+//   - deploymentID uuid.UUID
+func (_e *Repo_Expecter) EnvironmentsForDeployment(ctx interface{}, deploymentID interface{}) *Repo_EnvironmentsForDeployment_Call {
+	return &Repo_EnvironmentsForDeployment_Call{Call: _e.mock.On("EnvironmentsForDeployment", ctx, deploymentID)}
+}
+
+func (_c *Repo_EnvironmentsForDeployment_Call) Run(run func(ctx context.Context, deploymentID uuid.UUID)) *Repo_EnvironmentsForDeployment_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Repo_EnvironmentsForDeployment_Call) Return(uUIDs []uuid.UUID, err error) *Repo_EnvironmentsForDeployment_Call {
+	_c.Call.Return(uUIDs, err)
+	return _c
+}
+
+func (_c *Repo_EnvironmentsForDeployment_Call) RunAndReturn(run func(ctx context.Context, deploymentID uuid.UUID) ([]uuid.UUID, error)) *Repo_EnvironmentsForDeployment_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // EnvironmentsGet provides a mock function for the type Repo
 func (_mock *Repo) EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]*model.Environment, error) {
 	ret := _mock.Called(ctx, tenantID)
@@ -4220,74 +4288,6 @@ func (_c *Repo_EnvironmentsGetByAutoUpgrade_Call) Return(environments []*model.E
 }
 
 func (_c *Repo_EnvironmentsGetByAutoUpgrade_Call) RunAndReturn(run func(ctx context.Context) ([]*model.Environment, error)) *Repo_EnvironmentsGetByAutoUpgrade_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// EnvironmentsTargetedByDeployment provides a mock function for the type Repo
-func (_mock *Repo) EnvironmentsTargetedByDeployment(ctx context.Context, deploymentID uuid.UUID) ([]uuid.UUID, error) {
-	ret := _mock.Called(ctx, deploymentID)
-
-	if len(ret) == 0 {
-		panic("no return value specified for EnvironmentsTargetedByDeployment")
-	}
-
-	var r0 []uuid.UUID
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]uuid.UUID, error)); ok {
-		return returnFunc(ctx, deploymentID)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) []uuid.UUID); ok {
-		r0 = returnFunc(ctx, deploymentID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]uuid.UUID)
-		}
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
-		r1 = returnFunc(ctx, deploymentID)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Repo_EnvironmentsTargetedByDeployment_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'EnvironmentsTargetedByDeployment'
-type Repo_EnvironmentsTargetedByDeployment_Call struct {
-	*mock.Call
-}
-
-// EnvironmentsTargetedByDeployment is a helper method to define mock.On call
-//   - ctx context.Context
-//   - deploymentID uuid.UUID
-func (_e *Repo_Expecter) EnvironmentsTargetedByDeployment(ctx interface{}, deploymentID interface{}) *Repo_EnvironmentsTargetedByDeployment_Call {
-	return &Repo_EnvironmentsTargetedByDeployment_Call{Call: _e.mock.On("EnvironmentsTargetedByDeployment", ctx, deploymentID)}
-}
-
-func (_c *Repo_EnvironmentsTargetedByDeployment_Call) Run(run func(ctx context.Context, deploymentID uuid.UUID)) *Repo_EnvironmentsTargetedByDeployment_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 uuid.UUID
-		if args[1] != nil {
-			arg1 = args[1].(uuid.UUID)
-		}
-		run(
-			arg0,
-			arg1,
-		)
-	})
-	return _c
-}
-
-func (_c *Repo_EnvironmentsTargetedByDeployment_Call) Return(uUIDs []uuid.UUID, err error) *Repo_EnvironmentsTargetedByDeployment_Call {
-	_c.Call.Return(uUIDs, err)
-	return _c
-}
-
-func (_c *Repo_EnvironmentsTargetedByDeployment_Call) RunAndReturn(run func(ctx context.Context, deploymentID uuid.UUID) ([]uuid.UUID, error)) *Repo_EnvironmentsTargetedByDeployment_Call {
 	_c.Call.Return(run)
 	return _c
 }

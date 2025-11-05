@@ -19,8 +19,6 @@ type ReconcilerStore interface {
 	database.DeploymentRepo
 }
 
-type labelMap = map[string]string
-
 type Publisher interface{}
 
 type NewPublisher func(topicID string, log *logrus.Entry) Publisher
@@ -87,7 +85,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 
 	for _, deployment := range deployments {
-		envs, err := r.repo.EnvironmentsTargetedByDeployment(ctx, deployment.ID)
+		envs, err := r.repo.EnvironmentsForDeployment(ctx, deployment.ID)
 		if err != nil {
 			return fmt.Errorf("get environments targeted by deployment: %w", err)
 		}

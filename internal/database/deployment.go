@@ -16,12 +16,11 @@ type DeploymentRepo interface {
 	DeploymentTargetsCreate(ctx context.Context, deploymentID, environmentID uuid.UUID) error
 	DeploymentTargetsUpdate(ctx context.Context, deploymentID, environmentID uuid.UUID, status string) error
 	DeploymentsGet(ctx context.Context) ([]gensql.Deployment, error)
-
-	EnvironmentsTargetedByDeployment(ctx context.Context, deploymentID uuid.UUID) ([]uuid.UUID, error)
+	EnvironmentsForDeployment(ctx context.Context, deploymentID uuid.UUID) ([]uuid.UUID, error)
 }
 
-func (r *repo) EnvironmentsTargetedByDeployment(ctx context.Context, deploymentID uuid.UUID) ([]uuid.UUID, error) {
-	return r.querier.EnvironmentsTargetedByDeployment(ctx, deploymentID)
+func (r *repo) EnvironmentsForDeployment(ctx context.Context, deploymentID uuid.UUID) ([]uuid.UUID, error) {
+	return r.querier.EnvironmentsForDeployment(ctx, deploymentID)
 }
 
 func (r *repo) DeploymentCreate(ctx context.Context, featureName, featureVersion string, ghRef []byte, target environment.Labels) (*gensql.Deployment, error) {
