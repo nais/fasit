@@ -276,16 +276,57 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 
 	case model.UpgradeStatusCreated:
 		// Check if GKE has already started upgrade operations
-		// If operations are running, just return and let the next iteration handle status transition
-		// The operations are already being tracked by getAndUpdateRunningOperations above
+		// If operations are running, transition immediately to the appropriate state
 		if clusterHas(runningOperations) {
-			log.WithFields(logrus.Fields{
-				"upgrade_id":     clusterUpgrade.ID,
-				"target_version": clusterUpgrade.Version,
-				"running_ops":    len(runningOperations),
-			}).Info("GKE has already started upgrade operations, will track them on next iteration")
-			// Operations are tracked, no need to do anything else this iteration
-			// The next run will transition to the appropriate state based on operation types
+			// Determine which operations are running
+			hasControlPlaneOp := false
+			hasNodeOp := false
+			for _, op := range runningOperations {
+				if op.Status == containerpb.Operation_RUNNING {
+					switch op.OperationType {
+					case containerpb.Operation_UPGRADE_MASTER:
+						hasControlPlaneOp = true
+					case containerpb.Operation_UPGRADE_NODES:
+						hasNodeOp = true
+					}
+				}
+			}
+
+			// Transition to appropriate state based on running operations
+			var targetStatus gensql.ClusterUpgradesStatus
+			if hasNodeOp {
+				// Node upgrade is running, skip to NODE_UPGRADE state
+				targetStatus = gensql.ClusterUpgradesStatusNODEUPGRADE
+				log.WithFields(logrus.Fields{
+					"upgrade_id":     clusterUpgrade.ID,
+					"target_version": clusterUpgrade.Version,
+				}).Info("GKE has already started node upgrade operations, transitioning to NODE_UPGRADE")
+			} else if hasControlPlaneOp {
+				// Control plane upgrade is running, transition to CONTROL_PLANE_UPGRADE state
+				targetStatus = gensql.ClusterUpgradesStatusCONTROLPLANEUPGRADE
+				log.WithFields(logrus.Fields{
+					"upgrade_id":     clusterUpgrade.ID,
+					"target_version": clusterUpgrade.Version,
+				}).Info("GKE has already started control plane upgrade operations, transitioning to CONTROL_PLANE_UPGRADE")
+			} else {
+				// Unknown operation type running, stay in CREATED and log
+				log.WithFields(logrus.Fields{
+					"upgrade_id":     clusterUpgrade.ID,
+					"target_version": clusterUpgrade.Version,
+					"running_ops":    len(runningOperations),
+				}).Warn("GKE has unknown operations running, will check again next iteration")
+				return nil
+			}
+
+			// Update status in database
+			upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, targetStatus, clusterUpgrade.Version)
+			if err != nil {
+				log.WithError(err).Error("failed to transition upgrade status for GKE-initiated operations")
+				return err
+			}
+
+			// Update Slack progress
+			c.updateSlackProgress(ctx, tenant.Name, env.Name, upgradeStatus)
 			return nil
 		} else if clusterUpgrade.IsAutomatic {
 			// Only apply delay logic to automatic upgrades when no operations are running
