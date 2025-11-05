@@ -474,8 +474,8 @@ func (_c *ClusterUpgraderRepo_ClusterUpgradeHistoryGet_Call) RunAndReturn(run fu
 }
 
 // CreateClusterUpgrade provides a mock function for the type ClusterUpgraderRepo
-func (_mock *ClusterUpgraderRepo) CreateClusterUpgrade(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID, version string) (*model.ClusterUpgradeStatus, error) {
-	ret := _mock.Called(ctx, tenantID, envID, version)
+func (_mock *ClusterUpgraderRepo) CreateClusterUpgrade(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID, version string, isAutomatic bool) (*model.ClusterUpgradeStatus, error) {
+	ret := _mock.Called(ctx, tenantID, envID, version, isAutomatic)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateClusterUpgrade")
@@ -483,18 +483,18 @@ func (_mock *ClusterUpgraderRepo) CreateClusterUpgrade(ctx context.Context, tena
 
 	var r0 *model.ClusterUpgradeStatus
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID, string) (*model.ClusterUpgradeStatus, error)); ok {
-		return returnFunc(ctx, tenantID, envID, version)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID, string, bool) (*model.ClusterUpgradeStatus, error)); ok {
+		return returnFunc(ctx, tenantID, envID, version, isAutomatic)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID, string) *model.ClusterUpgradeStatus); ok {
-		r0 = returnFunc(ctx, tenantID, envID, version)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID, string, bool) *model.ClusterUpgradeStatus); ok {
+		r0 = returnFunc(ctx, tenantID, envID, version, isAutomatic)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.ClusterUpgradeStatus)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, uuid.UUID, string) error); ok {
-		r1 = returnFunc(ctx, tenantID, envID, version)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, uuid.UUID, string, bool) error); ok {
+		r1 = returnFunc(ctx, tenantID, envID, version, isAutomatic)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -511,11 +511,12 @@ type ClusterUpgraderRepo_CreateClusterUpgrade_Call struct {
 //   - tenantID uuid.UUID
 //   - envID uuid.UUID
 //   - version string
-func (_e *ClusterUpgraderRepo_Expecter) CreateClusterUpgrade(ctx interface{}, tenantID interface{}, envID interface{}, version interface{}) *ClusterUpgraderRepo_CreateClusterUpgrade_Call {
-	return &ClusterUpgraderRepo_CreateClusterUpgrade_Call{Call: _e.mock.On("CreateClusterUpgrade", ctx, tenantID, envID, version)}
+//   - isAutomatic bool
+func (_e *ClusterUpgraderRepo_Expecter) CreateClusterUpgrade(ctx interface{}, tenantID interface{}, envID interface{}, version interface{}, isAutomatic interface{}) *ClusterUpgraderRepo_CreateClusterUpgrade_Call {
+	return &ClusterUpgraderRepo_CreateClusterUpgrade_Call{Call: _e.mock.On("CreateClusterUpgrade", ctx, tenantID, envID, version, isAutomatic)}
 }
 
-func (_c *ClusterUpgraderRepo_CreateClusterUpgrade_Call) Run(run func(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID, version string)) *ClusterUpgraderRepo_CreateClusterUpgrade_Call {
+func (_c *ClusterUpgraderRepo_CreateClusterUpgrade_Call) Run(run func(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID, version string, isAutomatic bool)) *ClusterUpgraderRepo_CreateClusterUpgrade_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -533,11 +534,16 @@ func (_c *ClusterUpgraderRepo_CreateClusterUpgrade_Call) Run(run func(ctx contex
 		if args[3] != nil {
 			arg3 = args[3].(string)
 		}
+		var arg4 bool
+		if args[4] != nil {
+			arg4 = args[4].(bool)
+		}
 		run(
 			arg0,
 			arg1,
 			arg2,
 			arg3,
+			arg4,
 		)
 	})
 	return _c
@@ -548,7 +554,7 @@ func (_c *ClusterUpgraderRepo_CreateClusterUpgrade_Call) Return(clusterUpgradeSt
 	return _c
 }
 
-func (_c *ClusterUpgraderRepo_CreateClusterUpgrade_Call) RunAndReturn(run func(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID, version string) (*model.ClusterUpgradeStatus, error)) *ClusterUpgraderRepo_CreateClusterUpgrade_Call {
+func (_c *ClusterUpgraderRepo_CreateClusterUpgrade_Call) RunAndReturn(run func(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID, version string, isAutomatic bool) (*model.ClusterUpgradeStatus, error)) *ClusterUpgraderRepo_CreateClusterUpgrade_Call {
 	_c.Call.Return(run)
 	return _c
 }

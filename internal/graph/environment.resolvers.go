@@ -264,7 +264,7 @@ func (r *mutationResolver) EnvironmentUpgrade(ctx context.Context, upgrade *mode
 		return nil, fmt.Errorf("environment %s is onprem", env.Name)
 	}
 
-	_, err = r.Repo.CreateClusterUpgrade(ctx, env.TenantID, upgrade.EnvID, upgrade.Version)
+	_, err = r.Repo.CreateClusterUpgrade(ctx, env.TenantID, upgrade.EnvID, upgrade.Version, false)
 	if err != nil {
 		return nil, err
 	}

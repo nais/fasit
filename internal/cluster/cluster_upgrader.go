@@ -275,29 +275,39 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		c.updateSlackProgress(ctx, tenant.Name, env.Name, updatedStatus)
 
 	case model.UpgradeStatusCreated:
-		// Check if delay is configured - if so, transition to WAITING status
-		tenantDelay := tenant.UpgradeDelayDays
-		envDelay := env.UpgradeDelayDays
-		delayDays := tenantDelay + envDelay
+		// Only apply delay logic to automatic upgrades
+		// Manual upgrades (initiated by users) should proceed immediately
+		if clusterUpgrade.IsAutomatic {
+			tenantDelay := tenant.UpgradeDelayDays
+			envDelay := env.UpgradeDelayDays
+			delayDays := tenantDelay + envDelay
 
-		if delayDays > 0 {
-			// Transition status to WAITING and persist
-			upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatusWAITING, clusterUpgrade.Version)
-			if err != nil {
-				log.WithError(err).Error("failed to update upgrade status to WAITING")
-				return err
+			if delayDays > 0 {
+				// Transition status to WAITING and persist
+				upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatusWAITING, clusterUpgrade.Version)
+				if err != nil {
+					log.WithError(err).Error("failed to update upgrade status to WAITING")
+					return err
+				}
+
+				log.WithFields(logrus.Fields{
+					"upgrade_id":   clusterUpgrade.ID,
+					"delay_days":   delayDays,
+					"is_automatic": true,
+				}).Info("upgrade status transitioned from CREATED to WAITING due to delay configuration")
+
+				c.updateSlackProgress(ctx, tenant.Name, env.Name, upgradeStatus)
+				return nil
 			}
-
+		} else {
 			log.WithFields(logrus.Fields{
-				"upgrade_id": clusterUpgrade.ID,
-				"delay_days": delayDays,
-			}).Info("upgrade status transitioned from CREATED to WAITING due to delay configuration")
-
-			c.updateSlackProgress(ctx, tenant.Name, env.Name, upgradeStatus)
-			return nil
+				"upgrade_id":     clusterUpgrade.ID,
+				"target_version": clusterUpgrade.Version,
+				"is_automatic":   false,
+			}).Info("manual upgrade bypassing delay configuration - proceeding immediately")
 		}
 
-		// No delay configured, proceed with control plane upgrade
+		// No delay configured or manual upgrade, proceed with control plane upgrade
 		log.WithFields(logrus.Fields{
 			"target_version": clusterUpgrade.Version,
 			"tenant":         tenant.Name,

@@ -1,8 +1,13 @@
 -- name: ClusterUpgradesCreate :one
 INSERT INTO
-	cluster_upgrades ("tenant_id", "environment_id", "version")
+	cluster_upgrades (
+		"tenant_id",
+		"environment_id",
+		"version",
+		"is_automatic"
+	)
 VALUES
-	(@tenantId, @envID, @version)
+	(@tenantId, @envID, @version, @isAutomatic)
 RETURNING
 	*
 ;

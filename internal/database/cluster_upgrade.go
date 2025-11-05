@@ -15,7 +15,7 @@ import (
 type ClusterUpgraderRepo interface {
 	CreateOrUpdateClusterOperation(ctx context.Context, tenantID, envID, versionID uuid.UUID, op *containerpb.Operation) (*model.EnvironmentOperation, error)
 	GetRunningClusterOperation(ctx context.Context, tenantID, envID uuid.UUID) (*model.EnvironmentOperation, error)
-	CreateClusterUpgrade(ctx context.Context, tenantID, envID uuid.UUID, version string) (*model.ClusterUpgradeStatus, error)
+	CreateClusterUpgrade(ctx context.Context, tenantID, envID uuid.UUID, version string, isAutomatic bool) (*model.ClusterUpgradeStatus, error)
 	ClusterUpgradeGet(ctx context.Context, tenantID, envID uuid.UUID) (*model.ClusterUpgradeStatus, error)
 	ClusterUpgradeGetByVersion(ctx context.Context, tenantID, envID uuid.UUID, version string) (*model.ClusterUpgradeStatus, error)
 	ClusterUpgradeHistoryGet(ctx context.Context, tenantID, envID uuid.UUID) ([]*model.ClusterUpgradeStatus, error)
@@ -53,6 +53,7 @@ func clusterUpgradeFromSQL(p gensql.ClusterUpgrade) *model.ClusterUpgradeStatus 
 		EnvironmentID:         p.EnvironmentID,
 		SlackMessageTimestamp: p.SlackMessageTimestamp.String,
 		SlackChannelID:        p.SlackChannelID.String,
+		IsAutomatic:           p.IsAutomatic,
 	}
 }
 
@@ -169,11 +170,12 @@ func (r *repo) ClusterUpgradeGetByVersion(ctx context.Context, tenantID, envID u
 	return clusterUpgradeFromSQL(clusterUpgrade), nil
 }
 
-func (r *repo) CreateClusterUpgrade(ctx context.Context, tenantID, envID uuid.UUID, version string) (*model.ClusterUpgradeStatus, error) {
+func (r *repo) CreateClusterUpgrade(ctx context.Context, tenantID, envID uuid.UUID, version string, isAutomatic bool) (*model.ClusterUpgradeStatus, error) {
 	clusterVersion, err := r.querier.ClusterUpgradesCreate(ctx, gensql.ClusterUpgradesCreateParams{
-		Tenantid: tenantID,
-		Envid:    envID,
-		Version:  version,
+		Tenantid:    tenantID,
+		Envid:       envID,
+		Version:     version,
+		Isautomatic: isAutomatic,
 	})
 	if err != nil {
 		return nil, err
