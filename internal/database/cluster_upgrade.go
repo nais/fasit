@@ -181,6 +181,11 @@ func (r *repo) CreateClusterUpgrade(ctx context.Context, tenantID, envID uuid.UU
 		return nil, err
 	}
 
+	// Audit manual upgrades to track who initiated them
+	if !isAutomatic {
+		r.createAudit(ctx, "manual cluster upgrade to "+version, "cluster_upgrades", envID.String())
+	}
+
 	return clusterUpgradeFromSQL(clusterVersion), nil
 }
 
