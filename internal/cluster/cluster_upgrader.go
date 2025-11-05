@@ -275,9 +275,27 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		c.updateSlackProgress(ctx, tenant.Name, env.Name, updatedStatus)
 
 	case model.UpgradeStatusCreated:
-		// Only apply delay logic to automatic upgrades
-		// Manual upgrades (initiated by users) should proceed immediately
-		if clusterUpgrade.IsAutomatic {
+		// Check if GKE has already started upgrade operations
+		// If operations are running, we should track them rather than delay or initiate new upgrade
+		if clusterHas(runningOperations) {
+			log.WithFields(logrus.Fields{
+				"upgrade_id":     clusterUpgrade.ID,
+				"target_version": clusterUpgrade.Version,
+				"running_ops":    len(runningOperations),
+			}).Info("GKE has already started upgrade operations, proceeding to track them")
+
+			// Transition to CONTROL_PLANE_UPGRADE to track the existing operations
+			// Don't call UpgradeControlPlane since GKE already started the upgrade
+			upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatusCONTROLPLANEUPGRADE, clusterUpgrade.Version)
+			if err != nil {
+				return err
+			}
+
+			c.updateSlackProgress(ctx, tenant.Name, env.Name, upgradeStatus)
+			return nil
+		} else if clusterUpgrade.IsAutomatic {
+			// Only apply delay logic to automatic upgrades when no operations are running
+			// Manual upgrades (initiated by users) should proceed immediately
 			tenantDelay := tenant.UpgradeDelayDays
 			envDelay := env.UpgradeDelayDays
 			delayDays := tenantDelay + envDelay
@@ -307,16 +325,12 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 			}).Info("manual upgrade bypassing delay configuration - proceeding immediately")
 		}
 
-		// No delay configured or manual upgrade, proceed with control plane upgrade
+		// No delay configured or manual upgrade - initiate control plane upgrade
 		log.WithFields(logrus.Fields{
 			"target_version": clusterUpgrade.Version,
 			"tenant":         tenant.Name,
 			"environment":    env.Name,
 		}).Info("starting control plane upgrade")
-		if clusterHas(runningOperations) {
-			log.WithFields(logrus.Fields{"target_version": clusterUpgrade.Version}).Debug("has running operations, skipping...")
-			return nil
-		}
 
 		// Check if control plane is already at target version
 		var currentVersion string

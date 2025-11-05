@@ -664,3 +664,94 @@ func TestRun_CreatedWithoutDelaySkipsWaiting(t *testing.T) {
 	// Verify that it was called with CONTROL_PLANE_UPGRADE instead
 	suite.repoMock.AssertExpectations(t)
 }
+
+func TestRun_CreatedWithDelayButRunningOperations(t *testing.T) {
+	suite := newTestSuite(t)
+	upgrade := newUpgrade(suite)
+
+	// Setup tenant and environment with delay configured
+	tenantDelayDays := int32(1)
+	envDelayDays := int32(0)
+
+	suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
+		ID:               suite.env.tenantID,
+		Name:             suite.env.name,
+		UpgradeDelayDays: tenantDelayDays,
+	}}, nil).Once()
+
+	suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
+		ID:               suite.env.id,
+		TenantID:         suite.env.tenantID,
+		Name:             suite.env.name,
+		UpgradeDelayDays: envDelayDays,
+	}}, nil).Once()
+
+	suite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, mock.Anything, "project_id", false).Return(
+		&model.EnvironmentValue{
+			Key:   "project_id",
+			Value: []byte(`"1234"`),
+		}, nil).Twice()
+
+	// Mock ClusterUpgradeGet to return upgrade in CREATED status (automatic upgrade)
+	createdUpgrade := &model.ClusterUpgradeStatus{
+		ID:            uuid.New(),
+		UpgradeStatus: model.UpgradeStatusCreated,
+		Version:       "1.2.4",
+		StartTime:     time.Now(),
+		LastModified:  time.Now(),
+		EnvironmentID: suite.env.id,
+		IsAutomatic:   true, // Automatic upgrade with delay configured
+	}
+	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(createdUpgrade, nil).Once()
+
+	suite.repoMock.EXPECT().ClusterUpgradeHistoryGet(mock.Anything, suite.env.tenantID, suite.env.id).Return([]*model.ClusterUpgradeStatus{}, nil).Once()
+
+	// Mock ClusterOperationsGetByUpgradeID for cleanup operations check
+	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{}, nil).Once()
+
+	// Mock GetRunningOperations - return a running control plane upgrade operation
+	// This simulates GKE having already started the upgrade before Fasit checked
+	runningOp := &containerpb.Operation{
+		Name:          "operation-123-running",
+		OperationType: containerpb.Operation_UPGRADE_MASTER,
+		Status:        containerpb.Operation_RUNNING,
+	}
+	suite.clusterMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{runningOp}, nil).Twice()
+
+	// getAndUpdateRunningOperations will track the running operation
+	suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantID, suite.env.id, createdUpgrade.ID, mock.Anything).Return(nil, nil).Once()
+
+	// Since there are running operations, should:
+	// 1. Skip delay logic (even though delay is configured)
+	// 2. NOT call UpgradeControlPlane (don't start a new upgrade)
+	// 3. Transition to CONTROL_PLANE_UPGRADE to track existing operations
+	suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, gensql.ClusterUpgradesStatusCONTROLPLANEUPGRADE, "1.2.4").
+		Return(&model.ClusterUpgradeStatus{
+			ID:            createdUpgrade.ID,
+			UpgradeStatus: model.UpgradeStatusControlPlaneUpgrade,
+			Version:       "1.2.4",
+			StartTime:     createdUpgrade.StartTime,
+			LastModified:  time.Now(),
+			EnvironmentID: suite.env.id,
+		}, nil).Once()
+
+	// Mock SetClusterUpgradesSlackMessage for posting new Slack message
+	suite.repoMock.EXPECT().SetClusterUpgradesSlackMessage(mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil).Maybe()
+
+	// Mock EnvironmentValueGet for slack mentions
+	suite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, suite.env.id, "slack_upgrade_mentions", false).Return(
+		&model.EnvironmentValue{
+			Key:   "slack_upgrade_mentions",
+			Value: []byte(`""`),
+		}, nil).Once()
+
+	err := upgrade.Run(context.Background())
+	if err != nil {
+		t.Errorf("got %v, want nil", err)
+	}
+
+	// Verify that UpdateClusterUpgradeStatus was NOT called with WAITING status
+	// even though delay is configured, because GKE already has running operations
+	suite.repoMock.AssertNotCalled(t, "UpdateClusterUpgradeStatus", mock.Anything, mock.Anything, mock.Anything, gensql.ClusterUpgradesStatusWAITING, mock.Anything)
+	suite.repoMock.AssertExpectations(t)
+}
