@@ -8,12 +8,11 @@ INSERT INTO
 		source,
 		kinds,
 		dependencies,
-		VALUES
-,
-			default_values,
-			timeout,
-			tpl_details,
-		RENAME
+		"values",
+		default_values,
+		timeout,
+		tpl_details,
+		"rename"
 	)
 VALUES
 	(

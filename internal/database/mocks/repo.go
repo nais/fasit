@@ -2192,6 +2192,92 @@ func (_c *Repo_DeployInstructionsLatestForFeature_Call) RunAndReturn(run func(ct
 	return _c
 }
 
+// DeploymentCreate provides a mock function for the type Repo
+func (_mock *Repo) DeploymentCreate(ctx context.Context, featureName string, featureVersion string, ghRef []byte, target database.EnvironmentLabels) (*gensql.Deployment, error) {
+	ret := _mock.Called(ctx, featureName, featureVersion, ghRef, target)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeploymentCreate")
+	}
+
+	var r0 *gensql.Deployment
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, []byte, database.EnvironmentLabels) (*gensql.Deployment, error)); ok {
+		return returnFunc(ctx, featureName, featureVersion, ghRef, target)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, []byte, database.EnvironmentLabels) *gensql.Deployment); ok {
+		r0 = returnFunc(ctx, featureName, featureVersion, ghRef, target)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*gensql.Deployment)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string, string, []byte, database.EnvironmentLabels) error); ok {
+		r1 = returnFunc(ctx, featureName, featureVersion, ghRef, target)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Repo_DeploymentCreate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeploymentCreate'
+type Repo_DeploymentCreate_Call struct {
+	*mock.Call
+}
+
+// DeploymentCreate is a helper method to define mock.On call
+//   - ctx context.Context
+//   - featureName string
+//   - featureVersion string
+//   - ghRef []byte
+//   - target database.EnvironmentLabels
+func (_e *Repo_Expecter) DeploymentCreate(ctx interface{}, featureName interface{}, featureVersion interface{}, ghRef interface{}, target interface{}) *Repo_DeploymentCreate_Call {
+	return &Repo_DeploymentCreate_Call{Call: _e.mock.On("DeploymentCreate", ctx, featureName, featureVersion, ghRef, target)}
+}
+
+func (_c *Repo_DeploymentCreate_Call) Run(run func(ctx context.Context, featureName string, featureVersion string, ghRef []byte, target database.EnvironmentLabels)) *Repo_DeploymentCreate_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		var arg2 string
+		if args[2] != nil {
+			arg2 = args[2].(string)
+		}
+		var arg3 []byte
+		if args[3] != nil {
+			arg3 = args[3].([]byte)
+		}
+		var arg4 database.EnvironmentLabels
+		if args[4] != nil {
+			arg4 = args[4].(database.EnvironmentLabels)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+			arg4,
+		)
+	})
+	return _c
+}
+
+func (_c *Repo_DeploymentCreate_Call) Return(deployment *gensql.Deployment, err error) *Repo_DeploymentCreate_Call {
+	_c.Call.Return(deployment, err)
+	return _c
+}
+
+func (_c *Repo_DeploymentCreate_Call) RunAndReturn(run func(ctx context.Context, featureName string, featureVersion string, ghRef []byte, target database.EnvironmentLabels) (*gensql.Deployment, error)) *Repo_DeploymentCreate_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // DeploymentTargetsCreate provides a mock function for the type Repo
 func (_mock *Repo) DeploymentTargetsCreate(ctx context.Context, deploymentID uuid.UUID, environmentID uuid.UUID) error {
 	ret := _mock.Called(ctx, deploymentID, environmentID)
@@ -2256,11 +2342,79 @@ func (_c *Repo_DeploymentTargetsCreate_Call) RunAndReturn(run func(ctx context.C
 }
 
 // DeploymentTargetsGet provides a mock function for the type Repo
-func (_mock *Repo) DeploymentTargetsGet(ctx context.Context) ([]gensql.DeploymentTarget, error) {
-	ret := _mock.Called(ctx)
+func (_mock *Repo) DeploymentTargetsGet(ctx context.Context, deploymentID uuid.UUID) ([]gensql.DeploymentTarget, error) {
+	ret := _mock.Called(ctx, deploymentID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for DeploymentTargetsGet")
+	}
+
+	var r0 []gensql.DeploymentTarget
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]gensql.DeploymentTarget, error)); ok {
+		return returnFunc(ctx, deploymentID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) []gensql.DeploymentTarget); ok {
+		r0 = returnFunc(ctx, deploymentID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gensql.DeploymentTarget)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = returnFunc(ctx, deploymentID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Repo_DeploymentTargetsGet_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeploymentTargetsGet'
+type Repo_DeploymentTargetsGet_Call struct {
+	*mock.Call
+}
+
+// DeploymentTargetsGet is a helper method to define mock.On call
+//   - ctx context.Context
+//   - deploymentID uuid.UUID
+func (_e *Repo_Expecter) DeploymentTargetsGet(ctx interface{}, deploymentID interface{}) *Repo_DeploymentTargetsGet_Call {
+	return &Repo_DeploymentTargetsGet_Call{Call: _e.mock.On("DeploymentTargetsGet", ctx, deploymentID)}
+}
+
+func (_c *Repo_DeploymentTargetsGet_Call) Run(run func(ctx context.Context, deploymentID uuid.UUID)) *Repo_DeploymentTargetsGet_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Repo_DeploymentTargetsGet_Call) Return(deploymentTargets []gensql.DeploymentTarget, err error) *Repo_DeploymentTargetsGet_Call {
+	_c.Call.Return(deploymentTargets, err)
+	return _c
+}
+
+func (_c *Repo_DeploymentTargetsGet_Call) RunAndReturn(run func(ctx context.Context, deploymentID uuid.UUID) ([]gensql.DeploymentTarget, error)) *Repo_DeploymentTargetsGet_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// DeploymentTargetsGetAll provides a mock function for the type Repo
+func (_mock *Repo) DeploymentTargetsGetAll(ctx context.Context) ([]gensql.DeploymentTarget, error) {
+	ret := _mock.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeploymentTargetsGetAll")
 	}
 
 	var r0 []gensql.DeploymentTarget
@@ -2283,18 +2437,18 @@ func (_mock *Repo) DeploymentTargetsGet(ctx context.Context) ([]gensql.Deploymen
 	return r0, r1
 }
 
-// Repo_DeploymentTargetsGet_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeploymentTargetsGet'
-type Repo_DeploymentTargetsGet_Call struct {
+// Repo_DeploymentTargetsGetAll_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeploymentTargetsGetAll'
+type Repo_DeploymentTargetsGetAll_Call struct {
 	*mock.Call
 }
 
-// DeploymentTargetsGet is a helper method to define mock.On call
+// DeploymentTargetsGetAll is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *Repo_Expecter) DeploymentTargetsGet(ctx interface{}) *Repo_DeploymentTargetsGet_Call {
-	return &Repo_DeploymentTargetsGet_Call{Call: _e.mock.On("DeploymentTargetsGet", ctx)}
+func (_e *Repo_Expecter) DeploymentTargetsGetAll(ctx interface{}) *Repo_DeploymentTargetsGetAll_Call {
+	return &Repo_DeploymentTargetsGetAll_Call{Call: _e.mock.On("DeploymentTargetsGetAll", ctx)}
 }
 
-func (_c *Repo_DeploymentTargetsGet_Call) Run(run func(ctx context.Context)) *Repo_DeploymentTargetsGet_Call {
+func (_c *Repo_DeploymentTargetsGetAll_Call) Run(run func(ctx context.Context)) *Repo_DeploymentTargetsGetAll_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -2307,12 +2461,12 @@ func (_c *Repo_DeploymentTargetsGet_Call) Run(run func(ctx context.Context)) *Re
 	return _c
 }
 
-func (_c *Repo_DeploymentTargetsGet_Call) Return(deploymentTargets []gensql.DeploymentTarget, err error) *Repo_DeploymentTargetsGet_Call {
+func (_c *Repo_DeploymentTargetsGetAll_Call) Return(deploymentTargets []gensql.DeploymentTarget, err error) *Repo_DeploymentTargetsGetAll_Call {
 	_c.Call.Return(deploymentTargets, err)
 	return _c
 }
 
-func (_c *Repo_DeploymentTargetsGet_Call) RunAndReturn(run func(ctx context.Context) ([]gensql.DeploymentTarget, error)) *Repo_DeploymentTargetsGet_Call {
+func (_c *Repo_DeploymentTargetsGetAll_Call) RunAndReturn(run func(ctx context.Context) ([]gensql.DeploymentTarget, error)) *Repo_DeploymentTargetsGetAll_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -4065,6 +4219,136 @@ func (_c *Repo_EnvironmentsGetByAutoUpgrade_Call) Return(environments []*model.E
 }
 
 func (_c *Repo_EnvironmentsGetByAutoUpgrade_Call) RunAndReturn(run func(ctx context.Context) ([]*model.Environment, error)) *Repo_EnvironmentsGetByAutoUpgrade_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// EnvironmentsGetIDWithLabels provides a mock function for the type Repo
+func (_mock *Repo) EnvironmentsGetIDWithLabels(ctx context.Context) ([]gensql.EnvironmentsGetIDWithLabelsRow, error) {
+	ret := _mock.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for EnvironmentsGetIDWithLabels")
+	}
+
+	var r0 []gensql.EnvironmentsGetIDWithLabelsRow
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context) ([]gensql.EnvironmentsGetIDWithLabelsRow, error)); ok {
+		return returnFunc(ctx)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context) []gensql.EnvironmentsGetIDWithLabelsRow); ok {
+		r0 = returnFunc(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gensql.EnvironmentsGetIDWithLabelsRow)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = returnFunc(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Repo_EnvironmentsGetIDWithLabels_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'EnvironmentsGetIDWithLabels'
+type Repo_EnvironmentsGetIDWithLabels_Call struct {
+	*mock.Call
+}
+
+// EnvironmentsGetIDWithLabels is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *Repo_Expecter) EnvironmentsGetIDWithLabels(ctx interface{}) *Repo_EnvironmentsGetIDWithLabels_Call {
+	return &Repo_EnvironmentsGetIDWithLabels_Call{Call: _e.mock.On("EnvironmentsGetIDWithLabels", ctx)}
+}
+
+func (_c *Repo_EnvironmentsGetIDWithLabels_Call) Run(run func(ctx context.Context)) *Repo_EnvironmentsGetIDWithLabels_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *Repo_EnvironmentsGetIDWithLabels_Call) Return(environmentsGetIDWithLabelsRows []gensql.EnvironmentsGetIDWithLabelsRow, err error) *Repo_EnvironmentsGetIDWithLabels_Call {
+	_c.Call.Return(environmentsGetIDWithLabelsRows, err)
+	return _c
+}
+
+func (_c *Repo_EnvironmentsGetIDWithLabels_Call) RunAndReturn(run func(ctx context.Context) ([]gensql.EnvironmentsGetIDWithLabelsRow, error)) *Repo_EnvironmentsGetIDWithLabels_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// EnvironmentsTargetedByDeployment provides a mock function for the type Repo
+func (_mock *Repo) EnvironmentsTargetedByDeployment(ctx context.Context, deploymentID uuid.UUID) ([]uuid.UUID, error) {
+	ret := _mock.Called(ctx, deploymentID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for EnvironmentsTargetedByDeployment")
+	}
+
+	var r0 []uuid.UUID
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]uuid.UUID, error)); ok {
+		return returnFunc(ctx, deploymentID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) []uuid.UUID); ok {
+		r0 = returnFunc(ctx, deploymentID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]uuid.UUID)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = returnFunc(ctx, deploymentID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Repo_EnvironmentsTargetedByDeployment_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'EnvironmentsTargetedByDeployment'
+type Repo_EnvironmentsTargetedByDeployment_Call struct {
+	*mock.Call
+}
+
+// EnvironmentsTargetedByDeployment is a helper method to define mock.On call
+//   - ctx context.Context
+//   - deploymentID uuid.UUID
+func (_e *Repo_Expecter) EnvironmentsTargetedByDeployment(ctx interface{}, deploymentID interface{}) *Repo_EnvironmentsTargetedByDeployment_Call {
+	return &Repo_EnvironmentsTargetedByDeployment_Call{Call: _e.mock.On("EnvironmentsTargetedByDeployment", ctx, deploymentID)}
+}
+
+func (_c *Repo_EnvironmentsTargetedByDeployment_Call) Run(run func(ctx context.Context, deploymentID uuid.UUID)) *Repo_EnvironmentsTargetedByDeployment_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Repo_EnvironmentsTargetedByDeployment_Call) Return(uUIDs []uuid.UUID, err error) *Repo_EnvironmentsTargetedByDeployment_Call {
+	_c.Call.Return(uUIDs, err)
+	return _c
+}
+
+func (_c *Repo_EnvironmentsTargetedByDeployment_Call) RunAndReturn(run func(ctx context.Context, deploymentID uuid.UUID) ([]uuid.UUID, error)) *Repo_EnvironmentsTargetedByDeployment_Call {
 	_c.Call.Return(run)
 	return _c
 }

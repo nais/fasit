@@ -9,11 +9,13 @@ import (
 	"github.com/google/uuid"
 )
 
-const deploymentCreate = `-- name: DeploymentCreate :exec
+const deploymentCreate = `-- name: DeploymentCreate :one
 INSERT INTO
 	deployments (feature_name, version, target, gh_ref)
 VALUES
 	($1, $2, $3, $4)
+RETURNING
+	id, feature_name, version, target, created, gh_ref, deploy_instructions
 `
 
 type DeploymentCreateParams struct {
@@ -23,14 +25,24 @@ type DeploymentCreateParams struct {
 	GhRef       []byte
 }
 
-func (q *Queries) DeploymentCreate(ctx context.Context, arg DeploymentCreateParams) error {
-	_, err := q.db.Exec(ctx, deploymentCreate,
+func (q *Queries) DeploymentCreate(ctx context.Context, arg DeploymentCreateParams) (Deployment, error) {
+	row := q.db.QueryRow(ctx, deploymentCreate,
 		arg.FeatureName,
 		arg.Version,
 		arg.Target,
 		arg.GhRef,
 	)
-	return err
+	var i Deployment
+	err := row.Scan(
+		&i.ID,
+		&i.FeatureName,
+		&i.Version,
+		&i.Target,
+		&i.Created,
+		&i.GhRef,
+		&i.DeployInstructions,
+	)
+	return i, err
 }
 
 const deploymentTargetsCreate = `-- name: DeploymentTargetsCreate :exec
@@ -57,12 +69,50 @@ SELECT
 	deployment_id, environment_id, status, last_modified, created, hash
 FROM
 	deployment_targets
+WHERE
+	deployment_id = $1
 ORDER BY
 	created ASC
 `
 
-func (q *Queries) DeploymentTargetsGet(ctx context.Context) ([]DeploymentTarget, error) {
-	rows, err := q.db.Query(ctx, deploymentTargetsGet)
+func (q *Queries) DeploymentTargetsGet(ctx context.Context, deploymentID uuid.UUID) ([]DeploymentTarget, error) {
+	rows, err := q.db.Query(ctx, deploymentTargetsGet, deploymentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []DeploymentTarget{}
+	for rows.Next() {
+		var i DeploymentTarget
+		if err := rows.Scan(
+			&i.DeploymentID,
+			&i.EnvironmentID,
+			&i.Status,
+			&i.LastModified,
+			&i.Created,
+			&i.Hash,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const deploymentTargetsGetAll = `-- name: DeploymentTargetsGetAll :many
+SELECT
+	deployment_id, environment_id, status, last_modified, created, hash
+FROM
+	deployment_targets
+ORDER BY
+	created ASC
+`
+
+func (q *Queries) DeploymentTargetsGetAll(ctx context.Context) ([]DeploymentTarget, error) {
+	rows, err := q.db.Query(ctx, deploymentTargetsGetAll)
 	if err != nil {
 		return nil, err
 	}
@@ -177,6 +227,49 @@ func (q *Queries) DeploymentsGet(ctx context.Context) ([]Deployment, error) {
 			return nil, err
 		}
 		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const environmentsTargetedByDeployment = `-- name: EnvironmentsTargetedByDeployment :many
+SELECT
+	el.environment_id
+FROM
+	deployments d
+	JOIN environment_labels el ON TRUE
+WHERE
+	d.id = $1
+	AND (d.target ->> el.key) = el.value
+GROUP BY
+	el.environment_id,
+	d.target
+HAVING
+	COUNT(*) = (
+		SELECT
+			COUNT(*)
+		FROM
+			JSONB_OBJECT_KEYS(d.target)
+	)
+ORDER BY
+	el.environment_id
+`
+
+func (q *Queries) EnvironmentsTargetedByDeployment(ctx context.Context, deploymentID uuid.UUID) ([]uuid.UUID, error) {
+	rows, err := q.db.Query(ctx, environmentsTargetedByDeployment, deploymentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []uuid.UUID{}
+	for rows.Next() {
+		var environment_id uuid.UUID
+		if err := rows.Scan(&environment_id); err != nil {
+			return nil, err
+		}
+		items = append(items, environment_id)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

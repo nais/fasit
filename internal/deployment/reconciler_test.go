@@ -2,10 +2,10 @@ package deployment_test
 
 import (
 	"context"
-	"encoding/json"
 	"io"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/dbtest"
@@ -34,80 +34,210 @@ func TestReconcile(t *testing.T) {
 		t.Fatalf("create reconciler: %v", err)
 	}
 
+	const tenantName = "tenant-1"
+
 	tenant, err := db.TenantCreate(ctx, &model.TenantCreate{
-		Name: "tenant-1",
+		Name: tenantName,
 	})
 	if err != nil {
 		t.Fatalf("create tenant: %v", err)
 	}
 
-	_, err = db.EnvironmentCreate(ctx, &model.EnvironmentCreate{
-		Name:     "env-no-labels",
-		TenantID: tenant.ID,
-		Kind:     "tenant",
-	})
-	if err != nil {
-		t.Fatalf("create environment: %v", err)
+	envsWithAiven := make([]uuid.UUID, 0)
+	envsWithUnleash := make([]uuid.UUID, 0)
+
+	{
+		env, err := db.EnvironmentCreate(ctx, &model.EnvironmentCreate{
+			Name:     "management",
+			TenantID: tenant.ID,
+			Kind:     "management",
+		})
+		if err != nil {
+			t.Fatalf("create environment: %v", err)
+		}
+		err = db.EnvironmentSetLabels(ctx, env.ID, []*protogen.EnvironmentLabel{
+			{
+				Key:   "tenant",
+				Value: tenantName,
+			},
+			{
+				Key:   "environment",
+				Value: "management",
+			},
+		})
+		if err != nil {
+			t.Fatalf("set environment labels: %v", err)
+		}
 	}
 
-	env, err := db.EnvironmentCreate(ctx, &model.EnvironmentCreate{
-		Name:     "env-with-labels",
-		TenantID: tenant.ID,
-		Kind:     "tenant",
-	})
-	if err != nil {
-		t.Fatalf("create environment: %v", err)
+	{
+		env, err := db.EnvironmentCreate(ctx, &model.EnvironmentCreate{
+			Name:     "dev",
+			TenantID: tenant.ID,
+			Kind:     "tenant",
+		})
+		if err != nil {
+			t.Fatalf("create environment: %v", err)
+		}
+		err = db.EnvironmentSetLabels(ctx, env.ID, []*protogen.EnvironmentLabel{
+			{
+				Key:   "tenant",
+				Value: tenantName,
+			},
+			{
+				Key:   "environment",
+				Value: "dev",
+			},
+			{
+				Key:   "aiven",
+				Value: "true",
+			},
+		})
+		if err != nil {
+			t.Fatalf("set environment labels: %v", err)
+		}
+
+		envsWithAiven = append(envsWithAiven, env.ID)
 	}
 
-	err = db.EnvironmentSetLabels(ctx, env.ID, []*protogen.EnvironmentLabel{
-		{
-			Key:   "foo",
-			Value: "bar",
-		},
+	{
+		env, err := db.EnvironmentCreate(ctx, &model.EnvironmentCreate{
+			Name:     "prod",
+			TenantID: tenant.ID,
+			Kind:     "tenant",
+		})
+		if err != nil {
+			t.Fatalf("create environment: %v", err)
+		}
+		err = db.EnvironmentSetLabels(ctx, env.ID, []*protogen.EnvironmentLabel{
+			{
+				Key:   "tenant",
+				Value: tenantName,
+			},
+			{
+				Key:   "environment",
+				Value: "prod",
+			},
+			{
+				Key:   "aiven",
+				Value: "true",
+			},
+			{
+				Key:   "unleash",
+				Value: "true",
+			},
+		})
+		if err != nil {
+			t.Fatalf("set environment labels: %v", err)
+		}
+
+		envsWithAiven = append(envsWithAiven, env.ID)
+		envsWithUnleash = append(envsWithUnleash, env.ID)
+	}
+
+	tenant, err = db.TenantCreate(ctx, &model.TenantCreate{
+		Name: "tenant-2",
 	})
 	if err != nil {
-		t.Fatalf("set environment labels: %v", err)
+		t.Fatalf("create tenant: %v", err)
+	}
+
+	{
+		env, err := db.EnvironmentCreate(ctx, &model.EnvironmentCreate{
+			Name:     "prod",
+			TenantID: tenant.ID,
+			Kind:     "tenant",
+		})
+		if err != nil {
+			t.Fatalf("create environment: %v", err)
+		}
+		err = db.EnvironmentSetLabels(ctx, env.ID, []*protogen.EnvironmentLabel{
+			{
+				Key:   "tenant",
+				Value: "tenant-2",
+			},
+			{
+				Key:   "environment",
+				Value: "prod",
+			},
+			{
+				Key:   "aiven",
+				Value: "true",
+			},
+			{
+				Key:   "unleash",
+				Value: "true",
+			},
+		})
+		if err != nil {
+			t.Fatalf("set environment labels: %v", err)
+		}
+
+		envsWithAiven = append(envsWithAiven, env.ID)
 	}
 
 	err = db.FeatureDataCreate(ctx, model.Feature{
-		FeatureYAML: model.FeatureYAML{},
-		Name:        "feature-a",
-		Version:     "v2",
-		Chart:       "oci://feature-a-chart",
-		Description: "Feature A description",
-		Source:      "sr",
-		ValuesYAML:  make(map[string]json.RawMessage),
-		SpecVersion: "v2",
+		Name:    "aiven",
+		Version: "v2",
+		Chart:   "oci://aiven",
 	}, &feature.FeatureTemplateDetails{})
 	if err != nil {
 		t.Fatalf("create feature data: %v", err)
 	}
 
-	err = db.DeploymentCreate(ctx, "feature-a", "v2", []byte(`{"key": "ghref"}`), database.EnvironmentLabels{
-		"foo": "bar",
+	err = db.FeatureDataCreate(ctx, model.Feature{
+		Name:    "unleash",
+		Version: "v3",
+		Chart:   "oci://unleash",
+	}, &feature.FeatureTemplateDetails{})
+	if err != nil {
+		t.Fatalf("create feature data: %v", err)
+	}
+
+	dep1, err := db.DeploymentCreate(ctx, "aiven", "v2", []byte(`{"key": "ghref"}`), database.EnvironmentLabels{
+		"aiven": "true",
 	})
 	if err != nil {
 		t.Fatalf("create deployment: %v", err)
 	}
+
+	dep2, err := db.DeploymentCreate(ctx, "unleash", "v3", []byte(`{"key": "ghref"}`), database.EnvironmentLabels{
+		"tenant":  tenantName,
+		"unleash": "true",
+	})
+	if err != nil {
+		t.Fatalf("create deployment: %v", err)
+	}
+
 	deploys, err := db.DeploymentsGet(ctx)
 	if err != nil {
 		t.Fatalf("get deployment: %v", err)
 	}
+	assert.Len(t, deploys, 2)
 
-	err = r.Reconcile(ctx)
-	if err != nil {
+	if err := r.Reconcile(ctx); err != nil {
 		t.Fatalf("Reconcile failed: %v", err)
 	}
 
-	targets, err := db.DeploymentTargetsGet(ctx)
+	targets, err := db.DeploymentTargetsGet(ctx, dep1.ID)
 	if err != nil {
 		t.Fatalf("get deployment targets: %v", err)
 	}
+	assert.Len(t, targets, 3)
 
+	for _, target := range targets {
+		assert.Contains(t, envsWithAiven, target.EnvironmentID, "environment ID should be in envsWithAiven")
+	}
+
+	targets, err = db.DeploymentTargetsGet(ctx, dep2.ID)
+	if err != nil {
+		t.Fatalf("get deployment targets: %v", err)
+	}
 	assert.Len(t, targets, 1)
-	assert.Equal(t, targets[0].EnvironmentID, env.ID)
-	assert.Len(t, deploys, 1)
-	assert.Equal(t, deploys[0].ID, targets[0].DeploymentID)
+
+	for _, target := range targets {
+		assert.Contains(t, envsWithUnleash, target.EnvironmentID, "environment ID should be in envsWithUnleash")
+	}
 }
 
 func setupDb(ctx context.Context, t *testing.T, testcontainers bool) database.Repo {
@@ -129,6 +259,7 @@ func setupDb(ctx context.Context, t *testing.T, testcontainers bool) database.Re
 		})
 	} else {
 		d, c := dbtest.DockerSQLPool(ctx)
+		t.Logf("PostgreSQL DSN: %q", d)
 		dbs = d
 		db, closers, err := database.NewDB(ctx, dbs, false)
 		if err != nil {

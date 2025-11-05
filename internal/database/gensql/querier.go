@@ -49,9 +49,10 @@ type Querier interface {
 	DeployInstructionsLatestForFeature(ctx context.Context, arg DeployInstructionsLatestForFeatureParams) (DeployInstruction, error)
 	DeployInstructionsPrevious(ctx context.Context, id uuid.UUID) (DeployInstruction, error)
 	DeployInstructionsUpdateStatus(ctx context.Context, arg DeployInstructionsUpdateStatusParams) error
-	DeploymentCreate(ctx context.Context, arg DeploymentCreateParams) error
+	DeploymentCreate(ctx context.Context, arg DeploymentCreateParams) (Deployment, error)
 	DeploymentTargetsCreate(ctx context.Context, arg DeploymentTargetsCreateParams) error
-	DeploymentTargetsGet(ctx context.Context) ([]DeploymentTarget, error)
+	DeploymentTargetsGet(ctx context.Context, deploymentID uuid.UUID) ([]DeploymentTarget, error)
+	DeploymentTargetsGetAll(ctx context.Context) ([]DeploymentTarget, error)
 	DeploymentTargetsGetPending(ctx context.Context) ([]DeploymentTarget, error)
 	DeploymentTargetsUpdate(ctx context.Context, arg DeploymentTargetsUpdateParams) error
 	DeploymentsGet(ctx context.Context) ([]Deployment, error)
@@ -79,6 +80,7 @@ type Querier interface {
 	EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]Environment, error)
 	EnvironmentsGetByAutoUpgrade(ctx context.Context) ([]Environment, error)
 	EnvironmentsGetIDWithLabels(ctx context.Context) ([]EnvironmentsGetIDWithLabelsRow, error)
+	EnvironmentsTargetedByDeployment(ctx context.Context, deploymentID uuid.UUID) ([]uuid.UUID, error)
 	FeatureByName(ctx context.Context, name string) (FeatureByNameRow, error)
 	FeatureDataCreate(ctx context.Context, arg FeatureDataCreateParams) error
 	FeatureGetForEnv(ctx context.Context, environmentKind string) ([]FeatureGetForEnvRow, error)

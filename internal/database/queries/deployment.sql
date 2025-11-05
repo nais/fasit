@@ -7,11 +7,22 @@ ORDER BY
 	created ASC
 ;
 
--- name: DeploymentCreate :exec
+-- name: DeploymentCreate :one
 INSERT INTO
 	deployments (feature_name, version, target, gh_ref)
 VALUES
 	(@feature_name, @version, @target, @gh_ref)
+RETURNING
+	*
+;
+
+-- name: DeploymentTargetsGetAll :many
+SELECT
+	*
+FROM
+	deployment_targets
+ORDER BY
+	created ASC
 ;
 
 -- name: DeploymentTargetsGet :many
@@ -19,6 +30,8 @@ SELECT
 	*
 FROM
 	deployment_targets
+WHERE
+	deployment_id = @deployment_id
 ORDER BY
 	created ASC
 ;
@@ -50,4 +63,27 @@ SET
 WHERE
 	deployment_id = @deployment_id
 	AND environment_id = @environment_id
+;
+
+-- name: EnvironmentsTargetedByDeployment :many
+SELECT
+	el.environment_id
+FROM
+	deployments d
+	JOIN environment_labels el ON TRUE
+WHERE
+	d.id = @deployment_id
+	AND (d.target ->> el.key) = el.value
+GROUP BY
+	el.environment_id,
+	d.target
+HAVING
+	COUNT(*) = (
+		SELECT
+			COUNT(*)
+		FROM
+			JSONB_OBJECT_KEYS(d.target)
+	)
+ORDER BY
+	el.environment_id
 ;

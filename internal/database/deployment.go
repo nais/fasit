@@ -16,33 +16,45 @@ type (
 )
 
 type DeploymentRepo interface {
-	DeploymentCreate(ctx context.Context, featureName, featureVersion string, ghRef []byte, target EnvironmentLabels) error
-	DeploymentTargetsGet(ctx context.Context) ([]gensql.DeploymentTarget, error)
+	DeploymentCreate(ctx context.Context, featureName, featureVersion string, ghRef []byte, target EnvironmentLabels) (*gensql.Deployment, error)
+	DeploymentTargetsGetAll(ctx context.Context) ([]gensql.DeploymentTarget, error)
+	DeploymentTargetsGet(ctx context.Context, deploymentID uuid.UUID) ([]gensql.DeploymentTarget, error)
 	DeploymentTargetsGetPending(ctx context.Context) ([]gensql.DeploymentTarget, error)
 	DeploymentTargetsCreate(ctx context.Context, deploymentID, environmentID uuid.UUID) error
 	DeploymentTargetsUpdate(ctx context.Context, deploymentID, environmentID uuid.UUID, status string) error
 	DeploymentsGet(ctx context.Context) ([]gensql.Deployment, error)
+
+	EnvironmentsTargetedByDeployment(ctx context.Context, deploymentID uuid.UUID) ([]uuid.UUID, error)
 }
 
-func (r *repo) DeploymentCreate(ctx context.Context, featureName, featureVersion string, ghRef []byte, target EnvironmentLabels) error {
+func (r *repo) EnvironmentsTargetedByDeployment(ctx context.Context, deploymentID uuid.UUID) ([]uuid.UUID, error) {
+	return r.querier.EnvironmentsTargetedByDeployment(ctx, deploymentID)
+}
+
+func (r *repo) DeploymentCreate(ctx context.Context, featureName, featureVersion string, ghRef []byte, target EnvironmentLabels) (*gensql.Deployment, error) {
 	b, err := json.Marshal(target)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return r.querier.DeploymentCreate(ctx, gensql.DeploymentCreateParams{
+	ret, err := r.querier.DeploymentCreate(ctx, gensql.DeploymentCreateParams{
 		FeatureName: featureName,
 		Version:     featureVersion,
 		GhRef:       ghRef,
 		Target:      b,
 	})
+	return &ret, err
 }
 
-func (r *repo) DeploymentTargetsGet(ctx context.Context) ([]gensql.DeploymentTarget, error) {
-	return r.querier.DeploymentTargetsGet(ctx)
+func (r *repo) DeploymentTargetsGetAll(ctx context.Context) ([]gensql.DeploymentTarget, error) {
+	return r.querier.DeploymentTargetsGetAll(ctx)
+}
+
+func (r *repo) DeploymentTargetsGet(ctx context.Context, deploymentID uuid.UUID) ([]gensql.DeploymentTarget, error) {
+	return r.querier.DeploymentTargetsGet(ctx, deploymentID)
 }
 
 func (r *repo) DeploymentTargetsGetPending(ctx context.Context) ([]gensql.DeploymentTarget, error) {
-	return r.querier.DeploymentTargetsGet(ctx)
+	return r.querier.DeploymentTargetsGetPending(ctx)
 }
 
 func (r *repo) DeploymentsGet(ctx context.Context) ([]gensql.Deployment, error) {

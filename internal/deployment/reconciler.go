@@ -17,12 +17,7 @@ import (
 
 type ReconcilerStore interface {
 	database.EnvironmentRepo
-	DeploymentCreate(ctx context.Context, featureName, featureVersion string, ghRef []byte, target database.EnvironmentLabels) error
-	DeploymentTargetsGet(ctx context.Context) ([]gensql.DeploymentTarget, error)
-	DeploymentTargetsGetPending(ctx context.Context) ([]gensql.DeploymentTarget, error)
-	DeploymentTargetsCreate(ctx context.Context, deploymentID, environmentID uuid.UUID) error
-	DeploymentTargetsUpdate(ctx context.Context, deploymentID, environmentID uuid.UUID, status string) error
-	DeploymentsGet(ctx context.Context) ([]gensql.Deployment, error)
+	database.DeploymentRepo
 }
 
 type lookupMap = map[database.EnvironmentLabelKey]map[database.EnvironmentLabelValue]database.EnvironmentID
@@ -79,7 +74,7 @@ func (r *Reconciler) Run(ctx context.Context, interval time.Duration) {
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context) error {
+func (r *Reconciler) ReconcileWithLookup(ctx context.Context) error {
 	ctx = auth.SetEmail(ctx, "system:deployment_reconciler")
 
 	if shouldrun := r.lock.TryLock(); !shouldrun {
@@ -123,6 +118,41 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 			}
 		}
 	}
+	return nil
+}
+
+func (r *Reconciler) Reconcile(ctx context.Context) error {
+	ctx = auth.SetEmail(ctx, "system:deployment_reconciler")
+
+	if shouldrun := r.lock.TryLock(); !shouldrun {
+		return nil
+	}
+	defer r.lock.Unlock()
+
+	deployments, err := r.repo.DeploymentsGet(ctx)
+	if err != nil {
+		return fmt.Errorf("get deployments: %w", err)
+	}
+
+	for _, deployment := range deployments {
+		envs, err := r.repo.EnvironmentsTargetedByDeployment(ctx, deployment.ID)
+		if err != nil {
+			return fmt.Errorf("get environments targeted by deployment: %w", err)
+		}
+
+		for _, envID := range envs {
+			if err := r.createDeploymentTarget(ctx, deployment, envID); err != nil {
+				r.log.
+					WithError(err).
+					WithFields(logrus.Fields{
+						"deployment_id":  deployment.ID,
+						"environment_id": envID,
+					}).
+					Error("reconcile deployment")
+			}
+		}
+	}
+
 	return nil
 }
 
