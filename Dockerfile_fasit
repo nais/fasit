@@ -1,10 +1,9 @@
 ARG GO_VERSION=1.25
 
-FROM golang:${GO_VERSION} as builder
+FROM golang:${GO_VERSION} AS builder
 
 WORKDIR /workspace
 COPY go.* ./
-RUN go version
 RUN go mod download
 
 COPY . /workspace
