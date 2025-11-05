@@ -724,26 +724,9 @@ func TestRun_CreatedWithDelayButRunningOperations(t *testing.T) {
 	// Since there are running operations, should:
 	// 1. Skip delay logic (even though delay is configured)
 	// 2. NOT call UpgradeControlPlane (don't start a new upgrade)
-	// 3. Transition to CONTROL_PLANE_UPGRADE to track existing operations
-	suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, gensql.ClusterUpgradesStatusCONTROLPLANEUPGRADE, "1.2.4").
-		Return(&model.ClusterUpgradeStatus{
-			ID:            createdUpgrade.ID,
-			UpgradeStatus: model.UpgradeStatusControlPlaneUpgrade,
-			Version:       "1.2.4",
-			StartTime:     createdUpgrade.StartTime,
-			LastModified:  time.Now(),
-			EnvironmentID: suite.env.id,
-		}, nil).Once()
-
-	// Mock SetClusterUpgradesSlackMessage for posting new Slack message
-	suite.repoMock.EXPECT().SetClusterUpgradesSlackMessage(mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil).Maybe()
-
-	// Mock EnvironmentValueGet for slack mentions
-	suite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, suite.env.id, "slack_upgrade_mentions", false).Return(
-		&model.EnvironmentValue{
-			Key:   "slack_upgrade_mentions",
-			Value: []byte(`""`),
-		}, nil).Once()
+	// 3. Return successfully - next iteration will handle status transition
+	// NOTE: We do NOT expect UpdateClusterUpgradeStatus to be called
+	// The status will remain CREATED and transition on the next run iteration
 
 	err := upgrade.Run(context.Background())
 	if err != nil {
@@ -753,5 +736,7 @@ func TestRun_CreatedWithDelayButRunningOperations(t *testing.T) {
 	// Verify that UpdateClusterUpgradeStatus was NOT called with WAITING status
 	// even though delay is configured, because GKE already has running operations
 	suite.repoMock.AssertNotCalled(t, "UpdateClusterUpgradeStatus", mock.Anything, mock.Anything, mock.Anything, gensql.ClusterUpgradesStatusWAITING, mock.Anything)
+	// Also verify it was NOT called with CONTROL_PLANE_UPGRADE (we let next iteration handle it)
+	suite.repoMock.AssertNotCalled(t, "UpdateClusterUpgradeStatus", mock.Anything, mock.Anything, mock.Anything, gensql.ClusterUpgradesStatusCONTROLPLANEUPGRADE, mock.Anything)
 	suite.repoMock.AssertExpectations(t)
 }

@@ -23,6 +23,8 @@ WHERE
 	AND status NOT IN ('DONE', 'FAILED')
 ORDER BY
 	last_modified DESC
+FOR UPDATE
+	SKIP LOCKED
 ;
 
 -- name: ClusterUpgradesSetSlackMessage :one
@@ -41,9 +43,7 @@ UPDATE cluster_upgrades
 SET
 	"status" = @status
 WHERE
-	"tenant_id" = @tenantId
-	AND "environment_id" = @envID
-	AND "version" = @version
+	"id" = @id
 RETURNING
 	*
 ;

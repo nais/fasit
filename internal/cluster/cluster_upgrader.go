@@ -276,22 +276,16 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 
 	case model.UpgradeStatusCreated:
 		// Check if GKE has already started upgrade operations
-		// If operations are running, we should track them rather than delay or initiate new upgrade
+		// If operations are running, just return and let the next iteration handle status transition
+		// The operations are already being tracked by getAndUpdateRunningOperations above
 		if clusterHas(runningOperations) {
 			log.WithFields(logrus.Fields{
 				"upgrade_id":     clusterUpgrade.ID,
 				"target_version": clusterUpgrade.Version,
 				"running_ops":    len(runningOperations),
-			}).Info("GKE has already started upgrade operations, proceeding to track them")
-
-			// Transition to CONTROL_PLANE_UPGRADE to track the existing operations
-			// Don't call UpgradeControlPlane since GKE already started the upgrade
-			upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatusCONTROLPLANEUPGRADE, clusterUpgrade.Version)
-			if err != nil {
-				return err
-			}
-
-			c.updateSlackProgress(ctx, tenant.Name, env.Name, upgradeStatus)
+			}).Info("GKE has already started upgrade operations, will track them on next iteration")
+			// Operations are tracked, no need to do anything else this iteration
+			// The next run will transition to the appropriate state based on operation types
 			return nil
 		} else if clusterUpgrade.IsAutomatic {
 			// Only apply delay logic to automatic upgrades when no operations are running

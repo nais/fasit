@@ -123,11 +123,37 @@ func (r *repo) SetClusterUpgradesSlackMessage(ctx context.Context, id uuid.UUID,
 }
 
 func (r *repo) UpdateClusterUpgradeStatus(ctx context.Context, tenantID, envID uuid.UUID, status gensql.ClusterUpgradesStatus, version string) (*model.ClusterUpgradeStatus, error) {
-	clusterUpgrade, err := r.querier.ClusterUpgradesUpdateStatus(ctx, gensql.ClusterUpgradesUpdateStatusParams{
-		Status:   status,
+	// First, get the current upgrade to get its ID
+	// This ensures we're updating the correct upgrade even if multiple exist for the same version
+	currentUpgrades, err := r.querier.ClusterUpgradesGet(ctx, gensql.ClusterUpgradesGetParams{
 		Tenantid: tenantID,
 		Envid:    envID,
-		Version:  version,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(currentUpgrades) == 0 {
+		return nil, errors.New("no upgrade found to update")
+	}
+
+	// Find the upgrade matching the version
+	var upgradeID uuid.UUID
+	for _, upgrade := range currentUpgrades {
+		if upgrade.Version == version {
+			upgradeID = upgrade.ID
+			break
+		}
+	}
+
+	if upgradeID == uuid.Nil {
+		return nil, errors.New("no upgrade found with version " + version)
+	}
+
+	// Now update by ID to avoid constraint issues
+	clusterUpgrade, err := r.querier.ClusterUpgradesUpdateStatus(ctx, gensql.ClusterUpgradesUpdateStatusParams{
+		Status: status,
+		ID:     upgradeID,
 	})
 	if err != nil {
 		return nil, err

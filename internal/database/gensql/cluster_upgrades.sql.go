@@ -65,6 +65,8 @@ WHERE
 	AND status NOT IN ('DONE', 'FAILED')
 ORDER BY
 	last_modified DESC
+FOR UPDATE
+	SKIP LOCKED
 `
 
 type ClusterUpgradesGetParams struct {
@@ -257,27 +259,18 @@ UPDATE cluster_upgrades
 SET
 	"status" = $1
 WHERE
-	"tenant_id" = $2
-	AND "environment_id" = $3
-	AND "version" = $4
+	"id" = $2
 RETURNING
 	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id, is_automatic
 `
 
 type ClusterUpgradesUpdateStatusParams struct {
-	Status   ClusterUpgradesStatus
-	Tenantid uuid.UUID
-	Envid    uuid.UUID
-	Version  string
+	Status ClusterUpgradesStatus
+	ID     uuid.UUID
 }
 
 func (q *Queries) ClusterUpgradesUpdateStatus(ctx context.Context, arg ClusterUpgradesUpdateStatusParams) (ClusterUpgrade, error) {
-	row := q.db.QueryRow(ctx, clusterUpgradesUpdateStatus,
-		arg.Status,
-		arg.Tenantid,
-		arg.Envid,
-		arg.Version,
-	)
+	row := q.db.QueryRow(ctx, clusterUpgradesUpdateStatus, arg.Status, arg.ID)
 	var i ClusterUpgrade
 	err := row.Scan(
 		&i.ID,
