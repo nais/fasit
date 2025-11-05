@@ -196,6 +196,59 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		"last_modified":  clusterUpgrade.LastModified.Format("2006-01-02 15:04:05"),
 	})
 
+	// For WAITING upgrades, check if GKE has started operations before checking delay
+	// This handles the case where GKE's auto-upgrade starts before Fasit's delay expires
+	if clusterUpgrade.UpgradeStatus == model.UpgradeStatusWaiting {
+		runningOps, err := c.getAndUpdateRunningOperations(ctx, projectID, env, clusterUpgrade)
+		if err != nil {
+			return err
+		}
+
+		if clusterHas(runningOps) {
+			// GKE has started upgrading - override delay and track the operations
+			log.WithFields(logrus.Fields{
+				"upgrade_id":     clusterUpgrade.ID,
+				"target_version": clusterUpgrade.Version,
+				"running_ops":    len(runningOps),
+			}).Warn("GKE started upgrade before delay expired, overriding delay to track operations")
+
+			// Determine which operations are running and transition appropriately
+			hasControlPlaneOp := false
+			hasNodeOp := false
+			for _, op := range runningOps {
+				if op.Status == containerpb.Operation_RUNNING {
+					switch op.OperationType {
+					case containerpb.Operation_UPGRADE_MASTER:
+						hasControlPlaneOp = true
+					case containerpb.Operation_UPGRADE_NODES:
+						hasNodeOp = true
+					}
+				}
+			}
+
+			var targetStatus gensql.ClusterUpgradesStatus
+			if hasNodeOp {
+				targetStatus = gensql.ClusterUpgradesStatusNODEUPGRADE
+				log.Info("Transitioning to NODE_UPGRADE to track GKE-initiated upgrade")
+			} else if hasControlPlaneOp {
+				targetStatus = gensql.ClusterUpgradesStatusCONTROLPLANEUPGRADE
+				log.Info("Transitioning to CONTROL_PLANE_UPGRADE to track GKE-initiated upgrade")
+			} else {
+				log.Warn("Unknown operation type, staying in WAITING")
+				return nil
+			}
+
+			upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, targetStatus, clusterUpgrade.Version)
+			if err != nil {
+				log.WithError(err).Error("failed to transition from WAITING to track GKE-initiated upgrade")
+				return err
+			}
+
+			c.updateSlackProgress(ctx, tenant.Name, env.Name, upgradeStatus)
+			return nil
+		}
+	}
+
 	// Check if upgrade should be delayed based on configuration
 	if c.shouldDelayUpgrade(tenant, env, clusterUpgrade, log) {
 		return nil
@@ -249,17 +302,15 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 	log.WithFields(logrus.Fields{"target_version": clusterUpgrade.Version, "status": clusterUpgrade.UpgradeStatus}).Debug("cluster upgrade status")
 	switch clusterUpgrade.UpgradeStatus {
 	case model.UpgradeStatusWaiting:
-		// delay period has passed, proceed with control plane upgrade
+		// Note: Check for GKE-initiated operations is done earlier (before delay check)
+		// If we reach here, delay period has passed and no operations are running
+		// So we can proceed with starting the control plane upgrade
+
 		log.WithFields(logrus.Fields{
 			"target_version": clusterUpgrade.Version,
 			"tenant":         tenant.Name,
 			"environment":    env.Name,
 		}).Info("delay period satisfied, starting control plane upgrade")
-
-		if clusterHas(runningOperations) {
-			log.WithFields(logrus.Fields{"target_version": clusterUpgrade.Version}).Debug("has running operations, skipping...")
-			return nil
-		}
 
 		// Record upgrade started metric
 		c.upgradeStarted.Add(ctx, 1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "control_plane")...))
