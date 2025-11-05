@@ -10,6 +10,7 @@ import (
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/dbtest"
 	"github.com/nais/fasit/internal/deployment"
+	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/provider/protogen"
@@ -194,14 +195,14 @@ func TestReconcile(t *testing.T) {
 		t.Fatalf("create feature data: %v", err)
 	}
 
-	dep1, err := db.DeploymentCreate(ctx, "aiven", "v2", []byte(`{"key": "ghref"}`), database.EnvironmentLabels{
+	dep1, err := db.DeploymentCreate(ctx, "aiven", "v2", []byte(`{"key": "ghref"}`), environment.Labels{
 		"aiven": "true",
 	})
 	if err != nil {
 		t.Fatalf("create deployment: %v", err)
 	}
 
-	dep2, err := db.DeploymentCreate(ctx, "unleash", "v3", []byte(`{"key": "ghref"}`), database.EnvironmentLabels{
+	dep2, err := db.DeploymentCreate(ctx, "unleash", "v3", []byte(`{"key": "ghref"}`), environment.Labels{
 		"tenant":  tenantName,
 		"unleash": "true",
 	})

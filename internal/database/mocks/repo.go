@@ -14,6 +14,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/gensql"
+	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
@@ -2193,7 +2194,7 @@ func (_c *Repo_DeployInstructionsLatestForFeature_Call) RunAndReturn(run func(ct
 }
 
 // DeploymentCreate provides a mock function for the type Repo
-func (_mock *Repo) DeploymentCreate(ctx context.Context, featureName string, featureVersion string, ghRef []byte, target database.EnvironmentLabels) (*gensql.Deployment, error) {
+func (_mock *Repo) DeploymentCreate(ctx context.Context, featureName string, featureVersion string, ghRef []byte, target environment.Labels) (*gensql.Deployment, error) {
 	ret := _mock.Called(ctx, featureName, featureVersion, ghRef, target)
 
 	if len(ret) == 0 {
@@ -2202,17 +2203,17 @@ func (_mock *Repo) DeploymentCreate(ctx context.Context, featureName string, fea
 
 	var r0 *gensql.Deployment
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, []byte, database.EnvironmentLabels) (*gensql.Deployment, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, []byte, environment.Labels) (*gensql.Deployment, error)); ok {
 		return returnFunc(ctx, featureName, featureVersion, ghRef, target)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, []byte, database.EnvironmentLabels) *gensql.Deployment); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, []byte, environment.Labels) *gensql.Deployment); ok {
 		r0 = returnFunc(ctx, featureName, featureVersion, ghRef, target)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*gensql.Deployment)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string, string, []byte, database.EnvironmentLabels) error); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string, string, []byte, environment.Labels) error); ok {
 		r1 = returnFunc(ctx, featureName, featureVersion, ghRef, target)
 	} else {
 		r1 = ret.Error(1)
@@ -2230,12 +2231,12 @@ type Repo_DeploymentCreate_Call struct {
 //   - featureName string
 //   - featureVersion string
 //   - ghRef []byte
-//   - target database.EnvironmentLabels
+//   - target environment.Labels
 func (_e *Repo_Expecter) DeploymentCreate(ctx interface{}, featureName interface{}, featureVersion interface{}, ghRef interface{}, target interface{}) *Repo_DeploymentCreate_Call {
 	return &Repo_DeploymentCreate_Call{Call: _e.mock.On("DeploymentCreate", ctx, featureName, featureVersion, ghRef, target)}
 }
 
-func (_c *Repo_DeploymentCreate_Call) Run(run func(ctx context.Context, featureName string, featureVersion string, ghRef []byte, target database.EnvironmentLabels)) *Repo_DeploymentCreate_Call {
+func (_c *Repo_DeploymentCreate_Call) Run(run func(ctx context.Context, featureName string, featureVersion string, ghRef []byte, target environment.Labels)) *Repo_DeploymentCreate_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -2253,9 +2254,9 @@ func (_c *Repo_DeploymentCreate_Call) Run(run func(ctx context.Context, featureN
 		if args[3] != nil {
 			arg3 = args[3].([]byte)
 		}
-		var arg4 database.EnvironmentLabels
+		var arg4 environment.Labels
 		if args[4] != nil {
-			arg4 = args[4].(database.EnvironmentLabels)
+			arg4 = args[4].(environment.Labels)
 		}
 		run(
 			arg0,
@@ -2273,7 +2274,7 @@ func (_c *Repo_DeploymentCreate_Call) Return(deployment *gensql.Deployment, err 
 	return _c
 }
 
-func (_c *Repo_DeploymentCreate_Call) RunAndReturn(run func(ctx context.Context, featureName string, featureVersion string, ghRef []byte, target database.EnvironmentLabels) (*gensql.Deployment, error)) *Repo_DeploymentCreate_Call {
+func (_c *Repo_DeploymentCreate_Call) RunAndReturn(run func(ctx context.Context, featureName string, featureVersion string, ghRef []byte, target environment.Labels) (*gensql.Deployment, error)) *Repo_DeploymentCreate_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -2802,8 +2803,8 @@ func (_c *Repo_EnvironmentByNames_Call) Run(run func(ctx context.Context, tenant
 	return _c
 }
 
-func (_c *Repo_EnvironmentByNames_Call) Return(environment *model.Environment, err error) *Repo_EnvironmentByNames_Call {
-	_c.Call.Return(environment, err)
+func (_c *Repo_EnvironmentByNames_Call) Return(environment1 *model.Environment, err error) *Repo_EnvironmentByNames_Call {
+	_c.Call.Return(environment1, err)
 	return _c
 }
 
@@ -2870,8 +2871,8 @@ func (_c *Repo_EnvironmentCI_Call) Run(run func(ctx context.Context, kind model.
 	return _c
 }
 
-func (_c *Repo_EnvironmentCI_Call) Return(environment *model.Environment, err error) *Repo_EnvironmentCI_Call {
-	_c.Call.Return(environment, err)
+func (_c *Repo_EnvironmentCI_Call) Return(environment1 *model.Environment, err error) *Repo_EnvironmentCI_Call {
+	_c.Call.Return(environment1, err)
 	return _c
 }
 
@@ -2938,8 +2939,8 @@ func (_c *Repo_EnvironmentCreate_Call) Run(run func(ctx context.Context, t *mode
 	return _c
 }
 
-func (_c *Repo_EnvironmentCreate_Call) Return(environment *model.Environment, err error) *Repo_EnvironmentCreate_Call {
-	_c.Call.Return(environment, err)
+func (_c *Repo_EnvironmentCreate_Call) Return(environment1 *model.Environment, err error) *Repo_EnvironmentCreate_Call {
+	_c.Call.Return(environment1, err)
 	return _c
 }
 
@@ -3006,8 +3007,8 @@ func (_c *Repo_EnvironmentGet_Call) Run(run func(ctx context.Context, id uuid.UU
 	return _c
 }
 
-func (_c *Repo_EnvironmentGet_Call) Return(environment *model.Environment, err error) *Repo_EnvironmentGet_Call {
-	_c.Call.Return(environment, err)
+func (_c *Repo_EnvironmentGet_Call) Return(environment1 *model.Environment, err error) *Repo_EnvironmentGet_Call {
+	_c.Call.Return(environment1, err)
 	return _c
 }
 
@@ -3080,8 +3081,8 @@ func (_c *Repo_EnvironmentGetByName_Call) Run(run func(ctx context.Context, tena
 	return _c
 }
 
-func (_c *Repo_EnvironmentGetByName_Call) Return(environment *model.Environment, err error) *Repo_EnvironmentGetByName_Call {
-	_c.Call.Return(environment, err)
+func (_c *Repo_EnvironmentGetByName_Call) Return(environment1 *model.Environment, err error) *Repo_EnvironmentGetByName_Call {
+	_c.Call.Return(environment1, err)
 	return _c
 }
 
@@ -3364,8 +3365,8 @@ func (_c *Repo_EnvironmentSetAutoUpgrade_Call) Run(run func(ctx context.Context,
 	return _c
 }
 
-func (_c *Repo_EnvironmentSetAutoUpgrade_Call) Return(environment *model.Environment, err error) *Repo_EnvironmentSetAutoUpgrade_Call {
-	_c.Call.Return(environment, err)
+func (_c *Repo_EnvironmentSetAutoUpgrade_Call) Return(environment1 *model.Environment, err error) *Repo_EnvironmentSetAutoUpgrade_Call {
+	_c.Call.Return(environment1, err)
 	return _c
 }
 
@@ -3501,8 +3502,8 @@ func (_c *Repo_EnvironmentSetMaintenanceWindow_Call) Run(run func(ctx context.Co
 	return _c
 }
 
-func (_c *Repo_EnvironmentSetMaintenanceWindow_Call) Return(environment *model.Environment, err error) *Repo_EnvironmentSetMaintenanceWindow_Call {
-	_c.Call.Return(environment, err)
+func (_c *Repo_EnvironmentSetMaintenanceWindow_Call) Return(environment1 *model.Environment, err error) *Repo_EnvironmentSetMaintenanceWindow_Call {
+	_c.Call.Return(environment1, err)
 	return _c
 }
 
@@ -3575,8 +3576,8 @@ func (_c *Repo_EnvironmentSetReconcile_Call) Run(run func(ctx context.Context, e
 	return _c
 }
 
-func (_c *Repo_EnvironmentSetReconcile_Call) Return(environment *model.Environment, err error) *Repo_EnvironmentSetReconcile_Call {
-	_c.Call.Return(environment, err)
+func (_c *Repo_EnvironmentSetReconcile_Call) Return(environment1 *model.Environment, err error) *Repo_EnvironmentSetReconcile_Call {
+	_c.Call.Return(environment1, err)
 	return _c
 }
 
@@ -3649,8 +3650,8 @@ func (_c *Repo_EnvironmentSetUpgradeDelayDays_Call) Run(run func(ctx context.Con
 	return _c
 }
 
-func (_c *Repo_EnvironmentSetUpgradeDelayDays_Call) Return(environment *model.Environment, err error) *Repo_EnvironmentSetUpgradeDelayDays_Call {
-	_c.Call.Return(environment, err)
+func (_c *Repo_EnvironmentSetUpgradeDelayDays_Call) Return(environment1 *model.Environment, err error) *Repo_EnvironmentSetUpgradeDelayDays_Call {
+	_c.Call.Return(environment1, err)
 	return _c
 }
 
@@ -3723,8 +3724,8 @@ func (_c *Repo_EnvironmentUpdate_Call) Run(run func(ctx context.Context, environ
 	return _c
 }
 
-func (_c *Repo_EnvironmentUpdate_Call) Return(environment *model.Environment, err error) *Repo_EnvironmentUpdate_Call {
-	_c.Call.Return(environment, err)
+func (_c *Repo_EnvironmentUpdate_Call) Return(environment1 *model.Environment, err error) *Repo_EnvironmentUpdate_Call {
+	_c.Call.Return(environment1, err)
 	return _c
 }
 
@@ -4219,68 +4220,6 @@ func (_c *Repo_EnvironmentsGetByAutoUpgrade_Call) Return(environments []*model.E
 }
 
 func (_c *Repo_EnvironmentsGetByAutoUpgrade_Call) RunAndReturn(run func(ctx context.Context) ([]*model.Environment, error)) *Repo_EnvironmentsGetByAutoUpgrade_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// EnvironmentsGetIDWithLabels provides a mock function for the type Repo
-func (_mock *Repo) EnvironmentsGetIDWithLabels(ctx context.Context) ([]gensql.EnvironmentsGetIDWithLabelsRow, error) {
-	ret := _mock.Called(ctx)
-
-	if len(ret) == 0 {
-		panic("no return value specified for EnvironmentsGetIDWithLabels")
-	}
-
-	var r0 []gensql.EnvironmentsGetIDWithLabelsRow
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context) ([]gensql.EnvironmentsGetIDWithLabelsRow, error)); ok {
-		return returnFunc(ctx)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context) []gensql.EnvironmentsGetIDWithLabelsRow); ok {
-		r0 = returnFunc(ctx)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]gensql.EnvironmentsGetIDWithLabelsRow)
-		}
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = returnFunc(ctx)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Repo_EnvironmentsGetIDWithLabels_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'EnvironmentsGetIDWithLabels'
-type Repo_EnvironmentsGetIDWithLabels_Call struct {
-	*mock.Call
-}
-
-// EnvironmentsGetIDWithLabels is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *Repo_Expecter) EnvironmentsGetIDWithLabels(ctx interface{}) *Repo_EnvironmentsGetIDWithLabels_Call {
-	return &Repo_EnvironmentsGetIDWithLabels_Call{Call: _e.mock.On("EnvironmentsGetIDWithLabels", ctx)}
-}
-
-func (_c *Repo_EnvironmentsGetIDWithLabels_Call) Run(run func(ctx context.Context)) *Repo_EnvironmentsGetIDWithLabels_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		run(
-			arg0,
-		)
-	})
-	return _c
-}
-
-func (_c *Repo_EnvironmentsGetIDWithLabels_Call) Return(environmentsGetIDWithLabelsRows []gensql.EnvironmentsGetIDWithLabelsRow, err error) *Repo_EnvironmentsGetIDWithLabels_Call {
-	_c.Call.Return(environmentsGetIDWithLabelsRows, err)
-	return _c
-}
-
-func (_c *Repo_EnvironmentsGetIDWithLabels_Call) RunAndReturn(run func(ctx context.Context) ([]gensql.EnvironmentsGetIDWithLabelsRow, error)) *Repo_EnvironmentsGetIDWithLabels_Call {
 	_c.Call.Return(run)
 	return _c
 }

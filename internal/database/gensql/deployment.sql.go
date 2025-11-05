@@ -7,6 +7,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/nais/fasit/internal/environment"
 )
 
 const deploymentCreate = `-- name: DeploymentCreate :one
@@ -21,7 +22,7 @@ RETURNING
 type DeploymentCreateParams struct {
 	FeatureName string
 	Version     string
-	Target      []byte
+	Target      environment.Labels
 	GhRef       []byte
 }
 
@@ -236,25 +237,15 @@ func (q *Queries) DeploymentsGet(ctx context.Context) ([]Deployment, error) {
 
 const environmentsTargetedByDeployment = `-- name: EnvironmentsTargetedByDeployment :many
 SELECT
-	el.environment_id
+	e.id
 FROM
-	deployments d
-	JOIN environment_labels el ON TRUE
+	deployments d,
+	environments e
 WHERE
 	d.id = $1
-	AND (d.target ->> el.key) = el.value
-GROUP BY
-	el.environment_id,
-	d.target
-HAVING
-	COUNT(*) = (
-		SELECT
-			COUNT(*)
-		FROM
-			JSONB_OBJECT_KEYS(d.target)
-	)
+	AND e.labels @> d.target -- @> operator checks if the JSONB on the left contains the JSONB on the right
 ORDER BY
-	el.environment_id
+	e.id
 `
 
 func (q *Queries) EnvironmentsTargetedByDeployment(ctx context.Context, deploymentID uuid.UUID) ([]uuid.UUID, error) {
@@ -265,11 +256,11 @@ func (q *Queries) EnvironmentsTargetedByDeployment(ctx context.Context, deployme
 	defer rows.Close()
 	items := []uuid.UUID{}
 	for rows.Next() {
-		var environment_id uuid.UUID
-		if err := rows.Scan(&environment_id); err != nil {
+		var id uuid.UUID
+		if err := rows.Scan(&id); err != nil {
 			return nil, err
 		}
-		items = append(items, environment_id)
+		items = append(items, id)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

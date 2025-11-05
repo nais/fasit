@@ -67,23 +67,13 @@ WHERE
 
 -- name: EnvironmentsTargetedByDeployment :many
 SELECT
-	el.environment_id
+	e.id
 FROM
-	deployments d
-	JOIN environment_labels el ON TRUE
+	deployments d,
+	environments e
 WHERE
 	d.id = @deployment_id
-	AND (d.target ->> el.key) = el.value
-GROUP BY
-	el.environment_id,
-	d.target
-HAVING
-	COUNT(*) = (
-		SELECT
-			COUNT(*)
-		FROM
-			JSONB_OBJECT_KEYS(d.target)
-	)
+	AND e.labels @> d.target -- @> operator checks if the JSONB on the left contains the JSONB on the right
 ORDER BY
-	el.environment_id
+	e.id
 ;

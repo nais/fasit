@@ -2,21 +2,14 @@ package database
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/database/gensql"
-)
-
-type (
-	EnvironmentLabels     = map[EnvironmentLabelKey]EnvironmentLabelValue
-	EnvironmentID         = uuid.UUID
-	EnvironmentLabelKey   = string
-	EnvironmentLabelValue = string
+	"github.com/nais/fasit/internal/environment"
 )
 
 type DeploymentRepo interface {
-	DeploymentCreate(ctx context.Context, featureName, featureVersion string, ghRef []byte, target EnvironmentLabels) (*gensql.Deployment, error)
+	DeploymentCreate(ctx context.Context, featureName, featureVersion string, ghRef []byte, target environment.Labels) (*gensql.Deployment, error)
 	DeploymentTargetsGetAll(ctx context.Context) ([]gensql.DeploymentTarget, error)
 	DeploymentTargetsGet(ctx context.Context, deploymentID uuid.UUID) ([]gensql.DeploymentTarget, error)
 	DeploymentTargetsGetPending(ctx context.Context) ([]gensql.DeploymentTarget, error)
@@ -31,16 +24,12 @@ func (r *repo) EnvironmentsTargetedByDeployment(ctx context.Context, deploymentI
 	return r.querier.EnvironmentsTargetedByDeployment(ctx, deploymentID)
 }
 
-func (r *repo) DeploymentCreate(ctx context.Context, featureName, featureVersion string, ghRef []byte, target EnvironmentLabels) (*gensql.Deployment, error) {
-	b, err := json.Marshal(target)
-	if err != nil {
-		return nil, err
-	}
+func (r *repo) DeploymentCreate(ctx context.Context, featureName, featureVersion string, ghRef []byte, target environment.Labels) (*gensql.Deployment, error) {
 	ret, err := r.querier.DeploymentCreate(ctx, gensql.DeploymentCreateParams{
 		FeatureName: featureName,
 		Version:     featureVersion,
 		GhRef:       ghRef,
-		Target:      b,
+		Target:      target,
 	})
 	return &ret, err
 }

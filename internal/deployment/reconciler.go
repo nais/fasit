@@ -2,7 +2,6 @@ package deployment
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
@@ -20,7 +19,7 @@ type ReconcilerStore interface {
 	database.DeploymentRepo
 }
 
-type lookupMap = map[database.EnvironmentLabelKey]map[database.EnvironmentLabelValue]database.EnvironmentID
+type labelMap = map[string]string
 
 type Publisher interface{}
 
@@ -72,53 +71,6 @@ func (r *Reconciler) Run(ctx context.Context, interval time.Duration) {
 		case <-ticker.C:
 		}
 	}
-}
-
-func (r *Reconciler) ReconcileWithLookup(ctx context.Context) error {
-	ctx = auth.SetEmail(ctx, "system:deployment_reconciler")
-
-	if shouldrun := r.lock.TryLock(); !shouldrun {
-		return nil
-	}
-	defer r.lock.Unlock()
-
-	deployments, err := r.repo.DeploymentsGet(ctx)
-	if err != nil {
-		return fmt.Errorf("get deployments: %w", err)
-	}
-
-	envs, err := r.repo.EnvironmentsGetIDWithLabels(ctx)
-	if err != nil {
-		return fmt.Errorf("get environments: %w", err)
-	}
-
-	lookup := lookupMap{}
-	for _, env := range envs {
-		if _, exists := lookup[env.Key]; !exists {
-			lookup[env.Key] = map[database.EnvironmentLabelValue]database.EnvironmentID{}
-		}
-		lookup[env.Key][env.Value] = env.ID
-	}
-
-	for _, d := range deployments {
-		var target map[string]string
-		err = json.Unmarshal(d.Target, &target)
-		if err != nil {
-			r.log.WithError(err).Error("unmarshal target")
-		}
-
-		for k, v := range target {
-			id, ok := lookup[k][v]
-			if !ok {
-				continue
-			}
-			err = r.createDeploymentTarget(ctx, d, id)
-			if err != nil {
-				r.log.WithError(err).WithField("deployment_id", d.ID).WithField("environment_id", id).Error("reconcile deployment")
-			}
-		}
-	}
-	return nil
 }
 
 func (r *Reconciler) Reconcile(ctx context.Context) error {

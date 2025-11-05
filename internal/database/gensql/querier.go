@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/nais/fasit/internal/environment"
 )
 
 type Querier interface {
@@ -61,13 +62,12 @@ type Querier interface {
 	EnvironmentByNames(ctx context.Context, arg EnvironmentByNamesParams) (Environment, error)
 	EnvironmentCI(ctx context.Context, kind EnvironmentKind) (Environment, error)
 	EnvironmentCreate(ctx context.Context, arg EnvironmentCreateParams) (Environment, error)
-	EnvironmentDeleteLabels(ctx context.Context, environmentID uuid.UUID) error
 	EnvironmentGet(ctx context.Context, id uuid.UUID) (Environment, error)
 	EnvironmentGetByName(ctx context.Context, arg EnvironmentGetByNameParams) (Environment, error)
-	EnvironmentGetLabels(ctx context.Context, environmentID uuid.UUID) ([]EnvironmentLabel, error)
+	EnvironmentGetLabels(ctx context.Context, id uuid.UUID) (environment.Labels, error)
 	EnvironmentIDByNames(ctx context.Context, arg EnvironmentIDByNamesParams) (uuid.UUID, error)
-	EnvironmentInsertLabels(ctx context.Context, arg []EnvironmentInsertLabelsParams) *EnvironmentInsertLabelsBatchResults
 	EnvironmentSetAutoUpgrade(ctx context.Context, arg EnvironmentSetAutoUpgradeParams) (Environment, error)
+	EnvironmentSetLabels(ctx context.Context, arg EnvironmentSetLabelsParams) error
 	EnvironmentSetMaintenanceWindow(ctx context.Context, arg EnvironmentSetMaintenanceWindowParams) (Environment, error)
 	EnvironmentSetReconcile(ctx context.Context, arg EnvironmentSetReconcileParams) (Environment, error)
 	EnvironmentSetUpgradeDelayDays(ctx context.Context, arg EnvironmentSetUpgradeDelayDaysParams) (Environment, error)
@@ -79,7 +79,6 @@ type Querier interface {
 	EnvironmentValuesForEnvironment(ctx context.Context, arg EnvironmentValuesForEnvironmentParams) ([]EnvironmentValuesForEnvironmentRow, error)
 	EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]Environment, error)
 	EnvironmentsGetByAutoUpgrade(ctx context.Context) ([]Environment, error)
-	EnvironmentsGetIDWithLabels(ctx context.Context) ([]EnvironmentsGetIDWithLabelsRow, error)
 	EnvironmentsTargetedByDeployment(ctx context.Context, deploymentID uuid.UUID) ([]uuid.UUID, error)
 	FeatureByName(ctx context.Context, name string) (FeatureByNameRow, error)
 	FeatureDataCreate(ctx context.Context, arg FeatureDataCreateParams) error

@@ -45,18 +45,6 @@ LIMIT
 	1
 ;
 
--- name: EnvironmentsGetIDWithLabels :many
-SELECT
-	e.id,
-	el.key,
-	el.value
-FROM
-	environments e
-	JOIN environment_labels el ON e.id = el.environment_id
-ORDER BY
-	e.id ASC
-;
-
 -- name: EnvironmentIDByNames :one
 SELECT
 	e.id
@@ -152,4 +140,21 @@ ORDER BY
 		ELSE 2
 	END,
 	name ASC
+;
+
+-- name: EnvironmentSetLabels :exec
+UPDATE environments
+SET
+	labels = @labels
+WHERE
+	id = @id
+;
+
+-- name: EnvironmentGetLabels :one
+SELECT
+	labels
+FROM
+	environments
+WHERE
+	id = @id
 ;
