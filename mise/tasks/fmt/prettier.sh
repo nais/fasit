@@ -2,5 +2,5 @@
 #MISE description="Format code using prettier"
 set -euo pipefail
 
-npm install
+npm ci
 npx prettier --write .
