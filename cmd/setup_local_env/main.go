@@ -11,6 +11,7 @@ import (
 
 	"cloud.google.com/go/pubsub/v2"
 	"cloud.google.com/go/pubsub/v2/apiv1/pubsubpb"
+	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/gensql"
 	"github.com/nais/fasit/internal/environment"
@@ -21,24 +22,93 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+type (
+	tenant          = string
+	environmentName = string
+	envSpec         struct {
+		kind   protogen.EnvironmentKind
+		labels environment.Labels
+	}
+)
+
 var (
 	naisProjectID      = "nais-local-dev"
 	statusSubscription = "fasit-subscription"
 	statusTopic        = "status"
 
-	envs = map[string]map[string]protogen.EnvironmentKind{
-		"test-partner": {"dev": protogen.EnvironmentKind_TENANT, "management": protogen.EnvironmentKind_MANAGEMENT},
-		"nav": {
-			"management": protogen.EnvironmentKind_MANAGEMENT,
-			"dev":        protogen.EnvironmentKind_TENANT,
-			"prod":       protogen.EnvironmentKind_TENANT,
-			"dev-fss":    protogen.EnvironmentKind_ONPREM,
-			"prod-fss":   protogen.EnvironmentKind_ONPREM,
-			"dev-gcp":    protogen.EnvironmentKind_LEGACY,
-			"prod-gcp":   protogen.EnvironmentKind_LEGACY,
+	envs = map[tenant]map[environmentName]envSpec{
+		"test-partner": {
+			"dev": envSpec{
+				kind:   protogen.EnvironmentKind_TENANT,
+				labels: environment.Labels{},
+			},
+			"management": envSpec{
+				kind:   protogen.EnvironmentKind_MANAGEMENT,
+				labels: environment.Labels{},
+			},
 		},
-		"ssb":      {"dev": protogen.EnvironmentKind_TENANT, "management": protogen.EnvironmentKind_MANAGEMENT},
-		"dev-nais": {"dev": protogen.EnvironmentKind_TENANT, "management": protogen.EnvironmentKind_MANAGEMENT},
+		"nav": {
+			"management": envSpec{
+				kind:   protogen.EnvironmentKind_MANAGEMENT,
+				labels: environment.Labels{},
+			},
+			"dev": envSpec{
+				kind: protogen.EnvironmentKind_TENANT,
+				labels: environment.Labels{
+					"aiven": "enabled",
+				},
+			},
+			"prod": envSpec{
+				kind: protogen.EnvironmentKind_TENANT,
+				labels: environment.Labels{
+					"aiven": "enabled",
+				},
+			},
+			"dev-fss": envSpec{
+				kind: protogen.EnvironmentKind_ONPREM,
+				labels: environment.Labels{
+					"aiven": "enabled",
+				},
+			},
+			"prod-fss": envSpec{
+				kind: protogen.EnvironmentKind_ONPREM,
+				labels: environment.Labels{
+					"aiven": "enabled",
+				},
+			},
+			"dev-gcp": envSpec{
+				kind: protogen.EnvironmentKind_LEGACY,
+				labels: environment.Labels{
+					"aiven": "enabled",
+				},
+			},
+			"prod-gcp": envSpec{
+				kind: protogen.EnvironmentKind_LEGACY,
+				labels: environment.Labels{
+					"aiven": "enabled",
+				},
+			},
+		},
+		"ssb": {
+			"dev": envSpec{
+				kind:   protogen.EnvironmentKind_TENANT,
+				labels: environment.Labels{},
+			},
+			"management": envSpec{
+				kind:   protogen.EnvironmentKind_MANAGEMENT,
+				labels: environment.Labels{},
+			},
+		},
+		"dev-nais": {
+			"dev": envSpec{
+				kind:   protogen.EnvironmentKind_TENANT,
+				labels: environment.Labels{},
+			},
+			"management": envSpec{
+				kind:   protogen.EnvironmentKind_MANAGEMENT,
+				labels: environment.Labels{},
+			},
+		},
 	}
 
 	deployments = []*gensql.DeploymentCreateParams{
@@ -49,7 +119,18 @@ var (
 		{FeatureName: "naiserator", Version: "1.0.0", Target: environment.Labels{"aiven": "enabled"}},
 		{FeatureName: "unleash", Version: "1.0.0", Target: environment.Labels{"featuretoggle": "enabled"}},
 		{FeatureName: "unleash", Version: "2.0.0", Target: environment.Labels{"featuretoggle": "enabled"}},
-		{FeatureName: "v13s", Version: "1.0.0", Target: environment.Labels{"security": "matters"}},
+		{FeatureName: "v13s", Version: "1.0.0", Target: environment.Labels{"kind": "management"}},
+	}
+
+	featureStates = map[tenant]map[environmentName][]*gensql.FeatureStateCreateOrUpdateParams{
+		"nav": {
+			"dev": {
+				{
+					Feature: "aivenator",
+					Enabled: false,
+				},
+			},
+		},
 	}
 )
 
@@ -65,14 +146,14 @@ func main() {
 	}
 	defer cancel.Close()
 
-	db := database.New(dbConn, logrus.New().WithField("component", "setup-local"))
-
 	conn, err := grpc.NewClient("localhost:4444", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
 	grpcClient := protogen.NewProviderClient(conn)
+
+	db := database.New(dbConn, logrus.New().WithField("component", "setup-local"))
 	for _, d := range deployments {
 		_ = db.FeatureDataCreate(ctx, model.Feature{
 			Name:    d.FeatureName,
@@ -95,19 +176,24 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		for env, kind := range environments {
+		for env, spec := range environments {
+			lbls := spec.labels
+			lbls["kind"] = strings.ToLower(spec.kind.String())
+			lbls["environment"] = env
+			lbls["tenant"] = tenantName
+
 			_, err := grpcClient.CreateEnvironment(ctx, &protogen.CreateEnvironmentRequest{
 				TenantId: tenant.Id,
 				Name:     env,
-				Kind:     kind,
-				Labels: []*protogen.EnvironmentLabel{
-					{
-						Key:   "foo",
-						Value: "bar",
-					},
-				},
-			},
-			)
+				Kind:     spec.kind,
+				Labels: func(lbls environment.Labels) []*protogen.EnvironmentLabel {
+					out := make([]*protogen.EnvironmentLabel, 0)
+					for k, v := range lbls {
+						out = append(out, &protogen.EnvironmentLabel{Key: k, Value: v})
+					}
+					return out
+				}(lbls),
+			})
 			if err != nil {
 				if !strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
 					log.Fatal(err)
@@ -117,6 +203,13 @@ func main() {
 			environment, err := grpcClient.GetEnvironment(ctx, &protogen.GetEnvironmentRequest{TenantId: tenant.Id, Name: env})
 			if err != nil {
 				log.Fatal(err)
+			}
+
+			for _, fs := range featureStates[tenantName][environment.Name] {
+				_, err = db.FeatureStatesCreateOrUpdate(ctx, uuid.MustParse(environment.Id), &model.Feature{Name: fs.Feature}, fs.Enabled)
+				if err != nil {
+					log.Fatal(err)
+				}
 			}
 
 			_, err = grpcClient.CreateOrUpdateEnvironmentValue(ctx, &protogen.CreateOrUpdateEnvironmentValueRequest{
