@@ -5,11 +5,9 @@ structname: "{{ .InterfaceName }}"
 template: testify
 packages:
   github.com/nais/fasit/internal/database:
-    config:
-      all: true
-      dir: internal/database/mocks
+    interfaces:
+      Repo:
+      Querier:
   github.com/nais/fasit/internal/cluster:
     interfaces:
       ClusterManager:
-        config:
-          dir: internal/cluster/mocks
