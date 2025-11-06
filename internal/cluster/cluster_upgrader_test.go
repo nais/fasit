@@ -12,6 +12,7 @@ import (
 	"cloud.google.com/go/container/apiv1/containerpb"
 
 	"github.com/google/uuid"
+	"github.com/googleapis/gax-go/v2/apierror"
 	clustermock "github.com/nais/fasit/internal/cluster/mocks"
 	"github.com/nais/fasit/internal/database/mocks"
 	"github.com/nais/fasit/internal/graph/model"
@@ -19,11 +20,19 @@ import (
 	"github.com/stretchr/testify/mock"
 	metricsdk "go.opentelemetry.io/otel/sdk/metric"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // Helper function to create bool pointer
 func boolPtr(b bool) *bool {
 	return &b
+}
+
+// Helper function to create APIError from gRPC status
+func createAPIError(code codes.Code, msg string) error {
+	grpcErr := status.Error(code, msg)
+	apiErr, _ := apierror.FromError(grpcErr)
+	return apiErr
 }
 
 type env struct {
