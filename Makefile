@@ -120,7 +120,7 @@ tester_spec:
 	go run ./cmd/tester_spec
 
 prettier:
-	npm install
+	npm ci
 	npx prettier --write .
 
 fmt: prettier install-lua-formatter
