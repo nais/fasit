@@ -7046,8 +7046,8 @@ func (_c *Repo_TxFunc_Call) RunAndReturn(run func(ctx context.Context, fn databa
 }
 
 // UpdateClusterUpgradeStatus provides a mock function for the type Repo
-func (_mock *Repo) UpdateClusterUpgradeStatus(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID, status gensql.ClusterUpgradesStatus, version string) (*model.ClusterUpgradeStatus, error) {
-	ret := _mock.Called(ctx, tenantID, envID, status, version)
+func (_mock *Repo) UpdateClusterUpgradeStatus(ctx context.Context, upgradeID uuid.UUID, status gensql.ClusterUpgradesStatus) (*model.ClusterUpgradeStatus, error) {
+	ret := _mock.Called(ctx, upgradeID, status)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdateClusterUpgradeStatus")
@@ -7055,18 +7055,18 @@ func (_mock *Repo) UpdateClusterUpgradeStatus(ctx context.Context, tenantID uuid
 
 	var r0 *model.ClusterUpgradeStatus
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID, gensql.ClusterUpgradesStatus, string) (*model.ClusterUpgradeStatus, error)); ok {
-		return returnFunc(ctx, tenantID, envID, status, version)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, gensql.ClusterUpgradesStatus) (*model.ClusterUpgradeStatus, error)); ok {
+		return returnFunc(ctx, upgradeID, status)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID, gensql.ClusterUpgradesStatus, string) *model.ClusterUpgradeStatus); ok {
-		r0 = returnFunc(ctx, tenantID, envID, status, version)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, gensql.ClusterUpgradesStatus) *model.ClusterUpgradeStatus); ok {
+		r0 = returnFunc(ctx, upgradeID, status)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.ClusterUpgradeStatus)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, uuid.UUID, gensql.ClusterUpgradesStatus, string) error); ok {
-		r1 = returnFunc(ctx, tenantID, envID, status, version)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, gensql.ClusterUpgradesStatus) error); ok {
+		r1 = returnFunc(ctx, upgradeID, status)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -7080,15 +7080,13 @@ type Repo_UpdateClusterUpgradeStatus_Call struct {
 
 // UpdateClusterUpgradeStatus is a helper method to define mock.On call
 //   - ctx context.Context
-//   - tenantID uuid.UUID
-//   - envID uuid.UUID
+//   - upgradeID uuid.UUID
 //   - status gensql.ClusterUpgradesStatus
-//   - version string
-func (_e *Repo_Expecter) UpdateClusterUpgradeStatus(ctx interface{}, tenantID interface{}, envID interface{}, status interface{}, version interface{}) *Repo_UpdateClusterUpgradeStatus_Call {
-	return &Repo_UpdateClusterUpgradeStatus_Call{Call: _e.mock.On("UpdateClusterUpgradeStatus", ctx, tenantID, envID, status, version)}
+func (_e *Repo_Expecter) UpdateClusterUpgradeStatus(ctx interface{}, upgradeID interface{}, status interface{}) *Repo_UpdateClusterUpgradeStatus_Call {
+	return &Repo_UpdateClusterUpgradeStatus_Call{Call: _e.mock.On("UpdateClusterUpgradeStatus", ctx, upgradeID, status)}
 }
 
-func (_c *Repo_UpdateClusterUpgradeStatus_Call) Run(run func(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID, status gensql.ClusterUpgradesStatus, version string)) *Repo_UpdateClusterUpgradeStatus_Call {
+func (_c *Repo_UpdateClusterUpgradeStatus_Call) Run(run func(ctx context.Context, upgradeID uuid.UUID, status gensql.ClusterUpgradesStatus)) *Repo_UpdateClusterUpgradeStatus_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -7098,24 +7096,14 @@ func (_c *Repo_UpdateClusterUpgradeStatus_Call) Run(run func(ctx context.Context
 		if args[1] != nil {
 			arg1 = args[1].(uuid.UUID)
 		}
-		var arg2 uuid.UUID
+		var arg2 gensql.ClusterUpgradesStatus
 		if args[2] != nil {
-			arg2 = args[2].(uuid.UUID)
-		}
-		var arg3 gensql.ClusterUpgradesStatus
-		if args[3] != nil {
-			arg3 = args[3].(gensql.ClusterUpgradesStatus)
-		}
-		var arg4 string
-		if args[4] != nil {
-			arg4 = args[4].(string)
+			arg2 = args[2].(gensql.ClusterUpgradesStatus)
 		}
 		run(
 			arg0,
 			arg1,
 			arg2,
-			arg3,
-			arg4,
 		)
 	})
 	return _c
@@ -7126,7 +7114,7 @@ func (_c *Repo_UpdateClusterUpgradeStatus_Call) Return(clusterUpgradeStatus *mod
 	return _c
 }
 
-func (_c *Repo_UpdateClusterUpgradeStatus_Call) RunAndReturn(run func(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID, status gensql.ClusterUpgradesStatus, version string) (*model.ClusterUpgradeStatus, error)) *Repo_UpdateClusterUpgradeStatus_Call {
+func (_c *Repo_UpdateClusterUpgradeStatus_Call) RunAndReturn(run func(ctx context.Context, upgradeID uuid.UUID, status gensql.ClusterUpgradesStatus) (*model.ClusterUpgradeStatus, error)) *Repo_UpdateClusterUpgradeStatus_Call {
 	_c.Call.Return(run)
 	return _c
 }

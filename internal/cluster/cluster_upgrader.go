@@ -238,7 +238,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 				return nil
 			}
 
-			upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, targetStatus, clusterUpgrade.Version)
+			upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, clusterUpgrade.ID, targetStatus)
 			if err != nil {
 				log.WithError(err).Error("failed to transition from WAITING to track GKE-initiated upgrade")
 				return err
@@ -268,7 +268,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		// Record stuck upgrade metric
 		c.upgradeStuck.Add(ctx, 1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, string(clusterUpgrade.UpgradeStatus))...))
 
-		_, err = c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatusFAILED, clusterUpgrade.Version)
+		_, err = c.repo.UpdateClusterUpgradeStatus(ctx, clusterUpgrade.ID, gensql.ClusterUpgradesStatusFAILED)
 		if err != nil {
 			log.WithError(err).Error("failed to mark stuck upgrade as failed")
 			return err
@@ -370,7 +370,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 			}
 
 			// Update status in database
-			upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, targetStatus, clusterUpgrade.Version)
+			upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, clusterUpgrade.ID, targetStatus)
 			if err != nil {
 				log.WithError(err).Error("failed to transition upgrade status for GKE-initiated operations")
 				return err
@@ -385,7 +385,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 			delayDays := tenantDelay + envDelay
 
 			if delayDays > 0 {
-				upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatusWAITING, clusterUpgrade.Version)
+				upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, clusterUpgrade.ID, gensql.ClusterUpgradesStatusWAITING)
 				if err != nil {
 					log.WithError(err).Error("failed to update upgrade status to WAITING")
 					return err
@@ -430,7 +430,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 				"target_version": clusterUpgrade.Version,
 			}).Info("control plane already at target version, skipping to node upgrade")
 
-			upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatusNODEUPGRADE, clusterUpgrade.Version)
+			upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, clusterUpgrade.ID, gensql.ClusterUpgradesStatusNODEUPGRADE)
 			if err != nil {
 				return err
 			}
@@ -503,7 +503,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 			"environment":    env.Name,
 		}).Info("cluster upgrade completed successfully")
 
-		upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatusDONE, clusterUpgrade.Version)
+		upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, clusterUpgrade.ID, gensql.ClusterUpgradesStatusDONE)
 		if err != nil {
 			return err
 		}
@@ -867,7 +867,7 @@ func (c *ClusterUpgrader) upgradeNodes(ctx context.Context, env *model.Environme
 			return nil, err
 		}
 
-		us, err := c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatus(clusterUpgrade.UpgradeStatus), clusterUpgrade.Version)
+		us, err := c.repo.UpdateClusterUpgradeStatus(ctx, clusterUpgrade.ID, gensql.ClusterUpgradesStatus(clusterUpgrade.UpgradeStatus))
 		if err != nil {
 			return nil, err
 		}
@@ -944,7 +944,7 @@ func (c *ClusterUpgrader) controlPlaneUpgradeStatus(ctx context.Context, env *mo
 				setMetricsAttrs(env.Name, tenantName, clusterUpgrade.Version, "control_plane")...),
 			)
 
-			upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatusNODEUPGRADE, clusterUpgrade.Version)
+			upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, clusterUpgrade.ID, gensql.ClusterUpgradesStatusNODEUPGRADE)
 			if err != nil {
 				return nil, err
 			}
@@ -976,7 +976,7 @@ func (c *ClusterUpgrader) controlPlaneUpgradeStatus(ctx context.Context, env *mo
 				"target_version": clusterUpgrade.Version,
 			}).Info("control plane already at target version, marking upgrade as complete")
 
-			upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatusNODEUPGRADE, clusterUpgrade.Version)
+			upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, clusterUpgrade.ID, gensql.ClusterUpgradesStatusNODEUPGRADE)
 			if err != nil {
 				return nil, err
 			}
@@ -1003,7 +1003,7 @@ func (c *ClusterUpgrader) controlPlaneUpgradeStatus(ctx context.Context, env *mo
 		c.upgradeInProgress.Add(ctx, -1, metric.WithAttributes(
 			setMetricsAttrs(env.Name, tenantName, clusterUpgrade.Version, "control_plane")...),
 		)
-		upgradeStatus, err = c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatusNODEUPGRADE, clusterUpgrade.Version)
+		upgradeStatus, err = c.repo.UpdateClusterUpgradeStatus(ctx, clusterUpgrade.ID, gensql.ClusterUpgradesStatusNODEUPGRADE)
 		if err != nil {
 			return nil, err
 		}
@@ -1025,7 +1025,7 @@ func (c *ClusterUpgrader) controlPlaneUpgrade(ctx context.Context, env *model.En
 		if e, ok := err.(*apierror.APIError); ok {
 			if e.GRPCStatus().Code() == codes.InvalidArgument {
 				c.log.WithFields(logrus.Fields{"tenant": tenantName, "environment": env.Name}).Infof("invalid argument: %s", e.GRPCStatus().Message())
-				_, err = c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatusFAILED, upgrade.Version)
+				_, err = c.repo.UpdateClusterUpgradeStatus(ctx, upgrade.ID, gensql.ClusterUpgradesStatusFAILED)
 				if err != nil {
 					return nil, err
 				}
@@ -1042,7 +1042,7 @@ func (c *ClusterUpgrader) controlPlaneUpgrade(ctx context.Context, env *model.En
 		return nil, err
 	}
 
-	upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatusCONTROLPLANEUPGRADE, upgrade.Version)
+	upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, upgrade.ID, gensql.ClusterUpgradesStatusCONTROLPLANEUPGRADE)
 	if err != nil {
 		return upgradeStatus, err
 	}
