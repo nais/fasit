@@ -11,7 +11,12 @@ import (
 
 	"cloud.google.com/go/pubsub/v2"
 	"cloud.google.com/go/pubsub/v2/apiv1/pubsubpb"
+	"github.com/nais/fasit/internal/database"
+	"github.com/nais/fasit/internal/database/gensql"
+	"github.com/nais/fasit/internal/environment"
+	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/provider/protogen"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -35,6 +40,17 @@ var (
 		"ssb":      {"dev": protogen.EnvironmentKind_TENANT, "management": protogen.EnvironmentKind_MANAGEMENT},
 		"dev-nais": {"dev": protogen.EnvironmentKind_TENANT, "management": protogen.EnvironmentKind_MANAGEMENT},
 	}
+
+	deployments = []*gensql.DeploymentCreateParams{
+		{FeatureName: "aivenator", Version: "1.0.0", Target: environment.Labels{"aiven": "enabled"}},
+		{FeatureName: "aivenator", Version: "2.0.0", Target: environment.Labels{"aiven": "enabled"}},
+		{FeatureName: "aivenator", Version: "1.0.0", Target: environment.Labels{"aiven": "enabled", "tenant": "nav"}},
+		{FeatureName: "aivenator", Version: "3.0.0", Target: environment.Labels{"aiven": "enabled"}},
+		{FeatureName: "naiserator", Version: "1.0.0", Target: environment.Labels{"aiven": "enabled"}},
+		{FeatureName: "unleash", Version: "1.0.0", Target: environment.Labels{"featuretoggle": "enabled"}},
+		{FeatureName: "unleash", Version: "2.0.0", Target: environment.Labels{"featuretoggle": "enabled"}},
+		{FeatureName: "v13s", Version: "1.0.0", Target: environment.Labels{"security": "matters"}},
+	}
 )
 
 func main() {
@@ -43,6 +59,13 @@ func main() {
 	}
 
 	ctx := context.Background()
+	dbConn, cancel, err := database.NewDB(ctx, "postgres://postgres:postgres@localhost:5432/fasit?sslmode=disable", false)
+	if err != nil {
+		panic(err)
+	}
+	defer cancel.Close()
+
+	db := database.New(dbConn, logrus.New().WithField("component", "setup-local"))
 
 	conn, err := grpc.NewClient("localhost:4444", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
@@ -50,6 +73,17 @@ func main() {
 	}
 	defer conn.Close()
 	grpcClient := protogen.NewProviderClient(conn)
+	for _, d := range deployments {
+		_ = db.FeatureDataCreate(ctx, model.Feature{
+			Name:    d.FeatureName,
+			Version: d.Version,
+			Chart:   "oci://aiven",
+		}, nil)
+		_, err = db.DeploymentCreate(ctx, d.FeatureName, d.Version, d.GhRef, d.Target)
+		if err != nil {
+			panic(err)
+		}
+	}
 	for tenantName, environments := range envs {
 		_, err := grpcClient.CreateTenant(ctx, &protogen.CreateTenantRequest{Name: tenantName})
 		if err != nil {

@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/auth"
 	"github.com/nais/fasit/internal/database"
+	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/provider/protogen"
 	"google.golang.org/grpc/codes"
@@ -226,6 +227,16 @@ func (s *Server) DeleteEnvironmentValue(ctx context.Context, req *protogen.Delet
 	}
 
 	return &protogen.DeleteEnvironmentValueResponse{Success: true}, nil
+}
+
+func (s *Server) CreateDeployment(ctx context.Context, req *protogen.CreateDeploymentRequest) (*protogen.CreateDeploymentResponse, error) {
+	target := make(environment.Labels)
+	for _, l := range req.Target {
+		target[l.Key] = l.Value
+	}
+
+	_, err := s.repo.DeploymentCreate(ctx, req.FeatureName, req.Version, nil, target)
+	return &protogen.CreateDeploymentResponse{}, err
 }
 
 func toEnvironmentKind(kind protogen.EnvironmentKind) (model.EnvironmentKind, error) {

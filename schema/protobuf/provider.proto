@@ -5,24 +5,23 @@ option go_package = "internal/provider/protogen;protogen";
 service Provider {
   rpc CreateTenant(CreateTenantRequest) returns (TenantResponse) {}
   rpc GetTenant(GetTenantRequest) returns (TenantResponse) {}
-  rpc CreateEnvironment(CreateEnvironmentRequest)
-      returns (EnvironmentResponse) {}
+  rpc CreateEnvironment(CreateEnvironmentRequest) returns (EnvironmentResponse) {}
   rpc GetEnvironment(GetEnvironmentRequest) returns (EnvironmentResponse) {}
-  rpc CreateOrUpdateEnvironmentValue(CreateOrUpdateEnvironmentValueRequest)
-      returns (CreateOrUpdateEnvironmentValueResponse) {}
-  rpc GetEnvironmentValue(GetEnvironmentValueRequest)
-      returns (EnvironmentValueResponse) {}
-  rpc GetEnvironmentValuesAcrossEnvs(GetEnvironmentValuesAcrossEnvsRequest)
-      returns (EnvironmentValuesAcrossEnvsResponse) {}
-  rpc DeleteEnvironmentValue(DeleteEnvironmentValueRequest)
-      returns (DeleteEnvironmentValueResponse) {}
-  rpc UpdateEnvironment(UpdateEnvironmentRequest)
-      returns (EnvironmentResponse) {}
+  rpc CreateOrUpdateEnvironmentValue(CreateOrUpdateEnvironmentValueRequest) returns (CreateOrUpdateEnvironmentValueResponse) {}
+  rpc GetEnvironmentValue(GetEnvironmentValueRequest) returns (EnvironmentValueResponse) {}
+  rpc GetEnvironmentValuesAcrossEnvs(GetEnvironmentValuesAcrossEnvsRequest) returns (EnvironmentValuesAcrossEnvsResponse) {}
+  rpc DeleteEnvironmentValue(DeleteEnvironmentValueRequest) returns (DeleteEnvironmentValueResponse) {}
+  rpc UpdateEnvironment(UpdateEnvironmentRequest) returns (EnvironmentResponse) {}
+  rpc CreateDeployment(CreateDeploymentRequest) returns (CreateDeploymentResponse) {}
 }
 
-message CreateTenantRequest { string name = 1; }
+message CreateTenantRequest {
+  string name = 1;
+}
 
-message GetTenantRequest { string name = 1; }
+message GetTenantRequest {
+  string name = 1;
+}
 
 message TenantResponse {
   string id = 1;
@@ -73,7 +72,9 @@ message CreateOrUpdateEnvironmentValueRequest {
   bool secret = 4;
 }
 
-message CreateOrUpdateEnvironmentValueResponse { bool success = 1; }
+message CreateOrUpdateEnvironmentValueResponse {
+  bool success = 1;
+}
 
 message GetEnvironmentValueRequest {
   string environment_id = 1;
@@ -90,7 +91,9 @@ message EnvironmentValueResponse {
   string tenant_name = 7;
 }
 
-message GetEnvironmentValuesAcrossEnvsRequest { string key = 1; }
+message GetEnvironmentValuesAcrossEnvsRequest {
+  string key = 1;
+}
 
 message EnvironmentValuesAcrossEnvsResponse {
   repeated EnvironmentValueResponse values = 1;
@@ -101,4 +104,14 @@ message DeleteEnvironmentValueRequest {
   string key = 2;
 }
 
-message DeleteEnvironmentValueResponse { bool success = 1; }
+message DeleteEnvironmentValueResponse {
+  bool success = 1;
+}
+
+message CreateDeploymentRequest {
+  string FeatureName = 1;
+  string Version = 2;
+  repeated EnvironmentLabel Target = 3;
+}
+
+message CreateDeploymentResponse {}
