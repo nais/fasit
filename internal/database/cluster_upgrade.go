@@ -129,8 +129,6 @@ func (r *repo) SetClusterUpgradesSlackMessage(ctx context.Context, id uuid.UUID,
 }
 
 func (r *repo) UpdateClusterUpgradeStatus(ctx context.Context, tenantID, envID uuid.UUID, status gensql.ClusterUpgradesStatus, version string) (*model.ClusterUpgradeStatus, error) {
-	// First, get the current upgrade to get its ID
-	// This ensures we're updating the correct upgrade even if multiple exist for the same version
 	currentUpgrades, err := r.querier.ClusterUpgradesGet(ctx, gensql.ClusterUpgradesGetParams{
 		Tenantid: tenantID,
 		Envid:    envID,
@@ -143,7 +141,6 @@ func (r *repo) UpdateClusterUpgradeStatus(ctx context.Context, tenantID, envID u
 		return nil, errors.New("no upgrade found to update")
 	}
 
-	// Find the upgrade matching the version
 	var upgradeID uuid.UUID
 	for _, upgrade := range currentUpgrades {
 		if upgrade.Version == version {
@@ -156,7 +153,6 @@ func (r *repo) UpdateClusterUpgradeStatus(ctx context.Context, tenantID, envID u
 		return nil, errors.New("no upgrade found with version " + version)
 	}
 
-	// Now update by ID to avoid constraint issues
 	clusterUpgrade, err := r.querier.ClusterUpgradesUpdateStatus(ctx, gensql.ClusterUpgradesUpdateStatusParams{
 		Status: status,
 		ID:     upgradeID,
@@ -218,7 +214,6 @@ func (r *repo) CreateClusterUpgrade(ctx context.Context, tenantID, envID uuid.UU
 		return nil, err
 	}
 
-	// Audit manual upgrades to track who initiated them
 	if isAutomatic != nil && !*isAutomatic {
 		r.createAudit(ctx, "manual cluster upgrade to "+version, "cluster_upgrades", clusterUpgrade.ID.String())
 	}

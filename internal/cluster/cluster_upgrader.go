@@ -380,15 +380,11 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 			c.updateSlackProgress(ctx, tenant.Name, env.Name, upgradeStatus)
 			return nil
 		} else if clusterUpgrade.IsAutomatic == nil || *clusterUpgrade.IsAutomatic {
-			// Only apply delay logic to automatic upgrades when no operations are running
-			// Manual upgrades (initiated by users) should proceed immediately
-			// Treat nil (legacy upgrades) as automatic for safety
 			tenantDelay := tenant.UpgradeDelayDays
 			envDelay := env.UpgradeDelayDays
 			delayDays := tenantDelay + envDelay
 
 			if delayDays > 0 {
-				// Transition status to WAITING and persist
 				upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, env.TenantID, env.ID, gensql.ClusterUpgradesStatusWAITING, clusterUpgrade.Version)
 				if err != nil {
 					log.WithError(err).Error("failed to update upgrade status to WAITING")
@@ -412,14 +408,12 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 			}).Info("manual upgrade bypassing delay configuration - proceeding immediately")
 		}
 
-		// No delay configured or manual upgrade - initiate control plane upgrade
 		log.WithFields(logrus.Fields{
 			"target_version": clusterUpgrade.Version,
 			"tenant":         tenant.Name,
 			"environment":    env.Name,
 		}).Info("starting control plane upgrade")
 
-		// Check if control plane is already at target version
 		var currentVersion string
 		err = c.retryer.WithBackoff(ctx, "get_current_control_plane_version", func() error {
 			var retryErr error

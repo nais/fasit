@@ -205,12 +205,12 @@ func (c *Client) getClusterName(environment *model.Environment) string {
 	return environment.Name
 }
 
-// SetMaintenanceWindow configures the maintenance window for a GKE cluster
+// SetMaintenanceWindow configures the maintenance window for a GKE cluster.
+// Pass nil to remove the window and allow GKE to perform maintenance anytime.
 func (c *Client) SetMaintenanceWindow(ctx context.Context, projectID string, environment *model.Environment, window *model.MaintenanceWindow) (*containerpb.Operation, error) {
 	clusterName := c.getClusterName(environment)
 	clusterPath := c.getName(projectID, clusterName)
 
-	// First, get the current cluster to obtain the current maintenance policy's resourceVersion
 	cluster, err := c.client.GetCluster(ctx, &containerpb.GetClusterRequest{
 		Name: clusterPath,
 	})
@@ -218,14 +218,12 @@ func (c *Client) SetMaintenanceWindow(ctx context.Context, projectID string, env
 		return nil, fmt.Errorf("failed to get cluster: %w", err)
 	}
 
-	// Get the current resource version from existing maintenance policy
 	var resourceVersion string
 	if cluster.MaintenancePolicy != nil {
 		resourceVersion = cluster.MaintenancePolicy.ResourceVersion
 	}
 
 	if window == nil {
-		// Remove maintenance window - allow upgrades anytime
 		return c.client.SetMaintenancePolicy(ctx, &containerpb.SetMaintenancePolicyRequest{
 			Name: clusterPath,
 			MaintenancePolicy: &containerpb.MaintenancePolicy{
@@ -234,23 +232,19 @@ func (c *Client) SetMaintenanceWindow(ctx context.Context, projectID string, env
 		})
 	}
 
-	// Convert days to GKE format
 	var recurringWindow *containerpb.RecurringTimeWindow
 
-	// Parse timezone
 	location, err := time.LoadLocation(window.Timezone)
 	if err != nil {
 		return nil, fmt.Errorf("invalid timezone %s: %w", window.Timezone, err)
 	}
 
-	// Parse start and end times (HH:MM format)
 	startParts := strings.Split(window.StartTime, ":")
 	endParts := strings.Split(window.EndTime, ":")
 	if len(startParts) != 2 || len(endParts) != 2 {
 		return nil, fmt.Errorf("invalid time format, expected HH:MM")
 	}
 
-	// Parse hours and minutes as integers
 	var startHour, startMin, endHour, endMin int
 	if _, err := fmt.Sscanf(window.StartTime, "%d:%d", &startHour, &startMin); err != nil {
 		return nil, fmt.Errorf("invalid start time format: %w", err)
@@ -259,7 +253,6 @@ func (c *Client) SetMaintenanceWindow(ctx context.Context, projectID string, env
 		return nil, fmt.Errorf("invalid end time format: %w", err)
 	}
 
-	// Validate time ranges
 	if startHour < 0 || startHour > 23 || endHour < 0 || endHour > 23 {
 		return nil, fmt.Errorf("hours must be between 0 and 23")
 	}
@@ -267,17 +260,14 @@ func (c *Client) SetMaintenanceWindow(ctx context.Context, projectID string, env
 		return nil, fmt.Errorf("minutes must be between 0 and 59")
 	}
 
-	// Create a time window for today (GKE will apply the recurrence)
 	now := time.Now().In(location)
 	startTime := time.Date(now.Year(), now.Month(), now.Day(),
 		startHour, startMin, 0, 0, location)
 	endTime := time.Date(now.Year(), now.Month(), now.Day(),
 		endHour, endMin, 0, 0, location)
 
-	// Build recurrence rule (RFC 5545 format)
 	var recurrence string
 	if len(window.Days) > 0 {
-		// Specific days specified: "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR"
 		days := make([]string, len(window.Days))
 		dayMap := map[model.DayOfWeek]string{
 			model.DayOfWeekMonday:    "MO",
@@ -293,7 +283,6 @@ func (c *Client) SetMaintenanceWindow(ctx context.Context, projectID string, env
 		}
 		recurrence = "FREQ=WEEKLY;BYDAY=" + strings.Join(days, ",")
 	} else {
-		// No days specified means every day
 		recurrence = "FREQ=DAILY"
 	}
 
