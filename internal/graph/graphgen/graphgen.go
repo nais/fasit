@@ -2448,7 +2448,7 @@ type ClusterUpgradeStatus {
 	startTime: Time!
 	operations: [EnvironmentOperation!]!
 	environment: Environment!
-	isAutomatic: Boolean!
+	isAutomatic: Boolean
 }
 
 enum DayOfWeek {
@@ -3887,9 +3887,9 @@ func (ec *executionContext) _ClusterUpgradeStatus_isAutomatic(ctx context.Contex
 			return obj.IsAutomatic, nil
 		},
 		nil,
-		ec.marshalNBoolean2bool,
+		ec.marshalOBoolean2ᚖbool,
 		true,
-		true,
+		false,
 	)
 }
 
@@ -14460,9 +14460,6 @@ func (ec *executionContext) _ClusterUpgradeStatus(ctx context.Context, sel ast.S
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "isAutomatic":
 			out.Values[i] = ec._ClusterUpgradeStatus_isAutomatic(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

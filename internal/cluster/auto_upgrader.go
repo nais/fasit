@@ -252,7 +252,8 @@ func (c *AutoUpgrader) evaluateAndScheduleUpgrades(ctx context.Context, env *mod
 			}
 
 			// Schedule the upgrade
-			upgrade, err := c.repo.CreateClusterUpgrade(ctx, env.TenantID, env.ID, version, true)
+			automatic := true
+			upgrade, err := c.repo.CreateClusterUpgrade(ctx, env.TenantID, env.ID, version, &automatic)
 			if err != nil {
 				envLogger.WithFields(logrus.Fields{
 					"current_version": controlPlaneVer,

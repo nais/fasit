@@ -21,6 +21,11 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
+// Helper function to create bool pointer
+func boolPtr(b bool) *bool {
+	return &b
+}
+
 type env struct {
 	tenantID          uuid.UUID
 	projectID         string
@@ -531,7 +536,7 @@ func TestRun_CreatedToWaitingTransitionWithDelay(t *testing.T) {
 		StartTime:     time.Now(),
 		LastModified:  time.Now(),
 		EnvironmentID: suite.env.id,
-		IsAutomatic:   true, // This is an automatic upgrade, should respect delays
+		IsAutomatic:   boolPtr(true), // This is an automatic upgrade, should respect delays
 	}
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(createdUpgrade, nil).Once()
 
@@ -609,7 +614,7 @@ func TestRun_CreatedWithoutDelaySkipsWaiting(t *testing.T) {
 		StartTime:     time.Now(),
 		LastModified:  time.Now(),
 		EnvironmentID: suite.env.id,
-		IsAutomatic:   true, // Automatic upgrade with no delay should proceed immediately
+		IsAutomatic:   boolPtr(true), // Automatic upgrade with no delay should proceed immediately
 	}
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(createdUpgrade, nil).Once()
 
@@ -700,7 +705,7 @@ func TestRun_CreatedWithDelayButRunningOperations(t *testing.T) {
 		StartTime:     time.Now(),
 		LastModified:  time.Now(),
 		EnvironmentID: suite.env.id,
-		IsAutomatic:   true, // Automatic upgrade with delay configured
+		IsAutomatic:   boolPtr(true), // Automatic upgrade with delay configured
 	}
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(createdUpgrade, nil).Once()
 
@@ -734,7 +739,7 @@ func TestRun_CreatedWithDelayButRunningOperations(t *testing.T) {
 		StartTime:     time.Now(),
 		LastModified:  time.Now(),
 		EnvironmentID: suite.env.id,
-		IsAutomatic:   true,
+		IsAutomatic:   boolPtr(true),
 	}
 	suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, suite.env.tenantID, suite.env.id, gensql.ClusterUpgradesStatusCONTROLPLANEUPGRADE, "1.2.4").Return(updatedUpgrade, nil).Once()
 

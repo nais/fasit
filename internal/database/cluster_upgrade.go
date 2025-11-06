@@ -8,6 +8,7 @@ import (
 	"cloud.google.com/go/container/apiv1/containerpb"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/nais/fasit/internal/database/gensql"
 	"github.com/nais/fasit/internal/graph/model"
 )
@@ -15,7 +16,7 @@ import (
 type ClusterUpgraderRepo interface {
 	CreateOrUpdateClusterOperation(ctx context.Context, tenantID, envID, versionID uuid.UUID, op *containerpb.Operation) (*model.EnvironmentOperation, error)
 	GetRunningClusterOperation(ctx context.Context, tenantID, envID uuid.UUID) (*model.EnvironmentOperation, error)
-	CreateClusterUpgrade(ctx context.Context, tenantID, envID uuid.UUID, version string, isAutomatic bool) (*model.ClusterUpgradeStatus, error)
+	CreateClusterUpgrade(ctx context.Context, tenantID, envID uuid.UUID, version string, isAutomatic *bool) (*model.ClusterUpgradeStatus, error)
 	ClusterUpgradeGet(ctx context.Context, tenantID, envID uuid.UUID) (*model.ClusterUpgradeStatus, error)
 	ClusterUpgradeGetByVersion(ctx context.Context, tenantID, envID uuid.UUID, version string) (*model.ClusterUpgradeStatus, error)
 	ClusterUpgradeHistoryGet(ctx context.Context, tenantID, envID uuid.UUID) ([]*model.ClusterUpgradeStatus, error)
@@ -44,6 +45,11 @@ func (r *repo) ClusterUpgradeHistoryGet(ctx context.Context, tenantID, envID uui
 }
 
 func clusterUpgradeFromSQL(p gensql.ClusterUpgrade) *model.ClusterUpgradeStatus {
+	var isAutomatic *bool
+	if p.IsAutomatic.Valid {
+		isAutomatic = &p.IsAutomatic.Bool
+	}
+
 	return &model.ClusterUpgradeStatus{
 		ID:                    p.ID,
 		Version:               p.Version,
@@ -53,7 +59,7 @@ func clusterUpgradeFromSQL(p gensql.ClusterUpgrade) *model.ClusterUpgradeStatus 
 		EnvironmentID:         p.EnvironmentID,
 		SlackMessageTimestamp: p.SlackMessageTimestamp.String,
 		SlackChannelID:        p.SlackChannelID.String,
-		IsAutomatic:           p.IsAutomatic,
+		IsAutomatic:           isAutomatic,
 	}
 }
 
@@ -196,23 +202,28 @@ func (r *repo) ClusterUpgradeGetByVersion(ctx context.Context, tenantID, envID u
 	return clusterUpgradeFromSQL(clusterUpgrade), nil
 }
 
-func (r *repo) CreateClusterUpgrade(ctx context.Context, tenantID, envID uuid.UUID, version string, isAutomatic bool) (*model.ClusterUpgradeStatus, error) {
-	clusterVersion, err := r.querier.ClusterUpgradesCreate(ctx, gensql.ClusterUpgradesCreateParams{
+func (r *repo) CreateClusterUpgrade(ctx context.Context, tenantID, envID uuid.UUID, version string, isAutomatic *bool) (*model.ClusterUpgradeStatus, error) {
+	var isauto pgtype.Bool
+	if isAutomatic != nil {
+		isauto = pgtype.Bool{Bool: *isAutomatic, Valid: true}
+	}
+
+	clusterUpgrade, err := r.querier.ClusterUpgradesCreate(ctx, gensql.ClusterUpgradesCreateParams{
 		Tenantid:    tenantID,
 		Envid:       envID,
 		Version:     version,
-		Isautomatic: isAutomatic,
+		Isautomatic: isauto,
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	// Audit manual upgrades to track who initiated them
-	if !isAutomatic {
-		r.createAudit(ctx, "manual cluster upgrade to "+version, "cluster_upgrades", envID.String())
+	if isAutomatic != nil && !*isAutomatic {
+		r.createAudit(ctx, "manual cluster upgrade to "+version, "cluster_upgrades", clusterUpgrade.ID.String())
 	}
 
-	return clusterUpgradeFromSQL(clusterVersion), nil
+	return clusterUpgradeFromSQL(clusterUpgrade), nil
 }
 
 func (r *repo) GetRunningClusterOperation(ctx context.Context, tenantID, envID uuid.UUID) (*model.EnvironmentOperation, error) {

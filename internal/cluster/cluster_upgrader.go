@@ -379,9 +379,10 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 			// Update Slack progress
 			c.updateSlackProgress(ctx, tenant.Name, env.Name, upgradeStatus)
 			return nil
-		} else if clusterUpgrade.IsAutomatic {
+		} else if clusterUpgrade.IsAutomatic == nil || *clusterUpgrade.IsAutomatic {
 			// Only apply delay logic to automatic upgrades when no operations are running
 			// Manual upgrades (initiated by users) should proceed immediately
+			// Treat nil (legacy upgrades) as automatic for safety
 			tenantDelay := tenant.UpgradeDelayDays
 			envDelay := env.UpgradeDelayDays
 			delayDays := tenantDelay + envDelay

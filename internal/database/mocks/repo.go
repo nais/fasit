@@ -1520,7 +1520,7 @@ func (_c *Repo_CostUpsert_Call) RunAndReturn(run func(ctx context.Context, rows 
 }
 
 // CreateClusterUpgrade provides a mock function for the type Repo
-func (_mock *Repo) CreateClusterUpgrade(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID, version string, isAutomatic bool) (*model.ClusterUpgradeStatus, error) {
+func (_mock *Repo) CreateClusterUpgrade(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID, version string, isAutomatic *bool) (*model.ClusterUpgradeStatus, error) {
 	ret := _mock.Called(ctx, tenantID, envID, version, isAutomatic)
 
 	if len(ret) == 0 {
@@ -1529,17 +1529,17 @@ func (_mock *Repo) CreateClusterUpgrade(ctx context.Context, tenantID uuid.UUID,
 
 	var r0 *model.ClusterUpgradeStatus
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID, string, bool) (*model.ClusterUpgradeStatus, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID, string, *bool) (*model.ClusterUpgradeStatus, error)); ok {
 		return returnFunc(ctx, tenantID, envID, version, isAutomatic)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID, string, bool) *model.ClusterUpgradeStatus); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID, string, *bool) *model.ClusterUpgradeStatus); ok {
 		r0 = returnFunc(ctx, tenantID, envID, version, isAutomatic)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.ClusterUpgradeStatus)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, uuid.UUID, string, bool) error); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, uuid.UUID, string, *bool) error); ok {
 		r1 = returnFunc(ctx, tenantID, envID, version, isAutomatic)
 	} else {
 		r1 = ret.Error(1)
@@ -1557,12 +1557,12 @@ type Repo_CreateClusterUpgrade_Call struct {
 //   - tenantID uuid.UUID
 //   - envID uuid.UUID
 //   - version string
-//   - isAutomatic bool
+//   - isAutomatic *bool
 func (_e *Repo_Expecter) CreateClusterUpgrade(ctx interface{}, tenantID interface{}, envID interface{}, version interface{}, isAutomatic interface{}) *Repo_CreateClusterUpgrade_Call {
 	return &Repo_CreateClusterUpgrade_Call{Call: _e.mock.On("CreateClusterUpgrade", ctx, tenantID, envID, version, isAutomatic)}
 }
 
-func (_c *Repo_CreateClusterUpgrade_Call) Run(run func(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID, version string, isAutomatic bool)) *Repo_CreateClusterUpgrade_Call {
+func (_c *Repo_CreateClusterUpgrade_Call) Run(run func(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID, version string, isAutomatic *bool)) *Repo_CreateClusterUpgrade_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -1580,9 +1580,9 @@ func (_c *Repo_CreateClusterUpgrade_Call) Run(run func(ctx context.Context, tena
 		if args[3] != nil {
 			arg3 = args[3].(string)
 		}
-		var arg4 bool
+		var arg4 *bool
 		if args[4] != nil {
-			arg4 = args[4].(bool)
+			arg4 = args[4].(*bool)
 		}
 		run(
 			arg0,
@@ -1600,7 +1600,7 @@ func (_c *Repo_CreateClusterUpgrade_Call) Return(clusterUpgradeStatus *model.Clu
 	return _c
 }
 
-func (_c *Repo_CreateClusterUpgrade_Call) RunAndReturn(run func(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID, version string, isAutomatic bool) (*model.ClusterUpgradeStatus, error)) *Repo_CreateClusterUpgrade_Call {
+func (_c *Repo_CreateClusterUpgrade_Call) RunAndReturn(run func(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID, version string, isAutomatic *bool) (*model.ClusterUpgradeStatus, error)) *Repo_CreateClusterUpgrade_Call {
 	_c.Call.Return(run)
 	return _c
 }

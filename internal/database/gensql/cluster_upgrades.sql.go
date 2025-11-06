@@ -28,7 +28,7 @@ type ClusterUpgradesCreateParams struct {
 	Tenantid    uuid.UUID
 	Envid       uuid.UUID
 	Version     string
-	Isautomatic bool
+	Isautomatic pgtype.Bool
 }
 
 func (q *Queries) ClusterUpgradesCreate(ctx context.Context, arg ClusterUpgradesCreateParams) (ClusterUpgrade, error) {

@@ -1,6 +1,6 @@
 -- +goose Up
 ALTER TABLE cluster_upgrades
-ADD COLUMN "is_automatic" BOOLEAN NOT NULL DEFAULT FALSE
+ADD COLUMN "is_automatic" BOOLEAN DEFAULT NULL
 ;
 
 -- +goose Down
