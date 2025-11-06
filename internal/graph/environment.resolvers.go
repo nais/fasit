@@ -316,9 +316,7 @@ func (r *mutationResolver) EnvironmentSetMaintenanceWindow(ctx context.Context, 
 		return nil, fmt.Errorf("failed to get project ID: %w", err)
 	}
 	if projectID == nil {
-		r.Log.WithField("environment_id", environmentID).Warn("no project ID found, skipping GKE API call")
-		// For environments without project ID, just save to DB
-		return r.Repo.EnvironmentSetMaintenanceWindow(ctx, environmentID, maintenanceWindow)
+		return nil, fmt.Errorf("cannot set maintenance window: environment has no GCP project ID configured")
 	}
 
 	// Apply maintenance window to GKE cluster FIRST
