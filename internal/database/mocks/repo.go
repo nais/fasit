@@ -4497,6 +4497,78 @@ func (_c *Repo_FeatureDataCreate_Call) RunAndReturn(run func(context1 context.Co
 	return _c
 }
 
+// FeatureEnabled provides a mock function for the type Repo
+func (_mock *Repo) FeatureEnabled(ctx context.Context, featureName string, envID uuid.UUID) (bool, error) {
+	ret := _mock.Called(ctx, featureName, envID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for FeatureEnabled")
+	}
+
+	var r0 bool
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, uuid.UUID) (bool, error)); ok {
+		return returnFunc(ctx, featureName, envID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, uuid.UUID) bool); ok {
+		r0 = returnFunc(ctx, featureName, envID)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string, uuid.UUID) error); ok {
+		r1 = returnFunc(ctx, featureName, envID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Repo_FeatureEnabled_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FeatureEnabled'
+type Repo_FeatureEnabled_Call struct {
+	*mock.Call
+}
+
+// FeatureEnabled is a helper method to define mock.On call
+//   - ctx context.Context
+//   - featureName string
+//   - envID uuid.UUID
+func (_e *Repo_Expecter) FeatureEnabled(ctx interface{}, featureName interface{}, envID interface{}) *Repo_FeatureEnabled_Call {
+	return &Repo_FeatureEnabled_Call{Call: _e.mock.On("FeatureEnabled", ctx, featureName, envID)}
+}
+
+func (_c *Repo_FeatureEnabled_Call) Run(run func(ctx context.Context, featureName string, envID uuid.UUID)) *Repo_FeatureEnabled_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		var arg2 uuid.UUID
+		if args[2] != nil {
+			arg2 = args[2].(uuid.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *Repo_FeatureEnabled_Call) Return(b bool, err error) *Repo_FeatureEnabled_Call {
+	_c.Call.Return(b, err)
+	return _c
+}
+
+func (_c *Repo_FeatureEnabled_Call) RunAndReturn(run func(ctx context.Context, featureName string, envID uuid.UUID) (bool, error)) *Repo_FeatureEnabled_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // FeatureStateGet provides a mock function for the type Repo
 func (_mock *Repo) FeatureStateGet(ctx context.Context, envID uuid.UUID, featureName string) (*model.FeatureState, error) {
 	ret := _mock.Called(ctx, envID, featureName)

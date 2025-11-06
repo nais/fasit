@@ -241,17 +241,13 @@ SELECT
 FROM
 	deployments d,
 	environments e
-	JOIN feature_states f ON f.feature_name = d.feature_name
-	AND f.environment_id = e.id
 WHERE
 	d.id = $1
-	AND f.enabled = TRUE
 	AND e.labels @> d.target -- @> operator checks if the JSONB on the left contains the JSONB on the right
 ORDER BY
 	e.id
 `
 
-// EnvironmentsForDeployment returns slice of env ids where feature is enabled and targeted by deployment
 func (q *Queries) EnvironmentsForDeployment(ctx context.Context, deploymentID uuid.UUID) ([]uuid.UUID, error) {
 	rows, err := q.db.Query(ctx, environmentsForDeployment, deploymentID)
 	if err != nil {
@@ -270,4 +266,30 @@ func (q *Queries) EnvironmentsForDeployment(ctx context.Context, deploymentID uu
 		return nil, err
 	}
 	return items, nil
+}
+
+const featureEnabled = `-- name: FeatureEnabled :one
+SELECT
+	NOT EXISTS (
+		SELECT
+			environment_id, feature, enabled, created, last_modified, enabled_at
+		FROM
+			feature_states fs
+		WHERE
+			fs.feature = $1
+			AND fs.environment_id = $2
+			AND fs.enabled = FALSE
+	)
+`
+
+type FeatureEnabledParams struct {
+	FeatureName   string
+	EnvironmentID uuid.UUID
+}
+
+func (q *Queries) FeatureEnabled(ctx context.Context, arg FeatureEnabledParams) (bool, error) {
+	row := q.db.QueryRow(ctx, featureEnabled, arg.FeatureName, arg.EnvironmentID)
+	var not_exists bool
+	err := row.Scan(&not_exists)
+	return not_exists, err
 }

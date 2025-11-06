@@ -91,6 +91,10 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		}
 
 		for _, envID := range envs {
+			if !r.shouldDeployToEnvironment(ctx, deployment, envID) {
+				continue
+			}
+
 			if err := r.createDeploymentTarget(ctx, deployment, envID); err != nil {
 				r.log.
 					WithError(err).
@@ -113,4 +117,19 @@ func (r *Reconciler) createDeploymentTarget(ctx context.Context, d gensql.Deploy
 	}
 
 	return nil
+}
+
+func (r *Reconciler) shouldDeployToEnvironment(ctx context.Context, deployment gensql.Deployment, envID uuid.UUID) bool {
+	enabled, err := r.repo.FeatureEnabled(ctx, deployment.FeatureName, envID)
+	if err != nil {
+		r.log.WithError(err).Errorf("get feature state for deployment %q", deployment.ID)
+		return false
+	}
+
+	if !enabled {
+		return false
+	}
+
+	// Additional criteria can be added here
+	return true
 }

@@ -65,19 +65,29 @@ WHERE
 	AND environment_id = @environment_id
 ;
 
--- EnvironmentsForDeployment returns slice of env ids where feature is enabled and targeted by deployment
 -- name: EnvironmentsForDeployment :many
 SELECT
 	e.id
 FROM
 	deployments d,
 	environments e
-	JOIN feature_states f ON f.feature_name = d.feature_name
-	AND f.environment_id = e.id
 WHERE
 	d.id = @deployment_id
-	AND f.enabled = TRUE
 	AND e.labels @> d.target -- @> operator checks if the JSONB on the left contains the JSONB on the right
 ORDER BY
 	e.id
+;
+
+-- name: FeatureEnabled :one
+SELECT
+	NOT EXISTS (
+		SELECT
+			*
+		FROM
+			feature_states fs
+		WHERE
+			fs.feature = @feature_name
+			AND fs.environment_id = @environment_id
+			AND fs.enabled = FALSE
+	)
 ;

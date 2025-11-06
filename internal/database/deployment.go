@@ -17,6 +17,7 @@ type DeploymentRepo interface {
 	DeploymentTargetsUpdate(ctx context.Context, deploymentID, environmentID uuid.UUID, status string) error
 	DeploymentsGet(ctx context.Context) ([]gensql.Deployment, error)
 	EnvironmentsForDeployment(ctx context.Context, deploymentID uuid.UUID) ([]uuid.UUID, error)
+	FeatureEnabled(ctx context.Context, featureName string, envID uuid.UUID) (bool, error)
 }
 
 func (r *repo) EnvironmentsForDeployment(ctx context.Context, deploymentID uuid.UUID) ([]uuid.UUID, error) {
@@ -62,5 +63,12 @@ func (r *repo) DeploymentTargetsUpdate(ctx context.Context, deploymentID, enviro
 		DeploymentID:  deploymentID,
 		EnvironmentID: environmentID,
 		Status:        status,
+	})
+}
+
+func (r *repo) FeatureEnabled(ctx context.Context, featureName string, envID uuid.UUID) (bool, error) {
+	return r.querier.FeatureEnabled(ctx, gensql.FeatureEnabledParams{
+		FeatureName:   featureName,
+		EnvironmentID: envID,
 	})
 }
