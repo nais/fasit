@@ -1,4 +1,4 @@
-package upgrader
+package cluster
 
 import (
 	"context"
@@ -19,13 +19,13 @@ import (
 type AutoUpgrader struct {
 	repo                      database.Repo
 	log                       logrus.FieldLogger
-	client                    Upgrader
+	client                    ClusterManager
 	autoUpgradesScheduled     metric.Int64Counter
 	autoUpgradeProcessingTime metric.Float64Histogram
 	retryer                   *Retryer
 }
 
-func NewAutoUpgrader(repo database.Repo, log logrus.FieldLogger, client Upgrader, meter metric.Meter) *AutoUpgrader {
+func NewAutoUpgrader(repo database.Repo, log logrus.FieldLogger, client ClusterManager, meter metric.Meter) *AutoUpgrader {
 	autoUpgradesScheduled, _ := meter.Int64Counter(
 		"auto_upgrades_scheduled",
 		metric.WithDescription("Number of automatic cluster upgrades scheduled"),
@@ -231,8 +231,29 @@ func (c *AutoUpgrader) evaluateAndScheduleUpgrades(ctx context.Context, env *mod
 				return true, false
 			}
 
+			// Check if this version was already attempted and failed/completed
+			existingUpgrade, err := c.repo.ClusterUpgradeGetByVersion(ctx, env.TenantID, env.ID, version)
+			if err != nil {
+				envLogger.WithFields(logrus.Fields{
+					"target_version": version,
+					"operation":      "check_upgrade_history",
+				}).WithError(err).Error("failed to check cluster upgrade history")
+				return true, false
+			}
+
+			if existingUpgrade != nil && (existingUpgrade.UpgradeStatus == model.UpgradeStatusDone || existingUpgrade.UpgradeStatus == model.UpgradeStatusFailed) {
+				envLogger.WithFields(logrus.Fields{
+					"current_version":  controlPlaneVer,
+					"target_version":   version,
+					"existing_upgrade": existingUpgrade.ID,
+					"upgrade_status":   existingUpgrade.UpgradeStatus,
+				}).Info("cluster upgrade for this version already completed or failed, skipping automatic scheduling")
+				return true, false
+			}
+
 			// Schedule the upgrade
-			upgrade, err := c.repo.CreateClusterUpgrade(ctx, env.TenantID, env.ID, version)
+			automatic := true
+			upgrade, err := c.repo.CreateClusterUpgrade(ctx, env.TenantID, env.ID, version, &automatic)
 			if err != nil {
 				envLogger.WithFields(logrus.Fields{
 					"current_version": controlPlaneVer,
@@ -240,9 +261,7 @@ func (c *AutoUpgrader) evaluateAndScheduleUpgrades(ctx context.Context, env *mod
 					"operation":       "create_upgrade",
 				}).WithError(err).Error("failed to schedule automatic cluster upgrade")
 				return true, false
-			}
-
-			// Record successful scheduling
+			} // Record successful scheduling
 			c.autoUpgradesScheduled.Add(ctx, 1, metric.WithAttributes(
 				attribute.String("environment", env.Name),
 				attribute.String("tenant", tenant.Name),

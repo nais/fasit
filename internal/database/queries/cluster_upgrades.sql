@@ -1,8 +1,13 @@
 -- name: ClusterUpgradesCreate :one
 INSERT INTO
-	cluster_upgrades ("tenant_id", "environment_id", "version")
+	cluster_upgrades (
+		"tenant_id",
+		"environment_id",
+		"version",
+		"is_automatic"
+	)
 VALUES
-	(@tenantId, @envID, @version)
+	(@tenantId, @envID, @version, @isAutomatic)
 RETURNING
 	*
 ;
@@ -18,6 +23,8 @@ WHERE
 	AND status NOT IN ('DONE', 'FAILED')
 ORDER BY
 	last_modified DESC
+FOR UPDATE
+	SKIP LOCKED
 ;
 
 -- name: ClusterUpgradesSetSlackMessage :one
@@ -36,9 +43,7 @@ UPDATE cluster_upgrades
 SET
 	"status" = @status
 WHERE
-	"tenant_id" = @tenantId
-	AND "environment_id" = @envID
-	AND "version" = @version
+	"id" = @id
 RETURNING
 	*
 ;
@@ -62,4 +67,19 @@ WHERE
 	AND environment_id = @envID
 ORDER BY
 	last_modified DESC
+;
+
+-- name: ClusterUpgradesGetByVersion :one
+SELECT
+	*
+FROM
+	cluster_upgrades
+WHERE
+	tenant_id = @tenantId
+	AND environment_id = @envID
+	AND version = @version
+ORDER BY
+	last_modified DESC
+LIMIT
+	1
 ;

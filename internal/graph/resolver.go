@@ -6,11 +6,11 @@ import (
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/google/uuid"
+	"github.com/nais/fasit/internal/cluster"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/notifier"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
-	"github.com/nais/fasit/internal/upgrader"
 	"github.com/nais/fasit/internal/workers"
 	"github.com/sirupsen/logrus"
 )
@@ -22,18 +22,18 @@ import (
 type Resolver struct {
 	Repo           database.Repo
 	Log            *logrus.Entry
-	UpgraderClient upgrader.Upgrader
+	ClusterManager cluster.ClusterManager
 
 	logNotifier     *logNotifier
 	diNotifier      *updateNotifier
 	createPublisher workers.NewPublisher
 }
 
-func NewResolver(ctx context.Context, repo database.Repo, notifier *notifier.Notifier, naisdPublisher workers.NewPublisher, upgraderClient upgrader.Upgrader, log *logrus.Entry) *Resolver {
+func NewResolver(ctx context.Context, repo database.Repo, notifier *notifier.Notifier, naisdPublisher workers.NewPublisher, clusterManager cluster.ClusterManager, log *logrus.Entry) *Resolver {
 	return &Resolver{
 		Repo:            repo,
 		Log:             log,
-		UpgraderClient:  upgraderClient,
+		ClusterManager:  clusterManager,
 		createPublisher: naisdPublisher,
 		logNotifier:     newLogNotifier(ctx, notifier, repo),
 		diNotifier:      newDeployInstructionsNotifier(ctx, notifier, repo),

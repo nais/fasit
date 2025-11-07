@@ -144,6 +144,7 @@ type ClusterUpgrade struct {
 	LastModified          pgtype.Timestamptz
 	SlackMessageTimestamp pgtype.Text
 	SlackChannelID        pgtype.Text
+	IsAutomatic           pgtype.Bool
 }
 
 type ConfigurationsEnvironment struct {
@@ -187,17 +188,18 @@ type EnvCost struct {
 }
 
 type Environment struct {
-	ID               uuid.UUID
-	TenantID         uuid.UUID
-	Name             string
-	Kind             EnvironmentKind
-	Description      pgtype.Text
-	Created          pgtype.Timestamptz
-	LastModified     pgtype.Timestamptz
-	Ci               bool
-	Reconcile        bool
-	AutoUpgrade      bool
-	UpgradeDelayDays int32
+	ID                uuid.UUID
+	TenantID          uuid.UUID
+	Name              string
+	Kind              EnvironmentKind
+	Description       pgtype.Text
+	Created           pgtype.Timestamptz
+	LastModified      pgtype.Timestamptz
+	Ci                bool
+	Reconcile         bool
+	AutoUpgrade       bool
+	UpgradeDelayDays  int32
+	MaintenanceWindow []byte
 }
 
 type EnvironmentLabel struct {

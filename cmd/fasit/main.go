@@ -22,6 +22,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/go-chi/chi/v5"
 	"github.com/nais/fasit/internal/auth"
+	"github.com/nais/fasit/internal/cluster"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/notifier"
 	"github.com/nais/fasit/internal/graph"
@@ -31,7 +32,6 @@ import (
 	"github.com/nais/fasit/internal/provider/protogen"
 	"github.com/nais/fasit/internal/rollout"
 	"github.com/nais/fasit/internal/slack"
-	"github.com/nais/fasit/internal/upgrader"
 	"github.com/nais/fasit/internal/workers"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/ravilushqa/otelgqlgen"
@@ -171,7 +171,7 @@ func main() {
 		go costUpdater.Run(ctx, 1*time.Hour)
 	}
 
-	googleClient, err := upgrader.New(ctx)
+	googleClient, err := cluster.New(ctx)
 	if err != nil {
 		log.WithError(err).Fatal("setting up google client")
 	}
@@ -327,10 +327,10 @@ func newMetricsProvider() (metric.Meter, error) {
 	return provider.Meter("github.com/nais/fasit"), nil
 }
 
-func runClusterUpgrader(ctx context.Context, log *logrus.Logger, googleClient upgrader.Upgrader, repo database.Repo, meter metric.Meter, slack slack.SlackClient) error {
+func runClusterUpgrader(ctx context.Context, log *logrus.Logger, clusterManager cluster.ClusterManager, repo database.Repo, meter metric.Meter, slack slack.SlackClient) error {
 	s := workers.NewScheduler(log.WithField("subsystem", "scheduler"))
-	clusterUpgrader := upgrader.NewClusterUpgrader(repo, log, googleClient, meter, slack, cfg.SlackClusterUpgradeChannel)
-	autoUpgrader := upgrader.NewAutoUpgrader(repo, log, googleClient, meter)
+	clusterUpgrader := cluster.NewClusterUpgrader(repo, log, clusterManager, meter, slack, cfg.SlackClusterUpgradeChannel)
+	autoUpgrader := cluster.NewAutoUpgrader(repo, log, clusterManager, meter)
 
 	s.Register("cluster-upgrader", clusterUpgrader, 30*time.Second)
 	s.Register("auto-upgrader", autoUpgrader, 1*time.Hour)

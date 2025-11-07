@@ -554,6 +554,86 @@ func (_c *Repo_ClusterUpgradeGetByID_Call) RunAndReturn(run func(ctx context.Con
 	return _c
 }
 
+// ClusterUpgradeGetByVersion provides a mock function for the type Repo
+func (_mock *Repo) ClusterUpgradeGetByVersion(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID, version string) (*model.ClusterUpgradeStatus, error) {
+	ret := _mock.Called(ctx, tenantID, envID, version)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ClusterUpgradeGetByVersion")
+	}
+
+	var r0 *model.ClusterUpgradeStatus
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID, string) (*model.ClusterUpgradeStatus, error)); ok {
+		return returnFunc(ctx, tenantID, envID, version)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID, string) *model.ClusterUpgradeStatus); ok {
+		r0 = returnFunc(ctx, tenantID, envID, version)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.ClusterUpgradeStatus)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, uuid.UUID, string) error); ok {
+		r1 = returnFunc(ctx, tenantID, envID, version)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Repo_ClusterUpgradeGetByVersion_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ClusterUpgradeGetByVersion'
+type Repo_ClusterUpgradeGetByVersion_Call struct {
+	*mock.Call
+}
+
+// ClusterUpgradeGetByVersion is a helper method to define mock.On call
+//   - ctx context.Context
+//   - tenantID uuid.UUID
+//   - envID uuid.UUID
+//   - version string
+func (_e *Repo_Expecter) ClusterUpgradeGetByVersion(ctx interface{}, tenantID interface{}, envID interface{}, version interface{}) *Repo_ClusterUpgradeGetByVersion_Call {
+	return &Repo_ClusterUpgradeGetByVersion_Call{Call: _e.mock.On("ClusterUpgradeGetByVersion", ctx, tenantID, envID, version)}
+}
+
+func (_c *Repo_ClusterUpgradeGetByVersion_Call) Run(run func(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID, version string)) *Repo_ClusterUpgradeGetByVersion_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		var arg2 uuid.UUID
+		if args[2] != nil {
+			arg2 = args[2].(uuid.UUID)
+		}
+		var arg3 string
+		if args[3] != nil {
+			arg3 = args[3].(string)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+		)
+	})
+	return _c
+}
+
+func (_c *Repo_ClusterUpgradeGetByVersion_Call) Return(clusterUpgradeStatus *model.ClusterUpgradeStatus, err error) *Repo_ClusterUpgradeGetByVersion_Call {
+	_c.Call.Return(clusterUpgradeStatus, err)
+	return _c
+}
+
+func (_c *Repo_ClusterUpgradeGetByVersion_Call) RunAndReturn(run func(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID, version string) (*model.ClusterUpgradeStatus, error)) *Repo_ClusterUpgradeGetByVersion_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ClusterUpgradeHistoryGet provides a mock function for the type Repo
 func (_mock *Repo) ClusterUpgradeHistoryGet(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID) ([]*model.ClusterUpgradeStatus, error) {
 	ret := _mock.Called(ctx, tenantID, envID)
@@ -1440,8 +1520,8 @@ func (_c *Repo_CostUpsert_Call) RunAndReturn(run func(ctx context.Context, rows 
 }
 
 // CreateClusterUpgrade provides a mock function for the type Repo
-func (_mock *Repo) CreateClusterUpgrade(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID, version string) (*model.ClusterUpgradeStatus, error) {
-	ret := _mock.Called(ctx, tenantID, envID, version)
+func (_mock *Repo) CreateClusterUpgrade(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID, version string, isAutomatic *bool) (*model.ClusterUpgradeStatus, error) {
+	ret := _mock.Called(ctx, tenantID, envID, version, isAutomatic)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateClusterUpgrade")
@@ -1449,18 +1529,18 @@ func (_mock *Repo) CreateClusterUpgrade(ctx context.Context, tenantID uuid.UUID,
 
 	var r0 *model.ClusterUpgradeStatus
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID, string) (*model.ClusterUpgradeStatus, error)); ok {
-		return returnFunc(ctx, tenantID, envID, version)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID, string, *bool) (*model.ClusterUpgradeStatus, error)); ok {
+		return returnFunc(ctx, tenantID, envID, version, isAutomatic)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID, string) *model.ClusterUpgradeStatus); ok {
-		r0 = returnFunc(ctx, tenantID, envID, version)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID, string, *bool) *model.ClusterUpgradeStatus); ok {
+		r0 = returnFunc(ctx, tenantID, envID, version, isAutomatic)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.ClusterUpgradeStatus)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, uuid.UUID, string) error); ok {
-		r1 = returnFunc(ctx, tenantID, envID, version)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, uuid.UUID, string, *bool) error); ok {
+		r1 = returnFunc(ctx, tenantID, envID, version, isAutomatic)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1477,11 +1557,12 @@ type Repo_CreateClusterUpgrade_Call struct {
 //   - tenantID uuid.UUID
 //   - envID uuid.UUID
 //   - version string
-func (_e *Repo_Expecter) CreateClusterUpgrade(ctx interface{}, tenantID interface{}, envID interface{}, version interface{}) *Repo_CreateClusterUpgrade_Call {
-	return &Repo_CreateClusterUpgrade_Call{Call: _e.mock.On("CreateClusterUpgrade", ctx, tenantID, envID, version)}
+//   - isAutomatic *bool
+func (_e *Repo_Expecter) CreateClusterUpgrade(ctx interface{}, tenantID interface{}, envID interface{}, version interface{}, isAutomatic interface{}) *Repo_CreateClusterUpgrade_Call {
+	return &Repo_CreateClusterUpgrade_Call{Call: _e.mock.On("CreateClusterUpgrade", ctx, tenantID, envID, version, isAutomatic)}
 }
 
-func (_c *Repo_CreateClusterUpgrade_Call) Run(run func(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID, version string)) *Repo_CreateClusterUpgrade_Call {
+func (_c *Repo_CreateClusterUpgrade_Call) Run(run func(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID, version string, isAutomatic *bool)) *Repo_CreateClusterUpgrade_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -1499,11 +1580,16 @@ func (_c *Repo_CreateClusterUpgrade_Call) Run(run func(ctx context.Context, tena
 		if args[3] != nil {
 			arg3 = args[3].(string)
 		}
+		var arg4 *bool
+		if args[4] != nil {
+			arg4 = args[4].(*bool)
+		}
 		run(
 			arg0,
 			arg1,
 			arg2,
 			arg3,
+			arg4,
 		)
 	})
 	return _c
@@ -1514,7 +1600,7 @@ func (_c *Repo_CreateClusterUpgrade_Call) Return(clusterUpgradeStatus *model.Clu
 	return _c
 }
 
-func (_c *Repo_CreateClusterUpgrade_Call) RunAndReturn(run func(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID, version string) (*model.ClusterUpgradeStatus, error)) *Repo_CreateClusterUpgrade_Call {
+func (_c *Repo_CreateClusterUpgrade_Call) RunAndReturn(run func(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID, version string, isAutomatic *bool) (*model.ClusterUpgradeStatus, error)) *Repo_CreateClusterUpgrade_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -2532,6 +2618,74 @@ func (_c *Repo_EnvironmentGetLabels_Call) RunAndReturn(run func(ctx context.Cont
 	return _c
 }
 
+// EnvironmentGetMaintenanceWindow provides a mock function for the type Repo
+func (_mock *Repo) EnvironmentGetMaintenanceWindow(ctx context.Context, env *model.Environment) (*model.MaintenanceWindow, error) {
+	ret := _mock.Called(ctx, env)
+
+	if len(ret) == 0 {
+		panic("no return value specified for EnvironmentGetMaintenanceWindow")
+	}
+
+	var r0 *model.MaintenanceWindow
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *model.Environment) (*model.MaintenanceWindow, error)); ok {
+		return returnFunc(ctx, env)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *model.Environment) *model.MaintenanceWindow); ok {
+		r0 = returnFunc(ctx, env)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.MaintenanceWindow)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, *model.Environment) error); ok {
+		r1 = returnFunc(ctx, env)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Repo_EnvironmentGetMaintenanceWindow_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'EnvironmentGetMaintenanceWindow'
+type Repo_EnvironmentGetMaintenanceWindow_Call struct {
+	*mock.Call
+}
+
+// EnvironmentGetMaintenanceWindow is a helper method to define mock.On call
+//   - ctx context.Context
+//   - env *model.Environment
+func (_e *Repo_Expecter) EnvironmentGetMaintenanceWindow(ctx interface{}, env interface{}) *Repo_EnvironmentGetMaintenanceWindow_Call {
+	return &Repo_EnvironmentGetMaintenanceWindow_Call{Call: _e.mock.On("EnvironmentGetMaintenanceWindow", ctx, env)}
+}
+
+func (_c *Repo_EnvironmentGetMaintenanceWindow_Call) Run(run func(ctx context.Context, env *model.Environment)) *Repo_EnvironmentGetMaintenanceWindow_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 *model.Environment
+		if args[1] != nil {
+			arg1 = args[1].(*model.Environment)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Repo_EnvironmentGetMaintenanceWindow_Call) Return(maintenanceWindow *model.MaintenanceWindow, err error) *Repo_EnvironmentGetMaintenanceWindow_Call {
+	_c.Call.Return(maintenanceWindow, err)
+	return _c
+}
+
+func (_c *Repo_EnvironmentGetMaintenanceWindow_Call) RunAndReturn(run func(ctx context.Context, env *model.Environment) (*model.MaintenanceWindow, error)) *Repo_EnvironmentGetMaintenanceWindow_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // EnvironmentIDByNames provides a mock function for the type Repo
 func (_mock *Repo) EnvironmentIDByNames(ctx context.Context, tenantName string, environmentName string) (uuid.UUID, error) {
 	ret := _mock.Called(ctx, tenantName, environmentName)
@@ -2739,6 +2893,80 @@ func (_c *Repo_EnvironmentSetLabels_Call) Return(err error) *Repo_EnvironmentSet
 }
 
 func (_c *Repo_EnvironmentSetLabels_Call) RunAndReturn(run func(ctx context.Context, environmentID uuid.UUID, labels []*protogen.EnvironmentLabel) error) *Repo_EnvironmentSetLabels_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// EnvironmentSetMaintenanceWindow provides a mock function for the type Repo
+func (_mock *Repo) EnvironmentSetMaintenanceWindow(ctx context.Context, id uuid.UUID, window *model.MaintenanceWindow) (*model.Environment, error) {
+	ret := _mock.Called(ctx, id, window)
+
+	if len(ret) == 0 {
+		panic("no return value specified for EnvironmentSetMaintenanceWindow")
+	}
+
+	var r0 *model.Environment
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, *model.MaintenanceWindow) (*model.Environment, error)); ok {
+		return returnFunc(ctx, id, window)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, *model.MaintenanceWindow) *model.Environment); ok {
+		r0 = returnFunc(ctx, id, window)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Environment)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, *model.MaintenanceWindow) error); ok {
+		r1 = returnFunc(ctx, id, window)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Repo_EnvironmentSetMaintenanceWindow_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'EnvironmentSetMaintenanceWindow'
+type Repo_EnvironmentSetMaintenanceWindow_Call struct {
+	*mock.Call
+}
+
+// EnvironmentSetMaintenanceWindow is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id uuid.UUID
+//   - window *model.MaintenanceWindow
+func (_e *Repo_Expecter) EnvironmentSetMaintenanceWindow(ctx interface{}, id interface{}, window interface{}) *Repo_EnvironmentSetMaintenanceWindow_Call {
+	return &Repo_EnvironmentSetMaintenanceWindow_Call{Call: _e.mock.On("EnvironmentSetMaintenanceWindow", ctx, id, window)}
+}
+
+func (_c *Repo_EnvironmentSetMaintenanceWindow_Call) Run(run func(ctx context.Context, id uuid.UUID, window *model.MaintenanceWindow)) *Repo_EnvironmentSetMaintenanceWindow_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		var arg2 *model.MaintenanceWindow
+		if args[2] != nil {
+			arg2 = args[2].(*model.MaintenanceWindow)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *Repo_EnvironmentSetMaintenanceWindow_Call) Return(environment *model.Environment, err error) *Repo_EnvironmentSetMaintenanceWindow_Call {
+	_c.Call.Return(environment, err)
+	return _c
+}
+
+func (_c *Repo_EnvironmentSetMaintenanceWindow_Call) RunAndReturn(run func(ctx context.Context, id uuid.UUID, window *model.MaintenanceWindow) (*model.Environment, error)) *Repo_EnvironmentSetMaintenanceWindow_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -6818,8 +7046,8 @@ func (_c *Repo_TxFunc_Call) RunAndReturn(run func(ctx context.Context, fn databa
 }
 
 // UpdateClusterUpgradeStatus provides a mock function for the type Repo
-func (_mock *Repo) UpdateClusterUpgradeStatus(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID, status gensql.ClusterUpgradesStatus, version string) (*model.ClusterUpgradeStatus, error) {
-	ret := _mock.Called(ctx, tenantID, envID, status, version)
+func (_mock *Repo) UpdateClusterUpgradeStatus(ctx context.Context, upgradeID uuid.UUID, status gensql.ClusterUpgradesStatus) (*model.ClusterUpgradeStatus, error) {
+	ret := _mock.Called(ctx, upgradeID, status)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdateClusterUpgradeStatus")
@@ -6827,18 +7055,18 @@ func (_mock *Repo) UpdateClusterUpgradeStatus(ctx context.Context, tenantID uuid
 
 	var r0 *model.ClusterUpgradeStatus
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID, gensql.ClusterUpgradesStatus, string) (*model.ClusterUpgradeStatus, error)); ok {
-		return returnFunc(ctx, tenantID, envID, status, version)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, gensql.ClusterUpgradesStatus) (*model.ClusterUpgradeStatus, error)); ok {
+		return returnFunc(ctx, upgradeID, status)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID, gensql.ClusterUpgradesStatus, string) *model.ClusterUpgradeStatus); ok {
-		r0 = returnFunc(ctx, tenantID, envID, status, version)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, gensql.ClusterUpgradesStatus) *model.ClusterUpgradeStatus); ok {
+		r0 = returnFunc(ctx, upgradeID, status)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.ClusterUpgradeStatus)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, uuid.UUID, gensql.ClusterUpgradesStatus, string) error); ok {
-		r1 = returnFunc(ctx, tenantID, envID, status, version)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, gensql.ClusterUpgradesStatus) error); ok {
+		r1 = returnFunc(ctx, upgradeID, status)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -6852,15 +7080,13 @@ type Repo_UpdateClusterUpgradeStatus_Call struct {
 
 // UpdateClusterUpgradeStatus is a helper method to define mock.On call
 //   - ctx context.Context
-//   - tenantID uuid.UUID
-//   - envID uuid.UUID
+//   - upgradeID uuid.UUID
 //   - status gensql.ClusterUpgradesStatus
-//   - version string
-func (_e *Repo_Expecter) UpdateClusterUpgradeStatus(ctx interface{}, tenantID interface{}, envID interface{}, status interface{}, version interface{}) *Repo_UpdateClusterUpgradeStatus_Call {
-	return &Repo_UpdateClusterUpgradeStatus_Call{Call: _e.mock.On("UpdateClusterUpgradeStatus", ctx, tenantID, envID, status, version)}
+func (_e *Repo_Expecter) UpdateClusterUpgradeStatus(ctx interface{}, upgradeID interface{}, status interface{}) *Repo_UpdateClusterUpgradeStatus_Call {
+	return &Repo_UpdateClusterUpgradeStatus_Call{Call: _e.mock.On("UpdateClusterUpgradeStatus", ctx, upgradeID, status)}
 }
 
-func (_c *Repo_UpdateClusterUpgradeStatus_Call) Run(run func(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID, status gensql.ClusterUpgradesStatus, version string)) *Repo_UpdateClusterUpgradeStatus_Call {
+func (_c *Repo_UpdateClusterUpgradeStatus_Call) Run(run func(ctx context.Context, upgradeID uuid.UUID, status gensql.ClusterUpgradesStatus)) *Repo_UpdateClusterUpgradeStatus_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -6870,24 +7096,14 @@ func (_c *Repo_UpdateClusterUpgradeStatus_Call) Run(run func(ctx context.Context
 		if args[1] != nil {
 			arg1 = args[1].(uuid.UUID)
 		}
-		var arg2 uuid.UUID
+		var arg2 gensql.ClusterUpgradesStatus
 		if args[2] != nil {
-			arg2 = args[2].(uuid.UUID)
-		}
-		var arg3 gensql.ClusterUpgradesStatus
-		if args[3] != nil {
-			arg3 = args[3].(gensql.ClusterUpgradesStatus)
-		}
-		var arg4 string
-		if args[4] != nil {
-			arg4 = args[4].(string)
+			arg2 = args[2].(gensql.ClusterUpgradesStatus)
 		}
 		run(
 			arg0,
 			arg1,
 			arg2,
-			arg3,
-			arg4,
 		)
 	})
 	return _c
@@ -6898,7 +7114,7 @@ func (_c *Repo_UpdateClusterUpgradeStatus_Call) Return(clusterUpgradeStatus *mod
 	return _c
 }
 
-func (_c *Repo_UpdateClusterUpgradeStatus_Call) RunAndReturn(run func(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID, status gensql.ClusterUpgradesStatus, version string) (*model.ClusterUpgradeStatus, error)) *Repo_UpdateClusterUpgradeStatus_Call {
+func (_c *Repo_UpdateClusterUpgradeStatus_Call) RunAndReturn(run func(ctx context.Context, upgradeID uuid.UUID, status gensql.ClusterUpgradesStatus) (*model.ClusterUpgradeStatus, error)) *Repo_UpdateClusterUpgradeStatus_Call {
 	_c.Call.Return(run)
 	return _c
 }

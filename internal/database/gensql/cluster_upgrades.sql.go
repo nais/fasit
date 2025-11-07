@@ -12,21 +12,32 @@ import (
 
 const clusterUpgradesCreate = `-- name: ClusterUpgradesCreate :one
 INSERT INTO
-	cluster_upgrades ("tenant_id", "environment_id", "version")
+	cluster_upgrades (
+		"tenant_id",
+		"environment_id",
+		"version",
+		"is_automatic"
+	)
 VALUES
-	($1, $2, $3)
+	($1, $2, $3, $4)
 RETURNING
-	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id
+	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id, is_automatic
 `
 
 type ClusterUpgradesCreateParams struct {
-	Tenantid uuid.UUID
-	Envid    uuid.UUID
-	Version  string
+	Tenantid    uuid.UUID
+	Envid       uuid.UUID
+	Version     string
+	Isautomatic pgtype.Bool
 }
 
 func (q *Queries) ClusterUpgradesCreate(ctx context.Context, arg ClusterUpgradesCreateParams) (ClusterUpgrade, error) {
-	row := q.db.QueryRow(ctx, clusterUpgradesCreate, arg.Tenantid, arg.Envid, arg.Version)
+	row := q.db.QueryRow(ctx, clusterUpgradesCreate,
+		arg.Tenantid,
+		arg.Envid,
+		arg.Version,
+		arg.Isautomatic,
+	)
 	var i ClusterUpgrade
 	err := row.Scan(
 		&i.ID,
@@ -38,13 +49,14 @@ func (q *Queries) ClusterUpgradesCreate(ctx context.Context, arg ClusterUpgrades
 		&i.LastModified,
 		&i.SlackMessageTimestamp,
 		&i.SlackChannelID,
+		&i.IsAutomatic,
 	)
 	return i, err
 }
 
 const clusterUpgradesGet = `-- name: ClusterUpgradesGet :many
 SELECT
-	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id
+	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id, is_automatic
 FROM
 	cluster_upgrades
 WHERE
@@ -53,6 +65,8 @@ WHERE
 	AND status NOT IN ('DONE', 'FAILED')
 ORDER BY
 	last_modified DESC
+FOR UPDATE
+	SKIP LOCKED
 `
 
 type ClusterUpgradesGetParams struct {
@@ -79,6 +93,7 @@ func (q *Queries) ClusterUpgradesGet(ctx context.Context, arg ClusterUpgradesGet
 			&i.LastModified,
 			&i.SlackMessageTimestamp,
 			&i.SlackChannelID,
+			&i.IsAutomatic,
 		); err != nil {
 			return nil, err
 		}
@@ -92,7 +107,7 @@ func (q *Queries) ClusterUpgradesGet(ctx context.Context, arg ClusterUpgradesGet
 
 const clusterUpgradesGetByID = `-- name: ClusterUpgradesGetByID :one
 SELECT
-	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id
+	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id, is_automatic
 FROM
 	cluster_upgrades
 WHERE
@@ -112,13 +127,53 @@ func (q *Queries) ClusterUpgradesGetByID(ctx context.Context, id uuid.UUID) (Clu
 		&i.LastModified,
 		&i.SlackMessageTimestamp,
 		&i.SlackChannelID,
+		&i.IsAutomatic,
+	)
+	return i, err
+}
+
+const clusterUpgradesGetByVersion = `-- name: ClusterUpgradesGetByVersion :one
+SELECT
+	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id, is_automatic
+FROM
+	cluster_upgrades
+WHERE
+	tenant_id = $1
+	AND environment_id = $2
+	AND version = $3
+ORDER BY
+	last_modified DESC
+LIMIT
+	1
+`
+
+type ClusterUpgradesGetByVersionParams struct {
+	Tenantid uuid.UUID
+	Envid    uuid.UUID
+	Version  string
+}
+
+func (q *Queries) ClusterUpgradesGetByVersion(ctx context.Context, arg ClusterUpgradesGetByVersionParams) (ClusterUpgrade, error) {
+	row := q.db.QueryRow(ctx, clusterUpgradesGetByVersion, arg.Tenantid, arg.Envid, arg.Version)
+	var i ClusterUpgrade
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.EnvironmentID,
+		&i.Version,
+		&i.Status,
+		&i.StartTime,
+		&i.LastModified,
+		&i.SlackMessageTimestamp,
+		&i.SlackChannelID,
+		&i.IsAutomatic,
 	)
 	return i, err
 }
 
 const clusterUpgradesHistoryGetByEnvironmentID = `-- name: ClusterUpgradesHistoryGetByEnvironmentID :many
 SELECT
-	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id
+	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id, is_automatic
 FROM
 	cluster_upgrades
 WHERE
@@ -152,6 +207,7 @@ func (q *Queries) ClusterUpgradesHistoryGetByEnvironmentID(ctx context.Context, 
 			&i.LastModified,
 			&i.SlackMessageTimestamp,
 			&i.SlackChannelID,
+			&i.IsAutomatic,
 		); err != nil {
 			return nil, err
 		}
@@ -171,7 +227,7 @@ SET
 WHERE
 	"id" = $3
 RETURNING
-	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id
+	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id, is_automatic
 `
 
 type ClusterUpgradesSetSlackMessageParams struct {
@@ -193,6 +249,7 @@ func (q *Queries) ClusterUpgradesSetSlackMessage(ctx context.Context, arg Cluste
 		&i.LastModified,
 		&i.SlackMessageTimestamp,
 		&i.SlackChannelID,
+		&i.IsAutomatic,
 	)
 	return i, err
 }
@@ -202,27 +259,18 @@ UPDATE cluster_upgrades
 SET
 	"status" = $1
 WHERE
-	"tenant_id" = $2
-	AND "environment_id" = $3
-	AND "version" = $4
+	"id" = $2
 RETURNING
-	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id
+	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id, is_automatic
 `
 
 type ClusterUpgradesUpdateStatusParams struct {
-	Status   ClusterUpgradesStatus
-	Tenantid uuid.UUID
-	Envid    uuid.UUID
-	Version  string
+	Status ClusterUpgradesStatus
+	ID     uuid.UUID
 }
 
 func (q *Queries) ClusterUpgradesUpdateStatus(ctx context.Context, arg ClusterUpgradesUpdateStatusParams) (ClusterUpgrade, error) {
-	row := q.db.QueryRow(ctx, clusterUpgradesUpdateStatus,
-		arg.Status,
-		arg.Tenantid,
-		arg.Envid,
-		arg.Version,
-	)
+	row := q.db.QueryRow(ctx, clusterUpgradesUpdateStatus, arg.Status, arg.ID)
 	var i ClusterUpgrade
 	err := row.Scan(
 		&i.ID,
@@ -234,6 +282,7 @@ func (q *Queries) ClusterUpgradesUpdateStatus(ctx context.Context, arg ClusterUp
 		&i.LastModified,
 		&i.SlackMessageTimestamp,
 		&i.SlackChannelID,
+		&i.IsAutomatic,
 	)
 	return i, err
 }

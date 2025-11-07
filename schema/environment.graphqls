@@ -22,6 +22,50 @@ type ClusterUpgradeStatus {
 	startTime: Time!
 	operations: [EnvironmentOperation!]!
 	environment: Environment!
+	isAutomatic: Boolean
+}
+
+enum DayOfWeek {
+	MONDAY
+	TUESDAY
+	WEDNESDAY
+	THURSDAY
+	FRIDAY
+	SATURDAY
+	SUNDAY
+}
+
+"""
+MaintenanceWindow defines when GKE is allowed to perform maintenance on the cluster.
+If not set, GKE can perform maintenance at any time.
+"""
+type MaintenanceWindow {
+	"""
+	Start time in 24-hour format (HH:MM), e.g., "02:00" for 2 AM
+	"""
+	startTime: String!
+	"""
+	End time in 24-hour format (HH:MM), e.g., "06:00" for 6 AM
+	"""
+	endTime: String!
+	"""
+	Days of the week when maintenance is allowed. If empty, all days are allowed.
+	"""
+	days: [DayOfWeek!]!
+	"""
+	Timezone for the maintenance window, e.g., "Europe/Oslo" or "UTC"
+	"""
+	timezone: String!
+}
+
+"""
+Input for setting a maintenance window
+"""
+input MaintenanceWindowInput {
+	startTime: String!
+	endTime: String!
+	days: [DayOfWeek!]!
+	timezone: String!
 }
 
 type Health {
@@ -64,6 +108,10 @@ type Environment {
 	versions: EnvironmentVersions
 	labels: [EnvironmentLabel!]!
 	upgradeDelayDays: Int!
+	"""
+	Maintenance window for GKE cluster maintenance. If null, GKE can perform maintenance at any time.
+	"""
+	maintenanceWindow: MaintenanceWindow
 }
 
 type EnvironmentLabel {
@@ -163,4 +211,9 @@ extend type Mutation {
 	Set the upgrade delay (in days) for an environment.
 	"""
 	environmentSetUpgradeDelayDays(environmentID: ID!, delayDays: Int!): Environment!
+
+	"""
+	Set the maintenance window for an environment. Set to null to remove the window (allow GKE maintenance anytime).
+	"""
+	environmentSetMaintenanceWindow(environmentID: ID!, window: MaintenanceWindowInput): Environment!
 }

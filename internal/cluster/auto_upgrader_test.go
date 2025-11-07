@@ -1,4 +1,4 @@
-package upgrader
+package cluster
 
 import (
 	"testing"
@@ -10,7 +10,7 @@ import (
 func newAutoUpgrader(suite *testSuite) *AutoUpgrader {
 	log := logrus.New().WithField("testSuite", "upgrade")
 	meter := metric.NewMeterProvider().Meter("testSuite")
-	return NewAutoUpgrader(suite.repoMock, log, suite.upgradeMock, meter)
+	return NewAutoUpgrader(suite.repoMock, log, suite.clusterMock, meter)
 }
 
 func Test_IsNewerPatchRelease(t *testing.T) {

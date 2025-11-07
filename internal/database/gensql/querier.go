@@ -22,6 +22,7 @@ type Querier interface {
 	ClusterUpgradesCreate(ctx context.Context, arg ClusterUpgradesCreateParams) (ClusterUpgrade, error)
 	ClusterUpgradesGet(ctx context.Context, arg ClusterUpgradesGetParams) ([]ClusterUpgrade, error)
 	ClusterUpgradesGetByID(ctx context.Context, id uuid.UUID) (ClusterUpgrade, error)
+	ClusterUpgradesGetByVersion(ctx context.Context, arg ClusterUpgradesGetByVersionParams) (ClusterUpgrade, error)
 	ClusterUpgradesHistoryGetByEnvironmentID(ctx context.Context, arg ClusterUpgradesHistoryGetByEnvironmentIDParams) ([]ClusterUpgrade, error)
 	ClusterUpgradesSetSlackMessage(ctx context.Context, arg ClusterUpgradesSetSlackMessageParams) (ClusterUpgrade, error)
 	ClusterUpgradesUpdateStatus(ctx context.Context, arg ClusterUpgradesUpdateStatusParams) (ClusterUpgrade, error)
@@ -59,6 +60,7 @@ type Querier interface {
 	EnvironmentIDByNames(ctx context.Context, arg EnvironmentIDByNamesParams) (uuid.UUID, error)
 	EnvironmentInsertLabels(ctx context.Context, arg []EnvironmentInsertLabelsParams) *EnvironmentInsertLabelsBatchResults
 	EnvironmentSetAutoUpgrade(ctx context.Context, arg EnvironmentSetAutoUpgradeParams) (Environment, error)
+	EnvironmentSetMaintenanceWindow(ctx context.Context, arg EnvironmentSetMaintenanceWindowParams) (Environment, error)
 	EnvironmentSetReconcile(ctx context.Context, arg EnvironmentSetReconcileParams) (Environment, error)
 	EnvironmentSetUpgradeDelayDays(ctx context.Context, arg EnvironmentSetUpgradeDelayDaysParams) (Environment, error)
 	EnvironmentUpdate(ctx context.Context, arg EnvironmentUpdateParams) (Environment, error)

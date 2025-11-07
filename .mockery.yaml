@@ -8,6 +8,6 @@ packages:
     interfaces:
       Repo:
       Querier:
-  github.com/nais/fasit/internal/upgrader:
+  github.com/nais/fasit/internal/cluster:
     interfaces:
-      Upgrader:
+      ClusterManager:

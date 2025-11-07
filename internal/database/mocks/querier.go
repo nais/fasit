@@ -836,6 +836,72 @@ func (_c *Querier_ClusterUpgradesGetByID_Call) RunAndReturn(run func(ctx context
 	return _c
 }
 
+// ClusterUpgradesGetByVersion provides a mock function for the type Querier
+func (_mock *Querier) ClusterUpgradesGetByVersion(ctx context.Context, arg gensql.ClusterUpgradesGetByVersionParams) (gensql.ClusterUpgrade, error) {
+	ret := _mock.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ClusterUpgradesGetByVersion")
+	}
+
+	var r0 gensql.ClusterUpgrade
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, gensql.ClusterUpgradesGetByVersionParams) (gensql.ClusterUpgrade, error)); ok {
+		return returnFunc(ctx, arg)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, gensql.ClusterUpgradesGetByVersionParams) gensql.ClusterUpgrade); ok {
+		r0 = returnFunc(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(gensql.ClusterUpgrade)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, gensql.ClusterUpgradesGetByVersionParams) error); ok {
+		r1 = returnFunc(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_ClusterUpgradesGetByVersion_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ClusterUpgradesGetByVersion'
+type Querier_ClusterUpgradesGetByVersion_Call struct {
+	*mock.Call
+}
+
+// ClusterUpgradesGetByVersion is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg gensql.ClusterUpgradesGetByVersionParams
+func (_e *Querier_Expecter) ClusterUpgradesGetByVersion(ctx interface{}, arg interface{}) *Querier_ClusterUpgradesGetByVersion_Call {
+	return &Querier_ClusterUpgradesGetByVersion_Call{Call: _e.mock.On("ClusterUpgradesGetByVersion", ctx, arg)}
+}
+
+func (_c *Querier_ClusterUpgradesGetByVersion_Call) Run(run func(ctx context.Context, arg gensql.ClusterUpgradesGetByVersionParams)) *Querier_ClusterUpgradesGetByVersion_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 gensql.ClusterUpgradesGetByVersionParams
+		if args[1] != nil {
+			arg1 = args[1].(gensql.ClusterUpgradesGetByVersionParams)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_ClusterUpgradesGetByVersion_Call) Return(clusterUpgrade gensql.ClusterUpgrade, err error) *Querier_ClusterUpgradesGetByVersion_Call {
+	_c.Call.Return(clusterUpgrade, err)
+	return _c
+}
+
+func (_c *Querier_ClusterUpgradesGetByVersion_Call) RunAndReturn(run func(ctx context.Context, arg gensql.ClusterUpgradesGetByVersionParams) (gensql.ClusterUpgrade, error)) *Querier_ClusterUpgradesGetByVersion_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ClusterUpgradesHistoryGetByEnvironmentID provides a mock function for the type Querier
 func (_mock *Querier) ClusterUpgradesHistoryGetByEnvironmentID(ctx context.Context, arg gensql.ClusterUpgradesHistoryGetByEnvironmentIDParams) ([]gensql.ClusterUpgrade, error) {
 	ret := _mock.Called(ctx, arg)
@@ -3235,6 +3301,72 @@ func (_c *Querier_EnvironmentSetAutoUpgrade_Call) Return(environment gensql.Envi
 }
 
 func (_c *Querier_EnvironmentSetAutoUpgrade_Call) RunAndReturn(run func(ctx context.Context, arg gensql.EnvironmentSetAutoUpgradeParams) (gensql.Environment, error)) *Querier_EnvironmentSetAutoUpgrade_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// EnvironmentSetMaintenanceWindow provides a mock function for the type Querier
+func (_mock *Querier) EnvironmentSetMaintenanceWindow(ctx context.Context, arg gensql.EnvironmentSetMaintenanceWindowParams) (gensql.Environment, error) {
+	ret := _mock.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for EnvironmentSetMaintenanceWindow")
+	}
+
+	var r0 gensql.Environment
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, gensql.EnvironmentSetMaintenanceWindowParams) (gensql.Environment, error)); ok {
+		return returnFunc(ctx, arg)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, gensql.EnvironmentSetMaintenanceWindowParams) gensql.Environment); ok {
+		r0 = returnFunc(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(gensql.Environment)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, gensql.EnvironmentSetMaintenanceWindowParams) error); ok {
+		r1 = returnFunc(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_EnvironmentSetMaintenanceWindow_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'EnvironmentSetMaintenanceWindow'
+type Querier_EnvironmentSetMaintenanceWindow_Call struct {
+	*mock.Call
+}
+
+// EnvironmentSetMaintenanceWindow is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg gensql.EnvironmentSetMaintenanceWindowParams
+func (_e *Querier_Expecter) EnvironmentSetMaintenanceWindow(ctx interface{}, arg interface{}) *Querier_EnvironmentSetMaintenanceWindow_Call {
+	return &Querier_EnvironmentSetMaintenanceWindow_Call{Call: _e.mock.On("EnvironmentSetMaintenanceWindow", ctx, arg)}
+}
+
+func (_c *Querier_EnvironmentSetMaintenanceWindow_Call) Run(run func(ctx context.Context, arg gensql.EnvironmentSetMaintenanceWindowParams)) *Querier_EnvironmentSetMaintenanceWindow_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 gensql.EnvironmentSetMaintenanceWindowParams
+		if args[1] != nil {
+			arg1 = args[1].(gensql.EnvironmentSetMaintenanceWindowParams)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_EnvironmentSetMaintenanceWindow_Call) Return(environment gensql.Environment, err error) *Querier_EnvironmentSetMaintenanceWindow_Call {
+	_c.Call.Return(environment, err)
+	return _c
+}
+
+func (_c *Querier_EnvironmentSetMaintenanceWindow_Call) RunAndReturn(run func(ctx context.Context, arg gensql.EnvironmentSetMaintenanceWindowParams) (gensql.Environment, error)) *Querier_EnvironmentSetMaintenanceWindow_Call {
 	_c.Call.Return(run)
 	return _c
 }
