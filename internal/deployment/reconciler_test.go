@@ -3,9 +3,9 @@ package deployment_test
 import (
 	"context"
 	"io"
+	"strings"
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/dbtest"
@@ -18,12 +18,24 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// Intentional uppercase to avoid var clashes
+type Db struct {
+	repo database.Repo
+	t    *testing.T
+}
+
+type featureDeploy struct {
+	name    string
+	version string
+	target  environment.Labels
+}
+
 func TestReconcile(t *testing.T) {
 	ctx := context.Background()
 	db := setupDb(ctx, t, true)
 
 	r, err := deployment.NewReconciler(
-		db,
+		db.repo,
 		func(topicID string, log *logrus.Entry) deployment.Publisher {
 			return nil
 		},
@@ -35,213 +47,183 @@ func TestReconcile(t *testing.T) {
 		t.Fatalf("create reconciler: %v", err)
 	}
 
-	const tenantName = "tenant-1"
+	type tenantKey = string
+	envsToCreate := map[tenantKey]map[string]environment.Labels{
+		"test-partner": {
+			"dev": environment.Labels{},
+			"prod": environment.Labels{
+				"featuretoggle": "enabled",
+			},
+		},
+		"nav": {
+			"dev": environment.Labels{
+				"aiven": "enabled",
+			},
+			"management": environment.Labels{
+				"kind": "management",
+			},
+		},
+	}
 
-	tenant, err := db.TenantCreate(ctx, &model.TenantCreate{
-		Name: tenantName,
-	})
+	deploymentsToCreate := []featureDeploy{
+		{name: "aivenator", version: "1.0.0", target: environment.Labels{"aiven": "enabled"}},
+		{name: "aivenator", version: "2.0.0", target: environment.Labels{"aiven": "enabled"}},
+		{name: "aivenator", version: "1.1.0", target: environment.Labels{"aiven": "enabled", "tenant": "nav"}},
+		{name: "aivenator", version: "1.1.1", target: environment.Labels{"aiven": "enabled", "tenant": "nav"}},
+		{name: "aivenator", version: "3.0.0", target: environment.Labels{"aiven": "enabled"}},
+		{name: "naiserator", version: "1.0.0", target: environment.Labels{"aiven": "enabled"}},
+		{name: "unleash", version: "1.0.0", target: environment.Labels{"featuretoggle": "enabled"}},
+		{name: "unleash", version: "2.0.0", target: environment.Labels{"kind": "tenant"}},
+		{name: "v13s", version: "1.0.0", target: environment.Labels{"kind": "management"}},
+	}
+
+	expectedDeploymentTargets := map[string]map[string][]featureDeploy{
+		"nav": {
+			"dev": {
+				{name: "aivenator", version: "1.1.1", target: environment.Labels{"aiven": "enabled", "tenant": "nav"}},
+				{name: "naiserator", version: "1.0.0", target: environment.Labels{"aiven": "enabled"}},
+				{name: "unleash", version: "2.0.0", target: environment.Labels{"kind": "tenant"}},
+			},
+			"management": {
+				{name: "v13s", version: "1.0.0", target: environment.Labels{"kind": "management"}},
+			},
+		},
+		"test-partner": {
+			"dev": {
+				{name: "unleash", version: "2.0.0", target: environment.Labels{"kind": "tenant"}},
+			},
+			"prod": {
+				{name: "unleash", version: "2.0.0", target: environment.Labels{"kind": "tenant"}},
+			},
+		},
+	}
+
+	db.createTenantEnvironments(ctx, envsToCreate)
+	db.createDeployments(ctx, deploymentsToCreate)
+
+	err = r.Reconcile(ctx)
 	if err != nil {
-		t.Fatalf("create tenant: %v", err)
+		t.Fatalf("reconcile: %v", err)
 	}
 
-	envsWithAiven := make([]uuid.UUID, 0)
-	envsWithUnleash := make([]uuid.UUID, 0)
-
-	{
-		env, err := db.EnvironmentCreate(ctx, &model.EnvironmentCreate{
-			Name:     "management",
-			TenantID: tenant.ID,
-			Kind:     "management",
-		})
-		if err != nil {
-			t.Fatalf("create environment: %v", err)
-		}
-		err = db.EnvironmentSetLabels(ctx, env.ID, []*protogen.EnvironmentLabel{
-			{
-				Key:   "tenant",
-				Value: tenantName,
-			},
-			{
-				Key:   "environment",
-				Value: "management",
-			},
-		})
-		if err != nil {
-			t.Fatalf("set environment labels: %v", err)
-		}
-	}
-
-	{
-		env, err := db.EnvironmentCreate(ctx, &model.EnvironmentCreate{
-			Name:     "dev",
-			TenantID: tenant.ID,
-			Kind:     "tenant",
-		})
-		if err != nil {
-			t.Fatalf("create environment: %v", err)
-		}
-		err = db.EnvironmentSetLabels(ctx, env.ID, []*protogen.EnvironmentLabel{
-			{
-				Key:   "tenant",
-				Value: tenantName,
-			},
-			{
-				Key:   "environment",
-				Value: "dev",
-			},
-			{
-				Key:   "aiven",
-				Value: "true",
-			},
-		})
-		if err != nil {
-			t.Fatalf("set environment labels: %v", err)
-		}
-
-		envsWithAiven = append(envsWithAiven, env.ID)
-	}
-
-	{
-		env, err := db.EnvironmentCreate(ctx, &model.EnvironmentCreate{
-			Name:     "prod",
-			TenantID: tenant.ID,
-			Kind:     "tenant",
-		})
-		if err != nil {
-			t.Fatalf("create environment: %v", err)
-		}
-		err = db.EnvironmentSetLabels(ctx, env.ID, []*protogen.EnvironmentLabel{
-			{
-				Key:   "tenant",
-				Value: tenantName,
-			},
-			{
-				Key:   "environment",
-				Value: "prod",
-			},
-			{
-				Key:   "aiven",
-				Value: "true",
-			},
-			{
-				Key:   "unleash",
-				Value: "true",
-			},
-		})
-		if err != nil {
-			t.Fatalf("set environment labels: %v", err)
-		}
-
-		envsWithAiven = append(envsWithAiven, env.ID)
-		envsWithUnleash = append(envsWithUnleash, env.ID)
-	}
-
-	tenant, err = db.TenantCreate(ctx, &model.TenantCreate{
-		Name: "tenant-2",
-	})
+	allDeploymentTargets, err := db.repo.DeploymentTargetsGetAll(ctx)
 	if err != nil {
-		t.Fatalf("create tenant: %v", err)
+		t.Fatalf("get all deployment targets: %v", err)
 	}
 
-	{
-		env, err := db.EnvironmentCreate(ctx, &model.EnvironmentCreate{
-			Name:     "prod",
-			TenantID: tenant.ID,
-			Kind:     "tenant",
-		})
-		if err != nil {
-			t.Fatalf("create environment: %v", err)
+	countExpected := 0
+	for _, envs := range expectedDeploymentTargets {
+		for _, dts := range envs {
+			countExpected += len(dts)
 		}
-		err = db.EnvironmentSetLabels(ctx, env.ID, []*protogen.EnvironmentLabel{
-			{
-				Key:   "tenant",
-				Value: "tenant-2",
-			},
-			{
-				Key:   "environment",
-				Value: "prod",
-			},
-			{
-				Key:   "aiven",
-				Value: "true",
-			},
-			{
-				Key:   "unleash",
-				Value: "true",
-			},
-		})
-		if err != nil {
-			t.Fatalf("set environment labels: %v", err)
-		}
+	}
+	assert.Len(t, allDeploymentTargets, countExpected, "expected %d deployment targets, got %d", countExpected, len(allDeploymentTargets))
 
-		envsWithAiven = append(envsWithAiven, env.ID)
+	count := 0
+	for _, dt := range allDeploymentTargets {
+		featureDeploys, ok := expectedDeploymentTargets[dt.TenantName][dt.EnvironmentName]
+		if !ok {
+			t.Fatalf(
+				"%s:%s not found in expected deployment targets map",
+				dt.TenantName,
+				dt.EnvironmentName,
+			)
+		}
+		found := false
+		for _, fd := range featureDeploys {
+			if dt.FeatureName == fd.name && dt.Version == fd.version {
+				count++
+				found = true
+				break
+			}
+		}
+		assert.True(t, found,
+			"deployment target %s:%s:%s:%s not found in expected deployment targets",
+			dt.TenantName,
+			dt.EnvironmentName,
+			dt.FeatureName,
+			dt.Version,
+		)
+
 	}
 
-	err = db.FeatureDataCreate(ctx, model.Feature{
-		Name:    "aiven",
-		Version: "v2",
-		Chart:   "oci://aiven",
+	assert.Len(t, allDeploymentTargets, count, "number of deployment targets does not match the expected number of deployment targets")
+}
+
+func (d *Db) createDeployment(ctx context.Context, featureName, version string, labels environment.Labels) {
+	d.t.Helper()
+	err := d.repo.FeatureDataCreate(ctx, model.Feature{
+		Name:    featureName,
+		Version: version,
+		Chart:   "oci://" + featureName,
 	}, &feature.FeatureTemplateDetails{})
+	if err != nil && !strings.Contains(err.Error(), "SQLSTATE 23505") {
+		d.t.Fatalf("create feature data: %v", err)
+	}
+
+	_, err = d.repo.DeploymentCreate(ctx, featureName, version, []byte(`{"key": "ghref"}`), labels)
 	if err != nil {
-		t.Fatalf("create feature data: %v", err)
-	}
-
-	err = db.FeatureDataCreate(ctx, model.Feature{
-		Name:    "unleash",
-		Version: "v3",
-		Chart:   "oci://unleash",
-	}, &feature.FeatureTemplateDetails{})
-	if err != nil {
-		t.Fatalf("create feature data: %v", err)
-	}
-
-	dep1, err := db.DeploymentCreate(ctx, "aiven", "v2", []byte(`{"key": "ghref"}`), environment.Labels{
-		"aiven": "true",
-	})
-	if err != nil {
-		t.Fatalf("create deployment: %v", err)
-	}
-
-	dep2, err := db.DeploymentCreate(ctx, "unleash", "v3", []byte(`{"key": "ghref"}`), environment.Labels{
-		"tenant":  tenantName,
-		"unleash": "true",
-	})
-	if err != nil {
-		t.Fatalf("create deployment: %v", err)
-	}
-
-	deploys, err := db.DeploymentsGet(ctx)
-	if err != nil {
-		t.Fatalf("get deployment: %v", err)
-	}
-	assert.Len(t, deploys, 2)
-
-	if err := r.Reconcile(ctx); err != nil {
-		t.Fatalf("Reconcile failed: %v", err)
-	}
-
-	targets, err := db.DeploymentTargetsGet(ctx, dep1.ID)
-	if err != nil {
-		t.Fatalf("get deployment targets: %v", err)
-	}
-	assert.Len(t, targets, 3)
-
-	for _, target := range targets {
-		assert.Contains(t, envsWithAiven, target.EnvironmentID, "environment ID should be in envsWithAiven")
-	}
-
-	targets, err = db.DeploymentTargetsGet(ctx, dep2.ID)
-	if err != nil {
-		t.Fatalf("get deployment targets: %v", err)
-	}
-	assert.Len(t, targets, 1)
-
-	for _, target := range targets {
-		assert.Contains(t, envsWithUnleash, target.EnvironmentID, "environment ID should be in envsWithUnleash")
+		d.t.Fatalf("create deployment: %v", err)
 	}
 }
 
-func setupDb(ctx context.Context, t *testing.T, testcontainers bool) database.Repo {
+func (d *Db) createEnv(ctx context.Context, tenant *model.Tenant, name string, labels environment.Labels) {
+	d.t.Helper()
+
+	if labels["kind"] == "" {
+		labels["kind"] = "tenant"
+	}
+	env, err := d.repo.EnvironmentCreate(ctx, &model.EnvironmentCreate{
+		Name:     name,
+		TenantID: tenant.ID,
+		Kind:     model.EnvironmentKind(labels["kind"]),
+	})
+	if err != nil {
+		d.t.Fatalf("create environment: %v", err)
+	}
+	lbls := make([]*protogen.EnvironmentLabel, 0)
+	for k, v := range labels {
+		lbls = append(lbls, &protogen.EnvironmentLabel{
+			Key:   k,
+			Value: v,
+		})
+	}
+	lbls = append(lbls, &protogen.EnvironmentLabel{
+		Key:   "tenant",
+		Value: tenant.Name,
+	}, &protogen.EnvironmentLabel{
+		Key:   "environment",
+		Value: name,
+	})
+	err = d.repo.EnvironmentSetLabels(ctx, env.ID, lbls)
+	if err != nil {
+		d.t.Fatalf("set environment labels: %v", err)
+	}
+}
+
+// key in envsToCreate is tenantName, key in inner map is env name
+func (d *Db) createTenantEnvironments(ctx context.Context, envsToCreate map[string]map[string]environment.Labels) {
+	d.t.Helper()
+	for k, v := range envsToCreate {
+		tenant, err := d.repo.TenantCreate(ctx, &model.TenantCreate{
+			Name: k,
+		})
+		if err != nil {
+			d.t.Fatalf("create tenant: %v", err)
+		}
+		for name, labels := range v {
+			d.createEnv(ctx, tenant, name, labels)
+		}
+	}
+}
+
+func (d *Db) createDeployments(ctx context.Context, deployments []featureDeploy) {
+	for _, deploy := range deployments {
+		d.createDeployment(ctx, deploy.name, deploy.version, deploy.target)
+	}
+}
+
+func setupDb(ctx context.Context, t *testing.T, testcontainers bool) *Db {
 	t.Helper()
 
 	log := logrus.New()
@@ -276,5 +258,8 @@ func setupDb(ctx context.Context, t *testing.T, testcontainers bool) database.Re
 	if err := database.Migrate("pgx", dbs, logrus.NewEntry(log)); err != nil {
 		t.Fatalf("Could not migrate: %v", err)
 	}
-	return database.New(pool, log.WithField("subsystem", "repo"))
+	return &Db{
+		repo: database.New(pool, log.WithField("subsystem", "repo")),
+		t:    t,
+	}
 }

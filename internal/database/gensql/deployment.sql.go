@@ -7,6 +7,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/nais/fasit/internal/environment"
 )
 
@@ -69,7 +70,7 @@ const deploymentTargetsGet = `-- name: DeploymentTargetsGet :many
 SELECT
 	deployment_id, environment_id, status, last_modified, created, hash
 FROM
-	deployment_targets
+	deployment_targets dt
 WHERE
 	deployment_id = $1
 ORDER BY
@@ -105,22 +106,42 @@ func (q *Queries) DeploymentTargetsGet(ctx context.Context, deploymentID uuid.UU
 
 const deploymentTargetsGetAll = `-- name: DeploymentTargetsGetAll :many
 SELECT
-	deployment_id, environment_id, status, last_modified, created, hash
+	dt.deployment_id, dt.environment_id, dt.status, dt.last_modified, dt.created, dt.hash,
+	e.name as environment_name,
+	t.name as tenant_name,
+	d.feature_name,
+	d.version
 FROM
-	deployment_targets
+	deployment_targets dt
+	JOIN environments e on e.id = dt.environment_id
+    JOIN tenants t on t.id = e.tenant_id
+    JOIN deployments d on d.id = dt.deployment_id
 ORDER BY
-	created ASC
+	dt.created
 `
 
-func (q *Queries) DeploymentTargetsGetAll(ctx context.Context) ([]DeploymentTarget, error) {
+type DeploymentTargetsGetAllRow struct {
+	DeploymentID    uuid.UUID
+	EnvironmentID   uuid.UUID
+	Status          string
+	LastModified    pgtype.Timestamptz
+	Created         pgtype.Timestamptz
+	Hash            string
+	EnvironmentName string
+	TenantName      string
+	FeatureName     string
+	Version         string
+}
+
+func (q *Queries) DeploymentTargetsGetAll(ctx context.Context) ([]DeploymentTargetsGetAllRow, error) {
 	rows, err := q.db.Query(ctx, deploymentTargetsGetAll)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []DeploymentTarget{}
+	items := []DeploymentTargetsGetAllRow{}
 	for rows.Next() {
-		var i DeploymentTarget
+		var i DeploymentTargetsGetAllRow
 		if err := rows.Scan(
 			&i.DeploymentID,
 			&i.EnvironmentID,
@@ -128,6 +149,10 @@ func (q *Queries) DeploymentTargetsGetAll(ctx context.Context) ([]DeploymentTarg
 			&i.LastModified,
 			&i.Created,
 			&i.Hash,
+			&i.EnvironmentName,
+			&i.TenantName,
+			&i.FeatureName,
+			&i.Version,
 		); err != nil {
 			return nil, err
 		}
@@ -199,17 +224,18 @@ func (q *Queries) DeploymentTargetsUpdate(ctx context.Context, arg DeploymentTar
 }
 
 const deploymentsForEnvironment = `-- name: DeploymentsForEnvironment :many
-SELECT
-    DISTINCT ON (d.feature_name, d.target)
-    d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.deploy_instructions
+SELECT DISTINCT
+	ON (d.feature_name, d.target) d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.deploy_instructions
 FROM
-    deployments d,
-    environments e
+	deployments d,
+	environments e
 WHERE
-    e.id = $1
-    AND e.labels @> d.target -- @> operator checks if the JSONB on the left contains the JSONB on the right
+	e.id = $1
+	AND e.labels @> d.target -- @> operator checks if the JSONB on the left contains the JSONB on the right
 ORDER BY
-    d.feature_name, d.target, d.created DESC
+	d.feature_name,
+	d.target,
+	d.created DESC
 `
 
 func (q *Queries) DeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]Deployment, error) {

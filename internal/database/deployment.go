@@ -10,7 +10,7 @@ import (
 
 type DeploymentRepo interface {
 	DeploymentCreate(ctx context.Context, featureName, featureVersion string, ghRef []byte, target environment.Labels) (*gensql.Deployment, error)
-	DeploymentTargetsGetAll(ctx context.Context) ([]gensql.DeploymentTarget, error)
+	DeploymentTargetsGetAll(ctx context.Context) ([]gensql.DeploymentTargetsGetAllRow, error)
 	DeploymentTargetsGet(ctx context.Context, deploymentID uuid.UUID) ([]gensql.DeploymentTarget, error)
 	DeploymentTargetsGetPending(ctx context.Context) ([]gensql.DeploymentTarget, error)
 	DeploymentTargetsCreate(ctx context.Context, deploymentID, environmentID uuid.UUID) error
@@ -34,7 +34,7 @@ func (r *repo) DeploymentCreate(ctx context.Context, featureName, featureVersion
 	return &ret, err
 }
 
-func (r *repo) DeploymentTargetsGetAll(ctx context.Context) ([]gensql.DeploymentTarget, error) {
+func (r *repo) DeploymentTargetsGetAll(ctx context.Context) ([]gensql.DeploymentTargetsGetAllRow, error) {
 	return r.querier.DeploymentTargetsGetAll(ctx)
 }
 

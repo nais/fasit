@@ -2780,23 +2780,23 @@ func (_c *Querier_DeploymentTargetsGet_Call) RunAndReturn(run func(ctx context.C
 }
 
 // DeploymentTargetsGetAll provides a mock function for the type Querier
-func (_mock *Querier) DeploymentTargetsGetAll(ctx context.Context) ([]gensql.DeploymentTarget, error) {
+func (_mock *Querier) DeploymentTargetsGetAll(ctx context.Context) ([]gensql.DeploymentTargetsGetAllRow, error) {
 	ret := _mock.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for DeploymentTargetsGetAll")
 	}
 
-	var r0 []gensql.DeploymentTarget
+	var r0 []gensql.DeploymentTargetsGetAllRow
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context) ([]gensql.DeploymentTarget, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context) ([]gensql.DeploymentTargetsGetAllRow, error)); ok {
 		return returnFunc(ctx)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context) []gensql.DeploymentTarget); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context) []gensql.DeploymentTargetsGetAllRow); ok {
 		r0 = returnFunc(ctx)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]gensql.DeploymentTarget)
+			r0 = ret.Get(0).([]gensql.DeploymentTargetsGetAllRow)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
@@ -2831,12 +2831,12 @@ func (_c *Querier_DeploymentTargetsGetAll_Call) Run(run func(ctx context.Context
 	return _c
 }
 
-func (_c *Querier_DeploymentTargetsGetAll_Call) Return(deploymentTargets []gensql.DeploymentTarget, err error) *Querier_DeploymentTargetsGetAll_Call {
-	_c.Call.Return(deploymentTargets, err)
+func (_c *Querier_DeploymentTargetsGetAll_Call) Return(deploymentTargetsGetAllRows []gensql.DeploymentTargetsGetAllRow, err error) *Querier_DeploymentTargetsGetAll_Call {
+	_c.Call.Return(deploymentTargetsGetAllRows, err)
 	return _c
 }
 
-func (_c *Querier_DeploymentTargetsGetAll_Call) RunAndReturn(run func(ctx context.Context) ([]gensql.DeploymentTarget, error)) *Querier_DeploymentTargetsGetAll_Call {
+func (_c *Querier_DeploymentTargetsGetAll_Call) RunAndReturn(run func(ctx context.Context) ([]gensql.DeploymentTargetsGetAllRow, error)) *Querier_DeploymentTargetsGetAll_Call {
 	_c.Call.Return(run)
 	return _c
 }

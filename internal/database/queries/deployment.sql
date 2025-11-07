@@ -18,11 +18,18 @@ RETURNING
 
 -- name: DeploymentTargetsGetAll :many
 SELECT
-	*
+	dt.*,
+	e.name AS environment_name,
+	t.name AS tenant_name,
+	d.feature_name,
+	d.version
 FROM
-	deployment_targets
+	deployment_targets dt
+	JOIN environments e ON e.id = dt.environment_id
+	JOIN tenants t ON t.id = e.tenant_id
+	JOIN deployments d ON d.id = dt.deployment_id
 ORDER BY
-	created ASC
+	dt.created
 ;
 
 -- name: DeploymentTargetsGet :many
@@ -33,7 +40,7 @@ FROM
 WHERE
 	deployment_id = @deployment_id
 ORDER BY
-	created ASC
+	created
 ;
 
 -- name: DeploymentTargetsGetPending :many
