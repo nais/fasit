@@ -18,7 +18,6 @@ ADD CONSTRAINT environments_maintenance_window_valid CHECK (
 		AND JSONB_TYPEOF(maintenance_window -> 'days') = 'array'
 		AND JSONB_EXISTS (maintenance_window, 'timezone')
 		AND JSONB_TYPEOF(maintenance_window -> 'timezone') = 'string'
-		AND (maintenance_window ->> 'timezone') ~ '^[A-Za-z]+(?:/[A-Za-z_\-\.]+)+$'
 	)
 )
 ;
