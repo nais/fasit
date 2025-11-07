@@ -28,6 +28,29 @@ func (r *clusterUpgradeStatusResolver) Environment(ctx context.Context, obj *mod
 	return r.Repo.EnvironmentGet(ctx, obj.EnvironmentID)
 }
 
+// Actor is the resolver for the actor field.
+func (r *clusterUpgradeStatusResolver) Actor(ctx context.Context, obj *model.ClusterUpgradeStatus) (*string, error) {
+	// For automatic upgrades, there is no actor
+	if obj.IsAutomatic != nil && *obj.IsAutomatic {
+		return nil, nil
+	}
+
+	// Get the audit log for this cluster upgrade
+	auditLog, err := r.Repo.AuditGetLatestForClusterUpgrade(ctx, obj.ID)
+	if err != nil {
+		r.Log.WithError(err).WithFields(map[string]interface{}{
+			"upgrade_id": obj.ID,
+		}).Warn("failed to get audit log for cluster upgrade")
+		return nil, nil
+	}
+
+	if auditLog == nil {
+		return nil, nil
+	}
+
+	return &auditLog.Actor, nil
+}
+
 // FeatureStates is the resolver for the featureStates field.
 func (r *environmentResolver) FeatureStates(ctx context.Context, obj *model.Environment) ([]*model.FeatureState, error) {
 	return r.Repo.FeatureStatesGet(ctx, obj.ID)

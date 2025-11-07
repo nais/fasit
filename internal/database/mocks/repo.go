@@ -175,6 +175,74 @@ func (_c *Repo_AuditForEnvironment_Call) RunAndReturn(run func(ctx context.Conte
 	return _c
 }
 
+// AuditGetLatestForClusterUpgrade provides a mock function for the type Repo
+func (_mock *Repo) AuditGetLatestForClusterUpgrade(ctx context.Context, upgradeID uuid.UUID) (*model.AuditLog, error) {
+	ret := _mock.Called(ctx, upgradeID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AuditGetLatestForClusterUpgrade")
+	}
+
+	var r0 *model.AuditLog
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) (*model.AuditLog, error)); ok {
+		return returnFunc(ctx, upgradeID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) *model.AuditLog); ok {
+		r0 = returnFunc(ctx, upgradeID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.AuditLog)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = returnFunc(ctx, upgradeID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Repo_AuditGetLatestForClusterUpgrade_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AuditGetLatestForClusterUpgrade'
+type Repo_AuditGetLatestForClusterUpgrade_Call struct {
+	*mock.Call
+}
+
+// AuditGetLatestForClusterUpgrade is a helper method to define mock.On call
+//   - ctx context.Context
+//   - upgradeID uuid.UUID
+func (_e *Repo_Expecter) AuditGetLatestForClusterUpgrade(ctx interface{}, upgradeID interface{}) *Repo_AuditGetLatestForClusterUpgrade_Call {
+	return &Repo_AuditGetLatestForClusterUpgrade_Call{Call: _e.mock.On("AuditGetLatestForClusterUpgrade", ctx, upgradeID)}
+}
+
+func (_c *Repo_AuditGetLatestForClusterUpgrade_Call) Run(run func(ctx context.Context, upgradeID uuid.UUID)) *Repo_AuditGetLatestForClusterUpgrade_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Repo_AuditGetLatestForClusterUpgrade_Call) Return(auditLog *model.AuditLog, err error) *Repo_AuditGetLatestForClusterUpgrade_Call {
+	_c.Call.Return(auditLog, err)
+	return _c
+}
+
+func (_c *Repo_AuditGetLatestForClusterUpgrade_Call) RunAndReturn(run func(ctx context.Context, upgradeID uuid.UUID) (*model.AuditLog, error)) *Repo_AuditGetLatestForClusterUpgrade_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // AutoInstallsForKind provides a mock function for the type Repo
 func (_mock *Repo) AutoInstallsForKind(ctx context.Context, kind model.EnvironmentKind) ([]string, error) {
 	ret := _mock.Called(ctx, kind)

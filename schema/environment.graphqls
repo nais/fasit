@@ -23,6 +23,7 @@ type ClusterUpgradeStatus {
 	operations: [EnvironmentOperation!]!
 	environment: Environment!
 	isAutomatic: Boolean
+	actor: String
 }
 
 enum DayOfWeek {

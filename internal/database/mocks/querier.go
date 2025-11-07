@@ -166,6 +166,72 @@ func (_c *Querier_AuditForEnvironment_Call) RunAndReturn(run func(ctx context.Co
 	return _c
 }
 
+// AuditGetLatestForClusterUpgrade provides a mock function for the type Querier
+func (_mock *Querier) AuditGetLatestForClusterUpgrade(ctx context.Context, upgradeID string) (gensql.Audit, error) {
+	ret := _mock.Called(ctx, upgradeID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AuditGetLatestForClusterUpgrade")
+	}
+
+	var r0 gensql.Audit
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (gensql.Audit, error)); ok {
+		return returnFunc(ctx, upgradeID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) gensql.Audit); ok {
+		r0 = returnFunc(ctx, upgradeID)
+	} else {
+		r0 = ret.Get(0).(gensql.Audit)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = returnFunc(ctx, upgradeID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_AuditGetLatestForClusterUpgrade_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AuditGetLatestForClusterUpgrade'
+type Querier_AuditGetLatestForClusterUpgrade_Call struct {
+	*mock.Call
+}
+
+// AuditGetLatestForClusterUpgrade is a helper method to define mock.On call
+//   - ctx context.Context
+//   - upgradeID string
+func (_e *Querier_Expecter) AuditGetLatestForClusterUpgrade(ctx interface{}, upgradeID interface{}) *Querier_AuditGetLatestForClusterUpgrade_Call {
+	return &Querier_AuditGetLatestForClusterUpgrade_Call{Call: _e.mock.On("AuditGetLatestForClusterUpgrade", ctx, upgradeID)}
+}
+
+func (_c *Querier_AuditGetLatestForClusterUpgrade_Call) Run(run func(ctx context.Context, upgradeID string)) *Querier_AuditGetLatestForClusterUpgrade_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_AuditGetLatestForClusterUpgrade_Call) Return(audit gensql.Audit, err error) *Querier_AuditGetLatestForClusterUpgrade_Call {
+	_c.Call.Return(audit, err)
+	return _c
+}
+
+func (_c *Querier_AuditGetLatestForClusterUpgrade_Call) RunAndReturn(run func(ctx context.Context, upgradeID string) (gensql.Audit, error)) *Querier_AuditGetLatestForClusterUpgrade_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // AutoInstallNamesForKind provides a mock function for the type Querier
 func (_mock *Querier) AutoInstallNamesForKind(ctx context.Context, environmentKind gensql.EnvironmentKind) ([]string, error) {
 	ret := _mock.Called(ctx, environmentKind)

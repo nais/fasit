@@ -20,3 +20,17 @@ ORDER BY
 LIMIT
 	@page_size
 ;
+
+-- name: AuditGetLatestForClusterUpgrade :one
+SELECT
+	*
+FROM
+	audits
+WHERE
+	object_id = @upgrade_id
+	AND object_type = 'cluster_upgrades'
+ORDER BY
+	created_at DESC
+LIMIT
+	1
+;

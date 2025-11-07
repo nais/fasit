@@ -12,6 +12,7 @@ import (
 type Querier interface {
 	AuditCreate(ctx context.Context, arg AuditCreateParams) error
 	AuditForEnvironment(ctx context.Context, arg AuditForEnvironmentParams) ([]Audit, error)
+	AuditGetLatestForClusterUpgrade(ctx context.Context, upgradeID string) (Audit, error)
 	AutoInstallNamesForKind(ctx context.Context, environmentKind EnvironmentKind) ([]string, error)
 	AutoInstallsForKind(ctx context.Context, environmentKind EnvironmentKind) ([]AutoInstall, error)
 	ClusterOperationCreateOrUpdate(ctx context.Context, arg ClusterOperationCreateOrUpdateParams) (ClusterOperation, error)

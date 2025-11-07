@@ -2,8 +2,10 @@ package database
 
 import (
 	"context"
+	"errors"
 
 	"github.com/google/uuid"
+	pgx "github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/internal/auth"
 	"github.com/nais/fasit/internal/database/gensql"
 	"github.com/nais/fasit/internal/graph/model"
@@ -12,6 +14,7 @@ import (
 
 type AuditRepo interface {
 	AuditForEnvironment(ctx context.Context, id uuid.UUID, featureName string) ([]*model.AuditLog, error)
+	AuditGetLatestForClusterUpgrade(ctx context.Context, upgradeID uuid.UUID) (*model.AuditLog, error)
 	AuditDeleteHelmInstall(ctx context.Context, envID uuid.UUID, name string)
 }
 
@@ -27,6 +30,25 @@ func (r *repo) AuditForEnvironment(ctx context.Context, id uuid.UUID, featureNam
 	}
 
 	return auditLogsFromSQL(auditLogs), nil
+}
+
+// AuditGetLatestForClusterUpgrade returns the most recent audit log for a cluster upgrade.
+func (r *repo) AuditGetLatestForClusterUpgrade(ctx context.Context, upgradeID uuid.UUID) (*model.AuditLog, error) {
+	auditLog, err := r.querier.AuditGetLatestForClusterUpgrade(ctx, upgradeID.String())
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &model.AuditLog{
+		Actor:       auditLog.Actor,
+		Description: auditLog.Description,
+		ObjectType:  auditLog.ObjectType,
+		ObjectID:    auditLog.ObjectID,
+		CreatedAt:   auditLog.CreatedAt.Time,
+	}, nil
 }
 
 func (r *repo) AuditDeleteHelmInstall(ctx context.Context, envID uuid.UUID, name string) {

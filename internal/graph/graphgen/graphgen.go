@@ -75,6 +75,7 @@ type ComplexityRoot struct {
 	}
 
 	ClusterUpgradeStatus struct {
+		Actor         func(childComplexity int) int
 		Environment   func(childComplexity int) int
 		ID            func(childComplexity int) int
 		IsAutomatic   func(childComplexity int) int
@@ -433,6 +434,8 @@ type ComplexityRoot struct {
 type ClusterUpgradeStatusResolver interface {
 	Operations(ctx context.Context, obj *model.ClusterUpgradeStatus) ([]*model.EnvironmentOperation, error)
 	Environment(ctx context.Context, obj *model.ClusterUpgradeStatus) (*model.Environment, error)
+
+	Actor(ctx context.Context, obj *model.ClusterUpgradeStatus) (*string, error)
 }
 type ConfigOverrideResolver interface {
 	Environment(ctx context.Context, obj *model.ConfigOverride) (*model.Environment, error)
@@ -604,6 +607,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.AuditLog.ObjectType(childComplexity), true
 
+	case "ClusterUpgradeStatus.actor":
+		if e.complexity.ClusterUpgradeStatus.Actor == nil {
+			break
+		}
+
+		return e.complexity.ClusterUpgradeStatus.Actor(childComplexity), true
 	case "ClusterUpgradeStatus.environment":
 		if e.complexity.ClusterUpgradeStatus.Environment == nil {
 			break
@@ -2442,6 +2451,7 @@ type ClusterUpgradeStatus {
 	operations: [EnvironmentOperation!]!
 	environment: Environment!
 	isAutomatic: Boolean
+	actor: String
 }
 
 enum DayOfWeek {
@@ -3899,6 +3909,35 @@ func (ec *executionContext) fieldContext_ClusterUpgradeStatus_isAutomatic(_ cont
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ClusterUpgradeStatus_actor(ctx context.Context, field graphql.CollectedField, obj *model.ClusterUpgradeStatus) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ClusterUpgradeStatus_actor,
+		func(ctx context.Context) (any, error) {
+			return ec.resolvers.ClusterUpgradeStatus().Actor(ctx, obj)
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_ClusterUpgradeStatus_actor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ClusterUpgradeStatus",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -5530,6 +5569,8 @@ func (ec *executionContext) fieldContext_Environment_clusterUpgradeHistory(_ con
 				return ec.fieldContext_ClusterUpgradeStatus_environment(ctx, field)
 			case "isAutomatic":
 				return ec.fieldContext_ClusterUpgradeStatus_isAutomatic(ctx, field)
+			case "actor":
+				return ec.fieldContext_ClusterUpgradeStatus_actor(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ClusterUpgradeStatus", field.Name)
 		},
@@ -5577,6 +5618,8 @@ func (ec *executionContext) fieldContext_Environment_clusterUpgradeStatus(_ cont
 				return ec.fieldContext_ClusterUpgradeStatus_environment(ctx, field)
 			case "isAutomatic":
 				return ec.fieldContext_ClusterUpgradeStatus_isAutomatic(ctx, field)
+			case "actor":
+				return ec.fieldContext_ClusterUpgradeStatus_actor(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ClusterUpgradeStatus", field.Name)
 		},
@@ -14420,6 +14463,39 @@ func (ec *executionContext) _ClusterUpgradeStatus(ctx context.Context, sel ast.S
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "isAutomatic":
 			out.Values[i] = ec._ClusterUpgradeStatus_isAutomatic(ctx, field, obj)
+		case "actor":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ClusterUpgradeStatus_actor(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
