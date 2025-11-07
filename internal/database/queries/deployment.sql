@@ -65,17 +65,19 @@ WHERE
 	AND environment_id = @environment_id
 ;
 
--- name: EnvironmentsForDeployment :many
-SELECT
-	e.id
+-- name: DeploymentsForEnvironment :many
+SELECT DISTINCT
+	ON (d.feature_name, d.target) d.*
 FROM
 	deployments d,
 	environments e
 WHERE
-	d.id = @deployment_id
+	e.id = @environment_id
 	AND e.labels @> d.target -- @> operator checks if the JSONB on the left contains the JSONB on the right
 ORDER BY
-	e.id
+	d.feature_name,
+	d.target,
+	d.created DESC
 ;
 
 -- name: FeatureEnabled :one

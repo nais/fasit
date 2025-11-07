@@ -198,6 +198,48 @@ func (q *Queries) DeploymentTargetsUpdate(ctx context.Context, arg DeploymentTar
 	return err
 }
 
+const deploymentsForEnvironment = `-- name: DeploymentsForEnvironment :many
+SELECT
+    DISTINCT ON (d.feature_name, d.target)
+    d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.deploy_instructions
+FROM
+    deployments d,
+    environments e
+WHERE
+    e.id = $1
+    AND e.labels @> d.target -- @> operator checks if the JSONB on the left contains the JSONB on the right
+ORDER BY
+    d.feature_name, d.target, d.created DESC
+`
+
+func (q *Queries) DeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]Deployment, error) {
+	rows, err := q.db.Query(ctx, deploymentsForEnvironment, environmentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Deployment{}
+	for rows.Next() {
+		var i Deployment
+		if err := rows.Scan(
+			&i.ID,
+			&i.FeatureName,
+			&i.Version,
+			&i.Target,
+			&i.Created,
+			&i.GhRef,
+			&i.DeployInstructions,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const deploymentsGet = `-- name: DeploymentsGet :many
 SELECT
 	id, feature_name, version, target, created, gh_ref, deploy_instructions
@@ -228,39 +270,6 @@ func (q *Queries) DeploymentsGet(ctx context.Context) ([]Deployment, error) {
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const environmentsForDeployment = `-- name: EnvironmentsForDeployment :many
-SELECT
-	e.id
-FROM
-	deployments d,
-	environments e
-WHERE
-	d.id = $1
-	AND e.labels @> d.target -- @> operator checks if the JSONB on the left contains the JSONB on the right
-ORDER BY
-	e.id
-`
-
-func (q *Queries) EnvironmentsForDeployment(ctx context.Context, deploymentID uuid.UUID) ([]uuid.UUID, error) {
-	rows, err := q.db.Query(ctx, environmentsForDeployment, deploymentID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []uuid.UUID{}
-	for rows.Next() {
-		var id uuid.UUID
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		items = append(items, id)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

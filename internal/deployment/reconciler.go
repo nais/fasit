@@ -10,6 +10,7 @@ import (
 	"github.com/nais/fasit/internal/auth"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/gensql"
+	"github.com/nais/fasit/internal/graph/model"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/metric"
 )
@@ -17,6 +18,7 @@ import (
 type ReconcilerStore interface {
 	database.EnvironmentRepo
 	database.DeploymentRepo
+	database.TenantRepo
 }
 
 type Publisher interface{}
@@ -79,30 +81,20 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 	defer r.lock.Unlock()
 
-	deployments, err := r.repo.DeploymentsGet(ctx)
+	tenants, err := r.repo.TenantsGet(ctx)
 	if err != nil {
-		return fmt.Errorf("get deployments: %w", err)
+		return fmt.Errorf("get tenants: %w", err)
 	}
 
-	for _, deployment := range deployments {
-		envs, err := r.repo.EnvironmentsForDeployment(ctx, deployment.ID)
+	for _, tenant := range tenants {
+		environments, err := r.repo.EnvironmentsGet(ctx, tenant.ID)
 		if err != nil {
-			return fmt.Errorf("get environments targeted by deployment: %w", err)
+			return fmt.Errorf("get environments for tenant %q: %w", tenant.Name, err)
 		}
 
-		for _, envID := range envs {
-			if !r.shouldDeployToEnvironment(ctx, deployment, envID) {
-				continue
-			}
-
-			if err := r.createDeploymentTarget(ctx, deployment, envID); err != nil {
-				r.log.
-					WithError(err).
-					WithFields(logrus.Fields{
-						"deployment_id":  deployment.ID,
-						"environment_id": envID,
-					}).
-					Error("reconcile deployment")
+		for _, environment := range environments {
+			if err := r.reconcileEnvironment(ctx, environment); err != nil {
+				return fmt.Errorf("reconcile environment %q for tenant: %q: %w", environment.Name, tenant.Name, err)
 			}
 		}
 	}
@@ -132,4 +124,58 @@ func (r *Reconciler) shouldDeployToEnvironment(ctx context.Context, deployment g
 
 	// Additional criteria can be added here
 	return true
+}
+
+func (r *Reconciler) reconcileEnvironment(ctx context.Context, environment *model.Environment) error {
+	allDeployments, err := r.repo.DeploymentsForEnvironment(ctx, environment.ID)
+	if err != nil {
+		return fmt.Errorf("get deployments for environment %q: %w", environment.Name, err)
+	}
+
+	for _, deployment := range filterDeployments(allDeployments) {
+		if !r.shouldDeployToEnvironment(ctx, deployment, environment.ID) {
+			continue
+		}
+
+		if err := r.createDeploymentTarget(ctx, deployment, environment.ID); err != nil {
+			r.log.
+				WithError(err).
+				WithFields(logrus.Fields{
+					"deployment_id":  deployment.ID,
+					"environment_id": environment.ID,
+				}).
+				Error("reconcile deployment")
+		}
+	}
+
+	return nil
+}
+
+// filterDeployments filters the deployments to only include the most specific deployment with the latest created
+// timestamp.
+func filterDeployments(allDeployments []gensql.Deployment) []gensql.Deployment {
+	deployments := map[string]gensql.Deployment{}
+	for _, deployment := range allDeployments {
+		d, ok := deployments[deployment.FeatureName]
+		if !ok {
+			deployments[deployment.FeatureName] = deployment
+			continue
+		}
+
+		if len(deployment.Target) > len(d.Target) {
+			deployments[deployment.FeatureName] = deployment
+			continue
+		}
+
+		if len(deployment.Target) == len(d.Target) && deployment.Created.Time.After(d.Created.Time) {
+			deployments[deployment.FeatureName] = deployment
+			continue
+		}
+	}
+
+	ret := make([]gensql.Deployment, 0)
+	for _, d := range deployments {
+		ret = append(ret, d)
+	}
+	return ret
 }

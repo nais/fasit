@@ -56,6 +56,7 @@ type Querier interface {
 	DeploymentTargetsGetAll(ctx context.Context) ([]DeploymentTarget, error)
 	DeploymentTargetsGetPending(ctx context.Context) ([]DeploymentTarget, error)
 	DeploymentTargetsUpdate(ctx context.Context, arg DeploymentTargetsUpdateParams) error
+	DeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]Deployment, error)
 	DeploymentsGet(ctx context.Context) ([]Deployment, error)
 	EnvConfig(ctx context.Context, arg EnvConfigParams) ([]EnvConfigRow, error)
 	EnvConfigOnlyKnown(ctx context.Context, arg EnvConfigOnlyKnownParams) ([]EnvConfigOnlyKnownRow, error)
@@ -77,7 +78,6 @@ type Querier interface {
 	EnvironmentValueStore(ctx context.Context, arg EnvironmentValueStoreParams) error
 	EnvironmentValuesAcrossEnvs(ctx context.Context, key string) ([]EnvironmentValuesAcrossEnvsRow, error)
 	EnvironmentValuesForEnvironment(ctx context.Context, arg EnvironmentValuesForEnvironmentParams) ([]EnvironmentValuesForEnvironmentRow, error)
-	EnvironmentsForDeployment(ctx context.Context, deploymentID uuid.UUID) ([]uuid.UUID, error)
 	EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]Environment, error)
 	EnvironmentsGetByAutoUpgrade(ctx context.Context) ([]Environment, error)
 	FeatureByName(ctx context.Context, name string) (FeatureByNameRow, error)
