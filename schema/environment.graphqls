@@ -38,34 +38,39 @@ enum DayOfWeek {
 """
 MaintenanceWindow defines when GKE is allowed to perform maintenance on the cluster.
 If not set, GKE can perform maintenance at any time.
+All times are in UTC.
 """
 type MaintenanceWindow {
 	"""
-	Start time in 24-hour format (HH:MM), e.g., "02:00" for 2 AM
+	Start time in UTC 24-hour format (HH:MM), e.g., "02:00" for 2 AM UTC
 	"""
 	startTime: String!
 	"""
-	End time in 24-hour format (HH:MM), e.g., "06:00" for 6 AM
+	End time in UTC 24-hour format (HH:MM), e.g., "06:00" for 6 AM UTC
 	"""
 	endTime: String!
 	"""
-	Days of the week when maintenance is allowed. At least one day must be specified.
+	Days of the week when maintenance is allowed (in UTC). At least one day must be specified.
 	"""
 	days: [DayOfWeek!]!
-	"""
-	Timezone for the maintenance window, e.g., "Europe/Oslo" or "UTC"
-	"""
-	timezone: String!
 }
 
 """
 Input for setting a maintenance window
 """
 input MaintenanceWindowInput {
+	"""
+	Start time in UTC 24-hour format (HH:MM)
+	"""
 	startTime: String!
+	"""
+	End time in UTC 24-hour format (HH:MM)
+	"""
 	endTime: String!
+	"""
+	Days of the week when maintenance is allowed (in UTC). At least one day must be specified.
+	"""
 	days: [DayOfWeek!]!
-	timezone: String!
 }
 
 type Health {

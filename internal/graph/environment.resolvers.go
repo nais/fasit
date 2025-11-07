@@ -307,7 +307,6 @@ func (r *mutationResolver) EnvironmentSetMaintenanceWindow(ctx context.Context, 
 			StartTime: window.StartTime,
 			EndTime:   window.EndTime,
 			Days:      window.Days,
-			Timezone:  window.Timezone,
 		}
 	}
 

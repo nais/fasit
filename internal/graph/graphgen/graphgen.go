@@ -294,7 +294,6 @@ type ComplexityRoot struct {
 		Days      func(childComplexity int) int
 		EndTime   func(childComplexity int) int
 		StartTime func(childComplexity int) int
-		Timezone  func(childComplexity int) int
 	}
 
 	Mutation struct {
@@ -1487,12 +1486,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.MaintenanceWindow.StartTime(childComplexity), true
-	case "MaintenanceWindow.timezone":
-		if e.complexity.MaintenanceWindow.Timezone == nil {
-			break
-		}
-
-		return e.complexity.MaintenanceWindow.Timezone(childComplexity), true
 
 	case "Mutation.configurationCreate":
 		if e.complexity.Mutation.ConfigurationCreate == nil {
@@ -2464,34 +2457,39 @@ enum DayOfWeek {
 """
 MaintenanceWindow defines when GKE is allowed to perform maintenance on the cluster.
 If not set, GKE can perform maintenance at any time.
+All times are in UTC.
 """
 type MaintenanceWindow {
 	"""
-	Start time in 24-hour format (HH:MM), e.g., "02:00" for 2 AM
+	Start time in UTC 24-hour format (HH:MM), e.g., "02:00" for 2 AM UTC
 	"""
 	startTime: String!
 	"""
-	End time in 24-hour format (HH:MM), e.g., "06:00" for 6 AM
+	End time in UTC 24-hour format (HH:MM), e.g., "06:00" for 6 AM UTC
 	"""
 	endTime: String!
 	"""
-	Days of the week when maintenance is allowed. At least one day must be specified.
+	Days of the week when maintenance is allowed (in UTC). At least one day must be specified.
 	"""
 	days: [DayOfWeek!]!
-	"""
-	Timezone for the maintenance window, e.g., "Europe/Oslo" or "UTC"
-	"""
-	timezone: String!
 }
 
 """
 Input for setting a maintenance window
 """
 input MaintenanceWindowInput {
+	"""
+	Start time in UTC 24-hour format (HH:MM)
+	"""
 	startTime: String!
+	"""
+	End time in UTC 24-hour format (HH:MM)
+	"""
 	endTime: String!
+	"""
+	Days of the week when maintenance is allowed (in UTC). At least one day must be specified.
+	"""
 	days: [DayOfWeek!]!
-	timezone: String!
 }
 
 type Health {
@@ -5719,8 +5717,6 @@ func (ec *executionContext) fieldContext_Environment_maintenanceWindow(_ context
 				return ec.fieldContext_MaintenanceWindow_endTime(ctx, field)
 			case "days":
 				return ec.fieldContext_MaintenanceWindow_days(ctx, field)
-			case "timezone":
-				return ec.fieldContext_MaintenanceWindow_timezone(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type MaintenanceWindow", field.Name)
 		},
@@ -8468,35 +8464,6 @@ func (ec *executionContext) fieldContext_MaintenanceWindow_days(_ context.Contex
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type DayOfWeek does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MaintenanceWindow_timezone(ctx context.Context, field graphql.CollectedField, obj *model.MaintenanceWindow) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_MaintenanceWindow_timezone,
-		func(ctx context.Context) (any, error) {
-			return obj.Timezone, nil
-		},
-		nil,
-		ec.marshalNString2string,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_MaintenanceWindow_timezone(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MaintenanceWindow",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -14010,7 +13977,7 @@ func (ec *executionContext) unmarshalInputMaintenanceWindowInput(ctx context.Con
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"startTime", "endTime", "days", "timezone"}
+	fieldsInOrder := [...]string{"startTime", "endTime", "days"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -14038,13 +14005,6 @@ func (ec *executionContext) unmarshalInputMaintenanceWindowInput(ctx context.Con
 				return it, err
 			}
 			it.Days = data
-		case "timezone":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("timezone"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Timezone = data
 		}
 	}
 
@@ -17089,11 +17049,6 @@ func (ec *executionContext) _MaintenanceWindow(ctx context.Context, sel ast.Sele
 			}
 		case "days":
 			out.Values[i] = ec._MaintenanceWindow_days(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "timezone":
-			out.Values[i] = ec._MaintenanceWindow_timezone(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

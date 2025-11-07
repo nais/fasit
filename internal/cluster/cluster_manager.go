@@ -234,11 +234,6 @@ func (c *Client) SetMaintenanceWindow(ctx context.Context, projectID string, env
 
 	var recurringWindow *containerpb.RecurringTimeWindow
 
-	location, err := time.LoadLocation(window.Timezone)
-	if err != nil {
-		return nil, fmt.Errorf("invalid timezone %s: %w", window.Timezone, err)
-	}
-
 	startParts := strings.Split(window.StartTime, ":")
 	endParts := strings.Split(window.EndTime, ":")
 	if len(startParts) != 2 || len(endParts) != 2 {
@@ -260,11 +255,12 @@ func (c *Client) SetMaintenanceWindow(ctx context.Context, projectID string, env
 		return nil, fmt.Errorf("minutes must be between 0 and 59")
 	}
 
-	now := time.Now().In(location)
+	// Create times in UTC
+	now := time.Now().UTC()
 	startTime := time.Date(now.Year(), now.Month(), now.Day(),
-		startHour, startMin, 0, 0, location)
+		startHour, startMin, 0, 0, time.UTC)
 	endTime := time.Date(now.Year(), now.Month(), now.Day(),
-		endHour, endMin, 0, 0, location)
+		endHour, endMin, 0, 0, time.UTC)
 
 	if len(window.Days) == 0 {
 		return nil, fmt.Errorf("at least one day must be specified for the maintenance window")

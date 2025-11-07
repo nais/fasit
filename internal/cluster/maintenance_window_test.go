@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/stretchr/testify/assert"
@@ -15,12 +14,6 @@ import (
 func validateMaintenanceWindow(window *model.MaintenanceWindow) error {
 	if window == nil {
 		return nil
-	}
-
-	// Validate timezone
-	_, err := time.LoadLocation(window.Timezone)
-	if err != nil {
-		return fmt.Errorf("invalid timezone %s: %w", window.Timezone, err)
 	}
 
 	// Validate time format (HH:MM)
@@ -68,7 +61,6 @@ func TestSetMaintenanceWindow_Validation(t *testing.T) {
 				StartTime: "02:00",
 				EndTime:   "06:00",
 				Days:      []model.DayOfWeek{model.DayOfWeekSaturday, model.DayOfWeekSunday},
-				Timezone:  "Europe/Oslo",
 			},
 			expectError: false,
 		},
@@ -78,21 +70,9 @@ func TestSetMaintenanceWindow_Validation(t *testing.T) {
 				StartTime: "01:00",
 				EndTime:   "05:00",
 				Days:      []model.DayOfWeek{},
-				Timezone:  "UTC",
 			},
 			expectError: true,
 			errorMsg:    "at least one day must be specified",
-		},
-		{
-			name: "invalid timezone",
-			window: &model.MaintenanceWindow{
-				StartTime: "02:00",
-				EndTime:   "06:00",
-				Days:      []model.DayOfWeek{model.DayOfWeekMonday},
-				Timezone:  "Invalid/Timezone",
-			},
-			expectError: true,
-			errorMsg:    "invalid timezone",
 		},
 		{
 			name: "invalid time format - missing colon",
@@ -100,7 +80,6 @@ func TestSetMaintenanceWindow_Validation(t *testing.T) {
 				StartTime: "0200",
 				EndTime:   "06:00",
 				Days:      []model.DayOfWeek{model.DayOfWeekMonday},
-				Timezone:  "UTC",
 			},
 			expectError: true,
 			errorMsg:    "invalid time format",
@@ -111,7 +90,6 @@ func TestSetMaintenanceWindow_Validation(t *testing.T) {
 				StartTime: "ab:cd",
 				EndTime:   "06:00",
 				Days:      []model.DayOfWeek{model.DayOfWeekMonday},
-				Timezone:  "UTC",
 			},
 			expectError: true,
 			errorMsg:    "invalid start time format",
@@ -122,7 +100,6 @@ func TestSetMaintenanceWindow_Validation(t *testing.T) {
 				StartTime: "25:00",
 				EndTime:   "06:00",
 				Days:      []model.DayOfWeek{model.DayOfWeekMonday},
-				Timezone:  "UTC",
 			},
 			expectError: true,
 			errorMsg:    "hours must be between 0 and 23",
@@ -133,7 +110,6 @@ func TestSetMaintenanceWindow_Validation(t *testing.T) {
 				StartTime: "02:60",
 				EndTime:   "06:00",
 				Days:      []model.DayOfWeek{model.DayOfWeekMonday},
-				Timezone:  "UTC",
 			},
 			expectError: true,
 			errorMsg:    "minutes must be between 0 and 59",
@@ -213,42 +189,8 @@ func TestSetMaintenanceWindow_RecurrenceRules(t *testing.T) {
 	}
 }
 
-func TestSetMaintenanceWindow_TimeZones(t *testing.T) {
-	validTimezones := []string{
-		"UTC",
-		"Europe/Oslo",
-		"America/New_York",
-		"Asia/Tokyo",
-		"Australia/Sydney",
-	}
-
-	for _, tz := range validTimezones {
-		t.Run(tz, func(t *testing.T) {
-			_, err := time.LoadLocation(tz)
-			assert.NoError(t, err, "Timezone %s should be valid", tz)
-		})
-	}
-}
-
-func TestDayOfWeekMapping(t *testing.T) {
-	// Test that our day mapping matches GKE's expected format (2-letter RFC 5545 abbreviations)
-	dayMap := map[model.DayOfWeek]string{
-		model.DayOfWeekMonday:    "MO",
-		model.DayOfWeekTuesday:   "TU",
-		model.DayOfWeekWednesday: "WE",
-		model.DayOfWeekThursday:  "TH",
-		model.DayOfWeekFriday:    "FR",
-		model.DayOfWeekSaturday:  "SA",
-		model.DayOfWeekSunday:    "SU",
-	}
-
-	for day, abbrev := range dayMap {
-		assert.Len(t, abbrev, 2, "Day abbreviation for %s should be 2 characters", day)
-	}
-}
-
 func TestMaintenanceWindowTimeWindow(t *testing.T) {
-	// Test that time window format is validated correctly
+	// Test that time window format is validated correctly (all times in UTC)
 	tests := []struct {
 		name      string
 		startTime string
@@ -283,7 +225,6 @@ func TestMaintenanceWindowTimeWindow(t *testing.T) {
 				StartTime: tt.startTime,
 				EndTime:   tt.endTime,
 				Days:      []model.DayOfWeek{model.DayOfWeekMonday},
-				Timezone:  "UTC",
 			}
 			err := validateMaintenanceWindow(window)
 			assert.NoError(t, err, "Time window should be valid")
