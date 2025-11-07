@@ -266,25 +266,24 @@ func (c *Client) SetMaintenanceWindow(ctx context.Context, projectID string, env
 	endTime := time.Date(now.Year(), now.Month(), now.Day(),
 		endHour, endMin, 0, 0, location)
 
-	var recurrence string
-	if len(window.Days) > 0 {
-		days := make([]string, len(window.Days))
-		dayMap := map[model.DayOfWeek]string{
-			model.DayOfWeekMonday:    "MO",
-			model.DayOfWeekTuesday:   "TU",
-			model.DayOfWeekWednesday: "WE",
-			model.DayOfWeekThursday:  "TH",
-			model.DayOfWeekFriday:    "FR",
-			model.DayOfWeekSaturday:  "SA",
-			model.DayOfWeekSunday:    "SU",
-		}
-		for i, day := range window.Days {
-			days[i] = dayMap[day]
-		}
-		recurrence = "FREQ=WEEKLY;BYDAY=" + strings.Join(days, ",")
-	} else {
-		recurrence = "FREQ=DAILY"
+	if len(window.Days) == 0 {
+		return nil, fmt.Errorf("at least one day must be specified for the maintenance window")
 	}
+
+	days := make([]string, len(window.Days))
+	dayMap := map[model.DayOfWeek]string{
+		model.DayOfWeekMonday:    "MO",
+		model.DayOfWeekTuesday:   "TU",
+		model.DayOfWeekWednesday: "WE",
+		model.DayOfWeekThursday:  "TH",
+		model.DayOfWeekFriday:    "FR",
+		model.DayOfWeekSaturday:  "SA",
+		model.DayOfWeekSunday:    "SU",
+	}
+	for i, day := range window.Days {
+		days[i] = dayMap[day]
+	}
+	recurrence := "FREQ=WEEKLY;BYDAY=" + strings.Join(days, ",")
 
 	recurringWindow = &containerpb.RecurringTimeWindow{
 		Window: &containerpb.TimeWindow{

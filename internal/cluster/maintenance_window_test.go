@@ -47,6 +47,11 @@ func validateMaintenanceWindow(window *model.MaintenanceWindow) error {
 		return fmt.Errorf("minutes must be between 0 and 59")
 	}
 
+	// Validate at least one day is specified
+	if len(window.Days) == 0 {
+		return fmt.Errorf("at least one day must be specified for the maintenance window")
+	}
+
 	return nil
 }
 
@@ -68,14 +73,15 @@ func TestSetMaintenanceWindow_Validation(t *testing.T) {
 			expectError: false,
 		},
 		{
-			name: "valid window with all days (empty)",
+			name: "empty days - not allowed",
 			window: &model.MaintenanceWindow{
 				StartTime: "01:00",
 				EndTime:   "05:00",
 				Days:      []model.DayOfWeek{},
 				Timezone:  "UTC",
 			},
-			expectError: false,
+			expectError: true,
+			errorMsg:    "at least one day must be specified",
 		},
 		{
 			name: "invalid timezone",
@@ -172,12 +178,6 @@ func TestSetMaintenanceWindow_RecurrenceRules(t *testing.T) {
 			days:              []model.DayOfWeek{model.DayOfWeekMonday},
 			expectedFrequency: "FREQ=WEEKLY",
 			expectedPattern:   "BYDAY=MO",
-		},
-		{
-			name:              "empty means every day",
-			days:              []model.DayOfWeek{},
-			expectedFrequency: "FREQ=DAILY",
-			expectedPattern:   "",
 		},
 	}
 

@@ -111,7 +111,7 @@ type MaintenanceWindow struct {
 	StartTime string `json:"startTime"`
 	// End time in 24-hour format (HH:MM), e.g., "06:00" for 6 AM
 	EndTime string `json:"endTime"`
-	// Days of the week when maintenance is allowed. If empty, all days are allowed.
+	// Days of the week when maintenance is allowed. At least one day must be specified.
 	Days []DayOfWeek `json:"days"`
 	// Timezone for the maintenance window, e.g., "Europe/Oslo" or "UTC"
 	Timezone string `json:"timezone"`
