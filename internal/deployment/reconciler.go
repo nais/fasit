@@ -16,13 +16,13 @@ import (
 )
 
 type ReconcilerStore interface {
-	database.EnvironmentRepo
 	database.DeploymentRepo
 	database.TenantRepo
+	database.FeaturesRepo
+	database.FeatureStateRepo
 }
 
 type Publisher interface{}
-
 type NewPublisher func(topicID string, log *logrus.Entry) Publisher
 
 type Notifier interface{}
@@ -81,21 +81,14 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	}
 	defer r.lock.Unlock()
 
-	tenants, err := r.repo.TenantsGet(ctx)
+	tenantEnvironments, err := r.repo.TenantEnvironments(ctx, true)
 	if err != nil {
-		return fmt.Errorf("get tenants: %w", err)
+		return fmt.Errorf("get tenant environments: %w", err)
 	}
 
-	for _, tenant := range tenants {
-		environments, err := r.repo.EnvironmentsGet(ctx, tenant.ID)
-		if err != nil {
-			return fmt.Errorf("get environments for tenant %q: %w", tenant.Name, err)
-		}
-
-		for _, environment := range environments {
-			if err := r.reconcileEnvironment(ctx, environment); err != nil {
-				return fmt.Errorf("reconcile environment %q for tenant: %q: %w", environment.Name, tenant.Name, err)
-			}
+	for _, environment := range tenantEnvironments {
+		if err := r.reconcileEnvironment(ctx, environment); err != nil {
+			return fmt.Errorf("reconcile environment %q for tenant: %q: %w", environment.Name, environment.TenantName, err)
 		}
 	}
 
@@ -111,30 +104,49 @@ func (r *Reconciler) createDeploymentTarget(ctx context.Context, d gensql.Deploy
 	return nil
 }
 
-func (r *Reconciler) shouldDeployToEnvironment(ctx context.Context, deployment gensql.Deployment, envID uuid.UUID) bool {
-	enabled, err := r.repo.FeatureEnabled(ctx, deployment.FeatureName, envID)
-	if err != nil {
-		r.log.WithError(err).Errorf("get feature state for deployment %q", deployment.ID)
-		return false
+func (r *Reconciler) shouldDeployToEnvironment(ctx context.Context, feature *model.Feature, envID uuid.UUID) bool {
+	if len(feature.Dependencies) > 0 {
+		states, err := r.repo.FeatureStatesGet(ctx, envID)
+		if err != nil {
+			// TODO: log
+			return false
+		}
+
+		// TODO: no need to fetch all?
+		enabledFeatures := []string{}
+		for _, state := range states {
+			if state.Enabled {
+				enabledFeatures = append(enabledFeatures, state.FeatureName)
+			}
+		}
+
+		missingFeatures := feature.Dependencies.FindMissing(enabledFeatures)
+		if len(missingFeatures) > 0 {
+			return false // TODO: log => nil, fmt.Errorf("dependency '%v' not enabled", missingFeatures)
+		}
 	}
 
-	if !enabled {
-		return false
-	}
-
-	// Additional criteria can be added here
 	return true
 }
 
-func (r *Reconciler) reconcileEnvironment(ctx context.Context, environment *model.Environment) error {
+func (r *Reconciler) reconcileEnvironment(ctx context.Context, environment *model.TenantEnvironment) error {
 	allDeployments, err := r.repo.DeploymentsForEnvironment(ctx, environment.ID)
 	if err != nil {
 		return fmt.Errorf("get deployments for environment %q: %w", environment.Name, err)
 	}
 
 	for _, deployment := range filterDeployments(allDeployments) {
-		if !r.shouldDeployToEnvironment(ctx, deployment, environment.ID) {
+		feature, err := r.repo.FeatureByNameForEnv(ctx, deployment.FeatureName, environment.ID)
+		if err != nil {
+			return err
+		}
+
+		if !r.shouldDeployToEnvironment(ctx, feature, environment.ID) {
 			continue
+		}
+
+		if _, err = r.repo.FeatureStatesCreateOrUpdate(ctx, environment.ID, feature, true); err != nil {
+			return fmt.Errorf("enable feature %q for environment %q: %w", deployment.FeatureName, environment.Name, err)
 		}
 
 		if err := r.createDeploymentTarget(ctx, deployment, environment.ID); err != nil {
