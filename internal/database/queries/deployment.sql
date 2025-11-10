@@ -9,9 +9,9 @@ ORDER BY
 
 -- name: DeploymentCreate :one
 INSERT INTO
-	deployments (feature_name, version, target, gh_ref)
+	deployments (feature_name, version, target, gh_ref, hash)
 VALUES
-	(@feature_name, @version, @target, @gh_ref)
+	(@feature_name, @version, @target, @gh_ref, @hash)
 RETURNING
 	*
 ;
@@ -56,9 +56,9 @@ ORDER BY
 
 -- name: DeploymentTargetsCreate :exec
 INSERT INTO
-	deployment_targets (deployment_id, environment_id, hash)
+	deployment_targets (deployment_id, environment_id)
 VALUES
-	(@deployment_id, @environment_id, @hash)
+	(@deployment_id, @environment_id)
 ON CONFLICT DO NOTHING
 ;
 

@@ -235,7 +235,7 @@ func (s *Server) CreateDeployment(ctx context.Context, req *protogen.CreateDeplo
 		target[l.Key] = l.Value
 	}
 
-	_, err := s.repo.DeploymentCreate(ctx, req.FeatureName, req.Version, nil, target)
+	_, err := s.repo.DeploymentCreate(ctx, req.FeatureName, req.Version, nil, target, "TODO: hash")
 	return &protogen.CreateDeploymentResponse{}, err
 }
 

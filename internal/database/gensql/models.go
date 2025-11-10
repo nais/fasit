@@ -183,13 +183,13 @@ type DeployInstruction struct {
 }
 
 type Deployment struct {
-	ID                 uuid.UUID
-	FeatureName        string
-	Version            string
-	Target             environment.Labels
-	Created            pgtype.Timestamptz
-	GhRef              []byte
-	DeployInstructions []uuid.UUID
+	ID          uuid.UUID
+	FeatureName string
+	Version     string
+	Target      environment.Labels
+	Created     pgtype.Timestamptz
+	GhRef       []byte
+	Hash        string
 }
 
 type DeploymentTarget struct {
@@ -198,7 +198,6 @@ type DeploymentTarget struct {
 	Status        string
 	LastModified  pgtype.Timestamptz
 	Created       pgtype.Timestamptz
-	Hash          string
 }
 
 type EnvCost struct {

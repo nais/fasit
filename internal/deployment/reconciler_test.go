@@ -161,7 +161,7 @@ func (d *Db) createDeployment(ctx context.Context, featureName, version string, 
 		d.t.Fatalf("create feature data: %v", err)
 	}
 
-	_, err = d.repo.DeploymentCreate(ctx, featureName, version, []byte(`{"key": "ghref"}`), labels)
+	_, err = d.repo.DeploymentCreate(ctx, featureName, version, []byte(`{"key": "ghref"}`), labels, "TODO: hash")
 	if err != nil {
 		d.t.Fatalf("create deployment: %v", err)
 	}

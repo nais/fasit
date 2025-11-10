@@ -9,7 +9,7 @@ import (
 )
 
 type DeploymentRepo interface {
-	DeploymentCreate(ctx context.Context, featureName, featureVersion string, ghRef []byte, target environment.Labels) (*gensql.Deployment, error)
+	DeploymentCreate(ctx context.Context, featureName, featureVersion string, ghRef []byte, target environment.Labels, hash string) (*gensql.Deployment, error)
 	DeploymentTargetsGetAll(ctx context.Context) ([]gensql.DeploymentTargetsGetAllRow, error)
 	DeploymentTargetsGet(ctx context.Context, deploymentID uuid.UUID) ([]gensql.DeploymentTarget, error)
 	DeploymentTargetsGetPending(ctx context.Context) ([]gensql.DeploymentTarget, error)
@@ -24,12 +24,13 @@ func (r *repo) DeploymentsForEnvironment(ctx context.Context, environmentID uuid
 	return r.querier.DeploymentsForEnvironment(ctx, environmentID)
 }
 
-func (r *repo) DeploymentCreate(ctx context.Context, featureName, featureVersion string, ghRef []byte, target environment.Labels) (*gensql.Deployment, error) {
+func (r *repo) DeploymentCreate(ctx context.Context, featureName, featureVersion string, ghRef []byte, target environment.Labels, hash string) (*gensql.Deployment, error) {
 	ret, err := r.querier.DeploymentCreate(ctx, gensql.DeploymentCreateParams{
 		FeatureName: featureName,
 		Version:     featureVersion,
 		GhRef:       ghRef,
 		Target:      target,
+		Hash:        hash,
 	})
 	return &ret, err
 }
@@ -54,7 +55,6 @@ func (r *repo) DeploymentTargetsCreate(ctx context.Context, deploymentID, enviro
 	return r.querier.DeploymentTargetsCreate(ctx, gensql.DeploymentTargetsCreateParams{
 		DeploymentID:  deploymentID,
 		EnvironmentID: environmentID,
-		Hash:          "",
 	})
 }
 

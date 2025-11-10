@@ -112,14 +112,14 @@ var (
 	}
 
 	deployments = []*gensql.DeploymentCreateParams{
-		{FeatureName: "aivenator", Version: "1.0.0", Target: environment.Labels{"aiven": "enabled"}},
-		{FeatureName: "aivenator", Version: "2.0.0", Target: environment.Labels{"aiven": "enabled"}},
-		{FeatureName: "aivenator", Version: "1.0.0", Target: environment.Labels{"aiven": "enabled", "tenant": "nav"}},
-		{FeatureName: "aivenator", Version: "3.0.0", Target: environment.Labels{"aiven": "enabled"}},
-		{FeatureName: "naiserator", Version: "1.0.0", Target: environment.Labels{"aiven": "enabled"}},
-		{FeatureName: "unleash", Version: "1.0.0", Target: environment.Labels{"featuretoggle": "enabled"}},
-		{FeatureName: "unleash", Version: "2.0.0", Target: environment.Labels{"featuretoggle": "enabled"}},
-		{FeatureName: "v13s", Version: "1.0.0", Target: environment.Labels{"kind": "management"}},
+		{FeatureName: "aivenator", Version: "1.0.0", Target: environment.Labels{"aiven": "enabled"}, Hash: "TODO"},
+		{FeatureName: "aivenator", Version: "2.0.0", Target: environment.Labels{"aiven": "enabled"}, Hash: "TODO"},
+		{FeatureName: "aivenator", Version: "1.0.0", Target: environment.Labels{"aiven": "enabled", "tenant": "nav"}, Hash: "TODO"},
+		{FeatureName: "aivenator", Version: "3.0.0", Target: environment.Labels{"aiven": "enabled"}, Hash: "TODO"},
+		{FeatureName: "naiserator", Version: "1.0.0", Target: environment.Labels{"aiven": "enabled"}, Hash: "TODO"},
+		{FeatureName: "unleash", Version: "1.0.0", Target: environment.Labels{"featuretoggle": "enabled"}, Hash: "TODO"},
+		{FeatureName: "unleash", Version: "2.0.0", Target: environment.Labels{"featuretoggle": "enabled"}, Hash: "TODO"},
+		{FeatureName: "v13s", Version: "1.0.0", Target: environment.Labels{"kind": "management"}, Hash: "TODO"},
 	}
 
 	featureStates = map[tenant]map[environmentName][]*gensql.FeatureStateCreateOrUpdateParams{
@@ -160,7 +160,7 @@ func main() {
 			Version: d.Version,
 			Chart:   "oci://aiven",
 		}, nil)
-		_, err = db.DeploymentCreate(ctx, d.FeatureName, d.Version, d.GhRef, d.Target)
+		_, err = db.DeploymentCreate(ctx, d.FeatureName, d.Version, d.GhRef, d.Target, d.Hash)
 		if err != nil {
 			panic(err)
 		}

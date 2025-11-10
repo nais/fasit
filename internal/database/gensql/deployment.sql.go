@@ -13,11 +13,11 @@ import (
 
 const deploymentCreate = `-- name: DeploymentCreate :one
 INSERT INTO
-	deployments (feature_name, version, target, gh_ref)
+	deployments (feature_name, version, target, gh_ref, hash)
 VALUES
-	($1, $2, $3, $4)
+	($1, $2, $3, $4, $5)
 RETURNING
-	id, feature_name, version, target, created, gh_ref, deploy_instructions
+	id, feature_name, version, target, created, gh_ref, hash
 `
 
 type DeploymentCreateParams struct {
@@ -25,6 +25,7 @@ type DeploymentCreateParams struct {
 	Version     string
 	Target      environment.Labels
 	GhRef       []byte
+	Hash        string
 }
 
 func (q *Queries) DeploymentCreate(ctx context.Context, arg DeploymentCreateParams) (Deployment, error) {
@@ -33,6 +34,7 @@ func (q *Queries) DeploymentCreate(ctx context.Context, arg DeploymentCreatePara
 		arg.Version,
 		arg.Target,
 		arg.GhRef,
+		arg.Hash,
 	)
 	var i Deployment
 	err := row.Scan(
@@ -42,39 +44,38 @@ func (q *Queries) DeploymentCreate(ctx context.Context, arg DeploymentCreatePara
 		&i.Target,
 		&i.Created,
 		&i.GhRef,
-		&i.DeployInstructions,
+		&i.Hash,
 	)
 	return i, err
 }
 
 const deploymentTargetsCreate = `-- name: DeploymentTargetsCreate :exec
 INSERT INTO
-	deployment_targets (deployment_id, environment_id, hash)
+	deployment_targets (deployment_id, environment_id)
 VALUES
-	($1, $2, $3)
+	($1, $2)
 ON CONFLICT DO NOTHING
 `
 
 type DeploymentTargetsCreateParams struct {
 	DeploymentID  uuid.UUID
 	EnvironmentID uuid.UUID
-	Hash          string
 }
 
 func (q *Queries) DeploymentTargetsCreate(ctx context.Context, arg DeploymentTargetsCreateParams) error {
-	_, err := q.db.Exec(ctx, deploymentTargetsCreate, arg.DeploymentID, arg.EnvironmentID, arg.Hash)
+	_, err := q.db.Exec(ctx, deploymentTargetsCreate, arg.DeploymentID, arg.EnvironmentID)
 	return err
 }
 
 const deploymentTargetsGet = `-- name: DeploymentTargetsGet :many
 SELECT
-	deployment_id, environment_id, status, last_modified, created, hash
+	deployment_id, environment_id, status, last_modified, created
 FROM
-	deployment_targets dt
+	deployment_targets
 WHERE
 	deployment_id = $1
 ORDER BY
-	created ASC
+	created
 `
 
 func (q *Queries) DeploymentTargetsGet(ctx context.Context, deploymentID uuid.UUID) ([]DeploymentTarget, error) {
@@ -92,7 +93,6 @@ func (q *Queries) DeploymentTargetsGet(ctx context.Context, deploymentID uuid.UU
 			&i.Status,
 			&i.LastModified,
 			&i.Created,
-			&i.Hash,
 		); err != nil {
 			return nil, err
 		}
@@ -106,16 +106,16 @@ func (q *Queries) DeploymentTargetsGet(ctx context.Context, deploymentID uuid.UU
 
 const deploymentTargetsGetAll = `-- name: DeploymentTargetsGetAll :many
 SELECT
-	dt.deployment_id, dt.environment_id, dt.status, dt.last_modified, dt.created, dt.hash,
-	e.name as environment_name,
-	t.name as tenant_name,
+	dt.deployment_id, dt.environment_id, dt.status, dt.last_modified, dt.created,
+	e.name AS environment_name,
+	t.name AS tenant_name,
 	d.feature_name,
 	d.version
 FROM
 	deployment_targets dt
-	JOIN environments e on e.id = dt.environment_id
-    JOIN tenants t on t.id = e.tenant_id
-    JOIN deployments d on d.id = dt.deployment_id
+	JOIN environments e ON e.id = dt.environment_id
+	JOIN tenants t ON t.id = e.tenant_id
+	JOIN deployments d ON d.id = dt.deployment_id
 ORDER BY
 	dt.created
 `
@@ -126,7 +126,6 @@ type DeploymentTargetsGetAllRow struct {
 	Status          string
 	LastModified    pgtype.Timestamptz
 	Created         pgtype.Timestamptz
-	Hash            string
 	EnvironmentName string
 	TenantName      string
 	FeatureName     string
@@ -148,7 +147,6 @@ func (q *Queries) DeploymentTargetsGetAll(ctx context.Context) ([]DeploymentTarg
 			&i.Status,
 			&i.LastModified,
 			&i.Created,
-			&i.Hash,
 			&i.EnvironmentName,
 			&i.TenantName,
 			&i.FeatureName,
@@ -166,7 +164,7 @@ func (q *Queries) DeploymentTargetsGetAll(ctx context.Context) ([]DeploymentTarg
 
 const deploymentTargetsGetPending = `-- name: DeploymentTargetsGetPending :many
 SELECT
-	deployment_id, environment_id, status, last_modified, created, hash
+	deployment_id, environment_id, status, last_modified, created
 FROM
 	deployment_targets
 WHERE
@@ -190,7 +188,6 @@ func (q *Queries) DeploymentTargetsGetPending(ctx context.Context) ([]Deployment
 			&i.Status,
 			&i.LastModified,
 			&i.Created,
-			&i.Hash,
 		); err != nil {
 			return nil, err
 		}
@@ -225,7 +222,7 @@ func (q *Queries) DeploymentTargetsUpdate(ctx context.Context, arg DeploymentTar
 
 const deploymentsForEnvironment = `-- name: DeploymentsForEnvironment :many
 SELECT DISTINCT
-	ON (d.feature_name, d.target) d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.deploy_instructions
+	ON (d.feature_name, d.target) d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.hash
 FROM
 	deployments d,
 	environments e
@@ -254,7 +251,7 @@ func (q *Queries) DeploymentsForEnvironment(ctx context.Context, environmentID u
 			&i.Target,
 			&i.Created,
 			&i.GhRef,
-			&i.DeployInstructions,
+			&i.Hash,
 		); err != nil {
 			return nil, err
 		}
@@ -268,7 +265,7 @@ func (q *Queries) DeploymentsForEnvironment(ctx context.Context, environmentID u
 
 const deploymentsGet = `-- name: DeploymentsGet :many
 SELECT
-	id, feature_name, version, target, created, gh_ref, deploy_instructions
+	id, feature_name, version, target, created, gh_ref, hash
 FROM
 	deployments
 ORDER BY
@@ -291,7 +288,7 @@ func (q *Queries) DeploymentsGet(ctx context.Context) ([]Deployment, error) {
 			&i.Target,
 			&i.Created,
 			&i.GhRef,
-			&i.DeployInstructions,
+			&i.Hash,
 		); err != nil {
 			return nil, err
 		}
