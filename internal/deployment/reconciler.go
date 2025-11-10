@@ -20,6 +20,7 @@ type ReconcilerStore interface {
 	database.TenantRepo
 	database.FeaturesRepo
 	database.FeatureStateRepo
+	database.HealthRepo
 }
 
 type Publisher interface{}
@@ -130,6 +131,15 @@ func (r *Reconciler) shouldDeployToEnvironment(ctx context.Context, feature *mod
 }
 
 func (r *Reconciler) reconcileEnvironment(ctx context.Context, environment *model.TenantEnvironment) error {
+	health, err := r.repo.HealthGet(ctx, environment.ID)
+	if err != nil {
+		return fmt.Errorf("health status: %w", err)
+	}
+	if time.Since(health.ReportedAt) > 3*time.Minute {
+		r.log.Debug("naisd is unhealthy - skip reconcile")
+		return nil
+	}
+
 	allDeployments, err := r.repo.DeploymentsForEnvironment(ctx, environment.ID)
 	if err != nil {
 		return fmt.Errorf("get deployments for environment %q: %w", environment.Name, err)
