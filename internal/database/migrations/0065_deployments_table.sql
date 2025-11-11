@@ -3,7 +3,7 @@ CREATE TABLE "deployments" (
 	"id" uuid PRIMARY KEY DEFAULT uuid_generate_v4 () NOT NULL,
 	"feature_name" TEXT NOT NULL,
 	"version" TEXT NOT NULL,
-	"target" jsonb NOT NULL,
+	"target" jsonb NOT NULL DEFAULT '{}',
 	"created" TIMESTAMPTZ DEFAULT NOW() NOT NULL,
 	"gh_ref" jsonb,
 	"hash" TEXT NOT NULL,
