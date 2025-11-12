@@ -190,7 +190,7 @@ func (r *Reconciler) isDependenciesDeployed(ctx context.Context, deployment data
 		// deploy_instructions to handle state stuff.
 
 		if len(dep.AllOf) > 0 {
-			missing, err := r.repo.DeployInstructionsGetFeaturesNotInEnv(ctx, dep.AllOf, envID)
+			missing, err := r.repo.MissingDependencies(ctx, dep.AllOf, envID)
 			if err != nil {
 				return false, fmt.Errorf("get features not in env: %w", err)
 			}
@@ -203,7 +203,7 @@ func (r *Reconciler) isDependenciesDeployed(ctx context.Context, deployment data
 			}
 		}
 		if len(dep.AnyOf) > 0 {
-			missing, err := r.repo.DeployInstructionsGetFeaturesNotInEnv(ctx, dep.AnyOf, envID)
+			missing, err := r.repo.MissingDependencies(ctx, dep.AnyOf, envID)
 			if err != nil {
 				return false, fmt.Errorf("get features not in env: %w", err)
 			}

@@ -2057,80 +2057,6 @@ func (_c *Repo_DeployInstructionsForFeature_Call) RunAndReturn(run func(ctx cont
 	return _c
 }
 
-// DeployInstructionsGetFeaturesNotInEnv provides a mock function for the type Repo
-func (_mock *Repo) DeployInstructionsGetFeaturesNotInEnv(ctx context.Context, features []string, environmentID uuid.UUID) ([]string, error) {
-	ret := _mock.Called(ctx, features, environmentID)
-
-	if len(ret) == 0 {
-		panic("no return value specified for DeployInstructionsGetFeaturesNotInEnv")
-	}
-
-	var r0 []string
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, []string, uuid.UUID) ([]string, error)); ok {
-		return returnFunc(ctx, features, environmentID)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, []string, uuid.UUID) []string); ok {
-		r0 = returnFunc(ctx, features, environmentID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]string)
-		}
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, []string, uuid.UUID) error); ok {
-		r1 = returnFunc(ctx, features, environmentID)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Repo_DeployInstructionsGetFeaturesNotInEnv_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeployInstructionsGetFeaturesNotInEnv'
-type Repo_DeployInstructionsGetFeaturesNotInEnv_Call struct {
-	*mock.Call
-}
-
-// DeployInstructionsGetFeaturesNotInEnv is a helper method to define mock.On call
-//   - ctx context.Context
-//   - features []string
-//   - environmentID uuid.UUID
-func (_e *Repo_Expecter) DeployInstructionsGetFeaturesNotInEnv(ctx interface{}, features interface{}, environmentID interface{}) *Repo_DeployInstructionsGetFeaturesNotInEnv_Call {
-	return &Repo_DeployInstructionsGetFeaturesNotInEnv_Call{Call: _e.mock.On("DeployInstructionsGetFeaturesNotInEnv", ctx, features, environmentID)}
-}
-
-func (_c *Repo_DeployInstructionsGetFeaturesNotInEnv_Call) Run(run func(ctx context.Context, features []string, environmentID uuid.UUID)) *Repo_DeployInstructionsGetFeaturesNotInEnv_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 []string
-		if args[1] != nil {
-			arg1 = args[1].([]string)
-		}
-		var arg2 uuid.UUID
-		if args[2] != nil {
-			arg2 = args[2].(uuid.UUID)
-		}
-		run(
-			arg0,
-			arg1,
-			arg2,
-		)
-	})
-	return _c
-}
-
-func (_c *Repo_DeployInstructionsGetFeaturesNotInEnv_Call) Return(strings []string, err error) *Repo_DeployInstructionsGetFeaturesNotInEnv_Call {
-	_c.Call.Return(strings, err)
-	return _c
-}
-
-func (_c *Repo_DeployInstructionsGetFeaturesNotInEnv_Call) RunAndReturn(run func(ctx context.Context, features []string, environmentID uuid.UUID) ([]string, error)) *Repo_DeployInstructionsGetFeaturesNotInEnv_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // DeployInstructionsLatestForEnvironment provides a mock function for the type Repo
 func (_mock *Repo) DeployInstructionsLatestForEnvironment(ctx context.Context, envID uuid.UUID) ([]*model.DeployInstruction, error) {
 	ret := _mock.Called(ctx, envID)
@@ -5880,6 +5806,80 @@ func (_c *Repo_Metrics_Call) Return(err error) *Repo_Metrics_Call {
 }
 
 func (_c *Repo_Metrics_Call) RunAndReturn(run func(meter metric.Meter) error) *Repo_Metrics_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// MissingDependencies provides a mock function for the type Repo
+func (_mock *Repo) MissingDependencies(ctx context.Context, dependencies []string, environmentID uuid.UUID) ([]string, error) {
+	ret := _mock.Called(ctx, dependencies, environmentID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for MissingDependencies")
+	}
+
+	var r0 []string
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []string, uuid.UUID) ([]string, error)); ok {
+		return returnFunc(ctx, dependencies, environmentID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []string, uuid.UUID) []string); ok {
+		r0 = returnFunc(ctx, dependencies, environmentID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, []string, uuid.UUID) error); ok {
+		r1 = returnFunc(ctx, dependencies, environmentID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Repo_MissingDependencies_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'MissingDependencies'
+type Repo_MissingDependencies_Call struct {
+	*mock.Call
+}
+
+// MissingDependencies is a helper method to define mock.On call
+//   - ctx context.Context
+//   - dependencies []string
+//   - environmentID uuid.UUID
+func (_e *Repo_Expecter) MissingDependencies(ctx interface{}, dependencies interface{}, environmentID interface{}) *Repo_MissingDependencies_Call {
+	return &Repo_MissingDependencies_Call{Call: _e.mock.On("MissingDependencies", ctx, dependencies, environmentID)}
+}
+
+func (_c *Repo_MissingDependencies_Call) Run(run func(ctx context.Context, dependencies []string, environmentID uuid.UUID)) *Repo_MissingDependencies_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 []string
+		if args[1] != nil {
+			arg1 = args[1].([]string)
+		}
+		var arg2 uuid.UUID
+		if args[2] != nil {
+			arg2 = args[2].(uuid.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *Repo_MissingDependencies_Call) Return(strings []string, err error) *Repo_MissingDependencies_Call {
+	_c.Call.Return(strings, err)
+	return _c
+}
+
+func (_c *Repo_MissingDependencies_Call) RunAndReturn(run func(ctx context.Context, dependencies []string, environmentID uuid.UUID) ([]string, error)) *Repo_MissingDependencies_Call {
 	_c.Call.Return(run)
 	return _c
 }

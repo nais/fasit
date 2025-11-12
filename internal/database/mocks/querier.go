@@ -2331,27 +2331,27 @@ func (_c *Querier_DeployInstructionsForNameVersion_Call) RunAndReturn(run func(c
 	return _c
 }
 
-// DeployInstructionsGetFeaturesNotInEnv provides a mock function for the type Querier
-func (_mock *Querier) DeployInstructionsGetFeaturesNotInEnv(ctx context.Context, arg gensql.DeployInstructionsGetFeaturesNotInEnvParams) ([]string, error) {
+// DeployInstructionsGetDeployedFeatures provides a mock function for the type Querier
+func (_mock *Querier) DeployInstructionsGetDeployedFeatures(ctx context.Context, arg gensql.DeployInstructionsGetDeployedFeaturesParams) ([]string, error) {
 	ret := _mock.Called(ctx, arg)
 
 	if len(ret) == 0 {
-		panic("no return value specified for DeployInstructionsGetFeaturesNotInEnv")
+		panic("no return value specified for DeployInstructionsGetDeployedFeatures")
 	}
 
 	var r0 []string
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, gensql.DeployInstructionsGetFeaturesNotInEnvParams) ([]string, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, gensql.DeployInstructionsGetDeployedFeaturesParams) ([]string, error)); ok {
 		return returnFunc(ctx, arg)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, gensql.DeployInstructionsGetFeaturesNotInEnvParams) []string); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, gensql.DeployInstructionsGetDeployedFeaturesParams) []string); ok {
 		r0 = returnFunc(ctx, arg)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]string)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, gensql.DeployInstructionsGetFeaturesNotInEnvParams) error); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, gensql.DeployInstructionsGetDeployedFeaturesParams) error); ok {
 		r1 = returnFunc(ctx, arg)
 	} else {
 		r1 = ret.Error(1)
@@ -2359,27 +2359,27 @@ func (_mock *Querier) DeployInstructionsGetFeaturesNotInEnv(ctx context.Context,
 	return r0, r1
 }
 
-// Querier_DeployInstructionsGetFeaturesNotInEnv_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeployInstructionsGetFeaturesNotInEnv'
-type Querier_DeployInstructionsGetFeaturesNotInEnv_Call struct {
+// Querier_DeployInstructionsGetDeployedFeatures_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeployInstructionsGetDeployedFeatures'
+type Querier_DeployInstructionsGetDeployedFeatures_Call struct {
 	*mock.Call
 }
 
-// DeployInstructionsGetFeaturesNotInEnv is a helper method to define mock.On call
+// DeployInstructionsGetDeployedFeatures is a helper method to define mock.On call
 //   - ctx context.Context
-//   - arg gensql.DeployInstructionsGetFeaturesNotInEnvParams
-func (_e *Querier_Expecter) DeployInstructionsGetFeaturesNotInEnv(ctx interface{}, arg interface{}) *Querier_DeployInstructionsGetFeaturesNotInEnv_Call {
-	return &Querier_DeployInstructionsGetFeaturesNotInEnv_Call{Call: _e.mock.On("DeployInstructionsGetFeaturesNotInEnv", ctx, arg)}
+//   - arg gensql.DeployInstructionsGetDeployedFeaturesParams
+func (_e *Querier_Expecter) DeployInstructionsGetDeployedFeatures(ctx interface{}, arg interface{}) *Querier_DeployInstructionsGetDeployedFeatures_Call {
+	return &Querier_DeployInstructionsGetDeployedFeatures_Call{Call: _e.mock.On("DeployInstructionsGetDeployedFeatures", ctx, arg)}
 }
 
-func (_c *Querier_DeployInstructionsGetFeaturesNotInEnv_Call) Run(run func(ctx context.Context, arg gensql.DeployInstructionsGetFeaturesNotInEnvParams)) *Querier_DeployInstructionsGetFeaturesNotInEnv_Call {
+func (_c *Querier_DeployInstructionsGetDeployedFeatures_Call) Run(run func(ctx context.Context, arg gensql.DeployInstructionsGetDeployedFeaturesParams)) *Querier_DeployInstructionsGetDeployedFeatures_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 gensql.DeployInstructionsGetFeaturesNotInEnvParams
+		var arg1 gensql.DeployInstructionsGetDeployedFeaturesParams
 		if args[1] != nil {
-			arg1 = args[1].(gensql.DeployInstructionsGetFeaturesNotInEnvParams)
+			arg1 = args[1].(gensql.DeployInstructionsGetDeployedFeaturesParams)
 		}
 		run(
 			arg0,
@@ -2389,12 +2389,12 @@ func (_c *Querier_DeployInstructionsGetFeaturesNotInEnv_Call) Run(run func(ctx c
 	return _c
 }
 
-func (_c *Querier_DeployInstructionsGetFeaturesNotInEnv_Call) Return(strings []string, err error) *Querier_DeployInstructionsGetFeaturesNotInEnv_Call {
+func (_c *Querier_DeployInstructionsGetDeployedFeatures_Call) Return(strings []string, err error) *Querier_DeployInstructionsGetDeployedFeatures_Call {
 	_c.Call.Return(strings, err)
 	return _c
 }
 
-func (_c *Querier_DeployInstructionsGetFeaturesNotInEnv_Call) RunAndReturn(run func(ctx context.Context, arg gensql.DeployInstructionsGetFeaturesNotInEnvParams) ([]string, error)) *Querier_DeployInstructionsGetFeaturesNotInEnv_Call {
+func (_c *Querier_DeployInstructionsGetDeployedFeatures_Call) RunAndReturn(run func(ctx context.Context, arg gensql.DeployInstructionsGetDeployedFeaturesParams) ([]string, error)) *Querier_DeployInstructionsGetDeployedFeatures_Call {
 	_c.Call.Return(run)
 	return _c
 }

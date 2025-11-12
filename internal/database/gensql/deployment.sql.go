@@ -11,27 +11,27 @@ import (
 	"github.com/nais/fasit/internal/environment"
 )
 
-const deployInstructionsGetFeaturesNotInEnv = `-- name: DeployInstructionsGetFeaturesNotInEnv :many
+const deployInstructionsGetDeployedFeatures = `-- name: DeployInstructionsGetDeployedFeatures :many
 SELECT
 	feature_name
 FROM
 	deploy_instructions
 WHERE
 	feature_name = ANY ($1::TEXT[])
-	AND status != 'deployed'
+	AND status = 'deployed'
 	AND environment_id = $2
 	AND deployment_id IS NOT NULL
 ORDER BY
 	feature_name
 `
 
-type DeployInstructionsGetFeaturesNotInEnvParams struct {
+type DeployInstructionsGetDeployedFeaturesParams struct {
 	FeatureNames  []string
 	EnvironmentID uuid.UUID
 }
 
-func (q *Queries) DeployInstructionsGetFeaturesNotInEnv(ctx context.Context, arg DeployInstructionsGetFeaturesNotInEnvParams) ([]string, error) {
-	rows, err := q.db.Query(ctx, deployInstructionsGetFeaturesNotInEnv, arg.FeatureNames, arg.EnvironmentID)
+func (q *Queries) DeployInstructionsGetDeployedFeatures(ctx context.Context, arg DeployInstructionsGetDeployedFeaturesParams) ([]string, error) {
+	rows, err := q.db.Query(ctx, deployInstructionsGetDeployedFeatures, arg.FeatureNames, arg.EnvironmentID)
 	if err != nil {
 		return nil, err
 	}
@@ -298,18 +298,17 @@ func (q *Queries) DeploymentsGet(ctx context.Context) ([]Deployment, error) {
 
 const featureDeploymentsForEnvironment = `-- name: FeatureDeploymentsForEnvironment :many
 SELECT DISTINCT
-	ON (d.feature_name, d.target)
-    d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.hash,
-    fd.name,
-    fd.version,
-    fd.chart,
-    fd.description,
-    fd.source,
-    fd.kinds::TEXT[] AS kinds,
-    fd.dependencies,
-    fd.values,
-    fd.default_values,
-    fd.timeout
+	ON (d.feature_name, d.target) d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.hash,
+	fd.name,
+	fd.version,
+	fd.chart,
+	fd.description,
+	fd.source,
+	fd.kinds::TEXT[] AS kinds,
+	fd.dependencies,
+	fd.values,
+	fd.default_values,
+	fd.timeout
 FROM
 	deployments d,
 	environments e,

@@ -14,7 +14,6 @@ import (
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/gensql"
 	"github.com/nais/fasit/internal/environment"
-	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/provider/protogen"
 	"github.com/sirupsen/logrus"
@@ -118,17 +117,39 @@ var (
 		*/
 	}
 
-	deployments = []*gensql.DeploymentCreateParams{
-		{FeatureName: "aivenator", Version: "1.0.0", Target: environment.Labels{"aiven": "enabled"}, Hash: "TODO"},
-		{FeatureName: "aivenator", Version: "2.0.0", Target: environment.Labels{"aiven": "enabled"}, Hash: "TODO"},
-		{FeatureName: "aivenator", Version: "1.0.0", Target: environment.Labels{"aiven": "enabled", "tenant": "nav"}, Hash: "TODO"},
-		{FeatureName: "aivenator", Version: "3.0.0", Target: environment.Labels{"aiven": "enabled"}, Hash: "TODO"},
-		{FeatureName: "naiserator", Version: "1.0.0", Target: environment.Labels{"aiven": "enabled"}, Hash: "TODO"},
-		{FeatureName: "unleash", Version: "1.0.0", Target: environment.Labels{"featuretoggle": "enabled"}, Hash: "TODO"},
-		{FeatureName: "unleash", Version: "2.0.0", Target: environment.Labels{"featuretoggle": "enabled"}, Hash: "TODO"},
-		{FeatureName: "v13s", Version: "1.0.0", Target: environment.Labels{"kind": "management"}, Hash: "TODO"},
+	deployments = []Deployment{
+		{
+			DeploymentCreateParams: &gensql.DeploymentCreateParams{FeatureName: "aivenator", Version: "1.0.0", Target: environment.Labels{"aiven": "enabled"}, Hash: "TODO"},
+		},
+		{
+			DeploymentCreateParams: &gensql.DeploymentCreateParams{FeatureName: "aivenator", Version: "2.0.0", Target: environment.Labels{"aiven": "enabled"}, Hash: "TODO"},
+		},
+		{
+			DeploymentCreateParams: &gensql.DeploymentCreateParams{FeatureName: "aivenator", Version: "1.0.0", Target: environment.Labels{"aiven": "enabled", "tenant": "nav"}, Hash: "TODO"},
+		},
+		{
+			DeploymentCreateParams: &gensql.DeploymentCreateParams{FeatureName: "naiserator", Version: "1.0.0", Target: environment.Labels{"aiven": "enabled"}, Hash: "TODO"},
+		},
+		{
+			DeploymentCreateParams: &gensql.DeploymentCreateParams{FeatureName: "aivenator", Version: "3.0.0", Target: environment.Labels{"aiven": "enabled"}, Hash: "TODO"},
+			Dependencies:           []string{"naiserator"},
+		},
+		{
+			DeploymentCreateParams: &gensql.DeploymentCreateParams{FeatureName: "unleash", Version: "1.0.0", Target: environment.Labels{"featuretoggle": "enabled"}, Hash: "TODO"},
+		},
+		{
+			DeploymentCreateParams: &gensql.DeploymentCreateParams{FeatureName: "unleash", Version: "2.0.0", Target: environment.Labels{"featuretoggle": "enabled"}, Hash: "TODO"},
+		},
+		{
+			DeploymentCreateParams: &gensql.DeploymentCreateParams{FeatureName: "v13s", Version: "1.0.0", Target: environment.Labels{"kind": "management"}, Hash: "TODO"},
+		},
 	}
 )
+
+type Deployment struct {
+	*gensql.DeploymentCreateParams
+	Dependencies []string
+}
 
 func main() {
 	if err := os.Setenv("PUBSUB_EMULATOR_HOST", "localhost:8086"); err != nil {
@@ -151,11 +172,21 @@ func main() {
 
 	db := database.New(dbConn, logrus.New().WithField("component", "setup-local"))
 	for _, d := range deployments {
+		var deps model.Dependencies
+		if len(d.Dependencies) > 0 {
+			deps = model.Dependencies{
+				&model.Dependency{
+					AllOf: d.Dependencies,
+				},
+			}
+		}
+
 		_ = db.FeatureDataCreate(ctx, model.Feature{
 			Name:    d.FeatureName,
 			Version: d.Version,
 			Chart:   "oci://aiven",
 			FeatureYAML: model.FeatureYAML{
+				Dependencies:     deps,
 				EnvironmentKinds: []model.EnvironmentKind{"tenant", "management"},
 			},
 		}, nil)
@@ -202,20 +233,6 @@ func main() {
 			environment, err := grpcClient.GetEnvironment(ctx, &protogen.GetEnvironmentRequest{TenantId: tenant.Id, Name: env})
 			if err != nil {
 				log.Fatal(err)
-			}
-
-			for _, d := range deployments {
-				err := db.FeatureDataCreate(ctx, model.Feature{
-					FeatureYAML: model.FeatureYAML{
-						// Dependencies: dependencies,
-					},
-					Name:    d.FeatureName,
-					Version: d.Version,
-					Chart:   "oci://" + d.FeatureName,
-				}, &feature.FeatureTemplateDetails{})
-				if err != nil && !strings.Contains(err.Error(), "SQLSTATE 23505") {
-					log.Fatalf("create feature data: %v", err)
-				}
 			}
 
 			_, err = grpcClient.CreateOrUpdateEnvironmentValue(ctx, &protogen.CreateOrUpdateEnvironmentValueRequest{

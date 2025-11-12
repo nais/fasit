@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/google/uuid"
@@ -21,17 +22,28 @@ type DeploymentRepo interface {
 	DeploymentsGet(ctx context.Context) ([]gensql.Deployment, error)
 	DeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]Deployment, error)
 	FeatureEnabled(ctx context.Context, featureName string, envID uuid.UUID) (bool, error)
-	DeployInstructionsGetFeaturesNotInEnv(ctx context.Context, features []string, environmentID uuid.UUID) ([]string, error)
+	MissingDependencies(ctx context.Context, dependencies []string, environmentID uuid.UUID) ([]string, error)
 }
 
-func (r *repo) DeployInstructionsGetFeaturesNotInEnv(ctx context.Context, features []string, environmentID uuid.UUID) ([]string, error) {
-	if len(features) == 0 {
+func (r *repo) MissingDependencies(ctx context.Context, dependencies []string, environmentID uuid.UUID) ([]string, error) {
+	if len(dependencies) == 0 {
 		return []string{}, nil
 	}
-	return r.querier.DeployInstructionsGetFeaturesNotInEnv(ctx, gensql.DeployInstructionsGetFeaturesNotInEnvParams{
-		FeatureNames:  features,
+	deployedFeatures, err := r.querier.DeployInstructionsGetDeployedFeatures(ctx, gensql.DeployInstructionsGetDeployedFeaturesParams{
+		FeatureNames:  dependencies,
 		EnvironmentID: environmentID,
 	})
+	if err != nil {
+		return nil, err
+	}
+
+	missing := make([]string, 0)
+	for _, d := range dependencies {
+		if !slices.Contains(deployedFeatures, d) {
+			missing = append(missing, d)
+		}
+	}
+	return missing, nil
 }
 
 type Deployment struct {
