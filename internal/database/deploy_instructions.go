@@ -9,13 +9,14 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/nais/fasit/internal/database/gensql"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nsf/jsondiff"
 )
 
 type DeployInstructionRepo interface {
-	DeployInstructionCreate(ctx context.Context, envID uuid.UUID, feature *model.Feature, hash string) (uuid.UUID, error)
+	DeployInstructionCreate(ctx context.Context, envID uuid.UUID, feature *model.Feature, hash string, deploymentID *uuid.UUID) (uuid.UUID, error)
 	DeployInstructionGet(ctx context.Context, id uuid.UUID) (*model.DeployInstruction, error)
 	TimeoutDeployInstructions(ctx context.Context)
 	DeployInstructionsForFeature(ctx context.Context, envID uuid.UUID, featureName string, offset int) ([]*model.DeployInstruction, error)
@@ -26,7 +27,7 @@ type DeployInstructionRepo interface {
 	NamesFromDeployInstruction(ctx context.Context, id uuid.UUID) (tenantName, environmentName string, err error)
 }
 
-func (r *repo) DeployInstructionCreate(ctx context.Context, envID uuid.UUID, feature *model.Feature, hash string) (uuid.UUID, error) {
+func (r *repo) DeployInstructionCreate(ctx context.Context, envID uuid.UUID, feature *model.Feature, hash string, deploymentID *uuid.UUID) (uuid.UUID, error) {
 	vals, err := r.HelmValues(ctx, feature, envID)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("get helm values: %w", err)
@@ -37,12 +38,21 @@ func (r *repo) DeployInstructionCreate(ctx context.Context, envID uuid.UUID, fea
 		return uuid.Nil, fmt.Errorf("marshal helm values: %w", err)
 	}
 
+	var dID pgtype.UUID
+	if deploymentID != nil {
+		dID = pgtype.UUID{
+			Bytes: *deploymentID,
+			Valid: true,
+		}
+	}
+
 	return r.querier.DeployInstructionsCreate(ctx, gensql.DeployInstructionsCreateParams{
 		EnvironmentID:  envID,
 		FeatureName:    feature.Name,
 		FeatureVersion: feature.Version,
 		Hash:           hash,
 		Values:         values,
+		DeploymentID:   dID,
 	})
 }
 

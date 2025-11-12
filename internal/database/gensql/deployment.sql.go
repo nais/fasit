@@ -20,8 +20,9 @@ WHERE
 	feature_name = ANY ($1::TEXT[])
 	AND status != 'deployed'
 	AND environment_id = $2
-    AND deployment_id IS NOT NULL
-ORDER BY feature_name
+	AND deployment_id IS NOT NULL
+ORDER BY
+	feature_name
 `
 
 type DeployInstructionsGetFeaturesNotInEnvParams struct {
@@ -258,70 +259,6 @@ func (q *Queries) DeploymentTargetsUpdate(ctx context.Context, arg DeploymentTar
 	return err
 }
 
-const deploymentsForEnvironment = `-- name: DeploymentsForEnvironment :many
-SELECT DISTINCT
-	ON (d.feature_name, d.target) d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.hash,
-	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.rename
-FROM
-	deployments d,
-	environments e,
-	feature_data fd
-WHERE
-	d.feature_name = fd.name
-	AND d.version = fd.version
-	AND e.id = $1
-	AND e.labels @> d.target -- @> operator checks if the JSONB on the left contains the JSONB on the right
-ORDER BY
-	d.feature_name,
-	d.target,
-	d.created DESC
-`
-
-type DeploymentsForEnvironmentRow struct {
-	Deployment   Deployment
-	FeatureDatum FeatureDatum
-}
-
-func (q *Queries) DeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]DeploymentsForEnvironmentRow, error) {
-	rows, err := q.db.Query(ctx, deploymentsForEnvironment, environmentID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []DeploymentsForEnvironmentRow{}
-	for rows.Next() {
-		var i DeploymentsForEnvironmentRow
-		if err := rows.Scan(
-			&i.Deployment.ID,
-			&i.Deployment.FeatureName,
-			&i.Deployment.Version,
-			&i.Deployment.Target,
-			&i.Deployment.Created,
-			&i.Deployment.GhRef,
-			&i.Deployment.Hash,
-			&i.FeatureDatum.Name,
-			&i.FeatureDatum.Version,
-			&i.FeatureDatum.Chart,
-			&i.FeatureDatum.Description,
-			&i.FeatureDatum.Source,
-			&i.FeatureDatum.Kinds,
-			&i.FeatureDatum.Dependencies,
-			&i.FeatureDatum.Values,
-			&i.FeatureDatum.DefaultValues,
-			&i.FeatureDatum.Timeout,
-			&i.FeatureDatum.TplDetails,
-			&i.FeatureDatum.Rename,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const deploymentsGet = `-- name: DeploymentsGet :many
 SELECT
 	id, feature_name, version, target, created, gh_ref, hash
@@ -348,6 +285,87 @@ func (q *Queries) DeploymentsGet(ctx context.Context) ([]Deployment, error) {
 			&i.Created,
 			&i.GhRef,
 			&i.Hash,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const featureDeploymentsForEnvironment = `-- name: FeatureDeploymentsForEnvironment :many
+SELECT DISTINCT
+	ON (d.feature_name, d.target)
+    d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.hash,
+    fd.name,
+    fd.version,
+    fd.chart,
+    fd.description,
+    fd.source,
+    fd.kinds::TEXT[] AS kinds,
+    fd.dependencies,
+    fd.values,
+    fd.default_values,
+    fd.timeout
+FROM
+	deployments d,
+	environments e,
+	feature_data fd
+WHERE
+	d.feature_name = fd.name
+	AND d.version = fd.version
+	AND e.id = $1
+	AND e.labels @> d.target -- @> operator checks if the JSONB on the left contains the JSONB on the right
+ORDER BY
+	d.feature_name,
+	d.target,
+	d.created DESC
+`
+
+type FeatureDeploymentsForEnvironmentRow struct {
+	Deployment    Deployment
+	Name          string
+	Version       string
+	Chart         string
+	Description   string
+	Source        string
+	Kinds         []string
+	Dependencies  []byte
+	Values        []byte
+	DefaultValues []byte
+	Timeout       int64
+}
+
+func (q *Queries) FeatureDeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]FeatureDeploymentsForEnvironmentRow, error) {
+	rows, err := q.db.Query(ctx, featureDeploymentsForEnvironment, environmentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []FeatureDeploymentsForEnvironmentRow{}
+	for rows.Next() {
+		var i FeatureDeploymentsForEnvironmentRow
+		if err := rows.Scan(
+			&i.Deployment.ID,
+			&i.Deployment.FeatureName,
+			&i.Deployment.Version,
+			&i.Deployment.Target,
+			&i.Deployment.Created,
+			&i.Deployment.GhRef,
+			&i.Deployment.Hash,
+			&i.Name,
+			&i.Version,
+			&i.Chart,
+			&i.Description,
+			&i.Source,
+			&i.Kinds,
+			&i.Dependencies,
+			&i.Values,
+			&i.DefaultValues,
+			&i.Timeout,
 		); err != nil {
 			return nil, err
 		}

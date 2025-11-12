@@ -2331,6 +2331,74 @@ func (_c *Querier_DeployInstructionsForNameVersion_Call) RunAndReturn(run func(c
 	return _c
 }
 
+// DeployInstructionsGetFeaturesNotInEnv provides a mock function for the type Querier
+func (_mock *Querier) DeployInstructionsGetFeaturesNotInEnv(ctx context.Context, arg gensql.DeployInstructionsGetFeaturesNotInEnvParams) ([]string, error) {
+	ret := _mock.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeployInstructionsGetFeaturesNotInEnv")
+	}
+
+	var r0 []string
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, gensql.DeployInstructionsGetFeaturesNotInEnvParams) ([]string, error)); ok {
+		return returnFunc(ctx, arg)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, gensql.DeployInstructionsGetFeaturesNotInEnvParams) []string); ok {
+		r0 = returnFunc(ctx, arg)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, gensql.DeployInstructionsGetFeaturesNotInEnvParams) error); ok {
+		r1 = returnFunc(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_DeployInstructionsGetFeaturesNotInEnv_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeployInstructionsGetFeaturesNotInEnv'
+type Querier_DeployInstructionsGetFeaturesNotInEnv_Call struct {
+	*mock.Call
+}
+
+// DeployInstructionsGetFeaturesNotInEnv is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg gensql.DeployInstructionsGetFeaturesNotInEnvParams
+func (_e *Querier_Expecter) DeployInstructionsGetFeaturesNotInEnv(ctx interface{}, arg interface{}) *Querier_DeployInstructionsGetFeaturesNotInEnv_Call {
+	return &Querier_DeployInstructionsGetFeaturesNotInEnv_Call{Call: _e.mock.On("DeployInstructionsGetFeaturesNotInEnv", ctx, arg)}
+}
+
+func (_c *Querier_DeployInstructionsGetFeaturesNotInEnv_Call) Run(run func(ctx context.Context, arg gensql.DeployInstructionsGetFeaturesNotInEnvParams)) *Querier_DeployInstructionsGetFeaturesNotInEnv_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 gensql.DeployInstructionsGetFeaturesNotInEnvParams
+		if args[1] != nil {
+			arg1 = args[1].(gensql.DeployInstructionsGetFeaturesNotInEnvParams)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_DeployInstructionsGetFeaturesNotInEnv_Call) Return(strings []string, err error) *Querier_DeployInstructionsGetFeaturesNotInEnv_Call {
+	_c.Call.Return(strings, err)
+	return _c
+}
+
+func (_c *Querier_DeployInstructionsGetFeaturesNotInEnv_Call) RunAndReturn(run func(ctx context.Context, arg gensql.DeployInstructionsGetFeaturesNotInEnvParams) ([]string, error)) *Querier_DeployInstructionsGetFeaturesNotInEnv_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // DeployInstructionsLatestForEnvironment provides a mock function for the type Querier
 func (_mock *Querier) DeployInstructionsLatestForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]gensql.DeployInstruction, error) {
 	ret := _mock.Called(ctx, environmentID)
@@ -2956,74 +3024,6 @@ func (_c *Querier_DeploymentTargetsUpdate_Call) Return(err error) *Querier_Deplo
 }
 
 func (_c *Querier_DeploymentTargetsUpdate_Call) RunAndReturn(run func(ctx context.Context, arg gensql.DeploymentTargetsUpdateParams) error) *Querier_DeploymentTargetsUpdate_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// DeploymentsForEnvironment provides a mock function for the type Querier
-func (_mock *Querier) DeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]gensql.Deployment, error) {
-	ret := _mock.Called(ctx, environmentID)
-
-	if len(ret) == 0 {
-		panic("no return value specified for DeploymentsForEnvironment")
-	}
-
-	var r0 []gensql.Deployment
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]gensql.Deployment, error)); ok {
-		return returnFunc(ctx, environmentID)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) []gensql.Deployment); ok {
-		r0 = returnFunc(ctx, environmentID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]gensql.Deployment)
-		}
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
-		r1 = returnFunc(ctx, environmentID)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Querier_DeploymentsForEnvironment_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeploymentsForEnvironment'
-type Querier_DeploymentsForEnvironment_Call struct {
-	*mock.Call
-}
-
-// DeploymentsForEnvironment is a helper method to define mock.On call
-//   - ctx context.Context
-//   - environmentID uuid.UUID
-func (_e *Querier_Expecter) DeploymentsForEnvironment(ctx interface{}, environmentID interface{}) *Querier_DeploymentsForEnvironment_Call {
-	return &Querier_DeploymentsForEnvironment_Call{Call: _e.mock.On("DeploymentsForEnvironment", ctx, environmentID)}
-}
-
-func (_c *Querier_DeploymentsForEnvironment_Call) Run(run func(ctx context.Context, environmentID uuid.UUID)) *Querier_DeploymentsForEnvironment_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 uuid.UUID
-		if args[1] != nil {
-			arg1 = args[1].(uuid.UUID)
-		}
-		run(
-			arg0,
-			arg1,
-		)
-	})
-	return _c
-}
-
-func (_c *Querier_DeploymentsForEnvironment_Call) Return(deployments []gensql.Deployment, err error) *Querier_DeploymentsForEnvironment_Call {
-	_c.Call.Return(deployments, err)
-	return _c
-}
-
-func (_c *Querier_DeploymentsForEnvironment_Call) RunAndReturn(run func(ctx context.Context, environmentID uuid.UUID) ([]gensql.Deployment, error)) *Querier_DeploymentsForEnvironment_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -4644,6 +4644,74 @@ func (_c *Querier_FeatureDataCreate_Call) Return(err error) *Querier_FeatureData
 }
 
 func (_c *Querier_FeatureDataCreate_Call) RunAndReturn(run func(ctx context.Context, arg gensql.FeatureDataCreateParams) error) *Querier_FeatureDataCreate_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// FeatureDeploymentsForEnvironment provides a mock function for the type Querier
+func (_mock *Querier) FeatureDeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]gensql.FeatureDeploymentsForEnvironmentRow, error) {
+	ret := _mock.Called(ctx, environmentID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for FeatureDeploymentsForEnvironment")
+	}
+
+	var r0 []gensql.FeatureDeploymentsForEnvironmentRow
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]gensql.FeatureDeploymentsForEnvironmentRow, error)); ok {
+		return returnFunc(ctx, environmentID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) []gensql.FeatureDeploymentsForEnvironmentRow); ok {
+		r0 = returnFunc(ctx, environmentID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gensql.FeatureDeploymentsForEnvironmentRow)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = returnFunc(ctx, environmentID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_FeatureDeploymentsForEnvironment_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FeatureDeploymentsForEnvironment'
+type Querier_FeatureDeploymentsForEnvironment_Call struct {
+	*mock.Call
+}
+
+// FeatureDeploymentsForEnvironment is a helper method to define mock.On call
+//   - ctx context.Context
+//   - environmentID uuid.UUID
+func (_e *Querier_Expecter) FeatureDeploymentsForEnvironment(ctx interface{}, environmentID interface{}) *Querier_FeatureDeploymentsForEnvironment_Call {
+	return &Querier_FeatureDeploymentsForEnvironment_Call{Call: _e.mock.On("FeatureDeploymentsForEnvironment", ctx, environmentID)}
+}
+
+func (_c *Querier_FeatureDeploymentsForEnvironment_Call) Run(run func(ctx context.Context, environmentID uuid.UUID)) *Querier_FeatureDeploymentsForEnvironment_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_FeatureDeploymentsForEnvironment_Call) Return(featureDeploymentsForEnvironmentRows []gensql.FeatureDeploymentsForEnvironmentRow, err error) *Querier_FeatureDeploymentsForEnvironment_Call {
+	_c.Call.Return(featureDeploymentsForEnvironmentRows, err)
+	return _c
+}
+
+func (_c *Querier_FeatureDeploymentsForEnvironment_Call) RunAndReturn(run func(ctx context.Context, environmentID uuid.UUID) ([]gensql.FeatureDeploymentsForEnvironmentRow, error)) *Querier_FeatureDeploymentsForEnvironment_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -11,10 +11,10 @@ import (
 
 	"cloud.google.com/go/pubsub/v2"
 	"cloud.google.com/go/pubsub/v2/apiv1/pubsubpb"
-	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/gensql"
 	"github.com/nais/fasit/internal/environment"
+	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/provider/protogen"
 	"github.com/sirupsen/logrus"
@@ -39,76 +39,83 @@ var (
 	envs = map[tenant]map[environmentName]envSpec{
 		"test-partner": {
 			"dev": envSpec{
-				kind:   protogen.EnvironmentKind_TENANT,
-				labels: environment.Labels{},
-			},
-			"management": envSpec{
-				kind:   protogen.EnvironmentKind_MANAGEMENT,
-				labels: environment.Labels{},
-			},
-		},
-		"nav": {
-			"management": envSpec{
-				kind:   protogen.EnvironmentKind_MANAGEMENT,
-				labels: environment.Labels{},
-			},
-			"dev": envSpec{
 				kind: protogen.EnvironmentKind_TENANT,
 				labels: environment.Labels{
 					"aiven": "enabled",
 				},
 			},
-			"prod": envSpec{
-				kind: protogen.EnvironmentKind_TENANT,
-				labels: environment.Labels{
-					"aiven": "enabled",
-				},
-			},
-			"dev-fss": envSpec{
-				kind: protogen.EnvironmentKind_ONPREM,
-				labels: environment.Labels{
-					"aiven": "enabled",
-				},
-			},
-			"prod-fss": envSpec{
-				kind: protogen.EnvironmentKind_ONPREM,
-				labels: environment.Labels{
-					"aiven": "enabled",
-				},
-			},
-			"dev-gcp": envSpec{
-				kind: protogen.EnvironmentKind_LEGACY,
-				labels: environment.Labels{
-					"aiven": "enabled",
-				},
-			},
-			"prod-gcp": envSpec{
-				kind: protogen.EnvironmentKind_LEGACY,
-				labels: environment.Labels{
-					"aiven": "enabled",
-				},
-			},
-		},
-		"ssb": {
-			"dev": envSpec{
-				kind:   protogen.EnvironmentKind_TENANT,
-				labels: environment.Labels{},
-			},
 			"management": envSpec{
-				kind:   protogen.EnvironmentKind_MANAGEMENT,
-				labels: environment.Labels{},
+				kind: protogen.EnvironmentKind_MANAGEMENT,
+				labels: environment.Labels{
+					"aiven": "enabled",
+				},
 			},
 		},
-		"dev-nais": {
-			"dev": envSpec{
-				kind:   protogen.EnvironmentKind_TENANT,
-				labels: environment.Labels{},
+		/*
+			"nav": {
+				"management": envSpec{
+					kind:   protogen.EnvironmentKind_MANAGEMENT,
+					labels: environment.Labels{},
+				},
+				"dev": envSpec{
+					kind: protogen.EnvironmentKind_TENANT,
+					labels: environment.Labels{
+						"aiven": "enabled",
+					},
+				},
+				"prod": envSpec{
+					kind: protogen.EnvironmentKind_TENANT,
+					labels: environment.Labels{
+						"aiven": "enabled",
+					},
+				},
+				"dev-fss": envSpec{
+					kind: protogen.EnvironmentKind_ONPREM,
+					labels: environment.Labels{
+						"aiven": "enabled",
+					},
+				},
+				"prod-fss": envSpec{
+					kind: protogen.EnvironmentKind_ONPREM,
+					labels: environment.Labels{
+						"aiven": "enabled",
+					},
+				},
+				"dev-gcp": envSpec{
+					kind: protogen.EnvironmentKind_LEGACY,
+					labels: environment.Labels{
+						"aiven": "enabled",
+					},
+				},
+				"prod-gcp": envSpec{
+					kind: protogen.EnvironmentKind_LEGACY,
+					labels: environment.Labels{
+						"aiven": "enabled",
+					},
+				},
 			},
-			"management": envSpec{
-				kind:   protogen.EnvironmentKind_MANAGEMENT,
-				labels: environment.Labels{},
+			"ssb": {
+				"dev": envSpec{
+					kind:   protogen.EnvironmentKind_TENANT,
+					labels: environment.Labels{},
+				},
+				"management": envSpec{
+					kind:   protogen.EnvironmentKind_MANAGEMENT,
+					labels: environment.Labels{},
+				},
 			},
-		},
+			"dev-nais": {
+				"dev": envSpec{
+					kind:   protogen.EnvironmentKind_TENANT,
+					labels: environment.Labels{},
+				},
+				"management": envSpec{
+					kind:   protogen.EnvironmentKind_MANAGEMENT,
+					labels: environment.Labels{},
+				},
+			},
+
+		*/
 	}
 
 	deployments = []*gensql.DeploymentCreateParams{
@@ -120,17 +127,6 @@ var (
 		{FeatureName: "unleash", Version: "1.0.0", Target: environment.Labels{"featuretoggle": "enabled"}, Hash: "TODO"},
 		{FeatureName: "unleash", Version: "2.0.0", Target: environment.Labels{"featuretoggle": "enabled"}, Hash: "TODO"},
 		{FeatureName: "v13s", Version: "1.0.0", Target: environment.Labels{"kind": "management"}, Hash: "TODO"},
-	}
-
-	featureStates = map[tenant]map[environmentName][]*gensql.FeatureStateCreateOrUpdateParams{
-		"nav": {
-			"dev": {
-				{
-					Feature: "aivenator",
-					Enabled: false,
-				},
-			},
-		},
 	}
 )
 
@@ -159,6 +155,9 @@ func main() {
 			Name:    d.FeatureName,
 			Version: d.Version,
 			Chart:   "oci://aiven",
+			FeatureYAML: model.FeatureYAML{
+				EnvironmentKinds: []model.EnvironmentKind{"tenant", "management"},
+			},
 		}, nil)
 		_, err = db.DeploymentCreate(ctx, d.FeatureName, d.Version, d.GhRef, d.Target, d.Hash)
 		if err != nil {
@@ -205,10 +204,17 @@ func main() {
 				log.Fatal(err)
 			}
 
-			for _, fs := range featureStates[tenantName][environment.Name] {
-				_, err = db.FeatureStatesCreateOrUpdate(ctx, uuid.MustParse(environment.Id), &model.Feature{Name: fs.Feature}, fs.Enabled)
-				if err != nil {
-					log.Fatal(err)
+			for _, d := range deployments {
+				err := db.FeatureDataCreate(ctx, model.Feature{
+					FeatureYAML: model.FeatureYAML{
+						// Dependencies: dependencies,
+					},
+					Name:    d.FeatureName,
+					Version: d.Version,
+					Chart:   "oci://" + d.FeatureName,
+				}, &feature.FeatureTemplateDetails{})
+				if err != nil && !strings.Contains(err.Error(), "SQLSTATE 23505") {
+					log.Fatalf("create feature data: %v", err)
 				}
 			}
 

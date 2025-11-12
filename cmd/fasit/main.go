@@ -157,15 +157,6 @@ func main() {
 		log.WithError(err).Fatal("setting up reconciler")
 	}
 
-	deployCreatePublisher := func(topicID string, log *logrus.Entry) deployment.Publisher {
-		return message.NewPublisher[message.DeployInstruction](pubsubClient, cfg.GCPProjectID, topicID, log)
-	}
-
-	_, err = deployment.NewReconciler(repo, deployCreatePublisher, notifierService, meter, log.WithField("subsystem", "deployment_reconciler"))
-	if err != nil {
-		log.WithError(err).Fatal("setting up deployment reconciler")
-	}
-
 	go func() {
 		defer log.Error("reconciler listener stopped")
 		if err := reconciler.Listen(ctx); err != nil {
@@ -173,6 +164,17 @@ func main() {
 		}
 	}()
 	go reconciler.Run(ctx, 10*time.Minute)
+
+	deployCreatePublisher := func(topicID string, log *logrus.Entry) deployment.Publisher {
+		return message.NewPublisher[message.DeployInstruction](pubsubClient, cfg.GCPProjectID, topicID, log)
+	}
+
+	deploymentReconciler, err := deployment.NewReconciler(repo, deployCreatePublisher, notifierService, meter, log.WithField("subsystem", "deployment_reconciler"))
+	if err != nil {
+		log.WithError(err).Fatal("setting up deployment reconciler")
+	}
+	// TODO: adjust interval
+	go deploymentReconciler.Run(ctx, 10*time.Second)
 
 	costUpdater, err := workers.NewCostUpdater(ctx, repo, log.WithField("subsystem", "cost_updater"))
 	if err != nil {

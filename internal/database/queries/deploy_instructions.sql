@@ -14,7 +14,8 @@ INSERT INTO
 		feature_name,
 		feature_version,
 		hash,
-		VALUES
+		"values",
+		deployment_id
 	)
 VALUES
 	(
@@ -22,7 +23,8 @@ VALUES
 		@feature_name,
 		@feature_version,
 		@hash,
-		@values
+		@values,
+		@deployment_id
 	)
 RETURNING
 	id

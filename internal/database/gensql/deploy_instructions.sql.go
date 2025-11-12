@@ -7,6 +7,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const deployInstructionsByID = `-- name: DeployInstructionsByID :one
@@ -43,7 +44,8 @@ INSERT INTO
 		feature_name,
 		feature_version,
 		hash,
-		VALUES
+		"values",
+		deployment_id
 	)
 VALUES
 	(
@@ -51,7 +53,8 @@ VALUES
 		$2,
 		$3,
 		$4,
-		$5
+		$5,
+		$6
 	)
 RETURNING
 	id
@@ -63,6 +66,7 @@ type DeployInstructionsCreateParams struct {
 	FeatureVersion string
 	Hash           string
 	Values         []byte
+	DeploymentID   pgtype.UUID
 }
 
 func (q *Queries) DeployInstructionsCreate(ctx context.Context, arg DeployInstructionsCreateParams) (uuid.UUID, error) {
@@ -72,6 +76,7 @@ func (q *Queries) DeployInstructionsCreate(ctx context.Context, arg DeployInstru
 		arg.FeatureVersion,
 		arg.Hash,
 		arg.Values,
+		arg.DeploymentID,
 	)
 	var id uuid.UUID
 	err := row.Scan(&id)

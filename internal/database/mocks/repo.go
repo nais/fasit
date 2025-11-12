@@ -1761,8 +1761,8 @@ func (_c *Repo_CreateOrUpdateClusterOperation_Call) RunAndReturn(run func(ctx co
 }
 
 // DeployInstructionCreate provides a mock function for the type Repo
-func (_mock *Repo) DeployInstructionCreate(ctx context.Context, envID uuid.UUID, feature *model.Feature, hash string) (uuid.UUID, error) {
-	ret := _mock.Called(ctx, envID, feature, hash)
+func (_mock *Repo) DeployInstructionCreate(ctx context.Context, envID uuid.UUID, feature *model.Feature, hash string, deploymentID *uuid.UUID) (uuid.UUID, error) {
+	ret := _mock.Called(ctx, envID, feature, hash, deploymentID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for DeployInstructionCreate")
@@ -1770,18 +1770,18 @@ func (_mock *Repo) DeployInstructionCreate(ctx context.Context, envID uuid.UUID,
 
 	var r0 uuid.UUID
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, *model.Feature, string) (uuid.UUID, error)); ok {
-		return returnFunc(ctx, envID, feature, hash)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, *model.Feature, string, *uuid.UUID) (uuid.UUID, error)); ok {
+		return returnFunc(ctx, envID, feature, hash, deploymentID)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, *model.Feature, string) uuid.UUID); ok {
-		r0 = returnFunc(ctx, envID, feature, hash)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, *model.Feature, string, *uuid.UUID) uuid.UUID); ok {
+		r0 = returnFunc(ctx, envID, feature, hash, deploymentID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(uuid.UUID)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, *model.Feature, string) error); ok {
-		r1 = returnFunc(ctx, envID, feature, hash)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, *model.Feature, string, *uuid.UUID) error); ok {
+		r1 = returnFunc(ctx, envID, feature, hash, deploymentID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1798,11 +1798,12 @@ type Repo_DeployInstructionCreate_Call struct {
 //   - envID uuid.UUID
 //   - feature *model.Feature
 //   - hash string
-func (_e *Repo_Expecter) DeployInstructionCreate(ctx interface{}, envID interface{}, feature interface{}, hash interface{}) *Repo_DeployInstructionCreate_Call {
-	return &Repo_DeployInstructionCreate_Call{Call: _e.mock.On("DeployInstructionCreate", ctx, envID, feature, hash)}
+//   - deploymentID *uuid.UUID
+func (_e *Repo_Expecter) DeployInstructionCreate(ctx interface{}, envID interface{}, feature interface{}, hash interface{}, deploymentID interface{}) *Repo_DeployInstructionCreate_Call {
+	return &Repo_DeployInstructionCreate_Call{Call: _e.mock.On("DeployInstructionCreate", ctx, envID, feature, hash, deploymentID)}
 }
 
-func (_c *Repo_DeployInstructionCreate_Call) Run(run func(ctx context.Context, envID uuid.UUID, feature *model.Feature, hash string)) *Repo_DeployInstructionCreate_Call {
+func (_c *Repo_DeployInstructionCreate_Call) Run(run func(ctx context.Context, envID uuid.UUID, feature *model.Feature, hash string, deploymentID *uuid.UUID)) *Repo_DeployInstructionCreate_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -1820,11 +1821,16 @@ func (_c *Repo_DeployInstructionCreate_Call) Run(run func(ctx context.Context, e
 		if args[3] != nil {
 			arg3 = args[3].(string)
 		}
+		var arg4 *uuid.UUID
+		if args[4] != nil {
+			arg4 = args[4].(*uuid.UUID)
+		}
 		run(
 			arg0,
 			arg1,
 			arg2,
 			arg3,
+			arg4,
 		)
 	})
 	return _c
@@ -1835,7 +1841,7 @@ func (_c *Repo_DeployInstructionCreate_Call) Return(uUID uuid.UUID, err error) *
 	return _c
 }
 
-func (_c *Repo_DeployInstructionCreate_Call) RunAndReturn(run func(ctx context.Context, envID uuid.UUID, feature *model.Feature, hash string) (uuid.UUID, error)) *Repo_DeployInstructionCreate_Call {
+func (_c *Repo_DeployInstructionCreate_Call) RunAndReturn(run func(ctx context.Context, envID uuid.UUID, feature *model.Feature, hash string, deploymentID *uuid.UUID) (uuid.UUID, error)) *Repo_DeployInstructionCreate_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -2047,6 +2053,80 @@ func (_c *Repo_DeployInstructionsForFeature_Call) Return(deployInstructions []*m
 }
 
 func (_c *Repo_DeployInstructionsForFeature_Call) RunAndReturn(run func(ctx context.Context, envID uuid.UUID, featureName string, offset int) ([]*model.DeployInstruction, error)) *Repo_DeployInstructionsForFeature_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// DeployInstructionsGetFeaturesNotInEnv provides a mock function for the type Repo
+func (_mock *Repo) DeployInstructionsGetFeaturesNotInEnv(ctx context.Context, features []string, environmentID uuid.UUID) ([]string, error) {
+	ret := _mock.Called(ctx, features, environmentID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeployInstructionsGetFeaturesNotInEnv")
+	}
+
+	var r0 []string
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []string, uuid.UUID) ([]string, error)); ok {
+		return returnFunc(ctx, features, environmentID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []string, uuid.UUID) []string); ok {
+		r0 = returnFunc(ctx, features, environmentID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, []string, uuid.UUID) error); ok {
+		r1 = returnFunc(ctx, features, environmentID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Repo_DeployInstructionsGetFeaturesNotInEnv_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeployInstructionsGetFeaturesNotInEnv'
+type Repo_DeployInstructionsGetFeaturesNotInEnv_Call struct {
+	*mock.Call
+}
+
+// DeployInstructionsGetFeaturesNotInEnv is a helper method to define mock.On call
+//   - ctx context.Context
+//   - features []string
+//   - environmentID uuid.UUID
+func (_e *Repo_Expecter) DeployInstructionsGetFeaturesNotInEnv(ctx interface{}, features interface{}, environmentID interface{}) *Repo_DeployInstructionsGetFeaturesNotInEnv_Call {
+	return &Repo_DeployInstructionsGetFeaturesNotInEnv_Call{Call: _e.mock.On("DeployInstructionsGetFeaturesNotInEnv", ctx, features, environmentID)}
+}
+
+func (_c *Repo_DeployInstructionsGetFeaturesNotInEnv_Call) Run(run func(ctx context.Context, features []string, environmentID uuid.UUID)) *Repo_DeployInstructionsGetFeaturesNotInEnv_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 []string
+		if args[1] != nil {
+			arg1 = args[1].([]string)
+		}
+		var arg2 uuid.UUID
+		if args[2] != nil {
+			arg2 = args[2].(uuid.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *Repo_DeployInstructionsGetFeaturesNotInEnv_Call) Return(strings []string, err error) *Repo_DeployInstructionsGetFeaturesNotInEnv_Call {
+	_c.Call.Return(strings, err)
+	return _c
+}
+
+func (_c *Repo_DeployInstructionsGetFeaturesNotInEnv_Call) RunAndReturn(run func(ctx context.Context, features []string, environmentID uuid.UUID) ([]string, error)) *Repo_DeployInstructionsGetFeaturesNotInEnv_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -2610,23 +2690,23 @@ func (_c *Repo_DeploymentTargetsUpdate_Call) RunAndReturn(run func(ctx context.C
 }
 
 // DeploymentsForEnvironment provides a mock function for the type Repo
-func (_mock *Repo) DeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]gensql.Deployment, error) {
+func (_mock *Repo) DeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]database.Deployment, error) {
 	ret := _mock.Called(ctx, environmentID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for DeploymentsForEnvironment")
 	}
 
-	var r0 []gensql.Deployment
+	var r0 []database.Deployment
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]gensql.Deployment, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]database.Deployment, error)); ok {
 		return returnFunc(ctx, environmentID)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) []gensql.Deployment); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) []database.Deployment); ok {
 		r0 = returnFunc(ctx, environmentID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]gensql.Deployment)
+			r0 = ret.Get(0).([]database.Deployment)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
@@ -2667,12 +2747,12 @@ func (_c *Repo_DeploymentsForEnvironment_Call) Run(run func(ctx context.Context,
 	return _c
 }
 
-func (_c *Repo_DeploymentsForEnvironment_Call) Return(deployments []gensql.Deployment, err error) *Repo_DeploymentsForEnvironment_Call {
+func (_c *Repo_DeploymentsForEnvironment_Call) Return(deployments []database.Deployment, err error) *Repo_DeploymentsForEnvironment_Call {
 	_c.Call.Return(deployments, err)
 	return _c
 }
 
-func (_c *Repo_DeploymentsForEnvironment_Call) RunAndReturn(run func(ctx context.Context, environmentID uuid.UUID) ([]gensql.Deployment, error)) *Repo_DeploymentsForEnvironment_Call {
+func (_c *Repo_DeploymentsForEnvironment_Call) RunAndReturn(run func(ctx context.Context, environmentID uuid.UUID) ([]database.Deployment, error)) *Repo_DeploymentsForEnvironment_Call {
 	_c.Call.Return(run)
 	return _c
 }

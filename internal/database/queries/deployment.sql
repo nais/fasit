@@ -72,10 +72,19 @@ WHERE
 	AND environment_id = @environment_id
 ;
 
--- name: DeploymentsForEnvironment :many
+-- name: FeatureDeploymentsForEnvironment :many
 SELECT DISTINCT
 	ON (d.feature_name, d.target) sqlc.embed(d),
-	sqlc.embed(fd)
+	fd.name,
+	fd.version,
+	fd.chart,
+	fd.description,
+	fd.source,
+	fd.kinds::TEXT[] AS kinds,
+	fd.dependencies,
+	fd.values,
+	fd.default_values,
+	fd.timeout
 FROM
 	deployments d,
 	environments e,
