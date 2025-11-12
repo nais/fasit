@@ -11,6 +11,44 @@ import (
 	"github.com/nais/fasit/internal/environment"
 )
 
+const deployInstructionsGetFeaturesNotInEnv = `-- name: DeployInstructionsGetFeaturesNotInEnv :many
+SELECT
+	feature_name
+FROM
+	deploy_instructions
+WHERE
+	feature_name = ANY ($1::TEXT[])
+	AND status != 'deployed'
+	AND environment_id = $2
+    AND deployment_id IS NOT NULL
+ORDER BY feature_name
+`
+
+type DeployInstructionsGetFeaturesNotInEnvParams struct {
+	FeatureNames  []string
+	EnvironmentID uuid.UUID
+}
+
+func (q *Queries) DeployInstructionsGetFeaturesNotInEnv(ctx context.Context, arg DeployInstructionsGetFeaturesNotInEnvParams) ([]string, error) {
+	rows, err := q.db.Query(ctx, deployInstructionsGetFeaturesNotInEnv, arg.FeatureNames, arg.EnvironmentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var feature_name string
+		if err := rows.Scan(&feature_name); err != nil {
+			return nil, err
+		}
+		items = append(items, feature_name)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const deploymentCreate = `-- name: DeploymentCreate :one
 INSERT INTO
 	deployments (feature_name, version, target, gh_ref, hash)
@@ -222,12 +260,16 @@ func (q *Queries) DeploymentTargetsUpdate(ctx context.Context, arg DeploymentTar
 
 const deploymentsForEnvironment = `-- name: DeploymentsForEnvironment :many
 SELECT DISTINCT
-	ON (d.feature_name, d.target) d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.hash
+	ON (d.feature_name, d.target) d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.hash,
+	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.rename
 FROM
 	deployments d,
-	environments e
+	environments e,
+	feature_data fd
 WHERE
-	e.id = $1
+	d.feature_name = fd.name
+	AND d.version = fd.version
+	AND e.id = $1
 	AND e.labels @> d.target -- @> operator checks if the JSONB on the left contains the JSONB on the right
 ORDER BY
 	d.feature_name,
@@ -235,23 +277,40 @@ ORDER BY
 	d.created DESC
 `
 
-func (q *Queries) DeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]Deployment, error) {
+type DeploymentsForEnvironmentRow struct {
+	Deployment   Deployment
+	FeatureDatum FeatureDatum
+}
+
+func (q *Queries) DeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]DeploymentsForEnvironmentRow, error) {
 	rows, err := q.db.Query(ctx, deploymentsForEnvironment, environmentID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []Deployment{}
+	items := []DeploymentsForEnvironmentRow{}
 	for rows.Next() {
-		var i Deployment
+		var i DeploymentsForEnvironmentRow
 		if err := rows.Scan(
-			&i.ID,
-			&i.FeatureName,
-			&i.Version,
-			&i.Target,
-			&i.Created,
-			&i.GhRef,
-			&i.Hash,
+			&i.Deployment.ID,
+			&i.Deployment.FeatureName,
+			&i.Deployment.Version,
+			&i.Deployment.Target,
+			&i.Deployment.Created,
+			&i.Deployment.GhRef,
+			&i.Deployment.Hash,
+			&i.FeatureDatum.Name,
+			&i.FeatureDatum.Version,
+			&i.FeatureDatum.Chart,
+			&i.FeatureDatum.Description,
+			&i.FeatureDatum.Source,
+			&i.FeatureDatum.Kinds,
+			&i.FeatureDatum.Dependencies,
+			&i.FeatureDatum.Values,
+			&i.FeatureDatum.DefaultValues,
+			&i.FeatureDatum.Timeout,
+			&i.FeatureDatum.TplDetails,
+			&i.FeatureDatum.Rename,
 		); err != nil {
 			return nil, err
 		}

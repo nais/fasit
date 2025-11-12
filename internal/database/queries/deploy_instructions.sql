@@ -76,6 +76,7 @@ WHERE
 			feature_name,
 			created DESC
 	)
+	AND deployment_id IS NULL
 ;
 
 -- name: DeployInstructionsForFeature :many

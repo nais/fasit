@@ -16,11 +16,22 @@ type DeploymentRepo interface {
 	DeploymentTargetsCreate(ctx context.Context, deploymentID, environmentID uuid.UUID) error
 	DeploymentTargetsUpdate(ctx context.Context, deploymentID, environmentID uuid.UUID, status string) error
 	DeploymentsGet(ctx context.Context) ([]gensql.Deployment, error)
-	DeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]gensql.Deployment, error)
+	DeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]gensql.DeploymentsForEnvironmentRow, error)
 	FeatureEnabled(ctx context.Context, featureName string, envID uuid.UUID) (bool, error)
+	DeployInstructionsGetFeaturesNotInEnv(ctx context.Context, features []string, environmentID uuid.UUID) ([]string, error)
 }
 
-func (r *repo) DeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]gensql.Deployment, error) {
+func (r *repo) DeployInstructionsGetFeaturesNotInEnv(ctx context.Context, features []string, environmentID uuid.UUID) ([]string, error) {
+	if len(features) == 0 {
+		return []string{}, nil
+	}
+	return r.querier.DeployInstructionsGetFeaturesNotInEnv(ctx, gensql.DeployInstructionsGetFeaturesNotInEnvParams{
+		FeatureNames:  features,
+		EnvironmentID: environmentID,
+	})
+}
+
+func (r *repo) DeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]gensql.DeploymentsForEnvironmentRow, error) {
 	return r.querier.DeploymentsForEnvironment(ctx, environmentID)
 }
 

@@ -11,7 +11,7 @@ import (
 
 const deployInstructionsByID = `-- name: DeployInstructionsByID :one
 SELECT
-	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values
+	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, deployment_id
 FROM
 	deploy_instructions
 WHERE
@@ -31,6 +31,7 @@ func (q *Queries) DeployInstructionsByID(ctx context.Context, id uuid.UUID) (Dep
 		&i.Created,
 		&i.LastModified,
 		&i.Values,
+		&i.DeploymentID,
 	)
 	return i, err
 }
@@ -79,7 +80,7 @@ func (q *Queries) DeployInstructionsCreate(ctx context.Context, arg DeployInstru
 
 const deployInstructionsForFeature = `-- name: DeployInstructionsForFeature :many
 SELECT
-	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values
+	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, deployment_id
 FROM
 	deploy_instructions
 WHERE
@@ -118,6 +119,7 @@ func (q *Queries) DeployInstructionsForFeature(ctx context.Context, arg DeployIn
 			&i.Created,
 			&i.LastModified,
 			&i.Values,
+			&i.DeploymentID,
 		); err != nil {
 			return nil, err
 		}
@@ -131,7 +133,7 @@ func (q *Queries) DeployInstructionsForFeature(ctx context.Context, arg DeployIn
 
 const deployInstructionsForNameVersion = `-- name: DeployInstructionsForNameVersion :one
 SELECT
-	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values
+	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, deployment_id
 FROM
 	deploy_instructions
 WHERE
@@ -157,13 +159,14 @@ func (q *Queries) DeployInstructionsForNameVersion(ctx context.Context, arg Depl
 		&i.Created,
 		&i.LastModified,
 		&i.Values,
+		&i.DeploymentID,
 	)
 	return i, err
 }
 
 const deployInstructionsLatestForEnvironment = `-- name: DeployInstructionsLatestForEnvironment :many
 SELECT
-	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values
+	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, deployment_id
 FROM
 	deploy_instructions
 WHERE
@@ -178,6 +181,7 @@ WHERE
 			feature_name,
 			created DESC
 	)
+	AND deployment_id IS NULL
 `
 
 func (q *Queries) DeployInstructionsLatestForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]DeployInstruction, error) {
@@ -199,6 +203,7 @@ func (q *Queries) DeployInstructionsLatestForEnvironment(ctx context.Context, en
 			&i.Created,
 			&i.LastModified,
 			&i.Values,
+			&i.DeploymentID,
 		); err != nil {
 			return nil, err
 		}
@@ -212,7 +217,7 @@ func (q *Queries) DeployInstructionsLatestForEnvironment(ctx context.Context, en
 
 const deployInstructionsLatestForFeature = `-- name: DeployInstructionsLatestForFeature :one
 SELECT
-	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values
+	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, deployment_id
 FROM
 	deploy_instructions
 WHERE
@@ -242,6 +247,7 @@ func (q *Queries) DeployInstructionsLatestForFeature(ctx context.Context, arg De
 		&i.Created,
 		&i.LastModified,
 		&i.Values,
+		&i.DeploymentID,
 	)
 	return i, err
 }
@@ -250,14 +256,14 @@ const deployInstructionsPrevious = `-- name: DeployInstructionsPrevious :one
 WITH
 	current AS (
 		SELECT
-			di.id, di.environment_id, di.feature_name, di.feature_version, di.status, di.hash, di.created, di.last_modified, di.values
+			di.id, di.environment_id, di.feature_name, di.feature_version, di.status, di.hash, di.created, di.last_modified, di.values, di.deployment_id
 		FROM
 			deploy_instructions di
 		WHERE
 			di.id = $1
 	)
 SELECT
-	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values
+	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, deployment_id
 FROM
 	deploy_instructions
 WHERE
@@ -298,6 +304,7 @@ func (q *Queries) DeployInstructionsPrevious(ctx context.Context, id uuid.UUID) 
 		&i.Created,
 		&i.LastModified,
 		&i.Values,
+		&i.DeploymentID,
 	)
 	return i, err
 }

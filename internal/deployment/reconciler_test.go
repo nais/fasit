@@ -115,7 +115,6 @@ func TestMultipleReconcile(t *testing.T) {
 		}
 	}
 	fmt.Printf("%d features created\n", len(features))
-
 }
 
 func TestReconcile(t *testing.T) {

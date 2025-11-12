@@ -74,12 +74,16 @@ WHERE
 
 -- name: DeploymentsForEnvironment :many
 SELECT DISTINCT
-	ON (d.feature_name, d.target) d.*
+	ON (d.feature_name, d.target) sqlc.embed(d),
+	sqlc.embed(fd)
 FROM
 	deployments d,
-	environments e
+	environments e,
+	feature_data fd
 WHERE
-	e.id = @environment_id
+	d.feature_name = fd.name
+	AND d.version = fd.version
+	AND e.id = @environment_id
 	AND e.labels @> d.target -- @> operator checks if the JSONB on the left contains the JSONB on the right
 ORDER BY
 	d.feature_name,
@@ -99,4 +103,18 @@ SELECT
 			AND fs.environment_id = @environment_id
 			AND fs.enabled = FALSE
 	)
+;
+
+-- name: DeployInstructionsGetFeaturesNotInEnv :many
+SELECT
+	feature_name
+FROM
+	deploy_instructions
+WHERE
+	feature_name = ANY (@feature_names::TEXT[])
+	AND status != 'deployed'
+	AND environment_id = @environment_id
+	AND deployment_id IS NOT NULL
+ORDER BY
+	feature_name
 ;

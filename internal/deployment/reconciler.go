@@ -2,11 +2,15 @@ package deployment
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/internal/auth"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/gensql"
@@ -21,10 +25,13 @@ type ReconcilerStore interface {
 	database.FeaturesRepo
 	database.FeatureStateRepo
 	database.HealthRepo
+	database.DeployInstructionRepo
 }
 
-type Publisher interface{}
-type NewPublisher func(topicID string, log *logrus.Entry) Publisher
+type (
+	Publisher    interface{}
+	NewPublisher func(topicID string, log *logrus.Entry) Publisher
+)
 
 type Notifier interface{}
 
@@ -105,29 +112,23 @@ func (r *Reconciler) createDeploymentTarget(ctx context.Context, d gensql.Deploy
 	return nil
 }
 
-func (r *Reconciler) shouldDeployToEnvironment(ctx context.Context, feature *model.Feature, envID uuid.UUID) bool {
-	if len(feature.Dependencies) > 0 {
-		states, err := r.repo.FeatureStatesGet(ctx, envID)
-		if err != nil {
-			// TODO: log
-			return false
-		}
-
-		// TODO: no need to fetch all?
-		enabledFeatures := []string{}
-		for _, state := range states {
-			if state.Enabled {
-				enabledFeatures = append(enabledFeatures, state.FeatureName)
-			}
-		}
-
-		missingFeatures := feature.Dependencies.FindMissing(enabledFeatures)
-		if len(missingFeatures) > 0 {
-			return false // TODO: log => nil, fmt.Errorf("dependency '%v' not enabled", missingFeatures)
+func (r *Reconciler) shouldDeployToEnvironment(ctx context.Context, deployment gensql.DeploymentsForEnvironmentRow, environment *model.TenantEnvironment) (bool, error) {
+	existingDeploy, err := r.repo.DeployInstructionsLatestForFeature(ctx, environment.ID, deployment.Deployment.FeatureName)
+	if err != nil {
+		if !errors.Is(err, pgx.ErrNoRows) {
+			return false, fmt.Errorf("get deploy instructions latest for environment %q: %w", environment.Name, err)
 		}
 	}
 
-	return true
+	if existingDeploy != nil {
+		// TODO: should we check version as well?
+		if existingDeploy.Hash == deployment.Deployment.Hash {
+			r.log.Debug("deployment is already up to date - skip reconcile")
+			return false, nil
+		}
+	}
+
+	return r.isDependenciesDeployed(ctx, deployment, environment.ID)
 }
 
 func (r *Reconciler) reconcileEnvironment(ctx context.Context, environment *model.TenantEnvironment) error {
@@ -146,58 +147,97 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, environment *mode
 	}
 
 	for _, deployment := range filterDeployments(allDeployments) {
-		feature, err := r.repo.FeatureByNameForEnv(ctx, deployment.FeatureName, environment.ID)
-		if err != nil {
-			return err
-		}
 
-		if !r.shouldDeployToEnvironment(ctx, feature, environment.ID) {
+		if ok, err := r.shouldDeployToEnvironment(ctx, deployment, environment); err != nil {
+			return err
+		} else if !ok {
 			continue
 		}
 
-		if _, err = r.repo.FeatureStatesCreateOrUpdate(ctx, environment.ID, feature, true); err != nil {
-			return fmt.Errorf("enable feature %q for environment %q: %w", deployment.FeatureName, environment.Name, err)
-		}
-
-		if err := r.createDeploymentTarget(ctx, deployment, environment.ID); err != nil {
-			r.log.
-				WithError(err).
-				WithFields(logrus.Fields{
-					"deployment_id":  deployment.ID,
-					"environment_id": environment.ID,
-				}).
-				Error("reconcile deployment")
+		// TODO: should we use deploy_instructions to keep track of deployed features or deployment_target?
+		if err = r.createDeploymentTarget(ctx, deployment.Deployment, environment.ID); err != nil {
+			return err
 		}
 	}
 
 	return nil
 }
 
+func (r *Reconciler) isDependenciesDeployed(ctx context.Context, deployment gensql.DeploymentsForEnvironmentRow, envID uuid.UUID) (bool, error) {
+	deps, err := getDependencies(deployment.FeatureDatum.Dependencies)
+	if err != nil {
+		return false, err
+	}
+
+	if len(deps) == 0 {
+		return true, nil
+	}
+
+	for _, dep := range deps {
+		if len(dep.AllOf) > 0 {
+			missing, err := r.repo.DeployInstructionsGetFeaturesNotInEnv(ctx, dep.AllOf, envID)
+			if err != nil {
+				return false, fmt.Errorf("get features not in env: %w", err)
+			}
+			if len(missing) > 0 {
+				r.log.
+					WithField("environment_id", envID.String()).
+					WithField("features", strings.Join(missing, ",")).
+					Debug("feature dependencies not found in env")
+				return false, nil
+			}
+		}
+		if len(dep.AnyOf) > 0 {
+			missing, err := r.repo.DeployInstructionsGetFeaturesNotInEnv(ctx, dep.AnyOf, envID)
+			if err != nil {
+				return false, fmt.Errorf("get features not in env: %w", err)
+			}
+			if len(missing) == len(dep.AnyOf) {
+				r.log.
+					WithField("environment_id", envID.String()).
+					WithField("features", strings.Join(missing, ",")).
+					Debug("feature dependencies not found in env")
+				return false, nil
+			}
+		}
+	}
+
+	return true, nil
+}
+
 // filterDeployments filters the deployments to only include the most specific deployment with the latest created
 // timestamp.
-func filterDeployments(allDeployments []gensql.Deployment) []gensql.Deployment {
-	deployments := map[string]gensql.Deployment{}
-	for _, deployment := range allDeployments {
-		d, ok := deployments[deployment.FeatureName]
+func filterDeployments(allDeployments []gensql.DeploymentsForEnvironmentRow) []gensql.DeploymentsForEnvironmentRow {
+	deployments := map[string]gensql.DeploymentsForEnvironmentRow{}
+	for _, row := range allDeployments {
+		d, ok := deployments[row.Deployment.FeatureName]
 		if !ok {
-			deployments[deployment.FeatureName] = deployment
+			deployments[row.Deployment.FeatureName] = row
 			continue
 		}
 
-		if len(deployment.Target) > len(d.Target) {
-			deployments[deployment.FeatureName] = deployment
+		if len(row.Deployment.Target) > len(d.Deployment.Target) {
+			deployments[row.Deployment.FeatureName] = row
 			continue
 		}
 
-		if len(deployment.Target) == len(d.Target) && deployment.Created.Time.After(d.Created.Time) {
-			deployments[deployment.FeatureName] = deployment
+		if len(row.Deployment.Target) == len(d.Deployment.Target) && row.Deployment.Created.Time.After(d.Deployment.Created.Time) {
+			deployments[row.Deployment.FeatureName] = row
 			continue
 		}
 	}
 
-	ret := make([]gensql.Deployment, 0)
+	ret := make([]gensql.DeploymentsForEnvironmentRow, 0)
 	for _, d := range deployments {
 		ret = append(ret, d)
 	}
 	return ret
+}
+
+func getDependencies(deps []byte) (model.Dependencies, error) {
+	ret := model.Dependencies{}
+	if err := json.Unmarshal(deps, &ret); err != nil {
+		return nil, fmt.Errorf("unmarshal dependencies: %w", err)
+	}
+	return ret, nil
 }

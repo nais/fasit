@@ -180,6 +180,7 @@ type DeployInstruction struct {
 	Created        pgtype.Timestamptz
 	LastModified   pgtype.Timestamptz
 	Values         []byte
+	DeploymentID   pgtype.UUID
 }
 
 type Deployment struct {

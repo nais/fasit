@@ -20,3 +20,34 @@ CREATE TABLE "deployment_targets" (
 	PRIMARY KEY ("deployment_id", "environment_id")
 )
 ;
+
+ALTER TABLE environments
+ADD COLUMN IF NOT EXISTS labels JSONB NOT NULL DEFAULT '{}'::JSONB
+;
+
+UPDATE environments e
+SET
+	labels = el.labels
+FROM
+	(
+		SELECT
+			environment_id,
+			JSONB_OBJECT_AGG(key, value) AS labels
+		FROM
+			environment_labels
+		GROUP BY
+			environment_id
+	) el
+WHERE
+	e.id = el.environment_id
+;
+
+DROP TABLE IF EXISTS environment_labels
+;
+
+ALTER TABLE deploy_instructions
+ADD COLUMN deployment_id uuid REFERENCES deployments (id) ON DELETE CASCADE
+;
+
+CREATE INDEX ON "deploy_instructions" ("deployment_id")
+;

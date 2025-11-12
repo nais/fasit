@@ -46,6 +46,7 @@ type Querier interface {
 	DeployInstructionsCreate(ctx context.Context, arg DeployInstructionsCreateParams) (uuid.UUID, error)
 	DeployInstructionsForFeature(ctx context.Context, arg DeployInstructionsForFeatureParams) ([]DeployInstruction, error)
 	DeployInstructionsForNameVersion(ctx context.Context, arg DeployInstructionsForNameVersionParams) (DeployInstruction, error)
+	DeployInstructionsGetFeaturesNotInEnv(ctx context.Context, arg DeployInstructionsGetFeaturesNotInEnvParams) ([]string, error)
 	DeployInstructionsLatestForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]DeployInstruction, error)
 	DeployInstructionsLatestForFeature(ctx context.Context, arg DeployInstructionsLatestForFeatureParams) (DeployInstruction, error)
 	DeployInstructionsPrevious(ctx context.Context, id uuid.UUID) (DeployInstruction, error)
@@ -56,7 +57,7 @@ type Querier interface {
 	DeploymentTargetsGetAll(ctx context.Context) ([]DeploymentTargetsGetAllRow, error)
 	DeploymentTargetsGetPending(ctx context.Context) ([]DeploymentTarget, error)
 	DeploymentTargetsUpdate(ctx context.Context, arg DeploymentTargetsUpdateParams) error
-	DeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]Deployment, error)
+	DeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]DeploymentsForEnvironmentRow, error)
 	DeploymentsGet(ctx context.Context) ([]Deployment, error)
 	EnvConfig(ctx context.Context, arg EnvConfigParams) ([]EnvConfigRow, error)
 	EnvConfigOnlyKnown(ctx context.Context, arg EnvConfigOnlyKnownParams) ([]EnvConfigOnlyKnownRow, error)
