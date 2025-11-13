@@ -36,14 +36,14 @@ type Publisher interface {
 	Stop()
 }
 
-type NewPublisher func(topicID string, log *logrus.Entry) Publisher
+type NewPublisher func(topicID string, log logrus.FieldLogger) Publisher
 
 type Notifier interface{}
 
 type Reconciler struct {
 	repo      ReconcilerStore
 	publisher NewPublisher
-	log       *logrus.Entry
+	log       logrus.FieldLogger
 	notifier  Notifier
 
 	lock    sync.Mutex
@@ -59,7 +59,7 @@ func NewReconciler(
 	publisher NewPublisher,
 	notifier Notifier,
 	meter metric.Meter,
-	log *logrus.Entry,
+	log logrus.FieldLogger,
 ) (*Reconciler, error) {
 	return &Reconciler{
 		repo:      repo,

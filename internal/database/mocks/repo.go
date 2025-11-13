@@ -2200,8 +2200,8 @@ func (_c *Repo_DeployInstructionsLatestForFeature_Call) RunAndReturn(run func(ct
 }
 
 // DeploymentCreate provides a mock function for the type Repo
-func (_mock *Repo) DeploymentCreate(ctx context.Context, featureName string, featureVersion string, ghRef []byte, target environment.Labels, hash string) (*gensql.Deployment, error) {
-	ret := _mock.Called(ctx, featureName, featureVersion, ghRef, target, hash)
+func (_mock *Repo) DeploymentCreate(ctx context.Context, featureName string, featureVersion string, ghRef []byte, target environment.Labels) (*gensql.Deployment, error) {
+	ret := _mock.Called(ctx, featureName, featureVersion, ghRef, target)
 
 	if len(ret) == 0 {
 		panic("no return value specified for DeploymentCreate")
@@ -2209,18 +2209,18 @@ func (_mock *Repo) DeploymentCreate(ctx context.Context, featureName string, fea
 
 	var r0 *gensql.Deployment
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, []byte, environment.Labels, string) (*gensql.Deployment, error)); ok {
-		return returnFunc(ctx, featureName, featureVersion, ghRef, target, hash)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, []byte, environment.Labels) (*gensql.Deployment, error)); ok {
+		return returnFunc(ctx, featureName, featureVersion, ghRef, target)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, []byte, environment.Labels, string) *gensql.Deployment); ok {
-		r0 = returnFunc(ctx, featureName, featureVersion, ghRef, target, hash)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, []byte, environment.Labels) *gensql.Deployment); ok {
+		r0 = returnFunc(ctx, featureName, featureVersion, ghRef, target)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*gensql.Deployment)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string, string, []byte, environment.Labels, string) error); ok {
-		r1 = returnFunc(ctx, featureName, featureVersion, ghRef, target, hash)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string, string, []byte, environment.Labels) error); ok {
+		r1 = returnFunc(ctx, featureName, featureVersion, ghRef, target)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -2238,12 +2238,11 @@ type Repo_DeploymentCreate_Call struct {
 //   - featureVersion string
 //   - ghRef []byte
 //   - target environment.Labels
-//   - hash string
-func (_e *Repo_Expecter) DeploymentCreate(ctx interface{}, featureName interface{}, featureVersion interface{}, ghRef interface{}, target interface{}, hash interface{}) *Repo_DeploymentCreate_Call {
-	return &Repo_DeploymentCreate_Call{Call: _e.mock.On("DeploymentCreate", ctx, featureName, featureVersion, ghRef, target, hash)}
+func (_e *Repo_Expecter) DeploymentCreate(ctx interface{}, featureName interface{}, featureVersion interface{}, ghRef interface{}, target interface{}) *Repo_DeploymentCreate_Call {
+	return &Repo_DeploymentCreate_Call{Call: _e.mock.On("DeploymentCreate", ctx, featureName, featureVersion, ghRef, target)}
 }
 
-func (_c *Repo_DeploymentCreate_Call) Run(run func(ctx context.Context, featureName string, featureVersion string, ghRef []byte, target environment.Labels, hash string)) *Repo_DeploymentCreate_Call {
+func (_c *Repo_DeploymentCreate_Call) Run(run func(ctx context.Context, featureName string, featureVersion string, ghRef []byte, target environment.Labels)) *Repo_DeploymentCreate_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -2265,17 +2264,12 @@ func (_c *Repo_DeploymentCreate_Call) Run(run func(ctx context.Context, featureN
 		if args[4] != nil {
 			arg4 = args[4].(environment.Labels)
 		}
-		var arg5 string
-		if args[5] != nil {
-			arg5 = args[5].(string)
-		}
 		run(
 			arg0,
 			arg1,
 			arg2,
 			arg3,
 			arg4,
-			arg5,
 		)
 	})
 	return _c
@@ -2286,7 +2280,7 @@ func (_c *Repo_DeploymentCreate_Call) Return(deployment *gensql.Deployment, err 
 	return _c
 }
 
-func (_c *Repo_DeploymentCreate_Call) RunAndReturn(run func(ctx context.Context, featureName string, featureVersion string, ghRef []byte, target environment.Labels, hash string) (*gensql.Deployment, error)) *Repo_DeploymentCreate_Call {
+func (_c *Repo_DeploymentCreate_Call) RunAndReturn(run func(ctx context.Context, featureName string, featureVersion string, ghRef []byte, target environment.Labels) (*gensql.Deployment, error)) *Repo_DeploymentCreate_Call {
 	_c.Call.Return(run)
 	return _c
 }

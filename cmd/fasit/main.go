@@ -165,7 +165,7 @@ func main() {
 	}()
 	go reconciler.Run(ctx, 10*time.Minute)
 
-	deployCreatePublisher := func(topicID string, log *logrus.Entry) deployment.Publisher {
+	deployCreatePublisher := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
 		return message.NewPublisher[message.DeployInstruction](pubsubClient, cfg.GCPProjectID, topicID, log)
 	}
 

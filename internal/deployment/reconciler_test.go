@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/dbtest"
@@ -18,6 +19,7 @@ import (
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/provider/protogen"
 	"github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -25,6 +27,11 @@ import (
 type Db struct {
 	repo database.Repo
 	t    *testing.T
+	pool *pgxpool.Pool
+}
+
+func (d Db) RunQuery(ctx context.Context, q string) (pgx.Rows, error) {
+	return d.pool.Query(ctx, q)
 }
 
 type featureDeploy struct {
@@ -45,7 +52,7 @@ func TestMultipleReconcile(t *testing.T) {
 
 	r, err := deployment.NewReconciler(
 		db.repo,
-		func(topicID string, log *logrus.Entry) deployment.Publisher {
+		func(topicID string, log logrus.FieldLogger) deployment.Publisher {
 			return nil
 		},
 		nil,
@@ -117,18 +124,30 @@ func TestMultipleReconcile(t *testing.T) {
 	fmt.Printf("%d features created\n", len(features))
 }
 
+type publisher struct {
+	log logrus.FieldLogger
+}
+
+func (p *publisher) Publish(_ context.Context, msg message.DeployInstruction) error {
+	p.log.Infof("%s:%s", msg.Name, msg.Version)
+	return nil
+}
+func (p *publisher) Stop() {}
+
 func TestReconcile(t *testing.T) {
 	ctx := context.Background()
 	db := setupDb(ctx, t, true)
 
+	logger, hook := test.NewNullLogger()
+
 	r, err := deployment.NewReconciler(
 		db.repo,
-		func(topicID string, log *logrus.Entry) deployment.Publisher {
-			return nil
+		func(topicID string, log logrus.FieldLogger) deployment.Publisher {
+			return &publisher{log: log}
 		},
 		nil,
 		nil,
-		logrus.NewEntry(logrus.New()),
+		logger,
 	)
 	if err != nil {
 		t.Fatalf("create reconciler: %v", err)
@@ -153,9 +172,9 @@ func TestReconcile(t *testing.T) {
 	}
 
 	tt := []struct {
-		name                      string
-		deploymentsToCreate       []featureDeploy
-		expectedDeploymentTargets []map[string]map[string][]featureDeploy
+		name                string
+		deploymentsToCreate []featureDeploy
+		expectedFeatures    []string
 	}{
 		{
 			name: "install most specific and latest features",
@@ -170,67 +189,13 @@ func TestReconcile(t *testing.T) {
 				{name: "unleash", version: "2.0.0", target: environment.Labels{"kind": "tenant"}},
 				{name: "v13s", version: "1.0.0", target: environment.Labels{"kind": "management"}},
 			},
-			expectedDeploymentTargets: []map[string]map[string][]featureDeploy{
-				{
-					"nav": {
-						"dev": {
-							{name: "aivenator", version: "1.1.1", target: environment.Labels{"aiven": "enabled", "tenant": "nav"}},
-							{name: "naiserator", version: "1.0.0", target: environment.Labels{"aiven": "enabled"}},
-							{name: "unleash", version: "2.0.0", target: environment.Labels{"kind": "tenant"}},
-						},
-						"management": {
-							{name: "v13s", version: "1.0.0", target: environment.Labels{"kind": "management"}},
-						},
-					},
-					"test-partner": {
-						"dev": {
-							{name: "unleash", version: "2.0.0", target: environment.Labels{"kind": "tenant"}},
-						},
-						"prod": {
-							{name: "unleash", version: "2.0.0", target: environment.Labels{"kind": "tenant"}},
-						},
-					},
-				},
-				{
-					"nav": {
-						"dev": {
-							{name: "aivenator", version: "1.1.1", target: environment.Labels{"aiven": "enabled", "tenant": "nav"}},
-							{name: "naiserator", version: "1.0.0", target: environment.Labels{"aiven": "enabled"}},
-							{name: "unleash", version: "2.0.0", target: environment.Labels{"kind": "tenant"}},
-						},
-						"management": {
-							{name: "v13s", version: "1.0.0", target: environment.Labels{"kind": "management"}},
-						},
-					},
-					"test-partner": {
-						"dev": {
-							{name: "unleash", version: "2.0.0", target: environment.Labels{"kind": "tenant"}},
-						},
-						"prod": {
-							{name: "unleash", version: "2.0.0", target: environment.Labels{"kind": "tenant"}},
-						},
-					},
-				},
-				{
-					"nav": {
-						"dev": {
-							{name: "aivenator", version: "1.1.1", target: environment.Labels{"aiven": "enabled", "tenant": "nav"}},
-							{name: "naiserator", version: "1.0.0", target: environment.Labels{"aiven": "enabled"}},
-							{name: "unleash", version: "2.0.0", target: environment.Labels{"kind": "tenant"}},
-						},
-						"management": {
-							{name: "v13s", version: "1.0.0", target: environment.Labels{"kind": "management"}},
-						},
-					},
-					"test-partner": {
-						"dev": {
-							{name: "unleash", version: "2.0.0", target: environment.Labels{"kind": "tenant"}},
-						},
-						"prod": {
-							{name: "unleash", version: "2.0.0", target: environment.Labels{"kind": "tenant"}},
-						},
-					},
-				},
+			expectedFeatures: []string{
+				"nav:dev:aivenator:1.1.1",
+				"nav:dev:naiserator:1.0.0",
+				"nav:dev:unleash:2.0.0",
+				"nav:management:v13s:1.0.0",
+				"test-partner:dev:unleash:2.0.0",
+				"test-partner:prod:unleash:2.0.0",
 			},
 		},
 	}
@@ -240,52 +205,46 @@ func TestReconcile(t *testing.T) {
 			db.createTenantEnvironments(ctx, envsToCreate)
 			db.createDeployments(ctx, tc.deploymentsToCreate)
 
-			for _, expectedTargets := range tc.expectedDeploymentTargets {
-				err = r.Reconcile(ctx)
-				if err != nil {
-					t.Fatalf("reconcile: %v", err)
-				}
+			if err := r.Reconcile(ctx); err != nil {
+				t.Fatalf("reconcile: %v", err)
+			}
 
-				allDeploymentTargets, err := db.repo.DeploymentTargetsGetAll(ctx)
-				if err != nil {
-					t.Fatalf("get all deployment targets: %v", err)
-				}
+			q := `
+				SELECT
+				t.name || ':' || e.name || ':' || di.feature_name || ':' || di.feature_version
+				FROM deploy_instructions di
+				JOIN environments e ON e.id = di.environment_id
+				JOIN tenants t ON t.id = e.tenant_id
+			`
 
-				countExpected := 0
-				for _, envs := range expectedTargets {
-					for _, dts := range envs {
-						countExpected += len(dts)
+			rows, err := db.RunQuery(ctx, q)
+			if err != nil {
+				t.Fatalf("query deploy instructions: %v", err)
+			}
+
+			var instructions []string
+			for rows.Next() {
+				var instruction string
+				_ = rows.Scan(&instruction)
+				instructions = append(instructions, instruction)
+			}
+
+			assert.Len(t, instructions, len(tc.expectedFeatures))
+			assert.Len(t, hook.Entries, len(tc.expectedFeatures))
+
+			for _, instruction := range tc.expectedFeatures {
+				found := false
+				for _, msg := range hook.Entries {
+					parts := strings.Split(instruction, ":")
+					if msg.Message == strings.Join(parts[2:], ":") {
+						found = true
+						break
 					}
 				}
-				assert.Len(t, allDeploymentTargets, countExpected, "expected %d deployment targets, got %d", countExpected, len(allDeploymentTargets))
 
-				count := 0
-				for _, dt := range allDeploymentTargets {
-					featureDeploys, ok := expectedTargets[dt.TenantName][dt.EnvironmentName]
-					if !ok {
-						t.Fatalf(
-							"%s:%s not found in expected deployment targets map",
-							dt.TenantName,
-							dt.EnvironmentName,
-						)
-					}
-					found := false
-					for _, fd := range featureDeploys {
-						if dt.FeatureName == fd.name && dt.Version == fd.version {
-							count++
-							found = true
-							break
-						}
-					}
-					assert.True(t, found,
-						"deployment target %s:%s:%s:%s not found in expected deployment targets",
-						dt.TenantName,
-						dt.EnvironmentName,
-						dt.FeatureName,
-						dt.Version,
-					)
+				if !found {
+					t.Errorf("expected log message for instruction %q not found", instruction)
 				}
-				assert.Len(t, allDeploymentTargets, count, "number of deployment targets does not match the expected number of deployment targets")
 			}
 		})
 	}
@@ -308,7 +267,7 @@ func (d *Db) createDeployment(ctx context.Context, featureName, version string, 
 		d.t.Fatalf("update feature version: %v", err)
 	}
 
-	_, err = d.repo.DeploymentCreate(ctx, featureName, version, []byte(`{"key": "ghref"}`), labels, "TODO: hash")
+	_, err = d.repo.DeploymentCreate(ctx, featureName, version, []byte(`{"key": "ghref"}`), labels)
 	if err != nil {
 		d.t.Fatalf("create deployment: %v", err)
 	}
@@ -351,7 +310,7 @@ func (d *Db) createFeatureDeployment(ctx context.Context, featureName, version s
 		labels = environment.Labels{}
 	}
 
-	_, err = d.repo.DeploymentCreate(ctx, featureName, version, []byte(`{"key": "ghref"}`), labels, "TODO: hash")
+	_, err = d.repo.DeploymentCreate(ctx, featureName, version, []byte(`{"key": "ghref"}`), labels)
 	if err != nil {
 		d.t.Fatalf("create deployment: %v", err)
 	}
@@ -455,5 +414,6 @@ func setupDb(ctx context.Context, t *testing.T, testcontainers bool) *Db {
 	return &Db{
 		repo: database.New(pool, log.WithField("subsystem", "repo")),
 		t:    t,
+		pool: pool,
 	}
 }

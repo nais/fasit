@@ -35,11 +35,11 @@ type Topic interface {
 
 type Publisher[T any] struct {
 	topic  Topic
-	log    *logrus.Entry
+	log    logrus.FieldLogger
 	config publisherConfig
 }
 
-func NewPublisher[T any](client *pubsub.Client, projectID, topicID string, log *logrus.Entry, opts ...publisherOpts) *Publisher[T] {
+func NewPublisher[T any](client *pubsub.Client, projectID, topicID string, log logrus.FieldLogger, opts ...publisherOpts) *Publisher[T] {
 	cfg := publisherConfig{}
 	for _, opt := range opts {
 		opt(&cfg)
