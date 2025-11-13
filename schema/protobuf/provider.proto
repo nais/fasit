@@ -12,7 +12,6 @@ service Provider {
   rpc GetEnvironmentValuesAcrossEnvs(GetEnvironmentValuesAcrossEnvsRequest) returns (EnvironmentValuesAcrossEnvsResponse) {}
   rpc DeleteEnvironmentValue(DeleteEnvironmentValueRequest) returns (DeleteEnvironmentValueResponse) {}
   rpc UpdateEnvironment(UpdateEnvironmentRequest) returns (EnvironmentResponse) {}
-  rpc CreateDeployment(CreateDeploymentRequest) returns (CreateDeploymentResponse) {}
 }
 
 message CreateTenantRequest {
@@ -107,11 +106,3 @@ message DeleteEnvironmentValueRequest {
 message DeleteEnvironmentValueResponse {
   bool success = 1;
 }
-
-message CreateDeploymentRequest {
-  string FeatureName = 1;
-  string Version = 2;
-  repeated EnvironmentLabel Target = 3;
-}
-
-message CreateDeploymentResponse {}

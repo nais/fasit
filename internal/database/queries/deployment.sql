@@ -9,9 +9,9 @@ ORDER BY
 
 -- name: DeploymentCreate :one
 INSERT INTO
-	deployments (feature_name, version, target, gh_ref, hash)
+	deployments (feature_name, version, target, gh_ref)
 VALUES
-	(@feature_name, @version, @target, @gh_ref, @hash)
+	(@feature_name, @version, @target, @gh_ref)
 RETURNING
 	*
 ;

@@ -13,7 +13,7 @@ import (
 )
 
 type DeploymentRepo interface {
-	DeploymentCreate(ctx context.Context, featureName, featureVersion string, ghRef []byte, target environment.Labels, hash string) (*gensql.Deployment, error)
+	DeploymentCreate(ctx context.Context, featureName, featureVersion string, ghRef []byte, target environment.Labels) (*gensql.Deployment, error)
 	DeploymentTargetsGetAll(ctx context.Context) ([]gensql.DeploymentTargetsGetAllRow, error)
 	DeploymentTargetsGet(ctx context.Context, deploymentID uuid.UUID) ([]gensql.DeploymentTarget, error)
 	DeploymentTargetsGetPending(ctx context.Context) ([]gensql.DeploymentTarget, error)
@@ -52,7 +52,6 @@ type Deployment struct {
 	ID      uuid.UUID
 	Created time.Time
 	Target  environment.Labels
-	Hash    string
 }
 
 func (r *repo) DeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]Deployment, error) {
@@ -73,7 +72,6 @@ func (r *repo) DeploymentsForEnvironment(ctx context.Context, environmentID uuid
 			ID:      row.Deployment.ID,
 			Created: row.Deployment.Created.Time,
 			Target:  row.Deployment.Target,
-			Hash:    row.Deployment.Hash,
 		}
 	}
 
@@ -83,7 +81,7 @@ func (r *repo) DeploymentsForEnvironment(ctx context.Context, environmentID uuid
 func featureFromSQL(f gensql.FeatureDeploymentsForEnvironmentRow) (*model.Feature, error) {
 	kinds := make([]string, len(f.Kinds))
 	for i, k := range f.Kinds {
-		kinds[i] = string(k)
+		kinds[i] = k
 	}
 
 	fyaml, defaultValues, err := makeFeatureYAML(kinds, f.Dependencies, f.Values, f.DefaultValues, nil, f.Timeout)
@@ -103,13 +101,12 @@ func featureFromSQL(f gensql.FeatureDeploymentsForEnvironmentRow) (*model.Featur
 	}, nil
 }
 
-func (r *repo) DeploymentCreate(ctx context.Context, featureName, featureVersion string, ghRef []byte, target environment.Labels, hash string) (*gensql.Deployment, error) {
+func (r *repo) DeploymentCreate(ctx context.Context, featureName, featureVersion string, ghRef []byte, target environment.Labels) (*gensql.Deployment, error) {
 	ret, err := r.querier.DeploymentCreate(ctx, gensql.DeploymentCreateParams{
 		FeatureName: featureName,
 		Version:     featureVersion,
 		GhRef:       ghRef,
 		Target:      target,
-		Hash:        hash,
 	})
 	return &ret, err
 }

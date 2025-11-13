@@ -948,102 +948,6 @@ func (x *DeleteEnvironmentValueResponse) GetSuccess() bool {
 	return false
 }
 
-type CreateDeploymentRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	FeatureName   string                 `protobuf:"bytes,1,opt,name=FeatureName,proto3" json:"FeatureName,omitempty"`
-	Version       string                 `protobuf:"bytes,2,opt,name=Version,proto3" json:"Version,omitempty"`
-	Target        []*EnvironmentLabel    `protobuf:"bytes,3,rep,name=Target,proto3" json:"Target,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *CreateDeploymentRequest) Reset() {
-	*x = CreateDeploymentRequest{}
-	mi := &file_provider_proto_msgTypes[16]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CreateDeploymentRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CreateDeploymentRequest) ProtoMessage() {}
-
-func (x *CreateDeploymentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_provider_proto_msgTypes[16]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CreateDeploymentRequest.ProtoReflect.Descriptor instead.
-func (*CreateDeploymentRequest) Descriptor() ([]byte, []int) {
-	return file_provider_proto_rawDescGZIP(), []int{16}
-}
-
-func (x *CreateDeploymentRequest) GetFeatureName() string {
-	if x != nil {
-		return x.FeatureName
-	}
-	return ""
-}
-
-func (x *CreateDeploymentRequest) GetVersion() string {
-	if x != nil {
-		return x.Version
-	}
-	return ""
-}
-
-func (x *CreateDeploymentRequest) GetTarget() []*EnvironmentLabel {
-	if x != nil {
-		return x.Target
-	}
-	return nil
-}
-
-type CreateDeploymentResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *CreateDeploymentResponse) Reset() {
-	*x = CreateDeploymentResponse{}
-	mi := &file_provider_proto_msgTypes[17]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CreateDeploymentResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CreateDeploymentResponse) ProtoMessage() {}
-
-func (x *CreateDeploymentResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_provider_proto_msgTypes[17]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CreateDeploymentResponse.ProtoReflect.Descriptor instead.
-func (*CreateDeploymentResponse) Descriptor() ([]byte, []int) {
-	return file_provider_proto_rawDescGZIP(), []int{17}
-}
-
 var File_provider_proto protoreflect.FileDescriptor
 
 const file_provider_proto_rawDesc = "" +
@@ -1102,12 +1006,7 @@ const file_provider_proto_rawDesc = "" +
 	"\x0eenvironment_id\x18\x01 \x01(\tR\renvironmentId\x12\x10\n" +
 	"\x03key\x18\x02 \x01(\tR\x03key\":\n" +
 	"\x1eDeleteEnvironmentValueResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\"\x80\x01\n" +
-	"\x17CreateDeploymentRequest\x12 \n" +
-	"\vFeatureName\x18\x01 \x01(\tR\vFeatureName\x12\x18\n" +
-	"\aVersion\x18\x02 \x01(\tR\aVersion\x12)\n" +
-	"\x06Target\x18\x03 \x03(\v2\x11.EnvironmentLabelR\x06Target\"\x1a\n" +
-	"\x18CreateDeploymentResponse*R\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess*R\n" +
 	"\x0fEnvironmentKind\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\x0e\n" +
 	"\n" +
@@ -1117,7 +1016,7 @@ const file_provider_proto_rawDesc = "" +
 	"\n" +
 	"\x06ONPREM\x10\x03\x12\n" +
 	"\n" +
-	"\x06LEGACY\x10\x042\xa8\x06\n" +
+	"\x06LEGACY\x10\x042\xdd\x05\n" +
 	"\bProvider\x127\n" +
 	"\fCreateTenant\x12\x14.CreateTenantRequest\x1a\x0f.TenantResponse\"\x00\x121\n" +
 	"\tGetTenant\x12\x11.GetTenantRequest\x1a\x0f.TenantResponse\"\x00\x12F\n" +
@@ -1127,8 +1026,7 @@ const file_provider_proto_rawDesc = "" +
 	"\x13GetEnvironmentValue\x12\x1b.GetEnvironmentValueRequest\x1a\x19.EnvironmentValueResponse\"\x00\x12p\n" +
 	"\x1eGetEnvironmentValuesAcrossEnvs\x12&.GetEnvironmentValuesAcrossEnvsRequest\x1a$.EnvironmentValuesAcrossEnvsResponse\"\x00\x12[\n" +
 	"\x16DeleteEnvironmentValue\x12\x1e.DeleteEnvironmentValueRequest\x1a\x1f.DeleteEnvironmentValueResponse\"\x00\x12F\n" +
-	"\x11UpdateEnvironment\x12\x19.UpdateEnvironmentRequest\x1a\x14.EnvironmentResponse\"\x00\x12I\n" +
-	"\x10CreateDeployment\x12\x18.CreateDeploymentRequest\x1a\x19.CreateDeploymentResponse\"\x00B%Z#internal/provider/protogen;protogenb\x06proto3"
+	"\x11UpdateEnvironment\x12\x19.UpdateEnvironmentRequest\x1a\x14.EnvironmentResponse\"\x00B%Z#internal/provider/protogen;protogenb\x06proto3"
 
 var (
 	file_provider_proto_rawDescOnce sync.Once
@@ -1143,7 +1041,7 @@ func file_provider_proto_rawDescGZIP() []byte {
 }
 
 var file_provider_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_provider_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_provider_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_provider_proto_goTypes = []any{
 	(EnvironmentKind)(0),                           // 0: EnvironmentKind
 	(*CreateTenantRequest)(nil),                    // 1: CreateTenantRequest
@@ -1162,8 +1060,6 @@ var file_provider_proto_goTypes = []any{
 	(*EnvironmentValuesAcrossEnvsResponse)(nil),    // 14: EnvironmentValuesAcrossEnvsResponse
 	(*DeleteEnvironmentValueRequest)(nil),          // 15: DeleteEnvironmentValueRequest
 	(*DeleteEnvironmentValueResponse)(nil),         // 16: DeleteEnvironmentValueResponse
-	(*CreateDeploymentRequest)(nil),                // 17: CreateDeploymentRequest
-	(*CreateDeploymentResponse)(nil),               // 18: CreateDeploymentResponse
 }
 var file_provider_proto_depIdxs = []int32{
 	0,  // 0: CreateEnvironmentRequest.kind:type_name -> EnvironmentKind
@@ -1171,32 +1067,29 @@ var file_provider_proto_depIdxs = []int32{
 	6,  // 2: UpdateEnvironmentRequest.labels:type_name -> EnvironmentLabel
 	6,  // 3: EnvironmentResponse.labels:type_name -> EnvironmentLabel
 	12, // 4: EnvironmentValuesAcrossEnvsResponse.values:type_name -> EnvironmentValueResponse
-	6,  // 5: CreateDeploymentRequest.Target:type_name -> EnvironmentLabel
-	1,  // 6: Provider.CreateTenant:input_type -> CreateTenantRequest
-	2,  // 7: Provider.GetTenant:input_type -> GetTenantRequest
-	4,  // 8: Provider.CreateEnvironment:input_type -> CreateEnvironmentRequest
-	7,  // 9: Provider.GetEnvironment:input_type -> GetEnvironmentRequest
-	9,  // 10: Provider.CreateOrUpdateEnvironmentValue:input_type -> CreateOrUpdateEnvironmentValueRequest
-	11, // 11: Provider.GetEnvironmentValue:input_type -> GetEnvironmentValueRequest
-	13, // 12: Provider.GetEnvironmentValuesAcrossEnvs:input_type -> GetEnvironmentValuesAcrossEnvsRequest
-	15, // 13: Provider.DeleteEnvironmentValue:input_type -> DeleteEnvironmentValueRequest
-	5,  // 14: Provider.UpdateEnvironment:input_type -> UpdateEnvironmentRequest
-	17, // 15: Provider.CreateDeployment:input_type -> CreateDeploymentRequest
-	3,  // 16: Provider.CreateTenant:output_type -> TenantResponse
-	3,  // 17: Provider.GetTenant:output_type -> TenantResponse
-	8,  // 18: Provider.CreateEnvironment:output_type -> EnvironmentResponse
-	8,  // 19: Provider.GetEnvironment:output_type -> EnvironmentResponse
-	10, // 20: Provider.CreateOrUpdateEnvironmentValue:output_type -> CreateOrUpdateEnvironmentValueResponse
-	12, // 21: Provider.GetEnvironmentValue:output_type -> EnvironmentValueResponse
-	14, // 22: Provider.GetEnvironmentValuesAcrossEnvs:output_type -> EnvironmentValuesAcrossEnvsResponse
-	16, // 23: Provider.DeleteEnvironmentValue:output_type -> DeleteEnvironmentValueResponse
-	8,  // 24: Provider.UpdateEnvironment:output_type -> EnvironmentResponse
-	18, // 25: Provider.CreateDeployment:output_type -> CreateDeploymentResponse
-	16, // [16:26] is the sub-list for method output_type
-	6,  // [6:16] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	1,  // 5: Provider.CreateTenant:input_type -> CreateTenantRequest
+	2,  // 6: Provider.GetTenant:input_type -> GetTenantRequest
+	4,  // 7: Provider.CreateEnvironment:input_type -> CreateEnvironmentRequest
+	7,  // 8: Provider.GetEnvironment:input_type -> GetEnvironmentRequest
+	9,  // 9: Provider.CreateOrUpdateEnvironmentValue:input_type -> CreateOrUpdateEnvironmentValueRequest
+	11, // 10: Provider.GetEnvironmentValue:input_type -> GetEnvironmentValueRequest
+	13, // 11: Provider.GetEnvironmentValuesAcrossEnvs:input_type -> GetEnvironmentValuesAcrossEnvsRequest
+	15, // 12: Provider.DeleteEnvironmentValue:input_type -> DeleteEnvironmentValueRequest
+	5,  // 13: Provider.UpdateEnvironment:input_type -> UpdateEnvironmentRequest
+	3,  // 14: Provider.CreateTenant:output_type -> TenantResponse
+	3,  // 15: Provider.GetTenant:output_type -> TenantResponse
+	8,  // 16: Provider.CreateEnvironment:output_type -> EnvironmentResponse
+	8,  // 17: Provider.GetEnvironment:output_type -> EnvironmentResponse
+	10, // 18: Provider.CreateOrUpdateEnvironmentValue:output_type -> CreateOrUpdateEnvironmentValueResponse
+	12, // 19: Provider.GetEnvironmentValue:output_type -> EnvironmentValueResponse
+	14, // 20: Provider.GetEnvironmentValuesAcrossEnvs:output_type -> EnvironmentValuesAcrossEnvsResponse
+	16, // 21: Provider.DeleteEnvironmentValue:output_type -> DeleteEnvironmentValueResponse
+	8,  // 22: Provider.UpdateEnvironment:output_type -> EnvironmentResponse
+	14, // [14:23] is the sub-list for method output_type
+	5,  // [5:14] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_provider_proto_init() }
@@ -1210,7 +1103,7 @@ func file_provider_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_provider_proto_rawDesc), len(file_provider_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   18,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -52,11 +52,11 @@ func (q *Queries) DeployInstructionsGetDeployedFeatures(ctx context.Context, arg
 
 const deploymentCreate = `-- name: DeploymentCreate :one
 INSERT INTO
-	deployments (feature_name, version, target, gh_ref, hash)
+	deployments (feature_name, version, target, gh_ref)
 VALUES
-	($1, $2, $3, $4, $5)
+	($1, $2, $3, $4)
 RETURNING
-	id, feature_name, version, target, created, gh_ref, hash
+	id, feature_name, version, target, created, gh_ref
 `
 
 type DeploymentCreateParams struct {
@@ -64,7 +64,6 @@ type DeploymentCreateParams struct {
 	Version     string
 	Target      environment.Labels
 	GhRef       []byte
-	Hash        string
 }
 
 func (q *Queries) DeploymentCreate(ctx context.Context, arg DeploymentCreateParams) (Deployment, error) {
@@ -73,7 +72,6 @@ func (q *Queries) DeploymentCreate(ctx context.Context, arg DeploymentCreatePara
 		arg.Version,
 		arg.Target,
 		arg.GhRef,
-		arg.Hash,
 	)
 	var i Deployment
 	err := row.Scan(
@@ -83,7 +81,6 @@ func (q *Queries) DeploymentCreate(ctx context.Context, arg DeploymentCreatePara
 		&i.Target,
 		&i.Created,
 		&i.GhRef,
-		&i.Hash,
 	)
 	return i, err
 }
@@ -261,7 +258,7 @@ func (q *Queries) DeploymentTargetsUpdate(ctx context.Context, arg DeploymentTar
 
 const deploymentsGet = `-- name: DeploymentsGet :many
 SELECT
-	id, feature_name, version, target, created, gh_ref, hash
+	id, feature_name, version, target, created, gh_ref
 FROM
 	deployments
 ORDER BY
@@ -284,7 +281,6 @@ func (q *Queries) DeploymentsGet(ctx context.Context) ([]Deployment, error) {
 			&i.Target,
 			&i.Created,
 			&i.GhRef,
-			&i.Hash,
 		); err != nil {
 			return nil, err
 		}
@@ -298,7 +294,7 @@ func (q *Queries) DeploymentsGet(ctx context.Context) ([]Deployment, error) {
 
 const featureDeploymentsForEnvironment = `-- name: FeatureDeploymentsForEnvironment :many
 SELECT DISTINCT
-	ON (d.feature_name, d.target) d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.hash,
+	ON (d.feature_name, d.target) d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref,
 	fd.name,
 	fd.version,
 	fd.chart,
@@ -354,7 +350,6 @@ func (q *Queries) FeatureDeploymentsForEnvironment(ctx context.Context, environm
 			&i.Deployment.Target,
 			&i.Deployment.Created,
 			&i.Deployment.GhRef,
-			&i.Deployment.Hash,
 			&i.Name,
 			&i.Version,
 			&i.Chart,

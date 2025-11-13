@@ -119,29 +119,29 @@ var (
 
 	deployments = []Deployment{
 		{
-			DeploymentCreateParams: &gensql.DeploymentCreateParams{FeatureName: "aivenator", Version: "1.0.0", Target: environment.Labels{"aiven": "enabled"}, Hash: "TODO"},
+			DeploymentCreateParams: &gensql.DeploymentCreateParams{FeatureName: "aivenator", Version: "1.0.0", Target: environment.Labels{"aiven": "enabled"}},
 		},
 		{
-			DeploymentCreateParams: &gensql.DeploymentCreateParams{FeatureName: "aivenator", Version: "2.0.0", Target: environment.Labels{"aiven": "enabled"}, Hash: "TODO"},
+			DeploymentCreateParams: &gensql.DeploymentCreateParams{FeatureName: "aivenator", Version: "2.0.0", Target: environment.Labels{"aiven": "enabled"}},
 		},
 		{
-			DeploymentCreateParams: &gensql.DeploymentCreateParams{FeatureName: "aivenator", Version: "1.0.0", Target: environment.Labels{"aiven": "enabled", "tenant": "nav"}, Hash: "TODO"},
+			DeploymentCreateParams: &gensql.DeploymentCreateParams{FeatureName: "aivenator", Version: "1.0.0", Target: environment.Labels{"aiven": "enabled", "tenant": "nav"}},
 		},
 		{
-			DeploymentCreateParams: &gensql.DeploymentCreateParams{FeatureName: "naiserator", Version: "1.0.0", Target: environment.Labels{"aiven": "enabled"}, Hash: "TODO"},
+			DeploymentCreateParams: &gensql.DeploymentCreateParams{FeatureName: "naiserator", Version: "1.0.0", Target: environment.Labels{"aiven": "enabled"}},
 		},
 		{
-			DeploymentCreateParams: &gensql.DeploymentCreateParams{FeatureName: "aivenator", Version: "3.0.0", Target: environment.Labels{"aiven": "enabled"}, Hash: "TODO"},
+			DeploymentCreateParams: &gensql.DeploymentCreateParams{FeatureName: "aivenator", Version: "3.0.0", Target: environment.Labels{"aiven": "enabled"}},
 			Dependencies:           []string{"naiserator"},
 		},
 		{
-			DeploymentCreateParams: &gensql.DeploymentCreateParams{FeatureName: "unleash", Version: "1.0.0", Target: environment.Labels{"featuretoggle": "enabled"}, Hash: "TODO"},
+			DeploymentCreateParams: &gensql.DeploymentCreateParams{FeatureName: "unleash", Version: "1.0.0", Target: environment.Labels{"featuretoggle": "enabled"}},
 		},
 		{
-			DeploymentCreateParams: &gensql.DeploymentCreateParams{FeatureName: "unleash", Version: "2.0.0", Target: environment.Labels{"featuretoggle": "enabled"}, Hash: "TODO"},
+			DeploymentCreateParams: &gensql.DeploymentCreateParams{FeatureName: "unleash", Version: "2.0.0", Target: environment.Labels{"featuretoggle": "enabled"}},
 		},
 		{
-			DeploymentCreateParams: &gensql.DeploymentCreateParams{FeatureName: "v13s", Version: "1.0.0", Target: environment.Labels{"kind": "management"}, Hash: "TODO"},
+			DeploymentCreateParams: &gensql.DeploymentCreateParams{FeatureName: "v13s", Version: "1.0.0", Target: environment.Labels{"kind": "management"}},
 		},
 	}
 )
@@ -190,7 +190,7 @@ func main() {
 				EnvironmentKinds: []model.EnvironmentKind{"tenant", "management"},
 			},
 		}, nil)
-		_, err = db.DeploymentCreate(ctx, d.FeatureName, d.Version, d.GhRef, d.Target, d.Hash)
+		_, err = db.DeploymentCreate(ctx, d.FeatureName, d.Version, d.GhRef, d.Target)
 		if err != nil {
 			panic(err)
 		}

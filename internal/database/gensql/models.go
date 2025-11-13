@@ -190,7 +190,6 @@ type Deployment struct {
 	Target      environment.Labels
 	Created     pgtype.Timestamptz
 	GhRef       []byte
-	Hash        string
 }
 
 type DeploymentTarget struct {

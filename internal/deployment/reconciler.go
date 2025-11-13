@@ -2,6 +2,9 @@ package deployment
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -102,7 +105,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	return nil
 }
 
-func (r *Reconciler) shouldDeployToEnvironment(ctx context.Context, deployment database.Deployment, environment *model.TenantEnvironment) (bool, error) {
+func (r *Reconciler) shouldDeployToEnvironment(ctx context.Context, deployment database.Deployment, environment *model.TenantEnvironment, hash string) (bool, error) {
 	existingDeploy, err := r.repo.DeployInstructionsLatestForFeature(ctx, environment.ID, deployment.Feature.Name)
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
@@ -111,8 +114,7 @@ func (r *Reconciler) shouldDeployToEnvironment(ctx context.Context, deployment d
 	}
 
 	if existingDeploy != nil {
-		// TODO: should we check version as well?
-		if existingDeploy.Hash == deployment.Hash {
+		if existingDeploy.Hash == hash {
 			r.log.Debug("deployment is already up to date - skip reconcile")
 			return false, nil
 		}
@@ -140,18 +142,6 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, environment *mode
 	}
 
 	for _, deployment := range filterDeployments(allDeployments) {
-		if ok, err := r.shouldDeployToEnvironment(ctx, deployment, environment); err != nil {
-			return err
-		} else if !ok {
-			continue
-		}
-
-		// TODO: should we use deploy_instructions to keep track of deployed features or deployment_target?
-		deployInstructionID, err := r.repo.DeployInstructionCreate(ctx, environment.ID, deployment.Feature, deployment.Hash, &deployment.ID)
-		if err != nil {
-			return fmt.Errorf("create deploy instruction: %w", err)
-		}
-
 		values, err := r.repo.HelmValues(ctx, deployment.Feature, environment.ID)
 		if err != nil {
 			var fer *database.ErrMissingRequiredFields
@@ -162,12 +152,28 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, environment *mode
 			return fmt.Errorf("helm values: %w", err)
 		}
 
+		hash, err := generateHash(values, deployment.Feature)
+		if err != nil {
+			return fmt.Errorf("generate hash: %w", err)
+		}
+
+		if ok, err := r.shouldDeployToEnvironment(ctx, deployment, environment, hash); err != nil {
+			return err
+		} else if !ok {
+			continue
+		}
+
+		deployInstructionID, err := r.repo.DeployInstructionCreate(ctx, environment.ID, deployment.Feature, hash, &deployment.ID)
+		if err != nil {
+			return fmt.Errorf("create deploy instruction: %w", err)
+		}
+
 		err = mgr.Publish(ctx, message.DeployInstruction{
 			ID:         deployInstructionID,
 			Name:       deployment.Feature.Name,
 			Version:    deployment.Feature.Version,
 			Chart:      deployment.Feature.Chart,
-			ConfigHash: deployment.Hash,
+			ConfigHash: hash,
 			Timeout:    deployment.Feature.Timeout,
 			Values:     values,
 		})
@@ -189,11 +195,12 @@ func (r *Reconciler) isDependenciesDeployed(ctx context.Context, deployment data
 		// successful deployment in the environment. If this is not OK, we need to use a different table than
 		// deploy_instructions to handle state stuff.
 
+		missing, err := r.repo.MissingDependencies(ctx, dep.AllOf, envID)
+		if err != nil {
+			return false, fmt.Errorf("get features not in env: %w", err)
+		}
+
 		if len(dep.AllOf) > 0 {
-			missing, err := r.repo.MissingDependencies(ctx, dep.AllOf, envID)
-			if err != nil {
-				return false, fmt.Errorf("get features not in env: %w", err)
-			}
 			if len(missing) > 0 {
 				r.log.
 					WithField("environment_id", envID.String()).
@@ -202,11 +209,8 @@ func (r *Reconciler) isDependenciesDeployed(ctx context.Context, deployment data
 				return false, nil
 			}
 		}
+
 		if len(dep.AnyOf) > 0 {
-			missing, err := r.repo.MissingDependencies(ctx, dep.AnyOf, envID)
-			if err != nil {
-				return false, fmt.Errorf("get features not in env: %w", err)
-			}
 			if len(missing) == len(dep.AnyOf) {
 				r.log.
 					WithField("environment_id", envID.String()).
@@ -253,4 +257,18 @@ func filterDeployments(deps []database.Deployment) []database.Deployment {
 
 func naisdTopicID(tenantName, envName string) string {
 	return "naisd-" + tenantName + "-" + envName
+}
+
+func generateHash(values map[string]any, feature *model.Feature) (string, error) {
+	b, err := json.Marshal(values)
+	if err != nil {
+		return "", err
+	}
+
+	at := ""
+
+	b = append(b, []byte(feature.Version+feature.Chart+at)...)
+
+	hash := sha256.Sum256(b)
+	return hex.EncodeToString(hash[:]), nil
 }

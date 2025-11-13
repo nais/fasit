@@ -6,7 +6,6 @@ CREATE TABLE "deployments" (
 	"target" jsonb NOT NULL DEFAULT '{}',
 	"created" TIMESTAMPTZ DEFAULT NOW() NOT NULL,
 	"gh_ref" jsonb,
-	"hash" TEXT NOT NULL,
 	FOREIGN KEY (feature_name, version) REFERENCES feature_data (name, version)
 )
 ;

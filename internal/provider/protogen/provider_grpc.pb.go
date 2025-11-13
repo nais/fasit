@@ -8,7 +8,6 @@ package protogen
 
 import (
 	context "context"
-
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -29,7 +28,6 @@ const (
 	Provider_GetEnvironmentValuesAcrossEnvs_FullMethodName = "/Provider/GetEnvironmentValuesAcrossEnvs"
 	Provider_DeleteEnvironmentValue_FullMethodName         = "/Provider/DeleteEnvironmentValue"
 	Provider_UpdateEnvironment_FullMethodName              = "/Provider/UpdateEnvironment"
-	Provider_CreateDeployment_FullMethodName               = "/Provider/CreateDeployment"
 )
 
 // ProviderClient is the client API for Provider service.
@@ -45,7 +43,6 @@ type ProviderClient interface {
 	GetEnvironmentValuesAcrossEnvs(ctx context.Context, in *GetEnvironmentValuesAcrossEnvsRequest, opts ...grpc.CallOption) (*EnvironmentValuesAcrossEnvsResponse, error)
 	DeleteEnvironmentValue(ctx context.Context, in *DeleteEnvironmentValueRequest, opts ...grpc.CallOption) (*DeleteEnvironmentValueResponse, error)
 	UpdateEnvironment(ctx context.Context, in *UpdateEnvironmentRequest, opts ...grpc.CallOption) (*EnvironmentResponse, error)
-	CreateDeployment(ctx context.Context, in *CreateDeploymentRequest, opts ...grpc.CallOption) (*CreateDeploymentResponse, error)
 }
 
 type providerClient struct {
@@ -146,16 +143,6 @@ func (c *providerClient) UpdateEnvironment(ctx context.Context, in *UpdateEnviro
 	return out, nil
 }
 
-func (c *providerClient) CreateDeployment(ctx context.Context, in *CreateDeploymentRequest, opts ...grpc.CallOption) (*CreateDeploymentResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(CreateDeploymentResponse)
-	err := c.cc.Invoke(ctx, Provider_CreateDeployment_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // ProviderServer is the server API for Provider service.
 // All implementations must embed UnimplementedProviderServer
 // for forward compatibility.
@@ -169,7 +156,6 @@ type ProviderServer interface {
 	GetEnvironmentValuesAcrossEnvs(context.Context, *GetEnvironmentValuesAcrossEnvsRequest) (*EnvironmentValuesAcrossEnvsResponse, error)
 	DeleteEnvironmentValue(context.Context, *DeleteEnvironmentValueRequest) (*DeleteEnvironmentValueResponse, error)
 	UpdateEnvironment(context.Context, *UpdateEnvironmentRequest) (*EnvironmentResponse, error)
-	CreateDeployment(context.Context, *CreateDeploymentRequest) (*CreateDeploymentResponse, error)
 	mustEmbedUnimplementedProviderServer()
 }
 
@@ -183,41 +169,29 @@ type UnimplementedProviderServer struct{}
 func (UnimplementedProviderServer) CreateTenant(context.Context, *CreateTenantRequest) (*TenantResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateTenant not implemented")
 }
-
 func (UnimplementedProviderServer) GetTenant(context.Context, *GetTenantRequest) (*TenantResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTenant not implemented")
 }
-
 func (UnimplementedProviderServer) CreateEnvironment(context.Context, *CreateEnvironmentRequest) (*EnvironmentResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateEnvironment not implemented")
 }
-
 func (UnimplementedProviderServer) GetEnvironment(context.Context, *GetEnvironmentRequest) (*EnvironmentResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetEnvironment not implemented")
 }
-
 func (UnimplementedProviderServer) CreateOrUpdateEnvironmentValue(context.Context, *CreateOrUpdateEnvironmentValueRequest) (*CreateOrUpdateEnvironmentValueResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateOrUpdateEnvironmentValue not implemented")
 }
-
 func (UnimplementedProviderServer) GetEnvironmentValue(context.Context, *GetEnvironmentValueRequest) (*EnvironmentValueResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetEnvironmentValue not implemented")
 }
-
 func (UnimplementedProviderServer) GetEnvironmentValuesAcrossEnvs(context.Context, *GetEnvironmentValuesAcrossEnvsRequest) (*EnvironmentValuesAcrossEnvsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetEnvironmentValuesAcrossEnvs not implemented")
 }
-
 func (UnimplementedProviderServer) DeleteEnvironmentValue(context.Context, *DeleteEnvironmentValueRequest) (*DeleteEnvironmentValueResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DeleteEnvironmentValue not implemented")
 }
-
 func (UnimplementedProviderServer) UpdateEnvironment(context.Context, *UpdateEnvironmentRequest) (*EnvironmentResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UpdateEnvironment not implemented")
-}
-
-func (UnimplementedProviderServer) CreateDeployment(context.Context, *CreateDeploymentRequest) (*CreateDeploymentResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateDeployment not implemented")
 }
 func (UnimplementedProviderServer) mustEmbedUnimplementedProviderServer() {}
 func (UnimplementedProviderServer) testEmbeddedByValue()                  {}
@@ -402,24 +376,6 @@ func _Provider_UpdateEnvironment_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Provider_CreateDeployment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateDeploymentRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ProviderServer).CreateDeployment(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Provider_CreateDeployment_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProviderServer).CreateDeployment(ctx, req.(*CreateDeploymentRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // Provider_ServiceDesc is the grpc.ServiceDesc for Provider service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -462,10 +418,6 @@ var Provider_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "UpdateEnvironment",
 			Handler:    _Provider_UpdateEnvironment_Handler,
-		},
-		{
-			MethodName: "CreateDeployment",
-			Handler:    _Provider_CreateDeployment_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
