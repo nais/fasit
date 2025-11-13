@@ -12,8 +12,8 @@ import (
 )
 
 const deployInstructionsGetDeployedFeatures = `-- name: DeployInstructionsGetDeployedFeatures :many
-SELECT
-	feature_name
+SELECT DISTINCT
+	ON (feature_name) feature_name
 FROM
 	deploy_instructions
 WHERE
