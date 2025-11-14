@@ -141,7 +141,10 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, environment *mode
 		return fmt.Errorf("health status: %w", err)
 	}
 	if time.Since(health.ReportedAt) > 3*time.Minute {
-		r.log.Debug("naisd is unhealthy - skip reconcile")
+		r.log.WithFields(logrus.Fields{
+			"tenant":     environment.TenantName,
+			"enviroment": environment.Name,
+		}).Debug("naisd is unhealthy - skip reconcile")
 		return nil
 	}
 

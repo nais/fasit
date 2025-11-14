@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"slices"
 	"time"
@@ -13,7 +14,7 @@ import (
 )
 
 type DeploymentRepo interface {
-	DeploymentCreate(ctx context.Context, featureName, featureVersion string, ghRef []byte, target environment.Labels) (*gensql.Deployment, error)
+	DeploymentCreate(ctx context.Context, featureName, featureVersion string, ref *model.GHRef, target environment.Labels) (*gensql.Deployment, error)
 	DeploymentTargetsGetAll(ctx context.Context) ([]gensql.DeploymentTargetsGetAllRow, error)
 	DeploymentTargetsGet(ctx context.Context, deploymentID uuid.UUID) ([]gensql.DeploymentTarget, error)
 	DeploymentTargetsGetPending(ctx context.Context) ([]gensql.DeploymentTarget, error)
@@ -101,7 +102,16 @@ func featureFromSQL(f gensql.FeatureDeploymentsForEnvironmentRow) (*model.Featur
 	}, nil
 }
 
-func (r *repo) DeploymentCreate(ctx context.Context, featureName, featureVersion string, ghRef []byte, target environment.Labels) (*gensql.Deployment, error) {
+func (r *repo) DeploymentCreate(ctx context.Context, featureName, featureVersion string, ref *model.GHRef, target environment.Labels) (*gensql.Deployment, error) {
+	var ghRef []byte
+	if ref != nil {
+		b, err := json.Marshal(ref)
+		if err != nil {
+			return nil, fmt.Errorf("marshal gh ref: %w", err)
+		}
+
+		ghRef = b
+	}
 	ret, err := r.querier.DeploymentCreate(ctx, gensql.DeploymentCreateParams{
 		FeatureName: featureName,
 		Version:     featureVersion,

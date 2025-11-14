@@ -313,16 +313,11 @@ func (d *Db) createFeatureDeployment(ctx context.Context, featureName, version s
 		d.t.Fatalf("create feature data: %v", err)
 	}
 
-	err = d.repo.FeatureVersionUpdate(ctx, featureName, version)
-	if err != nil {
-		d.t.Fatalf("update feature version: %v", err)
-	}
-
 	if labels == nil {
 		labels = environment.Labels{}
 	}
 
-	_, err = d.repo.DeploymentCreate(ctx, featureName, version, []byte(`{"key": "ghref"}`), labels)
+	_, err = d.repo.DeploymentCreate(ctx, featureName, version, nil, labels)
 	if err != nil {
 		d.t.Fatalf("create deployment: %v", err)
 	}

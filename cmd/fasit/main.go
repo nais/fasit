@@ -245,6 +245,13 @@ func main() {
 	rout.AllowAll = cfg.InsecureSkipTokenCheck
 	router.Post("/github/rollout", rout.Rollout)
 
+	deploy, err := deployment.New(ctx, repo, log.WithField("subsystem", "create_deployment"))
+	if err != nil {
+		log.WithError(err).Fatal("setting up deployment")
+	}
+	deploy.AllowAll = cfg.InsecureSkipTokenCheck
+	router.Post("/github/deployment", deploy.CreateDeployment)
+
 	go func() {
 		if err := runGRPC(ctx, repo, log); err != nil {
 			panic(err)

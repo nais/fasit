@@ -190,7 +190,7 @@ func main() {
 				EnvironmentKinds: []model.EnvironmentKind{"tenant", "management"},
 			},
 		}, nil)
-		_, err = db.DeploymentCreate(ctx, d.FeatureName, d.Version, d.GhRef, d.Target)
+		_, err = db.DeploymentCreate(ctx, d.FeatureName, d.Version, nil, d.Target)
 		if err != nil {
 			panic(err)
 		}
