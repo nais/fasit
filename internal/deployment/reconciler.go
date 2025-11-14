@@ -107,6 +107,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *Reconciler) shouldDeployToEnvironment(ctx context.Context, deployment database.Deployment, environment *model.TenantEnvironment, hash string) (bool, error) {
+	// TODO:
 	existingDeploy, err := r.repo.DeployInstructionsLatestForFeature(ctx, environment.ID, deployment.Feature.Name)
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
@@ -115,6 +116,16 @@ func (r *Reconciler) shouldDeployToEnvironment(ctx context.Context, deployment d
 	}
 
 	if existingDeploy != nil {
+		if existingDeploy.Status == model.RolloutStatusCreated || existingDeploy.Status == model.RolloutStatusPending {
+			r.log.WithFields(logrus.Fields{
+				"tenant":      environment.TenantName,
+				"environment": environment.Name,
+				"feature":     existingDeploy.FeatureName,
+				"version":     existingDeploy.FeatureVersion,
+			}).Warnln("deployment is already in progress - skip reconcile")
+			return false, nil
+		}
+
 		if existingDeploy.Hash == hash {
 			r.log.Debug("deployment is already up to date - skip reconcile")
 			return false, nil
@@ -278,9 +289,7 @@ func generateHash(values map[string]any, feature *model.Feature) (string, error)
 	}
 
 	b = append(b, []byte(feature.Version+feature.Chart)...)
-
 	hash := sha256.Sum256(b)
 
-	fmt.Printf("feature: %s(%s) => %s\n", feature.Name, feature.Version, hex.EncodeToString(hash[:]))
 	return hex.EncodeToString(hash[:]), nil
 }

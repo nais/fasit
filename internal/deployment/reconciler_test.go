@@ -146,6 +146,7 @@ func TestReconcile(t *testing.T) {
 				FROM deploy_instructions di
 				JOIN environments e ON e.id = di.environment_id
 				JOIN tenants t ON t.id = e.tenant_id
+				WHERE di.status = 'deployed'
 			`
 
 				rows, err := db.runQuery(ctx, q)
@@ -153,14 +154,14 @@ func TestReconcile(t *testing.T) {
 					t.Fatalf("query deploy instructions: %v", err)
 				}
 
-				var instructions []string
+				var deployInstructions []string
 				for rows.Next() {
 					var instruction string
 					_ = rows.Scan(&instruction)
-					instructions = append(instructions, instruction)
+					deployInstructions = append(deployInstructions, instruction)
 				}
 
-				assert.Len(t, instructions, len(result))
+				assert.Len(t, deployInstructions, len(result))
 				assert.Len(t, pub.msg, len(result))
 
 				for _, instruction := range result {
@@ -182,6 +183,87 @@ func TestReconcile(t *testing.T) {
 	}
 }
 
+func TestReconcileWhenPreviousIsInProgress(t *testing.T) {
+	ctx := context.Background()
+	logger, hook := test.NewNullLogger()
+
+	envsToCreate := map[string]environment.Labels{
+		"nav:dev": {"aiven": "enabled"},
+	}
+
+	container, dsn, err := startPostgresql(ctx, t)
+	if err != nil {
+		t.Fatalf("failed to start postgres container: %v", err)
+	}
+
+	fmt.Println("postgres container started: ", dsn)
+
+	db := getDb(ctx, t, container, dsn, logger)
+	pub := &publisher{repo: db.repo}
+
+	r, err := deployment.NewReconciler(
+		db.repo,
+		func(topicID string, log logrus.FieldLogger) deployment.Publisher {
+			return pub
+		},
+		nil,
+		nil,
+		logger,
+	)
+	if err != nil {
+		t.Fatalf("create reconciler: %v", err)
+	}
+
+	db.createTenantsAndEnvironments(ctx, envsToCreate)
+	db.createFeatureDeployment(ctx, "feature-pending", "1.0.0", environment.Labels{}, nil)
+
+	if err = r.Reconcile(ctx); err != nil {
+		t.Fatalf("reconcile: %v", err)
+	}
+
+	db.createFeatureDeployment(ctx, "feature-pending", "2.0.0", environment.Labels{}, nil)
+
+	if err = r.Reconcile(ctx); err != nil {
+		t.Fatalf("reconcile: %v", err)
+	}
+
+	q := `
+		SELECT
+		COUNT(di.*) AS count
+		FROM deploy_instructions di
+		WHERE di.feature_name = 'feature-pending' AND di.feature_version = '2.0.0'
+	`
+
+	row := db.pool.QueryRow(ctx, q)
+	var count int
+	if err := row.Scan(&count); err != nil {
+		t.Fatalf("scan deploy instructions: %v", err)
+	}
+
+	if count != 0 {
+		t.Fatalf("expected 0 instruction with status deployed, got %d", count)
+	}
+
+	found := false
+	for _, m := range hook.Entries {
+		if strings.Contains(m.Message, "deployment is already in progress") {
+			if m.Data["feature"] != "feature-pending" {
+				t.Errorf("expected log message about feature 'feature-pending', got %q", m.Data["feature"])
+			}
+
+			if m.Data["version"] != "1.0.0" {
+				t.Errorf("expected log message about version '1.0.0', got %q", m.Data["version"])
+			}
+
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Fatalf("expected log message about deployment in progress not found")
+	}
+}
+
 type publisher struct {
 	msg  []message.DeployInstruction
 	repo database.Repo
@@ -189,7 +271,12 @@ type publisher struct {
 
 func (p *publisher) Publish(ctx context.Context, msg message.DeployInstruction) error {
 	p.msg = append(p.msg, msg)
-	return p.repo.DeployInstructionUpdateStatus(ctx, msg.ID, model.RolloutStatusDeployed)
+
+	status := model.RolloutStatusDeployed
+	if strings.HasSuffix(msg.Name, "-pending") {
+		status = model.RolloutStatusPending
+	}
+	return p.repo.DeployInstructionUpdateStatus(ctx, msg.ID, status)
 }
 
 func (p *publisher) Stop() {}
