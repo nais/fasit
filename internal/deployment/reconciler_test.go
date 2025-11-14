@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/database"
@@ -39,12 +38,6 @@ type featureInput struct {
 
 func TestReconcile(t *testing.T) {
 	ctx := context.Background()
-
-	container, dsn, err := startPostgresql(ctx, t)
-	if err != nil {
-		t.Fatalf("failed to start postgres container: %v", err)
-	}
-
 	logger, _ := test.NewNullLogger()
 
 	envsToCreate := map[string]environment.Labels{
@@ -53,6 +46,13 @@ func TestReconcile(t *testing.T) {
 		"nav:dev":           {"aiven": "enabled"},
 		"nav:management":    {"kind": "management"},
 	}
+
+	container, dsn, err := startPostgresql(ctx, t)
+	if err != nil {
+		t.Fatalf("failed to start postgres container: %v", err)
+	}
+
+	fmt.Println("postgres container started: ", dsn)
 
 	tt := []struct {
 		name                string
@@ -117,9 +117,9 @@ func TestReconcile(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
-			fmt.Printf("dsn: %s\n", dsn)
-			db := getConnection(ctx, t, container, dsn, logger)
-			pub := &publisher{db: db}
+			db := getDb(ctx, t, container, dsn, logger)
+			pub := &publisher{repo: db.repo}
+
 			r, err := deployment.NewReconciler(
 				db.repo,
 				func(topicID string, log logrus.FieldLogger) deployment.Publisher {
@@ -133,7 +133,7 @@ func TestReconcile(t *testing.T) {
 				t.Fatalf("create reconciler: %v", err)
 			}
 
-			db.createTenantEnvironments(ctx, envsToCreate)
+			db.createTenantsAndEnvironments(ctx, envsToCreate)
 			db.createFeatureDeployments(ctx, tc.deploymentsToCreate)
 
 			for _, result := range tc.reconcileResults {
@@ -183,13 +183,13 @@ func TestReconcile(t *testing.T) {
 }
 
 type publisher struct {
-	msg []message.DeployInstruction
-	db  Db
+	msg  []message.DeployInstruction
+	repo database.Repo
 }
 
 func (p *publisher) Publish(ctx context.Context, msg message.DeployInstruction) error {
 	p.msg = append(p.msg, msg)
-	return p.db.repo.DeployInstructionUpdateStatus(ctx, msg.ID, model.RolloutStatusDeployed)
+	return p.repo.DeployInstructionUpdateStatus(ctx, msg.ID, model.RolloutStatusDeployed)
 }
 
 func (p *publisher) Stop() {}
@@ -279,21 +279,35 @@ func (d *Db) createEnv(ctx context.Context, tenant *model.Tenant, name string, l
 	})
 }
 
-// key in envsToCreate is tenantName, key in inner map is env name
-func (d *Db) createTenantEnvironments(ctx context.Context, envsToCreate map[string]environment.Labels) {
+// createTenantsAndEnvironments creates a set of tenanats and environments.
+func (d *Db) createTenantsAndEnvironments(ctx context.Context, tenantsAndEnvs map[string]environment.Labels) {
 	d.t.Helper()
 
-	for k, v := range envsToCreate {
-		tenantName := strings.Split(k, ":")[0]
-		envName := strings.Split(k, ":")[1]
-		tenant, _ := d.repo.TenantCreate(ctx, &model.TenantCreate{
-			Name: tenantName,
-		})
-		d.createEnv(ctx, tenant, envName, v)
+	tenants := make(map[string]*model.Tenant)
+	for te, lbls := range tenantsAndEnvs {
+		p := strings.Split(te, ":")
+		tenantName, envName := p[0], p[1]
+
+		tenant, exists := tenants[tenantName]
+		if !exists {
+			var err error
+			tenant, err = d.repo.TenantCreate(ctx, &model.TenantCreate{
+				Name: tenantName,
+			})
+			if err != nil {
+				d.t.Fatalf("create tenant: %v", err)
+			}
+
+			tenants[tenantName] = tenant
+		}
+
+		d.createEnv(ctx, tenants[tenantName], envName, lbls)
 	}
 }
 
 func startPostgresql(ctx context.Context, t *testing.T) (container *postgres.PostgresContainer, dsn string, err error) {
+	t.Helper()
+
 	container, err = postgres.Run(
 		ctx,
 		"docker.io/postgres:16-alpine",
@@ -326,7 +340,9 @@ func startPostgresql(ctx context.Context, t *testing.T) (container *postgres.Pos
 	return container, dsn, nil
 }
 
-func getConnection(ctx context.Context, t *testing.T, container *postgres.PostgresContainer, dsn string, log logrus.FieldLogger) Db {
+func getDb(ctx context.Context, t *testing.T, container *postgres.PostgresContainer, dsn string, log logrus.FieldLogger) Db {
+	t.Helper()
+
 	pool, _, err := database.NewDB(ctx, dsn, false)
 	if err != nil {
 		t.Fatalf("Error connecting to database: %v", err)
@@ -338,6 +354,7 @@ func getConnection(ctx context.Context, t *testing.T, container *postgres.Postgr
 			t.Fatalf("failed to restore database: %v", err)
 		}
 	})
+
 	return Db{
 		repo: database.New(pool, log),
 		t:    t,

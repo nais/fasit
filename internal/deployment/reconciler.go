@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -195,12 +196,12 @@ func (r *Reconciler) isDependenciesDeployed(ctx context.Context, deployment data
 		// successful deployment in the environment. If this is not OK, we need to use a different table than
 		// deploy_instructions to handle state stuff.
 
-		missing, err := r.repo.MissingDependencies(ctx, dep.AllOf, envID)
-		if err != nil {
-			return false, fmt.Errorf("get features not in env: %w", err)
-		}
-
 		if len(dep.AllOf) > 0 {
+			missing, err := r.repo.MissingDependencies(ctx, dep.AllOf, envID)
+			if err != nil {
+				return false, fmt.Errorf("get features not in env: %w", err)
+			}
+
 			if len(missing) > 0 {
 				r.log.
 					WithField("environment_id", envID.String()).
@@ -211,6 +212,11 @@ func (r *Reconciler) isDependenciesDeployed(ctx context.Context, deployment data
 		}
 
 		if len(dep.AnyOf) > 0 {
+			missing, err := r.repo.MissingDependencies(ctx, dep.AnyOf, envID)
+			if err != nil {
+				return false, fmt.Errorf("get features not in env: %w", err)
+			}
+
 			if len(missing) == len(dep.AnyOf) {
 				r.log.
 					WithField("environment_id", envID.String()).
@@ -252,6 +258,12 @@ func filterDeployments(deps []database.Deployment) []database.Deployment {
 	for _, d := range deployments {
 		ret = append(ret, d)
 	}
+
+	// sort by created timestamp ascending so that the oldest deployments are installed first
+	slices.SortStableFunc(ret, func(a, b database.Deployment) int {
+		return a.Created.Compare(b.Created)
+	})
+
 	return ret
 }
 
@@ -265,10 +277,10 @@ func generateHash(values map[string]any, feature *model.Feature) (string, error)
 		return "", err
 	}
 
-	at := ""
-
-	b = append(b, []byte(feature.Version+feature.Chart+at)...)
+	b = append(b, []byte(feature.Version+feature.Chart)...)
 
 	hash := sha256.Sum256(b)
+
+	fmt.Printf("feature: %s(%s) => %s\n", feature.Name, feature.Version, hex.EncodeToString(hash[:]))
 	return hex.EncodeToString(hash[:]), nil
 }
