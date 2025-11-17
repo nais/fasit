@@ -192,10 +192,11 @@ type Deployment struct {
 	GhRef       []byte
 }
 
-type DeploymentTarget struct {
+type DeploymentStatus struct {
 	DeploymentID  uuid.UUID
 	EnvironmentID uuid.UUID
 	Status        string
+	Message       string
 	LastModified  pgtype.Timestamptz
 	Created       pgtype.Timestamptz
 }

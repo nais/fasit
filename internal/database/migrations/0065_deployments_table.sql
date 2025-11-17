@@ -10,14 +10,20 @@ CREATE TABLE "deployments" (
 )
 ;
 
-CREATE TABLE "deployment_targets" (
+CREATE TABLE "deployment_statuses" (
 	"deployment_id" uuid NOT NULL REFERENCES deployments (id) ON DELETE CASCADE,
 	"environment_id" uuid NOT NULL REFERENCES environments (id) ON DELETE CASCADE,
 	"status" TEXT NOT NULL DEFAULT 'pending',
+	"message" TEXT NOT NULL,
 	"last_modified" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 	"created" TIMESTAMPTZ DEFAULT NOW() NOT NULL,
 	PRIMARY KEY ("deployment_id", "environment_id")
 )
+;
+
+CREATE TRIGGER deployment_statuses_set_modified BEFORE
+UPDATE ON deployment_statuses FOR EACH ROW
+EXECUTE PROCEDURE update_modified_timestamp ()
 ;
 
 ALTER TABLE environments

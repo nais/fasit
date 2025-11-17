@@ -52,11 +52,6 @@ type Querier interface {
 	DeployInstructionsPrevious(ctx context.Context, id uuid.UUID) (DeployInstruction, error)
 	DeployInstructionsUpdateStatus(ctx context.Context, arg DeployInstructionsUpdateStatusParams) error
 	DeploymentCreate(ctx context.Context, arg DeploymentCreateParams) (Deployment, error)
-	DeploymentTargetsCreate(ctx context.Context, arg DeploymentTargetsCreateParams) error
-	DeploymentTargetsGet(ctx context.Context, deploymentID uuid.UUID) ([]DeploymentTarget, error)
-	DeploymentTargetsGetAll(ctx context.Context) ([]DeploymentTargetsGetAllRow, error)
-	DeploymentTargetsGetPending(ctx context.Context) ([]DeploymentTarget, error)
-	DeploymentTargetsUpdate(ctx context.Context, arg DeploymentTargetsUpdateParams) error
 	DeploymentsGet(ctx context.Context) ([]Deployment, error)
 	EnvConfig(ctx context.Context, arg EnvConfigParams) ([]EnvConfigRow, error)
 	EnvConfigOnlyKnown(ctx context.Context, arg EnvConfigOnlyKnownParams) ([]EnvConfigOnlyKnownRow, error)
