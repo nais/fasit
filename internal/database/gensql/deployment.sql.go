@@ -84,6 +84,39 @@ func (q *Queries) DeploymentCreate(ctx context.Context, arg DeploymentCreatePara
 	return i, err
 }
 
+const deploymentStatusCreateOrUpdate = `-- name: DeploymentStatusCreateOrUpdate :exec
+INSERT INTO
+	deployment_statuses (deployment_id, environment_id, status, message)
+VALUES
+	(
+		$1,
+		$2,
+		$3,
+		$4
+	)
+ON CONFLICT (deployment_id, environment_id) DO UPDATE
+SET
+	status = EXCLUDED.status,
+	message = EXCLUDED.message
+`
+
+type DeploymentStatusCreateOrUpdateParams struct {
+	DeploymentID  uuid.UUID
+	EnvironmentID uuid.UUID
+	Status        string
+	Message       string
+}
+
+func (q *Queries) DeploymentStatusCreateOrUpdate(ctx context.Context, arg DeploymentStatusCreateOrUpdateParams) error {
+	_, err := q.db.Exec(ctx, deploymentStatusCreateOrUpdate,
+		arg.DeploymentID,
+		arg.EnvironmentID,
+		arg.Status,
+		arg.Message,
+	)
+	return err
+}
+
 const deploymentsGet = `-- name: DeploymentsGet :many
 SELECT
 	id, feature_name, version, target, created, gh_ref
