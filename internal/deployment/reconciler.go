@@ -116,17 +116,12 @@ func (r *Reconciler) shouldDeployToEnvironment(ctx context.Context, deployment d
 
 	if existingDeploy != nil {
 		if existingDeploy.Status == model.RolloutStatusCreated || existingDeploy.Status == model.RolloutStatusPending {
-			r.log.WithFields(logrus.Fields{
-				"tenant":      environment.TenantName,
-				"environment": environment.Name,
-				"feature":     existingDeploy.FeatureName,
-				"version":     existingDeploy.FeatureVersion,
-			}).Warnln("deployment is already in progress - skip reconcile")
+			r.setDeploymentStatus(ctx, deployment.ID, environment.ID, existingDeploy.Status, "deployment is already in progress")
 			return false, nil
 		}
 
 		if existingDeploy.Hash == hash {
-			r.log.Debug("deployment is already up to date - skip reconcile")
+			r.setDeploymentStatus(ctx, deployment.ID, environment.ID, existingDeploy.Status, "deployment is already up to date")
 			return false, nil
 		}
 	}
@@ -139,6 +134,8 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, environment *mode
 	if err != nil {
 		return fmt.Errorf("health status: %w", err)
 	}
+
+	// TODO: move health check further down the line so that we can report unhealthy status for each deployment?
 	if time.Since(health.ReportedAt) > 3*time.Minute {
 		r.log.WithFields(logrus.Fields{
 			"tenant":     environment.TenantName,
@@ -160,15 +157,18 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, environment *mode
 		if err != nil {
 			var fer *database.ErrMissingRequiredFields
 			if errors.As(err, &fer) {
-				r.log.WithError(err).Debug("missing required fields")
+				msg := fmt.Sprintf("missing required chart config: %s", strings.Join(fer.Fields, ", "))
+				r.setDeploymentStatus(ctx, deployment.ID, environment.ID, model.RolloutStatusFailed, msg)
 				continue
 			}
-			return fmt.Errorf("helm values: %w", err)
+			return fmt.Errorf("get helm values for feature: %w", err)
 		}
 
 		hash, err := generateHash(values, deployment.Feature)
 		if err != nil {
-			return fmt.Errorf("generate hash: %w", err)
+			msg := fmt.Sprintf("unable to generate feature hash: %s", err.Error())
+			r.setDeploymentStatus(ctx, deployment.ID, environment.ID, model.RolloutStatusFailed, msg)
+			continue
 		}
 
 		if ok, err := r.shouldDeployToEnvironment(ctx, deployment, environment, hash); err != nil {
@@ -194,9 +194,22 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, environment *mode
 		if err != nil {
 			return fmt.Errorf("publish deploy instruction: %w", err)
 		}
+
+		r.setDeploymentStatus(ctx, deployment.ID, environment.ID, model.RolloutStatusCreated, "deployment instruction sent to naisd")
 	}
 
 	return nil
+}
+
+func (r *Reconciler) setDeploymentStatus(ctx context.Context, deploymentID, environmentID uuid.UUID, status model.RolloutStatus, msg string) {
+	if err := r.repo.DeploymentStatusCreateOrUpdate(ctx, deploymentID, environmentID, status, msg); err != nil {
+		r.log.WithFields(logrus.Fields{
+			"deployment_id":  deploymentID,
+			"environment_id": environmentID,
+			"status":         status,
+			"msg":            msg,
+		}).WithError(err).Error("create deployment status")
+	}
 }
 
 func (r *Reconciler) isDependenciesDeployed(ctx context.Context, deployment database.Deployment, envID uuid.UUID) (bool, error) {
@@ -216,10 +229,7 @@ func (r *Reconciler) isDependenciesDeployed(ctx context.Context, deployment data
 			}
 
 			if len(missing) > 0 {
-				r.log.
-					WithField("environment_id", envID.String()).
-					WithField("features", strings.Join(missing, ",")).
-					Debug("feature dependencies not found in env")
+				r.setDeploymentStatus(ctx, deployment.ID, envID, model.RolloutStatusFailed, "missing dependencies (AllOf): "+strings.Join(missing, ", "))
 				return false, nil
 			}
 		}
@@ -231,10 +241,7 @@ func (r *Reconciler) isDependenciesDeployed(ctx context.Context, deployment data
 			}
 
 			if len(missing) == len(dep.AnyOf) {
-				r.log.
-					WithField("environment_id", envID.String()).
-					WithField("features", strings.Join(missing, ",")).
-					Debug("feature dependencies not found in env")
+				r.setDeploymentStatus(ctx, deployment.ID, envID, model.RolloutStatusFailed, "missing dependencies (AnyOf): "+strings.Join(missing, ", "))
 				return false, nil
 			}
 		}

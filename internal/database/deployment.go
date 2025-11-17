@@ -18,7 +18,7 @@ type DeploymentRepo interface {
 	DeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]Deployment, error)
 	FeatureEnabled(ctx context.Context, featureName string, envID uuid.UUID) (bool, error)
 	MissingDependencies(ctx context.Context, dependencies []string, environmentID uuid.UUID) ([]string, error)
-	DeploymentStatusCreateOrUpdate(ctx context.Context, deploymentID, environmentID uuid.UUID, status, message string) error
+	DeploymentStatusCreateOrUpdate(ctx context.Context, deploymentID, environmentID uuid.UUID, status model.RolloutStatus, message string) error
 }
 
 func (r *repo) MissingDependencies(ctx context.Context, dependencies []string, environmentID uuid.UUID) ([]string, error) {
@@ -123,11 +123,11 @@ func (r *repo) FeatureEnabled(ctx context.Context, featureName string, envID uui
 	})
 }
 
-func (r *repo) DeploymentStatusCreateOrUpdate(ctx context.Context, deploymentID, environmentID uuid.UUID, status, message string) error {
+func (r *repo) DeploymentStatusCreateOrUpdate(ctx context.Context, deploymentID, environmentID uuid.UUID, status model.RolloutStatus, message string) error {
 	return r.querier.DeploymentStatusCreateOrUpdate(ctx, gensql.DeploymentStatusCreateOrUpdateParams{
 		DeploymentID:  deploymentID,
 		EnvironmentID: environmentID,
-		Status:        status,
+		Status:        status.String(),
 		Message:       message,
 	})
 }
