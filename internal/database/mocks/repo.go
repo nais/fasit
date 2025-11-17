@@ -2285,6 +2285,81 @@ func (_c *Repo_DeploymentCreate_Call) RunAndReturn(run func(ctx context.Context,
 	return _c
 }
 
+// DeploymentStatusCreateOrUpdate provides a mock function for the type Repo
+func (_mock *Repo) DeploymentStatusCreateOrUpdate(ctx context.Context, deploymentID uuid.UUID, environmentID uuid.UUID, status model.RolloutStatus, message string) error {
+	ret := _mock.Called(ctx, deploymentID, environmentID, status, message)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeploymentStatusCreateOrUpdate")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID, model.RolloutStatus, string) error); ok {
+		r0 = returnFunc(ctx, deploymentID, environmentID, status, message)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// Repo_DeploymentStatusCreateOrUpdate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeploymentStatusCreateOrUpdate'
+type Repo_DeploymentStatusCreateOrUpdate_Call struct {
+	*mock.Call
+}
+
+// DeploymentStatusCreateOrUpdate is a helper method to define mock.On call
+//   - ctx context.Context
+//   - deploymentID uuid.UUID
+//   - environmentID uuid.UUID
+//   - status model.RolloutStatus
+//   - message string
+func (_e *Repo_Expecter) DeploymentStatusCreateOrUpdate(ctx interface{}, deploymentID interface{}, environmentID interface{}, status interface{}, message interface{}) *Repo_DeploymentStatusCreateOrUpdate_Call {
+	return &Repo_DeploymentStatusCreateOrUpdate_Call{Call: _e.mock.On("DeploymentStatusCreateOrUpdate", ctx, deploymentID, environmentID, status, message)}
+}
+
+func (_c *Repo_DeploymentStatusCreateOrUpdate_Call) Run(run func(ctx context.Context, deploymentID uuid.UUID, environmentID uuid.UUID, status model.RolloutStatus, message string)) *Repo_DeploymentStatusCreateOrUpdate_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		var arg2 uuid.UUID
+		if args[2] != nil {
+			arg2 = args[2].(uuid.UUID)
+		}
+		var arg3 model.RolloutStatus
+		if args[3] != nil {
+			arg3 = args[3].(model.RolloutStatus)
+		}
+		var arg4 string
+		if args[4] != nil {
+			arg4 = args[4].(string)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+			arg4,
+		)
+	})
+	return _c
+}
+
+func (_c *Repo_DeploymentStatusCreateOrUpdate_Call) Return(err error) *Repo_DeploymentStatusCreateOrUpdate_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *Repo_DeploymentStatusCreateOrUpdate_Call) RunAndReturn(run func(ctx context.Context, deploymentID uuid.UUID, environmentID uuid.UUID, status model.RolloutStatus, message string) error) *Repo_DeploymentStatusCreateOrUpdate_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // DeploymentsForEnvironment provides a mock function for the type Repo
 func (_mock *Repo) DeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]database.Deployment, error) {
 	ret := _mock.Called(ctx, environmentID)

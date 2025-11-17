@@ -7,7 +7,6 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const deployInstructionsByID = `-- name: DeployInstructionsByID :one
@@ -66,7 +65,7 @@ type DeployInstructionsCreateParams struct {
 	FeatureVersion string
 	Hash           string
 	Values         []byte
-	DeploymentID   pgtype.UUID
+	DeploymentID   *uuid.UUID
 }
 
 func (q *Queries) DeployInstructionsCreate(ctx context.Context, arg DeployInstructionsCreateParams) (uuid.UUID, error) {

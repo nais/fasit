@@ -106,29 +106,6 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	return nil
 }
 
-func (r *Reconciler) shouldDeployToEnvironment(ctx context.Context, deployment database.Deployment, environment *model.TenantEnvironment, hash string) (bool, error) {
-	existingDeploy, err := r.repo.DeployInstructionsLatestForFeature(ctx, environment.ID, deployment.Feature.Name)
-	if err != nil {
-		if !errors.Is(err, pgx.ErrNoRows) {
-			return false, fmt.Errorf("get deploy instructions latest for environment %q: %w", environment.Name, err)
-		}
-	}
-
-	if existingDeploy != nil {
-		if existingDeploy.Status == model.RolloutStatusCreated || existingDeploy.Status == model.RolloutStatusPending {
-			r.setDeploymentStatus(ctx, deployment.ID, environment.ID, existingDeploy.Status, "deployment is already in progress")
-			return false, nil
-		}
-
-		if existingDeploy.Hash == hash {
-			r.setDeploymentStatus(ctx, deployment.ID, environment.ID, existingDeploy.Status, "deployment is already up to date")
-			return false, nil
-		}
-	}
-
-	return r.isDependenciesDeployed(ctx, deployment, environment.ID)
-}
-
 func (r *Reconciler) reconcileEnvironment(ctx context.Context, environment *model.TenantEnvironment) error {
 	health, err := r.repo.HealthGet(ctx, environment.ID)
 	if err != nil {
@@ -199,6 +176,31 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, environment *mode
 	}
 
 	return nil
+}
+
+func (r *Reconciler) shouldDeployToEnvironment(ctx context.Context, deployment database.Deployment, environment *model.TenantEnvironment, hash string) (bool, error) {
+	existingDeploy, err := r.repo.DeployInstructionsLatestForFeature(ctx, environment.ID, deployment.Feature.Name)
+	if err != nil {
+		if !errors.Is(err, pgx.ErrNoRows) {
+			return false, fmt.Errorf("get deploy instructions latest for environment %q: %w", environment.Name, err)
+		}
+	}
+
+	if existingDeploy != nil {
+		if existingDeploy.Status == model.RolloutStatusCreated || existingDeploy.Status == model.RolloutStatusPending {
+			r.setDeploymentStatus(ctx, deployment.ID, environment.ID, existingDeploy.Status, "deployment is already in progress")
+			return false, nil
+		}
+
+		if existingDeploy.Hash == hash {
+			if existingDeploy.Status != model.RolloutStatusFailed {
+				r.setDeploymentStatus(ctx, deployment.ID, environment.ID, existingDeploy.Status, "no changes in feature")
+			}
+			return false, nil
+		}
+	}
+
+	return r.isDependenciesDeployed(ctx, deployment, environment.ID)
 }
 
 func (r *Reconciler) setDeploymentStatus(ctx context.Context, deploymentID, environmentID uuid.UUID, status model.RolloutStatus, msg string) {

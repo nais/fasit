@@ -9,7 +9,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/nais/fasit/internal/database/gensql"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nsf/jsondiff"
@@ -38,21 +37,13 @@ func (r *repo) DeployInstructionCreate(ctx context.Context, envID uuid.UUID, fea
 		return uuid.Nil, fmt.Errorf("marshal helm values: %w", err)
 	}
 
-	var dID pgtype.UUID
-	if deploymentID != nil {
-		dID = pgtype.UUID{
-			Bytes: *deploymentID,
-			Valid: true,
-		}
-	}
-
 	return r.querier.DeployInstructionsCreate(ctx, gensql.DeployInstructionsCreateParams{
 		EnvironmentID:  envID,
 		FeatureName:    feature.Name,
 		FeatureVersion: feature.Version,
 		Hash:           hash,
 		Values:         values,
-		DeploymentID:   dID,
+		DeploymentID:   deploymentID,
 	})
 }
 
@@ -182,6 +173,7 @@ func deployInstructionFromSQL(di gensql.DeployInstruction) *model.DeployInstruct
 	return &model.DeployInstruction{
 		ID:             di.ID,
 		EnvironmentID:  di.EnvironmentID,
+		DeploymentID:   di.DeploymentID,
 		FeatureName:    di.FeatureName,
 		FeatureVersion: di.FeatureVersion,
 		Status:         model.RolloutStatus(di.Status),

@@ -417,7 +417,7 @@ type EnvConfigRow struct {
 	Feature       string
 	Key           string
 	Value         []byte
-	EnvironmentID pgtype.UUID
+	EnvironmentID *uuid.UUID
 	Rank          int64
 }
 
@@ -508,7 +508,7 @@ type EnvConfigOnlyKnownRow struct {
 	Feature       string
 	Key           string
 	Value         []byte
-	EnvironmentID pgtype.UUID
+	EnvironmentID *uuid.UUID
 	Rank          int64
 }
 

@@ -35,6 +35,7 @@ type Helm struct {
 	RolloutStatus model.RolloutStatus
 	ConfigHash    string
 	Log           string
+	Error         string
 }
 
 type Health struct {

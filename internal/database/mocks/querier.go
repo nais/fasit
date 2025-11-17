@@ -2722,6 +2722,63 @@ func (_c *Querier_DeploymentCreate_Call) RunAndReturn(run func(ctx context.Conte
 	return _c
 }
 
+// DeploymentStatusCreateOrUpdate provides a mock function for the type Querier
+func (_mock *Querier) DeploymentStatusCreateOrUpdate(ctx context.Context, arg gensql.DeploymentStatusCreateOrUpdateParams) error {
+	ret := _mock.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeploymentStatusCreateOrUpdate")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, gensql.DeploymentStatusCreateOrUpdateParams) error); ok {
+		r0 = returnFunc(ctx, arg)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// Querier_DeploymentStatusCreateOrUpdate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeploymentStatusCreateOrUpdate'
+type Querier_DeploymentStatusCreateOrUpdate_Call struct {
+	*mock.Call
+}
+
+// DeploymentStatusCreateOrUpdate is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg gensql.DeploymentStatusCreateOrUpdateParams
+func (_e *Querier_Expecter) DeploymentStatusCreateOrUpdate(ctx interface{}, arg interface{}) *Querier_DeploymentStatusCreateOrUpdate_Call {
+	return &Querier_DeploymentStatusCreateOrUpdate_Call{Call: _e.mock.On("DeploymentStatusCreateOrUpdate", ctx, arg)}
+}
+
+func (_c *Querier_DeploymentStatusCreateOrUpdate_Call) Run(run func(ctx context.Context, arg gensql.DeploymentStatusCreateOrUpdateParams)) *Querier_DeploymentStatusCreateOrUpdate_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 gensql.DeploymentStatusCreateOrUpdateParams
+		if args[1] != nil {
+			arg1 = args[1].(gensql.DeploymentStatusCreateOrUpdateParams)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_DeploymentStatusCreateOrUpdate_Call) Return(err error) *Querier_DeploymentStatusCreateOrUpdate_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *Querier_DeploymentStatusCreateOrUpdate_Call) RunAndReturn(run func(ctx context.Context, arg gensql.DeploymentStatusCreateOrUpdateParams) error) *Querier_DeploymentStatusCreateOrUpdate_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // DeploymentsGet provides a mock function for the type Querier
 func (_mock *Querier) DeploymentsGet(ctx context.Context) ([]gensql.Deployment, error) {
 	ret := _mock.Called(ctx)

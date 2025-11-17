@@ -256,6 +256,7 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 	if err != nil {
 		d.log.WithField("feature", msg.Name).WithError(err).Warn("failed to run helm")
 		helmStatus.RolloutStatus = model.RolloutStatusFailed
+		helmStatus.Error = err.Error()
 	} else {
 		helmStatus.RolloutStatus = model.RolloutStatusDeployed
 	}

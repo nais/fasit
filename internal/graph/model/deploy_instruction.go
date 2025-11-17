@@ -9,6 +9,7 @@ import (
 type DeployInstruction struct {
 	ID             uuid.UUID     `json:"id"`
 	EnvironmentID  uuid.UUID     `json:"environmentId"`
+	DeploymentID   *uuid.UUID    `json:"deploymentId"`
 	FeatureName    string        `json:"-"`
 	FeatureVersion string        `json:"-"`
 	Status         RolloutStatus `json:"status"`
