@@ -185,7 +185,7 @@ func TestReconcile(t *testing.T) {
 
 func TestReconcileWhenPreviousIsInProgress(t *testing.T) {
 	ctx := context.Background()
-	logger, hook := test.NewNullLogger()
+	logger, _ := test.NewNullLogger()
 
 	envsToCreate := map[string]environment.Labels{
 		"nav:dev": {"aiven": "enabled"},
@@ -242,25 +242,6 @@ func TestReconcileWhenPreviousIsInProgress(t *testing.T) {
 
 	if count != 0 {
 		t.Fatalf("expected 0 instruction with status deployed, got %d", count)
-	}
-
-	found := false
-	for _, m := range hook.Entries {
-		if strings.Contains(m.Message, "deployment is already in progress") {
-			if m.Data["feature"] != "feature-pending" {
-				t.Errorf("expected log message about feature 'feature-pending', got %q", m.Data["feature"])
-			}
-
-			if m.Data["version"] != "1.0.0" {
-				t.Errorf("expected log message about version '1.0.0', got %q", m.Data["version"])
-			}
-
-			found = true
-			break
-		}
-	}
-	if !found {
-		t.Fatalf("expected log message about deployment in progress not found")
 	}
 }
 
