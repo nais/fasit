@@ -341,5 +341,9 @@ func (r *Receiver) handleStatusLog(ctx context.Context, msg message.Status) erro
 		return nil
 	}
 
-	return r.repo.LogCreate(ctx, status.DIID, status.Logs)
+	if err := r.repo.LogCreate(ctx, status.DIID, status.Logs); err != nil {
+		r.log.WithError(err).Errorf("unable to log status")
+	}
+
+	return nil
 }
