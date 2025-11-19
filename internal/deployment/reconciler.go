@@ -39,13 +39,28 @@ type Publisher interface {
 
 type NewPublisher func(topicID string, log logrus.FieldLogger) Publisher
 
-type Notifier interface{}
+type Trigger chan ReconcileTriggerEvent
+
+type ReconcileTriggerEvent struct {
+	DeploymentID   uuid.UUID
+	FeatureName    string
+	FeatureVersion string
+	Type           ReconcileTriggerEventType
+}
+
+type ReconcileTriggerEventType int
+
+const (
+	ReconcileTriggerEventTypeNewDeployment = iota
+	ReconcileTriggerEventTypeGlobalConfigUpdate
+	ReconcileTriggerEventTypeFeatureConfigUpdate
+)
 
 type Reconciler struct {
-	repo      ReconcilerStore
-	publisher NewPublisher
-	log       logrus.FieldLogger
-	notifier  Notifier
+	repo             ReconcilerStore
+	publisher        NewPublisher
+	log              logrus.FieldLogger
+	reconcileTrigger Trigger
 
 	lock    sync.Mutex
 	running bool
@@ -58,15 +73,15 @@ type Reconciler struct {
 func NewReconciler(
 	repo ReconcilerStore,
 	publisher NewPublisher,
-	notifier Notifier,
+	reconcileTrigger Trigger,
 	meter metric.Meter,
 	log logrus.FieldLogger,
 ) (*Reconciler, error) {
 	return &Reconciler{
-		repo:      repo,
-		publisher: publisher,
-		log:       log,
-		notifier:  notifier,
+		repo:             repo,
+		publisher:        publisher,
+		log:              log,
+		reconcileTrigger: reconcileTrigger,
 	}, nil
 }
 
@@ -80,6 +95,13 @@ func (r *Reconciler) Run(ctx context.Context, interval time.Duration) {
 		case <-ctx.Done():
 			return
 		case <-time.After(interval):
+		case e := <-r.reconcileTrigger:
+			r.log.WithFields(logrus.Fields{
+				"deployment_id":   e.DeploymentID,
+				"feature_name":    e.FeatureName,
+				"feature_version": e.FeatureVersion,
+				"type":            e.Type,
+			}).Info("manual reconcile triggered")
 		}
 	}
 }

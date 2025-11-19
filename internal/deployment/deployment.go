@@ -33,6 +33,8 @@ type Deployment struct {
 	log logrus.FieldLogger
 	// AllowAll will allow all rollout requests when set to true
 	AllowAll bool
+
+	reconcileTrigger Trigger
 }
 
 type Claims struct {
@@ -50,7 +52,7 @@ type Request struct {
 	Target      environment.Labels `json:"target"`
 }
 
-func New(ctx context.Context, repo database.Repo, log logrus.FieldLogger) (*Deployment, error) {
+func New(ctx context.Context, repo database.Repo, reconcileTrigger Trigger, log logrus.FieldLogger) (*Deployment, error) {
 	provider, err := oidc.NewProvider(ctx, "https://token.actions.githubusercontent.com")
 	if err != nil {
 		return nil, err
@@ -61,10 +63,11 @@ func New(ctx context.Context, repo database.Repo, log logrus.FieldLogger) (*Depl
 	})
 
 	return &Deployment{
-		provider: provider,
-		verifier: verifier,
-		repo:     repo,
-		log:      log,
+		provider:         provider,
+		verifier:         verifier,
+		repo:             repo,
+		log:              log,
+		reconcileTrigger: reconcileTrigger,
 	}, nil
 }
 
@@ -136,6 +139,19 @@ func (d *Deployment) CreateDeployment(w http.ResponseWriter, req *http.Request) 
 	_ = json.NewEncoder(w).Encode(map[string]any{
 		"id": deployment.ID.String(),
 	})
+
+	go func() {
+		select {
+		case d.reconcileTrigger <- ReconcileTriggerEvent{
+			DeploymentID:   deployment.ID,
+			FeatureName:    feat.Name,
+			FeatureVersion: body.Version,
+			Type:           ReconcileTriggerEventTypeNewDeployment,
+		}:
+		default:
+			d.log.Debug("there is already a reconcile event queued, skipping")
+		}
+	}()
 }
 
 func (d *Deployment) validateToken(w http.ResponseWriter, req *http.Request) (actor string, ok bool) {

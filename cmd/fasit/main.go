@@ -169,12 +169,12 @@ func main() {
 		return message.NewPublisher[message.DeployInstruction](pubsubClient, cfg.GCPProjectID, topicID, log)
 	}
 
-	deploymentReconciler, err := deployment.NewReconciler(repo, deployCreatePublisher, notifierService, meter, log.WithField("subsystem", "deployment_reconciler"))
+	deploymentsReconcileTrigger := make(chan deployment.ReconcileTriggerEvent, 1)
+	deploymentReconciler, err := deployment.NewReconciler(repo, deployCreatePublisher, deploymentsReconcileTrigger, meter, log.WithField("subsystem", "deployment_reconciler"))
 	if err != nil {
 		log.WithError(err).Fatal("setting up deployment reconciler")
 	}
-	// TODO: adjust interval
-	go deploymentReconciler.Run(ctx, 10*time.Second)
+	go deploymentReconciler.Run(ctx, 10*time.Minute)
 
 	costUpdater, err := workers.NewCostUpdater(ctx, repo, log.WithField("subsystem", "cost_updater"))
 	if err != nil {
@@ -245,7 +245,7 @@ func main() {
 	rout.AllowAll = cfg.InsecureSkipTokenCheck
 	router.Post("/github/rollout", rout.Rollout)
 
-	deploy, err := deployment.New(ctx, repo, log.WithField("subsystem", "create_deployment"))
+	deploy, err := deployment.New(ctx, repo, deploymentsReconcileTrigger, log.WithField("subsystem", "create_deployment"))
 	if err != nil {
 		log.WithError(err).Fatal("setting up deployment")
 	}
