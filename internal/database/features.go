@@ -200,14 +200,15 @@ func featuresFromSQL(features []gensql.FeaturesForKindRow) ([]*model.Feature, er
 		}
 
 		feature := &model.Feature{
-			Name:        f.Name,
-			Description: f.Description,
-			Version:     f.Version,
-			Chart:       f.Chart,
-			Source:      f.Source,
-			FeatureYAML: fyaml,
-			ValuesYAML:  defaultValues,
-			SpecVersion: "v2",
+			Name:           f.Name,
+			Description:    f.Description,
+			Version:        f.Version,
+			Chart:          f.Chart,
+			Source:         f.Source,
+			FeatureYAML:    fyaml,
+			ValuesYAML:     defaultValues,
+			SpecVersion:    "v2",
+			HasDeployments: f.Hasdeployments,
 		}
 		ret = append(ret, feature)
 	}

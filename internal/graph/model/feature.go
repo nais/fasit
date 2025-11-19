@@ -35,6 +35,8 @@ type Feature struct {
 		EnvironmentID uuid.UUID
 		RolloutID     uuid.UUID
 	} `json:"-" yaml:"-"`
+
+	HasDeployments bool `json:"-"`
 }
 
 type Rename struct {

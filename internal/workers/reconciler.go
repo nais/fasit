@@ -248,6 +248,11 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, e *model.TenantEn
 	for _, f := range features {
 		log = log.WithField("feature", f.Name)
 
+		if f.HasDeployments {
+			log.Debug("feature is handled by deployments - skipping")
+			continue
+		}
+
 		if states[f.Name] == nil || !states[f.Name].Enabled {
 			continue
 		}

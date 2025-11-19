@@ -276,7 +276,15 @@ SELECT
 	fd.default_values,
 	fd.timeout,
 	features.created,
-	features.last_modified
+	features.last_modified,
+	EXISTS (
+		SELECT
+			1
+		FROM
+			deployments d
+		WHERE
+			d.feature_name = fd.name
+	) AS hasDeployments
 FROM
 	features
 	JOIN feature_data fd ON features.name = fd.name
@@ -288,18 +296,19 @@ ORDER BY
 `
 
 type FeaturesForKindRow struct {
-	Name          string
-	Version       string
-	Chart         string
-	Description   string
-	Source        string
-	Kinds         []string
-	Dependencies  []byte
-	Values        []byte
-	DefaultValues []byte
-	Timeout       int64
-	Created       pgtype.Timestamptz
-	LastModified  pgtype.Timestamptz
+	Name           string
+	Version        string
+	Chart          string
+	Description    string
+	Source         string
+	Kinds          []string
+	Dependencies   []byte
+	Values         []byte
+	DefaultValues  []byte
+	Timeout        int64
+	Created        pgtype.Timestamptz
+	LastModified   pgtype.Timestamptz
+	Hasdeployments bool
 }
 
 func (q *Queries) FeaturesForKind(ctx context.Context, environmentKind string) ([]FeaturesForKindRow, error) {
@@ -324,6 +333,7 @@ func (q *Queries) FeaturesForKind(ctx context.Context, environmentKind string) (
 			&i.Timeout,
 			&i.Created,
 			&i.LastModified,
+			&i.Hasdeployments,
 		); err != nil {
 			return nil, err
 		}

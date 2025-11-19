@@ -185,7 +185,6 @@ WHERE
 			feature_name,
 			created DESC
 	)
-	AND deployment_id IS NULL
 `
 
 func (q *Queries) DeployInstructionsLatestForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]DeployInstruction, error) {
