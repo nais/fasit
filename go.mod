@@ -37,6 +37,7 @@ require (
 	github.com/invopop/jsonschema v0.13.0
 	github.com/jackc/pgconn v1.14.3
 	github.com/jackc/pgx/v5 v5.7.6
+	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.10.9
 	github.com/nais/tester v0.1.0-pre.14
 	github.com/nsf/jsondiff v0.0.0-20230430225905-43f6cf3098c1
