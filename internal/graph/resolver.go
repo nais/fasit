@@ -9,6 +9,7 @@ import (
 	"github.com/nais/fasit/internal/cluster"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/notifier"
+	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/workers"
@@ -24,19 +25,21 @@ type Resolver struct {
 	Log            *logrus.Entry
 	ClusterManager cluster.ClusterManager
 
-	logNotifier     *logNotifier
-	diNotifier      *updateNotifier
-	createPublisher workers.NewPublisher
+	logNotifier        *logNotifier
+	diNotifier         *updateNotifier
+	createPublisher    workers.NewPublisher
+	deploymentsTrigger chan<- deployment.ReconcileTriggerEvent
 }
 
-func NewResolver(ctx context.Context, repo database.Repo, notifier *notifier.Notifier, naisdPublisher workers.NewPublisher, clusterManager cluster.ClusterManager, log *logrus.Entry) *Resolver {
+func NewResolver(ctx context.Context, repo database.Repo, deploymentsTrigger chan<- deployment.ReconcileTriggerEvent, notifier *notifier.Notifier, naisdPublisher workers.NewPublisher, clusterManager cluster.ClusterManager, log *logrus.Entry) *Resolver {
 	return &Resolver{
-		Repo:            repo,
-		Log:             log,
-		ClusterManager:  clusterManager,
-		createPublisher: naisdPublisher,
-		logNotifier:     newLogNotifier(ctx, notifier, repo),
-		diNotifier:      newDeployInstructionsNotifier(ctx, notifier, repo),
+		Repo:               repo,
+		Log:                log,
+		ClusterManager:     clusterManager,
+		createPublisher:    naisdPublisher,
+		logNotifier:        newLogNotifier(ctx, notifier, repo),
+		diNotifier:         newDeployInstructionsNotifier(ctx, notifier, repo),
+		deploymentsTrigger: deploymentsTrigger,
 	}
 }
 

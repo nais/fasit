@@ -187,7 +187,7 @@ func main() {
 	if err != nil {
 		log.WithError(err).Fatal("setting up google client")
 	}
-	resolver := graph.NewResolver(ctx, repo, notifierService, createPublisher, googleClient, log.WithField("subsystem", "graphql"))
+	resolver := graph.NewResolver(ctx, repo, deploymentsReconcileTrigger, notifierService, createPublisher, googleClient, log.WithField("subsystem", "graphql"))
 
 	srv := newServer(graphgen.NewExecutableSchema(graphgen.Config{Resolvers: resolver}))
 	srv.Use(otelgqlgen.Middleware())

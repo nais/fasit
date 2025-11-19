@@ -34,7 +34,7 @@ type Deployment struct {
 	// AllowAll will allow all rollout requests when set to true
 	AllowAll bool
 
-	reconcileTrigger Trigger
+	reconcileTrigger chan<- ReconcileTriggerEvent
 }
 
 type Claims struct {
@@ -52,7 +52,7 @@ type Request struct {
 	Target      environment.Labels `json:"target"`
 }
 
-func New(ctx context.Context, repo database.Repo, reconcileTrigger Trigger, log logrus.FieldLogger) (*Deployment, error) {
+func New(ctx context.Context, repo database.Repo, reconcileTrigger chan<- ReconcileTriggerEvent, log logrus.FieldLogger) (*Deployment, error) {
 	provider, err := oidc.NewProvider(ctx, "https://token.actions.githubusercontent.com")
 	if err != nil {
 		return nil, err

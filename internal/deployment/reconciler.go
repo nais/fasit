@@ -39,8 +39,6 @@ type Publisher interface {
 
 type NewPublisher func(topicID string, log logrus.FieldLogger) Publisher
 
-type Trigger chan ReconcileTriggerEvent
-
 type ReconcileTriggerEvent struct {
 	DeploymentID   uuid.UUID
 	FeatureName    string
@@ -60,7 +58,7 @@ type Reconciler struct {
 	repo             ReconcilerStore
 	publisher        NewPublisher
 	log              logrus.FieldLogger
-	reconcileTrigger Trigger
+	reconcileTrigger <-chan ReconcileTriggerEvent
 
 	lock    sync.Mutex
 	running bool
@@ -73,7 +71,7 @@ type Reconciler struct {
 func NewReconciler(
 	repo ReconcilerStore,
 	publisher NewPublisher,
-	reconcileTrigger Trigger,
+	reconcileTrigger <-chan ReconcileTriggerEvent,
 	meter metric.Meter,
 	log logrus.FieldLogger,
 ) (*Reconciler, error) {
