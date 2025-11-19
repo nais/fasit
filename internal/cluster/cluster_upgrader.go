@@ -1407,12 +1407,33 @@ func (c *ClusterUpgrader) shouldDelayUpgrade(tenant *model.Tenant, env *model.En
 		return true
 	}
 
+	// Delay period has passed - check if we're in business hours
+	location, err := time.LoadLocation("Europe/Oslo")
+	if err != nil {
+		log.WithError(err).Warn("failed to load Oslo timezone, proceeding with upgrade anyway")
+		return false
+	}
+	now := time.Now().In(location)
+
+	if !IsBusinessHours() {
+		log.WithFields(logrus.Fields{
+			"delay_days":     delayDays,
+			"delay_source":   delaySource,
+			"waited_for":     timeSinceCreation.String(),
+			"current_time":   now.Format("2006-01-02 15:04:05"),
+			"current_day":    now.Weekday().String(),
+			"business_hours": "Mon-Fri 9-16 Oslo time",
+		}).Info("delay satisfied but waiting for business hours to start upgrade")
+		return true
+	}
+
 	log.WithFields(logrus.Fields{
 		"delay_days":     delayDays,
 		"delay_source":   delaySource,
 		"required_delay": requiredDelayHours.String(),
 		"waited_for":     timeSinceCreation.String(),
-	}).Info("delay_days satisfied, proceeding with upgrade")
+		"current_time":   now.Format("2006-01-02 15:04:05"),
+	}).Info("delay_days satisfied and within business hours, proceeding with upgrade")
 	return false
 }
 

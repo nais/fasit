@@ -485,63 +485,6 @@ func (_c *ClusterManager_GetRunningOperations_Call) RunAndReturn(run func(ctx co
 	return _c
 }
 
-// IsTimeInRange provides a mock function for the type ClusterManager
-func (_mock *ClusterManager) IsTimeInRange(start int, end int) bool {
-	ret := _mock.Called(start, end)
-
-	if len(ret) == 0 {
-		panic("no return value specified for IsTimeInRange")
-	}
-
-	var r0 bool
-	if returnFunc, ok := ret.Get(0).(func(int, int) bool); ok {
-		r0 = returnFunc(start, end)
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-	return r0
-}
-
-// ClusterManager_IsTimeInRange_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'IsTimeInRange'
-type ClusterManager_IsTimeInRange_Call struct {
-	*mock.Call
-}
-
-// IsTimeInRange is a helper method to define mock.On call
-//   - start int
-//   - end int
-func (_e *ClusterManager_Expecter) IsTimeInRange(start interface{}, end interface{}) *ClusterManager_IsTimeInRange_Call {
-	return &ClusterManager_IsTimeInRange_Call{Call: _e.mock.On("IsTimeInRange", start, end)}
-}
-
-func (_c *ClusterManager_IsTimeInRange_Call) Run(run func(start int, end int)) *ClusterManager_IsTimeInRange_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 int
-		if args[0] != nil {
-			arg0 = args[0].(int)
-		}
-		var arg1 int
-		if args[1] != nil {
-			arg1 = args[1].(int)
-		}
-		run(
-			arg0,
-			arg1,
-		)
-	})
-	return _c
-}
-
-func (_c *ClusterManager_IsTimeInRange_Call) Return(b bool) *ClusterManager_IsTimeInRange_Call {
-	_c.Call.Return(b)
-	return _c
-}
-
-func (_c *ClusterManager_IsTimeInRange_Call) RunAndReturn(run func(start int, end int) bool) *ClusterManager_IsTimeInRange_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // SetMaintenanceWindow provides a mock function for the type ClusterManager
 func (_mock *ClusterManager) SetMaintenanceWindow(ctx context.Context, projectID string, environment *model.Environment, window *model.MaintenanceWindow) (*containerpb.Operation, error) {
 	ret := _mock.Called(ctx, projectID, environment, window)

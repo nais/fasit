@@ -76,7 +76,7 @@ func (c *AutoUpgrader) Run(ctx context.Context) error {
 		}).Debug("auto-upgrader run completed")
 	}()
 
-	if !c.client.IsTimeInRange(9, 16) {
+	if !IsBusinessHours() {
 		c.log.WithFields(logrus.Fields{
 			"component":    "auto_upgrader",
 			"time_window":  "9-16",

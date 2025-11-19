@@ -23,7 +23,6 @@ type ClusterManager interface {
 	GetNodePools(ctx context.Context, projectID string, environment *model.Environment) ([]*containerpb.NodePool, error)
 	GetOperation(ctx context.Context, projectID, operationID string) (*containerpb.Operation, error)
 	SetMaintenanceWindow(ctx context.Context, projectID string, environment *model.Environment, window *model.MaintenanceWindow) (*containerpb.Operation, error)
-	IsTimeInRange(start, end int) bool
 }
 
 type Client struct {
@@ -45,17 +44,25 @@ func (c *Client) Close() error {
 	return c.client.Close()
 }
 
-func (c *Client) IsTimeInRange(start, end int) bool {
+// IsBusinessHours checks if the current time is within business hours (Mon-Fri, 9 AM - 4 PM Europe/Oslo)
+func IsBusinessHours() bool {
 	location, err := time.LoadLocation("Europe/Oslo")
 	if err != nil {
 		fmt.Println("Error loading location:", err)
 		return false
 	}
 
-	upgradeWindowStart := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), start, 0, 0, 0, location)
-	upgradeWindowEnd := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), end, 0, 0, 0, location)
+	now := time.Now().In(location)
 
-	if time.Now().Before(upgradeWindowStart) || time.Now().After(upgradeWindowEnd) {
+	// Check if it's a weekday (Monday-Friday)
+	weekday := now.Weekday()
+	if weekday == time.Saturday || weekday == time.Sunday {
+		return false
+	}
+
+	// Check if it's within business hours (9 AM - 4 PM)
+	hour := now.Hour()
+	if hour < 9 || hour >= 16 {
 		return false
 	}
 
