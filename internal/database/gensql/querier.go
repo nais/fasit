@@ -88,8 +88,10 @@ type Querier interface {
 	FeatureVersionUpdate(ctx context.Context, arg FeatureVersionUpdateParams) error
 	Features(ctx context.Context) ([]FeaturesRow, error)
 	FeaturesForKind(ctx context.Context, environmentKind string) ([]FeaturesForKindRow, error)
+	GetEnvironmentFeature(ctx context.Context, arg GetEnvironmentFeatureParams) (GetEnvironmentFeatureRow, error)
 	HealthStatusCreateOrUpdate(ctx context.Context, arg HealthStatusCreateOrUpdateParams) (HealthStatus, error)
 	HealthStatusGet(ctx context.Context, environmentID uuid.UUID) (HealthStatus, error)
+	InsertEnvironmentFeature(ctx context.Context, arg InsertEnvironmentFeatureParams) error
 	KubernetesNodeCreateOrUpdate(ctx context.Context, arg KubernetesNodeCreateOrUpdateParams) error
 	KubernetesNodeDeleteObsolete(ctx context.Context, environmentID uuid.UUID) error
 	KubernetesNodeStatuses(ctx context.Context, environmentID uuid.UUID) ([]KubernetesNodeStatus, error)

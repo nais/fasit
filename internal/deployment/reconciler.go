@@ -144,12 +144,25 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, environment *mode
 	mgr := r.publisher(naisdTopicID(environment.TenantName, environment.Name), r.log)
 	defer mgr.Stop()
 
-	allDeployments, err := r.repo.DeploymentsForEnvironment(ctx, environment.ID)
+	allDeployments, err := r.repo.V3DeploymentsForEnvironment(ctx, environment.ID)
 	if err != nil {
 		return fmt.Errorf("get deployments for environment %q: %w", environment.Name, err)
 	}
 
 	for _, deployment := range filterDeployments(allDeployments) {
+		if err := r.repo.V3InsertEnvironmentFeature(ctx, environment.ID, deployment.ID, deployment.Name, deployment.Version); err != nil {
+
+			r.log.WithError(err).WithFields(logrus.Fields{
+				"environment_id": environment.ID,
+				"deployment_id":  deployment.ID,
+				"feature_name":   deployment.Name,
+				"feature_verion": deployment.Version,
+			}).Error("insert environment feature")
+
+			r.setDeploymentStatus(ctx, deployment.ID, environment.ID, model.RolloutStatusFailed, "failed to register feature deployment")
+			continue
+		}
+
 		values, err := r.repo.HelmValues(ctx, deployment.Feature, environment.ID)
 		if err != nil {
 			var fer *database.ErrMissingRequiredFields
@@ -224,7 +237,7 @@ func (r *Reconciler) shouldDeployToEnvironment(ctx context.Context, deployment d
 }
 
 func (r *Reconciler) setDeploymentStatus(ctx context.Context, deploymentID, environmentID uuid.UUID, status model.RolloutStatus, msg string) {
-	if err := r.repo.DeploymentStatusCreateOrUpdate(ctx, deploymentID, environmentID, status, msg); err != nil {
+	if err := r.repo.V3DeploymentStatusCreateOrUpdate(ctx, deploymentID, environmentID, status, msg); err != nil {
 		r.log.WithFields(logrus.Fields{
 			"deployment_id":  deploymentID,
 			"environment_id": environmentID,
@@ -245,7 +258,7 @@ func (r *Reconciler) isDependenciesDeployed(ctx context.Context, deployment data
 		// deploy_instructions to handle state stuff.
 
 		if len(dep.AllOf) > 0 {
-			missing, err := r.repo.MissingDependencies(ctx, dep.AllOf, envID)
+			missing, err := r.repo.V3MissingDependencies(ctx, dep.AllOf, envID)
 			if err != nil {
 				return false, fmt.Errorf("get features not in env: %w", err)
 			}
@@ -257,7 +270,7 @@ func (r *Reconciler) isDependenciesDeployed(ctx context.Context, deployment data
 		}
 
 		if len(dep.AnyOf) > 0 {
-			missing, err := r.repo.MissingDependencies(ctx, dep.AnyOf, envID)
+			missing, err := r.repo.V3MissingDependencies(ctx, dep.AnyOf, envID)
 			if err != nil {
 				return false, fmt.Errorf("get features not in env: %w", err)
 			}

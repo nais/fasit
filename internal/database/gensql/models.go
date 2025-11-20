@@ -224,6 +224,13 @@ type Environment struct {
 	Labels            environment.Labels
 }
 
+type EnvironmentFeature struct {
+	EnvironmentID  uuid.UUID
+	FeatureName    string
+	FeatureVersion string
+	DeploymentID   uuid.UUID
+}
+
 type EnvironmentValue struct {
 	EnvironmentID uuid.UUID
 	Key           string

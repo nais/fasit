@@ -5056,6 +5056,72 @@ func (_c *Querier_FeaturesForKind_Call) RunAndReturn(run func(ctx context.Contex
 	return _c
 }
 
+// GetEnvironmentFeature provides a mock function for the type Querier
+func (_mock *Querier) GetEnvironmentFeature(ctx context.Context, arg gensql.GetEnvironmentFeatureParams) (gensql.GetEnvironmentFeatureRow, error) {
+	ret := _mock.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetEnvironmentFeature")
+	}
+
+	var r0 gensql.GetEnvironmentFeatureRow
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, gensql.GetEnvironmentFeatureParams) (gensql.GetEnvironmentFeatureRow, error)); ok {
+		return returnFunc(ctx, arg)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, gensql.GetEnvironmentFeatureParams) gensql.GetEnvironmentFeatureRow); ok {
+		r0 = returnFunc(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(gensql.GetEnvironmentFeatureRow)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, gensql.GetEnvironmentFeatureParams) error); ok {
+		r1 = returnFunc(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_GetEnvironmentFeature_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetEnvironmentFeature'
+type Querier_GetEnvironmentFeature_Call struct {
+	*mock.Call
+}
+
+// GetEnvironmentFeature is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg gensql.GetEnvironmentFeatureParams
+func (_e *Querier_Expecter) GetEnvironmentFeature(ctx interface{}, arg interface{}) *Querier_GetEnvironmentFeature_Call {
+	return &Querier_GetEnvironmentFeature_Call{Call: _e.mock.On("GetEnvironmentFeature", ctx, arg)}
+}
+
+func (_c *Querier_GetEnvironmentFeature_Call) Run(run func(ctx context.Context, arg gensql.GetEnvironmentFeatureParams)) *Querier_GetEnvironmentFeature_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 gensql.GetEnvironmentFeatureParams
+		if args[1] != nil {
+			arg1 = args[1].(gensql.GetEnvironmentFeatureParams)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_GetEnvironmentFeature_Call) Return(getEnvironmentFeatureRow gensql.GetEnvironmentFeatureRow, err error) *Querier_GetEnvironmentFeature_Call {
+	_c.Call.Return(getEnvironmentFeatureRow, err)
+	return _c
+}
+
+func (_c *Querier_GetEnvironmentFeature_Call) RunAndReturn(run func(ctx context.Context, arg gensql.GetEnvironmentFeatureParams) (gensql.GetEnvironmentFeatureRow, error)) *Querier_GetEnvironmentFeature_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // HealthStatusCreateOrUpdate provides a mock function for the type Querier
 func (_mock *Querier) HealthStatusCreateOrUpdate(ctx context.Context, arg gensql.HealthStatusCreateOrUpdateParams) (gensql.HealthStatus, error) {
 	ret := _mock.Called(ctx, arg)
@@ -5184,6 +5250,63 @@ func (_c *Querier_HealthStatusGet_Call) Return(healthStatus gensql.HealthStatus,
 }
 
 func (_c *Querier_HealthStatusGet_Call) RunAndReturn(run func(ctx context.Context, environmentID uuid.UUID) (gensql.HealthStatus, error)) *Querier_HealthStatusGet_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// InsertEnvironmentFeature provides a mock function for the type Querier
+func (_mock *Querier) InsertEnvironmentFeature(ctx context.Context, arg gensql.InsertEnvironmentFeatureParams) error {
+	ret := _mock.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for InsertEnvironmentFeature")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, gensql.InsertEnvironmentFeatureParams) error); ok {
+		r0 = returnFunc(ctx, arg)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// Querier_InsertEnvironmentFeature_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InsertEnvironmentFeature'
+type Querier_InsertEnvironmentFeature_Call struct {
+	*mock.Call
+}
+
+// InsertEnvironmentFeature is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg gensql.InsertEnvironmentFeatureParams
+func (_e *Querier_Expecter) InsertEnvironmentFeature(ctx interface{}, arg interface{}) *Querier_InsertEnvironmentFeature_Call {
+	return &Querier_InsertEnvironmentFeature_Call{Call: _e.mock.On("InsertEnvironmentFeature", ctx, arg)}
+}
+
+func (_c *Querier_InsertEnvironmentFeature_Call) Run(run func(ctx context.Context, arg gensql.InsertEnvironmentFeatureParams)) *Querier_InsertEnvironmentFeature_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 gensql.InsertEnvironmentFeatureParams
+		if args[1] != nil {
+			arg1 = args[1].(gensql.InsertEnvironmentFeatureParams)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_InsertEnvironmentFeature_Call) Return(err error) *Querier_InsertEnvironmentFeature_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *Querier_InsertEnvironmentFeature_Call) RunAndReturn(run func(ctx context.Context, arg gensql.InsertEnvironmentFeatureParams) error) *Querier_InsertEnvironmentFeature_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -21,6 +21,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/go-chi/chi/v5"
+	"github.com/joho/godotenv"
 	"github.com/nais/fasit/internal/auth"
 	"github.com/nais/fasit/internal/cluster"
 	"github.com/nais/fasit/internal/database"
@@ -60,6 +61,7 @@ var cfg = DefaultConfig()
 const slowQueryEndpoint = false
 
 func init() {
+	_ = godotenv.Load()
 	flag.StringVar(&cfg.BindAddress, "bind-address", cfg.BindAddress, "Bind address")
 	flag.StringVar(&cfg.GRPCBindAddress, "grpc-bind-address", cfg.GRPCBindAddress, "Bind address")
 	flag.StringVar(&cfg.DBConnectionDSN, "db-connection-dsn", getEnv("FASIT_DBCONN_STRING", "postgres://postgres:postgres@localhost:5432/fasit?sslmode=disable"), "database connection DSN")

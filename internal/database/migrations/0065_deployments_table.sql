@@ -10,6 +10,16 @@ CREATE TABLE "deployments" (
 )
 ;
 
+CREATE TABLE "environment_features" (
+	"environment_id" uuid NOT NULL REFERENCES environments (id) ON DELETE CASCADE,
+	"feature_name" TEXT NOT NULL,
+	"feature_version" TEXT NOT NULL,
+	"deployment_id" uuid NOT NULL REFERENCES deployments (id) ON DELETE CASCADE,
+	PRIMARY KEY (environment_id, feature_name),
+	FOREIGN KEY (feature_name, feature_version) REFERENCES feature_data (name, version) ON DELETE CASCADE
+)
+;
+
 CREATE TABLE "deployment_statuses" (
 	"deployment_id" uuid NOT NULL REFERENCES deployments (id) ON DELETE CASCADE,
 	"environment_id" uuid NOT NULL REFERENCES environments (id) ON DELETE CASCADE,

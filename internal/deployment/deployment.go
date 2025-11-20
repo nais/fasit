@@ -128,7 +128,7 @@ func (d *Deployment) CreateDeployment(w http.ResponseWriter, req *http.Request) 
 		}
 	}
 
-	deployment, err := d.repo.DeploymentCreate(ctx, feat.Name, body.Version, body.Ref, body.Target)
+	deployment, err := d.repo.V3DeploymentCreate(ctx, feat.Name, body.Version, body.Ref, body.Target)
 	if err != nil {
 		http.Error(w, "unable to create deployment", http.StatusInternalServerError)
 		d.log.WithError(err).Error("create deployment")

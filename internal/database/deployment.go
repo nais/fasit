@@ -14,14 +14,52 @@ import (
 )
 
 type DeploymentRepo interface {
-	DeploymentCreate(ctx context.Context, featureName, featureVersion string, ref *model.GHRef, target environment.Labels) (*gensql.Deployment, error)
-	DeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]Deployment, error)
-	FeatureEnabled(ctx context.Context, featureName string, envID uuid.UUID) (bool, error)
-	MissingDependencies(ctx context.Context, dependencies []string, environmentID uuid.UUID) ([]string, error)
-	DeploymentStatusCreateOrUpdate(ctx context.Context, deploymentID, environmentID uuid.UUID, status model.RolloutStatus, message string) error
+	V3DeploymentCreate(ctx context.Context, featureName, featureVersion string, ref *model.GHRef, target environment.Labels) (*gensql.Deployment, error)
+	V3DeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]Deployment, error)
+	V3DeploymentStatusCreateOrUpdate(ctx context.Context, deploymentID, environmentID uuid.UUID, status model.RolloutStatus, message string) error
+	V3MissingDependencies(ctx context.Context, dependencies []string, environmentID uuid.UUID) ([]string, error)
+	V3GetEnvironmentFeature(ctx context.Context, environmentID uuid.UUID, featureName string) (*model.Feature, error)
+	V3InsertEnvironmentFeature(ctx context.Context, environmentID uuid.UUID, deploymentID uuid.UUID, featureName, featureVersion string) error
 }
 
-func (r *repo) MissingDependencies(ctx context.Context, dependencies []string, environmentID uuid.UUID) ([]string, error) {
+func (r *repo) V3InsertEnvironmentFeature(ctx context.Context, environmentID uuid.UUID, deploymentID uuid.UUID, featureName, featureVersion string) error {
+	return r.querier.InsertEnvironmentFeature(ctx, gensql.InsertEnvironmentFeatureParams{
+		EnvironmentID:  environmentID,
+		DeploymentID:   deploymentID,
+		FeatureName:    featureName,
+		FeatureVersion: featureVersion,
+	})
+}
+
+func (r *repo) V3GetEnvironmentFeature(ctx context.Context, environmentID uuid.UUID, featureName string) (*model.Feature, error) {
+	f, err := r.querier.GetEnvironmentFeature(ctx, gensql.GetEnvironmentFeatureParams{
+		EnvironmentID: environmentID,
+		FeatureName:   featureName,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	fyaml, defaultValues, err := makeFeatureYAML(f.Kinds, f.Dependencies, f.Values, f.DefaultValues, nil, f.Timeout)
+	if err != nil {
+		return nil, fmt.Errorf("make feature yaml: %w", err)
+	}
+
+	return &model.Feature{
+		Name:        f.Name,
+		Description: f.Description,
+		Version:     f.Version,
+		Chart:       f.Chart,
+		Source:      f.Source,
+		FeatureYAML: fyaml,
+		ValuesYAML:  defaultValues,
+		SpecVersion: "v2",
+		// if exists in the environment_features table, it must have deployments
+		HasDeployments: true,
+	}, nil
+}
+
+func (r *repo) V3MissingDependencies(ctx context.Context, dependencies []string, environmentID uuid.UUID) ([]string, error) {
 	if len(dependencies) == 0 {
 		return []string{}, nil
 	}
@@ -50,7 +88,7 @@ type Deployment struct {
 	Target  environment.Labels
 }
 
-func (r *repo) DeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]Deployment, error) {
+func (r *repo) V3DeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]Deployment, error) {
 	rows, err := r.querier.FeatureDeploymentsForEnvironment(ctx, environmentID)
 	if err != nil {
 		return nil, err
@@ -97,7 +135,7 @@ func featureFromSQL(f gensql.FeatureDeploymentsForEnvironmentRow) (*model.Featur
 	}, nil
 }
 
-func (r *repo) DeploymentCreate(ctx context.Context, featureName, featureVersion string, ref *model.GHRef, target environment.Labels) (*gensql.Deployment, error) {
+func (r *repo) V3DeploymentCreate(ctx context.Context, featureName, featureVersion string, ref *model.GHRef, target environment.Labels) (*gensql.Deployment, error) {
 	var ghRef []byte
 	if ref != nil {
 		b, err := json.Marshal(ref)
@@ -113,6 +151,7 @@ func (r *repo) DeploymentCreate(ctx context.Context, featureName, featureVersion
 		GhRef:       ghRef,
 		Target:      target,
 	})
+
 	return &ret, err
 }
 
@@ -123,7 +162,7 @@ func (r *repo) FeatureEnabled(ctx context.Context, featureName string, envID uui
 	})
 }
 
-func (r *repo) DeploymentStatusCreateOrUpdate(ctx context.Context, deploymentID, environmentID uuid.UUID, status model.RolloutStatus, message string) error {
+func (r *repo) V3DeploymentStatusCreateOrUpdate(ctx context.Context, deploymentID, environmentID uuid.UUID, status model.RolloutStatus, message string) error {
 	return r.querier.DeploymentStatusCreateOrUpdate(ctx, gensql.DeploymentStatusCreateOrUpdateParams{
 		DeploymentID:  deploymentID,
 		EnvironmentID: environmentID,
