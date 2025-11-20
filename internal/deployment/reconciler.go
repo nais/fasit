@@ -83,6 +83,16 @@ func NewReconciler(
 	}, nil
 }
 
+func TriggerReconcile(event ReconcileTriggerEvent, trigger chan<- ReconcileTriggerEvent, log logrus.FieldLogger) {
+	go func() {
+		select {
+		case trigger <- event:
+		default:
+			log.Debug("there is already a reconcile event queued, skipping")
+		}
+	}()
+}
+
 func (r *Reconciler) Run(ctx context.Context, interval time.Duration) {
 	for {
 		r.log.Debug("reconciling")

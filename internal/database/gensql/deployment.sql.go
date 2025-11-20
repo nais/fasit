@@ -19,7 +19,6 @@ WHERE
 	feature_name = ANY ($1::TEXT[])
 	AND status = 'deployed'
 	AND environment_id = $2
-	AND deployment_id IS NOT NULL
 ORDER BY
 	feature_name
 `

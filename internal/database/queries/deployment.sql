@@ -67,7 +67,6 @@ WHERE
 	feature_name = ANY (@feature_names::TEXT[])
 	AND status = 'deployed'
 	AND environment_id = @environment_id
-	AND deployment_id IS NOT NULL
 ORDER BY
 	feature_name
 ;
