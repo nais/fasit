@@ -16,6 +16,12 @@ RETURNING
 	*
 ;
 
+-- name: DeploymentDelete :exec
+DELETE FROM deployments
+WHERE
+	id = @id
+;
+
 -- name: FeatureDeploymentsForEnvironment :many
 SELECT DISTINCT
 	ON (d.feature_name, d.target) sqlc.embed(d),

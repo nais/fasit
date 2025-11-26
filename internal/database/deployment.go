@@ -15,11 +15,16 @@ import (
 
 type DeploymentRepo interface {
 	V3DeploymentCreate(ctx context.Context, featureName, featureVersion string, ref *model.GHRef, target environment.Labels) (*gensql.Deployment, error)
+	V3DeploymentDelete(ctx context.Context, deploymentID uuid.UUID) error
 	V3DeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]Deployment, error)
 	V3DeploymentStatusCreateOrUpdate(ctx context.Context, deploymentID, environmentID uuid.UUID, status model.RolloutStatus, message string) error
 	V3MissingDependencies(ctx context.Context, dependencies []string, environmentID uuid.UUID) ([]string, error)
 	V3GetEnvironmentFeature(ctx context.Context, environmentID uuid.UUID, featureName string) (*model.Feature, error)
 	V3InsertEnvironmentFeature(ctx context.Context, environmentID uuid.UUID, deploymentID uuid.UUID, featureName, featureVersion string) error
+}
+
+func (r *repo) V3DeploymentDelete(ctx context.Context, deploymentID uuid.UUID) error {
+	return r.querier.DeploymentDelete(ctx, deploymentID)
 }
 
 func (r *repo) V3InsertEnvironmentFeature(ctx context.Context, environmentID uuid.UUID, deploymentID uuid.UUID, featureName, featureVersion string) error {

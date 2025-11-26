@@ -83,6 +83,17 @@ func (q *Queries) DeploymentCreate(ctx context.Context, arg DeploymentCreatePara
 	return i, err
 }
 
+const deploymentDelete = `-- name: DeploymentDelete :exec
+DELETE FROM deployments
+WHERE
+	id = $1
+`
+
+func (q *Queries) DeploymentDelete(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, deploymentDelete, id)
+	return err
+}
+
 const deploymentStatusCreateOrUpdate = `-- name: DeploymentStatusCreateOrUpdate :exec
 INSERT INTO
 	deployment_statuses (deployment_id, environment_id, status, message)
