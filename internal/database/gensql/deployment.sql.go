@@ -94,6 +94,76 @@ func (q *Queries) DeploymentDelete(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
+const deploymentGet = `-- name: DeploymentGet :one
+SELECT
+	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref,
+	fd.name,
+	fd.version,
+	fd.chart,
+	fd.description,
+	fd.source,
+	fd.kinds::TEXT[] AS kinds,
+	fd.dependencies,
+	fd.values,
+	fd.default_values,
+	fd.timeout,
+	ds.deployment_id, ds.environment_id, ds.status, ds.message, ds.last_modified, ds.created
+FROM
+	deployments d,
+	feature_data fd,
+	deployment_statuses ds
+WHERE
+	d.feature_name = fd.name
+	AND d.version = fd.version
+	AND d.id = $1
+	AND ds.deployment_id = d.id
+`
+
+type DeploymentGetRow struct {
+	Deployment       Deployment
+	Name             string
+	Version          string
+	Chart            string
+	Description      string
+	Source           string
+	Kinds            []string
+	Dependencies     []byte
+	Values           []byte
+	DefaultValues    []byte
+	Timeout          int64
+	DeploymentStatus DeploymentStatus
+}
+
+func (q *Queries) DeploymentGet(ctx context.Context, id uuid.UUID) (DeploymentGetRow, error) {
+	row := q.db.QueryRow(ctx, deploymentGet, id)
+	var i DeploymentGetRow
+	err := row.Scan(
+		&i.Deployment.ID,
+		&i.Deployment.FeatureName,
+		&i.Deployment.Version,
+		&i.Deployment.Target,
+		&i.Deployment.Created,
+		&i.Deployment.GhRef,
+		&i.Name,
+		&i.Version,
+		&i.Chart,
+		&i.Description,
+		&i.Source,
+		&i.Kinds,
+		&i.Dependencies,
+		&i.Values,
+		&i.DefaultValues,
+		&i.Timeout,
+		&i.DeploymentStatus.DeploymentID,
+		&i.DeploymentStatus.EnvironmentID,
+		&i.DeploymentStatus.Status,
+		&i.DeploymentStatus.Message,
+		&i.DeploymentStatus.LastModified,
+		&i.DeploymentStatus.Created,
+	)
+	return i, err
+}
+
 const deploymentStatusCreateOrUpdate = `-- name: DeploymentStatusCreateOrUpdate :exec
 INSERT INTO
 	deployment_statuses (deployment_id, environment_id, status, message)
@@ -175,16 +245,19 @@ SELECT DISTINCT
 	fd.dependencies,
 	fd.values,
 	fd.default_values,
-	fd.timeout
+	fd.timeout,
+	ds.deployment_id, ds.environment_id, ds.status, ds.message, ds.last_modified, ds.created
 FROM
 	deployments d,
 	environments e,
-	feature_data fd
+	feature_data fd,
+	deployment_statuses ds
 WHERE
 	d.feature_name = fd.name
 	AND d.version = fd.version
 	AND e.id = $1
 	AND e.labels @> d.target -- @> operator checks if the JSONB on the left contains the JSONB on the right
+	AND ds.deployment_id = d.id
 ORDER BY
 	d.feature_name,
 	d.target,
@@ -192,17 +265,18 @@ ORDER BY
 `
 
 type FeatureDeploymentsForEnvironmentRow struct {
-	Deployment    Deployment
-	Name          string
-	Version       string
-	Chart         string
-	Description   string
-	Source        string
-	Kinds         []string
-	Dependencies  []byte
-	Values        []byte
-	DefaultValues []byte
-	Timeout       int64
+	Deployment       Deployment
+	Name             string
+	Version          string
+	Chart            string
+	Description      string
+	Source           string
+	Kinds            []string
+	Dependencies     []byte
+	Values           []byte
+	DefaultValues    []byte
+	Timeout          int64
+	DeploymentStatus DeploymentStatus
 }
 
 func (q *Queries) FeatureDeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]FeatureDeploymentsForEnvironmentRow, error) {
@@ -231,6 +305,12 @@ func (q *Queries) FeatureDeploymentsForEnvironment(ctx context.Context, environm
 			&i.Values,
 			&i.DefaultValues,
 			&i.Timeout,
+			&i.DeploymentStatus.DeploymentID,
+			&i.DeploymentStatus.EnvironmentID,
+			&i.DeploymentStatus.Status,
+			&i.DeploymentStatus.Message,
+			&i.DeploymentStatus.LastModified,
+			&i.DeploymentStatus.Created,
 		); err != nil {
 			return nil, err
 		}

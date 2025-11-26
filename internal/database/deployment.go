@@ -15,6 +15,7 @@ import (
 
 type DeploymentRepo interface {
 	V3DeploymentCreate(ctx context.Context, featureName, featureVersion string, ref *model.GHRef, target environment.Labels) (*gensql.Deployment, error)
+	V3DeploymentGet(ctx context.Context, deploymentID uuid.UUID) (*Deployment, error)
 	V3DeploymentDelete(ctx context.Context, deploymentID uuid.UUID) error
 	V3DeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]Deployment, error)
 	V3DeploymentStatusCreateOrUpdate(ctx context.Context, deploymentID, environmentID uuid.UUID, status model.RolloutStatus, message string) error
@@ -88,9 +89,42 @@ func (r *repo) V3MissingDependencies(ctx context.Context, dependencies []string,
 type Deployment struct {
 	*model.Feature
 
-	ID      uuid.UUID
-	Created time.Time
-	Target  environment.Labels
+	ID      uuid.UUID               `json:"id"`
+	Created time.Time               `json:"created"`
+	Target  environment.Labels      `json:"target"`
+	Status  gensql.DeploymentStatus `json:"status"`
+}
+
+func (r *repo) V3DeploymentGet(ctx context.Context, deploymentID uuid.UUID) (*Deployment, error) {
+	row, err := r.querier.DeploymentGet(ctx, deploymentID)
+	if err != nil {
+		return nil, err
+	}
+
+	feature, err := featureFromSQL(gensql.FeatureDeploymentsForEnvironmentRow{
+		Deployment:    row.Deployment,
+		Name:          row.Name,
+		Version:       row.Version,
+		Chart:         row.Chart,
+		Description:   row.Description,
+		Source:        row.Source,
+		Kinds:         row.Kinds,
+		Dependencies:  row.Dependencies,
+		Values:        row.Values,
+		DefaultValues: row.DefaultValues,
+		Timeout:       row.Timeout,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &Deployment{
+		Feature: feature,
+		ID:      row.Deployment.ID,
+		Created: row.Deployment.Created.Time,
+		Target:  row.Deployment.Target,
+		Status:  row.DeploymentStatus,
+	}, nil
 }
 
 func (r *repo) V3DeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]Deployment, error) {
@@ -111,6 +145,7 @@ func (r *repo) V3DeploymentsForEnvironment(ctx context.Context, environmentID uu
 			ID:      row.Deployment.ID,
 			Created: row.Deployment.Created.Time,
 			Target:  row.Deployment.Target,
+			Status:  row.DeploymentStatus,
 		}
 	}
 

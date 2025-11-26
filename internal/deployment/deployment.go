@@ -9,6 +9,9 @@ import (
 	"strings"
 
 	"github.com/coreos/go-oidc/v3/oidc"
+	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/nais/fasit/internal/auth"
 	"github.com/nais/fasit/internal/database"
@@ -69,6 +72,33 @@ func New(ctx context.Context, repo database.Repo, reconcileTrigger chan<- Reconc
 		log:              log,
 		reconcileTrigger: reconcileTrigger,
 	}, nil
+}
+
+func (d *Deployment) GetDeployment(w http.ResponseWriter, req *http.Request) {
+	ctx := req.Context()
+
+	if _, valid := d.validateToken(w, req); !valid {
+		return
+	}
+
+	deploymentID, err := uuid.Parse(chi.URLParam(req, "id"))
+	if err != nil {
+		http.Error(w, "invalid deployment id", http.StatusBadRequest)
+		d.log.WithError(err).Error("convert deployment ID")
+		return
+	}
+
+	deployment, err := d.repo.V3DeploymentGet(ctx, deploymentID)
+	if errors.Is(err, pgx.ErrNoRows) {
+		http.Error(w, "deployment does not exist", http.StatusNotFound)
+		return
+	} else if err != nil {
+		http.Error(w, "unable to get deployment", http.StatusInternalServerError)
+		d.log.WithError(err).Error("get deployment")
+		return
+	}
+
+	_ = json.NewEncoder(w).Encode(deployment)
 }
 
 func (d *Deployment) CreateDeployment(w http.ResponseWriter, req *http.Request) {

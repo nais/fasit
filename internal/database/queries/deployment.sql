@@ -22,6 +22,31 @@ WHERE
 	id = @id
 ;
 
+-- name: DeploymentGet :one
+SELECT
+	sqlc.embed(d),
+	fd.name,
+	fd.version,
+	fd.chart,
+	fd.description,
+	fd.source,
+	fd.kinds::TEXT[] AS kinds,
+	fd.dependencies,
+	fd.values,
+	fd.default_values,
+	fd.timeout,
+	sqlc.embed(ds)
+FROM
+	deployments d,
+	feature_data fd,
+	deployment_statuses ds
+WHERE
+	d.feature_name = fd.name
+	AND d.version = fd.version
+	AND d.id = @id
+	AND ds.deployment_id = d.id
+;
+
 -- name: FeatureDeploymentsForEnvironment :many
 SELECT DISTINCT
 	ON (d.feature_name, d.target) sqlc.embed(d),
@@ -34,16 +59,19 @@ SELECT DISTINCT
 	fd.dependencies,
 	fd.values,
 	fd.default_values,
-	fd.timeout
+	fd.timeout,
+	sqlc.embed(ds)
 FROM
 	deployments d,
 	environments e,
-	feature_data fd
+	feature_data fd,
+	deployment_statuses ds
 WHERE
 	d.feature_name = fd.name
 	AND d.version = fd.version
 	AND e.id = @environment_id
 	AND e.labels @> d.target -- @> operator checks if the JSONB on the left contains the JSONB on the right
+	AND ds.deployment_id = d.id
 ORDER BY
 	d.feature_name,
 	d.target,

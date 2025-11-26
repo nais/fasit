@@ -7280,6 +7280,131 @@ func (_c *Repo_V3DeploymentCreate_Call) RunAndReturn(run func(ctx context.Contex
 	return _c
 }
 
+// V3DeploymentDelete provides a mock function for the type Repo
+func (_mock *Repo) V3DeploymentDelete(ctx context.Context, deploymentID uuid.UUID) error {
+	ret := _mock.Called(ctx, deploymentID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for V3DeploymentDelete")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) error); ok {
+		r0 = returnFunc(ctx, deploymentID)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// Repo_V3DeploymentDelete_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'V3DeploymentDelete'
+type Repo_V3DeploymentDelete_Call struct {
+	*mock.Call
+}
+
+// V3DeploymentDelete is a helper method to define mock.On call
+//   - ctx context.Context
+//   - deploymentID uuid.UUID
+func (_e *Repo_Expecter) V3DeploymentDelete(ctx interface{}, deploymentID interface{}) *Repo_V3DeploymentDelete_Call {
+	return &Repo_V3DeploymentDelete_Call{Call: _e.mock.On("V3DeploymentDelete", ctx, deploymentID)}
+}
+
+func (_c *Repo_V3DeploymentDelete_Call) Run(run func(ctx context.Context, deploymentID uuid.UUID)) *Repo_V3DeploymentDelete_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Repo_V3DeploymentDelete_Call) Return(err error) *Repo_V3DeploymentDelete_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *Repo_V3DeploymentDelete_Call) RunAndReturn(run func(ctx context.Context, deploymentID uuid.UUID) error) *Repo_V3DeploymentDelete_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// V3DeploymentGet provides a mock function for the type Repo
+func (_mock *Repo) V3DeploymentGet(ctx context.Context, deploymentID uuid.UUID) (*database.Deployment, error) {
+	ret := _mock.Called(ctx, deploymentID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for V3DeploymentGet")
+	}
+
+	var r0 *database.Deployment
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) (*database.Deployment, error)); ok {
+		return returnFunc(ctx, deploymentID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) *database.Deployment); ok {
+		r0 = returnFunc(ctx, deploymentID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*database.Deployment)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = returnFunc(ctx, deploymentID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Repo_V3DeploymentGet_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'V3DeploymentGet'
+type Repo_V3DeploymentGet_Call struct {
+	*mock.Call
+}
+
+// V3DeploymentGet is a helper method to define mock.On call
+//   - ctx context.Context
+//   - deploymentID uuid.UUID
+func (_e *Repo_Expecter) V3DeploymentGet(ctx interface{}, deploymentID interface{}) *Repo_V3DeploymentGet_Call {
+	return &Repo_V3DeploymentGet_Call{Call: _e.mock.On("V3DeploymentGet", ctx, deploymentID)}
+}
+
+func (_c *Repo_V3DeploymentGet_Call) Run(run func(ctx context.Context, deploymentID uuid.UUID)) *Repo_V3DeploymentGet_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Repo_V3DeploymentGet_Call) Return(deployment *database.Deployment, err error) *Repo_V3DeploymentGet_Call {
+	_c.Call.Return(deployment, err)
+	return _c
+}
+
+func (_c *Repo_V3DeploymentGet_Call) RunAndReturn(run func(ctx context.Context, deploymentID uuid.UUID) (*database.Deployment, error)) *Repo_V3DeploymentGet_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // V3DeploymentStatusCreateOrUpdate provides a mock function for the type Repo
 func (_mock *Repo) V3DeploymentStatusCreateOrUpdate(ctx context.Context, deploymentID uuid.UUID, environmentID uuid.UUID, status model.RolloutStatus, message1 string) error {
 	ret := _mock.Called(ctx, deploymentID, environmentID, status, message1)

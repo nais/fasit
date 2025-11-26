@@ -2442,7 +2442,7 @@ extend type Query {
 }
 `, BuiltIn: false},
 	{Name: "../../../schema/deployments.graphqls", Input: `extend type Mutation {
-    deleteDeployment(deploymentID: ID!): Boolean!
+	deleteDeployment(deploymentID: ID!): Boolean!
 }
 `, BuiltIn: false},
 	{Name: "../../../schema/directives.graphqls", Input: `directive @goField(

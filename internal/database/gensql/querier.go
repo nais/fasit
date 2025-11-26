@@ -53,6 +53,7 @@ type Querier interface {
 	DeployInstructionsUpdateStatus(ctx context.Context, arg DeployInstructionsUpdateStatusParams) error
 	DeploymentCreate(ctx context.Context, arg DeploymentCreateParams) (Deployment, error)
 	DeploymentDelete(ctx context.Context, id uuid.UUID) error
+	DeploymentGet(ctx context.Context, id uuid.UUID) (DeploymentGetRow, error)
 	DeploymentStatusCreateOrUpdate(ctx context.Context, arg DeploymentStatusCreateOrUpdateParams) error
 	DeploymentsGet(ctx context.Context) ([]Deployment, error)
 	EnvConfig(ctx context.Context, arg EnvConfigParams) ([]EnvConfigRow, error)

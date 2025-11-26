@@ -12,7 +12,7 @@ import (
 	"sort"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
+	pgx "github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/graphgen"

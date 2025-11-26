@@ -253,6 +253,7 @@ func main() {
 	}
 	deploy.AllowAll = cfg.InsecureSkipTokenCheck
 	router.Post("/github/deployment", deploy.CreateDeployment)
+	router.Get("/github/deployment/{id}", deploy.GetDeployment)
 
 	go func() {
 		if err := runGRPC(ctx, repo, log); err != nil {
