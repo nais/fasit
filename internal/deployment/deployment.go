@@ -140,18 +140,16 @@ func (d *Deployment) CreateDeployment(w http.ResponseWriter, req *http.Request) 
 		"id": deployment.ID.String(),
 	})
 
-	go func() {
-		select {
-		case d.reconcileTrigger <- ReconcileTriggerEvent{
-			DeploymentID:   deployment.ID,
-			FeatureName:    feat.Name,
-			FeatureVersion: body.Version,
-			Type:           ReconcileTriggerEventTypeNewDeployment,
-		}:
-		default:
-			d.log.Debug("there is already a reconcile event queued, skipping")
-		}
-	}()
+	select {
+	case d.reconcileTrigger <- ReconcileTriggerEvent{
+		DeploymentID:   deployment.ID,
+		FeatureName:    feat.Name,
+		FeatureVersion: body.Version,
+		Type:           ReconcileTriggerEventTypeNewDeployment,
+	}:
+	default:
+		d.log.Debug("there is already a reconcile event queued, skipping")
+	}
 }
 
 func (d *Deployment) validateToken(w http.ResponseWriter, req *http.Request) (actor string, ok bool) {
