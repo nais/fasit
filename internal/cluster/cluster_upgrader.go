@@ -385,7 +385,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 			delayDays := tenantDelay + envDelay
 
 			if delayDays > 0 {
-				upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, clusterUpgrade.ID, gensql.ClusterUpgradesStatusWAITING)
+				_, err := c.repo.UpdateClusterUpgradeStatus(ctx, clusterUpgrade.ID, gensql.ClusterUpgradesStatusWAITING)
 				if err != nil {
 					log.WithError(err).Error("failed to update upgrade status to WAITING")
 					return err
@@ -397,7 +397,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 					"is_automatic": true,
 				}).Info("upgrade status transitioned from CREATED to WAITING due to delay configuration")
 
-				c.updateSlackProgress(ctx, tenant.Name, env.Name, upgradeStatus)
+				// Skip Slack notification for WAITING status - we'll notify when upgrade actually starts
 				return nil
 			}
 		} else {

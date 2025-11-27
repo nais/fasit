@@ -570,15 +570,7 @@ func TestRun_CreatedToWaitingTransitionWithDelay(t *testing.T) {
 	suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, createdUpgrade.ID, gensql.ClusterUpgradesStatusWAITING).
 		Return(waitingUpgrade, nil).Once()
 
-	// Mock SetClusterUpgradesSlackMessage for posting new Slack message
-	suite.repoMock.EXPECT().SetClusterUpgradesSlackMessage(mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil).Maybe()
-
-	// Mock EnvironmentValueGet for slack mentions
-	suite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, suite.env.id, "slack_upgrade_mentions", false).Return(
-		&model.EnvironmentValue{
-			Key:   "slack_upgrade_mentions",
-			Value: []byte(`""`),
-		}, nil).Once()
+	// No Slack notification when transitioning to WAITING - we'll notify when upgrade actually starts
 
 	err := upgrade.Run(context.Background())
 	if err != nil {
