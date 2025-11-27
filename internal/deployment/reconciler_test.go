@@ -21,6 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
+	metricsdk "go.opentelemetry.io/otel/sdk/metric"
 )
 
 // Intentional uppercase to avoid var clashes
@@ -35,6 +36,11 @@ type featureInput struct {
 	dependencies  []string
 	target        environment.Labels
 }
+
+var (
+	provider = metricsdk.NewMeterProvider()
+	meter    = provider.Meter("test-meter")
+)
 
 func TestReconcile(t *testing.T) {
 	ctx := context.Background()
@@ -126,7 +132,7 @@ func TestReconcile(t *testing.T) {
 					return pub
 				},
 				nil,
-				nil,
+				meter,
 				logger,
 			)
 			if err != nil {
@@ -207,7 +213,7 @@ func TestReconcileWhenPreviousIsInProgress(t *testing.T) {
 			return pub
 		},
 		nil,
-		nil,
+		meter,
 		logger,
 	)
 	if err != nil {

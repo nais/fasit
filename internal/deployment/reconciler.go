@@ -19,6 +19,7 @@ import (
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 )
 
@@ -75,11 +76,23 @@ func NewReconciler(
 	meter metric.Meter,
 	log logrus.FieldLogger,
 ) (*Reconciler, error) {
+	reconcileTime, err := meter.Int64Histogram("deployment_reconcile_time", metric.WithDescription("Time spent reconciling"), metric.WithUnit("ms"))
+	if err != nil {
+		return nil, fmt.Errorf("create reconcile time histogram: %w", err)
+	}
+
+	deployMessages, err := meter.Int64Counter("deployment_deploy_messages", metric.WithDescription("Deploy messages sent"))
+	if err != nil {
+		return nil, fmt.Errorf("create deploy messages counter: %w", err)
+	}
+
 	return &Reconciler{
 		repo:             repo,
 		publisher:        publisher,
 		log:              log,
 		reconcileTrigger: reconcileTrigger,
+		reconcileTime:    reconcileTime,
+		deployMessages:   deployMessages,
 	}, nil
 }
 
@@ -137,6 +150,15 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 }
 
 func (r *Reconciler) reconcileEnvironment(ctx context.Context, environment *model.TenantEnvironment) error {
+	start := time.Now()
+	defer func() {
+		attrs := attribute.NewSet(
+			attribute.String("tenant", environment.TenantName),
+			attribute.String("environment", environment.Name),
+		)
+		r.reconcileTime.Record(ctx, time.Since(start).Milliseconds(), metric.WithAttributeSet(attrs))
+	}()
+
 	health, err := r.repo.HealthGet(ctx, environment.ID)
 	if err != nil {
 		return fmt.Errorf("health status: %w", err)
@@ -214,6 +236,11 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, environment *mode
 		if err != nil {
 			return fmt.Errorf("publish deploy instruction: %w", err)
 		}
+		r.deployMessages.Add(ctx, 1, metric.WithAttributeSet(attribute.NewSet(
+			attribute.String("tenant", environment.TenantName),
+			attribute.String("environment", environment.Name),
+			attribute.String("feature", deployment.Feature.Name),
+		)))
 
 		r.setDeploymentStatus(ctx, deployment.ID, environment.ID, model.RolloutStatusCreated, "deployment instruction sent to naisd")
 	}
