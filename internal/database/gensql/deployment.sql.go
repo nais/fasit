@@ -7,6 +7,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/nais/fasit/internal/environment"
 )
 
@@ -106,32 +107,25 @@ SELECT
 	fd.dependencies,
 	fd.values,
 	fd.default_values,
-	fd.timeout,
-	ds.deployment_id, ds.environment_id, ds.status, ds.message, ds.last_modified, ds.created
+	fd.timeout
 FROM
-	deployments d,
-	feature_data fd,
-	deployment_statuses ds
-WHERE
-	d.feature_name = fd.name
-	AND d.version = fd.version
-	AND d.id = $1
-	AND ds.deployment_id = d.id
+	deployments d
+	JOIN feature_data fd ON d.feature_name = fd.name AND d.version = fd.version
+WHERE d.id = $1
 `
 
 type DeploymentGetRow struct {
-	Deployment       Deployment
-	Name             string
-	Version          string
-	Chart            string
-	Description      string
-	Source           string
-	Kinds            []string
-	Dependencies     []byte
-	Values           []byte
-	DefaultValues    []byte
-	Timeout          int64
-	DeploymentStatus DeploymentStatus
+	Deployment    Deployment
+	Name          string
+	Version       string
+	Chart         string
+	Description   string
+	Source        string
+	Kinds         []string
+	Dependencies  []byte
+	Values        []byte
+	DefaultValues []byte
+	Timeout       int64
 }
 
 func (q *Queries) DeploymentGet(ctx context.Context, id uuid.UUID) (DeploymentGetRow, error) {
@@ -154,12 +148,6 @@ func (q *Queries) DeploymentGet(ctx context.Context, id uuid.UUID) (DeploymentGe
 		&i.Values,
 		&i.DefaultValues,
 		&i.Timeout,
-		&i.DeploymentStatus.DeploymentID,
-		&i.DeploymentStatus.EnvironmentID,
-		&i.DeploymentStatus.Status,
-		&i.DeploymentStatus.Message,
-		&i.DeploymentStatus.LastModified,
-		&i.DeploymentStatus.Created,
 	)
 	return i, err
 }
@@ -195,6 +183,44 @@ func (q *Queries) DeploymentStatusCreateOrUpdate(ctx context.Context, arg Deploy
 		arg.Message,
 	)
 	return err
+}
+
+const deploymentStatusGet = `-- name: DeploymentStatusGet :many
+SELECT
+	deployment_id, environment_id, status, message, last_modified, created
+FROM
+  deployment_statuses
+WHERE
+  deployment_id = $1
+ORDER BY
+  environment_id ASC
+`
+
+func (q *Queries) DeploymentStatusGet(ctx context.Context, deploymentID uuid.UUID) ([]DeploymentStatus, error) {
+	rows, err := q.db.Query(ctx, deploymentStatusGet, deploymentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []DeploymentStatus{}
+	for rows.Next() {
+		var i DeploymentStatus
+		if err := rows.Scan(
+			&i.DeploymentID,
+			&i.EnvironmentID,
+			&i.Status,
+			&i.Message,
+			&i.LastModified,
+			&i.Created,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const deploymentsGet = `-- name: DeploymentsGet :many
@@ -246,18 +272,15 @@ SELECT DISTINCT
 	fd.values,
 	fd.default_values,
 	fd.timeout,
-	ds.deployment_id, ds.environment_id, ds.status, ds.message, ds.last_modified, ds.created
+	ds.status,
+	ds.message AS status_message,
+	ds.last_modified AS status_last_modified,
+	ds.created AS status_created
 FROM
-	deployments d,
-	environments e,
-	feature_data fd,
-	deployment_statuses ds
-WHERE
-	d.feature_name = fd.name
-	AND d.version = fd.version
-	AND e.id = $1
-	AND e.labels @> d.target -- @> operator checks if the JSONB on the left contains the JSONB on the right
-	AND ds.deployment_id = d.id
+	deployments d
+	JOIN environments e ON e.id = $1 AND e.labels @> d.target -- @> operator checks if the JSONB on the left contains the JSONB on the right
+	JOIN feature_data fd ON d.feature_name = fd.name AND d.version = fd.version
+	LEFT JOIN deployment_statuses ds ON ds.deployment_id = d.id AND ds.environment_id = $1
 ORDER BY
 	d.feature_name,
 	d.target,
@@ -265,18 +288,21 @@ ORDER BY
 `
 
 type FeatureDeploymentsForEnvironmentRow struct {
-	Deployment       Deployment
-	Name             string
-	Version          string
-	Chart            string
-	Description      string
-	Source           string
-	Kinds            []string
-	Dependencies     []byte
-	Values           []byte
-	DefaultValues    []byte
-	Timeout          int64
-	DeploymentStatus DeploymentStatus
+	Deployment         Deployment
+	Name               string
+	Version            string
+	Chart              string
+	Description        string
+	Source             string
+	Kinds              []string
+	Dependencies       []byte
+	Values             []byte
+	DefaultValues      []byte
+	Timeout            int64
+	Status             pgtype.Text
+	StatusMessage      pgtype.Text
+	StatusLastModified pgtype.Timestamptz
+	StatusCreated      pgtype.Timestamptz
 }
 
 func (q *Queries) FeatureDeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]FeatureDeploymentsForEnvironmentRow, error) {
@@ -305,12 +331,10 @@ func (q *Queries) FeatureDeploymentsForEnvironment(ctx context.Context, environm
 			&i.Values,
 			&i.DefaultValues,
 			&i.Timeout,
-			&i.DeploymentStatus.DeploymentID,
-			&i.DeploymentStatus.EnvironmentID,
-			&i.DeploymentStatus.Status,
-			&i.DeploymentStatus.Message,
-			&i.DeploymentStatus.LastModified,
-			&i.DeploymentStatus.Created,
+			&i.Status,
+			&i.StatusMessage,
+			&i.StatusLastModified,
+			&i.StatusCreated,
 		); err != nil {
 			return nil, err
 		}

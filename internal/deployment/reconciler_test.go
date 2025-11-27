@@ -346,6 +346,9 @@ func (d *Db) createEnv(ctx context.Context, tenant *model.Tenant, name string, l
 	err = d.repo.HealthStatusCreateOrUpdate(ctx, env.ID, &message.Health{
 		ReportedAt: time.Now(),
 	})
+	if err != nil {
+		d.t.Fatalf("create health status: %v", err)
+	}
 }
 
 // createTenantsAndEnvironments creates a set of tenanats and environments.
@@ -357,10 +360,10 @@ func (d *Db) createTenantsAndEnvironments(ctx context.Context, tenantsAndEnvs ma
 		p := strings.Split(te, ":")
 		tenantName, envName := p[0], p[1]
 
-		tenant, exists := tenants[tenantName]
+		_, exists := tenants[tenantName]
 		if !exists {
 			var err error
-			tenant, err = d.repo.TenantCreate(ctx, &model.TenantCreate{
+			tenant, err := d.repo.TenantCreate(ctx, &model.TenantCreate{
 				Name: tenantName,
 			})
 			if err != nil {

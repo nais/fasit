@@ -34,17 +34,11 @@ SELECT
 	fd.dependencies,
 	fd.values,
 	fd.default_values,
-	fd.timeout,
-	sqlc.embed(ds)
+	fd.timeout
 FROM
-	deployments d,
-	feature_data fd,
-	deployment_statuses ds
-WHERE
-	d.feature_name = fd.name
-	AND d.version = fd.version
-	AND d.id = @id
-	AND ds.deployment_id = d.id
+	deployments d
+	JOIN feature_data fd ON d.feature_name = fd.name AND d.version = fd.version
+WHERE d.id = @id
 ;
 
 -- name: FeatureDeploymentsForEnvironment :many
@@ -60,18 +54,15 @@ SELECT DISTINCT
 	fd.values,
 	fd.default_values,
 	fd.timeout,
-	sqlc.embed(ds)
+	ds.status,
+	ds.message AS status_message,
+	ds.last_modified AS status_last_modified,
+	ds.created AS status_created
 FROM
-	deployments d,
-	environments e,
-	feature_data fd,
-	deployment_statuses ds
-WHERE
-	d.feature_name = fd.name
-	AND d.version = fd.version
-	AND e.id = @environment_id
-	AND e.labels @> d.target -- @> operator checks if the JSONB on the left contains the JSONB on the right
-	AND ds.deployment_id = d.id
+	deployments d
+	JOIN environments e ON e.id = @environment_id AND e.labels @> d.target -- @> operator checks if the JSONB on the left contains the JSONB on the right
+	JOIN feature_data fd ON d.feature_name = fd.name AND d.version = fd.version
+	LEFT JOIN deployment_statuses ds ON ds.deployment_id = d.id AND ds.environment_id = @environment_id
 ORDER BY
 	d.feature_name,
 	d.target,
@@ -119,4 +110,15 @@ ON CONFLICT (deployment_id, environment_id) DO UPDATE
 SET
 	status = EXCLUDED.status,
 	message = EXCLUDED.message
+;
+
+-- name: DeploymentStatusGet :many
+SELECT
+	*
+FROM
+  deployment_statuses
+WHERE
+  deployment_id = @deployment_id
+ORDER BY
+  environment_id ASC
 ;

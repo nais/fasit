@@ -89,10 +89,10 @@ func (r *repo) V3MissingDependencies(ctx context.Context, dependencies []string,
 type Deployment struct {
 	*model.Feature
 
-	ID      uuid.UUID               `json:"id"`
-	Created time.Time               `json:"created"`
-	Target  environment.Labels      `json:"target"`
-	Status  gensql.DeploymentStatus `json:"status"`
+	ID       uuid.UUID                 `json:"id"`
+	Created  time.Time                 `json:"created"`
+	Target   environment.Labels        `json:"target"`
+	Statuses []gensql.DeploymentStatus `json:"statuses"`
 }
 
 func (r *repo) V3DeploymentGet(ctx context.Context, deploymentID uuid.UUID) (*Deployment, error) {
@@ -117,13 +117,17 @@ func (r *repo) V3DeploymentGet(ctx context.Context, deploymentID uuid.UUID) (*De
 	if err != nil {
 		return nil, err
 	}
+	statuses, err := r.querier.DeploymentStatusGet(ctx, deploymentID)
+	if err != nil {
+		return nil, err
+	}
 
 	return &Deployment{
-		Feature: feature,
-		ID:      row.Deployment.ID,
-		Created: row.Deployment.Created.Time,
-		Target:  row.Deployment.Target,
-		Status:  row.DeploymentStatus,
+		Feature:  feature,
+		ID:       row.Deployment.ID,
+		Created:  row.Deployment.Created.Time,
+		Target:   row.Deployment.Target,
+		Statuses: statuses,
 	}, nil
 }
 
@@ -145,7 +149,16 @@ func (r *repo) V3DeploymentsForEnvironment(ctx context.Context, environmentID uu
 			ID:      row.Deployment.ID,
 			Created: row.Deployment.Created.Time,
 			Target:  row.Deployment.Target,
-			Status:  row.DeploymentStatus,
+			Statuses: []gensql.DeploymentStatus{
+				{
+					DeploymentID:  row.Deployment.ID,
+					EnvironmentID: environmentID,
+					Status:        row.Status.String,
+					Message:       row.StatusMessage.String,
+					LastModified:  row.StatusLastModified,
+					Created:       row.StatusCreated,
+				},
+			},
 		}
 	}
 
@@ -154,9 +167,7 @@ func (r *repo) V3DeploymentsForEnvironment(ctx context.Context, environmentID uu
 
 func featureFromSQL(f gensql.FeatureDeploymentsForEnvironmentRow) (*model.Feature, error) {
 	kinds := make([]string, len(f.Kinds))
-	for i, k := range f.Kinds {
-		kinds[i] = k
-	}
+	copy(kinds, f.Kinds)
 
 	fyaml, defaultValues, err := makeFeatureYAML(kinds, f.Dependencies, f.Values, f.DefaultValues, nil, f.Timeout)
 	if err != nil {
