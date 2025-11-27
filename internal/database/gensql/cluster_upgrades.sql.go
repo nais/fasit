@@ -265,7 +265,10 @@ UPDATE cluster_upgrades
 SET
 	"status" = $1::cluster_upgrades_status,
 	"upgrade_start_time" = CASE
-		WHEN ($1::TEXT = 'CONTROL_PLANE_UPGRADE' OR $1::TEXT = 'NODE_UPGRADE')
+		WHEN (
+			$1::TEXT = 'CONTROL_PLANE_UPGRADE'
+			OR $1::TEXT = 'NODE_UPGRADE'
+		)
 		AND upgrade_start_time IS NULL THEN NOW()
 		ELSE upgrade_start_time
 	END
