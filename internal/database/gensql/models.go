@@ -145,6 +145,7 @@ type ClusterUpgrade struct {
 	SlackMessageTimestamp pgtype.Text
 	SlackChannelID        pgtype.Text
 	IsAutomatic           pgtype.Bool
+	UpgradeStartTime      pgtype.Timestamptz
 }
 
 type ConfigurationsEnvironment struct {

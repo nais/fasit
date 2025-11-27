@@ -75,15 +75,16 @@ type ComplexityRoot struct {
 	}
 
 	ClusterUpgradeStatus struct {
-		Actor         func(childComplexity int) int
-		Environment   func(childComplexity int) int
-		ID            func(childComplexity int) int
-		IsAutomatic   func(childComplexity int) int
-		LastModified  func(childComplexity int) int
-		Operations    func(childComplexity int) int
-		StartTime     func(childComplexity int) int
-		UpgradeStatus func(childComplexity int) int
-		Version       func(childComplexity int) int
+		Actor            func(childComplexity int) int
+		Environment      func(childComplexity int) int
+		ID               func(childComplexity int) int
+		IsAutomatic      func(childComplexity int) int
+		LastModified     func(childComplexity int) int
+		Operations       func(childComplexity int) int
+		StartTime        func(childComplexity int) int
+		UpgradeStartTime func(childComplexity int) int
+		UpgradeStatus    func(childComplexity int) int
+		Version          func(childComplexity int) int
 	}
 
 	Computed struct {
@@ -649,6 +650,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.ClusterUpgradeStatus.StartTime(childComplexity), true
+	case "ClusterUpgradeStatus.upgradeStartTime":
+		if e.complexity.ClusterUpgradeStatus.UpgradeStartTime == nil {
+			break
+		}
+
+		return e.complexity.ClusterUpgradeStatus.UpgradeStartTime(childComplexity), true
 	case "ClusterUpgradeStatus.upgradeStatus":
 		if e.complexity.ClusterUpgradeStatus.UpgradeStatus == nil {
 			break
@@ -2448,6 +2455,7 @@ type ClusterUpgradeStatus {
 	version: String!
 	lastModified: Time!
 	startTime: Time!
+	upgradeStartTime: Time
 	operations: [EnvironmentOperation!]!
 	environment: Environment!
 	isAutomatic: Boolean
@@ -3735,6 +3743,35 @@ func (ec *executionContext) _ClusterUpgradeStatus_startTime(ctx context.Context,
 }
 
 func (ec *executionContext) fieldContext_ClusterUpgradeStatus_startTime(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ClusterUpgradeStatus",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ClusterUpgradeStatus_upgradeStartTime(ctx context.Context, field graphql.CollectedField, obj *model.ClusterUpgradeStatus) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ClusterUpgradeStatus_upgradeStartTime,
+		func(ctx context.Context) (any, error) {
+			return obj.UpgradeStartTime, nil
+		},
+		nil,
+		ec.marshalOTime2ᚖtimeᚐTime,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_ClusterUpgradeStatus_upgradeStartTime(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ClusterUpgradeStatus",
 		Field:      field,
@@ -5563,6 +5600,8 @@ func (ec *executionContext) fieldContext_Environment_clusterUpgradeHistory(_ con
 				return ec.fieldContext_ClusterUpgradeStatus_lastModified(ctx, field)
 			case "startTime":
 				return ec.fieldContext_ClusterUpgradeStatus_startTime(ctx, field)
+			case "upgradeStartTime":
+				return ec.fieldContext_ClusterUpgradeStatus_upgradeStartTime(ctx, field)
 			case "operations":
 				return ec.fieldContext_ClusterUpgradeStatus_operations(ctx, field)
 			case "environment":
@@ -5612,6 +5651,8 @@ func (ec *executionContext) fieldContext_Environment_clusterUpgradeStatus(_ cont
 				return ec.fieldContext_ClusterUpgradeStatus_lastModified(ctx, field)
 			case "startTime":
 				return ec.fieldContext_ClusterUpgradeStatus_startTime(ctx, field)
+			case "upgradeStartTime":
+				return ec.fieldContext_ClusterUpgradeStatus_upgradeStartTime(ctx, field)
 			case "operations":
 				return ec.fieldContext_ClusterUpgradeStatus_operations(ctx, field)
 			case "environment":
@@ -14389,6 +14430,8 @@ func (ec *executionContext) _ClusterUpgradeStatus(ctx context.Context, sel ast.S
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "upgradeStartTime":
+			out.Values[i] = ec._ClusterUpgradeStatus_upgradeStartTime(ctx, field, obj)
 		case "operations":
 			field := field
 

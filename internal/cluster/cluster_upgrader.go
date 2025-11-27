@@ -30,13 +30,14 @@ type ClusterUpgrader struct {
 	retryer      *Retryer
 
 	// Metrics
-	upgradeInProgress metric.Int64Counter
-	upgradeWaiting    metric.Int64Counter
-	upgradeStarted    metric.Int64Counter
-	upgradeCompleted  metric.Int64Counter
-	upgradeFailed     metric.Int64Counter
-	upgradeStuck      metric.Int64Counter
-	upgradeDuration   metric.Float64Histogram
+	upgradeInProgress  metric.Int64Counter
+	upgradeWaiting     metric.Int64Counter
+	upgradeStarted     metric.Int64Counter
+	upgradeCompleted   metric.Int64Counter
+	upgradeFailed      metric.Int64Counter
+	upgradeStuck       metric.Int64Counter
+	upgradeDuration    metric.Float64Histogram
+	metricsInitialized bool
 }
 
 func NewClusterUpgrader(repo database.Repo, log logrus.FieldLogger, clusterManager ClusterManager, meter metric.Meter, slack slack.SlackClient, slackChannel string) *ClusterUpgrader {
@@ -112,6 +113,12 @@ func NewClusterUpgrader(repo database.Repo, log logrus.FieldLogger, clusterManag
 func (c *ClusterUpgrader) Run(ctx context.Context) error {
 	c.log.Debug("starting cluster upgrader run")
 	startTime := time.Now()
+
+	// Initialize metrics on first run by counting current upgrade states
+	if err := c.initializeMetrics(ctx); err != nil {
+		c.log.WithError(err).Warn("failed to initialize metrics from database state")
+		// Don't fail the run, just log the warning
+	}
 
 	var err error
 	tenants, err := c.repo.TenantsGet(ctx)
@@ -522,9 +529,17 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		// Record successful completion metrics
 		c.upgradeCompleted.Add(ctx, 1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "complete")...))
 
-		// Record upgrade duration
-		upgradeDuration := time.Since(clusterUpgrade.StartTime).Seconds()
-		c.upgradeDuration.Record(ctx, upgradeDuration, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "total")...))
+		// Record upgrade duration (actual upgrade time, excluding WAITING period)
+		if clusterUpgrade.UpgradeStartTime != nil {
+			upgradeDuration := time.Since(*clusterUpgrade.UpgradeStartTime).Seconds()
+			c.upgradeDuration.Record(ctx, upgradeDuration, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "total")...))
+		} else {
+			// Fallback for old upgrades without UpgradeStartTime
+			c.log.WithFields(logrus.Fields{
+				"upgrade_id": clusterUpgrade.ID,
+				"version":    clusterUpgrade.Version,
+			}).Warn("upgrade completed without UpgradeStartTime, skipping duration metric")
+		}
 
 		// Update Slack with completion
 		c.updateSlackProgress(ctx, tenant.Name, env.Name, upgradeStatus)
@@ -1483,4 +1498,68 @@ func (c *ClusterUpgrader) updateSlackProgress(ctx context.Context, tenantName, e
 			"status":      string(clusterUpgrade.UpgradeStatus),
 		})
 	}
+}
+
+// initializeMetrics sets metric values based on current database state
+// This is called once on the first Run() to ensure metrics reflect reality after restart
+func (c *ClusterUpgrader) initializeMetrics(ctx context.Context) error {
+	if c.metricsInitialized {
+		return nil
+	}
+
+	c.log.Debug("initializing metrics from database state")
+
+	tenants, err := c.repo.TenantsGet(ctx)
+	if err != nil {
+		return err
+	}
+
+	waitingCount := 0
+	inProgressCount := 0
+
+	for _, tenant := range tenants {
+		envs, err := c.repo.EnvironmentsGet(ctx, tenant.ID)
+		if err != nil {
+			c.log.WithError(err).WithField("tenant", tenant.Name).Warn("failed to get environments for metric initialization")
+			continue
+		}
+
+		for _, env := range envs {
+			clusterUpgrade, err := c.repo.ClusterUpgradeGet(ctx, env.TenantID, env.ID)
+			if err != nil {
+				if !errors.Is(err, pgx.ErrNoRows) {
+					c.log.WithError(err).WithFields(logrus.Fields{
+						"tenant":      tenant.Name,
+						"environment": env.Name,
+					}).Warn("failed to get cluster upgrade for metric initialization")
+				}
+				continue
+			}
+
+			if clusterUpgrade == nil {
+				continue
+			}
+
+			switch clusterUpgrade.UpgradeStatus {
+			case model.UpgradeStatusWaiting:
+				waitingCount++
+				c.upgradeWaiting.Add(ctx, 1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "waiting")...))
+			case model.UpgradeStatusControlPlaneUpgrade, model.UpgradeStatusNodeUpgrade:
+				inProgressCount++
+				target := "control_plane"
+				if clusterUpgrade.UpgradeStatus == model.UpgradeStatusNodeUpgrade {
+					target = "nodePools"
+				}
+				c.upgradeInProgress.Add(ctx, 1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, target)...))
+			}
+		}
+	}
+
+	c.log.WithFields(logrus.Fields{
+		"waiting_upgrades":     waitingCount,
+		"in_progress_upgrades": inProgressCount,
+	}).Info("metrics initialized from database state")
+
+	c.metricsInitialized = true
+	return nil
 }

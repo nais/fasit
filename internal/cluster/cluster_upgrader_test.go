@@ -79,6 +79,28 @@ func newUpgrade(suite *testSuite) *ClusterUpgrader {
 }
 
 func (s *testSuite) mockRunTenantForLoop(upgradeStatus model.UpgradeStatus) *model.ClusterUpgradeStatus {
+	// Mock TenantsGet for metrics initialization (first call in Run())
+	s.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{
+		{
+			ID:   s.env.tenantID,
+			Name: s.env.name,
+		},
+	}, nil).Once()
+
+	// Mock EnvironmentsGet for metrics initialization
+	s.repoMock.EXPECT().EnvironmentsGet(mock.Anything, s.env.tenantID).Return([]*model.Environment{
+		{
+			ID:       s.env.id,
+			TenantID: s.env.tenantID,
+			Name:     s.env.name,
+		},
+	}, nil).Once()
+
+	// Mock ClusterUpgradeGet for metrics initialization
+	s.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, s.env.tenantID, s.env.id).Return(
+		nil, nil).Once()
+
+	// Mock TenantsGet for the main processing loop
 	s.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{
 		{
 			ID:   s.env.tenantID,
@@ -519,6 +541,25 @@ func TestRun_CreatedToWaitingTransitionWithDelay(t *testing.T) {
 	tenantDelayDays := int32(2)
 	envDelayDays := int32(1)
 
+	// Mock TenantsGet for metrics initialization
+	suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
+		ID:               suite.env.tenantID,
+		Name:             suite.env.name,
+		UpgradeDelayDays: tenantDelayDays,
+	}}, nil).Once()
+
+	// Mock EnvironmentsGet for metrics initialization
+	suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
+		ID:               suite.env.id,
+		TenantID:         suite.env.tenantID,
+		Name:             suite.env.name,
+		UpgradeDelayDays: envDelayDays,
+	}}, nil).Once()
+
+	// Mock ClusterUpgradeGet for metrics initialization
+	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(nil, nil).Once()
+
+	// Mock TenantsGet for main processing loop
 	suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
 		ID:               suite.env.tenantID,
 		Name:             suite.env.name,
@@ -589,12 +630,32 @@ func TestRun_CreatedWithoutDelaySkipsWaiting(t *testing.T) {
 	tenantDelayDays := int32(0)
 	envDelayDays := int32(0)
 
+	// Mock TenantsGet for metrics initialization
 	suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
 		ID:               suite.env.tenantID,
 		Name:             suite.env.name,
 		UpgradeDelayDays: tenantDelayDays,
 	}}, nil).Once()
 
+	// Mock EnvironmentsGet for metrics initialization
+	suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
+		ID:               suite.env.id,
+		TenantID:         suite.env.tenantID,
+		Name:             suite.env.name,
+		UpgradeDelayDays: envDelayDays,
+	}}, nil).Once()
+
+	// Mock ClusterUpgradeGet for metrics initialization
+	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(nil, nil).Once()
+
+	// Mock TenantsGet for main processing loop
+	suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
+		ID:               suite.env.tenantID,
+		Name:             suite.env.name,
+		UpgradeDelayDays: tenantDelayDays,
+	}}, nil).Once()
+
+	// Mock EnvironmentsGet for main processing loop
 	suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
 		ID:               suite.env.id,
 		TenantID:         suite.env.tenantID,
@@ -680,12 +741,32 @@ func TestRun_CreatedWithDelayButRunningOperations(t *testing.T) {
 	tenantDelayDays := int32(1)
 	envDelayDays := int32(0)
 
+	// Mock TenantsGet for metrics initialization
 	suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
 		ID:               suite.env.tenantID,
 		Name:             suite.env.name,
 		UpgradeDelayDays: tenantDelayDays,
 	}}, nil).Once()
 
+	// Mock EnvironmentsGet for metrics initialization
+	suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
+		ID:               suite.env.id,
+		TenantID:         suite.env.tenantID,
+		Name:             suite.env.name,
+		UpgradeDelayDays: envDelayDays,
+	}}, nil).Once()
+
+	// Mock ClusterUpgradeGet for metrics initialization
+	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(nil, nil).Once()
+
+	// Mock TenantsGet for main processing loop
+	suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
+		ID:               suite.env.tenantID,
+		Name:             suite.env.name,
+		UpgradeDelayDays: tenantDelayDays,
+	}}, nil).Once()
+
+	// Mock EnvironmentsGet for main processing loop
 	suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
 		ID:               suite.env.id,
 		TenantID:         suite.env.tenantID,
