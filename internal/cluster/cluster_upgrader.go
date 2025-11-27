@@ -531,7 +531,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 
 		// Record upgrade duration (actual upgrade time, excluding WAITING period)
 		if upgradeStatus.UpgradeStartTime != nil {
-			upgradeDuration := time.Since(*upgradeStatus.UpgradeStartTime).Seconds()
+			upgradeDuration := upgradeStatus.LastModified.Sub(*upgradeStatus.UpgradeStartTime).Seconds()
 			c.upgradeDuration.Record(ctx, upgradeDuration, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "total")...))
 		} else {
 			// Fallback for old upgrades without UpgradeStartTime
