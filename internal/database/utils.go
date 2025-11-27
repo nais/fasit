@@ -49,11 +49,3 @@ func nullTimeToPtr(nt pgtype.Timestamptz) *time.Time {
 	}
 	return &nt.Time
 }
-
-func nullUUIDToPtr(nu pgtype.UUID) *uuid.UUID {
-	if !nu.Valid {
-		return nil
-	}
-	uid := uuid.UUID(nu.Bytes)
-	return &uid
-}
