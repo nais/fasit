@@ -31,6 +31,7 @@ type ClusterUpgrader struct {
 
 	// Metrics
 	upgradeInProgress metric.Int64Counter
+	upgradeWaiting    metric.Int64Counter
 	upgradeStarted    metric.Int64Counter
 	upgradeCompleted  metric.Int64Counter
 	upgradeFailed     metric.Int64Counter
@@ -40,6 +41,11 @@ type ClusterUpgrader struct {
 
 func NewClusterUpgrader(repo database.Repo, log logrus.FieldLogger, clusterManager ClusterManager, meter metric.Meter, slack slack.SlackClient, slackChannel string) *ClusterUpgrader {
 	counter, err := meter.Int64Counter("cluster_upgrade_in_progress", metric.WithDescription("Cluster upgrades currently in progress"))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	upgradeWaiting, err := meter.Int64Counter("cluster_upgrade_waiting", metric.WithDescription("Cluster upgrades currently waiting due to delay configuration"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -91,6 +97,7 @@ func NewClusterUpgrader(repo database.Repo, log logrus.FieldLogger, clusterManag
 		repo:              repo,
 		client:            clusterManager,
 		upgradeInProgress: counter,
+		upgradeWaiting:    upgradeWaiting,
 		upgradeStarted:    upgradeStarted,
 		upgradeCompleted:  upgradeCompleted,
 		upgradeFailed:     upgradeFailed,
@@ -312,7 +319,8 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 			"environment":    env.Name,
 		}).Info("delay period satisfied, starting control plane upgrade")
 
-		// Record upgrade started metric
+		// Record metrics: decrement waiting, increment started
+		c.upgradeWaiting.Add(ctx, -1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "waiting")...))
 		c.upgradeStarted.Add(ctx, 1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "control_plane")...))
 
 		updatedStatus, err := c.controlPlaneUpgrade(ctx, env, clusterUpgrade, tenant.Name, projectID)
@@ -390,6 +398,9 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 					log.WithError(err).Error("failed to update upgrade status to WAITING")
 					return err
 				}
+
+				// Record waiting metric
+				c.upgradeWaiting.Add(ctx, 1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "waiting")...))
 
 				log.WithFields(logrus.Fields{
 					"upgrade_id":   clusterUpgrade.ID,
