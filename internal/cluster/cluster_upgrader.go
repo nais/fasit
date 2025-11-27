@@ -530,14 +530,14 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		c.upgradeCompleted.Add(ctx, 1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "complete")...))
 
 		// Record upgrade duration (actual upgrade time, excluding WAITING period)
-		if clusterUpgrade.UpgradeStartTime != nil {
-			upgradeDuration := time.Since(*clusterUpgrade.UpgradeStartTime).Seconds()
+		if upgradeStatus.UpgradeStartTime != nil {
+			upgradeDuration := time.Since(*upgradeStatus.UpgradeStartTime).Seconds()
 			c.upgradeDuration.Record(ctx, upgradeDuration, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "total")...))
 		} else {
 			// Fallback for old upgrades without UpgradeStartTime
 			c.log.WithFields(logrus.Fields{
-				"upgrade_id": clusterUpgrade.ID,
-				"version":    clusterUpgrade.Version,
+				"upgrade_id": upgradeStatus.ID,
+				"version":    upgradeStatus.Version,
 			}).Warn("upgrade completed without UpgradeStartTime, skipping duration metric")
 		}
 
