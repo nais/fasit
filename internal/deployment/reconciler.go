@@ -61,8 +61,7 @@ type Reconciler struct {
 	log              logrus.FieldLogger
 	reconcileTrigger <-chan ReconcileTriggerEvent
 
-	lock    sync.Mutex
-	running bool
+	lock sync.Mutex
 
 	// Metrics
 	reconcileTime  metric.Int64Histogram
