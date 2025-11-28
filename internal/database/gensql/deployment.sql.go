@@ -110,8 +110,10 @@ SELECT
 	fd.timeout
 FROM
 	deployments d
-	JOIN feature_data fd ON d.feature_name = fd.name AND d.version = fd.version
-WHERE d.id = $1
+	JOIN feature_data fd ON d.feature_name = fd.name
+	AND d.version = fd.version
+WHERE
+	d.id = $1
 `
 
 type DeploymentGetRow struct {
@@ -189,11 +191,11 @@ const deploymentStatusGet = `-- name: DeploymentStatusGet :many
 SELECT
 	deployment_id, environment_id, status, message, last_modified, created
 FROM
-  deployment_statuses
+	deployment_statuses
 WHERE
-  deployment_id = $1
+	deployment_id = $1
 ORDER BY
-  environment_id ASC
+	environment_id ASC
 `
 
 func (q *Queries) DeploymentStatusGet(ctx context.Context, deploymentID uuid.UUID) ([]DeploymentStatus, error) {
@@ -278,9 +280,12 @@ SELECT DISTINCT
 	ds.created AS status_created
 FROM
 	deployments d
-	JOIN environments e ON e.id = $1 AND e.labels @> d.target -- @> operator checks if the JSONB on the left contains the JSONB on the right
-	JOIN feature_data fd ON d.feature_name = fd.name AND d.version = fd.version
-	LEFT JOIN deployment_statuses ds ON ds.deployment_id = d.id AND ds.environment_id = $1
+	JOIN environments e ON e.id = $1
+	AND e.labels @> d.target -- @> operator checks if the JSONB on the left contains the JSONB on the right
+	JOIN feature_data fd ON d.feature_name = fd.name
+	AND d.version = fd.version
+	LEFT JOIN deployment_statuses ds ON ds.deployment_id = d.id
+	AND ds.environment_id = $1
 ORDER BY
 	d.feature_name,
 	d.target,
