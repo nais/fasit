@@ -351,7 +351,7 @@ func (d *Db) createEnv(ctx context.Context, tenant *model.Tenant, name string, l
 	}
 }
 
-// createTenantsAndEnvironments creates a set of tenanats and environments.
+// createTenantsAndEnvironments creates a set of tenants and environments.
 func (d *Db) createTenantsAndEnvironments(ctx context.Context, tenantsAndEnvs map[string]environment.Labels) {
 	d.t.Helper()
 
