@@ -1563,7 +1563,7 @@ func (c *ClusterUpgrader) initializeMetrics(ctx context.Context) error {
 				inProgressCount++
 				target := "control_plane"
 				if clusterUpgrade.UpgradeStatus == model.UpgradeStatusNodeUpgrade {
-					target = "nodePools"
+					target = "node_pools"
 				}
 				c.upgradeInProgress.Add(ctx, 1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, target)...))
 			}
