@@ -25,6 +25,7 @@ type ClusterUpgraderRepo interface {
 	ClusterUpgradeGetByID(ctx context.Context, id uuid.UUID) (*model.ClusterUpgradeStatus, error)
 	ClusterOperationsGetByID(ctx context.Context, id uuid.UUID) (*model.EnvironmentOperation, error)
 	ClusterOperationsGetByUpgradeID(ctx context.Context, upgradeID uuid.UUID) ([]*model.EnvironmentOperation, error)
+	ClusterOperationsGetDanglingForEnvironment(ctx context.Context, tenantID, envID uuid.UUID) (map[uuid.UUID][]*model.EnvironmentOperation, error)
 	SetClusterUpgradesSlackMessage(ctx context.Context, id uuid.UUID, slackMessageTS, channelID string) (*model.ClusterUpgradeStatus, error)
 }
 
@@ -124,6 +125,25 @@ func (r *repo) ClusterOperationsGetByUpgradeID(ctx context.Context, upgradeID uu
 	}
 
 	return ops, nil
+}
+
+func (r *repo) ClusterOperationsGetDanglingForEnvironment(ctx context.Context, tenantID, envID uuid.UUID) (map[uuid.UUID][]*model.EnvironmentOperation, error) {
+	clusterOperations, err := r.querier.ClusterOperationsGetDanglingForEnvironment(ctx, gensql.ClusterOperationsGetDanglingForEnvironmentParams{
+		Tenantid: tenantID,
+		Envid:    envID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Group operations by upgrade_id for easier processing
+	opsByUpgrade := make(map[uuid.UUID][]*model.EnvironmentOperation)
+
+	for _, op := range clusterOperations {
+		opsByUpgrade[op.UpgradeID] = append(opsByUpgrade[op.UpgradeID], clusterOperationFromSQL(op))
+	}
+
+	return opsByUpgrade, nil
 }
 
 func (r *repo) ClusterUpgradeGetByID(ctx context.Context, id uuid.UUID) (*model.ClusterUpgradeStatus, error) {

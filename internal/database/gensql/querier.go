@@ -21,6 +21,9 @@ type Querier interface {
 	ClusterOperationsGet(ctx context.Context, arg ClusterOperationsGetParams) ([]ClusterOperation, error)
 	ClusterOperationsGetByID(ctx context.Context, id uuid.UUID) (ClusterOperation, error)
 	ClusterOperationsGetByUpgradeID(ctx context.Context, upgradeID uuid.UUID) ([]ClusterOperation, error)
+	// Get all RUNNING operations for completed (DONE/FAILED) upgrades in an environment
+	// These are "dangling" operations that should be updated to their final state
+	ClusterOperationsGetDanglingForEnvironment(ctx context.Context, arg ClusterOperationsGetDanglingForEnvironmentParams) ([]ClusterOperation, error)
 	ClusterUpgradesCreate(ctx context.Context, arg ClusterUpgradesCreateParams) (ClusterUpgrade, error)
 	ClusterUpgradesGet(ctx context.Context, arg ClusterUpgradesGetParams) ([]ClusterUpgrade, error)
 	ClusterUpgradesGetByID(ctx context.Context, id uuid.UUID) (ClusterUpgrade, error)

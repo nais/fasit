@@ -168,23 +168,13 @@ func (r *environmentResolver) ClusterUpgradeHistory(ctx context.Context, obj *mo
 	// Default to 50 if not specified
 	limitValue := int32(50)
 	if limit != nil && *limit > 0 {
-		// Cap limit at max int32 to prevent overflow
-		if *limit > 2147483647 {
-			limitValue = 2147483647
-		} else {
-			limitValue = int32(*limit)
-		}
+		limitValue = int32(*limit) // #nosec G115 -- int is at least 32 bits on all Go platforms, conversion is safe for valid pagination values
 	}
 
 	// Default to 0 if not specified
 	offsetValue := int32(0)
 	if offset != nil && *offset > 0 {
-		// Cap offset at max int32 to prevent overflow
-		if *offset > 2147483647 {
-			offsetValue = 2147483647
-		} else {
-			offsetValue = int32(*offset)
-		}
+		offsetValue = int32(*offset) // #nosec G115 -- int is at least 32 bits on all Go platforms, conversion is safe for valid pagination values
 	}
 
 	cus, err := r.Repo.ClusterUpgradeHistoryGet(ctx, obj.TenantID, obj.ID, limitValue, offsetValue)

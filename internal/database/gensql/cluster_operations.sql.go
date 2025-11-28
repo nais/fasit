@@ -294,3 +294,62 @@ func (q *Queries) ClusterOperationsGetByUpgradeID(ctx context.Context, upgradeID
 	}
 	return items, nil
 }
+
+const clusterOperationsGetDanglingForEnvironment = `-- name: ClusterOperationsGetDanglingForEnvironment :many
+SELECT
+	co.id, co.operation_name, co.tenant_id, co.environment_id, co.upgrade_id, co.status, co.type, co.detail, co.target, co.nodes_total, co.nodes_failed, co.nodes_completed, co.nodes_done, co.node_pdb_delay_seconds, co.start_time, co.last_modified
+FROM
+	cluster_operations co
+	INNER JOIN cluster_upgrades cu ON co.upgrade_id = cu.id
+WHERE
+	cu.tenant_id = $1
+	AND cu.environment_id = $2
+	AND cu.status IN ('DONE', 'FAILED')
+	AND co.status = 'RUNNING'
+ORDER BY
+	co.start_time DESC
+`
+
+type ClusterOperationsGetDanglingForEnvironmentParams struct {
+	Tenantid uuid.UUID
+	Envid    uuid.UUID
+}
+
+// Get all RUNNING operations for completed (DONE/FAILED) upgrades in an environment
+// These are "dangling" operations that should be updated to their final state
+func (q *Queries) ClusterOperationsGetDanglingForEnvironment(ctx context.Context, arg ClusterOperationsGetDanglingForEnvironmentParams) ([]ClusterOperation, error) {
+	rows, err := q.db.Query(ctx, clusterOperationsGetDanglingForEnvironment, arg.Tenantid, arg.Envid)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ClusterOperation{}
+	for rows.Next() {
+		var i ClusterOperation
+		if err := rows.Scan(
+			&i.ID,
+			&i.OperationName,
+			&i.TenantID,
+			&i.EnvironmentID,
+			&i.UpgradeID,
+			&i.Status,
+			&i.Type,
+			&i.Detail,
+			&i.Target,
+			&i.NodesTotal,
+			&i.NodesFailed,
+			&i.NodesCompleted,
+			&i.NodesDone,
+			&i.NodePdbDelaySeconds,
+			&i.StartTime,
+			&i.LastModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

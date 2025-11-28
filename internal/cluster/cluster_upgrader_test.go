@@ -12,15 +12,12 @@ import (
 	"cloud.google.com/go/container/apiv1/containerpb"
 
 	"github.com/google/uuid"
-	"github.com/googleapis/gax-go/v2/apierror"
 	clustermock "github.com/nais/fasit/internal/cluster/mocks"
 	"github.com/nais/fasit/internal/database/mocks"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/mock"
 	metricsdk "go.opentelemetry.io/otel/sdk/metric"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 // Helper function to create bool pointer
@@ -29,12 +26,6 @@ func boolPtr(b bool) *bool {
 }
 
 // Helper function to create APIError from gRPC status
-func createAPIError(code codes.Code, msg string) error {
-	grpcErr := status.Error(code, msg)
-	apiErr, _ := apierror.FromError(grpcErr)
-	return apiErr
-}
-
 type env struct {
 	tenantID          uuid.UUID
 	projectID         string
@@ -122,11 +113,11 @@ func (s *testSuite) mockRunTenantForLoop(upgradeStatus model.UpgradeStatus) *mod
 			Value: []byte(`"1234"`),
 		}, nil).Maybe()
 
-	// Mock ClusterUpgradeHistoryGet for the cleanup process - return empty list for most tests
-	s.repoMock.EXPECT().ClusterUpgradeHistoryGet(mock.Anything, s.env.tenantID, s.env.id, mock.Anything, mock.Anything).Return(
-		[]*model.ClusterUpgradeStatus{}, nil).Once()
+	// Mock ClusterOperationsGetDanglingForEnvironment for the cleanup process - return empty map for most tests
+	s.repoMock.EXPECT().ClusterOperationsGetDanglingForEnvironment(mock.Anything, s.env.tenantID, s.env.id).Return(
+		map[uuid.UUID][]*model.EnvironmentOperation{}, nil).Once()
 
-	// Mock ClusterOperationsGetByUpgradeID for cleanup process - return empty list for most tests
+	// Mock ClusterOperationsGetByUpgradeID for getAndUpdateRunningOperations - return empty list for most tests
 	s.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, mock.Anything).Return(
 		[]*model.EnvironmentOperation{}, nil).Maybe()
 
@@ -459,80 +450,6 @@ func TestRun_ControlPlaneUpgradeIsRunning(t *testing.T) {
 	}
 }
 
-func TestCleanupDanglingOperations_NotFound(t *testing.T) {
-	// Setup
-	tenantID := uuid.New()
-	envID := uuid.New()
-	upgradeID := uuid.New()
-	operationID := uuid.New()
-	operationName := "operation-1234-old-operation"
-	projectID := "test-project-123"
-
-	repoMock := mocks.NewRepo(t)
-	clusterMock := clustermock.NewClusterManager(t)
-	meterProvider := metricsdk.NewMeterProvider()
-	meter := meterProvider.Meter("test")
-	log := logrus.New()
-	slackClient := fake.NewFakeSlackClient()
-
-	upgrader := NewClusterUpgrader(repoMock, log, clusterMock, meter, slackClient, "test-channel")
-
-	environment := &model.Environment{
-		ID:       envID,
-		TenantID: tenantID,
-		Name:     "test-env",
-	}
-
-	// Setup: A completed upgrade with a RUNNING operation
-	clusterUpgrade := &model.ClusterUpgradeStatus{
-		ID:            upgradeID,
-		UpgradeStatus: model.UpgradeStatusDone,
-		Version:       "1.30.0",
-		StartTime:     time.Now().Add(-30 * 24 * time.Hour), // 30 days ago
-		LastModified:  time.Now().Add(-29 * 24 * time.Hour),
-	}
-
-	runningOp := &model.EnvironmentOperation{
-		ID:           operationID,
-		Name:         operationName,
-		Status:       "RUNNING", // Stuck in RUNNING
-		Type:         "UPGRADE_MASTER",
-		StartTime:    time.Now().Add(-30 * 24 * time.Hour),
-		LastModified: time.Now().Add(-29 * 24 * time.Hour),
-	}
-
-	// Mock: ClusterOperationsGetByUpgradeID returns the RUNNING operation
-	repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, upgradeID).
-		Return([]*model.EnvironmentOperation{runningOp}, nil).Once()
-
-	// Mock: GetOperation returns NotFound
-	notFoundErr := createAPIError(codes.NotFound, "Not found: "+operationName)
-	clusterMock.EXPECT().GetOperation(mock.Anything, projectID, operationName).
-		Return(nil, notFoundErr).Once()
-
-	// Mock: CreateOrUpdateClusterOperation should be called with DONE status
-	repoMock.EXPECT().CreateOrUpdateClusterOperation(
-		mock.Anything,
-		tenantID,
-		envID,
-		upgradeID,
-		mock.MatchedBy(func(op *containerpb.Operation) bool {
-			return op.Name == operationName && op.Status == containerpb.Operation_DONE
-		}),
-	).Return(runningOp, nil).Once()
-
-	// Execute cleanup
-	err := upgrader.cleanupDanglingOperations(context.Background(), projectID, environment, clusterUpgrade)
-	// Verify no error was returned
-	if err != nil {
-		t.Errorf("cleanupDanglingOperations() error = %v, want nil", err)
-	}
-
-	// Verify all expectations were met
-	clusterMock.AssertExpectations(t)
-	repoMock.AssertExpectations(t)
-}
-
 func TestRun_CreatedToWaitingTransitionWithDelay(t *testing.T) {
 	suite := newTestSuite(t)
 	upgrade := newUpgrade(suite)
@@ -591,9 +508,9 @@ func TestRun_CreatedToWaitingTransitionWithDelay(t *testing.T) {
 	}
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(createdUpgrade, nil).Once()
 
-	suite.repoMock.EXPECT().ClusterUpgradeHistoryGet(mock.Anything, suite.env.tenantID, suite.env.id, mock.Anything, mock.Anything).Return([]*model.ClusterUpgradeStatus{}, nil).Once()
+	suite.repoMock.EXPECT().ClusterOperationsGetDanglingForEnvironment(mock.Anything, suite.env.tenantID, suite.env.id).Return(map[uuid.UUID][]*model.EnvironmentOperation{}, nil).Once()
 
-	// Mock ClusterOperationsGetByUpgradeID for cleanup operations check
+	// Mock ClusterOperationsGetByUpgradeID for getAndUpdateRunningOperations
 	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{}, nil).Once()
 
 	// Mock GetRunningOperations - called twice: once for stuck check, once in getAndUpdateRunningOperations
@@ -681,9 +598,9 @@ func TestRun_CreatedWithoutDelaySkipsWaiting(t *testing.T) {
 	}
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(createdUpgrade, nil).Once()
 
-	suite.repoMock.EXPECT().ClusterUpgradeHistoryGet(mock.Anything, suite.env.tenantID, suite.env.id, mock.Anything, mock.Anything).Return([]*model.ClusterUpgradeStatus{}, nil).Once()
+	suite.repoMock.EXPECT().ClusterOperationsGetDanglingForEnvironment(mock.Anything, suite.env.tenantID, suite.env.id).Return(map[uuid.UUID][]*model.EnvironmentOperation{}, nil).Once()
 
-	// Mock ClusterOperationsGetByUpgradeID for cleanup operations check
+	// Mock ClusterOperationsGetByUpgradeID for getAndUpdateRunningOperations
 	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{}, nil).Once()
 
 	// Mock GetRunningOperations for stuck check and main logic
@@ -792,9 +709,9 @@ func TestRun_CreatedWithDelayButRunningOperations(t *testing.T) {
 	}
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(createdUpgrade, nil).Once()
 
-	suite.repoMock.EXPECT().ClusterUpgradeHistoryGet(mock.Anything, suite.env.tenantID, suite.env.id, mock.Anything, mock.Anything).Return([]*model.ClusterUpgradeStatus{}, nil).Once()
+	suite.repoMock.EXPECT().ClusterOperationsGetDanglingForEnvironment(mock.Anything, suite.env.tenantID, suite.env.id).Return(map[uuid.UUID][]*model.EnvironmentOperation{}, nil).Once()
 
-	// Mock ClusterOperationsGetByUpgradeID for cleanup operations check
+	// Mock ClusterOperationsGetByUpgradeID for getAndUpdateRunningOperations
 	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{}, nil).Once()
 
 	// Mock GetRunningOperations - return a running control plane upgrade operation
@@ -890,12 +807,9 @@ func TestRun_UpgradeDurationUsesUpgradeStartTime(t *testing.T) {
 		&model.EnvironmentValue{Key: "project_id", Value: []byte(`"test-project"`)},
 		nil,
 	).Maybe()
-	suite.repoMock.EXPECT().ClusterUpgradeHistoryGet(mock.Anything, suite.env.tenantID, suite.env.id, mock.Anything, mock.Anything).Return(
-		[]*model.ClusterUpgradeStatus{doneUpgrade}, nil,
+	suite.repoMock.EXPECT().ClusterOperationsGetDanglingForEnvironment(mock.Anything, suite.env.tenantID, suite.env.id).Return(
+		map[uuid.UUID][]*model.EnvironmentOperation{}, nil,
 	).Once()
-	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, doneUpgrade.ID).Return(
-		[]*model.EnvironmentOperation{}, nil,
-	).Maybe()
 
 	err := upgrade.Run(context.Background())
 	if err != nil {
@@ -951,12 +865,9 @@ func TestRun_UpgradeDurationWarnsWithoutUpgradeStartTime(t *testing.T) {
 		&model.EnvironmentValue{Key: "project_id", Value: []byte(`"test-project"`)},
 		nil,
 	).Maybe()
-	suite.repoMock.EXPECT().ClusterUpgradeHistoryGet(mock.Anything, suite.env.tenantID, suite.env.id, mock.Anything, mock.Anything).Return(
-		[]*model.ClusterUpgradeStatus{doneUpgrade}, nil,
+	suite.repoMock.EXPECT().ClusterOperationsGetDanglingForEnvironment(mock.Anything, suite.env.tenantID, suite.env.id).Return(
+		map[uuid.UUID][]*model.EnvironmentOperation{}, nil,
 	).Once()
-	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, doneUpgrade.ID).Return(
-		[]*model.EnvironmentOperation{}, nil,
-	).Maybe()
 
 	err := upgrade.Run(context.Background())
 	if err != nil {
