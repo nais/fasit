@@ -115,7 +115,7 @@ func TestReconcile(t *testing.T) {
 					"nav:dev:monitoring-crds:v1",
 					"nav:management:monitoring-crds:v1",
 					"nav:dev:monitoring:v1",
-					"nav:managment:monitoring:v1",
+					"nav:management:monitoring:v1",
 				},
 			},
 		},
@@ -351,7 +351,7 @@ func (d *Db) createEnv(ctx context.Context, tenant *model.Tenant, name string, l
 	}
 }
 
-// createTenantsAndEnvironments creates a set of tenanats and environments.
+// createTenantsAndEnvironments creates a set of tenants and environments.
 func (d *Db) createTenantsAndEnvironments(ctx context.Context, tenantsAndEnvs map[string]environment.Labels) {
 	d.t.Helper()
 

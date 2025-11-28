@@ -166,8 +166,8 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, environment *mode
 	// TODO: move health check further down the line so that we can report unhealthy status for each deployment?
 	if time.Since(health.ReportedAt) > 3*time.Minute {
 		r.log.WithFields(logrus.Fields{
-			"tenant":     environment.TenantName,
-			"enviroment": environment.Name,
+			"tenant":      environment.TenantName,
+			"environment": environment.Name,
 		}).Debug("naisd is unhealthy - skip reconcile")
 		return nil
 	}
@@ -184,9 +184,9 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, environment *mode
 		if err := r.repo.V3InsertEnvironmentFeature(ctx, environment.ID, deployment.ID, deployment.Name, deployment.Version); err != nil {
 
 			r.log.WithError(err).WithFields(logrus.Fields{
-				"environment_id": environment.ID,
-				"deployment_id":  deployment.ID,
-				"feature_name":   deployment.Name,
+				"environment_id":  environment.ID,
+				"deployment_id":   deployment.ID,
+				"feature_name":    deployment.Name,
 				"feature_version": deployment.Version,
 			}).Error("insert environment feature")
 
