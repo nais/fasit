@@ -12,6 +12,7 @@ type ClusterUpgradeStatus struct {
 	Version               string        `json:"version"`
 	LastModified          time.Time     `json:"lastModified"`
 	StartTime             time.Time     `json:"startTime"`
+	UpgradeStartTime      *time.Time    `json:"upgradeStartTime"`
 	SlackMessageTimestamp string        `json:"slackMessageTimestamp"`
 	SlackChannelID        string        `json:"slackChannelID"`
 	IsAutomatic           *bool         `json:"isAutomatic"`

@@ -41,7 +41,15 @@ RETURNING
 -- name: ClusterUpgradesUpdateStatus :one
 UPDATE cluster_upgrades
 SET
-	"status" = @status
+	"status" = @status::cluster_upgrades_status,
+	"upgrade_start_time" = CASE
+		WHEN (
+			@status::TEXT = 'CONTROL_PLANE_UPGRADE'
+			OR @status::TEXT = 'NODE_UPGRADE'
+		)
+		AND upgrade_start_time IS NULL THEN NOW()
+		ELSE upgrade_start_time
+	END
 WHERE
 	"id" = @id
 RETURNING

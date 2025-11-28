@@ -21,7 +21,7 @@ INSERT INTO
 VALUES
 	($1, $2, $3, $4)
 RETURNING
-	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id, is_automatic
+	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id, is_automatic, upgrade_start_time
 `
 
 type ClusterUpgradesCreateParams struct {
@@ -50,13 +50,14 @@ func (q *Queries) ClusterUpgradesCreate(ctx context.Context, arg ClusterUpgrades
 		&i.SlackMessageTimestamp,
 		&i.SlackChannelID,
 		&i.IsAutomatic,
+		&i.UpgradeStartTime,
 	)
 	return i, err
 }
 
 const clusterUpgradesGet = `-- name: ClusterUpgradesGet :many
 SELECT
-	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id, is_automatic
+	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id, is_automatic, upgrade_start_time
 FROM
 	cluster_upgrades
 WHERE
@@ -94,6 +95,7 @@ func (q *Queries) ClusterUpgradesGet(ctx context.Context, arg ClusterUpgradesGet
 			&i.SlackMessageTimestamp,
 			&i.SlackChannelID,
 			&i.IsAutomatic,
+			&i.UpgradeStartTime,
 		); err != nil {
 			return nil, err
 		}
@@ -107,7 +109,7 @@ func (q *Queries) ClusterUpgradesGet(ctx context.Context, arg ClusterUpgradesGet
 
 const clusterUpgradesGetByID = `-- name: ClusterUpgradesGetByID :one
 SELECT
-	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id, is_automatic
+	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id, is_automatic, upgrade_start_time
 FROM
 	cluster_upgrades
 WHERE
@@ -128,13 +130,14 @@ func (q *Queries) ClusterUpgradesGetByID(ctx context.Context, id uuid.UUID) (Clu
 		&i.SlackMessageTimestamp,
 		&i.SlackChannelID,
 		&i.IsAutomatic,
+		&i.UpgradeStartTime,
 	)
 	return i, err
 }
 
 const clusterUpgradesGetByVersion = `-- name: ClusterUpgradesGetByVersion :one
 SELECT
-	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id, is_automatic
+	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id, is_automatic, upgrade_start_time
 FROM
 	cluster_upgrades
 WHERE
@@ -167,13 +170,14 @@ func (q *Queries) ClusterUpgradesGetByVersion(ctx context.Context, arg ClusterUp
 		&i.SlackMessageTimestamp,
 		&i.SlackChannelID,
 		&i.IsAutomatic,
+		&i.UpgradeStartTime,
 	)
 	return i, err
 }
 
 const clusterUpgradesHistoryGetByEnvironmentID = `-- name: ClusterUpgradesHistoryGetByEnvironmentID :many
 SELECT
-	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id, is_automatic
+	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id, is_automatic, upgrade_start_time
 FROM
 	cluster_upgrades
 WHERE
@@ -208,6 +212,7 @@ func (q *Queries) ClusterUpgradesHistoryGetByEnvironmentID(ctx context.Context, 
 			&i.SlackMessageTimestamp,
 			&i.SlackChannelID,
 			&i.IsAutomatic,
+			&i.UpgradeStartTime,
 		); err != nil {
 			return nil, err
 		}
@@ -227,7 +232,7 @@ SET
 WHERE
 	"id" = $3
 RETURNING
-	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id, is_automatic
+	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id, is_automatic, upgrade_start_time
 `
 
 type ClusterUpgradesSetSlackMessageParams struct {
@@ -250,6 +255,7 @@ func (q *Queries) ClusterUpgradesSetSlackMessage(ctx context.Context, arg Cluste
 		&i.SlackMessageTimestamp,
 		&i.SlackChannelID,
 		&i.IsAutomatic,
+		&i.UpgradeStartTime,
 	)
 	return i, err
 }
@@ -257,11 +263,19 @@ func (q *Queries) ClusterUpgradesSetSlackMessage(ctx context.Context, arg Cluste
 const clusterUpgradesUpdateStatus = `-- name: ClusterUpgradesUpdateStatus :one
 UPDATE cluster_upgrades
 SET
-	"status" = $1
+	"status" = $1::cluster_upgrades_status,
+	"upgrade_start_time" = CASE
+		WHEN (
+			$1::TEXT = 'CONTROL_PLANE_UPGRADE'
+			OR $1::TEXT = 'NODE_UPGRADE'
+		)
+		AND upgrade_start_time IS NULL THEN NOW()
+		ELSE upgrade_start_time
+	END
 WHERE
 	"id" = $2
 RETURNING
-	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id, is_automatic
+	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id, is_automatic, upgrade_start_time
 `
 
 type ClusterUpgradesUpdateStatusParams struct {
@@ -283,6 +297,7 @@ func (q *Queries) ClusterUpgradesUpdateStatus(ctx context.Context, arg ClusterUp
 		&i.SlackMessageTimestamp,
 		&i.SlackChannelID,
 		&i.IsAutomatic,
+		&i.UpgradeStartTime,
 	)
 	return i, err
 }

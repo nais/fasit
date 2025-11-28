@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"strings"
+	"time"
 
 	"cloud.google.com/go/container/apiv1/containerpb"
 	"github.com/google/uuid"
@@ -50,12 +51,18 @@ func clusterUpgradeFromSQL(p gensql.ClusterUpgrade) *model.ClusterUpgradeStatus 
 		isAutomatic = &p.IsAutomatic.Bool
 	}
 
+	var upgradeStartTime *time.Time
+	if p.UpgradeStartTime.Valid {
+		upgradeStartTime = &p.UpgradeStartTime.Time
+	}
+
 	return &model.ClusterUpgradeStatus{
 		ID:                    p.ID,
 		Version:               p.Version,
 		UpgradeStatus:         model.UpgradeStatus(p.Status),
 		LastModified:          p.LastModified.Time,
 		StartTime:             p.StartTime.Time,
+		UpgradeStartTime:      upgradeStartTime,
 		EnvironmentID:         p.EnvironmentID,
 		SlackMessageTimestamp: p.SlackMessageTimestamp.String,
 		SlackChannelID:        p.SlackChannelID.String,
