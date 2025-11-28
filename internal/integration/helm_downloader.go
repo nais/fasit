@@ -37,9 +37,11 @@ func dirChart(name string, version string) (*bytes.Buffer, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	filename := name + "-" + version
-	stat, err := root.Stat(filename)
+	file, err := root.Open(name + "-" + version)
+	if err != nil {
+		return nil, fmt.Errorf("open file: %w", err)
+	}
+	stat, err := file.Stat()
 	if err != nil {
 		return nil, fmt.Errorf("stat file: %w", err)
 	}
@@ -47,13 +49,8 @@ func dirChart(name string, version string) (*bytes.Buffer, error) {
 		return nil, fmt.Errorf("not a directory")
 	}
 
-	absPath, err := root.Open(filename)
-	if err != nil {
-		return nil, fmt.Errorf("open file: %w", err)
-	}
-
 	var buf bytes.Buffer
-	if err := tarGz(name, &buf, absPath.Name()); err != nil {
+	if err := tarGz(name, &buf, file.Name()); err != nil {
 		return nil, err
 	}
 
