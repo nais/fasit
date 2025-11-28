@@ -115,7 +115,7 @@ func TestReconcile(t *testing.T) {
 					"nav:dev:monitoring-crds:v1",
 					"nav:management:monitoring-crds:v1",
 					"nav:dev:monitoring:v1",
-					"nav:managment:monitoring:v1",
+					"nav:management:monitoring:v1",
 				},
 			},
 		},
