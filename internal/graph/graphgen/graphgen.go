@@ -143,7 +143,7 @@ type ComplexityRoot struct {
 	Environment struct {
 		AuditLog              func(childComplexity int, featureName *string) int
 		AutoUpgrade           func(childComplexity int) int
-		ClusterUpgradeHistory func(childComplexity int) int
+		ClusterUpgradeHistory func(childComplexity int, limit *int, offset *int) int
 		ClusterUpgradeStatus  func(childComplexity int) int
 		Created               func(childComplexity int) int
 		Description           func(childComplexity int) int
@@ -466,7 +466,7 @@ type EnvironmentResolver interface {
 	Features(ctx context.Context, obj *model.Environment) ([]*model.Feature, error)
 	Feature(ctx context.Context, obj *model.Environment, name string) (*model.Feature, error)
 
-	ClusterUpgradeHistory(ctx context.Context, obj *model.Environment) ([]*model.ClusterUpgradeStatus, error)
+	ClusterUpgradeHistory(ctx context.Context, obj *model.Environment, limit *int, offset *int) ([]*model.ClusterUpgradeStatus, error)
 	ClusterUpgradeStatus(ctx context.Context, obj *model.Environment) (*model.ClusterUpgradeStatus, error)
 	Versions(ctx context.Context, obj *model.Environment) (*model.EnvironmentVersions, error)
 	Labels(ctx context.Context, obj *model.Environment) ([]*model.EnvironmentLabel, error)
@@ -841,7 +841,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			break
 		}
 
-		return e.complexity.Environment.ClusterUpgradeHistory(childComplexity), true
+		args, err := ec.field_Environment_clusterUpgradeHistory_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Environment.ClusterUpgradeHistory(childComplexity, args["limit"].(*int), args["offset"].(*int)), true
 	case "Environment.clusterUpgradeStatus":
 		if e.complexity.Environment.ClusterUpgradeStatus == nil {
 			break
@@ -2562,7 +2567,7 @@ type Environment {
 	feature(name: String!): Feature!
 	reconcile: Boolean!
 	autoUpgrade: Boolean!
-	clusterUpgradeHistory: [ClusterUpgradeStatus!]!
+	clusterUpgradeHistory(limit: Int, offset: Int): [ClusterUpgradeStatus!]!
 	clusterUpgradeStatus: ClusterUpgradeStatus
 	versions: EnvironmentVersions
 	labels: [EnvironmentLabel!]!
@@ -2987,6 +2992,22 @@ func (ec *executionContext) field_Environment_auditLog_args(ctx context.Context,
 		return nil, err
 	}
 	args["featureName"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Environment_clusterUpgradeHistory_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["offset"] = arg1
 	return args, nil
 }
 
@@ -5601,7 +5622,8 @@ func (ec *executionContext) _Environment_clusterUpgradeHistory(ctx context.Conte
 		field,
 		ec.fieldContext_Environment_clusterUpgradeHistory,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Environment().ClusterUpgradeHistory(ctx, obj)
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Environment().ClusterUpgradeHistory(ctx, obj, fc.Args["limit"].(*int), fc.Args["offset"].(*int))
 		},
 		nil,
 		ec.marshalNClusterUpgradeStatus2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐClusterUpgradeStatusᚄ,
@@ -5610,7 +5632,7 @@ func (ec *executionContext) _Environment_clusterUpgradeHistory(ctx context.Conte
 	)
 }
 
-func (ec *executionContext) fieldContext_Environment_clusterUpgradeHistory(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Environment_clusterUpgradeHistory(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Environment",
 		Field:      field,
@@ -5641,6 +5663,17 @@ func (ec *executionContext) fieldContext_Environment_clusterUpgradeHistory(_ con
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ClusterUpgradeStatus", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Environment_clusterUpgradeHistory_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -21365,6 +21398,24 @@ func (ec *executionContext) marshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ct
 	_ = sel
 	_ = ctx
 	res := graph.MarshalUUID(*v)
+	return res
+}
+
+func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v any) (*int, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalInt(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.SelectionSet, v *int) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	_ = sel
+	_ = ctx
+	res := graphql.MarshalInt(*v)
 	return res
 }
 

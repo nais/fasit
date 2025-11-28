@@ -20,7 +20,7 @@ type ClusterUpgraderRepo interface {
 	CreateClusterUpgrade(ctx context.Context, tenantID, envID uuid.UUID, version string, isAutomatic *bool) (*model.ClusterUpgradeStatus, error)
 	ClusterUpgradeGet(ctx context.Context, tenantID, envID uuid.UUID) (*model.ClusterUpgradeStatus, error)
 	ClusterUpgradeGetByVersion(ctx context.Context, tenantID, envID uuid.UUID, version string) (*model.ClusterUpgradeStatus, error)
-	ClusterUpgradeHistoryGet(ctx context.Context, tenantID, envID uuid.UUID) ([]*model.ClusterUpgradeStatus, error)
+	ClusterUpgradeHistoryGet(ctx context.Context, tenantID, envID uuid.UUID, limit, offset int32) ([]*model.ClusterUpgradeStatus, error)
 	UpdateClusterUpgradeStatus(ctx context.Context, upgradeID uuid.UUID, status gensql.ClusterUpgradesStatus) (*model.ClusterUpgradeStatus, error)
 	ClusterUpgradeGetByID(ctx context.Context, id uuid.UUID) (*model.ClusterUpgradeStatus, error)
 	ClusterOperationsGetByID(ctx context.Context, id uuid.UUID) (*model.EnvironmentOperation, error)
@@ -28,10 +28,21 @@ type ClusterUpgraderRepo interface {
 	SetClusterUpgradesSlackMessage(ctx context.Context, id uuid.UUID, slackMessageTS, channelID string) (*model.ClusterUpgradeStatus, error)
 }
 
-func (r *repo) ClusterUpgradeHistoryGet(ctx context.Context, tenantID, envID uuid.UUID) ([]*model.ClusterUpgradeStatus, error) {
+func (r *repo) ClusterUpgradeHistoryGet(ctx context.Context, tenantID, envID uuid.UUID, limit, offset int32) ([]*model.ClusterUpgradeStatus, error) {
+	// Default to 50 records if limit is not specified or invalid
+	if limit <= 0 {
+		limit = 50
+	}
+	// Ensure offset is non-negative
+	if offset < 0 {
+		offset = 0
+	}
+
 	clusterUpgrades, err := r.querier.ClusterUpgradesHistoryGetByEnvironmentID(ctx, gensql.ClusterUpgradesHistoryGetByEnvironmentIDParams{
-		Tenantid: tenantID,
-		Envid:    envID,
+		Tenantid:      tenantID,
+		Envid:         envID,
+		Historylimit:  limit,
+		Historyoffset: offset,
 	})
 	if err != nil {
 		return nil, err

@@ -110,7 +110,7 @@ type Environment {
 	feature(name: String!): Feature!
 	reconcile: Boolean!
 	autoUpgrade: Boolean!
-	clusterUpgradeHistory: [ClusterUpgradeStatus!]!
+	clusterUpgradeHistory(limit: Int, offset: Int): [ClusterUpgradeStatus!]!
 	clusterUpgradeStatus: ClusterUpgradeStatus
 	versions: EnvironmentVersions
 	labels: [EnvironmentLabel!]!

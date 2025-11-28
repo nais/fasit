@@ -843,7 +843,8 @@ func (c *ClusterUpgrader) cleanupCompletedUpgradeOperations(ctx context.Context,
 	}
 
 	// Get ALL upgrades for this environment (including DONE/FAILED)
-	allUpgrades, err := c.repo.ClusterUpgradeHistoryGet(ctx, env.TenantID, env.ID)
+	// Use a larger limit for cleanup to ensure we catch all completed upgrades that might need cleanup
+	allUpgrades, err := c.repo.ClusterUpgradeHistoryGet(ctx, env.TenantID, env.ID, 100, 0)
 	if err != nil {
 		log.WithError(err).Debug("failed to get upgrade history for cleanup")
 		return err

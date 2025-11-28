@@ -185,15 +185,26 @@ WHERE
 	AND environment_id = $2
 ORDER BY
 	last_modified DESC
+LIMIT
+	$4
+OFFSET
+	$3
 `
 
 type ClusterUpgradesHistoryGetByEnvironmentIDParams struct {
-	Tenantid uuid.UUID
-	Envid    uuid.UUID
+	Tenantid      uuid.UUID
+	Envid         uuid.UUID
+	Historyoffset int32
+	Historylimit  int32
 }
 
 func (q *Queries) ClusterUpgradesHistoryGetByEnvironmentID(ctx context.Context, arg ClusterUpgradesHistoryGetByEnvironmentIDParams) ([]ClusterUpgrade, error) {
-	rows, err := q.db.Query(ctx, clusterUpgradesHistoryGetByEnvironmentID, arg.Tenantid, arg.Envid)
+	rows, err := q.db.Query(ctx, clusterUpgradesHistoryGetByEnvironmentID,
+		arg.Tenantid,
+		arg.Envid,
+		arg.Historyoffset,
+		arg.Historylimit,
+	)
 	if err != nil {
 		return nil, err
 	}

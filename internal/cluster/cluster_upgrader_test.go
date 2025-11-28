@@ -123,7 +123,7 @@ func (s *testSuite) mockRunTenantForLoop(upgradeStatus model.UpgradeStatus) *mod
 		}, nil).Maybe()
 
 	// Mock ClusterUpgradeHistoryGet for the cleanup process - return empty list for most tests
-	s.repoMock.EXPECT().ClusterUpgradeHistoryGet(mock.Anything, s.env.tenantID, s.env.id).Return(
+	s.repoMock.EXPECT().ClusterUpgradeHistoryGet(mock.Anything, s.env.tenantID, s.env.id, mock.Anything, mock.Anything).Return(
 		[]*model.ClusterUpgradeStatus{}, nil).Once()
 
 	// Mock ClusterOperationsGetByUpgradeID for cleanup process - return empty list for most tests
@@ -591,7 +591,7 @@ func TestRun_CreatedToWaitingTransitionWithDelay(t *testing.T) {
 	}
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(createdUpgrade, nil).Once()
 
-	suite.repoMock.EXPECT().ClusterUpgradeHistoryGet(mock.Anything, suite.env.tenantID, suite.env.id).Return([]*model.ClusterUpgradeStatus{}, nil).Once()
+	suite.repoMock.EXPECT().ClusterUpgradeHistoryGet(mock.Anything, suite.env.tenantID, suite.env.id, mock.Anything, mock.Anything).Return([]*model.ClusterUpgradeStatus{}, nil).Once()
 
 	// Mock ClusterOperationsGetByUpgradeID for cleanup operations check
 	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{}, nil).Once()
@@ -681,7 +681,7 @@ func TestRun_CreatedWithoutDelaySkipsWaiting(t *testing.T) {
 	}
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(createdUpgrade, nil).Once()
 
-	suite.repoMock.EXPECT().ClusterUpgradeHistoryGet(mock.Anything, suite.env.tenantID, suite.env.id).Return([]*model.ClusterUpgradeStatus{}, nil).Once()
+	suite.repoMock.EXPECT().ClusterUpgradeHistoryGet(mock.Anything, suite.env.tenantID, suite.env.id, mock.Anything, mock.Anything).Return([]*model.ClusterUpgradeStatus{}, nil).Once()
 
 	// Mock ClusterOperationsGetByUpgradeID for cleanup operations check
 	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{}, nil).Once()
@@ -792,7 +792,7 @@ func TestRun_CreatedWithDelayButRunningOperations(t *testing.T) {
 	}
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(createdUpgrade, nil).Once()
 
-	suite.repoMock.EXPECT().ClusterUpgradeHistoryGet(mock.Anything, suite.env.tenantID, suite.env.id).Return([]*model.ClusterUpgradeStatus{}, nil).Once()
+	suite.repoMock.EXPECT().ClusterUpgradeHistoryGet(mock.Anything, suite.env.tenantID, suite.env.id, mock.Anything, mock.Anything).Return([]*model.ClusterUpgradeStatus{}, nil).Once()
 
 	// Mock ClusterOperationsGetByUpgradeID for cleanup operations check
 	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{}, nil).Once()
@@ -890,7 +890,7 @@ func TestRun_UpgradeDurationUsesUpgradeStartTime(t *testing.T) {
 		&model.EnvironmentValue{Key: "project_id", Value: []byte(`"test-project"`)},
 		nil,
 	).Maybe()
-	suite.repoMock.EXPECT().ClusterUpgradeHistoryGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(
+	suite.repoMock.EXPECT().ClusterUpgradeHistoryGet(mock.Anything, suite.env.tenantID, suite.env.id, mock.Anything, mock.Anything).Return(
 		[]*model.ClusterUpgradeStatus{doneUpgrade}, nil,
 	).Once()
 	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, doneUpgrade.ID).Return(
@@ -951,7 +951,7 @@ func TestRun_UpgradeDurationWarnsWithoutUpgradeStartTime(t *testing.T) {
 		&model.EnvironmentValue{Key: "project_id", Value: []byte(`"test-project"`)},
 		nil,
 	).Maybe()
-	suite.repoMock.EXPECT().ClusterUpgradeHistoryGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(
+	suite.repoMock.EXPECT().ClusterUpgradeHistoryGet(mock.Anything, suite.env.tenantID, suite.env.id, mock.Anything, mock.Anything).Return(
 		[]*model.ClusterUpgradeStatus{doneUpgrade}, nil,
 	).Once()
 	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, doneUpgrade.ID).Return(

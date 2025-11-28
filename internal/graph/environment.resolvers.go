@@ -164,8 +164,30 @@ func (r *environmentResolver) Feature(ctx context.Context, obj *model.Environmen
 }
 
 // ClusterUpgradeHistory is the resolver for the clusterUpgradeHistory field.
-func (r *environmentResolver) ClusterUpgradeHistory(ctx context.Context, obj *model.Environment) ([]*model.ClusterUpgradeStatus, error) {
-	cus, err := r.Repo.ClusterUpgradeHistoryGet(ctx, obj.TenantID, obj.ID)
+func (r *environmentResolver) ClusterUpgradeHistory(ctx context.Context, obj *model.Environment, limit *int, offset *int) ([]*model.ClusterUpgradeStatus, error) {
+	// Default to 50 if not specified
+	limitValue := int32(50)
+	if limit != nil && *limit > 0 {
+		// Cap limit at max int32 to prevent overflow
+		if *limit > 2147483647 {
+			limitValue = 2147483647
+		} else {
+			limitValue = int32(*limit)
+		}
+	}
+
+	// Default to 0 if not specified
+	offsetValue := int32(0)
+	if offset != nil && *offset > 0 {
+		// Cap offset at max int32 to prevent overflow
+		if *offset > 2147483647 {
+			offsetValue = 2147483647
+		} else {
+			offsetValue = int32(*offset)
+		}
+	}
+
+	cus, err := r.Repo.ClusterUpgradeHistoryGet(ctx, obj.TenantID, obj.ID, limitValue, offsetValue)
 	if err != nil {
 		return nil, err
 	}
