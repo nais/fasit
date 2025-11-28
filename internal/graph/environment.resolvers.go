@@ -173,7 +173,7 @@ func (r *environmentResolver) ClusterUpgradeHistory(ctx context.Context, obj *mo
 
 	// Default to 0 if not specified
 	offsetValue := int32(0)
-	if offset != nil && *offset > 0 {
+	if offset != nil && *offset >= 0 {
 		offsetValue = int32(*offset) // #nosec G115 -- int is at least 32 bits on all Go platforms, conversion is safe for valid pagination values
 	}
 
