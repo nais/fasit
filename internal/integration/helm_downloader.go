@@ -33,17 +33,27 @@ func init() {
 }
 
 func dirChart(name string, version string) (*bytes.Buffer, error) {
-	path := filepath.Join(RootDir, "_dir_charts", name+"-"+version)
-	stat, err := os.Stat(path)
+	root, err := os.OpenRoot(filepath.Join(RootDir, "_dir_charts"))
 	if err != nil {
 		return nil, err
+	}
+
+	filename := name + "-" + version
+	stat, err := root.Stat(filename)
+	if err != nil {
+		return nil, fmt.Errorf("stat file: %w", err)
 	}
 	if !stat.IsDir() {
 		return nil, fmt.Errorf("not a directory")
 	}
 
+	absPath, err := root.Open(filename)
+	if err != nil {
+		return nil, fmt.Errorf("open file: %w", err)
+	}
+
 	var buf bytes.Buffer
-	if err := tarGz(name, &buf, path); err != nil {
+	if err := tarGz(name, &buf, absPath.Name()); err != nil {
 		return nil, err
 	}
 
