@@ -187,7 +187,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, environment *mode
 				"environment_id": environment.ID,
 				"deployment_id":  deployment.ID,
 				"feature_name":   deployment.Name,
-				"feature_verion": deployment.Version,
+				"feature_version": deployment.Version,
 			}).Error("insert environment feature")
 
 			r.setDeploymentStatus(ctx, deployment.ID, environment.ID, model.RolloutStatusFailed, "failed to register feature deployment")
