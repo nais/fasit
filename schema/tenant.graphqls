@@ -8,6 +8,17 @@ type Tenant {
 	lastModified: Time!
 	warnings: [Warning!]!
 	upgradeDelayDays: Int!
+	"""
+	Cluster upgrade history for all environments in this tenant, with pagination support.
+
+	Parameters:
+	- limit: Maximum number of records to return (default: 50, max: 1000, must be positive)
+	- offset: Number of records to skip (default: 0, must be non-negative)
+
+	Results are ordered by last_modified DESC (newest first).
+	Invalid values are normalized: negative or zero limit defaults to 50, limit > 1000 capped at 1000, negative offset defaults to 0.
+	"""
+	clusterUpgradeHistory(limit: Int, offset: Int): [ClusterUpgradeStatus!]!
 }
 
 type Query {
@@ -32,4 +43,15 @@ extend type Query {
 	tenant returns the given tenant.
 	"""
 	tenant("id of the requested tenant." id: ID, slug: String): Tenant!
+	"""
+	Cluster upgrade history across all tenants and environments, with pagination support.
+
+	Parameters:
+	- limit: Maximum number of records to return (default: 50, max: 1000, must be positive)
+	- offset: Number of records to skip (default: 0, must be non-negative)
+
+	Results are ordered by last_modified DESC (newest first).
+	Invalid values are normalized: negative or zero limit defaults to 50, limit > 1000 capped at 1000, negative offset defaults to 0.
+	"""
+	clusterUpgradeHistory(limit: Int, offset: Int): [ClusterUpgradeStatus!]!
 }

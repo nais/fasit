@@ -95,3 +95,31 @@ ORDER BY
 LIMIT
 	1
 ;
+
+-- name: ClusterUpgradesHistoryGetByTenantID :many
+SELECT
+	*
+FROM
+	cluster_upgrades
+WHERE
+	tenant_id = @tenantId
+ORDER BY
+	last_modified DESC
+OFFSET
+	@historyOffset
+LIMIT
+	@historyLimit
+;
+
+-- name: ClusterUpgradesHistoryGetAll :many
+SELECT
+	*
+FROM
+	cluster_upgrades
+ORDER BY
+	last_modified DESC
+OFFSET
+	@historyOffset
+LIMIT
+	@historyLimit
+;

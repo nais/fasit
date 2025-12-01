@@ -28,7 +28,9 @@ type Querier interface {
 	ClusterUpgradesGet(ctx context.Context, arg ClusterUpgradesGetParams) ([]ClusterUpgrade, error)
 	ClusterUpgradesGetByID(ctx context.Context, id uuid.UUID) (ClusterUpgrade, error)
 	ClusterUpgradesGetByVersion(ctx context.Context, arg ClusterUpgradesGetByVersionParams) (ClusterUpgrade, error)
+	ClusterUpgradesHistoryGetAll(ctx context.Context, arg ClusterUpgradesHistoryGetAllParams) ([]ClusterUpgrade, error)
 	ClusterUpgradesHistoryGetByEnvironmentID(ctx context.Context, arg ClusterUpgradesHistoryGetByEnvironmentIDParams) ([]ClusterUpgrade, error)
+	ClusterUpgradesHistoryGetByTenantID(ctx context.Context, arg ClusterUpgradesHistoryGetByTenantIDParams) ([]ClusterUpgrade, error)
 	ClusterUpgradesSetSlackMessage(ctx context.Context, arg ClusterUpgradesSetSlackMessageParams) (ClusterUpgrade, error)
 	ClusterUpgradesUpdateStatus(ctx context.Context, arg ClusterUpgradesUpdateStatusParams) (ClusterUpgrade, error)
 	ConfigDelete(ctx context.Context, id uuid.UUID) error

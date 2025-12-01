@@ -334,19 +334,20 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Configuration func(childComplexity int, feature string, envID *uuid.UUID) int
-		Cost          func(childComplexity int, filter *model.CostFilter) int
-		CostForTenant func(childComplexity int, tenantID uuid.UUID, filter *model.CostFilter) int
-		Feature       func(childComplexity int, name string) int
-		FeatureState  func(childComplexity int, envID uuid.UUID, feature string) int
-		Features      func(childComplexity int) int
-		HelmValues    func(childComplexity int, feature string, envID *uuid.UUID, env *string, tenant *string) int
-		History       func(childComplexity int, id uuid.UUID) int
-		Rollout       func(childComplexity int, feature string, version string) int
-		Rollouts      func(childComplexity int, feature *string) int
-		Tenant        func(childComplexity int, id *uuid.UUID, slug *string) int
-		Tenants       func(childComplexity int) int
-		UserInfo      func(childComplexity int) int
+		ClusterUpgradeHistory func(childComplexity int, limit *int, offset *int) int
+		Configuration         func(childComplexity int, feature string, envID *uuid.UUID) int
+		Cost                  func(childComplexity int, filter *model.CostFilter) int
+		CostForTenant         func(childComplexity int, tenantID uuid.UUID, filter *model.CostFilter) int
+		Feature               func(childComplexity int, name string) int
+		FeatureState          func(childComplexity int, envID uuid.UUID, feature string) int
+		Features              func(childComplexity int) int
+		HelmValues            func(childComplexity int, feature string, envID *uuid.UUID, env *string, tenant *string) int
+		History               func(childComplexity int, id uuid.UUID) int
+		Rollout               func(childComplexity int, feature string, version string) int
+		Rollouts              func(childComplexity int, feature *string) int
+		Tenant                func(childComplexity int, id *uuid.UUID, slug *string) int
+		Tenants               func(childComplexity int) int
+		UserInfo              func(childComplexity int) int
 	}
 
 	Release struct {
@@ -402,15 +403,16 @@ type ComplexityRoot struct {
 	}
 
 	Tenant struct {
-		Created          func(childComplexity int) int
-		Description      func(childComplexity int) int
-		Environment      func(childComplexity int, id *uuid.UUID, slug *string) int
-		Environments     func(childComplexity int) int
-		ID               func(childComplexity int) int
-		LastModified     func(childComplexity int) int
-		Name             func(childComplexity int) int
-		UpgradeDelayDays func(childComplexity int) int
-		Warnings         func(childComplexity int) int
+		ClusterUpgradeHistory func(childComplexity int, limit *int, offset *int) int
+		Created               func(childComplexity int) int
+		Description           func(childComplexity int) int
+		Environment           func(childComplexity int, id *uuid.UUID, slug *string) int
+		Environments          func(childComplexity int) int
+		ID                    func(childComplexity int) int
+		LastModified          func(childComplexity int) int
+		Name                  func(childComplexity int) int
+		UpgradeDelayDays      func(childComplexity int) int
+		Warnings              func(childComplexity int) int
 	}
 
 	TenantCosts struct {
@@ -535,6 +537,7 @@ type QueryResolver interface {
 	Rollouts(ctx context.Context, feature *string) ([]*model.Rollout, error)
 	Rollout(ctx context.Context, feature string, version string) (*model.Rollout, error)
 	Tenant(ctx context.Context, id *uuid.UUID, slug *string) (*model.Tenant, error)
+	ClusterUpgradeHistory(ctx context.Context, limit *int, offset *int) ([]*model.ClusterUpgradeStatus, error)
 	UserInfo(ctx context.Context) (*model.UserInfo, error)
 }
 type ReleaseResolver interface {
@@ -558,6 +561,8 @@ type TenantResolver interface {
 	Environment(ctx context.Context, obj *model.Tenant, id *uuid.UUID, slug *string) (*model.Environment, error)
 
 	Warnings(ctx context.Context, obj *model.Tenant) ([]model.Warning, error)
+
+	ClusterUpgradeHistory(ctx context.Context, obj *model.Tenant, limit *int, offset *int) ([]*model.ClusterUpgradeStatus, error)
 }
 
 type executableSchema struct {
@@ -1737,6 +1742,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Playground.Result(childComplexity), true
 
+	case "Query.clusterUpgradeHistory":
+		if e.complexity.Query.ClusterUpgradeHistory == nil {
+			break
+		}
+
+		args, err := ec.field_Query_clusterUpgradeHistory_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.ClusterUpgradeHistory(childComplexity, args["limit"].(*int), args["offset"].(*int)), true
 	case "Query.configuration":
 		if e.complexity.Query.Configuration == nil {
 			break
@@ -2081,6 +2097,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Subscription.Updates(childComplexity), true
 
+	case "Tenant.clusterUpgradeHistory":
+		if e.complexity.Tenant.ClusterUpgradeHistory == nil {
+			break
+		}
+
+		args, err := ec.field_Tenant_clusterUpgradeHistory_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Tenant.ClusterUpgradeHistory(childComplexity, args["limit"].(*int), args["offset"].(*int)), true
 	case "Tenant.created":
 		if e.complexity.Tenant.Created == nil {
 			break
@@ -2936,6 +2963,17 @@ type Subscription {
 	lastModified: Time!
 	warnings: [Warning!]!
 	upgradeDelayDays: Int!
+	"""
+	Cluster upgrade history for all environments in this tenant, with pagination support.
+
+	Parameters:
+	- limit: Maximum number of records to return (default: 50, max: 1000, must be positive)
+	- offset: Number of records to skip (default: 0, must be non-negative)
+
+	Results are ordered by last_modified DESC (newest first).
+	Invalid values are normalized: negative or zero limit defaults to 50, limit > 1000 capped at 1000, negative offset defaults to 0.
+	"""
+	clusterUpgradeHistory(limit: Int, offset: Int): [ClusterUpgradeStatus!]!
 }
 
 type Query {
@@ -2960,6 +2998,17 @@ extend type Query {
 	tenant returns the given tenant.
 	"""
 	tenant("id of the requested tenant." id: ID, slug: String): Tenant!
+	"""
+	Cluster upgrade history across all tenants and environments, with pagination support.
+
+	Parameters:
+	- limit: Maximum number of records to return (default: 50, max: 1000, must be positive)
+	- offset: Number of records to skip (default: 0, must be non-negative)
+
+	Results are ordered by last_modified DESC (newest first).
+	Invalid values are normalized: negative or zero limit defaults to 50, limit > 1000 capped at 1000, negative offset defaults to 0.
+	"""
+	clusterUpgradeHistory(limit: Int, offset: Int): [ClusterUpgradeStatus!]!
 }
 `, BuiltIn: false},
 	{Name: "../../../schema/userInfo.graphqls", Input: `type userInfo {
@@ -3285,6 +3334,22 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_clusterUpgradeHistory_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["offset"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_configuration_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -3453,6 +3518,22 @@ func (ec *executionContext) field_Subscription_logs_args(ctx context.Context, ra
 		return nil, err
 	}
 	args["lastLogID"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Tenant_clusterUpgradeHistory_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint)
+	if err != nil {
+		return nil, err
+	}
+	args["offset"] = arg1
 	return args, nil
 }
 
@@ -4678,6 +4759,8 @@ func (ec *executionContext) fieldContext_CostSeries_tenant(_ context.Context, fi
 				return ec.fieldContext_Tenant_warnings(ctx, field)
 			case "upgradeDelayDays":
 				return ec.fieldContext_Tenant_upgradeDelayDays(ctx, field)
+			case "clusterUpgradeHistory":
+				return ec.fieldContext_Tenant_clusterUpgradeHistory(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tenant", field.Name)
 		},
@@ -5344,6 +5427,8 @@ func (ec *executionContext) fieldContext_Environment_tenant(_ context.Context, f
 				return ec.fieldContext_Tenant_warnings(ctx, field)
 			case "upgradeDelayDays":
 				return ec.fieldContext_Tenant_upgradeDelayDays(ctx, field)
+			case "clusterUpgradeHistory":
+				return ec.fieldContext_Tenant_clusterUpgradeHistory(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tenant", field.Name)
 		},
@@ -8667,6 +8752,8 @@ func (ec *executionContext) fieldContext_Mutation_tenantCreate(ctx context.Conte
 				return ec.fieldContext_Tenant_warnings(ctx, field)
 			case "upgradeDelayDays":
 				return ec.fieldContext_Tenant_upgradeDelayDays(ctx, field)
+			case "clusterUpgradeHistory":
+				return ec.fieldContext_Tenant_clusterUpgradeHistory(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tenant", field.Name)
 		},
@@ -8728,6 +8815,8 @@ func (ec *executionContext) fieldContext_Mutation_tenantSetUpgradeDelayDays(ctx 
 				return ec.fieldContext_Tenant_warnings(ctx, field)
 			case "upgradeDelayDays":
 				return ec.fieldContext_Tenant_upgradeDelayDays(ctx, field)
+			case "clusterUpgradeHistory":
+				return ec.fieldContext_Tenant_clusterUpgradeHistory(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tenant", field.Name)
 		},
@@ -10057,6 +10146,8 @@ func (ec *executionContext) fieldContext_Query_tenants(_ context.Context, field 
 				return ec.fieldContext_Tenant_warnings(ctx, field)
 			case "upgradeDelayDays":
 				return ec.fieldContext_Tenant_upgradeDelayDays(ctx, field)
+			case "clusterUpgradeHistory":
+				return ec.fieldContext_Tenant_clusterUpgradeHistory(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tenant", field.Name)
 		},
@@ -10659,6 +10750,8 @@ func (ec *executionContext) fieldContext_Query_tenant(ctx context.Context, field
 				return ec.fieldContext_Tenant_warnings(ctx, field)
 			case "upgradeDelayDays":
 				return ec.fieldContext_Tenant_upgradeDelayDays(ctx, field)
+			case "clusterUpgradeHistory":
+				return ec.fieldContext_Tenant_clusterUpgradeHistory(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tenant", field.Name)
 		},
@@ -10671,6 +10764,69 @@ func (ec *executionContext) fieldContext_Query_tenant(ctx context.Context, field
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_tenant_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_clusterUpgradeHistory(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_clusterUpgradeHistory,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Query().ClusterUpgradeHistory(ctx, fc.Args["limit"].(*int), fc.Args["offset"].(*int))
+		},
+		nil,
+		ec.marshalNClusterUpgradeStatus2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐClusterUpgradeStatusᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_clusterUpgradeHistory(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_ClusterUpgradeStatus_id(ctx, field)
+			case "upgradeStatus":
+				return ec.fieldContext_ClusterUpgradeStatus_upgradeStatus(ctx, field)
+			case "version":
+				return ec.fieldContext_ClusterUpgradeStatus_version(ctx, field)
+			case "lastModified":
+				return ec.fieldContext_ClusterUpgradeStatus_lastModified(ctx, field)
+			case "startTime":
+				return ec.fieldContext_ClusterUpgradeStatus_startTime(ctx, field)
+			case "upgradeStartTime":
+				return ec.fieldContext_ClusterUpgradeStatus_upgradeStartTime(ctx, field)
+			case "operations":
+				return ec.fieldContext_ClusterUpgradeStatus_operations(ctx, field)
+			case "environment":
+				return ec.fieldContext_ClusterUpgradeStatus_environment(ctx, field)
+			case "isAutomatic":
+				return ec.fieldContext_ClusterUpgradeStatus_isAutomatic(ctx, field)
+			case "actor":
+				return ec.fieldContext_ClusterUpgradeStatus_actor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ClusterUpgradeStatus", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_clusterUpgradeHistory_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -12267,6 +12423,69 @@ func (ec *executionContext) fieldContext_Tenant_upgradeDelayDays(_ context.Conte
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Tenant_clusterUpgradeHistory(ctx context.Context, field graphql.CollectedField, obj *model.Tenant) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Tenant_clusterUpgradeHistory,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Tenant().ClusterUpgradeHistory(ctx, obj, fc.Args["limit"].(*int), fc.Args["offset"].(*int))
+		},
+		nil,
+		ec.marshalNClusterUpgradeStatus2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐClusterUpgradeStatusᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Tenant_clusterUpgradeHistory(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Tenant",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_ClusterUpgradeStatus_id(ctx, field)
+			case "upgradeStatus":
+				return ec.fieldContext_ClusterUpgradeStatus_upgradeStatus(ctx, field)
+			case "version":
+				return ec.fieldContext_ClusterUpgradeStatus_version(ctx, field)
+			case "lastModified":
+				return ec.fieldContext_ClusterUpgradeStatus_lastModified(ctx, field)
+			case "startTime":
+				return ec.fieldContext_ClusterUpgradeStatus_startTime(ctx, field)
+			case "upgradeStartTime":
+				return ec.fieldContext_ClusterUpgradeStatus_upgradeStartTime(ctx, field)
+			case "operations":
+				return ec.fieldContext_ClusterUpgradeStatus_operations(ctx, field)
+			case "environment":
+				return ec.fieldContext_ClusterUpgradeStatus_environment(ctx, field)
+			case "isAutomatic":
+				return ec.fieldContext_ClusterUpgradeStatus_isAutomatic(ctx, field)
+			case "actor":
+				return ec.fieldContext_ClusterUpgradeStatus_actor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ClusterUpgradeStatus", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Tenant_clusterUpgradeHistory_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -17910,6 +18129,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "clusterUpgradeHistory":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_clusterUpgradeHistory(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "userInfo":
 			field := field
 
@@ -18604,6 +18845,42 @@ func (ec *executionContext) _Tenant(ctx context.Context, sel ast.SelectionSet, o
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "clusterUpgradeHistory":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Tenant_clusterUpgradeHistory(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
