@@ -175,6 +175,56 @@ func (q *Queries) ClusterUpgradesGetByVersion(ctx context.Context, arg ClusterUp
 	return i, err
 }
 
+const clusterUpgradesHistoryGetAll = `-- name: ClusterUpgradesHistoryGetAll :many
+SELECT
+	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id, is_automatic, upgrade_start_time
+FROM
+	cluster_upgrades
+ORDER BY
+	last_modified DESC
+OFFSET
+	$1
+LIMIT
+	$2
+`
+
+type ClusterUpgradesHistoryGetAllParams struct {
+	Historyoffset int32
+	Historylimit  int32
+}
+
+func (q *Queries) ClusterUpgradesHistoryGetAll(ctx context.Context, arg ClusterUpgradesHistoryGetAllParams) ([]ClusterUpgrade, error) {
+	rows, err := q.db.Query(ctx, clusterUpgradesHistoryGetAll, arg.Historyoffset, arg.Historylimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ClusterUpgrade{}
+	for rows.Next() {
+		var i ClusterUpgrade
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.EnvironmentID,
+			&i.Version,
+			&i.Status,
+			&i.StartTime,
+			&i.LastModified,
+			&i.SlackMessageTimestamp,
+			&i.SlackChannelID,
+			&i.IsAutomatic,
+			&i.UpgradeStartTime,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const clusterUpgradesHistoryGetByEnvironmentID = `-- name: ClusterUpgradesHistoryGetByEnvironmentID :many
 SELECT
 	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id, is_automatic, upgrade_start_time
@@ -205,6 +255,59 @@ func (q *Queries) ClusterUpgradesHistoryGetByEnvironmentID(ctx context.Context, 
 		arg.Historyoffset,
 		arg.Historylimit,
 	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ClusterUpgrade{}
+	for rows.Next() {
+		var i ClusterUpgrade
+		if err := rows.Scan(
+			&i.ID,
+			&i.TenantID,
+			&i.EnvironmentID,
+			&i.Version,
+			&i.Status,
+			&i.StartTime,
+			&i.LastModified,
+			&i.SlackMessageTimestamp,
+			&i.SlackChannelID,
+			&i.IsAutomatic,
+			&i.UpgradeStartTime,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const clusterUpgradesHistoryGetByTenantID = `-- name: ClusterUpgradesHistoryGetByTenantID :many
+SELECT
+	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id, is_automatic, upgrade_start_time
+FROM
+	cluster_upgrades
+WHERE
+	tenant_id = $1
+ORDER BY
+	last_modified DESC
+OFFSET
+	$2
+LIMIT
+	$3
+`
+
+type ClusterUpgradesHistoryGetByTenantIDParams struct {
+	Tenantid      uuid.UUID
+	Historyoffset int32
+	Historylimit  int32
+}
+
+func (q *Queries) ClusterUpgradesHistoryGetByTenantID(ctx context.Context, arg ClusterUpgradesHistoryGetByTenantIDParams) ([]ClusterUpgrade, error) {
+	rows, err := q.db.Query(ctx, clusterUpgradesHistoryGetByTenantID, arg.Tenantid, arg.Historyoffset, arg.Historylimit)
 	if err != nil {
 		return nil, err
 	}

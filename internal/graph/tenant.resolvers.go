@@ -44,6 +44,19 @@ func (r *queryResolver) Tenant(ctx context.Context, id *uuid.UUID, slug *string)
 	return nil, fmt.Errorf("either ID or slug must be specified")
 }
 
+// ClusterUpgradeHistory is the resolver for the clusterUpgradeHistory field.
+func (r *queryResolver) ClusterUpgradeHistory(ctx context.Context, limit *int, offset *int) ([]*model.ClusterUpgradeStatus, error) {
+	var limitValue, offsetValue int32
+	if limit != nil {
+		limitValue = int32(*limit) // #nosec G115 -- int is at least 32 bits on all Go platforms, conversion is safe for valid pagination values
+	}
+	if offset != nil {
+		offsetValue = int32(*offset) // #nosec G115 -- int is at least 32 bits on all Go platforms, conversion is safe for valid pagination values
+	}
+
+	return r.Repo.ClusterUpgradeHistoryGetAll(ctx, limitValue, offsetValue)
+}
+
 // Environments is the resolver for the environments field.
 func (r *tenantResolver) Environments(ctx context.Context, obj *model.Tenant) ([]*model.Environment, error) {
 	return r.Repo.EnvironmentsGet(ctx, obj.ID)
@@ -63,6 +76,19 @@ func (r *tenantResolver) Environment(ctx context.Context, obj *model.Tenant, id 
 // Warnings is the resolver for the warnings field.
 func (r *tenantResolver) Warnings(ctx context.Context, obj *model.Tenant) ([]model.Warning, error) {
 	return r.Repo.Warnings(ctx, nil, &obj.ID)
+}
+
+// ClusterUpgradeHistory is the resolver for the clusterUpgradeHistory field.
+func (r *tenantResolver) ClusterUpgradeHistory(ctx context.Context, obj *model.Tenant, limit *int, offset *int) ([]*model.ClusterUpgradeStatus, error) {
+	var limitValue, offsetValue int32
+	if limit != nil {
+		limitValue = int32(*limit) // #nosec G115 -- int is at least 32 bits on all Go platforms, conversion is safe for valid pagination values
+	}
+	if offset != nil {
+		offsetValue = int32(*offset) // #nosec G115 -- int is at least 32 bits on all Go platforms, conversion is safe for valid pagination values
+	}
+
+	return r.Repo.ClusterUpgradeHistoryGetByTenant(ctx, obj.ID, limitValue, offsetValue)
 }
 
 // Mutation returns graphgen.MutationResolver implementation.

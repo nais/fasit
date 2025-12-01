@@ -1037,6 +1037,74 @@ func (_c *Querier_ClusterUpgradesGetByVersion_Call) RunAndReturn(run func(ctx co
 	return _c
 }
 
+// ClusterUpgradesHistoryGetAll provides a mock function for the type Querier
+func (_mock *Querier) ClusterUpgradesHistoryGetAll(ctx context.Context, arg gensql.ClusterUpgradesHistoryGetAllParams) ([]gensql.ClusterUpgrade, error) {
+	ret := _mock.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ClusterUpgradesHistoryGetAll")
+	}
+
+	var r0 []gensql.ClusterUpgrade
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, gensql.ClusterUpgradesHistoryGetAllParams) ([]gensql.ClusterUpgrade, error)); ok {
+		return returnFunc(ctx, arg)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, gensql.ClusterUpgradesHistoryGetAllParams) []gensql.ClusterUpgrade); ok {
+		r0 = returnFunc(ctx, arg)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gensql.ClusterUpgrade)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, gensql.ClusterUpgradesHistoryGetAllParams) error); ok {
+		r1 = returnFunc(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_ClusterUpgradesHistoryGetAll_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ClusterUpgradesHistoryGetAll'
+type Querier_ClusterUpgradesHistoryGetAll_Call struct {
+	*mock.Call
+}
+
+// ClusterUpgradesHistoryGetAll is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg gensql.ClusterUpgradesHistoryGetAllParams
+func (_e *Querier_Expecter) ClusterUpgradesHistoryGetAll(ctx interface{}, arg interface{}) *Querier_ClusterUpgradesHistoryGetAll_Call {
+	return &Querier_ClusterUpgradesHistoryGetAll_Call{Call: _e.mock.On("ClusterUpgradesHistoryGetAll", ctx, arg)}
+}
+
+func (_c *Querier_ClusterUpgradesHistoryGetAll_Call) Run(run func(ctx context.Context, arg gensql.ClusterUpgradesHistoryGetAllParams)) *Querier_ClusterUpgradesHistoryGetAll_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 gensql.ClusterUpgradesHistoryGetAllParams
+		if args[1] != nil {
+			arg1 = args[1].(gensql.ClusterUpgradesHistoryGetAllParams)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_ClusterUpgradesHistoryGetAll_Call) Return(clusterUpgrades []gensql.ClusterUpgrade, err error) *Querier_ClusterUpgradesHistoryGetAll_Call {
+	_c.Call.Return(clusterUpgrades, err)
+	return _c
+}
+
+func (_c *Querier_ClusterUpgradesHistoryGetAll_Call) RunAndReturn(run func(ctx context.Context, arg gensql.ClusterUpgradesHistoryGetAllParams) ([]gensql.ClusterUpgrade, error)) *Querier_ClusterUpgradesHistoryGetAll_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ClusterUpgradesHistoryGetByEnvironmentID provides a mock function for the type Querier
 func (_mock *Querier) ClusterUpgradesHistoryGetByEnvironmentID(ctx context.Context, arg gensql.ClusterUpgradesHistoryGetByEnvironmentIDParams) ([]gensql.ClusterUpgrade, error) {
 	ret := _mock.Called(ctx, arg)
@@ -1101,6 +1169,74 @@ func (_c *Querier_ClusterUpgradesHistoryGetByEnvironmentID_Call) Return(clusterU
 }
 
 func (_c *Querier_ClusterUpgradesHistoryGetByEnvironmentID_Call) RunAndReturn(run func(ctx context.Context, arg gensql.ClusterUpgradesHistoryGetByEnvironmentIDParams) ([]gensql.ClusterUpgrade, error)) *Querier_ClusterUpgradesHistoryGetByEnvironmentID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ClusterUpgradesHistoryGetByTenantID provides a mock function for the type Querier
+func (_mock *Querier) ClusterUpgradesHistoryGetByTenantID(ctx context.Context, arg gensql.ClusterUpgradesHistoryGetByTenantIDParams) ([]gensql.ClusterUpgrade, error) {
+	ret := _mock.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ClusterUpgradesHistoryGetByTenantID")
+	}
+
+	var r0 []gensql.ClusterUpgrade
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, gensql.ClusterUpgradesHistoryGetByTenantIDParams) ([]gensql.ClusterUpgrade, error)); ok {
+		return returnFunc(ctx, arg)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, gensql.ClusterUpgradesHistoryGetByTenantIDParams) []gensql.ClusterUpgrade); ok {
+		r0 = returnFunc(ctx, arg)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gensql.ClusterUpgrade)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, gensql.ClusterUpgradesHistoryGetByTenantIDParams) error); ok {
+		r1 = returnFunc(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_ClusterUpgradesHistoryGetByTenantID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ClusterUpgradesHistoryGetByTenantID'
+type Querier_ClusterUpgradesHistoryGetByTenantID_Call struct {
+	*mock.Call
+}
+
+// ClusterUpgradesHistoryGetByTenantID is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg gensql.ClusterUpgradesHistoryGetByTenantIDParams
+func (_e *Querier_Expecter) ClusterUpgradesHistoryGetByTenantID(ctx interface{}, arg interface{}) *Querier_ClusterUpgradesHistoryGetByTenantID_Call {
+	return &Querier_ClusterUpgradesHistoryGetByTenantID_Call{Call: _e.mock.On("ClusterUpgradesHistoryGetByTenantID", ctx, arg)}
+}
+
+func (_c *Querier_ClusterUpgradesHistoryGetByTenantID_Call) Run(run func(ctx context.Context, arg gensql.ClusterUpgradesHistoryGetByTenantIDParams)) *Querier_ClusterUpgradesHistoryGetByTenantID_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 gensql.ClusterUpgradesHistoryGetByTenantIDParams
+		if args[1] != nil {
+			arg1 = args[1].(gensql.ClusterUpgradesHistoryGetByTenantIDParams)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_ClusterUpgradesHistoryGetByTenantID_Call) Return(clusterUpgrades []gensql.ClusterUpgrade, err error) *Querier_ClusterUpgradesHistoryGetByTenantID_Call {
+	_c.Call.Return(clusterUpgrades, err)
+	return _c
+}
+
+func (_c *Querier_ClusterUpgradesHistoryGetByTenantID_Call) RunAndReturn(run func(ctx context.Context, arg gensql.ClusterUpgradesHistoryGetByTenantIDParams) ([]gensql.ClusterUpgrade, error)) *Querier_ClusterUpgradesHistoryGetByTenantID_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -2966,6 +3102,74 @@ func (_c *Querier_DeploymentStatusCreateOrUpdate_Call) Return(err error) *Querie
 }
 
 func (_c *Querier_DeploymentStatusCreateOrUpdate_Call) RunAndReturn(run func(ctx context.Context, arg gensql.DeploymentStatusCreateOrUpdateParams) error) *Querier_DeploymentStatusCreateOrUpdate_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// DeploymentStatusGet provides a mock function for the type Querier
+func (_mock *Querier) DeploymentStatusGet(ctx context.Context, deploymentID uuid.UUID) ([]gensql.DeploymentStatus, error) {
+	ret := _mock.Called(ctx, deploymentID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeploymentStatusGet")
+	}
+
+	var r0 []gensql.DeploymentStatus
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]gensql.DeploymentStatus, error)); ok {
+		return returnFunc(ctx, deploymentID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) []gensql.DeploymentStatus); ok {
+		r0 = returnFunc(ctx, deploymentID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gensql.DeploymentStatus)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = returnFunc(ctx, deploymentID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_DeploymentStatusGet_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeploymentStatusGet'
+type Querier_DeploymentStatusGet_Call struct {
+	*mock.Call
+}
+
+// DeploymentStatusGet is a helper method to define mock.On call
+//   - ctx context.Context
+//   - deploymentID uuid.UUID
+func (_e *Querier_Expecter) DeploymentStatusGet(ctx interface{}, deploymentID interface{}) *Querier_DeploymentStatusGet_Call {
+	return &Querier_DeploymentStatusGet_Call{Call: _e.mock.On("DeploymentStatusGet", ctx, deploymentID)}
+}
+
+func (_c *Querier_DeploymentStatusGet_Call) Run(run func(ctx context.Context, deploymentID uuid.UUID)) *Querier_DeploymentStatusGet_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_DeploymentStatusGet_Call) Return(deploymentStatuss []gensql.DeploymentStatus, err error) *Querier_DeploymentStatusGet_Call {
+	_c.Call.Return(deploymentStatuss, err)
+	return _c
+}
+
+func (_c *Querier_DeploymentStatusGet_Call) RunAndReturn(run func(ctx context.Context, deploymentID uuid.UUID) ([]gensql.DeploymentStatus, error)) *Querier_DeploymentStatusGet_Call {
 	_c.Call.Return(run)
 	return _c
 }

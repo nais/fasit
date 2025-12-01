@@ -21,6 +21,8 @@ type ClusterUpgraderRepo interface {
 	ClusterUpgradeGet(ctx context.Context, tenantID, envID uuid.UUID) (*model.ClusterUpgradeStatus, error)
 	ClusterUpgradeGetByVersion(ctx context.Context, tenantID, envID uuid.UUID, version string) (*model.ClusterUpgradeStatus, error)
 	ClusterUpgradeHistoryGet(ctx context.Context, tenantID, envID uuid.UUID, limit, offset int32) ([]*model.ClusterUpgradeStatus, error)
+	ClusterUpgradeHistoryGetByTenant(ctx context.Context, tenantID uuid.UUID, limit, offset int32) ([]*model.ClusterUpgradeStatus, error)
+	ClusterUpgradeHistoryGetAll(ctx context.Context, limit, offset int32) ([]*model.ClusterUpgradeStatus, error)
 	UpdateClusterUpgradeStatus(ctx context.Context, upgradeID uuid.UUID, status gensql.ClusterUpgradesStatus) (*model.ClusterUpgradeStatus, error)
 	ClusterUpgradeGetByID(ctx context.Context, id uuid.UUID) (*model.ClusterUpgradeStatus, error)
 	ClusterOperationsGetByID(ctx context.Context, id uuid.UUID) (*model.EnvironmentOperation, error)
@@ -46,6 +48,67 @@ func (r *repo) ClusterUpgradeHistoryGet(ctx context.Context, tenantID, envID uui
 	clusterUpgrades, err := r.querier.ClusterUpgradesHistoryGetByEnvironmentID(ctx, gensql.ClusterUpgradesHistoryGetByEnvironmentIDParams{
 		Tenantid:      tenantID,
 		Envid:         envID,
+		Historyoffset: offset,
+		Historylimit:  limit,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var upgrades []*model.ClusterUpgradeStatus
+	for _, upgrade := range clusterUpgrades {
+		upgrades = append(upgrades, clusterUpgradeFromSQL(upgrade))
+	}
+
+	return upgrades, nil
+}
+
+func (r *repo) ClusterUpgradeHistoryGetByTenant(ctx context.Context, tenantID uuid.UUID, limit, offset int32) ([]*model.ClusterUpgradeStatus, error) {
+	// Default to 50 records if limit is not specified or invalid
+	if limit <= 0 {
+		limit = 50
+	}
+	// Cap limit at 1000 to prevent abuse
+	if limit > 1000 {
+		limit = 1000
+	}
+	// Ensure offset is non-negative
+	if offset < 0 {
+		offset = 0
+	}
+
+	clusterUpgrades, err := r.querier.ClusterUpgradesHistoryGetByTenantID(ctx, gensql.ClusterUpgradesHistoryGetByTenantIDParams{
+		Tenantid:      tenantID,
+		Historyoffset: offset,
+		Historylimit:  limit,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var upgrades []*model.ClusterUpgradeStatus
+	for _, upgrade := range clusterUpgrades {
+		upgrades = append(upgrades, clusterUpgradeFromSQL(upgrade))
+	}
+
+	return upgrades, nil
+}
+
+func (r *repo) ClusterUpgradeHistoryGetAll(ctx context.Context, limit, offset int32) ([]*model.ClusterUpgradeStatus, error) {
+	// Default to 50 records if limit is not specified or invalid
+	if limit <= 0 {
+		limit = 50
+	}
+	// Cap limit at 1000 to prevent abuse
+	if limit > 1000 {
+		limit = 1000
+	}
+	// Ensure offset is non-negative
+	if offset < 0 {
+		offset = 0
+	}
+
+	clusterUpgrades, err := r.querier.ClusterUpgradesHistoryGetAll(ctx, gensql.ClusterUpgradesHistoryGetAllParams{
 		Historyoffset: offset,
 		Historylimit:  limit,
 	})
