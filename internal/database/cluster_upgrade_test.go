@@ -41,7 +41,7 @@ func TestRepo_ClusterUpgradeHistoryGet_Pagination(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("default values - limit 50, offset 0", func(t *testing.T) {
-		// When limit and offset are 0, defaults should apply
+		// When limit is 0 or negative, it defaults to 50; offset=0 is already the default
 		got, err := repo.ClusterUpgradeHistoryGet(ctx, tenantID, envID, 0, 0)
 		if err != nil {
 			t.Fatalf("ClusterUpgradeHistoryGet() error = %v", err)
@@ -145,6 +145,19 @@ func TestRepo_ClusterUpgradeHistoryGet_Pagination(t *testing.T) {
 		}
 
 		// Should return all 10 available records
+		if len(got) != 10 {
+			t.Errorf("expected 10 records (all available), got %d", len(got))
+		}
+	})
+
+	t.Run("limit exceeding maximum is capped at 1000", func(t *testing.T) {
+		// Try to request an extremely large limit
+		got, err := repo.ClusterUpgradeHistoryGet(ctx, tenantID, envID, 2147483647, 0)
+		if err != nil {
+			t.Fatalf("ClusterUpgradeHistoryGet() error = %v", err)
+		}
+
+		// Should still return all 10 records (capped at 1000, but only 10 exist)
 		if len(got) != 10 {
 			t.Errorf("expected 10 records (all available), got %d", len(got))
 		}

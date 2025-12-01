@@ -34,6 +34,10 @@ func (r *repo) ClusterUpgradeHistoryGet(ctx context.Context, tenantID, envID uui
 	if limit <= 0 {
 		limit = 50
 	}
+	// Cap limit at 1000 to prevent abuse
+	if limit > 1000 {
+		limit = 1000
+	}
 	// Ensure offset is non-negative
 	if offset < 0 {
 		offset = 0

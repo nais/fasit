@@ -2571,11 +2571,11 @@ type Environment {
 	Cluster upgrade history with pagination support.
 
 	Parameters:
-	- limit: Maximum number of records to return (default: 50, must be positive)
+	- limit: Maximum number of records to return (default: 50, max: 1000, must be positive)
 	- offset: Number of records to skip (default: 0, must be non-negative)
 
 	Results are ordered by last_modified DESC (newest first).
-	Invalid values are normalized: negative or zero limit defaults to 50, negative offset defaults to 0.
+	Invalid values are normalized: negative or zero limit defaults to 50, limit > 1000 capped at 1000, negative offset defaults to 0.
 	"""
 	clusterUpgradeHistory(limit: Int, offset: Int): [ClusterUpgradeStatus!]!
 	clusterUpgradeStatus: ClusterUpgradeStatus

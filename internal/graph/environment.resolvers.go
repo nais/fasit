@@ -165,15 +165,11 @@ func (r *environmentResolver) Feature(ctx context.Context, obj *model.Environmen
 
 // ClusterUpgradeHistory is the resolver for the clusterUpgradeHistory field.
 func (r *environmentResolver) ClusterUpgradeHistory(ctx context.Context, obj *model.Environment, limit *int, offset *int) ([]*model.ClusterUpgradeStatus, error) {
-	// Default to 50 if not specified
-	limitValue := int32(50)
-	if limit != nil && *limit > 0 {
+	var limitValue, offsetValue int32
+	if limit != nil {
 		limitValue = int32(*limit) // #nosec G115 -- int is at least 32 bits on all Go platforms, conversion is safe for valid pagination values
 	}
-
-	// Default to 0 if not specified
-	offsetValue := int32(0)
-	if offset != nil && *offset >= 0 {
+	if offset != nil {
 		offsetValue = int32(*offset) // #nosec G115 -- int is at least 32 bits on all Go platforms, conversion is safe for valid pagination values
 	}
 
