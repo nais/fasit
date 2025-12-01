@@ -74,6 +74,12 @@ type ComplexityRoot struct {
 		ObjectType  func(childComplexity int) int
 	}
 
+	ClusterUpgradeHistoryResult struct {
+		HasMore    func(childComplexity int) int
+		Items      func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
 	ClusterUpgradeStatus struct {
 		Actor            func(childComplexity int) int
 		Environment      func(childComplexity int) int
@@ -468,7 +474,7 @@ type EnvironmentResolver interface {
 	Features(ctx context.Context, obj *model.Environment) ([]*model.Feature, error)
 	Feature(ctx context.Context, obj *model.Environment, name string) (*model.Feature, error)
 
-	ClusterUpgradeHistory(ctx context.Context, obj *model.Environment, limit *int, offset *int) ([]*model.ClusterUpgradeStatus, error)
+	ClusterUpgradeHistory(ctx context.Context, obj *model.Environment, limit *int, offset *int) (*model.ClusterUpgradeHistoryResult, error)
 	ClusterUpgradeStatus(ctx context.Context, obj *model.Environment) (*model.ClusterUpgradeStatus, error)
 	Versions(ctx context.Context, obj *model.Environment) (*model.EnvironmentVersions, error)
 	Labels(ctx context.Context, obj *model.Environment) ([]*model.EnvironmentLabel, error)
@@ -537,7 +543,7 @@ type QueryResolver interface {
 	Rollouts(ctx context.Context, feature *string) ([]*model.Rollout, error)
 	Rollout(ctx context.Context, feature string, version string) (*model.Rollout, error)
 	Tenant(ctx context.Context, id *uuid.UUID, slug *string) (*model.Tenant, error)
-	ClusterUpgradeHistory(ctx context.Context, limit *int, offset *int) ([]*model.ClusterUpgradeStatus, error)
+	ClusterUpgradeHistory(ctx context.Context, limit *int, offset *int) (*model.ClusterUpgradeHistoryResult, error)
 	UserInfo(ctx context.Context) (*model.UserInfo, error)
 }
 type ReleaseResolver interface {
@@ -562,7 +568,7 @@ type TenantResolver interface {
 
 	Warnings(ctx context.Context, obj *model.Tenant) ([]model.Warning, error)
 
-	ClusterUpgradeHistory(ctx context.Context, obj *model.Tenant, limit *int, offset *int) ([]*model.ClusterUpgradeStatus, error)
+	ClusterUpgradeHistory(ctx context.Context, obj *model.Tenant, limit *int, offset *int) (*model.ClusterUpgradeHistoryResult, error)
 }
 
 type executableSchema struct {
@@ -614,6 +620,25 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.AuditLog.ObjectType(childComplexity), true
+
+	case "ClusterUpgradeHistoryResult.hasMore":
+		if e.complexity.ClusterUpgradeHistoryResult.HasMore == nil {
+			break
+		}
+
+		return e.complexity.ClusterUpgradeHistoryResult.HasMore(childComplexity), true
+	case "ClusterUpgradeHistoryResult.items":
+		if e.complexity.ClusterUpgradeHistoryResult.Items == nil {
+			break
+		}
+
+		return e.complexity.ClusterUpgradeHistoryResult.Items(childComplexity), true
+	case "ClusterUpgradeHistoryResult.totalCount":
+		if e.complexity.ClusterUpgradeHistoryResult.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.ClusterUpgradeHistoryResult.TotalCount(childComplexity), true
 
 	case "ClusterUpgradeStatus.actor":
 		if e.complexity.ClusterUpgradeStatus.Actor == nil {
@@ -2511,6 +2536,25 @@ type ClusterUpgradeStatus {
 	actor: String
 }
 
+"""
+Result type for paginated cluster upgrade history queries.
+"""
+type ClusterUpgradeHistoryResult {
+	"""
+	The list of cluster upgrade records for the current page.
+	"""
+	items: [ClusterUpgradeStatus!]!
+	"""
+	Total number of records available across all pages.
+	"""
+	totalCount: Int!
+	"""
+	Whether there are more records available after the current page.
+	Calculated as: (offset + items.length) < totalCount
+	"""
+	hasMore: Boolean!
+}
+
 enum DayOfWeek {
 	MONDAY
 	TUESDAY
@@ -2604,7 +2648,7 @@ type Environment {
 	Results are ordered by last_modified DESC (newest first).
 	Invalid values are normalized: negative or zero limit defaults to 50, limit > 1000 capped at 1000, negative offset defaults to 0.
 	"""
-	clusterUpgradeHistory(limit: Int, offset: Int): [ClusterUpgradeStatus!]!
+	clusterUpgradeHistory(limit: Int, offset: Int): ClusterUpgradeHistoryResult!
 	clusterUpgradeStatus: ClusterUpgradeStatus
 	versions: EnvironmentVersions
 	labels: [EnvironmentLabel!]!
@@ -2973,7 +3017,7 @@ type Subscription {
 	Results are ordered by last_modified DESC (newest first).
 	Invalid values are normalized: negative or zero limit defaults to 50, limit > 1000 capped at 1000, negative offset defaults to 0.
 	"""
-	clusterUpgradeHistory(limit: Int, offset: Int): [ClusterUpgradeStatus!]!
+	clusterUpgradeHistory(limit: Int, offset: Int): ClusterUpgradeHistoryResult!
 }
 
 type Query {
@@ -3008,7 +3052,7 @@ extend type Query {
 	Results are ordered by last_modified DESC (newest first).
 	Invalid values are normalized: negative or zero limit defaults to 50, limit > 1000 capped at 1000, negative offset defaults to 0.
 	"""
-	clusterUpgradeHistory(limit: Int, offset: Int): [ClusterUpgradeStatus!]!
+	clusterUpgradeHistory(limit: Int, offset: Int): ClusterUpgradeHistoryResult!
 }
 `, BuiltIn: false},
 	{Name: "../../../schema/userInfo.graphqls", Input: `type userInfo {
@@ -3745,6 +3789,115 @@ func (ec *executionContext) fieldContext_AuditLog_createdAt(_ context.Context, f
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ClusterUpgradeHistoryResult_items(ctx context.Context, field graphql.CollectedField, obj *model.ClusterUpgradeHistoryResult) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ClusterUpgradeHistoryResult_items,
+		func(ctx context.Context) (any, error) {
+			return obj.Items, nil
+		},
+		nil,
+		ec.marshalNClusterUpgradeStatus2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐClusterUpgradeStatusᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ClusterUpgradeHistoryResult_items(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ClusterUpgradeHistoryResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_ClusterUpgradeStatus_id(ctx, field)
+			case "upgradeStatus":
+				return ec.fieldContext_ClusterUpgradeStatus_upgradeStatus(ctx, field)
+			case "version":
+				return ec.fieldContext_ClusterUpgradeStatus_version(ctx, field)
+			case "lastModified":
+				return ec.fieldContext_ClusterUpgradeStatus_lastModified(ctx, field)
+			case "startTime":
+				return ec.fieldContext_ClusterUpgradeStatus_startTime(ctx, field)
+			case "upgradeStartTime":
+				return ec.fieldContext_ClusterUpgradeStatus_upgradeStartTime(ctx, field)
+			case "operations":
+				return ec.fieldContext_ClusterUpgradeStatus_operations(ctx, field)
+			case "environment":
+				return ec.fieldContext_ClusterUpgradeStatus_environment(ctx, field)
+			case "isAutomatic":
+				return ec.fieldContext_ClusterUpgradeStatus_isAutomatic(ctx, field)
+			case "actor":
+				return ec.fieldContext_ClusterUpgradeStatus_actor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ClusterUpgradeStatus", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ClusterUpgradeHistoryResult_totalCount(ctx context.Context, field graphql.CollectedField, obj *model.ClusterUpgradeHistoryResult) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ClusterUpgradeHistoryResult_totalCount,
+		func(ctx context.Context) (any, error) {
+			return obj.TotalCount, nil
+		},
+		nil,
+		ec.marshalNInt2int,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ClusterUpgradeHistoryResult_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ClusterUpgradeHistoryResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ClusterUpgradeHistoryResult_hasMore(ctx context.Context, field graphql.CollectedField, obj *model.ClusterUpgradeHistoryResult) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ClusterUpgradeHistoryResult_hasMore,
+		func(ctx context.Context) (any, error) {
+			return obj.HasMore, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ClusterUpgradeHistoryResult_hasMore(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ClusterUpgradeHistoryResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -5721,7 +5874,7 @@ func (ec *executionContext) _Environment_clusterUpgradeHistory(ctx context.Conte
 			return ec.resolvers.Environment().ClusterUpgradeHistory(ctx, obj, fc.Args["limit"].(*int), fc.Args["offset"].(*int))
 		},
 		nil,
-		ec.marshalNClusterUpgradeStatus2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐClusterUpgradeStatusᚄ,
+		ec.marshalNClusterUpgradeHistoryResult2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐClusterUpgradeHistoryResult,
 		true,
 		true,
 	)
@@ -5735,28 +5888,14 @@ func (ec *executionContext) fieldContext_Environment_clusterUpgradeHistory(ctx c
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "id":
-				return ec.fieldContext_ClusterUpgradeStatus_id(ctx, field)
-			case "upgradeStatus":
-				return ec.fieldContext_ClusterUpgradeStatus_upgradeStatus(ctx, field)
-			case "version":
-				return ec.fieldContext_ClusterUpgradeStatus_version(ctx, field)
-			case "lastModified":
-				return ec.fieldContext_ClusterUpgradeStatus_lastModified(ctx, field)
-			case "startTime":
-				return ec.fieldContext_ClusterUpgradeStatus_startTime(ctx, field)
-			case "upgradeStartTime":
-				return ec.fieldContext_ClusterUpgradeStatus_upgradeStartTime(ctx, field)
-			case "operations":
-				return ec.fieldContext_ClusterUpgradeStatus_operations(ctx, field)
-			case "environment":
-				return ec.fieldContext_ClusterUpgradeStatus_environment(ctx, field)
-			case "isAutomatic":
-				return ec.fieldContext_ClusterUpgradeStatus_isAutomatic(ctx, field)
-			case "actor":
-				return ec.fieldContext_ClusterUpgradeStatus_actor(ctx, field)
+			case "items":
+				return ec.fieldContext_ClusterUpgradeHistoryResult_items(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_ClusterUpgradeHistoryResult_totalCount(ctx, field)
+			case "hasMore":
+				return ec.fieldContext_ClusterUpgradeHistoryResult_hasMore(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type ClusterUpgradeStatus", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type ClusterUpgradeHistoryResult", field.Name)
 		},
 	}
 	defer func() {
@@ -10781,7 +10920,7 @@ func (ec *executionContext) _Query_clusterUpgradeHistory(ctx context.Context, fi
 			return ec.resolvers.Query().ClusterUpgradeHistory(ctx, fc.Args["limit"].(*int), fc.Args["offset"].(*int))
 		},
 		nil,
-		ec.marshalNClusterUpgradeStatus2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐClusterUpgradeStatusᚄ,
+		ec.marshalNClusterUpgradeHistoryResult2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐClusterUpgradeHistoryResult,
 		true,
 		true,
 	)
@@ -10795,28 +10934,14 @@ func (ec *executionContext) fieldContext_Query_clusterUpgradeHistory(ctx context
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "id":
-				return ec.fieldContext_ClusterUpgradeStatus_id(ctx, field)
-			case "upgradeStatus":
-				return ec.fieldContext_ClusterUpgradeStatus_upgradeStatus(ctx, field)
-			case "version":
-				return ec.fieldContext_ClusterUpgradeStatus_version(ctx, field)
-			case "lastModified":
-				return ec.fieldContext_ClusterUpgradeStatus_lastModified(ctx, field)
-			case "startTime":
-				return ec.fieldContext_ClusterUpgradeStatus_startTime(ctx, field)
-			case "upgradeStartTime":
-				return ec.fieldContext_ClusterUpgradeStatus_upgradeStartTime(ctx, field)
-			case "operations":
-				return ec.fieldContext_ClusterUpgradeStatus_operations(ctx, field)
-			case "environment":
-				return ec.fieldContext_ClusterUpgradeStatus_environment(ctx, field)
-			case "isAutomatic":
-				return ec.fieldContext_ClusterUpgradeStatus_isAutomatic(ctx, field)
-			case "actor":
-				return ec.fieldContext_ClusterUpgradeStatus_actor(ctx, field)
+			case "items":
+				return ec.fieldContext_ClusterUpgradeHistoryResult_items(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_ClusterUpgradeHistoryResult_totalCount(ctx, field)
+			case "hasMore":
+				return ec.fieldContext_ClusterUpgradeHistoryResult_hasMore(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type ClusterUpgradeStatus", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type ClusterUpgradeHistoryResult", field.Name)
 		},
 	}
 	defer func() {
@@ -12438,7 +12563,7 @@ func (ec *executionContext) _Tenant_clusterUpgradeHistory(ctx context.Context, f
 			return ec.resolvers.Tenant().ClusterUpgradeHistory(ctx, obj, fc.Args["limit"].(*int), fc.Args["offset"].(*int))
 		},
 		nil,
-		ec.marshalNClusterUpgradeStatus2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐClusterUpgradeStatusᚄ,
+		ec.marshalNClusterUpgradeHistoryResult2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐClusterUpgradeHistoryResult,
 		true,
 		true,
 	)
@@ -12452,28 +12577,14 @@ func (ec *executionContext) fieldContext_Tenant_clusterUpgradeHistory(ctx contex
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "id":
-				return ec.fieldContext_ClusterUpgradeStatus_id(ctx, field)
-			case "upgradeStatus":
-				return ec.fieldContext_ClusterUpgradeStatus_upgradeStatus(ctx, field)
-			case "version":
-				return ec.fieldContext_ClusterUpgradeStatus_version(ctx, field)
-			case "lastModified":
-				return ec.fieldContext_ClusterUpgradeStatus_lastModified(ctx, field)
-			case "startTime":
-				return ec.fieldContext_ClusterUpgradeStatus_startTime(ctx, field)
-			case "upgradeStartTime":
-				return ec.fieldContext_ClusterUpgradeStatus_upgradeStartTime(ctx, field)
-			case "operations":
-				return ec.fieldContext_ClusterUpgradeStatus_operations(ctx, field)
-			case "environment":
-				return ec.fieldContext_ClusterUpgradeStatus_environment(ctx, field)
-			case "isAutomatic":
-				return ec.fieldContext_ClusterUpgradeStatus_isAutomatic(ctx, field)
-			case "actor":
-				return ec.fieldContext_ClusterUpgradeStatus_actor(ctx, field)
+			case "items":
+				return ec.fieldContext_ClusterUpgradeHistoryResult_items(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_ClusterUpgradeHistoryResult_totalCount(ctx, field)
+			case "hasMore":
+				return ec.fieldContext_ClusterUpgradeHistoryResult_hasMore(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type ClusterUpgradeStatus", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type ClusterUpgradeHistoryResult", field.Name)
 		},
 	}
 	defer func() {
@@ -14699,6 +14810,55 @@ func (ec *executionContext) _AuditLog(ctx context.Context, sel ast.SelectionSet,
 			}
 		case "createdAt":
 			out.Values[i] = ec._AuditLog_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var clusterUpgradeHistoryResultImplementors = []string{"ClusterUpgradeHistoryResult"}
+
+func (ec *executionContext) _ClusterUpgradeHistoryResult(ctx context.Context, sel ast.SelectionSet, obj *model.ClusterUpgradeHistoryResult) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, clusterUpgradeHistoryResultImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ClusterUpgradeHistoryResult")
+		case "items":
+			out.Values[i] = ec._ClusterUpgradeHistoryResult_items(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalCount":
+			out.Values[i] = ec._ClusterUpgradeHistoryResult_totalCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "hasMore":
+			out.Values[i] = ec._ClusterUpgradeHistoryResult_hasMore(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -19453,6 +19613,20 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNClusterUpgradeHistoryResult2githubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐClusterUpgradeHistoryResult(ctx context.Context, sel ast.SelectionSet, v model.ClusterUpgradeHistoryResult) graphql.Marshaler {
+	return ec._ClusterUpgradeHistoryResult(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNClusterUpgradeHistoryResult2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐClusterUpgradeHistoryResult(ctx context.Context, sel ast.SelectionSet, v *model.ClusterUpgradeHistoryResult) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ClusterUpgradeHistoryResult(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNClusterUpgradeStatus2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐClusterUpgradeStatusᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ClusterUpgradeStatus) graphql.Marshaler {

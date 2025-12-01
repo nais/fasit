@@ -20,9 +20,9 @@ type ClusterUpgraderRepo interface {
 	CreateClusterUpgrade(ctx context.Context, tenantID, envID uuid.UUID, version string, isAutomatic *bool) (*model.ClusterUpgradeStatus, error)
 	ClusterUpgradeGet(ctx context.Context, tenantID, envID uuid.UUID) (*model.ClusterUpgradeStatus, error)
 	ClusterUpgradeGetByVersion(ctx context.Context, tenantID, envID uuid.UUID, version string) (*model.ClusterUpgradeStatus, error)
-	ClusterUpgradeHistoryGet(ctx context.Context, tenantID, envID uuid.UUID, limit, offset int32) ([]*model.ClusterUpgradeStatus, error)
-	ClusterUpgradeHistoryGetByTenant(ctx context.Context, tenantID uuid.UUID, limit, offset int32) ([]*model.ClusterUpgradeStatus, error)
-	ClusterUpgradeHistoryGetAll(ctx context.Context, limit, offset int32) ([]*model.ClusterUpgradeStatus, error)
+	ClusterUpgradeHistoryGet(ctx context.Context, tenantID, envID uuid.UUID, limit, offset int32) (*model.ClusterUpgradeHistoryResult, error)
+	ClusterUpgradeHistoryGetByTenant(ctx context.Context, tenantID uuid.UUID, limit, offset int32) (*model.ClusterUpgradeHistoryResult, error)
+	ClusterUpgradeHistoryGetAll(ctx context.Context, limit, offset int32) (*model.ClusterUpgradeHistoryResult, error)
 	UpdateClusterUpgradeStatus(ctx context.Context, upgradeID uuid.UUID, status gensql.ClusterUpgradesStatus) (*model.ClusterUpgradeStatus, error)
 	ClusterUpgradeGetByID(ctx context.Context, id uuid.UUID) (*model.ClusterUpgradeStatus, error)
 	ClusterOperationsGetByID(ctx context.Context, id uuid.UUID) (*model.EnvironmentOperation, error)
@@ -31,7 +31,7 @@ type ClusterUpgraderRepo interface {
 	SetClusterUpgradesSlackMessage(ctx context.Context, id uuid.UUID, slackMessageTS, channelID string) (*model.ClusterUpgradeStatus, error)
 }
 
-func (r *repo) ClusterUpgradeHistoryGet(ctx context.Context, tenantID, envID uuid.UUID, limit, offset int32) ([]*model.ClusterUpgradeStatus, error) {
+func (r *repo) ClusterUpgradeHistoryGet(ctx context.Context, tenantID, envID uuid.UUID, limit, offset int32) (*model.ClusterUpgradeHistoryResult, error) {
 	// Default to 50 records if limit is not specified or invalid
 	if limit <= 0 {
 		limit = 50
@@ -43,6 +43,15 @@ func (r *repo) ClusterUpgradeHistoryGet(ctx context.Context, tenantID, envID uui
 	// Ensure offset is non-negative
 	if offset < 0 {
 		offset = 0
+	}
+
+	// Get total count
+	totalCount, err := r.querier.ClusterUpgradesCountByEnvironmentID(ctx, gensql.ClusterUpgradesCountByEnvironmentIDParams{
+		Tenantid: tenantID,
+		Envid:    envID,
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	clusterUpgrades, err := r.querier.ClusterUpgradesHistoryGetByEnvironmentID(ctx, gensql.ClusterUpgradesHistoryGetByEnvironmentIDParams{
@@ -60,10 +69,16 @@ func (r *repo) ClusterUpgradeHistoryGet(ctx context.Context, tenantID, envID uui
 		upgrades = append(upgrades, clusterUpgradeFromSQL(upgrade))
 	}
 
-	return upgrades, nil
+	hasMore := int64(offset)+int64(len(upgrades)) < totalCount
+
+	return &model.ClusterUpgradeHistoryResult{
+		Items:      upgrades,
+		TotalCount: int(totalCount),
+		HasMore:    hasMore,
+	}, nil
 }
 
-func (r *repo) ClusterUpgradeHistoryGetByTenant(ctx context.Context, tenantID uuid.UUID, limit, offset int32) ([]*model.ClusterUpgradeStatus, error) {
+func (r *repo) ClusterUpgradeHistoryGetByTenant(ctx context.Context, tenantID uuid.UUID, limit, offset int32) (*model.ClusterUpgradeHistoryResult, error) {
 	// Default to 50 records if limit is not specified or invalid
 	if limit <= 0 {
 		limit = 50
@@ -75,6 +90,12 @@ func (r *repo) ClusterUpgradeHistoryGetByTenant(ctx context.Context, tenantID uu
 	// Ensure offset is non-negative
 	if offset < 0 {
 		offset = 0
+	}
+
+	// Get total count
+	totalCount, err := r.querier.ClusterUpgradesCountByTenantID(ctx, tenantID)
+	if err != nil {
+		return nil, err
 	}
 
 	clusterUpgrades, err := r.querier.ClusterUpgradesHistoryGetByTenantID(ctx, gensql.ClusterUpgradesHistoryGetByTenantIDParams{
@@ -91,10 +112,16 @@ func (r *repo) ClusterUpgradeHistoryGetByTenant(ctx context.Context, tenantID uu
 		upgrades = append(upgrades, clusterUpgradeFromSQL(upgrade))
 	}
 
-	return upgrades, nil
+	hasMore := int64(offset)+int64(len(upgrades)) < totalCount
+
+	return &model.ClusterUpgradeHistoryResult{
+		Items:      upgrades,
+		TotalCount: int(totalCount),
+		HasMore:    hasMore,
+	}, nil
 }
 
-func (r *repo) ClusterUpgradeHistoryGetAll(ctx context.Context, limit, offset int32) ([]*model.ClusterUpgradeStatus, error) {
+func (r *repo) ClusterUpgradeHistoryGetAll(ctx context.Context, limit, offset int32) (*model.ClusterUpgradeHistoryResult, error) {
 	// Default to 50 records if limit is not specified or invalid
 	if limit <= 0 {
 		limit = 50
@@ -106,6 +133,12 @@ func (r *repo) ClusterUpgradeHistoryGetAll(ctx context.Context, limit, offset in
 	// Ensure offset is non-negative
 	if offset < 0 {
 		offset = 0
+	}
+
+	// Get total count
+	totalCount, err := r.querier.ClusterUpgradesCountAll(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	clusterUpgrades, err := r.querier.ClusterUpgradesHistoryGetAll(ctx, gensql.ClusterUpgradesHistoryGetAllParams{
@@ -121,7 +154,13 @@ func (r *repo) ClusterUpgradeHistoryGetAll(ctx context.Context, limit, offset in
 		upgrades = append(upgrades, clusterUpgradeFromSQL(upgrade))
 	}
 
-	return upgrades, nil
+	hasMore := int64(offset)+int64(len(upgrades)) < totalCount
+
+	return &model.ClusterUpgradeHistoryResult{
+		Items:      upgrades,
+		TotalCount: int(totalCount),
+		HasMore:    hasMore,
+	}, nil
 }
 
 func clusterUpgradeFromSQL(p gensql.ClusterUpgrade) *model.ClusterUpgradeStatus {

@@ -30,6 +30,17 @@ type AuditLog struct {
 	CreatedAt   time.Time `json:"createdAt"`
 }
 
+// Result type for paginated cluster upgrade history queries.
+type ClusterUpgradeHistoryResult struct {
+	// The list of cluster upgrade records for the current page.
+	Items []*ClusterUpgradeStatus `json:"items"`
+	// Total number of records available across all pages.
+	TotalCount int `json:"totalCount"`
+	// Whether there are more records available after the current page.
+	// Calculated as: (offset + items.length) < totalCount
+	HasMore bool `json:"hasMore"`
+}
+
 type ComputedValue struct {
 	Value   *Value          `json:"value"`
 	Content json.RawMessage `json:"content,omitempty"`

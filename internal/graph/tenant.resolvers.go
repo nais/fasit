@@ -45,7 +45,7 @@ func (r *queryResolver) Tenant(ctx context.Context, id *uuid.UUID, slug *string)
 }
 
 // ClusterUpgradeHistory is the resolver for the clusterUpgradeHistory field.
-func (r *queryResolver) ClusterUpgradeHistory(ctx context.Context, limit *int, offset *int) ([]*model.ClusterUpgradeStatus, error) {
+func (r *queryResolver) ClusterUpgradeHistory(ctx context.Context, limit *int, offset *int) (*model.ClusterUpgradeHistoryResult, error) {
 	var limitValue, offsetValue int32
 	if limit != nil {
 		limitValue = int32(*limit) // #nosec G115 -- int is at least 32 bits on all Go platforms, conversion is safe for valid pagination values
@@ -79,7 +79,7 @@ func (r *tenantResolver) Warnings(ctx context.Context, obj *model.Tenant) ([]mod
 }
 
 // ClusterUpgradeHistory is the resolver for the clusterUpgradeHistory field.
-func (r *tenantResolver) ClusterUpgradeHistory(ctx context.Context, obj *model.Tenant, limit *int, offset *int) ([]*model.ClusterUpgradeStatus, error) {
+func (r *tenantResolver) ClusterUpgradeHistory(ctx context.Context, obj *model.Tenant, limit *int, offset *int) (*model.ClusterUpgradeHistoryResult, error) {
 	var limitValue, offsetValue int32
 	if limit != nil {
 		limitValue = int32(*limit) // #nosec G115 -- int is at least 32 bits on all Go platforms, conversion is safe for valid pagination values

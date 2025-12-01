@@ -18,7 +18,7 @@ type Tenant {
 	Results are ordered by last_modified DESC (newest first).
 	Invalid values are normalized: negative or zero limit defaults to 50, limit > 1000 capped at 1000, negative offset defaults to 0.
 	"""
-	clusterUpgradeHistory(limit: Int, offset: Int): [ClusterUpgradeStatus!]!
+	clusterUpgradeHistory(limit: Int, offset: Int): ClusterUpgradeHistoryResult!
 }
 
 type Query {
@@ -53,5 +53,5 @@ extend type Query {
 	Results are ordered by last_modified DESC (newest first).
 	Invalid values are normalized: negative or zero limit defaults to 50, limit > 1000 capped at 1000, negative offset defaults to 0.
 	"""
-	clusterUpgradeHistory(limit: Int, offset: Int): [ClusterUpgradeStatus!]!
+	clusterUpgradeHistory(limit: Int, offset: Int): ClusterUpgradeHistoryResult!
 }
