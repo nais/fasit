@@ -10,6 +10,58 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const clusterUpgradesCountAll = `-- name: ClusterUpgradesCountAll :one
+SELECT
+	COUNT(*)
+FROM
+	cluster_upgrades
+`
+
+func (q *Queries) ClusterUpgradesCountAll(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, clusterUpgradesCountAll)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const clusterUpgradesCountByEnvironmentID = `-- name: ClusterUpgradesCountByEnvironmentID :one
+SELECT
+	COUNT(*)
+FROM
+	cluster_upgrades
+WHERE
+	tenant_id = $1
+	AND environment_id = $2
+`
+
+type ClusterUpgradesCountByEnvironmentIDParams struct {
+	Tenantid uuid.UUID
+	Envid    uuid.UUID
+}
+
+func (q *Queries) ClusterUpgradesCountByEnvironmentID(ctx context.Context, arg ClusterUpgradesCountByEnvironmentIDParams) (int64, error) {
+	row := q.db.QueryRow(ctx, clusterUpgradesCountByEnvironmentID, arg.Tenantid, arg.Envid)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const clusterUpgradesCountByTenantID = `-- name: ClusterUpgradesCountByTenantID :one
+SELECT
+	COUNT(*)
+FROM
+	cluster_upgrades
+WHERE
+	tenant_id = $1
+`
+
+func (q *Queries) ClusterUpgradesCountByTenantID(ctx context.Context, tenantid uuid.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, clusterUpgradesCountByTenantID, tenantid)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const clusterUpgradesCreate = `-- name: ClusterUpgradesCreate :one
 INSERT INTO
 	cluster_upgrades (

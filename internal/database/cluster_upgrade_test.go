@@ -48,16 +48,24 @@ func TestRepo_ClusterUpgradeHistoryGet_Pagination(t *testing.T) {
 		}
 
 		// Should return all 10 records (less than default limit of 50)
-		if len(got) != 10 {
-			t.Errorf("expected 10 records with default limit, got %d", len(got))
+		if len(got.Items) != 10 {
+			t.Errorf("expected 10 records with default limit, got %d", len(got.Items))
 		}
 
 		// Should be ordered by last_modified DESC (newest first)
-		if got[0].Version != "1.30.9" {
-			t.Errorf("expected first record to be 1.30.9 (newest), got %s", got[0].Version)
+		if got.Items[0].Version != "1.30.9" {
+			t.Errorf("expected first record to be 1.30.9 (newest), got %s", got.Items[0].Version)
 		}
-		if got[9].Version != "1.30.0" {
-			t.Errorf("expected last record to be 1.30.0 (oldest), got %s", got[9].Version)
+		if got.Items[9].Version != "1.30.0" {
+			t.Errorf("expected last record to be 1.30.0 (oldest), got %s", got.Items[9].Version)
+		}
+
+		// Check pagination metadata
+		if got.TotalCount != 10 {
+			t.Errorf("expected TotalCount 10, got %d", got.TotalCount)
+		}
+		if got.HasMore {
+			t.Error("expected HasMore to be false (all records returned)")
 		}
 	})
 
@@ -68,8 +76,15 @@ func TestRepo_ClusterUpgradeHistoryGet_Pagination(t *testing.T) {
 		}
 
 		// Should still return all records (negative limit becomes 50)
-		if len(got) != 10 {
-			t.Errorf("expected 10 records with negative limit, got %d", len(got))
+		if len(got.Items) != 10 {
+			t.Errorf("expected 10 records with negative limit, got %d", len(got.Items))
+		}
+
+		if got.TotalCount != 10 {
+			t.Errorf("expected TotalCount 10, got %d", got.TotalCount)
+		}
+		if got.HasMore {
+			t.Error("expected HasMore to be false")
 		}
 	})
 
@@ -80,11 +95,18 @@ func TestRepo_ClusterUpgradeHistoryGet_Pagination(t *testing.T) {
 		}
 
 		// Should return 5 records starting from beginning (offset becomes 0)
-		if len(got) != 5 {
-			t.Errorf("expected 5 records, got %d", len(got))
+		if len(got.Items) != 5 {
+			t.Errorf("expected 5 records, got %d", len(got.Items))
 		}
-		if got[0].Version != "1.30.9" {
-			t.Errorf("expected first record to be 1.30.9, got %s", got[0].Version)
+		if got.Items[0].Version != "1.30.9" {
+			t.Errorf("expected first record to be 1.30.9, got %s", got.Items[0].Version)
+		}
+
+		if got.TotalCount != 10 {
+			t.Errorf("expected TotalCount 10, got %d", got.TotalCount)
+		}
+		if !got.HasMore {
+			t.Error("expected HasMore to be true (5 items returned, 10 total)")
 		}
 	})
 
@@ -94,16 +116,23 @@ func TestRepo_ClusterUpgradeHistoryGet_Pagination(t *testing.T) {
 			t.Fatalf("ClusterUpgradeHistoryGet() error = %v", err)
 		}
 
-		if len(got) != 3 {
-			t.Errorf("expected 3 records with limit=3, got %d", len(got))
+		if len(got.Items) != 3 {
+			t.Errorf("expected 3 records with limit=3, got %d", len(got.Items))
 		}
 
 		// Should be the 3 newest records
-		if got[0].Version != "1.30.9" {
-			t.Errorf("expected first record to be 1.30.9, got %s", got[0].Version)
+		if got.Items[0].Version != "1.30.9" {
+			t.Errorf("expected first record to be 1.30.9, got %s", got.Items[0].Version)
 		}
-		if got[2].Version != "1.30.7" {
-			t.Errorf("expected third record to be 1.30.7, got %s", got[2].Version)
+		if got.Items[2].Version != "1.30.7" {
+			t.Errorf("expected third record to be 1.30.7, got %s", got.Items[2].Version)
+		}
+
+		if got.TotalCount != 10 {
+			t.Errorf("expected TotalCount 10, got %d", got.TotalCount)
+		}
+		if !got.HasMore {
+			t.Error("expected HasMore to be true (3 items returned, 10 total)")
 		}
 	})
 
@@ -113,17 +142,24 @@ func TestRepo_ClusterUpgradeHistoryGet_Pagination(t *testing.T) {
 			t.Fatalf("ClusterUpgradeHistoryGet() error = %v", err)
 		}
 
-		if len(got) != 3 {
-			t.Errorf("expected 3 records, got %d", len(got))
+		if len(got.Items) != 3 {
+			t.Errorf("expected 3 records, got %d", len(got.Items))
 		}
 
 		// With offset=2, should skip the 2 newest and return next 3
 		// Order: 1.30.9 (skip), 1.30.8 (skip), 1.30.7, 1.30.6, 1.30.5
-		if got[0].Version != "1.30.7" {
-			t.Errorf("expected first record to be 1.30.7, got %s", got[0].Version)
+		if got.Items[0].Version != "1.30.7" {
+			t.Errorf("expected first record to be 1.30.7, got %s", got.Items[0].Version)
 		}
-		if got[2].Version != "1.30.5" {
-			t.Errorf("expected third record to be 1.30.5, got %s", got[2].Version)
+		if got.Items[2].Version != "1.30.5" {
+			t.Errorf("expected third record to be 1.30.5, got %s", got.Items[2].Version)
+		}
+
+		if got.TotalCount != 10 {
+			t.Errorf("expected TotalCount 10, got %d", got.TotalCount)
+		}
+		if !got.HasMore {
+			t.Error("expected HasMore to be true (offset 2 + 3 items = 5 < 10 total)")
 		}
 	})
 
@@ -133,8 +169,15 @@ func TestRepo_ClusterUpgradeHistoryGet_Pagination(t *testing.T) {
 			t.Fatalf("ClusterUpgradeHistoryGet() error = %v", err)
 		}
 
-		if len(got) != 0 {
-			t.Errorf("expected 0 records with offset beyond available, got %d", len(got))
+		if len(got.Items) != 0 {
+			t.Errorf("expected 0 records with offset beyond available, got %d", len(got.Items))
+		}
+
+		if got.TotalCount != 10 {
+			t.Errorf("expected TotalCount 10, got %d", got.TotalCount)
+		}
+		if got.HasMore {
+			t.Error("expected HasMore to be false (offset beyond all records)")
 		}
 	})
 
@@ -145,8 +188,15 @@ func TestRepo_ClusterUpgradeHistoryGet_Pagination(t *testing.T) {
 		}
 
 		// Should return all 10 available records
-		if len(got) != 10 {
-			t.Errorf("expected 10 records (all available), got %d", len(got))
+		if len(got.Items) != 10 {
+			t.Errorf("expected 10 records (all available), got %d", len(got.Items))
+		}
+
+		if got.TotalCount != 10 {
+			t.Errorf("expected TotalCount 10, got %d", got.TotalCount)
+		}
+		if got.HasMore {
+			t.Error("expected HasMore to be false (all records returned)")
 		}
 	})
 
@@ -158,8 +208,15 @@ func TestRepo_ClusterUpgradeHistoryGet_Pagination(t *testing.T) {
 		}
 
 		// Should still return all 10 records (capped at 1000, but only 10 exist)
-		if len(got) != 10 {
-			t.Errorf("expected 10 records (all available), got %d", len(got))
+		if len(got.Items) != 10 {
+			t.Errorf("expected 10 records (all available), got %d", len(got.Items))
+		}
+
+		if got.TotalCount != 10 {
+			t.Errorf("expected TotalCount 10, got %d", got.TotalCount)
+		}
+		if got.HasMore {
+			t.Error("expected HasMore to be false (all records returned)")
 		}
 	})
 
@@ -175,11 +232,11 @@ func TestRepo_ClusterUpgradeHistoryGet_Pagination(t *testing.T) {
 				t.Fatalf("ClusterUpgradeHistoryGet() error = %v", err)
 			}
 
-			if len(page) == 0 {
+			if len(page.Items) == 0 {
 				break
 			}
 
-			for _, upgrade := range page {
+			for _, upgrade := range page.Items {
 				allVersions = append(allVersions, upgrade.Version)
 			}
 
@@ -221,8 +278,15 @@ func TestRepo_ClusterUpgradeHistoryGet_EmptyResult(t *testing.T) {
 			t.Fatalf("ClusterUpgradeHistoryGet() error = %v", err)
 		}
 
-		if len(got) != 0 {
-			t.Errorf("expected empty result, got %d records", len(got))
+		if len(got.Items) != 0 {
+			t.Errorf("expected empty result, got %d records", len(got.Items))
+		}
+
+		if got.TotalCount != 0 {
+			t.Errorf("expected TotalCount 0, got %d", got.TotalCount)
+		}
+		if got.HasMore {
+			t.Error("expected HasMore to be false (no records)")
 		}
 	})
 }
@@ -258,11 +322,11 @@ func TestRepo_ClusterUpgradeHistoryGet_ReturnedFields(t *testing.T) {
 		t.Fatalf("ClusterUpgradeHistoryGet() error = %v", err)
 	}
 
-	if len(got) != 1 {
-		t.Fatalf("expected 1 record, got %d", len(got))
+	if len(got.Items) != 1 {
+		t.Fatalf("expected 1 record, got %d", len(got.Items))
 	}
 
-	upgrade := got[0]
+	upgrade := got.Items[0]
 
 	// Verify all fields are populated correctly
 	if upgrade.ID != upgradeID {
@@ -288,6 +352,14 @@ func TestRepo_ClusterUpgradeHistoryGet_ReturnedFields(t *testing.T) {
 	}
 	if upgrade.UpgradeStartTime == nil {
 		t.Error("expected UpgradeStartTime to be set")
+	}
+
+	// Check pagination metadata
+	if got.TotalCount != 1 {
+		t.Errorf("expected TotalCount 1, got %d", got.TotalCount)
+	}
+	if got.HasMore {
+		t.Error("expected HasMore to be false (only 1 record)")
 	}
 }
 
@@ -348,13 +420,20 @@ func TestRepo_ClusterUpgradeHistoryGetByTenant_Pagination(t *testing.T) {
 			t.Fatalf("ClusterUpgradeHistoryGetByTenant() error = %v", err)
 		}
 
-		if len(got) != 7 {
-			t.Errorf("expected 7 records for tenant1, got %d", len(got))
+		if len(got.Items) != 7 {
+			t.Errorf("expected 7 records for tenant1, got %d", len(got.Items))
 		}
 
 		// Verify order (DESC by last_modified) - newest first
-		if got[0].Version != "1.28.6" {
-			t.Errorf("expected first record to be 1.28.6, got %s", got[0].Version)
+		if got.Items[0].Version != "1.28.6" {
+			t.Errorf("expected first record to be 1.28.6, got %s", got.Items[0].Version)
+		}
+
+		if got.TotalCount != 7 {
+			t.Errorf("expected TotalCount 7, got %d", got.TotalCount)
+		}
+		if got.HasMore {
+			t.Error("expected HasMore to be false (all records returned)")
 		}
 	})
 
@@ -364,8 +443,15 @@ func TestRepo_ClusterUpgradeHistoryGetByTenant_Pagination(t *testing.T) {
 			t.Fatalf("ClusterUpgradeHistoryGetByTenant() error = %v", err)
 		}
 
-		if len(got) != 3 {
-			t.Errorf("expected 3 records, got %d", len(got))
+		if len(got.Items) != 3 {
+			t.Errorf("expected 3 records, got %d", len(got.Items))
+		}
+
+		if got.TotalCount != 7 {
+			t.Errorf("expected TotalCount 7, got %d", got.TotalCount)
+		}
+		if !got.HasMore {
+			t.Error("expected HasMore to be true (3 items returned, 7 total)")
 		}
 	})
 
@@ -375,13 +461,20 @@ func TestRepo_ClusterUpgradeHistoryGetByTenant_Pagination(t *testing.T) {
 			t.Fatalf("ClusterUpgradeHistoryGetByTenant() error = %v", err)
 		}
 
-		if len(got) != 3 {
-			t.Errorf("expected 3 records, got %d", len(got))
+		if len(got.Items) != 3 {
+			t.Errorf("expected 3 records, got %d", len(got.Items))
 		}
 
 		// Should skip first 2 records
-		if got[0].Version != "1.28.4" {
-			t.Errorf("expected first record after offset to be 1.28.4, got %s", got[0].Version)
+		if got.Items[0].Version != "1.28.4" {
+			t.Errorf("expected first record after offset to be 1.28.4, got %s", got.Items[0].Version)
+		}
+
+		if got.TotalCount != 7 {
+			t.Errorf("expected TotalCount 7, got %d", got.TotalCount)
+		}
+		if !got.HasMore {
+			t.Error("expected HasMore to be true (offset 2 + 3 items = 5 < 7 total)")
 		}
 	})
 
@@ -392,8 +485,15 @@ func TestRepo_ClusterUpgradeHistoryGetByTenant_Pagination(t *testing.T) {
 		}
 
 		// Should return all 7 records (less than default 50)
-		if len(got) != 7 {
-			t.Errorf("expected 7 records with default limit, got %d", len(got))
+		if len(got.Items) != 7 {
+			t.Errorf("expected 7 records with default limit, got %d", len(got.Items))
+		}
+
+		if got.TotalCount != 7 {
+			t.Errorf("expected TotalCount 7, got %d", got.TotalCount)
+		}
+		if got.HasMore {
+			t.Error("expected HasMore to be false")
 		}
 	})
 
@@ -403,13 +503,20 @@ func TestRepo_ClusterUpgradeHistoryGetByTenant_Pagination(t *testing.T) {
 			t.Fatalf("ClusterUpgradeHistoryGetByTenant() error = %v", err)
 		}
 
-		if len(got) != 2 {
-			t.Errorf("expected 2 records, got %d", len(got))
+		if len(got.Items) != 2 {
+			t.Errorf("expected 2 records, got %d", len(got.Items))
 		}
 
 		// Should start from beginning (no offset)
-		if got[0].Version != "1.28.6" {
-			t.Errorf("expected first record to be 1.28.6, got %s", got[0].Version)
+		if got.Items[0].Version != "1.28.6" {
+			t.Errorf("expected first record to be 1.28.6, got %s", got.Items[0].Version)
+		}
+
+		if got.TotalCount != 7 {
+			t.Errorf("expected TotalCount 7, got %d", got.TotalCount)
+		}
+		if !got.HasMore {
+			t.Error("expected HasMore to be true (2 items returned, 7 total)")
 		}
 	})
 
@@ -420,8 +527,15 @@ func TestRepo_ClusterUpgradeHistoryGetByTenant_Pagination(t *testing.T) {
 		}
 
 		// Should return all available records (limited by data, not by cap)
-		if len(got) != 7 {
-			t.Errorf("expected 7 records, got %d", len(got))
+		if len(got.Items) != 7 {
+			t.Errorf("expected 7 records, got %d", len(got.Items))
+		}
+
+		if got.TotalCount != 7 {
+			t.Errorf("expected TotalCount 7, got %d", got.TotalCount)
+		}
+		if got.HasMore {
+			t.Error("expected HasMore to be false")
 		}
 	})
 }
@@ -472,13 +586,20 @@ func TestRepo_ClusterUpgradeHistoryGetAll_Pagination(t *testing.T) {
 			t.Fatalf("ClusterUpgradeHistoryGetAll() error = %v", err)
 		}
 
-		if len(got) != 15 {
-			t.Errorf("expected 15 records total, got %d", len(got))
+		if len(got.Items) != 15 {
+			t.Errorf("expected 15 records total, got %d", len(got.Items))
 		}
 
 		// Verify order (DESC by last_modified) - newest first
-		if got[0].Version != "1.30.14" {
-			t.Errorf("expected first record to be 1.30.14, got %s", got[0].Version)
+		if got.Items[0].Version != "1.30.14" {
+			t.Errorf("expected first record to be 1.30.14, got %s", got.Items[0].Version)
+		}
+
+		if got.TotalCount != 15 {
+			t.Errorf("expected TotalCount 15, got %d", got.TotalCount)
+		}
+		if got.HasMore {
+			t.Error("expected HasMore to be false (all records returned)")
 		}
 	})
 
@@ -488,16 +609,23 @@ func TestRepo_ClusterUpgradeHistoryGetAll_Pagination(t *testing.T) {
 			t.Fatalf("ClusterUpgradeHistoryGetAll() error = %v", err)
 		}
 
-		if len(got) != 5 {
-			t.Errorf("expected 5 records, got %d", len(got))
+		if len(got.Items) != 5 {
+			t.Errorf("expected 5 records, got %d", len(got.Items))
 		}
 
 		// Should be 5 newest
-		if got[0].Version != "1.30.14" {
-			t.Errorf("expected first record to be 1.30.14, got %s", got[0].Version)
+		if got.Items[0].Version != "1.30.14" {
+			t.Errorf("expected first record to be 1.30.14, got %s", got.Items[0].Version)
 		}
-		if got[4].Version != "1.30.10" {
-			t.Errorf("expected fifth record to be 1.30.10, got %s", got[4].Version)
+		if got.Items[4].Version != "1.30.10" {
+			t.Errorf("expected fifth record to be 1.30.10, got %s", got.Items[4].Version)
+		}
+
+		if got.TotalCount != 15 {
+			t.Errorf("expected TotalCount 15, got %d", got.TotalCount)
+		}
+		if !got.HasMore {
+			t.Error("expected HasMore to be true (5 items returned, 15 total)")
 		}
 	})
 
@@ -507,13 +635,20 @@ func TestRepo_ClusterUpgradeHistoryGetAll_Pagination(t *testing.T) {
 			t.Fatalf("ClusterUpgradeHistoryGetAll() error = %v", err)
 		}
 
-		if len(got) != 3 {
-			t.Errorf("expected 3 records, got %d", len(got))
+		if len(got.Items) != 3 {
+			t.Errorf("expected 3 records, got %d", len(got.Items))
 		}
 
 		// Should skip first 5, return next 3
-		if got[0].Version != "1.29.9" {
-			t.Errorf("expected first record after offset to be 1.29.9, got %s", got[0].Version)
+		if got.Items[0].Version != "1.29.9" {
+			t.Errorf("expected first record after offset to be 1.29.9, got %s", got.Items[0].Version)
+		}
+
+		if got.TotalCount != 15 {
+			t.Errorf("expected TotalCount 15, got %d", got.TotalCount)
+		}
+		if !got.HasMore {
+			t.Error("expected HasMore to be true (offset 5 + 3 items = 8 < 15 total)")
 		}
 	})
 
@@ -524,8 +659,15 @@ func TestRepo_ClusterUpgradeHistoryGetAll_Pagination(t *testing.T) {
 		}
 
 		// Should return all 15 records (less than default 50)
-		if len(got) != 15 {
-			t.Errorf("expected 15 records with default limit, got %d", len(got))
+		if len(got.Items) != 15 {
+			t.Errorf("expected 15 records with default limit, got %d", len(got.Items))
+		}
+
+		if got.TotalCount != 15 {
+			t.Errorf("expected TotalCount 15, got %d", got.TotalCount)
+		}
+		if got.HasMore {
+			t.Error("expected HasMore to be false")
 		}
 	})
 
@@ -535,13 +677,20 @@ func TestRepo_ClusterUpgradeHistoryGetAll_Pagination(t *testing.T) {
 			t.Fatalf("ClusterUpgradeHistoryGetAll() error = %v", err)
 		}
 
-		if len(got) != 3 {
-			t.Errorf("expected 3 records, got %d", len(got))
+		if len(got.Items) != 3 {
+			t.Errorf("expected 3 records, got %d", len(got.Items))
 		}
 
 		// Should start from beginning
-		if got[0].Version != "1.30.14" {
-			t.Errorf("expected first record to be 1.30.14, got %s", got[0].Version)
+		if got.Items[0].Version != "1.30.14" {
+			t.Errorf("expected first record to be 1.30.14, got %s", got.Items[0].Version)
+		}
+
+		if got.TotalCount != 15 {
+			t.Errorf("expected TotalCount 15, got %d", got.TotalCount)
+		}
+		if !got.HasMore {
+			t.Error("expected HasMore to be true (3 items returned, 15 total)")
 		}
 	})
 
@@ -552,8 +701,15 @@ func TestRepo_ClusterUpgradeHistoryGetAll_Pagination(t *testing.T) {
 		}
 
 		// Should return all available records
-		if len(got) != 15 {
-			t.Errorf("expected 15 records, got %d", len(got))
+		if len(got.Items) != 15 {
+			t.Errorf("expected 15 records, got %d", len(got.Items))
+		}
+
+		if got.TotalCount != 15 {
+			t.Errorf("expected TotalCount 15, got %d", got.TotalCount)
+		}
+		if got.HasMore {
+			t.Error("expected HasMore to be false")
 		}
 	})
 
@@ -563,8 +719,15 @@ func TestRepo_ClusterUpgradeHistoryGetAll_Pagination(t *testing.T) {
 			t.Fatalf("ClusterUpgradeHistoryGetAll() error = %v", err)
 		}
 
-		if len(got) != 0 {
-			t.Errorf("expected 0 records with offset beyond available, got %d", len(got))
+		if len(got.Items) != 0 {
+			t.Errorf("expected 0 records with offset beyond available, got %d", len(got.Items))
+		}
+
+		if got.TotalCount != 15 {
+			t.Errorf("expected TotalCount 15, got %d", got.TotalCount)
+		}
+		if got.HasMore {
+			t.Error("expected HasMore to be false (offset beyond all records)")
 		}
 	})
 }

@@ -123,3 +123,29 @@ OFFSET
 LIMIT
 	@historyLimit
 ;
+
+-- name: ClusterUpgradesCountByEnvironmentID :one
+SELECT
+	COUNT(*)
+FROM
+	cluster_upgrades
+WHERE
+	tenant_id = @tenantId
+	AND environment_id = @envID
+;
+
+-- name: ClusterUpgradesCountByTenantID :one
+SELECT
+	COUNT(*)
+FROM
+	cluster_upgrades
+WHERE
+	tenant_id = @tenantId
+;
+
+-- name: ClusterUpgradesCountAll :one
+SELECT
+	COUNT(*)
+FROM
+	cluster_upgrades
+;

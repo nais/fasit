@@ -27,6 +27,25 @@ type ClusterUpgradeStatus {
 	actor: String
 }
 
+"""
+Result type for paginated cluster upgrade history queries.
+"""
+type ClusterUpgradeHistoryResult {
+	"""
+	The list of cluster upgrade records for the current page.
+	"""
+	items: [ClusterUpgradeStatus!]!
+	"""
+	Total number of records available across all pages.
+	"""
+	totalCount: Int!
+	"""
+	Whether there are more records available after the current page.
+	Calculated as: (offset + items.length) < totalCount
+	"""
+	hasMore: Boolean!
+}
+
 enum DayOfWeek {
 	MONDAY
 	TUESDAY
@@ -120,7 +139,7 @@ type Environment {
 	Results are ordered by last_modified DESC (newest first).
 	Invalid values are normalized: negative or zero limit defaults to 50, limit > 1000 capped at 1000, negative offset defaults to 0.
 	"""
-	clusterUpgradeHistory(limit: Int, offset: Int): [ClusterUpgradeStatus!]!
+	clusterUpgradeHistory(limit: Int, offset: Int): ClusterUpgradeHistoryResult!
 	clusterUpgradeStatus: ClusterUpgradeStatus
 	versions: EnvironmentVersions
 	labels: [EnvironmentLabel!]!
