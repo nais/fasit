@@ -185,10 +185,10 @@ WHERE
 	AND environment_id = $2
 ORDER BY
 	last_modified DESC
-LIMIT
-	$4
 OFFSET
 	$3
+LIMIT
+	$4
 `
 
 type ClusterUpgradesHistoryGetByEnvironmentIDParams struct {

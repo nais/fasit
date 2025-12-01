@@ -2575,7 +2575,7 @@ type Environment {
 	- offset: Number of records to skip (default: 0, must be non-negative)
 
 	Results are ordered by last_modified DESC (newest first).
-	Invalid values (negative/zero limit, negative offset) are replaced with defaults.
+	Invalid values are normalized: negative or zero limit defaults to 50, negative offset defaults to 0.
 	"""
 	clusterUpgradeHistory(limit: Int, offset: Int): [ClusterUpgradeStatus!]!
 	clusterUpgradeStatus: ClusterUpgradeStatus

@@ -42,8 +42,8 @@ func (r *repo) ClusterUpgradeHistoryGet(ctx context.Context, tenantID, envID uui
 	clusterUpgrades, err := r.querier.ClusterUpgradesHistoryGetByEnvironmentID(ctx, gensql.ClusterUpgradesHistoryGetByEnvironmentIDParams{
 		Tenantid:      tenantID,
 		Envid:         envID,
-		Historylimit:  limit,
 		Historyoffset: offset,
+		Historylimit:  limit,
 	})
 	if err != nil {
 		return nil, err
