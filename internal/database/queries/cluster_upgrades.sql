@@ -75,6 +75,10 @@ WHERE
 	AND environment_id = @envID
 ORDER BY
 	last_modified DESC
+OFFSET
+	@historyOffset
+LIMIT
+	@historyLimit
 ;
 
 -- name: ClusterUpgradesGetByVersion :one

@@ -481,6 +481,80 @@ func (_c *Repo_ClusterOperationsGetByUpgradeID_Call) RunAndReturn(run func(ctx c
 	return _c
 }
 
+// ClusterOperationsGetDanglingForEnvironment provides a mock function for the type Repo
+func (_mock *Repo) ClusterOperationsGetDanglingForEnvironment(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID) (map[uuid.UUID][]*model.EnvironmentOperation, error) {
+	ret := _mock.Called(ctx, tenantID, envID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ClusterOperationsGetDanglingForEnvironment")
+	}
+
+	var r0 map[uuid.UUID][]*model.EnvironmentOperation
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID) (map[uuid.UUID][]*model.EnvironmentOperation, error)); ok {
+		return returnFunc(ctx, tenantID, envID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID) map[uuid.UUID][]*model.EnvironmentOperation); ok {
+		r0 = returnFunc(ctx, tenantID, envID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[uuid.UUID][]*model.EnvironmentOperation)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, uuid.UUID) error); ok {
+		r1 = returnFunc(ctx, tenantID, envID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Repo_ClusterOperationsGetDanglingForEnvironment_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ClusterOperationsGetDanglingForEnvironment'
+type Repo_ClusterOperationsGetDanglingForEnvironment_Call struct {
+	*mock.Call
+}
+
+// ClusterOperationsGetDanglingForEnvironment is a helper method to define mock.On call
+//   - ctx context.Context
+//   - tenantID uuid.UUID
+//   - envID uuid.UUID
+func (_e *Repo_Expecter) ClusterOperationsGetDanglingForEnvironment(ctx interface{}, tenantID interface{}, envID interface{}) *Repo_ClusterOperationsGetDanglingForEnvironment_Call {
+	return &Repo_ClusterOperationsGetDanglingForEnvironment_Call{Call: _e.mock.On("ClusterOperationsGetDanglingForEnvironment", ctx, tenantID, envID)}
+}
+
+func (_c *Repo_ClusterOperationsGetDanglingForEnvironment_Call) Run(run func(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID)) *Repo_ClusterOperationsGetDanglingForEnvironment_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		var arg2 uuid.UUID
+		if args[2] != nil {
+			arg2 = args[2].(uuid.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *Repo_ClusterOperationsGetDanglingForEnvironment_Call) Return(uUIDToEnvironmentOperations map[uuid.UUID][]*model.EnvironmentOperation, err error) *Repo_ClusterOperationsGetDanglingForEnvironment_Call {
+	_c.Call.Return(uUIDToEnvironmentOperations, err)
+	return _c
+}
+
+func (_c *Repo_ClusterOperationsGetDanglingForEnvironment_Call) RunAndReturn(run func(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID) (map[uuid.UUID][]*model.EnvironmentOperation, error)) *Repo_ClusterOperationsGetDanglingForEnvironment_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ClusterUpgradeGet provides a mock function for the type Repo
 func (_mock *Repo) ClusterUpgradeGet(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID) (*model.ClusterUpgradeStatus, error) {
 	ret := _mock.Called(ctx, tenantID, envID)
@@ -704,8 +778,8 @@ func (_c *Repo_ClusterUpgradeGetByVersion_Call) RunAndReturn(run func(ctx contex
 }
 
 // ClusterUpgradeHistoryGet provides a mock function for the type Repo
-func (_mock *Repo) ClusterUpgradeHistoryGet(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID) ([]*model.ClusterUpgradeStatus, error) {
-	ret := _mock.Called(ctx, tenantID, envID)
+func (_mock *Repo) ClusterUpgradeHistoryGet(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID, limit int32, offset int32) ([]*model.ClusterUpgradeStatus, error) {
+	ret := _mock.Called(ctx, tenantID, envID, limit, offset)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ClusterUpgradeHistoryGet")
@@ -713,18 +787,18 @@ func (_mock *Repo) ClusterUpgradeHistoryGet(ctx context.Context, tenantID uuid.U
 
 	var r0 []*model.ClusterUpgradeStatus
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID) ([]*model.ClusterUpgradeStatus, error)); ok {
-		return returnFunc(ctx, tenantID, envID)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID, int32, int32) ([]*model.ClusterUpgradeStatus, error)); ok {
+		return returnFunc(ctx, tenantID, envID, limit, offset)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID) []*model.ClusterUpgradeStatus); ok {
-		r0 = returnFunc(ctx, tenantID, envID)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID, int32, int32) []*model.ClusterUpgradeStatus); ok {
+		r0 = returnFunc(ctx, tenantID, envID, limit, offset)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*model.ClusterUpgradeStatus)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, uuid.UUID) error); ok {
-		r1 = returnFunc(ctx, tenantID, envID)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, uuid.UUID, int32, int32) error); ok {
+		r1 = returnFunc(ctx, tenantID, envID, limit, offset)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -740,11 +814,13 @@ type Repo_ClusterUpgradeHistoryGet_Call struct {
 //   - ctx context.Context
 //   - tenantID uuid.UUID
 //   - envID uuid.UUID
-func (_e *Repo_Expecter) ClusterUpgradeHistoryGet(ctx interface{}, tenantID interface{}, envID interface{}) *Repo_ClusterUpgradeHistoryGet_Call {
-	return &Repo_ClusterUpgradeHistoryGet_Call{Call: _e.mock.On("ClusterUpgradeHistoryGet", ctx, tenantID, envID)}
+//   - limit int32
+//   - offset int32
+func (_e *Repo_Expecter) ClusterUpgradeHistoryGet(ctx interface{}, tenantID interface{}, envID interface{}, limit interface{}, offset interface{}) *Repo_ClusterUpgradeHistoryGet_Call {
+	return &Repo_ClusterUpgradeHistoryGet_Call{Call: _e.mock.On("ClusterUpgradeHistoryGet", ctx, tenantID, envID, limit, offset)}
 }
 
-func (_c *Repo_ClusterUpgradeHistoryGet_Call) Run(run func(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID)) *Repo_ClusterUpgradeHistoryGet_Call {
+func (_c *Repo_ClusterUpgradeHistoryGet_Call) Run(run func(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID, limit int32, offset int32)) *Repo_ClusterUpgradeHistoryGet_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -758,10 +834,20 @@ func (_c *Repo_ClusterUpgradeHistoryGet_Call) Run(run func(ctx context.Context, 
 		if args[2] != nil {
 			arg2 = args[2].(uuid.UUID)
 		}
+		var arg3 int32
+		if args[3] != nil {
+			arg3 = args[3].(int32)
+		}
+		var arg4 int32
+		if args[4] != nil {
+			arg4 = args[4].(int32)
+		}
 		run(
 			arg0,
 			arg1,
 			arg2,
+			arg3,
+			arg4,
 		)
 	})
 	return _c
@@ -772,7 +858,7 @@ func (_c *Repo_ClusterUpgradeHistoryGet_Call) Return(clusterUpgradeStatuss []*mo
 	return _c
 }
 
-func (_c *Repo_ClusterUpgradeHistoryGet_Call) RunAndReturn(run func(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID) ([]*model.ClusterUpgradeStatus, error)) *Repo_ClusterUpgradeHistoryGet_Call {
+func (_c *Repo_ClusterUpgradeHistoryGet_Call) RunAndReturn(run func(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID, limit int32, offset int32) ([]*model.ClusterUpgradeStatus, error)) *Repo_ClusterUpgradeHistoryGet_Call {
 	_c.Call.Return(run)
 	return _c
 }

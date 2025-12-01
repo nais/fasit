@@ -93,3 +93,20 @@ FROM
 WHERE
 	id = @id
 ;
+
+-- name: ClusterOperationsGetDanglingForEnvironment :many
+-- Get all RUNNING operations for completed (DONE/FAILED) upgrades in an environment
+-- These are "dangling" operations that should be updated to their final state
+SELECT
+	co.*
+FROM
+	cluster_operations co
+	INNER JOIN cluster_upgrades cu ON co.upgrade_id = cu.id
+WHERE
+	cu.tenant_id = @tenantId
+	AND cu.environment_id = @envID
+	AND cu.status IN ('DONE', 'FAILED')
+	AND co.status = 'RUNNING'
+ORDER BY
+	co.start_time DESC
+;

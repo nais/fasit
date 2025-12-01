@@ -722,113 +722,8 @@ func (c *ClusterUpgrader) getAndUpdateRunningOperations(ctx context.Context, pro
 	return runningOperations, nil
 }
 
-// cleanupDanglingOperations handles cleanup of stale operations for completed upgrades
-func (c *ClusterUpgrader) cleanupDanglingOperations(ctx context.Context, projectID string, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus) error {
-	log := c.log.WithFields(logrus.Fields{
-		"tenant_id":      env.TenantID,
-		"environment":    env.Name,
-		"upgrade_id":     clusterUpgrade.ID,
-		"upgrade_status": clusterUpgrade.UpgradeStatus,
-	})
-
-	// Get all existing operations for this completed upgrade from database
-	existingOps, err := c.repo.ClusterOperationsGetByUpgradeID(ctx, clusterUpgrade.ID)
-	if err != nil {
-		log.WithError(err).Error("failed to get existing cluster operations for cleanup")
-		return err
-	}
-
-	if len(existingOps) == 0 {
-		log.Debug("no operations found for completed upgrade, nothing to cleanup")
-		return nil
-	}
-
-	// Count operations that need cleanup
-	danglingCount := 0
-	for _, op := range existingOps {
-		if op.Status == "RUNNING" {
-			danglingCount++
-		}
-	}
-
-	if danglingCount == 0 {
-		log.WithField("total_operations", len(existingOps)).Debug("all operations for completed upgrade are already in final state")
-		return nil
-	}
-
-	log.WithFields(logrus.Fields{
-		"total_operations": len(existingOps),
-		"dangling_running": danglingCount,
-	}).Info("cleaning up dangling operations for completed upgrade")
-
-	// Process each operation that might be dangling
-	for _, existingOp := range existingOps {
-		// Skip operations that are already in a final state
-		if existingOp.Status == "DONE" || existingOp.Status == "ABORTING" || existingOp.Status == "ABORTED" {
-			continue
-		}
-
-		if existingOp.Status == "RUNNING" {
-			// Try to get the current status from GKE
-			log.WithField("operation", existingOp.Name).Debug("checking final status of dangling operation")
-
-			err := c.retryer.WithBackoff(ctx, "cleanup_operation_status", func() error {
-				var gkeOp *containerpb.Operation
-				var retryErr error
-				gkeOp, retryErr = c.client.GetOperation(ctx, projectID, existingOp.Name)
-				if retryErr != nil {
-					return retryErr
-				}
-
-				// Update the operation with its final status
-				_, updateErr := c.repo.CreateOrUpdateClusterOperation(ctx, env.TenantID, env.ID, clusterUpgrade.ID, gkeOp)
-				if updateErr != nil {
-					log.WithError(updateErr).WithField("operation", existingOp.Name).Error("failed to update dangling operation")
-					return updateErr
-				}
-
-				log.WithFields(logrus.Fields{
-					"operation":    existingOp.Name,
-					"old_status":   existingOp.Status,
-					"final_status": gkeOp.Status.String(),
-					"type":         gkeOp.OperationType.String(),
-				}).Info("cleaned up dangling operation")
-
-				return nil
-			})
-			if err != nil {
-				// Check if operation no longer exists in GKE (NotFound error)
-				if apiErr, ok := err.(*apierror.APIError); ok && apiErr.GRPCStatus().Code() == codes.NotFound {
-					// Operation doesn't exist in GKE anymore - mark it as DONE in our database
-					log.WithFields(logrus.Fields{
-						"operation":      existingOp.Name,
-						"upgrade_id":     clusterUpgrade.ID,
-						"upgrade_status": clusterUpgrade.UpgradeStatus,
-					}).Info("operation no longer exists in GKE, marking as DONE")
-
-					// Create a synthetic DONE operation to update the database
-					doneOp := &containerpb.Operation{
-						Name:   existingOp.Name,
-						Status: containerpb.Operation_DONE,
-					}
-					_, updateErr := c.repo.CreateOrUpdateClusterOperation(ctx, env.TenantID, env.ID, clusterUpgrade.ID, doneOp)
-					if updateErr != nil {
-						log.WithError(updateErr).WithField("operation", existingOp.Name).Error("failed to mark stale operation as DONE")
-						// Continue processing other operations
-					}
-				} else {
-					log.WithError(err).WithField("operation", existingOp.Name).Warn("failed to get operation status from GKE during cleanup")
-				}
-				// Continue processing other operations rather than failing entirely
-			}
-		}
-	}
-
-	return nil
-}
-
 // cleanupCompletedUpgradeOperations cleans up dangling operations for completed upgrades
-// This uses the history query to find ALL upgrades (including DONE/FAILED) and clean up their operations
+// Uses a SQL query to efficiently find all RUNNING operations for DONE/FAILED upgrades
 func (c *ClusterUpgrader) cleanupCompletedUpgradeOperations(ctx context.Context, tenant *model.Tenant, env *model.Environment) error {
 	log := c.log.WithFields(logrus.Fields{
 		"tenant":      tenant.Name,
@@ -842,38 +737,86 @@ func (c *ClusterUpgrader) cleanupCompletedUpgradeOperations(ctx context.Context,
 		return nil // Don't fail cleanup for missing project ID
 	}
 
-	// Get ALL upgrades for this environment (including DONE/FAILED)
-	allUpgrades, err := c.repo.ClusterUpgradeHistoryGet(ctx, env.TenantID, env.ID)
+	// Get all RUNNING operations for completed (DONE/FAILED) upgrades in this environment
+	// This query uses a JOIN to efficiently find dangling operations without fetching all upgrades
+	// Returns a map of upgrade_id -> operations for that upgrade
+	danglingOpsByUpgrade, err := c.repo.ClusterOperationsGetDanglingForEnvironment(ctx, env.TenantID, env.ID)
 	if err != nil {
-		log.WithError(err).Debug("failed to get upgrade history for cleanup")
+		log.WithError(err).Debug("failed to get dangling operations for cleanup")
 		return err
 	}
 
-	// Only process completed upgrades that might have stale operations
-	completedUpgrades := make([]*model.ClusterUpgradeStatus, 0)
-	for _, upgrade := range allUpgrades {
-		if upgrade.UpgradeStatus == model.UpgradeStatusDone || upgrade.UpgradeStatus == model.UpgradeStatusFailed {
-			completedUpgrades = append(completedUpgrades, upgrade)
-		}
-	}
-
-	if len(completedUpgrades) == 0 {
-		log.Debug("no completed upgrades found for cleanup")
+	if len(danglingOpsByUpgrade) == 0 {
+		log.Debug("no dangling operations found for cleanup")
 		return nil
 	}
 
-	log.WithField("completed_upgrades", len(completedUpgrades)).Debug("checking completed upgrades for dangling operations")
+	totalOps := 0
+	for _, ops := range danglingOpsByUpgrade {
+		totalOps += len(ops)
+	}
 
-	// Clean up operations for each completed upgrade
-	for _, upgrade := range completedUpgrades {
-		err := c.cleanupDanglingOperations(ctx, projectID, env, upgrade)
-		if err != nil {
-			log.WithError(err).WithFields(logrus.Fields{
-				"upgrade_id":     upgrade.ID,
-				"upgrade_status": upgrade.UpgradeStatus,
-				"version":        upgrade.Version,
-			}).Warn("failed to cleanup operations for completed upgrade")
-			// Continue with other upgrades
+	log.WithFields(logrus.Fields{
+		"affected_upgrades":   len(danglingOpsByUpgrade),
+		"dangling_operations": totalOps,
+	}).Info("cleaning up dangling operations for completed upgrades")
+
+	// Process operations grouped by upgrade
+	for upgradeID, ops := range danglingOpsByUpgrade {
+		for _, op := range ops {
+			log.WithFields(logrus.Fields{
+				"operation":  op.Name,
+				"upgrade_id": upgradeID,
+			}).Debug("checking final status of dangling operation")
+
+			err := c.retryer.WithBackoff(ctx, "cleanup_operation_status", func() error {
+				var gkeOp *containerpb.Operation
+				var retryErr error
+				gkeOp, retryErr = c.client.GetOperation(ctx, projectID, op.Name)
+				if retryErr != nil {
+					return retryErr
+				}
+
+				// Update the operation with its final status
+				_, updateErr := c.repo.CreateOrUpdateClusterOperation(ctx, env.TenantID, env.ID, upgradeID, gkeOp)
+				if updateErr != nil {
+					log.WithError(updateErr).WithField("operation", op.Name).Error("failed to update dangling operation")
+					return updateErr
+				}
+
+				log.WithFields(logrus.Fields{
+					"operation":    op.Name,
+					"old_status":   op.Status,
+					"final_status": gkeOp.Status.String(),
+					"type":         gkeOp.OperationType.String(),
+				}).Info("cleaned up dangling operation")
+
+				return nil
+			})
+			if err != nil {
+				// Check if operation no longer exists in GKE (NotFound error)
+				if apiErr, ok := err.(*apierror.APIError); ok && apiErr.GRPCStatus().Code() == codes.NotFound {
+					// Operation doesn't exist in GKE anymore - mark it as DONE in our database
+					log.WithFields(logrus.Fields{
+						"operation":  op.Name,
+						"upgrade_id": upgradeID,
+					}).Info("operation no longer exists in GKE, marking as DONE")
+
+					// Create a synthetic DONE operation to update the database
+					doneOp := &containerpb.Operation{
+						Name:   op.Name,
+						Status: containerpb.Operation_DONE,
+					}
+					_, updateErr := c.repo.CreateOrUpdateClusterOperation(ctx, env.TenantID, env.ID, upgradeID, doneOp)
+					if updateErr != nil {
+						log.WithError(updateErr).WithField("operation", op.Name).Error("failed to mark stale operation as DONE")
+						// Continue processing other operations
+					}
+				} else {
+					log.WithError(err).WithField("operation", op.Name).Warn("failed to get operation status from GKE during cleanup")
+				}
+				// Continue processing other operations rather than failing entirely
+			}
 		}
 	}
 

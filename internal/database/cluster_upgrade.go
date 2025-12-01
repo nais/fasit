@@ -20,18 +20,34 @@ type ClusterUpgraderRepo interface {
 	CreateClusterUpgrade(ctx context.Context, tenantID, envID uuid.UUID, version string, isAutomatic *bool) (*model.ClusterUpgradeStatus, error)
 	ClusterUpgradeGet(ctx context.Context, tenantID, envID uuid.UUID) (*model.ClusterUpgradeStatus, error)
 	ClusterUpgradeGetByVersion(ctx context.Context, tenantID, envID uuid.UUID, version string) (*model.ClusterUpgradeStatus, error)
-	ClusterUpgradeHistoryGet(ctx context.Context, tenantID, envID uuid.UUID) ([]*model.ClusterUpgradeStatus, error)
+	ClusterUpgradeHistoryGet(ctx context.Context, tenantID, envID uuid.UUID, limit, offset int32) ([]*model.ClusterUpgradeStatus, error)
 	UpdateClusterUpgradeStatus(ctx context.Context, upgradeID uuid.UUID, status gensql.ClusterUpgradesStatus) (*model.ClusterUpgradeStatus, error)
 	ClusterUpgradeGetByID(ctx context.Context, id uuid.UUID) (*model.ClusterUpgradeStatus, error)
 	ClusterOperationsGetByID(ctx context.Context, id uuid.UUID) (*model.EnvironmentOperation, error)
 	ClusterOperationsGetByUpgradeID(ctx context.Context, upgradeID uuid.UUID) ([]*model.EnvironmentOperation, error)
+	ClusterOperationsGetDanglingForEnvironment(ctx context.Context, tenantID, envID uuid.UUID) (map[uuid.UUID][]*model.EnvironmentOperation, error)
 	SetClusterUpgradesSlackMessage(ctx context.Context, id uuid.UUID, slackMessageTS, channelID string) (*model.ClusterUpgradeStatus, error)
 }
 
-func (r *repo) ClusterUpgradeHistoryGet(ctx context.Context, tenantID, envID uuid.UUID) ([]*model.ClusterUpgradeStatus, error) {
+func (r *repo) ClusterUpgradeHistoryGet(ctx context.Context, tenantID, envID uuid.UUID, limit, offset int32) ([]*model.ClusterUpgradeStatus, error) {
+	// Default to 50 records if limit is not specified or invalid
+	if limit <= 0 {
+		limit = 50
+	}
+	// Cap limit at 1000 to prevent abuse
+	if limit > 1000 {
+		limit = 1000
+	}
+	// Ensure offset is non-negative
+	if offset < 0 {
+		offset = 0
+	}
+
 	clusterUpgrades, err := r.querier.ClusterUpgradesHistoryGetByEnvironmentID(ctx, gensql.ClusterUpgradesHistoryGetByEnvironmentIDParams{
-		Tenantid: tenantID,
-		Envid:    envID,
+		Tenantid:      tenantID,
+		Envid:         envID,
+		Historyoffset: offset,
+		Historylimit:  limit,
 	})
 	if err != nil {
 		return nil, err
@@ -113,6 +129,25 @@ func (r *repo) ClusterOperationsGetByUpgradeID(ctx context.Context, upgradeID uu
 	}
 
 	return ops, nil
+}
+
+func (r *repo) ClusterOperationsGetDanglingForEnvironment(ctx context.Context, tenantID, envID uuid.UUID) (map[uuid.UUID][]*model.EnvironmentOperation, error) {
+	clusterOperations, err := r.querier.ClusterOperationsGetDanglingForEnvironment(ctx, gensql.ClusterOperationsGetDanglingForEnvironmentParams{
+		Tenantid: tenantID,
+		Envid:    envID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Group operations by upgrade_id for easier processing
+	opsByUpgrade := make(map[uuid.UUID][]*model.EnvironmentOperation)
+
+	for _, op := range clusterOperations {
+		opsByUpgrade[op.UpgradeID] = append(opsByUpgrade[op.UpgradeID], clusterOperationFromSQL(op))
+	}
+
+	return opsByUpgrade, nil
 }
 
 func (r *repo) ClusterUpgradeGetByID(ctx context.Context, id uuid.UUID) (*model.ClusterUpgradeStatus, error) {
