@@ -46,11 +46,10 @@ func (r *queryResolver) Tenant(ctx context.Context, id *uuid.UUID, slug *string)
 
 // ClusterUpgradeHistory is the resolver for the clusterUpgradeHistory field.
 func (r *queryResolver) ClusterUpgradeHistory(ctx context.Context, limit *int, offset *int) ([]*model.ClusterUpgradeStatus, error) {
-	var limitValue int32
+	var limitValue, offsetValue int32
 	if limit != nil {
 		limitValue = int32(*limit) //#nosec G115 -- limit is validated in database layer
 	}
-	var offsetValue int32
 	if offset != nil {
 		offsetValue = int32(*offset) //#nosec G115 -- offset is validated in database layer
 	}
@@ -81,11 +80,10 @@ func (r *tenantResolver) Warnings(ctx context.Context, obj *model.Tenant) ([]mod
 
 // ClusterUpgradeHistory is the resolver for the clusterUpgradeHistory field.
 func (r *tenantResolver) ClusterUpgradeHistory(ctx context.Context, obj *model.Tenant, limit *int, offset *int) ([]*model.ClusterUpgradeStatus, error) {
-	var limitValue int32
+	var limitValue, offsetValue int32
 	if limit != nil {
 		limitValue = int32(*limit) //#nosec G115 -- limit is validated in database layer
 	}
-	var offsetValue int32
 	if offset != nil {
 		offsetValue = int32(*offset) //#nosec G115 -- offset is validated in database layer
 	}
