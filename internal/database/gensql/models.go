@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/nais/fasit/internal/environment"
 )
 
 type ClusterUpgradesStatus string
@@ -179,6 +180,25 @@ type DeployInstruction struct {
 	Created        pgtype.Timestamptz
 	LastModified   pgtype.Timestamptz
 	Values         []byte
+	DeploymentID   *uuid.UUID
+}
+
+type Deployment struct {
+	ID          uuid.UUID
+	FeatureName string
+	Version     string
+	Target      environment.Labels
+	Created     pgtype.Timestamptz
+	GhRef       []byte
+}
+
+type DeploymentStatus struct {
+	DeploymentID  uuid.UUID
+	EnvironmentID uuid.UUID
+	Status        string
+	Message       string
+	LastModified  pgtype.Timestamptz
+	Created       pgtype.Timestamptz
 }
 
 type EnvCost struct {
@@ -201,12 +221,14 @@ type Environment struct {
 	AutoUpgrade       bool
 	UpgradeDelayDays  int32
 	MaintenanceWindow []byte
+	Labels            environment.Labels
 }
 
-type EnvironmentLabel struct {
-	EnvironmentID uuid.UUID
-	Key           string
-	Value         string
+type EnvironmentFeature struct {
+	EnvironmentID  uuid.UUID
+	FeatureName    string
+	FeatureVersion string
+	DeploymentID   uuid.UUID
 }
 
 type EnvironmentValue struct {

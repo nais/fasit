@@ -151,6 +151,15 @@ func (r *repo) FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, 
 }
 
 func (r *repo) FeatureByNameForEnv(ctx context.Context, name string, envID uuid.UUID) (*model.Feature, error) {
+	feat, err := r.V3GetEnvironmentFeature(ctx, envID, name)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return nil, fmt.Errorf("get environment feature from db: %w", err)
+	}
+
+	if feat != nil {
+		return feat, nil
+	}
+
 	env, err := r.querier.EnvironmentGet(ctx, envID)
 	if err != nil {
 		return nil, fmt.Errorf("get environment from db: %w", err)
@@ -200,14 +209,15 @@ func featuresFromSQL(features []gensql.FeaturesForKindRow) ([]*model.Feature, er
 		}
 
 		feature := &model.Feature{
-			Name:        f.Name,
-			Description: f.Description,
-			Version:     f.Version,
-			Chart:       f.Chart,
-			Source:      f.Source,
-			FeatureYAML: fyaml,
-			ValuesYAML:  defaultValues,
-			SpecVersion: "v2",
+			Name:           f.Name,
+			Description:    f.Description,
+			Version:        f.Version,
+			Chart:          f.Chart,
+			Source:         f.Source,
+			FeatureYAML:    fyaml,
+			ValuesYAML:     defaultValues,
+			SpecVersion:    "v2",
+			HasDeployments: f.Hasdeployments,
 		}
 		ret = append(ret, feature)
 	}

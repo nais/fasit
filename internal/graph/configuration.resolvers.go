@@ -13,6 +13,7 @@ import (
 
 	"github.com/google/uuid"
 	pgx "github.com/jackc/pgx/v5"
+	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/graphgen"
 	"github.com/nais/fasit/internal/graph/model"
@@ -200,7 +201,19 @@ func (r *mutationResolver) ConfigurationCreate(ctx context.Context, configuratio
 	}
 
 	configuration.Secret = val.Config.Secret
-	return r.Repo.ConfigCreate(ctx, configuration)
+	ret, err := r.Repo.ConfigCreate(ctx, configuration)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: should we always trigger or only for features using deployments regime?
+	deployment.TriggerReconcile(deployment.ReconcileTriggerEvent{
+		FeatureName:    feature.Name,
+		FeatureVersion: feature.Version,
+		Type:           deployment.ReconcileTriggerEventTypeFeatureConfigUpdate,
+	}, r.deploymentsTrigger, r.Log)
+
+	return ret, nil
 }
 
 // ConfigurationUpdate is the resolver for the configurationUpdate field.

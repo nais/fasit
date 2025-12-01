@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/database/gensql"
+	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/provider/protogen"
 )
@@ -165,42 +166,30 @@ func (r *repo) EnvironmentSetReconcile(ctx context.Context, environmentID uuid.U
 	return environmentFromSQL(env), nil
 }
 
-func (r *repo) EnvironmentSetLabels(ctx context.Context, environmentID uuid.UUID, labels []*protogen.EnvironmentLabel) error {
-	if err := r.querier.EnvironmentDeleteLabels(ctx, environmentID); err != nil {
-		return err
+func (r *repo) EnvironmentSetLabels(ctx context.Context, environmentID uuid.UUID, protoLabels []*protogen.EnvironmentLabel) error {
+	labels := make(environment.Labels, len(protoLabels))
+	for _, el := range protoLabels {
+		labels[el.Key] = el.Value
 	}
 
-	p := make([]gensql.EnvironmentInsertLabelsParams, len(labels))
-	for i, l := range labels {
-		p[i] = gensql.EnvironmentInsertLabelsParams{
-			EnvironmentID: environmentID,
-			Key:           l.Key,
-			Value:         l.Value,
-		}
-	}
-
-	var batchErr error
-	r.querier.EnvironmentInsertLabels(ctx, p).Exec(func(i int, err error) {
-		if err != nil {
-			batchErr = err
-		}
+	return r.querier.EnvironmentSetLabels(ctx, gensql.EnvironmentSetLabelsParams{
+		Labels: labels,
+		ID:     environmentID,
 	})
-
-	return batchErr
 }
 
 func (r *repo) EnvironmentGetLabels(ctx context.Context, environmentID uuid.UUID) ([]*model.EnvironmentLabel, error) {
-	rows, err := r.querier.EnvironmentGetLabels(ctx, environmentID)
+	labels, err := r.querier.EnvironmentGetLabels(ctx, environmentID)
 	if err != nil {
 		return nil, err
 	}
 
-	ret := make([]*model.EnvironmentLabel, len(rows))
-	for i, row := range rows {
-		ret[i] = &model.EnvironmentLabel{
-			Key:   row.Key,
-			Value: row.Value,
-		}
+	var ret []*model.EnvironmentLabel
+	for k, v := range labels {
+		ret = append(ret, &model.EnvironmentLabel{
+			Key:   k,
+			Value: v,
+		})
 	}
 
 	return ret, nil

@@ -110,7 +110,15 @@ SELECT
 	fd.default_values,
 	fd.timeout,
 	features.created,
-	features.last_modified
+	features.last_modified,
+	EXISTS (
+		SELECT
+			1
+		FROM
+			deployments d
+		WHERE
+			d.feature_name = fd.name
+	) AS hasDeployments
 FROM
 	features
 	JOIN feature_data fd ON features.name = fd.name

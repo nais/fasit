@@ -1,0 +1,3 @@
+extend type Mutation {
+	deleteDeployment(deploymentID: ID!): Boolean!
+}

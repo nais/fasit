@@ -11,7 +11,7 @@ import (
 
 const deployInstructionsByID = `-- name: DeployInstructionsByID :one
 SELECT
-	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values
+	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, deployment_id
 FROM
 	deploy_instructions
 WHERE
@@ -31,6 +31,7 @@ func (q *Queries) DeployInstructionsByID(ctx context.Context, id uuid.UUID) (Dep
 		&i.Created,
 		&i.LastModified,
 		&i.Values,
+		&i.DeploymentID,
 	)
 	return i, err
 }
@@ -42,7 +43,8 @@ INSERT INTO
 		feature_name,
 		feature_version,
 		hash,
-		VALUES
+		"values",
+		deployment_id
 	)
 VALUES
 	(
@@ -50,7 +52,8 @@ VALUES
 		$2,
 		$3,
 		$4,
-		$5
+		$5,
+		$6
 	)
 RETURNING
 	id
@@ -62,6 +65,7 @@ type DeployInstructionsCreateParams struct {
 	FeatureVersion string
 	Hash           string
 	Values         []byte
+	DeploymentID   *uuid.UUID
 }
 
 func (q *Queries) DeployInstructionsCreate(ctx context.Context, arg DeployInstructionsCreateParams) (uuid.UUID, error) {
@@ -71,6 +75,7 @@ func (q *Queries) DeployInstructionsCreate(ctx context.Context, arg DeployInstru
 		arg.FeatureVersion,
 		arg.Hash,
 		arg.Values,
+		arg.DeploymentID,
 	)
 	var id uuid.UUID
 	err := row.Scan(&id)
@@ -79,7 +84,7 @@ func (q *Queries) DeployInstructionsCreate(ctx context.Context, arg DeployInstru
 
 const deployInstructionsForFeature = `-- name: DeployInstructionsForFeature :many
 SELECT
-	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values
+	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, deployment_id
 FROM
 	deploy_instructions
 WHERE
@@ -118,6 +123,7 @@ func (q *Queries) DeployInstructionsForFeature(ctx context.Context, arg DeployIn
 			&i.Created,
 			&i.LastModified,
 			&i.Values,
+			&i.DeploymentID,
 		); err != nil {
 			return nil, err
 		}
@@ -131,7 +137,7 @@ func (q *Queries) DeployInstructionsForFeature(ctx context.Context, arg DeployIn
 
 const deployInstructionsForNameVersion = `-- name: DeployInstructionsForNameVersion :one
 SELECT
-	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values
+	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, deployment_id
 FROM
 	deploy_instructions
 WHERE
@@ -157,13 +163,14 @@ func (q *Queries) DeployInstructionsForNameVersion(ctx context.Context, arg Depl
 		&i.Created,
 		&i.LastModified,
 		&i.Values,
+		&i.DeploymentID,
 	)
 	return i, err
 }
 
 const deployInstructionsLatestForEnvironment = `-- name: DeployInstructionsLatestForEnvironment :many
 SELECT
-	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values
+	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, deployment_id
 FROM
 	deploy_instructions
 WHERE
@@ -199,6 +206,7 @@ func (q *Queries) DeployInstructionsLatestForEnvironment(ctx context.Context, en
 			&i.Created,
 			&i.LastModified,
 			&i.Values,
+			&i.DeploymentID,
 		); err != nil {
 			return nil, err
 		}
@@ -212,7 +220,7 @@ func (q *Queries) DeployInstructionsLatestForEnvironment(ctx context.Context, en
 
 const deployInstructionsLatestForFeature = `-- name: DeployInstructionsLatestForFeature :one
 SELECT
-	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values
+	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, deployment_id
 FROM
 	deploy_instructions
 WHERE
@@ -242,6 +250,7 @@ func (q *Queries) DeployInstructionsLatestForFeature(ctx context.Context, arg De
 		&i.Created,
 		&i.LastModified,
 		&i.Values,
+		&i.DeploymentID,
 	)
 	return i, err
 }
@@ -250,14 +259,14 @@ const deployInstructionsPrevious = `-- name: DeployInstructionsPrevious :one
 WITH
 	current AS (
 		SELECT
-			di.id, di.environment_id, di.feature_name, di.feature_version, di.status, di.hash, di.created, di.last_modified, di.values
+			di.id, di.environment_id, di.feature_name, di.feature_version, di.status, di.hash, di.created, di.last_modified, di.values, di.deployment_id
 		FROM
 			deploy_instructions di
 		WHERE
 			di.id = $1
 	)
 SELECT
-	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values
+	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, deployment_id
 FROM
 	deploy_instructions
 WHERE
@@ -298,6 +307,7 @@ func (q *Queries) DeployInstructionsPrevious(ctx context.Context, id uuid.UUID) 
 		&i.Created,
 		&i.LastModified,
 		&i.Values,
+		&i.DeploymentID,
 	)
 	return i, err
 }

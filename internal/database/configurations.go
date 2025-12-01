@@ -85,7 +85,7 @@ func envConfigFromSQL(conf gensql.EnvConfigRow) *model.Configuration {
 	ret := &model.Configuration{
 		ID: conf.ID,
 		GraphVars: model.ConfigurationGraphVars{
-			EnvironmentID: nullUUIDToPtr(conf.EnvironmentID),
+			EnvironmentID: conf.EnvironmentID,
 			FeatureName:   conf.Feature,
 		},
 		// Description:   nullStringToPtr(conf.Description),
@@ -94,10 +94,8 @@ func envConfigFromSQL(conf gensql.EnvConfigRow) *model.Configuration {
 		Source:  model.ConfigSourceGlobal,
 	}
 
-	if conf.EnvironmentID.Valid {
-		ret.Source = model.ConfigSourceEnv
-		ret.GraphVars.EnvironmentID = nullUUIDToPtr(conf.EnvironmentID)
-	}
+	ret.Source = model.ConfigSourceEnv
+	ret.GraphVars.EnvironmentID = conf.EnvironmentID
 	return ret
 }
 

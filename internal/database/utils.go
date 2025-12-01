@@ -6,7 +6,6 @@ import (
 	"math"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -48,12 +47,4 @@ func nullTimeToPtr(nt pgtype.Timestamptz) *time.Time {
 		return nil
 	}
 	return &nt.Time
-}
-
-func nullUUIDToPtr(nu pgtype.UUID) *uuid.UUID {
-	if !nu.Valid {
-		return nil
-	}
-	uid := uuid.UUID(nu.Bytes)
-	return &uid
 }

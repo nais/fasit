@@ -87,9 +87,7 @@ func (s *Server) CreateEnvironment(ctx context.Context, in *protogen.CreateEnvir
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	err = s.repo.TxFunc(ctx, func(repo database.Repo) error {
-		return repo.EnvironmentSetLabels(ctx, environment.ID, in.Labels)
-	})
+	err = s.repo.EnvironmentSetLabels(ctx, environment.ID, in.Labels)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}

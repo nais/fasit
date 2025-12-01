@@ -219,7 +219,7 @@ func TestReconcile(t *testing.T) {
 
 			for _, te := range tt.environments {
 				if len(tt.want) > 0 {
-					repo.On("DeployInstructionCreate", mock.Anything, te.Environment.ID, mock.IsType(&model.Feature{}), mock.IsType("")).Return(tt.want[0].ID, nil).Once()
+					repo.EXPECT().DeployInstructionCreate(mock.Anything, te.Environment.ID, mock.IsType(&model.Feature{}), mock.IsType(""), mock.IsType(&uuid.UUID{})).Return(tt.want[0].ID, nil).Once()
 				}
 				repo.On("FeaturesForKind", mock.Anything, te.Environment.Kind, te.Environment.CI).Return(tt.features, nil)
 				repo.On("DeployInstructionsLatestForEnvironment", mock.Anything, te.Environment.ID).Return(te.Status, nil)

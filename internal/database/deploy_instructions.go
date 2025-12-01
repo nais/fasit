@@ -15,7 +15,7 @@ import (
 )
 
 type DeployInstructionRepo interface {
-	DeployInstructionCreate(ctx context.Context, envID uuid.UUID, feature *model.Feature, hash string) (uuid.UUID, error)
+	DeployInstructionCreate(ctx context.Context, envID uuid.UUID, feature *model.Feature, hash string, deploymentID *uuid.UUID) (uuid.UUID, error)
 	DeployInstructionGet(ctx context.Context, id uuid.UUID) (*model.DeployInstruction, error)
 	TimeoutDeployInstructions(ctx context.Context)
 	DeployInstructionsForFeature(ctx context.Context, envID uuid.UUID, featureName string, offset int) ([]*model.DeployInstruction, error)
@@ -26,7 +26,7 @@ type DeployInstructionRepo interface {
 	NamesFromDeployInstruction(ctx context.Context, id uuid.UUID) (tenantName, environmentName string, err error)
 }
 
-func (r *repo) DeployInstructionCreate(ctx context.Context, envID uuid.UUID, feature *model.Feature, hash string) (uuid.UUID, error) {
+func (r *repo) DeployInstructionCreate(ctx context.Context, envID uuid.UUID, feature *model.Feature, hash string, deploymentID *uuid.UUID) (uuid.UUID, error) {
 	vals, err := r.HelmValues(ctx, feature, envID)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("get helm values: %w", err)
@@ -43,6 +43,7 @@ func (r *repo) DeployInstructionCreate(ctx context.Context, envID uuid.UUID, fea
 		FeatureVersion: feature.Version,
 		Hash:           hash,
 		Values:         values,
+		DeploymentID:   deploymentID,
 	})
 }
 
@@ -172,6 +173,7 @@ func deployInstructionFromSQL(di gensql.DeployInstruction) *model.DeployInstruct
 	return &model.DeployInstruction{
 		ID:             di.ID,
 		EnvironmentID:  di.EnvironmentID,
+		DeploymentID:   di.DeploymentID,
 		FeatureName:    di.FeatureName,
 		FeatureVersion: di.FeatureVersion,
 		Status:         model.RolloutStatus(di.Status),

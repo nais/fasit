@@ -141,3 +141,20 @@ ORDER BY
 	END,
 	name ASC
 ;
+
+-- name: EnvironmentSetLabels :exec
+UPDATE environments
+SET
+	labels = @labels
+WHERE
+	id = @id
+;
+
+-- name: EnvironmentGetLabels :one
+SELECT
+	labels
+FROM
+	environments
+WHERE
+	id = @id
+;

@@ -160,7 +160,7 @@ WITH
 	),
 	dis AS (
 		SELECT
-			di.id, di.environment_id, di.feature_name, di.feature_version, di.status, di.hash, di.created, di.last_modified, di.values
+			di.id, di.environment_id, di.feature_name, di.feature_version, di.status, di.hash, di.created, di.last_modified, di.values, di.deployment_id
 		FROM
 			deploy_instructions di
 			INNER JOIN rollout ON di.feature_name = rollout.feature_name

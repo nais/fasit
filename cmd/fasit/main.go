@@ -21,10 +21,12 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/go-chi/chi/v5"
+	"github.com/joho/godotenv"
 	"github.com/nais/fasit/internal/auth"
 	"github.com/nais/fasit/internal/cluster"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/notifier"
+	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/graph"
 	"github.com/nais/fasit/internal/graph/graphgen"
 	"github.com/nais/fasit/internal/message"
@@ -59,6 +61,7 @@ var cfg = DefaultConfig()
 const slowQueryEndpoint = false
 
 func init() {
+	_ = godotenv.Load()
 	flag.StringVar(&cfg.BindAddress, "bind-address", cfg.BindAddress, "Bind address")
 	flag.StringVar(&cfg.GRPCBindAddress, "grpc-bind-address", cfg.GRPCBindAddress, "Bind address")
 	flag.StringVar(&cfg.DBConnectionDSN, "db-connection-dsn", getEnv("FASIT_DBCONN_STRING", "postgres://postgres:postgres@localhost:5432/fasit?sslmode=disable"), "database connection DSN")
@@ -164,6 +167,17 @@ func main() {
 	}()
 	go reconciler.Run(ctx, 10*time.Minute)
 
+	deployCreatePublisher := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
+		return message.NewPublisher[message.DeployInstruction](pubsubClient, cfg.GCPProjectID, topicID, log)
+	}
+
+	deploymentsReconcileTrigger := make(chan deployment.ReconcileTriggerEvent, 1)
+	deploymentReconciler, err := deployment.NewReconciler(repo, deployCreatePublisher, deploymentsReconcileTrigger, meter, log.WithField("subsystem", "deployment_reconciler"))
+	if err != nil {
+		log.WithError(err).Fatal("setting up deployment reconciler")
+	}
+	go deploymentReconciler.Run(ctx, 10*time.Minute)
+
 	costUpdater, err := workers.NewCostUpdater(ctx, repo, log.WithField("subsystem", "cost_updater"))
 	if err != nil {
 		log.WithError(err).Error("setting up cost updater. You might need to run `gcloud auth --update-adc` if running locally")
@@ -175,7 +189,7 @@ func main() {
 	if err != nil {
 		log.WithError(err).Fatal("setting up google client")
 	}
-	resolver := graph.NewResolver(ctx, repo, notifierService, createPublisher, googleClient, log.WithField("subsystem", "graphql"))
+	resolver := graph.NewResolver(ctx, repo, deploymentsReconcileTrigger, notifierService, createPublisher, googleClient, log.WithField("subsystem", "graphql"))
 
 	srv := newServer(graphgen.NewExecutableSchema(graphgen.Config{Resolvers: resolver}))
 	srv.Use(otelgqlgen.Middleware())
@@ -232,6 +246,14 @@ func main() {
 	}
 	rout.AllowAll = cfg.InsecureSkipTokenCheck
 	router.Post("/github/rollout", rout.Rollout)
+
+	deploy, err := deployment.New(ctx, repo, deploymentsReconcileTrigger, log.WithField("subsystem", "create_deployment"))
+	if err != nil {
+		log.WithError(err).Fatal("setting up deployment")
+	}
+	deploy.AllowAll = cfg.InsecureSkipTokenCheck
+	router.Post("/github/deployment", deploy.CreateDeployment)
+	router.Get("/github/deployment/{id}", deploy.GetDeployment)
 
 	go func() {
 		if err := runGRPC(ctx, repo, log); err != nil {

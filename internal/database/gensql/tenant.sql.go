@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/nais/fasit/internal/environment"
 )
 
 const tenantCI = `-- name: TenantCI :one
@@ -65,7 +66,7 @@ func (q *Queries) TenantCreate(ctx context.Context, arg TenantCreateParams) (Ten
 
 const tenantEnvironments = `-- name: TenantEnvironments :many
 SELECT
-	e.id, e.tenant_id, e.name, e.kind, e.description, e.created, e.last_modified, e.ci, e.reconcile, e.auto_upgrade, e.upgrade_delay_days, e.maintenance_window,
+	e.id, e.tenant_id, e.name, e.kind, e.description, e.created, e.last_modified, e.ci, e.reconcile, e.auto_upgrade, e.upgrade_delay_days, e.maintenance_window, e.labels,
 	t.name AS tenant_name
 FROM
 	environments e
@@ -94,6 +95,7 @@ type TenantEnvironmentsRow struct {
 	AutoUpgrade       bool
 	UpgradeDelayDays  int32
 	MaintenanceWindow []byte
+	Labels            environment.Labels
 	TenantName        string
 }
 
@@ -119,6 +121,7 @@ func (q *Queries) TenantEnvironments(ctx context.Context, all bool) ([]TenantEnv
 			&i.AutoUpgrade,
 			&i.UpgradeDelayDays,
 			&i.MaintenanceWindow,
+			&i.Labels,
 			&i.TenantName,
 		); err != nil {
 			return nil, err

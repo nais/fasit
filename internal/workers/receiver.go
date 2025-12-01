@@ -24,6 +24,7 @@ type ReceiverStore interface {
 	DeployInstructionGet(ctx context.Context, id uuid.UUID) (*model.DeployInstruction, error)
 	DeployInstructionsLatestForFeature(ctx context.Context, envID uuid.UUID, featureName string) (*model.DeployInstruction, error)
 	DeployInstructionUpdateStatus(ctx context.Context, id uuid.UUID, status model.RolloutStatus) error
+	V3DeploymentStatusCreateOrUpdate(ctx context.Context, deploymentID, environmentID uuid.UUID, status model.RolloutStatus, message string) error
 	EnvironmentByNames(ctx context.Context, tenantName, environmentName string) (*model.Environment, error)
 	EnvironmentCI(ctx context.Context, kind model.EnvironmentKind) (*model.Environment, error)
 	EnvironmentCreate(ctx context.Context, t *model.EnvironmentCreate) (*model.Environment, error)
@@ -134,9 +135,25 @@ func (r *Receiver) handlerHelm(ctx context.Context, msg message.Status) error {
 		return fmt.Errorf("updating deploy instruction status: %w", err)
 	}
 
-	if env.CI {
+	// only handle CI if no deployments are created for this deployinstruction, i.e. running the old rollout paradigm
+	if env.CI && di.DeploymentID == nil {
 		if err := r.handleCI(ctx, env, di, helmStatus, msg.Tenant); err != nil {
 			r.log.WithError(err).Error("handling helm status message for CI environment")
+		}
+	}
+
+	if di.DeploymentID != nil {
+		message := "received status from naisd."
+		if helmStatus.Error != "" {
+			message += " error: " + helmStatus.Error
+		}
+		if err = r.repo.V3DeploymentStatusCreateOrUpdate(ctx, *di.DeploymentID, env.ID, helmStatus.RolloutStatus, message); err != nil {
+			r.log.WithFields(logrus.Fields{
+				"deployment_id":  di.DeploymentID,
+				"environment_id": env.ID,
+				"status":         helmStatus.RolloutStatus,
+				"msg":            msg,
+			}).WithError(err).Error("create deployment status")
 		}
 	}
 
@@ -324,5 +341,9 @@ func (r *Receiver) handleStatusLog(ctx context.Context, msg message.Status) erro
 		return nil
 	}
 
-	return r.repo.LogCreate(ctx, status.DIID, status.Logs)
+	if err := r.repo.LogCreate(ctx, status.DIID, status.Logs); err != nil {
+		r.log.WithError(err).Errorf("unable to log status")
+	}
+
+	return nil
 }

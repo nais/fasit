@@ -302,6 +302,7 @@ type ComplexityRoot struct {
 		ConfigurationCreate             func(childComplexity int, configuration model.NewConfiguration) int
 		ConfigurationDelete             func(childComplexity int, id uuid.UUID) int
 		ConfigurationUpdate             func(childComplexity int, id uuid.UUID, configuration model.UpdateConfiguration) int
+		DeleteDeployment                func(childComplexity int, deploymentID uuid.UUID) int
 		DeleteHelmInstall               func(childComplexity int, envID uuid.UUID, name string) int
 		EnvironmentCreate               func(childComplexity int, environment model.EnvironmentCreate) int
 		EnvironmentSetAutoUpgrade       func(childComplexity int, id uuid.UUID, autoUpgrade bool) int
@@ -505,6 +506,7 @@ type MutationResolver interface {
 	ConfigurationCreate(ctx context.Context, configuration model.NewConfiguration) (*model.Configuration, error)
 	ConfigurationUpdate(ctx context.Context, id uuid.UUID, configuration model.UpdateConfiguration) (*model.Configuration, error)
 	ConfigurationDelete(ctx context.Context, id uuid.UUID) (bool, error)
+	DeleteDeployment(ctx context.Context, deploymentID uuid.UUID) (bool, error)
 	EnvironmentCreate(ctx context.Context, environment model.EnvironmentCreate) (*model.Environment, error)
 	EnvironmentUpdate(ctx context.Context, id uuid.UUID, input model.EnvironmentUpdate) (*model.Environment, error)
 	EnvironmentSetReconcile(ctx context.Context, id uuid.UUID, reconcile bool) (*model.Environment, error)
@@ -1536,6 +1538,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.ConfigurationUpdate(childComplexity, args["id"].(uuid.UUID), args["configuration"].(model.UpdateConfiguration)), true
+	case "Mutation.deleteDeployment":
+		if e.complexity.Mutation.DeleteDeployment == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteDeployment_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteDeployment(childComplexity, args["deploymentID"].(uuid.UUID)), true
 	case "Mutation.deleteHelmInstall":
 		if e.complexity.Mutation.DeleteHelmInstall == nil {
 			break
@@ -2428,6 +2441,10 @@ extend type Query {
 	cost(filter: CostFilter): Cost!
 }
 `, BuiltIn: false},
+	{Name: "../../../schema/deployments.graphqls", Input: `extend type Mutation {
+	deleteDeployment(deploymentID: ID!): Boolean!
+}
+`, BuiltIn: false},
 	{Name: "../../../schema/directives.graphqls", Input: `directive @goField(
 	forceResolver: Boolean
 	name: String
@@ -3019,6 +3036,17 @@ func (ec *executionContext) field_Mutation_configurationUpdate_args(ctx context.
 		return nil, err
 	}
 	args["configuration"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteDeployment_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "deploymentID", ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID)
+	if err != nil {
+		return nil, err
+	}
+	args["deploymentID"] = arg0
 	return args, nil
 }
 
@@ -8816,6 +8844,47 @@ func (ec *executionContext) fieldContext_Mutation_configurationDelete(ctx contex
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_configurationDelete_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteDeployment(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_deleteDeployment,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().DeleteDeployment(ctx, fc.Args["deploymentID"].(uuid.UUID))
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_deleteDeployment(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteDeployment_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -17244,6 +17313,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "configurationDelete":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_configurationDelete(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteDeployment":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteDeployment(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
