@@ -8,7 +8,7 @@ for i = 1, 15 do
 	Helper.SQLExec([[
 		INSERT INTO cluster_upgrades (tenant_id, environment_id, version, status, start_time, last_modified)
 		VALUES ($1, $2, $3, 'DONE', NOW() - INTERVAL ']] ..
-	(15 - i) .. [[ hours', NOW() - INTERVAL ']] .. (15 - i) .. [[ hours')
+		(15 - i) .. [[ hours', NOW() - INTERVAL ']] .. (15 - i) .. [[ hours')
 	]], tenantID, envID, version)
 end
 
