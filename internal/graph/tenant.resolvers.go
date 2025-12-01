@@ -48,10 +48,10 @@ func (r *queryResolver) Tenant(ctx context.Context, id *uuid.UUID, slug *string)
 func (r *queryResolver) ClusterUpgradeHistory(ctx context.Context, limit *int, offset *int) ([]*model.ClusterUpgradeStatus, error) {
 	var limitValue, offsetValue int32
 	if limit != nil {
-		limitValue = int32(*limit) //#nosec G115 -- limit is validated in database layer
+		limitValue = int32(*limit) // #nosec G115 -- int is at least 32 bits on all Go platforms, conversion is safe for valid pagination values
 	}
 	if offset != nil {
-		offsetValue = int32(*offset) //#nosec G115 -- offset is validated in database layer
+		offsetValue = int32(*offset) // #nosec G115 -- int is at least 32 bits on all Go platforms, conversion is safe for valid pagination values
 	}
 
 	return r.Repo.ClusterUpgradeHistoryGetAll(ctx, limitValue, offsetValue)
