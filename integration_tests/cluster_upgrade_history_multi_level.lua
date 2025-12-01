@@ -45,7 +45,11 @@ Test.gql("tenant level returns all environments in tenant", function(t)
 		{
 			tenant(slug: "multi-level-tenant-1") {
 				clusterUpgradeHistory {
-					version
+					items {
+						version
+					}
+					totalCount
+					hasMore
 				}
 			}
 		}
@@ -57,11 +61,15 @@ Test.gql("tenant level returns all environments in tenant", function(t)
 		data = {
 			tenant = {
 				clusterUpgradeHistory = {
-					{ version = "1.29.3-gke.100" },
-					{ version = "1.29.2-gke.100" },
-					{ version = "1.29.1-gke.100" },
-					{ version = "1.28.2-gke.100" },
-					{ version = "1.28.1-gke.100" },
+					items = {
+						{ version = "1.29.3-gke.100" },
+						{ version = "1.29.2-gke.100" },
+						{ version = "1.29.1-gke.100" },
+						{ version = "1.28.2-gke.100" },
+						{ version = "1.28.1-gke.100" },
+					},
+					totalCount = 5,
+					hasMore = false,
 				},
 			},
 		},
@@ -74,7 +82,11 @@ Test.gql("tenant level respects limit parameter", function(t)
 		{
 			tenant(slug: "multi-level-tenant-1") {
 				clusterUpgradeHistory(limit: 3) {
-					version
+					items {
+						version
+					}
+					totalCount
+					hasMore
 				}
 			}
 		}
@@ -85,9 +97,13 @@ Test.gql("tenant level respects limit parameter", function(t)
 		data = {
 			tenant = {
 				clusterUpgradeHistory = {
-					{ version = "1.29.3-gke.100" },
-					{ version = "1.29.2-gke.100" },
-					{ version = "1.29.1-gke.100" },
+					items = {
+						{ version = "1.29.3-gke.100" },
+						{ version = "1.29.2-gke.100" },
+						{ version = "1.29.1-gke.100" },
+					},
+					totalCount = 5,
+					hasMore = true,
 				},
 			},
 		},
@@ -100,7 +116,11 @@ Test.gql("tenant level respects offset parameter", function(t)
 		{
 			tenant(slug: "multi-level-tenant-1") {
 				clusterUpgradeHistory(offset: 3) {
-					version
+					items {
+						version
+					}
+					totalCount
+					hasMore
 				}
 			}
 		}
@@ -111,8 +131,12 @@ Test.gql("tenant level respects offset parameter", function(t)
 		data = {
 			tenant = {
 				clusterUpgradeHistory = {
-					{ version = "1.28.2-gke.100" },
-					{ version = "1.28.1-gke.100" },
+					items = {
+						{ version = "1.28.2-gke.100" },
+						{ version = "1.28.1-gke.100" },
+					},
+					totalCount = 5,
+					hasMore = false,
 				},
 			},
 		},
@@ -124,7 +148,11 @@ Test.gql("root level returns all tenants and environments", function(t)
 	t.query([[
 		{
 			clusterUpgradeHistory {
-				version
+				items {
+					version
+				}
+				totalCount
+				hasMore
 			}
 		}
 	]])
@@ -134,15 +162,19 @@ Test.gql("root level returns all tenants and environments", function(t)
 	t.check({
 		data = {
 			clusterUpgradeHistory = {
-				{ version = "1.30.4-gke.100" },
-				{ version = "1.30.3-gke.100" },
-				{ version = "1.30.2-gke.100" },
-				{ version = "1.30.1-gke.100" },
-				{ version = "1.29.3-gke.100" },
-				{ version = "1.29.2-gke.100" },
-				{ version = "1.29.1-gke.100" },
-				{ version = "1.28.2-gke.100" },
-				{ version = "1.28.1-gke.100" },
+				items = {
+					{ version = "1.30.4-gke.100" },
+					{ version = "1.30.3-gke.100" },
+					{ version = "1.30.2-gke.100" },
+					{ version = "1.30.1-gke.100" },
+					{ version = "1.29.3-gke.100" },
+					{ version = "1.29.2-gke.100" },
+					{ version = "1.29.1-gke.100" },
+					{ version = "1.28.2-gke.100" },
+					{ version = "1.28.1-gke.100" },
+				},
+				totalCount = 9,
+				hasMore = false,
 			},
 		},
 	})
@@ -153,7 +185,11 @@ Test.gql("root level respects limit parameter", function(t)
 	t.query([[
 		{
 			clusterUpgradeHistory(limit: 5) {
-				version
+				items {
+					version
+				}
+				totalCount
+				hasMore
 			}
 		}
 	]])
@@ -162,11 +198,15 @@ Test.gql("root level respects limit parameter", function(t)
 	t.check({
 		data = {
 			clusterUpgradeHistory = {
-				{ version = "1.30.4-gke.100" },
-				{ version = "1.30.3-gke.100" },
-				{ version = "1.30.2-gke.100" },
-				{ version = "1.30.1-gke.100" },
-				{ version = "1.29.3-gke.100" },
+				items = {
+					{ version = "1.30.4-gke.100" },
+					{ version = "1.30.3-gke.100" },
+					{ version = "1.30.2-gke.100" },
+					{ version = "1.30.1-gke.100" },
+					{ version = "1.29.3-gke.100" },
+				},
+				totalCount = 9,
+				hasMore = true,
 			},
 		},
 	})
@@ -177,7 +217,11 @@ Test.gql("root level respects offset parameter", function(t)
 	t.query([[
 		{
 			clusterUpgradeHistory(offset: 5, limit: 3) {
-				version
+				items {
+					version
+				}
+				totalCount
+				hasMore
 			}
 		}
 	]])
@@ -186,9 +230,13 @@ Test.gql("root level respects offset parameter", function(t)
 	t.check({
 		data = {
 			clusterUpgradeHistory = {
-				{ version = "1.29.2-gke.100" },
-				{ version = "1.29.1-gke.100" },
-				{ version = "1.28.2-gke.100" },
+				items = {
+					{ version = "1.29.2-gke.100" },
+					{ version = "1.29.1-gke.100" },
+					{ version = "1.28.2-gke.100" },
+				},
+				totalCount = 9,
+				hasMore = true,
 			},
 		},
 	})
@@ -200,7 +248,11 @@ Test.gql("tenant level only returns data for that tenant", function(t)
 		{
 			tenant(slug: "multi-level-tenant-2") {
 				clusterUpgradeHistory {
-					version
+					items {
+						version
+					}
+					totalCount
+					hasMore
 				}
 			}
 		}
@@ -211,10 +263,14 @@ Test.gql("tenant level only returns data for that tenant", function(t)
 		data = {
 			tenant = {
 				clusterUpgradeHistory = {
-					{ version = "1.30.4-gke.100" },
-					{ version = "1.30.3-gke.100" },
-					{ version = "1.30.2-gke.100" },
-					{ version = "1.30.1-gke.100" },
+					items = {
+						{ version = "1.30.4-gke.100" },
+						{ version = "1.30.3-gke.100" },
+						{ version = "1.30.2-gke.100" },
+						{ version = "1.30.1-gke.100" },
+					},
+					totalCount = 4,
+					hasMore = false,
 				},
 			},
 		},

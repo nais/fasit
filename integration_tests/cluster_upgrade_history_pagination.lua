@@ -19,7 +19,11 @@ Test.gql("default pagination returns all records", function(t)
 			tenant(slug: "pagination-tenant") {
 				environment(slug: "test-env") {
 					clusterUpgradeHistory {
-						version
+						items {
+							version
+						}
+						totalCount
+						hasMore
 					}
 				}
 			}
@@ -32,21 +36,25 @@ Test.gql("default pagination returns all records", function(t)
 			tenant = {
 				environment = {
 					clusterUpgradeHistory = {
-						{ version = "1.28.15-gke.100" },
-						{ version = "1.28.14-gke.100" },
-						{ version = "1.28.13-gke.100" },
-						{ version = "1.28.12-gke.100" },
-						{ version = "1.28.11-gke.100" },
-						{ version = "1.28.10-gke.100" },
-						{ version = "1.28.9-gke.100" },
-						{ version = "1.28.8-gke.100" },
-						{ version = "1.28.7-gke.100" },
-						{ version = "1.28.6-gke.100" },
-						{ version = "1.28.5-gke.100" },
-						{ version = "1.28.4-gke.100" },
-						{ version = "1.28.3-gke.100" },
-						{ version = "1.28.2-gke.100" },
-						{ version = "1.28.1-gke.100" },
+						items = {
+							{ version = "1.28.15-gke.100" },
+							{ version = "1.28.14-gke.100" },
+							{ version = "1.28.13-gke.100" },
+							{ version = "1.28.12-gke.100" },
+							{ version = "1.28.11-gke.100" },
+							{ version = "1.28.10-gke.100" },
+							{ version = "1.28.9-gke.100" },
+							{ version = "1.28.8-gke.100" },
+							{ version = "1.28.7-gke.100" },
+							{ version = "1.28.6-gke.100" },
+							{ version = "1.28.5-gke.100" },
+							{ version = "1.28.4-gke.100" },
+							{ version = "1.28.3-gke.100" },
+							{ version = "1.28.2-gke.100" },
+							{ version = "1.28.1-gke.100" },
+						},
+						totalCount = 15,
+						hasMore = false,
 					},
 				},
 			},
@@ -61,7 +69,11 @@ Test.gql("limit parameter controls number of records", function(t)
 			tenant(slug: "pagination-tenant") {
 				environment(slug: "test-env") {
 					clusterUpgradeHistory(limit: 5) {
-						version
+						items {
+							version
+						}
+						totalCount
+						hasMore
 					}
 				}
 			}
@@ -74,11 +86,15 @@ Test.gql("limit parameter controls number of records", function(t)
 			tenant = {
 				environment = {
 					clusterUpgradeHistory = {
-						{ version = "1.28.15-gke.100" },
-						{ version = "1.28.14-gke.100" },
-						{ version = "1.28.13-gke.100" },
-						{ version = "1.28.12-gke.100" },
-						{ version = "1.28.11-gke.100" },
+						items = {
+							{ version = "1.28.15-gke.100" },
+							{ version = "1.28.14-gke.100" },
+							{ version = "1.28.13-gke.100" },
+							{ version = "1.28.12-gke.100" },
+							{ version = "1.28.11-gke.100" },
+						},
+						totalCount = 15,
+						hasMore = true,
 					},
 				},
 			},
@@ -93,7 +109,11 @@ Test.gql("offset parameter skips records", function(t)
 			tenant(slug: "pagination-tenant") {
 				environment(slug: "test-env") {
 					clusterUpgradeHistory(limit: 5, offset: 5) {
-						version
+						items {
+							version
+						}
+						totalCount
+						hasMore
 					}
 				}
 			}
@@ -106,11 +126,15 @@ Test.gql("offset parameter skips records", function(t)
 			tenant = {
 				environment = {
 					clusterUpgradeHistory = {
-						{ version = "1.28.10-gke.100" },
-						{ version = "1.28.9-gke.100" },
-						{ version = "1.28.8-gke.100" },
-						{ version = "1.28.7-gke.100" },
-						{ version = "1.28.6-gke.100" },
+						items = {
+							{ version = "1.28.10-gke.100" },
+							{ version = "1.28.9-gke.100" },
+							{ version = "1.28.8-gke.100" },
+							{ version = "1.28.7-gke.100" },
+							{ version = "1.28.6-gke.100" },
+						},
+						totalCount = 15,
+						hasMore = true,
 					},
 				},
 			},
@@ -125,7 +149,11 @@ Test.gql("limit 0 defaults to 50", function(t)
 			tenant(slug: "pagination-tenant") {
 				environment(slug: "test-env") {
 					clusterUpgradeHistory(limit: 0) {
-						version
+						items {
+							version
+						}
+						totalCount
+						hasMore
 					}
 				}
 			}
@@ -136,7 +164,11 @@ Test.gql("limit 0 defaults to 50", function(t)
 		data = {
 			tenant = {
 				environment = {
-					clusterUpgradeHistory = NotNull(),
+					clusterUpgradeHistory = {
+						items = NotNull(),
+						totalCount = 15,
+						hasMore = false,
+					},
 				},
 			},
 		},
@@ -150,7 +182,11 @@ Test.gql("negative limit defaults to 50", function(t)
 			tenant(slug: "pagination-tenant") {
 				environment(slug: "test-env") {
 					clusterUpgradeHistory(limit: -1) {
-						version
+						items {
+							version
+						}
+						totalCount
+						hasMore
 					}
 				}
 			}
@@ -161,7 +197,11 @@ Test.gql("negative limit defaults to 50", function(t)
 		data = {
 			tenant = {
 				environment = {
-					clusterUpgradeHistory = NotNull(),
+					clusterUpgradeHistory = {
+						items = NotNull(),
+						totalCount = 15,
+						hasMore = false,
+					},
 				},
 			},
 		},
@@ -175,7 +215,11 @@ Test.gql("offset 0 is valid", function(t)
 			tenant(slug: "pagination-tenant") {
 				environment(slug: "test-env") {
 					clusterUpgradeHistory(limit: 3, offset: 0) {
-						version
+						items {
+							version
+						}
+						totalCount
+						hasMore
 					}
 				}
 			}
@@ -186,7 +230,11 @@ Test.gql("offset 0 is valid", function(t)
 		data = {
 			tenant = {
 				environment = {
-					clusterUpgradeHistory = NotNull(),
+					clusterUpgradeHistory = {
+						items = NotNull(),
+						totalCount = 15,
+						hasMore = true,
+					},
 				},
 			},
 		},
@@ -200,7 +248,11 @@ Test.gql("negative offset defaults to 0", function(t)
 			tenant(slug: "pagination-tenant") {
 				environment(slug: "test-env") {
 					clusterUpgradeHistory(limit: 3, offset: -1) {
-						version
+						items {
+							version
+						}
+						totalCount
+						hasMore
 					}
 				}
 			}
@@ -211,7 +263,11 @@ Test.gql("negative offset defaults to 0", function(t)
 		data = {
 			tenant = {
 				environment = {
-					clusterUpgradeHistory = NotNull(),
+					clusterUpgradeHistory = {
+						items = NotNull(),
+						totalCount = 15,
+						hasMore = true,
+					},
 				},
 			},
 		},
@@ -225,7 +281,11 @@ Test.gql("offset beyond records returns empty", function(t)
 			tenant(slug: "pagination-tenant") {
 				environment(slug: "test-env") {
 					clusterUpgradeHistory(limit: 5, offset: 100) {
-						version
+						items {
+							version
+						}
+						totalCount
+						hasMore
 					}
 				}
 			}
@@ -237,7 +297,11 @@ Test.gql("offset beyond records returns empty", function(t)
 		data = {
 			tenant = {
 				environment = {
-					clusterUpgradeHistory = {},
+					clusterUpgradeHistory = {
+						items = {},
+						totalCount = 15,
+						hasMore = false,
+					},
 				},
 			},
 		},
@@ -252,7 +316,11 @@ Test.gql("large limit is accepted", function(t)
 			tenant(slug: "pagination-tenant") {
 				environment(slug: "test-env") {
 					clusterUpgradeHistory(limit: 2000) {
-						version
+						items {
+							version
+						}
+						totalCount
+						hasMore
 					}
 				}
 			}
@@ -263,7 +331,11 @@ Test.gql("large limit is accepted", function(t)
 		data = {
 			tenant = {
 				environment = {
-					clusterUpgradeHistory = NotNull(),
+					clusterUpgradeHistory = {
+						items = NotNull(),
+						totalCount = 15,
+						hasMore = false,
+					},
 				},
 			},
 		},
