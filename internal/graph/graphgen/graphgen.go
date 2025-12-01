@@ -2569,11 +2569,11 @@ type Environment {
 	autoUpgrade: Boolean!
 	"""
 	Cluster upgrade history with pagination support.
-	
+
 	Parameters:
 	- limit: Maximum number of records to return (default: 50, must be positive)
 	- offset: Number of records to skip (default: 0, must be non-negative)
-	
+
 	Results are ordered by last_modified DESC (newest first).
 	Invalid values (negative/zero limit, negative offset) are replaced with defaults.
 	"""
