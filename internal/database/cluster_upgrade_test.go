@@ -731,3 +731,281 @@ func TestRepo_ClusterUpgradeHistoryGetAll_Pagination(t *testing.T) {
 		}
 	})
 }
+
+func TestRepo_ClusterUpgradeHistoryGetByTenant_Pagination(t *testing.T) {
+	tenant1ID := uuid.New()
+	tenant2ID := uuid.New()
+	env1ID := uuid.New()
+	env2ID := uuid.New()
+	env3ID := uuid.New()
+
+	// Setup test data: 2 tenants with multiple environments
+	qs := []string{
+		fmt.Sprintf("INSERT INTO tenants (id, name) VALUES ('%s', 'tenant-1')", tenant1ID),
+		fmt.Sprintf("INSERT INTO tenants (id, name) VALUES ('%s', 'tenant-2')", tenant2ID),
+		fmt.Sprintf("INSERT INTO environments (id, name, tenant_id, kind) VALUES ('%s', 'env-1', '%s', 'tenant')", env1ID, tenant1ID),
+		fmt.Sprintf("INSERT INTO environments (id, name, tenant_id, kind) VALUES ('%s', 'env-2', '%s', 'tenant')", env2ID, tenant1ID),
+		fmt.Sprintf("INSERT INTO environments (id, name, tenant_id, kind) VALUES ('%s', 'env-3', '%s', 'tenant')", env3ID, tenant2ID),
+	}
+
+	// Create upgrades: 7 for tenant1 (3 in env1, 4 in env2), 3 for tenant2
+	baseTime := time.Now().Add(-10 * time.Hour)
+	for i := 0; i < 3; i++ {
+		upgradeID := uuid.New()
+		version := fmt.Sprintf("1.29.%d", i)
+		timestamp := baseTime.Add(time.Duration(i) * time.Hour)
+		qs = append(qs, fmt.Sprintf(
+			"INSERT INTO cluster_upgrades (id, tenant_id, environment_id, version, status, start_time, last_modified) VALUES ('%s', '%s', '%s', '%s', 'DONE', '%s', '%s')",
+			upgradeID, tenant1ID, env1ID, version, timestamp.Format(time.RFC3339), timestamp.Format(time.RFC3339),
+		))
+	}
+	for i := 3; i < 7; i++ {
+		upgradeID := uuid.New()
+		version := fmt.Sprintf("1.28.%d", i)
+		timestamp := baseTime.Add(time.Duration(i) * time.Hour)
+		qs = append(qs, fmt.Sprintf(
+			"INSERT INTO cluster_upgrades (id, tenant_id, environment_id, version, status, start_time, last_modified) VALUES ('%s', '%s', '%s', '%s', 'DONE', '%s', '%s')",
+			upgradeID, tenant1ID, env2ID, version, timestamp.Format(time.RFC3339), timestamp.Format(time.RFC3339),
+		))
+	}
+	for i := 7; i < 10; i++ {
+		upgradeID := uuid.New()
+		version := fmt.Sprintf("1.30.%d", i)
+		timestamp := baseTime.Add(time.Duration(i) * time.Hour)
+		qs = append(qs, fmt.Sprintf(
+			"INSERT INTO cluster_upgrades (id, tenant_id, environment_id, version, status, start_time, last_modified) VALUES ('%s', '%s', '%s', '%s', 'DONE', '%s', '%s')",
+			upgradeID, tenant2ID, env3ID, version, timestamp.Format(time.RFC3339), timestamp.Format(time.RFC3339),
+		))
+	}
+
+	repo := newTestRepo(t, qs...)
+	defer repo.Close()
+
+	ctx := context.Background()
+
+	t.Run("returns all upgrades for tenant across all environments", func(t *testing.T) {
+		got, err := repo.ClusterUpgradeHistoryGetByTenant(ctx, tenant1ID, 50, 0)
+		if err != nil {
+			t.Fatalf("ClusterUpgradeHistoryGetByTenant() error = %v", err)
+		}
+
+		if len(got) != 7 {
+			t.Errorf("expected 7 records for tenant1, got %d", len(got))
+		}
+
+		// Verify order (DESC by last_modified) - newest first
+		if got[0].Version != "1.28.6" {
+			t.Errorf("expected first record to be 1.28.6, got %s", got[0].Version)
+		}
+	})
+
+	t.Run("limit parameter works", func(t *testing.T) {
+		got, err := repo.ClusterUpgradeHistoryGetByTenant(ctx, tenant1ID, 3, 0)
+		if err != nil {
+			t.Fatalf("ClusterUpgradeHistoryGetByTenant() error = %v", err)
+		}
+
+		if len(got) != 3 {
+			t.Errorf("expected 3 records, got %d", len(got))
+		}
+	})
+
+	t.Run("offset parameter works", func(t *testing.T) {
+		got, err := repo.ClusterUpgradeHistoryGetByTenant(ctx, tenant1ID, 3, 2)
+		if err != nil {
+			t.Fatalf("ClusterUpgradeHistoryGetByTenant() error = %v", err)
+		}
+
+		if len(got) != 3 {
+			t.Errorf("expected 3 records, got %d", len(got))
+		}
+
+		// Should skip first 2 records
+		if got[0].Version != "1.28.4" {
+			t.Errorf("expected first record after offset to be 1.28.4, got %s", got[0].Version)
+		}
+	})
+
+	t.Run("negative limit defaults to 50", func(t *testing.T) {
+		got, err := repo.ClusterUpgradeHistoryGetByTenant(ctx, tenant1ID, -1, 0)
+		if err != nil {
+			t.Fatalf("ClusterUpgradeHistoryGetByTenant() error = %v", err)
+		}
+
+		// Should return all 7 records (less than default 50)
+		if len(got) != 7 {
+			t.Errorf("expected 7 records with default limit, got %d", len(got))
+		}
+	})
+
+	t.Run("negative offset defaults to 0", func(t *testing.T) {
+		got, err := repo.ClusterUpgradeHistoryGetByTenant(ctx, tenant1ID, 2, -5)
+		if err != nil {
+			t.Fatalf("ClusterUpgradeHistoryGetByTenant() error = %v", err)
+		}
+
+		if len(got) != 2 {
+			t.Errorf("expected 2 records, got %d", len(got))
+		}
+
+		// Should start from beginning (no offset)
+		if got[0].Version != "1.28.6" {
+			t.Errorf("expected first record to be 1.28.6, got %s", got[0].Version)
+		}
+	})
+
+	t.Run("limit exceeding 1000 is capped", func(t *testing.T) {
+		got, err := repo.ClusterUpgradeHistoryGetByTenant(ctx, tenant1ID, 2000, 0)
+		if err != nil {
+			t.Fatalf("ClusterUpgradeHistoryGetByTenant() error = %v", err)
+		}
+
+		// Should return all available records (limited by data, not by cap)
+		if len(got) != 7 {
+			t.Errorf("expected 7 records, got %d", len(got))
+		}
+	})
+}
+
+func TestRepo_ClusterUpgradeHistoryGetAll_Pagination(t *testing.T) {
+	tenant1ID := uuid.New()
+	tenant2ID := uuid.New()
+	env1ID := uuid.New()
+	env2ID := uuid.New()
+
+	// Setup test data: 2 tenants with environments
+	qs := []string{
+		fmt.Sprintf("INSERT INTO tenants (id, name) VALUES ('%s', 'tenant-1')", tenant1ID),
+		fmt.Sprintf("INSERT INTO tenants (id, name) VALUES ('%s', 'tenant-2')", tenant2ID),
+		fmt.Sprintf("INSERT INTO environments (id, name, tenant_id, kind) VALUES ('%s', 'env-1', '%s', 'tenant')", env1ID, tenant1ID),
+		fmt.Sprintf("INSERT INTO environments (id, name, tenant_id, kind) VALUES ('%s', 'env-2', '%s', 'tenant')", env2ID, tenant2ID),
+	}
+
+	// Create 15 total upgrades: 10 for tenant1, 5 for tenant2
+	baseTime := time.Now().Add(-15 * time.Hour)
+	for i := 0; i < 10; i++ {
+		upgradeID := uuid.New()
+		version := fmt.Sprintf("1.29.%d", i)
+		timestamp := baseTime.Add(time.Duration(i) * time.Hour)
+		qs = append(qs, fmt.Sprintf(
+			"INSERT INTO cluster_upgrades (id, tenant_id, environment_id, version, status, start_time, last_modified) VALUES ('%s', '%s', '%s', '%s', 'DONE', '%s', '%s')",
+			upgradeID, tenant1ID, env1ID, version, timestamp.Format(time.RFC3339), timestamp.Format(time.RFC3339),
+		))
+	}
+	for i := 10; i < 15; i++ {
+		upgradeID := uuid.New()
+		version := fmt.Sprintf("1.30.%d", i)
+		timestamp := baseTime.Add(time.Duration(i) * time.Hour)
+		qs = append(qs, fmt.Sprintf(
+			"INSERT INTO cluster_upgrades (id, tenant_id, environment_id, version, status, start_time, last_modified) VALUES ('%s', '%s', '%s', '%s', 'DONE', '%s', '%s')",
+			upgradeID, tenant2ID, env2ID, version, timestamp.Format(time.RFC3339), timestamp.Format(time.RFC3339),
+		))
+	}
+
+	repo := newTestRepo(t, qs...)
+	defer repo.Close()
+
+	ctx := context.Background()
+
+	t.Run("returns all upgrades across all tenants", func(t *testing.T) {
+		got, err := repo.ClusterUpgradeHistoryGetAll(ctx, 50, 0)
+		if err != nil {
+			t.Fatalf("ClusterUpgradeHistoryGetAll() error = %v", err)
+		}
+
+		if len(got) != 15 {
+			t.Errorf("expected 15 records total, got %d", len(got))
+		}
+
+		// Verify order (DESC by last_modified) - newest first
+		if got[0].Version != "1.30.14" {
+			t.Errorf("expected first record to be 1.30.14, got %s", got[0].Version)
+		}
+	})
+
+	t.Run("limit parameter works", func(t *testing.T) {
+		got, err := repo.ClusterUpgradeHistoryGetAll(ctx, 5, 0)
+		if err != nil {
+			t.Fatalf("ClusterUpgradeHistoryGetAll() error = %v", err)
+		}
+
+		if len(got) != 5 {
+			t.Errorf("expected 5 records, got %d", len(got))
+		}
+
+		// Should be 5 newest
+		if got[0].Version != "1.30.14" {
+			t.Errorf("expected first record to be 1.30.14, got %s", got[0].Version)
+		}
+		if got[4].Version != "1.30.10" {
+			t.Errorf("expected fifth record to be 1.30.10, got %s", got[4].Version)
+		}
+	})
+
+	t.Run("offset parameter works", func(t *testing.T) {
+		got, err := repo.ClusterUpgradeHistoryGetAll(ctx, 3, 5)
+		if err != nil {
+			t.Fatalf("ClusterUpgradeHistoryGetAll() error = %v", err)
+		}
+
+		if len(got) != 3 {
+			t.Errorf("expected 3 records, got %d", len(got))
+		}
+
+		// Should skip first 5, return next 3
+		if got[0].Version != "1.29.9" {
+			t.Errorf("expected first record after offset to be 1.29.9, got %s", got[0].Version)
+		}
+	})
+
+	t.Run("negative limit defaults to 50", func(t *testing.T) {
+		got, err := repo.ClusterUpgradeHistoryGetAll(ctx, -1, 0)
+		if err != nil {
+			t.Fatalf("ClusterUpgradeHistoryGetAll() error = %v", err)
+		}
+
+		// Should return all 15 records (less than default 50)
+		if len(got) != 15 {
+			t.Errorf("expected 15 records with default limit, got %d", len(got))
+		}
+	})
+
+	t.Run("negative offset defaults to 0", func(t *testing.T) {
+		got, err := repo.ClusterUpgradeHistoryGetAll(ctx, 3, -10)
+		if err != nil {
+			t.Fatalf("ClusterUpgradeHistoryGetAll() error = %v", err)
+		}
+
+		if len(got) != 3 {
+			t.Errorf("expected 3 records, got %d", len(got))
+		}
+
+		// Should start from beginning
+		if got[0].Version != "1.30.14" {
+			t.Errorf("expected first record to be 1.30.14, got %s", got[0].Version)
+		}
+	})
+
+	t.Run("limit exceeding 1000 is capped", func(t *testing.T) {
+		got, err := repo.ClusterUpgradeHistoryGetAll(ctx, 5000, 0)
+		if err != nil {
+			t.Fatalf("ClusterUpgradeHistoryGetAll() error = %v", err)
+		}
+
+		// Should return all available records
+		if len(got) != 15 {
+			t.Errorf("expected 15 records, got %d", len(got))
+		}
+	})
+
+	t.Run("offset beyond records returns empty", func(t *testing.T) {
+		got, err := repo.ClusterUpgradeHistoryGetAll(ctx, 10, 20)
+		if err != nil {
+			t.Fatalf("ClusterUpgradeHistoryGetAll() error = %v", err)
+		}
+
+		if len(got) != 0 {
+			t.Errorf("expected 0 records with offset beyond available, got %d", len(got))
+		}
+	})
+}

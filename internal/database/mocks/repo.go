@@ -1017,6 +1017,160 @@ func (_c *Repo_ClusterUpgradeHistoryGetByTenant_Call) RunAndReturn(run func(ctx 
 	return _c
 }
 
+// ClusterUpgradeHistoryGetAll provides a mock function for the type Repo
+func (_mock *Repo) ClusterUpgradeHistoryGetAll(ctx context.Context, limit int32, offset int32) ([]*model.ClusterUpgradeStatus, error) {
+	ret := _mock.Called(ctx, limit, offset)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ClusterUpgradeHistoryGetAll")
+	}
+
+	var r0 []*model.ClusterUpgradeStatus
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int32, int32) ([]*model.ClusterUpgradeStatus, error)); ok {
+		return returnFunc(ctx, limit, offset)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int32, int32) []*model.ClusterUpgradeStatus); ok {
+		r0 = returnFunc(ctx, limit, offset)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.ClusterUpgradeStatus)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int32, int32) error); ok {
+		r1 = returnFunc(ctx, limit, offset)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Repo_ClusterUpgradeHistoryGetAll_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ClusterUpgradeHistoryGetAll'
+type Repo_ClusterUpgradeHistoryGetAll_Call struct {
+	*mock.Call
+}
+
+// ClusterUpgradeHistoryGetAll is a helper method to define mock.On call
+//   - ctx context.Context
+//   - limit int32
+//   - offset int32
+func (_e *Repo_Expecter) ClusterUpgradeHistoryGetAll(ctx interface{}, limit interface{}, offset interface{}) *Repo_ClusterUpgradeHistoryGetAll_Call {
+	return &Repo_ClusterUpgradeHistoryGetAll_Call{Call: _e.mock.On("ClusterUpgradeHistoryGetAll", ctx, limit, offset)}
+}
+
+func (_c *Repo_ClusterUpgradeHistoryGetAll_Call) Run(run func(ctx context.Context, limit int32, offset int32)) *Repo_ClusterUpgradeHistoryGetAll_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int32
+		if args[1] != nil {
+			arg1 = args[1].(int32)
+		}
+		var arg2 int32
+		if args[2] != nil {
+			arg2 = args[2].(int32)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *Repo_ClusterUpgradeHistoryGetAll_Call) Return(clusterUpgradeStatuss []*model.ClusterUpgradeStatus, err error) *Repo_ClusterUpgradeHistoryGetAll_Call {
+	_c.Call.Return(clusterUpgradeStatuss, err)
+	return _c
+}
+
+func (_c *Repo_ClusterUpgradeHistoryGetAll_Call) RunAndReturn(run func(ctx context.Context, limit int32, offset int32) ([]*model.ClusterUpgradeStatus, error)) *Repo_ClusterUpgradeHistoryGetAll_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ClusterUpgradeHistoryGetByTenant provides a mock function for the type Repo
+func (_mock *Repo) ClusterUpgradeHistoryGetByTenant(ctx context.Context, tenantID uuid.UUID, limit int32, offset int32) ([]*model.ClusterUpgradeStatus, error) {
+	ret := _mock.Called(ctx, tenantID, limit, offset)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ClusterUpgradeHistoryGetByTenant")
+	}
+
+	var r0 []*model.ClusterUpgradeStatus
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int32, int32) ([]*model.ClusterUpgradeStatus, error)); ok {
+		return returnFunc(ctx, tenantID, limit, offset)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int32, int32) []*model.ClusterUpgradeStatus); ok {
+		r0 = returnFunc(ctx, tenantID, limit, offset)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.ClusterUpgradeStatus)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, int32, int32) error); ok {
+		r1 = returnFunc(ctx, tenantID, limit, offset)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Repo_ClusterUpgradeHistoryGetByTenant_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ClusterUpgradeHistoryGetByTenant'
+type Repo_ClusterUpgradeHistoryGetByTenant_Call struct {
+	*mock.Call
+}
+
+// ClusterUpgradeHistoryGetByTenant is a helper method to define mock.On call
+//   - ctx context.Context
+//   - tenantID uuid.UUID
+//   - limit int32
+//   - offset int32
+func (_e *Repo_Expecter) ClusterUpgradeHistoryGetByTenant(ctx interface{}, tenantID interface{}, limit interface{}, offset interface{}) *Repo_ClusterUpgradeHistoryGetByTenant_Call {
+	return &Repo_ClusterUpgradeHistoryGetByTenant_Call{Call: _e.mock.On("ClusterUpgradeHistoryGetByTenant", ctx, tenantID, limit, offset)}
+}
+
+func (_c *Repo_ClusterUpgradeHistoryGetByTenant_Call) Run(run func(ctx context.Context, tenantID uuid.UUID, limit int32, offset int32)) *Repo_ClusterUpgradeHistoryGetByTenant_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		var arg2 int32
+		if args[2] != nil {
+			arg2 = args[2].(int32)
+		}
+		var arg3 int32
+		if args[3] != nil {
+			arg3 = args[3].(int32)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+		)
+	})
+	return _c
+}
+
+func (_c *Repo_ClusterUpgradeHistoryGetByTenant_Call) Return(clusterUpgradeStatuss []*model.ClusterUpgradeStatus, err error) *Repo_ClusterUpgradeHistoryGetByTenant_Call {
+	_c.Call.Return(clusterUpgradeStatuss, err)
+	return _c
+}
+
+func (_c *Repo_ClusterUpgradeHistoryGetByTenant_Call) RunAndReturn(run func(ctx context.Context, tenantID uuid.UUID, limit int32, offset int32) ([]*model.ClusterUpgradeStatus, error)) *Repo_ClusterUpgradeHistoryGetByTenant_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ConfigCreate provides a mock function for the type Repo
 func (_mock *Repo) ConfigCreate(ctx context.Context, c model.NewConfiguration) (*model.Configuration, error) {
 	ret := _mock.Called(ctx, c)
