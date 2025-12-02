@@ -778,23 +778,23 @@ func (_c *Repo_ClusterUpgradeGetByVersion_Call) RunAndReturn(run func(ctx contex
 }
 
 // ClusterUpgradeHistoryGet provides a mock function for the type Repo
-func (_mock *Repo) ClusterUpgradeHistoryGet(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID, limit int32, offset int32) ([]*model.ClusterUpgradeStatus, error) {
+func (_mock *Repo) ClusterUpgradeHistoryGet(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID, limit int32, offset int32) (*model.ClusterUpgradeHistoryResult, error) {
 	ret := _mock.Called(ctx, tenantID, envID, limit, offset)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ClusterUpgradeHistoryGet")
 	}
 
-	var r0 []*model.ClusterUpgradeStatus
+	var r0 *model.ClusterUpgradeHistoryResult
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID, int32, int32) ([]*model.ClusterUpgradeStatus, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID, int32, int32) (*model.ClusterUpgradeHistoryResult, error)); ok {
 		return returnFunc(ctx, tenantID, envID, limit, offset)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID, int32, int32) []*model.ClusterUpgradeStatus); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID, int32, int32) *model.ClusterUpgradeHistoryResult); ok {
 		r0 = returnFunc(ctx, tenantID, envID, limit, offset)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.ClusterUpgradeStatus)
+			r0 = ret.Get(0).(*model.ClusterUpgradeHistoryResult)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, uuid.UUID, int32, int32) error); ok {
@@ -853,34 +853,34 @@ func (_c *Repo_ClusterUpgradeHistoryGet_Call) Run(run func(ctx context.Context, 
 	return _c
 }
 
-func (_c *Repo_ClusterUpgradeHistoryGet_Call) Return(clusterUpgradeStatuss []*model.ClusterUpgradeStatus, err error) *Repo_ClusterUpgradeHistoryGet_Call {
-	_c.Call.Return(clusterUpgradeStatuss, err)
+func (_c *Repo_ClusterUpgradeHistoryGet_Call) Return(clusterUpgradeHistoryResult *model.ClusterUpgradeHistoryResult, err error) *Repo_ClusterUpgradeHistoryGet_Call {
+	_c.Call.Return(clusterUpgradeHistoryResult, err)
 	return _c
 }
 
-func (_c *Repo_ClusterUpgradeHistoryGet_Call) RunAndReturn(run func(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID, limit int32, offset int32) ([]*model.ClusterUpgradeStatus, error)) *Repo_ClusterUpgradeHistoryGet_Call {
+func (_c *Repo_ClusterUpgradeHistoryGet_Call) RunAndReturn(run func(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID, limit int32, offset int32) (*model.ClusterUpgradeHistoryResult, error)) *Repo_ClusterUpgradeHistoryGet_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // ClusterUpgradeHistoryGetAll provides a mock function for the type Repo
-func (_mock *Repo) ClusterUpgradeHistoryGetAll(ctx context.Context, limit int32, offset int32) ([]*model.ClusterUpgradeStatus, error) {
+func (_mock *Repo) ClusterUpgradeHistoryGetAll(ctx context.Context, limit int32, offset int32) (*model.ClusterUpgradeHistoryResult, error) {
 	ret := _mock.Called(ctx, limit, offset)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ClusterUpgradeHistoryGetAll")
 	}
 
-	var r0 []*model.ClusterUpgradeStatus
+	var r0 *model.ClusterUpgradeHistoryResult
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int32, int32) ([]*model.ClusterUpgradeStatus, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int32, int32) (*model.ClusterUpgradeHistoryResult, error)); ok {
 		return returnFunc(ctx, limit, offset)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, int32, int32) []*model.ClusterUpgradeStatus); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int32, int32) *model.ClusterUpgradeHistoryResult); ok {
 		r0 = returnFunc(ctx, limit, offset)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.ClusterUpgradeStatus)
+			r0 = ret.Get(0).(*model.ClusterUpgradeHistoryResult)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, int32, int32) error); ok {
@@ -927,34 +927,34 @@ func (_c *Repo_ClusterUpgradeHistoryGetAll_Call) Run(run func(ctx context.Contex
 	return _c
 }
 
-func (_c *Repo_ClusterUpgradeHistoryGetAll_Call) Return(clusterUpgradeStatuss []*model.ClusterUpgradeStatus, err error) *Repo_ClusterUpgradeHistoryGetAll_Call {
-	_c.Call.Return(clusterUpgradeStatuss, err)
+func (_c *Repo_ClusterUpgradeHistoryGetAll_Call) Return(clusterUpgradeHistoryResult *model.ClusterUpgradeHistoryResult, err error) *Repo_ClusterUpgradeHistoryGetAll_Call {
+	_c.Call.Return(clusterUpgradeHistoryResult, err)
 	return _c
 }
 
-func (_c *Repo_ClusterUpgradeHistoryGetAll_Call) RunAndReturn(run func(ctx context.Context, limit int32, offset int32) ([]*model.ClusterUpgradeStatus, error)) *Repo_ClusterUpgradeHistoryGetAll_Call {
+func (_c *Repo_ClusterUpgradeHistoryGetAll_Call) RunAndReturn(run func(ctx context.Context, limit int32, offset int32) (*model.ClusterUpgradeHistoryResult, error)) *Repo_ClusterUpgradeHistoryGetAll_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // ClusterUpgradeHistoryGetByTenant provides a mock function for the type Repo
-func (_mock *Repo) ClusterUpgradeHistoryGetByTenant(ctx context.Context, tenantID uuid.UUID, limit int32, offset int32) ([]*model.ClusterUpgradeStatus, error) {
+func (_mock *Repo) ClusterUpgradeHistoryGetByTenant(ctx context.Context, tenantID uuid.UUID, limit int32, offset int32) (*model.ClusterUpgradeHistoryResult, error) {
 	ret := _mock.Called(ctx, tenantID, limit, offset)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ClusterUpgradeHistoryGetByTenant")
 	}
 
-	var r0 []*model.ClusterUpgradeStatus
+	var r0 *model.ClusterUpgradeHistoryResult
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int32, int32) ([]*model.ClusterUpgradeStatus, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int32, int32) (*model.ClusterUpgradeHistoryResult, error)); ok {
 		return returnFunc(ctx, tenantID, limit, offset)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int32, int32) []*model.ClusterUpgradeStatus); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, int32, int32) *model.ClusterUpgradeHistoryResult); ok {
 		r0 = returnFunc(ctx, tenantID, limit, offset)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.ClusterUpgradeStatus)
+			r0 = ret.Get(0).(*model.ClusterUpgradeHistoryResult)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, int32, int32) error); ok {
@@ -1007,12 +1007,12 @@ func (_c *Repo_ClusterUpgradeHistoryGetByTenant_Call) Run(run func(ctx context.C
 	return _c
 }
 
-func (_c *Repo_ClusterUpgradeHistoryGetByTenant_Call) Return(clusterUpgradeStatuss []*model.ClusterUpgradeStatus, err error) *Repo_ClusterUpgradeHistoryGetByTenant_Call {
-	_c.Call.Return(clusterUpgradeStatuss, err)
+func (_c *Repo_ClusterUpgradeHistoryGetByTenant_Call) Return(clusterUpgradeHistoryResult *model.ClusterUpgradeHistoryResult, err error) *Repo_ClusterUpgradeHistoryGetByTenant_Call {
+	_c.Call.Return(clusterUpgradeHistoryResult, err)
 	return _c
 }
 
-func (_c *Repo_ClusterUpgradeHistoryGetByTenant_Call) RunAndReturn(run func(ctx context.Context, tenantID uuid.UUID, limit int32, offset int32) ([]*model.ClusterUpgradeStatus, error)) *Repo_ClusterUpgradeHistoryGetByTenant_Call {
+func (_c *Repo_ClusterUpgradeHistoryGetByTenant_Call) RunAndReturn(run func(ctx context.Context, tenantID uuid.UUID, limit int32, offset int32) (*model.ClusterUpgradeHistoryResult, error)) *Repo_ClusterUpgradeHistoryGetByTenant_Call {
 	_c.Call.Return(run)
 	return _c
 }
