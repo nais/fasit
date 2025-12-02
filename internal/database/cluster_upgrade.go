@@ -73,7 +73,7 @@ func (r *repo) ClusterUpgradeHistoryGet(ctx context.Context, tenantID, envID uui
 
 	return &model.ClusterUpgradeHistoryResult{
 		Items:      upgrades,
-		TotalCount: int(totalCount), //#nosec G115 -- totalCount unlikely to exceed int max in practice
+		TotalCount: int(totalCount), // #nosec G115 -- totalCount unlikely to exceed int max in practice
 		HasMore:    hasMore,
 	}, nil
 }
@@ -116,7 +116,7 @@ func (r *repo) ClusterUpgradeHistoryGetByTenant(ctx context.Context, tenantID uu
 
 	return &model.ClusterUpgradeHistoryResult{
 		Items:      upgrades,
-		TotalCount: int(totalCount), //#nosec G115 -- totalCount unlikely to exceed int max in practice
+		TotalCount: int(totalCount), // #nosec G115 -- totalCount unlikely to exceed int max in practice
 		HasMore:    hasMore,
 	}, nil
 }
@@ -158,7 +158,7 @@ func (r *repo) ClusterUpgradeHistoryGetAll(ctx context.Context, limit, offset in
 
 	return &model.ClusterUpgradeHistoryResult{
 		Items:      upgrades,
-		TotalCount: int(totalCount), //#nosec G115 -- totalCount unlikely to exceed int max in practice
+		TotalCount: int(totalCount), // #nosec G115 -- totalCount unlikely to exceed int max in practice
 		HasMore:    hasMore,
 	}, nil
 }
