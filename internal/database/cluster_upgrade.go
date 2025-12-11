@@ -24,6 +24,7 @@ type ClusterUpgraderRepo interface {
 	ClusterUpgradeHistoryGetByTenant(ctx context.Context, tenantID uuid.UUID, limit, offset int32) (*model.ClusterUpgradeHistoryResult, error)
 	ClusterUpgradeHistoryGetAll(ctx context.Context, limit, offset int32) (*model.ClusterUpgradeHistoryResult, error)
 	UpdateClusterUpgradeStatus(ctx context.Context, upgradeID uuid.UUID, status gensql.ClusterUpgradesStatus) (*model.ClusterUpgradeStatus, error)
+	ClusterUpgradeBypassDelay(ctx context.Context, upgradeID uuid.UUID) (*model.ClusterUpgradeStatus, error)
 	ClusterUpgradeGetByID(ctx context.Context, id uuid.UUID) (*model.ClusterUpgradeStatus, error)
 	ClusterOperationsGetByID(ctx context.Context, id uuid.UUID) (*model.EnvironmentOperation, error)
 	ClusterOperationsGetByUpgradeID(ctx context.Context, upgradeID uuid.UUID) ([]*model.EnvironmentOperation, error)
@@ -280,8 +281,30 @@ func (r *repo) UpdateClusterUpgradeStatus(ctx context.Context, upgradeID uuid.UU
 	if err != nil {
 		return nil, err
 	}
-
 	return clusterUpgradeFromSQL(clusterUpgrade), nil
+}
+
+func (r *repo) ClusterUpgradeBypassDelay(ctx context.Context, upgradeID uuid.UUID) (*model.ClusterUpgradeStatus, error) {
+	// Get the upgrade first to verify it exists and is in WAITING status
+	upgrade, err := r.querier.ClusterUpgradesGetByID(ctx, upgradeID)
+	if err != nil {
+		return nil, err
+	}
+
+	if upgrade.Status != gensql.ClusterUpgradesStatusWAITING {
+		return nil, errors.New("upgrade is not in WAITING status")
+	}
+
+	// Update both status to CREATED and is_automatic to false
+	updatedUpgrade, err := r.querier.ClusterUpgradesBypassDelay(ctx, upgradeID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Create audit entry for the manual override
+	r.createAudit(ctx, "bypassed upgrade delay", "cluster_upgrades", upgradeID.String())
+
+	return clusterUpgradeFromSQL(updatedUpgrade), nil
 }
 
 func (r *repo) ClusterUpgradeGet(ctx context.Context, tenantID, envID uuid.UUID) (*model.ClusterUpgradeStatus, error) {

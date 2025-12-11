@@ -149,3 +149,14 @@ SELECT
 FROM
 	cluster_upgrades
 ;
+
+-- name: ClusterUpgradesBypassDelay :one
+UPDATE cluster_upgrades
+SET
+	"status" = 'CREATED'::cluster_upgrades_status,
+	"is_automatic" = FALSE
+WHERE
+	"id" = @id
+RETURNING
+	*
+;
