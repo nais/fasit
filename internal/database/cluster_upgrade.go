@@ -301,7 +301,7 @@ func (r *repo) ClusterUpgradeBypassDelay(ctx context.Context, upgradeID uuid.UUI
 			}
 			// Upgrade exists but is not in WAITING status
 			if upgrade.Status != gensql.ClusterUpgradesStatusWAITING {
-				return nil, fmt.Errorf("cannot bypass delay: upgrade is in '%s' status; only upgrades in WAITING status can have their delay bypassed", upgrade.Status)
+				return nil, fmt.Errorf("cannot bypass delay: upgrade is in '%s' status; only upgrades in '%s' status can have their delay bypassed", strings.ToUpper(string(upgrade.Status)), "WAITING")
 			}
 		}
 		return nil, err

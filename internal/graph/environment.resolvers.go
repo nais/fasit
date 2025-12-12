@@ -9,7 +9,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -382,10 +381,6 @@ func (r *mutationResolver) ClusterUpgradeBypassDelay(ctx context.Context, upgrad
 	if err != nil {
 		return nil, fmt.Errorf("failed to bypass upgrade delay: %w", err)
 	}
-
-
-
-
 
 	r.Log.WithFields(map[string]interface{}{
 		"upgrade_id": upgradeID.String(),

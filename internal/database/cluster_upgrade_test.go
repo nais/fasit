@@ -802,7 +802,7 @@ func TestRepo_ClusterUpgradeBypassDelay(t *testing.T) {
 			t.Error("expected nil upgrade when error occurs")
 		}
 
-		expectedMsg := "cannot bypass delay: upgrade is in 'CREATED' status; only upgrades in WAITING status can have their delay bypassed"
+		expectedMsg := "cannot bypass delay: upgrade is in 'CREATED' status; only upgrades in 'WAITING' status can have their delay bypassed"
 		if err.Error() != expectedMsg {
 			t.Errorf("expected error message %q, got %q", expectedMsg, err.Error())
 		}
@@ -817,7 +817,7 @@ func TestRepo_ClusterUpgradeBypassDelay(t *testing.T) {
 			t.Error("expected nil upgrade when error occurs")
 		}
 
-		expectedMsg := "cannot bypass delay: upgrade is in 'DONE' status; only upgrades in WAITING status can have their delay bypassed"
+		expectedMsg := "cannot bypass delay: upgrade is in 'DONE' status; only upgrades in 'WAITING' status can have their delay bypassed"
 		if err.Error() != expectedMsg {
 			t.Errorf("expected error message %q, got %q", expectedMsg, err.Error())
 		}
@@ -832,7 +832,7 @@ func TestRepo_ClusterUpgradeBypassDelay(t *testing.T) {
 			t.Error("expected nil upgrade when error occurs")
 		}
 
-		expectedMsg := "cannot bypass delay: upgrade is in 'FAILED' status; only upgrades in WAITING status can have their delay bypassed"
+		expectedMsg := "cannot bypass delay: upgrade is in 'FAILED' status; only upgrades in 'WAITING' status can have their delay bypassed"
 		if err.Error() != expectedMsg {
 			t.Errorf("expected error message %q, got %q", expectedMsg, err.Error())
 		}
