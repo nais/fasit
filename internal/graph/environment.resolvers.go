@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -382,8 +383,9 @@ func (r *mutationResolver) ClusterUpgradeBypassDelay(ctx context.Context, upgrad
 		return nil, fmt.Errorf("failed to bypass upgrade delay: %w", err)
 	}
 
+	safeUpgradeID := strings.ReplaceAll(strings.ReplaceAll(upgradeID.String(), "\n", ""), "\r", "")
 	r.Log.WithFields(map[string]interface{}{
-		"upgrade_id": upgradeID.String(),
+		"upgrade_id": safeUpgradeID,
 		"version":    upgrade.Version,
 		"status":     upgrade.UpgradeStatus,
 	}).Info("bypassed upgrade delay - upgrade will start on next upgrader run")
