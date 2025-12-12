@@ -285,19 +285,24 @@ func (r *repo) UpdateClusterUpgradeStatus(ctx context.Context, upgradeID uuid.UU
 }
 
 func (r *repo) ClusterUpgradeBypassDelay(ctx context.Context, upgradeID uuid.UUID) (*model.ClusterUpgradeStatus, error) {
-	// Get the upgrade first to verify it exists and is in WAITING status
-	upgrade, err := r.querier.ClusterUpgradesGetByID(ctx, upgradeID)
-	if err != nil {
-		return nil, err
-	}
-
-	if upgrade.Status != gensql.ClusterUpgradesStatusWAITING {
-		return nil, errors.New("upgrade is not in WAITING status")
-	}
-
 	// Update both status to CREATED and is_automatic to false
+	// This UPDATE will only succeed if the upgrade exists AND is in WAITING status
 	updatedUpgrade, err := r.querier.ClusterUpgradesBypassDelay(ctx, upgradeID)
 	if err != nil {
+		// Check if it's a "no rows" error, which means either the upgrade doesn't exist
+		// or it's not in WAITING status
+		if errors.Is(err, pgx.ErrNoRows) {
+			// Try to get the upgrade to provide a better error message
+			upgrade, getErr := r.querier.ClusterUpgradesGetByID(ctx, upgradeID)
+			if getErr != nil {
+				// Upgrade doesn't exist
+				return nil, err
+			}
+			// Upgrade exists but is not in WAITING status
+			if upgrade.Status != gensql.ClusterUpgradesStatusWAITING {
+				return nil, errors.New("upgrade is not in WAITING status")
+			}
+		}
 		return nil, err
 	}
 

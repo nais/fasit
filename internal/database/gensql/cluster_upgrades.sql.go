@@ -17,6 +17,7 @@ SET
 	"is_automatic" = FALSE
 WHERE
 	"id" = $1
+	AND "status" = 'WAITING'::cluster_upgrades_status
 RETURNING
 	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id, is_automatic, upgrade_start_time
 `

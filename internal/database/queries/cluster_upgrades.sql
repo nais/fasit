@@ -157,6 +157,7 @@ SET
 	"is_automatic" = FALSE
 WHERE
 	"id" = @id
+	AND "status" = 'WAITING'::cluster_upgrades_status
 RETURNING
 	*
 ;
