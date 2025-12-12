@@ -383,12 +383,12 @@ func (r *mutationResolver) ClusterUpgradeBypassDelay(ctx context.Context, upgrad
 		return nil, fmt.Errorf("failed to bypass upgrade delay: %w", err)
 	}
 
-	// Sanitize upgradeID before logging: strip newlines/carriage returns just in case
-	upgradeIDStr := strings.ReplaceAll(upgradeID.String(), "\n", "")
-	upgradeIDStr = strings.ReplaceAll(upgradeIDStr, "\r", "")
+
+
+
 
 	r.Log.WithFields(map[string]interface{}{
-		"upgrade_id": upgradeIDStr,
+		"upgrade_id": upgradeID.String(),
 		"version":    upgrade.Version,
 		"status":     upgrade.UpgradeStatus,
 	}).Info("bypassed upgrade delay - upgrade will start on next upgrader run")
