@@ -378,6 +378,12 @@ func (r *mutationResolver) EnvironmentSetMaintenanceWindow(ctx context.Context, 
 
 // ClusterUpgradeBypassDelay is the resolver for the clusterUpgradeBypassDelay field.
 func (r *mutationResolver) ClusterUpgradeBypassDelay(ctx context.Context, upgradeID uuid.UUID) (*model.ClusterUpgradeStatus, error) {
+	// Fetch the upgrade first to validate it exists and provide better error messages
+	_, err := r.Repo.ClusterUpgradeGetByID(ctx, upgradeID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get upgrade: %w", err)
+	}
+
 	upgrade, err := r.Repo.ClusterUpgradeBypassDelay(ctx, upgradeID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to bypass upgrade delay: %w", err)
