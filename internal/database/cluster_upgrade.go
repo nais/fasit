@@ -289,28 +289,33 @@ func (r *repo) ClusterUpgradeBypassDelay(ctx context.Context, upgradeID uuid.UUI
 	// Update both status to CREATED and is_automatic to false
 	// This UPDATE will only succeed if the upgrade exists AND is in WAITING status
 	updatedUpgrade, err := r.querier.ClusterUpgradesBypassDelay(ctx, upgradeID)
-	if err != nil {
-		// Check if it's a "no rows" error, which means either the upgrade doesn't exist
-		// or it's not in WAITING status
-		if errors.Is(err, pgx.ErrNoRows) {
-			// Try to get the upgrade to provide a better error message
-			upgrade, getErr := r.querier.ClusterUpgradesGetByID(ctx, upgradeID)
-			if getErr != nil {
-				// Upgrade doesn't exist
-				return nil, err
-			}
-			// Upgrade exists but is not in WAITING status
-			if upgrade.Status != gensql.ClusterUpgradesStatusWAITING {
-				return nil, fmt.Errorf("cannot bypass delay: upgrade is in '%s' status; only upgrades in '%s' status can have their delay bypassed", strings.ToUpper(string(upgrade.Status)), "WAITING")
-			}
-		}
+	if err == nil {
+		// Success - create audit entry and return
+		r.createAudit(ctx, "bypassed upgrade delay", "cluster_upgrades", upgradeID.String())
+		return clusterUpgradeFromSQL(updatedUpgrade), nil
+	}
+
+	// Handle UPDATE failures
+	if !errors.Is(err, pgx.ErrNoRows) {
+		// Unexpected error
 		return nil, err
 	}
 
-	// Create audit entry for the manual override
-	r.createAudit(ctx, "bypassed upgrade delay", "cluster_upgrades", upgradeID.String())
+	// UPDATE returned no rows - either upgrade doesn't exist or is not in WAITING status
+	// Try to get the upgrade to provide a better error message
+	upgrade, getErr := r.querier.ClusterUpgradesGetByID(ctx, upgradeID)
+	if getErr != nil {
+		// Upgrade doesn't exist
+		return nil, err
+	}
 
-	return clusterUpgradeFromSQL(updatedUpgrade), nil
+	// Upgrade exists - check its status
+	if upgrade.Status != gensql.ClusterUpgradesStatusWAITING {
+		return nil, fmt.Errorf("cannot bypass delay: upgrade is in '%s' status; only upgrades in '%s' status can have their delay bypassed", strings.ToUpper(string(upgrade.Status)), "WAITING")
+	}
+
+	// This should be impossible: upgrade exists and is in WAITING, but UPDATE returned ErrNoRows
+	return nil, fmt.Errorf("internal error: upgrade exists and is in WAITING status, but bypass delay update failed")
 }
 
 func (r *repo) ClusterUpgradeGet(ctx context.Context, tenantID, envID uuid.UUID) (*model.ClusterUpgradeStatus, error) {
