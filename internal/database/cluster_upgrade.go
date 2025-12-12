@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -300,7 +301,7 @@ func (r *repo) ClusterUpgradeBypassDelay(ctx context.Context, upgradeID uuid.UUI
 			}
 			// Upgrade exists but is not in WAITING status
 			if upgrade.Status != gensql.ClusterUpgradesStatusWAITING {
-				return nil, errors.New("upgrade is not in WAITING status")
+				return nil, fmt.Errorf("cannot bypass delay: upgrade is in '%s' status; only upgrades in WAITING status can have their delay bypassed", upgrade.Status)
 			}
 		}
 		return nil, err
