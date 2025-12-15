@@ -34,8 +34,8 @@ jobs:
       go_version: ${{ steps.go_version.outputs.GO_VERSION }}
     runs-on: ubuntu-latest-4-cores
     steps:
-      - uses: actions/checkout@v5
-      - uses: jdx/mise-action@v3
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # ratchet:actions/checkout@v5
+      - uses: jdx/mise-action@146a28175021df8ca24f8ee1828cc2a60f980bd5 # ratchet:jdx/mise-action@v3
       - name: Find Go version
         id: go_version
         run: echo "go_version=$(mise current go)" >> $GITHUB_OUTPUT
@@ -56,10 +56,10 @@ jobs:
     outputs:
       version: ${{ steps.build-push-sign.outputs.version }}
     steps:
-      - uses: actions/checkout@v5
-      - uses: sigstore/cosign-installer@v3
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # ratchet:actions/checkout@v5
+      - uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # ratchet:sigstore/cosign-installer@v3
       - run: cosign verify --certificate-identity ${{ env.BASEIMG_IDENTITY }} --certificate-oidc-issuer ${{ env.BASEIMG_ISSUER }} ${{ env.RUNNER_IMG }}
-      - uses: nais/platform-build-push-sign@main
+      - uses: nais/platform-build-push-sign@8be8359cd90915318ee8ab5fbc8337d04937ae70 # ratchet:nais/platform-build-push-sign@main
         id: build-push-sign
         with:
           dockerfile: Dockerfile_fasit
@@ -78,21 +78,21 @@ jobs:
       - build_and_push_fasit
     steps:
       - name: Checkout fasit
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # ratchet:actions/checkout@v5
       - id: "auth"
         name: "Authenticate to Google Cloud"
-        uses: google-github-actions/auth@v3
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v3
         with:
           workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: "gh-fasit@nais-io.iam.gserviceaccount.com"
           token_format: "access_token"
       - id: "get-credentials"
-        uses: "google-github-actions/get-gke-credentials@v2"
+        uses: "google-github-actions/get-gke-credentials@64bc7249bbcf78056bb92f14d3cedc2da193946c" # ratchet:google-github-actions/get-gke-credentials@v2
         with:
           cluster_name: "nais-io"
           location: "europe-north1"
           project_id: "nais-io"
-      - uses: azure/setup-helm@v4.3.0
+      - uses: azure/setup-helm@b9e51907a09c216f16ebe8536097933489208112 # ratchet:azure/setup-helm@v4.3.0
       - name: deploy fasit
         shell: bash
         env:
