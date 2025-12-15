@@ -18,12 +18,12 @@ jobs:
       go_version: ${{ steps.go_version.outputs.GO_VERSION }}
     runs-on: ubuntu-latest-4-cores
     steps:
-      - uses: actions/checkout@v5
-      - uses: jdx/mise-action@v3
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # ratchet:actions/checkout@v5
+      - uses: jdx/mise-action@146a28175021df8ca24f8ee1828cc2a60f980bd5 # ratchet:jdx/mise-action@v3
       - name: Find Go version
         id: go_version
         run: echo "go_version=$(mise current go)" >> $GITHUB_OUTPUT
-      - uses: actions/setup-go@v6
+      - uses: actions/setup-go@4dc6199c7b1a012772edbd06daecab0f50c9053c # ratchet:actions/setup-go@v6
         with:
           go-version: ${{ steps.go_version.outputs.GO_VERSION }}
       - run: go test -cover -tags integration_test ./...
@@ -42,14 +42,14 @@ jobs:
     runs-on: ubuntu-latest-4-cores
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # ratchet:actions/checkout@v5
       - name: Install cosign
-        uses: sigstore/cosign-installer@v3
+        uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # ratchet:sigstore/cosign-installer@v3
         with:
           cosign-release: "v2.2.1"
       - name: Verify runner image
         run: cosign verify --certificate-identity ${{ env.BASEIMG_IDENTITY }} --certificate-oidc-issuer ${{ env.BASEIMG_ISSUER }} ${{ env.RUNNER_IMG }}
-      - uses: nais/platform-build-push-sign@main
+      - uses: nais/platform-build-push-sign@8be8359cd90915318ee8ab5fbc8337d04937ae70 # ratchet:nais/platform-build-push-sign@main
         id: build-push-sign
         with:
           dockerfile: Dockerfile_naisd
@@ -72,9 +72,9 @@ jobs:
       name: ${{ steps.build_chart.outputs.name }}
       version: ${{ steps.build_chart.outputs.version }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # ratchet:actions/checkout@v5
 
-      - uses: azure/setup-helm@v4
+      - uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # ratchet:azure/setup-helm@v4
         name: "Setup Helm"
         with:
           version: ${{ env.HELM_VERSION }}
@@ -99,7 +99,7 @@ jobs:
 
       - id: "auth"
         name: "Authenticate to Google Cloud"
-        uses: google-github-actions/auth@v3
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v3
         with:
           workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: "gh-fasit@nais-io.iam.gserviceaccount.com"
@@ -121,7 +121,7 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - uses: nais/fasit-deploy@v2
+      - uses: nais/fasit-deploy@8727ed1c7a5a465e837873e6016a9a692a6b874a # ratchet:nais/fasit-deploy@v2
         with:
           chart: oci://${{ env.GOOGLE_REGISTRY }}/nais-io/nais/feature/${{ needs.build_push_naisd_chart.outputs.name }}
           version: ${{ needs.build_push_naisd_chart.outputs.version }}
