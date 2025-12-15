@@ -255,7 +255,7 @@ extend type Mutation {
 
 	"""
 	Bypass upgrade delay and trigger immediate upgrade for a cluster upgrade in WAITING status.
-	This sets is_automatic to false and status to CREATED, allowing the upgrade to proceed on the next upgrader run.
+	This sets isAutomatic to false and status to CREATED, allowing the upgrade to proceed on the next upgrader run.
 	"""
 	clusterUpgradeBypassDelay(upgradeID: ID!): ClusterUpgradeStatus!
 }
