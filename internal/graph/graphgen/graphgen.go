@@ -62,7 +62,8 @@ type ResolverRoot interface {
 	Tenant() TenantResolver
 }
 
-type DirectiveRoot struct{}
+type DirectiveRoot struct {
+}
 
 type ComplexityRoot struct {
 	AuditLog struct {
