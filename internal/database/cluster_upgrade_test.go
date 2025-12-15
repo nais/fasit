@@ -731,3 +731,122 @@ func TestRepo_ClusterUpgradeHistoryGetAll_Pagination(t *testing.T) {
 		}
 	})
 }
+
+func TestRepo_ClusterUpgradeBypassDelay(t *testing.T) {
+	tenantID := uuid.New()
+
+	// Use different environment IDs to avoid unique constraint violation
+	// (only one in-progress upgrade per environment allowed)
+	waitingEnvID := uuid.New()
+	createdEnvID := uuid.New()
+	doneEnvID := uuid.New()
+	failedEnvID := uuid.New()
+
+	// Setup test data with upgrades in different statuses
+	waitingUpgradeID := uuid.New()
+	createdUpgradeID := uuid.New()
+	doneUpgradeID := uuid.New()
+	failedUpgradeID := uuid.New()
+
+	qs := []string{
+		fmt.Sprintf("INSERT INTO tenants (id, name) VALUES ('%s', 'test-tenant')", tenantID),
+		fmt.Sprintf("INSERT INTO environments (id, name, tenant_id, kind) VALUES ('%s', 'waiting-env', '%s', 'tenant')", waitingEnvID, tenantID),
+		fmt.Sprintf("INSERT INTO environments (id, name, tenant_id, kind) VALUES ('%s', 'created-env', '%s', 'tenant')", createdEnvID, tenantID),
+		fmt.Sprintf("INSERT INTO environments (id, name, tenant_id, kind) VALUES ('%s', 'done-env', '%s', 'tenant')", doneEnvID, tenantID),
+		fmt.Sprintf("INSERT INTO environments (id, name, tenant_id, kind) VALUES ('%s', 'failed-env', '%s', 'tenant')", failedEnvID, tenantID),
+		fmt.Sprintf(
+			"INSERT INTO cluster_upgrades (id, tenant_id, environment_id, version, status, is_automatic, start_time, last_modified) VALUES ('%s', '%s', '%s', '1.30.0', 'WAITING', true, '%s', '%s')",
+			waitingUpgradeID, tenantID, waitingEnvID, time.Now().Format(time.RFC3339), time.Now().Format(time.RFC3339),
+		),
+		fmt.Sprintf(
+			"INSERT INTO cluster_upgrades (id, tenant_id, environment_id, version, status, is_automatic, start_time, last_modified) VALUES ('%s', '%s', '%s', '1.30.1', 'CREATED', true, '%s', '%s')",
+			createdUpgradeID, tenantID, createdEnvID, time.Now().Format(time.RFC3339), time.Now().Format(time.RFC3339),
+		),
+		fmt.Sprintf(
+			"INSERT INTO cluster_upgrades (id, tenant_id, environment_id, version, status, is_automatic, start_time, last_modified) VALUES ('%s', '%s', '%s', '1.30.2', 'DONE', true, '%s', '%s')",
+			doneUpgradeID, tenantID, doneEnvID, time.Now().Format(time.RFC3339), time.Now().Format(time.RFC3339),
+		),
+		fmt.Sprintf(
+			"INSERT INTO cluster_upgrades (id, tenant_id, environment_id, version, status, is_automatic, start_time, last_modified) VALUES ('%s', '%s', '%s', '1.30.3', 'FAILED', true, '%s', '%s')",
+			failedUpgradeID, tenantID, failedEnvID, time.Now().Format(time.RFC3339), time.Now().Format(time.RFC3339),
+		),
+	}
+
+	repo := newTestRepo(t, qs...)
+	defer repo.Close()
+
+	ctx := context.Background()
+
+	t.Run("successfully bypass WAITING upgrade", func(t *testing.T) {
+		upgrade, err := repo.ClusterUpgradeBypassDelay(ctx, waitingUpgradeID)
+		if err != nil {
+			t.Fatalf("ClusterUpgradeBypassDelay() error = %v", err)
+		}
+
+		// Verify the returned upgrade has the correct status
+		if upgrade.UpgradeStatus != model.UpgradeStatusCreated {
+			t.Errorf("expected status to be CREATED, got %s", upgrade.UpgradeStatus)
+		}
+
+		if upgrade.IsAutomatic == nil || *upgrade.IsAutomatic {
+			t.Error("expected is_automatic to be false after bypass")
+		}
+	})
+
+	t.Run("reject bypass of CREATED upgrade", func(t *testing.T) {
+		upgrade, err := repo.ClusterUpgradeBypassDelay(ctx, createdUpgradeID)
+		if err == nil {
+			t.Fatal("expected error when bypassing CREATED upgrade, got nil")
+		}
+		if upgrade != nil {
+			t.Error("expected nil upgrade when error occurs")
+		}
+
+		expectedMsg := "cannot bypass delay: upgrade is in 'CREATED' status; only upgrades in 'WAITING' status can have their delay bypassed"
+		if err.Error() != expectedMsg {
+			t.Errorf("expected error message %q, got %q", expectedMsg, err.Error())
+		}
+	})
+
+	t.Run("reject bypass of DONE upgrade", func(t *testing.T) {
+		upgrade, err := repo.ClusterUpgradeBypassDelay(ctx, doneUpgradeID)
+		if err == nil {
+			t.Fatal("expected error when bypassing DONE upgrade, got nil")
+		}
+		if upgrade != nil {
+			t.Error("expected nil upgrade when error occurs")
+		}
+
+		expectedMsg := "cannot bypass delay: upgrade is in 'DONE' status; only upgrades in 'WAITING' status can have their delay bypassed"
+		if err.Error() != expectedMsg {
+			t.Errorf("expected error message %q, got %q", expectedMsg, err.Error())
+		}
+	})
+
+	t.Run("reject bypass of FAILED upgrade", func(t *testing.T) {
+		upgrade, err := repo.ClusterUpgradeBypassDelay(ctx, failedUpgradeID)
+		if err == nil {
+			t.Fatal("expected error when bypassing FAILED upgrade, got nil")
+		}
+		if upgrade != nil {
+			t.Error("expected nil upgrade when error occurs")
+		}
+
+		expectedMsg := "cannot bypass delay: upgrade is in 'FAILED' status; only upgrades in 'WAITING' status can have their delay bypassed"
+		if err.Error() != expectedMsg {
+			t.Errorf("expected error message %q, got %q", expectedMsg, err.Error())
+		}
+	})
+
+	t.Run("handle non-existent upgrade ID", func(t *testing.T) {
+		nonExistentID := uuid.New()
+		upgrade, err := repo.ClusterUpgradeBypassDelay(ctx, nonExistentID)
+		if err == nil {
+			t.Fatal("expected error for non-existent upgrade ID, got nil")
+		}
+		if upgrade != nil {
+			t.Error("expected nil upgrade when error occurs")
+		}
+		// The error should come from ClusterUpgradesGetByID when the upgrade doesn't exist
+	})
+}

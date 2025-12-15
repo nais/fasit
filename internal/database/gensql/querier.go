@@ -24,6 +24,7 @@ type Querier interface {
 	// Get all RUNNING operations for completed (DONE/FAILED) upgrades in an environment
 	// These are "dangling" operations that should be updated to their final state
 	ClusterOperationsGetDanglingForEnvironment(ctx context.Context, arg ClusterOperationsGetDanglingForEnvironmentParams) ([]ClusterOperation, error)
+	ClusterUpgradesBypassDelay(ctx context.Context, id uuid.UUID) (ClusterUpgrade, error)
 	ClusterUpgradesCountAll(ctx context.Context) (int64, error)
 	ClusterUpgradesCountByEnvironmentID(ctx context.Context, arg ClusterUpgradesCountByEnvironmentIDParams) (int64, error)
 	ClusterUpgradesCountByTenantID(ctx context.Context, tenantid uuid.UUID) (int64, error)

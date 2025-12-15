@@ -305,6 +305,7 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
+		ClusterUpgradeBypassDelay       func(childComplexity int, upgradeID uuid.UUID) int
 		ConfigurationCreate             func(childComplexity int, configuration model.NewConfiguration) int
 		ConfigurationDelete             func(childComplexity int, id uuid.UUID) int
 		ConfigurationUpdate             func(childComplexity int, id uuid.UUID, configuration model.UpdateConfiguration) int
@@ -522,6 +523,7 @@ type MutationResolver interface {
 	EnvironmentSetAutoUpgrade(ctx context.Context, id uuid.UUID, autoUpgrade bool) (*model.Environment, error)
 	EnvironmentSetUpgradeDelayDays(ctx context.Context, environmentID uuid.UUID, delayDays int) (*model.Environment, error)
 	EnvironmentSetMaintenanceWindow(ctx context.Context, environmentID uuid.UUID, window *model.MaintenanceWindowInput) (*model.Environment, error)
+	ClusterUpgradeBypassDelay(ctx context.Context, upgradeID uuid.UUID) (*model.ClusterUpgradeStatus, error)
 	FeatureStateSave(ctx context.Context, envID uuid.UUID, enabled bool, feature string) (*model.FeatureState, error)
 	Playground(ctx context.Context, input model.PlaygroundInput) (*model.Playground, error)
 	RolloutMarkFailed(ctx context.Context, feature string, version string) (*model.Rollout, error)
@@ -1540,6 +1542,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.MaintenanceWindow.StartTime(childComplexity), true
 
+	case "Mutation.clusterUpgradeBypassDelay":
+		if e.complexity.Mutation.ClusterUpgradeBypassDelay == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_clusterUpgradeBypassDelay_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.ClusterUpgradeBypassDelay(childComplexity, args["upgradeID"].(uuid.UUID)), true
 	case "Mutation.configurationCreate":
 		if e.complexity.Mutation.ConfigurationCreate == nil {
 			break
@@ -2761,6 +2774,12 @@ extend type Mutation {
 	Set the maintenance window for an environment. Set to null to remove the window (allow GKE maintenance anytime).
 	"""
 	environmentSetMaintenanceWindow(environmentID: ID!, window: MaintenanceWindowInput): Environment!
+
+	"""
+	Bypass upgrade delay and trigger immediate upgrade for a cluster upgrade in WAITING status.
+	This sets is_automatic to false and status to CREATED, allowing the upgrade to proceed on the next upgrader run.
+	"""
+	clusterUpgradeBypassDelay(upgradeID: ID!): ClusterUpgradeStatus!
 }
 `, BuiltIn: false},
 	{Name: "../../../schema/feature.graphqls", Input: `type Computed {
@@ -3122,6 +3141,17 @@ func (ec *executionContext) field_Environment_feature_args(ctx context.Context, 
 		return nil, err
 	}
 	args["name"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_clusterUpgradeBypassDelay_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "upgradeID", ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID)
+	if err != nil {
+		return nil, err
+	}
+	args["upgradeID"] = arg0
 	return args, nil
 }
 
@@ -9807,6 +9837,69 @@ func (ec *executionContext) fieldContext_Mutation_environmentSetMaintenanceWindo
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_environmentSetMaintenanceWindow_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_clusterUpgradeBypassDelay(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_clusterUpgradeBypassDelay,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().ClusterUpgradeBypassDelay(ctx, fc.Args["upgradeID"].(uuid.UUID))
+		},
+		nil,
+		ec.marshalNClusterUpgradeStatus2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐClusterUpgradeStatus,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_clusterUpgradeBypassDelay(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_ClusterUpgradeStatus_id(ctx, field)
+			case "upgradeStatus":
+				return ec.fieldContext_ClusterUpgradeStatus_upgradeStatus(ctx, field)
+			case "version":
+				return ec.fieldContext_ClusterUpgradeStatus_version(ctx, field)
+			case "lastModified":
+				return ec.fieldContext_ClusterUpgradeStatus_lastModified(ctx, field)
+			case "startTime":
+				return ec.fieldContext_ClusterUpgradeStatus_startTime(ctx, field)
+			case "upgradeStartTime":
+				return ec.fieldContext_ClusterUpgradeStatus_upgradeStartTime(ctx, field)
+			case "operations":
+				return ec.fieldContext_ClusterUpgradeStatus_operations(ctx, field)
+			case "environment":
+				return ec.fieldContext_ClusterUpgradeStatus_environment(ctx, field)
+			case "isAutomatic":
+				return ec.fieldContext_ClusterUpgradeStatus_isAutomatic(ctx, field)
+			case "actor":
+				return ec.fieldContext_ClusterUpgradeStatus_actor(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ClusterUpgradeStatus", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_clusterUpgradeBypassDelay_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -17795,6 +17888,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "clusterUpgradeBypassDelay":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_clusterUpgradeBypassDelay(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "featureStateSave":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_featureStateSave(ctx, field)
@@ -19627,6 +19727,10 @@ func (ec *executionContext) marshalNClusterUpgradeHistoryResult2ᚖgithubᚗcom�
 		return graphql.Null
 	}
 	return ec._ClusterUpgradeHistoryResult(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNClusterUpgradeStatus2githubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐClusterUpgradeStatus(ctx context.Context, sel ast.SelectionSet, v model.ClusterUpgradeStatus) graphql.Marshaler {
+	return ec._ClusterUpgradeStatus(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNClusterUpgradeStatus2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐClusterUpgradeStatusᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ClusterUpgradeStatus) graphql.Marshaler {

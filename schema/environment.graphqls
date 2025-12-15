@@ -252,4 +252,10 @@ extend type Mutation {
 	Set the maintenance window for an environment. Set to null to remove the window (allow GKE maintenance anytime).
 	"""
 	environmentSetMaintenanceWindow(environmentID: ID!, window: MaintenanceWindowInput): Environment!
+
+	"""
+	Bypass upgrade delay and trigger immediate upgrade for a cluster upgrade in WAITING status.
+	This sets is_automatic to false and status to CREATED, allowing the upgrade to proceed on the next upgrader run.
+	"""
+	clusterUpgradeBypassDelay(upgradeID: ID!): ClusterUpgradeStatus!
 }

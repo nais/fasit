@@ -10,6 +10,37 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const clusterUpgradesBypassDelay = `-- name: ClusterUpgradesBypassDelay :one
+UPDATE cluster_upgrades
+SET
+	"status" = 'CREATED'::cluster_upgrades_status,
+	"is_automatic" = FALSE
+WHERE
+	"id" = $1
+	AND "status" = 'WAITING'::cluster_upgrades_status
+RETURNING
+	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id, is_automatic, upgrade_start_time
+`
+
+func (q *Queries) ClusterUpgradesBypassDelay(ctx context.Context, id uuid.UUID) (ClusterUpgrade, error) {
+	row := q.db.QueryRow(ctx, clusterUpgradesBypassDelay, id)
+	var i ClusterUpgrade
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.EnvironmentID,
+		&i.Version,
+		&i.Status,
+		&i.StartTime,
+		&i.LastModified,
+		&i.SlackMessageTimestamp,
+		&i.SlackChannelID,
+		&i.IsAutomatic,
+		&i.UpgradeStartTime,
+	)
+	return i, err
+}
+
 const clusterUpgradesCountAll = `-- name: ClusterUpgradesCountAll :one
 SELECT
 	COUNT(*)

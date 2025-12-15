@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -24,6 +25,7 @@ type ClusterUpgraderRepo interface {
 	ClusterUpgradeHistoryGetByTenant(ctx context.Context, tenantID uuid.UUID, limit, offset int32) (*model.ClusterUpgradeHistoryResult, error)
 	ClusterUpgradeHistoryGetAll(ctx context.Context, limit, offset int32) (*model.ClusterUpgradeHistoryResult, error)
 	UpdateClusterUpgradeStatus(ctx context.Context, upgradeID uuid.UUID, status gensql.ClusterUpgradesStatus) (*model.ClusterUpgradeStatus, error)
+	ClusterUpgradeBypassDelay(ctx context.Context, upgradeID uuid.UUID) (*model.ClusterUpgradeStatus, error)
 	ClusterUpgradeGetByID(ctx context.Context, id uuid.UUID) (*model.ClusterUpgradeStatus, error)
 	ClusterOperationsGetByID(ctx context.Context, id uuid.UUID) (*model.EnvironmentOperation, error)
 	ClusterOperationsGetByUpgradeID(ctx context.Context, upgradeID uuid.UUID) ([]*model.EnvironmentOperation, error)
@@ -280,8 +282,40 @@ func (r *repo) UpdateClusterUpgradeStatus(ctx context.Context, upgradeID uuid.UU
 	if err != nil {
 		return nil, err
 	}
-
 	return clusterUpgradeFromSQL(clusterUpgrade), nil
+}
+
+func (r *repo) ClusterUpgradeBypassDelay(ctx context.Context, upgradeID uuid.UUID) (*model.ClusterUpgradeStatus, error) {
+	// Update both status to CREATED and is_automatic to false
+	// This UPDATE will only succeed if the upgrade exists AND is in WAITING status
+	updatedUpgrade, err := r.querier.ClusterUpgradesBypassDelay(ctx, upgradeID)
+	if err == nil {
+		// Success - create audit entry and return
+		r.createAudit(ctx, "bypassed upgrade delay", "cluster_upgrades", upgradeID.String())
+		return clusterUpgradeFromSQL(updatedUpgrade), nil
+	}
+
+	// Handle UPDATE failures
+	if !errors.Is(err, pgx.ErrNoRows) {
+		// Unexpected error
+		return nil, err
+	}
+
+	// UPDATE returned no rows - either upgrade doesn't exist or is not in WAITING status
+	// Try to get the upgrade to provide a better error message
+	upgrade, getErr := r.querier.ClusterUpgradesGetByID(ctx, upgradeID)
+	if getErr != nil {
+		// Upgrade doesn't exist
+		return nil, err
+	}
+
+	// Upgrade exists - check its status
+	if upgrade.Status != gensql.ClusterUpgradesStatusWAITING {
+		return nil, fmt.Errorf("cannot bypass delay: upgrade is in '%s' status; only upgrades in '%s' status can have their delay bypassed", strings.ToUpper(string(upgrade.Status)), "WAITING")
+	}
+
+	// This should be impossible: upgrade exists and is in WAITING, but UPDATE returned ErrNoRows
+	return nil, fmt.Errorf("internal error: upgrade exists and is in WAITING status, but bypass delay update failed")
 }
 
 func (r *repo) ClusterUpgradeGet(ctx context.Context, tenantID, envID uuid.UUID) (*model.ClusterUpgradeStatus, error) {
