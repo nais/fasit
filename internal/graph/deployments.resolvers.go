@@ -36,7 +36,7 @@ func (r *mutationResolver) DeleteDeployment(ctx context.Context, deploymentID uu
 
 // Deployments is the resolver for the deployments field.
 func (r *queryResolver) Deployments(ctx context.Context, feature *string) ([]*model.Deployment, error) {
-	d := make([]gensql.Deployment, 0)
+	var d []gensql.Deployment
 	var err error
 
 	if feature != nil {
