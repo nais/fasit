@@ -7856,6 +7856,136 @@ func (_c *Repo_V3DeploymentsForEnvironment_Call) RunAndReturn(run func(ctx conte
 	return _c
 }
 
+// V3DeploymentsGet provides a mock function for the type Repo
+func (_mock *Repo) V3DeploymentsGet(ctx context.Context) ([]gensql.Deployment, error) {
+	ret := _mock.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for V3DeploymentsGet")
+	}
+
+	var r0 []gensql.Deployment
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context) ([]gensql.Deployment, error)); ok {
+		return returnFunc(ctx)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context) []gensql.Deployment); ok {
+		r0 = returnFunc(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gensql.Deployment)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = returnFunc(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Repo_V3DeploymentsGet_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'V3DeploymentsGet'
+type Repo_V3DeploymentsGet_Call struct {
+	*mock.Call
+}
+
+// V3DeploymentsGet is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *Repo_Expecter) V3DeploymentsGet(ctx interface{}) *Repo_V3DeploymentsGet_Call {
+	return &Repo_V3DeploymentsGet_Call{Call: _e.mock.On("V3DeploymentsGet", ctx)}
+}
+
+func (_c *Repo_V3DeploymentsGet_Call) Run(run func(ctx context.Context)) *Repo_V3DeploymentsGet_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *Repo_V3DeploymentsGet_Call) Return(deployments []gensql.Deployment, err error) *Repo_V3DeploymentsGet_Call {
+	_c.Call.Return(deployments, err)
+	return _c
+}
+
+func (_c *Repo_V3DeploymentsGet_Call) RunAndReturn(run func(ctx context.Context) ([]gensql.Deployment, error)) *Repo_V3DeploymentsGet_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// V3DeploymentsGetByFeature provides a mock function for the type Repo
+func (_mock *Repo) V3DeploymentsGetByFeature(ctx context.Context, featureName string) ([]gensql.Deployment, error) {
+	ret := _mock.Called(ctx, featureName)
+
+	if len(ret) == 0 {
+		panic("no return value specified for V3DeploymentsGetByFeature")
+	}
+
+	var r0 []gensql.Deployment
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) ([]gensql.Deployment, error)); ok {
+		return returnFunc(ctx, featureName)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) []gensql.Deployment); ok {
+		r0 = returnFunc(ctx, featureName)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gensql.Deployment)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = returnFunc(ctx, featureName)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Repo_V3DeploymentsGetByFeature_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'V3DeploymentsGetByFeature'
+type Repo_V3DeploymentsGetByFeature_Call struct {
+	*mock.Call
+}
+
+// V3DeploymentsGetByFeature is a helper method to define mock.On call
+//   - ctx context.Context
+//   - featureName string
+func (_e *Repo_Expecter) V3DeploymentsGetByFeature(ctx interface{}, featureName interface{}) *Repo_V3DeploymentsGetByFeature_Call {
+	return &Repo_V3DeploymentsGetByFeature_Call{Call: _e.mock.On("V3DeploymentsGetByFeature", ctx, featureName)}
+}
+
+func (_c *Repo_V3DeploymentsGetByFeature_Call) Run(run func(ctx context.Context, featureName string)) *Repo_V3DeploymentsGetByFeature_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Repo_V3DeploymentsGetByFeature_Call) Return(deployments []gensql.Deployment, err error) *Repo_V3DeploymentsGetByFeature_Call {
+	_c.Call.Return(deployments, err)
+	return _c
+}
+
+func (_c *Repo_V3DeploymentsGetByFeature_Call) RunAndReturn(run func(ctx context.Context, featureName string) ([]gensql.Deployment, error)) *Repo_V3DeploymentsGetByFeature_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // V3GetEnvironmentFeature provides a mock function for the type Repo
 func (_mock *Repo) V3GetEnvironmentFeature(ctx context.Context, environmentID uuid.UUID, featureName string) (*model.Feature, error) {
 	ret := _mock.Called(ctx, environmentID, featureName)
