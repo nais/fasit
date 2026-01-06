@@ -33,9 +33,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  checks:
+  go-version:
     outputs:
-      go_version: ${{ steps.go_version.outputs.GO_VERSION }}
+      go-version: ${{ steps.go-version.outputs.go-version }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # ratchet:actions/checkout@v6
+      - uses: jdx/mise-action@146a28175021df8ca24f8ee1828cc2a60f980bd5 # ratchet:jdx/mise-action@v3
+      - id: go-version
+        run: echo "go-version=$(mise current go)" >> $GITHUB_OUTPUT
+  checks:
     strategy:
       fail-fast: false
       matrix:
@@ -55,9 +62,6 @@ jobs:
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # ratchet:actions/checkout@v6
       - uses: jdx/mise-action@146a28175021df8ca24f8ee1828cc2a60f980bd5 # ratchet:jdx/mise-action@v3
-      - name: Find Go version
-        id: go_version
-        run: echo "go_version=$(mise current go)" >> $GITHUB_OUTPUT
       - run: mise run ${{ matrix.mise-task }}
   # Used by GitHub to determine if all checks/builds have passed
   branch-protection-checkpoint:
@@ -71,6 +75,7 @@ jobs:
   build_and_push_fasit:
     needs:
       - checks
+      - go-version
     runs-on: ubuntu-latest-4-cores
     outputs:
       version: ${{ steps.build-push-sign.outputs.version }}
@@ -84,7 +89,7 @@ jobs:
           dockerfile: Dockerfile_fasit
           name: fasit
           build_args: |
-            GO_VERSION=${{ needs.checks.outputs.go_version }}
+            GO_VERSION=${{ needs.go-version.outputs.go-version }}
           google_service_account: gh-fasit
           workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
           push: ${{ github.actor != 'dependabot[bot]' }}
