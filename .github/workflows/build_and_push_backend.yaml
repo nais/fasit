@@ -60,7 +60,7 @@ jobs:
       - run: mise run ${{ matrix.mise-task }}
   # Used by GitHub to determine if all checks/builds have passed
   branch-protection-checkpoint:
-    needs: [ checks ]
+    needs: [checks]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     steps:
