@@ -3,4 +3,3 @@
 set -euo pipefail
 
 go tool github.com/99designs/gqlgen generate
-go tool mvdan.cc/gofumpt -w ./

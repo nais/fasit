@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
 #MISE description="Run all tests"
+#MISE depends=["test:unit","test:integration"]
 set -euo pipefail
-
-go test -race -tags integration_test -cover ./...

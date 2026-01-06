@@ -29,9 +29,22 @@ permissions:
   id-token: "write"
 
 jobs:
-  tests:
+  checks:
     outputs:
       go_version: ${{ steps.go_version.outputs.GO_VERSION }}
+    strategy:
+      matrix:
+        mise-task:
+          - check:deadcode
+          - check:gosec
+          - check:govet
+          - check:govulncheck
+          - check:helm
+          - check:ratchet
+          - check:sqlc
+          - check:staticcheck
+          - ci:fmt
+          - test
     runs-on: ubuntu-latest-4-cores
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # ratchet:actions/checkout@v6
@@ -39,19 +52,11 @@ jobs:
       - name: Find Go version
         id: go_version
         run: echo "go_version=$(mise current go)" >> $GITHUB_OUTPUT
-      - run: make test
-      - run: make check
-      - run: make helm-lint
-      - name: Check code format and run code generators
-        run: |
-          make generate
-          make fmt
-          echo "checking for diff after running formatters, if this fails, run 'make fmt'"
-          git diff --exit-code --name-only
+      - run: mise run ${{ matrix.mise-task }}
 
   build_and_push_fasit:
     needs:
-      - tests
+      - checks
     runs-on: ubuntu-latest-4-cores
     outputs:
       version: ${{ steps.build-push-sign.outputs.version }}
@@ -65,7 +70,7 @@ jobs:
           dockerfile: Dockerfile_fasit
           name: fasit
           build_args: |
-            GO_VERSION=${{ needs.tests.outputs.go_version }}
+            GO_VERSION=${{ needs.checks.outputs.go_version }}
           google_service_account: gh-fasit
           workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
           push: ${{ github.actor != 'dependabot[bot]' }}
