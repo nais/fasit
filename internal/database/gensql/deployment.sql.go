@@ -261,6 +261,44 @@ func (q *Queries) DeploymentsGet(ctx context.Context) ([]Deployment, error) {
 	return items, nil
 }
 
+const deploymentsGetByFeature = `-- name: DeploymentsGetByFeature :many
+SELECT
+	id, feature_name, version, target, created, gh_ref
+FROM
+	deployments
+WHERE
+	feature_name = $1
+ORDER BY
+	created ASC
+`
+
+func (q *Queries) DeploymentsGetByFeature(ctx context.Context, featureName string) ([]Deployment, error) {
+	rows, err := q.db.Query(ctx, deploymentsGetByFeature, featureName)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Deployment{}
+	for rows.Next() {
+		var i Deployment
+		if err := rows.Scan(
+			&i.ID,
+			&i.FeatureName,
+			&i.Version,
+			&i.Target,
+			&i.Created,
+			&i.GhRef,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const featureDeploymentsForEnvironment = `-- name: FeatureDeploymentsForEnvironment :many
 SELECT DISTINCT
 	ON (d.feature_name, d.target) d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref,

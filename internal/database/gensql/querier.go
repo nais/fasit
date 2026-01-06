@@ -66,6 +66,7 @@ type Querier interface {
 	DeploymentStatusCreateOrUpdate(ctx context.Context, arg DeploymentStatusCreateOrUpdateParams) error
 	DeploymentStatusGet(ctx context.Context, deploymentID uuid.UUID) ([]DeploymentStatus, error)
 	DeploymentsGet(ctx context.Context) ([]Deployment, error)
+	DeploymentsGetByFeature(ctx context.Context, featureName string) ([]Deployment, error)
 	EnvConfig(ctx context.Context, arg EnvConfigParams) ([]EnvConfigRow, error)
 	EnvConfigOnlyKnown(ctx context.Context, arg EnvConfigOnlyKnownParams) ([]EnvConfigOnlyKnownRow, error)
 	EnvironmentByNames(ctx context.Context, arg EnvironmentByNamesParams) (Environment, error)

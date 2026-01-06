@@ -10,7 +10,20 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/nais/fasit/internal/database/gensql"
+	"github.com/nais/fasit/internal/graph/graphgen"
+	"github.com/nais/fasit/internal/graph/model"
 )
+
+// DeploymentStatuses is the resolver for the deploymentStatuses field.
+func (r *deploymentResolver) DeploymentStatuses(ctx context.Context, obj *model.Deployment) ([]*model.DeploymentStatus, error) {
+	panic(fmt.Errorf("not implemented: DeploymentStatuses - deploymentStatuses"))
+}
+
+// Environment is the resolver for the environment field.
+func (r *deploymentStatusResolver) Environment(ctx context.Context, obj *model.DeploymentStatus) (*model.Environment, error) {
+	panic(fmt.Errorf("not implemented: Environment - environment"))
+}
 
 // DeleteDeployment is the resolver for the deleteDeployment field.
 func (r *mutationResolver) DeleteDeployment(ctx context.Context, deploymentID uuid.UUID) (bool, error) {
@@ -20,3 +33,53 @@ func (r *mutationResolver) DeleteDeployment(ctx context.Context, deploymentID uu
 
 	return true, nil
 }
+
+// Deployments is the resolver for the deployments field.
+func (r *queryResolver) Deployments(ctx context.Context, feature *string) ([]*model.Deployment, error) {
+	d := make([]gensql.Deployment, 0)
+	var err error
+
+	if feature != nil {
+		d, err = r.Repo.V3DeploymentsGetByFeature(ctx, *feature)
+		if err != nil {
+			return nil, fmt.Errorf("get deployments by feature: %w", err)
+		}
+	} else {
+		d, err = r.Repo.V3DeploymentsGet(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("get deployments: %w", err)
+		}
+	}
+
+	deployments := make([]*model.Deployment, 0)
+	for _, dep := range d {
+		labels := make([]*model.EnvironmentLabel, 0)
+		for k, v := range dep.Target {
+			labels = append(labels, &model.EnvironmentLabel{
+				Key:   k,
+				Value: v,
+			})
+		}
+		deployments = append(deployments, &model.Deployment{
+			ID:          dep.ID,
+			FeatureName: dep.FeatureName,
+			Version:     dep.Version,
+			Target:      labels,
+			Created:     dep.Created.Time,
+		})
+	}
+	return deployments, nil
+}
+
+// Deployment returns graphgen.DeploymentResolver implementation.
+func (r *Resolver) Deployment() graphgen.DeploymentResolver { return &deploymentResolver{r} }
+
+// DeploymentStatus returns graphgen.DeploymentStatusResolver implementation.
+func (r *Resolver) DeploymentStatus() graphgen.DeploymentStatusResolver {
+	return &deploymentStatusResolver{r}
+}
+
+type (
+	deploymentResolver       struct{ *Resolver }
+	deploymentStatusResolver struct{ *Resolver }
+)

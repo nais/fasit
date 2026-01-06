@@ -18,11 +18,13 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/notifier"
+	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/graph"
 	"github.com/nais/fasit/internal/graph/graphgen"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/naisd"
+	"github.com/nais/fasit/internal/provider/protogen"
 	"github.com/nais/fasit/internal/rollout"
 	"github.com/nais/fasit/internal/slack/fake"
 	"github.com/nais/fasit/internal/workers"
@@ -124,6 +126,11 @@ func TestRunner(ctx context.Context, skipSetup bool) (*testmanager.Manager, erro
 				Type: []spec.ArgumentType{spec.ArgumentTypeBoolean},
 				Doc:  "Whether the environment is a CI environment",
 			},
+			{
+				Name: "labels?",
+				Type: []spec.ArgumentType{spec.ArgumentTypeTable},
+				Doc:  "Labels for the environment",
+			},
 		},
 		Returns: []spec.ArgumentType{spec.ArgumentTypeString},
 		Func: func(L *lua.LState) int {
@@ -132,6 +139,8 @@ func TestRunner(ctx context.Context, skipSetup bool) (*testmanager.Manager, erro
 			kindStr := L.CheckString(3)
 			unhealthy := L.OptBool(4, false)
 			ci := L.OptBool(5, false)
+			labels := L.OptTable(6, L.NewTable())
+			envLabels := make([]*protogen.EnvironmentLabel, 0)
 
 			pool := L.Context().Value(poolKey).(*pgxpool.Pool)
 			repo := database.New(pool, logrus.New())
@@ -158,6 +167,18 @@ func TestRunner(ctx context.Context, skipSetup bool) (*testmanager.Manager, erro
 			})
 			if err != nil {
 				L.RaiseError("failed to create environment: %s", err)
+			}
+
+			labels.ForEach(func(key, value lua.LValue) {
+				envLabels = append(envLabels, &protogen.EnvironmentLabel{
+					Key:   key.String(),
+					Value: value.String(),
+				})
+			})
+
+			err = repo.EnvironmentSetLabels(ctx, env.ID, envLabels)
+			if err != nil {
+				L.RaiseError("failed to set environment labels: %s", err)
 			}
 
 			if ci {
@@ -355,6 +376,15 @@ func newRestRunner(ctx context.Context, pool *pgxpool.Pool) (*runner.REST, error
 	}
 	rout.AllowAll = true
 	router.Post("/github/rollout", rout.Rollout)
+
+	deploymentsReconcileTrigger := make(chan deployment.ReconcileTriggerEvent, 1)
+	deploy, err := deployment.New(ctx, db, deploymentsReconcileTrigger, logrus.New())
+	if err != nil {
+		return nil, err
+	}
+	deploy.AllowAll = true
+	router.Post("/github/deployment", deploy.CreateDeployment)
+	router.Get("/github/deployment/{id}", deploy.GetDeployment)
 
 	return runner.NewRestRunner(router), nil
 }

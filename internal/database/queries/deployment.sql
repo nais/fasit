@@ -7,6 +7,17 @@ ORDER BY
 	created ASC
 ;
 
+-- name: DeploymentsGetByFeature :many
+SELECT
+	*
+FROM
+	deployments
+WHERE
+	feature_name = @feature_name
+ORDER BY
+	created ASC
+;
+
 -- name: DeploymentCreate :one
 INSERT INTO
 	deployments (feature_name, version, target, gh_ref)

@@ -1,3 +1,33 @@
 extend type Mutation {
 	deleteDeployment(deploymentID: ID!): Boolean!
 }
+
+extend type Query {
+	deployments(feature: String): [Deployment!]!
+}
+
+type Deployment {
+	id: ID!
+	featureName: String!
+	version: String!
+	target: [EnvironmentLabel!]!
+	created: Time!
+	deploymentStatuses: [DeploymentStatus!]!
+}
+
+type DeploymentStatus {
+	id: ID!
+	environment: Environment!
+	status: DeploymentStatusState!
+	message: String!
+	lastModified: Time!
+	created: Time!
+}
+
+enum DeploymentStatusState {
+	UNKNOWN
+	CREATED
+	PENDING
+	DEPLOYED
+	FAILED
+}

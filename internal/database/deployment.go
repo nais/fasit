@@ -16,6 +16,8 @@ import (
 type DeploymentRepo interface {
 	V3DeploymentCreate(ctx context.Context, featureName, featureVersion string, ref *model.GHRef, target environment.Labels) (*gensql.Deployment, error)
 	V3DeploymentGet(ctx context.Context, deploymentID uuid.UUID) (*Deployment, error)
+	V3DeploymentsGet(ctx context.Context) ([]gensql.Deployment, error)
+	V3DeploymentsGetByFeature(ctx context.Context, featureName string) ([]gensql.Deployment, error)
 	V3DeploymentDelete(ctx context.Context, deploymentID uuid.UUID) error
 	V3DeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]Deployment, error)
 	V3DeploymentStatusCreateOrUpdate(ctx context.Context, deploymentID, environmentID uuid.UUID, status model.RolloutStatus, message string) error
@@ -129,6 +131,14 @@ func (r *repo) V3DeploymentGet(ctx context.Context, deploymentID uuid.UUID) (*De
 		Target:   row.Deployment.Target,
 		Statuses: statuses,
 	}, nil
+}
+
+func (r *repo) V3DeploymentsGet(ctx context.Context) ([]gensql.Deployment, error) {
+	return r.querier.DeploymentsGet(ctx)
+}
+
+func (r *repo) V3DeploymentsGetByFeature(ctx context.Context, featureName string) ([]gensql.Deployment, error) {
+	return r.querier.DeploymentsGetByFeature(ctx, featureName)
 }
 
 func (r *repo) V3DeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]Deployment, error) {

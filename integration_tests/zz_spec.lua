@@ -178,8 +178,9 @@ end
 ---@param kind string
 ---@param unhealthy? boolean
 ---@param ci? boolean
+---@param labels? table
 ---@return string
-function Helper.CreateEnvironment(tenant_id, name, kind, unhealthy, ci)
+function Helper.CreateEnvironment(tenant_id, name, kind, unhealthy, ci, labels)
 	print("CreateEnvironment")
 	return ""
 end
