@@ -28,11 +28,16 @@ permissions:
   contents: "read"
   id-token: "write"
 
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   checks:
     outputs:
       go_version: ${{ steps.go_version.outputs.GO_VERSION }}
     strategy:
+      fail-fast: false
       matrix:
         mise-task:
           - check:deadcode
