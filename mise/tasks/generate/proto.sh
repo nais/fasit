@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 #MISE description="Generate protobuf"
+#MISE depends_post=["fmt:go"]
 set -euo pipefail
 
 mkdir -p internal/provider/protogen
