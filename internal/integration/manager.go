@@ -43,6 +43,7 @@ type ctxKey int
 const (
 	poolKey ctxKey = iota
 	reconcilerKey
+	deploymentReconcilerKey
 	naisdKey
 )
 
@@ -220,6 +221,12 @@ func TestRunner(ctx context.Context, skipSetup bool) (*testmanager.Manager, erro
 				L.RaiseError("failed to reconcile: %s", err)
 			}
 
+			deploymentReconciler := L.Context().Value(deploymentReconcilerKey).(*deployment.Reconciler)
+
+			if err := deploymentReconciler.Reconcile(ctx); err != nil {
+				L.RaiseError("failed to reconcile: %s", err)
+			}
+
 			time.Sleep(100 * time.Millisecond)
 
 			return 0
@@ -309,7 +316,8 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 			log.Level = logrus.DebugLevel
 		}
 
-		restRunner, err := newRestRunner(ctx, pool)
+		deploymentsReconcileTrigger := make(chan deployment.ReconcileTriggerEvent, 1)
+		restRunner, err := newRestRunner(ctx, pool, deploymentsReconcileTrigger)
 		if err != nil {
 			done()
 			return ctx, nil, nil, err
@@ -350,7 +358,21 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 			return ctx, nil, nil, err
 		}
 
+		dcp := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
+			p, ok := naisdRunner.deploymentReconcilerPublishers[topicID]
+			if !ok {
+				panic(fmt.Sprintf("no publisher for topic %q", topicID))
+			}
+			return p
+		}
+		deploymentReconciler, err := deployment.NewReconciler(db, dcp, deploymentsReconcileTrigger, noop.NewMeterProvider().Meter(""), logrus.NewEntry(log))
+		if err != nil {
+			done()
+			return ctx, nil, nil, err
+		}
+
 		ctx = context.WithValue(ctx, reconcilerKey, reconciler)
+		ctx = context.WithValue(ctx, deploymentReconcilerKey, deploymentReconciler)
 		ctx = context.WithValue(ctx, naisdKey, naisdRunner)
 
 		cleanups = append(cleanups, close)
@@ -364,7 +386,7 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 	}
 }
 
-func newRestRunner(ctx context.Context, pool *pgxpool.Pool) (*runner.REST, error) {
+func newRestRunner(ctx context.Context, pool *pgxpool.Pool, deploymentsReconcileTrigger chan<- deployment.ReconcileTriggerEvent) (*runner.REST, error) {
 	router := chi.NewMux()
 	// router.Handle("/query", iapMW(corsMW.Handler(srv)))
 
@@ -377,7 +399,6 @@ func newRestRunner(ctx context.Context, pool *pgxpool.Pool) (*runner.REST, error
 	rout.AllowAll = true
 	router.Post("/github/rollout", rout.Rollout)
 
-	deploymentsReconcileTrigger := make(chan deployment.ReconcileTriggerEvent, 1)
 	deploy, err := deployment.New(ctx, db, deploymentsReconcileTrigger, logrus.New())
 	if err != nil {
 		return nil, err
@@ -476,8 +497,9 @@ func newDB(ctx context.Context, container *postgres.PostgresContainer, connStr s
 
 type naisdRunner struct {
 	*runner.PubSub
-	topics               map[string]chan pubsubMockMsg
-	reconcilerPublishers map[string]workers.Publisher
+	topics                         map[string]chan pubsubMockMsg
+	reconcilerPublishers           map[string]workers.Publisher
+	deploymentReconcilerPublishers map[string]deployment.Publisher
 
 	statusCh chan pubsubMockMsg
 
@@ -552,6 +574,7 @@ func newNaisdForEnv(done <-chan struct{}, tenant, env string, naisdRunner *naisd
 		messages: reconCh,
 	}
 	naisdRunner.registerReconcilerPublisher("naisd-"+tenant+"-"+env, reconPublisher)
+	naisdRunner.registerDeploymentReconcilerPublisher("naisd-"+tenant+"-"+env, reconPublisher)
 
 	deploySubscriber := &mockSubscriber[message.DeployInstruction]{
 		topic:    "naisd-" + tenant + "-" + env,
@@ -593,6 +616,13 @@ func (n *naisdRunner) registerReconcilerPublisher(name string, pub workers.Publi
 		n.reconcilerPublishers = make(map[string]workers.Publisher)
 	}
 	n.reconcilerPublishers[name] = pub
+}
+
+func (n *naisdRunner) registerDeploymentReconcilerPublisher(name string, pub deployment.Publisher) {
+	if n.deploymentReconcilerPublishers == nil {
+		n.deploymentReconcilerPublishers = make(map[string]deployment.Publisher)
+	}
+	n.deploymentReconcilerPublishers[name] = pub
 }
 
 func (n *naisdRunner) registerTopic(name string, ch chan pubsubMockMsg) {

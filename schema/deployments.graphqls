@@ -8,17 +8,16 @@ extend type Query {
 
 type Deployment {
 	id: ID!
-	featureName: String!
-	version: String!
+	feature: Feature!
 	target: [EnvironmentLabel!]!
 	created: Time!
-	deploymentStatuses: [DeploymentStatus!]!
+	statuses: [DeploymentStatus!]!
 }
 
 type DeploymentStatus {
-	id: ID!
+	deployment: Deployment!
 	environment: Environment!
-	status: DeploymentStatusState!
+	state: DeploymentStatusState!
 	message: String!
 	lastModified: Time!
 	created: Time!

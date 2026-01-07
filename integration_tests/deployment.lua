@@ -39,8 +39,10 @@ Test.gql("list deployments", function(t)
 		{
 			deployments {
 				id
-				featureName
-				version
+				feature {
+					name
+					version
+				}
 				target {
 				    key
 				    value
@@ -63,8 +65,10 @@ Test.gql("list deployments by feature", function(t)
 	t.query [[
 		{
 			deployments (feature: "clamav") {
-				featureName
-				version
+				feature {
+					name
+					version
+				}
 				target {
 				    key
 				    value
@@ -78,8 +82,78 @@ Test.gql("list deployments by feature", function(t)
 			data = {
 				deployments = {
 					{
-						featureName = "clamav",
-						version = "0.1.0-feature",
+						feature = {
+							name = "clamav",
+							version = "0.1.0-feature",
+						},
+						target = {
+							{
+								key = "kind",
+								value = "tenant",
+							},
+						},
+					},
+				},
+			},
+		}
+	)
+end)
+
+Helper.Reconcile()
+
+Test.gql("list deployments by feature with status", function(t)
+	t.query [[
+		{
+			deployments (feature: "clamav") {
+				feature {
+					name
+					version
+				}
+				statuses {
+					environment {
+						name
+						kind
+						labels {
+							key
+							value
+						}
+					}
+					state
+					message
+				}
+				target {
+				    key
+				    value
+				}
+			}
+		}
+	]]
+
+	t.check(
+		{
+			data = {
+				deployments = {
+					{
+						feature = {
+							name = "clamav",
+							version = "0.1.0-feature",
+						},
+						statuses = {
+							{
+								environment = {
+									kind = "TENANT",
+									labels = {
+										{
+											key = "kind",
+											value = "tenant",
+										},
+									},
+									name = "nonci",
+								},
+								message = "received status from naisd.",
+								state = "deployed",
+							},
+						},
 						target = {
 							{
 								key = "kind",

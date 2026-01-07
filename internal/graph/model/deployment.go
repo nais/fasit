@@ -11,19 +11,21 @@ import (
 )
 
 type Deployment struct {
-	ID          uuid.UUID           `json:"id"`
-	FeatureName string              `json:"featureName"`
-	Version     string              `json:"version"`
-	Target      []*EnvironmentLabel `json:"target"`
-	Created     time.Time           `json:"created"`
+	ID      uuid.UUID           `json:"id"`
+	Target  []*EnvironmentLabel `json:"target"`
+	Feature *Feature            `json:"feature"`
+
+	Created time.Time `json:"created"`
 }
 
 type DeploymentStatus struct {
-	ID           uuid.UUID             `json:"id"`
-	Status       DeploymentStatusState `json:"status"`
+	State        DeploymentStatusState `json:"state"`
 	Message      string                `json:"message"`
 	LastModified time.Time             `json:"lastModified"`
 	Created      time.Time             `json:"created"`
+
+	DeploymentID  uuid.UUID `json:"-"`
+	EnvironmentID uuid.UUID `json:"-"`
 }
 
 type DeploymentStatusState string

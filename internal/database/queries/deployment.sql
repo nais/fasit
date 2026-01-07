@@ -1,20 +1,44 @@
 -- name: DeploymentsGet :many
 SELECT
-	*
+	sqlc.embed(d),
+	fd.name,
+	fd.version,
+	fd.chart,
+	fd.description,
+	fd.source,
+	fd.kinds::TEXT[] AS kinds,
+	fd.dependencies,
+	fd.values,
+	fd.default_values,
+	fd.timeout
 FROM
-	deployments
-ORDER BY
-	created ASC;
+	deployments d
+	JOIN feature_data fd ON d.feature_name = fd.name
+		AND d.version = fd.version
+	ORDER BY
+		d.created ASC;
 
 -- name: DeploymentsGetByFeature :many
 SELECT
-	*
+	sqlc.embed(d),
+	fd.name,
+	fd.version,
+	fd.chart,
+	fd.description,
+	fd.source,
+	fd.kinds::TEXT[] AS kinds,
+	fd.dependencies,
+	fd.values,
+	fd.default_values,
+	fd.timeout
 FROM
-	deployments
+	deployments d
+	JOIN feature_data fd ON d.feature_name = fd.name
+		AND d.version = fd.version
 WHERE
-	feature_name = @feature_name
+	fd.name = @feature_name
 ORDER BY
-	created ASC;
+	d.created ASC;
 
 -- name: DeploymentCreate :one
 INSERT INTO deployments(

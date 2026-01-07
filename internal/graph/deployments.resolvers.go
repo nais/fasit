@@ -10,19 +10,41 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/nais/fasit/internal/database/gensql"
 	"github.com/nais/fasit/internal/graph/graphgen"
 	"github.com/nais/fasit/internal/graph/model"
 )
 
-// DeploymentStatuses is the resolver for the deploymentStatuses field.
-func (r *deploymentResolver) DeploymentStatuses(ctx context.Context, obj *model.Deployment) ([]*model.DeploymentStatus, error) {
-	panic(fmt.Errorf("not implemented: DeploymentStatuses - deploymentStatuses"))
+// Statuses is the resolver for the deploymentStatuses field.
+func (r *deploymentResolver) Statuses(ctx context.Context, obj *model.Deployment) ([]*model.DeploymentStatus, error) {
+	return r.Repo.V3DeploymentStatusesGet(ctx, obj.ID)
+}
+
+// Deployment is the resolver for the deployment field.
+func (r *deploymentStatusResolver) Deployment(ctx context.Context, obj *model.DeploymentStatus) (*model.Deployment, error) {
+	d, err := r.Repo.V3DeploymentGet(ctx, obj.DeploymentID)
+	if err != nil {
+		return nil, fmt.Errorf("get deployment: %w", err)
+	}
+
+	target := make([]*model.EnvironmentLabel, 0)
+	for k, v := range d.Target {
+		target = append(target, &model.EnvironmentLabel{
+			Key:   k,
+			Value: v,
+		})
+	}
+
+	return &model.Deployment{
+		ID:      d.ID,
+		Target:  target,
+		Created: d.Created,
+		Feature: d.Feature,
+	}, nil
 }
 
 // Environment is the resolver for the environment field.
 func (r *deploymentStatusResolver) Environment(ctx context.Context, obj *model.DeploymentStatus) (*model.Environment, error) {
-	panic(fmt.Errorf("not implemented: Environment - environment"))
+	return r.Repo.EnvironmentGet(ctx, obj.EnvironmentID)
 }
 
 // DeleteDeployment is the resolver for the deleteDeployment field.
@@ -36,39 +58,11 @@ func (r *mutationResolver) DeleteDeployment(ctx context.Context, deploymentID uu
 
 // Deployments is the resolver for the deployments field.
 func (r *queryResolver) Deployments(ctx context.Context, feature *string) ([]*model.Deployment, error) {
-	var d []gensql.Deployment
-	var err error
-
 	if feature != nil {
-		d, err = r.Repo.V3DeploymentsGetByFeature(ctx, *feature)
-		if err != nil {
-			return nil, fmt.Errorf("get deployments by feature: %w", err)
-		}
-	} else {
-		d, err = r.Repo.V3DeploymentsGet(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("get deployments: %w", err)
-		}
+		return r.Repo.V3DeploymentsGetByFeature(ctx, *feature)
 	}
 
-	deployments := make([]*model.Deployment, 0)
-	for _, dep := range d {
-		labels := make([]*model.EnvironmentLabel, 0)
-		for k, v := range dep.Target {
-			labels = append(labels, &model.EnvironmentLabel{
-				Key:   k,
-				Value: v,
-			})
-		}
-		deployments = append(deployments, &model.Deployment{
-			ID:          dep.ID,
-			FeatureName: dep.FeatureName,
-			Version:     dep.Version,
-			Target:      labels,
-			Created:     dep.Created.Time,
-		})
-	}
-	return deployments, nil
+	return r.Repo.V3DeploymentsGet(ctx)
 }
 
 // Deployment returns graphgen.DeploymentResolver implementation.

@@ -3433,23 +3433,23 @@ func (_c *Querier_DeploymentStatusGet_Call) RunAndReturn(run func(ctx context.Co
 }
 
 // DeploymentsGet provides a mock function for the type Querier
-func (_mock *Querier) DeploymentsGet(ctx context.Context) ([]gensql.Deployment, error) {
+func (_mock *Querier) DeploymentsGet(ctx context.Context) ([]gensql.DeploymentsGetRow, error) {
 	ret := _mock.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for DeploymentsGet")
 	}
 
-	var r0 []gensql.Deployment
+	var r0 []gensql.DeploymentsGetRow
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context) ([]gensql.Deployment, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context) ([]gensql.DeploymentsGetRow, error)); ok {
 		return returnFunc(ctx)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context) []gensql.Deployment); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context) []gensql.DeploymentsGetRow); ok {
 		r0 = returnFunc(ctx)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]gensql.Deployment)
+			r0 = ret.Get(0).([]gensql.DeploymentsGetRow)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
@@ -3484,34 +3484,34 @@ func (_c *Querier_DeploymentsGet_Call) Run(run func(ctx context.Context)) *Queri
 	return _c
 }
 
-func (_c *Querier_DeploymentsGet_Call) Return(deployments []gensql.Deployment, err error) *Querier_DeploymentsGet_Call {
-	_c.Call.Return(deployments, err)
+func (_c *Querier_DeploymentsGet_Call) Return(deploymentsGetRows []gensql.DeploymentsGetRow, err error) *Querier_DeploymentsGet_Call {
+	_c.Call.Return(deploymentsGetRows, err)
 	return _c
 }
 
-func (_c *Querier_DeploymentsGet_Call) RunAndReturn(run func(ctx context.Context) ([]gensql.Deployment, error)) *Querier_DeploymentsGet_Call {
+func (_c *Querier_DeploymentsGet_Call) RunAndReturn(run func(ctx context.Context) ([]gensql.DeploymentsGetRow, error)) *Querier_DeploymentsGet_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // DeploymentsGetByFeature provides a mock function for the type Querier
-func (_mock *Querier) DeploymentsGetByFeature(ctx context.Context, featureName string) ([]gensql.Deployment, error) {
+func (_mock *Querier) DeploymentsGetByFeature(ctx context.Context, featureName string) ([]gensql.DeploymentsGetByFeatureRow, error) {
 	ret := _mock.Called(ctx, featureName)
 
 	if len(ret) == 0 {
 		panic("no return value specified for DeploymentsGetByFeature")
 	}
 
-	var r0 []gensql.Deployment
+	var r0 []gensql.DeploymentsGetByFeatureRow
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) ([]gensql.Deployment, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) ([]gensql.DeploymentsGetByFeatureRow, error)); ok {
 		return returnFunc(ctx, featureName)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) []gensql.Deployment); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) []gensql.DeploymentsGetByFeatureRow); ok {
 		r0 = returnFunc(ctx, featureName)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]gensql.Deployment)
+			r0 = ret.Get(0).([]gensql.DeploymentsGetByFeatureRow)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
@@ -3552,12 +3552,12 @@ func (_c *Querier_DeploymentsGetByFeature_Call) Run(run func(ctx context.Context
 	return _c
 }
 
-func (_c *Querier_DeploymentsGetByFeature_Call) Return(deployments []gensql.Deployment, err error) *Querier_DeploymentsGetByFeature_Call {
-	_c.Call.Return(deployments, err)
+func (_c *Querier_DeploymentsGetByFeature_Call) Return(deploymentsGetByFeatureRows []gensql.DeploymentsGetByFeatureRow, err error) *Querier_DeploymentsGetByFeature_Call {
+	_c.Call.Return(deploymentsGetByFeatureRows, err)
 	return _c
 }
 
-func (_c *Querier_DeploymentsGetByFeature_Call) RunAndReturn(run func(ctx context.Context, featureName string) ([]gensql.Deployment, error)) *Querier_DeploymentsGetByFeature_Call {
+func (_c *Querier_DeploymentsGetByFeature_Call) RunAndReturn(run func(ctx context.Context, featureName string) ([]gensql.DeploymentsGetByFeatureRow, error)) *Querier_DeploymentsGetByFeature_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -235,29 +235,65 @@ func (q *Queries) DeploymentStatusGet(ctx context.Context, deploymentID uuid.UUI
 
 const deploymentsGet = `-- name: DeploymentsGet :many
 SELECT
-	id, feature_name, version, target, created, gh_ref
+	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref,
+	fd.name,
+	fd.version,
+	fd.chart,
+	fd.description,
+	fd.source,
+	fd.kinds::TEXT[] AS kinds,
+	fd.dependencies,
+	fd.values,
+	fd.default_values,
+	fd.timeout
 FROM
-	deployments
-ORDER BY
-	created ASC
+	deployments d
+	JOIN feature_data fd ON d.feature_name = fd.name
+		AND d.version = fd.version
+	ORDER BY
+		d.created ASC
 `
 
-func (q *Queries) DeploymentsGet(ctx context.Context) ([]Deployment, error) {
+type DeploymentsGetRow struct {
+	Deployment    Deployment
+	Name          string
+	Version       string
+	Chart         string
+	Description   string
+	Source        string
+	Kinds         []string
+	Dependencies  []byte
+	Values        []byte
+	DefaultValues []byte
+	Timeout       int64
+}
+
+func (q *Queries) DeploymentsGet(ctx context.Context) ([]DeploymentsGetRow, error) {
 	rows, err := q.db.Query(ctx, deploymentsGet)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []Deployment{}
+	items := []DeploymentsGetRow{}
 	for rows.Next() {
-		var i Deployment
+		var i DeploymentsGetRow
 		if err := rows.Scan(
-			&i.ID,
-			&i.FeatureName,
+			&i.Deployment.ID,
+			&i.Deployment.FeatureName,
+			&i.Deployment.Version,
+			&i.Deployment.Target,
+			&i.Deployment.Created,
+			&i.Deployment.GhRef,
+			&i.Name,
 			&i.Version,
-			&i.Target,
-			&i.Created,
-			&i.GhRef,
+			&i.Chart,
+			&i.Description,
+			&i.Source,
+			&i.Kinds,
+			&i.Dependencies,
+			&i.Values,
+			&i.DefaultValues,
+			&i.Timeout,
 		); err != nil {
 			return nil, err
 		}
@@ -271,31 +307,67 @@ func (q *Queries) DeploymentsGet(ctx context.Context) ([]Deployment, error) {
 
 const deploymentsGetByFeature = `-- name: DeploymentsGetByFeature :many
 SELECT
-	id, feature_name, version, target, created, gh_ref
+	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref,
+	fd.name,
+	fd.version,
+	fd.chart,
+	fd.description,
+	fd.source,
+	fd.kinds::TEXT[] AS kinds,
+	fd.dependencies,
+	fd.values,
+	fd.default_values,
+	fd.timeout
 FROM
-	deployments
+	deployments d
+	JOIN feature_data fd ON d.feature_name = fd.name
+		AND d.version = fd.version
 WHERE
-	feature_name = $1
+	fd.name = $1
 ORDER BY
-	created ASC
+	d.created ASC
 `
 
-func (q *Queries) DeploymentsGetByFeature(ctx context.Context, featureName string) ([]Deployment, error) {
+type DeploymentsGetByFeatureRow struct {
+	Deployment    Deployment
+	Name          string
+	Version       string
+	Chart         string
+	Description   string
+	Source        string
+	Kinds         []string
+	Dependencies  []byte
+	Values        []byte
+	DefaultValues []byte
+	Timeout       int64
+}
+
+func (q *Queries) DeploymentsGetByFeature(ctx context.Context, featureName string) ([]DeploymentsGetByFeatureRow, error) {
 	rows, err := q.db.Query(ctx, deploymentsGetByFeature, featureName)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []Deployment{}
+	items := []DeploymentsGetByFeatureRow{}
 	for rows.Next() {
-		var i Deployment
+		var i DeploymentsGetByFeatureRow
 		if err := rows.Scan(
-			&i.ID,
-			&i.FeatureName,
+			&i.Deployment.ID,
+			&i.Deployment.FeatureName,
+			&i.Deployment.Version,
+			&i.Deployment.Target,
+			&i.Deployment.Created,
+			&i.Deployment.GhRef,
+			&i.Name,
 			&i.Version,
-			&i.Target,
-			&i.Created,
-			&i.GhRef,
+			&i.Chart,
+			&i.Description,
+			&i.Source,
+			&i.Kinds,
+			&i.Dependencies,
+			&i.Values,
+			&i.DefaultValues,
+			&i.Timeout,
 		); err != nil {
 			return nil, err
 		}

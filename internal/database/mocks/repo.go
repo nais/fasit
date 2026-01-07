@@ -7788,6 +7788,74 @@ func (_c *Repo_V3DeploymentStatusCreateOrUpdate_Call) RunAndReturn(run func(ctx 
 	return _c
 }
 
+// V3DeploymentStatusesGet provides a mock function for the type Repo
+func (_mock *Repo) V3DeploymentStatusesGet(ctx context.Context, deploymentID uuid.UUID) ([]*model.DeploymentStatus, error) {
+	ret := _mock.Called(ctx, deploymentID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for V3DeploymentStatusesGet")
+	}
+
+	var r0 []*model.DeploymentStatus
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]*model.DeploymentStatus, error)); ok {
+		return returnFunc(ctx, deploymentID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) []*model.DeploymentStatus); ok {
+		r0 = returnFunc(ctx, deploymentID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.DeploymentStatus)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = returnFunc(ctx, deploymentID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Repo_V3DeploymentStatusesGet_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'V3DeploymentStatusesGet'
+type Repo_V3DeploymentStatusesGet_Call struct {
+	*mock.Call
+}
+
+// V3DeploymentStatusesGet is a helper method to define mock.On call
+//   - ctx context.Context
+//   - deploymentID uuid.UUID
+func (_e *Repo_Expecter) V3DeploymentStatusesGet(ctx interface{}, deploymentID interface{}) *Repo_V3DeploymentStatusesGet_Call {
+	return &Repo_V3DeploymentStatusesGet_Call{Call: _e.mock.On("V3DeploymentStatusesGet", ctx, deploymentID)}
+}
+
+func (_c *Repo_V3DeploymentStatusesGet_Call) Run(run func(ctx context.Context, deploymentID uuid.UUID)) *Repo_V3DeploymentStatusesGet_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Repo_V3DeploymentStatusesGet_Call) Return(deploymentStatuss []*model.DeploymentStatus, err error) *Repo_V3DeploymentStatusesGet_Call {
+	_c.Call.Return(deploymentStatuss, err)
+	return _c
+}
+
+func (_c *Repo_V3DeploymentStatusesGet_Call) RunAndReturn(run func(ctx context.Context, deploymentID uuid.UUID) ([]*model.DeploymentStatus, error)) *Repo_V3DeploymentStatusesGet_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // V3DeploymentsForEnvironment provides a mock function for the type Repo
 func (_mock *Repo) V3DeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]database.Deployment, error) {
 	ret := _mock.Called(ctx, environmentID)
@@ -7857,23 +7925,23 @@ func (_c *Repo_V3DeploymentsForEnvironment_Call) RunAndReturn(run func(ctx conte
 }
 
 // V3DeploymentsGet provides a mock function for the type Repo
-func (_mock *Repo) V3DeploymentsGet(ctx context.Context) ([]gensql.Deployment, error) {
+func (_mock *Repo) V3DeploymentsGet(ctx context.Context) ([]*model.Deployment, error) {
 	ret := _mock.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for V3DeploymentsGet")
 	}
 
-	var r0 []gensql.Deployment
+	var r0 []*model.Deployment
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context) ([]gensql.Deployment, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context) ([]*model.Deployment, error)); ok {
 		return returnFunc(ctx)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context) []gensql.Deployment); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context) []*model.Deployment); ok {
 		r0 = returnFunc(ctx)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]gensql.Deployment)
+			r0 = ret.Get(0).([]*model.Deployment)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
@@ -7908,34 +7976,34 @@ func (_c *Repo_V3DeploymentsGet_Call) Run(run func(ctx context.Context)) *Repo_V
 	return _c
 }
 
-func (_c *Repo_V3DeploymentsGet_Call) Return(deployments []gensql.Deployment, err error) *Repo_V3DeploymentsGet_Call {
+func (_c *Repo_V3DeploymentsGet_Call) Return(deployments []*model.Deployment, err error) *Repo_V3DeploymentsGet_Call {
 	_c.Call.Return(deployments, err)
 	return _c
 }
 
-func (_c *Repo_V3DeploymentsGet_Call) RunAndReturn(run func(ctx context.Context) ([]gensql.Deployment, error)) *Repo_V3DeploymentsGet_Call {
+func (_c *Repo_V3DeploymentsGet_Call) RunAndReturn(run func(ctx context.Context) ([]*model.Deployment, error)) *Repo_V3DeploymentsGet_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // V3DeploymentsGetByFeature provides a mock function for the type Repo
-func (_mock *Repo) V3DeploymentsGetByFeature(ctx context.Context, featureName string) ([]gensql.Deployment, error) {
+func (_mock *Repo) V3DeploymentsGetByFeature(ctx context.Context, featureName string) ([]*model.Deployment, error) {
 	ret := _mock.Called(ctx, featureName)
 
 	if len(ret) == 0 {
 		panic("no return value specified for V3DeploymentsGetByFeature")
 	}
 
-	var r0 []gensql.Deployment
+	var r0 []*model.Deployment
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) ([]gensql.Deployment, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) ([]*model.Deployment, error)); ok {
 		return returnFunc(ctx, featureName)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) []gensql.Deployment); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) []*model.Deployment); ok {
 		r0 = returnFunc(ctx, featureName)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]gensql.Deployment)
+			r0 = ret.Get(0).([]*model.Deployment)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
@@ -7976,12 +8044,12 @@ func (_c *Repo_V3DeploymentsGetByFeature_Call) Run(run func(ctx context.Context,
 	return _c
 }
 
-func (_c *Repo_V3DeploymentsGetByFeature_Call) Return(deployments []gensql.Deployment, err error) *Repo_V3DeploymentsGetByFeature_Call {
+func (_c *Repo_V3DeploymentsGetByFeature_Call) Return(deployments []*model.Deployment, err error) *Repo_V3DeploymentsGetByFeature_Call {
 	_c.Call.Return(deployments, err)
 	return _c
 }
 
-func (_c *Repo_V3DeploymentsGetByFeature_Call) RunAndReturn(run func(ctx context.Context, featureName string) ([]gensql.Deployment, error)) *Repo_V3DeploymentsGetByFeature_Call {
+func (_c *Repo_V3DeploymentsGetByFeature_Call) RunAndReturn(run func(ctx context.Context, featureName string) ([]*model.Deployment, error)) *Repo_V3DeploymentsGetByFeature_Call {
 	_c.Call.Return(run)
 	return _c
 }
