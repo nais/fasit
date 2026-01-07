@@ -1,9 +1,14 @@
 -- name: LogsCreate :batchexec
-INSERT INTO
-	logs (deploy_instruction, TIME, message, kind)
-VALUES
-	(@deploy_instruction, @time, @message, @kind)
-;
+INSERT INTO logs(
+	deploy_instruction,
+	TIME,
+	message,
+	kind)
+VALUES (
+	@deploy_instruction,
+	@time,
+	@message,
+	@kind);
 
 -- name: LogsByDeployInstruction :many
 SELECT
@@ -13,8 +18,7 @@ FROM
 WHERE
 	deploy_instruction = @deploy_instruction
 ORDER BY
-	TIME ASC
-;
+	TIME ASC;
 
 -- name: LogsByID :one
 SELECT
@@ -22,5 +26,5 @@ SELECT
 FROM
 	logs
 WHERE
-	id = @id
-;
+	id = @id;
+

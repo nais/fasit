@@ -6,18 +6,15 @@ on:
     paths:
       - "charts/fasit/**"
       - ".github/workflows/fasit_chart.yaml"
-
 jobs:
   build:
     permissions:
       contents: "read"
       id-token: "write"
-
     name: Build and push fasit chart
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # ratchet:actions/checkout@v6
-
       - id: "auth"
         name: "Authenticate to Google Cloud"
         uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v3
@@ -25,7 +22,6 @@ jobs:
           workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: "gh-fasit@nais-io.iam.gserviceaccount.com"
           token_format: "access_token"
-
       - name: "Set up Cloud SDK"
         uses: google-github-actions/setup-gcloud@aa5489c8933f4cc7a4f7d45035b3b1440c9c10db # ratchet:google-github-actions/setup-gcloud@v3
       - name: "Log in to Google Artifact Registry"
@@ -35,11 +31,9 @@ jobs:
         name: "Setup Helm"
         with:
           version: "3.9.3"
-
       - name: Build Chart
         run: |-
           helm package charts/fasit
-
       - name: Push Chart
         run: |-
           helm push fasit*.tgz oci://europe-north1-docker.pkg.dev/nais-io/nais

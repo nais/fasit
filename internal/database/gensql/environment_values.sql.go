@@ -11,8 +11,7 @@ import (
 
 const environmentValueDelete = `-- name: EnvironmentValueDelete :exec
 DELETE FROM environment_values
-WHERE
-	"environment_id" = $1
+WHERE "environment_id" = $1
 	AND "key" = $2
 `
 
@@ -31,15 +30,16 @@ SELECT
 	"environment_id",
 	"key",
 	"secret",
-	(
-		CASE
-			WHEN secret THEN CASE
-				WHEN $1::BOOL THEN value
-				ELSE '"*****"'
+(
+		CASE WHEN secret THEN
+			CASE WHEN $1::BOOL THEN
+				value
+			ELSE
+				'"*****"'
 			END
-			ELSE value
-		END
-	)::jsonb AS "value"
+		ELSE
+			value
+		END)::JSONB AS "value"
 FROM
 	environment_values
 WHERE
@@ -73,14 +73,22 @@ func (q *Queries) EnvironmentValueGet(ctx context.Context, arg EnvironmentValueG
 }
 
 const environmentValueStore = `-- name: EnvironmentValueStore :exec
-INSERT INTO
-	environment_values ("environment_id", "key", "value", "secret")
-VALUES
-	($1, $2, $3, $4)
-ON CONFLICT ("environment_id", "key") DO UPDATE
-SET
-	"value" = $3,
-	"secret" = $4
+INSERT INTO environment_values(
+	"environment_id",
+	"key",
+	"value",
+	"secret")
+VALUES (
+	$1,
+	$2,
+	$3,
+	$4)
+ON CONFLICT (
+	"environment_id",
+	"key")
+	DO UPDATE SET
+		"value" = $3,
+		"secret" = $4
 `
 
 type EnvironmentValueStoreParams struct {
@@ -162,21 +170,22 @@ SELECT
 	"environment_id",
 	"environment_values"."key",
 	"secret",
-	(
-		CASE
-			WHEN secret THEN CASE
-				WHEN $1::BOOL THEN value
-				ELSE '"*****"'
+(
+		CASE WHEN secret THEN
+			CASE WHEN $1::BOOL THEN
+				value
+			ELSE
+				'"*****"'
 			END
-			ELSE value
-		END
-	)::jsonb AS "value",
+		ELSE
+			value
+		END)::JSONB AS "value",
 	COALESCE("evs"."count", 0) AS "count"
 FROM
 	environment_values
 	LEFT JOIN environments ON environments.id = environment_values.environment_id
 	LEFT JOIN environment_values_stats evs ON evs.key = environment_values.key
-	AND evs.kind = environments.kind
+		AND evs.kind = environments.kind
 WHERE
 	"environment_id" = $2
 ORDER BY
@@ -223,51 +232,43 @@ func (q *Queries) EnvironmentValuesForEnvironment(ctx context.Context, arg Envir
 }
 
 const mappingValuesForTenant = `-- name: MappingValuesForTenant :many
-WITH
-	environment_ids AS (
-		SELECT
-			id
-		FROM
-			environments
-		WHERE
-			"tenant_id" = $1
-	),
-	mappings AS (
-		SELECT
-			"environment_id",
-			"key",
-			(
-				CASE
-					WHEN secret THEN CASE
-						WHEN $2::BOOL THEN value
-						ELSE '"*****"'
-					END
-					ELSE value
+WITH environment_ids AS (
+	SELECT
+		id
+	FROM
+		environments
+	WHERE
+		"tenant_id" = $1
+),
+mappings AS (
+	SELECT
+		"environment_id",
+		"key",
+(
+			CASE WHEN secret THEN
+				CASE WHEN $2::BOOL THEN
+					value
+				ELSE
+					'"*****"'
 				END
-			)::jsonb AS "value",
-			"secret"
-		FROM
-			environment_values
-		WHERE
-			"environment_id" IN (
-				SELECT
-					id
-				FROM
-					environment_ids
-			)
-	)
+			ELSE
+				value
+			END)::JSONB AS "value",
+		"secret"
+	FROM
+		environment_values
+	WHERE
+		"environment_id" IN (
+			SELECT
+				id
+			FROM
+				environment_ids))
 SELECT
 	"id",
 	"name",
 	"kind",
 	-- FILTER is added to prevent error when there's no environment values
-	COALESCE(
-		JSON_OBJECT_AGG("key", "value") FILTER (
-			WHERE
-				"key" IS NOT NULL
-		),
-		'{}'::json
-	)::json AS "values"
+	COALESCE(JSON_OBJECT_AGG("key", "value") FILTER (WHERE "key" IS NOT NULL), '{}'::JSON)::JSON AS "values"
 FROM
 	environments
 	LEFT JOIN mappings ON mappings.environment_id = environments.id

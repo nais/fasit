@@ -1,5 +1,5 @@
 -- +goose Up
-CREATE TABLE feature_data (
+CREATE TABLE feature_data(
 	-- Chart.yaml
 	"name" TEXT NOT NULL,
 	"version" TEXT NOT NULL,
@@ -14,5 +14,5 @@ CREATE TABLE feature_data (
 	-- values.yaml
 	"default_values" JSONB NOT NULL,
 	PRIMARY KEY ("name", "version")
-)
-;
+);
+

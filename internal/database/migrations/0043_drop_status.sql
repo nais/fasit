@@ -1,3 +1,3 @@
 -- +goose Up
-DROP TABLE status
-;
+DROP TABLE status;
+

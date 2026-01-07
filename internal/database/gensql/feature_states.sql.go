@@ -11,16 +11,24 @@ import (
 )
 
 const featureStateCreateOrUpdate = `-- name: FeatureStateCreateOrUpdate :one
-INSERT INTO
-	feature_states (environment_id, feature, enabled, enabled_at)
-VALUES
-	($1, $2, $3, $4)
-ON CONFLICT (environment_id, feature) DO UPDATE
-SET
-	enabled = EXCLUDED.enabled,
-	enabled_at = EXCLUDED.enabled_at
-RETURNING
-	environment_id, feature, enabled, created, last_modified, enabled_at
+INSERT INTO feature_states(
+	environment_id,
+	feature,
+	enabled,
+	enabled_at)
+VALUES (
+	$1,
+	$2,
+	$3,
+	$4)
+ON CONFLICT (
+	environment_id,
+	feature)
+	DO UPDATE SET
+		enabled = EXCLUDED.enabled,
+		enabled_at = EXCLUDED.enabled_at
+	RETURNING
+		environment_id, feature, enabled, created, last_modified, enabled_at
 `
 
 type FeatureStateCreateOrUpdateParams struct {
@@ -79,54 +87,53 @@ func (q *Queries) FeatureStateGet(ctx context.Context, arg FeatureStateGetParams
 }
 
 const featureStatesGet = `-- name: FeatureStatesGet :many
-WITH
-	env AS (
-		SELECT
-			ci,
-			kind
-		FROM
-			environments
-		WHERE
-			id = $1
-	),
-	combined AS (
-		SELECT
-			NULL AS id,
-			name,
-			version,
+WITH env AS (
+	SELECT
+		ci,
+		kind
+	FROM
+		environments
+	WHERE
+		id = $1
+),
+combined AS (
+	SELECT
+		NULL AS id,
+		name,
+		version,
+		last_modified
+	FROM
+		features
+	UNION
+	SELECT
+		id,
+		feature_name AS name,
+		version,
+		NULL AS last_modified
+	FROM
+		rollouts
+	WHERE
+		status = 'pending'
+),
+filtered AS (
+	SELECT DISTINCT ON (name)
+		name,
+		version
+	FROM
+		combined
+		JOIN env ON 1 = 1
+	ORDER BY
+		name,
+		-- If environment is CI, use definition from rollouts if it exists, otherwise use definition from features
+		CASE WHEN env.ci THEN
+			id
+		END,
+		CASE WHEN NOT ci THEN
 			last_modified
-		FROM
-			features
-		UNION
-		SELECT
-			id,
-			feature_name AS name,
-			version,
-			NULL AS last_modified
-		FROM
-			rollouts
-		WHERE
-			status = 'pending'
-	),
-	filtered AS (
-		SELECT DISTINCT
-			ON (name) name,
-			version
-		FROM
-			combined
-			JOIN env ON 1 = 1
-		ORDER BY
-			name,
-			-- If environment is CI, use definition from rollouts if it exists, otherwise use definition from features
-			CASE
-				WHEN env.ci THEN id
-			END,
-			CASE
-				WHEN NOT ci THEN last_modified
-			END
-	)
+		END
+)
 SELECT
-	$1::uuid AS environment_id,
+	$1::UUID AS environment_id,
 	f.name,
 	COALESCE(fs.enabled, FALSE) AS enabled,
 	fs.created,
@@ -135,16 +142,14 @@ SELECT
 FROM
 	filtered f
 	JOIN feature_data fd ON fd.name = f.name
-	AND fd.version = f.version
+		AND fd.version = f.version
 	LEFT JOIN feature_states fs ON fs.feature = f.name
-	AND fs.environment_id = $1
-WHERE
-	(
-		SELECT
-			kind
-		FROM
-			env
-	) = ANY (fd.kinds)
+		AND fs.environment_id = $1
+WHERE (
+	SELECT
+		kind
+	FROM
+		env) = ANY (fd.kinds)
 ORDER BY
 	f.name ASC
 `
@@ -244,7 +249,7 @@ func (q *Queries) FeatureStatesGetOld(ctx context.Context, environmentID uuid.UU
 
 const rolloutStatesGet = `-- name: RolloutStatesGet :many
 SELECT
-	$1::uuid AS environment_id,
+	$1::UUID AS environment_id,
 	r.feature_name,
 	COALESCE(fs.enabled, FALSE) AS enabled,
 	fs.created,
@@ -253,18 +258,16 @@ SELECT
 FROM
 	rollouts r
 	JOIN feature_data fd ON fd.name = r.feature_name
-	AND fd.version = r.version
+		AND fd.version = r.version
 	LEFT JOIN feature_states fs ON fs.feature = r.feature_name
-	AND fs.environment_id = $1
-WHERE
-	(
-		SELECT
-			kind
-		FROM
-			environments
-		WHERE
-			id = $1
-	) = ANY (fd.kinds)
+		AND fs.environment_id = $1
+WHERE (
+	SELECT
+		kind
+	FROM
+		environments
+	WHERE
+		id = $1) = ANY (fd.kinds)
 ORDER BY
 	r.feature_name ASC
 `

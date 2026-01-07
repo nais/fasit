@@ -1,7 +1,6 @@
 environmentKinds:
   - "tenant"
   - "management"
-
 values:
   rename.myValue:
     config:
@@ -9,14 +8,12 @@ values:
   rename.nested.key:
     config:
       type: string
-
   rename.nested.computed.key:
     config:
       type: string
       secret: true
     computed:
       template: "{{ .Env.kind }}"
-
 rename:
   - from: myValue
     to: rename.myValue

@@ -4,48 +4,42 @@ SELECT
 FROM
 	deploy_instructions
 WHERE
-	id = @id
-;
+	id = @id;
 
 -- name: DeployInstructionsCreate :one
-INSERT INTO
-	deploy_instructions (
-		environment_id,
-		feature_name,
-		feature_version,
-		hash,
-		"values",
-		deployment_id
-	)
-VALUES
-	(
-		@environment_id,
-		@feature_name,
-		@feature_version,
-		@hash,
-		@values,
-		@deployment_id
-	)
+INSERT INTO deploy_instructions(
+	environment_id,
+	feature_name,
+	feature_version,
+	hash,
+	"values",
+	deployment_id)
+VALUES (
+	@environment_id,
+	@feature_name,
+	@feature_version,
+	@hash,
+	@values,
+	@deployment_id)
 RETURNING
-	id
-;
+	id;
 
 -- name: DeployInstructionsUpdateStatus :exec
-UPDATE deploy_instructions
+UPDATE
+	deploy_instructions
 SET
 	status = @status
 WHERE
-	id = @id
-;
+	id = @id;
 
 -- name: TimeoutDeployInstructions :exec
-UPDATE deploy_instructions
+UPDATE
+	deploy_instructions
 SET
 	status = 'failed'
 WHERE
 	status = 'pending'
-	AND last_modified < NOW() - INTERVAL '1 hour'
-;
+	AND last_modified < NOW() - INTERVAL '1 hour';
 
 -- name: DeployInstructionsLatestForFeature :one
 SELECT
@@ -57,9 +51,7 @@ WHERE
 	AND environment_id = @environment_id
 ORDER BY
 	created DESC
-LIMIT
-	1
-;
+LIMIT 1;
 
 -- name: DeployInstructionsLatestForEnvironment :many
 SELECT
@@ -67,18 +59,15 @@ SELECT
 FROM
 	deploy_instructions
 WHERE
-	id IN (
-		SELECT DISTINCT
-			ON (feature_name) id
+	id IN ( SELECT DISTINCT ON (feature_name)
+			id
 		FROM
 			deploy_instructions di
 		WHERE
 			di.environment_id = @environment_id
 		ORDER BY
 			feature_name,
-			created DESC
-	)
-;
+			created DESC);
 
 -- name: DeployInstructionsForFeature :many
 SELECT
@@ -90,11 +79,7 @@ WHERE
 	AND environment_id = @environment_id
 ORDER BY
 	created DESC
-LIMIT
-	10
-OFFSET
-	sqlc.arg('offset')
-;
+LIMIT 10 OFFSET sqlc.arg('offset');
 
 -- name: DeployInstructionsForNameVersion :one
 SELECT
@@ -103,47 +88,40 @@ FROM
 	deploy_instructions
 WHERE
 	feature_name = @feature_name
-	AND feature_version = @feature_version
-;
+	AND feature_version = @feature_version;
 
 -- name: DeployInstructionsPrevious :one
-WITH
-	current AS (
-		SELECT
-			di.*
-		FROM
-			deploy_instructions di
-		WHERE
-			di.id = @id
-	)
+WITH CURRENT AS (
+	SELECT
+		di.*
+	FROM
+		deploy_instructions di
+	WHERE
+		di.id = @id
+)
 SELECT
 	*
 FROM
 	deploy_instructions
 WHERE
-	feature_name = (
+	feature_name =(
 		SELECT
 			feature_name
 		FROM
-			current
-	)
-	AND environment_id = (
+			CURRENT)
+	AND environment_id =(
 		SELECT
 			environment_id
 		FROM
-			current
-	)
-	AND created < (
+			CURRENT)
+	AND created <(
 		SELECT
 			created
 		FROM
-			current
-	)
+			CURRENT)
 ORDER BY
 	created DESC
-LIMIT
-	1
-;
+LIMIT 1;
 
 -- name: NamesFromDeployInstruction :one
 SELECT
@@ -154,5 +132,5 @@ FROM
 	JOIN environments ON deploy_instructions.environment_id = environments.id
 	JOIN tenants ON environments.tenant_id = tenants.id
 WHERE
-	deploy_instructions.id = @id
-;
+	deploy_instructions.id = @id;
+

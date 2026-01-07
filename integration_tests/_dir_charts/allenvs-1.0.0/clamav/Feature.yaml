@@ -3,5 +3,4 @@ environmentKinds:
   - "management"
   - "legacy"
   - "onprem"
-
 timeout: 10m

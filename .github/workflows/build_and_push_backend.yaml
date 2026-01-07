@@ -18,20 +18,16 @@ on:
       - reopened
       - synchronize
       - edited
-
 env:
   RUNNER_IMG: "gcr.io/distroless/base:nonroot"
   BASEIMG_IDENTITY: "keyless@distroless.iam.gserviceaccount.com"
   BASEIMG_ISSUER: "https://accounts.google.com"
-
 permissions:
   contents: "read"
   id-token: "write"
-
 concurrency:
   group: ${{ github.ref }}
   cancel-in-progress: true
-
 jobs:
   go-version:
     outputs:
@@ -93,7 +89,6 @@ jobs:
           google_service_account: gh-fasit
           workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
           push: ${{ github.actor != 'dependabot[bot]' }}
-
   deploy_fasit:
     if: github.ref == 'refs/heads/main'
     name: Deploy fasit on push to main

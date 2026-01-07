@@ -11,43 +11,40 @@ import (
 )
 
 const cost = `-- name: Cost :many
-WITH
-	tenant_ids AS (
+WITH tenant_ids AS (
+	SELECT
+		id
+	FROM
+		tenants
+),
+datasource AS (
+	SELECT
+		t.id AS tenant_id,
+		t.tdate::DATE AS "date",
+		COALESCE(SUM(
+				COST)::REAL, 0.0) AS
+		COST
+	FROM (
 		SELECT
-			id
+			"day" AS "tdate",
+			id AS "id"
 		FROM
-			tenants
-	),
-	datasource AS (
-		SELECT
-			t.id AS tenant_id,
-			t.tdate::DATE AS "date",
-			COALESCE(SUM(cost)::REAL, 0.0) AS cost
-		FROM
-			(
-				SELECT
-					"day" AS "tdate",
-					id AS "id"
-				FROM
-					GENERATE_SERIES(
-						$1::DATE,
-						$2::DATE,
-						INTERVAL '1 day'
-					) AS t (DAY),
-					tenant_ids
-			) AS t
-			LEFT JOIN env_cost ON tenant_id = t.id
+			GENERATE_SERIES($1::DATE, $2::DATE, INTERVAL '1 day') AS t(DAY),
+			tenant_ids) AS t
+		LEFT JOIN env_cost ON tenant_id = t.id
 			AND "date"::DATE = t.tdate
-		GROUP BY
-			t.tdate,
-			t.id
-		ORDER BY
-			t.tdate,
-			t.id
-	)
+	GROUP BY
+		t.tdate,
+		t.id
+	ORDER BY
+		t.tdate,
+		t.id
+)
 SELECT
 	tenant_id,
-	ARRAY_AGG(cost)::REAL[] AS cost
+	ARRAY_AGG(
+		COST)::REAL[] AS
+	COST
 FROM
 	datasource
 GROUP BY
@@ -87,45 +84,42 @@ func (q *Queries) Cost(ctx context.Context, arg CostParams) ([]CostRow, error) {
 }
 
 const costForTenant = `-- name: CostForTenant :many
-WITH
-	envs AS (
+WITH envs AS (
+	SELECT
+		id
+	FROM
+		environments
+	WHERE
+		environments.tenant_id = $1
+),
+datasource AS (
+	SELECT
+		t.id AS env_id,
+		t.tdate::DATE AS "date",
+		COALESCE(SUM(
+				COST)::REAL, 0.0) AS
+		COST
+	FROM (
 		SELECT
-			id
+			"day" AS "tdate",
+			id AS "id"
 		FROM
-			environments
-		WHERE
-			environments.tenant_id = $1
-	),
-	datasource AS (
-		SELECT
-			t.id AS env_id,
-			t.tdate::DATE AS "date",
-			COALESCE(SUM(cost)::REAL, 0.0) AS cost
-		FROM
-			(
-				SELECT
-					"day" AS "tdate",
-					id AS "id"
-				FROM
-					GENERATE_SERIES(
-						$2::DATE,
-						$3::DATE,
-						INTERVAL '1 day'
-					) AS t (DAY),
-					envs
-			) AS t
-			LEFT JOIN env_cost ON env_id = t.id
+			GENERATE_SERIES($2::DATE, $3::DATE, INTERVAL '1 day') AS t(DAY),
+			envs) AS t
+		LEFT JOIN env_cost ON env_id = t.id
 			AND "date"::DATE = t.tdate
-		GROUP BY
-			t.tdate,
-			t.id
-		ORDER BY
-			t.tdate,
-			t.id
-	)
+	GROUP BY
+		t.tdate,
+		t.id
+	ORDER BY
+		t.tdate,
+		t.id
+)
 SELECT
 	env_id,
-	ARRAY_AGG(cost)::REAL[] AS cost
+	ARRAY_AGG(
+		COST)::REAL[] AS
+	COST
 FROM
 	datasource
 GROUP BY

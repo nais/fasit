@@ -11,15 +11,18 @@ import (
 )
 
 const healthStatusCreateOrUpdate = `-- name: HealthStatusCreateOrUpdate :one
-INSERT INTO
-	health_statuses (environment_id, reported_at)
-VALUES
-	($1, $2)
-ON CONFLICT (environment_id) DO UPDATE
-SET
-	reported_at = EXCLUDED.reported_at
-RETURNING
-	environment_id, reported_at
+INSERT INTO health_statuses(
+	environment_id,
+	reported_at)
+VALUES (
+	$1,
+	$2)
+ON CONFLICT (
+	environment_id)
+	DO UPDATE SET
+		reported_at = EXCLUDED.reported_at
+	RETURNING
+		environment_id, reported_at
 `
 
 type HealthStatusCreateOrUpdateParams struct {

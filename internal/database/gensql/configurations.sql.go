@@ -12,8 +12,7 @@ import (
 
 const configDelete = `-- name: ConfigDelete :exec
 DELETE FROM configurations_global
-WHERE
-	id = $1
+WHERE id = $1
 `
 
 func (q *Queries) ConfigDelete(ctx context.Context, id uuid.UUID) error {
@@ -22,30 +21,29 @@ func (q *Queries) ConfigDelete(ctx context.Context, id uuid.UUID) error {
 }
 
 const configEnvUpdateOrCreate = `-- name: ConfigEnvUpdateOrCreate :one
-INSERT INTO
-	configurations_environment (
-		environment_id,
-		feature,
-		description,
-		secret,
-		key,
-		value
-	)
-VALUES
-	(
-		$1,
-		$2,
-		$3,
-		$4,
-		$5,
-		$6
-	)
-ON CONFLICT (environment_id, feature, key) DO UPDATE
-SET
-	value = EXCLUDED.value,
-	description = EXCLUDED.description
-RETURNING
-	id, feature, key, value, description, secret, created, environment_id
+INSERT INTO configurations_environment(
+	environment_id,
+	feature,
+	description,
+	secret,
+	key,
+	value)
+VALUES (
+	$1,
+	$2,
+	$3,
+	$4,
+	$5,
+	$6)
+ON CONFLICT (
+	environment_id,
+	feature,
+	key)
+	DO UPDATE SET
+		value = EXCLUDED.value,
+		description = EXCLUDED.description
+	RETURNING
+		id, feature, key, value, description, secret, created, environment_id
 `
 
 type ConfigEnvUpdateOrCreateParams struct {
@@ -190,16 +188,26 @@ func (q *Queries) ConfigGetForEnv(ctx context.Context, arg ConfigGetForEnvParams
 }
 
 const configGlobalUpdateOrCreate = `-- name: ConfigGlobalUpdateOrCreate :one
-INSERT INTO
-	configurations_global (feature, description, secret, key, value)
-VALUES
-	($1, $2, $3, $4, $5)
-ON CONFLICT (feature, key) DO UPDATE
-SET
-	value = EXCLUDED.value,
-	description = EXCLUDED.description
-RETURNING
-	id, feature, key, value, description, secret, created
+INSERT INTO configurations_global(
+	feature,
+	description,
+	secret,
+	key,
+	value)
+VALUES (
+	$1,
+	$2,
+	$3,
+	$4,
+	$5)
+ON CONFLICT (
+	feature,
+	key)
+	DO UPDATE SET
+		value = EXCLUDED.value,
+		description = EXCLUDED.description
+	RETURNING
+		id, feature, key, value, description, secret, created
 `
 
 type ConfigGlobalUpdateOrCreateParams struct {
@@ -271,7 +279,8 @@ func (q *Queries) ConfigOverridesByFeature(ctx context.Context, feature string) 
 }
 
 const configRenameEnv = `-- name: ConfigRenameEnv :exec
-UPDATE ONLY configurations_environment
+UPDATE
+	ONLY configurations_environment
 SET
 	key = $1
 WHERE
@@ -284,8 +293,7 @@ WHERE
 		WHERE
 			configurations_environment.feature = $3
 			AND nested.key = $1
-			AND nested.environment_id = configurations_environment.environment_id
-	)
+			AND nested.environment_id = configurations_environment.environment_id)
 `
 
 type ConfigRenameEnvParams struct {
@@ -300,7 +308,8 @@ func (q *Queries) ConfigRenameEnv(ctx context.Context, arg ConfigRenameEnvParams
 }
 
 const configRenameGlobal = `-- name: ConfigRenameGlobal :exec
-UPDATE ONLY configurations_global
+UPDATE
+	ONLY configurations_global
 SET
 	key = $1
 WHERE
@@ -313,8 +322,7 @@ WHERE
 			ONLY configurations_global nested
 		WHERE
 			nested.feature = $3
-			AND nested.key = $1
-	)
+			AND nested.key = $1)
 `
 
 type ConfigRenameGlobalParams struct {
@@ -329,7 +337,8 @@ func (q *Queries) ConfigRenameGlobal(ctx context.Context, arg ConfigRenameGlobal
 }
 
 const configUpdate = `-- name: ConfigUpdate :one
-UPDATE configurations_global
+UPDATE
+	configurations_global
 SET
 	description = $1,
 	value = $2
@@ -361,44 +370,37 @@ func (q *Queries) ConfigUpdate(ctx context.Context, arg ConfigUpdateParams) (Con
 }
 
 const envConfig = `-- name: EnvConfig :many
-WITH
-	"combined" AS (
-		SELECT
-			"id",
-			"feature",
-			"key",
-			"value",
-			NULL::uuid AS environment_id
-		FROM
-			ONLY configurations_global glob
-		WHERE
-			glob.feature = $1
-		UNION
-		SELECT
-			"id",
-			"feature",
-			"key",
-			"value",
-			"environment_id"
-		FROM
-			ONLY configurations_environment env
-		WHERE
-			env.feature = $1
-			AND environment_id = $2
-	),
-	"filtered" AS (
-		SELECT
-			id, feature, key, value, environment_id,
-			RANK() OVER (
-				PARTITION BY
-					"key"
-				ORDER BY
-					environment_id ASC,
-					key ASC
-			)
-		FROM
-			"combined"
-	)
+WITH "combined" AS (
+	SELECT
+		"id",
+		"feature",
+		"key",
+		"value",
+		NULL::UUID AS environment_id
+	FROM
+		ONLY configurations_global glob
+	WHERE
+		glob.feature = $1
+	UNION
+	SELECT
+		"id",
+		"feature",
+		"key",
+		"value",
+		"environment_id"
+	FROM
+		ONLY configurations_environment env
+	WHERE
+		env.feature = $1
+		AND environment_id = $2
+),
+"filtered" AS (
+	SELECT
+		id, feature, key, value, environment_id,
+		RANK() OVER (PARTITION BY "key" ORDER BY environment_id ASC,
+			key ASC)
+	FROM "combined"
+)
 SELECT
 	id, feature, key, value, environment_id, rank
 FROM
@@ -449,46 +451,39 @@ func (q *Queries) EnvConfig(ctx context.Context, arg EnvConfigParams) ([]EnvConf
 }
 
 const envConfigOnlyKnown = `-- name: EnvConfigOnlyKnown :many
-WITH
-	"combined" AS (
-		SELECT
-			"id",
-			"feature",
-			"key",
-			"value",
-			NULL::uuid AS environment_id
-		FROM
-			ONLY configurations_global glob
-		WHERE
-			glob.feature = $1
-			AND glob.key = ANY ($2::TEXT[])
-		UNION
-		SELECT
-			"id",
-			"feature",
-			"key",
-			"value",
-			"environment_id"
-		FROM
-			ONLY configurations_environment env
-		WHERE
-			env.feature = $1
-			AND environment_id = $3
-			AND env.key = ANY ($2::TEXT[])
-	),
-	"filtered" AS (
-		SELECT
-			id, feature, key, value, environment_id,
-			RANK() OVER (
-				PARTITION BY
-					"key"
-				ORDER BY
-					environment_id ASC,
-					key ASC
-			)
-		FROM
-			"combined"
-	)
+WITH "combined" AS (
+	SELECT
+		"id",
+		"feature",
+		"key",
+		"value",
+		NULL::UUID AS environment_id
+	FROM
+		ONLY configurations_global glob
+	WHERE
+		glob.feature = $1
+		AND glob.key = ANY ($2::TEXT[])
+	UNION
+	SELECT
+		"id",
+		"feature",
+		"key",
+		"value",
+		"environment_id"
+	FROM
+		ONLY configurations_environment env
+	WHERE
+		env.feature = $1
+		AND environment_id = $3
+		AND env.key = ANY ($2::TEXT[])
+),
+"filtered" AS (
+	SELECT
+		id, feature, key, value, environment_id,
+		RANK() OVER (PARTITION BY "key" ORDER BY environment_id ASC,
+			key ASC)
+	FROM "combined"
+)
 SELECT
 	id, feature, key, value, environment_id, rank
 FROM

@@ -1,5 +1,5 @@
 -- +goose Up
-CREATE TABLE cluster_operations (
+CREATE TABLE cluster_operations(
 	"id" UUID PRIMARY KEY,
 	"operation_name" TEXT NOT NULL,
 	"tenant_id" UUID NOT NULL,
@@ -16,13 +16,13 @@ CREATE TABLE cluster_operations (
 	"node_pdb_delay_seconds" INT NOT NULL,
 	"start_time" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 	"last_modified" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-	CONSTRAINT fk_cluster_operations_tenant FOREIGN KEY (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE,
-	CONSTRAINT fk_cluster_operations_env FOREIGN KEY (environment_id) REFERENCES environments (id) ON DELETE CASCADE,
-	CONSTRAINT fk_cluster_operations_version FOREIGN KEY (upgrade_id) REFERENCES cluster_upgrades (id) ON DELETE CASCADE
-)
-;
+	CONSTRAINT fk_cluster_operations_tenant FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
+	CONSTRAINT fk_cluster_operations_env FOREIGN KEY (environment_id) REFERENCES environments(id) ON DELETE CASCADE,
+	CONSTRAINT fk_cluster_operations_version FOREIGN KEY (upgrade_id) REFERENCES cluster_upgrades(id) ON DELETE CASCADE
+);
 
-CREATE TRIGGER cluster_operations_set_modified BEFORE
-UPDATE ON cluster_operations FOR EACH ROW
-EXECUTE PROCEDURE update_modified_timestamp ()
-;
+CREATE TRIGGER cluster_operations_set_modified
+	BEFORE UPDATE ON cluster_operations
+	FOR EACH ROW
+	EXECUTE PROCEDURE update_modified_timestamp();
+

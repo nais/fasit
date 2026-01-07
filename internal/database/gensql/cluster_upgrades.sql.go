@@ -11,7 +11,8 @@ import (
 )
 
 const clusterUpgradesBypassDelay = `-- name: ClusterUpgradesBypassDelay :one
-UPDATE cluster_upgrades
+UPDATE
+	cluster_upgrades
 SET
 	"status" = 'CREATED'::cluster_upgrades_status,
 	"is_automatic" = FALSE
@@ -94,15 +95,16 @@ func (q *Queries) ClusterUpgradesCountByTenantID(ctx context.Context, tenantid u
 }
 
 const clusterUpgradesCreate = `-- name: ClusterUpgradesCreate :one
-INSERT INTO
-	cluster_upgrades (
-		"tenant_id",
-		"environment_id",
-		"version",
-		"is_automatic"
-	)
-VALUES
-	($1, $2, $3, $4)
+INSERT INTO cluster_upgrades(
+	"tenant_id",
+	"environment_id",
+	"version",
+	"is_automatic")
+VALUES (
+	$1,
+	$2,
+	$3,
+	$4)
 RETURNING
 	id, tenant_id, environment_id, version, status, start_time, last_modified, slack_message_timestamp, slack_channel_id, is_automatic, upgrade_start_time
 `
@@ -229,8 +231,7 @@ WHERE
 	AND version = $3
 ORDER BY
 	last_modified DESC
-LIMIT
-	1
+LIMIT 1
 `
 
 type ClusterUpgradesGetByVersionParams struct {
@@ -264,11 +265,8 @@ SELECT
 FROM
 	cluster_upgrades
 ORDER BY
-	last_modified DESC
-OFFSET
-	$1
-LIMIT
-	$2
+	last_modified DESC OFFSET $1
+LIMIT $2
 `
 
 type ClusterUpgradesHistoryGetAllParams struct {
@@ -317,11 +315,8 @@ WHERE
 	tenant_id = $1
 	AND environment_id = $2
 ORDER BY
-	last_modified DESC
-OFFSET
-	$3
-LIMIT
-	$4
+	last_modified DESC OFFSET $3
+LIMIT $4
 `
 
 type ClusterUpgradesHistoryGetByEnvironmentIDParams struct {
@@ -376,11 +371,8 @@ FROM
 WHERE
 	tenant_id = $1
 ORDER BY
-	last_modified DESC
-OFFSET
-	$2
-LIMIT
-	$3
+	last_modified DESC OFFSET $2
+LIMIT $3
 `
 
 type ClusterUpgradesHistoryGetByTenantIDParams struct {
@@ -422,7 +414,8 @@ func (q *Queries) ClusterUpgradesHistoryGetByTenantID(ctx context.Context, arg C
 }
 
 const clusterUpgradesSetSlackMessage = `-- name: ClusterUpgradesSetSlackMessage :one
-UPDATE cluster_upgrades
+UPDATE
+	cluster_upgrades
 SET
 	"slack_message_timestamp" = $1,
 	"slack_channel_id" = $2
@@ -458,16 +451,16 @@ func (q *Queries) ClusterUpgradesSetSlackMessage(ctx context.Context, arg Cluste
 }
 
 const clusterUpgradesUpdateStatus = `-- name: ClusterUpgradesUpdateStatus :one
-UPDATE cluster_upgrades
+UPDATE
+	cluster_upgrades
 SET
 	"status" = $1::cluster_upgrades_status,
-	"upgrade_start_time" = CASE
-		WHEN (
-			$1::TEXT = 'CONTROL_PLANE_UPGRADE'
-			OR $1::TEXT = 'NODE_UPGRADE'
-		)
-		AND upgrade_start_time IS NULL THEN NOW()
-		ELSE upgrade_start_time
+	"upgrade_start_time" = CASE WHEN ($1::TEXT = 'CONTROL_PLANE_UPGRADE'
+		OR $1::TEXT = 'NODE_UPGRADE')
+		AND upgrade_start_time IS NULL THEN
+		NOW()
+	ELSE
+		upgrade_start_time
 	END
 WHERE
 	"id" = $2

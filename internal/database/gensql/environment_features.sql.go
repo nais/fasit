@@ -25,7 +25,7 @@ SELECT
 FROM
 	environment_features ef
 	JOIN feature_data fd ON fd.name = ef.feature_name
-	AND fd.version = ef.feature_version
+		AND fd.version = ef.feature_version
 WHERE
 	environment_id = $1
 	AND feature_name = $2
@@ -70,24 +70,22 @@ func (q *Queries) GetEnvironmentFeature(ctx context.Context, arg GetEnvironmentF
 }
 
 const insertEnvironmentFeature = `-- name: InsertEnvironmentFeature :exec
-INSERT INTO
-	environment_features (
-		environment_id,
-		feature_name,
-		feature_version,
-		deployment_id
-	)
-VALUES
-	(
-		$1,
-		$2,
-		$3,
-		$4
-	)
-ON CONFLICT (environment_id, feature_name) DO UPDATE
-SET
-	feature_version = EXCLUDED.feature_version,
-	deployment_id = EXCLUDED.deployment_id
+INSERT INTO environment_features(
+	environment_id,
+	feature_name,
+	feature_version,
+	deployment_id)
+VALUES (
+	$1,
+	$2,
+	$3,
+	$4)
+ON CONFLICT (
+	environment_id,
+	feature_name)
+	DO UPDATE SET
+		feature_version = EXCLUDED.feature_version,
+		deployment_id = EXCLUDED.deployment_id
 `
 
 type InsertEnvironmentFeatureParams struct {

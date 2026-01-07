@@ -26,7 +26,7 @@ SELECT
 FROM
 	features
 	JOIN feature_data fd ON features.name = fd.name
-	AND features.version = fd.version
+		AND features.version = fd.version
 WHERE
 	fd.name = $1
 `
@@ -74,7 +74,7 @@ SELECT
 FROM
 	features
 	JOIN feature_data fd ON features.name = fd.name
-	AND features.version = fd.version
+		AND features.version = fd.version
 WHERE
 	$1::TEXT = ANY (kinds::TEXT[])
 ORDER BY
@@ -134,13 +134,16 @@ func (q *Queries) FeatureGetForEnv(ctx context.Context, environmentKind string) 
 }
 
 const featureVersionUpdate = `-- name: FeatureVersionUpdate :exec
-INSERT INTO
-	features (name, version)
-VALUES
-	($1, $2)
-ON CONFLICT (name) DO UPDATE
-SET
-	version = EXCLUDED.version
+INSERT INTO features(
+	name,
+	version)
+VALUES (
+	$1,
+	$2)
+ON CONFLICT (
+	name)
+	DO UPDATE SET
+		version = EXCLUDED.version
 `
 
 type FeatureVersionUpdateParams struct {
@@ -154,46 +157,42 @@ func (q *Queries) FeatureVersionUpdate(ctx context.Context, arg FeatureVersionUp
 }
 
 const features = `-- name: Features :many
-WITH
-	combined AS (
-		SELECT
-			NULL AS id,
-			name,
+WITH combined AS (
+	SELECT
+		NULL AS id,
+		name,
+		version,
+		created,
+		last_modified
+	FROM
+		features
+	UNION ( SELECT DISTINCT ON (feature_name)
+			id,
+			feature_name AS name,
 			version,
-			created,
-			last_modified
+			MAKE_TIMESTAMPTZ(1969, 4, 20, 0, 0, 0) AS created,
+			MAKE_TIMESTAMPTZ(1969, 4, 20, 0, 0, 0) AS last_modified
 		FROM
-			features
-		UNION
-		(
-			SELECT DISTINCT
-				ON (feature_name) id,
-				feature_name AS name,
-				version,
-				MAKE_TIMESTAMPTZ(1969, 4, 20, 0, 0, 0) AS created,
-				MAKE_TIMESTAMPTZ(1969, 4, 20, 0, 0, 0) AS last_modified
-			FROM
-				rollouts
-			WHERE
-				status = 'pending'
-			ORDER BY
-				feature_name,
-				"version" DESC
-		)
-	),
-	filtered AS (
-		SELECT DISTINCT
-			ON (name) name AS name,
-			version,
-			created,
-			last_modified
-		FROM
-			combined
+			rollouts
+		WHERE
+			status = 'pending'
 		ORDER BY
-			-- order by id to ensure rollout has precedence over feature
-			name,
-			id
-	)
+			feature_name,
+			"version" DESC)
+),
+filtered AS (
+	SELECT DISTINCT ON (name)
+		name AS name,
+		version,
+		created,
+		last_modified
+	FROM
+		combined
+	ORDER BY
+		-- order by id to ensure rollout has precedence over feature
+		name,
+		id
+)
 SELECT
 	fd.name,
 	fd.version,
@@ -210,9 +209,9 @@ SELECT
 FROM
 	combined
 	JOIN feature_data fd ON combined.name = fd.name
-	AND combined.version = fd.version
-ORDER BY
-	combined.name
+		AND combined.version = fd.version
+	ORDER BY
+		combined.name
 `
 
 type FeaturesRow struct {
@@ -283,12 +282,11 @@ SELECT
 		FROM
 			deployments d
 		WHERE
-			d.feature_name = fd.name
-	) AS hasDeployments
+			d.feature_name = fd.name) AS hasDeployments
 FROM
 	features
 	JOIN feature_data fd ON features.name = fd.name
-	AND features.version = fd.version
+		AND features.version = fd.version
 WHERE
 	$1::TEXT = ANY (kinds::TEXT[])
 ORDER BY

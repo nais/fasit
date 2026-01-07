@@ -36,10 +36,12 @@ func (q *Queries) TenantCI(ctx context.Context) (Tenant, error) {
 }
 
 const tenantCreate = `-- name: TenantCreate :one
-INSERT INTO
-	tenants (name, description)
-VALUES
-	($1, $2)
+INSERT INTO tenants(
+	name,
+	description)
+VALUES (
+	$1,
+	$2)
 RETURNING
 	id, name, description, created, last_modified, ci, upgrade_delay_days
 `
@@ -73,9 +75,10 @@ FROM
 	JOIN tenants t ON e.tenant_id = t.id
 WHERE
 	-- If @all is false, only return environments with reconcile enabled
-	CASE
-		WHEN TRUE = $1::BOOLEAN THEN TRUE
-		ELSE e.reconcile = TRUE
+	CASE WHEN TRUE = $1::BOOLEAN THEN
+		TRUE
+	ELSE
+		e.reconcile = TRUE
 	END
 ORDER BY
 	t.name,
@@ -183,7 +186,8 @@ func (q *Queries) TenantGetByName(ctx context.Context, name string) (Tenant, err
 }
 
 const tenantSetUpgradeDelayDays = `-- name: TenantSetUpgradeDelayDays :one
-UPDATE tenants
+UPDATE
+	tenants
 SET
 	upgrade_delay_days = $1
 WHERE

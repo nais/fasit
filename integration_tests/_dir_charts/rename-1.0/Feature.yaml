@@ -1,7 +1,6 @@
 environmentKinds:
   - "tenant"
   - "management"
-
 values:
   myValue:
     config:
@@ -9,7 +8,6 @@ values:
   nested.key:
     config:
       type: string
-
   nested.computed.key:
     config:
       type: string

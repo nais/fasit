@@ -10,51 +10,48 @@ import (
 )
 
 const clusterOperationCreateOrUpdate = `-- name: ClusterOperationCreateOrUpdate :one
-INSERT INTO
-	cluster_operations (
-		"id",
-		"operation_name",
-		"tenant_id",
-		"environment_id",
-		"upgrade_id",
-		"status",
-		"target",
-		"type",
-		"detail",
-		"nodes_total",
-		"nodes_failed",
-		"nodes_completed",
-		"nodes_done",
-		"node_pdb_delay_seconds"
-	)
-VALUES
-	(
-		$1,
-		$2,
-		$3,
-		$4,
-		$5,
-		$6,
-		$7,
-		$8,
-		$9,
-		$10,
-		$11,
-		$12,
-		$13,
-		$14
-	)
-ON CONFLICT ("id") DO UPDATE
-SET
-	"status" = EXCLUDED.status,
-	"detail" = EXCLUDED.detail,
-	"nodes_total" = EXCLUDED.nodes_total,
-	"nodes_failed" = EXCLUDED.nodes_failed,
-	"nodes_completed" = EXCLUDED.nodes_completed,
-	"nodes_done" = EXCLUDED.nodes_done,
-	"node_pdb_delay_seconds" = EXCLUDED.node_pdb_delay_seconds
-RETURNING
-	id, operation_name, tenant_id, environment_id, upgrade_id, status, type, detail, target, nodes_total, nodes_failed, nodes_completed, nodes_done, node_pdb_delay_seconds, start_time, last_modified
+INSERT INTO cluster_operations(
+	"id",
+	"operation_name",
+	"tenant_id",
+	"environment_id",
+	"upgrade_id",
+	"status",
+	"target",
+	"type",
+	"detail",
+	"nodes_total",
+	"nodes_failed",
+	"nodes_completed",
+	"nodes_done",
+	"node_pdb_delay_seconds")
+VALUES (
+	$1,
+	$2,
+	$3,
+	$4,
+	$5,
+	$6,
+	$7,
+	$8,
+	$9,
+	$10,
+	$11,
+	$12,
+	$13,
+	$14)
+ON CONFLICT (
+	"id")
+	DO UPDATE SET
+		"status" = EXCLUDED.status,
+		"detail" = EXCLUDED.detail,
+		"nodes_total" = EXCLUDED.nodes_total,
+		"nodes_failed" = EXCLUDED.nodes_failed,
+		"nodes_completed" = EXCLUDED.nodes_completed,
+		"nodes_done" = EXCLUDED.nodes_done,
+		"node_pdb_delay_seconds" = EXCLUDED.node_pdb_delay_seconds
+	RETURNING
+		id, operation_name, tenant_id, environment_id, upgrade_id, status, type, detail, target, nodes_total, nodes_failed, nodes_completed, nodes_done, node_pdb_delay_seconds, start_time, last_modified
 `
 
 type ClusterOperationCreateOrUpdateParams struct {
@@ -124,8 +121,7 @@ WHERE
 	AND "status" = $3
 ORDER BY
 	"start_time" DESC
-LIMIT
-	1
+LIMIT 1
 `
 
 type ClusterOperationGetParams struct {

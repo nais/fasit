@@ -6,10 +6,8 @@ on:
     paths:
       - "schema/jsonschema/feature.json"
       - ".github/workflows/push_jsonschema.yaml"
-
 env:
   BUCKET: "fasit-jsonschema"
-
 jobs:
   upload_jsonschema:
     permissions:

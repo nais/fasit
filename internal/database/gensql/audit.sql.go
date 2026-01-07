@@ -8,10 +8,16 @@ import (
 )
 
 const auditCreate = `-- name: AuditCreate :exec
-INSERT INTO
-	audits (actor, description, object_type, object_id)
-VALUES
-	($1, $2, $3, $4)
+INSERT INTO audits(
+	actor,
+	description,
+	object_type,
+	object_id)
+VALUES (
+	$1,
+	$2,
+	$3,
+	$4)
 `
 
 type AuditCreateParams struct {
@@ -37,14 +43,14 @@ SELECT
 FROM
 	audits
 WHERE
-	CASE
-		WHEN $1::TEXT != '' THEN object_id = CONCAT($2::TEXT, ':', $1::TEXT)
-		ELSE STARTS_WITH(object_id, $2::TEXT)
+	CASE WHEN $1::TEXT != '' THEN
+		object_id = CONCAT($2::TEXT, ':', $1::TEXT)
+	ELSE
+		STARTS_WITH(object_id, $2::TEXT)
 	END
 ORDER BY
 	created_at DESC
-LIMIT
-	$3
+LIMIT $3
 `
 
 type AuditForEnvironmentParams struct {
@@ -90,8 +96,7 @@ WHERE
 	AND object_type = 'cluster_upgrades'
 ORDER BY
 	created_at DESC
-LIMIT
-	1
+LIMIT 1
 `
 
 func (q *Queries) AuditGetLatestForClusterUpgrade(ctx context.Context, upgradeID string) (Audit, error) {

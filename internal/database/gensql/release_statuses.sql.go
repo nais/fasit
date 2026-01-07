@@ -11,32 +11,30 @@ import (
 )
 
 const releaseStatusCreateOrUpdate = `-- name: ReleaseStatusCreateOrUpdate :one
-INSERT INTO
-	release_statuses (
-		environment_id,
-		feature,
-		version,
-		status,
-		revision,
-		last_deployed
-	)
-VALUES
-	(
-		$1,
-		$2,
-		$3,
-		$4,
-		$5,
-		$6
-	)
-ON CONFLICT (environment_id, feature) DO UPDATE
-SET
-	version = EXCLUDED.version,
-	status = EXCLUDED.status,
-	revision = EXCLUDED.revision,
-	last_deployed = EXCLUDED.last_deployed
-RETURNING
-	environment_id, feature, version, status, revision, last_deployed, created, last_modified
+INSERT INTO release_statuses(
+	environment_id,
+	feature,
+	version,
+	status,
+	revision,
+	last_deployed)
+VALUES (
+	$1,
+	$2,
+	$3,
+	$4,
+	$5,
+	$6)
+ON CONFLICT (
+	environment_id,
+	feature)
+	DO UPDATE SET
+		version = EXCLUDED.version,
+		status = EXCLUDED.status,
+		revision = EXCLUDED.revision,
+		last_deployed = EXCLUDED.last_deployed
+	RETURNING
+		environment_id, feature, version, status, revision, last_deployed, created, last_modified
 `
 
 type ReleaseStatusCreateOrUpdateParams struct {
@@ -73,8 +71,7 @@ func (q *Queries) ReleaseStatusCreateOrUpdate(ctx context.Context, arg ReleaseSt
 
 const releaseStatusDeleteByEnvironment = `-- name: ReleaseStatusDeleteByEnvironment :exec
 DELETE FROM release_statuses
-WHERE
-	environment_id = $1
+WHERE environment_id = $1
 `
 
 func (q *Queries) ReleaseStatusDeleteByEnvironment(ctx context.Context, environmentID uuid.UUID) error {

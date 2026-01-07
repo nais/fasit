@@ -3,7 +3,6 @@ on:
   push:
     tags:
       - "naisd-*"
-
 env:
   CHART_PATH: "charts/naisd"
   HELM_VERSION: "3.10.2"
@@ -11,7 +10,6 @@ env:
   RUNNER_IMG: "gcr.io/distroless/static-debian11:nonroot"
   BASEIMG_IDENTITY: "keyless@distroless.iam.gserviceaccount.com"
   BASEIMG_ISSUER: "https://accounts.google.com"
-
 jobs:
   naisd_tests:
     outputs:
@@ -31,7 +29,6 @@ jobs:
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@latest
           govulncheck ./...
-
   build_and_push_naisd:
     needs: [naisd_tests]
     permissions:
@@ -59,7 +56,6 @@ jobs:
           google_service_account: gh-fasit
           workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
           push: ${{ github.actor != 'dependabot[bot]' }}
-
   build_push_naisd_chart:
     name: Build and push chart
     needs: [build_and_push_naisd]
@@ -73,12 +69,10 @@ jobs:
       version: ${{ steps.build_chart.outputs.version }}
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # ratchet:actions/checkout@v6
-
       - uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # ratchet:azure/setup-helm@v4
         name: "Setup Helm"
         with:
           version: ${{ env.HELM_VERSION }}
-
       - name: Build Chart
         id: build_chart
         run: |-
@@ -96,7 +90,6 @@ jobs:
           echo "name=$name" >> $GITHUB_OUTPUT
           echo "chart=$name-$new_version.tgz" >> $GITHUB_OUTPUT
           echo "version=$new_version" >> $GITHUB_OUTPUT
-
       - id: "auth"
         name: "Authenticate to Google Cloud"
         uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # ratchet:google-github-actions/auth@v3
@@ -104,17 +97,14 @@ jobs:
           workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
           service_account: "gh-fasit@nais-io.iam.gserviceaccount.com"
           token_format: "access_token"
-
       - name: "Log in to Google Artifact Registry"
         run: |-
           echo '${{ steps.auth.outputs.access_token }}' | docker login -u oauth2accesstoken --password-stdin https://${{ env.GOOGLE_REGISTRY }}
-
       - name: Push Chart
         run: |-
           chart="${{ steps.build_chart.outputs.chart }}"
           echo "Pushing: $chart"
           helm push "$chart" oci://${{ env.GOOGLE_REGISTRY }}/nais-io/nais/feature
-
   rollout_naisd:
     needs: [build_push_naisd_chart, build_and_push_naisd]
     runs-on: fasit-deploy

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #MISE description="Generate SQL functions and models"
-#MISE depends=["fmt:prettier"]
+#MISE depends=["fmt:sql"]
 #MISE depends_post=["fmt:go"]
 set -euo pipefail
 

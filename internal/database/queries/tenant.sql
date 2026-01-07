@@ -4,8 +4,7 @@ SELECT
 FROM
 	tenants
 WHERE
-	id = @id
-;
+	id = @id;
 
 -- name: TenantGetByName :one
 SELECT
@@ -13,8 +12,7 @@ SELECT
 FROM
 	tenants
 WHERE
-	name = @name
-;
+	name = @name;
 
 -- name: TenantsGet :many
 SELECT
@@ -23,27 +21,27 @@ FROM
 	tenants
 ORDER BY
 	created DESC,
-	name ASC
-;
+	name ASC;
 
 -- name: TenantCreate :one
-INSERT INTO
-	tenants (name, description)
-VALUES
-	(@name, @description)
+INSERT INTO tenants(
+	name,
+	description)
+VALUES (
+	@name,
+	@description)
 RETURNING
-	*
-;
+	*;
 
 -- name: TenantSetUpgradeDelayDays :one
-UPDATE tenants
+UPDATE
+	tenants
 SET
 	upgrade_delay_days = @upgrade_delay_days
 WHERE
 	id = @id
 RETURNING
-	*
-;
+	*;
 
 -- name: TenantEnvironments :many
 SELECT
@@ -54,14 +52,14 @@ FROM
 	JOIN tenants t ON e.tenant_id = t.id
 WHERE
 	-- If @all is false, only return environments with reconcile enabled
-	CASE
-		WHEN TRUE = sqlc.arg('all')::BOOLEAN THEN TRUE
-		ELSE e.reconcile = TRUE
+	CASE WHEN TRUE = sqlc.arg('all')::BOOLEAN THEN
+		TRUE
+	ELSE
+		e.reconcile = TRUE
 	END
 ORDER BY
 	t.name,
-	e.name
-;
+	e.name;
 
 -- name: TenantCI :one
 SELECT
@@ -69,5 +67,5 @@ SELECT
 FROM
 	tenants
 WHERE
-	ci = TRUE
-;
+	ci = TRUE;
+

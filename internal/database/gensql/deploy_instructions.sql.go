@@ -37,24 +37,20 @@ func (q *Queries) DeployInstructionsByID(ctx context.Context, id uuid.UUID) (Dep
 }
 
 const deployInstructionsCreate = `-- name: DeployInstructionsCreate :one
-INSERT INTO
-	deploy_instructions (
-		environment_id,
-		feature_name,
-		feature_version,
-		hash,
-		"values",
-		deployment_id
-	)
-VALUES
-	(
-		$1,
-		$2,
-		$3,
-		$4,
-		$5,
-		$6
-	)
+INSERT INTO deploy_instructions(
+	environment_id,
+	feature_name,
+	feature_version,
+	hash,
+	"values",
+	deployment_id)
+VALUES (
+	$1,
+	$2,
+	$3,
+	$4,
+	$5,
+	$6)
 RETURNING
 	id
 `
@@ -92,10 +88,7 @@ WHERE
 	AND environment_id = $2
 ORDER BY
 	created DESC
-LIMIT
-	10
-OFFSET
-	$3
+LIMIT 10 OFFSET $3
 `
 
 type DeployInstructionsForFeatureParams struct {
@@ -174,17 +167,15 @@ SELECT
 FROM
 	deploy_instructions
 WHERE
-	id IN (
-		SELECT DISTINCT
-			ON (feature_name) id
+	id IN ( SELECT DISTINCT ON (feature_name)
+			id
 		FROM
 			deploy_instructions di
 		WHERE
 			di.environment_id = $1
 		ORDER BY
 			feature_name,
-			created DESC
-	)
+			created DESC)
 `
 
 func (q *Queries) DeployInstructionsLatestForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]DeployInstruction, error) {
@@ -228,8 +219,7 @@ WHERE
 	AND environment_id = $2
 ORDER BY
 	created DESC
-LIMIT
-	1
+LIMIT 1
 `
 
 type DeployInstructionsLatestForFeatureParams struct {
@@ -256,42 +246,37 @@ func (q *Queries) DeployInstructionsLatestForFeature(ctx context.Context, arg De
 }
 
 const deployInstructionsPrevious = `-- name: DeployInstructionsPrevious :one
-WITH
-	current AS (
-		SELECT
-			di.id, di.environment_id, di.feature_name, di.feature_version, di.status, di.hash, di.created, di.last_modified, di.values, di.deployment_id
-		FROM
-			deploy_instructions di
-		WHERE
-			di.id = $1
-	)
+WITH CURRENT AS (
+	SELECT
+		di.id, di.environment_id, di.feature_name, di.feature_version, di.status, di.hash, di.created, di.last_modified, di.values, di.deployment_id
+	FROM
+		deploy_instructions di
+	WHERE
+		di.id = $1
+)
 SELECT
 	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, deployment_id
 FROM
 	deploy_instructions
 WHERE
-	feature_name = (
+	feature_name =(
 		SELECT
 			feature_name
 		FROM
-			current
-	)
-	AND environment_id = (
+			CURRENT)
+	AND environment_id =(
 		SELECT
 			environment_id
 		FROM
-			current
-	)
-	AND created < (
+			CURRENT)
+	AND created <(
 		SELECT
 			created
 		FROM
-			current
-	)
+			CURRENT)
 ORDER BY
 	created DESC
-LIMIT
-	1
+LIMIT 1
 `
 
 func (q *Queries) DeployInstructionsPrevious(ctx context.Context, id uuid.UUID) (DeployInstruction, error) {
@@ -313,7 +298,8 @@ func (q *Queries) DeployInstructionsPrevious(ctx context.Context, id uuid.UUID) 
 }
 
 const deployInstructionsUpdateStatus = `-- name: DeployInstructionsUpdateStatus :exec
-UPDATE deploy_instructions
+UPDATE
+	deploy_instructions
 SET
 	status = $1
 WHERE
@@ -355,7 +341,8 @@ func (q *Queries) NamesFromDeployInstruction(ctx context.Context, id uuid.UUID) 
 }
 
 const timeoutDeployInstructions = `-- name: TimeoutDeployInstructions :exec
-UPDATE deploy_instructions
+UPDATE
+	deploy_instructions
 SET
 	status = 'failed'
 WHERE

@@ -6,8 +6,7 @@ FROM
 WHERE
 	kind = @environment_kind
 ORDER BY
-	feature
-;
+	feature;
 
 -- name: AutoInstallNamesForKind :many
 SELECT
@@ -17,5 +16,5 @@ FROM
 WHERE
 	kind = @environment_kind
 ORDER BY
-	feature
-;
+	feature;
+

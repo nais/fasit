@@ -17,11 +17,10 @@ SELECT
 FROM
 	tenants t
 	JOIN environments e ON e.tenant_id = t.id
-	AND e.name = $1
+		AND e.name = $1
 WHERE
 	t.name = $2
-LIMIT
-	1
+LIMIT 1
 `
 
 type EnvironmentByNamesParams struct {
@@ -82,10 +81,16 @@ func (q *Queries) EnvironmentCI(ctx context.Context, kind EnvironmentKind) (Envi
 }
 
 const environmentCreate = `-- name: EnvironmentCreate :one
-INSERT INTO
-	environments (name, description, tenant_id, kind)
-VALUES
-	($1, $2, $3, $4)
+INSERT INTO environments(
+	name,
+	description,
+	tenant_id,
+	kind)
+VALUES (
+	$1,
+	$2,
+	$3,
+	$4)
 RETURNING
 	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade, upgrade_delay_days, maintenance_window, labels
 `
@@ -211,11 +216,10 @@ SELECT
 FROM
 	tenants p
 	JOIN environments e ON e.tenant_id = p.id
-	AND e.name = $1
+		AND e.name = $1
 WHERE
 	p.name = $2
-LIMIT
-	1
+LIMIT 1
 `
 
 type EnvironmentIDByNamesParams struct {
@@ -231,7 +235,8 @@ func (q *Queries) EnvironmentIDByNames(ctx context.Context, arg EnvironmentIDByN
 }
 
 const environmentSetAutoUpgrade = `-- name: EnvironmentSetAutoUpgrade :one
-UPDATE environments
+UPDATE
+	environments
 SET
 	auto_upgrade = $1
 WHERE
@@ -267,7 +272,8 @@ func (q *Queries) EnvironmentSetAutoUpgrade(ctx context.Context, arg Environment
 }
 
 const environmentSetLabels = `-- name: EnvironmentSetLabels :exec
-UPDATE environments
+UPDATE
+	environments
 SET
 	labels = $1
 WHERE
@@ -285,7 +291,8 @@ func (q *Queries) EnvironmentSetLabels(ctx context.Context, arg EnvironmentSetLa
 }
 
 const environmentSetMaintenanceWindow = `-- name: EnvironmentSetMaintenanceWindow :one
-UPDATE environments
+UPDATE
+	environments
 SET
 	maintenance_window = $1
 WHERE
@@ -321,7 +328,8 @@ func (q *Queries) EnvironmentSetMaintenanceWindow(ctx context.Context, arg Envir
 }
 
 const environmentSetReconcile = `-- name: EnvironmentSetReconcile :one
-UPDATE environments
+UPDATE
+	environments
 SET
 	reconcile = $1
 WHERE
@@ -357,7 +365,8 @@ func (q *Queries) EnvironmentSetReconcile(ctx context.Context, arg EnvironmentSe
 }
 
 const environmentSetUpgradeDelayDays = `-- name: EnvironmentSetUpgradeDelayDays :one
-UPDATE environments
+UPDATE
+	environments
 SET
 	upgrade_delay_days = $1
 WHERE
@@ -393,7 +402,8 @@ func (q *Queries) EnvironmentSetUpgradeDelayDays(ctx context.Context, arg Enviro
 }
 
 const environmentUpdate = `-- name: EnvironmentUpdate :one
-UPDATE environments
+UPDATE
+	environments
 SET
 	description = $1
 WHERE
@@ -436,9 +446,10 @@ FROM
 WHERE
 	tenant_id = $1
 ORDER BY
-	CASE
-		WHEN name = 'management' THEN 1
-		ELSE 2
+	CASE WHEN name = 'management' THEN
+		1
+	ELSE
+		2
 	END,
 	name ASC
 `
@@ -485,9 +496,10 @@ FROM
 WHERE
 	auto_upgrade = TRUE
 ORDER BY
-	CASE
-		WHEN name = 'management' THEN 1
-		ELSE 2
+	CASE WHEN name = 'management' THEN
+		1
+	ELSE
+		2
 	END,
 	name ASC
 `

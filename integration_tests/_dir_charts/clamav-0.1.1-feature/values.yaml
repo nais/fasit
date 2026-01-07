@@ -3,7 +3,6 @@
 # Declare variables to be passed into your templates.
 
 gcp: false
-
 muescheli:
   image:
     repository: navikt/muescheli
@@ -37,7 +36,6 @@ daemon:
     runAsNonRoot: true
     runAsUser: 1000
     runAsGroup: 101
-
 podSecurityContext:
   runAsNonRoot: true
   seccompProfile:

@@ -12,8 +12,8 @@ import (
 )
 
 const deployInstructionsGetDeployedFeatures = `-- name: DeployInstructionsGetDeployedFeatures :many
-SELECT DISTINCT
-	ON (feature_name) feature_name
+SELECT DISTINCT ON (feature_name)
+	feature_name
 FROM
 	deploy_instructions
 WHERE
@@ -50,10 +50,16 @@ func (q *Queries) DeployInstructionsGetDeployedFeatures(ctx context.Context, arg
 }
 
 const deploymentCreate = `-- name: DeploymentCreate :one
-INSERT INTO
-	deployments (feature_name, version, target, gh_ref)
-VALUES
-	($1, $2, $3, $4)
+INSERT INTO deployments(
+	feature_name,
+	version,
+	target,
+	gh_ref)
+VALUES (
+	$1,
+	$2,
+	$3,
+	$4)
 RETURNING
 	id, feature_name, version, target, created, gh_ref
 `
@@ -86,8 +92,7 @@ func (q *Queries) DeploymentCreate(ctx context.Context, arg DeploymentCreatePara
 
 const deploymentDelete = `-- name: DeploymentDelete :exec
 DELETE FROM deployments
-WHERE
-	id = $1
+WHERE id = $1
 `
 
 func (q *Queries) DeploymentDelete(ctx context.Context, id uuid.UUID) error {
@@ -111,7 +116,7 @@ SELECT
 FROM
 	deployments d
 	JOIN feature_data fd ON d.feature_name = fd.name
-	AND d.version = fd.version
+		AND d.version = fd.version
 WHERE
 	d.id = $1
 `
@@ -155,19 +160,22 @@ func (q *Queries) DeploymentGet(ctx context.Context, id uuid.UUID) (DeploymentGe
 }
 
 const deploymentStatusCreateOrUpdate = `-- name: DeploymentStatusCreateOrUpdate :exec
-INSERT INTO
-	deployment_statuses (deployment_id, environment_id, status, message)
-VALUES
-	(
-		$1,
-		$2,
-		$3,
-		$4
-	)
-ON CONFLICT (deployment_id, environment_id) DO UPDATE
-SET
-	status = EXCLUDED.status,
-	message = EXCLUDED.message
+INSERT INTO deployment_statuses(
+	deployment_id,
+	environment_id,
+	status,
+	message)
+VALUES (
+	$1,
+	$2,
+	$3,
+	$4)
+ON CONFLICT (
+	deployment_id,
+	environment_id)
+	DO UPDATE SET
+		status = EXCLUDED.status,
+		message = EXCLUDED.message
 `
 
 type DeploymentStatusCreateOrUpdateParams struct {
@@ -300,8 +308,8 @@ func (q *Queries) DeploymentsGetByFeature(ctx context.Context, featureName strin
 }
 
 const featureDeploymentsForEnvironment = `-- name: FeatureDeploymentsForEnvironment :many
-SELECT DISTINCT
-	ON (d.feature_name, d.target) d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref,
+SELECT DISTINCT ON (d.feature_name, d.target)
+	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref,
 	fd.name,
 	fd.version,
 	fd.chart,
@@ -319,15 +327,15 @@ SELECT DISTINCT
 FROM
 	deployments d
 	JOIN environments e ON e.id = $1
-	AND e.labels @> d.target -- @> operator checks if the JSONB on the left contains the JSONB on the right
+		AND e.labels @> d.target -- @> operator checks if the JSONB on the left contains the JSONB on the right
 	JOIN feature_data fd ON d.feature_name = fd.name
-	AND d.version = fd.version
+		AND d.version = fd.version
 	LEFT JOIN deployment_statuses ds ON ds.deployment_id = d.id
-	AND ds.environment_id = $1
-ORDER BY
-	d.feature_name,
-	d.target,
-	d.created DESC
+		AND ds.environment_id = $1
+	ORDER BY
+		d.feature_name,
+		d.target,
+		d.created DESC
 `
 
 type FeatureDeploymentsForEnvironmentRow struct {
@@ -399,8 +407,7 @@ SELECT
 		WHERE
 			fs.feature = $1
 			AND fs.environment_id = $2
-			AND fs.enabled = FALSE
-	)
+			AND fs.enabled = FALSE)
 `
 
 type FeatureEnabledParams struct {

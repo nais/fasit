@@ -11,7 +11,8 @@ import (
 )
 
 const rolloutAssignDeployInstruction = `-- name: RolloutAssignDeployInstruction :exec
-UPDATE rollouts
+UPDATE
+	rollouts
 SET
 	deploy_instructions = ARRAY_APPEND(deploy_instructions, $1)
 WHERE
@@ -74,7 +75,7 @@ SELECT
 FROM
 	rollouts
 	JOIN feature_data fd ON rollouts.feature_name = fd.name
-	AND rollouts.version = fd.version
+		AND rollouts.version = fd.version
 WHERE
 	fd.name = $1
 	AND rollouts.status = 'pending'
@@ -149,65 +150,60 @@ func (q *Queries) RolloutByNameAndVersion(ctx context.Context, arg RolloutByName
 }
 
 const rolloutCalculateDone = `-- name: RolloutCalculateDone :one
-WITH
-	rollout AS (
-		SELECT
-			id, feature_name, version, status, created, completed, gh_ref, deploy_instructions
-		FROM
-			rollouts
-		WHERE
-			rollouts.id = $1
-	),
-	dis AS (
-		SELECT
-			di.id, di.environment_id, di.feature_name, di.feature_version, di.status, di.hash, di.created, di.last_modified, di.values, di.deployment_id
-		FROM
-			deploy_instructions di
-			INNER JOIN rollout ON di.feature_name = rollout.feature_name
+WITH rollout AS (
+	SELECT
+		id, feature_name, version, status, created, completed, gh_ref, deploy_instructions
+	FROM
+		rollouts
+	WHERE
+		rollouts.id = $1
+),
+dis AS (
+	SELECT
+		di.id, di.environment_id, di.feature_name, di.feature_version, di.status, di.hash, di.created, di.last_modified, di.values, di.deployment_id
+	FROM
+		deploy_instructions di
+		INNER JOIN rollout ON di.feature_name = rollout.feature_name
 			AND di.feature_version = rollout.version
-		WHERE
-			di.status IN ('deployed', 'failed')
-	),
-	cienvs AS (
-		SELECT
-			id
-		FROM
-			environments
-		WHERE
-			ci = TRUE
-	),
-	feature_states AS (
-		SELECT
-			COUNT(1)
-		FROM
-			feature_states
-		WHERE
-			feature = (
-				SELECT
-					feature_name
-				FROM
-					rollout
-			)
+	WHERE
+		di.status IN ('deployed', 'failed')
+),
+cienvs AS (
+	SELECT
+		id
+	FROM
+		environments
+	WHERE
+		ci = TRUE
+),
+feature_states AS (
+	SELECT
+		COUNT(1)
+	FROM
+		feature_states
+	WHERE
+		feature =(
+			SELECT
+				feature_name
+			FROM
+				rollout)
 			AND environment_id IN (
 				SELECT
 					id
 				FROM
-					cienvs
-			)
-			AND enabled = TRUE
-	)
-SELECT
-	(
-		SELECT
-			COUNT(1)
-		FROM
-			dis
-	) = (
+					cienvs)
+				AND enabled = TRUE
+)
+	SELECT
+		(
+			SELECT
+				COUNT(1)
+			FROM
+				dis) =(
 		SELECT
 			count
 		FROM
-			feature_states
-	) AS done
+			feature_states) AS done
 `
 
 func (q *Queries) RolloutCalculateDone(ctx context.Context, rolloutID uuid.UUID) (bool, error) {
@@ -218,7 +214,8 @@ func (q *Queries) RolloutCalculateDone(ctx context.Context, rolloutID uuid.UUID)
 }
 
 const rolloutComplete = `-- name: RolloutComplete :exec
-UPDATE rollouts
+UPDATE
+	rollouts
 SET
 	completed = NOW()
 WHERE
@@ -232,10 +229,14 @@ func (q *Queries) RolloutComplete(ctx context.Context, featureName string) error
 }
 
 const rolloutCreate = `-- name: RolloutCreate :one
-INSERT INTO
-	rollouts (feature_name, version, gh_ref)
-VALUES
-	($1, $2, $3)
+INSERT INTO rollouts(
+	feature_name,
+	version,
+	gh_ref)
+VALUES (
+	$1,
+	$2,
+	$3)
 RETURNING
 	id, feature_name, version, status, created, completed, gh_ref, deploy_instructions
 `
@@ -264,8 +265,7 @@ func (q *Queries) RolloutCreate(ctx context.Context, arg RolloutCreateParams) (R
 
 const rolloutDelete = `-- name: RolloutDelete :exec
 DELETE FROM rollouts
-WHERE
-	feature_name = $1
+WHERE feature_name = $1
 `
 
 func (q *Queries) RolloutDelete(ctx context.Context, featureName string) error {
@@ -274,10 +274,16 @@ func (q *Queries) RolloutDelete(ctx context.Context, featureName string) error {
 }
 
 const rolloutEventCreate = `-- name: RolloutEventCreate :exec
-INSERT INTO
-	rollout_events (rollout_id, failure, message, data)
-VALUES
-	($1, $2::BOOLEAN, $3, $4)
+INSERT INTO rollout_events(
+	rollout_id,
+	failure,
+	message,
+	data)
+VALUES (
+	$1,
+	$2::BOOLEAN,
+	$3,
+	$4)
 `
 
 type RolloutEventCreateParams struct {
@@ -336,7 +342,8 @@ func (q *Queries) RolloutEventForRollout(ctx context.Context, rolloutID uuid.UUI
 }
 
 const rolloutMarkFailed = `-- name: RolloutMarkFailed :execrows
-UPDATE rollouts
+UPDATE
+	rollouts
 SET
 	status = 'failed',
 	completed = NOW()
@@ -371,7 +378,8 @@ func (q *Queries) RolloutStatus(ctx context.Context, featureName string) (string
 }
 
 const rolloutUpdateStatus = `-- name: RolloutUpdateStatus :exec
-UPDATE rollouts
+UPDATE
+	rollouts
 SET
 	status = $1
 WHERE
@@ -396,8 +404,7 @@ FROM
 	rollouts
 ORDER BY
 	created DESC
-LIMIT
-	$1
+LIMIT $1
 `
 
 func (q *Queries) Rollouts(ctx context.Context, limit int32) ([]Rollout, error) {
@@ -438,8 +445,7 @@ WHERE
 	feature_name = $1
 ORDER BY
 	created DESC
-LIMIT
-	30
+LIMIT 30
 `
 
 func (q *Queries) RolloutsForFeature(ctx context.Context, featureName string) ([]Rollout, error) {
@@ -472,51 +478,48 @@ func (q *Queries) RolloutsForFeature(ctx context.Context, featureName string) ([
 }
 
 const rolloutsForKind = `-- name: RolloutsForKind :many
-WITH
-	success AS (
-		SELECT DISTINCT
-			ON (rollouts.feature_name) id,
-			feature_name
-		FROM
-			rollouts
-			JOIN feature_data fd ON rollouts.feature_name = fd.name
+WITH success AS (
+	SELECT DISTINCT ON (rollouts.feature_name)
+		id,
+		feature_name
+	FROM
+		rollouts
+		JOIN feature_data fd ON rollouts.feature_name = fd.name
 			AND rollouts.version = fd.version
-		WHERE
-			$1::environment_kind = ANY (kinds)
-			AND (
-				rollouts.status IN ('pending', 'in_progress', 'deployed')
-			)
-		ORDER BY
-			rollouts.feature_name,
-			rollouts.created DESC
-	),
-	failed AS (
-		SELECT DISTINCT
-			ON (rollouts.feature_name) rollouts.id
-		FROM
-			rollouts
-			LEFT OUTER JOIN success ON success.feature_name = rollouts.feature_name
-			JOIN feature_data fd ON rollouts.feature_name = fd.name
-			AND rollouts.version = fd.version
-		WHERE
-			success.id IS NULL
-			AND $1::environment_kind = ANY (kinds)
-			AND (rollouts.status IN ('failed'))
-		ORDER BY
-			rollouts.feature_name,
-			rollouts.created DESC
-	),
-	all_rollouts AS (
-		SELECT
-			id
-		FROM
-			success
-		UNION
-		SELECT
-			id
-		FROM
-			failed
-	)
+	WHERE
+		$1::environment_kind = ANY (kinds)
+		AND (rollouts.status IN ('pending', 'in_progress', 'deployed'))
+	ORDER BY
+		rollouts.feature_name,
+		rollouts.created DESC
+),
+failed AS (
+	SELECT DISTINCT ON (rollouts.feature_name)
+		rollouts.id
+	FROM
+		rollouts
+		LEFT OUTER JOIN success ON success.feature_name = rollouts.feature_name
+	JOIN feature_data fd ON rollouts.feature_name = fd.name
+		AND rollouts.version = fd.version
+	WHERE
+		success.id IS NULL
+		AND $1::environment_kind = ANY (kinds)
+		AND (rollouts.status IN ('failed'))
+	ORDER BY
+		rollouts.feature_name,
+		rollouts.created DESC
+),
+all_rollouts AS (
+	SELECT
+		id
+	FROM
+		success
+	UNION
+	SELECT
+		id
+	FROM
+		failed
+)
 SELECT
 	rollouts.id,
 	fd.name,
@@ -534,9 +537,9 @@ FROM
 	rollouts
 	JOIN all_rollouts ar ON ar.id = rollouts.id
 	JOIN feature_data fd ON rollouts.feature_name = fd.name
-	AND rollouts.version = fd.version
-ORDER BY
-	rollouts.feature_name ASC
+		AND rollouts.version = fd.version
+	ORDER BY
+		rollouts.feature_name ASC
 `
 
 type RolloutsForKindRow struct {
