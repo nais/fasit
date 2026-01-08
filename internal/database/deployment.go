@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"slices"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -36,7 +37,7 @@ func (r *repo) V3DeploymentStatusesGet(ctx context.Context, deploymentID uuid.UU
 	models := make([]*model.DeploymentStatus, len(rows))
 	for i, status := range rows {
 		models[i] = &model.DeploymentStatus{
-			State:         model.DeploymentStatusState(status.Status),
+			State:         model.DeploymentStatusState(strings.ToUpper(status.Status)),
 			Message:       status.Message,
 			LastModified:  status.LastModified.Time,
 			Created:       status.Created.Time,
