@@ -65,6 +65,29 @@ func (r *queryResolver) Deployments(ctx context.Context, feature *string) ([]*mo
 	return r.Repo.V3DeploymentsGet(ctx)
 }
 
+// Deployment is the resolver for the deployment field.
+func (r *queryResolver) Deployment(ctx context.Context, id uuid.UUID) (*model.Deployment, error) {
+	d, err := r.Repo.V3DeploymentGet(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("get deployment: %w", err)
+	}
+
+	target := make([]*model.EnvironmentLabel, 0)
+	for k, v := range d.Target {
+		target = append(target, &model.EnvironmentLabel{
+			Key:   k,
+			Value: v,
+		})
+	}
+
+	return &model.Deployment{
+		ID:      d.ID,
+		Target:  target,
+		Created: d.Created,
+		Feature: d.Feature,
+	}, nil
+}
+
 // Deployment returns graphgen.DeploymentResolver implementation.
 func (r *Resolver) Deployment() graphgen.DeploymentResolver { return &deploymentResolver{r} }
 

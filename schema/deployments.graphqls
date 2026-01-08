@@ -3,7 +3,8 @@ extend type Mutation {
 }
 
 extend type Query {
-	deployments(feature: String): [Deployment!]!
+    deployments(feature: String): [Deployment!]!
+    deployment(id: ID!): Deployment!
 }
 
 type Deployment {
