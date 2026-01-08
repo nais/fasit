@@ -151,7 +151,7 @@ Test.gql("list deployments by feature with status", function(t)
 									name = "nonci",
 								},
 								message = "received status from naisd.",
-								state = "deployed",
+								state = "DEPLOYED",
 							},
 						},
 						target = {
