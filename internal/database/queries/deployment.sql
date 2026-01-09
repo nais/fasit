@@ -158,5 +158,6 @@ FROM
 WHERE
 	deployment_id = @deployment_id
 ORDER BY
+	last_modified DESC,
 	environment_id ASC;
 

@@ -1,0 +1,6 @@
+environmentKinds:
+  - "tenant"
+  - "management"
+  - "legacy"
+  - "onprem"
+timeout: 10m

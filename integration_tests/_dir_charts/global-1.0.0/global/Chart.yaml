@@ -1,0 +1,8 @@
+apiVersion: v2
+appVersion: 1.16.0
+description: Global
+name: global
+sources:
+  - https://global
+type: application
+version: 1.0.0

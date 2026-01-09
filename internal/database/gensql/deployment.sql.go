@@ -203,6 +203,7 @@ FROM
 WHERE
 	deployment_id = $1
 ORDER BY
+	last_modified DESC,
 	environment_id ASC
 `
 
