@@ -23,6 +23,7 @@ import (
 
 type Store interface {
 	database.FeatureDataRepo
+	database.FeaturesRepo
 	database.DeploymentRepo
 	database.Transaction
 }
@@ -48,10 +49,11 @@ type Claims struct {
 }
 
 type Request struct {
-	ChartURL    string             `json:"chartUrl"`
+	Chart       string             `json:"chart"`
 	Version     string             `json:"version"`
 	Description string             `json:"description"`
 	Ref         *model.GHRef       `json:"ref"`
+	Global      bool               `json:"global"`
 	Target      environment.Labels `json:"target"`
 }
 
@@ -118,7 +120,7 @@ func (d *Deployment) CreateDeployment(w http.ResponseWriter, req *http.Request) 
 		return
 	}
 
-	feat, err := model.FromChart(body.ChartURL, body.Version)
+	feat, err := model.FromChart(body.Chart, body.Version)
 	if err != nil {
 		http.Error(w, "Unable to convert oci chart: "+err.Error(), http.StatusBadRequest)
 		return
@@ -163,6 +165,12 @@ func (d *Deployment) CreateDeployment(w http.ResponseWriter, req *http.Request) 
 		http.Error(w, "unable to create deployment", http.StatusInternalServerError)
 		d.log.WithError(err).Error("create deployment")
 		return
+	}
+
+	if body.Global {
+		if err := d.repo.FeatureVersionUpdate(ctx, feat.Name, body.Version); err != nil {
+			http.Error(w, "unable to update feature version", http.StatusInternalServerError)
+		}
 	}
 
 	w.WriteHeader(http.StatusCreated)

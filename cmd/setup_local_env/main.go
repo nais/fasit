@@ -194,6 +194,9 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
+		if err := db.FeatureVersionUpdate(ctx, d.FeatureName, d.Version); err != nil {
+			panic(err)
+		}
 	}
 	for tenantName, environments := range envs {
 		_, err := grpcClient.CreateTenant(ctx, &protogen.CreateTenantRequest{Name: tenantName})

@@ -5,7 +5,7 @@ Helper.CreateEnvironment(tenantID, "nonci", "tenant", false, false, { kind = "te
 Test.rest("create deployment", function(t)
 	t.send("POST", "/github/deployment", [[
 		{
-			"chartUrl": "oci://clamav",
+			"chart": "oci://clamav",
 			"version": "0.1.0-feature",
 			"target" : {
 				"kind": "tenant"
@@ -21,7 +21,7 @@ end)
 Test.rest("create second deployment", function(t)
 	t.send("POST", "/github/deployment", [[
 		{
-			"chartUrl": "oci://allenvs",
+			"chart": "oci://allenvs",
 			"version": "1.0.0",
 			"target" : {
 				"kind": "tenant"
