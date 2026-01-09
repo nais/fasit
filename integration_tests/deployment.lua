@@ -200,7 +200,7 @@ end)
 Test.rest("create global deployment", function(t)
 	t.send("POST", "/github/deployment", [[
 		{
-			"chartUrl": "oci://global",
+			"chart": "oci://global",
 			"version": "1.0.0",
 			"target": {}
 		}
