@@ -28,6 +28,65 @@ type Store interface {
 	database.Transaction
 }
 
+type HttpError struct {
+	Message string
+	Code    int
+	err     error
+}
+
+func (e *HttpError) Error() string {
+	msg := e.Message
+	if e.err != nil {
+		msg += ": " + e.err.Error()
+	}
+	return msg
+}
+
+func (e *HttpError) Unwrap() error {
+	return e.err
+}
+
+func CreateDeployment(ctx context.Context, repo Store, req *Request) (uuid.UUID, error) {
+	feat, err := model.FromChart(req.Chart, req.Version)
+	if err != nil {
+		return uuid.Nil, &HttpError{err: err, Message: "Unable to convert oci chart", Code: http.StatusBadRequest}
+	}
+
+	// TODO: if we remove kind as a concept we need to change featureData table and logic
+	if len(feat.EnvironmentKinds) == 0 {
+		return uuid.Nil, &HttpError{err: err, Message: "No environments defined in Feature.yaml", Code: http.StatusBadRequest}
+	}
+
+	if feat.Source == "" {
+		return uuid.Nil, &HttpError{err: err, Message: "No source url found in Chart.yaml", Code: http.StatusBadRequest}
+	}
+
+	details, err := feature.ParseTemplateDetails(feat.FeatureYAML.Values)
+	if err != nil {
+		return uuid.Nil, &HttpError{err: err, Message: "Unable to parse feature template details", Code: http.StatusBadRequest}
+	}
+
+	if err := repo.FeatureDataCreate(ctx, *feat, details); err != nil {
+		var pgErr *pgconn.PgError
+		if !errors.As(err, &pgErr) || pgErr.Code != "23505" {
+			return uuid.Nil, &HttpError{err: err, Message: "Unable to create feature data", Code: http.StatusInternalServerError}
+		}
+	}
+
+	deployment, err := repo.V3DeploymentCreate(ctx, feat.Name, req.Version, req.Ref, req.Target)
+	if err != nil {
+		return uuid.Nil, &HttpError{err: err, Message: "Unable to create deployment", Code: http.StatusInternalServerError}
+	}
+
+	if req.Global {
+		if err := repo.FeatureVersionUpdate(ctx, feat.Name, req.Version); err != nil {
+			return uuid.Nil, &HttpError{err: err, Message: "Unable to update feature version", Code: http.StatusInternalServerError}
+		}
+	}
+
+	return deployment.ID, nil
+}
+
 type Deployment struct {
 	provider *oidc.Provider
 	verifier *oidc.IDTokenVerifier
@@ -120,74 +179,32 @@ func (d *Deployment) CreateDeployment(w http.ResponseWriter, req *http.Request) 
 		return
 	}
 
-	feat, err := model.FromChart(body.Chart, body.Version)
-	if err != nil {
-		http.Error(w, "Unable to convert oci chart: "+err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	// TODO: if we remove kind as a concept we need to change featureData table and logic
-	if len(feat.EnvironmentKinds) == 0 {
-		http.Error(w, "No environments defined in Feature.yaml", http.StatusBadRequest)
-		return
-	}
-
-	if feat.Source == "" {
-		http.Error(w, "No source url found in Chart.yaml", http.StatusBadRequest)
-		return
-	}
-
-	details, err := feature.ParseTemplateDetails(feat.FeatureYAML.Values)
-	if err != nil {
-		http.Error(w, "Unable to parse feature template details: "+err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	if err := d.repo.FeatureDataCreate(ctx, *feat, details); err != nil {
-		var pgErr *pgconn.PgError
-		if !errors.As(err, &pgErr) || pgErr.Code != "23505" {
-			http.Error(w, "unable to create feature data", http.StatusInternalServerError)
-			d.log.WithError(err).Error("create feature data")
-			return
-		}
-	}
-
 	if ref := body.Ref; ref != nil {
-		// Make sure all fields are set
 		if ref.Owner == "" || ref.Repo == "" || ref.Ref == "" {
 			http.Error(w, "invalid ref, missing owner, repo or ref", http.StatusBadRequest)
 			return
 		}
 	}
 
-	deployment, err := d.repo.V3DeploymentCreate(ctx, feat.Name, body.Version, body.Ref, body.Target)
+	deploymentID, err := CreateDeployment(ctx, d.repo, body)
 	if err != nil {
-		http.Error(w, "unable to create deployment", http.StatusInternalServerError)
+		var httpErr *HttpError
+		if errors.As(err, &httpErr) {
+			http.Error(w, httpErr.Error(), httpErr.Code)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+
 		d.log.WithError(err).Error("create deployment")
 		return
 	}
 
-	if body.Global {
-		if err := d.repo.FeatureVersionUpdate(ctx, feat.Name, body.Version); err != nil {
-			http.Error(w, "unable to update feature version", http.StatusInternalServerError)
-		}
-	}
-
 	w.WriteHeader(http.StatusCreated)
 	_ = json.NewEncoder(w).Encode(map[string]any{
-		"id": deployment.ID.String(),
+		"id": deploymentID.String(),
 	})
 
-	select {
-	case d.reconcileTrigger <- ReconcileTriggerEvent{
-		DeploymentID:   deployment.ID,
-		FeatureName:    feat.Name,
-		FeatureVersion: body.Version,
-		Type:           ReconcileTriggerEventTypeNewDeployment,
-	}:
-	default:
-		d.log.Debug("there is already a reconcile event queued, skipping")
-	}
+	TriggerReconcile(ReconcileTriggerEvent{}, d.reconcileTrigger, d.log)
 }
 
 func (d *Deployment) validateToken(w http.ResponseWriter, req *http.Request) (actor string, ok bool) {

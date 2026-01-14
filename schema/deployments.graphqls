@@ -1,10 +1,19 @@
 extend type Mutation {
+    createDeployment(input: CreateDeploymentInput!): ID!
 	deleteDeployment(deploymentID: ID!): Boolean!
 }
 
 extend type Query {
     deployments(feature: String): [Deployment!]!
     deployment(id: ID!): Deployment!
+}
+
+input CreateDeploymentInput {
+    chart: String!
+    version: String!
+    description: String!
+    global: Boolean!
+    target: String!
 }
 
 type Deployment {

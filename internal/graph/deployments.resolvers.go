@@ -8,8 +8,12 @@ package graph
 import (
 	"context"
 	"fmt"
+	"strings"
 
+	"github.com/go-jose/go-jose/v4/json"
 	"github.com/google/uuid"
+	"github.com/nais/fasit/internal/deployment"
+	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph/graphgen"
 	"github.com/nais/fasit/internal/graph/model"
 )
@@ -45,6 +49,33 @@ func (r *deploymentStatusResolver) Deployment(ctx context.Context, obj *model.De
 // Environment is the resolver for the environment field.
 func (r *deploymentStatusResolver) Environment(ctx context.Context, obj *model.DeploymentStatus) (*model.Environment, error) {
 	return r.Repo.EnvironmentGet(ctx, obj.EnvironmentID)
+}
+
+// CreateDeployment is the resolver for the createDeployment field.
+func (r *mutationResolver) CreateDeployment(ctx context.Context, input model.CreateDeploymentInput) (uuid.UUID, error) {
+	if input.Target == "" {
+		return uuid.Nil, fmt.Errorf("target must be a valid JSON string")
+	}
+
+	target := make(environment.Labels)
+	if err := json.NewDecoder(strings.NewReader(input.Target)).Decode(&target); err != nil {
+		return uuid.Nil, fmt.Errorf("invalid target: %w", err)
+	}
+
+	id, err := deployment.CreateDeployment(ctx, r.Repo, &deployment.Request{
+		Chart:       input.Chart,
+		Version:     input.Version,
+		Description: input.Description,
+		Global:      input.Global,
+		Target:      target,
+	})
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("create deployment: %w", err)
+	}
+
+	deployment.TriggerReconcile(deployment.ReconcileTriggerEvent{}, r.deploymentsTrigger, r.Log)
+
+	return id, nil
 }
 
 // DeleteDeployment is the resolver for the deleteDeployment field.

@@ -40,12 +40,7 @@ type Publisher interface {
 
 type NewPublisher func(topicID string, log logrus.FieldLogger) Publisher
 
-type ReconcileTriggerEvent struct {
-	DeploymentID   uuid.UUID
-	FeatureName    string
-	FeatureVersion string
-	Type           ReconcileTriggerEventType
-}
+type ReconcileTriggerEvent struct{}
 
 type ReconcileTriggerEventType int
 
@@ -96,13 +91,11 @@ func NewReconciler(
 }
 
 func TriggerReconcile(event ReconcileTriggerEvent, trigger chan<- ReconcileTriggerEvent, log logrus.FieldLogger) {
-	go func() {
-		select {
-		case trigger <- event:
-		default:
-			log.Debug("there is already a reconcile event queued, skipping")
-		}
-	}()
+	select {
+	case trigger <- event:
+	default:
+		log.Debug("there is already a reconcile event queued, skipping")
+	}
 }
 
 func (r *Reconciler) Run(ctx context.Context, interval time.Duration) {
@@ -115,13 +108,8 @@ func (r *Reconciler) Run(ctx context.Context, interval time.Duration) {
 		case <-ctx.Done():
 			return
 		case <-time.After(interval):
-		case e := <-r.reconcileTrigger:
-			r.log.WithFields(logrus.Fields{
-				"deployment_id":   e.DeploymentID,
-				"feature_name":    e.FeatureName,
-				"feature_version": e.FeatureVersion,
-				"type":            e.Type,
-			}).Info("manual reconcile triggered")
+		case <-r.reconcileTrigger:
+			r.log.Info("manual reconcile triggered")
 		}
 	}
 }

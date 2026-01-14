@@ -61,6 +61,14 @@ type CostFilter struct {
 	EndDate *time.Time `json:"endDate,omitempty"`
 }
 
+type CreateDeploymentInput struct {
+	Chart       string `json:"chart"`
+	Version     string `json:"version"`
+	Description string `json:"description"`
+	Global      bool   `json:"global"`
+	Target      string `json:"target"`
+}
+
 // EnvironmentCreate contains metadata for creating an environment
 type EnvironmentCreate struct {
 	Name        string          `json:"name"`

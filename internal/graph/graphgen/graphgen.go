@@ -328,6 +328,7 @@ type ComplexityRoot struct {
 		ConfigurationCreate             func(childComplexity int, configuration model.NewConfiguration) int
 		ConfigurationDelete             func(childComplexity int, id uuid.UUID) int
 		ConfigurationUpdate             func(childComplexity int, id uuid.UUID, configuration model.UpdateConfiguration) int
+		CreateDeployment                func(childComplexity int, input model.CreateDeploymentInput) int
 		DeleteDeployment                func(childComplexity int, deploymentID uuid.UUID) int
 		DeleteHelmInstall               func(childComplexity int, envID uuid.UUID, name string) int
 		EnvironmentCreate               func(childComplexity int, environment model.EnvironmentCreate) int
@@ -543,6 +544,7 @@ type MutationResolver interface {
 	ConfigurationCreate(ctx context.Context, configuration model.NewConfiguration) (*model.Configuration, error)
 	ConfigurationUpdate(ctx context.Context, id uuid.UUID, configuration model.UpdateConfiguration) (*model.Configuration, error)
 	ConfigurationDelete(ctx context.Context, id uuid.UUID) (bool, error)
+	CreateDeployment(ctx context.Context, input model.CreateDeploymentInput) (uuid.UUID, error)
 	DeleteDeployment(ctx context.Context, deploymentID uuid.UUID) (bool, error)
 	EnvironmentCreate(ctx context.Context, environment model.EnvironmentCreate) (*model.Environment, error)
 	EnvironmentUpdate(ctx context.Context, id uuid.UUID, input model.EnvironmentUpdate) (*model.Environment, error)
@@ -1684,6 +1686,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.ConfigurationUpdate(childComplexity, args["id"].(uuid.UUID), args["configuration"].(model.UpdateConfiguration)), true
+	case "Mutation.createDeployment":
+		if e.complexity.Mutation.CreateDeployment == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createDeployment_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateDeployment(childComplexity, args["input"].(model.CreateDeploymentInput)), true
 	case "Mutation.deleteDeployment":
 		if e.complexity.Mutation.DeleteDeployment == nil {
 			break
@@ -2398,6 +2411,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	ec := executionContext{opCtx, e, 0, 0, make(chan graphql.DeferredResult)}
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
 		ec.unmarshalInputCostFilter,
+		ec.unmarshalInputCreateDeploymentInput,
 		ec.unmarshalInputEnvironmentCreate,
 		ec.unmarshalInputEnvironmentUpdate,
 		ec.unmarshalInputEnvironmentUpgrade,
@@ -2632,12 +2646,21 @@ extend type Query {
 }
 `, BuiltIn: false},
 	{Name: "../../../schema/deployments.graphqls", Input: `extend type Mutation {
+    createDeployment(input: CreateDeploymentInput!): ID!
 	deleteDeployment(deploymentID: ID!): Boolean!
 }
 
 extend type Query {
     deployments(feature: String): [Deployment!]!
     deployment(id: ID!): Deployment!
+}
+
+input CreateDeploymentInput {
+    chart: String!
+    version: String!
+    description: String!
+    global: Boolean!
+    target: String!
 }
 
 type Deployment {
@@ -3340,6 +3363,17 @@ func (ec *executionContext) field_Mutation_configurationUpdate_args(ctx context.
 		return nil, err
 	}
 	args["configuration"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_createDeployment_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNCreateDeploymentInput2githubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐCreateDeploymentInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
 	return args, nil
 }
 
@@ -9758,6 +9792,47 @@ func (ec *executionContext) fieldContext_Mutation_configurationDelete(ctx contex
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_createDeployment(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_createDeployment,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().CreateDeployment(ctx, fc.Args["input"].(model.CreateDeploymentInput))
+		},
+		nil,
+		ec.marshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createDeployment(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createDeployment_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_deleteDeployment(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -15193,6 +15268,61 @@ func (ec *executionContext) unmarshalInputCostFilter(ctx context.Context, obj an
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputCreateDeploymentInput(ctx context.Context, obj any) (model.CreateDeploymentInput, error) {
+	var it model.CreateDeploymentInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"chart", "version", "description", "global", "target"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "chart":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("chart"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Chart = data
+		case "version":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("version"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Version = data
+		case "description":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Description = data
+		case "global":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("global"))
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Global = data
+		case "target":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("target"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Target = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputEnvironmentCreate(ctx context.Context, obj any) (model.EnvironmentCreate, error) {
 	var it model.EnvironmentCreate
 	asMap := map[string]any{}
@@ -18761,6 +18891,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "createDeployment":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createDeployment(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "deleteDeployment":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_deleteDeployment(ctx, field)
@@ -21036,6 +21173,11 @@ func (ec *executionContext) marshalNCostSeries2ᚖgithubᚗcomᚋnaisᚋfasitᚋ
 		return graphql.Null
 	}
 	return ec._CostSeries(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNCreateDeploymentInput2githubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐCreateDeploymentInput(ctx context.Context, v any) (model.CreateDeploymentInput, error) {
+	res, err := ec.unmarshalInputCreateDeploymentInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNDayOfWeek2githubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐDayOfWeek(ctx context.Context, v any) (model.DayOfWeek, error) {

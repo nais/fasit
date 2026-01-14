@@ -16,7 +16,7 @@ FROM
 	JOIN feature_data fd ON d.feature_name = fd.name
 		AND d.version = fd.version
 	ORDER BY
-		d.created ASC;
+		d.created DESC;
 
 -- name: DeploymentsGetByFeature :many
 SELECT
@@ -38,7 +38,7 @@ FROM
 WHERE
 	fd.name = @feature_name
 ORDER BY
-	d.created ASC;
+	d.created DESC;
 
 -- name: DeploymentCreate :one
 INSERT INTO deployments(

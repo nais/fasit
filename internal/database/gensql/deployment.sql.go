@@ -252,7 +252,7 @@ FROM
 	JOIN feature_data fd ON d.feature_name = fd.name
 		AND d.version = fd.version
 	ORDER BY
-		d.created ASC
+		d.created DESC
 `
 
 type DeploymentsGetRow struct {
@@ -326,7 +326,7 @@ FROM
 WHERE
 	fd.name = $1
 ORDER BY
-	d.created ASC
+	d.created DESC
 `
 
 type DeploymentsGetByFeatureRow struct {
