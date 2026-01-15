@@ -7503,8 +7503,8 @@ func (_c *Repo_UpdateClusterUpgradeStatus_Call) RunAndReturn(run func(ctx contex
 }
 
 // V3DeploymentCreate provides a mock function for the type Repo
-func (_mock *Repo) V3DeploymentCreate(ctx context.Context, featureName string, featureVersion string, ref *model.GHRef, target environment.Labels) (*gensql.Deployment, error) {
-	ret := _mock.Called(ctx, featureName, featureVersion, ref, target)
+func (_mock *Repo) V3DeploymentCreate(ctx context.Context, featureName string, featureVersion string, description string, ref *model.GHRef, target environment.Labels) (*gensql.Deployment, error) {
+	ret := _mock.Called(ctx, featureName, featureVersion, description, ref, target)
 
 	if len(ret) == 0 {
 		panic("no return value specified for V3DeploymentCreate")
@@ -7512,18 +7512,18 @@ func (_mock *Repo) V3DeploymentCreate(ctx context.Context, featureName string, f
 
 	var r0 *gensql.Deployment
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, *model.GHRef, environment.Labels) (*gensql.Deployment, error)); ok {
-		return returnFunc(ctx, featureName, featureVersion, ref, target)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, string, *model.GHRef, environment.Labels) (*gensql.Deployment, error)); ok {
+		return returnFunc(ctx, featureName, featureVersion, description, ref, target)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, *model.GHRef, environment.Labels) *gensql.Deployment); ok {
-		r0 = returnFunc(ctx, featureName, featureVersion, ref, target)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string, string, *model.GHRef, environment.Labels) *gensql.Deployment); ok {
+		r0 = returnFunc(ctx, featureName, featureVersion, description, ref, target)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*gensql.Deployment)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string, string, *model.GHRef, environment.Labels) error); ok {
-		r1 = returnFunc(ctx, featureName, featureVersion, ref, target)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string, string, string, *model.GHRef, environment.Labels) error); ok {
+		r1 = returnFunc(ctx, featureName, featureVersion, description, ref, target)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -7539,13 +7539,14 @@ type Repo_V3DeploymentCreate_Call struct {
 //   - ctx context.Context
 //   - featureName string
 //   - featureVersion string
+//   - description string
 //   - ref *model.GHRef
 //   - target environment.Labels
-func (_e *Repo_Expecter) V3DeploymentCreate(ctx interface{}, featureName interface{}, featureVersion interface{}, ref interface{}, target interface{}) *Repo_V3DeploymentCreate_Call {
-	return &Repo_V3DeploymentCreate_Call{Call: _e.mock.On("V3DeploymentCreate", ctx, featureName, featureVersion, ref, target)}
+func (_e *Repo_Expecter) V3DeploymentCreate(ctx interface{}, featureName interface{}, featureVersion interface{}, description interface{}, ref interface{}, target interface{}) *Repo_V3DeploymentCreate_Call {
+	return &Repo_V3DeploymentCreate_Call{Call: _e.mock.On("V3DeploymentCreate", ctx, featureName, featureVersion, description, ref, target)}
 }
 
-func (_c *Repo_V3DeploymentCreate_Call) Run(run func(ctx context.Context, featureName string, featureVersion string, ref *model.GHRef, target environment.Labels)) *Repo_V3DeploymentCreate_Call {
+func (_c *Repo_V3DeploymentCreate_Call) Run(run func(ctx context.Context, featureName string, featureVersion string, description string, ref *model.GHRef, target environment.Labels)) *Repo_V3DeploymentCreate_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -7559,13 +7560,17 @@ func (_c *Repo_V3DeploymentCreate_Call) Run(run func(ctx context.Context, featur
 		if args[2] != nil {
 			arg2 = args[2].(string)
 		}
-		var arg3 *model.GHRef
+		var arg3 string
 		if args[3] != nil {
-			arg3 = args[3].(*model.GHRef)
+			arg3 = args[3].(string)
 		}
-		var arg4 environment.Labels
+		var arg4 *model.GHRef
 		if args[4] != nil {
-			arg4 = args[4].(environment.Labels)
+			arg4 = args[4].(*model.GHRef)
+		}
+		var arg5 environment.Labels
+		if args[5] != nil {
+			arg5 = args[5].(environment.Labels)
 		}
 		run(
 			arg0,
@@ -7573,6 +7578,7 @@ func (_c *Repo_V3DeploymentCreate_Call) Run(run func(ctx context.Context, featur
 			arg2,
 			arg3,
 			arg4,
+			arg5,
 		)
 	})
 	return _c
@@ -7583,7 +7589,7 @@ func (_c *Repo_V3DeploymentCreate_Call) Return(deployment *gensql.Deployment, er
 	return _c
 }
 
-func (_c *Repo_V3DeploymentCreate_Call) RunAndReturn(run func(ctx context.Context, featureName string, featureVersion string, ref *model.GHRef, target environment.Labels) (*gensql.Deployment, error)) *Repo_V3DeploymentCreate_Call {
+func (_c *Repo_V3DeploymentCreate_Call) RunAndReturn(run func(ctx context.Context, featureName string, featureVersion string, description string, ref *model.GHRef, target environment.Labels) (*gensql.Deployment, error)) *Repo_V3DeploymentCreate_Call {
 	_c.Call.Return(run)
 	return _c
 }
