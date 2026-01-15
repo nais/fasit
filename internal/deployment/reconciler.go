@@ -151,13 +151,12 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, environment *mode
 		return fmt.Errorf("health status: %w", err)
 	}
 
-	// TODO: move health check further down the line so that we can report unhealthy status for each deployment?
-	if time.Since(health.ReportedAt) > 3*time.Minute {
+	naisdUnhealthy := time.Since(health.ReportedAt) > 3*time.Minute
+	if naisdUnhealthy {
 		r.log.WithFields(logrus.Fields{
 			"tenant":      environment.TenantName,
 			"environment": environment.Name,
 		}).Debug("naisd is unhealthy - skip reconcile")
-		return nil
 	}
 
 	mgr := r.publisher(naisdTopicID(environment.TenantName, environment.Name), r.log)
@@ -170,7 +169,6 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, environment *mode
 
 	for _, deployment := range filterDeployments(allDeployments) {
 		if err := r.repo.V3InsertEnvironmentFeature(ctx, environment.ID, deployment.ID, deployment.Name, deployment.Version); err != nil {
-
 			r.log.WithError(err).WithFields(logrus.Fields{
 				"environment_id":  environment.ID,
 				"deployment_id":   deployment.ID,
@@ -179,6 +177,11 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, environment *mode
 			}).Error("insert environment feature")
 
 			r.setDeploymentStatus(ctx, deployment.ID, environment.ID, model.RolloutStatusFailed, "failed to register feature deployment")
+			continue
+		}
+
+		if naisdUnhealthy {
+			r.setDeploymentStatus(ctx, deployment.ID, environment.ID, model.RolloutStatusPending, "naisd is unhealthy")
 			continue
 		}
 

@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	pgx "github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/graph/graphgen"
 	"github.com/nais/fasit/internal/graph/model"
@@ -55,7 +55,38 @@ func (r *clusterUpgradeStatusResolver) Actor(ctx context.Context, obj *model.Clu
 
 // FeatureStates is the resolver for the featureStates field.
 func (r *environmentResolver) FeatureStates(ctx context.Context, obj *model.Environment) ([]*model.FeatureState, error) {
-	return r.Repo.FeatureStatesGet(ctx, obj.ID)
+	deployments, err := r.Repo.V3DeploymentsForEnvironment(ctx, obj.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]*model.FeatureState, 0)
+	features := make(map[string]bool)
+	for _, deployment := range deployments {
+		ret = append(ret, &model.FeatureState{
+			ID:           deployment.ID.String(),
+			FeatureName:  deployment.Feature.Name,
+			Enabled:      true,
+			EnabledAt:    &deployment.Created,
+			Created:      deployment.Created,
+			LastModified: deployment.Created,
+			EnvID:        obj.ID,
+		})
+		features[deployment.Feature.Name] = true
+	}
+
+	states, err := r.Repo.FeatureStatesGet(ctx, obj.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, state := range states {
+		if _, ok := features[state.FeatureName]; !ok {
+			ret = append(ret, state)
+		}
+	}
+
+	return ret, nil
 }
 
 // GCPProjectID is the resolver for the gcpProjectID field.
