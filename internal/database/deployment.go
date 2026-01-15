@@ -9,13 +9,14 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/nais/fasit/internal/database/gensql"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph/model"
 )
 
 type DeploymentRepo interface {
-	V3DeploymentCreate(ctx context.Context, featureName, featureVersion string, ref *model.GHRef, target environment.Labels) (*gensql.Deployment, error)
+	V3DeploymentCreate(ctx context.Context, featureName, featureVersion, description string, ref *model.GHRef, target environment.Labels) (*gensql.Deployment, error)
 	V3DeploymentGet(ctx context.Context, deploymentID uuid.UUID) (*Deployment, error)
 	V3DeploymentsGet(ctx context.Context) ([]*model.Deployment, error)
 	V3DeploymentStatusesGet(ctx context.Context, deploymentID uuid.UUID) ([]*model.DeploymentStatus, error)
@@ -114,10 +115,11 @@ func (r *repo) V3MissingDependencies(ctx context.Context, dependencies []string,
 type Deployment struct {
 	*model.Feature
 
-	ID       uuid.UUID                 `json:"id"`
-	Created  time.Time                 `json:"created"`
-	Target   environment.Labels        `json:"target"`
-	Statuses []gensql.DeploymentStatus `json:"statuses"`
+	ID          uuid.UUID                 `json:"id"`
+	Created     time.Time                 `json:"created"`
+	Target      environment.Labels        `json:"target"`
+	Description string                    `json:"description"`
+	Statuses    []gensql.DeploymentStatus `json:"statuses"`
 }
 
 func (r *repo) V3DeploymentGet(ctx context.Context, deploymentID uuid.UUID) (*Deployment, error) {
@@ -148,11 +150,12 @@ func (r *repo) V3DeploymentGet(ctx context.Context, deploymentID uuid.UUID) (*De
 	}
 
 	return &Deployment{
-		Feature:  feature,
-		ID:       row.Deployment.ID,
-		Created:  row.Deployment.Created.Time,
-		Target:   row.Deployment.Target,
-		Statuses: statuses,
+		Feature:     feature,
+		ID:          row.Deployment.ID,
+		Created:     row.Deployment.Created.Time,
+		Target:      row.Deployment.Target,
+		Statuses:    statuses,
+		Description: row.Deployment.Description.String,
 	}, nil
 }
 
@@ -190,10 +193,11 @@ func (r *repo) V3DeploymentsGet(ctx context.Context) ([]*model.Deployment, error
 			HasDeployments: true,
 		}
 		ret[i] = &model.Deployment{
-			Feature: feature,
-			ID:      r.Deployment.ID,
-			Created: r.Deployment.Created.Time,
-			Target:  target,
+			Feature:     feature,
+			ID:          r.Deployment.ID,
+			Created:     r.Deployment.Created.Time,
+			Target:      target,
+			Description: r.Deployment.Description.String,
 		}
 	}
 
@@ -299,7 +303,7 @@ func featureFromSQL(f gensql.FeatureDeploymentsForEnvironmentRow) (*model.Featur
 	}, nil
 }
 
-func (r *repo) V3DeploymentCreate(ctx context.Context, featureName, featureVersion string, ref *model.GHRef, target environment.Labels) (*gensql.Deployment, error) {
+func (r *repo) V3DeploymentCreate(ctx context.Context, featureName, featureVersion, description string, ref *model.GHRef, target environment.Labels) (*gensql.Deployment, error) {
 	var ghRef []byte
 	if ref != nil {
 		b, err := json.Marshal(ref)
@@ -309,11 +313,16 @@ func (r *repo) V3DeploymentCreate(ctx context.Context, featureName, featureVersi
 
 		ghRef = b
 	}
+
 	ret, err := r.querier.DeploymentCreate(ctx, gensql.DeploymentCreateParams{
 		FeatureName: featureName,
 		Version:     featureVersion,
 		GhRef:       ghRef,
 		Target:      target,
+		Description: pgtype.Text{
+			String: description,
+			Valid:  description != "",
+		},
 	})
 
 	return &ret, err

@@ -22,6 +22,7 @@ type Deployment {
 	target: [EnvironmentLabel!]!
 	created: Time!
 	statuses: [DeploymentStatus!]!
+	description: String
 }
 
 type DeploymentStatus {

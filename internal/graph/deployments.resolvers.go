@@ -39,10 +39,11 @@ func (r *deploymentStatusResolver) Deployment(ctx context.Context, obj *model.De
 	}
 
 	return &model.Deployment{
-		ID:      d.ID,
-		Target:  target,
-		Created: d.Created,
-		Feature: d.Feature,
+		ID:          d.ID,
+		Target:      target,
+		Created:     d.Created,
+		Feature:     d.Feature,
+		Description: d.Description,
 	}, nil
 }
 
@@ -112,10 +113,11 @@ func (r *queryResolver) Deployment(ctx context.Context, id uuid.UUID) (*model.De
 	}
 
 	return &model.Deployment{
-		ID:      d.ID,
-		Target:  target,
-		Created: d.Created,
-		Feature: d.Feature,
+		ID:          d.ID,
+		Target:      target,
+		Created:     d.Created,
+		Feature:     d.Feature,
+		Description: d.Description,
 	}, nil
 }
 

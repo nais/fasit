@@ -144,11 +144,12 @@ type ComplexityRoot struct {
 	}
 
 	Deployment struct {
-		Created  func(childComplexity int) int
-		Feature  func(childComplexity int) int
-		ID       func(childComplexity int) int
-		Statuses func(childComplexity int) int
-		Target   func(childComplexity int) int
+		Created     func(childComplexity int) int
+		Description func(childComplexity int) int
+		Feature     func(childComplexity int) int
+		ID          func(childComplexity int) int
+		Statuses    func(childComplexity int) int
+		Target      func(childComplexity int) int
 	}
 
 	DeploymentStatus struct {
@@ -876,6 +877,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Deployment.Created(childComplexity), true
+	case "Deployment.description":
+		if e.complexity.Deployment.Description == nil {
+			break
+		}
+
+		return e.complexity.Deployment.Description(childComplexity), true
 	case "Deployment.feature":
 		if e.complexity.Deployment.Feature == nil {
 			break
@@ -2669,6 +2676,7 @@ type Deployment {
 	target: [EnvironmentLabel!]!
 	created: Time!
 	statuses: [DeploymentStatus!]!
+	description: String
 }
 
 type DeploymentStatus {
@@ -5441,6 +5449,35 @@ func (ec *executionContext) fieldContext_Deployment_statuses(_ context.Context, 
 	return fc, nil
 }
 
+func (ec *executionContext) _Deployment_description(ctx context.Context, field graphql.CollectedField, obj *model.Deployment) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Deployment_description,
+		func(ctx context.Context) (any, error) {
+			return obj.Description, nil
+		},
+		nil,
+		ec.marshalOString2string,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Deployment_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Deployment",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _DeploymentStatus_deployment(ctx context.Context, field graphql.CollectedField, obj *model.DeploymentStatus) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -5475,6 +5512,8 @@ func (ec *executionContext) fieldContext_DeploymentStatus_deployment(_ context.C
 				return ec.fieldContext_Deployment_created(ctx, field)
 			case "statuses":
 				return ec.fieldContext_Deployment_statuses(ctx, field)
+			case "description":
+				return ec.fieldContext_Deployment_description(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Deployment", field.Name)
 		},
@@ -11290,6 +11329,8 @@ func (ec *executionContext) fieldContext_Query_deployments(ctx context.Context, 
 				return ec.fieldContext_Deployment_created(ctx, field)
 			case "statuses":
 				return ec.fieldContext_Deployment_statuses(ctx, field)
+			case "description":
+				return ec.fieldContext_Deployment_description(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Deployment", field.Name)
 		},
@@ -11343,6 +11384,8 @@ func (ec *executionContext) fieldContext_Query_deployment(ctx context.Context, f
 				return ec.fieldContext_Deployment_created(ctx, field)
 			case "statuses":
 				return ec.fieldContext_Deployment_statuses(ctx, field)
+			case "description":
+				return ec.fieldContext_Deployment_description(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Deployment", field.Name)
 		},
@@ -16585,6 +16628,8 @@ func (ec *executionContext) _Deployment(ctx context.Context, sel ast.SelectionSe
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "description":
+			out.Values[i] = ec._Deployment_description(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -23259,6 +23304,18 @@ func (ec *executionContext) marshalOStatus2ᚖgithubᚗcomᚋnaisᚋfasitᚋinte
 		return graphql.Null
 	}
 	return ec._Status(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOString2string(ctx context.Context, v any) (string, error) {
+	res, err := graphql.UnmarshalString(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOString2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
+	_ = sel
+	_ = ctx
+	res := graphql.MarshalString(v)
+	return res
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v any) (*string, error) {

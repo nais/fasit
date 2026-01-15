@@ -11,11 +11,11 @@ import (
 )
 
 type Deployment struct {
-	ID      uuid.UUID           `json:"id"`
-	Target  []*EnvironmentLabel `json:"target"`
-	Feature *Feature            `json:"feature"`
-
-	Created time.Time `json:"created"`
+	ID          uuid.UUID           `json:"id"`
+	Target      []*EnvironmentLabel `json:"target"`
+	Feature     *Feature            `json:"feature"`
+	Description string              `json:"description"`
+	Created     time.Time           `json:"created"`
 }
 
 type DeploymentStatus struct {

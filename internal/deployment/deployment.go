@@ -73,7 +73,7 @@ func CreateDeployment(ctx context.Context, repo Store, req *Request) (uuid.UUID,
 		}
 	}
 
-	deployment, err := repo.V3DeploymentCreate(ctx, feat.Name, req.Version, req.Ref, req.Target)
+	deployment, err := repo.V3DeploymentCreate(ctx, feat.Name, req.Version, req.Description, req.Ref, req.Target)
 	if err != nil {
 		return uuid.Nil, &HttpError{err: err, Message: "Unable to create deployment", Code: http.StatusInternalServerError}
 	}

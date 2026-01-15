@@ -45,12 +45,14 @@ INSERT INTO deployments(
 	feature_name,
 	version,
 	target,
-	gh_ref)
+	gh_ref,
+	description)
 VALUES (
 	@feature_name,
 	@version,
 	@target,
-	@gh_ref)
+	@gh_ref,
+	@description)
 RETURNING
 	*;
 
