@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -85,6 +86,9 @@ func (r *environmentResolver) FeatureStates(ctx context.Context, obj *model.Envi
 			ret = append(ret, state)
 		}
 	}
+	slices.SortFunc(ret, func(a, b *model.FeatureState) int {
+		return strings.Compare(a.FeatureName, b.FeatureName)
+	})
 
 	return ret, nil
 }

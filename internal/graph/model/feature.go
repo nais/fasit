@@ -20,12 +20,13 @@ var DownloadChartFunc = helm.DownloadChart
 
 type Feature struct {
 	FeatureYAML
-	Name        string                     `json:"name"`
-	Chart       string                     `json:"chart"`
-	Version     string                     `json:"version"`
-	Description string                     `json:"description"`
-	Source      string                     `json:"source"`
-	ValuesYAML  map[string]json.RawMessage `json:"-"`
+	Name           string                     `json:"name"`
+	Chart          string                     `json:"chart"`
+	Version        string                     `json:"version"`
+	Description    string                     `json:"description"`
+	Source         string                     `json:"source"`
+	ValuesYAML     map[string]json.RawMessage `json:"-"`
+	HasDeployments bool                       `json:"hasDeployments"`
 
 	// SpecVersion is used to determine which version of the feature spec is used.
 	SpecVersion string `json:"specVersion"`
@@ -35,8 +36,6 @@ type Feature struct {
 		EnvironmentID uuid.UUID
 		RolloutID     uuid.UUID
 	} `json:"-" yaml:"-"`
-
-	HasDeployments bool `json:"-"`
 }
 
 type Rename struct {

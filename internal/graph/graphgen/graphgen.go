@@ -236,6 +236,7 @@ type ComplexityRoot struct {
 		Dependencies     func(childComplexity int) int
 		Description      func(childComplexity int) int
 		EnvironmentKinds func(childComplexity int) int
+		HasDeployments   func(childComplexity int) int
 		HelmValueDiff    func(childComplexity int) int
 		Histories        func(childComplexity int) int
 		Name             func(childComplexity int) int
@@ -1302,6 +1303,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Feature.EnvironmentKinds(childComplexity), true
+	case "Feature.hasDeployments":
+		if e.complexity.Feature.HasDeployments == nil {
+			break
+		}
+
+		return e.complexity.Feature.HasDeployments(childComplexity), true
 	case "Feature.helmValueDiff":
 		if e.complexity.Feature.HelmValueDiff == nil {
 			break
@@ -3005,6 +3012,7 @@ type Feature {
 	configuration: Configurations!
 	specVersion: String!
 
+	hasDeployments: Boolean!
 	state: FeatureState
 	status: Status
 	histories: [FeatureHistory!]!
@@ -5327,6 +5335,8 @@ func (ec *executionContext) fieldContext_Deployment_feature(_ context.Context, f
 				return ec.fieldContext_Feature_configuration(ctx, field)
 			case "specVersion":
 				return ec.fieldContext_Feature_specVersion(ctx, field)
+			case "hasDeployments":
+				return ec.fieldContext_Feature_hasDeployments(ctx, field)
 			case "state":
 				return ec.fieldContext_Feature_state(ctx, field)
 			case "status":
@@ -6427,6 +6437,8 @@ func (ec *executionContext) fieldContext_Environment_features(_ context.Context,
 				return ec.fieldContext_Feature_configuration(ctx, field)
 			case "specVersion":
 				return ec.fieldContext_Feature_specVersion(ctx, field)
+			case "hasDeployments":
+				return ec.fieldContext_Feature_hasDeployments(ctx, field)
 			case "state":
 				return ec.fieldContext_Feature_state(ctx, field)
 			case "status":
@@ -6489,6 +6501,8 @@ func (ec *executionContext) fieldContext_Environment_feature(ctx context.Context
 				return ec.fieldContext_Feature_configuration(ctx, field)
 			case "specVersion":
 				return ec.fieldContext_Feature_specVersion(ctx, field)
+			case "hasDeployments":
+				return ec.fieldContext_Feature_hasDeployments(ctx, field)
 			case "state":
 				return ec.fieldContext_Feature_state(ctx, field)
 			case "status":
@@ -7794,6 +7808,35 @@ func (ec *executionContext) fieldContext_Feature_specVersion(_ context.Context, 
 	return fc, nil
 }
 
+func (ec *executionContext) _Feature_hasDeployments(ctx context.Context, field graphql.CollectedField, obj *model.Feature) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Feature_hasDeployments,
+		func(ctx context.Context) (any, error) {
+			return obj.HasDeployments, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Feature_hasDeployments(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Feature",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Feature_state(ctx context.Context, field graphql.CollectedField, obj *model.Feature) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -8256,6 +8299,8 @@ func (ec *executionContext) fieldContext_FeatureState_feature(_ context.Context,
 				return ec.fieldContext_Feature_configuration(ctx, field)
 			case "specVersion":
 				return ec.fieldContext_Feature_specVersion(ctx, field)
+			case "hasDeployments":
+				return ec.fieldContext_Feature_hasDeployments(ctx, field)
 			case "state":
 				return ec.fieldContext_Feature_state(ctx, field)
 			case "status":
@@ -8404,6 +8449,8 @@ func (ec *executionContext) fieldContext_FeatureState_missingDependencies(_ cont
 				return ec.fieldContext_Feature_configuration(ctx, field)
 			case "specVersion":
 				return ec.fieldContext_Feature_specVersion(ctx, field)
+			case "hasDeployments":
+				return ec.fieldContext_Feature_hasDeployments(ctx, field)
 			case "state":
 				return ec.fieldContext_Feature_state(ctx, field)
 			case "status":
@@ -8529,6 +8576,8 @@ func (ec *executionContext) fieldContext_FeatureWarning_feature(_ context.Contex
 				return ec.fieldContext_Feature_configuration(ctx, field)
 			case "specVersion":
 				return ec.fieldContext_Feature_specVersion(ctx, field)
+			case "hasDeployments":
+				return ec.fieldContext_Feature_hasDeployments(ctx, field)
 			case "state":
 				return ec.fieldContext_Feature_state(ctx, field)
 			case "status":
@@ -11450,6 +11499,8 @@ func (ec *executionContext) fieldContext_Query_features(_ context.Context, field
 				return ec.fieldContext_Feature_configuration(ctx, field)
 			case "specVersion":
 				return ec.fieldContext_Feature_specVersion(ctx, field)
+			case "hasDeployments":
+				return ec.fieldContext_Feature_hasDeployments(ctx, field)
 			case "state":
 				return ec.fieldContext_Feature_state(ctx, field)
 			case "status":
@@ -11512,6 +11563,8 @@ func (ec *executionContext) fieldContext_Query_feature(ctx context.Context, fiel
 				return ec.fieldContext_Feature_configuration(ctx, field)
 			case "specVersion":
 				return ec.fieldContext_Feature_specVersion(ctx, field)
+			case "hasDeployments":
+				return ec.fieldContext_Feature_hasDeployments(ctx, field)
 			case "state":
 				return ec.fieldContext_Feature_state(ctx, field)
 			case "status":
@@ -12098,6 +12151,8 @@ func (ec *executionContext) fieldContext_Release_feature(_ context.Context, fiel
 				return ec.fieldContext_Feature_configuration(ctx, field)
 			case "specVersion":
 				return ec.fieldContext_Feature_specVersion(ctx, field)
+			case "hasDeployments":
+				return ec.fieldContext_Feature_hasDeployments(ctx, field)
 			case "state":
 				return ec.fieldContext_Feature_state(ctx, field)
 			case "status":
@@ -17927,6 +17982,11 @@ func (ec *executionContext) _Feature(ctx context.Context, sel ast.SelectionSet, 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "specVersion":
 			out.Values[i] = ec._Feature_specVersion(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "hasDeployments":
+			out.Values[i] = ec._Feature_hasDeployments(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
