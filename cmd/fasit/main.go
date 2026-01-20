@@ -194,7 +194,7 @@ func main() {
 	if err != nil {
 		log.WithError(err).Fatal("setting up google client")
 	}
-	resolver := graph.NewResolver(ctx, repo, deploymentsReconcileTrigger, notifierService, createPublisher, googleClient, log.WithField("subsystem", "graphql"))
+	resolver := graph.NewResolver(ctx, repo, deployer, deploymentsReconcileTrigger, notifierService, createPublisher, googleClient, log.WithField("subsystem", "graphql"))
 
 	srv := newServer(graphgen.NewExecutableSchema(graphgen.Config{Resolvers: resolver}))
 	srv.Use(otelgqlgen.Middleware())
@@ -252,7 +252,7 @@ func main() {
 	rout.AllowAll = cfg.InsecureSkipTokenCheck
 	router.Post("/github/rollout", rout.Rollout)
 
-	deploy, err := deployment.NewHttpHandler(ctx, repo, deploymentsReconcileTrigger, log.WithField("subsystem", "create_deployment"))
+	deploy, err := deployment.NewHttpHandler(ctx, deployer, deploymentsReconcileTrigger, log.WithField("subsystem", "create_deployment"))
 	if err != nil {
 		log.WithError(err).Fatal("setting up deployment")
 	}

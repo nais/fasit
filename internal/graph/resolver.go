@@ -29,13 +29,15 @@ type Resolver struct {
 	diNotifier         *updateNotifier
 	createPublisher    workers.NewPublisher
 	deploymentsTrigger chan<- deployment.ReconcileTriggerEvent
+	deployer           *deployment.Deployer
 }
 
-func NewResolver(ctx context.Context, repo database.Repo, deploymentsTrigger chan<- deployment.ReconcileTriggerEvent, notifier *notifier.Notifier, naisdPublisher workers.NewPublisher, clusterManager cluster.ClusterManager, log *logrus.Entry) *Resolver {
+func NewResolver(ctx context.Context, repo database.Repo, deployer *deployment.Deployer, deploymentsTrigger chan<- deployment.ReconcileTriggerEvent, notifier *notifier.Notifier, naisdPublisher workers.NewPublisher, clusterManager cluster.ClusterManager, log *logrus.Entry) *Resolver {
 	return &Resolver{
 		Repo:               repo,
 		Log:                log,
 		ClusterManager:     clusterManager,
+		deployer:           deployer,
 		createPublisher:    naisdPublisher,
 		logNotifier:        newLogNotifier(ctx, notifier, repo),
 		diNotifier:         newDeployInstructionsNotifier(ctx, notifier, repo),
