@@ -315,14 +315,6 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 			log.Out = os.Stdout
 			log.Level = logrus.DebugLevel
 		}
-
-		deploymentsReconcileTrigger := make(chan deployment.ReconcileTriggerEvent, 1)
-		restRunner, err := newRestRunner(ctx, pool, deploymentsReconcileTrigger)
-		if err != nil {
-			done()
-			return ctx, nil, nil, err
-		}
-
 		db := database.New(pool, log)
 		naisdRunner, close, err := newNaisd()
 		if err != nil {
@@ -334,6 +326,27 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 			done()
 			return ctx, nil, nil, err
 		}
+
+		dcp := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
+			p, ok := naisdRunner.deploymentReconcilerPublishers[topicID]
+			if !ok {
+				panic(fmt.Sprintf("no publisher for topic %q", topicID))
+			}
+			return p
+		}
+		deployer, err := deployment.NewDeployer(db, dcp, noop.NewMeterProvider().Meter(""), logrus.NewEntry(log))
+		if err != nil {
+			done()
+			return ctx, nil, nil, err
+		}
+
+		deploymentsReconcileTrigger := make(chan deployment.ReconcileTriggerEvent, 1)
+		restRunner, err := newRestRunner(ctx, pool, deployer, deploymentsReconcileTrigger)
+		if err != nil {
+			done()
+			return ctx, nil, nil, err
+		}
+
 		runners := []spec.Runner{
 			naisdRunner,
 			restRunner,
@@ -358,14 +371,7 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 			return ctx, nil, nil, err
 		}
 
-		dcp := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
-			p, ok := naisdRunner.deploymentReconcilerPublishers[topicID]
-			if !ok {
-				panic(fmt.Sprintf("no publisher for topic %q", topicID))
-			}
-			return p
-		}
-		deploymentReconciler, err := deployment.NewReconciler(db, dcp, deploymentsReconcileTrigger, noop.NewMeterProvider().Meter(""), logrus.NewEntry(log))
+		deploymentReconciler, err := deployment.NewReconciler(db, deployer, deploymentsReconcileTrigger, noop.NewMeterProvider().Meter(""), logrus.NewEntry(log))
 		if err != nil {
 			done()
 			return ctx, nil, nil, err
@@ -386,7 +392,7 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 	}
 }
 
-func newRestRunner(ctx context.Context, pool *pgxpool.Pool, deploymentsReconcileTrigger chan<- deployment.ReconcileTriggerEvent) (*runner.REST, error) {
+func newRestRunner(ctx context.Context, pool *pgxpool.Pool, deployer *deployment.Deployer, deploymentsReconcileTrigger chan<- deployment.ReconcileTriggerEvent) (*runner.REST, error) {
 	router := chi.NewMux()
 	// router.Handle("/query", iapMW(corsMW.Handler(srv)))
 
@@ -399,7 +405,7 @@ func newRestRunner(ctx context.Context, pool *pgxpool.Pool, deploymentsReconcile
 	rout.AllowAll = true
 	router.Post("/github/rollout", rout.Rollout)
 
-	deploy, err := deployment.New(ctx, db, deploymentsReconcileTrigger, logrus.New())
+	deploy, err := deployment.NewHttpHandler(ctx, deployer, deploymentsReconcileTrigger, logrus.New())
 	if err != nil {
 		return nil, err
 	}

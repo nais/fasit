@@ -125,12 +125,14 @@ func TestReconcile(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			db := getDb(ctx, t, container, dsn, logger)
 			pub := &publisher{repo: db.repo}
+			deployer, err := deployment.NewDeployer(db.repo, func(topicID string, log logrus.FieldLogger) deployment.Publisher { return pub }, meter, logger)
+			if err != nil {
+				t.Fatalf("create deployer: %v", err)
+			}
 
 			r, err := deployment.NewReconciler(
 				db.repo,
-				func(topicID string, log logrus.FieldLogger) deployment.Publisher {
-					return pub
-				},
+				deployer,
 				nil,
 				meter,
 				logger,
@@ -207,11 +209,14 @@ func TestReconcileWhenPreviousIsInProgress(t *testing.T) {
 	db := getDb(ctx, t, container, dsn, logger)
 	pub := &publisher{repo: db.repo}
 
+	deployer, err := deployment.NewDeployer(db.repo, func(topicID string, log logrus.FieldLogger) deployment.Publisher { return pub }, meter, logger)
+	if err != nil {
+		t.Fatalf("create deployer: %v", err)
+	}
+
 	r, err := deployment.NewReconciler(
 		db.repo,
-		func(topicID string, log logrus.FieldLogger) deployment.Publisher {
-			return pub
-		},
+		deployer,
 		nil,
 		meter,
 		logger,

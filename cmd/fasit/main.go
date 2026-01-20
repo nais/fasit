@@ -171,8 +171,13 @@ func main() {
 		return message.NewPublisher[message.DeployInstruction](pubsubClient, cfg.GCPProjectID, topicID, log)
 	}
 
+	deployer, err := deployment.NewDeployer(repo, deployCreatePublisher, meter, log)
+	if err != nil {
+		log.WithError(err).Fatal("setting up deployer")
+	}
+
 	deploymentsReconcileTrigger := make(chan deployment.ReconcileTriggerEvent, 1)
-	deploymentReconciler, err := deployment.NewReconciler(repo, deployCreatePublisher, deploymentsReconcileTrigger, meter, log.WithField("subsystem", "deployment_reconciler"))
+	deploymentReconciler, err := deployment.NewReconciler(repo, deployer, deploymentsReconcileTrigger, meter, log.WithField("subsystem", "deployment_reconciler"))
 	if err != nil {
 		log.WithError(err).Fatal("setting up deployment reconciler")
 	}
@@ -247,7 +252,7 @@ func main() {
 	rout.AllowAll = cfg.InsecureSkipTokenCheck
 	router.Post("/github/rollout", rout.Rollout)
 
-	deploy, err := deployment.New(ctx, repo, deploymentsReconcileTrigger, log.WithField("subsystem", "create_deployment"))
+	deploy, err := deployment.NewHttpHandler(ctx, repo, deploymentsReconcileTrigger, log.WithField("subsystem", "create_deployment"))
 	if err != nil {
 		log.WithError(err).Fatal("setting up deployment")
 	}

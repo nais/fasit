@@ -63,7 +63,7 @@ func (r *mutationResolver) CreateDeployment(ctx context.Context, input model.Cre
 		return uuid.Nil, fmt.Errorf("invalid target: %w", err)
 	}
 
-	id, err := deployment.CreateDeployment(ctx, r.Repo, &deployment.Request{
+	id, err := deployment.CreateDeployment(ctx, &deployment.Request{
 		Chart:       input.Chart,
 		Version:     input.Version,
 		Description: input.Description,
