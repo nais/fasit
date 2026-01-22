@@ -83,11 +83,28 @@ func (c *Client) GetRunningOperations(ctx context.Context, projectID string, env
 	clusterName := c.getClusterName(environment)
 
 	for _, op := range operations.Operations {
-		if strings.Contains(op.TargetLink, clusterName) && op.Status == containerpb.Operation_RUNNING {
+		if targetMatchesCluster(op.TargetLink, clusterName) && (op.Status == containerpb.Operation_RUNNING || op.Status == containerpb.Operation_PENDING) {
 			runningOps = append(runningOps, op)
 		}
 	}
 	return runningOps, nil
+}
+
+// targetMatchesCluster checks if a target link refers to the given cluster by name.
+// Extracts the cluster name from the URL path (the segment after "/clusters/").
+// This works for both cluster operations (.../clusters/name) and sub-resources
+// like node pools (.../clusters/name/nodePools/pool).
+func targetMatchesCluster(targetLink, clusterName string) bool {
+	parts := strings.Split(targetLink, "/")
+
+	// Find the "clusters" segment and get the next one
+	for i, part := range parts {
+		if part == "clusters" && i+1 < len(parts) {
+			return parts[i+1] == clusterName
+		}
+	}
+
+	return false
 }
 
 func (c *Client) GetOperation(ctx context.Context, projectID, operationID string) (*containerpb.Operation, error) {
