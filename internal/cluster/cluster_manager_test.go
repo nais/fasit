@@ -154,9 +154,9 @@ func TestClient_GetRunningOperations_FiltersPendingAndRunning(t *testing.T) {
 					TargetLink:    fmt.Sprintf("https://container.googleapis.com/v1/projects/%s/zones/europe-north1-a/clusters/nais-t1", projectID),
 				},
 				{
-					Name:          "op-aborted",
+					Name:          "op-aborting",
 					OperationType: containerpb.Operation_UPGRADE_NODES,
-					Status:        containerpb.Operation_ABORTED,
+					Status:        containerpb.Operation_ABORTING,
 					TargetLink:    fmt.Sprintf("https://container.googleapis.com/v1/projects/%s/zones/europe-north1-a/clusters/nais-t1", projectID),
 				},
 			},
