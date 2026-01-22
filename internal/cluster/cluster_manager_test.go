@@ -3,7 +3,6 @@ package cluster
 import (
 	"context"
 	"fmt"
-	"strings"
 	"testing"
 
 	"cloud.google.com/go/container/apiv1/containerpb"
@@ -175,7 +174,7 @@ func TestClient_GetRunningOperations_FiltersPendingAndRunning(t *testing.T) {
 			var expectedOps []*containerpb.Operation
 			for _, op := range tt.operations {
 				if (op.Status == containerpb.Operation_RUNNING || op.Status == containerpb.Operation_PENDING) &&
-					containsCluster(op.TargetLink, tt.targetCluster) {
+					targetMatchesCluster(op.TargetLink, tt.targetCluster) {
 					expectedOps = append(expectedOps, op)
 				}
 			}
@@ -207,19 +206,6 @@ func TestClient_GetRunningOperations_FiltersPendingAndRunning(t *testing.T) {
 			}
 		})
 	}
-}
-
-// containsCluster checks if a target link refers to the given cluster by name
-func containsCluster(targetLink, clusterName string) bool {
-	parts := strings.Split(targetLink, "/")
-	if len(parts) == 0 {
-		return false
-	}
-	last := parts[len(parts)-1]
-	if last == "" && len(parts) > 1 {
-		last = parts[len(parts)-2]
-	}
-	return last == clusterName
 }
 
 func TestClient_GetAvailableVersions(t *testing.T) {

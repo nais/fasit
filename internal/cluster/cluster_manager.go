@@ -83,11 +83,25 @@ func (c *Client) GetRunningOperations(ctx context.Context, projectID string, env
 	clusterName := c.getClusterName(environment)
 
 	for _, op := range operations.Operations {
-		if strings.Contains(op.TargetLink, clusterName) && (op.Status == containerpb.Operation_RUNNING || op.Status == containerpb.Operation_PENDING) {
+		if targetMatchesCluster(op.TargetLink, clusterName) && (op.Status == containerpb.Operation_RUNNING || op.Status == containerpb.Operation_PENDING) {
 			runningOps = append(runningOps, op)
 		}
 	}
 	return runningOps, nil
+}
+
+// targetMatchesCluster checks if a target link refers to the given cluster by name.
+// Parses the URL path to avoid false positives (e.g., "nais-t1" shouldn't match "nais-t10").
+func targetMatchesCluster(targetLink, clusterName string) bool {
+	parts := strings.Split(targetLink, "/")
+	if len(parts) == 0 {
+		return false
+	}
+	last := parts[len(parts)-1]
+	if last == "" && len(parts) > 1 {
+		last = parts[len(parts)-2]
+	}
+	return last == clusterName
 }
 
 func (c *Client) GetOperation(ctx context.Context, projectID, operationID string) (*containerpb.Operation, error) {
