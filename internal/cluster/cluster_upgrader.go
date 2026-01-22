@@ -607,7 +607,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 
 func clusterHas(runningOperations []*containerpb.Operation) bool {
 	for _, op := range runningOperations {
-		if op.Status == containerpb.Operation_RUNNING {
+		if op.Status == containerpb.Operation_RUNNING || op.Status == containerpb.Operation_PENDING {
 			return true
 		}
 	}

@@ -83,7 +83,7 @@ func (c *Client) GetRunningOperations(ctx context.Context, projectID string, env
 	clusterName := c.getClusterName(environment)
 
 	for _, op := range operations.Operations {
-		if strings.Contains(op.TargetLink, clusterName) && op.Status == containerpb.Operation_RUNNING {
+		if strings.Contains(op.TargetLink, clusterName) && (op.Status == containerpb.Operation_RUNNING || op.Status == containerpb.Operation_PENDING) {
 			runningOps = append(runningOps, op)
 		}
 	}
