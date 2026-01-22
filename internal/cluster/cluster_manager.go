@@ -91,17 +91,20 @@ func (c *Client) GetRunningOperations(ctx context.Context, projectID string, env
 }
 
 // targetMatchesCluster checks if a target link refers to the given cluster by name.
-// Parses the URL path to avoid false positives (e.g., "nais-t1" shouldn't match "nais-t10").
+// Extracts the cluster name from the URL path (the segment after "/clusters/").
+// This works for both cluster operations (.../clusters/name) and sub-resources
+// like node pools (.../clusters/name/nodePools/pool).
 func targetMatchesCluster(targetLink, clusterName string) bool {
 	parts := strings.Split(targetLink, "/")
-	if len(parts) == 0 {
-		return false
+
+	// Find the "clusters" segment and get the next one
+	for i, part := range parts {
+		if part == "clusters" && i+1 < len(parts) {
+			return parts[i+1] == clusterName
+		}
 	}
-	last := parts[len(parts)-1]
-	if last == "" && len(parts) > 1 {
-		last = parts[len(parts)-2]
-	}
-	return last == clusterName
+
+	return false
 }
 
 func (c *Client) GetOperation(ctx context.Context, projectID, operationID string) (*containerpb.Operation, error) {
