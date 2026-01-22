@@ -215,15 +215,16 @@ func TestRunner(ctx context.Context, skipSetup bool) (*testmanager.Manager, erro
 		Name: "Reconcile",
 		Doc:  "Reconcile all environments",
 		Func: func(L *lua.LState) int {
-			reconciler := L.Context().Value(reconcilerKey).(*workers.Reconciler)
-
-			if err := reconciler.Reconcile(ctx); err != nil {
+			rolloutReconciler := L.Context().Value(reconcilerKey).(*workers.Reconciler)
+			if err := rolloutReconciler.Reconcile(ctx); err != nil {
 				L.RaiseError("failed to reconcile: %s", err)
 			}
 
 			deploymentMgr := L.Context().Value(deploymentMgrKey).(*deployment.Manager)
+			if err := deploymentMgr.Reconcile(ctx); err != nil {
+				L.RaiseError("failed to reconcile: %s", err)
+			}
 
-			deploymentMgr.TriggerReconcile(deployment.ReconcileTriggerEvent{})
 			time.Sleep(100 * time.Millisecond)
 
 			return 0
@@ -294,6 +295,8 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 		panic(err)
 	}
 
+	fmt.Println("PostgreSQL connection string: " + connStr)
+
 	return func(ctx context.Context, dir string, configInput any) (context.Context, []spec.Runner, func(), error) {
 		ctx, done := context.WithCancel(ctx)
 		cleanups := []func(){}
@@ -336,7 +339,6 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 			done()
 			return ctx, nil, nil, err
 		}
-		go deploymentMgr.Run(ctx, 1*time.Hour)
 
 		restRunner, err := newRestRunner(ctx, pool, deploymentMgr)
 		if err != nil {

@@ -48,6 +48,13 @@ func (dm *Manager) Run(ctx context.Context, intervalSeconds time.Duration) {
 	dm.reconciler.Run(ctx, intervalSeconds)
 }
 
+// Reconcile performs a reconciliation of deployments, and will block until complete.
+func (dm *Manager) Reconcile(ctx context.Context) error {
+	return dm.reconciler.Reconcile(ctx)
+}
+
+// TriggerReconcile will trigger an asynchronous reconciliation of deployments. The returned channel can be used to wait
+// for the result.
 func (dm *Manager) TriggerReconcile(event ReconcileTriggerEvent) chan TriggerResult {
 	return dm.reconciler.trigger(event)
 }

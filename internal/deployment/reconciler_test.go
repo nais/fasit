@@ -135,14 +135,14 @@ func TestReconcile(t *testing.T) {
 			if err != nil {
 				t.Fatalf("create deployment manager: %v", err)
 			}
-			go deploymentMgr.Run(reconcilerCtx, 1*time.Hour)
 
 			db.createTenantsAndEnvironments(ctx, envsToCreate)
 			db.createFeatureDeployments(ctx, tc.deploymentsToCreate)
 
 			for _, result := range tc.reconcileResults {
-				done := deploymentMgr.TriggerReconcile(deployment.ReconcileTriggerEvent{})
-				<-done
+				if err := deploymentMgr.Reconcile(reconcilerCtx); err != nil {
+					t.Fatalf("reconcile: %v", err)
+				}
 
 				q := `
 				SELECT
@@ -216,19 +216,18 @@ func TestReconcileWhenPreviousIsInProgress(t *testing.T) {
 		t.Fatalf("create deployment manager: %v", err)
 	}
 
-	// Start reconciler so TriggerReconcile calls work
-	go deploymentMgr.Run(reconcilerCtx, 1*time.Hour)
-
 	db.createTenantsAndEnvironments(ctx, envsToCreate)
 	db.createFeatureDeployment(ctx, "feature-pending", "1.0.0", environment.Labels{}, nil)
 
-	done := deploymentMgr.TriggerReconcile(deployment.ReconcileTriggerEvent{})
-	<-done
+	if err := deploymentMgr.Reconcile(reconcilerCtx); err != nil {
+		t.Fatalf("reconcile: %v", err)
+	}
 
 	db.createFeatureDeployment(ctx, "feature-pending", "2.0.0", environment.Labels{}, nil)
 
-	done = deploymentMgr.TriggerReconcile(deployment.ReconcileTriggerEvent{})
-	<-done
+	if err := deploymentMgr.Reconcile(reconcilerCtx); err != nil {
+		t.Fatalf("reconcile: %v", err)
+	}
 
 	q := `
 		SELECT
