@@ -13,8 +13,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/internal/auth"
-	"github.com/nais/fasit/internal/environment"
-	"github.com/nais/fasit/internal/graph/model"
 	"github.com/sirupsen/logrus"
 )
 
@@ -24,9 +22,7 @@ type HttpHandler struct {
 	log      logrus.FieldLogger
 	// AllowAll will allow all rollout requests when set to true
 	AllowAll bool
-
-	reconcileTrigger chan<- ReconcileTriggerEvent
-	deployer         *Deployer
+	manager  *Manager
 }
 
 type Claims struct {
@@ -36,17 +32,7 @@ type Claims struct {
 	RunID      string `json:"run_id"`
 }
 
-type Request struct {
-	Chart       string             `json:"chart"`
-	Version     string             `json:"version"`
-	Description string             `json:"description"`
-	Ref         *model.GHRef       `json:"ref"`
-	Global      bool               `json:"global"`
-	Target      environment.Labels `json:"target"`
-	CI          string             `json:"ci,omitempty"`
-}
-
-func NewHttpHandler(ctx context.Context, deployer *Deployer, reconcileTrigger chan<- ReconcileTriggerEvent, log logrus.FieldLogger) (*HttpHandler, error) {
+func NewHttpHandler(ctx context.Context, manager *Manager, log logrus.FieldLogger) (*HttpHandler, error) {
 	provider, err := oidc.NewProvider(ctx, "https://token.actions.githubusercontent.com")
 	if err != nil {
 		return nil, err
@@ -57,11 +43,10 @@ func NewHttpHandler(ctx context.Context, deployer *Deployer, reconcileTrigger ch
 	})
 
 	return &HttpHandler{
-		provider:         provider,
-		verifier:         verifier,
-		deployer:         deployer,
-		log:              log,
-		reconcileTrigger: reconcileTrigger,
+		provider: provider,
+		verifier: verifier,
+		manager:  manager,
+		log:      log,
 	}, nil
 }
 
@@ -79,7 +64,7 @@ func (h *HttpHandler) GetDeployment(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	deployment, err := h.deployer.GetDeployment(ctx, deploymentID)
+	deployment, err := h.manager.GetDeployment(ctx, deploymentID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		http.Error(w, "deployment does not exist", http.StatusNotFound)
 		return
@@ -116,7 +101,7 @@ func (h *HttpHandler) CreateDeployment(w http.ResponseWriter, req *http.Request)
 		}
 	}
 
-	deploymentID, err := h.deployer.CreateDeployment(ctx, body)
+	deploymentID, err := h.manager.CreateDeployment(ctx, body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		h.log.WithError(err).Error("create deployment")
@@ -128,7 +113,7 @@ func (h *HttpHandler) CreateDeployment(w http.ResponseWriter, req *http.Request)
 		"id": deploymentID.String(),
 	})
 
-	TriggerReconcile(ReconcileTriggerEvent{}, h.reconcileTrigger, h.log)
+	h.manager.TriggerReconcile(ReconcileTriggerEvent{})
 }
 
 func (h *HttpHandler) validateToken(w http.ResponseWriter, req *http.Request) (actor string, ok bool) {

@@ -16,11 +16,19 @@ import (
 
 type ReconcileTriggerEvent struct{}
 
-type Reconciler struct {
+type TriggerResult int
+
+const (
+	TriggerResultSkipped TriggerResult = iota
+	TriggerResultSuccess
+	TriggerResultFailed
+)
+
+type reconciler struct {
 	repo             database.Repo
 	log              logrus.FieldLogger
-	reconcileTrigger <-chan ReconcileTriggerEvent
-	deployer         *Deployer
+	reconcileTrigger chan chan TriggerResult
+	deployer         *deployer
 
 	lock sync.Mutex
 
@@ -28,19 +36,13 @@ type Reconciler struct {
 	reconcileTime metric.Int64Histogram
 }
 
-func NewReconciler(
-	repo database.Repo,
-	deployer *Deployer,
-	reconcileTrigger <-chan ReconcileTriggerEvent,
-	meter metric.Meter,
-	log logrus.FieldLogger,
-) (*Reconciler, error) {
+func newReconciler(repo database.Repo, deployer *deployer, meter metric.Meter, log logrus.FieldLogger) (*reconciler, error) {
 	reconcileTime, err := meter.Int64Histogram("deployment_reconcile_time", metric.WithDescription("Time spent reconciling"), metric.WithUnit("ms"))
 	if err != nil {
 		return nil, fmt.Errorf("create reconcile time histogram: %w", err)
 	}
-
-	return &Reconciler{
+	reconcileTrigger := make(chan chan TriggerResult, 1)
+	return &reconciler{
 		repo:             repo,
 		log:              log,
 		reconcileTrigger: reconcileTrigger,
@@ -49,31 +51,45 @@ func NewReconciler(
 	}, nil
 }
 
-func TriggerReconcile(event ReconcileTriggerEvent, trigger chan<- ReconcileTriggerEvent, log logrus.FieldLogger) {
+func (r *reconciler) trigger(_ ReconcileTriggerEvent) chan TriggerResult {
+	done := make(chan TriggerResult, 1)
 	select {
-	case trigger <- event:
+	case r.reconcileTrigger <- done:
 	default:
-		log.Debug("there is already a reconcile event queued, skipping")
+		r.log.Debug("there is already a reconcile event queued, skipping")
+		done <- TriggerResultSkipped
 	}
+	return done
 }
 
-func (r *Reconciler) Run(ctx context.Context, interval time.Duration) {
+func (r *reconciler) Run(ctx context.Context, interval time.Duration) {
+	var done chan TriggerResult
 	for {
 		r.log.Debug("reconciling")
-		if err := r.Reconcile(ctx); err != nil {
+		err := r.Reconcile(ctx)
+		if err != nil {
 			r.log.WithError(err).Error("reconcile")
 		}
+		if done != nil {
+			if err != nil {
+				done <- TriggerResultFailed
+			} else {
+				done <- TriggerResultSuccess
+			}
+			done = nil
+		}
+
 		select {
 		case <-ctx.Done():
 			return
 		case <-time.After(interval):
-		case <-r.reconcileTrigger:
+		case done = <-r.reconcileTrigger:
 			r.log.Info("manual reconcile triggered")
 		}
 	}
 }
 
-func (r *Reconciler) Reconcile(ctx context.Context) error {
+func (r *reconciler) Reconcile(ctx context.Context) error {
 	ctx = auth.SetEmail(ctx, "system:deployment_reconciler")
 
 	if shouldrun := r.lock.TryLock(); !shouldrun {
@@ -94,7 +110,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	return nil
 }
 
-func (r *Reconciler) reconcileEnvironment(ctx context.Context, environment *model.TenantEnvironment) error {
+func (r *reconciler) reconcileEnvironment(ctx context.Context, environment *model.TenantEnvironment) error {
 	start := time.Now()
 	defer func() {
 		attrs := attribute.NewSet(

@@ -43,7 +43,7 @@ type ctxKey int
 const (
 	poolKey ctxKey = iota
 	reconcilerKey
-	deploymentReconcilerKey
+	deploymentMgrKey
 	naisdKey
 )
 
@@ -221,12 +221,9 @@ func TestRunner(ctx context.Context, skipSetup bool) (*testmanager.Manager, erro
 				L.RaiseError("failed to reconcile: %s", err)
 			}
 
-			deploymentReconciler := L.Context().Value(deploymentReconcilerKey).(*deployment.Reconciler)
+			deploymentMgr := L.Context().Value(deploymentMgrKey).(*deployment.Manager)
 
-			if err := deploymentReconciler.Reconcile(ctx); err != nil {
-				L.RaiseError("failed to reconcile: %s", err)
-			}
-
+			deploymentMgr.TriggerReconcile(deployment.ReconcileTriggerEvent{})
 			time.Sleep(100 * time.Millisecond)
 
 			return 0
@@ -334,14 +331,14 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 			}
 			return p
 		}
-		deployer, err := deployment.NewDeployer(db, dcp, noop.NewMeterProvider().Meter(""), logrus.NewEntry(log))
+		deploymentMgr, err := deployment.NewManager(db, dcp, noop.NewMeterProvider().Meter(""), logrus.NewEntry(log))
 		if err != nil {
 			done()
 			return ctx, nil, nil, err
 		}
+		go deploymentMgr.Run(ctx, 1*time.Hour)
 
-		deploymentsReconcileTrigger := make(chan deployment.ReconcileTriggerEvent, 1)
-		restRunner, err := newRestRunner(ctx, pool, deployer, deploymentsReconcileTrigger)
+		restRunner, err := newRestRunner(ctx, pool, deploymentMgr)
 		if err != nil {
 			done()
 			return ctx, nil, nil, err
@@ -350,7 +347,7 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 		runners := []spec.Runner{
 			naisdRunner,
 			restRunner,
-			newGQLRunner(pool),
+			newGQLRunner(pool, deploymentMgr),
 			runner.NewSQLRunner(pool),
 		}
 
@@ -371,14 +368,8 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 			return ctx, nil, nil, err
 		}
 
-		deploymentReconciler, err := deployment.NewReconciler(db, deployer, deploymentsReconcileTrigger, noop.NewMeterProvider().Meter(""), logrus.NewEntry(log))
-		if err != nil {
-			done()
-			return ctx, nil, nil, err
-		}
-
 		ctx = context.WithValue(ctx, reconcilerKey, reconciler)
-		ctx = context.WithValue(ctx, deploymentReconcilerKey, deploymentReconciler)
+		ctx = context.WithValue(ctx, deploymentMgrKey, deploymentMgr)
 		ctx = context.WithValue(ctx, naisdKey, naisdRunner)
 
 		cleanups = append(cleanups, close)
@@ -392,7 +383,7 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 	}
 }
 
-func newRestRunner(ctx context.Context, pool *pgxpool.Pool, deployer *deployment.Deployer, deploymentsReconcileTrigger chan<- deployment.ReconcileTriggerEvent) (*runner.REST, error) {
+func newRestRunner(ctx context.Context, pool *pgxpool.Pool, deploymentMgr *deployment.Manager) (*runner.REST, error) {
 	router := chi.NewMux()
 	// router.Handle("/query", iapMW(corsMW.Handler(srv)))
 
@@ -405,7 +396,7 @@ func newRestRunner(ctx context.Context, pool *pgxpool.Pool, deployer *deployment
 	rout.AllowAll = true
 	router.Post("/github/rollout", rout.Rollout)
 
-	deploy, err := deployment.NewHttpHandler(ctx, deployer, deploymentsReconcileTrigger, logrus.New())
+	deploy, err := deployment.NewHttpHandler(ctx, deploymentMgr, logrus.New())
 	if err != nil {
 		return nil, err
 	}
@@ -416,13 +407,14 @@ func newRestRunner(ctx context.Context, pool *pgxpool.Pool, deployer *deployment
 	return runner.NewRestRunner(router), nil
 }
 
-func newGQLRunner(pool *pgxpool.Pool) spec.Runner {
+func newGQLRunner(pool *pgxpool.Pool, deploymentMgr *deployment.Manager) spec.Runner {
 	log := logrus.New()
 	log.Out = io.Discard
 
 	resolver := &graph.Resolver{
-		Repo: database.New(pool, log),
-		Log:  logrus.NewEntry(log),
+		Repo:          database.New(pool, log),
+		Log:           logrus.NewEntry(log),
+		DeploymentMgr: deploymentMgr,
 	}
 
 	newServer := func(es graphql.ExecutableSchema) *handler.Server {

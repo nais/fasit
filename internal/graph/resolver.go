@@ -24,24 +24,22 @@ type Resolver struct {
 	Repo           database.Repo
 	Log            *logrus.Entry
 	ClusterManager cluster.ClusterManager
+	DeploymentMgr  *deployment.Manager
 
-	logNotifier        *logNotifier
-	diNotifier         *updateNotifier
-	createPublisher    workers.NewPublisher
-	deploymentsTrigger chan<- deployment.ReconcileTriggerEvent
-	deployer           *deployment.Deployer
+	logNotifier     *logNotifier
+	diNotifier      *updateNotifier
+	createPublisher workers.NewPublisher
 }
 
-func NewResolver(ctx context.Context, repo database.Repo, deployer *deployment.Deployer, deploymentsTrigger chan<- deployment.ReconcileTriggerEvent, notifier *notifier.Notifier, naisdPublisher workers.NewPublisher, clusterManager cluster.ClusterManager, log *logrus.Entry) *Resolver {
+func NewResolver(ctx context.Context, repo database.Repo, deploymentMgr *deployment.Manager, notifier *notifier.Notifier, naisdPublisher workers.NewPublisher, clusterManager cluster.ClusterManager, log *logrus.Entry) *Resolver {
 	return &Resolver{
-		Repo:               repo,
-		Log:                log,
-		ClusterManager:     clusterManager,
-		deployer:           deployer,
-		createPublisher:    naisdPublisher,
-		logNotifier:        newLogNotifier(ctx, notifier, repo),
-		diNotifier:         newDeployInstructionsNotifier(ctx, notifier, repo),
-		deploymentsTrigger: deploymentsTrigger,
+		Repo:            repo,
+		Log:             log,
+		ClusterManager:  clusterManager,
+		DeploymentMgr:   deploymentMgr,
+		createPublisher: naisdPublisher,
+		logNotifier:     newLogNotifier(ctx, notifier, repo),
+		diNotifier:      newDeployInstructionsNotifier(ctx, notifier, repo),
 	}
 }
 

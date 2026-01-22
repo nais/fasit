@@ -30,26 +30,25 @@ type Publisher interface {
 
 type NewPublisher func(topicID string, log logrus.FieldLogger) Publisher
 
-type Deployer struct {
+type deployer struct {
 	publisher      NewPublisher
 	repo           database.Repo
 	log            logrus.FieldLogger
 	deployMessages metric.Int64Counter
 }
 
-func NewDeployer(
+func newDeployer(
 	repo database.Repo,
 	publisher NewPublisher,
 	meter metric.Meter,
 	log logrus.FieldLogger,
-) (*Deployer, error) {
-
+) (*deployer, error) {
 	deployMessages, err := meter.Int64Counter("deployment_deploy_messages", metric.WithDescription("Deploy messages sent"))
 	if err != nil {
 		return nil, fmt.Errorf("create deploy messages counter: %w", err)
 	}
 
-	return &Deployer{
+	return &deployer{
 		publisher:      publisher,
 		repo:           repo,
 		log:            log,
@@ -57,7 +56,7 @@ func NewDeployer(
 	}, nil
 }
 
-func (d *Deployer) deployToCI(ctx context.Context, kind model.EnvironmentKind, deploymentId uuid.UUID) error {
+func (d *deployer) deployToCI(ctx context.Context, kind model.EnvironmentKind, deploymentId uuid.UUID) error {
 	tenant, err := d.repo.TenantCI(ctx)
 	if err != nil {
 		return fmt.Errorf("get ci tenant: %w", err)
@@ -94,7 +93,7 @@ func (d *Deployer) deployToCI(ctx context.Context, kind model.EnvironmentKind, d
 	}, naisdUnhealthy, mgr)
 }
 
-func (d *Deployer) deployToEnvironment(ctx context.Context, deployment database.Deployment, environment *model.TenantEnvironment, naisdUnhealthy bool, mgr Publisher) error {
+func (d *deployer) deployToEnvironment(ctx context.Context, deployment database.Deployment, environment *model.TenantEnvironment, naisdUnhealthy bool, mgr Publisher) error {
 	if err := d.repo.V3InsertEnvironmentFeature(ctx, environment.ID, deployment.ID, deployment.Name, deployment.Version); err != nil {
 		d.log.WithError(err).WithFields(logrus.Fields{
 			"environment_id":  environment.ID,
@@ -163,7 +162,7 @@ func (d *Deployer) deployToEnvironment(ctx context.Context, deployment database.
 	return nil
 }
 
-func (d *Deployer) shouldDeployToEnvironment(ctx context.Context, deployment database.Deployment, environment *model.TenantEnvironment, hash string) (bool, error) {
+func (d *deployer) shouldDeployToEnvironment(ctx context.Context, deployment database.Deployment, environment *model.TenantEnvironment, hash string) (bool, error) {
 	existingDeploy, err := d.repo.DeployInstructionsLatestForFeature(ctx, environment.ID, deployment.Feature.Name)
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
@@ -178,9 +177,6 @@ func (d *Deployer) shouldDeployToEnvironment(ctx context.Context, deployment dat
 		}
 
 		if existingDeploy.Hash == hash {
-			if existingDeploy.Status != model.RolloutStatusFailed {
-				d.setDeploymentStatus(ctx, deployment.ID, environment.ID, existingDeploy.Status, "no changes in feature")
-			}
 			return false, nil
 		}
 	}
@@ -188,7 +184,7 @@ func (d *Deployer) shouldDeployToEnvironment(ctx context.Context, deployment dat
 	return d.isDependenciesDeployed(ctx, deployment, environment.ID)
 }
 
-func (d *Deployer) setDeploymentStatus(ctx context.Context, deploymentID, environmentID uuid.UUID, status model.RolloutStatus, msg string) {
+func (d *deployer) setDeploymentStatus(ctx context.Context, deploymentID, environmentID uuid.UUID, status model.RolloutStatus, msg string) {
 	if err := d.repo.V3DeploymentStatusCreateOrUpdate(ctx, deploymentID, environmentID, status, msg); err != nil {
 		d.log.WithFields(logrus.Fields{
 			"deployment_id":  deploymentID,
@@ -199,7 +195,7 @@ func (d *Deployer) setDeploymentStatus(ctx context.Context, deploymentID, enviro
 	}
 }
 
-func (d *Deployer) isDependenciesDeployed(ctx context.Context, deployment database.Deployment, envID uuid.UUID) (bool, error) {
+func (d *deployer) isDependenciesDeployed(ctx context.Context, deployment database.Deployment, envID uuid.UUID) (bool, error) {
 	if len(deployment.Dependencies) == 0 {
 		return true, nil
 	}
@@ -236,8 +232,8 @@ func (d *Deployer) isDependenciesDeployed(ctx context.Context, deployment databa
 
 	return true, nil
 }
-func (d *Deployer) CreateDeployment(ctx context.Context, req *Request) (uuid.UUID, error) {
 
+func (d *deployer) CreateDeployment(ctx context.Context, req *Request) (uuid.UUID, error) {
 	feat, err := model.FromChart(req.Chart, req.Version)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("unable to convert oci chart: %w", err)
@@ -278,12 +274,12 @@ func (d *Deployer) CreateDeployment(ctx context.Context, req *Request) (uuid.UUI
 }
 
 // TODO: donot use database.Deployment in public methods
-func (d *Deployer) GetDeployment(ctx context.Context, id uuid.UUID) (*database.Deployment, error) {
+func (d *deployer) GetDeployment(ctx context.Context, id uuid.UUID) (*database.Deployment, error) {
 	return d.repo.V3DeploymentGet(ctx, id)
 }
 
 // TODO: rename to something
-func (d *Deployer) deploymentsInEnvironment(ctx context.Context, environment *model.TenantEnvironment) error {
+func (d *deployer) deploymentsInEnvironment(ctx context.Context, environment *model.TenantEnvironment) error {
 	health, err := d.repo.HealthGet(ctx, environment.ID)
 	if err != nil {
 		return fmt.Errorf("health status: %w", err)
