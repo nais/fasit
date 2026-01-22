@@ -3,6 +3,7 @@ package cluster
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 
 	"cloud.google.com/go/container/apiv1/containerpb"
@@ -210,23 +211,7 @@ func TestClient_GetRunningOperations_FiltersPendingAndRunning(t *testing.T) {
 
 // containsCluster checks if a target link contains the cluster name
 func containsCluster(targetLink, clusterName string) bool {
-	return targetLink != "" && clusterName != "" &&
-		(targetLink == clusterName ||
-			targetLink[len(targetLink)-len(clusterName):] == clusterName ||
-			containsSubstring(targetLink, clusterName))
-}
-
-func containsSubstring(s, substr string) bool {
-	return len(s) >= len(substr) && findSubstring(s, substr)
-}
-
-func findSubstring(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
+	return strings.Contains(targetLink, clusterName)
 }
 
 func TestClient_GetAvailableVersions(t *testing.T) {
