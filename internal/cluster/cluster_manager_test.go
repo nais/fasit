@@ -209,9 +209,17 @@ func TestClient_GetRunningOperations_FiltersPendingAndRunning(t *testing.T) {
 	}
 }
 
-// containsCluster checks if a target link contains the cluster name
+// containsCluster checks if a target link refers to the given cluster by name
 func containsCluster(targetLink, clusterName string) bool {
-	return strings.Contains(targetLink, clusterName)
+	parts := strings.Split(targetLink, "/")
+	if len(parts) == 0 {
+		return false
+	}
+	last := parts[len(parts)-1]
+	if last == "" && len(parts) > 1 {
+		last = parts[len(parts)-2]
+	}
+	return last == clusterName
 }
 
 func TestClient_GetAvailableVersions(t *testing.T) {
