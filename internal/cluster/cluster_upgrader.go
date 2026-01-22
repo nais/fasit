@@ -230,7 +230,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 			hasControlPlaneOp := false
 			hasNodeOp := false
 			for _, op := range runningOps {
-				if op.Status == containerpb.Operation_RUNNING {
+				if isOperationActive(op) {
 					switch op.OperationType {
 					case containerpb.Operation_UPGRADE_MASTER:
 						hasControlPlaneOp = true
@@ -367,7 +367,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 			hasControlPlaneOp := false
 			hasNodeOp := false
 			for _, op := range runningOperations {
-				if op.Status == containerpb.Operation_RUNNING {
+				if isOperationActive(op) {
 					switch op.OperationType {
 					case containerpb.Operation_UPGRADE_MASTER:
 						hasControlPlaneOp = true
@@ -605,9 +605,14 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 	return nil
 }
 
+// isOperationActive checks if an operation is in an active state (RUNNING or PENDING)
+func isOperationActive(op *containerpb.Operation) bool {
+	return op.Status == containerpb.Operation_RUNNING || op.Status == containerpb.Operation_PENDING
+}
+
 func clusterHas(runningOperations []*containerpb.Operation) bool {
 	for _, op := range runningOperations {
-		if op.Status == containerpb.Operation_RUNNING || op.Status == containerpb.Operation_PENDING {
+		if isOperationActive(op) {
 			return true
 		}
 	}
