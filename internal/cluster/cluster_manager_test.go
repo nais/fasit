@@ -73,9 +73,9 @@ func TestClient_GetRunningOperations(t *testing.T) {
 func TestClient_GetRunningOperations_FiltersPendingAndRunning(t *testing.T) {
 	ctx := context.Background()
 
-	// Create a real Client with a mock GKE client would be complex,
-	// so this test documents the expected behavior that should be verified
-	// in integration tests or by mocking the underlying GKE client.
+	// NOTE: This test uses the ClusterManager interface mock and does not
+	// exercise the actual filtering logic. See TestTargetMatchesCluster for
+	// unit tests of the filtering logic itself.
 
 	tests := []struct {
 		name           string
@@ -203,6 +203,67 @@ func TestClient_GetRunningOperations_FiltersPendingAndRunning(t *testing.T) {
 						t.Errorf("operation[%d] status = %v, want %v", i, op.Status, tt.expectedStatus[i])
 					}
 				}
+			}
+		})
+	}
+}
+
+func TestTargetMatchesCluster(t *testing.T) {
+	tests := []struct {
+		name        string
+		targetLink  string
+		clusterName string
+		expected    bool
+	}{
+		{
+			name:        "matches cluster operation",
+			targetLink:  "https://container.googleapis.com/v1/projects/my-project/locations/europe-north1/clusters/nais-t1",
+			clusterName: "nais-t1",
+			expected:    true,
+		},
+		{
+			name:        "matches nodepool operation",
+			targetLink:  "https://container.googleapis.com/v1/projects/my-project/locations/europe-north1/clusters/nais-t1/nodePools/pool-name",
+			clusterName: "nais-t1",
+			expected:    true,
+		},
+		{
+			name:        "does not match different cluster",
+			targetLink:  "https://container.googleapis.com/v1/projects/my-project/locations/europe-north1/clusters/nais-t2",
+			clusterName: "nais-t1",
+			expected:    false,
+		},
+		{
+			name:        "does not match cluster with similar name (nais-t10 vs nais-t1)",
+			targetLink:  "https://container.googleapis.com/v1/projects/my-project/locations/europe-north1/clusters/nais-t10",
+			clusterName: "nais-t1",
+			expected:    false,
+		},
+		{
+			name:        "does not match nodepool operation for different cluster",
+			targetLink:  "https://container.googleapis.com/v1/projects/my-project/locations/europe-north1/clusters/nais-other/nodePools/pool-name",
+			clusterName: "nais-t1",
+			expected:    false,
+		},
+		{
+			name:        "returns false for URL without clusters segment",
+			targetLink:  "https://container.googleapis.com/v1/projects/my-project/locations/europe-north1",
+			clusterName: "nais-t1",
+			expected:    false,
+		},
+		{
+			name:        "returns false for empty target link",
+			targetLink:  "",
+			clusterName: "nais-t1",
+			expected:    false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := targetMatchesCluster(tt.targetLink, tt.clusterName)
+			if result != tt.expected {
+				t.Errorf("targetMatchesCluster(%q, %q) = %v, want %v", tt.targetLink, tt.clusterName, result, tt.expected)
 			}
 		})
 	}
