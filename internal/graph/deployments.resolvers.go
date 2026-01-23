@@ -63,7 +63,7 @@ func (r *mutationResolver) CreateDeployment(ctx context.Context, input model.Cre
 		return uuid.Nil, fmt.Errorf("invalid target: %w", err)
 	}
 
-	id, err := deployment.CreateDeployment(ctx, r.Repo, &deployment.Request{
+	id, err := r.DeploymentMgr.CreateDeployment(ctx, &deployment.Request{
 		Chart:       input.Chart,
 		Version:     input.Version,
 		Description: input.Description,
@@ -74,7 +74,7 @@ func (r *mutationResolver) CreateDeployment(ctx context.Context, input model.Cre
 		return uuid.Nil, fmt.Errorf("create deployment: %w", err)
 	}
 
-	deployment.TriggerReconcile(deployment.ReconcileTriggerEvent{}, r.deploymentsTrigger, r.Log)
+	r.DeploymentMgr.TriggerReconcile(deployment.ReconcileTriggerEvent{})
 
 	return id, nil
 }

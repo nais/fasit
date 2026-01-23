@@ -171,12 +171,11 @@ func main() {
 		return message.NewPublisher[message.DeployInstruction](pubsubClient, cfg.GCPProjectID, topicID, log)
 	}
 
-	deploymentsReconcileTrigger := make(chan deployment.ReconcileTriggerEvent, 1)
-	deploymentReconciler, err := deployment.NewReconciler(repo, deployCreatePublisher, deploymentsReconcileTrigger, meter, log.WithField("subsystem", "deployment_reconciler"))
+	deploymentMgr, err := deployment.NewManager(repo, deployCreatePublisher, meter, log.WithField("subsystem", "deployment_mgr"))
 	if err != nil {
 		log.WithError(err).Fatal("setting up deployment reconciler")
 	}
-	go deploymentReconciler.Run(ctx, 10*time.Minute)
+	go deploymentMgr.Run(ctx, 10*time.Minute)
 
 	costUpdater, err := workers.NewCostUpdater(ctx, repo, log.WithField("subsystem", "cost_updater"))
 	if err != nil {
@@ -189,7 +188,7 @@ func main() {
 	if err != nil {
 		log.WithError(err).Fatal("setting up google client")
 	}
-	resolver := graph.NewResolver(ctx, repo, deploymentsReconcileTrigger, notifierService, createPublisher, googleClient, log.WithField("subsystem", "graphql"))
+	resolver := graph.NewResolver(ctx, repo, deploymentMgr, notifierService, createPublisher, googleClient, log.WithField("subsystem", "graphql"))
 
 	srv := newServer(graphgen.NewExecutableSchema(graphgen.Config{Resolvers: resolver}))
 	srv.Use(otelgqlgen.Middleware())
@@ -247,7 +246,7 @@ func main() {
 	rout.AllowAll = cfg.InsecureSkipTokenCheck
 	router.Post("/github/rollout", rout.Rollout)
 
-	deploy, err := deployment.New(ctx, repo, deploymentsReconcileTrigger, log.WithField("subsystem", "create_deployment"))
+	deploy, err := deployment.NewHttpHandler(ctx, deploymentMgr, log.WithField("subsystem", "deployment_http"))
 	if err != nil {
 		log.WithError(err).Fatal("setting up deployment")
 	}

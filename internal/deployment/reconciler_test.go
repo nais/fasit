@@ -123,29 +123,27 @@ func TestReconcile(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
+			reconcilerCtx, cancel := context.WithCancel(ctx)
+			t.Cleanup(cancel)
+
 			db := getDb(ctx, t, container, dsn, logger)
 			pub := &publisher{repo: db.repo}
-
-			r, err := deployment.NewReconciler(
-				db.repo,
-				func(topicID string, log logrus.FieldLogger) deployment.Publisher {
-					return pub
-				},
-				nil,
-				meter,
-				logger,
-			)
+			newPublisher := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
+				return pub
+			}
+			deploymentMgr, err := deployment.NewManager(db.repo, newPublisher, meter, logger)
 			if err != nil {
-				t.Fatalf("create reconciler: %v", err)
+				t.Fatalf("create deployment manager: %v", err)
 			}
 
 			db.createTenantsAndEnvironments(ctx, envsToCreate)
 			db.createFeatureDeployments(ctx, tc.deploymentsToCreate)
 
 			for _, result := range tc.reconcileResults {
-				if err = r.Reconcile(ctx); err != nil {
+				if err := deploymentMgr.Reconcile(reconcilerCtx); err != nil {
 					t.Fatalf("reconcile: %v", err)
 				}
+
 				q := `
 				SELECT
 				t.name || ':' || e.name || ':' || di.feature_name || ':' || di.feature_version
@@ -204,32 +202,30 @@ func TestReconcileWhenPreviousIsInProgress(t *testing.T) {
 
 	fmt.Println("postgres container started: ", dsn)
 
+	reconcilerCtx, cancel := context.WithCancel(ctx)
+	t.Cleanup(cancel)
+
 	db := getDb(ctx, t, container, dsn, logger)
 	pub := &publisher{repo: db.repo}
+	newPublisher := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
+		return pub
+	}
 
-	r, err := deployment.NewReconciler(
-		db.repo,
-		func(topicID string, log logrus.FieldLogger) deployment.Publisher {
-			return pub
-		},
-		nil,
-		meter,
-		logger,
-	)
+	deploymentMgr, err := deployment.NewManager(db.repo, newPublisher, meter, logger)
 	if err != nil {
-		t.Fatalf("create reconciler: %v", err)
+		t.Fatalf("create deployment manager: %v", err)
 	}
 
 	db.createTenantsAndEnvironments(ctx, envsToCreate)
 	db.createFeatureDeployment(ctx, "feature-pending", "1.0.0", environment.Labels{}, nil)
 
-	if err = r.Reconcile(ctx); err != nil {
+	if err := deploymentMgr.Reconcile(reconcilerCtx); err != nil {
 		t.Fatalf("reconcile: %v", err)
 	}
 
 	db.createFeatureDeployment(ctx, "feature-pending", "2.0.0", environment.Labels{}, nil)
 
-	if err = r.Reconcile(ctx); err != nil {
+	if err := deploymentMgr.Reconcile(reconcilerCtx); err != nil {
 		t.Fatalf("reconcile: %v", err)
 	}
 
