@@ -937,7 +937,7 @@ func (c *ClusterUpgrader) upgradeNodes(ctx context.Context, env *model.Environme
 }
 
 func (c *ClusterUpgrader) nodeUpgradeStatus(ctx context.Context, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus, projectID string) (bool, error) {
-	rop, err := c.repo.GetRunningClusterOperation(ctx, env.TenantID, env.ID)
+	rop, err := c.repo.GetActiveClusterOperation(ctx, env.TenantID, env.ID)
 	if err != nil {
 		return false, err
 	}
@@ -958,7 +958,7 @@ func (c *ClusterUpgrader) nodeUpgradeStatus(ctx context.Context, env *model.Envi
 }
 
 func (c *ClusterUpgrader) controlPlaneUpgradeStatus(ctx context.Context, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus, projectID, tenantName string) (*model.ClusterUpgradeStatus, error) {
-	rop, err := c.repo.GetRunningClusterOperation(ctx, env.TenantID, env.ID)
+	rop, err := c.repo.GetActiveClusterOperation(ctx, env.TenantID, env.ID)
 	if err != nil {
 		return nil, err
 	}
