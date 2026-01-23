@@ -879,7 +879,57 @@ func TestRun_UpgradeDurationWarnsWithoutUpgradeStartTime(t *testing.T) {
 	// The test passes if no error is thrown and the warning is logged (verified by code coverage)
 }
 
-// Note: Additional integration tests for the deduplication logic in upgradeNodes() would be valuable
-// but are complex to implement with the current test framework's mock setup. The core logic is
-// validated through comprehensive unit tests of the containsNodePool() helper function (14 test cases).
-// The deduplication behavior will be validated in production deployment.
+// TestUpgradeNodes_SkipsDuplicateOperation verifies the deduplication logic prevents creating
+// duplicate upgrade operations when an active operation already exists for a nodepool.
+func TestUpgradeNodes_SkipsDuplicateOperation(t *testing.T) {
+	suite := newTestSuite(t)
+	log := logrus.New().WithField("testSuite", "upgrade")
+	meter := metricsdk.NewMeterProvider().Meter("testSuite")
+	slackClient := fake.NewFakeSlackClient()
+	upgrade := NewClusterUpgrader(suite.repoMock, log, suite.clusterMock, meter, slackClient, "channel")
+
+	ctx := context.Background()
+	clusterUpgradeID := uuid.New()
+
+	// Set up a cluster upgrade in NODE_UPGRADE status
+	clusterUpgrade := &model.ClusterUpgradeStatus{
+		ID:            clusterUpgradeID,
+		UpgradeStatus: model.UpgradeStatusNodeUpgrade,
+		Version:       "1.2.4",
+		LastModified:  time.Now(),
+		StartTime:     time.Now(),
+	}
+
+	// Mock GetNodePools - nodepool needs upgrading
+	suite.clusterMock.EXPECT().GetNodePools(mock.Anything, "test-project", suite.environment).Return(
+		[]*containerpb.NodePool{
+			{
+				Name:    "test-pool",
+				Version: "1.2.3", // Needs upgrade to 1.2.4
+			},
+		}, nil).Once()
+
+	// Mock ClusterOperationsGetByUpgradeID - return RUNNING operation for the same nodepool
+	existingOps := []*model.EnvironmentOperation{
+		{
+			Name:   "operation-already-running",
+			Type:   "UPGRADE_NODES",
+			Status: "RUNNING",
+			Target: "https://container.googleapis.com/v1/projects/test-project/locations/europe-north1/clusters/test-cluster/nodePools/test-pool",
+		},
+	}
+	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(ctx, clusterUpgradeID).Return(existingOps, nil).Once()
+
+	// Call upgradeNodes directly
+	result, err := upgrade.upgradeNodes(ctx, suite.environment, clusterUpgrade, "test-project", "test-tenant")
+	// Should NOT create a new operation (returns nil)
+	if err != nil {
+		t.Errorf("upgradeNodes returned error: %v", err)
+	}
+	if result != nil {
+		t.Errorf("upgradeNodes should return nil when skipping duplicate, got: %v", result)
+	}
+
+	// Verify UpgradeNodePool was NOT called
+	suite.clusterMock.AssertNotCalled(t, "UpgradeNodePool")
+}
