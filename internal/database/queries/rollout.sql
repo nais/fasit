@@ -69,14 +69,21 @@ SELECT
 	fd.values,
 	fd.default_values,
 	fd.timeout,
-	rollouts.created
-FROM
-	rollouts
-	JOIN all_rollouts ar ON ar.id = rollouts.id
-	JOIN feature_data fd ON rollouts.feature_name = fd.name
-		AND rollouts.version = fd.version
-	ORDER BY
-		rollouts.feature_name ASC;
+	rollouts.created,
+	EXISTS (
+		SELECT
+			1
+		FROM
+			deployments d
+		WHERE
+			d.feature_name = fd.name) AS hasDeployments
+	FROM
+		rollouts
+		JOIN all_rollouts ar ON ar.id = rollouts.id
+		JOIN feature_data fd ON rollouts.feature_name = fd.name
+			AND rollouts.version = fd.version
+		ORDER BY
+			rollouts.feature_name ASC;
 
 -- name: RolloutByName :one
 SELECT
