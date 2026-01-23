@@ -76,6 +76,12 @@ func TestContainsNodePool(t *testing.T) {
 			expected:     true,
 		},
 		{
+			name:         "matches nodepool with trailing slash",
+			targetLink:   "https://container.googleapis.com/v1/projects/my-project/locations/europe-north1/clusters/nais-dev/nodePools/my-pool/",
+			nodepoolName: "my-pool",
+			expected:     true,
+		},
+		{
 			name:         "does not match when nodePools appears but no name follows",
 			targetLink:   "https://container.googleapis.com/v1/projects/my-project/locations/europe-north1/clusters/nais-dev/nodePools",
 			nodepoolName: "my-pool",
