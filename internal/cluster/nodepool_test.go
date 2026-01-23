@@ -81,6 +81,18 @@ func TestContainsNodePool(t *testing.T) {
 			nodepoolName: "my-pool",
 			expected:     false,
 		},
+		{
+			name:         "returns false for empty nodepool name with trailing slash in URL",
+			targetLink:   "https://container.googleapis.com/v1/projects/my-project/locations/europe-north1/clusters/nais-dev/nodePools/",
+			nodepoolName: "",
+			expected:     false,
+		},
+		{
+			name:         "returns false for empty nodepool name with double slash in URL",
+			targetLink:   "https://container.googleapis.com/v1/projects/my-project/locations/europe-north1/clusters/nais-dev/nodePools//",
+			nodepoolName: "",
+			expected:     false,
+		},
 	}
 
 	for _, tt := range tests {

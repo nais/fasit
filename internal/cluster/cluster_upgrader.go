@@ -614,6 +614,12 @@ func isOperationActive(op *containerpb.Operation) bool {
 // containsNodePool checks if the target link references the specified nodepool name as a distinct path segment
 func containsNodePool(targetLink, nodepoolName string) bool {
 	// Target link format: https://container.googleapis.com/v1/projects/{project}/locations/{location}/clusters/{cluster}/nodePools/{nodepool}
+
+	// Empty nodepool name is not valid
+	if nodepoolName == "" {
+		return false
+	}
+
 	// Strip query parameters and fragments if present
 	if i := strings.IndexAny(targetLink, "?#"); i != -1 {
 		targetLink = targetLink[:i]
