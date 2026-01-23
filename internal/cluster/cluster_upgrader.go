@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/container/apiv1/containerpb"
@@ -610,6 +611,12 @@ func isOperationActive(op *containerpb.Operation) bool {
 	return op.Status == containerpb.Operation_RUNNING || op.Status == containerpb.Operation_PENDING
 }
 
+// containsNodePool checks if the target link contains the specified nodepool name
+func containsNodePool(targetLink, nodepoolName string) bool {
+	// Target link format: https://container.googleapis.com/v1/projects/{project}/locations/{location}/clusters/{cluster}/nodePools/{nodepool}
+	return strings.Contains(targetLink, "/nodePools/"+nodepoolName)
+}
+
 func clusterHas(runningOperations []*containerpb.Operation) bool {
 	for _, op := range runningOperations {
 		if isOperationActive(op) {
@@ -684,8 +691,9 @@ func (c *ClusterUpgrader) getAndUpdateRunningOperations(ctx context.Context, pro
 			continue
 		}
 
-		if existingOp.Status != "RUNNING" {
-			continue // Skip operations that are not in RUNNING state
+		// Check both RUNNING and PENDING operations that might have completed
+		if existingOp.Status != "RUNNING" && existingOp.Status != "PENDING" {
+			continue
 		}
 
 		if !runningOpNames[existingOp.Name] {
@@ -844,6 +852,13 @@ func (c *ClusterUpgrader) upgradeNodes(ctx context.Context, env *model.Environme
 		return nil, err
 	}
 
+	// Get existing operations to avoid creating duplicates
+	existingOps, err := c.repo.ClusterOperationsGetByUpgradeID(ctx, clusterUpgrade.ID)
+	if err != nil {
+		c.log.WithError(err).Error("failed to get existing cluster operations")
+		return nil, err
+	}
+
 	for _, np := range nodePools {
 		npVersionObj, err := version.NewVersion(np.Version)
 		if err != nil {
@@ -851,6 +866,31 @@ func (c *ClusterUpgrader) upgradeNodes(ctx context.Context, env *model.Environme
 		}
 
 		if npVersionObj.GreaterThanOrEqual(clusterUpgraderVersionObj) {
+			continue
+		}
+
+		// Check if there's already an operation for this nodepool
+		// Operations contain the nodepool name in their target link
+		hasOperation := false
+		for _, existingOp := range existingOps {
+			// Check if this operation is for the current nodepool and is active or recently completed
+			if existingOp.Type == "UPGRADE_NODES" &&
+				(existingOp.Status == "PENDING" || existingOp.Status == "RUNNING" || existingOp.Status == "DONE") {
+				// Parse the target link to check if it matches this nodepool
+				// Target format: https://container.googleapis.com/.../nodePools/{nodepool-name}
+				if containsNodePool(existingOp.Target, np.Name) {
+					hasOperation = true
+					c.log.WithFields(logrus.Fields{
+						"nodepool":  np.Name,
+						"operation": existingOp.Name,
+						"status":    existingOp.Status,
+					}).Debug("nodepool already has an operation, skipping new upgrade")
+					break
+				}
+			}
+		}
+
+		if hasOperation {
 			continue
 		}
 
