@@ -707,14 +707,14 @@ func (c *ClusterUpgrader) getAndUpdateRunningOperations(ctx context.Context, pro
 			continue
 		}
 
-		// Check both RUNNING and PENDING operations that might have completed
+		// Only process operations that are RUNNING or PENDING
 		if existingOp.Status != "RUNNING" && existingOp.Status != "PENDING" {
 			continue
 		}
 
 		if !runningOpNames[existingOp.Name] {
-			// This operation is marked as RUNNING in our DB but not found in GKE
-			// Need to fetch its current status from GKE
+			// This operation is marked as RUNNING or PENDING in our DB but not found in GKE
+			// Need to fetch its current status from GKE (might have completed)
 			log.WithField("operation", existingOp.Name).Debug("checking status of operation no longer running")
 
 			err := c.retryer.WithBackoff(ctx, "get_operation_status", func() error {
