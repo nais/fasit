@@ -611,10 +611,20 @@ func isOperationActive(op *containerpb.Operation) bool {
 	return op.Status == containerpb.Operation_RUNNING || op.Status == containerpb.Operation_PENDING
 }
 
-// containsNodePool checks if the target link contains the specified nodepool name
+// containsNodePool checks if the target link references the specified nodepool name as a distinct path segment
 func containsNodePool(targetLink, nodepoolName string) bool {
 	// Target link format: https://container.googleapis.com/v1/projects/{project}/locations/{location}/clusters/{cluster}/nodePools/{nodepool}
-	return strings.Contains(targetLink, "/nodePools/"+nodepoolName)
+	// Strip query parameters and fragments if present
+	if i := strings.IndexAny(targetLink, "?#"); i != -1 {
+		targetLink = targetLink[:i]
+	}
+	parts := strings.Split(targetLink, "/")
+	for i := 0; i < len(parts)-1; i++ {
+		if parts[i] == "nodePools" && parts[i+1] == nodepoolName {
+			return true
+		}
+	}
+	return false
 }
 
 func clusterHas(runningOperations []*containerpb.Operation) bool {
@@ -873,9 +883,9 @@ func (c *ClusterUpgrader) upgradeNodes(ctx context.Context, env *model.Environme
 		// Operations contain the nodepool name in their target link
 		hasOperation := false
 		for _, existingOp := range existingOps {
-			// Check if this operation is for the current nodepool and is active or recently completed
+			// Check if this operation is for the current nodepool and is active
 			if existingOp.Type == "UPGRADE_NODES" &&
-				(existingOp.Status == "PENDING" || existingOp.Status == "RUNNING" || existingOp.Status == "DONE") {
+				(existingOp.Status == "PENDING" || existingOp.Status == "RUNNING") {
 				// Parse the target link to check if it matches this nodepool
 				// Target format: https://container.googleapis.com/.../nodePools/{nodepool-name}
 				if containsNodePool(existingOp.Target, np.Name) {
