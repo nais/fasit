@@ -4692,12 +4692,12 @@ func (_c *Repo_FeaturesForKind_Call) RunAndReturn(run func(ctx context.Context, 
 	return _c
 }
 
-// GetRunningClusterOperation provides a mock function for the type Repo
-func (_mock *Repo) GetRunningClusterOperation(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID) (*model.EnvironmentOperation, error) {
+// GetActiveClusterOperation provides a mock function for the type Repo
+func (_mock *Repo) GetActiveClusterOperation(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID) (*model.EnvironmentOperation, error) {
 	ret := _mock.Called(ctx, tenantID, envID)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetRunningClusterOperation")
+		panic("no return value specified for GetActiveClusterOperation")
 	}
 
 	var r0 *model.EnvironmentOperation
@@ -4720,20 +4720,20 @@ func (_mock *Repo) GetRunningClusterOperation(ctx context.Context, tenantID uuid
 	return r0, r1
 }
 
-// Repo_GetRunningClusterOperation_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetRunningClusterOperation'
-type Repo_GetRunningClusterOperation_Call struct {
+// Repo_GetActiveClusterOperation_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetActiveClusterOperation'
+type Repo_GetActiveClusterOperation_Call struct {
 	*mock.Call
 }
 
-// GetRunningClusterOperation is a helper method to define mock.On call
+// GetActiveClusterOperation is a helper method to define mock.On call
 //   - ctx context.Context
 //   - tenantID uuid.UUID
 //   - envID uuid.UUID
-func (_e *Repo_Expecter) GetRunningClusterOperation(ctx interface{}, tenantID interface{}, envID interface{}) *Repo_GetRunningClusterOperation_Call {
-	return &Repo_GetRunningClusterOperation_Call{Call: _e.mock.On("GetRunningClusterOperation", ctx, tenantID, envID)}
+func (_e *Repo_Expecter) GetActiveClusterOperation(ctx interface{}, tenantID interface{}, envID interface{}) *Repo_GetActiveClusterOperation_Call {
+	return &Repo_GetActiveClusterOperation_Call{Call: _e.mock.On("GetActiveClusterOperation", ctx, tenantID, envID)}
 }
 
-func (_c *Repo_GetRunningClusterOperation_Call) Run(run func(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID)) *Repo_GetRunningClusterOperation_Call {
+func (_c *Repo_GetActiveClusterOperation_Call) Run(run func(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID)) *Repo_GetActiveClusterOperation_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -4756,12 +4756,12 @@ func (_c *Repo_GetRunningClusterOperation_Call) Run(run func(ctx context.Context
 	return _c
 }
 
-func (_c *Repo_GetRunningClusterOperation_Call) Return(environmentOperation *model.EnvironmentOperation, err error) *Repo_GetRunningClusterOperation_Call {
+func (_c *Repo_GetActiveClusterOperation_Call) Return(environmentOperation *model.EnvironmentOperation, err error) *Repo_GetActiveClusterOperation_Call {
 	_c.Call.Return(environmentOperation, err)
 	return _c
 }
 
-func (_c *Repo_GetRunningClusterOperation_Call) RunAndReturn(run func(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID) (*model.EnvironmentOperation, error)) *Repo_GetRunningClusterOperation_Call {
+func (_c *Repo_GetActiveClusterOperation_Call) RunAndReturn(run func(ctx context.Context, tenantID uuid.UUID, envID uuid.UUID) (*model.EnvironmentOperation, error)) *Repo_GetActiveClusterOperation_Call {
 	_c.Call.Return(run)
 	return _c
 }

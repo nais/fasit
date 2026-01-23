@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/container/apiv1/containerpb"
@@ -610,6 +611,28 @@ func isOperationActive(op *containerpb.Operation) bool {
 	return op.Status == containerpb.Operation_RUNNING || op.Status == containerpb.Operation_PENDING
 }
 
+// containsNodePool checks if the target link references the specified nodepool name as a distinct path segment
+func containsNodePool(targetLink, nodepoolName string) bool {
+	// Target link format: https://container.googleapis.com/v1/projects/{project}/locations/{location}/clusters/{cluster}/nodePools/{nodepool}
+
+	// Empty nodepool name is not valid
+	if nodepoolName == "" {
+		return false
+	}
+
+	// Strip query parameters and fragments if present
+	if i := strings.IndexAny(targetLink, "?#"); i != -1 {
+		targetLink = targetLink[:i]
+	}
+	parts := strings.Split(targetLink, "/")
+	for i := 0; i < len(parts)-1; i++ {
+		if parts[i] == "nodePools" && parts[i+1] == nodepoolName {
+			return true
+		}
+	}
+	return false
+}
+
 func clusterHas(runningOperations []*containerpb.Operation) bool {
 	for _, op := range runningOperations {
 		if isOperationActive(op) {
@@ -684,13 +707,14 @@ func (c *ClusterUpgrader) getAndUpdateRunningOperations(ctx context.Context, pro
 			continue
 		}
 
-		if existingOp.Status != "RUNNING" {
-			continue // Skip operations that are not in RUNNING state
+		// Only process operations that are RUNNING or PENDING
+		if existingOp.Status != "RUNNING" && existingOp.Status != "PENDING" {
+			continue
 		}
 
 		if !runningOpNames[existingOp.Name] {
-			// This operation is marked as RUNNING in our DB but not found in GKE
-			// Need to fetch its current status from GKE
+			// This operation is marked as RUNNING or PENDING in our DB but not found in GKE
+			// Need to fetch its current status from GKE (might have completed)
 			log.WithField("operation", existingOp.Name).Debug("checking status of operation no longer running")
 
 			err := c.retryer.WithBackoff(ctx, "get_operation_status", func() error {
@@ -844,6 +868,13 @@ func (c *ClusterUpgrader) upgradeNodes(ctx context.Context, env *model.Environme
 		return nil, err
 	}
 
+	// Get existing operations to avoid creating duplicates
+	existingOps, err := c.repo.ClusterOperationsGetByUpgradeID(ctx, clusterUpgrade.ID)
+	if err != nil {
+		c.log.WithError(err).Error("failed to get existing cluster operations")
+		return nil, err
+	}
+
 	for _, np := range nodePools {
 		npVersionObj, err := version.NewVersion(np.Version)
 		if err != nil {
@@ -851,6 +882,31 @@ func (c *ClusterUpgrader) upgradeNodes(ctx context.Context, env *model.Environme
 		}
 
 		if npVersionObj.GreaterThanOrEqual(clusterUpgraderVersionObj) {
+			continue
+		}
+
+		// Check if there's already an operation for this nodepool
+		// Operations contain the nodepool name in their target link
+		hasOperation := false
+		for _, existingOp := range existingOps {
+			// Check if this operation is for the current nodepool and is active
+			if existingOp.Type == "UPGRADE_NODES" &&
+				(existingOp.Status == "PENDING" || existingOp.Status == "RUNNING") {
+				// Parse the target link to check if it matches this nodepool
+				// Target format: https://container.googleapis.com/.../nodePools/{nodepool-name}
+				if containsNodePool(existingOp.Target, np.Name) {
+					hasOperation = true
+					c.log.WithFields(logrus.Fields{
+						"nodepool":  np.Name,
+						"operation": existingOp.Name,
+						"status":    existingOp.Status,
+					}).Debug("nodepool already has an operation, skipping new upgrade")
+					break
+				}
+			}
+		}
+
+		if hasOperation {
 			continue
 		}
 
@@ -881,7 +937,7 @@ func (c *ClusterUpgrader) upgradeNodes(ctx context.Context, env *model.Environme
 }
 
 func (c *ClusterUpgrader) nodeUpgradeStatus(ctx context.Context, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus, projectID string) (bool, error) {
-	rop, err := c.repo.GetRunningClusterOperation(ctx, env.TenantID, env.ID)
+	rop, err := c.repo.GetActiveClusterOperation(ctx, env.TenantID, env.ID)
 	if err != nil {
 		return false, err
 	}
@@ -902,7 +958,7 @@ func (c *ClusterUpgrader) nodeUpgradeStatus(ctx context.Context, env *model.Envi
 }
 
 func (c *ClusterUpgrader) controlPlaneUpgradeStatus(ctx context.Context, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus, projectID, tenantName string) (*model.ClusterUpgradeStatus, error) {
-	rop, err := c.repo.GetRunningClusterOperation(ctx, env.TenantID, env.ID)
+	rop, err := c.repo.GetActiveClusterOperation(ctx, env.TenantID, env.ID)
 	if err != nil {
 		return nil, err
 	}
