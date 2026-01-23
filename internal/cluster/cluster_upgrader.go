@@ -889,18 +889,35 @@ func (c *ClusterUpgrader) upgradeNodes(ctx context.Context, env *model.Environme
 		// Operations contain the nodepool name in their target link
 		hasOperation := false
 		for _, existingOp := range existingOps {
-			// Check if this operation is for the current nodepool and is active
-			if existingOp.Type == "UPGRADE_NODES" &&
-				(existingOp.Status == "PENDING" || existingOp.Status == "RUNNING") {
-				// Parse the target link to check if it matches this nodepool
-				// Target format: https://container.googleapis.com/.../nodePools/{nodepool-name}
-				if containsNodePool(existingOp.Target, np.Name) {
+			if existingOp.Type != "UPGRADE_NODES" || !containsNodePool(existingOp.Target, np.Name) {
+				continue
+			}
+
+			// Check if this operation is active (PENDING or RUNNING)
+			if existingOp.Status == "PENDING" || existingOp.Status == "RUNNING" {
+				hasOperation = true
+				c.log.WithFields(logrus.Fields{
+					"nodepool":  np.Name,
+					"operation": existingOp.Name,
+					"status":    existingOp.Status,
+				}).Debug("nodepool already has an operation, skipping new upgrade")
+				break
+			}
+
+			// Check if this is a recently failed DONE operation (apply backoff to avoid hammering GCP)
+			if existingOp.Status == "DONE" && existingOp.NodesFailed > 0 {
+				timeSinceFailure := time.Since(existingOp.LastModified)
+				backoffDuration := 30 * time.Minute
+				if timeSinceFailure < backoffDuration {
 					hasOperation = true
 					c.log.WithFields(logrus.Fields{
-						"nodepool":  np.Name,
-						"operation": existingOp.Name,
-						"status":    existingOp.Status,
-					}).Debug("nodepool already has an operation, skipping new upgrade")
+						"nodepool":        np.Name,
+						"operation":       existingOp.Name,
+						"status":          existingOp.Status,
+						"nodes_failed":    existingOp.NodesFailed,
+						"time_since_fail": timeSinceFailure,
+						"retry_available": backoffDuration - timeSinceFailure,
+					}).Info("nodepool upgrade recently failed, applying backoff before retry (will continue with other nodepools)")
 					break
 				}
 			}
