@@ -375,7 +375,7 @@ func (r *repo) CreateClusterUpgrade(ctx context.Context, tenantID, envID uuid.UU
 	return clusterUpgradeFromSQL(clusterUpgrade), nil
 }
 
-// GetActiveClusterOperation returns the most recent active (RUNNING or PENDING) cluster operation for the given tenant and environment.
+// GetActiveClusterOperation returns an active (RUNNING or PENDING) cluster operation for the given tenant and environment, prioritizing RUNNING over PENDING status.
 // It checks RUNNING first, then PENDING if no RUNNING operation is found.
 func (r *repo) GetActiveClusterOperation(ctx context.Context, tenantID, envID uuid.UUID) (*model.EnvironmentOperation, error) {
 	// First try to find a RUNNING operation
