@@ -56,43 +56,6 @@ func newDeployer(
 	}, nil
 }
 
-func (d *deployer) deployToCI(ctx context.Context, kind model.EnvironmentKind, deploymentId uuid.UUID) error {
-	tenant, err := d.repo.TenantCI(ctx)
-	if err != nil {
-		return fmt.Errorf("get ci tenant: %w", err)
-	}
-	env, err := d.repo.EnvironmentCI(ctx, kind)
-	if err != nil {
-		return fmt.Errorf("get ci environment for kind %q: %w", kind, err)
-	}
-
-	health, err := d.repo.HealthGet(ctx, env.ID)
-	if err != nil {
-		return fmt.Errorf("health status: %w", err)
-	}
-
-	naisdUnhealthy := time.Since(health.ReportedAt) > 3*time.Minute
-	if naisdUnhealthy {
-		d.log.WithFields(logrus.Fields{
-			"tenant":      tenant.Name,
-			"environment": env.Name,
-		}).Debug("naisd is unhealthy - skip deploy to ci")
-	}
-	mgr := d.publisher(naisdTopicID(tenant.Name, env.Name), d.log)
-	defer mgr.Stop()
-
-	deployment, err := d.repo.V3DeploymentGet(ctx, deploymentId)
-	if err != nil {
-		return fmt.Errorf("get deployment %q: %w", deploymentId, err)
-	}
-
-	return d.deployToEnvironment(ctx, *deployment, &model.TenantEnvironment{
-		Environment: *env,
-		TenantName:  tenant.Name,
-		TenantID:    tenant.ID,
-	}, naisdUnhealthy, mgr)
-}
-
 func (d *deployer) deployToEnvironment(ctx context.Context, deployment database.Deployment, environment *model.TenantEnvironment, naisdUnhealthy bool, mgr Publisher) error {
 	if err := d.repo.V3InsertEnvironmentFeature(ctx, environment.ID, deployment.ID, deployment.Name, deployment.Version); err != nil {
 		d.log.WithError(err).WithFields(logrus.Fields{

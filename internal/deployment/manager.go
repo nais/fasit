@@ -44,8 +44,8 @@ func NewManager(repo database.Repo, publisher NewPublisher, m metric.Meter, log 
 	}, nil
 }
 
-func (dm *Manager) Run(ctx context.Context, intervalSeconds time.Duration) {
-	dm.reconciler.Run(ctx, intervalSeconds)
+func (dm *Manager) Run(ctx context.Context, interval time.Duration) {
+	dm.reconciler.Run(ctx, interval)
 }
 
 // Reconcile performs a reconciliation of deployments, and will block until complete.
