@@ -27,6 +27,45 @@ type DeploymentRepo interface {
 	V3MissingDependencies(ctx context.Context, dependencies []string, environmentID uuid.UUID) ([]string, error)
 	V3GetEnvironmentFeature(ctx context.Context, environmentID uuid.UUID, featureName string) (*model.Feature, error)
 	V3InsertEnvironmentFeature(ctx context.Context, environmentID uuid.UUID, deploymentID uuid.UUID, featureName, featureVersion string) error
+	GetCIEnvironmentsForTarget(ctx context.Context, labels environment.Labels) ([]*model.TenantEnvironment, error)
+	LatestStatusForDeploymentInEnvironment(ctx context.Context, deploymentID, environmentID uuid.UUID) (model.DeploymentStatusState, error)
+}
+
+func (r *repo) LatestStatusForDeploymentInEnvironment(ctx context.Context, deploymentID, environmentID uuid.UUID) (model.DeploymentStatusState, error) {
+	status, err := r.querier.LatestStatusForDeploymentInEnvironment(ctx, gensql.LatestStatusForDeploymentInEnvironmentParams{
+		DeploymentID:  deploymentID,
+		EnvironmentID: environmentID,
+	})
+	if err != nil {
+		return model.DeploymentStatusStateUnknown, err
+	}
+
+	return model.DeploymentStatusState(strings.ToUpper(status)), nil
+}
+
+func (r *repo) GetCIEnvironmentsForTarget(ctx context.Context, labels environment.Labels) ([]*model.TenantEnvironment, error) {
+	envs, err := r.querier.GetCIEnvironmentsForTarget(ctx, labels)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]*model.TenantEnvironment, len(envs))
+	for i, e := range envs {
+		ret[i] = &model.TenantEnvironment{
+			Environment: model.Environment{
+				ID:           e.Environment.ID,
+				Name:         e.Environment.Name,
+				CI:           e.Environment.Ci,
+				Description:  nullStringToPtr(e.Environment.Description),
+				Created:      e.Environment.Created.Time,
+				LastModified: e.Environment.LastModified.Time,
+				Kind:         model.EnvironmentKind(e.Environment.Kind),
+			},
+			TenantName: e.TenantName,
+			TenantID:   e.Environment.TenantID,
+		}
+	}
+	return ret, nil
 }
 
 func (r *repo) V3DeploymentStatusesGet(ctx context.Context, deploymentID uuid.UUID) ([]*model.DeploymentStatus, error) {

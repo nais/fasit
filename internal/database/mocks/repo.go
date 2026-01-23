@@ -4766,6 +4766,74 @@ func (_c *Repo_GetActiveClusterOperation_Call) RunAndReturn(run func(ctx context
 	return _c
 }
 
+// GetCIEnvironmentsForTarget provides a mock function for the type Repo
+func (_mock *Repo) GetCIEnvironmentsForTarget(ctx context.Context, labels environment.Labels) ([]*model.TenantEnvironment, error) {
+	ret := _mock.Called(ctx, labels)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetCIEnvironmentsForTarget")
+	}
+
+	var r0 []*model.TenantEnvironment
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, environment.Labels) ([]*model.TenantEnvironment, error)); ok {
+		return returnFunc(ctx, labels)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, environment.Labels) []*model.TenantEnvironment); ok {
+		r0 = returnFunc(ctx, labels)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.TenantEnvironment)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, environment.Labels) error); ok {
+		r1 = returnFunc(ctx, labels)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Repo_GetCIEnvironmentsForTarget_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetCIEnvironmentsForTarget'
+type Repo_GetCIEnvironmentsForTarget_Call struct {
+	*mock.Call
+}
+
+// GetCIEnvironmentsForTarget is a helper method to define mock.On call
+//   - ctx context.Context
+//   - labels environment.Labels
+func (_e *Repo_Expecter) GetCIEnvironmentsForTarget(ctx interface{}, labels interface{}) *Repo_GetCIEnvironmentsForTarget_Call {
+	return &Repo_GetCIEnvironmentsForTarget_Call{Call: _e.mock.On("GetCIEnvironmentsForTarget", ctx, labels)}
+}
+
+func (_c *Repo_GetCIEnvironmentsForTarget_Call) Run(run func(ctx context.Context, labels environment.Labels)) *Repo_GetCIEnvironmentsForTarget_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 environment.Labels
+		if args[1] != nil {
+			arg1 = args[1].(environment.Labels)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Repo_GetCIEnvironmentsForTarget_Call) Return(tenantEnvironments []*model.TenantEnvironment, err error) *Repo_GetCIEnvironmentsForTarget_Call {
+	_c.Call.Return(tenantEnvironments, err)
+	return _c
+}
+
+func (_c *Repo_GetCIEnvironmentsForTarget_Call) RunAndReturn(run func(ctx context.Context, labels environment.Labels) ([]*model.TenantEnvironment, error)) *Repo_GetCIEnvironmentsForTarget_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // HealthGet provides a mock function for the type Repo
 func (_mock *Repo) HealthGet(ctx context.Context, environmentID uuid.UUID) (*model.Health, error) {
 	ret := _mock.Called(ctx, environmentID)
@@ -5166,6 +5234,78 @@ func (_c *Repo_KubernetesNodesForEnv_Call) Return(kubernetesNodes []*model.Kuber
 }
 
 func (_c *Repo_KubernetesNodesForEnv_Call) RunAndReturn(run func(ctx context.Context, envID uuid.UUID) ([]*model.KubernetesNode, error)) *Repo_KubernetesNodesForEnv_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// LatestStatusForDeploymentInEnvironment provides a mock function for the type Repo
+func (_mock *Repo) LatestStatusForDeploymentInEnvironment(ctx context.Context, deploymentID uuid.UUID, environmentID uuid.UUID) (model.DeploymentStatusState, error) {
+	ret := _mock.Called(ctx, deploymentID, environmentID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for LatestStatusForDeploymentInEnvironment")
+	}
+
+	var r0 model.DeploymentStatusState
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID) (model.DeploymentStatusState, error)); ok {
+		return returnFunc(ctx, deploymentID, environmentID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID) model.DeploymentStatusState); ok {
+		r0 = returnFunc(ctx, deploymentID, environmentID)
+	} else {
+		r0 = ret.Get(0).(model.DeploymentStatusState)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, uuid.UUID) error); ok {
+		r1 = returnFunc(ctx, deploymentID, environmentID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Repo_LatestStatusForDeploymentInEnvironment_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'LatestStatusForDeploymentInEnvironment'
+type Repo_LatestStatusForDeploymentInEnvironment_Call struct {
+	*mock.Call
+}
+
+// LatestStatusForDeploymentInEnvironment is a helper method to define mock.On call
+//   - ctx context.Context
+//   - deploymentID uuid.UUID
+//   - environmentID uuid.UUID
+func (_e *Repo_Expecter) LatestStatusForDeploymentInEnvironment(ctx interface{}, deploymentID interface{}, environmentID interface{}) *Repo_LatestStatusForDeploymentInEnvironment_Call {
+	return &Repo_LatestStatusForDeploymentInEnvironment_Call{Call: _e.mock.On("LatestStatusForDeploymentInEnvironment", ctx, deploymentID, environmentID)}
+}
+
+func (_c *Repo_LatestStatusForDeploymentInEnvironment_Call) Run(run func(ctx context.Context, deploymentID uuid.UUID, environmentID uuid.UUID)) *Repo_LatestStatusForDeploymentInEnvironment_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		var arg2 uuid.UUID
+		if args[2] != nil {
+			arg2 = args[2].(uuid.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *Repo_LatestStatusForDeploymentInEnvironment_Call) Return(deploymentStatusState model.DeploymentStatusState, err error) *Repo_LatestStatusForDeploymentInEnvironment_Call {
+	_c.Call.Return(deploymentStatusState, err)
+	return _c
+}
+
+func (_c *Repo_LatestStatusForDeploymentInEnvironment_Call) RunAndReturn(run func(ctx context.Context, deploymentID uuid.UUID, environmentID uuid.UUID) (model.DeploymentStatusState, error)) *Repo_LatestStatusForDeploymentInEnvironment_Call {
 	_c.Call.Return(run)
 	return _c
 }

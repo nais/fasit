@@ -63,12 +63,13 @@ func (r *mutationResolver) CreateDeployment(ctx context.Context, input model.Cre
 		return uuid.Nil, fmt.Errorf("invalid target: %w", err)
 	}
 
-	id, err := r.DeploymentMgr.CreateDeployment(ctx, &deployment.Request{
+	id, err := r.DeploymentMgr.CreateDeployment(ctx, deployment.Request{
 		Chart:       input.Chart,
 		Version:     input.Version,
 		Description: input.Description,
 		Global:      input.Global,
 		Target:      target,
+		SkipCI:      true, // manual deployments should always skip CI
 	})
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("create deployment: %w", err)

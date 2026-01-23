@@ -15,12 +15,14 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/nais/fasit/internal/database"
+	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+	"golang.org/x/sync/errgroup"
 )
 
 type Publisher interface {
@@ -54,6 +56,103 @@ func newDeployer(
 		log:            log,
 		deployMessages: deployMessages,
 	}, nil
+}
+
+func (d *deployer) naisdHealthCheck(ctx context.Context, environmentID uuid.UUID) error {
+	health, err := d.repo.HealthGet(ctx, environmentID)
+	if err != nil {
+		return fmt.Errorf("health status: %w", err)
+	}
+
+	if healthy := time.Since(health.ReportedAt) <= 3*time.Minute; healthy {
+		return nil
+	}
+
+	return fmt.Errorf("naisd is unhealthy")
+}
+
+func (d *deployer) deployToCI(ctx context.Context, feat *model.Feature, req Request) error {
+	envs, err := d.repo.GetCIEnvironmentsForTarget(ctx, req.Target)
+	if err != nil {
+		return fmt.Errorf("get ci environments for target: %w", err)
+	}
+
+	deploymentsByEnvID := make(map[uuid.UUID]uuid.UUID)
+	for _, env := range envs {
+		if err := d.naisdHealthCheck(ctx, env.ID); err != nil {
+			return err
+		}
+
+		publisher := d.publisher(naisdTopicID(env.TenantName, env.Name), d.log)
+		var deploymentID uuid.UUID
+		err := func() error {
+			defer publisher.Stop()
+
+			labels, err := d.repo.EnvironmentGetLabels(ctx, env.ID)
+			if err != nil {
+				return fmt.Errorf("get environment labels: %w", err)
+			}
+
+			target := make(environment.Labels)
+			for _, label := range labels {
+				target[label.Key] = label.Value
+			}
+
+			req.Target = target
+
+			deploymentID, err = d.CreateDeployment(ctx, feat, req)
+			if err != nil {
+				return err
+			}
+
+			deployment, err := d.repo.V3DeploymentGet(ctx, deploymentID)
+			if err != nil {
+				return fmt.Errorf("get deployment %q: %w", deploymentID, err)
+			}
+
+			return d.deployToEnvironment(ctx, *deployment, env, false, publisher)
+		}()
+		if err != nil {
+			return err
+		}
+
+		deploymentsByEnvID[env.ID] = deploymentID
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
+	defer cancel()
+
+	eg, ctx := errgroup.WithContext(ctx)
+
+	for envID, deploymentID := range deploymentsByEnvID {
+		eg.Go(func() error {
+			for {
+				if ctx.Err() != nil {
+					return ctx.Err()
+				}
+
+				state, err := d.repo.LatestStatusForDeploymentInEnvironment(ctx, deploymentID, envID)
+				if err != nil {
+					return fmt.Errorf("get latest deployment status for deployment %q in environment %q: %w", deploymentID, envID, err)
+				}
+
+				switch state {
+				case model.DeploymentStatusStateDeployed:
+					return nil
+				case model.DeploymentStatusStateFailed:
+					return fmt.Errorf("deployment %q in environment %q failed", deploymentID, envID)
+				}
+
+				select {
+				case <-ctx.Done():
+					return fmt.Errorf("timeout waiting for deployment %q in environment %q to complete", deploymentID, envID)
+				case <-time.After(5 * time.Second):
+				}
+			}
+		})
+	}
+
+	return eg.Wait()
 }
 
 func (d *deployer) deployToEnvironment(ctx context.Context, deployment database.Deployment, environment *model.TenantEnvironment, naisdUnhealthy bool, mgr Publisher) error {
@@ -196,21 +295,7 @@ func (d *deployer) isDependenciesDeployed(ctx context.Context, deployment databa
 	return true, nil
 }
 
-func (d *deployer) CreateDeployment(ctx context.Context, req *Request) (uuid.UUID, error) {
-	feat, err := model.FromChart(req.Chart, req.Version)
-	if err != nil {
-		return uuid.Nil, fmt.Errorf("unable to convert oci chart: %w", err)
-	}
-
-	// TODO: if we remove kind as a concept we need to change featureData table and logic
-	if len(feat.EnvironmentKinds) == 0 {
-		return uuid.Nil, fmt.Errorf("no environments defined in Feature.yaml")
-	}
-
-	if feat.Source == "" {
-		return uuid.Nil, fmt.Errorf("no source url found in Chart.yaml")
-	}
-
+func (d *deployer) CreateDeployment(ctx context.Context, feat *model.Feature, req Request) (uuid.UUID, error) {
 	details, err := feature.ParseTemplateDetails(feat.FeatureYAML.Values)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("unable to parse feature template details: %w", err)
@@ -223,13 +308,13 @@ func (d *deployer) CreateDeployment(ctx context.Context, req *Request) (uuid.UUI
 		}
 	}
 
-	deployment, err := d.repo.V3DeploymentCreate(ctx, feat.Name, req.Version, req.Description, req.Ref, req.Target)
+	deployment, err := d.repo.V3DeploymentCreate(ctx, feat.Name, feat.Version, req.Description, req.Ref, req.Target)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("unable to create deployment: %w", err)
 	}
 
 	if req.Global {
-		if err := d.repo.FeatureVersionUpdate(ctx, feat.Name, req.Version); err != nil {
+		if err := d.repo.FeatureVersionUpdate(ctx, feat.Name, feat.Version); err != nil {
 			return uuid.Nil, fmt.Errorf("unable to update feature version: %w", err)
 		}
 	}

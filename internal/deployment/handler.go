@@ -87,8 +87,8 @@ func (h *HttpHandler) CreateDeployment(w http.ResponseWriter, req *http.Request)
 
 	ctx = auth.SetEmail(ctx, actor)
 
-	body := &Request{}
-	err := json.NewDecoder(req.Body).Decode(body)
+	body := Request{}
+	err := json.NewDecoder(req.Body).Decode(&body)
 	if err != nil {
 		http.Error(w, "Unable to decode JSON body: "+err.Error(), http.StatusBadRequest)
 		return

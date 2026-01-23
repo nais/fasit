@@ -5777,6 +5777,74 @@ func (_c *Querier_FeaturesForKind_Call) RunAndReturn(run func(ctx context.Contex
 	return _c
 }
 
+// GetCIEnvironmentsForTarget provides a mock function for the type Querier
+func (_mock *Querier) GetCIEnvironmentsForTarget(ctx context.Context, target environment.Labels) ([]gensql.GetCIEnvironmentsForTargetRow, error) {
+	ret := _mock.Called(ctx, target)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetCIEnvironmentsForTarget")
+	}
+
+	var r0 []gensql.GetCIEnvironmentsForTargetRow
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, environment.Labels) ([]gensql.GetCIEnvironmentsForTargetRow, error)); ok {
+		return returnFunc(ctx, target)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, environment.Labels) []gensql.GetCIEnvironmentsForTargetRow); ok {
+		r0 = returnFunc(ctx, target)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gensql.GetCIEnvironmentsForTargetRow)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, environment.Labels) error); ok {
+		r1 = returnFunc(ctx, target)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_GetCIEnvironmentsForTarget_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetCIEnvironmentsForTarget'
+type Querier_GetCIEnvironmentsForTarget_Call struct {
+	*mock.Call
+}
+
+// GetCIEnvironmentsForTarget is a helper method to define mock.On call
+//   - ctx context.Context
+//   - target environment.Labels
+func (_e *Querier_Expecter) GetCIEnvironmentsForTarget(ctx interface{}, target interface{}) *Querier_GetCIEnvironmentsForTarget_Call {
+	return &Querier_GetCIEnvironmentsForTarget_Call{Call: _e.mock.On("GetCIEnvironmentsForTarget", ctx, target)}
+}
+
+func (_c *Querier_GetCIEnvironmentsForTarget_Call) Run(run func(ctx context.Context, target environment.Labels)) *Querier_GetCIEnvironmentsForTarget_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 environment.Labels
+		if args[1] != nil {
+			arg1 = args[1].(environment.Labels)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_GetCIEnvironmentsForTarget_Call) Return(getCIEnvironmentsForTargetRows []gensql.GetCIEnvironmentsForTargetRow, err error) *Querier_GetCIEnvironmentsForTarget_Call {
+	_c.Call.Return(getCIEnvironmentsForTargetRows, err)
+	return _c
+}
+
+func (_c *Querier_GetCIEnvironmentsForTarget_Call) RunAndReturn(run func(ctx context.Context, target environment.Labels) ([]gensql.GetCIEnvironmentsForTargetRow, error)) *Querier_GetCIEnvironmentsForTarget_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetEnvironmentFeature provides a mock function for the type Querier
 func (_mock *Querier) GetEnvironmentFeature(ctx context.Context, arg gensql.GetEnvironmentFeatureParams) (gensql.GetEnvironmentFeatureRow, error) {
 	ret := _mock.Called(ctx, arg)
@@ -6210,6 +6278,72 @@ func (_c *Querier_KubernetesNodeStatuses_Call) Return(kubernetesNodeStatuss []ge
 }
 
 func (_c *Querier_KubernetesNodeStatuses_Call) RunAndReturn(run func(ctx context.Context, environmentID uuid.UUID) ([]gensql.KubernetesNodeStatus, error)) *Querier_KubernetesNodeStatuses_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// LatestStatusForDeploymentInEnvironment provides a mock function for the type Querier
+func (_mock *Querier) LatestStatusForDeploymentInEnvironment(ctx context.Context, arg gensql.LatestStatusForDeploymentInEnvironmentParams) (string, error) {
+	ret := _mock.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for LatestStatusForDeploymentInEnvironment")
+	}
+
+	var r0 string
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, gensql.LatestStatusForDeploymentInEnvironmentParams) (string, error)); ok {
+		return returnFunc(ctx, arg)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, gensql.LatestStatusForDeploymentInEnvironmentParams) string); ok {
+		r0 = returnFunc(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, gensql.LatestStatusForDeploymentInEnvironmentParams) error); ok {
+		r1 = returnFunc(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_LatestStatusForDeploymentInEnvironment_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'LatestStatusForDeploymentInEnvironment'
+type Querier_LatestStatusForDeploymentInEnvironment_Call struct {
+	*mock.Call
+}
+
+// LatestStatusForDeploymentInEnvironment is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg gensql.LatestStatusForDeploymentInEnvironmentParams
+func (_e *Querier_Expecter) LatestStatusForDeploymentInEnvironment(ctx interface{}, arg interface{}) *Querier_LatestStatusForDeploymentInEnvironment_Call {
+	return &Querier_LatestStatusForDeploymentInEnvironment_Call{Call: _e.mock.On("LatestStatusForDeploymentInEnvironment", ctx, arg)}
+}
+
+func (_c *Querier_LatestStatusForDeploymentInEnvironment_Call) Run(run func(ctx context.Context, arg gensql.LatestStatusForDeploymentInEnvironmentParams)) *Querier_LatestStatusForDeploymentInEnvironment_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 gensql.LatestStatusForDeploymentInEnvironmentParams
+		if args[1] != nil {
+			arg1 = args[1].(gensql.LatestStatusForDeploymentInEnvironmentParams)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_LatestStatusForDeploymentInEnvironment_Call) Return(s string, err error) *Querier_LatestStatusForDeploymentInEnvironment_Call {
+	_c.Call.Return(s, err)
+	return _c
+}
+
+func (_c *Querier_LatestStatusForDeploymentInEnvironment_Call) RunAndReturn(run func(ctx context.Context, arg gensql.LatestStatusForDeploymentInEnvironmentParams) (string, error)) *Querier_LatestStatusForDeploymentInEnvironment_Call {
 	_c.Call.Return(run)
 	return _c
 }
