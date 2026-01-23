@@ -15,6 +15,7 @@ import (
 
 type Manager struct {
 	deployer   *deployer
+	repo       database.Repo
 	reconciler *reconciler
 }
 
@@ -42,6 +43,7 @@ func NewManager(repo database.Repo, publisher NewPublisher, m metric.Meter, log 
 	return &Manager{
 		deployer:   d,
 		reconciler: r,
+		repo:       repo,
 	}, nil
 }
 
@@ -60,8 +62,8 @@ func (dm *Manager) TriggerReconcile(event ReconcileTriggerEvent) chan TriggerRes
 	return dm.reconciler.trigger(event)
 }
 
-func (dm *Manager) GetDeployment(ctx context.Context, id uuid.UUID) (*database.Deployment, error) {
-	return dm.deployer.GetDeployment(ctx, id)
+func (dm *Manager) GetDeployment(ctx context.Context, id uuid.UUID) (*model.Deployment, error) {
+	return dm.repo.V3DeploymentGet(ctx, id)
 }
 
 func (dm *Manager) CreateDeployment(ctx context.Context, req Request) (uuid.UUID, error) {

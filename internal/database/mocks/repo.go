@@ -7792,23 +7792,23 @@ func (_c *Repo_V3DeploymentDelete_Call) RunAndReturn(run func(ctx context.Contex
 }
 
 // V3DeploymentGet provides a mock function for the type Repo
-func (_mock *Repo) V3DeploymentGet(ctx context.Context, deploymentID uuid.UUID) (*database.Deployment, error) {
+func (_mock *Repo) V3DeploymentGet(ctx context.Context, deploymentID uuid.UUID) (*model.Deployment, error) {
 	ret := _mock.Called(ctx, deploymentID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for V3DeploymentGet")
 	}
 
-	var r0 *database.Deployment
+	var r0 *model.Deployment
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) (*database.Deployment, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) (*model.Deployment, error)); ok {
 		return returnFunc(ctx, deploymentID)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) *database.Deployment); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) *model.Deployment); ok {
 		r0 = returnFunc(ctx, deploymentID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*database.Deployment)
+			r0 = ret.Get(0).(*model.Deployment)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
@@ -7849,12 +7849,12 @@ func (_c *Repo_V3DeploymentGet_Call) Run(run func(ctx context.Context, deploymen
 	return _c
 }
 
-func (_c *Repo_V3DeploymentGet_Call) Return(deployment *database.Deployment, err error) *Repo_V3DeploymentGet_Call {
+func (_c *Repo_V3DeploymentGet_Call) Return(deployment *model.Deployment, err error) *Repo_V3DeploymentGet_Call {
 	_c.Call.Return(deployment, err)
 	return _c
 }
 
-func (_c *Repo_V3DeploymentGet_Call) RunAndReturn(run func(ctx context.Context, deploymentID uuid.UUID) (*database.Deployment, error)) *Repo_V3DeploymentGet_Call {
+func (_c *Repo_V3DeploymentGet_Call) RunAndReturn(run func(ctx context.Context, deploymentID uuid.UUID) (*model.Deployment, error)) *Repo_V3DeploymentGet_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -8003,23 +8003,23 @@ func (_c *Repo_V3DeploymentStatusesGet_Call) RunAndReturn(run func(ctx context.C
 }
 
 // V3DeploymentsForEnvironment provides a mock function for the type Repo
-func (_mock *Repo) V3DeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]database.Deployment, error) {
+func (_mock *Repo) V3DeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]model.Deployment, error) {
 	ret := _mock.Called(ctx, environmentID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for V3DeploymentsForEnvironment")
 	}
 
-	var r0 []database.Deployment
+	var r0 []model.Deployment
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]database.Deployment, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]model.Deployment, error)); ok {
 		return returnFunc(ctx, environmentID)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) []database.Deployment); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) []model.Deployment); ok {
 		r0 = returnFunc(ctx, environmentID)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]database.Deployment)
+			r0 = ret.Get(0).([]model.Deployment)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
@@ -8060,12 +8060,12 @@ func (_c *Repo_V3DeploymentsForEnvironment_Call) Run(run func(ctx context.Contex
 	return _c
 }
 
-func (_c *Repo_V3DeploymentsForEnvironment_Call) Return(deployments []database.Deployment, err error) *Repo_V3DeploymentsForEnvironment_Call {
+func (_c *Repo_V3DeploymentsForEnvironment_Call) Return(deployments []model.Deployment, err error) *Repo_V3DeploymentsForEnvironment_Call {
 	_c.Call.Return(deployments, err)
 	return _c
 }
 
-func (_c *Repo_V3DeploymentsForEnvironment_Call) RunAndReturn(run func(ctx context.Context, environmentID uuid.UUID) ([]database.Deployment, error)) *Repo_V3DeploymentsForEnvironment_Call {
+func (_c *Repo_V3DeploymentsForEnvironment_Call) RunAndReturn(run func(ctx context.Context, environmentID uuid.UUID) ([]model.Deployment, error)) *Repo_V3DeploymentsForEnvironment_Call {
 	_c.Call.Return(run)
 	return _c
 }
