@@ -9,17 +9,14 @@ import (
 	"cloud.google.com/go/container/apiv1/containerpb"
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/graph/model"
-	"github.com/nais/fasit/internal/slack/fake"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/mock"
-	metricsdk "go.opentelemetry.io/otel/sdk/metric"
 )
 
 func TestClusterNodePoolsCompleted_AllVersionsMatch_NoFailedOps(t *testing.T) {
 	suite := newTestSuite(t)
 	ctx := context.Background()
 
-	upgrade := setupUpgrader(suite)
+	upgrade := newUpgrade(suite)
 	clusterUpgrade := &model.ClusterUpgradeStatus{
 		ID:      uuid.New(),
 		Version: "1.33.5-gke.2118000",
@@ -50,7 +47,7 @@ func TestClusterNodePoolsCompleted_AllVersionsMatch_HasFailedOps(t *testing.T) {
 	suite := newTestSuite(t)
 	ctx := context.Background()
 
-	upgrade := setupUpgrader(suite)
+	upgrade := newUpgrade(suite)
 	clusterUpgrade := &model.ClusterUpgradeStatus{
 		ID:      uuid.New(),
 		Version: "1.33.5-gke.2118000",
@@ -81,7 +78,7 @@ func TestClusterNodePoolsCompleted_VersionsDontMatch(t *testing.T) {
 	suite := newTestSuite(t)
 	ctx := context.Background()
 
-	upgrade := setupUpgrader(suite)
+	upgrade := newUpgrade(suite)
 	clusterUpgrade := &model.ClusterUpgradeStatus{
 		ID:      uuid.New(),
 		Version: "1.33.5-gke.2118000",
@@ -108,7 +105,7 @@ func TestClusterNodePoolsCompleted_MultipleFailedOps(t *testing.T) {
 	suite := newTestSuite(t)
 	ctx := context.Background()
 
-	upgrade := setupUpgrader(suite)
+	upgrade := newUpgrade(suite)
 	clusterUpgrade := &model.ClusterUpgradeStatus{
 		ID:      uuid.New(),
 		Version: "1.33.5-gke.2118000",
@@ -141,7 +138,7 @@ func TestClusterNodePoolsCompleted_FailedThenSuccessfulRetry(t *testing.T) {
 	suite := newTestSuite(t)
 	ctx := context.Background()
 
-	upgrade := setupUpgrader(suite)
+	upgrade := newUpgrade(suite)
 	clusterUpgrade := &model.ClusterUpgradeStatus{
 		ID:      uuid.New(),
 		Version: "1.33.5-gke.2118000",
@@ -174,7 +171,7 @@ func TestClusterNodePoolsCompleted_DatabaseError(t *testing.T) {
 	suite := newTestSuite(t)
 	ctx := context.Background()
 
-	upgrade := setupUpgrader(suite)
+	upgrade := newUpgrade(suite)
 	clusterUpgrade := &model.ClusterUpgradeStatus{
 		ID:      uuid.New(),
 		Version: "1.33.5-gke.2118000",
@@ -196,13 +193,4 @@ func TestClusterNodePoolsCompleted_DatabaseError(t *testing.T) {
 	if done {
 		t.Errorf("expected upgrade to NOT be marked done when database call fails (to avoid marking upgrade complete incorrectly)")
 	}
-}
-
-func setupUpgrader(suite *testSuite) *ClusterUpgrader {
-	meter := metricsdk.NewMeterProvider().Meter("test")
-	logger := logrus.New()
-	logger.SetLevel(logrus.FatalLevel) // Silence logs during tests
-	slackClient := fake.NewFakeSlackClient()
-
-	return NewClusterUpgrader(suite.repoMock, logger, suite.clusterMock, meter, slackClient, "test-channel")
 }
