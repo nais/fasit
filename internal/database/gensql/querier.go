@@ -103,6 +103,7 @@ type Querier interface {
 	FeaturesForKind(ctx context.Context, environmentKind string) ([]FeaturesForKindRow, error)
 	GetCIEnvironmentsForTarget(ctx context.Context, target environment.Labels) ([]GetCIEnvironmentsForTargetRow, error)
 	GetEnvironmentFeature(ctx context.Context, arg GetEnvironmentFeatureParams) (GetEnvironmentFeatureRow, error)
+	GetEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]GetEnvironmentFeaturesRow, error)
 	HealthStatusCreateOrUpdate(ctx context.Context, arg HealthStatusCreateOrUpdateParams) (HealthStatus, error)
 	HealthStatusGet(ctx context.Context, environmentID uuid.UUID) (HealthStatus, error)
 	InsertEnvironmentFeature(ctx context.Context, arg InsertEnvironmentFeatureParams) error

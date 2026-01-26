@@ -56,24 +56,14 @@ func (r *clusterUpgradeStatusResolver) Actor(ctx context.Context, obj *model.Clu
 
 // FeatureStates is the resolver for the featureStates field.
 func (r *environmentResolver) FeatureStates(ctx context.Context, obj *model.Environment) ([]*model.FeatureState, error) {
-	deployments, err := r.Repo.V3DeploymentsForEnvironment(ctx, obj.ID)
+	ret, err := r.Repo.V3GetEnvironmentFeatures(ctx, obj.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	ret := make([]*model.FeatureState, 0)
 	features := make(map[string]bool)
-	for _, deployment := range deployments {
-		ret = append(ret, &model.FeatureState{
-			ID:           deployment.ID.String(),
-			FeatureName:  deployment.Feature.Name,
-			Enabled:      true,
-			EnabledAt:    &deployment.Created,
-			Created:      deployment.Created,
-			LastModified: deployment.Created,
-			EnvID:        obj.ID,
-		})
-		features[deployment.Feature.Name] = true
+	for _, f := range ret {
+		features[f.FeatureName] = true
 	}
 
 	states, err := r.Repo.FeatureStatesGet(ctx, obj.ID)

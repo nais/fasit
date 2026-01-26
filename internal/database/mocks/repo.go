@@ -8280,6 +8280,74 @@ func (_c *Repo_V3GetEnvironmentFeature_Call) RunAndReturn(run func(ctx context.C
 	return _c
 }
 
+// V3GetEnvironmentFeatures provides a mock function for the type Repo
+func (_mock *Repo) V3GetEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]*model.FeatureState, error) {
+	ret := _mock.Called(ctx, environmentID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for V3GetEnvironmentFeatures")
+	}
+
+	var r0 []*model.FeatureState
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]*model.FeatureState, error)); ok {
+		return returnFunc(ctx, environmentID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) []*model.FeatureState); ok {
+		r0 = returnFunc(ctx, environmentID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.FeatureState)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = returnFunc(ctx, environmentID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Repo_V3GetEnvironmentFeatures_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'V3GetEnvironmentFeatures'
+type Repo_V3GetEnvironmentFeatures_Call struct {
+	*mock.Call
+}
+
+// V3GetEnvironmentFeatures is a helper method to define mock.On call
+//   - ctx context.Context
+//   - environmentID uuid.UUID
+func (_e *Repo_Expecter) V3GetEnvironmentFeatures(ctx interface{}, environmentID interface{}) *Repo_V3GetEnvironmentFeatures_Call {
+	return &Repo_V3GetEnvironmentFeatures_Call{Call: _e.mock.On("V3GetEnvironmentFeatures", ctx, environmentID)}
+}
+
+func (_c *Repo_V3GetEnvironmentFeatures_Call) Run(run func(ctx context.Context, environmentID uuid.UUID)) *Repo_V3GetEnvironmentFeatures_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Repo_V3GetEnvironmentFeatures_Call) Return(featureStates []*model.FeatureState, err error) *Repo_V3GetEnvironmentFeatures_Call {
+	_c.Call.Return(featureStates, err)
+	return _c
+}
+
+func (_c *Repo_V3GetEnvironmentFeatures_Call) RunAndReturn(run func(ctx context.Context, environmentID uuid.UUID) ([]*model.FeatureState, error)) *Repo_V3GetEnvironmentFeatures_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // V3InsertEnvironmentFeature provides a mock function for the type Repo
 func (_mock *Repo) V3InsertEnvironmentFeature(ctx context.Context, environmentID uuid.UUID, deploymentID uuid.UUID, featureName string, featureVersion string) error {
 	ret := _mock.Called(ctx, environmentID, deploymentID, featureName, featureVersion)
