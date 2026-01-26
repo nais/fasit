@@ -25,6 +25,7 @@ type DeploymentRepo interface {
 	V3DeploymentStatusCreateOrUpdate(ctx context.Context, deploymentID, environmentID uuid.UUID, status model.RolloutStatus, message string) error
 	V3MissingDependencies(ctx context.Context, dependencies []string, environmentID uuid.UUID) ([]string, error)
 	V3GetEnvironmentFeature(ctx context.Context, environmentID uuid.UUID, featureName string) (*model.Feature, error)
+	V3GetEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]*model.FeatureState, error)
 	V3InsertEnvironmentFeature(ctx context.Context, environmentID uuid.UUID, deploymentID uuid.UUID, featureName, featureVersion string) error
 	GetCIEnvironmentsForTarget(ctx context.Context, labels environment.Labels) ([]*model.TenantEnvironment, error)
 	LatestStatusForDeploymentInEnvironment(ctx context.Context, deploymentID, environmentID uuid.UUID) (model.DeploymentStatusState, error)
@@ -127,6 +128,28 @@ func (r *repo) V3GetEnvironmentFeature(ctx context.Context, environmentID uuid.U
 		// if exists in the environment_features table, it must have deployments
 		HasDeployments: true,
 	}, nil
+}
+
+func (r *repo) V3GetEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]*model.FeatureState, error) {
+	features, err := r.querier.GetEnvironmentFeatures(ctx, environmentID)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]*model.FeatureState, len(features))
+	for i, f := range features {
+		ret[i] = &model.FeatureState{
+			ID:           environmentID.String() + "-" + f.Name,
+			FeatureName:  f.Name,
+			Enabled:      true,
+			EnabledAt:    &f.Created.Time,
+			Created:      f.Created.Time,
+			LastModified: f.Created.Time,
+			EnvID:        environmentID,
+		}
+	}
+
+	return ret, nil
 }
 
 func (r *repo) V3MissingDependencies(ctx context.Context, dependencies []string, environmentID uuid.UUID) ([]string, error) {
