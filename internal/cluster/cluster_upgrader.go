@@ -540,9 +540,9 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 
 				// Update Slack with nodepool start
 				c.updateSlackProgress(ctx, tenant.Name, env.Name, un)
-				return nil
 			}
-
+			// Upgrade not complete yet, return to retry on next reconciliation
+			return nil
 		}
 
 		// node upgrade done, update status
@@ -892,13 +892,10 @@ func (c *ClusterUpgrader) upgradeNodes(ctx context.Context, env *model.Environme
 			return nil, err
 		}
 
-		if npVersionObj.GreaterThanOrEqual(clusterUpgraderVersionObj) {
-			continue
-		}
-
 		// Check if there's already an operation for this nodepool
 		// Operations contain the nodepool name in their target link
 		hasOperation := false
+		needsRetry := false
 		for _, existingOp := range existingOps {
 			if existingOp.Type != "UPGRADE_NODES" || !containsNodePool(existingOp.Target, np.Name) {
 				continue
@@ -930,11 +927,25 @@ func (c *ClusterUpgrader) upgradeNodes(ctx context.Context, env *model.Environme
 						"retry_available": backoffDuration - timeSinceFailure,
 					}).Info("nodepool upgrade recently failed, applying backoff before retry (will continue with other nodepools)")
 					break
+				} else {
+					// Backoff period has passed, this nodepool needs a retry
+					needsRetry = true
+					c.log.WithFields(logrus.Fields{
+						"nodepool":        np.Name,
+						"operation":       existingOp.Name,
+						"nodes_failed":    existingOp.NodesFailed,
+						"time_since_fail": timeSinceFailure,
+					}).Info("nodepool upgrade previously failed, will retry now")
 				}
 			}
 		}
 
 		if hasOperation {
+			continue
+		}
+
+		// Skip if nodepool is already at target version and doesn't need retry
+		if npVersionObj.GreaterThanOrEqual(clusterUpgraderVersionObj) && !needsRetry {
 			continue
 		}
 
@@ -1224,9 +1235,10 @@ func (c *ClusterUpgrader) clusterNodePoolsCompleted(ctx context.Context, project
 
 		if len(failedNodepools) > 0 {
 			c.log.WithFields(logrus.Fields{
-				"upgrade_id":       clusterUpgrade.ID,
-				"failed_nodepools": failedNodepools,
-				"total_nodepools":  len(latestOps),
+				"upgrade_id":            clusterUpgrade.ID,
+				"failed_nodepools":      failedNodepools,
+				"failed_nodepool_count": len(failedNodepools),
+				"total_nodepools":       len(nodepools),
 			}).Info("upgrade not complete - latest operations have failed nodes, will retry after backoff")
 			return false, nil
 		}
