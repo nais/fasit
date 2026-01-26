@@ -1242,11 +1242,11 @@ func (c *ClusterUpgrader) clusterNodePoolsCompleted(ctx context.Context, project
 
 		if len(failedNodepools) > 0 {
 			c.log.WithFields(logrus.Fields{
-				"upgrade_id":            clusterUpgrade.ID,
-				"failed_nodepools":      failedNodepools,
-				"failed_nodepool_count": len(failedNodepools),
-				"failed_operation_count": len(failedNodepools), // One latest operation per failed nodepool
-				"total_nodepools":       len(nodepools),
+				"upgrade_id":               clusterUpgrade.ID,
+				"failed_nodepools":         failedNodepools,
+				"failed_nodepool_count":    len(failedNodepools),
+				"failed_latest_operations": len(failedNodepools),
+				"total_nodepools":          len(nodepools),
 			}).Info("upgrade not complete - latest operations have failed nodes, will retry after backoff")
 			return false, nil
 		}
