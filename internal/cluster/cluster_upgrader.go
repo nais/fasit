@@ -585,7 +585,10 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		}
 
 		c.upgradeInProgress.Add(ctx, -1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "node_pools")...))
-		log.WithField("target_version", upgradeStatus.Version).Info("nodepool upgrade done")
+		log.WithFields(logrus.Fields{
+			"target_version": upgradeStatus.Version,
+			"upgrade_id":     upgradeStatus.ID,
+		}).Info("all nodepool upgrades completed successfully")
 
 	case model.UpgradeStatusDone:
 		// Upgrade is already completed - this should have been handled earlier
@@ -947,7 +950,12 @@ func (c *ClusterUpgrader) upgradeNodes(ctx context.Context, env *model.Environme
 		if err != nil {
 			return nil, err
 		}
-		c.log.WithFields(logrus.Fields{"tenant": tenantName, "environment": env.Name}).Infof("started upgrade of nodepool %s to %s", np.Name, clusterUpgrade.Version)
+		c.log.WithFields(logrus.Fields{
+			"tenant":      tenantName,
+			"environment": env.Name,
+			"nodepool":    np.Name,
+			"version":     clusterUpgrade.Version,
+		}).Info("started upgrade of nodepool")
 		return us, nil
 	}
 	return nil, nil
@@ -1156,6 +1164,7 @@ func (c *ClusterUpgrader) clusterNodePoolsCompleted(ctx context.Context, project
 		return false, err
 	}
 
+	// Check if all nodepool versions match the target
 	done := true
 	for _, np := range nodepools {
 		npVersionObj, err := version.NewVersion(np.Version)
@@ -1166,6 +1175,34 @@ func (c *ClusterUpgrader) clusterNodePoolsCompleted(ctx context.Context, project
 			done = false
 		}
 	}
+
+	// Even if GKE reports nodepools at target version, check if operations actually succeeded
+	// GKE sometimes reports target version before individual nodes are upgraded
+	if done {
+		ops, err := c.repo.ClusterOperationsGetByUpgradeID(ctx, clusterUpgrade.ID)
+		if err != nil {
+			c.log.WithError(err).Warn("failed to get operations for completion check, proceeding anyway")
+			return done, nil
+		}
+
+		// Check if there are any failed operations (DONE with nodes_failed > 0)
+		failedOpsCount := 0
+		for _, op := range ops {
+			if op.Status == "DONE" && op.NodesFailed > 0 {
+				failedOpsCount++
+			}
+		}
+
+		if failedOpsCount > 0 {
+			c.log.WithFields(logrus.Fields{
+				"upgrade_id":        clusterUpgrade.ID,
+				"failed_operations": failedOpsCount,
+				"total_operations":  len(ops),
+			}).Info("upgrade not complete - operations have failed nodes, will retry after backoff")
+			return false, nil
+		}
+	}
+
 	return done, nil
 }
 
