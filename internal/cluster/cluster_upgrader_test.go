@@ -1109,3 +1109,119 @@ func TestUpgradeNodes_RetryAfterBackoffExpired(t *testing.T) {
 	// Verify UpgradeNodePool WAS called (retry allowed after backoff)
 	suite.clusterMock.AssertCalled(t, "UpgradeNodePool", mock.Anything, "test-project", suite.environment, "test-pool", "1.2.4")
 }
+
+func TestUpgradeNodes_BackoffAfterAbortedOperation(t *testing.T) {
+	suite := newTestSuite(t)
+	log := logrus.New().WithField("testSuite", "upgrade")
+	meter := metricsdk.NewMeterProvider().Meter("testSuite")
+	slackClient := fake.NewFakeSlackClient()
+	upgrade := NewClusterUpgrader(suite.repoMock, log, suite.clusterMock, meter, slackClient, "channel")
+
+	ctx := context.Background()
+	clusterUpgradeID := uuid.New()
+
+	// Set up a cluster upgrade in NODE_UPGRADE status
+	clusterUpgrade := &model.ClusterUpgradeStatus{
+		ID:            clusterUpgradeID,
+		UpgradeStatus: model.UpgradeStatusNodeUpgrade,
+		Version:       "1.2.4",
+		LastModified:  time.Now(),
+		StartTime:     time.Now(),
+	}
+
+	// Mock GetNodePools - nodepool needs upgrading
+	suite.clusterMock.EXPECT().GetNodePools(mock.Anything, "test-project", suite.environment).Return(
+		[]*containerpb.NodePool{
+			{
+				Name:    "test-pool",
+				Version: "1.2.3", // Needs upgrade to 1.2.4
+			},
+		}, nil).Once()
+
+	// Mock ClusterOperationsGetByUpgradeID - return recent ABORTED operation
+	existingOps := []*model.EnvironmentOperation{
+		{
+			Name:         "operation-aborted",
+			Type:         "UPGRADE_NODES",
+			Status:       "ABORTED",
+			Target:       "https://container.googleapis.com/v1/projects/test-project/locations/europe-north1/clusters/test-cluster/nodePools/test-pool",
+			NodesFailed:  0,
+			LastModified: time.Now().Add(-5 * time.Minute), // Aborted 5 minutes ago
+		},
+	}
+	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(ctx, clusterUpgradeID).Return(existingOps, nil).Once()
+
+	// Mock UpdateClusterUpgradeStatus
+	suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(ctx, clusterUpgradeID, gensql.ClusterUpgradesStatusNODEUPGRADE).Return(clusterUpgrade, nil).Maybe()
+
+	// Call upgradeNodes directly
+	result, err := upgrade.upgradeNodes(ctx, suite.environment, clusterUpgrade, "test-project", "test-tenant")
+	// Should not create a new operation due to backoff
+	if err != nil {
+		t.Errorf("upgradeNodes returned error: %v", err)
+	}
+	if result != nil {
+		t.Errorf("upgradeNodes should return nil during backoff period for ABORTED operation")
+	}
+
+	// Verify UpgradeNodePool was NOT called (backoff in effect)
+	suite.clusterMock.AssertNotCalled(t, "UpgradeNodePool")
+}
+
+func TestUpgradeNodes_BackoffAfterAbortingOperation(t *testing.T) {
+	suite := newTestSuite(t)
+	log := logrus.New().WithField("testSuite", "upgrade")
+	meter := metricsdk.NewMeterProvider().Meter("testSuite")
+	slackClient := fake.NewFakeSlackClient()
+	upgrade := NewClusterUpgrader(suite.repoMock, log, suite.clusterMock, meter, slackClient, "channel")
+
+	ctx := context.Background()
+	clusterUpgradeID := uuid.New()
+
+	// Set up a cluster upgrade in NODE_UPGRADE status
+	clusterUpgrade := &model.ClusterUpgradeStatus{
+		ID:            clusterUpgradeID,
+		UpgradeStatus: model.UpgradeStatusNodeUpgrade,
+		Version:       "1.2.4",
+		LastModified:  time.Now(),
+		StartTime:     time.Now(),
+	}
+
+	// Mock GetNodePools - nodepool needs upgrading
+	suite.clusterMock.EXPECT().GetNodePools(mock.Anything, "test-project", suite.environment).Return(
+		[]*containerpb.NodePool{
+			{
+				Name:    "test-pool",
+				Version: "1.2.3", // Needs upgrade to 1.2.4
+			},
+		}, nil).Once()
+
+	// Mock ClusterOperationsGetByUpgradeID - return recent ABORTING operation
+	existingOps := []*model.EnvironmentOperation{
+		{
+			Name:         "operation-aborting",
+			Type:         "UPGRADE_NODES",
+			Status:       "ABORTING",
+			Target:       "https://container.googleapis.com/v1/projects/test-project/locations/europe-north1/clusters/test-cluster/nodePools/test-pool",
+			NodesFailed:  0,
+			LastModified: time.Now().Add(-5 * time.Minute), // Aborting 5 minutes ago
+		},
+	}
+	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(ctx, clusterUpgradeID).Return(existingOps, nil).Once()
+
+	// Mock UpdateClusterUpgradeStatus
+	suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(ctx, clusterUpgradeID, gensql.ClusterUpgradesStatusNODEUPGRADE).Return(clusterUpgrade, nil).Maybe()
+
+	// Call upgradeNodes directly
+	result, err := upgrade.upgradeNodes(ctx, suite.environment, clusterUpgrade, "test-project", "test-tenant")
+	// Should not create a new operation due to backoff
+	if err != nil {
+		t.Errorf("upgradeNodes returned error: %v", err)
+	}
+	if result != nil {
+		t.Errorf("upgradeNodes should return nil during backoff period for ABORTING operation")
+	}
+
+	// Verify UpgradeNodePool was NOT called (backoff in effect)
+	suite.clusterMock.AssertNotCalled(t, "UpgradeNodePool")
+}
