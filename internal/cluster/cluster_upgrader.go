@@ -614,6 +614,24 @@ func isOperationActive(op *containerpb.Operation) bool {
 	return op.Status == containerpb.Operation_RUNNING || op.Status == containerpb.Operation_PENDING
 }
 
+// extractNodePoolName extracts the nodepool name from a GKE target link
+func extractNodePoolName(targetLink string) string {
+	// Target link format: https://container.googleapis.com/v1/projects/{project}/locations/{location}/clusters/{cluster}/nodePools/{nodepool}
+
+	// Strip query parameters and fragments if present
+	if i := strings.IndexAny(targetLink, "?#"); i != -1 {
+		targetLink = targetLink[:i]
+	}
+
+	parts := strings.Split(targetLink, "/")
+	for i := 0; i < len(parts)-1; i++ {
+		if parts[i] == "nodePools" && i+1 < len(parts) {
+			return parts[i+1]
+		}
+	}
+	return ""
+}
+
 // containsNodePool checks if the target link references the specified nodepool name as a distinct path segment
 func containsNodePool(targetLink, nodepoolName string) bool {
 	// Target link format: https://container.googleapis.com/v1/projects/{project}/locations/{location}/clusters/{cluster}/nodePools/{nodepool}
@@ -623,17 +641,7 @@ func containsNodePool(targetLink, nodepoolName string) bool {
 		return false
 	}
 
-	// Strip query parameters and fragments if present
-	if i := strings.IndexAny(targetLink, "?#"); i != -1 {
-		targetLink = targetLink[:i]
-	}
-	parts := strings.Split(targetLink, "/")
-	for i := 0; i < len(parts)-1; i++ {
-		if parts[i] == "nodePools" && parts[i+1] == nodepoolName {
-			return true
-		}
-	}
-	return false
+	return extractNodePoolName(targetLink) == nodepoolName
 }
 
 func clusterHas(runningOperations []*containerpb.Operation) bool {
@@ -1185,20 +1193,41 @@ func (c *ClusterUpgrader) clusterNodePoolsCompleted(ctx context.Context, project
 			return done, nil
 		}
 
-		// Check if there are any failed operations (DONE with nodes_failed > 0)
-		failedOpsCount := 0
+		// Find the most recent operation for each nodepool
+		// Map: nodepool name -> most recent operation
+		latestOps := make(map[string]*model.EnvironmentOperation)
 		for _, op := range ops {
-			if op.Status == "DONE" && op.NodesFailed > 0 {
-				failedOpsCount++
+			if op.Type != "UPGRADE_NODES" || op.Target == "" {
+				continue // Skip non-nodepool operations
+			}
+
+			// Extract nodepool name from target URL
+			// Target format: https://container.googleapis.com/v1/.../nodePools/{name}
+			nodepoolName := extractNodePoolName(op.Target)
+			if nodepoolName == "" {
+				continue // Skip if we can't extract the nodepool name
+			}
+
+			existing, exists := latestOps[nodepoolName]
+			if !exists || op.LastModified.After(existing.LastModified) {
+				latestOps[nodepoolName] = op
 			}
 		}
 
-		if failedOpsCount > 0 {
+		// Check if any nodepool's latest operation has failed nodes
+		failedNodepools := []string{}
+		for nodepoolName, op := range latestOps {
+			if op.Status == "DONE" && op.NodesFailed > 0 {
+				failedNodepools = append(failedNodepools, nodepoolName)
+			}
+		}
+
+		if len(failedNodepools) > 0 {
 			c.log.WithFields(logrus.Fields{
-				"upgrade_id":        clusterUpgrade.ID,
-				"failed_operations": failedOpsCount,
-				"total_operations":  len(ops),
-			}).Info("upgrade not complete - operations have failed nodes, will retry after backoff")
+				"upgrade_id":       clusterUpgrade.ID,
+				"failed_nodepools": failedNodepools,
+				"total_nodepools":  len(latestOps),
+			}).Info("upgrade not complete - latest operations have failed nodes, will retry after backoff")
 			return false, nil
 		}
 	}
