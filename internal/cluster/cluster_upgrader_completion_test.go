@@ -194,3 +194,65 @@ func TestClusterNodePoolsCompleted_DatabaseError(t *testing.T) {
 		t.Errorf("expected upgrade to NOT be marked done when database call fails (to avoid marking upgrade complete incorrectly)")
 	}
 }
+
+func TestClusterNodePoolsCompleted_AbortedOperation(t *testing.T) {
+	suite := newTestSuite(t)
+	ctx := context.Background()
+
+	upgrade := newUpgrade(suite)
+	clusterUpgrade := &model.ClusterUpgradeStatus{
+		ID:      uuid.New(),
+		Version: "1.33.5-gke.2118000",
+	}
+
+	// Mock GetNodePools - all at target version
+	suite.clusterMock.On("GetNodePools", mock.Anything, "test-project", suite.environment).Return([]*containerpb.NodePool{
+		{Name: "pool-1", Version: "1.33.5-gke.2118000"},
+		{Name: "pool-2", Version: "1.33.5-gke.2118000"},
+	}, nil)
+
+	// Mock operations - one operation ABORTED
+	suite.repoMock.On("ClusterOperationsGetByUpgradeID", mock.Anything, clusterUpgrade.ID).Return([]*model.EnvironmentOperation{
+		{Name: "op-1", Status: "ABORTED", NodesFailed: 0, Type: "UPGRADE_NODES", Target: "https://container.googleapis.com/v1/projects/test-project/locations/us-central1/clusters/test-cluster/nodePools/pool-1"},
+		{Name: "op-2", Status: "DONE", NodesFailed: 0, Type: "UPGRADE_NODES", Target: "https://container.googleapis.com/v1/projects/test-project/locations/us-central1/clusters/test-cluster/nodePools/pool-2"},
+	}, nil)
+
+	done, err := upgrade.clusterNodePoolsCompleted(ctx, "test-project", suite.environment, clusterUpgrade)
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+	if done {
+		t.Errorf("expected upgrade NOT done when operation is ABORTED")
+	}
+}
+
+func TestClusterNodePoolsCompleted_AbortingOperation(t *testing.T) {
+	suite := newTestSuite(t)
+	ctx := context.Background()
+
+	upgrade := newUpgrade(suite)
+	clusterUpgrade := &model.ClusterUpgradeStatus{
+		ID:      uuid.New(),
+		Version: "1.33.5-gke.2118000",
+	}
+
+	// Mock GetNodePools - all at target version
+	suite.clusterMock.On("GetNodePools", mock.Anything, "test-project", suite.environment).Return([]*containerpb.NodePool{
+		{Name: "pool-1", Version: "1.33.5-gke.2118000"},
+		{Name: "pool-2", Version: "1.33.5-gke.2118000"},
+	}, nil)
+
+	// Mock operations - one operation ABORTING
+	suite.repoMock.On("ClusterOperationsGetByUpgradeID", mock.Anything, clusterUpgrade.ID).Return([]*model.EnvironmentOperation{
+		{Name: "op-1", Status: "ABORTING", NodesFailed: 0, Type: "UPGRADE_NODES", Target: "https://container.googleapis.com/v1/projects/test-project/locations/us-central1/clusters/test-cluster/nodePools/pool-1"},
+		{Name: "op-2", Status: "DONE", NodesFailed: 0, Type: "UPGRADE_NODES", Target: "https://container.googleapis.com/v1/projects/test-project/locations/us-central1/clusters/test-cluster/nodePools/pool-2"},
+	}, nil)
+
+	done, err := upgrade.clusterNodePoolsCompleted(ctx, "test-project", suite.environment, clusterUpgrade)
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+	if done {
+		t.Errorf("expected upgrade NOT done when operation is ABORTING")
+	}
+}

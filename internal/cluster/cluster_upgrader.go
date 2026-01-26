@@ -1236,9 +1236,11 @@ func (c *ClusterUpgrader) clusterNodePoolsCompleted(ctx context.Context, project
 		failedNodepools := []string{}
 		totalNodesFailedCount := 0
 		for nodepoolName, op := range latestOps {
-			if op.Status == "DONE" && op.NodesFailed > 0 {
+			if (op.Status == "DONE" && op.NodesFailed > 0) || op.Status == "ABORTED" || op.Status == "ABORTING" {
 				failedNodepools = append(failedNodepools, nodepoolName)
-				totalNodesFailedCount += op.NodesFailed
+				if op.NodesFailed > 0 {
+					totalNodesFailedCount += op.NodesFailed
+				}
 			}
 		}
 
