@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"slices"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -16,17 +15,56 @@ import (
 )
 
 type DeploymentRepo interface {
-	V3DeploymentCreate(ctx context.Context, featureName, featureVersion, description string, ref *model.GHRef, target environment.Labels) (*gensql.Deployment, error)
-	V3DeploymentGet(ctx context.Context, deploymentID uuid.UUID) (*Deployment, error)
+	V3DeploymentCreate(ctx context.Context, featureName, featureVersion, description string, ref *model.GHRef, target environment.Labels, ci bool) (*gensql.Deployment, error)
+	V3DeploymentGet(ctx context.Context, deploymentID uuid.UUID) (*model.Deployment, error)
 	V3DeploymentsGet(ctx context.Context) ([]*model.Deployment, error)
 	V3DeploymentStatusesGet(ctx context.Context, deploymentID uuid.UUID) ([]*model.DeploymentStatus, error)
 	V3DeploymentsGetByFeature(ctx context.Context, featureName string) ([]*model.Deployment, error)
 	V3DeploymentDelete(ctx context.Context, deploymentID uuid.UUID) error
-	V3DeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]Deployment, error)
+	V3DeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]model.Deployment, error)
 	V3DeploymentStatusCreateOrUpdate(ctx context.Context, deploymentID, environmentID uuid.UUID, status model.RolloutStatus, message string) error
 	V3MissingDependencies(ctx context.Context, dependencies []string, environmentID uuid.UUID) ([]string, error)
 	V3GetEnvironmentFeature(ctx context.Context, environmentID uuid.UUID, featureName string) (*model.Feature, error)
 	V3InsertEnvironmentFeature(ctx context.Context, environmentID uuid.UUID, deploymentID uuid.UUID, featureName, featureVersion string) error
+	GetCIEnvironmentsForTarget(ctx context.Context, labels environment.Labels) ([]*model.TenantEnvironment, error)
+	LatestStatusForDeploymentInEnvironment(ctx context.Context, deploymentID, environmentID uuid.UUID) (model.DeploymentStatusState, error)
+}
+
+func (r *repo) LatestStatusForDeploymentInEnvironment(ctx context.Context, deploymentID, environmentID uuid.UUID) (model.DeploymentStatusState, error) {
+	status, err := r.querier.LatestStatusForDeploymentInEnvironment(ctx, gensql.LatestStatusForDeploymentInEnvironmentParams{
+		DeploymentID:  deploymentID,
+		EnvironmentID: environmentID,
+	})
+	if err != nil {
+		return model.DeploymentStatusStateUnknown, err
+	}
+
+	return model.DeploymentStatusState(strings.ToUpper(status)), nil
+}
+
+func (r *repo) GetCIEnvironmentsForTarget(ctx context.Context, labels environment.Labels) ([]*model.TenantEnvironment, error) {
+	envs, err := r.querier.GetCIEnvironmentsForTarget(ctx, labels)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]*model.TenantEnvironment, len(envs))
+	for i, e := range envs {
+		ret[i] = &model.TenantEnvironment{
+			Environment: model.Environment{
+				ID:           e.Environment.ID,
+				Name:         e.Environment.Name,
+				CI:           e.Environment.Ci,
+				Description:  nullStringToPtr(e.Environment.Description),
+				Created:      e.Environment.Created.Time,
+				LastModified: e.Environment.LastModified.Time,
+				Kind:         model.EnvironmentKind(e.Environment.Kind),
+			},
+			TenantName: e.TenantName,
+			TenantID:   e.Environment.TenantID,
+		}
+	}
+	return ret, nil
 }
 
 func (r *repo) V3DeploymentStatusesGet(ctx context.Context, deploymentID uuid.UUID) ([]*model.DeploymentStatus, error) {
@@ -112,17 +150,7 @@ func (r *repo) V3MissingDependencies(ctx context.Context, dependencies []string,
 	return missing, nil
 }
 
-type Deployment struct {
-	*model.Feature
-
-	ID          uuid.UUID                 `json:"id"`
-	Created     time.Time                 `json:"created"`
-	Target      environment.Labels        `json:"target"`
-	Description string                    `json:"description"`
-	Statuses    []gensql.DeploymentStatus `json:"statuses"`
-}
-
-func (r *repo) V3DeploymentGet(ctx context.Context, deploymentID uuid.UUID) (*Deployment, error) {
+func (r *repo) V3DeploymentGet(ctx context.Context, deploymentID uuid.UUID) (*model.Deployment, error) {
 	row, err := r.querier.DeploymentGet(ctx, deploymentID)
 	if err != nil {
 		return nil, err
@@ -144,18 +172,13 @@ func (r *repo) V3DeploymentGet(ctx context.Context, deploymentID uuid.UUID) (*De
 	if err != nil {
 		return nil, err
 	}
-	statuses, err := r.querier.DeploymentStatusGet(ctx, deploymentID)
-	if err != nil {
-		return nil, err
-	}
 
-	return &Deployment{
-		Feature:     feature,
-		ID:          row.Deployment.ID,
-		Created:     row.Deployment.Created.Time,
-		Target:      row.Deployment.Target,
-		Statuses:    statuses,
-		Description: row.Deployment.Description.String,
+	return &model.Deployment{
+		Feature:      feature,
+		ID:           row.Deployment.ID,
+		Created:      row.Deployment.Created.Time,
+		TargetLabels: row.Deployment.Target,
+		Description:  row.Deployment.Description.String,
 	}, nil
 }
 
@@ -166,26 +189,18 @@ func (r *repo) V3DeploymentsGet(ctx context.Context) ([]*model.Deployment, error
 	}
 
 	ret := make([]*model.Deployment, len(rows))
-	for i, r := range rows {
-		fyaml, defaultValues, err := makeFeatureYAML(r.Kinds, r.Dependencies, r.Values, r.DefaultValues, nil, r.Timeout)
+	for i, row := range rows {
+		fyaml, defaultValues, err := makeFeatureYAML(row.Kinds, row.Dependencies, row.Values, row.DefaultValues, nil, row.Timeout)
 		if err != nil {
 			return nil, fmt.Errorf("make feature yaml: %w", err)
 		}
 
-		target := make([]*model.EnvironmentLabel, 0)
-		for k, v := range r.Deployment.Target {
-			target = append(target, &model.EnvironmentLabel{
-				Key:   k,
-				Value: v,
-			})
-		}
-
 		feature := &model.Feature{
-			Name:        r.Name,
-			Description: r.Description,
-			Version:     r.Version,
-			Chart:       r.Chart,
-			Source:      r.Source,
+			Name:        row.Name,
+			Description: row.Description,
+			Version:     row.Version,
+			Chart:       row.Chart,
+			Source:      row.Source,
 			FeatureYAML: fyaml,
 			ValuesYAML:  defaultValues,
 			SpecVersion: "v2",
@@ -193,11 +208,11 @@ func (r *repo) V3DeploymentsGet(ctx context.Context) ([]*model.Deployment, error
 			HasDeployments: true,
 		}
 		ret[i] = &model.Deployment{
-			Feature:     feature,
-			ID:          r.Deployment.ID,
-			Created:     r.Deployment.Created.Time,
-			Target:      target,
-			Description: r.Deployment.Description.String,
+			Feature:      feature,
+			ID:           row.Deployment.ID,
+			Created:      row.Deployment.Created.Time,
+			TargetLabels: row.Deployment.Target,
+			Description:  row.Deployment.Description.String,
 		}
 	}
 
@@ -211,26 +226,18 @@ func (r *repo) V3DeploymentsGetByFeature(ctx context.Context, featureName string
 	}
 
 	ret := make([]*model.Deployment, len(rows))
-	for i, r := range rows {
-		fyaml, defaultValues, err := makeFeatureYAML(r.Kinds, r.Dependencies, r.Values, r.DefaultValues, nil, r.Timeout)
+	for i, row := range rows {
+		fyaml, defaultValues, err := makeFeatureYAML(row.Kinds, row.Dependencies, row.Values, row.DefaultValues, nil, row.Timeout)
 		if err != nil {
 			return nil, fmt.Errorf("make feature yaml: %w", err)
 		}
 
-		target := make([]*model.EnvironmentLabel, 0)
-		for k, v := range r.Deployment.Target {
-			target = append(target, &model.EnvironmentLabel{
-				Key:   k,
-				Value: v,
-			})
-		}
-
 		feature := &model.Feature{
-			Name:        r.Name,
-			Description: r.Description,
-			Version:     r.Version,
-			Chart:       r.Chart,
-			Source:      r.Source,
+			Name:        row.Name,
+			Description: row.Description,
+			Version:     row.Version,
+			Chart:       row.Chart,
+			Source:      row.Source,
 			FeatureYAML: fyaml,
 			ValuesYAML:  defaultValues,
 			SpecVersion: "v2",
@@ -238,44 +245,34 @@ func (r *repo) V3DeploymentsGetByFeature(ctx context.Context, featureName string
 			HasDeployments: true,
 		}
 		ret[i] = &model.Deployment{
-			Feature: feature,
-			ID:      r.Deployment.ID,
-			Created: r.Deployment.Created.Time,
-			Target:  target,
+			Feature:      feature,
+			ID:           row.Deployment.ID,
+			Created:      row.Deployment.Created.Time,
+			TargetLabels: row.Deployment.Target,
 		}
 	}
 
 	return ret, nil
 }
 
-func (r *repo) V3DeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]Deployment, error) {
+func (r *repo) V3DeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]model.Deployment, error) {
 	rows, err := r.querier.FeatureDeploymentsForEnvironment(ctx, environmentID)
 	if err != nil {
 		return nil, err
 	}
 
-	ret := make([]Deployment, len(rows))
+	ret := make([]model.Deployment, len(rows))
 	for i, row := range rows {
 		feature, err := featureFromSQL(row)
 		if err != nil {
 			return nil, err
 		}
 
-		ret[i] = Deployment{
-			Feature: feature,
-			ID:      row.Deployment.ID,
-			Created: row.Deployment.Created.Time,
-			Target:  row.Deployment.Target,
-			Statuses: []gensql.DeploymentStatus{
-				{
-					DeploymentID:  row.Deployment.ID,
-					EnvironmentID: environmentID,
-					Status:        row.Status.String,
-					Message:       row.StatusMessage.String,
-					LastModified:  row.StatusLastModified,
-					Created:       row.StatusCreated,
-				},
-			},
+		ret[i] = model.Deployment{
+			Feature:      feature,
+			ID:           row.Deployment.ID,
+			Created:      row.Deployment.Created.Time,
+			TargetLabels: row.Deployment.Target,
 		}
 	}
 
@@ -303,7 +300,7 @@ func featureFromSQL(f gensql.FeatureDeploymentsForEnvironmentRow) (*model.Featur
 	}, nil
 }
 
-func (r *repo) V3DeploymentCreate(ctx context.Context, featureName, featureVersion, description string, ref *model.GHRef, target environment.Labels) (*gensql.Deployment, error) {
+func (r *repo) V3DeploymentCreate(ctx context.Context, featureName, featureVersion, description string, ref *model.GHRef, target environment.Labels, ci bool) (*gensql.Deployment, error) {
 	var ghRef []byte
 	if ref != nil {
 		b, err := json.Marshal(ref)
@@ -323,6 +320,7 @@ func (r *repo) V3DeploymentCreate(ctx context.Context, featureName, featureVersi
 			String: description,
 			Valid:  description != "",
 		},
+		Ci: ci,
 	})
 
 	return &ret, err

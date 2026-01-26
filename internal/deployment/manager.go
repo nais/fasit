@@ -2,6 +2,7 @@ package deployment
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -14,6 +15,7 @@ import (
 
 type Manager struct {
 	deployer   *deployer
+	repo       database.Repo
 	reconciler *reconciler
 }
 
@@ -25,7 +27,7 @@ type Request struct {
 	Ref         *model.GHRef       `json:"ref"`
 	Global      bool               `json:"global"`
 	Target      environment.Labels `json:"target"`
-	CI          string             `json:"ci,omitempty"`
+	SkipCI      bool               `json:"skipCI"`
 }
 
 func NewManager(repo database.Repo, publisher NewPublisher, m metric.Meter, log logrus.FieldLogger) (*Manager, error) {
@@ -41,6 +43,7 @@ func NewManager(repo database.Repo, publisher NewPublisher, m metric.Meter, log 
 	return &Manager{
 		deployer:   d,
 		reconciler: r,
+		repo:       repo,
 	}, nil
 }
 
@@ -59,10 +62,29 @@ func (dm *Manager) TriggerReconcile(event ReconcileTriggerEvent) chan TriggerRes
 	return dm.reconciler.trigger(event)
 }
 
-func (dm *Manager) GetDeployment(ctx context.Context, id uuid.UUID) (*database.Deployment, error) {
-	return dm.deployer.GetDeployment(ctx, id)
+func (dm *Manager) GetDeployment(ctx context.Context, id uuid.UUID) (*model.Deployment, error) {
+	return dm.repo.V3DeploymentGet(ctx, id)
 }
 
-func (dm *Manager) CreateDeployment(ctx context.Context, req *Request) (uuid.UUID, error) {
-	return dm.deployer.CreateDeployment(ctx, req)
+func (dm *Manager) CreateDeployment(ctx context.Context, req Request) (uuid.UUID, error) {
+	feat, err := model.FromChart(req.Chart, req.Version)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("unable to convert oci chart: %w", err)
+	}
+
+	if len(feat.EnvironmentKinds) == 0 {
+		return uuid.Nil, fmt.Errorf("no environments defined in Feature.yaml")
+	}
+
+	if feat.Source == "" {
+		return uuid.Nil, fmt.Errorf("no source url found in Chart.yaml")
+	}
+
+	if !req.SkipCI {
+		if err := dm.deployer.deployToCI(ctx, feat, req); err != nil {
+			return uuid.Nil, fmt.Errorf("deploy to ci: %w", err)
+		}
+	}
+
+	return dm.deployer.CreateDeployment(ctx, feat, req, false)
 }

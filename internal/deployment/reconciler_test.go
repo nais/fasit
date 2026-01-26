@@ -300,7 +300,7 @@ func (d *Db) createFeatureDeployment(ctx context.Context, featureName, version s
 		labels = environment.Labels{}
 	}
 
-	_, err = d.repo.V3DeploymentCreate(ctx, featureName, version, "", nil, labels)
+	_, err = d.repo.V3DeploymentCreate(ctx, featureName, version, "", nil, labels, false)
 	if err != nil {
 		d.t.Fatalf("create deployment: %v", err)
 	}

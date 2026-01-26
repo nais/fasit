@@ -55,15 +55,17 @@ INSERT INTO deployments(
 	version,
 	target,
 	gh_ref,
-	description)
+	description,
+	ci)
 VALUES (
 	$1,
 	$2,
 	$3,
 	$4,
-	$5)
+	$5,
+	$6)
 RETURNING
-	id, feature_name, version, target, created, gh_ref, description
+	id, feature_name, version, target, created, gh_ref, description, ci
 `
 
 type DeploymentCreateParams struct {
@@ -72,6 +74,7 @@ type DeploymentCreateParams struct {
 	Target      environment.Labels
 	GhRef       []byte
 	Description pgtype.Text
+	Ci          bool
 }
 
 func (q *Queries) DeploymentCreate(ctx context.Context, arg DeploymentCreateParams) (Deployment, error) {
@@ -81,6 +84,7 @@ func (q *Queries) DeploymentCreate(ctx context.Context, arg DeploymentCreatePara
 		arg.Target,
 		arg.GhRef,
 		arg.Description,
+		arg.Ci,
 	)
 	var i Deployment
 	err := row.Scan(
@@ -91,6 +95,7 @@ func (q *Queries) DeploymentCreate(ctx context.Context, arg DeploymentCreatePara
 		&i.Created,
 		&i.GhRef,
 		&i.Description,
+		&i.Ci,
 	)
 	return i, err
 }
@@ -107,7 +112,7 @@ func (q *Queries) DeploymentDelete(ctx context.Context, id uuid.UUID) error {
 
 const deploymentGet = `-- name: DeploymentGet :one
 SELECT
-	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description,
+	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description, d.ci,
 	fd.name,
 	fd.version,
 	fd.chart,
@@ -151,6 +156,7 @@ func (q *Queries) DeploymentGet(ctx context.Context, id uuid.UUID) (DeploymentGe
 		&i.Deployment.Created,
 		&i.Deployment.GhRef,
 		&i.Deployment.Description,
+		&i.Deployment.Ci,
 		&i.Name,
 		&i.Version,
 		&i.Chart,
@@ -242,7 +248,7 @@ func (q *Queries) DeploymentStatusGet(ctx context.Context, deploymentID uuid.UUI
 
 const deploymentsGet = `-- name: DeploymentsGet :many
 SELECT
-	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description,
+	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description, d.ci,
 	fd.name,
 	fd.version,
 	fd.chart,
@@ -292,6 +298,7 @@ func (q *Queries) DeploymentsGet(ctx context.Context) ([]DeploymentsGetRow, erro
 			&i.Deployment.Created,
 			&i.Deployment.GhRef,
 			&i.Deployment.Description,
+			&i.Deployment.Ci,
 			&i.Name,
 			&i.Version,
 			&i.Chart,
@@ -315,7 +322,7 @@ func (q *Queries) DeploymentsGet(ctx context.Context) ([]DeploymentsGetRow, erro
 
 const deploymentsGetByFeature = `-- name: DeploymentsGetByFeature :many
 SELECT
-	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description,
+	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description, d.ci,
 	fd.name,
 	fd.version,
 	fd.chart,
@@ -367,6 +374,7 @@ func (q *Queries) DeploymentsGetByFeature(ctx context.Context, featureName strin
 			&i.Deployment.Created,
 			&i.Deployment.GhRef,
 			&i.Deployment.Description,
+			&i.Deployment.Ci,
 			&i.Name,
 			&i.Version,
 			&i.Chart,
@@ -390,7 +398,7 @@ func (q *Queries) DeploymentsGetByFeature(ctx context.Context, featureName strin
 
 const featureDeploymentsForEnvironment = `-- name: FeatureDeploymentsForEnvironment :many
 SELECT DISTINCT ON (d.feature_name, d.target)
-	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description,
+	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description, d.ci,
 	fd.name,
 	fd.version,
 	fd.chart,
@@ -454,6 +462,7 @@ func (q *Queries) FeatureDeploymentsForEnvironment(ctx context.Context, environm
 			&i.Deployment.Created,
 			&i.Deployment.GhRef,
 			&i.Deployment.Description,
+			&i.Deployment.Ci,
 			&i.Name,
 			&i.Version,
 			&i.Chart,
@@ -502,4 +511,91 @@ func (q *Queries) FeatureEnabled(ctx context.Context, arg FeatureEnabledParams) 
 	var not_exists bool
 	err := row.Scan(&not_exists)
 	return not_exists, err
+}
+
+const getCIEnvironmentsForTarget = `-- name: GetCIEnvironmentsForTarget :many
+SELECT DISTINCT
+	e_ci.id, e_ci.tenant_id, e_ci.name, e_ci.kind, e_ci.description, e_ci.created, e_ci.last_modified, e_ci.ci, e_ci.reconcile, e_ci.auto_upgrade, e_ci.upgrade_delay_days, e_ci.maintenance_window, e_ci.labels,
+	t.name AS tenant_name
+FROM
+	environments e_ci
+	JOIN tenants t ON e_ci.tenant_id = t.id
+WHERE
+	e_ci.ci = TRUE
+	AND EXISTS (
+		SELECT
+			1
+		FROM
+			environments e_non_ci
+		WHERE
+			e_non_ci.ci = FALSE
+			AND e_non_ci.labels @> $1
+			AND e_non_ci.kind = e_ci.kind)
+ORDER BY
+	e_ci.name ASC
+`
+
+type GetCIEnvironmentsForTargetRow struct {
+	Environment Environment
+	TenantName  string
+}
+
+func (q *Queries) GetCIEnvironmentsForTarget(ctx context.Context, target environment.Labels) ([]GetCIEnvironmentsForTargetRow, error) {
+	rows, err := q.db.Query(ctx, getCIEnvironmentsForTarget, target)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetCIEnvironmentsForTargetRow{}
+	for rows.Next() {
+		var i GetCIEnvironmentsForTargetRow
+		if err := rows.Scan(
+			&i.Environment.ID,
+			&i.Environment.TenantID,
+			&i.Environment.Name,
+			&i.Environment.Kind,
+			&i.Environment.Description,
+			&i.Environment.Created,
+			&i.Environment.LastModified,
+			&i.Environment.Ci,
+			&i.Environment.Reconcile,
+			&i.Environment.AutoUpgrade,
+			&i.Environment.UpgradeDelayDays,
+			&i.Environment.MaintenanceWindow,
+			&i.Environment.Labels,
+			&i.TenantName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const latestStatusForDeploymentInEnvironment = `-- name: LatestStatusForDeploymentInEnvironment :one
+SELECT
+	status
+FROM
+	deployment_statuses
+WHERE
+	deployment_id = $1
+	AND environment_id = $2
+ORDER BY
+	last_modified DESC
+LIMIT 1
+`
+
+type LatestStatusForDeploymentInEnvironmentParams struct {
+	DeploymentID  uuid.UUID
+	EnvironmentID uuid.UUID
+}
+
+func (q *Queries) LatestStatusForDeploymentInEnvironment(ctx context.Context, arg LatestStatusForDeploymentInEnvironmentParams) (string, error) {
+	row := q.db.QueryRow(ctx, latestStatusForDeploymentInEnvironment, arg.DeploymentID, arg.EnvironmentID)
+	var status string
+	err := row.Scan(&status)
+	return status, err
 }

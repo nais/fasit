@@ -120,5 +120,19 @@ func (r *reconciler) reconcileEnvironment(ctx context.Context, environment *mode
 		r.reconcileTime.Record(ctx, time.Since(start).Milliseconds(), metric.WithAttributeSet(attrs))
 	}()
 
-	return r.deployer.deploymentsInEnvironment(ctx, environment)
+	publisher := r.deployer.publisher(naisdTopicID(environment.TenantName, environment.Name), r.deployer.log)
+	defer publisher.Stop()
+
+	allDeployments, err := r.repo.V3DeploymentsForEnvironment(ctx, environment.ID)
+	if err != nil {
+		return fmt.Errorf("get deployments for environment %q: %w", environment.Name, err)
+	}
+
+	for _, deployment := range filterDeployments(allDeployments) {
+		if err := r.deployer.deployToEnvironment(ctx, deployment, environment, publisher); err != nil {
+			// TODO: continue on error? earlier we returned the error immediately when the above was inside the loop.
+			return err
+		}
+	}
+	return nil
 }
