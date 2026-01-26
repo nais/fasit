@@ -2,6 +2,7 @@ package cluster
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
@@ -166,6 +167,34 @@ func TestClusterNodePoolsCompleted_FailedThenSuccessfulRetry(t *testing.T) {
 	}
 	if !done {
 		t.Errorf("expected upgrade to be done when latest retry succeeded, even with historical failures")
+	}
+}
+
+func TestClusterNodePoolsCompleted_DatabaseError(t *testing.T) {
+	suite := newTestSuite(t)
+	ctx := context.Background()
+
+	upgrade := setupUpgrader(suite)
+	clusterUpgrade := &model.ClusterUpgradeStatus{
+		ID:      uuid.New(),
+		Version: "1.33.5-gke.2118000",
+	}
+
+	// Mock GetNodePools - all at target version
+	suite.clusterMock.On("GetNodePools", mock.Anything, "test-project", suite.environment).Return([]*containerpb.NodePool{
+		{Name: "pool-1", Version: "1.33.5-gke.2118000"},
+		{Name: "pool-2", Version: "1.33.5-gke.2118000"},
+	}, nil)
+
+	// Mock database error
+	suite.repoMock.On("ClusterOperationsGetByUpgradeID", mock.Anything, clusterUpgrade.ID).Return(nil, errors.New("database connection failed"))
+
+	done, err := upgrade.clusterNodePoolsCompleted(ctx, "test-project", suite.environment, clusterUpgrade)
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+	if done {
+		t.Errorf("expected upgrade to NOT be marked done when database call fails (to avoid marking upgrade complete incorrectly)")
 	}
 }
 
