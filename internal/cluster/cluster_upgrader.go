@@ -886,54 +886,61 @@ func (c *ClusterUpgrader) upgradeNodes(ctx context.Context, env *model.Environme
 		return nil, err
 	}
 
+	// Build a map of latest operation per nodepool for efficient lookup
+	latestOpPerNodepool := make(map[string]*model.EnvironmentOperation)
+	for _, op := range existingOps {
+		if op.Type != "UPGRADE_NODES" || op.Target == "" {
+			continue
+		}
+		nodepoolName := extractNodePoolName(op.Target)
+		if nodepoolName == "" {
+			continue
+		}
+		existing, exists := latestOpPerNodepool[nodepoolName]
+		if !exists || op.LastModified.After(existing.LastModified) {
+			latestOpPerNodepool[nodepoolName] = op
+		}
+	}
+
 	for _, np := range nodePools {
 		npVersionObj, err := version.NewVersion(np.Version)
 		if err != nil {
 			return nil, err
 		}
 
-		// Check if there's already an operation for this nodepool
-		// Operations contain the nodepool name in their target link
+		// Check the latest operation for this nodepool
 		hasOperation := false
 		needsRetry := false
-		for _, existingOp := range existingOps {
-			if existingOp.Type != "UPGRADE_NODES" || !containsNodePool(existingOp.Target, np.Name) {
-				continue
-			}
-
+		if latestOp, exists := latestOpPerNodepool[np.Name]; exists {
 			// Check if this operation is active (PENDING or RUNNING)
-			if existingOp.Status == "PENDING" || existingOp.Status == "RUNNING" {
+			if latestOp.Status == "PENDING" || latestOp.Status == "RUNNING" {
 				hasOperation = true
 				c.log.WithFields(logrus.Fields{
 					"nodepool":  np.Name,
-					"operation": existingOp.Name,
-					"status":    existingOp.Status,
+					"operation": latestOp.Name,
+					"status":    latestOp.Status,
 				}).Debug("nodepool already has an operation, skipping new upgrade")
-				break
-			}
-
-			// Check if this is a recently failed DONE operation (apply backoff to avoid hammering GCP)
-			if existingOp.Status == "DONE" && existingOp.NodesFailed > 0 {
-				timeSinceFailure := time.Since(existingOp.LastModified)
+			} else if latestOp.Status == "DONE" && latestOp.NodesFailed > 0 {
+				// Check if this is a recently failed DONE operation (apply backoff to avoid hammering GCP)
+				timeSinceFailure := time.Since(latestOp.LastModified)
 				backoffDuration := 30 * time.Minute
 				if timeSinceFailure < backoffDuration {
 					hasOperation = true
 					c.log.WithFields(logrus.Fields{
 						"nodepool":        np.Name,
-						"operation":       existingOp.Name,
-						"status":          existingOp.Status,
-						"nodes_failed":    existingOp.NodesFailed,
+						"operation":       latestOp.Name,
+						"status":          latestOp.Status,
+						"nodes_failed":    latestOp.NodesFailed,
 						"time_since_fail": timeSinceFailure,
 						"retry_available": backoffDuration - timeSinceFailure,
 					}).Info("nodepool upgrade recently failed, applying backoff before retry (will continue with other nodepools)")
-					break
 				} else {
-					// Backoff period has passed, this nodepool needs a retry
+					// Backoff period has passed, this nodepool needs a retry even if version matches
 					needsRetry = true
 					c.log.WithFields(logrus.Fields{
 						"nodepool":        np.Name,
-						"operation":       existingOp.Name,
-						"nodes_failed":    existingOp.NodesFailed,
+						"operation":       latestOp.Name,
+						"nodes_failed":    latestOp.NodesFailed,
 						"time_since_fail": timeSinceFailure,
 					}).Info("nodepool upgrade previously failed, will retry now")
 				}
