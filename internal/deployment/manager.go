@@ -86,5 +86,5 @@ func (dm *Manager) CreateDeployment(ctx context.Context, req Request) (uuid.UUID
 		}
 	}
 
-	return dm.deployer.CreateDeployment(ctx, feat, req)
+	return dm.deployer.CreateDeployment(ctx, feat, req, false)
 }

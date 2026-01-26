@@ -15,7 +15,7 @@ import (
 )
 
 type DeploymentRepo interface {
-	V3DeploymentCreate(ctx context.Context, featureName, featureVersion, description string, ref *model.GHRef, target environment.Labels) (*gensql.Deployment, error)
+	V3DeploymentCreate(ctx context.Context, featureName, featureVersion, description string, ref *model.GHRef, target environment.Labels, ci bool) (*gensql.Deployment, error)
 	V3DeploymentGet(ctx context.Context, deploymentID uuid.UUID) (*model.Deployment, error)
 	V3DeploymentsGet(ctx context.Context) ([]*model.Deployment, error)
 	V3DeploymentStatusesGet(ctx context.Context, deploymentID uuid.UUID) ([]*model.DeploymentStatus, error)
@@ -300,7 +300,7 @@ func featureFromSQL(f gensql.FeatureDeploymentsForEnvironmentRow) (*model.Featur
 	}, nil
 }
 
-func (r *repo) V3DeploymentCreate(ctx context.Context, featureName, featureVersion, description string, ref *model.GHRef, target environment.Labels) (*gensql.Deployment, error) {
+func (r *repo) V3DeploymentCreate(ctx context.Context, featureName, featureVersion, description string, ref *model.GHRef, target environment.Labels, ci bool) (*gensql.Deployment, error) {
 	var ghRef []byte
 	if ref != nil {
 		b, err := json.Marshal(ref)
@@ -320,6 +320,7 @@ func (r *repo) V3DeploymentCreate(ctx context.Context, featureName, featureVersi
 			String: description,
 			Valid:  description != "",
 		},
+		Ci: ci,
 	})
 
 	return &ret, err

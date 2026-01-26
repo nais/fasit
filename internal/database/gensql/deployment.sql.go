@@ -55,15 +55,17 @@ INSERT INTO deployments(
 	version,
 	target,
 	gh_ref,
-	description)
+	description,
+	ci)
 VALUES (
 	$1,
 	$2,
 	$3,
 	$4,
-	$5)
+	$5,
+	$6)
 RETURNING
-	id, feature_name, version, target, created, gh_ref, description
+	id, feature_name, version, target, created, gh_ref, description, ci
 `
 
 type DeploymentCreateParams struct {
@@ -72,6 +74,7 @@ type DeploymentCreateParams struct {
 	Target      environment.Labels
 	GhRef       []byte
 	Description pgtype.Text
+	Ci          bool
 }
 
 func (q *Queries) DeploymentCreate(ctx context.Context, arg DeploymentCreateParams) (Deployment, error) {
@@ -81,6 +84,7 @@ func (q *Queries) DeploymentCreate(ctx context.Context, arg DeploymentCreatePara
 		arg.Target,
 		arg.GhRef,
 		arg.Description,
+		arg.Ci,
 	)
 	var i Deployment
 	err := row.Scan(
@@ -91,6 +95,7 @@ func (q *Queries) DeploymentCreate(ctx context.Context, arg DeploymentCreatePara
 		&i.Created,
 		&i.GhRef,
 		&i.Description,
+		&i.Ci,
 	)
 	return i, err
 }
@@ -107,7 +112,7 @@ func (q *Queries) DeploymentDelete(ctx context.Context, id uuid.UUID) error {
 
 const deploymentGet = `-- name: DeploymentGet :one
 SELECT
-	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description,
+	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description, d.ci,
 	fd.name,
 	fd.version,
 	fd.chart,
@@ -151,6 +156,7 @@ func (q *Queries) DeploymentGet(ctx context.Context, id uuid.UUID) (DeploymentGe
 		&i.Deployment.Created,
 		&i.Deployment.GhRef,
 		&i.Deployment.Description,
+		&i.Deployment.Ci,
 		&i.Name,
 		&i.Version,
 		&i.Chart,
@@ -242,7 +248,7 @@ func (q *Queries) DeploymentStatusGet(ctx context.Context, deploymentID uuid.UUI
 
 const deploymentsGet = `-- name: DeploymentsGet :many
 SELECT
-	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description,
+	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description, d.ci,
 	fd.name,
 	fd.version,
 	fd.chart,
@@ -292,6 +298,7 @@ func (q *Queries) DeploymentsGet(ctx context.Context) ([]DeploymentsGetRow, erro
 			&i.Deployment.Created,
 			&i.Deployment.GhRef,
 			&i.Deployment.Description,
+			&i.Deployment.Ci,
 			&i.Name,
 			&i.Version,
 			&i.Chart,
@@ -315,7 +322,7 @@ func (q *Queries) DeploymentsGet(ctx context.Context) ([]DeploymentsGetRow, erro
 
 const deploymentsGetByFeature = `-- name: DeploymentsGetByFeature :many
 SELECT
-	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description,
+	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description, d.ci,
 	fd.name,
 	fd.version,
 	fd.chart,
@@ -367,6 +374,7 @@ func (q *Queries) DeploymentsGetByFeature(ctx context.Context, featureName strin
 			&i.Deployment.Created,
 			&i.Deployment.GhRef,
 			&i.Deployment.Description,
+			&i.Deployment.Ci,
 			&i.Name,
 			&i.Version,
 			&i.Chart,
@@ -390,7 +398,7 @@ func (q *Queries) DeploymentsGetByFeature(ctx context.Context, featureName strin
 
 const featureDeploymentsForEnvironment = `-- name: FeatureDeploymentsForEnvironment :many
 SELECT DISTINCT ON (d.feature_name, d.target)
-	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description,
+	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description, d.ci,
 	fd.name,
 	fd.version,
 	fd.chart,
@@ -454,6 +462,7 @@ func (q *Queries) FeatureDeploymentsForEnvironment(ctx context.Context, environm
 			&i.Deployment.Created,
 			&i.Deployment.GhRef,
 			&i.Deployment.Description,
+			&i.Deployment.Ci,
 			&i.Name,
 			&i.Version,
 			&i.Chart,

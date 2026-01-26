@@ -93,7 +93,7 @@ func (d *deployer) deployToCI(ctx context.Context, feat *model.Feature, req Requ
 
 			req.Target = target
 
-			deploymentID, err = d.CreateDeployment(ctx, feat, req)
+			deploymentID, err = d.CreateDeployment(ctx, feat, req, true)
 			if err != nil {
 				return err
 			}
@@ -258,7 +258,7 @@ func (d *deployer) isDependenciesDeployed(ctx context.Context, deployment model.
 	return true, nil
 }
 
-func (d *deployer) CreateDeployment(ctx context.Context, feat *model.Feature, req Request) (uuid.UUID, error) {
+func (d *deployer) CreateDeployment(ctx context.Context, feat *model.Feature, req Request, ci bool) (uuid.UUID, error) {
 	details, err := feature.ParseTemplateDetails(feat.FeatureYAML.Values)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("unable to parse feature template details: %w", err)
@@ -271,7 +271,7 @@ func (d *deployer) CreateDeployment(ctx context.Context, feat *model.Feature, re
 		}
 	}
 
-	deployment, err := d.repo.V3DeploymentCreate(ctx, feat.Name, feat.Version, req.Description, req.Ref, req.Target)
+	deployment, err := d.repo.V3DeploymentCreate(ctx, feat.Name, feat.Version, req.Description, req.Ref, req.Target, ci)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("unable to create deployment: %w", err)
 	}
