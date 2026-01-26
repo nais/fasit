@@ -1189,8 +1189,8 @@ func (c *ClusterUpgrader) clusterNodePoolsCompleted(ctx context.Context, project
 	if done {
 		ops, err := c.repo.ClusterOperationsGetByUpgradeID(ctx, clusterUpgrade.ID)
 		if err != nil {
-			c.log.WithError(err).Warn("failed to get operations for completion check, proceeding anyway")
-			return done, nil
+			c.log.WithError(err).Warn("failed to get operations for completion check, will retry on next reconciliation")
+			return false, nil
 		}
 
 		// Find the most recent operation for each nodepool
