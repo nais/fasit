@@ -190,6 +190,8 @@ type Deployment struct {
 	Target      environment.Labels
 	Created     pgtype.Timestamptz
 	GhRef       []byte
+	Description pgtype.Text
+	Ci          bool
 }
 
 type DeploymentStatus struct {

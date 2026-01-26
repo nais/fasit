@@ -37,3 +37,27 @@ WHERE
 	environment_id = @environment_id
 	AND feature_name = @feature_name;
 
+-- name: GetEnvironmentFeatures :many
+SELECT
+	fd.name,
+	fd.version,
+	fd.chart,
+	fd.description,
+	fd.source,
+	fd.kinds::TEXT[] AS kinds,
+	fd.dependencies,
+	fd.values,
+	fd.default_values,
+	fd.timeout,
+	ef.deployment_id,
+	d.created
+FROM
+	environment_features ef
+	JOIN deployments d ON d.id = ef.deployment_id
+	JOIN feature_data fd ON fd.name = ef.feature_name
+		AND fd.version = ef.feature_version
+WHERE
+	environment_id = @environment_id
+ORDER BY
+	fd.name ASC;
+

@@ -204,14 +204,14 @@ SELECT
 	fd.values,
 	fd.default_values,
 	fd.timeout,
-	combined.created,
-	combined.last_modified
+	filtered.created,
+	filtered.last_modified
 FROM
-	combined
-	JOIN feature_data fd ON combined.name = fd.name
-		AND combined.version = fd.version
+	filtered
+	JOIN feature_data fd ON filtered.name = fd.name
+		AND filtered.version = fd.version
 	ORDER BY
-		combined.name
+		filtered.name
 `
 
 type FeaturesRow struct {

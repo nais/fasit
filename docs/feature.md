@@ -45,7 +45,6 @@ environmentKinds:
   - management
   - tenant
   - onprem
-  - legacy
 # list of values that will be provided by Fasit, either as a computed value or manually entered (config).
 values:
   # The key is the key used in the values.yaml file.
