@@ -25,26 +25,7 @@ func (r *deploymentResolver) Statuses(ctx context.Context, obj *model.Deployment
 
 // Deployment is the resolver for the deployment field.
 func (r *deploymentStatusResolver) Deployment(ctx context.Context, obj *model.DeploymentStatus) (*model.Deployment, error) {
-	d, err := r.Repo.V3DeploymentGet(ctx, obj.DeploymentID)
-	if err != nil {
-		return nil, fmt.Errorf("get deployment: %w", err)
-	}
-
-	target := make([]*model.EnvironmentLabel, 0)
-	for k, v := range d.Target {
-		target = append(target, &model.EnvironmentLabel{
-			Key:   k,
-			Value: v,
-		})
-	}
-
-	return &model.Deployment{
-		ID:          d.ID,
-		Target:      target,
-		Created:     d.Created,
-		Feature:     d.Feature,
-		Description: d.Description,
-	}, nil
+	return r.Repo.V3DeploymentGet(ctx, obj.DeploymentID)
 }
 
 // Environment is the resolver for the environment field.
@@ -63,12 +44,13 @@ func (r *mutationResolver) CreateDeployment(ctx context.Context, input model.Cre
 		return uuid.Nil, fmt.Errorf("invalid target: %w", err)
 	}
 
-	id, err := r.DeploymentMgr.CreateDeployment(ctx, &deployment.Request{
+	id, err := r.DeploymentMgr.CreateDeployment(ctx, deployment.Request{
 		Chart:       input.Chart,
 		Version:     input.Version,
 		Description: input.Description,
 		Global:      input.Global,
 		Target:      target,
+		SkipCI:      true, // manual deployments should always skip CI
 	})
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("create deployment: %w", err)
@@ -99,26 +81,7 @@ func (r *queryResolver) Deployments(ctx context.Context, feature *string) ([]*mo
 
 // Deployment is the resolver for the deployment field.
 func (r *queryResolver) Deployment(ctx context.Context, id uuid.UUID) (*model.Deployment, error) {
-	d, err := r.Repo.V3DeploymentGet(ctx, id)
-	if err != nil {
-		return nil, fmt.Errorf("get deployment: %w", err)
-	}
-
-	target := make([]*model.EnvironmentLabel, 0)
-	for k, v := range d.Target {
-		target = append(target, &model.EnvironmentLabel{
-			Key:   k,
-			Value: v,
-		})
-	}
-
-	return &model.Deployment{
-		ID:          d.ID,
-		Target:      target,
-		Created:     d.Created,
-		Feature:     d.Feature,
-		Description: d.Description,
-	}, nil
+	return r.Repo.V3DeploymentGet(ctx, id)
 }
 
 // Deployment returns graphgen.DeploymentResolver implementation.

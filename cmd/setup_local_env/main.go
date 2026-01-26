@@ -190,7 +190,7 @@ func main() {
 				EnvironmentKinds: []model.EnvironmentKind{"tenant", "management"},
 			},
 		}, nil)
-		_, err = db.V3DeploymentCreate(ctx, d.FeatureName, d.Version, "Deployment from mise run setup", nil, d.Target)
+		_, err = db.V3DeploymentCreate(ctx, d.FeatureName, d.Version, "Deployment from mise run setup", nil, d.Target, false)
 		if err != nil {
 			panic(err)
 		}

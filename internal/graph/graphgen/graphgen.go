@@ -5359,7 +5359,7 @@ func (ec *executionContext) _Deployment_target(ctx context.Context, field graphq
 		field,
 		ec.fieldContext_Deployment_target,
 		func(ctx context.Context) (any, error) {
-			return obj.Target, nil
+			return obj.Target(), nil
 		},
 		nil,
 		ec.marshalNEnvironmentLabel2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironmentLabelᚄ,
@@ -5372,7 +5372,7 @@ func (ec *executionContext) fieldContext_Deployment_target(_ context.Context, fi
 	fc = &graphql.FieldContext{
 		Object:     "Deployment",
 		Field:      field,
-		IsMethod:   false,
+		IsMethod:   true,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {

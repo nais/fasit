@@ -15,12 +15,14 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/nais/fasit/internal/database"
+	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+	"golang.org/x/sync/errgroup"
 )
 
 type Publisher interface {
@@ -56,21 +58,81 @@ func newDeployer(
 	}, nil
 }
 
-func (d *deployer) deployToEnvironment(ctx context.Context, deployment database.Deployment, environment *model.TenantEnvironment, naisdUnhealthy bool, mgr Publisher) error {
-	if err := d.repo.V3InsertEnvironmentFeature(ctx, environment.ID, deployment.ID, deployment.Name, deployment.Version); err != nil {
+func (d *deployer) naisdHealthCheck(ctx context.Context, environmentID uuid.UUID) error {
+	health, err := d.repo.HealthGet(ctx, environmentID)
+	if err != nil {
+		return fmt.Errorf("health status: %w", err)
+	}
+
+	if healthy := time.Since(health.ReportedAt) <= 3*time.Minute; healthy {
+		return nil
+	}
+
+	return fmt.Errorf("naisd is unhealthy")
+}
+
+func (d *deployer) deployToCI(ctx context.Context, feat *model.Feature, req Request) error {
+	envs, err := d.repo.GetCIEnvironmentsForTarget(ctx, req.Target)
+	if err != nil {
+		return fmt.Errorf("get ci environments for target: %w", err)
+	}
+
+	deploymentsByEnvID := make(map[uuid.UUID]uuid.UUID)
+	for _, env := range envs {
+		var deploymentID uuid.UUID
+		err := func() error {
+			labels, err := d.repo.EnvironmentGetLabels(ctx, env.ID)
+			if err != nil {
+				return fmt.Errorf("get environment labels: %w", err)
+			}
+
+			target := make(environment.Labels)
+			for _, label := range labels {
+				target[label.Key] = label.Value
+			}
+
+			req.Target = target
+
+			deploymentID, err = d.CreateDeployment(ctx, feat, req, true)
+			if err != nil {
+				return err
+			}
+
+			deployment, err := d.repo.V3DeploymentGet(ctx, deploymentID)
+			if err != nil {
+				return fmt.Errorf("get deployment %q: %w", deploymentID, err)
+			}
+
+			publisher := d.publisher(naisdTopicID(env.TenantName, env.Name), d.log)
+			defer publisher.Stop()
+
+			return d.deployToEnvironment(ctx, *deployment, env, publisher)
+		}()
+		if err != nil {
+			return err
+		}
+
+		deploymentsByEnvID[env.ID] = deploymentID
+	}
+
+	return d.waitForDeploymentStatuses(ctx, deploymentsByEnvID)
+}
+
+func (d *deployer) deployToEnvironment(ctx context.Context, deployment model.Deployment, environment *model.TenantEnvironment, publisher Publisher) error {
+	if err := d.repo.V3InsertEnvironmentFeature(ctx, environment.ID, deployment.ID, deployment.Feature.Name, deployment.Feature.Version); err != nil {
 		d.log.WithError(err).WithFields(logrus.Fields{
 			"environment_id":  environment.ID,
 			"deployment_id":   deployment.ID,
-			"feature_name":    deployment.Name,
-			"feature_version": deployment.Version,
+			"feature_name":    deployment.Feature.Name,
+			"feature_version": deployment.Feature.Version,
 		}).Error("insert environment feature")
 
 		d.setDeploymentStatus(ctx, deployment.ID, environment.ID, model.RolloutStatusFailed, "failed to register feature deployment")
 		return nil
 	}
 
-	if naisdUnhealthy {
-		d.setDeploymentStatus(ctx, deployment.ID, environment.ID, model.RolloutStatusPending, "naisd is unhealthy")
+	if err := d.naisdHealthCheck(ctx, environment.ID); err != nil {
+		d.setDeploymentStatus(ctx, deployment.ID, environment.ID, model.RolloutStatusPending, err.Error())
 		return nil
 	}
 
@@ -103,7 +165,7 @@ func (d *deployer) deployToEnvironment(ctx context.Context, deployment database.
 		return fmt.Errorf("create deploy instruction: %w", err)
 	}
 
-	err = mgr.Publish(ctx, message.DeployInstruction{
+	err = publisher.Publish(ctx, message.DeployInstruction{
 		ID:         deployInstructionID,
 		Name:       deployment.Feature.Name,
 		Version:    deployment.Feature.Version,
@@ -125,7 +187,7 @@ func (d *deployer) deployToEnvironment(ctx context.Context, deployment database.
 	return nil
 }
 
-func (d *deployer) shouldDeployToEnvironment(ctx context.Context, deployment database.Deployment, environment *model.TenantEnvironment, hash string) (bool, error) {
+func (d *deployer) shouldDeployToEnvironment(ctx context.Context, deployment model.Deployment, environment *model.TenantEnvironment, hash string) (bool, error) {
 	existingDeploy, err := d.repo.DeployInstructionsLatestForFeature(ctx, environment.ID, deployment.Feature.Name)
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
@@ -158,12 +220,12 @@ func (d *deployer) setDeploymentStatus(ctx context.Context, deploymentID, enviro
 	}
 }
 
-func (d *deployer) isDependenciesDeployed(ctx context.Context, deployment database.Deployment, envID uuid.UUID) (bool, error) {
-	if len(deployment.Dependencies) == 0 {
+func (d *deployer) isDependenciesDeployed(ctx context.Context, deployment model.Deployment, envID uuid.UUID) (bool, error) {
+	if len(deployment.Feature.Dependencies) == 0 {
 		return true, nil
 	}
 
-	for _, dep := range deployment.Dependencies {
+	for _, dep := range deployment.Feature.Dependencies {
 		// TODO: the queries below assumes that a dependency is met if the feature has at any given point in time a
 		// successful deployment in the environment. If this is not OK, we need to use a different table than
 		// deploy_instructions to handle state stuff.
@@ -196,21 +258,7 @@ func (d *deployer) isDependenciesDeployed(ctx context.Context, deployment databa
 	return true, nil
 }
 
-func (d *deployer) CreateDeployment(ctx context.Context, req *Request) (uuid.UUID, error) {
-	feat, err := model.FromChart(req.Chart, req.Version)
-	if err != nil {
-		return uuid.Nil, fmt.Errorf("unable to convert oci chart: %w", err)
-	}
-
-	// TODO: if we remove kind as a concept we need to change featureData table and logic
-	if len(feat.EnvironmentKinds) == 0 {
-		return uuid.Nil, fmt.Errorf("no environments defined in Feature.yaml")
-	}
-
-	if feat.Source == "" {
-		return uuid.Nil, fmt.Errorf("no source url found in Chart.yaml")
-	}
-
+func (d *deployer) CreateDeployment(ctx context.Context, feat *model.Feature, req Request, ci bool) (uuid.UUID, error) {
 	details, err := feature.ParseTemplateDetails(feat.FeatureYAML.Values)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("unable to parse feature template details: %w", err)
@@ -223,60 +271,60 @@ func (d *deployer) CreateDeployment(ctx context.Context, req *Request) (uuid.UUI
 		}
 	}
 
-	deployment, err := d.repo.V3DeploymentCreate(ctx, feat.Name, req.Version, req.Description, req.Ref, req.Target)
+	deployment, err := d.repo.V3DeploymentCreate(ctx, feat.Name, feat.Version, req.Description, req.Ref, req.Target, ci)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("unable to create deployment: %w", err)
 	}
 
 	if req.Global {
-		if err := d.repo.FeatureVersionUpdate(ctx, feat.Name, req.Version); err != nil {
+		if err := d.repo.FeatureVersionUpdate(ctx, feat.Name, feat.Version); err != nil {
 			return uuid.Nil, fmt.Errorf("unable to update feature version: %w", err)
 		}
 	}
 	return deployment.ID, nil
 }
 
-// TODO: donot use database.Deployment in public methods
-func (d *deployer) GetDeployment(ctx context.Context, id uuid.UUID) (*database.Deployment, error) {
-	return d.repo.V3DeploymentGet(ctx, id)
-}
+func (d *deployer) waitForDeploymentStatuses(ctx context.Context, deploymentsByEnvID map[uuid.UUID]uuid.UUID) error {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
+	defer cancel()
 
-// TODO: rename to something
-func (d *deployer) deploymentsInEnvironment(ctx context.Context, environment *model.TenantEnvironment) error {
-	health, err := d.repo.HealthGet(ctx, environment.ID)
-	if err != nil {
-		return fmt.Errorf("health status: %w", err)
+	eg, ctx := errgroup.WithContext(ctx)
+
+	for envID, deploymentID := range deploymentsByEnvID {
+		eg.Go(func() error {
+			for {
+				if ctx.Err() != nil {
+					return ctx.Err()
+				}
+
+				state, err := d.repo.LatestStatusForDeploymentInEnvironment(ctx, deploymentID, envID)
+				if err != nil {
+					return fmt.Errorf("get latest deployment status for deployment %q in environment %q: %w", deploymentID, envID, err)
+				}
+
+				switch state {
+				case model.DeploymentStatusStateDeployed:
+					return nil
+				case model.DeploymentStatusStateFailed:
+					return fmt.Errorf("deployment %q in environment %q failed", deploymentID, envID)
+				}
+
+				select {
+				case <-ctx.Done():
+					return fmt.Errorf("timeout waiting for deployment %q in environment %q to complete", deploymentID, envID)
+				case <-time.After(5 * time.Second):
+				}
+			}
+		})
 	}
 
-	naisdUnhealthy := time.Since(health.ReportedAt) > 3*time.Minute
-	if naisdUnhealthy {
-		d.log.WithFields(logrus.Fields{
-			"tenant":      environment.TenantName,
-			"environment": environment.Name,
-		}).Debug("naisd is unhealthy - skip reconcile")
-	}
-
-	mgr := d.publisher(naisdTopicID(environment.TenantName, environment.Name), d.log)
-	defer mgr.Stop()
-
-	allDeployments, err := d.repo.V3DeploymentsForEnvironment(ctx, environment.ID)
-	if err != nil {
-		return fmt.Errorf("get deployments for environment %q: %w", environment.Name, err)
-	}
-
-	for _, deployment := range filterDeployments(allDeployments) {
-		if err := d.deployToEnvironment(ctx, deployment, environment, naisdUnhealthy, mgr); err != nil {
-			// TODO: continue on error? earlier we returned the error immediately when the above was inside the loop.
-			return err
-		}
-	}
-	return nil
+	return eg.Wait()
 }
 
 // filterDeployments filters the deployments to only include the most specific deployment with the latest created
 // timestamp.
-func filterDeployments(deps []database.Deployment) []database.Deployment {
-	deployments := map[string]database.Deployment{}
+func filterDeployments(deps []model.Deployment) []model.Deployment {
+	deployments := map[string]model.Deployment{}
 	for _, dep := range deps {
 		featureName := dep.Feature.Name
 
@@ -286,24 +334,24 @@ func filterDeployments(deps []database.Deployment) []database.Deployment {
 			continue
 		}
 
-		if len(dep.Target) > len(d.Target) {
+		if len(dep.TargetLabels) > len(d.TargetLabels) {
 			deployments[featureName] = dep
 			continue
 		}
 
-		if len(dep.Target) == len(d.Target) && dep.Created.After(d.Created) {
+		if len(dep.TargetLabels) == len(d.TargetLabels) && dep.Created.After(d.Created) {
 			deployments[featureName] = dep
 			continue
 		}
 	}
 
-	ret := make([]database.Deployment, 0)
+	ret := make([]model.Deployment, 0)
 	for _, d := range deployments {
 		ret = append(ret, d)
 	}
 
 	// sort by created timestamp ascending so that the oldest deployments are installed first
-	slices.SortStableFunc(ret, func(a, b database.Deployment) int {
+	slices.SortStableFunc(ret, func(a, b model.Deployment) int {
 		return a.Created.Compare(b.Created)
 	})
 
