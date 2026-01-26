@@ -256,3 +256,65 @@ func TestClusterNodePoolsCompleted_AbortingOperation(t *testing.T) {
 		t.Errorf("expected upgrade NOT done when operation is ABORTING")
 	}
 }
+
+func TestClusterNodePoolsCompleted_OperationStillRunning(t *testing.T) {
+	suite := newTestSuite(t)
+	ctx := context.Background()
+
+	upgrade := newUpgrade(suite)
+	clusterUpgrade := &model.ClusterUpgradeStatus{
+		ID:      uuid.New(),
+		Version: "1.33.5-gke.2118000",
+	}
+
+	// Mock GetNodePools - all at target version (GKE reports target version prematurely)
+	suite.clusterMock.On("GetNodePools", mock.Anything, "test-project", suite.environment).Return([]*containerpb.NodePool{
+		{Name: "pool-1", Version: "1.33.5-gke.2118000"},
+		{Name: "pool-2", Version: "1.33.5-gke.2118000"},
+	}, nil)
+
+	// Mock operations - one operation still RUNNING
+	suite.repoMock.On("ClusterOperationsGetByUpgradeID", mock.Anything, clusterUpgrade.ID).Return([]*model.EnvironmentOperation{
+		{Name: "op-1", Status: "RUNNING", NodesFailed: 0, Type: "UPGRADE_NODES", Target: "https://container.googleapis.com/v1/projects/test-project/locations/us-central1/clusters/test-cluster/nodePools/pool-1"},
+		{Name: "op-2", Status: "DONE", NodesFailed: 0, Type: "UPGRADE_NODES", Target: "https://container.googleapis.com/v1/projects/test-project/locations/us-central1/clusters/test-cluster/nodePools/pool-2"},
+	}, nil)
+
+	done, err := upgrade.clusterNodePoolsCompleted(ctx, "test-project", suite.environment, clusterUpgrade)
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+	if done {
+		t.Errorf("expected upgrade NOT done when operation is still RUNNING, even if GKE reports target version")
+	}
+}
+
+func TestClusterNodePoolsCompleted_OperationStillPending(t *testing.T) {
+	suite := newTestSuite(t)
+	ctx := context.Background()
+
+	upgrade := newUpgrade(suite)
+	clusterUpgrade := &model.ClusterUpgradeStatus{
+		ID:      uuid.New(),
+		Version: "1.33.5-gke.2118000",
+	}
+
+	// Mock GetNodePools - all at target version (GKE reports target version prematurely)
+	suite.clusterMock.On("GetNodePools", mock.Anything, "test-project", suite.environment).Return([]*containerpb.NodePool{
+		{Name: "pool-1", Version: "1.33.5-gke.2118000"},
+		{Name: "pool-2", Version: "1.33.5-gke.2118000"},
+	}, nil)
+
+	// Mock operations - one operation still PENDING
+	suite.repoMock.On("ClusterOperationsGetByUpgradeID", mock.Anything, clusterUpgrade.ID).Return([]*model.EnvironmentOperation{
+		{Name: "op-1", Status: "DONE", NodesFailed: 0, Type: "UPGRADE_NODES", Target: "https://container.googleapis.com/v1/projects/test-project/locations/us-central1/clusters/test-cluster/nodePools/pool-1"},
+		{Name: "op-2", Status: "PENDING", NodesFailed: 0, Type: "UPGRADE_NODES", Target: "https://container.googleapis.com/v1/projects/test-project/locations/us-central1/clusters/test-cluster/nodePools/pool-2"},
+	}, nil)
+
+	done, err := upgrade.clusterNodePoolsCompleted(ctx, "test-project", suite.environment, clusterUpgrade)
+	if err != nil {
+		t.Errorf("expected no error, got %v", err)
+	}
+	if done {
+		t.Errorf("expected upgrade NOT done when operation is still PENDING, even if GKE reports target version")
+	}
+}

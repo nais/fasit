@@ -1223,16 +1223,21 @@ func (c *ClusterUpgrader) clusterNodePoolsCompleted(ctx context.Context, project
 		// Find the most recent operation for each nodepool
 		latestOps := latestNodepoolUpgradeOps(ops)
 
-		// Check if any nodepool's latest operation has failed nodes
+		// Check if any nodepool's latest operation has failed nodes or is still in progress
 		failedNodepools := []string{}
+		incompleteNodepools := []string{}
 		totalNodesFailedCount := 0
 		totalFailedOperations := 0
 		for nodepoolName, op := range latestOps {
+			// Check for failed operations
 			if (op.Status == "DONE" && op.NodesFailed > 0) || op.Status == "ABORTED" || op.Status == "ABORTING" {
 				failedNodepools = append(failedNodepools, nodepoolName)
 				if op.NodesFailed > 0 {
 					totalNodesFailedCount += op.NodesFailed
 				}
+			} else if op.Status == "RUNNING" || op.Status == "PENDING" {
+				// Operation still in progress - not complete yet
+				incompleteNodepools = append(incompleteNodepools, nodepoolName)
 			}
 		}
 
@@ -1257,6 +1262,16 @@ func (c *ClusterUpgrader) clusterNodePoolsCompleted(ctx context.Context, project
 				"total_nodes_failed_count": totalNodesFailedCount,
 				"total_nodepools":          len(nodepools),
 			}).Info("upgrade not complete - latest operations have failed nodes, will retry after backoff")
+			return false, nil
+		}
+
+		if len(incompleteNodepools) > 0 {
+			c.log.WithFields(logrus.Fields{
+				"upgrade_id":           clusterUpgrade.ID,
+				"incomplete_nodepools": incompleteNodepools,
+				"incomplete_count":     len(incompleteNodepools),
+				"total_nodepools":      len(nodepools),
+			}).Debug("upgrade not complete - operations still running")
 			return false, nil
 		}
 	}
