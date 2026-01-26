@@ -285,7 +285,7 @@ func (d *deployer) CreateDeployment(ctx context.Context, feat *model.Feature, re
 }
 
 func (d *deployer) waitForDeploymentStatuses(ctx context.Context, deploymentsByEnvID map[uuid.UUID]uuid.UUID) error {
-	ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
 	defer cancel()
 
 	eg, ctx := errgroup.WithContext(ctx)
