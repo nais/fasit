@@ -625,7 +625,7 @@ func extractNodePoolName(targetLink string) string {
 
 	parts := strings.Split(targetLink, "/")
 	for i := 0; i < len(parts)-1; i++ {
-		if parts[i] == "nodePools" && i+1 < len(parts) {
+		if parts[i] == "nodePools" {
 			return parts[i+1]
 		}
 	}
@@ -642,6 +642,28 @@ func containsNodePool(targetLink, nodepoolName string) bool {
 	}
 
 	return extractNodePoolName(targetLink) == nodepoolName
+}
+
+// latestNodepoolUpgradeOps builds a map of the most recent UPGRADE_NODES operation for each nodepool
+func latestNodepoolUpgradeOps(ops []*model.EnvironmentOperation) map[string]*model.EnvironmentOperation {
+	latestOps := make(map[string]*model.EnvironmentOperation)
+	for _, op := range ops {
+		if op.Type != "UPGRADE_NODES" || op.Target == "" {
+			continue // Skip non-nodepool operations
+		}
+
+		// Extract nodepool name from target URL
+		nodepoolName := extractNodePoolName(op.Target)
+		if nodepoolName == "" {
+			continue // Skip if we can't extract the nodepool name
+		}
+
+		existing, exists := latestOps[nodepoolName]
+		if !exists || op.LastModified.After(existing.LastModified) {
+			latestOps[nodepoolName] = op
+		}
+	}
+	return latestOps
 }
 
 func clusterHas(runningOperations []*containerpb.Operation) bool {
@@ -887,20 +909,7 @@ func (c *ClusterUpgrader) upgradeNodes(ctx context.Context, env *model.Environme
 	}
 
 	// Build a map of latest operation per nodepool for efficient lookup
-	latestOpPerNodepool := make(map[string]*model.EnvironmentOperation)
-	for _, op := range existingOps {
-		if op.Type != "UPGRADE_NODES" || op.Target == "" {
-			continue
-		}
-		nodepoolName := extractNodePoolName(op.Target)
-		if nodepoolName == "" {
-			continue
-		}
-		existing, exists := latestOpPerNodepool[nodepoolName]
-		if !exists || op.LastModified.After(existing.LastModified) {
-			latestOpPerNodepool[nodepoolName] = op
-		}
-	}
+	latestOpPerNodepool := latestNodepoolUpgradeOps(existingOps)
 
 	for _, np := range nodePools {
 		npVersionObj, err := version.NewVersion(np.Version)
@@ -1212,25 +1221,7 @@ func (c *ClusterUpgrader) clusterNodePoolsCompleted(ctx context.Context, project
 		}
 
 		// Find the most recent operation for each nodepool
-		// Map: nodepool name -> most recent operation
-		latestOps := make(map[string]*model.EnvironmentOperation)
-		for _, op := range ops {
-			if op.Type != "UPGRADE_NODES" || op.Target == "" {
-				continue // Skip non-nodepool operations
-			}
-
-			// Extract nodepool name from target URL
-			// Target format: https://container.googleapis.com/v1/.../nodePools/{name}
-			nodepoolName := extractNodePoolName(op.Target)
-			if nodepoolName == "" {
-				continue // Skip if we can't extract the nodepool name
-			}
-
-			existing, exists := latestOps[nodepoolName]
-			if !exists || op.LastModified.After(existing.LastModified) {
-				latestOps[nodepoolName] = op
-			}
-		}
+		latestOps := latestNodepoolUpgradeOps(ops)
 
 		// Check if any nodepool's latest operation has failed nodes
 		failedNodepools := []string{}
