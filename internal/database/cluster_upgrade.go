@@ -17,7 +17,7 @@ import (
 
 type ClusterUpgraderRepo interface {
 	CreateOrUpdateClusterOperation(ctx context.Context, tenantID, envID, versionID uuid.UUID, op *containerpb.Operation) (*model.EnvironmentOperation, error)
-	GetRunningClusterOperation(ctx context.Context, tenantID, envID uuid.UUID) (*model.EnvironmentOperation, error)
+	GetActiveClusterOperation(ctx context.Context, tenantID, envID uuid.UUID) (*model.EnvironmentOperation, error)
 	CreateClusterUpgrade(ctx context.Context, tenantID, envID uuid.UUID, version string, isAutomatic *bool) (*model.ClusterUpgradeStatus, error)
 	ClusterUpgradeGet(ctx context.Context, tenantID, envID uuid.UUID) (*model.ClusterUpgradeStatus, error)
 	ClusterUpgradeGetByVersion(ctx context.Context, tenantID, envID uuid.UUID, version string) (*model.ClusterUpgradeStatus, error)
@@ -375,11 +375,29 @@ func (r *repo) CreateClusterUpgrade(ctx context.Context, tenantID, envID uuid.UU
 	return clusterUpgradeFromSQL(clusterUpgrade), nil
 }
 
-func (r *repo) GetRunningClusterOperation(ctx context.Context, tenantID, envID uuid.UUID) (*model.EnvironmentOperation, error) {
+// GetActiveClusterOperation returns an active (RUNNING or PENDING) cluster operation for the given tenant and environment, prioritizing RUNNING over PENDING status.
+// It checks RUNNING first, then PENDING if no RUNNING operation is found.
+func (r *repo) GetActiveClusterOperation(ctx context.Context, tenantID, envID uuid.UUID) (*model.EnvironmentOperation, error) {
+	// First try to find a RUNNING operation
 	op, err := r.querier.ClusterOperationGet(ctx, gensql.ClusterOperationGetParams{
 		Tenantid: tenantID,
 		Envid:    envID,
 		Status:   "RUNNING",
+	})
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return nil, err
+	}
+
+	// If found, return it
+	if err == nil {
+		return clusterOperationFromSQL(op), nil
+	}
+
+	// No RUNNING operation found, try PENDING
+	op, err = r.querier.ClusterOperationGet(ctx, gensql.ClusterOperationGetParams{
+		Tenantid: tenantID,
+		Envid:    envID,
+		Status:   "PENDING",
 	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

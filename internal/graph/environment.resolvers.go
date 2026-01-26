@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -55,7 +56,31 @@ func (r *clusterUpgradeStatusResolver) Actor(ctx context.Context, obj *model.Clu
 
 // FeatureStates is the resolver for the featureStates field.
 func (r *environmentResolver) FeatureStates(ctx context.Context, obj *model.Environment) ([]*model.FeatureState, error) {
-	return r.Repo.FeatureStatesGet(ctx, obj.ID)
+	ret, err := r.Repo.V3GetEnvironmentFeatures(ctx, obj.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	features := make(map[string]bool)
+	for _, f := range ret {
+		features[f.FeatureName] = true
+	}
+
+	states, err := r.Repo.FeatureStatesGet(ctx, obj.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, state := range states {
+		if _, ok := features[state.FeatureName]; !ok {
+			ret = append(ret, state)
+		}
+	}
+	slices.SortFunc(ret, func(a, b *model.FeatureState) int {
+		return strings.Compare(a.FeatureName, b.FeatureName)
+	})
+
+	return ret, nil
 }
 
 // GCPProjectID is the resolver for the gcpProjectID field.

@@ -7,6 +7,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const getEnvironmentFeature = `-- name: GetEnvironmentFeature :one
@@ -67,6 +68,79 @@ func (q *Queries) GetEnvironmentFeature(ctx context.Context, arg GetEnvironmentF
 		&i.DeploymentID,
 	)
 	return i, err
+}
+
+const getEnvironmentFeatures = `-- name: GetEnvironmentFeatures :many
+SELECT
+	fd.name,
+	fd.version,
+	fd.chart,
+	fd.description,
+	fd.source,
+	fd.kinds::TEXT[] AS kinds,
+	fd.dependencies,
+	fd.values,
+	fd.default_values,
+	fd.timeout,
+	ef.deployment_id,
+	d.created
+FROM
+	environment_features ef
+	JOIN deployments d ON d.id = ef.deployment_id
+	JOIN feature_data fd ON fd.name = ef.feature_name
+		AND fd.version = ef.feature_version
+WHERE
+	environment_id = $1
+ORDER BY
+	fd.name ASC
+`
+
+type GetEnvironmentFeaturesRow struct {
+	Name          string
+	Version       string
+	Chart         string
+	Description   string
+	Source        string
+	Kinds         []string
+	Dependencies  []byte
+	Values        []byte
+	DefaultValues []byte
+	Timeout       int64
+	DeploymentID  uuid.UUID
+	Created       pgtype.Timestamptz
+}
+
+func (q *Queries) GetEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]GetEnvironmentFeaturesRow, error) {
+	rows, err := q.db.Query(ctx, getEnvironmentFeatures, environmentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetEnvironmentFeaturesRow{}
+	for rows.Next() {
+		var i GetEnvironmentFeaturesRow
+		if err := rows.Scan(
+			&i.Name,
+			&i.Version,
+			&i.Chart,
+			&i.Description,
+			&i.Source,
+			&i.Kinds,
+			&i.Dependencies,
+			&i.Values,
+			&i.DefaultValues,
+			&i.Timeout,
+			&i.DeploymentID,
+			&i.Created,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const insertEnvironmentFeature = `-- name: InsertEnvironmentFeature :exec

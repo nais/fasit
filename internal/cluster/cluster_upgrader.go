@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 	"time"
 
 	"cloud.google.com/go/container/apiv1/containerpb"
@@ -230,7 +231,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 			hasControlPlaneOp := false
 			hasNodeOp := false
 			for _, op := range runningOps {
-				if op.Status == containerpb.Operation_RUNNING {
+				if isOperationActive(op) {
 					switch op.OperationType {
 					case containerpb.Operation_UPGRADE_MASTER:
 						hasControlPlaneOp = true
@@ -367,7 +368,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 			hasControlPlaneOp := false
 			hasNodeOp := false
 			for _, op := range runningOperations {
-				if op.Status == containerpb.Operation_RUNNING {
+				if isOperationActive(op) {
 					switch op.OperationType {
 					case containerpb.Operation_UPGRADE_MASTER:
 						hasControlPlaneOp = true
@@ -539,9 +540,9 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 
 				// Update Slack with nodepool start
 				c.updateSlackProgress(ctx, tenant.Name, env.Name, un)
-				return nil
 			}
-
+			// Upgrade not complete yet, return to retry on next reconciliation
+			return nil
 		}
 
 		// node upgrade done, update status
@@ -584,7 +585,10 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		}
 
 		c.upgradeInProgress.Add(ctx, -1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "node_pools")...))
-		log.WithField("target_version", upgradeStatus.Version).Info("nodepool upgrade done")
+		log.WithFields(logrus.Fields{
+			"target_version": upgradeStatus.Version,
+			"upgrade_id":     upgradeStatus.ID,
+		}).Info("all nodepool upgrades completed successfully")
 
 	case model.UpgradeStatusDone:
 		// Upgrade is already completed - this should have been handled earlier
@@ -605,9 +609,66 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 	return nil
 }
 
+// isOperationActive checks if an operation is in an active state (RUNNING or PENDING)
+func isOperationActive(op *containerpb.Operation) bool {
+	return op.Status == containerpb.Operation_RUNNING || op.Status == containerpb.Operation_PENDING
+}
+
+// extractNodePoolName extracts the nodepool name from a GKE target link
+func extractNodePoolName(targetLink string) string {
+	// Target link format: https://container.googleapis.com/v1/projects/{project}/locations/{location}/clusters/{cluster}/nodePools/{nodepool}
+
+	// Strip query parameters and fragments if present
+	if i := strings.IndexAny(targetLink, "?#"); i != -1 {
+		targetLink = targetLink[:i]
+	}
+
+	parts := strings.Split(targetLink, "/")
+	for i := 0; i < len(parts)-1; i++ {
+		if parts[i] == "nodePools" {
+			return parts[i+1]
+		}
+	}
+	return ""
+}
+
+// containsNodePool checks if the target link references the specified nodepool name as a distinct path segment
+func containsNodePool(targetLink, nodepoolName string) bool {
+	// Target link format: https://container.googleapis.com/v1/projects/{project}/locations/{location}/clusters/{cluster}/nodePools/{nodepool}
+
+	// Empty nodepool name is not valid
+	if nodepoolName == "" {
+		return false
+	}
+
+	return extractNodePoolName(targetLink) == nodepoolName
+}
+
+// latestNodepoolUpgradeOps builds a map of the most recent UPGRADE_NODES operation for each nodepool
+func latestNodepoolUpgradeOps(ops []*model.EnvironmentOperation) map[string]*model.EnvironmentOperation {
+	latestOps := make(map[string]*model.EnvironmentOperation)
+	for _, op := range ops {
+		if op.Type != "UPGRADE_NODES" || op.Target == "" {
+			continue // Skip non-nodepool operations
+		}
+
+		// Extract nodepool name from target URL
+		nodepoolName := extractNodePoolName(op.Target)
+		if nodepoolName == "" {
+			continue // Skip if we can't extract the nodepool name
+		}
+
+		existing, exists := latestOps[nodepoolName]
+		if !exists || op.LastModified.After(existing.LastModified) {
+			latestOps[nodepoolName] = op
+		}
+	}
+	return latestOps
+}
+
 func clusterHas(runningOperations []*containerpb.Operation) bool {
 	for _, op := range runningOperations {
-		if op.Status == containerpb.Operation_RUNNING {
+		if isOperationActive(op) {
 			return true
 		}
 	}
@@ -679,13 +740,14 @@ func (c *ClusterUpgrader) getAndUpdateRunningOperations(ctx context.Context, pro
 			continue
 		}
 
-		if existingOp.Status != "RUNNING" {
-			continue // Skip operations that are not in RUNNING state
+		// Only process operations that are RUNNING or PENDING
+		if existingOp.Status != "RUNNING" && existingOp.Status != "PENDING" {
+			continue
 		}
 
 		if !runningOpNames[existingOp.Name] {
-			// This operation is marked as RUNNING in our DB but not found in GKE
-			// Need to fetch its current status from GKE
+			// This operation is marked as RUNNING or PENDING in our DB but not found in GKE
+			// Need to fetch its current status from GKE (might have completed)
 			log.WithField("operation", existingOp.Name).Debug("checking status of operation no longer running")
 
 			err := c.retryer.WithBackoff(ctx, "get_operation_status", func() error {
@@ -839,13 +901,67 @@ func (c *ClusterUpgrader) upgradeNodes(ctx context.Context, env *model.Environme
 		return nil, err
 	}
 
+	// Get existing operations to avoid creating duplicates
+	existingOps, err := c.repo.ClusterOperationsGetByUpgradeID(ctx, clusterUpgrade.ID)
+	if err != nil {
+		c.log.WithError(err).Error("failed to get existing cluster operations")
+		return nil, err
+	}
+
+	// Build a map of latest operation per nodepool for efficient lookup
+	latestOpPerNodepool := latestNodepoolUpgradeOps(existingOps)
+
 	for _, np := range nodePools {
 		npVersionObj, err := version.NewVersion(np.Version)
 		if err != nil {
 			return nil, err
 		}
 
-		if npVersionObj.GreaterThanOrEqual(clusterUpgraderVersionObj) {
+		// Check the latest operation for this nodepool
+		hasOperation := false
+		needsRetry := false
+		if latestOp, exists := latestOpPerNodepool[np.Name]; exists {
+			// Check if this operation is active (PENDING or RUNNING)
+			if latestOp.Status == "PENDING" || latestOp.Status == "RUNNING" {
+				hasOperation = true
+				c.log.WithFields(logrus.Fields{
+					"nodepool":  np.Name,
+					"operation": latestOp.Name,
+					"status":    latestOp.Status,
+				}).Debug("nodepool already has an operation, skipping new upgrade")
+			} else if (latestOp.Status == "DONE" && latestOp.NodesFailed > 0) || latestOp.Status == "ABORTED" || latestOp.Status == "ABORTING" {
+				// Check if this is a recently failed operation (apply backoff to avoid hammering GCP)
+				timeSinceFailure := time.Since(latestOp.LastModified)
+				backoffDuration := 30 * time.Minute
+				if timeSinceFailure < backoffDuration {
+					hasOperation = true
+					c.log.WithFields(logrus.Fields{
+						"nodepool":        np.Name,
+						"operation":       latestOp.Name,
+						"status":          latestOp.Status,
+						"nodes_failed":    latestOp.NodesFailed,
+						"time_since_fail": timeSinceFailure,
+						"retry_available": backoffDuration - timeSinceFailure,
+					}).Info("nodepool upgrade recently failed, applying backoff before retry (will continue with other nodepools)")
+				} else {
+					// Backoff period has passed, this nodepool needs a retry even if version matches
+					needsRetry = true
+					c.log.WithFields(logrus.Fields{
+						"nodepool":        np.Name,
+						"operation":       latestOp.Name,
+						"nodes_failed":    latestOp.NodesFailed,
+						"time_since_fail": timeSinceFailure,
+					}).Info("nodepool upgrade previously failed, will retry now")
+				}
+			}
+		}
+
+		if hasOperation {
+			continue
+		}
+
+		// Skip if nodepool is already at target version and doesn't need retry
+		if npVersionObj.GreaterThanOrEqual(clusterUpgraderVersionObj) && !needsRetry {
 			continue
 		}
 
@@ -869,14 +985,19 @@ func (c *ClusterUpgrader) upgradeNodes(ctx context.Context, env *model.Environme
 		if err != nil {
 			return nil, err
 		}
-		c.log.WithFields(logrus.Fields{"tenant": tenantName, "environment": env.Name}).Infof("started upgrade of nodepool %s to %s", np.Name, clusterUpgrade.Version)
+		c.log.WithFields(logrus.Fields{
+			"tenant":      tenantName,
+			"environment": env.Name,
+			"nodepool":    np.Name,
+			"version":     clusterUpgrade.Version,
+		}).Info("started upgrade of nodepool")
 		return us, nil
 	}
 	return nil, nil
 }
 
 func (c *ClusterUpgrader) nodeUpgradeStatus(ctx context.Context, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus, projectID string) (bool, error) {
-	rop, err := c.repo.GetRunningClusterOperation(ctx, env.TenantID, env.ID)
+	rop, err := c.repo.GetActiveClusterOperation(ctx, env.TenantID, env.ID)
 	if err != nil {
 		return false, err
 	}
@@ -897,7 +1018,7 @@ func (c *ClusterUpgrader) nodeUpgradeStatus(ctx context.Context, env *model.Envi
 }
 
 func (c *ClusterUpgrader) controlPlaneUpgradeStatus(ctx context.Context, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus, projectID, tenantName string) (*model.ClusterUpgradeStatus, error) {
-	rop, err := c.repo.GetRunningClusterOperation(ctx, env.TenantID, env.ID)
+	rop, err := c.repo.GetActiveClusterOperation(ctx, env.TenantID, env.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -1078,6 +1199,7 @@ func (c *ClusterUpgrader) clusterNodePoolsCompleted(ctx context.Context, project
 		return false, err
 	}
 
+	// Check if all nodepool versions match the target
 	done := true
 	for _, np := range nodepools {
 		npVersionObj, err := version.NewVersion(np.Version)
@@ -1088,6 +1210,72 @@ func (c *ClusterUpgrader) clusterNodePoolsCompleted(ctx context.Context, project
 			done = false
 		}
 	}
+
+	// Even if GKE reports nodepools at target version, check if operations actually succeeded
+	// GKE sometimes reports target version before individual nodes are upgraded
+	if done {
+		ops, err := c.repo.ClusterOperationsGetByUpgradeID(ctx, clusterUpgrade.ID)
+		if err != nil {
+			c.log.WithError(err).Warn("failed to get operations for completion check, will retry on next reconciliation")
+			return false, nil
+		}
+
+		// Find the most recent operation for each nodepool
+		latestOps := latestNodepoolUpgradeOps(ops)
+
+		// Check if any nodepool's latest operation has failed nodes or is still in progress
+		failedNodepools := []string{}
+		incompleteNodepools := []string{}
+		totalNodesFailedCount := 0
+		totalFailedOperations := 0
+		for nodepoolName, op := range latestOps {
+			// Check for failed operations
+			if (op.Status == "DONE" && op.NodesFailed > 0) || op.Status == "ABORTED" || op.Status == "ABORTING" {
+				failedNodepools = append(failedNodepools, nodepoolName)
+				if op.NodesFailed > 0 {
+					totalNodesFailedCount += op.NodesFailed
+				}
+			} else if op.Status == "RUNNING" || op.Status == "PENDING" {
+				// Operation still in progress - not complete yet
+				incompleteNodepools = append(incompleteNodepools, nodepoolName)
+			}
+		}
+
+		// Count total failed operations across all nodepools (including historical retries)
+		if len(failedNodepools) > 0 {
+			for _, op := range ops {
+				if op.Type != "UPGRADE_NODES" {
+					continue
+				}
+				if (op.Status == "DONE" && op.NodesFailed > 0) || op.Status == "ABORTED" || op.Status == "ABORTING" {
+					totalFailedOperations++
+				}
+			}
+		}
+
+		if len(failedNodepools) > 0 {
+			c.log.WithFields(logrus.Fields{
+				"upgrade_id":               clusterUpgrade.ID,
+				"failed_nodepools":         failedNodepools,
+				"failed_nodepool_count":    len(failedNodepools),
+				"failed_operation_count":   totalFailedOperations,
+				"total_nodes_failed_count": totalNodesFailedCount,
+				"total_nodepools":          len(nodepools),
+			}).Info("upgrade not complete - latest operations have failed nodes, will retry after backoff")
+			return false, nil
+		}
+
+		if len(incompleteNodepools) > 0 {
+			c.log.WithFields(logrus.Fields{
+				"upgrade_id":           clusterUpgrade.ID,
+				"incomplete_nodepools": incompleteNodepools,
+				"incomplete_count":     len(incompleteNodepools),
+				"total_nodepools":      len(nodepools),
+			}).Debug("upgrade not complete - operations still running")
+			return false, nil
+		}
+	}
+
 	return done, nil
 }
 

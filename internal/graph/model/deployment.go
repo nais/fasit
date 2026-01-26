@@ -8,14 +8,27 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/nais/fasit/internal/environment"
 )
 
 type Deployment struct {
-	ID      uuid.UUID           `json:"id"`
-	Target  []*EnvironmentLabel `json:"target"`
-	Feature *Feature            `json:"feature"`
+	ID          uuid.UUID `json:"id"`
+	Feature     *Feature  `json:"feature"`
+	Description string    `json:"description"`
+	Created     time.Time `json:"created"`
 
-	Created time.Time `json:"created"`
+	TargetLabels environment.Labels `json:"-"`
+}
+
+func (d *Deployment) Target() []*EnvironmentLabel {
+	target := make([]*EnvironmentLabel, 0)
+	for k, v := range d.TargetLabels {
+		target = append(target, &EnvironmentLabel{
+			Key:   k,
+			Value: v,
+		})
+	}
+	return target
 }
 
 type DeploymentStatus struct {

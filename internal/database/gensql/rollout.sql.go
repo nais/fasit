@@ -532,29 +532,37 @@ SELECT
 	fd.values,
 	fd.default_values,
 	fd.timeout,
-	rollouts.created
-FROM
-	rollouts
-	JOIN all_rollouts ar ON ar.id = rollouts.id
-	JOIN feature_data fd ON rollouts.feature_name = fd.name
-		AND rollouts.version = fd.version
-	ORDER BY
-		rollouts.feature_name ASC
+	rollouts.created,
+	EXISTS (
+		SELECT
+			1
+		FROM
+			deployments d
+		WHERE
+			d.feature_name = fd.name) AS hasDeployments
+	FROM
+		rollouts
+		JOIN all_rollouts ar ON ar.id = rollouts.id
+		JOIN feature_data fd ON rollouts.feature_name = fd.name
+			AND rollouts.version = fd.version
+		ORDER BY
+			rollouts.feature_name ASC
 `
 
 type RolloutsForKindRow struct {
-	ID            uuid.UUID
-	Name          string
-	Version       string
-	Chart         string
-	Description   string
-	Source        string
-	Kinds         []string
-	Dependencies  []byte
-	Values        []byte
-	DefaultValues []byte
-	Timeout       int64
-	Created       pgtype.Timestamptz
+	ID             uuid.UUID
+	Name           string
+	Version        string
+	Chart          string
+	Description    string
+	Source         string
+	Kinds          []string
+	Dependencies   []byte
+	Values         []byte
+	DefaultValues  []byte
+	Timeout        int64
+	Created        pgtype.Timestamptz
+	Hasdeployments bool
 }
 
 func (q *Queries) RolloutsForKind(ctx context.Context, environmentKind EnvironmentKind) ([]RolloutsForKindRow, error) {
@@ -579,6 +587,7 @@ func (q *Queries) RolloutsForKind(ctx context.Context, environmentKind Environme
 			&i.DefaultValues,
 			&i.Timeout,
 			&i.Created,
+			&i.Hasdeployments,
 		); err != nil {
 			return nil, err
 		}
