@@ -920,8 +920,8 @@ func (c *ClusterUpgrader) upgradeNodes(ctx context.Context, env *model.Environme
 					"operation": latestOp.Name,
 					"status":    latestOp.Status,
 				}).Debug("nodepool already has an operation, skipping new upgrade")
-			} else if latestOp.Status == "DONE" && latestOp.NodesFailed > 0 {
-				// Check if this is a recently failed DONE operation (apply backoff to avoid hammering GCP)
+			} else if latestOp.Status == "DONE" && latestOp.NodesFailed > 0 || latestOp.Status == "ABORTED" || latestOp.Status == "ABORTING" {
+				// Check if this is a recently failed operation (apply backoff to avoid hammering GCP)
 				timeSinceFailure := time.Since(latestOp.LastModified)
 				backoffDuration := 30 * time.Minute
 				if timeSinceFailure < backoffDuration {
