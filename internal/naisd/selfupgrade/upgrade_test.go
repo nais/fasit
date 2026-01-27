@@ -11,6 +11,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
@@ -35,7 +36,7 @@ func TestFullRun(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	client := fake.NewSimpleClientset(&corev1.Pod{
+	client := fake.NewClientset(&corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      hostname,
 			Namespace: namespace,
@@ -76,7 +77,22 @@ func TestFullRun(t *testing.T) {
 	secretMap := objToMap(t, secret)
 
 	wantJob := map[string]any{
-		"metadata": map[string]any{"labels": map[string]any{"app": string("naisd-self-upgrader"), "app.kubernetes.io/instance": string("naisd")}, "name": string("naisd-self-upgrader-20200101-000000"), "namespace": string("nais-system")},
+		"apiVersion": "batch/v1",
+		"kind":       "Job",
+		"metadata": map[string]any{
+			"labels": map[string]any{"app": string("naisd-self-upgrader"), "app.kubernetes.io/instance": string("naisd")},
+			"managedFields": []any{
+				map[string]any{
+					"apiVersion": "batch/v1",
+					"fieldsType": "FieldsV1",
+					"fieldsV1":   map[string]any{},
+					"manager":    "unknown",
+					"operation":  "Update",
+				},
+			},
+			"name":      string("naisd-self-upgrader-20200101-000000"),
+			"namespace": string("nais-system"),
+		},
 		"spec": map[string]any{
 			"backoffLimit": float64(1),
 			"completions":  float64(1),
@@ -111,16 +127,30 @@ func TestFullRun(t *testing.T) {
 		"status": map[string]any{},
 	}
 
-	if !cmp.Equal(wantJob, jobMap) {
-		t.Errorf("diff -want +got:\n%v", cmp.Diff(wantJob, jobMap))
+	// Ignore fieldsV1 and time in managedFields as they contain detailed internal tracking
+	ignoreInternalFields := cmpopts.IgnoreMapEntries(func(k string, v any) bool {
+		return k == "time" || k == "fieldsV1"
+	})
+	if !cmp.Equal(wantJob, jobMap, ignoreInternalFields) {
+		t.Errorf("diff -want +got:\n%v", cmp.Diff(wantJob, jobMap, ignoreInternalFields))
 	}
 
 	wantSecret := map[string]any{
+		"apiVersion": "v1",
+		"kind":       "Secret",
 		"metadata": map[string]any{
 			"name":      "naisd-self-upgrader-20200101-000000",
 			"namespace": "nais-system",
 			"labels": map[string]any{
 				"app": "naisd-self-upgrader",
+			},
+			"managedFields": []any{
+				map[string]any{
+					"apiVersion": "v1",
+					"fieldsType": "FieldsV1",
+					"manager":    "unknown",
+					"operation":  "Update",
+				},
 			},
 			"ownerReferences": []any{
 				map[string]any{
@@ -135,8 +165,8 @@ func TestFullRun(t *testing.T) {
 			"deploy_instruction.json": "{\"ID\":\"" + deployInstruction.ID.String() + "\",\"Name\":\"naisd\",\"Version\":\"1.2.3\",\"Chart\":\"oci://asdf\",\"ConfigHash\":\"123\",\"Timeout\":60000000000,\"Values\":null}\n",
 		},
 	}
-	if !cmp.Equal(wantSecret, secretMap) {
-		t.Errorf("diff -want +got:\n%v", cmp.Diff(wantSecret, secretMap))
+	if !cmp.Equal(wantSecret, secretMap, ignoreInternalFields) {
+		t.Errorf("diff -want +got:\n%v", cmp.Diff(wantSecret, secretMap, ignoreInternalFields))
 	}
 }
 

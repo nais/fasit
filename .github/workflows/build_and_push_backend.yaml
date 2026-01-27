@@ -35,7 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # ratchet:actions/checkout@v6
-      - uses: jdx/mise-action@146a28175021df8ca24f8ee1828cc2a60f980bd5 # ratchet:jdx/mise-action@v3
+      - uses: jdx/mise-action@6d1e696aa24c1aa1bcc1adea0212707c71ab78a8 # ratchet:jdx/mise-action@v3
       - id: go-version
         run: echo "go-version=$(mise current go)" >> $GITHUB_OUTPUT
   checks:
@@ -54,25 +54,15 @@ jobs:
           - ci:fmt
           - test:unit
           - test:integration
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-16-cores
     steps:
       - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # ratchet:actions/checkout@v6
-      - uses: jdx/mise-action@146a28175021df8ca24f8ee1828cc2a60f980bd5 # ratchet:jdx/mise-action@v3
+      - uses: jdx/mise-action@6d1e696aa24c1aa1bcc1adea0212707c71ab78a8 # ratchet:jdx/mise-action@v3
       - run: mise run ${{ matrix.mise-task }}
-  # Used by GitHub to determine if all checks/builds have passed
-  branch-protection-checkpoint:
-    needs: [checks]
-    if: ${{ always() }}
-    runs-on: ubuntu-latest
-    steps:
-      - if: ${{ needs.checks.result != 'success' }}
-        run: exit 1
-      - run: echo "All checks and builds passed."
-  build_and_push_fasit:
+  build-and-push-fasit:
     needs:
-      - checks
       - go-version
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-16-cores
     outputs:
       version: ${{ steps.build-push-sign.outputs.version }}
     steps:
@@ -89,12 +79,20 @@ jobs:
           google_service_account: gh-fasit
           workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
           push: ${{ github.actor != 'dependabot[bot]' }}
+  # Used by GitHub to determine if all checks/builds have passed
+  branch-protection-checkpoint:
+    needs: [checks, build-and-push-fasit]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - if: ${{ needs.checks.result != 'success' && needs.build-and-push-fasit.result != 'success' }}
+        run: exit 1
+      - run: echo "All checks and builds passed."
   deploy_fasit:
     if: github.ref == 'refs/heads/main'
     name: Deploy fasit on push to main
     runs-on: fasit-deploy
-    needs:
-      - build_and_push_fasit
+    needs: [build-and-push-fasit, branch-protection-checkpoint]
     steps:
       - name: Checkout fasit
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # ratchet:actions/checkout@v6
@@ -115,7 +113,7 @@ jobs:
       - name: deploy fasit
         shell: bash
         env:
-          VERSION: ${{ needs.build_and_push_fasit.outputs.version }}
+          VERSION: ${{ needs.build-and-push-fasit.outputs.version }}
           SLACK_API_TOKEN: ${{ secrets.SLACK_API_TOKEN }}
         run: |
           helm upgrade fasit-backend oci://europe-north1-docker.pkg.dev/nais-io/nais/fasit --install --atomic --wait --version 0.3.1 --set image.tag="${VERSION}" --set slackToken="${SLACK_API_TOKEN}" --namespace nais-system --reuse-values
