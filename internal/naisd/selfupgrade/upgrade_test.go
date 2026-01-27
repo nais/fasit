@@ -35,7 +35,7 @@ func TestFullRun(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	client := fake.NewSimpleClientset(&corev1.Pod{
+	client := fake.NewClientset(&corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      hostname,
 			Namespace: namespace,

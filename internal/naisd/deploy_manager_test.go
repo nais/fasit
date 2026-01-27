@@ -309,7 +309,7 @@ func mockNaisdK8s() *fake.Clientset {
 		panic(err)
 	}
 
-	return fake.NewSimpleClientset(&corev1.Pod{
+	return fake.NewClientset(&corev1.Pod{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Pod",
 			APIVersion: "v1",
