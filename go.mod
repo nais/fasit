@@ -23,11 +23,11 @@ require (
 	cloud.google.com/go/pubsub v1.50.1
 	cloud.google.com/go/pubsub/v2 v2.3.0
 	github.com/99designs/gqlgen v0.17.86
-	github.com/GoogleCloudPlatform/cloudsql-proxy v1.37.11
+	github.com/GoogleCloudPlatform/cloudsql-proxy v1.37.12
 	github.com/Masterminds/sprig/v3 v3.3.0
 	github.com/bradleyfalzon/ghinstallation/v2 v2.17.0
 	github.com/coreos/go-oidc/v3 v3.17.0
-	github.com/go-chi/chi/v5 v5.2.3
+	github.com/go-chi/chi/v5 v5.2.4
 	github.com/go-jose/go-jose/v4 v4.1.3
 	github.com/google/go-cmp v0.7.0
 	github.com/google/go-github/v56 v56.0.0
@@ -47,7 +47,7 @@ require (
 	github.com/prometheus/client_golang v1.23.2
 	github.com/ravilushqa/otelgqlgen v0.19.0
 	github.com/rs/cors v1.11.1
-	github.com/sirupsen/logrus v1.9.3
+	github.com/sirupsen/logrus v1.9.4
 	github.com/slack-go/slack v0.17.3
 	github.com/stretchr/testify v1.11.1
 	github.com/testcontainers/testcontainers-go v0.40.0
@@ -64,7 +64,7 @@ require (
 	google.golang.org/grpc v1.78.0
 	google.golang.org/protobuf v1.36.11
 	gopkg.in/yaml.v3 v3.0.1
-	helm.sh/helm/v3 v3.19.4
+	helm.sh/helm/v3 v3.20.0
 	k8s.io/api v0.35.0
 	k8s.io/apimachinery v0.35.0
 	k8s.io/client-go v0.35.0
@@ -80,7 +80,7 @@ require (
 	dario.cat/mergo v1.0.2 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20250102033503-faa5f7b0171c // indirect
-	github.com/BurntSushi/toml v1.5.0 // indirect
+	github.com/BurntSushi/toml v1.6.0 // indirect
 	github.com/MakeNowJust/heredoc v1.0.0 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
@@ -103,7 +103,7 @@ require (
 	github.com/chai2010/gettext-go v1.0.3 // indirect
 	github.com/clipperhouse/stringish v0.1.1 // indirect
 	github.com/clipperhouse/uax29/v2 v2.3.0 // indirect
-	github.com/containerd/containerd v1.7.29 // indirect
+	github.com/containerd/containerd v1.7.30 // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
@@ -155,7 +155,6 @@ require (
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/goccy/go-json v0.10.5 // indirect
 	github.com/goccy/go-yaml v1.19.2 // indirect
-	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
 	github.com/google/btree v1.1.3 // indirect
@@ -213,7 +212,6 @@ require (
 	github.com/moby/docker-image-spec v1.3.1 // indirect
 	github.com/moby/go-archive v0.1.0 // indirect
 	github.com/moby/patternmatcher v0.6.0 // indirect
-	github.com/moby/spdystream v0.5.0 // indirect
 	github.com/moby/sys/sequential v0.6.0 // indirect
 	github.com/moby/sys/user v0.4.0 // indirect
 	github.com/moby/sys/userns v0.1.0 // indirect
@@ -223,7 +221,6 @@ require (
 	github.com/monochromegane/go-gitignore v0.0.0-20200626010858-205db1a8cc00 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/mxk/go-flowrate v0.0.0-20140419014527-cca7078d478f // indirect
 	github.com/ncruces/go-strftime v1.0.0 // indirect
 	github.com/openai/openai-go/v3 v3.8.1 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
@@ -245,7 +242,7 @@ require (
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/riza-io/grpc-go v0.2.0 // indirect
 	github.com/rs/zerolog v1.34.0 // indirect
-	github.com/rubenv/sql-migrate v1.8.0 // indirect
+	github.com/rubenv/sql-migrate v1.8.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2 // indirect
 	github.com/securego/gosec/v2 v2.22.11 // indirect
@@ -255,7 +252,7 @@ require (
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/sosodev/duration v1.3.1 // indirect
 	github.com/spf13/cast v1.10.0 // indirect
-	github.com/spf13/cobra v1.10.1 // indirect
+	github.com/spf13/cobra v1.10.2 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/sqlc-dev/sqlc v1.30.0 // indirect
 	github.com/stoewer/go-strcase v1.3.1 // indirect
@@ -317,13 +314,13 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1 // indirect
 	honnef.co/go/tools v0.6.1 // indirect
-	k8s.io/apiextensions-apiserver v0.34.2 // indirect
-	k8s.io/apiserver v0.34.2 // indirect
-	k8s.io/cli-runtime v0.34.2 // indirect
-	k8s.io/component-base v0.34.2 // indirect
+	k8s.io/apiextensions-apiserver v0.35.0 // indirect
+	k8s.io/apiserver v0.35.0 // indirect
+	k8s.io/cli-runtime v0.35.0 // indirect
+	k8s.io/component-base v0.35.0 // indirect
 	k8s.io/klog/v2 v2.130.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250910181357-589584f1c912 // indirect
-	k8s.io/kubectl v0.34.2 // indirect
+	k8s.io/kubectl v0.35.0 // indirect
 	modernc.org/libc v1.66.10 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.11.0 // indirect
