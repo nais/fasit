@@ -196,12 +196,18 @@ func (r *repo) V3DeploymentGet(ctx context.Context, deploymentID uuid.UUID) (*mo
 		return nil, err
 	}
 
+	var desc *string
+	if row.Deployment.Description.Valid {
+		desc = &row.Deployment.Description.String
+	}
+
 	return &model.Deployment{
 		Feature:      feature,
 		ID:           row.Deployment.ID,
 		Created:      row.Deployment.Created.Time,
 		TargetLabels: row.Deployment.Target,
-		Description:  row.Deployment.Description.String,
+		Description:  desc,
+		CI:           row.Deployment.Ci,
 	}, nil
 }
 
@@ -218,6 +224,10 @@ func (r *repo) V3DeploymentsGet(ctx context.Context) ([]*model.Deployment, error
 			return nil, fmt.Errorf("make feature yaml: %w", err)
 		}
 
+		var desc *string
+		if row.Deployment.Description.Valid {
+			desc = &row.Deployment.Description.String
+		}
 		feature := &model.Feature{
 			Name:        row.Name,
 			Description: row.Description,
@@ -235,7 +245,8 @@ func (r *repo) V3DeploymentsGet(ctx context.Context) ([]*model.Deployment, error
 			ID:           row.Deployment.ID,
 			Created:      row.Deployment.Created.Time,
 			TargetLabels: row.Deployment.Target,
-			Description:  row.Deployment.Description.String,
+			Description:  desc,
+			CI:           row.Deployment.Ci,
 		}
 	}
 
@@ -255,6 +266,10 @@ func (r *repo) V3DeploymentsGetByFeature(ctx context.Context, featureName string
 			return nil, fmt.Errorf("make feature yaml: %w", err)
 		}
 
+		var desc *string
+		if row.Deployment.Description.Valid {
+			desc = &row.Deployment.Description.String
+		}
 		feature := &model.Feature{
 			Name:        row.Name,
 			Description: row.Description,
@@ -272,6 +287,8 @@ func (r *repo) V3DeploymentsGetByFeature(ctx context.Context, featureName string
 			ID:           row.Deployment.ID,
 			Created:      row.Deployment.Created.Time,
 			TargetLabels: row.Deployment.Target,
+			Description:  desc,
+			CI:           row.Deployment.Ci,
 		}
 	}
 
@@ -291,11 +308,18 @@ func (r *repo) V3DeploymentsForEnvironment(ctx context.Context, environmentID uu
 			return nil, err
 		}
 
+		var desc *string
+		if row.Deployment.Description.Valid {
+			desc = &row.Deployment.Description.String
+		}
+
 		ret[i] = model.Deployment{
 			Feature:      feature,
 			ID:           row.Deployment.ID,
 			Created:      row.Deployment.Created.Time,
 			TargetLabels: row.Deployment.Target,
+			Description:  desc,
+			CI:           row.Deployment.Ci,
 		}
 	}
 

@@ -14,8 +14,9 @@ import (
 type Deployment struct {
 	ID          uuid.UUID `json:"id"`
 	Feature     *Feature  `json:"feature"`
-	Description string    `json:"description"`
+	Description *string   `json:"description"`
 	Created     time.Time `json:"created"`
+	CI          bool      `json:"ci"`
 
 	TargetLabels environment.Labels `json:"-"`
 }
