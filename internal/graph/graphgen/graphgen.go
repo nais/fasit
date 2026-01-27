@@ -15823,7 +15823,11 @@ func (ec *executionContext) _Update(ctx context.Context, sel ast.SelectionSet, o
 		}
 		return ec._ClusterUpgradeStatus(ctx, sel, obj)
 	default:
-		panic(fmt.Errorf("unexpected type %T", obj))
+		if typedObj, ok := obj.(graphql.Marshaler); ok {
+			return typedObj
+		} else {
+			panic(fmt.Errorf("unexpected type %T; non-generated variants of Update must implement graphql.Marshaler", obj))
+		}
 	}
 }
 
@@ -15846,7 +15850,11 @@ func (ec *executionContext) _Warning(ctx context.Context, sel ast.SelectionSet, 
 		}
 		return ec._FeatureWarning(ctx, sel, obj)
 	default:
-		panic(fmt.Errorf("unexpected type %T", obj))
+		if typedObj, ok := obj.(graphql.Marshaler); ok {
+			return typedObj
+		} else {
+			panic(fmt.Errorf("unexpected type %T; non-generated variants of Warning must implement graphql.Marshaler", obj))
+		}
 	}
 }
 

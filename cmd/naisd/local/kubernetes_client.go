@@ -22,7 +22,7 @@ func NewKubernetesClient() kubernetes.Interface {
 		n.Name = fmt.Sprintf("node-%v", i)
 	}
 
-	client := fake.NewSimpleClientset(objs...)
+	client := fake.NewClientset(objs...)
 
 	return client
 }
