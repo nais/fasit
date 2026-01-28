@@ -82,7 +82,7 @@ FROM
 WHERE
 	d.id = @id;
 
--- name: FeatureDeploymentsForEnvironment :many
+-- name: DeploymentsForEnvironmentToReconcile :many
 SELECT DISTINCT ON (d.feature_name, d.target)
 	sqlc.embed(d),
 	fd.name,

@@ -65,6 +65,7 @@ type Querier interface {
 	DeploymentGet(ctx context.Context, id uuid.UUID) (DeploymentGetRow, error)
 	DeploymentStatusCreateOrUpdate(ctx context.Context, arg DeploymentStatusCreateOrUpdateParams) error
 	DeploymentStatusGet(ctx context.Context, deploymentID uuid.UUID) ([]DeploymentStatus, error)
+	DeploymentsForEnvironmentToReconcile(ctx context.Context, environmentID uuid.UUID) ([]DeploymentsForEnvironmentToReconcileRow, error)
 	DeploymentsGet(ctx context.Context) ([]DeploymentsGetRow, error)
 	DeploymentsGetByFeature(ctx context.Context, featureName string) ([]DeploymentsGetByFeatureRow, error)
 	EnvConfig(ctx context.Context, arg EnvConfigParams) ([]EnvConfigRow, error)
@@ -91,7 +92,6 @@ type Querier interface {
 	EnvironmentsGetByAutoUpgrade(ctx context.Context) ([]Environment, error)
 	FeatureByName(ctx context.Context, name string) (FeatureByNameRow, error)
 	FeatureDataCreate(ctx context.Context, arg FeatureDataCreateParams) error
-	FeatureDeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]FeatureDeploymentsForEnvironmentRow, error)
 	FeatureEnabled(ctx context.Context, arg FeatureEnabledParams) (bool, error)
 	FeatureGetForEnv(ctx context.Context, environmentKind string) ([]FeatureGetForEnvRow, error)
 	FeatureStateCreateOrUpdate(ctx context.Context, arg FeatureStateCreateOrUpdateParams) (FeatureState, error)
