@@ -271,10 +271,14 @@ FROM
 		AND d.version = fd.version
 	LEFT JOIN deployment_statuses ds ON ds.deployment_id = d.id
 		AND ds.environment_id = $1
-	ORDER BY
-		d.feature_name,
-		d.target,
-		d.created DESC
+	LEFT JOIN feature_states fs ON fs.environment_id = e.id
+		AND fs.feature = fd.name
+WHERE
+	COALESCE(fs.enabled, TRUE) = TRUE
+ORDER BY
+	d.feature_name,
+	d.target,
+	d.created DESC
 `
 
 type DeploymentsForEnvironmentToReconcileRow struct {
