@@ -119,8 +119,6 @@ func (d *deployer) deployToCI(ctx context.Context, feat *model.Feature, req Requ
 }
 
 func (d *deployer) deployToEnvironment(ctx context.Context, deployment model.Deployment, environment *model.TenantEnvironment, publisher Publisher) error {
-	d.setDeploymentStatus(ctx, deployment.ID, environment.ID, model.RolloutStatusPending, "starting deployment")
-
 	if err := d.repo.V3InsertEnvironmentFeature(ctx, environment.ID, deployment.ID, deployment.Feature.Name, deployment.Feature.Version); err != nil {
 		d.log.WithError(err).WithFields(logrus.Fields{
 			"environment_id":  environment.ID,
@@ -204,6 +202,7 @@ func (d *deployer) shouldDeployToEnvironment(ctx context.Context, deployment mod
 		}
 
 		if existingDeploy.Hash == hash {
+			d.setDeploymentStatus(ctx, deployment.ID, environment.ID, existingDeploy.Status, "no changes in feature")
 			return false, nil
 		}
 	}
