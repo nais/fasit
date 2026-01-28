@@ -513,8 +513,8 @@ func TestRun_CreatedToWaitingTransitionWithDelay(t *testing.T) {
 	// Mock ClusterOperationsGetByUpgradeID for getAndUpdateRunningOperations
 	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{}, nil).Once()
 
-	// Mock GetRunningOperations - called twice: once for stuck check, once in getAndUpdateRunningOperations
-	suite.clusterMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{}, nil).Twice()
+	// Mock GetRunningOperations - called in getAndUpdateRunningOperations
+	suite.clusterMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{}, nil).Once()
 
 	// Expect UpdateClusterUpgradeStatus to be called to transition to WAITING
 	waitingUpgrade := &model.ClusterUpgradeStatus{
@@ -603,8 +603,8 @@ func TestRun_CreatedWithoutDelaySkipsWaiting(t *testing.T) {
 	// Mock ClusterOperationsGetByUpgradeID for getAndUpdateRunningOperations
 	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{}, nil).Once()
 
-	// Mock GetRunningOperations for stuck check and main logic
-	suite.clusterMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{}, nil).Twice()
+	// Mock GetRunningOperations for getAndUpdateRunningOperations
+	suite.clusterMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{}, nil).Once()
 
 	// Mock GetCurrentControlPlaneVersion check in CREATED state
 	suite.clusterMock.EXPECT().GetCurrentControlPlaneVersion(mock.Anything, mock.Anything, mock.Anything).Return("1.2.3", nil).Once()
@@ -721,7 +721,7 @@ func TestRun_CreatedWithDelayButRunningOperations(t *testing.T) {
 		OperationType: containerpb.Operation_UPGRADE_MASTER,
 		Status:        containerpb.Operation_RUNNING,
 	}
-	suite.clusterMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{runningOp}, nil).Twice()
+	suite.clusterMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{runningOp}, nil).Once()
 
 	// getAndUpdateRunningOperations will track the running operation
 	suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantID, suite.env.id, createdUpgrade.ID, mock.Anything).Return(nil, nil).Once()
