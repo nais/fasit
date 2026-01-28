@@ -603,7 +603,7 @@ func TestRun_CreatedWithoutDelaySkipsWaiting(t *testing.T) {
 	// Mock ClusterOperationsGetByUpgradeID for getAndUpdateRunningOperations
 	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{}, nil).Once()
 
-	// Mock GetRunningOperations for stuck check and main logic
+	// Mock GetRunningOperations for getAndUpdateRunningOperations
 	suite.clusterMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{}, nil).Once()
 
 	// Mock GetCurrentControlPlaneVersion check in CREATED state
