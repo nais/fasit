@@ -123,7 +123,7 @@ func (r *reconciler) reconcileEnvironment(ctx context.Context, environment *mode
 	publisher := r.deployer.publisher(naisdTopicID(environment.TenantName, environment.Name), r.deployer.log)
 	defer publisher.Stop()
 
-	allDeployments, err := r.repo.V3DeploymentsForEnvironment(ctx, environment.ID)
+	allDeployments, err := r.repo.V3DeploymentsForEnvironmentToReconcile(ctx, environment.ID)
 	if err != nil {
 		return fmt.Errorf("get deployments for environment %q: %w", environment.Name, err)
 	}

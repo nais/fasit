@@ -21,7 +21,7 @@ type DeploymentRepo interface {
 	V3DeploymentStatusesGet(ctx context.Context, deploymentID uuid.UUID) ([]*model.DeploymentStatus, error)
 	V3DeploymentsGetByFeature(ctx context.Context, featureName string) ([]*model.Deployment, error)
 	V3DeploymentDelete(ctx context.Context, deploymentID uuid.UUID) error
-	V3DeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]model.Deployment, error)
+	V3DeploymentsForEnvironmentToReconcile(ctx context.Context, environmentID uuid.UUID) ([]model.Deployment, error)
 	V3DeploymentStatusCreateOrUpdate(ctx context.Context, deploymentID, environmentID uuid.UUID, status model.RolloutStatus, message string) error
 	V3MissingDependencies(ctx context.Context, dependencies []string, environmentID uuid.UUID) ([]string, error)
 	V3GetEnvironmentFeature(ctx context.Context, environmentID uuid.UUID, featureName string) (*model.Feature, error)
@@ -179,7 +179,7 @@ func (r *repo) V3DeploymentGet(ctx context.Context, deploymentID uuid.UUID) (*mo
 		return nil, err
 	}
 
-	feature, err := featureFromSQL(gensql.FeatureDeploymentsForEnvironmentRow{
+	feature, err := featureFromSQL(gensql.DeploymentsForEnvironmentToReconcileRow{
 		Deployment:    row.Deployment,
 		Name:          row.Name,
 		Version:       row.Version,
@@ -295,8 +295,8 @@ func (r *repo) V3DeploymentsGetByFeature(ctx context.Context, featureName string
 	return ret, nil
 }
 
-func (r *repo) V3DeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]model.Deployment, error) {
-	rows, err := r.querier.FeatureDeploymentsForEnvironment(ctx, environmentID)
+func (r *repo) V3DeploymentsForEnvironmentToReconcile(ctx context.Context, environmentID uuid.UUID) ([]model.Deployment, error) {
+	rows, err := r.querier.DeploymentsForEnvironmentToReconcile(ctx, environmentID)
 	if err != nil {
 		return nil, err
 	}
@@ -326,7 +326,7 @@ func (r *repo) V3DeploymentsForEnvironment(ctx context.Context, environmentID uu
 	return ret, nil
 }
 
-func featureFromSQL(f gensql.FeatureDeploymentsForEnvironmentRow) (*model.Feature, error) {
+func featureFromSQL(f gensql.DeploymentsForEnvironmentToReconcileRow) (*model.Feature, error) {
 	kinds := make([]string, len(f.Kinds))
 	copy(kinds, f.Kinds)
 

@@ -3432,6 +3432,74 @@ func (_c *Querier_DeploymentStatusGet_Call) RunAndReturn(run func(ctx context.Co
 	return _c
 }
 
+// DeploymentsForEnvironmentToReconcile provides a mock function for the type Querier
+func (_mock *Querier) DeploymentsForEnvironmentToReconcile(ctx context.Context, environmentID uuid.UUID) ([]gensql.DeploymentsForEnvironmentToReconcileRow, error) {
+	ret := _mock.Called(ctx, environmentID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeploymentsForEnvironmentToReconcile")
+	}
+
+	var r0 []gensql.DeploymentsForEnvironmentToReconcileRow
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]gensql.DeploymentsForEnvironmentToReconcileRow, error)); ok {
+		return returnFunc(ctx, environmentID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) []gensql.DeploymentsForEnvironmentToReconcileRow); ok {
+		r0 = returnFunc(ctx, environmentID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]gensql.DeploymentsForEnvironmentToReconcileRow)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = returnFunc(ctx, environmentID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_DeploymentsForEnvironmentToReconcile_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeploymentsForEnvironmentToReconcile'
+type Querier_DeploymentsForEnvironmentToReconcile_Call struct {
+	*mock.Call
+}
+
+// DeploymentsForEnvironmentToReconcile is a helper method to define mock.On call
+//   - ctx context.Context
+//   - environmentID uuid.UUID
+func (_e *Querier_Expecter) DeploymentsForEnvironmentToReconcile(ctx interface{}, environmentID interface{}) *Querier_DeploymentsForEnvironmentToReconcile_Call {
+	return &Querier_DeploymentsForEnvironmentToReconcile_Call{Call: _e.mock.On("DeploymentsForEnvironmentToReconcile", ctx, environmentID)}
+}
+
+func (_c *Querier_DeploymentsForEnvironmentToReconcile_Call) Run(run func(ctx context.Context, environmentID uuid.UUID)) *Querier_DeploymentsForEnvironmentToReconcile_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_DeploymentsForEnvironmentToReconcile_Call) Return(deploymentsForEnvironmentToReconcileRows []gensql.DeploymentsForEnvironmentToReconcileRow, err error) *Querier_DeploymentsForEnvironmentToReconcile_Call {
+	_c.Call.Return(deploymentsForEnvironmentToReconcileRows, err)
+	return _c
+}
+
+func (_c *Querier_DeploymentsForEnvironmentToReconcile_Call) RunAndReturn(run func(ctx context.Context, environmentID uuid.UUID) ([]gensql.DeploymentsForEnvironmentToReconcileRow, error)) *Querier_DeploymentsForEnvironmentToReconcile_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // DeploymentsGet provides a mock function for the type Querier
 func (_mock *Querier) DeploymentsGet(ctx context.Context) ([]gensql.DeploymentsGetRow, error) {
 	ret := _mock.Called(ctx)
@@ -5116,74 +5184,6 @@ func (_c *Querier_FeatureDataCreate_Call) Return(err error) *Querier_FeatureData
 }
 
 func (_c *Querier_FeatureDataCreate_Call) RunAndReturn(run func(ctx context.Context, arg gensql.FeatureDataCreateParams) error) *Querier_FeatureDataCreate_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// FeatureDeploymentsForEnvironment provides a mock function for the type Querier
-func (_mock *Querier) FeatureDeploymentsForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]gensql.FeatureDeploymentsForEnvironmentRow, error) {
-	ret := _mock.Called(ctx, environmentID)
-
-	if len(ret) == 0 {
-		panic("no return value specified for FeatureDeploymentsForEnvironment")
-	}
-
-	var r0 []gensql.FeatureDeploymentsForEnvironmentRow
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]gensql.FeatureDeploymentsForEnvironmentRow, error)); ok {
-		return returnFunc(ctx, environmentID)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) []gensql.FeatureDeploymentsForEnvironmentRow); ok {
-		r0 = returnFunc(ctx, environmentID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]gensql.FeatureDeploymentsForEnvironmentRow)
-		}
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
-		r1 = returnFunc(ctx, environmentID)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Querier_FeatureDeploymentsForEnvironment_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FeatureDeploymentsForEnvironment'
-type Querier_FeatureDeploymentsForEnvironment_Call struct {
-	*mock.Call
-}
-
-// FeatureDeploymentsForEnvironment is a helper method to define mock.On call
-//   - ctx context.Context
-//   - environmentID uuid.UUID
-func (_e *Querier_Expecter) FeatureDeploymentsForEnvironment(ctx interface{}, environmentID interface{}) *Querier_FeatureDeploymentsForEnvironment_Call {
-	return &Querier_FeatureDeploymentsForEnvironment_Call{Call: _e.mock.On("FeatureDeploymentsForEnvironment", ctx, environmentID)}
-}
-
-func (_c *Querier_FeatureDeploymentsForEnvironment_Call) Run(run func(ctx context.Context, environmentID uuid.UUID)) *Querier_FeatureDeploymentsForEnvironment_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 uuid.UUID
-		if args[1] != nil {
-			arg1 = args[1].(uuid.UUID)
-		}
-		run(
-			arg0,
-			arg1,
-		)
-	})
-	return _c
-}
-
-func (_c *Querier_FeatureDeploymentsForEnvironment_Call) Return(featureDeploymentsForEnvironmentRows []gensql.FeatureDeploymentsForEnvironmentRow, err error) *Querier_FeatureDeploymentsForEnvironment_Call {
-	_c.Call.Return(featureDeploymentsForEnvironmentRows, err)
-	return _c
-}
-
-func (_c *Querier_FeatureDeploymentsForEnvironment_Call) RunAndReturn(run func(ctx context.Context, environmentID uuid.UUID) ([]gensql.FeatureDeploymentsForEnvironmentRow, error)) *Querier_FeatureDeploymentsForEnvironment_Call {
 	_c.Call.Return(run)
 	return _c
 }
