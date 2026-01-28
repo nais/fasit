@@ -119,6 +119,8 @@ func (d *deployer) deployToCI(ctx context.Context, feat *model.Feature, req Requ
 }
 
 func (d *deployer) deployToEnvironment(ctx context.Context, deployment model.Deployment, environment *model.TenantEnvironment, publisher Publisher) error {
+	d.setDeploymentStatus(ctx, deployment.ID, environment.ID, model.RolloutStatusPending, "starting deployment")
+
 	if err := d.repo.V3InsertEnvironmentFeature(ctx, environment.ID, deployment.ID, deployment.Feature.Name, deployment.Feature.Version); err != nil {
 		d.log.WithError(err).WithFields(logrus.Fields{
 			"environment_id":  environment.ID,
@@ -298,7 +300,7 @@ func (d *deployer) waitForDeploymentStatuses(ctx context.Context, deploymentsByE
 				}
 
 				state, err := d.repo.LatestStatusForDeploymentInEnvironment(ctx, deploymentID, envID)
-				if err != nil {
+				if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 					return fmt.Errorf("get latest deployment status for deployment %q in environment %q: %w", deploymentID, envID, err)
 				}
 
