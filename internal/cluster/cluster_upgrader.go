@@ -36,7 +36,6 @@ type ClusterUpgrader struct {
 	upgradeStarted     metric.Int64Counter
 	upgradeCompleted   metric.Int64Counter
 	upgradeFailed      metric.Int64Counter
-	upgradeStuck       metric.Int64Counter
 	upgradeDuration    metric.Float64Histogram
 	metricsInitialized bool
 }
@@ -63,11 +62,6 @@ func NewClusterUpgrader(repo database.Repo, log logrus.FieldLogger, clusterManag
 	}
 
 	upgradeFailed, err := meter.Int64Counter("cluster_upgrade_failed", metric.WithDescription("Number of cluster upgrades failed"))
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	upgradeStuck, err := meter.Int64Counter("cluster_upgrade_stuck", metric.WithDescription("Number of cluster upgrades detected as stuck"))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -103,7 +97,6 @@ func NewClusterUpgrader(repo database.Repo, log logrus.FieldLogger, clusterManag
 		upgradeStarted:    upgradeStarted,
 		upgradeCompleted:  upgradeCompleted,
 		upgradeFailed:     upgradeFailed,
-		upgradeStuck:      upgradeStuck,
 		upgradeDuration:   upgradeDuration,
 		slack:             slack,
 		slackChannel:      slackChannel,
