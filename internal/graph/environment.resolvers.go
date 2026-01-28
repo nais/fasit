@@ -215,20 +215,7 @@ func (r *environmentResolver) ClusterUpgradeStatus(ctx context.Context, obj *mod
 		return nil, err
 	}
 
-	if cu == nil {
-		return nil, nil
-	}
-
-	ret := &model.ClusterUpgradeStatus{
-		ID:            cu.ID,
-		UpgradeStatus: cu.UpgradeStatus,
-		Version:       cu.Version,
-		LastModified:  cu.LastModified,
-		StartTime:     cu.StartTime,
-		EnvironmentID: cu.EnvironmentID,
-	}
-
-	return ret, nil
+	return cu, nil
 }
 
 // Versions is the resolver for the versions field.
