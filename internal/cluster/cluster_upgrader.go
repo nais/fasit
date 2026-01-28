@@ -865,6 +865,18 @@ func (c *ClusterUpgrader) upgradeNodes(ctx context.Context, env *model.Environme
 	// Build a map of latest operation per nodepool for efficient lookup
 	latestOpPerNodepool := latestNodepoolUpgradeOps(existingOps)
 
+	if len(latestOpPerNodepool) > 0 {
+		opsInfo := make(map[string]string)
+		for k, v := range latestOpPerNodepool {
+			opsInfo[k] = v.Status
+		}
+		c.log.WithFields(logrus.Fields{
+			"upgrade_id":             clusterUpgrade.ID,
+			"nodepool_count":         len(nodePools),
+			"operations_by_nodepool": opsInfo,
+		}).Info("processing node pools with existing operations")
+	}
+
 	for _, np := range nodePools {
 		npVersionObj, err := version.NewVersion(np.Version)
 		if err != nil {
@@ -908,6 +920,19 @@ func (c *ClusterUpgrader) upgradeNodes(ctx context.Context, env *model.Environme
 					}).Info("nodepool upgrade previously failed, will retry now")
 				}
 			}
+		} else if len(latestOpPerNodepool) > 0 {
+			// We have operations but none matched this nodepool name - log for debugging
+			c.log.WithFields(logrus.Fields{
+				"nodepool":   np.Name,
+				"upgrade_id": clusterUpgrade.ID,
+				"available_pools": func() []string {
+					keys := make([]string, 0, len(latestOpPerNodepool))
+					for k := range latestOpPerNodepool {
+						keys = append(keys, k)
+					}
+					return keys
+				}(),
+			}).Info("nodepool not found in operations map - name mismatch?")
 		}
 
 		if hasOperation {
