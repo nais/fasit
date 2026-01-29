@@ -659,19 +659,24 @@ func (c *ClusterUpgrader) completeIfNonOwnedOperationsReachedTarget(
 		"upgrade_id":  clusterUpgrade.ID,
 	})
 
-	completed, currentVersionStr, err := c.checkAndCompleteIfAtTargetVersion(ctx, projectID, env, tenant, clusterUpgrade, runningOpsCount, decrementWaiting)
+	// Check if cluster is already at or beyond target version
+	atTarget, currentVersionStr, err := c.isAtOrBeyondTargetVersion(ctx, projectID, env, clusterUpgrade)
 	if err != nil {
 		return err
 	}
 
-	if !completed {
-		log.WithFields(logrus.Fields{
-			"upgrade_id":      clusterUpgrade.ID,
-			"target_version":  clusterUpgrade.Version,
-			"current_version": currentVersionStr,
-			"running_ops":     runningOpsCount,
-		}).Warn("GKE operations detected but no operations existed in DB before this run - these are not ours, backing off")
+	if atTarget {
+		// Mark upgrade as complete with all side effects
+		return c.markUpgradeComplete(ctx, env, tenant, clusterUpgrade, runningOpsCount, decrementWaiting)
 	}
+
+	// Cluster not at target yet - log and back off
+	log.WithFields(logrus.Fields{
+		"upgrade_id":      clusterUpgrade.ID,
+		"target_version":  clusterUpgrade.Version,
+		"current_version": currentVersionStr,
+		"running_ops":     runningOpsCount,
+	}).Warn("GKE operations detected but no operations existed in DB before this run - these are not ours, backing off")
 
 	return nil
 }
@@ -693,21 +698,29 @@ func (c *ClusterUpgrader) trackOwnedOperationsAndCheckCompletion(
 		return nil, "", false, err
 	}
 
-	completed, currentVersionStr, err := c.checkAndCompleteIfAtTargetVersion(ctx, projectID, env, tenant, clusterUpgrade, len(runningOps), decrementWaiting)
+	// Check if cluster is already at or beyond target version
+	atTarget, currentVersionStr, err := c.isAtOrBeyondTargetVersion(ctx, projectID, env, clusterUpgrade)
 	if err != nil {
 		return nil, "", false, err
 	}
 
-	return runningOps, currentVersionStr, completed, nil
+	if atTarget {
+		// Mark upgrade as complete with all side effects
+		err = c.markUpgradeComplete(ctx, env, tenant, clusterUpgrade, len(runningOps), decrementWaiting)
+		if err != nil {
+			return nil, "", false, err
+		}
+		return runningOps, currentVersionStr, true, nil
+	}
+
+	return runningOps, currentVersionStr, false, nil
 }
 
-// checkAndCompleteIfAtTargetVersion checks if cluster is at or beyond target version and marks upgrade as DONE if so.
-// Returns (completed, currentVersion, error). If completed is true, upgrade was marked DONE.
-func (c *ClusterUpgrader) checkAndCompleteIfAtTargetVersion(ctx context.Context, projectID string, env *model.Environment, tenant *model.Tenant, clusterUpgrade *model.ClusterUpgradeStatus, runningOpsCount int, decrementWaiting bool) (bool, string, error) {
+// isAtOrBeyondTargetVersion checks if cluster version is at or beyond the target version.
+// Returns (atTarget, currentVersion, error). Pure function with no side effects.
+func (c *ClusterUpgrader) isAtOrBeyondTargetVersion(ctx context.Context, projectID string, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus) (bool, string, error) {
 	log := c.log.WithFields(logrus.Fields{
-		"tenant":      tenant.Name,
-		"environment": env.Name,
-		"upgrade_id":  clusterUpgrade.ID,
+		"upgrade_id": clusterUpgrade.ID,
 	})
 
 	currentVersionStr, err := c.client.GetCurrentControlPlaneVersion(ctx, projectID, env)
@@ -726,19 +739,28 @@ func (c *ClusterUpgrader) checkAndCompleteIfAtTargetVersion(ctx context.Context,
 		return false, "", fmt.Errorf("failed to parse current version %q: %w", currentVersionStr, err)
 	}
 
-	if currentVer.LessThan(targetVer) {
-		return false, currentVersionStr, nil
-	}
+	// Check if current version is at or beyond target
+	atTarget := !currentVer.LessThan(targetVer)
+	return atTarget, currentVersionStr, nil
+}
+
+// markUpgradeComplete marks an upgrade as DONE and performs all related side effects:
+// updates database status, updates metrics, and notifies Slack.
+func (c *ClusterUpgrader) markUpgradeComplete(ctx context.Context, env *model.Environment, tenant *model.Tenant, clusterUpgrade *model.ClusterUpgradeStatus, runningOpsCount int, decrementWaiting bool) error {
+	log := c.log.WithFields(logrus.Fields{
+		"tenant":      tenant.Name,
+		"environment": env.Name,
+		"upgrade_id":  clusterUpgrade.ID,
+	})
 
 	log.WithFields(logrus.Fields{
-		"upgrade_id":     clusterUpgrade.ID,
 		"target_version": clusterUpgrade.Version,
 		"running_ops":    runningOpsCount,
 	}).Info("cluster at or beyond target version, marking upgrade as DONE")
 
 	upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, clusterUpgrade.ID, gensql.ClusterUpgradesStatusDONE)
 	if err != nil {
-		return false, currentVersionStr, err
+		return err
 	}
 
 	// Update metrics
@@ -758,7 +780,7 @@ func (c *ClusterUpgrader) checkAndCompleteIfAtTargetVersion(ctx context.Context,
 		})
 	}
 
-	return true, currentVersionStr, nil
+	return nil
 }
 
 // isOperationActive checks if an operation is in an active state (RUNNING or PENDING)
