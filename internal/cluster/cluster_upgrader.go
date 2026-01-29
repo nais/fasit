@@ -233,7 +233,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 			}
 
 			// We own these operations - track them and check if already complete
-			runningOps, currentVersionStr, completed, err := c.trackOwnedOperationsAndCheckCompletion(ctx, projectID, env, tenant, clusterUpgrade, true)
+			runningOps, currentVersionStr, completed, err := c.trackOwnedOperationsAndCheckCompletion(ctx, projectID, env, tenant, clusterUpgrade, runningOps, true)
 			if err != nil {
 				return err
 			}
@@ -377,7 +377,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 			}
 
 			// We own these operations - track them and check if already complete
-			runningOperations, currentVersionStr, completed, err := c.trackOwnedOperationsAndCheckCompletion(ctx, projectID, env, tenant, clusterUpgrade, false)
+			runningOperations, currentVersionStr, completed, err := c.trackOwnedOperationsAndCheckCompletion(ctx, projectID, env, tenant, clusterUpgrade, runningOperations, false)
 			if err != nil {
 				return err
 			}
@@ -679,9 +679,11 @@ func (c *ClusterUpgrader) trackOwnedOperationsAndCheckCompletion(
 	env *model.Environment,
 	tenant *model.Tenant,
 	clusterUpgrade *model.ClusterUpgradeStatus,
+	runningOps []*containerpb.Operation,
 	decrementWaiting bool,
 ) ([]*containerpb.Operation, string, bool, error) {
-	runningOps, err := c.getAndUpdateRunningOperations(ctx, projectID, env, clusterUpgrade)
+	// Track the already-fetched operations in the database
+	runningOps, err := c.trackRunningOperations(ctx, projectID, env, clusterUpgrade, runningOps)
 	if err != nil {
 		return nil, "", false, err
 	}
@@ -840,23 +842,14 @@ func (c *ClusterUpgrader) getRunningOperationsFromGKE(ctx context.Context, proje
 	return runningOperations, nil
 }
 
-func (c *ClusterUpgrader) getAndUpdateRunningOperations(ctx context.Context, projectID string, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus) ([]*containerpb.Operation, error) {
+// trackRunningOperations updates the database with already-fetched running operations.
+// Returns the updated list of operations after tracking completion status.
+func (c *ClusterUpgrader) trackRunningOperations(ctx context.Context, projectID string, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus, runningOperations []*containerpb.Operation) ([]*containerpb.Operation, error) {
 	log := c.log.WithFields(logrus.Fields{
 		"tenant_id":   env.TenantID,
 		"environment": env.Name,
 		"upgrade_id":  clusterUpgrade.ID,
 	})
-
-	// Get current running operations from GKE
-	var runningOperations []*containerpb.Operation
-	err := c.retryer.WithBackoff(ctx, "get_running_operations", func() error {
-		var retryErr error
-		runningOperations, retryErr = c.client.GetRunningOperations(ctx, projectID, env)
-		return retryErr
-	})
-	if err != nil {
-		return nil, err
-	}
 
 	// Get all existing operations for this upgrade from database
 	existingOps, err := c.repo.ClusterOperationsGetByUpgradeID(ctx, clusterUpgrade.ID)
@@ -947,6 +940,24 @@ func (c *ClusterUpgrader) getAndUpdateRunningOperations(ctx context.Context, pro
 	}
 
 	return runningOperations, nil
+}
+
+// getAndUpdateRunningOperations fetches running operations from GKE and tracks them in the database.
+// This is a convenience wrapper that combines getRunningOperationsFromGKE and trackRunningOperations.
+func (c *ClusterUpgrader) getAndUpdateRunningOperations(ctx context.Context, projectID string, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus) ([]*containerpb.Operation, error) {
+	// Get current running operations from GKE
+	var runningOperations []*containerpb.Operation
+	err := c.retryer.WithBackoff(ctx, "get_running_operations", func() error {
+		var retryErr error
+		runningOperations, retryErr = c.client.GetRunningOperations(ctx, projectID, env)
+		return retryErr
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Track them in the database
+	return c.trackRunningOperations(ctx, projectID, env, clusterUpgrade, runningOperations)
 }
 
 // cleanupCompletedUpgradeOperations cleans up dangling operations for completed upgrades

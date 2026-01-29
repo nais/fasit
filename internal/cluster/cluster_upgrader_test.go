@@ -721,7 +721,8 @@ func TestRun_CreatedWithDelayButRunningOperations(t *testing.T) {
 	}
 	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{existingOp}, nil).Once()
 
-	// Mock GetRunningOperations - first call from getRunningOperationsFromGKE to check if operations exist
+	// Mock GetRunningOperations - called from getRunningOperationsFromGKE to check if operations exist
+	// The fetched operations are then passed to trackOwnedOperationsAndCheckCompletion (no duplicate fetch)
 	runningOp := &containerpb.Operation{
 		Name:          "operation-123-running",
 		OperationType: containerpb.Operation_UPGRADE_MASTER,
@@ -729,19 +730,15 @@ func TestRun_CreatedWithDelayButRunningOperations(t *testing.T) {
 	}
 	suite.clusterMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{runningOp}, nil).Once()
 
-	// Since there are existing operations (ownership passed), now call getAndUpdateRunningOperations
-	// Mock ClusterOperationsGetByUpgradeID for getAndUpdateRunningOperations
+	// Since there are existing operations (ownership passed), trackOwnedOperationsAndCheckCompletion is called with pre-fetched operations
+	// Mock ClusterOperationsGetByUpgradeID for trackRunningOperations (called from trackOwnedOperationsAndCheckCompletion)
 	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{existingOp}, nil).Once()
-
-	// Mock GetRunningOperations - second call from getAndUpdateRunningOperations to update tracked operations
-	// This simulates GKE having already started the upgrade before Fasit checked
-	suite.clusterMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{runningOp}, nil).Once()
 
 	// Mock GetCurrentControlPlaneVersion - return current version lower than target
 	// This validates that the running operation is for our upgrade (cluster not yet at target)
 	suite.clusterMock.EXPECT().GetCurrentControlPlaneVersion(mock.Anything, mock.Anything, mock.Anything).Return("1.2.3", nil).Once()
 
-	// getAndUpdateRunningOperations will track the running operation
+	// trackRunningOperations will update the operation in database
 	suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantID, suite.env.id, createdUpgrade.ID, mock.Anything).Return(nil, nil).Once()
 
 	// Since there are running operations, should:
@@ -886,6 +883,8 @@ func TestRun_CreatedWithRunningOperationsButVersionMismatch(t *testing.T) {
 		t.Errorf("got %v, want nil", err)
 	}
 
+	// Verify that the running operations are NOT tracked in the database (since they're not our operations)
+	suite.repoMock.AssertNotCalled(t, "CreateOrUpdateClusterOperation", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything)
 	// Verify that UpdateClusterUpgradeStatus is not called with CONTROLPLANEUPGRADE
 	// When the cluster is already at target version, the upgrade is marked as DONE regardless of running operations
 	suite.repoMock.AssertNotCalled(t, "UpdateClusterUpgradeStatus", mock.Anything, mock.Anything, gensql.ClusterUpgradesStatusCONTROLPLANEUPGRADE)
