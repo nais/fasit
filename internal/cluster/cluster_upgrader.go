@@ -234,7 +234,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 				if completed {
 					return nil
 				}
-				
+
 				log.WithFields(logrus.Fields{
 					"upgrade_id":      clusterUpgrade.ID,
 					"target_version":  clusterUpgrade.Version,
@@ -340,7 +340,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 			log.WithError(err).Error("failed to get existing operations for ownership check")
 			return err
 		}
-		
+
 		// Get running operations from GKE without tracking them yet
 		runningOperations, err = c.getRunningOperationsFromGKE(ctx, projectID, env)
 		if err != nil {
@@ -398,7 +398,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 				if completed {
 					return nil
 				}
-				
+
 				log.WithFields(logrus.Fields{
 					"upgrade_id":      clusterUpgrade.ID,
 					"target_version":  clusterUpgrade.Version,
@@ -414,7 +414,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 			if err != nil {
 				return err
 			}
-			
+
 			// Check if cluster is already at target version - mark upgrade DONE
 			completed, currentVersionStr, err := c.checkAndCompleteIfAtTargetVersion(ctx, projectID, env, tenant, clusterUpgrade, len(runningOperations), false)
 			if err != nil {
@@ -689,7 +689,7 @@ func (c *ClusterUpgrader) checkAndCompleteIfAtTargetVersion(ctx context.Context,
 	// Try semantic version comparison first (handles GKE versions with suffixes like "-gke.100")
 	targetVer, targetErr := version.NewVersion(clusterUpgrade.Version)
 	currentVer, currentErr := version.NewVersion(currentVersionStr)
-	
+
 	versionsMatch := false
 	if targetErr == nil && currentErr == nil {
 		// Compare core versions (ignoring metadata/prerelease)
