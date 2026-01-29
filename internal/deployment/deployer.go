@@ -106,7 +106,7 @@ func (d *deployer) deployToCI(ctx context.Context, feat *model.Feature, req Requ
 			publisher := d.publisher(naisdTopicID(env.TenantName, env.Name), d.log)
 			defer publisher.Stop()
 
-			return d.deployToEnvironment(ctx, *deployment, env, publisher)
+			return d.deployToEnvironment(ctx, deployment, env, publisher)
 		}()
 		if err != nil {
 			return err
@@ -118,7 +118,7 @@ func (d *deployer) deployToCI(ctx context.Context, feat *model.Feature, req Requ
 	return d.waitForDeploymentStatuses(ctx, deploymentsByEnvID)
 }
 
-func (d *deployer) deployToEnvironment(ctx context.Context, deployment model.Deployment, environment *model.TenantEnvironment, publisher Publisher) error {
+func (d *deployer) deployToEnvironment(ctx context.Context, deployment *model.Deployment, environment *model.TenantEnvironment, publisher Publisher) error {
 	if err := d.repo.V3InsertEnvironmentFeature(ctx, environment.ID, deployment.ID, deployment.Feature.Name, deployment.Feature.Version); err != nil {
 		d.log.WithError(err).WithFields(logrus.Fields{
 			"environment_id":  environment.ID,
@@ -187,7 +187,7 @@ func (d *deployer) deployToEnvironment(ctx context.Context, deployment model.Dep
 	return nil
 }
 
-func (d *deployer) shouldDeployToEnvironment(ctx context.Context, deployment model.Deployment, environment *model.TenantEnvironment, hash string) (bool, error) {
+func (d *deployer) shouldDeployToEnvironment(ctx context.Context, deployment *model.Deployment, environment *model.TenantEnvironment, hash string) (bool, error) {
 	existingDeploy, err := d.repo.DeployInstructionsLatestForFeature(ctx, environment.ID, deployment.Feature.Name)
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
@@ -223,7 +223,7 @@ func (d *deployer) setDeploymentStatus(ctx context.Context, deploymentID, enviro
 	}
 }
 
-func (d *deployer) isDependenciesDeployed(ctx context.Context, deployment model.Deployment, envID uuid.UUID) (bool, error) {
+func (d *deployer) isDependenciesDeployed(ctx context.Context, deployment *model.Deployment, envID uuid.UUID) (bool, error) {
 	if len(deployment.Feature.Dependencies) == 0 {
 		return true, nil
 	}
@@ -326,8 +326,8 @@ func (d *deployer) waitForDeploymentStatuses(ctx context.Context, deploymentsByE
 
 // filterDeployments filters the deployments to only include the most specific deployment with the latest created
 // timestamp.
-func filterDeployments(deps []model.Deployment) []model.Deployment {
-	deployments := map[string]model.Deployment{}
+func filterDeployments(deps []*model.Deployment) []*model.Deployment {
+	deployments := map[string]*model.Deployment{}
 	for _, dep := range deps {
 		featureName := dep.Feature.Name
 
@@ -348,13 +348,13 @@ func filterDeployments(deps []model.Deployment) []model.Deployment {
 		}
 	}
 
-	ret := make([]model.Deployment, 0)
+	ret := make([]*model.Deployment, 0)
 	for _, d := range deployments {
 		ret = append(ret, d)
 	}
 
 	// sort by created timestamp ascending so that the oldest deployments are installed first
-	slices.SortStableFunc(ret, func(a, b model.Deployment) int {
+	slices.SortStableFunc(ret, func(a, b *model.Deployment) int {
 		return a.Created.Compare(b.Created)
 	})
 

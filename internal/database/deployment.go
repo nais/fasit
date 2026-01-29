@@ -21,7 +21,7 @@ type DeploymentRepo interface {
 	V3DeploymentStatusesGet(ctx context.Context, deploymentID uuid.UUID) ([]*model.DeploymentStatus, error)
 	V3DeploymentsGetByFeature(ctx context.Context, featureName string) ([]*model.Deployment, error)
 	V3DeploymentDelete(ctx context.Context, deploymentID uuid.UUID) error
-	V3DeploymentsForEnvironmentToReconcile(ctx context.Context, environmentID uuid.UUID) ([]model.Deployment, error)
+	V3DeploymentsForEnvironmentToReconcile(ctx context.Context, environmentID uuid.UUID) ([]*model.Deployment, error)
 	V3DeploymentStatusCreateOrUpdate(ctx context.Context, deploymentID, environmentID uuid.UUID, status model.RolloutStatus, message string) error
 	V3MissingDependencies(ctx context.Context, dependencies []string, environmentID uuid.UUID) ([]string, error)
 	V3GetEnvironmentFeature(ctx context.Context, environmentID uuid.UUID, featureName string) (*model.Feature, error)
@@ -169,24 +169,7 @@ func (r *repo) V3DeploymentGet(ctx context.Context, deploymentID uuid.UUID) (*mo
 		return nil, err
 	}
 
-	feature, err := featureFromSQL(row.FeatureDatum)
-	if err != nil {
-		return nil, err
-	}
-
-	var desc *string
-	if row.Deployment.Description.Valid {
-		desc = &row.Deployment.Description.String
-	}
-
-	return &model.Deployment{
-		Feature:      feature,
-		ID:           row.Deployment.ID,
-		Created:      row.Deployment.Created.Time,
-		TargetLabels: row.Deployment.Target,
-		Description:  desc,
-		CI:           row.Deployment.Ci,
-	}, nil
+	return deploymentFromSQL(row.Deployment, row.FeatureDatum)
 }
 
 func (r *repo) V3DeploymentsGet(ctx context.Context) ([]*model.Deployment, error) {
@@ -197,25 +180,11 @@ func (r *repo) V3DeploymentsGet(ctx context.Context) ([]*model.Deployment, error
 
 	ret := make([]*model.Deployment, len(rows))
 	for i, row := range rows {
-		feature, err := featureFromSQL(row.FeatureDatum)
+		deployment, err := deploymentFromSQL(row.Deployment, row.FeatureDatum)
 		if err != nil {
-			return nil, fmt.Errorf("make feature: %w", err)
+			return nil, fmt.Errorf("make deployment: %w", err)
 		}
-		feature.HasDeployments = true
-
-		var desc *string
-		if row.Deployment.Description.Valid {
-			desc = &row.Deployment.Description.String
-		}
-
-		ret[i] = &model.Deployment{
-			Feature:      feature,
-			ID:           row.Deployment.ID,
-			Created:      row.Deployment.Created.Time,
-			TargetLabels: row.Deployment.Target,
-			Description:  desc,
-			CI:           row.Deployment.Ci,
-		}
+		ret[i] = deployment
 	}
 
 	return ret, nil
@@ -229,77 +198,32 @@ func (r *repo) V3DeploymentsGetByFeature(ctx context.Context, featureName string
 
 	ret := make([]*model.Deployment, len(rows))
 	for i, row := range rows {
-		feature, err := featureFromSQL(row.FeatureDatum)
+		deployment, err := deploymentFromSQL(row.Deployment, row.FeatureDatum)
 		if err != nil {
-			return nil, fmt.Errorf("make feature yaml: %w", err)
+			return nil, fmt.Errorf("make deployment: %w", err)
 		}
-		feature.HasDeployments = true
-
-		var desc *string
-		if row.Deployment.Description.Valid {
-			desc = &row.Deployment.Description.String
-		}
-
-		ret[i] = &model.Deployment{
-			Feature:      feature,
-			ID:           row.Deployment.ID,
-			Created:      row.Deployment.Created.Time,
-			TargetLabels: row.Deployment.Target,
-			Description:  desc,
-			CI:           row.Deployment.Ci,
-		}
+		ret[i] = deployment
 	}
 
 	return ret, nil
 }
 
-func (r *repo) V3DeploymentsForEnvironmentToReconcile(ctx context.Context, environmentID uuid.UUID) ([]model.Deployment, error) {
+func (r *repo) V3DeploymentsForEnvironmentToReconcile(ctx context.Context, environmentID uuid.UUID) ([]*model.Deployment, error) {
 	rows, err := r.querier.DeploymentsForEnvironmentToReconcile(ctx, environmentID)
 	if err != nil {
 		return nil, err
 	}
 
-	ret := make([]model.Deployment, len(rows))
+	ret := make([]*model.Deployment, len(rows))
 	for i, row := range rows {
-		feature, err := featureFromSQL(row.FeatureDatum)
+		deployment, err := deploymentFromSQL(row.Deployment, row.FeatureDatum)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("make deployment: %w", err)
 		}
-
-		var desc *string
-		if row.Deployment.Description.Valid {
-			desc = &row.Deployment.Description.String
-		}
-
-		ret[i] = model.Deployment{
-			Feature:      feature,
-			ID:           row.Deployment.ID,
-			Created:      row.Deployment.Created.Time,
-			TargetLabels: row.Deployment.Target,
-			Description:  desc,
-			CI:           row.Deployment.Ci,
-		}
+		ret[i] = deployment
 	}
 
 	return ret, nil
-}
-
-func featureFromSQL(f gensql.FeatureDatum) (*model.Feature, error) {
-	fyaml, defaultValues, err := makeFeatureYAML(f)
-	if err != nil {
-		return nil, fmt.Errorf("make feature yaml: %w", err)
-	}
-
-	return &model.Feature{
-		FeatureYAML: fyaml,
-		Name:        f.Name,
-		Chart:       f.Chart,
-		Version:     f.Version,
-		Description: f.Description,
-		Source:      f.Source,
-		ValuesYAML:  defaultValues,
-		SpecVersion: "v2",
-	}, nil
 }
 
 func (r *repo) V3DeploymentCreate(ctx context.Context, featureName, featureVersion, description string, ref *model.GHRef, target environment.Labels, ci bool) (*gensql.Deployment, error) {
@@ -342,4 +266,44 @@ func (r *repo) V3DeploymentStatusCreateOrUpdate(ctx context.Context, deploymentI
 		Status:        status.String(),
 		Message:       message,
 	})
+}
+
+func featureFromSQL(f gensql.FeatureDatum) (*model.Feature, error) {
+	fyaml, defaultValues, err := makeFeatureYAML(f)
+	if err != nil {
+		return nil, fmt.Errorf("make feature yaml: %w", err)
+	}
+
+	return &model.Feature{
+		FeatureYAML: fyaml,
+		Name:        f.Name,
+		Chart:       f.Chart,
+		Version:     f.Version,
+		Description: f.Description,
+		Source:      f.Source,
+		ValuesYAML:  defaultValues,
+		SpecVersion: "v2",
+	}, nil
+}
+
+func deploymentFromSQL(d gensql.Deployment, fd gensql.FeatureDatum) (*model.Deployment, error) {
+	feature, err := featureFromSQL(fd)
+	if err != nil {
+		return nil, fmt.Errorf("make feature: %w", err)
+	}
+	feature.HasDeployments = true
+
+	var desc *string
+	if d.Description.Valid {
+		desc = &d.Description.String
+	}
+
+	return &model.Deployment{
+		ID:           d.ID,
+		Feature:      feature,
+		Description:  desc,
+		Created:      d.Created.Time,
+		CI:           d.Ci,
+		TargetLabels: d.Target,
+	}, nil
 }
