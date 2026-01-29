@@ -113,16 +113,7 @@ func (q *Queries) DeploymentDelete(ctx context.Context, id uuid.UUID) error {
 const deploymentGet = `-- name: DeploymentGet :one
 SELECT
 	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description, d.ci,
-	fd.name,
-	fd.version,
-	fd.chart,
-	fd.description,
-	fd.source,
-	fd.kinds::TEXT[] AS kinds,
-	fd.dependencies,
-	fd.values,
-	fd.default_values,
-	fd.timeout
+	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.rename
 FROM
 	deployments d
 	JOIN feature_data fd ON d.feature_name = fd.name
@@ -132,17 +123,8 @@ WHERE
 `
 
 type DeploymentGetRow struct {
-	Deployment    Deployment
-	Name          string
-	Version       string
-	Chart         string
-	Description   string
-	Source        string
-	Kinds         []string
-	Dependencies  []byte
-	Values        []byte
-	DefaultValues []byte
-	Timeout       int64
+	Deployment   Deployment
+	FeatureDatum FeatureDatum
 }
 
 func (q *Queries) DeploymentGet(ctx context.Context, id uuid.UUID) (DeploymentGetRow, error) {
@@ -157,16 +139,18 @@ func (q *Queries) DeploymentGet(ctx context.Context, id uuid.UUID) (DeploymentGe
 		&i.Deployment.GhRef,
 		&i.Deployment.Description,
 		&i.Deployment.Ci,
-		&i.Name,
-		&i.Version,
-		&i.Chart,
-		&i.Description,
-		&i.Source,
-		&i.Kinds,
-		&i.Dependencies,
-		&i.Values,
-		&i.DefaultValues,
-		&i.Timeout,
+		&i.FeatureDatum.Name,
+		&i.FeatureDatum.Version,
+		&i.FeatureDatum.Chart,
+		&i.FeatureDatum.Description,
+		&i.FeatureDatum.Source,
+		&i.FeatureDatum.Kinds,
+		&i.FeatureDatum.Dependencies,
+		&i.FeatureDatum.Values,
+		&i.FeatureDatum.DefaultValues,
+		&i.FeatureDatum.Timeout,
+		&i.FeatureDatum.TplDetails,
+		&i.FeatureDatum.Rename,
 	)
 	return i, err
 }
@@ -249,28 +233,13 @@ func (q *Queries) DeploymentStatusGet(ctx context.Context, deploymentID uuid.UUI
 const deploymentsForEnvironmentToReconcile = `-- name: DeploymentsForEnvironmentToReconcile :many
 SELECT DISTINCT ON (d.feature_name, d.target)
 	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description, d.ci,
-	fd.name,
-	fd.version,
-	fd.chart,
-	fd.description,
-	fd.source,
-	fd.kinds::TEXT[] AS kinds,
-	fd.dependencies,
-	fd.values,
-	fd.default_values,
-	fd.timeout,
-	ds.status,
-	ds.message AS status_message,
-	ds.last_modified AS status_last_modified,
-	ds.created AS status_created
+	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.rename
 FROM
 	deployments d
 	JOIN environments e ON e.id = $1
 		AND e.labels @> d.target -- @> operator checks if the JSONB on the left contains the JSONB on the right
 	JOIN feature_data fd ON d.feature_name = fd.name
 		AND d.version = fd.version
-	LEFT JOIN deployment_statuses ds ON ds.deployment_id = d.id
-		AND ds.environment_id = $1
 	LEFT JOIN feature_states fs ON fs.environment_id = e.id
 		AND fs.feature = fd.name
 WHERE
@@ -282,21 +251,8 @@ ORDER BY
 `
 
 type DeploymentsForEnvironmentToReconcileRow struct {
-	Deployment         Deployment
-	Name               string
-	Version            string
-	Chart              string
-	Description        string
-	Source             string
-	Kinds              []string
-	Dependencies       []byte
-	Values             []byte
-	DefaultValues      []byte
-	Timeout            int64
-	Status             pgtype.Text
-	StatusMessage      pgtype.Text
-	StatusLastModified pgtype.Timestamptz
-	StatusCreated      pgtype.Timestamptz
+	Deployment   Deployment
+	FeatureDatum FeatureDatum
 }
 
 func (q *Queries) DeploymentsForEnvironmentToReconcile(ctx context.Context, environmentID uuid.UUID) ([]DeploymentsForEnvironmentToReconcileRow, error) {
@@ -317,20 +273,18 @@ func (q *Queries) DeploymentsForEnvironmentToReconcile(ctx context.Context, envi
 			&i.Deployment.GhRef,
 			&i.Deployment.Description,
 			&i.Deployment.Ci,
-			&i.Name,
-			&i.Version,
-			&i.Chart,
-			&i.Description,
-			&i.Source,
-			&i.Kinds,
-			&i.Dependencies,
-			&i.Values,
-			&i.DefaultValues,
-			&i.Timeout,
-			&i.Status,
-			&i.StatusMessage,
-			&i.StatusLastModified,
-			&i.StatusCreated,
+			&i.FeatureDatum.Name,
+			&i.FeatureDatum.Version,
+			&i.FeatureDatum.Chart,
+			&i.FeatureDatum.Description,
+			&i.FeatureDatum.Source,
+			&i.FeatureDatum.Kinds,
+			&i.FeatureDatum.Dependencies,
+			&i.FeatureDatum.Values,
+			&i.FeatureDatum.DefaultValues,
+			&i.FeatureDatum.Timeout,
+			&i.FeatureDatum.TplDetails,
+			&i.FeatureDatum.Rename,
 		); err != nil {
 			return nil, err
 		}

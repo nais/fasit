@@ -65,16 +65,7 @@ WHERE id = @id;
 -- name: DeploymentGet :one
 SELECT
 	sqlc.embed(d),
-	fd.name,
-	fd.version,
-	fd.chart,
-	fd.description,
-	fd.source,
-	fd.kinds::TEXT[] AS kinds,
-	fd.dependencies,
-	fd.values,
-	fd.default_values,
-	fd.timeout
+	sqlc.embed(fd)
 FROM
 	deployments d
 	JOIN feature_data fd ON d.feature_name = fd.name
@@ -85,28 +76,13 @@ WHERE
 -- name: DeploymentsForEnvironmentToReconcile :many
 SELECT DISTINCT ON (d.feature_name, d.target)
 	sqlc.embed(d),
-	fd.name,
-	fd.version,
-	fd.chart,
-	fd.description,
-	fd.source,
-	fd.kinds::TEXT[] AS kinds,
-	fd.dependencies,
-	fd.values,
-	fd.default_values,
-	fd.timeout,
-	ds.status,
-	ds.message AS status_message,
-	ds.last_modified AS status_last_modified,
-	ds.created AS status_created
+	sqlc.embed(fd)
 FROM
 	deployments d
 	JOIN environments e ON e.id = @environment_id
 		AND e.labels @> d.target -- @> operator checks if the JSONB on the left contains the JSONB on the right
 	JOIN feature_data fd ON d.feature_name = fd.name
 		AND d.version = fd.version
-	LEFT JOIN deployment_statuses ds ON ds.deployment_id = d.id
-		AND ds.environment_id = @environment_id
 	LEFT JOIN feature_states fs ON fs.environment_id = e.id
 		AND fs.feature = fd.name
 WHERE

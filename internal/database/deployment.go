@@ -179,19 +179,7 @@ func (r *repo) V3DeploymentGet(ctx context.Context, deploymentID uuid.UUID) (*mo
 		return nil, err
 	}
 
-	feature, err := featureFromSQL(gensql.DeploymentsForEnvironmentToReconcileRow{
-		Deployment:    row.Deployment,
-		Name:          row.Name,
-		Version:       row.Version,
-		Chart:         row.Chart,
-		Description:   row.Description,
-		Source:        row.Source,
-		Kinds:         row.Kinds,
-		Dependencies:  row.Dependencies,
-		Values:        row.Values,
-		DefaultValues: row.DefaultValues,
-		Timeout:       row.Timeout,
-	})
+	feature, err := featureFromSQL(row.FeatureDatum)
 	if err != nil {
 		return nil, err
 	}
@@ -303,7 +291,7 @@ func (r *repo) V3DeploymentsForEnvironmentToReconcile(ctx context.Context, envir
 
 	ret := make([]model.Deployment, len(rows))
 	for i, row := range rows {
-		feature, err := featureFromSQL(row)
+		feature, err := featureFromSQL(row.FeatureDatum)
 		if err != nil {
 			return nil, err
 		}
@@ -326,9 +314,11 @@ func (r *repo) V3DeploymentsForEnvironmentToReconcile(ctx context.Context, envir
 	return ret, nil
 }
 
-func featureFromSQL(f gensql.DeploymentsForEnvironmentToReconcileRow) (*model.Feature, error) {
+func featureFromSQL(f gensql.FeatureDatum) (*model.Feature, error) {
 	kinds := make([]string, len(f.Kinds))
-	copy(kinds, f.Kinds)
+	for i, k := range f.Kinds {
+		kinds[i] = string(k)
+	}
 
 	fyaml, defaultValues, err := makeFeatureYAML(kinds, f.Dependencies, f.Values, f.DefaultValues, nil, f.Timeout)
 	if err != nil {

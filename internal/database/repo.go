@@ -140,6 +140,16 @@ func NewDB(ctx context.Context, dbConnDSN string, cloudsql bool) (*pgxpool.Pool,
 		return nil, nil, fmt.Errorf("failed to parse pgx config: %w", err)
 	}
 
+	config.AfterConnect = func(ctx context.Context, conn *pgx.Conn) error {
+		types, err := conn.LoadTypes(ctx, []string{"environment_kind", "_environment_kind"})
+		if err != nil {
+			return fmt.Errorf("failed to load types: %w", err)
+		}
+
+		conn.TypeMap().RegisterTypes(types)
+		return nil
+	}
+
 	closers := closeFuncs{}
 
 	if cloudsql {

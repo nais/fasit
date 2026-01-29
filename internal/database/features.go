@@ -225,6 +225,7 @@ func featuresFromSQL(features []gensql.FeaturesForKindRow) ([]*model.Feature, er
 	return ret, nil
 }
 
+// TODO: use EnvironmentKind type for kinds parameter, and sqlc.embed in queries
 func makeFeatureYAML(kinds []string, deps, values, defaultValues, rename []byte, timeout int64) (model.FeatureYAML, map[string]json.RawMessage, error) {
 	ret := model.FeatureYAML{
 		Timeout: time.Duration(timeout) * time.Millisecond,
