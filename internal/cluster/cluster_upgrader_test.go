@@ -510,6 +510,9 @@ func TestRun_CreatedToWaitingTransitionWithDelay(t *testing.T) {
 
 	suite.repoMock.EXPECT().ClusterOperationsGetDanglingForEnvironment(mock.Anything, suite.env.tenantID, suite.env.id).Return(map[uuid.UUID][]*model.EnvironmentOperation{}, nil).Once()
 
+	// ClusterOperationsGetByUpgradeID called BEFORE getAndUpdateRunningOperations for ownership check (CREATED state)
+	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{}, nil).Once()
+
 	// Mock ClusterOperationsGetByUpgradeID for getAndUpdateRunningOperations
 	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{}, nil).Once()
 
@@ -599,6 +602,9 @@ func TestRun_CreatedWithoutDelaySkipsWaiting(t *testing.T) {
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(createdUpgrade, nil).Once()
 
 	suite.repoMock.EXPECT().ClusterOperationsGetDanglingForEnvironment(mock.Anything, suite.env.tenantID, suite.env.id).Return(map[uuid.UUID][]*model.EnvironmentOperation{}, nil).Once()
+
+	// ClusterOperationsGetByUpgradeID called BEFORE getAndUpdateRunningOperations for ownership check (CREATED state)
+	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{}, nil).Once()
 
 	// Mock ClusterOperationsGetByUpgradeID for getAndUpdateRunningOperations
 	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{}, nil).Once()
@@ -711,7 +717,7 @@ func TestRun_CreatedWithDelayButRunningOperations(t *testing.T) {
 
 	suite.repoMock.EXPECT().ClusterOperationsGetDanglingForEnvironment(mock.Anything, suite.env.tenantID, suite.env.id).Return(map[uuid.UUID][]*model.EnvironmentOperation{}, nil).Once()
 
-	// Mock ClusterOperationsGetByUpgradeID for getAndUpdateRunningOperations
+	// ClusterOperationsGetByUpgradeID called BEFORE getAndUpdateRunningOperations for ownership check
 	// Return an existing operation to indicate we've already started tracking this upgrade
 	existingOp := &model.EnvironmentOperation{
 		ID:     uuid.New(),
@@ -719,6 +725,9 @@ func TestRun_CreatedWithDelayButRunningOperations(t *testing.T) {
 		Type:   "UPGRADE_MASTER",
 		Status: "RUNNING",
 	}
+	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{existingOp}, nil).Once()
+
+	// Mock ClusterOperationsGetByUpgradeID for getAndUpdateRunningOperations
 	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{existingOp}, nil).Once()
 
 	// Mock GetRunningOperations - return a running control plane upgrade operation
@@ -733,9 +742,6 @@ func TestRun_CreatedWithDelayButRunningOperations(t *testing.T) {
 	// Mock GetCurrentControlPlaneVersion - return current version lower than target
 	// This validates that the running operation is for our upgrade (cluster not yet at target)
 	suite.clusterMock.EXPECT().GetCurrentControlPlaneVersion(mock.Anything, mock.Anything, mock.Anything).Return("1.2.3", nil).Once()
-
-	// ClusterOperationsGetByUpgradeID called by checkOperationOwnership helper
-	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{existingOp}, nil).Once()
 
 	// getAndUpdateRunningOperations will track the running operation
 	suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantID, suite.env.id, createdUpgrade.ID, mock.Anything).Return(nil, nil).Once()
@@ -838,6 +844,9 @@ func TestRun_CreatedWithRunningOperationsButVersionMismatch(t *testing.T) {
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(createdUpgrade, nil).Once()
 
 	suite.repoMock.EXPECT().ClusterOperationsGetDanglingForEnvironment(mock.Anything, suite.env.tenantID, suite.env.id).Return(map[uuid.UUID][]*model.EnvironmentOperation{}, nil).Once()
+
+	// ClusterOperationsGetByUpgradeID called BEFORE getAndUpdateRunningOperations for ownership check (CREATED state)
+	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{}, nil).Once()
 
 	// Mock ClusterOperationsGetByUpgradeID for getAndUpdateRunningOperations
 	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{}, nil).Once()
