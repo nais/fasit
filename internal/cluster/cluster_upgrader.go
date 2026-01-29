@@ -683,11 +683,7 @@ func (c *ClusterUpgrader) checkAndCompleteIfAtTargetVersion(ctx context.Context,
 	currentVersionStr, err := c.client.GetCurrentControlPlaneVersion(ctx, projectID, env)
 	if err != nil {
 		log.WithError(err).Error("failed to get cluster current version")
-		c.logNonCriticalError(err, "get_current_control_plane_version", logrus.Fields{
-			"tenant":      tenant.Name,
-			"environment": env.Name,
-		})
-		return false, "", nil
+		return false, "", err
 	}
 
 	// Try semantic version comparison first (handles GKE versions with suffixes like "-gke.100")

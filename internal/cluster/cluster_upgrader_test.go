@@ -861,8 +861,6 @@ func TestRun_CreatedWithRunningOperationsButVersionMismatch(t *testing.T) {
 
 	// Since no operations existed before (not our upgrade) but cluster is at target version, should mark upgrade as DONE
 	// The running operations should NOT be tracked in the database
-
-	// Since cluster is already at target version, should mark upgrade as DONE
 	doneUpgrade := &model.ClusterUpgradeStatus{
 		ID:                    createdUpgrade.ID,
 		UpgradeStatus:         model.UpgradeStatusDone,
