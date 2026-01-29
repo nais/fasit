@@ -336,7 +336,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 	}
 
 	// At this point, we own the operations (or there are none running)
-	// Each state case below will handle tracking operations as appropriate
+	// Each state case below will track owned operations in their specific flow
 
 	log.WithFields(logrus.Fields{"target_version": clusterUpgrade.Version, "status": clusterUpgrade.UpgradeStatus}).Debug("cluster upgrade status")
 	switch clusterUpgrade.UpgradeStatus {
@@ -368,17 +368,8 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 
 	case model.UpgradeStatusCreated:
 		// Check if GKE has already started upgrade operations
+		// At this point, ownership was already checked above, so if there are running ops, we own them
 		if clusterHas(runningOperations) {
-			if !c.ownsRunningOperations(existingOpsBeforeUpdate, runningOperations) {
-				err := c.completeIfNonOwnedOperationsReachedTarget(ctx, projectID, env, tenant, clusterUpgrade, len(runningOperations), false)
-				if err != nil {
-					return err
-				}
-				// Non-owned operations - back off (may have marked upgrade DONE if at target)
-				return nil
-			}
-
-			// We own these operations - track them and check if already complete
 			runningOperations, currentVersionStr, completed, err := c.trackOwnedOperationsAndCheckCompletion(ctx, projectID, env, tenant, clusterUpgrade, runningOperations, existingOpsBeforeUpdate, false)
 			if err != nil {
 				return err
@@ -526,11 +517,20 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		c.updateSlackProgress(ctx, tenant.Name, env.Name, updatedStatus)
 
 	case model.UpgradeStatusControlPlaneUpgrade:
-		// Track owned operations
+		// Track owned operations if any are running
 		if clusterHas(runningOperations) {
-			runningOperations, err = c.trackRunningOperations(ctx, projectID, env, clusterUpgrade, runningOperations, existingOpsBeforeUpdate)
-			if err != nil {
-				return err
+			var hasActiveOps bool
+			for _, op := range runningOperations {
+				if isOperationActive(op) {
+					hasActiveOps = true
+					break
+				}
+			}
+			if hasActiveOps {
+				runningOperations, err = c.trackRunningOperations(ctx, projectID, env, clusterUpgrade, runningOperations, existingOpsBeforeUpdate)
+				if err != nil {
+					return err
+				}
 			}
 		}
 
@@ -550,11 +550,20 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		c.updateSlackProgress(ctx, tenant.Name, env.Name, status)
 
 	case model.UpgradeStatusNodeUpgrade:
-		// Track owned operations
+		// Track owned operations if any are running
 		if clusterHas(runningOperations) {
-			runningOperations, err = c.trackRunningOperations(ctx, projectID, env, clusterUpgrade, runningOperations, existingOpsBeforeUpdate)
-			if err != nil {
-				return err
+			var hasActiveOps bool
+			for _, op := range runningOperations {
+				if isOperationActive(op) {
+					hasActiveOps = true
+					break
+				}
+			}
+			if hasActiveOps {
+				runningOperations, err = c.trackRunningOperations(ctx, projectID, env, clusterUpgrade, runningOperations, existingOpsBeforeUpdate)
+				if err != nil {
+					return err
+				}
 			}
 		}
 
@@ -617,11 +626,11 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 
 		err = c.slack.AddReaction(upgradeStatus.SlackChannelID, upgradeStatus.SlackMessageTimestamp, "white_check_mark")
 		if err != nil {
-			c.logNonCriticalError(err, "slack_add_reaction", logrus.Fields{
+			log.WithError(err).WithFields(logrus.Fields{
 				"tenant":      tenant.Name,
 				"environment": env.Name,
 				"reaction":    "white_check_mark",
-			})
+			}).Warn("failed to add Slack reaction for completed upgrade - notification failure, upgrade completed successfully")
 		}
 
 		c.upgradeInProgress.Add(ctx, -1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "node_pools")...))
@@ -663,7 +672,6 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 // This is mitigated by:
 // 1. Checking operation names match (not just existence of any operations)
 // 2. Database unique constraints preventing duplicate operation tracking
-// 3. The fact that completed (DONE/FAILED) upgrades are not processed again
 func (c *ClusterUpgrader) ownsRunningOperations(existingOps []*model.EnvironmentOperation, runningOps []*containerpb.Operation) bool {
 	if len(existingOps) == 0 {
 		return false
@@ -818,13 +826,15 @@ func (c *ClusterUpgrader) markUpgradeComplete(ctx context.Context, env *model.En
 		c.upgradeWaiting.Add(ctx, -1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "waiting")...))
 	} else {
 		// Transitioning from CREATED to DONE - need to increment started/in-progress before completing
-		// to maintain metric consistency (completed should never exceed started)
+		// to maintain metric consistency (completed should never exceed started).
+		// The upgradeInProgress is immediately decremented after upgradeCompleted to avoid
+		// inflating the in-progress count, since the upgrade is already complete.
 		c.upgradeStarted.Add(ctx, 1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "start")...))
 		c.upgradeInProgress.Add(ctx, 1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "in_progress")...))
 	}
 	c.upgradeCompleted.Add(ctx, 1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "complete")...))
 	if !decrementWaiting {
-		// Decrement the in-progress we just incremented
+		// Decrement the in-progress we just incremented (see comment above)
 		c.upgradeInProgress.Add(ctx, -1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "in_progress")...))
 	}
 
