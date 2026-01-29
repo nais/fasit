@@ -632,6 +632,12 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 
 // ownsRunningOperations checks if running operations belong to this upgrade.
 // Returns true if we have existing operations in DB for this upgrade.
+// We assume this because:
+//   - environment operations in the database are scoped to a specific upgrade ID, and
+//   - completed (DONE/FAILED) upgrades are not processed again.
+//
+// Therefore, if any operations exist in the DB for this upgrade ID, we treat all
+// currently running GKE operations for this cluster/upgrade as "owned" by this upgrader.
 func (c *ClusterUpgrader) ownsRunningOperations(existingOps []*model.EnvironmentOperation) bool {
 	return len(existingOps) > 0
 }
