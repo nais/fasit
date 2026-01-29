@@ -111,23 +111,13 @@ func (r *repo) V3GetEnvironmentFeature(ctx context.Context, environmentID uuid.U
 		return nil, err
 	}
 
-	fyaml, defaultValues, err := makeFeatureYAML(f.Kinds, f.Dependencies, f.Values, f.DefaultValues, nil, f.Timeout)
+	feature, err := featureFromSQL(f.FeatureDatum)
 	if err != nil {
-		return nil, fmt.Errorf("make feature yaml: %w", err)
+		return nil, fmt.Errorf("make feature: %w", err)
 	}
+	feature.HasDeployments = true
 
-	return &model.Feature{
-		Name:        f.Name,
-		Description: f.Description,
-		Version:     f.Version,
-		Chart:       f.Chart,
-		Source:      f.Source,
-		FeatureYAML: fyaml,
-		ValuesYAML:  defaultValues,
-		SpecVersion: "v2",
-		// if exists in the environment_features table, it must have deployments
-		HasDeployments: true,
-	}, nil
+	return feature, nil
 }
 
 func (r *repo) V3GetEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]*model.FeatureState, error) {
@@ -139,8 +129,8 @@ func (r *repo) V3GetEnvironmentFeatures(ctx context.Context, environmentID uuid.
 	ret := make([]*model.FeatureState, len(features))
 	for i, f := range features {
 		ret[i] = &model.FeatureState{
-			ID:           environmentID.String() + "-" + f.Name,
-			FeatureName:  f.Name,
+			ID:           environmentID.String() + "-" + f.FeatureDatum.Name,
+			FeatureName:  f.FeatureDatum.Name,
 			Enabled:      true,
 			EnabledAt:    &f.Created.Time,
 			Created:      f.Created.Time,
@@ -207,27 +197,17 @@ func (r *repo) V3DeploymentsGet(ctx context.Context) ([]*model.Deployment, error
 
 	ret := make([]*model.Deployment, len(rows))
 	for i, row := range rows {
-		fyaml, defaultValues, err := makeFeatureYAML(row.Kinds, row.Dependencies, row.Values, row.DefaultValues, nil, row.Timeout)
+		feature, err := featureFromSQL(row.FeatureDatum)
 		if err != nil {
-			return nil, fmt.Errorf("make feature yaml: %w", err)
+			return nil, fmt.Errorf("make feature: %w", err)
 		}
+		feature.HasDeployments = true
 
 		var desc *string
 		if row.Deployment.Description.Valid {
 			desc = &row.Deployment.Description.String
 		}
-		feature := &model.Feature{
-			Name:        row.Name,
-			Description: row.Description,
-			Version:     row.Version,
-			Chart:       row.Chart,
-			Source:      row.Source,
-			FeatureYAML: fyaml,
-			ValuesYAML:  defaultValues,
-			SpecVersion: "v2",
-			// if exists in the environment_features table, it must have deployments
-			HasDeployments: true,
-		}
+
 		ret[i] = &model.Deployment{
 			Feature:      feature,
 			ID:           row.Deployment.ID,
@@ -249,27 +229,17 @@ func (r *repo) V3DeploymentsGetByFeature(ctx context.Context, featureName string
 
 	ret := make([]*model.Deployment, len(rows))
 	for i, row := range rows {
-		fyaml, defaultValues, err := makeFeatureYAML(row.Kinds, row.Dependencies, row.Values, row.DefaultValues, nil, row.Timeout)
+		feature, err := featureFromSQL(row.FeatureDatum)
 		if err != nil {
 			return nil, fmt.Errorf("make feature yaml: %w", err)
 		}
+		feature.HasDeployments = true
 
 		var desc *string
 		if row.Deployment.Description.Valid {
 			desc = &row.Deployment.Description.String
 		}
-		feature := &model.Feature{
-			Name:        row.Name,
-			Description: row.Description,
-			Version:     row.Version,
-			Chart:       row.Chart,
-			Source:      row.Source,
-			FeatureYAML: fyaml,
-			ValuesYAML:  defaultValues,
-			SpecVersion: "v2",
-			// if exists in the environment_features table, it must have deployments
-			HasDeployments: true,
-		}
+
 		ret[i] = &model.Deployment{
 			Feature:      feature,
 			ID:           row.Deployment.ID,
@@ -315,23 +285,18 @@ func (r *repo) V3DeploymentsForEnvironmentToReconcile(ctx context.Context, envir
 }
 
 func featureFromSQL(f gensql.FeatureDatum) (*model.Feature, error) {
-	kinds := make([]string, len(f.Kinds))
-	for i, k := range f.Kinds {
-		kinds[i] = string(k)
-	}
-
-	fyaml, defaultValues, err := makeFeatureYAML(kinds, f.Dependencies, f.Values, f.DefaultValues, nil, f.Timeout)
+	fyaml, defaultValues, err := makeFeatureYAML(f)
 	if err != nil {
 		return nil, fmt.Errorf("make feature yaml: %w", err)
 	}
 
 	return &model.Feature{
-		Name:        f.Name,
-		Description: f.Description,
-		Version:     f.Version,
-		Chart:       f.Chart,
-		Source:      f.Source,
 		FeatureYAML: fyaml,
+		Name:        f.Name,
+		Chart:       f.Chart,
+		Version:     f.Version,
+		Description: f.Description,
+		Source:      f.Source,
 		ValuesYAML:  defaultValues,
 		SpecVersion: "v2",
 	}, nil

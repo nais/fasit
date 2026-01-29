@@ -299,16 +299,7 @@ func (q *Queries) DeploymentsForEnvironmentToReconcile(ctx context.Context, envi
 const deploymentsGet = `-- name: DeploymentsGet :many
 SELECT
 	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description, d.ci,
-	fd.name,
-	fd.version,
-	fd.chart,
-	fd.description,
-	fd.source,
-	fd.kinds::TEXT[] AS kinds,
-	fd.dependencies,
-	fd.values,
-	fd.default_values,
-	fd.timeout
+	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.rename
 FROM
 	deployments d
 	JOIN feature_data fd ON d.feature_name = fd.name
@@ -318,17 +309,8 @@ FROM
 `
 
 type DeploymentsGetRow struct {
-	Deployment    Deployment
-	Name          string
-	Version       string
-	Chart         string
-	Description   string
-	Source        string
-	Kinds         []string
-	Dependencies  []byte
-	Values        []byte
-	DefaultValues []byte
-	Timeout       int64
+	Deployment   Deployment
+	FeatureDatum FeatureDatum
 }
 
 func (q *Queries) DeploymentsGet(ctx context.Context) ([]DeploymentsGetRow, error) {
@@ -349,16 +331,18 @@ func (q *Queries) DeploymentsGet(ctx context.Context) ([]DeploymentsGetRow, erro
 			&i.Deployment.GhRef,
 			&i.Deployment.Description,
 			&i.Deployment.Ci,
-			&i.Name,
-			&i.Version,
-			&i.Chart,
-			&i.Description,
-			&i.Source,
-			&i.Kinds,
-			&i.Dependencies,
-			&i.Values,
-			&i.DefaultValues,
-			&i.Timeout,
+			&i.FeatureDatum.Name,
+			&i.FeatureDatum.Version,
+			&i.FeatureDatum.Chart,
+			&i.FeatureDatum.Description,
+			&i.FeatureDatum.Source,
+			&i.FeatureDatum.Kinds,
+			&i.FeatureDatum.Dependencies,
+			&i.FeatureDatum.Values,
+			&i.FeatureDatum.DefaultValues,
+			&i.FeatureDatum.Timeout,
+			&i.FeatureDatum.TplDetails,
+			&i.FeatureDatum.Rename,
 		); err != nil {
 			return nil, err
 		}
@@ -373,16 +357,7 @@ func (q *Queries) DeploymentsGet(ctx context.Context) ([]DeploymentsGetRow, erro
 const deploymentsGetByFeature = `-- name: DeploymentsGetByFeature :many
 SELECT
 	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description, d.ci,
-	fd.name,
-	fd.version,
-	fd.chart,
-	fd.description,
-	fd.source,
-	fd.kinds::TEXT[] AS kinds,
-	fd.dependencies,
-	fd.values,
-	fd.default_values,
-	fd.timeout
+	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.rename
 FROM
 	deployments d
 	JOIN feature_data fd ON d.feature_name = fd.name
@@ -394,17 +369,8 @@ ORDER BY
 `
 
 type DeploymentsGetByFeatureRow struct {
-	Deployment    Deployment
-	Name          string
-	Version       string
-	Chart         string
-	Description   string
-	Source        string
-	Kinds         []string
-	Dependencies  []byte
-	Values        []byte
-	DefaultValues []byte
-	Timeout       int64
+	Deployment   Deployment
+	FeatureDatum FeatureDatum
 }
 
 func (q *Queries) DeploymentsGetByFeature(ctx context.Context, featureName string) ([]DeploymentsGetByFeatureRow, error) {
@@ -425,16 +391,18 @@ func (q *Queries) DeploymentsGetByFeature(ctx context.Context, featureName strin
 			&i.Deployment.GhRef,
 			&i.Deployment.Description,
 			&i.Deployment.Ci,
-			&i.Name,
-			&i.Version,
-			&i.Chart,
-			&i.Description,
-			&i.Source,
-			&i.Kinds,
-			&i.Dependencies,
-			&i.Values,
-			&i.DefaultValues,
-			&i.Timeout,
+			&i.FeatureDatum.Name,
+			&i.FeatureDatum.Version,
+			&i.FeatureDatum.Chart,
+			&i.FeatureDatum.Description,
+			&i.FeatureDatum.Source,
+			&i.FeatureDatum.Kinds,
+			&i.FeatureDatum.Dependencies,
+			&i.FeatureDatum.Values,
+			&i.FeatureDatum.DefaultValues,
+			&i.FeatureDatum.Timeout,
+			&i.FeatureDatum.TplDetails,
+			&i.FeatureDatum.Rename,
 		); err != nil {
 			return nil, err
 		}

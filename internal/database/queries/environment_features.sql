@@ -18,16 +18,7 @@ ON CONFLICT (
 
 -- name: GetEnvironmentFeature :one
 SELECT
-	fd.name,
-	fd.version,
-	fd.chart,
-	fd.description,
-	fd.source,
-	fd.kinds::TEXT[] AS kinds,
-	fd.dependencies,
-	fd.values,
-	fd.default_values,
-	fd.timeout,
+	sqlc.embed(fd),
 	ef.deployment_id
 FROM
 	environment_features ef
@@ -39,17 +30,7 @@ WHERE
 
 -- name: GetEnvironmentFeatures :many
 SELECT
-	fd.name,
-	fd.version,
-	fd.chart,
-	fd.description,
-	fd.source,
-	fd.kinds::TEXT[] AS kinds,
-	fd.dependencies,
-	fd.values,
-	fd.default_values,
-	fd.timeout,
-	ef.deployment_id,
+	sqlc.embed(fd),
 	d.created
 FROM
 	environment_features ef

@@ -1,15 +1,6 @@
 -- name: FeatureByName :one
 SELECT
-	fd.name,
-	fd.version,
-	fd.chart,
-	fd.description,
-	fd.source,
-	fd.kinds::TEXT[] AS kinds,
-	fd.dependencies,
-	fd.values,
-	fd.default_values,
-	fd.timeout,
+	sqlc.embed(fd),
 	features.created,
 	features.last_modified
 FROM
@@ -57,16 +48,7 @@ filtered AS (
 		id
 )
 SELECT
-	fd.name,
-	fd.version,
-	fd.chart,
-	fd.description,
-	fd.source,
-	fd.kinds::TEXT[] AS kinds,
-	fd.dependencies,
-	fd.values,
-	fd.default_values,
-	fd.timeout,
+	sqlc.embed(fd),
 	filtered.created,
 	filtered.last_modified
 FROM
@@ -92,16 +74,7 @@ ORDER BY
 
 -- name: FeaturesForKind :many
 SELECT
-	fd.name,
-	fd.version,
-	fd.chart,
-	fd.description,
-	fd.source,
-	fd.kinds::TEXT[] AS kinds,
-	fd.dependencies,
-	fd.values,
-	fd.default_values,
-	fd.timeout,
+	sqlc.embed(fd),
 	features.created,
 	features.last_modified,
 	EXISTS (

@@ -1,16 +1,7 @@
 -- name: DeploymentsGet :many
 SELECT
 	sqlc.embed(d),
-	fd.name,
-	fd.version,
-	fd.chart,
-	fd.description,
-	fd.source,
-	fd.kinds::TEXT[] AS kinds,
-	fd.dependencies,
-	fd.values,
-	fd.default_values,
-	fd.timeout
+	sqlc.embed(fd)
 FROM
 	deployments d
 	JOIN feature_data fd ON d.feature_name = fd.name
@@ -21,16 +12,7 @@ FROM
 -- name: DeploymentsGetByFeature :many
 SELECT
 	sqlc.embed(d),
-	fd.name,
-	fd.version,
-	fd.chart,
-	fd.description,
-	fd.source,
-	fd.kinds::TEXT[] AS kinds,
-	fd.dependencies,
-	fd.values,
-	fd.default_values,
-	fd.timeout
+	sqlc.embed(fd)
 FROM
 	deployments d
 	JOIN feature_data fd ON d.feature_name = fd.name

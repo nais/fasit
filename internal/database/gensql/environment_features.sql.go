@@ -12,16 +12,7 @@ import (
 
 const getEnvironmentFeature = `-- name: GetEnvironmentFeature :one
 SELECT
-	fd.name,
-	fd.version,
-	fd.chart,
-	fd.description,
-	fd.source,
-	fd.kinds::TEXT[] AS kinds,
-	fd.dependencies,
-	fd.values,
-	fd.default_values,
-	fd.timeout,
+	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.rename,
 	ef.deployment_id
 FROM
 	environment_features ef
@@ -38,33 +29,26 @@ type GetEnvironmentFeatureParams struct {
 }
 
 type GetEnvironmentFeatureRow struct {
-	Name          string
-	Version       string
-	Chart         string
-	Description   string
-	Source        string
-	Kinds         []string
-	Dependencies  []byte
-	Values        []byte
-	DefaultValues []byte
-	Timeout       int64
-	DeploymentID  uuid.UUID
+	FeatureDatum FeatureDatum
+	DeploymentID uuid.UUID
 }
 
 func (q *Queries) GetEnvironmentFeature(ctx context.Context, arg GetEnvironmentFeatureParams) (GetEnvironmentFeatureRow, error) {
 	row := q.db.QueryRow(ctx, getEnvironmentFeature, arg.EnvironmentID, arg.FeatureName)
 	var i GetEnvironmentFeatureRow
 	err := row.Scan(
-		&i.Name,
-		&i.Version,
-		&i.Chart,
-		&i.Description,
-		&i.Source,
-		&i.Kinds,
-		&i.Dependencies,
-		&i.Values,
-		&i.DefaultValues,
-		&i.Timeout,
+		&i.FeatureDatum.Name,
+		&i.FeatureDatum.Version,
+		&i.FeatureDatum.Chart,
+		&i.FeatureDatum.Description,
+		&i.FeatureDatum.Source,
+		&i.FeatureDatum.Kinds,
+		&i.FeatureDatum.Dependencies,
+		&i.FeatureDatum.Values,
+		&i.FeatureDatum.DefaultValues,
+		&i.FeatureDatum.Timeout,
+		&i.FeatureDatum.TplDetails,
+		&i.FeatureDatum.Rename,
 		&i.DeploymentID,
 	)
 	return i, err
@@ -72,17 +56,7 @@ func (q *Queries) GetEnvironmentFeature(ctx context.Context, arg GetEnvironmentF
 
 const getEnvironmentFeatures = `-- name: GetEnvironmentFeatures :many
 SELECT
-	fd.name,
-	fd.version,
-	fd.chart,
-	fd.description,
-	fd.source,
-	fd.kinds::TEXT[] AS kinds,
-	fd.dependencies,
-	fd.values,
-	fd.default_values,
-	fd.timeout,
-	ef.deployment_id,
+	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.rename,
 	d.created
 FROM
 	environment_features ef
@@ -96,18 +70,8 @@ ORDER BY
 `
 
 type GetEnvironmentFeaturesRow struct {
-	Name          string
-	Version       string
-	Chart         string
-	Description   string
-	Source        string
-	Kinds         []string
-	Dependencies  []byte
-	Values        []byte
-	DefaultValues []byte
-	Timeout       int64
-	DeploymentID  uuid.UUID
-	Created       pgtype.Timestamptz
+	FeatureDatum FeatureDatum
+	Created      pgtype.Timestamptz
 }
 
 func (q *Queries) GetEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]GetEnvironmentFeaturesRow, error) {
@@ -120,17 +84,18 @@ func (q *Queries) GetEnvironmentFeatures(ctx context.Context, environmentID uuid
 	for rows.Next() {
 		var i GetEnvironmentFeaturesRow
 		if err := rows.Scan(
-			&i.Name,
-			&i.Version,
-			&i.Chart,
-			&i.Description,
-			&i.Source,
-			&i.Kinds,
-			&i.Dependencies,
-			&i.Values,
-			&i.DefaultValues,
-			&i.Timeout,
-			&i.DeploymentID,
+			&i.FeatureDatum.Name,
+			&i.FeatureDatum.Version,
+			&i.FeatureDatum.Chart,
+			&i.FeatureDatum.Description,
+			&i.FeatureDatum.Source,
+			&i.FeatureDatum.Kinds,
+			&i.FeatureDatum.Dependencies,
+			&i.FeatureDatum.Values,
+			&i.FeatureDatum.DefaultValues,
+			&i.FeatureDatum.Timeout,
+			&i.FeatureDatum.TplDetails,
+			&i.FeatureDatum.Rename,
 			&i.Created,
 		); err != nil {
 			return nil, err
