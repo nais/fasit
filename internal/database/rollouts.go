@@ -111,37 +111,18 @@ func (r *repo) RolloutByName(ctx context.Context, name string) (*model.Feature, 
 		return nil, fmt.Errorf("get rollout by name from db: %w", err)
 	}
 
-	deps := model.Dependencies{}
-	if err := json.Unmarshal(f.Dependencies, &deps); err != nil {
-		return nil, fmt.Errorf("unmarshal dependencies: %w", err)
-	}
-
-	valuesYAML := make(map[string]json.RawMessage)
-	if err := json.Unmarshal(f.DefaultValues, &valuesYAML); err != nil {
-		return nil, fmt.Errorf("unmarshal default values: %w", err)
-	}
-
-	fyaml, defaultValues, err := makeFeatureYAML(f.Kinds, f.Dependencies, f.Values, f.DefaultValues, f.Rename, f.Timeout)
+	feature, err := featureFromSQL(f.FeatureDatum)
 	if err != nil {
-		return nil, fmt.Errorf("make feature yaml: %w", err)
+		return nil, fmt.Errorf("make feature: %w", err)
+	}
+	feature.GraphVars = struct {
+		EnvironmentID uuid.UUID
+		RolloutID     uuid.UUID
+	}{
+		RolloutID: f.ID,
 	}
 
-	return &model.Feature{
-		Name:        f.Name,
-		Description: f.Description,
-		Version:     f.Version,
-		Chart:       f.Chart,
-		Source:      f.Source,
-		FeatureYAML: fyaml,
-		ValuesYAML:  defaultValues,
-		SpecVersion: "v2",
-		GraphVars: struct {
-			EnvironmentID uuid.UUID
-			RolloutID     uuid.UUID
-		}{
-			RolloutID: f.ID,
-		},
-	}, nil
+	return feature, nil
 }
 
 func (r *repo) RolloutsForFeature(ctx context.Context, name string) ([]*model.Rollout, error) {

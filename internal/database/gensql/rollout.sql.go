@@ -60,17 +60,7 @@ func (q *Queries) RolloutByID(ctx context.Context, id uuid.UUID) (Rollout, error
 const rolloutByName = `-- name: RolloutByName :one
 SELECT
 	rollouts.id,
-	fd.name,
-	fd.version,
-	fd.chart,
-	fd.description,
-	fd.source,
-	fd.kinds::TEXT[] AS kinds,
-	fd.dependencies,
-	fd.values,
-	fd.default_values,
-	fd.timeout,
-	fd.rename,
+	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.rename,
 	rollouts.created
 FROM
 	rollouts
@@ -82,19 +72,9 @@ WHERE
 `
 
 type RolloutByNameRow struct {
-	ID            uuid.UUID
-	Name          string
-	Version       string
-	Chart         string
-	Description   string
-	Source        string
-	Kinds         []string
-	Dependencies  []byte
-	Values        []byte
-	DefaultValues []byte
-	Timeout       int64
-	Rename        []byte
-	Created       pgtype.Timestamptz
+	ID           uuid.UUID
+	FeatureDatum FeatureDatum
+	Created      pgtype.Timestamptz
 }
 
 func (q *Queries) RolloutByName(ctx context.Context, name string) (RolloutByNameRow, error) {
@@ -102,17 +82,18 @@ func (q *Queries) RolloutByName(ctx context.Context, name string) (RolloutByName
 	var i RolloutByNameRow
 	err := row.Scan(
 		&i.ID,
-		&i.Name,
-		&i.Version,
-		&i.Chart,
-		&i.Description,
-		&i.Source,
-		&i.Kinds,
-		&i.Dependencies,
-		&i.Values,
-		&i.DefaultValues,
-		&i.Timeout,
-		&i.Rename,
+		&i.FeatureDatum.Name,
+		&i.FeatureDatum.Version,
+		&i.FeatureDatum.Chart,
+		&i.FeatureDatum.Description,
+		&i.FeatureDatum.Source,
+		&i.FeatureDatum.Kinds,
+		&i.FeatureDatum.Dependencies,
+		&i.FeatureDatum.Values,
+		&i.FeatureDatum.DefaultValues,
+		&i.FeatureDatum.Timeout,
+		&i.FeatureDatum.TplDetails,
+		&i.FeatureDatum.Rename,
 		&i.Created,
 	)
 	return i, err
@@ -522,16 +503,7 @@ all_rollouts AS (
 )
 SELECT
 	rollouts.id,
-	fd.name,
-	fd.version,
-	fd.chart,
-	fd.description,
-	fd.source,
-	fd.kinds::TEXT[] AS kinds,
-	fd.dependencies,
-	fd.values,
-	fd.default_values,
-	fd.timeout,
+	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.rename,
 	rollouts.created,
 	EXISTS (
 		SELECT
@@ -551,16 +523,7 @@ SELECT
 
 type RolloutsForKindRow struct {
 	ID             uuid.UUID
-	Name           string
-	Version        string
-	Chart          string
-	Description    string
-	Source         string
-	Kinds          []string
-	Dependencies   []byte
-	Values         []byte
-	DefaultValues  []byte
-	Timeout        int64
+	FeatureDatum   FeatureDatum
 	Created        pgtype.Timestamptz
 	Hasdeployments bool
 }
@@ -576,16 +539,18 @@ func (q *Queries) RolloutsForKind(ctx context.Context, environmentKind Environme
 		var i RolloutsForKindRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.Name,
-			&i.Version,
-			&i.Chart,
-			&i.Description,
-			&i.Source,
-			&i.Kinds,
-			&i.Dependencies,
-			&i.Values,
-			&i.DefaultValues,
-			&i.Timeout,
+			&i.FeatureDatum.Name,
+			&i.FeatureDatum.Version,
+			&i.FeatureDatum.Chart,
+			&i.FeatureDatum.Description,
+			&i.FeatureDatum.Source,
+			&i.FeatureDatum.Kinds,
+			&i.FeatureDatum.Dependencies,
+			&i.FeatureDatum.Values,
+			&i.FeatureDatum.DefaultValues,
+			&i.FeatureDatum.Timeout,
+			&i.FeatureDatum.TplDetails,
+			&i.FeatureDatum.Rename,
 			&i.Created,
 			&i.Hasdeployments,
 		); err != nil {

@@ -59,16 +59,7 @@ all_rollouts AS (
 )
 SELECT
 	rollouts.id,
-	fd.name,
-	fd.version,
-	fd.chart,
-	fd.description,
-	fd.source,
-	fd.kinds::TEXT[] AS kinds,
-	fd.dependencies,
-	fd.values,
-	fd.default_values,
-	fd.timeout,
+	sqlc.embed(fd),
 	rollouts.created,
 	EXISTS (
 		SELECT
@@ -88,17 +79,7 @@ SELECT
 -- name: RolloutByName :one
 SELECT
 	rollouts.id,
-	fd.name,
-	fd.version,
-	fd.chart,
-	fd.description,
-	fd.source,
-	fd.kinds::TEXT[] AS kinds,
-	fd.dependencies,
-	fd.values,
-	fd.default_values,
-	fd.timeout,
-	fd.rename,
+	sqlc.embed(fd),
 	rollouts.created
 FROM
 	rollouts

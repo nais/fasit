@@ -45,21 +45,7 @@ func (r *repo) FeatureByName(ctx context.Context, name string) (*model.Feature, 
 		return nil, fmt.Errorf("get feature by name from db: %w", err)
 	}
 
-	fyaml, defaultValues, err := makeFeatureYAML(f.Kinds, f.Dependencies, f.Values, f.DefaultValues, nil, f.Timeout)
-	if err != nil {
-		return nil, fmt.Errorf("make feature yaml: %w", err)
-	}
-
-	return &model.Feature{
-		Name:        f.Name,
-		Description: f.Description,
-		Version:     f.Version,
-		Chart:       f.Chart,
-		Source:      f.Source,
-		FeatureYAML: fyaml,
-		ValuesYAML:  defaultValues,
-		SpecVersion: "v2",
-	}, nil
+	return featureFromSQL(f.FeatureDatum)
 }
 
 func (r *repo) Features(ctx context.Context) ([]*model.Feature, error) {
@@ -70,21 +56,11 @@ func (r *repo) Features(ctx context.Context) ([]*model.Feature, error) {
 
 	var ret []*model.Feature
 	for _, f := range features {
-		fyaml, defaultValues, err := makeFeatureYAML(f.Kinds, f.Dependencies, f.Values, f.DefaultValues, nil, f.Timeout)
+		feature, err := featureFromSQL(f.FeatureDatum)
 		if err != nil {
-			return nil, fmt.Errorf("make feature yaml: %w", err)
+			return nil, fmt.Errorf("make feature: %w", err)
 		}
 
-		feature := &model.Feature{
-			Name:        f.Name,
-			Description: f.Description,
-			Version:     f.Version,
-			Chart:       f.Chart,
-			Source:      f.Source,
-			FeatureYAML: fyaml,
-			ValuesYAML:  defaultValues,
-			SpecVersion: "v2",
-		}
 		ret = append(ret, feature)
 	}
 
@@ -113,7 +89,7 @@ func (r *repo) FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, 
 
 	for _, ro := range rollouts {
 		for i, f := range features {
-			if f.Name == ro.Name {
+			if f.FeatureDatum.Name == ro.FeatureDatum.Name {
 				// delete feature from slice
 				features = append(features[:i], features[i+1:]...)
 				break
@@ -123,32 +99,16 @@ func (r *repo) FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, 
 
 	for _, ro := range rollouts {
 		features = append(features, gensql.FeaturesForKindRow{
-			Name:           ro.Name,
-			Description:    ro.Description,
-			Version:        ro.Version,
-			Chart:          ro.Chart,
-			Source:         ro.Source,
-			Dependencies:   ro.Dependencies,
-			DefaultValues:  ro.DefaultValues,
-			Kinds:          ro.Kinds,
-			Values:         ro.Values,
-			Created:        ro.Created,
-			Timeout:        ro.Timeout,
+			FeatureDatum:   ro.FeatureDatum,
 			Hasdeployments: ro.Hasdeployments,
 		})
 	}
 
-	// sort features by name
 	sort.Slice(features, func(i, j int) bool {
-		return features[i].Name < features[j].Name
+		return features[i].FeatureDatum.Name < features[j].FeatureDatum.Name
 	})
 
-	ret, err := featuresFromSQL(features)
-	if err != nil {
-		return nil, err
-	}
-
-	return ret, nil
+	return featuresFromSQL(features)
 }
 
 func (r *repo) FeatureByNameForEnv(ctx context.Context, name string, envID uuid.UUID) (*model.Feature, error) {
@@ -201,55 +161,43 @@ func (r *repo) FeatureByNameForEnv(ctx context.Context, name string, envID uuid.
 // 	return feature.Dependencies.FindMissing(enabledFeatures), nil
 // }
 
-func featuresFromSQL(features []gensql.FeaturesForKindRow) ([]*model.Feature, error) {
-	var ret []*model.Feature
-	for _, f := range features {
-		fyaml, defaultValues, err := makeFeatureYAML(f.Kinds, f.Dependencies, f.Values, f.DefaultValues, nil, f.Timeout)
+func featuresFromSQL(rows []gensql.FeaturesForKindRow) ([]*model.Feature, error) {
+	ret := make([]*model.Feature, len(rows))
+	for i, f := range rows {
+		feature, err := featureFromSQL(f.FeatureDatum)
 		if err != nil {
-			return nil, fmt.Errorf("make feature yaml: %w", err)
+			return nil, fmt.Errorf("make feature: %w", err)
 		}
-
-		feature := &model.Feature{
-			Name:           f.Name,
-			Description:    f.Description,
-			Version:        f.Version,
-			Chart:          f.Chart,
-			Source:         f.Source,
-			FeatureYAML:    fyaml,
-			ValuesYAML:     defaultValues,
-			SpecVersion:    "v2",
-			HasDeployments: f.Hasdeployments,
-		}
-		ret = append(ret, feature)
+		feature.HasDeployments = f.Hasdeployments
+		ret[i] = feature
 	}
 	return ret, nil
 }
 
-// TODO: use EnvironmentKind type for kinds parameter, and sqlc.embed in queries
-func makeFeatureYAML(kinds []string, deps, values, defaultValues, rename []byte, timeout int64) (model.FeatureYAML, map[string]json.RawMessage, error) {
+func makeFeatureYAML(fd gensql.FeatureDatum) (model.FeatureYAML, map[string]json.RawMessage, error) {
 	ret := model.FeatureYAML{
-		Timeout: time.Duration(timeout) * time.Millisecond,
+		Timeout: time.Duration(fd.Timeout) * time.Millisecond,
 	}
-	if err := json.Unmarshal(deps, &ret.Dependencies); err != nil {
+	if err := json.Unmarshal(fd.Dependencies, &ret.Dependencies); err != nil {
 		return ret, nil, fmt.Errorf("unmarshal dependencies: %w", err)
 	}
 
 	var retDefaultVals map[string]json.RawMessage
-	if err := json.Unmarshal(defaultValues, &retDefaultVals); err != nil {
+	if err := json.Unmarshal(fd.DefaultValues, &retDefaultVals); err != nil {
 		return ret, nil, fmt.Errorf("unmarshal default values: %w", err)
 	}
 
-	ret.EnvironmentKinds = make([]model.EnvironmentKind, len(kinds))
-	for i, k := range kinds {
+	ret.EnvironmentKinds = make([]model.EnvironmentKind, len(fd.Kinds))
+	for i, k := range fd.Kinds {
 		ret.EnvironmentKinds[i] = model.EnvironmentKind(k)
 	}
 
-	if err := json.Unmarshal(values, &ret.Values); err != nil {
+	if err := json.Unmarshal(fd.Values, &ret.Values); err != nil {
 		return ret, nil, fmt.Errorf("unmarshal values: %w", err)
 	}
 
-	if len(rename) > 0 {
-		if err := json.Unmarshal(rename, &ret.Rename); err != nil {
+	if len(fd.Rename) > 0 {
+		if err := json.Unmarshal(fd.Rename, &ret.Rename); err != nil {
 			return ret, nil, fmt.Errorf("unmarshal rename: %w", err)
 		}
 	}

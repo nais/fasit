@@ -11,16 +11,7 @@ import (
 
 const featureByName = `-- name: FeatureByName :one
 SELECT
-	fd.name,
-	fd.version,
-	fd.chart,
-	fd.description,
-	fd.source,
-	fd.kinds::TEXT[] AS kinds,
-	fd.dependencies,
-	fd.values,
-	fd.default_values,
-	fd.timeout,
+	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.rename,
 	features.created,
 	features.last_modified
 FROM
@@ -32,34 +23,27 @@ WHERE
 `
 
 type FeatureByNameRow struct {
-	Name          string
-	Version       string
-	Chart         string
-	Description   string
-	Source        string
-	Kinds         []string
-	Dependencies  []byte
-	Values        []byte
-	DefaultValues []byte
-	Timeout       int64
-	Created       pgtype.Timestamptz
-	LastModified  pgtype.Timestamptz
+	FeatureDatum FeatureDatum
+	Created      pgtype.Timestamptz
+	LastModified pgtype.Timestamptz
 }
 
 func (q *Queries) FeatureByName(ctx context.Context, name string) (FeatureByNameRow, error) {
 	row := q.db.QueryRow(ctx, featureByName, name)
 	var i FeatureByNameRow
 	err := row.Scan(
-		&i.Name,
-		&i.Version,
-		&i.Chart,
-		&i.Description,
-		&i.Source,
-		&i.Kinds,
-		&i.Dependencies,
-		&i.Values,
-		&i.DefaultValues,
-		&i.Timeout,
+		&i.FeatureDatum.Name,
+		&i.FeatureDatum.Version,
+		&i.FeatureDatum.Chart,
+		&i.FeatureDatum.Description,
+		&i.FeatureDatum.Source,
+		&i.FeatureDatum.Kinds,
+		&i.FeatureDatum.Dependencies,
+		&i.FeatureDatum.Values,
+		&i.FeatureDatum.DefaultValues,
+		&i.FeatureDatum.Timeout,
+		&i.FeatureDatum.TplDetails,
+		&i.FeatureDatum.Rename,
 		&i.Created,
 		&i.LastModified,
 	)
@@ -194,16 +178,7 @@ filtered AS (
 		id
 )
 SELECT
-	fd.name,
-	fd.version,
-	fd.chart,
-	fd.description,
-	fd.source,
-	fd.kinds::TEXT[] AS kinds,
-	fd.dependencies,
-	fd.values,
-	fd.default_values,
-	fd.timeout,
+	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.rename,
 	filtered.created,
 	filtered.last_modified
 FROM
@@ -215,18 +190,9 @@ FROM
 `
 
 type FeaturesRow struct {
-	Name          string
-	Version       string
-	Chart         string
-	Description   string
-	Source        string
-	Kinds         []string
-	Dependencies  []byte
-	Values        []byte
-	DefaultValues []byte
-	Timeout       int64
-	Created       pgtype.Timestamptz
-	LastModified  pgtype.Timestamptz
+	FeatureDatum FeatureDatum
+	Created      pgtype.Timestamptz
+	LastModified pgtype.Timestamptz
 }
 
 func (q *Queries) Features(ctx context.Context) ([]FeaturesRow, error) {
@@ -239,16 +205,18 @@ func (q *Queries) Features(ctx context.Context) ([]FeaturesRow, error) {
 	for rows.Next() {
 		var i FeaturesRow
 		if err := rows.Scan(
-			&i.Name,
-			&i.Version,
-			&i.Chart,
-			&i.Description,
-			&i.Source,
-			&i.Kinds,
-			&i.Dependencies,
-			&i.Values,
-			&i.DefaultValues,
-			&i.Timeout,
+			&i.FeatureDatum.Name,
+			&i.FeatureDatum.Version,
+			&i.FeatureDatum.Chart,
+			&i.FeatureDatum.Description,
+			&i.FeatureDatum.Source,
+			&i.FeatureDatum.Kinds,
+			&i.FeatureDatum.Dependencies,
+			&i.FeatureDatum.Values,
+			&i.FeatureDatum.DefaultValues,
+			&i.FeatureDatum.Timeout,
+			&i.FeatureDatum.TplDetails,
+			&i.FeatureDatum.Rename,
 			&i.Created,
 			&i.LastModified,
 		); err != nil {
@@ -264,16 +232,7 @@ func (q *Queries) Features(ctx context.Context) ([]FeaturesRow, error) {
 
 const featuresForKind = `-- name: FeaturesForKind :many
 SELECT
-	fd.name,
-	fd.version,
-	fd.chart,
-	fd.description,
-	fd.source,
-	fd.kinds::TEXT[] AS kinds,
-	fd.dependencies,
-	fd.values,
-	fd.default_values,
-	fd.timeout,
+	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.rename,
 	features.created,
 	features.last_modified,
 	EXISTS (
@@ -294,16 +253,7 @@ ORDER BY
 `
 
 type FeaturesForKindRow struct {
-	Name           string
-	Version        string
-	Chart          string
-	Description    string
-	Source         string
-	Kinds          []string
-	Dependencies   []byte
-	Values         []byte
-	DefaultValues  []byte
-	Timeout        int64
+	FeatureDatum   FeatureDatum
 	Created        pgtype.Timestamptz
 	LastModified   pgtype.Timestamptz
 	Hasdeployments bool
@@ -319,16 +269,18 @@ func (q *Queries) FeaturesForKind(ctx context.Context, environmentKind string) (
 	for rows.Next() {
 		var i FeaturesForKindRow
 		if err := rows.Scan(
-			&i.Name,
-			&i.Version,
-			&i.Chart,
-			&i.Description,
-			&i.Source,
-			&i.Kinds,
-			&i.Dependencies,
-			&i.Values,
-			&i.DefaultValues,
-			&i.Timeout,
+			&i.FeatureDatum.Name,
+			&i.FeatureDatum.Version,
+			&i.FeatureDatum.Chart,
+			&i.FeatureDatum.Description,
+			&i.FeatureDatum.Source,
+			&i.FeatureDatum.Kinds,
+			&i.FeatureDatum.Dependencies,
+			&i.FeatureDatum.Values,
+			&i.FeatureDatum.DefaultValues,
+			&i.FeatureDatum.Timeout,
+			&i.FeatureDatum.TplDetails,
+			&i.FeatureDatum.Rename,
 			&i.Created,
 			&i.LastModified,
 			&i.Hasdeployments,
