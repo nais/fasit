@@ -726,7 +726,7 @@ func (c *ClusterUpgrader) checkAndCompleteIfAtTargetVersion(ctx context.Context,
 		return false, "", fmt.Errorf("failed to parse current version %q: %w", currentVersionStr, err)
 	}
 
-	if !targetVer.Equal(currentVer) {
+	if currentVer.LessThan(targetVer) {
 		return false, currentVersionStr, nil
 	}
 

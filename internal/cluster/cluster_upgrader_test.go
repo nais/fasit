@@ -779,7 +779,7 @@ func TestRun_CreatedWithDelayButRunningOperations(t *testing.T) {
 	suite.repoMock.AssertExpectations(t)
 }
 
-func TestRun_CreatedWithRunningOperationsButVersionMismatch(t *testing.T) {
+func TestRun_CreatedWithNonOwnedOperationsAndClusterAtTarget(t *testing.T) {
 	suite := newTestSuite(t)
 	upgrade := newUpgrade(suite)
 
@@ -844,7 +844,7 @@ func TestRun_CreatedWithRunningOperationsButVersionMismatch(t *testing.T) {
 	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{}, nil).Once()
 
 	// Mock GetRunningOperations - return a running control plane upgrade operation
-	// This simulates a GKE automatic upgrade that Fasit didn't initiate, but which happens to have upgraded the cluster to our target version
+	// This simulates when non-owned GKE operations exist and the cluster is already at the target version (possibly upgraded by a previous GKE auto-upgrade)
 	runningOp := &containerpb.Operation{
 		Name:          "operation-123-running",
 		OperationType: containerpb.Operation_UPGRADE_MASTER,
