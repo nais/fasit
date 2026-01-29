@@ -860,7 +860,8 @@ func TestRun_CreatedWithRunningOperationsButVersionMismatch(t *testing.T) {
 	}
 	suite.clusterMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{runningOp}, nil).Once()
 
-	// getAndUpdateRunningOperations will track the running operation (even though we won't associate it)
+	// getAndUpdateRunningOperations will track the running operation in the database and associate it with this upgrade,
+	// but the upgrade state will not transition to CONTROL_PLANE_UPGRADE because the cluster is already at the target version.
 	suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantID, suite.env.id, createdUpgrade.ID, mock.Anything).Return(nil, nil).Once()
 
 	// Mock GetCurrentControlPlaneVersion - return current version >= target version
@@ -893,8 +894,8 @@ func TestRun_CreatedWithRunningOperationsButVersionMismatch(t *testing.T) {
 		t.Errorf("got %v, want nil", err)
 	}
 
-	// Verify that UpdateClusterUpgradeStatus was NOT called
-	// The upgrade should stay in CREATED state because the running operations are not for our upgrade
+	// Verify that UpdateClusterUpgradeStatus is not called with CONTROLPLANEUPGRADE
+	// When the cluster is already at target version, the upgrade is marked as DONE regardless of running operations
 	suite.repoMock.AssertNotCalled(t, "UpdateClusterUpgradeStatus", mock.Anything, mock.Anything, gensql.ClusterUpgradesStatusCONTROLPLANEUPGRADE)
 	suite.repoMock.AssertExpectations(t)
 }
