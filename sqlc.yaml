@@ -42,9 +42,10 @@ sql:
         package: "deploymentsql"
         out: "internal/deployment/deploymentsql"
         emit_pointers_for_null_types: true
+        omit_unused_structs: true
+
         #emit_result_struct_pointers: true
         #emit_prepared_queries: true
         #emit_all_enum_values: true
         #emit_enum_valid_method: true
         #json_tags_id_uppercase: true
-        #omit_unused_structs: true
