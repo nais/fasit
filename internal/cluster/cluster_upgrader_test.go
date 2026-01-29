@@ -734,7 +734,7 @@ func TestRun_CreatedWithDelayButRunningOperations(t *testing.T) {
 	// This validates that the running operation is for our upgrade (cluster not yet at target)
 	suite.clusterMock.EXPECT().GetCurrentControlPlaneVersion(mock.Anything, mock.Anything, mock.Anything).Return("1.2.3", nil).Once()
 
-	// Second call to ClusterOperationsGetByUpgradeID in CREATED state logic
+	// ClusterOperationsGetByUpgradeID called by checkOperationOwnership helper
 	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{existingOp}, nil).Once()
 
 	// getAndUpdateRunningOperations will track the running operation
