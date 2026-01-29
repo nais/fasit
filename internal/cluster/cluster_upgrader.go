@@ -701,7 +701,7 @@ func (c *ClusterUpgrader) trackOwnedOperationsAndCheckCompletion(
 	return runningOps, currentVersionStr, completed, nil
 }
 
-// checkAndCompleteIfAtTargetVersion checks if cluster is already at target version and marks upgrade as DONE if so.
+// checkAndCompleteIfAtTargetVersion checks if cluster is at or beyond target version and marks upgrade as DONE if so.
 // Returns (completed, currentVersion, error). If completed is true, upgrade was marked DONE.
 func (c *ClusterUpgrader) checkAndCompleteIfAtTargetVersion(ctx context.Context, projectID string, env *model.Environment, tenant *model.Tenant, clusterUpgrade *model.ClusterUpgradeStatus, runningOpsCount int, decrementWaiting bool) (bool, string, error) {
 	log := c.log.WithFields(logrus.Fields{
@@ -734,7 +734,7 @@ func (c *ClusterUpgrader) checkAndCompleteIfAtTargetVersion(ctx context.Context,
 		"upgrade_id":     clusterUpgrade.ID,
 		"target_version": clusterUpgrade.Version,
 		"running_ops":    runningOpsCount,
-	}).Info("cluster already at target version, marking upgrade as DONE")
+	}).Info("cluster at or beyond target version, marking upgrade as DONE")
 
 	upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, clusterUpgrade.ID, gensql.ClusterUpgradesStatusDONE)
 	if err != nil {
