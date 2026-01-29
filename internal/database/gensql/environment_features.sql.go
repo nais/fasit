@@ -107,39 +107,3 @@ func (q *Queries) GetEnvironmentFeatures(ctx context.Context, environmentID uuid
 	}
 	return items, nil
 }
-
-const insertEnvironmentFeature = `-- name: InsertEnvironmentFeature :exec
-INSERT INTO environment_features(
-	environment_id,
-	feature_name,
-	feature_version,
-	deployment_id)
-VALUES (
-	$1,
-	$2,
-	$3,
-	$4)
-ON CONFLICT (
-	environment_id,
-	feature_name)
-	DO UPDATE SET
-		feature_version = EXCLUDED.feature_version,
-		deployment_id = EXCLUDED.deployment_id
-`
-
-type InsertEnvironmentFeatureParams struct {
-	EnvironmentID  uuid.UUID
-	FeatureName    string
-	FeatureVersion string
-	DeploymentID   uuid.UUID
-}
-
-func (q *Queries) InsertEnvironmentFeature(ctx context.Context, arg InsertEnvironmentFeatureParams) error {
-	_, err := q.db.Exec(ctx, insertEnvironmentFeature,
-		arg.EnvironmentID,
-		arg.FeatureName,
-		arg.FeatureVersion,
-		arg.DeploymentID,
-	)
-	return err
-}

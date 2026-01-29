@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/database"
+	"github.com/nais/fasit/internal/deployment/deploymentsql"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/sirupsen/logrus"
@@ -15,8 +16,8 @@ import (
 
 type Manager struct {
 	deployer   *deployer
-	repo       database.Repo
 	reconciler *reconciler
+	querier    deploymentsql.Querier
 }
 
 // TODO: check if we can use same request as in graphql
@@ -31,19 +32,22 @@ type Request struct {
 }
 
 func NewManager(repo database.Repo, publisher NewPublisher, m metric.Meter, log logrus.FieldLogger) (*Manager, error) {
-	d, err := newDeployer(repo, publisher, m, log.WithField("subsystem", "deployer"))
+	querier := deploymentsql.New(repo.GetConnPool())
+
+	d, err := newDeployer(repo, querier, publisher, m, log.WithField("subsystem", "deployer"))
 	if err != nil {
 		return nil, err
 	}
 
-	r, err := newReconciler(repo, d, m, log.WithField("subsystem", "reconciler"))
+	r, err := newReconciler(repo, querier, d, m, log.WithField("subsystem", "reconciler"))
 	if err != nil {
 		return nil, err
 	}
+
 	return &Manager{
 		deployer:   d,
 		reconciler: r,
-		repo:       repo,
+		querier:    querier,
 	}, nil
 }
 
@@ -63,7 +67,7 @@ func (dm *Manager) TriggerReconcile(event ReconcileTriggerEvent) chan TriggerRes
 }
 
 func (dm *Manager) GetDeployment(ctx context.Context, id uuid.UUID) (*model.Deployment, error) {
-	return dm.repo.V3DeploymentGet(ctx, id)
+	return getDeployment(ctx, dm.querier, id)
 }
 
 func (dm *Manager) CreateDeployment(ctx context.Context, req Request) (uuid.UUID, error) {

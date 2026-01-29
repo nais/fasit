@@ -1,23 +1,27 @@
 version: "2"
+rules:
+  - name: "always-order-by"
+    rule: |
+      query.cmd == "many" && !query.sql.contains("ORDER BY")
+    message: |
+      SELECT statements must have an ORDER BY clause
 sql:
-  - engine: postgresql
+  - &default_domain
+    name: "Fasit SQL"
+    engine: "postgresql"
     schema: "internal/database/migrations"
     queries: "internal/database/queries"
+    rules:
+      - "always-order-by"
     gen:
-      go:
-        package: gensql
+      go: &default_go
+        package: "gensql"
         out: "internal/database/gensql"
-        sql_package: pgx/v5
+        sql_package: "pgx/v5"
         emit_interface: true
-        #emit_result_struct_pointers: true
-        #emit_prepared_queries: true
-        #emit_all_enum_values: true
-        #emit_enum_valid_method: true
-        #emit_pointers_for_null_types: true
-        emit_empty_slices: true
-        #json_tags_id_uppercase: true
-        #omit_unused_structs: true
         omit_sqlc_version: true
+        emit_empty_slices: true
+
         overrides:
           - db_type: "uuid"
             go_type: "github.com/google/uuid.UUID"
@@ -28,11 +32,19 @@ sql:
             go_type: "github.com/nais/fasit/internal/environment.Labels"
           - column: "deployments.target"
             go_type: "github.com/nais/fasit/internal/environment.Labels"
-    rules:
-      - always-order-by
-rules:
-  - name: always-order-by
-    rule: |
-      query.cmd == "many" && !query.sql.contains("ORDER BY")
-    message: |
-      SELECT statements must have an ORDER BY clause
+
+  - <<: *default_domain
+    name: "Deployment SQL"
+    queries: "internal/deployment/queries"
+    gen:
+      go:
+        <<: *default_go
+        package: "deploymentsql"
+        out: "internal/deployment/deploymentsql"
+        emit_pointers_for_null_types: true
+        #emit_result_struct_pointers: true
+        #emit_prepared_queries: true
+        #emit_all_enum_values: true
+        #emit_enum_valid_method: true
+        #json_tags_id_uppercase: true
+        #omit_unused_structs: true
