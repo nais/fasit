@@ -230,7 +230,6 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 				if completed {
 					return nil
 				}
-				return nil
 			}
 
 			// We own these operations - track them and check if already complete
@@ -375,7 +374,6 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 				if completed {
 					return nil
 				}
-				return nil
 			}
 
 			// We own these operations - track them and check if already complete
