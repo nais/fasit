@@ -202,7 +202,9 @@ func (d *deployer) shouldDeployToEnvironment(ctx context.Context, deployment mod
 		}
 
 		if existingDeploy.Hash == hash {
-			d.setDeploymentStatus(ctx, deployment.ID, environment.ID, existingDeploy.Status, "no changes in feature")
+			if existingDeploy.Status != model.RolloutStatusFailed {
+				d.setDeploymentStatus(ctx, deployment.ID, environment.ID, existingDeploy.Status, "no changes in feature")
+			}
 			return false, nil
 		}
 	}
