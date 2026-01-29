@@ -15,10 +15,13 @@ import (
 )
 
 type Manager struct {
-	deployer   *deployer
-	reconciler *reconciler
-	querier    deploymentsql.Querier
+	deployer        *deployer
+	reconciler      *reconciler
+	querier         deploymentsql.Querier
+	chartDownloader ChartDownloader
 }
+
+type ChartDownloader func(chartURL, version string) (*model.Feature, error)
 
 // TODO: check if we can use same request as in graphql
 type Request struct {
@@ -31,9 +34,16 @@ type Request struct {
 	SkipCI      bool               `json:"skipCI"`
 }
 
-func NewManager(repo database.Repo, publisher NewPublisher, m metric.Meter, log logrus.FieldLogger) (*Manager, error) {
-	querier := deploymentsql.New(repo.GetConnPool())
+type Option func(*Manager)
 
+func WithChartDownloader(downloader ChartDownloader) Option {
+	return func(m *Manager) {
+		m.chartDownloader = downloader
+	}
+}
+
+func NewManager(repo database.Repo, publisher NewPublisher, m metric.Meter, log logrus.FieldLogger, opts ...Option) (*Manager, error) {
+	querier := deploymentsql.New(repo.GetConnPool())
 	d, err := newDeployer(repo, querier, publisher, m, log.WithField("subsystem", "deployer"))
 	if err != nil {
 		return nil, err
@@ -44,11 +54,20 @@ func NewManager(repo database.Repo, publisher NewPublisher, m metric.Meter, log 
 		return nil, err
 	}
 
-	return &Manager{
+	mgr := &Manager{
 		deployer:   d,
 		reconciler: r,
 		querier:    querier,
-	}, nil
+	}
+	for _, opt := range opts {
+		opt(mgr)
+	}
+
+	if mgr.chartDownloader == nil {
+		mgr.chartDownloader = model.FromChart
+	}
+
+	return mgr, nil
 }
 
 func (dm *Manager) Run(ctx context.Context, interval time.Duration) {
@@ -71,7 +90,7 @@ func (dm *Manager) GetDeployment(ctx context.Context, id uuid.UUID) (*model.Depl
 }
 
 func (dm *Manager) CreateDeployment(ctx context.Context, req Request) (uuid.UUID, error) {
-	feat, err := model.FromChart(req.Chart, req.Version)
+	feat, err := dm.chartDownloader(req.Chart, req.Version)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("unable to convert oci chart: %w", err)
 	}

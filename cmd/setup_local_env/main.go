@@ -12,11 +12,12 @@ import (
 	"cloud.google.com/go/pubsub/v2"
 	"cloud.google.com/go/pubsub/v2/apiv1/pubsubpb"
 	"github.com/nais/fasit/internal/database"
-	"github.com/nais/fasit/internal/database/gensql"
+	"github.com/nais/fasit/internal/deployment"
+	"github.com/nais/fasit/internal/deployment/deploymenttest"
 	"github.com/nais/fasit/internal/environment"
-	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/provider/protogen"
 	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/metric/noop"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
@@ -116,40 +117,7 @@ var (
 
 		*/
 	}
-
-	deployments = []Deployment{
-		{
-			DeploymentCreateParams: &gensql.DeploymentCreateParams{FeatureName: "aivenator", Version: "1.0.0", Target: environment.Labels{"aiven": "enabled"}},
-		},
-		{
-			DeploymentCreateParams: &gensql.DeploymentCreateParams{FeatureName: "aivenator", Version: "2.0.0", Target: environment.Labels{"aiven": "enabled"}},
-		},
-		{
-			DeploymentCreateParams: &gensql.DeploymentCreateParams{FeatureName: "aivenator", Version: "1.0.0", Target: environment.Labels{"aiven": "enabled", "tenant": "nav"}},
-		},
-		{
-			DeploymentCreateParams: &gensql.DeploymentCreateParams{FeatureName: "naiserator", Version: "1.0.0", Target: environment.Labels{"aiven": "enabled"}},
-		},
-		{
-			DeploymentCreateParams: &gensql.DeploymentCreateParams{FeatureName: "aivenator", Version: "3.0.0", Target: environment.Labels{"aiven": "enabled"}},
-			Dependencies:           []string{"naiserator"},
-		},
-		{
-			DeploymentCreateParams: &gensql.DeploymentCreateParams{FeatureName: "unleash", Version: "1.0.0", Target: environment.Labels{"featuretoggle": "enabled"}},
-		},
-		{
-			DeploymentCreateParams: &gensql.DeploymentCreateParams{FeatureName: "unleash", Version: "2.0.0", Target: environment.Labels{"featuretoggle": "enabled"}},
-		},
-		{
-			DeploymentCreateParams: &gensql.DeploymentCreateParams{FeatureName: "v13s", Version: "1.0.0", Target: environment.Labels{"kind": "management"}},
-		},
-	}
 )
-
-type Deployment struct {
-	*gensql.DeploymentCreateParams
-	Dependencies []string
-}
 
 func main() {
 	if err := os.Setenv("PUBSUB_EMULATOR_HOST", "localhost:8086"); err != nil {
@@ -171,33 +139,32 @@ func main() {
 	grpcClient := protogen.NewProviderClient(conn)
 
 	db := database.New(dbConn, logrus.New().WithField("component", "setup-local"))
-	for _, d := range deployments {
-		var deps model.Dependencies
-		if len(d.Dependencies) > 0 {
-			deps = model.Dependencies{
-				&model.Dependency{
-					AllOf: d.Dependencies,
-				},
-			}
-		}
 
-		_ = db.FeatureDataCreate(ctx, model.Feature{
-			Name:    d.FeatureName,
-			Version: d.Version,
-			Chart:   "oci://aiven",
-			FeatureYAML: model.FeatureYAML{
-				Dependencies:     deps,
-				EnvironmentKinds: []model.EnvironmentKind{"tenant", "management"},
-			},
-		}, nil)
-		_, err = db.V3DeploymentCreate(ctx, d.FeatureName, d.Version, "Deployment from mise run setup", nil, d.Target, false)
-		if err != nil {
-			panic(err)
-		}
-		if err := db.FeatureVersionUpdate(ctx, d.FeatureName, d.Version); err != nil {
-			panic(err)
-		}
+	seeder := deploymenttest.NewSeeder()
+	dMgr, err := deployment.NewManager(
+		db,
+		nil,
+		noop.NewMeterProvider().Meter(""),
+		logrus.New().WithField("component", "deployment-manager"),
+		deployment.WithChartDownloader(seeder.ChartDownloader()),
+	)
+	if err != nil {
+		panic(err)
 	}
+
+	seeder.AddDeployment("aivenator", "1.0.0", environment.Labels{"aiven": "enabled"})
+	seeder.AddDeployment("aivenator", "2.0.0", environment.Labels{"aiven": "enabled"})
+	seeder.AddDeployment("aivenator", "1.0.0", environment.Labels{"aiven": "enabled", "tenant": "nav"})
+	seeder.AddDeployment("naiserator", "1.0.0", environment.Labels{"aiven": "enabled"})
+	seeder.AddDeployment("aivenator", "3.0.0", environment.Labels{"aiven": "enabled"}, "naiserator")
+	seeder.AddDeployment("unleash", "1.0.0", environment.Labels{"featuretoggle": "enabled"})
+	seeder.AddDeployment("unleash", "2.0.0", environment.Labels{"featuretoggle": "enabled"})
+	seeder.AddDeployment("v13s", "1.0.0", environment.Labels{"kind": "management"})
+
+	if err := seeder.Seed(ctx, dMgr); err != nil {
+		log.Fatal(err)
+	}
+
 	for tenantName, environments := range envs {
 		_, err := grpcClient.CreateTenant(ctx, &protogen.CreateTenantRequest{Name: tenantName})
 		if err != nil {
