@@ -207,6 +207,15 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 	// For WAITING upgrades, check if GKE has started operations before checking delay
 	// This handles the case where GKE's auto-upgrade starts before Fasit's delay expires
 	if clusterUpgrade.UpgradeStatus == model.UpgradeStatusWaiting {
+		// First check ownership BEFORE fetching running operations from GKE
+		// This prevents the race condition where getAndUpdateRunningOperations creates operations
+		// in DB, then ownership check always passes because operations now exist
+		existingOps, err := c.repo.ClusterOperationsGetByUpgradeID(ctx, clusterUpgrade.ID)
+		if err != nil {
+			log.WithError(err).Error("failed to get existing operations for ownership check")
+			return err
+		}
+
 		runningOps, err := c.getAndUpdateRunningOperations(ctx, projectID, env, clusterUpgrade)
 		if err != nil {
 			return err
@@ -222,14 +231,15 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 				return nil
 			}
 
-			// Check if we have any operations in DB for this upgrade
-			// If we do, these running operations might be ours. If not, they're not ours - back off.
-			shouldTrack, err := c.checkOperationOwnership(ctx, clusterUpgrade, currentVersionStr, len(runningOps))
-			if err != nil {
-				return err
-			}
-			if !shouldTrack {
-				// Operations are not ours, honor delay and don't track them
+			// Check ownership using the operations we fetched BEFORE getAndUpdateRunningOperations
+			if len(existingOps) == 0 {
+				// No operations existed before - these running operations are not ours (GKE auto-upgrade?)
+				log.WithFields(logrus.Fields{
+					"upgrade_id":      clusterUpgrade.ID,
+					"target_version":  clusterUpgrade.Version,
+					"current_version": currentVersionStr,
+					"running_ops":     len(runningOps),
+				}).Warn("GKE operations detected but no operations existed in DB before this run - these are not ours, will honor delay")
 				return nil
 			}
 
@@ -302,6 +312,19 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		return nil
 	}
 
+	// For CREATED state: check ownership BEFORE fetching running operations from GKE
+	// This prevents the race condition where getAndUpdateRunningOperations creates operations
+	// in DB, then ownership check always passes because operations now exist
+	var existingOpsBeforeUpdate []*model.EnvironmentOperation
+	if clusterUpgrade.UpgradeStatus == model.UpgradeStatusCreated {
+		var err error
+		existingOpsBeforeUpdate, err = c.repo.ClusterOperationsGetByUpgradeID(ctx, clusterUpgrade.ID)
+		if err != nil {
+			log.WithError(err).Error("failed to get existing operations for ownership check")
+			return err
+		}
+	}
+
 	runningOperations, err := c.getAndUpdateRunningOperations(ctx, projectID, env, clusterUpgrade)
 	if err != nil {
 		return err
@@ -347,14 +370,15 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 				return nil
 			}
 
-			// Check if we have any operations in DB for this upgrade
-			// If we do, these running operations are ours. If not, they're not ours - back off.
-			shouldTrack, err := c.checkOperationOwnership(ctx, clusterUpgrade, currentVersionStr, len(runningOperations))
-			if err != nil {
-				return err
-			}
-			if !shouldTrack {
-				// Operations are not ours, don't track them - wait for them to complete
+			// Check ownership using the operations we fetched BEFORE getAndUpdateRunningOperations
+			if len(existingOpsBeforeUpdate) == 0 {
+				// No operations existed before - these running operations are not ours (GKE auto-upgrade?)
+				log.WithFields(logrus.Fields{
+					"upgrade_id":      clusterUpgrade.ID,
+					"target_version":  clusterUpgrade.Version,
+					"current_version": currentVersionStr,
+					"running_ops":     len(runningOperations),
+				}).Warn("GKE operations detected but no operations existed in DB before this run - backing off, will retry after they complete")
 				return nil
 			}
 
@@ -655,34 +679,6 @@ func (c *ClusterUpgrader) checkAndCompleteIfAtTargetVersion(ctx context.Context,
 	}
 
 	return true, currentVersionStr, nil
-}
-
-// checkOperationOwnership checks if running operations belong to this upgrade by verifying database records.
-// Returns true if operations are ours and should be tracked, false if we should back off.
-func (c *ClusterUpgrader) checkOperationOwnership(ctx context.Context, clusterUpgrade *model.ClusterUpgradeStatus, currentVersion string, runningOpsCount int) (bool, error) {
-	log := c.log.WithFields(logrus.Fields{
-		"upgrade_id": clusterUpgrade.ID,
-	})
-
-	existingOps, err := c.repo.ClusterOperationsGetByUpgradeID(ctx, clusterUpgrade.ID)
-	if err != nil {
-		log.WithError(err).Error("failed to get existing operations")
-		return false, err
-	}
-
-	if len(existingOps) == 0 {
-		// No operations in DB means these running operations are not ours (GKE auto-upgrade?)
-		log.WithFields(logrus.Fields{
-			"upgrade_id":      clusterUpgrade.ID,
-			"target_version":  clusterUpgrade.Version,
-			"current_version": currentVersion,
-			"running_ops":     runningOpsCount,
-		}).Warn("GKE operations detected but no operations in DB for this upgrade - these are not ours, backing off")
-		return false, nil
-	}
-
-	// We have operations in DB, so these running operations are ours
-	return true, nil
 }
 
 // isOperationActive checks if an operation is in an active state (RUNNING or PENDING)
