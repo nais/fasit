@@ -686,16 +686,13 @@ func (c *ClusterUpgrader) checkAndCompleteIfAtTargetVersion(ctx context.Context,
 		return false, "", err
 	}
 
-	// Try semantic version comparison first (handles GKE versions with suffixes like "-gke.100")
 	targetVer, targetErr := version.NewVersion(clusterUpgrade.Version)
 	currentVer, currentErr := version.NewVersion(currentVersionStr)
 
 	versionsMatch := false
 	if targetErr == nil && currentErr == nil {
-		// Compare core versions (ignoring metadata/prerelease)
-		versionsMatch = targetVer.Core().Equal(currentVer.Core())
+		versionsMatch = targetVer.Equal(currentVer)
 	} else {
-		// Fallback to string comparison if semantic versioning fails
 		if targetErr != nil {
 			log.WithError(targetErr).Warn("failed to parse target version as semantic version, falling back to string comparison")
 		}
