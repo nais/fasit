@@ -840,7 +840,7 @@ func TestRun_CreatedWithNonOwnedOperationsAndClusterAtTarget(t *testing.T) {
 
 	suite.repoMock.EXPECT().ClusterOperationsGetDanglingForEnvironment(mock.Anything, suite.env.tenantID, suite.env.id).Return(map[uuid.UUID][]*model.EnvironmentOperation{}, nil).Once()
 
-	// ClusterOperationsGetByUpgradeID called BEFORE getAndUpdateRunningOperations for ownership check (CREATED state)
+	// ClusterOperationsGetByUpgradeID called BEFORE getRunningOperationsFromGKE for ownership check (CREATED state)
 	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{}, nil).Once()
 
 	// Mock GetRunningOperations - return a running control plane upgrade operation
@@ -952,7 +952,7 @@ func TestRun_CreatedWithNonOwnedOperationsAndClusterBeyondTarget(t *testing.T) {
 
 	suite.repoMock.EXPECT().ClusterOperationsGetDanglingForEnvironment(mock.Anything, suite.env.tenantID, suite.env.id).Return(map[uuid.UUID][]*model.EnvironmentOperation{}, nil).Once()
 
-	// ClusterOperationsGetByUpgradeID called BEFORE getAndUpdateRunningOperations for ownership check (CREATED state)
+	// ClusterOperationsGetByUpgradeID called BEFORE getRunningOperationsFromGKE for ownership check (CREATED state)
 	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{}, nil).Once()
 
 	// Mock GetRunningOperations - return a running control plane upgrade operation
@@ -1064,7 +1064,7 @@ func TestRun_CreatedWithNonOwnedOperationsButClusterNotAtTarget(t *testing.T) {
 
 	suite.repoMock.EXPECT().ClusterOperationsGetDanglingForEnvironment(mock.Anything, suite.env.tenantID, suite.env.id).Return(map[uuid.UUID][]*model.EnvironmentOperation{}, nil).Once()
 
-	// ClusterOperationsGetByUpgradeID called BEFORE getAndUpdateRunningOperations for ownership check (CREATED state)
+	// ClusterOperationsGetByUpgradeID called BEFORE getRunningOperationsFromGKE for ownership check (CREATED state)
 	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{}, nil).Once()
 
 	// Mock GetRunningOperations - return a running control plane upgrade operation
