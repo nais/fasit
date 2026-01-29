@@ -510,13 +510,10 @@ func TestRun_CreatedToWaitingTransitionWithDelay(t *testing.T) {
 
 	suite.repoMock.EXPECT().ClusterOperationsGetDanglingForEnvironment(mock.Anything, suite.env.tenantID, suite.env.id).Return(map[uuid.UUID][]*model.EnvironmentOperation{}, nil).Once()
 
-	// ClusterOperationsGetByUpgradeID called BEFORE getAndUpdateRunningOperations for ownership check (CREATED state)
+	// ClusterOperationsGetByUpgradeID called BEFORE getRunningOperationsFromGKE for ownership check (CREATED state)
 	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{}, nil).Once()
 
-	// Mock ClusterOperationsGetByUpgradeID for getAndUpdateRunningOperations
-	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{}, nil).Once()
-
-	// Mock GetRunningOperations - called in getAndUpdateRunningOperations
+	// Mock GetRunningOperations - called in getRunningOperationsFromGKE (no operations running)
 	suite.clusterMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{}, nil).Once()
 
 	// Expect UpdateClusterUpgradeStatus to be called to transition to WAITING
@@ -603,13 +600,10 @@ func TestRun_CreatedWithoutDelaySkipsWaiting(t *testing.T) {
 
 	suite.repoMock.EXPECT().ClusterOperationsGetDanglingForEnvironment(mock.Anything, suite.env.tenantID, suite.env.id).Return(map[uuid.UUID][]*model.EnvironmentOperation{}, nil).Once()
 
-	// ClusterOperationsGetByUpgradeID called BEFORE getAndUpdateRunningOperations for ownership check (CREATED state)
+	// ClusterOperationsGetByUpgradeID called BEFORE getRunningOperationsFromGKE for ownership check (CREATED state)
 	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{}, nil).Once()
 
-	// Mock ClusterOperationsGetByUpgradeID for getAndUpdateRunningOperations
-	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{}, nil).Once()
-
-	// Mock GetRunningOperations for getAndUpdateRunningOperations
+	// Mock GetRunningOperations for getRunningOperationsFromGKE (no operations running)
 	suite.clusterMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{}, nil).Once()
 
 	// Mock GetCurrentControlPlaneVersion check in CREATED state
@@ -717,7 +711,7 @@ func TestRun_CreatedWithDelayButRunningOperations(t *testing.T) {
 
 	suite.repoMock.EXPECT().ClusterOperationsGetDanglingForEnvironment(mock.Anything, suite.env.tenantID, suite.env.id).Return(map[uuid.UUID][]*model.EnvironmentOperation{}, nil).Once()
 
-	// ClusterOperationsGetByUpgradeID called BEFORE getAndUpdateRunningOperations for ownership check
+	// ClusterOperationsGetByUpgradeID called BEFORE getRunningOperationsFromGKE for ownership check
 	// Return an existing operation to indicate we've already started tracking this upgrade
 	existingOp := &model.EnvironmentOperation{
 		ID:     uuid.New(),
@@ -727,16 +721,20 @@ func TestRun_CreatedWithDelayButRunningOperations(t *testing.T) {
 	}
 	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{existingOp}, nil).Once()
 
-	// Mock ClusterOperationsGetByUpgradeID for getAndUpdateRunningOperations
-	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{existingOp}, nil).Once()
-
-	// Mock GetRunningOperations - return a running control plane upgrade operation
-	// This simulates GKE having already started the upgrade before Fasit checked
+	// Mock GetRunningOperations - first call from getRunningOperationsFromGKE to check if operations exist
 	runningOp := &containerpb.Operation{
 		Name:          "operation-123-running",
 		OperationType: containerpb.Operation_UPGRADE_MASTER,
 		Status:        containerpb.Operation_RUNNING,
 	}
+	suite.clusterMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{runningOp}, nil).Once()
+
+	// Since there are existing operations (ownership passed), now call getAndUpdateRunningOperations
+	// Mock ClusterOperationsGetByUpgradeID for getAndUpdateRunningOperations
+	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{existingOp}, nil).Once()
+
+	// Mock GetRunningOperations - second call from getAndUpdateRunningOperations to update tracked operations
+	// This simulates GKE having already started the upgrade before Fasit checked
 	suite.clusterMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{runningOp}, nil).Once()
 
 	// Mock GetCurrentControlPlaneVersion - return current version lower than target
@@ -848,11 +846,8 @@ func TestRun_CreatedWithRunningOperationsButVersionMismatch(t *testing.T) {
 	// ClusterOperationsGetByUpgradeID called BEFORE getAndUpdateRunningOperations for ownership check (CREATED state)
 	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{}, nil).Once()
 
-	// Mock ClusterOperationsGetByUpgradeID for getAndUpdateRunningOperations
-	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{}, nil).Once()
-
 	// Mock GetRunningOperations - return a running control plane upgrade operation
-	// This simulates a GKE automatic upgrade that's NOT for our target version
+	// This simulates a GKE automatic upgrade that Fasit didn't initiate, but which happens to have upgraded the cluster to our target version
 	runningOp := &containerpb.Operation{
 		Name:          "operation-123-running",
 		OperationType: containerpb.Operation_UPGRADE_MASTER,
@@ -860,13 +855,12 @@ func TestRun_CreatedWithRunningOperationsButVersionMismatch(t *testing.T) {
 	}
 	suite.clusterMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{runningOp}, nil).Once()
 
-	// getAndUpdateRunningOperations will track the running operation in the database and associate it with this upgrade,
-	// but the upgrade state will not transition to CONTROL_PLANE_UPGRADE because the cluster is already at the target version.
-	suite.repoMock.EXPECT().CreateOrUpdateClusterOperation(mock.Anything, suite.env.tenantID, suite.env.id, createdUpgrade.ID, mock.Anything).Return(nil, nil).Once()
-
 	// Mock GetCurrentControlPlaneVersion - return current version >= target version
 	// This indicates the cluster is already at target version
 	suite.clusterMock.EXPECT().GetCurrentControlPlaneVersion(mock.Anything, mock.Anything, mock.Anything).Return("1.2.5", nil).Once()
+
+	// Since no operations existed before (not our upgrade) but cluster is at target version, should mark upgrade as DONE
+	// The running operations should NOT be tracked in the database
 
 	// Since cluster is already at target version, should mark upgrade as DONE
 	doneUpgrade := &model.ClusterUpgradeStatus{
