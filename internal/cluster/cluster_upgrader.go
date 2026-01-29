@@ -635,8 +635,8 @@ func (c *ClusterUpgrader) ownsRunningOperations(existingOps []*model.Environment
 	return len(existingOps) > 0
 }
 
-// completeIfNonOwnedOperationsReachedTarget checks if cluster is at target version when non-owned operations exist.
-// If cluster is at target, marks upgrade as DONE. Always backs off regardless.
+// completeIfNonOwnedOperationsReachedTarget checks if cluster is at target version when non-owned operations exist,
+// and marks upgrade as DONE if so. Otherwise logs a warning.
 func (c *ClusterUpgrader) completeIfNonOwnedOperationsReachedTarget(
 	ctx context.Context,
 	projectID string,
