@@ -223,13 +223,12 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 
 		if clusterHas(runningOps) {
 			if !c.ownsRunningOperations(existingOps) {
-				completed, err := c.completeIfNonOwnedOperationsReachedTarget(ctx, projectID, env, tenant, clusterUpgrade, len(runningOps), true)
+				err := c.completeIfNonOwnedOperationsReachedTarget(ctx, projectID, env, tenant, clusterUpgrade, len(runningOps), true)
 				if err != nil {
 					return err
 				}
-				if completed {
-					return nil
-				}
+				// Non-owned operations - back off (may have marked upgrade DONE if at target)
+				return nil
 			}
 
 			// We own these operations - track them and check if already complete
@@ -367,13 +366,12 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		// Check if GKE has already started upgrade operations
 		if clusterHas(runningOperations) {
 			if !c.ownsRunningOperations(existingOpsBeforeUpdate) {
-				completed, err := c.completeIfNonOwnedOperationsReachedTarget(ctx, projectID, env, tenant, clusterUpgrade, len(runningOperations), false)
+				err := c.completeIfNonOwnedOperationsReachedTarget(ctx, projectID, env, tenant, clusterUpgrade, len(runningOperations), false)
 				if err != nil {
 					return err
 				}
-				if completed {
-					return nil
-				}
+				// Non-owned operations - back off (may have marked upgrade DONE if at target)
+				return nil
 			}
 
 			// We own these operations - track them and check if already complete
@@ -638,7 +636,7 @@ func (c *ClusterUpgrader) ownsRunningOperations(existingOps []*model.Environment
 }
 
 // completeIfNonOwnedOperationsReachedTarget checks if cluster is at target version when non-owned operations exist.
-// Returns true if upgrade was completed (cluster at target version), false otherwise.
+// If cluster is at target, marks upgrade as DONE. Always backs off regardless.
 func (c *ClusterUpgrader) completeIfNonOwnedOperationsReachedTarget(
 	ctx context.Context,
 	projectID string,
@@ -647,7 +645,7 @@ func (c *ClusterUpgrader) completeIfNonOwnedOperationsReachedTarget(
 	clusterUpgrade *model.ClusterUpgradeStatus,
 	runningOpsCount int,
 	decrementWaiting bool,
-) (bool, error) {
+) error {
 	log := c.log.WithFields(logrus.Fields{
 		"tenant":      tenant.Name,
 		"environment": env.Name,
@@ -656,19 +654,19 @@ func (c *ClusterUpgrader) completeIfNonOwnedOperationsReachedTarget(
 
 	completed, currentVersionStr, err := c.checkAndCompleteIfAtTargetVersion(ctx, projectID, env, tenant, clusterUpgrade, runningOpsCount, decrementWaiting)
 	if err != nil {
-		return false, err
-	}
-	if completed {
-		return true, nil
+		return err
 	}
 
-	log.WithFields(logrus.Fields{
-		"upgrade_id":      clusterUpgrade.ID,
-		"target_version":  clusterUpgrade.Version,
-		"current_version": currentVersionStr,
-		"running_ops":     runningOpsCount,
-	}).Warn("GKE operations detected but no operations existed in DB before this run - these are not ours, backing off")
-	return false, nil
+	if !completed {
+		log.WithFields(logrus.Fields{
+			"upgrade_id":      clusterUpgrade.ID,
+			"target_version":  clusterUpgrade.Version,
+			"current_version": currentVersionStr,
+			"running_ops":     runningOpsCount,
+		}).Warn("GKE operations detected but no operations existed in DB before this run - these are not ours, backing off")
+	}
+
+	return nil
 }
 
 // trackOwnedOperationsAndCheckCompletion tracks owned operations and checks if upgrade is complete.
