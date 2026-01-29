@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -709,23 +710,17 @@ func (c *ClusterUpgrader) checkAndCompleteIfAtTargetVersion(ctx context.Context,
 		return false, "", err
 	}
 
-	targetVer, targetErr := version.NewVersion(clusterUpgrade.Version)
-	currentVer, currentErr := version.NewVersion(currentVersionStr)
-
-	versionsMatch := false
-	if targetErr == nil && currentErr == nil {
-		versionsMatch = targetVer.Equal(currentVer)
-	} else {
-		if targetErr != nil {
-			log.WithError(targetErr).Warn("failed to parse target version as semantic version, falling back to string comparison")
-		}
-		if currentErr != nil {
-			log.WithError(currentErr).Warn("failed to parse current version as semantic version, falling back to string comparison")
-		}
-		versionsMatch = currentVersionStr == clusterUpgrade.Version
+	targetVer, err := version.NewVersion(clusterUpgrade.Version)
+	if err != nil {
+		return false, "", fmt.Errorf("failed to parse target version %q: %w", clusterUpgrade.Version, err)
 	}
 
-	if !versionsMatch {
+	currentVer, err := version.NewVersion(currentVersionStr)
+	if err != nil {
+		return false, "", fmt.Errorf("failed to parse current version %q: %w", currentVersionStr, err)
+	}
+
+	if !targetVer.Equal(currentVer) {
 		return false, currentVersionStr, nil
 	}
 
@@ -943,13 +938,8 @@ func (c *ClusterUpgrader) trackRunningOperations(ctx context.Context, projectID 
 // getAndUpdateRunningOperations fetches running operations from GKE and tracks them in the database.
 // This is a convenience wrapper that combines getRunningOperationsFromGKE and trackRunningOperations.
 func (c *ClusterUpgrader) getAndUpdateRunningOperations(ctx context.Context, projectID string, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus) ([]*containerpb.Operation, error) {
-	// Get current running operations from GKE
-	var runningOperations []*containerpb.Operation
-	err := c.retryer.WithBackoff(ctx, "get_running_operations", func() error {
-		var retryErr error
-		runningOperations, retryErr = c.client.GetRunningOperations(ctx, projectID, env)
-		return retryErr
-	})
+	// Get current running operations from GKE via helper
+	runningOperations, err := c.getRunningOperationsFromGKE(ctx, projectID, env)
 	if err != nil {
 		return nil, err
 	}
