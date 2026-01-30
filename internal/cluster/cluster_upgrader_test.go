@@ -159,6 +159,9 @@ func TestRun_OperationDoneUpdateClusterNodeStatusToDone(t *testing.T) {
 	upgrade := newUpgrade(suite)
 	clusterUpgrade := suite.mockRunTenantForLoop(model.UpgradeStatusNodeUpgrade)
 
+	// Mock GetCurrentControlPlaneVersion for the version fetch at the start of upgradeEnvironment
+	suite.clusterMock.EXPECT().GetCurrentControlPlaneVersion(mock.Anything, mock.Anything, suite.environment).Return("1.2.4", nil).Maybe()
+
 	// Allow multiple GetRunningOperations calls - we'll fix the exact count later
 	suite.clusterMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, suite.environment).Return(
 		[]*containerpb.Operation{}, nil).Maybe()
@@ -222,6 +225,9 @@ func TestRun_StartNodeUpgradeClusterStatusNodeUpgrade(t *testing.T) {
 	suite := newTestSuite(t)
 	upgrade := newUpgrade(suite)
 	clusterUpgrade := suite.mockRunTenantForLoop(model.UpgradeStatusNodeUpgrade)
+
+	// Mock GetCurrentControlPlaneVersion for the version fetch at the start of upgradeEnvironment
+	suite.clusterMock.EXPECT().GetCurrentControlPlaneVersion(mock.Anything, mock.Anything, suite.environment).Return("1.2.4", nil).Maybe()
 
 	// GetRunningOperations for main logic and stuck detection
 	suite.clusterMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, suite.environment).Return(
@@ -526,6 +532,9 @@ func TestRun_CreatedToWaitingTransitionWithDelay(t *testing.T) {
 
 	// ClusterOperationsGetByUpgradeID called BEFORE getRunningOperationsFromGKE for ownership check (CREATED state)
 	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{}, nil).Once()
+
+	// Mock GetCurrentControlPlaneVersion for the version fetch at the start of upgradeEnvironment
+	suite.clusterMock.EXPECT().GetCurrentControlPlaneVersion(mock.Anything, mock.Anything, mock.Anything).Return("1.2.3", nil).Once()
 
 	// Mock GetRunningOperations - called in getRunningOperationsFromGKE (no operations running)
 	suite.clusterMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{}, nil).Once()
@@ -1463,6 +1472,10 @@ func TestRun_UpgradeDurationUsesUpgradeStartTime(t *testing.T) {
 		&model.EnvironmentValue{Key: "project_id", Value: []byte(`"test-project"`)},
 		nil,
 	).Maybe()
+
+	// Mock GetCurrentControlPlaneVersion for the version fetch at the start of upgradeEnvironment
+	suite.clusterMock.EXPECT().GetCurrentControlPlaneVersion(mock.Anything, mock.Anything, suite.environment).Return("1.28.0-gke.1000", nil).Maybe()
+
 	suite.repoMock.EXPECT().ClusterOperationsGetDanglingForEnvironment(mock.Anything, suite.env.tenantID, suite.env.id).Return(
 		map[uuid.UUID][]*model.EnvironmentOperation{}, nil,
 	).Once()
@@ -1521,6 +1534,10 @@ func TestRun_UpgradeDurationWarnsWithoutUpgradeStartTime(t *testing.T) {
 		&model.EnvironmentValue{Key: "project_id", Value: []byte(`"test-project"`)},
 		nil,
 	).Maybe()
+
+	// Mock GetCurrentControlPlaneVersion for the version fetch at the start of upgradeEnvironment
+	suite.clusterMock.EXPECT().GetCurrentControlPlaneVersion(mock.Anything, mock.Anything, suite.environment).Return("1.28.0-gke.1000", nil).Maybe()
+
 	suite.repoMock.EXPECT().ClusterOperationsGetDanglingForEnvironment(mock.Anything, suite.env.tenantID, suite.env.id).Return(
 		map[uuid.UUID][]*model.EnvironmentOperation{}, nil,
 	).Once()
