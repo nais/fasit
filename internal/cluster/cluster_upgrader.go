@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -204,26 +205,66 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		"last_modified":  clusterUpgrade.LastModified.Format("2006-01-02 15:04:05"),
 	})
 
-	// For WAITING upgrades, check if GKE has started operations before checking delay
-	// This handles the case where GKE's auto-upgrade starts before Fasit's delay expires
+	// Fetch current version once for this reconciliation cycle to avoid duplicate GKE API calls
+	var currentVersion string
+	err = c.retryer.WithBackoff(ctx, "get_current_control_plane_version", func() error {
+		var retryErr error
+		currentVersion, retryErr = c.client.GetCurrentControlPlaneVersion(ctx, projectID, env)
+		return retryErr
+	})
+	if err != nil {
+		log.WithError(err).Error("failed to get current control plane version")
+		return err
+	}
+
+	// Check ownership BEFORE fetching running operations from GKE for all states except WAITING
+	// Get running operations without tracking them yet to determine ownership
 	if clusterUpgrade.UpgradeStatus == model.UpgradeStatusWaiting {
-		runningOps, err := c.getAndUpdateRunningOperations(ctx, projectID, env, clusterUpgrade)
+		existingOpsBeforeUpdate, err := c.repo.ClusterOperationsGetByUpgradeID(ctx, clusterUpgrade.ID)
+		if err != nil {
+			log.WithError(err).Error("failed to get existing operations for ownership check")
+			return err
+		}
+
+		// Get running operations from GKE without tracking them yet
+		runningOperations, err := c.getRunningOperationsFromGKE(ctx, projectID, env)
 		if err != nil {
 			return err
 		}
 
-		if clusterHas(runningOps) {
-			// GKE has started upgrading - override delay and track the operations
+		// Check for non-owned operations in all states except DONE/FAILED
+		if clusterHas(runningOperations) && !c.ownsRunningOperations(existingOpsBeforeUpdate, runningOperations) {
+			err := c.completeIfNonOwnedOperationsReachedTarget(ctx, projectID, env, tenant, clusterUpgrade, currentVersion, len(runningOperations))
+			if err != nil {
+				return err
+			}
+			// Non-owned operations detected - back off regardless of state
+			return nil
+		}
+
+		// For WAITING upgrades, check if GKE has started operations before checking delay
+		// This handles the case where GKE's auto-upgrade starts before Fasit's delay expires
+		if clusterHas(runningOperations) {
+			// We own these operations - track them and check if already complete
+			runningOperations, completed, err := c.trackOwnedOperationsAndCheckCompletion(ctx, projectID, env, tenant, clusterUpgrade, currentVersion, runningOperations, existingOpsBeforeUpdate)
+			if err != nil {
+				return err
+			}
+			if completed {
+				return nil
+			}
+			// We have operations in DB, so these running operations are ours - override delay and track them
 			log.WithFields(logrus.Fields{
-				"upgrade_id":     clusterUpgrade.ID,
-				"target_version": clusterUpgrade.Version,
-				"running_ops":    len(runningOps),
-			}).Warn("GKE started upgrade before delay expired, overriding delay to track operations")
+				"upgrade_id":      clusterUpgrade.ID,
+				"target_version":  clusterUpgrade.Version,
+				"current_version": currentVersion,
+				"running_ops":     len(runningOperations),
+			}).Warn("GKE started upgrade toward target version before delay expired, overriding delay to track operations")
 
 			// Determine which operations are running and transition appropriately
 			hasControlPlaneOp := false
 			hasNodeOp := false
-			for _, op := range runningOps {
+			for _, op := range runningOperations {
 				if isOperationActive(op) {
 					switch op.OperationType {
 					case containerpb.Operation_UPGRADE_MASTER:
@@ -281,10 +322,32 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		return nil
 	}
 
-	runningOperations, err := c.getAndUpdateRunningOperations(ctx, projectID, env, clusterUpgrade)
+	// Check ownership BEFORE fetching running operations from GKE for all non-WAITING states
+	// Get running operations without tracking them yet to determine ownership
+	existingOpsBeforeUpdate, err := c.repo.ClusterOperationsGetByUpgradeID(ctx, clusterUpgrade.ID)
+	if err != nil {
+		log.WithError(err).Error("failed to get existing operations for ownership check")
+		return err
+	}
+
+	// Get running operations from GKE without tracking them yet
+	runningOperations, err := c.getRunningOperationsFromGKE(ctx, projectID, env)
 	if err != nil {
 		return err
 	}
+
+	// Check for non-owned operations in all states except DONE/FAILED
+	if clusterHas(runningOperations) && !c.ownsRunningOperations(existingOpsBeforeUpdate, runningOperations) {
+		err := c.completeIfNonOwnedOperationsReachedTarget(ctx, projectID, env, tenant, clusterUpgrade, currentVersion, len(runningOperations))
+		if err != nil {
+			return err
+		}
+		// Non-owned operations detected - back off regardless of state
+		return nil
+	}
+
+	// At this point, we own the operations (or there are none running)
+	// Each state case below will track owned operations in their specific flow
 
 	log.WithFields(logrus.Fields{"target_version": clusterUpgrade.Version, "status": clusterUpgrade.UpgradeStatus}).Debug("cluster upgrade status")
 	switch clusterUpgrade.UpgradeStatus {
@@ -316,8 +379,15 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 
 	case model.UpgradeStatusCreated:
 		// Check if GKE has already started upgrade operations
-		// If operations are running, transition immediately to the appropriate state
+		// At this point, ownership was already checked above, so if there are running ops, we own them
 		if clusterHas(runningOperations) {
+			runningOperations, completed, err := c.trackOwnedOperationsAndCheckCompletion(ctx, projectID, env, tenant, clusterUpgrade, currentVersion, runningOperations, existingOpsBeforeUpdate)
+			if err != nil {
+				return err
+			}
+			if completed {
+				return nil
+			}
 			// Determine which operations are running
 			hasControlPlaneOp := false
 			hasNodeOp := false
@@ -340,17 +410,19 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 				targetStatus = gensql.ClusterUpgradesStatusNODEUPGRADE
 				metricsTarget = "node_pools"
 				log.WithFields(logrus.Fields{
-					"upgrade_id":     clusterUpgrade.ID,
-					"target_version": clusterUpgrade.Version,
-				}).Info("GKE has already started node upgrade operations, transitioning to NODE_UPGRADE")
+					"upgrade_id":      clusterUpgrade.ID,
+					"target_version":  clusterUpgrade.Version,
+					"current_version": currentVersion,
+				}).Info("GKE has already started node upgrade operations toward target version, transitioning to NODE_UPGRADE")
 			} else if hasControlPlaneOp {
 				// Control plane upgrade is running, transition to CONTROL_PLANE_UPGRADE state
 				targetStatus = gensql.ClusterUpgradesStatusCONTROLPLANEUPGRADE
 				metricsTarget = "control_plane"
 				log.WithFields(logrus.Fields{
-					"upgrade_id":     clusterUpgrade.ID,
-					"target_version": clusterUpgrade.Version,
-				}).Info("GKE has already started control plane upgrade operations, transitioning to CONTROL_PLANE_UPGRADE")
+					"upgrade_id":      clusterUpgrade.ID,
+					"target_version":  clusterUpgrade.Version,
+					"current_version": currentVersion,
+				}).Info("GKE has already started control plane upgrade operations toward target version, transitioning to CONTROL_PLANE_UPGRADE")
 			} else {
 				// Unknown operation type running, stay in CREATED and log
 				log.WithFields(logrus.Fields{
@@ -413,17 +485,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 			"environment":    env.Name,
 		}).Info("starting control plane upgrade")
 
-		var currentVersion string
-		err = c.retryer.WithBackoff(ctx, "get_current_control_plane_version", func() error {
-			var retryErr error
-			currentVersion, retryErr = c.client.GetCurrentControlPlaneVersion(ctx, projectID, env)
-			return retryErr
-		})
-		if err != nil {
-			log.WithError(err).Error("failed to get current control plane version")
-			return err
-		}
-
+		// Use the already-fetched current version
 		if currentVersion == clusterUpgrade.Version {
 			log.WithFields(logrus.Fields{
 				"target_version": clusterUpgrade.Version,
@@ -456,8 +518,25 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		c.updateSlackProgress(ctx, tenant.Name, env.Name, updatedStatus)
 
 	case model.UpgradeStatusControlPlaneUpgrade:
+		// Track owned operations if any are running
+		if clusterHas(runningOperations) {
+			var hasActiveOps bool
+			for _, op := range runningOperations {
+				if isOperationActive(op) {
+					hasActiveOps = true
+					break
+				}
+			}
+			if hasActiveOps {
+				_, err = c.trackRunningOperations(ctx, projectID, env, clusterUpgrade, runningOperations, existingOpsBeforeUpdate)
+				if err != nil {
+					return err
+				}
+			}
+		}
+
 		// check status on ongoing control plane upgrade
-		status, err := c.controlPlaneUpgradeStatus(ctx, env, clusterUpgrade, projectID, tenant.Name)
+		status, err := c.controlPlaneUpgradeStatus(ctx, env, clusterUpgrade, projectID, tenant.Name, currentVersion)
 		if err != nil {
 			return err
 		}
@@ -472,6 +551,23 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		c.updateSlackProgress(ctx, tenant.Name, env.Name, status)
 
 	case model.UpgradeStatusNodeUpgrade:
+		// Track owned operations if any are running
+		if clusterHas(runningOperations) {
+			var hasActiveOps bool
+			for _, op := range runningOperations {
+				if isOperationActive(op) {
+					hasActiveOps = true
+					break
+				}
+			}
+			if hasActiveOps {
+				runningOperations, err = c.trackRunningOperations(ctx, projectID, env, clusterUpgrade, runningOperations, existingOpsBeforeUpdate)
+				if err != nil {
+					return err
+				}
+			}
+		}
+
 		if clusterHas(runningOperations) {
 			log.WithFields(logrus.Fields{"target_version": clusterUpgrade.Version}).Debug("has running operations, skipping...")
 			return nil
@@ -531,11 +627,11 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 
 		err = c.slack.AddReaction(upgradeStatus.SlackChannelID, upgradeStatus.SlackMessageTimestamp, "white_check_mark")
 		if err != nil {
-			c.logNonCriticalError(err, "slack_add_reaction", logrus.Fields{
+			log.WithError(err).WithFields(logrus.Fields{
 				"tenant":      tenant.Name,
 				"environment": env.Name,
 				"reaction":    "white_check_mark",
-			})
+			}).Warn("failed to add Slack reaction for completed upgrade - notification failure, upgrade completed successfully")
 		}
 
 		c.upgradeInProgress.Add(ctx, -1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "node_pools")...))
@@ -560,6 +656,194 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		}).Debug("upgrade failed, no action needed")
 		return nil
 	}
+	return nil
+}
+
+// ownsRunningOperations checks if running operations belong to this upgrade.
+// Returns true if we have existing operations in DB for this upgrade AND those operations
+// match operations currently running in GKE (by operation name).
+//
+// We check operation names to handle the scenario where:
+// 1. Fasit initiates an upgrade and tracks operation A
+// 2. GKE auto-upgrade starts operation B for a different version while A is still running
+// 3. Only operation A should be considered "owned", not B
+//
+// Note on race conditions: There's a potential race between checking ClusterOperationsGetByUpgradeID
+// and getting running operations from GKE where another upgrader instance could insert operations.
+// This is mitigated by:
+// 1. Checking operation names match (not just existence of any operations)
+// 2. Database unique constraints preventing duplicate operation tracking
+func (c *ClusterUpgrader) ownsRunningOperations(existingOps []*model.EnvironmentOperation, runningOps []*containerpb.Operation) bool {
+	if len(existingOps) == 0 {
+		return false
+	}
+
+	// Build map of existing operation names in database
+	existingOpNames := make(map[string]bool)
+	for _, op := range existingOps {
+		existingOpNames[op.Name] = true
+	}
+
+	// Check if at least one running operation exists in our database
+	// If GKE has started completely new operations (not in our DB), they're not ours
+	for _, runningOp := range runningOps {
+		if !isOperationActive(runningOp) {
+			continue
+		}
+		if existingOpNames[runningOp.Name] {
+			return true
+		}
+	}
+
+	return false
+}
+
+// completeIfNonOwnedOperationsReachedTarget checks if cluster is at target version when non-owned operations exist,
+// and marks upgrade as DONE if so. Otherwise logs a warning.
+func (c *ClusterUpgrader) completeIfNonOwnedOperationsReachedTarget(
+	ctx context.Context,
+	projectID string,
+	env *model.Environment,
+	tenant *model.Tenant,
+	clusterUpgrade *model.ClusterUpgradeStatus,
+	currentVersion string,
+	runningOpsCount int,
+) error {
+	log := c.log.WithFields(logrus.Fields{
+		"tenant":      tenant.Name,
+		"environment": env.Name,
+		"upgrade_id":  clusterUpgrade.ID,
+	})
+
+	// Check if cluster is already at or beyond target version
+	atTarget, err := c.isAtOrBeyondTargetVersion(clusterUpgrade, currentVersion)
+	if err != nil {
+		return err
+	}
+
+	if atTarget {
+		// Mark upgrade as complete with all side effects
+		return c.markUpgradeComplete(ctx, env, tenant, clusterUpgrade, runningOpsCount)
+	}
+
+	// Cluster not at target yet - log and back off
+	log.WithFields(logrus.Fields{
+		"upgrade_id":      clusterUpgrade.ID,
+		"target_version":  clusterUpgrade.Version,
+		"current_version": currentVersion,
+		"running_ops":     runningOpsCount,
+	}).Warn("GKE operations detected but no operations existed in DB before this run - these are not ours, backing off")
+
+	return nil
+}
+
+// trackOwnedOperationsAndCheckCompletion tracks owned operations and checks if upgrade is complete.
+// Returns (operations, completed, error).
+func (c *ClusterUpgrader) trackOwnedOperationsAndCheckCompletion(
+	ctx context.Context,
+	projectID string,
+	env *model.Environment,
+	tenant *model.Tenant,
+	clusterUpgrade *model.ClusterUpgradeStatus,
+	currentVersion string,
+	runningOps []*containerpb.Operation,
+	existingOps []*model.EnvironmentOperation,
+) ([]*containerpb.Operation, bool, error) {
+	// Check if cluster is already at or beyond target version FIRST
+	// This avoids unnecessary database writes if upgrade is already complete
+	atTarget, err := c.isAtOrBeyondTargetVersion(clusterUpgrade, currentVersion)
+	if err != nil {
+		return nil, false, err
+	}
+
+	if atTarget {
+		// Mark upgrade as complete without tracking operations
+		err = c.markUpgradeComplete(ctx, env, tenant, clusterUpgrade, len(runningOps))
+		if err != nil {
+			return nil, false, err
+		}
+		return runningOps, true, nil
+	}
+
+	// Track the already-fetched operations in the database only if not yet complete
+	runningOps, err = c.trackRunningOperations(ctx, projectID, env, clusterUpgrade, runningOps, existingOps)
+	if err != nil {
+		return nil, false, err
+	}
+
+	return runningOps, false, nil
+}
+
+// isAtOrBeyondTargetVersion checks if cluster version is at or beyond the target version.
+// Returns (atTarget, error). Pure function with no side effects.
+func (c *ClusterUpgrader) isAtOrBeyondTargetVersion(clusterUpgrade *model.ClusterUpgradeStatus, currentVersionStr string) (bool, error) {
+	targetVer, err := version.NewVersion(clusterUpgrade.Version)
+	if err != nil {
+		return false, fmt.Errorf("failed to parse target version %q: %w", clusterUpgrade.Version, err)
+	}
+
+	currentVer, err := version.NewVersion(currentVersionStr)
+	if err != nil {
+		return false, fmt.Errorf("failed to parse current version %q: %w", currentVersionStr, err)
+	}
+
+	// Check if current version is at or beyond target
+	atTarget := !currentVer.LessThan(targetVer)
+	return atTarget, nil
+}
+
+// markUpgradeComplete marks an upgrade as DONE and performs all related side effects:
+// updates database status, updates metrics, and notifies Slack.
+func (c *ClusterUpgrader) markUpgradeComplete(ctx context.Context, env *model.Environment, tenant *model.Tenant, clusterUpgrade *model.ClusterUpgradeStatus, runningOpsCount int) error {
+	log := c.log.WithFields(logrus.Fields{
+		"tenant":      tenant.Name,
+		"environment": env.Name,
+		"upgrade_id":  clusterUpgrade.ID,
+	})
+
+	log.WithFields(logrus.Fields{
+		"target_version": clusterUpgrade.Version,
+		"running_ops":    runningOpsCount,
+		"from_status":    clusterUpgrade.UpgradeStatus,
+	}).Info("cluster at or beyond target version, marking upgrade as DONE")
+
+	upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, clusterUpgrade.ID, gensql.ClusterUpgradesStatusDONE)
+	if err != nil {
+		return err
+	}
+
+	// Update metrics based on current state
+	switch clusterUpgrade.UpgradeStatus {
+	case model.UpgradeStatusWaiting:
+		// Transitioning from WAITING to DONE - decrement waiting counter
+		c.upgradeWaiting.Add(ctx, -1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "waiting")...))
+		c.upgradeCompleted.Add(ctx, 1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "complete")...))
+	case model.UpgradeStatusControlPlaneUpgrade:
+		// Transitioning from CONTROL_PLANE_UPGRADE to DONE - decrement in-progress counter for control plane
+		c.upgradeInProgress.Add(ctx, -1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "control_plane")...))
+		c.upgradeCompleted.Add(ctx, 1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "complete")...))
+	case model.UpgradeStatusNodeUpgrade:
+		// Transitioning from NODE_UPGRADE to DONE - decrement in-progress counter for node pools
+		c.upgradeInProgress.Add(ctx, -1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "node_pools")...))
+		c.upgradeCompleted.Add(ctx, 1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "complete")...))
+	case model.UpgradeStatusCreated:
+		// Transitioning from CREATED to DONE - no metrics to decrement since upgrade never started
+		// The cluster was already upgraded by GKE auto-upgrade or another mechanism before Fasit could act
+		// We only increment upgradeCompleted to track that the upgrade goal was achieved
+		c.upgradeCompleted.Add(ctx, 1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "complete")...))
+	}
+
+	// Update Slack
+	c.updateSlackProgress(ctx, tenant.Name, env.Name, upgradeStatus)
+	err = c.slack.AddReaction(upgradeStatus.SlackChannelID, upgradeStatus.SlackMessageTimestamp, "white_check_mark")
+	if err != nil {
+		log.WithError(err).WithFields(logrus.Fields{
+			"tenant":      tenant.Name,
+			"environment": env.Name,
+			"reaction":    "white_check_mark",
+		}).Warn("failed to add Slack reaction for completed upgrade - notification failure, upgrade completed successfully")
+	}
+
 	return nil
 }
 
@@ -629,14 +913,8 @@ func clusterHas(runningOperations []*containerpb.Operation) bool {
 	return false
 }
 
-func (c *ClusterUpgrader) getAndUpdateRunningOperations(ctx context.Context, projectID string, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus) ([]*containerpb.Operation, error) {
-	log := c.log.WithFields(logrus.Fields{
-		"tenant_id":   env.TenantID,
-		"environment": env.Name,
-		"upgrade_id":  clusterUpgrade.ID,
-	})
-
-	// Get current running operations from GKE
+// getRunningOperationsFromGKE retrieves running operations from GKE without updating the database
+func (c *ClusterUpgrader) getRunningOperationsFromGKE(ctx context.Context, projectID string, env *model.Environment) ([]*containerpb.Operation, error) {
 	var runningOperations []*containerpb.Operation
 	err := c.retryer.WithBackoff(ctx, "get_running_operations", func() error {
 		var retryErr error
@@ -646,13 +924,25 @@ func (c *ClusterUpgrader) getAndUpdateRunningOperations(ctx context.Context, pro
 	if err != nil {
 		return nil, err
 	}
+	return runningOperations, nil
+}
 
-	// Get all existing operations for this upgrade from database
-	existingOps, err := c.repo.ClusterOperationsGetByUpgradeID(ctx, clusterUpgrade.ID)
-	if err != nil {
-		log.WithError(err).Error("failed to get existing cluster operations")
-		return nil, err
-	}
+// trackRunningOperations updates the database with already-fetched running operations.
+// Returns the updated list of operations after tracking completion status.
+// Accepts existingOps to avoid duplicate database queries.
+func (c *ClusterUpgrader) trackRunningOperations(
+	ctx context.Context,
+	projectID string,
+	env *model.Environment,
+	clusterUpgrade *model.ClusterUpgradeStatus,
+	runningOperations []*containerpb.Operation,
+	existingOps []*model.EnvironmentOperation,
+) ([]*containerpb.Operation, error) {
+	log := c.log.WithFields(logrus.Fields{
+		"tenant_id":   env.TenantID,
+		"environment": env.Name,
+		"upgrade_id":  clusterUpgrade.ID,
+	})
 
 	log.WithFields(logrus.Fields{
 		"gke_running_operations": len(runningOperations),
@@ -996,7 +1286,7 @@ func (c *ClusterUpgrader) nodeUpgradeStatus(ctx context.Context, env *model.Envi
 	return done, nil
 }
 
-func (c *ClusterUpgrader) controlPlaneUpgradeStatus(ctx context.Context, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus, projectID, tenantName string) (*model.ClusterUpgradeStatus, error) {
+func (c *ClusterUpgrader) controlPlaneUpgradeStatus(ctx context.Context, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus, projectID, tenantName, currentVersion string) (*model.ClusterUpgradeStatus, error) {
 	rop, err := c.repo.GetActiveClusterOperation(ctx, env.TenantID, env.ID)
 	if err != nil {
 		return nil, err
@@ -1050,29 +1340,24 @@ func (c *ClusterUpgrader) controlPlaneUpgradeStatus(ctx context.Context, env *mo
 			return upgradeStatus, nil
 		}
 
-		// No operations at all - verify with GKE directly
+		// No operations at all - verify with GKE directly using already-fetched version
 		c.log.WithFields(logrus.Fields{
 			"tenant":      tenantName,
 			"environment": env.Name,
-		}).Warn("no operations found in database for control plane upgrade, verifying with GKE")
+		}).Warn("no operations found in database for control plane upgrade, verifying with already-fetched version")
 
-		var currentVersion string
-		err = c.retryer.WithBackoff(ctx, "get_current_control_plane_version", func() error {
-			var retryErr error
-			currentVersion, retryErr = c.client.GetCurrentControlPlaneVersion(ctx, projectID, env)
-			return retryErr
-		})
+		// If the control plane is already at or beyond the target version, mark it as complete
+		atTarget, err := c.isAtOrBeyondTargetVersion(clusterUpgrade, currentVersion)
 		if err != nil {
 			return nil, err
 		}
-
-		// If the control plane is already at the target version, mark it as complete
-		if currentVersion == clusterUpgrade.Version {
+		if atTarget {
 			c.log.WithFields(logrus.Fields{
-				"tenant":         tenantName,
-				"environment":    env.Name,
-				"target_version": clusterUpgrade.Version,
-			}).Info("control plane already at target version, marking upgrade as complete")
+				"tenant":          tenantName,
+				"environment":     env.Name,
+				"target_version":  clusterUpgrade.Version,
+				"current_version": currentVersion,
+			}).Info("control plane already at or beyond target version, marking upgrade as complete")
 
 			// Adjust metrics: control plane complete, starting node upgrade
 			c.upgradeInProgress.Add(ctx, -1, metric.WithAttributes(setMetricsAttrs(env.Name, tenantName, clusterUpgrade.Version, "control_plane")...))
