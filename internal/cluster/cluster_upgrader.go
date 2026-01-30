@@ -1346,13 +1346,18 @@ func (c *ClusterUpgrader) controlPlaneUpgradeStatus(ctx context.Context, env *mo
 			"environment": env.Name,
 		}).Warn("no operations found in database for control plane upgrade, verifying with already-fetched version")
 
-		// If the control plane is already at the target version, mark it as complete
-		if currentVersion == clusterUpgrade.Version {
+		// If the control plane is already at or beyond the target version, mark it as complete
+		atTarget, err := c.isAtOrBeyondTargetVersion(clusterUpgrade, currentVersion)
+		if err != nil {
+			return nil, err
+		}
+		if atTarget {
 			c.log.WithFields(logrus.Fields{
-				"tenant":         tenantName,
-				"environment":    env.Name,
-				"target_version": clusterUpgrade.Version,
-			}).Info("control plane already at target version, marking upgrade as complete")
+				"tenant":          tenantName,
+				"environment":     env.Name,
+				"target_version":  clusterUpgrade.Version,
+				"current_version": currentVersion,
+			}).Info("control plane already at or beyond target version, marking upgrade as complete")
 
 			// Adjust metrics: control plane complete, starting node upgrade
 			c.upgradeInProgress.Add(ctx, -1, metric.WithAttributes(setMetricsAttrs(env.Name, tenantName, clusterUpgrade.Version, "control_plane")...))
