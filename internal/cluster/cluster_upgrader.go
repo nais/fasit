@@ -234,9 +234,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 
 		// Check for non-owned operations in all states except DONE/FAILED
 		if clusterHas(runningOperations) && !c.ownsRunningOperations(existingOpsBeforeUpdate, runningOperations) {
-			// Determine if we should decrement waiting metric based on current state
-			decrementWaiting := clusterUpgrade.UpgradeStatus == model.UpgradeStatusWaiting
-			err := c.completeIfNonOwnedOperationsReachedTarget(ctx, projectID, env, tenant, clusterUpgrade, currentVersion, len(runningOperations), decrementWaiting)
+			err := c.completeIfNonOwnedOperationsReachedTarget(ctx, projectID, env, tenant, clusterUpgrade, currentVersion, len(runningOperations))
 			if err != nil {
 				return err
 			}
@@ -248,7 +246,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		// This handles the case where GKE's auto-upgrade starts before Fasit's delay expires
 		if clusterHas(runningOperations) {
 			// We own these operations - track them and check if already complete
-			runningOperations, completed, err := c.trackOwnedOperationsAndCheckCompletion(ctx, projectID, env, tenant, clusterUpgrade, currentVersion, runningOperations, existingOpsBeforeUpdate, true)
+			runningOperations, completed, err := c.trackOwnedOperationsAndCheckCompletion(ctx, projectID, env, tenant, clusterUpgrade, currentVersion, runningOperations, existingOpsBeforeUpdate)
 			if err != nil {
 				return err
 			}
@@ -340,9 +338,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 
 	// Check for non-owned operations in all states except DONE/FAILED
 	if clusterHas(runningOperations) && !c.ownsRunningOperations(existingOpsBeforeUpdate, runningOperations) {
-		// Determine if we should decrement waiting metric based on current state
-		decrementWaiting := clusterUpgrade.UpgradeStatus == model.UpgradeStatusWaiting
-		err := c.completeIfNonOwnedOperationsReachedTarget(ctx, projectID, env, tenant, clusterUpgrade, currentVersion, len(runningOperations), decrementWaiting)
+		err := c.completeIfNonOwnedOperationsReachedTarget(ctx, projectID, env, tenant, clusterUpgrade, currentVersion, len(runningOperations))
 		if err != nil {
 			return err
 		}
@@ -385,7 +381,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		// Check if GKE has already started upgrade operations
 		// At this point, ownership was already checked above, so if there are running ops, we own them
 		if clusterHas(runningOperations) {
-			runningOperations, completed, err := c.trackOwnedOperationsAndCheckCompletion(ctx, projectID, env, tenant, clusterUpgrade, currentVersion, runningOperations, existingOpsBeforeUpdate, false)
+			runningOperations, completed, err := c.trackOwnedOperationsAndCheckCompletion(ctx, projectID, env, tenant, clusterUpgrade, currentVersion, runningOperations, existingOpsBeforeUpdate)
 			if err != nil {
 				return err
 			}
@@ -712,7 +708,6 @@ func (c *ClusterUpgrader) completeIfNonOwnedOperationsReachedTarget(
 	clusterUpgrade *model.ClusterUpgradeStatus,
 	currentVersion string,
 	runningOpsCount int,
-	decrementWaiting bool,
 ) error {
 	log := c.log.WithFields(logrus.Fields{
 		"tenant":      tenant.Name,
@@ -728,7 +723,7 @@ func (c *ClusterUpgrader) completeIfNonOwnedOperationsReachedTarget(
 
 	if atTarget {
 		// Mark upgrade as complete with all side effects
-		return c.markUpgradeComplete(ctx, env, tenant, clusterUpgrade, runningOpsCount, decrementWaiting)
+		return c.markUpgradeComplete(ctx, env, tenant, clusterUpgrade, runningOpsCount)
 	}
 
 	// Cluster not at target yet - log and back off
@@ -753,7 +748,6 @@ func (c *ClusterUpgrader) trackOwnedOperationsAndCheckCompletion(
 	currentVersion string,
 	runningOps []*containerpb.Operation,
 	existingOps []*model.EnvironmentOperation,
-	decrementWaiting bool,
 ) ([]*containerpb.Operation, bool, error) {
 	// Check if cluster is already at or beyond target version FIRST
 	// This avoids unnecessary database writes if upgrade is already complete
@@ -764,7 +758,7 @@ func (c *ClusterUpgrader) trackOwnedOperationsAndCheckCompletion(
 
 	if atTarget {
 		// Mark upgrade as complete without tracking operations
-		err = c.markUpgradeComplete(ctx, env, tenant, clusterUpgrade, len(runningOps), decrementWaiting)
+		err = c.markUpgradeComplete(ctx, env, tenant, clusterUpgrade, len(runningOps))
 		if err != nil {
 			return nil, false, err
 		}
@@ -800,7 +794,7 @@ func (c *ClusterUpgrader) isAtOrBeyondTargetVersion(clusterUpgrade *model.Cluste
 
 // markUpgradeComplete marks an upgrade as DONE and performs all related side effects:
 // updates database status, updates metrics, and notifies Slack.
-func (c *ClusterUpgrader) markUpgradeComplete(ctx context.Context, env *model.Environment, tenant *model.Tenant, clusterUpgrade *model.ClusterUpgradeStatus, runningOpsCount int, decrementWaiting bool) error {
+func (c *ClusterUpgrader) markUpgradeComplete(ctx context.Context, env *model.Environment, tenant *model.Tenant, clusterUpgrade *model.ClusterUpgradeStatus, runningOpsCount int) error {
 	log := c.log.WithFields(logrus.Fields{
 		"tenant":      tenant.Name,
 		"environment": env.Name,
@@ -810,6 +804,7 @@ func (c *ClusterUpgrader) markUpgradeComplete(ctx context.Context, env *model.En
 	log.WithFields(logrus.Fields{
 		"target_version": clusterUpgrade.Version,
 		"running_ops":    runningOpsCount,
+		"from_status":    clusterUpgrade.UpgradeStatus,
 	}).Info("cluster at or beyond target version, marking upgrade as DONE")
 
 	upgradeStatus, err := c.repo.UpdateClusterUpgradeStatus(ctx, clusterUpgrade.ID, gensql.ClusterUpgradesStatusDONE)
@@ -817,15 +812,26 @@ func (c *ClusterUpgrader) markUpgradeComplete(ctx context.Context, env *model.En
 		return err
 	}
 
-	// Update metrics
-	if decrementWaiting {
+	// Update metrics based on current state
+	switch clusterUpgrade.UpgradeStatus {
+	case model.UpgradeStatusWaiting:
 		// Transitioning from WAITING to DONE - decrement waiting counter
 		c.upgradeWaiting.Add(ctx, -1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "waiting")...))
 		c.upgradeCompleted.Add(ctx, 1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "complete")...))
+	case model.UpgradeStatusControlPlaneUpgrade:
+		// Transitioning from CONTROL_PLANE_UPGRADE to DONE - decrement in-progress counter for control plane
+		c.upgradeInProgress.Add(ctx, -1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "control_plane")...))
+		c.upgradeCompleted.Add(ctx, 1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "complete")...))
+	case model.UpgradeStatusNodeUpgrade:
+		// Transitioning from NODE_UPGRADE to DONE - decrement in-progress counter for node pools
+		c.upgradeInProgress.Add(ctx, -1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "node_pools")...))
+		c.upgradeCompleted.Add(ctx, 1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "complete")...))
+	case model.UpgradeStatusCreated:
+		// Transitioning from CREATED to DONE - no metrics to decrement since upgrade never started
+		// The cluster was already upgraded by GKE auto-upgrade or another mechanism before Fasit could act
+		// We only increment upgradeCompleted to track that the upgrade goal was achieved
+		c.upgradeCompleted.Add(ctx, 1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "complete")...))
 	}
-	// Note: When transitioning from CREATED to DONE (cluster already at target), we don't increment
-	// any metrics since no actual upgrade work was performed by Fasit. The cluster was already upgraded
-	// by GKE auto-upgrade or another mechanism before Fasit could act.
 
 	// Update Slack
 	c.updateSlackProgress(ctx, tenant.Name, env.Name, upgradeStatus)
