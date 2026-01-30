@@ -380,6 +380,16 @@ func TestRun_ControlPlaneUpgradeIsRunning(t *testing.T) {
 	upgrade := newUpgrade(suite)
 	clusterUpgrade := suite.mockRunTenantForLoop(model.UpgradeStatusControlPlaneUpgrade)
 
+	// ClusterOperationsGetByUpgradeID called for ownership check
+	existingOp := &model.EnvironmentOperation{
+		ID:     uuid.New(),
+		Name:   "operation",
+		Status: containerpb.Operation_RUNNING.String(),
+		Type:   "UPGRADE_MASTER",
+	}
+	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, mock.Anything).Return(
+		[]*model.EnvironmentOperation{existingOp}, nil).Maybe()
+
 	suite.clusterMock.EXPECT().GetRunningOperations(mock.Anything, suite.env.projectID, suite.environment).Return(
 		[]*containerpb.Operation{
 			{
@@ -390,6 +400,10 @@ func TestRun_ControlPlaneUpgradeIsRunning(t *testing.T) {
 				Detail:        "testSuite",
 			},
 		}, nil).Maybe()
+
+	// Mock GetCurrentControlPlaneVersion for ownership validation (checking if cluster is at target)
+	// Return version below target to show operation is still ongoing
+	suite.clusterMock.EXPECT().GetCurrentControlPlaneVersion(mock.Anything, suite.env.projectID, suite.environment).Return("1.2.3", nil).Maybe()
 
 	// Additional GetRunningOperations call for isUpgradeStuck validation - return same running operations so not stuck
 	suite.clusterMock.EXPECT().GetRunningOperations(mock.Anything, suite.env.projectID, suite.environment).Return(
@@ -731,8 +745,7 @@ func TestRun_CreatedWithDelayButRunningOperations(t *testing.T) {
 	suite.clusterMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{runningOp}, nil).Once()
 
 	// Since there are existing operations (ownership passed), trackOwnedOperationsAndCheckCompletion is called with pre-fetched operations
-	// Mock ClusterOperationsGetByUpgradeID for trackRunningOperations (called from trackOwnedOperationsAndCheckCompletion)
-	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{existingOp}, nil).Once()
+	// trackOwnedOperationsAndCheckCompletion now receives existingOps as parameter to avoid duplicate database call
 
 	// Mock GetCurrentControlPlaneVersion - return current version lower than target
 	// This validates that the running operation is for our upgrade (cluster not yet at target)
