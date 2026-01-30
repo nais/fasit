@@ -2068,6 +2068,63 @@ func (_c *Repo_CreateOrUpdateClusterOperation_Call) RunAndReturn(run func(ctx co
 	return _c
 }
 
+// DeleteDeployment provides a mock function for the type Repo
+func (_mock *Repo) DeleteDeployment(ctx context.Context, deploymentID uuid.UUID) error {
+	ret := _mock.Called(ctx, deploymentID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteDeployment")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) error); ok {
+		r0 = returnFunc(ctx, deploymentID)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// Repo_DeleteDeployment_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeleteDeployment'
+type Repo_DeleteDeployment_Call struct {
+	*mock.Call
+}
+
+// DeleteDeployment is a helper method to define mock.On call
+//   - ctx context.Context
+//   - deploymentID uuid.UUID
+func (_e *Repo_Expecter) DeleteDeployment(ctx interface{}, deploymentID interface{}) *Repo_DeleteDeployment_Call {
+	return &Repo_DeleteDeployment_Call{Call: _e.mock.On("DeleteDeployment", ctx, deploymentID)}
+}
+
+func (_c *Repo_DeleteDeployment_Call) Run(run func(ctx context.Context, deploymentID uuid.UUID)) *Repo_DeleteDeployment_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Repo_DeleteDeployment_Call) Return(err error) *Repo_DeleteDeployment_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *Repo_DeleteDeployment_Call) RunAndReturn(run func(ctx context.Context, deploymentID uuid.UUID) error) *Repo_DeleteDeployment_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // DeployInstructionCreate provides a mock function for the type Repo
 func (_mock *Repo) DeployInstructionCreate(ctx context.Context, envID uuid.UUID, feature *model.Feature, hash string, deploymentID *uuid.UUID) (uuid.UUID, error) {
 	ret := _mock.Called(ctx, envID, feature, hash, deploymentID)
@@ -4812,6 +4869,148 @@ func (_c *Repo_GetConnPool_Call) RunAndReturn(run func() *pgxpool.Pool) *Repo_Ge
 	return _c
 }
 
+// GetDeployment provides a mock function for the type Repo
+func (_mock *Repo) GetDeployment(ctx context.Context, deploymentID uuid.UUID) (*model.Deployment, error) {
+	ret := _mock.Called(ctx, deploymentID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetDeployment")
+	}
+
+	var r0 *model.Deployment
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) (*model.Deployment, error)); ok {
+		return returnFunc(ctx, deploymentID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) *model.Deployment); ok {
+		r0 = returnFunc(ctx, deploymentID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Deployment)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = returnFunc(ctx, deploymentID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Repo_GetDeployment_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetDeployment'
+type Repo_GetDeployment_Call struct {
+	*mock.Call
+}
+
+// GetDeployment is a helper method to define mock.On call
+//   - ctx context.Context
+//   - deploymentID uuid.UUID
+func (_e *Repo_Expecter) GetDeployment(ctx interface{}, deploymentID interface{}) *Repo_GetDeployment_Call {
+	return &Repo_GetDeployment_Call{Call: _e.mock.On("GetDeployment", ctx, deploymentID)}
+}
+
+func (_c *Repo_GetDeployment_Call) Run(run func(ctx context.Context, deploymentID uuid.UUID)) *Repo_GetDeployment_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Repo_GetDeployment_Call) Return(deployment *model.Deployment, err error) *Repo_GetDeployment_Call {
+	_c.Call.Return(deployment, err)
+	return _c
+}
+
+func (_c *Repo_GetDeployment_Call) RunAndReturn(run func(ctx context.Context, deploymentID uuid.UUID) (*model.Deployment, error)) *Repo_GetDeployment_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetEnvironmentFeature provides a mock function for the type Repo
+func (_mock *Repo) GetEnvironmentFeature(ctx context.Context, environmentID uuid.UUID, featureName string) (*model.Feature, error) {
+	ret := _mock.Called(ctx, environmentID, featureName)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetEnvironmentFeature")
+	}
+
+	var r0 *model.Feature
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, string) (*model.Feature, error)); ok {
+		return returnFunc(ctx, environmentID, featureName)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, string) *model.Feature); ok {
+		r0 = returnFunc(ctx, environmentID, featureName)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Feature)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, string) error); ok {
+		r1 = returnFunc(ctx, environmentID, featureName)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Repo_GetEnvironmentFeature_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetEnvironmentFeature'
+type Repo_GetEnvironmentFeature_Call struct {
+	*mock.Call
+}
+
+// GetEnvironmentFeature is a helper method to define mock.On call
+//   - ctx context.Context
+//   - environmentID uuid.UUID
+//   - featureName string
+func (_e *Repo_Expecter) GetEnvironmentFeature(ctx interface{}, environmentID interface{}, featureName interface{}) *Repo_GetEnvironmentFeature_Call {
+	return &Repo_GetEnvironmentFeature_Call{Call: _e.mock.On("GetEnvironmentFeature", ctx, environmentID, featureName)}
+}
+
+func (_c *Repo_GetEnvironmentFeature_Call) Run(run func(ctx context.Context, environmentID uuid.UUID, featureName string)) *Repo_GetEnvironmentFeature_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		var arg2 string
+		if args[2] != nil {
+			arg2 = args[2].(string)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *Repo_GetEnvironmentFeature_Call) Return(feature1 *model.Feature, err error) *Repo_GetEnvironmentFeature_Call {
+	_c.Call.Return(feature1, err)
+	return _c
+}
+
+func (_c *Repo_GetEnvironmentFeature_Call) RunAndReturn(run func(ctx context.Context, environmentID uuid.UUID, featureName string) (*model.Feature, error)) *Repo_GetEnvironmentFeature_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // HealthGet provides a mock function for the type Repo
 func (_mock *Repo) HealthGet(ctx context.Context, environmentID uuid.UUID) (*model.Health, error) {
 	ret := _mock.Called(ctx, environmentID)
@@ -5212,6 +5411,272 @@ func (_c *Repo_KubernetesNodesForEnv_Call) Return(kubernetesNodes []*model.Kuber
 }
 
 func (_c *Repo_KubernetesNodesForEnv_Call) RunAndReturn(run func(ctx context.Context, envID uuid.UUID) ([]*model.KubernetesNode, error)) *Repo_KubernetesNodesForEnv_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ListDeploymentStatuses provides a mock function for the type Repo
+func (_mock *Repo) ListDeploymentStatuses(ctx context.Context, deploymentID uuid.UUID) ([]*model.DeploymentStatus, error) {
+	ret := _mock.Called(ctx, deploymentID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListDeploymentStatuses")
+	}
+
+	var r0 []*model.DeploymentStatus
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]*model.DeploymentStatus, error)); ok {
+		return returnFunc(ctx, deploymentID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) []*model.DeploymentStatus); ok {
+		r0 = returnFunc(ctx, deploymentID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.DeploymentStatus)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = returnFunc(ctx, deploymentID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Repo_ListDeploymentStatuses_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListDeploymentStatuses'
+type Repo_ListDeploymentStatuses_Call struct {
+	*mock.Call
+}
+
+// ListDeploymentStatuses is a helper method to define mock.On call
+//   - ctx context.Context
+//   - deploymentID uuid.UUID
+func (_e *Repo_Expecter) ListDeploymentStatuses(ctx interface{}, deploymentID interface{}) *Repo_ListDeploymentStatuses_Call {
+	return &Repo_ListDeploymentStatuses_Call{Call: _e.mock.On("ListDeploymentStatuses", ctx, deploymentID)}
+}
+
+func (_c *Repo_ListDeploymentStatuses_Call) Run(run func(ctx context.Context, deploymentID uuid.UUID)) *Repo_ListDeploymentStatuses_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Repo_ListDeploymentStatuses_Call) Return(deploymentStatuss []*model.DeploymentStatus, err error) *Repo_ListDeploymentStatuses_Call {
+	_c.Call.Return(deploymentStatuss, err)
+	return _c
+}
+
+func (_c *Repo_ListDeploymentStatuses_Call) RunAndReturn(run func(ctx context.Context, deploymentID uuid.UUID) ([]*model.DeploymentStatus, error)) *Repo_ListDeploymentStatuses_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ListDeployments provides a mock function for the type Repo
+func (_mock *Repo) ListDeployments(ctx context.Context) ([]*model.Deployment, error) {
+	ret := _mock.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListDeployments")
+	}
+
+	var r0 []*model.Deployment
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context) ([]*model.Deployment, error)); ok {
+		return returnFunc(ctx)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context) []*model.Deployment); ok {
+		r0 = returnFunc(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.Deployment)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = returnFunc(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Repo_ListDeployments_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListDeployments'
+type Repo_ListDeployments_Call struct {
+	*mock.Call
+}
+
+// ListDeployments is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *Repo_Expecter) ListDeployments(ctx interface{}) *Repo_ListDeployments_Call {
+	return &Repo_ListDeployments_Call{Call: _e.mock.On("ListDeployments", ctx)}
+}
+
+func (_c *Repo_ListDeployments_Call) Run(run func(ctx context.Context)) *Repo_ListDeployments_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *Repo_ListDeployments_Call) Return(deployments []*model.Deployment, err error) *Repo_ListDeployments_Call {
+	_c.Call.Return(deployments, err)
+	return _c
+}
+
+func (_c *Repo_ListDeployments_Call) RunAndReturn(run func(ctx context.Context) ([]*model.Deployment, error)) *Repo_ListDeployments_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ListDeploymentsByFeature provides a mock function for the type Repo
+func (_mock *Repo) ListDeploymentsByFeature(ctx context.Context, featureName string) ([]*model.Deployment, error) {
+	ret := _mock.Called(ctx, featureName)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListDeploymentsByFeature")
+	}
+
+	var r0 []*model.Deployment
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) ([]*model.Deployment, error)); ok {
+		return returnFunc(ctx, featureName)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) []*model.Deployment); ok {
+		r0 = returnFunc(ctx, featureName)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.Deployment)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = returnFunc(ctx, featureName)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Repo_ListDeploymentsByFeature_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListDeploymentsByFeature'
+type Repo_ListDeploymentsByFeature_Call struct {
+	*mock.Call
+}
+
+// ListDeploymentsByFeature is a helper method to define mock.On call
+//   - ctx context.Context
+//   - featureName string
+func (_e *Repo_Expecter) ListDeploymentsByFeature(ctx interface{}, featureName interface{}) *Repo_ListDeploymentsByFeature_Call {
+	return &Repo_ListDeploymentsByFeature_Call{Call: _e.mock.On("ListDeploymentsByFeature", ctx, featureName)}
+}
+
+func (_c *Repo_ListDeploymentsByFeature_Call) Run(run func(ctx context.Context, featureName string)) *Repo_ListDeploymentsByFeature_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Repo_ListDeploymentsByFeature_Call) Return(deployments []*model.Deployment, err error) *Repo_ListDeploymentsByFeature_Call {
+	_c.Call.Return(deployments, err)
+	return _c
+}
+
+func (_c *Repo_ListDeploymentsByFeature_Call) RunAndReturn(run func(ctx context.Context, featureName string) ([]*model.Deployment, error)) *Repo_ListDeploymentsByFeature_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ListEnvironmentFeatures provides a mock function for the type Repo
+func (_mock *Repo) ListEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]*model.FeatureState, error) {
+	ret := _mock.Called(ctx, environmentID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListEnvironmentFeatures")
+	}
+
+	var r0 []*model.FeatureState
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]*model.FeatureState, error)); ok {
+		return returnFunc(ctx, environmentID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) []*model.FeatureState); ok {
+		r0 = returnFunc(ctx, environmentID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.FeatureState)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = returnFunc(ctx, environmentID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Repo_ListEnvironmentFeatures_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListEnvironmentFeatures'
+type Repo_ListEnvironmentFeatures_Call struct {
+	*mock.Call
+}
+
+// ListEnvironmentFeatures is a helper method to define mock.On call
+//   - ctx context.Context
+//   - environmentID uuid.UUID
+func (_e *Repo_Expecter) ListEnvironmentFeatures(ctx interface{}, environmentID interface{}) *Repo_ListEnvironmentFeatures_Call {
+	return &Repo_ListEnvironmentFeatures_Call{Call: _e.mock.On("ListEnvironmentFeatures", ctx, environmentID)}
+}
+
+func (_c *Repo_ListEnvironmentFeatures_Call) Run(run func(ctx context.Context, environmentID uuid.UUID)) *Repo_ListEnvironmentFeatures_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Repo_ListEnvironmentFeatures_Call) Return(featureStates []*model.FeatureState, err error) *Repo_ListEnvironmentFeatures_Call {
+	_c.Call.Return(featureStates, err)
+	return _c
+}
+
+func (_c *Repo_ListEnvironmentFeatures_Call) RunAndReturn(run func(ctx context.Context, environmentID uuid.UUID) ([]*model.FeatureState, error)) *Repo_ListEnvironmentFeatures_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -6907,6 +7372,81 @@ func (_c *Repo_SetClusterUpgradesSlackMessage_Call) RunAndReturn(run func(ctx co
 	return _c
 }
 
+// SetDeploymentStatus provides a mock function for the type Repo
+func (_mock *Repo) SetDeploymentStatus(ctx context.Context, deploymentID uuid.UUID, environmentID uuid.UUID, status model.RolloutStatus, message1 string) error {
+	ret := _mock.Called(ctx, deploymentID, environmentID, status, message1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SetDeploymentStatus")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID, model.RolloutStatus, string) error); ok {
+		r0 = returnFunc(ctx, deploymentID, environmentID, status, message1)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// Repo_SetDeploymentStatus_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetDeploymentStatus'
+type Repo_SetDeploymentStatus_Call struct {
+	*mock.Call
+}
+
+// SetDeploymentStatus is a helper method to define mock.On call
+//   - ctx context.Context
+//   - deploymentID uuid.UUID
+//   - environmentID uuid.UUID
+//   - status model.RolloutStatus
+//   - message1 string
+func (_e *Repo_Expecter) SetDeploymentStatus(ctx interface{}, deploymentID interface{}, environmentID interface{}, status interface{}, message1 interface{}) *Repo_SetDeploymentStatus_Call {
+	return &Repo_SetDeploymentStatus_Call{Call: _e.mock.On("SetDeploymentStatus", ctx, deploymentID, environmentID, status, message1)}
+}
+
+func (_c *Repo_SetDeploymentStatus_Call) Run(run func(ctx context.Context, deploymentID uuid.UUID, environmentID uuid.UUID, status model.RolloutStatus, message1 string)) *Repo_SetDeploymentStatus_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		var arg2 uuid.UUID
+		if args[2] != nil {
+			arg2 = args[2].(uuid.UUID)
+		}
+		var arg3 model.RolloutStatus
+		if args[3] != nil {
+			arg3 = args[3].(model.RolloutStatus)
+		}
+		var arg4 string
+		if args[4] != nil {
+			arg4 = args[4].(string)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+			arg3,
+			arg4,
+		)
+	})
+	return _c
+}
+
+func (_c *Repo_SetDeploymentStatus_Call) Return(err error) *Repo_SetDeploymentStatus_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *Repo_SetDeploymentStatus_Call) RunAndReturn(run func(ctx context.Context, deploymentID uuid.UUID, environmentID uuid.UUID, status model.RolloutStatus, message1 string) error) *Repo_SetDeploymentStatus_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // TenantCI provides a mock function for the type Repo
 func (_mock *Repo) TenantCI(ctx context.Context) (*model.Tenant, error) {
 	ret := _mock.Called(ctx)
@@ -7544,546 +8084,6 @@ func (_c *Repo_UpdateClusterUpgradeStatus_Call) Return(clusterUpgradeStatus *mod
 }
 
 func (_c *Repo_UpdateClusterUpgradeStatus_Call) RunAndReturn(run func(ctx context.Context, upgradeID uuid.UUID, status gensql.ClusterUpgradesStatus) (*model.ClusterUpgradeStatus, error)) *Repo_UpdateClusterUpgradeStatus_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// V3DeploymentDelete provides a mock function for the type Repo
-func (_mock *Repo) V3DeploymentDelete(ctx context.Context, deploymentID uuid.UUID) error {
-	ret := _mock.Called(ctx, deploymentID)
-
-	if len(ret) == 0 {
-		panic("no return value specified for V3DeploymentDelete")
-	}
-
-	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) error); ok {
-		r0 = returnFunc(ctx, deploymentID)
-	} else {
-		r0 = ret.Error(0)
-	}
-	return r0
-}
-
-// Repo_V3DeploymentDelete_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'V3DeploymentDelete'
-type Repo_V3DeploymentDelete_Call struct {
-	*mock.Call
-}
-
-// V3DeploymentDelete is a helper method to define mock.On call
-//   - ctx context.Context
-//   - deploymentID uuid.UUID
-func (_e *Repo_Expecter) V3DeploymentDelete(ctx interface{}, deploymentID interface{}) *Repo_V3DeploymentDelete_Call {
-	return &Repo_V3DeploymentDelete_Call{Call: _e.mock.On("V3DeploymentDelete", ctx, deploymentID)}
-}
-
-func (_c *Repo_V3DeploymentDelete_Call) Run(run func(ctx context.Context, deploymentID uuid.UUID)) *Repo_V3DeploymentDelete_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 uuid.UUID
-		if args[1] != nil {
-			arg1 = args[1].(uuid.UUID)
-		}
-		run(
-			arg0,
-			arg1,
-		)
-	})
-	return _c
-}
-
-func (_c *Repo_V3DeploymentDelete_Call) Return(err error) *Repo_V3DeploymentDelete_Call {
-	_c.Call.Return(err)
-	return _c
-}
-
-func (_c *Repo_V3DeploymentDelete_Call) RunAndReturn(run func(ctx context.Context, deploymentID uuid.UUID) error) *Repo_V3DeploymentDelete_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// V3DeploymentGet provides a mock function for the type Repo
-func (_mock *Repo) V3DeploymentGet(ctx context.Context, deploymentID uuid.UUID) (*model.Deployment, error) {
-	ret := _mock.Called(ctx, deploymentID)
-
-	if len(ret) == 0 {
-		panic("no return value specified for V3DeploymentGet")
-	}
-
-	var r0 *model.Deployment
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) (*model.Deployment, error)); ok {
-		return returnFunc(ctx, deploymentID)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) *model.Deployment); ok {
-		r0 = returnFunc(ctx, deploymentID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.Deployment)
-		}
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
-		r1 = returnFunc(ctx, deploymentID)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Repo_V3DeploymentGet_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'V3DeploymentGet'
-type Repo_V3DeploymentGet_Call struct {
-	*mock.Call
-}
-
-// V3DeploymentGet is a helper method to define mock.On call
-//   - ctx context.Context
-//   - deploymentID uuid.UUID
-func (_e *Repo_Expecter) V3DeploymentGet(ctx interface{}, deploymentID interface{}) *Repo_V3DeploymentGet_Call {
-	return &Repo_V3DeploymentGet_Call{Call: _e.mock.On("V3DeploymentGet", ctx, deploymentID)}
-}
-
-func (_c *Repo_V3DeploymentGet_Call) Run(run func(ctx context.Context, deploymentID uuid.UUID)) *Repo_V3DeploymentGet_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 uuid.UUID
-		if args[1] != nil {
-			arg1 = args[1].(uuid.UUID)
-		}
-		run(
-			arg0,
-			arg1,
-		)
-	})
-	return _c
-}
-
-func (_c *Repo_V3DeploymentGet_Call) Return(deployment *model.Deployment, err error) *Repo_V3DeploymentGet_Call {
-	_c.Call.Return(deployment, err)
-	return _c
-}
-
-func (_c *Repo_V3DeploymentGet_Call) RunAndReturn(run func(ctx context.Context, deploymentID uuid.UUID) (*model.Deployment, error)) *Repo_V3DeploymentGet_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// V3DeploymentStatusCreateOrUpdate provides a mock function for the type Repo
-func (_mock *Repo) V3DeploymentStatusCreateOrUpdate(ctx context.Context, deploymentID uuid.UUID, environmentID uuid.UUID, status model.RolloutStatus, message1 string) error {
-	ret := _mock.Called(ctx, deploymentID, environmentID, status, message1)
-
-	if len(ret) == 0 {
-		panic("no return value specified for V3DeploymentStatusCreateOrUpdate")
-	}
-
-	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, uuid.UUID, model.RolloutStatus, string) error); ok {
-		r0 = returnFunc(ctx, deploymentID, environmentID, status, message1)
-	} else {
-		r0 = ret.Error(0)
-	}
-	return r0
-}
-
-// Repo_V3DeploymentStatusCreateOrUpdate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'V3DeploymentStatusCreateOrUpdate'
-type Repo_V3DeploymentStatusCreateOrUpdate_Call struct {
-	*mock.Call
-}
-
-// V3DeploymentStatusCreateOrUpdate is a helper method to define mock.On call
-//   - ctx context.Context
-//   - deploymentID uuid.UUID
-//   - environmentID uuid.UUID
-//   - status model.RolloutStatus
-//   - message1 string
-func (_e *Repo_Expecter) V3DeploymentStatusCreateOrUpdate(ctx interface{}, deploymentID interface{}, environmentID interface{}, status interface{}, message1 interface{}) *Repo_V3DeploymentStatusCreateOrUpdate_Call {
-	return &Repo_V3DeploymentStatusCreateOrUpdate_Call{Call: _e.mock.On("V3DeploymentStatusCreateOrUpdate", ctx, deploymentID, environmentID, status, message1)}
-}
-
-func (_c *Repo_V3DeploymentStatusCreateOrUpdate_Call) Run(run func(ctx context.Context, deploymentID uuid.UUID, environmentID uuid.UUID, status model.RolloutStatus, message1 string)) *Repo_V3DeploymentStatusCreateOrUpdate_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 uuid.UUID
-		if args[1] != nil {
-			arg1 = args[1].(uuid.UUID)
-		}
-		var arg2 uuid.UUID
-		if args[2] != nil {
-			arg2 = args[2].(uuid.UUID)
-		}
-		var arg3 model.RolloutStatus
-		if args[3] != nil {
-			arg3 = args[3].(model.RolloutStatus)
-		}
-		var arg4 string
-		if args[4] != nil {
-			arg4 = args[4].(string)
-		}
-		run(
-			arg0,
-			arg1,
-			arg2,
-			arg3,
-			arg4,
-		)
-	})
-	return _c
-}
-
-func (_c *Repo_V3DeploymentStatusCreateOrUpdate_Call) Return(err error) *Repo_V3DeploymentStatusCreateOrUpdate_Call {
-	_c.Call.Return(err)
-	return _c
-}
-
-func (_c *Repo_V3DeploymentStatusCreateOrUpdate_Call) RunAndReturn(run func(ctx context.Context, deploymentID uuid.UUID, environmentID uuid.UUID, status model.RolloutStatus, message1 string) error) *Repo_V3DeploymentStatusCreateOrUpdate_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// V3DeploymentStatusesGet provides a mock function for the type Repo
-func (_mock *Repo) V3DeploymentStatusesGet(ctx context.Context, deploymentID uuid.UUID) ([]*model.DeploymentStatus, error) {
-	ret := _mock.Called(ctx, deploymentID)
-
-	if len(ret) == 0 {
-		panic("no return value specified for V3DeploymentStatusesGet")
-	}
-
-	var r0 []*model.DeploymentStatus
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]*model.DeploymentStatus, error)); ok {
-		return returnFunc(ctx, deploymentID)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) []*model.DeploymentStatus); ok {
-		r0 = returnFunc(ctx, deploymentID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.DeploymentStatus)
-		}
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
-		r1 = returnFunc(ctx, deploymentID)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Repo_V3DeploymentStatusesGet_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'V3DeploymentStatusesGet'
-type Repo_V3DeploymentStatusesGet_Call struct {
-	*mock.Call
-}
-
-// V3DeploymentStatusesGet is a helper method to define mock.On call
-//   - ctx context.Context
-//   - deploymentID uuid.UUID
-func (_e *Repo_Expecter) V3DeploymentStatusesGet(ctx interface{}, deploymentID interface{}) *Repo_V3DeploymentStatusesGet_Call {
-	return &Repo_V3DeploymentStatusesGet_Call{Call: _e.mock.On("V3DeploymentStatusesGet", ctx, deploymentID)}
-}
-
-func (_c *Repo_V3DeploymentStatusesGet_Call) Run(run func(ctx context.Context, deploymentID uuid.UUID)) *Repo_V3DeploymentStatusesGet_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 uuid.UUID
-		if args[1] != nil {
-			arg1 = args[1].(uuid.UUID)
-		}
-		run(
-			arg0,
-			arg1,
-		)
-	})
-	return _c
-}
-
-func (_c *Repo_V3DeploymentStatusesGet_Call) Return(deploymentStatuss []*model.DeploymentStatus, err error) *Repo_V3DeploymentStatusesGet_Call {
-	_c.Call.Return(deploymentStatuss, err)
-	return _c
-}
-
-func (_c *Repo_V3DeploymentStatusesGet_Call) RunAndReturn(run func(ctx context.Context, deploymentID uuid.UUID) ([]*model.DeploymentStatus, error)) *Repo_V3DeploymentStatusesGet_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// V3DeploymentsGet provides a mock function for the type Repo
-func (_mock *Repo) V3DeploymentsGet(ctx context.Context) ([]*model.Deployment, error) {
-	ret := _mock.Called(ctx)
-
-	if len(ret) == 0 {
-		panic("no return value specified for V3DeploymentsGet")
-	}
-
-	var r0 []*model.Deployment
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context) ([]*model.Deployment, error)); ok {
-		return returnFunc(ctx)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context) []*model.Deployment); ok {
-		r0 = returnFunc(ctx)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.Deployment)
-		}
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = returnFunc(ctx)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Repo_V3DeploymentsGet_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'V3DeploymentsGet'
-type Repo_V3DeploymentsGet_Call struct {
-	*mock.Call
-}
-
-// V3DeploymentsGet is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *Repo_Expecter) V3DeploymentsGet(ctx interface{}) *Repo_V3DeploymentsGet_Call {
-	return &Repo_V3DeploymentsGet_Call{Call: _e.mock.On("V3DeploymentsGet", ctx)}
-}
-
-func (_c *Repo_V3DeploymentsGet_Call) Run(run func(ctx context.Context)) *Repo_V3DeploymentsGet_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		run(
-			arg0,
-		)
-	})
-	return _c
-}
-
-func (_c *Repo_V3DeploymentsGet_Call) Return(deployments []*model.Deployment, err error) *Repo_V3DeploymentsGet_Call {
-	_c.Call.Return(deployments, err)
-	return _c
-}
-
-func (_c *Repo_V3DeploymentsGet_Call) RunAndReturn(run func(ctx context.Context) ([]*model.Deployment, error)) *Repo_V3DeploymentsGet_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// V3DeploymentsGetByFeature provides a mock function for the type Repo
-func (_mock *Repo) V3DeploymentsGetByFeature(ctx context.Context, featureName string) ([]*model.Deployment, error) {
-	ret := _mock.Called(ctx, featureName)
-
-	if len(ret) == 0 {
-		panic("no return value specified for V3DeploymentsGetByFeature")
-	}
-
-	var r0 []*model.Deployment
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) ([]*model.Deployment, error)); ok {
-		return returnFunc(ctx, featureName)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) []*model.Deployment); ok {
-		r0 = returnFunc(ctx, featureName)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.Deployment)
-		}
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = returnFunc(ctx, featureName)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Repo_V3DeploymentsGetByFeature_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'V3DeploymentsGetByFeature'
-type Repo_V3DeploymentsGetByFeature_Call struct {
-	*mock.Call
-}
-
-// V3DeploymentsGetByFeature is a helper method to define mock.On call
-//   - ctx context.Context
-//   - featureName string
-func (_e *Repo_Expecter) V3DeploymentsGetByFeature(ctx interface{}, featureName interface{}) *Repo_V3DeploymentsGetByFeature_Call {
-	return &Repo_V3DeploymentsGetByFeature_Call{Call: _e.mock.On("V3DeploymentsGetByFeature", ctx, featureName)}
-}
-
-func (_c *Repo_V3DeploymentsGetByFeature_Call) Run(run func(ctx context.Context, featureName string)) *Repo_V3DeploymentsGetByFeature_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 string
-		if args[1] != nil {
-			arg1 = args[1].(string)
-		}
-		run(
-			arg0,
-			arg1,
-		)
-	})
-	return _c
-}
-
-func (_c *Repo_V3DeploymentsGetByFeature_Call) Return(deployments []*model.Deployment, err error) *Repo_V3DeploymentsGetByFeature_Call {
-	_c.Call.Return(deployments, err)
-	return _c
-}
-
-func (_c *Repo_V3DeploymentsGetByFeature_Call) RunAndReturn(run func(ctx context.Context, featureName string) ([]*model.Deployment, error)) *Repo_V3DeploymentsGetByFeature_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// V3GetEnvironmentFeature provides a mock function for the type Repo
-func (_mock *Repo) V3GetEnvironmentFeature(ctx context.Context, environmentID uuid.UUID, featureName string) (*model.Feature, error) {
-	ret := _mock.Called(ctx, environmentID, featureName)
-
-	if len(ret) == 0 {
-		panic("no return value specified for V3GetEnvironmentFeature")
-	}
-
-	var r0 *model.Feature
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, string) (*model.Feature, error)); ok {
-		return returnFunc(ctx, environmentID, featureName)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, string) *model.Feature); ok {
-		r0 = returnFunc(ctx, environmentID, featureName)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.Feature)
-		}
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, string) error); ok {
-		r1 = returnFunc(ctx, environmentID, featureName)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Repo_V3GetEnvironmentFeature_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'V3GetEnvironmentFeature'
-type Repo_V3GetEnvironmentFeature_Call struct {
-	*mock.Call
-}
-
-// V3GetEnvironmentFeature is a helper method to define mock.On call
-//   - ctx context.Context
-//   - environmentID uuid.UUID
-//   - featureName string
-func (_e *Repo_Expecter) V3GetEnvironmentFeature(ctx interface{}, environmentID interface{}, featureName interface{}) *Repo_V3GetEnvironmentFeature_Call {
-	return &Repo_V3GetEnvironmentFeature_Call{Call: _e.mock.On("V3GetEnvironmentFeature", ctx, environmentID, featureName)}
-}
-
-func (_c *Repo_V3GetEnvironmentFeature_Call) Run(run func(ctx context.Context, environmentID uuid.UUID, featureName string)) *Repo_V3GetEnvironmentFeature_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 uuid.UUID
-		if args[1] != nil {
-			arg1 = args[1].(uuid.UUID)
-		}
-		var arg2 string
-		if args[2] != nil {
-			arg2 = args[2].(string)
-		}
-		run(
-			arg0,
-			arg1,
-			arg2,
-		)
-	})
-	return _c
-}
-
-func (_c *Repo_V3GetEnvironmentFeature_Call) Return(feature1 *model.Feature, err error) *Repo_V3GetEnvironmentFeature_Call {
-	_c.Call.Return(feature1, err)
-	return _c
-}
-
-func (_c *Repo_V3GetEnvironmentFeature_Call) RunAndReturn(run func(ctx context.Context, environmentID uuid.UUID, featureName string) (*model.Feature, error)) *Repo_V3GetEnvironmentFeature_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// V3GetEnvironmentFeatures provides a mock function for the type Repo
-func (_mock *Repo) V3GetEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]*model.FeatureState, error) {
-	ret := _mock.Called(ctx, environmentID)
-
-	if len(ret) == 0 {
-		panic("no return value specified for V3GetEnvironmentFeatures")
-	}
-
-	var r0 []*model.FeatureState
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]*model.FeatureState, error)); ok {
-		return returnFunc(ctx, environmentID)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) []*model.FeatureState); ok {
-		r0 = returnFunc(ctx, environmentID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.FeatureState)
-		}
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
-		r1 = returnFunc(ctx, environmentID)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Repo_V3GetEnvironmentFeatures_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'V3GetEnvironmentFeatures'
-type Repo_V3GetEnvironmentFeatures_Call struct {
-	*mock.Call
-}
-
-// V3GetEnvironmentFeatures is a helper method to define mock.On call
-//   - ctx context.Context
-//   - environmentID uuid.UUID
-func (_e *Repo_Expecter) V3GetEnvironmentFeatures(ctx interface{}, environmentID interface{}) *Repo_V3GetEnvironmentFeatures_Call {
-	return &Repo_V3GetEnvironmentFeatures_Call{Call: _e.mock.On("V3GetEnvironmentFeatures", ctx, environmentID)}
-}
-
-func (_c *Repo_V3GetEnvironmentFeatures_Call) Run(run func(ctx context.Context, environmentID uuid.UUID)) *Repo_V3GetEnvironmentFeatures_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 uuid.UUID
-		if args[1] != nil {
-			arg1 = args[1].(uuid.UUID)
-		}
-		run(
-			arg0,
-			arg1,
-		)
-	})
-	return _c
-}
-
-func (_c *Repo_V3GetEnvironmentFeatures_Call) Return(featureStates []*model.FeatureState, err error) *Repo_V3GetEnvironmentFeatures_Call {
-	_c.Call.Return(featureStates, err)
-	return _c
-}
-
-func (_c *Repo_V3GetEnvironmentFeatures_Call) RunAndReturn(run func(ctx context.Context, environmentID uuid.UUID) ([]*model.FeatureState, error)) *Repo_V3GetEnvironmentFeatures_Call {
 	_c.Call.Return(run)
 	return _c
 }

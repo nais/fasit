@@ -3,6 +3,7 @@ package deployment
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -85,10 +86,6 @@ func (dm *Manager) TriggerReconcile(event ReconcileTriggerEvent) chan TriggerRes
 	return dm.reconciler.trigger(event)
 }
 
-func (dm *Manager) GetDeployment(ctx context.Context, id uuid.UUID) (*model.Deployment, error) {
-	return getDeployment(ctx, dm.querier, id)
-}
-
 func (dm *Manager) CreateDeployment(ctx context.Context, req Request) (uuid.UUID, error) {
 	feat, err := dm.chartDownloader(req.Chart, req.Version)
 	if err != nil {
@@ -110,4 +107,119 @@ func (dm *Manager) CreateDeployment(ctx context.Context, req Request) (uuid.UUID
 	}
 
 	return dm.deployer.CreateDeployment(ctx, feat, req, false)
+}
+
+func (dm *Manager) GetDeployment(ctx context.Context, id uuid.UUID) (*model.Deployment, error) {
+	return getDeployment(ctx, dm.querier, id)
+}
+
+func (dm *Manager) ListDeployments(ctx context.Context) ([]*model.Deployment, error) {
+	rows, err := dm.querier.ListDeployments(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]*model.Deployment, len(rows))
+	for i, row := range rows {
+		deployment, err := deploymentFromSQL(row.Deployment, row.FeatureDatum)
+		if err != nil {
+			return nil, fmt.Errorf("make deployment: %w", err)
+		}
+		ret[i] = deployment
+	}
+
+	return ret, nil
+}
+
+func (dm *Manager) ListDeploymentStatuses(ctx context.Context, deploymentID uuid.UUID) ([]*model.DeploymentStatus, error) {
+	rows, err := dm.querier.ListDeploymentStatuses(ctx, deploymentID)
+	if err != nil {
+		return nil, fmt.Errorf("get deployment statuses: %w", err)
+	}
+
+	models := make([]*model.DeploymentStatus, len(rows))
+	for i, status := range rows {
+		models[i] = &model.DeploymentStatus{
+			State:         model.DeploymentStatusState(strings.ToUpper(status.Status)),
+			Message:       status.Message,
+			LastModified:  status.LastModified.Time,
+			Created:       status.Created.Time,
+			DeploymentID:  status.DeploymentID,
+			EnvironmentID: status.EnvironmentID,
+		}
+	}
+
+	return models, nil
+}
+
+func (dm *Manager) ListDeploymentsByFeature(ctx context.Context, featureName string) ([]*model.Deployment, error) {
+	rows, err := dm.querier.ListDeploymentsByFeature(ctx, featureName)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]*model.Deployment, len(rows))
+	for i, row := range rows {
+		deployment, err := deploymentFromSQL(row.Deployment, row.FeatureDatum)
+		if err != nil {
+			return nil, fmt.Errorf("make deployment: %w", err)
+		}
+		ret[i] = deployment
+	}
+
+	return ret, nil
+}
+
+func (dm *Manager) DeleteDeployment(ctx context.Context, deploymentID uuid.UUID) error {
+	return dm.querier.DeleteDeployment(ctx, deploymentID)
+}
+
+func (dm *Manager) SetDeploymentStatus(ctx context.Context, deploymentID, environmentID uuid.UUID, status model.RolloutStatus, message string) error {
+	return dm.querier.SetDeploymentStatus(ctx, deploymentsql.SetDeploymentStatusParams{
+		DeploymentID:  deploymentID,
+		EnvironmentID: environmentID,
+		Status:        status.String(),
+		Message:       message,
+	})
+	return nil
+}
+
+func (dm *Manager) GetEnvironmentFeature(ctx context.Context, environmentID uuid.UUID, featureName string) (*model.Feature, error) {
+	f, err := dm.querier.GetEnvironmentFeature(ctx, deploymentsql.GetEnvironmentFeatureParams{
+		EnvironmentID: environmentID,
+		FeatureName:   featureName,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	feature, err := featureFromSQL(f.FeatureDatum)
+	if err != nil {
+		return nil, fmt.Errorf("make feature: %w", err)
+	}
+	feature.HasDeployments = true
+
+	return feature, nil
+}
+
+func (dm *Manager) ListEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]*model.FeatureState, error) {
+	features, err := dm.querier.ListEnvironmentFeatures(ctx, environmentID)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]*model.FeatureState, len(features))
+	for i, f := range features {
+		ret[i] = &model.FeatureState{
+			ID:           environmentID.String() + "-" + f.FeatureDatum.Name,
+			FeatureName:  f.FeatureDatum.Name,
+			Enabled:      true,
+			EnabledAt:    &f.Created.Time,
+			Created:      f.Created.Time,
+			LastModified: f.Created.Time,
+			EnvID:        environmentID,
+		}
+	}
+
+	return ret, nil
 }

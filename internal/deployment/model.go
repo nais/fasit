@@ -11,6 +11,20 @@ import (
 	"github.com/nais/fasit/internal/graph/model"
 )
 
+func getDeployment(ctx context.Context, querier deploymentsql.Querier, id uuid.UUID) (*model.Deployment, error) {
+	d, err := querier.GetDeployment(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("getting deployment from db: %w", err)
+	}
+
+	ret, err := deploymentFromSQL(d.Deployment, d.FeatureDatum)
+	if err != nil {
+		return nil, fmt.Errorf("converting deployment from sql: %w", err)
+	}
+
+	return ret, nil
+}
+
 func makeFeatureYAML(fd deploymentsql.FeatureDatum) (model.FeatureYAML, map[string]json.RawMessage, error) {
 	ret := model.FeatureYAML{
 		Timeout: time.Duration(fd.Timeout) * time.Millisecond,
@@ -75,18 +89,4 @@ func deploymentFromSQL(d deploymentsql.Deployment, fd deploymentsql.FeatureDatum
 		CI:           d.Ci,
 		TargetLabels: d.Target,
 	}, nil
-}
-
-func getDeployment(ctx context.Context, querier deploymentsql.Querier, id uuid.UUID) (*model.Deployment, error) {
-	d, err := querier.DeploymentGet(ctx, id)
-	if err != nil {
-		return nil, fmt.Errorf("getting deployment from db: %w", err)
-	}
-
-	ret, err := deploymentFromSQL(d.Deployment, d.FeatureDatum)
-	if err != nil {
-		return nil, fmt.Errorf("converting deployment from sql: %w", err)
-	}
-
-	return ret, nil
 }

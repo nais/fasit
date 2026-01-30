@@ -56,7 +56,7 @@ func (r *clusterUpgradeStatusResolver) Actor(ctx context.Context, obj *model.Clu
 
 // FeatureStates is the resolver for the featureStates field.
 func (r *environmentResolver) FeatureStates(ctx context.Context, obj *model.Environment) ([]*model.FeatureState, error) {
-	ret, err := r.Repo.V3GetEnvironmentFeatures(ctx, obj.ID)
+	ret, err := r.Repo.ListEnvironmentFeatures(ctx, obj.ID)
 	if err != nil {
 		return nil, err
 	}

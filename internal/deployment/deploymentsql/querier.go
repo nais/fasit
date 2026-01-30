@@ -10,19 +10,21 @@ import (
 )
 
 type Querier interface {
+	CreateDeployment(ctx context.Context, arg CreateDeploymentParams) (Deployment, error)
+	DeleteDeployment(ctx context.Context, id uuid.UUID) error
 	DeployInstructionsGetDeployedFeatures(ctx context.Context, arg DeployInstructionsGetDeployedFeaturesParams) ([]string, error)
-	DeploymentCreate(ctx context.Context, arg DeploymentCreateParams) (Deployment, error)
-	DeploymentDelete(ctx context.Context, id uuid.UUID) error
-	DeploymentGet(ctx context.Context, id uuid.UUID) (DeploymentGetRow, error)
-	DeploymentStatusCreateOrUpdate(ctx context.Context, arg DeploymentStatusCreateOrUpdateParams) error
-	DeploymentStatusGet(ctx context.Context, deploymentID uuid.UUID) ([]DeploymentStatus, error)
-	DeploymentsForEnvironmentToReconcile(ctx context.Context, environmentID uuid.UUID) ([]DeploymentsForEnvironmentToReconcileRow, error)
-	DeploymentsGet(ctx context.Context) ([]DeploymentsGetRow, error)
-	DeploymentsGetByFeature(ctx context.Context, featureName string) ([]DeploymentsGetByFeatureRow, error)
 	FeatureEnabled(ctx context.Context, arg FeatureEnabledParams) (bool, error)
 	GetCIEnvironmentsForTarget(ctx context.Context, target environment.Labels) ([]GetCIEnvironmentsForTargetRow, error)
+	GetDeployment(ctx context.Context, id uuid.UUID) (GetDeploymentRow, error)
+	GetEnvironmentFeature(ctx context.Context, arg GetEnvironmentFeatureParams) (GetEnvironmentFeatureRow, error)
 	InsertEnvironmentFeature(ctx context.Context, arg InsertEnvironmentFeatureParams) error
 	LatestStatusForDeploymentInEnvironment(ctx context.Context, arg LatestStatusForDeploymentInEnvironmentParams) (string, error)
+	ListDeploymentStatuses(ctx context.Context, deploymentID uuid.UUID) ([]DeploymentStatus, error)
+	ListDeployments(ctx context.Context) ([]ListDeploymentsRow, error)
+	ListDeploymentsByFeature(ctx context.Context, featureName string) ([]ListDeploymentsByFeatureRow, error)
+	ListDeploymentsToReconcile(ctx context.Context, environmentID uuid.UUID) ([]ListDeploymentsToReconcileRow, error)
+	ListEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]ListEnvironmentFeaturesRow, error)
+	SetDeploymentStatus(ctx context.Context, arg SetDeploymentStatusParams) error
 }
 
 var _ Querier = (*Queries)(nil)

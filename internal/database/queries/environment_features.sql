@@ -10,7 +10,7 @@ WHERE
 	environment_id = @environment_id
 	AND feature_name = @feature_name;
 
--- name: GetEnvironmentFeatures :many
+-- name: ListEnvironmentFeatures :many
 SELECT
 	sqlc.embed(fd),
 	d.created

@@ -226,7 +226,7 @@ func (d *deployer) shouldDeployToEnvironment(ctx context.Context, deployment *mo
 }
 
 func (d *deployer) setDeploymentStatus(ctx context.Context, deploymentID, environmentID uuid.UUID, status model.RolloutStatus, message string) {
-	err := d.querier.DeploymentStatusCreateOrUpdate(ctx, deploymentsql.DeploymentStatusCreateOrUpdateParams{
+	err := d.querier.SetDeploymentStatus(ctx, deploymentsql.SetDeploymentStatusParams{
 		DeploymentID:  deploymentID,
 		EnvironmentID: environmentID,
 		Status:        status.String(),
@@ -293,7 +293,24 @@ func (d *deployer) CreateDeployment(ctx context.Context, feat *model.Feature, re
 		}
 	}
 
-	deployment, err := d.deploymentCreate(ctx, feat.Name, feat.Version, &req.Description, req.Ref, req.Target, ci)
+	var ghRef []byte
+	if req.Ref != nil {
+		b, err := json.Marshal(req.Ref)
+		if err != nil {
+			return uuid.Nil, fmt.Errorf("marshal gh ref: %w", err)
+		}
+
+		ghRef = b
+	}
+
+	deployment, err := d.querier.CreateDeployment(ctx, deploymentsql.CreateDeploymentParams{
+		FeatureName: feat.Name,
+		Version:     feat.Version,
+		GhRef:       ghRef,
+		Target:      req.Target,
+		Description: &req.Description,
+		Ci:          ci,
+	})
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("unable to create deployment: %w", err)
 	}
@@ -392,29 +409,6 @@ func (d *deployer) missingDependencies(ctx context.Context, dependencies []strin
 		}
 	}
 	return missing, nil
-}
-
-func (d *deployer) deploymentCreate(ctx context.Context, featureName, featureVersion string, description *string, ref *model.GHRef, target environment.Labels, ci bool) (*deploymentsql.Deployment, error) {
-	var ghRef []byte
-	if ref != nil {
-		b, err := json.Marshal(ref)
-		if err != nil {
-			return nil, fmt.Errorf("marshal gh ref: %w", err)
-		}
-
-		ghRef = b
-	}
-
-	ret, err := d.querier.DeploymentCreate(ctx, deploymentsql.DeploymentCreateParams{
-		FeatureName: featureName,
-		Version:     featureVersion,
-		GhRef:       ghRef,
-		Target:      target,
-		Description: description,
-		Ci:          ci,
-	})
-
-	return &ret, err
 }
 
 // filterDeployments filters the deployments to only include the most specific deployment with the latest created

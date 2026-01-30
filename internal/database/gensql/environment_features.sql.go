@@ -54,7 +54,7 @@ func (q *Queries) GetEnvironmentFeature(ctx context.Context, arg GetEnvironmentF
 	return i, err
 }
 
-const getEnvironmentFeatures = `-- name: GetEnvironmentFeatures :many
+const listEnvironmentFeatures = `-- name: ListEnvironmentFeatures :many
 SELECT
 	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.rename,
 	d.created
@@ -69,20 +69,20 @@ ORDER BY
 	fd.name ASC
 `
 
-type GetEnvironmentFeaturesRow struct {
+type ListEnvironmentFeaturesRow struct {
 	FeatureDatum FeatureDatum
 	Created      pgtype.Timestamptz
 }
 
-func (q *Queries) GetEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]GetEnvironmentFeaturesRow, error) {
-	rows, err := q.db.Query(ctx, getEnvironmentFeatures, environmentID)
+func (q *Queries) ListEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]ListEnvironmentFeaturesRow, error) {
+	rows, err := q.db.Query(ctx, listEnvironmentFeatures, environmentID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []GetEnvironmentFeaturesRow{}
+	items := []ListEnvironmentFeaturesRow{}
 	for rows.Next() {
-		var i GetEnvironmentFeaturesRow
+		var i ListEnvironmentFeaturesRow
 		if err := rows.Scan(
 			&i.FeatureDatum.Name,
 			&i.FeatureDatum.Version,

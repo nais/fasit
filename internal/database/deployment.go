@@ -11,17 +11,17 @@ import (
 )
 
 type DeploymentRepo interface {
-	V3DeploymentGet(ctx context.Context, deploymentID uuid.UUID) (*model.Deployment, error)
-	V3DeploymentsGet(ctx context.Context) ([]*model.Deployment, error)
-	V3DeploymentStatusesGet(ctx context.Context, deploymentID uuid.UUID) ([]*model.DeploymentStatus, error)
-	V3DeploymentsGetByFeature(ctx context.Context, featureName string) ([]*model.Deployment, error)
-	V3DeploymentDelete(ctx context.Context, deploymentID uuid.UUID) error
-	V3DeploymentStatusCreateOrUpdate(ctx context.Context, deploymentID, environmentID uuid.UUID, status model.RolloutStatus, message string) error
-	V3GetEnvironmentFeature(ctx context.Context, environmentID uuid.UUID, featureName string) (*model.Feature, error)
-	V3GetEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]*model.FeatureState, error)
+	GetDeployment(ctx context.Context, deploymentID uuid.UUID) (*model.Deployment, error)
+	ListDeployments(ctx context.Context) ([]*model.Deployment, error)
+	ListDeploymentStatuses(ctx context.Context, deploymentID uuid.UUID) ([]*model.DeploymentStatus, error)
+	ListDeploymentsByFeature(ctx context.Context, featureName string) ([]*model.Deployment, error)
+	DeleteDeployment(ctx context.Context, deploymentID uuid.UUID) error
+	SetDeploymentStatus(ctx context.Context, deploymentID, environmentID uuid.UUID, status model.RolloutStatus, message string) error
+	GetEnvironmentFeature(ctx context.Context, environmentID uuid.UUID, featureName string) (*model.Feature, error)
+	ListEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]*model.FeatureState, error)
 }
 
-func (r *repo) V3DeploymentStatusesGet(ctx context.Context, deploymentID uuid.UUID) ([]*model.DeploymentStatus, error) {
+func (r *repo) ListDeploymentStatuses(ctx context.Context, deploymentID uuid.UUID) ([]*model.DeploymentStatus, error) {
 	rows, err := r.querier.DeploymentStatusGet(ctx, deploymentID)
 	if err != nil {
 		return nil, fmt.Errorf("get deployment statuses: %w", err)
@@ -42,11 +42,11 @@ func (r *repo) V3DeploymentStatusesGet(ctx context.Context, deploymentID uuid.UU
 	return models, nil
 }
 
-func (r *repo) V3DeploymentDelete(ctx context.Context, deploymentID uuid.UUID) error {
+func (r *repo) DeleteDeployment(ctx context.Context, deploymentID uuid.UUID) error {
 	return r.querier.DeploymentDelete(ctx, deploymentID)
 }
 
-func (r *repo) V3GetEnvironmentFeature(ctx context.Context, environmentID uuid.UUID, featureName string) (*model.Feature, error) {
+func (r *repo) GetEnvironmentFeature(ctx context.Context, environmentID uuid.UUID, featureName string) (*model.Feature, error) {
 	f, err := r.querier.GetEnvironmentFeature(ctx, gensql.GetEnvironmentFeatureParams{
 		EnvironmentID: environmentID,
 		FeatureName:   featureName,
@@ -64,8 +64,8 @@ func (r *repo) V3GetEnvironmentFeature(ctx context.Context, environmentID uuid.U
 	return feature, nil
 }
 
-func (r *repo) V3GetEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]*model.FeatureState, error) {
-	features, err := r.querier.GetEnvironmentFeatures(ctx, environmentID)
+func (r *repo) ListEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]*model.FeatureState, error) {
+	features, err := r.querier.ListEnvironmentFeatures(ctx, environmentID)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +86,7 @@ func (r *repo) V3GetEnvironmentFeatures(ctx context.Context, environmentID uuid.
 	return ret, nil
 }
 
-func (r *repo) V3DeploymentGet(ctx context.Context, deploymentID uuid.UUID) (*model.Deployment, error) {
+func (r *repo) GetDeployment(ctx context.Context, deploymentID uuid.UUID) (*model.Deployment, error) {
 	row, err := r.querier.DeploymentGet(ctx, deploymentID)
 	if err != nil {
 		return nil, err
@@ -95,7 +95,7 @@ func (r *repo) V3DeploymentGet(ctx context.Context, deploymentID uuid.UUID) (*mo
 	return deploymentFromSQL(row.Deployment, row.FeatureDatum)
 }
 
-func (r *repo) V3DeploymentsGet(ctx context.Context) ([]*model.Deployment, error) {
+func (r *repo) ListDeployments(ctx context.Context) ([]*model.Deployment, error) {
 	rows, err := r.querier.DeploymentsGet(ctx)
 	if err != nil {
 		return nil, err
@@ -113,7 +113,7 @@ func (r *repo) V3DeploymentsGet(ctx context.Context) ([]*model.Deployment, error
 	return ret, nil
 }
 
-func (r *repo) V3DeploymentsGetByFeature(ctx context.Context, featureName string) ([]*model.Deployment, error) {
+func (r *repo) ListDeploymentsByFeature(ctx context.Context, featureName string) ([]*model.Deployment, error) {
 	rows, err := r.querier.DeploymentsGetByFeature(ctx, featureName)
 	if err != nil {
 		return nil, err
@@ -139,7 +139,7 @@ func (r *repo) FeatureEnabled(ctx context.Context, featureName string, envID uui
 }
 
 // TODO: receiver is still using this
-func (r *repo) V3DeploymentStatusCreateOrUpdate(ctx context.Context, deploymentID, environmentID uuid.UUID, status model.RolloutStatus, message string) error {
+func (r *repo) SetDeploymentStatus(ctx context.Context, deploymentID, environmentID uuid.UUID, status model.RolloutStatus, message string) error {
 	return r.querier.DeploymentStatusCreateOrUpdate(ctx, gensql.DeploymentStatusCreateOrUpdateParams{
 		DeploymentID:  deploymentID,
 		EnvironmentID: environmentID,

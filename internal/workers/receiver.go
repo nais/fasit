@@ -24,7 +24,7 @@ type ReceiverStore interface {
 	DeployInstructionGet(ctx context.Context, id uuid.UUID) (*model.DeployInstruction, error)
 	DeployInstructionsLatestForFeature(ctx context.Context, envID uuid.UUID, featureName string) (*model.DeployInstruction, error)
 	DeployInstructionUpdateStatus(ctx context.Context, id uuid.UUID, status model.RolloutStatus) error
-	V3DeploymentStatusCreateOrUpdate(ctx context.Context, deploymentID, environmentID uuid.UUID, status model.RolloutStatus, message string) error
+	SetDeploymentStatus(ctx context.Context, deploymentID, environmentID uuid.UUID, status model.RolloutStatus, message string) error
 	EnvironmentByNames(ctx context.Context, tenantName, environmentName string) (*model.Environment, error)
 	EnvironmentCI(ctx context.Context, kind model.EnvironmentKind) (*model.Environment, error)
 	EnvironmentCreate(ctx context.Context, t *model.EnvironmentCreate) (*model.Environment, error)
@@ -147,7 +147,7 @@ func (r *Receiver) handlerHelm(ctx context.Context, msg message.Status) error {
 		if helmStatus.Error != "" {
 			message += " error: " + helmStatus.Error
 		}
-		if err = r.repo.V3DeploymentStatusCreateOrUpdate(ctx, *di.DeploymentID, env.ID, helmStatus.RolloutStatus, message); err != nil {
+		if err = r.repo.SetDeploymentStatus(ctx, *di.DeploymentID, env.ID, helmStatus.RolloutStatus, message); err != nil {
 			r.log.WithFields(logrus.Fields{
 				"deployment_id":  di.DeploymentID,
 				"environment_id": env.ID,

@@ -131,7 +131,7 @@ func (r *reconciler) reconcileEnvironment(ctx context.Context, environment *mode
 	publisher := r.deployer.publisher(naisdTopicID(environment.TenantName, environment.Name), r.deployer.log)
 	defer publisher.Stop()
 
-	allDeployments, err := r.deploymentsForEnvironmentToReconcile(ctx, environment.ID)
+	allDeployments, err := r.listDeploymentsToReconcile(ctx, environment.ID)
 	if err != nil {
 		return fmt.Errorf("get deployments for environment %q: %w", environment.Name, err)
 	}
@@ -145,8 +145,8 @@ func (r *reconciler) reconcileEnvironment(ctx context.Context, environment *mode
 	return nil
 }
 
-func (r *reconciler) deploymentsForEnvironmentToReconcile(ctx context.Context, environmentID uuid.UUID) ([]*model.Deployment, error) {
-	rows, err := r.querier.DeploymentsForEnvironmentToReconcile(ctx, environmentID)
+func (r *reconciler) listDeploymentsToReconcile(ctx context.Context, environmentID uuid.UUID) ([]*model.Deployment, error) {
+	rows, err := r.querier.ListDeploymentsToReconcile(ctx, environmentID)
 	if err != nil {
 		return nil, err
 	}

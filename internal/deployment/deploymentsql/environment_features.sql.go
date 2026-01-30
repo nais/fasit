@@ -7,7 +7,52 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
+
+const getEnvironmentFeature = `-- name: GetEnvironmentFeature :one
+SELECT
+	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.rename,
+	ef.deployment_id
+FROM
+	environment_features ef
+	JOIN feature_data fd ON fd.name = ef.feature_name
+		AND fd.version = ef.feature_version
+WHERE
+	environment_id = $1
+	AND feature_name = $2
+`
+
+type GetEnvironmentFeatureParams struct {
+	EnvironmentID uuid.UUID
+	FeatureName   string
+}
+
+type GetEnvironmentFeatureRow struct {
+	FeatureDatum FeatureDatum
+	DeploymentID uuid.UUID
+}
+
+func (q *Queries) GetEnvironmentFeature(ctx context.Context, arg GetEnvironmentFeatureParams) (GetEnvironmentFeatureRow, error) {
+	row := q.db.QueryRow(ctx, getEnvironmentFeature, arg.EnvironmentID, arg.FeatureName)
+	var i GetEnvironmentFeatureRow
+	err := row.Scan(
+		&i.FeatureDatum.Name,
+		&i.FeatureDatum.Version,
+		&i.FeatureDatum.Chart,
+		&i.FeatureDatum.Description,
+		&i.FeatureDatum.Source,
+		&i.FeatureDatum.Kinds,
+		&i.FeatureDatum.Dependencies,
+		&i.FeatureDatum.Values,
+		&i.FeatureDatum.DefaultValues,
+		&i.FeatureDatum.Timeout,
+		&i.FeatureDatum.TplDetails,
+		&i.FeatureDatum.Rename,
+		&i.DeploymentID,
+	)
+	return i, err
+}
 
 const insertEnvironmentFeature = `-- name: InsertEnvironmentFeature :exec
 INSERT INTO environment_features(
@@ -43,4 +88,58 @@ func (q *Queries) InsertEnvironmentFeature(ctx context.Context, arg InsertEnviro
 		arg.DeploymentID,
 	)
 	return err
+}
+
+const listEnvironmentFeatures = `-- name: ListEnvironmentFeatures :many
+SELECT
+	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.rename,
+	d.created
+FROM
+	environment_features ef
+	JOIN deployments d ON d.id = ef.deployment_id
+	JOIN feature_data fd ON fd.name = ef.feature_name
+		AND fd.version = ef.feature_version
+WHERE
+	environment_id = $1
+ORDER BY
+	fd.name ASC
+`
+
+type ListEnvironmentFeaturesRow struct {
+	FeatureDatum FeatureDatum
+	Created      pgtype.Timestamptz
+}
+
+func (q *Queries) ListEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]ListEnvironmentFeaturesRow, error) {
+	rows, err := q.db.Query(ctx, listEnvironmentFeatures, environmentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListEnvironmentFeaturesRow{}
+	for rows.Next() {
+		var i ListEnvironmentFeaturesRow
+		if err := rows.Scan(
+			&i.FeatureDatum.Name,
+			&i.FeatureDatum.Version,
+			&i.FeatureDatum.Chart,
+			&i.FeatureDatum.Description,
+			&i.FeatureDatum.Source,
+			&i.FeatureDatum.Kinds,
+			&i.FeatureDatum.Dependencies,
+			&i.FeatureDatum.Values,
+			&i.FeatureDatum.DefaultValues,
+			&i.FeatureDatum.Timeout,
+			&i.FeatureDatum.TplDetails,
+			&i.FeatureDatum.Rename,
+			&i.Created,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
