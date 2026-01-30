@@ -217,35 +217,38 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		return err
 	}
 
-	// For WAITING upgrades, check if GKE has started operations before checking delay
-	// This handles the case where GKE's auto-upgrade starts before Fasit's delay expires
+	// Check ownership BEFORE fetching running operations from GKE for all states except WAITING
+	// Get running operations without tracking them yet to determine ownership
 	if clusterUpgrade.UpgradeStatus == model.UpgradeStatusWaiting {
-		// First check ownership BEFORE fetching running operations from GKE
-		// This prevents associating non-owned operations with our upgrade
-		existingOps, err := c.repo.ClusterOperationsGetByUpgradeID(ctx, clusterUpgrade.ID)
+		existingOpsBeforeUpdate, err := c.repo.ClusterOperationsGetByUpgradeID(ctx, clusterUpgrade.ID)
 		if err != nil {
 			log.WithError(err).Error("failed to get existing operations for ownership check")
 			return err
 		}
 
 		// Get running operations from GKE without tracking them yet
-		runningOps, err := c.getRunningOperationsFromGKE(ctx, projectID, env)
+		runningOperations, err := c.getRunningOperationsFromGKE(ctx, projectID, env)
 		if err != nil {
 			return err
 		}
 
-		if clusterHas(runningOps) {
-			if !c.ownsRunningOperations(existingOps, runningOps) {
-				err := c.completeIfNonOwnedOperationsReachedTarget(ctx, projectID, env, tenant, clusterUpgrade, currentVersion, len(runningOps), true)
-				if err != nil {
-					return err
-				}
-				// Non-owned operations - back off (may have marked upgrade DONE if at target)
-				return nil
+		// Check for non-owned operations in all states except DONE/FAILED
+		if clusterHas(runningOperations) && !c.ownsRunningOperations(existingOpsBeforeUpdate, runningOperations) {
+			// Determine if we should decrement waiting metric based on current state
+			decrementWaiting := clusterUpgrade.UpgradeStatus == model.UpgradeStatusWaiting
+			err := c.completeIfNonOwnedOperationsReachedTarget(ctx, projectID, env, tenant, clusterUpgrade, currentVersion, len(runningOperations), decrementWaiting)
+			if err != nil {
+				return err
 			}
+			// Non-owned operations detected - back off regardless of state
+			return nil
+		}
 
+		// For WAITING upgrades, check if GKE has started operations before checking delay
+		// This handles the case where GKE's auto-upgrade starts before Fasit's delay expires
+		if clusterHas(runningOperations) {
 			// We own these operations - track them and check if already complete
-			runningOps, completed, err := c.trackOwnedOperationsAndCheckCompletion(ctx, projectID, env, tenant, clusterUpgrade, currentVersion, runningOps, existingOps, true)
+			runningOperations, completed, err := c.trackOwnedOperationsAndCheckCompletion(ctx, projectID, env, tenant, clusterUpgrade, currentVersion, runningOperations, existingOpsBeforeUpdate, true)
 			if err != nil {
 				return err
 			}
@@ -257,13 +260,13 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 				"upgrade_id":      clusterUpgrade.ID,
 				"target_version":  clusterUpgrade.Version,
 				"current_version": currentVersion,
-				"running_ops":     len(runningOps),
+				"running_ops":     len(runningOperations),
 			}).Warn("GKE started upgrade toward target version before delay expired, overriding delay to track operations")
 
 			// Determine which operations are running and transition appropriately
 			hasControlPlaneOp := false
 			hasNodeOp := false
-			for _, op := range runningOps {
+			for _, op := range runningOperations {
 				if isOperationActive(op) {
 					switch op.OperationType {
 					case containerpb.Operation_UPGRADE_MASTER:
@@ -321,7 +324,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		return nil
 	}
 
-	// Check ownership BEFORE fetching running operations from GKE for all states
+	// Check ownership BEFORE fetching running operations from GKE for all non-WAITING states
 	// Get running operations without tracking them yet to determine ownership
 	existingOpsBeforeUpdate, err := c.repo.ClusterOperationsGetByUpgradeID(ctx, clusterUpgrade.ID)
 	if err != nil {
