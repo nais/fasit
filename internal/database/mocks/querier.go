@@ -3050,384 +3050,6 @@ func (_c *Querier_DeployInstructionsUpdateStatus_Call) RunAndReturn(run func(ctx
 	return _c
 }
 
-// DeploymentDelete provides a mock function for the type Querier
-func (_mock *Querier) DeploymentDelete(ctx context.Context, id uuid.UUID) error {
-	ret := _mock.Called(ctx, id)
-
-	if len(ret) == 0 {
-		panic("no return value specified for DeploymentDelete")
-	}
-
-	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) error); ok {
-		r0 = returnFunc(ctx, id)
-	} else {
-		r0 = ret.Error(0)
-	}
-	return r0
-}
-
-// Querier_DeploymentDelete_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeploymentDelete'
-type Querier_DeploymentDelete_Call struct {
-	*mock.Call
-}
-
-// DeploymentDelete is a helper method to define mock.On call
-//   - ctx context.Context
-//   - id uuid.UUID
-func (_e *Querier_Expecter) DeploymentDelete(ctx interface{}, id interface{}) *Querier_DeploymentDelete_Call {
-	return &Querier_DeploymentDelete_Call{Call: _e.mock.On("DeploymentDelete", ctx, id)}
-}
-
-func (_c *Querier_DeploymentDelete_Call) Run(run func(ctx context.Context, id uuid.UUID)) *Querier_DeploymentDelete_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 uuid.UUID
-		if args[1] != nil {
-			arg1 = args[1].(uuid.UUID)
-		}
-		run(
-			arg0,
-			arg1,
-		)
-	})
-	return _c
-}
-
-func (_c *Querier_DeploymentDelete_Call) Return(err error) *Querier_DeploymentDelete_Call {
-	_c.Call.Return(err)
-	return _c
-}
-
-func (_c *Querier_DeploymentDelete_Call) RunAndReturn(run func(ctx context.Context, id uuid.UUID) error) *Querier_DeploymentDelete_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// DeploymentGet provides a mock function for the type Querier
-func (_mock *Querier) DeploymentGet(ctx context.Context, id uuid.UUID) (gensql.DeploymentGetRow, error) {
-	ret := _mock.Called(ctx, id)
-
-	if len(ret) == 0 {
-		panic("no return value specified for DeploymentGet")
-	}
-
-	var r0 gensql.DeploymentGetRow
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) (gensql.DeploymentGetRow, error)); ok {
-		return returnFunc(ctx, id)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) gensql.DeploymentGetRow); ok {
-		r0 = returnFunc(ctx, id)
-	} else {
-		r0 = ret.Get(0).(gensql.DeploymentGetRow)
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
-		r1 = returnFunc(ctx, id)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Querier_DeploymentGet_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeploymentGet'
-type Querier_DeploymentGet_Call struct {
-	*mock.Call
-}
-
-// DeploymentGet is a helper method to define mock.On call
-//   - ctx context.Context
-//   - id uuid.UUID
-func (_e *Querier_Expecter) DeploymentGet(ctx interface{}, id interface{}) *Querier_DeploymentGet_Call {
-	return &Querier_DeploymentGet_Call{Call: _e.mock.On("DeploymentGet", ctx, id)}
-}
-
-func (_c *Querier_DeploymentGet_Call) Run(run func(ctx context.Context, id uuid.UUID)) *Querier_DeploymentGet_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 uuid.UUID
-		if args[1] != nil {
-			arg1 = args[1].(uuid.UUID)
-		}
-		run(
-			arg0,
-			arg1,
-		)
-	})
-	return _c
-}
-
-func (_c *Querier_DeploymentGet_Call) Return(deploymentGetRow gensql.DeploymentGetRow, err error) *Querier_DeploymentGet_Call {
-	_c.Call.Return(deploymentGetRow, err)
-	return _c
-}
-
-func (_c *Querier_DeploymentGet_Call) RunAndReturn(run func(ctx context.Context, id uuid.UUID) (gensql.DeploymentGetRow, error)) *Querier_DeploymentGet_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// DeploymentStatusCreateOrUpdate provides a mock function for the type Querier
-func (_mock *Querier) DeploymentStatusCreateOrUpdate(ctx context.Context, arg gensql.DeploymentStatusCreateOrUpdateParams) error {
-	ret := _mock.Called(ctx, arg)
-
-	if len(ret) == 0 {
-		panic("no return value specified for DeploymentStatusCreateOrUpdate")
-	}
-
-	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, gensql.DeploymentStatusCreateOrUpdateParams) error); ok {
-		r0 = returnFunc(ctx, arg)
-	} else {
-		r0 = ret.Error(0)
-	}
-	return r0
-}
-
-// Querier_DeploymentStatusCreateOrUpdate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeploymentStatusCreateOrUpdate'
-type Querier_DeploymentStatusCreateOrUpdate_Call struct {
-	*mock.Call
-}
-
-// DeploymentStatusCreateOrUpdate is a helper method to define mock.On call
-//   - ctx context.Context
-//   - arg gensql.DeploymentStatusCreateOrUpdateParams
-func (_e *Querier_Expecter) DeploymentStatusCreateOrUpdate(ctx interface{}, arg interface{}) *Querier_DeploymentStatusCreateOrUpdate_Call {
-	return &Querier_DeploymentStatusCreateOrUpdate_Call{Call: _e.mock.On("DeploymentStatusCreateOrUpdate", ctx, arg)}
-}
-
-func (_c *Querier_DeploymentStatusCreateOrUpdate_Call) Run(run func(ctx context.Context, arg gensql.DeploymentStatusCreateOrUpdateParams)) *Querier_DeploymentStatusCreateOrUpdate_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 gensql.DeploymentStatusCreateOrUpdateParams
-		if args[1] != nil {
-			arg1 = args[1].(gensql.DeploymentStatusCreateOrUpdateParams)
-		}
-		run(
-			arg0,
-			arg1,
-		)
-	})
-	return _c
-}
-
-func (_c *Querier_DeploymentStatusCreateOrUpdate_Call) Return(err error) *Querier_DeploymentStatusCreateOrUpdate_Call {
-	_c.Call.Return(err)
-	return _c
-}
-
-func (_c *Querier_DeploymentStatusCreateOrUpdate_Call) RunAndReturn(run func(ctx context.Context, arg gensql.DeploymentStatusCreateOrUpdateParams) error) *Querier_DeploymentStatusCreateOrUpdate_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// DeploymentStatusGet provides a mock function for the type Querier
-func (_mock *Querier) DeploymentStatusGet(ctx context.Context, deploymentID uuid.UUID) ([]gensql.DeploymentStatus, error) {
-	ret := _mock.Called(ctx, deploymentID)
-
-	if len(ret) == 0 {
-		panic("no return value specified for DeploymentStatusGet")
-	}
-
-	var r0 []gensql.DeploymentStatus
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]gensql.DeploymentStatus, error)); ok {
-		return returnFunc(ctx, deploymentID)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) []gensql.DeploymentStatus); ok {
-		r0 = returnFunc(ctx, deploymentID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]gensql.DeploymentStatus)
-		}
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
-		r1 = returnFunc(ctx, deploymentID)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Querier_DeploymentStatusGet_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeploymentStatusGet'
-type Querier_DeploymentStatusGet_Call struct {
-	*mock.Call
-}
-
-// DeploymentStatusGet is a helper method to define mock.On call
-//   - ctx context.Context
-//   - deploymentID uuid.UUID
-func (_e *Querier_Expecter) DeploymentStatusGet(ctx interface{}, deploymentID interface{}) *Querier_DeploymentStatusGet_Call {
-	return &Querier_DeploymentStatusGet_Call{Call: _e.mock.On("DeploymentStatusGet", ctx, deploymentID)}
-}
-
-func (_c *Querier_DeploymentStatusGet_Call) Run(run func(ctx context.Context, deploymentID uuid.UUID)) *Querier_DeploymentStatusGet_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 uuid.UUID
-		if args[1] != nil {
-			arg1 = args[1].(uuid.UUID)
-		}
-		run(
-			arg0,
-			arg1,
-		)
-	})
-	return _c
-}
-
-func (_c *Querier_DeploymentStatusGet_Call) Return(deploymentStatuss []gensql.DeploymentStatus, err error) *Querier_DeploymentStatusGet_Call {
-	_c.Call.Return(deploymentStatuss, err)
-	return _c
-}
-
-func (_c *Querier_DeploymentStatusGet_Call) RunAndReturn(run func(ctx context.Context, deploymentID uuid.UUID) ([]gensql.DeploymentStatus, error)) *Querier_DeploymentStatusGet_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// DeploymentsGet provides a mock function for the type Querier
-func (_mock *Querier) DeploymentsGet(ctx context.Context) ([]gensql.DeploymentsGetRow, error) {
-	ret := _mock.Called(ctx)
-
-	if len(ret) == 0 {
-		panic("no return value specified for DeploymentsGet")
-	}
-
-	var r0 []gensql.DeploymentsGetRow
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context) ([]gensql.DeploymentsGetRow, error)); ok {
-		return returnFunc(ctx)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context) []gensql.DeploymentsGetRow); ok {
-		r0 = returnFunc(ctx)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]gensql.DeploymentsGetRow)
-		}
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = returnFunc(ctx)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Querier_DeploymentsGet_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeploymentsGet'
-type Querier_DeploymentsGet_Call struct {
-	*mock.Call
-}
-
-// DeploymentsGet is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *Querier_Expecter) DeploymentsGet(ctx interface{}) *Querier_DeploymentsGet_Call {
-	return &Querier_DeploymentsGet_Call{Call: _e.mock.On("DeploymentsGet", ctx)}
-}
-
-func (_c *Querier_DeploymentsGet_Call) Run(run func(ctx context.Context)) *Querier_DeploymentsGet_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		run(
-			arg0,
-		)
-	})
-	return _c
-}
-
-func (_c *Querier_DeploymentsGet_Call) Return(deploymentsGetRows []gensql.DeploymentsGetRow, err error) *Querier_DeploymentsGet_Call {
-	_c.Call.Return(deploymentsGetRows, err)
-	return _c
-}
-
-func (_c *Querier_DeploymentsGet_Call) RunAndReturn(run func(ctx context.Context) ([]gensql.DeploymentsGetRow, error)) *Querier_DeploymentsGet_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// DeploymentsGetByFeature provides a mock function for the type Querier
-func (_mock *Querier) DeploymentsGetByFeature(ctx context.Context, featureName string) ([]gensql.DeploymentsGetByFeatureRow, error) {
-	ret := _mock.Called(ctx, featureName)
-
-	if len(ret) == 0 {
-		panic("no return value specified for DeploymentsGetByFeature")
-	}
-
-	var r0 []gensql.DeploymentsGetByFeatureRow
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) ([]gensql.DeploymentsGetByFeatureRow, error)); ok {
-		return returnFunc(ctx, featureName)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) []gensql.DeploymentsGetByFeatureRow); ok {
-		r0 = returnFunc(ctx, featureName)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]gensql.DeploymentsGetByFeatureRow)
-		}
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = returnFunc(ctx, featureName)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Querier_DeploymentsGetByFeature_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeploymentsGetByFeature'
-type Querier_DeploymentsGetByFeature_Call struct {
-	*mock.Call
-}
-
-// DeploymentsGetByFeature is a helper method to define mock.On call
-//   - ctx context.Context
-//   - featureName string
-func (_e *Querier_Expecter) DeploymentsGetByFeature(ctx interface{}, featureName interface{}) *Querier_DeploymentsGetByFeature_Call {
-	return &Querier_DeploymentsGetByFeature_Call{Call: _e.mock.On("DeploymentsGetByFeature", ctx, featureName)}
-}
-
-func (_c *Querier_DeploymentsGetByFeature_Call) Run(run func(ctx context.Context, featureName string)) *Querier_DeploymentsGetByFeature_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 string
-		if args[1] != nil {
-			arg1 = args[1].(string)
-		}
-		run(
-			arg0,
-			arg1,
-		)
-	})
-	return _c
-}
-
-func (_c *Querier_DeploymentsGetByFeature_Call) Return(deploymentsGetByFeatureRows []gensql.DeploymentsGetByFeatureRow, err error) *Querier_DeploymentsGetByFeature_Call {
-	_c.Call.Return(deploymentsGetByFeatureRows, err)
-	return _c
-}
-
-func (_c *Querier_DeploymentsGetByFeature_Call) RunAndReturn(run func(ctx context.Context, featureName string) ([]gensql.DeploymentsGetByFeatureRow, error)) *Querier_DeploymentsGetByFeature_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // EnvConfig provides a mock function for the type Querier
 func (_mock *Querier) EnvConfig(ctx context.Context, arg gensql.EnvConfigParams) ([]gensql.EnvConfigRow, error) {
 	ret := _mock.Called(ctx, arg)
@@ -4986,72 +4608,6 @@ func (_c *Querier_FeatureDataCreate_Call) RunAndReturn(run func(ctx context.Cont
 	return _c
 }
 
-// FeatureEnabled provides a mock function for the type Querier
-func (_mock *Querier) FeatureEnabled(ctx context.Context, arg gensql.FeatureEnabledParams) (bool, error) {
-	ret := _mock.Called(ctx, arg)
-
-	if len(ret) == 0 {
-		panic("no return value specified for FeatureEnabled")
-	}
-
-	var r0 bool
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, gensql.FeatureEnabledParams) (bool, error)); ok {
-		return returnFunc(ctx, arg)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, gensql.FeatureEnabledParams) bool); ok {
-		r0 = returnFunc(ctx, arg)
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, gensql.FeatureEnabledParams) error); ok {
-		r1 = returnFunc(ctx, arg)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Querier_FeatureEnabled_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FeatureEnabled'
-type Querier_FeatureEnabled_Call struct {
-	*mock.Call
-}
-
-// FeatureEnabled is a helper method to define mock.On call
-//   - ctx context.Context
-//   - arg gensql.FeatureEnabledParams
-func (_e *Querier_Expecter) FeatureEnabled(ctx interface{}, arg interface{}) *Querier_FeatureEnabled_Call {
-	return &Querier_FeatureEnabled_Call{Call: _e.mock.On("FeatureEnabled", ctx, arg)}
-}
-
-func (_c *Querier_FeatureEnabled_Call) Run(run func(ctx context.Context, arg gensql.FeatureEnabledParams)) *Querier_FeatureEnabled_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 gensql.FeatureEnabledParams
-		if args[1] != nil {
-			arg1 = args[1].(gensql.FeatureEnabledParams)
-		}
-		run(
-			arg0,
-			arg1,
-		)
-	})
-	return _c
-}
-
-func (_c *Querier_FeatureEnabled_Call) Return(b bool, err error) *Querier_FeatureEnabled_Call {
-	_c.Call.Return(b, err)
-	return _c
-}
-
-func (_c *Querier_FeatureEnabled_Call) RunAndReturn(run func(ctx context.Context, arg gensql.FeatureEnabledParams) (bool, error)) *Querier_FeatureEnabled_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // FeatureGetForEnv provides a mock function for the type Querier
 func (_mock *Querier) FeatureGetForEnv(ctx context.Context, environmentKind string) ([]gensql.FeatureGetForEnvRow, error) {
 	ret := _mock.Called(ctx, environmentKind)
@@ -5951,74 +5507,6 @@ func (_c *Querier_KubernetesNodeStatuses_Call) Return(kubernetesNodeStatuss []ge
 }
 
 func (_c *Querier_KubernetesNodeStatuses_Call) RunAndReturn(run func(ctx context.Context, environmentID uuid.UUID) ([]gensql.KubernetesNodeStatus, error)) *Querier_KubernetesNodeStatuses_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// ListEnvironmentFeatures provides a mock function for the type Querier
-func (_mock *Querier) ListEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]gensql.ListEnvironmentFeaturesRow, error) {
-	ret := _mock.Called(ctx, environmentID)
-
-	if len(ret) == 0 {
-		panic("no return value specified for ListEnvironmentFeatures")
-	}
-
-	var r0 []gensql.ListEnvironmentFeaturesRow
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]gensql.ListEnvironmentFeaturesRow, error)); ok {
-		return returnFunc(ctx, environmentID)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) []gensql.ListEnvironmentFeaturesRow); ok {
-		r0 = returnFunc(ctx, environmentID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]gensql.ListEnvironmentFeaturesRow)
-		}
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
-		r1 = returnFunc(ctx, environmentID)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Querier_ListEnvironmentFeatures_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListEnvironmentFeatures'
-type Querier_ListEnvironmentFeatures_Call struct {
-	*mock.Call
-}
-
-// ListEnvironmentFeatures is a helper method to define mock.On call
-//   - ctx context.Context
-//   - environmentID uuid.UUID
-func (_e *Querier_Expecter) ListEnvironmentFeatures(ctx interface{}, environmentID interface{}) *Querier_ListEnvironmentFeatures_Call {
-	return &Querier_ListEnvironmentFeatures_Call{Call: _e.mock.On("ListEnvironmentFeatures", ctx, environmentID)}
-}
-
-func (_c *Querier_ListEnvironmentFeatures_Call) Run(run func(ctx context.Context, environmentID uuid.UUID)) *Querier_ListEnvironmentFeatures_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 uuid.UUID
-		if args[1] != nil {
-			arg1 = args[1].(uuid.UUID)
-		}
-		run(
-			arg0,
-			arg1,
-		)
-	})
-	return _c
-}
-
-func (_c *Querier_ListEnvironmentFeatures_Call) Return(listEnvironmentFeaturesRows []gensql.ListEnvironmentFeaturesRow, err error) *Querier_ListEnvironmentFeatures_Call {
-	_c.Call.Return(listEnvironmentFeaturesRows, err)
-	return _c
-}
-
-func (_c *Querier_ListEnvironmentFeatures_Call) RunAndReturn(run func(ctx context.Context, environmentID uuid.UUID) ([]gensql.ListEnvironmentFeaturesRow, error)) *Querier_ListEnvironmentFeatures_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -7624,6 +7112,63 @@ func (_c *Querier_RolloutsForKind_Call) Return(rolloutsForKindRows []gensql.Roll
 }
 
 func (_c *Querier_RolloutsForKind_Call) RunAndReturn(run func(ctx context.Context, environmentKind gensql.EnvironmentKind) ([]gensql.RolloutsForKindRow, error)) *Querier_RolloutsForKind_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// SetDeploymentStatus provides a mock function for the type Querier
+func (_mock *Querier) SetDeploymentStatus(ctx context.Context, arg gensql.SetDeploymentStatusParams) error {
+	ret := _mock.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SetDeploymentStatus")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, gensql.SetDeploymentStatusParams) error); ok {
+		r0 = returnFunc(ctx, arg)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// Querier_SetDeploymentStatus_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetDeploymentStatus'
+type Querier_SetDeploymentStatus_Call struct {
+	*mock.Call
+}
+
+// SetDeploymentStatus is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg gensql.SetDeploymentStatusParams
+func (_e *Querier_Expecter) SetDeploymentStatus(ctx interface{}, arg interface{}) *Querier_SetDeploymentStatus_Call {
+	return &Querier_SetDeploymentStatus_Call{Call: _e.mock.On("SetDeploymentStatus", ctx, arg)}
+}
+
+func (_c *Querier_SetDeploymentStatus_Call) Run(run func(ctx context.Context, arg gensql.SetDeploymentStatusParams)) *Querier_SetDeploymentStatus_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 gensql.SetDeploymentStatusParams
+		if args[1] != nil {
+			arg1 = args[1].(gensql.SetDeploymentStatusParams)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_SetDeploymentStatus_Call) Return(err error) *Querier_SetDeploymentStatus_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *Querier_SetDeploymentStatus_Call) RunAndReturn(run func(ctx context.Context, arg gensql.SetDeploymentStatusParams) error) *Querier_SetDeploymentStatus_Call {
 	_c.Call.Return(run)
 	return _c
 }

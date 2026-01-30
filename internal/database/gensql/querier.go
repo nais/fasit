@@ -59,12 +59,6 @@ type Querier interface {
 	DeployInstructionsLatestForFeature(ctx context.Context, arg DeployInstructionsLatestForFeatureParams) (DeployInstruction, error)
 	DeployInstructionsPrevious(ctx context.Context, id uuid.UUID) (DeployInstruction, error)
 	DeployInstructionsUpdateStatus(ctx context.Context, arg DeployInstructionsUpdateStatusParams) error
-	DeploymentDelete(ctx context.Context, id uuid.UUID) error
-	DeploymentGet(ctx context.Context, id uuid.UUID) (DeploymentGetRow, error)
-	DeploymentStatusCreateOrUpdate(ctx context.Context, arg DeploymentStatusCreateOrUpdateParams) error
-	DeploymentStatusGet(ctx context.Context, deploymentID uuid.UUID) ([]DeploymentStatus, error)
-	DeploymentsGet(ctx context.Context) ([]DeploymentsGetRow, error)
-	DeploymentsGetByFeature(ctx context.Context, featureName string) ([]DeploymentsGetByFeatureRow, error)
 	EnvConfig(ctx context.Context, arg EnvConfigParams) ([]EnvConfigRow, error)
 	EnvConfigOnlyKnown(ctx context.Context, arg EnvConfigOnlyKnownParams) ([]EnvConfigOnlyKnownRow, error)
 	EnvironmentByNames(ctx context.Context, arg EnvironmentByNamesParams) (Environment, error)
@@ -89,7 +83,6 @@ type Querier interface {
 	EnvironmentsGetByAutoUpgrade(ctx context.Context) ([]Environment, error)
 	FeatureByName(ctx context.Context, name string) (FeatureByNameRow, error)
 	FeatureDataCreate(ctx context.Context, arg FeatureDataCreateParams) error
-	FeatureEnabled(ctx context.Context, arg FeatureEnabledParams) (bool, error)
 	FeatureGetForEnv(ctx context.Context, environmentKind string) ([]FeatureGetForEnvRow, error)
 	FeatureStateCreateOrUpdate(ctx context.Context, arg FeatureStateCreateOrUpdateParams) (FeatureState, error)
 	FeatureStateGet(ctx context.Context, arg FeatureStateGetParams) (FeatureState, error)
@@ -104,7 +97,6 @@ type Querier interface {
 	KubernetesNodeCreateOrUpdate(ctx context.Context, arg KubernetesNodeCreateOrUpdateParams) error
 	KubernetesNodeDeleteObsolete(ctx context.Context, environmentID uuid.UUID) error
 	KubernetesNodeStatuses(ctx context.Context, environmentID uuid.UUID) ([]KubernetesNodeStatus, error)
-	ListEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]ListEnvironmentFeaturesRow, error)
 	LogsByDeployInstruction(ctx context.Context, deployInstruction uuid.UUID) ([]Log, error)
 	LogsByID(ctx context.Context, id int64) (Log, error)
 	LogsCreate(ctx context.Context, arg []LogsCreateParams) *LogsCreateBatchResults
@@ -130,6 +122,7 @@ type Querier interface {
 	Rollouts(ctx context.Context, limit int32) ([]Rollout, error)
 	RolloutsForFeature(ctx context.Context, featureName string) ([]Rollout, error)
 	RolloutsForKind(ctx context.Context, environmentKind EnvironmentKind) ([]RolloutsForKindRow, error)
+	SetDeploymentStatus(ctx context.Context, arg SetDeploymentStatusParams) error
 	TenantCI(ctx context.Context) (Tenant, error)
 	TenantCreate(ctx context.Context, arg TenantCreateParams) (Tenant, error)
 	TenantEnvironments(ctx context.Context, all bool) ([]TenantEnvironmentsRow, error)

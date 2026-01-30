@@ -20,12 +20,12 @@ import (
 
 // Statuses is the resolver for the deploymentStatuses field.
 func (r *deploymentResolver) Statuses(ctx context.Context, obj *model.Deployment) ([]*model.DeploymentStatus, error) {
-	return r.Repo.ListDeploymentStatuses(ctx, obj.ID)
+	return r.DeploymentMgr.ListDeploymentStatuses(ctx, obj.ID)
 }
 
 // Deployment is the resolver for the deployment field.
 func (r *deploymentStatusResolver) Deployment(ctx context.Context, obj *model.DeploymentStatus) (*model.Deployment, error) {
-	return r.Repo.GetDeployment(ctx, obj.DeploymentID)
+	return r.DeploymentMgr.GetDeployment(ctx, obj.DeploymentID)
 }
 
 // Environment is the resolver for the environment field.
@@ -63,7 +63,7 @@ func (r *mutationResolver) CreateDeployment(ctx context.Context, input model.Cre
 
 // DeleteDeployment is the resolver for the deleteDeployment field.
 func (r *mutationResolver) DeleteDeployment(ctx context.Context, deploymentID uuid.UUID) (bool, error) {
-	if err := r.Repo.DeleteDeployment(ctx, deploymentID); err != nil {
+	if err := r.DeploymentMgr.DeleteDeployment(ctx, deploymentID); err != nil {
 		return false, fmt.Errorf("delete deployment: %w", err)
 	}
 
@@ -73,15 +73,15 @@ func (r *mutationResolver) DeleteDeployment(ctx context.Context, deploymentID uu
 // Deployments is the resolver for the deployments field.
 func (r *queryResolver) Deployments(ctx context.Context, feature *string) ([]*model.Deployment, error) {
 	if feature != nil {
-		return r.Repo.ListDeploymentsByFeature(ctx, *feature)
+		return r.DeploymentMgr.ListDeploymentsByFeature(ctx, *feature)
 	}
 
-	return r.Repo.ListDeployments(ctx)
+	return r.DeploymentMgr.ListDeployments(ctx)
 }
 
 // Deployment is the resolver for the deployment field.
 func (r *queryResolver) Deployment(ctx context.Context, id uuid.UUID) (*model.Deployment, error) {
-	return r.Repo.GetDeployment(ctx, id)
+	return r.DeploymentMgr.GetDeployment(ctx, id)
 }
 
 // Deployment returns graphgen.DeploymentResolver implementation.
