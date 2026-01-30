@@ -822,21 +822,13 @@ func (c *ClusterUpgrader) markUpgradeComplete(ctx context.Context, env *model.En
 
 	// Update metrics
 	if decrementWaiting {
-		// Transitioning from WAITING to DONE
+		// Transitioning from WAITING to DONE - decrement waiting counter
 		c.upgradeWaiting.Add(ctx, -1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "waiting")...))
-	} else {
-		// Transitioning from CREATED to DONE - need to increment started/in-progress before completing
-		// to maintain metric consistency (completed should never exceed started).
-		// The upgradeInProgress is immediately decremented after upgradeCompleted to avoid
-		// inflating the in-progress count, since the upgrade is already complete.
-		c.upgradeStarted.Add(ctx, 1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "start")...))
-		c.upgradeInProgress.Add(ctx, 1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "in_progress")...))
+		c.upgradeCompleted.Add(ctx, 1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "complete")...))
 	}
-	c.upgradeCompleted.Add(ctx, 1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "complete")...))
-	if !decrementWaiting {
-		// Decrement the in-progress we just incremented (see comment above)
-		c.upgradeInProgress.Add(ctx, -1, metric.WithAttributes(setMetricsAttrs(env.Name, tenant.Name, clusterUpgrade.Version, "in_progress")...))
-	}
+	// Note: When transitioning from CREATED to DONE (cluster already at target), we don't increment
+	// any metrics since no actual upgrade work was performed by Fasit. The cluster was already upgraded
+	// by GKE auto-upgrade or another mechanism before Fasit could act.
 
 	// Update Slack
 	c.updateSlackProgress(ctx, tenant.Name, env.Name, upgradeStatus)
