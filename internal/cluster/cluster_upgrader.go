@@ -527,7 +527,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 				}
 			}
 			if hasActiveOps {
-				runningOperations, err = c.trackRunningOperations(ctx, projectID, env, clusterUpgrade, runningOperations, existingOpsBeforeUpdate)
+				_, err = c.trackRunningOperations(ctx, projectID, env, clusterUpgrade, runningOperations, existingOpsBeforeUpdate)
 				if err != nil {
 					return err
 				}
@@ -1031,25 +1031,6 @@ func (c *ClusterUpgrader) trackRunningOperations(
 	}
 
 	return runningOperations, nil
-}
-
-// getAndUpdateRunningOperations fetches running operations from GKE and tracks them in the database.
-// This is a convenience wrapper that combines getRunningOperationsFromGKE and trackRunningOperations.
-func (c *ClusterUpgrader) getAndUpdateRunningOperations(ctx context.Context, projectID string, env *model.Environment, clusterUpgrade *model.ClusterUpgradeStatus) ([]*containerpb.Operation, error) {
-	// Get current running operations from GKE via helper
-	runningOperations, err := c.getRunningOperationsFromGKE(ctx, projectID, env)
-	if err != nil {
-		return nil, err
-	}
-
-	// Get existing operations from database
-	existingOps, err := c.repo.ClusterOperationsGetByUpgradeID(ctx, clusterUpgrade.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	// Track them in the database
-	return c.trackRunningOperations(ctx, projectID, env, clusterUpgrade, runningOperations, existingOps)
 }
 
 // cleanupCompletedUpgradeOperations cleans up dangling operations for completed upgrades
