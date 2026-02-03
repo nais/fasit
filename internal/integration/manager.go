@@ -322,11 +322,6 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 			return ctx, nil, nil, err
 		}
 
-		if err := naisdRunner.start(ctx, db); err != nil {
-			done()
-			return ctx, nil, nil, err
-		}
-
 		dcp := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
 			p, ok := naisdRunner.deploymentReconcilerPublishers[topicID]
 			if !ok {
@@ -334,8 +329,14 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 			}
 			return p
 		}
+
 		deploymentMgr, err := deployment.NewManager(db, dcp, noop.NewMeterProvider().Meter(""), logrus.NewEntry(log))
 		if err != nil {
+			done()
+			return ctx, nil, nil, err
+		}
+
+		if err := naisdRunner.start(ctx, db, deploymentMgr); err != nil {
 			done()
 			return ctx, nil, nil, err
 		}
@@ -539,7 +540,7 @@ func newNaisd() (*naisdRunner, func(), error) {
 	return naisdRunner, func() {}, nil
 }
 
-func (n *naisdRunner) start(ctx context.Context, db database.Repo) error {
+func (n *naisdRunner) start(ctx context.Context, db database.Repo, dmgr *deployment.Manager) error {
 	log := logrus.New()
 	if testing.Verbose() {
 		log.Out = os.Stdout
@@ -548,7 +549,7 @@ func (n *naisdRunner) start(ctx context.Context, db database.Repo) error {
 		log.Out = io.Discard
 	}
 
-	rec := workers.NewReceiver(&statusReceiver{naisdRunner: n}, db, log, fake.NewFakeSlackClient(), "test")
+	rec := workers.NewReceiver(&statusReceiver{naisdRunner: n}, db, log, fake.NewFakeSlackClient(), "test", dmgr)
 	go rec.Run(ctx)
 	return nil
 }

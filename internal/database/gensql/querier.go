@@ -55,19 +55,10 @@ type Querier interface {
 	DeployInstructionsCreate(ctx context.Context, arg DeployInstructionsCreateParams) (uuid.UUID, error)
 	DeployInstructionsForFeature(ctx context.Context, arg DeployInstructionsForFeatureParams) ([]DeployInstruction, error)
 	DeployInstructionsForNameVersion(ctx context.Context, arg DeployInstructionsForNameVersionParams) (DeployInstruction, error)
-	DeployInstructionsGetDeployedFeatures(ctx context.Context, arg DeployInstructionsGetDeployedFeaturesParams) ([]string, error)
 	DeployInstructionsLatestForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]DeployInstruction, error)
 	DeployInstructionsLatestForFeature(ctx context.Context, arg DeployInstructionsLatestForFeatureParams) (DeployInstruction, error)
 	DeployInstructionsPrevious(ctx context.Context, id uuid.UUID) (DeployInstruction, error)
 	DeployInstructionsUpdateStatus(ctx context.Context, arg DeployInstructionsUpdateStatusParams) error
-	DeploymentCreate(ctx context.Context, arg DeploymentCreateParams) (Deployment, error)
-	DeploymentDelete(ctx context.Context, id uuid.UUID) error
-	DeploymentGet(ctx context.Context, id uuid.UUID) (DeploymentGetRow, error)
-	DeploymentStatusCreateOrUpdate(ctx context.Context, arg DeploymentStatusCreateOrUpdateParams) error
-	DeploymentStatusGet(ctx context.Context, deploymentID uuid.UUID) ([]DeploymentStatus, error)
-	DeploymentsForEnvironmentToReconcile(ctx context.Context, environmentID uuid.UUID) ([]DeploymentsForEnvironmentToReconcileRow, error)
-	DeploymentsGet(ctx context.Context) ([]DeploymentsGetRow, error)
-	DeploymentsGetByFeature(ctx context.Context, featureName string) ([]DeploymentsGetByFeatureRow, error)
 	EnvConfig(ctx context.Context, arg EnvConfigParams) ([]EnvConfigRow, error)
 	EnvConfigOnlyKnown(ctx context.Context, arg EnvConfigOnlyKnownParams) ([]EnvConfigOnlyKnownRow, error)
 	EnvironmentByNames(ctx context.Context, arg EnvironmentByNamesParams) (Environment, error)
@@ -92,7 +83,6 @@ type Querier interface {
 	EnvironmentsGetByAutoUpgrade(ctx context.Context) ([]Environment, error)
 	FeatureByName(ctx context.Context, name string) (FeatureByNameRow, error)
 	FeatureDataCreate(ctx context.Context, arg FeatureDataCreateParams) error
-	FeatureEnabled(ctx context.Context, arg FeatureEnabledParams) (bool, error)
 	FeatureGetForEnv(ctx context.Context, environmentKind string) ([]FeatureGetForEnvRow, error)
 	FeatureStateCreateOrUpdate(ctx context.Context, arg FeatureStateCreateOrUpdateParams) (FeatureState, error)
 	FeatureStateGet(ctx context.Context, arg FeatureStateGetParams) (FeatureState, error)
@@ -101,16 +91,12 @@ type Querier interface {
 	FeatureVersionUpdate(ctx context.Context, arg FeatureVersionUpdateParams) error
 	Features(ctx context.Context) ([]FeaturesRow, error)
 	FeaturesForKind(ctx context.Context, environmentKind string) ([]FeaturesForKindRow, error)
-	GetCIEnvironmentsForTarget(ctx context.Context, target environment.Labels) ([]GetCIEnvironmentsForTargetRow, error)
 	GetEnvironmentFeature(ctx context.Context, arg GetEnvironmentFeatureParams) (GetEnvironmentFeatureRow, error)
-	GetEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]GetEnvironmentFeaturesRow, error)
 	HealthStatusCreateOrUpdate(ctx context.Context, arg HealthStatusCreateOrUpdateParams) (HealthStatus, error)
 	HealthStatusGet(ctx context.Context, environmentID uuid.UUID) (HealthStatus, error)
-	InsertEnvironmentFeature(ctx context.Context, arg InsertEnvironmentFeatureParams) error
 	KubernetesNodeCreateOrUpdate(ctx context.Context, arg KubernetesNodeCreateOrUpdateParams) error
 	KubernetesNodeDeleteObsolete(ctx context.Context, environmentID uuid.UUID) error
 	KubernetesNodeStatuses(ctx context.Context, environmentID uuid.UUID) ([]KubernetesNodeStatus, error)
-	LatestStatusForDeploymentInEnvironment(ctx context.Context, arg LatestStatusForDeploymentInEnvironmentParams) (string, error)
 	LogsByDeployInstruction(ctx context.Context, deployInstruction uuid.UUID) ([]Log, error)
 	LogsByID(ctx context.Context, id int64) (Log, error)
 	LogsCreate(ctx context.Context, arg []LogsCreateParams) *LogsCreateBatchResults

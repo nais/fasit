@@ -15,6 +15,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/nais/fasit/internal/database"
+	"github.com/nais/fasit/internal/deployment/deploymentsql"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
@@ -32,19 +33,24 @@ type Publisher interface {
 
 type NewPublisher func(topicID string, log logrus.FieldLogger) Publisher
 
+type deployerRepo interface {
+	database.ConfigRepo
+	database.DeployInstructionRepo
+	database.EnvironmentRepo
+	database.FeaturesRepo
+	database.FeatureDataRepo
+	database.HealthRepo
+}
+
 type deployer struct {
 	publisher      NewPublisher
-	repo           database.Repo
+	repo           deployerRepo
+	querier        deploymentsql.Querier
 	log            logrus.FieldLogger
 	deployMessages metric.Int64Counter
 }
 
-func newDeployer(
-	repo database.Repo,
-	publisher NewPublisher,
-	meter metric.Meter,
-	log logrus.FieldLogger,
-) (*deployer, error) {
+func newDeployer(repo deployerRepo, querier deploymentsql.Querier, publisher NewPublisher, meter metric.Meter, log logrus.FieldLogger) (*deployer, error) {
 	deployMessages, err := meter.Int64Counter("deployment_deploy_messages", metric.WithDescription("Deploy messages sent"))
 	if err != nil {
 		return nil, fmt.Errorf("create deploy messages counter: %w", err)
@@ -53,6 +59,7 @@ func newDeployer(
 	return &deployer{
 		publisher:      publisher,
 		repo:           repo,
+		querier:        querier,
 		log:            log,
 		deployMessages: deployMessages,
 	}, nil
@@ -72,7 +79,7 @@ func (d *deployer) naisdHealthCheck(ctx context.Context, environmentID uuid.UUID
 }
 
 func (d *deployer) deployToCI(ctx context.Context, feat *model.Feature, req Request) error {
-	envs, err := d.repo.GetCIEnvironmentsForTarget(ctx, req.Target)
+	envs, err := d.getCIEnvironmentsForTarget(ctx, req.Target)
 	if err != nil {
 		return fmt.Errorf("get ci environments for target: %w", err)
 	}
@@ -98,7 +105,7 @@ func (d *deployer) deployToCI(ctx context.Context, feat *model.Feature, req Requ
 				return err
 			}
 
-			deployment, err := d.repo.V3DeploymentGet(ctx, deploymentID)
+			deployment, err := getDeployment(ctx, d.querier, deploymentID)
 			if err != nil {
 				return fmt.Errorf("get deployment %q: %w", deploymentID, err)
 			}
@@ -119,7 +126,13 @@ func (d *deployer) deployToCI(ctx context.Context, feat *model.Feature, req Requ
 }
 
 func (d *deployer) deployToEnvironment(ctx context.Context, deployment *model.Deployment, environment *model.TenantEnvironment, publisher Publisher) error {
-	if err := d.repo.V3InsertEnvironmentFeature(ctx, environment.ID, deployment.ID, deployment.Feature.Name, deployment.Feature.Version); err != nil {
+	err := d.querier.InsertEnvironmentFeature(ctx, deploymentsql.InsertEnvironmentFeatureParams{
+		EnvironmentID:  environment.ID,
+		DeploymentID:   deployment.ID,
+		FeatureName:    deployment.Feature.Name,
+		FeatureVersion: deployment.Feature.Version,
+	})
+	if err != nil {
 		d.log.WithError(err).WithFields(logrus.Fields{
 			"environment_id":  environment.ID,
 			"deployment_id":   deployment.ID,
@@ -212,13 +225,19 @@ func (d *deployer) shouldDeployToEnvironment(ctx context.Context, deployment *mo
 	return d.isDependenciesDeployed(ctx, deployment, environment.ID)
 }
 
-func (d *deployer) setDeploymentStatus(ctx context.Context, deploymentID, environmentID uuid.UUID, status model.RolloutStatus, msg string) {
-	if err := d.repo.V3DeploymentStatusCreateOrUpdate(ctx, deploymentID, environmentID, status, msg); err != nil {
+func (d *deployer) setDeploymentStatus(ctx context.Context, deploymentID, environmentID uuid.UUID, status model.RolloutStatus, message string) {
+	err := d.querier.SetDeploymentStatus(ctx, deploymentsql.SetDeploymentStatusParams{
+		DeploymentID:  deploymentID,
+		EnvironmentID: environmentID,
+		Status:        status.String(),
+		Message:       message,
+	})
+	if err != nil {
 		d.log.WithFields(logrus.Fields{
 			"deployment_id":  deploymentID,
 			"environment_id": environmentID,
 			"status":         status,
-			"msg":            msg,
+			"msg":            message,
 		}).WithError(err).Error("create deployment status")
 	}
 }
@@ -234,7 +253,7 @@ func (d *deployer) isDependenciesDeployed(ctx context.Context, deployment *model
 		// deploy_instructions to handle state stuff.
 
 		if len(dep.AllOf) > 0 {
-			missing, err := d.repo.V3MissingDependencies(ctx, dep.AllOf, envID)
+			missing, err := d.missingDependencies(ctx, dep.AllOf, envID)
 			if err != nil {
 				return false, fmt.Errorf("get features not in env: %w", err)
 			}
@@ -246,7 +265,7 @@ func (d *deployer) isDependenciesDeployed(ctx context.Context, deployment *model
 		}
 
 		if len(dep.AnyOf) > 0 {
-			missing, err := d.repo.V3MissingDependencies(ctx, dep.AnyOf, envID)
+			missing, err := d.missingDependencies(ctx, dep.AnyOf, envID)
 			if err != nil {
 				return false, fmt.Errorf("get features not in env: %w", err)
 			}
@@ -274,7 +293,24 @@ func (d *deployer) CreateDeployment(ctx context.Context, feat *model.Feature, re
 		}
 	}
 
-	deployment, err := d.repo.V3DeploymentCreate(ctx, feat.Name, feat.Version, req.Description, req.Ref, req.Target, ci)
+	var ghRef []byte
+	if req.Ref != nil {
+		b, err := json.Marshal(req.Ref)
+		if err != nil {
+			return uuid.Nil, fmt.Errorf("marshal gh ref: %w", err)
+		}
+
+		ghRef = b
+	}
+
+	deployment, err := d.querier.CreateDeployment(ctx, deploymentsql.CreateDeploymentParams{
+		FeatureName: feat.Name,
+		Version:     feat.Version,
+		GhRef:       ghRef,
+		Target:      req.Target,
+		Description: &req.Description,
+		Ci:          ci,
+	})
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("unable to create deployment: %w", err)
 	}
@@ -300,10 +336,15 @@ func (d *deployer) waitForDeploymentStatuses(ctx context.Context, deploymentsByE
 					return ctx.Err()
 				}
 
-				state, err := d.repo.LatestStatusForDeploymentInEnvironment(ctx, deploymentID, envID)
+				status, err := d.querier.LatestStatusForDeploymentInEnvironment(ctx, deploymentsql.LatestStatusForDeploymentInEnvironmentParams{
+					DeploymentID:  deploymentID,
+					EnvironmentID: envID,
+				})
 				if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 					return fmt.Errorf("get latest deployment status for deployment %q in environment %q: %w", deploymentID, envID, err)
 				}
+
+				state := model.DeploymentStatusState(strings.ToUpper(status))
 
 				switch state {
 				case model.DeploymentStatusStateDeployed:
@@ -322,6 +363,52 @@ func (d *deployer) waitForDeploymentStatuses(ctx context.Context, deploymentsByE
 	}
 
 	return eg.Wait()
+}
+
+func (d *deployer) getCIEnvironmentsForTarget(ctx context.Context, labels environment.Labels) ([]*model.TenantEnvironment, error) {
+	envs, err := d.querier.GetCIEnvironmentsForTarget(ctx, labels)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]*model.TenantEnvironment, len(envs))
+	for i, e := range envs {
+		ret[i] = &model.TenantEnvironment{
+			Environment: model.Environment{
+				ID:           e.Environment.ID,
+				Name:         e.Environment.Name,
+				CI:           e.Environment.Ci,
+				Description:  e.Environment.Description,
+				Created:      e.Environment.Created.Time,
+				LastModified: e.Environment.LastModified.Time,
+				Kind:         model.EnvironmentKind(e.Environment.Kind),
+			},
+			TenantName: e.TenantName,
+			TenantID:   e.Environment.TenantID,
+		}
+	}
+	return ret, nil
+}
+
+func (d *deployer) missingDependencies(ctx context.Context, dependencies []string, environmentID uuid.UUID) ([]string, error) {
+	if len(dependencies) == 0 {
+		return []string{}, nil
+	}
+	deployedFeatures, err := d.querier.DeployInstructionsGetDeployedFeatures(ctx, deploymentsql.DeployInstructionsGetDeployedFeaturesParams{
+		FeatureNames:  dependencies,
+		EnvironmentID: environmentID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	missing := make([]string, 0)
+	for _, d := range dependencies {
+		if !slices.Contains(deployedFeatures, d) {
+			missing = append(missing, d)
+		}
+	}
+	return missing, nil
 }
 
 // filterDeployments filters the deployments to only include the most specific deployment with the latest created

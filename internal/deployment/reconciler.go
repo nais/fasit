@@ -6,8 +6,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/auth"
 	"github.com/nais/fasit/internal/database"
+	"github.com/nais/fasit/internal/deployment/deploymentsql"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
@@ -24,8 +26,13 @@ const (
 	TriggerResultFailed
 )
 
+type reconcilerRepo interface {
+	database.TenantRepo
+}
+
 type reconciler struct {
-	repo             database.Repo
+	repo             reconcilerRepo
+	querier          deploymentsql.Querier
 	log              logrus.FieldLogger
 	reconcileTrigger chan chan TriggerResult
 	deployer         *deployer
@@ -36,7 +43,7 @@ type reconciler struct {
 	reconcileTime metric.Int64Histogram
 }
 
-func newReconciler(repo database.Repo, deployer *deployer, meter metric.Meter, log logrus.FieldLogger) (*reconciler, error) {
+func newReconciler(repo reconcilerRepo, querier deploymentsql.Querier, deployer *deployer, meter metric.Meter, log logrus.FieldLogger) (*reconciler, error) {
 	reconcileTime, err := meter.Int64Histogram("deployment_reconcile_time", metric.WithDescription("Time spent reconciling"), metric.WithUnit("ms"))
 	if err != nil {
 		return nil, fmt.Errorf("create reconcile time histogram: %w", err)
@@ -44,6 +51,7 @@ func newReconciler(repo database.Repo, deployer *deployer, meter metric.Meter, l
 	reconcileTrigger := make(chan chan TriggerResult, 1)
 	return &reconciler{
 		repo:             repo,
+		querier:          querier,
 		log:              log,
 		reconcileTrigger: reconcileTrigger,
 		deployer:         deployer,
@@ -123,7 +131,7 @@ func (r *reconciler) reconcileEnvironment(ctx context.Context, environment *mode
 	publisher := r.deployer.publisher(naisdTopicID(environment.TenantName, environment.Name), r.deployer.log)
 	defer publisher.Stop()
 
-	allDeployments, err := r.repo.V3DeploymentsForEnvironmentToReconcile(ctx, environment.ID)
+	allDeployments, err := r.listDeploymentsToReconcile(ctx, environment.ID)
 	if err != nil {
 		return fmt.Errorf("get deployments for environment %q: %w", environment.Name, err)
 	}
@@ -135,4 +143,22 @@ func (r *reconciler) reconcileEnvironment(ctx context.Context, environment *mode
 		}
 	}
 	return nil
+}
+
+func (r *reconciler) listDeploymentsToReconcile(ctx context.Context, environmentID uuid.UUID) ([]*model.Deployment, error) {
+	rows, err := r.querier.ListDeploymentsToReconcile(ctx, environmentID)
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]*model.Deployment, len(rows))
+	for i, row := range rows {
+		deployment, err := deploymentFromSQL(row.Deployment, row.FeatureDatum)
+		if err != nil {
+			return nil, fmt.Errorf("make deployment: %w", err)
+		}
+		ret[i] = deployment
+	}
+
+	return ret, nil
 }

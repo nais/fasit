@@ -111,8 +111,9 @@ func (r *repo) FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, 
 	return featuresFromSQL(features)
 }
 
+// TODO: enviromentfeatures are a deployment concept, should be moved to deployment repo, but then we need to refactor repos first
 func (r *repo) FeatureByNameForEnv(ctx context.Context, name string, envID uuid.UUID) (*model.Feature, error) {
-	feat, err := r.V3GetEnvironmentFeature(ctx, envID, name)
+	feat, err := r.GetEnvironmentFeature(ctx, envID, name)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		return nil, fmt.Errorf("get environment feature from db: %w", err)
 	}

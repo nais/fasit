@@ -1,4 +1,4 @@
--- name: DeploymentsGet :many
+-- name: ListDeployments :many
 SELECT
 	sqlc.embed(d),
 	sqlc.embed(fd)
@@ -9,7 +9,7 @@ FROM
 	ORDER BY
 		d.created DESC;
 
--- name: DeploymentsGetByFeature :many
+-- name: ListDeploymentsByFeature :many
 SELECT
 	sqlc.embed(d),
 	sqlc.embed(fd)
@@ -22,7 +22,7 @@ WHERE
 ORDER BY
 	d.created DESC;
 
--- name: DeploymentCreate :one
+-- name: CreateDeployment :one
 INSERT INTO deployments(
 	feature_name,
 	version,
@@ -40,11 +40,11 @@ VALUES (
 RETURNING
 	*;
 
--- name: DeploymentDelete :exec
+-- name: DeleteDeployment :exec
 DELETE FROM deployments
 WHERE id = @id;
 
--- name: DeploymentGet :one
+-- name: GetDeployment :one
 SELECT
 	sqlc.embed(d),
 	sqlc.embed(fd)
@@ -55,7 +55,7 @@ FROM
 WHERE
 	d.id = @id;
 
--- name: DeploymentsForEnvironmentToReconcile :many
+-- name: ListDeploymentsToReconcile :many
 SELECT DISTINCT ON (d.feature_name, d.target)
 	sqlc.embed(d),
 	sqlc.embed(fd)
@@ -98,7 +98,7 @@ WHERE
 ORDER BY
 	feature_name;
 
--- name: DeploymentStatusCreateOrUpdate :exec
+-- name: SetDeploymentStatus :exec
 INSERT INTO deployment_statuses(
 	deployment_id,
 	environment_id,
@@ -116,7 +116,7 @@ ON CONFLICT (
 		status = EXCLUDED.status,
 		message = EXCLUDED.message;
 
--- name: DeploymentStatusGet :many
+-- name: ListDeploymentStatuses :many
 SELECT
 	*
 FROM

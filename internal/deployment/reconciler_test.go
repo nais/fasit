@@ -11,8 +11,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/deployment"
+	"github.com/nais/fasit/internal/deployment/deploymenttest"
 	"github.com/nais/fasit/internal/environment"
-	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/provider/protogen"
@@ -126,21 +126,20 @@ func TestReconcile(t *testing.T) {
 			reconcilerCtx, cancel := context.WithCancel(ctx)
 			t.Cleanup(cancel)
 
-			db := getDb(ctx, t, container, dsn, logger)
-			pub := &publisher{repo: db.repo}
-			newPublisher := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
-				return pub
-			}
-			deploymentMgr, err := deployment.NewManager(db.repo, newPublisher, meter, logger)
-			if err != nil {
-				t.Fatalf("create deployment manager: %v", err)
+			mgr := setupTestMgr(ctx, t, container, dsn, logger)
+
+			mgr.db.createTenantsAndEnvironments(ctx, envsToCreate)
+			for _, input := range tc.deploymentsToCreate {
+				mgr.seeder.AddDeployment(input.name, input.version, input.target, input.dependencies...)
 			}
 
-			db.createTenantsAndEnvironments(ctx, envsToCreate)
-			db.createFeatureDeployments(ctx, tc.deploymentsToCreate)
+			err = mgr.seeder.Seed(ctx, mgr.dmgr)
+			if err != nil {
+				t.Fatalf("seeding deployments: %v", err)
+			}
 
 			for _, result := range tc.reconcileResults {
-				if err := deploymentMgr.Reconcile(reconcilerCtx); err != nil {
+				if err := mgr.dmgr.Reconcile(reconcilerCtx); err != nil {
 					t.Fatalf("reconcile: %v", err)
 				}
 
@@ -153,10 +152,7 @@ func TestReconcile(t *testing.T) {
 				WHERE di.status = 'deployed'
 			`
 
-				rows, err := db.runQuery(ctx, q)
-				if err != nil {
-					t.Fatalf("query deploy instructions: %v", err)
-				}
+				rows := mgr.db.runQuery(ctx, t, q)
 
 				var deployInstructions []string
 				for rows.Next() {
@@ -166,11 +162,11 @@ func TestReconcile(t *testing.T) {
 				}
 
 				assert.Len(t, deployInstructions, len(result))
-				assert.Len(t, pub.msg, len(result))
+				assert.Len(t, mgr.publisher.msg, len(result))
 
 				for _, instruction := range result {
 					found := false
-					for _, msg := range pub.msg {
+					for _, msg := range mgr.publisher.msg {
 						parts := strings.Split(instruction, ":")
 						if fmt.Sprintf("%s:%s", msg.Name, msg.Version) == strings.Join(parts[2:], ":") {
 							found = true
@@ -205,27 +201,25 @@ func TestReconcileWhenPreviousIsInProgress(t *testing.T) {
 	reconcilerCtx, cancel := context.WithCancel(ctx)
 	t.Cleanup(cancel)
 
-	db := getDb(ctx, t, container, dsn, logger)
-	pub := &publisher{repo: db.repo}
-	newPublisher := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
-		return pub
-	}
-
-	deploymentMgr, err := deployment.NewManager(db.repo, newPublisher, meter, logger)
+	mgr := setupTestMgr(ctx, t, container, dsn, logger)
+	mgr.db.createTenantsAndEnvironments(ctx, envsToCreate)
+	mgr.seeder.AddDeployment("feature-pending", "1.0.0", environment.Labels{"aiven": "enabled"})
+	err = mgr.seeder.Seed(ctx, mgr.dmgr)
 	if err != nil {
-		t.Fatalf("create deployment manager: %v", err)
+		t.Fatalf("seeding deployments: %v", err)
 	}
-
-	db.createTenantsAndEnvironments(ctx, envsToCreate)
-	db.createFeatureDeployment(ctx, "feature-pending", "1.0.0", environment.Labels{}, nil)
-
-	if err := deploymentMgr.Reconcile(reconcilerCtx); err != nil {
+	if err = mgr.dmgr.Reconcile(reconcilerCtx); err != nil {
 		t.Fatalf("reconcile: %v", err)
 	}
 
-	db.createFeatureDeployment(ctx, "feature-pending", "2.0.0", environment.Labels{}, nil)
+	mgr.seeder.Reset()
 
-	if err := deploymentMgr.Reconcile(reconcilerCtx); err != nil {
+	mgr.seeder.AddDeployment("feature-pending", "2.0.0", environment.Labels{})
+	err = mgr.seeder.Seed(ctx, mgr.dmgr)
+	if err != nil {
+		t.Fatalf("seeding deployments: %v", err)
+	}
+	if err = mgr.dmgr.Reconcile(reconcilerCtx); err != nil {
 		t.Fatalf("reconcile: %v", err)
 	}
 
@@ -236,7 +230,7 @@ func TestReconcileWhenPreviousIsInProgress(t *testing.T) {
 		WHERE di.feature_name = 'feature-pending' AND di.feature_version = '2.0.0'
 	`
 
-	row := db.pool.QueryRow(ctx, q)
+	row := mgr.db.pool.QueryRow(ctx, q)
 	var count int
 	if err := row.Scan(&count); err != nil {
 		t.Fatalf("scan deploy instructions: %v", err)
@@ -264,46 +258,12 @@ func (p *publisher) Publish(ctx context.Context, msg message.DeployInstruction) 
 
 func (p *publisher) Stop() {}
 
-func (d Db) runQuery(ctx context.Context, q string) (pgx.Rows, error) {
-	return d.pool.Query(ctx, q)
-}
-
-func (d *Db) createFeatureDeployments(ctx context.Context, features []featureInput) {
-	for _, f := range features {
-		var deps model.Dependencies
-		if len(f.dependencies) > 0 {
-			deps = model.Dependencies{
-				&model.Dependency{
-					AllOf: f.dependencies,
-				},
-			}
-		}
-		d.createFeatureDeployment(ctx, f.name, f.version, f.target, deps)
-	}
-}
-
-func (d *Db) createFeatureDeployment(ctx context.Context, featureName, version string, labels environment.Labels, dependencies model.Dependencies) {
-	d.t.Helper()
-	err := d.repo.FeatureDataCreate(ctx, model.Feature{
-		FeatureYAML: model.FeatureYAML{
-			Dependencies: dependencies,
-		},
-		Name:    featureName,
-		Version: version,
-		Chart:   "oci://" + featureName,
-	}, &feature.FeatureTemplateDetails{})
-	if err != nil && !strings.Contains(err.Error(), "SQLSTATE 23505") {
-		d.t.Fatalf("create feature data: %v", err)
-	}
-
-	if labels == nil {
-		labels = environment.Labels{}
-	}
-
-	_, err = d.repo.V3DeploymentCreate(ctx, featureName, version, "", nil, labels, false)
+func (d *Db) runQuery(ctx context.Context, t *testing.T, q string) pgx.Rows {
+	r, err := d.pool.Query(ctx, q)
 	if err != nil {
-		d.t.Fatalf("create deployment: %v", err)
+		t.Fatalf("run query: %v", err)
 	}
+	return r
 }
 
 func (d *Db) createEnv(ctx context.Context, tenant *model.Tenant, name string, labels environment.Labels) {
@@ -406,6 +366,49 @@ func startPostgresql(ctx context.Context, t *testing.T) (container *postgres.Pos
 	}
 
 	return container, dsn, nil
+}
+
+type TestMgr struct {
+	t         *testing.T
+	db        Db
+	dmgr      *deployment.Manager
+	seeder    *deploymenttest.Seeder
+	publisher *publisher
+	log       logrus.FieldLogger
+}
+
+func setupTestMgr(
+	ctx context.Context,
+	t *testing.T,
+	container *postgres.PostgresContainer,
+	dsn string,
+	log logrus.FieldLogger,
+) *TestMgr {
+	t.Helper()
+	db := getDb(ctx, t, container, dsn, log)
+	seeder := deploymenttest.NewSeeder()
+	pub := &publisher{repo: db.repo}
+	newPublisher := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
+		return pub
+	}
+	dmgr, err := deployment.NewManager(
+		db.repo,
+		newPublisher,
+		meter,
+		log,
+		deployment.WithChartDownloader(seeder.ChartDownloader()),
+	)
+	if err != nil {
+		t.Fatalf("create deployment manager: %v", err)
+	}
+	return &TestMgr{
+		t:         t,
+		db:        db,
+		dmgr:      dmgr,
+		seeder:    seeder,
+		publisher: pub,
+		log:       log,
+	}
 }
 
 func getDb(ctx context.Context, t *testing.T, container *postgres.PostgresContainer, dsn string, log logrus.FieldLogger) Db {

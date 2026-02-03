@@ -2,22 +2,28 @@ package deployment
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/internal/database"
+	"github.com/nais/fasit/internal/deployment/deploymentsql"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nais/fasit/internal/message"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/metric"
 )
 
 type Manager struct {
-	deployer   *deployer
-	repo       database.Repo
-	reconciler *reconciler
+	deployer        *deployer
+	reconciler      *reconciler
+	querier         deploymentsql.Querier
+	chartDownloader ChartDownloader
+	log             logrus.FieldLogger
 }
+
+type ChartDownloader func(chartURL, version string) (*model.Feature, error)
 
 // TODO: check if we can use same request as in graphql
 type Request struct {
@@ -30,21 +36,41 @@ type Request struct {
 	SkipCI      bool               `json:"skipCI"`
 }
 
-func NewManager(repo database.Repo, publisher NewPublisher, m metric.Meter, log logrus.FieldLogger) (*Manager, error) {
-	d, err := newDeployer(repo, publisher, m, log.WithField("subsystem", "deployer"))
+type Option func(*Manager)
+
+func WithChartDownloader(downloader ChartDownloader) Option {
+	return func(m *Manager) {
+		m.chartDownloader = downloader
+	}
+}
+
+func NewManager(repo database.Repo, publisher NewPublisher, m metric.Meter, log logrus.FieldLogger, opts ...Option) (*Manager, error) {
+	querier := deploymentsql.New(repo.GetConnPool())
+	d, err := newDeployer(repo, querier, publisher, m, log.WithField("subsystem", "deployer"))
 	if err != nil {
 		return nil, err
 	}
 
-	r, err := newReconciler(repo, d, m, log.WithField("subsystem", "reconciler"))
+	r, err := newReconciler(repo, querier, d, m, log.WithField("subsystem", "reconciler"))
 	if err != nil {
 		return nil, err
 	}
-	return &Manager{
+
+	mgr := &Manager{
 		deployer:   d,
 		reconciler: r,
-		repo:       repo,
-	}, nil
+		querier:    querier,
+		log:        log,
+	}
+	for _, opt := range opts {
+		opt(mgr)
+	}
+
+	if mgr.chartDownloader == nil {
+		mgr.chartDownloader = model.FromChart
+	}
+
+	return mgr, nil
 }
 
 func (dm *Manager) Run(ctx context.Context, interval time.Duration) {
@@ -56,35 +82,29 @@ func (dm *Manager) Reconcile(ctx context.Context) error {
 	return dm.reconciler.Reconcile(ctx)
 }
 
-// TriggerReconcile will trigger an asynchronous reconciliation of deployments. The returned channel can be used to wait
-// for the result.
-func (dm *Manager) TriggerReconcile(event ReconcileTriggerEvent) chan TriggerResult {
-	return dm.reconciler.trigger(event)
-}
-
-func (dm *Manager) GetDeployment(ctx context.Context, id uuid.UUID) (*model.Deployment, error) {
-	return dm.repo.V3DeploymentGet(ctx, id)
-}
-
-func (dm *Manager) CreateDeployment(ctx context.Context, req Request) (uuid.UUID, error) {
-	feat, err := model.FromChart(req.Chart, req.Version)
+func (dm *Manager) Receive(ctx context.Context, status *message.Helm) error {
+	di, err := dm.querier.DeployInstructionsByID(ctx, status.DIID)
 	if err != nil {
-		return uuid.Nil, fmt.Errorf("unable to convert oci chart: %w", err)
+		if errors.Is(err, pgx.ErrNoRows) {
+			dm.log.WithField("diid", status.DIID).Warn("unknown deploy instruction")
+			return nil
+		}
+		return err
 	}
 
-	if len(feat.EnvironmentKinds) == 0 {
-		return uuid.Nil, fmt.Errorf("no environments defined in Feature.yaml")
-	}
-
-	if feat.Source == "" {
-		return uuid.Nil, fmt.Errorf("no source url found in Chart.yaml")
-	}
-
-	if !req.SkipCI {
-		if err := dm.deployer.deployToCI(ctx, feat, req); err != nil {
-			return uuid.Nil, fmt.Errorf("deploy to ci: %w", err)
+	if di.DeploymentID != nil {
+		msg := "received status from naisd."
+		if status.Error != "" {
+			msg += " error: " + status.Error
+		}
+		if err = dm.SetDeploymentStatus(ctx, *di.DeploymentID, di.EnvironmentID, status.RolloutStatus, msg); err != nil {
+			dm.log.WithFields(logrus.Fields{
+				"deployment_id":  di.DeploymentID,
+				"environment_id": di.EnvironmentID,
+				"status":         status.RolloutStatus,
+				"msg":            msg,
+			}).WithError(err).Error("create deployment status")
 		}
 	}
-
-	return dm.deployer.CreateDeployment(ctx, feat, req, false)
+	return nil
 }

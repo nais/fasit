@@ -65,6 +65,7 @@ type Repo interface {
 	Close()
 	Metrics(meter metric.Meter) error
 	WithTx(ctx context.Context) (Repo, pgx.Tx, error)
+	GetConnPool() *pgxpool.Pool
 }
 
 type Transaction interface {
@@ -77,6 +78,10 @@ type repo struct {
 	log     logrus.FieldLogger
 
 	auditErrorCount metric.Int64Counter
+}
+
+func (r *repo) GetConnPool() *pgxpool.Pool {
+	return r.db
 }
 
 func (r *repo) Metrics(meter metric.Meter) (err error) {
