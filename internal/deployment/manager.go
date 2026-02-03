@@ -2,12 +2,15 @@ package deployment
 
 import (
 	"context"
+	"errors"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/deployment/deploymentsql"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nais/fasit/internal/message"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/metric"
 )
@@ -17,6 +20,7 @@ type Manager struct {
 	reconciler      *reconciler
 	querier         deploymentsql.Querier
 	chartDownloader ChartDownloader
+	log             logrus.FieldLogger
 }
 
 type ChartDownloader func(chartURL, version string) (*model.Feature, error)
@@ -56,6 +60,7 @@ func NewManager(repo database.Repo, publisher NewPublisher, m metric.Meter, log 
 		deployer:   d,
 		reconciler: r,
 		querier:    querier,
+		log:        log,
 	}
 	for _, opt := range opts {
 		opt(mgr)
@@ -75,4 +80,31 @@ func (dm *Manager) Run(ctx context.Context, interval time.Duration) {
 // Reconcile performs a reconciliation of deployments, and will block until complete.
 func (dm *Manager) Reconcile(ctx context.Context) error {
 	return dm.reconciler.Reconcile(ctx)
+}
+
+func (dm *Manager) Receive(ctx context.Context, status *message.Helm) error {
+	di, err := dm.querier.DeployInstructionsByID(ctx, status.DIID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			dm.log.WithField("diid", status.DIID).Warn("unknown deploy instruction")
+			return nil
+		}
+		return err
+	}
+
+	if di.DeploymentID != nil {
+		msg := "received status from naisd."
+		if status.Error != "" {
+			msg += " error: " + status.Error
+		}
+		if err = dm.SetDeploymentStatus(ctx, *di.DeploymentID, di.EnvironmentID, status.RolloutStatus, msg); err != nil {
+			dm.log.WithFields(logrus.Fields{
+				"deployment_id":  di.DeploymentID,
+				"environment_id": di.EnvironmentID,
+				"status":         status.RolloutStatus,
+				"msg":            msg,
+			}).WithError(err).Error("create deployment status")
+		}
+	}
+	return nil
 }

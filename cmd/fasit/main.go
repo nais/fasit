@@ -143,9 +143,26 @@ func main() {
 	go repo.TimeoutDeployInstructions(ctx)
 	log.Info("-- successfully started database client")
 
+	deployCreatePublisher := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
+		return message.NewPublisher[message.DeployInstruction](pubsubClient, cfg.GCPProjectID, topicID, log)
+	}
+
+	deploymentMgr, err := deployment.NewManager(repo, deployCreatePublisher, meter, log.WithField("subsystem", "deployment_mgr"))
+	if err != nil {
+		log.WithError(err).Fatal("setting up deployment reconciler")
+	}
+	go deploymentMgr.Run(ctx, 10*time.Minute)
+
 	statusMgr := message.NewSubscriber[message.Status](pubsubClient, cfg.GCPProjectID, cfg.StatusSubscriptionID, log.WithField("subsystem", "status-subscriber"))
 
-	receiver := workers.NewReceiver(statusMgr, repo, log.WithField("subsystem", "status"), slackClient, cfg.SlackChannelFeatureAlerts)
+	receiver := workers.NewReceiver(
+		statusMgr,
+		repo,
+		log.WithField("subsystem", "status"),
+		slackClient,
+		cfg.SlackChannelFeatureAlerts,
+		deploymentMgr,
+	)
 	go receiver.Run(ctx)
 
 	notifierService := notifier.New(db, log.WithField("subsystem", "notifier"))
@@ -166,16 +183,6 @@ func main() {
 		}
 	}()
 	go reconciler.Run(ctx, 10*time.Minute)
-
-	deployCreatePublisher := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
-		return message.NewPublisher[message.DeployInstruction](pubsubClient, cfg.GCPProjectID, topicID, log)
-	}
-
-	deploymentMgr, err := deployment.NewManager(repo, deployCreatePublisher, meter, log.WithField("subsystem", "deployment_mgr"))
-	if err != nil {
-		log.WithError(err).Fatal("setting up deployment reconciler")
-	}
-	go deploymentMgr.Run(ctx, 10*time.Minute)
 
 	costUpdater, err := workers.NewCostUpdater(ctx, repo, log.WithField("subsystem", "cost_updater"))
 	if err != nil {

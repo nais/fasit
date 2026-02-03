@@ -10,7 +10,7 @@ import (
 	"github.com/nais/fasit/internal/graph/model"
 )
 
-type ctxKey int
+/*type ctxKey int
 
 const managerKey ctxKey = iota
 
@@ -20,7 +20,7 @@ func NewManagerContext(ctx context.Context, dmgr *Manager) context.Context {
 
 func fromContext(ctx context.Context) *Manager {
 	return ctx.Value(managerKey).(*Manager)
-}
+}*/
 
 // TriggerReconcile will trigger an asynchronous reconciliation of deployments. The returned channel can be used to wait
 // for the result.
@@ -123,7 +123,6 @@ func (dm *Manager) SetDeploymentStatus(ctx context.Context, deploymentID, enviro
 		Status:        status.String(),
 		Message:       message,
 	})
-	return nil
 }
 
 func (dm *Manager) GetEnvironmentFeature(ctx context.Context, environmentID uuid.UUID, featureName string) (*model.Feature, error) {

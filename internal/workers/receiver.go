@@ -20,11 +20,14 @@ type ReceiverClient interface {
 	Receive(ctx context.Context, f func(ctx context.Context, msg message.Status) error) error
 }
 
+type HelmListener interface {
+	Receive(ctx context.Context, message *message.Helm) error
+}
+
 type ReceiverStore interface {
 	DeployInstructionGet(ctx context.Context, id uuid.UUID) (*model.DeployInstruction, error)
 	DeployInstructionsLatestForFeature(ctx context.Context, envID uuid.UUID, featureName string) (*model.DeployInstruction, error)
 	DeployInstructionUpdateStatus(ctx context.Context, id uuid.UUID, status model.RolloutStatus) error
-	SetDeploymentStatus(ctx context.Context, deploymentID, environmentID uuid.UUID, status model.RolloutStatus, message string) error
 	EnvironmentByNames(ctx context.Context, tenantName, environmentName string) (*model.Environment, error)
 	EnvironmentCI(ctx context.Context, kind model.EnvironmentKind) (*model.Environment, error)
 	EnvironmentCreate(ctx context.Context, t *model.EnvironmentCreate) (*model.Environment, error)
@@ -53,15 +56,24 @@ type Receiver struct {
 	log          logrus.FieldLogger
 	slack        slack.SlackClient
 	slackChannel string
+	listeners    []HelmListener
 }
 
-func NewReceiver(mgr ReceiverClient, repo ReceiverStore, log logrus.FieldLogger, slackClient slack.SlackClient, slackChannel string) *Receiver {
+func NewReceiver(
+	mgr ReceiverClient,
+	repo ReceiverStore,
+	log logrus.FieldLogger,
+	slackClient slack.SlackClient,
+	slackChannel string,
+	listeners ...HelmListener,
+) *Receiver {
 	receiver := &Receiver{
 		manager:      mgr,
 		repo:         repo,
 		log:          log,
 		slack:        slackClient,
 		slackChannel: slackChannel,
+		listeners:    listeners,
 	}
 	return receiver
 }
@@ -98,6 +110,12 @@ func (r *Receiver) handlerHelm(ctx context.Context, msg message.Status) error {
 	if err != nil {
 		r.log.WithError(err).Errorf("invalid json")
 		return nil
+	}
+
+	for _, l := range r.listeners {
+		if err := l.Receive(ctx, helmStatus); err != nil {
+			r.log.WithError(err).Error("notifying helm listener")
+		}
 	}
 
 	di, err := r.repo.DeployInstructionGet(ctx, helmStatus.DIID)
@@ -139,21 +157,6 @@ func (r *Receiver) handlerHelm(ctx context.Context, msg message.Status) error {
 	if env.CI && di.DeploymentID == nil {
 		if err := r.handleCI(ctx, env, di, helmStatus, msg.Tenant); err != nil {
 			r.log.WithError(err).Error("handling helm status message for CI environment")
-		}
-	}
-
-	if di.DeploymentID != nil {
-		message := "received status from naisd."
-		if helmStatus.Error != "" {
-			message += " error: " + helmStatus.Error
-		}
-		if err = r.repo.SetDeploymentStatus(ctx, *di.DeploymentID, env.ID, helmStatus.RolloutStatus, message); err != nil {
-			r.log.WithFields(logrus.Fields{
-				"deployment_id":  di.DeploymentID,
-				"environment_id": env.ID,
-				"status":         helmStatus.RolloutStatus,
-				"msg":            msg,
-			}).WithError(err).Error("create deployment status")
 		}
 	}
 

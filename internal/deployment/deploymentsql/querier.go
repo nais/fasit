@@ -12,6 +12,7 @@ import (
 type Querier interface {
 	CreateDeployment(ctx context.Context, arg CreateDeploymentParams) (Deployment, error)
 	DeleteDeployment(ctx context.Context, id uuid.UUID) error
+	DeployInstructionsByID(ctx context.Context, id uuid.UUID) (DeployInstruction, error)
 	DeployInstructionsGetDeployedFeatures(ctx context.Context, arg DeployInstructionsGetDeployedFeaturesParams) ([]string, error)
 	FeatureEnabled(ctx context.Context, arg FeatureEnabledParams) (bool, error)
 	GetCIEnvironmentsForTarget(ctx context.Context, target environment.Labels) ([]GetCIEnvironmentsForTargetRow, error)

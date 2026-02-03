@@ -10,7 +10,6 @@ import (
 )
 
 type DeploymentRepo interface {
-	SetDeploymentStatus(ctx context.Context, deploymentID, environmentID uuid.UUID, status model.RolloutStatus, message string) error
 	GetEnvironmentFeature(ctx context.Context, environmentID uuid.UUID, featureName string) (*model.Feature, error)
 }
 
@@ -30,16 +29,6 @@ func (r *repo) GetEnvironmentFeature(ctx context.Context, environmentID uuid.UUI
 	feature.HasDeployments = true
 
 	return feature, nil
-}
-
-// TODO: receiver is still using this
-func (r *repo) SetDeploymentStatus(ctx context.Context, deploymentID, environmentID uuid.UUID, status model.RolloutStatus, message string) error {
-	return r.querier.SetDeploymentStatus(ctx, gensql.SetDeploymentStatusParams{
-		DeploymentID:  deploymentID,
-		EnvironmentID: environmentID,
-		Status:        status.String(),
-		Message:       message,
-	})
 }
 
 func featureFromSQL(f gensql.FeatureDatum) (*model.Feature, error) {
