@@ -32,7 +32,8 @@ sql:
             go_type: "github.com/nais/fasit/internal/environment.Labels"
           - column: "deployments.target"
             go_type: "github.com/nais/fasit/internal/environment.Labels"
-  - !!merge <<: *default_domain
+  - engine: "postgresql" # keep this line for Intellij formatting issues
+    !!merge <<: *default_domain
     name: "Deployment SQL"
     queries: "internal/deployment/queries"
     gen:
@@ -40,6 +41,16 @@ sql:
         !!merge <<: *default_go
         package: "deploymentsql"
         out: "internal/deployment/deploymentsql"
+        emit_pointers_for_null_types: true
+  - engine: "postgresql" # keep this line for Intellij formatting issues
+    !!merge <<: *default_domain
+    name: "Environment SQL"
+    queries: "internal/environment/queries"
+    gen:
+      go:
+        !!merge <<: *default_go
+        package: "environmentsql"
+        out: "internal/environment/environmentsql"
         emit_pointers_for_null_types: true
 #emit_result_struct_pointers: true
 #emit_prepared_queries: true
