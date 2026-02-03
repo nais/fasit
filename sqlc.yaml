@@ -21,7 +21,6 @@ sql:
         emit_interface: true
         omit_sqlc_version: true
         emit_empty_slices: true
-
         overrides:
           - db_type: "uuid"
             go_type: "github.com/google/uuid.UUID"
@@ -32,20 +31,18 @@ sql:
             go_type: "github.com/nais/fasit/internal/environment.Labels"
           - column: "deployments.target"
             go_type: "github.com/nais/fasit/internal/environment.Labels"
-
-  - <<: *default_domain
+  - !!merge <<: *default_domain
     name: "Deployment SQL"
     queries: "internal/deployment/queries"
     gen:
       go:
-        <<: *default_go
+        !!merge <<: *default_go
         package: "deploymentsql"
         out: "internal/deployment/deploymentsql"
         emit_pointers_for_null_types: true
         omit_unused_structs: true
-
-        #emit_result_struct_pointers: true
-        #emit_prepared_queries: true
-        #emit_all_enum_values: true
-        #emit_enum_valid_method: true
-        #json_tags_id_uppercase: true
+#emit_result_struct_pointers: true
+#emit_prepared_queries: true
+#emit_all_enum_values: true
+#emit_enum_valid_method: true
+#json_tags_id_uppercase: true
