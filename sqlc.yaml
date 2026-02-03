@@ -21,6 +21,7 @@ sql:
         emit_interface: true
         omit_sqlc_version: true
         emit_empty_slices: true
+        omit_unused_structs: true
         overrides:
           - db_type: "uuid"
             go_type: "github.com/google/uuid.UUID"
@@ -40,7 +41,7 @@ sql:
         package: "deploymentsql"
         out: "internal/deployment/deploymentsql"
         emit_pointers_for_null_types: true
-        omit_unused_structs: true
+
 #emit_result_struct_pointers: true
 #emit_prepared_queries: true
 #emit_all_enum_values: true
