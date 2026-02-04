@@ -42,16 +42,6 @@ sql:
         package: "deploymentsql"
         out: "internal/deployment/deploymentsql"
         emit_pointers_for_null_types: true
-  - engine: "postgresql" # keep this line for Intellij formatting issues
-    !!merge <<: *default_domain
-    name: "Environment SQL"
-    queries: "internal/environment/queries"
-    gen:
-      go:
-        !!merge <<: *default_go
-        package: "environmentsql"
-        out: "internal/environment/environmentsql"
-        emit_pointers_for_null_types: true
 #emit_result_struct_pointers: true
 #emit_prepared_queries: true
 #emit_all_enum_values: true
