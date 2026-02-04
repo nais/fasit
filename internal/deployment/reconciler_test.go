@@ -356,14 +356,10 @@ func startPostgresql(ctx context.Context, t *testing.T) (container *postgres.Pos
 		return nil, "", fmt.Errorf("failed to get connection string: %w", err)
 	}
 
-	pool, _, err := database.NewConnPool(ctx, dsn, false)
+	logger, _ := test.NewNullLogger()
+	pool, _, err := database.NewConnPool(ctx, dsn, false, logger)
 	if err != nil {
 		t.Fatalf("Error connecting to database: %v", err)
-	}
-
-	logger, _ := test.NewNullLogger()
-	if err = database.Migrate(pool, logger); err != nil {
-		return nil, "", fmt.Errorf("failed to migrate database: %w", err)
 	}
 	pool.Close()
 
@@ -420,7 +416,7 @@ func setupTestMgr(
 func getDb(ctx context.Context, t *testing.T, container *postgres.PostgresContainer, dsn string, log logrus.FieldLogger) Db {
 	t.Helper()
 
-	pool, _, err := database.NewConnPool(ctx, dsn, false)
+	pool, _, err := database.NewConnPool(ctx, dsn, false, log)
 	if err != nil {
 		t.Fatalf("Error connecting to database: %v", err)
 	}

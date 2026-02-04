@@ -453,17 +453,13 @@ func startPostgresql(ctx context.Context) (*postgres.PostgresContainer, string, 
 
 	logr := logrus.New()
 	logr.Out = io.Discard
-	pool, close, err := database.NewConnPool(ctx, connStr, false)
+	pool, closers, err := database.NewConnPool(ctx, connStr, false, logr)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to create pool: %w", err)
 	}
-
-	if err := database.Migrate(pool, logr); err != nil {
-		return nil, "", fmt.Errorf("failed to migrate: %w", err)
-	}
-
 	pool.Close()
-	if err := close.Close(); err != nil {
+
+	if err := closers.Close(); err != nil {
 		return nil, "", fmt.Errorf("failed to close pool: %w", err)
 	}
 
@@ -478,14 +474,14 @@ func newDB(ctx context.Context, container *postgres.PostgresContainer, connStr s
 	logr := logrus.New()
 	logr.Out = io.Discard
 
-	pool, close, err := database.NewConnPool(ctx, connStr, false)
+	pool, closers, err := database.NewConnPool(ctx, connStr, false, logr)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create pool: %w", err)
 	}
 
 	cleanup := func() {
 		pool.Close()
-		if err := close.Close(); err != nil {
+		if err := closers.Close(); err != nil {
 			log.Fatalf("failed to close pool: %s", err)
 		}
 		if err := container.Restore(ctx, postgres.WithSnapshotName("migrated")); err != nil {

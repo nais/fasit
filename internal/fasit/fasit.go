@@ -101,15 +101,11 @@ func Run(ctx context.Context) error {
 		extraDSN = " pool_max_conns=5"
 	}
 
-	pool, closers, err := database.NewConnPool(ctx, cfg.DBConnectionDSN+extraDSN, dbDriver != "pgx")
+	pool, closers, err := database.NewConnPool(ctx, cfg.DBConnectionDSN+extraDSN, dbDriver != "pgx", log)
 	if err != nil {
 		return fmt.Errorf("error setting up database: %w", err)
 	}
 	defer ioconvenience.CloseWithLog(closers, log)
-
-	if err := database.Migrate(pool, log); err != nil {
-		return fmt.Errorf("error migrating database: %w", err)
-	}
 
 	repo := database.NewRepo(pool, log)
 	go repo.TimeoutDeployInstructions(ctx)

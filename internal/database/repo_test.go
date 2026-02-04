@@ -27,17 +27,13 @@ func TestMain(m *testing.M) {
 	log.Out = io.Discard
 	ctx := context.Background()
 
-	pool, closers, err := NewConnPool(ctx, dbString, false)
+	pool, closers, err := NewConnPool(ctx, dbString, false, log)
 	if err != nil {
 		log.Fatalf("Error connecting to database: %v", err)
 	}
 	defer func() {
 		_ = closers.Close()
 	}()
-
-	if err := Migrate(pool, logrus.NewEntry(log)); err != nil {
-		log.Fatalf("Could not migrate: %v", err)
-	}
 
 	repository = NewRepo(pool, logrus.NewEntry(log)).(*repo)
 

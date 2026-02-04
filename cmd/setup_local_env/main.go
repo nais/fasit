@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 	"time"
@@ -120,12 +119,14 @@ var (
 )
 
 func main() {
+	log := logrus.StandardLogger()
+
 	if err := os.Setenv("PUBSUB_EMULATOR_HOST", "localhost:8086"); err != nil {
 		log.Fatal(err)
 	}
 
 	ctx := context.Background()
-	dbConn, cancel, err := database.NewConnPool(ctx, "postgres://postgres:postgres@localhost:5432/fasit?sslmode=disable", false)
+	dbConn, cancel, err := database.NewConnPool(ctx, "postgres://postgres:postgres@localhost:5432/fasit?sslmode=disable", false, log)
 	if err != nil {
 		panic(err)
 	}

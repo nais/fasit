@@ -130,7 +130,7 @@ func (r *repo) TxFunc(ctx context.Context, fn TXFunc) error {
 	})
 }
 
-func NewConnPool(ctx context.Context, dbConnDSN string, cloudsql bool) (*pgxpool.Pool, io.Closer, error) {
+func NewConnPool(ctx context.Context, dbConnDSN string, cloudsql bool, log logrus.FieldLogger) (*pgxpool.Pool, io.Closer, error) {
 	cloudsqlHost := ""
 	if cloudsql {
 		vals, err := url.ParseQuery(strings.ReplaceAll(dbConnDSN, " ", "&"))
@@ -180,11 +180,16 @@ func NewConnPool(ctx context.Context, dbConnDSN string, cloudsql bool) (*pgxpool
 	}
 
 	// Interact with the dirver directly as you normally would
-	conn, err := pgxpool.NewWithConfig(context.Background(), config)
+	pool, err := pgxpool.NewWithConfig(context.Background(), config)
 	if err != nil {
 		return nil, closers, fmt.Errorf("failed to connect: %w", err)
 	}
-	return conn, closers, nil
+
+	if err := Migrate(pool, log); err != nil {
+		return nil, closers, fmt.Errorf("error migrating database: %w", err)
+	}
+
+	return pool, closers, nil
 }
 
 func Migrate(pool *pgxpool.Pool, log logrus.FieldLogger) error {
