@@ -19,17 +19,17 @@ import (
 )
 
 // Statuses is the resolver for the deploymentStatuses field.
-func (r *deploymentResolver) Statuses(ctx context.Context, obj *model.Deployment) ([]*model.DeploymentStatus, error) {
+func (r *deploymentResolver) Statuses(ctx context.Context, obj *deployment.Deployment) ([]*deployment.DeploymentStatus, error) {
 	return deployment.ListDeploymentStatuses(ctx, obj.ID)
 }
 
 // Deployment is the resolver for the deployment field.
-func (r *deploymentStatusResolver) Deployment(ctx context.Context, obj *model.DeploymentStatus) (*model.Deployment, error) {
+func (r *deploymentStatusResolver) Deployment(ctx context.Context, obj *deployment.DeploymentStatus) (*deployment.Deployment, error) {
 	return deployment.GetDeployment(ctx, obj.DeploymentID)
 }
 
 // Environment is the resolver for the environment field.
-func (r *deploymentStatusResolver) Environment(ctx context.Context, obj *model.DeploymentStatus) (*model.Environment, error) {
+func (r *deploymentStatusResolver) Environment(ctx context.Context, obj *deployment.DeploymentStatus) (*model.Environment, error) {
 	return r.Repo.EnvironmentGet(ctx, obj.EnvironmentID)
 }
 
@@ -71,7 +71,7 @@ func (r *mutationResolver) DeleteDeployment(ctx context.Context, deploymentID uu
 }
 
 // Deployments is the resolver for the deployments field.
-func (r *queryResolver) Deployments(ctx context.Context, feature *string) ([]*model.Deployment, error) {
+func (r *queryResolver) Deployments(ctx context.Context, feature *string) ([]*deployment.Deployment, error) {
 	if feature != nil {
 		return deployment.ListDeploymentsByFeature(ctx, *feature)
 	}
@@ -80,7 +80,7 @@ func (r *queryResolver) Deployments(ctx context.Context, feature *string) ([]*mo
 }
 
 // Deployment is the resolver for the deployment field.
-func (r *queryResolver) Deployment(ctx context.Context, id uuid.UUID) (*model.Deployment, error) {
+func (r *queryResolver) Deployment(ctx context.Context, id uuid.UUID) (*deployment.Deployment, error) {
 	return deployment.GetDeployment(ctx, id)
 }
 

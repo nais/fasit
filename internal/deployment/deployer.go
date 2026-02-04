@@ -125,7 +125,7 @@ func (d *deployer) deployToCI(ctx context.Context, feat *model.Feature, req Requ
 	return d.waitForDeploymentStatuses(ctx, deploymentsByEnvID)
 }
 
-func (d *deployer) deployToEnvironment(ctx context.Context, deployment *model.Deployment, environment *model.TenantEnvironment, publisher Publisher) error {
+func (d *deployer) deployToEnvironment(ctx context.Context, deployment *Deployment, environment *model.TenantEnvironment, publisher Publisher) error {
 	err := d.querier.InsertEnvironmentFeature(ctx, deploymentsql.InsertEnvironmentFeatureParams{
 		EnvironmentID:  environment.ID,
 		DeploymentID:   deployment.ID,
@@ -200,7 +200,7 @@ func (d *deployer) deployToEnvironment(ctx context.Context, deployment *model.De
 	return nil
 }
 
-func (d *deployer) shouldDeployToEnvironment(ctx context.Context, deployment *model.Deployment, environment *model.TenantEnvironment, hash string) (bool, error) {
+func (d *deployer) shouldDeployToEnvironment(ctx context.Context, deployment *Deployment, environment *model.TenantEnvironment, hash string) (bool, error) {
 	existingDeploy, err := d.repo.DeployInstructionsLatestForFeature(ctx, environment.ID, deployment.Feature.Name)
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
@@ -242,7 +242,7 @@ func (d *deployer) setDeploymentStatus(ctx context.Context, deploymentID, enviro
 	}
 }
 
-func (d *deployer) isDependenciesDeployed(ctx context.Context, deployment *model.Deployment, envID uuid.UUID) (bool, error) {
+func (d *deployer) isDependenciesDeployed(ctx context.Context, deployment *Deployment, envID uuid.UUID) (bool, error) {
 	if len(deployment.Feature.Dependencies) == 0 {
 		return true, nil
 	}
@@ -344,12 +344,12 @@ func (d *deployer) waitForDeploymentStatuses(ctx context.Context, deploymentsByE
 					return fmt.Errorf("get latest deployment status for deployment %q in environment %q: %w", deploymentID, envID, err)
 				}
 
-				state := model.DeploymentStatusState(strings.ToUpper(status))
+				state := DeploymentStatusState(strings.ToUpper(status))
 
 				switch state {
-				case model.DeploymentStatusStateDeployed:
+				case DeploymentStatusStateDeployed:
 					return nil
-				case model.DeploymentStatusStateFailed:
+				case DeploymentStatusStateFailed:
 					return fmt.Errorf("deployment %q in environment %q failed", deploymentID, envID)
 				}
 
@@ -413,8 +413,8 @@ func (d *deployer) missingDependencies(ctx context.Context, dependencies []strin
 
 // filterDeployments filters the deployments to only include the most specific deployment with the latest created
 // timestamp.
-func filterDeployments(deps []*model.Deployment) []*model.Deployment {
-	deployments := map[string]*model.Deployment{}
+func filterDeployments(deps []*Deployment) []*Deployment {
+	deployments := map[string]*Deployment{}
 	for _, dep := range deps {
 		featureName := dep.Feature.Name
 
@@ -435,13 +435,13 @@ func filterDeployments(deps []*model.Deployment) []*model.Deployment {
 		}
 	}
 
-	ret := make([]*model.Deployment, 0)
+	ret := make([]*Deployment, 0)
 	for _, d := range deployments {
 		ret = append(ret, d)
 	}
 
 	// sort by created timestamp ascending so that the oldest deployments are installed first
-	slices.SortStableFunc(ret, func(a, b *model.Deployment) int {
+	slices.SortStableFunc(ret, func(a, b *Deployment) int {
 		return a.Created.Compare(b.Created)
 	})
 

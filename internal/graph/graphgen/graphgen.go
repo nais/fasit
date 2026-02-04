@@ -16,6 +16,7 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
 	"github.com/google/uuid"
+	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/graph/model"
 	graph "github.com/nais/fasit/internal/graph/scalars"
 	gqlparser "github.com/vektah/gqlparser/v2"
@@ -484,11 +485,11 @@ type CostSeriesResolver interface {
 	Tenant(ctx context.Context, obj *model.CostSeries) (*model.Tenant, error)
 }
 type DeploymentResolver interface {
-	Statuses(ctx context.Context, obj *model.Deployment) ([]*model.DeploymentStatus, error)
+	Statuses(ctx context.Context, obj *deployment.Deployment) ([]*deployment.DeploymentStatus, error)
 }
 type DeploymentStatusResolver interface {
-	Deployment(ctx context.Context, obj *model.DeploymentStatus) (*model.Deployment, error)
-	Environment(ctx context.Context, obj *model.DeploymentStatus) (*model.Environment, error)
+	Deployment(ctx context.Context, obj *deployment.DeploymentStatus) (*deployment.Deployment, error)
+	Environment(ctx context.Context, obj *deployment.DeploymentStatus) (*model.Environment, error)
 }
 type EnvSeriesResolver interface {
 	Environment(ctx context.Context, obj *model.EnvSeries) (*model.Environment, error)
@@ -571,8 +572,8 @@ type QueryResolver interface {
 	HelmValues(ctx context.Context, feature string, envID *uuid.UUID, env *string, tenant *string) (json.RawMessage, error)
 	CostForTenant(ctx context.Context, tenantID uuid.UUID, filter *model.CostFilter) (*model.TenantCosts, error)
 	Cost(ctx context.Context, filter *model.CostFilter) (*model.Cost, error)
-	Deployments(ctx context.Context, feature *string) ([]*model.Deployment, error)
-	Deployment(ctx context.Context, id uuid.UUID) (*model.Deployment, error)
+	Deployments(ctx context.Context, feature *string) ([]*deployment.Deployment, error)
+	Deployment(ctx context.Context, id uuid.UUID) (*deployment.Deployment, error)
 	Features(ctx context.Context) ([]*model.Feature, error)
 	Feature(ctx context.Context, name string) (*model.Feature, error)
 	History(ctx context.Context, id uuid.UUID) (*model.FeatureHistory, error)
@@ -5268,7 +5269,7 @@ func (ec *executionContext) fieldContext_Dependency_allOf(_ context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _Deployment_id(ctx context.Context, field graphql.CollectedField, obj *model.Deployment) (ret graphql.Marshaler) {
+func (ec *executionContext) _Deployment_id(ctx context.Context, field graphql.CollectedField, obj *deployment.Deployment) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
@@ -5297,7 +5298,7 @@ func (ec *executionContext) fieldContext_Deployment_id(_ context.Context, field 
 	return fc, nil
 }
 
-func (ec *executionContext) _Deployment_feature(ctx context.Context, field graphql.CollectedField, obj *model.Deployment) (ret graphql.Marshaler) {
+func (ec *executionContext) _Deployment_feature(ctx context.Context, field graphql.CollectedField, obj *deployment.Deployment) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
@@ -5360,7 +5361,7 @@ func (ec *executionContext) fieldContext_Deployment_feature(_ context.Context, f
 	return fc, nil
 }
 
-func (ec *executionContext) _Deployment_target(ctx context.Context, field graphql.CollectedField, obj *model.Deployment) (ret graphql.Marshaler) {
+func (ec *executionContext) _Deployment_target(ctx context.Context, field graphql.CollectedField, obj *deployment.Deployment) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
@@ -5395,7 +5396,7 @@ func (ec *executionContext) fieldContext_Deployment_target(_ context.Context, fi
 	return fc, nil
 }
 
-func (ec *executionContext) _Deployment_created(ctx context.Context, field graphql.CollectedField, obj *model.Deployment) (ret graphql.Marshaler) {
+func (ec *executionContext) _Deployment_created(ctx context.Context, field graphql.CollectedField, obj *deployment.Deployment) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
@@ -5424,7 +5425,7 @@ func (ec *executionContext) fieldContext_Deployment_created(_ context.Context, f
 	return fc, nil
 }
 
-func (ec *executionContext) _Deployment_statuses(ctx context.Context, field graphql.CollectedField, obj *model.Deployment) (ret graphql.Marshaler) {
+func (ec *executionContext) _Deployment_statuses(ctx context.Context, field graphql.CollectedField, obj *deployment.Deployment) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
@@ -5434,7 +5435,7 @@ func (ec *executionContext) _Deployment_statuses(ctx context.Context, field grap
 			return ec.resolvers.Deployment().Statuses(ctx, obj)
 		},
 		nil,
-		ec.marshalNDeploymentStatus2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐDeploymentStatusᚄ,
+		ec.marshalNDeploymentStatus2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋdeploymentᚐDeploymentStatusᚄ,
 		true,
 		true,
 	)
@@ -5467,7 +5468,7 @@ func (ec *executionContext) fieldContext_Deployment_statuses(_ context.Context, 
 	return fc, nil
 }
 
-func (ec *executionContext) _Deployment_description(ctx context.Context, field graphql.CollectedField, obj *model.Deployment) (ret graphql.Marshaler) {
+func (ec *executionContext) _Deployment_description(ctx context.Context, field graphql.CollectedField, obj *deployment.Deployment) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
@@ -5496,7 +5497,7 @@ func (ec *executionContext) fieldContext_Deployment_description(_ context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _Deployment_ci(ctx context.Context, field graphql.CollectedField, obj *model.Deployment) (ret graphql.Marshaler) {
+func (ec *executionContext) _Deployment_ci(ctx context.Context, field graphql.CollectedField, obj *deployment.Deployment) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
@@ -5525,7 +5526,7 @@ func (ec *executionContext) fieldContext_Deployment_ci(_ context.Context, field 
 	return fc, nil
 }
 
-func (ec *executionContext) _DeploymentStatus_deployment(ctx context.Context, field graphql.CollectedField, obj *model.DeploymentStatus) (ret graphql.Marshaler) {
+func (ec *executionContext) _DeploymentStatus_deployment(ctx context.Context, field graphql.CollectedField, obj *deployment.DeploymentStatus) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
@@ -5535,7 +5536,7 @@ func (ec *executionContext) _DeploymentStatus_deployment(ctx context.Context, fi
 			return ec.resolvers.DeploymentStatus().Deployment(ctx, obj)
 		},
 		nil,
-		ec.marshalNDeployment2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐDeployment,
+		ec.marshalNDeployment2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋdeploymentᚐDeployment,
 		true,
 		true,
 	)
@@ -5570,7 +5571,7 @@ func (ec *executionContext) fieldContext_DeploymentStatus_deployment(_ context.C
 	return fc, nil
 }
 
-func (ec *executionContext) _DeploymentStatus_environment(ctx context.Context, field graphql.CollectedField, obj *model.DeploymentStatus) (ret graphql.Marshaler) {
+func (ec *executionContext) _DeploymentStatus_environment(ctx context.Context, field graphql.CollectedField, obj *deployment.DeploymentStatus) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
@@ -5651,7 +5652,7 @@ func (ec *executionContext) fieldContext_DeploymentStatus_environment(_ context.
 	return fc, nil
 }
 
-func (ec *executionContext) _DeploymentStatus_state(ctx context.Context, field graphql.CollectedField, obj *model.DeploymentStatus) (ret graphql.Marshaler) {
+func (ec *executionContext) _DeploymentStatus_state(ctx context.Context, field graphql.CollectedField, obj *deployment.DeploymentStatus) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
@@ -5661,7 +5662,7 @@ func (ec *executionContext) _DeploymentStatus_state(ctx context.Context, field g
 			return obj.State, nil
 		},
 		nil,
-		ec.marshalNDeploymentStatusState2githubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐDeploymentStatusState,
+		ec.marshalNDeploymentStatusState2githubᚗcomᚋnaisᚋfasitᚋinternalᚋdeploymentᚐDeploymentStatusState,
 		true,
 		true,
 	)
@@ -5680,7 +5681,7 @@ func (ec *executionContext) fieldContext_DeploymentStatus_state(_ context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _DeploymentStatus_message(ctx context.Context, field graphql.CollectedField, obj *model.DeploymentStatus) (ret graphql.Marshaler) {
+func (ec *executionContext) _DeploymentStatus_message(ctx context.Context, field graphql.CollectedField, obj *deployment.DeploymentStatus) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
@@ -5709,7 +5710,7 @@ func (ec *executionContext) fieldContext_DeploymentStatus_message(_ context.Cont
 	return fc, nil
 }
 
-func (ec *executionContext) _DeploymentStatus_lastModified(ctx context.Context, field graphql.CollectedField, obj *model.DeploymentStatus) (ret graphql.Marshaler) {
+func (ec *executionContext) _DeploymentStatus_lastModified(ctx context.Context, field graphql.CollectedField, obj *deployment.DeploymentStatus) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
@@ -5738,7 +5739,7 @@ func (ec *executionContext) fieldContext_DeploymentStatus_lastModified(_ context
 	return fc, nil
 }
 
-func (ec *executionContext) _DeploymentStatus_created(ctx context.Context, field graphql.CollectedField, obj *model.DeploymentStatus) (ret graphql.Marshaler) {
+func (ec *executionContext) _DeploymentStatus_created(ctx context.Context, field graphql.CollectedField, obj *deployment.DeploymentStatus) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
@@ -11393,7 +11394,7 @@ func (ec *executionContext) _Query_deployments(ctx context.Context, field graphq
 			return ec.resolvers.Query().Deployments(ctx, fc.Args["feature"].(*string))
 		},
 		nil,
-		ec.marshalNDeployment2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐDeploymentᚄ,
+		ec.marshalNDeployment2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋdeploymentᚐDeploymentᚄ,
 		true,
 		true,
 	)
@@ -11450,7 +11451,7 @@ func (ec *executionContext) _Query_deployment(ctx context.Context, field graphql
 			return ec.resolvers.Query().Deployment(ctx, fc.Args["id"].(uuid.UUID))
 		},
 		nil,
-		ec.marshalNDeployment2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐDeployment,
+		ec.marshalNDeployment2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋdeploymentᚐDeployment,
 		true,
 		true,
 	)
@@ -16669,7 +16670,7 @@ func (ec *executionContext) _Dependency(ctx context.Context, sel ast.SelectionSe
 
 var deploymentImplementors = []string{"Deployment"}
 
-func (ec *executionContext) _Deployment(ctx context.Context, sel ast.SelectionSet, obj *model.Deployment) graphql.Marshaler {
+func (ec *executionContext) _Deployment(ctx context.Context, sel ast.SelectionSet, obj *deployment.Deployment) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, deploymentImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -16766,7 +16767,7 @@ func (ec *executionContext) _Deployment(ctx context.Context, sel ast.SelectionSe
 
 var deploymentStatusImplementors = []string{"DeploymentStatus"}
 
-func (ec *executionContext) _DeploymentStatus(ctx context.Context, sel ast.SelectionSet, obj *model.DeploymentStatus) graphql.Marshaler {
+func (ec *executionContext) _DeploymentStatus(ctx context.Context, sel ast.SelectionSet, obj *deployment.DeploymentStatus) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, deploymentStatusImplementors)
 
 	out := graphql.NewFieldSet(fields)
@@ -21464,11 +21465,11 @@ func (ec *executionContext) marshalNDependency2ᚖgithubᚗcomᚋnaisᚋfasitᚋ
 	return ec._Dependency(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNDeployment2githubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐDeployment(ctx context.Context, sel ast.SelectionSet, v model.Deployment) graphql.Marshaler {
+func (ec *executionContext) marshalNDeployment2githubᚗcomᚋnaisᚋfasitᚋinternalᚋdeploymentᚐDeployment(ctx context.Context, sel ast.SelectionSet, v deployment.Deployment) graphql.Marshaler {
 	return ec._Deployment(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNDeployment2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐDeploymentᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Deployment) graphql.Marshaler {
+func (ec *executionContext) marshalNDeployment2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋdeploymentᚐDeploymentᚄ(ctx context.Context, sel ast.SelectionSet, v []*deployment.Deployment) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -21492,7 +21493,7 @@ func (ec *executionContext) marshalNDeployment2ᚕᚖgithubᚗcomᚋnaisᚋfasit
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNDeployment2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐDeployment(ctx, sel, v[i])
+			ret[i] = ec.marshalNDeployment2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋdeploymentᚐDeployment(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -21512,7 +21513,7 @@ func (ec *executionContext) marshalNDeployment2ᚕᚖgithubᚗcomᚋnaisᚋfasit
 	return ret
 }
 
-func (ec *executionContext) marshalNDeployment2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐDeployment(ctx context.Context, sel ast.SelectionSet, v *model.Deployment) graphql.Marshaler {
+func (ec *executionContext) marshalNDeployment2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋdeploymentᚐDeployment(ctx context.Context, sel ast.SelectionSet, v *deployment.Deployment) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
@@ -21522,7 +21523,7 @@ func (ec *executionContext) marshalNDeployment2ᚖgithubᚗcomᚋnaisᚋfasitᚋ
 	return ec._Deployment(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNDeploymentStatus2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐDeploymentStatusᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.DeploymentStatus) graphql.Marshaler {
+func (ec *executionContext) marshalNDeploymentStatus2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋdeploymentᚐDeploymentStatusᚄ(ctx context.Context, sel ast.SelectionSet, v []*deployment.DeploymentStatus) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -21546,7 +21547,7 @@ func (ec *executionContext) marshalNDeploymentStatus2ᚕᚖgithubᚗcomᚋnais�
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNDeploymentStatus2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐDeploymentStatus(ctx, sel, v[i])
+			ret[i] = ec.marshalNDeploymentStatus2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋdeploymentᚐDeploymentStatus(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -21566,7 +21567,7 @@ func (ec *executionContext) marshalNDeploymentStatus2ᚕᚖgithubᚗcomᚋnais�
 	return ret
 }
 
-func (ec *executionContext) marshalNDeploymentStatus2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐDeploymentStatus(ctx context.Context, sel ast.SelectionSet, v *model.DeploymentStatus) graphql.Marshaler {
+func (ec *executionContext) marshalNDeploymentStatus2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋdeploymentᚐDeploymentStatus(ctx context.Context, sel ast.SelectionSet, v *deployment.DeploymentStatus) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
@@ -21576,13 +21577,13 @@ func (ec *executionContext) marshalNDeploymentStatus2ᚖgithubᚗcomᚋnaisᚋfa
 	return ec._DeploymentStatus(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNDeploymentStatusState2githubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐDeploymentStatusState(ctx context.Context, v any) (model.DeploymentStatusState, error) {
-	var res model.DeploymentStatusState
+func (ec *executionContext) unmarshalNDeploymentStatusState2githubᚗcomᚋnaisᚋfasitᚋinternalᚋdeploymentᚐDeploymentStatusState(ctx context.Context, v any) (deployment.DeploymentStatusState, error) {
+	var res deployment.DeploymentStatusState
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNDeploymentStatusState2githubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐDeploymentStatusState(ctx context.Context, sel ast.SelectionSet, v model.DeploymentStatusState) graphql.Marshaler {
+func (ec *executionContext) marshalNDeploymentStatusState2githubᚗcomᚋnaisᚋfasitᚋinternalᚋdeploymentᚐDeploymentStatusState(ctx context.Context, sel ast.SelectionSet, v deployment.DeploymentStatusState) graphql.Marshaler {
 	return v
 }
 

@@ -145,13 +145,13 @@ func (r *reconciler) reconcileEnvironment(ctx context.Context, environment *mode
 	return nil
 }
 
-func (r *reconciler) listDeploymentsToReconcile(ctx context.Context, environmentID uuid.UUID) ([]*model.Deployment, error) {
+func (r *reconciler) listDeploymentsToReconcile(ctx context.Context, environmentID uuid.UUID) ([]*Deployment, error) {
 	rows, err := r.querier.ListDeploymentsToReconcile(ctx, environmentID)
 	if err != nil {
 		return nil, err
 	}
 
-	ret := make([]*model.Deployment, len(rows))
+	ret := make([]*Deployment, len(rows))
 	for i, row := range rows {
 		deployment, err := deploymentFromSQL(row.Deployment, row.FeatureDatum)
 		if err != nil {

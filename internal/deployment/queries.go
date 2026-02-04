@@ -51,17 +51,17 @@ func CreateDeployment(ctx context.Context, req Request) (uuid.UUID, error) {
 	return fromContext(ctx).deployer.CreateDeployment(ctx, feat, req, false)
 }
 
-func GetDeployment(ctx context.Context, id uuid.UUID) (*model.Deployment, error) {
+func GetDeployment(ctx context.Context, id uuid.UUID) (*Deployment, error) {
 	return getDeployment(ctx, fromContext(ctx).querier, id)
 }
 
-func ListDeployments(ctx context.Context) ([]*model.Deployment, error) {
+func ListDeployments(ctx context.Context) ([]*Deployment, error) {
 	rows, err := fromContext(ctx).querier.ListDeployments(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	ret := make([]*model.Deployment, len(rows))
+	ret := make([]*Deployment, len(rows))
 	for i, row := range rows {
 		deployment, err := deploymentFromSQL(row.Deployment, row.FeatureDatum)
 		if err != nil {
@@ -73,16 +73,16 @@ func ListDeployments(ctx context.Context) ([]*model.Deployment, error) {
 	return ret, nil
 }
 
-func ListDeploymentStatuses(ctx context.Context, deploymentID uuid.UUID) ([]*model.DeploymentStatus, error) {
+func ListDeploymentStatuses(ctx context.Context, deploymentID uuid.UUID) ([]*DeploymentStatus, error) {
 	rows, err := fromContext(ctx).querier.ListDeploymentStatuses(ctx, deploymentID)
 	if err != nil {
 		return nil, fmt.Errorf("get deployment statuses: %w", err)
 	}
 
-	models := make([]*model.DeploymentStatus, len(rows))
+	models := make([]*DeploymentStatus, len(rows))
 	for i, status := range rows {
-		models[i] = &model.DeploymentStatus{
-			State:         model.DeploymentStatusState(strings.ToUpper(status.Status)),
+		models[i] = &DeploymentStatus{
+			State:         DeploymentStatusState(strings.ToUpper(status.Status)),
 			Message:       status.Message,
 			LastModified:  status.LastModified.Time,
 			Created:       status.Created.Time,
@@ -94,13 +94,13 @@ func ListDeploymentStatuses(ctx context.Context, deploymentID uuid.UUID) ([]*mod
 	return models, nil
 }
 
-func ListDeploymentsByFeature(ctx context.Context, featureName string) ([]*model.Deployment, error) {
+func ListDeploymentsByFeature(ctx context.Context, featureName string) ([]*Deployment, error) {
 	rows, err := fromContext(ctx).querier.ListDeploymentsByFeature(ctx, featureName)
 	if err != nil {
 		return nil, err
 	}
 
-	ret := make([]*model.Deployment, len(rows))
+	ret := make([]*Deployment, len(rows))
 	for i, row := range rows {
 		deployment, err := deploymentFromSQL(row.Deployment, row.FeatureDatum)
 		if err != nil {
