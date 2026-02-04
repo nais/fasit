@@ -22,7 +22,7 @@ import (
 
 type Resolver struct {
 	Repo           database.Repo
-	Log            *logrus.Entry
+	Log            logrus.FieldLogger
 	ClusterManager cluster.ClusterManager
 	DeploymentMgr  *deployment.Manager
 
@@ -31,10 +31,10 @@ type Resolver struct {
 	createPublisher workers.NewPublisher
 }
 
-func NewResolver(ctx context.Context, repo database.Repo, deploymentMgr *deployment.Manager, notifier *notifier.Notifier, naisdPublisher workers.NewPublisher, clusterManager cluster.ClusterManager, log *logrus.Entry) *Resolver {
+func NewResolver(ctx context.Context, repo database.Repo, deploymentMgr *deployment.Manager, notifier *notifier.Notifier, naisdPublisher workers.NewPublisher, clusterManager cluster.ClusterManager, log logrus.FieldLogger) *Resolver {
 	return &Resolver{
 		Repo:            repo,
-		Log:             log,
+		Log:             log.WithField("subsystem", "graphql"),
 		ClusterManager:  clusterManager,
 		DeploymentMgr:   deploymentMgr,
 		createPublisher: naisdPublisher,

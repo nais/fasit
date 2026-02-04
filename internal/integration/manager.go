@@ -356,7 +356,7 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 
 		ctx = context.WithValue(ctx, poolKey, pool)
 
-		cp := func(topicID string, log *logrus.Entry) workers.Publisher {
+		cp := func(topicID string, log logrus.FieldLogger) workers.Publisher {
 			p, ok := naisdRunner.reconcilerPublishers[topicID]
 			if !ok {
 				panic(fmt.Sprintf("no publisher for topic %q", topicID))

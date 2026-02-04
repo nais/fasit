@@ -32,7 +32,7 @@ type Subscriber[T any] struct {
 func NewSubscriber[T any](client *pubsub.Client, projectID, subscriptionID string, log logrus.FieldLogger) *Subscriber[T] {
 	return &Subscriber[T]{
 		subscription: client.Subscriber("projects/" + projectID + "/subscriptions/" + subscriptionID),
-		log:          log,
+		log:          log.WithField("subsystem", "status-subscriber"),
 	}
 }
 

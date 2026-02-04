@@ -64,7 +64,7 @@ func NewCostUpdater(ctx context.Context, repo database.Repo, log logrus.FieldLog
 	return &CostUpdater{
 		repo:   repo,
 		client: client,
-		log:    log,
+		log:    log.WithField("subsystem", "cost-updater"),
 	}, nil
 }
 

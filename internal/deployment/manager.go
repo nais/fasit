@@ -46,12 +46,12 @@ func WithChartDownloader(downloader ChartDownloader) Option {
 
 func NewManager(repo database.Repo, publisher NewPublisher, m metric.Meter, log logrus.FieldLogger, opts ...Option) (*Manager, error) {
 	querier := deploymentsql.New(repo.GetConnPool())
-	d, err := newDeployer(repo, querier, publisher, m, log.WithField("subsystem", "deployer"))
+	d, err := newDeployer(repo, querier, publisher, m, log.WithField("subsystem", "deployment-deployer"))
 	if err != nil {
 		return nil, err
 	}
 
-	r, err := newReconciler(repo, querier, d, m, log.WithField("subsystem", "reconciler"))
+	r, err := newReconciler(repo, querier, d, m, log.WithField("subsystem", "deployment-reconciler"))
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +60,7 @@ func NewManager(repo database.Repo, publisher NewPublisher, m metric.Meter, log 
 		deployer:   d,
 		reconciler: r,
 		querier:    querier,
-		log:        log,
+		log:        log.WithField("subsystem", "deployment-manager"),
 	}
 	for _, opt := range opts {
 		opt(mgr)

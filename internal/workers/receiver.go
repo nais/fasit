@@ -70,7 +70,7 @@ func NewReceiver(
 	receiver := &Receiver{
 		manager:      mgr,
 		repo:         repo,
-		log:          log,
+		log:          log.WithField("subsystem", "status-receiver"),
 		slack:        slackClient,
 		slackChannel: slackChannel,
 		listeners:    listeners,

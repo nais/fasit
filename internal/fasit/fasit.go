@@ -107,11 +107,11 @@ func Run(ctx context.Context) error {
 	}
 	defer ioconvenience.CloseWithLog(closers, log)
 
-	if err := database.Migrate(dbDriver, cfg.DBConnectionDSN, log.WithField("subsystem", "migrate")); err != nil {
+	if err := database.Migrate(dbDriver, cfg.DBConnectionDSN, log); err != nil {
 		return fmt.Errorf("error migrating database: %w", err)
 	}
 
-	repo := database.NewRepo(pool, log.WithField("subsystem", "repo"))
+	repo := database.NewRepo(pool, log)
 	go repo.TimeoutDeployInstructions(ctx)
 	log.Info("-- successfully started database client")
 
@@ -119,31 +119,31 @@ func Run(ctx context.Context) error {
 		return message.NewPublisher[message.DeployInstruction](pubSubClient, cfg.GCPProjectID, topicID, log)
 	}
 
-	deploymentMgr, err := deployment.NewManager(repo, deployCreatePublisher, meter, log.WithField("subsystem", "deployment_mgr"))
+	deploymentMgr, err := deployment.NewManager(repo, deployCreatePublisher, meter, log)
 	if err != nil {
 		return fmt.Errorf("error creating deployment manager: %w", err)
 	}
 	go deploymentMgr.Run(ctx, 10*time.Minute)
 
-	statusMgr := message.NewSubscriber[message.Status](pubSubClient, cfg.GCPProjectID, cfg.StatusSubscriptionID, log.WithField("subsystem", "status-subscriber"))
+	statusMgr := message.NewSubscriber[message.Status](pubSubClient, cfg.GCPProjectID, cfg.StatusSubscriptionID, log)
 
 	receiver := workers.NewReceiver(
 		statusMgr,
 		repo,
-		log.WithField("subsystem", "status"),
+		log,
 		slackClient,
 		cfg.SlackChannelFeatureAlerts,
 		deploymentMgr,
 	)
 	go receiver.Run(ctx)
 
-	notifierService := notifier.New(pool, log.WithField("subsystem", "notifier"))
+	notifierService := notifier.New(pool, log)
 	go notifierService.Run(ctx)
 
-	createPublisher := func(topicID string, log *logrus.Entry) workers.Publisher {
+	createPublisher := func(topicID string, log logrus.FieldLogger) workers.Publisher {
 		return message.NewPublisher[message.DeployInstruction](pubSubClient, cfg.GCPProjectID, topicID, log)
 	}
-	reconciler, err := workers.NewReconciler(repo, createPublisher, notifierService, meter, log.WithField("subsystem", "reconciler"))
+	reconciler, err := workers.NewReconciler(repo, createPublisher, notifierService, meter, log)
 	if err != nil {
 		return fmt.Errorf("error creating reconciler: %w", err)
 	}
@@ -156,7 +156,7 @@ func Run(ctx context.Context) error {
 	}()
 	go reconciler.Run(ctx, 10*time.Minute)
 
-	costUpdater, err := workers.NewCostUpdater(ctx, repo, log.WithField("subsystem", "cost_updater"))
+	costUpdater, err := workers.NewCostUpdater(ctx, repo, log)
 	if err != nil {
 		log.WithError(err).Error("setting up cost updater. You might need to run `gcloud auth --update-adc` if running locally")
 	} else {
@@ -167,7 +167,7 @@ func Run(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("error creating google client: %w", err)
 	}
-	resolver := graph.NewResolver(ctx, repo, deploymentMgr, notifierService, createPublisher, googleClient, log.WithField("subsystem", "graphql"))
+	resolver := graph.NewResolver(ctx, repo, deploymentMgr, notifierService, createPublisher, googleClient, log)
 
 	graphServer := newGraphServer(graphgen.NewExecutableSchema(graphgen.Config{Resolvers: resolver}))
 	graphServer.Use(otelgqlgen.Middleware())
@@ -206,7 +206,7 @@ func Run(ctx context.Context) error {
 
 	if os.Getenv("GH_PEM") != "" {
 		log.Info("GitHub status reporter enabled")
-		ghstatus, err := rollout.NewGHStatusReporter(log.WithField("subsystem", "gh_status"), repo, notifierService, os.Getenv("GH_PEM"))
+		ghstatus, err := rollout.NewGHStatusReporter(log, repo, notifierService, os.Getenv("GH_PEM"))
 		if err != nil {
 			return fmt.Errorf("error creating github status reporter: %w", err)
 		}
@@ -225,7 +225,7 @@ func Run(ctx context.Context) error {
 	rout.AllowAll = cfg.InsecureSkipTokenCheck
 	router.Post("/github/rollout", rout.Rollout)
 
-	deploy, err := deployment.NewHttpHandler(ctx, deploymentMgr, log.WithField("subsystem", "deployment_http"))
+	deploy, err := deployment.NewHttpHandler(ctx, deploymentMgr, log)
 	if err != nil {
 		return fmt.Errorf("error creating deployment http handler: %w", err)
 	}
@@ -262,7 +262,7 @@ func Run(ctx context.Context) error {
 		return fmt.Errorf("running cluster upgrader: %w", err)
 	}
 
-	go clustersMetrics(ctx, repo, meter, log.WithField("subsystem", "cluster_info"))
+	go clustersMetrics(ctx, repo, meter, log)
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 	defer cancel()
@@ -296,7 +296,7 @@ func newGraphServer(es graphql.ExecutableSchema) *handler.Server {
 	return srv
 }
 
-func newLogger(level string) (*logrus.Logger, error) {
+func newLogger(level string) (logrus.FieldLogger, error) {
 	log := logrus.StandardLogger()
 	log.SetFormatter(&logrus.JSONFormatter{})
 
@@ -341,8 +341,8 @@ func newMetricsProvider() (metric.Meter, error) {
 		Meter("github.com/nais/fasit"), nil
 }
 
-func runClusterUpgrader(ctx context.Context, slackChannel string, log *logrus.Logger, clusterManager cluster.ClusterManager, repo database.Repo, meter metric.Meter, slack slack.SlackClient) error {
-	s := workers.NewScheduler(log.WithField("subsystem", "scheduler"))
+func runClusterUpgrader(ctx context.Context, slackChannel string, log logrus.FieldLogger, clusterManager cluster.ClusterManager, repo database.Repo, meter metric.Meter, slack slack.SlackClient) error {
+	s := workers.NewScheduler(log)
 	clusterUpgrader := cluster.NewClusterUpgrader(repo, log, clusterManager, meter, slack, slackChannel)
 	autoUpgrader := cluster.NewAutoUpgrader(repo, log, clusterManager, meter)
 
@@ -354,6 +354,8 @@ func runClusterUpgrader(ctx context.Context, slackChannel string, log *logrus.Lo
 }
 
 func clustersMetrics(ctx context.Context, repo database.Repo, meter metric.Meter, log logrus.FieldLogger) {
+	log = log.WithField("subsystem", "cluster-info")
+
 	gauge, err := meter.Int64Gauge("cluster_info")
 	if err != nil {
 		return

@@ -99,11 +99,11 @@ type Querier interface {
 	WithTx(tx pgx.Tx) *gensql.Queries
 }
 
-func NewRepo(db *pgxpool.Pool, log logrus.FieldLogger) Repo {
+func NewRepo(pool *pgxpool.Pool, log logrus.FieldLogger) Repo {
 	return &repo{
-		querier: gensql.New(db),
-		db:      db,
-		log:     log,
+		querier: gensql.New(pool),
+		db:      pool,
+		log:     log.WithField("subsystem", "database-repo"),
 	}
 }
 
@@ -187,6 +187,8 @@ func NewConnPool(ctx context.Context, dbConnDSN string, cloudsql bool) (*pgxpool
 }
 
 func Migrate(driver, dsn string, log logrus.FieldLogger) error {
+	log = log.WithField("subsystem", "database-migration")
+
 	goose.SetBaseFS(embedMigrations)
 	goose.SetLogger(log)
 

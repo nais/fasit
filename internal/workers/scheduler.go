@@ -19,13 +19,13 @@ type scheduledWorker struct {
 }
 
 type Scheduler struct {
-	log     *logrus.Entry
+	log     logrus.FieldLogger
 	workers []*scheduledWorker
 }
 
-func NewScheduler(log *logrus.Entry) *Scheduler {
+func NewScheduler(log logrus.FieldLogger) *Scheduler {
 	return &Scheduler{
-		log: log,
+		log: log.WithField("subsystem", "scheduler"),
 	}
 }
 

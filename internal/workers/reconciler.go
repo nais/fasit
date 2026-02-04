@@ -39,7 +39,7 @@ type Publisher interface {
 	Stop()
 }
 
-type NewPublisher func(topicID string, log *logrus.Entry) Publisher
+type NewPublisher func(topicID string, log logrus.FieldLogger) Publisher
 
 type Notifier interface {
 	Listen(table string, filters ...notifier.Filter) <-chan notifier.Payload
@@ -48,7 +48,7 @@ type Notifier interface {
 type Reconciler struct {
 	repo      ReconcilerStore
 	publisher NewPublisher
-	log       *logrus.Entry
+	log       logrus.FieldLogger
 	notifier  Notifier
 
 	lock    sync.Mutex
@@ -64,7 +64,7 @@ func NewReconciler(
 	publisher NewPublisher,
 	notifier Notifier,
 	meter metric.Meter,
-	log *logrus.Entry,
+	log logrus.FieldLogger,
 ) (*Reconciler, error) {
 	reconcileTime, err := meter.Int64Histogram("reconcile_time", metric.WithDescription("Time spent reconciling"), metric.WithUnit("ms"))
 	if err != nil {
@@ -78,7 +78,7 @@ func NewReconciler(
 	return &Reconciler{
 		repo:           repo,
 		publisher:      publisher,
-		log:            log,
+		log:            log.WithField("subsystem", "reconciler"),
 		reconcileTime:  reconcileTime,
 		deployMessages: deployMessages,
 		notifier:       notifier,
@@ -189,7 +189,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 	return nil
 }
 
-func (r *Reconciler) reconcileEnvironment(ctx context.Context, e *model.TenantEnvironment, log *logrus.Entry) error {
+func (r *Reconciler) reconcileEnvironment(ctx context.Context, e *model.TenantEnvironment, log logrus.FieldLogger) error {
 	metricAttrs := []attribute.KeyValue{
 		attribute.Key("environment").String(e.Name),
 		attribute.Key("tenant").String(e.TenantName),
