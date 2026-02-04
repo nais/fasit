@@ -101,7 +101,7 @@ func Run(ctx context.Context) error {
 		extraDSN = " pool_max_conns=5"
 	}
 
-	db, closers, err := database.NewDB(ctx, cfg.DBConnectionDSN+extraDSN, dbDriver != "pgx")
+	pool, closers, err := database.NewConnPool(ctx, cfg.DBConnectionDSN+extraDSN, dbDriver != "pgx")
 	if err != nil {
 		return fmt.Errorf("error setting up database: %w", err)
 	}
@@ -111,7 +111,7 @@ func Run(ctx context.Context) error {
 		return fmt.Errorf("error migrating database: %w", err)
 	}
 
-	repo := database.New(db, log.WithField("subsystem", "repo"))
+	repo := database.NewRepo(pool, log.WithField("subsystem", "repo"))
 	go repo.TimeoutDeployInstructions(ctx)
 	log.Info("-- successfully started database client")
 
@@ -137,7 +137,7 @@ func Run(ctx context.Context) error {
 	)
 	go receiver.Run(ctx)
 
-	notifierService := notifier.New(db, log.WithField("subsystem", "notifier"))
+	notifierService := notifier.New(pool, log.WithField("subsystem", "notifier"))
 	go notifierService.Run(ctx)
 
 	createPublisher := func(topicID string, log *logrus.Entry) workers.Publisher {

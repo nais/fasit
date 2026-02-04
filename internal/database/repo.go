@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"embed"
 	"fmt"
+	"io"
 	"net"
 	"net/url"
 	"strings"
@@ -98,7 +99,7 @@ type Querier interface {
 	WithTx(tx pgx.Tx) *gensql.Queries
 }
 
-func New(db *pgxpool.Pool, log logrus.FieldLogger) Repo {
+func NewRepo(db *pgxpool.Pool, log logrus.FieldLogger) Repo {
 	return &repo{
 		querier: gensql.New(db),
 		db:      db,
@@ -128,7 +129,7 @@ func (r *repo) TxFunc(ctx context.Context, fn TXFunc) error {
 	})
 }
 
-func NewDB(ctx context.Context, dbConnDSN string, cloudsql bool) (*pgxpool.Pool, closeFuncs, error) {
+func NewConnPool(ctx context.Context, dbConnDSN string, cloudsql bool) (*pgxpool.Pool, io.Closer, error) {
 	cloudsqlHost := ""
 	if cloudsql {
 		vals, err := url.ParseQuery(strings.ReplaceAll(dbConnDSN, " ", "&"))
