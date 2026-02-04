@@ -183,6 +183,6 @@ func deploymentFromSQL(d deploymentsql.Deployment, fd deploymentsql.FeatureDatum
 		Description:  d.Description,
 		Created:      d.Created.Time,
 		CI:           d.Ci,
-		TargetLabels: d.Target,
+		TargetLabels: environment.Labels(d.Target),
 	}, nil
 }

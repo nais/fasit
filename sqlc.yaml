@@ -29,9 +29,9 @@ sql:
             go_type: "*github.com/google/uuid.UUID"
             nullable: true
           - column: "environments.labels"
-            go_type: "github.com/nais/fasit/internal/environment.Labels"
+            go_type: "github.com/nais/fasit/internal/database/types.EnvironmentLabels"
           - column: "deployments.target"
-            go_type: "github.com/nais/fasit/internal/environment.Labels"
+            go_type: "github.com/nais/fasit/internal/database/types.EnvironmentLabels"
   - engine: "postgresql" # keep this line for Intellij formatting issues
     !!merge <<: *default_domain
     name: "Deployment SQL"
@@ -41,6 +41,16 @@ sql:
         !!merge <<: *default_go
         package: "deploymentsql"
         out: "internal/deployment/deploymentsql"
+        emit_pointers_for_null_types: true
+  - engine: "postgresql" # keep this line for Intellij formatting issues
+    !!merge <<: *default_domain
+    name: "Environment SQL"
+    queries: "internal/environment/queries"
+    gen:
+      go:
+        !!merge <<: *default_go
+        package: "environmentsql"
+        out: "internal/environment/environmentsql"
         emit_pointers_for_null_types: true
 #emit_result_struct_pointers: true
 #emit_prepared_queries: true

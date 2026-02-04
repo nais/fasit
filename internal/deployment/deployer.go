@@ -14,7 +14,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/database"
+	"github.com/nais/fasit/internal/database/types"
 	"github.com/nais/fasit/internal/deployment/deploymentsql"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/feature"
@@ -34,12 +36,13 @@ type Publisher interface {
 type NewPublisher func(topicID string, log logrus.FieldLogger) Publisher
 
 type deployerRepo interface {
-	database.ConfigRepo
-	database.DeployInstructionRepo
-	database.EnvironmentRepo
-	database.FeaturesRepo
-	database.FeatureDataRepo
-	database.HealthRepo
+	HealthGet(ctx context.Context, environmentID uuid.UUID) (*model.Health, error)
+	EnvironmentGetLabels(ctx context.Context, environmentID uuid.UUID) ([]*model.EnvironmentLabel, error)
+	HelmValues(ctx context.Context, feature *model.Feature, envID uuid.UUID) (values map[string]any, err error)
+	DeployInstructionCreate(ctx context.Context, envID uuid.UUID, feature *model.Feature, hash string, deploymentID *uuid.UUID) (uuid.UUID, error)
+	DeployInstructionsLatestForFeature(ctx context.Context, envID uuid.UUID, featureName string) (*model.DeployInstruction, error)
+	FeatureDataCreate(context.Context, model.Feature, *feature.FeatureTemplateDetails) error
+	FeatureVersionUpdate(ctx context.Context, name string, version string) error
 }
 
 type deployer struct {
@@ -50,11 +53,13 @@ type deployer struct {
 	deployMessages metric.Int64Counter
 }
 
-func newDeployer(repo deployerRepo, querier deploymentsql.Querier, publisher NewPublisher, meter metric.Meter, log logrus.FieldLogger) (*deployer, error) {
+func newDeployer(pool *pgxpool.Pool, querier deploymentsql.Querier, publisher NewPublisher, meter metric.Meter, log logrus.FieldLogger) (*deployer, error) {
 	deployMessages, err := meter.Int64Counter("deployment_deploy_messages", metric.WithDescription("Deploy messages sent"))
 	if err != nil {
 		return nil, fmt.Errorf("create deploy messages counter: %w", err)
 	}
+	// temporary until relevant functions have been moved
+	repo := database.NewRepo(pool, log.WithField("subsystem", "database-repo"))
 
 	return &deployer{
 		publisher:      publisher,
@@ -307,7 +312,7 @@ func (d *deployer) CreateDeployment(ctx context.Context, feat *model.Feature, re
 		FeatureName: feat.Name,
 		Version:     feat.Version,
 		GhRef:       ghRef,
-		Target:      req.Target,
+		Target:      types.EnvironmentLabels(req.Target),
 		Description: &req.Description,
 		Ci:          ci,
 	})
@@ -366,7 +371,7 @@ func (d *deployer) waitForDeploymentStatuses(ctx context.Context, deploymentsByE
 }
 
 func (d *deployer) getCIEnvironmentsForTarget(ctx context.Context, labels environment.Labels) ([]*model.TenantEnvironment, error) {
-	envs, err := d.querier.GetCIEnvironmentsForTarget(ctx, labels)
+	envs, err := d.querier.GetCIEnvironmentsForTarget(ctx, types.EnvironmentLabels(labels))
 	if err != nil {
 		return nil, err
 	}

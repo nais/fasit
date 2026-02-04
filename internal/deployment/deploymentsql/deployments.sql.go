@@ -7,7 +7,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/nais/fasit/internal/environment"
+	"github.com/nais/fasit/internal/database/types"
 )
 
 const createDeployment = `-- name: CreateDeployment :one
@@ -32,7 +32,7 @@ RETURNING
 type CreateDeploymentParams struct {
 	FeatureName string
 	Version     string
-	Target      environment.Labels
+	Target      types.EnvironmentLabels
 	GhRef       []byte
 	Description *string
 	Ci          bool
@@ -161,7 +161,7 @@ type GetCIEnvironmentsForTargetRow struct {
 	TenantName  string
 }
 
-func (q *Queries) GetCIEnvironmentsForTarget(ctx context.Context, target environment.Labels) ([]GetCIEnvironmentsForTargetRow, error) {
+func (q *Queries) GetCIEnvironmentsForTarget(ctx context.Context, target types.EnvironmentLabels) ([]GetCIEnvironmentsForTargetRow, error) {
 	rows, err := q.db.Query(ctx, getCIEnvironmentsForTarget, target)
 	if err != nil {
 		return nil, err

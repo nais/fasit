@@ -7,9 +7,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/auth"
-	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/deployment/deploymentsql"
+	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
@@ -27,7 +28,7 @@ const (
 )
 
 type reconcilerRepo interface {
-	database.TenantRepo
+	TenantEnvironments(ctx context.Context, onlyReconciled bool) ([]*model.TenantEnvironment, error)
 }
 
 type reconciler struct {
@@ -43,7 +44,9 @@ type reconciler struct {
 	reconcileTime metric.Int64Histogram
 }
 
-func newReconciler(repo reconcilerRepo, querier deploymentsql.Querier, deployer *deployer, meter metric.Meter, log logrus.FieldLogger) (*reconciler, error) {
+func newReconciler(pool *pgxpool.Pool, querier deploymentsql.Querier, deployer *deployer, meter metric.Meter, log logrus.FieldLogger) (*reconciler, error) {
+	repo := environment.NewManager(pool)
+
 	reconcileTime, err := meter.Int64Histogram("deployment_reconcile_time", metric.WithDescription("Time spent reconciling"), metric.WithUnit("ms"))
 	if err != nil {
 		return nil, fmt.Errorf("create reconcile time histogram: %w", err)

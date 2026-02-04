@@ -326,7 +326,7 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 			return p
 		}
 
-		deploymentMgr, err := deployment.NewManager(db, dcp, noop.NewMeterProvider().Meter(""), logrus.NewEntry(log))
+		deploymentMgr, err := deployment.NewManager(pool, dcp, noop.NewMeterProvider().Meter(""), logrus.NewEntry(log))
 		if err != nil {
 			done()
 			return ctx, nil, nil, err

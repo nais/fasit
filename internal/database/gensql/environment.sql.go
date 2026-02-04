@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/nais/fasit/internal/environment"
+	"github.com/nais/fasit/internal/database/types"
 )
 
 const environmentByNames = `-- name: EnvironmentByNames :one
@@ -203,9 +203,9 @@ WHERE
 	id = $1
 `
 
-func (q *Queries) EnvironmentGetLabels(ctx context.Context, id uuid.UUID) (environment.Labels, error) {
+func (q *Queries) EnvironmentGetLabels(ctx context.Context, id uuid.UUID) (types.EnvironmentLabels, error) {
 	row := q.db.QueryRow(ctx, environmentGetLabels, id)
-	var labels environment.Labels
+	var labels types.EnvironmentLabels
 	err := row.Scan(&labels)
 	return labels, err
 }
@@ -281,7 +281,7 @@ WHERE
 `
 
 type EnvironmentSetLabelsParams struct {
-	Labels environment.Labels
+	Labels types.EnvironmentLabels
 	ID     uuid.UUID
 }
 

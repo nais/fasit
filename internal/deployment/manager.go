@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/nais/fasit/internal/database"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/deployment/deploymentsql"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph/model"
@@ -44,14 +44,14 @@ func WithChartDownloader(downloader ChartDownloader) Option {
 	}
 }
 
-func NewManager(repo database.Repo, publisher NewPublisher, m metric.Meter, log logrus.FieldLogger, opts ...Option) (*Manager, error) {
-	querier := deploymentsql.New(repo.GetConnPool())
-	d, err := newDeployer(repo, querier, publisher, m, log.WithField("subsystem", "deployment-deployer"))
+func NewManager(pool *pgxpool.Pool, publisher NewPublisher, m metric.Meter, log logrus.FieldLogger, opts ...Option) (*Manager, error) {
+	querier := deploymentsql.New(pool)
+	d, err := newDeployer(pool, querier, publisher, m, log.WithField("subsystem", "deployment-deployer"))
 	if err != nil {
 		return nil, err
 	}
 
-	r, err := newReconciler(repo, querier, d, m, log.WithField("subsystem", "deployment-reconciler"))
+	r, err := newReconciler(pool, querier, d, m, log.WithField("subsystem", "deployment-reconciler"))
 	if err != nil {
 		return nil, err
 	}

@@ -87,7 +87,7 @@ func Run(ctx context.Context) error {
 		return message.NewPublisher[message.DeployInstruction](pubSubClient, cfg.GCPProjectID, topicID, log)
 	}
 
-	deploymentMgr, err := deployment.NewManager(repo, deployCreatePublisher, meter, log)
+	deploymentMgr, err := deployment.NewManager(pool, deployCreatePublisher, meter, log)
 	if err != nil {
 		return fmt.Errorf("error creating deployment manager: %w", err)
 	}

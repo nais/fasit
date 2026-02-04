@@ -398,7 +398,7 @@ func setupTestMgr(
 		return pub
 	}
 	dmgr, err := deployment.NewManager(
-		db.repo,
+		db.pool,
 		newPublisher,
 		meter,
 		log,

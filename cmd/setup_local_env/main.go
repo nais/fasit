@@ -139,11 +139,9 @@ func main() {
 	defer conn.Close()
 	grpcClient := protogen.NewProviderClient(conn)
 
-	db := database.NewRepo(dbConn, logrus.New().WithField("component", "setup-local"))
-
 	seeder := deploymenttest.NewSeeder()
 	dMgr, err := deployment.NewManager(
-		db,
+		dbConn,
 		nil,
 		noop.NewMeterProvider().Meter(""),
 		logrus.New().WithField("component", "deployment-manager"),
