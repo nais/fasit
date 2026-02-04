@@ -113,7 +113,7 @@ func (h *HttpHandler) CreateDeployment(w http.ResponseWriter, req *http.Request)
 		"id": deploymentID.String(),
 	})
 
-	h.manager.TriggerReconcile(ReconcileTriggerEvent{})
+	TriggerReconcile(ctx, ReconcileTriggerEvent{})
 }
 
 func (h *HttpHandler) validateToken(w http.ResponseWriter, req *http.Request) (actor string, ok bool) {

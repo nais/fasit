@@ -56,7 +56,7 @@ func (r *mutationResolver) CreateDeployment(ctx context.Context, input model.Cre
 		return uuid.Nil, fmt.Errorf("create deployment: %w", err)
 	}
 
-	r.DeploymentMgr.TriggerReconcile(deployment.ReconcileTriggerEvent{})
+	deployment.TriggerReconcile(ctx, deployment.ReconcileTriggerEvent{})
 
 	return id, nil
 }

@@ -31,6 +31,18 @@ import (
 	"go.opentelemetry.io/otel/metric"
 )
 
+func Middleware(fn func(context.Context) context.Context) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		// return a middleware that injects the loader to the request context
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Note that the loaders are being created per-request. This is important because they contain caching and
+			// batching logic that must be request-scoped.
+			r = r.WithContext(fn(r.Context()))
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
 func newHttpServer(
 	ctx context.Context,
 	cfg *Config,
@@ -42,6 +54,11 @@ func newHttpServer(
 	meter metric.Meter,
 	log logrus.FieldLogger,
 ) (*http.Server, error) {
+	setupContext := func(ctx context.Context) context.Context {
+		ctx = deployment.NewContext(ctx, deploymentManager)
+		return ctx
+	}
+
 	resolver := graph.NewResolver(ctx, repo, deploymentManager, notifier, publisher, clusterClient, log)
 
 	graphServer := newGraphServer(graphgen.NewExecutableSchema(graphgen.Config{Resolvers: resolver}))
@@ -80,6 +97,7 @@ func newHttpServer(
 	}
 
 	router := chi.NewMux()
+	router.Use(Middleware(setupContext))
 	router.Handle("/", iapMW(playground.Handler("GraphQL playground", "/query")))
 	router.Handle("/query", slowDownQuery(iapMW(corsMW.Handler(graphServer))))
 	router.Handle("/metrics", promhttp.Handler())

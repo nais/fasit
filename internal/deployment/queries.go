@@ -10,22 +10,22 @@ import (
 	"github.com/nais/fasit/internal/graph/model"
 )
 
-/*type ctxKey int
+type ctxKey int
 
 const managerKey ctxKey = iota
 
-func NewManagerContext(ctx context.Context, dmgr *Manager) context.Context {
-	return context.WithValue(ctx, managerKey, dmgr)
+func NewContext(ctx context.Context, deploymentManager *Manager) context.Context {
+	return context.WithValue(ctx, managerKey, deploymentManager)
 }
 
 func fromContext(ctx context.Context) *Manager {
 	return ctx.Value(managerKey).(*Manager)
-}*/
+}
 
 // TriggerReconcile will trigger an asynchronous reconciliation of deployments. The returned channel can be used to wait
 // for the result.
-func (dm *Manager) TriggerReconcile(event ReconcileTriggerEvent) chan TriggerResult {
-	return dm.reconciler.trigger(event)
+func TriggerReconcile(ctx context.Context, event ReconcileTriggerEvent) chan TriggerResult {
+	return fromContext(ctx).reconciler.trigger(event)
 }
 
 func (dm *Manager) CreateDeployment(ctx context.Context, req Request) (uuid.UUID, error) {

@@ -19,6 +19,7 @@ import (
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/notifier"
 	"github.com/nais/fasit/internal/deployment"
+	"github.com/nais/fasit/internal/fasit"
 	"github.com/nais/fasit/internal/graph"
 	"github.com/nais/fasit/internal/graph/graphgen"
 	"github.com/nais/fasit/internal/graph/model"
@@ -389,6 +390,11 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 func newRestRunner(ctx context.Context, pool *pgxpool.Pool, deploymentMgr *deployment.Manager) (*runner.REST, error) {
 	router := chi.NewMux()
 	// router.Handle("/query", iapMW(corsMW.Handler(srv)))
+	setupContext := func(ctx context.Context) context.Context {
+		ctx = deployment.NewContext(ctx, deploymentMgr)
+		return ctx
+	}
+	router.Use(fasit.Middleware(setupContext))
 
 	db := database.NewRepo(pool, logrus.New())
 
@@ -429,9 +435,13 @@ func newGQLRunner(pool *pgxpool.Pool, deploymentMgr *deployment.Manager) spec.Ru
 		return srv
 	}
 
-	srv := newServer(graphgen.NewExecutableSchema(graphgen.Config{Resolvers: resolver}))
+	setupContext := func(ctx context.Context) context.Context {
+		ctx = deployment.NewContext(ctx, deploymentMgr)
+		return ctx
+	}
 
-	return runner.NewGQLRunner(srv)
+	srv := newServer(graphgen.NewExecutableSchema(graphgen.Config{Resolvers: resolver}))
+	return runner.NewGQLRunner(fasit.Middleware(setupContext)(srv))
 }
 
 func startPostgresql(ctx context.Context) (*postgres.PostgresContainer, string, error) {

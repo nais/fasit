@@ -207,8 +207,7 @@ func (r *mutationResolver) ConfigurationCreate(ctx context.Context, configuratio
 		return nil, err
 	}
 
-	// TODO: should we always trigger or only for features using deployments regime?
-	r.DeploymentMgr.TriggerReconcile(deployment.ReconcileTriggerEvent{})
+	deployment.TriggerReconcile(ctx, deployment.ReconcileTriggerEvent{})
 
 	return ret, nil
 }
