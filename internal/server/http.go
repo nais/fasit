@@ -57,7 +57,7 @@ func SetupRouter(
 	rout.AllowAll = insecureSkipTokenCheck
 	router.Post("/github/rollout", rout.Rollout)
 
-	deploy, err := deployment.NewHttpHandler(ctx, domainHandlers.DeploymentManager, log)
+	deploy, err := deployment.NewHttpHandler(ctx, log)
 	if err != nil {
 		return nil, fmt.Errorf("error creating deployment http handler: %w", err)
 	}

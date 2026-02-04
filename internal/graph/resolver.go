@@ -9,7 +9,6 @@ import (
 	"github.com/nais/fasit/internal/cluster"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/notifier"
-	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/workers"
@@ -24,19 +23,17 @@ type Resolver struct {
 	Repo           database.Repo
 	Log            logrus.FieldLogger
 	ClusterManager cluster.ClusterManager
-	DeploymentMgr  *deployment.Manager
 
 	logNotifier     *logNotifier
 	diNotifier      *updateNotifier
 	createPublisher workers.NewPublisher
 }
 
-func NewResolver(ctx context.Context, repo database.Repo, deploymentMgr *deployment.Manager, notifier *notifier.Notifier, naisdPublisher workers.NewPublisher, clusterManager cluster.ClusterManager, log logrus.FieldLogger) *Resolver {
+func NewResolver(ctx context.Context, repo database.Repo, notifier *notifier.Notifier, naisdPublisher workers.NewPublisher, clusterManager cluster.ClusterManager, log logrus.FieldLogger) *Resolver {
 	return &Resolver{
 		Repo:            repo,
 		Log:             log.WithField("subsystem", "graphql"),
 		ClusterManager:  clusterManager,
-		DeploymentMgr:   deploymentMgr,
 		createPublisher: naisdPublisher,
 		logNotifier:     newLogNotifier(ctx, notifier, repo),
 		diNotifier:      newDeployInstructionsNotifier(ctx, notifier, repo),

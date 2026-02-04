@@ -22,7 +22,6 @@ type HttpHandler struct {
 	log      logrus.FieldLogger
 	// AllowAll will allow all rollout requests when set to true
 	AllowAll bool
-	manager  *Manager
 }
 
 type Claims struct {
@@ -32,7 +31,7 @@ type Claims struct {
 	RunID      string `json:"run_id"`
 }
 
-func NewHttpHandler(ctx context.Context, manager *Manager, log logrus.FieldLogger) (*HttpHandler, error) {
+func NewHttpHandler(ctx context.Context, log logrus.FieldLogger) (*HttpHandler, error) {
 	provider, err := oidc.NewProvider(ctx, "https://token.actions.githubusercontent.com")
 	if err != nil {
 		return nil, err
@@ -45,7 +44,6 @@ func NewHttpHandler(ctx context.Context, manager *Manager, log logrus.FieldLogge
 	return &HttpHandler{
 		provider: provider,
 		verifier: verifier,
-		manager:  manager,
 		log:      log.WithField("subsystem", "deployment-http"),
 	}, nil
 }
@@ -64,7 +62,7 @@ func (h *HttpHandler) GetDeployment(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	deployment, err := h.manager.GetDeployment(ctx, deploymentID)
+	deployment, err := GetDeployment(ctx, deploymentID)
 	if errors.Is(err, pgx.ErrNoRows) {
 		http.Error(w, "deployment does not exist", http.StatusNotFound)
 		return
@@ -101,7 +99,7 @@ func (h *HttpHandler) CreateDeployment(w http.ResponseWriter, req *http.Request)
 		}
 	}
 
-	deploymentID, err := h.manager.CreateDeployment(ctx, body)
+	deploymentID, err := CreateDeployment(ctx, body)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		h.log.WithError(err).Error("create deployment")

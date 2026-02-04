@@ -97,7 +97,13 @@ func (dm *Manager) Receive(ctx context.Context, status *message.Helm) error {
 		if status.Error != "" {
 			msg += " error: " + status.Error
 		}
-		if err = dm.SetDeploymentStatus(ctx, *di.DeploymentID, di.EnvironmentID, status.RolloutStatus, msg); err != nil {
+		err := dm.querier.SetDeploymentStatus(ctx, deploymentsql.SetDeploymentStatusParams{
+			DeploymentID:  *di.DeploymentID,
+			EnvironmentID: di.EnvironmentID,
+			Status:        status.RolloutStatus.String(),
+			Message:       msg,
+		})
+		if err != nil {
 			dm.log.WithFields(logrus.Fields{
 				"deployment_id":  di.DeploymentID,
 				"environment_id": di.EnvironmentID,

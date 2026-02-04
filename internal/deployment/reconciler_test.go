@@ -133,7 +133,9 @@ func TestReconcile(t *testing.T) {
 				mgr.seeder.AddDeployment(input.name, input.version, input.target, input.dependencies...)
 			}
 
-			err = mgr.seeder.Seed(ctx, mgr.dmgr)
+			ctx = deployment.NewContext(ctx, mgr.dmgr)
+
+			err = mgr.seeder.Seed(ctx)
 			if err != nil {
 				t.Fatalf("seeding deployments: %v", err)
 			}
@@ -203,8 +205,10 @@ func TestReconcileWhenPreviousIsInProgress(t *testing.T) {
 
 	mgr := setupTestMgr(ctx, t, container, dsn, logger)
 	mgr.db.createTenantsAndEnvironments(ctx, envsToCreate)
+	ctx = deployment.NewContext(ctx, mgr.dmgr)
+
 	mgr.seeder.AddDeployment("feature-pending", "1.0.0", environment.Labels{"aiven": "enabled"})
-	err = mgr.seeder.Seed(ctx, mgr.dmgr)
+	err = mgr.seeder.Seed(ctx)
 	if err != nil {
 		t.Fatalf("seeding deployments: %v", err)
 	}
@@ -215,7 +219,7 @@ func TestReconcileWhenPreviousIsInProgress(t *testing.T) {
 	mgr.seeder.Reset()
 
 	mgr.seeder.AddDeployment("feature-pending", "2.0.0", environment.Labels{})
-	err = mgr.seeder.Seed(ctx, mgr.dmgr)
+	err = mgr.seeder.Seed(ctx)
 	if err != nil {
 		t.Fatalf("seeding deployments: %v", err)
 	}

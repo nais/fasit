@@ -153,6 +153,8 @@ func main() {
 		panic(err)
 	}
 
+	ctx = deployment.NewContext(ctx, dMgr)
+
 	seeder.AddDeployment("aivenator", "1.0.0", environment.Labels{"aiven": "enabled"})
 	seeder.AddDeployment("aivenator", "2.0.0", environment.Labels{"aiven": "enabled"})
 	seeder.AddDeployment("aivenator", "1.0.0", environment.Labels{"aiven": "enabled", "tenant": "nav"})
@@ -162,7 +164,7 @@ func main() {
 	seeder.AddDeployment("unleash", "2.0.0", environment.Labels{"featuretoggle": "enabled"})
 	seeder.AddDeployment("v13s", "1.0.0", environment.Labels{"kind": "management"})
 
-	if err := seeder.Seed(ctx, dMgr); err != nil {
+	if err := seeder.Seed(ctx); err != nil {
 		log.Fatal(err)
 	}
 

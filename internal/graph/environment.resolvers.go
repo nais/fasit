@@ -17,6 +17,7 @@ import (
 	"github.com/google/uuid"
 	pgx "github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/internal/database"
+	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/graph/graphgen"
 	"github.com/nais/fasit/internal/graph/model"
 )
@@ -56,7 +57,7 @@ func (r *clusterUpgradeStatusResolver) Actor(ctx context.Context, obj *model.Clu
 
 // FeatureStates is the resolver for the featureStates field.
 func (r *environmentResolver) FeatureStates(ctx context.Context, obj *model.Environment) ([]*model.FeatureState, error) {
-	ret, err := r.DeploymentMgr.ListEnvironmentFeatures(ctx, obj.ID)
+	ret, err := deployment.ListEnvironmentFeatures(ctx, obj.ID)
 	if err != nil {
 		return nil, err
 	}

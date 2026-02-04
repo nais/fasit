@@ -406,9 +406,8 @@ func newGQLRunner(domainHandlers *server.DomainHandlers) spec.Runner {
 	log.Out = io.Discard
 
 	resolver := &graph.Resolver{
-		Repo:          domainHandlers.Repo,
-		Log:           logrus.NewEntry(log),
-		DeploymentMgr: domainHandlers.DeploymentManager,
+		Repo: domainHandlers.Repo,
+		Log:  logrus.NewEntry(log),
 	}
 	httpHandler, err := server.SetupGraph(resolver, noop.NewMeterProvider().Meter(""), domainHandlers)
 	if err != nil {

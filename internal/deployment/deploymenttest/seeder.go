@@ -38,9 +38,9 @@ func (s *Seeder) AddDeployment(name, version string, target environment.Labels, 
 	return s
 }
 
-func (s *Seeder) Seed(ctx context.Context, dmgr *deployment.Manager) error {
+func (s *Seeder) Seed(ctx context.Context) error {
 	for _, d := range s.deployments {
-		_, err := dmgr.CreateDeployment(ctx, deployment.Request{
+		_, err := deployment.CreateDeployment(ctx, deployment.Request{
 			Chart:       "oci://" + d.FeatureName,
 			Version:     d.Version,
 			Description: "Setup local environment deployment",

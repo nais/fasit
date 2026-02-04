@@ -34,7 +34,7 @@ func newHttpServer(
 		DeploymentManager: deploymentManager,
 	}
 
-	resolver := graph.NewResolver(ctx, repo, deploymentManager, notifier, publisher, clusterClient, log)
+	resolver := graph.NewResolver(ctx, repo, notifier, publisher, clusterClient, log)
 	graphServer, err := server.SetupGraph(resolver, meter, dependencies)
 	if err != nil {
 		return nil, fmt.Errorf("setting up graph: %w", err)
