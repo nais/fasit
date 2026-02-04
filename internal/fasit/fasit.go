@@ -139,9 +139,9 @@ func Run(ctx context.Context) error {
 	}
 	defer ioconvenience.CloseWithLog(googleClient, log)
 
-	if os.Getenv("GH_PEM") != "" {
+	if cfg.GitHubPEM != "" {
 		log.Info("GitHub status reporter enabled")
-		ghstatus, err := rollout.NewGHStatusReporter(log, repo, notifierService, os.Getenv("GH_PEM"))
+		ghstatus, err := rollout.NewGHStatusReporter(log, repo, notifierService, cfg.GitHubPEM)
 		if err != nil {
 			return fmt.Errorf("error creating github status reporter: %w", err)
 		}

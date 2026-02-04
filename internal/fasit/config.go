@@ -20,6 +20,7 @@ type Config struct {
 	SlackAPIToken              string `env:"SLACK_API_TOKEN"`
 	SlackClusterUpgradeChannel string `env:"SLACK_CLUSTER_UPGRADE_CHANNEL"`
 	SlackChannelFeatureAlerts  string `env:"SLACK_CHANNEL_FEATURE_ALERTS"`
+	GitHubPEM                  string `env:"GH_PEM"`
 }
 
 // newConfig creates a new configuration instance from environment variables.
