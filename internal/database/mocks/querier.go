@@ -11,7 +11,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/nais/fasit/internal/database/gensql"
-	"github.com/nais/fasit/internal/environment"
+	"github.com/nais/fasit/internal/database/types"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -3517,23 +3517,23 @@ func (_c *Querier_EnvironmentGetByName_Call) RunAndReturn(run func(ctx context.C
 }
 
 // EnvironmentGetLabels provides a mock function for the type Querier
-func (_mock *Querier) EnvironmentGetLabels(ctx context.Context, id uuid.UUID) (environment.Labels, error) {
+func (_mock *Querier) EnvironmentGetLabels(ctx context.Context, id uuid.UUID) (types.EnvironmentLabels, error) {
 	ret := _mock.Called(ctx, id)
 
 	if len(ret) == 0 {
 		panic("no return value specified for EnvironmentGetLabels")
 	}
 
-	var r0 environment.Labels
+	var r0 types.EnvironmentLabels
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) (environment.Labels, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) (types.EnvironmentLabels, error)); ok {
 		return returnFunc(ctx, id)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) environment.Labels); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) types.EnvironmentLabels); ok {
 		r0 = returnFunc(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(environment.Labels)
+			r0 = ret.Get(0).(types.EnvironmentLabels)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
@@ -3574,12 +3574,12 @@ func (_c *Querier_EnvironmentGetLabels_Call) Run(run func(ctx context.Context, i
 	return _c
 }
 
-func (_c *Querier_EnvironmentGetLabels_Call) Return(labels environment.Labels, err error) *Querier_EnvironmentGetLabels_Call {
-	_c.Call.Return(labels, err)
+func (_c *Querier_EnvironmentGetLabels_Call) Return(environmentLabels types.EnvironmentLabels, err error) *Querier_EnvironmentGetLabels_Call {
+	_c.Call.Return(environmentLabels, err)
 	return _c
 }
 
-func (_c *Querier_EnvironmentGetLabels_Call) RunAndReturn(run func(ctx context.Context, id uuid.UUID) (environment.Labels, error)) *Querier_EnvironmentGetLabels_Call {
+func (_c *Querier_EnvironmentGetLabels_Call) RunAndReturn(run func(ctx context.Context, id uuid.UUID) (types.EnvironmentLabels, error)) *Querier_EnvironmentGetLabels_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -3708,8 +3708,8 @@ func (_c *Querier_EnvironmentSetAutoUpgrade_Call) Run(run func(ctx context.Conte
 	return _c
 }
 
-func (_c *Querier_EnvironmentSetAutoUpgrade_Call) Return(environment1 gensql.Environment, err error) *Querier_EnvironmentSetAutoUpgrade_Call {
-	_c.Call.Return(environment1, err)
+func (_c *Querier_EnvironmentSetAutoUpgrade_Call) Return(environment gensql.Environment, err error) *Querier_EnvironmentSetAutoUpgrade_Call {
+	_c.Call.Return(environment, err)
 	return _c
 }
 
@@ -3831,8 +3831,8 @@ func (_c *Querier_EnvironmentSetMaintenanceWindow_Call) Run(run func(ctx context
 	return _c
 }
 
-func (_c *Querier_EnvironmentSetMaintenanceWindow_Call) Return(environment1 gensql.Environment, err error) *Querier_EnvironmentSetMaintenanceWindow_Call {
-	_c.Call.Return(environment1, err)
+func (_c *Querier_EnvironmentSetMaintenanceWindow_Call) Return(environment gensql.Environment, err error) *Querier_EnvironmentSetMaintenanceWindow_Call {
+	_c.Call.Return(environment, err)
 	return _c
 }
 
@@ -3897,8 +3897,8 @@ func (_c *Querier_EnvironmentSetReconcile_Call) Run(run func(ctx context.Context
 	return _c
 }
 
-func (_c *Querier_EnvironmentSetReconcile_Call) Return(environment1 gensql.Environment, err error) *Querier_EnvironmentSetReconcile_Call {
-	_c.Call.Return(environment1, err)
+func (_c *Querier_EnvironmentSetReconcile_Call) Return(environment gensql.Environment, err error) *Querier_EnvironmentSetReconcile_Call {
+	_c.Call.Return(environment, err)
 	return _c
 }
 
@@ -3963,8 +3963,8 @@ func (_c *Querier_EnvironmentSetUpgradeDelayDays_Call) Run(run func(ctx context.
 	return _c
 }
 
-func (_c *Querier_EnvironmentSetUpgradeDelayDays_Call) Return(environment1 gensql.Environment, err error) *Querier_EnvironmentSetUpgradeDelayDays_Call {
-	_c.Call.Return(environment1, err)
+func (_c *Querier_EnvironmentSetUpgradeDelayDays_Call) Return(environment gensql.Environment, err error) *Querier_EnvironmentSetUpgradeDelayDays_Call {
+	_c.Call.Return(environment, err)
 	return _c
 }
 
@@ -4029,8 +4029,8 @@ func (_c *Querier_EnvironmentUpdate_Call) Run(run func(ctx context.Context, arg 
 	return _c
 }
 
-func (_c *Querier_EnvironmentUpdate_Call) Return(environment1 gensql.Environment, err error) *Querier_EnvironmentUpdate_Call {
-	_c.Call.Return(environment1, err)
+func (_c *Querier_EnvironmentUpdate_Call) Return(environment gensql.Environment, err error) *Querier_EnvironmentUpdate_Call {
+	_c.Call.Return(environment, err)
 	return _c
 }
 
