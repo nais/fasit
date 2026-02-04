@@ -6,27 +6,22 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net/http"
 	"os"
 	"testing"
 	"time"
 
-	"github.com/99designs/gqlgen/graphql"
-	"github.com/99designs/gqlgen/graphql/handler"
-	"github.com/99designs/gqlgen/graphql/handler/transport"
-	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/notifier"
 	"github.com/nais/fasit/internal/deployment"
-	"github.com/nais/fasit/internal/fasit"
 	"github.com/nais/fasit/internal/graph"
-	"github.com/nais/fasit/internal/graph/graphgen"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/naisd"
 	"github.com/nais/fasit/internal/provider/protogen"
-	"github.com/nais/fasit/internal/rollout"
+	"github.com/nais/fasit/internal/server"
 	"github.com/nais/fasit/internal/slack/fake"
 	"github.com/nais/fasit/internal/workers"
 	testmanager "github.com/nais/tester/lua"
@@ -342,7 +337,12 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 			return ctx, nil, nil, err
 		}
 
-		restRunner, err := newRestRunner(ctx, pool, deploymentMgr)
+		domainHandlers := &server.DomainHandlers{
+			Repo:              db,
+			DeploymentManager: deploymentMgr,
+		}
+
+		restRunner, err := newRestRunner(ctx, domainHandlers)
 		if err != nil {
 			done()
 			return ctx, nil, nil, err
@@ -351,7 +351,7 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 		runners := []spec.Runner{
 			naisdRunner,
 			restRunner,
-			newGQLRunner(pool, deploymentMgr),
+			newGQLRunner(domainHandlers),
 			runner.NewSQLRunner(pool),
 		}
 
@@ -387,61 +387,35 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 	}
 }
 
-func newRestRunner(ctx context.Context, pool *pgxpool.Pool, deploymentMgr *deployment.Manager) (*runner.REST, error) {
-	router := chi.NewMux()
+func newRestRunner(ctx context.Context, domainHandlers *server.DomainHandlers) (*runner.REST, error) {
+	log := logrus.New()
+	log.Out = io.Discard
+
+	dummyHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	// router.Handle("/query", iapMW(corsMW.Handler(srv)))
-	setupContext := func(ctx context.Context) context.Context {
-		ctx = deployment.NewContext(ctx, deploymentMgr)
-		return ctx
-	}
-	router.Use(fasit.Middleware(setupContext))
-
-	db := database.NewRepo(pool, logrus.New())
-
-	rout, err := rollout.New(ctx, db)
+	router, err := server.SetupRouter(ctx, "", true, true, dummyHandler, domainHandlers, log)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
-	rout.AllowAll = true
-	router.Post("/github/rollout", rout.Rollout)
-
-	deploy, err := deployment.NewHttpHandler(ctx, deploymentMgr, logrus.New())
-	if err != nil {
-		return nil, err
-	}
-	deploy.AllowAll = true
-	router.Post("/github/deployment", deploy.CreateDeployment)
-	router.Get("/github/deployment/{id}", deploy.GetDeployment)
 
 	return runner.NewRestRunner(router), nil
 }
 
-func newGQLRunner(pool *pgxpool.Pool, deploymentMgr *deployment.Manager) spec.Runner {
+func newGQLRunner(domainHandlers *server.DomainHandlers) spec.Runner {
 	log := logrus.New()
 	log.Out = io.Discard
 
 	resolver := &graph.Resolver{
-		Repo:          database.NewRepo(pool, log),
+		Repo:          domainHandlers.Repo,
 		Log:           logrus.NewEntry(log),
-		DeploymentMgr: deploymentMgr,
+		DeploymentMgr: domainHandlers.DeploymentManager,
+	}
+	httpHandler, err := server.SetupGraph(resolver, noop.NewMeterProvider().Meter(""), domainHandlers)
+	if err != nil {
+		panic(err)
 	}
 
-	newServer := func(es graphql.ExecutableSchema) *handler.Server {
-		srv := handler.New(es)
-		srv.AddTransport(transport.SSE{})
-		srv.AddTransport(transport.GET{})
-		srv.AddTransport(transport.POST{})
-
-		return srv
-	}
-
-	setupContext := func(ctx context.Context) context.Context {
-		ctx = deployment.NewContext(ctx, deploymentMgr)
-		return ctx
-	}
-
-	srv := newServer(graphgen.NewExecutableSchema(graphgen.Config{Resolvers: resolver}))
-	return runner.NewGQLRunner(fasit.Middleware(setupContext)(srv))
+	return runner.NewGQLRunner(httpHandler)
 }
 
 func startPostgresql(ctx context.Context) (*postgres.PostgresContainer, string, error) {

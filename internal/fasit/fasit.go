@@ -41,8 +41,6 @@ import (
 	_ "go.uber.org/automaxprocs"
 )
 
-const slowQueryEndpoint = false
-
 func Run(ctx context.Context) error {
 	if err := loadEnvFile(); err != nil {
 		return fmt.Errorf("error loading .env file: %w", err)
