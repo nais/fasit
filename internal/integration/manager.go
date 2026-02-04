@@ -458,7 +458,7 @@ func startPostgresql(ctx context.Context) (*postgres.PostgresContainer, string, 
 		return nil, "", fmt.Errorf("failed to create pool: %w", err)
 	}
 
-	if err := database.Migrate("pgx", connStr, logr); err != nil {
+	if err := database.Migrate(pool, logr); err != nil {
 		return nil, "", fmt.Errorf("failed to migrate: %w", err)
 	}
 

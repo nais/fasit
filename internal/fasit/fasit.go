@@ -107,7 +107,7 @@ func Run(ctx context.Context) error {
 	}
 	defer ioconvenience.CloseWithLog(closers, log)
 
-	if err := database.Migrate(dbDriver, cfg.DBConnectionDSN, log); err != nil {
+	if err := database.Migrate(pool, log); err != nil {
 		return fmt.Errorf("error migrating database: %w", err)
 	}
 

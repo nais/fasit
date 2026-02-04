@@ -356,10 +356,16 @@ func startPostgresql(ctx context.Context, t *testing.T) (container *postgres.Pos
 		return nil, "", fmt.Errorf("failed to get connection string: %w", err)
 	}
 
+	pool, _, err := database.NewConnPool(ctx, dsn, false)
+	if err != nil {
+		t.Fatalf("Error connecting to database: %v", err)
+	}
+
 	logger, _ := test.NewNullLogger()
-	if err = database.Migrate("pgx", dsn, logger); err != nil {
+	if err = database.Migrate(pool, logger); err != nil {
 		return nil, "", fmt.Errorf("failed to migrate database: %w", err)
 	}
+	pool.Close()
 
 	if err = container.Snapshot(ctx); err != nil {
 		return nil, "", fmt.Errorf("failed to snapshot: %w", err)
