@@ -9,7 +9,6 @@ import (
 )
 
 func main() {
-
 	if err := fasit.Run(context.Background()); err != nil {
 		logrus.SetFormatter(&logrus.JSONFormatter{})
 		logrus.WithError(err).Error("error occurred while running fasit")

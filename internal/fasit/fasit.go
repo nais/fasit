@@ -2,7 +2,7 @@ package fasit
 
 import (
 	"context"
-	"flag"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -21,6 +21,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/go-chi/chi/v5"
+	"github.com/joho/godotenv"
 	"github.com/nais/fasit/internal/auth"
 	"github.com/nais/fasit/internal/cluster"
 	"github.com/nais/fasit/internal/database"
@@ -38,6 +39,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/ravilushqa/otelgqlgen"
 	"github.com/rs/cors"
+	"github.com/sethvargo/go-envconfig"
 	"github.com/sirupsen/logrus"
 	"github.com/vektah/gqlparser/v2/ast"
 	"go.opentelemetry.io/otel/attribute"
@@ -59,20 +61,27 @@ import (
 const slowQueryEndpoint = false
 
 func Run(ctx context.Context) error {
-	flag.Parse()
+	if err := loadEnvFile(); err != nil {
+		return fmt.Errorf("error loading .env file: %w", err)
+	}
 
-	log, err := newLogger()
+	cfg, err := newConfig(ctx, envconfig.OsLookuper())
+	if err != nil {
+		return fmt.Errorf("error loading config: %w", err)
+	}
+
+	log, err := newLogger(cfg.LogLevel)
 	if err != nil {
 		return fmt.Errorf("error creating logger: %w", err)
 	}
 
 	log.Info("starting pub/sub client")
-	pubsubClient, err := pubsub.NewClient(ctx, cfg.GCPProjectID)
+	pubSubClient, err := pubsub.NewClient(ctx, cfg.GCPProjectID)
 	if err != nil {
 		return fmt.Errorf("error creating pub/sub client: %w", err)
 	}
-	defer ioconvenience.CloseWithLog(pubsubClient, log)
-	log.Info("-- successfully started pubsub client")
+	defer ioconvenience.CloseWithLog(pubSubClient, log)
+	log.Info("-- successfully started pub/sub client")
 
 	meter, err := newMetricsProvider()
 	if err != nil {
@@ -96,14 +105,10 @@ func Run(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("error setting up database: %w", err)
 	}
-	defer func() {
-		if err := closers.Close(); err != nil {
-			log.WithError(err).Errorf("closing database: %v", err)
-		}
-	}()
+	defer ioconvenience.CloseWithLog(closers, log)
 
 	if err := database.Migrate(dbDriver, cfg.DBConnectionDSN, log.WithField("subsystem", "migrate")); err != nil {
-		return fmt.Errorf("error migratiing database: %w", err)
+		return fmt.Errorf("error migrating database: %w", err)
 	}
 
 	repo := database.New(db, log.WithField("subsystem", "repo"))
@@ -111,7 +116,7 @@ func Run(ctx context.Context) error {
 	log.Info("-- successfully started database client")
 
 	deployCreatePublisher := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
-		return message.NewPublisher[message.DeployInstruction](pubsubClient, cfg.GCPProjectID, topicID, log)
+		return message.NewPublisher[message.DeployInstruction](pubSubClient, cfg.GCPProjectID, topicID, log)
 	}
 
 	deploymentMgr, err := deployment.NewManager(repo, deployCreatePublisher, meter, log.WithField("subsystem", "deployment_mgr"))
@@ -120,7 +125,7 @@ func Run(ctx context.Context) error {
 	}
 	go deploymentMgr.Run(ctx, 10*time.Minute)
 
-	statusMgr := message.NewSubscriber[message.Status](pubsubClient, cfg.GCPProjectID, cfg.StatusSubscriptionID, log.WithField("subsystem", "status-subscriber"))
+	statusMgr := message.NewSubscriber[message.Status](pubSubClient, cfg.GCPProjectID, cfg.StatusSubscriptionID, log.WithField("subsystem", "status-subscriber"))
 
 	receiver := workers.NewReceiver(
 		statusMgr,
@@ -136,7 +141,7 @@ func Run(ctx context.Context) error {
 	go notifierService.Run(ctx)
 
 	createPublisher := func(topicID string, log *logrus.Entry) workers.Publisher {
-		return message.NewPublisher[message.DeployInstruction](pubsubClient, cfg.GCPProjectID, topicID, log)
+		return message.NewPublisher[message.DeployInstruction](pubSubClient, cfg.GCPProjectID, topicID, log)
 	}
 	reconciler, err := workers.NewReconciler(repo, createPublisher, notifierService, meter, log.WithField("subsystem", "reconciler"))
 	if err != nil {
@@ -164,13 +169,13 @@ func Run(ctx context.Context) error {
 	}
 	resolver := graph.NewResolver(ctx, repo, deploymentMgr, notifierService, createPublisher, googleClient, log.WithField("subsystem", "graphql"))
 
-	srv := newServer(graphgen.NewExecutableSchema(graphgen.Config{Resolvers: resolver}))
-	srv.Use(otelgqlgen.Middleware())
+	graphServer := newGraphServer(graphgen.NewExecutableSchema(graphgen.Config{Resolvers: resolver}))
+	graphServer.Use(otelgqlgen.Middleware())
 	metricsMW, err := graph.NewMetrics(meter)
 	if err != nil {
 		return fmt.Errorf("error creating metrics middleware: %w", err)
 	}
-	srv.Use(metricsMW)
+	graphServer.Use(metricsMW)
 
 	corsMW := cors.New(cors.Options{
 		AllowedOrigins:   []string{"https://*", "http://*"},
@@ -180,11 +185,11 @@ func Run(ctx context.Context) error {
 
 	// Add the IAP validation middleware.
 	// If the IAP audience is not set, we stop the server with a fatal error
-	// unless the insecure-skip-proxy flag is set.
+	// unless the INSECURE_SKIP_PROXY env var is true.
 	iapMW := auth.ValidateJWTFromComputeEngine(cfg.IAPAudience)
 	if cfg.IAPAudience == "" {
 		if !cfg.InsecureSkipProxy {
-			return fmt.Errorf("insecure-skip-proxy must be true when iap audience is not set")
+			return fmt.Errorf("INSECURE_SKIP_PROXY must be true when iap audience is not set")
 		}
 
 		iapMW = auth.InsecureValidateMW
@@ -210,7 +215,7 @@ func Run(ctx context.Context) error {
 
 	router := chi.NewMux()
 	router.Handle("/", iapMW(playground.Handler("GraphQL playground", "/query")))
-	router.Handle("/query", slowDownQuery(iapMW(corsMW.Handler(srv))))
+	router.Handle("/query", slowDownQuery(iapMW(corsMW.Handler(graphServer))))
 	router.Handle("/metrics", promhttp.Handler())
 
 	rout, err := rollout.New(ctx, repo)
@@ -229,7 +234,7 @@ func Run(ctx context.Context) error {
 	router.Get("/github/deployment/{id}", deploy.GetDeployment)
 
 	go func() {
-		if err := runGRPC(ctx, repo, log); err != nil {
+		if err := runGRPC(ctx, cfg.GRPCBindAddress, repo, log); err != nil {
 			panic(err)
 		}
 	}()
@@ -253,7 +258,7 @@ func Run(ctx context.Context) error {
 		}
 	}()
 
-	if err := runClusterUpgrader(ctx, log, googleClient, repo, meter, slackClient); err != nil {
+	if err := runClusterUpgrader(ctx, cfg.SlackClusterUpgradeChannel, log, googleClient, repo, meter, slackClient); err != nil {
 		return fmt.Errorf("running cluster upgrader: %w", err)
 	}
 
@@ -275,7 +280,7 @@ func Run(ctx context.Context) error {
 	return nil
 }
 
-func newServer(es graphql.ExecutableSchema) *handler.Server {
+func newGraphServer(es graphql.ExecutableSchema) *handler.Server {
 	srv := handler.New(es)
 	srv.AddTransport(transport.SSE{}) // Support subscriptions
 	srv.AddTransport(transport.Options{})
@@ -291,11 +296,11 @@ func newServer(es graphql.ExecutableSchema) *handler.Server {
 	return srv
 }
 
-func newLogger() (*logrus.Logger, error) {
+func newLogger(level string) (*logrus.Logger, error) {
 	log := logrus.StandardLogger()
 	log.SetFormatter(&logrus.JSONFormatter{})
 
-	l, err := logrus.ParseLevel(cfg.LogLevel)
+	l, err := logrus.ParseLevel(level)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing log level: %w", err)
 	}
@@ -303,16 +308,9 @@ func newLogger() (*logrus.Logger, error) {
 	return log, nil
 }
 
-func getEnv(key, fallback string) string {
-	if env := os.Getenv(key); env != "" {
-		return env
-	}
-	return fallback
-}
-
-func runGRPC(ctx context.Context, repo database.Repo, log logrus.FieldLogger) error {
-	log.Info("GRPC serving on port", cfg.GRPCBindAddress)
-	lis, err := net.Listen("tcp", cfg.GRPCBindAddress)
+func runGRPC(ctx context.Context, bindAddress string, repo database.Repo, log logrus.FieldLogger) error {
+	log.Info("GRPC serving on port", bindAddress)
+	lis, err := net.Listen("tcp", bindAddress)
 	if err != nil {
 		return fmt.Errorf("failed to listen: %w", err)
 	}
@@ -343,9 +341,9 @@ func newMetricsProvider() (metric.Meter, error) {
 		Meter("github.com/nais/fasit"), nil
 }
 
-func runClusterUpgrader(ctx context.Context, log *logrus.Logger, clusterManager cluster.ClusterManager, repo database.Repo, meter metric.Meter, slack slack.SlackClient) error {
+func runClusterUpgrader(ctx context.Context, slackChannel string, log *logrus.Logger, clusterManager cluster.ClusterManager, repo database.Repo, meter metric.Meter, slack slack.SlackClient) error {
 	s := workers.NewScheduler(log.WithField("subsystem", "scheduler"))
-	clusterUpgrader := cluster.NewClusterUpgrader(repo, log, clusterManager, meter, slack, cfg.SlackClusterUpgradeChannel)
+	clusterUpgrader := cluster.NewClusterUpgrader(repo, log, clusterManager, meter, slack, slackChannel)
 	autoUpgrader := cluster.NewAutoUpgrader(repo, log, clusterManager, meter)
 
 	s.Register("cluster-upgrader", clusterUpgrader, 30*time.Second)
@@ -391,4 +389,17 @@ func clustersMetrics(ctx context.Context, repo database.Repo, meter metric.Meter
 		case <-time.After(5 * time.Minute):
 		}
 	}
+}
+
+// loadEnvFile will load a .env file if it exists. This is useful for local development.
+func loadEnvFile() error {
+	if _, err := os.Stat(".env"); errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+
+	if err := godotenv.Load(".env"); err != nil {
+		return err
+	}
+
+	return nil
 }

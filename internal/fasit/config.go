@@ -1,47 +1,36 @@
 package fasit
 
 import (
-	"flag"
-	"os"
+	"context"
+	"fmt"
 
-	"github.com/joho/godotenv"
+	"github.com/sethvargo/go-envconfig"
 )
 
 type Config struct {
-	BindAddress          string
-	GRPCBindAddress      string
-	DBConnectionDSN      string
-	LogLevel             string
-	GCPProjectID         string
-	StatusSubscriptionID string
-
-	InsecureSkipProxy      bool
-	InsecureSkipTokenCheck bool
-	IAPAudience            string
-
-	SlackAPIToken              string
-	SlackClusterUpgradeChannel string
-	SlackChannelFeatureAlerts  string
+	BindAddress                string `env:"HTTP_BIND_ADDRESS,default=:8080"`
+	GRPCBindAddress            string `env:"GRPC_BIND_ADDRESS,default=:4444"`
+	DBConnectionDSN            string `env:"FASIT_DBCONN_STRING,default=postgres://postgres:postgres@localhost:5432/fasit?sslmode=disable"`
+	LogLevel                   string `env:"LOG_LEVEL,default=info"`
+	GCPProjectID               string `env:"GCP_PROJECT_ID,default=nais-local-dev"`
+	StatusSubscriptionID       string `env:"PUBSUB_STATUS_SUBSCRIPTION_ID,default=fasit-subscription"`
+	InsecureSkipProxy          bool   `env:"INSECURE_SKIP_PROXY,default=false"`
+	InsecureSkipTokenCheck     bool   `env:"INSECURE_SKIP_TOKEN_CHECK,default=false"`
+	IAPAudience                string `env:"IAP_AUDIENCE"`
+	SlackAPIToken              string `env:"SLACK_API_TOKEN"`
+	SlackClusterUpgradeChannel string `env:"SLACK_CLUSTER_UPGRADE_CHANNEL"`
+	SlackChannelFeatureAlerts  string `env:"SLACK_CHANNEL_FEATURE_ALERTS"`
 }
 
-var cfg = Config{
-	BindAddress:     ":8080",
-	GRPCBindAddress: ":4444",
-	LogLevel:        "info",
-}
-
-func init() {
-	_ = godotenv.Load()
-	flag.StringVar(&cfg.BindAddress, "bind-address", cfg.BindAddress, "Bind address")
-	flag.StringVar(&cfg.GRPCBindAddress, "grpc-bind-address", cfg.GRPCBindAddress, "Bind address")
-	flag.StringVar(&cfg.DBConnectionDSN, "db-connection-dsn", getEnv("FASIT_DBCONN_STRING", "postgres://postgres:postgres@localhost:5432/fasit?sslmode=disable"), "database connection DSN")
-	flag.StringVar(&cfg.LogLevel, "log-level", "info", "which log level to output")
-	flag.StringVar(&cfg.GCPProjectID, "project-id", "nais-local-dev", "Google project ID")
-	flag.StringVar(&cfg.StatusSubscriptionID, "status-subscription-id", "fasit-subscription", "Pub/sub subscription for status")
-	flag.StringVar(&cfg.IAPAudience, "iap-audience", "", "IAP audience string")
-	flag.BoolVar(&cfg.InsecureSkipProxy, "insecure-skip-proxy", false, "Insecure, but allows the server to not require iap")
-	flag.BoolVar(&cfg.InsecureSkipTokenCheck, "insecure-skip-token-check", false, "Insecure, but allows the server ignore token check")
-	flag.StringVar(&cfg.SlackClusterUpgradeChannel, "slack-cluster-upgrade-channel", os.Getenv("SLACK_CLUSTER_UPGRADE_CHANNEL"), "Slack channel to send message to")
-	flag.StringVar(&cfg.SlackChannelFeatureAlerts, "slack-channel-feature-alerts", os.Getenv("SLACK_CHANNEL_FEATURE_ALERTS"), "Slack channel to send feature alerts to")
-	flag.StringVar(&cfg.SlackAPIToken, "slack-api-token", os.Getenv("SLACK_API_TOKEN"), "Slack API token")
+// newConfig creates a new configuration instance from environment variables.
+func newConfig(ctx context.Context, lookuper envconfig.Lookuper) (*Config, error) {
+	cfg := &Config{}
+	err := envconfig.ProcessWith(ctx, &envconfig.Config{
+		Target:   cfg,
+		Lookuper: lookuper,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("error processing configuration: %w", err)
+	}
+	return cfg, nil
 }
