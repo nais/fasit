@@ -238,7 +238,7 @@ func TestReconcile(t *testing.T) {
 
 			messages := []message.DeployInstruction{}
 
-			publisher := func(topicID string, log *logrus.Entry) Publisher {
+			publisher := func(topicID string, log logrus.FieldLogger) Publisher {
 				return &mockPublisher{topicID: topicID, messages: &messages}
 			}
 

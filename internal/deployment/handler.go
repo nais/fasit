@@ -46,7 +46,7 @@ func NewHttpHandler(ctx context.Context, manager *Manager, log logrus.FieldLogge
 		provider: provider,
 		verifier: verifier,
 		manager:  manager,
-		log:      log,
+		log:      log.WithField("subsystem", "deployment-http"),
 	}, nil
 }
 

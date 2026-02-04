@@ -36,11 +36,6 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          args:
-            - --project-id
-            - nais-io
-            - --iap-audience
-            - {{ .Values.iapAudience }}
           volumeMounts:
           - mountPath: /tmp
             name: tmp
@@ -49,6 +44,11 @@ spec:
             readOnly: true
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            - name: GCP_PROJECT_ID
+              value: nais-io
+            - name: IAP_AUDIENCE
+              value: {{ .Values.iapAudience }}
           envFrom:
             - secretRef:
                 name: {{ include "fasit.fullname" . }}

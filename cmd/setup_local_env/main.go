@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 	"time"
@@ -120,12 +119,14 @@ var (
 )
 
 func main() {
+	log := logrus.StandardLogger()
+
 	if err := os.Setenv("PUBSUB_EMULATOR_HOST", "localhost:8086"); err != nil {
 		log.Fatal(err)
 	}
 
 	ctx := context.Background()
-	dbConn, cancel, err := database.NewDB(ctx, "postgres://postgres:postgres@localhost:5432/fasit?sslmode=disable", false)
+	dbConn, cancel, err := database.NewConnPool(ctx, "postgres://postgres:postgres@localhost:5432/fasit?sslmode=disable", log)
 	if err != nil {
 		panic(err)
 	}
@@ -138,7 +139,7 @@ func main() {
 	defer conn.Close()
 	grpcClient := protogen.NewProviderClient(conn)
 
-	db := database.New(dbConn, logrus.New().WithField("component", "setup-local"))
+	db := database.NewRepo(dbConn, logrus.New().WithField("component", "setup-local"))
 
 	seeder := deploymenttest.NewSeeder()
 	dMgr, err := deployment.NewManager(

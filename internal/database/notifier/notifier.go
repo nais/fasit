@@ -65,7 +65,7 @@ func New(db *pgxpool.Pool, log logrus.FieldLogger) *Notifier {
 	return &Notifier{
 		db:        db,
 		channel:   "fasit_notify",
-		log:       log,
+		log:       log.WithField("subsystem", "notifier"),
 		listeners: map[string][]listener{},
 	}
 }

@@ -74,7 +74,7 @@ func TestRunner(ctx context.Context, skipSetup bool) (*testmanager.Manager, erro
 			ci := L.OptBool(2, false)
 
 			pool := L.Context().Value(poolKey).(*pgxpool.Pool)
-			repo := database.New(pool, logrus.New())
+			repo := database.NewRepo(pool, logrus.New())
 
 			tenant, err := repo.TenantCreate(ctx, &model.TenantCreate{
 				Name: name,
@@ -144,7 +144,7 @@ func TestRunner(ctx context.Context, skipSetup bool) (*testmanager.Manager, erro
 			envLabels := make([]*protogen.EnvironmentLabel, 0)
 
 			pool := L.Context().Value(poolKey).(*pgxpool.Pool)
-			repo := database.New(pool, logrus.New())
+			repo := database.NewRepo(pool, logrus.New())
 
 			tenantID, err := uuid.Parse(tenantIDStr)
 			if err != nil {
@@ -251,7 +251,7 @@ func TestRunner(ctx context.Context, skipSetup bool) (*testmanager.Manager, erro
 			failing := L.OptBool(2, true)
 
 			pool := L.Context().Value(poolKey).(*pgxpool.Pool)
-			repo := database.New(pool, logrus.New())
+			repo := database.NewRepo(pool, logrus.New())
 
 			envID, err := uuid.Parse(envIDStr)
 			if err != nil {
@@ -315,7 +315,7 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 			log.Out = os.Stdout
 			log.Level = logrus.DebugLevel
 		}
-		db := database.New(pool, log)
+		db := database.NewRepo(pool, log)
 		naisdRunner, close, err := newNaisd()
 		if err != nil {
 			done()
@@ -356,7 +356,7 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 
 		ctx = context.WithValue(ctx, poolKey, pool)
 
-		cp := func(topicID string, log *logrus.Entry) workers.Publisher {
+		cp := func(topicID string, log logrus.FieldLogger) workers.Publisher {
 			p, ok := naisdRunner.reconcilerPublishers[topicID]
 			if !ok {
 				panic(fmt.Sprintf("no publisher for topic %q", topicID))
@@ -390,7 +390,7 @@ func newRestRunner(ctx context.Context, pool *pgxpool.Pool, deploymentMgr *deplo
 	router := chi.NewMux()
 	// router.Handle("/query", iapMW(corsMW.Handler(srv)))
 
-	db := database.New(pool, logrus.New())
+	db := database.NewRepo(pool, logrus.New())
 
 	rout, err := rollout.New(ctx, db)
 	if err != nil {
@@ -415,7 +415,7 @@ func newGQLRunner(pool *pgxpool.Pool, deploymentMgr *deployment.Manager) spec.Ru
 	log.Out = io.Discard
 
 	resolver := &graph.Resolver{
-		Repo:          database.New(pool, log),
+		Repo:          database.NewRepo(pool, log),
 		Log:           logrus.NewEntry(log),
 		DeploymentMgr: deploymentMgr,
 	}
@@ -453,17 +453,13 @@ func startPostgresql(ctx context.Context) (*postgres.PostgresContainer, string, 
 
 	logr := logrus.New()
 	logr.Out = io.Discard
-	pool, close, err := database.NewDB(ctx, connStr, false)
+	pool, closers, err := database.NewConnPool(ctx, connStr, logr)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to create pool: %w", err)
 	}
-
-	if err := database.Migrate("pgx", connStr, logr); err != nil {
-		return nil, "", fmt.Errorf("failed to migrate: %w", err)
-	}
-
 	pool.Close()
-	if err := close.Close(); err != nil {
+
+	if err := closers.Close(); err != nil {
 		return nil, "", fmt.Errorf("failed to close pool: %w", err)
 	}
 
@@ -478,14 +474,14 @@ func newDB(ctx context.Context, container *postgres.PostgresContainer, connStr s
 	logr := logrus.New()
 	logr.Out = io.Discard
 
-	pool, close, err := database.NewDB(ctx, connStr, false)
+	pool, closers, err := database.NewConnPool(ctx, connStr, logr)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create pool: %w", err)
 	}
 
 	cleanup := func() {
 		pool.Close()
-		if err := close.Close(); err != nil {
+		if err := closers.Close(); err != nil {
 			log.Fatalf("failed to close pool: %s", err)
 		}
 		if err := container.Restore(ctx, postgres.WithSnapshotName("migrated")); err != nil {

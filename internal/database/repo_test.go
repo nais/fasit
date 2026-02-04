@@ -27,7 +27,7 @@ func TestMain(m *testing.M) {
 	log.Out = io.Discard
 	ctx := context.Background()
 
-	db, closers, err := NewDB(ctx, dbString, false)
+	pool, closers, err := NewConnPool(ctx, dbString, log)
 	if err != nil {
 		log.Fatalf("Error connecting to database: %v", err)
 	}
@@ -35,11 +35,7 @@ func TestMain(m *testing.M) {
 		_ = closers.Close()
 	}()
 
-	if err := Migrate("pgx", dbString, logrus.NewEntry(log)); err != nil {
-		log.Fatalf("Could not migrate: %v", err)
-	}
-
-	repository = New(db, logrus.NewEntry(log)).(*repo)
+	repository = NewRepo(pool, logrus.NewEntry(log)).(*repo)
 
 	code := m.Run()
 

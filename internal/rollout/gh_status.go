@@ -33,7 +33,7 @@ func NewGHStatusReporter(log logrus.FieldLogger, repo database.RolloutRepo, noti
 	client := github.NewClient(&http.Client{Transport: itr})
 
 	return &GHStatusReporter{
-		log:      log,
+		log:      log.WithField("subsystem", "github-status-reporter"),
 		notifier: notif,
 		client:   client,
 		repo:     repo,

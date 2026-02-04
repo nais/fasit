@@ -8,4 +8,4 @@ bin/
 .direnv
 flake.*
 node_modules
-fasit
+/fasit

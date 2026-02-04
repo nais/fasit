@@ -2,18 +2,21 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"embed"
 	"fmt"
+	"io"
 	"net"
 	"net/url"
+	"runtime"
 	"strings"
 
 	"cloud.google.com/go/cloudsqlconn"
 	cloudsqlpgx "cloud.google.com/go/cloudsqlconn/postgres/pgxv5"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/nais/fasit/internal/database/gensql"
+	"github.com/nais/fasit/internal/ioconvenience"
 	"github.com/pressly/goose/v3"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/metric"
@@ -98,11 +101,11 @@ type Querier interface {
 	WithTx(tx pgx.Tx) *gensql.Queries
 }
 
-func New(db *pgxpool.Pool, log logrus.FieldLogger) Repo {
+func NewRepo(pool *pgxpool.Pool, log logrus.FieldLogger) Repo {
 	return &repo{
-		querier: gensql.New(db),
-		db:      db,
-		log:     log,
+		querier: gensql.New(pool),
+		db:      pool,
+		log:     log.WithField("subsystem", "database-repo"),
 	}
 }
 
@@ -128,7 +131,13 @@ func (r *repo) TxFunc(ctx context.Context, fn TXFunc) error {
 	})
 }
 
-func NewDB(ctx context.Context, dbConnDSN string, cloudsql bool) (*pgxpool.Pool, closeFuncs, error) {
+func NewConnPool(ctx context.Context, dbConnDSN string, log logrus.FieldLogger) (*pgxpool.Pool, io.Closer, error) {
+	cloudsql := !strings.Contains(dbConnDSN, "://")
+
+	if runtime.NumCPU() < 5 {
+		dbConnDSN = dbConnDSN + " pool_max_conns=5"
+	}
+
 	cloudsqlHost := ""
 	if cloudsql {
 		vals, err := url.ParseQuery(strings.ReplaceAll(dbConnDSN, " ", "&"))
@@ -178,22 +187,27 @@ func NewDB(ctx context.Context, dbConnDSN string, cloudsql bool) (*pgxpool.Pool,
 	}
 
 	// Interact with the dirver directly as you normally would
-	conn, err := pgxpool.NewWithConfig(context.Background(), config)
+	pool, err := pgxpool.NewWithConfig(context.Background(), config)
 	if err != nil {
 		return nil, closers, fmt.Errorf("failed to connect: %w", err)
 	}
-	return conn, closers, nil
+
+	if err := Migrate(pool, log); err != nil {
+		return nil, closers, fmt.Errorf("error migrating database: %w", err)
+	}
+
+	return pool, closers, nil
 }
 
-func Migrate(driver, dsn string, log logrus.FieldLogger) error {
+func Migrate(pool *pgxpool.Pool, log logrus.FieldLogger) error {
+	log = log.WithField("subsystem", "database-migration")
+
 	goose.SetBaseFS(embedMigrations)
 	goose.SetLogger(log)
 
-	db, err := sql.Open(driver, dsn)
-	if err != nil {
-		return err
-	}
-	defer db.Close()
+	db := stdlib.OpenDBFromPool(pool)
+	defer ioconvenience.CloseWithLog(db, log)
+
 	if err := goose.Up(db, "migrations"); err != nil {
 		return fmt.Errorf("goose up: %w", err)
 	}
