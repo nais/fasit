@@ -27,7 +27,7 @@ func TestMain(m *testing.M) {
 	log.Out = io.Discard
 	ctx := context.Background()
 
-	pool, closers, err := NewConnPool(ctx, dbString, false, log)
+	pool, closers, err := NewConnPool(ctx, dbString, log)
 	if err != nil {
 		log.Fatalf("Error connecting to database: %v", err)
 	}

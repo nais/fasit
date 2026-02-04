@@ -7,6 +7,7 @@ import (
 	"io"
 	"net"
 	"net/url"
+	"runtime"
 	"strings"
 
 	"cloud.google.com/go/cloudsqlconn"
@@ -130,7 +131,13 @@ func (r *repo) TxFunc(ctx context.Context, fn TXFunc) error {
 	})
 }
 
-func NewConnPool(ctx context.Context, dbConnDSN string, cloudsql bool, log logrus.FieldLogger) (*pgxpool.Pool, io.Closer, error) {
+func NewConnPool(ctx context.Context, dbConnDSN string, log logrus.FieldLogger) (*pgxpool.Pool, io.Closer, error) {
+	cloudsql := !strings.Contains(dbConnDSN, "://")
+
+	if runtime.NumCPU() < 5 {
+		dbConnDSN = dbConnDSN + " pool_max_conns=5"
+	}
+
 	cloudsqlHost := ""
 	if cloudsql {
 		vals, err := url.ParseQuery(strings.ReplaceAll(dbConnDSN, " ", "&"))

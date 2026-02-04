@@ -453,7 +453,7 @@ func startPostgresql(ctx context.Context) (*postgres.PostgresContainer, string, 
 
 	logr := logrus.New()
 	logr.Out = io.Discard
-	pool, closers, err := database.NewConnPool(ctx, connStr, false, logr)
+	pool, closers, err := database.NewConnPool(ctx, connStr, logr)
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to create pool: %w", err)
 	}
@@ -474,7 +474,7 @@ func newDB(ctx context.Context, container *postgres.PostgresContainer, connStr s
 	logr := logrus.New()
 	logr.Out = io.Discard
 
-	pool, closers, err := database.NewConnPool(ctx, connStr, false, logr)
+	pool, closers, err := database.NewConnPool(ctx, connStr, logr)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to create pool: %w", err)
 	}

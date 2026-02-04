@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"runtime"
-	"strings"
 	"syscall"
 	"time"
 
@@ -91,17 +89,8 @@ func Run(ctx context.Context) error {
 	slackClient := slack.New(cfg.SlackAPIToken)
 
 	log.Info("starting database client")
-	dbDriver := "pgx"
-	if !strings.Contains(cfg.DBConnectionDSN, "://") {
-		dbDriver = "cloudsql-postgres"
-	}
 
-	extraDSN := ""
-	if runtime.NumCPU() < 5 {
-		extraDSN = " pool_max_conns=5"
-	}
-
-	pool, closers, err := database.NewConnPool(ctx, cfg.DBConnectionDSN+extraDSN, dbDriver != "pgx", log)
+	pool, closers, err := database.NewConnPool(ctx, cfg.DBConnectionDSN, log)
 	if err != nil {
 		return fmt.Errorf("error setting up database: %w", err)
 	}

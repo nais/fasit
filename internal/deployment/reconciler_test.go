@@ -357,7 +357,7 @@ func startPostgresql(ctx context.Context, t *testing.T) (container *postgres.Pos
 	}
 
 	logger, _ := test.NewNullLogger()
-	pool, _, err := database.NewConnPool(ctx, dsn, false, logger)
+	pool, _, err := database.NewConnPool(ctx, dsn, logger)
 	if err != nil {
 		t.Fatalf("Error connecting to database: %v", err)
 	}
@@ -416,7 +416,7 @@ func setupTestMgr(
 func getDb(ctx context.Context, t *testing.T, container *postgres.PostgresContainer, dsn string, log logrus.FieldLogger) Db {
 	t.Helper()
 
-	pool, _, err := database.NewConnPool(ctx, dsn, false, log)
+	pool, _, err := database.NewConnPool(ctx, dsn, log)
 	if err != nil {
 		t.Fatalf("Error connecting to database: %v", err)
 	}

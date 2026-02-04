@@ -126,7 +126,7 @@ func main() {
 	}
 
 	ctx := context.Background()
-	dbConn, cancel, err := database.NewConnPool(ctx, "postgres://postgres:postgres@localhost:5432/fasit?sslmode=disable", false, log)
+	dbConn, cancel, err := database.NewConnPool(ctx, "postgres://postgres:postgres@localhost:5432/fasit?sslmode=disable", log)
 	if err != nil {
 		panic(err)
 	}
