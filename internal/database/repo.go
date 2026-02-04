@@ -186,8 +186,7 @@ func NewConnPool(ctx context.Context, dbConnDSN string, log logrus.FieldLogger) 
 		closers = append(closers, cleanup)
 	}
 
-	// Interact with the dirver directly as you normally would
-	pool, err := pgxpool.NewWithConfig(context.Background(), config)
+	pool, err := pgxpool.NewWithConfig(ctx, config)
 	if err != nil {
 		return nil, closers, fmt.Errorf("failed to connect: %w", err)
 	}
