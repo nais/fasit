@@ -3172,9 +3172,9 @@ extend type Mutation {
 }
 `, BuiltIn: false},
 	{Name: "../../../schema/scalars.graphqls", Input: `"""
-Map represents a key => value map.
+EnvironmentLabels represents a key => value map.
 """
-scalar Map
+scalar EnvironmentLabels
 
 """
 RawMessage represents an arbitrary JSON value.

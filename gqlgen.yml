@@ -57,6 +57,9 @@ models:
   RawMessage:
     model:
       - github.com/nais/fasit/internal/graph/scalars.RawMessage
+  EnvironmentLabels:
+    model:
+      - github.com/nais/fasit/internal/graph/scalars.EnvironmentLabels
   Int:
     model:
       - github.com/99designs/gqlgen/graphql.Int

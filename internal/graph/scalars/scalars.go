@@ -42,3 +42,19 @@ func UnmarshalRawMessage(v any) (json.RawMessage, error) {
 	}
 	return b, nil
 }
+
+func MarshalEnvironmentLabels(val map[string]string) graphql.Marshaler {
+	return graphql.WriterFunc(func(w io.Writer) {
+		if err := json.NewEncoder(w).Encode(val); err != nil {
+			panic(err)
+		}
+	})
+}
+
+func UnmarshalEnvironmentLabels(v any) (map[string]string, error) {
+	if m, ok := v.(map[string]string); ok {
+		return m, nil
+	}
+
+	return nil, fmt.Errorf("%T is not a map[string]string", v)
+}
