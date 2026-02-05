@@ -91,7 +91,10 @@ func Run(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("error creating deployment manager: %w", err)
 	}
-	go deploymentMgr.Run(ctx, 10*time.Minute)
+
+	setupContext := GetSetupContextFunc(pool, deploymentMgr)
+
+	go deploymentMgr.Run(setupContext(ctx), 10*time.Minute)
 
 	statusMgr := message.NewSubscriber[message.Status](pubSubClient, cfg.GCPProjectID, cfg.StatusSubscriptionID, log)
 
@@ -155,7 +158,7 @@ func Run(ctx context.Context) error {
 	serverCtx, serverCancel := context.WithCancel(ctx)
 	defer serverCancel()
 
-	httpServer, err := newHttpServer(serverCtx, cfg, repo, deploymentMgr, notifierService, createPublisher, googleClient, meter, log)
+	httpServer, err := newHttpServer(serverCtx, setupContext, cfg, repo, notifierService, createPublisher, googleClient, meter, log)
 	if err != nil {
 		return fmt.Errorf("error creating http server: %w", err)
 	}

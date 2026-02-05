@@ -10,7 +10,6 @@ import (
 	"github.com/nais/fasit/internal/cluster"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/notifier"
-	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/graph"
 	"github.com/nais/fasit/internal/server"
 	"github.com/nais/fasit/internal/workers"
@@ -20,27 +19,22 @@ import (
 
 func newHttpServer(
 	ctx context.Context,
+	setupContext SetupContextFunc,
 	cfg *Config,
 	repo database.Repo,
-	deploymentManager *deployment.Manager,
 	notifier *notifier.Notifier,
 	publisher workers.NewPublisher,
 	clusterClient *cluster.Client,
 	meter metric.Meter,
 	log logrus.FieldLogger,
 ) (*http.Server, error) {
-	dependencies := &server.DomainHandlers{
-		Repo:              repo,
-		DeploymentManager: deploymentManager,
-	}
-
 	resolver := graph.NewResolver(ctx, repo, notifier, publisher, clusterClient, log)
-	graphServer, err := server.SetupGraph(resolver, meter, dependencies)
+	graphServer, err := server.SetupGraph(setupContext, resolver, meter)
 	if err != nil {
 		return nil, fmt.Errorf("setting up graph: %w", err)
 	}
 
-	router, err := server.SetupRouter(ctx, cfg.IAPAudience, cfg.InsecureSkipProxy, cfg.InsecureSkipTokenCheck, graphServer, dependencies, log)
+	router, err := server.SetupRouter(ctx, setupContext, cfg.IAPAudience, cfg.InsecureSkipProxy, cfg.InsecureSkipTokenCheck, graphServer, repo, log)
 	if err != nil {
 		return nil, fmt.Errorf("setting up router: %w", err)
 	}

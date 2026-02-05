@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"time"
@@ -20,7 +21,7 @@ import (
 
 const slowQueryEndpoint = false
 
-func SetupGraph(resolver *graph.Resolver, meter metric.Meter, domainHandlers *DomainHandlers) (http.Handler, error) {
+func SetupGraph(setupContext func(ctx context.Context) context.Context, resolver *graph.Resolver, meter metric.Meter) (http.Handler, error) {
 	graphServer := newGraphServer(graphgen.NewExecutableSchema(graphgen.Config{Resolvers: resolver}))
 	graphServer.Use(otelgqlgen.Middleware())
 	metricsMW, err := graph.NewMetrics(meter)
@@ -46,7 +47,7 @@ func SetupGraph(resolver *graph.Resolver, meter metric.Meter, domainHandlers *Do
 
 	handler := slowDownQuery(corsMW.Handler(graphServer))
 
-	return contextMiddleware(domainHandlers.SetupContext)(handler), nil
+	return contextMiddleware(setupContext)(handler), nil
 }
 
 func newGraphServer(es graphql.ExecutableSchema) *handler.Server {

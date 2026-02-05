@@ -14,6 +14,7 @@ import (
 	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/deployment/deploymenttest"
 	"github.com/nais/fasit/internal/environment"
+	"github.com/nais/fasit/internal/fasit"
 	"github.com/nais/fasit/internal/provider/protogen"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/metric/noop"
@@ -151,7 +152,8 @@ func main() {
 		panic(err)
 	}
 
-	ctx = deployment.NewContext(ctx, dMgr)
+	setupContext := fasit.GetSetupContextFunc(dbConn, dMgr)
+	ctx = setupContext(ctx)
 
 	seeder.AddDeployment("aivenator", "1.0.0", environment.Labels{"aiven": "enabled"})
 	seeder.AddDeployment("aivenator", "2.0.0", environment.Labels{"aiven": "enabled"})

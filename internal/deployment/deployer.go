@@ -14,12 +14,11 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/database/types"
 	"github.com/nais/fasit/internal/deployment/deploymentsql"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/errs"
-	"github.com/nais/fasit/internal/feature"
+	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/naisdstatus"
@@ -37,34 +36,28 @@ type Publisher interface {
 type NewPublisher func(topicID string, log logrus.FieldLogger) Publisher
 
 type deployer struct {
-	publisher          NewPublisher
-	querier            deploymentsql.Querier
-	log                logrus.FieldLogger
-	deployMessages     metric.Int64Counter
-	naisdStatusManager *naisdstatus.Manager
-	environmentManager *environment.Manager
-	featureManager     *feature.Manager
+	publisher      NewPublisher
+	querier        deploymentsql.Querier
+	log            logrus.FieldLogger
+	deployMessages metric.Int64Counter
 }
 
-func newDeployer(pool *pgxpool.Pool, querier deploymentsql.Querier, publisher NewPublisher, meter metric.Meter, log logrus.FieldLogger) (*deployer, error) {
+func newDeployer(querier deploymentsql.Querier, publisher NewPublisher, meter metric.Meter, log logrus.FieldLogger) (*deployer, error) {
 	deployMessages, err := meter.Int64Counter("deployment_deploy_messages", metric.WithDescription("Deploy messages sent"))
 	if err != nil {
 		return nil, fmt.Errorf("create deploy messages counter: %w", err)
 	}
 
 	return &deployer{
-		publisher:          publisher,
-		querier:            querier,
-		log:                log,
-		deployMessages:     deployMessages,
-		naisdStatusManager: naisdstatus.NewManager(pool),
-		environmentManager: environment.NewManager(pool),
-		featureManager:     feature.NewManager(pool),
+		publisher:      publisher,
+		querier:        querier,
+		log:            log,
+		deployMessages: deployMessages,
 	}, nil
 }
 
 func (d *deployer) naisdHealthCheck(ctx context.Context, environmentID uuid.UUID) error {
-	health, err := d.naisdStatusManager.Get(ctx, environmentID)
+	health, err := naisdstatus.Get(ctx, environmentID)
 	if err != nil {
 		return fmt.Errorf("health status: %w", err)
 	}
@@ -77,7 +70,7 @@ func (d *deployer) naisdHealthCheck(ctx context.Context, environmentID uuid.UUID
 }
 
 func (d *deployer) deployToCI(ctx context.Context, feat *model.Feature, req Request) error {
-	envs, err := d.environmentManager.ListCIEnvironmentsForTarget(ctx, req.Target)
+	envs, err := environment.ListCIEnvironmentsForTarget(ctx, req.Target)
 	if err != nil {
 		return fmt.Errorf("get ci environments for target: %w", err)
 	}
@@ -86,7 +79,7 @@ func (d *deployer) deployToCI(ctx context.Context, feat *model.Feature, req Requ
 	for _, env := range envs {
 		var deploymentID uuid.UUID
 		err := func() error {
-			labels, err := d.environmentManager.ListLabels(ctx, env.ID)
+			labels, err := environment.ListLabels(ctx, env.ID)
 			if err != nil {
 				return fmt.Errorf("get environment labels: %w", err)
 			}
@@ -147,7 +140,7 @@ func (d *deployer) deployToEnvironment(ctx context.Context, deployment *Deployme
 		return nil
 	}
 
-	values, err := d.featureManager.HelmValues(ctx, deployment.Feature, environment.ID)
+	values, err := featurepkg.HelmValues(ctx, deployment.Feature, environment.ID)
 	if err != nil {
 		var fer *errs.ErrMissingRequiredFields
 		if errors.As(err, &fer) {
@@ -279,12 +272,12 @@ func (d *deployer) isDependenciesDeployed(ctx context.Context, deployment *Deplo
 }
 
 func (d *deployer) CreateDeployment(ctx context.Context, feat *model.Feature, req Request, ci bool) (uuid.UUID, error) {
-	details, err := feature.ParseTemplateDetails(feat.FeatureYAML.Values)
+	details, err := featurepkg.ParseTemplateDetails(feat.FeatureYAML.Values)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("unable to parse feature template details: %w", err)
 	}
 
-	if err := d.featureManager.FeatureDataCreate(ctx, *feat, details); err != nil {
+	if err := featurepkg.FeatureDataCreate(ctx, *feat, details); err != nil {
 		var pgErr *pgconn.PgError
 		if !errors.As(err, &pgErr) || pgErr.Code != "23505" {
 			return uuid.Nil, fmt.Errorf("unable to create feature data: %w", pgErr)
@@ -314,7 +307,7 @@ func (d *deployer) CreateDeployment(ctx context.Context, feat *model.Feature, re
 	}
 
 	if req.Global {
-		if err := d.featureManager.FeatureVersionUpdate(ctx, feat.Name, feat.Version); err != nil {
+		if err := featurepkg.FeatureVersionUpdate(ctx, feat.Name, feat.Version); err != nil {
 			return uuid.Nil, fmt.Errorf("unable to update feature version: %w", err)
 		}
 	}
@@ -385,7 +378,7 @@ func (d *deployer) missingDependencies(ctx context.Context, dependencies []strin
 }
 
 func (d *deployer) createDeployInstruction(ctx context.Context, envID uuid.UUID, feature *model.Feature, hash string, deploymentID *uuid.UUID) (uuid.UUID, error) {
-	vals, err := d.featureManager.HelmValues(ctx, feature, envID)
+	vals, err := featurepkg.HelmValues(ctx, feature, envID)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("get helm values: %w", err)
 	}

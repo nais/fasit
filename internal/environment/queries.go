@@ -10,18 +10,20 @@ import (
 	"github.com/nais/fasit/internal/graph/model"
 )
 
-type Manager struct {
-	querier environmentsql.Querier
+type ctxKey int
+
+const querierKey ctxKey = iota
+
+func Register(ctx context.Context, pool *pgxpool.Pool) context.Context {
+	return context.WithValue(ctx, querierKey, environmentsql.New(pool))
 }
 
-func NewManager(pool *pgxpool.Pool) *Manager {
-	return &Manager{
-		querier: environmentsql.New(pool),
-	}
+func querier(ctx context.Context) environmentsql.Querier {
+	return ctx.Value(querierKey).(environmentsql.Querier)
 }
 
-func (m *Manager) TenantEnvironments(ctx context.Context, onlyReconciled bool) ([]*model.TenantEnvironment, error) {
-	data, err := m.querier.TenantEnvironments(ctx, !onlyReconciled)
+func TenantEnvironments(ctx context.Context, onlyReconciled bool) ([]*model.TenantEnvironment, error) {
+	data, err := querier(ctx).TenantEnvironments(ctx, !onlyReconciled)
 	if err != nil {
 		return nil, err
 	}
@@ -46,8 +48,8 @@ func (m *Manager) TenantEnvironments(ctx context.Context, onlyReconciled bool) (
 	return ret, nil
 }
 
-func (m *Manager) ListCIEnvironmentsForTarget(ctx context.Context, labels Labels) ([]*model.TenantEnvironment, error) {
-	envs, err := m.querier.ListCIEnvironmentsForTarget(ctx, types.EnvironmentLabels(labels))
+func ListCIEnvironmentsForTarget(ctx context.Context, labels Labels) ([]*model.TenantEnvironment, error) {
+	envs, err := querier(ctx).ListCIEnvironmentsForTarget(ctx, types.EnvironmentLabels(labels))
 	if err != nil {
 		return nil, err
 	}
@@ -71,8 +73,8 @@ func (m *Manager) ListCIEnvironmentsForTarget(ctx context.Context, labels Labels
 	return ret, nil
 }
 
-func (m *Manager) ListLabels(ctx context.Context, environmentID uuid.UUID) ([]*model.EnvironmentLabel, error) {
-	labels, err := m.querier.GetLabels(ctx, environmentID)
+func ListLabels(ctx context.Context, environmentID uuid.UUID) ([]*model.EnvironmentLabel, error) {
+	labels, err := querier(ctx).GetLabels(ctx, environmentID)
 	if err != nil {
 		return nil, err
 	}
@@ -88,16 +90,16 @@ func (m *Manager) ListLabels(ctx context.Context, environmentID uuid.UUID) ([]*m
 	return ret, nil
 }
 
-func (m *Manager) Get(ctx context.Context, id uuid.UUID) (*model.Environment, error) {
-	env, err := m.querier.Get(ctx, id)
+func Get(ctx context.Context, id uuid.UUID) (*model.Environment, error) {
+	env, err := querier(ctx).Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 	return environmentFromSQL(env), nil
 }
 
-func (m *Manager) GetTenant(ctx context.Context, id uuid.UUID) (*model.Tenant, error) {
-	tenant, err := m.querier.GetTenant(ctx, id)
+func GetTenant(ctx context.Context, id uuid.UUID) (*model.Tenant, error) {
+	tenant, err := querier(ctx).GetTenant(ctx, id)
 	if err != nil {
 		return nil, err
 	}

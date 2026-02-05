@@ -14,7 +14,7 @@ type ctxKey int
 
 const managerKey ctxKey = iota
 
-func NewContext(ctx context.Context, deploymentManager *Manager) context.Context {
+func Register(ctx context.Context, deploymentManager *Manager) context.Context {
 	return context.WithValue(ctx, managerKey, deploymentManager)
 }
 

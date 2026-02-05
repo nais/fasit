@@ -16,20 +16,20 @@ import (
 	"github.com/nais/fasit/internal/graph/model"
 )
 
-type Manager struct {
-	querier            featuresql.Querier
-	environmentManager *environment.Manager
+type ctxKey int
+
+const querierKey ctxKey = iota
+
+func Register(ctx context.Context, pool *pgxpool.Pool) context.Context {
+	return context.WithValue(ctx, querierKey, featuresql.New(pool))
 }
 
-func NewManager(pool *pgxpool.Pool) *Manager {
-	return &Manager{
-		querier:            featuresql.New(pool),
-		environmentManager: environment.NewManager(pool),
-	}
+func querier(ctx context.Context) featuresql.Querier {
+	return ctx.Value(querierKey).(featuresql.Querier)
 }
 
-func (m *Manager) HelmValues(ctx context.Context, f *model.Feature, envID uuid.UUID) (map[string]any, error) {
-	mv, envKind, err := m.MappingValuesForEnvironment(ctx, envID, true)
+func HelmValues(ctx context.Context, f *model.Feature, envID uuid.UUID) (map[string]any, error) {
+	mv, envKind, err := MappingValuesForEnvironment(ctx, envID, true)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +41,7 @@ func (m *Manager) HelmValues(ctx context.Context, f *model.Feature, envID uuid.U
 		}
 	}
 
-	vals, err := m.querier.ConfigForEnvironmentFilteredByKeys(ctx, featuresql.ConfigForEnvironmentFilteredByKeysParams{
+	vals, err := querier(ctx).ConfigForEnvironmentFilteredByKeys(ctx, featuresql.ConfigForEnvironmentFilteredByKeysParams{
 		Feature:       f.Name,
 		EnvironmentID: envID,
 		Includedkeys:  includeKeys,
@@ -75,13 +75,13 @@ func (m *Manager) HelmValues(ctx context.Context, f *model.Feature, envID uuid.U
 	return mp, err
 }
 
-func (m *Manager) MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) (*ComputedValues, model.EnvironmentKind, error) {
-	env, err := m.environmentManager.Get(ctx, envID)
+func MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) (*ComputedValues, model.EnvironmentKind, error) {
+	env, err := environment.Get(ctx, envID)
 	if err != nil {
 		return nil, "", fmt.Errorf("envValuesForEnv: failed to get environment: %w", err)
 	}
 
-	tenant, err := m.environmentManager.GetTenant(ctx, env.TenantID)
+	tenant, err := environment.GetTenant(ctx, env.TenantID)
 	if err != nil {
 		return nil, env.Kind, fmt.Errorf("envValuesForEnv: failed to get tenant: %w", err)
 	}
@@ -92,7 +92,7 @@ func (m *Manager) MappingValuesForEnvironment(ctx context.Context, envID uuid.UU
 		},
 	}
 
-	values, err := m.querier.ListMappingValuesForTenant(ctx, featuresql.ListMappingValuesForTenantParams{
+	values, err := querier(ctx).ListMappingValuesForTenant(ctx, featuresql.ListMappingValuesForTenantParams{
 		Tenantid:      tenant.ID,
 		Showsensitive: showSensitive,
 	})
@@ -124,7 +124,7 @@ func (m *Manager) MappingValuesForEnvironment(ctx context.Context, envID uuid.UU
 	return mv, env.Kind, nil
 }
 
-func (m *Manager) FeatureDataCreate(ctx context.Context, feat model.Feature, details *FeatureTemplateDetails) error {
+func FeatureDataCreate(ctx context.Context, feat model.Feature, details *FeatureTemplateDetails) error {
 	// TODO: Use pgx v5 instead of []byte
 	dep, err := json.Marshal(feat.Dependencies)
 	if err != nil {
@@ -149,7 +149,7 @@ func (m *Manager) FeatureDataCreate(ctx context.Context, feat model.Feature, det
 		return fmt.Errorf("marshal rename to json: %w", err)
 	}
 
-	return m.querier.FeatureDataCreate(ctx, featuresql.FeatureDataCreateParams{
+	return querier(ctx).FeatureDataCreate(ctx, featuresql.FeatureDataCreateParams{
 		FeatureName:   feat.Name,
 		Version:       feat.Version,
 		Chart:         feat.Chart,
@@ -165,8 +165,8 @@ func (m *Manager) FeatureDataCreate(ctx context.Context, feat model.Feature, det
 	})
 }
 
-func (m *Manager) FeatureVersionUpdate(ctx context.Context, name string, version string) error {
-	return m.querier.FeatureVersionUpdate(ctx, featuresql.FeatureVersionUpdateParams{
+func FeatureVersionUpdate(ctx context.Context, name string, version string) error {
+	return querier(ctx).FeatureVersionUpdate(ctx, featuresql.FeatureVersionUpdateParams{
 		Name:    name,
 		Version: version,
 	})

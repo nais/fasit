@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/auth"
 	"github.com/nais/fasit/internal/deployment/deploymentsql"
 	"github.com/nais/fasit/internal/environment"
@@ -27,12 +26,7 @@ const (
 	TriggerResultFailed
 )
 
-type reconcilerRepo interface {
-	TenantEnvironments(ctx context.Context, onlyReconciled bool) ([]*model.TenantEnvironment, error)
-}
-
 type reconciler struct {
-	repo             reconcilerRepo
 	querier          deploymentsql.Querier
 	log              logrus.FieldLogger
 	reconcileTrigger chan chan TriggerResult
@@ -44,16 +38,13 @@ type reconciler struct {
 	reconcileTime metric.Int64Histogram
 }
 
-func newReconciler(pool *pgxpool.Pool, querier deploymentsql.Querier, deployer *deployer, meter metric.Meter, log logrus.FieldLogger) (*reconciler, error) {
-	repo := environment.NewManager(pool)
-
+func newReconciler(querier deploymentsql.Querier, deployer *deployer, meter metric.Meter, log logrus.FieldLogger) (*reconciler, error) {
 	reconcileTime, err := meter.Int64Histogram("deployment_reconcile_time", metric.WithDescription("Time spent reconciling"), metric.WithUnit("ms"))
 	if err != nil {
 		return nil, fmt.Errorf("create reconcile time histogram: %w", err)
 	}
 	reconcileTrigger := make(chan chan TriggerResult, 1)
 	return &reconciler{
-		repo:             repo,
 		querier:          querier,
 		log:              log,
 		reconcileTrigger: reconcileTrigger,
@@ -108,7 +99,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 	}
 	defer r.lock.Unlock()
 
-	tenantEnvironments, err := r.repo.TenantEnvironments(ctx, true)
+	tenantEnvironments, err := environment.TenantEnvironments(ctx, true)
 	if err != nil {
 		return fmt.Errorf("get tenant environments: %w", err)
 	}

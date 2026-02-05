@@ -13,6 +13,7 @@ import (
 	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/deployment/deploymenttest"
 	"github.com/nais/fasit/internal/environment"
+	"github.com/nais/fasit/internal/fasit"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/provider/protogen"
@@ -133,15 +134,14 @@ func TestReconcile(t *testing.T) {
 				mgr.seeder.AddDeployment(input.name, input.version, input.target, input.dependencies...)
 			}
 
-			ctx = deployment.NewContext(ctx, mgr.dmgr)
-
-			err = mgr.seeder.Seed(ctx)
+			setupContext := fasit.GetSetupContextFunc(mgr.db.pool, mgr.dmgr)
+			err = mgr.seeder.Seed(setupContext(ctx))
 			if err != nil {
 				t.Fatalf("seeding deployments: %v", err)
 			}
 
 			for _, result := range tc.reconcileResults {
-				if err := mgr.dmgr.Reconcile(reconcilerCtx); err != nil {
+				if err := mgr.dmgr.Reconcile(setupContext(reconcilerCtx)); err != nil {
 					t.Fatalf("reconcile: %v", err)
 				}
 
@@ -200,12 +200,14 @@ func TestReconcileWhenPreviousIsInProgress(t *testing.T) {
 
 	fmt.Println("postgres container started: ", dsn)
 
-	reconcilerCtx, cancel := context.WithCancel(ctx)
-	t.Cleanup(cancel)
-
 	mgr := setupTestMgr(ctx, t, container, dsn, logger)
 	mgr.db.createTenantsAndEnvironments(ctx, envsToCreate)
-	ctx = deployment.NewContext(ctx, mgr.dmgr)
+	setupContext := fasit.GetSetupContextFunc(mgr.db.pool, mgr.dmgr)
+
+	reconcilerCtx, cancel := context.WithCancel(ctx)
+	t.Cleanup(cancel)
+	reconcilerCtx = setupContext(reconcilerCtx)
+	ctx = setupContext(ctx)
 
 	mgr.seeder.AddDeployment("feature-pending", "1.0.0", environment.Labels{"aiven": "enabled"})
 	err = mgr.seeder.Seed(ctx)

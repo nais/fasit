@@ -21,6 +21,7 @@ type Manager struct {
 	querier         deploymentsql.Querier
 	chartDownloader ChartDownloader
 	log             logrus.FieldLogger
+	pool            *pgxpool.Pool
 }
 
 type ChartDownloader func(chartURL, version string) (*model.Feature, error)
@@ -46,12 +47,12 @@ func WithChartDownloader(downloader ChartDownloader) Option {
 
 func NewManager(pool *pgxpool.Pool, publisher NewPublisher, m metric.Meter, log logrus.FieldLogger, opts ...Option) (*Manager, error) {
 	querier := deploymentsql.New(pool)
-	d, err := newDeployer(pool, querier, publisher, m, log.WithField("subsystem", "deployment-deployer"))
+	d, err := newDeployer(querier, publisher, m, log.WithField("subsystem", "deployment-deployer"))
 	if err != nil {
 		return nil, err
 	}
 
-	r, err := newReconciler(pool, querier, d, m, log.WithField("subsystem", "deployment-reconciler"))
+	r, err := newReconciler(querier, d, m, log.WithField("subsystem", "deployment-reconciler"))
 	if err != nil {
 		return nil, err
 	}
@@ -59,6 +60,7 @@ func NewManager(pool *pgxpool.Pool, publisher NewPublisher, m metric.Meter, log 
 	mgr := &Manager{
 		deployer:   d,
 		reconciler: r,
+		pool:       pool,
 		querier:    querier,
 		log:        log.WithField("subsystem", "deployment-manager"),
 	}
@@ -73,20 +75,20 @@ func NewManager(pool *pgxpool.Pool, publisher NewPublisher, m metric.Meter, log 
 	return mgr, nil
 }
 
-func (dm *Manager) Run(ctx context.Context, interval time.Duration) {
-	dm.reconciler.Run(ctx, interval)
+func (m *Manager) Run(ctx context.Context, interval time.Duration) {
+	m.reconciler.Run(ctx, interval)
 }
 
-// Reconcile performs a reconciliation of deployments, and will block until complete.
-func (dm *Manager) Reconcile(ctx context.Context) error {
-	return dm.reconciler.Reconcile(ctx)
+// Reconcile performs a reconciliation of deployments and will block until complete.
+func (m *Manager) Reconcile(ctx context.Context) error {
+	return m.reconciler.Reconcile(ctx)
 }
 
-func (dm *Manager) Receive(ctx context.Context, status *message.Helm) error {
-	di, err := dm.querier.DeployInstructionsByID(ctx, status.DIID)
+func (m *Manager) Receive(ctx context.Context, status *message.Helm) error {
+	di, err := m.querier.DeployInstructionsByID(ctx, status.DIID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			dm.log.WithField("diid", status.DIID).Warn("unknown deploy instruction")
+			m.log.WithField("diid", status.DIID).Warn("unknown deploy instruction")
 			return nil
 		}
 		return err
@@ -97,14 +99,14 @@ func (dm *Manager) Receive(ctx context.Context, status *message.Helm) error {
 		if status.Error != "" {
 			msg += " error: " + status.Error
 		}
-		err := dm.querier.SetDeploymentStatus(ctx, deploymentsql.SetDeploymentStatusParams{
+		err := m.querier.SetDeploymentStatus(ctx, deploymentsql.SetDeploymentStatusParams{
 			DeploymentID:  *di.DeploymentID,
 			EnvironmentID: di.EnvironmentID,
 			Status:        status.RolloutStatus.String(),
 			Message:       msg,
 		})
 		if err != nil {
-			dm.log.WithFields(logrus.Fields{
+			m.log.WithFields(logrus.Fields{
 				"deployment_id":  di.DeploymentID,
 				"environment_id": di.EnvironmentID,
 				"status":         status.RolloutStatus,

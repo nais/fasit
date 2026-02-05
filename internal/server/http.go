@@ -15,22 +15,13 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-type DomainHandlers struct {
-	Repo              database.Repo
-	DeploymentManager *deployment.Manager
-}
-
-func (d *DomainHandlers) SetupContext(ctx context.Context) context.Context {
-	ctx = deployment.NewContext(ctx, d.DeploymentManager)
-	return ctx
-}
-
 func SetupRouter(
 	ctx context.Context,
+	setupContext func(context.Context) context.Context,
 	iapAudience string,
 	insecureSkipProxy, insecureSkipTokenCheck bool,
 	graphHandler http.Handler,
-	domainHandlers *DomainHandlers,
+	repo database.Repo,
 	log logrus.FieldLogger,
 ) (http.Handler, error) {
 	// Add the IAP validation middleware.
@@ -45,12 +36,12 @@ func SetupRouter(
 	}
 
 	router := chi.NewMux()
-	router.Use(contextMiddleware(domainHandlers.SetupContext))
+	router.Use(contextMiddleware(setupContext))
 	router.Handle("/", iapMW(playground.Handler("GraphQL playground", "/query")))
 	router.Handle("/query", iapMW(graphHandler))
 	router.Handle("/metrics", promhttp.Handler())
 
-	rout, err := rollout.New(ctx, domainHandlers.Repo)
+	rout, err := rollout.New(ctx, repo)
 	if err != nil {
 		return nil, fmt.Errorf("error creating rollout handler: %w", err)
 	}

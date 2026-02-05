@@ -12,18 +12,20 @@ import (
 	"github.com/nais/fasit/internal/naisdstatus/naisdstatussql"
 )
 
-type Manager struct {
-	querier naisdstatussql.Querier
+type ctxKey int
+
+const querierKey ctxKey = iota
+
+func Register(ctx context.Context, pool *pgxpool.Pool) context.Context {
+	return context.WithValue(ctx, querierKey, naisdstatussql.New(pool))
 }
 
-func NewManager(pool *pgxpool.Pool) *Manager {
-	return &Manager{
-		querier: naisdstatussql.New(pool),
-	}
+func querier(ctx context.Context) naisdstatussql.Querier {
+	return ctx.Value(querierKey).(naisdstatussql.Querier)
 }
 
-func (m *Manager) Get(ctx context.Context, environmentID uuid.UUID) (*model.Health, error) {
-	res, err := m.querier.Get(ctx, environmentID)
+func Get(ctx context.Context, environmentID uuid.UUID) (*model.Health, error) {
+	res, err := querier(ctx).Get(ctx, environmentID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return &model.Health{

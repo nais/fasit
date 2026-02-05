@@ -16,6 +16,7 @@ import (
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/notifier"
 	"github.com/nais/fasit/internal/deployment"
+	"github.com/nais/fasit/internal/fasit"
 	"github.com/nais/fasit/internal/graph"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
@@ -217,7 +218,8 @@ func TestRunner(ctx context.Context, skipSetup bool) (*testmanager.Manager, erro
 			}
 
 			deploymentMgr := L.Context().Value(deploymentMgrKey).(*deployment.Manager)
-			if err := deploymentMgr.Reconcile(ctx); err != nil {
+			setupContext := fasit.GetSetupContextFunc(L.Context().Value(poolKey).(*pgxpool.Pool), deploymentMgr)
+			if err := deploymentMgr.Reconcile(setupContext(ctx)); err != nil {
 				L.RaiseError("failed to reconcile: %s", err)
 			}
 
@@ -337,12 +339,9 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 			return ctx, nil, nil, err
 		}
 
-		domainHandlers := &server.DomainHandlers{
-			Repo:              db,
-			DeploymentManager: deploymentMgr,
-		}
+		setupContext := fasit.GetSetupContextFunc(pool, deploymentMgr)
 
-		restRunner, err := newRestRunner(ctx, domainHandlers)
+		restRunner, err := newRestRunner(ctx, setupContext, db)
 		if err != nil {
 			done()
 			return ctx, nil, nil, err
@@ -351,7 +350,7 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 		runners := []spec.Runner{
 			naisdRunner,
 			restRunner,
-			newGQLRunner(domainHandlers),
+			newGQLRunner(setupContext, db),
 			runner.NewSQLRunner(pool),
 		}
 
@@ -387,13 +386,13 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 	}
 }
 
-func newRestRunner(ctx context.Context, domainHandlers *server.DomainHandlers) (*runner.REST, error) {
+func newRestRunner(ctx context.Context, setupContext fasit.SetupContextFunc, repo database.Repo) (*runner.REST, error) {
 	log := logrus.New()
 	log.Out = io.Discard
 
 	dummyHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	// router.Handle("/query", iapMW(corsMW.Handler(srv)))
-	router, err := server.SetupRouter(ctx, "", true, true, dummyHandler, domainHandlers, log)
+	router, err := server.SetupRouter(ctx, setupContext, "", true, true, dummyHandler, repo, log)
 	if err != nil {
 		panic(err)
 	}
@@ -401,15 +400,15 @@ func newRestRunner(ctx context.Context, domainHandlers *server.DomainHandlers) (
 	return runner.NewRestRunner(router), nil
 }
 
-func newGQLRunner(domainHandlers *server.DomainHandlers) spec.Runner {
+func newGQLRunner(setupContext fasit.SetupContextFunc, repo database.Repo) spec.Runner {
 	log := logrus.New()
 	log.Out = io.Discard
 
 	resolver := &graph.Resolver{
-		Repo: domainHandlers.Repo,
+		Repo: repo,
 		Log:  logrus.NewEntry(log),
 	}
-	httpHandler, err := server.SetupGraph(resolver, noop.NewMeterProvider().Meter(""), domainHandlers)
+	httpHandler, err := server.SetupGraph(setupContext, resolver, noop.NewMeterProvider().Meter(""))
 	if err != nil {
 		panic(err)
 	}
