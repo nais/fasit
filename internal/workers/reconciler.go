@@ -12,8 +12,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/auth"
-	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/notifier"
+	error2 "github.com/nais/fasit/internal/errs"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/sirupsen/logrus"
@@ -264,7 +264,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, e *model.TenantEn
 
 		values, err := r.repo.HelmValues(ctx, f, e.ID)
 		if err != nil {
-			var fer *database.ErrMissingRequiredFields
+			var fer *error2.ErrMissingRequiredFields
 			if errors.As(err, &fer) {
 				log.WithError(err).Debug("missing required fields")
 				continue

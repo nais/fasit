@@ -9,6 +9,48 @@ import (
 	"github.com/google/uuid"
 )
 
+const createDeployInstruction = `-- name: CreateDeployInstruction :one
+INSERT INTO deploy_instructions(
+	environment_id,
+	feature_name,
+	feature_version,
+	hash,
+	"values",
+	deployment_id)
+VALUES (
+	$1,
+	$2,
+	$3,
+	$4,
+	$5,
+	$6)
+RETURNING
+	id
+`
+
+type CreateDeployInstructionParams struct {
+	EnvironmentID  uuid.UUID
+	FeatureName    string
+	FeatureVersion string
+	Hash           string
+	Values         []byte
+	DeploymentID   *uuid.UUID
+}
+
+func (q *Queries) CreateDeployInstruction(ctx context.Context, arg CreateDeployInstructionParams) (uuid.UUID, error) {
+	row := q.db.QueryRow(ctx, createDeployInstruction,
+		arg.EnvironmentID,
+		arg.FeatureName,
+		arg.FeatureVersion,
+		arg.Hash,
+		arg.Values,
+		arg.DeploymentID,
+	)
+	var id uuid.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
 const deployInstructionsByID = `-- name: DeployInstructionsByID :one
 SELECT
 	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, deployment_id

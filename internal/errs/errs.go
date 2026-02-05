@@ -1,8 +1,6 @@
-package database
+package errs
 
-import (
-	"fmt"
-)
+import "fmt"
 
 type ErrMissingRequiredFields struct {
 	Fields []string

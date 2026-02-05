@@ -4,9 +4,16 @@ package environmentsql
 
 import (
 	"context"
+
+	"github.com/google/uuid"
+	"github.com/nais/fasit/internal/database/types"
 )
 
 type Querier interface {
+	Get(ctx context.Context, id uuid.UUID) (Environment, error)
+	GetLabels(ctx context.Context, id uuid.UUID) (types.EnvironmentLabels, error)
+	GetTenant(ctx context.Context, id uuid.UUID) (Tenant, error)
+	ListCIEnvironmentsForTarget(ctx context.Context, target types.EnvironmentLabels) ([]ListCIEnvironmentsForTargetRow, error)
 	TenantEnvironments(ctx context.Context, all bool) ([]TenantEnvironmentsRow, error)
 }
 

@@ -6,16 +6,15 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/nais/fasit/internal/database/types"
 )
 
 type Querier interface {
+	CreateDeployInstruction(ctx context.Context, arg CreateDeployInstructionParams) (uuid.UUID, error)
 	CreateDeployment(ctx context.Context, arg CreateDeploymentParams) (Deployment, error)
 	DeleteDeployment(ctx context.Context, id uuid.UUID) error
 	DeployInstructionsByID(ctx context.Context, id uuid.UUID) (DeployInstruction, error)
 	DeployInstructionsGetDeployedFeatures(ctx context.Context, arg DeployInstructionsGetDeployedFeaturesParams) ([]string, error)
 	FeatureEnabled(ctx context.Context, arg FeatureEnabledParams) (bool, error)
-	GetCIEnvironmentsForTarget(ctx context.Context, target types.EnvironmentLabels) ([]GetCIEnvironmentsForTargetRow, error)
 	GetDeployment(ctx context.Context, id uuid.UUID) (GetDeploymentRow, error)
 	GetEnvironmentFeature(ctx context.Context, arg GetEnvironmentFeatureParams) (GetEnvironmentFeatureRow, error)
 	InsertEnvironmentFeature(ctx context.Context, arg InsertEnvironmentFeatureParams) error

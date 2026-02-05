@@ -134,68 +134,6 @@ func (q *Queries) FeatureEnabled(ctx context.Context, arg FeatureEnabledParams) 
 	return not_exists, err
 }
 
-const getCIEnvironmentsForTarget = `-- name: GetCIEnvironmentsForTarget :many
-SELECT DISTINCT
-	e_ci.id, e_ci.tenant_id, e_ci.name, e_ci.kind, e_ci.description, e_ci.created, e_ci.last_modified, e_ci.ci, e_ci.reconcile, e_ci.auto_upgrade, e_ci.upgrade_delay_days, e_ci.maintenance_window, e_ci.labels,
-	t.name AS tenant_name
-FROM
-	environments e_ci
-	JOIN tenants t ON e_ci.tenant_id = t.id
-WHERE
-	e_ci.ci = TRUE
-	AND EXISTS (
-		SELECT
-			1
-		FROM
-			environments e_non_ci
-		WHERE
-			e_non_ci.ci = FALSE
-			AND e_non_ci.labels @> $1
-			AND e_non_ci.kind = e_ci.kind)
-ORDER BY
-	e_ci.name ASC
-`
-
-type GetCIEnvironmentsForTargetRow struct {
-	Environment Environment
-	TenantName  string
-}
-
-func (q *Queries) GetCIEnvironmentsForTarget(ctx context.Context, target types.EnvironmentLabels) ([]GetCIEnvironmentsForTargetRow, error) {
-	rows, err := q.db.Query(ctx, getCIEnvironmentsForTarget, target)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []GetCIEnvironmentsForTargetRow{}
-	for rows.Next() {
-		var i GetCIEnvironmentsForTargetRow
-		if err := rows.Scan(
-			&i.Environment.ID,
-			&i.Environment.TenantID,
-			&i.Environment.Name,
-			&i.Environment.Kind,
-			&i.Environment.Description,
-			&i.Environment.Created,
-			&i.Environment.LastModified,
-			&i.Environment.Ci,
-			&i.Environment.Reconcile,
-			&i.Environment.AutoUpgrade,
-			&i.Environment.UpgradeDelayDays,
-			&i.Environment.MaintenanceWindow,
-			&i.Environment.Labels,
-			&i.TenantName,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const getDeployment = `-- name: GetDeployment :one
 SELECT
 	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description, d.ci,

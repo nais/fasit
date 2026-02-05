@@ -19,9 +19,11 @@ import (
 	"github.com/nais/fasit/internal/database/types"
 	"github.com/nais/fasit/internal/deployment/deploymentsql"
 	"github.com/nais/fasit/internal/environment"
+	"github.com/nais/fasit/internal/errs"
 	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
+	"github.com/nais/fasit/internal/naisdstatus"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
@@ -36,21 +38,20 @@ type Publisher interface {
 type NewPublisher func(topicID string, log logrus.FieldLogger) Publisher
 
 type deployerRepo interface {
-	HealthGet(ctx context.Context, environmentID uuid.UUID) (*model.Health, error)
-	EnvironmentGetLabels(ctx context.Context, environmentID uuid.UUID) ([]*model.EnvironmentLabel, error)
-	HelmValues(ctx context.Context, feature *model.Feature, envID uuid.UUID) (values map[string]any, err error)
-	DeployInstructionCreate(ctx context.Context, envID uuid.UUID, feature *model.Feature, hash string, deploymentID *uuid.UUID) (uuid.UUID, error)
 	DeployInstructionsLatestForFeature(ctx context.Context, envID uuid.UUID, featureName string) (*model.DeployInstruction, error)
 	FeatureDataCreate(context.Context, model.Feature, *feature.FeatureTemplateDetails) error
 	FeatureVersionUpdate(ctx context.Context, name string, version string) error
 }
 
 type deployer struct {
-	publisher      NewPublisher
-	repo           deployerRepo
-	querier        deploymentsql.Querier
-	log            logrus.FieldLogger
-	deployMessages metric.Int64Counter
+	publisher          NewPublisher
+	repo               deployerRepo
+	querier            deploymentsql.Querier
+	log                logrus.FieldLogger
+	deployMessages     metric.Int64Counter
+	naisdStatusManager *naisdstatus.Manager
+	environmentManager *environment.Manager
+	featureManager     *feature.Manager
 }
 
 func newDeployer(pool *pgxpool.Pool, querier deploymentsql.Querier, publisher NewPublisher, meter metric.Meter, log logrus.FieldLogger) (*deployer, error) {
@@ -62,16 +63,19 @@ func newDeployer(pool *pgxpool.Pool, querier deploymentsql.Querier, publisher Ne
 	repo := database.NewRepo(pool, log.WithField("subsystem", "database-repo"))
 
 	return &deployer{
-		publisher:      publisher,
-		repo:           repo,
-		querier:        querier,
-		log:            log,
-		deployMessages: deployMessages,
+		publisher:          publisher,
+		repo:               repo,
+		querier:            querier,
+		log:                log,
+		deployMessages:     deployMessages,
+		naisdStatusManager: naisdstatus.NewManager(pool),
+		environmentManager: environment.NewManager(pool),
+		featureManager:     feature.NewManager(pool),
 	}, nil
 }
 
 func (d *deployer) naisdHealthCheck(ctx context.Context, environmentID uuid.UUID) error {
-	health, err := d.repo.HealthGet(ctx, environmentID)
+	health, err := d.naisdStatusManager.Get(ctx, environmentID)
 	if err != nil {
 		return fmt.Errorf("health status: %w", err)
 	}
@@ -84,7 +88,7 @@ func (d *deployer) naisdHealthCheck(ctx context.Context, environmentID uuid.UUID
 }
 
 func (d *deployer) deployToCI(ctx context.Context, feat *model.Feature, req Request) error {
-	envs, err := d.getCIEnvironmentsForTarget(ctx, req.Target)
+	envs, err := d.environmentManager.ListCIEnvironmentsForTarget(ctx, req.Target)
 	if err != nil {
 		return fmt.Errorf("get ci environments for target: %w", err)
 	}
@@ -93,7 +97,7 @@ func (d *deployer) deployToCI(ctx context.Context, feat *model.Feature, req Requ
 	for _, env := range envs {
 		var deploymentID uuid.UUID
 		err := func() error {
-			labels, err := d.repo.EnvironmentGetLabels(ctx, env.ID)
+			labels, err := d.environmentManager.ListLabels(ctx, env.ID)
 			if err != nil {
 				return fmt.Errorf("get environment labels: %w", err)
 			}
@@ -154,9 +158,9 @@ func (d *deployer) deployToEnvironment(ctx context.Context, deployment *Deployme
 		return nil
 	}
 
-	values, err := d.repo.HelmValues(ctx, deployment.Feature, environment.ID)
+	values, err := d.featureManager.HelmValues(ctx, deployment.Feature, environment.ID)
 	if err != nil {
-		var fer *database.ErrMissingRequiredFields
+		var fer *errs.ErrMissingRequiredFields
 		if errors.As(err, &fer) {
 			msg := fmt.Sprintf("missing required chart config: %s", strings.Join(fer.Fields, ", "))
 			d.setDeploymentStatus(ctx, deployment.ID, environment.ID, model.RolloutStatusFailed, msg)
@@ -178,7 +182,7 @@ func (d *deployer) deployToEnvironment(ctx context.Context, deployment *Deployme
 		return nil
 	}
 
-	deployInstructionID, err := d.repo.DeployInstructionCreate(ctx, environment.ID, deployment.Feature, hash, &deployment.ID)
+	deployInstructionID, err := d.createDeployInstruction(ctx, environment.ID, deployment.Feature, hash, &deployment.ID)
 	if err != nil {
 		return fmt.Errorf("create deploy instruction: %w", err)
 	}
@@ -370,31 +374,6 @@ func (d *deployer) waitForDeploymentStatuses(ctx context.Context, deploymentsByE
 	return eg.Wait()
 }
 
-func (d *deployer) getCIEnvironmentsForTarget(ctx context.Context, labels environment.Labels) ([]*model.TenantEnvironment, error) {
-	envs, err := d.querier.GetCIEnvironmentsForTarget(ctx, types.EnvironmentLabels(labels))
-	if err != nil {
-		return nil, err
-	}
-
-	ret := make([]*model.TenantEnvironment, len(envs))
-	for i, e := range envs {
-		ret[i] = &model.TenantEnvironment{
-			Environment: model.Environment{
-				ID:           e.Environment.ID,
-				Name:         e.Environment.Name,
-				CI:           e.Environment.Ci,
-				Description:  e.Environment.Description,
-				Created:      e.Environment.Created.Time,
-				LastModified: e.Environment.LastModified.Time,
-				Kind:         model.EnvironmentKind(e.Environment.Kind),
-			},
-			TenantName: e.TenantName,
-			TenantID:   e.Environment.TenantID,
-		}
-	}
-	return ret, nil
-}
-
 func (d *deployer) missingDependencies(ctx context.Context, dependencies []string, environmentID uuid.UUID) ([]string, error) {
 	if len(dependencies) == 0 {
 		return []string{}, nil
@@ -414,6 +393,27 @@ func (d *deployer) missingDependencies(ctx context.Context, dependencies []strin
 		}
 	}
 	return missing, nil
+}
+
+func (d *deployer) createDeployInstruction(ctx context.Context, envID uuid.UUID, feature *model.Feature, hash string, deploymentID *uuid.UUID) (uuid.UUID, error) {
+	vals, err := d.featureManager.HelmValues(ctx, feature, envID)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("get helm values: %w", err)
+	}
+
+	values, err := json.Marshal(vals)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("marshal helm values: %w", err)
+	}
+
+	return d.querier.CreateDeployInstruction(ctx, deploymentsql.CreateDeployInstructionParams{
+		EnvironmentID:  envID,
+		FeatureName:    feature.Name,
+		FeatureVersion: feature.Version,
+		Hash:           hash,
+		Values:         values,
+		DeploymentID:   deploymentID,
+	})
 }
 
 // filterDeployments filters the deployments to only include the most specific deployment with the latest created

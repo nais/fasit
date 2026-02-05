@@ -1,3 +1,11 @@
+-- name: GetTenant :one
+SELECT
+	*
+FROM
+	tenants
+WHERE
+	id = @id;
+
 -- name: TenantEnvironments :many
 SELECT
 	e.*,

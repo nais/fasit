@@ -183,6 +183,33 @@ type DeployInstruction struct {
 	DeploymentID   *uuid.UUID
 }
 
+type Deployment struct {
+	ID          uuid.UUID
+	FeatureName string
+	Version     string
+	Target      types.EnvironmentLabels
+	Created     pgtype.Timestamptz
+	GhRef       []byte
+	Description pgtype.Text
+	Ci          bool
+}
+
+type DeploymentStatus struct {
+	DeploymentID  uuid.UUID
+	EnvironmentID uuid.UUID
+	Status        string
+	Message       string
+	LastModified  pgtype.Timestamptz
+	Created       pgtype.Timestamptz
+}
+
+type EnvCost struct {
+	TenantID uuid.UUID
+	EnvID    uuid.UUID
+	Date     pgtype.Date
+	Cost     float32
+}
+
 type Environment struct {
 	ID                uuid.UUID
 	TenantID          uuid.UUID
@@ -197,6 +224,34 @@ type Environment struct {
 	UpgradeDelayDays  int32
 	MaintenanceWindow []byte
 	Labels            types.EnvironmentLabels
+}
+
+type EnvironmentFeature struct {
+	EnvironmentID  uuid.UUID
+	FeatureName    string
+	FeatureVersion string
+	DeploymentID   uuid.UUID
+}
+
+type EnvironmentValue struct {
+	EnvironmentID uuid.UUID
+	Key           string
+	Value         []byte
+	Secret        bool
+}
+
+type EnvironmentValuesStat struct {
+	Key      string
+	Kind     interface{}
+	Count    int64
+	Features interface{}
+}
+
+type Feature struct {
+	Name         string
+	Version      string
+	Created      pgtype.Timestamptz
+	LastModified pgtype.Timestamptz
 }
 
 type FeatureDatum struct {
