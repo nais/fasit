@@ -7,11 +7,6 @@ exec:
   filename: internal/graph/graphgen/graphgen.go
   package: graphgen
 
-# Uncomment to enable federation
-# federation:
-#   filename: graph/generated/federation.go
-#   package: generated
-
 # Where should any generated models go?
 model:
   filename: internal/graph/model/donotuse/models_gen.go
@@ -22,15 +17,22 @@ resolver:
   layout: follow-schema
   dir: internal/graph
   package: graph
+  omit_template_comment: true
+
+# Omit Query / Mutation models
+omit_root_models: true
 
 # Optional: turn on to exclude the gqlgen version in the generated file notice. No effect if `omit_gqlgen_file_notice` is true.
 omit_gqlgen_version_in_file_notice: true
 
-# Optional: turn on use `gqlgen:"fieldName"` tags in your models
-# struct_tag: json
+# Don't generate Get<FieldName> functions for fields included in the GraphQL interfaces
+omit_getters: true
 
-# Optional: turn on to use []Thing instead of []*Thing
-# omit_slice_element_pointers: false
+# Optional: turn on to not generate any file notice comments in generated files
+omit_gqlgen_file_notice: true
+
+# Setting this to false will generate type instances for required struct fields, and type pointers for optional fields
+struct_fields_always_pointers: true
 
 # Because we're using gofumpt, and in general run our code often enough, we can disable building and running go mod tidy during gqlgen generate
 # This will speed up the generation process
@@ -41,8 +43,9 @@ skip_validation: true
 # if they match it will use them, otherwise it will generate them.
 autobind:
   - "github.com/99designs/gqlgen/graphql/introspection" # Without this line in the beginning, a `prelude.resolver.go` is generated
-  - "github.com/nais/fasit/internal/graph/model"
   - "github.com/nais/fasit/internal/deployment"
+  - "github.com/nais/fasit/internal/environment"
+  - "github.com/nais/fasit/internal/graph/model"
 
 # This section declares type mapping between the GraphQL and go type systems
 #
