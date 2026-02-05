@@ -543,8 +543,6 @@ type FeatureWarningResolver interface {
 	Environment(ctx context.Context, obj *model.FeatureWarning) (*model.Environment, error)
 }
 type MutationResolver interface {
-	TenantCreate(ctx context.Context, tenant model.TenantCreate) (*model.Tenant, error)
-	TenantSetUpgradeDelayDays(ctx context.Context, tenantID uuid.UUID, delayDays int) (*model.Tenant, error)
 	ConfigurationCreate(ctx context.Context, configuration model.NewConfiguration) (*model.Configuration, error)
 	ConfigurationUpdate(ctx context.Context, id uuid.UUID, configuration model.UpdateConfiguration) (*model.Configuration, error)
 	ConfigurationDelete(ctx context.Context, id uuid.UUID) (bool, error)
@@ -562,12 +560,13 @@ type MutationResolver interface {
 	Playground(ctx context.Context, input model.PlaygroundInput) (*model.Playground, error)
 	RolloutMarkFailed(ctx context.Context, feature string, version string) (*model.Rollout, error)
 	DeleteHelmInstall(ctx context.Context, envID uuid.UUID, name string) (bool, error)
+	TenantCreate(ctx context.Context, tenant model.TenantCreate) (*model.Tenant, error)
+	TenantSetUpgradeDelayDays(ctx context.Context, tenantID uuid.UUID, delayDays int) (*model.Tenant, error)
 }
 type NaisdWarningResolver interface {
 	Environment(ctx context.Context, obj *model.NaisdWarning) (*model.Environment, error)
 }
 type QueryResolver interface {
-	Tenants(ctx context.Context) ([]*model.Tenant, error)
 	Configuration(ctx context.Context, feature string, envID *uuid.UUID) (*model.Configurations, error)
 	HelmValues(ctx context.Context, feature string, envID *uuid.UUID, env *string, tenant *string) (json.RawMessage, error)
 	CostForTenant(ctx context.Context, tenantID uuid.UUID, filter *model.CostFilter) (*model.TenantCosts, error)
@@ -582,6 +581,7 @@ type QueryResolver interface {
 	Rollout(ctx context.Context, feature string, version string) (*model.Rollout, error)
 	Tenant(ctx context.Context, id *uuid.UUID, slug *string) (*model.Tenant, error)
 	ClusterUpgradeHistory(ctx context.Context, limit *int, offset *int) (*model.ClusterUpgradeHistoryResult, error)
+	Tenants(ctx context.Context) ([]*model.Tenant, error)
 	UserInfo(ctx context.Context) (*model.UserInfo, error)
 }
 type ReleaseResolver interface {
@@ -3179,13 +3179,39 @@ Time is a string in [RFC 3339](https://rfc-editor.org/rfc/rfc3339.html) format, 
 """
 scalar Time
 `, BuiltIn: false},
-	{Name: "../../../schema/status.graphqls", Input: `enum RolloutStatus {
+	{Name: "../../../schema/schema.graphqls", Input: `"""
+The query root for the Fasit GraphQL API.
+"""
+type Query
+
+"""
+The mutation root for the Fasit GraphQL API.
+"""
+type Mutation
+
+"""
+The subscription root for the Fasit GraphQL API.
+"""
+type Subscription
+`, BuiltIn: false},
+	{Name: "../../../schema/status.graphqls", Input: `extend type Subscription {
+    logs(environmentID: ID!, featureName: String!, lastLogID: String): LogLine!
+
+    """
+    Updates notifies whenever a feature state has been changed.
+    """
+    updates: Update!
+}
+
+enum RolloutStatus {
 	UNKNOWN
 	CREATED
 	PENDING
 	DEPLOYED
 	FAILED
 }
+
+union Update = Status | Configuration | FeatureState | ClusterUpgradeStatus
 
 type LogLine {
 	id: ID!
@@ -3202,19 +3228,40 @@ type Status {
 	lastModified: Time!
 	log: [LogLine!]!
 }
-
-union Update = Status | Configuration | FeatureState | ClusterUpgradeStatus
-
-type Subscription {
-	logs(environmentID: ID!, featureName: String!, lastLogID: String): LogLine!
-
-	"""
-	Updates notifies whenever a feature state has been changed.
-	"""
-	updates: Update!
-}
 `, BuiltIn: false},
-	{Name: "../../../schema/tenant.graphqls", Input: `type Tenant {
+	{Name: "../../../schema/tenant.graphqls", Input: `extend type Mutation {
+    tenantCreate(tenant: TenantCreate!): Tenant!
+    """
+    Set the upgrade delay (in days) for a tenant.
+    """
+    tenantSetUpgradeDelayDays(tenantID: ID!, delayDays: Int!): Tenant!
+}
+
+extend type Query {
+    """
+    tenant returns the given tenant.
+    """
+    tenant("id of the requested tenant." id: ID, slug: String): Tenant!
+    """
+    Cluster upgrade history across all tenants and environments, with pagination support.
+
+    Parameters:
+    - limit: Maximum number of records to return (default: 50, max: 1000, must be positive)
+    - offset: Number of records to skip (default: 0, must be non-negative)
+
+    Results are ordered by last_modified DESC (newest first).
+    Invalid values are normalized: negative or zero limit defaults to 50, limit > 1000 capped at 1000, negative offset defaults to 0.
+    """
+    clusterUpgradeHistory(limit: Int, offset: Int): ClusterUpgradeHistoryResult!
+    tenants: [Tenant!]!
+}
+
+input TenantCreate {
+    name: String!
+    description: String
+}
+
+type Tenant {
 	id: ID!
 	name: String!
 	description: String
@@ -3226,41 +3273,6 @@ type Subscription {
 	upgradeDelayDays: Int!
 	"""
 	Cluster upgrade history for all environments in this tenant, with pagination support.
-
-	Parameters:
-	- limit: Maximum number of records to return (default: 50, max: 1000, must be positive)
-	- offset: Number of records to skip (default: 0, must be non-negative)
-
-	Results are ordered by last_modified DESC (newest first).
-	Invalid values are normalized: negative or zero limit defaults to 50, limit > 1000 capped at 1000, negative offset defaults to 0.
-	"""
-	clusterUpgradeHistory(limit: Int, offset: Int): ClusterUpgradeHistoryResult!
-}
-
-type Query {
-	tenants: [Tenant!]!
-}
-
-input TenantCreate {
-	name: String!
-	description: String
-}
-
-type Mutation {
-	tenantCreate(tenant: TenantCreate!): Tenant!
-	"""
-	Set the upgrade delay (in days) for a tenant.
-	"""
-	tenantSetUpgradeDelayDays(tenantID: ID!, delayDays: Int!): Tenant!
-}
-
-extend type Query {
-	"""
-	tenant returns the given tenant.
-	"""
-	tenant("id of the requested tenant." id: ID, slug: String): Tenant!
-	"""
-	Cluster upgrade history across all tenants and environments, with pagination support.
 
 	Parameters:
 	- limit: Maximum number of records to return (default: 50, max: 1000, must be positive)
@@ -9647,132 +9659,6 @@ func (ec *executionContext) fieldContext_MaintenanceWindow_days(_ context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _Mutation_tenantCreate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Mutation_tenantCreate,
-		func(ctx context.Context) (any, error) {
-			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().TenantCreate(ctx, fc.Args["tenant"].(model.TenantCreate))
-		},
-		nil,
-		ec.marshalNTenant2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐTenant,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Mutation_tenantCreate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Tenant_id(ctx, field)
-			case "name":
-				return ec.fieldContext_Tenant_name(ctx, field)
-			case "description":
-				return ec.fieldContext_Tenant_description(ctx, field)
-			case "environments":
-				return ec.fieldContext_Tenant_environments(ctx, field)
-			case "environment":
-				return ec.fieldContext_Tenant_environment(ctx, field)
-			case "created":
-				return ec.fieldContext_Tenant_created(ctx, field)
-			case "lastModified":
-				return ec.fieldContext_Tenant_lastModified(ctx, field)
-			case "warnings":
-				return ec.fieldContext_Tenant_warnings(ctx, field)
-			case "upgradeDelayDays":
-				return ec.fieldContext_Tenant_upgradeDelayDays(ctx, field)
-			case "clusterUpgradeHistory":
-				return ec.fieldContext_Tenant_clusterUpgradeHistory(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Tenant", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_tenantCreate_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Mutation_tenantSetUpgradeDelayDays(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Mutation_tenantSetUpgradeDelayDays,
-		func(ctx context.Context) (any, error) {
-			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().TenantSetUpgradeDelayDays(ctx, fc.Args["tenantID"].(uuid.UUID), fc.Args["delayDays"].(int))
-		},
-		nil,
-		ec.marshalNTenant2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐTenant,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Mutation_tenantSetUpgradeDelayDays(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Tenant_id(ctx, field)
-			case "name":
-				return ec.fieldContext_Tenant_name(ctx, field)
-			case "description":
-				return ec.fieldContext_Tenant_description(ctx, field)
-			case "environments":
-				return ec.fieldContext_Tenant_environments(ctx, field)
-			case "environment":
-				return ec.fieldContext_Tenant_environment(ctx, field)
-			case "created":
-				return ec.fieldContext_Tenant_created(ctx, field)
-			case "lastModified":
-				return ec.fieldContext_Tenant_lastModified(ctx, field)
-			case "warnings":
-				return ec.fieldContext_Tenant_warnings(ctx, field)
-			case "upgradeDelayDays":
-				return ec.fieldContext_Tenant_upgradeDelayDays(ctx, field)
-			case "clusterUpgradeHistory":
-				return ec.fieldContext_Tenant_clusterUpgradeHistory(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Tenant", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_tenantSetUpgradeDelayDays_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Mutation_configurationCreate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -10920,6 +10806,132 @@ func (ec *executionContext) fieldContext_Mutation_deleteHelmInstall(ctx context.
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_tenantCreate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_tenantCreate,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().TenantCreate(ctx, fc.Args["tenant"].(model.TenantCreate))
+		},
+		nil,
+		ec.marshalNTenant2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐTenant,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_tenantCreate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Tenant_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Tenant_name(ctx, field)
+			case "description":
+				return ec.fieldContext_Tenant_description(ctx, field)
+			case "environments":
+				return ec.fieldContext_Tenant_environments(ctx, field)
+			case "environment":
+				return ec.fieldContext_Tenant_environment(ctx, field)
+			case "created":
+				return ec.fieldContext_Tenant_created(ctx, field)
+			case "lastModified":
+				return ec.fieldContext_Tenant_lastModified(ctx, field)
+			case "warnings":
+				return ec.fieldContext_Tenant_warnings(ctx, field)
+			case "upgradeDelayDays":
+				return ec.fieldContext_Tenant_upgradeDelayDays(ctx, field)
+			case "clusterUpgradeHistory":
+				return ec.fieldContext_Tenant_clusterUpgradeHistory(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Tenant", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_tenantCreate_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_tenantSetUpgradeDelayDays(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_tenantSetUpgradeDelayDays,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Mutation().TenantSetUpgradeDelayDays(ctx, fc.Args["tenantID"].(uuid.UUID), fc.Args["delayDays"].(int))
+		},
+		nil,
+		ec.marshalNTenant2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐTenant,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_tenantSetUpgradeDelayDays(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Tenant_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Tenant_name(ctx, field)
+			case "description":
+				return ec.fieldContext_Tenant_description(ctx, field)
+			case "environments":
+				return ec.fieldContext_Tenant_environments(ctx, field)
+			case "environment":
+				return ec.fieldContext_Tenant_environment(ctx, field)
+			case "created":
+				return ec.fieldContext_Tenant_created(ctx, field)
+			case "lastModified":
+				return ec.fieldContext_Tenant_lastModified(ctx, field)
+			case "warnings":
+				return ec.fieldContext_Tenant_warnings(ctx, field)
+			case "upgradeDelayDays":
+				return ec.fieldContext_Tenant_upgradeDelayDays(ctx, field)
+			case "clusterUpgradeHistory":
+				return ec.fieldContext_Tenant_clusterUpgradeHistory(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Tenant", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_tenantSetUpgradeDelayDays_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _NaisdWarning_message(ctx context.Context, field graphql.CollectedField, obj *model.NaisdWarning) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -11141,57 +11153,6 @@ func (ec *executionContext) fieldContext_Playground_errors(_ context.Context, fi
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_tenants(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Query_tenants,
-		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Query().Tenants(ctx)
-		},
-		nil,
-		ec.marshalNTenant2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐTenantᚄ,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Query_tenants(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Tenant_id(ctx, field)
-			case "name":
-				return ec.fieldContext_Tenant_name(ctx, field)
-			case "description":
-				return ec.fieldContext_Tenant_description(ctx, field)
-			case "environments":
-				return ec.fieldContext_Tenant_environments(ctx, field)
-			case "environment":
-				return ec.fieldContext_Tenant_environment(ctx, field)
-			case "created":
-				return ec.fieldContext_Tenant_created(ctx, field)
-			case "lastModified":
-				return ec.fieldContext_Tenant_lastModified(ctx, field)
-			case "warnings":
-				return ec.fieldContext_Tenant_warnings(ctx, field)
-			case "upgradeDelayDays":
-				return ec.fieldContext_Tenant_upgradeDelayDays(ctx, field)
-			case "clusterUpgradeHistory":
-				return ec.fieldContext_Tenant_clusterUpgradeHistory(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Tenant", field.Name)
 		},
 	}
 	return fc, nil
@@ -11975,6 +11936,57 @@ func (ec *executionContext) fieldContext_Query_clusterUpgradeHistory(ctx context
 	if fc.Args, err = ec.field_Query_clusterUpgradeHistory_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_tenants(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_tenants,
+		func(ctx context.Context) (any, error) {
+			return ec.resolvers.Query().Tenants(ctx)
+		},
+		nil,
+		ec.marshalNTenant2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐTenantᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_tenants(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Tenant_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Tenant_name(ctx, field)
+			case "description":
+				return ec.fieldContext_Tenant_description(ctx, field)
+			case "environments":
+				return ec.fieldContext_Tenant_environments(ctx, field)
+			case "environment":
+				return ec.fieldContext_Tenant_environment(ctx, field)
+			case "created":
+				return ec.fieldContext_Tenant_created(ctx, field)
+			case "lastModified":
+				return ec.fieldContext_Tenant_lastModified(ctx, field)
+			case "warnings":
+				return ec.fieldContext_Tenant_warnings(ctx, field)
+			case "upgradeDelayDays":
+				return ec.fieldContext_Tenant_upgradeDelayDays(ctx, field)
+			case "clusterUpgradeHistory":
+				return ec.fieldContext_Tenant_clusterUpgradeHistory(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Tenant", field.Name)
+		},
 	}
 	return fc, nil
 }
@@ -19018,20 +19030,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Mutation")
-		case "tenantCreate":
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_tenantCreate(ctx, field)
-			})
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "tenantSetUpgradeDelayDays":
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_tenantSetUpgradeDelayDays(ctx, field)
-			})
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		case "configurationCreate":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_configurationCreate(ctx, field)
@@ -19147,6 +19145,20 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "deleteHelmInstall":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_deleteHelmInstall(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "tenantCreate":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_tenantCreate(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "tenantSetUpgradeDelayDays":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_tenantSetUpgradeDelayDays(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -19353,28 +19365,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Query")
-		case "tenants":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_tenants(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "configuration":
 			field := field
 
@@ -19671,6 +19661,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_clusterUpgradeHistory(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "tenants":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_tenants(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}

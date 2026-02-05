@@ -24,11 +24,6 @@ func (r *mutationResolver) TenantSetUpgradeDelayDays(ctx context.Context, tenant
 	return r.Repo.TenantSetUpgradeDelayDays(ctx, tenantID, delayDays32)
 }
 
-// Tenants is the resolver for the tenants field.
-func (r *queryResolver) Tenants(ctx context.Context) ([]*model.Tenant, error) {
-	return r.Repo.TenantsGet(ctx)
-}
-
 // Tenant is the resolver for the tenant field.
 func (r *queryResolver) Tenant(ctx context.Context, id *uuid.UUID, slug *string) (*model.Tenant, error) {
 	if id != nil {
@@ -51,6 +46,11 @@ func (r *queryResolver) ClusterUpgradeHistory(ctx context.Context, limit *int, o
 	}
 
 	return r.Repo.ClusterUpgradeHistoryGetAll(ctx, limitValue, offsetValue)
+}
+
+// Tenants is the resolver for the tenants field.
+func (r *queryResolver) Tenants(ctx context.Context) ([]*model.Tenant, error) {
+	return r.Repo.TenantsGet(ctx)
 }
 
 // Environments is the resolver for the environments field.
@@ -87,14 +87,6 @@ func (r *tenantResolver) ClusterUpgradeHistory(ctx context.Context, obj *model.T
 	return r.Repo.ClusterUpgradeHistoryGetByTenant(ctx, obj.ID, limitValue, offsetValue)
 }
 
-func (r *Resolver) Mutation() graphgen.MutationResolver { return &mutationResolver{r} }
-
-func (r *Resolver) Query() graphgen.QueryResolver { return &queryResolver{r} }
-
 func (r *Resolver) Tenant() graphgen.TenantResolver { return &tenantResolver{r} }
 
-type (
-	mutationResolver struct{ *Resolver }
-	queryResolver    struct{ *Resolver }
-	tenantResolver   struct{ *Resolver }
-)
+type tenantResolver struct{ *Resolver }

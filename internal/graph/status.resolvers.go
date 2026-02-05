@@ -104,9 +104,4 @@ func (r *subscriptionResolver) Updates(ctx context.Context) (<-chan model.Update
 
 func (r *Resolver) Status() graphgen.StatusResolver { return &statusResolver{r} }
 
-func (r *Resolver) Subscription() graphgen.SubscriptionResolver { return &subscriptionResolver{r} }
-
-type (
-	statusResolver       struct{ *Resolver }
-	subscriptionResolver struct{ *Resolver }
-)
+type statusResolver struct{ *Resolver }
