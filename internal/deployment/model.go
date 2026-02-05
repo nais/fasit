@@ -186,3 +186,18 @@ func deploymentFromSQL(d deploymentsql.Deployment, fd deploymentsql.FeatureDatum
 		TargetLabels: environment.Labels(d.Target),
 	}, nil
 }
+
+func deployInstructionFromSQL(di deploymentsql.DeployInstruction) *model.DeployInstruction {
+	return &model.DeployInstruction{
+		ID:             di.ID,
+		EnvironmentID:  di.EnvironmentID,
+		DeploymentID:   di.DeploymentID,
+		FeatureName:    di.FeatureName,
+		FeatureVersion: di.FeatureVersion,
+		Status:         model.RolloutStatus(di.Status),
+		Hash:           di.Hash,
+		Created:        di.Created.Time,
+		LastModified:   di.LastModified.Time,
+		Values:         di.Values,
+	}
+}

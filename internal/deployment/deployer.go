@@ -15,7 +15,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/types"
 	"github.com/nais/fasit/internal/deployment/deploymentsql"
 	"github.com/nais/fasit/internal/environment"
@@ -37,15 +36,8 @@ type Publisher interface {
 
 type NewPublisher func(topicID string, log logrus.FieldLogger) Publisher
 
-type deployerRepo interface {
-	DeployInstructionsLatestForFeature(ctx context.Context, envID uuid.UUID, featureName string) (*model.DeployInstruction, error)
-	FeatureDataCreate(context.Context, model.Feature, *feature.FeatureTemplateDetails) error
-	FeatureVersionUpdate(ctx context.Context, name string, version string) error
-}
-
 type deployer struct {
 	publisher          NewPublisher
-	repo               deployerRepo
 	querier            deploymentsql.Querier
 	log                logrus.FieldLogger
 	deployMessages     metric.Int64Counter
@@ -59,12 +51,9 @@ func newDeployer(pool *pgxpool.Pool, querier deploymentsql.Querier, publisher Ne
 	if err != nil {
 		return nil, fmt.Errorf("create deploy messages counter: %w", err)
 	}
-	// temporary until relevant functions have been moved
-	repo := database.NewRepo(pool, log.WithField("subsystem", "database-repo"))
 
 	return &deployer{
 		publisher:          publisher,
-		repo:               repo,
 		querier:            querier,
 		log:                log,
 		deployMessages:     deployMessages,
@@ -210,7 +199,7 @@ func (d *deployer) deployToEnvironment(ctx context.Context, deployment *Deployme
 }
 
 func (d *deployer) shouldDeployToEnvironment(ctx context.Context, deployment *Deployment, environment *model.TenantEnvironment, hash string) (bool, error) {
-	existingDeploy, err := d.repo.DeployInstructionsLatestForFeature(ctx, environment.ID, deployment.Feature.Name)
+	existingDeploy, err := d.getLatestDeployInstructionForFeature(ctx, environment.ID, deployment.Feature.Name)
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
 			return false, fmt.Errorf("get deploy instructions latest for environment %q: %w", environment.Name, err)
@@ -295,7 +284,7 @@ func (d *deployer) CreateDeployment(ctx context.Context, feat *model.Feature, re
 		return uuid.Nil, fmt.Errorf("unable to parse feature template details: %w", err)
 	}
 
-	if err := d.repo.FeatureDataCreate(ctx, *feat, details); err != nil {
+	if err := d.featureManager.FeatureDataCreate(ctx, *feat, details); err != nil {
 		var pgErr *pgconn.PgError
 		if !errors.As(err, &pgErr) || pgErr.Code != "23505" {
 			return uuid.Nil, fmt.Errorf("unable to create feature data: %w", pgErr)
@@ -325,7 +314,7 @@ func (d *deployer) CreateDeployment(ctx context.Context, feat *model.Feature, re
 	}
 
 	if req.Global {
-		if err := d.repo.FeatureVersionUpdate(ctx, feat.Name, feat.Version); err != nil {
+		if err := d.featureManager.FeatureVersionUpdate(ctx, feat.Name, feat.Version); err != nil {
 			return uuid.Nil, fmt.Errorf("unable to update feature version: %w", err)
 		}
 	}
@@ -414,6 +403,18 @@ func (d *deployer) createDeployInstruction(ctx context.Context, envID uuid.UUID,
 		Values:         values,
 		DeploymentID:   deploymentID,
 	})
+}
+
+func (d *deployer) getLatestDeployInstructionForFeature(ctx context.Context, envID uuid.UUID, featureName string) (*model.DeployInstruction, error) {
+	di, err := d.querier.GetLatestDeployInstructionsForFeature(ctx, deploymentsql.GetLatestDeployInstructionsForFeatureParams{
+		EnvironmentID: envID,
+		FeatureName:   featureName,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return deployInstructionFromSQL(di), nil
 }
 
 // filterDeployments filters the deployments to only include the most specific deployment with the latest created

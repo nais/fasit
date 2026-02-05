@@ -77,3 +77,39 @@ func (q *Queries) DeployInstructionsByID(ctx context.Context, id uuid.UUID) (Dep
 	)
 	return i, err
 }
+
+const getLatestDeployInstructionsForFeature = `-- name: GetLatestDeployInstructionsForFeature :one
+SELECT
+	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, deployment_id
+FROM
+	deploy_instructions
+WHERE
+	feature_name = $1
+	AND environment_id = $2
+ORDER BY
+	created DESC
+LIMIT 1
+`
+
+type GetLatestDeployInstructionsForFeatureParams struct {
+	FeatureName   string
+	EnvironmentID uuid.UUID
+}
+
+func (q *Queries) GetLatestDeployInstructionsForFeature(ctx context.Context, arg GetLatestDeployInstructionsForFeatureParams) (DeployInstruction, error) {
+	row := q.db.QueryRow(ctx, getLatestDeployInstructionsForFeature, arg.FeatureName, arg.EnvironmentID)
+	var i DeployInstruction
+	err := row.Scan(
+		&i.ID,
+		&i.EnvironmentID,
+		&i.FeatureName,
+		&i.FeatureVersion,
+		&i.Status,
+		&i.Hash,
+		&i.Created,
+		&i.LastModified,
+		&i.Values,
+		&i.DeploymentID,
+	)
+	return i, err
+}

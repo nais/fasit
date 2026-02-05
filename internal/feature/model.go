@@ -3,6 +3,7 @@ package feature
 import (
 	"encoding/json"
 	"fmt"
+	"slices"
 
 	"github.com/nais/fasit/internal/feature/featuresql"
 	"github.com/nais/fasit/internal/feature/featureutil"
@@ -75,4 +76,13 @@ func validateFields(f *model.Feature, envKind model.EnvironmentKind, values []fe
 		}
 	}
 	return missing
+}
+
+func environmentKindToSQL(kinds []model.EnvironmentKind) []string {
+	ret := []string{}
+	for _, kind := range kinds {
+		ret = append(ret, kind.String())
+	}
+	slices.Sort(ret)
+	return ret
 }

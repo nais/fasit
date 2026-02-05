@@ -9,6 +9,8 @@ import (
 type Querier interface {
 	// orignal name: EnvConfigOnlyKnown
 	ConfigForEnvironmentFilteredByKeys(ctx context.Context, arg ConfigForEnvironmentFilteredByKeysParams) ([]ConfigForEnvironmentFilteredByKeysRow, error)
+	FeatureDataCreate(ctx context.Context, arg FeatureDataCreateParams) error
+	FeatureVersionUpdate(ctx context.Context, arg FeatureVersionUpdateParams) error
 	// original name: MappingValuesForTenant
 	ListMappingValuesForTenant(ctx context.Context, arg ListMappingValuesForTenantParams) ([]ListMappingValuesForTenantRow, error)
 }
