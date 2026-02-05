@@ -22,9 +22,6 @@ resolver:
 # Omit Query / Mutation models
 omit_root_models: true
 
-# Optional: turn on to exclude the gqlgen version in the generated file notice. No effect if `omit_gqlgen_file_notice` is true.
-omit_gqlgen_version_in_file_notice: true
-
 # Don't generate Get<FieldName> functions for fields included in the GraphQL interfaces
 omit_getters: true
 

@@ -3171,7 +3171,14 @@ extend type Mutation {
 	deleteHelmInstall(envID: ID!, name: String!): Boolean!
 }
 `, BuiltIn: false},
-	{Name: "../../../schema/scalars.graphqls", Input: `scalar Map
+	{Name: "../../../schema/scalars.graphqls", Input: `"""
+Map represents a key => value map.
+"""
+scalar Map
+
+"""
+RawMessage represents an arbitrary JSON value.
+"""
 scalar RawMessage
 
 """

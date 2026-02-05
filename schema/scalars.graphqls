@@ -1,4 +1,11 @@
+"""
+Map represents a key => value map.
+"""
 scalar Map
+
+"""
+RawMessage represents an arbitrary JSON value.
+"""
 scalar RawMessage
 
 """
