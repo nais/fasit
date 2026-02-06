@@ -9,11 +9,11 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/nais/fasit/internal/contextloader"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/deployment/deploymenttest"
 	"github.com/nais/fasit/internal/environment"
-	"github.com/nais/fasit/internal/fasit"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/naisdstatus"
@@ -131,15 +131,15 @@ func TestReconcile(t *testing.T) {
 			newPublisher := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
 				return mgr.publisher
 			}
-			setupContext, err := fasit.GetSetupContextFunc(mgr.db.pool, newPublisher, nil, meter, logger)
+			loadContext, err := contextloader.NewLoaderFunc(mgr.db.pool, newPublisher, nil, meter, logger)
 			if err != nil {
 				t.Fatalf("failed to get setup context: %v", err)
 			}
-			ctx = setupContext(ctx)
+			ctx = loadContext(ctx)
 
 			reconcilerCtx, cancel := context.WithCancel(ctx)
 			t.Cleanup(cancel)
-			reconcilerCtx = setupContext(reconcilerCtx)
+			reconcilerCtx = loadContext(reconcilerCtx)
 
 			mgr.db.createTenantsAndEnvironments(ctx, envsToCreate)
 			for _, input := range tc.deploymentsToCreate {
@@ -216,17 +216,17 @@ func TestReconcileWhenPreviousIsInProgress(t *testing.T) {
 	newPublisher := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
 		return mgr.publisher
 	}
-	setupContext, err := fasit.GetSetupContextFunc(mgr.db.pool, newPublisher, nil, meter, logger)
+	loadContext, err := contextloader.NewLoaderFunc(mgr.db.pool, newPublisher, nil, meter, logger)
 	if err != nil {
 		t.Fatalf("failed to get setup context: %v", err)
 	}
-	ctx = setupContext(ctx)
+	ctx = loadContext(ctx)
 
 	mgr.db.createTenantsAndEnvironments(ctx, envsToCreate)
 
 	reconcilerCtx, cancel := context.WithCancel(ctx)
 	t.Cleanup(cancel)
-	reconcilerCtx = setupContext(reconcilerCtx)
+	reconcilerCtx = loadContext(reconcilerCtx)
 
 	mgr.seeder.AddDeployment("feature-pending", "1.0.0", environment.Labels{"aiven": "enabled"})
 	err = mgr.seeder.Seed(ctx)

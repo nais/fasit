@@ -14,6 +14,7 @@ import (
 	"cloud.google.com/go/pubsub/v2"
 	"github.com/joho/godotenv"
 	"github.com/nais/fasit/internal/cluster"
+	"github.com/nais/fasit/internal/contextloader"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/notifier"
 	"github.com/nais/fasit/internal/deployment"
@@ -90,12 +91,12 @@ func Run(ctx context.Context) error {
 		return message.NewPublisher[message.DeployInstruction](pubSubClient, cfg.GCPProjectID, topicID, log)
 	}
 
-	setupContext, err := GetSetupContextFunc(pool, deploymentPublisher, rolloutPublisher, meter, log)
+	loadContext, err := contextloader.NewLoaderFunc(pool, deploymentPublisher, rolloutPublisher, meter, log)
 	if err != nil {
 		return fmt.Errorf("creating setup context: %w", err)
 	}
 
-	ctx = setupContext(ctx)
+	ctx = loadContext(ctx)
 	go deployment.GetManager(ctx).Run(ctx, 10*time.Minute)
 
 	statusMgr := message.NewSubscriber[message.Status](pubSubClient, cfg.GCPProjectID, cfg.StatusSubscriptionID, log)
@@ -157,7 +158,7 @@ func Run(ctx context.Context) error {
 	serverCtx, serverCancel := context.WithCancel(ctx)
 	defer serverCancel()
 
-	httpServer, err := newHttpServer(serverCtx, setupContext, cfg, repo, notifierService, rolloutPublisher, googleClient, meter, log)
+	httpServer, err := newHttpServer(serverCtx, loadContext, cfg, repo, notifierService, rolloutPublisher, googleClient, meter, log)
 	if err != nil {
 		return fmt.Errorf("error creating http server: %w", err)
 	}

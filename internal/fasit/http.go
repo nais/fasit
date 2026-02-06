@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/nais/fasit/internal/cluster"
+	"github.com/nais/fasit/internal/contextloader"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/notifier"
 	"github.com/nais/fasit/internal/graph"
@@ -19,7 +20,7 @@ import (
 
 func newHttpServer(
 	ctx context.Context,
-	setupContext SetupContextFunc,
+	loadContext contextloader.LoaderFunc,
 	cfg *Config,
 	repo database.Repo,
 	notifier *notifier.Notifier,
@@ -29,12 +30,12 @@ func newHttpServer(
 	log logrus.FieldLogger,
 ) (*http.Server, error) {
 	resolver := graph.NewResolver(ctx, repo, notifier, publisher, clusterClient, log)
-	graphServer, err := server.SetupGraph(setupContext, resolver, meter)
+	graphServer, err := server.SetupGraph(loadContext, resolver, meter)
 	if err != nil {
 		return nil, fmt.Errorf("setting up graph: %w", err)
 	}
 
-	router, err := server.SetupRouter(ctx, setupContext, cfg.IAPAudience, cfg.InsecureSkipProxy, cfg.InsecureSkipTokenCheck, graphServer, repo, log)
+	router, err := server.SetupRouter(ctx, loadContext, cfg.IAPAudience, cfg.InsecureSkipProxy, cfg.InsecureSkipTokenCheck, graphServer, repo, log)
 	if err != nil {
 		return nil, fmt.Errorf("setting up router: %w", err)
 	}

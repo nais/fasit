@@ -10,11 +10,11 @@ import (
 
 	"cloud.google.com/go/pubsub/v2"
 	"cloud.google.com/go/pubsub/v2/apiv1/pubsubpb"
+	"github.com/nais/fasit/internal/contextloader"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/deployment/deploymenttest"
 	"github.com/nais/fasit/internal/environment"
-	"github.com/nais/fasit/internal/fasit"
 	"github.com/nais/fasit/internal/provider/protogen"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/metric/noop"
@@ -140,11 +140,11 @@ func main() {
 	defer conn.Close()
 	grpcClient := protogen.NewProviderClient(conn)
 
-	setupContext, err := fasit.GetSetupContextFunc(dbConn, nil, nil, noop.NewMeterProvider().Meter(""), logrus.New())
+	loadContext, err := contextloader.NewLoaderFunc(dbConn, nil, nil, noop.NewMeterProvider().Meter(""), logrus.New())
 	if err != nil {
 		panic(err)
 	}
-	ctx = setupContext(ctx)
+	ctx = loadContext(ctx)
 	seeder := deploymenttest.NewSeeder()
 	deployment.ChartDownloader = seeder.ChartDownloader()
 

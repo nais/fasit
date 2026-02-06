@@ -8,6 +8,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/go-chi/chi/v5"
 	"github.com/nais/fasit/internal/auth"
+	"github.com/nais/fasit/internal/contextloader"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/rollout"
@@ -17,7 +18,7 @@ import (
 
 func SetupRouter(
 	ctx context.Context,
-	setupContext func(context.Context) context.Context,
+	loadContext contextloader.LoaderFunc,
 	iapAudience string,
 	insecureSkipProxy, insecureSkipTokenCheck bool,
 	graphHandler http.Handler,
@@ -36,7 +37,7 @@ func SetupRouter(
 	}
 
 	router := chi.NewMux()
-	router.Use(contextMiddleware(setupContext))
+	router.Use(contextMiddleware(loadContext))
 	router.Handle("/", iapMW(playground.Handler("GraphQL playground", "/query")))
 	router.Handle("/query", iapMW(graphHandler))
 	router.Handle("/metrics", promhttp.Handler())

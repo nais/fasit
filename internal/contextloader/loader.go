@@ -1,4 +1,4 @@
-package fasit
+package contextloader
 
 import (
 	"context"
@@ -13,15 +13,15 @@ import (
 	"go.opentelemetry.io/otel/metric"
 )
 
-type SetupContextFunc func(context.Context) context.Context
+type LoaderFunc func(context.Context) context.Context
 
-func GetSetupContextFunc(
+func NewLoaderFunc(
 	pool *pgxpool.Pool,
 	deploymentPublisher deployment.NewPublisher,
 	_ workers.NewPublisher,
 	meter metric.Meter,
 	log logrus.FieldLogger,
-) (SetupContextFunc, error) {
+) (LoaderFunc, error) {
 	deploymentManager, err := deployment.NewManager(pool, deploymentPublisher, meter, log)
 	if err != nil {
 		return nil, err
