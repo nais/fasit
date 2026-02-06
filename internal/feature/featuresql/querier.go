@@ -9,10 +9,16 @@ import (
 type Querier interface {
 	// orignal name: EnvConfigOnlyKnown
 	ConfigForEnvironmentFilteredByKeys(ctx context.Context, arg ConfigForEnvironmentFilteredByKeysParams) ([]ConfigForEnvironmentFilteredByKeysRow, error)
+	FeatureByName(ctx context.Context, name string) (FeatureByNameRow, error)
 	FeatureDataCreate(ctx context.Context, arg FeatureDataCreateParams) error
 	FeatureVersionUpdate(ctx context.Context, arg FeatureVersionUpdateParams) error
+	Features(ctx context.Context) ([]FeaturesRow, error)
+	FeaturesForKind(ctx context.Context, environmentKind string) ([]FeaturesForKindRow, error)
+	GetEnvironmentFeature(ctx context.Context, arg GetEnvironmentFeatureParams) (GetEnvironmentFeatureRow, error)
 	// original name: MappingValuesForTenant
 	ListMappingValuesForTenant(ctx context.Context, arg ListMappingValuesForTenantParams) ([]ListMappingValuesForTenantRow, error)
+	RolloutByName(ctx context.Context, name string) (RolloutByNameRow, error)
+	RolloutsForKind(ctx context.Context, environmentKind EnvironmentKind) ([]RolloutsForKindRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

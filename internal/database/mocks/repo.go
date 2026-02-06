@@ -4066,211 +4066,6 @@ func (_c *Repo_EnvironmentsGetByAutoUpgrade_Call) RunAndReturn(run func(ctx cont
 	return _c
 }
 
-// FeatureByName provides a mock function for the type Repo
-func (_mock *Repo) FeatureByName(ctx context.Context, name string) (*model.Feature, error) {
-	ret := _mock.Called(ctx, name)
-
-	if len(ret) == 0 {
-		panic("no return value specified for FeatureByName")
-	}
-
-	var r0 *model.Feature
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (*model.Feature, error)); ok {
-		return returnFunc(ctx, name)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) *model.Feature); ok {
-		r0 = returnFunc(ctx, name)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.Feature)
-		}
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = returnFunc(ctx, name)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Repo_FeatureByName_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FeatureByName'
-type Repo_FeatureByName_Call struct {
-	*mock.Call
-}
-
-// FeatureByName is a helper method to define mock.On call
-//   - ctx context.Context
-//   - name string
-func (_e *Repo_Expecter) FeatureByName(ctx interface{}, name interface{}) *Repo_FeatureByName_Call {
-	return &Repo_FeatureByName_Call{Call: _e.mock.On("FeatureByName", ctx, name)}
-}
-
-func (_c *Repo_FeatureByName_Call) Run(run func(ctx context.Context, name string)) *Repo_FeatureByName_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 string
-		if args[1] != nil {
-			arg1 = args[1].(string)
-		}
-		run(
-			arg0,
-			arg1,
-		)
-	})
-	return _c
-}
-
-func (_c *Repo_FeatureByName_Call) Return(feature *model.Feature, err error) *Repo_FeatureByName_Call {
-	_c.Call.Return(feature, err)
-	return _c
-}
-
-func (_c *Repo_FeatureByName_Call) RunAndReturn(run func(ctx context.Context, name string) (*model.Feature, error)) *Repo_FeatureByName_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// FeatureByNameForEnv provides a mock function for the type Repo
-func (_mock *Repo) FeatureByNameForEnv(ctx context.Context, name string, envID uuid.UUID) (*model.Feature, error) {
-	ret := _mock.Called(ctx, name, envID)
-
-	if len(ret) == 0 {
-		panic("no return value specified for FeatureByNameForEnv")
-	}
-
-	var r0 *model.Feature
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, uuid.UUID) (*model.Feature, error)); ok {
-		return returnFunc(ctx, name, envID)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, uuid.UUID) *model.Feature); ok {
-		r0 = returnFunc(ctx, name, envID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.Feature)
-		}
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string, uuid.UUID) error); ok {
-		r1 = returnFunc(ctx, name, envID)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Repo_FeatureByNameForEnv_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FeatureByNameForEnv'
-type Repo_FeatureByNameForEnv_Call struct {
-	*mock.Call
-}
-
-// FeatureByNameForEnv is a helper method to define mock.On call
-//   - ctx context.Context
-//   - name string
-//   - envID uuid.UUID
-func (_e *Repo_Expecter) FeatureByNameForEnv(ctx interface{}, name interface{}, envID interface{}) *Repo_FeatureByNameForEnv_Call {
-	return &Repo_FeatureByNameForEnv_Call{Call: _e.mock.On("FeatureByNameForEnv", ctx, name, envID)}
-}
-
-func (_c *Repo_FeatureByNameForEnv_Call) Run(run func(ctx context.Context, name string, envID uuid.UUID)) *Repo_FeatureByNameForEnv_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 string
-		if args[1] != nil {
-			arg1 = args[1].(string)
-		}
-		var arg2 uuid.UUID
-		if args[2] != nil {
-			arg2 = args[2].(uuid.UUID)
-		}
-		run(
-			arg0,
-			arg1,
-			arg2,
-		)
-	})
-	return _c
-}
-
-func (_c *Repo_FeatureByNameForEnv_Call) Return(feature *model.Feature, err error) *Repo_FeatureByNameForEnv_Call {
-	_c.Call.Return(feature, err)
-	return _c
-}
-
-func (_c *Repo_FeatureByNameForEnv_Call) RunAndReturn(run func(ctx context.Context, name string, envID uuid.UUID) (*model.Feature, error)) *Repo_FeatureByNameForEnv_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// FeatureDataCreate provides a mock function for the type Repo
-func (_mock *Repo) FeatureDataCreate(context1 context.Context, feature1 model.Feature, featureTemplateDetails *feature.FeatureTemplateDetails) error {
-	ret := _mock.Called(context1, feature1, featureTemplateDetails)
-
-	if len(ret) == 0 {
-		panic("no return value specified for FeatureDataCreate")
-	}
-
-	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, model.Feature, *feature.FeatureTemplateDetails) error); ok {
-		r0 = returnFunc(context1, feature1, featureTemplateDetails)
-	} else {
-		r0 = ret.Error(0)
-	}
-	return r0
-}
-
-// Repo_FeatureDataCreate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FeatureDataCreate'
-type Repo_FeatureDataCreate_Call struct {
-	*mock.Call
-}
-
-// FeatureDataCreate is a helper method to define mock.On call
-//   - context1 context.Context
-//   - feature1 model.Feature
-//   - featureTemplateDetails *feature.FeatureTemplateDetails
-func (_e *Repo_Expecter) FeatureDataCreate(context1 interface{}, feature1 interface{}, featureTemplateDetails interface{}) *Repo_FeatureDataCreate_Call {
-	return &Repo_FeatureDataCreate_Call{Call: _e.mock.On("FeatureDataCreate", context1, feature1, featureTemplateDetails)}
-}
-
-func (_c *Repo_FeatureDataCreate_Call) Run(run func(context1 context.Context, feature1 model.Feature, featureTemplateDetails *feature.FeatureTemplateDetails)) *Repo_FeatureDataCreate_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 model.Feature
-		if args[1] != nil {
-			arg1 = args[1].(model.Feature)
-		}
-		var arg2 *feature.FeatureTemplateDetails
-		if args[2] != nil {
-			arg2 = args[2].(*feature.FeatureTemplateDetails)
-		}
-		run(
-			arg0,
-			arg1,
-			arg2,
-		)
-	})
-	return _c
-}
-
-func (_c *Repo_FeatureDataCreate_Call) Return(err error) *Repo_FeatureDataCreate_Call {
-	_c.Call.Return(err)
-	return _c
-}
-
-func (_c *Repo_FeatureDataCreate_Call) RunAndReturn(run func(context1 context.Context, feature1 model.Feature, featureTemplateDetails *feature.FeatureTemplateDetails) error) *Repo_FeatureDataCreate_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // FeatureStateGet provides a mock function for the type Repo
 func (_mock *Repo) FeatureStateGet(ctx context.Context, envID uuid.UUID, featureName string) (*model.FeatureState, error) {
 	ret := _mock.Called(ctx, envID, featureName)
@@ -4346,8 +4141,8 @@ func (_c *Repo_FeatureStateGet_Call) RunAndReturn(run func(ctx context.Context, 
 }
 
 // FeatureStatesCreateOrUpdate provides a mock function for the type Repo
-func (_mock *Repo) FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature1 *model.Feature, enabled bool) (*model.FeatureState, error) {
-	ret := _mock.Called(ctx, envID, feature1, enabled)
+func (_mock *Repo) FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *model.Feature, enabled bool) (*model.FeatureState, error) {
+	ret := _mock.Called(ctx, envID, feature, enabled)
 
 	if len(ret) == 0 {
 		panic("no return value specified for FeatureStatesCreateOrUpdate")
@@ -4356,17 +4151,17 @@ func (_mock *Repo) FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.U
 	var r0 *model.FeatureState
 	var r1 error
 	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, *model.Feature, bool) (*model.FeatureState, error)); ok {
-		return returnFunc(ctx, envID, feature1, enabled)
+		return returnFunc(ctx, envID, feature, enabled)
 	}
 	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, *model.Feature, bool) *model.FeatureState); ok {
-		r0 = returnFunc(ctx, envID, feature1, enabled)
+		r0 = returnFunc(ctx, envID, feature, enabled)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.FeatureState)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, *model.Feature, bool) error); ok {
-		r1 = returnFunc(ctx, envID, feature1, enabled)
+		r1 = returnFunc(ctx, envID, feature, enabled)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -4381,13 +4176,13 @@ type Repo_FeatureStatesCreateOrUpdate_Call struct {
 // FeatureStatesCreateOrUpdate is a helper method to define mock.On call
 //   - ctx context.Context
 //   - envID uuid.UUID
-//   - feature1 *model.Feature
+//   - feature *model.Feature
 //   - enabled bool
-func (_e *Repo_Expecter) FeatureStatesCreateOrUpdate(ctx interface{}, envID interface{}, feature1 interface{}, enabled interface{}) *Repo_FeatureStatesCreateOrUpdate_Call {
-	return &Repo_FeatureStatesCreateOrUpdate_Call{Call: _e.mock.On("FeatureStatesCreateOrUpdate", ctx, envID, feature1, enabled)}
+func (_e *Repo_Expecter) FeatureStatesCreateOrUpdate(ctx interface{}, envID interface{}, feature interface{}, enabled interface{}) *Repo_FeatureStatesCreateOrUpdate_Call {
+	return &Repo_FeatureStatesCreateOrUpdate_Call{Call: _e.mock.On("FeatureStatesCreateOrUpdate", ctx, envID, feature, enabled)}
 }
 
-func (_c *Repo_FeatureStatesCreateOrUpdate_Call) Run(run func(ctx context.Context, envID uuid.UUID, feature1 *model.Feature, enabled bool)) *Repo_FeatureStatesCreateOrUpdate_Call {
+func (_c *Repo_FeatureStatesCreateOrUpdate_Call) Run(run func(ctx context.Context, envID uuid.UUID, feature *model.Feature, enabled bool)) *Repo_FeatureStatesCreateOrUpdate_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -4420,7 +4215,7 @@ func (_c *Repo_FeatureStatesCreateOrUpdate_Call) Return(featureState *model.Feat
 	return _c
 }
 
-func (_c *Repo_FeatureStatesCreateOrUpdate_Call) RunAndReturn(run func(ctx context.Context, envID uuid.UUID, feature1 *model.Feature, enabled bool) (*model.FeatureState, error)) *Repo_FeatureStatesCreateOrUpdate_Call {
+func (_c *Repo_FeatureStatesCreateOrUpdate_Call) RunAndReturn(run func(ctx context.Context, envID uuid.UUID, feature *model.Feature, enabled bool) (*model.FeatureState, error)) *Repo_FeatureStatesCreateOrUpdate_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -4489,205 +4284,6 @@ func (_c *Repo_FeatureStatesGet_Call) Return(featureStates []*model.FeatureState
 }
 
 func (_c *Repo_FeatureStatesGet_Call) RunAndReturn(run func(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)) *Repo_FeatureStatesGet_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// FeatureVersionUpdate provides a mock function for the type Repo
-func (_mock *Repo) FeatureVersionUpdate(ctx context.Context, name string, version string) error {
-	ret := _mock.Called(ctx, name, version)
-
-	if len(ret) == 0 {
-		panic("no return value specified for FeatureVersionUpdate")
-	}
-
-	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
-		r0 = returnFunc(ctx, name, version)
-	} else {
-		r0 = ret.Error(0)
-	}
-	return r0
-}
-
-// Repo_FeatureVersionUpdate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FeatureVersionUpdate'
-type Repo_FeatureVersionUpdate_Call struct {
-	*mock.Call
-}
-
-// FeatureVersionUpdate is a helper method to define mock.On call
-//   - ctx context.Context
-//   - name string
-//   - version string
-func (_e *Repo_Expecter) FeatureVersionUpdate(ctx interface{}, name interface{}, version interface{}) *Repo_FeatureVersionUpdate_Call {
-	return &Repo_FeatureVersionUpdate_Call{Call: _e.mock.On("FeatureVersionUpdate", ctx, name, version)}
-}
-
-func (_c *Repo_FeatureVersionUpdate_Call) Run(run func(ctx context.Context, name string, version string)) *Repo_FeatureVersionUpdate_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 string
-		if args[1] != nil {
-			arg1 = args[1].(string)
-		}
-		var arg2 string
-		if args[2] != nil {
-			arg2 = args[2].(string)
-		}
-		run(
-			arg0,
-			arg1,
-			arg2,
-		)
-	})
-	return _c
-}
-
-func (_c *Repo_FeatureVersionUpdate_Call) Return(err error) *Repo_FeatureVersionUpdate_Call {
-	_c.Call.Return(err)
-	return _c
-}
-
-func (_c *Repo_FeatureVersionUpdate_Call) RunAndReturn(run func(ctx context.Context, name string, version string) error) *Repo_FeatureVersionUpdate_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// Features provides a mock function for the type Repo
-func (_mock *Repo) Features(ctx context.Context) ([]*model.Feature, error) {
-	ret := _mock.Called(ctx)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Features")
-	}
-
-	var r0 []*model.Feature
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context) ([]*model.Feature, error)); ok {
-		return returnFunc(ctx)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context) []*model.Feature); ok {
-		r0 = returnFunc(ctx)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.Feature)
-		}
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = returnFunc(ctx)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Repo_Features_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Features'
-type Repo_Features_Call struct {
-	*mock.Call
-}
-
-// Features is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *Repo_Expecter) Features(ctx interface{}) *Repo_Features_Call {
-	return &Repo_Features_Call{Call: _e.mock.On("Features", ctx)}
-}
-
-func (_c *Repo_Features_Call) Run(run func(ctx context.Context)) *Repo_Features_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		run(
-			arg0,
-		)
-	})
-	return _c
-}
-
-func (_c *Repo_Features_Call) Return(features []*model.Feature, err error) *Repo_Features_Call {
-	_c.Call.Return(features, err)
-	return _c
-}
-
-func (_c *Repo_Features_Call) RunAndReturn(run func(ctx context.Context) ([]*model.Feature, error)) *Repo_Features_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// FeaturesForKind provides a mock function for the type Repo
-func (_mock *Repo) FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, ci bool) ([]*model.Feature, error) {
-	ret := _mock.Called(ctx, kind, ci)
-
-	if len(ret) == 0 {
-		panic("no return value specified for FeaturesForKind")
-	}
-
-	var r0 []*model.Feature
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, model.EnvironmentKind, bool) ([]*model.Feature, error)); ok {
-		return returnFunc(ctx, kind, ci)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, model.EnvironmentKind, bool) []*model.Feature); ok {
-		r0 = returnFunc(ctx, kind, ci)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.Feature)
-		}
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, model.EnvironmentKind, bool) error); ok {
-		r1 = returnFunc(ctx, kind, ci)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Repo_FeaturesForKind_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FeaturesForKind'
-type Repo_FeaturesForKind_Call struct {
-	*mock.Call
-}
-
-// FeaturesForKind is a helper method to define mock.On call
-//   - ctx context.Context
-//   - kind model.EnvironmentKind
-//   - ci bool
-func (_e *Repo_Expecter) FeaturesForKind(ctx interface{}, kind interface{}, ci interface{}) *Repo_FeaturesForKind_Call {
-	return &Repo_FeaturesForKind_Call{Call: _e.mock.On("FeaturesForKind", ctx, kind, ci)}
-}
-
-func (_c *Repo_FeaturesForKind_Call) Run(run func(ctx context.Context, kind model.EnvironmentKind, ci bool)) *Repo_FeaturesForKind_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 model.EnvironmentKind
-		if args[1] != nil {
-			arg1 = args[1].(model.EnvironmentKind)
-		}
-		var arg2 bool
-		if args[2] != nil {
-			arg2 = args[2].(bool)
-		}
-		run(
-			arg0,
-			arg1,
-			arg2,
-		)
-	})
-	return _c
-}
-
-func (_c *Repo_FeaturesForKind_Call) Return(features []*model.Feature, err error) *Repo_FeaturesForKind_Call {
-	_c.Call.Return(features, err)
-	return _c
-}
-
-func (_c *Repo_FeaturesForKind_Call) RunAndReturn(run func(ctx context.Context, kind model.EnvironmentKind, ci bool) ([]*model.Feature, error)) *Repo_FeaturesForKind_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -4812,80 +4408,6 @@ func (_c *Repo_GetConnPool_Call) RunAndReturn(run func() *pgxpool.Pool) *Repo_Ge
 	return _c
 }
 
-// GetEnvironmentFeature provides a mock function for the type Repo
-func (_mock *Repo) GetEnvironmentFeature(ctx context.Context, environmentID uuid.UUID, featureName string) (*model.Feature, error) {
-	ret := _mock.Called(ctx, environmentID, featureName)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetEnvironmentFeature")
-	}
-
-	var r0 *model.Feature
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, string) (*model.Feature, error)); ok {
-		return returnFunc(ctx, environmentID, featureName)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, string) *model.Feature); ok {
-		r0 = returnFunc(ctx, environmentID, featureName)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.Feature)
-		}
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, string) error); ok {
-		r1 = returnFunc(ctx, environmentID, featureName)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Repo_GetEnvironmentFeature_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetEnvironmentFeature'
-type Repo_GetEnvironmentFeature_Call struct {
-	*mock.Call
-}
-
-// GetEnvironmentFeature is a helper method to define mock.On call
-//   - ctx context.Context
-//   - environmentID uuid.UUID
-//   - featureName string
-func (_e *Repo_Expecter) GetEnvironmentFeature(ctx interface{}, environmentID interface{}, featureName interface{}) *Repo_GetEnvironmentFeature_Call {
-	return &Repo_GetEnvironmentFeature_Call{Call: _e.mock.On("GetEnvironmentFeature", ctx, environmentID, featureName)}
-}
-
-func (_c *Repo_GetEnvironmentFeature_Call) Run(run func(ctx context.Context, environmentID uuid.UUID, featureName string)) *Repo_GetEnvironmentFeature_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 uuid.UUID
-		if args[1] != nil {
-			arg1 = args[1].(uuid.UUID)
-		}
-		var arg2 string
-		if args[2] != nil {
-			arg2 = args[2].(string)
-		}
-		run(
-			arg0,
-			arg1,
-			arg2,
-		)
-	})
-	return _c
-}
-
-func (_c *Repo_GetEnvironmentFeature_Call) Return(feature1 *model.Feature, err error) *Repo_GetEnvironmentFeature_Call {
-	_c.Call.Return(feature1, err)
-	return _c
-}
-
-func (_c *Repo_GetEnvironmentFeature_Call) RunAndReturn(run func(ctx context.Context, environmentID uuid.UUID, featureName string) (*model.Feature, error)) *Repo_GetEnvironmentFeature_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // HelmValueDiffGet provides a mock function for the type Repo
 func (_mock *Repo) HelmValueDiffGet(ctx context.Context, di *model.DeployInstruction) (*model.HelmValueDiff, error) {
 	ret := _mock.Called(ctx, di)
@@ -4955,8 +4477,8 @@ func (_c *Repo_HelmValueDiffGet_Call) RunAndReturn(run func(ctx context.Context,
 }
 
 // HelmValues provides a mock function for the type Repo
-func (_mock *Repo) HelmValues(ctx context.Context, feature1 *model.Feature, envID uuid.UUID) (map[string]any, error) {
-	ret := _mock.Called(ctx, feature1, envID)
+func (_mock *Repo) HelmValues(ctx context.Context, feature *model.Feature, envID uuid.UUID) (map[string]any, error) {
+	ret := _mock.Called(ctx, feature, envID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for HelmValues")
@@ -4965,17 +4487,17 @@ func (_mock *Repo) HelmValues(ctx context.Context, feature1 *model.Feature, envI
 	var r0 map[string]any
 	var r1 error
 	if returnFunc, ok := ret.Get(0).(func(context.Context, *model.Feature, uuid.UUID) (map[string]any, error)); ok {
-		return returnFunc(ctx, feature1, envID)
+		return returnFunc(ctx, feature, envID)
 	}
 	if returnFunc, ok := ret.Get(0).(func(context.Context, *model.Feature, uuid.UUID) map[string]any); ok {
-		r0 = returnFunc(ctx, feature1, envID)
+		r0 = returnFunc(ctx, feature, envID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(map[string]any)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, *model.Feature, uuid.UUID) error); ok {
-		r1 = returnFunc(ctx, feature1, envID)
+		r1 = returnFunc(ctx, feature, envID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -4989,13 +4511,13 @@ type Repo_HelmValues_Call struct {
 
 // HelmValues is a helper method to define mock.On call
 //   - ctx context.Context
-//   - feature1 *model.Feature
+//   - feature *model.Feature
 //   - envID uuid.UUID
-func (_e *Repo_Expecter) HelmValues(ctx interface{}, feature1 interface{}, envID interface{}) *Repo_HelmValues_Call {
-	return &Repo_HelmValues_Call{Call: _e.mock.On("HelmValues", ctx, feature1, envID)}
+func (_e *Repo_Expecter) HelmValues(ctx interface{}, feature interface{}, envID interface{}) *Repo_HelmValues_Call {
+	return &Repo_HelmValues_Call{Call: _e.mock.On("HelmValues", ctx, feature, envID)}
 }
 
-func (_c *Repo_HelmValues_Call) Run(run func(ctx context.Context, feature1 *model.Feature, envID uuid.UUID)) *Repo_HelmValues_Call {
+func (_c *Repo_HelmValues_Call) Run(run func(ctx context.Context, feature *model.Feature, envID uuid.UUID)) *Repo_HelmValues_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -5023,7 +4545,7 @@ func (_c *Repo_HelmValues_Call) Return(values map[string]any, err error) *Repo_H
 	return _c
 }
 
-func (_c *Repo_HelmValues_Call) RunAndReturn(run func(ctx context.Context, feature1 *model.Feature, envID uuid.UUID) (map[string]any, error)) *Repo_HelmValues_Call {
+func (_c *Repo_HelmValues_Call) RunAndReturn(run func(ctx context.Context, feature *model.Feature, envID uuid.UUID) (map[string]any, error)) *Repo_HelmValues_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -5882,74 +5404,6 @@ func (_c *Repo_RolloutByID_Call) Return(rollout *model.Rollout, err error) *Repo
 }
 
 func (_c *Repo_RolloutByID_Call) RunAndReturn(run func(ctx context.Context, id uuid.UUID) (*model.Rollout, error)) *Repo_RolloutByID_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// RolloutByName provides a mock function for the type Repo
-func (_mock *Repo) RolloutByName(ctx context.Context, name string) (*model.Feature, error) {
-	ret := _mock.Called(ctx, name)
-
-	if len(ret) == 0 {
-		panic("no return value specified for RolloutByName")
-	}
-
-	var r0 *model.Feature
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (*model.Feature, error)); ok {
-		return returnFunc(ctx, name)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) *model.Feature); ok {
-		r0 = returnFunc(ctx, name)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.Feature)
-		}
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = returnFunc(ctx, name)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Repo_RolloutByName_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RolloutByName'
-type Repo_RolloutByName_Call struct {
-	*mock.Call
-}
-
-// RolloutByName is a helper method to define mock.On call
-//   - ctx context.Context
-//   - name string
-func (_e *Repo_Expecter) RolloutByName(ctx interface{}, name interface{}) *Repo_RolloutByName_Call {
-	return &Repo_RolloutByName_Call{Call: _e.mock.On("RolloutByName", ctx, name)}
-}
-
-func (_c *Repo_RolloutByName_Call) Run(run func(ctx context.Context, name string)) *Repo_RolloutByName_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 string
-		if args[1] != nil {
-			arg1 = args[1].(string)
-		}
-		run(
-			arg0,
-			arg1,
-		)
-	})
-	return _c
-}
-
-func (_c *Repo_RolloutByName_Call) Return(feature1 *model.Feature, err error) *Repo_RolloutByName_Call {
-	_c.Call.Return(feature1, err)
-	return _c
-}
-
-func (_c *Repo_RolloutByName_Call) RunAndReturn(run func(ctx context.Context, name string) (*model.Feature, error)) *Repo_RolloutByName_Call {
 	_c.Call.Return(run)
 	return _c
 }

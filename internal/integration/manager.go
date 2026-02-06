@@ -216,7 +216,7 @@ func TestRunner(ctx context.Context, skipSetup bool) (*testmanager.Manager, erro
 		Doc:  "Reconcile all environments",
 		Func: func(L *lua.LState) int {
 			rolloutReconciler := L.Context().Value(reconcilerKey).(*workers.Reconciler)
-			if err := rolloutReconciler.Reconcile(ctx); err != nil {
+			if err := rolloutReconciler.Reconcile(L.Context()); err != nil {
 				L.RaiseError("failed to reconcile: %s", err)
 			}
 

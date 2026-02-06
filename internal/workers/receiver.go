@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/internal/database"
+	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/naisdstatus"
@@ -34,11 +35,9 @@ type ReceiverStore interface {
 	EnvironmentCreate(ctx context.Context, t *model.EnvironmentCreate) (*model.Environment, error)
 	EnvironmentGet(ctx context.Context, id uuid.UUID) (*model.Environment, error)
 	EnvironmentIDByNames(ctx context.Context, tenantName string, environmentName string) (uuid.UUID, error)
-	FeatureVersionUpdate(ctx context.Context, name string, version string) error
 	KubernetesNodeSync(ctx context.Context, envID uuid.UUID, kn *message.KubernetesNodes) error
 	LogCreate(ctx context.Context, deployInstructionID uuid.UUID, lines []message.LogLine) error
 	ReleaseStatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Release) error
-	RolloutByName(ctx context.Context, name string) (*model.Feature, error)
 	RolloutCalculateDone(ctx context.Context, rolloutID uuid.UUID) (bool, error)
 	RolloutDelete(ctx context.Context, name string) error
 	RolloutEventCreate(ctx context.Context, rollout uuid.UUID, failure bool, message string, data map[string]any) error
@@ -167,7 +166,7 @@ func (r *Receiver) handleCI(ctx context.Context, env *model.Environment, di *mod
 	featureName := di.FeatureName
 	featureVersion := di.FeatureVersion
 
-	rollout, err := r.repo.RolloutByName(ctx, featureName)
+	rollout, err := feature.RolloutByName(ctx, featureName)
 	if err != nil {
 		if !errors.Is(err, pgx.ErrNoRows) {
 			return fmt.Errorf("getting rollout: %w", err)
@@ -240,7 +239,7 @@ func (r *Receiver) handleCI(ctx context.Context, env *model.Environment, di *mod
 			return nil
 		}
 
-		if err := repo.FeatureVersionUpdate(ctx, rollout.Name, rollout.Version); err != nil {
+		if err := feature.FeatureVersionUpdate(ctx, rollout.Name, rollout.Version); err != nil {
 			return fmt.Errorf("updating feature version: %w", err)
 		}
 

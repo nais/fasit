@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	pgx "github.com/jackc/pgx/v5"
+	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/graphgen"
 	"github.com/nais/fasit/internal/graph/model"
 )
@@ -34,7 +35,7 @@ func (r *mutationResolver) DeleteHelmInstall(ctx context.Context, envID uuid.UUI
 		return false, err
 	}
 
-	_, err = r.Repo.FeatureByNameForEnv(ctx, name, env.ID)
+	_, err = featurepkg.FeatureByNameForEnv(ctx, name, env.ID)
 	if err != nil {
 		// If feature is not found, we allow deletion of helm install
 		if !errors.Is(err, pgx.ErrNoRows) {

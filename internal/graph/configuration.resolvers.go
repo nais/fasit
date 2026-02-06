@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 	pgx "github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/internal/deployment"
-	"github.com/nais/fasit/internal/feature"
+	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/graphgen"
 	"github.com/nais/fasit/internal/graph/model"
 )
@@ -24,7 +24,7 @@ func (r *configurationsResolver) Configuration(ctx context.Context, obj *model.C
 	var kind model.EnvironmentKind
 
 	if obj.EnvID != nil && *obj.EnvID != uuid.Nil {
-		feat, err = r.Repo.FeatureByNameForEnv(ctx, obj.FeatureName, *obj.EnvID)
+		feat, err = featurepkg.FeatureByNameForEnv(ctx, obj.FeatureName, *obj.EnvID)
 		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 			return nil, err
 		}
@@ -46,14 +46,14 @@ func (r *configurationsResolver) Configuration(ctx context.Context, obj *model.C
 		}
 
 		if obj.RolloutID != uuid.Nil {
-			feat, err = r.Repo.RolloutByName(ctx, obj.FeatureName)
+			feat, err = featurepkg.RolloutByName(ctx, obj.FeatureName)
 			if err != nil {
 				return nil, err
 			}
 		}
 
 		if feat == nil {
-			feat, err = r.Repo.FeatureByName(ctx, obj.FeatureName)
+			feat, err = featurepkg.FeatureByName(ctx, obj.FeatureName)
 			if err != nil {
 				return nil, err
 			}
@@ -136,7 +136,7 @@ func (r *configurationsResolver) Computed(ctx context.Context, obj *model.Config
 	if obj.EnvID == nil || *obj.EnvID == uuid.Nil {
 		return nil, nil
 	}
-	f, err := r.Repo.FeatureByNameForEnv(ctx, obj.FeatureName, *obj.EnvID)
+	f, err := featurepkg.FeatureByNameForEnv(ctx, obj.FeatureName, *obj.EnvID)
 	if err != nil {
 		return nil, fmt.Errorf("get feature by name for environment: %w", err)
 	}
@@ -148,7 +148,7 @@ func (r *configurationsResolver) Computed(ctx context.Context, obj *model.Config
 	computed := f.Values.Computed()
 
 	generated := map[string]any{}
-	if err := feature.Generate(computed, kind, cv, generated); err != nil {
+	if err := featurepkg.Generate(computed, kind, cv, generated); err != nil {
 		return nil, fmt.Errorf("generate computed values: %w", err)
 	}
 
@@ -177,11 +177,11 @@ func (r *mutationResolver) ConfigurationCreate(ctx context.Context, configuratio
 	var err error
 
 	if configuration.EnvironmentID != nil && *configuration.EnvironmentID != uuid.Nil {
-		feature, err = r.Repo.FeatureByNameForEnv(ctx, configuration.Feature, *configuration.EnvironmentID)
+		feature, err = featurepkg.FeatureByNameForEnv(ctx, configuration.Feature, *configuration.EnvironmentID)
 	} else {
-		feature, err = r.Repo.FeatureByName(ctx, configuration.Feature)
+		feature, err = featurepkg.FeatureByName(ctx, configuration.Feature)
 		if errors.Is(err, pgx.ErrNoRows) {
-			feature, err = r.Repo.RolloutByName(ctx, configuration.Feature)
+			feature, err = featurepkg.RolloutByName(ctx, configuration.Feature)
 		}
 	}
 	if err != nil {
@@ -241,7 +241,7 @@ func (r *queryResolver) HelmValues(ctx context.Context, feature string, envID *u
 		}
 		envID = &e.ID
 	}
-	f, err := r.Repo.FeatureByNameForEnv(ctx, feature, *envID)
+	f, err := featurepkg.FeatureByNameForEnv(ctx, feature, *envID)
 	if err != nil {
 		return nil, err
 	}

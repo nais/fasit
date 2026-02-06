@@ -7,8 +7,10 @@ import (
 	"errors"
 	"fmt"
 	"slices"
+	"sort"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/errs"
@@ -18,14 +20,16 @@ import (
 
 type ctxKey int
 
-const querierKey ctxKey = iota
+// QuerierKey is exposed for testing to override querier with mocks.
+// Avoid usage by e.g. using testcontainers.
+const QuerierKey ctxKey = iota
 
 func Register(ctx context.Context, pool *pgxpool.Pool) context.Context {
-	return context.WithValue(ctx, querierKey, featuresql.New(pool))
+	return context.WithValue(ctx, QuerierKey, featuresql.New(pool))
 }
 
 func querier(ctx context.Context) featuresql.Querier {
-	return ctx.Value(querierKey).(featuresql.Querier)
+	return ctx.Value(QuerierKey).(featuresql.Querier)
 }
 
 func HelmValues(ctx context.Context, f *model.Feature, envID uuid.UUID) (map[string]any, error) {
@@ -170,4 +174,156 @@ func FeatureVersionUpdate(ctx context.Context, name string, version string) erro
 		Name:    name,
 		Version: version,
 	})
+}
+
+// TODO: rename to FeatureFromRollout or something similar
+func RolloutByName(ctx context.Context, name string) (*model.Feature, error) {
+	f, err := querier(ctx).RolloutByName(ctx, name)
+	if err != nil {
+		return nil, fmt.Errorf("get rollout by name from db: %w", err)
+	}
+
+	feature, err := featureFromSQL(f.FeatureDatum)
+	if err != nil {
+		return nil, fmt.Errorf("make feature: %w", err)
+	}
+	feature.GraphVars = struct {
+		EnvironmentID uuid.UUID
+		RolloutID     uuid.UUID
+	}{
+		RolloutID: f.ID,
+	}
+
+	return feature, nil
+}
+
+func FeatureByName(ctx context.Context, name string) (*model.Feature, error) {
+	f, err := querier(ctx).FeatureByName(ctx, name)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			r, err := RolloutByName(ctx, name)
+			if err == nil {
+				return r, nil
+			} else if !errors.Is(err, pgx.ErrNoRows) {
+				return nil, fmt.Errorf("get rollout by name from db: %w", err)
+			}
+
+		}
+
+		return nil, fmt.Errorf("get feature by name from db: %w", err)
+	}
+
+	return featureFromSQL(f.FeatureDatum)
+}
+
+// TODO: rename function as it is not by env, but by rollout if ci
+// TODO: enviromentfeatures are a deployment concept, should be moved to deployment repo, but then we need to refactor repos first
+func FeatureByNameForEnv(ctx context.Context, name string, envID uuid.UUID) (*model.Feature, error) {
+	feat, err := GetEnvironmentFeature(ctx, envID, name)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		return nil, fmt.Errorf("get environment feature from db: %w", err)
+	}
+
+	if feat != nil {
+		return feat, nil
+	}
+
+	env, err := environment.Get(ctx, envID)
+	if err != nil {
+		return nil, fmt.Errorf("get environment from db: %w", err)
+	}
+
+	if env.CI {
+		roll, err := RolloutByName(ctx, name)
+		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+			return nil, fmt.Errorf("get rollout by name from db: %w", err)
+		}
+
+		if roll != nil {
+			return roll, nil
+		}
+	}
+
+	return FeatureByName(ctx, name)
+}
+
+func GetEnvironmentFeature(ctx context.Context, environmentID uuid.UUID, featureName string) (*model.Feature, error) {
+	f, err := querier(ctx).GetEnvironmentFeature(ctx, featuresql.GetEnvironmentFeatureParams{
+		EnvironmentID: environmentID,
+		FeatureName:   featureName,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	feature, err := featureFromSQL(f.FeatureDatum)
+	if err != nil {
+		return nil, fmt.Errorf("make feature: %w", err)
+	}
+	feature.HasDeployments = true
+
+	return feature, nil
+}
+
+func Features(ctx context.Context) ([]*model.Feature, error) {
+	features, err := querier(ctx).Features(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("get features from db: %w", err)
+	}
+
+	var ret []*model.Feature
+	for _, f := range features {
+		feature, err := featureFromSQL(f.FeatureDatum)
+		if err != nil {
+			return nil, fmt.Errorf("make feature: %w", err)
+		}
+
+		ret = append(ret, feature)
+	}
+
+	return ret, nil
+}
+
+func FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, ci bool) ([]*model.Feature, error) {
+	features, err := querier(ctx).FeaturesForKind(ctx, kind.String())
+	if err != nil {
+		return nil, err
+	}
+
+	if !ci {
+		ret, err := featuresFromSQL(features)
+		if err != nil {
+			return nil, err
+		}
+
+		return ret, nil
+	}
+
+	rollouts, err := querier(ctx).RolloutsForKind(ctx, featuresql.EnvironmentKind(kind))
+	if err != nil {
+		return nil, err
+	}
+
+	for _, ro := range rollouts {
+		for i, f := range features {
+			if f.FeatureDatum.Name == ro.FeatureDatum.Name {
+				// delete feature from slice
+				features = append(features[:i], features[i+1:]...)
+				break
+			}
+		}
+	}
+
+	for _, ro := range rollouts {
+		features = append(features, featuresql.FeaturesForKindRow{
+			FeatureDatum:   ro.FeatureDatum,
+			Hasdeployments: ro.Hasdeployments,
+		})
+	}
+
+	sort.Slice(features, func(i, j int) bool {
+		return features[i].FeatureDatum.Name < features[j].FeatureDatum.Name
+	})
+
+	return featuresFromSQL(features)
 }

@@ -1,4 +1,4 @@
-package workers
+package workers_test
 
 import (
 	"context"
@@ -10,10 +10,12 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/nais/fasit/internal/database/mocks"
 	"github.com/nais/fasit/internal/database/notifier"
+	"github.com/nais/fasit/internal/feature/featuretest"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/naisdstatus/naisdstatussql"
 	"github.com/nais/fasit/internal/naisdstatus/naisdstatustest"
+	"github.com/nais/fasit/internal/workers"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/mock"
 	"go.opentelemetry.io/otel/metric/noop"
@@ -209,7 +211,7 @@ func TestReconcile(t *testing.T) {
 	for name, tt := range reconcileTests {
 		t.Run(name, func(t *testing.T) {
 			ctx := context.Background()
-			ctx = naisdstatustest.Register(ctx, t)
+			ctx = naisdstatustest.RegisterMock(ctx, t)
 			statusQuerier := naisdstatustest.GetQuerier(ctx)
 
 			repo := mocks.NewRepo(t)
@@ -224,11 +226,15 @@ func TestReconcile(t *testing.T) {
 
 			repo.On("TenantEnvironments", mock.Anything, true).Return(te, nil)
 
+			ctx = featuretest.RegisterMock(ctx, t)
+
 			for _, te := range tt.environments {
 				if len(tt.want) > 0 {
 					repo.EXPECT().DeployInstructionCreate(mock.Anything, te.Environment.ID, mock.IsType(&model.Feature{}), mock.IsType(""), mock.IsType(&uuid.UUID{})).Return(tt.want[0].ID, nil).Once()
 				}
-				repo.On("FeaturesForKind", mock.Anything, te.Environment.Kind, te.Environment.CI).Return(tt.features, nil)
+				// repo.On("FeaturesForKind", mock.Anything, te.Environment.Kind, te.Environment.CI).Return(tt.features, nil)
+				featuretest.OnFeaturesForKind(ctx, te.Environment.Kind, tt.features)
+
 				repo.On("DeployInstructionsLatestForEnvironment", mock.Anything, te.Environment.ID).Return(te.Status, nil)
 				repo.On("FeatureStatesGet", mock.Anything, te.Environment.ID).Return(te.FeatureStates, nil)
 				repo.On("HelmValues", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, nil).Maybe()
@@ -249,11 +255,12 @@ func TestReconcile(t *testing.T) {
 
 			messages := []message.DeployInstruction{}
 
-			publisher := func(topicID string, log logrus.FieldLogger) Publisher {
+			meter := noop.NewMeterProvider().Meter("test")
+			publisher := func(topicID string, log logrus.FieldLogger) workers.Publisher {
 				return &mockPublisher{topicID: topicID, messages: &messages}
 			}
 
-			reconciler, err := NewReconciler(repo, publisher, &mockNotifier{}, noop.NewMeterProvider().Meter(""), logrus.NewEntry(logrus.StandardLogger()))
+			reconciler, err := workers.NewReconciler(repo, publisher, &mockNotifier{}, meter, logrus.NewEntry(logrus.StandardLogger()))
 			if err != nil {
 				t.Fatal(err)
 			}

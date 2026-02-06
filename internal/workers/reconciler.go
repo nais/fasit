@@ -14,6 +14,7 @@ import (
 	"github.com/nais/fasit/internal/auth"
 	"github.com/nais/fasit/internal/database/notifier"
 	"github.com/nais/fasit/internal/errs"
+	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/naisdstatus"
@@ -25,7 +26,6 @@ import (
 type ReconcilerStore interface {
 	DeployInstructionCreate(ctx context.Context, envID uuid.UUID, feature *model.Feature, hash string, deploymentID *uuid.UUID) (uuid.UUID, error)
 	DeployInstructionsLatestForEnvironment(ctx context.Context, envID uuid.UUID) ([]*model.DeployInstruction, error)
-	FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, ci bool) ([]*model.Feature, error)
 	FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *model.Feature, enabled bool) (*model.FeatureState, error)
 	FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
 	HelmValues(ctx context.Context, feature *model.Feature, envID uuid.UUID) (map[string]any, error)
@@ -240,7 +240,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, e *model.TenantEn
 	mgr := r.publisher(NaisdTopicID(e.TenantName, e.Name), r.log)
 	defer mgr.Stop()
 
-	features, err := r.repo.FeaturesForKind(ctx, e.Kind, e.CI)
+	features, err := featurepkg.FeaturesForKind(ctx, e.Kind, e.CI)
 	if err != nil {
 		return fmt.Errorf("features for kind: %w", err)
 	}

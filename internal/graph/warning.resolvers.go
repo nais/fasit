@@ -3,13 +3,14 @@ package graph
 import (
 	"context"
 
+	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/graphgen"
 	"github.com/nais/fasit/internal/graph/model"
 )
 
 // Feature is the resolver for the feature field.
 func (r *featureWarningResolver) Feature(ctx context.Context, obj *model.FeatureWarning) (*model.Feature, error) {
-	return r.Repo.FeatureByNameForEnv(ctx, obj.FeatureName, obj.EnvironmentID)
+	return featurepkg.FeatureByNameForEnv(ctx, obj.FeatureName, obj.EnvironmentID)
 }
 
 // Environment is the resolver for the environment field.

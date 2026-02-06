@@ -81,17 +81,10 @@ type Querier interface {
 	EnvironmentValuesForEnvironment(ctx context.Context, arg EnvironmentValuesForEnvironmentParams) ([]EnvironmentValuesForEnvironmentRow, error)
 	EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]Environment, error)
 	EnvironmentsGetByAutoUpgrade(ctx context.Context) ([]Environment, error)
-	FeatureByName(ctx context.Context, name string) (FeatureByNameRow, error)
-	FeatureDataCreate(ctx context.Context, arg FeatureDataCreateParams) error
-	FeatureGetForEnv(ctx context.Context, environmentKind string) ([]FeatureGetForEnvRow, error)
 	FeatureStateCreateOrUpdate(ctx context.Context, arg FeatureStateCreateOrUpdateParams) (FeatureState, error)
 	FeatureStateGet(ctx context.Context, arg FeatureStateGetParams) (FeatureState, error)
 	FeatureStatesGet(ctx context.Context, environmentID uuid.UUID) ([]FeatureStatesGetRow, error)
 	FeatureStatesGetOld(ctx context.Context, environmentID uuid.UUID) ([]FeatureStatesGetOldRow, error)
-	FeatureVersionUpdate(ctx context.Context, arg FeatureVersionUpdateParams) error
-	Features(ctx context.Context) ([]FeaturesRow, error)
-	FeaturesForKind(ctx context.Context, environmentKind string) ([]FeaturesForKindRow, error)
-	GetEnvironmentFeature(ctx context.Context, arg GetEnvironmentFeatureParams) (GetEnvironmentFeatureRow, error)
 	KubernetesNodeCreateOrUpdate(ctx context.Context, arg KubernetesNodeCreateOrUpdateParams) error
 	KubernetesNodeDeleteObsolete(ctx context.Context, environmentID uuid.UUID) error
 	KubernetesNodeStatuses(ctx context.Context, environmentID uuid.UUID) ([]KubernetesNodeStatus, error)
@@ -105,7 +98,6 @@ type Querier interface {
 	ReleaseStatusesGet(ctx context.Context, environmentID uuid.UUID) ([]ReleaseStatus, error)
 	RolloutAssignDeployInstruction(ctx context.Context, arg RolloutAssignDeployInstructionParams) error
 	RolloutByID(ctx context.Context, id uuid.UUID) (Rollout, error)
-	RolloutByName(ctx context.Context, name string) (RolloutByNameRow, error)
 	RolloutByNameAndVersion(ctx context.Context, arg RolloutByNameAndVersionParams) (Rollout, error)
 	RolloutCalculateDone(ctx context.Context, rolloutID uuid.UUID) (bool, error)
 	RolloutComplete(ctx context.Context, featureName string) error

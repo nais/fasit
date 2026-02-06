@@ -49,12 +49,9 @@ type Repo interface {
 	ConfigRepo
 	CostRepo
 	DeployInstructionRepo
-	DeploymentRepo
 	EnvironmentRepo
 	EnvironmentValueRepo
-	FeatureDataRepo
 	FeatureStateRepo
-	FeaturesRepo
 	KubernetesNodeRepo
 	LogRepo
 	ReleaseStatusRepo
