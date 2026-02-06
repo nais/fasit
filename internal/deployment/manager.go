@@ -16,15 +16,19 @@ import (
 )
 
 type Manager struct {
-	deployer        *deployer
-	reconciler      *reconciler
-	querier         deploymentsql.Querier
-	chartDownloader ChartDownloader
-	log             logrus.FieldLogger
-	pool            *pgxpool.Pool
+	deployer   *deployer
+	reconciler *reconciler
+	querier    deploymentsql.Querier
+	log        logrus.FieldLogger
+	pool       *pgxpool.Pool
 }
 
-type ChartDownloader func(chartURL, version string) (*model.Feature, error)
+type ChartDownloaderFunc func(chartURL, version string) (*model.Feature, error)
+
+// Override for testing
+var ChartDownloader = func(chartURL, version string) (*model.Feature, error) {
+	return model.FromChart(chartURL, version)
+}
 
 // TODO: check if we can use same request as in graphql
 type Request struct {
@@ -38,12 +42,6 @@ type Request struct {
 }
 
 type Option func(*Manager)
-
-func WithChartDownloader(downloader ChartDownloader) Option {
-	return func(m *Manager) {
-		m.chartDownloader = downloader
-	}
-}
 
 func NewManager(pool *pgxpool.Pool, publisher NewPublisher, m metric.Meter, log logrus.FieldLogger, opts ...Option) (*Manager, error) {
 	querier := deploymentsql.New(pool)
@@ -66,10 +64,6 @@ func NewManager(pool *pgxpool.Pool, publisher NewPublisher, m metric.Meter, log 
 	}
 	for _, opt := range opts {
 		opt(mgr)
-	}
-
-	if mgr.chartDownloader == nil {
-		mgr.chartDownloader = model.FromChart
 	}
 
 	return mgr, nil

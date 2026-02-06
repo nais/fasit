@@ -64,7 +64,7 @@ func (s *Seeder) Reset() {
 	s.deployments = deployments{}
 }
 
-func (s *Seeder) ChartDownloader() deployment.ChartDownloader {
+func (s *Seeder) ChartDownloader() deployment.ChartDownloaderFunc {
 	return func(chartURL, version string) (*model.Feature, error) {
 		for _, deploy := range s.deployments {
 			u := "oci://" + deploy.FeatureName

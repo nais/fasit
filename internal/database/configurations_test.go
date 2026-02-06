@@ -15,7 +15,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/database/gensql"
-	error2 "github.com/nais/fasit/internal/errs"
+	"github.com/nais/fasit/internal/errs"
 	"github.com/nais/fasit/internal/graph/model"
 	"k8s.io/utils/ptr"
 )
@@ -415,7 +415,7 @@ func TestRepo_HelmValues_MissingRequiredField(t *testing.T) {
 	}
 
 	_, err = r.HelmValues(context.Background(), &feature, envid)
-	if !errors.Is(err, &error2.ErrMissingRequiredFields{}) {
+	if !errors.Is(err, &errs.ErrMissingRequiredFields{}) {
 		t.Errorf("got: %v, want ErrMissingRequiredFields", err)
 	}
 }

@@ -15,6 +15,7 @@ import (
 	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/graph/graphgen"
 	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nais/fasit/internal/naisdstatus"
 )
 
 // Operations is the resolver for the operations field.
@@ -104,7 +105,7 @@ func (r *environmentResolver) GCPProjectID(ctx context.Context, obj *model.Envir
 
 // Health is the resolver for the health field.
 func (r *environmentResolver) Health(ctx context.Context, obj *model.Environment) (*model.Health, error) {
-	health, err := r.Repo.HealthGet(ctx, obj.ID)
+	health, err := naisdstatus.Get(ctx, obj.ID)
 	if err != nil {
 		return &model.Health{
 			EnvironmentID: obj.ID,

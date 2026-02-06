@@ -22,6 +22,10 @@ func fromContext(ctx context.Context) *Manager {
 	return ctx.Value(managerKey).(*Manager)
 }
 
+func GetManager(ctx context.Context) *Manager {
+	return fromContext(ctx)
+}
+
 // TriggerReconcile will trigger an asynchronous reconciliation of deployments. The returned channel can be used to wait
 // for the result.
 func TriggerReconcile(ctx context.Context, event ReconcileTriggerEvent) chan TriggerResult {
@@ -29,7 +33,7 @@ func TriggerReconcile(ctx context.Context, event ReconcileTriggerEvent) chan Tri
 }
 
 func CreateDeployment(ctx context.Context, req Request) (uuid.UUID, error) {
-	feat, err := fromContext(ctx).chartDownloader(req.Chart, req.Version)
+	feat, err := ChartDownloader(req.Chart, req.Version)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("unable to convert oci chart: %w", err)
 	}

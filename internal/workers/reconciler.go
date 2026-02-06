@@ -13,9 +13,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/auth"
 	"github.com/nais/fasit/internal/database/notifier"
-	error2 "github.com/nais/fasit/internal/errs"
+	"github.com/nais/fasit/internal/errs"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
+	"github.com/nais/fasit/internal/naisdstatus"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
@@ -27,7 +28,6 @@ type ReconcilerStore interface {
 	FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, ci bool) ([]*model.Feature, error)
 	FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *model.Feature, enabled bool) (*model.FeatureState, error)
 	FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
-	HealthGet(ctx context.Context, environmentID uuid.UUID) (*model.Health, error)
 	HelmValues(ctx context.Context, feature *model.Feature, envID uuid.UUID) (map[string]any, error)
 	RolloutStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error)
 	TenantEnvironments(ctx context.Context, onlyReconciled bool) ([]*model.TenantEnvironment, error)
@@ -199,7 +199,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, e *model.TenantEn
 		r.reconcileTime.Record(ctx, time.Since(start).Milliseconds(), metric.WithAttributes(metricAttrs...))
 	}()
 
-	health, err := r.repo.HealthGet(ctx, e.ID)
+	health, err := naisdstatus.Get(ctx, e.ID)
 	if err != nil {
 		return fmt.Errorf("health status: %w", err)
 	}
@@ -264,7 +264,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, e *model.TenantEn
 
 		values, err := r.repo.HelmValues(ctx, f, e.ID)
 		if err != nil {
-			var fer *error2.ErrMissingRequiredFields
+			var fer *errs.ErrMissingRequiredFields
 			if errors.As(err, &fer) {
 				log.WithError(err).Debug("missing required fields")
 				continue

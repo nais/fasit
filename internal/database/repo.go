@@ -55,7 +55,6 @@ type Repo interface {
 	FeatureDataRepo
 	FeatureStateRepo
 	FeaturesRepo
-	HealthRepo
 	KubernetesNodeRepo
 	LogRepo
 	ReleaseStatusRepo

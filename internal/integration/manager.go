@@ -21,6 +21,7 @@ import (
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/naisd"
+	"github.com/nais/fasit/internal/naisdstatus"
 	"github.com/nais/fasit/internal/provider/protogen"
 	"github.com/nais/fasit/internal/server"
 	"github.com/nais/fasit/internal/slack/fake"
@@ -141,6 +142,7 @@ func TestRunner(ctx context.Context, skipSetup bool) (*testmanager.Manager, erro
 			envLabels := make([]*protogen.EnvironmentLabel, 0)
 
 			pool := L.Context().Value(poolKey).(*pgxpool.Pool)
+
 			repo := database.NewRepo(pool, logrus.New())
 
 			tenantID, err := uuid.Parse(tenantIDStr)
@@ -188,9 +190,10 @@ func TestRunner(ctx context.Context, skipSetup bool) (*testmanager.Manager, erro
 					L.RaiseError("failed to make environment ci: %s", err)
 				}
 			}
+			ctx = naisdstatus.Register(ctx, pool)
 
 			if !unhealthy {
-				err := repo.HealthStatusCreateOrUpdate(ctx, env.ID, &message.Health{
+				err := naisdstatus.Set(ctx, env.ID, &message.Health{
 					ReportedAt: time.Now(),
 				})
 				if err != nil {
@@ -217,9 +220,7 @@ func TestRunner(ctx context.Context, skipSetup bool) (*testmanager.Manager, erro
 				L.RaiseError("failed to reconcile: %s", err)
 			}
 
-			deploymentMgr := L.Context().Value(deploymentMgrKey).(*deployment.Manager)
-			setupContext := fasit.GetSetupContextFunc(L.Context().Value(poolKey).(*pgxpool.Pool), deploymentMgr)
-			if err := deploymentMgr.Reconcile(setupContext(ctx)); err != nil {
+			if err := deployment.GetManager(L.Context()).Reconcile(L.Context()); err != nil {
 				L.RaiseError("failed to reconcile: %s", err)
 			}
 
@@ -320,26 +321,29 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 			return ctx, nil, nil, err
 		}
 
-		dcp := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
+		deploymentPublisher := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
 			p, ok := naisdRunner.deploymentReconcilerPublishers[topicID]
 			if !ok {
 				panic(fmt.Sprintf("no publisher for topic %q", topicID))
 			}
 			return p
 		}
+		rolloutPublisher := func(topicID string, log logrus.FieldLogger) workers.Publisher {
+			p, ok := naisdRunner.reconcilerPublishers[topicID]
+			if !ok {
+				panic(fmt.Sprintf("no publisher for topic %q", topicID))
+			}
+			return p
+		}
 
-		deploymentMgr, err := deployment.NewManager(pool, dcp, noop.NewMeterProvider().Meter(""), logrus.NewEntry(log))
+		meter := noop.NewMeterProvider().Meter("")
+
+		setupContext, err := fasit.GetSetupContextFunc(pool, deploymentPublisher, rolloutPublisher, meter, log)
 		if err != nil {
 			done()
 			return ctx, nil, nil, err
 		}
-
-		if err := naisdRunner.start(ctx, db, deploymentMgr); err != nil {
-			done()
-			return ctx, nil, nil, err
-		}
-
-		setupContext := fasit.GetSetupContextFunc(pool, deploymentMgr)
+		ctx = setupContext(ctx)
 
 		restRunner, err := newRestRunner(ctx, setupContext, db)
 		if err != nil {
@@ -356,23 +360,19 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 
 		ctx = context.WithValue(ctx, poolKey, pool)
 
-		cp := func(topicID string, log logrus.FieldLogger) workers.Publisher {
-			p, ok := naisdRunner.reconcilerPublishers[topicID]
-			if !ok {
-				panic(fmt.Sprintf("no publisher for topic %q", topicID))
-			}
-			return p
-		}
-
 		notifierService := notifier.New(pool, logrus.NewEntry(log))
-		reconciler, err := workers.NewReconciler(db, cp, notifierService, noop.NewMeterProvider().Meter(""), logrus.NewEntry(log))
+		reconciler, err := workers.NewReconciler(db, rolloutPublisher, notifierService, meter, log)
 		if err != nil {
 			done()
 			return ctx, nil, nil, err
 		}
 
+		if err := naisdRunner.start(ctx, db); err != nil {
+			done()
+			return ctx, nil, nil, err
+		}
+
 		ctx = context.WithValue(ctx, reconcilerKey, reconciler)
-		ctx = context.WithValue(ctx, deploymentMgrKey, deploymentMgr)
 		ctx = context.WithValue(ctx, naisdKey, naisdRunner)
 
 		cleanups = append(cleanups, close)
@@ -518,7 +518,7 @@ func newNaisd() (*naisdRunner, func(), error) {
 	return naisdRunner, func() {}, nil
 }
 
-func (n *naisdRunner) start(ctx context.Context, db database.Repo, dmgr *deployment.Manager) error {
+func (n *naisdRunner) start(ctx context.Context, db database.Repo) error {
 	log := logrus.New()
 	if testing.Verbose() {
 		log.Out = os.Stdout
@@ -526,8 +526,9 @@ func (n *naisdRunner) start(ctx context.Context, db database.Repo, dmgr *deploym
 	} else {
 		log.Out = io.Discard
 	}
+	deploymentManager := deployment.GetManager(ctx)
 
-	rec := workers.NewReceiver(&statusReceiver{naisdRunner: n}, db, log, fake.NewFakeSlackClient(), "test", dmgr)
+	rec := workers.NewReceiver(&statusReceiver{naisdRunner: n}, db, log, fake.NewFakeSlackClient(), "test", deploymentManager)
 	go rec.Run(ctx)
 	return nil
 }

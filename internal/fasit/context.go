@@ -8,16 +8,30 @@ import (
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/naisdstatus"
+	"github.com/nais/fasit/internal/workers"
+	"github.com/sirupsen/logrus"
+	"go.opentelemetry.io/otel/metric"
 )
 
 type SetupContextFunc func(context.Context) context.Context
 
-func GetSetupContextFunc(pool *pgxpool.Pool, deploymentManager *deployment.Manager) SetupContextFunc {
+func GetSetupContextFunc(
+	pool *pgxpool.Pool,
+	deploymentPublisher deployment.NewPublisher,
+	_ workers.NewPublisher,
+	meter metric.Meter,
+	log logrus.FieldLogger,
+) (SetupContextFunc, error) {
+	deploymentManager, err := deployment.NewManager(pool, deploymentPublisher, meter, log)
+	if err != nil {
+		return nil, err
+	}
+
 	return func(ctx context.Context) context.Context {
 		ctx = environment.Register(ctx, pool)
 		ctx = feature.Register(ctx, pool)
 		ctx = naisdstatus.Register(ctx, pool)
 		ctx = deployment.Register(ctx, deploymentManager)
 		return ctx
-	}
+	}, nil
 }

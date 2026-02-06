@@ -83,18 +83,20 @@ func Run(ctx context.Context) error {
 	go repo.TimeoutDeployInstructions(ctx)
 	log.Info("-- successfully started database client")
 
-	deployCreatePublisher := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
+	deploymentPublisher := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
+		return message.NewPublisher[message.DeployInstruction](pubSubClient, cfg.GCPProjectID, topicID, log)
+	}
+	rolloutPublisher := func(topicID string, log logrus.FieldLogger) workers.Publisher {
 		return message.NewPublisher[message.DeployInstruction](pubSubClient, cfg.GCPProjectID, topicID, log)
 	}
 
-	deploymentMgr, err := deployment.NewManager(pool, deployCreatePublisher, meter, log)
+	setupContext, err := GetSetupContextFunc(pool, deploymentPublisher, rolloutPublisher, meter, log)
 	if err != nil {
-		return fmt.Errorf("error creating deployment manager: %w", err)
+		return fmt.Errorf("creating setup context: %w", err)
 	}
 
-	setupContext := GetSetupContextFunc(pool, deploymentMgr)
-
-	go deploymentMgr.Run(setupContext(ctx), 10*time.Minute)
+	ctx = setupContext(ctx)
+	go deployment.GetManager(ctx).Run(ctx, 10*time.Minute)
 
 	statusMgr := message.NewSubscriber[message.Status](pubSubClient, cfg.GCPProjectID, cfg.StatusSubscriptionID, log)
 
@@ -104,17 +106,14 @@ func Run(ctx context.Context) error {
 		log,
 		slackClient,
 		cfg.SlackChannelFeatureAlerts,
-		deploymentMgr,
+		deployment.GetManager(ctx),
 	)
 	go receiver.Run(ctx)
 
 	notifierService := notifier.New(pool, log)
 	go notifierService.Run(ctx)
 
-	createPublisher := func(topicID string, log logrus.FieldLogger) workers.Publisher {
-		return message.NewPublisher[message.DeployInstruction](pubSubClient, cfg.GCPProjectID, topicID, log)
-	}
-	reconciler, err := workers.NewReconciler(repo, createPublisher, notifierService, meter, log)
+	reconciler, err := workers.NewReconciler(repo, rolloutPublisher, notifierService, meter, log)
 	if err != nil {
 		return fmt.Errorf("error creating reconciler: %w", err)
 	}
@@ -158,7 +157,7 @@ func Run(ctx context.Context) error {
 	serverCtx, serverCancel := context.WithCancel(ctx)
 	defer serverCancel()
 
-	httpServer, err := newHttpServer(serverCtx, setupContext, cfg, repo, notifierService, createPublisher, googleClient, meter, log)
+	httpServer, err := newHttpServer(serverCtx, setupContext, cfg, repo, notifierService, rolloutPublisher, googleClient, meter, log)
 	if err != nil {
 		return fmt.Errorf("error creating http server: %w", err)
 	}

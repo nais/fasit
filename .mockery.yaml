@@ -3,6 +3,7 @@ dir: "{{ .InterfaceDir }}/mocks"
 filename: "{{ .InterfaceName | snakecase }}.go"
 structname: "{{ .InterfaceName }}"
 template: testify
+include-auto-generated: true
 packages:
   github.com/nais/fasit/internal/database:
     interfaces:
@@ -11,3 +12,6 @@ packages:
   github.com/nais/fasit/internal/cluster:
     interfaces:
       ClusterManager:
+  github.com/nais/fasit/internal/naisdstatus/naisdstatussql:
+    interfaces:
+      Querier:

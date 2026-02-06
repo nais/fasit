@@ -12,6 +12,7 @@ import (
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
+	"github.com/nais/fasit/internal/naisdstatus"
 	"github.com/nais/fasit/internal/slack"
 	"github.com/sirupsen/logrus"
 )
@@ -34,7 +35,6 @@ type ReceiverStore interface {
 	EnvironmentGet(ctx context.Context, id uuid.UUID) (*model.Environment, error)
 	EnvironmentIDByNames(ctx context.Context, tenantName string, environmentName string) (uuid.UUID, error)
 	FeatureVersionUpdate(ctx context.Context, name string, version string) error
-	HealthStatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Health) error
 	KubernetesNodeSync(ctx context.Context, envID uuid.UUID, kn *message.KubernetesNodes) error
 	LogCreate(ctx context.Context, deployInstructionID uuid.UUID, lines []message.LogLine) error
 	ReleaseStatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Release) error
@@ -311,7 +311,7 @@ func (r *Receiver) healthStatus(ctx context.Context, msg message.Status) error {
 		}
 		return err
 	}
-	return r.repo.HealthStatusCreateOrUpdate(ctx, environmentID, status)
+	return naisdstatus.Set(ctx, environmentID, status)
 }
 
 func (r *Receiver) kubernetesNodes(ctx context.Context, msg message.Status) error {

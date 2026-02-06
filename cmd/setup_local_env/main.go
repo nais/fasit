@@ -140,20 +140,13 @@ func main() {
 	defer conn.Close()
 	grpcClient := protogen.NewProviderClient(conn)
 
-	seeder := deploymenttest.NewSeeder()
-	dMgr, err := deployment.NewManager(
-		dbConn,
-		nil,
-		noop.NewMeterProvider().Meter(""),
-		logrus.New().WithField("component", "deployment-manager"),
-		deployment.WithChartDownloader(seeder.ChartDownloader()),
-	)
+	setupContext, err := fasit.GetSetupContextFunc(dbConn, nil, nil, noop.NewMeterProvider().Meter(""), logrus.New())
 	if err != nil {
 		panic(err)
 	}
-
-	setupContext := fasit.GetSetupContextFunc(dbConn, dMgr)
 	ctx = setupContext(ctx)
+	seeder := deploymenttest.NewSeeder()
+	deployment.ChartDownloader = seeder.ChartDownloader()
 
 	seeder.AddDeployment("aivenator", "1.0.0", environment.Labels{"aiven": "enabled"})
 	seeder.AddDeployment("aivenator", "2.0.0", environment.Labels{"aiven": "enabled"})
