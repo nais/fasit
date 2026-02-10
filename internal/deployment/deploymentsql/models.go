@@ -8,8 +8,54 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/nais/fasit/internal/environment"
+	"github.com/nais/fasit/internal/database/types"
 )
+
+type ClusterUpgradesStatus string
+
+const (
+	ClusterUpgradesStatusCREATED             ClusterUpgradesStatus = "CREATED"
+	ClusterUpgradesStatusWAITING             ClusterUpgradesStatus = "WAITING"
+	ClusterUpgradesStatusCONTROLPLANEUPGRADE ClusterUpgradesStatus = "CONTROL_PLANE_UPGRADE"
+	ClusterUpgradesStatusNODEUPGRADE         ClusterUpgradesStatus = "NODE_UPGRADE"
+	ClusterUpgradesStatusFAILED              ClusterUpgradesStatus = "FAILED"
+	ClusterUpgradesStatusDONE                ClusterUpgradesStatus = "DONE"
+)
+
+func (e *ClusterUpgradesStatus) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = ClusterUpgradesStatus(s)
+	case string:
+		*e = ClusterUpgradesStatus(s)
+	default:
+		return fmt.Errorf("unsupported scan type for ClusterUpgradesStatus: %T", src)
+	}
+	return nil
+}
+
+type NullClusterUpgradesStatus struct {
+	ClusterUpgradesStatus ClusterUpgradesStatus
+	Valid                 bool // Valid is true if ClusterUpgradesStatus is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullClusterUpgradesStatus) Scan(value interface{}) error {
+	if value == nil {
+		ns.ClusterUpgradesStatus, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.ClusterUpgradesStatus.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullClusterUpgradesStatus) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.ClusterUpgradesStatus), nil
+}
 
 type EnvironmentKind string
 
@@ -55,6 +101,75 @@ func (ns NullEnvironmentKind) Value() (driver.Value, error) {
 	return string(ns.EnvironmentKind), nil
 }
 
+type Audit struct {
+	ID          uuid.UUID
+	Actor       string
+	Description string
+	ObjectType  string
+	ObjectID    string
+	CreatedAt   pgtype.Timestamptz
+}
+
+type AutoInstall struct {
+	Kind    EnvironmentKind
+	Feature string
+	Created pgtype.Timestamptz
+}
+
+type ClusterOperation struct {
+	ID                  uuid.UUID
+	OperationName       string
+	TenantID            uuid.UUID
+	EnvironmentID       uuid.UUID
+	UpgradeID           uuid.UUID
+	Status              string
+	Type                string
+	Detail              string
+	Target              string
+	NodesTotal          int32
+	NodesFailed         int32
+	NodesCompleted      int32
+	NodesDone           int32
+	NodePdbDelaySeconds int32
+	StartTime           pgtype.Timestamptz
+	LastModified        pgtype.Timestamptz
+}
+
+type ClusterUpgrade struct {
+	ID                    uuid.UUID
+	TenantID              uuid.UUID
+	EnvironmentID         uuid.UUID
+	Version               string
+	Status                ClusterUpgradesStatus
+	StartTime             pgtype.Timestamptz
+	LastModified          pgtype.Timestamptz
+	SlackMessageTimestamp *string
+	SlackChannelID        *string
+	IsAutomatic           *bool
+	UpgradeStartTime      pgtype.Timestamptz
+}
+
+type ConfigurationsEnvironment struct {
+	ID            uuid.UUID
+	Feature       string
+	Key           string
+	Value         []byte
+	Description   *string
+	Secret        bool
+	Created       pgtype.Timestamptz
+	EnvironmentID uuid.UUID
+}
+
+type ConfigurationsGlobal struct {
+	ID          uuid.UUID
+	Feature     string
+	Key         string
+	Value       []byte
+	Description *string
+	Secret      bool
+	Created     pgtype.Timestamptz
+}
+
 type DeployInstruction struct {
 	ID             uuid.UUID
 	EnvironmentID  uuid.UUID
@@ -72,7 +187,7 @@ type Deployment struct {
 	ID          uuid.UUID
 	FeatureName string
 	Version     string
-	Target      environment.Labels
+	Target      types.EnvironmentLabels
 	Created     pgtype.Timestamptz
 	GhRef       []byte
 	Description *string
@@ -88,6 +203,13 @@ type DeploymentStatus struct {
 	Created       pgtype.Timestamptz
 }
 
+type EnvCost struct {
+	TenantID uuid.UUID
+	EnvID    uuid.UUID
+	Date     pgtype.Date
+	Cost     float32
+}
+
 type Environment struct {
 	ID                uuid.UUID
 	TenantID          uuid.UUID
@@ -101,7 +223,35 @@ type Environment struct {
 	AutoUpgrade       bool
 	UpgradeDelayDays  int32
 	MaintenanceWindow []byte
-	Labels            environment.Labels
+	Labels            types.EnvironmentLabels
+}
+
+type EnvironmentFeature struct {
+	EnvironmentID  uuid.UUID
+	FeatureName    string
+	FeatureVersion string
+	DeploymentID   uuid.UUID
+}
+
+type EnvironmentValue struct {
+	EnvironmentID uuid.UUID
+	Key           string
+	Value         []byte
+	Secret        bool
+}
+
+type EnvironmentValuesStat struct {
+	Key      string
+	Kind     interface{}
+	Count    int64
+	Features interface{}
+}
+
+type Feature struct {
+	Name         string
+	Version      string
+	Created      pgtype.Timestamptz
+	LastModified pgtype.Timestamptz
 }
 
 type FeatureDatum struct {
@@ -117,4 +267,85 @@ type FeatureDatum struct {
 	Timeout       int64
 	TplDetails    []byte
 	Rename        []byte
+}
+
+type FeatureState struct {
+	EnvironmentID uuid.UUID
+	Feature       string
+	Enabled       bool
+	Created       pgtype.Timestamptz
+	LastModified  pgtype.Timestamptz
+	EnabledAt     pgtype.Timestamptz
+}
+
+type HealthStatus struct {
+	EnvironmentID uuid.UUID
+	ReportedAt    pgtype.Timestamptz
+}
+
+type KubernetesNodeStatus struct {
+	EnvironmentID           uuid.UUID
+	Name                    string
+	KernelVersion           string
+	OsImage                 string
+	ContainerRuntimeVersion string
+	KubeletVersion          string
+	KubeProxyVersion        string
+	OperatingSystem         string
+	Architecture            string
+	Conditions              []byte
+	Allocatable             []byte
+	Capacity                []byte
+	Created                 pgtype.Timestamptz
+	LastModified            pgtype.Timestamptz
+	InternalIp              string
+}
+
+type Log struct {
+	ID                int64
+	DeployInstruction uuid.UUID
+	Time              pgtype.Timestamptz
+	Message           string
+	Kind              string
+}
+
+type ReleaseStatus struct {
+	EnvironmentID uuid.UUID
+	Feature       string
+	Version       string
+	Status        string
+	Revision      int32
+	LastDeployed  pgtype.Timestamptz
+	Created       pgtype.Timestamptz
+	LastModified  pgtype.Timestamptz
+}
+
+type Rollout struct {
+	ID                 uuid.UUID
+	FeatureName        string
+	Version            string
+	Status             string
+	Created            pgtype.Timestamptz
+	Completed          pgtype.Timestamptz
+	GhRef              []byte
+	DeployInstructions []uuid.UUID
+}
+
+type RolloutEvent struct {
+	ID        uuid.UUID
+	RolloutID uuid.UUID
+	Failure   bool
+	Message   string
+	Data      []byte
+	Created   pgtype.Timestamptz
+}
+
+type Tenant struct {
+	ID               uuid.UUID
+	Name             string
+	Description      *string
+	Created          pgtype.Timestamptz
+	LastModified     pgtype.Timestamptz
+	Ci               bool
+	UpgradeDelayDays int32
 }

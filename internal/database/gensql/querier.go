@@ -7,7 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/nais/fasit/internal/environment"
+	"github.com/nais/fasit/internal/database/types"
 )
 
 type Querier interface {
@@ -66,7 +66,7 @@ type Querier interface {
 	EnvironmentCreate(ctx context.Context, arg EnvironmentCreateParams) (Environment, error)
 	EnvironmentGet(ctx context.Context, id uuid.UUID) (Environment, error)
 	EnvironmentGetByName(ctx context.Context, arg EnvironmentGetByNameParams) (Environment, error)
-	EnvironmentGetLabels(ctx context.Context, id uuid.UUID) (environment.Labels, error)
+	EnvironmentGetLabels(ctx context.Context, id uuid.UUID) (types.EnvironmentLabels, error)
 	EnvironmentIDByNames(ctx context.Context, arg EnvironmentIDByNamesParams) (uuid.UUID, error)
 	EnvironmentSetAutoUpgrade(ctx context.Context, arg EnvironmentSetAutoUpgradeParams) (Environment, error)
 	EnvironmentSetLabels(ctx context.Context, arg EnvironmentSetLabelsParams) error
@@ -92,8 +92,6 @@ type Querier interface {
 	Features(ctx context.Context) ([]FeaturesRow, error)
 	FeaturesForKind(ctx context.Context, environmentKind string) ([]FeaturesForKindRow, error)
 	GetEnvironmentFeature(ctx context.Context, arg GetEnvironmentFeatureParams) (GetEnvironmentFeatureRow, error)
-	HealthStatusCreateOrUpdate(ctx context.Context, arg HealthStatusCreateOrUpdateParams) (HealthStatus, error)
-	HealthStatusGet(ctx context.Context, environmentID uuid.UUID) (HealthStatus, error)
 	KubernetesNodeCreateOrUpdate(ctx context.Context, arg KubernetesNodeCreateOrUpdateParams) error
 	KubernetesNodeDeleteObsolete(ctx context.Context, environmentID uuid.UUID) error
 	KubernetesNodeStatuses(ctx context.Context, environmentID uuid.UUID) ([]KubernetesNodeStatus, error)

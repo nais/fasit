@@ -1,8 +1,10 @@
-package database
+package errs_test
 
 import (
 	"errors"
 	"testing"
+
+	"github.com/nais/fasit/internal/errs"
 )
 
 func TestErrors(t *testing.T) {
@@ -12,10 +14,10 @@ func TestErrors(t *testing.T) {
 		String string
 	}{
 		"ErrMissingRequiredFields": {
-			err: &ErrMissingRequiredFields{
+			err: &errs.ErrMissingRequiredFields{
 				Fields: []string{"test"},
 			},
-			target: &ErrMissingRequiredFields{},
+			target: &errs.ErrMissingRequiredFields{},
 			String: "missing required fields: [test]",
 		},
 	}

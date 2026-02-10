@@ -1,3 +1,12 @@
+extend type Subscription {
+    logs(environmentID: ID!, featureName: String!, lastLogID: String): LogLine!
+
+    """
+    Updates notifies whenever a feature state has been changed.
+    """
+    updates: Update!
+}
+
 enum RolloutStatus {
 	UNKNOWN
 	CREATED
@@ -5,6 +14,8 @@ enum RolloutStatus {
 	DEPLOYED
 	FAILED
 }
+
+union Update = Status | Configuration | FeatureState | ClusterUpgradeStatus
 
 type LogLine {
 	id: ID!
@@ -20,15 +31,4 @@ type Status {
 	created: Time!
 	lastModified: Time!
 	log: [LogLine!]!
-}
-
-union Update = Status | Configuration | FeatureState | ClusterUpgradeStatus
-
-type Subscription {
-	logs(environmentID: ID!, featureName: String!, lastLogID: String): LogLine!
-
-	"""
-	Updates notifies whenever a feature state has been changed.
-	"""
-	updates: Update!
 }

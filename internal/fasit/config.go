@@ -8,7 +8,7 @@ import (
 )
 
 type Config struct {
-	BindAddress                string `env:"HTTP_BIND_ADDRESS,default=:8080"`
+	HTTPBindAddress            string `env:"HTTP_BIND_ADDRESS,default=:8080"`
 	GRPCBindAddress            string `env:"GRPC_BIND_ADDRESS,default=:4444"`
 	DBConnectionDSN            string `env:"FASIT_DBCONN_STRING,default=postgres://postgres:postgres@localhost:5432/fasit?sslmode=disable"`
 	LogLevel                   string `env:"LOG_LEVEL,default=info"`
@@ -20,6 +20,7 @@ type Config struct {
 	SlackAPIToken              string `env:"SLACK_API_TOKEN"`
 	SlackClusterUpgradeChannel string `env:"SLACK_CLUSTER_UPGRADE_CHANNEL"`
 	SlackChannelFeatureAlerts  string `env:"SLACK_CHANNEL_FEATURE_ALERTS"`
+	GitHubPEM                  string `env:"GH_PEM"`
 }
 
 // newConfig creates a new configuration instance from environment variables.

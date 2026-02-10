@@ -9,6 +9,8 @@ import (
 	"github.com/nais/fasit/internal/database/mocks"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
+	"github.com/nais/fasit/internal/naisdstatus/naisdstatussql"
+	"github.com/nais/fasit/internal/naisdstatus/naisdstatustest"
 	"github.com/nais/fasit/internal/slack/fake"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/mock"
@@ -103,8 +105,11 @@ func TestReceiver(t *testing.T) {
 
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
-			repo := mocks.NewRepo(t)
+			ctx := context.Background()
+			ctx = naisdstatustest.Register(ctx, t)
+			statusQuerier := naisdstatustest.GetQuerier(ctx)
 
+			repo := mocks.NewRepo(t)
 			repo.On("DeployInstructionGet", mock.Anything, tc.deployInstructionID).Return(&model.DeployInstruction{ID: tc.deployInstructionID, EnvironmentID: tc.envID}, nil).Maybe()
 			repo.On("EnvironmentGet", mock.Anything, tc.envID).Return(&model.Environment{ID: tc.envID}, nil).Maybe()
 
@@ -123,7 +128,7 @@ func TestReceiver(t *testing.T) {
 				})
 			}
 			if tc.numHealthStatusCreateOrUpdate > 0 {
-				repo.On("HealthStatusCreateOrUpdate", mock.Anything, tc.envID, mock.Anything).Return(nil).Times(tc.numHealthStatusCreateOrUpdate)
+				statusQuerier.On("Set", ctx, mock.Anything).Return(naisdstatussql.HealthStatus{}, nil).Times(tc.numHealthStatusCreateOrUpdate)
 			}
 			if tc.numKubernetesNodeSync > 0 {
 				repo.On("KubernetesNodeSync", mock.Anything, tc.envID, mock.Anything).Return(nil).Times(tc.numKubernetesNodeSync)
@@ -137,7 +142,7 @@ func TestReceiver(t *testing.T) {
 				"test",
 			)
 
-			rec.Run(context.Background())
+			rec.Run(ctx)
 			// if storage.statusCreateOrUpdate != tc.expectedUpdates {
 			// 	t.Errorf("expected %d status messages to be handled, got %d", len(tc.statuses), storage.statusCreateOrUpdate)
 			// }

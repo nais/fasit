@@ -10,6 +10,7 @@ import (
 
 	"cloud.google.com/go/pubsub/v2"
 	"cloud.google.com/go/pubsub/v2/apiv1/pubsubpb"
+	"github.com/nais/fasit/internal/contextloader"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/deployment/deploymenttest"
@@ -139,19 +140,13 @@ func main() {
 	defer conn.Close()
 	grpcClient := protogen.NewProviderClient(conn)
 
-	db := database.NewRepo(dbConn, logrus.New().WithField("component", "setup-local"))
-
-	seeder := deploymenttest.NewSeeder()
-	dMgr, err := deployment.NewManager(
-		db,
-		nil,
-		noop.NewMeterProvider().Meter(""),
-		logrus.New().WithField("component", "deployment-manager"),
-		deployment.WithChartDownloader(seeder.ChartDownloader()),
-	)
+	loadContext, err := contextloader.NewLoaderFunc(dbConn, nil, nil, noop.NewMeterProvider().Meter(""), logrus.New())
 	if err != nil {
 		panic(err)
 	}
+	ctx = loadContext(ctx)
+	seeder := deploymenttest.NewSeeder()
+	deployment.ChartDownloader = seeder.ChartDownloader()
 
 	seeder.AddDeployment("aivenator", "1.0.0", environment.Labels{"aiven": "enabled"})
 	seeder.AddDeployment("aivenator", "2.0.0", environment.Labels{"aiven": "enabled"})
@@ -162,7 +157,7 @@ func main() {
 	seeder.AddDeployment("unleash", "2.0.0", environment.Labels{"featuretoggle": "enabled"})
 	seeder.AddDeployment("v13s", "1.0.0", environment.Labels{"kind": "management"})
 
-	if err := seeder.Seed(ctx, dMgr); err != nil {
+	if err := seeder.Seed(ctx); err != nil {
 		log.Fatal(err)
 	}
 

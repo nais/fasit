@@ -7,10 +7,13 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/nais/fasit/internal/database/mocks"
 	"github.com/nais/fasit/internal/database/notifier"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
+	"github.com/nais/fasit/internal/naisdstatus/naisdstatussql"
+	"github.com/nais/fasit/internal/naisdstatus/naisdstatustest"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/mock"
 	"go.opentelemetry.io/otel/metric/noop"
@@ -205,6 +208,10 @@ var reconcileTests = map[string]struct {
 func TestReconcile(t *testing.T) {
 	for name, tt := range reconcileTests {
 		t.Run(name, func(t *testing.T) {
+			ctx := context.Background()
+			ctx = naisdstatustest.Register(ctx, t)
+			statusQuerier := naisdstatustest.GetQuerier(ctx)
+
 			repo := mocks.NewRepo(t)
 
 			te := []*model.TenantEnvironment{}
@@ -231,8 +238,12 @@ func TestReconcile(t *testing.T) {
 				if !te.NaisdReportedAt.IsZero() {
 					reportAt = te.NaisdReportedAt
 				}
-				repo.On("HealthGet", mock.Anything, te.Environment.ID).Return(&model.Health{
-					ReportedAt: reportAt,
+				statusQuerier.On("Get", mock.Anything, te.Environment.ID).Return(naisdstatussql.HealthStatus{
+					EnvironmentID: te.Environment.ID,
+					ReportedAt: pgtype.Timestamptz{
+						Time:  reportAt,
+						Valid: true,
+					},
 				}, nil)
 			}
 
@@ -247,7 +258,6 @@ func TestReconcile(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			ctx := context.Background()
 			if err := reconciler.Reconcile(ctx); err != nil {
 				t.Errorf("reconcile failed: %v", err)
 			}

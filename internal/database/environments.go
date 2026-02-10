@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/database/gensql"
-	"github.com/nais/fasit/internal/environment"
+	"github.com/nais/fasit/internal/database/types"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/provider/protogen"
 )
@@ -167,7 +167,7 @@ func (r *repo) EnvironmentSetReconcile(ctx context.Context, environmentID uuid.U
 }
 
 func (r *repo) EnvironmentSetLabels(ctx context.Context, environmentID uuid.UUID, protoLabels []*protogen.EnvironmentLabel) error {
-	labels := make(environment.Labels, len(protoLabels))
+	labels := make(types.EnvironmentLabels, len(protoLabels))
 	for _, el := range protoLabels {
 		labels[el.Key] = el.Value
 	}

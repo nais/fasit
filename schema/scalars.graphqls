@@ -1,4 +1,11 @@
-scalar Map
+"""
+EnvironmentLabels represents a key => value map.
+"""
+scalar EnvironmentLabels
+
+"""
+RawMessage represents an arbitrary JSON value.
+"""
 scalar RawMessage
 
 """

@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/database/gensql"
+	"github.com/nais/fasit/internal/errs"
 	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/feature/featureutil"
 	"github.com/nais/fasit/internal/graph/model"
@@ -267,7 +268,7 @@ func (r *repo) HelmValues(ctx context.Context, f *model.Feature, envID uuid.UUID
 
 	missing := validateFields(f, envKind, vals, mp)
 	if len(missing) > 0 {
-		return nil, &ErrMissingRequiredFields{Fields: missing}
+		return nil, &errs.ErrMissingRequiredFields{Fields: missing}
 	}
 
 	return mp, err

@@ -1,17 +1,113 @@
 package deployment
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/deployment/deploymentsql"
+	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph/model"
 )
 
-func getDeployment(ctx context.Context, querier deploymentsql.Querier, id uuid.UUID) (*model.Deployment, error) {
+type Deployment struct {
+	ID          uuid.UUID      `json:"id"`
+	Feature     *model.Feature `json:"feature"`
+	Description *string        `json:"description"`
+	Created     time.Time      `json:"created"`
+	CI          bool           `json:"ci"`
+
+	TargetLabels environment.Labels `json:"-"`
+}
+
+func (d *Deployment) Target() []*model.EnvironmentLabel {
+	target := make([]*model.EnvironmentLabel, 0)
+	for k, v := range d.TargetLabels {
+		target = append(target, &model.EnvironmentLabel{
+			Key:   k,
+			Value: v,
+		})
+	}
+	return target
+}
+
+type DeploymentStatus struct {
+	State        DeploymentStatusState `json:"state"`
+	Message      string                `json:"message"`
+	LastModified time.Time             `json:"lastModified"`
+	Created      time.Time             `json:"created"`
+
+	DeploymentID  uuid.UUID `json:"-"`
+	EnvironmentID uuid.UUID `json:"-"`
+}
+
+type DeploymentStatusState string
+
+const (
+	DeploymentStatusStateUnknown  DeploymentStatusState = "UNKNOWN"
+	DeploymentStatusStateCreated  DeploymentStatusState = "CREATED"
+	DeploymentStatusStatePending  DeploymentStatusState = "PENDING"
+	DeploymentStatusStateDeployed DeploymentStatusState = "DEPLOYED"
+	DeploymentStatusStateFailed   DeploymentStatusState = "FAILED"
+)
+
+var AllDeploymentStatusState = []DeploymentStatusState{
+	DeploymentStatusStateUnknown,
+	DeploymentStatusStateCreated,
+	DeploymentStatusStatePending,
+	DeploymentStatusStateDeployed,
+	DeploymentStatusStateFailed,
+}
+
+func (e DeploymentStatusState) IsValid() bool {
+	switch e {
+	case DeploymentStatusStateUnknown, DeploymentStatusStateCreated, DeploymentStatusStatePending, DeploymentStatusStateDeployed, DeploymentStatusStateFailed:
+		return true
+	}
+	return false
+}
+
+func (e DeploymentStatusState) String() string {
+	return string(e)
+}
+
+func (e *DeploymentStatusState) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = DeploymentStatusState(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid DeploymentStatusState", str)
+	}
+	return nil
+}
+
+func (e DeploymentStatusState) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *DeploymentStatusState) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e DeploymentStatusState) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+func getDeployment(ctx context.Context, querier deploymentsql.Querier, id uuid.UUID) (*Deployment, error) {
 	d, err := querier.GetDeployment(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("getting deployment from db: %w", err)
@@ -74,19 +170,34 @@ func featureFromSQL(f deploymentsql.FeatureDatum) (*model.Feature, error) {
 	}, nil
 }
 
-func deploymentFromSQL(d deploymentsql.Deployment, fd deploymentsql.FeatureDatum) (*model.Deployment, error) {
+func deploymentFromSQL(d deploymentsql.Deployment, fd deploymentsql.FeatureDatum) (*Deployment, error) {
 	feature, err := featureFromSQL(fd)
 	if err != nil {
 		return nil, fmt.Errorf("make feature: %w", err)
 	}
 	feature.HasDeployments = true
 
-	return &model.Deployment{
+	return &Deployment{
 		ID:           d.ID,
 		Feature:      feature,
 		Description:  d.Description,
 		Created:      d.Created.Time,
 		CI:           d.Ci,
-		TargetLabels: d.Target,
+		TargetLabels: environment.Labels(d.Target),
 	}, nil
+}
+
+func deployInstructionFromSQL(di deploymentsql.DeployInstruction) *model.DeployInstruction {
+	return &model.DeployInstruction{
+		ID:             di.ID,
+		EnvironmentID:  di.EnvironmentID,
+		DeploymentID:   di.DeploymentID,
+		FeatureName:    di.FeatureName,
+		FeatureVersion: di.FeatureVersion,
+		Status:         model.RolloutStatus(di.Status),
+		Hash:           di.Hash,
+		Created:        di.Created.Time,
+		LastModified:   di.LastModified.Time,
+		Values:         di.Values,
+	}
 }

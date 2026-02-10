@@ -9,6 +9,48 @@ import (
 	"github.com/google/uuid"
 )
 
+const createDeployInstruction = `-- name: CreateDeployInstruction :one
+INSERT INTO deploy_instructions(
+	environment_id,
+	feature_name,
+	feature_version,
+	hash,
+	"values",
+	deployment_id)
+VALUES (
+	$1,
+	$2,
+	$3,
+	$4,
+	$5,
+	$6)
+RETURNING
+	id
+`
+
+type CreateDeployInstructionParams struct {
+	EnvironmentID  uuid.UUID
+	FeatureName    string
+	FeatureVersion string
+	Hash           string
+	Values         []byte
+	DeploymentID   *uuid.UUID
+}
+
+func (q *Queries) CreateDeployInstruction(ctx context.Context, arg CreateDeployInstructionParams) (uuid.UUID, error) {
+	row := q.db.QueryRow(ctx, createDeployInstruction,
+		arg.EnvironmentID,
+		arg.FeatureName,
+		arg.FeatureVersion,
+		arg.Hash,
+		arg.Values,
+		arg.DeploymentID,
+	)
+	var id uuid.UUID
+	err := row.Scan(&id)
+	return id, err
+}
+
 const deployInstructionsByID = `-- name: DeployInstructionsByID :one
 SELECT
 	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, deployment_id
@@ -20,6 +62,42 @@ WHERE
 
 func (q *Queries) DeployInstructionsByID(ctx context.Context, id uuid.UUID) (DeployInstruction, error) {
 	row := q.db.QueryRow(ctx, deployInstructionsByID, id)
+	var i DeployInstruction
+	err := row.Scan(
+		&i.ID,
+		&i.EnvironmentID,
+		&i.FeatureName,
+		&i.FeatureVersion,
+		&i.Status,
+		&i.Hash,
+		&i.Created,
+		&i.LastModified,
+		&i.Values,
+		&i.DeploymentID,
+	)
+	return i, err
+}
+
+const getLatestDeployInstructionsForFeature = `-- name: GetLatestDeployInstructionsForFeature :one
+SELECT
+	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, deployment_id
+FROM
+	deploy_instructions
+WHERE
+	feature_name = $1
+	AND environment_id = $2
+ORDER BY
+	created DESC
+LIMIT 1
+`
+
+type GetLatestDeployInstructionsForFeatureParams struct {
+	FeatureName   string
+	EnvironmentID uuid.UUID
+}
+
+func (q *Queries) GetLatestDeployInstructionsForFeature(ctx context.Context, arg GetLatestDeployInstructionsForFeatureParams) (DeployInstruction, error) {
+	row := q.db.QueryRow(ctx, getLatestDeployInstructionsForFeature, arg.FeatureName, arg.EnvironmentID)
 	var i DeployInstruction
 	err := row.Scan(
 		&i.ID,

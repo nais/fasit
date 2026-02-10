@@ -11,7 +11,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/nais/fasit/internal/database/gensql"
-	"github.com/nais/fasit/internal/environment"
+	"github.com/nais/fasit/internal/database/types"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -3517,23 +3517,23 @@ func (_c *Querier_EnvironmentGetByName_Call) RunAndReturn(run func(ctx context.C
 }
 
 // EnvironmentGetLabels provides a mock function for the type Querier
-func (_mock *Querier) EnvironmentGetLabels(ctx context.Context, id uuid.UUID) (environment.Labels, error) {
+func (_mock *Querier) EnvironmentGetLabels(ctx context.Context, id uuid.UUID) (types.EnvironmentLabels, error) {
 	ret := _mock.Called(ctx, id)
 
 	if len(ret) == 0 {
 		panic("no return value specified for EnvironmentGetLabels")
 	}
 
-	var r0 environment.Labels
+	var r0 types.EnvironmentLabels
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) (environment.Labels, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) (types.EnvironmentLabels, error)); ok {
 		return returnFunc(ctx, id)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) environment.Labels); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) types.EnvironmentLabels); ok {
 		r0 = returnFunc(ctx, id)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(environment.Labels)
+			r0 = ret.Get(0).(types.EnvironmentLabels)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
@@ -3574,12 +3574,12 @@ func (_c *Querier_EnvironmentGetLabels_Call) Run(run func(ctx context.Context, i
 	return _c
 }
 
-func (_c *Querier_EnvironmentGetLabels_Call) Return(labels environment.Labels, err error) *Querier_EnvironmentGetLabels_Call {
-	_c.Call.Return(labels, err)
+func (_c *Querier_EnvironmentGetLabels_Call) Return(environmentLabels types.EnvironmentLabels, err error) *Querier_EnvironmentGetLabels_Call {
+	_c.Call.Return(environmentLabels, err)
 	return _c
 }
 
-func (_c *Querier_EnvironmentGetLabels_Call) RunAndReturn(run func(ctx context.Context, id uuid.UUID) (environment.Labels, error)) *Querier_EnvironmentGetLabels_Call {
+func (_c *Querier_EnvironmentGetLabels_Call) RunAndReturn(run func(ctx context.Context, id uuid.UUID) (types.EnvironmentLabels, error)) *Querier_EnvironmentGetLabels_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -3708,8 +3708,8 @@ func (_c *Querier_EnvironmentSetAutoUpgrade_Call) Run(run func(ctx context.Conte
 	return _c
 }
 
-func (_c *Querier_EnvironmentSetAutoUpgrade_Call) Return(environment1 gensql.Environment, err error) *Querier_EnvironmentSetAutoUpgrade_Call {
-	_c.Call.Return(environment1, err)
+func (_c *Querier_EnvironmentSetAutoUpgrade_Call) Return(environment gensql.Environment, err error) *Querier_EnvironmentSetAutoUpgrade_Call {
+	_c.Call.Return(environment, err)
 	return _c
 }
 
@@ -3831,8 +3831,8 @@ func (_c *Querier_EnvironmentSetMaintenanceWindow_Call) Run(run func(ctx context
 	return _c
 }
 
-func (_c *Querier_EnvironmentSetMaintenanceWindow_Call) Return(environment1 gensql.Environment, err error) *Querier_EnvironmentSetMaintenanceWindow_Call {
-	_c.Call.Return(environment1, err)
+func (_c *Querier_EnvironmentSetMaintenanceWindow_Call) Return(environment gensql.Environment, err error) *Querier_EnvironmentSetMaintenanceWindow_Call {
+	_c.Call.Return(environment, err)
 	return _c
 }
 
@@ -3897,8 +3897,8 @@ func (_c *Querier_EnvironmentSetReconcile_Call) Run(run func(ctx context.Context
 	return _c
 }
 
-func (_c *Querier_EnvironmentSetReconcile_Call) Return(environment1 gensql.Environment, err error) *Querier_EnvironmentSetReconcile_Call {
-	_c.Call.Return(environment1, err)
+func (_c *Querier_EnvironmentSetReconcile_Call) Return(environment gensql.Environment, err error) *Querier_EnvironmentSetReconcile_Call {
+	_c.Call.Return(environment, err)
 	return _c
 }
 
@@ -3963,8 +3963,8 @@ func (_c *Querier_EnvironmentSetUpgradeDelayDays_Call) Run(run func(ctx context.
 	return _c
 }
 
-func (_c *Querier_EnvironmentSetUpgradeDelayDays_Call) Return(environment1 gensql.Environment, err error) *Querier_EnvironmentSetUpgradeDelayDays_Call {
-	_c.Call.Return(environment1, err)
+func (_c *Querier_EnvironmentSetUpgradeDelayDays_Call) Return(environment gensql.Environment, err error) *Querier_EnvironmentSetUpgradeDelayDays_Call {
+	_c.Call.Return(environment, err)
 	return _c
 }
 
@@ -4029,8 +4029,8 @@ func (_c *Querier_EnvironmentUpdate_Call) Run(run func(ctx context.Context, arg 
 	return _c
 }
 
-func (_c *Querier_EnvironmentUpdate_Call) Return(environment1 gensql.Environment, err error) *Querier_EnvironmentUpdate_Call {
-	_c.Call.Return(environment1, err)
+func (_c *Querier_EnvironmentUpdate_Call) Return(environment gensql.Environment, err error) *Querier_EnvironmentUpdate_Call {
+	_c.Call.Return(environment, err)
 	return _c
 }
 
@@ -5193,138 +5193,6 @@ func (_c *Querier_GetEnvironmentFeature_Call) Return(getEnvironmentFeatureRow ge
 }
 
 func (_c *Querier_GetEnvironmentFeature_Call) RunAndReturn(run func(ctx context.Context, arg gensql.GetEnvironmentFeatureParams) (gensql.GetEnvironmentFeatureRow, error)) *Querier_GetEnvironmentFeature_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// HealthStatusCreateOrUpdate provides a mock function for the type Querier
-func (_mock *Querier) HealthStatusCreateOrUpdate(ctx context.Context, arg gensql.HealthStatusCreateOrUpdateParams) (gensql.HealthStatus, error) {
-	ret := _mock.Called(ctx, arg)
-
-	if len(ret) == 0 {
-		panic("no return value specified for HealthStatusCreateOrUpdate")
-	}
-
-	var r0 gensql.HealthStatus
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, gensql.HealthStatusCreateOrUpdateParams) (gensql.HealthStatus, error)); ok {
-		return returnFunc(ctx, arg)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, gensql.HealthStatusCreateOrUpdateParams) gensql.HealthStatus); ok {
-		r0 = returnFunc(ctx, arg)
-	} else {
-		r0 = ret.Get(0).(gensql.HealthStatus)
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, gensql.HealthStatusCreateOrUpdateParams) error); ok {
-		r1 = returnFunc(ctx, arg)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Querier_HealthStatusCreateOrUpdate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'HealthStatusCreateOrUpdate'
-type Querier_HealthStatusCreateOrUpdate_Call struct {
-	*mock.Call
-}
-
-// HealthStatusCreateOrUpdate is a helper method to define mock.On call
-//   - ctx context.Context
-//   - arg gensql.HealthStatusCreateOrUpdateParams
-func (_e *Querier_Expecter) HealthStatusCreateOrUpdate(ctx interface{}, arg interface{}) *Querier_HealthStatusCreateOrUpdate_Call {
-	return &Querier_HealthStatusCreateOrUpdate_Call{Call: _e.mock.On("HealthStatusCreateOrUpdate", ctx, arg)}
-}
-
-func (_c *Querier_HealthStatusCreateOrUpdate_Call) Run(run func(ctx context.Context, arg gensql.HealthStatusCreateOrUpdateParams)) *Querier_HealthStatusCreateOrUpdate_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 gensql.HealthStatusCreateOrUpdateParams
-		if args[1] != nil {
-			arg1 = args[1].(gensql.HealthStatusCreateOrUpdateParams)
-		}
-		run(
-			arg0,
-			arg1,
-		)
-	})
-	return _c
-}
-
-func (_c *Querier_HealthStatusCreateOrUpdate_Call) Return(healthStatus gensql.HealthStatus, err error) *Querier_HealthStatusCreateOrUpdate_Call {
-	_c.Call.Return(healthStatus, err)
-	return _c
-}
-
-func (_c *Querier_HealthStatusCreateOrUpdate_Call) RunAndReturn(run func(ctx context.Context, arg gensql.HealthStatusCreateOrUpdateParams) (gensql.HealthStatus, error)) *Querier_HealthStatusCreateOrUpdate_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// HealthStatusGet provides a mock function for the type Querier
-func (_mock *Querier) HealthStatusGet(ctx context.Context, environmentID uuid.UUID) (gensql.HealthStatus, error) {
-	ret := _mock.Called(ctx, environmentID)
-
-	if len(ret) == 0 {
-		panic("no return value specified for HealthStatusGet")
-	}
-
-	var r0 gensql.HealthStatus
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) (gensql.HealthStatus, error)); ok {
-		return returnFunc(ctx, environmentID)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) gensql.HealthStatus); ok {
-		r0 = returnFunc(ctx, environmentID)
-	} else {
-		r0 = ret.Get(0).(gensql.HealthStatus)
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
-		r1 = returnFunc(ctx, environmentID)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Querier_HealthStatusGet_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'HealthStatusGet'
-type Querier_HealthStatusGet_Call struct {
-	*mock.Call
-}
-
-// HealthStatusGet is a helper method to define mock.On call
-//   - ctx context.Context
-//   - environmentID uuid.UUID
-func (_e *Querier_Expecter) HealthStatusGet(ctx interface{}, environmentID interface{}) *Querier_HealthStatusGet_Call {
-	return &Querier_HealthStatusGet_Call{Call: _e.mock.On("HealthStatusGet", ctx, environmentID)}
-}
-
-func (_c *Querier_HealthStatusGet_Call) Run(run func(ctx context.Context, environmentID uuid.UUID)) *Querier_HealthStatusGet_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 uuid.UUID
-		if args[1] != nil {
-			arg1 = args[1].(uuid.UUID)
-		}
-		run(
-			arg0,
-			arg1,
-		)
-	})
-	return _c
-}
-
-func (_c *Querier_HealthStatusGet_Call) Return(healthStatus gensql.HealthStatus, err error) *Querier_HealthStatusGet_Call {
-	_c.Call.Return(healthStatus, err)
-	return _c
-}
-
-func (_c *Querier_HealthStatusGet_Call) RunAndReturn(run func(ctx context.Context, environmentID uuid.UUID) (gensql.HealthStatus, error)) *Querier_HealthStatusGet_Call {
 	_c.Call.Return(run)
 	return _c
 }

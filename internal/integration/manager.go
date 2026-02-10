@@ -6,26 +6,24 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net/http"
 	"os"
 	"testing"
 	"time"
 
-	"github.com/99designs/gqlgen/graphql"
-	"github.com/99designs/gqlgen/graphql/handler"
-	"github.com/99designs/gqlgen/graphql/handler/transport"
-	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/nais/fasit/internal/contextloader"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/notifier"
 	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/graph"
-	"github.com/nais/fasit/internal/graph/graphgen"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/naisd"
+	"github.com/nais/fasit/internal/naisdstatus"
 	"github.com/nais/fasit/internal/provider/protogen"
-	"github.com/nais/fasit/internal/rollout"
+	"github.com/nais/fasit/internal/server"
 	"github.com/nais/fasit/internal/slack/fake"
 	"github.com/nais/fasit/internal/workers"
 	testmanager "github.com/nais/tester/lua"
@@ -144,6 +142,7 @@ func TestRunner(ctx context.Context, skipSetup bool) (*testmanager.Manager, erro
 			envLabels := make([]*protogen.EnvironmentLabel, 0)
 
 			pool := L.Context().Value(poolKey).(*pgxpool.Pool)
+
 			repo := database.NewRepo(pool, logrus.New())
 
 			tenantID, err := uuid.Parse(tenantIDStr)
@@ -191,9 +190,10 @@ func TestRunner(ctx context.Context, skipSetup bool) (*testmanager.Manager, erro
 					L.RaiseError("failed to make environment ci: %s", err)
 				}
 			}
+			ctx = naisdstatus.Register(ctx, pool)
 
 			if !unhealthy {
-				err := repo.HealthStatusCreateOrUpdate(ctx, env.ID, &message.Health{
+				err := naisdstatus.Set(ctx, env.ID, &message.Health{
 					ReportedAt: time.Now(),
 				})
 				if err != nil {
@@ -220,8 +220,7 @@ func TestRunner(ctx context.Context, skipSetup bool) (*testmanager.Manager, erro
 				L.RaiseError("failed to reconcile: %s", err)
 			}
 
-			deploymentMgr := L.Context().Value(deploymentMgrKey).(*deployment.Manager)
-			if err := deploymentMgr.Reconcile(ctx); err != nil {
+			if err := deployment.GetManager(L.Context()).Reconcile(L.Context()); err != nil {
 				L.RaiseError("failed to reconcile: %s", err)
 			}
 
@@ -322,26 +321,31 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 			return ctx, nil, nil, err
 		}
 
-		dcp := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
+		deploymentPublisher := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
 			p, ok := naisdRunner.deploymentReconcilerPublishers[topicID]
 			if !ok {
 				panic(fmt.Sprintf("no publisher for topic %q", topicID))
 			}
 			return p
 		}
+		rolloutPublisher := func(topicID string, log logrus.FieldLogger) workers.Publisher {
+			p, ok := naisdRunner.reconcilerPublishers[topicID]
+			if !ok {
+				panic(fmt.Sprintf("no publisher for topic %q", topicID))
+			}
+			return p
+		}
 
-		deploymentMgr, err := deployment.NewManager(db, dcp, noop.NewMeterProvider().Meter(""), logrus.NewEntry(log))
+		meter := noop.NewMeterProvider().Meter("")
+
+		loadContext, err := contextloader.NewLoaderFunc(pool, deploymentPublisher, rolloutPublisher, meter, log)
 		if err != nil {
 			done()
 			return ctx, nil, nil, err
 		}
+		ctx = loadContext(ctx)
 
-		if err := naisdRunner.start(ctx, db, deploymentMgr); err != nil {
-			done()
-			return ctx, nil, nil, err
-		}
-
-		restRunner, err := newRestRunner(ctx, pool, deploymentMgr)
+		restRunner, err := newRestRunner(ctx, loadContext, db)
 		if err != nil {
 			done()
 			return ctx, nil, nil, err
@@ -350,29 +354,25 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 		runners := []spec.Runner{
 			naisdRunner,
 			restRunner,
-			newGQLRunner(pool, deploymentMgr),
+			newGQLRunner(loadContext, db),
 			runner.NewSQLRunner(pool),
 		}
 
 		ctx = context.WithValue(ctx, poolKey, pool)
 
-		cp := func(topicID string, log logrus.FieldLogger) workers.Publisher {
-			p, ok := naisdRunner.reconcilerPublishers[topicID]
-			if !ok {
-				panic(fmt.Sprintf("no publisher for topic %q", topicID))
-			}
-			return p
-		}
-
 		notifierService := notifier.New(pool, logrus.NewEntry(log))
-		reconciler, err := workers.NewReconciler(db, cp, notifierService, noop.NewMeterProvider().Meter(""), logrus.NewEntry(log))
+		reconciler, err := workers.NewReconciler(db, rolloutPublisher, notifierService, meter, log)
 		if err != nil {
 			done()
 			return ctx, nil, nil, err
 		}
 
+		if err := naisdRunner.start(ctx, db); err != nil {
+			done()
+			return ctx, nil, nil, err
+		}
+
 		ctx = context.WithValue(ctx, reconcilerKey, reconciler)
-		ctx = context.WithValue(ctx, deploymentMgrKey, deploymentMgr)
 		ctx = context.WithValue(ctx, naisdKey, naisdRunner)
 
 		cleanups = append(cleanups, close)
@@ -386,52 +386,34 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 	}
 }
 
-func newRestRunner(ctx context.Context, pool *pgxpool.Pool, deploymentMgr *deployment.Manager) (*runner.REST, error) {
-	router := chi.NewMux()
+func newRestRunner(ctx context.Context, loadContext contextloader.LoaderFunc, repo database.Repo) (*runner.REST, error) {
+	log := logrus.New()
+	log.Out = io.Discard
+
+	dummyHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
 	// router.Handle("/query", iapMW(corsMW.Handler(srv)))
-
-	db := database.NewRepo(pool, logrus.New())
-
-	rout, err := rollout.New(ctx, db)
+	router, err := server.SetupRouter(ctx, loadContext, "", true, true, dummyHandler, repo, log)
 	if err != nil {
-		return nil, err
+		panic(err)
 	}
-	rout.AllowAll = true
-	router.Post("/github/rollout", rout.Rollout)
-
-	deploy, err := deployment.NewHttpHandler(ctx, deploymentMgr, logrus.New())
-	if err != nil {
-		return nil, err
-	}
-	deploy.AllowAll = true
-	router.Post("/github/deployment", deploy.CreateDeployment)
-	router.Get("/github/deployment/{id}", deploy.GetDeployment)
 
 	return runner.NewRestRunner(router), nil
 }
 
-func newGQLRunner(pool *pgxpool.Pool, deploymentMgr *deployment.Manager) spec.Runner {
+func newGQLRunner(loadContext contextloader.LoaderFunc, repo database.Repo) spec.Runner {
 	log := logrus.New()
 	log.Out = io.Discard
 
 	resolver := &graph.Resolver{
-		Repo:          database.NewRepo(pool, log),
-		Log:           logrus.NewEntry(log),
-		DeploymentMgr: deploymentMgr,
+		Repo: repo,
+		Log:  logrus.NewEntry(log),
+	}
+	httpHandler, err := server.SetupGraph(loadContext, resolver, noop.NewMeterProvider().Meter(""))
+	if err != nil {
+		panic(err)
 	}
 
-	newServer := func(es graphql.ExecutableSchema) *handler.Server {
-		srv := handler.New(es)
-		srv.AddTransport(transport.SSE{})
-		srv.AddTransport(transport.GET{})
-		srv.AddTransport(transport.POST{})
-
-		return srv
-	}
-
-	srv := newServer(graphgen.NewExecutableSchema(graphgen.Config{Resolvers: resolver}))
-
-	return runner.NewGQLRunner(srv)
+	return runner.NewGQLRunner(httpHandler)
 }
 
 func startPostgresql(ctx context.Context) (*postgres.PostgresContainer, string, error) {
@@ -536,7 +518,7 @@ func newNaisd() (*naisdRunner, func(), error) {
 	return naisdRunner, func() {}, nil
 }
 
-func (n *naisdRunner) start(ctx context.Context, db database.Repo, dmgr *deployment.Manager) error {
+func (n *naisdRunner) start(ctx context.Context, db database.Repo) error {
 	log := logrus.New()
 	if testing.Verbose() {
 		log.Out = os.Stdout
@@ -544,8 +526,9 @@ func (n *naisdRunner) start(ctx context.Context, db database.Repo, dmgr *deploym
 	} else {
 		log.Out = io.Discard
 	}
+	deploymentManager := deployment.GetManager(ctx)
 
-	rec := workers.NewReceiver(&statusReceiver{naisdRunner: n}, db, log, fake.NewFakeSlackClient(), "test", dmgr)
+	rec := workers.NewReceiver(&statusReceiver{naisdRunner: n}, db, log, fake.NewFakeSlackClient(), "test", deploymentManager)
 	go rec.Run(ctx)
 	return nil
 }

@@ -9,12 +9,14 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/nais/fasit/internal/contextloader"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/deployment/deploymenttest"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
+	"github.com/nais/fasit/internal/naisdstatus"
 	"github.com/nais/fasit/internal/provider/protogen"
 	"github.com/sirupsen/logrus"
 	"github.com/sirupsen/logrus/hooks/test"
@@ -123,23 +125,34 @@ func TestReconcile(t *testing.T) {
 
 	for _, tc := range tt {
 		t.Run(tc.name, func(t *testing.T) {
+			mgr := setupTestMgr(ctx, t, container, dsn, logger)
+			deployment.ChartDownloader = mgr.seeder.ChartDownloader()
+
+			newPublisher := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
+				return mgr.publisher
+			}
+			loadContext, err := contextloader.NewLoaderFunc(mgr.db.pool, newPublisher, nil, meter, logger)
+			if err != nil {
+				t.Fatalf("failed to get setup context: %v", err)
+			}
+			ctx = loadContext(ctx)
+
 			reconcilerCtx, cancel := context.WithCancel(ctx)
 			t.Cleanup(cancel)
-
-			mgr := setupTestMgr(ctx, t, container, dsn, logger)
+			reconcilerCtx = loadContext(reconcilerCtx)
 
 			mgr.db.createTenantsAndEnvironments(ctx, envsToCreate)
 			for _, input := range tc.deploymentsToCreate {
 				mgr.seeder.AddDeployment(input.name, input.version, input.target, input.dependencies...)
 			}
 
-			err = mgr.seeder.Seed(ctx, mgr.dmgr)
+			err = mgr.seeder.Seed(ctx)
 			if err != nil {
 				t.Fatalf("seeding deployments: %v", err)
 			}
 
 			for _, result := range tc.reconcileResults {
-				if err := mgr.dmgr.Reconcile(reconcilerCtx); err != nil {
+				if err := deployment.GetManager(ctx).Reconcile(reconcilerCtx); err != nil {
 					t.Fatalf("reconcile: %v", err)
 				}
 
@@ -198,28 +211,40 @@ func TestReconcileWhenPreviousIsInProgress(t *testing.T) {
 
 	fmt.Println("postgres container started: ", dsn)
 
+	mgr := setupTestMgr(ctx, t, container, dsn, logger)
+	deployment.ChartDownloader = mgr.seeder.ChartDownloader()
+	newPublisher := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
+		return mgr.publisher
+	}
+	loadContext, err := contextloader.NewLoaderFunc(mgr.db.pool, newPublisher, nil, meter, logger)
+	if err != nil {
+		t.Fatalf("failed to get setup context: %v", err)
+	}
+	ctx = loadContext(ctx)
+
+	mgr.db.createTenantsAndEnvironments(ctx, envsToCreate)
+
 	reconcilerCtx, cancel := context.WithCancel(ctx)
 	t.Cleanup(cancel)
+	reconcilerCtx = loadContext(reconcilerCtx)
 
-	mgr := setupTestMgr(ctx, t, container, dsn, logger)
-	mgr.db.createTenantsAndEnvironments(ctx, envsToCreate)
 	mgr.seeder.AddDeployment("feature-pending", "1.0.0", environment.Labels{"aiven": "enabled"})
-	err = mgr.seeder.Seed(ctx, mgr.dmgr)
+	err = mgr.seeder.Seed(ctx)
 	if err != nil {
 		t.Fatalf("seeding deployments: %v", err)
 	}
-	if err = mgr.dmgr.Reconcile(reconcilerCtx); err != nil {
+	if err = deployment.GetManager(ctx).Reconcile(reconcilerCtx); err != nil {
 		t.Fatalf("reconcile: %v", err)
 	}
 
 	mgr.seeder.Reset()
 
 	mgr.seeder.AddDeployment("feature-pending", "2.0.0", environment.Labels{})
-	err = mgr.seeder.Seed(ctx, mgr.dmgr)
+	err = mgr.seeder.Seed(ctx)
 	if err != nil {
 		t.Fatalf("seeding deployments: %v", err)
 	}
-	if err = mgr.dmgr.Reconcile(reconcilerCtx); err != nil {
+	if err = deployment.GetManager(ctx).Reconcile(reconcilerCtx); err != nil {
 		t.Fatalf("reconcile: %v", err)
 	}
 
@@ -299,7 +324,7 @@ func (d *Db) createEnv(ctx context.Context, tenant *model.Tenant, name string, l
 		d.t.Fatalf("set environment labels: %v", err)
 	}
 
-	err = d.repo.HealthStatusCreateOrUpdate(ctx, env.ID, &message.Health{
+	err = naisdstatus.Set(ctx, env.ID, &message.Health{
 		ReportedAt: time.Now(),
 	})
 	if err != nil {
@@ -373,7 +398,6 @@ func startPostgresql(ctx context.Context, t *testing.T) (container *postgres.Pos
 type TestMgr struct {
 	t         *testing.T
 	db        Db
-	dmgr      *deployment.Manager
 	seeder    *deploymenttest.Seeder
 	publisher *publisher
 	log       logrus.FieldLogger
@@ -390,23 +414,9 @@ func setupTestMgr(
 	db := getDb(ctx, t, container, dsn, log)
 	seeder := deploymenttest.NewSeeder()
 	pub := &publisher{repo: db.repo}
-	newPublisher := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
-		return pub
-	}
-	dmgr, err := deployment.NewManager(
-		db.repo,
-		newPublisher,
-		meter,
-		log,
-		deployment.WithChartDownloader(seeder.ChartDownloader()),
-	)
-	if err != nil {
-		t.Fatalf("create deployment manager: %v", err)
-	}
 	return &TestMgr{
 		t:         t,
 		db:        db,
-		dmgr:      dmgr,
 		seeder:    seeder,
 		publisher: pub,
 		log:       log,

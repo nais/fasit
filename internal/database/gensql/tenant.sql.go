@@ -8,7 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/nais/fasit/internal/environment"
+	"github.com/nais/fasit/internal/database/types"
 )
 
 const tenantCI = `-- name: TenantCI :one
@@ -98,7 +98,7 @@ type TenantEnvironmentsRow struct {
 	AutoUpgrade       bool
 	UpgradeDelayDays  int32
 	MaintenanceWindow []byte
-	Labels            environment.Labels
+	Labels            types.EnvironmentLabels
 	TenantName        string
 }
 

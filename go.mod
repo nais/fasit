@@ -1,6 +1,6 @@
 module github.com/nais/fasit
 
-go 1.25.6
+go 1.25.7
 
 tool (
 	github.com/99designs/gqlgen

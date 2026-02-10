@@ -10,26 +10,30 @@ import (
 	"github.com/nais/fasit/internal/graph/model"
 )
 
-/*type ctxKey int
+type ctxKey int
 
 const managerKey ctxKey = iota
 
-func NewManagerContext(ctx context.Context, dmgr *Manager) context.Context {
-	return context.WithValue(ctx, managerKey, dmgr)
+func Register(ctx context.Context, deploymentManager *Manager) context.Context {
+	return context.WithValue(ctx, managerKey, deploymentManager)
 }
 
 func fromContext(ctx context.Context) *Manager {
 	return ctx.Value(managerKey).(*Manager)
-}*/
+}
+
+func GetManager(ctx context.Context) *Manager {
+	return fromContext(ctx)
+}
 
 // TriggerReconcile will trigger an asynchronous reconciliation of deployments. The returned channel can be used to wait
 // for the result.
-func (dm *Manager) TriggerReconcile(event ReconcileTriggerEvent) chan TriggerResult {
-	return dm.reconciler.trigger(event)
+func TriggerReconcile(ctx context.Context, event ReconcileTriggerEvent) chan TriggerResult {
+	return fromContext(ctx).reconciler.trigger(event)
 }
 
-func (dm *Manager) CreateDeployment(ctx context.Context, req Request) (uuid.UUID, error) {
-	feat, err := dm.chartDownloader(req.Chart, req.Version)
+func CreateDeployment(ctx context.Context, req Request) (uuid.UUID, error) {
+	feat, err := ChartDownloader(req.Chart, req.Version)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("unable to convert oci chart: %w", err)
 	}
@@ -43,25 +47,25 @@ func (dm *Manager) CreateDeployment(ctx context.Context, req Request) (uuid.UUID
 	}
 
 	if !req.SkipCI {
-		if err := dm.deployer.deployToCI(ctx, feat, req); err != nil {
+		if err := fromContext(ctx).deployer.deployToCI(ctx, feat, req); err != nil {
 			return uuid.Nil, fmt.Errorf("deploy to ci: %w", err)
 		}
 	}
 
-	return dm.deployer.CreateDeployment(ctx, feat, req, false)
+	return fromContext(ctx).deployer.CreateDeployment(ctx, feat, req, false)
 }
 
-func (dm *Manager) GetDeployment(ctx context.Context, id uuid.UUID) (*model.Deployment, error) {
-	return getDeployment(ctx, dm.querier, id)
+func GetDeployment(ctx context.Context, id uuid.UUID) (*Deployment, error) {
+	return getDeployment(ctx, fromContext(ctx).querier, id)
 }
 
-func (dm *Manager) ListDeployments(ctx context.Context) ([]*model.Deployment, error) {
-	rows, err := dm.querier.ListDeployments(ctx)
+func ListDeployments(ctx context.Context) ([]*Deployment, error) {
+	rows, err := fromContext(ctx).querier.ListDeployments(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	ret := make([]*model.Deployment, len(rows))
+	ret := make([]*Deployment, len(rows))
 	for i, row := range rows {
 		deployment, err := deploymentFromSQL(row.Deployment, row.FeatureDatum)
 		if err != nil {
@@ -73,16 +77,16 @@ func (dm *Manager) ListDeployments(ctx context.Context) ([]*model.Deployment, er
 	return ret, nil
 }
 
-func (dm *Manager) ListDeploymentStatuses(ctx context.Context, deploymentID uuid.UUID) ([]*model.DeploymentStatus, error) {
-	rows, err := dm.querier.ListDeploymentStatuses(ctx, deploymentID)
+func ListDeploymentStatuses(ctx context.Context, deploymentID uuid.UUID) ([]*DeploymentStatus, error) {
+	rows, err := fromContext(ctx).querier.ListDeploymentStatuses(ctx, deploymentID)
 	if err != nil {
 		return nil, fmt.Errorf("get deployment statuses: %w", err)
 	}
 
-	models := make([]*model.DeploymentStatus, len(rows))
+	models := make([]*DeploymentStatus, len(rows))
 	for i, status := range rows {
-		models[i] = &model.DeploymentStatus{
-			State:         model.DeploymentStatusState(strings.ToUpper(status.Status)),
+		models[i] = &DeploymentStatus{
+			State:         DeploymentStatusState(strings.ToUpper(status.Status)),
 			Message:       status.Message,
 			LastModified:  status.LastModified.Time,
 			Created:       status.Created.Time,
@@ -94,13 +98,13 @@ func (dm *Manager) ListDeploymentStatuses(ctx context.Context, deploymentID uuid
 	return models, nil
 }
 
-func (dm *Manager) ListDeploymentsByFeature(ctx context.Context, featureName string) ([]*model.Deployment, error) {
-	rows, err := dm.querier.ListDeploymentsByFeature(ctx, featureName)
+func ListDeploymentsByFeature(ctx context.Context, featureName string) ([]*Deployment, error) {
+	rows, err := fromContext(ctx).querier.ListDeploymentsByFeature(ctx, featureName)
 	if err != nil {
 		return nil, err
 	}
 
-	ret := make([]*model.Deployment, len(rows))
+	ret := make([]*Deployment, len(rows))
 	for i, row := range rows {
 		deployment, err := deploymentFromSQL(row.Deployment, row.FeatureDatum)
 		if err != nil {
@@ -112,12 +116,12 @@ func (dm *Manager) ListDeploymentsByFeature(ctx context.Context, featureName str
 	return ret, nil
 }
 
-func (dm *Manager) DeleteDeployment(ctx context.Context, deploymentID uuid.UUID) error {
-	return dm.querier.DeleteDeployment(ctx, deploymentID)
+func DeleteDeployment(ctx context.Context, deploymentID uuid.UUID) error {
+	return fromContext(ctx).querier.DeleteDeployment(ctx, deploymentID)
 }
 
-func (dm *Manager) SetDeploymentStatus(ctx context.Context, deploymentID, environmentID uuid.UUID, status model.RolloutStatus, message string) error {
-	return dm.querier.SetDeploymentStatus(ctx, deploymentsql.SetDeploymentStatusParams{
+func SetDeploymentStatus(ctx context.Context, deploymentID, environmentID uuid.UUID, status model.RolloutStatus, message string) error {
+	return fromContext(ctx).querier.SetDeploymentStatus(ctx, deploymentsql.SetDeploymentStatusParams{
 		DeploymentID:  deploymentID,
 		EnvironmentID: environmentID,
 		Status:        status.String(),
@@ -125,8 +129,8 @@ func (dm *Manager) SetDeploymentStatus(ctx context.Context, deploymentID, enviro
 	})
 }
 
-func (dm *Manager) GetEnvironmentFeature(ctx context.Context, environmentID uuid.UUID, featureName string) (*model.Feature, error) {
-	f, err := dm.querier.GetEnvironmentFeature(ctx, deploymentsql.GetEnvironmentFeatureParams{
+func GetEnvironmentFeature(ctx context.Context, environmentID uuid.UUID, featureName string) (*model.Feature, error) {
+	f, err := fromContext(ctx).querier.GetEnvironmentFeature(ctx, deploymentsql.GetEnvironmentFeatureParams{
 		EnvironmentID: environmentID,
 		FeatureName:   featureName,
 	})
@@ -143,8 +147,8 @@ func (dm *Manager) GetEnvironmentFeature(ctx context.Context, environmentID uuid
 	return feature, nil
 }
 
-func (dm *Manager) ListEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]*model.FeatureState, error) {
-	features, err := dm.querier.ListEnvironmentFeatures(ctx, environmentID)
+func ListEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]*model.FeatureState, error) {
+	features, err := fromContext(ctx).querier.ListEnvironmentFeatures(ctx, environmentID)
 	if err != nil {
 		return nil, err
 	}

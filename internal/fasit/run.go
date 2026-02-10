@@ -12,21 +12,12 @@ import (
 	"time"
 
 	"cloud.google.com/go/pubsub/v2"
-	"github.com/99designs/gqlgen/graphql"
-	"github.com/99designs/gqlgen/graphql/handler"
-	"github.com/99designs/gqlgen/graphql/handler/extension"
-	"github.com/99designs/gqlgen/graphql/handler/lru"
-	"github.com/99designs/gqlgen/graphql/handler/transport"
-	"github.com/99designs/gqlgen/graphql/playground"
-	"github.com/go-chi/chi/v5"
 	"github.com/joho/godotenv"
-	"github.com/nais/fasit/internal/auth"
 	"github.com/nais/fasit/internal/cluster"
+	"github.com/nais/fasit/internal/contextloader"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/notifier"
 	"github.com/nais/fasit/internal/deployment"
-	"github.com/nais/fasit/internal/graph"
-	"github.com/nais/fasit/internal/graph/graphgen"
 	"github.com/nais/fasit/internal/ioconvenience"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/provider"
@@ -34,13 +25,8 @@ import (
 	"github.com/nais/fasit/internal/rollout"
 	"github.com/nais/fasit/internal/slack"
 	"github.com/nais/fasit/internal/workers"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/ravilushqa/otelgqlgen"
-	"github.com/rs/cors"
 	"github.com/sethvargo/go-envconfig"
 	"github.com/sirupsen/logrus"
-	"github.com/vektah/gqlparser/v2/ast"
-	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/prometheus"
 	"go.opentelemetry.io/otel/metric"
 	metricsdk "go.opentelemetry.io/otel/sdk/metric"
@@ -55,8 +41,6 @@ import (
 	// performance in a containerized environment.
 	_ "go.uber.org/automaxprocs"
 )
-
-const slowQueryEndpoint = false
 
 func Run(ctx context.Context) error {
 	if err := loadEnvFile(); err != nil {
@@ -100,15 +84,20 @@ func Run(ctx context.Context) error {
 	go repo.TimeoutDeployInstructions(ctx)
 	log.Info("-- successfully started database client")
 
-	deployCreatePublisher := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
+	deploymentPublisher := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
+		return message.NewPublisher[message.DeployInstruction](pubSubClient, cfg.GCPProjectID, topicID, log)
+	}
+	rolloutPublisher := func(topicID string, log logrus.FieldLogger) workers.Publisher {
 		return message.NewPublisher[message.DeployInstruction](pubSubClient, cfg.GCPProjectID, topicID, log)
 	}
 
-	deploymentMgr, err := deployment.NewManager(repo, deployCreatePublisher, meter, log)
+	loadContext, err := contextloader.NewLoaderFunc(pool, deploymentPublisher, rolloutPublisher, meter, log)
 	if err != nil {
-		return fmt.Errorf("error creating deployment manager: %w", err)
+		return fmt.Errorf("creating setup context: %w", err)
 	}
-	go deploymentMgr.Run(ctx, 10*time.Minute)
+
+	ctx = loadContext(ctx)
+	go deployment.GetManager(ctx).Run(ctx, 10*time.Minute)
 
 	statusMgr := message.NewSubscriber[message.Status](pubSubClient, cfg.GCPProjectID, cfg.StatusSubscriptionID, log)
 
@@ -118,17 +107,14 @@ func Run(ctx context.Context) error {
 		log,
 		slackClient,
 		cfg.SlackChannelFeatureAlerts,
-		deploymentMgr,
+		deployment.GetManager(ctx),
 	)
 	go receiver.Run(ctx)
 
 	notifierService := notifier.New(pool, log)
 	go notifierService.Run(ctx)
 
-	createPublisher := func(topicID string, log logrus.FieldLogger) workers.Publisher {
-		return message.NewPublisher[message.DeployInstruction](pubSubClient, cfg.GCPProjectID, topicID, log)
-	}
-	reconciler, err := workers.NewReconciler(repo, createPublisher, notifierService, meter, log)
+	reconciler, err := workers.NewReconciler(repo, rolloutPublisher, notifierService, meter, log)
 	if err != nil {
 		return fmt.Errorf("error creating reconciler: %w", err)
 	}
@@ -152,71 +138,16 @@ func Run(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("error creating google client: %w", err)
 	}
-	resolver := graph.NewResolver(ctx, repo, deploymentMgr, notifierService, createPublisher, googleClient, log)
+	defer ioconvenience.CloseWithLog(googleClient, log)
 
-	graphServer := newGraphServer(graphgen.NewExecutableSchema(graphgen.Config{Resolvers: resolver}))
-	graphServer.Use(otelgqlgen.Middleware())
-	metricsMW, err := graph.NewMetrics(meter)
-	if err != nil {
-		return fmt.Errorf("error creating metrics middleware: %w", err)
-	}
-	graphServer.Use(metricsMW)
-
-	corsMW := cors.New(cors.Options{
-		AllowedOrigins:   []string{"https://*", "http://*"},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowCredentials: true,
-	})
-
-	// Add the IAP validation middleware.
-	// If the IAP audience is not set, we stop the server with a fatal error
-	// unless the INSECURE_SKIP_PROXY env var is true.
-	iapMW := auth.ValidateJWTFromComputeEngine(cfg.IAPAudience)
-	if cfg.IAPAudience == "" {
-		if !cfg.InsecureSkipProxy {
-			return fmt.Errorf("INSECURE_SKIP_PROXY must be true when iap audience is not set")
-		}
-
-		iapMW = auth.InsecureValidateMW
-	}
-
-	slowDownQuery := func(h http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if slowQueryEndpoint {
-				time.Sleep(2 * time.Second)
-			}
-			h.ServeHTTP(w, r)
-		})
-	}
-
-	if os.Getenv("GH_PEM") != "" {
+	if cfg.GitHubPEM != "" {
 		log.Info("GitHub status reporter enabled")
-		ghstatus, err := rollout.NewGHStatusReporter(log, repo, notifierService, os.Getenv("GH_PEM"))
+		ghstatus, err := rollout.NewGHStatusReporter(log, repo, notifierService, cfg.GitHubPEM)
 		if err != nil {
 			return fmt.Errorf("error creating github status reporter: %w", err)
 		}
 		go ghstatus.Run(ctx)
 	}
-
-	router := chi.NewMux()
-	router.Handle("/", iapMW(playground.Handler("GraphQL playground", "/query")))
-	router.Handle("/query", slowDownQuery(iapMW(corsMW.Handler(graphServer))))
-	router.Handle("/metrics", promhttp.Handler())
-
-	rout, err := rollout.New(ctx, repo)
-	if err != nil {
-		return fmt.Errorf("error creating rollout handler: %w", err)
-	}
-	rout.AllowAll = cfg.InsecureSkipTokenCheck
-	router.Post("/github/rollout", rout.Rollout)
-
-	deploy, err := deployment.NewHttpHandler(ctx, deploymentMgr, log)
-	if err != nil {
-		return fmt.Errorf("error creating deployment http handler: %w", err)
-	}
-	deploy.AllowAll = cfg.InsecureSkipTokenCheck
-	router.Post("/github/deployment", deploy.CreateDeployment)
-	router.Get("/github/deployment/{id}", deploy.GetDeployment)
 
 	go func() {
 		if err := runGRPC(ctx, cfg.GRPCBindAddress, repo, log); err != nil {
@@ -227,18 +158,14 @@ func Run(ctx context.Context) error {
 	serverCtx, serverCancel := context.WithCancel(ctx)
 	defer serverCancel()
 
-	server := &http.Server{
-		Addr:              cfg.BindAddress,
-		Handler:           router,
-		ReadHeaderTimeout: 2 * time.Second,
-		BaseContext: func(net.Listener) context.Context {
-			return serverCtx
-		},
+	httpServer, err := newHttpServer(serverCtx, loadContext, cfg, repo, notifierService, rolloutPublisher, googleClient, meter, log)
+	if err != nil {
+		return fmt.Errorf("error creating http server: %w", err)
 	}
 
 	go func() {
-		log.Printf("connect to http://%s/ for GraphQL playground", cfg.BindAddress)
-		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		log.Printf("connect to http://%s/ for GraphQL playground", cfg.HTTPBindAddress)
+		if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.WithError(err).Fatal("running server")
 		}
 	}()
@@ -258,27 +185,11 @@ func Run(ctx context.Context) error {
 	timeoutCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	if err := server.Shutdown(timeoutCtx); err != nil {
+	if err := httpServer.Shutdown(timeoutCtx); err != nil {
 		log.WithError(err).Error("shutting down server")
 	}
 
 	return nil
-}
-
-func newGraphServer(es graphql.ExecutableSchema) *handler.Server {
-	srv := handler.New(es)
-	srv.AddTransport(transport.SSE{}) // Support subscriptions
-	srv.AddTransport(transport.Options{})
-	srv.AddTransport(transport.POST{})
-
-	srv.SetQueryCache(lru.New[*ast.QueryDocument](1000))
-
-	srv.Use(extension.Introspection{})
-	srv.Use(extension.AutomaticPersistedQuery{
-		Cache: lru.New[string](100),
-	})
-
-	return srv
 }
 
 func newLogger(level string) (logrus.FieldLogger, error) {
@@ -324,58 +235,6 @@ func newMetricsProvider() (metric.Meter, error) {
 	return metricsdk.
 		NewMeterProvider(metricsdk.WithReader(exporter)).
 		Meter("github.com/nais/fasit"), nil
-}
-
-func runClusterUpgrader(ctx context.Context, slackChannel string, log logrus.FieldLogger, clusterManager cluster.ClusterManager, repo database.Repo, meter metric.Meter, slack slack.SlackClient) error {
-	s := workers.NewScheduler(log)
-	clusterUpgrader := cluster.NewClusterUpgrader(repo, log, clusterManager, meter, slack, slackChannel)
-	autoUpgrader := cluster.NewAutoUpgrader(repo, log, clusterManager, meter)
-
-	s.Register("cluster-upgrader", clusterUpgrader, 30*time.Second)
-	s.Register("auto-upgrader", autoUpgrader, 1*time.Hour)
-	s.Start(ctx)
-
-	return nil
-}
-
-func clustersMetrics(ctx context.Context, repo database.Repo, meter metric.Meter, log logrus.FieldLogger) {
-	log = log.WithField("subsystem", "cluster-info")
-
-	gauge, err := meter.Int64Gauge("cluster_info")
-	if err != nil {
-		return
-	}
-
-	for {
-		tenants, err := repo.TenantsGet(ctx)
-		if err != nil {
-			log.WithError(err).Error("getting tenants")
-			return
-		}
-
-		for _, tenant := range tenants {
-			environments, err := repo.EnvironmentsGet(ctx, tenant.ID)
-			if err != nil {
-				log.WithError(err).Error("getting environments")
-				return
-			}
-
-			for _, env := range environments {
-				attr := []attribute.KeyValue{
-					attribute.String("tenant", tenant.Name),
-					attribute.String("environment", env.Name),
-					attribute.String("kind", env.Kind.String()),
-				}
-				gauge.Record(ctx, 1, metric.WithAttributes(attr...))
-			}
-		}
-
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(5 * time.Minute):
-		}
-	}
 }
 
 // loadEnvFile will load a .env file if it exists. This is useful for local development.
