@@ -51,7 +51,6 @@ type Repo interface {
 	DeployInstructionRepo
 	EnvironmentRepo
 	EnvironmentValueRepo
-	FeatureStateRepo
 	KubernetesNodeRepo
 	LogRepo
 	ReleaseStatusRepo

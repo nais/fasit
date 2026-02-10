@@ -16,7 +16,6 @@ import (
 
 type Store interface {
 	database.EnvironmentRepo
-	database.FeatureStateRepo
 	database.RolloutRepo
 
 	database.Transaction
@@ -103,7 +102,7 @@ func (r *Rollout) Rollout(w http.ResponseWriter, req *http.Request) {
 			continue
 		}
 
-		fs, err := r.repo.FeatureStateGet(ctx, e.ID, feat.Name)
+		fs, err := feature.FeatureStateGet(ctx, e.ID, feat.Name)
 		if err != nil {
 			envNotAvailable = append(envNotAvailable, env)
 			continue

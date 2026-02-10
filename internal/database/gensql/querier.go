@@ -81,10 +81,6 @@ type Querier interface {
 	EnvironmentValuesForEnvironment(ctx context.Context, arg EnvironmentValuesForEnvironmentParams) ([]EnvironmentValuesForEnvironmentRow, error)
 	EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]Environment, error)
 	EnvironmentsGetByAutoUpgrade(ctx context.Context) ([]Environment, error)
-	FeatureStateCreateOrUpdate(ctx context.Context, arg FeatureStateCreateOrUpdateParams) (FeatureState, error)
-	FeatureStateGet(ctx context.Context, arg FeatureStateGetParams) (FeatureState, error)
-	FeatureStatesGet(ctx context.Context, environmentID uuid.UUID) ([]FeatureStatesGetRow, error)
-	FeatureStatesGetOld(ctx context.Context, environmentID uuid.UUID) ([]FeatureStatesGetOldRow, error)
 	KubernetesNodeCreateOrUpdate(ctx context.Context, arg KubernetesNodeCreateOrUpdateParams) error
 	KubernetesNodeDeleteObsolete(ctx context.Context, environmentID uuid.UUID) error
 	KubernetesNodeStatuses(ctx context.Context, environmentID uuid.UUID) ([]KubernetesNodeStatus, error)
@@ -106,7 +102,6 @@ type Querier interface {
 	RolloutEventCreate(ctx context.Context, arg RolloutEventCreateParams) error
 	RolloutEventForRollout(ctx context.Context, rolloutID uuid.UUID) ([]RolloutEvent, error)
 	RolloutMarkFailed(ctx context.Context, rolloutID uuid.UUID) (int64, error)
-	RolloutStatesGet(ctx context.Context, environmentID uuid.UUID) ([]RolloutStatesGetRow, error)
 	RolloutStatus(ctx context.Context, featureName string) (string, error)
 	RolloutUpdateStatus(ctx context.Context, arg RolloutUpdateStatusParams) error
 	Rollouts(ctx context.Context, limit int32) ([]Rollout, error)

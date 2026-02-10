@@ -11,7 +11,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/errs"
 	"github.com/nais/fasit/internal/feature/featuresql"
@@ -22,7 +24,10 @@ type ctxKey int
 
 // QuerierKey is exposed for testing to override querier with mocks.
 // Avoid usage by e.g. using testcontainers.
-const QuerierKey ctxKey = iota
+const (
+	QuerierKey ctxKey = iota
+	HelmValuesFuncKey
+)
 
 func Register(ctx context.Context, pool *pgxpool.Pool) context.Context {
 	return context.WithValue(ctx, QuerierKey, featuresql.New(pool))
@@ -32,7 +37,7 @@ func querier(ctx context.Context) featuresql.Querier {
 	return ctx.Value(QuerierKey).(featuresql.Querier)
 }
 
-func HelmValues(ctx context.Context, f *model.Feature, envID uuid.UUID) (map[string]any, error) {
+func helmValues(ctx context.Context, f *model.Feature, envID uuid.UUID) (map[string]any, error) {
 	mv, envKind, err := MappingValuesForEnvironment(ctx, envID, true)
 	if err != nil {
 		return nil, err
@@ -77,6 +82,13 @@ func HelmValues(ctx context.Context, f *model.Feature, envID uuid.UUID) (map[str
 	}
 
 	return mp, err
+}
+
+func HelmValues(ctx context.Context, f *model.Feature, envID uuid.UUID) (map[string]any, error) {
+	if ctx.Value(HelmValuesFuncKey) != nil {
+		return ctx.Value(HelmValuesFuncKey).(func(ctx context.Context, f *model.Feature, envID uuid.UUID) (map[string]any, error))(ctx, f, envID)
+	}
+	return helmValues(ctx, f, envID)
 }
 
 func MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) (*ComputedValues, model.EnvironmentKind, error) {
@@ -326,4 +338,137 @@ func FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, ci bool) (
 	})
 
 	return featuresFromSQL(features)
+}
+
+func FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error) {
+	ret := []*model.FeatureState{}
+	featureStates, err := querier(ctx).FeatureStatesGet(ctx, envID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ret, nil
+		}
+		return nil, err
+	}
+
+	for _, featureState := range featureStates {
+		ret = append(ret, &model.FeatureState{
+			ID:           model.FeatureStateID(envID, featureState.Name),
+			FeatureName:  featureState.Name,
+			EnabledAt:    nullTimeToPtr(featureState.EnabledAt),
+			Enabled:      featureState.Enabled,
+			Created:      featureState.Created.Time,
+			LastModified: featureState.LastModified.Time,
+			EnvID:        envID,
+		})
+	}
+
+	return ret, nil
+}
+
+func FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *model.Feature, enabled bool) (*model.FeatureState, error) {
+	if len(feature.Dependencies) > 0 && enabled {
+		states, err := FeatureStatesGet(ctx, envID)
+		if err != nil {
+			return nil, err
+		}
+
+		enabledFeatures := []string{}
+		for _, state := range states {
+			if state.Enabled {
+				enabledFeatures = append(enabledFeatures, state.FeatureName)
+			}
+		}
+
+		missingFeatures := feature.Dependencies.FindMissing(enabledFeatures)
+		if len(missingFeatures) > 0 {
+			return nil, fmt.Errorf("dependency '%v' not enabled", missingFeatures)
+		}
+	}
+
+	res, err := querier(ctx).FeatureStateCreateOrUpdate(ctx, featuresql.FeatureStateCreateOrUpdateParams{
+		EnvironmentID: envID,
+		Feature:       feature.Name,
+		Enabled:       enabled,
+		Enabledat: pgtype.Timestamptz{
+			Time:  Now(ctx),
+			Valid: enabled,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	msg := fmt.Sprintf("enabled %v", feature.Name)
+	if !enabled {
+		msg = fmt.Sprintf("disabled %v", feature.Name)
+	}
+
+	audit.CreateAudit(ctx, msg, "feature_states", envID.String()+":"+feature.Name)
+
+	return featureStateFromSQL(res), nil
+}
+
+func FeatureStateGet(ctx context.Context, envID uuid.UUID, featureName string) (*model.FeatureState, error) {
+	featureState, err := querier(ctx).FeatureStateGet(ctx, featuresql.FeatureStateGetParams{
+		EnvironmentID: envID,
+		Feature:       featureName,
+	})
+
+	if err == nil {
+		fs := featureStateFromSQL(featureState)
+		fs.EnvID = envID
+		return fs, nil
+	} else if !errors.Is(err, pgx.ErrNoRows) {
+		return nil, err
+	}
+
+	fs := &model.FeatureState{
+		ID:          model.FeatureStateID(envID, featureName),
+		FeatureName: featureName,
+		EnvID:       envID,
+		Enabled:     false,
+	}
+
+	env, err := environment.Get(ctx, envID)
+	if err != nil {
+		return nil, err
+	}
+
+	defaultFeatures, err := querier(ctx).AutoInstallNamesForKind(ctx, featuresql.EnvironmentKind(env.Kind.String()))
+	if err != nil {
+		return nil, err
+	}
+
+	for _, feature := range defaultFeatures {
+		if feature == featureName {
+			fs.Enabled = true
+			return fs, nil
+		}
+	}
+
+	return fs, nil
+}
+
+func RolloutStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error) {
+	ret := []*model.FeatureState{}
+	featureStates, err := querier(ctx).RolloutStatesGet(ctx, envID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ret, nil
+		}
+		return nil, err
+	}
+
+	for _, featureState := range featureStates {
+		ret = append(ret, &model.FeatureState{
+			ID:           model.FeatureStateID(envID, featureState.FeatureName),
+			FeatureName:  featureState.FeatureName,
+			EnabledAt:    nullTimeToPtr(featureState.EnabledAt),
+			Enabled:      featureState.Enabled,
+			Created:      featureState.Created.Time,
+			LastModified: featureState.LastModified.Time,
+			EnvID:        envID,
+		})
+	}
+	return ret, nil
 }

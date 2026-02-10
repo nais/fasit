@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/nais/fasit/internal/database/mocks"
 	"github.com/nais/fasit/internal/database/notifier"
+	"github.com/nais/fasit/internal/environment/environmenttest"
 	"github.com/nais/fasit/internal/feature/featuretest"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
@@ -227,17 +228,18 @@ func TestReconcile(t *testing.T) {
 			repo.On("TenantEnvironments", mock.Anything, true).Return(te, nil)
 
 			ctx = featuretest.RegisterMock(ctx, t)
+			ctx = featuretest.OnHelmValues(ctx, uuid.Nil, "", nil)
+			ctx = environmenttest.RegisterMock(ctx, t)
 
 			for _, te := range tt.environments {
 				if len(tt.want) > 0 {
 					repo.EXPECT().DeployInstructionCreate(mock.Anything, te.Environment.ID, mock.IsType(&model.Feature{}), mock.IsType(""), mock.IsType(&uuid.UUID{})).Return(tt.want[0].ID, nil).Once()
 				}
-				// repo.On("FeaturesForKind", mock.Anything, te.Environment.Kind, te.Environment.CI).Return(tt.features, nil)
 				featuretest.OnFeaturesForKind(ctx, te.Environment.Kind, tt.features)
 
 				repo.On("DeployInstructionsLatestForEnvironment", mock.Anything, te.Environment.ID).Return(te.Status, nil)
-				repo.On("FeatureStatesGet", mock.Anything, te.Environment.ID).Return(te.FeatureStates, nil)
-				repo.On("HelmValues", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, nil).Maybe()
+				featuretest.OnFeatureStatesGet(ctx, te.Environment.ID, te.FeatureStates)
+
 				repo.EXPECT().RolloutAssignDeployInstruction(mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
 
 				reportAt := time.Now()

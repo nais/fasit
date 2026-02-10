@@ -7,6 +7,7 @@ package mocks
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/feature/featuresql"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -36,6 +37,142 @@ type Querier_Expecter struct {
 
 func (_m *Querier) EXPECT() *Querier_Expecter {
 	return &Querier_Expecter{mock: &_m.Mock}
+}
+
+// AutoInstallNamesForKind provides a mock function for the type Querier
+func (_mock *Querier) AutoInstallNamesForKind(ctx context.Context, environmentKind featuresql.EnvironmentKind) ([]string, error) {
+	ret := _mock.Called(ctx, environmentKind)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AutoInstallNamesForKind")
+	}
+
+	var r0 []string
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, featuresql.EnvironmentKind) ([]string, error)); ok {
+		return returnFunc(ctx, environmentKind)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, featuresql.EnvironmentKind) []string); ok {
+		r0 = returnFunc(ctx, environmentKind)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, featuresql.EnvironmentKind) error); ok {
+		r1 = returnFunc(ctx, environmentKind)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_AutoInstallNamesForKind_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AutoInstallNamesForKind'
+type Querier_AutoInstallNamesForKind_Call struct {
+	*mock.Call
+}
+
+// AutoInstallNamesForKind is a helper method to define mock.On call
+//   - ctx context.Context
+//   - environmentKind featuresql.EnvironmentKind
+func (_e *Querier_Expecter) AutoInstallNamesForKind(ctx interface{}, environmentKind interface{}) *Querier_AutoInstallNamesForKind_Call {
+	return &Querier_AutoInstallNamesForKind_Call{Call: _e.mock.On("AutoInstallNamesForKind", ctx, environmentKind)}
+}
+
+func (_c *Querier_AutoInstallNamesForKind_Call) Run(run func(ctx context.Context, environmentKind featuresql.EnvironmentKind)) *Querier_AutoInstallNamesForKind_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 featuresql.EnvironmentKind
+		if args[1] != nil {
+			arg1 = args[1].(featuresql.EnvironmentKind)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_AutoInstallNamesForKind_Call) Return(strings []string, err error) *Querier_AutoInstallNamesForKind_Call {
+	_c.Call.Return(strings, err)
+	return _c
+}
+
+func (_c *Querier_AutoInstallNamesForKind_Call) RunAndReturn(run func(ctx context.Context, environmentKind featuresql.EnvironmentKind) ([]string, error)) *Querier_AutoInstallNamesForKind_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// AutoInstallsForKind provides a mock function for the type Querier
+func (_mock *Querier) AutoInstallsForKind(ctx context.Context, environmentKind featuresql.EnvironmentKind) ([]featuresql.AutoInstall, error) {
+	ret := _mock.Called(ctx, environmentKind)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AutoInstallsForKind")
+	}
+
+	var r0 []featuresql.AutoInstall
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, featuresql.EnvironmentKind) ([]featuresql.AutoInstall, error)); ok {
+		return returnFunc(ctx, environmentKind)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, featuresql.EnvironmentKind) []featuresql.AutoInstall); ok {
+		r0 = returnFunc(ctx, environmentKind)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]featuresql.AutoInstall)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, featuresql.EnvironmentKind) error); ok {
+		r1 = returnFunc(ctx, environmentKind)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_AutoInstallsForKind_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AutoInstallsForKind'
+type Querier_AutoInstallsForKind_Call struct {
+	*mock.Call
+}
+
+// AutoInstallsForKind is a helper method to define mock.On call
+//   - ctx context.Context
+//   - environmentKind featuresql.EnvironmentKind
+func (_e *Querier_Expecter) AutoInstallsForKind(ctx interface{}, environmentKind interface{}) *Querier_AutoInstallsForKind_Call {
+	return &Querier_AutoInstallsForKind_Call{Call: _e.mock.On("AutoInstallsForKind", ctx, environmentKind)}
+}
+
+func (_c *Querier_AutoInstallsForKind_Call) Run(run func(ctx context.Context, environmentKind featuresql.EnvironmentKind)) *Querier_AutoInstallsForKind_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 featuresql.EnvironmentKind
+		if args[1] != nil {
+			arg1 = args[1].(featuresql.EnvironmentKind)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_AutoInstallsForKind_Call) Return(autoInstalls []featuresql.AutoInstall, err error) *Querier_AutoInstallsForKind_Call {
+	_c.Call.Return(autoInstalls, err)
+	return _c
+}
+
+func (_c *Querier_AutoInstallsForKind_Call) RunAndReturn(run func(ctx context.Context, environmentKind featuresql.EnvironmentKind) ([]featuresql.AutoInstall, error)) *Querier_AutoInstallsForKind_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // ConfigForEnvironmentFilteredByKeys provides a mock function for the type Querier
@@ -225,6 +362,206 @@ func (_c *Querier_FeatureDataCreate_Call) Return(err error) *Querier_FeatureData
 }
 
 func (_c *Querier_FeatureDataCreate_Call) RunAndReturn(run func(ctx context.Context, arg featuresql.FeatureDataCreateParams) error) *Querier_FeatureDataCreate_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// FeatureStateCreateOrUpdate provides a mock function for the type Querier
+func (_mock *Querier) FeatureStateCreateOrUpdate(ctx context.Context, arg featuresql.FeatureStateCreateOrUpdateParams) (featuresql.FeatureState, error) {
+	ret := _mock.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for FeatureStateCreateOrUpdate")
+	}
+
+	var r0 featuresql.FeatureState
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, featuresql.FeatureStateCreateOrUpdateParams) (featuresql.FeatureState, error)); ok {
+		return returnFunc(ctx, arg)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, featuresql.FeatureStateCreateOrUpdateParams) featuresql.FeatureState); ok {
+		r0 = returnFunc(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(featuresql.FeatureState)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, featuresql.FeatureStateCreateOrUpdateParams) error); ok {
+		r1 = returnFunc(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_FeatureStateCreateOrUpdate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FeatureStateCreateOrUpdate'
+type Querier_FeatureStateCreateOrUpdate_Call struct {
+	*mock.Call
+}
+
+// FeatureStateCreateOrUpdate is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg featuresql.FeatureStateCreateOrUpdateParams
+func (_e *Querier_Expecter) FeatureStateCreateOrUpdate(ctx interface{}, arg interface{}) *Querier_FeatureStateCreateOrUpdate_Call {
+	return &Querier_FeatureStateCreateOrUpdate_Call{Call: _e.mock.On("FeatureStateCreateOrUpdate", ctx, arg)}
+}
+
+func (_c *Querier_FeatureStateCreateOrUpdate_Call) Run(run func(ctx context.Context, arg featuresql.FeatureStateCreateOrUpdateParams)) *Querier_FeatureStateCreateOrUpdate_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 featuresql.FeatureStateCreateOrUpdateParams
+		if args[1] != nil {
+			arg1 = args[1].(featuresql.FeatureStateCreateOrUpdateParams)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_FeatureStateCreateOrUpdate_Call) Return(featureState featuresql.FeatureState, err error) *Querier_FeatureStateCreateOrUpdate_Call {
+	_c.Call.Return(featureState, err)
+	return _c
+}
+
+func (_c *Querier_FeatureStateCreateOrUpdate_Call) RunAndReturn(run func(ctx context.Context, arg featuresql.FeatureStateCreateOrUpdateParams) (featuresql.FeatureState, error)) *Querier_FeatureStateCreateOrUpdate_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// FeatureStateGet provides a mock function for the type Querier
+func (_mock *Querier) FeatureStateGet(ctx context.Context, arg featuresql.FeatureStateGetParams) (featuresql.FeatureState, error) {
+	ret := _mock.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for FeatureStateGet")
+	}
+
+	var r0 featuresql.FeatureState
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, featuresql.FeatureStateGetParams) (featuresql.FeatureState, error)); ok {
+		return returnFunc(ctx, arg)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, featuresql.FeatureStateGetParams) featuresql.FeatureState); ok {
+		r0 = returnFunc(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(featuresql.FeatureState)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, featuresql.FeatureStateGetParams) error); ok {
+		r1 = returnFunc(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_FeatureStateGet_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FeatureStateGet'
+type Querier_FeatureStateGet_Call struct {
+	*mock.Call
+}
+
+// FeatureStateGet is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg featuresql.FeatureStateGetParams
+func (_e *Querier_Expecter) FeatureStateGet(ctx interface{}, arg interface{}) *Querier_FeatureStateGet_Call {
+	return &Querier_FeatureStateGet_Call{Call: _e.mock.On("FeatureStateGet", ctx, arg)}
+}
+
+func (_c *Querier_FeatureStateGet_Call) Run(run func(ctx context.Context, arg featuresql.FeatureStateGetParams)) *Querier_FeatureStateGet_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 featuresql.FeatureStateGetParams
+		if args[1] != nil {
+			arg1 = args[1].(featuresql.FeatureStateGetParams)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_FeatureStateGet_Call) Return(featureState featuresql.FeatureState, err error) *Querier_FeatureStateGet_Call {
+	_c.Call.Return(featureState, err)
+	return _c
+}
+
+func (_c *Querier_FeatureStateGet_Call) RunAndReturn(run func(ctx context.Context, arg featuresql.FeatureStateGetParams) (featuresql.FeatureState, error)) *Querier_FeatureStateGet_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// FeatureStatesGet provides a mock function for the type Querier
+func (_mock *Querier) FeatureStatesGet(ctx context.Context, environmentID uuid.UUID) ([]featuresql.FeatureStatesGetRow, error) {
+	ret := _mock.Called(ctx, environmentID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for FeatureStatesGet")
+	}
+
+	var r0 []featuresql.FeatureStatesGetRow
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]featuresql.FeatureStatesGetRow, error)); ok {
+		return returnFunc(ctx, environmentID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) []featuresql.FeatureStatesGetRow); ok {
+		r0 = returnFunc(ctx, environmentID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]featuresql.FeatureStatesGetRow)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = returnFunc(ctx, environmentID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_FeatureStatesGet_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FeatureStatesGet'
+type Querier_FeatureStatesGet_Call struct {
+	*mock.Call
+}
+
+// FeatureStatesGet is a helper method to define mock.On call
+//   - ctx context.Context
+//   - environmentID uuid.UUID
+func (_e *Querier_Expecter) FeatureStatesGet(ctx interface{}, environmentID interface{}) *Querier_FeatureStatesGet_Call {
+	return &Querier_FeatureStatesGet_Call{Call: _e.mock.On("FeatureStatesGet", ctx, environmentID)}
+}
+
+func (_c *Querier_FeatureStatesGet_Call) Run(run func(ctx context.Context, environmentID uuid.UUID)) *Querier_FeatureStatesGet_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_FeatureStatesGet_Call) Return(featureStatesGetRows []featuresql.FeatureStatesGetRow, err error) *Querier_FeatureStatesGet_Call {
+	_c.Call.Return(featureStatesGetRows, err)
+	return _c
+}
+
+func (_c *Querier_FeatureStatesGet_Call) RunAndReturn(run func(ctx context.Context, environmentID uuid.UUID) ([]featuresql.FeatureStatesGetRow, error)) *Querier_FeatureStatesGet_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -612,6 +949,74 @@ func (_c *Querier_RolloutByName_Call) Return(rolloutByNameRow featuresql.Rollout
 }
 
 func (_c *Querier_RolloutByName_Call) RunAndReturn(run func(ctx context.Context, name string) (featuresql.RolloutByNameRow, error)) *Querier_RolloutByName_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// RolloutStatesGet provides a mock function for the type Querier
+func (_mock *Querier) RolloutStatesGet(ctx context.Context, environmentID uuid.UUID) ([]featuresql.RolloutStatesGetRow, error) {
+	ret := _mock.Called(ctx, environmentID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for RolloutStatesGet")
+	}
+
+	var r0 []featuresql.RolloutStatesGetRow
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]featuresql.RolloutStatesGetRow, error)); ok {
+		return returnFunc(ctx, environmentID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) []featuresql.RolloutStatesGetRow); ok {
+		r0 = returnFunc(ctx, environmentID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]featuresql.RolloutStatesGetRow)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = returnFunc(ctx, environmentID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_RolloutStatesGet_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RolloutStatesGet'
+type Querier_RolloutStatesGet_Call struct {
+	*mock.Call
+}
+
+// RolloutStatesGet is a helper method to define mock.On call
+//   - ctx context.Context
+//   - environmentID uuid.UUID
+func (_e *Querier_Expecter) RolloutStatesGet(ctx interface{}, environmentID interface{}) *Querier_RolloutStatesGet_Call {
+	return &Querier_RolloutStatesGet_Call{Call: _e.mock.On("RolloutStatesGet", ctx, environmentID)}
+}
+
+func (_c *Querier_RolloutStatesGet_Call) Run(run func(ctx context.Context, environmentID uuid.UUID)) *Querier_RolloutStatesGet_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_RolloutStatesGet_Call) Return(rolloutStatesGetRows []featuresql.RolloutStatesGetRow, err error) *Querier_RolloutStatesGet_Call {
+	_c.Call.Return(rolloutStatesGetRows, err)
+	return _c
+}
+
+func (_c *Querier_RolloutStatesGet_Call) RunAndReturn(run func(ctx context.Context, environmentID uuid.UUID) ([]featuresql.RolloutStatesGetRow, error)) *Querier_RolloutStatesGet_Call {
 	_c.Call.Return(run)
 	return _c
 }

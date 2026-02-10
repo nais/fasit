@@ -72,6 +72,16 @@ sql:
         package: "featuresql"
         out: "internal/feature/featuresql"
         emit_pointers_for_null_types: true
+  - engine: "postgresql" # keep this line for Intellij formatting issues
+    !!merge <<: *default_domain
+    name: "Audit SQL"
+    queries: "internal/audit/queries"
+    gen:
+      go:
+        !!merge <<: *default_go
+        package: "auditsql"
+        out: "internal/audit/auditsql"
+        emit_pointers_for_null_types: true
 #emit_result_struct_pointers: true
 #emit_prepared_queries: true
 #emit_all_enum_values: true

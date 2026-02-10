@@ -6,6 +6,7 @@ package featuresql
 import (
 	"context"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -111,6 +112,186 @@ func (q *Queries) FeatureDataCreate(ctx context.Context, arg FeatureDataCreatePa
 		arg.Rename,
 	)
 	return err
+}
+
+const featureStateCreateOrUpdate = `-- name: FeatureStateCreateOrUpdate :one
+INSERT INTO feature_states(
+	environment_id,
+	feature,
+	enabled,
+	enabled_at)
+VALUES (
+	$1,
+	$2,
+	$3,
+	$4)
+ON CONFLICT (
+	environment_id,
+	feature)
+	DO UPDATE SET
+		enabled = EXCLUDED.enabled,
+		enabled_at = EXCLUDED.enabled_at
+	RETURNING
+		environment_id, feature, enabled, created, last_modified, enabled_at
+`
+
+type FeatureStateCreateOrUpdateParams struct {
+	EnvironmentID uuid.UUID
+	Feature       string
+	Enabled       bool
+	Enabledat     pgtype.Timestamptz
+}
+
+func (q *Queries) FeatureStateCreateOrUpdate(ctx context.Context, arg FeatureStateCreateOrUpdateParams) (FeatureState, error) {
+	row := q.db.QueryRow(ctx, featureStateCreateOrUpdate,
+		arg.EnvironmentID,
+		arg.Feature,
+		arg.Enabled,
+		arg.Enabledat,
+	)
+	var i FeatureState
+	err := row.Scan(
+		&i.EnvironmentID,
+		&i.Feature,
+		&i.Enabled,
+		&i.Created,
+		&i.LastModified,
+		&i.EnabledAt,
+	)
+	return i, err
+}
+
+const featureStateGet = `-- name: FeatureStateGet :one
+SELECT
+	environment_id, feature, enabled, created, last_modified, enabled_at
+FROM
+	feature_states
+WHERE
+	feature = $1
+	AND environment_id = $2
+`
+
+type FeatureStateGetParams struct {
+	Feature       string
+	EnvironmentID uuid.UUID
+}
+
+func (q *Queries) FeatureStateGet(ctx context.Context, arg FeatureStateGetParams) (FeatureState, error) {
+	row := q.db.QueryRow(ctx, featureStateGet, arg.Feature, arg.EnvironmentID)
+	var i FeatureState
+	err := row.Scan(
+		&i.EnvironmentID,
+		&i.Feature,
+		&i.Enabled,
+		&i.Created,
+		&i.LastModified,
+		&i.EnabledAt,
+	)
+	return i, err
+}
+
+const featureStatesGet = `-- name: FeatureStatesGet :many
+WITH env AS (
+	SELECT
+		ci,
+		kind
+	FROM
+		environments
+	WHERE
+		id = $1
+),
+combined AS (
+	SELECT
+		NULL AS id,
+		name,
+		version,
+		last_modified
+	FROM
+		features
+	UNION
+	SELECT
+		id,
+		feature_name AS name,
+		version,
+		NULL AS last_modified
+	FROM
+		rollouts
+	WHERE
+		status = 'pending'
+),
+filtered AS (
+	SELECT DISTINCT ON (name)
+		name,
+		version
+	FROM
+		combined
+		JOIN env ON 1 = 1
+	ORDER BY
+		name,
+		-- If environment is CI, use definition from rollouts if it exists, otherwise use definition from features
+		CASE WHEN env.ci THEN
+			id
+		END,
+		CASE WHEN NOT ci THEN
+			last_modified
+		END
+)
+SELECT
+	$1::UUID AS environment_id,
+	f.name,
+	COALESCE(fs.enabled, FALSE) AS enabled,
+	fs.created,
+	fs.last_modified,
+	fs.enabled_at
+FROM
+	filtered f
+	JOIN feature_data fd ON fd.name = f.name
+		AND fd.version = f.version
+	LEFT JOIN feature_states fs ON fs.feature = f.name
+		AND fs.environment_id = $1
+WHERE (
+	SELECT
+		kind
+	FROM
+		env) = ANY (fd.kinds)
+ORDER BY
+	f.name ASC
+`
+
+type FeatureStatesGetRow struct {
+	EnvironmentID uuid.UUID
+	Name          string
+	Enabled       bool
+	Created       pgtype.Timestamptz
+	LastModified  pgtype.Timestamptz
+	EnabledAt     pgtype.Timestamptz
+}
+
+func (q *Queries) FeatureStatesGet(ctx context.Context, environmentID uuid.UUID) ([]FeatureStatesGetRow, error) {
+	rows, err := q.db.Query(ctx, featureStatesGet, environmentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []FeatureStatesGetRow{}
+	for rows.Next() {
+		var i FeatureStatesGetRow
+		if err := rows.Scan(
+			&i.EnvironmentID,
+			&i.Name,
+			&i.Enabled,
+			&i.Created,
+			&i.LastModified,
+			&i.EnabledAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const featureVersionUpdate = `-- name: FeatureVersionUpdate :exec
@@ -280,6 +461,67 @@ func (q *Queries) FeaturesForKind(ctx context.Context, environmentKind string) (
 			&i.Created,
 			&i.LastModified,
 			&i.Hasdeployments,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const rolloutStatesGet = `-- name: RolloutStatesGet :many
+SELECT
+	$1::UUID AS environment_id,
+	r.feature_name,
+	COALESCE(fs.enabled, FALSE) AS enabled,
+	fs.created,
+	fs.last_modified,
+	fs.enabled_at
+FROM
+	rollouts r
+	JOIN feature_data fd ON fd.name = r.feature_name
+		AND fd.version = r.version
+	LEFT JOIN feature_states fs ON fs.feature = r.feature_name
+		AND fs.environment_id = $1
+WHERE (
+	SELECT
+		kind
+	FROM
+		environments
+	WHERE
+		id = $1) = ANY (fd.kinds)
+ORDER BY
+	r.feature_name ASC
+`
+
+type RolloutStatesGetRow struct {
+	EnvironmentID uuid.UUID
+	FeatureName   string
+	Enabled       bool
+	Created       pgtype.Timestamptz
+	LastModified  pgtype.Timestamptz
+	EnabledAt     pgtype.Timestamptz
+}
+
+func (q *Queries) RolloutStatesGet(ctx context.Context, environmentID uuid.UUID) ([]RolloutStatesGetRow, error) {
+	rows, err := q.db.Query(ctx, rolloutStatesGet, environmentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []RolloutStatesGetRow{}
+	for rows.Next() {
+		var i RolloutStatesGetRow
+		if err := rows.Scan(
+			&i.EnvironmentID,
+			&i.FeatureName,
+			&i.Enabled,
+			&i.Created,
+			&i.LastModified,
+			&i.EnabledAt,
 		); err != nil {
 			return nil, err
 		}

@@ -43,7 +43,7 @@ func (r *mutationResolver) DeleteHelmInstall(ctx context.Context, envID uuid.UUI
 		}
 	}
 
-	state, err := r.Repo.FeatureStateGet(ctx, env.ID, name)
+	state, err := featurepkg.FeatureStateGet(ctx, env.ID, name)
 	if err != nil {
 		// If feature state is not found, we allow deletion of helm install
 		if !errors.Is(err, pgx.ErrNoRows) {

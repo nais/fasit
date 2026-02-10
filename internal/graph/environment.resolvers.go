@@ -64,7 +64,7 @@ func (r *environmentResolver) FeatureStates(ctx context.Context, obj *model.Envi
 		features[f.FeatureName] = true
 	}
 
-	states, err := r.Repo.FeatureStatesGet(ctx, obj.ID)
+	states, err := featurepkg.FeatureStatesGet(ctx, obj.ID)
 	if err != nil {
 		return nil, err
 	}

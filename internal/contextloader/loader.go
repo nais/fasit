@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/feature"
@@ -28,6 +29,7 @@ func NewLoaderFunc(
 	}
 
 	return func(ctx context.Context) context.Context {
+		ctx = audit.Register(ctx, pool, log)
 		ctx = environment.Register(ctx, pool)
 		ctx = feature.Register(ctx, pool)
 		ctx = naisdstatus.Register(ctx, pool)

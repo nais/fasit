@@ -47,7 +47,7 @@ func (r *Resolver) missingDependencies(ctx context.Context, featureName string, 
 		return nil, err
 	}
 
-	states, err := r.Repo.FeatureStatesGet(ctx, envID)
+	states, err := featurepkg.FeatureStatesGet(ctx, envID)
 	if err != nil {
 		return nil, err
 	}
