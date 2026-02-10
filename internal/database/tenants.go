@@ -11,7 +11,6 @@ import (
 type TenantRepo interface {
 	TenantCI(ctx context.Context) (*model.Tenant, error)
 	TenantCreate(ctx context.Context, t *model.TenantCreate) (*model.Tenant, error)
-	TenantEnvironments(ctx context.Context, onlyReconciled bool) ([]*model.TenantEnvironment, error)
 	TenantGet(ctx context.Context, id uuid.UUID) (*model.Tenant, error)
 	TenantGetByName(ctx context.Context, name string) (*model.Tenant, error)
 	TenantsGet(ctx context.Context) ([]*model.Tenant, error)
@@ -83,32 +82,6 @@ func (r *repo) TenantSetUpgradeDelayDays(ctx context.Context, id uuid.UUID, dela
 	r.createAudit(ctx, "updated upgrade_delay_days", "tenants", tenant.ID.String())
 
 	return tenantFromSQL(tenant), nil
-}
-
-func (r *repo) TenantEnvironments(ctx context.Context, onlyReconciled bool) ([]*model.TenantEnvironment, error) {
-	data, err := r.querier.TenantEnvironments(ctx, !onlyReconciled)
-	if err != nil {
-		return nil, err
-	}
-
-	var ret []*model.TenantEnvironment
-	for _, d := range data {
-		ret = append(ret, &model.TenantEnvironment{
-			Environment: model.Environment{
-				ID:           d.ID,
-				Name:         d.Name,
-				CI:           d.Ci,
-				Description:  nullStringToPtr(d.Description),
-				Created:      d.Created.Time,
-				LastModified: d.LastModified.Time,
-				Kind:         model.EnvironmentKind(d.Kind),
-			},
-			TenantName: d.TenantName,
-			TenantID:   d.TenantID,
-		})
-	}
-
-	return ret, nil
 }
 
 func (r *repo) TenantCI(ctx context.Context) (*model.Tenant, error) {

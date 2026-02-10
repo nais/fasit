@@ -225,11 +225,9 @@ func TestReconcile(t *testing.T) {
 				})
 			}
 
-			repo.On("TenantEnvironments", mock.Anything, true).Return(te, nil)
-
+			ctx = environmenttest.OnTenantEnvironments(ctx, t, te)
 			ctx = featuretest.RegisterMock(ctx, t)
 			ctx = featuretest.OnHelmValues(ctx, uuid.Nil, "", nil)
-			ctx = environmenttest.RegisterMock(ctx, t)
 
 			for _, te := range tt.environments {
 				if len(tt.want) > 0 {

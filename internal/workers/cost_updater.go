@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/gensql"
+	"github.com/nais/fasit/internal/environment"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/api/iterator"
 )
@@ -163,7 +164,7 @@ type tenantEnvMap struct {
 }
 
 func (c *CostUpdater) tenantEnvs(ctx context.Context) (tenants map[string]tenantEnvMap, err error) {
-	te, err := c.repo.TenantEnvironments(ctx, false)
+	te, err := environment.TenantEnvironments(ctx, false)
 	if err != nil {
 		return nil, err
 	}

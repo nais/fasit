@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/auth"
 	"github.com/nais/fasit/internal/database/notifier"
+	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/errs"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
@@ -26,7 +27,6 @@ import (
 type ReconcilerStore interface {
 	DeployInstructionCreate(ctx context.Context, envID uuid.UUID, feature *model.Feature, hash string, deploymentID *uuid.UUID) (uuid.UUID, error)
 	DeployInstructionsLatestForEnvironment(ctx context.Context, envID uuid.UUID) ([]*model.DeployInstruction, error)
-	TenantEnvironments(ctx context.Context, onlyReconciled bool) ([]*model.TenantEnvironment, error)
 	RolloutAssignDeployInstruction(ctx context.Context, featureName, featureVersion string, deployInstruction uuid.UUID) error
 }
 
@@ -165,7 +165,7 @@ func (r *Reconciler) Reconcile(ctx context.Context) error {
 		r.lock.Unlock()
 	}()
 
-	data, err := r.repo.TenantEnvironments(ctx, true)
+	data, err := environment.TenantEnvironments(ctx, true)
 	if err != nil {
 		return err
 	}

@@ -109,7 +109,6 @@ type Querier interface {
 	RolloutsForKind(ctx context.Context, environmentKind EnvironmentKind) ([]RolloutsForKindRow, error)
 	TenantCI(ctx context.Context) (Tenant, error)
 	TenantCreate(ctx context.Context, arg TenantCreateParams) (Tenant, error)
-	TenantEnvironments(ctx context.Context, all bool) ([]TenantEnvironmentsRow, error)
 	TenantGet(ctx context.Context, id uuid.UUID) (Tenant, error)
 	TenantGetByName(ctx context.Context, name string) (Tenant, error)
 	TenantSetUpgradeDelayDays(ctx context.Context, arg TenantSetUpgradeDelayDaysParams) (Tenant, error)
