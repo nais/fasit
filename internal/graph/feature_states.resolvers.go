@@ -6,13 +6,14 @@ import (
 
 	"github.com/google/uuid"
 	pgx "github.com/jackc/pgx/v5"
+	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/graphgen"
 	"github.com/nais/fasit/internal/graph/model"
 )
 
 // Feature is the resolver for the feature field.
 func (r *featureStateResolver) Feature(ctx context.Context, obj *model.FeatureState) (*model.Feature, error) {
-	f, err := r.Repo.FeatureByNameForEnv(ctx, obj.FeatureName, obj.EnvID)
+	f, err := featurepkg.FeatureByNameForEnv(ctx, obj.FeatureName, obj.EnvID)
 	if err != nil {
 		return nil, err
 	}
@@ -32,16 +33,16 @@ func (r *featureStateResolver) Configuration(ctx context.Context, obj *model.Fea
 
 // FeatureStateSave is the resolver for the featureStateSave field.
 func (r *mutationResolver) FeatureStateSave(ctx context.Context, envID uuid.UUID, enabled bool, feature string) (*model.FeatureState, error) {
-	feat, err := r.Repo.FeatureByNameForEnv(ctx, feature, envID)
+	feat, err := featurepkg.FeatureByNameForEnv(ctx, feature, envID)
 	if err != nil {
 		return nil, err
 	}
-	return r.Repo.FeatureStatesCreateOrUpdate(ctx, envID, feat, enabled)
+	return featurepkg.FeatureStatesCreateOrUpdate(ctx, envID, feat, enabled)
 }
 
 // FeatureState is the resolver for the featureState field.
 func (r *queryResolver) FeatureState(ctx context.Context, envID uuid.UUID, feature string) (*model.FeatureState, error) {
-	fs, err := r.Repo.FeatureStateGet(ctx, envID, feature)
+	fs, err := featurepkg.FeatureStateGet(ctx, envID, feature)
 	if err == nil {
 		return fs, nil
 	}

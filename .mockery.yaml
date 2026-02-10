@@ -15,3 +15,9 @@ packages:
   github.com/nais/fasit/internal/naisdstatus/naisdstatussql:
     interfaces:
       Querier:
+  github.com/nais/fasit/internal/feature/featuresql:
+    interfaces:
+      Querier:
+  github.com/nais/fasit/internal/environment/environmentsql:
+    interfaces:
+      Querier:

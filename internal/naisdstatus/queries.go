@@ -16,6 +16,8 @@ import (
 
 type ctxKey int
 
+// QuerierKey is exposed for testing to override querier with mocks.
+// Avoid usage by e.g. using testcontainers.
 const QuerierKey ctxKey = iota
 
 func Register(ctx context.Context, pool *pgxpool.Pool) context.Context {

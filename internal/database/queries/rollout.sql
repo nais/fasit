@@ -76,19 +76,6 @@ SELECT
 		ORDER BY
 			rollouts.feature_name ASC;
 
--- name: RolloutByName :one
-SELECT
-	rollouts.id,
-	sqlc.embed(fd),
-	rollouts.created
-FROM
-	rollouts
-	JOIN feature_data fd ON rollouts.feature_name = fd.name
-		AND rollouts.version = fd.version
-WHERE
-	fd.name = @name
-	AND rollouts.status = 'pending';
-
 -- name: RolloutAssignDeployInstruction :exec
 UPDATE
 	rollouts

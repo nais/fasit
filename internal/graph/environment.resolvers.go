@@ -13,6 +13,7 @@ import (
 	pgx "github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/deployment"
+	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/graphgen"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/naisdstatus"
@@ -63,7 +64,7 @@ func (r *environmentResolver) FeatureStates(ctx context.Context, obj *model.Envi
 		features[f.FeatureName] = true
 	}
 
-	states, err := r.Repo.FeatureStatesGet(ctx, obj.ID)
+	states, err := featurepkg.FeatureStatesGet(ctx, obj.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +153,7 @@ func (r *environmentResolver) AuditLog(ctx context.Context, obj *model.Environme
 
 // Features is the resolver for the features field.
 func (r *environmentResolver) Features(ctx context.Context, obj *model.Environment) ([]*model.Feature, error) {
-	fs, err := r.Repo.FeaturesForKind(ctx, obj.Kind, obj.CI)
+	fs, err := featurepkg.FeaturesForKind(ctx, obj.Kind, obj.CI)
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +167,7 @@ func (r *environmentResolver) Features(ctx context.Context, obj *model.Environme
 
 // Feature is the resolver for the feature field.
 func (r *environmentResolver) Feature(ctx context.Context, obj *model.Environment, name string) (*model.Feature, error) {
-	f, err := r.Repo.FeatureByNameForEnv(ctx, name, obj.ID)
+	f, err := featurepkg.FeatureByNameForEnv(ctx, name, obj.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -405,7 +406,7 @@ func (r *mutationResolver) ClusterUpgradeBypassDelay(ctx context.Context, upgrad
 
 // Feature is the resolver for the feature field.
 func (r *releaseResolver) Feature(ctx context.Context, obj *model.Release) (*model.Feature, error) {
-	f, err := r.Repo.FeatureByNameForEnv(ctx, obj.Name, obj.GraphVars.EnvironmentID)
+	f, err := featurepkg.FeatureByNameForEnv(ctx, obj.Name, obj.GraphVars.EnvironmentID)
 	if err != nil {
 		r.Log.WithError(err).Debug("error getting feature for release, returning nil")
 	}

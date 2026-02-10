@@ -12,14 +12,16 @@ import (
 
 type ctxKey int
 
-const querierKey ctxKey = iota
+// QuerierKey is exposed for testing to override querier with mocks.
+// Avoid usage by e.g. using testcontainers.
+const QuerierKey ctxKey = iota
 
 func Register(ctx context.Context, pool *pgxpool.Pool) context.Context {
-	return context.WithValue(ctx, querierKey, environmentsql.New(pool))
+	return context.WithValue(ctx, QuerierKey, environmentsql.New(pool))
 }
 
 func querier(ctx context.Context) environmentsql.Querier {
-	return ctx.Value(querierKey).(environmentsql.Querier)
+	return ctx.Value(QuerierKey).(environmentsql.Querier)
 }
 
 func TenantEnvironments(ctx context.Context, onlyReconciled bool) ([]*model.TenantEnvironment, error) {

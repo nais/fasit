@@ -106,7 +106,7 @@ func TestReceiver(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			ctx := context.Background()
-			ctx = naisdstatustest.Register(ctx, t)
+			ctx = naisdstatustest.RegisterMock(ctx, t)
 			statusQuerier := naisdstatustest.GetQuerier(ctx)
 
 			repo := mocks.NewRepo(t)

@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	pgx "github.com/jackc/pgx/v5"
+	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/graphgen"
 	"github.com/nais/fasit/internal/graph/model"
 )
@@ -72,7 +73,7 @@ func (r *featureResolver) State(ctx context.Context, obj *model.Feature) (*model
 		return nil, nil
 	}
 
-	return r.Repo.FeatureStateGet(ctx, obj.GraphVars.EnvironmentID, obj.Name)
+	return featurepkg.FeatureStateGet(ctx, obj.GraphVars.EnvironmentID, obj.Name)
 }
 
 // Status is the resolver for the status field.
@@ -80,7 +81,7 @@ func (r *featureResolver) Status(ctx context.Context, obj *model.Feature) (*mode
 	di, err := r.Repo.DeployInstructionsLatestForFeature(ctx, obj.GraphVars.EnvironmentID, obj.Name)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			f, err := r.Repo.FeatureByNameForEnv(ctx, obj.Name, obj.GraphVars.EnvironmentID)
+			f, err := featurepkg.FeatureByNameForEnv(ctx, obj.Name, obj.GraphVars.EnvironmentID)
 			if err != nil {
 				return nil, fmt.Errorf("feature %v not found: %v", obj.Name, err)
 			}
@@ -163,15 +164,15 @@ func (r *featureHistoryResolver) HelmValueDiff(ctx context.Context, obj *model.F
 
 // Features is the resolver for the features field.
 func (r *queryResolver) Features(ctx context.Context) ([]*model.Feature, error) {
-	return r.Repo.Features(ctx)
+	return featurepkg.Features(ctx)
 }
 
 // Feature is the resolver for the feature field.
 func (r *queryResolver) Feature(ctx context.Context, name string) (*model.Feature, error) {
-	f, err := r.Repo.FeatureByName(ctx, name)
+	f, err := featurepkg.FeatureByName(ctx, name)
 
 	if errors.Is(err, pgx.ErrNoRows) {
-		return r.Repo.RolloutByName(ctx, name)
+		return featurepkg.RolloutByName(ctx, name)
 	}
 
 	return f, err

@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/notifier"
+	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/sirupsen/logrus"
 )
@@ -173,7 +174,7 @@ func (d *updateNotifier) handleFeatureState(ctx context.Context, msg notifier.Pa
 		return
 	}
 
-	fs, err := d.repo.FeatureStateGet(ctx, envid, feature)
+	fs, err := featurepkg.FeatureStateGet(ctx, envid, feature)
 	if err != nil {
 		logrus.Debug("failed to get feature state")
 		return

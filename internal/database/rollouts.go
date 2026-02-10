@@ -13,7 +13,6 @@ import (
 type RolloutRepo interface {
 	RolloutAssignDeployInstruction(ctx context.Context, featureName, featureVersion string, deployInstruction uuid.UUID) error
 	RolloutByID(ctx context.Context, id uuid.UUID) (*model.Rollout, error)
-	RolloutByName(ctx context.Context, name string) (*model.Feature, error)
 	RolloutByNameAndVersion(ctx context.Context, name, version string) (*model.Rollout, error)
 	RolloutCalculateDone(ctx context.Context, rolloutID uuid.UUID) (bool, error)
 	RolloutCreate(ctx context.Context, name, version string, ref *model.GHRef) (*model.Rollout, error)
@@ -103,26 +102,6 @@ func (r *repo) RolloutByID(ctx context.Context, id uuid.UUID) (*model.Rollout, e
 	}
 
 	return rolloutFromSQL(ro), nil
-}
-
-func (r *repo) RolloutByName(ctx context.Context, name string) (*model.Feature, error) {
-	f, err := r.querier.RolloutByName(ctx, name)
-	if err != nil {
-		return nil, fmt.Errorf("get rollout by name from db: %w", err)
-	}
-
-	feature, err := featureFromSQL(f.FeatureDatum)
-	if err != nil {
-		return nil, fmt.Errorf("make feature: %w", err)
-	}
-	feature.GraphVars = struct {
-		EnvironmentID uuid.UUID
-		RolloutID     uuid.UUID
-	}{
-		RolloutID: f.ID,
-	}
-
-	return feature, nil
 }
 
 func (r *repo) RolloutsForFeature(ctx context.Context, name string) ([]*model.Rollout, error) {

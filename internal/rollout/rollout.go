@@ -16,8 +16,6 @@ import (
 
 type Store interface {
 	database.EnvironmentRepo
-	database.FeatureDataRepo
-	database.FeatureStateRepo
 	database.RolloutRepo
 
 	database.Transaction
@@ -104,7 +102,7 @@ func (r *Rollout) Rollout(w http.ResponseWriter, req *http.Request) {
 			continue
 		}
 
-		fs, err := r.repo.FeatureStateGet(ctx, e.ID, feat.Name)
+		fs, err := feature.FeatureStateGet(ctx, e.ID, feat.Name)
 		if err != nil {
 			envNotAvailable = append(envNotAvailable, env)
 			continue
@@ -116,18 +114,10 @@ func (r *Rollout) Rollout(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 
-	if _, err := r.repo.RolloutByName(ctx, feat.Name); err == nil {
+	if _, err := feature.RolloutByName(ctx, feat.Name); err == nil {
 		http.Error(w, "Rollout with this feature name is already in progress", http.StatusConflict)
 		return
 	}
-
-	// if len(envNotAvailable) >= len(feature.EnvironmentKinds) {
-	// 	w.WriteHeader(http.StatusBadRequest)
-	// 	_ = json.NewEncoder(w).Encode(map[string]interface{}{
-	// 		"error": fmt.Sprintf("no available environments to test in for kind(s): %v", envNotAvailable),
-	// 	})
-	// 	return
-	// }
 
 	details, err := feature.ParseTemplateDetails(feat.FeatureYAML.Values)
 	if err != nil {
@@ -138,7 +128,7 @@ func (r *Rollout) Rollout(w http.ResponseWriter, req *http.Request) {
 	id := ""
 
 	err = r.repo.TxFunc(ctx, func(repo database.Repo) error {
-		if err := repo.FeatureDataCreate(ctx, *feat, details); err != nil {
+		if err := feature.FeatureDataCreate(ctx, *feat, details); err != nil {
 			return fmt.Errorf("feature data: %w", err)
 		}
 

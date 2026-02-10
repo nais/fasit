@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/database/mocks"
 	"github.com/nais/fasit/internal/feature"
+	"github.com/nais/fasit/internal/feature/featuretest"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/stretchr/testify/mock"
 )
@@ -71,7 +72,8 @@ func Test_queryResolver_Configuration_Global_Configurations(t *testing.T) {
 			GraphVars: model.ConfigurationGraphVars{FeatureName: feature.Name},
 		},
 	}, nil).Once()
-	repo.On("FeatureByName", mock.Anything, feature.Name).Return(feature, nil).Once()
+
+	ctx = featuretest.OnFeatureByName(ctx, t, feature.Name, feature)
 
 	r := &queryResolver{
 		Resolver: &Resolver{
@@ -175,7 +177,8 @@ func Test_queryResolver_Configuration_Feature_Configurations(t *testing.T) {
 			},
 		},
 	}, nil).Once()
-	repo.On("FeatureByNameForEnv", mock.Anything, feature.Name, env.ID).Return(feature, nil).Once()
+
+	ctx = featuretest.OnFeatureByNameForEnv(ctx, t, env.Name, feature)
 	repo.On("EnvironmentGet", mock.Anything, env.ID).Return(env, nil).Once()
 
 	r := &queryResolver{
@@ -269,9 +272,8 @@ func Test_queryResolver_Configuration_Feature_Computed(t *testing.T) {
 	}
 
 	repo := mocks.NewRepo(t)
-	// repo.On("EnvironmentGet", mock.Anything, env.ID).Return(env, nil).Once()
-	// repo.On("EnvConfig", mock.Anything, f.Name, env.ID).Return([]*model.Configuration{}, nil).Once()
-	repo.On("FeatureByNameForEnv", mock.Anything, f.Name, env.ID).Return(f, nil).Once()
+	ctx = featuretest.OnFeatureByNameForEnv(ctx, t, env.Name, f)
+
 	repo.On("MappingValuesForEnvironment", mock.Anything, env.ID, false).Return(
 		&feature.ComputedValues{
 			Kind: env.Kind,

@@ -57,48 +57,6 @@ func (q *Queries) RolloutByID(ctx context.Context, id uuid.UUID) (Rollout, error
 	return i, err
 }
 
-const rolloutByName = `-- name: RolloutByName :one
-SELECT
-	rollouts.id,
-	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.rename,
-	rollouts.created
-FROM
-	rollouts
-	JOIN feature_data fd ON rollouts.feature_name = fd.name
-		AND rollouts.version = fd.version
-WHERE
-	fd.name = $1
-	AND rollouts.status = 'pending'
-`
-
-type RolloutByNameRow struct {
-	ID           uuid.UUID
-	FeatureDatum FeatureDatum
-	Created      pgtype.Timestamptz
-}
-
-func (q *Queries) RolloutByName(ctx context.Context, name string) (RolloutByNameRow, error) {
-	row := q.db.QueryRow(ctx, rolloutByName, name)
-	var i RolloutByNameRow
-	err := row.Scan(
-		&i.ID,
-		&i.FeatureDatum.Name,
-		&i.FeatureDatum.Version,
-		&i.FeatureDatum.Chart,
-		&i.FeatureDatum.Description,
-		&i.FeatureDatum.Source,
-		&i.FeatureDatum.Kinds,
-		&i.FeatureDatum.Dependencies,
-		&i.FeatureDatum.Values,
-		&i.FeatureDatum.DefaultValues,
-		&i.FeatureDatum.Timeout,
-		&i.FeatureDatum.TplDetails,
-		&i.FeatureDatum.Rename,
-		&i.Created,
-	)
-	return i, err
-}
-
 const rolloutByNameAndVersion = `-- name: RolloutByNameAndVersion :one
 SELECT
 	id, feature_name, version, status, created, completed, gh_ref, deploy_instructions

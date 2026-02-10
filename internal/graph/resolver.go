@@ -9,6 +9,7 @@ import (
 	"github.com/nais/fasit/internal/cluster"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/notifier"
+	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/workers"
@@ -41,12 +42,12 @@ func NewResolver(ctx context.Context, repo database.Repo, notifier *notifier.Not
 }
 
 func (r *Resolver) missingDependencies(ctx context.Context, featureName string, envID uuid.UUID) ([]*model.Feature, error) {
-	f, err := r.Repo.FeatureByNameForEnv(ctx, featureName, envID)
+	f, err := featurepkg.FeatureByNameForEnv(ctx, featureName, envID)
 	if err != nil {
 		return nil, err
 	}
 
-	states, err := r.Repo.FeatureStatesGet(ctx, envID)
+	states, err := featurepkg.FeatureStatesGet(ctx, envID)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +62,7 @@ func (r *Resolver) missingDependencies(ctx context.Context, featureName string, 
 	ret := []*model.Feature{}
 
 	for _, missing := range f.Dependencies.FindMissing(enabledFeatures) {
-		mf, err := r.Repo.FeatureByNameForEnv(ctx, missing, envID)
+		mf, err := featurepkg.FeatureByNameForEnv(ctx, missing, envID)
 		if err != nil {
 			graphql.AddErrorf(ctx, "getting feature by name: %v: %w", missing, err)
 			continue
