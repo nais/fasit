@@ -18,20 +18,6 @@ type ConfigRepo interface {
 	HelmValues(ctx context.Context, feature *model.Feature, envID uuid.UUID) (values map[string]any, err error)
 }
 
-func environmentConfigurationFromSQL(c gensql.ConfigurationsEnvironment) *model.Configuration {
-	return &model.Configuration{
-		ID: c.ID,
-		GraphVars: model.ConfigurationGraphVars{
-			EnvironmentID: &c.EnvironmentID,
-			FeatureName:   c.Feature,
-		},
-		Key:     c.Key,
-		Content: c.Value,
-		Created: c.Created.Time,
-		Source:  model.ConfigSourceEnv,
-	}
-}
-
 func (r *repo) EnvConfig(ctx context.Context, feature *model.Feature, envID uuid.UUID) ([]*model.Configuration, error) {
 	config, err := r.querier.EnvConfig(ctx, gensql.EnvConfigParams{
 		Feature:       feature.Name,
@@ -73,24 +59,6 @@ func envConfigFromSQL(conf gensql.EnvConfigRow) *model.Configuration {
 		Content: conf.Value,
 		Source:  model.ConfigSourceEnv,
 	}
-}
-
-func (r *repo) ConfigGetForEnv(ctx context.Context, feature string, envID uuid.UUID) ([]*model.Configuration, error) {
-	params := gensql.ConfigGetForEnvParams{
-		Feature:       feature,
-		EnvironmentID: envID,
-	}
-	config, err := r.querier.ConfigGetForEnv(ctx, params)
-	if err != nil {
-		return nil, err
-	}
-
-	retVal := []*model.Configuration{}
-	for _, conf := range config {
-		retVal = append(retVal, environmentConfigurationFromSQL(conf))
-	}
-
-	return retVal, nil
 }
 
 func (r *repo) HelmValues(ctx context.Context, f *model.Feature, envID uuid.UUID) (map[string]any, error) {

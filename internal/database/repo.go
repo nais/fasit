@@ -41,7 +41,6 @@ type TXFunc func(repo Repo) error
 
 type Repo interface {
 	AuditRepo
-	AutoInstallsRepo
 	ClusterUpgraderRepo
 	ConfigRepo
 	CostRepo
@@ -58,9 +57,7 @@ type Repo interface {
 	Transaction
 
 	Close()
-	Metrics(meter metric.Meter) error
 	WithTx(ctx context.Context) (Repo, pgx.Tx, error)
-	GetConnPool() *pgxpool.Pool
 }
 
 type Transaction interface {
@@ -73,19 +70,6 @@ type repo struct {
 	log     logrus.FieldLogger
 
 	auditErrorCount metric.Int64Counter
-}
-
-func (r *repo) GetConnPool() *pgxpool.Pool {
-	return r.db
-}
-
-func (r *repo) Metrics(meter metric.Meter) (err error) {
-	r.auditErrorCount, err = meter.Int64Counter("audit_errors", metric.WithDescription("Number of audit errors"))
-	if err != nil {
-		return fmt.Errorf("failed to create audit_errors counter: %w", err)
-	}
-
-	return nil
 }
 
 type Querier interface {

@@ -47,15 +47,6 @@ ORDER BY
 	created DESC
 LIMIT 10 OFFSET sqlc.arg('offset');
 
--- name: DeployInstructionsForNameVersion :one
-SELECT
-	*
-FROM
-	deploy_instructions
-WHERE
-	feature_name = @feature_name
-	AND feature_version = @feature_version;
-
 -- name: DeployInstructionsPrevious :one
 WITH CURRENT AS (
 	SELECT

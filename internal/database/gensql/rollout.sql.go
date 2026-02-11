@@ -7,7 +7,6 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const rolloutByID = `-- name: RolloutByID :one
@@ -383,112 +382,6 @@ func (q *Queries) RolloutsForFeature(ctx context.Context, featureName string) ([
 			&i.Completed,
 			&i.GhRef,
 			&i.DeployInstructions,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const rolloutsForKind = `-- name: RolloutsForKind :many
-WITH success AS (
-	SELECT DISTINCT ON (rollouts.feature_name)
-		id,
-		feature_name
-	FROM
-		rollouts
-		JOIN feature_data fd ON rollouts.feature_name = fd.name
-			AND rollouts.version = fd.version
-	WHERE
-		$1::environment_kind = ANY (kinds)
-		AND (rollouts.status IN ('pending', 'in_progress', 'deployed'))
-	ORDER BY
-		rollouts.feature_name,
-		rollouts.created DESC
-),
-failed AS (
-	SELECT DISTINCT ON (rollouts.feature_name)
-		rollouts.id
-	FROM
-		rollouts
-		LEFT OUTER JOIN success ON success.feature_name = rollouts.feature_name
-	JOIN feature_data fd ON rollouts.feature_name = fd.name
-		AND rollouts.version = fd.version
-	WHERE
-		success.id IS NULL
-		AND $1::environment_kind = ANY (kinds)
-		AND (rollouts.status IN ('failed'))
-	ORDER BY
-		rollouts.feature_name,
-		rollouts.created DESC
-),
-all_rollouts AS (
-	SELECT
-		id
-	FROM
-		success
-	UNION
-	SELECT
-		id
-	FROM
-		failed
-)
-SELECT
-	rollouts.id,
-	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.rename,
-	rollouts.created,
-	EXISTS (
-		SELECT
-			1
-		FROM
-			deployments d
-		WHERE
-			d.feature_name = fd.name) AS hasDeployments
-	FROM
-		rollouts
-		JOIN all_rollouts ar ON ar.id = rollouts.id
-		JOIN feature_data fd ON rollouts.feature_name = fd.name
-			AND rollouts.version = fd.version
-		ORDER BY
-			rollouts.feature_name ASC
-`
-
-type RolloutsForKindRow struct {
-	ID             uuid.UUID
-	FeatureDatum   FeatureDatum
-	Created        pgtype.Timestamptz
-	Hasdeployments bool
-}
-
-func (q *Queries) RolloutsForKind(ctx context.Context, environmentKind EnvironmentKind) ([]RolloutsForKindRow, error) {
-	rows, err := q.db.Query(ctx, rolloutsForKind, environmentKind)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []RolloutsForKindRow{}
-	for rows.Next() {
-		var i RolloutsForKindRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.FeatureDatum.Name,
-			&i.FeatureDatum.Version,
-			&i.FeatureDatum.Chart,
-			&i.FeatureDatum.Description,
-			&i.FeatureDatum.Source,
-			&i.FeatureDatum.Kinds,
-			&i.FeatureDatum.Dependencies,
-			&i.FeatureDatum.Values,
-			&i.FeatureDatum.DefaultValues,
-			&i.FeatureDatum.Timeout,
-			&i.FeatureDatum.TplDetails,
-			&i.FeatureDatum.Rename,
-			&i.Created,
-			&i.Hasdeployments,
 		); err != nil {
 			return nil, err
 		}
