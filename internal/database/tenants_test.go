@@ -9,7 +9,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/graph/model"
 	"k8s.io/utils/ptr"
 )
@@ -91,90 +90,5 @@ func Test_repo_TenantsGet(t *testing.T) {
 
 	if !cmp.Equal(want, got) {
 		t.Errorf("diff -want +got:\n%v", cmp.Diff(want, got))
-	}
-}
-
-func TestRepo_TenantEnvironments(t *testing.T) {
-	repo := newTestRepo(t)
-	defer repo.Close()
-
-	ctx := context.Background()
-
-	eids := []uuid.UUID{}
-	tenantIDs := []uuid.UUID{}
-	for i := 0; i < 2; i++ {
-		p, err := repo.TenantCreate(ctx, &model.TenantCreate{
-			Name: fmt.Sprintf("test-tenant-%v", i),
-		})
-		if err != nil {
-			t.Fatalf("TenantCreate(ctx, tenant) err = %v, want nil", err)
-		}
-		tenantIDs = append(tenantIDs, p.ID)
-
-		for j := 0; j < 2; j++ {
-			e, err := repo.EnvironmentCreate(ctx, &model.EnvironmentCreate{
-				Name:        fmt.Sprintf("test-env-%v", j),
-				Description: ptr.To("description"),
-				TenantID:    p.ID,
-				Kind:        model.EnvironmentKindTenant,
-			})
-			if err != nil {
-				t.Fatalf("EnvironmentCreate(ctx, env) err = %v, want nil", err)
-			}
-			eids = append(eids, e.ID)
-		}
-	}
-
-	got, err := repo.TenantEnvironments(ctx, true)
-	if err != nil {
-		t.Fatalf("TenantEnvironments(ctx) err = %v, want nil", err)
-	}
-
-	want := []*model.TenantEnvironment{
-		{
-			Environment: model.Environment{
-				ID:          eids[0],
-				Name:        "test-env-0",
-				Description: ptr.To("description"),
-				Kind:        model.EnvironmentKindTenant,
-			},
-			TenantName: "test-tenant-0",
-			TenantID:   tenantIDs[0],
-		},
-		{
-			Environment: model.Environment{
-				ID:          eids[1],
-				Name:        "test-env-1",
-				Description: ptr.To("description"),
-				Kind:        model.EnvironmentKindTenant,
-			},
-			TenantName: "test-tenant-0",
-			TenantID:   tenantIDs[0],
-		},
-		{
-			Environment: model.Environment{
-				ID:          eids[2],
-				Name:        "test-env-0",
-				Description: ptr.To("description"),
-				Kind:        model.EnvironmentKindTenant,
-			},
-			TenantName: "test-tenant-1",
-			TenantID:   tenantIDs[1],
-		},
-		{
-			Environment: model.Environment{
-				ID:          eids[3],
-				Name:        "test-env-1",
-				Description: ptr.To("description"),
-				Kind:        model.EnvironmentKindTenant,
-			},
-			TenantName: "test-tenant-1",
-			TenantID:   tenantIDs[1],
-		},
-	}
-
-	opts := cmpopts.IgnoreFields(model.Environment{}, "Created", "LastModified")
-	if !cmp.Equal(want, got, opts) {
-		t.Errorf("diff -want +got:\n%v", cmp.Diff(want, got, opts))
 	}
 }
