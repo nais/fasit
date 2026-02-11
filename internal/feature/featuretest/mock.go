@@ -3,7 +3,6 @@ package featuretest
 import (
 	"context"
 	"encoding/json"
-	"testing"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -16,21 +15,33 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func OnFeatureByName(ctx context.Context, t *testing.T, name string, expect *model.Feature) context.Context {
-	ctx = RegisterMock(ctx, t)
+func OnFeatureByName(ctx context.Context, name string, expect *model.Feature) {
 	GetQuerier(ctx).On("FeatureByName", ctx, name).Return(featuresql.FeatureByNameRow{
 		FeatureDatum: modelToFeatureDatum(expect),
 	}, nil).Once()
-	return ctx
 }
 
-func OnFeatureByNameForEnv(ctx context.Context, t *testing.T, envName string, expect *model.Feature) context.Context {
-	ctx = RegisterMock(ctx, t)
-	ctx = environmenttest.RegisterMock(ctx, t)
+func OnConfigGet(ctx context.Context, name string, config []*model.Configuration) {
+	ret := make([]featuresql.ConfigurationsGlobal, len(config))
+	for i, c := range config {
+		ret[i] = featuresql.ConfigurationsGlobal{
+			ID:      c.ID,
+			Feature: name,
+			Key:     c.Key,
+			Value:   c.Content,
+			Created: pgtype.Timestamptz{
+				Time:  c.Created,
+				Valid: true,
+			},
+		}
+	}
+	GetQuerier(ctx).EXPECT().ConfigGet(mock.Anything, name).Return(ret, nil).Once()
+}
+
+func OnFeatureByNameForEnv(ctx context.Context, envName string, expect *model.Feature) {
 	featureMock := GetQuerier(ctx)
-	envMock := environmenttest.GetQuerier(ctx)
 	featureMock.On("GetEnvironmentFeature", ctx, mock.Anything).Return(featuresql.GetEnvironmentFeatureRow{}, pgx.ErrNoRows).Once()
-	envMock.On("Get", ctx, mock.Anything).Return(
+	environmenttest.GetQuerier(ctx).On("Get", ctx, mock.Anything).Return(
 		environmentsql.Environment{
 			ID:   uuid.New(),
 			Name: envName,
@@ -39,7 +50,6 @@ func OnFeatureByNameForEnv(ctx context.Context, t *testing.T, envName string, ex
 	featureMock.On("FeatureByName", ctx, expect.Name).Return(featuresql.FeatureByNameRow{
 		FeatureDatum: modelToFeatureDatum(expect),
 	}, nil).Once()
-	return ctx
 }
 
 func OnFeaturesForKind(ctx context.Context, kind model.EnvironmentKind, expect []*model.Feature) {

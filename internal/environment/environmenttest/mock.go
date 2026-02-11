@@ -2,7 +2,6 @@ package environmenttest
 
 import (
 	"context"
-	"testing"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/nais/fasit/internal/environment/environmentsql"
@@ -10,9 +9,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-func OnTenantEnvironments(ctx context.Context, t *testing.T, expected []*model.TenantEnvironment) context.Context {
-	ctx = RegisterMock(ctx, t)
-	querier := GetQuerier(ctx)
+func OnTenantEnvironments(ctx context.Context, expected []*model.TenantEnvironment) {
 	rows := make([]environmentsql.TenantEnvironmentsRow, len(expected))
 
 	for i, e := range expected {
@@ -35,6 +32,5 @@ func OnTenantEnvironments(ctx context.Context, t *testing.T, expected []*model.T
 		}
 	}
 
-	querier.EXPECT().TenantEnvironments(mock.Anything, false).Return(rows, nil)
-	return ctx
+	GetQuerier(ctx).EXPECT().TenantEnvironments(mock.Anything, false).Return(rows, nil)
 }

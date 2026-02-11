@@ -228,8 +228,10 @@ func TestReconcile(t *testing.T) {
 				})
 			}
 
-			ctx = environmenttest.OnTenantEnvironments(ctx, t, te)
+			ctx = environmenttest.RegisterMock(ctx, t)
 			ctx = featuretest.RegisterMock(ctx, t)
+
+			environmenttest.OnTenantEnvironments(ctx, te)
 			ctx = featuretest.OnHelmValues(ctx, uuid.Nil, "", nil)
 			querier := mocks.NewQuerier(t)
 			reconciler.querier = querier

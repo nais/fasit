@@ -14,14 +14,6 @@ import (
 )
 
 type ConfigRepo interface {
-	ConfigCreate(ctx context.Context, c model.NewConfiguration) (*model.Configuration, error)
-	ConfigDelete(ctx context.Context, id uuid.UUID) error
-	ConfigGet(ctx context.Context, feature string) ([]*model.Configuration, error)
-	ConfigGetByID(ctx context.Context, id uuid.UUID) (*model.Configuration, error)
-	ConfigGetForEnv(ctx context.Context, feature string, envID uuid.UUID) ([]*model.Configuration, error)
-	ConfigMove(ctx context.Context, feature string, moves []model.Rename) error
-	ConfigOverridesByFeature(ctx context.Context, featureName string) ([]*model.ConfigOverride, error)
-	ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration) (*model.Configuration, error)
 	EnvConfig(ctx context.Context, feature *model.Feature, envID uuid.UUID) ([]*model.Configuration, error)
 	HelmValues(ctx context.Context, feature *model.Feature, envID uuid.UUID) (values map[string]any, err error)
 }
@@ -37,18 +29,6 @@ func environmentConfigurationFromSQL(c gensql.ConfigurationsEnvironment) *model.
 		Content: c.Value,
 		Created: c.Created.Time,
 		Source:  model.ConfigSourceEnv,
-	}
-}
-
-func globalConfigFromSQL(c gensql.ConfigurationsGlobal) *model.Configuration {
-	return &model.Configuration{
-		ID:        c.ID,
-		GraphVars: model.ConfigurationGraphVars{FeatureName: c.Feature},
-		// Description: nullStringToPtr(c.Description),
-		Key:     c.Key,
-		Content: c.Value,
-		Created: c.Created.Time,
-		Source:  model.ConfigSourceGlobal,
 	}
 }
 
@@ -83,34 +63,16 @@ func (r *repo) EnvConfig(ctx context.Context, feature *model.Feature, envID uuid
 }
 
 func envConfigFromSQL(conf gensql.EnvConfigRow) *model.Configuration {
-	ret := &model.Configuration{
+	return &model.Configuration{
 		ID: conf.ID,
 		GraphVars: model.ConfigurationGraphVars{
 			EnvironmentID: conf.EnvironmentID,
 			FeatureName:   conf.Feature,
 		},
-		// Description:   nullStringToPtr(conf.Description),
 		Key:     conf.Key,
 		Content: conf.Value,
-		Source:  model.ConfigSourceGlobal,
+		Source:  model.ConfigSourceEnv,
 	}
-
-	ret.Source = model.ConfigSourceEnv
-	ret.GraphVars.EnvironmentID = conf.EnvironmentID
-	return ret
-}
-
-func (r *repo) ConfigGet(ctx context.Context, feature string) ([]*model.Configuration, error) {
-	config, err := r.querier.ConfigGet(ctx, feature)
-	if err != nil {
-		return nil, err
-	}
-	retVal := []*model.Configuration{}
-	for _, conf := range config {
-		retVal = append(retVal, globalConfigFromSQL(conf))
-	}
-
-	return retVal, nil
 }
 
 func (r *repo) ConfigGetForEnv(ctx context.Context, feature string, envID uuid.UUID) ([]*model.Configuration, error) {
@@ -129,102 +91,6 @@ func (r *repo) ConfigGetForEnv(ctx context.Context, feature string, envID uuid.U
 	}
 
 	return retVal, nil
-}
-
-func (r *repo) ConfigCreate(ctx context.Context, c model.NewConfiguration) (*model.Configuration, error) {
-	value, err := json.Marshal(c.Value)
-	if err != nil {
-		return nil, err
-	}
-
-	if c.EnvironmentID != nil && *c.EnvironmentID != uuid.Nil {
-		return r.configEnvCreate(ctx, c, value)
-	}
-
-	return r.configGlobalCreate(ctx, c, value)
-}
-
-func (r *repo) configEnvCreate(ctx context.Context, c model.NewConfiguration, value []byte) (*model.Configuration, error) {
-	config, err := r.querier.ConfigEnvUpdateOrCreate(ctx, gensql.ConfigEnvUpdateOrCreateParams{
-		EnvironmentID: *c.EnvironmentID,
-		Feature:       c.Feature,
-		Description:   ptrToNullString(c.Description),
-		Secret:        c.Secret,
-		Key:           c.Key,
-		Value:         value,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	r.createAudit(ctx, "config created or updated", "configurations_environment", config.ID.String())
-
-	return environmentConfigurationFromSQL(config), nil
-}
-
-func (r *repo) configGlobalCreate(ctx context.Context, c model.NewConfiguration, value []byte) (*model.Configuration, error) {
-	config, err := r.querier.ConfigGlobalUpdateOrCreate(ctx, gensql.ConfigGlobalUpdateOrCreateParams{
-		Feature:     c.Feature,
-		Description: ptrToNullString(c.Description),
-		Secret:      c.Secret,
-		Key:         c.Key,
-		Value:       value,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	r.createAudit(ctx, "config created or updated", "configurations_global", config.ID.String())
-
-	return globalConfigFromSQL(config), nil
-}
-
-func (r *repo) ConfigUpdate(ctx context.Context, id uuid.UUID, c model.UpdateConfiguration) (*model.Configuration, error) {
-	conf, err := r.querier.ConfigUpdate(ctx, gensql.ConfigUpdateParams{
-		Description: ptrToNullString(c.Description),
-		Value:       c.Value,
-		ID:          id,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	r.createAudit(ctx, "config updated", "configurations_global", conf.ID.String())
-
-	return globalConfigFromSQL(conf), nil
-}
-
-func (r *repo) ConfigDelete(ctx context.Context, id uuid.UUID) error {
-	if err := r.querier.ConfigDelete(ctx, id); err != nil {
-		return err
-	}
-
-	r.createAudit(ctx, "config deleted", "configurations_global", id.String())
-	return nil
-}
-
-func (r *repo) ConfigMove(ctx context.Context, feature string, moves []model.Rename) error {
-	for _, m := range moves {
-		err := r.querier.ConfigRenameEnv(ctx, gensql.ConfigRenameEnvParams{
-			FromKey: m.From,
-			ToKey:   m.To,
-			Feature: feature,
-		})
-		if err != nil {
-			return fmt.Errorf("rename env config: %w", err)
-		}
-
-		err = r.querier.ConfigRenameGlobal(ctx, gensql.ConfigRenameGlobalParams{
-			FromKey: m.From,
-			ToKey:   m.To,
-			Feature: feature,
-		})
-		if err != nil {
-			return fmt.Errorf("rename global config: %w", err)
-		}
-	}
-
-	return nil
 }
 
 func (r *repo) HelmValues(ctx context.Context, f *model.Feature, envID uuid.UUID) (map[string]any, error) {
@@ -340,31 +206,6 @@ func makeHelmConfigMap(vals []gensql.EnvConfigOnlyKnownRow) (map[string]any, err
 		}
 	}
 	return val, nil
-}
-
-func (r *repo) ConfigOverridesByFeature(ctx context.Context, featureName string) ([]*model.ConfigOverride, error) {
-	overrides, err := r.querier.ConfigOverridesByFeature(ctx, featureName)
-	if err != nil {
-		return nil, err
-	}
-
-	result := make([]*model.ConfigOverride, len(overrides))
-	for i, o := range overrides {
-		result[i] = &model.ConfigOverride{
-			EnvironmentID: o.EnvironmentID,
-			Keys:          o.Keys,
-		}
-	}
-	return result, nil
-}
-
-func (r *repo) ConfigGetByID(ctx context.Context, id uuid.UUID) (*model.Configuration, error) {
-	config, err := r.querier.ConfigGetByID(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	return globalConfigFromSQL(config), nil
 }
 
 func contains[T comparable](s []T, e T) bool {

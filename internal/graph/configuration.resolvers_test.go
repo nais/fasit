@@ -9,6 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/database/mocks"
+	"github.com/nais/fasit/internal/environment/environmenttest"
 	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/feature/featuretest"
 	"github.com/nais/fasit/internal/graph/model"
@@ -63,7 +64,7 @@ func Test_queryResolver_Configuration_Global_Configurations(t *testing.T) {
 	storedConfigID := uuid.New()
 
 	repo := mocks.NewRepo(t)
-	repo.On("ConfigGet", mock.Anything, feature.Name).Return([]*model.Configuration{
+	retConfig := []*model.Configuration{
 		{
 			ID:        storedConfigID,
 			Key:       "key.set",
@@ -71,9 +72,10 @@ func Test_queryResolver_Configuration_Global_Configurations(t *testing.T) {
 			Content:   json.RawMessage(`"value"`),
 			GraphVars: model.ConfigurationGraphVars{FeatureName: feature.Name},
 		},
-	}, nil).Once()
-
-	ctx = featuretest.OnFeatureByName(ctx, t, feature.Name, feature)
+	}
+	ctx = featuretest.RegisterMock(ctx, t)
+	featuretest.OnConfigGet(ctx, feature.Name, retConfig)
+	featuretest.OnFeatureByName(ctx, feature.Name, feature)
 
 	r := &queryResolver{
 		Resolver: &Resolver{
@@ -178,7 +180,10 @@ func Test_queryResolver_Configuration_Feature_Configurations(t *testing.T) {
 		},
 	}, nil).Once()
 
-	ctx = featuretest.OnFeatureByNameForEnv(ctx, t, env.Name, feature)
+	ctx = featuretest.RegisterMock(ctx, t)
+	ctx = environmenttest.RegisterMock(ctx, t)
+
+	featuretest.OnFeatureByNameForEnv(ctx, env.Name, feature)
 	repo.On("EnvironmentGet", mock.Anything, env.ID).Return(env, nil).Once()
 
 	r := &queryResolver{
@@ -272,7 +277,11 @@ func Test_queryResolver_Configuration_Feature_Computed(t *testing.T) {
 	}
 
 	repo := mocks.NewRepo(t)
-	ctx = featuretest.OnFeatureByNameForEnv(ctx, t, env.Name, f)
+
+	ctx = featuretest.RegisterMock(ctx, t)
+	ctx = environmenttest.RegisterMock(ctx, t)
+
+	featuretest.OnFeatureByNameForEnv(ctx, env.Name, f)
 
 	repo.On("MappingValuesForEnvironment", mock.Anything, env.ID, false).Return(
 		&feature.ComputedValues{

@@ -1,7 +1,6 @@
 package database
 
 import (
-	"context"
 	"fmt"
 	"math"
 	"time"
@@ -15,13 +14,6 @@ func ToInt32(val int) (int32, error) {
 		return 0, fmt.Errorf("ToInt32: value %d out of int32 bounds (min: %d, max: %d)", val, math.MinInt32, math.MaxInt32)
 	}
 	return int32(val), nil
-}
-
-func Now(ctx context.Context) time.Time {
-	if now, ok := ctx.Value(ctxKey("nowfunc")).(func() time.Time); ok {
-		return now()
-	}
-	return time.Now()
 }
 
 func ptrToNullString(str *string) pgtype.Text {

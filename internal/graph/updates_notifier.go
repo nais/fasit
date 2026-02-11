@@ -139,7 +139,7 @@ func (d *updateNotifier) handleConfig(ctx context.Context, msg notifier.Payload)
 		return
 	}
 
-	cfg, err := d.repo.ConfigGetByID(ctx, id)
+	cfg, err := featurepkg.ConfigGetByID(ctx, id)
 	if err != nil {
 		logrus.Debug("failed to get global config")
 		return

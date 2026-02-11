@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"slices"
 	"sort"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
@@ -390,7 +391,7 @@ func FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *
 		Feature:       feature.Name,
 		Enabled:       enabled,
 		Enabledat: pgtype.Timestamptz{
-			Time:  Now(ctx),
+			Time:  time.Now(),
 			Valid: enabled,
 		},
 	})

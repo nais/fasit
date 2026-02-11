@@ -22,10 +22,7 @@ import (
 	"go.opentelemetry.io/otel/metric"
 )
 
-type (
-	ctxKey     string
-	closeFuncs []func() error
-)
+type closeFuncs []func() error
 
 func (c closeFuncs) Close() error {
 	var err error

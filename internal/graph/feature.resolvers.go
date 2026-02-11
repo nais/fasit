@@ -38,7 +38,7 @@ func (r *featureResolver) Dependencies(ctx context.Context, obj *model.Feature) 
 
 // Configoverrides is the resolver for the configoverrides field.
 func (r *featureResolver) Configoverrides(ctx context.Context, obj *model.Feature) ([]*model.ConfigOverride, error) {
-	return r.Repo.ConfigOverridesByFeature(ctx, obj.Name)
+	return featurepkg.ConfigOverridesByFeature(ctx, obj.Name)
 }
 
 // Configuration is the resolver for the configuration field.

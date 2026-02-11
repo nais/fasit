@@ -1,7 +1,6 @@
 package feature
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"slices"
@@ -169,11 +168,4 @@ func featureStateFromSQL(state featuresql.FeatureState) *model.FeatureState {
 		Created:      state.Created.Time,
 		LastModified: state.LastModified.Time,
 	}
-}
-
-func Now(ctx context.Context) time.Time {
-	if now, ok := ctx.Value("nowfunc").(func() time.Time); ok {
-		return now()
-	}
-	return time.Now()
 }
