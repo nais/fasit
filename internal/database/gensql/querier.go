@@ -52,10 +52,8 @@ type Querier interface {
 	CostLastDate(ctx context.Context) (pgtype.Date, error)
 	CostUpsert(ctx context.Context, arg []CostUpsertParams) *CostUpsertBatchResults
 	DeployInstructionsByID(ctx context.Context, id uuid.UUID) (DeployInstruction, error)
-	DeployInstructionsCreate(ctx context.Context, arg DeployInstructionsCreateParams) (uuid.UUID, error)
 	DeployInstructionsForFeature(ctx context.Context, arg DeployInstructionsForFeatureParams) ([]DeployInstruction, error)
 	DeployInstructionsForNameVersion(ctx context.Context, arg DeployInstructionsForNameVersionParams) (DeployInstruction, error)
-	DeployInstructionsLatestForEnvironment(ctx context.Context, environmentID uuid.UUID) ([]DeployInstruction, error)
 	DeployInstructionsLatestForFeature(ctx context.Context, arg DeployInstructionsLatestForFeatureParams) (DeployInstruction, error)
 	DeployInstructionsPrevious(ctx context.Context, id uuid.UUID) (DeployInstruction, error)
 	DeployInstructionsUpdateStatus(ctx context.Context, arg DeployInstructionsUpdateStatusParams) error
@@ -92,7 +90,6 @@ type Querier interface {
 	ReleaseStatusCreateOrUpdate(ctx context.Context, arg ReleaseStatusCreateOrUpdateParams) (ReleaseStatus, error)
 	ReleaseStatusDeleteByEnvironment(ctx context.Context, environmentID uuid.UUID) error
 	ReleaseStatusesGet(ctx context.Context, environmentID uuid.UUID) ([]ReleaseStatus, error)
-	RolloutAssignDeployInstruction(ctx context.Context, arg RolloutAssignDeployInstructionParams) error
 	RolloutByID(ctx context.Context, id uuid.UUID) (Rollout, error)
 	RolloutByNameAndVersion(ctx context.Context, arg RolloutByNameAndVersionParams) (Rollout, error)
 	RolloutCalculateDone(ctx context.Context, rolloutID uuid.UUID) (bool, error)

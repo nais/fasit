@@ -87,7 +87,7 @@ func Run(ctx context.Context) error {
 	deploymentPublisher := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
 		return message.NewPublisher[message.DeployInstruction](pubSubClient, cfg.GCPProjectID, topicID, log)
 	}
-	rolloutPublisher := func(topicID string, log logrus.FieldLogger) workers.Publisher {
+	rolloutPublisher := func(topicID string, log logrus.FieldLogger) rollout.Publisher {
 		return message.NewPublisher[message.DeployInstruction](pubSubClient, cfg.GCPProjectID, topicID, log)
 	}
 
@@ -114,7 +114,7 @@ func Run(ctx context.Context) error {
 	notifierService := notifier.New(pool, log)
 	go notifierService.Run(ctx)
 
-	reconciler, err := workers.NewReconciler(repo, rolloutPublisher, notifierService, meter, log)
+	reconciler, err := rollout.NewReconciler(pool, rolloutPublisher, notifierService, meter, log)
 	if err != nil {
 		return fmt.Errorf("error creating reconciler: %w", err)
 	}

@@ -23,6 +23,7 @@ import (
 	"github.com/nais/fasit/internal/naisd"
 	"github.com/nais/fasit/internal/naisdstatus"
 	"github.com/nais/fasit/internal/provider/protogen"
+	"github.com/nais/fasit/internal/rollout"
 	"github.com/nais/fasit/internal/server"
 	"github.com/nais/fasit/internal/slack/fake"
 	"github.com/nais/fasit/internal/workers"
@@ -215,7 +216,7 @@ func TestRunner(ctx context.Context, skipSetup bool) (*testmanager.Manager, erro
 		Name: "Reconcile",
 		Doc:  "Reconcile all environments",
 		Func: func(L *lua.LState) int {
-			rolloutReconciler := L.Context().Value(reconcilerKey).(*workers.Reconciler)
+			rolloutReconciler := L.Context().Value(reconcilerKey).(*rollout.Reconciler)
 			if err := rolloutReconciler.Reconcile(L.Context()); err != nil {
 				L.RaiseError("failed to reconcile: %s", err)
 			}
@@ -328,7 +329,7 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 			}
 			return p
 		}
-		rolloutPublisher := func(topicID string, log logrus.FieldLogger) workers.Publisher {
+		rolloutPublisher := func(topicID string, log logrus.FieldLogger) rollout.Publisher {
 			p, ok := naisdRunner.reconcilerPublishers[topicID]
 			if !ok {
 				panic(fmt.Sprintf("no publisher for topic %q", topicID))
@@ -361,7 +362,7 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 		ctx = context.WithValue(ctx, poolKey, pool)
 
 		notifierService := notifier.New(pool, logrus.NewEntry(log))
-		reconciler, err := workers.NewReconciler(db, rolloutPublisher, notifierService, meter, log)
+		reconciler, err := rollout.NewReconciler(pool, rolloutPublisher, notifierService, meter, log)
 		if err != nil {
 			done()
 			return ctx, nil, nil, err
@@ -477,7 +478,7 @@ func newDB(ctx context.Context, container *postgres.PostgresContainer, connStr s
 type naisdRunner struct {
 	*runner.PubSub
 	topics                         map[string]chan pubsubMockMsg
-	reconcilerPublishers           map[string]workers.Publisher
+	reconcilerPublishers           map[string]rollout.Publisher
 	deploymentReconcilerPublishers map[string]deployment.Publisher
 
 	statusCh chan pubsubMockMsg
@@ -591,9 +592,9 @@ func newNaisdForEnv(done <-chan struct{}, tenant, env string, naisdRunner *naisd
 	return mgr, executor, err
 }
 
-func (n *naisdRunner) registerReconcilerPublisher(name string, pub workers.Publisher) {
+func (n *naisdRunner) registerReconcilerPublisher(name string, pub rollout.Publisher) {
 	if n.reconcilerPublishers == nil {
-		n.reconcilerPublishers = make(map[string]workers.Publisher)
+		n.reconcilerPublishers = make(map[string]rollout.Publisher)
 	}
 	n.reconcilerPublishers[name] = pub
 }

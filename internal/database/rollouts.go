@@ -11,7 +11,6 @@ import (
 )
 
 type RolloutRepo interface {
-	RolloutAssignDeployInstruction(ctx context.Context, featureName, featureVersion string, deployInstruction uuid.UUID) error
 	RolloutByID(ctx context.Context, id uuid.UUID) (*model.Rollout, error)
 	RolloutByNameAndVersion(ctx context.Context, name, version string) (*model.Rollout, error)
 	RolloutCalculateDone(ctx context.Context, rolloutID uuid.UUID) (bool, error)
@@ -183,14 +182,6 @@ func (r *repo) Rollouts(ctx context.Context, limit int) ([]*model.Rollout, error
 	}
 
 	return res, nil
-}
-
-func (r *repo) RolloutAssignDeployInstruction(ctx context.Context, featureName, featureVersion string, deployInstruction uuid.UUID) error {
-	return r.querier.RolloutAssignDeployInstruction(ctx, gensql.RolloutAssignDeployInstructionParams{
-		FeatureName:         featureName,
-		Version:             featureVersion,
-		DeployInstructionID: deployInstruction,
-	})
 }
 
 func rolloutFromSQL(ro gensql.Rollout) *model.Rollout {

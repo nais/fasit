@@ -12,7 +12,7 @@ import (
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
-	"github.com/nais/fasit/internal/workers"
+	"github.com/nais/fasit/internal/rollout"
 	"github.com/sirupsen/logrus"
 )
 
@@ -27,10 +27,10 @@ type Resolver struct {
 
 	logNotifier     *logNotifier
 	diNotifier      *updateNotifier
-	createPublisher workers.NewPublisher
+	createPublisher rollout.NewPublisher
 }
 
-func NewResolver(ctx context.Context, repo database.Repo, notifier *notifier.Notifier, naisdPublisher workers.NewPublisher, clusterManager cluster.ClusterManager, log logrus.FieldLogger) *Resolver {
+func NewResolver(ctx context.Context, repo database.Repo, notifier *notifier.Notifier, naisdPublisher rollout.NewPublisher, clusterManager cluster.ClusterManager, log logrus.FieldLogger) *Resolver {
 	return &Resolver{
 		Repo:            repo,
 		Log:             log.WithField("subsystem", "graphql"),
@@ -78,7 +78,7 @@ func (r *Resolver) deleteHelmInstallation(ctx context.Context, env *model.Enviro
 		return fmt.Errorf("getting tenant: %w", err)
 	}
 
-	pub := r.createPublisher(workers.NaisdTopicID(tenant.Name, env.Name), r.Log)
+	pub := r.createPublisher(rollout.NaisdTopicID(tenant.Name, env.Name), r.Log)
 
 	return pub.Publish(ctx, message.DeployInstruction{
 		Name:      name,

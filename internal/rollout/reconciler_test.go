@@ -1,4 +1,4 @@
-package workers_test
+package rollout
 
 import (
 	"context"
@@ -8,7 +8,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/nais/fasit/internal/database/mocks"
 	"github.com/nais/fasit/internal/database/notifier"
 	"github.com/nais/fasit/internal/environment/environmenttest"
 	"github.com/nais/fasit/internal/feature/featuretest"
@@ -16,7 +15,8 @@ import (
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/naisdstatus/naisdstatussql"
 	"github.com/nais/fasit/internal/naisdstatus/naisdstatustest"
-	"github.com/nais/fasit/internal/workers"
+	"github.com/nais/fasit/internal/rollout/rolloutsql"
+	"github.com/nais/fasit/internal/rollout/rolloutsql/mocks"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/mock"
 	"go.opentelemetry.io/otel/metric/noop"
@@ -28,7 +28,7 @@ type reconcileTestEnvironment struct {
 	Environment     model.Environment
 	TenantName      string
 	NaisdReportedAt time.Time
-	Status          []*model.DeployInstruction
+	Status          []rolloutsql.DeployInstruction
 	FeatureStates   []*model.FeatureState
 }
 
@@ -97,13 +97,13 @@ var reconcileTests = map[string]struct {
 					Name: "prod",
 				},
 				TenantName: "tenant1",
-				Status: []*model.DeployInstruction{
+				Status: []rolloutsql.DeployInstruction{
 					{
 						ID:             uuid.New(),
 						FeatureName:    "feature1",
 						FeatureVersion: "1",
 						Hash:           "c5f057e78616cfea744cf031f52d7f772e00190d27383dbf6c0c6e7f128cf67b",
-						Status:         model.RolloutStatusDeployed,
+						Status:         model.RolloutStatusDeployed.String(),
 					},
 				},
 			},
@@ -185,13 +185,13 @@ var reconcileTests = map[string]struct {
 						EnabledAt:   &atTime,
 					},
 				},
-				Status: []*model.DeployInstruction{
+				Status: []rolloutsql.DeployInstruction{
 					{
 						ID:             uuid.New(),
 						FeatureName:    "feature1",
 						FeatureVersion: "1",
 						Hash:           "c5f057e78616cfea744cf031f52d7f772e00190d27383dbf6c0c6e7f128cf67b",
-						Status:         model.RolloutStatusDeployed,
+						Status:         model.RolloutStatusDeployed.String(),
 					},
 				},
 			},
@@ -215,7 +215,10 @@ func TestReconcile(t *testing.T) {
 			ctx = naisdstatustest.RegisterMock(ctx, t)
 			statusQuerier := naisdstatustest.GetQuerier(ctx)
 
-			repo := mocks.NewRepo(t)
+			reconciler, err := NewReconciler(nil, nil, &mockNotifier{}, noop.NewMeterProvider().Meter("test"), logrus.NewEntry(logrus.StandardLogger()))
+			if err != nil {
+				t.Fatal(err)
+			}
 
 			te := []*model.TenantEnvironment{}
 			for _, e := range tt.environments {
@@ -228,17 +231,21 @@ func TestReconcile(t *testing.T) {
 			ctx = environmenttest.OnTenantEnvironments(ctx, t, te)
 			ctx = featuretest.RegisterMock(ctx, t)
 			ctx = featuretest.OnHelmValues(ctx, uuid.Nil, "", nil)
+			querier := mocks.NewQuerier(t)
+			reconciler.querier = querier
 
 			for _, te := range tt.environments {
 				if len(tt.want) > 0 {
-					repo.EXPECT().DeployInstructionCreate(mock.Anything, te.Environment.ID, mock.IsType(&model.Feature{}), mock.IsType(""), mock.IsType(&uuid.UUID{})).Return(tt.want[0].ID, nil).Once()
+					querier.EXPECT().DeployInstructionsCreate(mock.Anything, mock.MatchedBy(func(params rolloutsql.DeployInstructionsCreateParams) bool {
+						return params.EnvironmentID == te.Environment.ID
+					})).Return(tt.want[0].ID, nil)
 				}
 				featuretest.OnFeaturesForKind(ctx, te.Environment.Kind, tt.features)
 
-				repo.On("DeployInstructionsLatestForEnvironment", mock.Anything, te.Environment.ID).Return(te.Status, nil)
+				querier.EXPECT().DeployInstructionsLatestForEnvironment(mock.Anything, te.Environment.ID).Return(te.Status, nil)
 				featuretest.OnFeatureStatesGet(ctx, te.Environment.ID, te.FeatureStates)
 
-				repo.EXPECT().RolloutAssignDeployInstruction(mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil).Maybe()
+				querier.EXPECT().RolloutAssignDeployInstruction(mock.Anything, mock.Anything).Return(nil).Maybe()
 
 				reportAt := time.Now()
 				if !te.NaisdReportedAt.IsZero() {
@@ -254,16 +261,11 @@ func TestReconcile(t *testing.T) {
 			}
 
 			messages := []message.DeployInstruction{}
-
-			meter := noop.NewMeterProvider().Meter("test")
-			publisher := func(topicID string, log logrus.FieldLogger) workers.Publisher {
+			publisher := func(topicID string, log logrus.FieldLogger) Publisher {
 				return &mockPublisher{topicID: topicID, messages: &messages}
 			}
 
-			reconciler, err := workers.NewReconciler(repo, publisher, &mockNotifier{}, meter, logrus.NewEntry(logrus.StandardLogger()))
-			if err != nil {
-				t.Fatal(err)
-			}
+			reconciler.publisher = publisher
 
 			if err := reconciler.Reconcile(ctx); err != nil {
 				t.Errorf("reconcile failed: %v", err)
