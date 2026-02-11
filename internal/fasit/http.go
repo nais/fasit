@@ -12,8 +12,8 @@ import (
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/notifier"
 	"github.com/nais/fasit/internal/graph"
+	"github.com/nais/fasit/internal/rollout"
 	"github.com/nais/fasit/internal/server"
-	"github.com/nais/fasit/internal/workers"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/metric"
 )
@@ -24,7 +24,7 @@ func newHttpServer(
 	cfg *Config,
 	repo database.Repo,
 	notifier *notifier.Notifier,
-	publisher workers.NewPublisher,
+	publisher rollout.NewPublisher,
 	clusterClient *cluster.Client,
 	meter metric.Meter,
 	log logrus.FieldLogger,

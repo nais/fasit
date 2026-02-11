@@ -1,4 +1,4 @@
-package workers_test
+package rollout_test
 
 import (
 	"context"
@@ -16,7 +16,7 @@ import (
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/naisdstatus/naisdstatussql"
 	"github.com/nais/fasit/internal/naisdstatus/naisdstatustest"
-	"github.com/nais/fasit/internal/workers"
+	"github.com/nais/fasit/internal/rollout"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/mock"
 	"go.opentelemetry.io/otel/metric/noop"
@@ -256,11 +256,11 @@ func TestReconcile(t *testing.T) {
 			messages := []message.DeployInstruction{}
 
 			meter := noop.NewMeterProvider().Meter("test")
-			publisher := func(topicID string, log logrus.FieldLogger) workers.Publisher {
+			publisher := func(topicID string, log logrus.FieldLogger) rollout.Publisher {
 				return &mockPublisher{topicID: topicID, messages: &messages}
 			}
 
-			reconciler, err := workers.NewReconciler(repo, publisher, &mockNotifier{}, meter, logrus.NewEntry(logrus.StandardLogger()))
+			reconciler, err := rollout.NewReconciler(repo, publisher, &mockNotifier{}, meter, logrus.NewEntry(logrus.StandardLogger()))
 			if err != nil {
 				t.Fatal(err)
 			}

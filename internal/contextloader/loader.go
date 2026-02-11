@@ -9,7 +9,7 @@ import (
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/naisdstatus"
-	"github.com/nais/fasit/internal/workers"
+	"github.com/nais/fasit/internal/rollout"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/metric"
 )
@@ -19,7 +19,7 @@ type LoaderFunc func(context.Context) context.Context
 func NewLoaderFunc(
 	pool *pgxpool.Pool,
 	deploymentPublisher deployment.NewPublisher,
-	_ workers.NewPublisher,
+	_ rollout.NewPublisher,
 	meter metric.Meter,
 	log logrus.FieldLogger,
 ) (LoaderFunc, error) {
