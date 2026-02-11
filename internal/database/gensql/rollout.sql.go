@@ -10,28 +10,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const rolloutAssignDeployInstruction = `-- name: RolloutAssignDeployInstruction :exec
-UPDATE
-	rollouts
-SET
-	deploy_instructions = ARRAY_APPEND(deploy_instructions, $1)
-WHERE
-	feature_name = $2
-	AND version = $3
-	AND status = 'pending'
-`
-
-type RolloutAssignDeployInstructionParams struct {
-	DeployInstructionID interface{}
-	FeatureName         string
-	Version             string
-}
-
-func (q *Queries) RolloutAssignDeployInstruction(ctx context.Context, arg RolloutAssignDeployInstructionParams) error {
-	_, err := q.db.Exec(ctx, rolloutAssignDeployInstruction, arg.DeployInstructionID, arg.FeatureName, arg.Version)
-	return err
-}
-
 const rolloutByID = `-- name: RolloutByID :one
 SELECT
 	id, feature_name, version, status, created, completed, gh_ref, deploy_instructions

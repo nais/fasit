@@ -114,7 +114,7 @@ func Run(ctx context.Context) error {
 	notifierService := notifier.New(pool, log)
 	go notifierService.Run(ctx)
 
-	reconciler, err := rollout.NewReconciler(repo, rolloutPublisher, notifierService, meter, log)
+	reconciler, err := rollout.NewReconciler(pool, rolloutPublisher, notifierService, meter, log)
 	if err != nil {
 		return fmt.Errorf("error creating reconciler: %w", err)
 	}

@@ -362,7 +362,7 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 		ctx = context.WithValue(ctx, poolKey, pool)
 
 		notifierService := notifier.New(pool, logrus.NewEntry(log))
-		reconciler, err := rollout.NewReconciler(db, rolloutPublisher, notifierService, meter, log)
+		reconciler, err := rollout.NewReconciler(pool, rolloutPublisher, notifierService, meter, log)
 		if err != nil {
 			done()
 			return ctx, nil, nil, err

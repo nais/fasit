@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"time"
@@ -15,36 +14,14 @@ import (
 )
 
 type DeployInstructionRepo interface {
-	DeployInstructionCreate(ctx context.Context, envID uuid.UUID, feature *model.Feature, hash string, deploymentID *uuid.UUID) (uuid.UUID, error)
 	DeployInstructionGet(ctx context.Context, id uuid.UUID) (*model.DeployInstruction, error)
 	TimeoutDeployInstructions(ctx context.Context)
 	DeployInstructionsForFeature(ctx context.Context, envID uuid.UUID, featureName string, offset int) ([]*model.DeployInstruction, error)
-	DeployInstructionsLatestForEnvironment(ctx context.Context, envID uuid.UUID) ([]*model.DeployInstruction, error)
+	// DeployInstructionsLatestForEnvironment(ctx context.Context, envID uuid.UUID) ([]*model.DeployInstruction, error)
 	DeployInstructionsLatestForFeature(ctx context.Context, envID uuid.UUID, featureName string) (*model.DeployInstruction, error)
 	DeployInstructionUpdateStatus(ctx context.Context, id uuid.UUID, status model.RolloutStatus) error
 	HelmValueDiffGet(ctx context.Context, di *model.DeployInstruction) (*model.HelmValueDiff, error)
 	NamesFromDeployInstruction(ctx context.Context, id uuid.UUID) (tenantName, environmentName string, err error)
-}
-
-func (r *repo) DeployInstructionCreate(ctx context.Context, envID uuid.UUID, feature *model.Feature, hash string, deploymentID *uuid.UUID) (uuid.UUID, error) {
-	vals, err := r.HelmValues(ctx, feature, envID)
-	if err != nil {
-		return uuid.Nil, fmt.Errorf("get helm values: %w", err)
-	}
-
-	values, err := json.Marshal(vals)
-	if err != nil {
-		return uuid.Nil, fmt.Errorf("marshal helm values: %w", err)
-	}
-
-	return r.querier.DeployInstructionsCreate(ctx, gensql.DeployInstructionsCreateParams{
-		EnvironmentID:  envID,
-		FeatureName:    feature.Name,
-		FeatureVersion: feature.Version,
-		Hash:           hash,
-		Values:         values,
-		DeploymentID:   deploymentID,
-	})
 }
 
 func (r *repo) DeployInstructionUpdateStatus(ctx context.Context, id uuid.UUID, status model.RolloutStatus) error {
@@ -94,20 +71,6 @@ func (r *repo) DeployInstructionsLatestForFeature(ctx context.Context, envID uui
 	}
 
 	return deployInstructionFromSQL(di), nil
-}
-
-func (r *repo) DeployInstructionsLatestForEnvironment(ctx context.Context, envID uuid.UUID) ([]*model.DeployInstruction, error) {
-	dis, err := r.querier.DeployInstructionsLatestForEnvironment(ctx, envID)
-	if err != nil {
-		return nil, err
-	}
-
-	var instructions []*model.DeployInstruction
-	for _, di := range dis {
-		instructions = append(instructions, deployInstructionFromSQL(di))
-	}
-
-	return instructions, nil
 }
 
 func (r *repo) TimeoutDeployInstructions(ctx context.Context) {

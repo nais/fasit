@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/auth"
 	"github.com/nais/fasit/internal/database/notifier"
 	"github.com/nais/fasit/internal/environment"
@@ -19,16 +20,11 @@ import (
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/naisdstatus"
+	"github.com/nais/fasit/internal/rollout/rolloutsql"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 )
-
-type ReconcilerStore interface {
-	DeployInstructionCreate(ctx context.Context, envID uuid.UUID, feature *model.Feature, hash string, deploymentID *uuid.UUID) (uuid.UUID, error)
-	DeployInstructionsLatestForEnvironment(ctx context.Context, envID uuid.UUID) ([]*model.DeployInstruction, error)
-	RolloutAssignDeployInstruction(ctx context.Context, featureName, featureVersion string, deployInstruction uuid.UUID) error
-}
 
 type Publisher interface {
 	Publish(ctx context.Context, msg message.DeployInstruction) error
@@ -42,10 +38,10 @@ type Notifier interface {
 }
 
 type Reconciler struct {
-	repo      ReconcilerStore
 	publisher NewPublisher
 	log       logrus.FieldLogger
 	notifier  Notifier
+	querier   rolloutsql.Querier
 
 	lock    sync.Mutex
 	running bool
@@ -55,8 +51,43 @@ type Reconciler struct {
 	deployMessages metric.Int64Counter
 }
 
+func (r *Reconciler) deployInstructionCreate(ctx context.Context, envID uuid.UUID, feature *model.Feature, hash string, deploymentID *uuid.UUID) (uuid.UUID, error) {
+	vals, err := featurepkg.HelmValues(ctx, feature, envID)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("get helm values: %w", err)
+	}
+
+	values, err := json.Marshal(vals)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("marshal helm values: %w", err)
+	}
+
+	return r.querier.DeployInstructionsCreate(ctx, rolloutsql.DeployInstructionsCreateParams{
+		EnvironmentID:  envID,
+		FeatureName:    feature.Name,
+		FeatureVersion: feature.Version,
+		Hash:           hash,
+		Values:         values,
+		DeploymentID:   deploymentID,
+	})
+}
+
+func (r *Reconciler) deployInstructionsLatestForEnvironment(ctx context.Context, envID uuid.UUID) ([]*model.DeployInstruction, error) {
+	dis, err := r.querier.DeployInstructionsLatestForEnvironment(ctx, envID)
+	if err != nil {
+		return nil, err
+	}
+
+	var instructions []*model.DeployInstruction
+	for _, di := range dis {
+		instructions = append(instructions, deployInstructionFromSQL(di))
+	}
+
+	return instructions, nil
+}
+
 func NewReconciler(
-	repo ReconcilerStore,
+	pool *pgxpool.Pool,
 	publisher NewPublisher,
 	notifier Notifier,
 	meter metric.Meter,
@@ -72,7 +103,7 @@ func NewReconciler(
 	}
 
 	return &Reconciler{
-		repo:           repo,
+		querier:        rolloutsql.New(pool),
 		publisher:      publisher,
 		log:            log.WithField("subsystem", "reconciler"),
 		reconcileTime:  reconcileTime,
@@ -204,7 +235,7 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, e *model.TenantEn
 		return nil
 	}
 
-	envInstructions, err := r.repo.DeployInstructionsLatestForEnvironment(ctx, e.Environment.ID)
+	envInstructions, err := r.deployInstructionsLatestForEnvironment(ctx, e.Environment.ID)
 	if err != nil {
 		return fmt.Errorf("status for environment: %w", err)
 	}
@@ -284,12 +315,16 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, e *model.TenantEn
 
 		r.deployMessages.Add(ctx, 1, metric.WithAttributes(append(metricAttrs, attribute.Key("feature").String(f.Name))...))
 
-		id, err := r.repo.DeployInstructionCreate(ctx, e.ID, f, hash, nil)
+		id, err := r.deployInstructionCreate(ctx, e.ID, f, hash, nil)
 		if err != nil {
 			return fmt.Errorf("create deploy instruction: %w", err)
 		}
 
-		if err := r.repo.RolloutAssignDeployInstruction(ctx, f.Name, f.Version, id); err != nil {
+		if err := r.querier.RolloutAssignDeployInstruction(ctx, rolloutsql.RolloutAssignDeployInstructionParams{
+			DeployInstructionID: id,
+			FeatureName:         f.Name,
+			Version:             f.Version,
+		}); err != nil {
 			log.WithError(err).Error("assign deploy instruction")
 		}
 
@@ -329,4 +364,19 @@ func generateHash(values map[string]any, feature *model.Feature, enabledAt *time
 
 func NaisdTopicID(tenantName, envName string) string {
 	return "naisd-" + tenantName + "-" + envName
+}
+
+func deployInstructionFromSQL(di rolloutsql.DeployInstruction) *model.DeployInstruction {
+	return &model.DeployInstruction{
+		ID:             di.ID,
+		EnvironmentID:  di.EnvironmentID,
+		DeploymentID:   di.DeploymentID,
+		FeatureName:    di.FeatureName,
+		FeatureVersion: di.FeatureVersion,
+		Status:         model.RolloutStatus(di.Status),
+		Hash:           di.Hash,
+		Created:        di.Created.Time,
+		LastModified:   di.LastModified.Time,
+		Values:         di.Values,
+	}
 }

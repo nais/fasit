@@ -76,16 +76,6 @@ SELECT
 		ORDER BY
 			rollouts.feature_name ASC;
 
--- name: RolloutAssignDeployInstruction :exec
-UPDATE
-	rollouts
-SET
-	deploy_instructions = ARRAY_APPEND(deploy_instructions, @deploy_instruction_id)
-WHERE
-	feature_name = @feature_name
-	AND version = @version
-	AND status = 'pending';
-
 -- name: RolloutByID :one
 SELECT
 	*
