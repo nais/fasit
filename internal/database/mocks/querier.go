@@ -5945,66 +5945,6 @@ func (_c *Querier_RolloutsForKind_Call) RunAndReturn(run func(ctx context.Contex
 	return _c
 }
 
-// TenantCI provides a mock function for the type Querier
-func (_mock *Querier) TenantCI(ctx context.Context) (gensql.Tenant, error) {
-	ret := _mock.Called(ctx)
-
-	if len(ret) == 0 {
-		panic("no return value specified for TenantCI")
-	}
-
-	var r0 gensql.Tenant
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context) (gensql.Tenant, error)); ok {
-		return returnFunc(ctx)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context) gensql.Tenant); ok {
-		r0 = returnFunc(ctx)
-	} else {
-		r0 = ret.Get(0).(gensql.Tenant)
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = returnFunc(ctx)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
-}
-
-// Querier_TenantCI_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TenantCI'
-type Querier_TenantCI_Call struct {
-	*mock.Call
-}
-
-// TenantCI is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *Querier_Expecter) TenantCI(ctx interface{}) *Querier_TenantCI_Call {
-	return &Querier_TenantCI_Call{Call: _e.mock.On("TenantCI", ctx)}
-}
-
-func (_c *Querier_TenantCI_Call) Run(run func(ctx context.Context)) *Querier_TenantCI_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		run(
-			arg0,
-		)
-	})
-	return _c
-}
-
-func (_c *Querier_TenantCI_Call) Return(tenant gensql.Tenant, err error) *Querier_TenantCI_Call {
-	_c.Call.Return(tenant, err)
-	return _c
-}
-
-func (_c *Querier_TenantCI_Call) RunAndReturn(run func(ctx context.Context) (gensql.Tenant, error)) *Querier_TenantCI_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // TenantCreate provides a mock function for the type Querier
 func (_mock *Querier) TenantCreate(ctx context.Context, arg gensql.TenantCreateParams) (gensql.Tenant, error) {
 	ret := _mock.Called(ctx, arg)

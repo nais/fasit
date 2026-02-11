@@ -43,11 +43,3 @@ WHERE
 RETURNING
 	*;
 
--- name: TenantCI :one
-SELECT
-	*
-FROM
-	tenants
-WHERE
-	ci = TRUE;
-
