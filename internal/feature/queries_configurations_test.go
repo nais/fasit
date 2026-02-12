@@ -2,12 +2,12 @@
 
 package feature
 
-/*
 import (
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"strings"
 	"testing"
 	"time"
@@ -15,9 +15,16 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
-	"github.com/nais/fasit/internal/database/gensql"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/nais/fasit/internal/audit"
+	"github.com/nais/fasit/internal/database"
+	"github.com/nais/fasit/internal/database/dbtest"
+	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/errs"
+	"github.com/nais/fasit/internal/feature/featuresql"
 	"github.com/nais/fasit/internal/graph/model"
+	"github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus/hooks/test"
 	"k8s.io/utils/ptr"
 )
 
@@ -27,7 +34,7 @@ func TestHelmConfigMap(t *testing.T) {
 		return b
 	}
 	tests := map[string]struct {
-		input    []gensql.EnvConfigOnlyKnownRow
+		input    []featuresql.ConfigForEnvironmentFilteredByKeysRow
 		expected map[string]any
 	}{
 		"empty": {
@@ -35,7 +42,7 @@ func TestHelmConfigMap(t *testing.T) {
 			expected: make(map[string]any),
 		},
 		"single_level": {
-			input: []gensql.EnvConfigOnlyKnownRow{
+			input: []featuresql.ConfigForEnvironmentFilteredByKeysRow{
 				{
 					Key:   "test1",
 					Value: jsonify("value1"),
@@ -51,7 +58,7 @@ func TestHelmConfigMap(t *testing.T) {
 			},
 		},
 		"multi_level": {
-			input: []gensql.EnvConfigOnlyKnownRow{
+			input: []featuresql.ConfigForEnvironmentFilteredByKeysRow{
 				{
 					Key:   "test.a",
 					Value: jsonify("value_a"),
@@ -69,7 +76,7 @@ func TestHelmConfigMap(t *testing.T) {
 			},
 		},
 		"escaped dots": {
-			input: []gensql.EnvConfigOnlyKnownRow{
+			input: []featuresql.ConfigForEnvironmentFilteredByKeysRow{
 				{
 					Key:   "test.a",
 					Value: jsonify("value_a"),
@@ -102,6 +109,8 @@ func TestHelmConfigMap(t *testing.T) {
 }
 
 func TestRepo_ConfigGet(t *testing.T) {
+	ctx, pool := setup(t)
+
 	id := uuid.New()
 	created := time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC)
 	description := "description"
@@ -110,10 +119,10 @@ func TestRepo_ConfigGet(t *testing.T) {
 	) VALUES (
 		'%s', 'feature3', 'my.key', '"stringval"', '%s', true, '%s'
 	)`
-	repo := newTestRepo(t, fmt.Sprintf(q, id, description, created.Format(time.RFC3339)))
-	defer repo.Close()
 
-	got, err := repo.ConfigGet(context.Background(), "feature3")
+	execQuery(ctx, t, pool, fmt.Sprintf(q, id, description, created.Format(time.RFC3339)))
+
+	got, err := ConfigGet(ctx, "feature3")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -134,56 +143,15 @@ func TestRepo_ConfigGet(t *testing.T) {
 	}
 }
 
-func TestRepo_ConfigGetForEnv(t *testing.T) {
-	id := uuid.New()
-	envid := uuid.New()
-	tenantid := uuid.New()
-	created := time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC)
-	description := "description"
-
-	q1 := `INSERT INTO tenants (id, name) VALUES ('%s', 'tenant1')`
-	q2 := `INSERT INTO environments (id, tenant_id, name, kind) VALUES ('%s', '%s', 'env1', 'tenant')`
-	q3 := `INSERT INTO configurations_environment (
-		id, environment_id, feature, key, value, description, secret, created
-	) VALUES (
-		'%s', '%s', 'feature3', 'my.key', '"stringval"', '%s', true, '%s'
-	)`
-
-	repo := newTestRepo(t,
-		fmt.Sprintf(q1, tenantid),
-		fmt.Sprintf(q2, envid, tenantid),
-		fmt.Sprintf(q3, id, envid, description, created.Format(time.RFC3339)),
-	)
-	defer repo.Close()
-
-	got, err := repo.ConfigGetForEnv(context.Background(), "feature3", envid)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	want := []*model.Configuration{
-		{
-			ID:        id,
-			GraphVars: model.ConfigurationGraphVars{FeatureName: "feature3", EnvironmentID: &envid},
-			Key:       "my.key",
-			Content:   []byte(`"stringval"`),
-			Created:   created,
-			Source:    model.ConfigSourceEnv,
-		},
-	}
-
-	if !cmp.Equal(want, got) {
-		t.Errorf("diff -want +got:\n%v", cmp.Diff(want, got))
-	}
-}
-
 func TestRepo_ConfigCreate_Environment(t *testing.T) {
+	ctx, pool := setup(t)
+
 	envid := uuid.New()
 	tenantid := uuid.New()
 	q1 := `INSERT INTO tenants (id, name) VALUES ('%s', 'tenant1')`
 	q2 := `INSERT INTO environments (id, tenant_id, name, kind) VALUES ('%s', '%s', 'env1', 'tenant')`
-	repo := newTestRepo(t, fmt.Sprintf(q1, tenantid), fmt.Sprintf(q2, envid, tenantid))
-	defer repo.Close()
+
+	execQuery(ctx, t, pool, fmt.Sprintf(q1, tenantid), fmt.Sprintf(q2, envid, tenantid))
 
 	config := model.NewConfiguration{
 		EnvironmentID: &envid,
@@ -193,7 +161,7 @@ func TestRepo_ConfigCreate_Environment(t *testing.T) {
 		Value:         []byte(`"stringval"`),
 		Secret:        true,
 	}
-	got, err := repo.ConfigCreate(context.Background(), config)
+	got, err := ConfigCreate(ctx, config)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -215,8 +183,8 @@ func TestRepo_ConfigCreate_Environment(t *testing.T) {
 }
 
 func TestRepo_ConfigCreate_Global(t *testing.T) {
-	repo := newTestRepo(t)
-	defer repo.Close()
+	ctx, _ := setup(t)
+
 	envid := uuid.Nil
 	config := model.NewConfiguration{
 		EnvironmentID: &envid,
@@ -226,7 +194,7 @@ func TestRepo_ConfigCreate_Global(t *testing.T) {
 		Value:         []byte(`"stringval"`),
 		Secret:        true,
 	}
-	got, err := repo.ConfigCreate(context.Background(), config)
+	got, err := ConfigCreate(ctx, config)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -247,8 +215,7 @@ func TestRepo_ConfigCreate_Global(t *testing.T) {
 }
 
 func TestRepo_ConfigUpdate_Global(t *testing.T) {
-	repo := newTestRepo(t)
-	defer repo.Close()
+	ctx, _ := setup(t)
 
 	config := model.NewConfiguration{
 		Feature:     "feature5",
@@ -258,12 +225,12 @@ func TestRepo_ConfigUpdate_Global(t *testing.T) {
 		Secret:      true,
 	}
 	// Create
-	got, err := repo.ConfigCreate(context.Background(), config)
+	got, err := ConfigCreate(ctx, config)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	got, err = repo.ConfigUpdate(context.Background(), got.ID, model.UpdateConfiguration{
+	got, err = ConfigUpdate(ctx, got.ID, model.UpdateConfiguration{
 		Value: []byte(`"newval"`),
 	})
 	if err != nil {
@@ -284,8 +251,7 @@ func TestRepo_ConfigUpdate_Global(t *testing.T) {
 }
 
 func TestRepo_ConfigDelete(t *testing.T) {
-	r := newTestRepo(t)
-	defer r.Close()
+	ctx, _ := setup(t)
 
 	config := model.NewConfiguration{
 		Feature: "feature9",
@@ -293,17 +259,17 @@ func TestRepo_ConfigDelete(t *testing.T) {
 		Value:   []byte(`"stringval"`),
 	}
 	// Create
-	got, err := r.ConfigCreate(context.Background(), config)
+	got, err := ConfigCreate(ctx, config)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	gotID := got.ID
-	err = r.ConfigDelete(context.Background(), gotID)
+	err = ConfigDelete(ctx, gotID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	confs, err := r.ConfigGet(context.Background(), config.Feature)
+	confs, err := ConfigGet(ctx, config.Feature)
 	if err != nil {
 		return
 	}
@@ -319,12 +285,14 @@ func TestRepo_ConfigDelete(t *testing.T) {
 }
 
 func TestRepo_HelmValues_OK(t *testing.T) {
+	ctx, pool := setup(t)
+
 	envid := uuid.New()
 	tenantid := uuid.New()
 	q1 := `INSERT INTO tenants (id, name) VALUES ('%s', 'tenant1')`
 	q2 := `INSERT INTO environments (id, tenant_id, name, kind) VALUES ('%s', '%s', 'env1', 'tenant')`
-	r := newTestRepo(t, fmt.Sprintf(q1, tenantid), fmt.Sprintf(q2, envid, tenantid))
-	defer r.Close()
+
+	execQuery(ctx, t, pool, fmt.Sprintf(q1, tenantid), fmt.Sprintf(q2, envid, tenantid))
 
 	feature := model.Feature{
 		Name: "feature5",
@@ -348,12 +316,12 @@ func TestRepo_HelmValues_OK(t *testing.T) {
 		Secret:        true,
 	}
 	// Create
-	_, err := r.ConfigCreate(context.Background(), config)
+	_, err := ConfigCreate(ctx, config)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	got, err := r.HelmValues(context.Background(), &feature, envid)
+	got, err := HelmValues(ctx, &feature, envid)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -374,12 +342,13 @@ func TestRepo_HelmValues_OK(t *testing.T) {
 }
 
 func TestRepo_HelmValues_MissingRequiredField(t *testing.T) {
+	ctx, pool := setup(t)
+
 	envid := uuid.New()
 	tenantid := uuid.New()
 	q1 := `INSERT INTO tenants (id, name) VALUES ('%s', 'tenant1')`
 	q2 := `INSERT INTO environments (id, tenant_id, name, kind) VALUES ('%s', '%s', 'env1', 'tenant')`
-	r := newTestRepo(t, fmt.Sprintf(q1, tenantid), fmt.Sprintf(q2, envid, tenantid))
-	defer r.Close()
+	execQuery(ctx, t, pool, fmt.Sprintf(q1, tenantid), fmt.Sprintf(q2, envid, tenantid))
 
 	feature := model.Feature{
 		Name: "feature5",
@@ -410,24 +379,24 @@ func TestRepo_HelmValues_MissingRequiredField(t *testing.T) {
 		Secret:        true,
 	}
 	// Create
-	_, err := r.ConfigCreate(context.Background(), config)
+	_, err := ConfigCreate(ctx, config)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = r.HelmValues(context.Background(), &feature, envid)
+	_, err = HelmValues(ctx, &feature, envid)
 	if !errors.Is(err, &errs.ErrMissingRequiredFields{}) {
 		t.Errorf("got: %v, want ErrMissingRequiredFields", err)
 	}
 }
 
 func TestRepo_HelmValues_InvaldKeyNesting(t *testing.T) {
+	ctx, pool := setup(t)
 	envid := uuid.New()
 	tenantid := uuid.New()
 	q1 := `INSERT INTO tenants (id, name) VALUES ('%s', 'tenant1')`
 	q2 := `INSERT INTO environments (id, tenant_id, name, kind) VALUES ('%s', '%s', 'env1', 'tenant')`
-	r := newTestRepo(t, fmt.Sprintf(q1, tenantid), fmt.Sprintf(q2, envid, tenantid))
-	defer r.Close()
+	execQuery(ctx, t, pool, fmt.Sprintf(q1, tenantid), fmt.Sprintf(q2, envid, tenantid))
 
 	config := model.NewConfiguration{
 		Feature: "feature5",
@@ -442,11 +411,11 @@ func TestRepo_HelmValues_InvaldKeyNesting(t *testing.T) {
 		Secret:  true,
 	}
 	// Create
-	_, err := r.ConfigCreate(context.Background(), config2)
+	_, err := ConfigCreate(ctx, config2)
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = r.ConfigCreate(context.Background(), config)
+	_, err = ConfigCreate(ctx, config)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -468,21 +437,21 @@ func TestRepo_HelmValues_InvaldKeyNesting(t *testing.T) {
 			},
 		},
 	}
-	_, err = r.HelmValues(context.Background(), feature, envid)
+	_, err = HelmValues(ctx, feature, envid)
 	if err == nil || !strings.HasSuffix(err.Error(), "is not nestable") {
 		t.Errorf("got: %v, want \"key `key` is not nestable\"", err)
 	}
 }
 
 func TestRepo_HelmValues_WithMappingValues(t *testing.T) {
+	ctx, pool := setup(t)
 	envid := uuid.New()
 	mgmtID := uuid.New()
 	tenantid := uuid.New()
 	q1 := `INSERT INTO tenants (id, name) VALUES ('%s', 'tenant1')`
 	q2 := `INSERT INTO environments (id, tenant_id, name, kind) VALUES ('%s', '%s', 'management', 'management')`
 	q3 := `INSERT INTO environments (id, tenant_id, name, kind) VALUES ('%s', '%s', 'env1', 'tenant')`
-	r := newTestRepo(t, fmt.Sprintf(q1, tenantid), fmt.Sprintf(q2, mgmtID, tenantid), fmt.Sprintf(q3, envid, tenantid))
-	defer r.Close()
+	execQuery(ctx, t, pool, fmt.Sprintf(q1, tenantid), fmt.Sprintf(q2, mgmtID, tenantid), fmt.Sprintf(q3, envid, tenantid))
 
 	vali := []struct {
 		EnvID  uuid.UUID
@@ -529,13 +498,27 @@ func TestRepo_HelmValues_WithMappingValues(t *testing.T) {
 	}
 
 	for _, v := range vali {
-		err := r.EnvironmentValueStore(context.Background(), v.EnvID, v.Key, v.Value, v.Secret)
-		if err != nil {
-			t.Fatal(err)
-		}
+		q := `INSERT INTO environment_values(
+	"environment_id",
+	"key",
+	"value",
+	"secret")
+VALUES (
+	'%[1]s',
+	'%[2]s',
+	'%[3]s',
+	%[4]v)
+ON CONFLICT (
+	"environment_id",
+	"key")
+	DO UPDATE SET
+		"value" = '%[3]s',
+		"secret" = %[4]v`
+
+		execQuery(ctx, t, pool, fmt.Sprintf(q, v.EnvID, v.Key, v.Value, v.Secret))
 	}
 
-	got, err := r.HelmValues(context.Background(), &f, envid)
+	got, err := HelmValues(ctx, &f, envid)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -556,12 +539,12 @@ func TestRepo_HelmValues_WithMappingValues(t *testing.T) {
 }
 
 func TestRepo_HelmValues_WithIgnoredKeys_Ignored(t *testing.T) {
+	ctx, pool := setup(t)
 	envid := uuid.New()
 	tenantid := uuid.New()
 	q1 := `INSERT INTO tenants (id, name) VALUES ('%s', 'tenant1')`
 	q2 := `INSERT INTO environments (id, tenant_id, name, kind) VALUES ('%s', '%s', 'env1', 'onprem')`
-	r := newTestRepo(t, fmt.Sprintf(q1, tenantid), fmt.Sprintf(q2, envid, tenantid))
-	defer r.Close()
+	execQuery(ctx, t, pool, fmt.Sprintf(q1, tenantid), fmt.Sprintf(q2, envid, tenantid))
 
 	feature := model.Feature{
 		Name: "feature6",
@@ -594,7 +577,7 @@ func TestRepo_HelmValues_WithIgnoredKeys_Ignored(t *testing.T) {
 		Value:         json.RawMessage(`"stringval"`),
 		Secret:        true,
 	}
-	_, err := r.ConfigCreate(context.Background(), config)
+	_, err := ConfigCreate(ctx, config)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -605,12 +588,12 @@ func TestRepo_HelmValues_WithIgnoredKeys_Ignored(t *testing.T) {
 		Value:   []byte(`"ignore"`),
 		Secret:  true,
 	}
-	_, err = r.ConfigCreate(context.Background(), globConfig)
+	_, err = ConfigCreate(ctx, globConfig)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	got, err := r.HelmValues(context.Background(), &feature, envid)
+	got, err := HelmValues(ctx, &feature, envid)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -631,12 +614,12 @@ func TestRepo_HelmValues_WithIgnoredKeys_Ignored(t *testing.T) {
 }
 
 func TestRepo_HelmValues_WithIgnoredKeys_NotIgnored(t *testing.T) {
+	ctx, pool := setup(t)
 	envid := uuid.New()
 	tenantid := uuid.New()
 	q1 := `INSERT INTO tenants (id, name) VALUES ('%s', 'tenant1')`
 	q2 := `INSERT INTO environments (id, tenant_id, name, kind) VALUES ('%s', '%s', 'env1', 'tenant')`
-	r := newTestRepo(t, fmt.Sprintf(q1, tenantid), fmt.Sprintf(q2, envid, tenantid))
-	defer r.Close()
+	execQuery(ctx, t, pool, fmt.Sprintf(q1, tenantid), fmt.Sprintf(q2, envid, tenantid))
 
 	feature := model.Feature{
 		Name: "feature6",
@@ -669,7 +652,7 @@ func TestRepo_HelmValues_WithIgnoredKeys_NotIgnored(t *testing.T) {
 		Value:         []byte(`"stringval"`),
 		Secret:        true,
 	}
-	_, err := r.ConfigCreate(context.Background(), config)
+	_, err := ConfigCreate(ctx, config)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -680,12 +663,12 @@ func TestRepo_HelmValues_WithIgnoredKeys_NotIgnored(t *testing.T) {
 		Value:   []byte(`"ignore"`),
 		Secret:  true,
 	}
-	_, err = r.ConfigCreate(context.Background(), globConfig)
+	_, err = ConfigCreate(ctx, globConfig)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	got, err := r.HelmValues(context.Background(), &feature, envid)
+	got, err := HelmValues(ctx, &feature, envid)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -718,4 +701,44 @@ func TestRepo_HelmValues_WithIgnoredKeys_NotIgnored(t *testing.T) {
 		t.Errorf("diff -want +got:\n%v", cmp.Diff(expectedJSON, string(b)))
 	}
 }
-*/
+
+func setup(t *testing.T) (context.Context, *pgxpool.Pool) {
+	pool := setupPostgres(t)
+	log, _ := test.NewNullLogger()
+	ctx := Register(context.Background(), pool)
+	ctx = audit.Register(ctx, pool, log)
+	ctx = environment.Register(ctx, pool)
+
+	return ctx, pool
+}
+
+func setupPostgres(t *testing.T) *pgxpool.Pool {
+	t.Helper()
+
+	dsn, cleanup := dbtest.DockerSQLPool(context.Background())
+
+	log := logrus.New()
+	log.Out = io.Discard
+	ctx := context.Background()
+
+	pool, closers, err := database.NewConnPool(ctx, dsn, log)
+	if err != nil {
+		log.Fatalf("Error connecting to database: %v", err)
+	}
+	t.Cleanup(func() {
+		cleanup()
+		_ = closers.Close()
+	})
+
+	return pool
+}
+
+func execQuery(ctx context.Context, t *testing.T, pool *pgxpool.Pool, queries ...string) {
+	t.Helper()
+
+	for _, q := range queries {
+		if _, err := pool.Exec(ctx, q); err != nil {
+			t.Fatal(err)
+		}
+	}
+}

@@ -46,6 +46,7 @@ func TestMain(m *testing.M) {
 
 func newTestRepo(t testing.TB, stmts ...string) Repo {
 	t.Helper()
+
 	newRepo, tx, err := repository.WithTx(context.Background())
 	if err != nil {
 		t.Fatal(err)
