@@ -14,51 +14,7 @@ import (
 )
 
 type ConfigRepo interface {
-	EnvConfig(ctx context.Context, feature *model.Feature, envID uuid.UUID) ([]*model.Configuration, error)
 	HelmValues(ctx context.Context, feature *model.Feature, envID uuid.UUID) (values map[string]any, err error)
-}
-
-func (r *repo) EnvConfig(ctx context.Context, feature *model.Feature, envID uuid.UUID) ([]*model.Configuration, error) {
-	config, err := r.querier.EnvConfig(ctx, gensql.EnvConfigParams{
-		Feature:       feature.Name,
-		EnvironmentID: envID,
-	})
-	if err != nil {
-		return nil, err
-	}
-	retVal := []*model.Configuration{}
-	knownKeys := make(map[string]struct{}, len(config))
-	for _, conf := range config {
-		retVal = append(retVal, envConfigFromSQL(conf))
-		knownKeys[conf.Key] = struct{}{}
-	}
-
-	for _, m := range feature.Rename {
-		for _, rv := range retVal {
-			if rv.Key == m.From {
-				_, ok := knownKeys[m.To]
-				if !ok {
-					rv.Key = m.To
-				}
-				break
-			}
-		}
-	}
-
-	return retVal, nil
-}
-
-func envConfigFromSQL(conf gensql.EnvConfigRow) *model.Configuration {
-	return &model.Configuration{
-		ID: conf.ID,
-		GraphVars: model.ConfigurationGraphVars{
-			EnvironmentID: conf.EnvironmentID,
-			FeatureName:   conf.Feature,
-		},
-		Key:     conf.Key,
-		Content: conf.Value,
-		Source:  model.ConfigSourceEnv,
-	}
 }
 
 func (r *repo) HelmValues(ctx context.Context, f *model.Feature, envID uuid.UUID) (map[string]any, error) {

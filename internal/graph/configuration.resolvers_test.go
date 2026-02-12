@@ -11,6 +11,7 @@ import (
 	"github.com/nais/fasit/internal/database/mocks"
 	"github.com/nais/fasit/internal/environment/environmenttest"
 	"github.com/nais/fasit/internal/feature"
+	"github.com/nais/fasit/internal/feature/featuresql"
 	"github.com/nais/fasit/internal/feature/featuretest"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/stretchr/testify/mock"
@@ -146,44 +147,36 @@ func Test_queryResolver_Configuration_Feature_Configurations(t *testing.T) {
 		},
 	}
 
-	repo := mocks.NewRepo(t)
-	repo.On("EnvConfig", mock.Anything, mock.IsType(feature), env.ID).Return([]*model.Configuration{
-		{
-			ID:      uuid.New(),
-			Key:     "key.set",
-			Source:  model.ConfigSourceGlobal,
-			Content: json.RawMessage(`"value"`),
-			GraphVars: model.ConfigurationGraphVars{
-				FeatureName:   feature.Name,
-				EnvironmentID: &env.ID,
-			},
-		},
-		{
-			ID:      uuid.New(),
-			Key:     "key.env",
-			Source:  model.ConfigSourceEnv,
-			Content: json.RawMessage(`"env"`),
-			GraphVars: model.ConfigurationGraphVars{
-				FeatureName:   feature.Name,
-				EnvironmentID: &env.ID,
-			},
-		},
-		{
-			ID:      uuid.New(),
-			Key:     "key.unknown",
-			Source:  model.ConfigSourceEnv,
-			Content: json.RawMessage(`"shouldn't be set"`),
-			GraphVars: model.ConfigurationGraphVars{
-				FeatureName:   feature.Name,
-				EnvironmentID: &env.ID,
-			},
-		},
-	}, nil).Once()
-
 	ctx = featuretest.RegisterMock(ctx, t)
 	ctx = environmenttest.RegisterMock(ctx, t)
 
+	featuretest.OnEnvConfig(ctx, env.ID, []featuresql.EnvConfigRow{
+		{
+			ID:            uuid.New(),
+			EnvironmentID: &env.ID,
+			Feature:       feature.Name,
+			Key:           "key.set",
+			Value:         json.RawMessage(`"value"`),
+		},
+		{
+			ID:            uuid.New(),
+			EnvironmentID: &env.ID,
+			Feature:       feature.Name,
+			Key:           "key.env",
+			Value:         json.RawMessage(`"env"`),
+		},
+		{
+			ID:            uuid.New(),
+			EnvironmentID: &env.ID,
+			Feature:       feature.Name,
+			Key:           "key.unknown",
+			Value:         json.RawMessage(`"shouldn't be set"`),
+		},
+	})
+
 	featuretest.OnFeatureByNameForEnv(ctx, env.Name, feature)
+
+	repo := mocks.NewRepo(t)
 	repo.On("EnvironmentGet", mock.Anything, env.ID).Return(env, nil).Once()
 
 	r := &queryResolver{
@@ -228,7 +221,7 @@ func Test_queryResolver_Configuration_Feature_Configurations(t *testing.T) {
 				GraphQLKey: "key.set",
 			},
 			Content: json.RawMessage(`"value"`),
-			Source:  model.ConfigSourceGlobal,
+			Source:  model.ConfigSourceEnv,
 			Key:     "key.set",
 			GraphVars: model.ConfigurationGraphVars{
 				FeatureName:   feature.Name,

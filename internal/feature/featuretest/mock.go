@@ -38,6 +38,13 @@ func OnConfigGet(ctx context.Context, name string, config []*model.Configuration
 	GetQuerier(ctx).EXPECT().ConfigGet(mock.Anything, name).Return(ret, nil).Once()
 }
 
+func OnEnvConfig(ctx context.Context, envID uuid.UUID, ret []featuresql.EnvConfigRow) {
+	featureMock := GetQuerier(ctx)
+	featureMock.EXPECT().EnvConfig(mock.Anything, mock.MatchedBy(func(params featuresql.EnvConfigParams) bool {
+		return params.EnvironmentID == envID
+	})).Return(ret, nil).Once()
+}
+
 func OnFeatureByNameForEnv(ctx context.Context, envName string, expect *model.Feature) {
 	featureMock := GetQuerier(ctx)
 	featureMock.On("GetEnvironmentFeature", ctx, mock.Anything).Return(featuresql.GetEnvironmentFeatureRow{}, pgx.ErrNoRows).Once()

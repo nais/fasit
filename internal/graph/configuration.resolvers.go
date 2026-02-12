@@ -29,7 +29,7 @@ func (r *configurationsResolver) Configuration(ctx context.Context, obj *model.C
 			return nil, err
 		}
 
-		configs, err = r.Repo.EnvConfig(ctx, feat, *obj.EnvID)
+		configs, err = featurepkg.EnvConfig(ctx, feat, *obj.EnvID)
 		if err != nil {
 			return nil, err
 		}

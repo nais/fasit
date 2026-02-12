@@ -67,21 +67,16 @@ func EnvConfig(ctx context.Context, feature *model.Feature, envID uuid.UUID) ([]
 }
 
 func envConfigFromSQL(conf featuresql.EnvConfigRow) *model.Configuration {
-	ret := &model.Configuration{
+	return &model.Configuration{
 		ID: conf.ID,
 		GraphVars: model.ConfigurationGraphVars{
 			EnvironmentID: conf.EnvironmentID,
 			FeatureName:   conf.Feature,
 		},
-		// Description:   nullStringToPtr(conf.Description),
 		Key:     conf.Key,
 		Content: conf.Value,
-		Source:  model.ConfigSourceGlobal,
+		Source:  model.ConfigSourceEnv,
 	}
-
-	ret.Source = model.ConfigSourceEnv
-	ret.GraphVars.EnvironmentID = conf.EnvironmentID
-	return ret
 }
 
 func ConfigGet(ctx context.Context, feature string) ([]*model.Configuration, error) {
