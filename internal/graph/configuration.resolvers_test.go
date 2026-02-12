@@ -275,17 +275,12 @@ func Test_queryResolver_Configuration_Feature_Computed(t *testing.T) {
 	ctx = environmenttest.RegisterMock(ctx, t)
 
 	featuretest.OnFeatureByNameForEnv(ctx, env.Name, f)
-
-	repo.On("MappingValuesForEnvironment", mock.Anything, env.ID, false).Return(
-		&feature.ComputedValues{
-			Kind: env.Kind,
-			Env: map[string]any{
-				"value": "computed value",
-			},
+	featuretest.OnMappingValuesForEnvironment(ctx, env.ID, env.TenantID, false, &feature.ComputedValues{
+		Kind: env.Kind,
+		Env: map[string]any{
+			"value": "computed value",
 		},
-		env.Kind,
-		nil,
-	)
+	})
 
 	r := &queryResolver{
 		Resolver: &Resolver{

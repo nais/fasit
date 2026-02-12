@@ -14,7 +14,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/gensql"
-	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/provider/protogen"
@@ -3628,86 +3627,6 @@ func (_c *Repo_LogsGet_Call) Return(logLines []*model.LogLine, err error) *Repo_
 }
 
 func (_c *Repo_LogsGet_Call) RunAndReturn(run func(ctx context.Context, deployInstructionID uuid.UUID) ([]*model.LogLine, error)) *Repo_LogsGet_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// MappingValuesForEnvironment provides a mock function for the type Repo
-func (_mock *Repo) MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) (*feature.ComputedValues, model.EnvironmentKind, error) {
-	ret := _mock.Called(ctx, envID, showSensitive)
-
-	if len(ret) == 0 {
-		panic("no return value specified for MappingValuesForEnvironment")
-	}
-
-	var r0 *feature.ComputedValues
-	var r1 model.EnvironmentKind
-	var r2 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, bool) (*feature.ComputedValues, model.EnvironmentKind, error)); ok {
-		return returnFunc(ctx, envID, showSensitive)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, bool) *feature.ComputedValues); ok {
-		r0 = returnFunc(ctx, envID, showSensitive)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*feature.ComputedValues)
-		}
-	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, bool) model.EnvironmentKind); ok {
-		r1 = returnFunc(ctx, envID, showSensitive)
-	} else {
-		r1 = ret.Get(1).(model.EnvironmentKind)
-	}
-	if returnFunc, ok := ret.Get(2).(func(context.Context, uuid.UUID, bool) error); ok {
-		r2 = returnFunc(ctx, envID, showSensitive)
-	} else {
-		r2 = ret.Error(2)
-	}
-	return r0, r1, r2
-}
-
-// Repo_MappingValuesForEnvironment_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'MappingValuesForEnvironment'
-type Repo_MappingValuesForEnvironment_Call struct {
-	*mock.Call
-}
-
-// MappingValuesForEnvironment is a helper method to define mock.On call
-//   - ctx context.Context
-//   - envID uuid.UUID
-//   - showSensitive bool
-func (_e *Repo_Expecter) MappingValuesForEnvironment(ctx interface{}, envID interface{}, showSensitive interface{}) *Repo_MappingValuesForEnvironment_Call {
-	return &Repo_MappingValuesForEnvironment_Call{Call: _e.mock.On("MappingValuesForEnvironment", ctx, envID, showSensitive)}
-}
-
-func (_c *Repo_MappingValuesForEnvironment_Call) Run(run func(ctx context.Context, envID uuid.UUID, showSensitive bool)) *Repo_MappingValuesForEnvironment_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		var arg0 context.Context
-		if args[0] != nil {
-			arg0 = args[0].(context.Context)
-		}
-		var arg1 uuid.UUID
-		if args[1] != nil {
-			arg1 = args[1].(uuid.UUID)
-		}
-		var arg2 bool
-		if args[2] != nil {
-			arg2 = args[2].(bool)
-		}
-		run(
-			arg0,
-			arg1,
-			arg2,
-		)
-	})
-	return _c
-}
-
-func (_c *Repo_MappingValuesForEnvironment_Call) Return(computedValues *feature.ComputedValues, environmentKind model.EnvironmentKind, err error) *Repo_MappingValuesForEnvironment_Call {
-	_c.Call.Return(computedValues, environmentKind, err)
-	return _c
-}
-
-func (_c *Repo_MappingValuesForEnvironment_Call) RunAndReturn(run func(ctx context.Context, envID uuid.UUID, showSensitive bool) (*feature.ComputedValues, model.EnvironmentKind, error)) *Repo_MappingValuesForEnvironment_Call {
 	_c.Call.Return(run)
 	return _c
 }

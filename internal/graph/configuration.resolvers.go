@@ -140,7 +140,7 @@ func (r *configurationsResolver) Computed(ctx context.Context, obj *model.Config
 	if err != nil {
 		return nil, fmt.Errorf("get feature by name for environment: %w", err)
 	}
-	cv, kind, err := r.Repo.MappingValuesForEnvironment(ctx, *obj.EnvID, false)
+	cv, kind, err := featurepkg.MappingValuesForEnvironment(ctx, *obj.EnvID, false)
 	if err != nil {
 		return nil, err
 	}

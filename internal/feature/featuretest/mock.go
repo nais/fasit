@@ -45,6 +45,41 @@ func OnEnvConfig(ctx context.Context, envID uuid.UUID, ret []featuresql.EnvConfi
 	})).Return(ret, nil).Once()
 }
 
+func OnMappingValuesForEnvironment(ctx context.Context, envID, tenantID uuid.UUID, showSensitive bool, expected *feature.ComputedValues) {
+	environmenttest.GetQuerier(ctx).EXPECT().Get(ctx, envID).Return(
+		environmentsql.Environment{
+			ID:       envID,
+			TenantID: tenantID,
+			Name:     "env-name",
+			Kind:     environmentsql.EnvironmentKind(expected.Kind),
+		}, nil,
+	).Once()
+	environmenttest.GetQuerier(ctx).EXPECT().GetTenant(ctx, tenantID).Return(
+		environmentsql.Tenant{
+			ID:   tenantID,
+			Name: "tenant-name",
+		}, nil,
+	).Once()
+
+	values, err := json.Marshal(expected.Env)
+	if err != nil {
+		panic(err)
+	}
+
+	ret := []featuresql.ListMappingValuesForTenantRow{
+		{
+			ID:     envID,
+			Name:   "env-name",
+			Kind:   featuresql.EnvironmentKind(expected.Kind),
+			Values: values,
+		},
+	}
+
+	GetQuerier(ctx).EXPECT().ListMappingValuesForTenant(ctx, mock.MatchedBy(func(params featuresql.ListMappingValuesForTenantParams) bool {
+		return params.Tenantid == tenantID && params.Showsensitive == showSensitive
+	})).Return(ret, nil).Once()
+}
+
 func OnFeatureByNameForEnv(ctx context.Context, envName string, expect *model.Feature) {
 	featureMock := GetQuerier(ctx)
 	featureMock.On("GetEnvironmentFeature", ctx, mock.Anything).Return(featuresql.GetEnvironmentFeatureRow{}, pgx.ErrNoRows).Once()
