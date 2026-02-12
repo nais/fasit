@@ -246,7 +246,7 @@ func (r *queryResolver) HelmValues(ctx context.Context, feature string, envID *u
 		return nil, err
 	}
 
-	v, err := r.Repo.HelmValues(ctx, f, *envID)
+	v, err := featurepkg.HelmValues(ctx, f, *envID)
 	if err != nil {
 		return nil, err
 	}

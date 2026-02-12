@@ -42,7 +42,6 @@ type TXFunc func(repo Repo) error
 type Repo interface {
 	AuditRepo
 	ClusterUpgraderRepo
-	ConfigRepo
 	CostRepo
 	DeployInstructionRepo
 	EnvironmentRepo
