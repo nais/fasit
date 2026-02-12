@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 
+	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/feature/featureutil"
 	"github.com/nais/fasit/internal/graph/model"
 	yaml "gopkg.in/yaml.v3"
@@ -37,7 +38,7 @@ func (r *mutationResolver) Playground(ctx context.Context, input model.Playgroun
 	f := &model.Feature{
 		FeatureYAML: fyaml,
 	}
-	vals, err := r.Repo.HelmValues(ctx, f, env.ID)
+	vals, err := featurepkg.HelmValues(ctx, f, env.ID)
 	if err != nil {
 		return retErr(err)
 	}

@@ -42,18 +42,6 @@ ON CONFLICT (
 	RETURNING
 		*;
 
--- name: ClusterOperationsGet :many
-SELECT
-	*
-FROM
-	cluster_operations
-WHERE
-	"tenant_id" = @tenantId
-	AND "environment_id" = @envID
-	AND "status" = @status
-ORDER BY
-	"start_time" DESC;
-
 -- name: ClusterOperationGet :one
 SELECT
 	*
@@ -76,14 +64,6 @@ WHERE
 	"upgrade_id" = @upgrade_id
 ORDER BY
 	"start_time" DESC;
-
--- name: ClusterOperationsGetByID :one
-SELECT
-	*
-FROM
-	cluster_operations
-WHERE
-	id = @id;
 
 -- name: ClusterOperationsGetDanglingForEnvironment :many
 -- Get all RUNNING operations for completed (DONE/FAILED) upgrades in an environment

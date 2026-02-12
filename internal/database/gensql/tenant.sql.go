@@ -10,30 +10,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const tenantCI = `-- name: TenantCI :one
-SELECT
-	id, name, description, created, last_modified, ci, upgrade_delay_days
-FROM
-	tenants
-WHERE
-	ci = TRUE
-`
-
-func (q *Queries) TenantCI(ctx context.Context) (Tenant, error) {
-	row := q.db.QueryRow(ctx, tenantCI)
-	var i Tenant
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.Description,
-		&i.Created,
-		&i.LastModified,
-		&i.Ci,
-		&i.UpgradeDelayDays,
-	)
-	return i, err
-}
-
 const tenantCreate = `-- name: TenantCreate :one
 INSERT INTO tenants(
 	name,

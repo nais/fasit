@@ -86,39 +86,6 @@ func (q *Queries) DeployInstructionsForFeature(ctx context.Context, arg DeployIn
 	return items, nil
 }
 
-const deployInstructionsForNameVersion = `-- name: DeployInstructionsForNameVersion :one
-SELECT
-	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, deployment_id
-FROM
-	deploy_instructions
-WHERE
-	feature_name = $1
-	AND feature_version = $2
-`
-
-type DeployInstructionsForNameVersionParams struct {
-	FeatureName    string
-	FeatureVersion string
-}
-
-func (q *Queries) DeployInstructionsForNameVersion(ctx context.Context, arg DeployInstructionsForNameVersionParams) (DeployInstruction, error) {
-	row := q.db.QueryRow(ctx, deployInstructionsForNameVersion, arg.FeatureName, arg.FeatureVersion)
-	var i DeployInstruction
-	err := row.Scan(
-		&i.ID,
-		&i.EnvironmentID,
-		&i.FeatureName,
-		&i.FeatureVersion,
-		&i.Status,
-		&i.Hash,
-		&i.Created,
-		&i.LastModified,
-		&i.Values,
-		&i.DeploymentID,
-	)
-	return i, err
-}
-
 const deployInstructionsLatestForFeature = `-- name: DeployInstructionsLatestForFeature :one
 SELECT
 	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, deployment_id

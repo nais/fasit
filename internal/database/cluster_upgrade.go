@@ -27,7 +27,6 @@ type ClusterUpgraderRepo interface {
 	UpdateClusterUpgradeStatus(ctx context.Context, upgradeID uuid.UUID, status gensql.ClusterUpgradesStatus) (*model.ClusterUpgradeStatus, error)
 	ClusterUpgradeBypassDelay(ctx context.Context, upgradeID uuid.UUID) (*model.ClusterUpgradeStatus, error)
 	ClusterUpgradeGetByID(ctx context.Context, id uuid.UUID) (*model.ClusterUpgradeStatus, error)
-	ClusterOperationsGetByID(ctx context.Context, id uuid.UUID) (*model.EnvironmentOperation, error)
 	ClusterOperationsGetByUpgradeID(ctx context.Context, upgradeID uuid.UUID) ([]*model.EnvironmentOperation, error)
 	ClusterOperationsGetDanglingForEnvironment(ctx context.Context, tenantID, envID uuid.UUID) (map[uuid.UUID][]*model.EnvironmentOperation, error)
 	SetClusterUpgradesSlackMessage(ctx context.Context, id uuid.UUID, slackMessageTS, channelID string) (*model.ClusterUpgradeStatus, error)
@@ -206,18 +205,6 @@ func clusterOperationFromSQL(p gensql.ClusterOperation) *model.EnvironmentOperat
 		StartTime:           p.StartTime.Time,
 		LastModified:        p.LastModified.Time,
 	}
-}
-
-func (r *repo) ClusterOperationsGetByID(ctx context.Context, id uuid.UUID) (*model.EnvironmentOperation, error) {
-	clusterOperation, err := r.querier.ClusterOperationsGetByID(ctx, id)
-	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		return nil, err
-	}
-
-	if clusterOperation.EnvironmentID == uuid.Nil {
-		return &model.EnvironmentOperation{}, nil
-	}
-	return clusterOperationFromSQL(clusterOperation), nil
 }
 
 func (r *repo) ClusterOperationsGetByUpgradeID(ctx context.Context, upgradeID uuid.UUID) ([]*model.EnvironmentOperation, error) {

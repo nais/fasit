@@ -11,8 +11,17 @@ import (
 type Querier interface {
 	AutoInstallNamesForKind(ctx context.Context, environmentKind EnvironmentKind) ([]string, error)
 	AutoInstallsForKind(ctx context.Context, environmentKind EnvironmentKind) ([]AutoInstall, error)
-	// orignal name: EnvConfigOnlyKnown
+	ConfigDelete(ctx context.Context, id uuid.UUID) error
+	ConfigEnvUpdateOrCreate(ctx context.Context, arg ConfigEnvUpdateOrCreateParams) (ConfigurationsEnvironment, error)
 	ConfigForEnvironmentFilteredByKeys(ctx context.Context, arg ConfigForEnvironmentFilteredByKeysParams) ([]ConfigForEnvironmentFilteredByKeysRow, error)
+	ConfigGet(ctx context.Context, feature string) ([]ConfigurationsGlobal, error)
+	ConfigGetByID(ctx context.Context, id uuid.UUID) (ConfigurationsGlobal, error)
+	ConfigGlobalUpdateOrCreate(ctx context.Context, arg ConfigGlobalUpdateOrCreateParams) (ConfigurationsGlobal, error)
+	ConfigOverridesByFeature(ctx context.Context, feature string) ([]ConfigOverridesByFeatureRow, error)
+	ConfigRenameEnv(ctx context.Context, arg ConfigRenameEnvParams) error
+	ConfigRenameGlobal(ctx context.Context, arg ConfigRenameGlobalParams) error
+	ConfigUpdate(ctx context.Context, arg ConfigUpdateParams) (ConfigurationsGlobal, error)
+	EnvConfig(ctx context.Context, arg EnvConfigParams) ([]EnvConfigRow, error)
 	FeatureByName(ctx context.Context, name string) (FeatureByNameRow, error)
 	FeatureDataCreate(ctx context.Context, arg FeatureDataCreateParams) error
 	FeatureStateCreateOrUpdate(ctx context.Context, arg FeatureStateCreateOrUpdateParams) (FeatureState, error)

@@ -29,7 +29,7 @@ func (r *configurationsResolver) Configuration(ctx context.Context, obj *model.C
 			return nil, err
 		}
 
-		configs, err = r.Repo.EnvConfig(ctx, feat, *obj.EnvID)
+		configs, err = featurepkg.EnvConfig(ctx, feat, *obj.EnvID)
 		if err != nil {
 			return nil, err
 		}
@@ -40,7 +40,7 @@ func (r *configurationsResolver) Configuration(ctx context.Context, obj *model.C
 		}
 		kind = env.Kind
 	} else {
-		configs, err = r.Repo.ConfigGet(ctx, obj.FeatureName)
+		configs, err = featurepkg.ConfigGet(ctx, obj.FeatureName)
 		if err != nil {
 			return nil, err
 		}
@@ -140,7 +140,7 @@ func (r *configurationsResolver) Computed(ctx context.Context, obj *model.Config
 	if err != nil {
 		return nil, fmt.Errorf("get feature by name for environment: %w", err)
 	}
-	cv, kind, err := r.Repo.MappingValuesForEnvironment(ctx, *obj.EnvID, false)
+	cv, kind, err := featurepkg.MappingValuesForEnvironment(ctx, *obj.EnvID, false)
 	if err != nil {
 		return nil, err
 	}
@@ -197,7 +197,7 @@ func (r *mutationResolver) ConfigurationCreate(ctx context.Context, configuratio
 	}
 
 	configuration.Secret = val.Config.Secret
-	ret, err := r.Repo.ConfigCreate(ctx, configuration)
+	ret, err := featurepkg.ConfigCreate(ctx, configuration)
 	if err != nil {
 		return nil, err
 	}
@@ -209,13 +209,13 @@ func (r *mutationResolver) ConfigurationCreate(ctx context.Context, configuratio
 
 // ConfigurationUpdate is the resolver for the configurationUpdate field.
 func (r *mutationResolver) ConfigurationUpdate(ctx context.Context, id uuid.UUID, configuration model.UpdateConfiguration) (*model.Configuration, error) {
-	return r.Repo.ConfigUpdate(ctx, id, configuration)
+	return featurepkg.ConfigUpdate(ctx, id, configuration)
 }
 
 // ConfigurationDelete is the resolver for the configurationDelete field.
 func (r *mutationResolver) ConfigurationDelete(ctx context.Context, id uuid.UUID) (bool, error) {
 	// TODO(thokra): Make this soft delete?
-	if err := r.Repo.ConfigDelete(ctx, id); err != nil {
+	if err := featurepkg.ConfigDelete(ctx, id); err != nil {
 		return false, err
 	}
 	return true, nil
@@ -246,7 +246,7 @@ func (r *queryResolver) HelmValues(ctx context.Context, feature string, envID *u
 		return nil, err
 	}
 
-	v, err := r.Repo.HelmValues(ctx, f, *envID)
+	v, err := featurepkg.HelmValues(ctx, f, *envID)
 	if err != nil {
 		return nil, err
 	}

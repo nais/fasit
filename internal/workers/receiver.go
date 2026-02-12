@@ -244,7 +244,7 @@ func (r *Receiver) handleCI(ctx context.Context, env *model.Environment, di *mod
 		}
 
 		if len(rollout.Rename) > 0 {
-			if err := repo.ConfigMove(ctx, rollout.Name, rollout.Rename); err != nil {
+			if err := feature.ConfigMove(ctx, rollout.Name, rollout.Rename); err != nil {
 				return fmt.Errorf("moving config: %w", err)
 			}
 		}

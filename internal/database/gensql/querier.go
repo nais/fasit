@@ -14,12 +14,8 @@ type Querier interface {
 	AuditCreate(ctx context.Context, arg AuditCreateParams) error
 	AuditForEnvironment(ctx context.Context, arg AuditForEnvironmentParams) ([]Audit, error)
 	AuditGetLatestForClusterUpgrade(ctx context.Context, upgradeID string) (Audit, error)
-	AutoInstallNamesForKind(ctx context.Context, environmentKind EnvironmentKind) ([]string, error)
-	AutoInstallsForKind(ctx context.Context, environmentKind EnvironmentKind) ([]AutoInstall, error)
 	ClusterOperationCreateOrUpdate(ctx context.Context, arg ClusterOperationCreateOrUpdateParams) (ClusterOperation, error)
 	ClusterOperationGet(ctx context.Context, arg ClusterOperationGetParams) (ClusterOperation, error)
-	ClusterOperationsGet(ctx context.Context, arg ClusterOperationsGetParams) ([]ClusterOperation, error)
-	ClusterOperationsGetByID(ctx context.Context, id uuid.UUID) (ClusterOperation, error)
 	ClusterOperationsGetByUpgradeID(ctx context.Context, upgradeID uuid.UUID) ([]ClusterOperation, error)
 	// Get all RUNNING operations for completed (DONE/FAILED) upgrades in an environment
 	// These are "dangling" operations that should be updated to their final state
@@ -37,28 +33,15 @@ type Querier interface {
 	ClusterUpgradesHistoryGetByTenantID(ctx context.Context, arg ClusterUpgradesHistoryGetByTenantIDParams) ([]ClusterUpgrade, error)
 	ClusterUpgradesSetSlackMessage(ctx context.Context, arg ClusterUpgradesSetSlackMessageParams) (ClusterUpgrade, error)
 	ClusterUpgradesUpdateStatus(ctx context.Context, arg ClusterUpgradesUpdateStatusParams) (ClusterUpgrade, error)
-	ConfigDelete(ctx context.Context, id uuid.UUID) error
-	ConfigEnvUpdateOrCreate(ctx context.Context, arg ConfigEnvUpdateOrCreateParams) (ConfigurationsEnvironment, error)
-	ConfigGet(ctx context.Context, feature string) ([]ConfigurationsGlobal, error)
-	ConfigGetByID(ctx context.Context, id uuid.UUID) (ConfigurationsGlobal, error)
-	ConfigGetForEnv(ctx context.Context, arg ConfigGetForEnvParams) ([]ConfigurationsEnvironment, error)
-	ConfigGlobalUpdateOrCreate(ctx context.Context, arg ConfigGlobalUpdateOrCreateParams) (ConfigurationsGlobal, error)
-	ConfigOverridesByFeature(ctx context.Context, feature string) ([]ConfigOverridesByFeatureRow, error)
-	ConfigRenameEnv(ctx context.Context, arg ConfigRenameEnvParams) error
-	ConfigRenameGlobal(ctx context.Context, arg ConfigRenameGlobalParams) error
-	ConfigUpdate(ctx context.Context, arg ConfigUpdateParams) (ConfigurationsGlobal, error)
 	Cost(ctx context.Context, arg CostParams) ([]CostRow, error)
 	CostForTenant(ctx context.Context, arg CostForTenantParams) ([]CostForTenantRow, error)
 	CostLastDate(ctx context.Context) (pgtype.Date, error)
 	CostUpsert(ctx context.Context, arg []CostUpsertParams) *CostUpsertBatchResults
 	DeployInstructionsByID(ctx context.Context, id uuid.UUID) (DeployInstruction, error)
 	DeployInstructionsForFeature(ctx context.Context, arg DeployInstructionsForFeatureParams) ([]DeployInstruction, error)
-	DeployInstructionsForNameVersion(ctx context.Context, arg DeployInstructionsForNameVersionParams) (DeployInstruction, error)
 	DeployInstructionsLatestForFeature(ctx context.Context, arg DeployInstructionsLatestForFeatureParams) (DeployInstruction, error)
 	DeployInstructionsPrevious(ctx context.Context, id uuid.UUID) (DeployInstruction, error)
 	DeployInstructionsUpdateStatus(ctx context.Context, arg DeployInstructionsUpdateStatusParams) error
-	EnvConfig(ctx context.Context, arg EnvConfigParams) ([]EnvConfigRow, error)
-	EnvConfigOnlyKnown(ctx context.Context, arg EnvConfigOnlyKnownParams) ([]EnvConfigOnlyKnownRow, error)
 	EnvironmentByNames(ctx context.Context, arg EnvironmentByNamesParams) (Environment, error)
 	EnvironmentCI(ctx context.Context, kind EnvironmentKind) (Environment, error)
 	EnvironmentCreate(ctx context.Context, arg EnvironmentCreateParams) (Environment, error)
@@ -103,8 +86,6 @@ type Querier interface {
 	RolloutUpdateStatus(ctx context.Context, arg RolloutUpdateStatusParams) error
 	Rollouts(ctx context.Context, limit int32) ([]Rollout, error)
 	RolloutsForFeature(ctx context.Context, featureName string) ([]Rollout, error)
-	RolloutsForKind(ctx context.Context, environmentKind EnvironmentKind) ([]RolloutsForKindRow, error)
-	TenantCI(ctx context.Context) (Tenant, error)
 	TenantCreate(ctx context.Context, arg TenantCreateParams) (Tenant, error)
 	TenantGet(ctx context.Context, id uuid.UUID) (Tenant, error)
 	TenantGetByName(ctx context.Context, name string) (Tenant, error)

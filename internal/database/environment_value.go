@@ -2,14 +2,11 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
-	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/database/gensql"
-	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
 )
 
@@ -18,7 +15,6 @@ type EnvironmentValueRepo interface {
 	EnvironmentValueGet(ctx context.Context, environmentID uuid.UUID, key string, showSensitive bool) (*model.EnvironmentValue, error)
 	EnvironmentValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) ([]*model.EnvironmentValue, error)
 	EnvironmentValueStore(ctx context.Context, environmentID uuid.UUID, key string, value json.RawMessage, secret bool) error
-	MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) (*feature.ComputedValues, model.EnvironmentKind, error)
 
 	EnvironmentValuesAcrossEnvs(ctx context.Context, key string) ([]gensql.EnvironmentValuesAcrossEnvsRow, error)
 }
@@ -78,55 +74,6 @@ func (r *repo) EnvironmentValuesForEnvironment(ctx context.Context, envID uuid.U
 	}
 
 	return ret, nil
-}
-
-func (r *repo) MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensitive bool) (*feature.ComputedValues, model.EnvironmentKind, error) {
-	env, err := r.querier.EnvironmentGet(ctx, envID)
-	if err != nil {
-		return nil, "", fmt.Errorf("envValuesForEnv: failed to get environment: %w", err)
-	}
-
-	tenant, err := r.TenantGet(ctx, env.TenantID)
-	if err != nil {
-		return nil, model.EnvironmentKind(env.Kind), fmt.Errorf("envValuesForEnv: failed to get tenant: %w", err)
-	}
-	mv := &feature.ComputedValues{
-		Kind: model.EnvironmentKind(env.Kind),
-		Tenant: feature.ComputedTenant{
-			Name: tenant.Name,
-		},
-	}
-
-	values, err := r.querier.MappingValuesForTenant(ctx, gensql.MappingValuesForTenantParams{
-		Tenantid:      tenant.ID,
-		Showsensitive: showSensitive,
-	})
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return mv, model.EnvironmentKind(env.Kind), nil
-		}
-		return nil, model.EnvironmentKind(env.Kind), fmt.Errorf("envValuesForEnv: failed to get environment values: %w", err)
-	}
-
-	for _, env := range values {
-		val := map[string]any{}
-		if err := json.Unmarshal(env.Values, &val); err != nil {
-			return nil, model.EnvironmentKind(env.Kind), fmt.Errorf("envValuesForEnv: failed to unmarshal values for %q: %w", env.Name, err)
-		}
-		val["name"] = env.Name
-		val["kind"] = string(env.Kind)
-
-		if env.ID == envID {
-			mv.Env = val
-		}
-		if env.Kind == gensql.EnvironmentKind(model.EnvironmentKindManagement) {
-			mv.Management = val
-		} else {
-			mv.Envs = append(mv.Envs, val)
-		}
-	}
-
-	return mv, model.EnvironmentKind(env.Kind), nil
 }
 
 func (r *repo) EnvironmentValuesAcrossEnvs(ctx context.Context, key string) ([]gensql.EnvironmentValuesAcrossEnvsRow, error) {

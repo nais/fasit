@@ -9,7 +9,6 @@ import (
 )
 
 type TenantRepo interface {
-	TenantCI(ctx context.Context) (*model.Tenant, error)
 	TenantCreate(ctx context.Context, t *model.TenantCreate) (*model.Tenant, error)
 	TenantGet(ctx context.Context, id uuid.UUID) (*model.Tenant, error)
 	TenantGetByName(ctx context.Context, name string) (*model.Tenant, error)
@@ -81,13 +80,5 @@ func (r *repo) TenantSetUpgradeDelayDays(ctx context.Context, id uuid.UUID, dela
 
 	r.createAudit(ctx, "updated upgrade_delay_days", "tenants", tenant.ID.String())
 
-	return tenantFromSQL(tenant), nil
-}
-
-func (r *repo) TenantCI(ctx context.Context) (*model.Tenant, error) {
-	tenant, err := r.querier.TenantCI(ctx)
-	if err != nil {
-		return nil, err
-	}
 	return tenantFromSQL(tenant), nil
 }
