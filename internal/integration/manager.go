@@ -17,6 +17,7 @@ import (
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/notifier"
 	"github.com/nais/fasit/internal/deployment"
+	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
@@ -73,9 +74,8 @@ func TestRunner(ctx context.Context, skipSetup bool) (*testmanager.Manager, erro
 			ci := L.OptBool(2, false)
 
 			pool := L.Context().Value(poolKey).(*pgxpool.Pool)
-			repo := database.NewRepo(pool, logrus.New())
 
-			tenant, err := repo.TenantCreate(ctx, &model.TenantCreate{
+			tenant, err := environment.CreateTenant(L.Context(), &model.TenantCreate{
 				Name: name,
 			})
 			if err != nil {

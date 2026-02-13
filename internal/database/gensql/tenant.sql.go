@@ -7,39 +7,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 )
-
-const tenantCreate = `-- name: TenantCreate :one
-INSERT INTO tenants(
-	name,
-	description)
-VALUES (
-	$1,
-	$2)
-RETURNING
-	id, name, description, created, last_modified, ci, upgrade_delay_days
-`
-
-type TenantCreateParams struct {
-	Name        string
-	Description pgtype.Text
-}
-
-func (q *Queries) TenantCreate(ctx context.Context, arg TenantCreateParams) (Tenant, error) {
-	row := q.db.QueryRow(ctx, tenantCreate, arg.Name, arg.Description)
-	var i Tenant
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.Description,
-		&i.Created,
-		&i.LastModified,
-		&i.Ci,
-		&i.UpgradeDelayDays,
-	)
-	return i, err
-}
 
 const tenantGet = `-- name: TenantGet :one
 SELECT

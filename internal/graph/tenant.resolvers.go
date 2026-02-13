@@ -13,7 +13,7 @@ import (
 
 // TenantCreate is the resolver for the tenantCreate field.
 func (r *mutationResolver) TenantCreate(ctx context.Context, tenant model.TenantCreate) (*model.Tenant, error) {
-	return r.Repo.TenantCreate(ctx, &tenant)
+	return environment.CreateTenant(ctx, &tenant)
 }
 
 // TenantSetUpgradeDelayDays is the resolver for the tenantSetUpgradeDelayDays field.

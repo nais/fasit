@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/database/types"
 	"github.com/nais/fasit/internal/environment/environmentsql"
 	"github.com/nais/fasit/internal/graph/model"
@@ -106,6 +107,20 @@ func GetTenant(ctx context.Context, id uuid.UUID) (*model.Tenant, error) {
 	if err != nil {
 		return nil, err
 	}
+	return tenantFromSQL(tenant), nil
+}
+
+func CreateTenant(ctx context.Context, t *model.TenantCreate) (*model.Tenant, error) {
+	tenant, err := querier(ctx).TenantCreate(ctx, environmentsql.TenantCreateParams{
+		Name:        t.Name,
+		Description: t.Description,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	audit.CreateAudit(ctx, "created", "tenants", tenant.ID.String())
+
 	return tenantFromSQL(tenant), nil
 }
 

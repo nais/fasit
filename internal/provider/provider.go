@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/auth"
 	"github.com/nais/fasit/internal/database"
+	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/provider/protogen"
 	"google.golang.org/grpc/codes"
@@ -31,7 +32,7 @@ func (s *server) CreateTenant(ctx context.Context, in *protogen.CreateTenantRequ
 		return nil, status.Error(codes.InvalidArgument, "Tenant name must be at least 2 characters long")
 	}
 
-	tenant, err := s.repo.TenantCreate(ctx, &model.TenantCreate{
+	tenant, err := environment.CreateTenant(ctx, &model.TenantCreate{
 		Name: in.Name,
 	})
 	if err != nil {

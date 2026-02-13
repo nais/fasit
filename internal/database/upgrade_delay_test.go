@@ -6,7 +6,11 @@ import (
 	"context"
 	"testing"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/nais/fasit/internal/audit"
+	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph/model"
+	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/utils/ptr"
@@ -17,21 +21,22 @@ func TestUpgradePriorityOrdering(t *testing.T) {
 	defer repo.Close()
 
 	ctx := context.Background()
+	ctx = setupContext(ctx, pool)
 
 	// Create three test tenants with different upgrade delay days
-	testTenant, err := repo.TenantCreate(ctx, &model.TenantCreate{
+	testTenant, err := environment.CreateTenant(ctx, &model.TenantCreate{
 		Name:        "test-tenant",
 		Description: ptr.To("Test environment"),
 	})
 	require.NoError(t, err)
 
-	prodTenant, err := repo.TenantCreate(ctx, &model.TenantCreate{
+	prodTenant, err := environment.CreateTenant(ctx, &model.TenantCreate{
 		Name:        "prod-tenant",
 		Description: ptr.To("Production environment"),
 	})
 	require.NoError(t, err)
 
-	stagingTenant, err := repo.TenantCreate(ctx, &model.TenantCreate{
+	stagingTenant, err := environment.CreateTenant(ctx, &model.TenantCreate{
 		Name:        "staging-tenant",
 		Description: ptr.To("Staging environment"),
 	})
@@ -67,9 +72,10 @@ func TestEnvironmentUpgradePriorityOrdering(t *testing.T) {
 	defer repo.Close()
 
 	ctx := context.Background()
+	ctx = setupContext(ctx, pool)
 
 	// Create a test tenant
-	tenant, err := repo.TenantCreate(ctx, &model.TenantCreate{
+	tenant, err := environment.CreateTenant(ctx, &model.TenantCreate{
 		Name:        "priority-test-tenant",
 		Description: ptr.To("Test tenant for environment priorities"),
 	})
@@ -127,9 +133,10 @@ func TestEnvironmentUpgradeConfigEnabled(t *testing.T) {
 	defer repo.Close()
 
 	ctx := context.Background()
+	ctx = setupContext(ctx, pool)
 
 	// Create a test tenant and environment
-	tenant, err := repo.TenantCreate(ctx, &model.TenantCreate{
+	tenant, err := environment.CreateTenant(ctx, &model.TenantCreate{
 		Name:        "enabled-test-tenant",
 		Description: ptr.To("Test tenant for enabled flag"),
 	})
@@ -161,4 +168,11 @@ func TestEnvironmentUpgradeConfigEnabled(t *testing.T) {
 		}
 	}
 	assert.True(t, found, "environment with auto_upgrade=true should be in auto-upgrade list")
+}
+
+func setupContext(ctx context.Context, pool *pgxpool.Pool) context.Context {
+	log, _ := test.NewNullLogger()
+	ctx = audit.Register(ctx, pool, log)
+	ctx = environment.Register(ctx, pool)
+	return ctx
 }

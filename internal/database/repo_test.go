@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/lib/pq"
 	"github.com/nais/fasit/internal/database/dbtest"
 	"github.com/sirupsen/logrus"
@@ -17,6 +18,7 @@ import (
 var (
 	dbString   = ""
 	repository *repo
+	pool       *pgxpool.Pool
 )
 
 func TestMain(m *testing.M) {
@@ -27,13 +29,14 @@ func TestMain(m *testing.M) {
 	log.Out = io.Discard
 	ctx := context.Background()
 
-	pool, closers, err := NewConnPool(ctx, dbString, log)
+	p, closers, err := NewConnPool(ctx, dbString, log)
 	if err != nil {
 		log.Fatalf("Error connecting to database: %v", err)
 	}
 	defer func() {
 		_ = closers.Close()
 	}()
+	pool = p
 
 	repository = NewRepo(pool, logrus.NewEntry(log)).(*repo)
 

@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/contextloader"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/environment"
@@ -25,26 +26,30 @@ func TestProvider(t *testing.T) {
 	ctx := context.Background()
 	container, dsn := startPostgresql(ctx, t)
 	pool := newPool(ctx, t, container, dsn)
+	log, _ := test.NewNullLogger()
 	loadContext := func(ctx context.Context) context.Context {
 		ctx = environment.Register(ctx, pool)
+		ctx = audit.Register(ctx, pool, log)
 		return ctx
 	}
 
 	c := startGrpcServer(t, loadContext, pool)
 
-	resp, err := c.CreateTenant(ctx, &protogen.CreateTenantRequest{Name: "test-tenant"})
-	if err != nil {
-		t.Fatal(err)
-	}
+	t.Run("tenant operations", func(t *testing.T) {
+		want, err := c.CreateTenant(ctx, &protogen.CreateTenantRequest{Name: "test-tenant"})
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	expectedTenantId := resp.GetId()
-	resp, err = c.GetTenant(ctx, &protogen.GetTenantRequest{Name: "test-tenant"})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if resp.GetId() != expectedTenantId {
-		t.Fatalf("Expected tenant id %s, got %s", expectedTenantId, resp.GetId())
-	}
+		got, err := c.GetTenant(ctx, &protogen.GetTenantRequest{Name: "test-tenant"})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if got.GetId() != want.GetId() {
+			t.Fatalf("Expected tenant id %s, got %s", want.GetId(), got.GetId())
+		}
+	})
 }
 
 // startGrpcServer initializes an in-memory gRPC server

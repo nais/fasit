@@ -6,6 +6,16 @@ FROM
 WHERE
 	id = @id;
 
+-- name: TenantCreate :one
+INSERT INTO tenants(
+	name,
+	description)
+VALUES (
+	@name,
+	@description)
+RETURNING
+	*;
+
 -- name: TenantEnvironments :many
 SELECT
 	e.*,

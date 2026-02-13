@@ -43,7 +43,6 @@ type ReceiverStore interface {
 	RolloutEventCreate(ctx context.Context, rollout uuid.UUID, failure bool, message string, data map[string]any) error
 	RolloutStatus(ctx context.Context, name string) (model.RolloutStatus, error)
 	RolloutsUpdateStatus(ctx context.Context, status model.RolloutStatus, name string, completed bool) error
-	TenantCreate(ctx context.Context, t *model.TenantCreate) (*model.Tenant, error)
 	TenantGet(ctx context.Context, id uuid.UUID) (*model.Tenant, error)
 	TenantGetByName(ctx context.Context, name string) (*model.Tenant, error)
 	TxFunc(ctx context.Context, fn database.TXFunc) error

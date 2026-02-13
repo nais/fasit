@@ -9,7 +9,6 @@ import (
 )
 
 type TenantRepo interface {
-	TenantCreate(ctx context.Context, t *model.TenantCreate) (*model.Tenant, error)
 	TenantGet(ctx context.Context, id uuid.UUID) (*model.Tenant, error)
 	TenantGetByName(ctx context.Context, name string) (*model.Tenant, error)
 	TenantsGet(ctx context.Context) ([]*model.Tenant, error)
@@ -25,20 +24,6 @@ func tenantFromSQL(t gensql.Tenant) *model.Tenant {
 		LastModified:     t.LastModified.Time,
 		UpgradeDelayDays: t.UpgradeDelayDays,
 	}
-}
-
-func (r *repo) TenantCreate(ctx context.Context, t *model.TenantCreate) (*model.Tenant, error) {
-	tenant, err := r.querier.TenantCreate(ctx, gensql.TenantCreateParams{
-		Name:        t.Name,
-		Description: ptrToNullString(t.Description),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	r.createAudit(ctx, "created", "tenants", tenant.ID.String())
-
-	return tenantFromSQL(tenant), nil
 }
 
 func (r *repo) TenantGet(ctx context.Context, id uuid.UUID) (*model.Tenant, error) {

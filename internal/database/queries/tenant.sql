@@ -23,16 +23,6 @@ ORDER BY
 	created DESC,
 	name ASC;
 
--- name: TenantCreate :one
-INSERT INTO tenants(
-	name,
-	description)
-VALUES (
-	@name,
-	@description)
-RETURNING
-	*;
-
 -- name: TenantSetUpgradeDelayDays :one
 UPDATE
 	tenants

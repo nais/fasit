@@ -35,6 +35,37 @@ func (q *Queries) GetTenant(ctx context.Context, id uuid.UUID) (Tenant, error) {
 	return i, err
 }
 
+const tenantCreate = `-- name: TenantCreate :one
+INSERT INTO tenants(
+	name,
+	description)
+VALUES (
+	$1,
+	$2)
+RETURNING
+	id, name, description, created, last_modified, ci, upgrade_delay_days
+`
+
+type TenantCreateParams struct {
+	Name        string
+	Description *string
+}
+
+func (q *Queries) TenantCreate(ctx context.Context, arg TenantCreateParams) (Tenant, error) {
+	row := q.db.QueryRow(ctx, tenantCreate, arg.Name, arg.Description)
+	var i Tenant
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.Created,
+		&i.LastModified,
+		&i.Ci,
+		&i.UpgradeDelayDays,
+	)
+	return i, err
+}
+
 const tenantEnvironments = `-- name: TenantEnvironments :many
 SELECT
 	e.id, e.tenant_id, e.name, e.kind, e.description, e.created, e.last_modified, e.ci, e.reconcile, e.auto_upgrade, e.upgrade_delay_days, e.maintenance_window, e.labels,

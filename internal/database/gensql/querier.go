@@ -81,7 +81,6 @@ type Querier interface {
 	RolloutUpdateStatus(ctx context.Context, arg RolloutUpdateStatusParams) error
 	Rollouts(ctx context.Context, limit int32) ([]Rollout, error)
 	RolloutsForFeature(ctx context.Context, featureName string) ([]Rollout, error)
-	TenantCreate(ctx context.Context, arg TenantCreateParams) (Tenant, error)
 	TenantGet(ctx context.Context, id uuid.UUID) (Tenant, error)
 	TenantGetByName(ctx context.Context, name string) (Tenant, error)
 	TenantSetUpgradeDelayDays(ctx context.Context, arg TenantSetUpgradeDelayDaysParams) (Tenant, error)
