@@ -22,7 +22,6 @@ import (
 	"github.com/nais/fasit/internal/ioconvenience"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/provider"
-	"github.com/nais/fasit/internal/provider/protogen"
 	"github.com/nais/fasit/internal/rollout"
 	"github.com/nais/fasit/internal/slack"
 	"github.com/nais/fasit/internal/workers"
@@ -32,8 +31,6 @@ import (
 	"go.opentelemetry.io/otel/metric"
 	metricsdk "go.opentelemetry.io/otel/sdk/metric"
 	"golang.org/x/sync/errgroup"
-	"google.golang.org/grpc"
-
 	// Supported database drivers.
 	_ "github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/postgres"
 	_ "github.com/lib/pq"
@@ -152,8 +149,8 @@ func Run(ctx context.Context) error {
 	}
 
 	go func() {
-		if err := runGRPC(ctx, cfg.GRPCBindAddress, repo, log); err != nil {
-			panic(err)
+		if err := runGRPC(ctx, loadContext, cfg.GRPCBindAddress, repo, log); err != nil {
+			log.WithError(err).Fatal("running GRPC server")
 		}
 	}()
 
@@ -206,17 +203,14 @@ func newLogger(level string) (logrus.FieldLogger, error) {
 	return log, nil
 }
 
-func runGRPC(ctx context.Context, bindAddress string, repo database.Repo, log logrus.FieldLogger) error {
+func runGRPC(ctx context.Context, loadContext contextloader.LoaderFunc, bindAddress string, repo database.Repo, log logrus.FieldLogger) error {
 	log.Info("GRPC serving on port", bindAddress)
 	lis, err := net.Listen("tcp", bindAddress)
 	if err != nil {
 		return fmt.Errorf("failed to listen: %w", err)
 	}
 
-	opts := []grpc.ServerOption{}
-	s := grpc.NewServer(opts...)
-
-	protogen.RegisterProviderServer(s, provider.NewServer(repo))
+	s := provider.NewGrpcServer(loadContext, repo)
 
 	g, ctx := errgroup.WithContext(ctx)
 	g.Go(func() error { return s.Serve(lis) })
