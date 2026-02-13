@@ -15,6 +15,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/nais/fasit/internal/cluster"
 	"github.com/nais/fasit/internal/contextloader"
+	"github.com/nais/fasit/internal/cost"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/notifier"
 	"github.com/nais/fasit/internal/deployment"
@@ -127,7 +128,7 @@ func Run(ctx context.Context) error {
 	}()
 	go reconciler.Run(ctx, 10*time.Minute)
 
-	costUpdater, err := workers.NewCostUpdater(ctx, repo, log)
+	costUpdater, err := cost.NewCostUpdater(ctx, repo, log)
 	if err != nil {
 		log.WithError(err).Error("setting up cost updater. You might need to run `gcloud auth --update-adc` if running locally")
 	} else {

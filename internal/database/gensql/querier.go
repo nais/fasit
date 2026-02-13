@@ -6,7 +6,6 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/nais/fasit/internal/database/types"
 )
 
@@ -33,10 +32,6 @@ type Querier interface {
 	ClusterUpgradesHistoryGetByTenantID(ctx context.Context, arg ClusterUpgradesHistoryGetByTenantIDParams) ([]ClusterUpgrade, error)
 	ClusterUpgradesSetSlackMessage(ctx context.Context, arg ClusterUpgradesSetSlackMessageParams) (ClusterUpgrade, error)
 	ClusterUpgradesUpdateStatus(ctx context.Context, arg ClusterUpgradesUpdateStatusParams) (ClusterUpgrade, error)
-	Cost(ctx context.Context, arg CostParams) ([]CostRow, error)
-	CostForTenant(ctx context.Context, arg CostForTenantParams) ([]CostForTenantRow, error)
-	CostLastDate(ctx context.Context) (pgtype.Date, error)
-	CostUpsert(ctx context.Context, arg []CostUpsertParams) *CostUpsertBatchResults
 	DeployInstructionsByID(ctx context.Context, id uuid.UUID) (DeployInstruction, error)
 	DeployInstructionsForFeature(ctx context.Context, arg DeployInstructionsForFeatureParams) ([]DeployInstruction, error)
 	DeployInstructionsLatestForFeature(ctx context.Context, arg DeployInstructionsLatestForFeatureParams) (DeployInstruction, error)

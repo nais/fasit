@@ -40,12 +40,10 @@ var embedMigrations embed.FS
 type TXFunc func(repo Repo) error
 
 type Repo interface {
-	// Move to audit pkg
+	// createAudit is used in TenantCreate which in turn is used in grpc so need context setup.
 	AuditRepo
 	// Leave alone
 	ClusterUpgraderRepo
-	// Move to cost pkg
-	CostRepo
 	// Can possibly be moved, must analyze usage
 	DeployInstructionRepo
 	// Used in grpc so need context setup there
