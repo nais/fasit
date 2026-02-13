@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/deployment/deploymentsql"
 	"github.com/nais/fasit/internal/graph/model"
+	"github.com/sirupsen/logrus"
 )
 
 type ctxKey int
@@ -167,4 +169,24 @@ func ListEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]*m
 	}
 
 	return ret, nil
+}
+
+// TimeoutDeployInstructions will periodically check for deploy instructions that have been in pending state for
+// more than one hour and mark them as failed
+func TimeoutDeployInstructions(ctx context.Context, log logrus.FieldLogger) {
+	ticker := time.NewTicker(1 * time.Minute)
+	defer ticker.Stop()
+
+	for {
+		err := fromContext(ctx).querier.TimeoutDeployInstructions(ctx)
+		if err != nil {
+			log.WithError(err).Error("failed to timeout deploy instructions")
+		}
+
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+		}
+	}
 }

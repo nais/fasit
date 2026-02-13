@@ -82,7 +82,6 @@ func Run(ctx context.Context) error {
 	defer ioconvenience.CloseWithLog(closers, log)
 
 	repo := database.NewRepo(pool, log)
-	go repo.TimeoutDeployInstructions(ctx)
 	log.Info("-- successfully started database client")
 
 	deploymentPublisher := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
@@ -98,6 +97,8 @@ func Run(ctx context.Context) error {
 	}
 
 	ctx = loadContext(ctx)
+	go deployment.TimeoutDeployInstructions(ctx, log)
+
 	go deployment.GetManager(ctx).Run(ctx, 10*time.Minute)
 
 	statusMgr := message.NewSubscriber[message.Status](pubSubClient, cfg.GCPProjectID, cfg.StatusSubscriptionID, log)

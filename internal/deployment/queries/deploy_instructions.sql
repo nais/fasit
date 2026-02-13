@@ -36,3 +36,12 @@ ORDER BY
 	created DESC
 LIMIT 1;
 
+-- name: TimeoutDeployInstructions :exec
+UPDATE
+	deploy_instructions
+SET
+	status = 'failed'
+WHERE
+	status = 'pending'
+	AND last_modified < NOW() - INTERVAL '1 hour';
+
