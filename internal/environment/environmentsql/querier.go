@@ -15,6 +15,7 @@ type Querier interface {
 	GetTenant(ctx context.Context, id uuid.UUID) (Tenant, error)
 	ListCIEnvironmentsForTarget(ctx context.Context, target types.EnvironmentLabels) ([]ListCIEnvironmentsForTargetRow, error)
 	TenantEnvironments(ctx context.Context, all bool) ([]TenantEnvironmentsRow, error)
+	Warnings(ctx context.Context, arg WarningsParams) ([]WarningsRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

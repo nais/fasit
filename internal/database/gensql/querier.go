@@ -86,7 +86,6 @@ type Querier interface {
 	TenantGetByName(ctx context.Context, name string) (Tenant, error)
 	TenantSetUpgradeDelayDays(ctx context.Context, arg TenantSetUpgradeDelayDaysParams) (Tenant, error)
 	TenantsGet(ctx context.Context) ([]Tenant, error)
-	Warnings(ctx context.Context, arg WarningsParams) ([]WarningsRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

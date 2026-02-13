@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/database"
+	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph/graphgen"
 	"github.com/nais/fasit/internal/graph/model"
 )
@@ -71,7 +72,7 @@ func (r *tenantResolver) Environment(ctx context.Context, obj *model.Tenant, id 
 
 // Warnings is the resolver for the warnings field.
 func (r *tenantResolver) Warnings(ctx context.Context, obj *model.Tenant) ([]model.Warning, error) {
-	return r.Repo.Warnings(ctx, nil, &obj.ID)
+	return environment.Warnings(ctx, nil, &obj.ID)
 }
 
 // ClusterUpgradeHistory is the resolver for the clusterUpgradeHistory field.

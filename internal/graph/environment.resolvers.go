@@ -13,6 +13,7 @@ import (
 	pgx "github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/deployment"
+	"github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/graphgen"
 	"github.com/nais/fasit/internal/graph/model"
@@ -138,7 +139,7 @@ func (r *environmentResolver) Tenant(ctx context.Context, obj *model.Environment
 
 // Warnings is the resolver for the warnings field.
 func (r *environmentResolver) Warnings(ctx context.Context, obj *model.Environment) ([]model.Warning, error) {
-	return r.Repo.Warnings(ctx, &obj.ID, nil)
+	return environment.Warnings(ctx, &obj.ID, nil)
 }
 
 // AuditLog is the resolver for the auditLog field.

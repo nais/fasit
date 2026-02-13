@@ -375,3 +375,71 @@ func (_c *Querier_TenantEnvironments_Call) RunAndReturn(run func(ctx context.Con
 	_c.Call.Return(run)
 	return _c
 }
+
+// Warnings provides a mock function for the type Querier
+func (_mock *Querier) Warnings(ctx context.Context, arg environmentsql.WarningsParams) ([]environmentsql.WarningsRow, error) {
+	ret := _mock.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Warnings")
+	}
+
+	var r0 []environmentsql.WarningsRow
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, environmentsql.WarningsParams) ([]environmentsql.WarningsRow, error)); ok {
+		return returnFunc(ctx, arg)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, environmentsql.WarningsParams) []environmentsql.WarningsRow); ok {
+		r0 = returnFunc(ctx, arg)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]environmentsql.WarningsRow)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, environmentsql.WarningsParams) error); ok {
+		r1 = returnFunc(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_Warnings_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Warnings'
+type Querier_Warnings_Call struct {
+	*mock.Call
+}
+
+// Warnings is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg environmentsql.WarningsParams
+func (_e *Querier_Expecter) Warnings(ctx interface{}, arg interface{}) *Querier_Warnings_Call {
+	return &Querier_Warnings_Call{Call: _e.mock.On("Warnings", ctx, arg)}
+}
+
+func (_c *Querier_Warnings_Call) Run(run func(ctx context.Context, arg environmentsql.WarningsParams)) *Querier_Warnings_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 environmentsql.WarningsParams
+		if args[1] != nil {
+			arg1 = args[1].(environmentsql.WarningsParams)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_Warnings_Call) Return(warningsRows []environmentsql.WarningsRow, err error) *Querier_Warnings_Call {
+	_c.Call.Return(warningsRows, err)
+	return _c
+}
+
+func (_c *Querier_Warnings_Call) RunAndReturn(run func(ctx context.Context, arg environmentsql.WarningsParams) ([]environmentsql.WarningsRow, error)) *Querier_Warnings_Call {
+	_c.Call.Return(run)
+	return _c
+}

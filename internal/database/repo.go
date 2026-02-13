@@ -44,7 +44,7 @@ type Repo interface {
 	AuditRepo
 	// Leave alone
 	ClusterUpgraderRepo
-	// Can possibly be moved, must analyze usage
+	// Used a lot of places, requires more work to move
 	DeployInstructionRepo
 	// Used in grpc so need context setup there
 	EnvironmentRepo
@@ -60,8 +60,6 @@ type Repo interface {
 	RolloutRepo
 	// Used in grpc so need context setup there
 	TenantRepo
-	// Can possibly be moved, must analyze usage
-	WarningRepo
 
 	Transaction
 
