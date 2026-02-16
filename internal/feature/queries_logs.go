@@ -1,4 +1,4 @@
-package database
+package feature
 
 import (
 	"context"
@@ -7,21 +7,15 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-multierror"
 	"github.com/jackc/pgx/v5/pgtype"
-	"github.com/nais/fasit/internal/database/gensql"
+	"github.com/nais/fasit/internal/feature/featuresql"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 )
 
-type LogRepo interface {
-	LogCreate(ctx context.Context, deployInstructionID uuid.UUID, lines []message.LogLine) error
-	LogsGet(ctx context.Context, deployInstructionID uuid.UUID) ([]*model.LogLine, error)
-	LogsByID(ctx context.Context, id int) (*model.LogLine, error)
-}
-
-func (r *repo) LogCreate(ctx context.Context, deployInstructionID uuid.UUID, lines []message.LogLine) error {
-	params := make([]gensql.LogsCreateParams, len(lines))
+func LogCreate(ctx context.Context, deployInstructionID uuid.UUID, lines []message.LogLine) error {
+	params := make([]featuresql.LogsCreateParams, len(lines))
 	for i, line := range lines {
-		params[i] = gensql.LogsCreateParams{
+		params[i] = featuresql.LogsCreateParams{
 			DeployInstruction: deployInstructionID,
 			Time: pgtype.Timestamptz{
 				Time:  line.Time,
@@ -32,7 +26,7 @@ func (r *repo) LogCreate(ctx context.Context, deployInstructionID uuid.UUID, lin
 		}
 	}
 
-	br := r.querier.LogsCreate(ctx, params)
+	br := querier(ctx).LogsCreate(ctx, params)
 
 	var outerErr error
 	br.Exec(func(i int, err error) {
@@ -44,8 +38,8 @@ func (r *repo) LogCreate(ctx context.Context, deployInstructionID uuid.UUID, lin
 	return outerErr
 }
 
-func (r *repo) LogsGet(ctx context.Context, deployInstructionID uuid.UUID) ([]*model.LogLine, error) {
-	logs, err := r.querier.LogsByDeployInstruction(ctx, deployInstructionID)
+func LogsGet(ctx context.Context, deployInstructionID uuid.UUID) ([]*model.LogLine, error) {
+	logs, err := querier(ctx).LogsByDeployInstruction(ctx, deployInstructionID)
 	if err != nil {
 		return nil, err
 	}
@@ -58,8 +52,8 @@ func (r *repo) LogsGet(ctx context.Context, deployInstructionID uuid.UUID) ([]*m
 	return logLines, nil
 }
 
-func (r *repo) LogsByID(ctx context.Context, id int) (*model.LogLine, error) {
-	log, err := r.querier.LogsByID(ctx, int64(id))
+func LogsByID(ctx context.Context, id int) (*model.LogLine, error) {
+	log, err := querier(ctx).LogsByID(ctx, int64(id))
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +61,7 @@ func (r *repo) LogsByID(ctx context.Context, id int) (*model.LogLine, error) {
 	return logLineFromSQL(log), nil
 }
 
-func logLineFromSQL(log gensql.Log) *model.LogLine {
+func logLineFromSQL(log featuresql.Log) *model.LogLine {
 	return &model.LogLine{
 		ID:                  fmt.Sprintf("%s-%d", log.DeployInstruction, log.ID),
 		Timestamp:           log.Time.Time,

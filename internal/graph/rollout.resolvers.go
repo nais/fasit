@@ -92,7 +92,7 @@ func (r *rolloutResolver) Logs(ctx context.Context, obj *model.Rollout) ([]*mode
 		if err != nil {
 			return nil, err
 		}
-		logs, err := r.Repo.LogsGet(ctx, diid)
+		logs, err := featurepkg.LogsGet(ctx, diid)
 		if err != nil {
 			return nil, err
 		}

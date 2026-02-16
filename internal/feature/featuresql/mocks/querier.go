@@ -1526,6 +1526,199 @@ func (_c *Querier_ListMappingValuesForTenant_Call) RunAndReturn(run func(ctx con
 	return _c
 }
 
+// LogsByDeployInstruction provides a mock function for the type Querier
+func (_mock *Querier) LogsByDeployInstruction(ctx context.Context, deployInstruction uuid.UUID) ([]featuresql.Log, error) {
+	ret := _mock.Called(ctx, deployInstruction)
+
+	if len(ret) == 0 {
+		panic("no return value specified for LogsByDeployInstruction")
+	}
+
+	var r0 []featuresql.Log
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]featuresql.Log, error)); ok {
+		return returnFunc(ctx, deployInstruction)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) []featuresql.Log); ok {
+		r0 = returnFunc(ctx, deployInstruction)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]featuresql.Log)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = returnFunc(ctx, deployInstruction)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_LogsByDeployInstruction_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'LogsByDeployInstruction'
+type Querier_LogsByDeployInstruction_Call struct {
+	*mock.Call
+}
+
+// LogsByDeployInstruction is a helper method to define mock.On call
+//   - ctx context.Context
+//   - deployInstruction uuid.UUID
+func (_e *Querier_Expecter) LogsByDeployInstruction(ctx interface{}, deployInstruction interface{}) *Querier_LogsByDeployInstruction_Call {
+	return &Querier_LogsByDeployInstruction_Call{Call: _e.mock.On("LogsByDeployInstruction", ctx, deployInstruction)}
+}
+
+func (_c *Querier_LogsByDeployInstruction_Call) Run(run func(ctx context.Context, deployInstruction uuid.UUID)) *Querier_LogsByDeployInstruction_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_LogsByDeployInstruction_Call) Return(logs []featuresql.Log, err error) *Querier_LogsByDeployInstruction_Call {
+	_c.Call.Return(logs, err)
+	return _c
+}
+
+func (_c *Querier_LogsByDeployInstruction_Call) RunAndReturn(run func(ctx context.Context, deployInstruction uuid.UUID) ([]featuresql.Log, error)) *Querier_LogsByDeployInstruction_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// LogsByID provides a mock function for the type Querier
+func (_mock *Querier) LogsByID(ctx context.Context, id int64) (featuresql.Log, error) {
+	ret := _mock.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for LogsByID")
+	}
+
+	var r0 featuresql.Log
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) (featuresql.Log, error)); ok {
+		return returnFunc(ctx, id)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int64) featuresql.Log); ok {
+		r0 = returnFunc(ctx, id)
+	} else {
+		r0 = ret.Get(0).(featuresql.Log)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int64) error); ok {
+		r1 = returnFunc(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_LogsByID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'LogsByID'
+type Querier_LogsByID_Call struct {
+	*mock.Call
+}
+
+// LogsByID is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id int64
+func (_e *Querier_Expecter) LogsByID(ctx interface{}, id interface{}) *Querier_LogsByID_Call {
+	return &Querier_LogsByID_Call{Call: _e.mock.On("LogsByID", ctx, id)}
+}
+
+func (_c *Querier_LogsByID_Call) Run(run func(ctx context.Context, id int64)) *Querier_LogsByID_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int64
+		if args[1] != nil {
+			arg1 = args[1].(int64)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_LogsByID_Call) Return(log featuresql.Log, err error) *Querier_LogsByID_Call {
+	_c.Call.Return(log, err)
+	return _c
+}
+
+func (_c *Querier_LogsByID_Call) RunAndReturn(run func(ctx context.Context, id int64) (featuresql.Log, error)) *Querier_LogsByID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// LogsCreate provides a mock function for the type Querier
+func (_mock *Querier) LogsCreate(ctx context.Context, arg []featuresql.LogsCreateParams) *featuresql.LogsCreateBatchResults {
+	ret := _mock.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for LogsCreate")
+	}
+
+	var r0 *featuresql.LogsCreateBatchResults
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []featuresql.LogsCreateParams) *featuresql.LogsCreateBatchResults); ok {
+		r0 = returnFunc(ctx, arg)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*featuresql.LogsCreateBatchResults)
+		}
+	}
+	return r0
+}
+
+// Querier_LogsCreate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'LogsCreate'
+type Querier_LogsCreate_Call struct {
+	*mock.Call
+}
+
+// LogsCreate is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg []featuresql.LogsCreateParams
+func (_e *Querier_Expecter) LogsCreate(ctx interface{}, arg interface{}) *Querier_LogsCreate_Call {
+	return &Querier_LogsCreate_Call{Call: _e.mock.On("LogsCreate", ctx, arg)}
+}
+
+func (_c *Querier_LogsCreate_Call) Run(run func(ctx context.Context, arg []featuresql.LogsCreateParams)) *Querier_LogsCreate_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 []featuresql.LogsCreateParams
+		if args[1] != nil {
+			arg1 = args[1].([]featuresql.LogsCreateParams)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_LogsCreate_Call) Return(logsCreateBatchResults *featuresql.LogsCreateBatchResults) *Querier_LogsCreate_Call {
+	_c.Call.Return(logsCreateBatchResults)
+	return _c
+}
+
+func (_c *Querier_LogsCreate_Call) RunAndReturn(run func(ctx context.Context, arg []featuresql.LogsCreateParams) *featuresql.LogsCreateBatchResults) *Querier_LogsCreate_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // RolloutByName provides a mock function for the type Querier
 func (_mock *Querier) RolloutByName(ctx context.Context, name string) (featuresql.RolloutByNameRow, error) {
 	ret := _mock.Called(ctx, name)

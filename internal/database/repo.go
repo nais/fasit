@@ -40,18 +40,15 @@ var embedMigrations embed.FS
 type TXFunc func(repo Repo) error
 
 type Repo interface {
-	// Leave alone
 	ClusterUpgraderRepo
+	KubernetesNodeRepo
+
 	// Used a lot of places, requires more work to move
 	DeployInstructionRepo
 	// Used in grpc so need context setup there
 	EnvironmentRepo
 	// Used in grpc so need context setup there
 	EnvironmentValueRepo
-	// Leave alone
-	KubernetesNodeRepo
-	// Move to suitable pkg
-	LogRepo
 	// Can possibly be moved, must analyze usage
 	ReleaseStatusRepo
 	// Can be moved but is also heavily used in listeners etc
