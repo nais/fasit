@@ -19,7 +19,6 @@ import (
 	"github.com/nais/fasit/internal/ioconvenience"
 	"github.com/pressly/goose/v3"
 	"github.com/sirupsen/logrus"
-	"go.opentelemetry.io/otel/metric"
 )
 
 type closeFuncs []func() error
@@ -70,8 +69,6 @@ type repo struct {
 	querier Querier
 	db      *pgxpool.Pool
 	log     logrus.FieldLogger
-
-	auditErrorCount metric.Int64Counter
 }
 
 type Querier interface {
