@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/internal/database"
+	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
@@ -42,8 +43,6 @@ type ReceiverStore interface {
 	RolloutEventCreate(ctx context.Context, rollout uuid.UUID, failure bool, message string, data map[string]any) error
 	RolloutStatus(ctx context.Context, name string) (model.RolloutStatus, error)
 	RolloutsUpdateStatus(ctx context.Context, status model.RolloutStatus, name string, completed bool) error
-	TenantGet(ctx context.Context, id uuid.UUID) (*model.Tenant, error)
-	TenantGetByName(ctx context.Context, name string) (*model.Tenant, error)
 	TxFunc(ctx context.Context, fn database.TXFunc) error
 }
 
@@ -135,7 +134,7 @@ func (r *Receiver) handlerHelm(ctx context.Context, msg message.Status) error {
 	}
 
 	if helmStatus.RolloutStatus == model.RolloutStatusFailed {
-		tenant, err := r.repo.TenantGet(ctx, env.TenantID)
+		tenant, err := environment.GetTenant(ctx, env.TenantID)
 		if err != nil {
 			return fmt.Errorf("getting tenant: %w", err)
 		}

@@ -135,7 +135,7 @@ func (r *environmentResolver) Values(ctx context.Context, obj *model.Environment
 
 // Tenant is the resolver for the tenant field.
 func (r *environmentResolver) Tenant(ctx context.Context, obj *model.Environment) (*model.Tenant, error) {
-	return r.Repo.TenantGet(ctx, obj.TenantID)
+	return environment.GetTenant(ctx, obj.TenantID)
 }
 
 // Warnings is the resolver for the warnings field.

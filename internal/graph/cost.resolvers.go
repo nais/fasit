@@ -6,13 +6,14 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/cost"
+	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph/graphgen"
 	"github.com/nais/fasit/internal/graph/model"
 )
 
 // Tenant is the resolver for the tenant field.
 func (r *costSeriesResolver) Tenant(ctx context.Context, obj *model.CostSeries) (*model.Tenant, error) {
-	return r.Repo.TenantGet(ctx, obj.TenantID)
+	return environment.GetTenant(ctx, obj.TenantID)
 }
 
 // Environment is the resolver for the environment field.

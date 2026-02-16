@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/nais/fasit/internal/database/gensql"
+	"github.com/nais/fasit/internal/environment/environmenttest"
 	"github.com/nais/fasit/internal/slack/fake"
 
 	"cloud.google.com/go/container/apiv1/containerpb"
@@ -69,14 +70,14 @@ func newUpgrade(suite *testSuite) *ClusterUpgrader {
 	return NewClusterUpgrader(suite.repoMock, log, suite.clusterMock, meter, slackClient, "channel")
 }
 
-func (s *testSuite) mockRunTenantForLoop(upgradeStatus model.UpgradeStatus) *model.ClusterUpgradeStatus {
+func (s *testSuite) mockRunTenantForLoop(ctx context.Context, upgradeStatus model.UpgradeStatus) *model.ClusterUpgradeStatus {
 	// Mock TenantsGet for metrics initialization (first call in Run())
-	s.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{
+	environmenttest.OnGetTenants(ctx, []*model.Tenant{
 		{
 			ID:   s.env.tenantID,
 			Name: s.env.name,
 		},
-	}, nil).Once()
+	})
 
 	// Mock EnvironmentsGet for metrics initialization
 	s.repoMock.EXPECT().EnvironmentsGet(mock.Anything, s.env.tenantID).Return([]*model.Environment{
@@ -92,12 +93,12 @@ func (s *testSuite) mockRunTenantForLoop(upgradeStatus model.UpgradeStatus) *mod
 		nil, nil).Once()
 
 	// Mock TenantsGet for the main processing loop
-	s.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{
+	environmenttest.OnGetTenants(ctx, []*model.Tenant{
 		{
 			ID:   s.env.tenantID,
 			Name: s.env.name,
 		},
-	}, nil).Once()
+	})
 
 	s.repoMock.EXPECT().EnvironmentsGet(mock.Anything, s.env.tenantID).Return([]*model.Environment{
 		{
@@ -157,7 +158,8 @@ func (s *testSuite) mockRunTenantForLoop(upgradeStatus model.UpgradeStatus) *mod
 func TestRun_OperationDoneUpdateClusterNodeStatusToDone(t *testing.T) {
 	suite := newTestSuite(t)
 	upgrade := newUpgrade(suite)
-	clusterUpgrade := suite.mockRunTenantForLoop(model.UpgradeStatusNodeUpgrade)
+	ctx := environmenttest.RegisterMock(context.Background(), t)
+	clusterUpgrade := suite.mockRunTenantForLoop(ctx, model.UpgradeStatusNodeUpgrade)
 
 	// Mock GetCurrentControlPlaneVersion for the version fetch at the start of upgradeEnvironment
 	suite.clusterMock.EXPECT().GetCurrentControlPlaneVersion(mock.Anything, mock.Anything, suite.environment).Return("1.2.4", nil).Maybe()
@@ -215,7 +217,7 @@ func TestRun_OperationDoneUpdateClusterNodeStatusToDone(t *testing.T) {
 			StartTime:     time.Now(),
 		}, nil).Maybe()
 
-	err := upgrade.Run(context.Background())
+	err := upgrade.Run(ctx)
 	if err != nil {
 		t.Errorf("got %v, want nil", err)
 	}
@@ -224,7 +226,8 @@ func TestRun_OperationDoneUpdateClusterNodeStatusToDone(t *testing.T) {
 func TestRun_StartNodeUpgradeClusterStatusNodeUpgrade(t *testing.T) {
 	suite := newTestSuite(t)
 	upgrade := newUpgrade(suite)
-	clusterUpgrade := suite.mockRunTenantForLoop(model.UpgradeStatusNodeUpgrade)
+	ctx := environmenttest.RegisterMock(context.Background(), t)
+	clusterUpgrade := suite.mockRunTenantForLoop(ctx, model.UpgradeStatusNodeUpgrade)
 
 	// Mock GetCurrentControlPlaneVersion for the version fetch at the start of upgradeEnvironment
 	suite.clusterMock.EXPECT().GetCurrentControlPlaneVersion(mock.Anything, mock.Anything, suite.environment).Return("1.2.4", nil).Maybe()
@@ -271,7 +274,7 @@ func TestRun_StartNodeUpgradeClusterStatusNodeUpgrade(t *testing.T) {
 			StartTime:     time.Now(),
 		}, nil).Maybe()
 
-	err := upgrade.Run(context.Background())
+	err := upgrade.Run(ctx)
 	if err != nil {
 		t.Errorf("got %v, want nil", err)
 	}
@@ -280,7 +283,8 @@ func TestRun_StartNodeUpgradeClusterStatusNodeUpgrade(t *testing.T) {
 func TestRun_StartClusterUpgradeControlPlaneStatusCreated(t *testing.T) {
 	suite := newTestSuite(t)
 	upgrade := newUpgrade(suite)
-	clusterUpgrade := suite.mockRunTenantForLoop(model.UpgradeStatusCreated)
+	ctx := environmenttest.RegisterMock(context.Background(), t)
+	clusterUpgrade := suite.mockRunTenantForLoop(ctx, model.UpgradeStatusCreated)
 
 	suite.clusterMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, suite.environment).Return(
 		[]*containerpb.Operation{}, nil).Maybe()
@@ -320,7 +324,7 @@ func TestRun_StartClusterUpgradeControlPlaneStatusCreated(t *testing.T) {
 			StartTime:     time.Now(),
 		}, nil).Maybe()
 
-	err := upgrade.Run(context.Background())
+	err := upgrade.Run(ctx)
 	if err != nil {
 		t.Errorf("got %v, want nil", err)
 	}
@@ -329,7 +333,8 @@ func TestRun_StartClusterUpgradeControlPlaneStatusCreated(t *testing.T) {
 func TestRun_UpdateClusterStatusToNodeUpgradeWhenOperationDoneOnControlPlaneUpgrade(t *testing.T) {
 	suite := newTestSuite(t)
 	upgrade := newUpgrade(suite)
-	clusterUpgrade := suite.mockRunTenantForLoop(model.UpgradeStatusControlPlaneUpgrade)
+	ctx := environmenttest.RegisterMock(context.Background(), t)
+	clusterUpgrade := suite.mockRunTenantForLoop(ctx, model.UpgradeStatusControlPlaneUpgrade)
 
 	// Allow multiple GetRunningOperations calls - we'll fix the exact count later
 	suite.clusterMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, suite.environment).Return(
@@ -375,7 +380,7 @@ func TestRun_UpdateClusterStatusToNodeUpgradeWhenOperationDoneOnControlPlaneUpgr
 			StartTime:     time.Now(),
 		}, nil).Maybe()
 
-	err := upgrade.Run(context.Background())
+	err := upgrade.Run(ctx)
 	if err != nil {
 		t.Errorf("got %v, want nil", err)
 	}
@@ -384,7 +389,8 @@ func TestRun_UpdateClusterStatusToNodeUpgradeWhenOperationDoneOnControlPlaneUpgr
 func TestRun_ControlPlaneUpgradeIsRunning(t *testing.T) {
 	suite := newTestSuite(t)
 	upgrade := newUpgrade(suite)
-	clusterUpgrade := suite.mockRunTenantForLoop(model.UpgradeStatusControlPlaneUpgrade)
+	ctx := environmenttest.RegisterMock(context.Background(), t)
+	clusterUpgrade := suite.mockRunTenantForLoop(ctx, model.UpgradeStatusControlPlaneUpgrade)
 
 	// ClusterOperationsGetByUpgradeID called for ownership check
 	existingOp := &model.EnvironmentOperation{
@@ -464,7 +470,7 @@ func TestRun_ControlPlaneUpgradeIsRunning(t *testing.T) {
 			Type:   "UPGRADE_MASTER",
 		}, nil).Maybe()
 
-	err := upgrade.Run(context.Background())
+	err := upgrade.Run(ctx)
 	if err != nil {
 		t.Errorf("got %v, want nil", err)
 	}
@@ -478,12 +484,14 @@ func TestRun_CreatedToWaitingTransitionWithDelay(t *testing.T) {
 	tenantDelayDays := int32(2)
 	envDelayDays := int32(1)
 
+	ctx := environmenttest.RegisterMock(context.Background(), t)
+
 	// Mock TenantsGet for metrics initialization
-	suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
+	environmenttest.OnGetTenants(ctx, []*model.Tenant{{
 		ID:               suite.env.tenantID,
 		Name:             suite.env.name,
 		UpgradeDelayDays: tenantDelayDays,
-	}}, nil).Once()
+	}})
 
 	// Mock EnvironmentsGet for metrics initialization
 	suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
@@ -497,11 +505,11 @@ func TestRun_CreatedToWaitingTransitionWithDelay(t *testing.T) {
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(nil, nil).Once()
 
 	// Mock TenantsGet for main processing loop
-	suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
+	environmenttest.OnGetTenants(ctx, []*model.Tenant{{
 		ID:               suite.env.tenantID,
 		Name:             suite.env.name,
 		UpgradeDelayDays: tenantDelayDays,
-	}}, nil).Once()
+	}})
 
 	suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
 		ID:               suite.env.id,
@@ -553,7 +561,7 @@ func TestRun_CreatedToWaitingTransitionWithDelay(t *testing.T) {
 
 	// No Slack notification when transitioning to WAITING - we'll notify when upgrade actually starts
 
-	err := upgrade.Run(context.Background())
+	err := upgrade.Run(ctx)
 	if err != nil {
 		t.Errorf("got %v, want nil", err)
 	}
@@ -566,16 +574,19 @@ func TestRun_CreatedWithoutDelaySkipsWaiting(t *testing.T) {
 	suite := newTestSuite(t)
 	upgrade := newUpgrade(suite)
 
+	ctx := environmenttest.RegisterMock(context.Background(), t)
+
 	// Setup tenant and environment with NO delay (default 0)
+	// Mock TenantsGet for metrics initialization
 	tenantDelayDays := int32(0)
 	envDelayDays := int32(0)
 
 	// Mock TenantsGet for metrics initialization
-	suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
+	environmenttest.OnGetTenants(ctx, []*model.Tenant{{
 		ID:               suite.env.tenantID,
 		Name:             suite.env.name,
 		UpgradeDelayDays: tenantDelayDays,
-	}}, nil).Once()
+	}})
 
 	// Mock EnvironmentsGet for metrics initialization
 	suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
@@ -589,11 +600,11 @@ func TestRun_CreatedWithoutDelaySkipsWaiting(t *testing.T) {
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(nil, nil).Once()
 
 	// Mock TenantsGet for main processing loop
-	suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
+	environmenttest.OnGetTenants(ctx, []*model.Tenant{{
 		ID:               suite.env.tenantID,
 		Name:             suite.env.name,
 		UpgradeDelayDays: tenantDelayDays,
-	}}, nil).Once()
+	}})
 
 	// Mock EnvironmentsGet for main processing loop
 	suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
@@ -662,7 +673,7 @@ func TestRun_CreatedWithoutDelaySkipsWaiting(t *testing.T) {
 			Value: []byte(`""`),
 		}, nil).Once()
 
-	err := upgrade.Run(context.Background())
+	err := upgrade.Run(ctx)
 	if err != nil {
 		t.Errorf("got %v, want nil", err)
 	}
@@ -674,6 +685,7 @@ func TestRun_CreatedWithoutDelaySkipsWaiting(t *testing.T) {
 }
 
 func TestRun_CreatedWithDelayButRunningOperations(t *testing.T) {
+	ctx := environmenttest.RegisterMock(context.Background(), t)
 	suite := newTestSuite(t)
 	upgrade := newUpgrade(suite)
 
@@ -682,11 +694,11 @@ func TestRun_CreatedWithDelayButRunningOperations(t *testing.T) {
 	envDelayDays := int32(0)
 
 	// Mock TenantsGet for metrics initialization
-	suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
+	environmenttest.OnGetTenants(ctx, []*model.Tenant{{
 		ID:               suite.env.tenantID,
 		Name:             suite.env.name,
 		UpgradeDelayDays: tenantDelayDays,
-	}}, nil).Once()
+	}})
 
 	// Mock EnvironmentsGet for metrics initialization
 	suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
@@ -700,11 +712,11 @@ func TestRun_CreatedWithDelayButRunningOperations(t *testing.T) {
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(nil, nil).Once()
 
 	// Mock TenantsGet for main processing loop
-	suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
+	environmenttest.OnGetTenants(ctx, []*model.Tenant{{
 		ID:               suite.env.tenantID,
 		Name:             suite.env.name,
 		UpgradeDelayDays: tenantDelayDays,
-	}}, nil).Once()
+	}})
 
 	// Mock EnvironmentsGet for main processing loop
 	suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
@@ -790,7 +802,7 @@ func TestRun_CreatedWithDelayButRunningOperations(t *testing.T) {
 	// Mock SetClusterUpgradesSlackMessage for Slack notification
 	suite.repoMock.EXPECT().SetClusterUpgradesSlackMessage(mock.Anything, createdUpgrade.ID, mock.Anything, mock.Anything).Return(updatedUpgrade, nil).Once()
 
-	err := upgrade.Run(context.Background())
+	err := upgrade.Run(ctx)
 	if err != nil {
 		t.Errorf("got %v, want nil", err)
 	}
@@ -802,6 +814,7 @@ func TestRun_CreatedWithDelayButRunningOperations(t *testing.T) {
 }
 
 func TestRun_CreatedWithNonOwnedOperationsAndClusterAtTarget(t *testing.T) {
+	ctx := environmenttest.RegisterMock(context.Background(), t)
 	suite := newTestSuite(t)
 	upgrade := newUpgrade(suite)
 
@@ -810,11 +823,11 @@ func TestRun_CreatedWithNonOwnedOperationsAndClusterAtTarget(t *testing.T) {
 	envDelayDays := int32(0)
 
 	// Mock TenantsGet for metrics initialization
-	suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
+	environmenttest.OnGetTenants(ctx, []*model.Tenant{{
 		ID:               suite.env.tenantID,
 		Name:             suite.env.name,
 		UpgradeDelayDays: tenantDelayDays,
-	}}, nil).Once()
+	}})
 
 	// Mock EnvironmentsGet for metrics initialization
 	suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
@@ -828,11 +841,11 @@ func TestRun_CreatedWithNonOwnedOperationsAndClusterAtTarget(t *testing.T) {
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(nil, nil).Once()
 
 	// Mock TenantsGet for main processing loop
-	suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
+	environmenttest.OnGetTenants(ctx, []*model.Tenant{{
 		ID:               suite.env.tenantID,
 		Name:             suite.env.name,
 		UpgradeDelayDays: tenantDelayDays,
-	}}, nil).Once()
+	}})
 
 	// Mock EnvironmentsGet for main processing loop
 	suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
@@ -900,7 +913,7 @@ func TestRun_CreatedWithNonOwnedOperationsAndClusterAtTarget(t *testing.T) {
 			Value: []byte(`""`),
 		}, nil).Once()
 
-	err := upgrade.Run(context.Background())
+	err := upgrade.Run(ctx)
 	if err != nil {
 		t.Errorf("got %v, want nil", err)
 	}
@@ -914,6 +927,7 @@ func TestRun_CreatedWithNonOwnedOperationsAndClusterAtTarget(t *testing.T) {
 }
 
 func TestRun_CreatedWithNonOwnedOperationsAndClusterBeyondTarget(t *testing.T) {
+	ctx := environmenttest.RegisterMock(context.Background(), t)
 	suite := newTestSuite(t)
 	upgrade := newUpgrade(suite)
 
@@ -922,11 +936,11 @@ func TestRun_CreatedWithNonOwnedOperationsAndClusterBeyondTarget(t *testing.T) {
 	envDelayDays := int32(0)
 
 	// Mock TenantsGet for metrics initialization
-	suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
+	environmenttest.OnGetTenants(ctx, []*model.Tenant{{
 		ID:               suite.env.tenantID,
 		Name:             suite.env.name,
 		UpgradeDelayDays: tenantDelayDays,
-	}}, nil).Once()
+	}})
 
 	// Mock EnvironmentsGet for metrics initialization
 	suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
@@ -940,11 +954,11 @@ func TestRun_CreatedWithNonOwnedOperationsAndClusterBeyondTarget(t *testing.T) {
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(nil, nil).Once()
 
 	// Mock TenantsGet for main processing loop
-	suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
+	environmenttest.OnGetTenants(ctx, []*model.Tenant{{
 		ID:               suite.env.tenantID,
 		Name:             suite.env.name,
 		UpgradeDelayDays: tenantDelayDays,
-	}}, nil).Once()
+	}})
 
 	// Mock EnvironmentsGet for main processing loop
 	suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
@@ -1012,7 +1026,7 @@ func TestRun_CreatedWithNonOwnedOperationsAndClusterBeyondTarget(t *testing.T) {
 			Value: []byte(`""`),
 		}, nil).Once()
 
-	err := upgrade.Run(context.Background())
+	err := upgrade.Run(ctx)
 	if err != nil {
 		t.Errorf("got %v, want nil", err)
 	}
@@ -1026,6 +1040,7 @@ func TestRun_CreatedWithNonOwnedOperationsAndClusterBeyondTarget(t *testing.T) {
 }
 
 func TestRun_CreatedWithNonOwnedOperationsButClusterNotAtTarget(t *testing.T) {
+	ctx := environmenttest.RegisterMock(context.Background(), t)
 	suite := newTestSuite(t)
 	upgrade := newUpgrade(suite)
 
@@ -1034,11 +1049,11 @@ func TestRun_CreatedWithNonOwnedOperationsButClusterNotAtTarget(t *testing.T) {
 	envDelayDays := int32(0)
 
 	// Mock TenantsGet for metrics initialization
-	suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
+	environmenttest.OnGetTenants(ctx, []*model.Tenant{{
 		ID:               suite.env.tenantID,
 		Name:             suite.env.name,
 		UpgradeDelayDays: tenantDelayDays,
-	}}, nil).Once()
+	}})
 
 	// Mock EnvironmentsGet for metrics initialization
 	suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
@@ -1052,11 +1067,11 @@ func TestRun_CreatedWithNonOwnedOperationsButClusterNotAtTarget(t *testing.T) {
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(nil, nil).Once()
 
 	// Mock TenantsGet for main processing loop
-	suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
+	environmenttest.OnGetTenants(ctx, []*model.Tenant{{
 		ID:               suite.env.tenantID,
 		Name:             suite.env.name,
 		UpgradeDelayDays: tenantDelayDays,
-	}}, nil).Once()
+	}})
 
 	// Mock EnvironmentsGet for main processing loop
 	suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
@@ -1106,7 +1121,7 @@ func TestRun_CreatedWithNonOwnedOperationsButClusterNotAtTarget(t *testing.T) {
 	// The running operations should NOT be tracked in the database
 	// The upgrade should NOT be marked as DONE
 
-	err := upgrade.Run(context.Background())
+	err := upgrade.Run(ctx)
 	if err != nil {
 		t.Errorf("got %v, want nil", err)
 	}
@@ -1121,6 +1136,7 @@ func TestRun_CreatedWithNonOwnedOperationsButClusterNotAtTarget(t *testing.T) {
 }
 
 func TestRun_WaitingWithNonOwnedOperationsAndClusterAtTarget(t *testing.T) {
+	ctx := environmenttest.RegisterMock(context.Background(), t)
 	suite := newTestSuite(t)
 	upgrade := newUpgrade(suite)
 
@@ -1129,11 +1145,11 @@ func TestRun_WaitingWithNonOwnedOperationsAndClusterAtTarget(t *testing.T) {
 	envDelayDays := int32(0)
 
 	// Mock TenantsGet for metrics initialization
-	suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
+	environmenttest.OnGetTenants(ctx, []*model.Tenant{{
 		ID:               suite.env.tenantID,
 		Name:             suite.env.name,
 		UpgradeDelayDays: tenantDelayDays,
-	}}, nil).Once()
+	}})
 
 	// Mock EnvironmentsGet for metrics initialization
 	suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
@@ -1147,11 +1163,11 @@ func TestRun_WaitingWithNonOwnedOperationsAndClusterAtTarget(t *testing.T) {
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(nil, nil).Once()
 
 	// Mock TenantsGet for main processing loop
-	suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
+	environmenttest.OnGetTenants(ctx, []*model.Tenant{{
 		ID:               suite.env.tenantID,
 		Name:             suite.env.name,
 		UpgradeDelayDays: tenantDelayDays,
-	}}, nil).Once()
+	}})
 
 	// Mock EnvironmentsGet for main processing loop
 	suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
@@ -1217,7 +1233,7 @@ func TestRun_WaitingWithNonOwnedOperationsAndClusterAtTarget(t *testing.T) {
 			Value: []byte(`""`),
 		}, nil).Once()
 
-	err := upgrade.Run(context.Background())
+	err := upgrade.Run(ctx)
 	if err != nil {
 		t.Errorf("got %v, want nil", err)
 	}
@@ -1228,6 +1244,7 @@ func TestRun_WaitingWithNonOwnedOperationsAndClusterAtTarget(t *testing.T) {
 }
 
 func TestRun_WaitingWithNonOwnedOperationsAndClusterBeyondTarget(t *testing.T) {
+	ctx := environmenttest.RegisterMock(context.Background(), t)
 	suite := newTestSuite(t)
 	upgrade := newUpgrade(suite)
 
@@ -1236,11 +1253,11 @@ func TestRun_WaitingWithNonOwnedOperationsAndClusterBeyondTarget(t *testing.T) {
 	envDelayDays := int32(0)
 
 	// Mock TenantsGet for metrics initialization
-	suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
+	environmenttest.OnGetTenants(ctx, []*model.Tenant{{
 		ID:               suite.env.tenantID,
 		Name:             suite.env.name,
 		UpgradeDelayDays: tenantDelayDays,
-	}}, nil).Once()
+	}})
 
 	// Mock EnvironmentsGet for metrics initialization
 	suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
@@ -1254,11 +1271,11 @@ func TestRun_WaitingWithNonOwnedOperationsAndClusterBeyondTarget(t *testing.T) {
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(nil, nil).Once()
 
 	// Mock TenantsGet for main processing loop
-	suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
+	environmenttest.OnGetTenants(ctx, []*model.Tenant{{
 		ID:               suite.env.tenantID,
 		Name:             suite.env.name,
 		UpgradeDelayDays: tenantDelayDays,
-	}}, nil).Once()
+	}})
 
 	// Mock EnvironmentsGet for main processing loop
 	suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
@@ -1324,7 +1341,7 @@ func TestRun_WaitingWithNonOwnedOperationsAndClusterBeyondTarget(t *testing.T) {
 			Value: []byte(`""`),
 		}, nil).Once()
 
-	err := upgrade.Run(context.Background())
+	err := upgrade.Run(ctx)
 	if err != nil {
 		t.Errorf("got %v, want nil", err)
 	}
@@ -1335,6 +1352,7 @@ func TestRun_WaitingWithNonOwnedOperationsAndClusterBeyondTarget(t *testing.T) {
 }
 
 func TestRun_WaitingWithNonOwnedOperationsButClusterNotAtTarget(t *testing.T) {
+	ctx := environmenttest.RegisterMock(context.Background(), t)
 	suite := newTestSuite(t)
 	upgrade := newUpgrade(suite)
 
@@ -1343,11 +1361,11 @@ func TestRun_WaitingWithNonOwnedOperationsButClusterNotAtTarget(t *testing.T) {
 	envDelayDays := int32(0)
 
 	// Mock TenantsGet for metrics initialization
-	suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
+	environmenttest.OnGetTenants(ctx, []*model.Tenant{{
 		ID:               suite.env.tenantID,
 		Name:             suite.env.name,
 		UpgradeDelayDays: tenantDelayDays,
-	}}, nil).Once()
+	}})
 
 	// Mock EnvironmentsGet for metrics initialization
 	suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
@@ -1361,11 +1379,11 @@ func TestRun_WaitingWithNonOwnedOperationsButClusterNotAtTarget(t *testing.T) {
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(nil, nil).Once()
 
 	// Mock TenantsGet for main processing loop
-	suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
+	environmenttest.OnGetTenants(ctx, []*model.Tenant{{
 		ID:               suite.env.tenantID,
 		Name:             suite.env.name,
 		UpgradeDelayDays: tenantDelayDays,
-	}}, nil).Once()
+	}})
 
 	// Mock EnvironmentsGet for main processing loop
 	suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
@@ -1415,7 +1433,7 @@ func TestRun_WaitingWithNonOwnedOperationsButClusterNotAtTarget(t *testing.T) {
 	// The running operations should NOT be tracked in the database
 	// The upgrade should NOT be marked as DONE
 
-	err := upgrade.Run(context.Background())
+	err := upgrade.Run(ctx)
 	if err != nil {
 		t.Errorf("got %v, want nil", err)
 	}
@@ -1430,6 +1448,7 @@ func TestRun_WaitingWithNonOwnedOperationsButClusterNotAtTarget(t *testing.T) {
 }
 
 func TestRun_UpgradeDurationUsesUpgradeStartTime(t *testing.T) {
+	ctx := environmenttest.RegisterMock(context.Background(), t)
 	suite := newTestSuite(t)
 	upgrade := newUpgrade(suite)
 
@@ -1440,18 +1459,18 @@ func TestRun_UpgradeDurationUsesUpgradeStartTime(t *testing.T) {
 	lastModified := now                            // Completed now
 
 	// Mock metrics initialization
-	suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{
+	environmenttest.OnGetTenants(ctx, []*model.Tenant{
 		{ID: suite.env.tenantID, Name: suite.env.name},
-	}, nil).Once()
+	})
 	suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{
 		{ID: suite.env.id, TenantID: suite.env.tenantID, Name: suite.env.name},
 	}, nil).Once()
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(nil, nil).Once()
 
 	// Mock main loop
-	suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{
+	environmenttest.OnGetTenants(ctx, []*model.Tenant{
 		{ID: suite.env.tenantID, Name: suite.env.name},
-	}, nil).Once()
+	})
 	suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{
 		{ID: suite.env.id, TenantID: suite.env.tenantID, Name: suite.env.name},
 	}, nil).Once()
@@ -1480,7 +1499,7 @@ func TestRun_UpgradeDurationUsesUpgradeStartTime(t *testing.T) {
 		map[uuid.UUID][]*model.EnvironmentOperation{}, nil,
 	).Once()
 
-	err := upgrade.Run(context.Background())
+	err := upgrade.Run(ctx)
 	if err != nil {
 		t.Errorf("got %v, want nil", err)
 	}
@@ -1493,6 +1512,7 @@ func TestRun_UpgradeDurationUsesUpgradeStartTime(t *testing.T) {
 }
 
 func TestRun_UpgradeDurationWarnsWithoutUpgradeStartTime(t *testing.T) {
+	ctx := environmenttest.RegisterMock(context.Background(), t)
 	suite := newTestSuite(t)
 	upgrade := newUpgrade(suite)
 
@@ -1502,18 +1522,18 @@ func TestRun_UpgradeDurationWarnsWithoutUpgradeStartTime(t *testing.T) {
 	lastModified := now                  // Completed now
 
 	// Mock metrics initialization
-	suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{
+	environmenttest.OnGetTenants(ctx, []*model.Tenant{
 		{ID: suite.env.tenantID, Name: suite.env.name},
-	}, nil).Once()
+	})
 	suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{
 		{ID: suite.env.id, TenantID: suite.env.tenantID, Name: suite.env.name},
 	}, nil).Once()
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(nil, nil).Once()
 
 	// Mock main loop
-	suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{
+	environmenttest.OnGetTenants(ctx, []*model.Tenant{
 		{ID: suite.env.tenantID, Name: suite.env.name},
-	}, nil).Once()
+	})
 	suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{
 		{ID: suite.env.id, TenantID: suite.env.tenantID, Name: suite.env.name},
 	}, nil).Once()
@@ -1542,7 +1562,7 @@ func TestRun_UpgradeDurationWarnsWithoutUpgradeStartTime(t *testing.T) {
 		map[uuid.UUID][]*model.EnvironmentOperation{}, nil,
 	).Once()
 
-	err := upgrade.Run(context.Background())
+	err := upgrade.Run(ctx)
 	if err != nil {
 		t.Errorf("got %v, want nil", err)
 	}
@@ -1555,13 +1575,13 @@ func TestRun_UpgradeDurationWarnsWithoutUpgradeStartTime(t *testing.T) {
 // TestUpgradeNodes_SkipsDuplicateOperation verifies the deduplication logic prevents creating
 // duplicate upgrade operations when an active operation already exists for a nodepool.
 func TestUpgradeNodes_SkipsDuplicateOperation(t *testing.T) {
+	ctx := environmenttest.RegisterMock(context.Background(), t)
 	suite := newTestSuite(t)
 	log := logrus.New().WithField("testSuite", "upgrade")
 	meter := metricsdk.NewMeterProvider().Meter("testSuite")
 	slackClient := fake.NewFakeSlackClient()
 	upgrade := NewClusterUpgrader(suite.repoMock, log, suite.clusterMock, meter, slackClient, "channel")
 
-	ctx := context.Background()
 	clusterUpgradeID := uuid.New()
 
 	// Set up a cluster upgrade in NODE_UPGRADE status
@@ -1608,13 +1628,13 @@ func TestUpgradeNodes_SkipsDuplicateOperation(t *testing.T) {
 }
 
 func TestUpgradeNodes_SkipsDuplicatePendingOperation(t *testing.T) {
+	ctx := environmenttest.RegisterMock(context.Background(), t)
 	suite := newTestSuite(t)
 	log := logrus.New().WithField("testSuite", "upgrade")
 	meter := metricsdk.NewMeterProvider().Meter("testSuite")
 	slackClient := fake.NewFakeSlackClient()
 	upgrade := NewClusterUpgrader(suite.repoMock, log, suite.clusterMock, meter, slackClient, "channel")
 
-	ctx := context.Background()
 	clusterUpgradeID := uuid.New()
 
 	// Set up a cluster upgrade in NODE_UPGRADE status
@@ -1661,13 +1681,13 @@ func TestUpgradeNodes_SkipsDuplicatePendingOperation(t *testing.T) {
 }
 
 func TestUpgradeNodes_BackoffAfterFailedOperation(t *testing.T) {
+	ctx := environmenttest.RegisterMock(context.Background(), t)
 	suite := newTestSuite(t)
 	log := logrus.New().WithField("testSuite", "upgrade")
 	meter := metricsdk.NewMeterProvider().Meter("testSuite")
 	slackClient := fake.NewFakeSlackClient()
 	upgrade := NewClusterUpgrader(suite.repoMock, log, suite.clusterMock, meter, slackClient, "channel")
 
-	ctx := context.Background()
 	clusterUpgradeID := uuid.New()
 
 	// Set up a cluster upgrade in NODE_UPGRADE status
@@ -1716,13 +1736,13 @@ func TestUpgradeNodes_BackoffAfterFailedOperation(t *testing.T) {
 }
 
 func TestUpgradeNodes_RetryAfterBackoffExpired(t *testing.T) {
+	ctx := environmenttest.RegisterMock(context.Background(), t)
 	suite := newTestSuite(t)
 	log := logrus.New().WithField("testSuite", "upgrade")
 	meter := metricsdk.NewMeterProvider().Meter("testSuite")
 	slackClient := fake.NewFakeSlackClient()
 	upgrade := NewClusterUpgrader(suite.repoMock, log, suite.clusterMock, meter, slackClient, "channel")
 
-	ctx := context.Background()
 	clusterUpgradeID := uuid.New()
 
 	// Set up a cluster upgrade in NODE_UPGRADE status
@@ -1784,13 +1804,13 @@ func TestUpgradeNodes_RetryAfterBackoffExpired(t *testing.T) {
 }
 
 func TestUpgradeNodes_BackoffAfterAbortedOperation(t *testing.T) {
+	ctx := environmenttest.RegisterMock(context.Background(), t)
 	suite := newTestSuite(t)
 	log := logrus.New().WithField("testSuite", "upgrade")
 	meter := metricsdk.NewMeterProvider().Meter("testSuite")
 	slackClient := fake.NewFakeSlackClient()
 	upgrade := NewClusterUpgrader(suite.repoMock, log, suite.clusterMock, meter, slackClient, "channel")
 
-	ctx := context.Background()
 	clusterUpgradeID := uuid.New()
 
 	// Set up a cluster upgrade in NODE_UPGRADE status
@@ -1842,13 +1862,13 @@ func TestUpgradeNodes_BackoffAfterAbortedOperation(t *testing.T) {
 }
 
 func TestUpgradeNodes_BackoffAfterAbortingOperation(t *testing.T) {
+	ctx := environmenttest.RegisterMock(context.Background(), t)
 	suite := newTestSuite(t)
 	log := logrus.New().WithField("testSuite", "upgrade")
 	meter := metricsdk.NewMeterProvider().Meter("testSuite")
 	slackClient := fake.NewFakeSlackClient()
 	upgrade := NewClusterUpgrader(suite.repoMock, log, suite.clusterMock, meter, slackClient, "channel")
 
-	ctx := context.Background()
 	clusterUpgradeID := uuid.New()
 
 	// Set up a cluster upgrade in NODE_UPGRADE status
@@ -1900,6 +1920,7 @@ func TestUpgradeNodes_BackoffAfterAbortingOperation(t *testing.T) {
 }
 
 func TestRun_ControlPlaneUpgradeWithNonOwnedOperationsAndClusterAtTarget(t *testing.T) {
+	ctx := environmenttest.RegisterMock(context.Background(), t)
 	suite := newTestSuite(t)
 	upgrade := newUpgrade(suite)
 
@@ -1908,11 +1929,11 @@ func TestRun_ControlPlaneUpgradeWithNonOwnedOperationsAndClusterAtTarget(t *test
 	envDelayDays := int32(0)
 
 	// Mock TenantsGet for metrics initialization
-	suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
+	environmenttest.OnGetTenants(ctx, []*model.Tenant{{
 		ID:               suite.env.tenantID,
 		Name:             suite.env.name,
 		UpgradeDelayDays: tenantDelayDays,
-	}}, nil).Once()
+	}})
 
 	// Mock EnvironmentsGet for metrics initialization
 	suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
@@ -1926,11 +1947,11 @@ func TestRun_ControlPlaneUpgradeWithNonOwnedOperationsAndClusterAtTarget(t *test
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(nil, nil).Once()
 
 	// Mock TenantsGet for main processing loop
-	suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
+	environmenttest.OnGetTenants(ctx, []*model.Tenant{{
 		ID:               suite.env.tenantID,
 		Name:             suite.env.name,
 		UpgradeDelayDays: tenantDelayDays,
-	}}, nil).Once()
+	}})
 
 	// Mock EnvironmentsGet for main processing loop
 	suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
@@ -1995,7 +2016,7 @@ func TestRun_ControlPlaneUpgradeWithNonOwnedOperationsAndClusterAtTarget(t *test
 			Value: []byte(`""`),
 		}, nil).Once()
 
-	err := upgrade.Run(context.Background())
+	err := upgrade.Run(ctx)
 	if err != nil {
 		t.Errorf("got %v, want nil", err)
 	}
@@ -2008,6 +2029,7 @@ func TestRun_ControlPlaneUpgradeWithNonOwnedOperationsAndClusterAtTarget(t *test
 }
 
 func TestRun_ControlPlaneUpgradeWithNonOwnedOperationsButClusterNotAtTarget(t *testing.T) {
+	ctx := environmenttest.RegisterMock(context.Background(), t)
 	suite := newTestSuite(t)
 	upgrade := newUpgrade(suite)
 
@@ -2016,11 +2038,11 @@ func TestRun_ControlPlaneUpgradeWithNonOwnedOperationsButClusterNotAtTarget(t *t
 	envDelayDays := int32(0)
 
 	// Mock TenantsGet for metrics initialization
-	suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
+	environmenttest.OnGetTenants(ctx, []*model.Tenant{{
 		ID:               suite.env.tenantID,
 		Name:             suite.env.name,
 		UpgradeDelayDays: tenantDelayDays,
-	}}, nil).Once()
+	}})
 
 	// Mock EnvironmentsGet for metrics initialization
 	suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
@@ -2034,11 +2056,11 @@ func TestRun_ControlPlaneUpgradeWithNonOwnedOperationsButClusterNotAtTarget(t *t
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(nil, nil).Once()
 
 	// Mock TenantsGet for main processing loop
-	suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
+	environmenttest.OnGetTenants(ctx, []*model.Tenant{{
 		ID:               suite.env.tenantID,
 		Name:             suite.env.name,
 		UpgradeDelayDays: tenantDelayDays,
-	}}, nil).Once()
+	}})
 
 	// Mock EnvironmentsGet for main processing loop
 	suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
@@ -2084,7 +2106,7 @@ func TestRun_ControlPlaneUpgradeWithNonOwnedOperationsButClusterNotAtTarget(t *t
 
 	// Since non-owned operations exist but cluster is NOT at target version, should back off without tracking
 
-	err := upgrade.Run(context.Background())
+	err := upgrade.Run(ctx)
 	if err != nil {
 		t.Errorf("got %v, want nil", err)
 	}
@@ -2099,6 +2121,7 @@ func TestRun_ControlPlaneUpgradeWithNonOwnedOperationsButClusterNotAtTarget(t *t
 }
 
 func TestRun_NodeUpgradeWithNonOwnedOperationsAndClusterAtTarget(t *testing.T) {
+	ctx := environmenttest.RegisterMock(context.Background(), t)
 	suite := newTestSuite(t)
 	upgrade := newUpgrade(suite)
 
@@ -2107,11 +2130,11 @@ func TestRun_NodeUpgradeWithNonOwnedOperationsAndClusterAtTarget(t *testing.T) {
 	envDelayDays := int32(0)
 
 	// Mock TenantsGet for metrics initialization
-	suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
+	environmenttest.OnGetTenants(ctx, []*model.Tenant{{
 		ID:               suite.env.tenantID,
 		Name:             suite.env.name,
 		UpgradeDelayDays: tenantDelayDays,
-	}}, nil).Once()
+	}})
 
 	// Mock EnvironmentsGet for metrics initialization
 	suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
@@ -2125,11 +2148,11 @@ func TestRun_NodeUpgradeWithNonOwnedOperationsAndClusterAtTarget(t *testing.T) {
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(nil, nil).Once()
 
 	// Mock TenantsGet for main processing loop
-	suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
+	environmenttest.OnGetTenants(ctx, []*model.Tenant{{
 		ID:               suite.env.tenantID,
 		Name:             suite.env.name,
 		UpgradeDelayDays: tenantDelayDays,
-	}}, nil).Once()
+	}})
 
 	// Mock EnvironmentsGet for main processing loop
 	suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
@@ -2194,7 +2217,7 @@ func TestRun_NodeUpgradeWithNonOwnedOperationsAndClusterAtTarget(t *testing.T) {
 			Value: []byte(`""`),
 		}, nil).Once()
 
-	err := upgrade.Run(context.Background())
+	err := upgrade.Run(ctx)
 	if err != nil {
 		t.Errorf("got %v, want nil", err)
 	}
@@ -2205,6 +2228,7 @@ func TestRun_NodeUpgradeWithNonOwnedOperationsAndClusterAtTarget(t *testing.T) {
 }
 
 func TestRun_NodeUpgradeWithNonOwnedOperationsButClusterNotAtTarget(t *testing.T) {
+	ctx := environmenttest.RegisterMock(context.Background(), t)
 	suite := newTestSuite(t)
 	upgrade := newUpgrade(suite)
 
@@ -2213,11 +2237,11 @@ func TestRun_NodeUpgradeWithNonOwnedOperationsButClusterNotAtTarget(t *testing.T
 	envDelayDays := int32(0)
 
 	// Mock TenantsGet for metrics initialization
-	suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
+	environmenttest.OnGetTenants(ctx, []*model.Tenant{{
 		ID:               suite.env.tenantID,
 		Name:             suite.env.name,
 		UpgradeDelayDays: tenantDelayDays,
-	}}, nil).Once()
+	}})
 
 	// Mock EnvironmentsGet for metrics initialization
 	suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
@@ -2231,11 +2255,11 @@ func TestRun_NodeUpgradeWithNonOwnedOperationsButClusterNotAtTarget(t *testing.T
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(nil, nil).Once()
 
 	// Mock TenantsGet for main processing loop
-	suite.repoMock.EXPECT().TenantsGet(mock.Anything).Return([]*model.Tenant{{
+	environmenttest.OnGetTenants(ctx, []*model.Tenant{{
 		ID:               suite.env.tenantID,
 		Name:             suite.env.name,
 		UpgradeDelayDays: tenantDelayDays,
-	}}, nil).Once()
+	}})
 
 	// Mock EnvironmentsGet for main processing loop
 	suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
@@ -2281,7 +2305,7 @@ func TestRun_NodeUpgradeWithNonOwnedOperationsButClusterNotAtTarget(t *testing.T
 
 	// Since non-owned operations exist but cluster is NOT at target version, should back off without tracking
 
-	err := upgrade.Run(context.Background())
+	err := upgrade.Run(ctx)
 	if err != nil {
 		t.Errorf("got %v, want nil", err)
 	}

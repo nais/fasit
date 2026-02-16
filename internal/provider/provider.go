@@ -46,7 +46,7 @@ func (s *server) CreateTenant(ctx context.Context, in *protogen.CreateTenantRequ
 }
 
 func (s *server) GetTenant(ctx context.Context, in *protogen.GetTenantRequest) (*protogen.TenantResponse, error) {
-	tenant, err := s.repo.TenantGetByName(ctx, in.Name)
+	tenant, err := environment.GetTenantGetByName(ctx, in.Name)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, "Tenant not found")
 	}
@@ -69,7 +69,7 @@ func (s *server) CreateEnvironment(ctx context.Context, in *protogen.CreateEnvir
 		return nil, status.Error(codes.InvalidArgument, "Invalid tenant id")
 	}
 
-	tenant, err := s.repo.TenantGet(ctx, tenantID)
+	tenant, err := environment.GetTenant(ctx, tenantID)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, "Tenant not found")
 	}
@@ -79,7 +79,7 @@ func (s *server) CreateEnvironment(ctx context.Context, in *protogen.CreateEnvir
 		return nil, err
 	}
 
-	environment, err := s.repo.EnvironmentCreate(ctx, &model.EnvironmentCreate{
+	env, err := s.repo.EnvironmentCreate(ctx, &model.EnvironmentCreate{
 		Name:     in.Name,
 		TenantID: tenant.ID,
 		Kind:     kind,
@@ -88,15 +88,15 @@ func (s *server) CreateEnvironment(ctx context.Context, in *protogen.CreateEnvir
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	err = s.repo.EnvironmentSetLabels(ctx, environment.ID, in.Labels)
+	err = s.repo.EnvironmentSetLabels(ctx, env.ID, in.Labels)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	return &protogen.EnvironmentResponse{
-		Id:       environment.ID.String(),
+		Id:       env.ID.String(),
 		TenantId: tenant.ID.String(),
-		Name:     environment.Name,
+		Name:     env.Name,
 	}, nil
 }
 
@@ -106,19 +106,19 @@ func (s *server) UpdateEnvironment(ctx context.Context, in *protogen.UpdateEnvir
 		return nil, status.Error(codes.InvalidArgument, "Invalid environment id")
 	}
 
-	environment, err := s.repo.EnvironmentGet(ctx, environmentID)
+	env, err := s.repo.EnvironmentGet(ctx, environmentID)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, "Environment not found")
 	}
 
-	if err := s.repo.EnvironmentSetLabels(ctx, environment.ID, in.Labels); err != nil {
+	if err := s.repo.EnvironmentSetLabels(ctx, env.ID, in.Labels); err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
 	return &protogen.EnvironmentResponse{
-		Id:       environment.ID.String(),
-		TenantId: environment.TenantID.String(),
-		Name:     environment.Name,
+		Id:       env.ID.String(),
+		TenantId: env.TenantID.String(),
+		Name:     env.Name,
 	}, nil
 }
 
@@ -128,15 +128,15 @@ func (s *server) GetEnvironment(ctx context.Context, in *protogen.GetEnvironment
 		return nil, status.Error(codes.InvalidArgument, "Invalid tenant id")
 	}
 
-	environment, err := s.repo.EnvironmentGetByName(ctx, tenantID, in.Name)
+	env, err := s.repo.EnvironmentGetByName(ctx, tenantID, in.Name)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, "Environment not found")
 	}
 
 	return &protogen.EnvironmentResponse{
-		Id:       environment.ID.String(),
+		Id:       env.ID.String(),
 		TenantId: tenantID.String(),
-		Name:     environment.Name,
+		Name:     env.Name,
 	}, nil
 }
 
@@ -173,7 +173,7 @@ func (s *server) GetEnvironmentValue(ctx context.Context, in *protogen.GetEnviro
 		return nil, status.Error(codes.NotFound, "Environment not found")
 	}
 
-	tenant, err := s.repo.TenantGet(ctx, env.TenantID)
+	tenant, err := environment.GetTenant(ctx, env.TenantID)
 	if err != nil {
 		return nil, status.Error(codes.NotFound, "Tenant not found")
 	}

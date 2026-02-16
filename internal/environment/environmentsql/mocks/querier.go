@@ -240,6 +240,134 @@ func (_c *Querier_GetTenant_Call) RunAndReturn(run func(ctx context.Context, id 
 	return _c
 }
 
+// GetTenantByName provides a mock function for the type Querier
+func (_mock *Querier) GetTenantByName(ctx context.Context, name string) (environmentsql.Tenant, error) {
+	ret := _mock.Called(ctx, name)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetTenantByName")
+	}
+
+	var r0 environmentsql.Tenant
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (environmentsql.Tenant, error)); ok {
+		return returnFunc(ctx, name)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) environmentsql.Tenant); ok {
+		r0 = returnFunc(ctx, name)
+	} else {
+		r0 = ret.Get(0).(environmentsql.Tenant)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = returnFunc(ctx, name)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_GetTenantByName_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetTenantByName'
+type Querier_GetTenantByName_Call struct {
+	*mock.Call
+}
+
+// GetTenantByName is a helper method to define mock.On call
+//   - ctx context.Context
+//   - name string
+func (_e *Querier_Expecter) GetTenantByName(ctx interface{}, name interface{}) *Querier_GetTenantByName_Call {
+	return &Querier_GetTenantByName_Call{Call: _e.mock.On("GetTenantByName", ctx, name)}
+}
+
+func (_c *Querier_GetTenantByName_Call) Run(run func(ctx context.Context, name string)) *Querier_GetTenantByName_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_GetTenantByName_Call) Return(tenant environmentsql.Tenant, err error) *Querier_GetTenantByName_Call {
+	_c.Call.Return(tenant, err)
+	return _c
+}
+
+func (_c *Querier_GetTenantByName_Call) RunAndReturn(run func(ctx context.Context, name string) (environmentsql.Tenant, error)) *Querier_GetTenantByName_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetTenants provides a mock function for the type Querier
+func (_mock *Querier) GetTenants(ctx context.Context) ([]environmentsql.Tenant, error) {
+	ret := _mock.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetTenants")
+	}
+
+	var r0 []environmentsql.Tenant
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context) ([]environmentsql.Tenant, error)); ok {
+		return returnFunc(ctx)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context) []environmentsql.Tenant); ok {
+		r0 = returnFunc(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]environmentsql.Tenant)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = returnFunc(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_GetTenants_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetTenants'
+type Querier_GetTenants_Call struct {
+	*mock.Call
+}
+
+// GetTenants is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *Querier_Expecter) GetTenants(ctx interface{}) *Querier_GetTenants_Call {
+	return &Querier_GetTenants_Call{Call: _e.mock.On("GetTenants", ctx)}
+}
+
+func (_c *Querier_GetTenants_Call) Run(run func(ctx context.Context)) *Querier_GetTenants_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_GetTenants_Call) Return(tenants []environmentsql.Tenant, err error) *Querier_GetTenants_Call {
+	_c.Call.Return(tenants, err)
+	return _c
+}
+
+func (_c *Querier_GetTenants_Call) RunAndReturn(run func(ctx context.Context) ([]environmentsql.Tenant, error)) *Querier_GetTenants_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ListCIEnvironmentsForTarget provides a mock function for the type Querier
 func (_mock *Querier) ListCIEnvironmentsForTarget(ctx context.Context, target types.EnvironmentLabels) ([]environmentsql.ListCIEnvironmentsForTargetRow, error) {
 	ret := _mock.Called(ctx, target)
@@ -438,6 +566,72 @@ func (_c *Querier_TenantEnvironments_Call) Return(tenantEnvironmentsRows []envir
 }
 
 func (_c *Querier_TenantEnvironments_Call) RunAndReturn(run func(ctx context.Context, all bool) ([]environmentsql.TenantEnvironmentsRow, error)) *Querier_TenantEnvironments_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// TenantSetUpgradeDelayDays provides a mock function for the type Querier
+func (_mock *Querier) TenantSetUpgradeDelayDays(ctx context.Context, arg environmentsql.TenantSetUpgradeDelayDaysParams) (environmentsql.Tenant, error) {
+	ret := _mock.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for TenantSetUpgradeDelayDays")
+	}
+
+	var r0 environmentsql.Tenant
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, environmentsql.TenantSetUpgradeDelayDaysParams) (environmentsql.Tenant, error)); ok {
+		return returnFunc(ctx, arg)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, environmentsql.TenantSetUpgradeDelayDaysParams) environmentsql.Tenant); ok {
+		r0 = returnFunc(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(environmentsql.Tenant)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, environmentsql.TenantSetUpgradeDelayDaysParams) error); ok {
+		r1 = returnFunc(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_TenantSetUpgradeDelayDays_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TenantSetUpgradeDelayDays'
+type Querier_TenantSetUpgradeDelayDays_Call struct {
+	*mock.Call
+}
+
+// TenantSetUpgradeDelayDays is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg environmentsql.TenantSetUpgradeDelayDaysParams
+func (_e *Querier_Expecter) TenantSetUpgradeDelayDays(ctx interface{}, arg interface{}) *Querier_TenantSetUpgradeDelayDays_Call {
+	return &Querier_TenantSetUpgradeDelayDays_Call{Call: _e.mock.On("TenantSetUpgradeDelayDays", ctx, arg)}
+}
+
+func (_c *Querier_TenantSetUpgradeDelayDays_Call) Run(run func(ctx context.Context, arg environmentsql.TenantSetUpgradeDelayDaysParams)) *Querier_TenantSetUpgradeDelayDays_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 environmentsql.TenantSetUpgradeDelayDaysParams
+		if args[1] != nil {
+			arg1 = args[1].(environmentsql.TenantSetUpgradeDelayDaysParams)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_TenantSetUpgradeDelayDays_Call) Return(tenant environmentsql.Tenant, err error) *Querier_TenantSetUpgradeDelayDays_Call {
+	_c.Call.Return(tenant, err)
+	return _c
+}
+
+func (_c *Querier_TenantSetUpgradeDelayDays_Call) RunAndReturn(run func(ctx context.Context, arg environmentsql.TenantSetUpgradeDelayDaysParams) (environmentsql.Tenant, error)) *Querier_TenantSetUpgradeDelayDays_Call {
 	_c.Call.Return(run)
 	return _c
 }

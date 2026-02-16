@@ -110,6 +110,26 @@ func GetTenant(ctx context.Context, id uuid.UUID) (*model.Tenant, error) {
 	return tenantFromSQL(tenant), nil
 }
 
+func GetTenants(ctx context.Context) ([]*model.Tenant, error) {
+	tenants, err := querier(ctx).GetTenants(ctx)
+	if err != nil {
+		return nil, err
+	}
+	tenantSlice := []*model.Tenant{}
+	for _, tenant := range tenants {
+		tenantSlice = append(tenantSlice, tenantFromSQL(tenant))
+	}
+	return tenantSlice, nil
+}
+
+func GetTenantGetByName(ctx context.Context, name string) (*model.Tenant, error) {
+	tenant, err := querier(ctx).GetTenantByName(ctx, name)
+	if err != nil {
+		return nil, err
+	}
+	return tenantFromSQL(tenant), nil
+}
+
 func CreateTenant(ctx context.Context, t *model.TenantCreate) (*model.Tenant, error) {
 	tenant, err := querier(ctx).TenantCreate(ctx, environmentsql.TenantCreateParams{
 		Name:        t.Name,
@@ -120,6 +140,20 @@ func CreateTenant(ctx context.Context, t *model.TenantCreate) (*model.Tenant, er
 	}
 
 	audit.CreateAudit(ctx, "created", "tenants", tenant.ID.String())
+
+	return tenantFromSQL(tenant), nil
+}
+
+func TenantSetUpgradeDelayDays(ctx context.Context, id uuid.UUID, delayDays int32) (*model.Tenant, error) {
+	tenant, err := querier(ctx).TenantSetUpgradeDelayDays(ctx, environmentsql.TenantSetUpgradeDelayDaysParams{
+		ID:               id,
+		UpgradeDelayDays: delayDays,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	audit.CreateAudit(ctx, "updated upgrade_delay_days", "tenants", tenant.ID.String())
 
 	return tenantFromSQL(tenant), nil
 }

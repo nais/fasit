@@ -52,8 +52,6 @@ type Repo interface {
 	ReleaseStatusRepo
 	// Can be moved but is also heavily used in listeners etc
 	RolloutRepo
-	// Used in grpc so need context setup there
-	TenantRepo
 
 	Transaction
 

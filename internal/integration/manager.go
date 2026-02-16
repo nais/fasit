@@ -70,12 +70,14 @@ func TestRunner(ctx context.Context, skipSetup bool) (*testmanager.Manager, erro
 		},
 		Returns: []spec.ArgumentType{spec.ArgumentTypeString},
 		Func: func(L *lua.LState) int {
+			ctx := L.Context()
+
 			name := L.CheckString(1)
 			ci := L.OptBool(2, false)
 
-			pool := L.Context().Value(poolKey).(*pgxpool.Pool)
+			pool := ctx.Value(poolKey).(*pgxpool.Pool)
 
-			tenant, err := environment.CreateTenant(L.Context(), &model.TenantCreate{
+			tenant, err := environment.CreateTenant(ctx, &model.TenantCreate{
 				Name: name,
 			})
 			if err != nil {
@@ -134,6 +136,7 @@ func TestRunner(ctx context.Context, skipSetup bool) (*testmanager.Manager, erro
 		},
 		Returns: []spec.ArgumentType{spec.ArgumentTypeString},
 		Func: func(L *lua.LState) int {
+			ctx := L.Context()
 			tenantIDStr := L.CheckString(1)
 			name := L.CheckString(2)
 			kindStr := L.CheckString(3)
@@ -142,7 +145,7 @@ func TestRunner(ctx context.Context, skipSetup bool) (*testmanager.Manager, erro
 			labels := L.OptTable(6, L.NewTable())
 			envLabels := make([]*protogen.EnvironmentLabel, 0)
 
-			pool := L.Context().Value(poolKey).(*pgxpool.Pool)
+			pool := ctx.Value(poolKey).(*pgxpool.Pool)
 
 			repo := database.NewRepo(pool, logrus.New())
 
@@ -151,7 +154,7 @@ func TestRunner(ctx context.Context, skipSetup bool) (*testmanager.Manager, erro
 				L.RaiseError("failed to parse tenant ID: %s", err)
 			}
 
-			tenant, err := repo.TenantGet(L.Context(), tenantID)
+			tenant, err := environment.GetTenant(ctx, tenantID)
 			if err != nil {
 				L.RaiseError("failed to get tenant: %s", err)
 			}
@@ -161,7 +164,7 @@ func TestRunner(ctx context.Context, skipSetup bool) (*testmanager.Manager, erro
 				L.RaiseError("failed to parse environment kind: %s", err)
 			}
 
-			env, err := repo.EnvironmentCreate(L.Context(), &model.EnvironmentCreate{
+			env, err := repo.EnvironmentCreate(ctx, &model.EnvironmentCreate{
 				Name:     name,
 				Kind:     kind,
 				TenantID: tenant.ID,
@@ -177,7 +180,7 @@ func TestRunner(ctx context.Context, skipSetup bool) (*testmanager.Manager, erro
 				})
 			})
 
-			err = repo.EnvironmentSetLabels(L.Context(), env.ID, envLabels)
+			err = repo.EnvironmentSetLabels(ctx, env.ID, envLabels)
 			if err != nil {
 				L.RaiseError("failed to set environment labels: %s", err)
 			}
@@ -193,7 +196,7 @@ func TestRunner(ctx context.Context, skipSetup bool) (*testmanager.Manager, erro
 			}
 
 			if !unhealthy {
-				err := naisdstatus.Set(L.Context(), env.ID, &message.Health{
+				err := naisdstatus.Set(ctx, env.ID, &message.Health{
 					ReportedAt: time.Now(),
 				})
 				if err != nil {
@@ -201,7 +204,7 @@ func TestRunner(ctx context.Context, skipSetup bool) (*testmanager.Manager, erro
 				}
 			}
 
-			naisd := L.Context().Value(naisdKey).(*naisdRunner)
+			naisd := ctx.Value(naisdKey).(*naisdRunner)
 			if err := naisd.configureEnv(ctx, tenant.Name, env.Name); err != nil {
 				L.RaiseError("failed to configure environment: %s", err)
 			}
@@ -246,10 +249,11 @@ func TestRunner(ctx context.Context, skipSetup bool) (*testmanager.Manager, erro
 			},
 		},
 		Func: func(L *lua.LState) int {
+			ctx := L.Context()
 			envIDStr := L.CheckString(1)
 			failing := L.OptBool(2, true)
 
-			pool := L.Context().Value(poolKey).(*pgxpool.Pool)
+			pool := ctx.Value(poolKey).(*pgxpool.Pool)
 			repo := database.NewRepo(pool, logrus.New())
 
 			envID, err := uuid.Parse(envIDStr)
@@ -262,12 +266,12 @@ func TestRunner(ctx context.Context, skipSetup bool) (*testmanager.Manager, erro
 				L.RaiseError("failed to get environment: %s", err)
 			}
 
-			tenant, err := repo.TenantGet(ctx, env.TenantID)
+			tenant, err := environment.GetTenant(ctx, env.TenantID)
 			if err != nil {
 				L.RaiseError("failed to get tenant: %s", err)
 			}
 
-			naisd := L.Context().Value(naisdKey).(*naisdRunner)
+			naisd := ctx.Value(naisdKey).(*naisdRunner)
 			executor, ok := naisd.executors[tenant.Name+"-"+env.Name]
 			if !ok {
 				L.RaiseError("no executor for environment")

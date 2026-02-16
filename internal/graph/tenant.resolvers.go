@@ -22,16 +22,16 @@ func (r *mutationResolver) TenantSetUpgradeDelayDays(ctx context.Context, tenant
 	if err != nil {
 		return nil, err
 	}
-	return r.Repo.TenantSetUpgradeDelayDays(ctx, tenantID, delayDays32)
+	return environment.TenantSetUpgradeDelayDays(ctx, tenantID, delayDays32)
 }
 
 // Tenant is the resolver for the tenant field.
 func (r *queryResolver) Tenant(ctx context.Context, id *uuid.UUID, slug *string) (*model.Tenant, error) {
 	if id != nil {
-		return r.Repo.TenantGet(ctx, *id)
+		return environment.GetTenant(ctx, *id)
 	}
 	if slug != nil {
-		return r.Repo.TenantGetByName(ctx, *slug)
+		return environment.GetTenantGetByName(ctx, *slug)
 	}
 	return nil, fmt.Errorf("either ID or slug must be specified")
 }
@@ -51,7 +51,7 @@ func (r *queryResolver) ClusterUpgradeHistory(ctx context.Context, limit *int, o
 
 // Tenants is the resolver for the tenants field.
 func (r *queryResolver) Tenants(ctx context.Context) ([]*model.Tenant, error) {
-	return r.Repo.TenantsGet(ctx)
+	return environment.GetTenants(ctx)
 }
 
 // Environments is the resolver for the environments field.

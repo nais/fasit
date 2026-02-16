@@ -6,6 +6,7 @@ import (
 
 	"github.com/nais/fasit/internal/cluster"
 	"github.com/nais/fasit/internal/database"
+	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/slack"
 	"github.com/nais/fasit/internal/workers"
 	"github.com/sirupsen/logrus"
@@ -34,7 +35,7 @@ func clustersMetrics(ctx context.Context, repo database.Repo, meter metric.Meter
 	}
 
 	for {
-		tenants, err := repo.TenantsGet(ctx)
+		tenants, err := environment.GetTenants(ctx)
 		if err != nil {
 			log.WithError(err).Error("getting tenants")
 			return

@@ -9,6 +9,7 @@ import (
 	"github.com/nais/fasit/internal/cluster"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/notifier"
+	"github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
@@ -73,7 +74,7 @@ func (r *Resolver) missingDependencies(ctx context.Context, featureName string, 
 }
 
 func (r *Resolver) deleteHelmInstallation(ctx context.Context, env *model.Environment, name string) error {
-	tenant, err := r.Repo.TenantGet(ctx, env.TenantID)
+	tenant, err := environment.GetTenant(ctx, env.TenantID)
 	if err != nil {
 		return fmt.Errorf("getting tenant: %w", err)
 	}
