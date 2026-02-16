@@ -36,3 +36,79 @@ func (q *Queries) AuditCreate(ctx context.Context, arg AuditCreateParams) error 
 	)
 	return err
 }
+
+const auditForEnvironment = `-- name: AuditForEnvironment :many
+SELECT
+	id, actor, description, object_type, object_id, created_at
+FROM
+	audits
+WHERE
+	CASE WHEN $1::TEXT != '' THEN
+		object_id = CONCAT($2::TEXT, ':', $1::TEXT)
+	ELSE
+		STARTS_WITH(object_id, $2::TEXT)
+	END
+ORDER BY
+	created_at DESC
+LIMIT $3
+`
+
+type AuditForEnvironmentParams struct {
+	Featurename   string
+	EnvironmentID string
+	PageSize      int32
+}
+
+func (q *Queries) AuditForEnvironment(ctx context.Context, arg AuditForEnvironmentParams) ([]Audit, error) {
+	rows, err := q.db.Query(ctx, auditForEnvironment, arg.Featurename, arg.EnvironmentID, arg.PageSize)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Audit{}
+	for rows.Next() {
+		var i Audit
+		if err := rows.Scan(
+			&i.ID,
+			&i.Actor,
+			&i.Description,
+			&i.ObjectType,
+			&i.ObjectID,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const auditGetLatestForClusterUpgrade = `-- name: AuditGetLatestForClusterUpgrade :one
+SELECT
+	id, actor, description, object_type, object_id, created_at
+FROM
+	audits
+WHERE
+	object_id = $1
+	AND object_type = 'cluster_upgrades'
+ORDER BY
+	created_at DESC
+LIMIT 1
+`
+
+func (q *Queries) AuditGetLatestForClusterUpgrade(ctx context.Context, upgradeID string) (Audit, error) {
+	row := q.db.QueryRow(ctx, auditGetLatestForClusterUpgrade, upgradeID)
+	var i Audit
+	err := row.Scan(
+		&i.ID,
+		&i.Actor,
+		&i.Description,
+		&i.ObjectType,
+		&i.ObjectID,
+		&i.CreatedAt,
+	)
+	return i, err
+}

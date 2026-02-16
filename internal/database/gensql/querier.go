@@ -10,9 +10,6 @@ import (
 )
 
 type Querier interface {
-	AuditCreate(ctx context.Context, arg AuditCreateParams) error
-	AuditForEnvironment(ctx context.Context, arg AuditForEnvironmentParams) ([]Audit, error)
-	AuditGetLatestForClusterUpgrade(ctx context.Context, upgradeID string) (Audit, error)
 	ClusterOperationCreateOrUpdate(ctx context.Context, arg ClusterOperationCreateOrUpdateParams) (ClusterOperation, error)
 	ClusterOperationGet(ctx context.Context, arg ClusterOperationGetParams) (ClusterOperation, error)
 	ClusterOperationsGetByUpgradeID(ctx context.Context, upgradeID uuid.UUID) ([]ClusterOperation, error)

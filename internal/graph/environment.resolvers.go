@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	pgx "github.com/jackc/pgx/v5"
+	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/environment"
@@ -38,7 +39,7 @@ func (r *clusterUpgradeStatusResolver) Actor(ctx context.Context, obj *model.Clu
 	}
 
 	// Get the audit log for this cluster upgrade
-	auditLog, err := r.Repo.AuditGetLatestForClusterUpgrade(ctx, obj.ID)
+	auditLog, err := audit.AuditGetLatestForClusterUpgrade(ctx, obj.ID)
 	if err != nil {
 		r.Log.WithError(err).WithFields(map[string]interface{}{
 			"upgrade_id": obj.ID,
@@ -149,7 +150,7 @@ func (r *environmentResolver) AuditLog(ctx context.Context, obj *model.Environme
 		fn = *featureName
 	}
 
-	return r.Repo.AuditForEnvironment(ctx, obj.ID, fn)
+	return audit.AuditForEnvironment(ctx, obj.ID, fn)
 }
 
 // Features is the resolver for the features field.

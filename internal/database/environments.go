@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/google/uuid"
+	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/database/gensql"
 	"github.com/nais/fasit/internal/database/types"
 	"github.com/nais/fasit/internal/graph/model"
@@ -100,7 +101,7 @@ func (r *repo) EnvironmentCreate(ctx context.Context, t *model.EnvironmentCreate
 		return nil, err
 	}
 
-	r.createAudit(ctx, "created", "environments", env.ID.String())
+	audit.CreateAudit(ctx, "created", "environments", env.ID.String())
 
 	return environmentFromSQL(env), nil
 }
@@ -114,7 +115,7 @@ func (r *repo) EnvironmentUpdate(ctx context.Context, environmentID uuid.UUID, p
 		return nil, err
 	}
 
-	r.createAudit(ctx, "environment updated", "environments", env.ID.String())
+	audit.CreateAudit(ctx, "environment updated", "environments", env.ID.String())
 
 	return environmentFromSQL(env), nil
 }
@@ -161,7 +162,7 @@ func (r *repo) EnvironmentSetReconcile(ctx context.Context, environmentID uuid.U
 		txt = "disabled"
 	}
 
-	r.createAudit(ctx, "environment reconcile "+txt, "environments", env.ID.String())
+	audit.CreateAudit(ctx, "environment reconcile "+txt, "environments", env.ID.String())
 
 	return environmentFromSQL(env), nil
 }
@@ -209,7 +210,7 @@ func (r *repo) EnvironmentSetAutoUpgrade(ctx context.Context, environmentID uuid
 		txt = "disabled"
 	}
 
-	r.createAudit(ctx, "environment auto upgrade "+txt, "environments", env.ID.String())
+	audit.CreateAudit(ctx, "environment auto upgrade "+txt, "environments", env.ID.String())
 
 	return environmentFromSQL(env), nil
 }
@@ -223,7 +224,7 @@ func (r *repo) EnvironmentSetUpgradeDelayDays(ctx context.Context, id uuid.UUID,
 		return nil, err
 	}
 
-	r.createAudit(ctx, "updated upgrade_delay_days", "environments", env.ID.String())
+	audit.CreateAudit(ctx, "updated upgrade_delay_days", "environments", env.ID.String())
 
 	return environmentFromSQL(env), nil
 }
@@ -247,7 +248,7 @@ func (r *repo) EnvironmentSetMaintenanceWindow(ctx context.Context, id uuid.UUID
 		return nil, err
 	}
 
-	r.createAudit(ctx, "updated maintenance_window", "environments", env.ID.String())
+	audit.CreateAudit(ctx, "updated maintenance_window", "environments", env.ID.String())
 
 	return environmentFromSQL(env), nil
 }

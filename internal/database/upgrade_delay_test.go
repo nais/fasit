@@ -6,11 +6,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph/model"
-	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/utils/ptr"
@@ -168,11 +165,4 @@ func TestEnvironmentUpgradeConfigEnabled(t *testing.T) {
 		}
 	}
 	assert.True(t, found, "environment with auto_upgrade=true should be in auto-upgrade list")
-}
-
-func setupContext(ctx context.Context, pool *pgxpool.Pool) context.Context {
-	log, _ := test.NewNullLogger()
-	ctx = audit.Register(ctx, pool, log)
-	ctx = environment.Register(ctx, pool)
-	return ctx
 }

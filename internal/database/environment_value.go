@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/database/gensql"
 	"github.com/nais/fasit/internal/graph/model"
 )
@@ -30,7 +31,7 @@ func (r *repo) EnvironmentValueStore(ctx context.Context, environmentID uuid.UUI
 		return fmt.Errorf("failed to store environment value: %w", err)
 	}
 
-	r.createAudit(ctx, "created or updated", "environment_values", environmentID.String()+":"+key)
+	audit.CreateAudit(ctx, "created or updated", "environment_values", environmentID.String()+":"+key)
 
 	return nil
 }
@@ -89,7 +90,7 @@ func (r *repo) EnvironmentValueDelete(ctx context.Context, environmentID uuid.UU
 		return fmt.Errorf("failed to delete environment value: %w", err)
 	}
 
-	r.createAudit(ctx, "deleted", "environment_values", environmentID.String()+":"+key)
+	audit.CreateAudit(ctx, "deleted", "environment_values", environmentID.String()+":"+key)
 
 	return nil
 }

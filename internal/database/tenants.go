@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/database/gensql"
 	"github.com/nais/fasit/internal/graph/model"
 )
@@ -63,7 +64,7 @@ func (r *repo) TenantSetUpgradeDelayDays(ctx context.Context, id uuid.UUID, dela
 		return nil, err
 	}
 
-	r.createAudit(ctx, "updated upgrade_delay_days", "tenants", tenant.ID.String())
+	audit.CreateAudit(ctx, "updated upgrade_delay_days", "tenants", tenant.ID.String())
 
 	return tenantFromSQL(tenant), nil
 }

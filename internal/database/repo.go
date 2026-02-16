@@ -40,8 +40,6 @@ var embedMigrations embed.FS
 type TXFunc func(repo Repo) error
 
 type Repo interface {
-	// createAudit is used in TenantCreate which in turn is used in grpc so need context setup.
-	AuditRepo
 	// Leave alone
 	ClusterUpgraderRepo
 	// Used a lot of places, requires more work to move

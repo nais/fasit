@@ -151,7 +151,7 @@ func TestRunner(ctx context.Context, skipSetup bool) (*testmanager.Manager, erro
 				L.RaiseError("failed to parse tenant ID: %s", err)
 			}
 
-			tenant, err := repo.TenantGet(ctx, tenantID)
+			tenant, err := repo.TenantGet(L.Context(), tenantID)
 			if err != nil {
 				L.RaiseError("failed to get tenant: %s", err)
 			}
@@ -161,7 +161,7 @@ func TestRunner(ctx context.Context, skipSetup bool) (*testmanager.Manager, erro
 				L.RaiseError("failed to parse environment kind: %s", err)
 			}
 
-			env, err := repo.EnvironmentCreate(ctx, &model.EnvironmentCreate{
+			env, err := repo.EnvironmentCreate(L.Context(), &model.EnvironmentCreate{
 				Name:     name,
 				Kind:     kind,
 				TenantID: tenant.ID,
@@ -177,7 +177,7 @@ func TestRunner(ctx context.Context, skipSetup bool) (*testmanager.Manager, erro
 				})
 			})
 
-			err = repo.EnvironmentSetLabels(ctx, env.ID, envLabels)
+			err = repo.EnvironmentSetLabels(L.Context(), env.ID, envLabels)
 			if err != nil {
 				L.RaiseError("failed to set environment labels: %s", err)
 			}
@@ -191,10 +191,9 @@ func TestRunner(ctx context.Context, skipSetup bool) (*testmanager.Manager, erro
 					L.RaiseError("failed to make environment ci: %s", err)
 				}
 			}
-			ctx = naisdstatus.Register(ctx, pool)
 
 			if !unhealthy {
-				err := naisdstatus.Set(ctx, env.ID, &message.Health{
+				err := naisdstatus.Set(L.Context(), env.ID, &message.Health{
 					ReportedAt: time.Now(),
 				})
 				if err != nil {

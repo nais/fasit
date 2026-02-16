@@ -11,8 +11,11 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/lib/pq"
+	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/database/dbtest"
+	"github.com/nais/fasit/internal/environment"
 	"github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus/hooks/test"
 )
 
 var (
@@ -20,6 +23,13 @@ var (
 	repository *repo
 	pool       *pgxpool.Pool
 )
+
+func setupContext(ctx context.Context, pool *pgxpool.Pool) context.Context {
+	log, _ := test.NewNullLogger()
+	ctx = audit.Register(ctx, pool, log)
+	ctx = environment.Register(ctx, pool)
+	return ctx
+}
 
 func TestMain(m *testing.M) {
 	dbs, cleanup := dbtest.DockerSQLPool(context.Background())

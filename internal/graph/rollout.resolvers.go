@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	pgx "github.com/jackc/pgx/v5"
+	"github.com/nais/fasit/internal/audit"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/graphgen"
 	"github.com/nais/fasit/internal/graph/model"
@@ -59,7 +60,7 @@ func (r *mutationResolver) DeleteHelmInstall(ctx context.Context, envID uuid.UUI
 		return false, err
 	}
 
-	r.Repo.AuditDeleteHelmInstall(ctx, env.ID, name)
+	audit.AuditDeleteHelmInstall(ctx, env.ID, name)
 	return true, err
 }
 
