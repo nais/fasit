@@ -11,7 +11,8 @@ Test.rest("create deployment", function(t)
 			"version": "0.1.0-feature",
 			"target" : {
 				"kind": "tenant"
-			}
+			},
+			"ci": {"wait": true}
 		}
 	]])
 
@@ -27,7 +28,8 @@ Test.rest("create second deployment", function(t)
 			"version": "1.0.0",
 			"target" : {
 				"kind": "tenant"
-			}
+			},
+			"ci": {"wait": true}
 		}
 	]])
 
@@ -202,7 +204,8 @@ Test.rest("create global deployment", function(t)
 		{
 			"chart": "oci://global",
 			"version": "1.0.0",
-			"target": {}
+			"target": {},
+			"ci": {"wait": true}
 		}
 	]])
 

@@ -48,13 +48,31 @@ func CreateDeployment(ctx context.Context, req Request) (uuid.UUID, error) {
 		return uuid.Nil, fmt.Errorf("no source url found in Chart.yaml")
 	}
 
-	if !req.SkipCI {
-		if err := fromContext(ctx).deployer.deployToCI(ctx, feat, req); err != nil {
-			return uuid.Nil, fmt.Errorf("deploy to ci: %w", err)
+	if req.CI.Wait {
+		if !req.CI.Skip {
+			if err := fromContext(ctx).deployer.deployToCI(ctx, feat, req, 5*time.Minute); err != nil {
+				return uuid.Nil, fmt.Errorf("deploy to ci: %w", err)
+			}
 		}
+
+		return fromContext(ctx).deployer.CreateDeployment(ctx, feat, req, false)
 	}
 
-	return fromContext(ctx).deployer.CreateDeployment(ctx, feat, req, false)
+	go func() {
+		log := GetManager(ctx).log
+
+		if !req.CI.Skip {
+			if err := fromContext(ctx).deployer.deployToCI(ctx, feat, req, 1*time.Hour); err != nil {
+				log.WithError(err).Error("deploy to ci")
+			}
+		}
+
+		if _, err := fromContext(ctx).deployer.CreateDeployment(ctx, feat, req, false); err != nil {
+			log.WithError(err).Error("create deployment")
+		}
+	}()
+
+	return uuid.Nil, nil
 }
 
 func GetDeployment(ctx context.Context, id uuid.UUID) (*Deployment, error) {
