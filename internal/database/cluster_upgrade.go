@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/database/gensql"
 	"github.com/nais/fasit/internal/graph/model"
 )
@@ -278,7 +279,7 @@ func (r *repo) ClusterUpgradeBypassDelay(ctx context.Context, upgradeID uuid.UUI
 	updatedUpgrade, err := r.querier.ClusterUpgradesBypassDelay(ctx, upgradeID)
 	if err == nil {
 		// Success - create audit entry and return
-		r.createAudit(ctx, "bypassed upgrade delay", "cluster_upgrades", upgradeID.String())
+		audit.CreateAudit(ctx, "bypassed upgrade delay", "cluster_upgrades", upgradeID.String())
 		return clusterUpgradeFromSQL(updatedUpgrade), nil
 	}
 
@@ -356,7 +357,7 @@ func (r *repo) CreateClusterUpgrade(ctx context.Context, tenantID, envID uuid.UU
 	}
 
 	if isAutomatic != nil && !*isAutomatic {
-		r.createAudit(ctx, "manual cluster upgrade to "+version, "cluster_upgrades", clusterUpgrade.ID.String())
+		audit.CreateAudit(ctx, "manual cluster upgrade to "+version, "cluster_upgrades", clusterUpgrade.ID.String())
 	}
 
 	return clusterUpgradeFromSQL(clusterUpgrade), nil

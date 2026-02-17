@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/hashicorp/go-version"
 	"github.com/nais/fasit/internal/database"
+	environmentpkg "github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
@@ -147,7 +148,7 @@ func (c *AutoUpgrader) processEnvironment(ctx context.Context, env *model.Enviro
 		return false, false
 	}
 
-	tenant, err := c.repo.TenantGet(ctx, env.TenantID)
+	tenant, err := environmentpkg.GetTenant(ctx, env.TenantID)
 	if err != nil {
 		envLogger.WithError(err).Error("failed to retrieve tenant information")
 		return false, false
@@ -201,7 +202,7 @@ func (c *AutoUpgrader) processEnvironment(ctx context.Context, env *model.Enviro
 
 // evaluateAndScheduleUpgrades checks for newer patch versions and schedules upgrades
 func (c *AutoUpgrader) evaluateAndScheduleUpgrades(ctx context.Context, env *model.Environment, envLogger logrus.FieldLogger, controlPlaneVer string, availableVersions []string) (processed, scheduled bool) {
-	tenant, _ := c.repo.TenantGet(ctx, env.TenantID) // Already retrieved in parent, but needed for metrics
+	tenant, _ := environmentpkg.GetTenant(ctx, env.TenantID) // Already retrieved in parent, but needed for metrics
 
 	for _, version := range availableVersions {
 		if c.IsNewerPatchRelease(controlPlaneVer, version) {

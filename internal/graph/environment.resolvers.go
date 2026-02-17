@@ -11,8 +11,10 @@ import (
 
 	"github.com/google/uuid"
 	pgx "github.com/jackc/pgx/v5"
+	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/deployment"
+	"github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/graphgen"
 	"github.com/nais/fasit/internal/graph/model"
@@ -37,7 +39,7 @@ func (r *clusterUpgradeStatusResolver) Actor(ctx context.Context, obj *model.Clu
 	}
 
 	// Get the audit log for this cluster upgrade
-	auditLog, err := r.Repo.AuditGetLatestForClusterUpgrade(ctx, obj.ID)
+	auditLog, err := audit.AuditGetLatestForClusterUpgrade(ctx, obj.ID)
 	if err != nil {
 		r.Log.WithError(err).WithFields(map[string]interface{}{
 			"upgrade_id": obj.ID,
@@ -133,12 +135,12 @@ func (r *environmentResolver) Values(ctx context.Context, obj *model.Environment
 
 // Tenant is the resolver for the tenant field.
 func (r *environmentResolver) Tenant(ctx context.Context, obj *model.Environment) (*model.Tenant, error) {
-	return r.Repo.TenantGet(ctx, obj.TenantID)
+	return environment.GetTenant(ctx, obj.TenantID)
 }
 
 // Warnings is the resolver for the warnings field.
 func (r *environmentResolver) Warnings(ctx context.Context, obj *model.Environment) ([]model.Warning, error) {
-	return r.Repo.Warnings(ctx, &obj.ID, nil)
+	return environment.Warnings(ctx, &obj.ID, nil)
 }
 
 // AuditLog is the resolver for the auditLog field.
@@ -148,7 +150,7 @@ func (r *environmentResolver) AuditLog(ctx context.Context, obj *model.Environme
 		fn = *featureName
 	}
 
-	return r.Repo.AuditForEnvironment(ctx, obj.ID, fn)
+	return audit.AuditForEnvironment(ctx, obj.ID, fn)
 }
 
 // Features is the resolver for the features field.

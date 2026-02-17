@@ -775,7 +775,7 @@ func TestRepo_ClusterUpgradeBypassDelay(t *testing.T) {
 	repo := newTestRepo(t, qs...)
 	defer repo.Close()
 
-	ctx := context.Background()
+	ctx := setupContext(context.Background(), pool)
 
 	t.Run("successfully bypass WAITING upgrade", func(t *testing.T) {
 		upgrade, err := repo.ClusterUpgradeBypassDelay(ctx, waitingUpgradeID)

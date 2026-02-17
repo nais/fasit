@@ -33,6 +33,9 @@ type Querier interface {
 	GetEnvironmentFeature(ctx context.Context, arg GetEnvironmentFeatureParams) (GetEnvironmentFeatureRow, error)
 	// original name: MappingValuesForTenant
 	ListMappingValuesForTenant(ctx context.Context, arg ListMappingValuesForTenantParams) ([]ListMappingValuesForTenantRow, error)
+	LogsByDeployInstruction(ctx context.Context, deployInstruction uuid.UUID) ([]Log, error)
+	LogsByID(ctx context.Context, id int64) (Log, error)
+	LogsCreate(ctx context.Context, arg []LogsCreateParams) *LogsCreateBatchResults
 	RolloutByName(ctx context.Context, name string) (RolloutByNameRow, error)
 	RolloutStatesGet(ctx context.Context, environmentID uuid.UUID) ([]RolloutStatesGetRow, error)
 	RolloutsForKind(ctx context.Context, environmentKind EnvironmentKind) ([]RolloutsForKindRow, error)

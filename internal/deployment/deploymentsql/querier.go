@@ -26,6 +26,7 @@ type Querier interface {
 	ListDeploymentsToReconcile(ctx context.Context, environmentID uuid.UUID) ([]ListDeploymentsToReconcileRow, error)
 	ListEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]ListEnvironmentFeaturesRow, error)
 	SetDeploymentStatus(ctx context.Context, arg SetDeploymentStatusParams) error
+	TimeoutDeployInstructions(ctx context.Context) error
 }
 
 var _ Querier = (*Queries)(nil)

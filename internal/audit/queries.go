@@ -2,10 +2,14 @@ package audit
 
 import (
 	"context"
+	"errors"
 
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/audit/auditsql"
 	"github.com/nais/fasit/internal/auth"
+	"github.com/nais/fasit/internal/graph/model"
 	"github.com/sirupsen/logrus"
 )
 
@@ -51,4 +55,39 @@ func CreateAudit(ctx context.Context, description, objectType, objectID string) 
 		log(ctx).WithError(err).Error("failed to create audit")
 		// r.auditErrorCount.Add(ctx, 1)
 	}
+}
+
+func AuditForEnvironment(ctx context.Context, id uuid.UUID, featureName string) ([]*model.AuditLog, error) {
+	auditLogs, err := querier(ctx).AuditForEnvironment(ctx, auditsql.AuditForEnvironmentParams{
+		EnvironmentID: id.String(),
+		Featurename:   featureName,
+		PageSize:      50,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return auditLogsFromSQL(auditLogs), nil
+}
+
+func AuditGetLatestForClusterUpgrade(ctx context.Context, upgradeID uuid.UUID) (*model.AuditLog, error) {
+	auditLog, err := querier(ctx).AuditGetLatestForClusterUpgrade(ctx, upgradeID.String())
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &model.AuditLog{
+		Actor:       auditLog.Actor,
+		Description: auditLog.Description,
+		ObjectType:  auditLog.ObjectType,
+		ObjectID:    auditLog.ObjectID,
+		CreatedAt:   auditLog.CreatedAt.Time,
+	}, nil
+}
+
+func AuditDeleteHelmInstall(ctx context.Context, envID uuid.UUID, name string) {
+	CreateAudit(ctx, "delete helm install "+name, "environments", envID.String())
 }

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/graphgen"
 	"github.com/nais/fasit/internal/graph/model"
 )
@@ -18,7 +19,7 @@ func (r *statusResolver) ID(ctx context.Context, obj *model.Status) (uuid.UUID, 
 
 // Log is the resolver for the log field.
 func (r *statusResolver) Log(ctx context.Context, obj *model.Status) ([]*model.LogLine, error) {
-	return r.Repo.LogsGet(ctx, obj.DeployInstructionID)
+	return featurepkg.LogsGet(ctx, obj.DeployInstructionID)
 }
 
 // Logs is the resolver for the logs field.
@@ -45,7 +46,7 @@ func (r *subscriptionResolver) Logs(ctx context.Context, environmentID uuid.UUID
 			return nil, fmt.Errorf("invalid lastLogID: %s", *lastLogID)
 		}
 
-		logs, err := r.Repo.LogsGet(ctx, di.ID)
+		logs, err := featurepkg.LogsGet(ctx, di.ID)
 		if err != nil {
 			return nil, err
 		}

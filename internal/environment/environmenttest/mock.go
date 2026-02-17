@@ -34,3 +34,26 @@ func OnTenantEnvironments(ctx context.Context, expected []*model.TenantEnvironme
 
 	GetQuerier(ctx).EXPECT().TenantEnvironments(mock.Anything, false).Return(rows, nil)
 }
+
+func OnGetTenants(ctx context.Context, expected []*model.Tenant) {
+	rows := make([]environmentsql.Tenant, len(expected))
+
+	for i, e := range expected {
+		rows[i] = environmentsql.Tenant{
+			ID:          e.ID,
+			Name:        e.Name,
+			Description: e.Description,
+			Created: pgtype.Timestamptz{
+				Time:  e.Created,
+				Valid: true,
+			},
+			LastModified: pgtype.Timestamptz{
+				Time:  e.LastModified,
+				Valid: true,
+			},
+			UpgradeDelayDays: e.UpgradeDelayDays,
+		}
+	}
+
+	GetQuerier(ctx).EXPECT().GetTenants(mock.Anything).Return(rows, nil).Once()
+}

@@ -8,6 +8,8 @@ import (
 
 type Querier interface {
 	AuditCreate(ctx context.Context, arg AuditCreateParams) error
+	AuditForEnvironment(ctx context.Context, arg AuditForEnvironmentParams) ([]Audit, error)
+	AuditGetLatestForClusterUpgrade(ctx context.Context, upgradeID string) (Audit, error)
 }
 
 var _ Querier = (*Queries)(nil)

@@ -5,13 +5,15 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/nais/fasit/internal/cost"
+	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph/graphgen"
 	"github.com/nais/fasit/internal/graph/model"
 )
 
 // Tenant is the resolver for the tenant field.
 func (r *costSeriesResolver) Tenant(ctx context.Context, obj *model.CostSeries) (*model.Tenant, error) {
-	return r.Repo.TenantGet(ctx, obj.TenantID)
+	return environment.GetTenant(ctx, obj.TenantID)
 }
 
 // Environment is the resolver for the environment field.
@@ -33,7 +35,7 @@ func (r *queryResolver) CostForTenant(ctx context.Context, tenantID uuid.UUID, f
 		}
 	}
 
-	return r.Repo.CostForTenant(ctx, tenantID, start, end)
+	return cost.CostForTenant(ctx, tenantID, start, end)
 }
 
 // Cost is the resolver for the cost field.
@@ -50,7 +52,7 @@ func (r *queryResolver) Cost(ctx context.Context, filter *model.CostFilter) (*mo
 		}
 	}
 
-	return r.Repo.Cost(ctx, start, end)
+	return cost.Cost(ctx, start, end)
 }
 
 func (r *Resolver) CostSeries() graphgen.CostSeriesResolver { return &costSeriesResolver{r} }

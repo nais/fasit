@@ -154,7 +154,7 @@ func (r *featureResolver) HelmValueDiff(ctx context.Context, obj *model.Feature)
 
 // Log is the resolver for the log field.
 func (r *featureHistoryResolver) Log(ctx context.Context, obj *model.FeatureHistory) ([]*model.LogLine, error) {
-	return r.Repo.LogsGet(ctx, obj.ID)
+	return featurepkg.LogsGet(ctx, obj.ID)
 }
 
 // HelmValueDiff is the resolver for the helmValueDiff field.

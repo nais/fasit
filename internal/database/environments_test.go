@@ -92,13 +92,15 @@ func TestRepo_EnvironmentCreate(t *testing.T) {
 	repo := newTestRepo(t, qs...)
 	defer repo.Close()
 
+	ctx := setupContext(context.Background(), pool)
+
 	create := &model.EnvironmentCreate{
 		Name:        "somename",
 		Description: ptr.To("somedesc"),
 		TenantID:    tenantID,
 		Kind:        model.EnvironmentKindTenant,
 	}
-	got, err := repo.EnvironmentCreate(context.Background(), create)
+	got, err := repo.EnvironmentCreate(ctx, create)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -126,18 +128,20 @@ func TestRepo_EnvironmentUpdate(t *testing.T) {
 	repo := newTestRepo(t, qs...)
 	defer repo.Close()
 
+	ctx := setupContext(context.Background(), pool)
+
 	create := &model.EnvironmentCreate{
 		Name:        "somename",
 		Description: ptr.To("somedesc"),
 		TenantID:    tenantID,
 		Kind:        model.EnvironmentKindTenant,
 	}
-	env, err := repo.EnvironmentCreate(context.Background(), create)
+	env, err := repo.EnvironmentCreate(ctx, create)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	res, err := repo.EnvironmentUpdate(context.Background(), env.ID, &model.EnvironmentUpdate{
+	res, err := repo.EnvironmentUpdate(ctx, env.ID, &model.EnvironmentUpdate{
 		Description: ptr.To("somedesc2"),
 	})
 	if err != nil {
@@ -158,7 +162,7 @@ func TestRepo_EnvironmentUpdate(t *testing.T) {
 		t.Errorf("diff -want +got:\n%v", cmp.Diff(want, res, opts))
 	}
 
-	got, err := repo.EnvironmentGet(context.Background(), env.ID)
+	got, err := repo.EnvironmentGet(ctx, env.ID)
 	if err != nil {
 		t.Fatal(err)
 	}

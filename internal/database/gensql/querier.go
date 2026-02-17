@@ -6,14 +6,10 @@ import (
 	"context"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/nais/fasit/internal/database/types"
 )
 
 type Querier interface {
-	AuditCreate(ctx context.Context, arg AuditCreateParams) error
-	AuditForEnvironment(ctx context.Context, arg AuditForEnvironmentParams) ([]Audit, error)
-	AuditGetLatestForClusterUpgrade(ctx context.Context, upgradeID string) (Audit, error)
 	ClusterOperationCreateOrUpdate(ctx context.Context, arg ClusterOperationCreateOrUpdateParams) (ClusterOperation, error)
 	ClusterOperationGet(ctx context.Context, arg ClusterOperationGetParams) (ClusterOperation, error)
 	ClusterOperationsGetByUpgradeID(ctx context.Context, upgradeID uuid.UUID) ([]ClusterOperation, error)
@@ -33,10 +29,6 @@ type Querier interface {
 	ClusterUpgradesHistoryGetByTenantID(ctx context.Context, arg ClusterUpgradesHistoryGetByTenantIDParams) ([]ClusterUpgrade, error)
 	ClusterUpgradesSetSlackMessage(ctx context.Context, arg ClusterUpgradesSetSlackMessageParams) (ClusterUpgrade, error)
 	ClusterUpgradesUpdateStatus(ctx context.Context, arg ClusterUpgradesUpdateStatusParams) (ClusterUpgrade, error)
-	Cost(ctx context.Context, arg CostParams) ([]CostRow, error)
-	CostForTenant(ctx context.Context, arg CostForTenantParams) ([]CostForTenantRow, error)
-	CostLastDate(ctx context.Context) (pgtype.Date, error)
-	CostUpsert(ctx context.Context, arg []CostUpsertParams) *CostUpsertBatchResults
 	DeployInstructionsByID(ctx context.Context, id uuid.UUID) (DeployInstruction, error)
 	DeployInstructionsForFeature(ctx context.Context, arg DeployInstructionsForFeatureParams) ([]DeployInstruction, error)
 	DeployInstructionsLatestForFeature(ctx context.Context, arg DeployInstructionsLatestForFeatureParams) (DeployInstruction, error)
@@ -65,9 +57,6 @@ type Querier interface {
 	KubernetesNodeCreateOrUpdate(ctx context.Context, arg KubernetesNodeCreateOrUpdateParams) error
 	KubernetesNodeDeleteObsolete(ctx context.Context, environmentID uuid.UUID) error
 	KubernetesNodeStatuses(ctx context.Context, environmentID uuid.UUID) ([]KubernetesNodeStatus, error)
-	LogsByDeployInstruction(ctx context.Context, deployInstruction uuid.UUID) ([]Log, error)
-	LogsByID(ctx context.Context, id int64) (Log, error)
-	LogsCreate(ctx context.Context, arg []LogsCreateParams) *LogsCreateBatchResults
 	MappingValuesForTenant(ctx context.Context, arg MappingValuesForTenantParams) ([]MappingValuesForTenantRow, error)
 	NamesFromDeployInstruction(ctx context.Context, id uuid.UUID) (NamesFromDeployInstructionRow, error)
 	ReleaseStatusCreateOrUpdate(ctx context.Context, arg ReleaseStatusCreateOrUpdateParams) (ReleaseStatus, error)
@@ -86,13 +75,6 @@ type Querier interface {
 	RolloutUpdateStatus(ctx context.Context, arg RolloutUpdateStatusParams) error
 	Rollouts(ctx context.Context, limit int32) ([]Rollout, error)
 	RolloutsForFeature(ctx context.Context, featureName string) ([]Rollout, error)
-	TenantCreate(ctx context.Context, arg TenantCreateParams) (Tenant, error)
-	TenantGet(ctx context.Context, id uuid.UUID) (Tenant, error)
-	TenantGetByName(ctx context.Context, name string) (Tenant, error)
-	TenantSetUpgradeDelayDays(ctx context.Context, arg TenantSetUpgradeDelayDaysParams) (Tenant, error)
-	TenantsGet(ctx context.Context) ([]Tenant, error)
-	TimeoutDeployInstructions(ctx context.Context) error
-	Warnings(ctx context.Context, arg WarningsParams) ([]WarningsRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

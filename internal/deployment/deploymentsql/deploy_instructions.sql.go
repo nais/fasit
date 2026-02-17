@@ -113,3 +113,18 @@ func (q *Queries) GetLatestDeployInstructionsForFeature(ctx context.Context, arg
 	)
 	return i, err
 }
+
+const timeoutDeployInstructions = `-- name: TimeoutDeployInstructions :exec
+UPDATE
+	deploy_instructions
+SET
+	status = 'failed'
+WHERE
+	status = 'pending'
+	AND last_modified < NOW() - INTERVAL '1 hour'
+`
+
+func (q *Queries) TimeoutDeployInstructions(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, timeoutDeployInstructions)
+	return err
+}

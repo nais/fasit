@@ -2,9 +2,11 @@ package environment
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/database/types"
 	"github.com/nais/fasit/internal/environment/environmentsql"
 	"github.com/nais/fasit/internal/graph/model"
@@ -106,4 +108,107 @@ func GetTenant(ctx context.Context, id uuid.UUID) (*model.Tenant, error) {
 		return nil, err
 	}
 	return tenantFromSQL(tenant), nil
+}
+
+func GetTenants(ctx context.Context) ([]*model.Tenant, error) {
+	tenants, err := querier(ctx).GetTenants(ctx)
+	if err != nil {
+		return nil, err
+	}
+	tenantSlice := []*model.Tenant{}
+	for _, tenant := range tenants {
+		tenantSlice = append(tenantSlice, tenantFromSQL(tenant))
+	}
+	return tenantSlice, nil
+}
+
+func GetTenantGetByName(ctx context.Context, name string) (*model.Tenant, error) {
+	tenant, err := querier(ctx).GetTenantByName(ctx, name)
+	if err != nil {
+		return nil, err
+	}
+	return tenantFromSQL(tenant), nil
+}
+
+func CreateTenant(ctx context.Context, t *model.TenantCreate) (*model.Tenant, error) {
+	tenant, err := querier(ctx).TenantCreate(ctx, environmentsql.TenantCreateParams{
+		Name:        t.Name,
+		Description: t.Description,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	audit.CreateAudit(ctx, "created", "tenants", tenant.ID.String())
+
+	return tenantFromSQL(tenant), nil
+}
+
+func TenantSetUpgradeDelayDays(ctx context.Context, id uuid.UUID, delayDays int32) (*model.Tenant, error) {
+	tenant, err := querier(ctx).TenantSetUpgradeDelayDays(ctx, environmentsql.TenantSetUpgradeDelayDaysParams{
+		ID:               id,
+		UpgradeDelayDays: delayDays,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	audit.CreateAudit(ctx, "updated upgrade_delay_days", "tenants", tenant.ID.String())
+
+	return tenantFromSQL(tenant), nil
+}
+
+func Warnings(ctx context.Context, environmentID *uuid.UUID, tenantID *uuid.UUID) ([]model.Warning, error) {
+	args := environmentsql.WarningsParams{}
+	if environmentID == nil && tenantID == nil {
+		return nil, fmt.Errorf("must specify either environmentID or tenantID")
+	}
+	if environmentID != nil && tenantID != nil {
+		return nil, fmt.Errorf("must specify either environmentID or tenantID, not both")
+	}
+
+	if environmentID != nil {
+		args.EnvironmentID = *environmentID
+	}
+	if tenantID != nil {
+		args.TenantID = *tenantID
+	}
+
+	warnings, err := querier(ctx).Warnings(ctx, args)
+	if err != nil {
+		return nil, err
+	}
+
+	// Ensure that warnings are only returned for features that are actually in the environment
+	ws := []environmentsql.WarningsRow{}
+	for _, w := range warnings {
+		if w.FeatureDataName != "" {
+			ws = append(ws, w)
+		}
+	}
+
+	return warningsFromSQL(ws)
+}
+
+func warningsFromSQL(warnings []environmentsql.WarningsRow) ([]model.Warning, error) {
+	var result []model.Warning
+	for _, w := range warnings {
+		switch w.Type {
+		case "feature_status":
+			result = append(result, model.FeatureWarning{
+				Message:       "feature not reconciled correctly",
+				EnvironmentID: w.EnvironmentID,
+				FeatureName:   w.FeatureName,
+			})
+
+		case "naisd":
+			result = append(result, model.NaisdWarning{
+				Message:       "naisd not healthy",
+				EnvironmentID: w.EnvironmentID,
+			})
+		default:
+			return nil, fmt.Errorf("unknown warning type: %s", w.Type)
+		}
+	}
+	return result, nil
 }

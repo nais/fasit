@@ -9,15 +9,27 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/lib/pq"
+	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/database/dbtest"
+	"github.com/nais/fasit/internal/environment"
 	"github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus/hooks/test"
 )
 
 var (
 	dbString   = ""
 	repository *repo
+	pool       *pgxpool.Pool
 )
+
+func setupContext(ctx context.Context, pool *pgxpool.Pool) context.Context {
+	log, _ := test.NewNullLogger()
+	ctx = audit.Register(ctx, pool, log)
+	ctx = environment.Register(ctx, pool)
+	return ctx
+}
 
 func TestMain(m *testing.M) {
 	dbs, cleanup := dbtest.DockerSQLPool(context.Background())
@@ -27,13 +39,14 @@ func TestMain(m *testing.M) {
 	log.Out = io.Discard
 	ctx := context.Background()
 
-	pool, closers, err := NewConnPool(ctx, dbString, log)
+	p, closers, err := NewConnPool(ctx, dbString, log)
 	if err != nil {
 		log.Fatalf("Error connecting to database: %v", err)
 	}
 	defer func() {
 		_ = closers.Close()
 	}()
+	pool = p
 
 	repository = NewRepo(pool, logrus.NewEntry(log)).(*repo)
 

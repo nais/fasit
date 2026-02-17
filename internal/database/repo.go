@@ -19,7 +19,6 @@ import (
 	"github.com/nais/fasit/internal/ioconvenience"
 	"github.com/pressly/goose/v3"
 	"github.com/sirupsen/logrus"
-	"go.opentelemetry.io/otel/metric"
 )
 
 type closeFuncs []func() error
@@ -40,18 +39,19 @@ var embedMigrations embed.FS
 type TXFunc func(repo Repo) error
 
 type Repo interface {
-	AuditRepo
 	ClusterUpgraderRepo
-	CostRepo
-	DeployInstructionRepo
-	EnvironmentRepo
-	EnvironmentValueRepo
 	KubernetesNodeRepo
-	LogRepo
+
+	// Used a lot of places, requires more work to move
+	DeployInstructionRepo
+	// Used in grpc so need context setup there
+	EnvironmentRepo
+	// Used in grpc so need context setup there
+	EnvironmentValueRepo
+	// Can possibly be moved, must analyze usage
 	ReleaseStatusRepo
+	// Can be moved but is also heavily used in listeners etc
 	RolloutRepo
-	TenantRepo
-	WarningRepo
 
 	Transaction
 
@@ -67,8 +67,6 @@ type repo struct {
 	querier Querier
 	db      *pgxpool.Pool
 	log     logrus.FieldLogger
-
-	auditErrorCount metric.Int64Counter
 }
 
 type Querier interface {

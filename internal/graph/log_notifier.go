@@ -7,6 +7,7 @@ import (
 
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/notifier"
+	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/sirupsen/logrus"
 )
@@ -98,7 +99,7 @@ func (n *logNotifier) handleMessage(ctx context.Context, msg notifier.Payload) {
 		return
 	}
 
-	logLine, err := n.repo.LogsByID(ctx, int(lidint))
+	logLine, err := featurepkg.LogsByID(ctx, lidint)
 	if err != nil {
 		return
 	}

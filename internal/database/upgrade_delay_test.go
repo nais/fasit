@@ -6,6 +6,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -13,34 +14,32 @@ import (
 )
 
 func TestUpgradePriorityOrdering(t *testing.T) {
-	repo := newTestRepo(t)
-	defer repo.Close()
-
 	ctx := context.Background()
+	ctx = setupContext(ctx, pool)
 
 	// Create three test tenants with different upgrade delay days
-	testTenant, err := repo.TenantCreate(ctx, &model.TenantCreate{
+	testTenant, err := environment.CreateTenant(ctx, &model.TenantCreate{
 		Name:        "test-tenant",
 		Description: ptr.To("Test environment"),
 	})
 	require.NoError(t, err)
 
-	prodTenant, err := repo.TenantCreate(ctx, &model.TenantCreate{
+	prodTenant, err := environment.CreateTenant(ctx, &model.TenantCreate{
 		Name:        "prod-tenant",
 		Description: ptr.To("Production environment"),
 	})
 	require.NoError(t, err)
 
-	stagingTenant, err := repo.TenantCreate(ctx, &model.TenantCreate{
+	stagingTenant, err := environment.CreateTenant(ctx, &model.TenantCreate{
 		Name:        "staging-tenant",
 		Description: ptr.To("Staging environment"),
 	})
 	require.NoError(t, err)
 
 	// Set upgrade delay_days: test=0 (immediate), staging=0 (default), prod=2 (last)
-	testTenant, err = repo.TenantSetUpgradeDelayDays(ctx, testTenant.ID, 0)
+	testTenant, err = environment.TenantSetUpgradeDelayDays(ctx, testTenant.ID, 0)
 	require.NoError(t, err)
-	prodTenant, err = repo.TenantSetUpgradeDelayDays(ctx, prodTenant.ID, 2)
+	prodTenant, err = environment.TenantSetUpgradeDelayDays(ctx, prodTenant.ID, 2)
 	require.NoError(t, err)
 	// staging keeps default delay_days 0
 
@@ -49,15 +48,15 @@ func TestUpgradePriorityOrdering(t *testing.T) {
 	assert.Equal(t, int32(2), prodTenant.UpgradeDelayDays, "prod tenant should have delay_days 2")
 
 	// Get tenant again to verify persistence
-	fetchedTest, err := repo.TenantGet(ctx, testTenant.ID)
+	fetchedTest, err := environment.GetTenant(ctx, testTenant.ID)
 	require.NoError(t, err)
 	assert.Equal(t, int32(0), fetchedTest.UpgradeDelayDays, "test tenant delay_days should persist")
 
-	fetchedStaging, err := repo.TenantGet(ctx, stagingTenant.ID)
+	fetchedStaging, err := environment.GetTenant(ctx, stagingTenant.ID)
 	require.NoError(t, err)
 	assert.Equal(t, int32(0), fetchedStaging.UpgradeDelayDays, "staging tenant should have default delay_days 0")
 
-	fetchedProd, err := repo.TenantGet(ctx, prodTenant.ID)
+	fetchedProd, err := environment.GetTenant(ctx, prodTenant.ID)
 	require.NoError(t, err)
 	assert.Equal(t, int32(2), fetchedProd.UpgradeDelayDays, "prod tenant delay_days should persist")
 }
@@ -67,9 +66,10 @@ func TestEnvironmentUpgradePriorityOrdering(t *testing.T) {
 	defer repo.Close()
 
 	ctx := context.Background()
+	ctx = setupContext(ctx, pool)
 
 	// Create a test tenant
-	tenant, err := repo.TenantCreate(ctx, &model.TenantCreate{
+	tenant, err := environment.CreateTenant(ctx, &model.TenantCreate{
 		Name:        "priority-test-tenant",
 		Description: ptr.To("Test tenant for environment priorities"),
 	})
@@ -127,9 +127,10 @@ func TestEnvironmentUpgradeConfigEnabled(t *testing.T) {
 	defer repo.Close()
 
 	ctx := context.Background()
+	ctx = setupContext(ctx, pool)
 
 	// Create a test tenant and environment
-	tenant, err := repo.TenantCreate(ctx, &model.TenantCreate{
+	tenant, err := environment.CreateTenant(ctx, &model.TenantCreate{
 		Name:        "enabled-test-tenant",
 		Description: ptr.To("Test tenant for enabled flag"),
 	})

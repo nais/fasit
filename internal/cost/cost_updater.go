@@ -1,4 +1,4 @@
-package workers
+package cost
 
 import (
 	"context"
@@ -8,8 +8,8 @@ import (
 	"cloud.google.com/go/civil"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/nais/fasit/internal/cost/costsql"
 	"github.com/nais/fasit/internal/database"
-	"github.com/nais/fasit/internal/database/gensql"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/api/iterator"
@@ -87,7 +87,7 @@ func (c *CostUpdater) Run(ctx context.Context, schedule time.Duration) {
 // it will only do so if the current date is newer than the latest date in the database +1 day
 // and the time is after 05:00
 func (c *CostUpdater) updateCosts(ctx context.Context) error {
-	lastDate, err := c.repo.CostLastDate(ctx)
+	lastDate, err := costLastDate(ctx)
 	if err != nil {
 		return err
 	}
@@ -108,7 +108,7 @@ func (c *CostUpdater) updateCosts(ctx context.Context) error {
 		return err
 	}
 
-	rows := []gensql.CostUpsertParams{}
+	rows := []costsql.CostUpsertParams{}
 
 	type Row struct {
 		TenantName string     `bigquery:"tenant"`
@@ -143,7 +143,7 @@ func (c *CostUpdater) updateCosts(ctx context.Context) error {
 			continue
 		}
 
-		rows = append(rows, gensql.CostUpsertParams{
+		rows = append(rows, costsql.CostUpsertParams{
 			EnvID:    env,
 			TenantID: tenant.id,
 			Date:     pgtype.Date{Time: r.Date.In(time.UTC), Valid: true},
@@ -155,7 +155,7 @@ func (c *CostUpdater) updateCosts(ctx context.Context) error {
 		return nil
 	}
 
-	return c.repo.CostUpsert(ctx, rows)
+	return costUpsert(ctx, rows)
 }
 
 type tenantEnvMap struct {

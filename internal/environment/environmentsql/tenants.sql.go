@@ -35,6 +35,99 @@ func (q *Queries) GetTenant(ctx context.Context, id uuid.UUID) (Tenant, error) {
 	return i, err
 }
 
+const getTenantByName = `-- name: GetTenantByName :one
+SELECT
+	id, name, description, created, last_modified, ci, upgrade_delay_days
+FROM
+	tenants
+WHERE
+	name = $1
+`
+
+func (q *Queries) GetTenantByName(ctx context.Context, name string) (Tenant, error) {
+	row := q.db.QueryRow(ctx, getTenantByName, name)
+	var i Tenant
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.Created,
+		&i.LastModified,
+		&i.Ci,
+		&i.UpgradeDelayDays,
+	)
+	return i, err
+}
+
+const getTenants = `-- name: GetTenants :many
+SELECT
+	id, name, description, created, last_modified, ci, upgrade_delay_days
+FROM
+	tenants
+ORDER BY
+	created DESC,
+	name ASC
+`
+
+func (q *Queries) GetTenants(ctx context.Context) ([]Tenant, error) {
+	rows, err := q.db.Query(ctx, getTenants)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Tenant{}
+	for rows.Next() {
+		var i Tenant
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.Created,
+			&i.LastModified,
+			&i.Ci,
+			&i.UpgradeDelayDays,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const tenantCreate = `-- name: TenantCreate :one
+INSERT INTO tenants(
+	name,
+	description)
+VALUES (
+	$1,
+	$2)
+RETURNING
+	id, name, description, created, last_modified, ci, upgrade_delay_days
+`
+
+type TenantCreateParams struct {
+	Name        string
+	Description *string
+}
+
+func (q *Queries) TenantCreate(ctx context.Context, arg TenantCreateParams) (Tenant, error) {
+	row := q.db.QueryRow(ctx, tenantCreate, arg.Name, arg.Description)
+	var i Tenant
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.Created,
+		&i.LastModified,
+		&i.Ci,
+		&i.UpgradeDelayDays,
+	)
+	return i, err
+}
+
 const tenantEnvironments = `-- name: TenantEnvironments :many
 SELECT
 	e.id, e.tenant_id, e.name, e.kind, e.description, e.created, e.last_modified, e.ci, e.reconcile, e.auto_upgrade, e.upgrade_delay_days, e.maintenance_window, e.labels,
@@ -104,4 +197,35 @@ func (q *Queries) TenantEnvironments(ctx context.Context, all bool) ([]TenantEnv
 		return nil, err
 	}
 	return items, nil
+}
+
+const tenantSetUpgradeDelayDays = `-- name: TenantSetUpgradeDelayDays :one
+UPDATE
+	tenants
+SET
+	upgrade_delay_days = $1
+WHERE
+	id = $2
+RETURNING
+	id, name, description, created, last_modified, ci, upgrade_delay_days
+`
+
+type TenantSetUpgradeDelayDaysParams struct {
+	UpgradeDelayDays int32
+	ID               uuid.UUID
+}
+
+func (q *Queries) TenantSetUpgradeDelayDays(ctx context.Context, arg TenantSetUpgradeDelayDaysParams) (Tenant, error) {
+	row := q.db.QueryRow(ctx, tenantSetUpgradeDelayDays, arg.UpgradeDelayDays, arg.ID)
+	var i Tenant
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.Created,
+		&i.LastModified,
+		&i.Ci,
+		&i.UpgradeDelayDays,
+	)
+	return i, err
 }

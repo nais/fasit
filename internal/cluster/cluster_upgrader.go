@@ -15,6 +15,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/gensql"
+	environmentpkg "github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/slack"
 	"github.com/sirupsen/logrus"
@@ -116,7 +117,7 @@ func (c *ClusterUpgrader) Run(ctx context.Context) error {
 	}
 
 	var err error
-	tenants, err := c.repo.TenantsGet(ctx)
+	tenants, err := environmentpkg.GetTenants(ctx)
 	if err != nil {
 		c.log.WithError(err).Error("failed to get tenants")
 		return err
@@ -1762,7 +1763,7 @@ func (c *ClusterUpgrader) initializeMetrics(ctx context.Context) error {
 
 	c.log.Debug("initializing metrics from database state")
 
-	tenants, err := c.repo.TenantsGet(ctx)
+	tenants, err := environmentpkg.GetTenants(ctx)
 	if err != nil {
 		return err
 	}

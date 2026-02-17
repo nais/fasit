@@ -6,6 +6,43 @@ FROM
 WHERE
 	id = @id;
 
+-- name: GetTenants :many
+SELECT
+	*
+FROM
+	tenants
+ORDER BY
+	created DESC,
+	name ASC;
+
+-- name: GetTenantByName :one
+SELECT
+	*
+FROM
+	tenants
+WHERE
+	name = @name;
+
+-- name: TenantCreate :one
+INSERT INTO tenants(
+	name,
+	description)
+VALUES (
+	@name,
+	@description)
+RETURNING
+	*;
+
+-- name: TenantSetUpgradeDelayDays :one
+UPDATE
+	tenants
+SET
+	upgrade_delay_days = @upgrade_delay_days
+WHERE
+	id = @id
+RETURNING
+	*;
+
 -- name: TenantEnvironments :many
 SELECT
 	e.*,

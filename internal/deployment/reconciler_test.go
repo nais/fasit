@@ -344,7 +344,7 @@ func (d *Db) createTenantsAndEnvironments(ctx context.Context, tenantsAndEnvs ma
 		_, exists := tenants[tenantName]
 		if !exists {
 			var err error
-			tenant, err := d.repo.TenantCreate(ctx, &model.TenantCreate{
+			tenant, err := environment.CreateTenant(ctx, &model.TenantCreate{
 				Name: tenantName,
 			})
 			if err != nil {

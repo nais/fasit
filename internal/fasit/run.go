@@ -15,13 +15,13 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/nais/fasit/internal/cluster"
 	"github.com/nais/fasit/internal/contextloader"
+	"github.com/nais/fasit/internal/cost"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/notifier"
 	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/ioconvenience"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/provider"
-	"github.com/nais/fasit/internal/provider/protogen"
 	"github.com/nais/fasit/internal/rollout"
 	"github.com/nais/fasit/internal/slack"
 	"github.com/nais/fasit/internal/workers"
@@ -31,8 +31,6 @@ import (
 	"go.opentelemetry.io/otel/metric"
 	metricsdk "go.opentelemetry.io/otel/sdk/metric"
 	"golang.org/x/sync/errgroup"
-	"google.golang.org/grpc"
-
 	// Supported database drivers.
 	_ "github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/postgres"
 	_ "github.com/lib/pq"
@@ -81,7 +79,6 @@ func Run(ctx context.Context) error {
 	defer ioconvenience.CloseWithLog(closers, log)
 
 	repo := database.NewRepo(pool, log)
-	go repo.TimeoutDeployInstructions(ctx)
 	log.Info("-- successfully started database client")
 
 	deploymentPublisher := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
@@ -97,6 +94,8 @@ func Run(ctx context.Context) error {
 	}
 
 	ctx = loadContext(ctx)
+	go deployment.TimeoutDeployInstructions(ctx, log)
+
 	go deployment.GetManager(ctx).Run(ctx, 10*time.Minute)
 
 	statusMgr := message.NewSubscriber[message.Status](pubSubClient, cfg.GCPProjectID, cfg.StatusSubscriptionID, log)
@@ -127,7 +126,7 @@ func Run(ctx context.Context) error {
 	}()
 	go reconciler.Run(ctx, 10*time.Minute)
 
-	costUpdater, err := workers.NewCostUpdater(ctx, repo, log)
+	costUpdater, err := cost.NewCostUpdater(ctx, repo, log)
 	if err != nil {
 		log.WithError(err).Error("setting up cost updater. You might need to run `gcloud auth --update-adc` if running locally")
 	} else {
@@ -150,8 +149,8 @@ func Run(ctx context.Context) error {
 	}
 
 	go func() {
-		if err := runGRPC(ctx, cfg.GRPCBindAddress, repo, log); err != nil {
-			panic(err)
+		if err := runGRPC(ctx, loadContext, cfg.GRPCBindAddress, repo, log); err != nil {
+			log.WithError(err).Fatal("running GRPC server")
 		}
 	}()
 
@@ -204,17 +203,14 @@ func newLogger(level string) (logrus.FieldLogger, error) {
 	return log, nil
 }
 
-func runGRPC(ctx context.Context, bindAddress string, repo database.Repo, log logrus.FieldLogger) error {
+func runGRPC(ctx context.Context, loadContext contextloader.LoaderFunc, bindAddress string, repo database.Repo, log logrus.FieldLogger) error {
 	log.Info("GRPC serving on port", bindAddress)
 	lis, err := net.Listen("tcp", bindAddress)
 	if err != nil {
 		return fmt.Errorf("failed to listen: %w", err)
 	}
 
-	opts := []grpc.ServerOption{}
-	s := grpc.NewServer(opts...)
-
-	protogen.RegisterProviderServer(s, provider.NewServer(repo))
+	s := provider.NewGrpcServer(loadContext, repo)
 
 	g, ctx := errgroup.WithContext(ctx)
 	g.Go(func() error { return s.Serve(lis) })
