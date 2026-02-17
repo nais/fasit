@@ -22,6 +22,8 @@ type HttpHandler struct {
 	log      logrus.FieldLogger
 	// AllowAll will allow all rollout requests when set to true
 	AllowAll bool
+
+	programContext context.Context
 }
 
 type Claims struct {
@@ -42,9 +44,10 @@ func NewHttpHandler(ctx context.Context, log logrus.FieldLogger) (*HttpHandler, 
 	})
 
 	return &HttpHandler{
-		provider: provider,
-		verifier: verifier,
-		log:      log.WithField("subsystem", "deployment-http"),
+		provider:       provider,
+		verifier:       verifier,
+		log:            log.WithField("subsystem", "deployment-http"),
+		programContext: ctx,
 	}, nil
 }
 
@@ -76,14 +79,14 @@ func (h *HttpHandler) GetDeployment(w http.ResponseWriter, req *http.Request) {
 }
 
 func (h *HttpHandler) CreateDeployment(w http.ResponseWriter, req *http.Request) {
-	ctx := req.Context()
-
 	actor, valid := h.validateToken(w, req)
 	if !valid {
 		return
 	}
 
-	ctx = auth.SetEmail(ctx, actor)
+	// use the program context instead of the request context to avoid cancellation when the client disconnects, as
+	// deployments may take a while to create
+	ctx := auth.SetEmail(h.programContext, actor)
 
 	body := Request{}
 	err := json.NewDecoder(req.Body).Decode(&body)
@@ -106,10 +109,14 @@ func (h *HttpHandler) CreateDeployment(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
-	_ = json.NewEncoder(w).Encode(map[string]any{
-		"id": deploymentID.String(),
-	})
+	if body.CI.Wait {
+		w.WriteHeader(http.StatusCreated)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"id": deploymentID.String(),
+		})
+	} else {
+		w.WriteHeader(http.StatusAccepted)
+	}
 
 	TriggerReconcile(ctx, ReconcileTriggerEvent{})
 }

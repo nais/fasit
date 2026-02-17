@@ -51,7 +51,13 @@ func (s *Seeder) Seed(ctx context.Context) error {
 				Ref:   "refs/heads/main",
 			},
 			Target: d.Target,
-			SkipCI: true,
+			CI: struct {
+				Skip bool `json:"skip"`
+				Wait bool `json:"wait"`
+			}{
+				Skip: true,
+				Wait: true,
+			},
 		})
 		if err != nil {
 			return err

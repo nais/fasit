@@ -69,7 +69,7 @@ func (d *deployer) naisdHealthCheck(ctx context.Context, environmentID uuid.UUID
 	return fmt.Errorf("naisd is unhealthy")
 }
 
-func (d *deployer) deployToCI(ctx context.Context, feat *model.Feature, req Request) error {
+func (d *deployer) deployToCI(ctx context.Context, feat *model.Feature, req Request, timeout time.Duration) error {
 	envs, err := environment.ListCIEnvironmentsForTarget(ctx, req.Target)
 	if err != nil {
 		return fmt.Errorf("get ci environments for target: %w", err)
@@ -113,7 +113,7 @@ func (d *deployer) deployToCI(ctx context.Context, feat *model.Feature, req Requ
 		deploymentsByEnvID[env.ID] = deploymentID
 	}
 
-	return d.waitForDeploymentStatuses(ctx, deploymentsByEnvID)
+	return d.waitForDeploymentStatuses(ctx, deploymentsByEnvID, timeout)
 }
 
 func (d *deployer) deployToEnvironment(ctx context.Context, deployment *Deployment, environment *model.TenantEnvironment, publisher Publisher) error {
@@ -314,8 +314,8 @@ func (d *deployer) CreateDeployment(ctx context.Context, feat *model.Feature, re
 	return deployment.ID, nil
 }
 
-func (d *deployer) waitForDeploymentStatuses(ctx context.Context, deploymentsByEnvID map[uuid.UUID]uuid.UUID) error {
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Minute)
+func (d *deployer) waitForDeploymentStatuses(ctx context.Context, deploymentsByEnvID map[uuid.UUID]uuid.UUID, timeout time.Duration) error {
+	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
 	eg, ctx := errgroup.WithContext(ctx)

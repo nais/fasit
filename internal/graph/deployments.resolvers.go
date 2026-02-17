@@ -39,13 +39,19 @@ func (r *mutationResolver) CreateDeployment(ctx context.Context, input model.Cre
 		return uuid.Nil, fmt.Errorf("invalid target: %w", err)
 	}
 
-	id, err := deployment.CreateDeployment(ctx, deployment.Request{
+	deploymentID, err := deployment.CreateDeployment(ctx, deployment.Request{
 		Chart:       input.Chart,
 		Version:     input.Version,
 		Description: input.Description,
 		Global:      input.Global,
 		Target:      target,
-		SkipCI:      true, // manual deployments should always skip CI
+		CI: struct {
+			Skip bool `json:"skip"`
+			Wait bool `json:"wait"`
+		}{
+			Skip: true,
+			Wait: true,
+		},
 	})
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("create deployment: %w", err)
@@ -53,7 +59,7 @@ func (r *mutationResolver) CreateDeployment(ctx context.Context, input model.Cre
 
 	deployment.TriggerReconcile(ctx, deployment.ReconcileTriggerEvent{})
 
-	return id, nil
+	return deploymentID, nil
 }
 
 // DeleteDeployment is the resolver for the deleteDeployment field.
