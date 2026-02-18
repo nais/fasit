@@ -25,6 +25,11 @@ type Deployment struct {
 	TargetLabels environment.Labels `json:"-"`
 }
 
+type NewDeploymentSummary struct {
+	DeploymentID uuid.UUID
+	FeatureName  string
+}
+
 func (d *Deployment) Target() []*model.EnvironmentLabel {
 	target := make([]*model.EnvironmentLabel, 0)
 	for k, v := range d.TargetLabels {

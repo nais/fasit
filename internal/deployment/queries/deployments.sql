@@ -139,3 +139,25 @@ ORDER BY
 	last_modified DESC
 LIMIT 1;
 
+-- name: ListEnvironmentsForTarget :many
+SELECT DISTINCT
+	sqlc.embed(e),
+	t.name AS tenant_name
+FROM
+	environments e
+	JOIN tenants t ON e.tenant_id = t.id
+WHERE
+	e.labels @> @target
+ORDER BY
+	e.name ASC;
+
+-- name: ListFeatureStatesForFeature :many
+SELECT
+	sqlc.embed(feature_states)
+FROM
+	feature_states
+WHERE
+	feature = @feature_name
+ORDER BY
+	last_modified DESC;
+

@@ -311,6 +311,18 @@ func (d *deployer) CreateDeployment(ctx context.Context, feat *model.Feature, re
 			return uuid.Nil, fmt.Errorf("unable to update feature version: %w", err)
 		}
 	}
+
+	// get targeted envs and feature state, post summary to slack
+	envs, err := d.querier.ListEnvironmentsForTarget(ctx, types.EnvironmentLabels(req.Target))
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("get environments for target: %w", err)
+	}
+
+	states, err := d.querier.ListFeatureStatesForFeature(ctx, feat.Name)
+	if err != nil {
+		return uuid.Nil, fmt.Errorf("get feature states for feature: %w", err)
+	}
+
 	return deployment.ID, nil
 }
 

@@ -427,6 +427,101 @@ func (q *Queries) ListDeploymentsToReconcile(ctx context.Context, environmentID 
 	return items, nil
 }
 
+const listEnvironmentsForTarget = `-- name: ListEnvironmentsForTarget :many
+SELECT DISTINCT
+	e.id, e.tenant_id, e.name, e.kind, e.description, e.created, e.last_modified, e.ci, e.reconcile, e.auto_upgrade, e.upgrade_delay_days, e.maintenance_window, e.labels,
+	t.name AS tenant_name
+FROM
+	environments e
+	JOIN tenants t ON e.tenant_id = t.id
+WHERE
+	e.labels @> $1
+ORDER BY
+	e.name ASC
+`
+
+type ListEnvironmentsForTargetRow struct {
+	Environment Environment
+	TenantName  string
+}
+
+func (q *Queries) ListEnvironmentsForTarget(ctx context.Context, target types.EnvironmentLabels) ([]ListEnvironmentsForTargetRow, error) {
+	rows, err := q.db.Query(ctx, listEnvironmentsForTarget, target)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListEnvironmentsForTargetRow{}
+	for rows.Next() {
+		var i ListEnvironmentsForTargetRow
+		if err := rows.Scan(
+			&i.Environment.ID,
+			&i.Environment.TenantID,
+			&i.Environment.Name,
+			&i.Environment.Kind,
+			&i.Environment.Description,
+			&i.Environment.Created,
+			&i.Environment.LastModified,
+			&i.Environment.Ci,
+			&i.Environment.Reconcile,
+			&i.Environment.AutoUpgrade,
+			&i.Environment.UpgradeDelayDays,
+			&i.Environment.MaintenanceWindow,
+			&i.Environment.Labels,
+			&i.TenantName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listFeatureStatesForFeature = `-- name: ListFeatureStatesForFeature :many
+SELECT
+	feature_states.environment_id, feature_states.feature, feature_states.enabled, feature_states.created, feature_states.last_modified, feature_states.enabled_at
+FROM
+	feature_states
+WHERE
+	feature = $1
+ORDER BY
+	last_modified DESC
+`
+
+type ListFeatureStatesForFeatureRow struct {
+	FeatureState FeatureState
+}
+
+func (q *Queries) ListFeatureStatesForFeature(ctx context.Context, featureName string) ([]ListFeatureStatesForFeatureRow, error) {
+	rows, err := q.db.Query(ctx, listFeatureStatesForFeature, featureName)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListFeatureStatesForFeatureRow{}
+	for rows.Next() {
+		var i ListFeatureStatesForFeatureRow
+		if err := rows.Scan(
+			&i.FeatureState.EnvironmentID,
+			&i.FeatureState.Feature,
+			&i.FeatureState.Enabled,
+			&i.FeatureState.Created,
+			&i.FeatureState.LastModified,
+			&i.FeatureState.EnabledAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const setDeploymentStatus = `-- name: SetDeploymentStatus :exec
 INSERT INTO deployment_statuses(
 	deployment_id,

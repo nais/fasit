@@ -6,6 +6,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/nais/fasit/internal/database/types"
 )
 
 type Querier interface {
@@ -25,6 +26,8 @@ type Querier interface {
 	ListDeploymentsByFeature(ctx context.Context, featureName string) ([]ListDeploymentsByFeatureRow, error)
 	ListDeploymentsToReconcile(ctx context.Context, environmentID uuid.UUID) ([]ListDeploymentsToReconcileRow, error)
 	ListEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]ListEnvironmentFeaturesRow, error)
+	ListEnvironmentsForTarget(ctx context.Context, target types.EnvironmentLabels) ([]ListEnvironmentsForTargetRow, error)
+	ListFeatureStatesForFeature(ctx context.Context, featureName string) ([]ListFeatureStatesForFeatureRow, error)
 	SetDeploymentStatus(ctx context.Context, arg SetDeploymentStatusParams) error
 	TimeoutDeployInstructions(ctx context.Context) error
 }
