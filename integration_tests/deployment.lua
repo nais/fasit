@@ -7,23 +7,6 @@ Helper.CreateEnvironment(tenantID, "nonci", "tenant", false, false, { kind = "te
 Test.rest("create deployment", function(t)
 	t.send("POST", "/github/deployment", [[
 		{
-			"chart": "oci://clamav",
-			"version": "0.1.0-feature",
-			"target" : {
-				"kind": "tenant"
-			},
-			"ci": {"wait": true}
-		}
-	]])
-
-	t.check(201, {
-		id = NotNull(),
-	})
-end)
-
-Test.rest("create second deployment", function(t)
-	t.send("POST", "/github/deployment", [[
-		{
 			"chart": "oci://allenvs",
 			"version": "1.0.0",
 			"target" : {
@@ -32,7 +15,36 @@ Test.rest("create second deployment", function(t)
 			"ci": {"wait": true}
 		}
 	]])
+	t.check(201, {
+		id = NotNull(),
+	})
+end)
 
+Test.rest("create second deployment", function(t)
+    t.send("POST", "/github/deployment", [[
+		{
+			"chart": "oci://clamav",
+			"version": "0.1.1-feature",
+			"target" : {
+				"kind": "tenant"
+			},
+			"ci": {"wait": true}
+		}
+	]])
+	t.check(201, {
+		id = NotNull(),
+	})
+
+	t.send("POST", "/github/deployment", [[
+		{
+			"chart": "oci://clamav",
+			"version": "0.1.0-feature",
+			"target" : {
+				"kind": "tenant"
+			},
+			"ci": {"wait": true}
+		}
+	]])
 	t.check(201, {
 		id = NotNull(),
 	})
@@ -42,7 +54,6 @@ Test.gql("list deployments", function(t)
 	t.query [[
 		{
 			deployments {
-				id
 				feature {
 					name
 					version
@@ -51,7 +62,6 @@ Test.gql("list deployments", function(t)
 				    key
 				    value
 				}
-				created
 			}
 		}
 	]]
@@ -59,7 +69,32 @@ Test.gql("list deployments", function(t)
 	t.check(
 		{
 			data = {
-				deployments = NotNull(),
+                deployments = {
+                    {
+						feature = {
+							name = "clamav",
+							version = "0.1.0-feature",
+						},
+						target = {
+							{
+								key = "kind",
+								value = "tenant",
+							},
+                        },
+                    },
+					{
+						feature = {
+							name = "allenvs",
+							version = "1.0.0",
+						},
+						target = {
+							{
+								key = "kind",
+								value = "tenant",
+							},
+						},
+					},
+				},
 			},
 		}
 	)
@@ -89,6 +124,18 @@ Test.gql("list deployments by feature", function(t)
 						feature = {
 							name = "clamav",
 							version = "0.1.0-feature",
+						},
+						target = {
+							{
+								key = "kind",
+								value = "tenant",
+							},
+						},
+                    },
+					{
+						feature = {
+							name = "clamav",
+							version = "0.1.1-feature",
 						},
 						target = {
 							{
@@ -186,6 +233,19 @@ Test.gql("list deployments by feature with status", function(t)
 								state = "DEPLOYED",
 							},
 						},
+						target = {
+							{
+								key = "kind",
+								value = "tenant",
+							},
+						},
+                    },
+                    {
+						feature = {
+							name = "clamav",
+							version = "0.1.1-feature",
+                        },
+                        statuses = {},
 						target = {
 							{
 								key = "kind",
