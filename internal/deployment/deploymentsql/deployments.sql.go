@@ -249,6 +249,18 @@ SELECT
 	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.rename
 FROM
 	deployments d
+	JOIN (
+		SELECT
+			feature_name,
+			target,
+			MAX(created) AS max_created
+		FROM
+			deployments
+		GROUP BY
+			feature_name,
+			target) latest ON d.feature_name = latest.feature_name
+	AND d.target = latest.target
+	AND d.created = latest.max_created
 	JOIN feature_data fd ON d.feature_name = fd.name
 		AND d.version = fd.version
 	ORDER BY
