@@ -2,6 +2,7 @@ package environment
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -24,6 +25,50 @@ func Register(ctx context.Context, pool *pgxpool.Pool) context.Context {
 
 func querier(ctx context.Context) environmentsql.Querier {
 	return ctx.Value(QuerierKey).(environmentsql.Querier)
+}
+
+func Create(ctx context.Context, t *model.EnvironmentCreate) (*model.Environment, error) {
+	env, err := querier(ctx).Create(ctx, environmentsql.CreateParams{
+		Name:        t.Name,
+		Description: t.Description,
+		TenantID:    t.TenantID,
+		Kind:        environmentsql.EnvironmentKind(t.Kind),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	audit.CreateAudit(ctx, "created", "environments", env.ID.String())
+
+	return environmentFromSQL(env), nil
+}
+
+func SetLabels(ctx context.Context, environmentID uuid.UUID, labels Labels) error {
+	lbls := make(types.EnvironmentLabels)
+	for k, v := range labels {
+		lbls[k] = v
+	}
+
+	return querier(ctx).SetLabels(ctx, environmentsql.SetLabelsParams{
+		Labels: lbls,
+		ID:     environmentID,
+	})
+}
+
+func SetEnvironmentValue(ctx context.Context, environmentID uuid.UUID, key string, value json.RawMessage, secret bool) error {
+	err := querier(ctx).SetEnvironmentValue(ctx, environmentsql.SetEnvironmentValueParams{
+		Envid:  environmentID,
+		Key:    key,
+		Value:  value,
+		Secret: secret,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to store environment value: %w", err)
+	}
+
+	audit.CreateAudit(ctx, "created or updated", "environment_values", environmentID.String()+":"+key)
+
+	return nil
 }
 
 func TenantEnvironments(ctx context.Context, onlyReconciled bool) ([]*model.TenantEnvironment, error) {
