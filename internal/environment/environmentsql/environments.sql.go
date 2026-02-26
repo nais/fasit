@@ -10,6 +10,54 @@ import (
 	"github.com/nais/fasit/internal/database/types"
 )
 
+const create = `-- name: Create :one
+INSERT INTO environments(
+	name,
+	description,
+	tenant_id,
+	kind)
+VALUES (
+	$1,
+	$2,
+	$3,
+	$4)
+RETURNING
+	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade, upgrade_delay_days, maintenance_window, labels
+`
+
+type CreateParams struct {
+	Name        string
+	Description *string
+	TenantID    uuid.UUID
+	Kind        EnvironmentKind
+}
+
+func (q *Queries) Create(ctx context.Context, arg CreateParams) (Environment, error) {
+	row := q.db.QueryRow(ctx, create,
+		arg.Name,
+		arg.Description,
+		arg.TenantID,
+		arg.Kind,
+	)
+	var i Environment
+	err := row.Scan(
+		&i.ID,
+		&i.TenantID,
+		&i.Name,
+		&i.Kind,
+		&i.Description,
+		&i.Created,
+		&i.LastModified,
+		&i.Ci,
+		&i.Reconcile,
+		&i.AutoUpgrade,
+		&i.UpgradeDelayDays,
+		&i.MaintenanceWindow,
+		&i.Labels,
+	)
+	return i, err
+}
+
 const get = `-- name: Get :one
 SELECT
 	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade, upgrade_delay_days, maintenance_window, labels
@@ -116,4 +164,23 @@ func (q *Queries) ListCIEnvironmentsForTarget(ctx context.Context, target types.
 		return nil, err
 	}
 	return items, nil
+}
+
+const setLabels = `-- name: SetLabels :exec
+UPDATE
+	environments
+SET
+	labels = $1
+WHERE
+	id = $2
+`
+
+type SetLabelsParams struct {
+	Labels types.EnvironmentLabels
+	ID     uuid.UUID
+}
+
+func (q *Queries) SetLabels(ctx context.Context, arg SetLabelsParams) error {
+	_, err := q.db.Exec(ctx, setLabels, arg.Labels, arg.ID)
+	return err
 }

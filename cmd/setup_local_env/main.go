@@ -15,18 +15,16 @@ import (
 	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/deployment/deploymenttest"
 	"github.com/nais/fasit/internal/environment"
-	"github.com/nais/fasit/internal/provider/protogen"
+	"github.com/nais/fasit/internal/graph/model"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/metric/noop"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 type (
 	tenant          = string
 	environmentName = string
 	envSpec         struct {
-		kind   protogen.EnvironmentKind
+		kind   model.EnvironmentKind
 		labels environment.Labels
 	}
 )
@@ -39,13 +37,13 @@ var (
 	envs = map[tenant]map[environmentName]envSpec{
 		"test-partner": {
 			"dev": envSpec{
-				kind: protogen.EnvironmentKind_TENANT,
+				kind: model.EnvironmentKindTenant,
 				labels: environment.Labels{
 					"aiven": "enabled",
 				},
 			},
 			"management": envSpec{
-				kind: protogen.EnvironmentKind_MANAGEMENT,
+				kind: model.EnvironmentKindManagement,
 				labels: environment.Labels{
 					"aiven": "enabled",
 				},
@@ -133,13 +131,6 @@ func main() {
 	}
 	defer cancel.Close()
 
-	conn, err := grpc.NewClient("localhost:4444", grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		log.Fatalf("did not connect: %v", err)
-	}
-	defer conn.Close()
-	grpcClient := protogen.NewProviderClient(conn)
-
 	loadContext, err := contextloader.NewLoaderFunc(dbConn, nil, nil, noop.NewMeterProvider().Meter(""), logrus.New())
 	if err != nil {
 		panic(err)
@@ -162,58 +153,52 @@ func main() {
 	}
 
 	for tenantName, environments := range envs {
-		_, err := grpcClient.CreateTenant(ctx, &protogen.CreateTenantRequest{Name: tenantName})
+		_, err := environment.CreateTenant(ctx, &model.TenantCreate{Name: tenantName})
 		if err != nil {
 			if !strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
 				log.Fatal(err)
 			}
 		}
-		tenant, err := grpcClient.GetTenant(ctx, &protogen.GetTenantRequest{Name: tenantName})
+
+		tenant, err := environment.GetTenantGetByName(ctx, tenantName)
 		if err != nil {
 			log.Fatal(err)
 		}
+
 		for env, spec := range environments {
 			lbls := spec.labels
 			lbls["kind"] = strings.ToLower(spec.kind.String())
 			lbls["environment"] = env
 			lbls["tenant"] = tenantName
 
-			_, err := grpcClient.CreateEnvironment(ctx, &protogen.CreateEnvironmentRequest{
-				TenantId: tenant.Id,
+			e, err := environment.Create(ctx, &model.EnvironmentCreate{
 				Name:     env,
+				TenantID: tenant.ID,
 				Kind:     spec.kind,
-				Labels: func(lbls environment.Labels) []*protogen.EnvironmentLabel {
-					out := make([]*protogen.EnvironmentLabel, 0)
-					for k, v := range lbls {
-						out = append(out, &protogen.EnvironmentLabel{Key: k, Value: v})
-					}
-					return out
-				}(lbls),
 			})
 			if err != nil {
-				if !strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
-					log.Fatal(err)
+				if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+					continue
 				}
+
+				log.Fatal(err)
 			}
 
-			environment, err := grpcClient.GetEnvironment(ctx, &protogen.GetEnvironmentRequest{TenantId: tenant.Id, Name: env})
+			err = environment.SetLabels(ctx, e.ID, lbls)
+			if err != nil {
+				if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+					continue
+				}
+
+				log.Fatal(err)
+			}
+
+			err = environment.SetEnvironmentValue(ctx, e.ID, "project_id", json.RawMessage(fmt.Sprintf("%q", "nais-"+env)), false)
 			if err != nil {
 				log.Fatal(err)
 			}
 
-			_, err = grpcClient.CreateOrUpdateEnvironmentValue(ctx, &protogen.CreateOrUpdateEnvironmentValueRequest{
-				EnvironmentId: environment.Id,
-				Key:           "project_id",
-				Value:         json.RawMessage(fmt.Sprintf("%q", "nais-"+env)),
-			})
-			if err != nil {
-				log.Fatal(err)
-			}
-			_, err = grpcClient.CreateOrUpdateEnvironmentValue(ctx, &protogen.CreateOrUpdateEnvironmentValueRequest{
-				EnvironmentId: environment.Id,
-				Key:           "updated_at",
-				Value:         json.RawMessage(fmt.Sprintf("%q", time.Now().String())),
-			})
+			err = environment.SetEnvironmentValue(ctx, e.ID, "updated_at", json.RawMessage(fmt.Sprintf("%q", time.Now().String())), false)
 			if err != nil {
 				log.Fatal(err)
 			}
