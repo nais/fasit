@@ -2,7 +2,7 @@
 pin = true
 
 [tools]
-go = "1.25.7"
+go = "1.26.0"
 protoc = "33.0"
 protoc-gen-go = "1.36.10"
 protoc-gen-go-grpc = "1.5.1"
