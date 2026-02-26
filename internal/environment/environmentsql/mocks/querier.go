@@ -40,6 +40,72 @@ func (_m *Querier) EXPECT() *Querier_Expecter {
 	return &Querier_Expecter{mock: &_m.Mock}
 }
 
+// Create provides a mock function for the type Querier
+func (_mock *Querier) Create(ctx context.Context, arg environmentsql.CreateParams) (environmentsql.Environment, error) {
+	ret := _mock.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Create")
+	}
+
+	var r0 environmentsql.Environment
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, environmentsql.CreateParams) (environmentsql.Environment, error)); ok {
+		return returnFunc(ctx, arg)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, environmentsql.CreateParams) environmentsql.Environment); ok {
+		r0 = returnFunc(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(environmentsql.Environment)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, environmentsql.CreateParams) error); ok {
+		r1 = returnFunc(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_Create_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Create'
+type Querier_Create_Call struct {
+	*mock.Call
+}
+
+// Create is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg environmentsql.CreateParams
+func (_e *Querier_Expecter) Create(ctx interface{}, arg interface{}) *Querier_Create_Call {
+	return &Querier_Create_Call{Call: _e.mock.On("Create", ctx, arg)}
+}
+
+func (_c *Querier_Create_Call) Run(run func(ctx context.Context, arg environmentsql.CreateParams)) *Querier_Create_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 environmentsql.CreateParams
+		if args[1] != nil {
+			arg1 = args[1].(environmentsql.CreateParams)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_Create_Call) Return(environment environmentsql.Environment, err error) *Querier_Create_Call {
+	_c.Call.Return(environment, err)
+	return _c
+}
+
+func (_c *Querier_Create_Call) RunAndReturn(run func(ctx context.Context, arg environmentsql.CreateParams) (environmentsql.Environment, error)) *Querier_Create_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // Get provides a mock function for the type Querier
 func (_mock *Querier) Get(ctx context.Context, id uuid.UUID) (environmentsql.Environment, error) {
 	ret := _mock.Called(ctx, id)
@@ -432,6 +498,120 @@ func (_c *Querier_ListCIEnvironmentsForTarget_Call) Return(listCIEnvironmentsFor
 }
 
 func (_c *Querier_ListCIEnvironmentsForTarget_Call) RunAndReturn(run func(ctx context.Context, target types.EnvironmentLabels) ([]environmentsql.ListCIEnvironmentsForTargetRow, error)) *Querier_ListCIEnvironmentsForTarget_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// SetEnvironmentValue provides a mock function for the type Querier
+func (_mock *Querier) SetEnvironmentValue(ctx context.Context, arg environmentsql.SetEnvironmentValueParams) error {
+	ret := _mock.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SetEnvironmentValue")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, environmentsql.SetEnvironmentValueParams) error); ok {
+		r0 = returnFunc(ctx, arg)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// Querier_SetEnvironmentValue_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetEnvironmentValue'
+type Querier_SetEnvironmentValue_Call struct {
+	*mock.Call
+}
+
+// SetEnvironmentValue is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg environmentsql.SetEnvironmentValueParams
+func (_e *Querier_Expecter) SetEnvironmentValue(ctx interface{}, arg interface{}) *Querier_SetEnvironmentValue_Call {
+	return &Querier_SetEnvironmentValue_Call{Call: _e.mock.On("SetEnvironmentValue", ctx, arg)}
+}
+
+func (_c *Querier_SetEnvironmentValue_Call) Run(run func(ctx context.Context, arg environmentsql.SetEnvironmentValueParams)) *Querier_SetEnvironmentValue_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 environmentsql.SetEnvironmentValueParams
+		if args[1] != nil {
+			arg1 = args[1].(environmentsql.SetEnvironmentValueParams)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_SetEnvironmentValue_Call) Return(err error) *Querier_SetEnvironmentValue_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *Querier_SetEnvironmentValue_Call) RunAndReturn(run func(ctx context.Context, arg environmentsql.SetEnvironmentValueParams) error) *Querier_SetEnvironmentValue_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// SetLabels provides a mock function for the type Querier
+func (_mock *Querier) SetLabels(ctx context.Context, arg environmentsql.SetLabelsParams) error {
+	ret := _mock.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for SetLabels")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, environmentsql.SetLabelsParams) error); ok {
+		r0 = returnFunc(ctx, arg)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// Querier_SetLabels_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetLabels'
+type Querier_SetLabels_Call struct {
+	*mock.Call
+}
+
+// SetLabels is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg environmentsql.SetLabelsParams
+func (_e *Querier_Expecter) SetLabels(ctx interface{}, arg interface{}) *Querier_SetLabels_Call {
+	return &Querier_SetLabels_Call{Call: _e.mock.On("SetLabels", ctx, arg)}
+}
+
+func (_c *Querier_SetLabels_Call) Run(run func(ctx context.Context, arg environmentsql.SetLabelsParams)) *Querier_SetLabels_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 environmentsql.SetLabelsParams
+		if args[1] != nil {
+			arg1 = args[1].(environmentsql.SetLabelsParams)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_SetLabels_Call) Return(err error) *Querier_SetLabels_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *Querier_SetLabels_Call) RunAndReturn(run func(ctx context.Context, arg environmentsql.SetLabelsParams) error) *Querier_SetLabels_Call {
 	_c.Call.Return(run)
 	return _c
 }
