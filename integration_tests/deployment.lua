@@ -21,7 +21,7 @@ Test.rest("create deployment", function(t)
 end)
 
 Test.rest("create second deployment", function(t)
-    t.send("POST", "/github/deployment", [[
+	t.send("POST", "/github/deployment", [[
 		{
 			"chart": "oci://clamav",
 			"version": "0.1.1-feature",
@@ -69,8 +69,8 @@ Test.gql("list deployments", function(t)
 	t.check(
 		{
 			data = {
-                deployments = {
-                    {
+				deployments = {
+					{
 						feature = {
 							name = "clamav",
 							version = "0.1.0-feature",
@@ -80,8 +80,8 @@ Test.gql("list deployments", function(t)
 								key = "kind",
 								value = "tenant",
 							},
-                        },
-                    },
+						},
+					},
 					{
 						feature = {
 							name = "allenvs",
@@ -131,7 +131,7 @@ Test.gql("list deployments by feature", function(t)
 								value = "tenant",
 							},
 						},
-                    },
+					},
 					{
 						feature = {
 							name = "clamav",
@@ -239,13 +239,13 @@ Test.gql("list deployments by feature with status", function(t)
 								value = "tenant",
 							},
 						},
-                    },
-                    {
+					},
+					{
 						feature = {
 							name = "clamav",
 							version = "0.1.1-feature",
-                        },
-                        statuses = {},
+						},
+						statuses = {},
 						target = {
 							{
 								key = "kind",
