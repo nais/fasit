@@ -71,6 +71,6 @@ func main() {
 		if err != nil {
 			log.Println(err)
 		}
-		log.Printf("Created topic %v\n", topic)
+		log.Printf("Created topic %q\n", topic) // #nosec G706 -- topic is constructed from controlled format string
 	}
 }
