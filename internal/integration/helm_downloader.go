@@ -64,7 +64,8 @@ func tarGz(name string, w io.Writer, path string) error {
 	tw := tar.NewWriter(gw)
 	defer tw.Close()
 
-	return filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
+	cleanPath := filepath.Clean(path)
+	return filepath.Walk(cleanPath, func(path string, info os.FileInfo, err error) error { // #nosec G703
 		if err != nil {
 			return fmt.Errorf("walking path %q: %w", path, err)
 		}

@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-	"sync"
 	"sync/atomic"
 	"time"
 
@@ -27,20 +26,10 @@ import (
 
 // NewExecutableSchema creates an ExecutableSchema from the ResolverRoot interface.
 func NewExecutableSchema(cfg Config) graphql.ExecutableSchema {
-	return &executableSchema{
-		schema:     cfg.Schema,
-		resolvers:  cfg.Resolvers,
-		directives: cfg.Directives,
-		complexity: cfg.Complexity,
-	}
+	return &executableSchema{SchemaData: cfg.Schema, Resolvers: cfg.Resolvers, Directives: cfg.Directives, ComplexityRoot: cfg.Complexity}
 }
 
-type Config struct {
-	Schema     *ast.Schema
-	Resolvers  ResolverRoot
-	Directives DirectiveRoot
-	Complexity ComplexityRoot
-}
+type Config = graphql.Config[ResolverRoot, DirectiveRoot, ComplexityRoot]
 
 type ResolverRoot interface {
 	ClusterUpgradeStatus() ClusterUpgradeStatusResolver
@@ -609,366 +598,361 @@ type TenantResolver interface {
 	ClusterUpgradeHistory(ctx context.Context, obj *model.Tenant, limit *int, offset *int) (*model.ClusterUpgradeHistoryResult, error)
 }
 
-type executableSchema struct {
-	schema     *ast.Schema
-	resolvers  ResolverRoot
-	directives DirectiveRoot
-	complexity ComplexityRoot
-}
+type executableSchema graphql.ExecutableSchemaState[ResolverRoot, DirectiveRoot, ComplexityRoot]
 
 func (e *executableSchema) Schema() *ast.Schema {
-	if e.schema != nil {
-		return e.schema
+	if e.SchemaData != nil {
+		return e.SchemaData
 	}
 	return parsedSchema
 }
 
 func (e *executableSchema) Complexity(ctx context.Context, typeName, field string, childComplexity int, rawArgs map[string]any) (int, bool) {
-	ec := executionContext{nil, e, 0, 0, nil}
+	ec := newExecutionContext(nil, e, nil)
 	_ = ec
 	switch typeName + "." + field {
 
 	case "AuditLog.actor":
-		if e.complexity.AuditLog.Actor == nil {
+		if e.ComplexityRoot.AuditLog.Actor == nil {
 			break
 		}
 
-		return e.complexity.AuditLog.Actor(childComplexity), true
+		return e.ComplexityRoot.AuditLog.Actor(childComplexity), true
 	case "AuditLog.createdAt":
-		if e.complexity.AuditLog.CreatedAt == nil {
+		if e.ComplexityRoot.AuditLog.CreatedAt == nil {
 			break
 		}
 
-		return e.complexity.AuditLog.CreatedAt(childComplexity), true
+		return e.ComplexityRoot.AuditLog.CreatedAt(childComplexity), true
 	case "AuditLog.description":
-		if e.complexity.AuditLog.Description == nil {
+		if e.ComplexityRoot.AuditLog.Description == nil {
 			break
 		}
 
-		return e.complexity.AuditLog.Description(childComplexity), true
+		return e.ComplexityRoot.AuditLog.Description(childComplexity), true
 	case "AuditLog.objectId":
-		if e.complexity.AuditLog.ObjectID == nil {
+		if e.ComplexityRoot.AuditLog.ObjectID == nil {
 			break
 		}
 
-		return e.complexity.AuditLog.ObjectID(childComplexity), true
+		return e.ComplexityRoot.AuditLog.ObjectID(childComplexity), true
 	case "AuditLog.objectType":
-		if e.complexity.AuditLog.ObjectType == nil {
+		if e.ComplexityRoot.AuditLog.ObjectType == nil {
 			break
 		}
 
-		return e.complexity.AuditLog.ObjectType(childComplexity), true
+		return e.ComplexityRoot.AuditLog.ObjectType(childComplexity), true
 
 	case "ClusterUpgradeHistoryResult.hasMore":
-		if e.complexity.ClusterUpgradeHistoryResult.HasMore == nil {
+		if e.ComplexityRoot.ClusterUpgradeHistoryResult.HasMore == nil {
 			break
 		}
 
-		return e.complexity.ClusterUpgradeHistoryResult.HasMore(childComplexity), true
+		return e.ComplexityRoot.ClusterUpgradeHistoryResult.HasMore(childComplexity), true
 	case "ClusterUpgradeHistoryResult.items":
-		if e.complexity.ClusterUpgradeHistoryResult.Items == nil {
+		if e.ComplexityRoot.ClusterUpgradeHistoryResult.Items == nil {
 			break
 		}
 
-		return e.complexity.ClusterUpgradeHistoryResult.Items(childComplexity), true
+		return e.ComplexityRoot.ClusterUpgradeHistoryResult.Items(childComplexity), true
 	case "ClusterUpgradeHistoryResult.totalCount":
-		if e.complexity.ClusterUpgradeHistoryResult.TotalCount == nil {
+		if e.ComplexityRoot.ClusterUpgradeHistoryResult.TotalCount == nil {
 			break
 		}
 
-		return e.complexity.ClusterUpgradeHistoryResult.TotalCount(childComplexity), true
+		return e.ComplexityRoot.ClusterUpgradeHistoryResult.TotalCount(childComplexity), true
 
 	case "ClusterUpgradeStatus.actor":
-		if e.complexity.ClusterUpgradeStatus.Actor == nil {
+		if e.ComplexityRoot.ClusterUpgradeStatus.Actor == nil {
 			break
 		}
 
-		return e.complexity.ClusterUpgradeStatus.Actor(childComplexity), true
+		return e.ComplexityRoot.ClusterUpgradeStatus.Actor(childComplexity), true
 	case "ClusterUpgradeStatus.environment":
-		if e.complexity.ClusterUpgradeStatus.Environment == nil {
+		if e.ComplexityRoot.ClusterUpgradeStatus.Environment == nil {
 			break
 		}
 
-		return e.complexity.ClusterUpgradeStatus.Environment(childComplexity), true
+		return e.ComplexityRoot.ClusterUpgradeStatus.Environment(childComplexity), true
 	case "ClusterUpgradeStatus.id":
-		if e.complexity.ClusterUpgradeStatus.ID == nil {
+		if e.ComplexityRoot.ClusterUpgradeStatus.ID == nil {
 			break
 		}
 
-		return e.complexity.ClusterUpgradeStatus.ID(childComplexity), true
+		return e.ComplexityRoot.ClusterUpgradeStatus.ID(childComplexity), true
 	case "ClusterUpgradeStatus.isAutomatic":
-		if e.complexity.ClusterUpgradeStatus.IsAutomatic == nil {
+		if e.ComplexityRoot.ClusterUpgradeStatus.IsAutomatic == nil {
 			break
 		}
 
-		return e.complexity.ClusterUpgradeStatus.IsAutomatic(childComplexity), true
+		return e.ComplexityRoot.ClusterUpgradeStatus.IsAutomatic(childComplexity), true
 	case "ClusterUpgradeStatus.lastModified":
-		if e.complexity.ClusterUpgradeStatus.LastModified == nil {
+		if e.ComplexityRoot.ClusterUpgradeStatus.LastModified == nil {
 			break
 		}
 
-		return e.complexity.ClusterUpgradeStatus.LastModified(childComplexity), true
+		return e.ComplexityRoot.ClusterUpgradeStatus.LastModified(childComplexity), true
 	case "ClusterUpgradeStatus.operations":
-		if e.complexity.ClusterUpgradeStatus.Operations == nil {
+		if e.ComplexityRoot.ClusterUpgradeStatus.Operations == nil {
 			break
 		}
 
-		return e.complexity.ClusterUpgradeStatus.Operations(childComplexity), true
+		return e.ComplexityRoot.ClusterUpgradeStatus.Operations(childComplexity), true
 	case "ClusterUpgradeStatus.startTime":
-		if e.complexity.ClusterUpgradeStatus.StartTime == nil {
+		if e.ComplexityRoot.ClusterUpgradeStatus.StartTime == nil {
 			break
 		}
 
-		return e.complexity.ClusterUpgradeStatus.StartTime(childComplexity), true
+		return e.ComplexityRoot.ClusterUpgradeStatus.StartTime(childComplexity), true
 	case "ClusterUpgradeStatus.upgradeStartTime":
-		if e.complexity.ClusterUpgradeStatus.UpgradeStartTime == nil {
+		if e.ComplexityRoot.ClusterUpgradeStatus.UpgradeStartTime == nil {
 			break
 		}
 
-		return e.complexity.ClusterUpgradeStatus.UpgradeStartTime(childComplexity), true
+		return e.ComplexityRoot.ClusterUpgradeStatus.UpgradeStartTime(childComplexity), true
 	case "ClusterUpgradeStatus.upgradeStatus":
-		if e.complexity.ClusterUpgradeStatus.UpgradeStatus == nil {
+		if e.ComplexityRoot.ClusterUpgradeStatus.UpgradeStatus == nil {
 			break
 		}
 
-		return e.complexity.ClusterUpgradeStatus.UpgradeStatus(childComplexity), true
+		return e.ComplexityRoot.ClusterUpgradeStatus.UpgradeStatus(childComplexity), true
 	case "ClusterUpgradeStatus.version":
-		if e.complexity.ClusterUpgradeStatus.Version == nil {
+		if e.ComplexityRoot.ClusterUpgradeStatus.Version == nil {
 			break
 		}
 
-		return e.complexity.ClusterUpgradeStatus.Version(childComplexity), true
+		return e.ComplexityRoot.ClusterUpgradeStatus.Version(childComplexity), true
 
 	case "Computed.template":
-		if e.complexity.Computed.Template == nil {
+		if e.ComplexityRoot.Computed.Template == nil {
 			break
 		}
 
-		return e.complexity.Computed.Template(childComplexity), true
+		return e.ComplexityRoot.Computed.Template(childComplexity), true
 
 	case "ComputedValue.content":
-		if e.complexity.ComputedValue.Content == nil {
+		if e.ComplexityRoot.ComputedValue.Content == nil {
 			break
 		}
 
-		return e.complexity.ComputedValue.Content(childComplexity), true
+		return e.ComplexityRoot.ComputedValue.Content(childComplexity), true
 	case "ComputedValue.value":
-		if e.complexity.ComputedValue.Value == nil {
+		if e.ComplexityRoot.ComputedValue.Value == nil {
 			break
 		}
 
-		return e.complexity.ComputedValue.Value(childComplexity), true
+		return e.ComplexityRoot.ComputedValue.Value(childComplexity), true
 
 	case "Config.secret":
-		if e.complexity.Config.Secret == nil {
+		if e.ComplexityRoot.Config.Secret == nil {
 			break
 		}
 
-		return e.complexity.Config.Secret(childComplexity), true
+		return e.ComplexityRoot.Config.Secret(childComplexity), true
 	case "Config.type":
-		if e.complexity.Config.Type == nil {
+		if e.ComplexityRoot.Config.Type == nil {
 			break
 		}
 
-		return e.complexity.Config.Type(childComplexity), true
+		return e.ComplexityRoot.Config.Type(childComplexity), true
 
 	case "ConfigOverride.environment":
-		if e.complexity.ConfigOverride.Environment == nil {
+		if e.ComplexityRoot.ConfigOverride.Environment == nil {
 			break
 		}
 
-		return e.complexity.ConfigOverride.Environment(childComplexity), true
+		return e.ComplexityRoot.ConfigOverride.Environment(childComplexity), true
 	case "ConfigOverride.keys":
-		if e.complexity.ConfigOverride.Keys == nil {
+		if e.ComplexityRoot.ConfigOverride.Keys == nil {
 			break
 		}
 
-		return e.complexity.ConfigOverride.Keys(childComplexity), true
+		return e.ComplexityRoot.ConfigOverride.Keys(childComplexity), true
 
 	case "Configuration.content":
-		if e.complexity.Configuration.Content == nil {
+		if e.ComplexityRoot.Configuration.Content == nil {
 			break
 		}
 
-		return e.complexity.Configuration.Content(childComplexity), true
+		return e.ComplexityRoot.Configuration.Content(childComplexity), true
 	case "Configuration.created":
-		if e.complexity.Configuration.Created == nil {
+		if e.ComplexityRoot.Configuration.Created == nil {
 			break
 		}
 
-		return e.complexity.Configuration.Created(childComplexity), true
+		return e.ComplexityRoot.Configuration.Created(childComplexity), true
 	case "Configuration.id":
-		if e.complexity.Configuration.ID == nil {
+		if e.ComplexityRoot.Configuration.ID == nil {
 			break
 		}
 
-		return e.complexity.Configuration.ID(childComplexity), true
+		return e.ComplexityRoot.Configuration.ID(childComplexity), true
 	case "Configuration.source":
-		if e.complexity.Configuration.Source == nil {
+		if e.ComplexityRoot.Configuration.Source == nil {
 			break
 		}
 
-		return e.complexity.Configuration.Source(childComplexity), true
+		return e.ComplexityRoot.Configuration.Source(childComplexity), true
 	case "Configuration.value":
-		if e.complexity.Configuration.Value == nil {
+		if e.ComplexityRoot.Configuration.Value == nil {
 			break
 		}
 
-		return e.complexity.Configuration.Value(childComplexity), true
+		return e.ComplexityRoot.Configuration.Value(childComplexity), true
 
 	case "Configurations.computed":
-		if e.complexity.Configurations.Computed == nil {
+		if e.ComplexityRoot.Configurations.Computed == nil {
 			break
 		}
 
-		return e.complexity.Configurations.Computed(childComplexity), true
+		return e.ComplexityRoot.Configurations.Computed(childComplexity), true
 	case "Configurations.configuration":
-		if e.complexity.Configurations.Configuration == nil {
+		if e.ComplexityRoot.Configurations.Configuration == nil {
 			break
 		}
 
-		return e.complexity.Configurations.Configuration(childComplexity), true
+		return e.ComplexityRoot.Configurations.Configuration(childComplexity), true
 
 	case "Cost.from":
-		if e.complexity.Cost.From == nil {
+		if e.ComplexityRoot.Cost.From == nil {
 			break
 		}
 
-		return e.complexity.Cost.From(childComplexity), true
+		return e.ComplexityRoot.Cost.From(childComplexity), true
 	case "Cost.series":
-		if e.complexity.Cost.Series == nil {
+		if e.ComplexityRoot.Cost.Series == nil {
 			break
 		}
 
-		return e.complexity.Cost.Series(childComplexity), true
+		return e.ComplexityRoot.Cost.Series(childComplexity), true
 	case "Cost.to":
-		if e.complexity.Cost.To == nil {
+		if e.ComplexityRoot.Cost.To == nil {
 			break
 		}
 
-		return e.complexity.Cost.To(childComplexity), true
+		return e.ComplexityRoot.Cost.To(childComplexity), true
 
 	case "CostSeries.data":
-		if e.complexity.CostSeries.Data == nil {
+		if e.ComplexityRoot.CostSeries.Data == nil {
 			break
 		}
 
-		return e.complexity.CostSeries.Data(childComplexity), true
+		return e.ComplexityRoot.CostSeries.Data(childComplexity), true
 	case "CostSeries.tenant":
-		if e.complexity.CostSeries.Tenant == nil {
+		if e.ComplexityRoot.CostSeries.Tenant == nil {
 			break
 		}
 
-		return e.complexity.CostSeries.Tenant(childComplexity), true
+		return e.ComplexityRoot.CostSeries.Tenant(childComplexity), true
 
 	case "Dependency.allOf":
-		if e.complexity.Dependency.AllOf == nil {
+		if e.ComplexityRoot.Dependency.AllOf == nil {
 			break
 		}
 
-		return e.complexity.Dependency.AllOf(childComplexity), true
+		return e.ComplexityRoot.Dependency.AllOf(childComplexity), true
 	case "Dependency.anyOf":
-		if e.complexity.Dependency.AnyOf == nil {
+		if e.ComplexityRoot.Dependency.AnyOf == nil {
 			break
 		}
 
-		return e.complexity.Dependency.AnyOf(childComplexity), true
+		return e.ComplexityRoot.Dependency.AnyOf(childComplexity), true
 
 	case "Deployment.ci":
-		if e.complexity.Deployment.CI == nil {
+		if e.ComplexityRoot.Deployment.CI == nil {
 			break
 		}
 
-		return e.complexity.Deployment.CI(childComplexity), true
+		return e.ComplexityRoot.Deployment.CI(childComplexity), true
 	case "Deployment.created":
-		if e.complexity.Deployment.Created == nil {
+		if e.ComplexityRoot.Deployment.Created == nil {
 			break
 		}
 
-		return e.complexity.Deployment.Created(childComplexity), true
+		return e.ComplexityRoot.Deployment.Created(childComplexity), true
 	case "Deployment.description":
-		if e.complexity.Deployment.Description == nil {
+		if e.ComplexityRoot.Deployment.Description == nil {
 			break
 		}
 
-		return e.complexity.Deployment.Description(childComplexity), true
+		return e.ComplexityRoot.Deployment.Description(childComplexity), true
 	case "Deployment.feature":
-		if e.complexity.Deployment.Feature == nil {
+		if e.ComplexityRoot.Deployment.Feature == nil {
 			break
 		}
 
-		return e.complexity.Deployment.Feature(childComplexity), true
+		return e.ComplexityRoot.Deployment.Feature(childComplexity), true
 	case "Deployment.id":
-		if e.complexity.Deployment.ID == nil {
+		if e.ComplexityRoot.Deployment.ID == nil {
 			break
 		}
 
-		return e.complexity.Deployment.ID(childComplexity), true
+		return e.ComplexityRoot.Deployment.ID(childComplexity), true
 	case "Deployment.statuses":
-		if e.complexity.Deployment.Statuses == nil {
+		if e.ComplexityRoot.Deployment.Statuses == nil {
 			break
 		}
 
-		return e.complexity.Deployment.Statuses(childComplexity), true
+		return e.ComplexityRoot.Deployment.Statuses(childComplexity), true
 	case "Deployment.target":
-		if e.complexity.Deployment.Target == nil {
+		if e.ComplexityRoot.Deployment.Target == nil {
 			break
 		}
 
-		return e.complexity.Deployment.Target(childComplexity), true
+		return e.ComplexityRoot.Deployment.Target(childComplexity), true
 
 	case "DeploymentStatus.created":
-		if e.complexity.DeploymentStatus.Created == nil {
+		if e.ComplexityRoot.DeploymentStatus.Created == nil {
 			break
 		}
 
-		return e.complexity.DeploymentStatus.Created(childComplexity), true
+		return e.ComplexityRoot.DeploymentStatus.Created(childComplexity), true
 	case "DeploymentStatus.deployment":
-		if e.complexity.DeploymentStatus.Deployment == nil {
+		if e.ComplexityRoot.DeploymentStatus.Deployment == nil {
 			break
 		}
 
-		return e.complexity.DeploymentStatus.Deployment(childComplexity), true
+		return e.ComplexityRoot.DeploymentStatus.Deployment(childComplexity), true
 	case "DeploymentStatus.environment":
-		if e.complexity.DeploymentStatus.Environment == nil {
+		if e.ComplexityRoot.DeploymentStatus.Environment == nil {
 			break
 		}
 
-		return e.complexity.DeploymentStatus.Environment(childComplexity), true
+		return e.ComplexityRoot.DeploymentStatus.Environment(childComplexity), true
 	case "DeploymentStatus.lastModified":
-		if e.complexity.DeploymentStatus.LastModified == nil {
+		if e.ComplexityRoot.DeploymentStatus.LastModified == nil {
 			break
 		}
 
-		return e.complexity.DeploymentStatus.LastModified(childComplexity), true
+		return e.ComplexityRoot.DeploymentStatus.LastModified(childComplexity), true
 	case "DeploymentStatus.message":
-		if e.complexity.DeploymentStatus.Message == nil {
+		if e.ComplexityRoot.DeploymentStatus.Message == nil {
 			break
 		}
 
-		return e.complexity.DeploymentStatus.Message(childComplexity), true
+		return e.ComplexityRoot.DeploymentStatus.Message(childComplexity), true
 	case "DeploymentStatus.state":
-		if e.complexity.DeploymentStatus.State == nil {
+		if e.ComplexityRoot.DeploymentStatus.State == nil {
 			break
 		}
 
-		return e.complexity.DeploymentStatus.State(childComplexity), true
+		return e.ComplexityRoot.DeploymentStatus.State(childComplexity), true
 
 	case "EnvSeries.data":
-		if e.complexity.EnvSeries.Data == nil {
+		if e.ComplexityRoot.EnvSeries.Data == nil {
 			break
 		}
 
-		return e.complexity.EnvSeries.Data(childComplexity), true
+		return e.ComplexityRoot.EnvSeries.Data(childComplexity), true
 	case "EnvSeries.environment":
-		if e.complexity.EnvSeries.Environment == nil {
+		if e.ComplexityRoot.EnvSeries.Environment == nil {
 			break
 		}
 
-		return e.complexity.EnvSeries.Environment(childComplexity), true
+		return e.ComplexityRoot.EnvSeries.Environment(childComplexity), true
 
 	case "Environment.auditLog":
-		if e.complexity.Environment.AuditLog == nil {
+		if e.ComplexityRoot.Environment.AuditLog == nil {
 			break
 		}
 
@@ -977,15 +961,15 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Environment.AuditLog(childComplexity, args["featureName"].(*string)), true
+		return e.ComplexityRoot.Environment.AuditLog(childComplexity, args["featureName"].(*string)), true
 	case "Environment.autoUpgrade":
-		if e.complexity.Environment.AutoUpgrade == nil {
+		if e.ComplexityRoot.Environment.AutoUpgrade == nil {
 			break
 		}
 
-		return e.complexity.Environment.AutoUpgrade(childComplexity), true
+		return e.ComplexityRoot.Environment.AutoUpgrade(childComplexity), true
 	case "Environment.clusterUpgradeHistory":
-		if e.complexity.Environment.ClusterUpgradeHistory == nil {
+		if e.ComplexityRoot.Environment.ClusterUpgradeHistory == nil {
 			break
 		}
 
@@ -994,27 +978,27 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Environment.ClusterUpgradeHistory(childComplexity, args["limit"].(*int), args["offset"].(*int)), true
+		return e.ComplexityRoot.Environment.ClusterUpgradeHistory(childComplexity, args["limit"].(*int), args["offset"].(*int)), true
 	case "Environment.clusterUpgradeStatus":
-		if e.complexity.Environment.ClusterUpgradeStatus == nil {
+		if e.ComplexityRoot.Environment.ClusterUpgradeStatus == nil {
 			break
 		}
 
-		return e.complexity.Environment.ClusterUpgradeStatus(childComplexity), true
+		return e.ComplexityRoot.Environment.ClusterUpgradeStatus(childComplexity), true
 	case "Environment.created":
-		if e.complexity.Environment.Created == nil {
+		if e.ComplexityRoot.Environment.Created == nil {
 			break
 		}
 
-		return e.complexity.Environment.Created(childComplexity), true
+		return e.ComplexityRoot.Environment.Created(childComplexity), true
 	case "Environment.description":
-		if e.complexity.Environment.Description == nil {
+		if e.ComplexityRoot.Environment.Description == nil {
 			break
 		}
 
-		return e.complexity.Environment.Description(childComplexity), true
+		return e.ComplexityRoot.Environment.Description(childComplexity), true
 	case "Environment.feature":
-		if e.complexity.Environment.Feature == nil {
+		if e.ComplexityRoot.Environment.Feature == nil {
 			break
 		}
 
@@ -1023,649 +1007,649 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Environment.Feature(childComplexity, args["name"].(string)), true
+		return e.ComplexityRoot.Environment.Feature(childComplexity, args["name"].(string)), true
 	case "Environment.featureStates":
-		if e.complexity.Environment.FeatureStates == nil {
+		if e.ComplexityRoot.Environment.FeatureStates == nil {
 			break
 		}
 
-		return e.complexity.Environment.FeatureStates(childComplexity), true
+		return e.ComplexityRoot.Environment.FeatureStates(childComplexity), true
 	case "Environment.features":
-		if e.complexity.Environment.Features == nil {
+		if e.ComplexityRoot.Environment.Features == nil {
 			break
 		}
 
-		return e.complexity.Environment.Features(childComplexity), true
+		return e.ComplexityRoot.Environment.Features(childComplexity), true
 	case "Environment.gcpProjectID":
-		if e.complexity.Environment.GCPProjectID == nil {
+		if e.ComplexityRoot.Environment.GCPProjectID == nil {
 			break
 		}
 
-		return e.complexity.Environment.GCPProjectID(childComplexity), true
+		return e.ComplexityRoot.Environment.GCPProjectID(childComplexity), true
 	case "Environment.health":
-		if e.complexity.Environment.Health == nil {
+		if e.ComplexityRoot.Environment.Health == nil {
 			break
 		}
 
-		return e.complexity.Environment.Health(childComplexity), true
+		return e.ComplexityRoot.Environment.Health(childComplexity), true
 	case "Environment.id":
-		if e.complexity.Environment.ID == nil {
+		if e.ComplexityRoot.Environment.ID == nil {
 			break
 		}
 
-		return e.complexity.Environment.ID(childComplexity), true
+		return e.ComplexityRoot.Environment.ID(childComplexity), true
 	case "Environment.kind":
-		if e.complexity.Environment.Kind == nil {
+		if e.ComplexityRoot.Environment.Kind == nil {
 			break
 		}
 
-		return e.complexity.Environment.Kind(childComplexity), true
+		return e.ComplexityRoot.Environment.Kind(childComplexity), true
 	case "Environment.labels":
-		if e.complexity.Environment.Labels == nil {
+		if e.ComplexityRoot.Environment.Labels == nil {
 			break
 		}
 
-		return e.complexity.Environment.Labels(childComplexity), true
+		return e.ComplexityRoot.Environment.Labels(childComplexity), true
 	case "Environment.lastModified":
-		if e.complexity.Environment.LastModified == nil {
+		if e.ComplexityRoot.Environment.LastModified == nil {
 			break
 		}
 
-		return e.complexity.Environment.LastModified(childComplexity), true
+		return e.ComplexityRoot.Environment.LastModified(childComplexity), true
 	case "Environment.maintenanceWindow":
-		if e.complexity.Environment.MaintenanceWindow == nil {
+		if e.ComplexityRoot.Environment.MaintenanceWindow == nil {
 			break
 		}
 
-		return e.complexity.Environment.MaintenanceWindow(childComplexity), true
+		return e.ComplexityRoot.Environment.MaintenanceWindow(childComplexity), true
 	case "Environment.name":
-		if e.complexity.Environment.Name == nil {
+		if e.ComplexityRoot.Environment.Name == nil {
 			break
 		}
 
-		return e.complexity.Environment.Name(childComplexity), true
+		return e.ComplexityRoot.Environment.Name(childComplexity), true
 	case "Environment.nodes":
-		if e.complexity.Environment.Nodes == nil {
+		if e.ComplexityRoot.Environment.Nodes == nil {
 			break
 		}
 
-		return e.complexity.Environment.Nodes(childComplexity), true
+		return e.ComplexityRoot.Environment.Nodes(childComplexity), true
 	case "Environment.reconcile":
-		if e.complexity.Environment.Reconcile == nil {
+		if e.ComplexityRoot.Environment.Reconcile == nil {
 			break
 		}
 
-		return e.complexity.Environment.Reconcile(childComplexity), true
+		return e.ComplexityRoot.Environment.Reconcile(childComplexity), true
 	case "Environment.releases":
-		if e.complexity.Environment.Releases == nil {
+		if e.ComplexityRoot.Environment.Releases == nil {
 			break
 		}
 
-		return e.complexity.Environment.Releases(childComplexity), true
+		return e.ComplexityRoot.Environment.Releases(childComplexity), true
 	case "Environment.tenant":
-		if e.complexity.Environment.Tenant == nil {
+		if e.ComplexityRoot.Environment.Tenant == nil {
 			break
 		}
 
-		return e.complexity.Environment.Tenant(childComplexity), true
+		return e.ComplexityRoot.Environment.Tenant(childComplexity), true
 	case "Environment.upgradeDelayDays":
-		if e.complexity.Environment.UpgradeDelayDays == nil {
+		if e.ComplexityRoot.Environment.UpgradeDelayDays == nil {
 			break
 		}
 
-		return e.complexity.Environment.UpgradeDelayDays(childComplexity), true
+		return e.ComplexityRoot.Environment.UpgradeDelayDays(childComplexity), true
 	case "Environment.values":
-		if e.complexity.Environment.Values == nil {
+		if e.ComplexityRoot.Environment.Values == nil {
 			break
 		}
 
-		return e.complexity.Environment.Values(childComplexity), true
+		return e.ComplexityRoot.Environment.Values(childComplexity), true
 	case "Environment.versions":
-		if e.complexity.Environment.Versions == nil {
+		if e.ComplexityRoot.Environment.Versions == nil {
 			break
 		}
 
-		return e.complexity.Environment.Versions(childComplexity), true
+		return e.ComplexityRoot.Environment.Versions(childComplexity), true
 	case "Environment.warnings":
-		if e.complexity.Environment.Warnings == nil {
+		if e.ComplexityRoot.Environment.Warnings == nil {
 			break
 		}
 
-		return e.complexity.Environment.Warnings(childComplexity), true
+		return e.ComplexityRoot.Environment.Warnings(childComplexity), true
 
 	case "EnvironmentLabel.key":
-		if e.complexity.EnvironmentLabel.Key == nil {
+		if e.ComplexityRoot.EnvironmentLabel.Key == nil {
 			break
 		}
 
-		return e.complexity.EnvironmentLabel.Key(childComplexity), true
+		return e.ComplexityRoot.EnvironmentLabel.Key(childComplexity), true
 	case "EnvironmentLabel.value":
-		if e.complexity.EnvironmentLabel.Value == nil {
+		if e.ComplexityRoot.EnvironmentLabel.Value == nil {
 			break
 		}
 
-		return e.complexity.EnvironmentLabel.Value(childComplexity), true
+		return e.ComplexityRoot.EnvironmentLabel.Value(childComplexity), true
 
 	case "EnvironmentOperation.detail":
-		if e.complexity.EnvironmentOperation.Detail == nil {
+		if e.ComplexityRoot.EnvironmentOperation.Detail == nil {
 			break
 		}
 
-		return e.complexity.EnvironmentOperation.Detail(childComplexity), true
+		return e.ComplexityRoot.EnvironmentOperation.Detail(childComplexity), true
 	case "EnvironmentOperation.id":
-		if e.complexity.EnvironmentOperation.ID == nil {
+		if e.ComplexityRoot.EnvironmentOperation.ID == nil {
 			break
 		}
 
-		return e.complexity.EnvironmentOperation.ID(childComplexity), true
+		return e.ComplexityRoot.EnvironmentOperation.ID(childComplexity), true
 	case "EnvironmentOperation.lastModified":
-		if e.complexity.EnvironmentOperation.LastModified == nil {
+		if e.ComplexityRoot.EnvironmentOperation.LastModified == nil {
 			break
 		}
 
-		return e.complexity.EnvironmentOperation.LastModified(childComplexity), true
+		return e.ComplexityRoot.EnvironmentOperation.LastModified(childComplexity), true
 	case "EnvironmentOperation.name":
-		if e.complexity.EnvironmentOperation.Name == nil {
+		if e.ComplexityRoot.EnvironmentOperation.Name == nil {
 			break
 		}
 
-		return e.complexity.EnvironmentOperation.Name(childComplexity), true
+		return e.ComplexityRoot.EnvironmentOperation.Name(childComplexity), true
 	case "EnvironmentOperation.nodePdbDelaySeconds":
-		if e.complexity.EnvironmentOperation.NodePdbDelaySeconds == nil {
+		if e.ComplexityRoot.EnvironmentOperation.NodePdbDelaySeconds == nil {
 			break
 		}
 
-		return e.complexity.EnvironmentOperation.NodePdbDelaySeconds(childComplexity), true
+		return e.ComplexityRoot.EnvironmentOperation.NodePdbDelaySeconds(childComplexity), true
 	case "EnvironmentOperation.nodesCompleted":
-		if e.complexity.EnvironmentOperation.NodesCompleted == nil {
+		if e.ComplexityRoot.EnvironmentOperation.NodesCompleted == nil {
 			break
 		}
 
-		return e.complexity.EnvironmentOperation.NodesCompleted(childComplexity), true
+		return e.ComplexityRoot.EnvironmentOperation.NodesCompleted(childComplexity), true
 	case "EnvironmentOperation.nodesDone":
-		if e.complexity.EnvironmentOperation.NodesDone == nil {
+		if e.ComplexityRoot.EnvironmentOperation.NodesDone == nil {
 			break
 		}
 
-		return e.complexity.EnvironmentOperation.NodesDone(childComplexity), true
+		return e.ComplexityRoot.EnvironmentOperation.NodesDone(childComplexity), true
 	case "EnvironmentOperation.nodesFailed":
-		if e.complexity.EnvironmentOperation.NodesFailed == nil {
+		if e.ComplexityRoot.EnvironmentOperation.NodesFailed == nil {
 			break
 		}
 
-		return e.complexity.EnvironmentOperation.NodesFailed(childComplexity), true
+		return e.ComplexityRoot.EnvironmentOperation.NodesFailed(childComplexity), true
 	case "EnvironmentOperation.nodesTotal":
-		if e.complexity.EnvironmentOperation.NodesTotal == nil {
+		if e.ComplexityRoot.EnvironmentOperation.NodesTotal == nil {
 			break
 		}
 
-		return e.complexity.EnvironmentOperation.NodesTotal(childComplexity), true
+		return e.ComplexityRoot.EnvironmentOperation.NodesTotal(childComplexity), true
 	case "EnvironmentOperation.startTime":
-		if e.complexity.EnvironmentOperation.StartTime == nil {
+		if e.ComplexityRoot.EnvironmentOperation.StartTime == nil {
 			break
 		}
 
-		return e.complexity.EnvironmentOperation.StartTime(childComplexity), true
+		return e.ComplexityRoot.EnvironmentOperation.StartTime(childComplexity), true
 	case "EnvironmentOperation.status":
-		if e.complexity.EnvironmentOperation.Status == nil {
+		if e.ComplexityRoot.EnvironmentOperation.Status == nil {
 			break
 		}
 
-		return e.complexity.EnvironmentOperation.Status(childComplexity), true
+		return e.ComplexityRoot.EnvironmentOperation.Status(childComplexity), true
 	case "EnvironmentOperation.target":
-		if e.complexity.EnvironmentOperation.Target == nil {
+		if e.ComplexityRoot.EnvironmentOperation.Target == nil {
 			break
 		}
 
-		return e.complexity.EnvironmentOperation.Target(childComplexity), true
+		return e.ComplexityRoot.EnvironmentOperation.Target(childComplexity), true
 	case "EnvironmentOperation.type":
-		if e.complexity.EnvironmentOperation.Type == nil {
+		if e.ComplexityRoot.EnvironmentOperation.Type == nil {
 			break
 		}
 
-		return e.complexity.EnvironmentOperation.Type(childComplexity), true
+		return e.ComplexityRoot.EnvironmentOperation.Type(childComplexity), true
 
 	case "EnvironmentValue.key":
-		if e.complexity.EnvironmentValue.Key == nil {
+		if e.ComplexityRoot.EnvironmentValue.Key == nil {
 			break
 		}
 
-		return e.complexity.EnvironmentValue.Key(childComplexity), true
+		return e.ComplexityRoot.EnvironmentValue.Key(childComplexity), true
 	case "EnvironmentValue.knownUses":
-		if e.complexity.EnvironmentValue.KnownUses == nil {
+		if e.ComplexityRoot.EnvironmentValue.KnownUses == nil {
 			break
 		}
 
-		return e.complexity.EnvironmentValue.KnownUses(childComplexity), true
+		return e.ComplexityRoot.EnvironmentValue.KnownUses(childComplexity), true
 	case "EnvironmentValue.value":
-		if e.complexity.EnvironmentValue.Value == nil {
+		if e.ComplexityRoot.EnvironmentValue.Value == nil {
 			break
 		}
 
-		return e.complexity.EnvironmentValue.Value(childComplexity), true
+		return e.ComplexityRoot.EnvironmentValue.Value(childComplexity), true
 
 	case "EnvironmentVersions.apiserver":
-		if e.complexity.EnvironmentVersions.Apiserver == nil {
+		if e.ComplexityRoot.EnvironmentVersions.Apiserver == nil {
 			break
 		}
 
-		return e.complexity.EnvironmentVersions.Apiserver(childComplexity), true
+		return e.ComplexityRoot.EnvironmentVersions.Apiserver(childComplexity), true
 	case "EnvironmentVersions.availableVersions":
-		if e.complexity.EnvironmentVersions.AvailableVersions == nil {
+		if e.ComplexityRoot.EnvironmentVersions.AvailableVersions == nil {
 			break
 		}
 
-		return e.complexity.EnvironmentVersions.AvailableVersions(childComplexity), true
+		return e.ComplexityRoot.EnvironmentVersions.AvailableVersions(childComplexity), true
 	case "EnvironmentVersions.channel":
-		if e.complexity.EnvironmentVersions.Channel == nil {
+		if e.ComplexityRoot.EnvironmentVersions.Channel == nil {
 			break
 		}
 
-		return e.complexity.EnvironmentVersions.Channel(childComplexity), true
+		return e.ComplexityRoot.EnvironmentVersions.Channel(childComplexity), true
 	case "EnvironmentVersions.nodePools":
-		if e.complexity.EnvironmentVersions.NodePools == nil {
+		if e.ComplexityRoot.EnvironmentVersions.NodePools == nil {
 			break
 		}
 
-		return e.complexity.EnvironmentVersions.NodePools(childComplexity), true
+		return e.ComplexityRoot.EnvironmentVersions.NodePools(childComplexity), true
 
 	case "Feature.activeVersion":
-		if e.complexity.Feature.ActiveVersion == nil {
+		if e.ComplexityRoot.Feature.ActiveVersion == nil {
 			break
 		}
 
-		return e.complexity.Feature.ActiveVersion(childComplexity), true
+		return e.ComplexityRoot.Feature.ActiveVersion(childComplexity), true
 	case "Feature.chart":
-		if e.complexity.Feature.Chart == nil {
+		if e.ComplexityRoot.Feature.Chart == nil {
 			break
 		}
 
-		return e.complexity.Feature.Chart(childComplexity), true
+		return e.ComplexityRoot.Feature.Chart(childComplexity), true
 	case "Feature.configoverrides":
-		if e.complexity.Feature.Configoverrides == nil {
+		if e.ComplexityRoot.Feature.Configoverrides == nil {
 			break
 		}
 
-		return e.complexity.Feature.Configoverrides(childComplexity), true
+		return e.ComplexityRoot.Feature.Configoverrides(childComplexity), true
 	case "Feature.configuration":
-		if e.complexity.Feature.Configuration == nil {
+		if e.ComplexityRoot.Feature.Configuration == nil {
 			break
 		}
 
-		return e.complexity.Feature.Configuration(childComplexity), true
+		return e.ComplexityRoot.Feature.Configuration(childComplexity), true
 	case "Feature.dependencies":
-		if e.complexity.Feature.Dependencies == nil {
+		if e.ComplexityRoot.Feature.Dependencies == nil {
 			break
 		}
 
-		return e.complexity.Feature.Dependencies(childComplexity), true
+		return e.ComplexityRoot.Feature.Dependencies(childComplexity), true
 	case "Feature.description":
-		if e.complexity.Feature.Description == nil {
+		if e.ComplexityRoot.Feature.Description == nil {
 			break
 		}
 
-		return e.complexity.Feature.Description(childComplexity), true
+		return e.ComplexityRoot.Feature.Description(childComplexity), true
 	case "Feature.environmentKinds":
-		if e.complexity.Feature.EnvironmentKinds == nil {
+		if e.ComplexityRoot.Feature.EnvironmentKinds == nil {
 			break
 		}
 
-		return e.complexity.Feature.EnvironmentKinds(childComplexity), true
+		return e.ComplexityRoot.Feature.EnvironmentKinds(childComplexity), true
 	case "Feature.hasDeployments":
-		if e.complexity.Feature.HasDeployments == nil {
+		if e.ComplexityRoot.Feature.HasDeployments == nil {
 			break
 		}
 
-		return e.complexity.Feature.HasDeployments(childComplexity), true
+		return e.ComplexityRoot.Feature.HasDeployments(childComplexity), true
 	case "Feature.helmValueDiff":
-		if e.complexity.Feature.HelmValueDiff == nil {
+		if e.ComplexityRoot.Feature.HelmValueDiff == nil {
 			break
 		}
 
-		return e.complexity.Feature.HelmValueDiff(childComplexity), true
+		return e.ComplexityRoot.Feature.HelmValueDiff(childComplexity), true
 	case "Feature.histories":
-		if e.complexity.Feature.Histories == nil {
+		if e.ComplexityRoot.Feature.Histories == nil {
 			break
 		}
 
-		return e.complexity.Feature.Histories(childComplexity), true
+		return e.ComplexityRoot.Feature.Histories(childComplexity), true
 	case "Feature.name":
-		if e.complexity.Feature.Name == nil {
+		if e.ComplexityRoot.Feature.Name == nil {
 			break
 		}
 
-		return e.complexity.Feature.Name(childComplexity), true
+		return e.ComplexityRoot.Feature.Name(childComplexity), true
 	case "Feature.source":
-		if e.complexity.Feature.Source == nil {
+		if e.ComplexityRoot.Feature.Source == nil {
 			break
 		}
 
-		return e.complexity.Feature.Source(childComplexity), true
+		return e.ComplexityRoot.Feature.Source(childComplexity), true
 	case "Feature.specVersion":
-		if e.complexity.Feature.SpecVersion == nil {
+		if e.ComplexityRoot.Feature.SpecVersion == nil {
 			break
 		}
 
-		return e.complexity.Feature.SpecVersion(childComplexity), true
+		return e.ComplexityRoot.Feature.SpecVersion(childComplexity), true
 	case "Feature.state":
-		if e.complexity.Feature.State == nil {
+		if e.ComplexityRoot.Feature.State == nil {
 			break
 		}
 
-		return e.complexity.Feature.State(childComplexity), true
+		return e.ComplexityRoot.Feature.State(childComplexity), true
 	case "Feature.status":
-		if e.complexity.Feature.Status == nil {
+		if e.ComplexityRoot.Feature.Status == nil {
 			break
 		}
 
-		return e.complexity.Feature.Status(childComplexity), true
+		return e.ComplexityRoot.Feature.Status(childComplexity), true
 	case "Feature.version":
-		if e.complexity.Feature.Version == nil {
+		if e.ComplexityRoot.Feature.Version == nil {
 			break
 		}
 
-		return e.complexity.Feature.Version(childComplexity), true
+		return e.ComplexityRoot.Feature.Version(childComplexity), true
 
 	case "FeatureHistory.created":
-		if e.complexity.FeatureHistory.Created == nil {
+		if e.ComplexityRoot.FeatureHistory.Created == nil {
 			break
 		}
 
-		return e.complexity.FeatureHistory.Created(childComplexity), true
+		return e.ComplexityRoot.FeatureHistory.Created(childComplexity), true
 	case "FeatureHistory.helmValueDiff":
-		if e.complexity.FeatureHistory.HelmValueDiff == nil {
+		if e.ComplexityRoot.FeatureHistory.HelmValueDiff == nil {
 			break
 		}
 
-		return e.complexity.FeatureHistory.HelmValueDiff(childComplexity), true
+		return e.ComplexityRoot.FeatureHistory.HelmValueDiff(childComplexity), true
 	case "FeatureHistory.id":
-		if e.complexity.FeatureHistory.ID == nil {
+		if e.ComplexityRoot.FeatureHistory.ID == nil {
 			break
 		}
 
-		return e.complexity.FeatureHistory.ID(childComplexity), true
+		return e.ComplexityRoot.FeatureHistory.ID(childComplexity), true
 	case "FeatureHistory.lastModified":
-		if e.complexity.FeatureHistory.LastModified == nil {
+		if e.ComplexityRoot.FeatureHistory.LastModified == nil {
 			break
 		}
 
-		return e.complexity.FeatureHistory.LastModified(childComplexity), true
+		return e.ComplexityRoot.FeatureHistory.LastModified(childComplexity), true
 	case "FeatureHistory.log":
-		if e.complexity.FeatureHistory.Log == nil {
+		if e.ComplexityRoot.FeatureHistory.Log == nil {
 			break
 		}
 
-		return e.complexity.FeatureHistory.Log(childComplexity), true
+		return e.ComplexityRoot.FeatureHistory.Log(childComplexity), true
 	case "FeatureHistory.status":
-		if e.complexity.FeatureHistory.Status == nil {
+		if e.ComplexityRoot.FeatureHistory.Status == nil {
 			break
 		}
 
-		return e.complexity.FeatureHistory.Status(childComplexity), true
+		return e.ComplexityRoot.FeatureHistory.Status(childComplexity), true
 	case "FeatureHistory.version":
-		if e.complexity.FeatureHistory.Version == nil {
+		if e.ComplexityRoot.FeatureHistory.Version == nil {
 			break
 		}
 
-		return e.complexity.FeatureHistory.Version(childComplexity), true
+		return e.ComplexityRoot.FeatureHistory.Version(childComplexity), true
 
 	case "FeatureState.configuration":
-		if e.complexity.FeatureState.Configuration == nil {
+		if e.ComplexityRoot.FeatureState.Configuration == nil {
 			break
 		}
 
-		return e.complexity.FeatureState.Configuration(childComplexity), true
+		return e.ComplexityRoot.FeatureState.Configuration(childComplexity), true
 	case "FeatureState.created":
-		if e.complexity.FeatureState.Created == nil {
+		if e.ComplexityRoot.FeatureState.Created == nil {
 			break
 		}
 
-		return e.complexity.FeatureState.Created(childComplexity), true
+		return e.ComplexityRoot.FeatureState.Created(childComplexity), true
 	case "FeatureState.enabled":
-		if e.complexity.FeatureState.Enabled == nil {
+		if e.ComplexityRoot.FeatureState.Enabled == nil {
 			break
 		}
 
-		return e.complexity.FeatureState.Enabled(childComplexity), true
+		return e.ComplexityRoot.FeatureState.Enabled(childComplexity), true
 	case "FeatureState.feature":
-		if e.complexity.FeatureState.Feature == nil {
+		if e.ComplexityRoot.FeatureState.Feature == nil {
 			break
 		}
 
-		return e.complexity.FeatureState.Feature(childComplexity), true
+		return e.ComplexityRoot.FeatureState.Feature(childComplexity), true
 	case "FeatureState.id":
-		if e.complexity.FeatureState.ID == nil {
+		if e.ComplexityRoot.FeatureState.ID == nil {
 			break
 		}
 
-		return e.complexity.FeatureState.ID(childComplexity), true
+		return e.ComplexityRoot.FeatureState.ID(childComplexity), true
 	case "FeatureState.lastModified":
-		if e.complexity.FeatureState.LastModified == nil {
+		if e.ComplexityRoot.FeatureState.LastModified == nil {
 			break
 		}
 
-		return e.complexity.FeatureState.LastModified(childComplexity), true
+		return e.ComplexityRoot.FeatureState.LastModified(childComplexity), true
 	case "FeatureState.missingDependencies":
-		if e.complexity.FeatureState.MissingDependencies == nil {
+		if e.ComplexityRoot.FeatureState.MissingDependencies == nil {
 			break
 		}
 
-		return e.complexity.FeatureState.MissingDependencies(childComplexity), true
+		return e.ComplexityRoot.FeatureState.MissingDependencies(childComplexity), true
 
 	case "FeatureWarning.environment":
-		if e.complexity.FeatureWarning.Environment == nil {
+		if e.ComplexityRoot.FeatureWarning.Environment == nil {
 			break
 		}
 
-		return e.complexity.FeatureWarning.Environment(childComplexity), true
+		return e.ComplexityRoot.FeatureWarning.Environment(childComplexity), true
 	case "FeatureWarning.feature":
-		if e.complexity.FeatureWarning.Feature == nil {
+		if e.ComplexityRoot.FeatureWarning.Feature == nil {
 			break
 		}
 
-		return e.complexity.FeatureWarning.Feature(childComplexity), true
+		return e.ComplexityRoot.FeatureWarning.Feature(childComplexity), true
 	case "FeatureWarning.message":
-		if e.complexity.FeatureWarning.Message == nil {
+		if e.ComplexityRoot.FeatureWarning.Message == nil {
 			break
 		}
 
-		return e.complexity.FeatureWarning.Message(childComplexity), true
+		return e.ComplexityRoot.FeatureWarning.Message(childComplexity), true
 
 	case "Health.reportedAt":
-		if e.complexity.Health.ReportedAt == nil {
+		if e.ComplexityRoot.Health.ReportedAt == nil {
 			break
 		}
 
-		return e.complexity.Health.ReportedAt(childComplexity), true
+		return e.ComplexityRoot.Health.ReportedAt(childComplexity), true
 
 	case "HelmValueDiff.diff":
-		if e.complexity.HelmValueDiff.Diff == nil {
+		if e.ComplexityRoot.HelmValueDiff.Diff == nil {
 			break
 		}
 
-		return e.complexity.HelmValueDiff.Diff(childComplexity), true
+		return e.ComplexityRoot.HelmValueDiff.Diff(childComplexity), true
 	case "HelmValueDiff.difference":
-		if e.complexity.HelmValueDiff.Difference == nil {
+		if e.ComplexityRoot.HelmValueDiff.Difference == nil {
 			break
 		}
 
-		return e.complexity.HelmValueDiff.Difference(childComplexity), true
+		return e.ComplexityRoot.HelmValueDiff.Difference(childComplexity), true
 
 	case "KubernetesNode.allocatable":
-		if e.complexity.KubernetesNode.Allocatable == nil {
+		if e.ComplexityRoot.KubernetesNode.Allocatable == nil {
 			break
 		}
 
-		return e.complexity.KubernetesNode.Allocatable(childComplexity), true
+		return e.ComplexityRoot.KubernetesNode.Allocatable(childComplexity), true
 	case "KubernetesNode.architecture":
-		if e.complexity.KubernetesNode.Architecture == nil {
+		if e.ComplexityRoot.KubernetesNode.Architecture == nil {
 			break
 		}
 
-		return e.complexity.KubernetesNode.Architecture(childComplexity), true
+		return e.ComplexityRoot.KubernetesNode.Architecture(childComplexity), true
 	case "KubernetesNode.capacity":
-		if e.complexity.KubernetesNode.Capacity == nil {
+		if e.ComplexityRoot.KubernetesNode.Capacity == nil {
 			break
 		}
 
-		return e.complexity.KubernetesNode.Capacity(childComplexity), true
+		return e.ComplexityRoot.KubernetesNode.Capacity(childComplexity), true
 	case "KubernetesNode.conditions":
-		if e.complexity.KubernetesNode.Conditions == nil {
+		if e.ComplexityRoot.KubernetesNode.Conditions == nil {
 			break
 		}
 
-		return e.complexity.KubernetesNode.Conditions(childComplexity), true
+		return e.ComplexityRoot.KubernetesNode.Conditions(childComplexity), true
 	case "KubernetesNode.containerRuntimeVersion":
-		if e.complexity.KubernetesNode.ContainerRuntimeVersion == nil {
+		if e.ComplexityRoot.KubernetesNode.ContainerRuntimeVersion == nil {
 			break
 		}
 
-		return e.complexity.KubernetesNode.ContainerRuntimeVersion(childComplexity), true
+		return e.ComplexityRoot.KubernetesNode.ContainerRuntimeVersion(childComplexity), true
 	case "KubernetesNode.internalIP":
-		if e.complexity.KubernetesNode.InternalIP == nil {
+		if e.ComplexityRoot.KubernetesNode.InternalIP == nil {
 			break
 		}
 
-		return e.complexity.KubernetesNode.InternalIP(childComplexity), true
+		return e.ComplexityRoot.KubernetesNode.InternalIP(childComplexity), true
 	case "KubernetesNode.kernelVersion":
-		if e.complexity.KubernetesNode.KernelVersion == nil {
+		if e.ComplexityRoot.KubernetesNode.KernelVersion == nil {
 			break
 		}
 
-		return e.complexity.KubernetesNode.KernelVersion(childComplexity), true
+		return e.ComplexityRoot.KubernetesNode.KernelVersion(childComplexity), true
 	case "KubernetesNode.kubeProxyVersion":
-		if e.complexity.KubernetesNode.KubeProxyVersion == nil {
+		if e.ComplexityRoot.KubernetesNode.KubeProxyVersion == nil {
 			break
 		}
 
-		return e.complexity.KubernetesNode.KubeProxyVersion(childComplexity), true
+		return e.ComplexityRoot.KubernetesNode.KubeProxyVersion(childComplexity), true
 	case "KubernetesNode.kubeletVersion":
-		if e.complexity.KubernetesNode.KubeletVersion == nil {
+		if e.ComplexityRoot.KubernetesNode.KubeletVersion == nil {
 			break
 		}
 
-		return e.complexity.KubernetesNode.KubeletVersion(childComplexity), true
+		return e.ComplexityRoot.KubernetesNode.KubeletVersion(childComplexity), true
 	case "KubernetesNode.name":
-		if e.complexity.KubernetesNode.Name == nil {
+		if e.ComplexityRoot.KubernetesNode.Name == nil {
 			break
 		}
 
-		return e.complexity.KubernetesNode.Name(childComplexity), true
+		return e.ComplexityRoot.KubernetesNode.Name(childComplexity), true
 	case "KubernetesNode.osImage":
-		if e.complexity.KubernetesNode.OSImage == nil {
+		if e.ComplexityRoot.KubernetesNode.OSImage == nil {
 			break
 		}
 
-		return e.complexity.KubernetesNode.OSImage(childComplexity), true
+		return e.ComplexityRoot.KubernetesNode.OSImage(childComplexity), true
 	case "KubernetesNode.operatingSystem":
-		if e.complexity.KubernetesNode.OperatingSystem == nil {
+		if e.ComplexityRoot.KubernetesNode.OperatingSystem == nil {
 			break
 		}
 
-		return e.complexity.KubernetesNode.OperatingSystem(childComplexity), true
+		return e.ComplexityRoot.KubernetesNode.OperatingSystem(childComplexity), true
 
 	case "KubernetesNodeCondition.lastHeartbeat":
-		if e.complexity.KubernetesNodeCondition.LastHeartbeat == nil {
+		if e.ComplexityRoot.KubernetesNodeCondition.LastHeartbeat == nil {
 			break
 		}
 
-		return e.complexity.KubernetesNodeCondition.LastHeartbeat(childComplexity), true
+		return e.ComplexityRoot.KubernetesNodeCondition.LastHeartbeat(childComplexity), true
 	case "KubernetesNodeCondition.lastTransition":
-		if e.complexity.KubernetesNodeCondition.LastTransition == nil {
+		if e.ComplexityRoot.KubernetesNodeCondition.LastTransition == nil {
 			break
 		}
 
-		return e.complexity.KubernetesNodeCondition.LastTransition(childComplexity), true
+		return e.ComplexityRoot.KubernetesNodeCondition.LastTransition(childComplexity), true
 	case "KubernetesNodeCondition.message":
-		if e.complexity.KubernetesNodeCondition.Message == nil {
+		if e.ComplexityRoot.KubernetesNodeCondition.Message == nil {
 			break
 		}
 
-		return e.complexity.KubernetesNodeCondition.Message(childComplexity), true
+		return e.ComplexityRoot.KubernetesNodeCondition.Message(childComplexity), true
 	case "KubernetesNodeCondition.reason":
-		if e.complexity.KubernetesNodeCondition.Reason == nil {
+		if e.ComplexityRoot.KubernetesNodeCondition.Reason == nil {
 			break
 		}
 
-		return e.complexity.KubernetesNodeCondition.Reason(childComplexity), true
+		return e.ComplexityRoot.KubernetesNodeCondition.Reason(childComplexity), true
 	case "KubernetesNodeCondition.status":
-		if e.complexity.KubernetesNodeCondition.Status == nil {
+		if e.ComplexityRoot.KubernetesNodeCondition.Status == nil {
 			break
 		}
 
-		return e.complexity.KubernetesNodeCondition.Status(childComplexity), true
+		return e.ComplexityRoot.KubernetesNodeCondition.Status(childComplexity), true
 	case "KubernetesNodeCondition.type":
-		if e.complexity.KubernetesNodeCondition.Type == nil {
+		if e.ComplexityRoot.KubernetesNodeCondition.Type == nil {
 			break
 		}
 
-		return e.complexity.KubernetesNodeCondition.Type(childComplexity), true
+		return e.ComplexityRoot.KubernetesNodeCondition.Type(childComplexity), true
 
 	case "KubernetesNodeResources.cpu":
-		if e.complexity.KubernetesNodeResources.CPU == nil {
+		if e.ComplexityRoot.KubernetesNodeResources.CPU == nil {
 			break
 		}
 
-		return e.complexity.KubernetesNodeResources.CPU(childComplexity), true
+		return e.ComplexityRoot.KubernetesNodeResources.CPU(childComplexity), true
 	case "KubernetesNodeResources.memory":
-		if e.complexity.KubernetesNodeResources.Memory == nil {
+		if e.ComplexityRoot.KubernetesNodeResources.Memory == nil {
 			break
 		}
 
-		return e.complexity.KubernetesNodeResources.Memory(childComplexity), true
+		return e.ComplexityRoot.KubernetesNodeResources.Memory(childComplexity), true
 	case "KubernetesNodeResources.pods":
-		if e.complexity.KubernetesNodeResources.Pods == nil {
+		if e.ComplexityRoot.KubernetesNodeResources.Pods == nil {
 			break
 		}
 
-		return e.complexity.KubernetesNodeResources.Pods(childComplexity), true
+		return e.ComplexityRoot.KubernetesNodeResources.Pods(childComplexity), true
 	case "KubernetesNodeResources.storage":
-		if e.complexity.KubernetesNodeResources.Storage == nil {
+		if e.ComplexityRoot.KubernetesNodeResources.Storage == nil {
 			break
 		}
 
-		return e.complexity.KubernetesNodeResources.Storage(childComplexity), true
+		return e.ComplexityRoot.KubernetesNodeResources.Storage(childComplexity), true
 
 	case "LogLine.id":
-		if e.complexity.LogLine.ID == nil {
+		if e.ComplexityRoot.LogLine.ID == nil {
 			break
 		}
 
-		return e.complexity.LogLine.ID(childComplexity), true
+		return e.ComplexityRoot.LogLine.ID(childComplexity), true
 	case "LogLine.message":
-		if e.complexity.LogLine.Message == nil {
+		if e.ComplexityRoot.LogLine.Message == nil {
 			break
 		}
 
-		return e.complexity.LogLine.Message(childComplexity), true
+		return e.ComplexityRoot.LogLine.Message(childComplexity), true
 	case "LogLine.timestamp":
-		if e.complexity.LogLine.Timestamp == nil {
+		if e.ComplexityRoot.LogLine.Timestamp == nil {
 			break
 		}
 
-		return e.complexity.LogLine.Timestamp(childComplexity), true
+		return e.ComplexityRoot.LogLine.Timestamp(childComplexity), true
 
 	case "MaintenanceWindow.days":
-		if e.complexity.MaintenanceWindow.Days == nil {
+		if e.ComplexityRoot.MaintenanceWindow.Days == nil {
 			break
 		}
 
-		return e.complexity.MaintenanceWindow.Days(childComplexity), true
+		return e.ComplexityRoot.MaintenanceWindow.Days(childComplexity), true
 	case "MaintenanceWindow.endTime":
-		if e.complexity.MaintenanceWindow.EndTime == nil {
+		if e.ComplexityRoot.MaintenanceWindow.EndTime == nil {
 			break
 		}
 
-		return e.complexity.MaintenanceWindow.EndTime(childComplexity), true
+		return e.ComplexityRoot.MaintenanceWindow.EndTime(childComplexity), true
 	case "MaintenanceWindow.startTime":
-		if e.complexity.MaintenanceWindow.StartTime == nil {
+		if e.ComplexityRoot.MaintenanceWindow.StartTime == nil {
 			break
 		}
 
-		return e.complexity.MaintenanceWindow.StartTime(childComplexity), true
+		return e.ComplexityRoot.MaintenanceWindow.StartTime(childComplexity), true
 
 	case "Mutation.clusterUpgradeBypassDelay":
-		if e.complexity.Mutation.ClusterUpgradeBypassDelay == nil {
+		if e.ComplexityRoot.Mutation.ClusterUpgradeBypassDelay == nil {
 			break
 		}
 
@@ -1674,9 +1658,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.ClusterUpgradeBypassDelay(childComplexity, args["upgradeID"].(uuid.UUID)), true
+		return e.ComplexityRoot.Mutation.ClusterUpgradeBypassDelay(childComplexity, args["upgradeID"].(uuid.UUID)), true
 	case "Mutation.configurationCreate":
-		if e.complexity.Mutation.ConfigurationCreate == nil {
+		if e.ComplexityRoot.Mutation.ConfigurationCreate == nil {
 			break
 		}
 
@@ -1685,9 +1669,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.ConfigurationCreate(childComplexity, args["configuration"].(model.NewConfiguration)), true
+		return e.ComplexityRoot.Mutation.ConfigurationCreate(childComplexity, args["configuration"].(model.NewConfiguration)), true
 	case "Mutation.configurationDelete":
-		if e.complexity.Mutation.ConfigurationDelete == nil {
+		if e.ComplexityRoot.Mutation.ConfigurationDelete == nil {
 			break
 		}
 
@@ -1696,9 +1680,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.ConfigurationDelete(childComplexity, args["id"].(uuid.UUID)), true
+		return e.ComplexityRoot.Mutation.ConfigurationDelete(childComplexity, args["id"].(uuid.UUID)), true
 	case "Mutation.configurationUpdate":
-		if e.complexity.Mutation.ConfigurationUpdate == nil {
+		if e.ComplexityRoot.Mutation.ConfigurationUpdate == nil {
 			break
 		}
 
@@ -1707,9 +1691,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.ConfigurationUpdate(childComplexity, args["id"].(uuid.UUID), args["configuration"].(model.UpdateConfiguration)), true
+		return e.ComplexityRoot.Mutation.ConfigurationUpdate(childComplexity, args["id"].(uuid.UUID), args["configuration"].(model.UpdateConfiguration)), true
 	case "Mutation.createDeployment":
-		if e.complexity.Mutation.CreateDeployment == nil {
+		if e.ComplexityRoot.Mutation.CreateDeployment == nil {
 			break
 		}
 
@@ -1718,9 +1702,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateDeployment(childComplexity, args["input"].(model.CreateDeploymentInput)), true
+		return e.ComplexityRoot.Mutation.CreateDeployment(childComplexity, args["input"].(model.CreateDeploymentInput)), true
 	case "Mutation.deleteDeployment":
-		if e.complexity.Mutation.DeleteDeployment == nil {
+		if e.ComplexityRoot.Mutation.DeleteDeployment == nil {
 			break
 		}
 
@@ -1729,9 +1713,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.DeleteDeployment(childComplexity, args["deploymentID"].(uuid.UUID)), true
+		return e.ComplexityRoot.Mutation.DeleteDeployment(childComplexity, args["deploymentID"].(uuid.UUID)), true
 	case "Mutation.deleteHelmInstall":
-		if e.complexity.Mutation.DeleteHelmInstall == nil {
+		if e.ComplexityRoot.Mutation.DeleteHelmInstall == nil {
 			break
 		}
 
@@ -1740,9 +1724,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.DeleteHelmInstall(childComplexity, args["envID"].(uuid.UUID), args["name"].(string)), true
+		return e.ComplexityRoot.Mutation.DeleteHelmInstall(childComplexity, args["envID"].(uuid.UUID), args["name"].(string)), true
 	case "Mutation.environmentCreate":
-		if e.complexity.Mutation.EnvironmentCreate == nil {
+		if e.ComplexityRoot.Mutation.EnvironmentCreate == nil {
 			break
 		}
 
@@ -1751,9 +1735,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.EnvironmentCreate(childComplexity, args["environment"].(model.EnvironmentCreate)), true
+		return e.ComplexityRoot.Mutation.EnvironmentCreate(childComplexity, args["environment"].(model.EnvironmentCreate)), true
 	case "Mutation.environmentSetAutoUpgrade":
-		if e.complexity.Mutation.EnvironmentSetAutoUpgrade == nil {
+		if e.ComplexityRoot.Mutation.EnvironmentSetAutoUpgrade == nil {
 			break
 		}
 
@@ -1762,9 +1746,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.EnvironmentSetAutoUpgrade(childComplexity, args["id"].(uuid.UUID), args["autoUpgrade"].(bool)), true
+		return e.ComplexityRoot.Mutation.EnvironmentSetAutoUpgrade(childComplexity, args["id"].(uuid.UUID), args["autoUpgrade"].(bool)), true
 	case "Mutation.environmentSetMaintenanceWindow":
-		if e.complexity.Mutation.EnvironmentSetMaintenanceWindow == nil {
+		if e.ComplexityRoot.Mutation.EnvironmentSetMaintenanceWindow == nil {
 			break
 		}
 
@@ -1773,9 +1757,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.EnvironmentSetMaintenanceWindow(childComplexity, args["environmentID"].(uuid.UUID), args["window"].(*model.MaintenanceWindowInput)), true
+		return e.ComplexityRoot.Mutation.EnvironmentSetMaintenanceWindow(childComplexity, args["environmentID"].(uuid.UUID), args["window"].(*model.MaintenanceWindowInput)), true
 	case "Mutation.environmentSetReconcile":
-		if e.complexity.Mutation.EnvironmentSetReconcile == nil {
+		if e.ComplexityRoot.Mutation.EnvironmentSetReconcile == nil {
 			break
 		}
 
@@ -1784,9 +1768,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.EnvironmentSetReconcile(childComplexity, args["id"].(uuid.UUID), args["reconcile"].(bool)), true
+		return e.ComplexityRoot.Mutation.EnvironmentSetReconcile(childComplexity, args["id"].(uuid.UUID), args["reconcile"].(bool)), true
 	case "Mutation.environmentSetUpgradeDelayDays":
-		if e.complexity.Mutation.EnvironmentSetUpgradeDelayDays == nil {
+		if e.ComplexityRoot.Mutation.EnvironmentSetUpgradeDelayDays == nil {
 			break
 		}
 
@@ -1795,9 +1779,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.EnvironmentSetUpgradeDelayDays(childComplexity, args["environmentID"].(uuid.UUID), args["delayDays"].(int)), true
+		return e.ComplexityRoot.Mutation.EnvironmentSetUpgradeDelayDays(childComplexity, args["environmentID"].(uuid.UUID), args["delayDays"].(int)), true
 	case "Mutation.environmentUpdate":
-		if e.complexity.Mutation.EnvironmentUpdate == nil {
+		if e.ComplexityRoot.Mutation.EnvironmentUpdate == nil {
 			break
 		}
 
@@ -1806,9 +1790,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.EnvironmentUpdate(childComplexity, args["id"].(uuid.UUID), args["input"].(model.EnvironmentUpdate)), true
+		return e.ComplexityRoot.Mutation.EnvironmentUpdate(childComplexity, args["id"].(uuid.UUID), args["input"].(model.EnvironmentUpdate)), true
 	case "Mutation.environmentUpgrade":
-		if e.complexity.Mutation.EnvironmentUpgrade == nil {
+		if e.ComplexityRoot.Mutation.EnvironmentUpgrade == nil {
 			break
 		}
 
@@ -1817,9 +1801,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.EnvironmentUpgrade(childComplexity, args["upgrade"].(*model.EnvironmentUpgrade)), true
+		return e.ComplexityRoot.Mutation.EnvironmentUpgrade(childComplexity, args["upgrade"].(*model.EnvironmentUpgrade)), true
 	case "Mutation.featureStateSave":
-		if e.complexity.Mutation.FeatureStateSave == nil {
+		if e.ComplexityRoot.Mutation.FeatureStateSave == nil {
 			break
 		}
 
@@ -1828,9 +1812,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.FeatureStateSave(childComplexity, args["envID"].(uuid.UUID), args["enabled"].(bool), args["feature"].(string)), true
+		return e.ComplexityRoot.Mutation.FeatureStateSave(childComplexity, args["envID"].(uuid.UUID), args["enabled"].(bool), args["feature"].(string)), true
 	case "Mutation.playground":
-		if e.complexity.Mutation.Playground == nil {
+		if e.ComplexityRoot.Mutation.Playground == nil {
 			break
 		}
 
@@ -1839,9 +1823,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.Playground(childComplexity, args["input"].(model.PlaygroundInput)), true
+		return e.ComplexityRoot.Mutation.Playground(childComplexity, args["input"].(model.PlaygroundInput)), true
 	case "Mutation.rolloutMarkFailed":
-		if e.complexity.Mutation.RolloutMarkFailed == nil {
+		if e.ComplexityRoot.Mutation.RolloutMarkFailed == nil {
 			break
 		}
 
@@ -1850,9 +1834,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.RolloutMarkFailed(childComplexity, args["feature"].(string), args["version"].(string)), true
+		return e.ComplexityRoot.Mutation.RolloutMarkFailed(childComplexity, args["feature"].(string), args["version"].(string)), true
 	case "Mutation.tenantCreate":
-		if e.complexity.Mutation.TenantCreate == nil {
+		if e.ComplexityRoot.Mutation.TenantCreate == nil {
 			break
 		}
 
@@ -1861,9 +1845,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.TenantCreate(childComplexity, args["tenant"].(model.TenantCreate)), true
+		return e.ComplexityRoot.Mutation.TenantCreate(childComplexity, args["tenant"].(model.TenantCreate)), true
 	case "Mutation.tenantSetUpgradeDelayDays":
-		if e.complexity.Mutation.TenantSetUpgradeDelayDays == nil {
+		if e.ComplexityRoot.Mutation.TenantSetUpgradeDelayDays == nil {
 			break
 		}
 
@@ -1872,49 +1856,49 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.TenantSetUpgradeDelayDays(childComplexity, args["tenantID"].(uuid.UUID), args["delayDays"].(int)), true
+		return e.ComplexityRoot.Mutation.TenantSetUpgradeDelayDays(childComplexity, args["tenantID"].(uuid.UUID), args["delayDays"].(int)), true
 
 	case "NaisdWarning.environment":
-		if e.complexity.NaisdWarning.Environment == nil {
+		if e.ComplexityRoot.NaisdWarning.Environment == nil {
 			break
 		}
 
-		return e.complexity.NaisdWarning.Environment(childComplexity), true
+		return e.ComplexityRoot.NaisdWarning.Environment(childComplexity), true
 	case "NaisdWarning.message":
-		if e.complexity.NaisdWarning.Message == nil {
+		if e.ComplexityRoot.NaisdWarning.Message == nil {
 			break
 		}
 
-		return e.complexity.NaisdWarning.Message(childComplexity), true
+		return e.ComplexityRoot.NaisdWarning.Message(childComplexity), true
 
 	case "NodePool.name":
-		if e.complexity.NodePool.Name == nil {
+		if e.ComplexityRoot.NodePool.Name == nil {
 			break
 		}
 
-		return e.complexity.NodePool.Name(childComplexity), true
+		return e.ComplexityRoot.NodePool.Name(childComplexity), true
 	case "NodePool.version":
-		if e.complexity.NodePool.Version == nil {
+		if e.ComplexityRoot.NodePool.Version == nil {
 			break
 		}
 
-		return e.complexity.NodePool.Version(childComplexity), true
+		return e.ComplexityRoot.NodePool.Version(childComplexity), true
 
 	case "Playground.errors":
-		if e.complexity.Playground.Errors == nil {
+		if e.ComplexityRoot.Playground.Errors == nil {
 			break
 		}
 
-		return e.complexity.Playground.Errors(childComplexity), true
+		return e.ComplexityRoot.Playground.Errors(childComplexity), true
 	case "Playground.result":
-		if e.complexity.Playground.Result == nil {
+		if e.ComplexityRoot.Playground.Result == nil {
 			break
 		}
 
-		return e.complexity.Playground.Result(childComplexity), true
+		return e.ComplexityRoot.Playground.Result(childComplexity), true
 
 	case "Query.clusterUpgradeHistory":
-		if e.complexity.Query.ClusterUpgradeHistory == nil {
+		if e.ComplexityRoot.Query.ClusterUpgradeHistory == nil {
 			break
 		}
 
@@ -1923,9 +1907,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.ClusterUpgradeHistory(childComplexity, args["limit"].(*int), args["offset"].(*int)), true
+		return e.ComplexityRoot.Query.ClusterUpgradeHistory(childComplexity, args["limit"].(*int), args["offset"].(*int)), true
 	case "Query.configuration":
-		if e.complexity.Query.Configuration == nil {
+		if e.ComplexityRoot.Query.Configuration == nil {
 			break
 		}
 
@@ -1934,9 +1918,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.Configuration(childComplexity, args["feature"].(string), args["envID"].(*uuid.UUID)), true
+		return e.ComplexityRoot.Query.Configuration(childComplexity, args["feature"].(string), args["envID"].(*uuid.UUID)), true
 	case "Query.cost":
-		if e.complexity.Query.Cost == nil {
+		if e.ComplexityRoot.Query.Cost == nil {
 			break
 		}
 
@@ -1945,9 +1929,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.Cost(childComplexity, args["filter"].(*model.CostFilter)), true
+		return e.ComplexityRoot.Query.Cost(childComplexity, args["filter"].(*model.CostFilter)), true
 	case "Query.costForTenant":
-		if e.complexity.Query.CostForTenant == nil {
+		if e.ComplexityRoot.Query.CostForTenant == nil {
 			break
 		}
 
@@ -1956,9 +1940,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.CostForTenant(childComplexity, args["tenantID"].(uuid.UUID), args["filter"].(*model.CostFilter)), true
+		return e.ComplexityRoot.Query.CostForTenant(childComplexity, args["tenantID"].(uuid.UUID), args["filter"].(*model.CostFilter)), true
 	case "Query.deployment":
-		if e.complexity.Query.Deployment == nil {
+		if e.ComplexityRoot.Query.Deployment == nil {
 			break
 		}
 
@@ -1967,9 +1951,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.Deployment(childComplexity, args["id"].(uuid.UUID)), true
+		return e.ComplexityRoot.Query.Deployment(childComplexity, args["id"].(uuid.UUID)), true
 	case "Query.deployments":
-		if e.complexity.Query.Deployments == nil {
+		if e.ComplexityRoot.Query.Deployments == nil {
 			break
 		}
 
@@ -1978,9 +1962,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.Deployments(childComplexity, args["feature"].(*string)), true
+		return e.ComplexityRoot.Query.Deployments(childComplexity, args["feature"].(*string)), true
 	case "Query.feature":
-		if e.complexity.Query.Feature == nil {
+		if e.ComplexityRoot.Query.Feature == nil {
 			break
 		}
 
@@ -1989,9 +1973,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.Feature(childComplexity, args["name"].(string)), true
+		return e.ComplexityRoot.Query.Feature(childComplexity, args["name"].(string)), true
 	case "Query.featureState":
-		if e.complexity.Query.FeatureState == nil {
+		if e.ComplexityRoot.Query.FeatureState == nil {
 			break
 		}
 
@@ -2000,15 +1984,15 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.FeatureState(childComplexity, args["envID"].(uuid.UUID), args["feature"].(string)), true
+		return e.ComplexityRoot.Query.FeatureState(childComplexity, args["envID"].(uuid.UUID), args["feature"].(string)), true
 	case "Query.features":
-		if e.complexity.Query.Features == nil {
+		if e.ComplexityRoot.Query.Features == nil {
 			break
 		}
 
-		return e.complexity.Query.Features(childComplexity), true
+		return e.ComplexityRoot.Query.Features(childComplexity), true
 	case "Query.helmValues":
-		if e.complexity.Query.HelmValues == nil {
+		if e.ComplexityRoot.Query.HelmValues == nil {
 			break
 		}
 
@@ -2017,9 +2001,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.HelmValues(childComplexity, args["feature"].(string), args["envID"].(*uuid.UUID), args["env"].(*string), args["tenant"].(*string)), true
+		return e.ComplexityRoot.Query.HelmValues(childComplexity, args["feature"].(string), args["envID"].(*uuid.UUID), args["env"].(*string), args["tenant"].(*string)), true
 	case "Query.history":
-		if e.complexity.Query.History == nil {
+		if e.ComplexityRoot.Query.History == nil {
 			break
 		}
 
@@ -2028,9 +2012,10 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.History(childComplexity, args["id"].(uuid.UUID)), true
+		return e.ComplexityRoot.Query.History(childComplexity, args["id"].(uuid.UUID)), true
+
 	case "Query.rollout":
-		if e.complexity.Query.Rollout == nil {
+		if e.ComplexityRoot.Query.Rollout == nil {
 			break
 		}
 
@@ -2039,9 +2024,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.Rollout(childComplexity, args["feature"].(string), args["version"].(string)), true
+		return e.ComplexityRoot.Query.Rollout(childComplexity, args["feature"].(string), args["version"].(string)), true
 	case "Query.rollouts":
-		if e.complexity.Query.Rollouts == nil {
+		if e.ComplexityRoot.Query.Rollouts == nil {
 			break
 		}
 
@@ -2050,9 +2035,9 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.Rollouts(childComplexity, args["feature"].(*string)), true
+		return e.ComplexityRoot.Query.Rollouts(childComplexity, args["feature"].(*string)), true
 	case "Query.tenant":
-		if e.complexity.Query.Tenant == nil {
+		if e.ComplexityRoot.Query.Tenant == nil {
 			break
 		}
 
@@ -2061,219 +2046,219 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Query.Tenant(childComplexity, args["id"].(*uuid.UUID), args["slug"].(*string)), true
+		return e.ComplexityRoot.Query.Tenant(childComplexity, args["id"].(*uuid.UUID), args["slug"].(*string)), true
 	case "Query.tenants":
-		if e.complexity.Query.Tenants == nil {
+		if e.ComplexityRoot.Query.Tenants == nil {
 			break
 		}
 
-		return e.complexity.Query.Tenants(childComplexity), true
+		return e.ComplexityRoot.Query.Tenants(childComplexity), true
 	case "Query.userInfo":
-		if e.complexity.Query.UserInfo == nil {
+		if e.ComplexityRoot.Query.UserInfo == nil {
 			break
 		}
 
-		return e.complexity.Query.UserInfo(childComplexity), true
+		return e.ComplexityRoot.Query.UserInfo(childComplexity), true
 
 	case "Release.created":
-		if e.complexity.Release.Created == nil {
+		if e.ComplexityRoot.Release.Created == nil {
 			break
 		}
 
-		return e.complexity.Release.Created(childComplexity), true
+		return e.ComplexityRoot.Release.Created(childComplexity), true
 	case "Release.feature":
-		if e.complexity.Release.Feature == nil {
+		if e.ComplexityRoot.Release.Feature == nil {
 			break
 		}
 
-		return e.complexity.Release.Feature(childComplexity), true
+		return e.ComplexityRoot.Release.Feature(childComplexity), true
 	case "Release.lastDeployed":
-		if e.complexity.Release.LastDeployed == nil {
+		if e.ComplexityRoot.Release.LastDeployed == nil {
 			break
 		}
 
-		return e.complexity.Release.LastDeployed(childComplexity), true
+		return e.ComplexityRoot.Release.LastDeployed(childComplexity), true
 	case "Release.lastModified":
-		if e.complexity.Release.LastModified == nil {
+		if e.ComplexityRoot.Release.LastModified == nil {
 			break
 		}
 
-		return e.complexity.Release.LastModified(childComplexity), true
+		return e.ComplexityRoot.Release.LastModified(childComplexity), true
 	case "Release.name":
-		if e.complexity.Release.Name == nil {
+		if e.ComplexityRoot.Release.Name == nil {
 			break
 		}
 
-		return e.complexity.Release.Name(childComplexity), true
+		return e.ComplexityRoot.Release.Name(childComplexity), true
 	case "Release.revision":
-		if e.complexity.Release.Revision == nil {
+		if e.ComplexityRoot.Release.Revision == nil {
 			break
 		}
 
-		return e.complexity.Release.Revision(childComplexity), true
+		return e.ComplexityRoot.Release.Revision(childComplexity), true
 	case "Release.status":
-		if e.complexity.Release.Status == nil {
+		if e.ComplexityRoot.Release.Status == nil {
 			break
 		}
 
-		return e.complexity.Release.Status(childComplexity), true
+		return e.ComplexityRoot.Release.Status(childComplexity), true
 	case "Release.version":
-		if e.complexity.Release.Version == nil {
+		if e.ComplexityRoot.Release.Version == nil {
 			break
 		}
 
-		return e.complexity.Release.Version(childComplexity), true
+		return e.ComplexityRoot.Release.Version(childComplexity), true
 
 	case "Rollout.completed":
-		if e.complexity.Rollout.Completed == nil {
+		if e.ComplexityRoot.Rollout.Completed == nil {
 			break
 		}
 
-		return e.complexity.Rollout.Completed(childComplexity), true
+		return e.ComplexityRoot.Rollout.Completed(childComplexity), true
 	case "Rollout.created":
-		if e.complexity.Rollout.Created == nil {
+		if e.ComplexityRoot.Rollout.Created == nil {
 			break
 		}
 
-		return e.complexity.Rollout.Created(childComplexity), true
+		return e.ComplexityRoot.Rollout.Created(childComplexity), true
 	case "Rollout.events":
-		if e.complexity.Rollout.Events == nil {
+		if e.ComplexityRoot.Rollout.Events == nil {
 			break
 		}
 
-		return e.complexity.Rollout.Events(childComplexity), true
+		return e.ComplexityRoot.Rollout.Events(childComplexity), true
 	case "Rollout.featureName":
-		if e.complexity.Rollout.FeatureName == nil {
+		if e.ComplexityRoot.Rollout.FeatureName == nil {
 			break
 		}
 
-		return e.complexity.Rollout.FeatureName(childComplexity), true
+		return e.ComplexityRoot.Rollout.FeatureName(childComplexity), true
 	case "Rollout.id":
-		if e.complexity.Rollout.ID == nil {
+		if e.ComplexityRoot.Rollout.ID == nil {
 			break
 		}
 
-		return e.complexity.Rollout.ID(childComplexity), true
+		return e.ComplexityRoot.Rollout.ID(childComplexity), true
 	case "Rollout.logs":
-		if e.complexity.Rollout.Logs == nil {
+		if e.ComplexityRoot.Rollout.Logs == nil {
 			break
 		}
 
-		return e.complexity.Rollout.Logs(childComplexity), true
+		return e.ComplexityRoot.Rollout.Logs(childComplexity), true
 	case "Rollout.status":
-		if e.complexity.Rollout.Status == nil {
+		if e.ComplexityRoot.Rollout.Status == nil {
 			break
 		}
 
-		return e.complexity.Rollout.Status(childComplexity), true
+		return e.ComplexityRoot.Rollout.Status(childComplexity), true
 	case "Rollout.version":
-		if e.complexity.Rollout.Version == nil {
+		if e.ComplexityRoot.Rollout.Version == nil {
 			break
 		}
 
-		return e.complexity.Rollout.Version(childComplexity), true
+		return e.ComplexityRoot.Rollout.Version(childComplexity), true
 
 	case "RolloutEvent.created":
-		if e.complexity.RolloutEvent.Created == nil {
+		if e.ComplexityRoot.RolloutEvent.Created == nil {
 			break
 		}
 
-		return e.complexity.RolloutEvent.Created(childComplexity), true
+		return e.ComplexityRoot.RolloutEvent.Created(childComplexity), true
 	case "RolloutEvent.data":
-		if e.complexity.RolloutEvent.Data == nil {
+		if e.ComplexityRoot.RolloutEvent.Data == nil {
 			break
 		}
 
-		return e.complexity.RolloutEvent.Data(childComplexity), true
+		return e.ComplexityRoot.RolloutEvent.Data(childComplexity), true
 	case "RolloutEvent.failure":
-		if e.complexity.RolloutEvent.Failure == nil {
+		if e.ComplexityRoot.RolloutEvent.Failure == nil {
 			break
 		}
 
-		return e.complexity.RolloutEvent.Failure(childComplexity), true
+		return e.ComplexityRoot.RolloutEvent.Failure(childComplexity), true
 	case "RolloutEvent.id":
-		if e.complexity.RolloutEvent.ID == nil {
+		if e.ComplexityRoot.RolloutEvent.ID == nil {
 			break
 		}
 
-		return e.complexity.RolloutEvent.ID(childComplexity), true
+		return e.ComplexityRoot.RolloutEvent.ID(childComplexity), true
 	case "RolloutEvent.message":
-		if e.complexity.RolloutEvent.Message == nil {
+		if e.ComplexityRoot.RolloutEvent.Message == nil {
 			break
 		}
 
-		return e.complexity.RolloutEvent.Message(childComplexity), true
+		return e.ComplexityRoot.RolloutEvent.Message(childComplexity), true
 
 	case "RolloutLog.environment":
-		if e.complexity.RolloutLog.Environment == nil {
+		if e.ComplexityRoot.RolloutLog.Environment == nil {
 			break
 		}
 
-		return e.complexity.RolloutLog.Environment(childComplexity), true
+		return e.ComplexityRoot.RolloutLog.Environment(childComplexity), true
 	case "RolloutLog.id":
-		if e.complexity.RolloutLog.ID == nil {
+		if e.ComplexityRoot.RolloutLog.ID == nil {
 			break
 		}
 
-		return e.complexity.RolloutLog.ID(childComplexity), true
+		return e.ComplexityRoot.RolloutLog.ID(childComplexity), true
 	case "RolloutLog.lines":
-		if e.complexity.RolloutLog.Lines == nil {
+		if e.ComplexityRoot.RolloutLog.Lines == nil {
 			break
 		}
 
-		return e.complexity.RolloutLog.Lines(childComplexity), true
+		return e.ComplexityRoot.RolloutLog.Lines(childComplexity), true
 	case "RolloutLog.tenantName":
-		if e.complexity.RolloutLog.TenantName == nil {
+		if e.ComplexityRoot.RolloutLog.TenantName == nil {
 			break
 		}
 
-		return e.complexity.RolloutLog.TenantName(childComplexity), true
+		return e.ComplexityRoot.RolloutLog.TenantName(childComplexity), true
 
 	case "Status.created":
-		if e.complexity.Status.Created == nil {
+		if e.ComplexityRoot.Status.Created == nil {
 			break
 		}
 
-		return e.complexity.Status.Created(childComplexity), true
+		return e.ComplexityRoot.Status.Created(childComplexity), true
 	case "Status.environmentID":
-		if e.complexity.Status.EnvironmentID == nil {
+		if e.ComplexityRoot.Status.EnvironmentID == nil {
 			break
 		}
 
-		return e.complexity.Status.EnvironmentID(childComplexity), true
+		return e.ComplexityRoot.Status.EnvironmentID(childComplexity), true
 	case "Status.id":
-		if e.complexity.Status.ID == nil {
+		if e.ComplexityRoot.Status.ID == nil {
 			break
 		}
 
-		return e.complexity.Status.ID(childComplexity), true
+		return e.ComplexityRoot.Status.ID(childComplexity), true
 	case "Status.lastModified":
-		if e.complexity.Status.LastModified == nil {
+		if e.ComplexityRoot.Status.LastModified == nil {
 			break
 		}
 
-		return e.complexity.Status.LastModified(childComplexity), true
+		return e.ComplexityRoot.Status.LastModified(childComplexity), true
 	case "Status.log":
-		if e.complexity.Status.Log == nil {
+		if e.ComplexityRoot.Status.Log == nil {
 			break
 		}
 
-		return e.complexity.Status.Log(childComplexity), true
+		return e.ComplexityRoot.Status.Log(childComplexity), true
 	case "Status.status":
-		if e.complexity.Status.Status == nil {
+		if e.ComplexityRoot.Status.Status == nil {
 			break
 		}
 
-		return e.complexity.Status.Status(childComplexity), true
+		return e.ComplexityRoot.Status.Status(childComplexity), true
 	case "Status.version":
-		if e.complexity.Status.Version == nil {
+		if e.ComplexityRoot.Status.Version == nil {
 			break
 		}
 
-		return e.complexity.Status.Version(childComplexity), true
+		return e.ComplexityRoot.Status.Version(childComplexity), true
 
 	case "Subscription.logs":
-		if e.complexity.Subscription.Logs == nil {
+		if e.ComplexityRoot.Subscription.Logs == nil {
 			break
 		}
 
@@ -2282,16 +2267,16 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Subscription.Logs(childComplexity, args["environmentID"].(uuid.UUID), args["featureName"].(string), args["lastLogID"].(*string)), true
+		return e.ComplexityRoot.Subscription.Logs(childComplexity, args["environmentID"].(uuid.UUID), args["featureName"].(string), args["lastLogID"].(*string)), true
 	case "Subscription.updates":
-		if e.complexity.Subscription.Updates == nil {
+		if e.ComplexityRoot.Subscription.Updates == nil {
 			break
 		}
 
-		return e.complexity.Subscription.Updates(childComplexity), true
+		return e.ComplexityRoot.Subscription.Updates(childComplexity), true
 
 	case "Tenant.clusterUpgradeHistory":
-		if e.complexity.Tenant.ClusterUpgradeHistory == nil {
+		if e.ComplexityRoot.Tenant.ClusterUpgradeHistory == nil {
 			break
 		}
 
@@ -2300,21 +2285,21 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Tenant.ClusterUpgradeHistory(childComplexity, args["limit"].(*int), args["offset"].(*int)), true
+		return e.ComplexityRoot.Tenant.ClusterUpgradeHistory(childComplexity, args["limit"].(*int), args["offset"].(*int)), true
 	case "Tenant.created":
-		if e.complexity.Tenant.Created == nil {
+		if e.ComplexityRoot.Tenant.Created == nil {
 			break
 		}
 
-		return e.complexity.Tenant.Created(childComplexity), true
+		return e.ComplexityRoot.Tenant.Created(childComplexity), true
 	case "Tenant.description":
-		if e.complexity.Tenant.Description == nil {
+		if e.ComplexityRoot.Tenant.Description == nil {
 			break
 		}
 
-		return e.complexity.Tenant.Description(childComplexity), true
+		return e.ComplexityRoot.Tenant.Description(childComplexity), true
 	case "Tenant.environment":
-		if e.complexity.Tenant.Environment == nil {
+		if e.ComplexityRoot.Tenant.Environment == nil {
 			break
 		}
 
@@ -2323,106 +2308,106 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Tenant.Environment(childComplexity, args["id"].(*uuid.UUID), args["slug"].(*string)), true
+		return e.ComplexityRoot.Tenant.Environment(childComplexity, args["id"].(*uuid.UUID), args["slug"].(*string)), true
 	case "Tenant.environments":
-		if e.complexity.Tenant.Environments == nil {
+		if e.ComplexityRoot.Tenant.Environments == nil {
 			break
 		}
 
-		return e.complexity.Tenant.Environments(childComplexity), true
+		return e.ComplexityRoot.Tenant.Environments(childComplexity), true
 	case "Tenant.id":
-		if e.complexity.Tenant.ID == nil {
+		if e.ComplexityRoot.Tenant.ID == nil {
 			break
 		}
 
-		return e.complexity.Tenant.ID(childComplexity), true
+		return e.ComplexityRoot.Tenant.ID(childComplexity), true
 	case "Tenant.lastModified":
-		if e.complexity.Tenant.LastModified == nil {
+		if e.ComplexityRoot.Tenant.LastModified == nil {
 			break
 		}
 
-		return e.complexity.Tenant.LastModified(childComplexity), true
+		return e.ComplexityRoot.Tenant.LastModified(childComplexity), true
 	case "Tenant.name":
-		if e.complexity.Tenant.Name == nil {
+		if e.ComplexityRoot.Tenant.Name == nil {
 			break
 		}
 
-		return e.complexity.Tenant.Name(childComplexity), true
+		return e.ComplexityRoot.Tenant.Name(childComplexity), true
 	case "Tenant.upgradeDelayDays":
-		if e.complexity.Tenant.UpgradeDelayDays == nil {
+		if e.ComplexityRoot.Tenant.UpgradeDelayDays == nil {
 			break
 		}
 
-		return e.complexity.Tenant.UpgradeDelayDays(childComplexity), true
+		return e.ComplexityRoot.Tenant.UpgradeDelayDays(childComplexity), true
 	case "Tenant.warnings":
-		if e.complexity.Tenant.Warnings == nil {
+		if e.ComplexityRoot.Tenant.Warnings == nil {
 			break
 		}
 
-		return e.complexity.Tenant.Warnings(childComplexity), true
+		return e.ComplexityRoot.Tenant.Warnings(childComplexity), true
 
 	case "TenantCosts.from":
-		if e.complexity.TenantCosts.From == nil {
+		if e.ComplexityRoot.TenantCosts.From == nil {
 			break
 		}
 
-		return e.complexity.TenantCosts.From(childComplexity), true
+		return e.ComplexityRoot.TenantCosts.From(childComplexity), true
 	case "TenantCosts.series":
-		if e.complexity.TenantCosts.Series == nil {
+		if e.ComplexityRoot.TenantCosts.Series == nil {
 			break
 		}
 
-		return e.complexity.TenantCosts.Series(childComplexity), true
+		return e.ComplexityRoot.TenantCosts.Series(childComplexity), true
 	case "TenantCosts.to":
-		if e.complexity.TenantCosts.To == nil {
+		if e.ComplexityRoot.TenantCosts.To == nil {
 			break
 		}
 
-		return e.complexity.TenantCosts.To(childComplexity), true
+		return e.ComplexityRoot.TenantCosts.To(childComplexity), true
 
 	case "Value.computed":
-		if e.complexity.Value.Computed == nil {
+		if e.ComplexityRoot.Value.Computed == nil {
 			break
 		}
 
-		return e.complexity.Value.Computed(childComplexity), true
+		return e.ComplexityRoot.Value.Computed(childComplexity), true
 	case "Value.config":
-		if e.complexity.Value.Config == nil {
+		if e.ComplexityRoot.Value.Config == nil {
 			break
 		}
 
-		return e.complexity.Value.Config(childComplexity), true
+		return e.ComplexityRoot.Value.Config(childComplexity), true
 	case "Value.description":
-		if e.complexity.Value.Description == nil {
+		if e.ComplexityRoot.Value.Description == nil {
 			break
 		}
 
-		return e.complexity.Value.Description(childComplexity), true
+		return e.ComplexityRoot.Value.Description(childComplexity), true
 	case "Value.displayName":
-		if e.complexity.Value.DisplayName == nil {
+		if e.ComplexityRoot.Value.DisplayName == nil {
 			break
 		}
 
-		return e.complexity.Value.DisplayName(childComplexity), true
+		return e.ComplexityRoot.Value.DisplayName(childComplexity), true
 	case "Value.key":
-		if e.complexity.Value.GraphQLKey == nil {
+		if e.ComplexityRoot.Value.GraphQLKey == nil {
 			break
 		}
 
-		return e.complexity.Value.GraphQLKey(childComplexity), true
+		return e.ComplexityRoot.Value.GraphQLKey(childComplexity), true
 	case "Value.required":
-		if e.complexity.Value.Required == nil {
+		if e.ComplexityRoot.Value.Required == nil {
 			break
 		}
 
-		return e.complexity.Value.Required(childComplexity), true
+		return e.ComplexityRoot.Value.Required(childComplexity), true
 
 	case "userInfo.email":
-		if e.complexity.UserInfo.Email == nil {
+		if e.ComplexityRoot.UserInfo.Email == nil {
 			break
 		}
 
-		return e.complexity.UserInfo.Email(childComplexity), true
+		return e.ComplexityRoot.UserInfo.Email(childComplexity), true
 
 	}
 	return 0, false
@@ -2430,7 +2415,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	opCtx := graphql.GetOperationContext(ctx)
-	ec := executionContext{opCtx, e, 0, 0, make(chan graphql.DeferredResult)}
+	ec := newExecutionContext(opCtx, e, make(chan graphql.DeferredResult))
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
 		ec.unmarshalInputCostFilter,
 		ec.unmarshalInputCreateDeploymentInput,
@@ -2455,9 +2440,9 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 				ctx = graphql.WithUnmarshalerMap(ctx, inputUnmarshalMap)
 				data = ec._Query(ctx, opCtx.Operation.SelectionSet)
 			} else {
-				if atomic.LoadInt32(&ec.pendingDeferred) > 0 {
-					result := <-ec.deferredResults
-					atomic.AddInt32(&ec.pendingDeferred, -1)
+				if atomic.LoadInt32(&ec.PendingDeferred) > 0 {
+					result := <-ec.DeferredResults
+					atomic.AddInt32(&ec.PendingDeferred, -1)
 					data = result.Result
 					response.Path = result.Path
 					response.Label = result.Label
@@ -2469,8 +2454,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 			var buf bytes.Buffer
 			data.MarshalGQL(&buf)
 			response.Data = buf.Bytes()
-			if atomic.LoadInt32(&ec.deferred) > 0 {
-				hasNext := atomic.LoadInt32(&ec.pendingDeferred) > 0
+			if atomic.LoadInt32(&ec.Deferred) > 0 {
+				hasNext := atomic.LoadInt32(&ec.PendingDeferred) > 0
 				response.HasNext = &hasNext
 			}
 
@@ -2515,44 +2500,22 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 }
 
 type executionContext struct {
-	*graphql.OperationContext
-	*executableSchema
-	deferred        int32
-	pendingDeferred int32
-	deferredResults chan graphql.DeferredResult
+	*graphql.ExecutionContextState[ResolverRoot, DirectiveRoot, ComplexityRoot]
 }
 
-func (ec *executionContext) processDeferredGroup(dg graphql.DeferredGroup) {
-	atomic.AddInt32(&ec.pendingDeferred, 1)
-	go func() {
-		ctx := graphql.WithFreshResponseContext(dg.Context)
-		dg.FieldSet.Dispatch(ctx)
-		ds := graphql.DeferredResult{
-			Path:   dg.Path,
-			Label:  dg.Label,
-			Result: dg.FieldSet,
-			Errors: graphql.GetErrors(ctx),
-		}
-		// null fields should bubble up
-		if dg.FieldSet.Invalids > 0 {
-			ds.Result = graphql.Null
-		}
-		ec.deferredResults <- ds
-	}()
-}
-
-func (ec *executionContext) introspectSchema() (*introspection.Schema, error) {
-	if ec.DisableIntrospection {
-		return nil, errors.New("introspection disabled")
+func newExecutionContext(
+	opCtx *graphql.OperationContext,
+	execSchema *executableSchema,
+	deferredResults chan graphql.DeferredResult,
+) executionContext {
+	return executionContext{
+		ExecutionContextState: graphql.NewExecutionContextState[ResolverRoot, DirectiveRoot, ComplexityRoot](
+			opCtx,
+			(*graphql.ExecutableSchemaState[ResolverRoot, DirectiveRoot, ComplexityRoot])(execSchema),
+			parsedSchema,
+			deferredResults,
+		),
 	}
-	return introspection.WrapSchema(ec.Schema()), nil
-}
-
-func (ec *executionContext) introspectType(name string) (*introspection.Type, error) {
-	if ec.DisableIntrospection {
-		return nil, errors.New("introspection disabled")
-	}
-	return introspection.WrapTypeFromDef(ec.Schema(), ec.Schema().Types[name]), nil
 }
 
 var sources = []*ast.Source{
@@ -4364,7 +4327,7 @@ func (ec *executionContext) _ClusterUpgradeStatus_operations(ctx context.Context
 		field,
 		ec.fieldContext_ClusterUpgradeStatus_operations,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.ClusterUpgradeStatus().Operations(ctx, obj)
+			return ec.Resolvers.ClusterUpgradeStatus().Operations(ctx, obj)
 		},
 		nil,
 		ec.marshalNEnvironmentOperation2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironmentOperationᚄ,
@@ -4421,7 +4384,7 @@ func (ec *executionContext) _ClusterUpgradeStatus_environment(ctx context.Contex
 		field,
 		ec.fieldContext_ClusterUpgradeStatus_environment,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.ClusterUpgradeStatus().Environment(ctx, obj)
+			return ec.Resolvers.ClusterUpgradeStatus().Environment(ctx, obj)
 		},
 		nil,
 		ec.marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironment,
@@ -4531,7 +4494,7 @@ func (ec *executionContext) _ClusterUpgradeStatus_actor(ctx context.Context, fie
 		field,
 		ec.fieldContext_ClusterUpgradeStatus_actor,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.ClusterUpgradeStatus().Actor(ctx, obj)
+			return ec.Resolvers.ClusterUpgradeStatus().Actor(ctx, obj)
 		},
 		nil,
 		ec.marshalOString2ᚖstring,
@@ -4719,7 +4682,7 @@ func (ec *executionContext) _ConfigOverride_environment(ctx context.Context, fie
 		field,
 		ec.fieldContext_ConfigOverride_environment,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.ConfigOverride().Environment(ctx, obj)
+			return ec.Resolvers.ConfigOverride().Environment(ctx, obj)
 		},
 		nil,
 		ec.marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironment,
@@ -4988,7 +4951,7 @@ func (ec *executionContext) _Configurations_configuration(ctx context.Context, f
 		field,
 		ec.fieldContext_Configurations_configuration,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Configurations().Configuration(ctx, obj)
+			return ec.Resolvers.Configurations().Configuration(ctx, obj)
 		},
 		nil,
 		ec.marshalNConfiguration2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐConfigurationᚄ,
@@ -5029,7 +4992,7 @@ func (ec *executionContext) _Configurations_computed(ctx context.Context, field 
 		field,
 		ec.fieldContext_Configurations_computed,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Configurations().Computed(ctx, obj)
+			return ec.Resolvers.Configurations().Computed(ctx, obj)
 		},
 		nil,
 		ec.marshalNComputedValue2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐComputedValueᚄ,
@@ -5157,7 +5120,7 @@ func (ec *executionContext) _CostSeries_tenant(ctx context.Context, field graphq
 		field,
 		ec.fieldContext_CostSeries_tenant,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.CostSeries().Tenant(ctx, obj)
+			return ec.Resolvers.CostSeries().Tenant(ctx, obj)
 		},
 		nil,
 		ec.marshalNTenant2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐTenant,
@@ -5451,7 +5414,7 @@ func (ec *executionContext) _Deployment_statuses(ctx context.Context, field grap
 		field,
 		ec.fieldContext_Deployment_statuses,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Deployment().Statuses(ctx, obj)
+			return ec.Resolvers.Deployment().Statuses(ctx, obj)
 		},
 		nil,
 		ec.marshalNDeploymentStatus2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋdeploymentᚐDeploymentStatusᚄ,
@@ -5552,7 +5515,7 @@ func (ec *executionContext) _DeploymentStatus_deployment(ctx context.Context, fi
 		field,
 		ec.fieldContext_DeploymentStatus_deployment,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.DeploymentStatus().Deployment(ctx, obj)
+			return ec.Resolvers.DeploymentStatus().Deployment(ctx, obj)
 		},
 		nil,
 		ec.marshalNDeployment2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋdeploymentᚐDeployment,
@@ -5597,7 +5560,7 @@ func (ec *executionContext) _DeploymentStatus_environment(ctx context.Context, f
 		field,
 		ec.fieldContext_DeploymentStatus_environment,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.DeploymentStatus().Environment(ctx, obj)
+			return ec.Resolvers.DeploymentStatus().Environment(ctx, obj)
 		},
 		nil,
 		ec.marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironment,
@@ -5794,7 +5757,7 @@ func (ec *executionContext) _EnvSeries_environment(ctx context.Context, field gr
 		field,
 		ec.fieldContext_EnvSeries_environment,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.EnvSeries().Environment(ctx, obj)
+			return ec.Resolvers.EnvSeries().Environment(ctx, obj)
 		},
 		nil,
 		ec.marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironment,
@@ -5991,7 +5954,7 @@ func (ec *executionContext) _Environment_featureStates(ctx context.Context, fiel
 		field,
 		ec.fieldContext_Environment_featureStates,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Environment().FeatureStates(ctx, obj)
+			return ec.Resolvers.Environment().FeatureStates(ctx, obj)
 		},
 		nil,
 		ec.marshalNFeatureState2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐFeatureStateᚄ,
@@ -6123,7 +6086,7 @@ func (ec *executionContext) _Environment_gcpProjectID(ctx context.Context, field
 		field,
 		ec.fieldContext_Environment_gcpProjectID,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Environment().GCPProjectID(ctx, obj)
+			return ec.Resolvers.Environment().GCPProjectID(ctx, obj)
 		},
 		nil,
 		ec.marshalOString2ᚖstring,
@@ -6152,7 +6115,7 @@ func (ec *executionContext) _Environment_health(ctx context.Context, field graph
 		field,
 		ec.fieldContext_Environment_health,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Environment().Health(ctx, obj)
+			return ec.Resolvers.Environment().Health(ctx, obj)
 		},
 		nil,
 		ec.marshalNHealth2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐHealth,
@@ -6185,7 +6148,7 @@ func (ec *executionContext) _Environment_releases(ctx context.Context, field gra
 		field,
 		ec.fieldContext_Environment_releases,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Environment().Releases(ctx, obj)
+			return ec.Resolvers.Environment().Releases(ctx, obj)
 		},
 		nil,
 		ec.marshalNRelease2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐReleaseᚄ,
@@ -6232,7 +6195,7 @@ func (ec *executionContext) _Environment_nodes(ctx context.Context, field graphq
 		field,
 		ec.fieldContext_Environment_nodes,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Environment().Nodes(ctx, obj)
+			return ec.Resolvers.Environment().Nodes(ctx, obj)
 		},
 		nil,
 		ec.marshalNKubernetesNode2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐKubernetesNodeᚄ,
@@ -6287,7 +6250,7 @@ func (ec *executionContext) _Environment_values(ctx context.Context, field graph
 		field,
 		ec.fieldContext_Environment_values,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Environment().Values(ctx, obj)
+			return ec.Resolvers.Environment().Values(ctx, obj)
 		},
 		nil,
 		ec.marshalNEnvironmentValue2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironmentValueᚄ,
@@ -6324,7 +6287,7 @@ func (ec *executionContext) _Environment_tenant(ctx context.Context, field graph
 		field,
 		ec.fieldContext_Environment_tenant,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Environment().Tenant(ctx, obj)
+			return ec.Resolvers.Environment().Tenant(ctx, obj)
 		},
 		nil,
 		ec.marshalNTenant2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐTenant,
@@ -6375,7 +6338,7 @@ func (ec *executionContext) _Environment_warnings(ctx context.Context, field gra
 		field,
 		ec.fieldContext_Environment_warnings,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Environment().Warnings(ctx, obj)
+			return ec.Resolvers.Environment().Warnings(ctx, obj)
 		},
 		nil,
 		ec.marshalNWarning2ᚕgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐWarningᚄ,
@@ -6405,7 +6368,7 @@ func (ec *executionContext) _Environment_auditLog(ctx context.Context, field gra
 		ec.fieldContext_Environment_auditLog,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Environment().AuditLog(ctx, obj, fc.Args["featureName"].(*string))
+			return ec.Resolvers.Environment().AuditLog(ctx, obj, fc.Args["featureName"].(*string))
 		},
 		nil,
 		ec.marshalNAuditLog2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐAuditLogᚄ,
@@ -6457,7 +6420,7 @@ func (ec *executionContext) _Environment_features(ctx context.Context, field gra
 		field,
 		ec.fieldContext_Environment_features,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Environment().Features(ctx, obj)
+			return ec.Resolvers.Environment().Features(ctx, obj)
 		},
 		nil,
 		ec.marshalNFeature2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐFeatureᚄ,
@@ -6521,7 +6484,7 @@ func (ec *executionContext) _Environment_feature(ctx context.Context, field grap
 		ec.fieldContext_Environment_feature,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Environment().Feature(ctx, obj, fc.Args["name"].(string))
+			return ec.Resolvers.Environment().Feature(ctx, obj, fc.Args["name"].(string))
 		},
 		nil,
 		ec.marshalNFeature2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐFeature,
@@ -6654,7 +6617,7 @@ func (ec *executionContext) _Environment_clusterUpgradeHistory(ctx context.Conte
 		ec.fieldContext_Environment_clusterUpgradeHistory,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Environment().ClusterUpgradeHistory(ctx, obj, fc.Args["limit"].(*int), fc.Args["offset"].(*int))
+			return ec.Resolvers.Environment().ClusterUpgradeHistory(ctx, obj, fc.Args["limit"].(*int), fc.Args["offset"].(*int))
 		},
 		nil,
 		ec.marshalNClusterUpgradeHistoryResult2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐClusterUpgradeHistoryResult,
@@ -6702,7 +6665,7 @@ func (ec *executionContext) _Environment_clusterUpgradeStatus(ctx context.Contex
 		field,
 		ec.fieldContext_Environment_clusterUpgradeStatus,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Environment().ClusterUpgradeStatus(ctx, obj)
+			return ec.Resolvers.Environment().ClusterUpgradeStatus(ctx, obj)
 		},
 		nil,
 		ec.marshalOClusterUpgradeStatus2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐClusterUpgradeStatus,
@@ -6753,7 +6716,7 @@ func (ec *executionContext) _Environment_versions(ctx context.Context, field gra
 		field,
 		ec.fieldContext_Environment_versions,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Environment().Versions(ctx, obj)
+			return ec.Resolvers.Environment().Versions(ctx, obj)
 		},
 		nil,
 		ec.marshalOEnvironmentVersions2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironmentVersions,
@@ -6792,7 +6755,7 @@ func (ec *executionContext) _Environment_labels(ctx context.Context, field graph
 		field,
 		ec.fieldContext_Environment_labels,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Environment().Labels(ctx, obj)
+			return ec.Resolvers.Environment().Labels(ctx, obj)
 		},
 		nil,
 		ec.marshalNEnvironmentLabel2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironmentLabelᚄ,
@@ -6856,7 +6819,7 @@ func (ec *executionContext) _Environment_maintenanceWindow(ctx context.Context, 
 		field,
 		ec.fieldContext_Environment_maintenanceWindow,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Environment().MaintenanceWindow(ctx, obj)
+			return ec.Resolvers.Environment().MaintenanceWindow(ctx, obj)
 		},
 		nil,
 		ec.marshalOMaintenanceWindow2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐMaintenanceWindow,
@@ -7624,7 +7587,7 @@ func (ec *executionContext) _Feature_activeVersion(ctx context.Context, field gr
 		field,
 		ec.fieldContext_Feature_activeVersion,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Feature().ActiveVersion(ctx, obj)
+			return ec.Resolvers.Feature().ActiveVersion(ctx, obj)
 		},
 		nil,
 		ec.marshalNString2string,
@@ -7711,7 +7674,7 @@ func (ec *executionContext) _Feature_dependencies(ctx context.Context, field gra
 		field,
 		ec.fieldContext_Feature_dependencies,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Feature().Dependencies(ctx, obj)
+			return ec.Resolvers.Feature().Dependencies(ctx, obj)
 		},
 		nil,
 		ec.marshalNDependency2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐDependencyᚄ,
@@ -7775,7 +7738,7 @@ func (ec *executionContext) _Feature_configoverrides(ctx context.Context, field 
 		field,
 		ec.fieldContext_Feature_configoverrides,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Feature().Configoverrides(ctx, obj)
+			return ec.Resolvers.Feature().Configoverrides(ctx, obj)
 		},
 		nil,
 		ec.marshalNConfigOverride2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐConfigOverrideᚄ,
@@ -7810,7 +7773,7 @@ func (ec *executionContext) _Feature_configuration(ctx context.Context, field gr
 		field,
 		ec.fieldContext_Feature_configuration,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Feature().Configuration(ctx, obj)
+			return ec.Resolvers.Feature().Configuration(ctx, obj)
 		},
 		nil,
 		ec.marshalNConfigurations2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐConfigurations,
@@ -7903,7 +7866,7 @@ func (ec *executionContext) _Feature_state(ctx context.Context, field graphql.Co
 		field,
 		ec.fieldContext_Feature_state,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Feature().State(ctx, obj)
+			return ec.Resolvers.Feature().State(ctx, obj)
 		},
 		nil,
 		ec.marshalOFeatureState2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐFeatureState,
@@ -7948,7 +7911,7 @@ func (ec *executionContext) _Feature_status(ctx context.Context, field graphql.C
 		field,
 		ec.fieldContext_Feature_status,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Feature().Status(ctx, obj)
+			return ec.Resolvers.Feature().Status(ctx, obj)
 		},
 		nil,
 		ec.marshalOStatus2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐStatus,
@@ -7993,7 +7956,7 @@ func (ec *executionContext) _Feature_histories(ctx context.Context, field graphq
 		field,
 		ec.fieldContext_Feature_histories,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Feature().Histories(ctx, obj)
+			return ec.Resolvers.Feature().Histories(ctx, obj)
 		},
 		nil,
 		ec.marshalNFeatureHistory2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐFeatureHistoryᚄ,
@@ -8038,7 +8001,7 @@ func (ec *executionContext) _Feature_helmValueDiff(ctx context.Context, field gr
 		field,
 		ec.fieldContext_Feature_helmValueDiff,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Feature().HelmValueDiff(ctx, obj)
+			return ec.Resolvers.Feature().HelmValueDiff(ctx, obj)
 		},
 		nil,
 		ec.marshalNHelmValueDiff2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐHelmValueDiff,
@@ -8218,7 +8181,7 @@ func (ec *executionContext) _FeatureHistory_log(ctx context.Context, field graph
 		field,
 		ec.fieldContext_FeatureHistory_log,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.FeatureHistory().Log(ctx, obj)
+			return ec.Resolvers.FeatureHistory().Log(ctx, obj)
 		},
 		nil,
 		ec.marshalNLogLine2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐLogLineᚄ,
@@ -8255,7 +8218,7 @@ func (ec *executionContext) _FeatureHistory_helmValueDiff(ctx context.Context, f
 		field,
 		ec.fieldContext_FeatureHistory_helmValueDiff,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.FeatureHistory().HelmValueDiff(ctx, obj)
+			return ec.Resolvers.FeatureHistory().HelmValueDiff(ctx, obj)
 		},
 		nil,
 		ec.marshalNHelmValueDiff2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐHelmValueDiff,
@@ -8319,7 +8282,7 @@ func (ec *executionContext) _FeatureState_feature(ctx context.Context, field gra
 		field,
 		ec.fieldContext_FeatureState_feature,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.FeatureState().Feature(ctx, obj)
+			return ec.Resolvers.FeatureState().Feature(ctx, obj)
 		},
 		nil,
 		ec.marshalNFeature2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐFeature,
@@ -8469,7 +8432,7 @@ func (ec *executionContext) _FeatureState_missingDependencies(ctx context.Contex
 		field,
 		ec.fieldContext_FeatureState_missingDependencies,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.FeatureState().MissingDependencies(ctx, obj)
+			return ec.Resolvers.FeatureState().MissingDependencies(ctx, obj)
 		},
 		nil,
 		ec.marshalNFeature2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐFeatureᚄ,
@@ -8532,7 +8495,7 @@ func (ec *executionContext) _FeatureState_configuration(ctx context.Context, fie
 		field,
 		ec.fieldContext_FeatureState_configuration,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.FeatureState().Configuration(ctx, obj)
+			return ec.Resolvers.FeatureState().Configuration(ctx, obj)
 		},
 		nil,
 		ec.marshalNConfigurations2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐConfigurations,
@@ -8596,7 +8559,7 @@ func (ec *executionContext) _FeatureWarning_feature(ctx context.Context, field g
 		field,
 		ec.fieldContext_FeatureWarning_feature,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.FeatureWarning().Feature(ctx, obj)
+			return ec.Resolvers.FeatureWarning().Feature(ctx, obj)
 		},
 		nil,
 		ec.marshalNFeature2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐFeature,
@@ -8659,7 +8622,7 @@ func (ec *executionContext) _FeatureWarning_environment(ctx context.Context, fie
 		field,
 		ec.fieldContext_FeatureWarning_environment,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.FeatureWarning().Environment(ctx, obj)
+			return ec.Resolvers.FeatureWarning().Environment(ctx, obj)
 		},
 		nil,
 		ec.marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironment,
@@ -9674,7 +9637,7 @@ func (ec *executionContext) _Mutation_configurationCreate(ctx context.Context, f
 		ec.fieldContext_Mutation_configurationCreate,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().ConfigurationCreate(ctx, fc.Args["configuration"].(model.NewConfiguration))
+			return ec.Resolvers.Mutation().ConfigurationCreate(ctx, fc.Args["configuration"].(model.NewConfiguration))
 		},
 		nil,
 		ec.marshalNConfiguration2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐConfiguration,
@@ -9727,7 +9690,7 @@ func (ec *executionContext) _Mutation_configurationUpdate(ctx context.Context, f
 		ec.fieldContext_Mutation_configurationUpdate,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().ConfigurationUpdate(ctx, fc.Args["id"].(uuid.UUID), fc.Args["configuration"].(model.UpdateConfiguration))
+			return ec.Resolvers.Mutation().ConfigurationUpdate(ctx, fc.Args["id"].(uuid.UUID), fc.Args["configuration"].(model.UpdateConfiguration))
 		},
 		nil,
 		ec.marshalNConfiguration2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐConfiguration,
@@ -9780,7 +9743,7 @@ func (ec *executionContext) _Mutation_configurationDelete(ctx context.Context, f
 		ec.fieldContext_Mutation_configurationDelete,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().ConfigurationDelete(ctx, fc.Args["id"].(uuid.UUID))
+			return ec.Resolvers.Mutation().ConfigurationDelete(ctx, fc.Args["id"].(uuid.UUID))
 		},
 		nil,
 		ec.marshalNBoolean2bool,
@@ -9821,7 +9784,7 @@ func (ec *executionContext) _Mutation_createDeployment(ctx context.Context, fiel
 		ec.fieldContext_Mutation_createDeployment,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().CreateDeployment(ctx, fc.Args["input"].(model.CreateDeploymentInput))
+			return ec.Resolvers.Mutation().CreateDeployment(ctx, fc.Args["input"].(model.CreateDeploymentInput))
 		},
 		nil,
 		ec.marshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID,
@@ -9862,7 +9825,7 @@ func (ec *executionContext) _Mutation_deleteDeployment(ctx context.Context, fiel
 		ec.fieldContext_Mutation_deleteDeployment,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().DeleteDeployment(ctx, fc.Args["deploymentID"].(uuid.UUID))
+			return ec.Resolvers.Mutation().DeleteDeployment(ctx, fc.Args["deploymentID"].(uuid.UUID))
 		},
 		nil,
 		ec.marshalNBoolean2bool,
@@ -9903,7 +9866,7 @@ func (ec *executionContext) _Mutation_environmentCreate(ctx context.Context, fie
 		ec.fieldContext_Mutation_environmentCreate,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().EnvironmentCreate(ctx, fc.Args["environment"].(model.EnvironmentCreate))
+			return ec.Resolvers.Mutation().EnvironmentCreate(ctx, fc.Args["environment"].(model.EnvironmentCreate))
 		},
 		nil,
 		ec.marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironment,
@@ -9996,7 +9959,7 @@ func (ec *executionContext) _Mutation_environmentUpdate(ctx context.Context, fie
 		ec.fieldContext_Mutation_environmentUpdate,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().EnvironmentUpdate(ctx, fc.Args["id"].(uuid.UUID), fc.Args["input"].(model.EnvironmentUpdate))
+			return ec.Resolvers.Mutation().EnvironmentUpdate(ctx, fc.Args["id"].(uuid.UUID), fc.Args["input"].(model.EnvironmentUpdate))
 		},
 		nil,
 		ec.marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironment,
@@ -10089,7 +10052,7 @@ func (ec *executionContext) _Mutation_environmentSetReconcile(ctx context.Contex
 		ec.fieldContext_Mutation_environmentSetReconcile,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().EnvironmentSetReconcile(ctx, fc.Args["id"].(uuid.UUID), fc.Args["reconcile"].(bool))
+			return ec.Resolvers.Mutation().EnvironmentSetReconcile(ctx, fc.Args["id"].(uuid.UUID), fc.Args["reconcile"].(bool))
 		},
 		nil,
 		ec.marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironment,
@@ -10182,7 +10145,7 @@ func (ec *executionContext) _Mutation_environmentUpgrade(ctx context.Context, fi
 		ec.fieldContext_Mutation_environmentUpgrade,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().EnvironmentUpgrade(ctx, fc.Args["upgrade"].(*model.EnvironmentUpgrade))
+			return ec.Resolvers.Mutation().EnvironmentUpgrade(ctx, fc.Args["upgrade"].(*model.EnvironmentUpgrade))
 		},
 		nil,
 		ec.marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironment,
@@ -10275,7 +10238,7 @@ func (ec *executionContext) _Mutation_environmentSetAutoUpgrade(ctx context.Cont
 		ec.fieldContext_Mutation_environmentSetAutoUpgrade,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().EnvironmentSetAutoUpgrade(ctx, fc.Args["id"].(uuid.UUID), fc.Args["autoUpgrade"].(bool))
+			return ec.Resolvers.Mutation().EnvironmentSetAutoUpgrade(ctx, fc.Args["id"].(uuid.UUID), fc.Args["autoUpgrade"].(bool))
 		},
 		nil,
 		ec.marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironment,
@@ -10368,7 +10331,7 @@ func (ec *executionContext) _Mutation_environmentSetUpgradeDelayDays(ctx context
 		ec.fieldContext_Mutation_environmentSetUpgradeDelayDays,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().EnvironmentSetUpgradeDelayDays(ctx, fc.Args["environmentID"].(uuid.UUID), fc.Args["delayDays"].(int))
+			return ec.Resolvers.Mutation().EnvironmentSetUpgradeDelayDays(ctx, fc.Args["environmentID"].(uuid.UUID), fc.Args["delayDays"].(int))
 		},
 		nil,
 		ec.marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironment,
@@ -10461,7 +10424,7 @@ func (ec *executionContext) _Mutation_environmentSetMaintenanceWindow(ctx contex
 		ec.fieldContext_Mutation_environmentSetMaintenanceWindow,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().EnvironmentSetMaintenanceWindow(ctx, fc.Args["environmentID"].(uuid.UUID), fc.Args["window"].(*model.MaintenanceWindowInput))
+			return ec.Resolvers.Mutation().EnvironmentSetMaintenanceWindow(ctx, fc.Args["environmentID"].(uuid.UUID), fc.Args["window"].(*model.MaintenanceWindowInput))
 		},
 		nil,
 		ec.marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironment,
@@ -10554,7 +10517,7 @@ func (ec *executionContext) _Mutation_clusterUpgradeBypassDelay(ctx context.Cont
 		ec.fieldContext_Mutation_clusterUpgradeBypassDelay,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().ClusterUpgradeBypassDelay(ctx, fc.Args["upgradeID"].(uuid.UUID))
+			return ec.Resolvers.Mutation().ClusterUpgradeBypassDelay(ctx, fc.Args["upgradeID"].(uuid.UUID))
 		},
 		nil,
 		ec.marshalNClusterUpgradeStatus2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐClusterUpgradeStatus,
@@ -10617,7 +10580,7 @@ func (ec *executionContext) _Mutation_featureStateSave(ctx context.Context, fiel
 		ec.fieldContext_Mutation_featureStateSave,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().FeatureStateSave(ctx, fc.Args["envID"].(uuid.UUID), fc.Args["enabled"].(bool), fc.Args["feature"].(string))
+			return ec.Resolvers.Mutation().FeatureStateSave(ctx, fc.Args["envID"].(uuid.UUID), fc.Args["enabled"].(bool), fc.Args["feature"].(string))
 		},
 		nil,
 		ec.marshalNFeatureState2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐFeatureState,
@@ -10674,7 +10637,7 @@ func (ec *executionContext) _Mutation_playground(ctx context.Context, field grap
 		ec.fieldContext_Mutation_playground,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().Playground(ctx, fc.Args["input"].(model.PlaygroundInput))
+			return ec.Resolvers.Mutation().Playground(ctx, fc.Args["input"].(model.PlaygroundInput))
 		},
 		nil,
 		ec.marshalNPlayground2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐPlayground,
@@ -10721,7 +10684,7 @@ func (ec *executionContext) _Mutation_rolloutMarkFailed(ctx context.Context, fie
 		ec.fieldContext_Mutation_rolloutMarkFailed,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().RolloutMarkFailed(ctx, fc.Args["feature"].(string), fc.Args["version"].(string))
+			return ec.Resolvers.Mutation().RolloutMarkFailed(ctx, fc.Args["feature"].(string), fc.Args["version"].(string))
 		},
 		nil,
 		ec.marshalNRollout2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐRollout,
@@ -10780,7 +10743,7 @@ func (ec *executionContext) _Mutation_deleteHelmInstall(ctx context.Context, fie
 		ec.fieldContext_Mutation_deleteHelmInstall,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().DeleteHelmInstall(ctx, fc.Args["envID"].(uuid.UUID), fc.Args["name"].(string))
+			return ec.Resolvers.Mutation().DeleteHelmInstall(ctx, fc.Args["envID"].(uuid.UUID), fc.Args["name"].(string))
 		},
 		nil,
 		ec.marshalNBoolean2bool,
@@ -10821,7 +10784,7 @@ func (ec *executionContext) _Mutation_tenantCreate(ctx context.Context, field gr
 		ec.fieldContext_Mutation_tenantCreate,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().TenantCreate(ctx, fc.Args["tenant"].(model.TenantCreate))
+			return ec.Resolvers.Mutation().TenantCreate(ctx, fc.Args["tenant"].(model.TenantCreate))
 		},
 		nil,
 		ec.marshalNTenant2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐTenant,
@@ -10884,7 +10847,7 @@ func (ec *executionContext) _Mutation_tenantSetUpgradeDelayDays(ctx context.Cont
 		ec.fieldContext_Mutation_tenantSetUpgradeDelayDays,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().TenantSetUpgradeDelayDays(ctx, fc.Args["tenantID"].(uuid.UUID), fc.Args["delayDays"].(int))
+			return ec.Resolvers.Mutation().TenantSetUpgradeDelayDays(ctx, fc.Args["tenantID"].(uuid.UUID), fc.Args["delayDays"].(int))
 		},
 		nil,
 		ec.marshalNTenant2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐTenant,
@@ -10975,7 +10938,7 @@ func (ec *executionContext) _NaisdWarning_environment(ctx context.Context, field
 		field,
 		ec.fieldContext_NaisdWarning_environment,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.NaisdWarning().Environment(ctx, obj)
+			return ec.Resolvers.NaisdWarning().Environment(ctx, obj)
 		},
 		nil,
 		ec.marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironment,
@@ -11173,7 +11136,7 @@ func (ec *executionContext) _Query_configuration(ctx context.Context, field grap
 		ec.fieldContext_Query_configuration,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Configuration(ctx, fc.Args["feature"].(string), fc.Args["envID"].(*uuid.UUID))
+			return ec.Resolvers.Query().Configuration(ctx, fc.Args["feature"].(string), fc.Args["envID"].(*uuid.UUID))
 		},
 		nil,
 		ec.marshalNConfigurations2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐConfigurations,
@@ -11220,7 +11183,7 @@ func (ec *executionContext) _Query_helmValues(ctx context.Context, field graphql
 		ec.fieldContext_Query_helmValues,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().HelmValues(ctx, fc.Args["feature"].(string), fc.Args["envID"].(*uuid.UUID), fc.Args["env"].(*string), fc.Args["tenant"].(*string))
+			return ec.Resolvers.Query().HelmValues(ctx, fc.Args["feature"].(string), fc.Args["envID"].(*uuid.UUID), fc.Args["env"].(*string), fc.Args["tenant"].(*string))
 		},
 		nil,
 		ec.marshalNRawMessage2encodingᚋjsonᚐRawMessage,
@@ -11261,7 +11224,7 @@ func (ec *executionContext) _Query_costForTenant(ctx context.Context, field grap
 		ec.fieldContext_Query_costForTenant,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().CostForTenant(ctx, fc.Args["tenantID"].(uuid.UUID), fc.Args["filter"].(*model.CostFilter))
+			return ec.Resolvers.Query().CostForTenant(ctx, fc.Args["tenantID"].(uuid.UUID), fc.Args["filter"].(*model.CostFilter))
 		},
 		nil,
 		ec.marshalNTenantCosts2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐTenantCosts,
@@ -11310,7 +11273,7 @@ func (ec *executionContext) _Query_cost(ctx context.Context, field graphql.Colle
 		ec.fieldContext_Query_cost,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Cost(ctx, fc.Args["filter"].(*model.CostFilter))
+			return ec.Resolvers.Query().Cost(ctx, fc.Args["filter"].(*model.CostFilter))
 		},
 		nil,
 		ec.marshalNCost2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐCost,
@@ -11359,7 +11322,7 @@ func (ec *executionContext) _Query_deployments(ctx context.Context, field graphq
 		ec.fieldContext_Query_deployments,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Deployments(ctx, fc.Args["feature"].(*string))
+			return ec.Resolvers.Query().Deployments(ctx, fc.Args["feature"].(*string))
 		},
 		nil,
 		ec.marshalNDeployment2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋdeploymentᚐDeploymentᚄ,
@@ -11416,7 +11379,7 @@ func (ec *executionContext) _Query_deployment(ctx context.Context, field graphql
 		ec.fieldContext_Query_deployment,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Deployment(ctx, fc.Args["id"].(uuid.UUID))
+			return ec.Resolvers.Query().Deployment(ctx, fc.Args["id"].(uuid.UUID))
 		},
 		nil,
 		ec.marshalNDeployment2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋdeploymentᚐDeployment,
@@ -11472,7 +11435,7 @@ func (ec *executionContext) _Query_features(ctx context.Context, field graphql.C
 		field,
 		ec.fieldContext_Query_features,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Query().Features(ctx)
+			return ec.Resolvers.Query().Features(ctx)
 		},
 		nil,
 		ec.marshalNFeature2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐFeatureᚄ,
@@ -11536,7 +11499,7 @@ func (ec *executionContext) _Query_feature(ctx context.Context, field graphql.Co
 		ec.fieldContext_Query_feature,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Feature(ctx, fc.Args["name"].(string))
+			return ec.Resolvers.Query().Feature(ctx, fc.Args["name"].(string))
 		},
 		nil,
 		ec.marshalNFeature2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐFeature,
@@ -11611,7 +11574,7 @@ func (ec *executionContext) _Query_history(ctx context.Context, field graphql.Co
 		ec.fieldContext_Query_history,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().History(ctx, fc.Args["id"].(uuid.UUID))
+			return ec.Resolvers.Query().History(ctx, fc.Args["id"].(uuid.UUID))
 		},
 		nil,
 		ec.marshalNFeatureHistory2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐFeatureHistory,
@@ -11668,7 +11631,7 @@ func (ec *executionContext) _Query_featureState(ctx context.Context, field graph
 		ec.fieldContext_Query_featureState,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().FeatureState(ctx, fc.Args["envID"].(uuid.UUID), fc.Args["feature"].(string))
+			return ec.Resolvers.Query().FeatureState(ctx, fc.Args["envID"].(uuid.UUID), fc.Args["feature"].(string))
 		},
 		nil,
 		ec.marshalNFeatureState2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐFeatureState,
@@ -11725,7 +11688,7 @@ func (ec *executionContext) _Query_rollouts(ctx context.Context, field graphql.C
 		ec.fieldContext_Query_rollouts,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Rollouts(ctx, fc.Args["feature"].(*string))
+			return ec.Resolvers.Query().Rollouts(ctx, fc.Args["feature"].(*string))
 		},
 		nil,
 		ec.marshalNRollout2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐRolloutᚄ,
@@ -11784,7 +11747,7 @@ func (ec *executionContext) _Query_rollout(ctx context.Context, field graphql.Co
 		ec.fieldContext_Query_rollout,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Rollout(ctx, fc.Args["feature"].(string), fc.Args["version"].(string))
+			return ec.Resolvers.Query().Rollout(ctx, fc.Args["feature"].(string), fc.Args["version"].(string))
 		},
 		nil,
 		ec.marshalNRollout2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐRollout,
@@ -11843,7 +11806,7 @@ func (ec *executionContext) _Query_tenant(ctx context.Context, field graphql.Col
 		ec.fieldContext_Query_tenant,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().Tenant(ctx, fc.Args["id"].(*uuid.UUID), fc.Args["slug"].(*string))
+			return ec.Resolvers.Query().Tenant(ctx, fc.Args["id"].(*uuid.UUID), fc.Args["slug"].(*string))
 		},
 		nil,
 		ec.marshalNTenant2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐTenant,
@@ -11906,7 +11869,7 @@ func (ec *executionContext) _Query_clusterUpgradeHistory(ctx context.Context, fi
 		ec.fieldContext_Query_clusterUpgradeHistory,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Query().ClusterUpgradeHistory(ctx, fc.Args["limit"].(*int), fc.Args["offset"].(*int))
+			return ec.Resolvers.Query().ClusterUpgradeHistory(ctx, fc.Args["limit"].(*int), fc.Args["offset"].(*int))
 		},
 		nil,
 		ec.marshalNClusterUpgradeHistoryResult2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐClusterUpgradeHistoryResult,
@@ -11954,7 +11917,7 @@ func (ec *executionContext) _Query_tenants(ctx context.Context, field graphql.Co
 		field,
 		ec.fieldContext_Query_tenants,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Query().Tenants(ctx)
+			return ec.Resolvers.Query().Tenants(ctx)
 		},
 		nil,
 		ec.marshalNTenant2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐTenantᚄ,
@@ -12005,7 +11968,7 @@ func (ec *executionContext) _Query_userInfo(ctx context.Context, field graphql.C
 		field,
 		ec.fieldContext_Query_userInfo,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Query().UserInfo(ctx)
+			return ec.Resolvers.Query().UserInfo(ctx)
 		},
 		nil,
 		ec.marshalOuserInfo2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐUserInfo,
@@ -12039,7 +12002,7 @@ func (ec *executionContext) _Query___type(ctx context.Context, field graphql.Col
 		ec.fieldContext_Query___type,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.introspectType(fc.Args["name"].(string))
+			return ec.IntrospectType(fc.Args["name"].(string))
 		},
 		nil,
 		ec.marshalO__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType,
@@ -12103,7 +12066,7 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 		field,
 		ec.fieldContext_Query___schema,
 		func(ctx context.Context) (any, error) {
-			return ec.introspectSchema()
+			return ec.IntrospectSchema()
 		},
 		nil,
 		ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema,
@@ -12175,7 +12138,7 @@ func (ec *executionContext) _Release_feature(ctx context.Context, field graphql.
 		field,
 		ec.fieldContext_Release_feature,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Release().Feature(ctx, obj)
+			return ec.Resolvers.Release().Feature(ctx, obj)
 		},
 		nil,
 		ec.marshalOFeature2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐFeature,
@@ -12586,7 +12549,7 @@ func (ec *executionContext) _Rollout_events(ctx context.Context, field graphql.C
 		field,
 		ec.fieldContext_Rollout_events,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Rollout().Events(ctx, obj)
+			return ec.Resolvers.Rollout().Events(ctx, obj)
 		},
 		nil,
 		ec.marshalNRolloutEvent2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐRolloutEventᚄ,
@@ -12627,7 +12590,7 @@ func (ec *executionContext) _Rollout_logs(ctx context.Context, field graphql.Col
 		field,
 		ec.fieldContext_Rollout_logs,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Rollout().Logs(ctx, obj)
+			return ec.Resolvers.Rollout().Logs(ctx, obj)
 		},
 		nil,
 		ec.marshalNRolloutLog2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐRolloutLogᚄ,
@@ -12935,7 +12898,7 @@ func (ec *executionContext) _Status_id(ctx context.Context, field graphql.Collec
 		field,
 		ec.fieldContext_Status_id,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Status().ID(ctx, obj)
+			return ec.Resolvers.Status().ID(ctx, obj)
 		},
 		nil,
 		ec.marshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID,
@@ -13109,7 +13072,7 @@ func (ec *executionContext) _Status_log(ctx context.Context, field graphql.Colle
 		field,
 		ec.fieldContext_Status_log,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Status().Log(ctx, obj)
+			return ec.Resolvers.Status().Log(ctx, obj)
 		},
 		nil,
 		ec.marshalNLogLine2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐLogLineᚄ,
@@ -13147,7 +13110,7 @@ func (ec *executionContext) _Subscription_logs(ctx context.Context, field graphq
 		ec.fieldContext_Subscription_logs,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Subscription().Logs(ctx, fc.Args["environmentID"].(uuid.UUID), fc.Args["featureName"].(string), fc.Args["lastLogID"].(*string))
+			return ec.Resolvers.Subscription().Logs(ctx, fc.Args["environmentID"].(uuid.UUID), fc.Args["featureName"].(string), fc.Args["lastLogID"].(*string))
 		},
 		nil,
 		ec.marshalNLogLine2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐLogLine,
@@ -13195,7 +13158,7 @@ func (ec *executionContext) _Subscription_updates(ctx context.Context, field gra
 		field,
 		ec.fieldContext_Subscription_updates,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Subscription().Updates(ctx)
+			return ec.Resolvers.Subscription().Updates(ctx)
 		},
 		nil,
 		ec.marshalNUpdate2githubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐUpdate,
@@ -13311,7 +13274,7 @@ func (ec *executionContext) _Tenant_environments(ctx context.Context, field grap
 		field,
 		ec.fieldContext_Tenant_environments,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Tenant().Environments(ctx, obj)
+			return ec.Resolvers.Tenant().Environments(ctx, obj)
 		},
 		nil,
 		ec.marshalNEnvironment2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironmentᚄ,
@@ -13393,7 +13356,7 @@ func (ec *executionContext) _Tenant_environment(ctx context.Context, field graph
 		ec.fieldContext_Tenant_environment,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Tenant().Environment(ctx, obj, fc.Args["id"].(*uuid.UUID), fc.Args["slug"].(*string))
+			return ec.Resolvers.Tenant().Environment(ctx, obj, fc.Args["id"].(*uuid.UUID), fc.Args["slug"].(*string))
 		},
 		nil,
 		ec.marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironment,
@@ -13543,7 +13506,7 @@ func (ec *executionContext) _Tenant_warnings(ctx context.Context, field graphql.
 		field,
 		ec.fieldContext_Tenant_warnings,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Tenant().Warnings(ctx, obj)
+			return ec.Resolvers.Tenant().Warnings(ctx, obj)
 		},
 		nil,
 		ec.marshalNWarning2ᚕgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐWarningᚄ,
@@ -13602,7 +13565,7 @@ func (ec *executionContext) _Tenant_clusterUpgradeHistory(ctx context.Context, f
 		ec.fieldContext_Tenant_clusterUpgradeHistory,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Tenant().ClusterUpgradeHistory(ctx, obj, fc.Args["limit"].(*int), fc.Args["offset"].(*int))
+			return ec.Resolvers.Tenant().ClusterUpgradeHistory(ctx, obj, fc.Args["limit"].(*int), fc.Args["offset"].(*int))
 		},
 		nil,
 		ec.marshalNClusterUpgradeHistoryResult2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐClusterUpgradeHistoryResult,
@@ -15425,7 +15388,6 @@ func (ec *executionContext) unmarshalInputCostFilter(ctx context.Context, obj an
 			it.EndDate = data
 		}
 	}
-
 	return it, nil
 }
 
@@ -15480,7 +15442,6 @@ func (ec *executionContext) unmarshalInputCreateDeploymentInput(ctx context.Cont
 			it.Target = data
 		}
 	}
-
 	return it, nil
 }
 
@@ -15528,7 +15489,6 @@ func (ec *executionContext) unmarshalInputEnvironmentCreate(ctx context.Context,
 			it.Kind = data
 		}
 	}
-
 	return it, nil
 }
 
@@ -15555,7 +15515,6 @@ func (ec *executionContext) unmarshalInputEnvironmentUpdate(ctx context.Context,
 			it.Description = data
 		}
 	}
-
 	return it, nil
 }
 
@@ -15589,7 +15548,6 @@ func (ec *executionContext) unmarshalInputEnvironmentUpgrade(ctx context.Context
 			it.EnvID = data
 		}
 	}
-
 	return it, nil
 }
 
@@ -15630,7 +15588,6 @@ func (ec *executionContext) unmarshalInputMaintenanceWindowInput(ctx context.Con
 			it.Days = data
 		}
 	}
-
 	return it, nil
 }
 
@@ -15685,7 +15642,6 @@ func (ec *executionContext) unmarshalInputNewConfiguration(ctx context.Context, 
 			it.Value = data
 		}
 	}
-
 	return it, nil
 }
 
@@ -15740,7 +15696,6 @@ func (ec *executionContext) unmarshalInputPlaygroundInput(ctx context.Context, o
 			it.Code = data
 		}
 	}
-
 	return it, nil
 }
 
@@ -15774,7 +15729,6 @@ func (ec *executionContext) unmarshalInputTenantCreate(ctx context.Context, obj 
 			it.Description = data
 		}
 	}
-
 	return it, nil
 }
 
@@ -15808,7 +15762,6 @@ func (ec *executionContext) unmarshalInputUpdateConfiguration(ctx context.Contex
 			it.Value = data
 		}
 	}
-
 	return it, nil
 }
 
@@ -15927,10 +15880,10 @@ func (ec *executionContext) _AuditLog(ctx context.Context, sel ast.SelectionSet,
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -15976,10 +15929,10 @@ func (ec *executionContext) _ClusterUpgradeHistoryResult(ctx context.Context, se
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -16144,10 +16097,10 @@ func (ec *executionContext) _ClusterUpgradeStatus(ctx context.Context, sel ast.S
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -16183,10 +16136,10 @@ func (ec *executionContext) _Computed(ctx context.Context, sel ast.SelectionSet,
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -16224,10 +16177,10 @@ func (ec *executionContext) _ComputedValue(ctx context.Context, sel ast.Selectio
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -16268,10 +16221,10 @@ func (ec *executionContext) _Config(ctx context.Context, sel ast.SelectionSet, o
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -16343,10 +16296,10 @@ func (ec *executionContext) _ConfigOverride(ctx context.Context, sel ast.Selecti
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -16399,10 +16352,10 @@ func (ec *executionContext) _Configuration(ctx context.Context, sel ast.Selectio
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -16505,10 +16458,10 @@ func (ec *executionContext) _Configurations(ctx context.Context, sel ast.Selecti
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -16554,10 +16507,10 @@ func (ec *executionContext) _Cost(ctx context.Context, sel ast.SelectionSet, obj
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -16629,10 +16582,10 @@ func (ec *executionContext) _CostSeries(ctx context.Context, sel ast.SelectionSe
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -16673,10 +16626,10 @@ func (ec *executionContext) _Dependency(ctx context.Context, sel ast.SelectionSe
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -16770,10 +16723,10 @@ func (ec *executionContext) _Deployment(ctx context.Context, sel ast.SelectionSe
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -16896,10 +16849,10 @@ func (ec *executionContext) _DeploymentStatus(ctx context.Context, sel ast.Selec
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -16971,10 +16924,10 @@ func (ec *executionContext) _EnvSeries(ctx context.Context, sel ast.SelectionSet
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -17611,10 +17564,10 @@ func (ec *executionContext) _Environment(ctx context.Context, sel ast.SelectionS
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -17655,10 +17608,10 @@ func (ec *executionContext) _EnvironmentLabel(ctx context.Context, sel ast.Selec
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -17754,10 +17707,10 @@ func (ec *executionContext) _EnvironmentOperation(ctx context.Context, sel ast.S
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -17803,10 +17756,10 @@ func (ec *executionContext) _EnvironmentValue(ctx context.Context, sel ast.Selec
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -17857,10 +17810,10 @@ func (ec *executionContext) _EnvironmentVersions(ctx context.Context, sel ast.Se
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -18213,10 +18166,10 @@ func (ec *executionContext) _Feature(ctx context.Context, sel ast.SelectionSet, 
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -18344,10 +18297,10 @@ func (ec *executionContext) _FeatureHistory(ctx context.Context, sel ast.Selecti
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -18500,10 +18453,10 @@ func (ec *executionContext) _FeatureState(ctx context.Context, sel ast.Selection
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -18611,10 +18564,10 @@ func (ec *executionContext) _FeatureWarning(ctx context.Context, sel ast.Selecti
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -18650,10 +18603,10 @@ func (ec *executionContext) _Health(ctx context.Context, sel ast.SelectionSet, o
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -18694,10 +18647,10 @@ func (ec *executionContext) _HelmValueDiff(ctx context.Context, sel ast.Selectio
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -18788,10 +18741,10 @@ func (ec *executionContext) _KubernetesNode(ctx context.Context, sel ast.Selecti
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -18852,10 +18805,10 @@ func (ec *executionContext) _KubernetesNodeCondition(ctx context.Context, sel as
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -18906,10 +18859,10 @@ func (ec *executionContext) _KubernetesNodeResources(ctx context.Context, sel as
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -18955,10 +18908,10 @@ func (ec *executionContext) _LogLine(ctx context.Context, sel ast.SelectionSet, 
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -19004,10 +18957,10 @@ func (ec *executionContext) _MaintenanceWindow(ctx context.Context, sel ast.Sele
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -19179,10 +19132,10 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -19254,10 +19207,10 @@ func (ec *executionContext) _NaisdWarning(ctx context.Context, sel ast.Selection
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -19298,10 +19251,10 @@ func (ec *executionContext) _NodePool(ctx context.Context, sel ast.SelectionSet,
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -19339,10 +19292,10 @@ func (ec *executionContext) _Playground(ctx context.Context, sel ast.SelectionSe
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -19738,10 +19691,10 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -19840,10 +19793,10 @@ func (ec *executionContext) _Release(ctx context.Context, sel ast.SelectionSet, 
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -19973,10 +19926,10 @@ func (ec *executionContext) _Rollout(ctx context.Context, sel ast.SelectionSet, 
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -20029,10 +19982,10 @@ func (ec *executionContext) _RolloutEvent(ctx context.Context, sel ast.Selection
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -20083,10 +20036,10 @@ func (ec *executionContext) _RolloutLog(ctx context.Context, sel ast.SelectionSe
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -20214,10 +20167,10 @@ func (ec *executionContext) _Status(ctx context.Context, sel ast.SelectionSet, o
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -20441,10 +20394,10 @@ func (ec *executionContext) _Tenant(ctx context.Context, sel ast.SelectionSet, o
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -20490,10 +20443,10 @@ func (ec *executionContext) _TenantCosts(ctx context.Context, sel ast.SelectionS
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -20548,10 +20501,10 @@ func (ec *executionContext) _Value(ctx context.Context, sel ast.SelectionSet, ob
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -20604,10 +20557,10 @@ func (ec *executionContext) ___Directive(ctx context.Context, sel ast.SelectionS
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -20652,10 +20605,10 @@ func (ec *executionContext) ___EnumValue(ctx context.Context, sel ast.SelectionS
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -20710,10 +20663,10 @@ func (ec *executionContext) ___Field(ctx context.Context, sel ast.SelectionSet, 
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -20765,10 +20718,10 @@ func (ec *executionContext) ___InputValue(ctx context.Context, sel ast.Selection
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -20820,10 +20773,10 @@ func (ec *executionContext) ___Schema(ctx context.Context, sel ast.SelectionSet,
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -20879,10 +20832,10 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -20918,10 +20871,10 @@ func (ec *executionContext) _userInfo(ctx context.Context, sel ast.SelectionSet,
 		return graphql.Null
 	}
 
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
 
 	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
 			Label:    label,
 			Path:     graphql.GetPath(ctx),
 			FieldSet: dfs,
@@ -20937,39 +20890,11 @@ func (ec *executionContext) _userInfo(ctx context.Context, sel ast.SelectionSet,
 // region    ***************************** type.gotpl *****************************
 
 func (ec *executionContext) marshalNAuditLog2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐAuditLogᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.AuditLog) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNAuditLog2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐAuditLog(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNAuditLog2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐAuditLog(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -21025,39 +20950,11 @@ func (ec *executionContext) marshalNClusterUpgradeStatus2githubᚗcomᚋnaisᚋf
 }
 
 func (ec *executionContext) marshalNClusterUpgradeStatus2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐClusterUpgradeStatusᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ClusterUpgradeStatus) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNClusterUpgradeStatus2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐClusterUpgradeStatus(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNClusterUpgradeStatus2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐClusterUpgradeStatus(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -21079,39 +20976,11 @@ func (ec *executionContext) marshalNClusterUpgradeStatus2ᚖgithubᚗcomᚋnais�
 }
 
 func (ec *executionContext) marshalNComputedValue2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐComputedValueᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ComputedValue) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNComputedValue2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐComputedValue(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNComputedValue2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐComputedValue(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -21143,39 +21012,11 @@ func (ec *executionContext) marshalNConditionStatus2githubᚗcomᚋnaisᚋfasit�
 }
 
 func (ec *executionContext) marshalNConfigOverride2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐConfigOverrideᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ConfigOverride) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNConfigOverride2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐConfigOverride(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNConfigOverride2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐConfigOverride(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -21221,39 +21062,11 @@ func (ec *executionContext) marshalNConfiguration2githubᚗcomᚋnaisᚋfasitᚋ
 }
 
 func (ec *executionContext) marshalNConfiguration2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐConfigurationᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Configuration) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNConfiguration2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐConfiguration(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNConfiguration2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐConfiguration(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -21303,39 +21116,11 @@ func (ec *executionContext) marshalNCost2ᚖgithubᚗcomᚋnaisᚋfasitᚋintern
 }
 
 func (ec *executionContext) marshalNCostSeries2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐCostSeriesᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.CostSeries) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNCostSeries2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐCostSeries(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNCostSeries2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐCostSeries(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -21387,39 +21172,11 @@ func (ec *executionContext) unmarshalNDayOfWeek2ᚕgithubᚗcomᚋnaisᚋfasit�
 }
 
 func (ec *executionContext) marshalNDayOfWeek2ᚕgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐDayOfWeekᚄ(ctx context.Context, sel ast.SelectionSet, v []model.DayOfWeek) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNDayOfWeek2githubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐDayOfWeek(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNDayOfWeek2githubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐDayOfWeek(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -21431,39 +21188,11 @@ func (ec *executionContext) marshalNDayOfWeek2ᚕgithubᚗcomᚋnaisᚋfasitᚋi
 }
 
 func (ec *executionContext) marshalNDependency2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐDependencyᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Dependency) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNDependency2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐDependency(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNDependency2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐDependency(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -21489,39 +21218,11 @@ func (ec *executionContext) marshalNDeployment2githubᚗcomᚋnaisᚋfasitᚋint
 }
 
 func (ec *executionContext) marshalNDeployment2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋdeploymentᚐDeploymentᚄ(ctx context.Context, sel ast.SelectionSet, v []*deployment.Deployment) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNDeployment2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋdeploymentᚐDeployment(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNDeployment2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋdeploymentᚐDeployment(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -21543,39 +21244,11 @@ func (ec *executionContext) marshalNDeployment2ᚖgithubᚗcomᚋnaisᚋfasitᚋ
 }
 
 func (ec *executionContext) marshalNDeploymentStatus2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋdeploymentᚐDeploymentStatusᚄ(ctx context.Context, sel ast.SelectionSet, v []*deployment.DeploymentStatus) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNDeploymentStatus2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋdeploymentᚐDeploymentStatus(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNDeploymentStatus2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋdeploymentᚐDeploymentStatus(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -21607,39 +21280,11 @@ func (ec *executionContext) marshalNDeploymentStatusState2githubᚗcomᚋnaisᚋ
 }
 
 func (ec *executionContext) marshalNEnvSeries2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvSeriesᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.EnvSeries) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNEnvSeries2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvSeries(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNEnvSeries2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvSeries(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -21665,39 +21310,11 @@ func (ec *executionContext) marshalNEnvironment2githubᚗcomᚋnaisᚋfasitᚋin
 }
 
 func (ec *executionContext) marshalNEnvironment2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironmentᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Environment) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironment(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironment(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -21749,39 +21366,11 @@ func (ec *executionContext) unmarshalNEnvironmentKind2ᚕgithubᚗcomᚋnaisᚋf
 }
 
 func (ec *executionContext) marshalNEnvironmentKind2ᚕgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironmentKindᚄ(ctx context.Context, sel ast.SelectionSet, v []model.EnvironmentKind) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNEnvironmentKind2githubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironmentKind(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNEnvironmentKind2githubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironmentKind(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -21793,39 +21382,11 @@ func (ec *executionContext) marshalNEnvironmentKind2ᚕgithubᚗcomᚋnaisᚋfas
 }
 
 func (ec *executionContext) marshalNEnvironmentLabel2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironmentLabelᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.EnvironmentLabel) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNEnvironmentLabel2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironmentLabel(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNEnvironmentLabel2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironmentLabel(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -21847,39 +21408,11 @@ func (ec *executionContext) marshalNEnvironmentLabel2ᚖgithubᚗcomᚋnaisᚋfa
 }
 
 func (ec *executionContext) marshalNEnvironmentOperation2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironmentOperationᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.EnvironmentOperation) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNEnvironmentOperation2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironmentOperation(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNEnvironmentOperation2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironmentOperation(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -21906,39 +21439,11 @@ func (ec *executionContext) unmarshalNEnvironmentUpdate2githubᚗcomᚋnaisᚋfa
 }
 
 func (ec *executionContext) marshalNEnvironmentValue2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironmentValueᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.EnvironmentValue) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNEnvironmentValue2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironmentValue(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNEnvironmentValue2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironmentValue(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -21964,39 +21469,11 @@ func (ec *executionContext) marshalNFeature2githubᚗcomᚋnaisᚋfasitᚋintern
 }
 
 func (ec *executionContext) marshalNFeature2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐFeatureᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Feature) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNFeature2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐFeature(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNFeature2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐFeature(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -22022,39 +21499,11 @@ func (ec *executionContext) marshalNFeatureHistory2githubᚗcomᚋnaisᚋfasit�
 }
 
 func (ec *executionContext) marshalNFeatureHistory2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐFeatureHistoryᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.FeatureHistory) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNFeatureHistory2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐFeatureHistory(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNFeatureHistory2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐFeatureHistory(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -22080,39 +21529,11 @@ func (ec *executionContext) marshalNFeatureState2githubᚗcomᚋnaisᚋfasitᚋi
 }
 
 func (ec *executionContext) marshalNFeatureState2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐFeatureStateᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.FeatureState) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNFeatureState2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐFeatureState(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNFeatureState2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐFeatureState(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -22282,39 +21703,11 @@ func (ec *executionContext) marshalNInt2int32(ctx context.Context, sel ast.Selec
 }
 
 func (ec *executionContext) marshalNKubernetesNode2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐKubernetesNodeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.KubernetesNode) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNKubernetesNode2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐKubernetesNode(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNKubernetesNode2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐKubernetesNode(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -22336,39 +21729,11 @@ func (ec *executionContext) marshalNKubernetesNode2ᚖgithubᚗcomᚋnaisᚋfasi
 }
 
 func (ec *executionContext) marshalNKubernetesNodeCondition2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐKubernetesNodeConditionᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.KubernetesNodeCondition) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNKubernetesNodeCondition2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐKubernetesNodeCondition(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNKubernetesNodeCondition2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐKubernetesNodeCondition(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -22414,39 +21779,11 @@ func (ec *executionContext) marshalNLogLine2githubᚗcomᚋnaisᚋfasitᚋintern
 }
 
 func (ec *executionContext) marshalNLogLine2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐLogLineᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.LogLine) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNLogLine2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐLogLine(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNLogLine2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐLogLine(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -22473,39 +21810,11 @@ func (ec *executionContext) unmarshalNNewConfiguration2githubᚗcomᚋnaisᚋfas
 }
 
 func (ec *executionContext) marshalNNodePool2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐNodePoolᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.NodePool) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNNodePool2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐNodePool(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNNodePool2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐNodePool(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -22568,39 +21877,11 @@ func (ec *executionContext) marshalNRawMessage2encodingᚋjsonᚐRawMessage(ctx 
 }
 
 func (ec *executionContext) marshalNRelease2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐReleaseᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Release) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNRelease2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐRelease(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNRelease2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐRelease(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -22626,39 +21907,11 @@ func (ec *executionContext) marshalNRollout2githubᚗcomᚋnaisᚋfasitᚋintern
 }
 
 func (ec *executionContext) marshalNRollout2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐRolloutᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Rollout) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNRollout2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐRollout(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNRollout2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐRollout(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -22680,39 +21933,11 @@ func (ec *executionContext) marshalNRollout2ᚖgithubᚗcomᚋnaisᚋfasitᚋint
 }
 
 func (ec *executionContext) marshalNRolloutEvent2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐRolloutEventᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.RolloutEvent) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNRolloutEvent2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐRolloutEvent(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNRolloutEvent2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐRolloutEvent(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -22734,39 +21959,11 @@ func (ec *executionContext) marshalNRolloutEvent2ᚖgithubᚗcomᚋnaisᚋfasit�
 }
 
 func (ec *executionContext) marshalNRolloutLog2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐRolloutLogᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.RolloutLog) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNRolloutLog2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐRolloutLog(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNRolloutLog2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐRolloutLog(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -22848,39 +22045,11 @@ func (ec *executionContext) marshalNTenant2githubᚗcomᚋnaisᚋfasitᚋinterna
 }
 
 func (ec *executionContext) marshalNTenant2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐTenantᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Tenant) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNTenant2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐTenant(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNTenant2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐTenant(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -22982,39 +22151,11 @@ func (ec *executionContext) marshalNWarning2githubᚗcomᚋnaisᚋfasitᚋintern
 }
 
 func (ec *executionContext) marshalNWarning2ᚕgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐWarningᚄ(ctx context.Context, sel ast.SelectionSet, v []model.Warning) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNWarning2githubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐWarning(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNWarning2githubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐWarning(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -23030,39 +22171,11 @@ func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlge
 }
 
 func (ec *executionContext) marshalN__Directive2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirectiveᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.Directive) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -23105,39 +22218,11 @@ func (ec *executionContext) unmarshalN__DirectiveLocation2ᚕstringᚄ(ctx conte
 }
 
 func (ec *executionContext) marshalN__DirectiveLocation2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalN__DirectiveLocation2string(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalN__DirectiveLocation2string(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -23161,39 +22246,11 @@ func (ec *executionContext) marshalN__InputValue2githubᚗcomᚋ99designsᚋgqlg
 }
 
 func (ec *executionContext) marshalN__InputValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.InputValue) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalN__InputValue2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValue(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalN__InputValue2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValue(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -23209,39 +22266,11 @@ func (ec *executionContext) marshalN__Type2githubᚗcomᚋ99designsᚋgqlgenᚋg
 }
 
 func (ec *executionContext) marshalN__Type2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐTypeᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.Type) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalN__Type2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalN__Type2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -23494,39 +22523,11 @@ func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgq
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalN__EnumValue2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValue(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalN__EnumValue2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValue(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -23541,39 +22542,11 @@ func (ec *executionContext) marshalO__Field2ᚕgithubᚗcomᚋ99designsᚋgqlgen
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalN__Field2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐField(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalN__Field2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐField(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -23588,39 +22561,11 @@ func (ec *executionContext) marshalO__InputValue2ᚕgithubᚗcomᚋ99designsᚋg
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalN__InputValue2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValue(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalN__InputValue2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValue(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
@@ -23642,39 +22587,11 @@ func (ec *executionContext) marshalO__Type2ᚕgithubᚗcomᚋ99designsᚋgqlgen�
 	if v == nil {
 		return graphql.Null
 	}
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalN__Type2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalN__Type2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, sel, v[i])
+	})
 
 	for _, e := range ret {
 		if e == graphql.Null {
