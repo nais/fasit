@@ -359,6 +359,7 @@ type ComplexityRoot struct {
 		Cost                  func(childComplexity int, filter *model.CostFilter) int
 		CostForTenant         func(childComplexity int, tenantID uuid.UUID, filter *model.CostFilter) int
 		Deployment            func(childComplexity int, id uuid.UUID) int
+		DeploymentStatus      func(childComplexity int, deploymentID uuid.UUID, environmentID uuid.UUID) int
 		Deployments           func(childComplexity int, feature *string) int
 		Feature               func(childComplexity int, name string) int
 		FeatureState          func(childComplexity int, envID uuid.UUID, feature string) int
@@ -562,6 +563,7 @@ type QueryResolver interface {
 	Cost(ctx context.Context, filter *model.CostFilter) (*model.Cost, error)
 	Deployments(ctx context.Context, feature *string) ([]*deployment.Deployment, error)
 	Deployment(ctx context.Context, id uuid.UUID) (*deployment.Deployment, error)
+	DeploymentStatus(ctx context.Context, deploymentID uuid.UUID, environmentID uuid.UUID) (*deployment.DeploymentStatus, error)
 	Features(ctx context.Context) ([]*model.Feature, error)
 	Feature(ctx context.Context, name string) (*model.Feature, error)
 	History(ctx context.Context, id uuid.UUID) (*model.FeatureHistory, error)
@@ -1952,6 +1954,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.Deployment(childComplexity, args["id"].(uuid.UUID)), true
+	case "Query.deploymentStatus":
+		if e.ComplexityRoot.Query.DeploymentStatus == nil {
+			break
+		}
+
+		args, err := ec.field_Query_deploymentStatus_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.DeploymentStatus(childComplexity, args["deploymentID"].(uuid.UUID), args["environmentID"].(uuid.UUID)), true
 	case "Query.deployments":
 		if e.ComplexityRoot.Query.Deployments == nil {
 			break
@@ -2638,6 +2651,7 @@ extend type Query {
 extend type Query {
     deployments(feature: String): [Deployment!]!
     deployment(id: ID!): Deployment!
+    deploymentStatus(deploymentID: ID!, environmentID: ID!): DeploymentStatus!
 }
 
 input CreateDeploymentInput {
@@ -3655,6 +3669,22 @@ func (ec *executionContext) field_Query_cost_args(ctx context.Context, rawArgs m
 		return nil, err
 	}
 	args["filter"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_deploymentStatus_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "deploymentID", ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID)
+	if err != nil {
+		return nil, err
+	}
+	args["deploymentID"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "environmentID", ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID)
+	if err != nil {
+		return nil, err
+	}
+	args["environmentID"] = arg1
 	return args, nil
 }
 
@@ -11422,6 +11452,61 @@ func (ec *executionContext) fieldContext_Query_deployment(ctx context.Context, f
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_deployment_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_deploymentStatus(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_deploymentStatus,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().DeploymentStatus(ctx, fc.Args["deploymentID"].(uuid.UUID), fc.Args["environmentID"].(uuid.UUID))
+		},
+		nil,
+		ec.marshalNDeploymentStatus2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋdeploymentᚐDeploymentStatus,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_deploymentStatus(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "deployment":
+				return ec.fieldContext_DeploymentStatus_deployment(ctx, field)
+			case "environment":
+				return ec.fieldContext_DeploymentStatus_environment(ctx, field)
+			case "state":
+				return ec.fieldContext_DeploymentStatus_state(ctx, field)
+			case "message":
+				return ec.fieldContext_DeploymentStatus_message(ctx, field)
+			case "lastModified":
+				return ec.fieldContext_DeploymentStatus_lastModified(ctx, field)
+			case "created":
+				return ec.fieldContext_DeploymentStatus_created(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type DeploymentStatus", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_deploymentStatus_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -19457,6 +19542,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "deploymentStatus":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_deploymentStatus(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "features":
 			field := field
 
@@ -21241,6 +21348,10 @@ func (ec *executionContext) marshalNDeployment2ᚖgithubᚗcomᚋnaisᚋfasitᚋ
 		return graphql.Null
 	}
 	return ec._Deployment(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNDeploymentStatus2githubᚗcomᚋnaisᚋfasitᚋinternalᚋdeploymentᚐDeploymentStatus(ctx context.Context, sel ast.SelectionSet, v deployment.DeploymentStatus) graphql.Marshaler {
+	return ec._DeploymentStatus(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNDeploymentStatus2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋdeploymentᚐDeploymentStatusᚄ(ctx context.Context, sel ast.SelectionSet, v []*deployment.DeploymentStatus) graphql.Marshaler {
