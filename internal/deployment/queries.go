@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/deployment/deploymentsql"
+	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/sirupsen/logrus"
 )
@@ -88,6 +89,28 @@ func GetDeploymentStatus(ctx context.Context, deploymentID uuid.UUID, environmen
 	}
 
 	return deploymentStatusFromSQL(status), nil
+}
+
+func GetDeploymentStatusLog(ctx context.Context, deploymentID, environmentID uuid.UUID) (*model.RolloutLog, error) {
+	di, err := fromContext(ctx).querier.GetDeployInstructionByDeploymentAndEnvironmentID(ctx, deploymentsql.GetDeployInstructionByDeploymentAndEnvironmentIDParams{
+		DeploymentID:  &deploymentID,
+		EnvironmentID: environmentID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get deploy instruction: %w", err)
+	}
+
+	lines, err := featurepkg.LogsGet(ctx, di.DeployInstruction.ID)
+	if err != nil {
+		return nil, fmt.Errorf("get logs: %w", err)
+	}
+
+	return &model.RolloutLog{
+		ID:          di.DeployInstruction.ID,
+		TenantName:  di.TenantName,
+		Environment: di.EnvironmentName,
+		Lines:       lines,
+	}, nil
 }
 
 func ListDeployments(ctx context.Context) ([]*Deployment, error) {

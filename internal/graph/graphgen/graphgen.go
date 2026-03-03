@@ -148,6 +148,7 @@ type ComplexityRoot struct {
 		Deployment   func(childComplexity int) int
 		Environment  func(childComplexity int) int
 		LastModified func(childComplexity int) int
+		Log          func(childComplexity int) int
 		Message      func(childComplexity int) int
 		State        func(childComplexity int) int
 	}
@@ -480,6 +481,8 @@ type DeploymentResolver interface {
 type DeploymentStatusResolver interface {
 	Deployment(ctx context.Context, obj *deployment.DeploymentStatus) (*deployment.Deployment, error)
 	Environment(ctx context.Context, obj *deployment.DeploymentStatus) (*model.Environment, error)
+
+	Log(ctx context.Context, obj *deployment.DeploymentStatus) (*model.RolloutLog, error)
 }
 type EnvSeriesResolver interface {
 	Environment(ctx context.Context, obj *model.EnvSeries) (*model.Environment, error)
@@ -927,6 +930,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.DeploymentStatus.LastModified(childComplexity), true
+	case "DeploymentStatus.log":
+		if e.ComplexityRoot.DeploymentStatus.Log == nil {
+			break
+		}
+
+		return e.ComplexityRoot.DeploymentStatus.Log(childComplexity), true
 	case "DeploymentStatus.message":
 		if e.ComplexityRoot.DeploymentStatus.Message == nil {
 			break
@@ -2679,6 +2688,7 @@ type DeploymentStatus {
 	message: String!
 	lastModified: Time!
 	created: Time!
+	log: RolloutLog!
 }
 
 enum DeploymentStatusState {
@@ -5473,6 +5483,8 @@ func (ec *executionContext) fieldContext_Deployment_statuses(_ context.Context, 
 				return ec.fieldContext_DeploymentStatus_lastModified(ctx, field)
 			case "created":
 				return ec.fieldContext_DeploymentStatus_created(ctx, field)
+			case "log":
+				return ec.fieldContext_DeploymentStatus_log(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DeploymentStatus", field.Name)
 		},
@@ -5775,6 +5787,45 @@ func (ec *executionContext) fieldContext_DeploymentStatus_created(_ context.Cont
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Time does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DeploymentStatus_log(ctx context.Context, field graphql.CollectedField, obj *deployment.DeploymentStatus) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_DeploymentStatus_log,
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.DeploymentStatus().Log(ctx, obj)
+		},
+		nil,
+		ec.marshalNRolloutLog2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐRolloutLog,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_DeploymentStatus_log(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DeploymentStatus",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_RolloutLog_id(ctx, field)
+			case "tenantName":
+				return ec.fieldContext_RolloutLog_tenantName(ctx, field)
+			case "environment":
+				return ec.fieldContext_RolloutLog_environment(ctx, field)
+			case "lines":
+				return ec.fieldContext_RolloutLog_lines(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type RolloutLog", field.Name)
 		},
 	}
 	return fc, nil
@@ -11495,6 +11546,8 @@ func (ec *executionContext) fieldContext_Query_deploymentStatus(ctx context.Cont
 				return ec.fieldContext_DeploymentStatus_lastModified(ctx, field)
 			case "created":
 				return ec.fieldContext_DeploymentStatus_created(ctx, field)
+			case "log":
+				return ec.fieldContext_DeploymentStatus_log(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DeploymentStatus", field.Name)
 		},
@@ -16925,6 +16978,42 @@ func (ec *executionContext) _DeploymentStatus(ctx context.Context, sel ast.Selec
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
+		case "log":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._DeploymentStatus_log(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -22067,6 +22156,10 @@ func (ec *executionContext) marshalNRolloutEvent2ᚖgithubᚗcomᚋnaisᚋfasit�
 		return graphql.Null
 	}
 	return ec._RolloutEvent(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNRolloutLog2githubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐRolloutLog(ctx context.Context, sel ast.SelectionSet, v model.RolloutLog) graphql.Marshaler {
+	return ec._RolloutLog(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNRolloutLog2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐRolloutLogᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.RolloutLog) graphql.Marshaler {
