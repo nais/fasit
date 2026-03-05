@@ -1743,7 +1743,7 @@ func (c *ClusterUpgrader) updateSlackProgress(ctx context.Context, tenantName, e
 		mentions = "" // Use empty mentions as fallback
 	}
 
-	startTime := clusterUpgrade.LastModified.Format("2006-01-02 15:04")
+	startTime := clusterUpgrade.StartTime.Format("2006-01-02 15:04")
 	progressMsg := c.slack.GetClusterUpgradeProgressMessageOptions(
 		tenantName,
 		envName,
