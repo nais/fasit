@@ -28,6 +28,10 @@ func (r *deploymentStatusResolver) Environment(ctx context.Context, obj *deploym
 	return r.Repo.EnvironmentGet(ctx, obj.EnvironmentID)
 }
 
+func (r *deploymentStatusResolver) Log(ctx context.Context, obj *deployment.DeploymentStatus) (*model.RolloutLog, error) {
+	return deployment.GetDeploymentStatusLog(ctx, obj.DeploymentID, obj.EnvironmentID)
+}
+
 // CreateDeployment is the resolver for the createDeployment field.
 func (r *mutationResolver) CreateDeployment(ctx context.Context, input model.CreateDeploymentInput) (uuid.UUID, error) {
 	if input.Target == "" {
@@ -83,6 +87,10 @@ func (r *queryResolver) Deployments(ctx context.Context, feature *string) ([]*de
 // Deployment is the resolver for the deployment field.
 func (r *queryResolver) Deployment(ctx context.Context, id uuid.UUID) (*deployment.Deployment, error) {
 	return deployment.GetDeployment(ctx, id)
+}
+
+func (r *queryResolver) DeploymentStatus(ctx context.Context, deploymentID uuid.UUID, environmentID uuid.UUID) (*deployment.DeploymentStatus, error) {
+	return deployment.GetDeploymentStatus(ctx, deploymentID, environmentID)
 }
 
 func (r *Resolver) Deployment() graphgen.DeploymentResolver { return &deploymentResolver{r} }

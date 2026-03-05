@@ -6,6 +6,7 @@ extend type Mutation {
 extend type Query {
     deployments(feature: String): [Deployment!]!
     deployment(id: ID!): Deployment!
+    deploymentStatus(deploymentID: ID!, environmentID: ID!): DeploymentStatus!
 }
 
 input CreateDeploymentInput {
@@ -33,6 +34,7 @@ type DeploymentStatus {
 	message: String!
 	lastModified: Time!
 	created: Time!
+	log: RolloutLog!
 }
 
 enum DeploymentStatusState {

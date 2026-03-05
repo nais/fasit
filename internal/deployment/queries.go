@@ -3,11 +3,11 @@ package deployment
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/deployment/deploymentsql"
+	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/sirupsen/logrus"
 )
@@ -79,6 +79,40 @@ func GetDeployment(ctx context.Context, id uuid.UUID) (*Deployment, error) {
 	return getDeployment(ctx, fromContext(ctx).querier, id)
 }
 
+func GetDeploymentStatus(ctx context.Context, deploymentID uuid.UUID, environmentID uuid.UUID) (*DeploymentStatus, error) {
+	status, err := fromContext(ctx).querier.GetDeploymentStatus(ctx, deploymentsql.GetDeploymentStatusParams{
+		DeploymentID:  deploymentID,
+		EnvironmentID: environmentID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get deployment status: %w", err)
+	}
+
+	return deploymentStatusFromSQL(status), nil
+}
+
+func GetDeploymentStatusLog(ctx context.Context, deploymentID, environmentID uuid.UUID) (*model.RolloutLog, error) {
+	di, err := fromContext(ctx).querier.GetDeployInstructionByDeploymentAndEnvironmentID(ctx, deploymentsql.GetDeployInstructionByDeploymentAndEnvironmentIDParams{
+		DeploymentID:  &deploymentID,
+		EnvironmentID: environmentID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get deploy instruction: %w", err)
+	}
+
+	lines, err := featurepkg.LogsGet(ctx, di.DeployInstruction.ID)
+	if err != nil {
+		return nil, fmt.Errorf("get logs: %w", err)
+	}
+
+	return &model.RolloutLog{
+		ID:          di.DeployInstruction.ID,
+		TenantName:  di.TenantName,
+		Environment: di.EnvironmentName,
+		Lines:       lines,
+	}, nil
+}
+
 func ListDeployments(ctx context.Context) ([]*Deployment, error) {
 	rows, err := fromContext(ctx).querier.ListDeployments(ctx)
 	if err != nil {
@@ -105,14 +139,7 @@ func ListDeploymentStatuses(ctx context.Context, deploymentID uuid.UUID) ([]*Dep
 
 	models := make([]*DeploymentStatus, len(rows))
 	for i, status := range rows {
-		models[i] = &DeploymentStatus{
-			State:         DeploymentStatusState(strings.ToUpper(status.Status)),
-			Message:       status.Message,
-			LastModified:  status.LastModified.Time,
-			Created:       status.Created.Time,
-			DeploymentID:  status.DeploymentID,
-			EnvironmentID: status.EnvironmentID,
-		}
+		models[i] = deploymentStatusFromSQL(status)
 	}
 
 	return models, nil

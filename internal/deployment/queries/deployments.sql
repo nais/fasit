@@ -151,3 +151,12 @@ ORDER BY
 	last_modified DESC
 LIMIT 1;
 
+-- name: GetDeploymentStatus :one
+SELECT
+	*
+FROM
+	deployment_statuses ds
+WHERE
+	ds.deployment_id = @deployment_id
+	AND ds.environment_id = @environment_id;
+

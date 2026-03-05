@@ -78,6 +78,119 @@ func (q *Queries) DeployInstructionsByID(ctx context.Context, id uuid.UUID) (Dep
 	return i, err
 }
 
+const getDeployInstructionByDeploymentAndEnvironmentID = `-- name: GetDeployInstructionByDeploymentAndEnvironmentID :one
+SELECT
+	di.id, di.environment_id, di.feature_name, di.feature_version, di.status, di.hash, di.created, di.last_modified, di.values, di.deployment_id,
+	e.name AS environment_name,
+	t.name AS tenant_name
+FROM
+	deploy_instructions di
+	JOIN environments e ON e.id = di.environment_id
+	JOIN tenants t ON t.id = e.tenant_id
+WHERE
+	di.deployment_id = $1
+	AND di.environment_id = $2
+`
+
+type GetDeployInstructionByDeploymentAndEnvironmentIDParams struct {
+	DeploymentID  *uuid.UUID
+	EnvironmentID uuid.UUID
+}
+
+type GetDeployInstructionByDeploymentAndEnvironmentIDRow struct {
+	DeployInstruction DeployInstruction
+	EnvironmentName   string
+	TenantName        string
+}
+
+func (q *Queries) GetDeployInstructionByDeploymentAndEnvironmentID(ctx context.Context, arg GetDeployInstructionByDeploymentAndEnvironmentIDParams) (GetDeployInstructionByDeploymentAndEnvironmentIDRow, error) {
+	row := q.db.QueryRow(ctx, getDeployInstructionByDeploymentAndEnvironmentID, arg.DeploymentID, arg.EnvironmentID)
+	var i GetDeployInstructionByDeploymentAndEnvironmentIDRow
+	err := row.Scan(
+		&i.DeployInstruction.ID,
+		&i.DeployInstruction.EnvironmentID,
+		&i.DeployInstruction.FeatureName,
+		&i.DeployInstruction.FeatureVersion,
+		&i.DeployInstruction.Status,
+		&i.DeployInstruction.Hash,
+		&i.DeployInstruction.Created,
+		&i.DeployInstruction.LastModified,
+		&i.DeployInstruction.Values,
+		&i.DeployInstruction.DeploymentID,
+		&i.EnvironmentName,
+		&i.TenantName,
+	)
+	return i, err
+}
+
+const getDeploymentStatusLog = `-- name: GetDeploymentStatusLog :many
+SELECT
+	di.id, di.environment_id, di.feature_name, di.feature_version, di.status, di.hash, di.created, di.last_modified, di.values, di.deployment_id,
+	e.name AS environment_name,
+	t.name AS tenant_name,
+	l.id, l.deploy_instruction, l.time, l.message, l.kind
+FROM
+	deploy_instructions di
+	JOIN environments e ON e.id = di.environment_id
+	JOIN tenants t ON t.id = e.tenant_id
+	JOIN logs l ON l.deploy_instruction = di.id
+WHERE
+	di.deployment_id = $1
+	AND di.environment_id = $2
+ORDER BY
+	l.time ASC
+`
+
+type GetDeploymentStatusLogParams struct {
+	DeploymentID  *uuid.UUID
+	EnvironmentID uuid.UUID
+}
+
+type GetDeploymentStatusLogRow struct {
+	DeployInstruction DeployInstruction
+	EnvironmentName   string
+	TenantName        string
+	Log               Log
+}
+
+func (q *Queries) GetDeploymentStatusLog(ctx context.Context, arg GetDeploymentStatusLogParams) ([]GetDeploymentStatusLogRow, error) {
+	rows, err := q.db.Query(ctx, getDeploymentStatusLog, arg.DeploymentID, arg.EnvironmentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetDeploymentStatusLogRow{}
+	for rows.Next() {
+		var i GetDeploymentStatusLogRow
+		if err := rows.Scan(
+			&i.DeployInstruction.ID,
+			&i.DeployInstruction.EnvironmentID,
+			&i.DeployInstruction.FeatureName,
+			&i.DeployInstruction.FeatureVersion,
+			&i.DeployInstruction.Status,
+			&i.DeployInstruction.Hash,
+			&i.DeployInstruction.Created,
+			&i.DeployInstruction.LastModified,
+			&i.DeployInstruction.Values,
+			&i.DeployInstruction.DeploymentID,
+			&i.EnvironmentName,
+			&i.TenantName,
+			&i.Log.ID,
+			&i.Log.DeployInstruction,
+			&i.Log.Time,
+			&i.Log.Message,
+			&i.Log.Kind,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getLatestDeployInstructionsForFeature = `-- name: GetLatestDeployInstructionsForFeature :one
 SELECT
 	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, deployment_id
