@@ -660,9 +660,9 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 	return nil
 }
 
-// ownsRunningOperations checks if running operations belong to this upgrade.
-// Returns true if we have existing operations in DB for this upgrade AND those operations
-// match operations currently running in GKE (by operation name).
+// ownsRunningOperations checks if all active upgrade operations belong to this upgrade.
+// Returns true only when every active UPGRADE_* operation currently running in GKE
+// is already tracked in the database for this upgrade.
 //
 // We check operation names to handle the scenario where:
 // 1. Fasit initiates an upgrade and tracks operation A
@@ -685,18 +685,26 @@ func (c *ClusterUpgrader) ownsRunningOperations(existingOps []*model.Environment
 		existingOpNames[op.Name] = true
 	}
 
-	// Check if at least one running operation exists in our database
-	// If GKE has started completely new operations (not in our DB), they're not ours
+	hasActiveUpgradeOps := false
+
+	// All active upgrade operations must already exist in DB.
+	// If GKE has started a new operation that is not tracked by this upgrade,
+	// treat the set as non-owned and back off.
 	for _, runningOp := range runningOps {
 		if !isOperationActive(runningOp) {
 			continue
 		}
-		if existingOpNames[runningOp.Name] {
-			return true
+		if runningOp.OperationType != containerpb.Operation_UPGRADE_MASTER && runningOp.OperationType != containerpb.Operation_UPGRADE_NODES {
+			continue
+		}
+
+		hasActiveUpgradeOps = true
+		if !existingOpNames[runningOp.Name] {
+			return false
 		}
 	}
 
-	return false
+	return hasActiveUpgradeOps
 }
 
 // completeIfNonOwnedOperationsReachedTarget checks if cluster is at target version when non-owned operations exist,
@@ -1464,14 +1472,14 @@ func (c *ClusterUpgrader) clusterNodePoolsCompleted(ctx context.Context, project
 		return false, err
 	}
 
-	// Check if all nodepool versions match the target
+	// Check if all nodepool versions are at or above the target
 	done := true
 	for _, np := range nodepools {
 		npVersionObj, err := version.NewVersion(np.Version)
 		if err != nil {
 			return false, err
 		}
-		if !npVersionObj.Equal(clusterUpgraderVersionObj) {
+		if npVersionObj.LessThan(clusterUpgraderVersionObj) {
 			done = false
 		}
 	}
