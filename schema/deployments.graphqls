@@ -34,7 +34,7 @@ type DeploymentStatus {
 	message: String!
 	lastModified: Time!
 	created: Time!
-	log: RolloutLog!
+	log: RolloutLog
 }
 
 enum DeploymentStatusState {

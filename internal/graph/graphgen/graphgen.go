@@ -2688,7 +2688,7 @@ type DeploymentStatus {
 	message: String!
 	lastModified: Time!
 	created: Time!
-	log: RolloutLog!
+	log: RolloutLog
 }
 
 enum DeploymentStatusState {
@@ -5802,9 +5802,9 @@ func (ec *executionContext) _DeploymentStatus_log(ctx context.Context, field gra
 			return ec.Resolvers.DeploymentStatus().Log(ctx, obj)
 		},
 		nil,
-		ec.marshalNRolloutLog2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐRolloutLog,
+		ec.marshalORolloutLog2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐRolloutLog,
 		true,
-		true,
+		false,
 	)
 }
 
@@ -16981,16 +16981,13 @@ func (ec *executionContext) _DeploymentStatus(ctx context.Context, sel ast.Selec
 		case "log":
 			field := field
 
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
 				res = ec._DeploymentStatus_log(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
 				return res
 			}
 
@@ -22158,10 +22155,6 @@ func (ec *executionContext) marshalNRolloutEvent2ᚖgithubᚗcomᚋnaisᚋfasit�
 	return ec._RolloutEvent(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNRolloutLog2githubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐRolloutLog(ctx context.Context, sel ast.SelectionSet, v model.RolloutLog) graphql.Marshaler {
-	return ec._RolloutLog(ctx, sel, &v)
-}
-
 func (ec *executionContext) marshalNRolloutLog2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐRolloutLogᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.RolloutLog) graphql.Marshaler {
 	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
 		fc := graphql.GetFieldContext(ctx)
@@ -22666,6 +22659,13 @@ func (ec *executionContext) marshalORawMessage2encodingᚋjsonᚐRawMessage(ctx 
 	_ = ctx
 	res := graph.MarshalRawMessage(v)
 	return res
+}
+
+func (ec *executionContext) marshalORolloutLog2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐRolloutLog(ctx context.Context, sel ast.SelectionSet, v *model.RolloutLog) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._RolloutLog(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOStatus2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐStatus(ctx context.Context, sel ast.SelectionSet, v *model.Status) graphql.Marshaler {

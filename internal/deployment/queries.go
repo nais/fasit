@@ -2,10 +2,12 @@ package deployment
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/internal/deployment/deploymentsql"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
@@ -96,6 +98,9 @@ func GetDeploymentStatusLog(ctx context.Context, deploymentID, environmentID uui
 		DeploymentID:  &deploymentID,
 		EnvironmentID: environmentID,
 	})
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, nil
+	}
 	if err != nil {
 		return nil, fmt.Errorf("get deploy instruction: %w", err)
 	}
