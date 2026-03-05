@@ -1,9 +1,16 @@
 package cluster
 
 import (
+	"context"
 	"testing"
 
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/nais/fasit/internal/environment/environmentsql"
+	"github.com/nais/fasit/internal/environment/environmenttest"
+	"github.com/nais/fasit/internal/graph/model"
 	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/mock"
 	"go.opentelemetry.io/otel/sdk/metric"
 )
 
@@ -61,5 +68,43 @@ func Test_IsNewerPatchRelease(t *testing.T) {
 				t.Errorf("IsNewerVersion() = %v, want %v", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestProcessEnvironment_TenantLookupCalledOnce(t *testing.T) {
+	ctx := environmenttest.RegisterMock(context.Background(), t)
+	suite := newTestSuite(t)
+	upgrader := newAutoUpgrader(suite)
+
+	suite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, suite.env.id, "project_id", false).Return(
+		&model.EnvironmentValue{Key: "project_id", Value: []byte(`"test-project"`)}, nil,
+	).Once()
+
+	environmenttest.GetQuerier(ctx).EXPECT().GetTenant(mock.Anything, suite.env.tenantID).Return(
+		environmentsql.Tenant{
+			ID:               suite.env.tenantID,
+			Name:             suite.env.name,
+			Created:          pgtype.Timestamptz{Valid: true},
+			LastModified:     pgtype.Timestamptz{Valid: true},
+			UpgradeDelayDays: 0,
+		}, nil,
+	).Once()
+
+	suite.clusterMock.EXPECT().GetCurrentControlPlaneVersion(mock.Anything, "test-project", suite.environment).Return("1.33.5-gke.100", nil).Once()
+	suite.clusterMock.EXPECT().GetReleaseChannel(mock.Anything, "test-project", suite.environment).Return("REGULAR", nil).Once()
+	suite.clusterMock.EXPECT().GetAvailableVersions(mock.Anything, "test-project", suite.environment, "REGULAR").Return([]string{"1.33.6-gke.200"}, nil).Once()
+
+	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(nil, nil).Once()
+	suite.repoMock.EXPECT().ClusterUpgradeGetByVersion(mock.Anything, suite.env.tenantID, suite.env.id, "1.33.6-gke.200").Return(nil, nil).Once()
+	suite.repoMock.EXPECT().CreateClusterUpgrade(mock.Anything, suite.env.tenantID, suite.env.id, "1.33.6-gke.200", mock.Anything).Return(
+		&model.ClusterUpgradeStatus{ID: uuid.New(), Version: "1.33.6-gke.200", UpgradeStatus: model.UpgradeStatusCreated}, nil,
+	).Once()
+
+	processed, scheduled := upgrader.processEnvironment(ctx, suite.environment, upgrader.createEnvironmentLogger(suite.environment, nil))
+	if !processed {
+		t.Fatalf("expected environment to be processed")
+	}
+	if !scheduled {
+		t.Fatalf("expected environment upgrade to be scheduled")
 	}
 }
