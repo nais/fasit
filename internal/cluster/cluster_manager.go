@@ -48,7 +48,6 @@ func (c *Client) Close() error {
 func IsBusinessHours() bool {
 	location, err := time.LoadLocation("Europe/Oslo")
 	if err != nil {
-		fmt.Println("Error loading location:", err)
 		return false
 	}
 
