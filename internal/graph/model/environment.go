@@ -53,7 +53,7 @@ func (e EnvironmentKind) String() string {
 	return string(e)
 }
 
-func (e *EnvironmentKind) UnmarshalGQL(v interface{}) error {
+func (e *EnvironmentKind) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")

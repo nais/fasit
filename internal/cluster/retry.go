@@ -100,10 +100,7 @@ func (r *Retryer) WithBackoff(ctx context.Context, operation string, fn func() e
 		))
 
 		// Calculate delay with exponential backoff
-		delay := time.Duration(float64(r.config.BaseDelay) * math.Pow(2, float64(attempt)))
-		if delay > r.config.MaxDelay {
-			delay = r.config.MaxDelay
-		}
+		delay := min(time.Duration(float64(r.config.BaseDelay)*math.Pow(2, float64(attempt))), r.config.MaxDelay)
 
 		r.log.WithFields(logrus.Fields{
 			"operation":    operation,

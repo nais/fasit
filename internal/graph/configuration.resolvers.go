@@ -62,7 +62,6 @@ func (r *configurationsResolver) Configuration(ctx context.Context, obj *model.C
 
 OUTER:
 	for key, val := range feat.Values {
-		val := val
 		val.GraphQLKey = key
 		if val.Config == nil {
 			continue
@@ -154,7 +153,6 @@ func (r *configurationsResolver) Computed(ctx context.Context, obj *model.Config
 
 	ret := []*model.ComputedValue{}
 	for k, v := range computed {
-		k, v := k, v
 
 		rm, err := json.Marshal(pluckFromMap(k, generated))
 		if err != nil {

@@ -85,10 +85,10 @@ func (r *GHStatusReporter) report(ctx context.Context, payload notifier.Payload)
 	state := ghState(rollout.Status)
 
 	_, _, err = r.client.Repositories.CreateStatus(ctx, rollout.GHRef.Owner, rollout.GHRef.Repo, rollout.GHRef.Ref, &github.RepoStatus{
-		TargetURL:   github.String(fmt.Sprintf("https://fasit.nais.io/features/%v/rollouts/%v", rollout.FeatureName, rollout.Version)),
+		TargetURL:   new(fmt.Sprintf("https://fasit.nais.io/features/%v/rollouts/%v", rollout.FeatureName, rollout.Version)),
 		State:       state,
-		Description: github.String("Rollout of feature"),
-		Context:     github.String("fasit / " + rollout.FeatureName),
+		Description: new("Rollout of feature"),
+		Context:     new("fasit / " + rollout.FeatureName),
 	})
 	if err != nil {
 		r.log.WithError(err).Error("failed to create status")

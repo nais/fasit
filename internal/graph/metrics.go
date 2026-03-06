@@ -43,7 +43,7 @@ func (a *Metrics) InterceptResponse(ctx context.Context, next graphql.ResponseHa
 	return next(ctx)
 }
 
-func (a *Metrics) InterceptField(ctx context.Context, next graphql.Resolver) (interface{}, error) {
+func (a *Metrics) InterceptField(ctx context.Context, next graphql.Resolver) (any, error) {
 	fc := graphql.GetFieldContext(ctx)
 	if !fc.IsResolver {
 		return next(ctx)

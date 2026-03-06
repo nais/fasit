@@ -1,5 +1,7 @@
 package model
 
+import "slices"
+
 type Dependency struct {
 	AnyOf []string `json:"anyOf,omitempty" yaml:"anyOf,omitempty"`
 	AllOf []string `json:"allOf,omitempty" yaml:"allOf,omitempty"`
@@ -17,12 +19,7 @@ func (d Dependencies) FindMissing(features []string) []string {
 
 func (d *Dependency) FindMissing(features []string) []string {
 	contains := func(s []string, e string) bool {
-		for _, a := range s {
-			if a == e {
-				return true
-			}
-		}
-		return false
+		return slices.Contains(s, e)
 	}
 
 	missing := []string{}

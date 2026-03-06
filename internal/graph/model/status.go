@@ -55,7 +55,7 @@ func (r RolloutStatus) String() string {
 	return string(r)
 }
 
-func (r *RolloutStatus) UnmarshalGQL(v interface{}) error {
+func (r *RolloutStatus) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
