@@ -41,9 +41,8 @@ func (r *clusterUpgradeStatusResolver) Actor(ctx context.Context, obj *model.Clu
 	// Get the audit log for this cluster upgrade
 	auditLog, err := audit.AuditGetLatestForClusterUpgrade(ctx, obj.ID)
 	if err != nil {
-		safeUpgradeID := sanitizeLogString(obj.ID.String())
 		r.Log.WithError(err).WithFields(map[string]any{
-			"upgrade_id": safeUpgradeID,
+			"upgrade_id": obj.ID,
 		}).Warn("failed to get audit log for cluster upgrade")
 		return nil, nil
 	}
@@ -368,11 +367,9 @@ func (r *mutationResolver) EnvironmentSetMaintenanceWindow(ctx context.Context, 
 	// Apply maintenance window to GKE cluster FIRST
 	_, err = r.ClusterManager.SetMaintenanceWindow(ctx, *projectID, env, maintenanceWindow)
 	if err != nil {
-		safeEnvironmentID := sanitizeLogString(environmentID.String())
-		safeProjectID := sanitizeLogString(*projectID)
 		r.Log.WithError(err).WithFields(map[string]any{
-			"environment_id": safeEnvironmentID,
-			"project_id":     safeProjectID,
+			"environment_id": environmentID,
+			"project_id":     *projectID,
 		}).Error("failed to set maintenance window on GKE cluster")
 		return nil, fmt.Errorf("failed to apply maintenance window to GKE: %w", err)
 	}
@@ -383,11 +380,9 @@ func (r *mutationResolver) EnvironmentSetMaintenanceWindow(ctx context.Context, 
 		return nil, fmt.Errorf("failed to save maintenance window: %w", err)
 	}
 
-	safeEnvironmentID := sanitizeLogString(environmentID.String())
-	safeProjectID := sanitizeLogString(*projectID)
 	r.Log.WithFields(map[string]any{
-		"environment_id": safeEnvironmentID,
-		"project_id":     safeProjectID,
+		"environment_id": environmentID,
+		"project_id":     *projectID,
 		"has_window":     maintenanceWindow != nil,
 	}).Info("successfully set maintenance window on GKE cluster")
 
@@ -401,7 +396,7 @@ func (r *mutationResolver) ClusterUpgradeBypassDelay(ctx context.Context, upgrad
 		return nil, fmt.Errorf("failed to bypass upgrade delay: %w", err)
 	}
 
-	safeUpgradeID := sanitizeLogString(upgradeID.String())
+	safeUpgradeID := strings.ReplaceAll(strings.ReplaceAll(upgradeID.String(), "\n", ""), "\r", "")
 	r.Log.WithFields(map[string]any{
 		"upgrade_id": safeUpgradeID,
 		"version":    upgrade.Version,
