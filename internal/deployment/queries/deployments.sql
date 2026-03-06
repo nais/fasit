@@ -129,12 +129,51 @@ ON CONFLICT (
 		message = EXCLUDED.message;
 
 -- name: ListDeploymentStatuses :many
+WITH statuses AS (
+	SELECT
+		deployment_id,
+		environment_id,
+		status,
+		message,
+		last_modified,
+		created
+	FROM
+		deployment_statuses
+	WHERE
+		deployment_id = @deployment_id
+),
+disabled AS (
+	SELECT
+		d.id AS deployment_id,
+		e.id AS environment_id,
+		'DISABLED' AS status,
+		'feature is disabled in this environment' AS message,
+		fs.last_modified,
+		fs.enabled_at AS created
+	FROM
+		environments e
+		JOIN feature_states fs ON fs.environment_id = e.id
+		JOIN deployments d ON fs.feature = d.feature_name
+	WHERE
+		e.labels @> d.target -- @> operator checks if the JSONB on the left contains the JSONB on the right
+		AND fs.enabled = FALSE
+		AND d.id = @deployment_id
+),
+computed AS (
+	SELECT
+		*
+	FROM
+		statuses
+	UNION ALL
+	SELECT
+		*
+	FROM
+		disabled
+)
 SELECT
 	*
 FROM
-	deployment_statuses
-WHERE
-	deployment_id = @deployment_id
+	computed
 ORDER BY
 	last_modified DESC,
 	environment_id ASC;

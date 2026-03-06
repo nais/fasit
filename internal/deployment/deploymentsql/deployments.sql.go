@@ -7,6 +7,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/nais/fasit/internal/database/types"
 )
 
@@ -234,26 +235,74 @@ func (q *Queries) LatestStatusForDeploymentInEnvironment(ctx context.Context, ar
 }
 
 const listDeploymentStatuses = `-- name: ListDeploymentStatuses :many
+WITH statuses AS (
+	SELECT
+		deployment_id,
+		environment_id,
+		status,
+		message,
+		last_modified,
+		created
+	FROM
+		deployment_statuses
+	WHERE
+		deployment_id = $1
+),
+disabled AS (
+	SELECT
+		d.id AS deployment_id,
+		e.id AS environment_id,
+		'DISABLED' AS status,
+		'feature is disabled in this environment' AS message,
+		fs.last_modified,
+		fs.enabled_at AS created
+	FROM
+		environments e
+		JOIN feature_states fs ON fs.environment_id = e.id
+		JOIN deployments d ON fs.feature = d.feature_name
+	WHERE
+		e.labels @> d.target -- @> operator checks if the JSONB on the left contains the JSONB on the right
+		AND fs.enabled = FALSE
+		AND d.id = $1
+),
+computed AS (
+	SELECT
+		deployment_id, environment_id, status, message, last_modified, created
+	FROM
+		statuses
+	UNION ALL
+	SELECT
+		deployment_id, environment_id, status, message, last_modified, created
+	FROM
+		disabled
+)
 SELECT
 	deployment_id, environment_id, status, message, last_modified, created
 FROM
-	deployment_statuses
-WHERE
-	deployment_id = $1
+	computed
 ORDER BY
 	last_modified DESC,
 	environment_id ASC
 `
 
-func (q *Queries) ListDeploymentStatuses(ctx context.Context, deploymentID uuid.UUID) ([]DeploymentStatus, error) {
+type ListDeploymentStatusesRow struct {
+	DeploymentID  uuid.UUID
+	EnvironmentID uuid.UUID
+	Status        string
+	Message       string
+	LastModified  pgtype.Timestamptz
+	Created       pgtype.Timestamptz
+}
+
+func (q *Queries) ListDeploymentStatuses(ctx context.Context, deploymentID uuid.UUID) ([]ListDeploymentStatusesRow, error) {
 	rows, err := q.db.Query(ctx, listDeploymentStatuses, deploymentID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []DeploymentStatus{}
+	items := []ListDeploymentStatusesRow{}
 	for rows.Next() {
-		var i DeploymentStatus
+		var i ListDeploymentStatusesRow
 		if err := rows.Scan(
 			&i.DeploymentID,
 			&i.EnvironmentID,
