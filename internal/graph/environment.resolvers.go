@@ -41,8 +41,9 @@ func (r *clusterUpgradeStatusResolver) Actor(ctx context.Context, obj *model.Clu
 	// Get the audit log for this cluster upgrade
 	auditLog, err := audit.AuditGetLatestForClusterUpgrade(ctx, obj.ID)
 	if err != nil {
+		safeUpgradeID := sanitizeLogString(obj.ID.String())
 		r.Log.WithError(err).WithFields(map[string]any{
-			"upgrade_id": obj.ID,
+			"upgrade_id": safeUpgradeID,
 		}).Warn("failed to get audit log for cluster upgrade")
 		return nil, nil
 	}
@@ -367,9 +368,11 @@ func (r *mutationResolver) EnvironmentSetMaintenanceWindow(ctx context.Context, 
 	// Apply maintenance window to GKE cluster FIRST
 	_, err = r.ClusterManager.SetMaintenanceWindow(ctx, *projectID, env, maintenanceWindow)
 	if err != nil {
+		safeEnvironmentID := sanitizeLogString(environmentID.String())
+		safeProjectID := sanitizeLogString(*projectID)
 		r.Log.WithError(err).WithFields(map[string]any{
-			"environment_id": environmentID,
-			"project_id":     *projectID,
+			"environment_id": safeEnvironmentID,
+			"project_id":     safeProjectID,
 		}).Error("failed to set maintenance window on GKE cluster")
 		return nil, fmt.Errorf("failed to apply maintenance window to GKE: %w", err)
 	}
@@ -380,9 +383,11 @@ func (r *mutationResolver) EnvironmentSetMaintenanceWindow(ctx context.Context, 
 		return nil, fmt.Errorf("failed to save maintenance window: %w", err)
 	}
 
+	safeEnvironmentID := sanitizeLogString(environmentID.String())
+	safeProjectID := sanitizeLogString(*projectID)
 	r.Log.WithFields(map[string]any{
-		"environment_id": environmentID,
-		"project_id":     *projectID,
+		"environment_id": safeEnvironmentID,
+		"project_id":     safeProjectID,
 		"has_window":     maintenanceWindow != nil,
 	}).Info("successfully set maintenance window on GKE cluster")
 
@@ -396,7 +401,7 @@ func (r *mutationResolver) ClusterUpgradeBypassDelay(ctx context.Context, upgrad
 		return nil, fmt.Errorf("failed to bypass upgrade delay: %w", err)
 	}
 
-	safeUpgradeID := strings.ReplaceAll(strings.ReplaceAll(upgradeID.String(), "\n", ""), "\r", "")
+	safeUpgradeID := sanitizeLogString(upgradeID.String())
 	r.Log.WithFields(map[string]any{
 		"upgrade_id": safeUpgradeID,
 		"version":    upgrade.Version,
@@ -420,6 +425,12 @@ func (r *releaseResolver) Feature(ctx context.Context, obj *model.Release) (*mod
 	f.GraphVars.EnvironmentID = obj.GraphVars.EnvironmentID
 
 	return f, nil
+}
+
+func sanitizeLogString(v string) string {
+	v = strings.ReplaceAll(v, "\n", "")
+	v = strings.ReplaceAll(v, "\r", "")
+	return v
 }
 
 func (r *Resolver) ClusterUpgradeStatus() graphgen.ClusterUpgradeStatusResolver {
