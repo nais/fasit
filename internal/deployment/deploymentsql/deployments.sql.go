@@ -179,6 +179,35 @@ func (q *Queries) GetDeployment(ctx context.Context, id uuid.UUID) (GetDeploymen
 	return i, err
 }
 
+const getDeploymentStatus = `-- name: GetDeploymentStatus :one
+SELECT
+	deployment_id, environment_id, status, message, last_modified, created
+FROM
+	deployment_statuses ds
+WHERE
+	ds.deployment_id = $1
+	AND ds.environment_id = $2
+`
+
+type GetDeploymentStatusParams struct {
+	DeploymentID  uuid.UUID
+	EnvironmentID uuid.UUID
+}
+
+func (q *Queries) GetDeploymentStatus(ctx context.Context, arg GetDeploymentStatusParams) (DeploymentStatus, error) {
+	row := q.db.QueryRow(ctx, getDeploymentStatus, arg.DeploymentID, arg.EnvironmentID)
+	var i DeploymentStatus
+	err := row.Scan(
+		&i.DeploymentID,
+		&i.EnvironmentID,
+		&i.Status,
+		&i.Message,
+		&i.LastModified,
+		&i.Created,
+	)
+	return i, err
+}
+
 const latestStatusForDeploymentInEnvironment = `-- name: LatestStatusForDeploymentInEnvironment :one
 SELECT
 	status

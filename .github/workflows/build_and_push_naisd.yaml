@@ -21,7 +21,7 @@ jobs:
       - name: Find Go version
         id: go_version
         run: echo "go_version=$(mise current go)" >> $GITHUB_OUTPUT
-      - uses: actions/setup-go@7a3fe6cf4cb3a834922a1244abfce67bcef6a0c5 # ratchet:actions/setup-go@v6
+      - uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # ratchet:actions/setup-go@v6
         with:
           go-version: ${{ steps.go_version.outputs.GO_VERSION }}
       - run: go test -cover -tags integration_test ./...

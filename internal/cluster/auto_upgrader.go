@@ -197,12 +197,15 @@ func (c *AutoUpgrader) processEnvironment(ctx context.Context, env *model.Enviro
 		"available_versions":    len(availableVersions),
 	}).Debug("retrieved cluster version information")
 
-	return c.evaluateAndScheduleUpgrades(ctx, env, envLogger, controlPlaneVer, availableVersions)
+	return c.evaluateAndScheduleUpgrades(ctx, env, tenant, envLogger, controlPlaneVer, availableVersions)
 }
 
 // evaluateAndScheduleUpgrades checks for newer patch versions and schedules upgrades
-func (c *AutoUpgrader) evaluateAndScheduleUpgrades(ctx context.Context, env *model.Environment, envLogger logrus.FieldLogger, controlPlaneVer string, availableVersions []string) (processed, scheduled bool) {
-	tenant, _ := environmentpkg.GetTenant(ctx, env.TenantID) // Already retrieved in parent, but needed for metrics
+func (c *AutoUpgrader) evaluateAndScheduleUpgrades(ctx context.Context, env *model.Environment, tenant *model.Tenant, envLogger logrus.FieldLogger, controlPlaneVer string, availableVersions []string) (processed, scheduled bool) {
+	tenantName := "unknown"
+	if tenant != nil {
+		tenantName = tenant.Name
+	}
 
 	for _, version := range availableVersions {
 		if c.IsNewerPatchRelease(controlPlaneVer, version) {
@@ -265,7 +268,7 @@ func (c *AutoUpgrader) evaluateAndScheduleUpgrades(ctx context.Context, env *mod
 			} // Record successful scheduling
 			c.autoUpgradesScheduled.Add(ctx, 1, metric.WithAttributes(
 				attribute.String("environment", env.Name),
-				attribute.String("tenant", tenant.Name),
+				attribute.String("tenant", tenantName),
 				attribute.String("current_version", controlPlaneVer),
 				attribute.String("target_version", version),
 			))
