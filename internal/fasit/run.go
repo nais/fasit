@@ -119,7 +119,8 @@ func Run(ctx context.Context) error {
 	}
 
 	go func() {
-		defer log.Error("reconciler listener stopped")
+		// TODO: this does not need to run in a goroutine as the Listen method is not blocking
+		defer log.Info("reconciler listener started")
 		if err := reconciler.Listen(ctx); err != nil {
 			log.WithError(err).Fatal("setting up reconciler listener")
 		}
