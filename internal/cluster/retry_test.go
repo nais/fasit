@@ -63,7 +63,6 @@ func TestRetryerWithBackoff_RetriableEventuallySucceeds(t *testing.T) {
 		}
 		return nil
 	})
-
 	if err != nil {
 		t.Fatalf("expected nil, got %v", err)
 	}
