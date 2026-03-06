@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strings"
 	"text/template"
 
@@ -168,10 +169,5 @@ func copyMap(m map[string]any) map[string]any {
 }
 
 func ContainsKind(kinds []model.EnvironmentKind, kind model.EnvironmentKind) bool {
-	for _, k := range kinds {
-		if k == kind {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(kinds, kind)
 }

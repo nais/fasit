@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -143,11 +144,8 @@ func environmentsAsMap(keyList string, data []map[string]any) map[string]map[str
 		}
 		result[key] = make(map[string]any)
 		for k, v := range envMap {
-			for _, includedKey := range keys {
-				if k == includedKey {
-					result[key][k] = v
-					break
-				}
+			if slices.Contains(keys, k) {
+				result[key][k] = v
 			}
 		}
 	}

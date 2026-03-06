@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/google/uuid"
@@ -60,13 +61,7 @@ func (r *featureResolver) State(ctx context.Context, obj *model.Feature) (*model
 	if err != nil {
 		return nil, fmt.Errorf("get environment: %w", err)
 	}
-	ok := false
-	for _, kind := range obj.EnvironmentKinds {
-		if env.Kind == kind {
-			ok = true
-			break
-		}
-	}
+	ok := slices.Contains(obj.EnvironmentKinds, env.Kind)
 
 	if !ok {
 		// Not a valid environment for this feature

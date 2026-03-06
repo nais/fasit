@@ -195,7 +195,7 @@ func Test_image(t *testing.T) {
 	}
 }
 
-func objToMap(tb testing.TB, obj interface{}) map[string]any {
+func objToMap(tb testing.TB, obj any) map[string]any {
 	tb.Helper()
 	b, err := json.Marshal(obj)
 	if err != nil {

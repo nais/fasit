@@ -83,7 +83,7 @@ func testEnum[T enum](t *testing.T, valid []T, invalid []T) {
 	})
 }
 
-func unmarhsalWrapper[T enum](v interface{}) (T, error) {
+func unmarhsalWrapper[T enum](v any) (T, error) {
 	var empty T
 	target := new(T)
 

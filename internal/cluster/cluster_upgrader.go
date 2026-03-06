@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -522,11 +523,8 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		// Track owned operations if any are running
 		if clusterHas(runningOperations) {
 			var hasActiveOps bool
-			for _, op := range runningOperations {
-				if isOperationActive(op) {
-					hasActiveOps = true
-					break
-				}
+			if slices.ContainsFunc(runningOperations, isOperationActive) {
+				hasActiveOps = true
 			}
 			if hasActiveOps {
 				_, err = c.trackRunningOperations(ctx, projectID, env, clusterUpgrade, runningOperations, existingOpsBeforeUpdate)
@@ -555,11 +553,8 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 		// Track owned operations if any are running
 		if clusterHas(runningOperations) {
 			var hasActiveOps bool
-			for _, op := range runningOperations {
-				if isOperationActive(op) {
-					hasActiveOps = true
-					break
-				}
+			if slices.ContainsFunc(runningOperations, isOperationActive) {
+				hasActiveOps = true
 			}
 			if hasActiveOps {
 				runningOperations, err = c.trackRunningOperations(ctx, projectID, env, clusterUpgrade, runningOperations, existingOpsBeforeUpdate)
@@ -913,12 +908,7 @@ func latestNodepoolUpgradeOps(ops []*model.EnvironmentOperation) map[string]*mod
 }
 
 func clusterHas(runningOperations []*containerpb.Operation) bool {
-	for _, op := range runningOperations {
-		if isOperationActive(op) {
-			return true
-		}
-	}
-	return false
+	return slices.ContainsFunc(runningOperations, isOperationActive)
 }
 
 // getRunningOperationsFromGKE retrieves running operations from GKE without updating the database

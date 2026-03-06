@@ -440,11 +440,9 @@ func FeatureStateGet(ctx context.Context, envID uuid.UUID, featureName string) (
 		return nil, err
 	}
 
-	for _, feature := range defaultFeatures {
-		if feature == featureName {
-			fs.Enabled = true
-			return fs, nil
-		}
+	if slices.Contains(defaultFeatures, featureName) {
+		fs.Enabled = true
+		return fs, nil
 	}
 
 	return fs, nil

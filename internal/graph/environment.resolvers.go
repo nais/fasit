@@ -41,7 +41,7 @@ func (r *clusterUpgradeStatusResolver) Actor(ctx context.Context, obj *model.Clu
 	// Get the audit log for this cluster upgrade
 	auditLog, err := audit.AuditGetLatestForClusterUpgrade(ctx, obj.ID)
 	if err != nil {
-		r.Log.WithError(err).WithFields(map[string]interface{}{
+		r.Log.WithError(err).WithFields(map[string]any{
 			"upgrade_id": obj.ID,
 		}).Warn("failed to get audit log for cluster upgrade")
 		return nil, nil
@@ -367,7 +367,7 @@ func (r *mutationResolver) EnvironmentSetMaintenanceWindow(ctx context.Context, 
 	// Apply maintenance window to GKE cluster FIRST
 	_, err = r.ClusterManager.SetMaintenanceWindow(ctx, *projectID, env, maintenanceWindow)
 	if err != nil {
-		r.Log.WithError(err).WithFields(map[string]interface{}{
+		r.Log.WithError(err).WithFields(map[string]any{
 			"environment_id": environmentID,
 			"project_id":     *projectID,
 		}).Error("failed to set maintenance window on GKE cluster")
@@ -380,7 +380,7 @@ func (r *mutationResolver) EnvironmentSetMaintenanceWindow(ctx context.Context, 
 		return nil, fmt.Errorf("failed to save maintenance window: %w", err)
 	}
 
-	r.Log.WithFields(map[string]interface{}{
+	r.Log.WithFields(map[string]any{
 		"environment_id": environmentID,
 		"project_id":     *projectID,
 		"has_window":     maintenanceWindow != nil,
@@ -397,7 +397,7 @@ func (r *mutationResolver) ClusterUpgradeBypassDelay(ctx context.Context, upgrad
 	}
 
 	safeUpgradeID := strings.ReplaceAll(strings.ReplaceAll(upgradeID.String(), "\n", ""), "\r", "")
-	r.Log.WithFields(map[string]interface{}{
+	r.Log.WithFields(map[string]any{
 		"upgrade_id": safeUpgradeID,
 		"version":    upgrade.Version,
 		"status":     upgrade.UpgradeStatus,

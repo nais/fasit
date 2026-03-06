@@ -16,7 +16,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/utils/ptr"
 )
 
 var now = time.Now
@@ -111,9 +110,9 @@ func createJob(suffix string, msg message.DeployInstruction, naisProjectID, env,
 			Labels: lbls,
 		},
 		Spec: batchv1.JobSpec{
-			BackoffLimit:            ptr.To(int32(1)),
-			Completions:             ptr.To(int32(1)),
-			TTLSecondsAfterFinished: ptr.To(int32((3 * time.Hour).Seconds())),
+			BackoffLimit:            new(int32(1)),
+			Completions:             new(int32(1)),
+			TTLSecondsAfterFinished: new(int32((3 * time.Hour).Seconds())),
 			Template: corev1.PodTemplateSpec{
 				ObjectMeta: metav1.ObjectMeta{
 					Labels: lbls,

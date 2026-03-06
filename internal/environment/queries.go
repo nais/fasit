@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"maps"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -45,9 +46,7 @@ func Create(ctx context.Context, t *model.EnvironmentCreate) (*model.Environment
 
 func SetLabels(ctx context.Context, environmentID uuid.UUID, labels Labels) error {
 	lbls := make(types.EnvironmentLabels)
-	for k, v := range labels {
-		lbls[k] = v
-	}
+	maps.Copy(lbls, labels)
 
 	return querier(ctx).SetLabels(ctx, environmentsql.SetLabelsParams{
 		Labels: lbls,

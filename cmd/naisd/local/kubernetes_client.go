@@ -12,7 +12,7 @@ import (
 
 func NewKubernetesClient() kubernetes.Interface {
 	objs := []runtime.Object{}
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		n := &corev1.Node{}
 		if err := yaml.Unmarshal(nodeYAML, n); err != nil {
 			panic(err)

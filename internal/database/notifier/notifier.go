@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"slices"
 	"sync"
 	"time"
 
@@ -27,13 +28,7 @@ type Filter func(Payload) bool
 // WithOperations returns a filter that matches the given operations
 func WithOperations(ops ...string) Filter {
 	return func(payload Payload) bool {
-		for _, op := range ops {
-			if payload.Op == op {
-				return true
-			}
-		}
-
-		return false
+		return slices.Contains(ops, payload.Op)
 	}
 }
 

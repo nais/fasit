@@ -21,11 +21,6 @@ import (
 	metricsdk "go.opentelemetry.io/otel/sdk/metric"
 )
 
-// Helper function to create bool pointer
-func boolPtr(b bool) *bool {
-	return &b
-}
-
 // Helper function to create APIError from gRPC status
 type env struct {
 	tenantID          uuid.UUID
@@ -532,7 +527,7 @@ func TestRun_CreatedToWaitingTransitionWithDelay(t *testing.T) {
 		StartTime:     time.Now(),
 		LastModified:  time.Now(),
 		EnvironmentID: suite.env.id,
-		IsAutomatic:   boolPtr(true), // This is an automatic upgrade, should respect delays
+		IsAutomatic:   new(true), // This is an automatic upgrade, should respect delays
 	}
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(createdUpgrade, nil).Once()
 
@@ -628,7 +623,7 @@ func TestRun_CreatedWithoutDelaySkipsWaiting(t *testing.T) {
 		StartTime:     time.Now(),
 		LastModified:  time.Now(),
 		EnvironmentID: suite.env.id,
-		IsAutomatic:   boolPtr(true), // Automatic upgrade with no delay should proceed immediately
+		IsAutomatic:   new(true), // Automatic upgrade with no delay should proceed immediately
 	}
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(createdUpgrade, nil).Once()
 
@@ -740,7 +735,7 @@ func TestRun_CreatedWithDelayButRunningOperations(t *testing.T) {
 		StartTime:     time.Now(),
 		LastModified:  time.Now(),
 		EnvironmentID: suite.env.id,
-		IsAutomatic:   boolPtr(true), // Automatic upgrade with delay configured
+		IsAutomatic:   new(true), // Automatic upgrade with delay configured
 	}
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(createdUpgrade, nil).Once()
 
@@ -788,7 +783,7 @@ func TestRun_CreatedWithDelayButRunningOperations(t *testing.T) {
 		StartTime:     time.Now(),
 		LastModified:  time.Now(),
 		EnvironmentID: suite.env.id,
-		IsAutomatic:   boolPtr(true),
+		IsAutomatic:   new(true),
 	}
 	suite.repoMock.EXPECT().UpdateClusterUpgradeStatus(mock.Anything, createdUpgrade.ID, gensql.ClusterUpgradesStatusCONTROLPLANEUPGRADE).Return(updatedUpgrade, nil).Once()
 
@@ -869,7 +864,7 @@ func TestRun_CreatedWithNonOwnedOperationsAndClusterAtTarget(t *testing.T) {
 		StartTime:     time.Now(),
 		LastModified:  time.Now(),
 		EnvironmentID: suite.env.id,
-		IsAutomatic:   boolPtr(false),
+		IsAutomatic:   new(false),
 	}
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(createdUpgrade, nil).Once()
 
@@ -982,7 +977,7 @@ func TestRun_CreatedWithNonOwnedOperationsAndClusterBeyondTarget(t *testing.T) {
 		StartTime:     time.Now(),
 		LastModified:  time.Now(),
 		EnvironmentID: suite.env.id,
-		IsAutomatic:   boolPtr(false),
+		IsAutomatic:   new(false),
 	}
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(createdUpgrade, nil).Once()
 
@@ -1095,7 +1090,7 @@ func TestRun_CreatedWithNonOwnedOperationsButClusterNotAtTarget(t *testing.T) {
 		StartTime:     time.Now(),
 		LastModified:  time.Now(),
 		EnvironmentID: suite.env.id,
-		IsAutomatic:   boolPtr(false),
+		IsAutomatic:   new(false),
 	}
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(createdUpgrade, nil).Once()
 
@@ -1182,7 +1177,7 @@ func TestRun_CreatedWithMixedOwnedAndNonOwnedOperationsButClusterNotAtTarget(t *
 		StartTime:     time.Now(),
 		LastModified:  time.Now(),
 		EnvironmentID: suite.env.id,
-		IsAutomatic:   boolPtr(false),
+		IsAutomatic:   new(false),
 	}
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(createdUpgrade, nil).Once()
 
@@ -1266,7 +1261,7 @@ func TestRun_WaitingWithNonOwnedOperationsAndClusterAtTarget(t *testing.T) {
 		StartTime:     time.Now().Add(-3 * 24 * time.Hour), // Started 3 days ago (within delay)
 		LastModified:  time.Now(),
 		EnvironmentID: suite.env.id,
-		IsAutomatic:   boolPtr(false),
+		IsAutomatic:   new(false),
 	}
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(waitingUpgrade, nil).Once()
 
@@ -1374,7 +1369,7 @@ func TestRun_WaitingWithNonOwnedOperationsAndClusterBeyondTarget(t *testing.T) {
 		StartTime:     time.Now().Add(-3 * 24 * time.Hour), // Started 3 days ago (within delay)
 		LastModified:  time.Now(),
 		EnvironmentID: suite.env.id,
-		IsAutomatic:   boolPtr(false),
+		IsAutomatic:   new(false),
 	}
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(waitingUpgrade, nil).Once()
 
@@ -1482,7 +1477,7 @@ func TestRun_WaitingWithNonOwnedOperationsButClusterNotAtTarget(t *testing.T) {
 		StartTime:     time.Now().Add(-3 * 24 * time.Hour), // Started 3 days ago (within delay)
 		LastModified:  time.Now(),
 		EnvironmentID: suite.env.id,
-		IsAutomatic:   boolPtr(false),
+		IsAutomatic:   new(false),
 	}
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(waitingUpgrade, nil).Once()
 
@@ -2050,7 +2045,7 @@ func TestRun_ControlPlaneUpgradeWithNonOwnedOperationsAndClusterAtTarget(t *test
 		StartTime:     time.Now(),
 		LastModified:  time.Now(),
 		EnvironmentID: suite.env.id,
-		IsAutomatic:   boolPtr(false),
+		IsAutomatic:   new(false),
 	}
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(controlPlaneUpgrade, nil).Once()
 
@@ -2159,7 +2154,7 @@ func TestRun_ControlPlaneUpgradeWithNonOwnedOperationsButClusterNotAtTarget(t *t
 		StartTime:     time.Now(),
 		LastModified:  time.Now(),
 		EnvironmentID: suite.env.id,
-		IsAutomatic:   boolPtr(false),
+		IsAutomatic:   new(false),
 	}
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(controlPlaneUpgrade, nil).Once()
 
@@ -2251,7 +2246,7 @@ func TestRun_NodeUpgradeWithNonOwnedOperationsAndClusterAtTarget(t *testing.T) {
 		StartTime:     time.Now(),
 		LastModified:  time.Now(),
 		EnvironmentID: suite.env.id,
-		IsAutomatic:   boolPtr(false),
+		IsAutomatic:   new(false),
 	}
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(nodeUpgrade, nil).Once()
 
@@ -2358,7 +2353,7 @@ func TestRun_NodeUpgradeWithNonOwnedOperationsButClusterNotAtTarget(t *testing.T
 		StartTime:     time.Now(),
 		LastModified:  time.Now(),
 		EnvironmentID: suite.env.id,
-		IsAutomatic:   boolPtr(false),
+		IsAutomatic:   new(false),
 	}
 	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(nodeUpgrade, nil).Once()
 
