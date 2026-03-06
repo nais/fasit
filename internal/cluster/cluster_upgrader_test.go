@@ -1135,6 +1135,81 @@ func TestRun_CreatedWithNonOwnedOperationsButClusterNotAtTarget(t *testing.T) {
 	suite.repoMock.AssertExpectations(t)
 }
 
+func TestRun_CreatedWithMixedOwnedAndNonOwnedOperationsButClusterNotAtTarget(t *testing.T) {
+	ctx := environmenttest.RegisterMock(context.Background(), t)
+	suite := newTestSuite(t)
+	upgrade := newUpgrade(suite)
+
+	tenantDelayDays := int32(0)
+	envDelayDays := int32(0)
+
+	environmenttest.OnGetTenants(ctx, []*model.Tenant{{
+		ID:               suite.env.tenantID,
+		Name:             suite.env.name,
+		UpgradeDelayDays: tenantDelayDays,
+	}})
+
+	suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
+		ID:               suite.env.id,
+		TenantID:         suite.env.tenantID,
+		Name:             suite.env.name,
+		UpgradeDelayDays: envDelayDays,
+	}}, nil).Once()
+
+	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(nil, nil).Once()
+
+	environmenttest.OnGetTenants(ctx, []*model.Tenant{{
+		ID:               suite.env.tenantID,
+		Name:             suite.env.name,
+		UpgradeDelayDays: tenantDelayDays,
+	}})
+
+	suite.repoMock.EXPECT().EnvironmentsGet(mock.Anything, suite.env.tenantID).Return([]*model.Environment{{
+		ID:               suite.env.id,
+		TenantID:         suite.env.tenantID,
+		Name:             suite.env.name,
+		UpgradeDelayDays: envDelayDays,
+	}}, nil).Once()
+
+	suite.repoMock.EXPECT().EnvironmentValueGet(mock.Anything, mock.Anything, "project_id", false).Return(
+		&model.EnvironmentValue{Key: "project_id", Value: []byte(`"1234"`)}, nil,
+	).Twice()
+
+	createdUpgrade := &model.ClusterUpgradeStatus{
+		ID:            uuid.New(),
+		UpgradeStatus: model.UpgradeStatusCreated,
+		Version:       "1.2.5",
+		StartTime:     time.Now(),
+		LastModified:  time.Now(),
+		EnvironmentID: suite.env.id,
+		IsAutomatic:   boolPtr(false),
+	}
+	suite.repoMock.EXPECT().ClusterUpgradeGet(mock.Anything, suite.env.tenantID, suite.env.id).Return(createdUpgrade, nil).Once()
+
+	suite.repoMock.EXPECT().ClusterOperationsGetDanglingForEnvironment(mock.Anything, suite.env.tenantID, suite.env.id).Return(map[uuid.UUID][]*model.EnvironmentOperation{}, nil).Once()
+
+	ownedOp := &model.EnvironmentOperation{Name: "operation-owned", Status: "RUNNING", Type: "UPGRADE_MASTER"}
+	suite.repoMock.EXPECT().ClusterOperationsGetByUpgradeID(mock.Anything, createdUpgrade.ID).Return([]*model.EnvironmentOperation{ownedOp}, nil).Once()
+
+	suite.clusterMock.EXPECT().GetRunningOperations(mock.Anything, mock.Anything, mock.Anything).Return([]*containerpb.Operation{
+		{Name: "operation-owned", OperationType: containerpb.Operation_UPGRADE_MASTER, Status: containerpb.Operation_RUNNING},
+		{Name: "operation-foreign", OperationType: containerpb.Operation_UPGRADE_MASTER, Status: containerpb.Operation_RUNNING},
+	}, nil).Once()
+
+	suite.clusterMock.EXPECT().GetCurrentControlPlaneVersion(mock.Anything, mock.Anything, mock.Anything).Return("1.2.3", nil).Once()
+
+	err := upgrade.Run(ctx)
+	if err != nil {
+		t.Errorf("got %v, want nil", err)
+	}
+
+	// Mixed ownership should be treated as non-owned; do not track or transition.
+	suite.repoMock.AssertNotCalled(t, "CreateOrUpdateClusterOperation", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything)
+	suite.repoMock.AssertNotCalled(t, "UpdateClusterUpgradeStatus", mock.Anything, createdUpgrade.ID, gensql.ClusterUpgradesStatusCONTROLPLANEUPGRADE)
+	suite.repoMock.AssertNotCalled(t, "UpdateClusterUpgradeStatus", mock.Anything, createdUpgrade.ID, gensql.ClusterUpgradesStatusDONE)
+	suite.repoMock.AssertExpectations(t)
+}
+
 func TestRun_WaitingWithNonOwnedOperationsAndClusterAtTarget(t *testing.T) {
 	ctx := environmenttest.RegisterMock(context.Background(), t)
 	suite := newTestSuite(t)
