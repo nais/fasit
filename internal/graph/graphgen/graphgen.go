@@ -2697,6 +2697,7 @@ enum DeploymentStatusState {
 	PENDING
 	DEPLOYED
 	FAILED
+	DISABLED
 }
 `, BuiltIn: false},
 	{Name: "../../../schema/directives.graphqls", Input: `directive @goField(

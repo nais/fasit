@@ -43,4 +43,5 @@ enum DeploymentStatusState {
 	PENDING
 	DEPLOYED
 	FAILED
+	DISABLED
 }
