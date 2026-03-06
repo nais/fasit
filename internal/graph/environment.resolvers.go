@@ -427,12 +427,6 @@ func (r *releaseResolver) Feature(ctx context.Context, obj *model.Release) (*mod
 	return f, nil
 }
 
-func sanitizeLogString(v string) string {
-	v = strings.ReplaceAll(v, "\n", "")
-	v = strings.ReplaceAll(v, "\r", "")
-	return v
-}
-
 func (r *Resolver) ClusterUpgradeStatus() graphgen.ClusterUpgradeStatusResolver {
 	return &clusterUpgradeStatusResolver{r}
 }
