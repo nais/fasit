@@ -55,6 +55,7 @@ const (
 	DeploymentStatusStatePending  DeploymentStatusState = "PENDING"
 	DeploymentStatusStateDeployed DeploymentStatusState = "DEPLOYED"
 	DeploymentStatusStateFailed   DeploymentStatusState = "FAILED"
+	DeploymentStatusStateDisabled DeploymentStatusState = "DISABLED"
 )
 
 var AllDeploymentStatusState = []DeploymentStatusState{
@@ -63,11 +64,12 @@ var AllDeploymentStatusState = []DeploymentStatusState{
 	DeploymentStatusStatePending,
 	DeploymentStatusStateDeployed,
 	DeploymentStatusStateFailed,
+	DeploymentStatusStateDisabled,
 }
 
 func (e DeploymentStatusState) IsValid() bool {
 	switch e {
-	case DeploymentStatusStateUnknown, DeploymentStatusStateCreated, DeploymentStatusStatePending, DeploymentStatusStateDeployed, DeploymentStatusStateFailed:
+	case DeploymentStatusStateUnknown, DeploymentStatusStateCreated, DeploymentStatusStatePending, DeploymentStatusStateDeployed, DeploymentStatusStateFailed, DeploymentStatusStateDisabled:
 		return true
 	}
 	return false
