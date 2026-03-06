@@ -67,7 +67,7 @@ func (r *reconciler) trigger(_ ReconcileTriggerEvent) chan TriggerResult {
 func (r *reconciler) Run(ctx context.Context, interval time.Duration) {
 	var done chan TriggerResult
 	for {
-		r.log.Debug("reconciling")
+		r.log.Info("reconciling")
 		err := r.Reconcile(ctx)
 		if err != nil {
 			r.log.WithError(err).Error("reconcile")
@@ -104,6 +104,7 @@ func (r *reconciler) Reconcile(ctx context.Context) error {
 		return fmt.Errorf("get tenant environments: %w", err)
 	}
 
+	r.log.WithField("num_envs", len(tenantEnvironments)).Info("reconciling tenant environments")
 	for _, environment := range tenantEnvironments {
 		if err := r.reconcileEnvironment(ctx, environment); err != nil {
 			return fmt.Errorf("reconcile environment %q for tenant: %q: %w", environment.Name, environment.TenantName, err)
@@ -130,7 +131,14 @@ func (r *reconciler) reconcileEnvironment(ctx context.Context, environment *mode
 		return fmt.Errorf("get deployments for environment %q: %w", environment.Name, err)
 	}
 
-	for _, deployment := range filterDeployments(allDeployments) {
+	filtered := filterDeployments(allDeployments)
+
+	r.log.
+		WithField("tenant", environment.TenantName).
+		WithField("env", environment.Name).
+		WithField("num_deployments", len(filtered)).
+		Info("deployments to reconcile for environment")
+	for _, deployment := range filtered {
 		if err := r.deployer.deployToEnvironment(ctx, deployment, environment, publisher); err != nil {
 			// TODO: continue on error? earlier we returned the error immediately when the above was inside the loop.
 			return err
