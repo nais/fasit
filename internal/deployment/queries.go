@@ -144,7 +144,7 @@ func ListDeploymentStatuses(ctx context.Context, deploymentID uuid.UUID) ([]*Dep
 
 	models := make([]*DeploymentStatus, len(rows))
 	for i, status := range rows {
-		models[i] = deploymentStatusFromSQL(status)
+		models[i] = deploymentStatusFromSQL(deploymentsql.DeploymentStatus(status))
 	}
 
 	return models, nil

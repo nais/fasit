@@ -254,8 +254,8 @@ disabled AS (
 		e.id AS environment_id,
 		'DISABLED' AS status,
 		'feature is disabled in this environment' AS message,
-		fs.last_modified,
-		fs.enabled_at AS created
+		fs.last_modified AS last_modified,
+		fs.created AS created
 	FROM
 		environments e
 		JOIN feature_states fs ON fs.environment_id = e.id
@@ -270,7 +270,7 @@ computed AS (
 		deployment_id, environment_id, status, message, last_modified, created
 	FROM
 		statuses
-	UNION ALL
+	UNION
 	SELECT
 		deployment_id, environment_id, status, message, last_modified, created
 	FROM
