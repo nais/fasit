@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -199,5 +200,16 @@ func deployInstructionFromSQL(di deploymentsql.DeployInstruction) *model.DeployI
 		Created:        di.Created.Time,
 		LastModified:   di.LastModified.Time,
 		Values:         di.Values,
+	}
+}
+
+func deploymentStatusFromSQL(status deploymentsql.DeploymentStatus) *DeploymentStatus {
+	return &DeploymentStatus{
+		State:         DeploymentStatusState(strings.ToUpper(status.Status)),
+		Message:       status.Message,
+		LastModified:  status.LastModified.Time,
+		Created:       status.Created.Time,
+		DeploymentID:  status.DeploymentID,
+		EnvironmentID: status.EnvironmentID,
 	}
 }
