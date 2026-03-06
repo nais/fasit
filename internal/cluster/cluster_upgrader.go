@@ -235,7 +235,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 
 		// Check for non-owned operations in all states except DONE/FAILED
 		if clusterHas(runningOperations) && !c.ownsRunningOperations(existingOpsBeforeUpdate, runningOperations) {
-			err := c.completeIfNonOwnedOperationsReachedTarget(ctx, projectID, env, tenant, clusterUpgrade, currentVersion, len(runningOperations))
+			err := c.completeIfNonOwnedOperationsReachedTarget(ctx, env, tenant, clusterUpgrade, currentVersion, len(runningOperations))
 			if err != nil {
 				return err
 			}
@@ -339,7 +339,7 @@ func (c *ClusterUpgrader) upgradeEnvironment(ctx context.Context, tenant *model.
 
 	// Check for non-owned operations in all states except DONE/FAILED
 	if clusterHas(runningOperations) && !c.ownsRunningOperations(existingOpsBeforeUpdate, runningOperations) {
-		err := c.completeIfNonOwnedOperationsReachedTarget(ctx, projectID, env, tenant, clusterUpgrade, currentVersion, len(runningOperations))
+		err := c.completeIfNonOwnedOperationsReachedTarget(ctx, env, tenant, clusterUpgrade, currentVersion, len(runningOperations))
 		if err != nil {
 			return err
 		}
@@ -711,7 +711,6 @@ func (c *ClusterUpgrader) ownsRunningOperations(existingOps []*model.Environment
 // and marks upgrade as DONE if so. Otherwise logs a warning.
 func (c *ClusterUpgrader) completeIfNonOwnedOperationsReachedTarget(
 	ctx context.Context,
-	projectID string,
 	env *model.Environment,
 	tenant *model.Tenant,
 	clusterUpgrade *model.ClusterUpgradeStatus,
