@@ -97,7 +97,7 @@ require (
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/braydonk/yaml v0.9.0 // indirect
 	github.com/brunoga/deep v1.3.1 // indirect
-	github.com/buger/jsonparser v1.1.1 // indirect
+	github.com/buger/jsonparser v1.1.2 // indirect
 	github.com/ccojocar/zxcvbn-go v1.0.4 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
