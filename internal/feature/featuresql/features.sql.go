@@ -14,7 +14,14 @@ const featureByName = `-- name: FeatureByName :one
 SELECT
 	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.rename,
 	features.created,
-	features.last_modified
+	features.last_modified,
+	EXISTS (
+		SELECT
+			1
+		FROM
+			deployments d
+		WHERE
+			d.feature_name = fd.name) AS hasDeployments
 FROM
 	features
 	JOIN feature_data fd ON features.name = fd.name
@@ -24,9 +31,10 @@ WHERE
 `
 
 type FeatureByNameRow struct {
-	FeatureDatum FeatureDatum
-	Created      pgtype.Timestamptz
-	LastModified pgtype.Timestamptz
+	FeatureDatum   FeatureDatum
+	Created        pgtype.Timestamptz
+	LastModified   pgtype.Timestamptz
+	Hasdeployments bool
 }
 
 func (q *Queries) FeatureByName(ctx context.Context, name string) (FeatureByNameRow, error) {
@@ -47,6 +55,7 @@ func (q *Queries) FeatureByName(ctx context.Context, name string) (FeatureByName
 		&i.FeatureDatum.Rename,
 		&i.Created,
 		&i.LastModified,
+		&i.Hasdeployments,
 	)
 	return i, err
 }
@@ -357,19 +366,27 @@ filtered AS (
 SELECT
 	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.rename,
 	filtered.created,
-	filtered.last_modified
-FROM
-	filtered
-	JOIN feature_data fd ON filtered.name = fd.name
-		AND filtered.version = fd.version
-	ORDER BY
-		filtered.name
+	filtered.last_modified,
+	EXISTS (
+		SELECT
+			1
+		FROM
+			deployments d
+		WHERE
+			d.feature_name = fd.name) AS hasDeployments
+	FROM
+		filtered
+		JOIN feature_data fd ON filtered.name = fd.name
+			AND filtered.version = fd.version
+		ORDER BY
+			filtered.name
 `
 
 type FeaturesRow struct {
-	FeatureDatum FeatureDatum
-	Created      pgtype.Timestamptz
-	LastModified pgtype.Timestamptz
+	FeatureDatum   FeatureDatum
+	Created        pgtype.Timestamptz
+	LastModified   pgtype.Timestamptz
+	HasDeployments bool
 }
 
 func (q *Queries) Features(ctx context.Context) ([]FeaturesRow, error) {
@@ -396,6 +413,7 @@ func (q *Queries) Features(ctx context.Context) ([]FeaturesRow, error) {
 			&i.FeatureDatum.Rename,
 			&i.Created,
 			&i.LastModified,
+			&i.HasDeployments,
 		); err != nil {
 			return nil, err
 		}

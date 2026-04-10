@@ -226,7 +226,13 @@ func FeatureByName(ctx context.Context, name string) (*model.Feature, error) {
 		return nil, fmt.Errorf("get feature by name from db: %w", err)
 	}
 
-	return featureFromSQL(f.FeatureDatum)
+	feature, err := featureFromSQL(f.FeatureDatum)
+	if err != nil {
+		return nil, err
+	}
+
+	feature.HasDeployments = f.Hasdeployments
+	return feature, nil
 }
 
 // TODO: rename function as it is not by env, but by rollout if ci
@@ -291,6 +297,7 @@ func Features(ctx context.Context) ([]*model.Feature, error) {
 			return nil, fmt.Errorf("make feature: %w", err)
 		}
 
+		feature.HasDeployments = f.HasDeployments
 		ret = append(ret, feature)
 	}
 

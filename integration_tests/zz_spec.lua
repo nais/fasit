@@ -113,6 +113,13 @@ function TestFunctionTrest.send(method, path, body)
 	print("send")
 end
 
+--- Add a header to the request
+---@param key string
+---@param value string
+function TestFunctionTrest.addHeader(key, value)
+	print("addHeader")
+end
+
 --- Check the response done by send
 ---@param status_code number
 ---@param resp table

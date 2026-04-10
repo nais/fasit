@@ -15499,6 +15499,10 @@ func (ec *executionContext) fieldContext_userInfo_email(_ context.Context, field
 
 func (ec *executionContext) unmarshalInputCostFilter(ctx context.Context, obj any) (model.CostFilter, error) {
 	var it model.CostFilter
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -15532,6 +15536,10 @@ func (ec *executionContext) unmarshalInputCostFilter(ctx context.Context, obj an
 
 func (ec *executionContext) unmarshalInputCreateDeploymentInput(ctx context.Context, obj any) (model.CreateDeploymentInput, error) {
 	var it model.CreateDeploymentInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -15586,6 +15594,10 @@ func (ec *executionContext) unmarshalInputCreateDeploymentInput(ctx context.Cont
 
 func (ec *executionContext) unmarshalInputEnvironmentCreate(ctx context.Context, obj any) (model.EnvironmentCreate, error) {
 	var it model.EnvironmentCreate
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -15633,6 +15645,10 @@ func (ec *executionContext) unmarshalInputEnvironmentCreate(ctx context.Context,
 
 func (ec *executionContext) unmarshalInputEnvironmentUpdate(ctx context.Context, obj any) (model.EnvironmentUpdate, error) {
 	var it model.EnvironmentUpdate
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -15659,6 +15675,10 @@ func (ec *executionContext) unmarshalInputEnvironmentUpdate(ctx context.Context,
 
 func (ec *executionContext) unmarshalInputEnvironmentUpgrade(ctx context.Context, obj any) (model.EnvironmentUpgrade, error) {
 	var it model.EnvironmentUpgrade
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -15692,6 +15712,10 @@ func (ec *executionContext) unmarshalInputEnvironmentUpgrade(ctx context.Context
 
 func (ec *executionContext) unmarshalInputMaintenanceWindowInput(ctx context.Context, obj any) (model.MaintenanceWindowInput, error) {
 	var it model.MaintenanceWindowInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -15732,6 +15756,10 @@ func (ec *executionContext) unmarshalInputMaintenanceWindowInput(ctx context.Con
 
 func (ec *executionContext) unmarshalInputNewConfiguration(ctx context.Context, obj any) (model.NewConfiguration, error) {
 	var it model.NewConfiguration
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -15786,6 +15814,10 @@ func (ec *executionContext) unmarshalInputNewConfiguration(ctx context.Context, 
 
 func (ec *executionContext) unmarshalInputPlaygroundInput(ctx context.Context, obj any) (model.PlaygroundInput, error) {
 	var it model.PlaygroundInput
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -15840,6 +15872,10 @@ func (ec *executionContext) unmarshalInputPlaygroundInput(ctx context.Context, o
 
 func (ec *executionContext) unmarshalInputTenantCreate(ctx context.Context, obj any) (model.TenantCreate, error) {
 	var it model.TenantCreate
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
@@ -15873,6 +15909,10 @@ func (ec *executionContext) unmarshalInputTenantCreate(ctx context.Context, obj 
 
 func (ec *executionContext) unmarshalInputUpdateConfiguration(ctx context.Context, obj any) (model.UpdateConfiguration, error) {
 	var it model.UpdateConfiguration
+	if obj == nil {
+		return it, nil
+	}
+
 	asMap := map[string]any{}
 	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
