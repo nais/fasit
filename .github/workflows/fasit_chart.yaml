@@ -27,7 +27,7 @@ jobs:
       - name: "Log in to Google Artifact Registry"
         run: |-
           echo '${{ steps.auth.outputs.access_token }}' | docker login -u oauth2accesstoken --password-stdin https://europe-north1-docker.pkg.dev
-      - uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # ratchet:azure/setup-helm@v4
+      - uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # ratchet:azure/setup-helm@v5.0.0
         name: "Setup Helm"
         with:
           version: "3.9.3"
