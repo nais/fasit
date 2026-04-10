@@ -386,7 +386,7 @@ type FeaturesRow struct {
 	FeatureDatum   FeatureDatum
 	Created        pgtype.Timestamptz
 	LastModified   pgtype.Timestamptz
-	HasDeployments bool
+	Hasdeployments bool
 }
 
 func (q *Queries) Features(ctx context.Context) ([]FeaturesRow, error) {
@@ -413,7 +413,7 @@ func (q *Queries) Features(ctx context.Context) ([]FeaturesRow, error) {
 			&i.FeatureDatum.Rename,
 			&i.Created,
 			&i.LastModified,
-			&i.HasDeployments,
+			&i.Hasdeployments,
 		); err != nil {
 			return nil, err
 		}

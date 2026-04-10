@@ -297,7 +297,7 @@ func Features(ctx context.Context) ([]*model.Feature, error) {
 			return nil, fmt.Errorf("make feature: %w", err)
 		}
 
-		feature.HasDeployments = f.HasDeployments
+		feature.HasDeployments = f.Hasdeployments
 		ret = append(ret, feature)
 	}
 
