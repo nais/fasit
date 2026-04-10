@@ -17,19 +17,22 @@ Follow the guide on https://docs.nais.io/appendix/json-schema/ on how to add a j
 ## local dev setup
 
 ```
-docker-compose up
-
-# Run backend
-make local
-
-# Build config
-make setup
-
-# Run naisd
-make local-naisd
-
 # Install tools
 mise install
+
+cp .env.example .env
+
+docker-compose up -d
+
+# Build config
+mise run config
+
+# Run backend
+mise run fasit
+
+# Run naisd
+make run naisd
+
 ```
 
 ### Test local rollout
