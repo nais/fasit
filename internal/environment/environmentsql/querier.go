@@ -21,7 +21,6 @@ type Querier interface {
 	SetLabels(ctx context.Context, arg SetLabelsParams) error
 	TenantCreate(ctx context.Context, arg TenantCreateParams) (Tenant, error)
 	TenantEnvironments(ctx context.Context, all bool) ([]TenantEnvironmentsRow, error)
-	TenantSetUpgradeDelayDays(ctx context.Context, arg TenantSetUpgradeDelayDaysParams) (Tenant, error)
 	Warnings(ctx context.Context, arg WarningsParams) ([]WarningsRow, error)
 }
 

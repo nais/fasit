@@ -30,17 +30,6 @@ type AuditLog struct {
 	CreatedAt   time.Time `json:"createdAt"`
 }
 
-// Result type for paginated cluster upgrade history queries.
-type ClusterUpgradeHistoryResult struct {
-	// The list of cluster upgrade records for the current page.
-	Items []*ClusterUpgradeStatus `json:"items"`
-	// Total number of records available across all pages.
-	TotalCount int `json:"totalCount"`
-	// Whether there are more records available after the current page.
-	// Calculated as: (offset + items.length) < totalCount
-	HasMore bool `json:"hasMore"`
-}
-
 type ComputedValue struct {
 	Value   *Value          `json:"value"`
 	Content json.RawMessage `json:"content,omitempty"`
@@ -145,8 +134,7 @@ type MaintenanceWindowInput struct {
 	Days []DayOfWeek `json:"days"`
 }
 
-type Mutation struct {
-}
+type Mutation struct{}
 
 type NodePool struct {
 	Name    string `json:"name"`
@@ -166,8 +154,7 @@ type PlaygroundInput struct {
 	Code               string `json:"code"`
 }
 
-type Query struct {
-}
+type Query struct{}
 
 type RolloutEvent struct {
 	ID      uuid.UUID       `json:"id"`
@@ -184,8 +171,7 @@ type RolloutLog struct {
 	Lines       []*LogLine `json:"lines"`
 }
 
-type Subscription struct {
-}
+type Subscription struct{}
 
 type TenantCosts struct {
 	From   time.Time    `json:"from"`

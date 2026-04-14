@@ -198,34 +198,3 @@ func (q *Queries) TenantEnvironments(ctx context.Context, all bool) ([]TenantEnv
 	}
 	return items, nil
 }
-
-const tenantSetUpgradeDelayDays = `-- name: TenantSetUpgradeDelayDays :one
-UPDATE
-	tenants
-SET
-	upgrade_delay_days = $1
-WHERE
-	id = $2
-RETURNING
-	id, name, description, created, last_modified, ci, upgrade_delay_days
-`
-
-type TenantSetUpgradeDelayDaysParams struct {
-	UpgradeDelayDays int32
-	ID               uuid.UUID
-}
-
-func (q *Queries) TenantSetUpgradeDelayDays(ctx context.Context, arg TenantSetUpgradeDelayDaysParams) (Tenant, error) {
-	row := q.db.QueryRow(ctx, tenantSetUpgradeDelayDays, arg.UpgradeDelayDays, arg.ID)
-	var i Tenant
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.Description,
-		&i.Created,
-		&i.LastModified,
-		&i.Ci,
-		&i.UpgradeDelayDays,
-	)
-	return i, err
-}

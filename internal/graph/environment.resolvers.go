@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"slices"
 	"strings"
 	"time"
@@ -12,7 +11,6 @@ import (
 	"github.com/google/uuid"
 	pgx "github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/internal/audit"
-	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
@@ -20,39 +18,6 @@ import (
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/naisdstatus"
 )
-
-// Operations is the resolver for the operations field.
-func (r *clusterUpgradeStatusResolver) Operations(ctx context.Context, obj *model.ClusterUpgradeStatus) ([]*model.EnvironmentOperation, error) {
-	return r.Repo.ClusterOperationsGetByUpgradeID(ctx, obj.ID)
-}
-
-// Environment is the resolver for the environment field.
-func (r *clusterUpgradeStatusResolver) Environment(ctx context.Context, obj *model.ClusterUpgradeStatus) (*model.Environment, error) {
-	return r.Repo.EnvironmentGet(ctx, obj.EnvironmentID)
-}
-
-// Actor is the resolver for the actor field.
-func (r *clusterUpgradeStatusResolver) Actor(ctx context.Context, obj *model.ClusterUpgradeStatus) (*string, error) {
-	// For automatic upgrades, there is no actor
-	if obj.IsAutomatic != nil && *obj.IsAutomatic {
-		return nil, nil
-	}
-
-	// Get the audit log for this cluster upgrade
-	auditLog, err := audit.AuditGetLatestForClusterUpgrade(ctx, obj.ID)
-	if err != nil {
-		r.Log.WithError(err).WithFields(map[string]any{
-			"upgrade_id": obj.ID,
-		}).Warn("failed to get audit log for cluster upgrade")
-		return nil, nil
-	}
-
-	if auditLog == nil {
-		return nil, nil
-	}
-
-	return &auditLog.Actor, nil
-}
 
 // FeatureStates is the resolver for the featureStates field.
 func (r *environmentResolver) FeatureStates(ctx context.Context, obj *model.Environment) ([]*model.FeatureState, error) {
@@ -190,97 +155,9 @@ func (r *environmentResolver) Feature(ctx context.Context, obj *model.Environmen
 	return ret, nil
 }
 
-// ClusterUpgradeHistory is the resolver for the clusterUpgradeHistory field.
-func (r *environmentResolver) ClusterUpgradeHistory(ctx context.Context, obj *model.Environment, limit *int, offset *int) (*model.ClusterUpgradeHistoryResult, error) {
-	var limitValue, offsetValue int32
-	if limit != nil {
-		limitValue = int32(*limit) // #nosec G115 -- int is at least 32 bits on all Go platforms, conversion is safe for valid pagination values
-	}
-	if offset != nil {
-		offsetValue = int32(*offset) // #nosec G115 -- int is at least 32 bits on all Go platforms, conversion is safe for valid pagination values
-	}
-
-	cus, err := r.Repo.ClusterUpgradeHistoryGet(ctx, obj.TenantID, obj.ID, limitValue, offsetValue)
-	if err != nil {
-		return nil, err
-	}
-
-	return cus, nil
-}
-
-// ClusterUpgradeStatus is the resolver for the clusterUpgradeStatus field.
-func (r *environmentResolver) ClusterUpgradeStatus(ctx context.Context, obj *model.Environment) (*model.ClusterUpgradeStatus, error) {
-	cu, err := r.Repo.ClusterUpgradeGet(ctx, obj.TenantID, obj.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	return cu, nil
-}
-
-// Versions is the resolver for the versions field.
-func (r *environmentResolver) Versions(ctx context.Context, obj *model.Environment) (*model.EnvironmentVersions, error) {
-	projectID, err := r.Environment().GCPProjectID(ctx, obj)
-	if err != nil {
-		return nil, err
-	}
-
-	if projectID == nil {
-		return nil, fmt.Errorf("projectId is nil")
-	}
-
-	env, err := r.Repo.EnvironmentGet(ctx, obj.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	if env.Kind == model.EnvironmentKindOnprem {
-		return nil, nil
-	}
-
-	channel, err := r.ClusterManager.GetReleaseChannel(ctx, *projectID, obj)
-	if err != nil {
-		return nil, err
-	}
-	currentControlPlaneVersion, err := r.ClusterManager.GetCurrentControlPlaneVersion(ctx, *projectID, obj)
-	if err != nil {
-		return nil, err
-	}
-	availableVersions, err := r.ClusterManager.GetAvailableVersions(ctx, *projectID, obj, channel)
-	if err != nil {
-		return nil, err
-	}
-
-	nodePools, err := r.ClusterManager.GetNodePools(ctx, *projectID, obj)
-	if err != nil {
-		return nil, err
-	}
-
-	var nodePoolVersions []*model.NodePool
-
-	for _, np := range nodePools {
-		nodePoolVersions = append(nodePoolVersions, &model.NodePool{
-			Name:    np.Name,
-			Version: np.Version,
-		})
-	}
-
-	return &model.EnvironmentVersions{
-		Channel:           channel,
-		Apiserver:         currentControlPlaneVersion,
-		AvailableVersions: availableVersions,
-		NodePools:         nodePoolVersions,
-	}, nil
-}
-
 // Labels is the resolver for the labels field.
 func (r *environmentResolver) Labels(ctx context.Context, obj *model.Environment) ([]*model.EnvironmentLabel, error) {
 	return r.Repo.EnvironmentGetLabels(ctx, obj.ID)
-}
-
-// MaintenanceWindow is the resolver for the maintenanceWindow field.
-func (r *environmentResolver) MaintenanceWindow(ctx context.Context, obj *model.Environment) (*model.MaintenanceWindow, error) {
-	return r.Repo.EnvironmentGetMaintenanceWindow(ctx, obj)
 }
 
 // EnvironmentCreate is the resolver for the environmentCreate field.
@@ -296,114 +173,6 @@ func (r *mutationResolver) EnvironmentUpdate(ctx context.Context, id uuid.UUID, 
 // EnvironmentSetReconcile is the resolver for the environmentSetReconcile field.
 func (r *mutationResolver) EnvironmentSetReconcile(ctx context.Context, id uuid.UUID, reconcile bool) (*model.Environment, error) {
 	return r.Repo.EnvironmentSetReconcile(ctx, id, reconcile)
-}
-
-// EnvironmentUpgrade is the resolver for the environmentUpgrade field.
-func (r *mutationResolver) EnvironmentUpgrade(ctx context.Context, upgrade *model.EnvironmentUpgrade) (*model.Environment, error) {
-	env, err := r.Repo.EnvironmentGet(ctx, upgrade.EnvID)
-	if err != nil {
-		return nil, err
-	}
-
-	if env.Kind == model.EnvironmentKindOnprem {
-		return nil, fmt.Errorf("environment %s is onprem", env.Name)
-	}
-
-	manual := false
-	_, err = r.Repo.CreateClusterUpgrade(ctx, env.TenantID, upgrade.EnvID, upgrade.Version, &manual)
-	if err != nil {
-		return nil, err
-	}
-
-	return env, nil
-}
-
-// EnvironmentSetAutoUpgrade is the resolver for the environmentSetAutoUpgrade field.
-func (r *mutationResolver) EnvironmentSetAutoUpgrade(ctx context.Context, id uuid.UUID, autoUpgrade bool) (*model.Environment, error) {
-	return r.Repo.EnvironmentSetAutoUpgrade(ctx, id, autoUpgrade)
-}
-
-// EnvironmentSetUpgradeDelayDays is the resolver for the environmentSetUpgradeDelayDays field.
-func (r *mutationResolver) EnvironmentSetUpgradeDelayDays(ctx context.Context, environmentID uuid.UUID, delayDays int) (*model.Environment, error) {
-	delayDays32, err := database.ToInt32(delayDays)
-	if err != nil {
-		return nil, err
-	}
-	return r.Repo.EnvironmentSetUpgradeDelayDays(ctx, environmentID, delayDays32)
-}
-
-// EnvironmentSetMaintenanceWindow is the resolver for the environmentSetMaintenanceWindow field.
-func (r *mutationResolver) EnvironmentSetMaintenanceWindow(ctx context.Context, environmentID uuid.UUID, window *model.MaintenanceWindowInput) (*model.Environment, error) {
-	// Get environment to check kind and get project ID
-	env, err := r.Repo.EnvironmentGet(ctx, environmentID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get environment: %w", err)
-	}
-
-	// OnPrem clusters don't have maintenance windows in GKE
-	if env.Kind == model.EnvironmentKindOnprem {
-		return nil, fmt.Errorf("maintenance windows are not supported for onprem environments")
-	}
-
-	// Convert input to model
-	var maintenanceWindow *model.MaintenanceWindow
-	if window != nil {
-		maintenanceWindow = &model.MaintenanceWindow{
-			StartTime: window.StartTime,
-			EndTime:   window.EndTime,
-			Days:      window.Days,
-		}
-	}
-
-	// Get project ID for GKE API call
-	projectID, err := r.Environment().GCPProjectID(ctx, env)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get project ID: %w", err)
-	}
-	if projectID == nil {
-		return nil, fmt.Errorf("cannot set maintenance window: environment has no GCP project ID configured")
-	}
-
-	// Apply maintenance window to GKE cluster FIRST
-	_, err = r.ClusterManager.SetMaintenanceWindow(ctx, *projectID, env, maintenanceWindow)
-	if err != nil {
-		r.Log.WithError(err).WithFields(map[string]any{
-			"environment_id": environmentID,
-			"project_id":     *projectID,
-		}).Error("failed to set maintenance window on GKE cluster")
-		return nil, fmt.Errorf("failed to apply maintenance window to GKE: %w", err)
-	}
-
-	// Only save to database if GKE API succeeded
-	env, err = r.Repo.EnvironmentSetMaintenanceWindow(ctx, environmentID, maintenanceWindow)
-	if err != nil {
-		return nil, fmt.Errorf("failed to save maintenance window: %w", err)
-	}
-
-	r.Log.WithFields(map[string]any{
-		"environment_id": environmentID,
-		"project_id":     *projectID,
-		"has_window":     maintenanceWindow != nil,
-	}).Info("successfully set maintenance window on GKE cluster")
-
-	return env, nil
-}
-
-// ClusterUpgradeBypassDelay is the resolver for the clusterUpgradeBypassDelay field.
-func (r *mutationResolver) ClusterUpgradeBypassDelay(ctx context.Context, upgradeID uuid.UUID) (*model.ClusterUpgradeStatus, error) {
-	upgrade, err := r.Repo.ClusterUpgradeBypassDelay(ctx, upgradeID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to bypass upgrade delay: %w", err)
-	}
-
-	safeUpgradeID := strings.ReplaceAll(strings.ReplaceAll(upgradeID.String(), "\n", ""), "\r", "")
-	r.Log.WithFields(map[string]any{
-		"upgrade_id": safeUpgradeID,
-		"version":    upgrade.Version,
-		"status":     upgrade.UpgradeStatus,
-	}).Info("bypassed upgrade delay - upgrade will start on next upgrader run")
-
-	return upgrade, nil
 }
 
 // Feature is the resolver for the feature field.
@@ -422,16 +191,11 @@ func (r *releaseResolver) Feature(ctx context.Context, obj *model.Release) (*mod
 	return f, nil
 }
 
-func (r *Resolver) ClusterUpgradeStatus() graphgen.ClusterUpgradeStatusResolver {
-	return &clusterUpgradeStatusResolver{r}
-}
-
 func (r *Resolver) Environment() graphgen.EnvironmentResolver { return &environmentResolver{r} }
 
 func (r *Resolver) Release() graphgen.ReleaseResolver { return &releaseResolver{r} }
 
 type (
-	clusterUpgradeStatusResolver struct{ *Resolver }
-	environmentResolver          struct{ *Resolver }
-	releaseResolver              struct{ *Resolver }
+	environmentResolver struct{ *Resolver }
+	releaseResolver     struct{ *Resolver }
 )

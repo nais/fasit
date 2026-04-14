@@ -51,7 +51,6 @@ func OnGetTenants(ctx context.Context, expected []*model.Tenant) {
 				Time:  e.LastModified,
 				Valid: true,
 			},
-			UpgradeDelayDays: e.UpgradeDelayDays,
 		}
 	}
 

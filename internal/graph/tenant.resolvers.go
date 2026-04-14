@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph/graphgen"
 	"github.com/nais/fasit/internal/graph/model"
@@ -16,13 +15,8 @@ func (r *mutationResolver) TenantCreate(ctx context.Context, tenant model.Tenant
 	return environment.CreateTenant(ctx, &tenant)
 }
 
-// TenantSetUpgradeDelayDays is the resolver for the tenantSetUpgradeDelayDays field.
 func (r *mutationResolver) TenantSetUpgradeDelayDays(ctx context.Context, tenantID uuid.UUID, delayDays int) (*model.Tenant, error) {
-	delayDays32, err := database.ToInt32(delayDays)
-	if err != nil {
-		return nil, err
-	}
-	return environment.TenantSetUpgradeDelayDays(ctx, tenantID, delayDays32)
+	panic(fmt.Errorf("not implemented: TenantSetUpgradeDelayDays - tenantSetUpgradeDelayDays"))
 }
 
 // Tenant is the resolver for the tenant field.
@@ -34,19 +28,6 @@ func (r *queryResolver) Tenant(ctx context.Context, id *uuid.UUID, slug *string)
 		return environment.GetTenantGetByName(ctx, *slug)
 	}
 	return nil, fmt.Errorf("either ID or slug must be specified")
-}
-
-// ClusterUpgradeHistory is the resolver for the clusterUpgradeHistory field.
-func (r *queryResolver) ClusterUpgradeHistory(ctx context.Context, limit *int, offset *int) (*model.ClusterUpgradeHistoryResult, error) {
-	var limitValue, offsetValue int32
-	if limit != nil {
-		limitValue = int32(*limit) // #nosec G115 -- int is at least 32 bits on all Go platforms, conversion is safe for valid pagination values
-	}
-	if offset != nil {
-		offsetValue = int32(*offset) // #nosec G115 -- int is at least 32 bits on all Go platforms, conversion is safe for valid pagination values
-	}
-
-	return r.Repo.ClusterUpgradeHistoryGetAll(ctx, limitValue, offsetValue)
 }
 
 // Tenants is the resolver for the tenants field.
@@ -73,19 +54,6 @@ func (r *tenantResolver) Environment(ctx context.Context, obj *model.Tenant, id 
 // Warnings is the resolver for the warnings field.
 func (r *tenantResolver) Warnings(ctx context.Context, obj *model.Tenant) ([]model.Warning, error) {
 	return environment.Warnings(ctx, nil, &obj.ID)
-}
-
-// ClusterUpgradeHistory is the resolver for the clusterUpgradeHistory field.
-func (r *tenantResolver) ClusterUpgradeHistory(ctx context.Context, obj *model.Tenant, limit *int, offset *int) (*model.ClusterUpgradeHistoryResult, error) {
-	var limitValue, offsetValue int32
-	if limit != nil {
-		limitValue = int32(*limit) // #nosec G115 -- int is at least 32 bits on all Go platforms, conversion is safe for valid pagination values
-	}
-	if offset != nil {
-		offsetValue = int32(*offset) // #nosec G115 -- int is at least 32 bits on all Go platforms, conversion is safe for valid pagination values
-	}
-
-	return r.Repo.ClusterUpgradeHistoryGetByTenant(ctx, obj.ID, limitValue, offsetValue)
 }
 
 func (r *Resolver) Tenant() graphgen.TenantResolver { return &tenantResolver{r} }

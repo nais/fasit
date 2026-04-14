@@ -33,16 +33,6 @@ VALUES (
 RETURNING
 	*;
 
--- name: TenantSetUpgradeDelayDays :one
-UPDATE
-	tenants
-SET
-	upgrade_delay_days = @upgrade_delay_days
-WHERE
-	id = @id
-RETURNING
-	*;
-
 -- name: TenantEnvironments :many
 SELECT
 	e.*,

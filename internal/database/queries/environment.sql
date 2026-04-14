@@ -95,51 +95,6 @@ WHERE
 RETURNING
 	*;
 
--- name: EnvironmentSetAutoUpgrade :one
-UPDATE
-	environments
-SET
-	auto_upgrade = @auto_upgrade
-WHERE
-	id = @id
-RETURNING
-	*;
-
--- name: EnvironmentSetUpgradeDelayDays :one
-UPDATE
-	environments
-SET
-	upgrade_delay_days = @upgrade_delay_days
-WHERE
-	id = @id
-RETURNING
-	*;
-
--- name: EnvironmentSetMaintenanceWindow :one
-UPDATE
-	environments
-SET
-	maintenance_window = @maintenance_window
-WHERE
-	id = @id
-RETURNING
-	*;
-
--- name: EnvironmentsGetByAutoUpgrade :many
-SELECT
-	*
-FROM
-	environments
-WHERE
-	auto_upgrade = TRUE
-ORDER BY
-	CASE WHEN name = 'management' THEN
-		1
-	ELSE
-		2
-	END,
-	name ASC;
-
 -- name: EnvironmentSetLabels :exec
 UPDATE
 	environments

@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/nais/fasit/internal/cluster"
 	"github.com/nais/fasit/internal/contextloader"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/notifier"
@@ -18,18 +17,17 @@ import (
 	"go.opentelemetry.io/otel/metric"
 )
 
-func newHttpServer(
+func newHTTPServer(
 	ctx context.Context,
 	loadContext contextloader.LoaderFunc,
 	cfg *Config,
 	repo database.Repo,
 	notifier *notifier.Notifier,
 	publisher rollout.NewPublisher,
-	clusterClient *cluster.Client,
 	meter metric.Meter,
 	log logrus.FieldLogger,
 ) (*http.Server, error) {
-	resolver := graph.NewResolver(ctx, repo, notifier, publisher, clusterClient, log)
+	resolver := graph.NewResolver(ctx, repo, notifier, publisher, log)
 	graphServer, err := server.SetupGraph(loadContext, resolver, meter)
 	if err != nil {
 		return nil, fmt.Errorf("setting up graph: %w", err)

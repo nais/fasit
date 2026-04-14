@@ -32,7 +32,6 @@ func NewExecutableSchema(cfg Config) graphql.ExecutableSchema {
 type Config = graphql.Config[ResolverRoot, DirectiveRoot, ComplexityRoot]
 
 type ResolverRoot interface {
-	ClusterUpgradeStatus() ClusterUpgradeStatusResolver
 	ConfigOverride() ConfigOverrideResolver
 	Configurations() ConfigurationsResolver
 	CostSeries() CostSeriesResolver
@@ -64,25 +63,6 @@ type ComplexityRoot struct {
 		Description func(childComplexity int) int
 		ObjectID    func(childComplexity int) int
 		ObjectType  func(childComplexity int) int
-	}
-
-	ClusterUpgradeHistoryResult struct {
-		HasMore    func(childComplexity int) int
-		Items      func(childComplexity int) int
-		TotalCount func(childComplexity int) int
-	}
-
-	ClusterUpgradeStatus struct {
-		Actor            func(childComplexity int) int
-		Environment      func(childComplexity int) int
-		ID               func(childComplexity int) int
-		IsAutomatic      func(childComplexity int) int
-		LastModified     func(childComplexity int) int
-		Operations       func(childComplexity int) int
-		StartTime        func(childComplexity int) int
-		UpgradeStartTime func(childComplexity int) int
-		UpgradeStatus    func(childComplexity int) int
-		Version          func(childComplexity int) int
 	}
 
 	Computed struct {
@@ -159,31 +139,25 @@ type ComplexityRoot struct {
 	}
 
 	Environment struct {
-		AuditLog              func(childComplexity int, featureName *string) int
-		AutoUpgrade           func(childComplexity int) int
-		ClusterUpgradeHistory func(childComplexity int, limit *int, offset *int) int
-		ClusterUpgradeStatus  func(childComplexity int) int
-		Created               func(childComplexity int) int
-		Description           func(childComplexity int) int
-		Feature               func(childComplexity int, name string) int
-		FeatureStates         func(childComplexity int) int
-		Features              func(childComplexity int) int
-		GCPProjectID          func(childComplexity int) int
-		Health                func(childComplexity int) int
-		ID                    func(childComplexity int) int
-		Kind                  func(childComplexity int) int
-		Labels                func(childComplexity int) int
-		LastModified          func(childComplexity int) int
-		MaintenanceWindow     func(childComplexity int) int
-		Name                  func(childComplexity int) int
-		Nodes                 func(childComplexity int) int
-		Reconcile             func(childComplexity int) int
-		Releases              func(childComplexity int) int
-		Tenant                func(childComplexity int) int
-		UpgradeDelayDays      func(childComplexity int) int
-		Values                func(childComplexity int) int
-		Versions              func(childComplexity int) int
-		Warnings              func(childComplexity int) int
+		AuditLog      func(childComplexity int, featureName *string) int
+		Created       func(childComplexity int) int
+		Description   func(childComplexity int) int
+		Feature       func(childComplexity int, name string) int
+		FeatureStates func(childComplexity int) int
+		Features      func(childComplexity int) int
+		GCPProjectID  func(childComplexity int) int
+		Health        func(childComplexity int) int
+		ID            func(childComplexity int) int
+		Kind          func(childComplexity int) int
+		Labels        func(childComplexity int) int
+		LastModified  func(childComplexity int) int
+		Name          func(childComplexity int) int
+		Nodes         func(childComplexity int) int
+		Reconcile     func(childComplexity int) int
+		Releases      func(childComplexity int) int
+		Tenant        func(childComplexity int) int
+		Values        func(childComplexity int) int
+		Warnings      func(childComplexity int) int
 	}
 
 	EnvironmentLabel struct {
@@ -191,33 +165,10 @@ type ComplexityRoot struct {
 		Value func(childComplexity int) int
 	}
 
-	EnvironmentOperation struct {
-		Detail              func(childComplexity int) int
-		ID                  func(childComplexity int) int
-		LastModified        func(childComplexity int) int
-		Name                func(childComplexity int) int
-		NodePdbDelaySeconds func(childComplexity int) int
-		NodesCompleted      func(childComplexity int) int
-		NodesDone           func(childComplexity int) int
-		NodesFailed         func(childComplexity int) int
-		NodesTotal          func(childComplexity int) int
-		StartTime           func(childComplexity int) int
-		Status              func(childComplexity int) int
-		Target              func(childComplexity int) int
-		Type                func(childComplexity int) int
-	}
-
 	EnvironmentValue struct {
 		Key       func(childComplexity int) int
 		KnownUses func(childComplexity int) int
 		Value     func(childComplexity int) int
-	}
-
-	EnvironmentVersions struct {
-		Apiserver         func(childComplexity int) int
-		AvailableVersions func(childComplexity int) int
-		Channel           func(childComplexity int) int
-		NodePools         func(childComplexity int) int
 	}
 
 	Feature struct {
@@ -311,42 +262,26 @@ type ComplexityRoot struct {
 		Timestamp func(childComplexity int) int
 	}
 
-	MaintenanceWindow struct {
-		Days      func(childComplexity int) int
-		EndTime   func(childComplexity int) int
-		StartTime func(childComplexity int) int
-	}
-
 	Mutation struct {
-		ClusterUpgradeBypassDelay       func(childComplexity int, upgradeID uuid.UUID) int
-		ConfigurationCreate             func(childComplexity int, configuration model.NewConfiguration) int
-		ConfigurationDelete             func(childComplexity int, id uuid.UUID) int
-		ConfigurationUpdate             func(childComplexity int, id uuid.UUID, configuration model.UpdateConfiguration) int
-		CreateDeployment                func(childComplexity int, input model.CreateDeploymentInput) int
-		DeleteDeployment                func(childComplexity int, deploymentID uuid.UUID) int
-		DeleteHelmInstall               func(childComplexity int, envID uuid.UUID, name string) int
-		EnvironmentCreate               func(childComplexity int, environment model.EnvironmentCreate) int
-		EnvironmentSetAutoUpgrade       func(childComplexity int, id uuid.UUID, autoUpgrade bool) int
-		EnvironmentSetMaintenanceWindow func(childComplexity int, environmentID uuid.UUID, window *model.MaintenanceWindowInput) int
-		EnvironmentSetReconcile         func(childComplexity int, id uuid.UUID, reconcile bool) int
-		EnvironmentSetUpgradeDelayDays  func(childComplexity int, environmentID uuid.UUID, delayDays int) int
-		EnvironmentUpdate               func(childComplexity int, id uuid.UUID, input model.EnvironmentUpdate) int
-		EnvironmentUpgrade              func(childComplexity int, upgrade *model.EnvironmentUpgrade) int
-		FeatureStateSave                func(childComplexity int, envID uuid.UUID, enabled bool, feature string) int
-		Playground                      func(childComplexity int, input model.PlaygroundInput) int
-		RolloutMarkFailed               func(childComplexity int, feature string, version string) int
-		TenantCreate                    func(childComplexity int, tenant model.TenantCreate) int
-		TenantSetUpgradeDelayDays       func(childComplexity int, tenantID uuid.UUID, delayDays int) int
+		ConfigurationCreate       func(childComplexity int, configuration model.NewConfiguration) int
+		ConfigurationDelete       func(childComplexity int, id uuid.UUID) int
+		ConfigurationUpdate       func(childComplexity int, id uuid.UUID, configuration model.UpdateConfiguration) int
+		CreateDeployment          func(childComplexity int, input model.CreateDeploymentInput) int
+		DeleteDeployment          func(childComplexity int, deploymentID uuid.UUID) int
+		DeleteHelmInstall         func(childComplexity int, envID uuid.UUID, name string) int
+		EnvironmentCreate         func(childComplexity int, environment model.EnvironmentCreate) int
+		EnvironmentSetReconcile   func(childComplexity int, id uuid.UUID, reconcile bool) int
+		EnvironmentUpdate         func(childComplexity int, id uuid.UUID, input model.EnvironmentUpdate) int
+		FeatureStateSave          func(childComplexity int, envID uuid.UUID, enabled bool, feature string) int
+		Playground                func(childComplexity int, input model.PlaygroundInput) int
+		RolloutMarkFailed         func(childComplexity int, feature string, version string) int
+		TenantCreate              func(childComplexity int, tenant model.TenantCreate) int
+		TenantSetUpgradeDelayDays func(childComplexity int, tenantID uuid.UUID, delayDays int) int
 	}
 
 	NaisdWarning struct {
 		Environment func(childComplexity int) int
 		Message     func(childComplexity int) int
-	}
-
-	NodePool struct {
-		Name    func(childComplexity int) int
-		Version func(childComplexity int) int
 	}
 
 	Playground struct {
@@ -355,23 +290,22 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		ClusterUpgradeHistory func(childComplexity int, limit *int, offset *int) int
-		Configuration         func(childComplexity int, feature string, envID *uuid.UUID) int
-		Cost                  func(childComplexity int, filter *model.CostFilter) int
-		CostForTenant         func(childComplexity int, tenantID uuid.UUID, filter *model.CostFilter) int
-		Deployment            func(childComplexity int, id uuid.UUID) int
-		DeploymentStatus      func(childComplexity int, deploymentID uuid.UUID, environmentID uuid.UUID) int
-		Deployments           func(childComplexity int, feature *string) int
-		Feature               func(childComplexity int, name string) int
-		FeatureState          func(childComplexity int, envID uuid.UUID, feature string) int
-		Features              func(childComplexity int) int
-		HelmValues            func(childComplexity int, feature string, envID *uuid.UUID, env *string, tenant *string) int
-		History               func(childComplexity int, id uuid.UUID) int
-		Rollout               func(childComplexity int, feature string, version string) int
-		Rollouts              func(childComplexity int, feature *string) int
-		Tenant                func(childComplexity int, id *uuid.UUID, slug *string) int
-		Tenants               func(childComplexity int) int
-		UserInfo              func(childComplexity int) int
+		Configuration    func(childComplexity int, feature string, envID *uuid.UUID) int
+		Cost             func(childComplexity int, filter *model.CostFilter) int
+		CostForTenant    func(childComplexity int, tenantID uuid.UUID, filter *model.CostFilter) int
+		Deployment       func(childComplexity int, id uuid.UUID) int
+		DeploymentStatus func(childComplexity int, deploymentID uuid.UUID, environmentID uuid.UUID) int
+		Deployments      func(childComplexity int, feature *string) int
+		Feature          func(childComplexity int, name string) int
+		FeatureState     func(childComplexity int, envID uuid.UUID, feature string) int
+		Features         func(childComplexity int) int
+		HelmValues       func(childComplexity int, feature string, envID *uuid.UUID, env *string, tenant *string) int
+		History          func(childComplexity int, id uuid.UUID) int
+		Rollout          func(childComplexity int, feature string, version string) int
+		Rollouts         func(childComplexity int, feature *string) int
+		Tenant           func(childComplexity int, id *uuid.UUID, slug *string) int
+		Tenants          func(childComplexity int) int
+		UserInfo         func(childComplexity int) int
 	}
 
 	Release struct {
@@ -427,16 +361,14 @@ type ComplexityRoot struct {
 	}
 
 	Tenant struct {
-		ClusterUpgradeHistory func(childComplexity int, limit *int, offset *int) int
-		Created               func(childComplexity int) int
-		Description           func(childComplexity int) int
-		Environment           func(childComplexity int, id *uuid.UUID, slug *string) int
-		Environments          func(childComplexity int) int
-		ID                    func(childComplexity int) int
-		LastModified          func(childComplexity int) int
-		Name                  func(childComplexity int) int
-		UpgradeDelayDays      func(childComplexity int) int
-		Warnings              func(childComplexity int) int
+		Created      func(childComplexity int) int
+		Description  func(childComplexity int) int
+		Environment  func(childComplexity int, id *uuid.UUID, slug *string) int
+		Environments func(childComplexity int) int
+		ID           func(childComplexity int) int
+		LastModified func(childComplexity int) int
+		Name         func(childComplexity int) int
+		Warnings     func(childComplexity int) int
 	}
 
 	TenantCosts struct {
@@ -459,12 +391,6 @@ type ComplexityRoot struct {
 	}
 }
 
-type ClusterUpgradeStatusResolver interface {
-	Operations(ctx context.Context, obj *model.ClusterUpgradeStatus) ([]*model.EnvironmentOperation, error)
-	Environment(ctx context.Context, obj *model.ClusterUpgradeStatus) (*model.Environment, error)
-
-	Actor(ctx context.Context, obj *model.ClusterUpgradeStatus) (*string, error)
-}
 type ConfigOverrideResolver interface {
 	Environment(ctx context.Context, obj *model.ConfigOverride) (*model.Environment, error)
 }
@@ -501,12 +427,7 @@ type EnvironmentResolver interface {
 	Features(ctx context.Context, obj *model.Environment) ([]*model.Feature, error)
 	Feature(ctx context.Context, obj *model.Environment, name string) (*model.Feature, error)
 
-	ClusterUpgradeHistory(ctx context.Context, obj *model.Environment, limit *int, offset *int) (*model.ClusterUpgradeHistoryResult, error)
-	ClusterUpgradeStatus(ctx context.Context, obj *model.Environment) (*model.ClusterUpgradeStatus, error)
-	Versions(ctx context.Context, obj *model.Environment) (*model.EnvironmentVersions, error)
 	Labels(ctx context.Context, obj *model.Environment) ([]*model.EnvironmentLabel, error)
-
-	MaintenanceWindow(ctx context.Context, obj *model.Environment) (*model.MaintenanceWindow, error)
 }
 type FeatureResolver interface {
 	ActiveVersion(ctx context.Context, obj *model.Feature) (string, error)
@@ -544,11 +465,6 @@ type MutationResolver interface {
 	EnvironmentCreate(ctx context.Context, environment model.EnvironmentCreate) (*model.Environment, error)
 	EnvironmentUpdate(ctx context.Context, id uuid.UUID, input model.EnvironmentUpdate) (*model.Environment, error)
 	EnvironmentSetReconcile(ctx context.Context, id uuid.UUID, reconcile bool) (*model.Environment, error)
-	EnvironmentUpgrade(ctx context.Context, upgrade *model.EnvironmentUpgrade) (*model.Environment, error)
-	EnvironmentSetAutoUpgrade(ctx context.Context, id uuid.UUID, autoUpgrade bool) (*model.Environment, error)
-	EnvironmentSetUpgradeDelayDays(ctx context.Context, environmentID uuid.UUID, delayDays int) (*model.Environment, error)
-	EnvironmentSetMaintenanceWindow(ctx context.Context, environmentID uuid.UUID, window *model.MaintenanceWindowInput) (*model.Environment, error)
-	ClusterUpgradeBypassDelay(ctx context.Context, upgradeID uuid.UUID) (*model.ClusterUpgradeStatus, error)
 	FeatureStateSave(ctx context.Context, envID uuid.UUID, enabled bool, feature string) (*model.FeatureState, error)
 	Playground(ctx context.Context, input model.PlaygroundInput) (*model.Playground, error)
 	RolloutMarkFailed(ctx context.Context, feature string, version string) (*model.Rollout, error)
@@ -574,7 +490,6 @@ type QueryResolver interface {
 	Rollouts(ctx context.Context, feature *string) ([]*model.Rollout, error)
 	Rollout(ctx context.Context, feature string, version string) (*model.Rollout, error)
 	Tenant(ctx context.Context, id *uuid.UUID, slug *string) (*model.Tenant, error)
-	ClusterUpgradeHistory(ctx context.Context, limit *int, offset *int) (*model.ClusterUpgradeHistoryResult, error)
 	Tenants(ctx context.Context) ([]*model.Tenant, error)
 	UserInfo(ctx context.Context) (*model.UserInfo, error)
 }
@@ -599,8 +514,6 @@ type TenantResolver interface {
 	Environment(ctx context.Context, obj *model.Tenant, id *uuid.UUID, slug *string) (*model.Environment, error)
 
 	Warnings(ctx context.Context, obj *model.Tenant) ([]model.Warning, error)
-
-	ClusterUpgradeHistory(ctx context.Context, obj *model.Tenant, limit *int, offset *int) (*model.ClusterUpgradeHistoryResult, error)
 }
 
 type executableSchema graphql.ExecutableSchemaState[ResolverRoot, DirectiveRoot, ComplexityRoot]
@@ -647,86 +560,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.AuditLog.ObjectType(childComplexity), true
-
-	case "ClusterUpgradeHistoryResult.hasMore":
-		if e.ComplexityRoot.ClusterUpgradeHistoryResult.HasMore == nil {
-			break
-		}
-
-		return e.ComplexityRoot.ClusterUpgradeHistoryResult.HasMore(childComplexity), true
-	case "ClusterUpgradeHistoryResult.items":
-		if e.ComplexityRoot.ClusterUpgradeHistoryResult.Items == nil {
-			break
-		}
-
-		return e.ComplexityRoot.ClusterUpgradeHistoryResult.Items(childComplexity), true
-	case "ClusterUpgradeHistoryResult.totalCount":
-		if e.ComplexityRoot.ClusterUpgradeHistoryResult.TotalCount == nil {
-			break
-		}
-
-		return e.ComplexityRoot.ClusterUpgradeHistoryResult.TotalCount(childComplexity), true
-
-	case "ClusterUpgradeStatus.actor":
-		if e.ComplexityRoot.ClusterUpgradeStatus.Actor == nil {
-			break
-		}
-
-		return e.ComplexityRoot.ClusterUpgradeStatus.Actor(childComplexity), true
-	case "ClusterUpgradeStatus.environment":
-		if e.ComplexityRoot.ClusterUpgradeStatus.Environment == nil {
-			break
-		}
-
-		return e.ComplexityRoot.ClusterUpgradeStatus.Environment(childComplexity), true
-	case "ClusterUpgradeStatus.id":
-		if e.ComplexityRoot.ClusterUpgradeStatus.ID == nil {
-			break
-		}
-
-		return e.ComplexityRoot.ClusterUpgradeStatus.ID(childComplexity), true
-	case "ClusterUpgradeStatus.isAutomatic":
-		if e.ComplexityRoot.ClusterUpgradeStatus.IsAutomatic == nil {
-			break
-		}
-
-		return e.ComplexityRoot.ClusterUpgradeStatus.IsAutomatic(childComplexity), true
-	case "ClusterUpgradeStatus.lastModified":
-		if e.ComplexityRoot.ClusterUpgradeStatus.LastModified == nil {
-			break
-		}
-
-		return e.ComplexityRoot.ClusterUpgradeStatus.LastModified(childComplexity), true
-	case "ClusterUpgradeStatus.operations":
-		if e.ComplexityRoot.ClusterUpgradeStatus.Operations == nil {
-			break
-		}
-
-		return e.ComplexityRoot.ClusterUpgradeStatus.Operations(childComplexity), true
-	case "ClusterUpgradeStatus.startTime":
-		if e.ComplexityRoot.ClusterUpgradeStatus.StartTime == nil {
-			break
-		}
-
-		return e.ComplexityRoot.ClusterUpgradeStatus.StartTime(childComplexity), true
-	case "ClusterUpgradeStatus.upgradeStartTime":
-		if e.ComplexityRoot.ClusterUpgradeStatus.UpgradeStartTime == nil {
-			break
-		}
-
-		return e.ComplexityRoot.ClusterUpgradeStatus.UpgradeStartTime(childComplexity), true
-	case "ClusterUpgradeStatus.upgradeStatus":
-		if e.ComplexityRoot.ClusterUpgradeStatus.UpgradeStatus == nil {
-			break
-		}
-
-		return e.ComplexityRoot.ClusterUpgradeStatus.UpgradeStatus(childComplexity), true
-	case "ClusterUpgradeStatus.version":
-		if e.ComplexityRoot.ClusterUpgradeStatus.Version == nil {
-			break
-		}
-
-		return e.ComplexityRoot.ClusterUpgradeStatus.Version(childComplexity), true
 
 	case "Computed.template":
 		if e.ComplexityRoot.Computed.Template == nil {
@@ -973,29 +806,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Environment.AuditLog(childComplexity, args["featureName"].(*string)), true
-	case "Environment.autoUpgrade":
-		if e.ComplexityRoot.Environment.AutoUpgrade == nil {
-			break
-		}
-
-		return e.ComplexityRoot.Environment.AutoUpgrade(childComplexity), true
-	case "Environment.clusterUpgradeHistory":
-		if e.ComplexityRoot.Environment.ClusterUpgradeHistory == nil {
-			break
-		}
-
-		args, err := ec.field_Environment_clusterUpgradeHistory_args(ctx, rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.ComplexityRoot.Environment.ClusterUpgradeHistory(childComplexity, args["limit"].(*int), args["offset"].(*int)), true
-	case "Environment.clusterUpgradeStatus":
-		if e.ComplexityRoot.Environment.ClusterUpgradeStatus == nil {
-			break
-		}
-
-		return e.ComplexityRoot.Environment.ClusterUpgradeStatus(childComplexity), true
 	case "Environment.created":
 		if e.ComplexityRoot.Environment.Created == nil {
 			break
@@ -1067,12 +877,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Environment.LastModified(childComplexity), true
-	case "Environment.maintenanceWindow":
-		if e.ComplexityRoot.Environment.MaintenanceWindow == nil {
-			break
-		}
-
-		return e.ComplexityRoot.Environment.MaintenanceWindow(childComplexity), true
 	case "Environment.name":
 		if e.ComplexityRoot.Environment.Name == nil {
 			break
@@ -1103,24 +907,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Environment.Tenant(childComplexity), true
-	case "Environment.upgradeDelayDays":
-		if e.ComplexityRoot.Environment.UpgradeDelayDays == nil {
-			break
-		}
-
-		return e.ComplexityRoot.Environment.UpgradeDelayDays(childComplexity), true
 	case "Environment.values":
 		if e.ComplexityRoot.Environment.Values == nil {
 			break
 		}
 
 		return e.ComplexityRoot.Environment.Values(childComplexity), true
-	case "Environment.versions":
-		if e.ComplexityRoot.Environment.Versions == nil {
-			break
-		}
-
-		return e.ComplexityRoot.Environment.Versions(childComplexity), true
 	case "Environment.warnings":
 		if e.ComplexityRoot.Environment.Warnings == nil {
 			break
@@ -1141,85 +933,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.EnvironmentLabel.Value(childComplexity), true
 
-	case "EnvironmentOperation.detail":
-		if e.ComplexityRoot.EnvironmentOperation.Detail == nil {
-			break
-		}
-
-		return e.ComplexityRoot.EnvironmentOperation.Detail(childComplexity), true
-	case "EnvironmentOperation.id":
-		if e.ComplexityRoot.EnvironmentOperation.ID == nil {
-			break
-		}
-
-		return e.ComplexityRoot.EnvironmentOperation.ID(childComplexity), true
-	case "EnvironmentOperation.lastModified":
-		if e.ComplexityRoot.EnvironmentOperation.LastModified == nil {
-			break
-		}
-
-		return e.ComplexityRoot.EnvironmentOperation.LastModified(childComplexity), true
-	case "EnvironmentOperation.name":
-		if e.ComplexityRoot.EnvironmentOperation.Name == nil {
-			break
-		}
-
-		return e.ComplexityRoot.EnvironmentOperation.Name(childComplexity), true
-	case "EnvironmentOperation.nodePdbDelaySeconds":
-		if e.ComplexityRoot.EnvironmentOperation.NodePdbDelaySeconds == nil {
-			break
-		}
-
-		return e.ComplexityRoot.EnvironmentOperation.NodePdbDelaySeconds(childComplexity), true
-	case "EnvironmentOperation.nodesCompleted":
-		if e.ComplexityRoot.EnvironmentOperation.NodesCompleted == nil {
-			break
-		}
-
-		return e.ComplexityRoot.EnvironmentOperation.NodesCompleted(childComplexity), true
-	case "EnvironmentOperation.nodesDone":
-		if e.ComplexityRoot.EnvironmentOperation.NodesDone == nil {
-			break
-		}
-
-		return e.ComplexityRoot.EnvironmentOperation.NodesDone(childComplexity), true
-	case "EnvironmentOperation.nodesFailed":
-		if e.ComplexityRoot.EnvironmentOperation.NodesFailed == nil {
-			break
-		}
-
-		return e.ComplexityRoot.EnvironmentOperation.NodesFailed(childComplexity), true
-	case "EnvironmentOperation.nodesTotal":
-		if e.ComplexityRoot.EnvironmentOperation.NodesTotal == nil {
-			break
-		}
-
-		return e.ComplexityRoot.EnvironmentOperation.NodesTotal(childComplexity), true
-	case "EnvironmentOperation.startTime":
-		if e.ComplexityRoot.EnvironmentOperation.StartTime == nil {
-			break
-		}
-
-		return e.ComplexityRoot.EnvironmentOperation.StartTime(childComplexity), true
-	case "EnvironmentOperation.status":
-		if e.ComplexityRoot.EnvironmentOperation.Status == nil {
-			break
-		}
-
-		return e.ComplexityRoot.EnvironmentOperation.Status(childComplexity), true
-	case "EnvironmentOperation.target":
-		if e.ComplexityRoot.EnvironmentOperation.Target == nil {
-			break
-		}
-
-		return e.ComplexityRoot.EnvironmentOperation.Target(childComplexity), true
-	case "EnvironmentOperation.type":
-		if e.ComplexityRoot.EnvironmentOperation.Type == nil {
-			break
-		}
-
-		return e.ComplexityRoot.EnvironmentOperation.Type(childComplexity), true
-
 	case "EnvironmentValue.key":
 		if e.ComplexityRoot.EnvironmentValue.Key == nil {
 			break
@@ -1238,31 +951,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.EnvironmentValue.Value(childComplexity), true
-
-	case "EnvironmentVersions.apiserver":
-		if e.ComplexityRoot.EnvironmentVersions.Apiserver == nil {
-			break
-		}
-
-		return e.ComplexityRoot.EnvironmentVersions.Apiserver(childComplexity), true
-	case "EnvironmentVersions.availableVersions":
-		if e.ComplexityRoot.EnvironmentVersions.AvailableVersions == nil {
-			break
-		}
-
-		return e.ComplexityRoot.EnvironmentVersions.AvailableVersions(childComplexity), true
-	case "EnvironmentVersions.channel":
-		if e.ComplexityRoot.EnvironmentVersions.Channel == nil {
-			break
-		}
-
-		return e.ComplexityRoot.EnvironmentVersions.Channel(childComplexity), true
-	case "EnvironmentVersions.nodePools":
-		if e.ComplexityRoot.EnvironmentVersions.NodePools == nil {
-			break
-		}
-
-		return e.ComplexityRoot.EnvironmentVersions.NodePools(childComplexity), true
 
 	case "Feature.activeVersion":
 		if e.ComplexityRoot.Feature.ActiveVersion == nil {
@@ -1640,36 +1328,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.LogLine.Timestamp(childComplexity), true
 
-	case "MaintenanceWindow.days":
-		if e.ComplexityRoot.MaintenanceWindow.Days == nil {
-			break
-		}
-
-		return e.ComplexityRoot.MaintenanceWindow.Days(childComplexity), true
-	case "MaintenanceWindow.endTime":
-		if e.ComplexityRoot.MaintenanceWindow.EndTime == nil {
-			break
-		}
-
-		return e.ComplexityRoot.MaintenanceWindow.EndTime(childComplexity), true
-	case "MaintenanceWindow.startTime":
-		if e.ComplexityRoot.MaintenanceWindow.StartTime == nil {
-			break
-		}
-
-		return e.ComplexityRoot.MaintenanceWindow.StartTime(childComplexity), true
-
-	case "Mutation.clusterUpgradeBypassDelay":
-		if e.ComplexityRoot.Mutation.ClusterUpgradeBypassDelay == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_clusterUpgradeBypassDelay_args(ctx, rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.ComplexityRoot.Mutation.ClusterUpgradeBypassDelay(childComplexity, args["upgradeID"].(uuid.UUID)), true
 	case "Mutation.configurationCreate":
 		if e.ComplexityRoot.Mutation.ConfigurationCreate == nil {
 			break
@@ -1747,28 +1405,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.EnvironmentCreate(childComplexity, args["environment"].(model.EnvironmentCreate)), true
-	case "Mutation.environmentSetAutoUpgrade":
-		if e.ComplexityRoot.Mutation.EnvironmentSetAutoUpgrade == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_environmentSetAutoUpgrade_args(ctx, rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.ComplexityRoot.Mutation.EnvironmentSetAutoUpgrade(childComplexity, args["id"].(uuid.UUID), args["autoUpgrade"].(bool)), true
-	case "Mutation.environmentSetMaintenanceWindow":
-		if e.ComplexityRoot.Mutation.EnvironmentSetMaintenanceWindow == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_environmentSetMaintenanceWindow_args(ctx, rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.ComplexityRoot.Mutation.EnvironmentSetMaintenanceWindow(childComplexity, args["environmentID"].(uuid.UUID), args["window"].(*model.MaintenanceWindowInput)), true
 	case "Mutation.environmentSetReconcile":
 		if e.ComplexityRoot.Mutation.EnvironmentSetReconcile == nil {
 			break
@@ -1780,17 +1416,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.EnvironmentSetReconcile(childComplexity, args["id"].(uuid.UUID), args["reconcile"].(bool)), true
-	case "Mutation.environmentSetUpgradeDelayDays":
-		if e.ComplexityRoot.Mutation.EnvironmentSetUpgradeDelayDays == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_environmentSetUpgradeDelayDays_args(ctx, rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.ComplexityRoot.Mutation.EnvironmentSetUpgradeDelayDays(childComplexity, args["environmentID"].(uuid.UUID), args["delayDays"].(int)), true
 	case "Mutation.environmentUpdate":
 		if e.ComplexityRoot.Mutation.EnvironmentUpdate == nil {
 			break
@@ -1802,17 +1427,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.EnvironmentUpdate(childComplexity, args["id"].(uuid.UUID), args["input"].(model.EnvironmentUpdate)), true
-	case "Mutation.environmentUpgrade":
-		if e.ComplexityRoot.Mutation.EnvironmentUpgrade == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_environmentUpgrade_args(ctx, rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.ComplexityRoot.Mutation.EnvironmentUpgrade(childComplexity, args["upgrade"].(*model.EnvironmentUpgrade)), true
 	case "Mutation.featureStateSave":
 		if e.ComplexityRoot.Mutation.FeatureStateSave == nil {
 			break
@@ -1882,19 +1496,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.NaisdWarning.Message(childComplexity), true
 
-	case "NodePool.name":
-		if e.ComplexityRoot.NodePool.Name == nil {
-			break
-		}
-
-		return e.ComplexityRoot.NodePool.Name(childComplexity), true
-	case "NodePool.version":
-		if e.ComplexityRoot.NodePool.Version == nil {
-			break
-		}
-
-		return e.ComplexityRoot.NodePool.Version(childComplexity), true
-
 	case "Playground.errors":
 		if e.ComplexityRoot.Playground.Errors == nil {
 			break
@@ -1908,17 +1509,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Playground.Result(childComplexity), true
 
-	case "Query.clusterUpgradeHistory":
-		if e.ComplexityRoot.Query.ClusterUpgradeHistory == nil {
-			break
-		}
-
-		args, err := ec.field_Query_clusterUpgradeHistory_args(ctx, rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.ComplexityRoot.Query.ClusterUpgradeHistory(childComplexity, args["limit"].(*int), args["offset"].(*int)), true
 	case "Query.configuration":
 		if e.ComplexityRoot.Query.Configuration == nil {
 			break
@@ -2297,17 +1887,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Subscription.Updates(childComplexity), true
 
-	case "Tenant.clusterUpgradeHistory":
-		if e.ComplexityRoot.Tenant.ClusterUpgradeHistory == nil {
-			break
-		}
-
-		args, err := ec.field_Tenant_clusterUpgradeHistory_args(ctx, rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.ComplexityRoot.Tenant.ClusterUpgradeHistory(childComplexity, args["limit"].(*int), args["offset"].(*int)), true
 	case "Tenant.created":
 		if e.ComplexityRoot.Tenant.Created == nil {
 			break
@@ -2355,12 +1934,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Tenant.Name(childComplexity), true
-	case "Tenant.upgradeDelayDays":
-		if e.ComplexityRoot.Tenant.UpgradeDelayDays == nil {
-			break
-		}
-
-		return e.ComplexityRoot.Tenant.UpgradeDelayDays(childComplexity), true
 	case "Tenant.warnings":
 		if e.ComplexityRoot.Tenant.Warnings == nil {
 			break
@@ -2443,8 +2016,6 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateDeploymentInput,
 		ec.unmarshalInputEnvironmentCreate,
 		ec.unmarshalInputEnvironmentUpdate,
-		ec.unmarshalInputEnvironmentUpgrade,
-		ec.unmarshalInputMaintenanceWindowInput,
 		ec.unmarshalInputNewConfiguration,
 		ec.unmarshalInputPlaygroundInput,
 		ec.unmarshalInputTenantCreate,
@@ -2706,265 +2277,95 @@ enum DeploymentStatusState {
 ) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
 `, BuiltIn: false},
 	{Name: "../../../schema/environment.graphqls", Input: `enum EnvironmentKind {
-	TENANT
-	MANAGEMENT
-	ONPREM
-	LEGACY
-}
-
-enum UpgradeStatus {
-	CREATED
-	WAITING
-	CONTROL_PLANE_UPGRADE
-	NODE_UPGRADE
-	FAILED
-	DONE
-}
-
-type ClusterUpgradeStatus {
-	id: ID!
-	upgradeStatus: UpgradeStatus!
-	version: String!
-	lastModified: Time!
-	startTime: Time!
-	upgradeStartTime: Time
-	operations: [EnvironmentOperation!]!
-	environment: Environment!
-	isAutomatic: Boolean
-	actor: String
-}
-
-"""
-Result type for paginated cluster upgrade history queries.
-"""
-type ClusterUpgradeHistoryResult {
-	"""
-	The list of cluster upgrade records for the current page.
-	"""
-	items: [ClusterUpgradeStatus!]!
-	"""
-	Total number of records available across all pages.
-	"""
-	totalCount: Int!
-	"""
-	Whether there are more records available after the current page.
-	Calculated as: (offset + items.length) < totalCount
-	"""
-	hasMore: Boolean!
-}
-
-enum DayOfWeek {
-	MONDAY
-	TUESDAY
-	WEDNESDAY
-	THURSDAY
-	FRIDAY
-	SATURDAY
-	SUNDAY
-}
-
-"""
-MaintenanceWindow defines when GKE is allowed to perform maintenance on the cluster.
-If not set, GKE can perform maintenance at any time.
-All times are in UTC.
-"""
-type MaintenanceWindow {
-	"""
-	Start time in UTC 24-hour format (HH:MM), e.g., "02:00" for 2 AM UTC
-	"""
-	startTime: String!
-	"""
-	End time in UTC 24-hour format (HH:MM), e.g., "06:00" for 6 AM UTC
-	"""
-	endTime: String!
-	"""
-	Days of the week when maintenance is allowed (in UTC). At least one day must be specified.
-	"""
-	days: [DayOfWeek!]!
-}
-
-"""
-Input for setting a maintenance window
-"""
-input MaintenanceWindowInput {
-	"""
-	Start time in UTC 24-hour format (HH:MM)
-	"""
-	startTime: String!
-	"""
-	End time in UTC 24-hour format (HH:MM)
-	"""
-	endTime: String!
-	"""
-	Days of the week when maintenance is allowed (in UTC). At least one day must be specified.
-	"""
-	days: [DayOfWeek!]!
+  TENANT
+  MANAGEMENT
+  ONPREM
+  LEGACY
 }
 
 type Health {
-	reportedAt: Time!
+  reportedAt: Time!
 }
 
 type Release {
-	name: String!
-	feature: Feature
-	version: String!
-	status: String!
-	revision: Int!
-	lastDeployed: Time!
-	created: Time!
-	lastModified: Time!
+  name: String!
+  feature: Feature
+  version: String!
+  status: String!
+  revision: Int!
+  lastDeployed: Time!
+  created: Time!
+  lastModified: Time!
 }
 
 type Environment {
-	id: ID!
-	name: String!
-	description: String
-	featureStates: [FeatureState!]!
-	created: Time!
-	lastModified: Time!
-	kind: EnvironmentKind!
-	gcpProjectID: String
-	health: Health!
-	releases: [Release!]!
-	nodes: [KubernetesNode!]!
-	values: [EnvironmentValue!]!
-	tenant: Tenant!
-	warnings: [Warning!]!
-	auditLog(featureName: String): [AuditLog!]!
-	features: [Feature!]!
-	feature(name: String!): Feature!
-	reconcile: Boolean!
-	autoUpgrade: Boolean!
-	"""
-	Cluster upgrade history with pagination support.
+  id: ID!
+  name: String!
+  description: String
+  featureStates: [FeatureState!]!
+  created: Time!
+  lastModified: Time!
+  kind: EnvironmentKind!
+  gcpProjectID: String
+  health: Health!
+  releases: [Release!]!
+  nodes: [KubernetesNode!]!
+  values: [EnvironmentValue!]!
+  tenant: Tenant!
+  warnings: [Warning!]!
+  auditLog(featureName: String): [AuditLog!]!
+  features: [Feature!]!
+  feature(name: String!): Feature!
+  reconcile: Boolean!
 
-	Parameters:
-	- limit: Maximum number of records to return (default: 50, max: 1000, must be positive)
-	- offset: Number of records to skip (default: 0, must be non-negative)
-
-	Results are ordered by last_modified DESC (newest first).
-	Invalid values are normalized: negative or zero limit defaults to 50, limit > 1000 capped at 1000, negative offset defaults to 0.
-	"""
-	clusterUpgradeHistory(limit: Int, offset: Int): ClusterUpgradeHistoryResult!
-	clusterUpgradeStatus: ClusterUpgradeStatus
-	versions: EnvironmentVersions
-	labels: [EnvironmentLabel!]!
-	upgradeDelayDays: Int!
-	"""
-	Maintenance window for GKE cluster maintenance. If null, GKE can perform maintenance at any time.
-	"""
-	maintenanceWindow: MaintenanceWindow
+  labels: [EnvironmentLabel!]!
 }
 
 type EnvironmentLabel {
-	key: String!
-	value: String!
-}
-
-type EnvironmentOperation {
-	id: ID!
-	name: String!
-	status: String!
-	type: String!
-	target: String!
-	detail: String!
-	startTime: Time!
-	lastModified: Time!
-	nodesTotal: Int!
-	nodesFailed: Int!
-	nodesCompleted: Int!
-	nodesDone: Int!
-	nodePdbDelaySeconds: Int!
-}
-
-type EnvironmentVersions {
-	apiserver: String!
-	availableVersions: [String!]!
-	channel: String!
-	nodePools: [NodePool!]!
-}
-
-type NodePool {
-	name: String!
-	version: String!
+  key: String!
+  value: String!
 }
 
 type EnvironmentValue {
-	key: String!
-	value: RawMessage!
-	knownUses: Int!
+  key: String!
+  value: RawMessage!
+  knownUses: Int!
 }
 
 """
 EnvironmentCreate contains metadata for creating an environment
 """
 input EnvironmentCreate {
-	name: String!
-	description: String
-	tenantID: ID!
-	kind: EnvironmentKind!
+  name: String!
+  description: String
+  tenantID: ID!
+  kind: EnvironmentKind!
 }
 
 """
 UpdateEnvironment contains metadata for updating an environment
 """
 input EnvironmentUpdate {
-	"description of the environment"
-	description: String
-}
-
-"""
-EnvironmentUpgrade contains metadata for upgrading an environment
-"""
-input EnvironmentUpgrade {
-	"k8s version to upgrade to"
-	version: String!
-	envID: ID!
+  "description of the environment"
+  description: String
 }
 
 extend type Mutation {
-	environmentCreate(environment: EnvironmentCreate!): Environment!
-	"""
-	updateEnvironment updates an existing environment
-	"""
-	environmentUpdate(
-		"id of requested environment."
-		id: ID!
-		"input contains information about the updated environment."
-		input: EnvironmentUpdate!
-	): Environment!
+  environmentCreate(environment: EnvironmentCreate!): Environment!
+  """
+  updateEnvironment updates an existing environment
+  """
+  environmentUpdate(
+    "id of requested environment."
+    id: ID!
+    "input contains information about the updated environment."
+    input: EnvironmentUpdate!
+  ): Environment!
 
-	"""
-	Change the reconcile flag for an environment
-	"""
-	environmentSetReconcile(id: ID!, reconcile: Boolean!): Environment!
-
-	"""
-	Upgrade environment k8s cluster
-	"""
-	environmentUpgrade(upgrade: EnvironmentUpgrade): Environment!
-
-	"""
-	Change the autoUpgrade flag for an environment
-	"""
-	environmentSetAutoUpgrade(id: ID!, autoUpgrade: Boolean!): Environment!
-
-	"""
-	Set the upgrade delay (in days) for an environment.
-	"""
-	environmentSetUpgradeDelayDays(environmentID: ID!, delayDays: Int!): Environment!
-
-	"""
-	Set the maintenance window for an environment. Set to null to remove the window (allow GKE maintenance anytime).
-	"""
-	environmentSetMaintenanceWindow(environmentID: ID!, window: MaintenanceWindowInput): Environment!
-
-	"""
-	Bypass upgrade delay and trigger immediate upgrade for a cluster upgrade in WAITING status.
-	This sets isAutomatic to false and status to CREATED, allowing the upgrade to proceed on the next upgrader run.
-	"""
-	clusterUpgradeBypassDelay(upgradeID: ID!): ClusterUpgradeStatus!
+  """
+  Change the reconcile flag for an environment
+  """
+  environmentSetReconcile(id: ID!, reconcile: Boolean!): Environment!
 }
 `, BuiltIn: false},
 	{Name: "../../../schema/feature.graphqls", Input: `type Computed {
@@ -3190,93 +2591,71 @@ The subscription root for the Fasit GraphQL API.
 type Subscription
 `, BuiltIn: false},
 	{Name: "../../../schema/status.graphqls", Input: `extend type Subscription {
-    logs(environmentID: ID!, featureName: String!, lastLogID: String): LogLine!
+  logs(environmentID: ID!, featureName: String!, lastLogID: String): LogLine!
 
-    """
-    Updates notifies whenever a feature state has been changed.
-    """
-    updates: Update!
+  """
+  Updates notifies whenever a feature state has been changed.
+  """
+  updates: Update!
 }
 
 enum RolloutStatus {
-	UNKNOWN
-	CREATED
-	PENDING
-	DEPLOYED
-	FAILED
+  UNKNOWN
+  CREATED
+  PENDING
+  DEPLOYED
+  FAILED
 }
 
-union Update = Status | Configuration | FeatureState | ClusterUpgradeStatus
+union Update = Status | Configuration | FeatureState
 
 type LogLine {
-	id: ID!
-	timestamp: Time!
-	message: String!
+  id: ID!
+  timestamp: Time!
+  message: String!
 }
 
 type Status {
-	id: ID!
-	environmentID: ID!
-	version: String!
-	status: RolloutStatus!
-	created: Time!
-	lastModified: Time!
-	log: [LogLine!]!
+  id: ID!
+  environmentID: ID!
+  version: String!
+  status: RolloutStatus!
+  created: Time!
+  lastModified: Time!
+  log: [LogLine!]!
 }
 `, BuiltIn: false},
 	{Name: "../../../schema/tenant.graphqls", Input: `extend type Mutation {
-    tenantCreate(tenant: TenantCreate!): Tenant!
-    """
-    Set the upgrade delay (in days) for a tenant.
-    """
-    tenantSetUpgradeDelayDays(tenantID: ID!, delayDays: Int!): Tenant!
+  tenantCreate(tenant: TenantCreate!): Tenant!
+  """
+  Set the upgrade delay (in days) for a tenant.
+  """
+  tenantSetUpgradeDelayDays(tenantID: ID!, delayDays: Int!): Tenant!
 }
 
 extend type Query {
-    """
-    tenant returns the given tenant.
-    """
-    tenant("id of the requested tenant." id: ID, slug: String): Tenant!
-    """
-    Cluster upgrade history across all tenants and environments, with pagination support.
+  """
+  tenant returns the given tenant.
+  """
+  tenant("id of the requested tenant." id: ID, slug: String): Tenant!
 
-    Parameters:
-    - limit: Maximum number of records to return (default: 50, max: 1000, must be positive)
-    - offset: Number of records to skip (default: 0, must be non-negative)
-
-    Results are ordered by last_modified DESC (newest first).
-    Invalid values are normalized: negative or zero limit defaults to 50, limit > 1000 capped at 1000, negative offset defaults to 0.
-    """
-    clusterUpgradeHistory(limit: Int, offset: Int): ClusterUpgradeHistoryResult!
-    tenants: [Tenant!]!
+  tenants: [Tenant!]!
 }
 
 input TenantCreate {
-    name: String!
-    description: String
+  name: String!
+  description: String
 }
 
 type Tenant {
-	id: ID!
-	name: String!
-	description: String
-	environments: [Environment!]!
-	environment(id: ID, slug: String): Environment!
-	created: Time!
-	lastModified: Time!
-	warnings: [Warning!]!
-	upgradeDelayDays: Int!
-	"""
-	Cluster upgrade history for all environments in this tenant, with pagination support.
-
-	Parameters:
-	- limit: Maximum number of records to return (default: 50, max: 1000, must be positive)
-	- offset: Number of records to skip (default: 0, must be non-negative)
-
-	Results are ordered by last_modified DESC (newest first).
-	Invalid values are normalized: negative or zero limit defaults to 50, limit > 1000 capped at 1000, negative offset defaults to 0.
-	"""
-	clusterUpgradeHistory(limit: Int, offset: Int): ClusterUpgradeHistoryResult!
+  id: ID!
+  name: String!
+  description: String
+  environments: [Environment!]!
+  environment(id: ID, slug: String): Environment!
+  created: Time!
+  lastModified: Time!
+  warnings: [Warning!]!
 }
 `, BuiltIn: false},
 	{Name: "../../../schema/userInfo.graphqls", Input: `type userInfo {
@@ -3322,22 +2701,6 @@ func (ec *executionContext) field_Environment_auditLog_args(ctx context.Context,
 	return args, nil
 }
 
-func (ec *executionContext) field_Environment_clusterUpgradeHistory_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
-	var err error
-	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint)
-	if err != nil {
-		return nil, err
-	}
-	args["limit"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint)
-	if err != nil {
-		return nil, err
-	}
-	args["offset"] = arg1
-	return args, nil
-}
-
 func (ec *executionContext) field_Environment_feature_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -3346,17 +2709,6 @@ func (ec *executionContext) field_Environment_feature_args(ctx context.Context, 
 		return nil, err
 	}
 	args["name"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_clusterUpgradeBypassDelay_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
-	var err error
-	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "upgradeID", ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID)
-	if err != nil {
-		return nil, err
-	}
-	args["upgradeID"] = arg0
 	return args, nil
 }
 
@@ -3447,38 +2799,6 @@ func (ec *executionContext) field_Mutation_environmentCreate_args(ctx context.Co
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_environmentSetAutoUpgrade_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
-	var err error
-	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID)
-	if err != nil {
-		return nil, err
-	}
-	args["id"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "autoUpgrade", ec.unmarshalNBoolean2bool)
-	if err != nil {
-		return nil, err
-	}
-	args["autoUpgrade"] = arg1
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_environmentSetMaintenanceWindow_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
-	var err error
-	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "environmentID", ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID)
-	if err != nil {
-		return nil, err
-	}
-	args["environmentID"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "window", ec.unmarshalOMaintenanceWindowInput2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐMaintenanceWindowInput)
-	if err != nil {
-		return nil, err
-	}
-	args["window"] = arg1
-	return args, nil
-}
-
 func (ec *executionContext) field_Mutation_environmentSetReconcile_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -3495,22 +2815,6 @@ func (ec *executionContext) field_Mutation_environmentSetReconcile_args(ctx cont
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_environmentSetUpgradeDelayDays_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
-	var err error
-	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "environmentID", ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID)
-	if err != nil {
-		return nil, err
-	}
-	args["environmentID"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "delayDays", ec.unmarshalNInt2int)
-	if err != nil {
-		return nil, err
-	}
-	args["delayDays"] = arg1
-	return args, nil
-}
-
 func (ec *executionContext) field_Mutation_environmentUpdate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -3524,17 +2828,6 @@ func (ec *executionContext) field_Mutation_environmentUpdate_args(ctx context.Co
 		return nil, err
 	}
 	args["input"] = arg1
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_environmentUpgrade_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
-	var err error
-	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "upgrade", ec.unmarshalOEnvironmentUpgrade2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironmentUpgrade)
-	if err != nil {
-		return nil, err
-	}
-	args["upgrade"] = arg0
 	return args, nil
 }
 
@@ -3621,22 +2914,6 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 		return nil, err
 	}
 	args["name"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_clusterUpgradeHistory_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
-	var err error
-	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint)
-	if err != nil {
-		return nil, err
-	}
-	args["limit"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint)
-	if err != nil {
-		return nil, err
-	}
-	args["offset"] = arg1
 	return args, nil
 }
 
@@ -3849,22 +3126,6 @@ func (ec *executionContext) field_Subscription_logs_args(ctx context.Context, ra
 	return args, nil
 }
 
-func (ec *executionContext) field_Tenant_clusterUpgradeHistory_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
-	var err error
-	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint)
-	if err != nil {
-		return nil, err
-	}
-	args["limit"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint)
-	if err != nil {
-		return nil, err
-	}
-	args["offset"] = arg1
-	return args, nil
-}
-
 func (ec *executionContext) field_Tenant_environment_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -4073,485 +3334,6 @@ func (ec *executionContext) fieldContext_AuditLog_createdAt(_ context.Context, f
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Time does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _ClusterUpgradeHistoryResult_items(ctx context.Context, field graphql.CollectedField, obj *model.ClusterUpgradeHistoryResult) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_ClusterUpgradeHistoryResult_items,
-		func(ctx context.Context) (any, error) {
-			return obj.Items, nil
-		},
-		nil,
-		ec.marshalNClusterUpgradeStatus2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐClusterUpgradeStatusᚄ,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_ClusterUpgradeHistoryResult_items(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ClusterUpgradeHistoryResult",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_ClusterUpgradeStatus_id(ctx, field)
-			case "upgradeStatus":
-				return ec.fieldContext_ClusterUpgradeStatus_upgradeStatus(ctx, field)
-			case "version":
-				return ec.fieldContext_ClusterUpgradeStatus_version(ctx, field)
-			case "lastModified":
-				return ec.fieldContext_ClusterUpgradeStatus_lastModified(ctx, field)
-			case "startTime":
-				return ec.fieldContext_ClusterUpgradeStatus_startTime(ctx, field)
-			case "upgradeStartTime":
-				return ec.fieldContext_ClusterUpgradeStatus_upgradeStartTime(ctx, field)
-			case "operations":
-				return ec.fieldContext_ClusterUpgradeStatus_operations(ctx, field)
-			case "environment":
-				return ec.fieldContext_ClusterUpgradeStatus_environment(ctx, field)
-			case "isAutomatic":
-				return ec.fieldContext_ClusterUpgradeStatus_isAutomatic(ctx, field)
-			case "actor":
-				return ec.fieldContext_ClusterUpgradeStatus_actor(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type ClusterUpgradeStatus", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _ClusterUpgradeHistoryResult_totalCount(ctx context.Context, field graphql.CollectedField, obj *model.ClusterUpgradeHistoryResult) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_ClusterUpgradeHistoryResult_totalCount,
-		func(ctx context.Context) (any, error) {
-			return obj.TotalCount, nil
-		},
-		nil,
-		ec.marshalNInt2int,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_ClusterUpgradeHistoryResult_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ClusterUpgradeHistoryResult",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _ClusterUpgradeHistoryResult_hasMore(ctx context.Context, field graphql.CollectedField, obj *model.ClusterUpgradeHistoryResult) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_ClusterUpgradeHistoryResult_hasMore,
-		func(ctx context.Context) (any, error) {
-			return obj.HasMore, nil
-		},
-		nil,
-		ec.marshalNBoolean2bool,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_ClusterUpgradeHistoryResult_hasMore(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ClusterUpgradeHistoryResult",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _ClusterUpgradeStatus_id(ctx context.Context, field graphql.CollectedField, obj *model.ClusterUpgradeStatus) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_ClusterUpgradeStatus_id,
-		func(ctx context.Context) (any, error) {
-			return obj.ID, nil
-		},
-		nil,
-		ec.marshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_ClusterUpgradeStatus_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ClusterUpgradeStatus",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _ClusterUpgradeStatus_upgradeStatus(ctx context.Context, field graphql.CollectedField, obj *model.ClusterUpgradeStatus) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_ClusterUpgradeStatus_upgradeStatus,
-		func(ctx context.Context) (any, error) {
-			return obj.UpgradeStatus, nil
-		},
-		nil,
-		ec.marshalNUpgradeStatus2githubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐUpgradeStatus,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_ClusterUpgradeStatus_upgradeStatus(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ClusterUpgradeStatus",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type UpgradeStatus does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _ClusterUpgradeStatus_version(ctx context.Context, field graphql.CollectedField, obj *model.ClusterUpgradeStatus) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_ClusterUpgradeStatus_version,
-		func(ctx context.Context) (any, error) {
-			return obj.Version, nil
-		},
-		nil,
-		ec.marshalNString2string,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_ClusterUpgradeStatus_version(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ClusterUpgradeStatus",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _ClusterUpgradeStatus_lastModified(ctx context.Context, field graphql.CollectedField, obj *model.ClusterUpgradeStatus) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_ClusterUpgradeStatus_lastModified,
-		func(ctx context.Context) (any, error) {
-			return obj.LastModified, nil
-		},
-		nil,
-		ec.marshalNTime2timeᚐTime,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_ClusterUpgradeStatus_lastModified(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ClusterUpgradeStatus",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Time does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _ClusterUpgradeStatus_startTime(ctx context.Context, field graphql.CollectedField, obj *model.ClusterUpgradeStatus) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_ClusterUpgradeStatus_startTime,
-		func(ctx context.Context) (any, error) {
-			return obj.StartTime, nil
-		},
-		nil,
-		ec.marshalNTime2timeᚐTime,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_ClusterUpgradeStatus_startTime(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ClusterUpgradeStatus",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Time does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _ClusterUpgradeStatus_upgradeStartTime(ctx context.Context, field graphql.CollectedField, obj *model.ClusterUpgradeStatus) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_ClusterUpgradeStatus_upgradeStartTime,
-		func(ctx context.Context) (any, error) {
-			return obj.UpgradeStartTime, nil
-		},
-		nil,
-		ec.marshalOTime2ᚖtimeᚐTime,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_ClusterUpgradeStatus_upgradeStartTime(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ClusterUpgradeStatus",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Time does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _ClusterUpgradeStatus_operations(ctx context.Context, field graphql.CollectedField, obj *model.ClusterUpgradeStatus) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_ClusterUpgradeStatus_operations,
-		func(ctx context.Context) (any, error) {
-			return ec.Resolvers.ClusterUpgradeStatus().Operations(ctx, obj)
-		},
-		nil,
-		ec.marshalNEnvironmentOperation2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironmentOperationᚄ,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_ClusterUpgradeStatus_operations(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ClusterUpgradeStatus",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_EnvironmentOperation_id(ctx, field)
-			case "name":
-				return ec.fieldContext_EnvironmentOperation_name(ctx, field)
-			case "status":
-				return ec.fieldContext_EnvironmentOperation_status(ctx, field)
-			case "type":
-				return ec.fieldContext_EnvironmentOperation_type(ctx, field)
-			case "target":
-				return ec.fieldContext_EnvironmentOperation_target(ctx, field)
-			case "detail":
-				return ec.fieldContext_EnvironmentOperation_detail(ctx, field)
-			case "startTime":
-				return ec.fieldContext_EnvironmentOperation_startTime(ctx, field)
-			case "lastModified":
-				return ec.fieldContext_EnvironmentOperation_lastModified(ctx, field)
-			case "nodesTotal":
-				return ec.fieldContext_EnvironmentOperation_nodesTotal(ctx, field)
-			case "nodesFailed":
-				return ec.fieldContext_EnvironmentOperation_nodesFailed(ctx, field)
-			case "nodesCompleted":
-				return ec.fieldContext_EnvironmentOperation_nodesCompleted(ctx, field)
-			case "nodesDone":
-				return ec.fieldContext_EnvironmentOperation_nodesDone(ctx, field)
-			case "nodePdbDelaySeconds":
-				return ec.fieldContext_EnvironmentOperation_nodePdbDelaySeconds(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type EnvironmentOperation", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _ClusterUpgradeStatus_environment(ctx context.Context, field graphql.CollectedField, obj *model.ClusterUpgradeStatus) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_ClusterUpgradeStatus_environment,
-		func(ctx context.Context) (any, error) {
-			return ec.Resolvers.ClusterUpgradeStatus().Environment(ctx, obj)
-		},
-		nil,
-		ec.marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironment,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_ClusterUpgradeStatus_environment(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ClusterUpgradeStatus",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Environment_id(ctx, field)
-			case "name":
-				return ec.fieldContext_Environment_name(ctx, field)
-			case "description":
-				return ec.fieldContext_Environment_description(ctx, field)
-			case "featureStates":
-				return ec.fieldContext_Environment_featureStates(ctx, field)
-			case "created":
-				return ec.fieldContext_Environment_created(ctx, field)
-			case "lastModified":
-				return ec.fieldContext_Environment_lastModified(ctx, field)
-			case "kind":
-				return ec.fieldContext_Environment_kind(ctx, field)
-			case "gcpProjectID":
-				return ec.fieldContext_Environment_gcpProjectID(ctx, field)
-			case "health":
-				return ec.fieldContext_Environment_health(ctx, field)
-			case "releases":
-				return ec.fieldContext_Environment_releases(ctx, field)
-			case "nodes":
-				return ec.fieldContext_Environment_nodes(ctx, field)
-			case "values":
-				return ec.fieldContext_Environment_values(ctx, field)
-			case "tenant":
-				return ec.fieldContext_Environment_tenant(ctx, field)
-			case "warnings":
-				return ec.fieldContext_Environment_warnings(ctx, field)
-			case "auditLog":
-				return ec.fieldContext_Environment_auditLog(ctx, field)
-			case "features":
-				return ec.fieldContext_Environment_features(ctx, field)
-			case "feature":
-				return ec.fieldContext_Environment_feature(ctx, field)
-			case "reconcile":
-				return ec.fieldContext_Environment_reconcile(ctx, field)
-			case "autoUpgrade":
-				return ec.fieldContext_Environment_autoUpgrade(ctx, field)
-			case "clusterUpgradeHistory":
-				return ec.fieldContext_Environment_clusterUpgradeHistory(ctx, field)
-			case "clusterUpgradeStatus":
-				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
-			case "versions":
-				return ec.fieldContext_Environment_versions(ctx, field)
-			case "labels":
-				return ec.fieldContext_Environment_labels(ctx, field)
-			case "upgradeDelayDays":
-				return ec.fieldContext_Environment_upgradeDelayDays(ctx, field)
-			case "maintenanceWindow":
-				return ec.fieldContext_Environment_maintenanceWindow(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _ClusterUpgradeStatus_isAutomatic(ctx context.Context, field graphql.CollectedField, obj *model.ClusterUpgradeStatus) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_ClusterUpgradeStatus_isAutomatic,
-		func(ctx context.Context) (any, error) {
-			return obj.IsAutomatic, nil
-		},
-		nil,
-		ec.marshalOBoolean2ᚖbool,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_ClusterUpgradeStatus_isAutomatic(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ClusterUpgradeStatus",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _ClusterUpgradeStatus_actor(ctx context.Context, field graphql.CollectedField, obj *model.ClusterUpgradeStatus) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_ClusterUpgradeStatus_actor,
-		func(ctx context.Context) (any, error) {
-			return ec.Resolvers.ClusterUpgradeStatus().Actor(ctx, obj)
-		},
-		nil,
-		ec.marshalOString2ᚖstring,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_ClusterUpgradeStatus_actor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "ClusterUpgradeStatus",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -4776,20 +3558,8 @@ func (ec *executionContext) fieldContext_ConfigOverride_environment(_ context.Co
 				return ec.fieldContext_Environment_feature(ctx, field)
 			case "reconcile":
 				return ec.fieldContext_Environment_reconcile(ctx, field)
-			case "autoUpgrade":
-				return ec.fieldContext_Environment_autoUpgrade(ctx, field)
-			case "clusterUpgradeHistory":
-				return ec.fieldContext_Environment_clusterUpgradeHistory(ctx, field)
-			case "clusterUpgradeStatus":
-				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
-			case "versions":
-				return ec.fieldContext_Environment_versions(ctx, field)
 			case "labels":
 				return ec.fieldContext_Environment_labels(ctx, field)
-			case "upgradeDelayDays":
-				return ec.fieldContext_Environment_upgradeDelayDays(ctx, field)
-			case "maintenanceWindow":
-				return ec.fieldContext_Environment_maintenanceWindow(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -5194,10 +3964,6 @@ func (ec *executionContext) fieldContext_CostSeries_tenant(_ context.Context, fi
 				return ec.fieldContext_Tenant_lastModified(ctx, field)
 			case "warnings":
 				return ec.fieldContext_Tenant_warnings(ctx, field)
-			case "upgradeDelayDays":
-				return ec.fieldContext_Tenant_upgradeDelayDays(ctx, field)
-			case "clusterUpgradeHistory":
-				return ec.fieldContext_Tenant_clusterUpgradeHistory(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tenant", field.Name)
 		},
@@ -5656,20 +4422,8 @@ func (ec *executionContext) fieldContext_DeploymentStatus_environment(_ context.
 				return ec.fieldContext_Environment_feature(ctx, field)
 			case "reconcile":
 				return ec.fieldContext_Environment_reconcile(ctx, field)
-			case "autoUpgrade":
-				return ec.fieldContext_Environment_autoUpgrade(ctx, field)
-			case "clusterUpgradeHistory":
-				return ec.fieldContext_Environment_clusterUpgradeHistory(ctx, field)
-			case "clusterUpgradeStatus":
-				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
-			case "versions":
-				return ec.fieldContext_Environment_versions(ctx, field)
 			case "labels":
 				return ec.fieldContext_Environment_labels(ctx, field)
-			case "upgradeDelayDays":
-				return ec.fieldContext_Environment_upgradeDelayDays(ctx, field)
-			case "maintenanceWindow":
-				return ec.fieldContext_Environment_maintenanceWindow(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -5892,20 +4646,8 @@ func (ec *executionContext) fieldContext_EnvSeries_environment(_ context.Context
 				return ec.fieldContext_Environment_feature(ctx, field)
 			case "reconcile":
 				return ec.fieldContext_Environment_reconcile(ctx, field)
-			case "autoUpgrade":
-				return ec.fieldContext_Environment_autoUpgrade(ctx, field)
-			case "clusterUpgradeHistory":
-				return ec.fieldContext_Environment_clusterUpgradeHistory(ctx, field)
-			case "clusterUpgradeStatus":
-				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
-			case "versions":
-				return ec.fieldContext_Environment_versions(ctx, field)
 			case "labels":
 				return ec.fieldContext_Environment_labels(ctx, field)
-			case "upgradeDelayDays":
-				return ec.fieldContext_Environment_upgradeDelayDays(ctx, field)
-			case "maintenanceWindow":
-				return ec.fieldContext_Environment_maintenanceWindow(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -6402,10 +5144,6 @@ func (ec *executionContext) fieldContext_Environment_tenant(_ context.Context, f
 				return ec.fieldContext_Tenant_lastModified(ctx, field)
 			case "warnings":
 				return ec.fieldContext_Tenant_warnings(ctx, field)
-			case "upgradeDelayDays":
-				return ec.fieldContext_Tenant_upgradeDelayDays(ctx, field)
-			case "clusterUpgradeHistory":
-				return ec.fieldContext_Tenant_clusterUpgradeHistory(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tenant", field.Name)
 		},
@@ -6662,174 +5400,6 @@ func (ec *executionContext) fieldContext_Environment_reconcile(_ context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _Environment_autoUpgrade(ctx context.Context, field graphql.CollectedField, obj *model.Environment) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Environment_autoUpgrade,
-		func(ctx context.Context) (any, error) {
-			return obj.AutoUpgrade, nil
-		},
-		nil,
-		ec.marshalNBoolean2bool,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Environment_autoUpgrade(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Environment",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Environment_clusterUpgradeHistory(ctx context.Context, field graphql.CollectedField, obj *model.Environment) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Environment_clusterUpgradeHistory,
-		func(ctx context.Context) (any, error) {
-			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Environment().ClusterUpgradeHistory(ctx, obj, fc.Args["limit"].(*int), fc.Args["offset"].(*int))
-		},
-		nil,
-		ec.marshalNClusterUpgradeHistoryResult2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐClusterUpgradeHistoryResult,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Environment_clusterUpgradeHistory(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Environment",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "items":
-				return ec.fieldContext_ClusterUpgradeHistoryResult_items(ctx, field)
-			case "totalCount":
-				return ec.fieldContext_ClusterUpgradeHistoryResult_totalCount(ctx, field)
-			case "hasMore":
-				return ec.fieldContext_ClusterUpgradeHistoryResult_hasMore(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type ClusterUpgradeHistoryResult", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Environment_clusterUpgradeHistory_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Environment_clusterUpgradeStatus(ctx context.Context, field graphql.CollectedField, obj *model.Environment) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Environment_clusterUpgradeStatus,
-		func(ctx context.Context) (any, error) {
-			return ec.Resolvers.Environment().ClusterUpgradeStatus(ctx, obj)
-		},
-		nil,
-		ec.marshalOClusterUpgradeStatus2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐClusterUpgradeStatus,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_Environment_clusterUpgradeStatus(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Environment",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_ClusterUpgradeStatus_id(ctx, field)
-			case "upgradeStatus":
-				return ec.fieldContext_ClusterUpgradeStatus_upgradeStatus(ctx, field)
-			case "version":
-				return ec.fieldContext_ClusterUpgradeStatus_version(ctx, field)
-			case "lastModified":
-				return ec.fieldContext_ClusterUpgradeStatus_lastModified(ctx, field)
-			case "startTime":
-				return ec.fieldContext_ClusterUpgradeStatus_startTime(ctx, field)
-			case "upgradeStartTime":
-				return ec.fieldContext_ClusterUpgradeStatus_upgradeStartTime(ctx, field)
-			case "operations":
-				return ec.fieldContext_ClusterUpgradeStatus_operations(ctx, field)
-			case "environment":
-				return ec.fieldContext_ClusterUpgradeStatus_environment(ctx, field)
-			case "isAutomatic":
-				return ec.fieldContext_ClusterUpgradeStatus_isAutomatic(ctx, field)
-			case "actor":
-				return ec.fieldContext_ClusterUpgradeStatus_actor(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type ClusterUpgradeStatus", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Environment_versions(ctx context.Context, field graphql.CollectedField, obj *model.Environment) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Environment_versions,
-		func(ctx context.Context) (any, error) {
-			return ec.Resolvers.Environment().Versions(ctx, obj)
-		},
-		nil,
-		ec.marshalOEnvironmentVersions2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironmentVersions,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_Environment_versions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Environment",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "apiserver":
-				return ec.fieldContext_EnvironmentVersions_apiserver(ctx, field)
-			case "availableVersions":
-				return ec.fieldContext_EnvironmentVersions_availableVersions(ctx, field)
-			case "channel":
-				return ec.fieldContext_EnvironmentVersions_channel(ctx, field)
-			case "nodePools":
-				return ec.fieldContext_EnvironmentVersions_nodePools(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type EnvironmentVersions", field.Name)
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Environment_labels(ctx context.Context, field graphql.CollectedField, obj *model.Environment) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -6860,72 +5430,6 @@ func (ec *executionContext) fieldContext_Environment_labels(_ context.Context, f
 				return ec.fieldContext_EnvironmentLabel_value(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type EnvironmentLabel", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Environment_upgradeDelayDays(ctx context.Context, field graphql.CollectedField, obj *model.Environment) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Environment_upgradeDelayDays,
-		func(ctx context.Context) (any, error) {
-			return obj.UpgradeDelayDays, nil
-		},
-		nil,
-		ec.marshalNInt2int32,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Environment_upgradeDelayDays(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Environment",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Environment_maintenanceWindow(ctx context.Context, field graphql.CollectedField, obj *model.Environment) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Environment_maintenanceWindow,
-		func(ctx context.Context) (any, error) {
-			return ec.Resolvers.Environment().MaintenanceWindow(ctx, obj)
-		},
-		nil,
-		ec.marshalOMaintenanceWindow2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐMaintenanceWindow,
-		true,
-		false,
-	)
-}
-
-func (ec *executionContext) fieldContext_Environment_maintenanceWindow(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Environment",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "startTime":
-				return ec.fieldContext_MaintenanceWindow_startTime(ctx, field)
-			case "endTime":
-				return ec.fieldContext_MaintenanceWindow_endTime(ctx, field)
-			case "days":
-				return ec.fieldContext_MaintenanceWindow_days(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type MaintenanceWindow", field.Name)
 		},
 	}
 	return fc, nil
@@ -6984,383 +5488,6 @@ func (ec *executionContext) fieldContext_EnvironmentLabel_value(_ context.Contex
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _EnvironmentOperation_id(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentOperation) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_EnvironmentOperation_id,
-		func(ctx context.Context) (any, error) {
-			return obj.ID, nil
-		},
-		nil,
-		ec.marshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_EnvironmentOperation_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "EnvironmentOperation",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _EnvironmentOperation_name(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentOperation) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_EnvironmentOperation_name,
-		func(ctx context.Context) (any, error) {
-			return obj.Name, nil
-		},
-		nil,
-		ec.marshalNString2string,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_EnvironmentOperation_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "EnvironmentOperation",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _EnvironmentOperation_status(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentOperation) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_EnvironmentOperation_status,
-		func(ctx context.Context) (any, error) {
-			return obj.Status, nil
-		},
-		nil,
-		ec.marshalNString2string,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_EnvironmentOperation_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "EnvironmentOperation",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _EnvironmentOperation_type(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentOperation) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_EnvironmentOperation_type,
-		func(ctx context.Context) (any, error) {
-			return obj.Type, nil
-		},
-		nil,
-		ec.marshalNString2string,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_EnvironmentOperation_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "EnvironmentOperation",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _EnvironmentOperation_target(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentOperation) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_EnvironmentOperation_target,
-		func(ctx context.Context) (any, error) {
-			return obj.Target, nil
-		},
-		nil,
-		ec.marshalNString2string,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_EnvironmentOperation_target(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "EnvironmentOperation",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _EnvironmentOperation_detail(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentOperation) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_EnvironmentOperation_detail,
-		func(ctx context.Context) (any, error) {
-			return obj.Detail, nil
-		},
-		nil,
-		ec.marshalNString2string,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_EnvironmentOperation_detail(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "EnvironmentOperation",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _EnvironmentOperation_startTime(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentOperation) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_EnvironmentOperation_startTime,
-		func(ctx context.Context) (any, error) {
-			return obj.StartTime, nil
-		},
-		nil,
-		ec.marshalNTime2timeᚐTime,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_EnvironmentOperation_startTime(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "EnvironmentOperation",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Time does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _EnvironmentOperation_lastModified(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentOperation) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_EnvironmentOperation_lastModified,
-		func(ctx context.Context) (any, error) {
-			return obj.LastModified, nil
-		},
-		nil,
-		ec.marshalNTime2timeᚐTime,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_EnvironmentOperation_lastModified(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "EnvironmentOperation",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Time does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _EnvironmentOperation_nodesTotal(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentOperation) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_EnvironmentOperation_nodesTotal,
-		func(ctx context.Context) (any, error) {
-			return obj.NodesTotal, nil
-		},
-		nil,
-		ec.marshalNInt2int,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_EnvironmentOperation_nodesTotal(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "EnvironmentOperation",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _EnvironmentOperation_nodesFailed(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentOperation) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_EnvironmentOperation_nodesFailed,
-		func(ctx context.Context) (any, error) {
-			return obj.NodesFailed, nil
-		},
-		nil,
-		ec.marshalNInt2int,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_EnvironmentOperation_nodesFailed(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "EnvironmentOperation",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _EnvironmentOperation_nodesCompleted(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentOperation) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_EnvironmentOperation_nodesCompleted,
-		func(ctx context.Context) (any, error) {
-			return obj.NodesCompleted, nil
-		},
-		nil,
-		ec.marshalNInt2int,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_EnvironmentOperation_nodesCompleted(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "EnvironmentOperation",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _EnvironmentOperation_nodesDone(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentOperation) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_EnvironmentOperation_nodesDone,
-		func(ctx context.Context) (any, error) {
-			return obj.NodesDone, nil
-		},
-		nil,
-		ec.marshalNInt2int,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_EnvironmentOperation_nodesDone(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "EnvironmentOperation",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _EnvironmentOperation_nodePdbDelaySeconds(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentOperation) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_EnvironmentOperation_nodePdbDelaySeconds,
-		func(ctx context.Context) (any, error) {
-			return obj.NodePdbDelaySeconds, nil
-		},
-		nil,
-		ec.marshalNInt2int,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_EnvironmentOperation_nodePdbDelaySeconds(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "EnvironmentOperation",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -7448,128 +5575,6 @@ func (ec *executionContext) fieldContext_EnvironmentValue_knownUses(_ context.Co
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _EnvironmentVersions_apiserver(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentVersions) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_EnvironmentVersions_apiserver,
-		func(ctx context.Context) (any, error) {
-			return obj.Apiserver, nil
-		},
-		nil,
-		ec.marshalNString2string,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_EnvironmentVersions_apiserver(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "EnvironmentVersions",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _EnvironmentVersions_availableVersions(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentVersions) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_EnvironmentVersions_availableVersions,
-		func(ctx context.Context) (any, error) {
-			return obj.AvailableVersions, nil
-		},
-		nil,
-		ec.marshalNString2ᚕstringᚄ,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_EnvironmentVersions_availableVersions(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "EnvironmentVersions",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _EnvironmentVersions_channel(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentVersions) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_EnvironmentVersions_channel,
-		func(ctx context.Context) (any, error) {
-			return obj.Channel, nil
-		},
-		nil,
-		ec.marshalNString2string,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_EnvironmentVersions_channel(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "EnvironmentVersions",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _EnvironmentVersions_nodePools(ctx context.Context, field graphql.CollectedField, obj *model.EnvironmentVersions) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_EnvironmentVersions_nodePools,
-		func(ctx context.Context) (any, error) {
-			return obj.NodePools, nil
-		},
-		nil,
-		ec.marshalNNodePool2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐNodePoolᚄ,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_EnvironmentVersions_nodePools(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "EnvironmentVersions",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "name":
-				return ec.fieldContext_NodePool_name(ctx, field)
-			case "version":
-				return ec.fieldContext_NodePool_version(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type NodePool", field.Name)
 		},
 	}
 	return fc, nil
@@ -8757,20 +6762,8 @@ func (ec *executionContext) fieldContext_FeatureWarning_environment(_ context.Co
 				return ec.fieldContext_Environment_feature(ctx, field)
 			case "reconcile":
 				return ec.fieldContext_Environment_reconcile(ctx, field)
-			case "autoUpgrade":
-				return ec.fieldContext_Environment_autoUpgrade(ctx, field)
-			case "clusterUpgradeHistory":
-				return ec.fieldContext_Environment_clusterUpgradeHistory(ctx, field)
-			case "clusterUpgradeStatus":
-				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
-			case "versions":
-				return ec.fieldContext_Environment_versions(ctx, field)
 			case "labels":
 				return ec.fieldContext_Environment_labels(ctx, field)
-			case "upgradeDelayDays":
-				return ec.fieldContext_Environment_upgradeDelayDays(ctx, field)
-			case "maintenanceWindow":
-				return ec.fieldContext_Environment_maintenanceWindow(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -9624,93 +7617,6 @@ func (ec *executionContext) fieldContext_LogLine_message(_ context.Context, fiel
 	return fc, nil
 }
 
-func (ec *executionContext) _MaintenanceWindow_startTime(ctx context.Context, field graphql.CollectedField, obj *model.MaintenanceWindow) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_MaintenanceWindow_startTime,
-		func(ctx context.Context) (any, error) {
-			return obj.StartTime, nil
-		},
-		nil,
-		ec.marshalNString2string,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_MaintenanceWindow_startTime(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MaintenanceWindow",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MaintenanceWindow_endTime(ctx context.Context, field graphql.CollectedField, obj *model.MaintenanceWindow) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_MaintenanceWindow_endTime,
-		func(ctx context.Context) (any, error) {
-			return obj.EndTime, nil
-		},
-		nil,
-		ec.marshalNString2string,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_MaintenanceWindow_endTime(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MaintenanceWindow",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _MaintenanceWindow_days(ctx context.Context, field graphql.CollectedField, obj *model.MaintenanceWindow) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_MaintenanceWindow_days,
-		func(ctx context.Context) (any, error) {
-			return obj.Days, nil
-		},
-		nil,
-		ec.marshalNDayOfWeek2ᚕgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐDayOfWeekᚄ,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_MaintenanceWindow_days(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "MaintenanceWindow",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type DayOfWeek does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Mutation_configurationCreate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -10001,20 +7907,8 @@ func (ec *executionContext) fieldContext_Mutation_environmentCreate(ctx context.
 				return ec.fieldContext_Environment_feature(ctx, field)
 			case "reconcile":
 				return ec.fieldContext_Environment_reconcile(ctx, field)
-			case "autoUpgrade":
-				return ec.fieldContext_Environment_autoUpgrade(ctx, field)
-			case "clusterUpgradeHistory":
-				return ec.fieldContext_Environment_clusterUpgradeHistory(ctx, field)
-			case "clusterUpgradeStatus":
-				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
-			case "versions":
-				return ec.fieldContext_Environment_versions(ctx, field)
 			case "labels":
 				return ec.fieldContext_Environment_labels(ctx, field)
-			case "upgradeDelayDays":
-				return ec.fieldContext_Environment_upgradeDelayDays(ctx, field)
-			case "maintenanceWindow":
-				return ec.fieldContext_Environment_maintenanceWindow(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -10094,20 +7988,8 @@ func (ec *executionContext) fieldContext_Mutation_environmentUpdate(ctx context.
 				return ec.fieldContext_Environment_feature(ctx, field)
 			case "reconcile":
 				return ec.fieldContext_Environment_reconcile(ctx, field)
-			case "autoUpgrade":
-				return ec.fieldContext_Environment_autoUpgrade(ctx, field)
-			case "clusterUpgradeHistory":
-				return ec.fieldContext_Environment_clusterUpgradeHistory(ctx, field)
-			case "clusterUpgradeStatus":
-				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
-			case "versions":
-				return ec.fieldContext_Environment_versions(ctx, field)
 			case "labels":
 				return ec.fieldContext_Environment_labels(ctx, field)
-			case "upgradeDelayDays":
-				return ec.fieldContext_Environment_upgradeDelayDays(ctx, field)
-			case "maintenanceWindow":
-				return ec.fieldContext_Environment_maintenanceWindow(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -10187,20 +8069,8 @@ func (ec *executionContext) fieldContext_Mutation_environmentSetReconcile(ctx co
 				return ec.fieldContext_Environment_feature(ctx, field)
 			case "reconcile":
 				return ec.fieldContext_Environment_reconcile(ctx, field)
-			case "autoUpgrade":
-				return ec.fieldContext_Environment_autoUpgrade(ctx, field)
-			case "clusterUpgradeHistory":
-				return ec.fieldContext_Environment_clusterUpgradeHistory(ctx, field)
-			case "clusterUpgradeStatus":
-				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
-			case "versions":
-				return ec.fieldContext_Environment_versions(ctx, field)
 			case "labels":
 				return ec.fieldContext_Environment_labels(ctx, field)
-			case "upgradeDelayDays":
-				return ec.fieldContext_Environment_upgradeDelayDays(ctx, field)
-			case "maintenanceWindow":
-				return ec.fieldContext_Environment_maintenanceWindow(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -10213,441 +8083,6 @@ func (ec *executionContext) fieldContext_Mutation_environmentSetReconcile(ctx co
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_environmentSetReconcile_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Mutation_environmentUpgrade(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Mutation_environmentUpgrade,
-		func(ctx context.Context) (any, error) {
-			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Mutation().EnvironmentUpgrade(ctx, fc.Args["upgrade"].(*model.EnvironmentUpgrade))
-		},
-		nil,
-		ec.marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironment,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Mutation_environmentUpgrade(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Environment_id(ctx, field)
-			case "name":
-				return ec.fieldContext_Environment_name(ctx, field)
-			case "description":
-				return ec.fieldContext_Environment_description(ctx, field)
-			case "featureStates":
-				return ec.fieldContext_Environment_featureStates(ctx, field)
-			case "created":
-				return ec.fieldContext_Environment_created(ctx, field)
-			case "lastModified":
-				return ec.fieldContext_Environment_lastModified(ctx, field)
-			case "kind":
-				return ec.fieldContext_Environment_kind(ctx, field)
-			case "gcpProjectID":
-				return ec.fieldContext_Environment_gcpProjectID(ctx, field)
-			case "health":
-				return ec.fieldContext_Environment_health(ctx, field)
-			case "releases":
-				return ec.fieldContext_Environment_releases(ctx, field)
-			case "nodes":
-				return ec.fieldContext_Environment_nodes(ctx, field)
-			case "values":
-				return ec.fieldContext_Environment_values(ctx, field)
-			case "tenant":
-				return ec.fieldContext_Environment_tenant(ctx, field)
-			case "warnings":
-				return ec.fieldContext_Environment_warnings(ctx, field)
-			case "auditLog":
-				return ec.fieldContext_Environment_auditLog(ctx, field)
-			case "features":
-				return ec.fieldContext_Environment_features(ctx, field)
-			case "feature":
-				return ec.fieldContext_Environment_feature(ctx, field)
-			case "reconcile":
-				return ec.fieldContext_Environment_reconcile(ctx, field)
-			case "autoUpgrade":
-				return ec.fieldContext_Environment_autoUpgrade(ctx, field)
-			case "clusterUpgradeHistory":
-				return ec.fieldContext_Environment_clusterUpgradeHistory(ctx, field)
-			case "clusterUpgradeStatus":
-				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
-			case "versions":
-				return ec.fieldContext_Environment_versions(ctx, field)
-			case "labels":
-				return ec.fieldContext_Environment_labels(ctx, field)
-			case "upgradeDelayDays":
-				return ec.fieldContext_Environment_upgradeDelayDays(ctx, field)
-			case "maintenanceWindow":
-				return ec.fieldContext_Environment_maintenanceWindow(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_environmentUpgrade_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Mutation_environmentSetAutoUpgrade(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Mutation_environmentSetAutoUpgrade,
-		func(ctx context.Context) (any, error) {
-			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Mutation().EnvironmentSetAutoUpgrade(ctx, fc.Args["id"].(uuid.UUID), fc.Args["autoUpgrade"].(bool))
-		},
-		nil,
-		ec.marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironment,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Mutation_environmentSetAutoUpgrade(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Environment_id(ctx, field)
-			case "name":
-				return ec.fieldContext_Environment_name(ctx, field)
-			case "description":
-				return ec.fieldContext_Environment_description(ctx, field)
-			case "featureStates":
-				return ec.fieldContext_Environment_featureStates(ctx, field)
-			case "created":
-				return ec.fieldContext_Environment_created(ctx, field)
-			case "lastModified":
-				return ec.fieldContext_Environment_lastModified(ctx, field)
-			case "kind":
-				return ec.fieldContext_Environment_kind(ctx, field)
-			case "gcpProjectID":
-				return ec.fieldContext_Environment_gcpProjectID(ctx, field)
-			case "health":
-				return ec.fieldContext_Environment_health(ctx, field)
-			case "releases":
-				return ec.fieldContext_Environment_releases(ctx, field)
-			case "nodes":
-				return ec.fieldContext_Environment_nodes(ctx, field)
-			case "values":
-				return ec.fieldContext_Environment_values(ctx, field)
-			case "tenant":
-				return ec.fieldContext_Environment_tenant(ctx, field)
-			case "warnings":
-				return ec.fieldContext_Environment_warnings(ctx, field)
-			case "auditLog":
-				return ec.fieldContext_Environment_auditLog(ctx, field)
-			case "features":
-				return ec.fieldContext_Environment_features(ctx, field)
-			case "feature":
-				return ec.fieldContext_Environment_feature(ctx, field)
-			case "reconcile":
-				return ec.fieldContext_Environment_reconcile(ctx, field)
-			case "autoUpgrade":
-				return ec.fieldContext_Environment_autoUpgrade(ctx, field)
-			case "clusterUpgradeHistory":
-				return ec.fieldContext_Environment_clusterUpgradeHistory(ctx, field)
-			case "clusterUpgradeStatus":
-				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
-			case "versions":
-				return ec.fieldContext_Environment_versions(ctx, field)
-			case "labels":
-				return ec.fieldContext_Environment_labels(ctx, field)
-			case "upgradeDelayDays":
-				return ec.fieldContext_Environment_upgradeDelayDays(ctx, field)
-			case "maintenanceWindow":
-				return ec.fieldContext_Environment_maintenanceWindow(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_environmentSetAutoUpgrade_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Mutation_environmentSetUpgradeDelayDays(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Mutation_environmentSetUpgradeDelayDays,
-		func(ctx context.Context) (any, error) {
-			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Mutation().EnvironmentSetUpgradeDelayDays(ctx, fc.Args["environmentID"].(uuid.UUID), fc.Args["delayDays"].(int))
-		},
-		nil,
-		ec.marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironment,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Mutation_environmentSetUpgradeDelayDays(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Environment_id(ctx, field)
-			case "name":
-				return ec.fieldContext_Environment_name(ctx, field)
-			case "description":
-				return ec.fieldContext_Environment_description(ctx, field)
-			case "featureStates":
-				return ec.fieldContext_Environment_featureStates(ctx, field)
-			case "created":
-				return ec.fieldContext_Environment_created(ctx, field)
-			case "lastModified":
-				return ec.fieldContext_Environment_lastModified(ctx, field)
-			case "kind":
-				return ec.fieldContext_Environment_kind(ctx, field)
-			case "gcpProjectID":
-				return ec.fieldContext_Environment_gcpProjectID(ctx, field)
-			case "health":
-				return ec.fieldContext_Environment_health(ctx, field)
-			case "releases":
-				return ec.fieldContext_Environment_releases(ctx, field)
-			case "nodes":
-				return ec.fieldContext_Environment_nodes(ctx, field)
-			case "values":
-				return ec.fieldContext_Environment_values(ctx, field)
-			case "tenant":
-				return ec.fieldContext_Environment_tenant(ctx, field)
-			case "warnings":
-				return ec.fieldContext_Environment_warnings(ctx, field)
-			case "auditLog":
-				return ec.fieldContext_Environment_auditLog(ctx, field)
-			case "features":
-				return ec.fieldContext_Environment_features(ctx, field)
-			case "feature":
-				return ec.fieldContext_Environment_feature(ctx, field)
-			case "reconcile":
-				return ec.fieldContext_Environment_reconcile(ctx, field)
-			case "autoUpgrade":
-				return ec.fieldContext_Environment_autoUpgrade(ctx, field)
-			case "clusterUpgradeHistory":
-				return ec.fieldContext_Environment_clusterUpgradeHistory(ctx, field)
-			case "clusterUpgradeStatus":
-				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
-			case "versions":
-				return ec.fieldContext_Environment_versions(ctx, field)
-			case "labels":
-				return ec.fieldContext_Environment_labels(ctx, field)
-			case "upgradeDelayDays":
-				return ec.fieldContext_Environment_upgradeDelayDays(ctx, field)
-			case "maintenanceWindow":
-				return ec.fieldContext_Environment_maintenanceWindow(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_environmentSetUpgradeDelayDays_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Mutation_environmentSetMaintenanceWindow(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Mutation_environmentSetMaintenanceWindow,
-		func(ctx context.Context) (any, error) {
-			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Mutation().EnvironmentSetMaintenanceWindow(ctx, fc.Args["environmentID"].(uuid.UUID), fc.Args["window"].(*model.MaintenanceWindowInput))
-		},
-		nil,
-		ec.marshalNEnvironment2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironment,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Mutation_environmentSetMaintenanceWindow(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Environment_id(ctx, field)
-			case "name":
-				return ec.fieldContext_Environment_name(ctx, field)
-			case "description":
-				return ec.fieldContext_Environment_description(ctx, field)
-			case "featureStates":
-				return ec.fieldContext_Environment_featureStates(ctx, field)
-			case "created":
-				return ec.fieldContext_Environment_created(ctx, field)
-			case "lastModified":
-				return ec.fieldContext_Environment_lastModified(ctx, field)
-			case "kind":
-				return ec.fieldContext_Environment_kind(ctx, field)
-			case "gcpProjectID":
-				return ec.fieldContext_Environment_gcpProjectID(ctx, field)
-			case "health":
-				return ec.fieldContext_Environment_health(ctx, field)
-			case "releases":
-				return ec.fieldContext_Environment_releases(ctx, field)
-			case "nodes":
-				return ec.fieldContext_Environment_nodes(ctx, field)
-			case "values":
-				return ec.fieldContext_Environment_values(ctx, field)
-			case "tenant":
-				return ec.fieldContext_Environment_tenant(ctx, field)
-			case "warnings":
-				return ec.fieldContext_Environment_warnings(ctx, field)
-			case "auditLog":
-				return ec.fieldContext_Environment_auditLog(ctx, field)
-			case "features":
-				return ec.fieldContext_Environment_features(ctx, field)
-			case "feature":
-				return ec.fieldContext_Environment_feature(ctx, field)
-			case "reconcile":
-				return ec.fieldContext_Environment_reconcile(ctx, field)
-			case "autoUpgrade":
-				return ec.fieldContext_Environment_autoUpgrade(ctx, field)
-			case "clusterUpgradeHistory":
-				return ec.fieldContext_Environment_clusterUpgradeHistory(ctx, field)
-			case "clusterUpgradeStatus":
-				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
-			case "versions":
-				return ec.fieldContext_Environment_versions(ctx, field)
-			case "labels":
-				return ec.fieldContext_Environment_labels(ctx, field)
-			case "upgradeDelayDays":
-				return ec.fieldContext_Environment_upgradeDelayDays(ctx, field)
-			case "maintenanceWindow":
-				return ec.fieldContext_Environment_maintenanceWindow(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_environmentSetMaintenanceWindow_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Mutation_clusterUpgradeBypassDelay(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Mutation_clusterUpgradeBypassDelay,
-		func(ctx context.Context) (any, error) {
-			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Mutation().ClusterUpgradeBypassDelay(ctx, fc.Args["upgradeID"].(uuid.UUID))
-		},
-		nil,
-		ec.marshalNClusterUpgradeStatus2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐClusterUpgradeStatus,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Mutation_clusterUpgradeBypassDelay(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_ClusterUpgradeStatus_id(ctx, field)
-			case "upgradeStatus":
-				return ec.fieldContext_ClusterUpgradeStatus_upgradeStatus(ctx, field)
-			case "version":
-				return ec.fieldContext_ClusterUpgradeStatus_version(ctx, field)
-			case "lastModified":
-				return ec.fieldContext_ClusterUpgradeStatus_lastModified(ctx, field)
-			case "startTime":
-				return ec.fieldContext_ClusterUpgradeStatus_startTime(ctx, field)
-			case "upgradeStartTime":
-				return ec.fieldContext_ClusterUpgradeStatus_upgradeStartTime(ctx, field)
-			case "operations":
-				return ec.fieldContext_ClusterUpgradeStatus_operations(ctx, field)
-			case "environment":
-				return ec.fieldContext_ClusterUpgradeStatus_environment(ctx, field)
-			case "isAutomatic":
-				return ec.fieldContext_ClusterUpgradeStatus_isAutomatic(ctx, field)
-			case "actor":
-				return ec.fieldContext_ClusterUpgradeStatus_actor(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type ClusterUpgradeStatus", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_clusterUpgradeBypassDelay_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -10899,10 +8334,6 @@ func (ec *executionContext) fieldContext_Mutation_tenantCreate(ctx context.Conte
 				return ec.fieldContext_Tenant_lastModified(ctx, field)
 			case "warnings":
 				return ec.fieldContext_Tenant_warnings(ctx, field)
-			case "upgradeDelayDays":
-				return ec.fieldContext_Tenant_upgradeDelayDays(ctx, field)
-			case "clusterUpgradeHistory":
-				return ec.fieldContext_Tenant_clusterUpgradeHistory(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tenant", field.Name)
 		},
@@ -10962,10 +8393,6 @@ func (ec *executionContext) fieldContext_Mutation_tenantSetUpgradeDelayDays(ctx 
 				return ec.fieldContext_Tenant_lastModified(ctx, field)
 			case "warnings":
 				return ec.fieldContext_Tenant_warnings(ctx, field)
-			case "upgradeDelayDays":
-				return ec.fieldContext_Tenant_upgradeDelayDays(ctx, field)
-			case "clusterUpgradeHistory":
-				return ec.fieldContext_Tenant_clusterUpgradeHistory(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tenant", field.Name)
 		},
@@ -11073,80 +8500,10 @@ func (ec *executionContext) fieldContext_NaisdWarning_environment(_ context.Cont
 				return ec.fieldContext_Environment_feature(ctx, field)
 			case "reconcile":
 				return ec.fieldContext_Environment_reconcile(ctx, field)
-			case "autoUpgrade":
-				return ec.fieldContext_Environment_autoUpgrade(ctx, field)
-			case "clusterUpgradeHistory":
-				return ec.fieldContext_Environment_clusterUpgradeHistory(ctx, field)
-			case "clusterUpgradeStatus":
-				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
-			case "versions":
-				return ec.fieldContext_Environment_versions(ctx, field)
 			case "labels":
 				return ec.fieldContext_Environment_labels(ctx, field)
-			case "upgradeDelayDays":
-				return ec.fieldContext_Environment_upgradeDelayDays(ctx, field)
-			case "maintenanceWindow":
-				return ec.fieldContext_Environment_maintenanceWindow(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _NodePool_name(ctx context.Context, field graphql.CollectedField, obj *model.NodePool) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_NodePool_name,
-		func(ctx context.Context) (any, error) {
-			return obj.Name, nil
-		},
-		nil,
-		ec.marshalNString2string,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_NodePool_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "NodePool",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _NodePool_version(ctx context.Context, field graphql.CollectedField, obj *model.NodePool) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_NodePool_version,
-		func(ctx context.Context) (any, error) {
-			return obj.Version, nil
-		},
-		nil,
-		ec.marshalNString2string,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_NodePool_version(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "NodePool",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -11978,10 +9335,6 @@ func (ec *executionContext) fieldContext_Query_tenant(ctx context.Context, field
 				return ec.fieldContext_Tenant_lastModified(ctx, field)
 			case "warnings":
 				return ec.fieldContext_Tenant_warnings(ctx, field)
-			case "upgradeDelayDays":
-				return ec.fieldContext_Tenant_upgradeDelayDays(ctx, field)
-			case "clusterUpgradeHistory":
-				return ec.fieldContext_Tenant_clusterUpgradeHistory(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tenant", field.Name)
 		},
@@ -11994,55 +9347,6 @@ func (ec *executionContext) fieldContext_Query_tenant(ctx context.Context, field
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_tenant_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_clusterUpgradeHistory(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Query_clusterUpgradeHistory,
-		func(ctx context.Context) (any, error) {
-			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Query().ClusterUpgradeHistory(ctx, fc.Args["limit"].(*int), fc.Args["offset"].(*int))
-		},
-		nil,
-		ec.marshalNClusterUpgradeHistoryResult2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐClusterUpgradeHistoryResult,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Query_clusterUpgradeHistory(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "items":
-				return ec.fieldContext_ClusterUpgradeHistoryResult_items(ctx, field)
-			case "totalCount":
-				return ec.fieldContext_ClusterUpgradeHistoryResult_totalCount(ctx, field)
-			case "hasMore":
-				return ec.fieldContext_ClusterUpgradeHistoryResult_hasMore(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type ClusterUpgradeHistoryResult", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_clusterUpgradeHistory_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -12089,10 +9393,6 @@ func (ec *executionContext) fieldContext_Query_tenants(_ context.Context, field 
 				return ec.fieldContext_Tenant_lastModified(ctx, field)
 			case "warnings":
 				return ec.fieldContext_Tenant_warnings(ctx, field)
-			case "upgradeDelayDays":
-				return ec.fieldContext_Tenant_upgradeDelayDays(ctx, field)
-			case "clusterUpgradeHistory":
-				return ec.fieldContext_Tenant_clusterUpgradeHistory(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tenant", field.Name)
 		},
@@ -13466,20 +10766,8 @@ func (ec *executionContext) fieldContext_Tenant_environments(_ context.Context, 
 				return ec.fieldContext_Environment_feature(ctx, field)
 			case "reconcile":
 				return ec.fieldContext_Environment_reconcile(ctx, field)
-			case "autoUpgrade":
-				return ec.fieldContext_Environment_autoUpgrade(ctx, field)
-			case "clusterUpgradeHistory":
-				return ec.fieldContext_Environment_clusterUpgradeHistory(ctx, field)
-			case "clusterUpgradeStatus":
-				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
-			case "versions":
-				return ec.fieldContext_Environment_versions(ctx, field)
 			case "labels":
 				return ec.fieldContext_Environment_labels(ctx, field)
-			case "upgradeDelayDays":
-				return ec.fieldContext_Environment_upgradeDelayDays(ctx, field)
-			case "maintenanceWindow":
-				return ec.fieldContext_Environment_maintenanceWindow(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -13548,20 +10836,8 @@ func (ec *executionContext) fieldContext_Tenant_environment(ctx context.Context,
 				return ec.fieldContext_Environment_feature(ctx, field)
 			case "reconcile":
 				return ec.fieldContext_Environment_reconcile(ctx, field)
-			case "autoUpgrade":
-				return ec.fieldContext_Environment_autoUpgrade(ctx, field)
-			case "clusterUpgradeHistory":
-				return ec.fieldContext_Environment_clusterUpgradeHistory(ctx, field)
-			case "clusterUpgradeStatus":
-				return ec.fieldContext_Environment_clusterUpgradeStatus(ctx, field)
-			case "versions":
-				return ec.fieldContext_Environment_versions(ctx, field)
 			case "labels":
 				return ec.fieldContext_Environment_labels(ctx, field)
-			case "upgradeDelayDays":
-				return ec.fieldContext_Environment_upgradeDelayDays(ctx, field)
-			case "maintenanceWindow":
-				return ec.fieldContext_Environment_maintenanceWindow(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Environment", field.Name)
 		},
@@ -13663,84 +10939,6 @@ func (ec *executionContext) fieldContext_Tenant_warnings(_ context.Context, fiel
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("FieldContext.Child cannot be called on type INTERFACE")
 		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Tenant_upgradeDelayDays(ctx context.Context, field graphql.CollectedField, obj *model.Tenant) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Tenant_upgradeDelayDays,
-		func(ctx context.Context) (any, error) {
-			return obj.UpgradeDelayDays, nil
-		},
-		nil,
-		ec.marshalNInt2int32,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Tenant_upgradeDelayDays(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Tenant",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Int does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Tenant_clusterUpgradeHistory(ctx context.Context, field graphql.CollectedField, obj *model.Tenant) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Tenant_clusterUpgradeHistory,
-		func(ctx context.Context) (any, error) {
-			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Tenant().ClusterUpgradeHistory(ctx, obj, fc.Args["limit"].(*int), fc.Args["offset"].(*int))
-		},
-		nil,
-		ec.marshalNClusterUpgradeHistoryResult2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐClusterUpgradeHistoryResult,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Tenant_clusterUpgradeHistory(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Tenant",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "items":
-				return ec.fieldContext_ClusterUpgradeHistoryResult_items(ctx, field)
-			case "totalCount":
-				return ec.fieldContext_ClusterUpgradeHistoryResult_totalCount(ctx, field)
-			case "hasMore":
-				return ec.fieldContext_ClusterUpgradeHistoryResult_hasMore(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type ClusterUpgradeHistoryResult", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Tenant_clusterUpgradeHistory_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
 	}
 	return fc, nil
 }
@@ -15673,87 +12871,6 @@ func (ec *executionContext) unmarshalInputEnvironmentUpdate(ctx context.Context,
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputEnvironmentUpgrade(ctx context.Context, obj any) (model.EnvironmentUpgrade, error) {
-	var it model.EnvironmentUpgrade
-	if obj == nil {
-		return it, nil
-	}
-
-	asMap := map[string]any{}
-	for k, v := range obj.(map[string]any) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"version", "envID"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "version":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("version"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Version = data
-		case "envID":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("envID"))
-			data, err := ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.EnvID = data
-		}
-	}
-	return it, nil
-}
-
-func (ec *executionContext) unmarshalInputMaintenanceWindowInput(ctx context.Context, obj any) (model.MaintenanceWindowInput, error) {
-	var it model.MaintenanceWindowInput
-	if obj == nil {
-		return it, nil
-	}
-
-	asMap := map[string]any{}
-	for k, v := range obj.(map[string]any) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"startTime", "endTime", "days"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "startTime":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("startTime"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.StartTime = data
-		case "endTime":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("endTime"))
-			data, err := ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.EndTime = data
-		case "days":
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("days"))
-			data, err := ec.unmarshalNDayOfWeek2ᚕgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐDayOfWeekᚄ(ctx, v)
-			if err != nil {
-				return it, err
-			}
-			it.Days = data
-		}
-	}
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputNewConfiguration(ctx context.Context, obj any) (model.NewConfiguration, error) {
 	var it model.NewConfiguration
 	if obj == nil {
@@ -15967,13 +13084,6 @@ func (ec *executionContext) _Update(ctx context.Context, sel ast.SelectionSet, o
 			return graphql.Null
 		}
 		return ec._Configuration(ctx, sel, obj)
-	case model.ClusterUpgradeStatus:
-		return ec._ClusterUpgradeStatus(ctx, sel, &obj)
-	case *model.ClusterUpgradeStatus:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._ClusterUpgradeStatus(ctx, sel, obj)
 	default:
 		if typedObj, ok := obj.(graphql.Marshaler); ok {
 			return typedObj
@@ -16050,223 +13160,6 @@ func (ec *executionContext) _AuditLog(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.ProcessDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
-var clusterUpgradeHistoryResultImplementors = []string{"ClusterUpgradeHistoryResult"}
-
-func (ec *executionContext) _ClusterUpgradeHistoryResult(ctx context.Context, sel ast.SelectionSet, obj *model.ClusterUpgradeHistoryResult) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, clusterUpgradeHistoryResultImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("ClusterUpgradeHistoryResult")
-		case "items":
-			out.Values[i] = ec._ClusterUpgradeHistoryResult_items(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "totalCount":
-			out.Values[i] = ec._ClusterUpgradeHistoryResult_totalCount(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "hasMore":
-			out.Values[i] = ec._ClusterUpgradeHistoryResult_hasMore(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.ProcessDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
-var clusterUpgradeStatusImplementors = []string{"ClusterUpgradeStatus", "Update"}
-
-func (ec *executionContext) _ClusterUpgradeStatus(ctx context.Context, sel ast.SelectionSet, obj *model.ClusterUpgradeStatus) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, clusterUpgradeStatusImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("ClusterUpgradeStatus")
-		case "id":
-			out.Values[i] = ec._ClusterUpgradeStatus_id(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
-		case "upgradeStatus":
-			out.Values[i] = ec._ClusterUpgradeStatus_upgradeStatus(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
-		case "version":
-			out.Values[i] = ec._ClusterUpgradeStatus_version(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
-		case "lastModified":
-			out.Values[i] = ec._ClusterUpgradeStatus_lastModified(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
-		case "startTime":
-			out.Values[i] = ec._ClusterUpgradeStatus_startTime(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
-		case "upgradeStartTime":
-			out.Values[i] = ec._ClusterUpgradeStatus_upgradeStartTime(ctx, field, obj)
-		case "operations":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._ClusterUpgradeStatus_operations(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "environment":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._ClusterUpgradeStatus_environment(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "isAutomatic":
-			out.Values[i] = ec._ClusterUpgradeStatus_isAutomatic(ctx, field, obj)
-		case "actor":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._ClusterUpgradeStatus_actor(ctx, field, obj)
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -17586,113 +14479,6 @@ func (ec *executionContext) _Environment(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&out.Invalids, 1)
 			}
-		case "autoUpgrade":
-			out.Values[i] = ec._Environment_autoUpgrade(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
-		case "clusterUpgradeHistory":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Environment_clusterUpgradeHistory(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "clusterUpgradeStatus":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Environment_clusterUpgradeStatus(ctx, field, obj)
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "versions":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Environment_versions(ctx, field, obj)
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "labels":
 			field := field
 
@@ -17706,44 +14492,6 @@ func (ec *executionContext) _Environment(ctx context.Context, sel ast.SelectionS
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "upgradeDelayDays":
-			out.Values[i] = ec._Environment_upgradeDelayDays(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
-		case "maintenanceWindow":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Environment_maintenanceWindow(ctx, field, obj)
 				return res
 			}
 
@@ -17834,105 +14582,6 @@ func (ec *executionContext) _EnvironmentLabel(ctx context.Context, sel ast.Selec
 	return out
 }
 
-var environmentOperationImplementors = []string{"EnvironmentOperation"}
-
-func (ec *executionContext) _EnvironmentOperation(ctx context.Context, sel ast.SelectionSet, obj *model.EnvironmentOperation) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, environmentOperationImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("EnvironmentOperation")
-		case "id":
-			out.Values[i] = ec._EnvironmentOperation_id(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "name":
-			out.Values[i] = ec._EnvironmentOperation_name(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "status":
-			out.Values[i] = ec._EnvironmentOperation_status(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "type":
-			out.Values[i] = ec._EnvironmentOperation_type(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "target":
-			out.Values[i] = ec._EnvironmentOperation_target(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "detail":
-			out.Values[i] = ec._EnvironmentOperation_detail(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "startTime":
-			out.Values[i] = ec._EnvironmentOperation_startTime(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "lastModified":
-			out.Values[i] = ec._EnvironmentOperation_lastModified(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "nodesTotal":
-			out.Values[i] = ec._EnvironmentOperation_nodesTotal(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "nodesFailed":
-			out.Values[i] = ec._EnvironmentOperation_nodesFailed(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "nodesCompleted":
-			out.Values[i] = ec._EnvironmentOperation_nodesCompleted(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "nodesDone":
-			out.Values[i] = ec._EnvironmentOperation_nodesDone(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "nodePdbDelaySeconds":
-			out.Values[i] = ec._EnvironmentOperation_nodePdbDelaySeconds(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.ProcessDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
 var environmentValueImplementors = []string{"EnvironmentValue"}
 
 func (ec *executionContext) _EnvironmentValue(ctx context.Context, sel ast.SelectionSet, obj *model.EnvironmentValue) graphql.Marshaler {
@@ -17956,60 +14605,6 @@ func (ec *executionContext) _EnvironmentValue(ctx context.Context, sel ast.Selec
 			}
 		case "knownUses":
 			out.Values[i] = ec._EnvironmentValue_knownUses(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.ProcessDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
-var environmentVersionsImplementors = []string{"EnvironmentVersions"}
-
-func (ec *executionContext) _EnvironmentVersions(ctx context.Context, sel ast.SelectionSet, obj *model.EnvironmentVersions) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, environmentVersionsImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("EnvironmentVersions")
-		case "apiserver":
-			out.Values[i] = ec._EnvironmentVersions_apiserver(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "availableVersions":
-			out.Values[i] = ec._EnvironmentVersions_availableVersions(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "channel":
-			out.Values[i] = ec._EnvironmentVersions_channel(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "nodePools":
-			out.Values[i] = ec._EnvironmentVersions_nodePools(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -19134,55 +15729,6 @@ func (ec *executionContext) _LogLine(ctx context.Context, sel ast.SelectionSet, 
 	return out
 }
 
-var maintenanceWindowImplementors = []string{"MaintenanceWindow"}
-
-func (ec *executionContext) _MaintenanceWindow(ctx context.Context, sel ast.SelectionSet, obj *model.MaintenanceWindow) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, maintenanceWindowImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("MaintenanceWindow")
-		case "startTime":
-			out.Values[i] = ec._MaintenanceWindow_startTime(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "endTime":
-			out.Values[i] = ec._MaintenanceWindow_endTime(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "days":
-			out.Values[i] = ec._MaintenanceWindow_days(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.ProcessDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
 var mutationImplementors = []string{"Mutation"}
 
 func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet) graphql.Marshaler {
@@ -19254,41 +15800,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "environmentSetReconcile":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_environmentSetReconcile(ctx, field)
-			})
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "environmentUpgrade":
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_environmentUpgrade(ctx, field)
-			})
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "environmentSetAutoUpgrade":
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_environmentSetAutoUpgrade(ctx, field)
-			})
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "environmentSetUpgradeDelayDays":
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_environmentSetUpgradeDelayDays(ctx, field)
-			})
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "environmentSetMaintenanceWindow":
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_environmentSetMaintenanceWindow(ctx, field)
-			})
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "clusterUpgradeBypassDelay":
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_clusterUpgradeBypassDelay(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -19410,50 +15921,6 @@ func (ec *executionContext) _NaisdWarning(ctx context.Context, sel ast.Selection
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.ProcessDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
-var nodePoolImplementors = []string{"NodePool"}
-
-func (ec *executionContext) _NodePool(ctx context.Context, sel ast.SelectionSet, obj *model.NodePool) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, nodePoolImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("NodePool")
-		case "name":
-			out.Values[i] = ec._NodePool_name(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "version":
-			out.Values[i] = ec._NodePool_version(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -19833,28 +16300,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_tenant(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "clusterUpgradeHistory":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_clusterUpgradeHistory(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -20578,47 +17023,6 @@ func (ec *executionContext) _Tenant(ctx context.Context, sel ast.SelectionSet, o
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-		case "upgradeDelayDays":
-			out.Values[i] = ec._Tenant_upgradeDelayDays(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
-		case "clusterUpgradeHistory":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Tenant_clusterUpgradeHistory(ctx, field, obj)
-				if res == graphql.Null {
-					atomic.AddUint32(&fs.Invalids, 1)
-				}
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -21165,50 +17569,6 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) marshalNClusterUpgradeHistoryResult2githubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐClusterUpgradeHistoryResult(ctx context.Context, sel ast.SelectionSet, v model.ClusterUpgradeHistoryResult) graphql.Marshaler {
-	return ec._ClusterUpgradeHistoryResult(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNClusterUpgradeHistoryResult2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐClusterUpgradeHistoryResult(ctx context.Context, sel ast.SelectionSet, v *model.ClusterUpgradeHistoryResult) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._ClusterUpgradeHistoryResult(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNClusterUpgradeStatus2githubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐClusterUpgradeStatus(ctx context.Context, sel ast.SelectionSet, v model.ClusterUpgradeStatus) graphql.Marshaler {
-	return ec._ClusterUpgradeStatus(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNClusterUpgradeStatus2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐClusterUpgradeStatusᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ClusterUpgradeStatus) graphql.Marshaler {
-	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
-		fc := graphql.GetFieldContext(ctx)
-		fc.Result = &v[i]
-		return ec.marshalNClusterUpgradeStatus2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐClusterUpgradeStatus(ctx, sel, v[i])
-	})
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
-}
-
-func (ec *executionContext) marshalNClusterUpgradeStatus2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐClusterUpgradeStatus(ctx context.Context, sel ast.SelectionSet, v *model.ClusterUpgradeStatus) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._ClusterUpgradeStatus(ctx, sel, v)
-}
-
 func (ec *executionContext) marshalNComputedValue2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐComputedValueᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ComputedValue) graphql.Marshaler {
 	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
 		fc := graphql.GetFieldContext(ctx)
@@ -21378,47 +17738,6 @@ func (ec *executionContext) marshalNCostSeries2ᚖgithubᚗcomᚋnaisᚋfasitᚋ
 func (ec *executionContext) unmarshalNCreateDeploymentInput2githubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐCreateDeploymentInput(ctx context.Context, v any) (model.CreateDeploymentInput, error) {
 	res, err := ec.unmarshalInputCreateDeploymentInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) unmarshalNDayOfWeek2githubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐDayOfWeek(ctx context.Context, v any) (model.DayOfWeek, error) {
-	var res model.DayOfWeek
-	err := res.UnmarshalGQL(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNDayOfWeek2githubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐDayOfWeek(ctx context.Context, sel ast.SelectionSet, v model.DayOfWeek) graphql.Marshaler {
-	return v
-}
-
-func (ec *executionContext) unmarshalNDayOfWeek2ᚕgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐDayOfWeekᚄ(ctx context.Context, v any) ([]model.DayOfWeek, error) {
-	var vSlice []any
-	vSlice = graphql.CoerceList(v)
-	var err error
-	res := make([]model.DayOfWeek, len(vSlice))
-	for i := range vSlice {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalNDayOfWeek2githubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐDayOfWeek(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) marshalNDayOfWeek2ᚕgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐDayOfWeekᚄ(ctx context.Context, sel ast.SelectionSet, v []model.DayOfWeek) graphql.Marshaler {
-	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
-		fc := graphql.GetFieldContext(ctx)
-		fc.Result = &v[i]
-		return ec.marshalNDayOfWeek2githubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐDayOfWeek(ctx, sel, v[i])
-	})
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
 }
 
 func (ec *executionContext) marshalNDependency2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐDependencyᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Dependency) graphql.Marshaler {
@@ -21643,32 +17962,6 @@ func (ec *executionContext) marshalNEnvironmentLabel2ᚖgithubᚗcomᚋnaisᚋfa
 		return graphql.Null
 	}
 	return ec._EnvironmentLabel(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNEnvironmentOperation2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironmentOperationᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.EnvironmentOperation) graphql.Marshaler {
-	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
-		fc := graphql.GetFieldContext(ctx)
-		fc.Result = &v[i]
-		return ec.marshalNEnvironmentOperation2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironmentOperation(ctx, sel, v[i])
-	})
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
-}
-
-func (ec *executionContext) marshalNEnvironmentOperation2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironmentOperation(ctx context.Context, sel ast.SelectionSet, v *model.EnvironmentOperation) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._EnvironmentOperation(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNEnvironmentUpdate2githubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironmentUpdate(ctx context.Context, v any) (model.EnvironmentUpdate, error) {
@@ -21924,22 +18217,6 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 	return res
 }
 
-func (ec *executionContext) unmarshalNInt2int32(ctx context.Context, v any) (int32, error) {
-	res, err := graphql.UnmarshalInt32(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNInt2int32(ctx context.Context, sel ast.SelectionSet, v int32) graphql.Marshaler {
-	_ = sel
-	res := graphql.MarshalInt32(v)
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
-		}
-	}
-	return res
-}
-
 func (ec *executionContext) marshalNKubernetesNode2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐKubernetesNodeᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.KubernetesNode) graphql.Marshaler {
 	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
 		fc := graphql.GetFieldContext(ctx)
@@ -22045,32 +18322,6 @@ func (ec *executionContext) marshalNLogLine2ᚖgithubᚗcomᚋnaisᚋfasitᚋint
 func (ec *executionContext) unmarshalNNewConfiguration2githubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐNewConfiguration(ctx context.Context, v any) (model.NewConfiguration, error) {
 	res, err := ec.unmarshalInputNewConfiguration(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNNodePool2ᚕᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐNodePoolᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.NodePool) graphql.Marshaler {
-	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
-		fc := graphql.GetFieldContext(ctx)
-		fc.Result = &v[i]
-		return ec.marshalNNodePool2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐNodePool(ctx, sel, v[i])
-	})
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
-}
-
-func (ec *executionContext) marshalNNodePool2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐNodePool(ctx context.Context, sel ast.SelectionSet, v *model.NodePool) graphql.Marshaler {
-	if v == nil {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
-		}
-		return graphql.Null
-	}
-	return ec._NodePool(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNPlayground2githubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐPlayground(ctx context.Context, sel ast.SelectionSet, v model.Playground) graphql.Marshaler {
@@ -22358,16 +18609,6 @@ func (ec *executionContext) unmarshalNUpdateConfiguration2githubᚗcomᚋnaisᚋ
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNUpgradeStatus2githubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐUpgradeStatus(ctx context.Context, v any) (model.UpgradeStatus, error) {
-	var res model.UpgradeStatus
-	err := res.UnmarshalGQL(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNUpgradeStatus2githubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐUpgradeStatus(ctx context.Context, sel ast.SelectionSet, v model.UpgradeStatus) graphql.Marshaler {
-	return v
-}
-
 func (ec *executionContext) marshalNValue2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐValue(ctx context.Context, sel ast.SelectionSet, v *model.Value) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -22575,13 +18816,6 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return res
 }
 
-func (ec *executionContext) marshalOClusterUpgradeStatus2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐClusterUpgradeStatus(ctx context.Context, sel ast.SelectionSet, v *model.ClusterUpgradeStatus) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._ClusterUpgradeStatus(ctx, sel, v)
-}
-
 func (ec *executionContext) marshalOComputed2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐComputed(ctx context.Context, sel ast.SelectionSet, v *model.Computed) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -22602,21 +18836,6 @@ func (ec *executionContext) unmarshalOCostFilter2ᚖgithubᚗcomᚋnaisᚋfasit�
 	}
 	res, err := ec.unmarshalInputCostFilter(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) unmarshalOEnvironmentUpgrade2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironmentUpgrade(ctx context.Context, v any) (*model.EnvironmentUpgrade, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputEnvironmentUpgrade(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalOEnvironmentVersions2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐEnvironmentVersions(ctx context.Context, sel ast.SelectionSet, v *model.EnvironmentVersions) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._EnvironmentVersions(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOFeature2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐFeature(ctx context.Context, sel ast.SelectionSet, v *model.Feature) graphql.Marshaler {
@@ -22649,39 +18868,6 @@ func (ec *executionContext) marshalOID2ᚖgithubᚗcomᚋgoogleᚋuuidᚐUUID(ct
 	_ = ctx
 	res := graph.MarshalUUID(*v)
 	return res
-}
-
-func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v any) (*int, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := graphql.UnmarshalInt(v)
-	return &res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.SelectionSet, v *int) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	_ = sel
-	_ = ctx
-	res := graphql.MarshalInt(*v)
-	return res
-}
-
-func (ec *executionContext) marshalOMaintenanceWindow2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐMaintenanceWindow(ctx context.Context, sel ast.SelectionSet, v *model.MaintenanceWindow) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._MaintenanceWindow(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOMaintenanceWindowInput2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐMaintenanceWindowInput(ctx context.Context, v any) (*model.MaintenanceWindowInput, error) {
-	if v == nil {
-		return nil, nil
-	}
-	res, err := ec.unmarshalInputMaintenanceWindowInput(ctx, v)
-	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalORawMessage2encodingᚋjsonᚐRawMessage(ctx context.Context, v any) (json.RawMessage, error) {

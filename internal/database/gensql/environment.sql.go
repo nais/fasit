@@ -234,43 +234,6 @@ func (q *Queries) EnvironmentIDByNames(ctx context.Context, arg EnvironmentIDByN
 	return id, err
 }
 
-const environmentSetAutoUpgrade = `-- name: EnvironmentSetAutoUpgrade :one
-UPDATE
-	environments
-SET
-	auto_upgrade = $1
-WHERE
-	id = $2
-RETURNING
-	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade, upgrade_delay_days, maintenance_window, labels
-`
-
-type EnvironmentSetAutoUpgradeParams struct {
-	AutoUpgrade bool
-	ID          uuid.UUID
-}
-
-func (q *Queries) EnvironmentSetAutoUpgrade(ctx context.Context, arg EnvironmentSetAutoUpgradeParams) (Environment, error) {
-	row := q.db.QueryRow(ctx, environmentSetAutoUpgrade, arg.AutoUpgrade, arg.ID)
-	var i Environment
-	err := row.Scan(
-		&i.ID,
-		&i.TenantID,
-		&i.Name,
-		&i.Kind,
-		&i.Description,
-		&i.Created,
-		&i.LastModified,
-		&i.Ci,
-		&i.Reconcile,
-		&i.AutoUpgrade,
-		&i.UpgradeDelayDays,
-		&i.MaintenanceWindow,
-		&i.Labels,
-	)
-	return i, err
-}
-
 const environmentSetLabels = `-- name: EnvironmentSetLabels :exec
 UPDATE
 	environments
@@ -288,43 +251,6 @@ type EnvironmentSetLabelsParams struct {
 func (q *Queries) EnvironmentSetLabels(ctx context.Context, arg EnvironmentSetLabelsParams) error {
 	_, err := q.db.Exec(ctx, environmentSetLabels, arg.Labels, arg.ID)
 	return err
-}
-
-const environmentSetMaintenanceWindow = `-- name: EnvironmentSetMaintenanceWindow :one
-UPDATE
-	environments
-SET
-	maintenance_window = $1
-WHERE
-	id = $2
-RETURNING
-	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade, upgrade_delay_days, maintenance_window, labels
-`
-
-type EnvironmentSetMaintenanceWindowParams struct {
-	MaintenanceWindow []byte
-	ID                uuid.UUID
-}
-
-func (q *Queries) EnvironmentSetMaintenanceWindow(ctx context.Context, arg EnvironmentSetMaintenanceWindowParams) (Environment, error) {
-	row := q.db.QueryRow(ctx, environmentSetMaintenanceWindow, arg.MaintenanceWindow, arg.ID)
-	var i Environment
-	err := row.Scan(
-		&i.ID,
-		&i.TenantID,
-		&i.Name,
-		&i.Kind,
-		&i.Description,
-		&i.Created,
-		&i.LastModified,
-		&i.Ci,
-		&i.Reconcile,
-		&i.AutoUpgrade,
-		&i.UpgradeDelayDays,
-		&i.MaintenanceWindow,
-		&i.Labels,
-	)
-	return i, err
 }
 
 const environmentSetReconcile = `-- name: EnvironmentSetReconcile :one
@@ -345,43 +271,6 @@ type EnvironmentSetReconcileParams struct {
 
 func (q *Queries) EnvironmentSetReconcile(ctx context.Context, arg EnvironmentSetReconcileParams) (Environment, error) {
 	row := q.db.QueryRow(ctx, environmentSetReconcile, arg.Reconcile, arg.ID)
-	var i Environment
-	err := row.Scan(
-		&i.ID,
-		&i.TenantID,
-		&i.Name,
-		&i.Kind,
-		&i.Description,
-		&i.Created,
-		&i.LastModified,
-		&i.Ci,
-		&i.Reconcile,
-		&i.AutoUpgrade,
-		&i.UpgradeDelayDays,
-		&i.MaintenanceWindow,
-		&i.Labels,
-	)
-	return i, err
-}
-
-const environmentSetUpgradeDelayDays = `-- name: EnvironmentSetUpgradeDelayDays :one
-UPDATE
-	environments
-SET
-	upgrade_delay_days = $1
-WHERE
-	id = $2
-RETURNING
-	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade, upgrade_delay_days, maintenance_window, labels
-`
-
-type EnvironmentSetUpgradeDelayDaysParams struct {
-	UpgradeDelayDays int32
-	ID               uuid.UUID
-}
-
-func (q *Queries) EnvironmentSetUpgradeDelayDays(ctx context.Context, arg EnvironmentSetUpgradeDelayDaysParams) (Environment, error) {
-	row := q.db.QueryRow(ctx, environmentSetUpgradeDelayDays, arg.UpgradeDelayDays, arg.ID)
 	var i Environment
 	err := row.Scan(
 		&i.ID,
@@ -456,56 +345,6 @@ ORDER BY
 
 func (q *Queries) EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]Environment, error) {
 	rows, err := q.db.Query(ctx, environmentsGet, tenantID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []Environment{}
-	for rows.Next() {
-		var i Environment
-		if err := rows.Scan(
-			&i.ID,
-			&i.TenantID,
-			&i.Name,
-			&i.Kind,
-			&i.Description,
-			&i.Created,
-			&i.LastModified,
-			&i.Ci,
-			&i.Reconcile,
-			&i.AutoUpgrade,
-			&i.UpgradeDelayDays,
-			&i.MaintenanceWindow,
-			&i.Labels,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const environmentsGetByAutoUpgrade = `-- name: EnvironmentsGetByAutoUpgrade :many
-SELECT
-	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade, upgrade_delay_days, maintenance_window, labels
-FROM
-	environments
-WHERE
-	auto_upgrade = TRUE
-ORDER BY
-	CASE WHEN name = 'management' THEN
-		1
-	ELSE
-		2
-	END,
-	name ASC
-`
-
-func (q *Queries) EnvironmentsGetByAutoUpgrade(ctx context.Context) ([]Environment, error) {
-	rows, err := q.db.Query(ctx, environmentsGetByAutoUpgrade)
 	if err != nil {
 		return nil, err
 	}

@@ -30,13 +30,12 @@ func TestRepo_EnvironmentGet(t *testing.T) {
 	}
 
 	want := &model.Environment{
-		ID:               id,
-		TenantID:         tenantID,
-		Name:             "testname",
-		Description:      ptr.To("testdesc"),
-		Kind:             model.EnvironmentKindTenant,
-		Reconcile:        true,
-		UpgradeDelayDays: 0,
+		ID:          id,
+		TenantID:    tenantID,
+		Name:        "testname",
+		Description: ptr.To("testdesc"),
+		Kind:        model.EnvironmentKindTenant,
+		Reconcile:   true,
 	}
 
 	opts := cmpopts.IgnoreFields(model.Environment{}, "Created", "LastModified")
@@ -68,13 +67,12 @@ func TestRepo_EnvironmentsGet(t *testing.T) {
 
 	for i, id := range ids {
 		want = append(want, &model.Environment{
-			ID:               id,
-			TenantID:         tenantID,
-			Name:             fmt.Sprintf("testname%v", i),
-			Description:      ptr.To("testdesc"),
-			Kind:             model.EnvironmentKindManagement,
-			Reconcile:        true,
-			UpgradeDelayDays: 0,
+			ID:          id,
+			TenantID:    tenantID,
+			Name:        fmt.Sprintf("testname%v", i),
+			Description: ptr.To("testdesc"),
+			Kind:        model.EnvironmentKindManagement,
+			Reconcile:   true,
 		})
 	}
 
@@ -106,12 +104,11 @@ func TestRepo_EnvironmentCreate(t *testing.T) {
 	}
 
 	want := &model.Environment{
-		TenantID:         tenantID,
-		Name:             "somename",
-		Description:      ptr.To("somedesc"),
-		Kind:             model.EnvironmentKindTenant,
-		Reconcile:        true,
-		UpgradeDelayDays: 0,
+		TenantID:    tenantID,
+		Name:        "somename",
+		Description: ptr.To("somedesc"),
+		Kind:        model.EnvironmentKindTenant,
+		Reconcile:   true,
 	}
 
 	opts := cmpopts.IgnoreFields(model.Environment{}, "ID", "Created", "LastModified")
@@ -149,12 +146,11 @@ func TestRepo_EnvironmentUpdate(t *testing.T) {
 	}
 
 	want := &model.Environment{
-		TenantID:         tenantID,
-		Name:             "somename",
-		Description:      ptr.To("somedesc2"),
-		Kind:             model.EnvironmentKindTenant,
-		Reconcile:        true,
-		UpgradeDelayDays: 0,
+		TenantID:    tenantID,
+		Name:        "somename",
+		Description: ptr.To("somedesc2"),
+		Kind:        model.EnvironmentKindTenant,
+		Reconcile:   true,
 	}
 
 	opts := cmpopts.IgnoreFields(model.Environment{}, "ID", "Created", "LastModified")
@@ -167,12 +163,11 @@ func TestRepo_EnvironmentUpdate(t *testing.T) {
 		t.Fatal(err)
 	}
 	want2 := &model.Environment{
-		TenantID:         tenantID,
-		Name:             "somename",
-		Description:      ptr.To("somedesc2"),
-		Kind:             model.EnvironmentKindTenant,
-		Reconcile:        true,
-		UpgradeDelayDays: 0,
+		TenantID:    tenantID,
+		Name:        "somename",
+		Description: ptr.To("somedesc2"),
+		Kind:        model.EnvironmentKindTenant,
+		Reconcile:   true,
 	}
 
 	if !cmp.Equal(want2, got, opts) {
