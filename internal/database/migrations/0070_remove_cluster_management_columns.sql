@@ -17,3 +17,4 @@ ALTER TABLE environments
 
 ALTER TABLE tenants
 	ADD COLUMN "upgrade_delay_days" INT NOT NULL DEFAULT 0;
+
