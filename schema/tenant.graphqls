@@ -1,9 +1,5 @@
 extend type Mutation {
   tenantCreate(tenant: TenantCreate!): Tenant!
-  """
-  Set the upgrade delay (in days) for a tenant.
-  """
-  tenantSetUpgradeDelayDays(tenantID: ID!, delayDays: Int!): Tenant!
 }
 
 extend type Query {

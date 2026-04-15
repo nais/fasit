@@ -13,7 +13,7 @@ import (
 
 const getTenant = `-- name: GetTenant :one
 SELECT
-	id, name, description, created, last_modified, ci, upgrade_delay_days
+	id, name, description, created, last_modified, ci
 FROM
 	tenants
 WHERE
@@ -30,14 +30,13 @@ func (q *Queries) GetTenant(ctx context.Context, id uuid.UUID) (Tenant, error) {
 		&i.Created,
 		&i.LastModified,
 		&i.Ci,
-		&i.UpgradeDelayDays,
 	)
 	return i, err
 }
 
 const getTenantByName = `-- name: GetTenantByName :one
 SELECT
-	id, name, description, created, last_modified, ci, upgrade_delay_days
+	id, name, description, created, last_modified, ci
 FROM
 	tenants
 WHERE
@@ -54,14 +53,13 @@ func (q *Queries) GetTenantByName(ctx context.Context, name string) (Tenant, err
 		&i.Created,
 		&i.LastModified,
 		&i.Ci,
-		&i.UpgradeDelayDays,
 	)
 	return i, err
 }
 
 const getTenants = `-- name: GetTenants :many
 SELECT
-	id, name, description, created, last_modified, ci, upgrade_delay_days
+	id, name, description, created, last_modified, ci
 FROM
 	tenants
 ORDER BY
@@ -85,7 +83,6 @@ func (q *Queries) GetTenants(ctx context.Context) ([]Tenant, error) {
 			&i.Created,
 			&i.LastModified,
 			&i.Ci,
-			&i.UpgradeDelayDays,
 		); err != nil {
 			return nil, err
 		}
@@ -105,7 +102,7 @@ VALUES (
 	$1,
 	$2)
 RETURNING
-	id, name, description, created, last_modified, ci, upgrade_delay_days
+	id, name, description, created, last_modified, ci
 `
 
 type TenantCreateParams struct {
@@ -123,14 +120,13 @@ func (q *Queries) TenantCreate(ctx context.Context, arg TenantCreateParams) (Ten
 		&i.Created,
 		&i.LastModified,
 		&i.Ci,
-		&i.UpgradeDelayDays,
 	)
 	return i, err
 }
 
 const tenantEnvironments = `-- name: TenantEnvironments :many
 SELECT
-	e.id, e.tenant_id, e.name, e.kind, e.description, e.created, e.last_modified, e.ci, e.reconcile, e.auto_upgrade, e.upgrade_delay_days, e.maintenance_window, e.labels,
+	e.id, e.tenant_id, e.name, e.kind, e.description, e.created, e.last_modified, e.ci, e.reconcile, e.labels,
 	t.name AS tenant_name
 FROM
 	environments e
@@ -148,20 +144,17 @@ ORDER BY
 `
 
 type TenantEnvironmentsRow struct {
-	ID                uuid.UUID
-	TenantID          uuid.UUID
-	Name              string
-	Kind              EnvironmentKind
-	Description       *string
-	Created           pgtype.Timestamptz
-	LastModified      pgtype.Timestamptz
-	Ci                bool
-	Reconcile         bool
-	AutoUpgrade       bool
-	UpgradeDelayDays  int32
-	MaintenanceWindow []byte
-	Labels            types.EnvironmentLabels
-	TenantName        string
+	ID           uuid.UUID
+	TenantID     uuid.UUID
+	Name         string
+	Kind         EnvironmentKind
+	Description  *string
+	Created      pgtype.Timestamptz
+	LastModified pgtype.Timestamptz
+	Ci           bool
+	Reconcile    bool
+	Labels       types.EnvironmentLabels
+	TenantName   string
 }
 
 func (q *Queries) TenantEnvironments(ctx context.Context, all bool) ([]TenantEnvironmentsRow, error) {
@@ -183,9 +176,6 @@ func (q *Queries) TenantEnvironments(ctx context.Context, all bool) ([]TenantEnv
 			&i.LastModified,
 			&i.Ci,
 			&i.Reconcile,
-			&i.AutoUpgrade,
-			&i.UpgradeDelayDays,
-			&i.MaintenanceWindow,
 			&i.Labels,
 			&i.TenantName,
 		); err != nil {

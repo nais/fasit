@@ -25,7 +25,6 @@ func newDeployInstructionsNotifier(ctx context.Context, not *notifier.Notifier, 
 	chCfgGlobal := not.Listen("configurations_global")
 	chCfgEnv := not.Listen("configurations_environment")
 	states := not.Listen("feature_states")
-	clusterUpgrades := not.Listen("cluster_upgrades")
 
 	lf := &updateNotifier{
 		repo:        repo,
@@ -33,7 +32,6 @@ func newDeployInstructionsNotifier(ctx context.Context, not *notifier.Notifier, 
 	}
 
 	go func() {
-		var _ <-chan notifier.Payload = clusterUpgrades
 		lf.run(ctx, chDI, chCfgGlobal, chCfgEnv, states)
 	}()
 

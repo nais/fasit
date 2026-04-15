@@ -15,10 +15,6 @@ func (r *mutationResolver) TenantCreate(ctx context.Context, tenant model.Tenant
 	return environment.CreateTenant(ctx, &tenant)
 }
 
-func (r *mutationResolver) TenantSetUpgradeDelayDays(ctx context.Context, tenantID uuid.UUID, delayDays int) (*model.Tenant, error) {
-	panic(fmt.Errorf("not implemented: TenantSetUpgradeDelayDays - tenantSetUpgradeDelayDays"))
-}
-
 // Tenant is the resolver for the tenant field.
 func (r *queryResolver) Tenant(ctx context.Context, id *uuid.UUID, slug *string) (*model.Tenant, error) {
 	if id != nil {

@@ -263,20 +263,19 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		ConfigurationCreate       func(childComplexity int, configuration model.NewConfiguration) int
-		ConfigurationDelete       func(childComplexity int, id uuid.UUID) int
-		ConfigurationUpdate       func(childComplexity int, id uuid.UUID, configuration model.UpdateConfiguration) int
-		CreateDeployment          func(childComplexity int, input model.CreateDeploymentInput) int
-		DeleteDeployment          func(childComplexity int, deploymentID uuid.UUID) int
-		DeleteHelmInstall         func(childComplexity int, envID uuid.UUID, name string) int
-		EnvironmentCreate         func(childComplexity int, environment model.EnvironmentCreate) int
-		EnvironmentSetReconcile   func(childComplexity int, id uuid.UUID, reconcile bool) int
-		EnvironmentUpdate         func(childComplexity int, id uuid.UUID, input model.EnvironmentUpdate) int
-		FeatureStateSave          func(childComplexity int, envID uuid.UUID, enabled bool, feature string) int
-		Playground                func(childComplexity int, input model.PlaygroundInput) int
-		RolloutMarkFailed         func(childComplexity int, feature string, version string) int
-		TenantCreate              func(childComplexity int, tenant model.TenantCreate) int
-		TenantSetUpgradeDelayDays func(childComplexity int, tenantID uuid.UUID, delayDays int) int
+		ConfigurationCreate     func(childComplexity int, configuration model.NewConfiguration) int
+		ConfigurationDelete     func(childComplexity int, id uuid.UUID) int
+		ConfigurationUpdate     func(childComplexity int, id uuid.UUID, configuration model.UpdateConfiguration) int
+		CreateDeployment        func(childComplexity int, input model.CreateDeploymentInput) int
+		DeleteDeployment        func(childComplexity int, deploymentID uuid.UUID) int
+		DeleteHelmInstall       func(childComplexity int, envID uuid.UUID, name string) int
+		EnvironmentCreate       func(childComplexity int, environment model.EnvironmentCreate) int
+		EnvironmentSetReconcile func(childComplexity int, id uuid.UUID, reconcile bool) int
+		EnvironmentUpdate       func(childComplexity int, id uuid.UUID, input model.EnvironmentUpdate) int
+		FeatureStateSave        func(childComplexity int, envID uuid.UUID, enabled bool, feature string) int
+		Playground              func(childComplexity int, input model.PlaygroundInput) int
+		RolloutMarkFailed       func(childComplexity int, feature string, version string) int
+		TenantCreate            func(childComplexity int, tenant model.TenantCreate) int
 	}
 
 	NaisdWarning struct {
@@ -470,7 +469,6 @@ type MutationResolver interface {
 	RolloutMarkFailed(ctx context.Context, feature string, version string) (*model.Rollout, error)
 	DeleteHelmInstall(ctx context.Context, envID uuid.UUID, name string) (bool, error)
 	TenantCreate(ctx context.Context, tenant model.TenantCreate) (*model.Tenant, error)
-	TenantSetUpgradeDelayDays(ctx context.Context, tenantID uuid.UUID, delayDays int) (*model.Tenant, error)
 }
 type NaisdWarningResolver interface {
 	Environment(ctx context.Context, obj *model.NaisdWarning) (*model.Environment, error)
@@ -1471,17 +1469,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.TenantCreate(childComplexity, args["tenant"].(model.TenantCreate)), true
-	case "Mutation.tenantSetUpgradeDelayDays":
-		if e.ComplexityRoot.Mutation.TenantSetUpgradeDelayDays == nil {
-			break
-		}
-
-		args, err := ec.field_Mutation_tenantSetUpgradeDelayDays_args(ctx, rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.ComplexityRoot.Mutation.TenantSetUpgradeDelayDays(childComplexity, args["tenantID"].(uuid.UUID), args["delayDays"].(int)), true
 
 	case "NaisdWarning.environment":
 		if e.ComplexityRoot.NaisdWarning.Environment == nil {
@@ -2627,10 +2614,6 @@ type Status {
 `, BuiltIn: false},
 	{Name: "../../../schema/tenant.graphqls", Input: `extend type Mutation {
   tenantCreate(tenant: TenantCreate!): Tenant!
-  """
-  Set the upgrade delay (in days) for a tenant.
-  """
-  tenantSetUpgradeDelayDays(tenantID: ID!, delayDays: Int!): Tenant!
 }
 
 extend type Query {
@@ -2887,22 +2870,6 @@ func (ec *executionContext) field_Mutation_tenantCreate_args(ctx context.Context
 		return nil, err
 	}
 	args["tenant"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_tenantSetUpgradeDelayDays_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
-	var err error
-	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "tenantID", ec.unmarshalNID2githubᚗcomᚋgoogleᚋuuidᚐUUID)
-	if err != nil {
-		return nil, err
-	}
-	args["tenantID"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "delayDays", ec.unmarshalNInt2int)
-	if err != nil {
-		return nil, err
-	}
-	args["delayDays"] = arg1
 	return args, nil
 }
 
@@ -8346,65 +8313,6 @@ func (ec *executionContext) fieldContext_Mutation_tenantCreate(ctx context.Conte
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_tenantCreate_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Mutation_tenantSetUpgradeDelayDays(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Mutation_tenantSetUpgradeDelayDays,
-		func(ctx context.Context) (any, error) {
-			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Mutation().TenantSetUpgradeDelayDays(ctx, fc.Args["tenantID"].(uuid.UUID), fc.Args["delayDays"].(int))
-		},
-		nil,
-		ec.marshalNTenant2ᚖgithubᚗcomᚋnaisᚋfasitᚋinternalᚋgraphᚋmodelᚐTenant,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Mutation_tenantSetUpgradeDelayDays(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Mutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Tenant_id(ctx, field)
-			case "name":
-				return ec.fieldContext_Tenant_name(ctx, field)
-			case "description":
-				return ec.fieldContext_Tenant_description(ctx, field)
-			case "environments":
-				return ec.fieldContext_Tenant_environments(ctx, field)
-			case "environment":
-				return ec.fieldContext_Tenant_environment(ctx, field)
-			case "created":
-				return ec.fieldContext_Tenant_created(ctx, field)
-			case "lastModified":
-				return ec.fieldContext_Tenant_lastModified(ctx, field)
-			case "warnings":
-				return ec.fieldContext_Tenant_warnings(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Tenant", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_tenantSetUpgradeDelayDays_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -15835,13 +15743,6 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "tenantCreate":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_tenantCreate(ctx, field)
-			})
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "tenantSetUpgradeDelayDays":
-			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_tenantSetUpgradeDelayDays(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++

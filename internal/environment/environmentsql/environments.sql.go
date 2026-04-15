@@ -22,7 +22,7 @@ VALUES (
 	$3,
 	$4)
 RETURNING
-	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade, upgrade_delay_days, maintenance_window, labels
+	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, labels
 `
 
 type CreateParams struct {
@@ -50,9 +50,6 @@ func (q *Queries) Create(ctx context.Context, arg CreateParams) (Environment, er
 		&i.LastModified,
 		&i.Ci,
 		&i.Reconcile,
-		&i.AutoUpgrade,
-		&i.UpgradeDelayDays,
-		&i.MaintenanceWindow,
 		&i.Labels,
 	)
 	return i, err
@@ -60,7 +57,7 @@ func (q *Queries) Create(ctx context.Context, arg CreateParams) (Environment, er
 
 const get = `-- name: Get :one
 SELECT
-	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, auto_upgrade, upgrade_delay_days, maintenance_window, labels
+	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, labels
 FROM
 	environments
 WHERE
@@ -80,9 +77,6 @@ func (q *Queries) Get(ctx context.Context, id uuid.UUID) (Environment, error) {
 		&i.LastModified,
 		&i.Ci,
 		&i.Reconcile,
-		&i.AutoUpgrade,
-		&i.UpgradeDelayDays,
-		&i.MaintenanceWindow,
 		&i.Labels,
 	)
 	return i, err
@@ -106,7 +100,7 @@ func (q *Queries) GetLabels(ctx context.Context, id uuid.UUID) (types.Environmen
 
 const listCIEnvironmentsForTarget = `-- name: ListCIEnvironmentsForTarget :many
 SELECT DISTINCT
-	e_ci.id, e_ci.tenant_id, e_ci.name, e_ci.kind, e_ci.description, e_ci.created, e_ci.last_modified, e_ci.ci, e_ci.reconcile, e_ci.auto_upgrade, e_ci.upgrade_delay_days, e_ci.maintenance_window, e_ci.labels,
+	e_ci.id, e_ci.tenant_id, e_ci.name, e_ci.kind, e_ci.description, e_ci.created, e_ci.last_modified, e_ci.ci, e_ci.reconcile, e_ci.labels,
 	t.name AS tenant_name
 FROM
 	environments e_ci
@@ -150,9 +144,6 @@ func (q *Queries) ListCIEnvironmentsForTarget(ctx context.Context, target types.
 			&i.Environment.LastModified,
 			&i.Environment.Ci,
 			&i.Environment.Reconcile,
-			&i.Environment.AutoUpgrade,
-			&i.Environment.UpgradeDelayDays,
-			&i.Environment.MaintenanceWindow,
 			&i.Environment.Labels,
 			&i.TenantName,
 		); err != nil {
