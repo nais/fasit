@@ -31,9 +31,7 @@ func newDeployInstructionsNotifier(ctx context.Context, not *notifier.Notifier, 
 		subscribers: make(map[chan<- model.Update]struct{}),
 	}
 
-	go func() {
-		lf.run(ctx, chDI, chCfgGlobal, chCfgEnv, states)
-	}()
+	go lf.run(ctx, chDI, chCfgGlobal, chCfgEnv, states)
 
 	return lf
 }
