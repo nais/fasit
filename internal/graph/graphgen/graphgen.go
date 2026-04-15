@@ -2264,95 +2264,95 @@ enum DeploymentStatusState {
 ) on INPUT_FIELD_DEFINITION | FIELD_DEFINITION
 `, BuiltIn: false},
 	{Name: "../../../schema/environment.graphqls", Input: `enum EnvironmentKind {
-  TENANT
-  MANAGEMENT
-  ONPREM
-  LEGACY
+	TENANT
+	MANAGEMENT
+	ONPREM
+	LEGACY
 }
 
 type Health {
-  reportedAt: Time!
+	reportedAt: Time!
 }
 
 type Release {
-  name: String!
-  feature: Feature
-  version: String!
-  status: String!
-  revision: Int!
-  lastDeployed: Time!
-  created: Time!
-  lastModified: Time!
+	name: String!
+	feature: Feature
+	version: String!
+	status: String!
+	revision: Int!
+	lastDeployed: Time!
+	created: Time!
+	lastModified: Time!
 }
 
 type Environment {
-  id: ID!
-  name: String!
-  description: String
-  featureStates: [FeatureState!]!
-  created: Time!
-  lastModified: Time!
-  kind: EnvironmentKind!
-  gcpProjectID: String
-  health: Health!
-  releases: [Release!]!
-  nodes: [KubernetesNode!]!
-  values: [EnvironmentValue!]!
-  tenant: Tenant!
-  warnings: [Warning!]!
-  auditLog(featureName: String): [AuditLog!]!
-  features: [Feature!]!
-  feature(name: String!): Feature!
-  reconcile: Boolean!
+	id: ID!
+	name: String!
+	description: String
+	featureStates: [FeatureState!]!
+	created: Time!
+	lastModified: Time!
+	kind: EnvironmentKind!
+	gcpProjectID: String
+	health: Health!
+	releases: [Release!]!
+	nodes: [KubernetesNode!]!
+	values: [EnvironmentValue!]!
+	tenant: Tenant!
+	warnings: [Warning!]!
+	auditLog(featureName: String): [AuditLog!]!
+	features: [Feature!]!
+	feature(name: String!): Feature!
+	reconcile: Boolean!
 
-  labels: [EnvironmentLabel!]!
+	labels: [EnvironmentLabel!]!
 }
 
 type EnvironmentLabel {
-  key: String!
-  value: String!
+	key: String!
+	value: String!
 }
 
 type EnvironmentValue {
-  key: String!
-  value: RawMessage!
-  knownUses: Int!
+	key: String!
+	value: RawMessage!
+	knownUses: Int!
 }
 
 """
 EnvironmentCreate contains metadata for creating an environment
 """
 input EnvironmentCreate {
-  name: String!
-  description: String
-  tenantID: ID!
-  kind: EnvironmentKind!
+	name: String!
+	description: String
+	tenantID: ID!
+	kind: EnvironmentKind!
 }
 
 """
 UpdateEnvironment contains metadata for updating an environment
 """
 input EnvironmentUpdate {
-  "description of the environment"
-  description: String
+	"description of the environment"
+	description: String
 }
 
 extend type Mutation {
-  environmentCreate(environment: EnvironmentCreate!): Environment!
-  """
-  updateEnvironment updates an existing environment
-  """
-  environmentUpdate(
-    "id of requested environment."
-    id: ID!
-    "input contains information about the updated environment."
-    input: EnvironmentUpdate!
-  ): Environment!
+	environmentCreate(environment: EnvironmentCreate!): Environment!
+	"""
+	updateEnvironment updates an existing environment
+	"""
+	environmentUpdate(
+		"id of requested environment."
+		id: ID!
+		"input contains information about the updated environment."
+		input: EnvironmentUpdate!
+	): Environment!
 
-  """
-  Change the reconcile flag for an environment
-  """
-  environmentSetReconcile(id: ID!, reconcile: Boolean!): Environment!
+	"""
+	Change the reconcile flag for an environment
+	"""
+	environmentSetReconcile(id: ID!, reconcile: Boolean!): Environment!
 }
 `, BuiltIn: false},
 	{Name: "../../../schema/feature.graphqls", Input: `type Computed {
