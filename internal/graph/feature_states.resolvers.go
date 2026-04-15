@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	pgx "github.com/jackc/pgx/v5"
+	"github.com/nais/fasit/internal/deployment"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/graphgen"
 	"github.com/nais/fasit/internal/graph/model"
@@ -37,7 +38,15 @@ func (r *mutationResolver) FeatureStateSave(ctx context.Context, envID uuid.UUID
 	if err != nil {
 		return nil, err
 	}
-	return featurepkg.FeatureStatesCreateOrUpdate(ctx, envID, feat, enabled)
+	state, err := featurepkg.FeatureStatesCreateOrUpdate(ctx, envID, feat, enabled)
+	if err != nil {
+		return nil, err
+	}
+
+	if enabled && feat.HasDeployments {
+		deployment.TriggerReconcile(ctx, deployment.ReconcileTriggerEvent{})
+	}
+	return state, nil
 }
 
 // FeatureState is the resolver for the featureState field.
