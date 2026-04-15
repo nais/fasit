@@ -2578,67 +2578,67 @@ The subscription root for the Fasit GraphQL API.
 type Subscription
 `, BuiltIn: false},
 	{Name: "../../../schema/status.graphqls", Input: `extend type Subscription {
-  logs(environmentID: ID!, featureName: String!, lastLogID: String): LogLine!
+	logs(environmentID: ID!, featureName: String!, lastLogID: String): LogLine!
 
-  """
-  Updates notifies whenever a feature state has been changed.
-  """
-  updates: Update!
+	"""
+	Updates notifies whenever a feature state has been changed.
+	"""
+	updates: Update!
 }
 
 enum RolloutStatus {
-  UNKNOWN
-  CREATED
-  PENDING
-  DEPLOYED
-  FAILED
+	UNKNOWN
+	CREATED
+	PENDING
+	DEPLOYED
+	FAILED
 }
 
 union Update = Status | Configuration | FeatureState
 
 type LogLine {
-  id: ID!
-  timestamp: Time!
-  message: String!
+	id: ID!
+	timestamp: Time!
+	message: String!
 }
 
 type Status {
-  id: ID!
-  environmentID: ID!
-  version: String!
-  status: RolloutStatus!
-  created: Time!
-  lastModified: Time!
-  log: [LogLine!]!
+	id: ID!
+	environmentID: ID!
+	version: String!
+	status: RolloutStatus!
+	created: Time!
+	lastModified: Time!
+	log: [LogLine!]!
 }
 `, BuiltIn: false},
 	{Name: "../../../schema/tenant.graphqls", Input: `extend type Mutation {
-  tenantCreate(tenant: TenantCreate!): Tenant!
+	tenantCreate(tenant: TenantCreate!): Tenant!
 }
 
 extend type Query {
-  """
-  tenant returns the given tenant.
-  """
-  tenant("id of the requested tenant." id: ID, slug: String): Tenant!
+	"""
+	tenant returns the given tenant.
+	"""
+	tenant("id of the requested tenant." id: ID, slug: String): Tenant!
 
-  tenants: [Tenant!]!
+	tenants: [Tenant!]!
 }
 
 input TenantCreate {
-  name: String!
-  description: String
+	name: String!
+	description: String
 }
 
 type Tenant {
-  id: ID!
-  name: String!
-  description: String
-  environments: [Environment!]!
-  environment(id: ID, slug: String): Environment!
-  created: Time!
-  lastModified: Time!
-  warnings: [Warning!]!
+	id: ID!
+	name: String!
+	description: String
+	environments: [Environment!]!
+	environment(id: ID, slug: String): Environment!
+	created: Time!
+	lastModified: Time!
+	warnings: [Warning!]!
 }
 `, BuiltIn: false},
 	{Name: "../../../schema/userInfo.graphqls", Input: `type userInfo {
