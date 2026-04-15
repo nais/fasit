@@ -24,4 +24,3 @@ WHERE
 ORDER BY
 	created_at DESC
 LIMIT @page_size;
-
