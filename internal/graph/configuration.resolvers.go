@@ -25,7 +25,7 @@ func (r *configurationsResolver) Configuration(ctx context.Context, obj *model.C
 
 	if obj.EnvID != nil && *obj.EnvID != uuid.Nil {
 		feat, err = featurepkg.FeatureByNameForEnv(ctx, obj.FeatureName, *obj.EnvID)
-		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		if err != nil {
 			return nil, err
 		}
 
