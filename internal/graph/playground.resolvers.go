@@ -78,6 +78,7 @@ func (r *mutationResolver) Playground(ctx context.Context, input model.Playgroun
 	buf := &bytes.Buffer{}
 	enc := yaml.NewEncoder(buf)
 	enc.SetIndent(2)
+	defer enc.Close()
 
 	// json.RawMessage values encode to byte arrays in YAML; normalize via JSON round-trip first.
 	jsonBytes, err := json.Marshal(vals)
