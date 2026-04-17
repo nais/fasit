@@ -6,6 +6,7 @@ type Playground {
 input PlaygroundInput {
 	tenantSlug: String!
 	envSlug: String!
+	featureName: String
 	showSecrets: Boolean
 	includeUnsetConfig: Boolean
 	code: String!

@@ -85,13 +85,18 @@ func addToMap(target map[string]any, values *ComputedValues, key []string, v str
 		t, ok := target[key[0]]
 		if !ok {
 			t = make(map[string]any)
-			target[key[0]] = t
 		}
 		tt, ok := t.(map[string]any)
 		if !ok {
 			return fmt.Errorf("key %v is not nestable", key[0])
 		}
-		return addToMap(tt, values, key[1:], v)
+		if err := addToMap(tt, values, key[1:], v); err != nil {
+			return err
+		}
+		if len(tt) > 0 {
+			target[key[0]] = tt
+		}
+		return nil
 	}
 
 	val, err := renderTemplate(values, v)
@@ -100,6 +105,10 @@ func addToMap(target map[string]any, values *ComputedValues, key []string, v str
 	}
 
 	if _, ok := target[key[0]]; ok {
+		return nil
+	}
+
+	if val == nil {
 		return nil
 	}
 
@@ -114,6 +123,11 @@ func renderTemplate(values *ComputedValues, tpl string) (any, error) {
 	rdr, err := renderString(values, tpl)
 	if err != nil {
 		return nil, err
+	}
+
+	rdr = strings.TrimSpace(rdr)
+	if rdr == "" || rdr == "<no value>" {
+		return nil, nil
 	}
 
 	var v any
