@@ -72,7 +72,11 @@ func (r *mutationResolver) Playground(ctx context.Context, input model.Playgroun
 				if _, ok := outer[part]; !ok {
 					outer[part] = map[string]any{}
 				}
-				outer = outer[part].(map[string]any)
+				next, ok := outer[part].(map[string]any)
+				if !ok {
+					break
+				}
+				outer = next
 			}
 		}
 	}
