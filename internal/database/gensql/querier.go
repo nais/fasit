@@ -10,25 +10,6 @@ import (
 )
 
 type Querier interface {
-	ClusterOperationCreateOrUpdate(ctx context.Context, arg ClusterOperationCreateOrUpdateParams) (ClusterOperation, error)
-	ClusterOperationGet(ctx context.Context, arg ClusterOperationGetParams) (ClusterOperation, error)
-	ClusterOperationsGetByUpgradeID(ctx context.Context, upgradeID uuid.UUID) ([]ClusterOperation, error)
-	// Get all RUNNING operations for completed (DONE/FAILED) upgrades in an environment
-	// These are "dangling" operations that should be updated to their final state
-	ClusterOperationsGetDanglingForEnvironment(ctx context.Context, arg ClusterOperationsGetDanglingForEnvironmentParams) ([]ClusterOperation, error)
-	ClusterUpgradesBypassDelay(ctx context.Context, id uuid.UUID) (ClusterUpgrade, error)
-	ClusterUpgradesCountAll(ctx context.Context) (int64, error)
-	ClusterUpgradesCountByEnvironmentID(ctx context.Context, arg ClusterUpgradesCountByEnvironmentIDParams) (int64, error)
-	ClusterUpgradesCountByTenantID(ctx context.Context, tenantid uuid.UUID) (int64, error)
-	ClusterUpgradesCreate(ctx context.Context, arg ClusterUpgradesCreateParams) (ClusterUpgrade, error)
-	ClusterUpgradesGet(ctx context.Context, arg ClusterUpgradesGetParams) ([]ClusterUpgrade, error)
-	ClusterUpgradesGetByID(ctx context.Context, id uuid.UUID) (ClusterUpgrade, error)
-	ClusterUpgradesGetByVersion(ctx context.Context, arg ClusterUpgradesGetByVersionParams) (ClusterUpgrade, error)
-	ClusterUpgradesHistoryGetAll(ctx context.Context, arg ClusterUpgradesHistoryGetAllParams) ([]ClusterUpgrade, error)
-	ClusterUpgradesHistoryGetByEnvironmentID(ctx context.Context, arg ClusterUpgradesHistoryGetByEnvironmentIDParams) ([]ClusterUpgrade, error)
-	ClusterUpgradesHistoryGetByTenantID(ctx context.Context, arg ClusterUpgradesHistoryGetByTenantIDParams) ([]ClusterUpgrade, error)
-	ClusterUpgradesSetSlackMessage(ctx context.Context, arg ClusterUpgradesSetSlackMessageParams) (ClusterUpgrade, error)
-	ClusterUpgradesUpdateStatus(ctx context.Context, arg ClusterUpgradesUpdateStatusParams) (ClusterUpgrade, error)
 	DeployInstructionsByID(ctx context.Context, id uuid.UUID) (DeployInstruction, error)
 	DeployInstructionsForFeature(ctx context.Context, arg DeployInstructionsForFeatureParams) ([]DeployInstruction, error)
 	DeployInstructionsLatestForFeature(ctx context.Context, arg DeployInstructionsLatestForFeatureParams) (DeployInstruction, error)
@@ -41,11 +22,8 @@ type Querier interface {
 	EnvironmentGetByName(ctx context.Context, arg EnvironmentGetByNameParams) (Environment, error)
 	EnvironmentGetLabels(ctx context.Context, id uuid.UUID) (types.EnvironmentLabels, error)
 	EnvironmentIDByNames(ctx context.Context, arg EnvironmentIDByNamesParams) (uuid.UUID, error)
-	EnvironmentSetAutoUpgrade(ctx context.Context, arg EnvironmentSetAutoUpgradeParams) (Environment, error)
 	EnvironmentSetLabels(ctx context.Context, arg EnvironmentSetLabelsParams) error
-	EnvironmentSetMaintenanceWindow(ctx context.Context, arg EnvironmentSetMaintenanceWindowParams) (Environment, error)
 	EnvironmentSetReconcile(ctx context.Context, arg EnvironmentSetReconcileParams) (Environment, error)
-	EnvironmentSetUpgradeDelayDays(ctx context.Context, arg EnvironmentSetUpgradeDelayDaysParams) (Environment, error)
 	EnvironmentUpdate(ctx context.Context, arg EnvironmentUpdateParams) (Environment, error)
 	EnvironmentValueDelete(ctx context.Context, arg EnvironmentValueDeleteParams) error
 	EnvironmentValueGet(ctx context.Context, arg EnvironmentValueGetParams) (EnvironmentValueGetRow, error)
@@ -53,7 +31,6 @@ type Querier interface {
 	EnvironmentValuesAcrossEnvs(ctx context.Context, key string) ([]EnvironmentValuesAcrossEnvsRow, error)
 	EnvironmentValuesForEnvironment(ctx context.Context, arg EnvironmentValuesForEnvironmentParams) ([]EnvironmentValuesForEnvironmentRow, error)
 	EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]Environment, error)
-	EnvironmentsGetByAutoUpgrade(ctx context.Context) ([]Environment, error)
 	KubernetesNodeCreateOrUpdate(ctx context.Context, arg KubernetesNodeCreateOrUpdateParams) error
 	KubernetesNodeDeleteObsolete(ctx context.Context, environmentID uuid.UUID) error
 	KubernetesNodeStatuses(ctx context.Context, environmentID uuid.UUID) ([]KubernetesNodeStatus, error)

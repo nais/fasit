@@ -1,10 +1,10 @@
 extend type Subscription {
-    logs(environmentID: ID!, featureName: String!, lastLogID: String): LogLine!
+	logs(environmentID: ID!, featureName: String!, lastLogID: String): LogLine!
 
-    """
-    Updates notifies whenever a feature state has been changed.
-    """
-    updates: Update!
+	"""
+	Updates notifies whenever a feature state has been changed.
+	"""
+	updates: Update!
 }
 
 enum RolloutStatus {
@@ -15,7 +15,7 @@ enum RolloutStatus {
 	FAILED
 }
 
-union Update = Status | Configuration | FeatureState | ClusterUpgradeStatus
+union Update = Status | Configuration | FeatureState
 
 type LogLine {
 	id: ID!

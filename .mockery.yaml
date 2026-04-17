@@ -9,9 +9,6 @@ packages:
     interfaces:
       Repo:
       Querier:
-  github.com/nais/fasit/internal/cluster:
-    interfaces:
-      ClusterManager:
   github.com/nais/fasit/internal/naisdstatus/naisdstatussql:
     interfaces:
       Querier:

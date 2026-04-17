@@ -1,7 +1,6 @@
 package slack
 
 import (
-	"github.com/nais/fasit/internal/graph/model"
 	"github.com/slack-go/slack"
 )
 
@@ -12,10 +11,6 @@ type Slack struct {
 
 type SlackClient interface {
 	PostMessage(channelName string, msgOptions []slack.MsgOption) (string, string, error)
-	PostComment(channelName, messageTS string, msgOptions []slack.MsgOption) error
-	UpdateMessage(channelID, timestamp string, msgOptions []slack.MsgOption) (string, string, string, error)
-	AddReaction(channelID, timestamp, reaction string) error
-	GetClusterUpgradeProgressMessageOptions(tenant, environment, version string, upgradeStatus model.UpgradeStatus, startTime, mentions string) []slack.MsgOption
 	GetFeatureDeployFailedMessageOptions(feature, tenant, environment string) []slack.MsgOption
 }
 
@@ -33,18 +28,4 @@ func (s *Slack) PostMessage(channelName string, msgOptions []slack.MsgOption) (s
 		return "", "", err
 	}
 	return channelID, timestamp, nil
-}
-
-func (s *Slack) PostComment(channelName, messageTS string, msgOptions []slack.MsgOption) error {
-	msgOptions = append(msgOptions, slack.MsgOptionTS(messageTS))
-	_, _, err := s.client.PostMessage(channelName, msgOptions...)
-	return err
-}
-
-func (s *Slack) UpdateMessage(channelID, timestamp string, msgOptions []slack.MsgOption) (string, string, string, error) {
-	return s.client.UpdateMessage(channelID, timestamp, msgOptions...)
-}
-
-func (s *Slack) AddReaction(channelID, timestamp, reaction string) error {
-	return s.client.AddReaction(reaction, slack.ItemRef{Channel: channelID, Timestamp: timestamp})
 }

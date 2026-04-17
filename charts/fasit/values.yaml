@@ -5,7 +5,6 @@
 ingressHost: "fasit.nais.io"
 ingressClassName: "nais-ingress-iap"
 iapAudience:
-slackClusterUpgradeChannel: "nais-alerts-info"
 slackChannelFeatureAlerts: "nais-alerts-info"
 slackToken:
 

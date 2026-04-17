@@ -39,7 +39,6 @@ var embedMigrations embed.FS
 type TXFunc func(repo Repo) error
 
 type Repo interface {
-	ClusterUpgraderRepo
 	KubernetesNodeRepo
 
 	// Used a lot of places, requires more work to move

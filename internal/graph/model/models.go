@@ -30,17 +30,6 @@ type AuditLog struct {
 	CreatedAt   time.Time `json:"createdAt"`
 }
 
-// Result type for paginated cluster upgrade history queries.
-type ClusterUpgradeHistoryResult struct {
-	// The list of cluster upgrade records for the current page.
-	Items []*ClusterUpgradeStatus `json:"items"`
-	// Total number of records available across all pages.
-	TotalCount int `json:"totalCount"`
-	// Whether there are more records available after the current page.
-	// Calculated as: (offset + items.length) < totalCount
-	HasMore bool `json:"hasMore"`
-}
-
 type ComputedValue struct {
 	Value   *Value          `json:"value"`
 	Content json.RawMessage `json:"content,omitempty"`
@@ -82,40 +71,10 @@ type EnvironmentLabel struct {
 	Value string `json:"value"`
 }
 
-type EnvironmentOperation struct {
-	ID                  uuid.UUID `json:"id"`
-	Name                string    `json:"name"`
-	Status              string    `json:"status"`
-	Type                string    `json:"type"`
-	Target              string    `json:"target"`
-	Detail              string    `json:"detail"`
-	StartTime           time.Time `json:"startTime"`
-	LastModified        time.Time `json:"lastModified"`
-	NodesTotal          int       `json:"nodesTotal"`
-	NodesFailed         int       `json:"nodesFailed"`
-	NodesCompleted      int       `json:"nodesCompleted"`
-	NodesDone           int       `json:"nodesDone"`
-	NodePdbDelaySeconds int       `json:"nodePdbDelaySeconds"`
-}
-
 // UpdateEnvironment contains metadata for updating an environment
 type EnvironmentUpdate struct {
 	// description of the environment
 	Description *string `json:"description,omitempty"`
-}
-
-// EnvironmentUpgrade contains metadata for upgrading an environment
-type EnvironmentUpgrade struct {
-	// k8s version to upgrade to
-	Version string    `json:"version"`
-	EnvID   uuid.UUID `json:"envID"`
-}
-
-type EnvironmentVersions struct {
-	Apiserver         string      `json:"apiserver"`
-	AvailableVersions []string    `json:"availableVersions"`
-	Channel           string      `json:"channel"`
-	NodePools         []*NodePool `json:"nodePools"`
 }
 
 type HelmValueDiff struct {
@@ -123,35 +82,7 @@ type HelmValueDiff struct {
 	Diff       string              `json:"diff"`
 }
 
-// MaintenanceWindow defines when GKE is allowed to perform maintenance on the cluster.
-// If not set, GKE can perform maintenance at any time.
-// All times are in UTC.
-type MaintenanceWindow struct {
-	// Start time in UTC 24-hour format (HH:MM), e.g., "02:00" for 2 AM UTC
-	StartTime string `json:"startTime"`
-	// End time in UTC 24-hour format (HH:MM), e.g., "06:00" for 6 AM UTC
-	EndTime string `json:"endTime"`
-	// Days of the week when maintenance is allowed (in UTC). At least one day must be specified.
-	Days []DayOfWeek `json:"days"`
-}
-
-// Input for setting a maintenance window
-type MaintenanceWindowInput struct {
-	// Start time in UTC 24-hour format (HH:MM)
-	StartTime string `json:"startTime"`
-	// End time in UTC 24-hour format (HH:MM)
-	EndTime string `json:"endTime"`
-	// Days of the week when maintenance is allowed (in UTC). At least one day must be specified.
-	Days []DayOfWeek `json:"days"`
-}
-
-type Mutation struct {
-}
-
-type NodePool struct {
-	Name    string `json:"name"`
-	Version string `json:"version"`
-}
+type Mutation struct{}
 
 type Playground struct {
 	Result *string  `json:"result,omitempty"`
@@ -166,8 +97,7 @@ type PlaygroundInput struct {
 	Code               string `json:"code"`
 }
 
-type Query struct {
-}
+type Query struct{}
 
 type RolloutEvent struct {
 	ID      uuid.UUID       `json:"id"`
@@ -184,8 +114,7 @@ type RolloutLog struct {
 	Lines       []*LogLine `json:"lines"`
 }
 
-type Subscription struct {
-}
+type Subscription struct{}
 
 type TenantCosts struct {
 	From   time.Time    `json:"from"`
@@ -266,71 +195,6 @@ func (e ConfigSource) MarshalJSON() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-type DayOfWeek string
-
-const (
-	DayOfWeekMonday    DayOfWeek = "MONDAY"
-	DayOfWeekTuesday   DayOfWeek = "TUESDAY"
-	DayOfWeekWednesday DayOfWeek = "WEDNESDAY"
-	DayOfWeekThursday  DayOfWeek = "THURSDAY"
-	DayOfWeekFriday    DayOfWeek = "FRIDAY"
-	DayOfWeekSaturday  DayOfWeek = "SATURDAY"
-	DayOfWeekSunday    DayOfWeek = "SUNDAY"
-)
-
-var AllDayOfWeek = []DayOfWeek{
-	DayOfWeekMonday,
-	DayOfWeekTuesday,
-	DayOfWeekWednesday,
-	DayOfWeekThursday,
-	DayOfWeekFriday,
-	DayOfWeekSaturday,
-	DayOfWeekSunday,
-}
-
-func (e DayOfWeek) IsValid() bool {
-	switch e {
-	case DayOfWeekMonday, DayOfWeekTuesday, DayOfWeekWednesday, DayOfWeekThursday, DayOfWeekFriday, DayOfWeekSaturday, DayOfWeekSunday:
-		return true
-	}
-	return false
-}
-
-func (e DayOfWeek) String() string {
-	return string(e)
-}
-
-func (e *DayOfWeek) UnmarshalGQL(v any) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = DayOfWeek(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid DayOfWeek", str)
-	}
-	return nil
-}
-
-func (e DayOfWeek) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
-func (e *DayOfWeek) UnmarshalJSON(b []byte) error {
-	s, err := strconv.Unquote(string(b))
-	if err != nil {
-		return err
-	}
-	return e.UnmarshalGQL(s)
-}
-
-func (e DayOfWeek) MarshalJSON() ([]byte, error) {
-	var buf bytes.Buffer
-	e.MarshalGQL(&buf)
-	return buf.Bytes(), nil
-}
-
 type HelmValueDifference string
 
 const (
@@ -385,69 +249,6 @@ func (e *HelmValueDifference) UnmarshalJSON(b []byte) error {
 }
 
 func (e HelmValueDifference) MarshalJSON() ([]byte, error) {
-	var buf bytes.Buffer
-	e.MarshalGQL(&buf)
-	return buf.Bytes(), nil
-}
-
-type UpgradeStatus string
-
-const (
-	UpgradeStatusCreated             UpgradeStatus = "CREATED"
-	UpgradeStatusWaiting             UpgradeStatus = "WAITING"
-	UpgradeStatusControlPlaneUpgrade UpgradeStatus = "CONTROL_PLANE_UPGRADE"
-	UpgradeStatusNodeUpgrade         UpgradeStatus = "NODE_UPGRADE"
-	UpgradeStatusFailed              UpgradeStatus = "FAILED"
-	UpgradeStatusDone                UpgradeStatus = "DONE"
-)
-
-var AllUpgradeStatus = []UpgradeStatus{
-	UpgradeStatusCreated,
-	UpgradeStatusWaiting,
-	UpgradeStatusControlPlaneUpgrade,
-	UpgradeStatusNodeUpgrade,
-	UpgradeStatusFailed,
-	UpgradeStatusDone,
-}
-
-func (e UpgradeStatus) IsValid() bool {
-	switch e {
-	case UpgradeStatusCreated, UpgradeStatusWaiting, UpgradeStatusControlPlaneUpgrade, UpgradeStatusNodeUpgrade, UpgradeStatusFailed, UpgradeStatusDone:
-		return true
-	}
-	return false
-}
-
-func (e UpgradeStatus) String() string {
-	return string(e)
-}
-
-func (e *UpgradeStatus) UnmarshalGQL(v any) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = UpgradeStatus(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid UpgradeStatus", str)
-	}
-	return nil
-}
-
-func (e UpgradeStatus) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
-func (e *UpgradeStatus) UnmarshalJSON(b []byte) error {
-	s, err := strconv.Unquote(string(b))
-	if err != nil {
-		return err
-	}
-	return e.UnmarshalGQL(s)
-}
-
-func (e UpgradeStatus) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	e.MarshalGQL(&buf)
 	return buf.Bytes(), nil

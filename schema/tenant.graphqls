@@ -1,33 +1,19 @@
 extend type Mutation {
-    tenantCreate(tenant: TenantCreate!): Tenant!
-    """
-    Set the upgrade delay (in days) for a tenant.
-    """
-    tenantSetUpgradeDelayDays(tenantID: ID!, delayDays: Int!): Tenant!
+	tenantCreate(tenant: TenantCreate!): Tenant!
 }
 
 extend type Query {
-    """
-    tenant returns the given tenant.
-    """
-    tenant("id of the requested tenant." id: ID, slug: String): Tenant!
-    """
-    Cluster upgrade history across all tenants and environments, with pagination support.
+	"""
+	tenant returns the given tenant.
+	"""
+	tenant("id of the requested tenant." id: ID, slug: String): Tenant!
 
-    Parameters:
-    - limit: Maximum number of records to return (default: 50, max: 1000, must be positive)
-    - offset: Number of records to skip (default: 0, must be non-negative)
-
-    Results are ordered by last_modified DESC (newest first).
-    Invalid values are normalized: negative or zero limit defaults to 50, limit > 1000 capped at 1000, negative offset defaults to 0.
-    """
-    clusterUpgradeHistory(limit: Int, offset: Int): ClusterUpgradeHistoryResult!
-    tenants: [Tenant!]!
+	tenants: [Tenant!]!
 }
 
 input TenantCreate {
-    name: String!
-    description: String
+	name: String!
+	description: String
 }
 
 type Tenant {
@@ -39,16 +25,4 @@ type Tenant {
 	created: Time!
 	lastModified: Time!
 	warnings: [Warning!]!
-	upgradeDelayDays: Int!
-	"""
-	Cluster upgrade history for all environments in this tenant, with pagination support.
-
-	Parameters:
-	- limit: Maximum number of records to return (default: 50, max: 1000, must be positive)
-	- offset: Number of records to skip (default: 0, must be non-negative)
-
-	Results are ordered by last_modified DESC (newest first).
-	Invalid values are normalized: negative or zero limit defaults to 50, limit > 1000 capped at 1000, negative offset defaults to 0.
-	"""
-	clusterUpgradeHistory(limit: Int, offset: Int): ClusterUpgradeHistoryResult!
 }

@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/audit"
@@ -20,30 +19,23 @@ type EnvironmentRepo interface {
 	EnvironmentGetByName(ctx context.Context, tenantID uuid.UUID, name string) (*model.Environment, error)
 	EnvironmentIDByNames(ctx context.Context, tenantName, environmentName string) (uuid.UUID, error)
 	EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]*model.Environment, error)
-	EnvironmentsGetByAutoUpgrade(ctx context.Context) ([]*model.Environment, error)
 	EnvironmentUpdate(ctx context.Context, environmentID uuid.UUID, p *model.EnvironmentUpdate) (*model.Environment, error)
-	EnvironmentSetAutoUpgrade(ctx context.Context, environmentID uuid.UUID, autoUpgrade bool) (*model.Environment, error)
 	EnvironmentSetReconcile(ctx context.Context, environmentID uuid.UUID, reconcile bool) (*model.Environment, error)
 	EnvironmentSetLabels(ctx context.Context, environmentID uuid.UUID, labels []*protogen.EnvironmentLabel) error
 	EnvironmentGetLabels(ctx context.Context, environmentID uuid.UUID) ([]*model.EnvironmentLabel, error)
-	EnvironmentSetUpgradeDelayDays(ctx context.Context, id uuid.UUID, delayDays int32) (*model.Environment, error)
-	EnvironmentSetMaintenanceWindow(ctx context.Context, id uuid.UUID, window *model.MaintenanceWindow) (*model.Environment, error)
-	EnvironmentGetMaintenanceWindow(ctx context.Context, env *model.Environment) (*model.MaintenanceWindow, error)
 }
 
 func environmentFromSQL(p gensql.Environment) *model.Environment {
 	return &model.Environment{
-		ID:               p.ID,
-		Name:             p.Name,
-		Description:      nullStringToPtr(p.Description),
-		Created:          p.Created.Time,
-		LastModified:     p.LastModified.Time,
-		Kind:             model.EnvironmentKind(p.Kind),
-		TenantID:         p.TenantID,
-		CI:               p.Ci,
-		Reconcile:        p.Reconcile,
-		AutoUpgrade:      p.AutoUpgrade,
-		UpgradeDelayDays: p.UpgradeDelayDays,
+		ID:           p.ID,
+		Name:         p.Name,
+		Description:  nullStringToPtr(p.Description),
+		Created:      p.Created.Time,
+		LastModified: p.LastModified.Time,
+		Kind:         model.EnvironmentKind(p.Kind),
+		TenantID:     p.TenantID,
+		CI:           p.Ci,
+		Reconcile:    p.Reconcile,
 	}
 }
 
@@ -68,18 +60,6 @@ func (r *repo) EnvironmentGetByName(ctx context.Context, tenantID uuid.UUID, nam
 
 func (r *repo) EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]*model.Environment, error) {
 	envs, err := r.querier.EnvironmentsGet(ctx, tenantID)
-	if err != nil {
-		return nil, err
-	}
-	environmentSlice := []*model.Environment{}
-	for _, env := range envs {
-		environmentSlice = append(environmentSlice, environmentFromSQL(env))
-	}
-	return environmentSlice, nil
-}
-
-func (r *repo) EnvironmentsGetByAutoUpgrade(ctx context.Context) ([]*model.Environment, error) {
-	envs, err := r.querier.EnvironmentsGetByAutoUpgrade(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -194,79 +174,4 @@ func (r *repo) EnvironmentGetLabels(ctx context.Context, environmentID uuid.UUID
 	}
 
 	return ret, nil
-}
-
-func (r *repo) EnvironmentSetAutoUpgrade(ctx context.Context, environmentID uuid.UUID, autoUpgrade bool) (*model.Environment, error) {
-	env, err := r.querier.EnvironmentSetAutoUpgrade(ctx, gensql.EnvironmentSetAutoUpgradeParams{
-		ID:          environmentID,
-		AutoUpgrade: autoUpgrade,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	txt := "enabled"
-	if !autoUpgrade {
-		txt = "disabled"
-	}
-
-	audit.CreateAudit(ctx, "environment auto upgrade "+txt, "environments", env.ID.String())
-
-	return environmentFromSQL(env), nil
-}
-
-func (r *repo) EnvironmentSetUpgradeDelayDays(ctx context.Context, id uuid.UUID, delayDays int32) (*model.Environment, error) {
-	env, err := r.querier.EnvironmentSetUpgradeDelayDays(ctx, gensql.EnvironmentSetUpgradeDelayDaysParams{
-		ID:               id,
-		UpgradeDelayDays: delayDays,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	audit.CreateAudit(ctx, "updated upgrade_delay_days", "environments", env.ID.String())
-
-	return environmentFromSQL(env), nil
-}
-
-func (r *repo) EnvironmentSetMaintenanceWindow(ctx context.Context, id uuid.UUID, window *model.MaintenanceWindow) (*model.Environment, error) {
-	var windowJSON []byte
-	var err error
-
-	if window != nil {
-		windowJSON, err = json.Marshal(window)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	env, err := r.querier.EnvironmentSetMaintenanceWindow(ctx, gensql.EnvironmentSetMaintenanceWindowParams{
-		MaintenanceWindow: windowJSON,
-		ID:                id,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	audit.CreateAudit(ctx, "updated maintenance_window", "environments", env.ID.String())
-
-	return environmentFromSQL(env), nil
-}
-
-func (r *repo) EnvironmentGetMaintenanceWindow(ctx context.Context, env *model.Environment) (*model.MaintenanceWindow, error) {
-	sqlEnv, err := r.querier.EnvironmentGet(ctx, env.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	if len(sqlEnv.MaintenanceWindow) == 0 {
-		return nil, nil
-	}
-
-	var window model.MaintenanceWindow
-	if err := json.Unmarshal(sqlEnv.MaintenanceWindow, &window); err != nil {
-		return nil, err
-	}
-
-	return &window, nil
 }

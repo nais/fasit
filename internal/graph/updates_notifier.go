@@ -25,14 +25,13 @@ func newDeployInstructionsNotifier(ctx context.Context, not *notifier.Notifier, 
 	chCfgGlobal := not.Listen("configurations_global")
 	chCfgEnv := not.Listen("configurations_environment")
 	states := not.Listen("feature_states")
-	clusterUpgrades := not.Listen("cluster_upgrades")
 
 	lf := &updateNotifier{
 		repo:        repo,
 		subscribers: make(map[chan<- model.Update]struct{}),
 	}
 
-	go lf.run(ctx, chDI, chCfgGlobal, chCfgEnv, states, clusterUpgrades)
+	go lf.run(ctx, chDI, chCfgGlobal, chCfgEnv, states)
 
 	return lf
 }
@@ -51,7 +50,7 @@ func (d *updateNotifier) Unsubscribe(ch chan<- model.Update) {
 	delete(d.subscribers, ch)
 }
 
-func (d *updateNotifier) run(ctx context.Context, di, global, env, states, clusterUpgrades <-chan notifier.Payload) {
+func (d *updateNotifier) run(ctx context.Context, di, global, env, states <-chan notifier.Payload) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -64,8 +63,6 @@ func (d *updateNotifier) run(ctx context.Context, di, global, env, states, clust
 			d.handleConfig(ctx, msg)
 		case msg := <-states:
 			d.handleFeatureState(ctx, msg)
-		case msg := <-clusterUpgrades:
-			d.handleClusterUpgrades(ctx, msg)
 		}
 	}
 }
@@ -98,31 +95,6 @@ func (d *updateNotifier) handleDeployInstruction(ctx context.Context, msg notifi
 			LastModified:        di.LastModified,
 			DeployInstructionID: di.ID,
 		}:
-		default:
-			logrus.Debug("subscriber blocked")
-		}
-	}
-}
-
-func (d *updateNotifier) handleClusterUpgrades(ctx context.Context, msg notifier.Payload) {
-	d.lock.RLock()
-	defer d.lock.RUnlock()
-
-	id, err := d.getAsUUID("id", msg)
-	if err != nil {
-		logrus.Debug("failed to get upgrade id")
-		return
-	}
-
-	clusterUpgradeStatus, err := d.repo.ClusterUpgradeGetByID(ctx, id)
-	if err != nil {
-		logrus.Debug("failed to get cluster upgrade status from db")
-		return
-	}
-
-	for sub := range d.subscribers {
-		select {
-		case sub <- clusterUpgradeStatus:
 		default:
 			logrus.Debug("subscriber blocked")
 		}

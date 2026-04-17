@@ -188,20 +188,6 @@ func CreateTenant(ctx context.Context, t *model.TenantCreate) (*model.Tenant, er
 	return tenantFromSQL(tenant), nil
 }
 
-func TenantSetUpgradeDelayDays(ctx context.Context, id uuid.UUID, delayDays int32) (*model.Tenant, error) {
-	tenant, err := querier(ctx).TenantSetUpgradeDelayDays(ctx, environmentsql.TenantSetUpgradeDelayDaysParams{
-		ID:               id,
-		UpgradeDelayDays: delayDays,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	audit.CreateAudit(ctx, "updated upgrade_delay_days", "tenants", tenant.ID.String())
-
-	return tenantFromSQL(tenant), nil
-}
-
 func Warnings(ctx context.Context, environmentID *uuid.UUID, tenantID *uuid.UUID) ([]model.Warning, error) {
 	args := environmentsql.WarningsParams{}
 	if environmentID == nil && tenantID == nil {

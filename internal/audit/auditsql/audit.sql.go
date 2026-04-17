@@ -85,30 +85,3 @@ func (q *Queries) AuditForEnvironment(ctx context.Context, arg AuditForEnvironme
 	}
 	return items, nil
 }
-
-const auditGetLatestForClusterUpgrade = `-- name: AuditGetLatestForClusterUpgrade :one
-SELECT
-	id, actor, description, object_type, object_id, created_at
-FROM
-	audits
-WHERE
-	object_id = $1
-	AND object_type = 'cluster_upgrades'
-ORDER BY
-	created_at DESC
-LIMIT 1
-`
-
-func (q *Queries) AuditGetLatestForClusterUpgrade(ctx context.Context, upgradeID string) (Audit, error) {
-	row := q.db.QueryRow(ctx, auditGetLatestForClusterUpgrade, upgradeID)
-	var i Audit
-	err := row.Scan(
-		&i.ID,
-		&i.Actor,
-		&i.Description,
-		&i.ObjectType,
-		&i.ObjectID,
-		&i.CreatedAt,
-	)
-	return i, err
-}

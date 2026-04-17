@@ -5,95 +5,6 @@ enum EnvironmentKind {
 	LEGACY
 }
 
-enum UpgradeStatus {
-	CREATED
-	WAITING
-	CONTROL_PLANE_UPGRADE
-	NODE_UPGRADE
-	FAILED
-	DONE
-}
-
-type ClusterUpgradeStatus {
-	id: ID!
-	upgradeStatus: UpgradeStatus!
-	version: String!
-	lastModified: Time!
-	startTime: Time!
-	upgradeStartTime: Time
-	operations: [EnvironmentOperation!]!
-	environment: Environment!
-	isAutomatic: Boolean
-	actor: String
-}
-
-"""
-Result type for paginated cluster upgrade history queries.
-"""
-type ClusterUpgradeHistoryResult {
-	"""
-	The list of cluster upgrade records for the current page.
-	"""
-	items: [ClusterUpgradeStatus!]!
-	"""
-	Total number of records available across all pages.
-	"""
-	totalCount: Int!
-	"""
-	Whether there are more records available after the current page.
-	Calculated as: (offset + items.length) < totalCount
-	"""
-	hasMore: Boolean!
-}
-
-enum DayOfWeek {
-	MONDAY
-	TUESDAY
-	WEDNESDAY
-	THURSDAY
-	FRIDAY
-	SATURDAY
-	SUNDAY
-}
-
-"""
-MaintenanceWindow defines when GKE is allowed to perform maintenance on the cluster.
-If not set, GKE can perform maintenance at any time.
-All times are in UTC.
-"""
-type MaintenanceWindow {
-	"""
-	Start time in UTC 24-hour format (HH:MM), e.g., "02:00" for 2 AM UTC
-	"""
-	startTime: String!
-	"""
-	End time in UTC 24-hour format (HH:MM), e.g., "06:00" for 6 AM UTC
-	"""
-	endTime: String!
-	"""
-	Days of the week when maintenance is allowed (in UTC). At least one day must be specified.
-	"""
-	days: [DayOfWeek!]!
-}
-
-"""
-Input for setting a maintenance window
-"""
-input MaintenanceWindowInput {
-	"""
-	Start time in UTC 24-hour format (HH:MM)
-	"""
-	startTime: String!
-	"""
-	End time in UTC 24-hour format (HH:MM)
-	"""
-	endTime: String!
-	"""
-	Days of the week when maintenance is allowed (in UTC). At least one day must be specified.
-	"""
-	days: [DayOfWeek!]!
-}
-
 type Health {
 	reportedAt: Time!
 }
@@ -128,59 +39,13 @@ type Environment {
 	features: [Feature!]!
 	feature(name: String!): Feature!
 	reconcile: Boolean!
-	autoUpgrade: Boolean!
-	"""
-	Cluster upgrade history with pagination support.
 
-	Parameters:
-	- limit: Maximum number of records to return (default: 50, max: 1000, must be positive)
-	- offset: Number of records to skip (default: 0, must be non-negative)
-
-	Results are ordered by last_modified DESC (newest first).
-	Invalid values are normalized: negative or zero limit defaults to 50, limit > 1000 capped at 1000, negative offset defaults to 0.
-	"""
-	clusterUpgradeHistory(limit: Int, offset: Int): ClusterUpgradeHistoryResult!
-	clusterUpgradeStatus: ClusterUpgradeStatus
-	versions: EnvironmentVersions
 	labels: [EnvironmentLabel!]!
-	upgradeDelayDays: Int!
-	"""
-	Maintenance window for GKE cluster maintenance. If null, GKE can perform maintenance at any time.
-	"""
-	maintenanceWindow: MaintenanceWindow
 }
 
 type EnvironmentLabel {
 	key: String!
 	value: String!
-}
-
-type EnvironmentOperation {
-	id: ID!
-	name: String!
-	status: String!
-	type: String!
-	target: String!
-	detail: String!
-	startTime: Time!
-	lastModified: Time!
-	nodesTotal: Int!
-	nodesFailed: Int!
-	nodesCompleted: Int!
-	nodesDone: Int!
-	nodePdbDelaySeconds: Int!
-}
-
-type EnvironmentVersions {
-	apiserver: String!
-	availableVersions: [String!]!
-	channel: String!
-	nodePools: [NodePool!]!
-}
-
-type NodePool {
-	name: String!
-	version: String!
 }
 
 type EnvironmentValue {
@@ -207,15 +72,6 @@ input EnvironmentUpdate {
 	description: String
 }
 
-"""
-EnvironmentUpgrade contains metadata for upgrading an environment
-"""
-input EnvironmentUpgrade {
-	"k8s version to upgrade to"
-	version: String!
-	envID: ID!
-}
-
 extend type Mutation {
 	environmentCreate(environment: EnvironmentCreate!): Environment!
 	"""
@@ -232,30 +88,4 @@ extend type Mutation {
 	Change the reconcile flag for an environment
 	"""
 	environmentSetReconcile(id: ID!, reconcile: Boolean!): Environment!
-
-	"""
-	Upgrade environment k8s cluster
-	"""
-	environmentUpgrade(upgrade: EnvironmentUpgrade): Environment!
-
-	"""
-	Change the autoUpgrade flag for an environment
-	"""
-	environmentSetAutoUpgrade(id: ID!, autoUpgrade: Boolean!): Environment!
-
-	"""
-	Set the upgrade delay (in days) for an environment.
-	"""
-	environmentSetUpgradeDelayDays(environmentID: ID!, delayDays: Int!): Environment!
-
-	"""
-	Set the maintenance window for an environment. Set to null to remove the window (allow GKE maintenance anytime).
-	"""
-	environmentSetMaintenanceWindow(environmentID: ID!, window: MaintenanceWindowInput): Environment!
-
-	"""
-	Bypass upgrade delay and trigger immediate upgrade for a cluster upgrade in WAITING status.
-	This sets isAutomatic to false and status to CREATED, allowing the upgrade to proceed on the next upgrader run.
-	"""
-	clusterUpgradeBypassDelay(upgradeID: ID!): ClusterUpgradeStatus!
 }

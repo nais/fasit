@@ -13,7 +13,6 @@ import (
 
 	"cloud.google.com/go/pubsub/v2"
 	"github.com/joho/godotenv"
-	"github.com/nais/fasit/internal/cluster"
 	"github.com/nais/fasit/internal/contextloader"
 	"github.com/nais/fasit/internal/cost"
 	"github.com/nais/fasit/internal/database"
@@ -31,6 +30,7 @@ import (
 	"go.opentelemetry.io/otel/metric"
 	metricsdk "go.opentelemetry.io/otel/sdk/metric"
 	"golang.org/x/sync/errgroup"
+
 	// Supported database drivers.
 	_ "github.com/GoogleCloudPlatform/cloudsql-proxy/proxy/dialers/postgres"
 	_ "github.com/lib/pq"
@@ -134,12 +134,6 @@ func Run(ctx context.Context) error {
 		go costUpdater.Run(ctx, 1*time.Hour)
 	}
 
-	googleClient, err := cluster.New(ctx)
-	if err != nil {
-		return fmt.Errorf("error creating google client: %w", err)
-	}
-	defer ioconvenience.CloseWithLog(googleClient, log)
-
 	if cfg.GitHubPEM != "" {
 		log.Info("GitHub status reporter enabled")
 		ghstatus, err := rollout.NewGHStatusReporter(log, repo, notifierService, cfg.GitHubPEM)
@@ -158,7 +152,7 @@ func Run(ctx context.Context) error {
 	serverCtx, serverCancel := context.WithCancel(ctx)
 	defer serverCancel()
 
-	httpServer, err := newHttpServer(serverCtx, loadContext, cfg, repo, notifierService, rolloutPublisher, googleClient, meter, log)
+	httpServer, err := newHTTPServer(serverCtx, loadContext, cfg, repo, notifierService, rolloutPublisher, meter, log)
 	if err != nil {
 		return fmt.Errorf("error creating http server: %w", err)
 	}
@@ -169,10 +163,6 @@ func Run(ctx context.Context) error {
 			log.WithError(err).Fatal("running server")
 		}
 	}()
-
-	if err := runClusterUpgrader(ctx, cfg.SlackClusterUpgradeChannel, log, googleClient, repo, meter, slackClient); err != nil {
-		return fmt.Errorf("running cluster upgrader: %w", err)
-	}
 
 	go clustersMetrics(ctx, repo, meter, log)
 
