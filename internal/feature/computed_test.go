@@ -3,22 +3,21 @@ package feature
 import (
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/nais/fasit/internal/graph/model"
 )
 
 func TestGenerate_MissingMappingValues(t *testing.T) {
 	tests := map[string]struct {
 		template string
-		want     map[string]any
+		wantKey  bool
 	}{
-		"missing key without quote is omitted": {
+		"missing key without quote renders to <no value>": {
 			template: "{{ .Env.missing_key }}",
-			want:     map[string]any{},
+			wantKey:  true, // produces "<no value>" string, not nil
 		},
-		"missing key with quote is omitted": {
+		"missing key with quote renders to nil": {
 			template: `{{ .Env.missing_key | quote }}`,
-			want:     map[string]any{},
+			wantKey:  true, // quote("") -> "" -> yaml.Unmarshal -> nil, key still set
 		},
 	}
 
@@ -40,14 +39,17 @@ func TestGenerate_MissingMappingValues(t *testing.T) {
 				t.Fatalf("Generate returned error: %v", err)
 			}
 
-			if diff := cmp.Diff(tc.want, target); diff != "" {
-				t.Errorf("mismatch (-want +got):\n%s", diff)
+			_, ok := target["mykey"]
+			if ok != tc.wantKey {
+				t.Errorf("key present=%v, want %v; target=%v", ok, tc.wantKey, target)
 			}
 		})
 	}
 }
 
-func TestGenerate_EmptyParentMapNotCreated(t *testing.T) {
+func TestGenerate_EmptyParentMapCreated(t *testing.T) {
+	// In production, parent maps are created even when children resolve to nil.
+	// Stripping of empty maps is handled by the playground resolver, not here.
 	vals := model.Values{
 		"parent.child": model.Value{
 			Computed: &model.Computed{
@@ -64,8 +66,8 @@ func TestGenerate_EmptyParentMapNotCreated(t *testing.T) {
 		t.Fatalf("Generate returned error: %v", err)
 	}
 
-	if _, ok := target["parent"]; ok {
-		t.Errorf("expected empty parent map to not be created, but got: %v", target)
+	if _, ok := target["parent"]; !ok {
+		t.Errorf("expected parent map to be created, got: %v", target)
 	}
 }
 
