@@ -38,7 +38,6 @@ func Test_Playground_FeatureName_UsedForDBLookup(t *testing.T) {
 		FeatureName: ptr("console-frontend"),
 		Code:        "environmentKinds:\n  - management\nvalues:\n  memory:\n    config:\n      type: string\n",
 	})
-
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -78,7 +77,6 @@ func Test_Playground_IncludeUnsetConfig_DoesNotOverwriteExistingValues(t *testin
 		IncludeUnsetConfig: ptr(true),
 		Code:               "environmentKinds:\n  - management\nvalues:\n  memory:\n    config:\n      type: string\n  cpu:\n    config:\n      type: string\n",
 	})
-
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -123,7 +121,6 @@ func Test_Playground_JSONRawMessage_EncodesAsString(t *testing.T) {
 		EnvSlug:    "management",
 		Code:       "environmentKinds:\n  - management\nvalues:\n  token:\n    config:\n      type: string\n",
 	})
-
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
