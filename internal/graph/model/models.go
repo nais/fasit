@@ -90,12 +90,13 @@ type Playground struct {
 }
 
 type PlaygroundInput struct {
-	TenantSlug         string  `json:"tenantSlug"`
-	EnvSlug            string  `json:"envSlug"`
-	FeatureName        *string `json:"featureName,omitempty"`
-	ShowSecrets        *bool   `json:"showSecrets,omitempty"`
-	IncludeUnsetConfig *bool   `json:"includeUnsetConfig,omitempty"`
-	Code               string  `json:"code"`
+	TenantSlug           string  `json:"tenantSlug"`
+	EnvSlug              string  `json:"envSlug"`
+	FeatureName          *string `json:"featureName,omitempty"`
+	ShowSecrets          *bool   `json:"showSecrets,omitempty"`
+	IncludeChartDefaults *bool   `json:"includeChartDefaults,omitempty"`
+	IncludeUnsetConfig   *bool   `json:"includeUnsetConfig,omitempty"`
+	Code                 string  `json:"code"`
 }
 
 type Query struct{}
