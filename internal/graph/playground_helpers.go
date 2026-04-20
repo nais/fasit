@@ -37,12 +37,12 @@ func defaultsMap(valuesYAML map[string]json.RawMessage) (map[string]any, error) 
 
 		var val any
 		if err := json.Unmarshal(raw, &val); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("unmarshal default value for %q: %w", key, err)
 		}
 
 		parts, err := featureutil.SmartDotSplit(key)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("invalid default key %q: %w", key, err)
 		}
 
 		parent := ret
