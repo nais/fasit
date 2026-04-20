@@ -15,8 +15,6 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func ptr[T any](v T) *T { return &v }
-
 func Test_Playground_FeatureName_UsedForDBLookup(t *testing.T) {
 	ctx := context.Background()
 	envID := uuid.New()
@@ -44,7 +42,7 @@ func Test_Playground_FeatureName_UsedForDBLookup(t *testing.T) {
 	result, err := r.Playground(ctx, model.PlaygroundInput{
 		TenantSlug:  "nav",
 		EnvSlug:     "management",
-		FeatureName: ptr("console-frontend"),
+		FeatureName: new("console-frontend"),
 		Code:        "environmentKinds:\n  - management\nvalues:\n  memory:\n    config:\n      type: string\n",
 	})
 	if err != nil {
@@ -83,7 +81,7 @@ func Test_Playground_IncludeUnsetConfig_DoesNotOverwriteExistingValues(t *testin
 	result, err := r.Playground(ctx, model.PlaygroundInput{
 		TenantSlug:         "nav",
 		EnvSlug:            "management",
-		IncludeUnsetConfig: ptr(true),
+		IncludeUnsetConfig: new(true),
 		Code:               "environmentKinds:\n  - management\nvalues:\n  memory:\n    config:\n      type: string\n  cpu:\n    config:\n      type: string\n",
 	})
 	if err != nil {
@@ -247,9 +245,9 @@ func Test_Playground_IncludeChartDefaults_MergesDefaults(t *testing.T) {
 	result, err := r.Playground(ctx, model.PlaygroundInput{
 		TenantSlug:           "nav",
 		EnvSlug:              "management",
-		FeatureName:          ptr("console-frontend"),
-		IncludeChartDefaults: ptr(true),
-		IncludeUnsetConfig:   ptr(false),
+		FeatureName:          new("console-frontend"),
+		IncludeChartDefaults: new(true),
+		IncludeUnsetConfig:   new(false),
 		Code:                 "environmentKinds:\n  - management\n",
 	})
 	if err != nil {
