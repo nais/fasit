@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/feature/featureutil"
+	"github.com/nais/fasit/internal/graph/graphgen"
 	"github.com/nais/fasit/internal/graph/model"
 	yaml "gopkg.in/yaml.v3"
 )
@@ -39,8 +41,17 @@ func (r *mutationResolver) Playground(ctx context.Context, input model.Playgroun
 	f := &model.Feature{
 		FeatureYAML: fyaml,
 	}
+	var featureForEnv *model.Feature
 	if input.FeatureName != nil {
 		f.Name = *input.FeatureName
+		if input.IncludeChartDefaults != nil && *input.IncludeChartDefaults {
+			featureForEnv, err = featurepkg.FeatureByNameForEnv(ctx, *input.FeatureName, env.ID)
+			if err != nil {
+				return retErr(err)
+			}
+			f.Chart = featureForEnv.Chart
+			f.Version = featureForEnv.Version
+		}
 	}
 	vals, err := featurepkg.HelmValues(ctx, f, env.ID)
 	if err != nil {
@@ -48,6 +59,17 @@ func (r *mutationResolver) Playground(ctx context.Context, input model.Playgroun
 	}
 
 	stripNoValue(vals)
+	if input.IncludeChartDefaults != nil && *input.IncludeChartDefaults {
+		if featureForEnv == nil {
+			return retErr(fmt.Errorf("featureName is required when includeChartDefaults is true"))
+		}
+
+		d, err := defaultsMap(featureForEnv.ValuesYAML)
+		if err != nil {
+			return retErr(err)
+		}
+		vals = mergeDefaults(d, vals)
+	}
 
 	if input.IncludeUnsetConfig != nil && *input.IncludeUnsetConfig {
 		for k, v := range f.Values {
@@ -107,3 +129,14 @@ func (r *mutationResolver) Playground(ctx context.Context, input model.Playgroun
 		Result: &s,
 	}, nil
 }
+
+func (r *playgroundInputResolver) IncludeChartDefaults(ctx context.Context, obj *model.PlaygroundInput, data *bool) error {
+	obj.IncludeChartDefaults = data
+	return nil
+}
+
+func (r *Resolver) PlaygroundInput() graphgen.PlaygroundInputResolver {
+	return &playgroundInputResolver{r}
+}
+
+type playgroundInputResolver struct{ *Resolver }
