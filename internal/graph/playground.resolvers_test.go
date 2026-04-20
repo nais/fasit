@@ -245,12 +245,12 @@ func Test_Playground_IncludeChartDefaults_MergesDefaults(t *testing.T) {
 	r := &mutationResolver{Resolver: &Resolver{Repo: repo}}
 
 	result, err := r.Playground(ctx, model.PlaygroundInput{
-		TenantSlug:            "nav",
-		EnvSlug:               "management",
-		FeatureName:           ptr("console-frontend"),
-		IncludeChartDefaults:  ptr(true),
-		IncludeUnsetConfig:    ptr(false),
-		Code:                  "environmentKinds:\n  - management\n",
+		TenantSlug:           "nav",
+		EnvSlug:              "management",
+		FeatureName:          ptr("console-frontend"),
+		IncludeChartDefaults: ptr(true),
+		IncludeUnsetConfig:   ptr(false),
+		Code:                 "environmentKinds:\n  - management\n",
 	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
