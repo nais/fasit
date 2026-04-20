@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/database/mocks"
+	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/feature/featuretest"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/stretchr/testify/mock"
@@ -22,7 +23,14 @@ func Test_Playground_FeatureName_UsedForDBLookup(t *testing.T) {
 	helmVals := map[string]any{
 		"memory": json.RawMessage(`"256Mi"`),
 	}
-	ctx = featuretest.OnHelmValues(ctx, envID, "console-frontend", helmVals)
+	// Stub HelmValuesFuncKey to verify that featureName is passed to the resolver
+	helmValuesFunc := func(ctx context.Context, f *model.Feature, envID uuid.UUID) (map[string]any, error) {
+		if f.Name != "console-frontend" {
+			t.Errorf("expected featureName=console-frontend, got %s", f.Name)
+		}
+		return helmVals, nil
+	}
+	ctx = context.WithValue(ctx, feature.HelmValuesFuncKey, helmValuesFunc)
 
 	repo := mocks.NewRepo(t)
 	repo.EXPECT().EnvironmentByNames(mock.Anything, "nav", "management").Return(&model.Environment{

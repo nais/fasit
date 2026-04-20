@@ -17,7 +17,7 @@ func TestGenerate_MissingMappingValues(t *testing.T) {
 		},
 		"missing key with quote renders to nil": {
 			template: `{{ .Env.missing_key | quote }}`,
-			wantKey:  true, // quote("") -> "" -> yaml.Unmarshal -> nil, key still set
+			wantKey:  true, // quote(nil) -> "" -> yaml.Unmarshal("") -> nil, key still set
 		},
 	}
 
