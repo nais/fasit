@@ -2,6 +2,7 @@ package graph
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/nais/fasit/internal/feature/featureutil"
 )
@@ -53,6 +54,9 @@ func defaultsMap(valuesYAML map[string]json.RawMessage) (map[string]any, error) 
 
 			next, ok := parent[part].(map[string]any)
 			if !ok {
+				if _, exists := parent[part]; exists {
+					return nil, fmt.Errorf("key %q is not nestable", key)
+				}
 				next = map[string]any{}
 				parent[part] = next
 			}
