@@ -163,7 +163,6 @@ func Test_Playground_StripNoValue_OmitsMissingComputedFields(t *testing.T) {
 		EnvSlug:    "management",
 		Code:       "environmentKinds:\n  - management\n",
 	})
-
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
