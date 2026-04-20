@@ -145,11 +145,11 @@ func Test_Playground_JSONRawMessage_EncodesAsString(t *testing.T) {
 	}
 }
 
-func Test_Playground_StripNoValue_OmitsMissingComputedFields(t *testing.T) {
+func Test_Playground_StripNoValue_RendersMissingComputedFieldsAsNull(t *testing.T) {
 	ctx := context.Background()
 	envID := uuid.New()
 
-	// Simulate HelmValues returning <no value> (unquoted missing key) and nil (quoted missing key)
+	// Simulate HelmValues returning <no value> (unquoted missing key) and nil (quoted missing key).
 	helmVals := map[string]any{
 		"present": json.RawMessage(`"hello"`),
 		"missing": "<no value>",
@@ -185,13 +185,26 @@ func Test_Playground_StripNoValue_OmitsMissingComputedFields(t *testing.T) {
 	if out["present"] != "hello" {
 		t.Errorf("expected present=hello, got %v", out["present"])
 	}
-	if _, ok := out["missing"]; ok {
-		t.Errorf("expected 'missing' key to be omitted, got %v", out["missing"])
+	if _, ok := out["missing"]; !ok {
+		t.Fatal("expected 'missing' key to be present")
 	}
-	if _, ok := out["quoted"]; ok {
-		t.Errorf("expected 'quoted' (nil) key to be omitted, got %v", out["quoted"])
+	if out["missing"] != nil {
+		t.Errorf("expected 'missing' key to render as null, got %v", out["missing"])
 	}
-	if _, ok := out["parent"]; ok {
-		t.Errorf("expected empty 'parent' map to be omitted, got %v", out["parent"])
+	if _, ok := out["quoted"]; !ok {
+		t.Fatal("expected 'quoted' key to be present")
+	}
+	if out["quoted"] != nil {
+		t.Errorf("expected 'quoted' key to render as null, got %v", out["quoted"])
+	}
+	parent, ok := out["parent"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected 'parent' to be a map, got %T", out["parent"])
+	}
+	if _, ok := parent["child"]; !ok {
+		t.Fatal("expected 'parent.child' key to be present")
+	}
+	if parent["child"] != nil {
+		t.Errorf("expected 'parent.child' to render as null, got %v", parent["child"])
 	}
 }
