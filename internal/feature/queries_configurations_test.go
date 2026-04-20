@@ -113,7 +113,7 @@ func TestConfig(t *testing.T) {
 
 	t.Run("ConfigGet", func(t *testing.T) {
 		pool := newPool(ctx, t, container, dsn)
-		ctx = setupContext(ctx, pool)
+		ctx = setupContext(pool)
 
 		id := uuid.New()
 		created := time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC)
@@ -148,7 +148,7 @@ func TestConfig(t *testing.T) {
 	})
 	t.Run("ConfigCreate_Environment", func(t *testing.T) {
 		pool := newPool(ctx, t, container, dsn)
-		ctx = setupContext(ctx, pool)
+		ctx = setupContext(pool)
 
 		envid := uuid.New()
 		tenantid := uuid.New()
@@ -187,7 +187,7 @@ func TestConfig(t *testing.T) {
 	})
 	t.Run("ConfigCreate_Global", func(t *testing.T) {
 		pool := newPool(ctx, t, container, dsn)
-		ctx = setupContext(ctx, pool)
+		ctx = setupContext(pool)
 
 		envid := uuid.Nil
 		config := model.NewConfiguration{
@@ -219,7 +219,7 @@ func TestConfig(t *testing.T) {
 	})
 	t.Run("ConfigUpdate_Global", func(t *testing.T) {
 		pool := newPool(ctx, t, container, dsn)
-		ctx = setupContext(ctx, pool)
+		ctx = setupContext(pool)
 
 		config := model.NewConfiguration{
 			Feature:     "feature5",
@@ -255,7 +255,7 @@ func TestConfig(t *testing.T) {
 	})
 	t.Run("ConfigDelete", func(t *testing.T) {
 		pool := newPool(ctx, t, container, dsn)
-		ctx = setupContext(ctx, pool)
+		ctx = setupContext(pool)
 
 		config := model.NewConfiguration{
 			Feature: "feature9",
@@ -289,7 +289,7 @@ func TestConfig(t *testing.T) {
 	})
 	t.Run("HelmValues_Ok", func(t *testing.T) {
 		pool := newPool(ctx, t, container, dsn)
-		ctx = setupContext(ctx, pool)
+		ctx = setupContext(pool)
 
 		envid := uuid.New()
 		tenantid := uuid.New()
@@ -346,7 +346,7 @@ func TestConfig(t *testing.T) {
 	})
 	t.Run("HelmValues_MissingRequiredFields", func(t *testing.T) {
 		pool := newPool(ctx, t, container, dsn)
-		ctx = setupContext(ctx, pool)
+		ctx = setupContext(pool)
 
 		envid := uuid.New()
 		tenantid := uuid.New()
@@ -395,7 +395,7 @@ func TestConfig(t *testing.T) {
 	})
 	t.Run("HelmValues_InvalidKeyNesting", func(t *testing.T) {
 		pool := newPool(ctx, t, container, dsn)
-		ctx = setupContext(ctx, pool)
+		ctx = setupContext(pool)
 
 		envid := uuid.New()
 		tenantid := uuid.New()
@@ -449,7 +449,7 @@ func TestConfig(t *testing.T) {
 	})
 	t.Run("HelmValues_WithMappingValues", func(t *testing.T) {
 		pool := newPool(ctx, t, container, dsn)
-		ctx = setupContext(ctx, pool)
+		ctx = setupContext(pool)
 
 		envid := uuid.New()
 		mgmtID := uuid.New()
@@ -545,7 +545,7 @@ ON CONFLICT (
 	})
 	t.Run("HelmValues_WithIgnoredKeys_Ignored", func(t *testing.T) {
 		pool := newPool(ctx, t, container, dsn)
-		ctx = setupContext(ctx, pool)
+		ctx = setupContext(pool)
 
 		envid := uuid.New()
 		tenantid := uuid.New()
@@ -621,7 +621,7 @@ ON CONFLICT (
 	})
 	t.Run("HelmValues_WithIgnoredKeys_NotIgnored", func(t *testing.T) {
 		pool := newPool(ctx, t, container, dsn)
-		ctx = setupContext(ctx, pool)
+		ctx = setupContext(pool)
 
 		envid := uuid.New()
 		tenantid := uuid.New()
@@ -711,9 +711,9 @@ ON CONFLICT (
 	})
 }
 
-func setupContext(ctx context.Context, pool *pgxpool.Pool) context.Context {
+func setupContext(pool *pgxpool.Pool) context.Context {
 	log, _ := test.NewNullLogger()
-	ctx = Register(context.Background(), pool)
+	ctx := Register(context.Background(), pool)
 	ctx = audit.Register(ctx, pool, log)
 	ctx = environment.Register(ctx, pool)
 	return ctx

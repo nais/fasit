@@ -2503,6 +2503,7 @@ input PlaygroundInput {
 	envSlug: String!
 	featureName: String
 	showSecrets: Boolean
+	includeChartDefaults: Boolean
 	includeUnsetConfig: Boolean
 	code: String!
 }
@@ -12849,7 +12850,7 @@ func (ec *executionContext) unmarshalInputPlaygroundInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"tenantSlug", "envSlug", "featureName", "showSecrets", "includeUnsetConfig", "code"}
+	fieldsInOrder := [...]string{"tenantSlug", "envSlug", "featureName", "showSecrets", "includeChartDefaults", "includeUnsetConfig", "code"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -12884,6 +12885,13 @@ func (ec *executionContext) unmarshalInputPlaygroundInput(ctx context.Context, o
 				return it, err
 			}
 			it.ShowSecrets = data
+		case "includeChartDefaults":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("includeChartDefaults"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.IncludeChartDefaults = data
 		case "includeUnsetConfig":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("includeUnsetConfig"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)

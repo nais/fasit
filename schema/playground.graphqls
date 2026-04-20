@@ -8,6 +8,7 @@ input PlaygroundInput {
 	envSlug: String!
 	featureName: String
 	showSecrets: Boolean
+	includeChartDefaults: Boolean
 	includeUnsetConfig: Boolean
 	code: String!
 }
