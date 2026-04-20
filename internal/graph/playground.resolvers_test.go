@@ -136,3 +136,55 @@ func Test_Playground_JSONRawMessage_EncodesAsString(t *testing.T) {
 		t.Errorf("expected token=secret-value (string), got %T %v", out["token"], out["token"])
 	}
 }
+
+func Test_Playground_StripNoValue_OmitsMissingComputedFields(t *testing.T) {
+	ctx := context.Background()
+	envID := uuid.New()
+
+	// Simulate HelmValues returning <no value> (unquoted missing key) and nil (quoted missing key)
+	helmVals := map[string]any{
+		"present": json.RawMessage(`"hello"`),
+		"missing": "<no value>",
+		"quoted":  nil,
+		"parent":  map[string]any{"child": "<no value>"},
+	}
+	ctx = featuretest.OnHelmValues(ctx, envID, "", helmVals)
+
+	repo := mocks.NewRepo(t)
+	repo.EXPECT().EnvironmentByNames(mock.Anything, "nav", "management").Return(&model.Environment{
+		ID:   envID,
+		Kind: model.EnvironmentKindManagement,
+	}, nil).Once()
+
+	r := &mutationResolver{Resolver: &Resolver{Repo: repo}}
+
+	result, err := r.Playground(ctx, model.PlaygroundInput{
+		TenantSlug: "nav",
+		EnvSlug:    "management",
+		Code:       "environmentKinds:\n  - management\n",
+	})
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(result.Errors) > 0 {
+		t.Fatalf("unexpected playground errors: %v", result.Errors)
+	}
+
+	var out map[string]any
+	if err := yaml.Unmarshal([]byte(*result.Result), &out); err != nil {
+		t.Fatalf("unmarshal result: %v", err)
+	}
+	if out["present"] != "hello" {
+		t.Errorf("expected present=hello, got %v", out["present"])
+	}
+	if _, ok := out["missing"]; ok {
+		t.Errorf("expected 'missing' key to be omitted, got %v", out["missing"])
+	}
+	if _, ok := out["quoted"]; ok {
+		t.Errorf("expected 'quoted' (nil) key to be omitted, got %v", out["quoted"])
+	}
+	if _, ok := out["parent"]; ok {
+		t.Errorf("expected empty 'parent' map to be omitted, got %v", out["parent"])
+	}
+}

@@ -1,8 +1,8 @@
 package graph
 
-// stripNoValue cleans up the "<no value>" sentinel produced by Go templates when
-// referencing a missing map key, replacing it with nil so it renders as null in YAML.
-// Empty maps (all children unresolvable) are also removed.
+// stripNoValue removes keys whose values are the "<no value>" sentinel produced by
+// Go templates on missing map keys, or nil (produced by e.g. `{{ .Env.missing | quote }}`).
+// Empty parent maps left behind after pruning are also removed.
 // This is playground-only; production rollouts are unaffected.
 func stripNoValue(m map[string]any) {
 	for k, v := range m {
@@ -14,8 +14,10 @@ func stripNoValue(m map[string]any) {
 			}
 		case string:
 			if val == "<no value>" {
-				m[k] = nil
+				delete(m, k)
 			}
+		case nil:
+			delete(m, k)
 		}
 	}
 }
