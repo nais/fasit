@@ -128,5 +128,3 @@ func (r *mutationResolver) Playground(ctx context.Context, input model.Playgroun
 		Result: &s,
 	}, nil
 }
-
-
