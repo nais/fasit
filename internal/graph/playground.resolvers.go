@@ -40,6 +40,10 @@ func (r *mutationResolver) Playground(ctx context.Context, input model.Playgroun
 	f := &model.Feature{
 		FeatureYAML: fyaml,
 	}
+	if input.IncludeChartDefaults != nil && *input.IncludeChartDefaults && input.FeatureName == nil {
+		return retErr(fmt.Errorf("featureName is required when includeChartDefaults is true"))
+	}
+
 	var featureForEnv *model.Feature
 	if input.FeatureName != nil {
 		f.Name = *input.FeatureName
@@ -59,10 +63,6 @@ func (r *mutationResolver) Playground(ctx context.Context, input model.Playgroun
 
 	stripNoValue(vals)
 	if input.IncludeChartDefaults != nil && *input.IncludeChartDefaults {
-		if featureForEnv == nil {
-			return retErr(fmt.Errorf("featureName is required when includeChartDefaults is true"))
-		}
-
 		d, err := defaultsMap(featureForEnv.ValuesYAML)
 		if err != nil {
 			return retErr(err)

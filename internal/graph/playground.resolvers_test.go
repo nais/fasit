@@ -282,3 +282,44 @@ func Test_Playground_IncludeChartDefaults_MergesDefaults(t *testing.T) {
 		t.Errorf("expected replicaCount from defaults, got %v", out["replicaCount"])
 	}
 }
+
+func Test_Playground_IncludeChartDefaults_RequiresFeatureNameBeforeLookup(t *testing.T) {
+	ctx := context.Background()
+	envID := uuid.New()
+
+	calledHelmValues := false
+	helmValuesFunc := func(ctx context.Context, f *model.Feature, envID uuid.UUID) (map[string]any, error) {
+		calledHelmValues = true
+		return map[string]any{}, nil
+	}
+	ctx = context.WithValue(ctx, feature.HelmValuesFuncKey, helmValuesFunc)
+
+	repo := mocks.NewRepo(t)
+	repo.EXPECT().EnvironmentByNames(mock.Anything, "nav", "management").Return(&model.Environment{
+		ID:   envID,
+		Kind: model.EnvironmentKindManagement,
+		Name: "management",
+	}, nil).Once()
+
+	r := &mutationResolver{Resolver: &Resolver{Repo: repo}}
+	includeChartDefaults := true
+
+	result, err := r.Playground(ctx, model.PlaygroundInput{
+		TenantSlug:           "nav",
+		EnvSlug:              "management",
+		IncludeChartDefaults: &includeChartDefaults,
+		Code:                 "environmentKinds:\n  - management\n",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(result.Errors) == 0 {
+		t.Fatal("expected playground errors, got none")
+	}
+	if result.Errors[0] != "featureName is required when includeChartDefaults is true" {
+		t.Fatalf("unexpected playground error: %v", result.Errors[0])
+	}
+	if calledHelmValues {
+		t.Fatal("expected HelmValues not to be called")
+	}
+}
