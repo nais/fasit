@@ -8,7 +8,6 @@ import (
 
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/feature/featureutil"
-	"github.com/nais/fasit/internal/graph/graphgen"
 	"github.com/nais/fasit/internal/graph/model"
 	yaml "gopkg.in/yaml.v3"
 )
@@ -130,13 +129,19 @@ func (r *mutationResolver) Playground(ctx context.Context, input model.Playgroun
 	}, nil
 }
 
-func (r *playgroundInputResolver) IncludeChartDefaults(ctx context.Context, obj *model.PlaygroundInput, data *bool) error {
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//    it when you're done.
+//  - You have helper methods in this file. Move them out to keep these resolver files clean.
+/*
+	func (r *playgroundInputResolver) IncludeChartDefaults(ctx context.Context, obj *model.PlaygroundInput, data *bool) error {
 	obj.IncludeChartDefaults = data
 	return nil
 }
-
 func (r *Resolver) PlaygroundInput() graphgen.PlaygroundInputResolver {
 	return &playgroundInputResolver{r}
 }
-
 type playgroundInputResolver struct{ *Resolver }
+*/

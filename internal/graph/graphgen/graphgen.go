@@ -51,7 +51,6 @@ type ResolverRoot interface {
 	Status() StatusResolver
 	Subscription() SubscriptionResolver
 	Tenant() TenantResolver
-	PlaygroundInput() PlaygroundInputResolver
 }
 
 type DirectiveRoot struct {
@@ -513,10 +512,6 @@ type TenantResolver interface {
 	Environment(ctx context.Context, obj *model.Tenant, id *uuid.UUID, slug *string) (*model.Environment, error)
 
 	Warnings(ctx context.Context, obj *model.Tenant) ([]model.Warning, error)
-}
-
-type PlaygroundInputResolver interface {
-	IncludeChartDefaults(ctx context.Context, obj *model.PlaygroundInput, data *bool) error
 }
 
 type executableSchema graphql.ExecutableSchemaState[ResolverRoot, DirectiveRoot, ComplexityRoot]
@@ -12896,9 +12891,7 @@ func (ec *executionContext) unmarshalInputPlaygroundInput(ctx context.Context, o
 			if err != nil {
 				return it, err
 			}
-			if err = ec.Resolvers.PlaygroundInput().IncludeChartDefaults(ctx, &it, data); err != nil {
-				return it, err
-			}
+			it.IncludeChartDefaults = data
 		case "includeUnsetConfig":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("includeUnsetConfig"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
