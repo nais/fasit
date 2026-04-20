@@ -2501,6 +2501,7 @@ type KubernetesNode {
 input PlaygroundInput {
 	tenantSlug: String!
 	envSlug: String!
+	featureName: String
 	showSecrets: Boolean
 	includeUnsetConfig: Boolean
 	code: String!
@@ -12848,7 +12849,7 @@ func (ec *executionContext) unmarshalInputPlaygroundInput(ctx context.Context, o
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"tenantSlug", "envSlug", "showSecrets", "includeUnsetConfig", "code"}
+	fieldsInOrder := [...]string{"tenantSlug", "envSlug", "featureName", "showSecrets", "includeUnsetConfig", "code"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -12869,6 +12870,13 @@ func (ec *executionContext) unmarshalInputPlaygroundInput(ctx context.Context, o
 				return it, err
 			}
 			it.EnvSlug = data
+		case "featureName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("featureName"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.FeatureName = data
 		case "showSecrets":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("showSecrets"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)

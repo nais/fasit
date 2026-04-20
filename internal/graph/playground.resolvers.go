@@ -3,6 +3,7 @@ package graph
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/feature/featureutil"
@@ -38,10 +39,15 @@ func (r *mutationResolver) Playground(ctx context.Context, input model.Playgroun
 	f := &model.Feature{
 		FeatureYAML: fyaml,
 	}
+	if input.FeatureName != nil {
+		f.Name = *input.FeatureName
+	}
 	vals, err := featurepkg.HelmValues(ctx, f, env.ID)
 	if err != nil {
 		return retErr(err)
 	}
+
+	stripNoValue(vals)
 
 	if input.IncludeUnsetConfig != nil && *input.IncludeUnsetConfig {
 		for k, v := range f.Values {
@@ -57,14 +63,20 @@ func (r *mutationResolver) Playground(ctx context.Context, input model.Playgroun
 			outer := vals
 			for i, part := range parts {
 				if i == len(parts)-1 {
-					outer[part] = nil
+					if _, ok := outer[part]; !ok {
+						outer[part] = nil
+					}
 					break
 				}
 
 				if _, ok := outer[part]; !ok {
 					outer[part] = map[string]any{}
 				}
-				outer = outer[part].(map[string]any)
+				next, ok := outer[part].(map[string]any)
+				if !ok {
+					break
+				}
+				outer = next
 			}
 		}
 	}
@@ -72,7 +84,21 @@ func (r *mutationResolver) Playground(ctx context.Context, input model.Playgroun
 	buf := &bytes.Buffer{}
 	enc := yaml.NewEncoder(buf)
 	enc.SetIndent(2)
-	if err := enc.Encode(vals); err != nil {
+
+	// json.RawMessage values encode to byte arrays in YAML; normalize via JSON round-trip first.
+	jsonBytes, err := json.Marshal(vals)
+	if err != nil {
+		return retErr(err)
+	}
+	var normalized any
+	if err := json.Unmarshal(jsonBytes, &normalized); err != nil {
+		return retErr(err)
+	}
+
+	if err := enc.Encode(normalized); err != nil {
+		return retErr(err)
+	}
+	if err := enc.Close(); err != nil {
 		return retErr(err)
 	}
 
