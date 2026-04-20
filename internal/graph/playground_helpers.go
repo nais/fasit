@@ -48,6 +48,13 @@ func defaultsMap(valuesYAML map[string]json.RawMessage) (map[string]any, error) 
 		parent := ret
 		for i, part := range parts {
 			if i == len(parts)-1 {
+				if existing, exists := parent[part]; exists {
+					_, existingIsMap := existing.(map[string]any)
+					_, valIsMap := val.(map[string]any)
+					if existingIsMap != valIsMap {
+						return nil, fmt.Errorf("key %q is not nestable", key)
+					}
+				}
 				parent[part] = val
 				break
 			}
