@@ -23,6 +23,11 @@ import (
 
 type closeFuncs []func() error
 
+// defaultMaxConns is the pgxpool connection limit applied on machines with 4 or
+// fewer CPUs (e.g. local development, small CI runners) to avoid overwhelming
+// the database.
+const defaultMaxConns = 5
+
 func (c closeFuncs) Close() error {
 	var err error
 	for _, f := range c {
@@ -106,10 +111,6 @@ func (r *repo) TxFunc(ctx context.Context, fn TXFunc) error {
 func NewConnPool(ctx context.Context, dbConnDSN string, log logrus.FieldLogger) (*pgxpool.Pool, io.Closer, error) {
 	cloudsql := !strings.Contains(dbConnDSN, "://")
 
-	if runtime.NumCPU() < 5 {
-		dbConnDSN = dbConnDSN + " pool_max_conns=5"
-	}
-
 	cloudsqlHost := ""
 	if cloudsql {
 		vals, err := url.ParseQuery(strings.ReplaceAll(dbConnDSN, " ", "&"))
@@ -124,6 +125,10 @@ func NewConnPool(ctx context.Context, dbConnDSN string, log logrus.FieldLogger) 
 	config, err := pgxpool.ParseConfig(dbConnDSN)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to parse pgx config: %w", err)
+	}
+
+	if runtime.NumCPU() <= 4 {
+		config.MaxConns = defaultMaxConns
 	}
 
 	config.AfterConnect = func(ctx context.Context, conn *pgx.Conn) error {
