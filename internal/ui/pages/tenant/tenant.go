@@ -3,6 +3,7 @@ package tenant
 import (
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph/model"
@@ -25,7 +26,7 @@ type pageData struct {
 
 func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		slug := r.PathValue("tenant")
+		slug := chi.URLParam(r, "tenant")
 
 		tenant, err := environment.GetTenantGetByName(r.Context(), slug)
 		if err != nil {

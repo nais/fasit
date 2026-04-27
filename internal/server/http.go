@@ -26,8 +26,6 @@ func SetupRouter(
 	repo database.Repo,
 	log logrus.FieldLogger,
 ) (http.Handler, error) {
-	// If the IAP audience is not set, we stop the server with a fatal error
-	// unless the INSECURE_SKIP_PROXY env var is true.
 	iapMW := auth.ValidateJWTFromComputeEngine(iapAudience)
 	if iapAudience == "" {
 		if !insecureSkipProxy {

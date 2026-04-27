@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
@@ -15,7 +16,7 @@ import (
 
 func DetailHandler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		featureName, version := r.PathValue("feature"), r.PathValue("version")
+		featureName, version := chi.URLParam(r, "feature"), chi.URLParam(r, "version")
 		rollout, err := repo.RolloutByNameAndVersion(r.Context(), featureName, version)
 		if err != nil {
 			http.Error(w, "Failed to load rollout: "+err.Error(), http.StatusInternalServerError)

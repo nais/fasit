@@ -3,6 +3,7 @@ package environment
 import (
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/nais/fasit/internal/database"
 	envpkg "github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph/model"
@@ -28,8 +29,8 @@ type MetadataItem struct {
 
 func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		tenantSlug := r.PathValue("tenant")
-		envName := r.PathValue("env")
+		tenantSlug := chi.URLParam(r, "tenant")
+		envName := chi.URLParam(r, "env")
 
 		tenant, err := envpkg.GetTenantGetByName(r.Context(), tenantSlug)
 		if err != nil {

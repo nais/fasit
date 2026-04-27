@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/nais/fasit/internal/database"
 	envpkg "github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
@@ -182,7 +183,7 @@ func completedDate(value string) string {
 }
 
 func loadFeatureData(r *http.Request, repo database.Repo, activeTab string) (*DetailPage, error) {
-	featureName := r.PathValue("feature")
+	featureName := chi.URLParam(r, "feature")
 	features, err := featurepkg.Features(r.Context())
 	if err != nil {
 		return nil, err

@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/database"
 	envpkg "github.com/nais/fasit/internal/environment"
@@ -19,7 +20,7 @@ import (
 
 func FeatureTabHandler(renderPage RenderPage, repo database.Repo, activeTab string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		data, err := loadFeaturePageData(r.Context(), repo, r.PathValue("tenant"), r.PathValue("env"), r.PathValue("feature"), activeTab)
+		data, err := loadFeaturePageData(r.Context(), repo, chi.URLParam(r, "tenant"), chi.URLParam(r, "env"), chi.URLParam(r, "feature"), activeTab)
 		if err != nil {
 			http.Error(w, "Failed to load data: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -40,7 +41,7 @@ func UpdateConfigHandler(_ database.Repo) http.HandlerFunc {
 			return
 		}
 
-		configID, err := uuid.Parse(r.PathValue("id"))
+		configID, err := uuid.Parse(chi.URLParam(r, "id"))
 		if err != nil {
 			http.Error(w, "Invalid configuration id", http.StatusBadRequest)
 			return
@@ -69,7 +70,7 @@ func UpdateConfigHandler(_ database.Repo) http.HandlerFunc {
 
 func DeleteConfigHandler(_ database.Repo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		configID, err := uuid.Parse(r.PathValue("id"))
+		configID, err := uuid.Parse(chi.URLParam(r, "id"))
 		if err != nil {
 			http.Error(w, "Invalid configuration id", http.StatusBadRequest)
 			return
@@ -89,12 +90,12 @@ func ConfigOverrideSubmitHandler(repo database.Repo) http.HandlerFunc {
 			return
 		}
 
-		tenant, err := envpkg.GetTenantGetByName(r.Context(), r.PathValue("tenant"))
+		tenant, err := envpkg.GetTenantGetByName(r.Context(), chi.URLParam(r, "tenant"))
 		if err != nil {
 			http.Error(w, "Failed to get environment: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-		env, err := repo.EnvironmentGetByName(r.Context(), tenant.ID, r.PathValue("env"))
+		env, err := repo.EnvironmentGetByName(r.Context(), tenant.ID, chi.URLParam(r, "env"))
 		if err != nil {
 			http.Error(w, "Failed to get environment: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -113,7 +114,7 @@ func ConfigOverrideSubmitHandler(repo database.Repo) http.HandlerFunc {
 
 		_, err = featurepkg.ConfigCreate(r.Context(), model.NewConfiguration{
 			EnvironmentID: &env.ID,
-			Feature:       r.PathValue("feature"),
+			Feature:       chi.URLParam(r, "feature"),
 			Key:           r.FormValue("key"),
 			Value:         raw,
 		})
@@ -132,17 +133,17 @@ func ToggleFeatureStateHandler(repo database.Repo) http.HandlerFunc {
 			return
 		}
 
-		tenant, err := envpkg.GetTenantGetByName(r.Context(), r.PathValue("tenant"))
+		tenant, err := envpkg.GetTenantGetByName(r.Context(), chi.URLParam(r, "tenant"))
 		if err != nil {
 			http.Error(w, "Failed to get environment: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-		env, err := repo.EnvironmentGetByName(r.Context(), tenant.ID, r.PathValue("env"))
+		env, err := repo.EnvironmentGetByName(r.Context(), tenant.ID, chi.URLParam(r, "env"))
 		if err != nil {
 			http.Error(w, "Failed to get environment: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-		feature, err := featurepkg.FeatureByNameForEnv(r.Context(), r.PathValue("feature"), env.ID)
+		feature, err := featurepkg.FeatureByNameForEnv(r.Context(), chi.URLParam(r, "feature"), env.ID)
 		if err != nil {
 			http.Error(w, "Failed to get feature: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -379,7 +380,7 @@ func prettyJSON(s string) string {
 }
 
 func featureBasePath(r *http.Request) string {
-	return featureBasePathValues(r.PathValue("tenant"), r.PathValue("env"), r.PathValue("feature")) + "/"
+	return featureBasePathValues(chi.URLParam(r, "tenant"), chi.URLParam(r, "env"), chi.URLParam(r, "feature")) + "/"
 }
 
 func featureBasePathValues(tenant, env, feature string) string {

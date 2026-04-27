@@ -3,6 +3,7 @@ package environment
 import (
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/ui/chart"
 	"github.com/nais/fasit/internal/ui/layout"
@@ -22,7 +23,7 @@ values:
 
 func PlaygroundTabHandler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		data, err := loadFeaturePageData(r.Context(), repo, r.PathValue("tenant"), r.PathValue("env"), r.PathValue("feature"), "playground")
+		data, err := loadFeaturePageData(r.Context(), repo, chi.URLParam(r, "tenant"), chi.URLParam(r, "env"), chi.URLParam(r, "feature"), "playground")
 		if err != nil {
 			http.Error(w, "Failed to load data: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -50,7 +51,7 @@ func PlaygroundSubmitHandler(renderPage RenderPage, repo database.Repo) http.Han
 			return
 		}
 
-		data, err := loadFeaturePageData(r.Context(), repo, r.PathValue("tenant"), r.PathValue("env"), r.PathValue("feature"), "playground")
+		data, err := loadFeaturePageData(r.Context(), repo, chi.URLParam(r, "tenant"), chi.URLParam(r, "env"), chi.URLParam(r, "feature"), "playground")
 		if err != nil {
 			http.Error(w, "Failed to load data: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -58,7 +59,7 @@ func PlaygroundSubmitHandler(renderPage RenderPage, repo database.Repo) http.Han
 
 		code := r.FormValue("code")
 		data.PlaygroundCode = code
-		data.PlaygroundResult, _ = runPlayground(r.Context(), repo, r.PathValue("tenant"), r.PathValue("env"), r.PathValue("feature"), code, r.FormValue("includeUnset") == "on")
+		data.PlaygroundResult, _ = runPlayground(r.Context(), repo, chi.URLParam(r, "tenant"), chi.URLParam(r, "env"), chi.URLParam(r, "feature"), code, r.FormValue("includeUnset") == "on")
 
 		renderPage(w, layout.Props{
 			Title:          data.Tenant.Name + " / " + data.Environment.Name + " / " + data.Feature.Name,

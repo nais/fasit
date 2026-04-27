@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/deployment"
@@ -19,7 +20,7 @@ type deploymentStatusRow struct{ TenantName, EnvironmentName, State, Message, La
 
 func DeploymentHandler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		id, err := uuid.Parse(r.PathValue("id"))
+		id, err := uuid.Parse(chi.URLParam(r, "id"))
 		if err != nil {
 			http.Error(w, "Failed to load deployment", http.StatusInternalServerError)
 			return
