@@ -6,6 +6,7 @@ import (
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nais/fasit/internal/ui"
 	"github.com/nais/fasit/internal/ui/layout"
 	"github.com/nais/fasit/internal/ui/view"
 	g "maragu.dev/gomponents"
@@ -57,7 +58,7 @@ func page(tenants []tenantCard) g.Node {
 	articles := g.Map(tenants, func(tenant tenantCard) g.Node {
 		return h.Article(h.Class("dash-card"),
 			h.H3(
-				h.A(h.Href("/tenants/"+tenant.Tenant.Name),
+				h.A(h.Href(ui.BasePath+"/tenants/"+tenant.Tenant.Name),
 					tenantBadge(tenant),
 					g.Text(" "),
 					g.Text(tenant.Tenant.Name),
@@ -65,7 +66,7 @@ func page(tenants []tenantCard) g.Node {
 			),
 			h.Ul(g.Group(g.Map(tenant.Environments, func(environment *model.Environment) g.Node {
 				return h.Li(
-					h.A(h.Href("/tenants/"+tenant.Tenant.Name+"/envs/"+environment.Name), g.Text(environment.Name)),
+					h.A(h.Href(ui.BasePath+"/tenants/"+tenant.Tenant.Name+"/envs/"+environment.Name), g.Text(environment.Name)),
 				)
 			}))),
 		)

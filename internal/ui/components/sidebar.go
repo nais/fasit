@@ -1,6 +1,7 @@
 package components
 
 import (
+	"github.com/nais/fasit/internal/ui"
 	"github.com/nais/fasit/internal/ui/view"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
@@ -10,7 +11,7 @@ func FeaturesSidebar(features []view.FeatureNav, currentFeatureName string) g.No
 	return h.Aside(h.Class("sidebar"),
 		h.Div(h.Class("nav"),
 			h.Ul(g.Group(g.Map(features, func(feature view.FeatureNav) g.Node {
-				attrs := []g.Node{h.Href("/features/" + feature.Name)}
+				attrs := []g.Node{h.Href(ui.BasePath + "/features/" + feature.Name)}
 				if currentFeatureName != "" && feature.Name == currentFeatureName {
 					attrs = append(attrs, h.Class("active"))
 				}
@@ -34,7 +35,7 @@ func EnvironmentSidebar(tenantName, environmentName, currentFeatureName string, 
 			h.Ul(g.Group(g.Map(allFeatures, func(feature view.FeatureNav) g.Node {
 				syncEnabled, inEnv := enabledMap[feature.Name]
 				attrs := []g.Node{
-					h.Href("/tenants/" + tenantName + "/envs/" + environmentName + "/" + feature.Name),
+					h.Href(ui.BasePath + "/tenants/" + tenantName + "/envs/" + environmentName + "/" + feature.Name),
 				}
 				if currentFeatureName != "" && feature.Name == currentFeatureName {
 					attrs = append(attrs, h.Class("active"))

@@ -14,6 +14,7 @@ import (
 	envpkg "github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nais/fasit/internal/ui"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
@@ -126,7 +127,7 @@ func statusTab(data *DetailPage) g.Node {
 		if environment.Enabled {
 			statusClass, statusIcon, statusText = "status-success", "✓", "Enabled"
 		}
-		return h.Tr(h.Td(h.A(h.Href("/tenants/"+environment.TenantSlug+"/envs/"+environment.Name+"/"+data.CurrentFeature.Name+"/"), g.Text(environment.Name))), h.Td(h.A(h.Href("/tenants/"+environment.TenantSlug), g.Text(environment.TenantName))), h.Td(h.Span(h.Class(statusClass), g.Text(statusIcon)), g.Text(" "+statusText)), h.Td(g.Text(environment.Created)), h.Td(g.Text(environment.LastModified)))
+		return h.Tr(h.Td(h.A(h.Href(ui.BasePath+"/tenants/"+environment.TenantSlug+"/envs/"+environment.Name+"/"+data.CurrentFeature.Name+"/"), g.Text(environment.Name))), h.Td(h.A(h.Href(ui.BasePath+"/tenants/"+environment.TenantSlug), g.Text(environment.TenantName))), h.Td(h.Span(h.Class(statusClass), g.Text(statusIcon)), g.Text(" "+statusText)), h.Td(g.Text(environment.Created)), h.Td(g.Text(environment.LastModified)))
 	}))))
 }
 
@@ -141,9 +142,9 @@ func rolloutsTab(data *DetailPage) g.Node {
 
 func rolloutVersionCell(r RolloutItem) g.Node {
 	if r.DeploymentID != "" {
-		return h.A(h.Href("/deployments/"+r.DeploymentID+"/"), g.Text(r.Version))
+		return h.A(h.Href(ui.BasePath+"/deployments/"+r.DeploymentID+"/"), g.Text(r.Version))
 	}
-	return h.A(h.Href("/rollouts/"+r.FeatureName+"/"+r.Version+"/"), g.Text(r.Version))
+	return h.A(h.Href(ui.BasePath+"/rollouts/"+r.FeatureName+"/"+r.Version+"/"), g.Text(r.Version))
 }
 
 func dependencyLinks(feature *Feature) g.Node {
@@ -157,7 +158,7 @@ func dependencyLinks(feature *Feature) g.Node {
 	}
 	links := make([]g.Node, 0, len(names)*2)
 	for _, name := range names {
-		links = append(links, g.Text(" "), h.A(h.Href("/features/"+name), g.Text(name)))
+		links = append(links, g.Text(" "), h.A(h.Href(ui.BasePath+"/features/"+name), g.Text(name)))
 	}
 	return g.Group(links)
 }

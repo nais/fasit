@@ -9,6 +9,7 @@ import (
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/deployment"
 	envpkg "github.com/nais/fasit/internal/environment"
+	"github.com/nais/fasit/internal/ui"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
@@ -61,7 +62,7 @@ func DeploymentHandler(renderPage RenderPage, repo database.Repo) http.HandlerFu
 
 func deploymentPage(d *deployment.Deployment, statuses []deploymentStatusRow) g.Node {
 	meta := []g.Node{
-		metaRow("Feature", h.A(h.Href("/features/"+d.Feature.Name+"/"), g.Text(d.Feature.Name))),
+		metaRow("Feature", h.A(h.Href(ui.BasePath+"/features/"+d.Feature.Name+"/"), g.Text(d.Feature.Name))),
 		metaRow("Version", g.Text(d.Feature.Version)),
 		metaRow("Target", g.Text(deploymentTarget(d))),
 		metaRow("Created", g.Text(formatTime(d.Created))),
@@ -91,8 +92,8 @@ func deploymentPage(d *deployment.Deployment, statuses []deploymentStatusRow) g.
 			)),
 			h.TBody(g.Group(g.Map(statuses, func(s deploymentStatusRow) g.Node {
 				return h.Tr(
-					h.Td(h.A(h.Href("/tenants/"+s.TenantName+"/"), g.Text(s.TenantName))),
-					h.Td(h.A(h.Href("/tenants/"+s.TenantName+"/envs/"+s.EnvironmentName+"/"+d.Feature.Name+"/"), g.Text(s.EnvironmentName))),
+					h.Td(h.A(h.Href(ui.BasePath+"/tenants/"+s.TenantName+"/"), g.Text(s.TenantName))),
+					h.Td(h.A(h.Href(ui.BasePath+"/tenants/"+s.TenantName+"/envs/"+s.EnvironmentName+"/"+d.Feature.Name+"/"), g.Text(s.EnvironmentName))),
 					h.Td(rolloutStatus(s.State)),
 					h.Td(g.Text(s.Message)),
 					h.Td(g.Text(s.LastModified)),

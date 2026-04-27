@@ -8,6 +8,7 @@ import (
 
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/deployment"
+	"github.com/nais/fasit/internal/ui"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
@@ -102,7 +103,7 @@ func rolloutsContent(rollouts []Summary) g.Node {
 		)),
 		h.TBody(g.Group(g.Map(rollouts, func(rollout Summary) g.Node {
 			return h.Tr(
-				h.Td(h.A(h.Href("/features/"+rollout.FeatureName+"/"), g.Text(rollout.FeatureName))),
+				h.Td(h.A(h.Href(ui.BasePath+"/features/"+rollout.FeatureName+"/"), g.Text(rollout.FeatureName))),
 				h.Td(versionCell(rollout)),
 				h.Td(rolloutStatus(rollout.Status)),
 				h.Td(g.Text(rollout.Target)),
@@ -115,10 +116,10 @@ func rolloutsContent(rollouts []Summary) g.Node {
 
 func versionCell(r Summary) g.Node {
 	if r.DeploymentID != "" {
-		return h.A(h.Href("/deployments/"+r.DeploymentID+"/"), g.Text(r.Version))
+		return h.A(h.Href(ui.BasePath+"/deployments/"+r.DeploymentID+"/"), g.Text(r.Version))
 	}
 
-	return h.A(h.Href("/rollouts/"+r.FeatureName+"/"+r.Version+"/"), g.Text(r.Version))
+	return h.A(h.Href(ui.BasePath+"/rollouts/"+r.FeatureName+"/"+r.Version+"/"), g.Text(r.Version))
 }
 
 func rolloutStatus(status string) g.Node {

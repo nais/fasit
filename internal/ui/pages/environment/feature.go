@@ -12,6 +12,7 @@ import (
 	envpkg "github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nais/fasit/internal/ui"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
 	g "maragu.dev/gomponents"
@@ -178,7 +179,7 @@ func featurePageContent(page *FeaturePage) g.Node {
 			components.Breadcrumbs(page.Breadcrumbs),
 			h.Div(h.Class("card"),
 				h.Div(h.Class("card-body"),
-					h.P(g.Text("Global feature page: "), h.A(h.Href("/features/"+page.Feature.Name+"/"), g.Text(page.Feature.Name))),
+					h.P(g.Text("Global feature page: "), h.A(h.Href(ui.BasePath+"/features/"+page.Feature.Name+"/"), g.Text(page.Feature.Name))),
 					components.TabsNav(page.ActiveTab, envFeatureTabs()),
 					tabContent,
 				),
@@ -271,9 +272,9 @@ func rolloutsTab(page *FeaturePage) g.Node {
 
 func rolloutVersionCell(r RolloutItem) g.Node {
 	if r.DeploymentID != "" {
-		return h.A(h.Href("/deployments/"+r.DeploymentID+"/"), g.Text(r.Version))
+		return h.A(h.Href(ui.BasePath+"/deployments/"+r.DeploymentID+"/"), g.Text(r.Version))
 	}
-	return h.A(h.Href("/rollouts/"+r.FeatureName+"/"+r.Version+"/"), g.Text(r.Version))
+	return h.A(h.Href(ui.BasePath+"/rollouts/"+r.FeatureName+"/"+r.Version+"/"), g.Text(r.Version))
 }
 
 func auditTab() g.Node {
@@ -384,5 +385,5 @@ func featureBasePath(r *http.Request) string {
 }
 
 func featureBasePathValues(tenant, env, feature string) string {
-	return "/tenants/" + tenant + "/envs/" + env + "/" + feature
+	return ui.BasePath + "/tenants/" + tenant + "/envs/" + env + "/" + feature
 }

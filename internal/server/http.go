@@ -54,7 +54,7 @@ func SetupRouter(
 	router.Post("/github/deployment", deploy.CreateDeployment)
 	router.Get("/github/deployment/{id}", deploy.GetDeployment)
 	uiServer := uiserver.New(ui.SiteFS, repo)
-	router.Mount("/", iapMW(uiServer.Routes()))
+	router.Mount(ui.BasePath, iapMW(uiServer.Routes()))
 	return router, nil
 }
 

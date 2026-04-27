@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nais/fasit/internal/ui"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
@@ -42,7 +43,7 @@ func detailPage(rollout *model.Rollout, events []*model.RolloutEvent) g.Node {
 		h.Table(
 			h.Class("table"),
 			h.TBody(
-				metaRow("Feature", h.A(h.Href("/features/"+rollout.FeatureName+"/"), g.Text(rollout.FeatureName))),
+				metaRow("Feature", h.A(h.Href(ui.BasePath+"/features/"+rollout.FeatureName+"/"), g.Text(rollout.FeatureName))),
 				metaRow("Version", g.Text(rollout.Version)),
 				metaRow("Status", rolloutStatus(rollout.Status.String())),
 				metaRow("Created", g.Text(formatTime(rollout.Created))),

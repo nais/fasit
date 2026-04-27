@@ -7,6 +7,7 @@ import (
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nais/fasit/internal/ui"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
@@ -87,7 +88,7 @@ func page(breadcrumbs []breadcrumb.Crumb, tenant pageData) g.Node {
 						),
 						h.TBody(g.Group(g.Map(tenant.Environments, func(environment *model.Environment) g.Node {
 							return h.Tr(
-								h.Td(h.A(h.Href("/tenants/"+tenant.Tenant.Name+"/envs/"+environment.Name), g.Text(environment.Name))),
+								h.Td(h.A(h.Href(ui.BasePath+"/tenants/"+tenant.Tenant.Name+"/envs/"+environment.Name), g.Text(environment.Name))),
 								h.Td(g.Text(valueOrEmpty(environment.Description))),
 								h.Td(g.Text(environment.Kind.String())),
 								h.Td(g.Text(checkmarkOrDash(environment.Reconcile))),
