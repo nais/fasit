@@ -2,10 +2,26 @@ package server
 
 import (
 	"net/http"
+	"strconv"
 	"time"
 
-	"github.com/nais/fasit/internal/ui/server/stats"
-	"github.com/sirupsen/logrus"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+)
+
+var (
+	httpRequestsTotal = promauto.NewCounterVec(prometheus.CounterOpts{
+		Namespace: "fasit",
+		Subsystem: "ui",
+		Name:      "http_requests_total",
+	}, []string{"method", "path", "status"})
+
+	httpRequestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: "fasit",
+		Subsystem: "ui",
+		Name:      "http_request_duration_seconds",
+		Buckets:   prometheus.DefBuckets,
+	}, []string{"method", "path"})
 )
 
 type responseWriter struct {
@@ -18,14 +34,19 @@ func (rw *responseWriter) WriteHeader(status int) {
 	rw.ResponseWriter.WriteHeader(status)
 }
 
-func LoggingMiddleware(next http.Handler) http.Handler {
+func MetricsMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		stats.IncrementRequests()
 		start := time.Now()
 		rw := &responseWriter{ResponseWriter: w, status: http.StatusOK}
 
 		next.ServeHTTP(rw, r)
 
-		logrus.WithFields(logrus.Fields{"method": r.Method, "path": r.URL.Path, "status": rw.status, "duration": time.Since(start)}).Info("http request")
+		pattern := r.Pattern
+		if pattern == "" {
+			pattern = r.URL.Path
+		}
+
+		httpRequestsTotal.WithLabelValues(r.Method, pattern, strconv.Itoa(rw.status)).Inc()
+		httpRequestDuration.WithLabelValues(r.Method, pattern).Observe(time.Since(start).Seconds())
 	})
 }

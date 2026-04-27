@@ -46,5 +46,5 @@ func (s *Server) Routes() http.Handler {
 	mux.HandleFunc("GET /tenants/{tenant}/envs/{env}/{feature}/playground", environment.PlaygroundTabHandler(s.renderPage, s.repo))
 	mux.HandleFunc("POST /tenants/{tenant}/envs/{env}/{feature}/playground", environment.PlaygroundSubmitHandler(s.renderPage, s.repo))
 
-	return LoggingMiddleware(mux)
+	return MetricsMiddleware(mux)
 }
