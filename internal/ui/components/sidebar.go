@@ -33,15 +33,11 @@ func EnvironmentSidebar(tenantName, environmentName, currentFeatureName string, 
 		h.Div(h.Class("nav"),
 			h.Ul(g.Group(g.Map(allFeatures, func(feature view.FeatureNav) g.Node {
 				syncEnabled, inEnv := enabledMap[feature.Name]
-				classes := ""
-				if currentFeatureName != "" && feature.Name == currentFeatureName {
-					classes = "active"
-				}
 				attrs := []g.Node{
 					h.Href("/tenants/" + tenantName + "/envs/" + environmentName + "/" + feature.Name),
 				}
-				if classes != "" {
-					attrs = append(attrs, h.Class(classes))
+				if currentFeatureName != "" && feature.Name == currentFeatureName {
+					attrs = append(attrs, h.Class("active"))
 				}
 				if !inEnv {
 					attrs = append(attrs, h.Style("opacity: 0.5;"))

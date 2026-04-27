@@ -31,7 +31,7 @@ func FetchFeatureYAML(chartRef, version string) (string, error) {
 		}
 	}
 
-	return "", fmt.Errorf("Feature.yaml not found in chart %s:%s", chartRef, version)
+	return "", fmt.Errorf("feature.yaml not found in chart %s:%s", chartRef, version)
 }
 
 func extractFeatureYAML(layer v1.Layer) (string, error) {

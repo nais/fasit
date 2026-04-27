@@ -26,7 +26,6 @@ func SetupRouter(
 	repo database.Repo,
 	log logrus.FieldLogger,
 ) (http.Handler, error) {
-	// Add the IAP validation middleware.
 	// If the IAP audience is not set, we stop the server with a fatal error
 	// unless the INSECURE_SKIP_PROXY env var is true.
 	iapMW := auth.ValidateJWTFromComputeEngine(iapAudience)
@@ -63,7 +62,6 @@ func SetupRouter(
 
 func contextMiddleware(fn func(context.Context) context.Context) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
-		// return a contextMiddleware that injects the loader to the request context
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Note that the loaders are being created per-request. This is important because they contain caching and
 			// batching logic that must be request-scoped.

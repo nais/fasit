@@ -438,17 +438,6 @@ func parseConfigValue(value, configType string) (any, error) {
 	}
 }
 
-func formatDate(dateStr string) string {
-	if dateStr == "" {
-		return ""
-	}
-	t, err := time.Parse(time.RFC3339, dateStr)
-	if err != nil {
-		return dateStr
-	}
-	return formatTime(t)
-}
-
 func formatTime(t time.Time) string {
 	if t.IsZero() {
 		return ""
