@@ -48,7 +48,7 @@ func PlaygroundSubmitHandler(renderPage RenderPage, repo database.Repo) http.Han
 func playgroundTab(page *FeaturePage) g.Node {
 	code := page.PlaygroundCode
 	if code == "" { code = defaultPlaygroundCode }
-	action := fmt.Sprintf("/ui/tenants/%s/envs/%s/%s/playground", page.TenantSlug, page.Environment.Name, page.Feature.Name)
+	action := fmt.Sprintf("/tenants/%s/envs/%s/%s/playground", page.TenantSlug, page.Environment.Name, page.Feature.Name)
 	return h.Div(h.Class("tab-content-wrapper"), h.Form(h.Method("POST"), h.Action(action), h.Div(h.Class("playground-controls"), h.Label(h.Input(h.Type("checkbox"), h.Name("includeUnset")), g.Text(" Include unset config")), h.Button(h.Type("submit"), g.Text("Generate"))), h.Div(h.Class("playground-split"), h.Div(h.Class("playground-editor"), h.Label(h.For("code"), g.Text("Feature.yaml")), h.Textarea(h.Name("code"), h.ID("pg-code"), g.Text(code))), h.Div(h.Class("playground-result"), playgroundResultNode(page.PlaygroundResult, page.HelmValues)))))
 }
 

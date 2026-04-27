@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/go-chi/chi/v5"
 	"github.com/nais/fasit/internal/auth"
 	"github.com/nais/fasit/internal/contextloader"
@@ -40,7 +39,6 @@ func SetupRouter(
 
 	router := chi.NewMux()
 	router.Use(contextMiddleware(loadContext))
-	router.Handle("/", iapMW(playground.Handler("GraphQL playground", "/query")))
 	router.Handle("/query", iapMW(graphHandler))
 	router.Handle("/metrics", promhttp.Handler())
 
@@ -59,7 +57,7 @@ func SetupRouter(
 	router.Post("/github/deployment", deploy.CreateDeployment)
 	router.Get("/github/deployment/{id}", deploy.GetDeployment)
 	uiServer := uiserver.New(ui.SiteFS, repo)
-	router.Mount("/ui", iapMW(uiServer.Routes()))
+	router.Mount("/", iapMW(uiServer.Routes()))
 	return router, nil
 }
 

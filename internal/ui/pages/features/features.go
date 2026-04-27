@@ -115,7 +115,7 @@ func overviewTab(data *DetailPage) g.Node {
 
 func statusTab(data *DetailPage) g.Node {
 	if len(data.Environments) == 0 { return h.P(g.Text("No environments found.")) }
-	return h.Table(h.Class("table sortable"), h.THead(h.Tr(h.Th(g.Text("Environment")), h.Th(g.Text("Tenant")), h.Th(g.Text("Status")), h.Th(g.Text("Created")), h.Th(g.Text("Last Modified")))), h.TBody(g.Group(g.Map(data.Environments, func(environment EnvironmentStatus) g.Node { statusClass, statusIcon, statusText := "status-disabled", "○", "Disabled"; if environment.Enabled { statusClass, statusIcon, statusText = "status-success", "✓", "Enabled" }; return h.Tr(h.Td(h.A(h.Href("/ui/tenants/"+environment.TenantSlug+"/envs/"+environment.Name+"/"+data.CurrentFeature.Name+"/"), g.Text(environment.Name))), h.Td(h.A(h.Href("/ui/tenants/"+environment.TenantSlug), g.Text(environment.TenantName))), h.Td(h.Span(h.Class(statusClass), g.Text(statusIcon)), g.Text(" "+statusText)), h.Td(g.Text(environment.Created)), h.Td(g.Text(environment.LastModified))) }))))
+	return h.Table(h.Class("table sortable"), h.THead(h.Tr(h.Th(g.Text("Environment")), h.Th(g.Text("Tenant")), h.Th(g.Text("Status")), h.Th(g.Text("Created")), h.Th(g.Text("Last Modified")))), h.TBody(g.Group(g.Map(data.Environments, func(environment EnvironmentStatus) g.Node { statusClass, statusIcon, statusText := "status-disabled", "○", "Disabled"; if environment.Enabled { statusClass, statusIcon, statusText = "status-success", "✓", "Enabled" }; return h.Tr(h.Td(h.A(h.Href("/tenants/"+environment.TenantSlug+"/envs/"+environment.Name+"/"+data.CurrentFeature.Name+"/"), g.Text(environment.Name))), h.Td(h.A(h.Href("/tenants/"+environment.TenantSlug), g.Text(environment.TenantName))), h.Td(h.Span(h.Class(statusClass), g.Text(statusIcon)), g.Text(" "+statusText)), h.Td(g.Text(environment.Created)), h.Td(g.Text(environment.LastModified))) }))))
 }
 
 func rolloutsTab(data *DetailPage) g.Node {
@@ -123,14 +123,14 @@ func rolloutsTab(data *DetailPage) g.Node {
 	return h.Table(h.Class("table sortable"), h.THead(h.Tr(h.Th(g.Text("Version")), h.Th(g.Text("Status")), h.Th(g.Text("Target")), h.Th(g.Text("Created")), h.Th(g.Text("Completed")))), h.TBody(g.Group(g.Map(data.Rollouts, func(rollout RolloutItem) g.Node { return h.Tr(h.Td(rolloutVersionCell(rollout)), h.Td(rolloutStatus(rollout.Status)), h.Td(g.Text(rollout.Target)), h.Td(g.Text(rollout.Created)), h.Td(g.Text(completedDate(rollout.Completed)))) }))))
 }
 
-func rolloutVersionCell(r RolloutItem) g.Node { if r.DeploymentID != "" { return h.A(h.Href("/ui/deployments/"+r.DeploymentID+"/"), g.Text(r.Version)) }; return h.A(h.Href("/ui/rollouts/"+r.FeatureName+"/"+r.Version+"/"), g.Text(r.Version)) }
+func rolloutVersionCell(r RolloutItem) g.Node { if r.DeploymentID != "" { return h.A(h.Href("/deployments/"+r.DeploymentID+"/"), g.Text(r.Version)) }; return h.A(h.Href("/rollouts/"+r.FeatureName+"/"+r.Version+"/"), g.Text(r.Version)) }
 
 func dependencyLinks(feature *Feature) g.Node {
 	names := []string{}
 	for _, dependency := range feature.Dependencies { names = append(names, dependency.AllOf...); names = append(names, dependency.AnyOf...) }
 	if len(names) == 0 { return g.Text(" -") }
 	links := make([]g.Node, 0, len(names)*2)
-	for _, name := range names { links = append(links, g.Text(" "), h.A(h.Href("/ui/features/"+name), g.Text(name))) }
+	for _, name := range names { links = append(links, g.Text(" "), h.A(h.Href("/features/"+name), g.Text(name))) }
 	return g.Group(links)
 }
 

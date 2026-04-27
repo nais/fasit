@@ -177,7 +177,7 @@ func featurePageContent(page *FeaturePage) g.Node {
 			components.Breadcrumbs(page.Breadcrumbs),
 			h.Div(h.Class("card"),
 				h.Div(h.Class("card-body"),
-					h.P(g.Text("Global feature page: "), h.A(h.Href("/ui/features/"+page.Feature.Name+"/"), g.Text(page.Feature.Name))),
+					h.P(g.Text("Global feature page: "), h.A(h.Href("/features/"+page.Feature.Name+"/"), g.Text(page.Feature.Name))),
 					components.TabsNav(page.ActiveTab, envFeatureTabs()),
 					tabContent,
 				),
@@ -248,8 +248,8 @@ func rolloutsTab(page *FeaturePage) g.Node {
 }
 
 func rolloutVersionCell(r RolloutItem) g.Node {
-	if r.DeploymentID != "" { return h.A(h.Href("/ui/deployments/"+r.DeploymentID+"/"), g.Text(r.Version)) }
-	return h.A(h.Href("/ui/rollouts/"+r.FeatureName+"/"+r.Version+"/"), g.Text(r.Version))
+	if r.DeploymentID != "" { return h.A(h.Href("/deployments/"+r.DeploymentID+"/"), g.Text(r.Version)) }
+	return h.A(h.Href("/rollouts/"+r.FeatureName+"/"+r.Version+"/"), g.Text(r.Version))
 }
 
 func auditTab() g.Node { return h.Div(h.Class("tab-content-wrapper"), h.H2(g.Text("Audit Log")), h.P(g.Text("Audit log for configuration changes will be displayed here."))) }
@@ -311,4 +311,4 @@ func rolloutStatus(status string) g.Node {
 
 func prettyJSON(s string) string { var buf bytes.Buffer; if err := json.Indent(&buf, []byte(s), "", "  "); err != nil { return s }; return buf.String() }
 func featureBasePath(r *http.Request) string { return featureBasePathValues(r.PathValue("tenant"), r.PathValue("env"), r.PathValue("feature")) + "/" }
-func featureBasePathValues(tenant, env, feature string) string { return "/ui/tenants/" + tenant + "/envs/" + env + "/" + feature }
+func featureBasePathValues(tenant, env, feature string) string { return "/tenants/" + tenant + "/envs/" + env + "/" + feature }

@@ -24,8 +24,8 @@ func Page(props Props) g.Node {
 		Language: "en",
 		Head: []g.Node{
 			h.Meta(h.Name("viewport"), h.Content("width=1024")),
-			h.Link(h.Rel("stylesheet"), h.Href("/ui/site.css")),
-			h.Script(h.Src("/ui/site.js"), h.Defer()),
+			h.Link(h.Rel("stylesheet"), h.Href("/site.css")),
+			h.Script(h.Src("/site.js"), h.Defer()),
 		},
 		Body: []g.Node{
 			components.SiteHeader(props.CurrentSection),

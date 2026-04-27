@@ -20,11 +20,11 @@ func SiteHeader(currentSection string) g.Node {
 	}
 
 	return h.Nav(
-		h.A(h.Href("/ui/"), h.Class("logo"), g.Text("Fasit")),
+		h.A(h.Href("/"), h.Class("logo"), g.Text("Fasit")),
 		h.Div(h.Class("menu"),
-			navItem("/ui/tenants", "Tenants", "tenants"),
-			navItem("/ui/features", "Features", "features"),
-			navItem("/ui/rollouts", "Rollouts", "rollouts"),
+			navItem("/tenants", "Tenants", "tenants"),
+			navItem("/features", "Features", "features"),
+			navItem("/rollouts", "Rollouts", "rollouts"),
 		),
 		h.Span(h.Class("user"), g.Text("user")),
 	)
