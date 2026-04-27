@@ -12,6 +12,8 @@ import (
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/rollout"
+	"github.com/nais/fasit/internal/ui"
+	uiserver "github.com/nais/fasit/internal/ui/server"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 )
@@ -56,6 +58,8 @@ func SetupRouter(
 	deploy.AllowAll = insecureSkipProxy
 	router.Post("/github/deployment", deploy.CreateDeployment)
 	router.Get("/github/deployment/{id}", deploy.GetDeployment)
+	uiServer := uiserver.New(ui.SiteFS, repo)
+	router.Mount("/ui", iapMW(uiServer.Routes()))
 	return router, nil
 }
 
