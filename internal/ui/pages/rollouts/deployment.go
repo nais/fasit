@@ -135,7 +135,7 @@ func deploymentPage(d *deployment.Deployment, statuses []deploymentStatusRow, ma
 
 	trashButtonStyle := g.Attr("style", "background:none;border:none;cursor:pointer;font-size:1.2em;padding:0")
 
-	meta = append(meta, metaRow("Actions", h.FormEl(
+	meta = append(meta, metaRow("Actions", h.Form(
 		h.Method("POST"),
 		h.Action("/ui/deployments/"+d.ID.String()+"/delete"),
 		g.Attr("style", "display:inline"),
@@ -187,7 +187,7 @@ func deploymentPage(d *deployment.Deployment, statuses []deploymentStatusRow, ma
 				)
 			}))),
 		),
-		h.FormEl(
+		h.Form(
 			h.Method("POST"),
 			h.Action("/ui/deployments/"+d.ID.String()+"/delete-matching"),
 			g.Attr("style", "display:inline"),
