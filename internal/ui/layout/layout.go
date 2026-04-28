@@ -1,7 +1,6 @@
 package layout
 
 import (
-	"github.com/nais/fasit/internal/ui"
 	"github.com/nais/fasit/internal/ui/components"
 	g "maragu.dev/gomponents"
 	c "maragu.dev/gomponents/components"
@@ -25,8 +24,8 @@ func Page(props Props) g.Node {
 		Language: "en",
 		Head: []g.Node{
 			h.Meta(h.Name("viewport"), h.Content("width=1024")),
-			h.Link(h.Rel("stylesheet"), h.Href(ui.BasePath+"/site.css")),
-			h.Script(h.Src(ui.BasePath+"/site.js"), h.Defer()),
+			h.Link(h.Rel("stylesheet"), h.Href("/ui/site.css")),
+			h.Script(h.Src("/ui/site.js"), h.Defer()),
 		},
 		Body: []g.Node{
 			components.SiteHeader(props.CurrentSection),

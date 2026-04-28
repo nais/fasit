@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 	"github.com/nais/fasit/internal/ui/pages/environment"
 	"github.com/nais/fasit/internal/ui/pages/features"
 	"github.com/nais/fasit/internal/ui/pages/rollouts"
@@ -14,18 +13,17 @@ import (
 
 func (s *Server) Routes() http.Handler {
 	r := chi.NewRouter()
-	r.Use(middleware.RedirectSlashes)
 	r.Use(MetricsMiddleware)
 
 	r.Get("/site.css", s.CSS)
 	r.Get("/site.js", s.JS)
 
 	r.Get("/", tenants.Handler(s.renderPage, s.repo))
-	r.Get("/tenants/{tenant}/", tenant.Handler(s.renderPage, s.repo))
+	r.Get("/tenants/{tenant}", tenant.Handler(s.renderPage, s.repo))
 
-	r.Get("/tenants/{tenant}/envs/{env}/", environment.Handler(s.renderPage, s.repo))
+	r.Get("/tenants/{tenant}/envs/{env}", environment.Handler(s.renderPage, s.repo))
 
-	r.Get("/tenants/{tenant}/envs/{env}/{feature}/", environment.FeatureTabHandler(s.renderPage, s.repo, "overview"))
+	r.Get("/tenants/{tenant}/envs/{env}/{feature}", environment.FeatureTabHandler(s.renderPage, s.repo, "overview"))
 	r.Get("/tenants/{tenant}/envs/{env}/{feature}/logs", environment.FeatureTabHandler(s.renderPage, s.repo, "logs"))
 	r.Get("/tenants/{tenant}/envs/{env}/{feature}/helm", environment.FeatureTabHandler(s.renderPage, s.repo, "helm"))
 	r.Get("/tenants/{tenant}/envs/{env}/{feature}/rollouts", environment.FeatureTabHandler(s.renderPage, s.repo, "rollouts"))
@@ -40,12 +38,12 @@ func (s *Server) Routes() http.Handler {
 	r.Post("/tenants/{tenant}/envs/{env}/{feature}/config/override", environment.ConfigOverrideSubmitHandler(s.repo))
 	r.Post("/tenants/{tenant}/envs/{env}/{feature}/toggle-reconcile", environment.ToggleFeatureStateHandler(s.repo))
 
-	r.Get("/rollouts/", rollouts.Handler(s.renderPage, s.repo))
-	r.Get("/rollouts/{feature}/{version}/", rollouts.DetailHandler(s.renderPage, s.repo))
-	r.Get("/deployments/{id}/", rollouts.DeploymentHandler(s.renderPage, s.repo))
+	r.Get("/rollouts", rollouts.Handler(s.renderPage, s.repo))
+	r.Get("/rollouts/{feature}/{version}", rollouts.DetailHandler(s.renderPage, s.repo))
+	r.Get("/deployments/{id}", rollouts.DeploymentHandler(s.renderPage, s.repo))
 
-	r.Get("/features/", features.ListHandler(s.renderPage, s.repo))
-	r.Get("/features/{feature}/", features.TabHandler(s.renderPage, s.repo, "overview"))
+	r.Get("/features", features.ListHandler(s.renderPage, s.repo))
+	r.Get("/features/{feature}", features.TabHandler(s.renderPage, s.repo, "overview"))
 	r.Get("/features/{feature}/status", features.TabHandler(s.renderPage, s.repo, "status"))
 	r.Get("/features/{feature}/rollouts", features.TabHandler(s.renderPage, s.repo, "rollouts"))
 

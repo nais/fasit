@@ -12,7 +12,6 @@ import (
 	envpkg "github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
-	"github.com/nais/fasit/internal/ui"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
 	g "maragu.dev/gomponents"
@@ -179,8 +178,8 @@ func featurePageContent(page *FeaturePage) g.Node {
 			components.Breadcrumbs(page.Breadcrumbs),
 			h.Div(h.Class("card"),
 				h.Div(h.Class("card-body"),
-					h.P(g.Text("Global feature page: "), h.A(h.Href(ui.BasePath+"/features/"+page.Feature.Name+"/"), g.Text(page.Feature.Name))),
-					components.TabsNav(page.ActiveTab, envFeatureTabs()),
+					h.P(g.Text("Global feature page: "), h.A(h.Href("/ui/features/"+page.Feature.Name), g.Text(page.Feature.Name))),
+					components.TabsNav(page.ActiveTab, envFeatureTabs(page.TenantSlug, page.Environment.Name, page.Feature.Name)),
 					tabContent,
 				),
 			),
@@ -188,14 +187,15 @@ func featurePageContent(page *FeaturePage) g.Node {
 	)
 }
 
-func envFeatureTabs() []components.Tab {
+func envFeatureTabs(tenant, env, feature string) []components.Tab {
+	base := featureBasePathValues(tenant, env, feature)
 	return []components.Tab{
-		{ID: "overview", Href: "./", Label: "Overview"},
-		{ID: "logs", Href: "./logs", Label: "Logs"},
-		{ID: "helm", Href: "./helm", Label: "Feature Values"},
-		{ID: "rollouts", Href: "./rollouts", Label: "Rollouts"},
-		{ID: "playground", Href: "./playground", Label: "Playground"},
-		{ID: "audit", Href: "./audit", Label: "Audit"},
+		{ID: "overview", Href: base, Label: "Overview"},
+		{ID: "logs", Href: base + "/logs", Label: "Logs"},
+		{ID: "helm", Href: base + "/helm", Label: "Feature Values"},
+		{ID: "rollouts", Href: base + "/rollouts", Label: "Rollouts"},
+		{ID: "playground", Href: base + "/playground", Label: "Playground"},
+		{ID: "audit", Href: base + "/audit", Label: "Audit"},
 	}
 }
 
@@ -272,9 +272,9 @@ func rolloutsTab(page *FeaturePage) g.Node {
 
 func rolloutVersionCell(r RolloutItem) g.Node {
 	if r.DeploymentID != "" {
-		return h.A(h.Href(ui.BasePath+"/deployments/"+r.DeploymentID+"/"), g.Text(r.Version))
+		return h.A(h.Href("/ui/deployments/"+r.DeploymentID), g.Text(r.Version))
 	}
-	return h.A(h.Href(ui.BasePath+"/rollouts/"+r.FeatureName+"/"+r.Version+"/"), g.Text(r.Version))
+	return h.A(h.Href("/ui/rollouts/"+r.FeatureName+"/"+r.Version), g.Text(r.Version))
 }
 
 func auditTab() g.Node {
@@ -381,9 +381,9 @@ func prettyJSON(s string) string {
 }
 
 func featureBasePath(r *http.Request) string {
-	return featureBasePathValues(chi.URLParam(r, "tenant"), chi.URLParam(r, "env"), chi.URLParam(r, "feature")) + "/"
+	return featureBasePathValues(chi.URLParam(r, "tenant"), chi.URLParam(r, "env"), chi.URLParam(r, "feature"))
 }
 
 func featureBasePathValues(tenant, env, feature string) string {
-	return ui.BasePath + "/tenants/" + tenant + "/envs/" + env + "/" + feature
+	return "/ui/tenants/" + tenant + "/envs/" + env + "/" + feature
 }

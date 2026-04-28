@@ -1,7 +1,6 @@
 package components
 
 import (
-	"github.com/nais/fasit/internal/ui"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
 )
@@ -21,11 +20,11 @@ func SiteHeader(currentSection string) g.Node {
 	}
 
 	return h.Nav(
-		h.A(h.Href(ui.BasePath+"/"), h.Class("logo"), g.Text("Fasit")),
+		h.A(h.Href("/ui/"), h.Class("logo"), g.Text("Fasit")),
 		h.Div(h.Class("menu"),
-			navItem(ui.BasePath+"/tenants", "Tenants", "tenants"),
-			navItem(ui.BasePath+"/features", "Features", "features"),
-			navItem(ui.BasePath+"/rollouts", "Rollouts", "rollouts"),
+			navItem("/ui", "Tenants", "tenants"),
+			navItem("/ui/features", "Features", "features"),
+			navItem("/ui/rollouts", "Rollouts", "rollouts"),
 		),
 		h.Span(h.Class("user"), g.Text("user")),
 	)

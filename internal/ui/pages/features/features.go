@@ -14,7 +14,6 @@ import (
 	envpkg "github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
-	"github.com/nais/fasit/internal/ui"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
@@ -94,11 +93,12 @@ func listPage(features []view.FeatureNav) g.Node {
 }
 
 func detailPage(data *DetailPage) g.Node {
-	return h.Div(h.Class("container"), components.FeaturesSidebar(data.Features, data.CurrentFeature.Name), h.Main(h.Class("main-content"), components.Breadcrumbs(data.Breadcrumbs), h.Div(h.Class("card"), h.Div(h.Class("card-body"), components.TabsNav(data.ActiveTab, featureTabs()), h.Div(h.Class("tab-content-wrapper"), tabContent(data))))))
+	return h.Div(h.Class("container"), components.FeaturesSidebar(data.Features, data.CurrentFeature.Name), h.Main(h.Class("main-content"), components.Breadcrumbs(data.Breadcrumbs), h.Div(h.Class("card"), h.Div(h.Class("card-body"), components.TabsNav(data.ActiveTab, featureTabs(data.CurrentFeature.Name)), h.Div(h.Class("tab-content-wrapper"), tabContent(data))))))
 }
 
-func featureTabs() []components.Tab {
-	return []components.Tab{{ID: "overview", Href: "./", Label: "Overview"}, {ID: "status", Href: "./status", Label: "Status"}, {ID: "rollouts", Href: "./rollouts", Label: "Rollouts"}}
+func featureTabs(featureName string) []components.Tab {
+	base := "/ui/features/" + featureName
+	return []components.Tab{{ID: "overview", Href: base, Label: "Overview"}, {ID: "status", Href: base + "/status", Label: "Status"}, {ID: "rollouts", Href: base + "/rollouts", Label: "Rollouts"}}
 }
 
 func tabContent(data *DetailPage) g.Node {
@@ -127,7 +127,7 @@ func statusTab(data *DetailPage) g.Node {
 		if environment.Enabled {
 			statusClass, statusIcon, statusText = "status-success", "✓", "Enabled"
 		}
-		return h.Tr(h.Td(h.A(h.Href(ui.BasePath+"/tenants/"+environment.TenantSlug+"/envs/"+environment.Name+"/"+data.CurrentFeature.Name+"/"), g.Text(environment.Name))), h.Td(h.A(h.Href(ui.BasePath+"/tenants/"+environment.TenantSlug), g.Text(environment.TenantName))), h.Td(h.Span(h.Class(statusClass), g.Text(statusIcon)), g.Text(" "+statusText)), h.Td(g.Text(environment.Created)), h.Td(g.Text(environment.LastModified)))
+		return h.Tr(h.Td(h.A(h.Href("/ui/tenants/"+environment.TenantSlug+"/envs/"+environment.Name+"/"+data.CurrentFeature.Name), g.Text(environment.Name))), h.Td(h.A(h.Href("/ui/tenants/"+environment.TenantSlug), g.Text(environment.TenantName))), h.Td(h.Span(h.Class(statusClass), g.Text(statusIcon)), g.Text(" "+statusText)), h.Td(g.Text(environment.Created)), h.Td(g.Text(environment.LastModified)))
 	}))))
 }
 
@@ -142,9 +142,9 @@ func rolloutsTab(data *DetailPage) g.Node {
 
 func rolloutVersionCell(r RolloutItem) g.Node {
 	if r.DeploymentID != "" {
-		return h.A(h.Href(ui.BasePath+"/deployments/"+r.DeploymentID+"/"), g.Text(r.Version))
+		return h.A(h.Href("/ui/deployments/"+r.DeploymentID), g.Text(r.Version))
 	}
-	return h.A(h.Href(ui.BasePath+"/rollouts/"+r.FeatureName+"/"+r.Version+"/"), g.Text(r.Version))
+	return h.A(h.Href("/ui/rollouts/"+r.FeatureName+"/"+r.Version), g.Text(r.Version))
 }
 
 func dependencyLinks(feature *Feature) g.Node {
@@ -158,7 +158,7 @@ func dependencyLinks(feature *Feature) g.Node {
 	}
 	links := make([]g.Node, 0, len(names)*2)
 	for _, name := range names {
-		links = append(links, g.Text(" "), h.A(h.Href(ui.BasePath+"/features/"+name), g.Text(name)))
+		links = append(links, g.Text(" "), h.A(h.Href("/ui/features/"+name), g.Text(name)))
 	}
 	return g.Group(links)
 }
