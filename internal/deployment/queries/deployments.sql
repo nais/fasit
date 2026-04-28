@@ -190,6 +190,12 @@ ORDER BY
 	last_modified DESC
 LIMIT 1;
 
+-- name: DeleteDeploymentsByFeatureAndTarget :exec
+DELETE FROM deployments
+WHERE feature_name = @feature_name
+	AND target = @target
+	AND ci = @ci;
+
 -- name: GetDeploymentStatus :one
 SELECT
 	*

@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/nais/fasit/internal/database/types"
 	"github.com/nais/fasit/internal/deployment/deploymentsql"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
@@ -170,6 +171,14 @@ func ListDeploymentsByFeature(ctx context.Context, featureName string) ([]*Deplo
 
 func DeleteDeployment(ctx context.Context, deploymentID uuid.UUID) error {
 	return fromContext(ctx).querier.DeleteDeployment(ctx, deploymentID)
+}
+
+func DeleteDeploymentsByFeatureAndTarget(ctx context.Context, featureName string, target types.EnvironmentLabels, ci bool) error {
+	return fromContext(ctx).querier.DeleteDeploymentsByFeatureAndTarget(ctx, deploymentsql.DeleteDeploymentsByFeatureAndTargetParams{
+		FeatureName: featureName,
+		Target:      target,
+		Ci:          ci,
+	})
 }
 
 func SetDeploymentStatus(ctx context.Context, deploymentID, environmentID uuid.UUID, status model.RolloutStatus, message string) error {
