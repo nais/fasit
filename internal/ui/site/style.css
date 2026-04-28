@@ -1,0 +1,572 @@
+html {
+  height: 100%;
+  background: #1a1a1a;
+  color: #ddd;
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+body {
+  margin: 0;
+  height: 100%;
+}
+a {
+  color: #5B9FE6;
+}
+h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: #fff;
+}
+nav {
+  background: #222;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  padding: 0.75rem 1.5rem;
+  border-bottom: 1px solid #333;
+}
+nav .logo {
+  font-weight: bold;
+  font-size: 1.1rem;
+  color: #fff;
+  text-decoration: none;
+  letter-spacing: 0.02em;
+}
+nav .menu {
+  display: flex;
+  gap: 1.5rem;
+  margin-right: auto;
+}
+nav .menu .item {
+  cursor: pointer;
+  text-decoration: none;
+  color: #888;
+  font-size: 0.9rem;
+  transition: color 0.15s;
+}
+nav .menu .item:hover {
+  color: #ddd;
+}
+nav .menu .item.active {
+  color: #ddd;
+  text-decoration: underline;
+  text-underline-offset: 0.3em;
+}
+nav .user {
+  color: #555;
+  font-size: 0.85rem;
+}
+.container {
+  display: flex;
+  height: calc(100vh - 3rem);
+}
+.sidebar {
+  background: #222;
+  width: 16rem;
+  min-width: 16rem;
+  border-right: 1px solid #333;
+  overflow-y: auto;
+}
+.sidebar .nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.sidebar .nav a {
+  display: block;
+  padding: 0.4rem 1rem;
+  text-decoration: none;
+  color: #aaa;
+  border-left: 2px solid transparent;
+  font-size: 0.9rem;
+  transition:
+    color 0.15s,
+    background 0.15s;
+}
+.sidebar .nav a:hover,
+.sidebar .nav a.active {
+  color: #fff;
+  background: #2a2a2a;
+  border-left-color: #5B9FE6;
+}
+
+.text-muted {
+  color: #888;
+}
+
+.main-content {
+  flex: 1;
+  padding: 0.75rem 2rem 2rem;
+  overflow-y: auto;
+}
+.card {
+  background: #222;
+  border: 1px solid #333;
+  border-radius: 6px;
+  margin-bottom: 2rem;
+}
+.card-body {
+  padding: 1.5rem;
+}
+.card-body h1:first-child {
+  margin-top: 0;
+}
+.card-body h2 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+.card pre {
+  background: #111;
+  padding: 1rem;
+  margin: 0 0 1rem 0;
+  overflow-x: auto;
+  border: 1px solid #333;
+  border-radius: 4px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.table th,
+.table td {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid #2a2a2a;
+}
+.table th {
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #888;
+  background: #1a1a1a;
+}
+.table tbody tr:hover {
+  background: #2a2a2a;
+}
+.sortable th {
+  cursor: pointer;
+  user-select: none;
+}
+.sortable th::after {
+  content: " ⇅";
+  opacity: 0.3;
+}
+.sortable th[data-sort="asc"]::after {
+  content: " ▲";
+  opacity: 1;
+}
+.sortable th[data-sort="desc"]::after {
+  content: " ▼";
+  opacity: 1;
+}
+.table th.width-sm {
+  width: 4.25rem;
+}
+.table th.width-md {
+  width: 14.25rem;
+}
+.table td.italic {
+  font-style: italic;
+  color: #888;
+}
+.table td.th-like {
+  font-weight: bold;
+  color: #aaa;
+  white-space: nowrap;
+  width: 1%;
+  padding-right: 2rem;
+}
+.table td.action {
+  text-align: center;
+  cursor: pointer;
+  color: #888;
+}
+.table td.action:hover {
+  color: #fff;
+}
+.table tfoot td {
+  font-size: 0.85rem;
+  color: #666;
+  border: none;
+}
+
+.dashboard {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 2rem;
+}
+.dash-card {
+  background: #1e1e1e;
+  border: 1px solid #2a2a2a;
+  border-radius: 6px;
+  padding: 0;
+  flex: 1 1 13rem;
+  min-width: 13rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition:
+    box-shadow 0.15s,
+    border-color 0.15s;
+}
+.dash-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  border-color: #383838;
+}
+.dash-card h3 {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 1rem;
+  margin: 0;
+  padding: 0.75rem 1rem;
+  background: #252525;
+  border-radius: 6px 6px 0 0;
+  border-bottom: 1px solid #2a2a2a;
+}
+.dash-card a {
+  display: block;
+  margin: 0.25rem 0;
+}
+.dash-card ul {
+  list-style: none;
+  padding: 0.5rem 1rem 0.75rem;
+  margin: 0;
+}
+
+.tab-content-wrapper {
+  margin-top: 1rem;
+}
+
+.code-block {
+  background: #111;
+  color: #ddd;
+  padding: 1rem;
+  overflow-x: auto;
+  border: 1px solid #333;
+  border-radius: 4px;
+}
+.code-block span {
+  color: #ddd !important;
+  background-color: transparent !important;
+}
+.code-block span[style*="background-color: #fd7f7f"] {
+  color: #f87171 !important;
+}
+.code-block span[style*="background-color: #92dd96"] {
+  color: #4ade80 !important;
+}
+.code-block span[style*="color: rgba(0, 0, 0"] {
+  color: #666 !important;
+}
+
+.rollout-log {
+  margin-bottom: 2rem;
+}
+
+.status-success {
+  color: #4ade80;
+}
+
+.status-error {
+  color: #f87171;
+}
+
+.status-pending {
+  color: #fbbf24;
+}
+
+.status-disabled {
+  color: #6b7280;
+}
+
+.icon {
+  display: inline-block;
+}
+.tenant-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.02em;
+  flex-shrink: 0;
+}
+.tenant-icon-lg {
+  width: 2.25rem;
+  height: 2.25rem;
+  font-size: 0.85rem;
+}
+.breadcrumbs {
+  padding: 0;
+  margin: 0 0 0.5rem 0;
+  font-size: 0.75rem;
+  color: #666;
+  background: transparent;
+  border: none;
+}
+.breadcrumbs a {
+  color: #666;
+  text-decoration: none;
+}
+.breadcrumbs a:hover {
+  color: #aaa;
+  text-decoration: underline;
+}
+.breadcrumbs span {
+  color: #666;
+}
+.breadcrumbs span.active {
+  color: #aaa;
+}
+.breadcrumb-switcher {
+  position: relative;
+  display: inline-block;
+}
+.breadcrumb-dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: #222;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 0.25rem 0;
+  min-width: 10rem;
+  max-height: 20rem;
+  overflow-y: auto;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+.breadcrumb-switcher:hover .breadcrumb-dropdown {
+  display: block;
+}
+.breadcrumb-dropdown a {
+  display: block;
+  padding: 0.25rem 0.75rem;
+  color: #aaa;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.breadcrumb-dropdown a:hover {
+  background: #333;
+  color: #fff;
+}
+
+.tabs-nav {
+  border-bottom: 2px solid #333;
+  margin: 0 0 1rem 0;
+}
+
+.tabs-nav a {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  color: #aaa;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.tabs-nav a:hover {
+  color: #ddd;
+}
+
+.tabs-nav a.active {
+  color: #5B9FE6;
+  border-bottom: 2px solid #5B9FE6;
+  margin-bottom: -2px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.8rem;
+  border-radius: 3px;
+  background: #333;
+  color: #aaa;
+}
+.badge-override {
+  background: #163554;
+  color: #5B9FE6;
+}
+.value-override {
+  font-weight: 600;
+  color: #5B9FE6;
+}
+.value-default {
+  color: #888;
+  font-style: italic;
+}
+.edit-icon {
+  color: #666;
+  text-decoration: none;
+  margin-right: 0.4rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: inherit;
+  padding: 0;
+}
+.edit-icon:hover {
+  color: #ddd;
+}
+
+[popover] {
+  background: #222;
+  border: 1px solid #444;
+  border-radius: 8px;
+  color: #ddd;
+  padding: 1.5rem;
+  max-width: 28.5rem;
+  min-width: 21.5rem;
+}
+[popover]::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+[popover] h3 {
+  margin: 0 0 0.5rem 0;
+}
+[popover] label {
+  display: block;
+  margin: 0.5rem 0 0.25rem 0;
+  font-weight: bold;
+  font-size: 0.9rem;
+  color: #aaa;
+}
+[popover] input[type="text"],
+[popover] input[type="number"],
+[popover] textarea,
+[popover] select {
+  width: 100%;
+  padding: 0.4rem;
+  background: #111;
+  border: 1px solid #333;
+  border-radius: 4px;
+  color: #ddd;
+  font: inherit;
+  box-sizing: border-box;
+}
+[popover] input:disabled {
+  color: #666;
+}
+[popover] .popover-meta {
+  font-size: 0.85rem;
+  color: #666;
+  margin: 0.5rem 0;
+}
+[popover] .popover-actions {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.5rem;
+}
+[popover] button[type="submit"] {
+  background: #163554;
+  color: #5B9FE6;
+  border: 1px solid #5B9FE6;
+  border-radius: 4px;
+  padding: 0.4rem 1rem;
+  cursor: pointer;
+  font: inherit;
+}
+[popover] button[type="button"] {
+  background: #333;
+  color: #aaa;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 0.4rem 1rem;
+  cursor: pointer;
+  font: inherit;
+}
+.btn-small {
+  background: #333;
+  color: #ddd;
+  border: 1px solid #444;
+  border-radius: 4px;
+  padding: 0.2rem 0.6rem;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.85rem;
+  margin-left: 0.5rem;
+}
+.btn-small:hover {
+  background: #444;
+  border-color: #555;
+}
+
+.playground-controls {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+.playground-controls button[type="submit"] {
+  background: #163554;
+  color: #5B9FE6;
+  border: 1px solid #5B9FE6;
+  border-radius: 4px;
+  padding: 0.4rem 1rem;
+  cursor: pointer;
+  font: inherit;
+  white-space: nowrap;
+}
+.playground-controls button[type="submit"]:hover {
+  background: #1d4267;
+}
+.playground-split {
+  display: flex;
+  gap: 1rem;
+}
+.playground-split > * {
+  flex: 1;
+  min-width: 0;
+}
+.playground-editor {
+  display: flex;
+  flex-direction: column;
+}
+.playground-editor label {
+  font-size: 0.85rem;
+  color: #aaa;
+  margin-bottom: 0.25rem;
+}
+.playground-editor textarea {
+  flex: 1;
+  min-height: 24rem;
+  background: #111;
+  border: 1px solid #333;
+  border-radius: 4px;
+  color: #ddd;
+  font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+  font-size: 0.9rem;
+  padding: 0.75rem;
+  box-sizing: border-box;
+  resize: vertical;
+  tab-size: 2;
+}
+.playground-result .code-block {
+  max-height: 24rem;
+  overflow: auto;
+}
+.playground-errors {
+  margin-bottom: 1rem;
+}
+.playground-errors h2 {
+  color: #f87171;
+  font-size: 1rem;
+  margin: 0 0 0.5rem 0;
+}
+.playground-errors ul {
+  margin: 0;
+  padding: 0 0 0 1.25rem;
+  color: #f87171;
+}
+.playground-output h2 {
+  font-size: 1rem;
+  margin: 0 0 0.5rem 0;
+}

@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/go-chi/chi/v5"
 	"github.com/nais/fasit/internal/auth"
 	"github.com/nais/fasit/internal/contextloader"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/rollout"
+	"github.com/nais/fasit/internal/ui"
+	uiserver "github.com/nais/fasit/internal/ui/server"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/sirupsen/logrus"
 )
@@ -25,9 +26,6 @@ func SetupRouter(
 	repo database.Repo,
 	log logrus.FieldLogger,
 ) (http.Handler, error) {
-	// Add the IAP validation middleware.
-	// If the IAP audience is not set, we stop the server with a fatal error
-	// unless the INSECURE_SKIP_PROXY env var is true.
 	iapMW := auth.ValidateJWTFromComputeEngine(iapAudience)
 	if iapAudience == "" {
 		if !insecureSkipProxy {
@@ -38,7 +36,6 @@ func SetupRouter(
 
 	router := chi.NewMux()
 	router.Use(contextMiddleware(loadContext))
-	router.Handle("/", iapMW(playground.Handler("GraphQL playground", "/query")))
 	router.Handle("/query", iapMW(graphHandler))
 	router.Handle("/metrics", promhttp.Handler())
 
@@ -56,12 +53,16 @@ func SetupRouter(
 	deploy.AllowAll = insecureSkipProxy
 	router.Post("/github/deployment", deploy.CreateDeployment)
 	router.Get("/github/deployment/{id}", deploy.GetDeployment)
+	uiServer := uiserver.New(ui.SiteFS, repo)
+	router.Mount("/ui", iapMW(uiServer.Routes()))
+	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/ui/", http.StatusFound)
+	})
 	return router, nil
 }
 
 func contextMiddleware(fn func(context.Context) context.Context) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
-		// return a contextMiddleware that injects the loader to the request context
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Note that the loaders are being created per-request. This is important because they contain caching and
 			// batching logic that must be request-scoped.
