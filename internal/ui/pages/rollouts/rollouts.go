@@ -43,12 +43,14 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 		deployments, err := deployment.ListDeployments(r.Context())
 		if err == nil {
 			for _, dep := range deployments {
+				statuses, _ := deployment.ListDeploymentStatuses(r.Context(), dep.ID)
 				items = append(items, Summary{
 					FeatureName:  dep.Feature.Name,
 					Version:      dep.Feature.Version,
-					Status:       "DEPLOYMENT",
+					Status:       aggregateDeploymentStatus(statuses),
 					Target:       deploymentTarget(dep),
 					Created:      formatTime(dep.Created),
+					Completed:    latestStatusTime(statuses),
 					DeploymentID: dep.ID.String(),
 					createdAt:    dep.Created,
 				})
@@ -142,6 +144,47 @@ func rolloutStatus(status string) g.Node {
 	default:
 		return g.Text(status)
 	}
+}
+
+func aggregateDeploymentStatus(statuses []*deployment.DeploymentStatus) string {
+	if len(statuses) == 0 {
+		return "UNKNOWN"
+	}
+
+	allDeployed := true
+	for _, s := range statuses {
+		switch s.State {
+		case deployment.DeploymentStatusStateFailed:
+			return "FAILED"
+		case deployment.DeploymentStatusStatePending, deployment.DeploymentStatusStateCreated:
+			allDeployed = false
+		case deployment.DeploymentStatusStateDeployed:
+			// ok
+		default:
+			allDeployed = false
+		}
+	}
+
+	if allDeployed {
+		return "DEPLOYED"
+	}
+
+	return "PENDING"
+}
+
+func latestStatusTime(statuses []*deployment.DeploymentStatus) string {
+	var latest time.Time
+	for _, s := range statuses {
+		if s.LastModified.After(latest) {
+			latest = s.LastModified
+		}
+	}
+
+	if latest.IsZero() {
+		return ""
+	}
+
+	return formatTime(latest)
 }
 
 func deploymentTarget(dep *deployment.Deployment) string {
