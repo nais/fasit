@@ -12,6 +12,7 @@ type Querier interface {
 	CreateDeployInstruction(ctx context.Context, arg CreateDeployInstructionParams) (uuid.UUID, error)
 	CreateDeployment(ctx context.Context, arg CreateDeploymentParams) (Deployment, error)
 	DeleteDeployment(ctx context.Context, id uuid.UUID) error
+	DeleteDeploymentsByFeatureAndTarget(ctx context.Context, arg DeleteDeploymentsByFeatureAndTargetParams) error
 	DeployInstructionsByID(ctx context.Context, id uuid.UUID) (DeployInstruction, error)
 	DeployInstructionsGetDeployedFeatures(ctx context.Context, arg DeployInstructionsGetDeployedFeaturesParams) ([]string, error)
 	FeatureEnabled(ctx context.Context, arg FeatureEnabledParams) (bool, error)

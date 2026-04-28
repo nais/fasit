@@ -2,11 +2,13 @@ package rollouts
 
 import (
 	"fmt"
+	"maps"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/database"
+	"github.com/nais/fasit/internal/database/types"
 	"github.com/nais/fasit/internal/deployment"
 	envpkg "github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
@@ -17,6 +19,50 @@ import (
 )
 
 type deploymentStatusRow struct{ TenantName, EnvironmentName, State, Message, LastModified string }
+
+func DeleteDeploymentHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, err := uuid.Parse(chi.URLParam(r, "id"))
+		if err != nil {
+			http.Error(w, "Failed to parse deployment ID", http.StatusInternalServerError)
+			return
+		}
+
+		if err := deployment.DeleteDeployment(r.Context(), id); err != nil {
+			http.Error(w, "Failed to delete deployment: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		http.Redirect(w, r, "/ui/rollouts", http.StatusSeeOther)
+	}
+}
+
+type matchingDeployment struct {
+	ID, Version, Created string
+}
+
+func DeleteDeploymentsByFeatureAndTargetHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, err := uuid.Parse(chi.URLParam(r, "id"))
+		if err != nil {
+			http.Error(w, "Failed to parse deployment ID", http.StatusInternalServerError)
+			return
+		}
+
+		dep, err := deployment.GetDeployment(r.Context(), id)
+		if err != nil {
+			http.Error(w, "Failed to load deployment: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		if err := deployment.DeleteDeploymentsByFeatureAndTarget(r.Context(), dep.Feature.Name, types.EnvironmentLabels(dep.TargetLabels), dep.CI); err != nil {
+			http.Error(w, "Failed to delete deployments: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		http.Redirect(w, r, "/ui/rollouts", http.StatusSeeOther)
+	}
+}
 
 func DeploymentHandler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -55,11 +101,27 @@ func DeploymentHandler(renderPage RenderPage, repo database.Repo) http.HandlerFu
 			})
 		}
 
-		renderPage(w, layout.Props{Title: fmt.Sprintf("Deployment %s v%s", dep.Feature.Name, dep.Feature.Version), CurrentSection: "rollouts", Content: deploymentPage(dep, rows)})
+		allByFeature, _ := deployment.ListDeploymentsByFeature(r.Context(), dep.Feature.Name)
+		var matching []matchingDeployment
+		for _, d := range allByFeature {
+			if !maps.Equal(map[string]string(d.TargetLabels), map[string]string(dep.TargetLabels)) {
+				continue
+			}
+			if d.CI != dep.CI {
+				continue
+			}
+			matching = append(matching, matchingDeployment{
+				ID:      d.ID.String(),
+				Version: d.Feature.Version,
+				Created: formatTime(d.Created),
+			})
+		}
+
+		renderPage(w, layout.Props{Title: fmt.Sprintf("Deployment %s v%s", dep.Feature.Name, dep.Feature.Version), CurrentSection: "rollouts", Content: deploymentPage(dep, rows, matching)})
 	}
 }
 
-func deploymentPage(d *deployment.Deployment, statuses []deploymentStatusRow) g.Node {
+func deploymentPage(d *deployment.Deployment, statuses []deploymentStatusRow, matching []matchingDeployment) g.Node {
 	meta := []g.Node{
 		metaRow("Feature", h.A(h.Href("/ui/features/"+d.Feature.Name), g.Text(d.Feature.Name))),
 		metaRow("Version", g.Text(d.Feature.Version)),
@@ -70,6 +132,12 @@ func deploymentPage(d *deployment.Deployment, statuses []deploymentStatusRow) g.
 	if d.Description != nil && *d.Description != "" {
 		meta = append(meta, metaRow("Description", g.Text(*d.Description)))
 	}
+
+	meta = append(meta, metaRow("Actions", h.Form(
+		h.Method("POST"),
+		h.Action("/ui/deployments/"+d.ID.String()+"/delete"),
+		h.Button(h.Type("submit"), h.Class("btn-small"), g.Attr("onclick", "return confirm('Are you sure?')"), g.Text("Delete")),
+	)))
 
 	content := []g.Node{
 		h.H1(g.Textf("Deployment: %s v%s", d.Feature.Name, d.Feature.Version)),
@@ -100,6 +168,29 @@ func deploymentPage(d *deployment.Deployment, statuses []deploymentStatusRow) g.
 			}))),
 		))
 	}
+
+	content = append(content,
+		h.H2(g.Text("All deployments matching target")),
+		h.Table(
+			h.Class("table"),
+			h.THead(h.Tr(
+				h.Th(g.Text("Version")),
+				h.Th(g.Text("Created")),
+			)),
+			h.TBody(g.Group(g.Map(matching, func(m matchingDeployment) g.Node {
+				return h.Tr(
+					h.Td(h.A(h.Href("/ui/deployments/"+m.ID), g.Text(m.Version))),
+					h.Td(g.Text(m.Created)),
+				)
+			}))),
+		),
+		h.Form(
+			h.Method("POST"),
+			h.Action("/ui/deployments/"+d.ID.String()+"/delete-matching"),
+			h.Button(h.Type("submit"), h.Class("btn-small"), g.Attr("onclick", "return confirm('Are you sure?')"), g.Text("Delete all deployments")),
+			g.Textf(" (%d)", len(matching)),
+		),
+	)
 
 	return h.Div(
 		h.Class("container"),

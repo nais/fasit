@@ -99,6 +99,7 @@ func rolloutsContent(rollouts []Summary) g.Node {
 			h.Th(g.Text("Target")),
 			h.Th(g.Text("Created")),
 			h.Th(g.Text("Completed")),
+			h.Th(g.Text("Actions")),
 		)),
 		h.TBody(g.Group(g.Map(rollouts, func(rollout Summary) g.Node {
 			return h.Tr(
@@ -108,9 +109,18 @@ func rolloutsContent(rollouts []Summary) g.Node {
 				h.Td(g.Text(rollout.Target)),
 				h.Td(g.Text(rollout.Created)),
 				h.Td(g.Text(completedDate(rollout.Completed))),
+				h.Td(deleteDeploymentCell(rollout)),
 			)
 		}))),
 	)
+}
+
+func deleteDeploymentCell(r Summary) g.Node {
+	if r.DeploymentID == "" {
+		return g.Text("")
+	}
+
+	return h.A(h.Href("/ui/deployments/"+r.DeploymentID), g.Attr("title", "Delete deployment"), g.Text("🗑️"))
 }
 
 func versionCell(r Summary) g.Node {

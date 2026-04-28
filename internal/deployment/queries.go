@@ -8,6 +8,8 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/nais/fasit/internal/audit"
+	"github.com/nais/fasit/internal/database/types"
 	"github.com/nais/fasit/internal/deployment/deploymentsql"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
@@ -169,7 +171,25 @@ func ListDeploymentsByFeature(ctx context.Context, featureName string) ([]*Deplo
 }
 
 func DeleteDeployment(ctx context.Context, deploymentID uuid.UUID) error {
-	return fromContext(ctx).querier.DeleteDeployment(ctx, deploymentID)
+	err := fromContext(ctx).querier.DeleteDeployment(ctx, deploymentID)
+	if err != nil {
+		return err
+	}
+	audit.CreateAudit(ctx, "deleted", "deployments", deploymentID.String())
+	return nil
+}
+
+func DeleteDeploymentsByFeatureAndTarget(ctx context.Context, featureName string, target types.EnvironmentLabels, ci bool) error {
+	err := fromContext(ctx).querier.DeleteDeploymentsByFeatureAndTarget(ctx, deploymentsql.DeleteDeploymentsByFeatureAndTargetParams{
+		FeatureName: featureName,
+		Target:      target,
+		Ci:          ci,
+	})
+	if err != nil {
+		return err
+	}
+	audit.CreateAudit(ctx, "deleted all deployments matching feature and target", "deployments", featureName)
+	return nil
 }
 
 func SetDeploymentStatus(ctx context.Context, deploymentID, environmentID uuid.UUID, status model.RolloutStatus, message string) error {

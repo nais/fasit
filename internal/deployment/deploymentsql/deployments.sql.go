@@ -72,6 +72,24 @@ func (q *Queries) DeleteDeployment(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
+const deleteDeploymentsByFeatureAndTarget = `-- name: DeleteDeploymentsByFeatureAndTarget :exec
+DELETE FROM deployments
+WHERE feature_name = $1
+	AND target = $2
+	AND ci = $3
+`
+
+type DeleteDeploymentsByFeatureAndTargetParams struct {
+	FeatureName string
+	Target      types.EnvironmentLabels
+	Ci          bool
+}
+
+func (q *Queries) DeleteDeploymentsByFeatureAndTarget(ctx context.Context, arg DeleteDeploymentsByFeatureAndTargetParams) error {
+	_, err := q.db.Exec(ctx, deleteDeploymentsByFeatureAndTarget, arg.FeatureName, arg.Target, arg.Ci)
+	return err
+}
+
 const deployInstructionsGetDeployedFeatures = `-- name: DeployInstructionsGetDeployedFeatures :many
 SELECT DISTINCT ON (feature_name)
 	feature_name

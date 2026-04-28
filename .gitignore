@@ -9,3 +9,5 @@ bin/
 flake.*
 node_modules
 /fasit
+ARCHITECTURE.md
+misc/
