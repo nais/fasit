@@ -41,6 +41,8 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/rollouts", rollouts.Handler(s.renderPage, s.repo))
 	r.Get("/rollouts/{feature}/{version}", rollouts.DetailHandler(s.renderPage, s.repo))
 	r.Get("/deployments/{id}", rollouts.DeploymentHandler(s.renderPage, s.repo))
+	r.Post("/deployments/{id}/delete", rollouts.DeleteDeploymentHandler())
+	r.Post("/deployments/{id}/delete-matching", rollouts.DeleteDeploymentsByFeatureAndTargetHandler())
 
 	r.Get("/features", features.ListHandler(s.renderPage, s.repo))
 	r.Get("/features/{feature}", features.TabHandler(s.renderPage, s.repo, "overview"))
