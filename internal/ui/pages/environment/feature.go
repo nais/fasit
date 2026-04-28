@@ -264,34 +264,110 @@ func helmTab(page *FeaturePage) g.Node {
 }
 
 func playgroundTab(page *FeaturePage) g.Node {
+	code := page.PlaygroundCode
+	if code == "" {
+		code = defaultPlaygroundCode
+	}
+
 	action := featureBasePathValues(page.TenantSlug, page.Environment.Name, page.Feature.Name) + "/playground"
-	nodes := []g.Node{
-		h.H2(g.Text("Feature Playground")),
-		h.Form(h.Method("POST"), h.Action(action),
-			h.Label(g.Text("Feature YAML")),
-			h.Textarea(h.Name("code"), h.Class("code-block"), g.Attr("rows", "16"), g.Text(page.PlaygroundCode)),
-			h.Div(h.Class("form-row"),
+
+	return h.Div(h.Class("tab-content-wrapper"),
+		h.Form(
+			h.Method("POST"),
+			h.Action(action),
+			h.Div(h.Class("playground-controls"),
 				h.Label(
 					h.Input(h.Type("checkbox"), h.Name("includeUnset")),
-					g.Text(" Include unset values"),
+					g.Text(" Include unset config"),
+				),
+				h.Button(h.Type("submit"), g.Text("Generate")),
+			),
+			h.Div(h.Class("playground-split"),
+				h.Div(h.Class("playground-editor"),
+					h.Label(h.For("code"), g.Text("Feature.yaml")),
+					h.Textarea(h.Name("code"), h.ID("pg-code"),
+						g.Text(code),
+					),
+				),
+				h.Div(h.Class("playground-result"),
+					playgroundResultNode(page.PlaygroundResult, page.HelmValues),
 				),
 			),
-			h.Div(h.Class("popover-actions"),
-				h.Button(h.Type("submit"), g.Text("Run")),
-			),
 		),
+	)
+}
+
+func playgroundResultNode(result *PlaygroundResult, helmValues string) g.Node {
+	if result == nil {
+		if helmValues == "" {
+			return nil
+		}
+		return h.Div(h.Class("playground-output"),
+			h.H2(g.Text("values.yaml")),
+			h.Pre(h.Class("code-block"), g.Text(prettyJSON(helmValues))),
+		)
 	}
-	if page.PlaygroundResult != nil {
-		if len(page.PlaygroundResult.Errors) > 0 {
-			for _, e := range page.PlaygroundResult.Errors {
-				nodes = append(nodes, h.P(h.Class("status-error"), g.Text(e)))
+
+	var nodes []g.Node
+
+	if len(result.Errors) > 0 {
+		errorItems := make([]g.Node, 0, len(result.Errors))
+		for _, e := range result.Errors {
+			errorItems = append(errorItems, h.Li(g.Text(e)))
+		}
+		nodes = append(nodes,
+			h.Div(h.Class("playground-errors"),
+				h.H2(g.Text("Errors")),
+				h.Ul(errorItems...),
+			),
+		)
+	}
+
+	merged := result.Result
+	if merged != "" && helmValues != "" {
+		merged = mergeValuesJSON(merged, helmValues)
+	}
+
+	if merged != "" {
+		nodes = append(nodes,
+			h.Div(h.Class("playground-output"),
+				h.H2(g.Text("values.yaml")),
+				h.Pre(h.Class("code-block"), g.Text(strings.TrimSpace(merged))),
+			),
+		)
+	}
+
+	return g.Group(nodes)
+}
+
+func mergeValuesJSON(playgroundResult, helmValues string) string {
+	var resultMap, helmMap map[string]any
+	if err := json.Unmarshal([]byte(playgroundResult), &resultMap); err != nil {
+		return playgroundResult
+	}
+	if err := json.Unmarshal([]byte(helmValues), &helmMap); err != nil {
+		return playgroundResult
+	}
+	deepMerge(resultMap, helmMap)
+	b, err := json.MarshalIndent(resultMap, "", "  ")
+	if err != nil {
+		return playgroundResult
+	}
+	return string(b)
+}
+
+func deepMerge(dst, src map[string]any) {
+	for k, v := range src {
+		if srcMap, ok := v.(map[string]any); ok {
+			if dstMap, ok := dst[k].(map[string]any); ok {
+				deepMerge(dstMap, srcMap)
+				continue
 			}
 		}
-		if page.PlaygroundResult.Result != "" {
-			nodes = append(nodes, h.H3(g.Text("Result")), h.Pre(h.Class("code-block"), g.Text(prettyJSON(page.PlaygroundResult.Result))))
+		if _, exists := dst[k]; !exists {
+			dst[k] = v
 		}
 	}
-	return h.Div(h.Class("tab-content-wrapper"), g.Group(nodes))
 }
 
 func rolloutsTab(page *FeaturePage) g.Node {
