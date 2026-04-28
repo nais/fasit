@@ -133,13 +133,10 @@ func deploymentPage(d *deployment.Deployment, statuses []deploymentStatusRow, ma
 		meta = append(meta, metaRow("Description", g.Text(*d.Description)))
 	}
 
-	trashButtonStyle := g.Attr("style", "background:none;border:none;cursor:pointer;font-size:1.2em;padding:0")
-
 	meta = append(meta, metaRow("Actions", h.Form(
 		h.Method("POST"),
 		h.Action("/ui/deployments/"+d.ID.String()+"/delete"),
-		g.Attr("style", "display:inline"),
-		h.Button(h.Type("submit"), g.Attr("title", "Delete this deployment"), g.Attr("onclick", "return confirm('Are you sure?')"), trashButtonStyle, g.Text("🗑️")),
+		h.Button(h.Type("submit"), h.Class("btn-small"), g.Attr("onclick", "return confirm('Are you sure?')"), g.Text("Delete")),
 	)))
 
 	content := []g.Node{
@@ -190,9 +187,8 @@ func deploymentPage(d *deployment.Deployment, statuses []deploymentStatusRow, ma
 		h.Form(
 			h.Method("POST"),
 			h.Action("/ui/deployments/"+d.ID.String()+"/delete-matching"),
-			g.Attr("style", "display:inline"),
-			h.Button(h.Type("submit"), g.Attr("title", "Delete all deployments matching this feature and target"), g.Attr("onclick", "return confirm('Are you sure?')"), trashButtonStyle, g.Text("🗑️")),
-			g.Textf(" Delete all %d deployments", len(matching)),
+			h.Button(h.Type("submit"), h.Class("btn-small"), g.Attr("onclick", "return confirm('Are you sure?')"), g.Text("Delete all deployments")),
+			g.Textf(" (%d)", len(matching)),
 		),
 	)
 
