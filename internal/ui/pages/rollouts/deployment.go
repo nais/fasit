@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"maps"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -11,6 +12,7 @@ import (
 	"github.com/nais/fasit/internal/database/types"
 	"github.com/nais/fasit/internal/deployment"
 	envpkg "github.com/nais/fasit/internal/environment"
+	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
@@ -18,7 +20,9 @@ import (
 	h "maragu.dev/gomponents/html"
 )
 
-type deploymentStatusRow struct{ TenantName, EnvironmentName, State, Message, LastModified string }
+type deploymentStatusRow struct {
+	TenantName, EnvironmentName, EnvironmentID, State, Message, LastModified string
+}
 
 func DeleteDeploymentHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -95,6 +99,7 @@ func DeploymentHandler(renderPage RenderPage, repo database.Repo) http.HandlerFu
 			rows = append(rows, deploymentStatusRow{
 				TenantName:      tenant.Name,
 				EnvironmentName: env.Name,
+				EnvironmentID:   status.EnvironmentID.String(),
 				State:           status.State.String(),
 				Message:         status.Message,
 				LastModified:    formatTime(status.LastModified),
@@ -156,6 +161,7 @@ func deploymentPage(d *deployment.Deployment, statuses []deploymentStatusRow, ma
 				h.Th(g.Text("State")),
 				h.Th(g.Text("Message")),
 				h.Th(g.Text("Last Modified")),
+				h.Th(g.Text("Logs")),
 			)),
 			h.TBody(g.Group(g.Map(statuses, func(s deploymentStatusRow) g.Node {
 				return h.Tr(
@@ -164,6 +170,7 @@ func deploymentPage(d *deployment.Deployment, statuses []deploymentStatusRow, ma
 					h.Td(rolloutStatus(s.State)),
 					h.Td(g.Text(s.Message)),
 					h.Td(g.Text(s.LastModified)),
+					h.Td(h.A(h.Href("/ui/deployments/"+d.ID.String()+"/logs/"+s.EnvironmentID), g.Attr("title", "View logs"), g.Text("📋"))),
 				)
 			}))),
 		))
@@ -197,6 +204,81 @@ func deploymentPage(d *deployment.Deployment, statuses []deploymentStatusRow, ma
 		h.Main(
 			h.Class("main-content"),
 			components.Breadcrumbs([]breadcrumb.Crumb{breadcrumb.Rollouts(), breadcrumb.Deployment(d.ID.String(), d.Feature.Name, d.Feature.Version)}),
+			h.Div(h.Class("card"), h.Div(h.Class("card-body"), g.Group(content))),
+		),
+	)
+}
+
+func DeploymentLogsHandler(renderPage RenderPage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, err := uuid.Parse(chi.URLParam(r, "id"))
+		if err != nil {
+			http.Error(w, "Failed to parse deployment ID", http.StatusInternalServerError)
+			return
+		}
+
+		envID, err := uuid.Parse(chi.URLParam(r, "envID"))
+		if err != nil {
+			http.Error(w, "Failed to parse environment ID", http.StatusInternalServerError)
+			return
+		}
+
+		dep, err := deployment.GetDeployment(r.Context(), id)
+		if err != nil {
+			http.Error(w, "Failed to load deployment: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		log, err := deployment.GetDeploymentStatusLog(r.Context(), id, envID)
+		if err != nil {
+			http.Error(w, "Failed to load logs: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		title := fmt.Sprintf("Deployment Logs: %s v%s", dep.Feature.Name, dep.Feature.Version)
+		renderPage(w, layout.Props{
+			Title:          title,
+			CurrentSection: "rollouts",
+			Content:        deploymentLogsPage(dep, log),
+		})
+	}
+}
+
+func deploymentLogsPage(dep *deployment.Deployment, rolloutLog *model.RolloutLog) g.Node {
+	var logContent []g.Node
+
+	if rolloutLog == nil || len(rolloutLog.Lines) == 0 {
+		logContent = append(logContent, h.P(g.Text("No logs available.")))
+	} else {
+		var sb strings.Builder
+		for i, line := range rolloutLog.Lines {
+			if i > 0 {
+				sb.WriteString("\n")
+			}
+			sb.WriteString(formatTime(line.Timestamp))
+			sb.WriteString(" ")
+			sb.WriteString(line.Message)
+		}
+		logContent = append(logContent,
+			h.P(h.Class("text-muted"), g.Textf("Environment: %s", rolloutLog.Environment)),
+			h.Pre(h.Class("code-block"), g.Text(sb.String())),
+		)
+	}
+
+	content := []g.Node{
+		h.H1(g.Textf("Deployment Logs: %s v%s", dep.Feature.Name, dep.Feature.Version)),
+	}
+	content = append(content, logContent...)
+
+	return h.Div(
+		h.Class("container"),
+		h.Main(
+			h.Class("main-content"),
+			components.Breadcrumbs([]breadcrumb.Crumb{
+				breadcrumb.Rollouts(),
+				breadcrumb.Deployment(dep.ID.String(), dep.Feature.Name, dep.Feature.Version),
+				{Label: "Logs"},
+			}),
 			h.Div(h.Class("card"), h.Div(h.Class("card-body"), g.Group(content))),
 		),
 	)
