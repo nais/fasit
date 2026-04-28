@@ -285,7 +285,7 @@ func configTypeLabel(item ConfigItem) string {
 
 func configDefaultValue(item ConfigItem) g.Node {
 	if item.IsSecret {
-		return h.Span(h.Class("text-muted"), g.Text("[SECRET]"))
+		return h.Span(h.Class("text-muted"), g.Text("••••••••"))
 	}
 	if item.IsComputed {
 		return h.Code(g.Text(item.Template))

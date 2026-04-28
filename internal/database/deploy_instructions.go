@@ -2,12 +2,14 @@ package database
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/internal/database/gensql"
+	"github.com/nais/fasit/internal/feature/featureutil"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nsf/jsondiff"
 )
@@ -17,7 +19,7 @@ type DeployInstructionRepo interface {
 	DeployInstructionsForFeature(ctx context.Context, envID uuid.UUID, featureName string, offset int) ([]*model.DeployInstruction, error)
 	DeployInstructionsLatestForFeature(ctx context.Context, envID uuid.UUID, featureName string) (*model.DeployInstruction, error)
 	DeployInstructionUpdateStatus(ctx context.Context, id uuid.UUID, status model.RolloutStatus) error
-	HelmValueDiffGet(ctx context.Context, di *model.DeployInstruction) (*model.HelmValueDiff, error)
+	HelmValueDiffGet(ctx context.Context, di *model.DeployInstruction, secretKeys []string) (*model.HelmValueDiff, error)
 	NamesFromDeployInstruction(ctx context.Context, id uuid.UUID) (tenantName, environmentName string, err error)
 }
 
@@ -70,7 +72,7 @@ func (r *repo) DeployInstructionsLatestForFeature(ctx context.Context, envID uui
 	return deployInstructionFromSQL(di), nil
 }
 
-func (r *repo) HelmValueDiffGet(ctx context.Context, di *model.DeployInstruction) (*model.HelmValueDiff, error) {
+func (r *repo) HelmValueDiffGet(ctx context.Context, di *model.DeployInstruction, secretKeys []string) (*model.HelmValueDiff, error) {
 	ret := &model.HelmValueDiff{
 		Difference: model.HelmValueDifferenceNoMatch,
 	}
@@ -83,11 +85,14 @@ func (r *repo) HelmValueDiffGet(ctx context.Context, di *model.DeployInstruction
 		return nil, fmt.Errorf("failed to get previous deploy instruction: %w", err)
 	}
 
+	currentValues := scrubSecrets(di.Values, secretKeys)
+	previousValues := scrubSecrets(prev.Values, secretKeys)
+
 	opts := jsondiff.DefaultHTMLOptions()
 	opts.Indent = "\t"
 	opts.PrintTypes = true
 	opts.SkipMatches = true
-	diff, diff2 := jsondiff.Compare(prev.Values, di.Values, &opts)
+	diff, diff2 := jsondiff.Compare(previousValues, currentValues, &opts)
 	ret.Diff = diff2
 
 	switch diff {
@@ -100,6 +105,44 @@ func (r *repo) HelmValueDiffGet(ctx context.Context, di *model.DeployInstruction
 	}
 
 	return ret, nil
+}
+
+func scrubSecrets(data []byte, secretKeys []string) []byte {
+	if len(secretKeys) == 0 {
+		return data
+	}
+	var obj map[string]any
+	if err := json.Unmarshal(data, &obj); err != nil {
+		return data
+	}
+	for _, key := range secretKeys {
+		parts, err := featureutil.SmartDotSplit(key)
+		if err != nil {
+			continue
+		}
+		scrubPath(obj, parts)
+	}
+	result, err := json.Marshal(obj)
+	if err != nil {
+		return data
+	}
+	return result
+}
+
+func scrubPath(obj map[string]any, parts []string) {
+	for i, part := range parts {
+		if i == len(parts)-1 {
+			if _, ok := obj[part]; ok {
+				obj[part] = "••••••••"
+			}
+			return
+		}
+		next, ok := obj[part].(map[string]any)
+		if !ok {
+			return
+		}
+		obj = next
+	}
 }
 
 func (r *repo) NamesFromDeployInstruction(ctx context.Context, id uuid.UUID) (tenantName, environmentName string, err error) {

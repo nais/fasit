@@ -23,8 +23,9 @@ type Environment struct {
 }
 
 type MetadataItem struct {
-	Key   string
-	Value string
+	Key      string
+	Value    string
+	IsSecret bool
 }
 
 func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
@@ -69,6 +70,13 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 	}
 }
 
+func metadataValue(item MetadataItem) g.Node {
+	if item.IsSecret {
+		return h.Span(h.Class("text-muted"), g.Text("••••••••"))
+	}
+	return g.Text(item.Value)
+}
+
 func page(breadcrumbs []breadcrumb.Crumb, tenant *model.Tenant, environment *Environment, allFeatures, enabledFeatures []view.FeatureNav) g.Node {
 	return h.Div(h.Class("container"),
 		components.EnvironmentSidebar(tenant.Name, environment.Name, "", allFeatures, enabledFeatures),
@@ -87,7 +95,7 @@ func page(breadcrumbs []breadcrumb.Crumb, tenant *model.Tenant, environment *Env
 						h.TBody(g.Group(g.Map(environment.Metadata, func(item MetadataItem) g.Node {
 							return h.Tr(
 								h.Td(h.Class("th-like width-md"), g.Text(item.Key)),
-								h.Td(g.Text(item.Value)),
+								h.Td(metadataValue(item)),
 							)
 						}))),
 					),

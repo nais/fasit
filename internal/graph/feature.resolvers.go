@@ -139,7 +139,7 @@ func (r *featureResolver) HelmValueDiff(ctx context.Context, obj *model.Feature)
 		return nil, fmt.Errorf("get latest deploy instruction: %w", err)
 	}
 
-	prev, err := r.Repo.HelmValueDiffGet(ctx, di)
+	prev, err := r.Repo.HelmValueDiffGet(ctx, di, obj.SecretKeys())
 	if err != nil {
 		return nil, fmt.Errorf("get value diff: %w", err)
 	}
@@ -154,7 +154,11 @@ func (r *featureHistoryResolver) Log(ctx context.Context, obj *model.FeatureHist
 
 // HelmValueDiff is the resolver for the helmValueDiff field.
 func (r *featureHistoryResolver) HelmValueDiff(ctx context.Context, obj *model.FeatureHistory) (*model.HelmValueDiff, error) {
-	return r.Repo.HelmValueDiffGet(ctx, obj.Di)
+	feat, err := featurepkg.FeatureByName(ctx, obj.Di.FeatureName)
+	if err != nil {
+		return r.Repo.HelmValueDiffGet(ctx, obj.Di, nil)
+	}
+	return r.Repo.HelmValueDiffGet(ctx, obj.Di, feat.SecretKeys())
 }
 
 // Features is the resolver for the features field.

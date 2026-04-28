@@ -168,6 +168,8 @@ func featurePageContent(page *FeaturePage) g.Node {
 		tabContent = rolloutsTab(page)
 	case "audit":
 		tabContent = auditTab()
+	case "playground":
+		tabContent = playgroundTab(page)
 	default:
 		tabContent = overviewTab(page)
 	}
@@ -261,6 +263,37 @@ func helmTab(page *FeaturePage) g.Node {
 	return h.Div(h.Class("tab-content-wrapper"), h.H2(g.Text("Computed Feature Values")), h.Pre(h.Class("code-block"), g.Text(prettyJSON(page.HelmValues))))
 }
 
+func playgroundTab(page *FeaturePage) g.Node {
+	action := featureBasePathValues(page.TenantSlug, page.Environment.Name, page.Feature.Name) + "/playground"
+	nodes := []g.Node{
+		h.H2(g.Text("Feature Playground")),
+		h.Form(h.Method("POST"), h.Action(action),
+			h.Label(g.Text("Feature YAML")),
+			h.Textarea(h.Name("code"), h.Class("code-block"), g.Attr("rows", "16"), g.Text(page.PlaygroundCode)),
+			h.Div(h.Class("form-row"),
+				h.Label(
+					h.Input(h.Type("checkbox"), h.Name("includeUnset")),
+					g.Text(" Include unset values"),
+				),
+			),
+			h.Div(h.Class("popover-actions"),
+				h.Button(h.Type("submit"), g.Text("Run")),
+			),
+		),
+	}
+	if page.PlaygroundResult != nil {
+		if len(page.PlaygroundResult.Errors) > 0 {
+			for _, e := range page.PlaygroundResult.Errors {
+				nodes = append(nodes, h.P(h.Class("status-error"), g.Text(e)))
+			}
+		}
+		if page.PlaygroundResult.Result != "" {
+			nodes = append(nodes, h.H3(g.Text("Result")), h.Pre(h.Class("code-block"), g.Text(prettyJSON(page.PlaygroundResult.Result))))
+		}
+	}
+	return h.Div(h.Class("tab-content-wrapper"), g.Group(nodes))
+}
+
 func rolloutsTab(page *FeaturePage) g.Node {
 	if len(page.Rollouts) == 0 {
 		return h.Div(h.Class("tab-content-wrapper"), h.H2(g.Text("Rollout History")), h.P(g.Text("No rollout history available.")))
@@ -295,7 +328,7 @@ func configKeyCell(item FeatureConfigItem) g.Node {
 
 func configValueCell(page *FeaturePage, item FeatureConfigItem) g.Node {
 	if item.IsSecret {
-		return h.Span(h.Class("text-muted"), g.Text("[SECRET]"))
+		return h.Span(h.Class("text-muted"), g.Text("••••••••"))
 	}
 	if item.IsComputed {
 		return h.Code(g.Text(item.Template))

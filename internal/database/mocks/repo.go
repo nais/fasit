@@ -1497,8 +1497,8 @@ func (_c *Repo_EnvironmentsGet_Call) RunAndReturn(run func(ctx context.Context, 
 }
 
 // HelmValueDiffGet provides a mock function for the type Repo
-func (_mock *Repo) HelmValueDiffGet(ctx context.Context, di *model.DeployInstruction) (*model.HelmValueDiff, error) {
-	ret := _mock.Called(ctx, di)
+func (_mock *Repo) HelmValueDiffGet(ctx context.Context, di *model.DeployInstruction, secretKeys []string) (*model.HelmValueDiff, error) {
+	ret := _mock.Called(ctx, di, secretKeys)
 
 	if len(ret) == 0 {
 		panic("no return value specified for HelmValueDiffGet")
@@ -1506,18 +1506,18 @@ func (_mock *Repo) HelmValueDiffGet(ctx context.Context, di *model.DeployInstruc
 
 	var r0 *model.HelmValueDiff
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, *model.DeployInstruction) (*model.HelmValueDiff, error)); ok {
-		return returnFunc(ctx, di)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *model.DeployInstruction, []string) (*model.HelmValueDiff, error)); ok {
+		return returnFunc(ctx, di, secretKeys)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, *model.DeployInstruction) *model.HelmValueDiff); ok {
-		r0 = returnFunc(ctx, di)
+	if returnFunc, ok := ret.Get(0).(func(context.Context, *model.DeployInstruction, []string) *model.HelmValueDiff); ok {
+		r0 = returnFunc(ctx, di, secretKeys)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.HelmValueDiff)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, *model.DeployInstruction) error); ok {
-		r1 = returnFunc(ctx, di)
+	if returnFunc, ok := ret.Get(1).(func(context.Context, *model.DeployInstruction, []string) error); ok {
+		r1 = returnFunc(ctx, di, secretKeys)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1532,11 +1532,12 @@ type Repo_HelmValueDiffGet_Call struct {
 // HelmValueDiffGet is a helper method to define mock.On call
 //   - ctx context.Context
 //   - di *model.DeployInstruction
-func (_e *Repo_Expecter) HelmValueDiffGet(ctx interface{}, di interface{}) *Repo_HelmValueDiffGet_Call {
-	return &Repo_HelmValueDiffGet_Call{Call: _e.mock.On("HelmValueDiffGet", ctx, di)}
+//   - secretKeys []string
+func (_e *Repo_Expecter) HelmValueDiffGet(ctx interface{}, di interface{}, secretKeys interface{}) *Repo_HelmValueDiffGet_Call {
+	return &Repo_HelmValueDiffGet_Call{Call: _e.mock.On("HelmValueDiffGet", ctx, di, secretKeys)}
 }
 
-func (_c *Repo_HelmValueDiffGet_Call) Run(run func(ctx context.Context, di *model.DeployInstruction)) *Repo_HelmValueDiffGet_Call {
+func (_c *Repo_HelmValueDiffGet_Call) Run(run func(ctx context.Context, di *model.DeployInstruction, secretKeys []string)) *Repo_HelmValueDiffGet_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
@@ -1546,9 +1547,14 @@ func (_c *Repo_HelmValueDiffGet_Call) Run(run func(ctx context.Context, di *mode
 		if args[1] != nil {
 			arg1 = args[1].(*model.DeployInstruction)
 		}
+		var arg2 []string
+		if args[2] != nil {
+			arg2 = args[2].([]string)
+		}
 		run(
 			arg0,
 			arg1,
+			arg2,
 		)
 	})
 	return _c
@@ -1559,7 +1565,7 @@ func (_c *Repo_HelmValueDiffGet_Call) Return(helmValueDiff *model.HelmValueDiff,
 	return _c
 }
 
-func (_c *Repo_HelmValueDiffGet_Call) RunAndReturn(run func(ctx context.Context, di *model.DeployInstruction) (*model.HelmValueDiff, error)) *Repo_HelmValueDiffGet_Call {
+func (_c *Repo_HelmValueDiffGet_Call) RunAndReturn(run func(ctx context.Context, di *model.DeployInstruction, secretKeys []string) (*model.HelmValueDiff, error)) *Repo_HelmValueDiffGet_Call {
 	_c.Call.Return(run)
 	return _c
 }

@@ -134,7 +134,11 @@ func getEnvironmentMetadata(ctx context.Context, repo database.Repo, env *model.
 	values, err := repo.EnvironmentValuesForEnvironment(ctx, env.ID, true)
 	if err == nil {
 		for _, val := range values {
-			addMetadata(&metadata, val.Key, rawValueToString(val.Value))
+			if val.Secret {
+				metadata = append(metadata, MetadataItem{Key: val.Key, Value: "", IsSecret: true})
+			} else {
+				addMetadata(&metadata, val.Key, rawValueToString(val.Value))
+			}
 		}
 	}
 
@@ -257,7 +261,7 @@ func loadFeaturePageData(ctx context.Context, repo database.Repo, tenantSlug, en
 		page.Rollouts = loadEnvironmentRollouts(ctx, repo, featureName)
 	}
 	if activeTab == "logs" {
-		page.FeatureLog = loadFeatureLog(ctx, repo, env.ID, featureName)
+		page.FeatureLog = loadFeatureLog(ctx, repo, env.ID, feat)
 	}
 
 	return page, nil
@@ -385,8 +389,8 @@ func deploymentTarget(dep *deployment.Deployment) string {
 	return strings.Join(parts, ", ")
 }
 
-func loadFeatureLog(ctx context.Context, repo database.Repo, envID uuid.UUID, featureName string) *FeatureLog {
-	di, err := repo.DeployInstructionsLatestForFeature(ctx, envID, featureName)
+func loadFeatureLog(ctx context.Context, repo database.Repo, envID uuid.UUID, feat *model.Feature) *FeatureLog {
+	di, err := repo.DeployInstructionsLatestForFeature(ctx, envID, feat.Name)
 	if err != nil {
 		return nil
 	}
@@ -402,7 +406,7 @@ func loadFeatureLog(ctx context.Context, repo database.Repo, envID uuid.UUID, fe
 	for _, line := range lines {
 		ret.CurrentLog = append(ret.CurrentLog, LogLine{Timestamp: formatTime(line.Timestamp), Message: line.Message})
 	}
-	ret.HelmDiff, _ = repo.HelmValueDiffGet(ctx, di)
+	ret.HelmDiff, _ = repo.HelmValueDiffGet(ctx, di, feat.SecretKeys())
 	return ret
 }
 

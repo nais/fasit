@@ -248,6 +248,17 @@ func contains[T comparable](s []T, e T) bool {
 	return slices.Contains(s, e)
 }
 
+// SecretKeys returns the dotted key names of all secret values in the feature.
+func (f *Feature) SecretKeys() []string {
+	var keys []string
+	for key, val := range f.Values {
+		if val.Config != nil && val.Config.Secret {
+			keys = append(keys, key)
+		}
+	}
+	return keys
+}
+
 func isStringArray(v []any) bool {
 	for _, e := range v {
 		if _, ok := e.(string); !ok {
