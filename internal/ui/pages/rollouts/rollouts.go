@@ -1,6 +1,7 @@
 package rollouts
 
 import (
+	"fmt"
 	"net/http"
 	"sort"
 	"strings"
@@ -20,6 +21,7 @@ type RenderPage func(http.ResponseWriter, layout.Props)
 type Summary struct {
 	FeatureName, Version, Status, Target, Created, Completed, DeploymentID string
 	createdAt                                                              time.Time
+	disabledCount                                                          int
 }
 
 func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
@@ -44,15 +46,17 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 		if err == nil {
 			for _, dep := range deployments {
 				statuses, _ := deployment.ListDeploymentStatuses(r.Context(), dep.ID)
+				status, disabledCount := aggregateDeploymentStatus(statuses)
 				items = append(items, Summary{
-					FeatureName:  dep.Feature.Name,
-					Version:      dep.Feature.Version,
-					Status:       aggregateDeploymentStatus(statuses),
-					Target:       deploymentTarget(dep),
-					Created:      formatTime(dep.Created),
-					Completed:    latestStatusTime(statuses),
-					DeploymentID: dep.ID.String(),
-					createdAt:    dep.Created,
+					FeatureName:   dep.Feature.Name,
+					Version:       dep.Feature.Version,
+					Status:        status,
+					Target:        deploymentTarget(dep),
+					Created:       formatTime(dep.Created),
+					Completed:     latestStatusTime(statuses),
+					DeploymentID:  dep.ID.String(),
+					createdAt:     dep.Created,
+					disabledCount: disabledCount,
 				})
 			}
 		}
@@ -107,7 +111,7 @@ func rolloutsContent(rollouts []Summary) g.Node {
 			return h.Tr(
 				h.Td(h.A(h.Href("/ui/features/"+rollout.FeatureName), g.Text(rollout.FeatureName))),
 				h.Td(versionCell(rollout)),
-				h.Td(rolloutStatus(rollout.Status)),
+				h.Td(statusCell(rollout)),
 				h.Td(g.Text(rollout.Target)),
 				h.Td(g.Text(rollout.Created)),
 				h.Td(g.Text(completedDate(rollout.Completed))),
@@ -133,6 +137,14 @@ func versionCell(r Summary) g.Node {
 	return h.A(h.Href("/ui/rollouts/"+r.FeatureName+"/"+r.Version), g.Text(r.Version))
 }
 
+func statusCell(rollout Summary) g.Node {
+	nodes := []g.Node{rolloutStatus(rollout.Status)}
+	if rollout.disabledCount > 0 {
+		nodes = append(nodes, g.Text(" "), h.Span(g.Attr("title", fmt.Sprintf("Disabled in %d environment(s)", rollout.disabledCount)), g.Text("⚠️")))
+	}
+	return g.Group(nodes)
+}
+
 func rolloutStatus(status string) g.Node {
 	switch strings.ToUpper(status) {
 	case "DEPLOYED":
@@ -141,21 +153,37 @@ func rolloutStatus(status string) g.Node {
 		return g.Group([]g.Node{h.Span(h.Class("status-error"), g.Text("✗")), g.Text(" FAILED")})
 	case "PENDING":
 		return g.Group([]g.Node{h.Span(h.Class("status-pending"), g.Text("⏳")), g.Text(" PENDING")})
+	case "DISABLED":
+		return g.Group([]g.Node{g.Text("⏸️ DISABLED")})
 	default:
 		return g.Text(status)
 	}
 }
 
-func aggregateDeploymentStatus(statuses []*deployment.DeploymentStatus) string {
+func aggregateDeploymentStatus(statuses []*deployment.DeploymentStatus) (string, int) {
 	if len(statuses) == 0 {
-		return "UNKNOWN"
+		return "UNKNOWN", 0
+	}
+
+	disabledCount := 0
+	for _, s := range statuses {
+		if s.State == deployment.DeploymentStatusStateDisabled {
+			disabledCount++
+		}
+	}
+
+	if disabledCount == len(statuses) {
+		return "DISABLED", disabledCount
 	}
 
 	allDeployed := true
 	for _, s := range statuses {
+		if s.State == deployment.DeploymentStatusStateDisabled {
+			continue
+		}
 		switch s.State {
 		case deployment.DeploymentStatusStateFailed:
-			return "FAILED"
+			return "FAILED", disabledCount
 		case deployment.DeploymentStatusStatePending, deployment.DeploymentStatusStateCreated:
 			allDeployed = false
 		case deployment.DeploymentStatusStateDeployed:
@@ -166,10 +194,10 @@ func aggregateDeploymentStatus(statuses []*deployment.DeploymentStatus) string {
 	}
 
 	if allDeployed {
-		return "DEPLOYED"
+		return "DEPLOYED", disabledCount
 	}
 
-	return "PENDING"
+	return "PENDING", disabledCount
 }
 
 func latestStatusTime(statuses []*deployment.DeploymentStatus) string {
