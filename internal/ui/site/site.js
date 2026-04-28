@@ -1,26 +1,45 @@
-document.addEventListener("click", (e) => {
-  const th = e.target.closest(".sortable th");
+// Theme toggle
+function toggleTheme() {
+  var t = document.documentElement.dataset.theme === "light" ? "dark" : "light";
+  document.documentElement.dataset.theme = t;
+  localStorage.setItem("theme", t);
+}
+
+// Sidebar scroll persistence
+(function () {
+  var sidebar = document.querySelector(".sidebar");
+  if (!sidebar) return;
+  var saved = sessionStorage.getItem("sidebar-scroll");
+  if (saved) sidebar.scrollTop = parseInt(saved, 10);
+  sidebar.addEventListener("scroll", function () {
+    sessionStorage.setItem("sidebar-scroll", sidebar.scrollTop);
+  });
+})();
+
+// Sortable tables
+document.addEventListener("click", function (e) {
+  var th = e.target.closest(".sortable th");
   if (!th) return;
 
-  const table = th.closest("table");
-  const tbody = table.querySelector("tbody");
+  var table = th.closest("table");
+  var tbody = table.querySelector("tbody");
   if (!tbody) return;
 
-  const idx = Array.from(th.parentElement.children).indexOf(th);
-  const rows = Array.from(tbody.querySelectorAll("tr"));
+  var idx = Array.from(th.parentElement.children).indexOf(th);
+  var rows = Array.from(tbody.querySelectorAll("tr"));
 
-  const asc = th.dataset.sort !== "asc";
-  table.querySelectorAll("th").forEach((h) => delete h.dataset.sort);
+  var asc = th.dataset.sort !== "asc";
+  table.querySelectorAll("th").forEach(function (h) { delete h.dataset.sort; });
   th.dataset.sort = asc ? "asc" : "desc";
 
-  rows.sort((a, b) => {
-    const av = (a.children[idx]?.textContent || "").trim();
-    const bv = (b.children[idx]?.textContent || "").trim();
-    const an = parseFloat(av);
-    const bn = parseFloat(bv);
+  rows.sort(function (a, b) {
+    var av = (a.children[idx] ? a.children[idx].textContent : "").trim();
+    var bv = (b.children[idx] ? b.children[idx].textContent : "").trim();
+    var an = parseFloat(av);
+    var bn = parseFloat(bv);
     if (!isNaN(an) && !isNaN(bn)) return asc ? an - bn : bn - an;
     return asc ? av.localeCompare(bv) : bv.localeCompare(av);
   });
 
-  rows.forEach((r) => tbody.appendChild(r));
+  rows.forEach(function (r) { tbody.appendChild(r); });
 });

@@ -26,6 +26,7 @@ func SiteHeader(currentSection string) g.Node {
 			navItem("/ui/features", "Features", "features"),
 			navItem("/ui/rollouts", "Rollouts", "rollouts"),
 		),
+		h.Button(h.Class("theme-toggle"), g.Attr("onclick", "toggleTheme()"), g.Attr("title", "Toggle light/dark mode"), g.Raw("☀︎")),
 		h.Span(h.Class("user"), g.Text("user")),
 	)
 }
