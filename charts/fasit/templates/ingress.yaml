@@ -1,24 +1,24 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: { { include "fasit.fullname" . } }
-  labels: { { - include "fasit.labels" . | nindent 4 } }
+  name: {{ include "fasit.fullname" . }}
+  labels: {{ - include "fasit.labels" . | nindent 4 }}
 spec:
-  ingressClassName: { { .Values.ingressClassName } }
+  ingressClassName: {{ .Values.ingressClassName }}
   rules:
-    - host: { { .Values.ingressHost } }
+    - host: {{ .Values.ingressHost }}
       http:
         paths:
           - backend:
               service:
-                name: { { include "fasit.fullname" . } }
+                name: {{ include "fasit.fullname" . }}
                 port:
                   name: http
             path: /query
             pathType: Prefix
           - backend:
               service:
-                name: { { include "fasit.fullname" . } }
+                name: {{ include "fasit.fullname" . }}
                 port:
                   name: http
             path: /ui
