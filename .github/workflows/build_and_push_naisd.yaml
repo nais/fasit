@@ -5,38 +5,49 @@ on:
       - "naisd-*"
 env:
   CHART_PATH: "charts/naisd"
-  HELM_VERSION: "3.10.2"
   GOOGLE_REGISTRY: "europe-north1-docker.pkg.dev"
   RUNNER_IMG: "gcr.io/distroless/static-debian11:nonroot"
   BASEIMG_IDENTITY: "keyless@distroless.iam.gserviceaccount.com"
   BASEIMG_ISSUER: "https://accounts.google.com"
 jobs:
-  naisd_tests:
+  go-version:
     outputs:
-      go_version: ${{ steps.go_version.outputs.GO_VERSION }}
-    runs-on: ubuntu-latest-4-cores
+      go-version: ${{ steps.go-version.outputs.go-version }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
       - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # ratchet:jdx/mise-action@v4.0.1
-      - name: Find Go version
-        id: go_version
-        run: echo "go_version=$(mise current go)" >> $GITHUB_OUTPUT
-      - uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # ratchet:actions/setup-go@v6
-        with:
-          go-version: ${{ steps.go_version.outputs.GO_VERSION }}
-      - run: go test -cover -tags integration_test ./...
-      - name: Vulnerability check
-        run: |
-          go install golang.org/x/vuln/cmd/govulncheck@latest
-          govulncheck ./...
+      - id: go-version
+        run: echo "go-version=$(mise current go)" >> $GITHUB_OUTPUT
+  checks:
+    strategy:
+      fail-fast: false
+      matrix:
+        mise-task:
+          - check:deadcode
+          - check:gosec
+          - check:govet
+          - check:govulncheck
+          - check:helm
+          - check:ratchet
+          - check:sqlc
+          - check:staticcheck
+          - ci:fmt
+          - test:unit
+          - test:integration
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
+      - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # ratchet:jdx/mise-action@v4.0.1
+      - run: mise run ${{ matrix.mise-task }}
   build_and_push_naisd:
-    needs: [naisd_tests]
+    needs: [go-version, checks]
     permissions:
       contents: "read"
       id-token: "write"
     outputs:
       version: ${{ steps.build-push-sign.outputs.version }}
-    runs-on: ubuntu-latest-4-cores
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
@@ -52,7 +63,7 @@ jobs:
           dockerfile: Dockerfile_naisd
           name: naisd
           build_args: |
-            GO_VERSION=${{ needs.naisd_tests.outputs.go_version }}
+            GO_VERSION=${{ needs.go-version.outputs.go-version }}
           google_service_account: gh-fasit
           workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
           push: ${{ github.actor != 'dependabot[bot]' }}
@@ -69,10 +80,7 @@ jobs:
       version: ${{ steps.build_chart.outputs.version }}
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # ratchet:actions/checkout@v6
-      - uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # ratchet:azure/setup-helm@v5.0.0
-        name: "Setup Helm"
-        with:
-          version: ${{ env.HELM_VERSION }}
+      - uses: jdx/mise-action@1648a7812b9aeae629881980618f079932869151 # ratchet:jdx/mise-action@v4.0.1
       - name: Build Chart
         id: build_chart
         run: |-
