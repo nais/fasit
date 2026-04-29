@@ -14,9 +14,9 @@ ui/
     tenant/      → Single tenant with environment list
     environment/ → Environment detail, feature tabs (overview/logs/helm/rollouts/audit/playground)
     features/    → Feature list, feature detail tabs (overview/status/deployments/rollouts)
-    rollouts/    → Rollout list/detail, deployment list/detail/logs
+    rollouts/    → Rollout list/detail + deployment list/detail/logs (deployment.go is separate from rollouts.go)
     labels/      → Label management
-  breadcrumb/    → Breadcrumb navigation builder
+  breadcrumb/    → Breadcrumb navigation builder (supports dropdown switcher via Alternatives)
   chart/         → Chart/visualization components
   view/          → View helper (renderPage function type)
   site/          → Static assets: site.css, site.js (embedded via embed.go)
@@ -95,6 +95,19 @@ All routes defined in `server/routes.go`. URL structure:
 
 Tabbed pages use a shared handler with a tab parameter: `TabHandler(renderPage, repo, "status")`.
 
+POST routes use form submissions for destructive actions (delete, bulk-delete). No client-side fetch calls.
+
+### Breadcrumbs
+
+Breadcrumbs support a dropdown "switcher" for navigation between siblings (e.g., switching tenants or environments). Built with the `Alternatives` field on `breadcrumb.Crumb`:
+
+```go
+breadcrumb.TenantWithSwitcher(name, allTenants)        // Dropdown to switch tenant
+breadcrumb.EnvironmentWithSwitcher(tenant, env, envs)   // Dropdown to switch environment
+```
+
+When `Alternatives` is non-empty, `components.Breadcrumbs` renders a dropdown instead of a plain link.
+
 ### Static Assets
 
 CSS and JS are embedded at compile time via `embed.go`. Served at `/site.css` and `/site.js` by `server/assets.go`. No build step for frontend assets.
@@ -109,3 +122,4 @@ UI handlers access data through the context loader pattern (see root AGENTS.md).
 - No client-side routing. All navigation is server-side `<a>` tags.
 - No template files. All HTML is Go code via gomponents.
 - Do not add new JS without discussion.
+- Time formatting uses `mustLoadLocation("Europe/Oslo")` — defined per-page, not centralized.

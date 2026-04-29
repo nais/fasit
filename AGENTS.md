@@ -19,7 +19,7 @@ internal/
   contextloader/   → Per-request dependency injection via context.Context
   graph/           → GraphQL resolvers (gqlgen) — see internal/graph/AGENTS.md
   ui/              → Server-rendered HTML (gomponents) — see internal/ui/AGENTS.md
-  deployment/      → Deployment reconciler: label-matching, deployer, status tracking
+  deployment/      → Deployment reconciler: label-matching, deployer, status tracking — see internal/deployment/AGENTS.md
   rollout/         → Rollout reconciler: version rollouts across environments
   feature/         → Feature CRUD, template parsing, computed helm values
   environment/     → Environment CRUD, label matching
