@@ -138,11 +138,13 @@ func versionCell(r Summary) g.Node {
 }
 
 func statusCell(rollout Summary) g.Node {
-	nodes := []g.Node{rolloutStatus(rollout.Status)}
-	if rollout.disabledCount > 0 {
-		nodes = append(nodes, g.Text(" "), h.Span(g.Attr("title", fmt.Sprintf("Disabled in %d environment(s)", rollout.disabledCount)), g.Text("⚠️")))
+	if rollout.Status == "DEPLOYED" && rollout.disabledCount > 0 {
+		return g.Group([]g.Node{
+			h.Span(h.Class("status-success"), g.Attr("title", fmt.Sprintf("Disabled in %d environment(s)", rollout.disabledCount)), g.Attr("style", "font-size:inherit;line-height:inherit"), g.Text("⚠️")),
+			g.Text(" DEPLOYED"),
+		})
 	}
-	return g.Group(nodes)
+	return rolloutStatus(rollout.Status)
 }
 
 func rolloutStatus(status string) g.Node {
