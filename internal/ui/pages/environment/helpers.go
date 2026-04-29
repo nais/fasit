@@ -57,13 +57,12 @@ type FeatureDetail struct {
 }
 
 type RolloutItem struct {
-	FeatureName  string
-	Version      string
-	Status       string
-	Created      string
-	Completed    string
-	Target       string
-	DeploymentID string
+	FeatureName string
+	Version     string
+	Status      string
+	Created     string
+	Completed   string
+	Target      string
 }
 
 type EnvDeploymentItem struct {

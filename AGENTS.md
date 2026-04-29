@@ -54,9 +54,11 @@ Never edit files in: `gensql/`, `deploymentsql/`, `environmentsql/`, `featuresql
 
 ## Deployment vs Rollout
 
-- **Rollout**: Push a feature version across environments sequentially
-- **Deployment**: Label-based — deploy to all environments matching target labels (`labels @> target`)
+- **Rollout**: Push a feature version across environments sequentially (ordered progression)
+- **Deployment**: Label-based — deploy to all environments matching target labels (`labels @> target`), reconciled periodically
 - When a feature has deployments, rollouts are effectively disabled for that feature
+- Both produce `deploy_instructions` for naisd and share `model.RolloutStatus` enum / `model.RolloutLog` type at the domain layer — this is intentional (naisd doesn't distinguish)
+- UI, API, and domain packages keep rollouts and deployments fully separate — do NOT mix them
 
 ## Build & Run
 

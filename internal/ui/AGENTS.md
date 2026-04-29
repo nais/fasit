@@ -34,3 +34,11 @@ ui/
 - No client-side routing — server-side `<a>` tags only
 - No template files — all HTML is Go code via gomponents
 - No new JS without discussion
+
+## Rollouts vs Deployments (UI)
+
+- **Separate nav items**: `PageRollouts` and `PageDeployments` in `components/header.go`
+- **Separate breadcrumbs**: `breadcrumb.Rollouts()` and `breadcrumb.Deployments()` — never cross-reference
+- **Known structural debt**: Deployment UI handlers (`deployment.go`) live in `pages/rollouts/` package. They share helper functions (`rolloutStatus`, `formatTime`, `versionCell`) but are otherwise independent. Treat `deployment.go` as logically separate from `rollouts.go`.
+- **Feature detail page**: Has separate "Rollouts" and "Deployments" tabs with independent data types (`RolloutItem` vs `DeploymentItem`)
+- **Environment feature page**: Conditionally shows either "Deployments" or "Rollouts" tab based on `HasDeployments` — never both

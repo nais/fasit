@@ -66,13 +66,12 @@ type ConfigItem struct {
 }
 
 type RolloutItem struct {
-	FeatureName  string
-	Version      string
-	Status       string
-	Created      string
-	Completed    string
-	Target       string
-	DeploymentID string
+	FeatureName string
+	Version     string
+	Status      string
+	Created     string
+	Completed   string
+	Target      string
 }
 
 type DeploymentItem struct {
@@ -268,9 +267,6 @@ func rolloutsTab(data *DetailPage) g.Node {
 }
 
 func rolloutVersionCell(r RolloutItem) g.Node {
-	if r.DeploymentID != "" {
-		return h.A(h.Href("/ui/deployments/"+r.DeploymentID), g.Text(r.Version))
-	}
 	return h.A(h.Href("/ui/rollouts/"+r.FeatureName+"/"+r.Version), g.Text(r.Version))
 }
 
@@ -527,7 +523,6 @@ func aggregateDeploymentStatus(statuses []*deployment.DeploymentStatus) (string,
 		case deployment.DeploymentStatusStatePending, deployment.DeploymentStatusStateCreated:
 			allDeployed = false
 		case deployment.DeploymentStatusStateDeployed:
-			// ok
 		default:
 			allDeployed = false
 		}

@@ -308,10 +308,10 @@ func playgroundTab(page *FeaturePage) g.Node {
 }
 
 func playgroundResultNode(result *PlaygroundResult, helmValues string) g.Node {
+	if result == nil && helmValues == "" {
+		return nil
+	}
 	if result == nil {
-		if helmValues == "" {
-			return nil
-		}
 		return h.Div(h.Class("playground-output"),
 			h.H2(g.Text("values.yaml")),
 			h.Pre(h.Class("code-block"), g.Text(prettyJSON(helmValues))),
@@ -432,9 +432,6 @@ func labelPills(labels map[string]string) g.Node {
 }
 
 func rolloutVersionCell(r RolloutItem) g.Node {
-	if r.DeploymentID != "" {
-		return h.A(h.Href("/ui/deployments/"+r.DeploymentID), g.Text(r.Version))
-	}
 	return h.A(h.Href("/ui/rollouts/"+r.FeatureName+"/"+r.Version), g.Text(r.Version))
 }
 
@@ -461,8 +458,13 @@ func configValueCell(page *FeaturePage, item FeatureConfigItem) g.Node {
 	if item.IsComputed {
 		return h.Code(g.Text(item.Template))
 	}
-	popoverID, action, title, submitLabel := "", "", "Edit Configuration", "Save changes"
-	var formFields []g.Node
+	var (
+		popoverID   string
+		action      string
+		title       = "Edit Configuration"
+		submitLabel = "Save changes"
+		formFields  []g.Node
+	)
 	if item.Source == string(model.ConfigSourceEnv) {
 		popoverID = "edit-" + item.ID
 		action = featureBasePathValues(page.TenantSlug, page.Environment.Name, page.Feature.Name) + "/config/edit/" + item.ID

@@ -20,7 +20,6 @@ type HttpHandler struct {
 	provider *oidc.Provider
 	verifier *oidc.IDTokenVerifier
 	log      logrus.FieldLogger
-	// AllowAll will allow all rollout requests when set to true
 	AllowAll bool
 
 	programContext context.Context

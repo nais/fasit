@@ -40,7 +40,7 @@ func DeleteDeploymentHandler() http.HandlerFunc {
 			return
 		}
 
-		http.Redirect(w, r, "/ui/rollouts", http.StatusSeeOther)
+		http.Redirect(w, r, "/ui/deployments", http.StatusSeeOther)
 	}
 }
 
@@ -67,7 +67,7 @@ func DeleteDeploymentsByFeatureAndTargetHandler() http.HandlerFunc {
 			return
 		}
 
-		http.Redirect(w, r, "/ui/rollouts", http.StatusSeeOther)
+		http.Redirect(w, r, "/ui/deployments", http.StatusSeeOther)
 	}
 }
 
@@ -256,7 +256,7 @@ func deploymentPage(d *deployment.Deployment, statuses []deploymentStatusRow, de
 		h.Class("container"),
 		h.Main(
 			h.Class("main-content"),
-			components.Breadcrumbs([]breadcrumb.Crumb{breadcrumb.Rollouts(), breadcrumb.Deployment(d.ID.String(), d.Feature.Name, d.Feature.Version)}),
+			components.Breadcrumbs([]breadcrumb.Crumb{breadcrumb.Deployments(), breadcrumb.Deployment(d.ID.String(), d.Feature.Name, d.Feature.Version)}),
 			h.Div(h.Class("card"), h.Div(h.Class("card-body"), g.Group(content))),
 		),
 	)
@@ -296,8 +296,6 @@ func DeploymentLogsHandler(renderPage RenderPage) http.HandlerFunc {
 		})
 	}
 }
-
-// --- Deployments list page ---
 
 type featureGroup struct {
 	FeatureName string
@@ -403,7 +401,6 @@ func deploymentsContent(groups []featureGroup) g.Node {
 
 	nodes := make([]g.Node, len(groups))
 	for i, fg := range groups {
-		fg := fg
 		isFirst := i == 0
 		nodes[i] = deploymentGroup(fg, isFirst)
 	}
@@ -420,7 +417,6 @@ func deploymentGroup(fg featureGroup, open bool) g.Node {
 
 	rows := make([]g.Node, len(fg.Targets))
 	for i, dep := range fg.Targets {
-		dep := dep
 		rows[i] = h.Div(
 			h.Class("deployment-row"),
 			h.Span(h.Class("dep-target"), g.Text(dep.Target)),
@@ -468,7 +464,6 @@ func aggregateDeploymentStatus(statuses []*deployment.DeploymentStatus) (string,
 		case deployment.DeploymentStatusStatePending, deployment.DeploymentStatusStateCreated:
 			allDeployed = false
 		case deployment.DeploymentStatusStateDeployed:
-			// ok
 		default:
 			allDeployed = false
 		}
@@ -514,14 +509,14 @@ func deploymentTarget(dep *deployment.Deployment) string {
 	return strings.Join(parts, ", ")
 }
 
-func deploymentLogsPage(dep *deployment.Deployment, rolloutLog *model.RolloutLog) g.Node {
+func deploymentLogsPage(dep *deployment.Deployment, log *model.RolloutLog) g.Node {
 	var logContent []g.Node
 
-	if rolloutLog == nil || len(rolloutLog.Lines) == 0 {
+	if log == nil || len(log.Lines) == 0 {
 		logContent = append(logContent, h.P(g.Text("No logs available.")))
 	} else {
 		var sb strings.Builder
-		for i, line := range rolloutLog.Lines {
+		for i, line := range log.Lines {
 			if i > 0 {
 				sb.WriteString("\n")
 			}
@@ -530,7 +525,7 @@ func deploymentLogsPage(dep *deployment.Deployment, rolloutLog *model.RolloutLog
 			sb.WriteString(line.Message)
 		}
 		logContent = append(logContent,
-			h.P(h.Class("text-muted"), g.Textf("Environment: %s", rolloutLog.Environment)),
+			h.P(h.Class("text-muted"), g.Textf("Environment: %s", log.Environment)),
 			h.Pre(h.Class("code-block"), g.Text(sb.String())),
 		)
 	}
@@ -545,7 +540,7 @@ func deploymentLogsPage(dep *deployment.Deployment, rolloutLog *model.RolloutLog
 		h.Main(
 			h.Class("main-content"),
 			components.Breadcrumbs([]breadcrumb.Crumb{
-				breadcrumb.Rollouts(),
+				breadcrumb.Deployments(),
 				breadcrumb.Deployment(dep.ID.String(), dep.Feature.Name, dep.Feature.Version),
 				{Label: "Logs"},
 			}),
