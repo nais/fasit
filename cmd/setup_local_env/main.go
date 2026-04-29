@@ -188,14 +188,14 @@ func main() {
 		ref     string
 	}
 	rollouts := []rolloutSeed{
-		{"naiserator", "4.0.0", "refs/heads/main"},
-		{"naiserator", "4.1.0", "refs/heads/main"},
-		{"aivenator", "3.1.0", "refs/tags/v3.1.0"},
-		{"aivenator", "3.2.0", "refs/tags/v3.2.0"},
-		{"console", "2.1.0", "refs/heads/main"},
-		{"hookd", "2.1.0", "refs/tags/v2.1.0"},
-		{"dependencytrack", "2.1.0", "refs/heads/main"},
-		{"replicator", "2.1.0", "refs/tags/v2.1.0"},
+		{"naiserator", "1.0.0", "refs/heads/main"},
+		{"aivenator", "1.0.0", "refs/tags/v1.0.0"},
+		{"aivenator", "2.0.0", "refs/tags/v2.0.0"},
+		{"aivenator", "3.0.0", "refs/tags/v3.0.0"},
+		{"console", "2.0.0", "refs/heads/main"},
+		{"hookd", "1.0.0", "refs/tags/v1.0.0"},
+		{"dependencytrack", "2.0.0", "refs/heads/main"},
+		{"replicator", "2.0.0", "refs/tags/v2.0.0"},
 	}
 
 	for _, r := range rollouts {
