@@ -106,10 +106,6 @@ func (r *repo) TxFunc(ctx context.Context, fn TXFunc) error {
 func NewConnPool(ctx context.Context, dbConnDSN string, log logrus.FieldLogger) (*pgxpool.Pool, io.Closer, error) {
 	cloudsql := !strings.Contains(dbConnDSN, "://")
 
-	if runtime.NumCPU() < 5 {
-		dbConnDSN = dbConnDSN + " pool_max_conns=5"
-	}
-
 	cloudsqlHost := ""
 	if cloudsql {
 		vals, err := url.ParseQuery(strings.ReplaceAll(dbConnDSN, " ", "&"))
@@ -124,6 +120,10 @@ func NewConnPool(ctx context.Context, dbConnDSN string, log logrus.FieldLogger) 
 	config, err := pgxpool.ParseConfig(dbConnDSN)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to parse pgx config: %w", err)
+	}
+
+	if runtime.NumCPU() < 5 {
+		config.MaxConns = 5
 	}
 
 	config.AfterConnect = func(ctx context.Context, conn *pgx.Conn) error {
