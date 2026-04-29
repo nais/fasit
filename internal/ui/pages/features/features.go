@@ -11,6 +11,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/nais/fasit/internal/database"
+	"github.com/nais/fasit/internal/deployment"
 	envpkg "github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
@@ -30,6 +31,7 @@ type DetailPage struct {
 	CurrentFeature *Feature
 	Environments   []EnvironmentStatus
 	Rollouts       []RolloutItem
+	Deployments    []DeploymentItem
 	ActiveTab      string
 }
 
@@ -66,6 +68,14 @@ type RolloutItem struct {
 	DeploymentID string
 }
 
+type DeploymentItem struct {
+	ID      string
+	Version string
+	Status  string
+	Target  string
+	Created string
+}
+
 func ListHandler(renderPage RenderPage, _ database.Repo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		features, err := featurepkg.Features(r.Context())
@@ -98,13 +108,15 @@ func detailPage(data *DetailPage) g.Node {
 
 func featureTabs(featureName string) []components.Tab {
 	base := "/ui/features/" + featureName
-	return []components.Tab{{ID: "overview", Href: base, Label: "Overview"}, {ID: "status", Href: base + "/status", Label: "Status"}, {ID: "rollouts", Href: base + "/rollouts", Label: "Rollouts"}}
+	return []components.Tab{{ID: "overview", Href: base, Label: "Overview"}, {ID: "status", Href: base + "/status", Label: "Status"}, {ID: "deployments", Href: base + "/deployments", Label: "Deployments"}, {ID: "rollouts", Href: base + "/rollouts", Label: "Rollouts"}}
 }
 
 func tabContent(data *DetailPage) g.Node {
 	switch data.ActiveTab {
 	case "status":
 		return statusTab(data)
+	case "deployments":
+		return deploymentsTab(data)
 	case "rollouts":
 		return rolloutsTab(data)
 	default:
@@ -128,6 +140,15 @@ func statusTab(data *DetailPage) g.Node {
 			statusClass, statusIcon, statusText = "status-success", "✓", "Enabled"
 		}
 		return h.Tr(h.Td(h.A(h.Href("/ui/tenants/"+environment.TenantSlug+"/envs/"+environment.Name+"/"+data.CurrentFeature.Name), g.Text(environment.Name))), h.Td(h.A(h.Href("/ui/tenants/"+environment.TenantSlug), g.Text(environment.TenantName))), h.Td(h.Span(h.Class(statusClass), g.Text(statusIcon)), g.Text(" "+statusText)), h.Td(g.Text(environment.Created)), h.Td(g.Text(environment.LastModified)))
+	}))))
+}
+
+func deploymentsTab(data *DetailPage) g.Node {
+	if len(data.Deployments) == 0 {
+		return h.P(g.Text("No deployments yet."))
+	}
+	return h.Table(h.Class("table sortable"), h.THead(h.Tr(h.Th(g.Text("ID")), h.Th(g.Text("Version")), h.Th(g.Text("Status")), h.Th(g.Text("Target")), h.Th(g.Text("Created")))), h.TBody(g.Group(g.Map(data.Deployments, func(dep DeploymentItem) g.Node {
+		return h.Tr(h.Td(h.A(h.Href("/ui/deployments/"+dep.ID), g.Text(dep.ID[:8]))), h.Td(g.Text(dep.Version)), h.Td(g.Text(dep.Status)), h.Td(g.Text(dep.Target)), h.Td(g.Text(dep.Created)))
 	}))))
 }
 
@@ -197,6 +218,9 @@ func loadFeatureData(r *http.Request, repo database.Repo, activeTab string) (*De
 	if activeTab == "status" {
 		data.Environments = featureEnvironmentStatuses(r.Context(), repo, feature)
 	}
+	if activeTab == "deployments" {
+		data.Deployments = featureDeployments(r.Context(), featureName)
+	}
 	if activeTab == "rollouts" {
 		data.Rollouts = featureRollouts(r.Context(), repo, featureName)
 	}
@@ -249,6 +273,92 @@ func featureEnvironmentStatuses(ctx context.Context, repo database.Repo, feature
 		}
 	}
 	return ret
+}
+
+func featureDeployments(ctx context.Context, featureName string) []DeploymentItem {
+	deployments, err := deployment.ListDeploymentsByFeature(ctx, featureName)
+	if err != nil {
+		return nil
+	}
+	items := make([]DeploymentItem, 0, len(deployments))
+	for _, dep := range deployments {
+		statuses, _ := deployment.ListDeploymentStatuses(ctx, dep.ID)
+		state, _ := aggregateDeploymentStatus(statuses)
+		target := deploymentTarget(dep)
+		items = append(items, DeploymentItem{
+			ID:      dep.ID.String(),
+			Version: dep.Feature.Version,
+			Status:  state,
+			Target:  target,
+			Created: formatTime(dep.Created),
+		})
+	}
+	return items
+}
+
+func aggregateDeploymentStatus(statuses []*deployment.DeploymentStatus) (string, int) {
+	if len(statuses) == 0 {
+		return "UNKNOWN", 0
+	}
+
+	disabledCount := 0
+	for _, s := range statuses {
+		if s.State == deployment.DeploymentStatusStateDisabled {
+			disabledCount++
+		}
+	}
+
+	if disabledCount == len(statuses) {
+		return "DISABLED", disabledCount
+	}
+
+	allDeployed := true
+	for _, s := range statuses {
+		if s.State == deployment.DeploymentStatusStateDisabled {
+			continue
+		}
+		switch s.State {
+		case deployment.DeploymentStatusStateFailed:
+			return "FAILED", disabledCount
+		case deployment.DeploymentStatusStatePending, deployment.DeploymentStatusStateCreated:
+			allDeployed = false
+		case deployment.DeploymentStatusStateDeployed:
+			// ok
+		default:
+			allDeployed = false
+		}
+	}
+
+	if allDeployed {
+		return "DEPLOYED", disabledCount
+	}
+
+	return "PENDING", disabledCount
+}
+
+func deploymentTarget(dep *deployment.Deployment) string {
+	if dep.CI {
+		return "CI"
+	}
+
+	labels := dep.Target()
+	if len(labels) == 0 {
+		return "All environments"
+	}
+
+	keys := make([]string, 0, len(labels))
+	labelMap := make(map[string]string, len(labels))
+	for _, label := range labels {
+		keys = append(keys, label.Key)
+		labelMap[label.Key] = label.Value
+	}
+	sort.Strings(keys)
+
+	parts := make([]string, 0, len(keys))
+	for _, k := range keys {
+		parts = append(parts, k+"="+labelMap[k])
+	}
+	return strings.Join(parts, ", ")
 }
 
 func featureRollouts(ctx context.Context, repo database.Repo, featureName string) []RolloutItem {
