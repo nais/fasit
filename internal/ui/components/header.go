@@ -25,6 +25,13 @@ func SiteHeader(currentSection string) g.Node {
 			navItem("/ui", "Tenants", "tenants"),
 			navItem("/ui/features", "Features", "features"),
 			navItem("/ui/rollouts", "Rollouts", "rollouts"),
+			h.A(
+				h.Href("https://vedtak.nais.io/"),
+				h.Class("item"),
+				g.Attr("target", "_blank"),
+				g.Attr("rel", "noopener noreferrer"),
+				g.Text("Cluster management"),
+			),
 		),
 		h.Button(h.Class("theme-toggle"), g.Attr("onclick", "toggleTheme()"), g.Attr("title", "Toggle light/dark mode"), g.Raw("☀︎")),
 		h.Span(h.Class("user"), g.Text("user")),
