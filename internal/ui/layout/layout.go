@@ -9,7 +9,7 @@ import (
 
 type Props struct {
 	Title          string
-	CurrentSection string
+	CurrentPage components.Page
 	Content        g.Node
 }
 
@@ -29,7 +29,7 @@ func Page(props Props) g.Node {
 			h.Script(h.Src("/ui/site.js"), h.Defer()),
 		},
 		Body: []g.Node{
-			components.SiteHeader(props.CurrentSection),
+			components.SiteHeader(props.CurrentPage),
 			props.Content,
 		},
 	})

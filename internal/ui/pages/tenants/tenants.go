@@ -6,6 +6,7 @@ import (
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph/model"
+	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
 	"github.com/nais/fasit/internal/ui/view"
 	g "maragu.dev/gomponents"
@@ -47,7 +48,7 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 
 		renderPage(w, layout.Props{
 			Title:          "Tenants",
-			CurrentSection: "tenants",
+			CurrentPage: components.PageTenants,
 			Content:        page(cards),
 		})
 	}

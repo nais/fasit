@@ -89,7 +89,7 @@ func ListHandler(renderPage RenderPage, _ database.Repo) http.HandlerFunc {
 			http.Error(w, "Failed to load features", http.StatusInternalServerError)
 			return
 		}
-		renderPage(w, layout.Props{Title: "Features", CurrentSection: "features", Content: listPage(toFeatureNavs(features))})
+		renderPage(w, layout.Props{Title: "Features", CurrentPage: components.PageFeatures, Content: listPage(toFeatureNavs(features))})
 	}
 }
 
@@ -100,7 +100,7 @@ func TabHandler(renderPage RenderPage, repo database.Repo, activeTab string) htt
 			http.Error(w, "Failed to load feature data", http.StatusInternalServerError)
 			return
 		}
-		renderPage(w, layout.Props{Title: data.CurrentFeature.Name, CurrentSection: "features", Content: detailPage(data)})
+		renderPage(w, layout.Props{Title: data.CurrentFeature.Name, CurrentPage: components.PageFeatures, Content: detailPage(data)})
 	}
 }
 

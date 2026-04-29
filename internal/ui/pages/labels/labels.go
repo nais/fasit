@@ -10,6 +10,7 @@ import (
 
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/environment"
+	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
@@ -80,7 +81,7 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 
 		renderPage(w, layout.Props{
 			Title:          "Labels",
-			CurrentSection: "labels",
+			CurrentPage: components.PageLabels,
 			Content:        page(rows, labelKeys, activeFilters),
 		})
 	}

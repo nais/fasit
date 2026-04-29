@@ -54,7 +54,7 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 
 		renderPage(w, layout.Props{
 			Title:          tenant.Name,
-			CurrentSection: "tenants",
+			CurrentPage: components.PageTenants,
 			Content:        page(breadcrumbs, data),
 		})
 	}

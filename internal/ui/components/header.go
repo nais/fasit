@@ -5,10 +5,20 @@ import (
 	h "maragu.dev/gomponents/html"
 )
 
-func SiteHeader(currentSection string) g.Node {
-	navItem := func(href, label, section string) g.Node {
+type Page string
+
+const (
+	PageTenants     Page = "tenants"
+	PageFeatures    Page = "features"
+	PageDeployments Page = "deployments"
+	PageRollouts    Page = "rollouts"
+	PageLabels      Page = "labels"
+)
+
+func SiteHeader(currentPage Page) g.Node {
+	navItem := func(href, label string, page Page) g.Node {
 		className := "item"
-		if currentSection == section {
+		if currentPage == page {
 			className += " active"
 		}
 
@@ -22,11 +32,11 @@ func SiteHeader(currentSection string) g.Node {
 	return h.Nav(
 		h.A(h.Href("/ui/"), h.Class("logo"), g.Text("Fasit")),
 		h.Div(h.Class("menu"),
-			navItem("/ui", "Tenants", "tenants"),
-			navItem("/ui/features", "Features", "features"),
-			navItem("/ui/deployments", "Deployments", "deployments"),
-			navItem("/ui/rollouts", "Rollouts", "rollouts"),
-			navItem("/ui/labels", "Labels", "labels"),
+			navItem("/ui", "Tenants", PageTenants),
+			navItem("/ui/features", "Features", PageFeatures),
+			navItem("/ui/deployments", "Deployments", PageDeployments),
+			navItem("/ui/rollouts", "Rollouts", PageRollouts),
+			navItem("/ui/labels", "Labels", PageLabels),
 			h.A(
 				h.Href("https://vedtak.nais.io/"),
 				h.Class("item"),

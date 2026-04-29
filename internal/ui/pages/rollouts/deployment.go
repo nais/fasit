@@ -142,7 +142,7 @@ func DeploymentHandler(renderPage RenderPage, repo database.Repo) http.HandlerFu
 			})
 		}
 
-		renderPage(w, layout.Props{Title: fmt.Sprintf("Deployment %s v%s", dep.Feature.Name, dep.Feature.Version), CurrentSection: "deployments", Content: deploymentPage(dep, rows, deployInstructions, matching)})
+		renderPage(w, layout.Props{Title: fmt.Sprintf("Deployment %s v%s", dep.Feature.Name, dep.Feature.Version), CurrentPage: components.PageDeployments, Content: deploymentPage(dep, rows, deployInstructions, matching)})
 	}
 }
 
@@ -291,7 +291,7 @@ func DeploymentLogsHandler(renderPage RenderPage) http.HandlerFunc {
 		title := fmt.Sprintf("Deployment Logs: %s v%s", dep.Feature.Name, dep.Feature.Version)
 		renderPage(w, layout.Props{
 			Title:          title,
-			CurrentSection: "deployments",
+			CurrentPage: components.PageDeployments,
 			Content:        deploymentLogsPage(dep, log),
 		})
 	}
@@ -371,9 +371,9 @@ func DeploymentsHandler(renderPage RenderPage) http.HandlerFunc {
 		groups := groupDeployments(items)
 
 		renderPage(w, layout.Props{
-			Title:          "Deployments",
-			CurrentSection: "deployments",
-			Content:        deploymentsPage(groups),
+			Title:       "Deployments",
+			CurrentPage: components.PageDeployments,
+			Content:     deploymentsPage(groups),
 		})
 	}
 }

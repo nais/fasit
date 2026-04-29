@@ -6,6 +6,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/ui/chart"
+	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
 )
 
@@ -38,7 +39,7 @@ func PlaygroundTabHandler(renderPage RenderPage, repo database.Repo) http.Handle
 
 		renderPage(w, layout.Props{
 			Title:          data.Tenant.Name + " / " + data.Environment.Name + " / " + data.Feature.Name,
-			CurrentSection: "tenants",
+			CurrentPage: components.PageTenants,
 			Content:        featurePageContent(data),
 		})
 	}
@@ -63,7 +64,7 @@ func PlaygroundSubmitHandler(renderPage RenderPage, repo database.Repo) http.Han
 
 		renderPage(w, layout.Props{
 			Title:          data.Tenant.Name + " / " + data.Environment.Name + " / " + data.Feature.Name,
-			CurrentSection: "tenants",
+			CurrentPage: components.PageTenants,
 			Content:        featurePageContent(data),
 		})
 	}

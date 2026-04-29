@@ -28,7 +28,7 @@ func FeatureTabHandler(renderPage RenderPage, repo database.Repo, activeTab stri
 
 		renderPage(w, layout.Props{
 			Title:          data.Tenant.Name + " / " + data.Environment.Name + " / " + data.Feature.Name,
-			CurrentSection: "tenants",
+			CurrentPage: components.PageTenants,
 			Content:        featurePageContent(data),
 		})
 	}
