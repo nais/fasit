@@ -158,7 +158,7 @@ func Run(ctx context.Context) error {
 	}
 
 	go func() {
-		log.Printf("connect to http://%s/ for GraphQL playground", cfg.HTTPBindAddress)
+		log.Printf("listening on http://%s/", cfg.HTTPBindAddress)
 		if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.WithError(err).Fatal("running server")
 		}

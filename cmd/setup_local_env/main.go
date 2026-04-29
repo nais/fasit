@@ -10,11 +10,13 @@ import (
 
 	"cloud.google.com/go/pubsub/v2"
 	"cloud.google.com/go/pubsub/v2/apiv1/pubsubpb"
+	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/contextloader"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/deployment/deploymenttest"
 	"github.com/nais/fasit/internal/environment"
+	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/metric/noop"
@@ -36,31 +38,41 @@ var (
 
 	envs = map[tenant]map[environmentName]envSpec{
 		"test-partner": {
-			"dev": envSpec{
-				kind: model.EnvironmentKindTenant,
-				labels: environment.Labels{
-					"aiven": "enabled",
-				},
-			},
-			"management": envSpec{
+			"management": {
 				kind: model.EnvironmentKindManagement,
 				labels: environment.Labels{
 					"aiven": "enabled",
 				},
 			},
-		},
-		"nav": {
-			"management": envSpec{
-				kind:   model.EnvironmentKindManagement,
-				labels: environment.Labels{},
-			},
-			"dev": envSpec{
+			"dev": {
 				kind: model.EnvironmentKindTenant,
 				labels: environment.Labels{
 					"aiven": "enabled",
 				},
 			},
-			"prod": envSpec{
+			"prod": {
+				kind: model.EnvironmentKindTenant,
+				labels: environment.Labels{
+					"aiven": "enabled",
+				},
+			},
+			"staging": {
+				kind:   model.EnvironmentKindTenant,
+				labels: environment.Labels{},
+			},
+		},
+		"nav": {
+			"management": {
+				kind:   model.EnvironmentKindManagement,
+				labels: environment.Labels{},
+			},
+			"dev": {
+				kind: model.EnvironmentKindTenant,
+				labels: environment.Labels{
+					"aiven": "enabled",
+				},
+			},
+			"prod": {
 				kind: model.EnvironmentKindTenant,
 				labels: environment.Labels{
 					"aiven": "enabled",
@@ -68,11 +80,11 @@ var (
 			},
 		},
 		"dev-nais": {
-			"management": envSpec{
+			"management": {
 				kind:   model.EnvironmentKindManagement,
 				labels: environment.Labels{},
 			},
-			"dev": envSpec{
+			"dev": {
 				kind:   model.EnvironmentKindTenant,
 				labels: environment.Labels{},
 			},
@@ -99,33 +111,9 @@ func main() {
 		panic(err)
 	}
 	ctx = loadContext(ctx)
-	seeder := deploymenttest.NewSeeder()
-	deployment.ChartDownloader = seeder.ChartDownloader()
 
-	seeder.AddDeployment("aivenator", "1.0.0", environment.Labels{"aiven": "enabled"})
-	seeder.AddDeployment("aivenator", "2.0.0", environment.Labels{"aiven": "enabled"})
-	seeder.AddDeployment("aivenator", "1.0.0", environment.Labels{"aiven": "enabled", "tenant": "nav"})
-	seeder.AddDeployment("naiserator", "1.0.0", environment.Labels{"aiven": "enabled"})
-	seeder.AddDeployment("aivenator", "3.0.0", environment.Labels{"aiven": "enabled"}, "naiserator")
-	seeder.AddDeployment("unleash", "1.0.0", environment.Labels{"featuretoggle": "enabled"})
-	seeder.AddDeployment("unleash", "2.0.0", environment.Labels{"featuretoggle": "enabled"})
-	seeder.AddDeployment("v13s", "1.0.0", environment.Labels{"kind": "management"})
-
-	// Additional deployments for variety
-	seeder.AddDeployment("console", "1.0.0", environment.Labels{})
-	seeder.AddDeployment("console", "2.0.0", environment.Labels{})
-	seeder.AddDeployment("console", "3.0.0", environment.Labels{})
-	seeder.AddDeployment("hookd", "1.0.0", environment.Labels{"tenant": "nav"})
-	seeder.AddDeployment("hookd", "2.0.0", environment.Labels{"tenant": "nav"})
-	seeder.AddDeployment("dependencytrack", "1.0.0", environment.Labels{"kind": "management"})
-	seeder.AddDeployment("dependencytrack", "2.0.0", environment.Labels{"kind": "management"})
-	seeder.AddDeployment("replicator", "1.0.0", environment.Labels{"aiven": "enabled"})
-	seeder.AddDeployment("replicator", "2.0.0", environment.Labels{"aiven": "enabled"})
-
-	if err := seeder.Seed(ctx); err != nil {
-		log.Fatal(err)
-	}
-
+	// Create tenants and environments first (needed for deployment status FKs).
+	envIDs := make(map[string]uuid.UUID)
 	for tenantName, environments := range envs {
 		_, err := environment.CreateTenant(ctx, &model.TenantCreate{Name: tenantName})
 		if err != nil {
@@ -176,10 +164,67 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
+
+			envIDs[env] = e.ID
 		}
 	}
 
-	// Seed rollouts
+	seeder := deploymenttest.NewSeeder()
+	deployment.ChartDownloader = seeder.ChartDownloader()
+
+	// [0] aivenator: targets {aiven:enabled} → matches dev, management, prod (not staging)
+	seeder.AddDeployment("aivenator", "2.0.0", environment.Labels{"aiven": "enabled"})
+	// [1] naiserator: targets {kind:tenant} → matches dev, prod, staging (not management)
+	seeder.AddDeployment("naiserator", "1.0.0", environment.Labels{"kind": "tenant"})
+	// [2] v13s: targets {kind:management} → matches management only
+	seeder.AddDeployment("v13s", "1.0.0", environment.Labels{"kind": "management"})
+	// [3] console: global (empty target) → matches all environments
+	seeder.AddDeployment("console", "1.0.0", environment.Labels{})
+	// [4] unleash: targets {aiven:enabled} → matches dev, management, prod; dev will be DISABLED via feature_state
+	seeder.AddDeployment("unleash", "1.0.0", environment.Labels{"aiven": "enabled"})
+	// [5] kafka-manager: targets {kafka:enabled} → matches no environments
+	seeder.AddDeployment("kafka-manager", "1.0.0", environment.Labels{"kafka": "enabled"})
+
+	depIDs, err := seeder.Seed(ctx)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	setStatus := func(depIdx int, envName string, status model.RolloutStatus, msg string) {
+		envID, ok := envIDs[envName]
+		if !ok {
+			return
+		}
+		if err := deployment.SetDeploymentStatus(ctx, depIDs[depIdx], envID, status, msg); err != nil {
+			log.WithError(err).WithField("deployment", depIdx).WithField("env", envName).Error("set deployment status")
+		}
+	}
+
+	setStatus(0, "dev", model.RolloutStatusDeployed, "received status from naisd.")
+	setStatus(0, "management", model.RolloutStatusDeployed, "received status from naisd.")
+	setStatus(0, "prod", model.RolloutStatusFailed, "helm install failed: timeout waiting for condition")
+
+	setStatus(1, "dev", model.RolloutStatusDeployed, "received status from naisd.")
+	setStatus(1, "prod", model.RolloutStatusDeployed, "received status from naisd.")
+	setStatus(1, "staging", model.RolloutStatusPending, "waiting for naisd")
+
+	setStatus(2, "management", model.RolloutStatusDeployed, "received status from naisd.")
+
+	setStatus(3, "dev", model.RolloutStatusDeployed, "received status from naisd.")
+	setStatus(3, "management", model.RolloutStatusDeployed, "received status from naisd.")
+	setStatus(3, "prod", model.RolloutStatusDeployed, "received status from naisd.")
+	setStatus(3, "staging", model.RolloutStatusCreated, "deployment instruction sent to naisd")
+
+	setStatus(4, "management", model.RolloutStatusDeployed, "received status from naisd.")
+	setStatus(4, "prod", model.RolloutStatusDeployed, "received status from naisd.")
+
+	// Disable unleash in dev so ListDeploymentStatuses synthesizes a DISABLED row.
+	if devID, ok := envIDs["dev"]; ok {
+		if _, err := feature.FeatureStatesCreateOrUpdate(ctx, devID, &model.Feature{Name: "unleash"}, false); err != nil {
+			log.WithError(err).Error("disable unleash in dev")
+		}
+	}
+
 	repo := database.NewRepo(dbConn, log)
 
 	type rolloutSeed struct {
@@ -205,7 +250,6 @@ func main() {
 		}
 	}
 
-	// Mark some rollouts as deployed, some as failed, leave others pending
 	if err := repo.RolloutsUpdateStatus(ctx, model.RolloutStatusDeployed, "naiserator", true); err != nil {
 		log.WithError(err).Warn("failed to update naiserator rollout status")
 	}
@@ -218,8 +262,8 @@ func main() {
 	if err := repo.RolloutsUpdateStatus(ctx, model.RolloutStatusDeployed, "console", true); err != nil {
 		log.WithError(err).Warn("failed to update console rollout status")
 	}
-	// dependencytrack and replicator remain pending
 
+	// Set up pubsub topics and subscriptions.
 	client, err := pubsub.NewClient(ctx, naisProjectID)
 	if err != nil {
 		log.Fatal(err)

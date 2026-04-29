@@ -60,8 +60,6 @@ func TestReconcile(t *testing.T) {
 		t.Fatalf("failed to start postgres container: %v", err)
 	}
 
-	fmt.Println("postgres container started: ", dsn)
-
 	tt := []struct {
 		name                string
 		deploymentsToCreate []featureInput
@@ -146,7 +144,7 @@ func TestReconcile(t *testing.T) {
 				mgr.seeder.AddDeployment(input.name, input.version, input.target, input.dependencies...)
 			}
 
-			err = mgr.seeder.Seed(ctx)
+			_, err = mgr.seeder.Seed(ctx)
 			if err != nil {
 				t.Fatalf("seeding deployments: %v", err)
 			}
@@ -209,8 +207,6 @@ func TestReconcileWhenPreviousIsInProgress(t *testing.T) {
 		t.Fatalf("failed to start postgres container: %v", err)
 	}
 
-	fmt.Println("postgres container started: ", dsn)
-
 	mgr := setupTestMgr(ctx, t, container, dsn, logger)
 	deployment.ChartDownloader = mgr.seeder.ChartDownloader()
 	newPublisher := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
@@ -229,7 +225,7 @@ func TestReconcileWhenPreviousIsInProgress(t *testing.T) {
 	reconcilerCtx = loadContext(reconcilerCtx)
 
 	mgr.seeder.AddDeployment("feature-pending", "1.0.0", environment.Labels{"aiven": "enabled"})
-	err = mgr.seeder.Seed(ctx)
+	_, err = mgr.seeder.Seed(ctx)
 	if err != nil {
 		t.Fatalf("seeding deployments: %v", err)
 	}
@@ -240,7 +236,7 @@ func TestReconcileWhenPreviousIsInProgress(t *testing.T) {
 	mgr.seeder.Reset()
 
 	mgr.seeder.AddDeployment("feature-pending", "2.0.0", environment.Labels{})
-	err = mgr.seeder.Seed(ctx)
+	_, err = mgr.seeder.Seed(ctx)
 	if err != nil {
 		t.Fatalf("seeding deployments: %v", err)
 	}
@@ -332,7 +328,6 @@ func (d *Db) createEnv(ctx context.Context, tenant *model.Tenant, name string, l
 	}
 }
 
-// createTenantsAndEnvironments creates a set of tenants and environments.
 func (d *Db) createTenantsAndEnvironments(ctx context.Context, tenantsAndEnvs map[string]environment.Labels) {
 	d.t.Helper()
 

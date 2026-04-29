@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph/model"
@@ -38,9 +39,10 @@ func (s *Seeder) AddDeployment(name, version string, target environment.Labels, 
 	return s
 }
 
-func (s *Seeder) Seed(ctx context.Context) error {
+func (s *Seeder) Seed(ctx context.Context) ([]uuid.UUID, error) {
+	ids := make([]uuid.UUID, 0, len(s.deployments))
 	for _, d := range s.deployments {
-		_, err := deployment.CreateDeployment(ctx, deployment.Request{
+		id, err := deployment.CreateDeployment(ctx, deployment.Request{
 			Chart:       "oci://" + d.FeatureName,
 			Version:     d.Version,
 			Description: "Setup local environment deployment",
@@ -60,10 +62,11 @@ func (s *Seeder) Seed(ctx context.Context) error {
 			},
 		})
 		if err != nil {
-			return err
+			return nil, err
 		}
+		ids = append(ids, id)
 	}
-	return nil
+	return ids, nil
 }
 
 func (s *Seeder) Reset() {
