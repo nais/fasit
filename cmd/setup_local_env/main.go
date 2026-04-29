@@ -49,71 +49,34 @@ var (
 				},
 			},
 		},
-		/*
-			"nav": {
-				"management": envSpec{
-					kind:   protogen.EnvironmentKind_MANAGEMENT,
-					labels: environment.Labels{},
-				},
-				"dev": envSpec{
-					kind: protogen.EnvironmentKind_TENANT,
-					labels: environment.Labels{
-						"aiven": "enabled",
-					},
-				},
-				"prod": envSpec{
-					kind: protogen.EnvironmentKind_TENANT,
-					labels: environment.Labels{
-						"aiven": "enabled",
-					},
-				},
-				"dev-fss": envSpec{
-					kind: protogen.EnvironmentKind_ONPREM,
-					labels: environment.Labels{
-						"aiven": "enabled",
-					},
-				},
-				"prod-fss": envSpec{
-					kind: protogen.EnvironmentKind_ONPREM,
-					labels: environment.Labels{
-						"aiven": "enabled",
-					},
-				},
-				"dev-gcp": envSpec{
-					kind: protogen.EnvironmentKind_LEGACY,
-					labels: environment.Labels{
-						"aiven": "enabled",
-					},
-				},
-				"prod-gcp": envSpec{
-					kind: protogen.EnvironmentKind_LEGACY,
-					labels: environment.Labels{
-						"aiven": "enabled",
-					},
+		"nav": {
+			"management": envSpec{
+				kind:   model.EnvironmentKindManagement,
+				labels: environment.Labels{},
+			},
+			"dev": envSpec{
+				kind: model.EnvironmentKindTenant,
+				labels: environment.Labels{
+					"aiven": "enabled",
 				},
 			},
-			"ssb": {
-				"dev": envSpec{
-					kind:   protogen.EnvironmentKind_TENANT,
-					labels: environment.Labels{},
-				},
-				"management": envSpec{
-					kind:   protogen.EnvironmentKind_MANAGEMENT,
-					labels: environment.Labels{},
+			"prod": envSpec{
+				kind: model.EnvironmentKindTenant,
+				labels: environment.Labels{
+					"aiven": "enabled",
 				},
 			},
-			"dev-nais": {
-				"dev": envSpec{
-					kind:   protogen.EnvironmentKind_TENANT,
-					labels: environment.Labels{},
-				},
-				"management": envSpec{
-					kind:   protogen.EnvironmentKind_MANAGEMENT,
-					labels: environment.Labels{},
-				},
+		},
+		"dev-nais": {
+			"management": envSpec{
+				kind:   model.EnvironmentKindManagement,
+				labels: environment.Labels{},
 			},
-
-		*/
+			"dev": envSpec{
+				kind:   model.EnvironmentKindTenant,
+				labels: environment.Labels{},
+			},
+		},
 	}
 )
 
@@ -147,6 +110,17 @@ func main() {
 	seeder.AddDeployment("unleash", "1.0.0", environment.Labels{"featuretoggle": "enabled"})
 	seeder.AddDeployment("unleash", "2.0.0", environment.Labels{"featuretoggle": "enabled"})
 	seeder.AddDeployment("v13s", "1.0.0", environment.Labels{"kind": "management"})
+
+	// Additional deployments for variety
+	seeder.AddDeployment("console", "1.0.0", environment.Labels{})
+	seeder.AddDeployment("console", "2.0.0", environment.Labels{})
+	seeder.AddDeployment("console", "3.0.0", environment.Labels{})
+	seeder.AddDeployment("hookd", "1.0.0", environment.Labels{"tenant": "nav"})
+	seeder.AddDeployment("hookd", "2.0.0", environment.Labels{"tenant": "nav"})
+	seeder.AddDeployment("dependencytrack", "1.0.0", environment.Labels{"kind": "management"})
+	seeder.AddDeployment("dependencytrack", "2.0.0", environment.Labels{"kind": "management"})
+	seeder.AddDeployment("replicator", "1.0.0", environment.Labels{"aiven": "enabled"})
+	seeder.AddDeployment("replicator", "2.0.0", environment.Labels{"aiven": "enabled"})
 
 	if err := seeder.Seed(ctx); err != nil {
 		log.Fatal(err)
@@ -204,6 +178,47 @@ func main() {
 			}
 		}
 	}
+
+	// Seed rollouts
+	repo := database.NewRepo(dbConn, log)
+
+	type rolloutSeed struct {
+		name    string
+		version string
+		ref     string
+	}
+	rollouts := []rolloutSeed{
+		{"naiserator", "4.0.0", "refs/heads/main"},
+		{"naiserator", "4.1.0", "refs/heads/main"},
+		{"aivenator", "3.1.0", "refs/tags/v3.1.0"},
+		{"aivenator", "3.2.0", "refs/tags/v3.2.0"},
+		{"console", "2.1.0", "refs/heads/main"},
+		{"hookd", "2.1.0", "refs/tags/v2.1.0"},
+		{"dependencytrack", "2.1.0", "refs/heads/main"},
+		{"replicator", "2.1.0", "refs/tags/v2.1.0"},
+	}
+
+	for _, r := range rollouts {
+		_, err := repo.RolloutCreate(ctx, r.name, r.version, &model.GHRef{Owner: "nais", Repo: r.name, Ref: r.ref})
+		if err != nil {
+			log.WithError(err).Warnf("failed to create rollout for %s %s", r.name, r.version)
+		}
+	}
+
+	// Mark some rollouts as deployed, some as failed, leave others pending
+	if err := repo.RolloutsUpdateStatus(ctx, model.RolloutStatusDeployed, "naiserator", true); err != nil {
+		log.WithError(err).Warn("failed to update naiserator rollout status")
+	}
+	if err := repo.RolloutsUpdateStatus(ctx, model.RolloutStatusDeployed, "aivenator", true); err != nil {
+		log.WithError(err).Warn("failed to update aivenator rollout status")
+	}
+	if err := repo.RolloutsUpdateStatus(ctx, model.RolloutStatusFailed, "hookd", false); err != nil {
+		log.WithError(err).Warn("failed to update hookd rollout status")
+	}
+	if err := repo.RolloutsUpdateStatus(ctx, model.RolloutStatusDeployed, "console", true); err != nil {
+		log.WithError(err).Warn("failed to update console rollout status")
+	}
+	// dependencytrack and replicator remain pending
 
 	client, err := pubsub.NewClient(ctx, naisProjectID)
 	if err != nil {
