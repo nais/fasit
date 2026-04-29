@@ -11,6 +11,7 @@ import (
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/types"
 	"github.com/nais/fasit/internal/deployment"
+	"github.com/nais/fasit/internal/deployment/deploymentsql"
 	envpkg "github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
@@ -106,6 +107,23 @@ func DeploymentHandler(renderPage RenderPage, repo database.Repo) http.HandlerFu
 			})
 		}
 
+		allDeployInstructions, err := deployment.ListDeployInstructionsByDeploymentID(r.Context(), id)
+		if err != nil {
+			http.Error(w, "Failed to load deploy instructions: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// Deduplicate to latest instruction per environment (query is ordered by created DESC).
+		seen := make(map[string]bool)
+		var deployInstructions []deploymentsql.ListDeployInstructionsByDeploymentIDRow
+		for _, di := range allDeployInstructions {
+			envID := di.DeployInstruction.EnvironmentID.String()
+			if !seen[envID] {
+				seen[envID] = true
+				deployInstructions = append(deployInstructions, di)
+			}
+		}
+
 		allByFeature, _ := deployment.ListDeploymentsByFeature(r.Context(), dep.Feature.Name)
 		var matching []matchingDeployment
 		for _, d := range allByFeature {
@@ -122,11 +140,11 @@ func DeploymentHandler(renderPage RenderPage, repo database.Repo) http.HandlerFu
 			})
 		}
 
-		renderPage(w, layout.Props{Title: fmt.Sprintf("Deployment %s v%s", dep.Feature.Name, dep.Feature.Version), CurrentSection: "rollouts", Content: deploymentPage(dep, rows, matching)})
+		renderPage(w, layout.Props{Title: fmt.Sprintf("Deployment %s v%s", dep.Feature.Name, dep.Feature.Version), CurrentSection: "rollouts", Content: deploymentPage(dep, rows, deployInstructions, matching)})
 	}
 }
 
-func deploymentPage(d *deployment.Deployment, statuses []deploymentStatusRow, matching []matchingDeployment) g.Node {
+func deploymentPage(d *deployment.Deployment, statuses []deploymentStatusRow, deployInstructions []deploymentsql.ListDeployInstructionsByDeploymentIDRow, matching []matchingDeployment) g.Node {
 	meta := []g.Node{
 		metaRow("Feature", h.A(h.Href("/ui/features/"+d.Feature.Name), g.Text(d.Feature.Name))),
 		metaRow("Version", g.Text(d.Feature.Version)),
@@ -196,6 +214,39 @@ func deploymentPage(d *deployment.Deployment, statuses []deploymentStatusRow, ma
 			h.Action("/ui/deployments/"+d.ID.String()+"/delete-matching"),
 			h.Button(h.Type("submit"), h.Class("btn-small"), g.Attr("onclick", "return confirm('Are you sure?')"), g.Text("Delete all deployments")),
 			g.Textf(" (%d)", len(matching)),
+		),
+	)
+
+	// NAISD Instructions (collapsible, collapsed by default)
+	var naidInstructionsContent g.Node
+	if len(deployInstructions) == 0 {
+		naidInstructionsContent = h.P(g.Text("No NAISD instructions."))
+	} else {
+		naidInstructionsContent = h.Table(
+			h.Class("table sortable"),
+			h.THead(h.Tr(
+				h.Th(g.Text("Environment")),
+				h.Th(g.Text("Status")),
+				h.Th(g.Text("Created")),
+				h.Th(g.Text("Last Modified")),
+				h.Th(g.Text("Logs")),
+			)),
+			h.TBody(g.Group(g.Map(deployInstructions, func(di deploymentsql.ListDeployInstructionsByDeploymentIDRow) g.Node {
+				return h.Tr(
+					h.Td(h.A(h.Href("/ui/tenants/"+di.TenantName+"/envs/"+di.EnvironmentName), g.Textf("%s / %s", di.TenantName, di.EnvironmentName))),
+					h.Td(rolloutStatus(strings.ToUpper(di.DeployInstruction.Status))),
+					h.Td(g.Text(formatTime(di.DeployInstruction.Created.Time))),
+					h.Td(g.Text(formatTime(di.DeployInstruction.LastModified.Time))),
+					h.Td(h.A(h.Href("/ui/deployments/"+d.ID.String()+"/logs/"+di.DeployInstruction.EnvironmentID.String()), g.Attr("title", "View logs"), g.Text("📋"))),
+				)
+			}))),
+		)
+	}
+	content = append(content,
+		h.H2(g.Text("NAISD Instructions")),
+		h.Details(
+			h.Summary(g.Text("Show")),
+			naidInstructionsContent,
 		),
 	)
 
