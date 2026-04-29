@@ -194,7 +194,7 @@ func envFeatureTabs(tenant, env, feature string) []components.Tab {
 	return []components.Tab{
 		{ID: "overview", Href: base, Label: "Overview"},
 		{ID: "logs", Href: base + "/logs", Label: "Logs"},
-		{ID: "helm", Href: base + "/helm", Label: "Feature Values"},
+		{ID: "helm", Href: base + "/helm", Label: "Helm Values"},
 		{ID: "rollouts", Href: base + "/rollouts", Label: "Rollouts"},
 		{ID: "playground", Href: base + "/playground", Label: "Playground"},
 		{ID: "audit", Href: base + "/audit", Label: "Audit"},
@@ -231,7 +231,7 @@ func logsTab(page *FeaturePage) g.Node {
 	if len(page.FeatureLog.CurrentLog) > 0 {
 		content = append(content, h.H2(g.Textf("Current (%s)", page.FeatureLog.CurrentVersion)), h.P(h.Class("text-muted"), g.Textf("Status: %s · Last modified: %s", page.FeatureLog.CurrentStatus, page.FeatureLog.LastModified)))
 		if page.FeatureLog.HelmDiff != nil && page.FeatureLog.HelmDiff.Diff != "" && page.FeatureLog.HelmDiff.Difference != model.HelmValueDifferenceFullMatch {
-			content = append(content, h.Details(h.Summary(g.Textf("Feature value changes (%s)", strings.ToLower(strings.ReplaceAll(page.FeatureLog.HelmDiff.Difference.String(), "_", " ")))), h.Pre(h.Class("code-block"), g.Raw(page.FeatureLog.HelmDiff.Diff))))
+			content = append(content, h.Details(h.Summary(g.Textf("Helm value changes (%s)", strings.ToLower(strings.ReplaceAll(page.FeatureLog.HelmDiff.Difference.String(), "_", " ")))), h.Pre(h.Class("code-block"), g.Raw(page.FeatureLog.HelmDiff.Diff))))
 		}
 		content = append(content, logBlock(page.FeatureLog.CurrentLog))
 	}
@@ -258,9 +258,9 @@ func logBlock(lines []LogLine) g.Node {
 
 func helmTab(page *FeaturePage) g.Node {
 	if page.HelmValues == "" {
-		return h.Div(h.Class("tab-content-wrapper"), h.H2(g.Text("Computed Feature Values")), h.P(g.Text("No feature values available.")))
+		return h.Div(h.Class("tab-content-wrapper"), h.H2(g.Text("Computed Helm Values")), h.P(g.Text("No helm values available.")))
 	}
-	return h.Div(h.Class("tab-content-wrapper"), h.H2(g.Text("Computed Feature Values")), h.Pre(h.Class("code-block"), g.Text(prettyJSON(page.HelmValues))))
+	return h.Div(h.Class("tab-content-wrapper"), h.H2(g.Text("Computed Helm Values")), h.Pre(h.Class("code-block"), g.Text(prettyJSON(page.HelmValues))))
 }
 
 func playgroundTab(page *FeaturePage) g.Node {
