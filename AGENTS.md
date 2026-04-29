@@ -10,7 +10,7 @@ cmd/
   naisd/           → Agent binary (runs in tenant clusters, executes Helm)
   setup_local_env/ → Seeds local dev database
   generate_schema/ → Generates JSON schema for Feature.yaml
-  tester_run/      → Integration test runner
+  tester_run/
   tester_spec/     → Generates Lua spec for integration tests
 
 internal/
@@ -19,7 +19,7 @@ internal/
   contextloader/   → Per-request dependency injection via context.Context
   graph/           → GraphQL resolvers (gqlgen) — see internal/graph/AGENTS.md
   ui/              → Server-rendered HTML (gomponents) — see internal/ui/AGENTS.md
-  deployment/      → Deployment reconciler: label-matching, deployer, status tracking — see internal/deployment/AGENTS.md
+  deployment/      → Deployment reconciler — see internal/deployment/AGENTS.md
   rollout/         → Rollout reconciler: version rollouts across environments
   feature/         → Feature CRUD, template parsing, computed helm values
   environment/     → Environment CRUD, label matching
@@ -28,15 +28,9 @@ internal/
   naisd/           → naisd agent logic: Helm execution, self-upgrade
   naisdstatus/     → naisd heartbeat/status tracking
   cost/            → BigQuery cost data
-  audit/           → Audit log writes
-  auth/            → OIDC authentication, middleware
-  helm/            → Helm chart utilities
   provider/        → OCI chart provider (registry interaction)
-  errs/            → Shared error types
-  slack/           → Slack notifications
-  server/          → HTTP server and middleware setup
   integration/     → gRPC server for naisd communication
-  ioconvenience/   → IO utility functions
+  ioconvenience/
 
 schema/            → GraphQL schema files (*.graphqls)
 integration_tests/ → Lua-based integration tests (tester framework)
@@ -46,95 +40,43 @@ integration_tests/ → Lua-based integration tests (tester framework)
 
 ### Context Loader (Dependency Injection)
 
-Domain packages expose `Register(ctx, pool)` and package-level functions that extract their querier from context. Wired in `internal/contextloader/loader.go`:
+Domain packages expose `Register(ctx, pool)` and package-level functions that extract their querier from context. Wired in `internal/contextloader/loader.go`. Packages using this: `audit`, `cost`, `environment`, `feature`, `naisdstatus`, `deployment`.
 
-```go
-// Registration (called per-request via middleware)
-ctx = feature.Register(ctx, pool)
-ctx = environment.Register(ctx, pool)
-ctx = deployment.Register(ctx, deploymentManager)
+### sqlc
 
-// Usage (in resolvers, handlers — no explicit dependency passing)
-feature.FeatureByNameForEnv(ctx, name, envID)
-environment.GetTenant(ctx, tenantID)
-```
-
-Domain packages that use this pattern: `audit`, `cost`, `environment`, `feature`, `naisdstatus`, `deployment`.
-
-### sqlc (Database Queries)
-
-All SQL queries live in `queries/*.sql` files under each domain package. Generated Go code goes to `*sql/` subdirectories. Config in `sqlc.yaml` uses YAML anchors for shared settings.
-
-| Domain | Queries dir | Generated package |
-|---|---|---|
-| database (shared) | `internal/database/queries` | `gensql` |
-| deployment | `internal/deployment/queries` | `deploymentsql` |
-| environment | `internal/environment/queries` | `environmentsql` |
-| feature | `internal/feature/queries` | `featuresql` |
-| rollout | `internal/rollout/queries` | `rolloutsql` |
-| cost | `internal/cost/queries` | `costsql` |
-| audit | `internal/audit/queries` | `auditsql` |
-| naisdstatus | `internal/naisdstatus/queries` | `naisdstatussql` |
-
-Run `mise run generate` to regenerate. All generated packages share the same migration source: `internal/database/migrations`.
-
-### Mockery
-
-Mocks generated via mockery v3. Config in `.mockery.yaml`. Mocks go to `{package}/mocks/` directories. Interfaces mocked: `database.Repo`, `database.Querier`, and domain-specific `Querier` interfaces.
+SQL queries in `queries/*.sql` per domain package. Generated Go in `*sql/` subdirectories. Config in `sqlc.yaml` (YAML anchors for shared settings). All share migration source: `internal/database/migrations`.
 
 ### Code Generation
 
-```
-mise run generate        → runs all generators
-  sqlc generate          → SQL → Go (sqlc.yaml)
-  go run gqlgen generate → GraphQL → Go (gqlgen.yml)
-  mockery                → interfaces → mocks (.mockery.yaml)
-  protoc                 → protobuf → Go (schema/protobuf/)
-```
+`mise run generate` runs: sqlc, gqlgen, mockery (v3, config in `.mockery.yaml`), protoc.
 
 Never edit files in: `gensql/`, `deploymentsql/`, `environmentsql/`, `featuresql/`, `rolloutsql/`, `costsql/`, `auditsql/`, `naisdstatussql/`, `graphgen/`, `model/donotuse/`, `mocks/`.
 
+## Deployment vs Rollout
+
+- **Rollout**: Push a feature version across environments sequentially
+- **Deployment**: Label-based — deploy to all environments matching target labels (`labels @> target`)
+- When a feature has deployments, rollouts are effectively disabled for that feature
+
 ## Build & Run
 
-Tool management via [mise](https://mise.jdx.dev/). Tasks in `mise/tasks/`.
-
-```bash
-mise install              # Install tools (Go 1.26, protoc, helm, etc.)
-cp .env.example .env      # Configure local environment
-docker-compose up -d      # Postgres + Adminer + PubSub emulator
-mise run config           # Build config
-mise run fasit            # Run backend
-mise run naisd            # Run naisd agent
-mise run test             # Run all tests (unit + integration)
-mise run generate         # Run all code generation
-mise run fmt              # Format code (gofumpt)
-mise run check            # Lint and static analysis
-```
+Tool management via mise. Tasks in `mise/tasks/`. Key commands: `mise run fasit`, `mise run test`, `mise run generate`, `mise run check`.
 
 ## Testing
 
-- Unit tests: standard `_test.go` files alongside source
-- Integration tests: `testcontainers-go` for Postgres in domain package tests
-- End-to-end: Lua-based tests in `integration_tests/` using [tester](https://github.com/nais/tester)
-- Test helpers: `internal/database/dbtest` (DB setup), `internal/deployment/deploymenttest` (seeder)
+- Unit tests: `_test.go` alongside source
+- Integration: `testcontainers-go` for Postgres
+- End-to-end: Lua-based in `integration_tests/` using [tester](https://github.com/nais/tester)
 
 ## Database
 
-PostgreSQL 14. Migrations in `internal/database/migrations/` (goose, embedded). Connection via pgxpool. Cloud SQL Proxy support for production.
-
-The `database.Repo` interface composes domain-specific repo interfaces. Some domains (`deployment`, `feature`, etc.) have their own sqlc querier accessed via context loader instead.
-
-## Deployment vs Rollout
-
-- **Rollout**: Traditional version rollout — push a feature version across environments sequentially
-- **Deployment**: Label-based deployment — deploy a feature to all environments matching target labels. Reconciler runs periodically, matching deployments to environments via `labels @> target`
-- When a feature has deployments (`HasDeployments`), rollouts are effectively disabled for that feature
+PostgreSQL 14. Migrations in `internal/database/migrations/` (goose, embedded). `database.Repo` composes domain-specific repo interfaces; some domains have their own sqlc querier via context loader instead.
 
 ## Commit Convention
 
-Semantic commit messages enforced by git hook: `feat:`, `fix:`, `refactor:`, `build:`, `test:`, `docs:`, `ci:`, `perf:`, `style:`. Scope optional: `feat(ui):`. `chore:` is NOT valid.
+Semantic messages enforced by hook: `feat:`, `fix:`, `refactor:`, `build:`, `test:`, `docs:`, `ci:`, `perf:`, `style:`. Scope optional: `feat(ui):`. `chore:` is NOT valid.
 
 ## Release
 
-- **fasit**: Auto-deployed on push to main (GitHub Actions → GAR → Helm)
-- **naisd**: Released by pushing a `naisd-<version>` tag
+- **fasit**: Auto-deployed on push to main
+- **naisd**: Push `naisd-<version>` tag
