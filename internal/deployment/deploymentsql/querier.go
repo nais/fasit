@@ -24,6 +24,7 @@ type Querier interface {
 	GetLatestDeployInstructionsForFeature(ctx context.Context, arg GetLatestDeployInstructionsForFeatureParams) (DeployInstruction, error)
 	InsertEnvironmentFeature(ctx context.Context, arg InsertEnvironmentFeatureParams) error
 	LatestStatusForDeploymentInEnvironment(ctx context.Context, arg LatestStatusForDeploymentInEnvironmentParams) (string, error)
+	ListDeployInstructionsByDeploymentID(ctx context.Context, deploymentID *uuid.UUID) ([]ListDeployInstructionsByDeploymentIDRow, error)
 	ListDeploymentStatuses(ctx context.Context, deploymentID uuid.UUID) ([]ListDeploymentStatusesRow, error)
 	ListDeployments(ctx context.Context) ([]ListDeploymentsRow, error)
 	ListDeploymentsByFeature(ctx context.Context, featureName string) ([]ListDeploymentsByFeatureRow, error)

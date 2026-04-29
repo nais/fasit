@@ -227,6 +227,60 @@ func (q *Queries) GetLatestDeployInstructionsForFeature(ctx context.Context, arg
 	return i, err
 }
 
+const listDeployInstructionsByDeploymentID = `-- name: ListDeployInstructionsByDeploymentID :many
+SELECT
+	di.id, di.environment_id, di.feature_name, di.feature_version, di.status, di.hash, di.created, di.last_modified, di.values, di.deployment_id,
+	e.name AS environment_name,
+	t.name AS tenant_name
+FROM
+	deploy_instructions di
+	JOIN environments e ON e.id = di.environment_id
+	JOIN tenants t ON t.id = e.tenant_id
+WHERE
+	di.deployment_id = $1
+ORDER BY
+	di.created DESC
+`
+
+type ListDeployInstructionsByDeploymentIDRow struct {
+	DeployInstruction DeployInstruction
+	EnvironmentName   string
+	TenantName        string
+}
+
+func (q *Queries) ListDeployInstructionsByDeploymentID(ctx context.Context, deploymentID *uuid.UUID) ([]ListDeployInstructionsByDeploymentIDRow, error) {
+	rows, err := q.db.Query(ctx, listDeployInstructionsByDeploymentID, deploymentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListDeployInstructionsByDeploymentIDRow{}
+	for rows.Next() {
+		var i ListDeployInstructionsByDeploymentIDRow
+		if err := rows.Scan(
+			&i.DeployInstruction.ID,
+			&i.DeployInstruction.EnvironmentID,
+			&i.DeployInstruction.FeatureName,
+			&i.DeployInstruction.FeatureVersion,
+			&i.DeployInstruction.Status,
+			&i.DeployInstruction.Hash,
+			&i.DeployInstruction.Created,
+			&i.DeployInstruction.LastModified,
+			&i.DeployInstruction.Values,
+			&i.DeployInstruction.DeploymentID,
+			&i.EnvironmentName,
+			&i.TenantName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const timeoutDeployInstructions = `-- name: TimeoutDeployInstructions :exec
 UPDATE
 	deploy_instructions

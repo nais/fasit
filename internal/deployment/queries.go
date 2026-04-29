@@ -95,6 +95,10 @@ func GetDeploymentStatus(ctx context.Context, deploymentID uuid.UUID, environmen
 	return deploymentStatusFromSQL(status), nil
 }
 
+func ListDeployInstructionsByDeploymentID(ctx context.Context, deploymentID uuid.UUID) ([]deploymentsql.ListDeployInstructionsByDeploymentIDRow, error) {
+	return fromContext(ctx).querier.ListDeployInstructionsByDeploymentID(ctx, &deploymentID)
+}
+
 func GetDeploymentStatusLog(ctx context.Context, deploymentID, environmentID uuid.UUID) (*model.RolloutLog, error) {
 	di, err := fromContext(ctx).querier.GetDeployInstructionByDeploymentAndEnvironmentID(ctx, deploymentsql.GetDeployInstructionByDeploymentAndEnvironmentIDParams{
 		DeploymentID:  &deploymentID,

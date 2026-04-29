@@ -75,3 +75,17 @@ WHERE
 	di.deployment_id = @deployment_id
 	AND di.environment_id = @environment_id;
 
+-- name: ListDeployInstructionsByDeploymentID :many
+SELECT
+	sqlc.embed(di),
+	e.name AS environment_name,
+	t.name AS tenant_name
+FROM
+	deploy_instructions di
+	JOIN environments e ON e.id = di.environment_id
+	JOIN tenants t ON t.id = e.tenant_id
+WHERE
+	di.deployment_id = @deployment_id
+ORDER BY
+	di.created DESC;
+
