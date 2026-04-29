@@ -9,6 +9,8 @@ env:
   RUNNER_IMG: "gcr.io/distroless/static-debian11:nonroot"
   BASEIMG_IDENTITY: "keyless@distroless.iam.gserviceaccount.com"
   BASEIMG_ISSUER: "https://accounts.google.com"
+permissions:
+  contents: "read"
 jobs:
   go-version:
     outputs:
