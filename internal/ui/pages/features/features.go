@@ -281,7 +281,8 @@ func loadFeatureData(r *http.Request, repo database.Repo, activeTab string) (*De
 	return data, nil
 }
 
-func featureConfigItems(feature *model.Feature) []ConfigItem {	items := make([]ConfigItem, 0, len(feature.Values))
+func featureConfigItems(feature *model.Feature) []ConfigItem {
+	items := make([]ConfigItem, 0, len(feature.Values))
 	keys := make([]string, 0, len(feature.Values))
 	for key, value := range feature.Values {
 		if value.Config != nil {
@@ -302,7 +303,6 @@ func featureConfigItems(feature *model.Feature) []ConfigItem {	items := make([]C
 	}
 	return items
 }
-
 
 type envStatusEntry struct {
 	state        string
@@ -370,28 +370,28 @@ func featureEnvironmentStatuses(ctx context.Context, repo database.Repo, feature
 					environmentStatus.TargetLabels = deploymentStatus.targetLabels
 				}
 			}
-		if !environmentStatus.HasDeployments {
-			if environmentStatus.FeatureDeployable {
-				environmentStatus.StatusText = "-"
-			} else {
-				releases, err := repo.ReleaseStatusesGet(ctx, env.ID)
-				if err == nil {
-					for _, release := range releases {
-						if release.Name == feature.Name {
-							environmentStatus.StatusText = release.Status
-							break
+			if !environmentStatus.HasDeployments {
+				if environmentStatus.FeatureDeployable {
+					environmentStatus.StatusText = "-"
+				} else {
+					releases, err := repo.ReleaseStatusesGet(ctx, env.ID)
+					if err == nil {
+						for _, release := range releases {
+							if release.Name == feature.Name {
+								environmentStatus.StatusText = release.Status
+								break
+							}
+						}
+					}
+					if environmentStatus.StatusText == "" {
+						if state.Enabled {
+							environmentStatus.StatusText = "Enabled"
+						} else {
+							environmentStatus.StatusText = "Disabled"
 						}
 					}
 				}
-				if environmentStatus.StatusText == "" {
-					if state.Enabled {
-						environmentStatus.StatusText = "Enabled"
-					} else {
-						environmentStatus.StatusText = "Disabled"
-					}
-				}
 			}
-		}
 
 			ret = append(ret, environmentStatus)
 		}
