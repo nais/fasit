@@ -25,6 +25,7 @@ func SiteHeader(currentSection string) g.Node {
 			navItem("/ui", "Tenants", "tenants"),
 			navItem("/ui/features", "Features", "features"),
 			navItem("/ui/rollouts", "Rollouts", "rollouts"),
+			navItem("/ui/deployments", "Deployments", "deployments"),
 			navItem("/ui/labels", "Labels", "labels"),
 			h.A(
 				h.Href("https://vedtak.nais.io/"),

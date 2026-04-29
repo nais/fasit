@@ -42,6 +42,22 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 			}
 		}
 
+		sort.Slice(items, func(i, j int) bool {
+			return items[i].createdAt.After(items[j].createdAt)
+		})
+
+		renderPage(w, layout.Props{
+			Title:          "Rollouts",
+			CurrentSection: "rollouts",
+			Content:        page(items),
+		})
+	}
+}
+
+func DeploymentsHandler(renderPage RenderPage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var items []Summary
+
 		deployments, err := deployment.ListDeployments(r.Context())
 		if err == nil {
 			for _, dep := range deployments {
@@ -66,11 +82,59 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 		})
 
 		renderPage(w, layout.Props{
-			Title:          "Rollouts",
-			CurrentSection: "rollouts",
-			Content:        page(items),
+			Title:          "Deployments",
+			CurrentSection: "deployments",
+			Content:        deploymentsPage(items),
 		})
 	}
+}
+
+func deploymentsPage(items []Summary) g.Node {
+	return h.Div(
+		h.Class("container"),
+		h.Main(
+			h.Class("main-content"),
+			components.Breadcrumbs([]breadcrumb.Crumb{breadcrumb.Deployments()}),
+			h.Div(
+				h.Class("card"),
+				h.Div(
+					h.Class("card-body"),
+					h.H1(g.Text("Deployments")),
+					deploymentsContent(items),
+				),
+			),
+		),
+	)
+}
+
+func deploymentsContent(items []Summary) g.Node {
+	if len(items) == 0 {
+		return h.P(g.Text("No deployments yet."))
+	}
+
+	return h.Table(
+		h.Class("table sortable"),
+		h.THead(h.Tr(
+			h.Th(g.Text("Feature")),
+			h.Th(g.Text("Version")),
+			h.Th(g.Text("Status")),
+			h.Th(g.Text("Target")),
+			h.Th(g.Text("Created")),
+			h.Th(g.Text("Completed")),
+			h.Th(g.Text("Actions")),
+		)),
+		h.TBody(g.Group(g.Map(items, func(dep Summary) g.Node {
+			return h.Tr(
+				h.Td(h.A(h.Href("/ui/features/"+dep.FeatureName), g.Text(dep.FeatureName))),
+				h.Td(versionCell(dep)),
+				h.Td(statusCell(dep)),
+				h.Td(g.Text(dep.Target)),
+				h.Td(g.Text(dep.Created)),
+				h.Td(g.Text(completedDate(dep.Completed))),
+				h.Td(deleteDeploymentCell(dep)),
+			)
+		}))),
+	)
 }
 
 func page(rollouts []Summary) g.Node {
@@ -102,20 +166,16 @@ func rolloutsContent(rollouts []Summary) g.Node {
 			h.Th(g.Text("Feature")),
 			h.Th(g.Text("Version")),
 			h.Th(g.Text("Status")),
-			h.Th(g.Text("Target")),
 			h.Th(g.Text("Created")),
 			h.Th(g.Text("Completed")),
-			h.Th(g.Text("Actions")),
 		)),
 		h.TBody(g.Group(g.Map(rollouts, func(rollout Summary) g.Node {
 			return h.Tr(
 				h.Td(h.A(h.Href("/ui/features/"+rollout.FeatureName), g.Text(rollout.FeatureName))),
 				h.Td(versionCell(rollout)),
 				h.Td(statusCell(rollout)),
-				h.Td(g.Text(rollout.Target)),
 				h.Td(g.Text(rollout.Created)),
 				h.Td(g.Text(completedDate(rollout.Completed))),
-				h.Td(deleteDeploymentCell(rollout)),
 			)
 		}))),
 	)
