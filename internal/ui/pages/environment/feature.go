@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+	"sort"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
@@ -166,6 +167,8 @@ func featurePageContent(page *FeaturePage) g.Node {
 		tabContent = helmTab(page)
 	case "rollouts":
 		tabContent = rolloutsTab(page)
+	case "deployments":
+		tabContent = deploymentsTab(page)
 	case "audit":
 		tabContent = auditTab()
 	case "playground":
@@ -181,7 +184,7 @@ func featurePageContent(page *FeaturePage) g.Node {
 			h.Div(h.Class("card"),
 				h.Div(h.Class("card-body"),
 					h.P(g.Text("Global feature page: "), h.A(h.Href("/ui/features/"+page.Feature.Name), g.Text(page.Feature.Name))),
-					components.TabsNav(page.ActiveTab, envFeatureTabs(page.TenantSlug, page.Environment.Name, page.Feature.Name)),
+					components.TabsNav(page.ActiveTab, envFeatureTabs(page.TenantSlug, page.Environment.Name, page.Feature.Name, page.Feature.HasDeployments)),
 					tabContent,
 				),
 			),
@@ -189,16 +192,23 @@ func featurePageContent(page *FeaturePage) g.Node {
 	)
 }
 
-func envFeatureTabs(tenant, env, feature string) []components.Tab {
+func envFeatureTabs(tenant, env, feature string, hasDeployments bool) []components.Tab {
 	base := featureBasePathValues(tenant, env, feature)
-	return []components.Tab{
+	tabs := []components.Tab{
 		{ID: "overview", Href: base, Label: "Overview"},
 		{ID: "logs", Href: base + "/logs", Label: "Logs"},
 		{ID: "helm", Href: base + "/helm", Label: "Helm Values"},
-		{ID: "rollouts", Href: base + "/rollouts", Label: "Rollouts"},
-		{ID: "playground", Href: base + "/playground", Label: "Playground"},
-		{ID: "audit", Href: base + "/audit", Label: "Audit"},
 	}
+	if hasDeployments {
+		tabs = append(tabs, components.Tab{ID: "deployments", Href: base + "/deployments", Label: "Deployments"})
+	} else {
+		tabs = append(tabs, components.Tab{ID: "rollouts", Href: base + "/rollouts", Label: "Rollouts"})
+	}
+	tabs = append(tabs,
+		components.Tab{ID: "playground", Href: base + "/playground", Label: "Playground"},
+		components.Tab{ID: "audit", Href: base + "/audit", Label: "Audit"},
+	)
+	return tabs
 }
 
 func overviewTab(page *FeaturePage) g.Node {
@@ -377,6 +387,48 @@ func rolloutsTab(page *FeaturePage) g.Node {
 	return h.Div(h.Class("tab-content-wrapper"), h.H2(g.Text("Rollout History")), h.Table(h.Class("table sortable"), h.THead(h.Tr(h.Th(g.Text("Version")), h.Th(g.Text("Status")), h.Th(g.Text("Target")), h.Th(g.Text("Created")), h.Th(g.Text("Completed")))), h.TBody(g.Group(g.Map(page.Rollouts, func(rollout RolloutItem) g.Node {
 		return h.Tr(h.Td(rolloutVersionCell(rollout)), h.Td(rolloutStatus(rollout.Status)), h.Td(g.Text(emptyFallback(rollout.Target, "-"))), h.Td(g.Text(rollout.Created)), h.Td(g.Text(emptyFallback(rollout.Completed, "-"))))
 	})))))
+}
+
+func deploymentsTab(page *FeaturePage) g.Node {
+	if len(page.Deployments) == 0 {
+		return h.Div(h.Class("tab-content-wrapper"), h.H2(g.Text("Deployments")), h.P(g.Text("No deployments target this environment.")))
+	}
+	return h.Div(h.Class("tab-content-wrapper"), h.H2(g.Text("Deployments")),
+		h.Table(h.Class("table sortable"),
+			h.THead(h.Tr(
+				h.Th(g.Text("Deployment")),
+				h.Th(g.Text("Version")),
+				h.Th(g.Text("Status")),
+				h.Th(g.Text("Target")),
+				h.Th(g.Text("Created")),
+			)),
+			h.TBody(g.Group(g.Map(page.Deployments, func(dep EnvDeploymentItem) g.Node {
+				return h.Tr(
+					h.Td(h.A(h.Href("/ui/deployments/"+dep.ID), g.Text(dep.ID[:8]))),
+					h.Td(g.Text(dep.Version)),
+					h.Td(rolloutStatus(dep.Status)),
+					h.Td(labelPills(dep.TargetLabels)),
+					h.Td(g.Text(dep.Created)),
+				)
+			}))),
+		),
+	)
+}
+
+func labelPills(labels map[string]string) g.Node {
+	if len(labels) == 0 {
+		return h.Span(h.Class("label-filter-tag"), g.Text("All environments"))
+	}
+	keys := make([]string, 0, len(labels))
+	for k := range labels {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	pills := make([]g.Node, 0, len(keys))
+	for _, k := range keys {
+		pills = append(pills, h.Span(h.Class("label-filter-tag"), g.Text(k+": "+labels[k])))
+	}
+	return g.Group(pills)
 }
 
 func rolloutVersionCell(r RolloutItem) g.Node {

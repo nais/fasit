@@ -43,6 +43,7 @@ type FeaturePage struct {
 	EnabledFeatures  []view.FeatureNav
 	HelmValues       string
 	Rollouts         []RolloutItem
+	Deployments      []EnvDeploymentItem
 	FeatureLog       *FeatureLog
 	ActiveTab        string
 	PlaygroundCode   string
@@ -63,6 +64,14 @@ type RolloutItem struct {
 	Completed    string
 	Target       string
 	DeploymentID string
+}
+
+type EnvDeploymentItem struct {
+	ID           string
+	Version      string
+	Status       string
+	TargetLabels map[string]string
+	Created      string
 }
 
 type FeatureLog struct {
@@ -260,6 +269,9 @@ func loadFeaturePageData(ctx context.Context, repo database.Repo, tenantSlug, en
 	if activeTab == "rollouts" {
 		page.Rollouts = loadEnvironmentRollouts(ctx, repo, featureName)
 	}
+	if activeTab == "deployments" {
+		page.Deployments = loadEnvironmentDeployments(ctx, repo, featureName, env.ID)
+	}
 	if activeTab == "logs" {
 		page.FeatureLog = loadFeatureLog(ctx, repo, env.ID, feat)
 	}
@@ -340,30 +352,90 @@ func loadHelmValues(ctx context.Context, feat *model.Feature, envID uuid.UUID) (
 }
 
 func loadEnvironmentRollouts(ctx context.Context, repo database.Repo, featureName string) []RolloutItem {
-	items := []RolloutItem{}
 	rollouts, err := repo.RolloutsForFeature(ctx, featureName)
-	if err == nil {
-		for _, rollout := range rollouts {
-			items = append(items, RolloutItem{
-				FeatureName: rollout.FeatureName,
-				Version:     rollout.Version,
-				Status:      strings.ToUpper(rollout.Status.String()),
-				Created:     formatTime(rollout.Created),
-				Completed:   formatTimePtr(rollout.Completed),
-			})
-		}
+	if err != nil {
+		return nil
+	}
+	items := make([]RolloutItem, 0, len(rollouts))
+	for _, rollout := range rollouts {
+		items = append(items, RolloutItem{
+			FeatureName: rollout.FeatureName,
+			Version:     rollout.Version,
+			Status:      strings.ToUpper(rollout.Status.String()),
+			Created:     formatTime(rollout.Created),
+			Completed:   formatTimePtr(rollout.Completed),
+		})
+	}
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].Created > items[j].Created
+	})
+	return items
+}
+
+func loadEnvironmentDeployments(ctx context.Context, repo database.Repo, featureName string, envID uuid.UUID) []EnvDeploymentItem {
+	envLabels, err := repo.EnvironmentGetLabels(ctx, envID)
+	if err != nil {
+		return nil
+	}
+	envLabelMap := make(map[string]string, len(envLabels))
+	for _, l := range envLabels {
+		envLabelMap[l.Key] = l.Value
 	}
 
 	deployments, err := deployment.ListDeploymentsByFeature(ctx, featureName)
-	if err == nil {
-		for _, dep := range deployments {
-			items = append(items, RolloutItem{
-				FeatureName:  dep.Feature.Name,
-				Version:      dep.Feature.Version,
-				Status:       "DEPLOYMENT",
-				Created:      formatTime(dep.Created),
-				Target:       deploymentTarget(dep),
-				DeploymentID: dep.ID.String(),
+	if err != nil {
+		return nil
+	}
+
+	type candidate struct {
+		id      string
+		version string
+		target  map[string]string
+		created string
+		status  string
+	}
+
+	var candidates []candidate
+	maxLabels := 0
+
+	for _, dep := range deployments {
+		target := dep.TargetLabels
+		if !labelsMatch(envLabelMap, target) {
+			continue
+		}
+
+		status := "UNKNOWN"
+		statuses, err := deployment.ListDeploymentStatuses(ctx, dep.ID)
+		if err == nil {
+			for _, s := range statuses {
+				if s.EnvironmentID == envID {
+					status = string(s.State)
+					break
+				}
+			}
+		}
+
+		candidates = append(candidates, candidate{
+			id:      dep.ID.String(),
+			version: dep.Feature.Version,
+			target:  target,
+			created: formatTime(dep.Created),
+			status:  status,
+		})
+		if len(target) > maxLabels {
+			maxLabels = len(target)
+		}
+	}
+
+	items := make([]EnvDeploymentItem, 0, len(candidates))
+	for _, c := range candidates {
+		if len(c.target) == maxLabels {
+			items = append(items, EnvDeploymentItem{
+				ID:           c.id,
+				Version:      c.version,
+				Status:       c.status,
+				TargetLabels: c.target,
+				Created:      c.created,
 			})
 		}
 	}
@@ -374,19 +446,13 @@ func loadEnvironmentRollouts(ctx context.Context, repo database.Repo, featureNam
 	return items
 }
 
-func deploymentTarget(dep *deployment.Deployment) string {
-	if dep.CI {
-		return "CI"
+func labelsMatch(envLabels, target map[string]string) bool {
+	for k, v := range target {
+		if envLabels[k] != v {
+			return false
+		}
 	}
-	labels := dep.Target()
-	if len(labels) == 0 {
-		return "All environments"
-	}
-	parts := make([]string, 0, len(labels))
-	for _, label := range labels {
-		parts = append(parts, label.Key+"="+label.Value)
-	}
-	return strings.Join(parts, ", ")
+	return true
 }
 
 func loadFeatureLog(ctx context.Context, repo database.Repo, envID uuid.UUID, feat *model.Feature) *FeatureLog {
