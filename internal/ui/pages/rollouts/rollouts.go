@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/nais/fasit/internal/database"
-	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
@@ -52,89 +51,6 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 			Content:        page(items),
 		})
 	}
-}
-
-func DeploymentsHandler(renderPage RenderPage) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var items []Summary
-
-		deployments, err := deployment.ListDeployments(r.Context())
-		if err == nil {
-			for _, dep := range deployments {
-				statuses, _ := deployment.ListDeploymentStatuses(r.Context(), dep.ID)
-				status, disabledCount := aggregateDeploymentStatus(statuses)
-				items = append(items, Summary{
-					FeatureName:   dep.Feature.Name,
-					Version:       dep.Feature.Version,
-					Status:        status,
-					Target:        deploymentTarget(dep),
-					Created:       formatTime(dep.Created),
-					Completed:     latestStatusTime(statuses),
-					DeploymentID:  dep.ID.String(),
-					createdAt:     dep.Created,
-					disabledCount: disabledCount,
-				})
-			}
-		}
-
-		sort.Slice(items, func(i, j int) bool {
-			return items[i].createdAt.After(items[j].createdAt)
-		})
-
-		renderPage(w, layout.Props{
-			Title:          "Deployments",
-			CurrentSection: "deployments",
-			Content:        deploymentsPage(items),
-		})
-	}
-}
-
-func deploymentsPage(items []Summary) g.Node {
-	return h.Div(
-		h.Class("container"),
-		h.Main(
-			h.Class("main-content"),
-			components.Breadcrumbs([]breadcrumb.Crumb{breadcrumb.Deployments()}),
-			h.Div(
-				h.Class("card"),
-				h.Div(
-					h.Class("card-body"),
-					h.H1(g.Text("Deployments")),
-					deploymentsContent(items),
-				),
-			),
-		),
-	)
-}
-
-func deploymentsContent(items []Summary) g.Node {
-	if len(items) == 0 {
-		return h.P(g.Text("No deployments yet."))
-	}
-
-	return h.Table(
-		h.Class("table sortable"),
-		h.THead(h.Tr(
-			h.Th(g.Text("Feature")),
-			h.Th(g.Text("Version")),
-			h.Th(g.Text("Status")),
-			h.Th(g.Text("Target")),
-			h.Th(g.Text("Created")),
-			h.Th(g.Text("Completed")),
-			h.Th(g.Text("Actions")),
-		)),
-		h.TBody(g.Group(g.Map(items, func(dep Summary) g.Node {
-			return h.Tr(
-				h.Td(h.A(h.Href("/ui/features/"+dep.FeatureName), g.Text(dep.FeatureName))),
-				h.Td(versionCell(dep)),
-				h.Td(statusCell(dep)),
-				h.Td(g.Text(dep.Target)),
-				h.Td(g.Text(dep.Created)),
-				h.Td(g.Text(completedDate(dep.Completed))),
-				h.Td(deleteDeploymentCell(dep)),
-			)
-		}))),
-	)
 }
 
 func page(rollouts []Summary) g.Node {
@@ -181,14 +97,6 @@ func rolloutsContent(rollouts []Summary) g.Node {
 	)
 }
 
-func deleteDeploymentCell(r Summary) g.Node {
-	if r.DeploymentID == "" {
-		return g.Text("")
-	}
-
-	return h.A(h.Href("/ui/deployments/"+r.DeploymentID), g.Attr("title", "Delete deployment"), g.Text("🗑️"))
-}
-
 func versionCell(r Summary) g.Node {
 	if r.DeploymentID != "" {
 		return h.A(h.Href("/ui/deployments/"+r.DeploymentID), g.Text(r.Version))
@@ -220,79 +128,6 @@ func rolloutStatus(status string) g.Node {
 	default:
 		return g.Text(status)
 	}
-}
-
-func aggregateDeploymentStatus(statuses []*deployment.DeploymentStatus) (string, int) {
-	if len(statuses) == 0 {
-		return "UNKNOWN", 0
-	}
-
-	disabledCount := 0
-	for _, s := range statuses {
-		if s.State == deployment.DeploymentStatusStateDisabled {
-			disabledCount++
-		}
-	}
-
-	if disabledCount == len(statuses) {
-		return "DISABLED", disabledCount
-	}
-
-	allDeployed := true
-	for _, s := range statuses {
-		if s.State == deployment.DeploymentStatusStateDisabled {
-			continue
-		}
-		switch s.State {
-		case deployment.DeploymentStatusStateFailed:
-			return "FAILED", disabledCount
-		case deployment.DeploymentStatusStatePending, deployment.DeploymentStatusStateCreated:
-			allDeployed = false
-		case deployment.DeploymentStatusStateDeployed:
-			// ok
-		default:
-			allDeployed = false
-		}
-	}
-
-	if allDeployed {
-		return "DEPLOYED", disabledCount
-	}
-
-	return "PENDING", disabledCount
-}
-
-func latestStatusTime(statuses []*deployment.DeploymentStatus) string {
-	var latest time.Time
-	for _, s := range statuses {
-		if s.LastModified.After(latest) {
-			latest = s.LastModified
-		}
-	}
-
-	if latest.IsZero() {
-		return ""
-	}
-
-	return formatTime(latest)
-}
-
-func deploymentTarget(dep *deployment.Deployment) string {
-	if dep.CI {
-		return "CI"
-	}
-
-	labels := dep.Target()
-	if len(labels) == 0 {
-		return "All environments"
-	}
-
-	parts := make([]string, 0, len(labels))
-	for _, label := range labels {
-		parts = append(parts, label.Key+"="+label.Value)
-	}
-
-	return strings.Join(parts, ", ")
 }
 
 func completedDate(value string) string {

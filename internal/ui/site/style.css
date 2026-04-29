@@ -834,3 +834,107 @@ nav .theme-toggle:hover {
     order: -1;
   }
 }
+
+/* Deployment grouped view */
+.deployment-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.deployment-group {
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.deployment-group-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.55rem 0.75rem;
+  cursor: pointer;
+  background: var(--bg-elevated);
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  list-style: none;
+  user-select: none;
+  transition: background 0.15s;
+}
+
+.deployment-group-summary::-webkit-details-marker {
+  display: none;
+}
+
+.deployment-group-summary::before {
+  content: "▶";
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-right: 0.5rem;
+  transition: transform 0.15s;
+  display: inline-block;
+}
+
+.deployment-group[open] > .deployment-group-summary::before {
+  transform: rotate(90deg);
+}
+
+.deployment-group-summary:hover {
+  background: var(--bg-surface-hover);
+}
+
+.dep-group-time {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-left: auto;
+  padding-left: 1rem;
+}
+
+.deployment-group-body {
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+}
+
+.deployment-row {
+  display: grid;
+  grid-template-columns: 14rem 12rem 14rem 1fr;
+  align-items: center;
+  padding: 0.4rem 0.75rem 0.4rem 2rem;
+  border-bottom: 1px solid var(--border-subtle);
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  transition: background 0.1s;
+}
+
+.deployment-row:last-child {
+  border-bottom: none;
+}
+
+.deployment-row:hover {
+  background: var(--bg-surface-hover);
+}
+
+.dep-target {
+  color: var(--text-secondary);
+}
+
+.dep-version a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.dep-version a:hover {
+  text-decoration: underline;
+}
+
+.dep-status {
+  font-size: 0.85rem;
+}
+
+.dep-time {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  text-align: right;
+}
