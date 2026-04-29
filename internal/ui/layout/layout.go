@@ -8,9 +8,9 @@ import (
 )
 
 type Props struct {
-	Title          string
+	Title       string
 	CurrentPage components.Page
-	Content        g.Node
+	Content     g.Node
 }
 
 func Page(props Props) g.Node {

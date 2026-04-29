@@ -47,9 +47,9 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 		}
 
 		renderPage(w, layout.Props{
-			Title:          "Tenants",
+			Title:       "Tenants",
 			CurrentPage: components.PageTenants,
-			Content:        page(cards),
+			Content:     page(cards),
 		})
 	}
 }

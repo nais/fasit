@@ -60,7 +60,7 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 		}
 
 		renderPage(w, layout.Props{
-			Title:          tenant.Name + " / " + env.Name,
+			Title:       tenant.Name + " / " + env.Name,
 			CurrentPage: components.PageTenants,
 			Content: page([]breadcrumb.Crumb{
 				breadcrumb.TenantWithSwitcher(tenant.Name, toTenantNavs(allTenants)),

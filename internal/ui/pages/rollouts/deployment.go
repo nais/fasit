@@ -290,9 +290,9 @@ func DeploymentLogsHandler(renderPage RenderPage) http.HandlerFunc {
 
 		title := fmt.Sprintf("Deployment Logs: %s v%s", dep.Feature.Name, dep.Feature.Version)
 		renderPage(w, layout.Props{
-			Title:          title,
+			Title:       title,
 			CurrentPage: components.PageDeployments,
-			Content:        deploymentLogsPage(dep, log),
+			Content:     deploymentLogsPage(dep, log),
 		})
 	}
 }

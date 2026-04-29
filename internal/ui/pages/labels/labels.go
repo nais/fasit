@@ -80,9 +80,9 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 		activeFilters := parseFilters(r)
 
 		renderPage(w, layout.Props{
-			Title:          "Labels",
+			Title:       "Labels",
 			CurrentPage: components.PageLabels,
-			Content:        page(rows, labelKeys, activeFilters),
+			Content:     page(rows, labelKeys, activeFilters),
 		})
 	}
 }
