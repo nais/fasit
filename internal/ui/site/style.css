@@ -938,3 +938,34 @@ nav .theme-toggle:hover {
   font-size: 0.85rem;
   text-align: right;
 }
+
+/* Deployment group status */
+.deployment-group {
+  margin-bottom: 1.5rem;
+}
+.deployment-group-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 0;
+  border-bottom: 2px solid var(--border);
+  margin-bottom: 0.25rem;
+}
+.deployment-group-link {
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+.deployment-group-link:hover {
+  text-decoration: underline;
+}
+.deployment-group-version {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+  background: var(--bg-surface);
+  padding: 0.125rem 0.5rem;
+  border-radius: 4px;
+}
