@@ -11,3 +11,4 @@ node_modules
 /fasit
 ARCHITECTURE.md
 misc/
+.sisyphus/
