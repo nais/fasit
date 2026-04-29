@@ -6,6 +6,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/nais/fasit/internal/ui/pages/environment"
 	"github.com/nais/fasit/internal/ui/pages/features"
+	"github.com/nais/fasit/internal/ui/pages/labels"
 	"github.com/nais/fasit/internal/ui/pages/rollouts"
 	"github.com/nais/fasit/internal/ui/pages/tenant"
 	"github.com/nais/fasit/internal/ui/pages/tenants"
@@ -49,6 +50,8 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/features/{feature}", features.TabHandler(s.renderPage, s.repo, "overview"))
 	r.Get("/features/{feature}/status", features.TabHandler(s.renderPage, s.repo, "status"))
 	r.Get("/features/{feature}/rollouts", features.TabHandler(s.renderPage, s.repo, "rollouts"))
+
+	r.Get("/labels", labels.Handler(s.renderPage, s.repo))
 
 	return r
 }

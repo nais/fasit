@@ -671,3 +671,166 @@ nav .theme-toggle:hover {
   font-size: 1rem;
   margin: 0 0 0.5rem 0;
 }
+
+/* Labels page */
+.labels-page {
+  padding: 1rem 2rem 2rem;
+}
+.labels-page h1 {
+  margin-top: 0;
+}
+.labels-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-top: 1rem;
+}
+.labels-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+.labels-section h2 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1.15rem;
+}
+.labels-desc {
+  margin: 0 0 0.75rem 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+.labels-sidebar {
+  position: sticky;
+  top: 2rem;
+  height: fit-content;
+  max-height: calc(100vh - 6rem);
+  overflow-y: auto;
+}
+.labels-sidebar-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1.25rem;
+}
+.labels-sidebar-card h3 {
+  margin: 0 0 0.75rem 0;
+  font-size: 1.1rem;
+}
+.labels-sidebar-card h4 {
+  margin: 1.25rem 0 0.5rem 0;
+  font-size: 0.95rem;
+}
+.labels-json {
+  background: var(--bg-inset);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.75rem;
+  overflow-x: auto;
+}
+.labels-json pre {
+  margin: 0;
+  font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  white-space: pre;
+  color: var(--text-primary);
+}
+.labels-cell {
+  max-width: 20rem;
+}
+.label-filter-tag,
+.label-value-tag {
+  display: inline-block;
+  padding: 0.125rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin: 0.125rem;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+.label-filter-tag {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+.label-filter-tag:hover {
+  background: var(--accent-hover);
+  color: var(--text-heading);
+}
+.label-filter-tag.active {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+.label-filter-tag.active:hover {
+  opacity: 0.85;
+}
+.label-filter-tag.matched {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+.label-value-tag {
+  background: var(--btn-bg);
+  color: var(--text-secondary);
+}
+.label-value-tag:hover {
+  background: var(--btn-hover-bg);
+  color: var(--text-heading);
+}
+.label-value-tag.active {
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+}
+.label-values-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+.labels-active-filters {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 0.5rem;
+}
+.filter-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.labels-empty {
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-muted);
+  font-style: italic;
+  background: var(--bg-surface);
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+}
+.labels-no-match {
+  padding: 1rem;
+  text-align: center;
+  color: var(--status-error);
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+@media (max-width: 1200px) {
+  .labels-grid {
+    grid-template-columns: 1fr;
+  }
+  .labels-sidebar {
+    position: relative;
+    top: auto;
+    max-height: none;
+    order: -1;
+  }
+}
