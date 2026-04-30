@@ -410,27 +410,24 @@ func (d *deployer) getLatestDeployInstructionForFeature(ctx context.Context, env
 	return deployInstructionFromSQL(di), nil
 }
 
+// IsMoreSpecific reports whether a deployment with candidateLabels (created at
+// candidateCreated) should replace one with existingLabels (created at
+// existingCreated). More target labels means more specific. Equal count: latest wins.
+func IsMoreSpecific(candidateLabels, existingLabels map[string]string, candidateCreated, existingCreated time.Time) bool {
+	if len(candidateLabels) > len(existingLabels) {
+		return true
+	}
+	return len(candidateLabels) == len(existingLabels) && candidateCreated.After(existingCreated)
+}
+
 // filterDeployments filters the deployments to only include the most specific deployment with the latest created
 // timestamp.
 func filterDeployments(deps []*Deployment) []*Deployment {
 	deployments := map[string]*Deployment{}
 	for _, dep := range deps {
-		featureName := dep.Feature.Name
-
-		d, ok := deployments[featureName]
-		if !ok {
-			deployments[featureName] = dep
-			continue
-		}
-
-		if len(dep.TargetLabels) > len(d.TargetLabels) {
-			deployments[featureName] = dep
-			continue
-		}
-
-		if len(dep.TargetLabels) == len(d.TargetLabels) && dep.Created.After(d.Created) {
-			deployments[featureName] = dep
-			continue
+		existing, ok := deployments[dep.Feature.Name]
+		if !ok || IsMoreSpecific(dep.TargetLabels, existing.TargetLabels, dep.Created, existing.Created) {
+			deployments[dep.Feature.Name] = dep
 		}
 	}
 
