@@ -939,18 +939,22 @@ nav .theme-toggle:hover {
   text-align: right;
 }
 
-/* Deployment group status */
-.deployment-group {
-  margin-bottom: 1.5rem;
+/* Status tab: deployment-grouped table */
+.table tr.deployment-group-row td {
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+}
+.table tbody + tbody .deployment-group-row td {
+  border-top: 3px solid var(--bg-page);
+}
+.table tr.deployment-group-row:hover {
+  background: var(--bg-elevated);
 }
 .deployment-group-header {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   flex-wrap: wrap;
-  padding: 0.5rem 0;
-  border-bottom: 2px solid var(--border);
-  margin-bottom: 0.25rem;
 }
 .deployment-group-link {
   font-weight: 600;
@@ -961,11 +965,14 @@ nav .theme-toggle:hover {
 .deployment-group-link:hover {
   text-decoration: underline;
 }
-.deployment-group-version {
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
-  background: var(--bg-surface);
-  padding: 0.125rem 0.5rem;
-  border-radius: 4px;
+.version-mismatch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
 }
+.version-desired {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+

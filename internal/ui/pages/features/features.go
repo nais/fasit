@@ -48,6 +48,7 @@ type EnvironmentStatus struct {
 	FeatureDeployable bool
 	DeploymentID      string
 	DeploymentVersion string
+	ReleaseVersion    string
 	TargetLabels      map[string]string
 }
 
@@ -159,17 +160,10 @@ func statusTab(data *DetailPage) g.Node {
 	}
 
 	groups, ungrouped := groupByDeployment(data.Environments)
-	nodes := []g.Node{h.Div(h.Class("table-actions"), toggleLink)}
-	for _, group := range groups {
-		nodes = append(nodes, deploymentGroupSection(group, featureName))
-	}
-	if len(ungrouped) > 0 {
-		nodes = append(nodes,
-			h.H3(g.Text("Not targeted by any deployment")),
-			envTable(ungrouped, featureName),
-		)
-	}
-	return g.Group(nodes)
+	return g.Group([]g.Node{
+		h.Div(h.Class("table-actions"), toggleLink),
+		deploymentStatusTable(groups, ungrouped, featureName),
+	})
 }
 
 func groupByDeployment(envs []EnvironmentStatus) ([]deploymentGroup, []EnvironmentStatus) {
@@ -185,7 +179,6 @@ func groupByDeployment(envs []EnvironmentStatus) ([]deploymentGroup, []Environme
 		if _, ok := groups[env.DeploymentID]; !ok {
 			groups[env.DeploymentID] = &deploymentGroup{
 				DeploymentID: env.DeploymentID,
-				Version:      env.DeploymentVersion,
 				Labels:       env.TargetLabels,
 			}
 			order = append(order, env.DeploymentID)
@@ -200,17 +193,70 @@ func groupByDeployment(envs []EnvironmentStatus) ([]deploymentGroup, []Environme
 	return result, ungrouped
 }
 
-func deploymentGroupSection(group deploymentGroup, featureName string) g.Node {
-	return h.Section(h.Class("deployment-group"),
-		h.Div(h.Class("deployment-group-header"),
-			h.A(h.Href("/ui/deployments/"+group.DeploymentID), h.Class("deployment-group-link"),
-				g.Text("Deployment "+group.DeploymentID[:8]),
+func deploymentStatusTable(groups []deploymentGroup, ungrouped []EnvironmentStatus, featureName string) g.Node {
+	var bodies []g.Node
+	for _, group := range groups {
+		rows := []g.Node{
+			h.Tr(h.Class("deployment-group-row"),
+				h.Td(g.Attr("colspan", "5"),
+					h.Div(h.Class("deployment-group-header"),
+						h.A(h.Href("/ui/deployments/"+group.DeploymentID), h.Class("deployment-group-link"),
+							g.Text("Deployment "+group.DeploymentID[:8]),
+						),
+						labelPills(group.Labels),
+					),
+				),
 			),
-			labelPills(group.Labels),
-			h.Span(h.Class("deployment-group-version"), g.Text(group.Version)),
-		),
-		envTable(group.Environments, featureName),
+		}
+		for _, env := range group.Environments {
+			rows = append(rows, envRow(env, featureName))
+		}
+		bodies = append(bodies, h.TBody(g.Group(rows)))
+	}
+	if len(ungrouped) > 0 {
+		rows := []g.Node{
+			h.Tr(h.Class("deployment-group-row"),
+				h.Td(g.Attr("colspan", "5"), g.Text("Not targeted by any deployment")),
+			),
+		}
+		for _, env := range ungrouped {
+			rows = append(rows, envRow(env, featureName))
+		}
+		bodies = append(bodies, h.TBody(g.Group(rows)))
+	}
+	return h.Table(h.Class("table"),
+		h.THead(h.Tr(
+			h.Th(g.Text("Environment")),
+			h.Th(g.Text("Tenant")),
+			h.Th(g.Text("Version")),
+			h.Th(g.Text("Status")),
+			h.Th(g.Text("Last Modified")),
+		)),
+		g.Group(bodies),
 	)
+}
+
+func envRow(env EnvironmentStatus, featureName string) g.Node {
+	return h.Tr(
+		h.Td(h.A(h.Href("/ui/tenants/"+env.TenantSlug+"/envs/"+env.Name+"/"+featureName), g.Text(env.Name))),
+		h.Td(g.Text(env.TenantName)),
+		h.Td(versionCell(env)),
+		h.Td(rolloutStatus(env.StatusText)),
+		h.Td(g.Text(env.LastModified)),
+	)
+}
+
+func versionCell(env EnvironmentStatus) g.Node {
+	if env.ReleaseVersion == "" {
+		return g.Text("")
+	}
+	if env.DeploymentVersion != "" && env.ReleaseVersion != env.DeploymentVersion {
+		return h.Span(h.Class("version-mismatch"),
+			g.Text(env.ReleaseVersion),
+			h.Span(h.Class("version-desired"), g.Text("→ "+env.DeploymentVersion)),
+		)
+	}
+	return g.Text(env.ReleaseVersion)
 }
 
 func labelPills(labels map[string]string) g.Node {
@@ -367,11 +413,11 @@ type envStatusEntry struct {
 	deploymentID string
 	targetLabels map[string]string
 	version      string
+	created      time.Time
 }
 
 type deploymentGroup struct {
 	DeploymentID string
-	Version      string
 	Labels       map[string]string
 	Environments []EnvironmentStatus
 }
@@ -388,7 +434,8 @@ func featureEnvironmentStatuses(ctx context.Context, repo database.Repo, feature
 					continue
 				}
 				for _, status := range statuses {
-					if _, exists := deploymentStatuses[status.EnvironmentID]; exists {
+					existing, exists := deploymentStatuses[status.EnvironmentID]
+					if exists && !deployment.IsMoreSpecific(dep.TargetLabels, existing.targetLabels, dep.Created, existing.created) {
 						continue
 					}
 					deploymentStatuses[status.EnvironmentID] = envStatusEntry{
@@ -396,6 +443,7 @@ func featureEnvironmentStatuses(ctx context.Context, repo database.Repo, feature
 						deploymentID: dep.ID.String(),
 						targetLabels: dep.TargetLabels,
 						version:      dep.Feature.Version,
+						created:      dep.Created,
 					}
 				}
 			}
@@ -428,6 +476,16 @@ func featureEnvironmentStatuses(ctx context.Context, repo database.Repo, feature
 				FeatureDeployable: feature.HasDeployments,
 			}
 
+			releases, err := repo.ReleaseStatusesGet(ctx, env.ID)
+			if err == nil {
+				for _, release := range releases {
+					if release.Name == feature.Name {
+						environmentStatus.ReleaseVersion = release.Version
+						break
+					}
+				}
+			}
+
 			if feature.HasDeployments {
 				if deploymentStatus, ok := deploymentStatuses[env.ID]; ok {
 					environmentStatus.HasDeployments = true
@@ -441,13 +499,10 @@ func featureEnvironmentStatuses(ctx context.Context, repo database.Repo, feature
 				if environmentStatus.FeatureDeployable {
 					environmentStatus.StatusText = "-"
 				} else {
-					releases, err := repo.ReleaseStatusesGet(ctx, env.ID)
-					if err == nil {
-						for _, release := range releases {
-							if release.Name == feature.Name {
-								environmentStatus.StatusText = release.Status
-								break
-							}
+					for _, release := range releases {
+						if release.Name == feature.Name {
+							environmentStatus.StatusText = release.Status
+							break
 						}
 					}
 					if environmentStatus.StatusText == "" {
