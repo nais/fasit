@@ -436,7 +436,6 @@ func filterDeployments(deps []*Deployment) []*Deployment {
 		ret = append(ret, d)
 	}
 
-	// sort by created timestamp ascending so that the oldest deployments are installed first
 	slices.SortStableFunc(ret, func(a, b *Deployment) int {
 		return a.Created.Compare(b.Created)
 	})

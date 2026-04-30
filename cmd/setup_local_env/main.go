@@ -180,21 +180,13 @@ func main() {
 	seeder := deploymenttest.NewSeeder()
 	deployment.ChartDownloader = seeder.ChartDownloader()
 
-	// [0] aivenator: targets {aiven:enabled} → matches dev, management, prod (not staging)
 	seeder.AddDeployment("aivenator", "2.0.0", environment.Labels{"aiven": "enabled"})
-	// [1] naiserator: targets {kind:tenant} → matches dev, prod, staging (not management)
 	seeder.AddDeployment("naiserator", "1.0.0", environment.Labels{"kind": "tenant"})
-	// [2] v13s: targets {kind:management} → matches management only
 	seeder.AddDeployment("v13s", "1.0.0", environment.Labels{"kind": "management"})
-	// [3] console: global (empty target) → matches all environments
 	seeder.AddDeployment("console", "1.0.0", environment.Labels{})
-	// [4] unleash: targets {aiven:enabled} → matches dev, management, prod; dev will be DISABLED via feature_state
 	seeder.AddDeployment("unleash", "1.0.0", environment.Labels{"aiven": "enabled"})
-	// [5] kafka-manager: targets {kafka:enabled} → matches no environments
 	seeder.AddDeployment("kafka-manager", "1.0.0", environment.Labels{"kafka": "enabled"})
-	// [6] naiserator: targets {kind:tenant, tenant:nav} → more specific, overrides [1] for nav's tenant envs
 	seeder.AddDeployment("naiserator", "1.1.0", environment.Labels{"kind": "tenant", "tenant": "nav"})
-	// [7] naiserator: targets {kind:tenant, aiven:enabled, tenant:test-partner} → most specific, overrides [1] for test-partner dev+prod
 	seeder.AddDeployment("naiserator", "1.2.0", environment.Labels{"kind": "tenant", "aiven": "enabled", "tenant": "test-partner"})
 
 	depIDs, err := seeder.Seed(ctx)
@@ -208,7 +200,6 @@ func main() {
 		}
 	}
 
-	// aivenator [0]: targets {aiven:enabled}
 	setStatus(0, "test-partner", "dev", model.RolloutStatusDeployed, "received status from naisd.")
 	setStatus(0, "test-partner", "management", model.RolloutStatusDeployed, "received status from naisd.")
 	setStatus(0, "test-partner", "prod", model.RolloutStatusFailed, "helm install failed: timeout waiting for condition")
@@ -216,7 +207,6 @@ func main() {
 	setStatus(0, "nav", "management", model.RolloutStatusDeployed, "received status from naisd.")
 	setStatus(0, "nav", "prod", model.RolloutStatusDeployed, "received status from naisd.")
 
-	// naiserator [1]: targets {kind:tenant}
 	setStatus(1, "test-partner", "dev", model.RolloutStatusDeployed, "received status from naisd.")
 	setStatus(1, "test-partner", "prod", model.RolloutStatusDeployed, "received status from naisd.")
 	setStatus(1, "test-partner", "staging", model.RolloutStatusPending, "waiting for naisd")
@@ -224,12 +214,10 @@ func main() {
 	setStatus(1, "nav", "prod", model.RolloutStatusDeployed, "received status from naisd.")
 	setStatus(1, "dev-nais", "dev", model.RolloutStatusDeployed, "received status from naisd.")
 
-	// v13s [2]: targets {kind:management}
 	setStatus(2, "test-partner", "management", model.RolloutStatusDeployed, "received status from naisd.")
 	setStatus(2, "nav", "management", model.RolloutStatusDeployed, "received status from naisd.")
 	setStatus(2, "dev-nais", "management", model.RolloutStatusDeployed, "received status from naisd.")
 
-	// console [3]: global
 	setStatus(3, "test-partner", "dev", model.RolloutStatusDeployed, "received status from naisd.")
 	setStatus(3, "test-partner", "management", model.RolloutStatusDeployed, "received status from naisd.")
 	setStatus(3, "test-partner", "prod", model.RolloutStatusDeployed, "received status from naisd.")
@@ -240,17 +228,14 @@ func main() {
 	setStatus(3, "dev-nais", "dev", model.RolloutStatusDeployed, "received status from naisd.")
 	setStatus(3, "dev-nais", "management", model.RolloutStatusDeployed, "received status from naisd.")
 
-	// unleash [4]: targets {aiven:enabled}
 	setStatus(4, "test-partner", "management", model.RolloutStatusDeployed, "received status from naisd.")
 	setStatus(4, "test-partner", "prod", model.RolloutStatusDeployed, "received status from naisd.")
 	setStatus(4, "nav", "management", model.RolloutStatusDeployed, "received status from naisd.")
 	setStatus(4, "nav", "prod", model.RolloutStatusDeployed, "received status from naisd.")
 
-	// naiserator [6]: targets {kind:tenant, tenant:nav}
 	setStatus(6, "nav", "dev", model.RolloutStatusDeployed, "received status from naisd.")
 	setStatus(6, "nav", "prod", model.RolloutStatusDeployed, "received status from naisd.")
 
-	// naiserator [7]: targets {kind:tenant, aiven:enabled, tenant:test-partner}
 	setStatus(7, "test-partner", "dev", model.RolloutStatusDeployed, "received status from naisd.")
 	setStatus(7, "test-partner", "prod", model.RolloutStatusFailed, "helm install failed: timeout waiting for condition")
 
@@ -271,7 +256,6 @@ func main() {
 		}
 	}
 
-	// aivenator: desired 2.0.0 — prod failed, still on old version
 	setRelease("test-partner", "dev", "aivenator", "2.0.0", "deployed")
 	setRelease("test-partner", "management", "aivenator", "2.0.0", "deployed")
 	setRelease("test-partner", "prod", "aivenator", "1.0.0", "deployed")
@@ -279,19 +263,16 @@ func main() {
 	setRelease("nav", "management", "aivenator", "2.0.0", "deployed")
 	setRelease("nav", "prod", "aivenator", "2.0.0", "deployed")
 
-	// naiserator: desired 1.0.0 — staging pending (no release yet)
 	setRelease("test-partner", "dev", "naiserator", "1.2.0", "deployed")
 	setRelease("test-partner", "prod", "naiserator", "1.0.0", "deployed")
 	setRelease("nav", "dev", "naiserator", "1.1.0", "deployed")
 	setRelease("nav", "prod", "naiserator", "1.1.0", "deployed")
 	setRelease("dev-nais", "dev", "naiserator", "1.0.0", "deployed")
 
-	// v13s: desired 1.0.0
 	setRelease("test-partner", "management", "v13s", "1.0.0", "deployed")
 	setRelease("nav", "management", "v13s", "1.0.0", "deployed")
 	setRelease("dev-nais", "management", "v13s", "1.0.0", "deployed")
 
-	// console: desired 1.0.0 — staging still pending (no release yet)
 	setRelease("test-partner", "dev", "console", "1.0.0", "deployed")
 	setRelease("test-partner", "management", "console", "1.0.0", "deployed")
 	setRelease("test-partner", "prod", "console", "1.0.0", "deployed")
@@ -301,7 +282,6 @@ func main() {
 	setRelease("dev-nais", "dev", "console", "1.0.0", "deployed")
 	setRelease("dev-nais", "management", "console", "1.0.0", "deployed")
 
-	// unleash: desired 1.0.0
 	setRelease("test-partner", "management", "unleash", "1.0.0", "deployed")
 	setRelease("test-partner", "prod", "unleash", "1.0.0", "deployed")
 	setRelease("nav", "management", "unleash", "1.0.0", "deployed")

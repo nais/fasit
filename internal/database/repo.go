@@ -41,15 +41,10 @@ type TXFunc func(repo Repo) error
 type Repo interface {
 	KubernetesNodeRepo
 
-	// Used a lot of places, requires more work to move
 	DeployInstructionRepo
-	// Used in grpc so need context setup there
 	EnvironmentRepo
-	// Used in grpc so need context setup there
 	EnvironmentValueRepo
-	// Can possibly be moved, must analyze usage
 	ReleaseStatusRepo
-	// Can be moved but is also heavily used in listeners etc
 	RolloutRepo
 
 	Transaction
@@ -139,14 +134,12 @@ func NewConnPool(ctx context.Context, dbConnDSN string, log logrus.FieldLogger) 
 	closers := closeFuncs{}
 
 	if cloudsql {
-		// Create a new dialer with any options
 		d, err := cloudsqlconn.NewDialer(ctx)
 		if err != nil {
 			return nil, closers, fmt.Errorf("failed to initialize dialer: %w", err)
 		}
 		closers = append(closers, d.Close)
 
-		// Tell the driver to use the Cloud SQL Go Connector to create connections
 		config.ConnConfig.DialFunc = func(ctx context.Context, _ string, instance string) (net.Conn, error) {
 			return d.Dial(ctx, cloudsqlHost)
 		}

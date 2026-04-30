@@ -219,7 +219,6 @@ func deploymentPage(d *deployment.Deployment, statuses []deploymentStatusRow, de
 		),
 	)
 
-	// NAISD Instructions (collapsible, collapsed by default)
 	var naidInstructionsContent g.Node
 	if len(deployInstructions) == 0 {
 		naidInstructionsContent = h.P(g.Text("No NAISD instructions."))
@@ -304,7 +303,6 @@ type featureGroup struct {
 }
 
 func groupDeployments(items []Summary) []featureGroup {
-	// map[featureName]map[target]Summary — keep only latest per (feature, target)
 	type key struct{ feature, target string }
 	latest := make(map[key]Summary)
 	for _, item := range items {
@@ -314,7 +312,6 @@ func groupDeployments(items []Summary) []featureGroup {
 		}
 	}
 
-	// build groups
 	groupMap := make(map[string]*featureGroup)
 	for _, item := range latest {
 		fg, ok := groupMap[item.FeatureName]

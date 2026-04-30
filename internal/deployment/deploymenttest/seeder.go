@@ -25,7 +25,6 @@ type deployments []deploymentInput
 
 func NewSeeder() *Seeder {
 	return &Seeder{
-		deployments: deployments{},
 	}
 }
 
@@ -70,7 +69,7 @@ func (s *Seeder) Seed(ctx context.Context) ([]uuid.UUID, error) {
 }
 
 func (s *Seeder) Reset() {
-	s.deployments = deployments{}
+	s.deployments = nil
 }
 
 func (s *Seeder) ChartDownloader() deployment.ChartDownloaderFunc {

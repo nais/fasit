@@ -40,9 +40,7 @@ type Feature struct {
 }
 
 type Rename struct {
-	// From is the old key name
 	From string `json:"from"`
-	// To is the new key name
 	To string `json:"to"`
 }
 
@@ -166,7 +164,6 @@ func FromChart(chartURL, version string) (*Feature, error) {
 	if err := feat.parseChartYAML(chart.Metadata); err != nil {
 		return nil, err
 	}
-	// Combine all values
 	if err := chartutil.ProcessDependencies(chart, chart.Values); err != nil {
 		return nil, fmt.Errorf("unable to process dependencies: %w", err)
 	}
