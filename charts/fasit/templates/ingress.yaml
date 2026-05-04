@@ -22,7 +22,7 @@ spec:
                 name: {{ include "fasit.fullname" . }}
                 port:
                   name: http
-            path: /ui
+            path: /
             pathType: Prefix
 
 ---
@@ -49,5 +49,5 @@ spec:
                 name: {{ include "fasit.fullname" . }}
                 port:
                   name: http
-            path: /ui
+            path: /
             pathType: Prefix

@@ -98,65 +98,6 @@ func (q *Queries) GetLabels(ctx context.Context, id uuid.UUID) (types.Environmen
 	return labels, err
 }
 
-const listCIEnvironmentsForTarget = `-- name: ListCIEnvironmentsForTarget :many
-SELECT DISTINCT
-	e_ci.id, e_ci.tenant_id, e_ci.name, e_ci.kind, e_ci.description, e_ci.created, e_ci.last_modified, e_ci.ci, e_ci.reconcile, e_ci.labels,
-	t.name AS tenant_name
-FROM
-	environments e_ci
-	JOIN tenants t ON e_ci.tenant_id = t.id
-WHERE
-	e_ci.ci = TRUE
-	AND EXISTS (
-		SELECT
-			1
-		FROM
-			environments e_non_ci
-		WHERE
-			e_non_ci.ci = FALSE
-			AND e_non_ci.labels @> $1
-			AND e_non_ci.kind = e_ci.kind)
-ORDER BY
-	e_ci.name ASC
-`
-
-type ListCIEnvironmentsForTargetRow struct {
-	Environment Environment
-	TenantName  string
-}
-
-func (q *Queries) ListCIEnvironmentsForTarget(ctx context.Context, target types.EnvironmentLabels) ([]ListCIEnvironmentsForTargetRow, error) {
-	rows, err := q.db.Query(ctx, listCIEnvironmentsForTarget, target)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ListCIEnvironmentsForTargetRow{}
-	for rows.Next() {
-		var i ListCIEnvironmentsForTargetRow
-		if err := rows.Scan(
-			&i.Environment.ID,
-			&i.Environment.TenantID,
-			&i.Environment.Name,
-			&i.Environment.Kind,
-			&i.Environment.Description,
-			&i.Environment.Created,
-			&i.Environment.LastModified,
-			&i.Environment.Ci,
-			&i.Environment.Reconcile,
-			&i.Environment.Labels,
-			&i.TenantName,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const setLabels = `-- name: SetLabels :exec
 UPDATE
 	environments

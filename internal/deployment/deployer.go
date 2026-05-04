@@ -16,7 +16,6 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/nais/fasit/internal/database/types"
 	"github.com/nais/fasit/internal/deployment/deploymentsql"
-	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/errs"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
@@ -25,7 +24,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
-	"golang.org/x/sync/errgroup"
 )
 
 type Publisher interface {
@@ -67,53 +65,6 @@ func (d *deployer) naisdHealthCheck(ctx context.Context, environmentID uuid.UUID
 	}
 
 	return fmt.Errorf("naisd is unhealthy")
-}
-
-func (d *deployer) deployToCI(ctx context.Context, feat *model.Feature, req Request, timeout time.Duration) error {
-	envs, err := environment.ListCIEnvironmentsForTarget(ctx, req.Target)
-	if err != nil {
-		return fmt.Errorf("get ci environments for target: %w", err)
-	}
-
-	deploymentsByEnvID := make(map[uuid.UUID]uuid.UUID)
-	for _, env := range envs {
-		var deploymentID uuid.UUID
-		err := func() error {
-			labels, err := environment.ListLabels(ctx, env.ID)
-			if err != nil {
-				return fmt.Errorf("get environment labels: %w", err)
-			}
-
-			target := make(environment.Labels)
-			for _, label := range labels {
-				target[label.Key] = label.Value
-			}
-
-			req.Target = target
-
-			deploymentID, err = d.CreateDeployment(ctx, feat, req, true)
-			if err != nil {
-				return err
-			}
-
-			deployment, err := getDeployment(ctx, d.querier, deploymentID)
-			if err != nil {
-				return fmt.Errorf("get deployment %q: %w", deploymentID, err)
-			}
-
-			publisher := d.publisher(naisdTopicID(env.TenantName, env.Name), d.log)
-			defer publisher.Stop()
-
-			return d.deployToEnvironment(ctx, deployment, env, publisher)
-		}()
-		if err != nil {
-			return err
-		}
-
-		deploymentsByEnvID[env.ID] = deploymentID
-	}
-
-	return d.waitForDeploymentStatuses(ctx, deploymentsByEnvID, timeout)
 }
 
 func (d *deployer) deployToEnvironment(ctx context.Context, deployment *Deployment, environment *model.TenantEnvironment, publisher Publisher) error {
@@ -271,7 +222,7 @@ func (d *deployer) isDependenciesDeployed(ctx context.Context, deployment *Deplo
 	return true, nil
 }
 
-func (d *deployer) CreateDeployment(ctx context.Context, feat *model.Feature, req Request, ci bool) (uuid.UUID, error) {
+func (d *deployer) CreateDeployment(ctx context.Context, feat *model.Feature, req Request) (uuid.UUID, error) {
 	details, err := featurepkg.ParseTemplateDetails(feat.FeatureYAML.Values)
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("unable to parse feature template details: %w", err)
@@ -300,7 +251,6 @@ func (d *deployer) CreateDeployment(ctx context.Context, feat *model.Feature, re
 		GhRef:       ghRef,
 		Target:      types.EnvironmentLabels(req.Target),
 		Description: &req.Description,
-		Ci:          ci,
 	})
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("unable to create deployment: %w", err)
@@ -312,48 +262,6 @@ func (d *deployer) CreateDeployment(ctx context.Context, feat *model.Feature, re
 		}
 	}
 	return deployment.ID, nil
-}
-
-func (d *deployer) waitForDeploymentStatuses(ctx context.Context, deploymentsByEnvID map[uuid.UUID]uuid.UUID, timeout time.Duration) error {
-	ctx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-
-	eg, ctx := errgroup.WithContext(ctx)
-
-	for envID, deploymentID := range deploymentsByEnvID {
-		eg.Go(func() error {
-			for {
-				if ctx.Err() != nil {
-					return ctx.Err()
-				}
-
-				status, err := d.querier.LatestStatusForDeploymentInEnvironment(ctx, deploymentsql.LatestStatusForDeploymentInEnvironmentParams{
-					DeploymentID:  deploymentID,
-					EnvironmentID: envID,
-				})
-				if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-					return fmt.Errorf("get latest deployment status for deployment %q in environment %q: %w", deploymentID, envID, err)
-				}
-
-				state := DeploymentStatusState(strings.ToUpper(status))
-
-				switch state {
-				case DeploymentStatusStateDeployed:
-					return nil
-				case DeploymentStatusStateFailed:
-					return fmt.Errorf("deployment %q in environment %q failed", deploymentID, envID)
-				}
-
-				select {
-				case <-ctx.Done():
-					return fmt.Errorf("timeout waiting for deployment %q in environment %q to complete", deploymentID, envID)
-				case <-time.After(5 * time.Second):
-				}
-			}
-		})
-	}
-
-	return eg.Wait()
 }
 
 func (d *deployer) missingDependencies(ctx context.Context, dependencies []string, environmentID uuid.UUID) ([]string, error) {

@@ -30,7 +30,6 @@ var ChartDownloader = func(chartURL, version string) (*model.Feature, error) {
 	return model.FromChart(chartURL, version)
 }
 
-// TODO: check if we can use same request as in graphql
 type Request struct {
 	Chart       string             `json:"chart"`
 	Version     string             `json:"version"`
@@ -38,10 +37,6 @@ type Request struct {
 	Ref         *model.GHRef       `json:"ref"`
 	Global      bool               `json:"global"`
 	Target      environment.Labels `json:"target"`
-	CI          struct {
-		Skip bool `json:"skip"`
-		Wait bool `json:"wait"`
-	} `json:"ci"`
 }
 
 type Option func(*Manager)

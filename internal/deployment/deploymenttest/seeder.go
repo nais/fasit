@@ -51,13 +51,6 @@ func (s *Seeder) Seed(ctx context.Context) ([]uuid.UUID, error) {
 				Ref:   "refs/heads/main",
 			},
 			Target: d.Target,
-			CI: struct {
-				Skip bool `json:"skip"`
-				Wait bool `json:"wait"`
-			}{
-				Skip: true,
-				Wait: true,
-			},
 		})
 		if err != nil {
 			return nil, err

@@ -87,7 +87,7 @@ func page(breadcrumbs []breadcrumb.Crumb, tenant pageData) g.Node {
 						),
 						h.TBody(g.Group(g.Map(tenant.Environments, func(environment *model.Environment) g.Node {
 							return h.Tr(
-								h.Td(h.A(h.Href("/ui/tenants/"+tenant.Tenant.Name+"/envs/"+environment.Name), g.Text(environment.Name))),
+								h.Td(h.A(h.Href("/tenants/"+tenant.Tenant.Name+"/envs/"+environment.Name), g.Text(environment.Name))),
 								h.Td(g.Text(valueOrEmpty(environment.Description))),
 								h.Td(g.Text(environment.Kind.String())),
 								h.Td(g.Text(checkmarkOrDash(environment.Reconcile))),

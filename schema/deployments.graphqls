@@ -24,7 +24,6 @@ type Deployment {
 	created: Time!
 	statuses: [DeploymentStatus!]!
 	description: String
-    ci: Boolean!
 }
 
 type DeploymentStatus {

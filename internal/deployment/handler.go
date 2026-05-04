@@ -108,14 +108,10 @@ func (h *HttpHandler) CreateDeployment(w http.ResponseWriter, req *http.Request)
 		return
 	}
 
-	if body.CI.Wait {
-		w.WriteHeader(http.StatusCreated)
-		_ = json.NewEncoder(w).Encode(map[string]any{
-			"id": deploymentID.String(),
-		})
-	} else {
-		w.WriteHeader(http.StatusAccepted)
-	}
+	w.WriteHeader(http.StatusCreated)
+	_ = json.NewEncoder(w).Encode(map[string]any{
+		"id": deploymentID.String(),
+	})
 
 	TriggerReconcile(ctx, ReconcileTriggerEvent{})
 }

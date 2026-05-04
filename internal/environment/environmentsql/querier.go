@@ -16,7 +16,6 @@ type Querier interface {
 	GetTenant(ctx context.Context, id uuid.UUID) (Tenant, error)
 	GetTenantByName(ctx context.Context, name string) (Tenant, error)
 	GetTenants(ctx context.Context) ([]Tenant, error)
-	ListCIEnvironmentsForTarget(ctx context.Context, target types.EnvironmentLabels) ([]ListCIEnvironmentsForTargetRow, error)
 	SetEnvironmentValue(ctx context.Context, arg SetEnvironmentValueParams) error
 	SetLabels(ctx context.Context, arg SetLabelsParams) error
 	TenantCreate(ctx context.Context, arg TenantCreateParams) (Tenant, error)

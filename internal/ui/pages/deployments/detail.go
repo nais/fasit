@@ -88,9 +88,6 @@ func DetailHandler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 			if !maps.Equal(map[string]string(d.TargetLabels), map[string]string(dep.TargetLabels)) {
 				continue
 			}
-			if d.CI != dep.CI {
-				continue
-			}
 			matching = append(matching, matchingDeployment{
 				ID:      d.ID.String(),
 				Version: d.Feature.Version,
@@ -104,7 +101,7 @@ func DetailHandler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 
 func detailPage(d *deployment.Deployment, statuses []deploymentStatusRow, deployInstructions []deploymentsql.ListDeployInstructionsByDeploymentIDRow, matching []matchingDeployment) g.Node {
 	meta := []g.Node{
-		metaRow("Feature", h.A(h.Href("/ui/features/"+d.Feature.Name), g.Text(d.Feature.Name))),
+		metaRow("Feature", h.A(h.Href("/features/"+d.Feature.Name), g.Text(d.Feature.Name))),
 		metaRow("Version", g.Text(d.Feature.Version)),
 		metaRow("Target", g.Text(deploymentTarget(d))),
 		metaRow("Created", g.Text(formatTime(d.Created))),
@@ -116,7 +113,7 @@ func detailPage(d *deployment.Deployment, statuses []deploymentStatusRow, deploy
 
 	meta = append(meta, metaRow("Actions", h.Form(
 		h.Method("POST"),
-		h.Action("/ui/deployments/"+d.ID.String()+"/delete"),
+		h.Action("/deployments/"+d.ID.String()+"/delete"),
 		h.Button(h.Type("submit"), h.Class("btn-small"), g.Attr("onclick", "return confirm('Are you sure?')"), g.Text("Delete")),
 	)))
 
@@ -141,12 +138,12 @@ func detailPage(d *deployment.Deployment, statuses []deploymentStatusRow, deploy
 			)),
 			h.TBody(g.Group(g.Map(statuses, func(s deploymentStatusRow) g.Node {
 				return h.Tr(
-					h.Td(h.A(h.Href("/ui/tenants/"+s.TenantName), g.Text(s.TenantName))),
-					h.Td(h.A(h.Href("/ui/tenants/"+s.TenantName+"/envs/"+s.EnvironmentName+"/"+d.Feature.Name), g.Text(s.EnvironmentName))),
+					h.Td(h.A(h.Href("/tenants/"+s.TenantName), g.Text(s.TenantName))),
+					h.Td(h.A(h.Href("/tenants/"+s.TenantName+"/envs/"+s.EnvironmentName+"/"+d.Feature.Name), g.Text(s.EnvironmentName))),
 					h.Td(rolloutStatus(s.State)),
 					h.Td(g.Text(s.Message)),
 					h.Td(g.Text(s.LastModified)),
-					h.Td(h.A(h.Href("/ui/deployments/"+d.ID.String()+"/logs/"+s.EnvironmentID), g.Attr("title", "View logs"), g.Text("📋"))),
+					h.Td(h.A(h.Href("/deployments/"+d.ID.String()+"/logs/"+s.EnvironmentID), g.Attr("title", "View logs"), g.Text("📋"))),
 				)
 			}))),
 		))
@@ -162,14 +159,14 @@ func detailPage(d *deployment.Deployment, statuses []deploymentStatusRow, deploy
 			)),
 			h.TBody(g.Group(g.Map(matching, func(m matchingDeployment) g.Node {
 				return h.Tr(
-					h.Td(h.A(h.Href("/ui/deployments/"+m.ID), g.Text(m.Version))),
+					h.Td(h.A(h.Href("/deployments/"+m.ID), g.Text(m.Version))),
 					h.Td(g.Text(m.Created)),
 				)
 			}))),
 		),
 		h.Form(
 			h.Method("POST"),
-			h.Action("/ui/deployments/"+d.ID.String()+"/delete-matching"),
+			h.Action("/deployments/"+d.ID.String()+"/delete-matching"),
 			h.Button(h.Type("submit"), h.Class("btn-small"), g.Attr("onclick", "return confirm('Are you sure?')"), g.Text("Delete all deployments")),
 			g.Textf(" (%d)", len(matching)),
 		),
@@ -190,11 +187,11 @@ func detailPage(d *deployment.Deployment, statuses []deploymentStatusRow, deploy
 			)),
 			h.TBody(g.Group(g.Map(deployInstructions, func(di deploymentsql.ListDeployInstructionsByDeploymentIDRow) g.Node {
 				return h.Tr(
-					h.Td(h.A(h.Href("/ui/tenants/"+di.TenantName+"/envs/"+di.EnvironmentName), g.Textf("%s / %s", di.TenantName, di.EnvironmentName))),
+					h.Td(h.A(h.Href("/tenants/"+di.TenantName+"/envs/"+di.EnvironmentName), g.Textf("%s / %s", di.TenantName, di.EnvironmentName))),
 					h.Td(rolloutStatus(strings.ToUpper(di.DeployInstruction.Status))),
 					h.Td(g.Text(formatTime(di.DeployInstruction.Created.Time))),
 					h.Td(g.Text(formatTime(di.DeployInstruction.LastModified.Time))),
-					h.Td(h.A(h.Href("/ui/deployments/"+d.ID.String()+"/logs/"+di.DeployInstruction.EnvironmentID.String()), g.Attr("title", "View logs"), g.Text("📋"))),
+					h.Td(h.A(h.Href("/deployments/"+d.ID.String()+"/logs/"+di.DeployInstruction.EnvironmentID.String()), g.Attr("title", "View logs"), g.Text("📋"))),
 				)
 			}))),
 		)

@@ -114,7 +114,7 @@ func detailPage(data *DetailPage) g.Node {
 }
 
 func featureTabs(featureName string) []components.Tab {
-	base := "/ui/features/" + featureName
+	base := "/features/" + featureName
 	return []components.Tab{{ID: "overview", Href: base, Label: "Overview"}, {ID: "status", Href: base + "/status", Label: "Status"}, {ID: "deployments", Href: base + "/deployments", Label: "Deployments"}, {ID: "rollouts", Href: base + "/rollouts", Label: "Rollouts"}}
 }
 
@@ -141,9 +141,9 @@ func statusTab(data *DetailPage) g.Node {
 	featureName := data.CurrentFeature.Name
 	var toggleLink g.Node
 	if data.ShowAll {
-		toggleLink = h.A(h.Href("/ui/features/"+featureName+"/status"), h.Class("btn-small"), g.Text("Show enabled only"))
+		toggleLink = h.A(h.Href("/features/"+featureName+"/status"), h.Class("btn-small"), g.Text("Show enabled only"))
 	} else {
-		toggleLink = h.A(h.Href("/ui/features/"+featureName+"/status?show=all"), h.Class("btn-small"), g.Text("Show all environments"))
+		toggleLink = h.A(h.Href("/features/"+featureName+"/status?show=all"), h.Class("btn-small"), g.Text("Show all environments"))
 	}
 	if len(data.Environments) == 0 {
 		return g.Group([]g.Node{
@@ -200,7 +200,7 @@ func deploymentStatusTable(groups []deploymentGroup, ungrouped []EnvironmentStat
 			h.Tr(h.Class("deployment-group-row"),
 				h.Td(g.Attr("colspan", "5"),
 					h.Div(h.Class("deployment-group-header"),
-						h.A(h.Href("/ui/deployments/"+group.DeploymentID), h.Class("deployment-group-link"),
+						h.A(h.Href("/deployments/"+group.DeploymentID), h.Class("deployment-group-link"),
 							g.Text("Deployment "+group.DeploymentID[:8]),
 						),
 						labelPills(group.Labels),
@@ -238,7 +238,7 @@ func deploymentStatusTable(groups []deploymentGroup, ungrouped []EnvironmentStat
 
 func envRow(env EnvironmentStatus, featureName string) g.Node {
 	return h.Tr(
-		h.Td(h.A(h.Href("/ui/tenants/"+env.TenantSlug+"/envs/"+env.Name+"/"+featureName), g.Text(env.Name))),
+		h.Td(h.A(h.Href("/tenants/"+env.TenantSlug+"/envs/"+env.Name+"/"+featureName), g.Text(env.Name))),
 		h.Td(g.Text(env.TenantName)),
 		h.Td(versionCell(env)),
 		h.Td(rolloutStatus(env.StatusText)),
@@ -285,7 +285,7 @@ func envTable(envs []EnvironmentStatus, featureName string) g.Node {
 		)),
 		h.TBody(g.Group(g.Map(envs, func(env EnvironmentStatus) g.Node {
 			return h.Tr(
-				h.Td(h.A(h.Href("/ui/tenants/"+env.TenantSlug+"/envs/"+env.Name+"/"+featureName), g.Text(env.Name))),
+				h.Td(h.A(h.Href("/tenants/"+env.TenantSlug+"/envs/"+env.Name+"/"+featureName), g.Text(env.Name))),
 				h.Td(g.Text(env.TenantName)),
 				h.Td(rolloutStatus(env.StatusText)),
 				h.Td(g.Text(env.LastModified)),
@@ -299,7 +299,7 @@ func deploymentsTab(data *DetailPage) g.Node {
 		return h.P(g.Text("No deployments yet."))
 	}
 	return h.Table(h.Class("table sortable"), h.THead(h.Tr(h.Th(g.Text("ID")), h.Th(g.Text("Version")), h.Th(g.Text("Status")), h.Th(g.Text("Target")), h.Th(g.Text("Created")))), h.TBody(g.Group(g.Map(data.Deployments, func(dep DeploymentItem) g.Node {
-		return h.Tr(h.Td(h.A(h.Href("/ui/deployments/"+dep.ID), g.Text(dep.ID[:8]))), h.Td(g.Text(dep.Version)), h.Td(g.Text(dep.Status)), h.Td(g.Text(dep.Target)), h.Td(g.Text(dep.Created)))
+		return h.Tr(h.Td(h.A(h.Href("/deployments/"+dep.ID), g.Text(dep.ID[:8]))), h.Td(g.Text(dep.Version)), h.Td(g.Text(dep.Status)), h.Td(g.Text(dep.Target)), h.Td(g.Text(dep.Created)))
 	}))))
 }
 
@@ -313,7 +313,7 @@ func rolloutsTab(data *DetailPage) g.Node {
 }
 
 func rolloutVersionCell(r RolloutItem) g.Node {
-	return h.A(h.Href("/ui/rollouts/"+r.FeatureName+"/"+r.Version), g.Text(r.Version))
+	return h.A(h.Href("/rollouts/"+r.FeatureName+"/"+r.Version), g.Text(r.Version))
 }
 
 func dependencyLinks(feature *Feature) g.Node {
@@ -327,7 +327,7 @@ func dependencyLinks(feature *Feature) g.Node {
 	}
 	links := make([]g.Node, 0, len(names)*2)
 	for _, name := range names {
-		links = append(links, g.Text(" "), h.A(h.Href("/ui/features/"+name), g.Text(name)))
+		links = append(links, g.Text(" "), h.A(h.Href("/features/"+name), g.Text(name)))
 	}
 	return g.Group(links)
 }
@@ -591,10 +591,6 @@ func aggregateDeploymentStatus(statuses []*deployment.DeploymentStatus) (string,
 }
 
 func deploymentTarget(dep *deployment.Deployment) string {
-	if dep.CI {
-		return "CI"
-	}
-
 	labels := dep.Target()
 	if len(labels) == 0 {
 		return "All environments"

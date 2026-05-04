@@ -22,7 +22,7 @@ func DeleteHandler() http.HandlerFunc {
 			return
 		}
 
-		http.Redirect(w, r, "/ui/deployments", http.StatusSeeOther)
+		http.Redirect(w, r, "/deployments", http.StatusSeeOther)
 	}
 }
 
@@ -40,11 +40,11 @@ func DeleteByFeatureAndTargetHandler() http.HandlerFunc {
 			return
 		}
 
-		if err := deployment.DeleteDeploymentsByFeatureAndTarget(r.Context(), dep.Feature.Name, types.EnvironmentLabels(dep.TargetLabels), dep.CI); err != nil {
+		if err := deployment.DeleteDeploymentsByFeatureAndTarget(r.Context(), dep.Feature.Name, types.EnvironmentLabels(dep.TargetLabels)); err != nil {
 			http.Error(w, "Failed to delete deployments: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
 
-		http.Redirect(w, r, "/ui/deployments", http.StatusSeeOther)
+		http.Redirect(w, r, "/deployments", http.StatusSeeOther)
 	}
 }

@@ -49,13 +49,6 @@ func (r *mutationResolver) CreateDeployment(ctx context.Context, input model.Cre
 		Description: input.Description,
 		Global:      input.Global,
 		Target:      target,
-		CI: struct {
-			Skip bool `json:"skip"`
-			Wait bool `json:"wait"`
-		}{
-			Skip: true,
-			Wait: true,
-		},
 	})
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("create deployment: %w", err)

@@ -42,7 +42,7 @@ func detailPage(rollout *model.Rollout, events []*model.RolloutEvent) g.Node {
 		h.Table(
 			h.Class("table"),
 			h.TBody(
-				metaRow("Feature", h.A(h.Href("/ui/features/"+rollout.FeatureName), g.Text(rollout.FeatureName))),
+				metaRow("Feature", h.A(h.Href("/features/"+rollout.FeatureName), g.Text(rollout.FeatureName))),
 				metaRow("Version", g.Text(rollout.Version)),
 				metaRow("Status", rolloutStatus(rollout.Status.String())),
 				metaRow("Created", g.Text(formatTime(rollout.Created))),

@@ -114,7 +114,6 @@ type ComplexityRoot struct {
 	}
 
 	Deployment struct {
-		CI          func(childComplexity int) int
 		Created     func(childComplexity int) int
 		Description func(childComplexity int) int
 		Feature     func(childComplexity int) int
@@ -694,12 +693,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Dependency.AnyOf(childComplexity), true
 
-	case "Deployment.ci":
-		if e.ComplexityRoot.Deployment.CI == nil {
-			break
-		}
-
-		return e.ComplexityRoot.Deployment.CI(childComplexity), true
 	case "Deployment.created":
 		if e.ComplexityRoot.Deployment.Created == nil {
 			break
@@ -2236,7 +2229,6 @@ type Deployment {
 	created: Time!
 	statuses: [DeploymentStatus!]!
 	description: String
-    ci: Boolean!
 }
 
 type DeploymentStatus {
@@ -4257,35 +4249,6 @@ func (ec *executionContext) fieldContext_Deployment_description(_ context.Contex
 	return fc, nil
 }
 
-func (ec *executionContext) _Deployment_ci(ctx context.Context, field graphql.CollectedField, obj *deployment.Deployment) (ret graphql.Marshaler) {
-	return graphql.ResolveField(
-		ctx,
-		ec.OperationContext,
-		field,
-		ec.fieldContext_Deployment_ci,
-		func(ctx context.Context) (any, error) {
-			return obj.CI, nil
-		},
-		nil,
-		ec.marshalNBoolean2bool,
-		true,
-		true,
-	)
-}
-
-func (ec *executionContext) fieldContext_Deployment_ci(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Deployment",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _DeploymentStatus_deployment(ctx context.Context, field graphql.CollectedField, obj *deployment.DeploymentStatus) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -4322,8 +4285,6 @@ func (ec *executionContext) fieldContext_DeploymentStatus_deployment(_ context.C
 				return ec.fieldContext_Deployment_statuses(ctx, field)
 			case "description":
 				return ec.fieldContext_Deployment_description(ctx, field)
-			case "ci":
-				return ec.fieldContext_Deployment_ci(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Deployment", field.Name)
 		},
@@ -8700,8 +8661,6 @@ func (ec *executionContext) fieldContext_Query_deployments(ctx context.Context, 
 				return ec.fieldContext_Deployment_statuses(ctx, field)
 			case "description":
 				return ec.fieldContext_Deployment_description(ctx, field)
-			case "ci":
-				return ec.fieldContext_Deployment_ci(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Deployment", field.Name)
 		},
@@ -8757,8 +8716,6 @@ func (ec *executionContext) fieldContext_Query_deployment(ctx context.Context, f
 				return ec.fieldContext_Deployment_statuses(ctx, field)
 			case "description":
 				return ec.fieldContext_Deployment_description(ctx, field)
-			case "ci":
-				return ec.fieldContext_Deployment_ci(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Deployment", field.Name)
 		},
@@ -13705,11 +13662,6 @@ func (ec *executionContext) _Deployment(ctx context.Context, sel ast.SelectionSe
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "description":
 			out.Values[i] = ec._Deployment_description(ctx, field, obj)
-		case "ci":
-			out.Values[i] = ec._Deployment_ci(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

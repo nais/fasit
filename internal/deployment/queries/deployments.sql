@@ -40,15 +40,13 @@ INSERT INTO deployments(
 	version,
 	target,
 	gh_ref,
-	description,
-	ci)
+	description)
 VALUES (
 	@feature_name,
 	@version,
 	@target,
 	@gh_ref,
-	@description,
-	@ci)
+	@description)
 RETURNING
 	*;
 
@@ -193,8 +191,7 @@ LIMIT 1;
 -- name: DeleteDeploymentsByFeatureAndTarget :exec
 DELETE FROM deployments
 WHERE feature_name = @feature_name
-	AND target = @target
-	AND ci = @ci;
+	AND target = @target;
 
 -- name: GetDeploymentStatus :one
 SELECT

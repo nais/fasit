@@ -30,13 +30,13 @@ func SiteHeader(currentPage Page) g.Node {
 	}
 
 	return h.Nav(
-		h.A(h.Href("/ui/"), h.Class("logo"), g.Text("Fasit")),
+		h.A(h.Href("/"), h.Class("logo"), g.Text("Fasit")),
 		h.Div(h.Class("menu"),
-			navItem("/ui", "Tenants", PageTenants),
-			navItem("/ui/features", "Features", PageFeatures),
-			navItem("/ui/deployments", "Deployments", PageDeployments),
-			navItem("/ui/rollouts", "Rollouts", PageRollouts),
-			navItem("/ui/labels", "Labels", PageLabels),
+			navItem("/", "Tenants", PageTenants),
+			navItem("/features", "Features", PageFeatures),
+			navItem("/deployments", "Deployments", PageDeployments),
+			navItem("/rollouts", "Rollouts", PageRollouts),
+			navItem("/labels", "Labels", PageLabels),
 			h.A(
 				h.Href("https://vedtak.nais.io/"),
 				h.Class("item"),

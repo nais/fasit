@@ -112,7 +112,6 @@ type Deployment struct {
 	Created     pgtype.Timestamptz
 	GhRef       []byte
 	Description *string
-	Ci          bool
 }
 
 type DeploymentStatus struct {
