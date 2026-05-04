@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/nais/fasit/internal/ui/pages/deployments"
 	"github.com/nais/fasit/internal/ui/pages/environment"
 	"github.com/nais/fasit/internal/ui/pages/features"
 	"github.com/nais/fasit/internal/ui/pages/labels"
@@ -42,11 +43,11 @@ func (s *Server) Routes() http.Handler {
 
 	r.Get("/rollouts", rollouts.Handler(s.renderPage, s.repo))
 	r.Get("/rollouts/{feature}/{version}", rollouts.DetailHandler(s.renderPage, s.repo))
-	r.Get("/deployments", rollouts.DeploymentsHandler(s.renderPage))
-	r.Get("/deployments/{id}", rollouts.DeploymentHandler(s.renderPage, s.repo))
-	r.Get("/deployments/{id}/logs/{envID}", rollouts.DeploymentLogsHandler(s.renderPage))
-	r.Post("/deployments/{id}/delete", rollouts.DeleteDeploymentHandler())
-	r.Post("/deployments/{id}/delete-matching", rollouts.DeleteDeploymentsByFeatureAndTargetHandler())
+	r.Get("/deployments", deployments.ListHandler(s.renderPage))
+	r.Get("/deployments/{id}", deployments.DetailHandler(s.renderPage, s.repo))
+	r.Get("/deployments/{id}/logs/{envID}", deployments.LogsHandler(s.renderPage))
+	r.Post("/deployments/{id}/delete", deployments.DeleteHandler())
+	r.Post("/deployments/{id}/delete-matching", deployments.DeleteByFeatureAndTargetHandler())
 
 	r.Get("/features", features.ListHandler(s.renderPage, s.repo))
 	r.Get("/features/{feature}", features.TabHandler(s.renderPage, s.repo, "overview"))

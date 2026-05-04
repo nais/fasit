@@ -1,7 +1,6 @@
 package rollouts
 
 import (
-	"fmt"
 	"net/http"
 	"sort"
 	"strings"
@@ -18,9 +17,8 @@ import (
 type RenderPage func(http.ResponseWriter, layout.Props)
 
 type Summary struct {
-	FeatureName, Version, Status, Target, Created, Completed, DeploymentID string
-	createdAt                                                              time.Time
-	disabledCount                                                          int
+	FeatureName, Version, Status, Created, Completed string
+	createdAt                                        time.Time
 }
 
 func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
@@ -98,20 +96,10 @@ func rolloutsContent(rollouts []Summary) g.Node {
 }
 
 func versionCell(r Summary) g.Node {
-	if r.DeploymentID != "" {
-		return h.A(h.Href("/ui/deployments/"+r.DeploymentID), g.Text(r.Version))
-	}
-
 	return h.A(h.Href("/ui/rollouts/"+r.FeatureName+"/"+r.Version), g.Text(r.Version))
 }
 
 func statusCell(rollout Summary) g.Node {
-	if rollout.Status == "DEPLOYED" && rollout.disabledCount > 0 {
-		return g.Group([]g.Node{
-			h.Span(h.Class("status-success"), g.Attr("title", fmt.Sprintf("Disabled in %d environment(s)", rollout.disabledCount)), g.Attr("style", "font-size:inherit;line-height:inherit"), g.Text("⚠️")),
-			g.Text(" DEPLOYED"),
-		})
-	}
 	return rolloutStatus(rollout.Status)
 }
 

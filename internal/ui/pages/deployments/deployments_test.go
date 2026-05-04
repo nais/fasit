@@ -1,4 +1,4 @@
-package rollouts
+package deployments
 
 import (
 	"testing"

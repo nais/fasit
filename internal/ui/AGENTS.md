@@ -10,9 +10,10 @@ ui/
   layout/        → Page shell: HTML5 boilerplate, head tags, body wrapper
   components/    → SiteHeader, nav, Page type constants
   pages/         → Page handlers organized by domain:
+    deployments/ → Deployment list/detail/logs
     environment/ → Environment detail, feature tabs (overview/logs/helm/rollouts/audit/playground)
     features/    → Feature list, feature detail tabs (overview/status/deployments/rollouts)
-    rollouts/    → Rollout list/detail + deployment list/detail/logs (deployment.go separate from rollouts.go)
+    rollouts/    → Rollout list/detail
   breadcrumb/    → Supports dropdown switcher via Alternatives
   view/          → renderPage function type
   site/          → Static assets: site.css, site.js (embedded via embed.go)
@@ -39,6 +40,6 @@ ui/
 
 - **Separate nav items**: `PageRollouts` and `PageDeployments` in `components/header.go`
 - **Separate breadcrumbs**: `breadcrumb.Rollouts()` and `breadcrumb.Deployments()` — never cross-reference
-- **Known structural debt**: Deployment UI handlers (`deployment.go`) live in `pages/rollouts/` package. They share helper functions (`rolloutStatus`, `formatTime`, `versionCell`) but are otherwise independent. Treat `deployment.go` as logically separate from `rollouts.go`.
+- **Separate packages**: `pages/rollouts/` and `pages/deployments/` are independent. Some helpers (`rolloutStatus`, `formatTime`, `versionCell`, `metaRow`) are duplicated across both packages by design — keep them aligned but don't extract to a shared package.
 - **Feature detail page**: Has separate "Rollouts" and "Deployments" tabs with independent data types (`RolloutItem` vs `DeploymentItem`)
 - **Environment feature page**: Conditionally shows either "Deployments" or "Rollouts" tab based on `HasDeployments` — never both
