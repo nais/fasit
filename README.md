@@ -41,13 +41,13 @@ make run naisd
 ./hack/local_rollout.sh <chart> <version>
 ```
 
-For the rollout to progress, you need to have naisd running, either with `make local-naisd` or `make local-naisd-failing`.
+For the rollout to progress, you need to have naisd running, either with `mise run naisd`.
 
 You will also need to update `test-partner` `dev` to be a CI environment.
 
 ## Testing
 
-Run all tests in the project with `make test`.
+Run all tests in the project with `mise run test`.
 
 ### Integration tests
 
@@ -69,6 +69,8 @@ They will be re-run every time you save a `.lua` file.
 Fasit is released whenever a new push to main is done.
 
 The action will build a new image, push it to GAR and then deploy it using helm.
+
+Changes in the chart require manually updating the Helm-command in the workflow.
 
 ## naisd
 
