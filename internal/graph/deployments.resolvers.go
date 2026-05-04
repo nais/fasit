@@ -18,10 +18,6 @@ func (r *deploymentResolver) Statuses(ctx context.Context, obj *deployment.Deplo
 	return deployment.ListDeploymentStatuses(ctx, obj.ID)
 }
 
-func (r *deploymentResolver) Ci(ctx context.Context, obj *deployment.Deployment) (bool, error) {
-	panic(fmt.Errorf("not implemented: Ci - ci"))
-}
-
 // Deployment is the resolver for the deployment field.
 func (r *deploymentStatusResolver) Deployment(ctx context.Context, obj *deployment.DeploymentStatus) (*deployment.Deployment, error) {
 	return deployment.GetDeployment(ctx, obj.DeploymentID)
