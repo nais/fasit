@@ -40,7 +40,7 @@ func DeleteByFeatureAndTargetHandler() http.HandlerFunc {
 			return
 		}
 
-		if err := deployment.DeleteDeploymentsByFeatureAndTarget(r.Context(), dep.Feature.Name, types.EnvironmentLabels(dep.TargetLabels), dep.CI); err != nil {
+		if err := deployment.DeleteDeploymentsByFeatureAndTarget(r.Context(), dep.Feature.Name, types.EnvironmentLabels(dep.TargetLabels)); err != nil {
 			http.Error(w, "Failed to delete deployments: "+err.Error(), http.StatusInternalServerError)
 			return
 		}

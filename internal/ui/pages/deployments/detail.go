@@ -88,9 +88,6 @@ func DetailHandler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 			if !maps.Equal(map[string]string(d.TargetLabels), map[string]string(dep.TargetLabels)) {
 				continue
 			}
-			if d.CI != dep.CI {
-				continue
-			}
 			matching = append(matching, matchingDeployment{
 				ID:      d.ID.String(),
 				Version: d.Feature.Version,

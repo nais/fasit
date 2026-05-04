@@ -24,7 +24,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
-	"golang.org/x/sync/errgroup"
 )
 
 type Publisher interface {
@@ -263,48 +262,6 @@ func (d *deployer) CreateDeployment(ctx context.Context, feat *model.Feature, re
 		}
 	}
 	return deployment.ID, nil
-}
-
-func (d *deployer) waitForDeploymentStatuses(ctx context.Context, deploymentsByEnvID map[uuid.UUID]uuid.UUID, timeout time.Duration) error {
-	ctx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-
-	eg, ctx := errgroup.WithContext(ctx)
-
-	for envID, deploymentID := range deploymentsByEnvID {
-		eg.Go(func() error {
-			for {
-				if ctx.Err() != nil {
-					return ctx.Err()
-				}
-
-				status, err := d.querier.LatestStatusForDeploymentInEnvironment(ctx, deploymentsql.LatestStatusForDeploymentInEnvironmentParams{
-					DeploymentID:  deploymentID,
-					EnvironmentID: envID,
-				})
-				if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-					return fmt.Errorf("get latest deployment status for deployment %q in environment %q: %w", deploymentID, envID, err)
-				}
-
-				state := DeploymentStatusState(strings.ToUpper(status))
-
-				switch state {
-				case DeploymentStatusStateDeployed:
-					return nil
-				case DeploymentStatusStateFailed:
-					return fmt.Errorf("deployment %q in environment %q failed", deploymentID, envID)
-				}
-
-				select {
-				case <-ctx.Done():
-					return fmt.Errorf("timeout waiting for deployment %q in environment %q to complete", deploymentID, envID)
-				case <-time.After(5 * time.Second):
-				}
-			}
-		})
-	}
-
-	return eg.Wait()
 }
 
 func (d *deployer) missingDependencies(ctx context.Context, dependencies []string, environmentID uuid.UUID) ([]string, error) {

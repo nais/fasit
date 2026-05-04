@@ -216,10 +216,6 @@ func latestStatusTime(statuses []*deployment.DeploymentStatus) string {
 }
 
 func deploymentTarget(dep *deployment.Deployment) string {
-	if dep.CI {
-		return "CI"
-	}
-
 	labels := dep.Target()
 	if len(labels) == 0 {
 		return "All environments"

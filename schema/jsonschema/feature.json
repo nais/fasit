@@ -42,11 +42,9 @@
 				"additionalProperties": false,
 				"properties": {
 					"from": {
-						"description": "From is the old key name",
 						"type": "string"
 					},
 					"to": {
-						"description": "To is the new key name",
 						"type": "string"
 					}
 				},
