@@ -21,7 +21,6 @@ type Deployment struct {
 	Feature     *model.Feature `json:"feature"`
 	Description *string        `json:"description"`
 	Created     time.Time      `json:"created"`
-	CI          bool           `json:"ci"`
 
 	TargetLabels environment.Labels `json:"-"`
 }
@@ -185,7 +184,6 @@ func deploymentFromSQL(d deploymentsql.Deployment, fd deploymentsql.FeatureDatum
 		Feature:      feature,
 		Description:  d.Description,
 		Created:      d.Created.Time,
-		CI:           d.Ci,
 		TargetLabels: environment.Labels(d.Target),
 	}, nil
 }

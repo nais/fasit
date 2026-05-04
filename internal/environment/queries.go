@@ -96,31 +96,6 @@ func TenantEnvironments(ctx context.Context, onlyReconciled bool) ([]*model.Tena
 	return ret, nil
 }
 
-func ListCIEnvironmentsForTarget(ctx context.Context, labels Labels) ([]*model.TenantEnvironment, error) {
-	envs, err := querier(ctx).ListCIEnvironmentsForTarget(ctx, types.EnvironmentLabels(labels))
-	if err != nil {
-		return nil, err
-	}
-
-	ret := make([]*model.TenantEnvironment, len(envs))
-	for i, e := range envs {
-		ret[i] = &model.TenantEnvironment{
-			Environment: model.Environment{
-				ID:           e.Environment.ID,
-				Name:         e.Environment.Name,
-				CI:           e.Environment.Ci,
-				Description:  e.Environment.Description,
-				Created:      e.Environment.Created.Time,
-				LastModified: e.Environment.LastModified.Time,
-				Kind:         model.EnvironmentKind(e.Environment.Kind),
-			},
-			TenantName: e.TenantName,
-			TenantID:   e.Environment.TenantID,
-		}
-	}
-	return ret, nil
-}
-
 func ListLabels(ctx context.Context, environmentID uuid.UUID) ([]*model.EnvironmentLabel, error) {
 	labels, err := querier(ctx).GetLabels(ctx, environmentID)
 	if err != nil {

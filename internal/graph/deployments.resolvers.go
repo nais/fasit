@@ -18,6 +18,10 @@ func (r *deploymentResolver) Statuses(ctx context.Context, obj *deployment.Deplo
 	return deployment.ListDeploymentStatuses(ctx, obj.ID)
 }
 
+func (r *deploymentResolver) Ci(ctx context.Context, obj *deployment.Deployment) (bool, error) {
+	panic(fmt.Errorf("not implemented: Ci - ci"))
+}
+
 // Deployment is the resolver for the deployment field.
 func (r *deploymentStatusResolver) Deployment(ctx context.Context, obj *deployment.DeploymentStatus) (*deployment.Deployment, error) {
 	return deployment.GetDeployment(ctx, obj.DeploymentID)
@@ -49,13 +53,6 @@ func (r *mutationResolver) CreateDeployment(ctx context.Context, input model.Cre
 		Description: input.Description,
 		Global:      input.Global,
 		Target:      target,
-		CI: struct {
-			Skip bool `json:"skip"`
-			Wait bool `json:"wait"`
-		}{
-			Skip: true,
-			Wait: true,
-		},
 	})
 	if err != nil {
 		return uuid.Nil, fmt.Errorf("create deployment: %w", err)

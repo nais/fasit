@@ -17,17 +17,15 @@ INSERT INTO deployments(
 	version,
 	target,
 	gh_ref,
-	description,
-	ci)
+	description)
 VALUES (
 	$1,
 	$2,
 	$3,
 	$4,
-	$5,
-	$6)
+	$5)
 RETURNING
-	id, feature_name, version, target, created, gh_ref, description, ci
+	id, feature_name, version, target, created, gh_ref, description
 `
 
 type CreateDeploymentParams struct {
@@ -36,7 +34,6 @@ type CreateDeploymentParams struct {
 	Target      types.EnvironmentLabels
 	GhRef       []byte
 	Description *string
-	Ci          bool
 }
 
 func (q *Queries) CreateDeployment(ctx context.Context, arg CreateDeploymentParams) (Deployment, error) {
@@ -46,7 +43,6 @@ func (q *Queries) CreateDeployment(ctx context.Context, arg CreateDeploymentPara
 		arg.Target,
 		arg.GhRef,
 		arg.Description,
-		arg.Ci,
 	)
 	var i Deployment
 	err := row.Scan(
@@ -57,7 +53,6 @@ func (q *Queries) CreateDeployment(ctx context.Context, arg CreateDeploymentPara
 		&i.Created,
 		&i.GhRef,
 		&i.Description,
-		&i.Ci,
 	)
 	return i, err
 }
@@ -76,17 +71,15 @@ const deleteDeploymentsByFeatureAndTarget = `-- name: DeleteDeploymentsByFeature
 DELETE FROM deployments
 WHERE feature_name = $1
 	AND target = $2
-	AND ci = $3
 `
 
 type DeleteDeploymentsByFeatureAndTargetParams struct {
 	FeatureName string
 	Target      types.EnvironmentLabels
-	Ci          bool
 }
 
 func (q *Queries) DeleteDeploymentsByFeatureAndTarget(ctx context.Context, arg DeleteDeploymentsByFeatureAndTargetParams) error {
-	_, err := q.db.Exec(ctx, deleteDeploymentsByFeatureAndTarget, arg.FeatureName, arg.Target, arg.Ci)
+	_, err := q.db.Exec(ctx, deleteDeploymentsByFeatureAndTarget, arg.FeatureName, arg.Target)
 	return err
 }
 
@@ -155,7 +148,7 @@ func (q *Queries) FeatureEnabled(ctx context.Context, arg FeatureEnabledParams) 
 
 const getDeployment = `-- name: GetDeployment :one
 SELECT
-	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description, d.ci,
+	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description,
 	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.rename
 FROM
 	deployments d
@@ -181,7 +174,6 @@ func (q *Queries) GetDeployment(ctx context.Context, id uuid.UUID) (GetDeploymen
 		&i.Deployment.Created,
 		&i.Deployment.GhRef,
 		&i.Deployment.Description,
-		&i.Deployment.Ci,
 		&i.FeatureDatum.Name,
 		&i.FeatureDatum.Version,
 		&i.FeatureDatum.Chart,
@@ -341,7 +333,7 @@ func (q *Queries) ListDeploymentStatuses(ctx context.Context, deploymentID uuid.
 
 const listDeployments = `-- name: ListDeployments :many
 SELECT
-	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description, d.ci,
+	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description,
 	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.rename
 FROM
 	deployments d
@@ -385,7 +377,6 @@ func (q *Queries) ListDeployments(ctx context.Context) ([]ListDeploymentsRow, er
 			&i.Deployment.Created,
 			&i.Deployment.GhRef,
 			&i.Deployment.Description,
-			&i.Deployment.Ci,
 			&i.FeatureDatum.Name,
 			&i.FeatureDatum.Version,
 			&i.FeatureDatum.Chart,
@@ -411,7 +402,7 @@ func (q *Queries) ListDeployments(ctx context.Context) ([]ListDeploymentsRow, er
 
 const listDeploymentsByFeature = `-- name: ListDeploymentsByFeature :many
 SELECT
-	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description, d.ci,
+	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description,
 	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.rename
 FROM
 	deployments d
@@ -445,7 +436,6 @@ func (q *Queries) ListDeploymentsByFeature(ctx context.Context, featureName stri
 			&i.Deployment.Created,
 			&i.Deployment.GhRef,
 			&i.Deployment.Description,
-			&i.Deployment.Ci,
 			&i.FeatureDatum.Name,
 			&i.FeatureDatum.Version,
 			&i.FeatureDatum.Chart,
@@ -471,7 +461,7 @@ func (q *Queries) ListDeploymentsByFeature(ctx context.Context, featureName stri
 
 const listDeploymentsToReconcile = `-- name: ListDeploymentsToReconcile :many
 SELECT DISTINCT ON (d.feature_name, d.target)
-	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description, d.ci,
+	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description,
 	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.rename
 FROM
 	deployments d
@@ -511,7 +501,6 @@ func (q *Queries) ListDeploymentsToReconcile(ctx context.Context, environmentID 
 			&i.Deployment.Created,
 			&i.Deployment.GhRef,
 			&i.Deployment.Description,
-			&i.Deployment.Ci,
 			&i.FeatureDatum.Name,
 			&i.FeatureDatum.Version,
 			&i.FeatureDatum.Chart,

@@ -114,7 +114,7 @@ type ComplexityRoot struct {
 	}
 
 	Deployment struct {
-		CI          func(childComplexity int) int
+		Ci          func(childComplexity int) int
 		Created     func(childComplexity int) int
 		Description func(childComplexity int) int
 		Feature     func(childComplexity int) int
@@ -402,6 +402,8 @@ type CostSeriesResolver interface {
 }
 type DeploymentResolver interface {
 	Statuses(ctx context.Context, obj *deployment.Deployment) ([]*deployment.DeploymentStatus, error)
+
+	Ci(ctx context.Context, obj *deployment.Deployment) (bool, error)
 }
 type DeploymentStatusResolver interface {
 	Deployment(ctx context.Context, obj *deployment.DeploymentStatus) (*deployment.Deployment, error)
@@ -695,11 +697,11 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		return e.ComplexityRoot.Dependency.AnyOf(childComplexity), true
 
 	case "Deployment.ci":
-		if e.ComplexityRoot.Deployment.CI == nil {
+		if e.ComplexityRoot.Deployment.Ci == nil {
 			break
 		}
 
-		return e.ComplexityRoot.Deployment.CI(childComplexity), true
+		return e.ComplexityRoot.Deployment.Ci(childComplexity), true
 	case "Deployment.created":
 		if e.ComplexityRoot.Deployment.Created == nil {
 			break
@@ -4264,7 +4266,7 @@ func (ec *executionContext) _Deployment_ci(ctx context.Context, field graphql.Co
 		field,
 		ec.fieldContext_Deployment_ci,
 		func(ctx context.Context) (any, error) {
-			return obj.CI, nil
+			return ec.Resolvers.Deployment().Ci(ctx, obj)
 		},
 		nil,
 		ec.marshalNBoolean2bool,
@@ -4277,8 +4279,8 @@ func (ec *executionContext) fieldContext_Deployment_ci(_ context.Context, field 
 	fc = &graphql.FieldContext{
 		Object:     "Deployment",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Boolean does not have child fields")
 		},
@@ -13706,10 +13708,41 @@ func (ec *executionContext) _Deployment(ctx context.Context, sel ast.SelectionSe
 		case "description":
 			out.Values[i] = ec._Deployment_description(ctx, field, obj)
 		case "ci":
-			out.Values[i] = ec._Deployment_ci(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				atomic.AddUint32(&out.Invalids, 1)
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Deployment_ci(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
 			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

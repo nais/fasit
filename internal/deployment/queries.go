@@ -52,31 +52,12 @@ func CreateDeployment(ctx context.Context, req Request) (uuid.UUID, error) {
 		return uuid.Nil, fmt.Errorf("no source url found in Chart.yaml")
 	}
 
-	if req.CI.Wait {
-		if !req.CI.Skip {
-			if err := fromContext(ctx).deployer.deployToCI(ctx, feat, req, 5*time.Minute); err != nil {
-				return uuid.Nil, fmt.Errorf("deploy to ci: %w", err)
-			}
-		}
-
-		return fromContext(ctx).deployer.CreateDeployment(ctx, feat, req, false)
+	id, err := fromContext(ctx).deployer.CreateDeployment(ctx, feat, req)
+	if err != nil {
+		return uuid.Nil, err
 	}
 
-	go func() {
-		log := GetManager(ctx).log
-
-		if !req.CI.Skip {
-			if err := fromContext(ctx).deployer.deployToCI(ctx, feat, req, 1*time.Hour); err != nil {
-				log.WithError(err).Error("deploy to ci")
-			}
-		}
-
-		if _, err := fromContext(ctx).deployer.CreateDeployment(ctx, feat, req, false); err != nil {
-			log.WithError(err).Error("create deployment")
-		}
-	}()
-
-	return uuid.Nil, nil
+	return id, nil
 }
 
 func GetDeployment(ctx context.Context, id uuid.UUID) (*Deployment, error) {
@@ -183,11 +164,10 @@ func DeleteDeployment(ctx context.Context, deploymentID uuid.UUID) error {
 	return nil
 }
 
-func DeleteDeploymentsByFeatureAndTarget(ctx context.Context, featureName string, target types.EnvironmentLabels, ci bool) error {
+func DeleteDeploymentsByFeatureAndTarget(ctx context.Context, featureName string, target types.EnvironmentLabels) error {
 	err := fromContext(ctx).querier.DeleteDeploymentsByFeatureAndTarget(ctx, deploymentsql.DeleteDeploymentsByFeatureAndTargetParams{
 		FeatureName: featureName,
 		Target:      target,
-		Ci:          ci,
 	})
 	if err != nil {
 		return err
