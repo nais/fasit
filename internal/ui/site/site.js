@@ -43,3 +43,15 @@ document.addEventListener("click", function (e) {
 
   rows.forEach(function (r) { tbody.appendChild(r); });
 });
+
+// Expand/collapse all <details> matching [data-expand-all="<class>"]
+document.addEventListener("click", function (e) {
+  var btn = e.target.closest("[data-expand-all]");
+  if (!btn) return;
+  var cls = btn.getAttribute("data-expand-all");
+  var details = document.querySelectorAll("details." + cls);
+  if (!details.length) return;
+  var anyClosed = Array.from(details).some(function (d) { return !d.open; });
+  details.forEach(function (d) { d.open = anyClosed; });
+  btn.textContent = anyClosed ? "Collapse all" : "Expand all";
+});

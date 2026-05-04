@@ -600,6 +600,12 @@ nav .theme-toggle:hover {
   border-color: var(--btn-hover-border);
 }
 
+.deployments-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .playground-controls {
   display: flex;
   gap: 1.5rem;

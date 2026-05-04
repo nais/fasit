@@ -383,7 +383,16 @@ func deploymentsPage(groups []featureGroup) g.Node {
 				h.Class("card"),
 				h.Div(
 					h.Class("card-body"),
-					h.H1(g.Text("Deployments")),
+					h.Div(
+						h.Class("deployments-header"),
+						h.H1(g.Text("Deployments")),
+						g.If(len(groups) > 0, h.Button(
+							h.Type("button"),
+							h.Class("btn-small"),
+							g.Attr("data-expand-all", "deployment-group"),
+							g.Text("Expand all"),
+						)),
+					),
 					deploymentsContent(groups),
 				),
 			),
