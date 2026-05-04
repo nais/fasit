@@ -21,7 +21,7 @@ type Summary struct {
 
 func versionCell(s Summary) g.Node {
 	if s.DeploymentID != "" {
-		return h.A(h.Href("/ui/deployments/"+s.DeploymentID), g.Text(s.Version))
+		return h.A(h.Href("/deployments/"+s.DeploymentID), g.Text(s.Version))
 	}
 
 	return g.Text(s.Version)

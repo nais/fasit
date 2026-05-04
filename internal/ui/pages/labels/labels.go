@@ -148,12 +148,12 @@ func filterURL(current map[string]string, addKey, addValue string) string {
 	for _, k := range keys {
 		params = append(params, "label="+k+":"+merged[k])
 	}
-	return "/ui/labels?" + strings.Join(params, "&")
+	return "/labels?" + strings.Join(params, "&")
 }
 
 func removeFilterURL(current map[string]string, removeKey string) string {
 	if len(current) <= 1 {
-		return "/ui/labels"
+		return "/labels"
 	}
 	params := []string{}
 	keys := make([]string, 0, len(current))
@@ -166,7 +166,7 @@ func removeFilterURL(current map[string]string, removeKey string) string {
 			params = append(params, "label="+k+":"+current[k])
 		}
 	}
-	return "/ui/labels?" + strings.Join(params, "&")
+	return "/labels?" + strings.Join(params, "&")
 }
 
 func targetJSON(filters map[string]string) string {
@@ -221,7 +221,7 @@ func activeFiltersSection(filters map[string]string) g.Node {
 	return h.Div(h.Class("labels-active-filters"),
 		h.Span(h.Class("filter-label"), g.Text("Active filters: ")),
 		g.Group(tags),
-		h.A(h.Href("/ui/labels"), h.Class("btn-small"), g.Text("Clear all")),
+		h.A(h.Href("/labels"), h.Class("btn-small"), g.Text("Clear all")),
 	)
 }
 

@@ -183,7 +183,7 @@ func featurePageContent(page *FeaturePage) g.Node {
 			components.Breadcrumbs(page.Breadcrumbs),
 			h.Div(h.Class("card"),
 				h.Div(h.Class("card-body"),
-					h.P(g.Text("Global feature page: "), h.A(h.Href("/ui/features/"+page.Feature.Name), g.Text(page.Feature.Name))),
+					h.P(g.Text("Global feature page: "), h.A(h.Href("/features/"+page.Feature.Name), g.Text(page.Feature.Name))),
 					components.TabsNav(page.ActiveTab, envFeatureTabs(page.TenantSlug, page.Environment.Name, page.Feature.Name, page.Feature.HasDeployments)),
 					tabContent,
 				),
@@ -404,7 +404,7 @@ func deploymentsTab(page *FeaturePage) g.Node {
 			)),
 			h.TBody(g.Group(g.Map(page.Deployments, func(dep EnvDeploymentItem) g.Node {
 				return h.Tr(
-					h.Td(h.A(h.Href("/ui/deployments/"+dep.ID), g.Text(dep.ID[:8]))),
+					h.Td(h.A(h.Href("/deployments/"+dep.ID), g.Text(dep.ID[:8]))),
 					h.Td(g.Text(dep.Version)),
 					h.Td(rolloutStatus(dep.Status)),
 					h.Td(labelPills(dep.TargetLabels)),
@@ -432,7 +432,7 @@ func labelPills(labels map[string]string) g.Node {
 }
 
 func rolloutVersionCell(r RolloutItem) g.Node {
-	return h.A(h.Href("/ui/rollouts/"+r.FeatureName+"/"+r.Version), g.Text(r.Version))
+	return h.A(h.Href("/rollouts/"+r.FeatureName+"/"+r.Version), g.Text(r.Version))
 }
 
 func auditTab() g.Node {
@@ -548,5 +548,5 @@ func featureBasePath(r *http.Request) string {
 }
 
 func featureBasePathValues(tenant, env, feature string) string {
-	return "/ui/tenants/" + tenant + "/envs/" + env + "/" + feature
+	return "/tenants/" + tenant + "/envs/" + env + "/" + feature
 }

@@ -85,7 +85,7 @@ func rolloutsContent(rollouts []Summary) g.Node {
 		)),
 		h.TBody(g.Group(g.Map(rollouts, func(rollout Summary) g.Node {
 			return h.Tr(
-				h.Td(h.A(h.Href("/ui/features/"+rollout.FeatureName), g.Text(rollout.FeatureName))),
+				h.Td(h.A(h.Href("/features/"+rollout.FeatureName), g.Text(rollout.FeatureName))),
 				h.Td(versionCell(rollout)),
 				h.Td(statusCell(rollout)),
 				h.Td(g.Text(rollout.Created)),
@@ -96,7 +96,7 @@ func rolloutsContent(rollouts []Summary) g.Node {
 }
 
 func versionCell(r Summary) g.Node {
-	return h.A(h.Href("/ui/rollouts/"+r.FeatureName+"/"+r.Version), g.Text(r.Version))
+	return h.A(h.Href("/rollouts/"+r.FeatureName+"/"+r.Version), g.Text(r.Version))
 }
 
 func statusCell(rollout Summary) g.Node {

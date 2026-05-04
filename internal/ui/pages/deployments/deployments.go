@@ -154,7 +154,7 @@ func deploymentGroup(fg featureGroup, open bool) g.Node {
 		g.Group(detailsAttrs),
 		h.Summary(
 			h.Class("deployment-group-summary"),
-			h.A(h.Href("/ui/features/"+fg.FeatureName), g.Text(fg.FeatureName)),
+			h.A(h.Href("/features/"+fg.FeatureName), g.Text(fg.FeatureName)),
 			h.Span(h.Class("dep-group-time"), g.Text(formatTime(fg.LatestTime))),
 		),
 		h.Div(h.Class("deployment-group-body"), g.Group(rows)),
