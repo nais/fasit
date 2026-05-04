@@ -24,8 +24,7 @@ type deploymentInput struct {
 type deployments []deploymentInput
 
 func NewSeeder() *Seeder {
-	return &Seeder{
-	}
+	return &Seeder{}
 }
 
 func (s *Seeder) AddDeployment(name, version string, target environment.Labels, deps ...string) *Seeder {

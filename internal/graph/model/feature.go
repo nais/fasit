@@ -41,7 +41,7 @@ type Feature struct {
 
 type Rename struct {
 	From string `json:"from"`
-	To string `json:"to"`
+	To   string `json:"to"`
 }
 
 type FeatureYAML struct {
