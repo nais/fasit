@@ -41,13 +41,13 @@ make run naisd
 ./hack/local_rollout.sh <chart> <version>
 ```
 
-For the rollout to progress, you need to have naisd running, either with `make local-naisd` or `make local-naisd-failing`.
+For the rollout to progress, you need to have naisd running, either with `mise run naisd`.
 
 You will also need to update `test-partner` `dev` to be a CI environment.
 
 ## Testing
 
-Run all tests in the project with `make test`.
+Run all tests in the project with `mise run test`.
 
 ### Integration tests
 
