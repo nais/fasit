@@ -70,6 +70,8 @@ Fasit is released whenever a new push to main is done.
 
 The action will build a new image, push it to GAR and then deploy it using helm.
 
+Changes in the chart require manually updating the Helm-command in the workflow.
+
 ## naisd
 
 naisd is released by pushing a tag in the format `naisd-<version>`.
