@@ -93,64 +93,38 @@ func featureDeploymentCounts(ctx context.Context, repo database.Repo) (failed, p
 	failed = map[string]int{}
 	pending = map[string]int{}
 
-	deployments, err := deployment.ListDeployments(ctx)
-	if err != nil {
-		return failed, pending
-	}
-
-	for _, dep := range deployments {
-		statuses, err := deployment.ListDeploymentStatuses(ctx, dep.ID)
-		if err != nil {
-			continue
-		}
-		hasFailed, hasPending := classifyStatuses(statuses)
-		if hasFailed {
-			failed[dep.Feature.Name]++
-		}
-		if hasPending {
-			pending[dep.Feature.Name]++
-		}
-	}
-
 	features, err := featurepkg.Features(ctx)
 	if err != nil {
 		return failed, pending
 	}
 	for _, feat := range features {
 		if feat.HasDeployments {
-			continue
-		}
-		rollouts, err := repo.RolloutsForFeature(ctx, feat.Name)
-		if err != nil {
-			continue
-		}
-		for _, ro := range rollouts {
-			switch ro.Status {
-			case model.RolloutStatusFailed:
-				failed[feat.Name]++
-			case model.RolloutStatusPending, model.RolloutStatusCreated:
-				pending[feat.Name]++
+			for _, env := range featureEnvironmentStatuses(ctx, repo, feat) {
+				switch strings.ToUpper(env.StatusText) {
+				case "FAILED":
+					failed[feat.Name]++
+				case "PENDING", "CREATED":
+					pending[feat.Name]++
+				}
+			}
+		} else {
+			rollouts, err := repo.RolloutsForFeature(ctx, feat.Name)
+			if err != nil {
+				continue
+			}
+			for _, ro := range rollouts {
+				switch ro.Status {
+				case model.RolloutStatusFailed:
+					failed[feat.Name]++
+				case model.RolloutStatusPending, model.RolloutStatusCreated:
+					pending[feat.Name]++
+				}
 			}
 		}
 	}
 	return failed, pending
 }
 
-// classifyStatuses reports whether a deployment has any failed and/or any
-// pending environment statuses. A single deployment can be both failed and
-// pending simultaneously (e.g. some envs failed, others still rolling out),
-// so both flags can be true.
-func classifyStatuses(statuses []*deployment.DeploymentStatus) (hasFailed, hasPending bool) {
-	for _, s := range statuses {
-		switch s.State {
-		case deployment.DeploymentStatusStateFailed:
-			hasFailed = true
-		case deployment.DeploymentStatusStatePending, deployment.DeploymentStatusStateCreated:
-			hasPending = true
-		}
-	}
-	return hasFailed, hasPending
-}
 
 func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
