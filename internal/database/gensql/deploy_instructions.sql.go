@@ -10,10 +10,11 @@ import (
 )
 
 const deployInstructionStatusCounts = `-- name: DeployInstructionStatusCounts :many
-WITH latest AS (
+WITH di_latest AS (
 	SELECT DISTINCT ON (feature_name,
 		environment_id)
 		feature_name,
+		environment_id,
 		status
 	FROM
 		deploy_instructions
@@ -21,18 +22,49 @@ WITH latest AS (
 		feature_name,
 		environment_id,
 		created DESC
+),
+ds_latest AS (
+	SELECT
+		d.feature_name,
+		ds.environment_id,
+		ds.status
+	FROM
+		deployment_statuses ds
+		JOIN deployments d ON d.id = ds.deployment_id
+	WHERE
+		NOT EXISTS (
+			SELECT
+				1
+			FROM
+				di_latest di
+			WHERE
+				di.feature_name = d.feature_name
+				AND di.environment_id = ds.environment_id)
+),
+combined AS (
+	SELECT
+		feature_name,
+		status
+	FROM
+		di_latest
+	UNION ALL
+	SELECT
+		feature_name,
+		status
+	FROM
+		ds_latest
 )
 SELECT
 	feature_name,
 	COUNT(*) FILTER (WHERE status = 'failed') AS failed_count,
 	COUNT(*) FILTER (WHERE status IN ('pending', 'created')) AS pending_count
 FROM
-	latest
+	combined
 GROUP BY
 	feature_name
 HAVING
-	COUNT(*) FILTER (WHERE status = 'failed') > 0
-	OR COUNT(*) FILTER (WHERE status IN ('pending', 'created')) > 0
+	COUNT(*) FILTER (WHERE status IN ('failed', 'FAILED')) > 0
+	OR COUNT(*) FILTER (WHERE status IN ('pending', 'created', 'PENDING', 'CREATED')) > 0
 `
 
 type DeployInstructionStatusCountsRow struct {
@@ -41,9 +73,10 @@ type DeployInstructionStatusCountsRow struct {
 	PendingCount int64
 }
 
-// For each feature, count how many environments have a latest deploy
-// instruction in failed or pending/created state. Used by the features
-// sidebar to show badge counts without per-feature queries.
+// For each feature, count how many environments have a failed or
+// pending status. Merges deploy_instructions (naisd responded) with
+// deployment_statuses (naisd may be unreachable) so that pending
+// deployments where no deploy instruction was ever created are included.
 func (q *Queries) DeployInstructionStatusCounts(ctx context.Context) ([]DeployInstructionStatusCountsRow, error) {
 	rows, err := q.db.Query(ctx, deployInstructionStatusCounts)
 	if err != nil {

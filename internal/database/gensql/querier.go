@@ -10,9 +10,10 @@ import (
 )
 
 type Querier interface {
-	// For each feature, count how many environments have a latest deploy
-	// instruction in failed or pending/created state. Used by the features
-	// sidebar to show badge counts without per-feature queries.
+	// For each feature, count how many environments have a failed or
+	// pending status. Merges deploy_instructions (naisd responded) with
+	// deployment_statuses (naisd may be unreachable) so that pending
+	// deployments where no deploy instruction was ever created are included.
 	DeployInstructionStatusCounts(ctx context.Context) ([]DeployInstructionStatusCountsRow, error)
 	DeployInstructionsByID(ctx context.Context, id uuid.UUID) (DeployInstruction, error)
 	DeployInstructionsForFeature(ctx context.Context, arg DeployInstructionsForFeatureParams) ([]DeployInstruction, error)
