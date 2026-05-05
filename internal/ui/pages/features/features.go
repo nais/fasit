@@ -77,19 +77,19 @@ type RolloutItem struct {
 	Target      string
 }
 
-func ListHandler(renderPage RenderPage, _ database.Repo) http.HandlerFunc {
+func ListHandler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		features, err := featurepkg.Features(r.Context())
 		if err != nil {
 			http.Error(w, "Failed to load features", http.StatusInternalServerError)
 			return
 		}
-		failed, pending := featureDeploymentCounts(r.Context())
+		failed, pending := featureDeploymentCounts(r.Context(), repo)
 		renderPage(w, r, layout.Props{Title: "Features", CurrentPage: components.PageFeatures, Content: listPage(toFeatureNavs(features, failed, pending))})
 	}
 }
 
-func featureDeploymentCounts(ctx context.Context) (failed, pending map[string]int) {
+func featureDeploymentCounts(ctx context.Context, repo database.Repo) (failed, pending map[string]int) {
 	failed = map[string]int{}
 	pending = map[string]int{}
 
@@ -109,6 +109,28 @@ func featureDeploymentCounts(ctx context.Context) (failed, pending map[string]in
 		}
 		if hasPending {
 			pending[dep.Feature.Name]++
+		}
+	}
+
+	features, err := featurepkg.Features(ctx)
+	if err != nil {
+		return failed, pending
+	}
+	for _, feat := range features {
+		if feat.HasDeployments {
+			continue
+		}
+		rollouts, err := repo.RolloutsForFeature(ctx, feat.Name)
+		if err != nil {
+			continue
+		}
+		for _, ro := range rollouts {
+			switch ro.Status {
+			case model.RolloutStatusFailed:
+				failed[feat.Name]++
+			case model.RolloutStatusPending, model.RolloutStatusCreated:
+				pending[feat.Name]++
+			}
 		}
 	}
 	return failed, pending
@@ -419,7 +441,7 @@ func loadFeatureData(r *http.Request, repo database.Repo) (*DetailPage, error) {
 	if err != nil {
 		return nil, err
 	}
-	failed, pending := featureDeploymentCounts(r.Context())
+	failed, pending := featureDeploymentCounts(r.Context(), repo)
 	data := &DetailPage{Breadcrumbs: []breadcrumb.Crumb{breadcrumb.Features(), breadcrumb.Feature(featureName)}, Features: toFeatureNavs(features, failed, pending), CurrentFeature: &Feature{Feature: feature, Config: featureConfigItems(feature)}}
 	if feature.HasDeployments {
 		data.Environments = featureEnvironmentStatuses(r.Context(), repo, feature)
@@ -728,6 +750,9 @@ func toFeatureNavs(features []*model.Feature, failedCounts, pendingCounts map[st
 			PendingCount: pendingCounts[feature.Name],
 		})
 	}
+	sort.Slice(ret, func(i, j int) bool {
+		return ret[i].Name < ret[j].Name
+	})
 	return ret
 }
 

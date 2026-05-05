@@ -109,20 +109,35 @@ func toEnvironmentNavs(environments []*model.Environment) []view.EnvironmentNav 
 }
 
 func featureNavs(ctx context.Context, repo database.Repo, env *model.Environment) ([]view.FeatureNav, []view.FeatureNav, error) {
-	features, err := featurepkg.FeaturesForKind(ctx, env.Kind, env.CI)
+	// Use the same approach as the GraphQL FeatureStates resolver:
+	// merge deployment features with feature states (which include rollouts).
+	deploymentFeatures, err := deployment.ListEnvironmentFeatures(ctx, env.ID)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	allFeatures := make([]view.FeatureNav, 0, len(features))
-	enabledFeatures := make([]view.FeatureNav, 0, len(features))
-	for _, feat := range features {
-		state, err := featurepkg.FeatureStateGet(ctx, env.ID, feat.Name)
-		if err != nil {
-			return nil, nil, err
+	seen := make(map[string]bool, len(deploymentFeatures))
+	var states []*model.FeatureState
+	for _, f := range deploymentFeatures {
+		seen[f.FeatureName] = true
+		states = append(states, f)
+	}
+
+	featureStates, err := featurepkg.FeatureStatesGet(ctx, env.ID)
+	if err != nil {
+		return nil, nil, err
+	}
+	for _, state := range featureStates {
+		if !seen[state.FeatureName] {
+			states = append(states, state)
 		}
-		nav := view.FeatureNav{Name: feat.Name, Enabled: state.Enabled}
-		failed, pending := featureStatusForEnv(ctx, repo, env.ID, feat.Name)
+	}
+
+	allFeatures := make([]view.FeatureNav, 0, len(states))
+	enabledFeatures := make([]view.FeatureNav, 0, len(states))
+	for _, state := range states {
+		nav := view.FeatureNav{Name: state.FeatureName, Enabled: state.Enabled}
+		failed, pending := featureStatusForEnv(ctx, repo, env.ID, state.FeatureName)
 		if failed {
 			nav.FailedCount = 1
 		} else if pending {
@@ -131,6 +146,12 @@ func featureNavs(ctx context.Context, repo database.Repo, env *model.Environment
 		allFeatures = append(allFeatures, nav)
 		enabledFeatures = append(enabledFeatures, nav)
 	}
+	sort.Slice(allFeatures, func(i, j int) bool {
+		return allFeatures[i].Name < allFeatures[j].Name
+	})
+	sort.Slice(enabledFeatures, func(i, j int) bool {
+		return enabledFeatures[i].Name < enabledFeatures[j].Name
+	})
 	return allFeatures, enabledFeatures, nil
 }
 

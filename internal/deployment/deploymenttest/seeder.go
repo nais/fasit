@@ -15,13 +15,21 @@ type Seeder struct {
 }
 
 type deploymentInput struct {
-	FeatureName  string
-	Version      string
-	Target       environment.Labels
-	Dependencies []string
+	FeatureName      string
+	Version          string
+	Target           environment.Labels
+	Dependencies     []string
+	EnvironmentKinds []model.EnvironmentKind
 }
 
 type deployments []deploymentInput
+
+func (d deploymentInput) kinds() []model.EnvironmentKind {
+	if len(d.EnvironmentKinds) > 0 {
+		return d.EnvironmentKinds
+	}
+	return []model.EnvironmentKind{"tenant", "management"}
+}
 
 func NewSeeder() *Seeder {
 	return &Seeder{}
@@ -33,6 +41,17 @@ func (s *Seeder) AddDeployment(name, version string, target environment.Labels, 
 		Version:      version,
 		Target:       target,
 		Dependencies: deps,
+	})
+	return s
+}
+
+func (s *Seeder) AddDeploymentWithKinds(name, version string, target environment.Labels, kinds []model.EnvironmentKind, deps ...string) *Seeder {
+	s.deployments = append(s.deployments, deploymentInput{
+		FeatureName:      name,
+		Version:          version,
+		Target:           target,
+		Dependencies:     deps,
+		EnvironmentKinds: kinds,
 	})
 	return s
 }
@@ -83,7 +102,7 @@ func (s *Seeder) ChartDownloader() deployment.ChartDownloaderFunc {
 					Chart:   u,
 					FeatureYAML: model.FeatureYAML{
 						Dependencies:     deps,
-						EnvironmentKinds: []model.EnvironmentKind{"tenant", "management"},
+						EnvironmentKinds: deploy.kinds(),
 					},
 					Source: "https://example.com/" + deploy.FeatureName,
 				}, nil
