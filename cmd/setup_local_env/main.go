@@ -215,7 +215,7 @@ func main() {
 	setStatus(1, "dev-nais", "dev", model.RolloutStatusDeployed, "received status from naisd.")
 
 	setStatus(2, "test-partner", "management", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(2, "nav", "management", model.RolloutStatusDeployed, "received status from naisd.")
+	setStatus(2, "nav", "management", model.RolloutStatusFailed, "helm install failed: ImagePullBackOff")
 	setStatus(2, "dev-nais", "management", model.RolloutStatusDeployed, "received status from naisd.")
 
 	setStatus(3, "test-partner", "dev", model.RolloutStatusDeployed, "received status from naisd.")
