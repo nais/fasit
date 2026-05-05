@@ -145,7 +145,17 @@ func detailContent(data *DetailPage) g.Node {
 	if data.CurrentFeature.HasDeployments {
 		return statusTab(data)
 	}
-	return rolloutsTab(data)
+	var nodes []g.Node
+	if len(data.Environments) > 0 {
+		nodes = append(nodes, envTable(data.Environments, data.CurrentFeature.Name))
+	}
+	if len(data.Rollouts) > 0 {
+		nodes = append(nodes, h.H2(g.Text("Rollout History")), rolloutsTable(data))
+	}
+	if len(nodes) == 0 {
+		return h.P(g.Text("No environments or rollouts found."))
+	}
+	return g.Group(nodes)
 }
 
 func statusTab(data *DetailPage) g.Node {
@@ -342,10 +352,7 @@ func lastDeployedCell(t time.Time) g.Node {
 	return h.Td(h.Title(view.FormatTime(t)), g.Text(view.RelativeTime(t)))
 }
 
-func rolloutsTab(data *DetailPage) g.Node {
-	if len(data.Rollouts) == 0 {
-		return h.P(g.Text("No rollouts yet."))
-	}
+func rolloutsTable(data *DetailPage) g.Node {
 	return h.Table(h.Class("table sortable"), h.THead(h.Tr(h.Th(g.Text("Version")), h.Th(g.Text("Status")), h.Th(g.Text("Created")), h.Th(g.Text("Completed")))), h.TBody(g.Group(g.Map(data.Rollouts, func(rollout RolloutItem) g.Node {
 		return h.Tr(h.Td(rolloutVersionCell(rollout)), h.Td(rolloutStatus(rollout.Status)), h.Td(g.Text(rollout.Created)), h.Td(g.Text(completedDate(rollout.Completed))))
 	}))))
@@ -416,6 +423,7 @@ func loadFeatureData(r *http.Request, repo database.Repo) (*DetailPage, error) {
 	if feature.HasDeployments {
 		data.Environments = featureEnvironmentStatuses(r.Context(), repo, feature)
 	} else {
+		data.Environments = featureEnvironmentReleaseStatuses(r.Context(), repo, feature)
 		data.Rollouts = featureRollouts(r.Context(), repo, featureName)
 	}
 	return data, nil
@@ -592,9 +600,6 @@ func featureEnvironmentReleaseStatuses(ctx context.Context, repo database.Repo, 
 			}
 			state, err := featurepkg.FeatureStateGet(ctx, env.ID, feature.Name)
 			if err != nil {
-				continue
-			}
-			if !state.Enabled {
 				continue
 			}
 
