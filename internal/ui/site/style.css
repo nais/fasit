@@ -1,8 +1,8 @@
 :root {
   --bg-page: #1a1a1a;
   --bg-surface: #222;
-  --bg-surface-hover: #2a2a2a;
-  --bg-elevated: #252525;
+  --bg-surface-hover: #2e2e2e;
+  --bg-elevated: #282828;
   --bg-inset: #111;
   --bg-dash: #1e1e1e;
 
@@ -10,13 +10,13 @@
   --text-heading: #fff;
   --text-secondary: #b8b8b8;
   --text-muted: #a8a8a8;
-  --text-faint: #8a8a8a;
-  --text-faintest: #777;
+  --text-faint: #999;
+  --text-faintest: #888;
 
-  --border: #333;
-  --border-subtle: #2a2a2a;
-  --border-strong: #444;
-  --border-hover: #383838;
+  --border: #3a3a3a;
+  --border-subtle: #333;
+  --border-strong: #4a4a4a;
+  --border-hover: #444;
 
   --accent: #5B9FE6;
   --accent-bg: #163554;
@@ -54,8 +54,8 @@
   --text-heading: #111;
   --text-secondary: #4a4a4a;
   --text-muted: #5e5e5e;
-  --text-faint: #6b6b6b;
-  --text-faintest: #777;
+  --text-faint: #5e5e5e;
+  --text-faintest: #666;
 
   --border: #ddd;
   --border-subtle: #e8e8e8;
