@@ -11,6 +11,7 @@ import (
 	"cloud.google.com/go/pubsub/v2"
 	"cloud.google.com/go/pubsub/v2/apiv1/pubsubpb"
 	"github.com/google/uuid"
+	"github.com/nais/fasit/internal/auth"
 	"github.com/nais/fasit/internal/contextloader"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/deployment"
@@ -111,6 +112,9 @@ func main() {
 		panic(err)
 	}
 	ctx = loadContext(ctx)
+	// Identify the seeder as a system actor so audit log entries don't warn
+	// about an "unknown actor" for every feature_state we create below.
+	ctx = auth.SetEmail(ctx, "setup_local_env")
 
 	// Create tenants and environments first (needed for deployment status FKs).
 	for tenantName, environments := range envs {
@@ -249,6 +253,22 @@ func main() {
 	}
 
 	for _, r := range rollouts {
+		feat := model.Feature{
+			Name:    r.name,
+			Version: r.version,
+			Chart:   "oci://" + r.name,
+			Source:  "https://example.com/" + r.name,
+			FeatureYAML: model.FeatureYAML{
+				EnvironmentKinds: []model.EnvironmentKind{"tenant", "management"},
+			},
+		}
+		if err := feature.FeatureDataCreate(ctx, feat, nil); err != nil {
+			if !strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+				log.WithError(err).Warnf("failed to seed feature_data for %s %s", r.name, r.version)
+				continue
+			}
+		}
+
 		_, err := repo.RolloutCreate(ctx, r.name, r.version, &model.GHRef{Owner: "nais", Repo: r.name, Ref: r.ref})
 		if err != nil {
 			log.WithError(err).Warnf("failed to create rollout for %s %s", r.name, r.version)
