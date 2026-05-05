@@ -233,7 +233,7 @@ func deploymentStatusTable(groups []deploymentGroup, featureName string) g.Node 
 	for _, group := range groups {
 		rows := []g.Node{
 			h.Tr(h.Class("deployment-group-row"),
-				h.Td(g.Attr("colspan", "6"),
+				h.Td(g.Attr("colspan", "7"),
 					h.Div(h.Class("deployment-group-header"),
 						h.A(h.Href("/deployments/"+group.DeploymentID), h.Class("deployment-group-link"),
 							g.Text("Deployment "+group.DeploymentID[:8]),
