@@ -197,14 +197,14 @@ func main() {
 
 	seeder.AddDeploymentWithKinds("naiserator", "2026-04-28-a1b2c3d", environment.Labels{"kind": "tenant"}, tenantOnly)
 	seeder.AddDeploymentWithKinds("v13s", "2026-04-22-7e8f9a0", environment.Labels{"kind": "management"}, managementOnly)
-	seeder.AddDeploymentWithKinds("console", "2026-04-30-3c4d5e6", environment.Labels{"tenant": "dev-nais"}, tenantOnly)
-	seeder.AddDeploymentWithKinds("unleash", "2026-04-15-9b0c1d2", environment.Labels{"tenant": "test-partner", "aiven": "enabled"}, tenantOnly)
-	seeder.AddDeploymentWithKinds("replicator", "2026-04-18-5f6a7b8", environment.Labels{"tenant": "test-partner", "environment": "prod"}, tenantOnly)
-	seeder.AddDeploymentWithKinds("dependencytrack", "2026-04-10-2d3e4f5", environment.Labels{"tenant": "test-partner", "environment": "staging"}, tenantOnly)
-	seeder.AddDeploymentWithKinds("naiserator", "2026-05-01-6a7b8c9", environment.Labels{"tenant": "dev-nais", "environment": "dev"}, tenantOnly)
-	seeder.AddDeploymentWithKinds("dependencytrack", "2026-04-25-8d9e0f1", environment.Labels{"tenant": "dev-nais", "environment": "dev"}, tenantOnly)
-	seeder.AddDeploymentWithKinds("replicator", "2026-04-20-4b5c6d7", environment.Labels{"tenant": "dev-nais", "environment": "dev"}, tenantOnly)
-	seeder.AddDeploymentWithKinds("unleash", "2026-04-27-1a2b3c4", environment.Labels{"tenant": "dev-nais", "environment": "dev"}, tenantOnly)
+	seeder.AddDeploymentWithKinds("console", "2026-04-30-3c4d5e6", environment.Labels{"kind": "management"}, managementOnly)
+	seeder.AddDeploymentWithKinds("unleash", "2026-04-15-9b0c1d2", environment.Labels{"kind": "management", "aiven": "enabled"}, managementOnly)
+	seeder.AddDeploymentWithKinds("replicator", "2026-04-18-5f6a7b8", environment.Labels{"kind": "tenant", "tenant": "test-partner", "environment": "prod"}, tenantOnly)
+	seeder.AddDeploymentWithKinds("dependencytrack", "2026-04-10-2d3e4f5", environment.Labels{"kind": "tenant", "tenant": "test-partner", "environment": "staging"}, tenantOnly)
+	seeder.AddDeploymentWithKinds("naiserator", "2026-05-01-6a7b8c9", environment.Labels{"kind": "tenant", "tenant": "dev-nais", "environment": "dev"}, tenantOnly)
+	seeder.AddDeploymentWithKinds("dependencytrack", "2026-04-25-8d9e0f1", environment.Labels{"kind": "tenant", "tenant": "dev-nais", "environment": "dev"}, tenantOnly)
+	seeder.AddDeploymentWithKinds("replicator", "2026-04-20-4b5c6d7", environment.Labels{"kind": "tenant", "tenant": "dev-nais", "environment": "dev"}, tenantOnly)
+	seeder.AddDeploymentWithKinds("unleash", "2026-04-27-1a2b3c4", environment.Labels{"kind": "management", "tenant": "dev-nais"}, managementOnly)
 	seeder.AddDeploymentWithKinds("kyverno", "2026-04-27-1a2b3c5", environment.Labels{}, all)
 
 	if _, err := seeder.Seed(ctx); err != nil {
@@ -255,7 +255,7 @@ func main() {
 	rolloutSeedKinds := map[string][]model.EnvironmentKind{
 		"naiserator":      tenantOnly,
 		"aivenator":       tenantOnly,
-		"console":         tenantOnly,
+		"console":         managementOnly,
 		"hookd":           managementOnly,
 		"dependencytrack": managementOnly,
 		"replicator":      tenantOnly,
