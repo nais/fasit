@@ -32,9 +32,11 @@ func DetailHandler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 }
 
 func detailPage(rollout *model.Rollout, events []*model.RolloutEvent) g.Node {
-	completed := formatTimePtr(rollout.Completed)
-	if completed == "" {
-		completed = "-"
+	var completed g.Node
+	if rollout.Completed != nil && !rollout.Completed.IsZero() {
+		completed = timeWithTitle(*rollout.Completed)
+	} else {
+		completed = g.Text("-")
 	}
 
 	content := []g.Node{
@@ -45,8 +47,8 @@ func detailPage(rollout *model.Rollout, events []*model.RolloutEvent) g.Node {
 				metaRow("Feature", h.A(h.Href("/features/"+rollout.FeatureName), g.Text(rollout.FeatureName))),
 				metaRow("Version", g.Text(rollout.Version)),
 				metaRow("Status", rolloutStatus(rollout.Status.String())),
-				metaRow("Created", g.Text(formatTime(rollout.Created))),
-				metaRow("Completed", g.Text(completed)),
+				metaRow("Created", timeWithTitle(rollout.Created)),
+				metaRow("Completed", completed),
 			),
 		),
 	}
@@ -65,7 +67,7 @@ func detailPage(rollout *model.Rollout, events []*model.RolloutEvent) g.Node {
 					}
 
 					return h.Tr(
-						h.Td(g.Text(formatTime(e.Created))),
+						h.Td(timeWithTitle(e.Created)),
 						h.Td(h.Class(cls), g.Text(e.Message)),
 					)
 				}))),

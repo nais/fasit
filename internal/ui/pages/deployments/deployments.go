@@ -1,6 +1,7 @@
 package deployments
 
 import (
+	"fmt"
 	"net/http"
 	"sort"
 	"strings"
@@ -157,10 +158,47 @@ func deploymentGroup(fg featureGroup, open bool) g.Node {
 			h.Class("deployment-group-summary"),
 			h.Span(h.Class("dep-feature-toggle")),
 			h.A(h.Href("/features/"+fg.FeatureName), g.Text(fg.FeatureName)),
+			groupStatusBadge(fg),
 			h.Span(h.Class("dep-group-time"), timeWithTitle(fg.LatestTime)),
 		),
 		h.Div(h.Class("deployment-group-body"), g.Group(rows)),
 	)
+}
+
+func groupStatusBadge(fg featureGroup) g.Node {
+	failed := 0
+	pending := 0
+	for _, t := range fg.Targets {
+		switch t.Status {
+		case "FAILED":
+			failed++
+		case "PENDING":
+			pending++
+		}
+	}
+	switch {
+	case failed > 0:
+		return h.Span(
+			h.Class("dep-group-badge status-error"),
+			g.Attr("title", failedTitle(failed, len(fg.Targets))),
+			g.Textf("✗ %d failed", failed),
+		)
+	case pending > 0:
+		return h.Span(
+			h.Class("dep-group-badge status-pending"),
+			g.Attr("title", pendingTitle(pending, len(fg.Targets))),
+			g.Textf("⏳ %d pending", pending),
+		)
+	}
+	return nil
+}
+
+func failedTitle(failed, total int) string {
+	return fmt.Sprintf("%d of %d targets failed", failed, total)
+}
+
+func pendingTitle(pending, total int) string {
+	return fmt.Sprintf("%d of %d targets pending", pending, total)
 }
 
 func targetPills(labels map[string]string) g.Node {

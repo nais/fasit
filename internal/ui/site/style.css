@@ -913,6 +913,15 @@ nav .theme-toggle:hover {
   display: none;
 }
 
+.dep-group-badge {
+  margin-left: 0.5rem;
+  font-size: 0.8rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+}
+
 .deployment-group-body {
   display: grid;
   grid-template-columns: max-content max-content 1fr max-content;

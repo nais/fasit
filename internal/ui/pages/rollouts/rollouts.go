@@ -3,6 +3,7 @@ package rollouts
 import (
 	"net/http"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -17,8 +18,10 @@ import (
 type RenderPage func(http.ResponseWriter, *http.Request, layout.Props)
 
 type Summary struct {
-	FeatureName, Version, Status, Created, Completed string
-	createdAt                                        time.Time
+	FeatureName, Version, Status string
+	Created                      time.Time
+	Completed                    *time.Time
+	createdAt                    time.Time
 }
 
 func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
@@ -32,8 +35,8 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 					FeatureName: rollout.FeatureName,
 					Version:     rollout.Version,
 					Status:      strings.ToUpper(rollout.Status.String()),
-					Created:     formatTime(rollout.Created),
-					Completed:   formatTimePtr(rollout.Completed),
+					Created:     rollout.Created,
+					Completed:   rollout.Completed,
 					createdAt:   rollout.Created,
 				})
 			}
@@ -88,8 +91,8 @@ func rolloutsContent(rollouts []Summary) g.Node {
 				h.Td(h.A(h.Href("/features/"+rollout.FeatureName), g.Text(rollout.FeatureName))),
 				h.Td(versionCell(rollout)),
 				h.Td(statusCell(rollout)),
-				h.Td(g.Text(rollout.Created)),
-				h.Td(g.Text(completedDate(rollout.Completed))),
+				h.Td(timeWithTitle(rollout.Created)),
+				h.Td(completedCell(rollout.Completed)),
 			)
 		}))),
 	)
@@ -118,12 +121,44 @@ func rolloutStatus(status string) g.Node {
 	}
 }
 
-func completedDate(value string) string {
-	if value == "" {
-		return "-"
+func completedCell(t *time.Time) g.Node {
+	if t == nil || t.IsZero() {
+		return g.Text("-")
 	}
+	return timeWithTitle(*t)
+}
 
-	return value
+func timeWithTitle(t time.Time) g.Node {
+	if t.IsZero() {
+		return g.Text("")
+	}
+	return h.Span(g.Attr("title", formatTime(t)), g.Text(relativeTime(t)))
+}
+
+func relativeTime(t time.Time) string {
+	if t.IsZero() {
+		return ""
+	}
+	d := time.Since(t)
+	if d < 0 {
+		return formatTime(t)
+	}
+	switch {
+	case d < time.Minute:
+		return "just now"
+	case d < time.Hour:
+		return strconv.Itoa(int(d/time.Minute)) + "m ago"
+	case d < 24*time.Hour:
+		return strconv.Itoa(int(d/time.Hour)) + "h ago"
+	case d < 48*time.Hour:
+		return "yesterday"
+	case d < 30*24*time.Hour:
+		return strconv.Itoa(int(d/(24*time.Hour))) + "d ago"
+	case d < 365*24*time.Hour:
+		return strconv.Itoa(int(d/(30*24*time.Hour))) + "mo ago"
+	default:
+		return strconv.Itoa(int(d/(365*24*time.Hour))) + "y ago"
+	}
 }
 
 var oslo = mustLoadLocation("Europe/Oslo")
@@ -143,12 +178,4 @@ func formatTime(t time.Time) string {
 	}
 
 	return t.In(oslo).Format("2006-01-02 15:04:05")
-}
-
-func formatTimePtr(t *time.Time) string {
-	if t == nil {
-		return ""
-	}
-
-	return formatTime(*t)
 }
