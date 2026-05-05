@@ -261,6 +261,8 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 		helmStatus.RolloutStatus = model.RolloutStatusDeployed
 	}
 
+	d.RepublishHelmList()
+
 	return d.publishStatus(ctx, helmStatus)
 }
 
