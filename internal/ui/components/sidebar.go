@@ -64,9 +64,14 @@ func EnvironmentSidebar(tenantName, environmentName, currentFeatureName string, 
 				}
 
 				status := h.Span(h.Style("color: gray"), g.Text("○"))
-				if inEnv && syncEnabled {
+				switch {
+				case feature.FailedCount > 0:
+					status = h.Span(h.Class("status-error"), h.Title("failed"), g.Text("✗"))
+				case feature.PendingCount > 0:
+					status = h.Span(h.Class("status-pending"), h.Title("pending"), g.Text("⏳"))
+				case inEnv && syncEnabled:
 					status = h.Span(h.Style("color: green"), g.Text("✓"))
-				} else if inEnv {
+				case inEnv:
 					status = h.Span(h.Style("color: orange"), g.Text("⏸"))
 				}
 
