@@ -192,6 +192,8 @@ func main() {
 	//     receives a status because no naisd is listening there)
 	tenantOnly := []model.EnvironmentKind{"tenant"}
 	managementOnly := []model.EnvironmentKind{"management"}
+	onpremOnly := []model.EnvironmentKind{"onprem"}
+	all := append(append(tenantOnly, managementOnly...), onpremOnly...)
 
 	seeder.AddDeploymentWithKinds("naiserator", "2026-04-28-a1b2c3d", environment.Labels{"kind": "tenant"}, tenantOnly)
 	seeder.AddDeploymentWithKinds("v13s", "2026-04-22-7e8f9a0", environment.Labels{"kind": "management"}, managementOnly)
@@ -203,6 +205,7 @@ func main() {
 	seeder.AddDeploymentWithKinds("dependencytrack", "2026-04-25-8d9e0f1", environment.Labels{"tenant": "dev-nais", "environment": "dev"}, tenantOnly)
 	seeder.AddDeploymentWithKinds("replicator", "2026-04-20-4b5c6d7", environment.Labels{"tenant": "dev-nais", "environment": "dev"}, tenantOnly)
 	seeder.AddDeploymentWithKinds("unleash", "2026-04-27-1a2b3c4", environment.Labels{"tenant": "dev-nais", "environment": "dev"}, managementOnly)
+	seeder.AddDeploymentWithKinds("kyverno", "2026-04-27-1a2b3c5", environment.Labels{}, all)
 
 	if _, err := seeder.Seed(ctx); err != nil {
 		log.Fatal(err)
@@ -252,9 +255,9 @@ func main() {
 	rolloutSeedKinds := map[string][]model.EnvironmentKind{
 		"naiserator":      tenantOnly,
 		"aivenator":       tenantOnly,
-		"console":         tenantOnly,
+		"console":         managementOnly,
 		"hookd":           managementOnly,
-		"dependencytrack": tenantOnly,
+		"dependencytrack": managementOnly,
 		"replicator":      tenantOnly,
 	}
 

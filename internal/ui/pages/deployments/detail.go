@@ -114,10 +114,15 @@ func detailPage(d *deployment.Deployment, statuses []deploymentStatusRow, deploy
 		meta = append(meta, metaRow("Description", g.Text(*d.Description)))
 	}
 
-	meta = append(meta, metaRow("Actions", h.Form(
-		h.Method("POST"),
-		h.Action("/deployments/"+d.ID.String()+"/delete"),
-		h.Button(h.Type("submit"), h.Class("btn-small"), g.Attr("onclick", "return confirm('Are you sure?')"), g.Text("Delete")),
+	meta = append(meta, metaRow("Actions", h.Div(
+		h.Button(h.Type("button"), h.Class("btn-small"), g.Attr("popovertarget", "delete-deployment"), g.Text("Delete")),
+		h.Div(g.Attr("popover", ""), h.ID("delete-deployment"),
+			h.H3(g.Text("Delete deployment")),
+			h.P(g.Textf("Delete deployment %s v%s?", d.Feature.Name, d.Feature.Version)),
+			h.Form(h.Method("POST"), h.Action("/deployments/"+d.ID.String()+"/delete"),
+				h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text("Delete"))),
+			),
+		),
 	)))
 
 	content := []g.Node{
@@ -167,11 +172,14 @@ func detailPage(d *deployment.Deployment, statuses []deploymentStatusRow, deploy
 				)
 			}))),
 		),
-		h.Form(
-			h.Method("POST"),
-			h.Action("/deployments/"+d.ID.String()+"/delete-matching"),
-			h.Button(h.Type("submit"), h.Class("btn-small"), g.Attr("onclick", "return confirm('Are you sure?')"), g.Text("Delete all deployments")),
-			g.Textf(" (%d)", len(matching)),
+		h.Button(h.Type("button"), h.Class("btn-small"), g.Attr("popovertarget", "delete-all-deployments"), g.Text("Delete all deployments")),
+		g.Textf(" (%d)", len(matching)),
+		h.Div(g.Attr("popover", ""), h.ID("delete-all-deployments"),
+			h.H3(g.Text("Delete all deployments")),
+			h.P(g.Textf("Delete all %d deployments for %s?", len(matching), d.Feature.Name)),
+			h.Form(h.Method("POST"), h.Action("/deployments/"+d.ID.String()+"/delete-matching"),
+				h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text("Delete all"))),
+			),
 		),
 	)
 
