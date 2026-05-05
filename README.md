@@ -16,24 +16,34 @@ Follow the guide on https://docs.nais.io/appendix/json-schema/ on how to add a j
 
 ## local dev setup
 
-```
+```sh
 # Install tools
 mise install
 
+# Configure environment
 cp .env.example .env
 
-docker-compose up -d
+# Start postgres + pubsub emulator and seed the local database with
+# tenants, environments, features, and deployments.
+mise run setup
 
-# Build config
-mise run config
-
-# Run backend
+# Run fasit (in its own terminal)
 mise run fasit
 
-# Run naisd
-make run naisd
-
+# Run naisd for every seeded tenant/env in parallel (in its own terminal).
+# test-partner/prod and nav/prod are configured with --mock-failing so a
+# subset of deployments end up in the FAILED state for visual variety.
+mise run naisd-all
 ```
+
+`mise run naisd-all` is a wrapper around the lower-level `naisd-run` helper.
+If you only need a single env (for example to debug `test-partner/dev`),
+you can also run any of:
+
+- `mise run naisd` — test-partner/dev
+- `mise run naisd-failing` — test-partner/dev with mocked helm failures
+- `mise run naisd-management` — test-partner/management
+- `mise run naisd-management-failing` — test-partner/management with mocked helm failures
 
 ### Test local rollout
 

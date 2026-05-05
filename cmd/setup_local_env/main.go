@@ -189,55 +189,9 @@ func main() {
 	seeder.AddDeployment("naiserator", "1.1.0", environment.Labels{"kind": "tenant", "tenant": "nav"})
 	seeder.AddDeployment("naiserator", "1.2.0", environment.Labels{"kind": "tenant", "aiven": "enabled", "tenant": "test-partner"})
 
-	depIDs, err := seeder.Seed(ctx)
-	if err != nil {
+	if _, err := seeder.Seed(ctx); err != nil {
 		log.Fatal(err)
 	}
-
-	setStatus := func(depIdx int, tenantName, envName string, status model.RolloutStatus, msg string) {
-		if err := deployment.SetDeploymentStatus(ctx, depIDs[depIdx], envID(tenantName, envName), status, msg); err != nil {
-			log.WithError(err).WithField("deployment", depIdx).WithField("env", envName).Error("set deployment status")
-		}
-	}
-
-	setStatus(0, "test-partner", "dev", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(0, "test-partner", "management", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(0, "test-partner", "prod", model.RolloutStatusFailed, "helm install failed: timeout waiting for condition")
-	setStatus(0, "nav", "dev", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(0, "nav", "management", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(0, "nav", "prod", model.RolloutStatusDeployed, "received status from naisd.")
-
-	setStatus(1, "test-partner", "dev", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(1, "test-partner", "prod", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(1, "test-partner", "staging", model.RolloutStatusPending, "waiting for naisd")
-	setStatus(1, "nav", "dev", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(1, "nav", "prod", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(1, "dev-nais", "dev", model.RolloutStatusDeployed, "received status from naisd.")
-
-	setStatus(2, "test-partner", "management", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(2, "nav", "management", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(2, "dev-nais", "management", model.RolloutStatusDeployed, "received status from naisd.")
-
-	setStatus(3, "test-partner", "dev", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(3, "test-partner", "management", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(3, "test-partner", "prod", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(3, "test-partner", "staging", model.RolloutStatusCreated, "deployment instruction sent to naisd")
-	setStatus(3, "nav", "dev", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(3, "nav", "management", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(3, "nav", "prod", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(3, "dev-nais", "dev", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(3, "dev-nais", "management", model.RolloutStatusDeployed, "received status from naisd.")
-
-	setStatus(4, "test-partner", "management", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(4, "test-partner", "prod", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(4, "nav", "management", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(4, "nav", "prod", model.RolloutStatusDeployed, "received status from naisd.")
-
-	setStatus(6, "nav", "dev", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(6, "nav", "prod", model.RolloutStatusDeployed, "received status from naisd.")
-
-	setStatus(7, "test-partner", "dev", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(7, "test-partner", "prod", model.RolloutStatusFailed, "helm install failed: timeout waiting for condition")
 
 	// Disable unleash in dev so ListDeploymentStatuses synthesizes a DISABLED row.
 	if _, err := feature.FeatureStatesCreateOrUpdate(ctx, envID("test-partner", "dev"), &model.Feature{Name: "unleash"}, false); err != nil {
