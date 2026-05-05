@@ -50,10 +50,7 @@ func (s *Server) Routes() http.Handler {
 	r.Post("/deployments/{id}/delete-matching", deployments.DeleteByFeatureAndTargetHandler())
 
 	r.Get("/features", features.ListHandler(s.renderPage, s.repo))
-	r.Get("/features/{feature}", features.TabHandler(s.renderPage, s.repo, "overview"))
-	r.Get("/features/{feature}/status", features.TabHandler(s.renderPage, s.repo, "status"))
-	r.Get("/features/{feature}/deployments", features.TabHandler(s.renderPage, s.repo, "deployments"))
-	r.Get("/features/{feature}/rollouts", features.TabHandler(s.renderPage, s.repo, "rollouts"))
+	r.Get("/features/{feature}", features.Handler(s.renderPage, s.repo))
 
 	r.Get("/labels", labels.Handler(s.renderPage, s.repo))
 
