@@ -14,7 +14,7 @@ import (
 	h "maragu.dev/gomponents/html"
 )
 
-type RenderPage func(http.ResponseWriter, layout.Props)
+type RenderPage func(http.ResponseWriter, *http.Request, layout.Props)
 
 const (
 	healthyThreshold = 60 * time.Second
@@ -60,7 +60,7 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 			return rows[i].Environment < rows[j].Environment
 		})
 
-		renderPage(w, layout.Props{
+		renderPage(w, r, layout.Props{
 			Title:       "Naisd",
 			CurrentPage: components.PageNaisd,
 			Content:     page(rows, time.Now()),
