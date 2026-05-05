@@ -73,20 +73,3 @@ WHERE
 	fd.name = @name
 	AND rollouts.status = 'pending';
 
--- Distinct from RolloutByName: returns the latest rollout regardless of
--- status, for feature-definition lookups (resolvers, /features/{name}).
--- name: RolloutLatestByName :one
-SELECT
-	rollouts.id,
-	sqlc.embed(fd),
-	rollouts.created
-FROM
-	rollouts
-	JOIN feature_data fd ON rollouts.feature_name = fd.name
-		AND rollouts.version = fd.version
-WHERE
-	fd.name = @name
-ORDER BY
-	rollouts.created DESC
-LIMIT 1;
-

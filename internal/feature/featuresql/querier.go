@@ -41,9 +41,6 @@ type Querier interface {
 	LogsByID(ctx context.Context, id int64) (Log, error)
 	LogsCreate(ctx context.Context, arg []LogsCreateParams) *LogsCreateBatchResults
 	RolloutByName(ctx context.Context, name string) (RolloutByNameRow, error)
-	// Distinct from RolloutByName: returns the latest rollout regardless of
-	// status, for feature-definition lookups (resolvers, /features/{name}).
-	RolloutLatestByName(ctx context.Context, name string) (RolloutLatestByNameRow, error)
 	RolloutStatesGet(ctx context.Context, environmentID uuid.UUID) ([]RolloutStatesGetRow, error)
 	RolloutsForKind(ctx context.Context, environmentKind EnvironmentKind) ([]RolloutsForKindRow, error)
 }
