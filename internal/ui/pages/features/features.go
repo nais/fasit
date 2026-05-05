@@ -73,7 +73,6 @@ type RolloutItem struct {
 	Status      string
 	Created     string
 	Completed   string
-	Target      string
 }
 
 func ListHandler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
@@ -347,8 +346,8 @@ func rolloutsTab(data *DetailPage) g.Node {
 	if len(data.Rollouts) == 0 {
 		return h.P(g.Text("No rollouts yet."))
 	}
-	return h.Table(h.Class("table sortable"), h.THead(h.Tr(h.Th(g.Text("Version")), h.Th(g.Text("Status")), h.Th(g.Text("Target")), h.Th(g.Text("Created")), h.Th(g.Text("Completed")))), h.TBody(g.Group(g.Map(data.Rollouts, func(rollout RolloutItem) g.Node {
-		return h.Tr(h.Td(rolloutVersionCell(rollout)), h.Td(rolloutStatus(rollout.Status)), h.Td(g.Text(rollout.Target)), h.Td(g.Text(rollout.Created)), h.Td(g.Text(completedDate(rollout.Completed))))
+	return h.Table(h.Class("table sortable"), h.THead(h.Tr(h.Th(g.Text("Version")), h.Th(g.Text("Status")), h.Th(g.Text("Created")), h.Th(g.Text("Completed")))), h.TBody(g.Group(g.Map(data.Rollouts, func(rollout RolloutItem) g.Node {
+		return h.Tr(h.Td(rolloutVersionCell(rollout)), h.Td(rolloutStatus(rollout.Status)), h.Td(g.Text(rollout.Created)), h.Td(g.Text(completedDate(rollout.Completed))))
 	}))))
 }
 
