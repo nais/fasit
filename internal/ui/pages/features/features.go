@@ -573,8 +573,6 @@ func featureEnvironmentStatuses(ctx context.Context, repo database.Repo, feature
 			} else if status := statusByDepEnv[dep.ID.String()+":"+env.env.ID.String()]; status != nil {
 				es.StatusText = string(status.State)
 				es.LastModified = status.LastModified
-			} else {
-				es.StatusText = "PENDING"
 			}
 
 			ret = append(ret, es)
