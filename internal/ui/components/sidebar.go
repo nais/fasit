@@ -29,23 +29,20 @@ func featureStatusBadge(feature view.FeatureNav) g.Node {
 	return StatusCountsBadge(feature.FailedCount, feature.PendingCount)
 }
 
-// StatusCountsBadge renders small ✗N and/or ⏳N badges. When both failed and
-// pending are non-zero, both badges are shown (failed first). Returns nil when
-// both are zero so callers can append it unconditionally.
 func StatusCountsBadge(failed, pending int) g.Node {
 	var badges []g.Node
 	if failed > 0 {
 		badges = append(badges, h.Span(
 			h.Class("feature-nav-badge status-error"),
 			h.Title(strconv.Itoa(failed)+" failed"),
-			g.Text("✗ "+strconv.Itoa(failed)),
+			g.Text(strconv.Itoa(failed)+" failed"),
 		))
 	}
 	if pending > 0 {
 		badges = append(badges, h.Span(
 			h.Class("feature-nav-badge status-pending"),
 			h.Title(strconv.Itoa(pending)+" pending"),
-			g.Text("⏳ "+strconv.Itoa(pending)),
+			g.Text(strconv.Itoa(pending)+" pending"),
 		))
 	}
 	if len(badges) == 0 {
