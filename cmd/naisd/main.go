@@ -152,13 +152,9 @@ func sharedDependencies(ctx context.Context, log *logrus.Logger) (*naisd.DeployM
 
 	kubeConfig := local.RESTConfig()
 
-	var numSuccessful *int
-	if cfg.MockFailing {
-		numSuccessful = new(int)
-	}
-
-	var executor naisd.Exec = &naisd.MockExecutor{Logger: log.WithField("subsystem", "executor"), NumSuccessful: numSuccessful}
-	helmClient := local.NewHelmClient()
+	localHelm := local.NewHelmClient(log.WithField("subsystem", "executor"), cfg.MockFailing)
+	var executor naisd.Exec = localHelm
+	var helmClient naisd.HelmClient = localHelm
 	k8sClient := local.NewKubernetesClient()
 	if cfg.Production {
 		executor = &naisd.Executor{}

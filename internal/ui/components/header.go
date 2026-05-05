@@ -45,6 +45,18 @@ func SiteHeader(currentPage Page, userEmail string) g.Node {
 				g.Text("Cluster management"),
 			),
 		),
+		h.Form(
+			h.Class("nav-action"),
+			h.Method("post"),
+			h.Action("/reconcile"),
+			h.Button(
+				h.Type("submit"),
+				h.Class("nav-btn"),
+				g.Attr("title", "Trigger a full reconcile of all deployments"),
+				g.Attr("onclick", "return confirm('Trigger a full reconcile of all deployments?')"),
+				g.Text("Reconcile"),
+			),
+		),
 		h.Button(h.Class("theme-toggle"), g.Attr("onclick", "toggleTheme()"), g.Attr("title", "Toggle light/dark mode"), g.Raw("☀︎")),
 		h.Span(h.Class("user"), g.Text(userEmail)),
 	)

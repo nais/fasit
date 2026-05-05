@@ -286,7 +286,10 @@ func shortID(id string) string {
 
 func versionCell(env EnvironmentStatus) g.Node {
 	if env.ReleaseVersion == "" {
-		return g.Text("")
+		if env.DeploymentVersion == "" {
+			return g.Text("")
+		}
+		return h.Span(h.Class("version-desired"), g.Text("→ "+env.DeploymentVersion))
 	}
 	if env.DeploymentVersion != "" && env.ReleaseVersion != env.DeploymentVersion {
 		return h.Span(h.Class("version-mismatch"),

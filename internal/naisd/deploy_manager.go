@@ -209,7 +209,7 @@ func (d *DeployManager) handler(ctx context.Context, msg message.DeployInstructi
 		}
 
 		d.log.Debug("Offloading naisd upgrade")
-		if _, ok := d.executor.(*MockExecutor); ok {
+		if mock, ok := d.executor.(interface{ Mock() bool }); ok && mock.Mock() {
 			fmt.Fprintln(pubsubLog, "MockExecutor, not starting regular naisd upgrade")
 		} else {
 			err := selfupgrade.StartJob(ctx, d.k8sClient, msg, d.naisProjectID, d.env, d.tenantName)

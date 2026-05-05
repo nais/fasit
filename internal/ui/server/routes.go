@@ -48,6 +48,7 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/deployments/{id}/logs/{envID}", deployments.LogsHandler(s.renderPage))
 	r.Post("/deployments/{id}/delete", deployments.DeleteHandler())
 	r.Post("/deployments/{id}/delete-matching", deployments.DeleteByFeatureAndTargetHandler())
+	r.Post("/reconcile", deployments.ReconcileHandler())
 
 	r.Get("/features", features.ListHandler(s.renderPage, s.repo))
 	r.Get("/features/{feature}", features.Handler(s.renderPage, s.repo))

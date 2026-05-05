@@ -162,6 +162,23 @@ nav .theme-toggle {
 nav .theme-toggle:hover {
   color: var(--text-primary);
 }
+nav .nav-action {
+  margin: 0;
+}
+nav .nav-btn {
+  background: var(--btn-bg);
+  border: 1px solid var(--btn-border);
+  color: var(--btn-color);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 0.25rem;
+  transition: background 0.15s, border-color 0.15s;
+}
+nav .nav-btn:hover {
+  background: var(--btn-hover-bg);
+  border-color: var(--btn-hover-border);
+}
 .container {
   display: flex;
   height: calc(100vh - 3.5rem);
