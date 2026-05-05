@@ -95,7 +95,7 @@ func DetailHandler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 			})
 		}
 
-		renderPage(w, layout.Props{Title: fmt.Sprintf("Deployment %s v%s", dep.Feature.Name, dep.Feature.Version), CurrentPage: components.PageDeployments, Content: detailPage(dep, rows, deployInstructions, matching)})
+		renderPage(w, r, layout.Props{Title: fmt.Sprintf("Deployment %s v%s", dep.Feature.Name, dep.Feature.Version), CurrentPage: components.PageDeployments, Content: detailPage(dep, rows, deployInstructions, matching)})
 	}
 }
 

@@ -45,7 +45,7 @@ func ListHandler(renderPage RenderPage) http.HandlerFunc {
 
 		groups := groupDeployments(items)
 
-		renderPage(w, layout.Props{
+		renderPage(w, r, layout.Props{
 			Title:       "Deployments",
 			CurrentPage: components.PageDeployments,
 			Content:     listPage(groups),

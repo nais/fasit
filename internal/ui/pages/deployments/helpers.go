@@ -11,7 +11,7 @@ import (
 	h "maragu.dev/gomponents/html"
 )
 
-type RenderPage func(http.ResponseWriter, layout.Props)
+type RenderPage func(http.ResponseWriter, *http.Request, layout.Props)
 
 type Summary struct {
 	FeatureName, Version, Status, Target, Created, Completed, DeploymentID string

@@ -24,7 +24,7 @@ import (
 	h "maragu.dev/gomponents/html"
 )
 
-type RenderPage func(http.ResponseWriter, layout.Props)
+type RenderPage func(http.ResponseWriter, *http.Request, layout.Props)
 
 type DetailPage struct {
 	Breadcrumbs    []breadcrumb.Crumb
@@ -90,7 +90,7 @@ func ListHandler(renderPage RenderPage, _ database.Repo) http.HandlerFunc {
 			http.Error(w, "Failed to load features", http.StatusInternalServerError)
 			return
 		}
-		renderPage(w, layout.Props{Title: "Features", CurrentPage: components.PageFeatures, Content: listPage(toFeatureNavs(features))})
+		renderPage(w, r, layout.Props{Title: "Features", CurrentPage: components.PageFeatures, Content: listPage(toFeatureNavs(features))})
 	}
 }
 
@@ -101,7 +101,7 @@ func TabHandler(renderPage RenderPage, repo database.Repo, activeTab string) htt
 			http.Error(w, "Failed to load feature data", http.StatusInternalServerError)
 			return
 		}
-		renderPage(w, layout.Props{Title: data.CurrentFeature.Name, CurrentPage: components.PageFeatures, Content: detailPage(data)})
+		renderPage(w, r, layout.Props{Title: data.CurrentFeature.Name, CurrentPage: components.PageFeatures, Content: detailPage(data)})
 	}
 }
 

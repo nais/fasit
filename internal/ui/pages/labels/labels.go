@@ -16,7 +16,7 @@ import (
 	h "maragu.dev/gomponents/html"
 )
 
-type RenderPage func(http.ResponseWriter, layout.Props)
+type RenderPage func(http.ResponseWriter, *http.Request, layout.Props)
 
 type envRow struct {
 	Tenant      string
@@ -79,7 +79,7 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 		// Parse active filters from query params: ?label=key:value&label=key2:value2
 		activeFilters := parseFilters(r)
 
-		renderPage(w, layout.Props{
+		renderPage(w, r, layout.Props{
 			Title:       "Labels",
 			CurrentPage: components.PageLabels,
 			Content:     page(rows, labelKeys, activeFilters),

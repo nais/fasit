@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"path/filepath"
 
+	"github.com/nais/fasit/internal/auth"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/ui/layout"
 	"github.com/sirupsen/logrus"
@@ -30,8 +31,9 @@ func New(siteFS fs.FS, repo database.Repo) *Server {
 	}
 }
 
-func (s *Server) renderPage(w http.ResponseWriter, props layout.Props) {
+func (s *Server) renderPage(w http.ResponseWriter, r *http.Request, props layout.Props) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	props.UserEmail = auth.GetEmail(r.Context())
 	err := layout.Page(props).Render(w)
 	if err != nil {
 		logrus.WithError(err).Error("error rendering page")

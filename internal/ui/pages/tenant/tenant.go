@@ -15,7 +15,7 @@ import (
 	h "maragu.dev/gomponents/html"
 )
 
-type RenderPage func(http.ResponseWriter, layout.Props)
+type RenderPage func(http.ResponseWriter, *http.Request, layout.Props)
 
 type pageData struct {
 	Tenant       *model.Tenant
@@ -52,7 +52,7 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 			IconColor:    view.TenantColor(tenant.Name),
 		}
 
-		renderPage(w, layout.Props{
+		renderPage(w, r, layout.Props{
 			Title:       tenant.Name,
 			CurrentPage: components.PageTenants,
 			Content:     page(breadcrumbs, data),

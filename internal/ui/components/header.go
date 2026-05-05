@@ -15,7 +15,7 @@ const (
 	PageLabels      Page = "labels"
 )
 
-func SiteHeader(currentPage Page) g.Node {
+func SiteHeader(currentPage Page, userEmail string) g.Node {
 	navItem := func(href, label string, page Page) g.Node {
 		className := "item"
 		if currentPage == page {
@@ -46,6 +46,6 @@ func SiteHeader(currentPage Page) g.Node {
 			),
 		),
 		h.Button(h.Class("theme-toggle"), g.Attr("onclick", "toggleTheme()"), g.Attr("title", "Toggle light/dark mode"), g.Raw("☀︎")),
-		h.Span(h.Class("user"), g.Text("user")),
+		h.Span(h.Class("user"), g.Text(userEmail)),
 	)
 }

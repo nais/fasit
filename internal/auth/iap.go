@@ -16,12 +16,17 @@ type (
 
 const UnauthorizedName = "unauthorized"
 
+const LocalDevEmail = "local-dev@fasit"
+
 const contextEmail contextKey = 1
 
 func InsecureValidateMW(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		email := r.Header.Get("X-Goog-Authenticated-User-Email")
 		_, email, _ = strings.Cut(email, ":")
+		if email == "" {
+			email = LocalDevEmail
+		}
 
 		ctx := context.WithValue(r.Context(), contextEmail, email)
 		r = r.WithContext(ctx)

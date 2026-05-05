@@ -23,7 +23,7 @@ func DetailHandler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 			return
 		}
 		events, _ := repo.RolloutEvents(r.Context(), rollout.ID)
-		renderPage(w, layout.Props{
+		renderPage(w, r, layout.Props{
 			Title:       fmt.Sprintf("%s v%s", featureName, version),
 			CurrentPage: components.PageRollouts,
 			Content:     detailPage(rollout, events),

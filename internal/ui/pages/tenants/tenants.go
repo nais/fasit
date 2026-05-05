@@ -13,7 +13,7 @@ import (
 	h "maragu.dev/gomponents/html"
 )
 
-type RenderPage func(http.ResponseWriter, layout.Props)
+type RenderPage func(http.ResponseWriter, *http.Request, layout.Props)
 
 type tenantCard struct {
 	Tenant       *model.Tenant
@@ -46,7 +46,7 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 			})
 		}
 
-		renderPage(w, layout.Props{
+		renderPage(w, r, layout.Props{
 			Title:       "Tenants",
 			CurrentPage: components.PageTenants,
 			Content:     page(cards),

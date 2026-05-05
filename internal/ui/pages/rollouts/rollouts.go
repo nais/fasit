@@ -14,7 +14,7 @@ import (
 	h "maragu.dev/gomponents/html"
 )
 
-type RenderPage func(http.ResponseWriter, layout.Props)
+type RenderPage func(http.ResponseWriter, *http.Request, layout.Props)
 
 type Summary struct {
 	FeatureName, Version, Status, Created, Completed string
@@ -43,7 +43,7 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 			return items[i].createdAt.After(items[j].createdAt)
 		})
 
-		renderPage(w, layout.Props{
+		renderPage(w, r, layout.Props{
 			Title:       "Rollouts",
 			CurrentPage: components.PageRollouts,
 			Content:     page(items),

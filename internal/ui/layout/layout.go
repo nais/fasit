@@ -11,6 +11,7 @@ type Props struct {
 	Title       string
 	CurrentPage components.Page
 	Content     g.Node
+	UserEmail   string
 }
 
 func Page(props Props) g.Node {
@@ -29,7 +30,7 @@ func Page(props Props) g.Node {
 			h.Script(h.Src("/site.js"), h.Defer()),
 		},
 		Body: []g.Node{
-			components.SiteHeader(props.CurrentPage),
+			components.SiteHeader(props.CurrentPage, props.UserEmail),
 			props.Content,
 		},
 	})

@@ -15,7 +15,7 @@ import (
 	h "maragu.dev/gomponents/html"
 )
 
-type RenderPage func(http.ResponseWriter, layout.Props)
+type RenderPage func(http.ResponseWriter, *http.Request, layout.Props)
 
 type Environment struct {
 	*model.Environment
@@ -59,7 +59,7 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 			Metadata:    getEnvironmentMetadata(r.Context(), repo, env),
 		}
 
-		renderPage(w, layout.Props{
+		renderPage(w, r, layout.Props{
 			Title:       tenant.Name + " / " + env.Name,
 			CurrentPage: components.PageTenants,
 			Content: page([]breadcrumb.Crumb{
