@@ -74,6 +74,12 @@ Tool management via mise. Tasks in `mise/tasks/`. Key commands: `mise run fasit`
 
 PostgreSQL 14. Migrations in `internal/database/migrations/` (goose, embedded). `database.Repo` composes domain-specific repo interfaces; some domains have their own sqlc querier via context loader instead.
 
+## Code Style
+
+### Comments
+
+Keep code comments to an absolute minimum. Only add a comment when the code cannot reasonably explain itself — e.g. a non-obvious side effect, a subtle correctness constraint, or a required workaround. Do not restate what the code does. Godoc comments on exported functions are fine when they add context beyond the name and signature.
+
 ## Commit Convention
 
 Semantic messages enforced by hook: `feat:`, `fix:`, `refactor:`, `build:`, `test:`, `docs:`, `ci:`, `perf:`, `style:`. Scope optional: `feat(ui):`. `chore:` is NOT valid.
