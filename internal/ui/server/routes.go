@@ -8,6 +8,7 @@ import (
 	"github.com/nais/fasit/internal/ui/pages/environment"
 	"github.com/nais/fasit/internal/ui/pages/features"
 	"github.com/nais/fasit/internal/ui/pages/labels"
+	"github.com/nais/fasit/internal/ui/pages/naisd"
 	"github.com/nais/fasit/internal/ui/pages/rollouts"
 	"github.com/nais/fasit/internal/ui/pages/tenant"
 	"github.com/nais/fasit/internal/ui/pages/tenants"
@@ -54,6 +55,7 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/features/{feature}", features.Handler(s.renderPage, s.repo))
 
 	r.Get("/labels", labels.Handler(s.renderPage, s.repo))
+	r.Get("/naisd", naisd.Handler(s.renderPage, s.repo))
 
 	return r
 }

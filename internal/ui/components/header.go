@@ -13,6 +13,7 @@ const (
 	PageDeployments Page = "deployments"
 	PageRollouts    Page = "rollouts"
 	PageLabels      Page = "labels"
+	PageNaisd       Page = "naisd"
 )
 
 func SiteHeader(currentPage Page, userEmail string) g.Node {
@@ -37,6 +38,7 @@ func SiteHeader(currentPage Page, userEmail string) g.Node {
 			navItem("/deployments", "Deployments", PageDeployments),
 			navItem("/rollouts", "Rollouts", PageRollouts),
 			navItem("/labels", "Labels", PageLabels),
+			navItem("/naisd", "Naisd", PageNaisd),
 			h.A(
 				h.Href("https://vedtak.nais.io/"),
 				h.Class("item"),
