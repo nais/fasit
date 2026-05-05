@@ -127,11 +127,15 @@ func Run(ctx context.Context) error {
 	}()
 	go reconciler.Run(ctx, 10*time.Minute)
 
-	costUpdater, err := cost.NewCostUpdater(ctx, repo, log)
-	if err != nil {
-		log.WithError(err).Error("setting up cost updater. You might need to run `gcloud auth --update-adc` if running locally")
+	if cfg.DisableCostUpdater {
+		log.Info("cost updater disabled")
 	} else {
-		go costUpdater.Run(ctx, 1*time.Hour)
+		costUpdater, err := cost.NewCostUpdater(ctx, repo, log)
+		if err != nil {
+			log.WithError(err).Error("setting up cost updater. You might need to run `gcloud auth --update-adc` if running locally")
+		} else {
+			go costUpdater.Run(ctx, 1*time.Hour)
+		}
 	}
 
 	if cfg.GitHubPEM != "" {
