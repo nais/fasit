@@ -10,6 +10,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/database"
+	"github.com/nais/fasit/internal/deployment"
 	envpkg "github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
@@ -158,6 +159,39 @@ func ToggleFeatureStateHandler(repo database.Repo) http.HandlerFunc {
 	}
 }
 
+func RedeployHandler(repo database.Repo) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "Invalid form data", http.StatusBadRequest)
+			return
+		}
+
+		tenant, err := envpkg.GetTenantGetByName(r.Context(), chi.URLParam(r, "tenant"))
+		if err != nil {
+			http.Error(w, "Failed to get tenant: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		env, err := repo.EnvironmentGetByName(r.Context(), tenant.ID, chi.URLParam(r, "env"))
+		if err != nil {
+			http.Error(w, "Failed to get environment: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		feature, err := featurepkg.FeatureByNameForEnv(r.Context(), chi.URLParam(r, "feature"), env.ID)
+		if err != nil {
+			http.Error(w, "Failed to get feature: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if _, err := featurepkg.FeatureStatesCreateOrUpdate(r.Context(), env.ID, feature, true); err != nil {
+			http.Error(w, "Failed to trigger redeploy: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if feature.HasDeployments {
+			deployment.TriggerReconcile(r.Context(), deployment.ReconcileTriggerEvent{})
+		}
+		http.Redirect(w, r, featureBasePath(r), http.StatusSeeOther)
+	}
+}
+
 func featurePageContent(page *FeaturePage) g.Node {
 	var tabContent g.Node
 	switch page.ActiveTab {
@@ -253,6 +287,8 @@ func overviewTab(page *FeaturePage) g.Node {
 	if page.Feature.Enabled {
 		statusClass, statusText, buttonText, newEnabled = "status-success", "✓ Reconcile enabled", "Disable reconcile", "false"
 	}
+	redeployPopoverID := "trigger-redeploy"
+	redeployAction := featureBasePathValues(page.TenantSlug, page.Environment.Name, page.Feature.Name) + "/redeploy"
 	return h.Div(h.Class("tab-content-wrapper"),
 		h.P(
 			h.Span(h.Class(statusClass), g.Text(statusText)), g.Text(" "),
@@ -262,6 +298,16 @@ func overviewTab(page *FeaturePage) g.Node {
 				h.Form(h.Method("POST"), h.Action(action), h.Input(h.Type("hidden"), h.Name("enabled"), h.Value(newEnabled)), h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text(buttonText)))),
 			),
 		),
+		g.If(page.Feature.Enabled, h.P(
+			h.Button(h.Type("button"), h.Class("btn-small"), g.Attr("popovertarget", redeployPopoverID), g.Text("Trigger redeploy")),
+			h.Div(g.Attr("popover", ""), h.ID(redeployPopoverID),
+				h.H3(g.Text("Confirm redeploy")),
+				h.Form(h.Method("POST"), h.Action(redeployAction),
+					h.P(g.Textf("Force a fresh deploy of %s in %s?", page.Feature.Name, page.Environment.Name)),
+					h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text("Trigger redeploy"))),
+				),
+			),
+		)),
 		h.Table(h.Class("table sortable"), h.THead(h.Tr(h.Th(g.Text("Configuration Key")), h.Th(g.Text("Value")))), h.TBody(g.Group(g.Map(page.Feature.ConfigItems, func(item FeatureConfigItem) g.Node {
 			return h.Tr(h.Td(configKeyCell(item)), h.Td(configValueCell(page, item)))
 		})))),

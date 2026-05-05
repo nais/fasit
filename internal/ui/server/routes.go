@@ -41,6 +41,7 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/tenants/{tenant}/envs/{env}/{feature}/config/override", environment.FeatureTabHandler(s.renderPage, s.repo, "overview"))
 	r.Post("/tenants/{tenant}/envs/{env}/{feature}/config/override", environment.ConfigOverrideSubmitHandler(s.repo))
 	r.Post("/tenants/{tenant}/envs/{env}/{feature}/toggle-reconcile", environment.ToggleFeatureStateHandler(s.repo))
+	r.Post("/tenants/{tenant}/envs/{env}/{feature}/redeploy", environment.RedeployHandler(s.repo))
 
 	r.Get("/rollouts", rollouts.Handler(s.renderPage, s.repo))
 	r.Get("/rollouts/{feature}/{version}", rollouts.DetailHandler(s.renderPage, s.repo))
