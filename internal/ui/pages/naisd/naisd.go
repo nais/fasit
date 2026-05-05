@@ -10,6 +10,7 @@ import (
 	"github.com/nais/fasit/internal/naisdstatus"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
+	"github.com/nais/fasit/internal/ui/view"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
 )
@@ -124,7 +125,7 @@ func lastReportedCell(row agentRow) string {
 	if !row.HasReport {
 		return "never"
 	}
-	return row.ReportedAt.In(oslo).Format("2006-01-02 15:04:05")
+	return view.FormatTime(row.ReportedAt)
 }
 
 func ageCell(row agentRow, now time.Time) string {
@@ -135,12 +136,3 @@ func ageCell(row agentRow, now time.Time) string {
 	return age.String() + " ago"
 }
 
-var oslo = mustLoadLocation("Europe/Oslo")
-
-func mustLoadLocation(name string) *time.Location {
-	loc, err := time.LoadLocation(name)
-	if err != nil {
-		panic(err)
-	}
-	return loc
-}

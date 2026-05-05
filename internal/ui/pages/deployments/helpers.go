@@ -3,11 +3,11 @@ package deployments
 import (
 	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/nais/fasit/internal/ui/layout"
+	"github.com/nais/fasit/internal/ui/view"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
 )
@@ -58,54 +58,9 @@ func metaRow(label string, value g.Node) g.Node {
 	return h.Tr(h.Td(h.Class("th-like"), g.Text(label)), h.Td(value))
 }
 
-var oslo = mustLoadLocation("Europe/Oslo")
-
-func mustLoadLocation(name string) *time.Location {
-	loc, err := time.LoadLocation(name)
-	if err != nil {
-		panic(err)
-	}
-
-	return loc
-}
-
-func formatTime(t time.Time) string {
-	if t.IsZero() {
-		return ""
-	}
-
-	return t.In(oslo).Format("2006-01-02 15:04:05")
-}
-
-func relativeTime(t time.Time) string {
-	if t.IsZero() {
-		return ""
-	}
-	d := time.Since(t)
-	if d < 0 {
-		return formatTime(t)
-	}
-	switch {
-	case d < time.Minute:
-		return "just now"
-	case d < time.Hour:
-		return strconv.Itoa(int(d/time.Minute)) + "m ago"
-	case d < 24*time.Hour:
-		return strconv.Itoa(int(d/time.Hour)) + "h ago"
-	case d < 48*time.Hour:
-		return "yesterday"
-	case d < 30*24*time.Hour:
-		return strconv.Itoa(int(d/(24*time.Hour))) + "d ago"
-	case d < 365*24*time.Hour:
-		return strconv.Itoa(int(d/(30*24*time.Hour))) + "mo ago"
-	default:
-		return strconv.Itoa(int(d/(365*24*time.Hour))) + "y ago"
-	}
-}
-
 func timeWithTitle(t time.Time) g.Node {
 	if t.IsZero() {
 		return g.Text("")
 	}
-	return h.Span(g.Attr("title", formatTime(t)), g.Text(relativeTime(t)))
+	return h.Span(g.Attr("title", view.FormatTime(t)), g.Text(view.RelativeTime(t)))
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
+	"github.com/nais/fasit/internal/ui/view"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
 )
@@ -62,7 +63,7 @@ func logsPage(dep *deployment.Deployment, log *model.RolloutLog) g.Node {
 			if i > 0 {
 				sb.WriteString("\n")
 			}
-			sb.WriteString(formatTime(line.Timestamp))
+			sb.WriteString(view.FormatTime(line.Timestamp))
 			sb.WriteString(" ")
 			sb.WriteString(line.Message)
 		}

@@ -11,6 +11,7 @@ import (
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
+	"github.com/nais/fasit/internal/ui/view"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
 )
@@ -36,7 +37,7 @@ func ListHandler(renderPage RenderPage) http.HandlerFunc {
 					Status:        status,
 					Target:        deploymentTarget(dep),
 					TargetLabels:  deploymentTargetLabels(dep),
-					Created:       formatTime(dep.Created),
+					Created:       view.FormatTime(dep.Created),
 					Completed:     latestStatusTime(statuses),
 					DeploymentID:  dep.ID.String(),
 					createdAt:     dep.Created,
@@ -276,7 +277,7 @@ func latestStatusTime(statuses []*deployment.DeploymentStatus) string {
 		return ""
 	}
 
-	return formatTime(latest)
+	return view.FormatTime(latest)
 }
 
 func deploymentTarget(dep *deployment.Deployment) string {

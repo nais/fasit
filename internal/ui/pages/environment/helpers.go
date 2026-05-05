@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/database"
@@ -181,8 +180,8 @@ func getEnvironmentMetadata(ctx context.Context, repo database.Repo, env *model.
 		addMetadata(&metadata, "Description", *env.Description)
 	}
 	addMetadata(&metadata, "Kind", env.Kind.String())
-	addMetadata(&metadata, "Created", formatTime(env.Created))
-	addMetadata(&metadata, "Last Modified", formatTime(env.LastModified))
+	addMetadata(&metadata, "Created", view.FormatTime(env.Created))
+	addMetadata(&metadata, "Last Modified", view.FormatTime(env.LastModified))
 	addMetadataBool(&metadata, "Reconcile", env.Reconcile)
 
 	values, err := repo.EnvironmentValuesForEnvironment(ctx, env.ID, true)
@@ -406,8 +405,8 @@ func loadEnvironmentRollouts(ctx context.Context, repo database.Repo, featureNam
 			FeatureName: rollout.FeatureName,
 			Version:     rollout.Version,
 			Status:      strings.ToUpper(rollout.Status.String()),
-			Created:     formatTime(rollout.Created),
-			Completed:   formatTimePtr(rollout.Completed),
+			Created:     view.FormatTime(rollout.Created),
+			Completed:   view.FormatTimePtr(rollout.Completed),
 		})
 	}
 	sort.Slice(items, func(i, j int) bool {
@@ -463,7 +462,7 @@ func loadEnvironmentDeployments(ctx context.Context, repo database.Repo, feature
 			id:      dep.ID.String(),
 			version: dep.Feature.Version,
 			target:  target,
-			created: formatTime(dep.Created),
+			created: view.FormatTime(dep.Created),
 			status:  status,
 		})
 		if len(target) > maxLabels {
@@ -510,16 +509,16 @@ func loadFeatureLog(ctx context.Context, repo database.Repo, envID uuid.UUID, fe
 	}
 	lastDeployed := "never"
 	if dep, err := repo.DeployInstructionsLatestDeployedForFeature(ctx, envID, feat.Name); err == nil && dep != nil {
-		lastDeployed = formatTime(dep.LastModified)
+		lastDeployed = view.FormatTime(dep.LastModified)
 	}
 	ret := &FeatureLog{
 		CurrentVersion: di.FeatureVersion,
 		CurrentStatus:  strings.ToUpper(di.Status.String()),
-		LastModified:   formatTime(di.LastModified),
+		LastModified:   view.FormatTime(di.LastModified),
 		LastDeployed:   lastDeployed,
 	}
 	for _, line := range lines {
-		ret.CurrentLog = append(ret.CurrentLog, LogLine{Timestamp: formatTime(line.Timestamp), Message: line.Message})
+		ret.CurrentLog = append(ret.CurrentLog, LogLine{Timestamp: view.FormatTime(line.Timestamp), Message: line.Message})
 	}
 	ret.HelmDiff, _ = repo.HelmValueDiffGet(ctx, di, feat.SecretKeys())
 	return ret
@@ -555,30 +554,6 @@ func parseConfigValue(value, configType string) (any, error) {
 	default:
 		return value, nil
 	}
-}
-
-func formatTime(t time.Time) string {
-	if t.IsZero() {
-		return ""
-	}
-	return t.In(oslo).Format("2006-01-02 15:04:05")
-}
-
-func formatTimePtr(t *time.Time) string {
-	if t == nil {
-		return "-"
-	}
-	return formatTime(*t)
-}
-
-var oslo = mustLoadLocation("Europe/Oslo")
-
-func mustLoadLocation(name string) *time.Location {
-	loc, err := time.LoadLocation(name)
-	if err != nil {
-		panic(err)
-	}
-	return loc
 }
 
 func stripNoValue(m map[string]any) {

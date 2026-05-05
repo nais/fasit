@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"slices"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -252,7 +251,7 @@ func envRow(env EnvironmentStatus, featureName string) g.Node {
 		h.Td(g.Group(envCellChildren)),
 		h.Td(versionCell(env)),
 		h.Td(rolloutStatus(env.StatusText)),
-		h.Td(h.Title(formatTime(env.LastModified)), g.Text(relativeTime(env.LastModified))),
+		h.Td(h.Title(view.FormatTime(env.LastModified)), g.Text(view.RelativeTime(env.LastModified))),
 		lastDeployedCell(env.LastDeployed),
 		h.Td(h.A(h.Href(logsHref), g.Attr("title", "View logs"), g.Text("📋"))),
 	}
@@ -331,7 +330,7 @@ func envTable(envs []EnvironmentStatus, featureName string) g.Node {
 				h.Td(g.Text(env.TenantName)),
 				h.Td(h.A(h.Href("/tenants/"+env.TenantSlug+"/envs/"+env.Name+"/"+featureName), g.Text(env.Name))),
 				h.Td(rolloutStatus(env.StatusText)),
-				h.Td(h.Title(formatTime(env.LastModified)), g.Text(relativeTime(env.LastModified))),
+				h.Td(h.Title(view.FormatTime(env.LastModified)), g.Text(view.RelativeTime(env.LastModified))),
 				lastDeployedCell(env.LastDeployed),
 				h.Td(h.A(h.Href(logsHref), g.Attr("title", "View logs"), g.Text("📋"))),
 			)
@@ -343,7 +342,7 @@ func lastDeployedCell(t time.Time) g.Node {
 	if t.IsZero() {
 		return h.Td(h.Span(h.Class("text-muted"), g.Text("never")))
 	}
-	return h.Td(h.Title(formatTime(t)), g.Text(relativeTime(t)))
+	return h.Td(h.Title(view.FormatTime(t)), g.Text(view.RelativeTime(t)))
 }
 
 func rolloutsTab(data *DetailPage) g.Node {
@@ -677,7 +676,7 @@ func featureRollouts(ctx context.Context, repo database.Repo, featureName string
 	}
 	items := make([]RolloutItem, 0, len(rollouts))
 	for _, rollout := range rollouts {
-		items = append(items, RolloutItem{FeatureName: rollout.FeatureName, Version: rollout.Version, Status: strings.ToUpper(rollout.Status.String()), Created: formatTime(rollout.Created), Completed: formatTimePtr(rollout.Completed)})
+		items = append(items, RolloutItem{FeatureName: rollout.FeatureName, Version: rollout.Version, Status: strings.ToUpper(rollout.Status.String()), Created: view.FormatTime(rollout.Created), Completed: view.FormatTimePtr(rollout.Completed)})
 	}
 	return items
 }
@@ -747,58 +746,4 @@ func rawValueToString(value json.RawMessage) string {
 		return string(value)
 	}
 	return string(b)
-}
-
-var oslo = mustLoadLocation("Europe/Oslo")
-
-func mustLoadLocation(name string) *time.Location {
-	loc, err := time.LoadLocation(name)
-	if err != nil {
-		panic(err)
-	}
-	return loc
-}
-
-func formatTime(t time.Time) string {
-	if t.IsZero() {
-		return ""
-	}
-	return t.In(oslo).Format("2006-01-02 15:04:05")
-}
-
-func formatTimePtr(t *time.Time) string {
-	if t == nil {
-		return "-"
-	}
-	return formatTime(*t)
-}
-
-func relativeTime(t time.Time) string {
-	if t.IsZero() {
-		return ""
-	}
-	d := time.Since(t)
-	if d < 0 {
-		return formatTime(t)
-	}
-	switch {
-	case d < time.Minute:
-		return "just now"
-	case d < time.Hour:
-		return formatUnit(int(d/time.Minute), "m")
-	case d < 24*time.Hour:
-		return formatUnit(int(d/time.Hour), "h")
-	case d < 48*time.Hour:
-		return "yesterday"
-	case d < 30*24*time.Hour:
-		return formatUnit(int(d/(24*time.Hour)), "d")
-	case d < 365*24*time.Hour:
-		return formatUnit(int(d/(30*24*time.Hour)), "mo")
-	default:
-		return formatUnit(int(d/(365*24*time.Hour)), "y")
-	}
-}
-
-func formatUnit(n int, unit string) string {
-	return strconv.Itoa(n) + unit + " ago"
 }
