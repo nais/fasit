@@ -33,9 +33,6 @@ type DetailPage struct {
 	CurrentFeature *Feature
 	Environments   []EnvironmentStatus
 	Rollouts       []RolloutItem
-	Deployments    []DeploymentItem
-	ActiveTab      string
-	ShowAll        bool
 }
 
 type EnvironmentStatus struct {
@@ -50,7 +47,10 @@ type EnvironmentStatus struct {
 	DeploymentID      string
 	DeploymentVersion string
 	ReleaseVersion    string
-	TargetLabels      map[string]string
+	TargetLabels       map[string]string
+	IsOverridden       bool
+	OverriddenByID     string
+	OverriddenByLabels map[string]string
 }
 
 type Feature struct {
@@ -74,14 +74,6 @@ type RolloutItem struct {
 	Created     string
 	Completed   string
 	Target      string
-}
-
-type DeploymentItem struct {
-	ID      string
-	Version string
-	Status  string
-	Target  string
-	Created string
 }
 
 func ListHandler(renderPage RenderPage, _ database.Repo) http.HandlerFunc {
@@ -121,9 +113,9 @@ func featureDeploymentCounts(ctx context.Context) (failed, pending map[string]in
 	return failed, pending
 }
 
-func TabHandler(renderPage RenderPage, repo database.Repo, activeTab string) http.HandlerFunc {
+func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		data, err := loadFeatureData(r, repo, activeTab)
+		data, err := loadFeatureData(r, repo)
 		if err != nil {
 			http.Error(w, "Failed to load feature data", http.StatusInternalServerError)
 			return
@@ -137,70 +129,36 @@ func listPage(features []view.FeatureNav) g.Node {
 }
 
 func detailPage(data *DetailPage) g.Node {
-	return h.Div(h.Class("container"), components.FeaturesSidebar(data.Features, data.CurrentFeature.Name), h.Main(h.Class("main-content"), components.Breadcrumbs(data.Breadcrumbs), h.Div(h.Class("card"), h.Div(h.Class("card-body"), components.TabsNav(data.ActiveTab, featureTabs(data.CurrentFeature.Name)), h.Div(h.Class("tab-content-wrapper"), tabContent(data))))))
+	return h.Div(h.Class("container"), components.FeaturesSidebar(data.Features, data.CurrentFeature.Name), h.Main(h.Class("main-content"), components.Breadcrumbs(data.Breadcrumbs), h.Div(h.Class("card"), h.Div(h.Class("card-body"), detailContent(data)))))
 }
 
-func featureTabs(featureName string) []components.Tab {
-	base := "/features/" + featureName
-	return []components.Tab{{ID: "overview", Href: base, Label: "Overview"}, {ID: "status", Href: base + "/status", Label: "Status"}, {ID: "deployments", Href: base + "/deployments", Label: "Deployments"}, {ID: "rollouts", Href: base + "/rollouts", Label: "Rollouts"}}
-}
-
-func tabContent(data *DetailPage) g.Node {
-	switch data.ActiveTab {
-	case "status":
+func detailContent(data *DetailPage) g.Node {
+	if data.CurrentFeature.HasDeployments {
 		return statusTab(data)
-	case "deployments":
-		return deploymentsTab(data)
-	case "rollouts":
-		return rolloutsTab(data)
-	default:
-		return overviewTab(data)
 	}
-}
-
-func overviewTab(data *DetailPage) g.Node {
-	return g.Group([]g.Node{h.Pre(g.Text(data.CurrentFeature.Description+"\n"), g.Text("chart: "+data.CurrentFeature.Chart+"\n"), g.Text("version: "+data.CurrentFeature.Version+"\n"), g.Text("source: "), h.A(h.Href(data.CurrentFeature.Source), h.Target("_blank"), g.Text(data.CurrentFeature.Source)), g.Text("\n"), g.Text("dependencies:"), dependencyLinks(data.CurrentFeature)), h.Table(h.Class("table"), h.THead(h.Tr(h.Th(g.Text("Key")), h.Th(g.Text("Type")), h.Th(g.Text("Default Value")))), h.TBody(g.Group(g.Map(data.CurrentFeature.Config, func(item ConfigItem) g.Node {
-		return h.Tr(h.Td(h.Span(h.Class("icon"), g.Text("📄")), g.Text(" "), g.Text(item.Key)), h.Td(g.Text(configTypeLabel(item))), h.Td(h.Class("italic"), configDefaultValue(item)))
-	}))))})
+	return rolloutsTab(data)
 }
 
 func statusTab(data *DetailPage) g.Node {
 	featureName := data.CurrentFeature.Name
-	var toggleLink g.Node
-	if data.ShowAll {
-		toggleLink = h.A(h.Href("/features/"+featureName+"/status"), h.Class("btn-small"), g.Text("Show enabled only"))
-	} else {
-		toggleLink = h.A(h.Href("/features/"+featureName+"/status?show=all"), h.Class("btn-small"), g.Text("Show all environments"))
-	}
 	if len(data.Environments) == 0 {
-		return g.Group([]g.Node{
-			h.Div(h.Class("table-actions"), toggleLink),
-			h.P(g.Text("No environments found.")),
-		})
+		return h.P(g.Text("No environments found."))
 	}
 
 	if !data.CurrentFeature.HasDeployments {
-		return g.Group([]g.Node{
-			h.Div(h.Class("table-actions"), toggleLink),
-			envTable(data.Environments, featureName),
-		})
+		return envTable(data.Environments, featureName)
 	}
 
-	groups, ungrouped := groupByDeployment(data.Environments)
-	return g.Group([]g.Node{
-		h.Div(h.Class("table-actions"), toggleLink),
-		deploymentStatusTable(groups, ungrouped, featureName),
-	})
+	groups := groupByDeployment(data.Environments)
+	return deploymentStatusTable(groups, featureName)
 }
 
-func groupByDeployment(envs []EnvironmentStatus) ([]deploymentGroup, []EnvironmentStatus) {
+func groupByDeployment(envs []EnvironmentStatus) []deploymentGroup {
 	groups := map[string]*deploymentGroup{}
 	var order []string
-	var ungrouped []EnvironmentStatus
 
 	for _, env := range envs {
 		if !env.HasDeployments {
-			ungrouped = append(ungrouped, env)
 			continue
 		}
 		if _, ok := groups[env.DeploymentID]; !ok {
@@ -215,17 +173,28 @@ func groupByDeployment(envs []EnvironmentStatus) ([]deploymentGroup, []Environme
 
 	result := make([]deploymentGroup, 0, len(order))
 	for _, id := range order {
-		result = append(result, *groups[id])
+		group := *groups[id]
+		sort.SliceStable(group.Environments, func(i, j int) bool {
+			a, b := group.Environments[i], group.Environments[j]
+			if a.IsOverridden != b.IsOverridden {
+				return !a.IsOverridden
+			}
+			if a.TenantName != b.TenantName {
+				return a.TenantName < b.TenantName
+			}
+			return a.Name < b.Name
+		})
+		result = append(result, group)
 	}
-	return result, ungrouped
+	return result
 }
 
-func deploymentStatusTable(groups []deploymentGroup, ungrouped []EnvironmentStatus, featureName string) g.Node {
+func deploymentStatusTable(groups []deploymentGroup, featureName string) g.Node {
 	var bodies []g.Node
 	for _, group := range groups {
 		rows := []g.Node{
 			h.Tr(h.Class("deployment-group-row"),
-				h.Td(g.Attr("colspan", "5"),
+				h.Td(g.Attr("colspan", "6"),
 					h.Div(h.Class("deployment-group-header"),
 						h.A(h.Href("/deployments/"+group.DeploymentID), h.Class("deployment-group-link"),
 							g.Text("Deployment "+group.DeploymentID[:8]),
@@ -240,17 +209,6 @@ func deploymentStatusTable(groups []deploymentGroup, ungrouped []EnvironmentStat
 		}
 		bodies = append(bodies, h.TBody(g.Group(rows)))
 	}
-	if len(ungrouped) > 0 {
-		rows := []g.Node{
-			h.Tr(h.Class("deployment-group-row"),
-				h.Td(g.Attr("colspan", "5"), g.Text("Not targeted by any deployment")),
-			),
-		}
-		for _, env := range ungrouped {
-			rows = append(rows, envRow(env, featureName))
-		}
-		bodies = append(bodies, h.TBody(g.Group(rows)))
-	}
 	return h.Table(h.Class("table"),
 		h.THead(h.Tr(
 			h.Th(g.Text("Tenant")),
@@ -258,19 +216,56 @@ func deploymentStatusTable(groups []deploymentGroup, ungrouped []EnvironmentStat
 			h.Th(g.Text("Version")),
 			h.Th(g.Text("Status")),
 			h.Th(g.Text("Last Modified")),
+			h.Th(g.Text("")),
 		)),
 		g.Group(bodies),
 	)
 }
 
 func envRow(env EnvironmentStatus, featureName string) g.Node {
-	return h.Tr(
+	logsHref := "/tenants/" + env.TenantSlug + "/envs/" + env.Name + "/" + featureName + "/logs"
+	envLink := h.A(h.Href("/tenants/"+env.TenantSlug+"/envs/"+env.Name+"/"+featureName), g.Text(env.Name))
+
+	rowAttrs := []g.Node{}
+	envCellChildren := []g.Node{envLink}
+	if env.IsOverridden {
+		rowAttrs = append(rowAttrs, h.Class("deployment-overridden"), h.Title(overrideTooltip(env)))
+		envCellChildren = append(envCellChildren, h.Span(h.Class("text-muted override-note"), g.Text(" overridden")))
+	}
+
+	cells := []g.Node{
 		h.Td(g.Text(env.TenantName)),
-		h.Td(h.A(h.Href("/tenants/"+env.TenantSlug+"/envs/"+env.Name+"/"+featureName), g.Text(env.Name))),
+		h.Td(g.Group(envCellChildren)),
 		h.Td(versionCell(env)),
 		h.Td(rolloutStatus(env.StatusText)),
 		h.Td(h.Title(formatTime(env.LastModified)), g.Text(relativeTime(env.LastModified))),
-	)
+		h.Td(h.A(h.Href(logsHref), g.Attr("title", "View logs"), g.Text("📋"))),
+	}
+	return h.Tr(g.Group(append(rowAttrs, cells...)))
+}
+
+func overrideTooltip(env EnvironmentStatus) string {
+	parts := []string{"Overridden by deployment " + shortID(env.OverriddenByID)}
+	if len(env.OverriddenByLabels) > 0 {
+		keys := make([]string, 0, len(env.OverriddenByLabels))
+		for k := range env.OverriddenByLabels {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		pairs := make([]string, 0, len(keys))
+		for _, k := range keys {
+			pairs = append(pairs, k+"="+env.OverriddenByLabels[k])
+		}
+		parts = append(parts, "target: "+strings.Join(pairs, ", "))
+	}
+	return strings.Join(parts, " — ")
+}
+
+func shortID(id string) string {
+	if len(id) > 8 {
+		return id[:8]
+	}
+	return id
 }
 
 func versionCell(env EnvironmentStatus) g.Node {
@@ -309,25 +304,19 @@ func envTable(envs []EnvironmentStatus, featureName string) g.Node {
 			h.Th(g.Text("Environment")),
 			h.Th(g.Text("Status")),
 			h.Th(g.Text("Last Modified")),
+			h.Th(g.Text("")),
 		)),
 		h.TBody(g.Group(g.Map(envs, func(env EnvironmentStatus) g.Node {
+			logsHref := "/tenants/" + env.TenantSlug + "/envs/" + env.Name + "/" + featureName + "/logs"
 			return h.Tr(
 				h.Td(g.Text(env.TenantName)),
 				h.Td(h.A(h.Href("/tenants/"+env.TenantSlug+"/envs/"+env.Name+"/"+featureName), g.Text(env.Name))),
 				h.Td(rolloutStatus(env.StatusText)),
 				h.Td(h.Title(formatTime(env.LastModified)), g.Text(relativeTime(env.LastModified))),
+				h.Td(h.A(h.Href(logsHref), g.Attr("title", "View logs"), g.Text("📋"))),
 			)
 		}))),
 	)
-}
-
-func deploymentsTab(data *DetailPage) g.Node {
-	if len(data.Deployments) == 0 {
-		return h.P(g.Text("No deployments yet."))
-	}
-	return h.Table(h.Class("table sortable"), h.THead(h.Tr(h.Th(g.Text("ID")), h.Th(g.Text("Version")), h.Th(g.Text("Status")), h.Th(g.Text("Target")), h.Th(g.Text("Created")))), h.TBody(g.Group(g.Map(data.Deployments, func(dep DeploymentItem) g.Node {
-		return h.Tr(h.Td(h.A(h.Href("/deployments/"+dep.ID), g.Text(dep.ID[:8]))), h.Td(g.Text(dep.Version)), h.Td(g.Text(dep.Status)), h.Td(g.Text(dep.Target)), h.Td(g.Text(dep.Created)))
-	}))))
 }
 
 func rolloutsTab(data *DetailPage) g.Node {
@@ -375,6 +364,8 @@ func rolloutStatus(status string) g.Node {
 		return g.Group([]g.Node{h.Span(h.Class("status-pending"), g.Text("?")), g.Text(" UNKNOWN")})
 	case "ENABLED":
 		return g.Group([]g.Node{h.Span(h.Class("status-success"), g.Text("✓")), g.Text(" ENABLED")})
+	case "OVERRIDDEN":
+		return g.Group([]g.Node{h.Span(h.Class("status-disabled"), g.Text("⊘")), g.Text(" OVERRIDDEN")})
 	default:
 		return g.Text(status)
 	}
@@ -387,7 +378,7 @@ func completedDate(value string) string {
 	return value
 }
 
-func loadFeatureData(r *http.Request, repo database.Repo, activeTab string) (*DetailPage, error) {
+func loadFeatureData(r *http.Request, repo database.Repo) (*DetailPage, error) {
 	featureName := chi.URLParam(r, "feature")
 	features, err := featurepkg.Features(r.Context())
 	if err != nil {
@@ -398,16 +389,10 @@ func loadFeatureData(r *http.Request, repo database.Repo, activeTab string) (*De
 		return nil, err
 	}
 	failed, pending := featureDeploymentCounts(r.Context())
-	data := &DetailPage{Breadcrumbs: []breadcrumb.Crumb{breadcrumb.Features(), breadcrumb.Feature(featureName)}, Features: toFeatureNavs(features, failed, pending), CurrentFeature: &Feature{Feature: feature, Config: featureConfigItems(feature)}, ActiveTab: activeTab}
-	if activeTab == "status" {
-		showParam := r.URL.Query().Get("show")
-		data.ShowAll = showParam == "all"
-		data.Environments = featureEnvironmentStatuses(r.Context(), repo, feature, data.ShowAll)
-	}
-	if activeTab == "deployments" {
-		data.Deployments = featureDeployments(r.Context(), featureName)
-	}
-	if activeTab == "rollouts" {
+	data := &DetailPage{Breadcrumbs: []breadcrumb.Crumb{breadcrumb.Features(), breadcrumb.Feature(featureName)}, Features: toFeatureNavs(features, failed, pending), CurrentFeature: &Feature{Feature: feature, Config: featureConfigItems(feature)}}
+	if feature.HasDeployments {
+		data.Environments = featureEnvironmentStatuses(r.Context(), repo, feature)
+	} else {
 		data.Rollouts = featureRollouts(r.Context(), repo, featureName)
 	}
 	return data, nil
@@ -436,47 +421,135 @@ func featureConfigItems(feature *model.Feature) []ConfigItem {
 	return items
 }
 
-type envStatusEntry struct {
-	state        string
-	deploymentID string
-	targetLabels map[string]string
-	version      string
-	created      time.Time
-}
-
 type deploymentGroup struct {
 	DeploymentID string
 	Labels       map[string]string
 	Environments []EnvironmentStatus
 }
 
-func featureEnvironmentStatuses(ctx context.Context, repo database.Repo, feature *model.Feature, showAll bool) []EnvironmentStatus {
-	ret := []EnvironmentStatus{}
-	deploymentStatuses := map[uuid.UUID]envStatusEntry{}
-	if feature.HasDeployments {
-		deployments, err := deployment.ListDeploymentsByFeature(ctx, feature.Name)
-		if err == nil {
-			for _, dep := range deployments {
-				statuses, err := deployment.ListDeploymentStatuses(ctx, dep.ID)
-				if err != nil {
-					continue
-				}
-				for _, status := range statuses {
-					existing, exists := deploymentStatuses[status.EnvironmentID]
-					if exists && !deployment.IsMoreSpecific(dep.TargetLabels, existing.targetLabels, dep.Created, existing.created) {
-						continue
-					}
-					deploymentStatuses[status.EnvironmentID] = envStatusEntry{
-						state:        string(status.State),
-						deploymentID: dep.ID.String(),
-						targetLabels: dep.TargetLabels,
-						version:      dep.Feature.Version,
-						created:      dep.Created,
-					}
-				}
+func featureEnvironmentStatuses(ctx context.Context, repo database.Repo, feature *model.Feature) []EnvironmentStatus {
+	if !feature.HasDeployments {
+		return featureEnvironmentReleaseStatuses(ctx, repo, feature)
+	}
+
+	deployments, err := deployment.ListDeploymentsByFeature(ctx, feature.Name)
+	if err != nil || len(deployments) == 0 {
+		return []EnvironmentStatus{}
+	}
+	deployments = latestDeploymentPerTarget(deployments)
+
+	tenants, err := envpkg.GetTenants(ctx)
+	if err != nil {
+		return []EnvironmentStatus{}
+	}
+
+	type envInfo struct {
+		env        *model.Environment
+		tenantName string
+		labels     map[string]string
+	}
+	var allEnvs []envInfo
+	for _, tenant := range tenants {
+		envs, err := repo.EnvironmentsGet(ctx, tenant.ID)
+		if err != nil {
+			continue
+		}
+		for _, env := range envs {
+			if !featureTargetsKind(feature.EnvironmentKinds, env.Kind) {
+				continue
+			}
+			labels, err := repo.EnvironmentGetLabels(ctx, env.ID)
+			if err != nil {
+				continue
+			}
+			lblMap := make(map[string]string, len(labels))
+			for _, l := range labels {
+				lblMap[l.Key] = l.Value
+			}
+			allEnvs = append(allEnvs, envInfo{env: env, tenantName: tenant.Name, labels: lblMap})
+		}
+	}
+
+	winners := map[uuid.UUID]*deployment.Deployment{}
+	for _, env := range allEnvs {
+		for _, dep := range deployments {
+			if !targetMatchesLabels(dep.TargetLabels, env.labels) {
+				continue
+			}
+			existing, ok := winners[env.env.ID]
+			if !ok || deployment.IsMoreSpecific(dep.TargetLabels, existing.TargetLabels, dep.Created, existing.Created) {
+				winners[env.env.ID] = dep
 			}
 		}
 	}
+
+	statusByDepEnv := map[string]*deployment.DeploymentStatus{}
+	for _, dep := range deployments {
+		statuses, err := deployment.ListDeploymentStatuses(ctx, dep.ID)
+		if err != nil {
+			continue
+		}
+		for _, status := range statuses {
+			statusByDepEnv[dep.ID.String()+":"+status.EnvironmentID.String()] = status
+		}
+	}
+
+	ret := []EnvironmentStatus{}
+	for _, dep := range deployments {
+		for _, env := range allEnvs {
+			if !targetMatchesLabels(dep.TargetLabels, env.labels) {
+				continue
+			}
+
+			state, err := featurepkg.FeatureStateGet(ctx, env.env.ID, feature.Name)
+			if err != nil {
+				continue
+			}
+
+			es := EnvironmentStatus{
+				Name:              env.env.Name,
+				TenantName:        env.tenantName,
+				TenantSlug:        env.tenantName,
+				Enabled:           state.Enabled,
+				LastModified:      state.LastModified,
+				HasDeployments:    true,
+				FeatureDeployable: true,
+				DeploymentID:      dep.ID.String(),
+				DeploymentVersion: dep.Feature.Version,
+				TargetLabels:      dep.TargetLabels,
+			}
+
+			releases, err := repo.ReleaseStatusesGet(ctx, env.env.ID)
+			if err == nil {
+				for _, release := range releases {
+					if release.Name == feature.Name {
+						es.ReleaseVersion = release.Version
+						break
+					}
+				}
+			}
+
+			winner := winners[env.env.ID]
+			if winner != nil && winner.ID != dep.ID {
+				es.IsOverridden = true
+				es.OverriddenByID = winner.ID.String()
+				es.OverriddenByLabels = winner.TargetLabels
+				es.StatusText = "OVERRIDDEN"
+			} else if status := statusByDepEnv[dep.ID.String()+":"+env.env.ID.String()]; status != nil {
+				es.StatusText = string(status.State)
+				es.LastModified = status.LastModified
+			} else {
+				es.StatusText = "PENDING"
+			}
+
+			ret = append(ret, es)
+		}
+	}
+	return ret
+}
+
+func featureEnvironmentReleaseStatuses(ctx context.Context, repo database.Repo, feature *model.Feature) []EnvironmentStatus {
+	ret := []EnvironmentStatus{}
 	tenants, err := envpkg.GetTenants(ctx)
 	if err != nil {
 		return ret
@@ -494,89 +567,72 @@ func featureEnvironmentStatuses(ctx context.Context, repo database.Repo, feature
 			if err != nil {
 				continue
 			}
+			if !state.Enabled {
+				continue
+			}
 
-			environmentStatus := EnvironmentStatus{
-				Name:              env.Name,
-				TenantName:        tenant.Name,
-				TenantSlug:        tenant.Name,
-				Enabled:           state.Enabled,
-				LastModified:      state.LastModified,
-				FeatureDeployable: feature.HasDeployments,
+			es := EnvironmentStatus{
+				Name:         env.Name,
+				TenantName:   tenant.Name,
+				TenantSlug:   tenant.Name,
+				Enabled:      state.Enabled,
+				LastModified: state.LastModified,
 			}
 
 			releases, err := repo.ReleaseStatusesGet(ctx, env.ID)
 			if err == nil {
 				for _, release := range releases {
 					if release.Name == feature.Name {
-						environmentStatus.ReleaseVersion = release.Version
+						es.ReleaseVersion = release.Version
+						es.StatusText = release.Status
 						break
 					}
 				}
 			}
-
-			if feature.HasDeployments {
-				if deploymentStatus, ok := deploymentStatuses[env.ID]; ok {
-					environmentStatus.HasDeployments = true
-					environmentStatus.StatusText = deploymentStatus.state
-					environmentStatus.DeploymentID = deploymentStatus.deploymentID
-					environmentStatus.DeploymentVersion = deploymentStatus.version
-					environmentStatus.TargetLabels = deploymentStatus.targetLabels
-				}
-			}
-			if !environmentStatus.HasDeployments {
-				if environmentStatus.FeatureDeployable {
-					environmentStatus.StatusText = "-"
-				} else {
-					for _, release := range releases {
-						if release.Name == feature.Name {
-							environmentStatus.StatusText = release.Status
-							break
-						}
-					}
-					if environmentStatus.StatusText == "" {
-						if state.Enabled {
-							environmentStatus.StatusText = "Enabled"
-						} else {
-							environmentStatus.StatusText = "Disabled"
-						}
-					}
-				}
+			if es.StatusText == "" {
+				es.StatusText = "Enabled"
 			}
 
-			ret = append(ret, environmentStatus)
+			ret = append(ret, es)
 		}
 	}
-	if showAll {
-		return ret
-	}
-	filtered := make([]EnvironmentStatus, 0, len(ret))
-	for _, environmentStatus := range ret {
-		if environmentStatus.Enabled || (environmentStatus.HasDeployments && environmentStatus.DeploymentID != "") {
-			filtered = append(filtered, environmentStatus)
-		}
-	}
-	return filtered
+	return ret
 }
 
-func featureDeployments(ctx context.Context, featureName string) []DeploymentItem {
-	deployments, err := deployment.ListDeploymentsByFeature(ctx, featureName)
-	if err != nil {
-		return nil
+func targetMatchesLabels(target, envLabels map[string]string) bool {
+	for k, v := range target {
+		if envLabels[k] != v {
+			return false
+		}
 	}
-	items := make([]DeploymentItem, 0, len(deployments))
-	for _, dep := range deployments {
-		statuses, _ := deployment.ListDeploymentStatuses(ctx, dep.ID)
-		state, _ := aggregateDeploymentStatus(statuses)
-		target := deploymentTarget(dep)
-		items = append(items, DeploymentItem{
-			ID:      dep.ID.String(),
-			Version: dep.Feature.Version,
-			Status:  state,
-			Target:  target,
-			Created: formatTime(dep.Created),
-		})
+	return true
+}
+
+func latestDeploymentPerTarget(deps []*deployment.Deployment) []*deployment.Deployment {
+	seen := map[string]struct{}{}
+	ret := make([]*deployment.Deployment, 0, len(deps))
+	for _, dep := range deps {
+		key := targetKey(dep.TargetLabels)
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		ret = append(ret, dep)
 	}
-	return items
+	return ret
+}
+
+func targetKey(labels map[string]string) string {
+	keys := make([]string, 0, len(labels))
+	for k := range labels {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	parts := make([]string, 0, len(keys))
+	for _, k := range keys {
+		parts = append(parts, k+"="+labels[k])
+	}
+	return strings.Join(parts, ",")
 }
 
 func aggregateDeploymentStatus(statuses []*deployment.DeploymentStatus) (string, int) {
@@ -616,27 +672,6 @@ func aggregateDeploymentStatus(statuses []*deployment.DeploymentStatus) (string,
 	}
 
 	return "PENDING", disabledCount
-}
-
-func deploymentTarget(dep *deployment.Deployment) string {
-	labels := dep.Target()
-	if len(labels) == 0 {
-		return "All environments"
-	}
-
-	keys := make([]string, 0, len(labels))
-	labelMap := make(map[string]string, len(labels))
-	for _, label := range labels {
-		keys = append(keys, label.Key)
-		labelMap[label.Key] = label.Value
-	}
-	sort.Strings(keys)
-
-	parts := make([]string, 0, len(keys))
-	for _, k := range keys {
-		parts = append(parts, k+"="+labelMap[k])
-	}
-	return strings.Join(parts, ", ")
 }
 
 func featureRollouts(ctx context.Context, repo database.Repo, featureName string) []RolloutItem {

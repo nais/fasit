@@ -200,6 +200,18 @@ nav .theme-toggle:hover {
   color: var(--text-muted);
 }
 
+.deployment-overridden td:nth-child(1),
+.deployment-overridden td:nth-child(2) a,
+.deployment-overridden td:nth-child(3) {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+.deployment-overridden .override-note {
+  margin-left: 0.5rem;
+  font-size: 0.85em;
+  font-style: italic;
+}
+
 .main-content {
   flex: 1;
   padding: 0.75rem 2rem 2rem;
