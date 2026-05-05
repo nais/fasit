@@ -134,6 +134,40 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 	}
 }
 
+func ToggleHandler(repo database.Repo) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "Invalid form data", http.StatusBadRequest)
+			return
+		}
+		tenant, err := envpkg.GetTenantGetByName(r.Context(), r.FormValue("tenant"))
+		if err != nil {
+			http.Error(w, "Failed to get tenant: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		env, err := repo.EnvironmentGetByName(r.Context(), tenant.ID, r.FormValue("env"))
+		if err != nil {
+			http.Error(w, "Failed to get environment: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		featureName := chi.URLParam(r, "feature")
+		feat, err := featurepkg.FeatureByNameForEnv(r.Context(), featureName, env.ID)
+		if err != nil {
+			http.Error(w, "Failed to get feature: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		enabled := r.FormValue("enabled") == "true"
+		if _, err := featurepkg.FeatureStatesCreateOrUpdate(r.Context(), env.ID, feat, enabled); err != nil {
+			http.Error(w, "Failed to toggle feature: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if feat.HasDeployments {
+			deployment.TriggerReconcile(r.Context(), deployment.ReconcileTriggerEvent{})
+		}
+		http.Redirect(w, r, "/features/"+featureName, http.StatusSeeOther)
+	}
+}
+
 func listPage(features []view.FeatureNav) g.Node {
 	return h.Div(h.Class("container"), components.FeaturesSidebar(features, ""), h.Main(h.Class("main-content"), components.Breadcrumbs([]breadcrumb.Crumb{breadcrumb.Features()})))
 }
@@ -204,7 +238,7 @@ func deploymentStatusTable(groups []deploymentGroup, featureName string) g.Node 
 	for _, group := range groups {
 		rows := []g.Node{
 			h.Tr(h.Class("deployment-group-row"),
-				h.Td(g.Attr("colspan", "7"),
+				h.Td(g.Attr("colspan", "9"),
 					h.Div(h.Class("deployment-group-header"),
 						h.A(h.Href("/deployments/"+group.DeploymentID), h.Class("deployment-group-link"),
 							g.Text("Deployment "+group.DeploymentID[:8]),
@@ -227,6 +261,7 @@ func deploymentStatusTable(groups []deploymentGroup, featureName string) g.Node 
 			h.Th(g.Text("Status")),
 			h.Th(g.Text("Last update")),
 			h.Th(g.Text("Last deployed")),
+			h.Th(g.Text("Enabled")),
 			h.Th(g.Text("")),
 		)),
 		g.Group(bodies),
@@ -251,6 +286,7 @@ func envRow(env EnvironmentStatus, featureName string) g.Node {
 		h.Td(rolloutStatus(env.StatusText)),
 		h.Td(h.Title(view.FormatTime(env.LastModified)), g.Text(view.RelativeTime(env.LastModified))),
 		lastDeployedCell(env.LastDeployed),
+		h.Td(enableToggle(env, featureName)),
 		h.Td(h.A(h.Href(logsHref), g.Attr("title", "View logs"), g.Text("📋"))),
 	}
 	return h.Tr(g.Group(append(rowAttrs, cells...)))
@@ -312,6 +348,35 @@ func labelPills(labels map[string]string) g.Node {
 	return g.Group(pills)
 }
 
+func enableToggle(env EnvironmentStatus, featureName string) g.Node {
+	if env.IsOverridden {
+		return g.Text("")
+	}
+	action := "/features/" + featureName + "/toggle"
+	newEnabled := "true"
+	label := "Enable"
+	if env.Enabled {
+		newEnabled = "false"
+		label = "Disable"
+	}
+	popoverID := "toggle-" + env.TenantSlug + "-" + env.Name
+	return h.Div(
+		h.Button(h.Type("button"), h.Class("btn-small"), g.Attr("popovertarget", popoverID), g.Text(label)),
+		h.Div(g.Attr("popover", ""), h.ID(popoverID),
+			h.H3(g.Textf("%s %s in %s/%s?", label, featureName, env.TenantName, env.Name)),
+			h.Form(h.Method("POST"), h.Action(action),
+				h.Input(h.Type("hidden"), h.Name("tenant"), h.Value(env.TenantSlug)),
+				h.Input(h.Type("hidden"), h.Name("env"), h.Value(env.Name)),
+				h.Input(h.Type("hidden"), h.Name("enabled"), h.Value(newEnabled)),
+				h.Div(h.Class("popover-actions"),
+					h.Button(h.Type("submit"), g.Text(label)),
+					h.Button(h.Type("button"), g.Attr("popovertarget", popoverID), g.Attr("popovertargetaction", "hide"), g.Text("Cancel")),
+				),
+			),
+		),
+	)
+}
+
 func envTable(envs []EnvironmentStatus, featureName string) g.Node {
 	return h.Table(h.Class("table sortable"),
 		h.THead(h.Tr(
@@ -320,6 +385,7 @@ func envTable(envs []EnvironmentStatus, featureName string) g.Node {
 			h.Th(g.Text("Status")),
 			h.Th(g.Text("Last update")),
 			h.Th(g.Text("Last deployed")),
+			h.Th(g.Text("Enabled")),
 			h.Th(g.Text("")),
 		)),
 		h.TBody(g.Group(g.Map(envs, func(env EnvironmentStatus) g.Node {
@@ -330,6 +396,7 @@ func envTable(envs []EnvironmentStatus, featureName string) g.Node {
 				h.Td(rolloutStatus(env.StatusText)),
 				h.Td(h.Title(view.FormatTime(env.LastModified)), g.Text(view.RelativeTime(env.LastModified))),
 				lastDeployedCell(env.LastDeployed),
+				h.Td(enableToggle(env, featureName)),
 				h.Td(h.A(h.Href(logsHref), g.Attr("title", "View logs"), g.Text("📋"))),
 			)
 		}))),

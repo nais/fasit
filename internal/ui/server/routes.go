@@ -54,6 +54,7 @@ func (s *Server) Routes() http.Handler {
 
 	r.Get("/features", features.ListHandler(s.renderPage, s.repo))
 	r.Get("/features/{feature}", features.Handler(s.renderPage, s.repo))
+	r.Post("/features/{feature}/toggle", features.ToggleHandler(s.repo))
 
 	r.Get("/labels", labels.Handler(s.renderPage, s.repo))
 	r.Get("/naisd", naisd.Handler(s.renderPage, s.repo))

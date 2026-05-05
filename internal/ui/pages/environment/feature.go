@@ -551,9 +551,6 @@ func configKeyCell(item FeatureConfigItem) g.Node {
 }
 
 func configValueCell(page *FeaturePage, item FeatureConfigItem) g.Node {
-	if item.IsSecret {
-		return h.Span(h.Class("text-muted"), g.Text("••••••••"))
-	}
 	if item.IsComputed {
 		return h.Code(g.Text(item.Template))
 	}
@@ -574,7 +571,12 @@ func configValueCell(page *FeaturePage, item FeatureConfigItem) g.Node {
 		title, submitLabel = "Override Configuration", "Save override"
 		formFields = []g.Node{h.Input(h.Type("hidden"), h.Name("key"), h.Value(item.Key)), h.Input(h.Type("hidden"), h.Name("type"), h.Value(item.Type))}
 	}
-	return h.Div(h.Button(h.Type("button"), h.Class("edit-icon"), g.Attr("popovertarget", popoverID), g.Text("✎")), g.If(item.Source == string(model.ConfigSourceEnv), deleteOverrideButton(page, item)), valueSpan(item), h.Div(g.Attr("popover", ""), h.ID(popoverID), h.H3(g.Text(title)), h.Form(h.Method("POST"), h.Action(action), g.Group(formFields), h.Label(g.Text("Configuration Key")), h.Input(h.Type("text"), h.Value(item.Key), g.Attr("disabled", "")), h.Label(g.Text("Value")), configValueInput(item.Type, item.Value), h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text(submitLabel)), h.Button(h.Type("button"), g.Attr("popovertarget", popoverID), g.Attr("popovertargetaction", "hide"), g.Text("Cancel"))))))
+	displayValue := valueSpan(item)
+	inputValue := item.Value
+	if item.IsSecret {
+		displayValue = h.Span(h.Class("text-muted"), g.Text("••••••••"))
+	}
+	return h.Div(h.Button(h.Type("button"), h.Class("edit-icon"), g.Attr("popovertarget", popoverID), g.Text("✎")), g.If(item.Source == string(model.ConfigSourceEnv), deleteOverrideButton(page, item)), displayValue, h.Div(g.Attr("popover", ""), h.ID(popoverID), h.H3(g.Text(title)), h.Form(h.Method("POST"), h.Action(action), g.Group(formFields), h.Label(g.Text("Configuration Key")), h.Input(h.Type("text"), h.Value(item.Key), g.Attr("disabled", "")), h.Label(g.Text("Value")), configValueInput(item.Type, inputValue), h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text(submitLabel)), h.Button(h.Type("button"), g.Attr("popovertarget", popoverID), g.Attr("popovertargetaction", "hide"), g.Text("Cancel"))))))
 }
 
 func valueSpan(item FeatureConfigItem) g.Node {
