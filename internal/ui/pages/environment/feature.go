@@ -181,6 +181,15 @@ func RedeployHandler(repo database.Repo) http.HandlerFunc {
 			http.Error(w, "Failed to get feature: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
+		state, err := featurepkg.FeatureStateGet(r.Context(), env.ID, feature.Name)
+		if err != nil {
+			http.Error(w, "Failed to get feature state: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if !state.Enabled {
+			http.Error(w, "Cannot redeploy a disabled feature", http.StatusBadRequest)
+			return
+		}
 		if _, err := featurepkg.FeatureStatesCreateOrUpdate(r.Context(), env.ID, feature, true); err != nil {
 			http.Error(w, "Failed to trigger redeploy: "+err.Error(), http.StatusInternalServerError)
 			return
