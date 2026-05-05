@@ -77,6 +77,7 @@ type FeatureLog struct {
 	CurrentVersion string
 	CurrentStatus  string
 	LastModified   string
+	LastDeployed   string
 	CurrentLog     []LogLine
 	HelmDiff       *model.HelmValueDiff
 }
@@ -298,7 +299,6 @@ func loadFeaturePageData(ctx context.Context, repo database.Repo, tenantSlug, en
 		page.Deployments = loadEnvironmentDeployments(ctx, repo, featureName, env.ID)
 	}
 
-
 	return page, nil
 }
 
@@ -487,10 +487,15 @@ func loadFeatureLog(ctx context.Context, repo database.Repo, envID uuid.UUID, fe
 	if err != nil {
 		return nil
 	}
+	lastDeployed := "never"
+	if dep, err := repo.DeployInstructionsLatestDeployedForFeature(ctx, envID, feat.Name); err == nil && dep != nil {
+		lastDeployed = formatTime(dep.LastModified)
+	}
 	ret := &FeatureLog{
 		CurrentVersion: di.FeatureVersion,
 		CurrentStatus:  strings.ToUpper(di.Status.String()),
 		LastModified:   formatTime(di.LastModified),
+		LastDeployed:   lastDeployed,
 	}
 	for _, line := range lines {
 		ret.CurrentLog = append(ret.CurrentLog, LogLine{Timestamp: formatTime(line.Timestamp), Message: line.Message})

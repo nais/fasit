@@ -36,17 +36,18 @@ type DetailPage struct {
 }
 
 type EnvironmentStatus struct {
-	Name              string
-	TenantName        string
-	TenantSlug        string
-	Enabled           bool
-	LastModified      time.Time
-	StatusText        string
-	HasDeployments    bool
-	FeatureDeployable bool
-	DeploymentID      string
-	DeploymentVersion string
-	ReleaseVersion    string
+	Name               string
+	TenantName         string
+	TenantSlug         string
+	Enabled            bool
+	LastModified       time.Time
+	LastDeployed       time.Time
+	StatusText         string
+	HasDeployments     bool
+	FeatureDeployable  bool
+	DeploymentID       string
+	DeploymentVersion  string
+	ReleaseVersion     string
 	TargetLabels       map[string]string
 	IsOverridden       bool
 	OverriddenByID     string
@@ -231,7 +232,8 @@ func deploymentStatusTable(groups []deploymentGroup, featureName string) g.Node 
 			h.Th(g.Text("Environment")),
 			h.Th(g.Text("Version")),
 			h.Th(g.Text("Status")),
-			h.Th(g.Text("Last Modified")),
+			h.Th(g.Text("Last update")),
+			h.Th(g.Text("Last deployed")),
 			h.Th(g.Text("")),
 		)),
 		g.Group(bodies),
@@ -255,6 +257,7 @@ func envRow(env EnvironmentStatus, featureName string) g.Node {
 		h.Td(versionCell(env)),
 		h.Td(rolloutStatus(env.StatusText)),
 		h.Td(h.Title(formatTime(env.LastModified)), g.Text(relativeTime(env.LastModified))),
+		lastDeployedCell(env.LastDeployed),
 		h.Td(h.A(h.Href(logsHref), g.Attr("title", "View logs"), g.Text("📋"))),
 	}
 	return h.Tr(g.Group(append(rowAttrs, cells...)))
@@ -322,7 +325,8 @@ func envTable(envs []EnvironmentStatus, featureName string) g.Node {
 			h.Th(g.Text("Tenant")),
 			h.Th(g.Text("Environment")),
 			h.Th(g.Text("Status")),
-			h.Th(g.Text("Last Modified")),
+			h.Th(g.Text("Last update")),
+			h.Th(g.Text("Last deployed")),
 			h.Th(g.Text("")),
 		)),
 		h.TBody(g.Group(g.Map(envs, func(env EnvironmentStatus) g.Node {
@@ -332,10 +336,18 @@ func envTable(envs []EnvironmentStatus, featureName string) g.Node {
 				h.Td(h.A(h.Href("/tenants/"+env.TenantSlug+"/envs/"+env.Name+"/"+featureName), g.Text(env.Name))),
 				h.Td(rolloutStatus(env.StatusText)),
 				h.Td(h.Title(formatTime(env.LastModified)), g.Text(relativeTime(env.LastModified))),
+				lastDeployedCell(env.LastDeployed),
 				h.Td(h.A(h.Href(logsHref), g.Attr("title", "View logs"), g.Text("📋"))),
 			)
 		}))),
 	)
+}
+
+func lastDeployedCell(t time.Time) g.Node {
+	if t.IsZero() {
+		return h.Td(h.Span(h.Class("text-muted"), g.Text("never")))
+	}
+	return h.Td(h.Title(formatTime(t)), g.Text(relativeTime(t)))
 }
 
 func rolloutsTab(data *DetailPage) g.Node {
@@ -538,6 +550,10 @@ func featureEnvironmentStatuses(ctx context.Context, repo database.Repo, feature
 				TargetLabels:      dep.TargetLabels,
 			}
 
+			if di, err := repo.DeployInstructionsLatestDeployedForFeature(ctx, env.env.ID, feature.Name); err == nil && di != nil {
+				es.LastDeployed = di.LastModified
+			}
+
 			releases, err := repo.ReleaseStatusesGet(ctx, env.env.ID)
 			if err == nil {
 				for _, release := range releases {
@@ -596,6 +612,10 @@ func featureEnvironmentReleaseStatuses(ctx context.Context, repo database.Repo, 
 				TenantSlug:   tenant.Name,
 				Enabled:      state.Enabled,
 				LastModified: state.LastModified,
+			}
+
+			if di, err := repo.DeployInstructionsLatestDeployedForFeature(ctx, env.ID, feature.Name); err == nil && di != nil {
+				es.LastDeployed = di.LastModified
 			}
 
 			releases, err := repo.ReleaseStatusesGet(ctx, env.ID)

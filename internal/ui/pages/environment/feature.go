@@ -274,7 +274,7 @@ func logsTab(page *FeaturePage) g.Node {
 	}
 	content := []g.Node{}
 	if len(page.FeatureLog.CurrentLog) > 0 {
-		content = append(content, h.H2(g.Textf("Current (%s)", page.FeatureLog.CurrentVersion)), h.P(h.Class("text-muted"), g.Textf("Status: %s · Last modified: %s", page.FeatureLog.CurrentStatus, page.FeatureLog.LastModified)))
+		content = append(content, h.H2(g.Textf("Current (%s)", page.FeatureLog.CurrentVersion)), h.P(h.Class("text-muted"), g.Textf("Status: %s · Last update: %s · Last deployed: %s", page.FeatureLog.CurrentStatus, page.FeatureLog.LastModified, page.FeatureLog.LastDeployed)))
 		if page.FeatureLog.HelmDiff != nil && page.FeatureLog.HelmDiff.Diff != "" && page.FeatureLog.HelmDiff.Difference != model.HelmValueDifferenceFullMatch {
 			content = append(content, h.Details(h.Summary(g.Textf("Helm value changes (%s)", strings.ToLower(strings.ReplaceAll(page.FeatureLog.HelmDiff.Difference.String(), "_", " ")))), h.Pre(h.Class("code-block"), g.Raw(page.FeatureLog.HelmDiff.Diff))))
 		}

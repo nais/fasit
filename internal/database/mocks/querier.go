@@ -175,6 +175,72 @@ func (_c *Querier_DeployInstructionsForFeature_Call) RunAndReturn(run func(ctx c
 	return _c
 }
 
+// DeployInstructionsLatestDeployedForFeature provides a mock function for the type Querier
+func (_mock *Querier) DeployInstructionsLatestDeployedForFeature(ctx context.Context, arg gensql.DeployInstructionsLatestDeployedForFeatureParams) (gensql.DeployInstruction, error) {
+	ret := _mock.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeployInstructionsLatestDeployedForFeature")
+	}
+
+	var r0 gensql.DeployInstruction
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, gensql.DeployInstructionsLatestDeployedForFeatureParams) (gensql.DeployInstruction, error)); ok {
+		return returnFunc(ctx, arg)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, gensql.DeployInstructionsLatestDeployedForFeatureParams) gensql.DeployInstruction); ok {
+		r0 = returnFunc(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(gensql.DeployInstruction)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, gensql.DeployInstructionsLatestDeployedForFeatureParams) error); ok {
+		r1 = returnFunc(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_DeployInstructionsLatestDeployedForFeature_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeployInstructionsLatestDeployedForFeature'
+type Querier_DeployInstructionsLatestDeployedForFeature_Call struct {
+	*mock.Call
+}
+
+// DeployInstructionsLatestDeployedForFeature is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg gensql.DeployInstructionsLatestDeployedForFeatureParams
+func (_e *Querier_Expecter) DeployInstructionsLatestDeployedForFeature(ctx interface{}, arg interface{}) *Querier_DeployInstructionsLatestDeployedForFeature_Call {
+	return &Querier_DeployInstructionsLatestDeployedForFeature_Call{Call: _e.mock.On("DeployInstructionsLatestDeployedForFeature", ctx, arg)}
+}
+
+func (_c *Querier_DeployInstructionsLatestDeployedForFeature_Call) Run(run func(ctx context.Context, arg gensql.DeployInstructionsLatestDeployedForFeatureParams)) *Querier_DeployInstructionsLatestDeployedForFeature_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 gensql.DeployInstructionsLatestDeployedForFeatureParams
+		if args[1] != nil {
+			arg1 = args[1].(gensql.DeployInstructionsLatestDeployedForFeatureParams)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_DeployInstructionsLatestDeployedForFeature_Call) Return(deployInstruction gensql.DeployInstruction, err error) *Querier_DeployInstructionsLatestDeployedForFeature_Call {
+	_c.Call.Return(deployInstruction, err)
+	return _c
+}
+
+func (_c *Querier_DeployInstructionsLatestDeployedForFeature_Call) RunAndReturn(run func(ctx context.Context, arg gensql.DeployInstructionsLatestDeployedForFeatureParams) (gensql.DeployInstruction, error)) *Querier_DeployInstructionsLatestDeployedForFeature_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // DeployInstructionsLatestForFeature provides a mock function for the type Querier
 func (_mock *Querier) DeployInstructionsLatestForFeature(ctx context.Context, arg gensql.DeployInstructionsLatestForFeatureParams) (gensql.DeployInstruction, error) {
 	ret := _mock.Called(ctx, arg)
