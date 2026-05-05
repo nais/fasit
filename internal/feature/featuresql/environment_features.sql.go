@@ -53,36 +53,6 @@ func (q *Queries) GetEnvironmentFeature(ctx context.Context, arg GetEnvironmentF
 	return i, err
 }
 
-const hasActiveRollout = `-- name: HasActiveRollout :one
-SELECT
-	EXISTS (
-		SELECT
-			1
-		FROM
-			rollouts r
-			JOIN feature_data fd ON fd.name = r.feature_name
-				AND fd.version = r.version
-			JOIN environments e ON e.id = $1
-		WHERE
-			r.feature_name = $2
-			AND e.kind::TEXT = ANY (fd.kinds::TEXT[])
-			AND r.status NOT IN ('failed'))
-`
-
-type HasActiveRolloutParams struct {
-	EnvironmentID uuid.UUID
-	FeatureName   string
-}
-
-// Returns TRUE when a non-failed rollout exists for this feature whose
-// target kinds include the environment's kind.
-func (q *Queries) HasActiveRollout(ctx context.Context, arg HasActiveRolloutParams) (bool, error) {
-	row := q.db.QueryRow(ctx, hasActiveRollout, arg.EnvironmentID, arg.FeatureName)
-	var exists bool
-	err := row.Scan(&exists)
-	return exists, err
-}
-
 const hasMatchingDeployment = `-- name: HasMatchingDeployment :one
 SELECT
 	EXISTS (

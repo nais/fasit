@@ -25,20 +25,3 @@ SELECT
 		WHERE
 			d.feature_name = @feature_name);
 
--- name: HasActiveRollout :one
--- Returns TRUE when a non-failed rollout exists for this feature whose
--- target kinds include the environment's kind.
-SELECT
-	EXISTS (
-		SELECT
-			1
-		FROM
-			rollouts r
-			JOIN feature_data fd ON fd.name = r.feature_name
-				AND fd.version = r.version
-			JOIN environments e ON e.id = @environment_id
-		WHERE
-			r.feature_name = @feature_name
-			AND e.kind::TEXT = ANY (fd.kinds::TEXT[])
-			AND r.status NOT IN ('failed'));
-
