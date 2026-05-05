@@ -26,21 +26,32 @@ func FeaturesSidebar(features []view.FeatureNav, currentFeatureName string) g.No
 }
 
 func featureStatusBadge(feature view.FeatureNav) g.Node {
-	switch {
-	case feature.FailedCount > 0:
-		return h.Span(
+	return StatusCountsBadge(feature.FailedCount, feature.PendingCount)
+}
+
+// StatusCountsBadge renders small ✗N and/or ⏳N badges. When both failed and
+// pending are non-zero, both badges are shown (failed first). Returns nil when
+// both are zero so callers can append it unconditionally.
+func StatusCountsBadge(failed, pending int) g.Node {
+	var badges []g.Node
+	if failed > 0 {
+		badges = append(badges, h.Span(
 			h.Class("feature-nav-badge status-error"),
-			h.Title(strconv.Itoa(feature.FailedCount)+" failed deployment(s)"),
-			g.Text("✗ "+strconv.Itoa(feature.FailedCount)),
-		)
-	case feature.PendingCount > 0:
-		return h.Span(
-			h.Class("feature-nav-badge status-pending"),
-			h.Title(strconv.Itoa(feature.PendingCount)+" pending deployment(s)"),
-			g.Text("⏳ "+strconv.Itoa(feature.PendingCount)),
-		)
+			h.Title(strconv.Itoa(failed)+" failed"),
+			g.Text("✗ "+strconv.Itoa(failed)),
+		))
 	}
-	return nil
+	if pending > 0 {
+		badges = append(badges, h.Span(
+			h.Class("feature-nav-badge status-pending"),
+			h.Title(strconv.Itoa(pending)+" pending"),
+			g.Text("⏳ "+strconv.Itoa(pending)),
+		))
+	}
+	if len(badges) == 0 {
+		return nil
+	}
+	return g.Group(badges)
 }
 
 func EnvironmentSidebar(tenantName, environmentName, currentFeatureName string, allFeatures, enabledFeatures []view.FeatureNav) g.Node {

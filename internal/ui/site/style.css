@@ -422,8 +422,8 @@ nav .theme-toggle:hover {
 }
 .breadcrumbs {
   padding: 0;
-  margin: 0 0 0.5rem 0;
-  font-size: 0.75rem;
+  margin: 0 0 0.75rem 0;
+  font-size: 0.95rem;
   color: var(--text-faint);
   background: transparent;
   border: none;
@@ -937,10 +937,32 @@ nav .theme-toggle:hover {
 .feature-nav-badge {
   margin-left: 0.5rem;
   font-size: 0.75rem;
-  padding: 0.05rem 0.4rem;
+  font-weight: 600;
+  padding: 0.05rem 0.45rem;
   border-radius: 999px;
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
+  text-decoration: none;
+  line-height: 1.4;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+a .feature-nav-badge,
+a:hover .feature-nav-badge {
+  text-decoration: none;
+}
+
+.feature-nav-badge.status-error {
+  background: var(--status-error);
+  border-color: var(--status-error);
+  color: #fff;
+}
+
+.feature-nav-badge.status-pending {
+  background: var(--status-pending);
+  border-color: var(--status-pending);
+  color: #fff;
 }
 
 .deployment-group-body {

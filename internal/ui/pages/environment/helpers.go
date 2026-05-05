@@ -107,7 +107,7 @@ func toEnvironmentNavs(environments []*model.Environment) []view.EnvironmentNav 
 	return ret
 }
 
-func featureNavs(ctx context.Context, env *model.Environment) ([]view.FeatureNav, []view.FeatureNav, error) {
+func featureNavs(ctx context.Context, repo database.Repo, env *model.Environment) ([]view.FeatureNav, []view.FeatureNav, error) {
 	features, err := featurepkg.FeaturesForKind(ctx, env.Kind, env.CI)
 	if err != nil {
 		return nil, nil, err
@@ -121,10 +121,34 @@ func featureNavs(ctx context.Context, env *model.Environment) ([]view.FeatureNav
 			return nil, nil, err
 		}
 		nav := view.FeatureNav{Name: feat.Name, Enabled: state.Enabled}
+		failed, pending := featureStatusForEnv(ctx, repo, env.ID, feat.Name)
+		if failed {
+			nav.FailedCount = 1
+		} else if pending {
+			nav.PendingCount = 1
+		}
 		allFeatures = append(allFeatures, nav)
 		enabledFeatures = append(enabledFeatures, nav)
 	}
 	return allFeatures, enabledFeatures, nil
+}
+
+// featureStatusForEnv reports whether the latest deploy instruction for
+// (environment, feature) is failed or pending. Deploy instructions are the
+// unified source of truth for both rollout-driven and deployment-driven
+// progress, so this naturally covers both paths.
+func featureStatusForEnv(ctx context.Context, repo database.Repo, envID uuid.UUID, featureName string) (failed, pending bool) {
+	di, err := repo.DeployInstructionsLatestForFeature(ctx, envID, featureName)
+	if err != nil || di == nil {
+		return false, false
+	}
+	switch di.Status {
+	case model.RolloutStatusFailed:
+		return true, false
+	case model.RolloutStatusPending, model.RolloutStatusCreated:
+		return false, true
+	}
+	return false, false
 }
 
 func getEnvironmentMetadata(ctx context.Context, repo database.Repo, env *model.Environment) []MetadataItem {
@@ -224,7 +248,7 @@ func loadFeaturePageData(ctx context.Context, repo database.Repo, tenantSlug, en
 		return nil, err
 	}
 
-	allFeatures, enabledFeatures, err := featureNavs(ctx, env)
+	allFeatures, enabledFeatures, err := featureNavs(ctx, repo, env)
 	if err != nil {
 		return nil, err
 	}
