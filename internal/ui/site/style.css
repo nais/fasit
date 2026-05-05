@@ -922,6 +922,15 @@ nav .theme-toggle:hover {
   border: 1px solid var(--border-subtle);
 }
 
+.feature-nav-badge {
+  margin-left: 0.5rem;
+  font-size: 0.75rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+}
+
 .deployment-group-body {
   display: grid;
   grid-template-columns: max-content max-content 1fr max-content;

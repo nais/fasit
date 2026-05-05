@@ -1,6 +1,8 @@
 package components
 
 import (
+	"strconv"
+
 	"github.com/nais/fasit/internal/ui/view"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
@@ -16,11 +18,29 @@ func FeaturesSidebar(features []view.FeatureNav, currentFeatureName string) g.No
 				}
 
 				return h.Li(
-					h.A(append(attrs, g.Text(feature.Name))...),
+					h.A(append(attrs, g.Text(feature.Name), featureStatusBadge(feature))...),
 				)
 			}))),
 		),
 	)
+}
+
+func featureStatusBadge(feature view.FeatureNav) g.Node {
+	switch {
+	case feature.FailedCount > 0:
+		return h.Span(
+			h.Class("feature-nav-badge status-error"),
+			h.Title(strconv.Itoa(feature.FailedCount)+" failed deployment(s)"),
+			g.Text("✗ "+strconv.Itoa(feature.FailedCount)),
+		)
+	case feature.PendingCount > 0:
+		return h.Span(
+			h.Class("feature-nav-badge status-pending"),
+			h.Title(strconv.Itoa(feature.PendingCount)+" pending deployment(s)"),
+			g.Text("⏳ "+strconv.Itoa(feature.PendingCount)),
+		)
+	}
+	return nil
 }
 
 func EnvironmentSidebar(tenantName, environmentName, currentFeatureName string, allFeatures, enabledFeatures []view.FeatureNav) g.Node {

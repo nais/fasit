@@ -91,8 +91,34 @@ func ListHandler(renderPage RenderPage, _ database.Repo) http.HandlerFunc {
 			http.Error(w, "Failed to load features", http.StatusInternalServerError)
 			return
 		}
-		renderPage(w, r, layout.Props{Title: "Features", CurrentPage: components.PageFeatures, Content: listPage(toFeatureNavs(features))})
+		failed, pending := featureDeploymentCounts(r.Context())
+		renderPage(w, r, layout.Props{Title: "Features", CurrentPage: components.PageFeatures, Content: listPage(toFeatureNavs(features, failed, pending))})
 	}
+}
+
+func featureDeploymentCounts(ctx context.Context) (failed, pending map[string]int) {
+	failed = map[string]int{}
+	pending = map[string]int{}
+
+	deployments, err := deployment.ListDeployments(ctx)
+	if err != nil {
+		return failed, pending
+	}
+
+	for _, dep := range deployments {
+		statuses, err := deployment.ListDeploymentStatuses(ctx, dep.ID)
+		if err != nil {
+			continue
+		}
+		status, _ := aggregateDeploymentStatus(statuses)
+		switch status {
+		case "FAILED":
+			failed[dep.Feature.Name]++
+		case "PENDING":
+			pending[dep.Feature.Name]++
+		}
+	}
+	return failed, pending
 }
 
 func TabHandler(renderPage RenderPage, repo database.Repo, activeTab string) http.HandlerFunc {
@@ -371,7 +397,8 @@ func loadFeatureData(r *http.Request, repo database.Repo, activeTab string) (*De
 	if err != nil {
 		return nil, err
 	}
-	data := &DetailPage{Breadcrumbs: []breadcrumb.Crumb{breadcrumb.Features(), breadcrumb.Feature(featureName)}, Features: toFeatureNavs(features), CurrentFeature: &Feature{Feature: feature, Config: featureConfigItems(feature)}, ActiveTab: activeTab}
+	failed, pending := featureDeploymentCounts(r.Context())
+	data := &DetailPage{Breadcrumbs: []breadcrumb.Crumb{breadcrumb.Features(), breadcrumb.Feature(featureName)}, Features: toFeatureNavs(features, failed, pending), CurrentFeature: &Feature{Feature: feature, Config: featureConfigItems(feature)}, ActiveTab: activeTab}
 	if activeTab == "status" {
 		showParam := r.URL.Query().Get("show")
 		data.ShowAll = showParam == "all"
@@ -657,10 +684,14 @@ func configDefaultValue(item ConfigItem) g.Node {
 	return h.Span(h.Class("text-muted"), g.Text("-"))
 }
 
-func toFeatureNavs(features []*model.Feature) []view.FeatureNav {
+func toFeatureNavs(features []*model.Feature, failedCounts, pendingCounts map[string]int) []view.FeatureNav {
 	ret := make([]view.FeatureNav, 0, len(features))
 	for _, feature := range features {
-		ret = append(ret, view.FeatureNav{Name: feature.Name})
+		ret = append(ret, view.FeatureNav{
+			Name:         feature.Name,
+			FailedCount:  failedCounts[feature.Name],
+			PendingCount: pendingCounts[feature.Name],
+		})
 	}
 	return ret
 }
