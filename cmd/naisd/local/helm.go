@@ -166,5 +166,7 @@ func parseHelmCommand(args []string) (op, name, version string) {
 	return op, name, version
 }
 
-var _ naisd.HelmClient = (*HelmClient)(nil)
-var _ naisd.Exec = (*HelmClient)(nil)
+var (
+	_ naisd.HelmClient = (*HelmClient)(nil)
+	_ naisd.Exec       = (*HelmClient)(nil)
+)
