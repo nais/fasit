@@ -94,20 +94,30 @@ func featureDeploymentCounts(ctx context.Context, repo database.Repo) (failed, p
 		return map[string]int{}, map[string]int{}
 	}
 
+	features, err := featurepkg.Features(ctx)
+	if err != nil {
+		return failed, pending
+	}
+	hasDeployments := make(map[string]bool)
+	for _, f := range features {
+		if f.HasDeployments {
+			hasDeployments[f.Name] = true
+		}
+	}
+
 	rollouts, err := repo.Rollouts(ctx, 100)
 	if err != nil {
 		return failed, pending
 	}
 	for _, ro := range rollouts {
+		if hasDeployments[ro.FeatureName] {
+			continue
+		}
 		switch ro.Status {
 		case model.RolloutStatusFailed:
-			if failed[ro.FeatureName] == 0 {
-				failed[ro.FeatureName] = 1
-			}
+			failed[ro.FeatureName] = 1
 		case model.RolloutStatusPending:
-			if pending[ro.FeatureName] == 0 {
-				pending[ro.FeatureName] = 1
-			}
+			pending[ro.FeatureName] = 1
 		}
 	}
 	return failed, pending
