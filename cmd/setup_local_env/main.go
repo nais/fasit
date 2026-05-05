@@ -190,20 +190,16 @@ func main() {
 	//   - 2 features FAILED (touching test-partner/prod)
 	//   - 2 features PENDING (touching test-partner/staging, which never
 	//     receives a status because no naisd is listening there)
-	seeder.AddDeployment("aivenator", "2.0.0", environment.Labels{"tenant": "nav", "aiven": "enabled"})
-	seeder.AddDeployment("naiserator", "1.0.0", environment.Labels{"kind": "tenant", "tenant": "nav"})
-	seeder.AddDeployment("v13s", "1.0.0", environment.Labels{"kind": "management"})
-	seeder.AddDeployment("console", "1.0.0", environment.Labels{"tenant": "dev-nais"})
-	seeder.AddDeployment("unleash", "1.0.0", environment.Labels{"tenant": "test-partner", "aiven": "enabled"})
-	seeder.AddDeployment("replicator", "1.0.0", environment.Labels{"tenant": "test-partner", "environment": "prod"})
-	seeder.AddDeployment("dependencytrack", "1.0.0", environment.Labels{"tenant": "test-partner", "environment": "staging"})
-	seeder.AddDeployment("hookd", "1.0.0", environment.Labels{"tenant": "test-partner", "environment": "staging"})
-	seeder.AddDeployment("naiserator", "1.0.0", environment.Labels{"tenant": "dev-nais", "environment": "dev"})
-	seeder.AddDeployment("aivenator", "1.0.0", environment.Labels{"tenant": "dev-nais", "environment": "dev"})
-	seeder.AddDeployment("hookd", "1.0.0", environment.Labels{"tenant": "dev-nais", "environment": "dev"})
-	seeder.AddDeployment("dependencytrack", "1.0.0", environment.Labels{"tenant": "dev-nais", "environment": "dev"})
-	seeder.AddDeployment("replicator", "1.0.0", environment.Labels{"tenant": "dev-nais", "environment": "dev"})
-	seeder.AddDeployment("unleash", "1.0.0", environment.Labels{"tenant": "dev-nais", "environment": "dev"})
+	seeder.AddDeployment("naiserator", "2026-04-28-a1b2c3d", environment.Labels{"kind": "tenant"})
+	seeder.AddDeployment("v13s", "2026-04-22-7e8f9a0", environment.Labels{"kind": "management"})
+	seeder.AddDeployment("console", "2026-04-30-3c4d5e6", environment.Labels{"tenant": "dev-nais"})
+	seeder.AddDeployment("unleash", "2026-04-15-9b0c1d2", environment.Labels{"tenant": "test-partner", "aiven": "enabled"})
+	seeder.AddDeployment("replicator", "2026-04-18-5f6a7b8", environment.Labels{"tenant": "test-partner", "environment": "prod"})
+	seeder.AddDeployment("dependencytrack", "2026-04-10-2d3e4f5", environment.Labels{"tenant": "test-partner", "environment": "staging"})
+	seeder.AddDeployment("naiserator", "2026-05-01-6a7b8c9", environment.Labels{"tenant": "dev-nais", "environment": "dev"})
+	seeder.AddDeployment("dependencytrack", "2026-04-25-8d9e0f1", environment.Labels{"tenant": "dev-nais", "environment": "dev"})
+	seeder.AddDeployment("replicator", "2026-04-20-4b5c6d7", environment.Labels{"tenant": "dev-nais", "environment": "dev"})
+	seeder.AddDeployment("unleash", "2026-04-27-1a2b3c4", environment.Labels{"tenant": "dev-nais", "environment": "dev"})
 
 	if _, err := seeder.Seed(ctx); err != nil {
 		log.Fatal(err)
@@ -228,12 +224,10 @@ func main() {
 		}
 	}
 
-	// Disable a couple of features in dev-nais/dev so ListDeploymentStatuses
-	// synthesizes DISABLED rows for them; every other env leaves all features enabled.
-	for _, name := range []string{"hookd", "dependencytrack"} {
-		if _, err := feature.FeatureStatesCreateOrUpdate(ctx, envID("dev-nais", "dev"), &model.Feature{Name: name}, false); err != nil {
-			log.WithError(err).Errorf("disable %s in dev-nais/dev", name)
-		}
+	// Disable a feature in dev-nais/dev so ListDeploymentStatuses
+	// synthesizes a DISABLED row for it; every other env leaves all features enabled.
+	if _, err := feature.FeatureStatesCreateOrUpdate(ctx, envID("dev-nais", "dev"), &model.Feature{Name: "dependencytrack"}, false); err != nil {
+		log.WithError(err).Errorf("disable dependencytrack in dev-nais/dev")
 	}
 
 	type rolloutSeed struct {
@@ -242,7 +236,7 @@ func main() {
 		ref     string
 	}
 	rollouts := []rolloutSeed{
-		{"naiserator", "1.0.0", "refs/heads/main"},
+		{"naiserator", "2026-05-04-f1e2d3c", "refs/heads/main"},
 		{"aivenator", "1.0.0", "refs/tags/v1.0.0"},
 		{"aivenator", "2.0.0", "refs/tags/v2.0.0"},
 		{"aivenator", "3.0.0", "refs/tags/v3.0.0"},
