@@ -484,6 +484,18 @@ func FeatureStateGet(ctx context.Context, envID uuid.UUID, featureName string) (
 		return fs, nil
 	}
 
+	hasRollout, err := querier(ctx).HasActiveRollout(ctx, featuresql.HasActiveRolloutParams{
+		EnvironmentID: envID,
+		FeatureName:   featureName,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if hasRollout {
+		fs.Enabled = true
+		return fs, nil
+	}
+
 	return fs, nil
 }
 
