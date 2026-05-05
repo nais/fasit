@@ -135,4 +135,3 @@ func ageCell(row agentRow, now time.Time) string {
 	age := now.Sub(row.ReportedAt).Round(time.Second)
 	return age.String() + " ago"
 }
-

@@ -70,7 +70,6 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 	}
 }
 
-
 func page(tenants []tenantCard) g.Node {
 	articles := g.Map(tenants, func(tenant tenantCard) g.Node {
 		return h.Article(h.Class("dash-card"),

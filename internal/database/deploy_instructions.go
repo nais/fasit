@@ -19,6 +19,7 @@ type DeployInstructionRepo interface {
 	DeployInstructionsForFeature(ctx context.Context, envID uuid.UUID, featureName string, offset int) ([]*model.DeployInstruction, error)
 	DeployInstructionsLatestForFeature(ctx context.Context, envID uuid.UUID, featureName string) (*model.DeployInstruction, error)
 	DeployInstructionsLatestDeployedForFeature(ctx context.Context, envID uuid.UUID, featureName string) (*model.DeployInstruction, error)
+	DeployInstructionStatusCounts(ctx context.Context) (failed, pending map[string]int, err error)
 	DeployInstructionUpdateStatus(ctx context.Context, id uuid.UUID, status model.RolloutStatus) error
 	HelmValueDiffGet(ctx context.Context, di *model.DeployInstruction, secretKeys []string) (*model.HelmValueDiff, error)
 	NamesFromDeployInstruction(ctx context.Context, id uuid.UUID) (tenantName, environmentName string, err error)
@@ -86,6 +87,24 @@ func (r *repo) DeployInstructionsLatestDeployedForFeature(ctx context.Context, e
 	}
 
 	return deployInstructionFromSQL(di), nil
+}
+
+func (r *repo) DeployInstructionStatusCounts(ctx context.Context) (failed, pending map[string]int, err error) {
+	failed = map[string]int{}
+	pending = map[string]int{}
+	rows, err := r.querier.DeployInstructionStatusCounts(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	for _, row := range rows {
+		if row.FailedCount > 0 {
+			failed[row.FeatureName] = int(row.FailedCount)
+		}
+		if row.PendingCount > 0 {
+			pending[row.FeatureName] = int(row.PendingCount)
+		}
+	}
+	return failed, pending, nil
 }
 
 func (r *repo) HelmValueDiffGet(ctx context.Context, di *model.DeployInstruction, secretKeys []string) (*model.HelmValueDiff, error) {

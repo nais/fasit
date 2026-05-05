@@ -9,6 +9,61 @@ import (
 	"github.com/google/uuid"
 )
 
+const deployInstructionStatusCounts = `-- name: DeployInstructionStatusCounts :many
+WITH latest AS (
+	SELECT DISTINCT ON (feature_name,
+		environment_id)
+		feature_name,
+		status
+	FROM
+		deploy_instructions
+	ORDER BY
+		feature_name,
+		environment_id,
+		created DESC
+)
+SELECT
+	feature_name,
+	COUNT(*) FILTER (WHERE status = 'failed') AS failed_count,
+	COUNT(*) FILTER (WHERE status IN ('pending', 'created')) AS pending_count
+FROM
+	latest
+GROUP BY
+	feature_name
+HAVING
+	COUNT(*) FILTER (WHERE status = 'failed') > 0
+	OR COUNT(*) FILTER (WHERE status IN ('pending', 'created')) > 0
+`
+
+type DeployInstructionStatusCountsRow struct {
+	FeatureName  string
+	FailedCount  int64
+	PendingCount int64
+}
+
+// For each feature, count how many environments have a latest deploy
+// instruction in failed or pending/created state. Used by the features
+// sidebar to show badge counts without per-feature queries.
+func (q *Queries) DeployInstructionStatusCounts(ctx context.Context) ([]DeployInstructionStatusCountsRow, error) {
+	rows, err := q.db.Query(ctx, deployInstructionStatusCounts)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []DeployInstructionStatusCountsRow{}
+	for rows.Next() {
+		var i DeployInstructionStatusCountsRow
+		if err := rows.Scan(&i.FeatureName, &i.FailedCount, &i.PendingCount); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const deployInstructionsByID = `-- name: DeployInstructionsByID :one
 SELECT
 	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, deployment_id

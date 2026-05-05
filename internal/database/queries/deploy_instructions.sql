@@ -95,3 +95,31 @@ FROM
 WHERE
 	deploy_instructions.id = @id;
 
+-- name: DeployInstructionStatusCounts :many
+-- For each feature, count how many environments have a latest deploy
+-- instruction in failed or pending/created state. Used by the features
+-- sidebar to show badge counts without per-feature queries.
+WITH latest AS (
+	SELECT DISTINCT ON (feature_name,
+		environment_id)
+		feature_name,
+		status
+	FROM
+		deploy_instructions
+	ORDER BY
+		feature_name,
+		environment_id,
+		created DESC
+)
+SELECT
+	feature_name,
+	COUNT(*) FILTER (WHERE status = 'failed') AS failed_count,
+	COUNT(*) FILTER (WHERE status IN ('pending', 'created')) AS pending_count
+FROM
+	latest
+GROUP BY
+	feature_name
+HAVING
+	COUNT(*) FILTER (WHERE status = 'failed') > 0
+	OR COUNT(*) FILTER (WHERE status IN ('pending', 'created')) > 0;
+

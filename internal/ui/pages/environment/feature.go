@@ -215,7 +215,7 @@ func featurePageContent(page *FeaturePage) g.Node {
 		components.EnvironmentSidebar(page.Tenant.Name, page.Environment.Name, page.Feature.Name, page.AllFeatures, page.EnabledFeatures),
 		h.Main(h.Class("main-content"),
 			components.Breadcrumbs(page.Breadcrumbs),
-		h.Div(h.Class("card"),
+			h.Div(h.Class("card"),
 				h.Div(h.Class("card-body"),
 					h.Div(h.Class("card-header-row"),
 						h.P(g.Text("Global feature page: "), h.A(h.Href("/features/"+page.Feature.Name), g.Text(page.Feature.Name))),

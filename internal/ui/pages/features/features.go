@@ -89,41 +89,33 @@ func ListHandler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 }
 
 func featureDeploymentCounts(ctx context.Context, repo database.Repo) (failed, pending map[string]int) {
-	failed = map[string]int{}
-	pending = map[string]int{}
+	failed, pending, err := repo.DeployInstructionStatusCounts(ctx)
+	if err != nil {
+		return map[string]int{}, map[string]int{}
+	}
 
-	features, err := featurepkg.Features(ctx)
+	// Rollout-only features: count from rollout status directly.
+	// Deploy instructions cover both deployments and rollouts, but a
+	// rollout that failed before creating any deploy instructions (or
+	// whose feature has no deployments) needs the rollout table check.
+	rollouts, err := repo.Rollouts(ctx, 100)
 	if err != nil {
 		return failed, pending
 	}
-	for _, feat := range features {
-		if feat.HasDeployments {
-			for _, env := range featureEnvironmentStatuses(ctx, repo, feat) {
-				switch strings.ToUpper(env.StatusText) {
-				case "FAILED":
-					failed[feat.Name]++
-				case "PENDING", "CREATED":
-					pending[feat.Name]++
-				}
+	for _, ro := range rollouts {
+		switch ro.Status {
+		case model.RolloutStatusFailed:
+			if failed[ro.FeatureName] == 0 {
+				failed[ro.FeatureName] = 1
 			}
-		} else {
-			rollouts, err := repo.RolloutsForFeature(ctx, feat.Name)
-			if err != nil {
-				continue
-			}
-			for _, ro := range rollouts {
-				switch ro.Status {
-				case model.RolloutStatusFailed:
-					failed[feat.Name]++
-				case model.RolloutStatusPending, model.RolloutStatusCreated:
-					pending[feat.Name]++
-				}
+		case model.RolloutStatusPending:
+			if pending[ro.FeatureName] == 0 {
+				pending[ro.FeatureName] = 1
 			}
 		}
 	}
 	return failed, pending
 }
-
 
 func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

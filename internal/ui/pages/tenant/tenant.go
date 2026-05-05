@@ -127,7 +127,6 @@ func toTenantNavs(tenants []*model.Tenant) []view.TenantNav {
 	return ret
 }
 
-
 func valueOrEmpty(value *string) string {
 	if value == nil {
 		return ""
