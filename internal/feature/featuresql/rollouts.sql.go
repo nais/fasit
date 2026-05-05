@@ -52,6 +52,52 @@ func (q *Queries) RolloutByName(ctx context.Context, name string) (RolloutByName
 	return i, err
 }
 
+const rolloutLatestByName = `-- name: RolloutLatestByName :one
+SELECT
+	rollouts.id,
+	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.rename,
+	rollouts.created
+FROM
+	rollouts
+	JOIN feature_data fd ON rollouts.feature_name = fd.name
+		AND rollouts.version = fd.version
+WHERE
+	fd.name = $1
+ORDER BY
+	rollouts.created DESC
+LIMIT 1
+`
+
+type RolloutLatestByNameRow struct {
+	ID           uuid.UUID
+	FeatureDatum FeatureDatum
+	Created      pgtype.Timestamptz
+}
+
+// Distinct from RolloutByName: returns the latest rollout regardless of
+// status, for feature-definition lookups (resolvers, /features/{name}).
+func (q *Queries) RolloutLatestByName(ctx context.Context, name string) (RolloutLatestByNameRow, error) {
+	row := q.db.QueryRow(ctx, rolloutLatestByName, name)
+	var i RolloutLatestByNameRow
+	err := row.Scan(
+		&i.ID,
+		&i.FeatureDatum.Name,
+		&i.FeatureDatum.Version,
+		&i.FeatureDatum.Chart,
+		&i.FeatureDatum.Description,
+		&i.FeatureDatum.Source,
+		&i.FeatureDatum.Kinds,
+		&i.FeatureDatum.Dependencies,
+		&i.FeatureDatum.Values,
+		&i.FeatureDatum.DefaultValues,
+		&i.FeatureDatum.Timeout,
+		&i.FeatureDatum.TplDetails,
+		&i.FeatureDatum.Rename,
+		&i.Created,
+	)
+	return i, err
+}
+
 const rolloutsForKind = `-- name: RolloutsForKind :many
 WITH success AS (
 	SELECT DISTINCT ON (rollouts.feature_name)

@@ -210,11 +210,31 @@ func RolloutByName(ctx context.Context, name string) (*model.Feature, error) {
 	return feature, nil
 }
 
+func RolloutLatestByName(ctx context.Context, name string) (*model.Feature, error) {
+	f, err := querier(ctx).RolloutLatestByName(ctx, name)
+	if err != nil {
+		return nil, fmt.Errorf("get latest rollout by name from db: %w", err)
+	}
+
+	feature, err := featureFromSQL(f.FeatureDatum)
+	if err != nil {
+		return nil, fmt.Errorf("make feature: %w", err)
+	}
+	feature.GraphVars = struct {
+		EnvironmentID uuid.UUID
+		RolloutID     uuid.UUID
+	}{
+		RolloutID: f.ID,
+	}
+
+	return feature, nil
+}
+
 func FeatureByName(ctx context.Context, name string) (*model.Feature, error) {
 	f, err := querier(ctx).FeatureByName(ctx, name)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			r, err := RolloutByName(ctx, name)
+			r, err := RolloutLatestByName(ctx, name)
 			if err == nil {
 				return r, nil
 			} else if !errors.Is(err, pgx.ErrNoRows) {

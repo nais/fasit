@@ -171,7 +171,7 @@ func (r *queryResolver) Feature(ctx context.Context, name string) (*model.Featur
 	f, err := featurepkg.FeatureByName(ctx, name)
 
 	if errors.Is(err, pgx.ErrNoRows) {
-		return featurepkg.RolloutByName(ctx, name)
+		return featurepkg.RolloutLatestByName(ctx, name)
 	}
 
 	return f, err

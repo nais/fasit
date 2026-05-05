@@ -1851,6 +1851,72 @@ func (_c *Querier_RolloutByName_Call) RunAndReturn(run func(ctx context.Context,
 	return _c
 }
 
+// RolloutLatestByName provides a mock function for the type Querier
+func (_mock *Querier) RolloutLatestByName(ctx context.Context, name string) (featuresql.RolloutLatestByNameRow, error) {
+	ret := _mock.Called(ctx, name)
+
+	if len(ret) == 0 {
+		panic("no return value specified for RolloutLatestByName")
+	}
+
+	var r0 featuresql.RolloutLatestByNameRow
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (featuresql.RolloutLatestByNameRow, error)); ok {
+		return returnFunc(ctx, name)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) featuresql.RolloutLatestByNameRow); ok {
+		r0 = returnFunc(ctx, name)
+	} else {
+		r0 = ret.Get(0).(featuresql.RolloutLatestByNameRow)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = returnFunc(ctx, name)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_RolloutLatestByName_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RolloutLatestByName'
+type Querier_RolloutLatestByName_Call struct {
+	*mock.Call
+}
+
+// RolloutLatestByName is a helper method to define mock.On call
+//   - ctx context.Context
+//   - name string
+func (_e *Querier_Expecter) RolloutLatestByName(ctx interface{}, name interface{}) *Querier_RolloutLatestByName_Call {
+	return &Querier_RolloutLatestByName_Call{Call: _e.mock.On("RolloutLatestByName", ctx, name)}
+}
+
+func (_c *Querier_RolloutLatestByName_Call) Run(run func(ctx context.Context, name string)) *Querier_RolloutLatestByName_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 string
+		if args[1] != nil {
+			arg1 = args[1].(string)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_RolloutLatestByName_Call) Return(rolloutLatestByNameRow featuresql.RolloutLatestByNameRow, err error) *Querier_RolloutLatestByName_Call {
+	_c.Call.Return(rolloutLatestByNameRow, err)
+	return _c
+}
+
+func (_c *Querier_RolloutLatestByName_Call) RunAndReturn(run func(ctx context.Context, name string) (featuresql.RolloutLatestByNameRow, error)) *Querier_RolloutLatestByName_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // RolloutStatesGet provides a mock function for the type Querier
 func (_mock *Querier) RolloutStatesGet(ctx context.Context, environmentID uuid.UUID) ([]featuresql.RolloutStatesGetRow, error) {
 	ret := _mock.Called(ctx, environmentID)

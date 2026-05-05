@@ -49,7 +49,7 @@ func (r *configurationsResolver) Configuration(ctx context.Context, obj *model.C
 		}
 
 		if obj.RolloutID != uuid.Nil {
-			feat, err = featurepkg.RolloutByName(ctx, obj.FeatureName)
+			feat, err = featurepkg.RolloutLatestByName(ctx, obj.FeatureName)
 			if err != nil {
 				return nil, err
 			}
@@ -182,7 +182,7 @@ func (r *mutationResolver) ConfigurationCreate(ctx context.Context, configuratio
 	} else {
 		feature, err = featurepkg.FeatureByName(ctx, configuration.Feature)
 		if errors.Is(err, pgx.ErrNoRows) {
-			feature, err = featurepkg.RolloutByName(ctx, configuration.Feature)
+			feature, err = featurepkg.RolloutLatestByName(ctx, configuration.Feature)
 		}
 	}
 	if err != nil {
