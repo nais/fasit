@@ -626,7 +626,11 @@ func featureEnvironmentReleaseStatuses(ctx context.Context, repo database.Repo, 
 				}
 			}
 			if es.StatusText == "" {
-				es.StatusText = "Enabled"
+				if state.Enabled {
+					es.StatusText = "Enabled"
+				} else {
+					es.StatusText = "Disabled"
+				}
 			}
 
 			ret = append(ret, es)
