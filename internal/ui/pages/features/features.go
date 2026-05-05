@@ -94,10 +94,6 @@ func featureDeploymentCounts(ctx context.Context, repo database.Repo) (failed, p
 		return map[string]int{}, map[string]int{}
 	}
 
-	// Rollout-only features: count from rollout status directly.
-	// Deploy instructions cover both deployments and rollouts, but a
-	// rollout that failed before creating any deploy instructions (or
-	// whose feature has no deployments) needs the rollout table check.
 	rollouts, err := repo.Rollouts(ctx, 100)
 	if err != nil {
 		return failed, pending

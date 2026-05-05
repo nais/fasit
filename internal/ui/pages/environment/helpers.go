@@ -108,8 +108,6 @@ func toEnvironmentNavs(environments []*model.Environment) []view.EnvironmentNav 
 }
 
 func featureNavs(ctx context.Context, repo database.Repo, env *model.Environment) ([]view.FeatureNav, []view.FeatureNav, error) {
-	// Use the same approach as the GraphQL FeatureStates resolver:
-	// merge deployment features with feature states (which include rollouts).
 	deploymentFeatures, err := deployment.ListEnvironmentFeatures(ctx, env.ID)
 	if err != nil {
 		return nil, nil, err

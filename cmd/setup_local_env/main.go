@@ -211,9 +211,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Enable every feature in every env. Without an explicit feature_states row
-	// FeatureStatesGet COALESCEs enabled to FALSE, so every feature would otherwise
-	// appear disabled. After this, selectively disable a couple in dev-nais/dev.
+	// Enable every feature in every env so they don't default to disabled.
 	for tenantName, environments := range envs {
 		for envName := range environments {
 			id := envID(tenantName, envName)
@@ -230,8 +228,7 @@ func main() {
 		}
 	}
 
-	// Disable a feature in dev-nais/dev so ListDeploymentStatuses
-	// synthesizes a DISABLED row for it; every other env leaves all features enabled.
+	// Disable one feature to get a DISABLED status row in the mix.
 	if _, err := feature.FeatureStatesCreateOrUpdate(ctx, envID("dev-nais", "dev"), &model.Feature{Name: "dependencytrack"}, false); err != nil {
 		log.WithError(err).Errorf("disable dependencytrack in dev-nais/dev")
 	}
