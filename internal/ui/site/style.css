@@ -250,6 +250,11 @@ nav .nav-btn:hover {
   margin-top: 1.5rem;
   margin-bottom: 0.75rem;
 }
+.card-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 .card pre {
   background: var(--bg-inset);
   padding: 1rem;

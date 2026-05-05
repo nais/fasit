@@ -215,9 +215,12 @@ func featurePageContent(page *FeaturePage) g.Node {
 		components.EnvironmentSidebar(page.Tenant.Name, page.Environment.Name, page.Feature.Name, page.AllFeatures, page.EnabledFeatures),
 		h.Main(h.Class("main-content"),
 			components.Breadcrumbs(page.Breadcrumbs),
-			h.Div(h.Class("card"),
+		h.Div(h.Class("card"),
 				h.Div(h.Class("card-body"),
-					h.P(g.Text("Global feature page: "), h.A(h.Href("/features/"+page.Feature.Name), g.Text(page.Feature.Name))),
+					h.Div(h.Class("card-header-row"),
+						h.P(g.Text("Global feature page: "), h.A(h.Href("/features/"+page.Feature.Name), g.Text(page.Feature.Name))),
+						redeployButton(page),
+					),
 					featureMetadataHeader(page),
 					components.TabsNav(page.ActiveTab, envFeatureTabs(page.TenantSlug, page.Environment.Name, page.Feature.Name, page.Feature.HasDeployments)),
 					tabContent,
@@ -280,6 +283,24 @@ func envFeatureTabs(tenant, env, feature string, hasDeployments bool) []componen
 	return tabs
 }
 
+func redeployButton(page *FeaturePage) g.Node {
+	if !page.Feature.Enabled {
+		return nil
+	}
+	redeployPopoverID := "trigger-redeploy"
+	redeployAction := featureBasePathValues(page.TenantSlug, page.Environment.Name, page.Feature.Name) + "/redeploy"
+	return h.Div(
+		h.Button(h.Type("button"), h.Class("btn-small"), g.Attr("popovertarget", redeployPopoverID), g.Text("Trigger redeploy")),
+		h.Div(g.Attr("popover", ""), h.ID(redeployPopoverID),
+			h.H3(g.Text("Confirm redeploy")),
+			h.Form(h.Method("POST"), h.Action(redeployAction),
+				h.P(g.Textf("Force a fresh deploy of %s in %s?", page.Feature.Name, page.Environment.Name)),
+				h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text("Trigger redeploy")), h.Button(h.Type("button"), g.Attr("popovertarget", redeployPopoverID), g.Attr("popovertargetaction", "hide"), g.Text("Cancel"))),
+			),
+		),
+	)
+}
+
 func overviewTab(page *FeaturePage) g.Node {
 	popoverID := "toggle-reconcile"
 	action := featureBasePathValues(page.TenantSlug, page.Environment.Name, page.Feature.Name) + "/toggle-reconcile"
@@ -287,8 +308,6 @@ func overviewTab(page *FeaturePage) g.Node {
 	if page.Feature.Enabled {
 		statusClass, statusText, buttonText, newEnabled = "status-success", "✓ Reconcile enabled", "Disable reconcile", "false"
 	}
-	redeployPopoverID := "trigger-redeploy"
-	redeployAction := featureBasePathValues(page.TenantSlug, page.Environment.Name, page.Feature.Name) + "/redeploy"
 	return h.Div(h.Class("tab-content-wrapper"),
 		h.P(
 			h.Span(h.Class(statusClass), g.Text(statusText)), g.Text(" "),
@@ -298,16 +317,6 @@ func overviewTab(page *FeaturePage) g.Node {
 				h.Form(h.Method("POST"), h.Action(action), h.Input(h.Type("hidden"), h.Name("enabled"), h.Value(newEnabled)), h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text(buttonText)), h.Button(h.Type("button"), g.Attr("popovertarget", popoverID), g.Attr("popovertargetaction", "hide"), g.Text("Cancel")))),
 			),
 		),
-		g.If(page.Feature.Enabled, h.P(
-			h.Button(h.Type("button"), h.Class("btn-small"), g.Attr("popovertarget", redeployPopoverID), g.Text("Trigger redeploy")),
-			h.Div(g.Attr("popover", ""), h.ID(redeployPopoverID),
-				h.H3(g.Text("Confirm redeploy")),
-				h.Form(h.Method("POST"), h.Action(redeployAction),
-					h.P(g.Textf("Force a fresh deploy of %s in %s?", page.Feature.Name, page.Environment.Name)),
-					h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text("Trigger redeploy")), h.Button(h.Type("button"), g.Attr("popovertarget", redeployPopoverID), g.Attr("popovertargetaction", "hide"), g.Text("Cancel"))),
-				),
-			),
-		)),
 		h.Table(h.Class("table sortable"), h.THead(h.Tr(h.Th(g.Text("Configuration Key")), h.Th(g.Text("Value")))), h.TBody(g.Group(g.Map(page.Feature.ConfigItems, func(item FeatureConfigItem) g.Node {
 			return h.Tr(h.Td(configKeyCell(item)), h.Td(configValueCell(page, item)))
 		})))),
