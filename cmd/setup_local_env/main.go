@@ -194,14 +194,42 @@ func main() {
 	seeder.AddDeployment("replicator", "1.0.0", environment.Labels{"tenant": "test-partner", "environment": "prod"})
 	seeder.AddDeployment("dependencytrack", "1.0.0", environment.Labels{"tenant": "test-partner", "environment": "staging"})
 	seeder.AddDeployment("hookd", "1.0.0", environment.Labels{"tenant": "test-partner", "environment": "staging"})
+	seeder.AddDeployment("naiserator", "1.0.0", environment.Labels{"tenant": "dev-nais", "environment": "dev"})
+	seeder.AddDeployment("aivenator", "1.0.0", environment.Labels{"tenant": "dev-nais", "environment": "dev"})
+	seeder.AddDeployment("hookd", "1.0.0", environment.Labels{"tenant": "dev-nais", "environment": "dev"})
+	seeder.AddDeployment("dependencytrack", "1.0.0", environment.Labels{"tenant": "dev-nais", "environment": "dev"})
+	seeder.AddDeployment("replicator", "1.0.0", environment.Labels{"tenant": "dev-nais", "environment": "dev"})
+	seeder.AddDeployment("unleash", "1.0.0", environment.Labels{"tenant": "dev-nais", "environment": "dev"})
 
 	if _, err := seeder.Seed(ctx); err != nil {
 		log.Fatal(err)
 	}
 
-	// Disable unleash in dev so ListDeploymentStatuses synthesizes a DISABLED row.
-	if _, err := feature.FeatureStatesCreateOrUpdate(ctx, envID("test-partner", "dev"), &model.Feature{Name: "unleash"}, false); err != nil {
-		log.WithError(err).Error("disable unleash in dev")
+	// Enable every feature in every env. Without an explicit feature_states row
+	// FeatureStatesGet COALESCEs enabled to FALSE, so every feature would otherwise
+	// appear disabled. After this, selectively disable a couple in dev-nais/dev.
+	for tenantName, environments := range envs {
+		for envName := range environments {
+			id := envID(tenantName, envName)
+			states, err := feature.FeatureStatesGet(ctx, id)
+			if err != nil {
+				log.WithError(err).Errorf("get feature states for %s/%s", tenantName, envName)
+				continue
+			}
+			for _, state := range states {
+				if _, err := feature.FeatureStatesCreateOrUpdate(ctx, id, &model.Feature{Name: state.FeatureName}, true); err != nil {
+					log.WithError(err).Errorf("enable %s in %s/%s", state.FeatureName, tenantName, envName)
+				}
+			}
+		}
+	}
+
+	// Disable a couple of features in dev-nais/dev so ListDeploymentStatuses
+	// synthesizes DISABLED rows for them; every other env leaves all features enabled.
+	for _, name := range []string{"hookd", "dependencytrack"} {
+		if _, err := feature.FeatureStatesCreateOrUpdate(ctx, envID("dev-nais", "dev"), &model.Feature{Name: name}, false); err != nil {
+			log.WithError(err).Errorf("disable %s in dev-nais/dev", name)
+		}
 	}
 
 	type rolloutSeed struct {
