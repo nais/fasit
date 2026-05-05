@@ -31,8 +31,9 @@ mise run setup
 mise run fasit
 
 # Run naisd for every seeded tenant/env in parallel (in its own terminal).
-# test-partner/prod and nav/prod are configured with --mock-failing so a
-# subset of deployments end up in the FAILED state for visual variety.
+# test-partner/prod is configured with --mock-failing and test-partner/staging
+# is intentionally left out (no naisd) so the local UI ends up with a mix of
+# DEPLOYED, FAILED, and PENDING features.
 mise run naisd-all
 ```
 

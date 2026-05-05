@@ -18,7 +18,6 @@ import (
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
-	"github.com/nais/fasit/internal/message"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/metric/noop"
 )
@@ -180,14 +179,21 @@ func main() {
 	seeder := deploymenttest.NewSeeder()
 	deployment.ChartDownloader = seeder.ChartDownloader()
 
-	seeder.AddDeployment("aivenator", "2.0.0", environment.Labels{"aiven": "enabled"})
-	seeder.AddDeployment("naiserator", "1.0.0", environment.Labels{"kind": "tenant"})
+	// Targets are chosen so that, when paired with mise/tasks/naisd-all.sh
+	// (test-partner/prod runs --mock-failing, test-partner/staging has no
+	// naisd at all), the local UI ends up with a representative mix:
+	//   - 4 features successfully DEPLOYED
+	//   - 2 features FAILED (touching test-partner/prod)
+	//   - 2 features PENDING (touching test-partner/staging, which never
+	//     receives a status because no naisd is listening there)
+	seeder.AddDeployment("aivenator", "2.0.0", environment.Labels{"tenant": "nav", "aiven": "enabled"})
+	seeder.AddDeployment("naiserator", "1.0.0", environment.Labels{"kind": "tenant", "tenant": "nav"})
 	seeder.AddDeployment("v13s", "1.0.0", environment.Labels{"kind": "management"})
-	seeder.AddDeployment("console", "1.0.0", environment.Labels{})
-	seeder.AddDeployment("unleash", "1.0.0", environment.Labels{"aiven": "enabled"})
-	seeder.AddDeployment("kafka-manager", "1.0.0", environment.Labels{"kafka": "enabled"})
-	seeder.AddDeployment("naiserator", "1.1.0", environment.Labels{"kind": "tenant", "tenant": "nav"})
-	seeder.AddDeployment("naiserator", "1.2.0", environment.Labels{"kind": "tenant", "aiven": "enabled", "tenant": "test-partner"})
+	seeder.AddDeployment("console", "1.0.0", environment.Labels{"tenant": "dev-nais"})
+	seeder.AddDeployment("unleash", "1.0.0", environment.Labels{"tenant": "test-partner", "aiven": "enabled"})
+	seeder.AddDeployment("replicator", "1.0.0", environment.Labels{"tenant": "test-partner", "environment": "prod"})
+	seeder.AddDeployment("dependencytrack", "1.0.0", environment.Labels{"tenant": "test-partner", "environment": "staging"})
+	seeder.AddDeployment("hookd", "1.0.0", environment.Labels{"tenant": "test-partner", "environment": "staging"})
 
 	if _, err := seeder.Seed(ctx); err != nil {
 		log.Fatal(err)
@@ -197,49 +203,6 @@ func main() {
 	if _, err := feature.FeatureStatesCreateOrUpdate(ctx, envID("test-partner", "dev"), &model.Feature{Name: "unleash"}, false); err != nil {
 		log.WithError(err).Error("disable unleash in dev")
 	}
-
-	setRelease := func(tenantName, envName, featureName, version, status string) {
-		if err := repo.ReleaseStatusCreateOrUpdate(ctx, envID(tenantName, envName), &message.Release{
-			Name:         featureName,
-			Version:      version,
-			Status:       status,
-			Revision:     1,
-			LastDeployed: time.Now().Add(-1 * time.Hour),
-		}); err != nil {
-			log.WithError(err).WithField("tenant", tenantName).WithField("env", envName).WithField("feature", featureName).Error("set release status")
-		}
-	}
-
-	setRelease("test-partner", "dev", "aivenator", "2.0.0", "deployed")
-	setRelease("test-partner", "management", "aivenator", "2.0.0", "deployed")
-	setRelease("test-partner", "prod", "aivenator", "1.0.0", "deployed")
-	setRelease("nav", "dev", "aivenator", "2.0.0", "deployed")
-	setRelease("nav", "management", "aivenator", "2.0.0", "deployed")
-	setRelease("nav", "prod", "aivenator", "2.0.0", "deployed")
-
-	setRelease("test-partner", "dev", "naiserator", "1.2.0", "deployed")
-	setRelease("test-partner", "prod", "naiserator", "1.0.0", "deployed")
-	setRelease("nav", "dev", "naiserator", "1.1.0", "deployed")
-	setRelease("nav", "prod", "naiserator", "1.1.0", "deployed")
-	setRelease("dev-nais", "dev", "naiserator", "1.0.0", "deployed")
-
-	setRelease("test-partner", "management", "v13s", "1.0.0", "deployed")
-	setRelease("nav", "management", "v13s", "1.0.0", "deployed")
-	setRelease("dev-nais", "management", "v13s", "1.0.0", "deployed")
-
-	setRelease("test-partner", "dev", "console", "1.0.0", "deployed")
-	setRelease("test-partner", "management", "console", "1.0.0", "deployed")
-	setRelease("test-partner", "prod", "console", "1.0.0", "deployed")
-	setRelease("nav", "dev", "console", "1.0.0", "deployed")
-	setRelease("nav", "management", "console", "1.0.0", "deployed")
-	setRelease("nav", "prod", "console", "1.0.0", "deployed")
-	setRelease("dev-nais", "dev", "console", "1.0.0", "deployed")
-	setRelease("dev-nais", "management", "console", "1.0.0", "deployed")
-
-	setRelease("test-partner", "management", "unleash", "1.0.0", "deployed")
-	setRelease("test-partner", "prod", "unleash", "1.0.0", "deployed")
-	setRelease("nav", "management", "unleash", "1.0.0", "deployed")
-	setRelease("nav", "prod", "unleash", "1.0.0", "deployed")
 
 	type rolloutSeed struct {
 		name    string

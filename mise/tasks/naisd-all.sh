@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#MISE description="Run naisd for every seeded tenant/env in parallel. test-partner/prod and nav/prod fail, the rest succeed."
+#MISE description="Run naisd for every seeded tenant/env in parallel. test-partner/prod runs --mock-failing; test-partner/staging is left unresponsive (no naisd) to produce PENDING deployments."
 #MISE depends=["docker-compose"]
 set -euo pipefail
 
@@ -19,14 +19,13 @@ run() {
 	pids+=("$!")
 }
 
-run "test-partner/management"           test-partner management --management
-run "test-partner/dev"                  test-partner dev
-run "test-partner/prod    (FAILING)"    test-partner prod        --failing
-run "test-partner/staging"              test-partner staging
-run "nav/management"                    nav          management --management
-run "nav/dev"                           nav          dev
-run "nav/prod             (FAILING)"    nav          prod        --failing
-run "dev-nais/management"               dev-nais     management --management
-run "dev-nais/dev"                      dev-nais     dev
+run "test-partner/management"          test-partner management --management
+run "test-partner/dev"                 test-partner dev
+run "test-partner/prod    (FAILING)"   test-partner prod        --failing
+run "nav/management"                   nav          management --management
+run "nav/dev"                          nav          dev
+run "nav/prod"                         nav          prod
+run "dev-nais/management"              dev-nais     management --management
+run "dev-nais/dev"                     dev-nais     dev
 
 wait
