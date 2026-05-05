@@ -3,6 +3,7 @@ package deployments
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -15,6 +16,7 @@ type RenderPage func(http.ResponseWriter, *http.Request, layout.Props)
 
 type Summary struct {
 	FeatureName, Version, Status, Target, Created, Completed, DeploymentID string
+	TargetLabels                                                           map[string]string
 	createdAt                                                              time.Time
 	disabledCount                                                          int
 }
@@ -73,4 +75,37 @@ func formatTime(t time.Time) string {
 	}
 
 	return t.In(oslo).Format("2006-01-02 15:04:05")
+}
+
+func relativeTime(t time.Time) string {
+	if t.IsZero() {
+		return ""
+	}
+	d := time.Since(t)
+	if d < 0 {
+		return formatTime(t)
+	}
+	switch {
+	case d < time.Minute:
+		return "just now"
+	case d < time.Hour:
+		return strconv.Itoa(int(d/time.Minute)) + "m ago"
+	case d < 24*time.Hour:
+		return strconv.Itoa(int(d/time.Hour)) + "h ago"
+	case d < 48*time.Hour:
+		return "yesterday"
+	case d < 30*24*time.Hour:
+		return strconv.Itoa(int(d/(24*time.Hour))) + "d ago"
+	case d < 365*24*time.Hour:
+		return strconv.Itoa(int(d/(30*24*time.Hour))) + "mo ago"
+	default:
+		return strconv.Itoa(int(d/(365*24*time.Hour))) + "y ago"
+	}
+}
+
+func timeWithTitle(t time.Time) g.Node {
+	if t.IsZero() {
+		return g.Text("")
+	}
+	return h.Span(g.Attr("title", formatTime(t)), g.Text(relativeTime(t)))
 }

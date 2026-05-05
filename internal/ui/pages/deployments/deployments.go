@@ -34,6 +34,7 @@ func ListHandler(renderPage RenderPage) http.HandlerFunc {
 					Version:       dep.Feature.Version,
 					Status:        status,
 					Target:        deploymentTarget(dep),
+					TargetLabels:  deploymentTargetLabels(dep),
 					Created:       formatTime(dep.Created),
 					Completed:     latestStatusTime(statuses),
 					DeploymentID:  dep.ID.String(),
@@ -123,42 +124,67 @@ func listContent(groups []featureGroup) g.Node {
 		return h.P(g.Text("No deployments yet."))
 	}
 
-	nodes := make([]g.Node, len(groups))
+	bodies := make([]g.Node, len(groups))
 	for i, fg := range groups {
-		isFirst := i == 0
-		nodes[i] = deploymentGroup(fg, isFirst)
+		bodies[i] = deploymentGroup(fg, i == 0)
 	}
-	return h.Div(h.Class("deployment-groups"), g.Group(nodes))
+	return h.Div(
+		h.Class("deployments-list"),
+		g.Group(bodies),
+	)
 }
 
 func deploymentGroup(fg featureGroup, open bool) g.Node {
-	detailsAttrs := []g.Node{
-		h.Class("deployment-group"),
-	}
+	detailsAttrs := []g.Node{h.Class("deployment-group")}
 	if open {
-		detailsAttrs = append(detailsAttrs, g.Attr("open"))
+		detailsAttrs = append(detailsAttrs, h.Open())
 	}
 
-	rows := make([]g.Node, len(fg.Targets))
-	for i, dep := range fg.Targets {
-		rows[i] = h.Div(
+	rows := make([]g.Node, 0, len(fg.Targets))
+	for _, dep := range fg.Targets {
+		rows = append(rows, h.Div(
 			h.Class("deployment-row"),
-			h.Span(h.Class("dep-target"), g.Text(dep.Target)),
-			h.Span(h.Class("dep-version"), versionCell(dep)),
-			h.Span(h.Class("dep-status"), statusCell(dep)),
-			h.Span(h.Class("dep-time"), g.Text(dep.Created)),
-		)
+			h.Div(h.Class("dep-version"), versionCell(dep)),
+			h.Div(h.Class("dep-status"), statusCell(dep)),
+			h.Div(h.Class("dep-target"), targetPills(dep.TargetLabels)),
+			h.Div(h.Class("dep-time"), timeWithTitle(dep.createdAt)),
+		))
 	}
 
 	return h.Details(
 		g.Group(detailsAttrs),
 		h.Summary(
 			h.Class("deployment-group-summary"),
+			h.Span(h.Class("dep-feature-toggle")),
 			h.A(h.Href("/features/"+fg.FeatureName), g.Text(fg.FeatureName)),
-			h.Span(h.Class("dep-group-time"), g.Text(formatTime(fg.LatestTime))),
+			h.Span(h.Class("dep-group-time"), timeWithTitle(fg.LatestTime)),
 		),
 		h.Div(h.Class("deployment-group-body"), g.Group(rows)),
 	)
+}
+
+func targetPills(labels map[string]string) g.Node {
+	if len(labels) == 0 {
+		return allEnvironmentsPill()
+	}
+	keys := make([]string, 0, len(labels))
+	for k := range labels {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	pills := make([]g.Node, 0, len(keys))
+	for _, k := range keys {
+		pills = append(pills, labelPill(k, labels[k]))
+	}
+	return g.Group(pills)
+}
+
+func allEnvironmentsPill() g.Node {
+	return h.Span(h.Class("label-filter-tag"), g.Text("All environments"))
+}
+
+func labelPill(key, value string) g.Node {
+	return h.Span(h.Class("label-filter-tag"), g.Text(key+": "+value))
 }
 
 func aggregateDeploymentStatus(statuses []*deployment.DeploymentStatus) (string, int) {
@@ -227,4 +253,32 @@ func deploymentTarget(dep *deployment.Deployment) string {
 	}
 
 	return strings.Join(parts, ", ")
+}
+
+func deploymentTargetLabels(dep *deployment.Deployment) map[string]string {
+	labels := dep.Target()
+	if len(labels) == 0 {
+		return nil
+	}
+	out := make(map[string]string, len(labels))
+	for _, label := range labels {
+		out[label.Key] = label.Value
+	}
+	return out
+}
+
+func labelPills(labels map[string]string) g.Node {
+	if len(labels) == 0 {
+		return h.Span(h.Class("label-filter-tag"), g.Text("All environments"))
+	}
+	keys := make([]string, 0, len(labels))
+	for k := range labels {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	pills := make([]g.Node, 0, len(keys))
+	for _, k := range keys {
+		pills = append(pills, h.Span(h.Class("label-filter-tag"), g.Text(k+": "+labels[k])))
+	}
+	return g.Group(pills)
 }

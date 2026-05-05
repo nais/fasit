@@ -8,10 +8,10 @@
 
   --text-primary: #ddd;
   --text-heading: #fff;
-  --text-secondary: #aaa;
-  --text-muted: #888;
-  --text-faint: #666;
-  --text-faintest: #555;
+  --text-secondary: #b8b8b8;
+  --text-muted: #a8a8a8;
+  --text-faint: #8a8a8a;
+  --text-faintest: #777;
 
   --border: #333;
   --border-subtle: #2a2a2a;
@@ -52,10 +52,10 @@
 
   --text-primary: #333;
   --text-heading: #111;
-  --text-secondary: #555;
-  --text-muted: #666;
-  --text-faint: #888;
-  --text-faintest: #999;
+  --text-secondary: #4a4a4a;
+  --text-muted: #5e5e5e;
+  --text-faint: #6b6b6b;
+  --text-faintest: #777;
 
   --border: #ddd;
   --border-subtle: #e8e8e8;
@@ -844,31 +844,33 @@ nav .theme-toggle:hover {
   }
 }
 
-/* Deployment grouped view */
-.deployment-groups {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.deployment-group {
+/* Deployment grouped view (details/summary based) */
+.deployments-list {
   border: 1px solid var(--border-subtle);
   border-radius: 4px;
   overflow: hidden;
 }
 
+.deployment-group {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.deployment-group:last-child {
+  border-bottom: none;
+}
+
 .deployment-group-summary {
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 0.5rem;
   padding: 0.55rem 0.75rem;
-  cursor: pointer;
   background: var(--bg-elevated);
   font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
   font-size: 0.9rem;
   color: var(--text-primary);
-  list-style: none;
-  user-select: none;
   transition: background 0.15s;
 }
 
@@ -876,57 +878,73 @@ nav .theme-toggle:hover {
   display: none;
 }
 
-.deployment-group-summary::before {
-  content: "▶";
-  font-size: 0.65rem;
-  color: var(--text-muted);
-  margin-right: 0.5rem;
-  transition: transform 0.15s;
-  display: inline-block;
-}
-
-.deployment-group[open] > .deployment-group-summary::before {
-  transform: rotate(90deg);
-}
-
 .deployment-group-summary:hover {
   background: var(--bg-surface-hover);
 }
 
+.deployment-group-summary a {
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.deployment-group-summary a:hover {
+  text-decoration: underline;
+}
+
+.dep-feature-toggle::before {
+  content: "\25B6";
+  display: inline-block;
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  transition: transform 0.15s;
+}
+
+.deployment-group[open] > .deployment-group-summary .dep-feature-toggle::before {
+  transform: rotate(90deg);
+}
+
 .dep-group-time {
+  margin-left: auto;
   color: var(--text-muted);
   font-size: 0.85rem;
-  margin-left: auto;
-  padding-left: 1rem;
+}
+
+.deployment-group[open] > .deployment-group-summary .dep-group-time {
+  display: none;
 }
 
 .deployment-group-body {
-  border-top: 1px solid var(--border-subtle);
+  display: grid;
+  grid-template-columns: max-content max-content 1fr max-content;
   background: var(--bg-surface);
 }
 
 .deployment-row {
-  display: grid;
-  grid-template-columns: 14rem 12rem 14rem 1fr;
-  align-items: center;
-  padding: 0.4rem 0.75rem 0.4rem 2rem;
-  border-bottom: 1px solid var(--border-subtle);
+  display: contents;
   font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
   font-size: 0.875rem;
   color: var(--text-primary);
+}
+
+.deployment-row > * {
+  padding: 0.4rem 0.75rem;
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  background: var(--bg-surface);
   transition: background 0.1s;
 }
 
-.deployment-row:last-child {
+.deployment-row > :first-child {
+  padding-left: 2rem;
+}
+
+.deployment-group .deployment-row:last-child > * {
   border-bottom: none;
 }
 
-.deployment-row:hover {
+.deployment-row:hover > * {
   background: var(--bg-surface-hover);
-}
-
-.dep-target {
-  color: var(--text-secondary);
 }
 
 .dep-version a {
@@ -940,12 +958,18 @@ nav .theme-toggle:hover {
 
 .dep-status {
   font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.dep-target {
+  flex-wrap: wrap;
+  gap: 0.25rem;
 }
 
 .dep-time {
-  color: var(--text-muted);
   font-size: 0.85rem;
-  text-align: right;
+  white-space: nowrap;
+  justify-content: flex-end;
 }
 
 /* Status tab: deployment-grouped table */
