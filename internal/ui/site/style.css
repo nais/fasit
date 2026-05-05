@@ -942,13 +942,23 @@ nav .nav-btn:hover {
   display: none;
 }
 
-.dep-group-badge {
+.dep-group-badge,
+.status-badge {
   margin-left: 0.5rem;
   font-size: 0.8rem;
   padding: 0.1rem 0.45rem;
   border-radius: 999px;
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
+  display: inline-block;
+  vertical-align: middle;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+a .status-badge,
+a:hover .status-badge {
+  text-decoration: none;
 }
 
 .feature-nav-badge {
@@ -968,18 +978,6 @@ nav .nav-btn:hover {
 a .feature-nav-badge,
 a:hover .feature-nav-badge {
   text-decoration: none;
-}
-
-.feature-nav-badge.status-error {
-  background: var(--status-error);
-  border-color: var(--status-error);
-  color: #fff;
-}
-
-.feature-nav-badge.status-pending {
-  background: var(--status-pending);
-  border-color: var(--status-pending);
-  color: #fff;
 }
 
 .deployment-group-body {

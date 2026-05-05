@@ -184,6 +184,7 @@ func featurePageContent(page *FeaturePage) g.Node {
 			h.Div(h.Class("card"),
 				h.Div(h.Class("card-body"),
 					h.P(g.Text("Global feature page: "), h.A(h.Href("/features/"+page.Feature.Name), g.Text(page.Feature.Name))),
+					featureMetadataHeader(page),
 					components.TabsNav(page.ActiveTab, envFeatureTabs(page.TenantSlug, page.Environment.Name, page.Feature.Name, page.Feature.HasDeployments)),
 					tabContent,
 				),
@@ -192,10 +193,44 @@ func featurePageContent(page *FeaturePage) g.Node {
 	)
 }
 
+func featureMetadataHeader(page *FeaturePage) g.Node {
+	feat := page.Feature
+	rows := []g.Node{}
+
+	currentVersion := "—"
+	if page.FeatureLog != nil && page.FeatureLog.CurrentVersion != "" {
+		currentVersion = page.FeatureLog.CurrentVersion
+	}
+	currentValue := []g.Node{g.Text(currentVersion)}
+	if page.FeatureLog != nil && page.FeatureLog.CurrentStatus != "" {
+		currentValue = append(currentValue, g.Text(" · "), rolloutStatus(page.FeatureLog.CurrentStatus))
+	}
+	rows = append(rows, metaRow("Current version", g.Group(currentValue)))
+
+	if feat.Version != "" {
+		rows = append(rows, metaRow("Chart version", g.Text(feat.Version)))
+	}
+	if feat.Chart != "" {
+		rows = append(rows, metaRow("Chart", g.Text(feat.Chart)))
+	}
+	if feat.Source != "" {
+		rows = append(rows, metaRow("Source", h.A(h.Href(feat.Source), h.Target("_blank"), g.Text(feat.Source))))
+	}
+	if feat.Description != "" {
+		rows = append(rows, metaRow("Description", g.Text(feat.Description)))
+	}
+
+	return h.Table(h.Class("table meta-table"), h.TBody(rows...))
+}
+
+func metaRow(label string, value g.Node) g.Node {
+	return h.Tr(h.Td(h.Class("th-like"), g.Text(label)), h.Td(value))
+}
+
 func envFeatureTabs(tenant, env, feature string, hasDeployments bool) []components.Tab {
 	base := featureBasePathValues(tenant, env, feature)
 	tabs := []components.Tab{
-		{ID: "overview", Href: base, Label: "Overview"},
+		{ID: "overview", Href: base, Label: "Config"},
 		{ID: "logs", Href: base + "/logs", Label: "Logs"},
 		{ID: "helm", Href: base + "/helm", Label: "Helm Values"},
 	}

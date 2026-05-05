@@ -179,13 +179,13 @@ func groupStatusBadge(fg featureGroup) g.Node {
 	switch {
 	case failed > 0:
 		return h.Span(
-			h.Class("dep-group-badge status-error"),
+			h.Class("status-badge status-error"),
 			g.Attr("title", failedTitle(failed, len(fg.Targets))),
 			g.Textf("%d failed", failed),
 		)
 	case pending > 0:
 		return h.Span(
-			h.Class("dep-group-badge status-pending"),
+			h.Class("status-badge status-pending"),
 			g.Attr("title", pendingTitle(pending, len(fg.Targets))),
 			g.Textf("%d pending", pending),
 		)

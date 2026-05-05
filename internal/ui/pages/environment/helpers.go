@@ -286,6 +286,8 @@ func loadFeaturePageData(ctx context.Context, repo database.Repo, tenantSlug, en
 		return nil, err
 	}
 
+	page.FeatureLog = loadFeatureLog(ctx, repo, env.ID, feat)
+
 	if activeTab == "helm" || activeTab == "playground" {
 		page.HelmValues, _ = loadHelmValues(ctx, feat, env.ID)
 	}
@@ -295,9 +297,7 @@ func loadFeaturePageData(ctx context.Context, repo database.Repo, tenantSlug, en
 	if activeTab == "deployments" {
 		page.Deployments = loadEnvironmentDeployments(ctx, repo, featureName, env.ID)
 	}
-	if activeTab == "logs" {
-		page.FeatureLog = loadFeatureLog(ctx, repo, env.ID, feat)
-	}
+
 
 	return page, nil
 }
