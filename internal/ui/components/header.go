@@ -58,7 +58,7 @@ func SiteHeader(currentPage Page, userEmail string) g.Node {
 			h.H3(g.Text("Confirm reconcile")),
 			h.P(g.Text("Trigger a full reconcile of all deployments?")),
 			h.Form(h.Method("post"), h.Action("/reconcile"),
-				h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text("Reconcile"))),
+				h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text("Reconcile")), h.Button(h.Type("button"), g.Attr("popovertarget", "reconcile-confirm"), g.Attr("popovertargetaction", "hide"), g.Text("Cancel"))),
 			),
 		),
 		h.Button(h.Class("theme-toggle"), g.Attr("onclick", "toggleTheme()"), g.Attr("title", "Toggle light/dark mode"), g.Raw("☀︎")),

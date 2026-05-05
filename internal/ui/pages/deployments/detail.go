@@ -120,7 +120,7 @@ func detailPage(d *deployment.Deployment, statuses []deploymentStatusRow, deploy
 			h.H3(g.Text("Delete deployment")),
 			h.P(g.Textf("Delete deployment %s v%s?", d.Feature.Name, d.Feature.Version)),
 			h.Form(h.Method("POST"), h.Action("/deployments/"+d.ID.String()+"/delete"),
-				h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text("Delete"))),
+				h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text("Delete")), h.Button(h.Type("button"), g.Attr("popovertarget", "delete-deployment"), g.Attr("popovertargetaction", "hide"), g.Text("Cancel"))),
 			),
 		),
 	)))
@@ -178,7 +178,7 @@ func detailPage(d *deployment.Deployment, statuses []deploymentStatusRow, deploy
 			h.H3(g.Text("Delete all deployments")),
 			h.P(g.Textf("Delete all %d deployments for %s?", len(matching), d.Feature.Name)),
 			h.Form(h.Method("POST"), h.Action("/deployments/"+d.ID.String()+"/delete-matching"),
-				h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text("Delete all"))),
+				h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text("Delete all")), h.Button(h.Type("button"), g.Attr("popovertarget", "delete-all-deployments"), g.Attr("popovertargetaction", "hide"), g.Text("Cancel"))),
 			),
 		),
 	)

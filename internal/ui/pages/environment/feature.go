@@ -295,7 +295,7 @@ func overviewTab(page *FeaturePage) g.Node {
 			h.Button(h.Type("button"), h.Class("btn-small"), g.Attr("popovertarget", popoverID), g.Text(buttonText)),
 			h.Div(g.Attr("popover", ""), h.ID(popoverID),
 				h.H3(g.Text("Confirm reconcile toggle")),
-				h.Form(h.Method("POST"), h.Action(action), h.Input(h.Type("hidden"), h.Name("enabled"), h.Value(newEnabled)), h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text(buttonText)))),
+				h.Form(h.Method("POST"), h.Action(action), h.Input(h.Type("hidden"), h.Name("enabled"), h.Value(newEnabled)), h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text(buttonText)), h.Button(h.Type("button"), g.Attr("popovertarget", popoverID), g.Attr("popovertargetaction", "hide"), g.Text("Cancel")))),
 			),
 		),
 		g.If(page.Feature.Enabled, h.P(
@@ -304,7 +304,7 @@ func overviewTab(page *FeaturePage) g.Node {
 				h.H3(g.Text("Confirm redeploy")),
 				h.Form(h.Method("POST"), h.Action(redeployAction),
 					h.P(g.Textf("Force a fresh deploy of %s in %s?", page.Feature.Name, page.Environment.Name)),
-					h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text("Trigger redeploy"))),
+					h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text("Trigger redeploy")), h.Button(h.Type("button"), g.Attr("popovertarget", redeployPopoverID), g.Attr("popovertargetaction", "hide"), g.Text("Cancel"))),
 				),
 			),
 		)),
@@ -556,7 +556,7 @@ func configValueCell(page *FeaturePage, item FeatureConfigItem) g.Node {
 		title, submitLabel = "Override Configuration", "Save override"
 		formFields = []g.Node{h.Input(h.Type("hidden"), h.Name("key"), h.Value(item.Key)), h.Input(h.Type("hidden"), h.Name("type"), h.Value(item.Type))}
 	}
-	return h.Div(h.Button(h.Type("button"), h.Class("edit-icon"), g.Attr("popovertarget", popoverID), g.Text("✎")), g.If(item.Source == string(model.ConfigSourceEnv), deleteOverrideButton(page, item)), valueSpan(item), h.Div(g.Attr("popover", ""), h.ID(popoverID), h.H3(g.Text(title)), h.Form(h.Method("POST"), h.Action(action), g.Group(formFields), h.Label(g.Text("Configuration Key")), h.Input(h.Type("text"), h.Value(item.Key), g.Attr("disabled", "")), h.Label(g.Text("Value")), configValueInput(item.Type, item.Value), h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text(submitLabel))))))
+	return h.Div(h.Button(h.Type("button"), h.Class("edit-icon"), g.Attr("popovertarget", popoverID), g.Text("✎")), g.If(item.Source == string(model.ConfigSourceEnv), deleteOverrideButton(page, item)), valueSpan(item), h.Div(g.Attr("popover", ""), h.ID(popoverID), h.H3(g.Text(title)), h.Form(h.Method("POST"), h.Action(action), g.Group(formFields), h.Label(g.Text("Configuration Key")), h.Input(h.Type("text"), h.Value(item.Key), g.Attr("disabled", "")), h.Label(g.Text("Value")), configValueInput(item.Type, item.Value), h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text(submitLabel)), h.Button(h.Type("button"), g.Attr("popovertarget", popoverID), g.Attr("popovertargetaction", "hide"), g.Text("Cancel"))))))
 }
 
 func valueSpan(item FeatureConfigItem) g.Node {
@@ -571,7 +571,7 @@ func deleteOverrideButton(page *FeaturePage, item FeatureConfigItem) g.Node {
 	action := featureBasePathValues(page.TenantSlug, page.Environment.Name, page.Feature.Name) + "/config/delete/" + item.ID
 	return g.Group([]g.Node{
 		h.Button(h.Type("button"), h.Class("edit-icon"), g.Attr("popovertarget", popoverID), g.Text("✕")),
-		h.Div(g.Attr("popover", ""), h.ID(popoverID), h.H3(g.Text("Remove Override")), h.P(g.Textf("Remove the environment override for %s? The global default will be used instead.", item.Key)), h.Form(h.Method("POST"), h.Action(action), h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text("Remove override"))))),
+		h.Div(g.Attr("popover", ""), h.ID(popoverID), h.H3(g.Text("Remove Override")), h.P(g.Textf("Remove the environment override for %s? The global default will be used instead.", item.Key)), h.Form(h.Method("POST"), h.Action(action), h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text("Remove override")), h.Button(h.Type("button"), g.Attr("popovertarget", popoverID), g.Attr("popovertargetaction", "hide"), g.Text("Cancel"))))),
 	})
 }
 
