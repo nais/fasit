@@ -91,8 +91,8 @@ html {
   background: var(--bg-page);
   color: var(--text-primary);
   font-family: system-ui, sans-serif;
-  font-size: 14px;
-  line-height: 1.5;
+  font-size: 16px;
+  line-height: 1.55;
 }
 body {
   margin: 0;
@@ -106,13 +106,15 @@ h1 {
   font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--text-heading);
+  margin-top: 0;
+  margin-bottom: 1rem;
 }
 nav {
   background: var(--bg-surface);
   display: flex;
   align-items: center;
-  gap: 2rem;
-  padding: 0.75rem 1.5rem;
+  gap: 3rem;
+  padding: 1rem 2rem;
   border-bottom: 1px solid var(--border);
 }
 nav .logo {
@@ -121,6 +123,7 @@ nav .logo {
   color: var(--text-heading);
   text-decoration: none;
   letter-spacing: 0.02em;
+  margin-right: 1rem;
 }
 nav .menu {
   display: flex;
@@ -161,7 +164,7 @@ nav .theme-toggle:hover {
 }
 .container {
   display: flex;
-  height: calc(100vh - 3rem);
+  height: calc(100vh - 3.5rem);
 }
 .sidebar {
   background: var(--bg-surface);
@@ -233,7 +236,7 @@ nav .theme-toggle:hover {
 }
 .table th,
 .table td {
-  padding: 0.5rem 0.75rem;
+  padding: 0.65rem 0.9rem;
   text-align: left;
   border-bottom: 1px solid var(--border-subtle);
 }

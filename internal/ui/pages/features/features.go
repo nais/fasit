@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"slices"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -42,7 +43,7 @@ type EnvironmentStatus struct {
 	TenantName        string
 	TenantSlug        string
 	Enabled           bool
-	LastModified      string
+	LastModified      time.Time
 	StatusText        string
 	HasDeployments    bool
 	FeatureDeployable bool
@@ -226,8 +227,8 @@ func deploymentStatusTable(groups []deploymentGroup, ungrouped []EnvironmentStat
 	}
 	return h.Table(h.Class("table"),
 		h.THead(h.Tr(
-			h.Th(g.Text("Environment")),
 			h.Th(g.Text("Tenant")),
+			h.Th(g.Text("Environment")),
 			h.Th(g.Text("Version")),
 			h.Th(g.Text("Status")),
 			h.Th(g.Text("Last Modified")),
@@ -238,11 +239,11 @@ func deploymentStatusTable(groups []deploymentGroup, ungrouped []EnvironmentStat
 
 func envRow(env EnvironmentStatus, featureName string) g.Node {
 	return h.Tr(
-		h.Td(h.A(h.Href("/tenants/"+env.TenantSlug+"/envs/"+env.Name+"/"+featureName), g.Text(env.Name))),
 		h.Td(g.Text(env.TenantName)),
+		h.Td(h.A(h.Href("/tenants/"+env.TenantSlug+"/envs/"+env.Name+"/"+featureName), g.Text(env.Name))),
 		h.Td(versionCell(env)),
 		h.Td(rolloutStatus(env.StatusText)),
-		h.Td(g.Text(env.LastModified)),
+		h.Td(h.Title(formatTime(env.LastModified)), g.Text(relativeTime(env.LastModified))),
 	)
 }
 
@@ -278,17 +279,17 @@ func labelPills(labels map[string]string) g.Node {
 func envTable(envs []EnvironmentStatus, featureName string) g.Node {
 	return h.Table(h.Class("table sortable"),
 		h.THead(h.Tr(
-			h.Th(g.Text("Environment")),
 			h.Th(g.Text("Tenant")),
+			h.Th(g.Text("Environment")),
 			h.Th(g.Text("Status")),
 			h.Th(g.Text("Last Modified")),
 		)),
 		h.TBody(g.Group(g.Map(envs, func(env EnvironmentStatus) g.Node {
 			return h.Tr(
-				h.Td(h.A(h.Href("/tenants/"+env.TenantSlug+"/envs/"+env.Name+"/"+featureName), g.Text(env.Name))),
 				h.Td(g.Text(env.TenantName)),
+				h.Td(h.A(h.Href("/tenants/"+env.TenantSlug+"/envs/"+env.Name+"/"+featureName), g.Text(env.Name))),
 				h.Td(rolloutStatus(env.StatusText)),
-				h.Td(g.Text(env.LastModified)),
+				h.Td(h.Title(formatTime(env.LastModified)), g.Text(relativeTime(env.LastModified))),
 			)
 		}))),
 	)
@@ -472,7 +473,7 @@ func featureEnvironmentStatuses(ctx context.Context, repo database.Repo, feature
 				TenantName:        tenant.Name,
 				TenantSlug:        tenant.Name,
 				Enabled:           state.Enabled,
-				LastModified:      formatTime(state.LastModified),
+				LastModified:      state.LastModified,
 				FeatureDeployable: feature.HasDeployments,
 			}
 
@@ -705,4 +706,34 @@ func formatTimePtr(t *time.Time) string {
 		return "-"
 	}
 	return formatTime(*t)
+}
+
+func relativeTime(t time.Time) string {
+	if t.IsZero() {
+		return ""
+	}
+	d := time.Since(t)
+	if d < 0 {
+		return formatTime(t)
+	}
+	switch {
+	case d < time.Minute:
+		return "just now"
+	case d < time.Hour:
+		return formatUnit(int(d/time.Minute), "m")
+	case d < 24*time.Hour:
+		return formatUnit(int(d/time.Hour), "h")
+	case d < 48*time.Hour:
+		return "yesterday"
+	case d < 30*24*time.Hour:
+		return formatUnit(int(d/(24*time.Hour)), "d")
+	case d < 365*24*time.Hour:
+		return formatUnit(int(d/(30*24*time.Hour)), "mo")
+	default:
+		return formatUnit(int(d/(365*24*time.Hour)), "y")
+	}
+}
+
+func formatUnit(n int, unit string) string {
+	return strconv.Itoa(n) + unit + " ago"
 }
