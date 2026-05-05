@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/database"
+	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
@@ -131,12 +132,25 @@ func toTenantNavs(tenants []*model.Tenant) []view.TenantNav {
 }
 
 func environmentStatusCounts(ctx context.Context, repo database.Repo, env *model.Environment) (failed, pending int) {
-	features, err := featurepkg.FeaturesForKind(ctx, env.Kind, env.CI)
+	deploymentFeatures, err := deployment.ListEnvironmentFeatures(ctx, env.ID)
 	if err != nil {
 		return 0, 0
 	}
-	for _, feat := range features {
-		f, p := featureStatusForEnv(ctx, repo, env.ID, feat.Name)
+	seen := make(map[string]bool, len(deploymentFeatures))
+	for _, f := range deploymentFeatures {
+		seen[f.FeatureName] = true
+	}
+	states, err := featurepkg.FeatureStatesGet(ctx, env.ID)
+	if err != nil {
+		return 0, 0
+	}
+	for _, state := range states {
+		if !seen[state.FeatureName] {
+			seen[state.FeatureName] = true
+		}
+	}
+	for name := range seen {
+		f, p := featureStatusForEnv(ctx, repo, env.ID, name)
 		if f {
 			failed++
 		} else if p {
