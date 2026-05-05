@@ -102,15 +102,31 @@ func featureDeploymentCounts(ctx context.Context) (failed, pending map[string]in
 		if err != nil {
 			continue
 		}
-		status, _ := aggregateDeploymentStatus(statuses)
-		switch status {
-		case "FAILED":
+		hasFailed, hasPending := classifyStatuses(statuses)
+		if hasFailed {
 			failed[dep.Feature.Name]++
-		case "PENDING":
+		}
+		if hasPending {
 			pending[dep.Feature.Name]++
 		}
 	}
 	return failed, pending
+}
+
+// classifyStatuses reports whether a deployment has any failed and/or any
+// pending environment statuses. A single deployment can be both failed and
+// pending simultaneously (e.g. some envs failed, others still rolling out),
+// so both flags can be true.
+func classifyStatuses(statuses []*deployment.DeploymentStatus) (hasFailed, hasPending bool) {
+	for _, s := range statuses {
+		switch s.State {
+		case deployment.DeploymentStatusStateFailed:
+			hasFailed = true
+		case deployment.DeploymentStatusStatePending, deployment.DeploymentStatusStateCreated:
+			hasPending = true
+		}
+	}
+	return hasFailed, hasPending
 }
 
 func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
@@ -633,45 +649,6 @@ func targetKey(labels map[string]string) string {
 		parts = append(parts, k+"="+labels[k])
 	}
 	return strings.Join(parts, ",")
-}
-
-func aggregateDeploymentStatus(statuses []*deployment.DeploymentStatus) (string, int) {
-	if len(statuses) == 0 {
-		return "UNKNOWN", 0
-	}
-
-	disabledCount := 0
-	for _, s := range statuses {
-		if s.State == deployment.DeploymentStatusStateDisabled {
-			disabledCount++
-		}
-	}
-
-	if disabledCount == len(statuses) {
-		return "DISABLED", disabledCount
-	}
-
-	allDeployed := true
-	for _, s := range statuses {
-		if s.State == deployment.DeploymentStatusStateDisabled {
-			continue
-		}
-		switch s.State {
-		case deployment.DeploymentStatusStateFailed:
-			return "FAILED", disabledCount
-		case deployment.DeploymentStatusStatePending, deployment.DeploymentStatusStateCreated:
-			allDeployed = false
-		case deployment.DeploymentStatusStateDeployed:
-		default:
-			allDeployed = false
-		}
-	}
-
-	if allDeployed {
-		return "DEPLOYED", disabledCount
-	}
-
-	return "PENDING", disabledCount
 }
 
 func featureRollouts(ctx context.Context, repo database.Repo, featureName string) []RolloutItem {
