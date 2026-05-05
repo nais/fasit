@@ -10,10 +10,10 @@ import (
 )
 
 type Querier interface {
-	// For each feature, count how many environments have a failed or
-	// pending status. Merges deploy_instructions (naisd responded) with
-	// deployment_statuses (naisd may be unreachable) so that pending
-	// deployments where no deploy instruction was ever created are included.
+	// For each feature, count failed/pending statuses.
+	// For deployment-based features: uses deployment_statuses (covers
+	// both naisd-responded and naisd-unreachable cases).
+	// For rollout-only features: uses deploy_instructions.
 	DeployInstructionStatusCounts(ctx context.Context) ([]DeployInstructionStatusCountsRow, error)
 	DeployInstructionsByID(ctx context.Context, id uuid.UUID) (DeployInstruction, error)
 	DeployInstructionsForFeature(ctx context.Context, arg DeployInstructionsForFeatureParams) ([]DeployInstruction, error)
