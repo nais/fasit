@@ -1,15 +1,11 @@
 package tenant
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/database"
-	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/environment"
-	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
@@ -52,7 +48,7 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 
 		envRows := make([]envRow, 0, len(envs))
 		for _, env := range envs {
-			failed, pending := environmentStatusCounts(r.Context(), repo, env)
+			failed, pending := view.EnvironmentStatusCounts(r.Context(), repo, env.ID)
 			envRows = append(envRows, envRow{
 				Environment: env,
 				Failed:      failed,
@@ -131,48 +127,6 @@ func toTenantNavs(tenants []*model.Tenant) []view.TenantNav {
 	return ret
 }
 
-func environmentStatusCounts(ctx context.Context, repo database.Repo, env *model.Environment) (failed, pending int) {
-	deploymentFeatures, err := deployment.ListEnvironmentFeatures(ctx, env.ID)
-	if err != nil {
-		return 0, 0
-	}
-	seen := make(map[string]bool, len(deploymentFeatures))
-	for _, f := range deploymentFeatures {
-		seen[f.FeatureName] = true
-	}
-	states, err := featurepkg.FeatureStatesGet(ctx, env.ID)
-	if err != nil {
-		return 0, 0
-	}
-	for _, state := range states {
-		if !seen[state.FeatureName] {
-			seen[state.FeatureName] = true
-		}
-	}
-	for name := range seen {
-		f, p := featureStatusForEnv(ctx, repo, env.ID, name)
-		if f {
-			failed++
-		} else if p {
-			pending++
-		}
-	}
-	return failed, pending
-}
-
-func featureStatusForEnv(ctx context.Context, repo database.Repo, envID uuid.UUID, featureName string) (failed, pending bool) {
-	di, err := repo.DeployInstructionsLatestForFeature(ctx, envID, featureName)
-	if err != nil || di == nil {
-		return false, false
-	}
-	switch di.Status {
-	case model.RolloutStatusFailed:
-		return true, false
-	case model.RolloutStatusPending, model.RolloutStatusCreated:
-		return false, true
-	}
-	return false, false
-}
 
 func valueOrEmpty(value *string) string {
 	if value == nil {
