@@ -88,35 +88,27 @@ func ListHandler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 }
 
 func featureDeploymentCounts(ctx context.Context, repo database.Repo) (failed, pending map[string]int) {
-	failed, pending, err := repo.DeployInstructionStatusCounts(ctx)
-	if err != nil {
-		return map[string]int{}, map[string]int{}
-	}
+	failed = map[string]int{}
+	pending = map[string]int{}
 
 	features, err := featurepkg.Features(ctx)
 	if err != nil {
 		return failed, pending
 	}
-	hasDeployments := make(map[string]bool)
-	for _, f := range features {
-		if f.HasDeployments {
-			hasDeployments[f.Name] = true
+	for _, feat := range features {
+		var envs []EnvironmentStatus
+		if feat.HasDeployments {
+			envs = featureEnvironmentStatuses(ctx, repo, feat)
+		} else {
+			envs = featureEnvironmentReleaseStatuses(ctx, repo, feat)
 		}
-	}
-
-	rollouts, err := repo.Rollouts(ctx, 100)
-	if err != nil {
-		return failed, pending
-	}
-	for _, ro := range rollouts {
-		if hasDeployments[ro.FeatureName] {
-			continue
-		}
-		switch ro.Status {
-		case model.RolloutStatusFailed:
-			failed[ro.FeatureName] = 1
-		case model.RolloutStatusPending:
-			pending[ro.FeatureName] = 1
+		for _, env := range envs {
+			switch strings.ToUpper(env.StatusText) {
+			case "FAILED":
+				failed[feat.Name]++
+			case "PENDING", "CREATED":
+				pending[feat.Name]++
+			}
 		}
 	}
 	return failed, pending
