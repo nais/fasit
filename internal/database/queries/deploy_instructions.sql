@@ -132,10 +132,21 @@ di_latest AS (
 ds_latest AS (
 	SELECT
 		d.feature_name,
-		ds.status
+		COALESCE(di.status, ds.status) AS status
 	FROM
 		deployment_statuses ds
 		JOIN deployments d ON d.id = ds.deployment_id
+		LEFT JOIN (
+			SELECT
+				feature_name,
+				environment_id,
+				status,
+				ROW_NUMBER() OVER (PARTITION BY feature_name,
+					environment_id ORDER BY created DESC) AS rn
+			FROM
+				deploy_instructions) di ON di.feature_name = d.feature_name
+				AND di.environment_id = ds.environment_id
+				AND di.rn = 1
 ),
 combined AS (
 	SELECT
@@ -143,12 +154,12 @@ combined AS (
 		status
 	FROM
 		di_latest
-UNION ALL
-SELECT
-	feature_name,
-	status
-FROM
-	ds_latest
+	UNION ALL
+	SELECT
+		feature_name,
+		status
+	FROM
+		ds_latest
 )
 SELECT
 	feature_name,
