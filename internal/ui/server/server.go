@@ -16,6 +16,7 @@ var mime = map[string]string{
 	".js":   "application/javascript",
 	".css":  "text/css",
 	".html": "text/html",
+	".ico":  "image/x-icon",
 	"":      "text/plain",
 }
 
