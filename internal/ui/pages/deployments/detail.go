@@ -16,6 +16,7 @@ import (
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
+	"github.com/nais/fasit/internal/ui/view"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
 )
@@ -58,13 +59,14 @@ func DetailHandler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 				continue
 			}
 
+			state, lastMod := view.EffectiveDeploymentStatus(r.Context(), repo, status.EnvironmentID, dep.Feature.Name, status.State.String(), status.LastModified)
 			rows = append(rows, deploymentStatusRow{
 				TenantName:      tenant.Name,
 				EnvironmentName: env.Name,
 				EnvironmentID:   status.EnvironmentID.String(),
-				State:           status.State.String(),
+				State:           state,
 				Message:         status.Message,
-				LastModified:    status.LastModified,
+				LastModified:    lastMod,
 			})
 		}
 
