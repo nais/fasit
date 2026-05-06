@@ -38,18 +38,6 @@ func loadRolloutData(ctx context.Context, repo database.Repo, feature *model.Fea
 	data.Rollouts = featureRollouts(ctx, repo, feature.Name)
 }
 
-func rolloutStatusCounts(ctx context.Context, repo database.Repo, feature *model.Feature) (failed, pending int) {
-	for _, env := range featureEnvironmentReleaseStatuses(ctx, repo, feature) {
-		switch strings.ToUpper(env.StatusText) {
-		case "FAILED":
-			failed++
-		case "PENDING", "CREATED":
-			pending++
-		}
-	}
-	return failed, pending
-}
-
 func rolloutDetailContent(data *DetailPage) g.Node {
 	var nodes []g.Node
 	if len(data.RolloutEnvs) > 0 {

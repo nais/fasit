@@ -44,18 +44,6 @@ func loadDeploymentData(ctx context.Context, repo database.Repo, feature *model.
 	data.DeploymentEnvs = featureDeploymentEnvStatuses(ctx, repo, feature)
 }
 
-func deploymentStatusCounts(ctx context.Context, repo database.Repo, feature *model.Feature) (failed, pending int) {
-	for _, env := range featureDeploymentEnvStatuses(ctx, repo, feature) {
-		switch strings.ToUpper(env.StatusText) {
-		case "FAILED":
-			failed++
-		case "PENDING", "CREATED":
-			pending++
-		}
-	}
-	return failed, pending
-}
-
 func deploymentDetailContent(data *DetailPage) g.Node {
 	if len(data.DeploymentEnvs) == 0 {
 		return h.P(g.Text("No environments found."))
