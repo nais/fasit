@@ -46,6 +46,8 @@ Domain packages expose `Register(ctx, pool)` and package-level functions that ex
 
 SQL queries in `queries/*.sql` per domain package. Generated Go in `*sql/` subdirectories. Config in `sqlc.yaml` (YAML anchors for shared settings). All share migration source: `internal/database/migrations`.
 
+New queries go in the domain package that owns the data (`internal/deployment/queries/`, `internal/feature/queries/`, `internal/environment/queries/`, etc). `internal/database/queries/` is a legacy shared location — avoid adding new queries there; move them to the owning domain package when practical.
+
 ### Code Generation
 
 `mise run generate` runs: sqlc, gqlgen, mockery (v3, config in `.mockery.yaml`), protoc.
@@ -79,6 +81,10 @@ PostgreSQL 14. Migrations in `internal/database/migrations/` (goose, embedded). 
 ### Comments
 
 Keep code comments to an absolute minimum. Only add a comment when the code cannot reasonably explain itself — e.g. a non-obvious side effect, a subtle correctness constraint, or a required workaround. Do not restate what the code does. Godoc comments on exported functions are fine when they add context beyond the name and signature.
+
+### Error Handling
+
+Never ignore errors with `_ =` unless absolutely necessary (e.g. best-effort cleanup in a defer). Always propagate or handle errors explicitly.
 
 ## Commit Convention
 

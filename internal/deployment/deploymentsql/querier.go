@@ -23,6 +23,7 @@ type Querier interface {
 	GetEnvironmentFeature(ctx context.Context, arg GetEnvironmentFeatureParams) (GetEnvironmentFeatureRow, error)
 	GetLatestDeployInstructionsForFeature(ctx context.Context, arg GetLatestDeployInstructionsForFeatureParams) (DeployInstruction, error)
 	InsertEnvironmentFeature(ctx context.Context, arg InsertEnvironmentFeatureParams) error
+	InvalidateDeployInstructionHash(ctx context.Context, arg InvalidateDeployInstructionHashParams) error
 	LatestStatusForDeploymentInEnvironment(ctx context.Context, arg LatestStatusForDeploymentInEnvironmentParams) (string, error)
 	ListDeployInstructionsByDeploymentID(ctx context.Context, deploymentID *uuid.UUID) ([]ListDeployInstructionsByDeploymentIDRow, error)
 	ListDeploymentStatuses(ctx context.Context, deploymentID uuid.UUID) ([]ListDeploymentStatusesRow, error)

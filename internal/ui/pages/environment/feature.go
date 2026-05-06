@@ -195,7 +195,10 @@ func RedeployHandler(repo database.Repo) http.HandlerFunc {
 			return
 		}
 		if feature.HasDeployments {
-			deployment.TriggerReconcile(r.Context(), deployment.ReconcileTriggerEvent{})
+			if err := deployment.TriggerRedeploy(r.Context(), env.ID, feature.Name); err != nil {
+				http.Error(w, "Failed to trigger redeploy: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
 		}
 		http.Redirect(w, r, featureBasePath(r), http.StatusSeeOther)
 	}
