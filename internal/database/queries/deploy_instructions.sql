@@ -126,13 +126,28 @@ di_latest AS (
 			environment_id,
 			created DESC
 ),
-ds_latest AS (
-	SELECT
-		d.feature_name,
-		ds.status
+deployment_status_latest AS (
+	SELECT DISTINCT ON (deployment_id)
+		deployment_id,
+		status
 	FROM
-		deployment_statuses ds
-		JOIN deployments d ON d.id = ds.deployment_id
+		deployment_statuses
+	ORDER BY
+		deployment_id,
+		created DESC
+),
+ds_latest AS (
+	SELECT DISTINCT ON (d.feature_name,
+		d.environment_id)
+		d.feature_name,
+		dsl.status
+	FROM
+		deployments d
+		JOIN deployment_status_latest dsl ON dsl.deployment_id = d.id
+	ORDER BY
+		d.feature_name,
+		d.environment_id,
+		d.created DESC
 ),
 combined AS (
 	SELECT
