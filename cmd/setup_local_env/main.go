@@ -300,7 +300,7 @@ func main() {
 		"aivenator":       tenantOnly,
 		"console":         managementOnly,
 		"hookd":           managementOnly,
-		"dependencytrack": managementOnly,
+		"dependencytrack": tenantOnly,
 		"replicator":      tenantOnly,
 	}
 
