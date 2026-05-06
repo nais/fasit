@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -95,6 +96,14 @@ var (
 
 func main() {
 	log := logrus.StandardLogger()
+	now := time.Now().UTC().Format("2006-01-02-150405")
+	seq := 0
+	newVersion := func() string {
+		seq++
+		b := make([]byte, 3)
+		_, _ = rand.Read(b)
+		return fmt.Sprintf("%s-%x%d", now, b, seq)
+	}
 
 	if err := os.Setenv("PUBSUB_EMULATOR_HOST", "localhost:8086"); err != nil {
 		log.Fatal(err)
@@ -241,17 +250,29 @@ func main() {
 		},
 	}
 
-	seeder.AddDeploymentWithValues("naiserator", "2026-04-28-a1b2c3d", environment.Labels{"kind": "tenant"}, tenantOnly, featureValues["naiserator"])
-	seeder.AddDeploymentWithValues("v13s", "2026-04-22-7e8f9a0", environment.Labels{"kind": "management"}, managementOnly, featureValues["v13s"])
-	seeder.AddDeploymentWithValues("console", "2026-04-30-3c4d5e6", environment.Labels{"kind": "management"}, managementOnly, featureValues["console"])
-	seeder.AddDeploymentWithValues("unleash", "2026-04-15-9b0c1d2", environment.Labels{"kind": "management", "aiven": "enabled"}, managementOnly, featureValues["unleash"])
-	seeder.AddDeploymentWithValues("replicator", "2026-04-18-5f6a7b8", environment.Labels{"kind": "tenant", "tenant": "test-partner", "environment": "prod"}, tenantOnly, featureValues["replicator"])
-	seeder.AddDeploymentWithValues("dependencytrack", "2026-04-10-2d3e4f5", environment.Labels{"kind": "tenant", "tenant": "test-partner", "environment": "staging"}, tenantOnly, featureValues["dependencytrack"])
-	seeder.AddDeploymentWithValues("naiserator", "2026-05-01-6a7b8c9", environment.Labels{"kind": "tenant", "tenant": "dev-nais", "environment": "dev"}, tenantOnly, featureValues["naiserator"])
-	seeder.AddDeploymentWithValues("dependencytrack", "2026-04-25-8d9e0f1", environment.Labels{"kind": "tenant", "tenant": "dev-nais", "environment": "dev"}, tenantOnly, featureValues["dependencytrack"])
-	seeder.AddDeploymentWithValues("replicator", "2026-04-20-4b5c6d7", environment.Labels{"kind": "tenant", "tenant": "dev-nais", "environment": "dev"}, tenantOnly, featureValues["replicator"])
-	seeder.AddDeploymentWithValues("unleash", "2026-04-27-1a2b3c4", environment.Labels{"kind": "management", "tenant": "dev-nais"}, managementOnly, featureValues["unleash"])
-	seeder.AddDeploymentWithValues("kyverno", "2026-04-27-1a2b3c5", environment.Labels{}, all, featureValues["kyverno"])
+	naiseratorV := newVersion()
+	v13sV := newVersion()
+	consoleV := newVersion()
+	unleashV := newVersion()
+	replicatorV := newVersion()
+	dependencytrackV := newVersion()
+	naiseratorDevV := newVersion()
+	dependencytrackDevV := newVersion()
+	replicatorDevV := newVersion()
+	unleashDevV := newVersion()
+	kyvernoV := newVersion()
+
+	seeder.AddDeploymentWithValues("naiserator", naiseratorV, environment.Labels{"kind": "tenant"}, tenantOnly, featureValues["naiserator"])
+	seeder.AddDeploymentWithValues("v13s", v13sV, environment.Labels{"kind": "management"}, managementOnly, featureValues["v13s"])
+	seeder.AddDeploymentWithValues("console", consoleV, environment.Labels{"kind": "management"}, managementOnly, featureValues["console"])
+	seeder.AddDeploymentWithValues("unleash", unleashV, environment.Labels{"kind": "management", "aiven": "enabled"}, managementOnly, featureValues["unleash"])
+	seeder.AddDeploymentWithValues("replicator", replicatorV, environment.Labels{"kind": "tenant", "tenant": "test-partner", "environment": "prod"}, tenantOnly, featureValues["replicator"])
+	seeder.AddDeploymentWithValues("dependencytrack", dependencytrackV, environment.Labels{"kind": "tenant", "tenant": "test-partner", "environment": "staging"}, tenantOnly, featureValues["dependencytrack"])
+	seeder.AddDeploymentWithValues("naiserator", naiseratorDevV, environment.Labels{"kind": "tenant", "tenant": "dev-nais", "environment": "dev"}, tenantOnly, featureValues["naiserator"])
+	seeder.AddDeploymentWithValues("dependencytrack", dependencytrackDevV, environment.Labels{"kind": "tenant", "tenant": "dev-nais", "environment": "dev"}, tenantOnly, featureValues["dependencytrack"])
+	seeder.AddDeploymentWithValues("replicator", replicatorDevV, environment.Labels{"kind": "tenant", "tenant": "dev-nais", "environment": "dev"}, tenantOnly, featureValues["replicator"])
+	seeder.AddDeploymentWithValues("unleash", unleashDevV, environment.Labels{"kind": "management", "tenant": "dev-nais"}, managementOnly, featureValues["unleash"])
+	seeder.AddDeploymentWithValues("kyverno", kyvernoV, environment.Labels{}, all, featureValues["kyverno"])
 
 	if _, err := seeder.Seed(ctx); err != nil {
 		log.Fatal(err)
@@ -284,15 +305,24 @@ func main() {
 		version string
 		ref     string
 	}
+	naiseratorRolloutV := newVersion()
+	aivenatorV1 := newVersion()
+	aivenatorV2 := newVersion()
+	aivenatorV3 := newVersion()
+	consoleRolloutV := newVersion()
+	hookdV := newVersion()
+	dependencytrackRolloutV := newVersion()
+	replicatorRolloutV := newVersion()
+
 	rollouts := []rolloutSeed{
-		{"naiserator", "2026-05-04-f1e2d3c", "refs/heads/main"},
-		{"aivenator", "1.0.0", "refs/tags/v1.0.0"},
-		{"aivenator", "2.0.0", "refs/tags/v2.0.0"},
-		{"aivenator", "3.0.0", "refs/tags/v3.0.0"},
-		{"console", "2.0.0", "refs/heads/main"},
-		{"hookd", "1.0.0", "refs/tags/v1.0.0"},
-		{"dependencytrack", "2.0.0", "refs/heads/main"},
-		{"replicator", "2.0.0", "refs/tags/v2.0.0"},
+		{"naiserator", naiseratorRolloutV, "refs/heads/main"},
+		{"aivenator", aivenatorV1, "refs/tags/" + aivenatorV1},
+		{"aivenator", aivenatorV2, "refs/tags/" + aivenatorV2},
+		{"aivenator", aivenatorV3, "refs/tags/" + aivenatorV3},
+		{"console", consoleRolloutV, "refs/heads/main"},
+		{"hookd", hookdV, "refs/tags/" + hookdV},
+		{"dependencytrack", dependencytrackRolloutV, "refs/heads/main"},
+		{"replicator", replicatorRolloutV, "refs/tags/" + replicatorRolloutV},
 	}
 
 	rolloutSeedKinds := map[string][]model.EnvironmentKind{
@@ -335,13 +365,13 @@ func main() {
 	if err := repo.RolloutsUpdateStatus(ctx, model.RolloutStatusDeployed, "naiserator", true); err != nil {
 		log.WithError(err).Warn("failed to update naiserator rollout status")
 	}
-	if err := feature.FeatureVersionUpdate(ctx, "naiserator", "2026-05-04-f1e2d3c"); err != nil {
+	if err := feature.FeatureVersionUpdate(ctx, "naiserator", naiseratorRolloutV); err != nil {
 		log.WithError(err).Warn("failed to update naiserator feature version")
 	}
 	if err := repo.RolloutsUpdateStatus(ctx, model.RolloutStatusDeployed, "aivenator", true); err != nil {
 		log.WithError(err).Warn("failed to update aivenator rollout status")
 	}
-	if err := feature.FeatureVersionUpdate(ctx, "aivenator", "3.0.0"); err != nil {
+	if err := feature.FeatureVersionUpdate(ctx, "aivenator", aivenatorV3); err != nil {
 		log.WithError(err).Warn("failed to update aivenator feature version")
 	}
 	if err := repo.RolloutsUpdateStatus(ctx, model.RolloutStatusFailed, "hookd", false); err != nil {
@@ -350,7 +380,7 @@ func main() {
 	if err := repo.RolloutsUpdateStatus(ctx, model.RolloutStatusDeployed, "console", true); err != nil {
 		log.WithError(err).Warn("failed to update console rollout status")
 	}
-	if err := feature.FeatureVersionUpdate(ctx, "console", "2.0.0"); err != nil {
+	if err := feature.FeatureVersionUpdate(ctx, "console", consoleRolloutV); err != nil {
 		log.WithError(err).Warn("failed to update console feature version")
 	}
 
