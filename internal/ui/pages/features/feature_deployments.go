@@ -316,6 +316,9 @@ func featureDeploymentEnvStatuses(ctx context.Context, repo database.Repo, featu
 				es.OverriddenByID = winner.ID.String()
 				es.OverriddenByLabels = winner.TargetLabels
 				es.StatusText = "OVERRIDDEN"
+			} else if di, err := repo.DeployInstructionsLatestForFeature(ctx, env.env.ID, feature.Name); err == nil && di != nil {
+				es.StatusText = strings.ToUpper(di.Status.String())
+				es.LastModified = di.LastModified
 			} else if status := statusByDepEnv[dep.ID.String()+":"+env.env.ID.String()]; status != nil {
 				es.StatusText = string(status.State)
 				es.LastModified = status.LastModified
