@@ -289,6 +289,80 @@ func (_c *Repo_DeployInstructionsForFeature_Call) RunAndReturn(run func(ctx cont
 	return _c
 }
 
+// DeployInstructionsLatestDeployedForFeature provides a mock function for the type Repo
+func (_mock *Repo) DeployInstructionsLatestDeployedForFeature(ctx context.Context, envID uuid.UUID, featureName string) (*model.DeployInstruction, error) {
+	ret := _mock.Called(ctx, envID, featureName)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeployInstructionsLatestDeployedForFeature")
+	}
+
+	var r0 *model.DeployInstruction
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, string) (*model.DeployInstruction, error)); ok {
+		return returnFunc(ctx, envID, featureName)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID, string) *model.DeployInstruction); ok {
+		r0 = returnFunc(ctx, envID, featureName)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.DeployInstruction)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID, string) error); ok {
+		r1 = returnFunc(ctx, envID, featureName)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Repo_DeployInstructionsLatestDeployedForFeature_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DeployInstructionsLatestDeployedForFeature'
+type Repo_DeployInstructionsLatestDeployedForFeature_Call struct {
+	*mock.Call
+}
+
+// DeployInstructionsLatestDeployedForFeature is a helper method to define mock.On call
+//   - ctx context.Context
+//   - envID uuid.UUID
+//   - featureName string
+func (_e *Repo_Expecter) DeployInstructionsLatestDeployedForFeature(ctx interface{}, envID interface{}, featureName interface{}) *Repo_DeployInstructionsLatestDeployedForFeature_Call {
+	return &Repo_DeployInstructionsLatestDeployedForFeature_Call{Call: _e.mock.On("DeployInstructionsLatestDeployedForFeature", ctx, envID, featureName)}
+}
+
+func (_c *Repo_DeployInstructionsLatestDeployedForFeature_Call) Run(run func(ctx context.Context, envID uuid.UUID, featureName string)) *Repo_DeployInstructionsLatestDeployedForFeature_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		var arg2 string
+		if args[2] != nil {
+			arg2 = args[2].(string)
+		}
+		run(
+			arg0,
+			arg1,
+			arg2,
+		)
+	})
+	return _c
+}
+
+func (_c *Repo_DeployInstructionsLatestDeployedForFeature_Call) Return(deployInstruction *model.DeployInstruction, err error) *Repo_DeployInstructionsLatestDeployedForFeature_Call {
+	_c.Call.Return(deployInstruction, err)
+	return _c
+}
+
+func (_c *Repo_DeployInstructionsLatestDeployedForFeature_Call) RunAndReturn(run func(ctx context.Context, envID uuid.UUID, featureName string) (*model.DeployInstruction, error)) *Repo_DeployInstructionsLatestDeployedForFeature_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // DeployInstructionsLatestForFeature provides a mock function for the type Repo
 func (_mock *Repo) DeployInstructionsLatestForFeature(ctx context.Context, envID uuid.UUID, featureName string) (*model.DeployInstruction, error) {
 	ret := _mock.Called(ctx, envID, featureName)

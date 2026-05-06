@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/nais/fasit/internal/ui/layout"
+	"github.com/nais/fasit/internal/ui/view"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
 )
@@ -15,6 +16,7 @@ type RenderPage func(http.ResponseWriter, *http.Request, layout.Props)
 
 type Summary struct {
 	FeatureName, Version, Status, Target, Created, Completed, DeploymentID string
+	TargetLabels                                                           map[string]string
 	createdAt                                                              time.Time
 	disabledCount                                                          int
 }
@@ -56,21 +58,9 @@ func metaRow(label string, value g.Node) g.Node {
 	return h.Tr(h.Td(h.Class("th-like"), g.Text(label)), h.Td(value))
 }
 
-var oslo = mustLoadLocation("Europe/Oslo")
-
-func mustLoadLocation(name string) *time.Location {
-	loc, err := time.LoadLocation(name)
-	if err != nil {
-		panic(err)
-	}
-
-	return loc
-}
-
-func formatTime(t time.Time) string {
+func timeWithTitle(t time.Time) g.Node {
 	if t.IsZero() {
-		return ""
+		return g.Text("")
 	}
-
-	return t.In(oslo).Format("2006-01-02 15:04:05")
+	return h.Span(g.Attr("title", view.FormatTime(t)), g.Text(view.RelativeTime(t)))
 }

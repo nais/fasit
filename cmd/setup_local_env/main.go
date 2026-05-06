@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"cloud.google.com/go/pubsub/v2"
 	"cloud.google.com/go/pubsub/v2/apiv1/pubsubpb"
 	"github.com/google/uuid"
+	"github.com/nais/fasit/internal/auth"
 	"github.com/nais/fasit/internal/contextloader"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/deployment"
@@ -18,7 +20,6 @@ import (
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
-	"github.com/nais/fasit/internal/message"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/metric/noop"
 )
@@ -95,6 +96,14 @@ var (
 
 func main() {
 	log := logrus.StandardLogger()
+	now := time.Now().UTC().Format("2006-01-02-150405")
+	seq := 0
+	newVersion := func() string {
+		seq++
+		b := make([]byte, 3)
+		_, _ = rand.Read(b)
+		return fmt.Sprintf("%s-%x%d", now, b, seq)
+	}
 
 	if err := os.Setenv("PUBSUB_EMULATOR_HOST", "localhost:8086"); err != nil {
 		log.Fatal(err)
@@ -112,6 +121,9 @@ func main() {
 		panic(err)
 	}
 	ctx = loadContext(ctx)
+	// Identify the seeder as a system actor so audit log entries don't warn
+	// about an "unknown actor" for every feature_state we create below.
+	ctx = auth.SetEmail(ctx, "setup_local_env")
 
 	// Create tenants and environments first (needed for deployment status FKs).
 	for tenantName, environments := range envs {
@@ -180,130 +192,170 @@ func main() {
 	seeder := deploymenttest.NewSeeder()
 	deployment.ChartDownloader = seeder.ChartDownloader()
 
-	seeder.AddDeployment("aivenator", "2.0.0", environment.Labels{"aiven": "enabled"})
-	seeder.AddDeployment("naiserator", "1.0.0", environment.Labels{"kind": "tenant"})
-	seeder.AddDeployment("v13s", "1.0.0", environment.Labels{"kind": "management"})
-	seeder.AddDeployment("console", "1.0.0", environment.Labels{})
-	seeder.AddDeployment("unleash", "1.0.0", environment.Labels{"aiven": "enabled"})
-	seeder.AddDeployment("kafka-manager", "1.0.0", environment.Labels{"kafka": "enabled"})
-	seeder.AddDeployment("naiserator", "1.1.0", environment.Labels{"kind": "tenant", "tenant": "nav"})
-	seeder.AddDeployment("naiserator", "1.2.0", environment.Labels{"kind": "tenant", "aiven": "enabled", "tenant": "test-partner"})
+	// Targets are chosen so that, when paired with mise/tasks/naisd-all.sh
+	// (test-partner/prod runs --mock-failing, test-partner/staging has no
+	// naisd at all), the local UI ends up with a representative mix:
+	//   - 4 features successfully DEPLOYED
+	//   - 2 features FAILED (touching test-partner/prod)
+	//   - 2 features PENDING (touching test-partner/staging, which never
+	//     receives a status because no naisd is listening there)
+	tenantOnly := []model.EnvironmentKind{"tenant"}
+	managementOnly := []model.EnvironmentKind{"management"}
+	onpremOnly := []model.EnvironmentKind{"onprem"}
+	all := append(append(tenantOnly, managementOnly...), onpremOnly...)
 
-	depIDs, err := seeder.Seed(ctx)
-	if err != nil {
+	str := &model.Config{Type: model.ConfigTypeString}
+	intCfg := &model.Config{Type: model.ConfigTypeInt}
+	boolCfg := &model.Config{Type: model.ConfigTypeBool}
+	secret := &model.Config{Type: model.ConfigTypeString, Secret: true}
+
+	featureValues := map[string]model.Values{
+		"naiserator": {
+			"replicas": {DisplayName: "Replicas", Description: "Number of replicas", Config: intCfg},
+			"logLevel": {DisplayName: "Log Level", Config: str},
+			"apiKey":   {DisplayName: "API Key", Description: "External API key", Config: secret},
+		},
+		"console": {
+			"adminEmail":    {DisplayName: "Admin Email", Config: str},
+			"sessionSecret": {DisplayName: "Session Secret", Config: secret},
+			"debugMode":     {DisplayName: "Debug Mode", Config: boolCfg},
+		},
+		"unleash": {
+			"instanceCount": {DisplayName: "Instance Count", Config: intCfg},
+			"dbPassword":    {DisplayName: "Database Password", Config: secret},
+		},
+		"replicator": {
+			"syncInterval": {DisplayName: "Sync Interval", Description: "Seconds between syncs", Config: str},
+			"maxRetries":   {DisplayName: "Max Retries", Config: intCfg},
+		},
+		"v13s": {
+			"clusterName": {DisplayName: "Cluster Name", Config: str},
+			"dryRun":      {DisplayName: "Dry Run", Config: boolCfg},
+		},
+		"dependencytrack": {
+			"apiUrl":   {DisplayName: "API URL", Config: str},
+			"apiToken": {DisplayName: "API Token", Config: secret},
+		},
+		"kyverno": {
+			"webhookTimeout": {DisplayName: "Webhook Timeout", Description: "Timeout in seconds", Config: intCfg},
+			"replicaCount":   {DisplayName: "Replica Count", Config: intCfg},
+		},
+		"aivenator": {
+			"aivenToken":  {DisplayName: "Aiven Token", Config: secret},
+			"projectName": {DisplayName: "Project Name", Config: str},
+		},
+		"hookd": {
+			"webhookUrl":    {DisplayName: "Webhook URL", Config: str},
+			"webhookSecret": {DisplayName: "Webhook Secret", Config: secret},
+		},
+	}
+
+	naiseratorV := newVersion()
+	v13sV := newVersion()
+	consoleV := newVersion()
+	unleashV := newVersion()
+	replicatorV := newVersion()
+	dependencytrackV := newVersion()
+	naiseratorDevV := newVersion()
+	dependencytrackDevV := newVersion()
+	replicatorDevV := newVersion()
+	unleashDevV := newVersion()
+	kyvernoV := newVersion()
+
+	seeder.AddDeploymentWithValues("naiserator", naiseratorV, environment.Labels{"kind": "tenant"}, tenantOnly, featureValues["naiserator"])
+	seeder.AddDeploymentWithValues("v13s", v13sV, environment.Labels{"kind": "management"}, managementOnly, featureValues["v13s"])
+	seeder.AddDeploymentWithValues("console", consoleV, environment.Labels{"kind": "management"}, managementOnly, featureValues["console"])
+	seeder.AddDeploymentWithValues("unleash", unleashV, environment.Labels{"kind": "management", "aiven": "enabled"}, managementOnly, featureValues["unleash"])
+	seeder.AddDeploymentWithValues("replicator", replicatorV, environment.Labels{"kind": "tenant", "tenant": "test-partner", "environment": "prod"}, tenantOnly, featureValues["replicator"])
+	seeder.AddDeploymentWithValues("dependencytrack", dependencytrackV, environment.Labels{"kind": "tenant", "tenant": "test-partner", "environment": "staging"}, tenantOnly, featureValues["dependencytrack"])
+	seeder.AddDeploymentWithValues("naiserator", naiseratorDevV, environment.Labels{"kind": "tenant", "tenant": "dev-nais", "environment": "dev"}, tenantOnly, featureValues["naiserator"])
+	seeder.AddDeploymentWithValues("dependencytrack", dependencytrackDevV, environment.Labels{"kind": "tenant", "tenant": "dev-nais", "environment": "dev"}, tenantOnly, featureValues["dependencytrack"])
+	seeder.AddDeploymentWithValues("replicator", replicatorDevV, environment.Labels{"kind": "tenant", "tenant": "dev-nais", "environment": "dev"}, tenantOnly, featureValues["replicator"])
+	seeder.AddDeploymentWithValues("unleash", unleashDevV, environment.Labels{"kind": "management", "tenant": "dev-nais"}, managementOnly, featureValues["unleash"])
+	seeder.AddDeploymentWithValues("kyverno", kyvernoV, environment.Labels{}, all, featureValues["kyverno"])
+
+	if _, err := seeder.Seed(ctx); err != nil {
 		log.Fatal(err)
 	}
 
-	setStatus := func(depIdx int, tenantName, envName string, status model.RolloutStatus, msg string) {
-		if err := deployment.SetDeploymentStatus(ctx, depIDs[depIdx], envID(tenantName, envName), status, msg); err != nil {
-			log.WithError(err).WithField("deployment", depIdx).WithField("env", envName).Error("set deployment status")
+	// Enable every feature in every env so they don't default to disabled.
+	for tenantName, environments := range envs {
+		for envName := range environments {
+			id := envID(tenantName, envName)
+			states, err := feature.FeatureStatesGet(ctx, id)
+			if err != nil {
+				log.WithError(err).Errorf("get feature states for %s/%s", tenantName, envName)
+				continue
+			}
+			for _, state := range states {
+				if _, err := feature.FeatureStatesCreateOrUpdate(ctx, id, &model.Feature{Name: state.FeatureName}, true); err != nil {
+					log.WithError(err).Errorf("enable %s in %s/%s", state.FeatureName, tenantName, envName)
+				}
+			}
 		}
 	}
 
-	setStatus(0, "test-partner", "dev", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(0, "test-partner", "management", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(0, "test-partner", "prod", model.RolloutStatusFailed, "helm install failed: timeout waiting for condition")
-	setStatus(0, "nav", "dev", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(0, "nav", "management", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(0, "nav", "prod", model.RolloutStatusDeployed, "received status from naisd.")
-
-	setStatus(1, "test-partner", "dev", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(1, "test-partner", "prod", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(1, "test-partner", "staging", model.RolloutStatusPending, "waiting for naisd")
-	setStatus(1, "nav", "dev", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(1, "nav", "prod", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(1, "dev-nais", "dev", model.RolloutStatusDeployed, "received status from naisd.")
-
-	setStatus(2, "test-partner", "management", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(2, "nav", "management", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(2, "dev-nais", "management", model.RolloutStatusDeployed, "received status from naisd.")
-
-	setStatus(3, "test-partner", "dev", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(3, "test-partner", "management", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(3, "test-partner", "prod", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(3, "test-partner", "staging", model.RolloutStatusCreated, "deployment instruction sent to naisd")
-	setStatus(3, "nav", "dev", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(3, "nav", "management", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(3, "nav", "prod", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(3, "dev-nais", "dev", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(3, "dev-nais", "management", model.RolloutStatusDeployed, "received status from naisd.")
-
-	setStatus(4, "test-partner", "management", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(4, "test-partner", "prod", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(4, "nav", "management", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(4, "nav", "prod", model.RolloutStatusDeployed, "received status from naisd.")
-
-	setStatus(6, "nav", "dev", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(6, "nav", "prod", model.RolloutStatusDeployed, "received status from naisd.")
-
-	setStatus(7, "test-partner", "dev", model.RolloutStatusDeployed, "received status from naisd.")
-	setStatus(7, "test-partner", "prod", model.RolloutStatusFailed, "helm install failed: timeout waiting for condition")
-
-	// Disable unleash in dev so ListDeploymentStatuses synthesizes a DISABLED row.
-	if _, err := feature.FeatureStatesCreateOrUpdate(ctx, envID("test-partner", "dev"), &model.Feature{Name: "unleash"}, false); err != nil {
-		log.WithError(err).Error("disable unleash in dev")
+	// Disable one feature to get a DISABLED status row in the mix.
+	if _, err := feature.FeatureStatesCreateOrUpdate(ctx, envID("dev-nais", "dev"), &model.Feature{Name: "dependencytrack"}, false); err != nil {
+		log.WithError(err).Errorf("disable dependencytrack in dev-nais/dev")
 	}
-
-	setRelease := func(tenantName, envName, featureName, version, status string) {
-		if err := repo.ReleaseStatusCreateOrUpdate(ctx, envID(tenantName, envName), &message.Release{
-			Name:         featureName,
-			Version:      version,
-			Status:       status,
-			Revision:     1,
-			LastDeployed: time.Now().Add(-1 * time.Hour),
-		}); err != nil {
-			log.WithError(err).WithField("tenant", tenantName).WithField("env", envName).WithField("feature", featureName).Error("set release status")
-		}
-	}
-
-	setRelease("test-partner", "dev", "aivenator", "2.0.0", "deployed")
-	setRelease("test-partner", "management", "aivenator", "2.0.0", "deployed")
-	setRelease("test-partner", "prod", "aivenator", "1.0.0", "deployed")
-	setRelease("nav", "dev", "aivenator", "2.0.0", "deployed")
-	setRelease("nav", "management", "aivenator", "2.0.0", "deployed")
-	setRelease("nav", "prod", "aivenator", "2.0.0", "deployed")
-
-	setRelease("test-partner", "dev", "naiserator", "1.2.0", "deployed")
-	setRelease("test-partner", "prod", "naiserator", "1.0.0", "deployed")
-	setRelease("nav", "dev", "naiserator", "1.1.0", "deployed")
-	setRelease("nav", "prod", "naiserator", "1.1.0", "deployed")
-	setRelease("dev-nais", "dev", "naiserator", "1.0.0", "deployed")
-
-	setRelease("test-partner", "management", "v13s", "1.0.0", "deployed")
-	setRelease("nav", "management", "v13s", "1.0.0", "deployed")
-	setRelease("dev-nais", "management", "v13s", "1.0.0", "deployed")
-
-	setRelease("test-partner", "dev", "console", "1.0.0", "deployed")
-	setRelease("test-partner", "management", "console", "1.0.0", "deployed")
-	setRelease("test-partner", "prod", "console", "1.0.0", "deployed")
-	setRelease("nav", "dev", "console", "1.0.0", "deployed")
-	setRelease("nav", "management", "console", "1.0.0", "deployed")
-	setRelease("nav", "prod", "console", "1.0.0", "deployed")
-	setRelease("dev-nais", "dev", "console", "1.0.0", "deployed")
-	setRelease("dev-nais", "management", "console", "1.0.0", "deployed")
-
-	setRelease("test-partner", "management", "unleash", "1.0.0", "deployed")
-	setRelease("test-partner", "prod", "unleash", "1.0.0", "deployed")
-	setRelease("nav", "management", "unleash", "1.0.0", "deployed")
-	setRelease("nav", "prod", "unleash", "1.0.0", "deployed")
 
 	type rolloutSeed struct {
 		name    string
 		version string
 		ref     string
 	}
+	naiseratorRolloutV := newVersion()
+	aivenatorV1 := newVersion()
+	aivenatorV2 := newVersion()
+	aivenatorV3 := newVersion()
+	consoleRolloutV := newVersion()
+	hookdV := newVersion()
+	dependencytrackRolloutV := newVersion()
+	replicatorRolloutV := newVersion()
+
 	rollouts := []rolloutSeed{
-		{"naiserator", "1.0.0", "refs/heads/main"},
-		{"aivenator", "1.0.0", "refs/tags/v1.0.0"},
-		{"aivenator", "2.0.0", "refs/tags/v2.0.0"},
-		{"aivenator", "3.0.0", "refs/tags/v3.0.0"},
-		{"console", "2.0.0", "refs/heads/main"},
-		{"hookd", "1.0.0", "refs/tags/v1.0.0"},
-		{"dependencytrack", "2.0.0", "refs/heads/main"},
-		{"replicator", "2.0.0", "refs/tags/v2.0.0"},
+		{"naiserator", naiseratorRolloutV, "refs/heads/main"},
+		{"aivenator", aivenatorV1, "refs/tags/" + aivenatorV1},
+		{"aivenator", aivenatorV2, "refs/tags/" + aivenatorV2},
+		{"aivenator", aivenatorV3, "refs/tags/" + aivenatorV3},
+		{"console", consoleRolloutV, "refs/heads/main"},
+		{"hookd", hookdV, "refs/tags/" + hookdV},
+		{"dependencytrack", dependencytrackRolloutV, "refs/heads/main"},
+		{"replicator", replicatorRolloutV, "refs/tags/" + replicatorRolloutV},
+	}
+
+	rolloutSeedKinds := map[string][]model.EnvironmentKind{
+		"naiserator":      tenantOnly,
+		"aivenator":       tenantOnly,
+		"console":         managementOnly,
+		"hookd":           managementOnly,
+		"dependencytrack": tenantOnly,
+		"replicator":      tenantOnly,
 	}
 
 	for _, r := range rollouts {
+		kinds := rolloutSeedKinds[r.name]
+		if kinds == nil {
+			kinds = []model.EnvironmentKind{"tenant", "management"}
+		}
+		feat := model.Feature{
+			Name:    r.name,
+			Version: r.version,
+			Chart:   "oci://" + r.name,
+			Source:  "https://example.com/" + r.name,
+			FeatureYAML: model.FeatureYAML{
+				EnvironmentKinds: kinds,
+				Values:           featureValues[r.name],
+			},
+		}
+		if err := feature.FeatureDataCreate(ctx, feat, nil); err != nil {
+			if !strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+				log.WithError(err).Warnf("failed to seed feature_data for %s %s", r.name, r.version)
+				continue
+			}
+		}
+
 		_, err := repo.RolloutCreate(ctx, r.name, r.version, &model.GHRef{Owner: "nais", Repo: r.name, Ref: r.ref})
 		if err != nil {
 			log.WithError(err).Warnf("failed to create rollout for %s %s", r.name, r.version)
@@ -313,14 +365,23 @@ func main() {
 	if err := repo.RolloutsUpdateStatus(ctx, model.RolloutStatusDeployed, "naiserator", true); err != nil {
 		log.WithError(err).Warn("failed to update naiserator rollout status")
 	}
+	if err := feature.FeatureVersionUpdate(ctx, "naiserator", naiseratorRolloutV); err != nil {
+		log.WithError(err).Warn("failed to update naiserator feature version")
+	}
 	if err := repo.RolloutsUpdateStatus(ctx, model.RolloutStatusDeployed, "aivenator", true); err != nil {
 		log.WithError(err).Warn("failed to update aivenator rollout status")
+	}
+	if err := feature.FeatureVersionUpdate(ctx, "aivenator", aivenatorV3); err != nil {
+		log.WithError(err).Warn("failed to update aivenator feature version")
 	}
 	if err := repo.RolloutsUpdateStatus(ctx, model.RolloutStatusFailed, "hookd", false); err != nil {
 		log.WithError(err).Warn("failed to update hookd rollout status")
 	}
 	if err := repo.RolloutsUpdateStatus(ctx, model.RolloutStatusDeployed, "console", true); err != nil {
 		log.WithError(err).Warn("failed to update console rollout status")
+	}
+	if err := feature.FeatureVersionUpdate(ctx, "console", consoleRolloutV); err != nil {
+		log.WithError(err).Warn("failed to update console feature version")
 	}
 
 	// Set up pubsub topics and subscriptions.

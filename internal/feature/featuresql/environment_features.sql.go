@@ -52,3 +52,31 @@ func (q *Queries) GetEnvironmentFeature(ctx context.Context, arg GetEnvironmentF
 	)
 	return i, err
 }
+
+const hasMatchingDeployment = `-- name: HasMatchingDeployment :one
+SELECT
+	EXISTS (
+		SELECT
+			1
+		FROM
+			deployments d
+			JOIN environments e ON e.id = $1
+				AND e.labels @> d.target
+		WHERE
+			d.feature_name = $2)
+`
+
+type HasMatchingDeploymentParams struct {
+	EnvironmentID uuid.UUID
+	FeatureName   string
+}
+
+// Returns TRUE when at least one deployment exists whose target labels
+// are contained by the environment's labels (matching the predicate used
+// by the deployment reconciler in ListDeploymentsToReconcile).
+func (q *Queries) HasMatchingDeployment(ctx context.Context, arg HasMatchingDeploymentParams) (bool, error) {
+	row := q.db.QueryRow(ctx, hasMatchingDeployment, arg.EnvironmentID, arg.FeatureName)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}

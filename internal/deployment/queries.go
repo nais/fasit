@@ -185,6 +185,21 @@ func SetDeploymentStatus(ctx context.Context, deploymentID, environmentID uuid.U
 	})
 }
 
+func TriggerRedeploy(ctx context.Context, envID uuid.UUID, featureName string) error {
+	if err := invalidateDeployInstructionHash(ctx, envID, featureName); err != nil {
+		return fmt.Errorf("invalidate hash: %w", err)
+	}
+	TriggerReconcile(ctx, ReconcileTriggerEvent{})
+	return nil
+}
+
+func invalidateDeployInstructionHash(ctx context.Context, envID uuid.UUID, featureName string) error {
+	return fromContext(ctx).querier.InvalidateDeployInstructionHash(ctx, deploymentsql.InvalidateDeployInstructionHashParams{
+		EnvironmentID: envID,
+		FeatureName:   featureName,
+	})
+}
+
 func GetEnvironmentFeature(ctx context.Context, environmentID uuid.UUID, featureName string) (*model.Feature, error) {
 	f, err := fromContext(ctx).querier.GetEnvironmentFeature(ctx, deploymentsql.GetEnvironmentFeatureParams{
 		EnvironmentID: environmentID,

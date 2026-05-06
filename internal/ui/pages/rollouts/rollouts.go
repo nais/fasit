@@ -10,6 +10,7 @@ import (
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
+	"github.com/nais/fasit/internal/ui/view"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
 )
@@ -17,8 +18,10 @@ import (
 type RenderPage func(http.ResponseWriter, *http.Request, layout.Props)
 
 type Summary struct {
-	FeatureName, Version, Status, Created, Completed string
-	createdAt                                        time.Time
+	FeatureName, Version, Status string
+	Created                      time.Time
+	Completed                    *time.Time
+	createdAt                    time.Time
 }
 
 func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
@@ -32,8 +35,8 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 					FeatureName: rollout.FeatureName,
 					Version:     rollout.Version,
 					Status:      strings.ToUpper(rollout.Status.String()),
-					Created:     formatTime(rollout.Created),
-					Completed:   formatTimePtr(rollout.Completed),
+					Created:     rollout.Created,
+					Completed:   rollout.Completed,
 					createdAt:   rollout.Created,
 				})
 			}
@@ -88,8 +91,8 @@ func rolloutsContent(rollouts []Summary) g.Node {
 				h.Td(h.A(h.Href("/features/"+rollout.FeatureName), g.Text(rollout.FeatureName))),
 				h.Td(versionCell(rollout)),
 				h.Td(statusCell(rollout)),
-				h.Td(g.Text(rollout.Created)),
-				h.Td(g.Text(completedDate(rollout.Completed))),
+				h.Td(timeWithTitle(rollout.Created)),
+				h.Td(completedCell(rollout.Completed)),
 			)
 		}))),
 	)
@@ -118,37 +121,16 @@ func rolloutStatus(status string) g.Node {
 	}
 }
 
-func completedDate(value string) string {
-	if value == "" {
-		return "-"
+func completedCell(t *time.Time) g.Node {
+	if t == nil || t.IsZero() {
+		return g.Text("-")
 	}
-
-	return value
+	return timeWithTitle(*t)
 }
 
-var oslo = mustLoadLocation("Europe/Oslo")
-
-func mustLoadLocation(name string) *time.Location {
-	loc, err := time.LoadLocation(name)
-	if err != nil {
-		panic(err)
-	}
-
-	return loc
-}
-
-func formatTime(t time.Time) string {
+func timeWithTitle(t time.Time) g.Node {
 	if t.IsZero() {
-		return ""
+		return g.Text("")
 	}
-
-	return t.In(oslo).Format("2006-01-02 15:04:05")
-}
-
-func formatTimePtr(t *time.Time) string {
-	if t == nil {
-		return ""
-	}
-
-	return formatTime(*t)
+	return h.Span(g.Attr("title", view.FormatTime(t)), g.Text(view.RelativeTime(t)))
 }

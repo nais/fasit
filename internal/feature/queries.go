@@ -452,6 +452,18 @@ func FeatureStateGet(ctx context.Context, envID uuid.UUID, featureName string) (
 		return fs, nil
 	}
 
+	hasDeployment, err := querier(ctx).HasMatchingDeployment(ctx, featuresql.HasMatchingDeploymentParams{
+		EnvironmentID: envID,
+		FeatureName:   featureName,
+	})
+	if err != nil {
+		return nil, err
+	}
+	if hasDeployment {
+		fs.Enabled = true
+		return fs, nil
+	}
+
 	return fs, nil
 }
 

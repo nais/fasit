@@ -17,9 +17,15 @@ import (
 
 type RenderPage func(http.ResponseWriter, *http.Request, layout.Props)
 
+type envRow struct {
+	Environment *model.Environment
+	Failed      int
+	Pending     int
+}
+
 type pageData struct {
 	Tenant       *model.Tenant
-	Environments []*model.Environment
+	Environments []envRow
 	Icon         string
 	IconColor    string
 }
@@ -40,6 +46,16 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 			return
 		}
 
+		envRows := make([]envRow, 0, len(envs))
+		for _, env := range envs {
+			failed, pending := view.EnvironmentStatusCounts(r.Context(), repo, env.ID)
+			envRows = append(envRows, envRow{
+				Environment: env,
+				Failed:      failed,
+				Pending:     pending,
+			})
+		}
+
 		allTenants, _ := environment.GetTenants(r.Context())
 		breadcrumbs := []breadcrumb.Crumb{
 			breadcrumb.TenantWithSwitcher(tenant.Name, toTenantNavs(allTenants)),
@@ -47,7 +63,7 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 
 		data := pageData{
 			Tenant:       tenant,
-			Environments: envs,
+			Environments: envRows,
 			Icon:         view.TenantIcon(tenant.Name),
 			IconColor:    view.TenantColor(tenant.Name),
 		}
@@ -85,12 +101,15 @@ func page(breadcrumbs []breadcrumb.Crumb, tenant pageData) g.Node {
 								h.Th(g.Text("Reconcile")),
 							),
 						),
-						h.TBody(g.Group(g.Map(tenant.Environments, func(environment *model.Environment) g.Node {
+						h.TBody(g.Group(g.Map(tenant.Environments, func(row envRow) g.Node {
 							return h.Tr(
-								h.Td(h.A(h.Href("/tenants/"+tenant.Tenant.Name+"/envs/"+environment.Name), g.Text(environment.Name))),
-								h.Td(g.Text(valueOrEmpty(environment.Description))),
-								h.Td(g.Text(environment.Kind.String())),
-								h.Td(g.Text(checkmarkOrDash(environment.Reconcile))),
+								h.Td(h.A(h.Href("/tenants/"+tenant.Tenant.Name+"/envs/"+row.Environment.Name),
+									g.Text(row.Environment.Name),
+									components.StatusCountsBadge(row.Failed, row.Pending),
+								)),
+								h.Td(g.Text(valueOrEmpty(row.Environment.Description))),
+								h.Td(g.Text(row.Environment.Kind.String())),
+								h.Td(g.Text(checkmarkOrDash(row.Environment.Reconcile))),
 							)
 						}))),
 					),

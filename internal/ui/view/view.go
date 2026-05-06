@@ -11,8 +11,10 @@ type EnvironmentNav struct {
 }
 
 type FeatureNav struct {
-	Name    string
-	Enabled bool
+	Name         string
+	Enabled      bool
+	FailedCount  int
+	PendingCount int
 }
 
 func TenantIcon(name string) string {

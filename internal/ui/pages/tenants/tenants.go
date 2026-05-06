@@ -15,9 +15,15 @@ import (
 
 type RenderPage func(http.ResponseWriter, *http.Request, layout.Props)
 
+type envCard struct {
+	Environment *model.Environment
+	Failed      int
+	Pending     int
+}
+
 type tenantCard struct {
 	Tenant       *model.Tenant
-	Environments []*model.Environment
+	Environments []envCard
 	Icon         string
 	IconColor    string
 }
@@ -38,9 +44,19 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 				return
 			}
 
+			envCards := make([]envCard, 0, len(envs))
+			for _, env := range envs {
+				failed, pending := view.EnvironmentStatusCounts(r.Context(), repo, env.ID)
+				envCards = append(envCards, envCard{
+					Environment: env,
+					Failed:      failed,
+					Pending:     pending,
+				})
+			}
+
 			cards = append(cards, tenantCard{
 				Tenant:       tenant,
-				Environments: envs,
+				Environments: envCards,
 				Icon:         view.TenantIcon(tenant.Name),
 				IconColor:    view.TenantColor(tenant.Name),
 			})
@@ -64,9 +80,12 @@ func page(tenants []tenantCard) g.Node {
 					g.Text(tenant.Tenant.Name),
 				),
 			),
-			h.Ul(g.Group(g.Map(tenant.Environments, func(environment *model.Environment) g.Node {
+			h.Ul(g.Group(g.Map(tenant.Environments, func(envc envCard) g.Node {
 				return h.Li(
-					h.A(h.Href("/tenants/"+tenant.Tenant.Name+"/envs/"+environment.Name), g.Text(environment.Name)),
+					h.A(h.Href("/tenants/"+tenant.Tenant.Name+"/envs/"+envc.Environment.Name),
+						g.Text(envc.Environment.Name),
+						components.StatusCountsBadge(envc.Failed, envc.Pending),
+					),
 				)
 			}))),
 		)

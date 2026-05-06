@@ -8,6 +8,7 @@ import (
 	"github.com/nais/fasit/internal/ui/pages/environment"
 	"github.com/nais/fasit/internal/ui/pages/features"
 	"github.com/nais/fasit/internal/ui/pages/labels"
+	"github.com/nais/fasit/internal/ui/pages/naisd"
 	"github.com/nais/fasit/internal/ui/pages/rollouts"
 	"github.com/nais/fasit/internal/ui/pages/tenant"
 	"github.com/nais/fasit/internal/ui/pages/tenants"
@@ -40,6 +41,7 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/tenants/{tenant}/envs/{env}/{feature}/config/override", environment.FeatureTabHandler(s.renderPage, s.repo, "overview"))
 	r.Post("/tenants/{tenant}/envs/{env}/{feature}/config/override", environment.ConfigOverrideSubmitHandler(s.repo))
 	r.Post("/tenants/{tenant}/envs/{env}/{feature}/toggle-reconcile", environment.ToggleFeatureStateHandler(s.repo))
+	r.Post("/tenants/{tenant}/envs/{env}/{feature}/redeploy", environment.RedeployHandler(s.repo))
 
 	r.Get("/rollouts", rollouts.Handler(s.renderPage, s.repo))
 	r.Get("/rollouts/{feature}/{version}", rollouts.DetailHandler(s.renderPage, s.repo))
@@ -48,14 +50,13 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/deployments/{id}/logs/{envID}", deployments.LogsHandler(s.renderPage))
 	r.Post("/deployments/{id}/delete", deployments.DeleteHandler())
 	r.Post("/deployments/{id}/delete-matching", deployments.DeleteByFeatureAndTargetHandler())
+	r.Post("/reconcile", deployments.ReconcileHandler())
 
 	r.Get("/features", features.ListHandler(s.renderPage, s.repo))
-	r.Get("/features/{feature}", features.TabHandler(s.renderPage, s.repo, "overview"))
-	r.Get("/features/{feature}/status", features.TabHandler(s.renderPage, s.repo, "status"))
-	r.Get("/features/{feature}/deployments", features.TabHandler(s.renderPage, s.repo, "deployments"))
-	r.Get("/features/{feature}/rollouts", features.TabHandler(s.renderPage, s.repo, "rollouts"))
+	r.Get("/features/{feature}", features.Handler(s.renderPage, s.repo))
 
 	r.Get("/labels", labels.Handler(s.renderPage, s.repo))
+	r.Get("/naisd", naisd.Handler(s.renderPage, s.repo))
 
 	return r
 }

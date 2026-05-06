@@ -1,6 +1,8 @@
 package components
 
 import (
+	"strconv"
+
 	"github.com/nais/fasit/internal/ui/view"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
@@ -16,11 +18,37 @@ func FeaturesSidebar(features []view.FeatureNav, currentFeatureName string) g.No
 				}
 
 				return h.Li(
-					h.A(append(attrs, g.Text(feature.Name))...),
+					h.A(append(attrs, g.Text(feature.Name), featureStatusBadge(feature))...),
 				)
 			}))),
 		),
 	)
+}
+
+func featureStatusBadge(feature view.FeatureNav) g.Node {
+	return StatusCountsBadge(feature.FailedCount, feature.PendingCount)
+}
+
+func StatusCountsBadge(failed, pending int) g.Node {
+	var badges []g.Node
+	if failed > 0 {
+		badges = append(badges, h.Span(
+			h.Class("status-badge status-error"),
+			h.Title(strconv.Itoa(failed)+" failed"),
+			g.Text(strconv.Itoa(failed)+" failed"),
+		))
+	}
+	if pending > 0 {
+		badges = append(badges, h.Span(
+			h.Class("status-badge status-pending"),
+			h.Title(strconv.Itoa(pending)+" pending"),
+			g.Text(strconv.Itoa(pending)+" pending"),
+		))
+	}
+	if len(badges) == 0 {
+		return nil
+	}
+	return g.Group(badges)
 }
 
 func EnvironmentSidebar(tenantName, environmentName, currentFeatureName string, allFeatures, enabledFeatures []view.FeatureNav) g.Node {
@@ -44,9 +72,14 @@ func EnvironmentSidebar(tenantName, environmentName, currentFeatureName string, 
 				}
 
 				status := h.Span(h.Style("color: gray"), g.Text("○"))
-				if inEnv && syncEnabled {
+				switch {
+				case feature.FailedCount > 0:
+					status = h.Span(h.Class("status-error"), h.Title("failed"), g.Text("✗"))
+				case feature.PendingCount > 0:
+					status = h.Span(h.Class("status-pending"), h.Title("pending"), g.Text("⏳"))
+				case inEnv && syncEnabled:
 					status = h.Span(h.Style("color: green"), g.Text("✓"))
-				} else if inEnv {
+				case inEnv:
 					status = h.Span(h.Style("color: orange"), g.Text("⏸"))
 				}
 

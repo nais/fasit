@@ -45,7 +45,7 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 			return
 		}
 
-		allFeatures, enabledFeatures, err := featureNavs(r.Context(), env)
+		allFeatures, enabledFeatures, err := featureNavs(r.Context(), repo, env)
 		if err != nil {
 			http.Error(w, "Failed to load environment: "+err.Error(), http.StatusInternalServerError)
 			return

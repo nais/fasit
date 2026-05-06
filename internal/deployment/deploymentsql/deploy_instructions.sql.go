@@ -227,6 +227,35 @@ func (q *Queries) GetLatestDeployInstructionsForFeature(ctx context.Context, arg
 	return i, err
 }
 
+const invalidateDeployInstructionHash = `-- name: InvalidateDeployInstructionHash :exec
+UPDATE
+	deploy_instructions
+SET
+	hash = ''
+WHERE
+	id =(
+		SELECT
+			di.id
+		FROM
+			deploy_instructions di
+		WHERE
+			di.feature_name = $1
+			AND di.environment_id = $2
+		ORDER BY
+			di.created DESC
+		LIMIT 1)
+`
+
+type InvalidateDeployInstructionHashParams struct {
+	FeatureName   string
+	EnvironmentID uuid.UUID
+}
+
+func (q *Queries) InvalidateDeployInstructionHash(ctx context.Context, arg InvalidateDeployInstructionHashParams) error {
+	_, err := q.db.Exec(ctx, invalidateDeployInstructionHash, arg.FeatureName, arg.EnvironmentID)
+	return err
+}
+
 const listDeployInstructionsByDeploymentID = `-- name: ListDeployInstructionsByDeploymentID :many
 SELECT
 	di.id, di.environment_id, di.feature_name, di.feature_version, di.status, di.hash, di.created, di.last_modified, di.values, di.deployment_id,

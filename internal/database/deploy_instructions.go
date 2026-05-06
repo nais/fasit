@@ -18,6 +18,7 @@ type DeployInstructionRepo interface {
 	DeployInstructionGet(ctx context.Context, id uuid.UUID) (*model.DeployInstruction, error)
 	DeployInstructionsForFeature(ctx context.Context, envID uuid.UUID, featureName string, offset int) ([]*model.DeployInstruction, error)
 	DeployInstructionsLatestForFeature(ctx context.Context, envID uuid.UUID, featureName string) (*model.DeployInstruction, error)
+	DeployInstructionsLatestDeployedForFeature(ctx context.Context, envID uuid.UUID, featureName string) (*model.DeployInstruction, error)
 	DeployInstructionUpdateStatus(ctx context.Context, id uuid.UUID, status model.RolloutStatus) error
 	HelmValueDiffGet(ctx context.Context, di *model.DeployInstruction, secretKeys []string) (*model.HelmValueDiff, error)
 	NamesFromDeployInstruction(ctx context.Context, id uuid.UUID) (tenantName, environmentName string, err error)
@@ -66,6 +67,21 @@ func (r *repo) DeployInstructionsLatestForFeature(ctx context.Context, envID uui
 		FeatureName:   featureName,
 	})
 	if err != nil {
+		return nil, err
+	}
+
+	return deployInstructionFromSQL(di), nil
+}
+
+func (r *repo) DeployInstructionsLatestDeployedForFeature(ctx context.Context, envID uuid.UUID, featureName string) (*model.DeployInstruction, error) {
+	di, err := r.querier.DeployInstructionsLatestDeployedForFeature(ctx, gensql.DeployInstructionsLatestDeployedForFeatureParams{
+		EnvironmentID: envID,
+		FeatureName:   featureName,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, nil
+		}
 		return nil, err
 	}
 

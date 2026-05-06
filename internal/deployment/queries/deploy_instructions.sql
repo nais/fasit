@@ -89,3 +89,21 @@ WHERE
 ORDER BY
 	di.created DESC;
 
+-- name: InvalidateDeployInstructionHash :exec
+UPDATE
+	deploy_instructions
+SET
+	hash = ''
+WHERE
+	id =(
+		SELECT
+			di.id
+		FROM
+			deploy_instructions di
+		WHERE
+			di.feature_name = @feature_name
+			AND di.environment_id = @environment_id
+		ORDER BY
+			di.created DESC
+		LIMIT 1);
+

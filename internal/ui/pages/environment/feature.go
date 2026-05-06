@@ -10,6 +10,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/database"
+	"github.com/nais/fasit/internal/deployment"
 	envpkg "github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
@@ -158,6 +159,51 @@ func ToggleFeatureStateHandler(repo database.Repo) http.HandlerFunc {
 	}
 }
 
+func RedeployHandler(repo database.Repo) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "Invalid form data", http.StatusBadRequest)
+			return
+		}
+
+		tenant, err := envpkg.GetTenantGetByName(r.Context(), chi.URLParam(r, "tenant"))
+		if err != nil {
+			http.Error(w, "Failed to get tenant: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		env, err := repo.EnvironmentGetByName(r.Context(), tenant.ID, chi.URLParam(r, "env"))
+		if err != nil {
+			http.Error(w, "Failed to get environment: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		feature, err := featurepkg.FeatureByNameForEnv(r.Context(), chi.URLParam(r, "feature"), env.ID)
+		if err != nil {
+			http.Error(w, "Failed to get feature: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		state, err := featurepkg.FeatureStateGet(r.Context(), env.ID, feature.Name)
+		if err != nil {
+			http.Error(w, "Failed to get feature state: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if !state.Enabled {
+			http.Error(w, "Cannot redeploy a disabled feature", http.StatusBadRequest)
+			return
+		}
+		if _, err := featurepkg.FeatureStatesCreateOrUpdate(r.Context(), env.ID, feature, true); err != nil {
+			http.Error(w, "Failed to trigger redeploy: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		if feature.HasDeployments {
+			if err := deployment.TriggerRedeploy(r.Context(), env.ID, feature.Name); err != nil {
+				http.Error(w, "Failed to trigger redeploy: "+err.Error(), http.StatusInternalServerError)
+				return
+			}
+		}
+		http.Redirect(w, r, featureBasePath(r), http.StatusSeeOther)
+	}
+}
+
 func featurePageContent(page *FeaturePage) g.Node {
 	var tabContent g.Node
 	switch page.ActiveTab {
@@ -183,7 +229,11 @@ func featurePageContent(page *FeaturePage) g.Node {
 			components.Breadcrumbs(page.Breadcrumbs),
 			h.Div(h.Class("card"),
 				h.Div(h.Class("card-body"),
-					h.P(g.Text("Global feature page: "), h.A(h.Href("/features/"+page.Feature.Name), g.Text(page.Feature.Name))),
+					h.Div(h.Class("card-header-row"),
+						h.P(g.Text("Global feature page: "), h.A(h.Href("/features/"+page.Feature.Name), g.Text(page.Feature.Name))),
+						redeployButton(page),
+					),
+					featureMetadataHeader(page),
 					components.TabsNav(page.ActiveTab, envFeatureTabs(page.TenantSlug, page.Environment.Name, page.Feature.Name, page.Feature.HasDeployments)),
 					tabContent,
 				),
@@ -192,10 +242,44 @@ func featurePageContent(page *FeaturePage) g.Node {
 	)
 }
 
+func featureMetadataHeader(page *FeaturePage) g.Node {
+	feat := page.Feature
+	rows := []g.Node{}
+
+	currentVersion := "—"
+	if page.FeatureLog != nil && page.FeatureLog.CurrentVersion != "" {
+		currentVersion = page.FeatureLog.CurrentVersion
+	}
+	currentValue := []g.Node{g.Text(currentVersion)}
+	if page.FeatureLog != nil && page.FeatureLog.CurrentStatus != "" {
+		currentValue = append(currentValue, g.Text(" · "), rolloutStatus(page.FeatureLog.CurrentStatus))
+	}
+	rows = append(rows, metaRow("Current version", g.Group(currentValue)))
+
+	if feat.Version != "" {
+		rows = append(rows, metaRow("Chart version", g.Text(feat.Version)))
+	}
+	if feat.Chart != "" {
+		rows = append(rows, metaRow("Chart", g.Text(feat.Chart)))
+	}
+	if feat.Source != "" {
+		rows = append(rows, metaRow("Source", h.A(h.Href(feat.Source), h.Target("_blank"), g.Text(feat.Source))))
+	}
+	if feat.Description != "" {
+		rows = append(rows, metaRow("Description", g.Text(feat.Description)))
+	}
+
+	return h.Table(h.Class("table meta-table"), h.TBody(rows...))
+}
+
+func metaRow(label string, value g.Node) g.Node {
+	return h.Tr(h.Td(h.Class("th-like"), g.Text(label)), h.Td(value))
+}
+
 func envFeatureTabs(tenant, env, feature string, hasDeployments bool) []components.Tab {
 	base := featureBasePathValues(tenant, env, feature)
 	tabs := []components.Tab{
-		{ID: "overview", Href: base, Label: "Overview"},
+		{ID: "overview", Href: base, Label: "Config"},
 		{ID: "logs", Href: base + "/logs", Label: "Logs"},
 		{ID: "helm", Href: base + "/helm", Label: "Helm Values"},
 	}
@@ -211,6 +295,24 @@ func envFeatureTabs(tenant, env, feature string, hasDeployments bool) []componen
 	return tabs
 }
 
+func redeployButton(page *FeaturePage) g.Node {
+	if !page.Feature.Enabled {
+		return nil
+	}
+	redeployPopoverID := "trigger-redeploy"
+	redeployAction := featureBasePathValues(page.TenantSlug, page.Environment.Name, page.Feature.Name) + "/redeploy"
+	return h.Div(
+		h.Button(h.Type("button"), h.Class("btn-small"), g.Attr("popovertarget", redeployPopoverID), g.Text("Trigger redeploy")),
+		h.Div(g.Attr("popover", ""), h.ID(redeployPopoverID),
+			h.H3(g.Text("Confirm redeploy")),
+			h.Form(h.Method("POST"), h.Action(redeployAction),
+				h.P(g.Textf("Force a fresh deploy of %s in %s?", page.Feature.Name, page.Environment.Name)),
+				h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text("Trigger redeploy")), h.Button(h.Type("button"), g.Attr("popovertarget", redeployPopoverID), g.Attr("popovertargetaction", "hide"), g.Text("Cancel"))),
+			),
+		),
+	)
+}
+
 func overviewTab(page *FeaturePage) g.Node {
 	popoverID := "toggle-reconcile"
 	action := featureBasePathValues(page.TenantSlug, page.Environment.Name, page.Feature.Name) + "/toggle-reconcile"
@@ -224,7 +326,7 @@ func overviewTab(page *FeaturePage) g.Node {
 			h.Button(h.Type("button"), h.Class("btn-small"), g.Attr("popovertarget", popoverID), g.Text(buttonText)),
 			h.Div(g.Attr("popover", ""), h.ID(popoverID),
 				h.H3(g.Text("Confirm reconcile toggle")),
-				h.Form(h.Method("POST"), h.Action(action), h.Input(h.Type("hidden"), h.Name("enabled"), h.Value(newEnabled)), h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text(buttonText)))),
+				h.Form(h.Method("POST"), h.Action(action), h.Input(h.Type("hidden"), h.Name("enabled"), h.Value(newEnabled)), h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text(buttonText)), h.Button(h.Type("button"), g.Attr("popovertarget", popoverID), g.Attr("popovertargetaction", "hide"), g.Text("Cancel")))),
 			),
 		),
 		h.Table(h.Class("table sortable"), h.THead(h.Tr(h.Th(g.Text("Configuration Key")), h.Th(g.Text("Value")))), h.TBody(g.Group(g.Map(page.Feature.ConfigItems, func(item FeatureConfigItem) g.Node {
@@ -239,7 +341,7 @@ func logsTab(page *FeaturePage) g.Node {
 	}
 	content := []g.Node{}
 	if len(page.FeatureLog.CurrentLog) > 0 {
-		content = append(content, h.H2(g.Textf("Current (%s)", page.FeatureLog.CurrentVersion)), h.P(h.Class("text-muted"), g.Textf("Status: %s · Last modified: %s", page.FeatureLog.CurrentStatus, page.FeatureLog.LastModified)))
+		content = append(content, h.H2(g.Textf("Current (%s)", page.FeatureLog.CurrentVersion)), h.P(h.Class("text-muted"), g.Textf("Status: %s · Last update: %s · Last deployed: %s", page.FeatureLog.CurrentStatus, page.FeatureLog.LastModified, page.FeatureLog.LastDeployed)))
 		if page.FeatureLog.HelmDiff != nil && page.FeatureLog.HelmDiff.Diff != "" && page.FeatureLog.HelmDiff.Difference != model.HelmValueDifferenceFullMatch {
 			content = append(content, h.Details(h.Summary(g.Textf("Helm value changes (%s)", strings.ToLower(strings.ReplaceAll(page.FeatureLog.HelmDiff.Difference.String(), "_", " ")))), h.Pre(h.Class("code-block"), g.Raw(page.FeatureLog.HelmDiff.Diff))))
 		}
@@ -452,9 +554,6 @@ func configKeyCell(item FeatureConfigItem) g.Node {
 }
 
 func configValueCell(page *FeaturePage, item FeatureConfigItem) g.Node {
-	if item.IsSecret {
-		return h.Span(h.Class("text-muted"), g.Text("••••••••"))
-	}
 	if item.IsComputed {
 		return h.Code(g.Text(item.Template))
 	}
@@ -475,7 +574,12 @@ func configValueCell(page *FeaturePage, item FeatureConfigItem) g.Node {
 		title, submitLabel = "Override Configuration", "Save override"
 		formFields = []g.Node{h.Input(h.Type("hidden"), h.Name("key"), h.Value(item.Key)), h.Input(h.Type("hidden"), h.Name("type"), h.Value(item.Type))}
 	}
-	return h.Div(h.Button(h.Type("button"), h.Class("edit-icon"), g.Attr("popovertarget", popoverID), g.Text("✎")), g.If(item.Source == string(model.ConfigSourceEnv), deleteOverrideButton(page, item)), valueSpan(item), h.Div(g.Attr("popover", ""), h.ID(popoverID), h.H3(g.Text(title)), h.Form(h.Method("POST"), h.Action(action), g.Group(formFields), h.Label(g.Text("Configuration Key")), h.Input(h.Type("text"), h.Value(item.Key), g.Attr("disabled", "")), h.Label(g.Text("Value")), configValueInput(item.Type, item.Value), h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text(submitLabel))))))
+	displayValue := valueSpan(item)
+	inputValue := item.Value
+	if item.IsSecret {
+		displayValue = h.Span(h.Class("text-muted"), g.Text("••••••••"))
+	}
+	return h.Div(h.Button(h.Type("button"), h.Class("edit-icon"), g.Attr("popovertarget", popoverID), g.Text("✎")), g.If(item.Source == string(model.ConfigSourceEnv), deleteOverrideButton(page, item)), displayValue, h.Div(g.Attr("popover", ""), h.ID(popoverID), h.H3(g.Text(title)), h.Form(h.Method("POST"), h.Action(action), g.Group(formFields), h.Label(g.Text("Configuration Key")), h.Input(h.Type("text"), h.Value(item.Key), g.Attr("disabled", "")), h.Label(g.Text("Value")), configValueInput(item.Type, inputValue), h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text(submitLabel)), h.Button(h.Type("button"), g.Attr("popovertarget", popoverID), g.Attr("popovertargetaction", "hide"), g.Text("Cancel"))))))
 }
 
 func valueSpan(item FeatureConfigItem) g.Node {
@@ -490,7 +594,7 @@ func deleteOverrideButton(page *FeaturePage, item FeatureConfigItem) g.Node {
 	action := featureBasePathValues(page.TenantSlug, page.Environment.Name, page.Feature.Name) + "/config/delete/" + item.ID
 	return g.Group([]g.Node{
 		h.Button(h.Type("button"), h.Class("edit-icon"), g.Attr("popovertarget", popoverID), g.Text("✕")),
-		h.Div(g.Attr("popover", ""), h.ID(popoverID), h.H3(g.Text("Remove Override")), h.P(g.Textf("Remove the environment override for %s? The global default will be used instead.", item.Key)), h.Form(h.Method("POST"), h.Action(action), h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text("Remove override"))))),
+		h.Div(g.Attr("popover", ""), h.ID(popoverID), h.H3(g.Text("Remove Override")), h.P(g.Textf("Remove the environment override for %s? The global default will be used instead.", item.Key)), h.Form(h.Method("POST"), h.Action(action), h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text("Remove override")), h.Button(h.Type("button"), g.Attr("popovertarget", popoverID), g.Attr("popovertargetaction", "hide"), g.Text("Cancel"))))),
 	})
 }
 

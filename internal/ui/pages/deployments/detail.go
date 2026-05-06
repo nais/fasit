@@ -5,6 +5,7 @@ import (
 	"maps"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -15,16 +16,19 @@ import (
 	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
+	"github.com/nais/fasit/internal/ui/view"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
 )
 
 type deploymentStatusRow struct {
-	TenantName, EnvironmentName, EnvironmentID, State, Message, LastModified string
+	TenantName, EnvironmentName, EnvironmentID, State, Message string
+	LastModified                                               time.Time
 }
 
 type matchingDeployment struct {
-	ID, Version, Created string
+	ID, Version string
+	Created     time.Time
 }
 
 func DetailHandler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
@@ -55,13 +59,14 @@ func DetailHandler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 				continue
 			}
 
+			state, lastMod := view.EffectiveDeploymentStatus(r.Context(), repo, status.EnvironmentID, dep.Feature.Name, status.State.String(), status.LastModified)
 			rows = append(rows, deploymentStatusRow{
 				TenantName:      tenant.Name,
 				EnvironmentName: env.Name,
 				EnvironmentID:   status.EnvironmentID.String(),
-				State:           status.State.String(),
+				State:           state,
 				Message:         status.Message,
-				LastModified:    formatTime(status.LastModified),
+				LastModified:    lastMod,
 			})
 		}
 
@@ -91,7 +96,7 @@ func DetailHandler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 			matching = append(matching, matchingDeployment{
 				ID:      d.ID.String(),
 				Version: d.Feature.Version,
-				Created: formatTime(d.Created),
+				Created: d.Created,
 			})
 		}
 
@@ -103,18 +108,23 @@ func detailPage(d *deployment.Deployment, statuses []deploymentStatusRow, deploy
 	meta := []g.Node{
 		metaRow("Feature", h.A(h.Href("/features/"+d.Feature.Name), g.Text(d.Feature.Name))),
 		metaRow("Version", g.Text(d.Feature.Version)),
-		metaRow("Target", g.Text(deploymentTarget(d))),
-		metaRow("Created", g.Text(formatTime(d.Created))),
+		metaRow("Target", targetPills(deploymentTargetLabels(d))),
+		metaRow("Created", timeWithTitle(d.Created)),
 	}
 
 	if d.Description != nil && *d.Description != "" {
 		meta = append(meta, metaRow("Description", g.Text(*d.Description)))
 	}
 
-	meta = append(meta, metaRow("Actions", h.Form(
-		h.Method("POST"),
-		h.Action("/deployments/"+d.ID.String()+"/delete"),
-		h.Button(h.Type("submit"), h.Class("btn-small"), g.Attr("onclick", "return confirm('Are you sure?')"), g.Text("Delete")),
+	meta = append(meta, metaRow("Actions", h.Div(
+		h.Button(h.Type("button"), h.Class("btn-small"), g.Attr("popovertarget", "delete-deployment"), g.Text("Delete")),
+		h.Div(g.Attr("popover", ""), h.ID("delete-deployment"),
+			h.H3(g.Text("Delete deployment")),
+			h.P(g.Textf("Delete deployment %s v%s?", d.Feature.Name, d.Feature.Version)),
+			h.Form(h.Method("POST"), h.Action("/deployments/"+d.ID.String()+"/delete"),
+				h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text("Delete")), h.Button(h.Type("button"), g.Attr("popovertarget", "delete-deployment"), g.Attr("popovertargetaction", "hide"), g.Text("Cancel"))),
+			),
+		),
 	)))
 
 	content := []g.Node{
@@ -142,7 +152,7 @@ func detailPage(d *deployment.Deployment, statuses []deploymentStatusRow, deploy
 					h.Td(h.A(h.Href("/tenants/"+s.TenantName+"/envs/"+s.EnvironmentName+"/"+d.Feature.Name), g.Text(s.EnvironmentName))),
 					h.Td(rolloutStatus(s.State)),
 					h.Td(g.Text(s.Message)),
-					h.Td(g.Text(s.LastModified)),
+					h.Td(timeWithTitle(s.LastModified)),
 					h.Td(h.A(h.Href("/deployments/"+d.ID.String()+"/logs/"+s.EnvironmentID), g.Attr("title", "View logs"), g.Text("📋"))),
 				)
 			}))),
@@ -160,15 +170,18 @@ func detailPage(d *deployment.Deployment, statuses []deploymentStatusRow, deploy
 			h.TBody(g.Group(g.Map(matching, func(m matchingDeployment) g.Node {
 				return h.Tr(
 					h.Td(h.A(h.Href("/deployments/"+m.ID), g.Text(m.Version))),
-					h.Td(g.Text(m.Created)),
+					h.Td(timeWithTitle(m.Created)),
 				)
 			}))),
 		),
-		h.Form(
-			h.Method("POST"),
-			h.Action("/deployments/"+d.ID.String()+"/delete-matching"),
-			h.Button(h.Type("submit"), h.Class("btn-small"), g.Attr("onclick", "return confirm('Are you sure?')"), g.Text("Delete all deployments")),
-			g.Textf(" (%d)", len(matching)),
+		h.Button(h.Type("button"), h.Class("btn-small"), g.Attr("popovertarget", "delete-all-deployments"), g.Text("Delete all deployments")),
+		g.Textf(" (%d)", len(matching)),
+		h.Div(g.Attr("popover", ""), h.ID("delete-all-deployments"),
+			h.H3(g.Text("Delete all deployments")),
+			h.P(g.Textf("Delete all %d deployments for %s?", len(matching), d.Feature.Name)),
+			h.Form(h.Method("POST"), h.Action("/deployments/"+d.ID.String()+"/delete-matching"),
+				h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text("Delete all")), h.Button(h.Type("button"), g.Attr("popovertarget", "delete-all-deployments"), g.Attr("popovertargetaction", "hide"), g.Text("Cancel"))),
+			),
 		),
 	)
 
@@ -189,8 +202,8 @@ func detailPage(d *deployment.Deployment, statuses []deploymentStatusRow, deploy
 				return h.Tr(
 					h.Td(h.A(h.Href("/tenants/"+di.TenantName+"/envs/"+di.EnvironmentName), g.Textf("%s / %s", di.TenantName, di.EnvironmentName))),
 					h.Td(rolloutStatus(strings.ToUpper(di.DeployInstruction.Status))),
-					h.Td(g.Text(formatTime(di.DeployInstruction.Created.Time))),
-					h.Td(g.Text(formatTime(di.DeployInstruction.LastModified.Time))),
+					h.Td(timeWithTitle(di.DeployInstruction.Created.Time)),
+					h.Td(timeWithTitle(di.DeployInstruction.LastModified.Time)),
 					h.Td(h.A(h.Href("/deployments/"+d.ID.String()+"/logs/"+di.DeployInstruction.EnvironmentID.String()), g.Attr("title", "View logs"), g.Text("📋"))),
 				)
 			}))),

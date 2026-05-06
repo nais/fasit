@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/database"
@@ -77,6 +76,7 @@ type FeatureLog struct {
 	CurrentVersion string
 	CurrentStatus  string
 	LastModified   string
+	LastDeployed   string
 	CurrentLog     []LogLine
 	HelmDiff       *model.HelmValueDiff
 }
@@ -107,23 +107,48 @@ func toEnvironmentNavs(environments []*model.Environment) []view.EnvironmentNav 
 	return ret
 }
 
-func featureNavs(ctx context.Context, env *model.Environment) ([]view.FeatureNav, []view.FeatureNav, error) {
-	features, err := featurepkg.FeaturesForKind(ctx, env.Kind, env.CI)
+func featureNavs(ctx context.Context, repo database.Repo, env *model.Environment) ([]view.FeatureNav, []view.FeatureNav, error) {
+	deploymentFeatures, err := deployment.ListEnvironmentFeatures(ctx, env.ID)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	allFeatures := make([]view.FeatureNav, 0, len(features))
-	enabledFeatures := make([]view.FeatureNav, 0, len(features))
-	for _, feat := range features {
-		state, err := featurepkg.FeatureStateGet(ctx, env.ID, feat.Name)
-		if err != nil {
-			return nil, nil, err
+	seen := make(map[string]bool, len(deploymentFeatures))
+	var states []*model.FeatureState
+	for _, f := range deploymentFeatures {
+		seen[f.FeatureName] = true
+		states = append(states, f)
+	}
+
+	featureStates, err := featurepkg.FeatureStatesGet(ctx, env.ID)
+	if err != nil {
+		return nil, nil, err
+	}
+	for _, state := range featureStates {
+		if !seen[state.FeatureName] {
+			states = append(states, state)
 		}
-		nav := view.FeatureNav{Name: feat.Name, Enabled: state.Enabled}
+	}
+
+	allFeatures := make([]view.FeatureNav, 0, len(states))
+	enabledFeatures := make([]view.FeatureNav, 0, len(states))
+	for _, state := range states {
+		nav := view.FeatureNav{Name: state.FeatureName, Enabled: state.Enabled}
+		failed, pending := view.FeatureStatusForEnv(ctx, repo, env.ID, state.FeatureName)
+		if failed {
+			nav.FailedCount = 1
+		} else if pending {
+			nav.PendingCount = 1
+		}
 		allFeatures = append(allFeatures, nav)
 		enabledFeatures = append(enabledFeatures, nav)
 	}
+	sort.Slice(allFeatures, func(i, j int) bool {
+		return allFeatures[i].Name < allFeatures[j].Name
+	})
+	sort.Slice(enabledFeatures, func(i, j int) bool {
+		return enabledFeatures[i].Name < enabledFeatures[j].Name
+	})
 	return allFeatures, enabledFeatures, nil
 }
 
@@ -135,8 +160,8 @@ func getEnvironmentMetadata(ctx context.Context, repo database.Repo, env *model.
 		addMetadata(&metadata, "Description", *env.Description)
 	}
 	addMetadata(&metadata, "Kind", env.Kind.String())
-	addMetadata(&metadata, "Created", formatTime(env.Created))
-	addMetadata(&metadata, "Last Modified", formatTime(env.LastModified))
+	addMetadata(&metadata, "Created", view.FormatTime(env.Created))
+	addMetadata(&metadata, "Last Modified", view.FormatTime(env.LastModified))
 	addMetadataBool(&metadata, "Reconcile", env.Reconcile)
 
 	values, err := repo.EnvironmentValuesForEnvironment(ctx, env.ID, true)
@@ -224,7 +249,7 @@ func loadFeaturePageData(ctx context.Context, repo database.Repo, tenantSlug, en
 		return nil, err
 	}
 
-	allFeatures, enabledFeatures, err := featureNavs(ctx, env)
+	allFeatures, enabledFeatures, err := featureNavs(ctx, repo, env)
 	if err != nil {
 		return nil, err
 	}
@@ -262,6 +287,8 @@ func loadFeaturePageData(ctx context.Context, repo database.Repo, tenantSlug, en
 		return nil, err
 	}
 
+	page.FeatureLog = loadFeatureLog(ctx, repo, env.ID, feat)
+
 	if activeTab == "helm" || activeTab == "playground" {
 		page.HelmValues, _ = loadHelmValues(ctx, feat, env.ID)
 	}
@@ -270,9 +297,6 @@ func loadFeaturePageData(ctx context.Context, repo database.Repo, tenantSlug, en
 	}
 	if activeTab == "deployments" {
 		page.Deployments = loadEnvironmentDeployments(ctx, repo, featureName, env.ID)
-	}
-	if activeTab == "logs" {
-		page.FeatureLog = loadFeatureLog(ctx, repo, env.ID, feat)
 	}
 
 	return page, nil
@@ -361,8 +385,8 @@ func loadEnvironmentRollouts(ctx context.Context, repo database.Repo, featureNam
 			FeatureName: rollout.FeatureName,
 			Version:     rollout.Version,
 			Status:      strings.ToUpper(rollout.Status.String()),
-			Created:     formatTime(rollout.Created),
-			Completed:   formatTimePtr(rollout.Completed),
+			Created:     view.FormatTime(rollout.Created),
+			Completed:   view.FormatTimePtr(rollout.Completed),
 		})
 	}
 	sort.Slice(items, func(i, j int) bool {
@@ -418,7 +442,7 @@ func loadEnvironmentDeployments(ctx context.Context, repo database.Repo, feature
 			id:      dep.ID.String(),
 			version: dep.Feature.Version,
 			target:  target,
-			created: formatTime(dep.Created),
+			created: view.FormatTime(dep.Created),
 			status:  status,
 		})
 		if len(target) > maxLabels {
@@ -463,13 +487,18 @@ func loadFeatureLog(ctx context.Context, repo database.Repo, envID uuid.UUID, fe
 	if err != nil {
 		return nil
 	}
+	lastDeployed := "never"
+	if dep, err := repo.DeployInstructionsLatestDeployedForFeature(ctx, envID, feat.Name); err == nil && dep != nil {
+		lastDeployed = view.FormatTime(dep.LastModified)
+	}
 	ret := &FeatureLog{
 		CurrentVersion: di.FeatureVersion,
 		CurrentStatus:  strings.ToUpper(di.Status.String()),
-		LastModified:   formatTime(di.LastModified),
+		LastModified:   view.FormatTime(di.LastModified),
+		LastDeployed:   lastDeployed,
 	}
 	for _, line := range lines {
-		ret.CurrentLog = append(ret.CurrentLog, LogLine{Timestamp: formatTime(line.Timestamp), Message: line.Message})
+		ret.CurrentLog = append(ret.CurrentLog, LogLine{Timestamp: view.FormatTime(line.Timestamp), Message: line.Message})
 	}
 	ret.HelmDiff, _ = repo.HelmValueDiffGet(ctx, di, feat.SecretKeys())
 	return ret
@@ -505,30 +534,6 @@ func parseConfigValue(value, configType string) (any, error) {
 	default:
 		return value, nil
 	}
-}
-
-func formatTime(t time.Time) string {
-	if t.IsZero() {
-		return ""
-	}
-	return t.In(oslo).Format("2006-01-02 15:04:05")
-}
-
-func formatTimePtr(t *time.Time) string {
-	if t == nil {
-		return "-"
-	}
-	return formatTime(*t)
-}
-
-var oslo = mustLoadLocation("Europe/Oslo")
-
-func mustLoadLocation(name string) *time.Location {
-	loc, err := time.LoadLocation(name)
-	if err != nil {
-		panic(err)
-	}
-	return loc
 }
 
 func stripNoValue(m map[string]any) {

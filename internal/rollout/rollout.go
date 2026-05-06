@@ -10,6 +10,7 @@ import (
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/nais/fasit/internal/auth"
 	"github.com/nais/fasit/internal/database"
+	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
 )
@@ -116,6 +117,14 @@ func (r *Rollout) Rollout(w http.ResponseWriter, req *http.Request) {
 
 	if _, err := feature.RolloutByName(ctx, feat.Name); err == nil {
 		http.Error(w, "Rollout with this feature name is already in progress", http.StatusConflict)
+		return
+	}
+
+	if deps, err := deployment.ListDeploymentsByFeature(ctx, feat.Name); err != nil {
+		http.Error(w, "Unable to check existing deployments: "+err.Error(), http.StatusInternalServerError)
+		return
+	} else if len(deps) > 0 {
+		http.Error(w, "Feature has deployments; rollouts are disabled for features with deployments", http.StatusConflict)
 		return
 	}
 

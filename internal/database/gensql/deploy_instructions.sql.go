@@ -86,6 +86,43 @@ func (q *Queries) DeployInstructionsForFeature(ctx context.Context, arg DeployIn
 	return items, nil
 }
 
+const deployInstructionsLatestDeployedForFeature = `-- name: DeployInstructionsLatestDeployedForFeature :one
+SELECT
+	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, deployment_id
+FROM
+	deploy_instructions
+WHERE
+	feature_name = $1
+	AND environment_id = $2
+	AND status = 'deployed'
+ORDER BY
+	last_modified DESC
+LIMIT 1
+`
+
+type DeployInstructionsLatestDeployedForFeatureParams struct {
+	FeatureName   string
+	EnvironmentID uuid.UUID
+}
+
+func (q *Queries) DeployInstructionsLatestDeployedForFeature(ctx context.Context, arg DeployInstructionsLatestDeployedForFeatureParams) (DeployInstruction, error) {
+	row := q.db.QueryRow(ctx, deployInstructionsLatestDeployedForFeature, arg.FeatureName, arg.EnvironmentID)
+	var i DeployInstruction
+	err := row.Scan(
+		&i.ID,
+		&i.EnvironmentID,
+		&i.FeatureName,
+		&i.FeatureVersion,
+		&i.Status,
+		&i.Hash,
+		&i.Created,
+		&i.LastModified,
+		&i.Values,
+		&i.DeploymentID,
+	)
+	return i, err
+}
+
 const deployInstructionsLatestForFeature = `-- name: DeployInstructionsLatestForFeature :one
 SELECT
 	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, deployment_id
