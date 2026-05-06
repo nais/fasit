@@ -305,19 +305,3 @@ func deploymentTargetLabels(dep *deployment.Deployment) map[string]string {
 	}
 	return out
 }
-
-func labelPills(labels map[string]string) g.Node {
-	if len(labels) == 0 {
-		return h.Span(h.Class("label-filter-tag"), g.Text("All environments"))
-	}
-	keys := make([]string, 0, len(labels))
-	for k := range labels {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	pills := make([]g.Node, 0, len(keys))
-	for _, k := range keys {
-		pills = append(pills, h.Span(h.Class("label-filter-tag"), g.Text(k+": "+labels[k])))
-	}
-	return g.Group(pills)
-}

@@ -17,24 +17,31 @@ WITH has_deployment AS (
 		deployments
 ),
 di_latest AS (
-	SELECT DISTINCT ON (feature_name,
-		environment_id)
-		feature_name,
-		status
+	SELECT
+		di.feature_name,
+		di.status
 	FROM
-		deploy_instructions
-	WHERE
-		NOT EXISTS (
+		deploy_instructions di
+		INNER JOIN (
 			SELECT
-				1
+				feature_name,
+				environment_id,
+				MAX(created) AS max_created
 			FROM
-				has_deployment hd
-			WHERE
-				hd.feature_name = deploy_instructions.feature_name)
-		ORDER BY
-			feature_name,
-			environment_id,
-			created DESC
+				deploy_instructions
+			GROUP BY
+				feature_name,
+				environment_id) latest ON di.feature_name = latest.feature_name
+			AND di.environment_id = latest.environment_id
+			AND di.created = latest.max_created
+		WHERE
+			NOT EXISTS (
+				SELECT
+					1
+				FROM
+					has_deployment hd
+				WHERE
+					hd.feature_name = di.feature_name)
 ),
 ds_latest AS (
 	SELECT
@@ -68,6 +75,8 @@ GROUP BY
 HAVING
 	COUNT(*) FILTER (WHERE status = 'failed') > 0
 	OR COUNT(*) FILTER (WHERE status IN ('pending', 'created')) > 0
+ORDER BY
+	feature_name
 `
 
 type DeployInstructionStatusCountsRow struct {
@@ -76,10 +85,6 @@ type DeployInstructionStatusCountsRow struct {
 	PendingCount int64
 }
 
-// For each feature, count failed/pending statuses.
-// For deployment-based features: uses deployment_statuses (covers
-// both naisd-responded and naisd-unreachable cases).
-// For rollout-only features: uses deploy_instructions.
 func (q *Queries) DeployInstructionStatusCounts(ctx context.Context) ([]DeployInstructionStatusCountsRow, error) {
 	rows, err := q.db.Query(ctx, deployInstructionStatusCounts)
 	if err != nil {

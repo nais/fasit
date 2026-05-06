@@ -96,10 +96,6 @@ WHERE
 	deploy_instructions.id = @id;
 
 -- name: DeployInstructionStatusCounts :many
--- For each feature, count failed/pending statuses.
--- For deployment-based features: uses deployment_statuses (covers
--- both naisd-responded and naisd-unreachable cases).
--- For rollout-only features: uses deploy_instructions.
 WITH has_deployment AS (
 	SELECT DISTINCT
 		feature_name
@@ -107,47 +103,39 @@ WITH has_deployment AS (
 		deployments
 ),
 di_latest AS (
-	SELECT DISTINCT ON (feature_name,
-		environment_id)
-		feature_name,
-		status
+	SELECT
+		di.feature_name,
+		di.status
 	FROM
-		deploy_instructions
-	WHERE
-		NOT EXISTS (
+		deploy_instructions di
+		INNER JOIN (
 			SELECT
-				1
+				feature_name,
+				environment_id,
+				MAX(created) AS max_created
 			FROM
-				has_deployment hd
-			WHERE
-				hd.feature_name = deploy_instructions.feature_name)
-		ORDER BY
-			feature_name,
-			environment_id,
-			created DESC
-),
-deployment_status_latest AS (
-	SELECT DISTINCT ON (deployment_id)
-		deployment_id,
-		status
-	FROM
-		deployment_statuses
-	ORDER BY
-		deployment_id,
-		created DESC
+				deploy_instructions
+			GROUP BY
+				feature_name,
+				environment_id) latest ON di.feature_name = latest.feature_name
+			AND di.environment_id = latest.environment_id
+			AND di.created = latest.max_created
+		WHERE
+			NOT EXISTS (
+				SELECT
+					1
+				FROM
+					has_deployment hd
+				WHERE
+					hd.feature_name = di.feature_name)
 ),
 ds_latest AS (
-	SELECT DISTINCT ON (d.feature_name,
-		d.environment_id)
+	SELECT
 		d.feature_name,
-		dsl.status
+		ds.status
 	FROM
-		deployments d
-		JOIN deployment_status_latest dsl ON dsl.deployment_id = d.id
-	ORDER BY
-		d.feature_name,
-		d.environment_id,
-		d.created DESC
+		deployment_statuses ds
+		JOIN deployments d ON d.id = ds.deployment_id
 ),
 combined AS (
 	SELECT
@@ -172,5 +160,7 @@ GROUP BY
 	feature_name
 HAVING
 	COUNT(*) FILTER (WHERE status = 'failed') > 0
-	OR COUNT(*) FILTER (WHERE status IN ('pending', 'created')) > 0;
+	OR COUNT(*) FILTER (WHERE status IN ('pending', 'created')) > 0
+ORDER BY
+	feature_name;
 

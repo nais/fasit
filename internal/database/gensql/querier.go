@@ -10,10 +10,6 @@ import (
 )
 
 type Querier interface {
-	// For each feature, count failed/pending statuses.
-	// For deployment-based features: uses deployment_statuses (covers
-	// both naisd-responded and naisd-unreachable cases).
-	// For rollout-only features: uses deploy_instructions.
 	DeployInstructionStatusCounts(ctx context.Context) ([]DeployInstructionStatusCountsRow, error)
 	DeployInstructionsByID(ctx context.Context, id uuid.UUID) (DeployInstruction, error)
 	DeployInstructionsForFeature(ctx context.Context, arg DeployInstructionsForFeatureParams) ([]DeployInstruction, error)

@@ -362,22 +362,6 @@ func rolloutVersionCell(r RolloutItem) g.Node {
 	return h.A(h.Href("/rollouts/"+r.FeatureName+"/"+r.Version), g.Text(r.Version))
 }
 
-func dependencyLinks(feature *Feature) g.Node {
-	names := []string{}
-	for _, dependency := range feature.Dependencies {
-		names = append(names, dependency.AllOf...)
-		names = append(names, dependency.AnyOf...)
-	}
-	if len(names) == 0 {
-		return g.Text(" -")
-	}
-	links := make([]g.Node, 0, len(names)*2)
-	for _, name := range names {
-		links = append(links, g.Text(" "), h.A(h.Href("/features/"+name), g.Text(name)))
-	}
-	return g.Group(links)
-}
-
 func rolloutStatus(status string) g.Node {
 	switch strings.ToUpper(status) {
 	case "DEPLOYED":
@@ -690,32 +674,6 @@ func featureTargetsKind(kinds []model.EnvironmentKind, envKind model.Environment
 		return true
 	}
 	return slices.Contains(kinds, envKind)
-}
-
-func configTypeLabel(item ConfigItem) string {
-	if item.IsComputed {
-		return "computed"
-	}
-	if item.IsSecret {
-		return "secret"
-	}
-	if item.Type != "" {
-		return strings.ToLower(item.Type)
-	}
-	return "-"
-}
-
-func configDefaultValue(item ConfigItem) g.Node {
-	if item.IsSecret {
-		return h.Span(h.Class("text-muted"), g.Text("••••••••"))
-	}
-	if item.IsComputed {
-		return h.Code(g.Text(item.Template))
-	}
-	if item.Value != "" {
-		return h.Span(g.Text(item.Value))
-	}
-	return h.Span(h.Class("text-muted"), g.Text("-"))
 }
 
 func toFeatureNavs(features []*model.Feature, failedCounts, pendingCounts map[string]int) []view.FeatureNav {
