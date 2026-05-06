@@ -365,6 +365,10 @@ nav .nav-btn:hover {
   border-radius: 6px 6px 0 0;
   border-bottom: 1px solid var(--border-subtle);
 }
+.dash-card h3 a {
+  text-decoration: none;
+  color: var(--text-heading);
+}
 .dash-card a {
   display: block;
   margin: 0.25rem 0;
