@@ -199,6 +199,7 @@ func invalidateDeployInstructionHash(ctx context.Context, envID uuid.UUID, featu
 		FeatureName:   featureName,
 	})
 }
+
 func GetEnvironmentFeature(ctx context.Context, environmentID uuid.UUID, featureName string) (*model.Feature, error) {
 	f, err := fromContext(ctx).querier.GetEnvironmentFeature(ctx, deploymentsql.GetEnvironmentFeatureParams{
 		EnvironmentID: environmentID,

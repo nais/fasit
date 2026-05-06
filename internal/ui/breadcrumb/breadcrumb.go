@@ -16,10 +16,6 @@ func Features() Crumb {
 	return Crumb{Label: "Features", URL: "/features"}
 }
 
-func Tenant(name string) Crumb {
-	return Crumb{Label: name, URL: "/tenants/" + name}
-}
-
 func TenantWithSwitcher(name string, allTenants []view.TenantNav) Crumb {
 	alts := make([]Crumb, 0, len(allTenants))
 	for _, t := range allTenants {
@@ -28,10 +24,6 @@ func TenantWithSwitcher(name string, allTenants []view.TenantNav) Crumb {
 		}
 	}
 	return Crumb{Label: name, URL: "/tenants/" + name, Alternatives: alts}
-}
-
-func Environment(tenantName, envName string) Crumb {
-	return Crumb{Label: envName, URL: "/tenants/" + tenantName + "/envs/" + envName}
 }
 
 func EnvironmentWithSwitcher(tenantName, envName string, environments []view.EnvironmentNav) Crumb {
