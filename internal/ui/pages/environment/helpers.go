@@ -134,12 +134,6 @@ func featureNavs(ctx context.Context, repo database.Repo, env *model.Environment
 	enabledFeatures := make([]view.FeatureNav, 0, len(states))
 	for _, state := range states {
 		nav := view.FeatureNav{Name: state.FeatureName, Enabled: state.Enabled}
-		failed, pending := view.FeatureStatusForEnv(ctx, repo, env.ID, state.FeatureName)
-		if failed {
-			nav.FailedCount = 1
-		} else if pending {
-			nav.PendingCount = 1
-		}
 		allFeatures = append(allFeatures, nav)
 		enabledFeatures = append(enabledFeatures, nav)
 	}

@@ -107,28 +107,8 @@ func loadFeatureData(r *http.Request, repo database.Repo) (*DetailPage, error) {
 	return data, nil
 }
 
-func featureStatusCounts(ctx context.Context, repo database.Repo) (failed, pending map[string]int) {
-	failed = map[string]int{}
-	pending = map[string]int{}
-	features, err := featurepkg.Features(ctx)
-	if err != nil {
-		return failed, pending
-	}
-	for _, feat := range features {
-		var f, p int
-		if feat.HasDeployments {
-			f, p = deploymentStatusCounts(ctx, repo, feat)
-		} else {
-			f, p = rolloutStatusCounts(ctx, repo, feat)
-		}
-		if f > 0 {
-			failed[feat.Name] = f
-		}
-		if p > 0 {
-			pending[feat.Name] = p
-		}
-	}
-	return failed, pending
+func featureStatusCounts(_ context.Context, _ database.Repo) (failed, pending map[string]int) {
+	return map[string]int{}, map[string]int{}
 }
 
 func featureConfigItems(feature *model.Feature) []ConfigItem {

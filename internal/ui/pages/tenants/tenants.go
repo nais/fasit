@@ -46,7 +46,7 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 
 			envCards := make([]envCard, 0, len(envs))
 			for _, env := range envs {
-				failed, pending := view.EnvironmentStatusCounts(r.Context(), repo, env.ID)
+				failed, pending := 0, 0
 				envCards = append(envCards, envCard{
 					Environment: env,
 					Failed:      failed,
