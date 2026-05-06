@@ -30,11 +30,11 @@ func ListHandler(renderPage RenderPage) http.HandlerFunc {
 		if err == nil {
 			for _, dep := range deployments {
 				statuses, _ := deployment.ListDeploymentStatuses(r.Context(), dep.ID)
-				status, disabledCount := aggregateDeploymentStatus(statuses)
+				state, disabledCount := deployment.AggregateState(statuses)
 				items = append(items, Summary{
 					FeatureName:   dep.Feature.Name,
 					Version:       dep.Feature.Version,
-					Status:        status,
+					Status:        string(state),
 					Target:        deploymentTarget(dep),
 					TargetLabels:  deploymentTargetLabels(dep),
 					Created:       view.FormatTime(dep.Created),
@@ -224,45 +224,6 @@ func allEnvironmentsPill() g.Node {
 
 func labelPill(key, value string) g.Node {
 	return h.Span(h.Class("label-filter-tag"), g.Text(key+": "+value))
-}
-
-func aggregateDeploymentStatus(statuses []*deployment.DeploymentStatus) (string, int) {
-	if len(statuses) == 0 {
-		return "UNKNOWN", 0
-	}
-
-	disabledCount := 0
-	for _, s := range statuses {
-		if s.State == deployment.DeploymentStatusStateDisabled {
-			disabledCount++
-		}
-	}
-
-	if disabledCount == len(statuses) {
-		return "DISABLED", disabledCount
-	}
-
-	allDeployed := true
-	for _, s := range statuses {
-		if s.State == deployment.DeploymentStatusStateDisabled {
-			continue
-		}
-		switch s.State {
-		case deployment.DeploymentStatusStateFailed:
-			return "FAILED", disabledCount
-		case deployment.DeploymentStatusStatePending, deployment.DeploymentStatusStateCreated:
-			allDeployed = false
-		case deployment.DeploymentStatusStateDeployed:
-		default:
-			allDeployed = false
-		}
-	}
-
-	if allDeployed {
-		return "DEPLOYED", disabledCount
-	}
-
-	return "PENDING", disabledCount
 }
 
 func latestStatusTime(statuses []*deployment.DeploymentStatus) string {
