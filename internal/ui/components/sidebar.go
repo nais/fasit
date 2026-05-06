@@ -10,6 +10,7 @@ import (
 
 func FeaturesSidebar(features []view.FeatureNav, currentFeatureName string) g.Node {
 	return h.Aside(h.Class("sidebar"),
+		sidebarFilter(),
 		h.Div(h.Class("nav"),
 			h.Ul(g.Group(g.Map(features, func(feature view.FeatureNav) g.Node {
 				attrs := []g.Node{h.Href("/features/" + feature.Name)}
@@ -21,6 +22,18 @@ func FeaturesSidebar(features []view.FeatureNav, currentFeatureName string) g.No
 					h.A(append(attrs, g.Text(feature.Name), featureStatusBadge(feature))...),
 				)
 			}))),
+		),
+	)
+}
+
+func sidebarFilter() g.Node {
+	return h.Div(h.Class("sidebar-filter-wrap"),
+		h.Input(
+			h.Type("search"),
+			h.Class("sidebar-filter"),
+			h.Placeholder("Filter…"),
+			g.Attr("aria-label", "Filter list"),
+			g.Attr("autocomplete", "off"),
 		),
 	)
 }
@@ -58,6 +71,7 @@ func EnvironmentSidebar(tenantName, environmentName, currentFeatureName string, 
 	}
 
 	return h.Aside(h.Class("sidebar"),
+		sidebarFilter(),
 		h.Div(h.Class("nav"),
 			h.Ul(g.Group(g.Map(allFeatures, func(feature view.FeatureNav) g.Node {
 				syncEnabled, inEnv := enabledMap[feature.Name]

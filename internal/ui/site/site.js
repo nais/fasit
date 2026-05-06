@@ -16,6 +16,27 @@ function toggleTheme() {
   });
 })();
 
+// Sidebar client-side filter (fuzzy subsequence match)
+function fuzzyMatch(query, text) {
+  if (!query) return true;
+  var qi = 0;
+  for (var i = 0; i < text.length && qi < query.length; i++) {
+    if (text.charCodeAt(i) === query.charCodeAt(qi)) qi++;
+  }
+  return qi === query.length;
+}
+document.addEventListener("input", function (e) {
+  var input = e.target.closest(".sidebar-filter");
+  if (!input) return;
+  var sidebar = input.closest(".sidebar");
+  if (!sidebar) return;
+  var q = input.value.trim().toLowerCase();
+  sidebar.querySelectorAll(".nav li").forEach(function (li) {
+    var text = li.textContent.toLowerCase();
+    li.hidden = !fuzzyMatch(q, text);
+  });
+});
+
 // Sortable tables
 document.addEventListener("click", function (e) {
   var th = e.target.closest(".sortable th");
