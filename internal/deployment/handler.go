@@ -74,7 +74,27 @@ func (h *HttpHandler) GetDeployment(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	_ = json.NewEncoder(w).Encode(deployment)
+	state := DeploymentStatusStateUnknown
+	statuses, err := ListDeploymentStatuses(ctx, deploymentID)
+	if err != nil {
+		// Degrade to UNKNOWN rather than 500: clients are expected to keep polling.
+		h.log.WithError(err).Warn("list deployment statuses; returning UNKNOWN")
+	} else {
+		state, _ = AggregateState(statuses)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(GetDeploymentResponse{
+		ID:    deployment.ID,
+		State: state,
+	}); err != nil {
+		h.log.WithError(err).Error("encode deployment response")
+	}
+}
+
+type GetDeploymentResponse struct {
+	ID    uuid.UUID             `json:"id"`
+	State DeploymentStatusState `json:"state"`
 }
 
 func (h *HttpHandler) CreateDeployment(w http.ResponseWriter, req *http.Request) {
