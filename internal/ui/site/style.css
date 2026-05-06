@@ -135,15 +135,17 @@ nav .menu .item {
   text-decoration: none;
   color: var(--text-muted);
   font-size: 0.9rem;
-  transition: color 0.15s;
+  padding: 0.3rem 0.6rem;
+  border-radius: 0.3rem;
+  transition: color 0.15s, background 0.15s;
 }
 nav .menu .item:hover {
   color: var(--text-primary);
+  background: var(--btn-bg);
 }
 nav .menu .item.active {
   color: var(--text-primary);
-  text-decoration: underline;
-  text-underline-offset: 0.3em;
+  background: var(--btn-bg);
 }
 nav .user {
   color: var(--text-faintest);
