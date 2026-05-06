@@ -201,7 +201,7 @@ nav .nav-btn:hover {
   text-decoration: none;
   color: var(--text-secondary);
   border-left: 2px solid transparent;
-  font-size: 0.9rem;
+  font-size: 1rem;
   transition:
     color 0.15s,
     background 0.15s;
