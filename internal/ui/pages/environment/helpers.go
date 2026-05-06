@@ -152,7 +152,6 @@ func featureNavs(ctx context.Context, repo database.Repo, env *model.Environment
 	return allFeatures, enabledFeatures, nil
 }
 
-
 func getEnvironmentMetadata(ctx context.Context, repo database.Repo, env *model.Environment) []MetadataItem {
 	metadata := []MetadataItem{}
 	addMetadata(&metadata, "ID", env.ID.String())
