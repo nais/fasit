@@ -134,7 +134,7 @@ func featureNavs(ctx context.Context, repo database.Repo, env *model.Environment
 	enabledFeatures := make([]view.FeatureNav, 0, len(states))
 	for _, state := range states {
 		nav := view.FeatureNav{Name: state.FeatureName, Enabled: state.Enabled}
-		failed, pending := featureStatusForEnv(ctx, repo, env.ID, state.FeatureName)
+		failed, pending := view.FeatureStatusForEnv(ctx, repo, env.ID, state.FeatureName)
 		if failed {
 			nav.FailedCount = 1
 		} else if pending {
@@ -152,23 +152,6 @@ func featureNavs(ctx context.Context, repo database.Repo, env *model.Environment
 	return allFeatures, enabledFeatures, nil
 }
 
-// featureStatusForEnv reports whether the latest deploy instruction for
-// (environment, feature) is failed or pending. Deploy instructions are the
-// unified source of truth for both rollout-driven and deployment-driven
-// progress, so this naturally covers both paths.
-func featureStatusForEnv(ctx context.Context, repo database.Repo, envID uuid.UUID, featureName string) (failed, pending bool) {
-	di, err := repo.DeployInstructionsLatestForFeature(ctx, envID, featureName)
-	if err != nil || di == nil {
-		return false, false
-	}
-	switch di.Status {
-	case model.RolloutStatusFailed:
-		return true, false
-	case model.RolloutStatusPending, model.RolloutStatusCreated:
-		return false, true
-	}
-	return false, false
-}
 
 func getEnvironmentMetadata(ctx context.Context, repo database.Repo, env *model.Environment) []MetadataItem {
 	metadata := []MetadataItem{}
