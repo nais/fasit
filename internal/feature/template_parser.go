@@ -182,34 +182,6 @@ type scope struct {
 	references map[string][]string
 }
 
-func (s *scope) String() string {
-	sb := &strings.Builder{}
-	s.writeTo(sb)
-	return sb.String()
-}
-
-func (s *scope) writeTo(sb *strings.Builder) {
-	if s == nil {
-		return
-	}
-	if s.root != nil {
-		s.root.writeTo(sb)
-	}
-	for name, target := range s.references {
-		if name != "" {
-			sb.WriteString(name)
-			sb.WriteString(" -> .")
-			sb.WriteString(strings.Join(target, ", "))
-			sb.WriteString("\n")
-		} else {
-			sb.WriteString(".")
-			sb.WriteString(" -> .")
-			sb.WriteString(strings.Join(target, "."))
-			sb.WriteString("\n")
-		}
-	}
-}
-
 func (s *scope) Add(name string, target ...string) {
 	if s.references == nil {
 		s.references = map[string][]string{}

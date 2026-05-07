@@ -70,16 +70,6 @@ func Generate(vals model.Values, kind model.EnvironmentKind, values *ComputedVal
 	return nil
 }
 
-func (c Computed) DisplayName(key string) string {
-	for k, v := range c {
-		if k == key {
-			return v.DisplayName
-		}
-	}
-
-	return ""
-}
-
 func addToMap(target map[string]any, values *ComputedValues, key []string, v string) error {
 	if len(key) > 1 {
 		t, ok := target[key[0]]

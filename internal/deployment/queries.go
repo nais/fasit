@@ -176,15 +176,6 @@ func DeleteDeploymentsByFeatureAndTarget(ctx context.Context, featureName string
 	return nil
 }
 
-func SetDeploymentStatus(ctx context.Context, deploymentID, environmentID uuid.UUID, status model.RolloutStatus, message string) error {
-	return fromContext(ctx).querier.SetDeploymentStatus(ctx, deploymentsql.SetDeploymentStatusParams{
-		DeploymentID:  deploymentID,
-		EnvironmentID: environmentID,
-		Status:        status.String(),
-		Message:       message,
-	})
-}
-
 func TriggerRedeploy(ctx context.Context, envID uuid.UUID, featureName string) error {
 	if err := invalidateDeployInstructionHash(ctx, envID, featureName); err != nil {
 		return fmt.Errorf("invalidate hash: %w", err)
@@ -198,24 +189,6 @@ func invalidateDeployInstructionHash(ctx context.Context, envID uuid.UUID, featu
 		EnvironmentID: envID,
 		FeatureName:   featureName,
 	})
-}
-
-func GetEnvironmentFeature(ctx context.Context, environmentID uuid.UUID, featureName string) (*model.Feature, error) {
-	f, err := fromContext(ctx).querier.GetEnvironmentFeature(ctx, deploymentsql.GetEnvironmentFeatureParams{
-		EnvironmentID: environmentID,
-		FeatureName:   featureName,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	feature, err := featureFromSQL(f.FeatureDatum)
-	if err != nil {
-		return nil, fmt.Errorf("make feature: %w", err)
-	}
-	feature.HasDeployments = true
-
-	return feature, nil
 }
 
 func ListEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]*model.FeatureState, error) {

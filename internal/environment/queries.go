@@ -96,23 +96,6 @@ func TenantEnvironments(ctx context.Context, onlyReconciled bool) ([]*model.Tena
 	return ret, nil
 }
 
-func ListLabels(ctx context.Context, environmentID uuid.UUID) ([]*model.EnvironmentLabel, error) {
-	labels, err := querier(ctx).GetLabels(ctx, environmentID)
-	if err != nil {
-		return nil, err
-	}
-
-	var ret []*model.EnvironmentLabel
-	for k, v := range labels {
-		ret = append(ret, &model.EnvironmentLabel{
-			Key:   k,
-			Value: v,
-		})
-	}
-
-	return ret, nil
-}
-
 func Get(ctx context.Context, id uuid.UUID) (*model.Environment, error) {
 	env, err := querier(ctx).Get(ctx, id)
 	if err != nil {

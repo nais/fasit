@@ -46,17 +46,6 @@ func (s *Seeder) AddDeployment(name, version string, target environment.Labels, 
 	return s
 }
 
-func (s *Seeder) AddDeploymentWithKinds(name, version string, target environment.Labels, kinds []model.EnvironmentKind, deps ...string) *Seeder {
-	s.deployments = append(s.deployments, deploymentInput{
-		FeatureName:      name,
-		Version:          version,
-		Target:           target,
-		Dependencies:     deps,
-		EnvironmentKinds: kinds,
-	})
-	return s
-}
-
 func (s *Seeder) AddDeploymentWithValues(name, version string, target environment.Labels, kinds []model.EnvironmentKind, values model.Values, deps ...string) *Seeder {
 	s.deployments = append(s.deployments, deploymentInput{
 		FeatureName:      name,
