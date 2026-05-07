@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -116,6 +117,41 @@ func AuditForEnvironment(ctx context.Context, id uuid.UUID, featureName string) 
 	}
 
 	return auditLogsFromSQL(auditLogs), nil
+}
+
+// Entry mirrors AuditLog but exposes the structured metadata column for the
+// server-rendered UI; the GraphQL surface stays on AuditLog.
+type Entry struct {
+	Actor       string
+	Description string
+	ObjectType  string
+	ObjectID    string
+	CreatedAt   time.Time
+	Metadata    json.RawMessage
+}
+
+func EntriesForEnvironment(ctx context.Context, id uuid.UUID, featureName string) ([]*Entry, error) {
+	rows, err := querier(ctx).AuditForEnvironment(ctx, auditsql.AuditForEnvironmentParams{
+		EnvironmentID: id.String(),
+		Featurename:   featureName,
+		PageSize:      50,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	ret := make([]*Entry, 0, len(rows))
+	for _, r := range rows {
+		ret = append(ret, &Entry{
+			Actor:       r.Actor,
+			Description: r.Description,
+			ObjectType:  r.ObjectType,
+			ObjectID:    r.ObjectID,
+			CreatedAt:   r.CreatedAt.Time,
+			Metadata:    json.RawMessage(r.Metadata),
+		})
+	}
+	return ret, nil
 }
 
 func AuditDeleteHelmInstall(ctx context.Context, envID uuid.UUID, name string) {

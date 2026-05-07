@@ -121,12 +121,26 @@ func ConfigOverrideSubmitHandler(repo database.Repo) http.HandlerFunc {
 			return
 		}
 
+		featureName := chi.URLParam(r, "feature")
+		key := r.FormValue("key")
+
+		feat, err := featurepkg.FeatureByNameForEnv(r.Context(), featureName, env.ID)
+		if err != nil {
+			http.Error(w, "Failed to get feature: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		secret := false
+		if v, ok := feat.Values[key]; ok && v.Config != nil {
+			secret = v.Config.Secret
+		}
+
 		err = dbtx.WithTx(r.Context(), func(ctx context.Context) error {
 			_, err := featurepkg.ConfigCreate(ctx, model.NewConfiguration{
 				EnvironmentID: &env.ID,
-				Feature:       chi.URLParam(r, "feature"),
-				Key:           r.FormValue("key"),
+				Feature:       featureName,
+				Key:           key,
 				Value:         raw,
+				Secret:        secret,
 			})
 			return err
 		})
@@ -247,7 +261,7 @@ func featurePageContent(page *FeaturePage) g.Node {
 	case "deployments":
 		tabContent = deploymentsTab(page)
 	case "audit":
-		tabContent = auditTab()
+		tabContent = auditTab(page)
 	case "playground":
 		tabContent = playgroundTab(page)
 	default:
@@ -591,8 +605,46 @@ func rolloutVersionCell(r RolloutItem) g.Node {
 	return h.A(h.Href("/rollouts/"+r.FeatureName+"/"+r.Version), g.Text(r.Version))
 }
 
-func auditTab() g.Node {
-	return h.Div(h.Class("tab-content-wrapper"), h.H2(g.Text("Audit Log")), h.P(g.Text("Audit log for configuration changes will be displayed here.")))
+func auditTab(page *FeaturePage) g.Node {
+	if len(page.AuditEntries) == 0 {
+		return h.Div(h.Class("tab-content-wrapper"), h.H2(g.Text("Audit Log")), h.P(g.Text("No audit entries yet.")))
+	}
+	rows := make([]g.Node, 0, len(page.AuditEntries))
+	for _, e := range page.AuditEntries {
+		cells := []g.Node{
+			h.Td(g.Text(e.CreatedAt.Format("2006-01-02 15:04:05"))),
+			h.Td(g.Text(e.Actor)),
+			h.Td(g.Text(e.Description)),
+		}
+		if len(e.Metadata) > 0 {
+			var pretty bytes.Buffer
+			if err := json.Indent(&pretty, e.Metadata, "", "  "); err != nil {
+				pretty.Reset()
+				pretty.Write(e.Metadata)
+			}
+			cells = append(cells, h.Td(
+				h.Details(
+					h.Summary(g.Text("details")),
+					h.Pre(h.Class("code-block"), g.Text(pretty.String())),
+				),
+			))
+		} else {
+			cells = append(cells, h.Td(g.Text("")))
+		}
+		rows = append(rows, h.Tr(cells...))
+	}
+	return h.Div(h.Class("tab-content-wrapper"),
+		h.H2(g.Text("Audit Log")),
+		h.Table(h.Class("table sortable"),
+			h.THead(h.Tr(
+				h.Th(g.Text("Time")),
+				h.Th(g.Text("Actor")),
+				h.Th(g.Text("Description")),
+				h.Th(g.Text("Metadata")),
+			)),
+			h.TBody(rows...),
+		),
+	)
 }
 
 func configKeyCell(item FeatureConfigItem) g.Node {

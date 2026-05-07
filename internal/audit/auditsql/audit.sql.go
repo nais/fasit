@@ -49,8 +49,20 @@ FROM
 WHERE
 	CASE WHEN $1::TEXT != '' THEN
 		object_id = CONCAT($2::TEXT, ':', $1::TEXT)
+		OR (
+			metadata IS NOT NULL
+			AND metadata->>'feature' = $1::TEXT
+			AND (
+				metadata->>'envId' = $2::TEXT
+				OR NOT (metadata ? 'envId')
+			)
+		)
 	ELSE
 		STARTS_WITH(object_id, $2::TEXT)
+		OR (
+			metadata IS NOT NULL
+			AND metadata->>'envId' = $2::TEXT
+		)
 	END
 ORDER BY
 	created_at DESC
