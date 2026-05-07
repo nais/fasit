@@ -15,6 +15,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/audit"
+	"github.com/nais/fasit/internal/dbtx"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/errs"
 	"github.com/nais/fasit/internal/feature/featuresql"
@@ -35,7 +36,13 @@ func Register(ctx context.Context, pool *pgxpool.Pool) context.Context {
 }
 
 func querier(ctx context.Context) featuresql.Querier {
-	return ctx.Value(QuerierKey).(featuresql.Querier)
+	q := ctx.Value(QuerierKey).(featuresql.Querier)
+	if tx, ok := dbtx.Tx(ctx); ok {
+		if real, ok := q.(*featuresql.Queries); ok {
+			return real.WithTx(tx)
+		}
+	}
+	return q
 }
 
 func helmValues(ctx context.Context, f *model.Feature, envID uuid.UUID) (map[string]any, error) {

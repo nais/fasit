@@ -12,10 +12,12 @@ type Querier interface {
 	AutoInstallNamesForKind(ctx context.Context, environmentKind EnvironmentKind) ([]string, error)
 	AutoInstallsForKind(ctx context.Context, environmentKind EnvironmentKind) ([]AutoInstall, error)
 	ConfigDelete(ctx context.Context, id uuid.UUID) error
+	ConfigEnvGet(ctx context.Context, arg ConfigEnvGetParams) (ConfigurationsEnvironment, error)
 	ConfigEnvUpdateOrCreate(ctx context.Context, arg ConfigEnvUpdateOrCreateParams) (ConfigurationsEnvironment, error)
 	ConfigForEnvironmentFilteredByKeys(ctx context.Context, arg ConfigForEnvironmentFilteredByKeysParams) ([]ConfigForEnvironmentFilteredByKeysRow, error)
 	ConfigGet(ctx context.Context, feature string) ([]ConfigurationsGlobal, error)
 	ConfigGetByID(ctx context.Context, id uuid.UUID) (ConfigurationsGlobal, error)
+	ConfigGlobalGetByKey(ctx context.Context, arg ConfigGlobalGetByKeyParams) (ConfigurationsGlobal, error)
 	ConfigGlobalUpdateOrCreate(ctx context.Context, arg ConfigGlobalUpdateOrCreateParams) (ConfigurationsGlobal, error)
 	ConfigOverridesByFeature(ctx context.Context, feature string) ([]ConfigOverridesByFeatureRow, error)
 	ConfigRenameEnv(ctx context.Context, arg ConfigRenameEnvParams) error

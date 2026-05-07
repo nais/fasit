@@ -62,6 +62,7 @@ type Audit struct {
 	ObjectType  string
 	ObjectID    string
 	CreatedAt   pgtype.Timestamptz
+	Metadata    []byte
 }
 
 type AutoInstall struct {

@@ -12,12 +12,14 @@ INSERT INTO audits(
 	actor,
 	description,
 	object_type,
-	object_id)
+	object_id,
+	metadata)
 VALUES (
 	$1,
 	$2,
 	$3,
-	$4)
+	$4,
+	$5)
 `
 
 type AuditCreateParams struct {
@@ -25,6 +27,7 @@ type AuditCreateParams struct {
 	Description string
 	ObjectType  string
 	ObjectID    string
+	Metadata    []byte
 }
 
 func (q *Queries) AuditCreate(ctx context.Context, arg AuditCreateParams) error {
@@ -33,20 +36,27 @@ func (q *Queries) AuditCreate(ctx context.Context, arg AuditCreateParams) error 
 		arg.Description,
 		arg.ObjectType,
 		arg.ObjectID,
+		arg.Metadata,
 	)
 	return err
 }
 
 const auditForEnvironment = `-- name: AuditForEnvironment :many
 SELECT
-	id, actor, description, object_type, object_id, created_at
+	id, actor, description, object_type, object_id, created_at, metadata
 FROM
 	audits
 WHERE
 	CASE WHEN $1::TEXT != '' THEN
 		object_id = CONCAT($2::TEXT, ':', $1::TEXT)
+		OR (metadata IS NOT NULL
+			AND metadata ->> 'feature' = $1::TEXT
+			AND (metadata ->> 'envId' = $2::TEXT
+				OR NOT (metadata ? 'envId')))
 	ELSE
 		STARTS_WITH(object_id, $2::TEXT)
+		OR (metadata IS NOT NULL
+			AND metadata ->> 'envId' = $2::TEXT)
 	END
 ORDER BY
 	created_at DESC
@@ -75,6 +85,7 @@ func (q *Queries) AuditForEnvironment(ctx context.Context, arg AuditForEnvironme
 			&i.ObjectType,
 			&i.ObjectID,
 			&i.CreatedAt,
+			&i.Metadata,
 		); err != nil {
 			return nil, err
 		}

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/nais/fasit/internal/audit"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/deployment"
 	envpkg "github.com/nais/fasit/internal/environment"
@@ -47,6 +48,7 @@ type FeaturePage struct {
 	ActiveTab        string
 	PlaygroundCode   string
 	PlaygroundResult *PlaygroundResult
+	AuditEntries     []*audit.Entry
 }
 
 type FeatureDetail struct {
@@ -291,6 +293,13 @@ func loadFeaturePageData(ctx context.Context, repo database.Repo, tenantSlug, en
 	}
 	if activeTab == "deployments" {
 		page.Deployments = loadEnvironmentDeployments(ctx, repo, featureName, env.ID)
+	}
+	if activeTab == "audit" {
+		entries, err := audit.EntriesForEnvironment(ctx, env.ID, featureName)
+		if err != nil {
+			return nil, fmt.Errorf("load audit entries: %w", err)
+		}
+		page.AuditEntries = entries
 	}
 
 	return page, nil

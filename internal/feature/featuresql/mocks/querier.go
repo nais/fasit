@@ -232,6 +232,72 @@ func (_c *Querier_ConfigDelete_Call) RunAndReturn(run func(ctx context.Context, 
 	return _c
 }
 
+// ConfigEnvGet provides a mock function for the type Querier
+func (_mock *Querier) ConfigEnvGet(ctx context.Context, arg featuresql.ConfigEnvGetParams) (featuresql.ConfigurationsEnvironment, error) {
+	ret := _mock.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ConfigEnvGet")
+	}
+
+	var r0 featuresql.ConfigurationsEnvironment
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, featuresql.ConfigEnvGetParams) (featuresql.ConfigurationsEnvironment, error)); ok {
+		return returnFunc(ctx, arg)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, featuresql.ConfigEnvGetParams) featuresql.ConfigurationsEnvironment); ok {
+		r0 = returnFunc(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(featuresql.ConfigurationsEnvironment)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, featuresql.ConfigEnvGetParams) error); ok {
+		r1 = returnFunc(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_ConfigEnvGet_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ConfigEnvGet'
+type Querier_ConfigEnvGet_Call struct {
+	*mock.Call
+}
+
+// ConfigEnvGet is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg featuresql.ConfigEnvGetParams
+func (_e *Querier_Expecter) ConfigEnvGet(ctx interface{}, arg interface{}) *Querier_ConfigEnvGet_Call {
+	return &Querier_ConfigEnvGet_Call{Call: _e.mock.On("ConfigEnvGet", ctx, arg)}
+}
+
+func (_c *Querier_ConfigEnvGet_Call) Run(run func(ctx context.Context, arg featuresql.ConfigEnvGetParams)) *Querier_ConfigEnvGet_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 featuresql.ConfigEnvGetParams
+		if args[1] != nil {
+			arg1 = args[1].(featuresql.ConfigEnvGetParams)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_ConfigEnvGet_Call) Return(configurationsEnvironment featuresql.ConfigurationsEnvironment, err error) *Querier_ConfigEnvGet_Call {
+	_c.Call.Return(configurationsEnvironment, err)
+	return _c
+}
+
+func (_c *Querier_ConfigEnvGet_Call) RunAndReturn(run func(ctx context.Context, arg featuresql.ConfigEnvGetParams) (featuresql.ConfigurationsEnvironment, error)) *Querier_ConfigEnvGet_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ConfigEnvUpdateOrCreate provides a mock function for the type Querier
 func (_mock *Querier) ConfigEnvUpdateOrCreate(ctx context.Context, arg featuresql.ConfigEnvUpdateOrCreateParams) (featuresql.ConfigurationsEnvironment, error) {
 	ret := _mock.Called(ctx, arg)
@@ -496,6 +562,72 @@ func (_c *Querier_ConfigGetByID_Call) Return(configurationsGlobal featuresql.Con
 }
 
 func (_c *Querier_ConfigGetByID_Call) RunAndReturn(run func(ctx context.Context, id uuid.UUID) (featuresql.ConfigurationsGlobal, error)) *Querier_ConfigGetByID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ConfigGlobalGetByKey provides a mock function for the type Querier
+func (_mock *Querier) ConfigGlobalGetByKey(ctx context.Context, arg featuresql.ConfigGlobalGetByKeyParams) (featuresql.ConfigurationsGlobal, error) {
+	ret := _mock.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ConfigGlobalGetByKey")
+	}
+
+	var r0 featuresql.ConfigurationsGlobal
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, featuresql.ConfigGlobalGetByKeyParams) (featuresql.ConfigurationsGlobal, error)); ok {
+		return returnFunc(ctx, arg)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, featuresql.ConfigGlobalGetByKeyParams) featuresql.ConfigurationsGlobal); ok {
+		r0 = returnFunc(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(featuresql.ConfigurationsGlobal)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, featuresql.ConfigGlobalGetByKeyParams) error); ok {
+		r1 = returnFunc(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_ConfigGlobalGetByKey_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ConfigGlobalGetByKey'
+type Querier_ConfigGlobalGetByKey_Call struct {
+	*mock.Call
+}
+
+// ConfigGlobalGetByKey is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg featuresql.ConfigGlobalGetByKeyParams
+func (_e *Querier_Expecter) ConfigGlobalGetByKey(ctx interface{}, arg interface{}) *Querier_ConfigGlobalGetByKey_Call {
+	return &Querier_ConfigGlobalGetByKey_Call{Call: _e.mock.On("ConfigGlobalGetByKey", ctx, arg)}
+}
+
+func (_c *Querier_ConfigGlobalGetByKey_Call) Run(run func(ctx context.Context, arg featuresql.ConfigGlobalGetByKeyParams)) *Querier_ConfigGlobalGetByKey_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 featuresql.ConfigGlobalGetByKeyParams
+		if args[1] != nil {
+			arg1 = args[1].(featuresql.ConfigGlobalGetByKeyParams)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_ConfigGlobalGetByKey_Call) Return(configurationsGlobal featuresql.ConfigurationsGlobal, err error) *Querier_ConfigGlobalGetByKey_Call {
+	_c.Call.Return(configurationsGlobal, err)
+	return _c
+}
+
+func (_c *Querier_ConfigGlobalGetByKey_Call) RunAndReturn(run func(ctx context.Context, arg featuresql.ConfigGlobalGetByKeyParams) (featuresql.ConfigurationsGlobal, error)) *Querier_ConfigGlobalGetByKey_Call {
 	_c.Call.Return(run)
 	return _c
 }

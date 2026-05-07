@@ -2,6 +2,7 @@ package environment
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"sort"
@@ -10,6 +11,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/database"
+	"github.com/nais/fasit/internal/dbtx"
 	"github.com/nais/fasit/internal/deployment"
 	envpkg "github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
@@ -61,7 +63,10 @@ func UpdateConfigHandler(_ database.Repo) http.HandlerFunc {
 			return
 		}
 
-		if _, err := featurepkg.ConfigUpdate(r.Context(), configID, model.UpdateConfiguration{Value: raw}); err != nil {
+		if err := dbtx.WithTx(r.Context(), func(ctx context.Context) error {
+			_, err := featurepkg.ConfigUpdate(ctx, configID, model.UpdateConfiguration{Value: raw})
+			return err
+		}); err != nil {
 			http.Error(w, "Failed to update configuration: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -77,7 +82,9 @@ func DeleteConfigHandler(_ database.Repo) http.HandlerFunc {
 			http.Error(w, "Invalid configuration id", http.StatusBadRequest)
 			return
 		}
-		if err := featurepkg.ConfigDelete(r.Context(), configID); err != nil {
+		if err := dbtx.WithTx(r.Context(), func(ctx context.Context) error {
+			return featurepkg.ConfigDelete(ctx, configID)
+		}); err != nil {
 			http.Error(w, "Failed to delete configuration: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -114,11 +121,28 @@ func ConfigOverrideSubmitHandler(repo database.Repo) http.HandlerFunc {
 			return
 		}
 
-		_, err = featurepkg.ConfigCreate(r.Context(), model.NewConfiguration{
-			EnvironmentID: &env.ID,
-			Feature:       chi.URLParam(r, "feature"),
-			Key:           r.FormValue("key"),
-			Value:         raw,
+		featureName := chi.URLParam(r, "feature")
+		key := r.FormValue("key")
+
+		feat, err := featurepkg.FeatureByNameForEnv(r.Context(), featureName, env.ID)
+		if err != nil {
+			http.Error(w, "Failed to get feature: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		secret := false
+		if v, ok := feat.Values[key]; ok && v.Config != nil {
+			secret = v.Config.Secret
+		}
+
+		err = dbtx.WithTx(r.Context(), func(ctx context.Context) error {
+			_, err := featurepkg.ConfigCreate(ctx, model.NewConfiguration{
+				EnvironmentID: &env.ID,
+				Feature:       featureName,
+				Key:           key,
+				Value:         raw,
+				Secret:        secret,
+			})
+			return err
 		})
 		if err != nil {
 			http.Error(w, "Failed to create configuration: "+err.Error(), http.StatusInternalServerError)
@@ -151,7 +175,28 @@ func ToggleFeatureStateHandler(repo database.Repo) http.HandlerFunc {
 			return
 		}
 		enabled := r.FormValue("enabled") == "true"
-		if _, err := featurepkg.FeatureStatesCreateOrUpdate(r.Context(), env.ID, feature, enabled); err != nil {
+		var reason string
+		if !enabled {
+			reason = strings.TrimSpace(r.FormValue("reason"))
+			if reason == "" {
+				http.Error(w, "A reason is required to disable reconcile.", http.StatusBadRequest)
+				return
+			}
+			if len(reason) > 1000 {
+				http.Error(w, "Reason must be at most 1000 characters.", http.StatusBadRequest)
+				return
+			}
+		}
+
+		err = dbtx.WithTx(r.Context(), func(ctx context.Context) error {
+			if enabled {
+				_, err := featurepkg.FeatureStatesEnable(ctx, env.ID, feature)
+				return err
+			}
+			_, err := featurepkg.FeatureStatesDisable(ctx, env.ID, feature, reason)
+			return err
+		})
+		if err != nil {
 			http.Error(w, "Failed to toggle feature state: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -216,7 +261,7 @@ func featurePageContent(page *FeaturePage) g.Node {
 	case "deployments":
 		tabContent = deploymentsTab(page)
 	case "audit":
-		tabContent = auditTab()
+		tabContent = auditTab(page)
 	case "playground":
 		tabContent = playgroundTab(page)
 	default:
@@ -320,13 +365,36 @@ func overviewTab(page *FeaturePage) g.Node {
 	if page.Feature.Enabled {
 		statusClass, statusText, buttonText, newEnabled = "status-success", "✓ Reconcile enabled", "Disable reconcile", "false"
 	}
+
+	var dialogBody g.Node
+	if page.Feature.Enabled {
+		dialogBody = h.Form(h.Method("POST"), h.Action(action),
+			h.Input(h.Type("hidden"), h.Name("enabled"), h.Value(newEnabled)),
+			h.P(g.Textf("Disable reconcile for %s in %s? Reconciliation will stop until re-enabled.", page.Feature.Name, page.Environment.Name)),
+			h.Label(h.For("reconcile-reason"), g.Text("Reason for disabling reconcile")),
+			h.Textarea(h.ID("reconcile-reason"), h.Name("reason"), g.Attr("maxlength", "1000"), g.Attr("required", ""), h.Rows("3")),
+			h.Div(h.Class("popover-actions"),
+				h.Button(h.Type("submit"), g.Text(buttonText)),
+				h.Button(h.Type("button"), g.Attr("popovertarget", popoverID), g.Attr("popovertargetaction", "hide"), g.Text("Cancel")),
+			),
+		)
+	} else {
+		dialogBody = h.Form(h.Method("POST"), h.Action(action),
+			h.Input(h.Type("hidden"), h.Name("enabled"), h.Value(newEnabled)),
+			h.Div(h.Class("popover-actions"),
+				h.Button(h.Type("submit"), g.Text(buttonText)),
+				h.Button(h.Type("button"), g.Attr("popovertarget", popoverID), g.Attr("popovertargetaction", "hide"), g.Text("Cancel")),
+			),
+		)
+	}
+
 	return h.Div(h.Class("tab-content-wrapper"),
 		h.P(
 			h.Span(h.Class(statusClass), g.Text(statusText)), g.Text(" "),
 			h.Button(h.Type("button"), h.Class("btn-small"), g.Attr("popovertarget", popoverID), g.Text(buttonText)),
 			h.Div(g.Attr("popover", ""), h.ID(popoverID),
 				h.H3(g.Text("Confirm reconcile toggle")),
-				h.Form(h.Method("POST"), h.Action(action), h.Input(h.Type("hidden"), h.Name("enabled"), h.Value(newEnabled)), h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text(buttonText)), h.Button(h.Type("button"), g.Attr("popovertarget", popoverID), g.Attr("popovertargetaction", "hide"), g.Text("Cancel")))),
+				dialogBody,
 			),
 		),
 		h.Table(h.Class("table sortable"), h.THead(h.Tr(h.Th(g.Text("Configuration Key")), h.Th(g.Text("Value")))), h.TBody(g.Group(g.Map(page.Feature.ConfigItems, func(item FeatureConfigItem) g.Node {
@@ -537,8 +605,46 @@ func rolloutVersionCell(r RolloutItem) g.Node {
 	return h.A(h.Href("/rollouts/"+r.FeatureName+"/"+r.Version), g.Text(r.Version))
 }
 
-func auditTab() g.Node {
-	return h.Div(h.Class("tab-content-wrapper"), h.H2(g.Text("Audit Log")), h.P(g.Text("Audit log for configuration changes will be displayed here.")))
+func auditTab(page *FeaturePage) g.Node {
+	if len(page.AuditEntries) == 0 {
+		return h.Div(h.Class("tab-content-wrapper"), h.H2(g.Text("Audit Log")), h.P(g.Text("No audit entries yet.")))
+	}
+	rows := make([]g.Node, 0, len(page.AuditEntries))
+	for _, e := range page.AuditEntries {
+		cells := []g.Node{
+			h.Td(g.Text(e.CreatedAt.Format("2006-01-02 15:04:05"))),
+			h.Td(g.Text(e.Actor)),
+			h.Td(g.Text(e.Description)),
+		}
+		if len(e.Metadata) > 0 {
+			var pretty bytes.Buffer
+			if err := json.Indent(&pretty, e.Metadata, "", "  "); err != nil {
+				pretty.Reset()
+				pretty.Write(e.Metadata)
+			}
+			cells = append(cells, h.Td(
+				h.Details(
+					h.Summary(g.Text("details")),
+					h.Pre(h.Class("code-block"), g.Text(pretty.String())),
+				),
+			))
+		} else {
+			cells = append(cells, h.Td(g.Text("")))
+		}
+		rows = append(rows, h.Tr(cells...))
+	}
+	return h.Div(h.Class("tab-content-wrapper"),
+		h.H2(g.Text("Audit Log")),
+		h.Table(h.Class("table sortable"),
+			h.THead(h.Tr(
+				h.Th(g.Text("Time")),
+				h.Th(g.Text("Actor")),
+				h.Th(g.Text("Description")),
+				h.Th(g.Text("Metadata")),
+			)),
+			h.TBody(rows...),
+		),
+	)
 }
 
 func configKeyCell(item FeatureConfigItem) g.Node {

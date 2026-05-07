@@ -82,7 +82,7 @@ PostgreSQL 14. Migrations in `internal/database/migrations/` (goose, embedded). 
 
 ### Comments
 
-Keep code comments to an absolute minimum. Only add a comment when the code cannot reasonably explain itself — e.g. a non-obvious side effect, a subtle correctness constraint, or a required workaround. Do not restate what the code does. Godoc comments on exported functions are fine when they add context beyond the name and signature.
+Prefer self-documenting code: clear names, small functions, obvious control flow. Only add a comment when absolutely necessary — i.e. when the code cannot reasonably explain itself, such as a non-obvious side effect, a subtle correctness constraint, or a required workaround. Do not restate what the code does. Godoc on exported declarations is fine when it adds context beyond the name and signature; otherwise omit it.
 
 ### Error Handling
 
