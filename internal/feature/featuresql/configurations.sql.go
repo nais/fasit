@@ -19,6 +19,39 @@ func (q *Queries) ConfigDelete(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
+const configEnvGet = `-- name: ConfigEnvGet :one
+SELECT
+	id, feature, key, value, description, secret, created, environment_id
+FROM
+	ONLY configurations_environment
+WHERE
+	environment_id = $1
+	AND feature = $2
+	AND key = $3
+`
+
+type ConfigEnvGetParams struct {
+	EnvironmentID uuid.UUID
+	Feature       string
+	Key           string
+}
+
+func (q *Queries) ConfigEnvGet(ctx context.Context, arg ConfigEnvGetParams) (ConfigurationsEnvironment, error) {
+	row := q.db.QueryRow(ctx, configEnvGet, arg.EnvironmentID, arg.Feature, arg.Key)
+	var i ConfigurationsEnvironment
+	err := row.Scan(
+		&i.ID,
+		&i.Feature,
+		&i.Key,
+		&i.Value,
+		&i.Description,
+		&i.Secret,
+		&i.Created,
+		&i.EnvironmentID,
+	)
+	return i, err
+}
+
 const configEnvUpdateOrCreate = `-- name: ConfigEnvUpdateOrCreate :one
 INSERT INTO configurations_environment(
 	environment_id,
@@ -211,6 +244,36 @@ WHERE
 
 func (q *Queries) ConfigGetByID(ctx context.Context, id uuid.UUID) (ConfigurationsGlobal, error) {
 	row := q.db.QueryRow(ctx, configGetByID, id)
+	var i ConfigurationsGlobal
+	err := row.Scan(
+		&i.ID,
+		&i.Feature,
+		&i.Key,
+		&i.Value,
+		&i.Description,
+		&i.Secret,
+		&i.Created,
+	)
+	return i, err
+}
+
+const configGlobalGetByKey = `-- name: ConfigGlobalGetByKey :one
+SELECT
+	id, feature, key, value, description, secret, created
+FROM
+	ONLY configurations_global
+WHERE
+	feature = $1
+	AND key = $2
+`
+
+type ConfigGlobalGetByKeyParams struct {
+	Feature string
+	Key     string
+}
+
+func (q *Queries) ConfigGlobalGetByKey(ctx context.Context, arg ConfigGlobalGetByKeyParams) (ConfigurationsGlobal, error) {
+	row := q.db.QueryRow(ctx, configGlobalGetByKey, arg.Feature, arg.Key)
 	var i ConfigurationsGlobal
 	err := row.Scan(
 		&i.ID,

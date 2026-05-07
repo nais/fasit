@@ -49,6 +49,25 @@ WHERE
 ORDER BY
 	key ASC;
 
+-- name: ConfigEnvGet :one
+SELECT
+	*
+FROM
+	ONLY configurations_environment
+WHERE
+	environment_id = @environment_id
+	AND feature = @feature
+	AND key = @key;
+
+-- name: ConfigGlobalGetByKey :one
+SELECT
+	*
+FROM
+	ONLY configurations_global
+WHERE
+	feature = @feature
+	AND key = @key;
+
 -- name: ConfigEnvUpdateOrCreate :one
 INSERT INTO configurations_environment(
 	environment_id,
