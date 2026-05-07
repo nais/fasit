@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -94,12 +95,18 @@ func Create(ctx context.Context, p CreateParams) error {
 	})
 }
 
+func sanitizeForLog(s string) string {
+	s = strings.ReplaceAll(s, "\n", "")
+	s = strings.ReplaceAll(s, "\r", "")
+	return s
+}
+
 func actorOrUnknown(ctx context.Context, description, objectType string) string {
 	actor := auth.GetEmail(ctx)
 	if actor == auth.UnauthorizedName {
 		log(ctx).WithFields(logrus.Fields{
-			"description": description,
-			"objectType":  objectType,
+			"description": sanitizeForLog(description),
+			"objectType":  sanitizeForLog(objectType),
 		}).Warn("unknown actor")
 		return "unknown"
 	}
