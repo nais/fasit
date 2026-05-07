@@ -12,12 +12,14 @@ INSERT INTO audits(
 	actor,
 	description,
 	object_type,
-	object_id)
+	object_id,
+	metadata)
 VALUES (
 	$1,
 	$2,
 	$3,
-	$4)
+	$4,
+	$5)
 `
 
 type AuditCreateParams struct {
@@ -25,6 +27,7 @@ type AuditCreateParams struct {
 	Description string
 	ObjectType  string
 	ObjectID    string
+	Metadata    []byte
 }
 
 func (q *Queries) AuditCreate(ctx context.Context, arg AuditCreateParams) error {
@@ -33,13 +36,14 @@ func (q *Queries) AuditCreate(ctx context.Context, arg AuditCreateParams) error 
 		arg.Description,
 		arg.ObjectType,
 		arg.ObjectID,
+		arg.Metadata,
 	)
 	return err
 }
 
 const auditForEnvironment = `-- name: AuditForEnvironment :many
 SELECT
-	id, actor, description, object_type, object_id, created_at
+	id, actor, description, object_type, object_id, created_at, metadata
 FROM
 	audits
 WHERE
@@ -75,6 +79,7 @@ func (q *Queries) AuditForEnvironment(ctx context.Context, arg AuditForEnvironme
 			&i.ObjectType,
 			&i.ObjectID,
 			&i.CreatedAt,
+			&i.Metadata,
 		); err != nil {
 			return nil, err
 		}

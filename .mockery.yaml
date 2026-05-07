@@ -21,3 +21,6 @@ packages:
   github.com/nais/fasit/internal/rollout/rolloutsql:
     interfaces:
       Querier:
+  github.com/nais/fasit/internal/audit/auditsql:
+    interfaces:
+      Querier:

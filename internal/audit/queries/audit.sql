@@ -3,12 +3,14 @@ INSERT INTO audits(
 	actor,
 	description,
 	object_type,
-	object_id)
+	object_id,
+	metadata)
 VALUES (
 	@actor,
 	@description,
 	@object_type,
-	@object_id);
+	@object_id,
+	@metadata);
 
 -- name: AuditForEnvironment :many
 SELECT
