@@ -18,24 +18,26 @@ import (
 )
 
 type DeploymentEnvStatus struct {
-	Name               string
-	TenantName         string
-	TenantSlug         string
-	Enabled            bool
-	LastModified       time.Time
-	LastDeployed       time.Time
-	StatusText         string
-	DeploymentID       string
-	DeploymentVersion  string
-	ReleaseVersion     string
-	TargetLabels       map[string]string
-	IsOverridden       bool
-	OverriddenByID     string
-	OverriddenByLabels map[string]string
+	Name                string
+	TenantName          string
+	TenantSlug          string
+	Enabled             bool
+	LastModified        time.Time
+	LastDeployed        time.Time
+	StatusText          string
+	DeploymentID        string
+	DeploymentVersion   string
+	ReleaseVersion      string
+	TargetLabels        map[string]string
+	IsOverridden        bool
+	OverriddenByID      string
+	OverriddenByVersion string
+	OverriddenByLabels  map[string]string
 }
 
 type deploymentGroup struct {
 	DeploymentID string
+	Version      string
 	Labels       map[string]string
 	Environments []DeploymentEnvStatus
 }
@@ -60,6 +62,7 @@ func groupByDeployment(envs []DeploymentEnvStatus) []deploymentGroup {
 		if _, ok := groups[env.DeploymentID]; !ok {
 			groups[env.DeploymentID] = &deploymentGroup{
 				DeploymentID: env.DeploymentID,
+				Version:      env.DeploymentVersion,
 				Labels:       env.TargetLabels,
 			}
 			order = append(order, env.DeploymentID)
@@ -88,15 +91,17 @@ func groupByDeployment(envs []DeploymentEnvStatus) []deploymentGroup {
 func deploymentStatusTable(groups []deploymentGroup, featureName string) g.Node {
 	var bodies []g.Node
 	for _, group := range groups {
+		headerChildren := []g.Node{}
+		if group.Version != "" {
+			headerChildren = append(headerChildren,
+				h.A(h.Href("/deployments/"+group.DeploymentID), h.Class("deployment-group-version"), h.Title("View deployment"), g.Text(group.Version)),
+			)
+		}
+		headerChildren = append(headerChildren, labelPills(group.Labels))
 		rows := []g.Node{
-			h.Tr(h.Class("deployment-group-row"),
-				h.Td(g.Attr("colspan", "7"),
-					h.Div(h.Class("deployment-group-header"),
-						h.A(h.Href("/deployments/"+group.DeploymentID), h.Class("deployment-group-link"),
-							g.Text("Deployment "+group.DeploymentID[:8]),
-						),
-						labelPills(group.Labels),
-					),
+			h.Tr(h.Class("deployment-group-row"), h.ID("deployment-"+group.DeploymentID),
+				h.Td(g.Attr("colspan", "6"),
+					h.Div(h.Class("deployment-group-header"), g.Group(headerChildren)),
 				),
 			),
 		}
@@ -109,7 +114,6 @@ func deploymentStatusTable(groups []deploymentGroup, featureName string) g.Node 
 		h.THead(h.Tr(
 			h.Th(g.Text("Tenant")),
 			h.Th(g.Text("Environment")),
-			h.Th(g.Text("Version")),
 			h.Th(g.Text("Status")),
 			h.Th(g.Text("Last update")),
 			h.Th(g.Text("Last deployed")),
@@ -124,39 +128,72 @@ func envRow(env DeploymentEnvStatus, featureName string) g.Node {
 	envLink := h.A(h.Href("/tenants/"+env.TenantSlug+"/envs/"+env.Name+"/"+featureName), g.Text(env.Name))
 
 	rowAttrs := []g.Node{}
-	envCellChildren := []g.Node{envLink}
+	rowTip := ""
 	if env.IsOverridden {
-		rowAttrs = append(rowAttrs, h.Class("deployment-overridden"), h.Title(overrideTooltip(env)))
-		envCellChildren = append(envCellChildren, h.Span(h.Class("text-muted override-note"), g.Text(" overridden")))
+		rowAttrs = append(rowAttrs, h.Class("deployment-overridden"), g.Attr("data-overridden-by", env.OverriddenByID))
+		rowTip = statusTooltip(env)
 	}
 
+	td := func(children ...g.Node) g.Node {
+		if rowTip != "" {
+			children = append([]g.Node{h.Title(rowTip)}, children...)
+		}
+		return h.Td(children...)
+	}
+
+	statusCell := []g.Node{}
+	if tip := statusTooltip(env); tip != "" && rowTip == "" {
+		statusCell = append(statusCell, h.Title(tip))
+	}
+	statusCell = append(statusCell, rolloutStatus(env.StatusText))
+
 	cells := []g.Node{
-		h.Td(g.Text(env.TenantName)),
-		h.Td(g.Group(envCellChildren)),
-		h.Td(versionCell(env)),
-		h.Td(rolloutStatus(env.StatusText)),
-		h.Td(h.Title(view.FormatTime(env.LastModified)), g.Text(view.RelativeTime(env.LastModified))),
-		lastDeployedCell(env.LastDeployed),
-		h.Td(h.A(h.Href(logsHref), g.Attr("title", "View logs"), g.Text("📋"))),
+		td(g.Text(env.TenantName)),
+		td(envLink),
+		td(statusCell...),
+		td(h.Title(view.FormatTime(env.LastModified)), g.Text(view.RelativeTime(env.LastModified))),
+		lastDeployedCell(env.LastDeployed, rowTip),
+		td(h.A(h.Href(logsHref), g.Attr("title", "View logs"), g.Text("📋"))),
 	}
 	return h.Tr(g.Group(append(rowAttrs, cells...)))
 }
 
-func overrideTooltip(env DeploymentEnvStatus) string {
-	parts := []string{"Overridden by deployment " + shortID(env.OverriddenByID)}
-	if len(env.OverriddenByLabels) > 0 {
-		keys := make([]string, 0, len(env.OverriddenByLabels))
-		for k := range env.OverriddenByLabels {
-			keys = append(keys, k)
+func statusTooltip(env DeploymentEnvStatus) string {
+	if env.IsOverridden {
+		parts := []string{}
+		if env.OverriddenByVersion != "" {
+			parts = append(parts, "Overridden by "+env.OverriddenByVersion)
+		} else {
+			parts = append(parts, "Overridden")
 		}
-		sort.Strings(keys)
-		pairs := make([]string, 0, len(keys))
-		for _, k := range keys {
-			pairs = append(pairs, k+"="+env.OverriddenByLabels[k])
+		if labels := formatLabels(env.OverriddenByLabels); labels != "" {
+			parts = append(parts, "target: "+labels)
 		}
-		parts = append(parts, "target: "+strings.Join(pairs, ", "))
+		return strings.Join(parts, " — ")
 	}
-	return strings.Join(parts, " — ")
+	if env.ReleaseVersion != "" && env.ReleaseVersion != env.DeploymentVersion {
+		return "Currently: " + env.ReleaseVersion
+	}
+	if strings.HasPrefix(env.StatusText, "PENDING") && env.ReleaseVersion == "" {
+		return "No release deployed yet"
+	}
+	return ""
+}
+
+func formatLabels(labels map[string]string) string {
+	if len(labels) == 0 {
+		return ""
+	}
+	keys := make([]string, 0, len(labels))
+	for k := range labels {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	pairs := make([]string, 0, len(keys))
+	for _, k := range keys {
+		pairs = append(pairs, k+"="+labels[k])
+	}
+	return strings.Join(pairs, ", ")
 }
 
 func shortID(id string) string {
@@ -164,22 +201,6 @@ func shortID(id string) string {
 		return id[:8]
 	}
 	return id
-}
-
-func versionCell(env DeploymentEnvStatus) g.Node {
-	if env.ReleaseVersion == "" {
-		if env.DeploymentVersion == "" {
-			return g.Text("")
-		}
-		return h.Span(h.Class("version-desired"), g.Text("→ "+env.DeploymentVersion))
-	}
-	if env.DeploymentVersion != "" && env.ReleaseVersion != env.DeploymentVersion {
-		return h.Span(h.Class("version-mismatch"),
-			g.Text(env.ReleaseVersion),
-			h.Span(h.Class("version-desired"), g.Text("→ "+env.DeploymentVersion)),
-		)
-	}
-	return g.Text(env.ReleaseVersion)
 }
 
 func labelPills(labels map[string]string) g.Node {
@@ -302,6 +323,7 @@ func featureDeploymentEnvStatuses(ctx context.Context, repo database.Repo, featu
 			if winner != nil && winner.ID != dep.ID {
 				es.IsOverridden = true
 				es.OverriddenByID = winner.ID.String()
+				es.OverriddenByVersion = winner.Feature.Version
 				es.OverriddenByLabels = winner.TargetLabels
 				es.StatusText = "OVERRIDDEN"
 			} else {
@@ -311,7 +333,7 @@ func featureDeploymentEnvStatuses(ctx context.Context, repo database.Repo, featu
 					fallbackState = string(status.State)
 					fallbackModified = status.LastModified
 				}
-				es.StatusText, es.LastModified = view.EffectiveDeploymentStatus(ctx, repo, env.env.ID, feature.Name, fallbackState, fallbackModified)
+				es.StatusText, es.LastModified = view.EffectiveDeploymentStatus(ctx, repo, env.env.ID, feature.Name, fallbackState, fallbackModified, es.DeploymentVersion, es.ReleaseVersion)
 			}
 
 			ret = append(ret, es)

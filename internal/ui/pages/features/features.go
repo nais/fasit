@@ -156,11 +156,18 @@ func featureTargetsKind(kinds []model.EnvironmentKind, envKind model.Environment
 	return slices.Contains(kinds, envKind)
 }
 
-func lastDeployedCell(t time.Time) g.Node {
+func lastDeployedCell(t time.Time, extraTitle string) g.Node {
 	if t.IsZero() {
+		if extraTitle != "" {
+			return h.Td(h.Title(extraTitle), h.Span(h.Class("text-muted"), g.Text("never")))
+		}
 		return h.Td(h.Span(h.Class("text-muted"), g.Text("never")))
 	}
-	return h.Td(h.Title(view.FormatTime(t)), g.Text(view.RelativeTime(t)))
+	title := view.FormatTime(t)
+	if extraTitle != "" {
+		title = extraTitle
+	}
+	return h.Td(h.Title(title), g.Text(view.RelativeTime(t)))
 }
 
 func rolloutStatus(status string) g.Node {

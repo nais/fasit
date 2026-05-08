@@ -59,7 +59,17 @@ func DetailHandler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 				continue
 			}
 
-			state, lastMod := view.EffectiveDeploymentStatus(r.Context(), repo, status.EnvironmentID, dep.Feature.Name, status.State.String(), status.LastModified)
+			releaseVersion := ""
+			if releases, err := repo.ReleaseStatusesGet(r.Context(), status.EnvironmentID); err == nil {
+				for _, release := range releases {
+					if release.Name == dep.Feature.Name {
+						releaseVersion = release.Version
+						break
+					}
+				}
+			}
+
+			state, lastMod := view.EffectiveDeploymentStatus(r.Context(), repo, status.EnvironmentID, dep.Feature.Name, status.State.String(), status.LastModified, dep.Feature.Version, releaseVersion)
 			rows = append(rows, deploymentStatusRow{
 				TenantName:      tenant.Name,
 				EnvironmentName: env.Name,
@@ -100,7 +110,7 @@ func DetailHandler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 			})
 		}
 
-		renderPage(w, r, layout.Props{Title: fmt.Sprintf("Deployment %s v%s", dep.Feature.Name, dep.Feature.Version), CurrentPage: components.PageDeployments, Content: detailPage(dep, rows, deployInstructions, matching)})
+		renderPage(w, r, layout.Props{Title: fmt.Sprintf("Deployment %s %s", dep.Feature.Name, dep.Feature.Version), CurrentPage: components.PageDeployments, Content: detailPage(dep, rows, deployInstructions, matching)})
 	}
 }
 
@@ -120,7 +130,7 @@ func detailPage(d *deployment.Deployment, statuses []deploymentStatusRow, deploy
 		h.Button(h.Type("button"), h.Class("btn-small"), g.Attr("popovertarget", "delete-deployment"), g.Text("Delete")),
 		h.Div(g.Attr("popover", ""), h.ID("delete-deployment"),
 			h.H3(g.Text("Delete deployment")),
-			h.P(g.Textf("Delete deployment %s v%s?", d.Feature.Name, d.Feature.Version)),
+			h.P(g.Textf("Delete deployment %s %s?", d.Feature.Name, d.Feature.Version)),
 			h.Form(h.Method("POST"), h.Action("/deployments/"+d.ID.String()+"/delete"),
 				h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text("Delete")), h.Button(h.Type("button"), g.Attr("popovertarget", "delete-deployment"), g.Attr("popovertargetaction", "hide"), g.Text("Cancel"))),
 			),
@@ -128,7 +138,7 @@ func detailPage(d *deployment.Deployment, statuses []deploymentStatusRow, deploy
 	)))
 
 	content := []g.Node{
-		h.H1(g.Textf("Deployment: %s v%s", d.Feature.Name, d.Feature.Version)),
+		h.H1(g.Textf("Deployment: %s %s", d.Feature.Name, d.Feature.Version)),
 		h.Table(h.Class("table"), h.TBody(g.Group(meta))),
 		h.H2(g.Text("Environment Statuses")),
 	}

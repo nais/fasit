@@ -16,6 +16,21 @@ function toggleTheme() {
   });
 })();
 
+// Click on overridden row jumps to and highlights the overriding deployment header.
+document.addEventListener("click", function (e) {
+  if (e.target.closest("a, button")) return;
+  var row = e.target.closest("tr.deployment-overridden");
+  if (!row) return;
+  var id = row.getAttribute("data-overridden-by");
+  if (!id) return;
+  var target = document.getElementById("deployment-" + id);
+  if (!target) return;
+  target.scrollIntoView({ behavior: "smooth", block: "center" });
+  target.classList.remove("highlight");
+  void target.offsetWidth;
+  target.classList.add("highlight");
+});
+
 // Sidebar client-side filter (fuzzy subsequence match)
 function fuzzyMatch(query, text) {
   if (!query) return true;

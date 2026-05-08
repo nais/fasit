@@ -69,7 +69,7 @@ func envTable(envs []RolloutEnvStatus, featureName string) g.Node {
 				h.Td(h.A(h.Href("/tenants/"+env.TenantSlug+"/envs/"+env.Name+"/"+featureName), g.Text(env.Name))),
 				h.Td(rolloutStatus(env.StatusText)),
 				h.Td(h.Title(view.FormatTime(env.LastModified)), g.Text(view.RelativeTime(env.LastModified))),
-				lastDeployedCell(env.LastDeployed),
+				lastDeployedCell(env.LastDeployed, ""),
 				h.Td(h.A(h.Href(logsHref), g.Attr("title", "View logs"), g.Text("📋"))),
 			)
 		}))),

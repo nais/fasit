@@ -242,15 +242,9 @@ nav .nav-btn:hover {
 }
 
 .deployment-overridden td:nth-child(1),
-.deployment-overridden td:nth-child(2) a,
-.deployment-overridden td:nth-child(3) {
+.deployment-overridden td:nth-child(2) a {
   text-decoration: line-through;
   color: var(--text-muted);
-}
-.deployment-overridden .override-note {
-  margin-left: 0.5rem;
-  font-size: 0.85em;
-  font-style: italic;
 }
 
 .main-content {
@@ -1089,23 +1083,23 @@ a:hover .feature-nav-badge {
   gap: 0.5rem;
   flex-wrap: wrap;
 }
-.deployment-group-link {
+.deployment-group-version {
   font-weight: 600;
   color: var(--accent);
-  text-decoration: none;
   font-size: 0.95rem;
+  text-decoration: none;
 }
-.deployment-group-link:hover {
+.deployment-group-version:hover {
   text-decoration: underline;
 }
-.version-mismatch {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
+.deployment-overridden {
+  cursor: pointer;
 }
-.version-desired {
-  font-size: 0.75rem;
-  color: var(--text-secondary);
-  opacity: 0.7;
+.deployment-group-row.highlight > td {
+  animation: highlight-flash 1.2s ease-out;
+}
+@keyframes highlight-flash {
+  0%   { background: color-mix(in srgb, var(--accent) 25%, transparent); }
+  100% { background: transparent; }
 }
 
