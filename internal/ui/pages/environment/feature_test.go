@@ -15,14 +15,14 @@ import (
 
 // normalizedAttrs are attribute keys whose values vary per-row and should be replaced with "_".
 var normalizedAttrs = map[string]bool{
-	"id":                    true,
-	"for":                   true,
-	"action":                true,
-	"value":                 true,
-	"popovertarget":         true,
-	"popovertargetaction":   true,
-	"name":                  true,
-	"href":                  true,
+	"id":                  true,
+	"for":                 true,
+	"action":              true,
+	"value":               true,
+	"popovertarget":       true,
+	"popovertargetaction": true,
+	"name":                true,
+	"href":                true,
 }
 
 // skeleton returns a structural representation of an HTML node tree:
@@ -148,7 +148,7 @@ func TestOverviewTab_RequiredUnsetConfigWarning(t *testing.T) {
 	// Determine which rows should warn based on the spec rule:
 	// warn iff feat.FeatureYAML.Values[item.Key].Required && item.Source == "HELM" && item.Value == ""
 	type rowInfo struct {
-		skeleton  string
+		skeleton   string
 		shouldWarn bool
 	}
 
