@@ -340,6 +340,7 @@ func loadFeatureConfigItems(ctx context.Context, feat *model.Feature, envID uuid
 	})
 
 	items := make([]FeatureConfigItem, 0, len(configs))
+	hasComputed := false
 	for _, cfg := range configs {
 		item := FeatureConfigItem{
 			ID:     cfg.ID.String(),
@@ -357,12 +358,57 @@ func loadFeatureConfigItems(ctx context.Context, feat *model.Feature, envID uuid
 			if cfg.Value.Computed != nil {
 				item.IsComputed = true
 				item.Template = cfg.Value.Computed.Template
+				hasComputed = true
 			}
 		}
 		items = append(items, item)
 	}
 
+	if hasComputed {
+		rendered, err := featurepkg.HelmValues(ctx, feat, envID)
+		if err == nil {
+			for i, item := range items {
+				if !item.IsComputed {
+					continue
+				}
+				if v, ok := lookupHelmValue(rendered, item.Key); ok {
+					items[i].Value = v
+				}
+			}
+		}
+	}
+
 	return items, nil
+}
+
+func lookupHelmValue(m map[string]any, key string) (string, bool) {
+	keys, err := featureutil.SmartDotSplit(key)
+	if err != nil || len(keys) == 0 {
+		return "", false
+	}
+	var cur any = m
+	for _, k := range keys {
+		mm, ok := cur.(map[string]any)
+		if !ok {
+			return "", false
+		}
+		cur, ok = mm[k]
+		if !ok {
+			return "", false
+		}
+	}
+	switch v := cur.(type) {
+	case string:
+		return v, true
+	case nil:
+		return "", true
+	default:
+		b, err := json.Marshal(v)
+		if err != nil {
+			return "", false
+		}
+		return string(b), true
+	}
 }
 
 func loadHelmValues(ctx context.Context, feat *model.Feature, envID uuid.UUID) (string, error) {
