@@ -92,6 +92,8 @@ Never ignore errors with `_ =` unless absolutely necessary (e.g. best-effort cle
 
 Semantic messages enforced by hook: `feat:`, `fix:`, `refactor:`, `build:`, `test:`, `docs:`, `ci:`, `perf:`, `style:`. Scope optional: `feat(ui):`. `chore:` is NOT valid.
 
+Before committing, always run `mise run generate`, `mise run fmt`, and `mise run check`.
+
 ## Release
 
 - **fasit**: Auto-deployed on push to main
