@@ -312,7 +312,7 @@ func loadFeatureConfigItems(ctx context.Context, feat *model.Feature, envID uuid
 	}
 
 	for key, val := range feat.Values {
-		if val.Config == nil {
+		if val.Config == nil && val.Computed == nil {
 			continue
 		}
 		found := false
