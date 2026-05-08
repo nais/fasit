@@ -201,13 +201,6 @@ func formatLabels(labels map[string]string) string {
 	return strings.Join(pairs, ", ")
 }
 
-func shortID(id string) string {
-	if len(id) > 8 {
-		return id[:8]
-	}
-	return id
-}
-
 func setVersionPopover(popoverID, featureName, chart string, target map[string]string) g.Node {
 	keys := make([]string, 0, len(target))
 	for k := range target {
