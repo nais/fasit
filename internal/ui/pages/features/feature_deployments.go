@@ -51,7 +51,7 @@ func deploymentDetailContent(data *DetailPage) g.Node {
 		return h.P(g.Text("No environments found."))
 	}
 	groups := groupByDeployment(data.DeploymentEnvs)
-	return deploymentStatusTable(groups, data.CurrentFeature.Name)
+	return deploymentStatusTable(groups, data.CurrentFeature.Name, data.CurrentFeature.Chart)
 }
 
 func groupByDeployment(envs []DeploymentEnvStatus) []deploymentGroup {
@@ -88,9 +88,10 @@ func groupByDeployment(envs []DeploymentEnvStatus) []deploymentGroup {
 	return result
 }
 
-func deploymentStatusTable(groups []deploymentGroup, featureName string) g.Node {
+func deploymentStatusTable(groups []deploymentGroup, featureName, chart string) g.Node {
 	var bodies []g.Node
 	for _, group := range groups {
+		popoverID := "set-version-" + group.DeploymentID
 		headerChildren := []g.Node{}
 		if group.Version != "" {
 			headerChildren = append(headerChildren,
@@ -98,6 +99,10 @@ func deploymentStatusTable(groups []deploymentGroup, featureName string) g.Node 
 			)
 		}
 		headerChildren = append(headerChildren, labelPills(group.Labels))
+		headerChildren = append(headerChildren,
+			h.Button(h.Type("button"), h.Class("btn-small set-version-btn"), g.Attr("popovertarget", popoverID), g.Text("Set version")),
+			setVersionPopover(popoverID, featureName, chart, group.Labels),
+		)
 		rows := []g.Node{
 			h.Tr(h.Class("deployment-group-row"), h.ID("deployment-"+group.DeploymentID),
 				h.Td(g.Attr("colspan", "6"),
@@ -201,6 +206,33 @@ func shortID(id string) string {
 		return id[:8]
 	}
 	return id
+}
+
+func setVersionPopover(popoverID, featureName, chart string, target map[string]string) g.Node {
+	keys := make([]string, 0, len(target))
+	for k := range target {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	inputs := []g.Node{
+		h.Input(h.Type("hidden"), h.Name("feature_name"), h.Value(featureName)),
+		h.Input(h.Type("hidden"), h.Name("chart"), h.Value(chart)),
+	}
+	for _, k := range keys {
+		inputs = append(inputs, h.Input(h.Type("hidden"), h.Name("target_label"), h.Value(k+"="+target[k])))
+	}
+	return h.Div(g.Attr("popover", ""), h.ID(popoverID),
+		h.H3(g.Text("Set version")),
+		h.Form(h.Method("POST"), h.Action("/deployments"),
+			g.Group(inputs),
+			h.Label(g.Text("Version")),
+			h.Input(h.Type("text"), h.Name("version"), g.Attr("required", ""), g.Attr("autofocus", "")),
+			h.Div(h.Class("popover-actions"),
+				h.Button(h.Type("submit"), g.Text("Set version")),
+				h.Button(h.Type("button"), g.Attr("popovertarget", popoverID), g.Attr("popovertargetaction", "hide"), g.Text("Cancel")),
+			),
+		),
+	)
 }
 
 func labelPills(labels map[string]string) g.Node {

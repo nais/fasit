@@ -1096,6 +1096,9 @@ a:hover .feature-nav-badge {
   gap: 0.5rem;
   flex-wrap: wrap;
 }
+.deployment-group-header .set-version-btn {
+  margin-left: auto;
+}
 .deployment-group-version {
   font-weight: 600;
   color: var(--accent);
