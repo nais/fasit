@@ -399,7 +399,9 @@ func overviewTab(page *FeaturePage) g.Node {
 			),
 		),
 		h.Table(h.Class("table sortable"), h.THead(h.Tr(h.Th(g.Text("Configuration Key")), h.Th(g.Text("Value")))), h.TBody(g.Group(g.Map(page.Feature.ConfigItems, func(item FeatureConfigItem) g.Node {
-			return h.Tr(h.Td(configKeyCell(item)), h.Td(configValueCell(page, item)))
+			valDef := page.Feature.FeatureYAML.Values[item.Key]
+			warn := valDef.Required && item.Source == string(model.ConfigSourceHelm) && item.Value == ""
+			return h.Tr(g.If(warn, h.Class("config-warning")), h.Td(configKeyCell(item)), h.Td(configValueCell(page, item)))
 		})))),
 	)
 }
