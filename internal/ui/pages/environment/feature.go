@@ -279,6 +279,10 @@ func featurePageContent(page *FeaturePage) g.Node {
 						redeployButton(page),
 					),
 					featureMetadataHeader(page),
+				),
+			),
+			h.Div(h.Class("card"),
+				h.Div(h.Class("card-body"),
 					components.TabsNav(page.ActiveTab, envFeatureTabs(page.TenantSlug, page.Environment.Name, page.Feature.Name, page.Feature.HasDeployments)),
 					tabContent,
 				),
@@ -295,15 +299,12 @@ func featureMetadataHeader(page *FeaturePage) g.Node {
 	if page.FeatureLog != nil && page.FeatureLog.CurrentVersion != "" {
 		currentVersion = page.FeatureLog.CurrentVersion
 	}
-	currentValue := []g.Node{g.Text(currentVersion)}
-	if page.FeatureLog != nil && page.FeatureLog.CurrentStatus != "" {
-		currentValue = append(currentValue, g.Text(" · "), rolloutStatus(page.FeatureLog.CurrentStatus))
-	}
-	rows = append(rows, metaRow("Current version", g.Group(currentValue)))
+	rows = append(rows, metaRow("Current version", g.Text(currentVersion)))
 
-	if feat.Version != "" {
-		rows = append(rows, metaRow("Chart version", g.Text(feat.Version)))
+	if page.FeatureLog != nil && page.FeatureLog.CurrentStatus != "" {
+		rows = append(rows, metaRow("Status", rolloutStatus(page.FeatureLog.CurrentStatus)))
 	}
+
 	if feat.Chart != "" {
 		rows = append(rows, metaRow("Chart", g.Text(feat.Chart)))
 	}
