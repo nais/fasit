@@ -55,7 +55,7 @@ func DetailHandler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 		}
 
 		renderPage(w, r, layout.Props{
-			Title:       fmt.Sprintf("%s v%s", featureName, version),
+			Title:       fmt.Sprintf("%s %s", featureName, version),
 			CurrentPage: components.PageRollouts,
 			Content:     detailPage(rollout, events, instructions),
 		})
@@ -71,7 +71,7 @@ func detailPage(rollout *model.Rollout, events []*model.RolloutEvent, instructio
 	}
 
 	content := []g.Node{
-		h.H1(g.Textf("%s v%s", rollout.FeatureName, rollout.Version)),
+		h.H1(g.Textf("%s %s", rollout.FeatureName, rollout.Version)),
 		h.Table(
 			h.Class("table"),
 			h.TBody(

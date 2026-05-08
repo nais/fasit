@@ -49,9 +49,9 @@ func Deployments() Crumb {
 }
 
 func Rollout(featureName, version string) Crumb {
-	return Crumb{Label: featureName + " v" + version, URL: "/rollouts/" + featureName + "/" + version}
+	return Crumb{Label: featureName + " " + version, URL: "/rollouts/" + featureName + "/" + version}
 }
 
 func Deployment(id, featureName, version string) Crumb {
-	return Crumb{Label: featureName + " v" + version, URL: "/deployments/" + id}
+	return Crumb{Label: featureName + " " + version, URL: "/deployments/" + id}
 }

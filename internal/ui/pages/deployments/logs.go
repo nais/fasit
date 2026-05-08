@@ -43,7 +43,7 @@ func LogsHandler(renderPage RenderPage) http.HandlerFunc {
 			return
 		}
 
-		title := fmt.Sprintf("Deployment Logs: %s v%s", dep.Feature.Name, dep.Feature.Version)
+		title := fmt.Sprintf("Deployment Logs: %s %s", dep.Feature.Name, dep.Feature.Version)
 		renderPage(w, r, layout.Props{
 			Title:       title,
 			CurrentPage: components.PageDeployments,
@@ -74,7 +74,7 @@ func logsPage(dep *deployment.Deployment, log *model.RolloutLog) g.Node {
 	}
 
 	content := []g.Node{
-		h.H1(g.Textf("Deployment Logs: %s v%s", dep.Feature.Name, dep.Feature.Version)),
+		h.H1(g.Textf("Deployment Logs: %s %s", dep.Feature.Name, dep.Feature.Version)),
 	}
 	content = append(content, logContent...)
 
