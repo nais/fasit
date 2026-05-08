@@ -24,6 +24,7 @@
 
   --status-success: #4ade80;
   --status-error: #f87171;
+  --status-warning: #fbbf24;
   --status-pending: #60a5fa;
   --status-disabled: #6b7280;
 
@@ -68,6 +69,7 @@
 
   --status-success: #16a34a;
   --status-error: #dc2626;
+  --status-warning: #d97706;
   --status-pending: #2563eb;
   --status-disabled: #9ca3af;
 
@@ -567,6 +569,12 @@ nav .nav-btn:hover {
 .value-default {
   color: var(--text-muted);
   font-style: italic;
+}
+.config-warning {
+  border-left: 3px solid var(--status-warning);
+}
+.config-warning .value-default {
+  color: var(--status-warning);
 }
 .edit-icon {
   color: var(--text-faint);
