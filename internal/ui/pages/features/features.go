@@ -3,6 +3,7 @@ package features
 import (
 	"context"
 	"encoding/json"
+	"math/rand/v2"
 	"net/http"
 	"slices"
 	"sort"
@@ -70,7 +71,28 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 }
 
 func listPage(features []view.FeatureNav) g.Node {
-	return h.Div(h.Class("container"), components.FeaturesSidebar(features, ""), h.Main(h.Class("main-content"), components.Breadcrumbs([]breadcrumb.Crumb{breadcrumb.Features()})))
+	return h.Div(h.Class("container"), components.FeaturesSidebar(features, ""), h.Main(h.Class("main-content"), components.Breadcrumbs([]breadcrumb.Crumb{breadcrumb.Features()}), h.Div(h.Class("card"), h.Div(h.Class("card-body"), jokeOfTheMoment()))))
+}
+
+func jokeOfTheMoment() g.Node {
+	jokes := []struct{ Q, A string }{
+		{"Why did the feature flag break up with the deployment?", "It just couldn’t commit."},
+		{"How many SREs does it take to change a light bulb?", "None — it’s a hardware problem, page the on-call."},
+		{"Why don’t Helm charts ever get invited to parties?", "They always bring too many values."},
+		{"What did the rollout say to the deployment?", "“Stop overriding me, you’re not my real parent.”"},
+		{"Why did the YAML file go to therapy?", "Indentation issues."},
+		{"What’s a Kubernetes cluster’s favorite music?", "Heavy metal — because everything’s controlled by operators."},
+		{"Why did naisd cross the road?", "To reconcile the other side."},
+		{"Why was the OCI registry always calm?", "It had great pull."},
+		{"How does a feature deploy itself?", "With a little Helm."},
+		{"What did the PENDING status say to the DEPLOYED status?", "“Must be nice.”"},
+	}
+	j := jokes[rand.IntN(len(jokes))]
+	return h.Div(h.Class("joke"),
+		h.P(h.Class("joke-q"), g.Text(j.Q)),
+		h.P(h.Class("joke-a"), g.Text(j.A)),
+		h.P(h.Class("text-muted joke-hint"), g.Text("Pick a feature from the sidebar to get back to work.")),
+	)
 }
 
 func detailPage(data *DetailPage) g.Node {

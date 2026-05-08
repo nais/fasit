@@ -1097,6 +1097,24 @@ a:hover .feature-nav-badge {
 .deployment-group-version:hover {
   text-decoration: underline;
 }
+
+.joke {
+  text-align: center;
+  padding: 3rem 1rem;
+}
+.joke-q {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+.joke-a {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  margin-bottom: 2rem;
+}
+.joke-hint {
+  font-size: 0.85rem;
+}
 .deployment-overridden {
   cursor: pointer;
 }
@@ -1107,4 +1125,3 @@ a:hover .feature-nav-badge {
   0%   { background: color-mix(in srgb, var(--accent) 25%, transparent); }
   100% { background: transparent; }
 }
-
