@@ -87,7 +87,7 @@ func jokeOfTheMoment() g.Node {
 		{"How does a feature deploy itself?", "With a little Helm."},
 		{"What did the PENDING status say to the DEPLOYED status?", "“Must be nice.”"},
 	}
-	j := jokes[rand.IntN(len(jokes))] //nolint:gosec // joke picker, no security relevance
+	j := jokes[rand.IntN(len(jokes))] // #nosec G404 -- joke picker, no security relevance
 	return h.Div(h.Class("joke"),
 		h.P(h.Class("joke-q"), g.Text(j.Q)),
 		h.P(h.Class("joke-a"), g.Text(j.A)),
