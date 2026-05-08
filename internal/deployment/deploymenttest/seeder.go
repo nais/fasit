@@ -2,6 +2,7 @@ package deploymenttest
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -21,6 +22,7 @@ type deploymentInput struct {
 	Dependencies     []string
 	EnvironmentKinds []model.EnvironmentKind
 	Values           model.Values
+	Defaults         map[string]any
 }
 
 type deployments []deploymentInput
@@ -46,7 +48,11 @@ func (s *Seeder) AddDeployment(name, version string, target environment.Labels, 
 	return s
 }
 
-func (s *Seeder) AddDeploymentWithValues(name, version string, target environment.Labels, kinds []model.EnvironmentKind, values model.Values, deps ...string) *Seeder {
+// AddDeploymentWithValues registers a deployment with configurable values and
+// optional fake chart defaults. The defaults are returned by the seeder's
+// ChartDownloader as the feature's ValuesYAML, mimicking values pulled from a
+// real chart's values.yaml in production.
+func (s *Seeder) AddDeploymentWithValues(name, version string, target environment.Labels, kinds []model.EnvironmentKind, values model.Values, defaults map[string]any, deps ...string) *Seeder {
 	s.deployments = append(s.deployments, deploymentInput{
 		FeatureName:      name,
 		Version:          version,
@@ -54,6 +60,7 @@ func (s *Seeder) AddDeploymentWithValues(name, version string, target environmen
 		Dependencies:     deps,
 		EnvironmentKinds: kinds,
 		Values:           values,
+		Defaults:         defaults,
 	})
 	return s
 }
@@ -98,6 +105,10 @@ func (s *Seeder) ChartDownloader() deployment.ChartDownloaderFunc {
 						},
 					}
 				}
+				valuesYAML, err := buildValuesYAML(deploy.Values, deploy.Defaults)
+				if err != nil {
+					return nil, fmt.Errorf("build defaults for %s: %w", deploy.FeatureName, err)
+				}
 				return &model.Feature{
 					Name:    deploy.FeatureName,
 					Version: deploy.Version,
@@ -107,10 +118,33 @@ func (s *Seeder) ChartDownloader() deployment.ChartDownloaderFunc {
 						EnvironmentKinds: deploy.kinds(),
 						Values:           deploy.Values,
 					},
-					Source: "https://example.com/" + deploy.FeatureName,
+					ValuesYAML: valuesYAML,
+					Source:     "https://example.com/" + deploy.FeatureName,
 				}, nil
 			}
 		}
 		return nil, fmt.Errorf("chartUrl %s with version %s not found in deployments", chartURL, version)
 	}
+}
+
+func buildValuesYAML(values model.Values, defaults map[string]any) (map[string]json.RawMessage, error) {
+	if len(defaults) == 0 {
+		return nil, nil
+	}
+	out := map[string]json.RawMessage{}
+	for k, v := range values {
+		if v.Config == nil {
+			continue
+		}
+		dv, ok := defaults[k]
+		if !ok {
+			continue
+		}
+		b, err := json.Marshal(dv)
+		if err != nil {
+			return nil, fmt.Errorf("marshal default for %q: %w", k, err)
+		}
+		out[k] = b
+	}
+	return out, nil
 }

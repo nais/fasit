@@ -211,9 +211,11 @@ func main() {
 
 	featureValues := map[string]model.Values{
 		"naiserator": {
-			"replicas": {DisplayName: "Replicas", Description: "Number of replicas", Config: intCfg},
-			"logLevel": {DisplayName: "Log Level", Config: str},
-			"apiKey":   {DisplayName: "API Key", Description: "External API key", Config: secret},
+			"replicas":      {DisplayName: "Replicas", Description: "Number of replicas", Config: intCfg},
+			"logLevel":      {DisplayName: "Log Level", Config: str},
+			"apiKey":        {DisplayName: "API Key", Description: "External API key", Config: secret},
+			"clusterDomain": {DisplayName: "Cluster Domain", Description: "Derived from environment name", Computed: &model.Computed{Template: `"{{ .Env.name }}.{{ .Tenant.Name }}.cloud.nais.io"`}},
+			"projectRef":    {DisplayName: "GCP Project Ref", Computed: &model.Computed{Template: `"projects/{{ .Env.project_id }}"`}},
 		},
 		"console": {
 			"adminEmail":    {DisplayName: "Admin Email", Config: str},
@@ -239,6 +241,8 @@ func main() {
 		"kyverno": {
 			"webhookTimeout": {DisplayName: "Webhook Timeout", Description: "Timeout in seconds", Config: intCfg},
 			"replicaCount":   {DisplayName: "Replica Count", Config: intCfg},
+			"webhookURL":     {DisplayName: "Webhook URL", Computed: &model.Computed{Template: `"https://hooks.{{ .Env.name }}.{{ .Tenant.Name }}.example.com/kyverno"`}},
+			"envKind":        {DisplayName: "Environment Kind", Computed: &model.Computed{Template: `"{{ .Env.kind }}"`}},
 		},
 		"aivenator": {
 			"aivenToken":  {DisplayName: "Aiven Token", Config: secret},
@@ -248,6 +252,35 @@ func main() {
 			"webhookUrl":    {DisplayName: "Webhook URL", Config: str},
 			"webhookSecret": {DisplayName: "Webhook Secret", Config: secret},
 		},
+	}
+
+	featureDefaults := map[string]map[string]any{
+		"naiserator": {
+			"replicas": 2,
+			"logLevel": "info",
+		},
+		"console": {
+			"adminEmail": "admin@example.com",
+			"debugMode":  false,
+		},
+		"unleash": {
+			"instanceCount": 1,
+		},
+		"replicator": {
+			"syncInterval": "60",
+			"maxRetries":   3,
+		},
+		"v13s": {
+			"dryRun": false,
+		},
+		"kyverno": {
+			"webhookTimeout": 10,
+			"replicaCount":   3,
+		},
+	}
+
+	addDeployment := func(name, version string, target environment.Labels, kinds []model.EnvironmentKind) {
+		seeder.AddDeploymentWithValues(name, version, target, kinds, featureValues[name], featureDefaults[name])
 	}
 
 	naiseratorV := newVersion()
@@ -262,17 +295,17 @@ func main() {
 	unleashDevV := newVersion()
 	kyvernoV := newVersion()
 
-	seeder.AddDeploymentWithValues("naiserator", naiseratorV, environment.Labels{"kind": "tenant"}, tenantOnly, featureValues["naiserator"])
-	seeder.AddDeploymentWithValues("v13s", v13sV, environment.Labels{"kind": "management"}, managementOnly, featureValues["v13s"])
-	seeder.AddDeploymentWithValues("console", consoleV, environment.Labels{"kind": "management"}, managementOnly, featureValues["console"])
-	seeder.AddDeploymentWithValues("unleash", unleashV, environment.Labels{"kind": "management", "aiven": "enabled"}, managementOnly, featureValues["unleash"])
-	seeder.AddDeploymentWithValues("replicator", replicatorV, environment.Labels{"kind": "tenant", "tenant": "test-partner", "environment": "prod"}, tenantOnly, featureValues["replicator"])
-	seeder.AddDeploymentWithValues("dependencytrack", dependencytrackV, environment.Labels{"kind": "tenant", "tenant": "test-partner", "environment": "staging"}, tenantOnly, featureValues["dependencytrack"])
-	seeder.AddDeploymentWithValues("naiserator", naiseratorDevV, environment.Labels{"kind": "tenant", "tenant": "dev-nais", "environment": "dev"}, tenantOnly, featureValues["naiserator"])
-	seeder.AddDeploymentWithValues("dependencytrack", dependencytrackDevV, environment.Labels{"kind": "tenant", "tenant": "dev-nais", "environment": "dev"}, tenantOnly, featureValues["dependencytrack"])
-	seeder.AddDeploymentWithValues("replicator", replicatorDevV, environment.Labels{"kind": "tenant", "tenant": "dev-nais", "environment": "dev"}, tenantOnly, featureValues["replicator"])
-	seeder.AddDeploymentWithValues("unleash", unleashDevV, environment.Labels{"kind": "management", "tenant": "dev-nais"}, managementOnly, featureValues["unleash"])
-	seeder.AddDeploymentWithValues("kyverno", kyvernoV, environment.Labels{}, all, featureValues["kyverno"])
+	addDeployment("naiserator", naiseratorV, environment.Labels{"kind": "tenant"}, tenantOnly)
+	addDeployment("v13s", v13sV, environment.Labels{"kind": "management"}, managementOnly)
+	addDeployment("console", consoleV, environment.Labels{"kind": "management"}, managementOnly)
+	addDeployment("unleash", unleashV, environment.Labels{"kind": "management", "aiven": "enabled"}, managementOnly)
+	addDeployment("replicator", replicatorV, environment.Labels{"kind": "tenant", "tenant": "test-partner", "environment": "prod"}, tenantOnly)
+	addDeployment("dependencytrack", dependencytrackV, environment.Labels{"kind": "tenant", "tenant": "test-partner", "environment": "staging"}, tenantOnly)
+	addDeployment("naiserator", naiseratorDevV, environment.Labels{"kind": "tenant", "tenant": "dev-nais", "environment": "dev"}, tenantOnly)
+	addDeployment("dependencytrack", dependencytrackDevV, environment.Labels{"kind": "tenant", "tenant": "dev-nais", "environment": "dev"}, tenantOnly)
+	addDeployment("replicator", replicatorDevV, environment.Labels{"kind": "tenant", "tenant": "dev-nais", "environment": "dev"}, tenantOnly)
+	addDeployment("unleash", unleashDevV, environment.Labels{"kind": "management", "tenant": "dev-nais"}, managementOnly)
+	addDeployment("kyverno", kyvernoV, environment.Labels{}, all)
 
 	if _, err := seeder.Seed(ctx); err != nil {
 		log.Fatal(err)

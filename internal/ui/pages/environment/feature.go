@@ -664,7 +664,7 @@ func configKeyCell(item FeatureConfigItem) g.Node {
 
 func configValueCell(page *FeaturePage, item FeatureConfigItem) g.Node {
 	if item.IsComputed {
-		return h.Code(g.Text(item.Template))
+		return h.Code(h.Title(item.Template), g.Text(item.Value))
 	}
 	var (
 		popoverID   string
