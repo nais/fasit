@@ -52,6 +52,60 @@ document.addEventListener("input", function (e) {
   });
 });
 
+// Sidebar filter shortcut (Cmd/Ctrl+K) and Escape handling
+(function () {
+  var isMac = navigator.platform && navigator.platform.toUpperCase().includes("MAC");
+  document.querySelectorAll(".sidebar-filter").forEach(function (input) {
+    input.placeholder = isMac ? "Filter\u2026 (\u2318K)" : "Filter\u2026 (Ctrl+K)";
+  });
+  document.addEventListener("keydown", function (e) {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+      var input = document.querySelector(".sidebar-filter");
+      if (!input) return;
+      e.preventDefault();
+      input.focus();
+      input.select();
+    }
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Escape") return;
+    var input = e.target.closest && e.target.closest(".sidebar-filter");
+    if (!input) return;
+    if (input.value !== "") {
+      input.value = "";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    input.blur();
+  });
+
+  // Arrow key navigation between filter input and visible result links.
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+    var sidebar = e.target.closest && e.target.closest(".sidebar");
+    if (!sidebar) return;
+    var onFilter = e.target.classList && e.target.classList.contains("sidebar-filter");
+    var onLink = e.target.matches && e.target.matches(".nav li a");
+    if (!onFilter && !onLink) return;
+    var links = Array.from(sidebar.querySelectorAll(".nav li a")).filter(function (a) {
+      return !a.closest("li").hidden;
+    });
+    if (!links.length) return;
+    e.preventDefault();
+    var idx = links.indexOf(e.target);
+    var next;
+    if (e.key === "ArrowDown") {
+      next = idx === -1 ? 0 : Math.min(idx + 1, links.length - 1);
+    } else {
+      if (idx <= 0) {
+        sidebar.querySelector(".sidebar-filter").focus();
+        return;
+      }
+      next = idx - 1;
+    }
+    links[next].focus();
+  });
+})();
+
 // Sortable tables
 document.addEventListener("click", function (e) {
   var th = e.target.closest(".sortable th");
