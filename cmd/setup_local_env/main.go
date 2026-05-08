@@ -211,9 +211,11 @@ func main() {
 
 	featureValues := map[string]model.Values{
 		"naiserator": {
-			"replicas": {DisplayName: "Replicas", Description: "Number of replicas", Config: intCfg},
-			"logLevel": {DisplayName: "Log Level", Config: str},
-			"apiKey":   {DisplayName: "API Key", Description: "External API key", Config: secret},
+			"replicas":      {DisplayName: "Replicas", Description: "Number of replicas", Config: intCfg},
+			"logLevel":      {DisplayName: "Log Level", Config: str},
+			"apiKey":        {DisplayName: "API Key", Description: "External API key", Config: secret},
+			"clusterDomain": {DisplayName: "Cluster Domain", Description: "Derived from environment name", Computed: &model.Computed{Template: `"{{ .Env.name }}.{{ .Tenant.Name }}.cloud.nais.io"`}},
+			"projectRef":    {DisplayName: "GCP Project Ref", Computed: &model.Computed{Template: `"projects/{{ .Env.project_id }}"`}},
 		},
 		"console": {
 			"adminEmail":    {DisplayName: "Admin Email", Config: str},
@@ -239,6 +241,8 @@ func main() {
 		"kyverno": {
 			"webhookTimeout": {DisplayName: "Webhook Timeout", Description: "Timeout in seconds", Config: intCfg},
 			"replicaCount":   {DisplayName: "Replica Count", Config: intCfg},
+			"webhookURL":     {DisplayName: "Webhook URL", Computed: &model.Computed{Template: `"https://hooks.{{ .Env.name }}.{{ .Tenant.Name }}.example.com/kyverno"`}},
+			"envKind":        {DisplayName: "Environment Kind", Computed: &model.Computed{Template: `"{{ .Env.kind }}"`}},
 		},
 		"aivenator": {
 			"aivenToken":  {DisplayName: "Aiven Token", Config: secret},
