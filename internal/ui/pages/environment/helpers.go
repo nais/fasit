@@ -130,9 +130,7 @@ func featureNavs(ctx context.Context, repo database.Repo, env *model.Environment
 		names = append(names, f.FeatureName)
 	}
 
-	// Legacy feature_states rows are included so features toggled via the old
-	// GraphQL mutations (which still write there) appear in nav even if they
-	// have no deployment. Will become a no-op once feature_states is retired.
+	// include features controlled by rollouts
 	featureStates, err := featurepkg.FeatureStatesGet(ctx, env.ID)
 	if err != nil {
 		return nil, nil, err
