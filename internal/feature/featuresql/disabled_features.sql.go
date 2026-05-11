@@ -54,7 +54,9 @@ INSERT INTO disabled_features(
 VALUES (
 	$1,
 	$2)
-ON CONFLICT (environment_id, feature)
+ON CONFLICT (
+	environment_id,
+	feature)
 	DO NOTHING
 `
 
