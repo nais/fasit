@@ -252,7 +252,7 @@ func environmentsTable(rows []envRow, activeFilters map[string]string) g.Node {
 		)
 	})
 
-	return h.Table(h.Class("table sortable"),
+	return h.Table(h.Class("table sortable"), g.Attr("data-sort-key", "labels-envs"),
 		h.THead(h.Tr(
 			h.Th(g.Text("Tenant")),
 			h.Th(g.Text("Environment")),

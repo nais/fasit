@@ -152,6 +152,7 @@ func detailPage(d *deployment.Deployment, statuses []deploymentStatusRow, deploy
 	} else {
 		content = append(content, h.Table(
 			h.Class("table sortable"),
+			g.Attr("data-sort-key", "deployment-detail-envs"),
 			h.THead(h.Tr(
 				h.Th(g.Text("Tenant")),
 				h.Th(g.Text("Environment")),
@@ -205,6 +206,7 @@ func detailPage(d *deployment.Deployment, statuses []deploymentStatusRow, deploy
 	} else {
 		naidInstructionsContent = h.Table(
 			h.Class("table sortable"),
+			g.Attr("data-sort-key", "deployment-detail-instructions"),
 			h.THead(h.Tr(
 				h.Th(g.Text("Environment")),
 				h.Th(g.Text("Status")),

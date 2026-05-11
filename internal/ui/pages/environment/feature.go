@@ -418,7 +418,7 @@ func configurableTable(page *FeaturePage, items []FeatureConfigItem) g.Node {
 	}
 	return h.Div(
 		h.H2(g.Text("Configuration")),
-		h.Table(h.Class("table sortable config-table"),
+		h.Table(h.Class("table sortable config-table"), g.Attr("data-sort-key", "env-feature-config-configurable"),
 			h.THead(h.Tr(
 				h.Th(g.Text("Configuration Key")),
 				h.Th(h.Class("config-actions-col"), g.Attr("data-no-sort", "")),
@@ -444,7 +444,7 @@ func computedTable(items []FeatureConfigItem) g.Node {
 	}
 	return h.Div(
 		h.H2(g.Text("Computed")),
-		h.Table(h.Class("table sortable config-table"),
+		h.Table(h.Class("table sortable config-table"), g.Attr("data-sort-key", "env-feature-config-computed"),
 			h.THead(h.Tr(
 				h.Th(g.Text("Configuration Key")),
 				h.Th(h.Class("config-actions-col"), g.Attr("data-no-sort", "")),
@@ -633,7 +633,7 @@ func rolloutsTab(page *FeaturePage) g.Node {
 	if len(page.Rollouts) == 0 {
 		return h.Div(h.Class("tab-content-wrapper"), h.H2(g.Text("Rollout History")), h.P(g.Text("No rollout history available.")))
 	}
-	return h.Div(h.Class("tab-content-wrapper"), h.H2(g.Text("Rollout History")), h.Table(h.Class("table sortable"), h.THead(h.Tr(h.Th(g.Text("Version")), h.Th(g.Text("Status")), h.Th(g.Text("Target")), h.Th(g.Text("Created")), h.Th(g.Text("Completed")))), h.TBody(g.Group(g.Map(page.Rollouts, func(rollout RolloutItem) g.Node {
+	return h.Div(h.Class("tab-content-wrapper"), h.H2(g.Text("Rollout History")), h.Table(h.Class("table sortable"), g.Attr("data-sort-key", "env-feature-rollouts"), h.THead(h.Tr(h.Th(g.Text("Version")), h.Th(g.Text("Status")), h.Th(g.Text("Target")), h.Th(g.Text("Created")), h.Th(g.Text("Completed")))), h.TBody(g.Group(g.Map(page.Rollouts, func(rollout RolloutItem) g.Node {
 		return h.Tr(h.Td(rolloutVersionCell(rollout)), h.Td(rolloutStatus(rollout.Status)), h.Td(g.Text(emptyFallback(rollout.Target, "-"))), h.Td(g.Text(rollout.Created)), h.Td(g.Text(emptyFallback(rollout.Completed, "-"))))
 	})))))
 }
@@ -643,7 +643,7 @@ func deploymentsTab(page *FeaturePage) g.Node {
 		return h.Div(h.Class("tab-content-wrapper"), h.H2(g.Text("Deployments")), h.P(g.Text("No deployments target this environment.")))
 	}
 	return h.Div(h.Class("tab-content-wrapper"), h.H2(g.Text("Deployments")),
-		h.Table(h.Class("table sortable"),
+		h.Table(h.Class("table sortable"), g.Attr("data-sort-key", "env-feature-deployments"),
 			h.THead(h.Tr(
 				h.Th(g.Text("Deployment")),
 				h.Th(g.Text("Version")),
@@ -714,7 +714,7 @@ func auditTab(page *FeaturePage) g.Node {
 	}
 	return h.Div(h.Class("tab-content-wrapper"),
 		h.H2(g.Text("Audit Log")),
-		h.Table(h.Class("table sortable"),
+		h.Table(h.Class("table sortable"), g.Attr("data-sort-key", "env-feature-audit"),
 			h.THead(h.Tr(
 				h.Th(g.Text("Time")),
 				h.Th(g.Text("Actor")),

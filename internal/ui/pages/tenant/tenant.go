@@ -92,7 +92,7 @@ func page(breadcrumbs []breadcrumb.Crumb, tenant pageData) g.Node {
 						g.Text(tenant.Tenant.Name),
 					),
 					h.H2(g.Text("Environments")),
-					h.Table(h.Class("table sortable"),
+					h.Table(h.Class("table sortable"), g.Attr("data-sort-key", "tenant-environments"),
 						h.THead(
 							h.Tr(
 								h.Th(g.Text("Name")),

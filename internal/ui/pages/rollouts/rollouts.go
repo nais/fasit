@@ -79,6 +79,7 @@ func rolloutsContent(rollouts []Summary) g.Node {
 
 	return h.Table(
 		h.Class("table sortable"),
+		g.Attr("data-sort-key", "rollouts-list"),
 		h.THead(h.Tr(
 			h.Th(g.Text("Feature")),
 			h.Th(g.Text("Version")),

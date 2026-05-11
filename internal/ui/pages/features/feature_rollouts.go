@@ -53,7 +53,7 @@ func rolloutDetailContent(data *DetailPage) g.Node {
 }
 
 func envTable(envs []RolloutEnvStatus, featureName string) g.Node {
-	return h.Table(h.Class("table sortable"),
+	return h.Table(h.Class("table sortable"), g.Attr("data-sort-key", "feature-rollout-envs"),
 		h.THead(h.Tr(
 			h.Th(g.Text("Tenant")),
 			h.Th(g.Text("Environment")),
@@ -77,7 +77,7 @@ func envTable(envs []RolloutEnvStatus, featureName string) g.Node {
 }
 
 func rolloutsTable(data *DetailPage) g.Node {
-	return h.Table(h.Class("table sortable"), h.THead(h.Tr(h.Th(g.Text("Version")), h.Th(g.Text("Status")), h.Th(g.Text("Created")), h.Th(g.Text("Completed")))), h.TBody(g.Group(g.Map(data.Rollouts, func(rollout RolloutItem) g.Node {
+	return h.Table(h.Class("table sortable"), g.Attr("data-sort-key", "feature-rollouts"), h.THead(h.Tr(h.Th(g.Text("Version")), h.Th(g.Text("Status")), h.Th(g.Text("Created")), h.Th(g.Text("Completed")))), h.TBody(g.Group(g.Map(data.Rollouts, func(rollout RolloutItem) g.Node {
 		return h.Tr(h.Td(rolloutVersionCell(rollout)), h.Td(rolloutStatus(rollout.Status)), h.Td(g.Text(rollout.Created)), h.Td(g.Text(completedDate(rollout.Completed))))
 	}))))
 }

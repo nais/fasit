@@ -132,20 +132,30 @@ document.addEventListener("input", function (e) {
   });
 })();
 
-// Sortable tables
-document.addEventListener("click", function (e) {
-  var th = e.target.closest(".sortable th");
-  if (!th) return;
-  if (th.dataset && th.dataset.noSort !== undefined) return;
+// Sortable tables. Sort state is persisted in localStorage, keyed by
+// location.pathname + table index, identifying the column by header text
+// so it survives column reorderings.
+function sortableTables() {
+  return Array.from(document.querySelectorAll("table.sortable"));
+}
 
+function sortableStorageKey(table) {
+  if (table.dataset && table.dataset.sortKey) {
+    return "sort:" + table.dataset.sortKey;
+  }
+  var tables = sortableTables();
+  var idx = tables.indexOf(table);
+  if (idx < 0) return null;
+  return "sort:" + location.pathname + ":" + idx;
+}
+
+function applySort(th, dir) {
   var table = th.closest("table");
   var tbody = table.querySelector("tbody");
   if (!tbody) return;
-
   var idx = Array.from(th.parentElement.children).indexOf(th);
   var rows = Array.from(tbody.querySelectorAll("tr"));
-
-  var asc = th.dataset.sort !== "asc";
+  var asc = dir === "asc";
   table.querySelectorAll("th").forEach(function (h) { delete h.dataset.sort; });
   th.dataset.sort = asc ? "asc" : "desc";
 
@@ -157,7 +167,6 @@ document.addEventListener("click", function (e) {
     }
     return cell.textContent.trim();
   }
-
   rows.sort(function (a, b) {
     var av = cellSortValue(a);
     var bv = cellSortValue(b);
@@ -168,8 +177,42 @@ document.addEventListener("click", function (e) {
     }
     return asc ? av.localeCompare(bv) : bv.localeCompare(av);
   });
-
   rows.forEach(function (r) { tbody.appendChild(r); });
+}
+
+document.addEventListener("click", function (e) {
+  var th = e.target.closest(".sortable th");
+  if (!th) return;
+  if (th.dataset && th.dataset.noSort !== undefined) return;
+  var dir = th.dataset.sort === "asc" ? "desc" : "asc";
+  applySort(th, dir);
+  var table = th.closest("table");
+  var key = sortableStorageKey(table);
+  if (key) {
+    try {
+      localStorage.setItem(key, JSON.stringify({ col: th.textContent.trim(), dir: dir }));
+    } catch (_) {}
+  }
+});
+
+// Replay saved sort on load.
+document.addEventListener("DOMContentLoaded", function () {
+  sortableTables().forEach(function (table) {
+    var key = sortableStorageKey(table);
+    if (!key) return;
+    var raw;
+    try { raw = localStorage.getItem(key); } catch (_) { return; }
+    if (!raw) return;
+    var state;
+    try { state = JSON.parse(raw); } catch (_) { return; }
+    if (!state || !state.col || !state.dir) return;
+    var ths = Array.from(table.querySelectorAll("thead th"));
+    var th = ths.find(function (h) {
+      return !(h.dataset && h.dataset.noSort !== undefined) && h.textContent.trim() === state.col;
+    });
+    if (!th) return;
+    applySort(th, state.dir);
+  });
 });
 
 // Expand/collapse all <details> matching [data-expand-all="<class>"]

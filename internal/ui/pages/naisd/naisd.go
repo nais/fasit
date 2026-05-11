@@ -80,7 +80,7 @@ func page(rows []agentRow, now time.Time) g.Node {
 			g.Textf("%d agents · healthy < %s · stale < %s · dead beyond that",
 				len(rows), healthyThreshold, staleThreshold),
 		),
-		h.Table(h.Class("table sortable"),
+		h.Table(h.Class("table sortable"), g.Attr("data-sort-key", "naisd-agents"),
 			h.THead(h.Tr(
 				h.Th(g.Text("Tenant")),
 				h.Th(g.Text("Environment")),
