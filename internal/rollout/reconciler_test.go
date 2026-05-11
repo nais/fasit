@@ -25,11 +25,12 @@ import (
 var atTime = time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC)
 
 type reconcileTestEnvironment struct {
-	Environment     model.Environment
-	TenantName      string
-	NaisdReportedAt time.Time
-	Status          []rolloutsql.DeployInstruction
-	FeatureStates   []*model.FeatureState
+	Environment      model.Environment
+	TenantName       string
+	NaisdReportedAt  time.Time
+	Status           []rolloutsql.DeployInstruction
+	FeatureStates    []*model.FeatureState
+	DisabledFeatures []string
 }
 
 var reconcileTests = map[string]struct {
@@ -246,6 +247,7 @@ func TestReconcile(t *testing.T) {
 
 				querier.EXPECT().DeployInstructionsLatestForEnvironment(mock.Anything, te.Environment.ID).Return(te.Status, nil)
 				featuretest.OnFeatureStatesGet(ctx, te.Environment.ID, te.FeatureStates)
+				featuretest.OnDisabledFeaturesByEnvironment(ctx, te.Environment.ID, te.DisabledFeatures)
 
 				querier.EXPECT().RolloutAssignDeployInstruction(mock.Anything, mock.Anything).Return(nil).Maybe()
 

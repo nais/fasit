@@ -272,6 +272,11 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, e *model.TenantEn
 		return fmt.Errorf("features for kind: %w", err)
 	}
 
+	disabledFeatures, err := featurepkg.FeaturesDisabledIn(ctx, e.ID)
+	if err != nil {
+		return fmt.Errorf("feature states: %w", err)
+	}
+
 	for _, f := range features {
 		log = log.WithField("feature", f.Name)
 
@@ -281,6 +286,11 @@ func (r *Reconciler) reconcileEnvironment(ctx context.Context, e *model.TenantEn
 		}
 
 		if states[f.Name] == nil || !states[f.Name].Enabled {
+			continue
+		}
+
+		if _, exists := disabledFeatures[f.Name]; exists {
+			log.Debug("feature is disabled - skipping")
 			continue
 		}
 

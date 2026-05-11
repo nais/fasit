@@ -132,6 +132,17 @@ func OnFeatureStatesGet(ctx context.Context, envID uuid.UUID, expect []*model.Fe
 	GetQuerier(ctx).On("FeatureStatesGet", mock.Anything, envID).Return(ret, nil).Once()
 }
 
+func OnDisabledFeaturesByEnvironment(ctx context.Context, envID uuid.UUID, disabled []string) {
+	ret := make([]featuresql.DisabledFeature, len(disabled))
+	for i, name := range disabled {
+		ret[i] = featuresql.DisabledFeature{
+			EnvironmentID: envID,
+			Feature:       name,
+		}
+	}
+	GetQuerier(ctx).On("DisabledFeaturesByEnvironment", mock.Anything, envID).Return(ret, nil).Once()
+}
+
 func OnHelmValues(ctx context.Context, envID uuid.UUID, featureName string, expect map[string]any) context.Context {
 	helmValuesFunc := func(ctx context.Context, f *model.Feature, envID uuid.UUID) (map[string]any, error) {
 		return expect, nil
