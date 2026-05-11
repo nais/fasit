@@ -49,7 +49,7 @@ func SiteHeader(currentPage Page, userEmail string, gcpProjectID string) g.Node 
 		),
 		g.If(gcpProjectID != "",
 			h.A(
-				h.Href("https://console.cloud.google.com/welcome?project="+gcpProjectID),
+				h.Href("https://console.cloud.google.com/welcome?project="+gcpProjectID+"&authuser="+userEmail),
 				h.Class("item"),
 				g.Attr("target", "_blank"),
 				g.Attr("rel", "noopener noreferrer"),
