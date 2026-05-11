@@ -121,31 +121,6 @@ func (q *Queries) DeployInstructionsGetDeployedFeatures(ctx context.Context, arg
 	return items, nil
 }
 
-const featureEnabled = `-- name: FeatureEnabled :one
-SELECT
-	NOT EXISTS (
-		SELECT
-			environment_id, feature, enabled, created, last_modified, enabled_at
-		FROM
-			feature_states fs
-		WHERE
-			fs.feature = $1
-			AND fs.environment_id = $2
-			AND fs.enabled = FALSE)
-`
-
-type FeatureEnabledParams struct {
-	FeatureName   string
-	EnvironmentID uuid.UUID
-}
-
-func (q *Queries) FeatureEnabled(ctx context.Context, arg FeatureEnabledParams) (bool, error) {
-	row := q.db.QueryRow(ctx, featureEnabled, arg.FeatureName, arg.EnvironmentID)
-	var not_exists bool
-	err := row.Scan(&not_exists)
-	return not_exists, err
-}
-
 const getDeployment = `-- name: GetDeployment :one
 SELECT
 	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description,
@@ -264,15 +239,14 @@ disabled AS (
 		e.id AS environment_id,
 		'DISABLED' AS status,
 		'feature is disabled in this environment' AS message,
-		fs.last_modified AS last_modified,
-		fs.created AS created
+		df.disabled_at AS last_modified,
+		df.disabled_at AS created
 	FROM
 		environments e
-		JOIN feature_states fs ON fs.environment_id = e.id
-		JOIN deployments d ON fs.feature = d.feature_name
+		JOIN disabled_features df ON df.environment_id = e.id
+		JOIN deployments d ON df.feature = d.feature_name
 	WHERE
 		e.labels @> d.target -- @> operator checks if the JSONB on the left contains the JSONB on the right
-		AND fs.enabled = FALSE
 		AND d.id = $1
 ),
 computed AS (
@@ -469,10 +443,15 @@ FROM
 		AND e.labels @> d.target -- @> operator checks if the JSONB on the left contains the JSONB on the right
 	JOIN feature_data fd ON d.feature_name = fd.name
 		AND d.version = fd.version
-	LEFT JOIN feature_states fs ON fs.environment_id = e.id
-		AND fs.feature = fd.name
 WHERE
-	COALESCE(fs.enabled, TRUE) = TRUE
+	NOT EXISTS (
+		SELECT
+			1
+		FROM
+			disabled_features df
+		WHERE
+			df.environment_id = e.id
+			AND df.feature = fd.name)
 ORDER BY
 	d.feature_name,
 	d.target,

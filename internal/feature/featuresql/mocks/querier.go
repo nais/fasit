@@ -946,6 +946,254 @@ func (_c *Querier_ConfigUpdate_Call) RunAndReturn(run func(ctx context.Context, 
 	return _c
 }
 
+// DisabledFeatureDelete provides a mock function for the type Querier
+func (_mock *Querier) DisabledFeatureDelete(ctx context.Context, arg featuresql.DisabledFeatureDeleteParams) error {
+	ret := _mock.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DisabledFeatureDelete")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, featuresql.DisabledFeatureDeleteParams) error); ok {
+		r0 = returnFunc(ctx, arg)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// Querier_DisabledFeatureDelete_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DisabledFeatureDelete'
+type Querier_DisabledFeatureDelete_Call struct {
+	*mock.Call
+}
+
+// DisabledFeatureDelete is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg featuresql.DisabledFeatureDeleteParams
+func (_e *Querier_Expecter) DisabledFeatureDelete(ctx interface{}, arg interface{}) *Querier_DisabledFeatureDelete_Call {
+	return &Querier_DisabledFeatureDelete_Call{Call: _e.mock.On("DisabledFeatureDelete", ctx, arg)}
+}
+
+func (_c *Querier_DisabledFeatureDelete_Call) Run(run func(ctx context.Context, arg featuresql.DisabledFeatureDeleteParams)) *Querier_DisabledFeatureDelete_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 featuresql.DisabledFeatureDeleteParams
+		if args[1] != nil {
+			arg1 = args[1].(featuresql.DisabledFeatureDeleteParams)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_DisabledFeatureDelete_Call) Return(err error) *Querier_DisabledFeatureDelete_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *Querier_DisabledFeatureDelete_Call) RunAndReturn(run func(ctx context.Context, arg featuresql.DisabledFeatureDeleteParams) error) *Querier_DisabledFeatureDelete_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// DisabledFeatureGet provides a mock function for the type Querier
+func (_mock *Querier) DisabledFeatureGet(ctx context.Context, arg featuresql.DisabledFeatureGetParams) (featuresql.DisabledFeature, error) {
+	ret := _mock.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DisabledFeatureGet")
+	}
+
+	var r0 featuresql.DisabledFeature
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, featuresql.DisabledFeatureGetParams) (featuresql.DisabledFeature, error)); ok {
+		return returnFunc(ctx, arg)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, featuresql.DisabledFeatureGetParams) featuresql.DisabledFeature); ok {
+		r0 = returnFunc(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(featuresql.DisabledFeature)
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, featuresql.DisabledFeatureGetParams) error); ok {
+		r1 = returnFunc(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_DisabledFeatureGet_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DisabledFeatureGet'
+type Querier_DisabledFeatureGet_Call struct {
+	*mock.Call
+}
+
+// DisabledFeatureGet is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg featuresql.DisabledFeatureGetParams
+func (_e *Querier_Expecter) DisabledFeatureGet(ctx interface{}, arg interface{}) *Querier_DisabledFeatureGet_Call {
+	return &Querier_DisabledFeatureGet_Call{Call: _e.mock.On("DisabledFeatureGet", ctx, arg)}
+}
+
+func (_c *Querier_DisabledFeatureGet_Call) Run(run func(ctx context.Context, arg featuresql.DisabledFeatureGetParams)) *Querier_DisabledFeatureGet_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 featuresql.DisabledFeatureGetParams
+		if args[1] != nil {
+			arg1 = args[1].(featuresql.DisabledFeatureGetParams)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_DisabledFeatureGet_Call) Return(disabledFeature featuresql.DisabledFeature, err error) *Querier_DisabledFeatureGet_Call {
+	_c.Call.Return(disabledFeature, err)
+	return _c
+}
+
+func (_c *Querier_DisabledFeatureGet_Call) RunAndReturn(run func(ctx context.Context, arg featuresql.DisabledFeatureGetParams) (featuresql.DisabledFeature, error)) *Querier_DisabledFeatureGet_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// DisabledFeatureSet provides a mock function for the type Querier
+func (_mock *Querier) DisabledFeatureSet(ctx context.Context, arg featuresql.DisabledFeatureSetParams) error {
+	ret := _mock.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DisabledFeatureSet")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, featuresql.DisabledFeatureSetParams) error); ok {
+		r0 = returnFunc(ctx, arg)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// Querier_DisabledFeatureSet_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DisabledFeatureSet'
+type Querier_DisabledFeatureSet_Call struct {
+	*mock.Call
+}
+
+// DisabledFeatureSet is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg featuresql.DisabledFeatureSetParams
+func (_e *Querier_Expecter) DisabledFeatureSet(ctx interface{}, arg interface{}) *Querier_DisabledFeatureSet_Call {
+	return &Querier_DisabledFeatureSet_Call{Call: _e.mock.On("DisabledFeatureSet", ctx, arg)}
+}
+
+func (_c *Querier_DisabledFeatureSet_Call) Run(run func(ctx context.Context, arg featuresql.DisabledFeatureSetParams)) *Querier_DisabledFeatureSet_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 featuresql.DisabledFeatureSetParams
+		if args[1] != nil {
+			arg1 = args[1].(featuresql.DisabledFeatureSetParams)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_DisabledFeatureSet_Call) Return(err error) *Querier_DisabledFeatureSet_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *Querier_DisabledFeatureSet_Call) RunAndReturn(run func(ctx context.Context, arg featuresql.DisabledFeatureSetParams) error) *Querier_DisabledFeatureSet_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// DisabledFeaturesByEnvironment provides a mock function for the type Querier
+func (_mock *Querier) DisabledFeaturesByEnvironment(ctx context.Context, environmentID uuid.UUID) ([]featuresql.DisabledFeature, error) {
+	ret := _mock.Called(ctx, environmentID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DisabledFeaturesByEnvironment")
+	}
+
+	var r0 []featuresql.DisabledFeature
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]featuresql.DisabledFeature, error)); ok {
+		return returnFunc(ctx, environmentID)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) []featuresql.DisabledFeature); ok {
+		r0 = returnFunc(ctx, environmentID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]featuresql.DisabledFeature)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = returnFunc(ctx, environmentID)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_DisabledFeaturesByEnvironment_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DisabledFeaturesByEnvironment'
+type Querier_DisabledFeaturesByEnvironment_Call struct {
+	*mock.Call
+}
+
+// DisabledFeaturesByEnvironment is a helper method to define mock.On call
+//   - ctx context.Context
+//   - environmentID uuid.UUID
+func (_e *Querier_Expecter) DisabledFeaturesByEnvironment(ctx interface{}, environmentID interface{}) *Querier_DisabledFeaturesByEnvironment_Call {
+	return &Querier_DisabledFeaturesByEnvironment_Call{Call: _e.mock.On("DisabledFeaturesByEnvironment", ctx, environmentID)}
+}
+
+func (_c *Querier_DisabledFeaturesByEnvironment_Call) Run(run func(ctx context.Context, environmentID uuid.UUID)) *Querier_DisabledFeaturesByEnvironment_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_DisabledFeaturesByEnvironment_Call) Return(disabledFeatures []featuresql.DisabledFeature, err error) *Querier_DisabledFeaturesByEnvironment_Call {
+	_c.Call.Return(disabledFeatures, err)
+	return _c
+}
+
+func (_c *Querier_DisabledFeaturesByEnvironment_Call) RunAndReturn(run func(ctx context.Context, environmentID uuid.UUID) ([]featuresql.DisabledFeature, error)) *Querier_DisabledFeaturesByEnvironment_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // EnvConfig provides a mock function for the type Querier
 func (_mock *Querier) EnvConfig(ctx context.Context, arg featuresql.EnvConfigParams) ([]featuresql.EnvConfigRow, error) {
 	ret := _mock.Called(ctx, arg)

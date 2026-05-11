@@ -23,6 +23,10 @@ type Querier interface {
 	ConfigRenameEnv(ctx context.Context, arg ConfigRenameEnvParams) error
 	ConfigRenameGlobal(ctx context.Context, arg ConfigRenameGlobalParams) error
 	ConfigUpdate(ctx context.Context, arg ConfigUpdateParams) (ConfigurationsGlobal, error)
+	DisabledFeatureDelete(ctx context.Context, arg DisabledFeatureDeleteParams) error
+	DisabledFeatureGet(ctx context.Context, arg DisabledFeatureGetParams) (DisabledFeature, error)
+	DisabledFeatureSet(ctx context.Context, arg DisabledFeatureSetParams) error
+	DisabledFeaturesByEnvironment(ctx context.Context, environmentID uuid.UUID) ([]DisabledFeature, error)
 	EnvConfig(ctx context.Context, arg EnvConfigParams) ([]EnvConfigRow, error)
 	FeatureByName(ctx context.Context, name string) (FeatureByNameRow, error)
 	FeatureDataCreate(ctx context.Context, arg FeatureDataCreateParams) error
