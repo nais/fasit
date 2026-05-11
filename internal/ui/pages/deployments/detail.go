@@ -126,6 +126,10 @@ func detailPage(d *deployment.Deployment, statuses []deploymentStatusRow, deploy
 		meta = append(meta, metaRow("Description", g.Text(*d.Description)))
 	}
 
+	if ref := ghRefNode(d.GHRef); ref != nil {
+		meta = append(meta, metaRow("GitHub ref", ref))
+	}
+
 	meta = append(meta, metaRow("Actions", h.Div(
 		h.Button(h.Type("button"), h.Class("btn-small"), g.Attr("popovertarget", "delete-deployment"), g.Text("Delete")),
 		h.Div(g.Attr("popover", ""), h.ID("delete-deployment"),

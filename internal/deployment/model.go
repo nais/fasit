@@ -20,6 +20,7 @@ type Deployment struct {
 	ID          uuid.UUID      `json:"id"`
 	Feature     *model.Feature `json:"feature"`
 	Description *string        `json:"description"`
+	GHRef       []byte         `json:"ghRef,omitempty"`
 	Created     time.Time      `json:"created"`
 
 	TargetLabels environment.Labels `json:"-"`
@@ -183,6 +184,7 @@ func deploymentFromSQL(d deploymentsql.Deployment, fd deploymentsql.FeatureDatum
 		ID:           d.ID,
 		Feature:      feature,
 		Description:  d.Description,
+		GHRef:        d.GhRef,
 		Created:      d.Created.Time,
 		TargetLabels: environment.Labels(d.Target),
 	}, nil

@@ -1,6 +1,8 @@
 package deployments
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strings"
@@ -63,4 +65,15 @@ func timeWithTitle(t time.Time) g.Node {
 		return g.Text("")
 	}
 	return h.Span(g.Attr("title", view.FormatTime(t)), g.Text(view.RelativeTime(t)))
+}
+
+func ghRefNode(raw []byte) g.Node {
+	if len(raw) == 0 {
+		return nil
+	}
+	var pretty bytes.Buffer
+	if err := json.Indent(&pretty, raw, "", "  "); err != nil {
+		return h.Pre(h.Class("code-block"), g.Text(string(raw)))
+	}
+	return h.Pre(h.Class("code-block"), g.Text(pretty.String()))
 }

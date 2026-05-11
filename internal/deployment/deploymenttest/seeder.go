@@ -2,6 +2,8 @@ package deploymenttest
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 
@@ -73,12 +75,8 @@ func (s *Seeder) Seed(ctx context.Context) ([]uuid.UUID, error) {
 			Version:     d.Version,
 			Description: "Setup local environment deployment",
 			Global:      true,
-			Ref: &model.GHRef{
-				Owner: "nais",
-				Repo:  "fasit",
-				Ref:   "refs/heads/main",
-			},
-			Target: d.Target,
+			Ref:         fakeGHRef(d.FeatureName, d.Version),
+			Target:      d.Target,
 		})
 		if err != nil {
 			return nil, err
@@ -124,6 +122,17 @@ func (s *Seeder) ChartDownloader() deployment.ChartDownloaderFunc {
 			}
 		}
 		return nil, fmt.Errorf("chartUrl %s with version %s not found in deployments", chartURL, version)
+	}
+}
+
+// fakeGHRef produces a deterministic, realistic-looking commit SHA for seed
+// deployments so the UI can render a sensible GitHub link in local dev.
+func fakeGHRef(name, version string) *model.GHRef {
+	sum := sha256.Sum256([]byte(name + "@" + version))
+	return &model.GHRef{
+		Owner: "nais",
+		Repo:  name,
+		Ref:   hex.EncodeToString(sum[:20]),
 	}
 }
 
