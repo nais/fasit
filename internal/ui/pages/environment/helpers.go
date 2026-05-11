@@ -115,27 +115,40 @@ func featureNavs(ctx context.Context, repo database.Repo, env *model.Environment
 		return nil, nil, err
 	}
 
-	seen := make(map[string]bool, len(deploymentFeatures))
-	var states []*model.FeatureState
-	for _, f := range deploymentFeatures {
-		seen[f.FeatureName] = true
-		states = append(states, f)
+	disabled, err := featurepkg.FeaturesDisabledIn(ctx, env.ID)
+	if err != nil {
+		return nil, nil, err
 	}
 
+	seen := make(map[string]bool, len(deploymentFeatures))
+	var names []string
+	for _, f := range deploymentFeatures {
+		if seen[f.FeatureName] {
+			continue
+		}
+		seen[f.FeatureName] = true
+		names = append(names, f.FeatureName)
+	}
+
+	// Legacy feature_states rows are included so features toggled via the old
+	// GraphQL mutations (which still write there) appear in nav even if they
+	// have no deployment. Will become a no-op once feature_states is retired.
 	featureStates, err := featurepkg.FeatureStatesGet(ctx, env.ID)
 	if err != nil {
 		return nil, nil, err
 	}
 	for _, state := range featureStates {
-		if !seen[state.FeatureName] {
-			states = append(states, state)
+		if seen[state.FeatureName] {
+			continue
 		}
+		seen[state.FeatureName] = true
+		names = append(names, state.FeatureName)
 	}
 
-	allFeatures := make([]view.FeatureNav, 0, len(states))
-	enabledFeatures := make([]view.FeatureNav, 0, len(states))
-	for _, state := range states {
-		nav := view.FeatureNav{Name: state.FeatureName, Enabled: state.Enabled}
+	allFeatures := make([]view.FeatureNav, 0, len(names))
+	enabledFeatures := make([]view.FeatureNav, 0, len(names))
+	for _, name := range names {
+		nav := view.FeatureNav{Name: name, Enabled: !disabled[name]}
 		allFeatures = append(allFeatures, nav)
 		enabledFeatures = append(enabledFeatures, nav)
 	}
@@ -264,7 +277,7 @@ func loadFeaturePageData(ctx context.Context, repo database.Repo, tenantSlug, en
 		return nil, err
 	}
 
-	state, err := featurepkg.FeatureStateGet(ctx, env.ID, featureName)
+	disabledAt, err := featurepkg.FeatureDisabledAt(ctx, env.ID, featureName)
 	if err != nil {
 		return nil, err
 	}
@@ -281,7 +294,7 @@ func loadFeaturePageData(ctx context.Context, repo database.Repo, tenantSlug, en
 		Tenant:          tenant,
 		TenantSlug:      tenantSlug,
 		Environment:     &Environment{Environment: env, Metadata: getEnvironmentMetadata(ctx, repo, env)},
-		Feature:         &FeatureDetail{Feature: feat, Enabled: state.Enabled},
+		Feature:         &FeatureDetail{Feature: feat, Enabled: disabledAt == nil},
 		AllFeatures:     allFeatures,
 		EnabledFeatures: enabledFeatures,
 		ActiveTab:       activeTab,

@@ -191,11 +191,9 @@ func ToggleFeatureStateHandler(repo database.Repo) http.HandlerFunc {
 
 		err = dbtx.WithTx(r.Context(), func(ctx context.Context) error {
 			if enabled {
-				_, err := featurepkg.FeatureStatesEnable(ctx, env.ID, feature)
-				return err
+				return featurepkg.FeatureEnable(ctx, env.ID, feature.Name)
 			}
-			_, err := featurepkg.FeatureStatesDisable(ctx, env.ID, feature, reason)
-			return err
+			return featurepkg.FeatureDisable(ctx, env.ID, feature.Name, reason)
 		})
 		if err != nil {
 			http.Error(w, "Failed to toggle feature state: "+err.Error(), http.StatusInternalServerError)
@@ -227,12 +225,12 @@ func RedeployHandler(repo database.Repo) http.HandlerFunc {
 			http.Error(w, "Failed to get feature: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-		state, err := featurepkg.FeatureStateGet(r.Context(), env.ID, feature.Name)
+		disabledAt, err := featurepkg.FeatureDisabledAt(r.Context(), env.ID, feature.Name)
 		if err != nil {
 			http.Error(w, "Failed to get feature state: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-		if !state.Enabled {
+		if disabledAt != nil {
 			http.Error(w, "Cannot redeploy a disabled feature", http.StatusBadRequest)
 			return
 		}

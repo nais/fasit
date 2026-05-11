@@ -314,7 +314,7 @@ func featureDeploymentEnvStatuses(ctx context.Context, repo database.Repo, featu
 				continue
 			}
 
-			state, err := featurepkg.FeatureStateGet(ctx, env.env.ID, feature.Name)
+			disabledAt, err := featurepkg.FeatureDisabledAt(ctx, env.env.ID, feature.Name)
 			if err != nil {
 				continue
 			}
@@ -323,11 +323,13 @@ func featureDeploymentEnvStatuses(ctx context.Context, repo database.Repo, featu
 				Name:              env.env.Name,
 				TenantName:        env.tenantName,
 				TenantSlug:        env.tenantName,
-				Enabled:           state.Enabled,
-				LastModified:      state.LastModified,
+				Enabled:           disabledAt == nil,
 				DeploymentID:      dep.ID.String(),
 				DeploymentVersion: dep.Feature.Version,
 				TargetLabels:      dep.TargetLabels,
+			}
+			if disabledAt != nil {
+				es.LastModified = *disabledAt
 			}
 
 			if di, err := repo.DeployInstructionsLatestDeployedForFeature(ctx, env.env.ID, feature.Name); err == nil && di != nil {
