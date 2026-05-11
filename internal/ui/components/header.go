@@ -50,9 +50,9 @@ func SiteHeader(currentPage Page, userEmail string) g.Node {
 		h.Button(
 			h.Type("button"),
 			h.Class("nav-btn"),
-			g.Attr("title", "Trigger a full reconcile of all deployments"),
+			g.Attr("title", "Trigger a full reconcile of all features"),
 			g.Attr("popovertarget", "reconcile-confirm"),
-			g.Text("Reconcile"),
+			g.Text("Reconcile all features"),
 		),
 		h.Div(g.Attr("popover", ""), h.ID("reconcile-confirm"),
 			h.H3(g.Text("Confirm reconcile")),
