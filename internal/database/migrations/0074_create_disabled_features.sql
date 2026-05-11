@@ -5,3 +5,4 @@ CREATE TABLE disabled_features(
 	"disabled_at" TIMESTAMPTZ NOT NULL DEFAULT NOW(),
 	PRIMARY KEY (environment_id, feature)
 );
+

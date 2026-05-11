@@ -11,4 +11,4 @@ buf = "1.59.0"
 "github:CppCXY/EmmyLuaCodeStyle" = "1.5.6"
 jq = "1.8.1"
 yq = "4.50.1"
-"http:pgformatter"= { version = "5.9", "].tag_name" = "", url = "https://github.com/darold/pgFormatter/archive/refs/tags/v{version}.tar.gz", strip_components = "1", version_list_url = "https://api.github.com/repos/darold/pgFormatter/releases", version_json_path = ".[].tag_name" }
+"http:pgformatter" = { version = "5.9", "].tag_name" = "", url = "https://github.com/darold/pgFormatter/archive/refs/tags/v{version}.tar.gz", strip_components = "1", version_list_url = "https://api.github.com/repos/darold/pgFormatter/releases", version_json_path = ".[].tag_name" }

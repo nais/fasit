@@ -5,7 +5,9 @@ INSERT INTO disabled_features(
 VALUES (
 	@environment_id,
 	@feature)
-ON CONFLICT (environment_id, feature)
+ON CONFLICT (
+	environment_id,
+	feature)
 	DO NOTHING;
 
 -- name: DisabledFeatureDelete :exec
@@ -31,3 +33,4 @@ WHERE
 	environment_id = @environment_id
 ORDER BY
 	feature;
+
