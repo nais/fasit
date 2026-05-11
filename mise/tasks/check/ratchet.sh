@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 #MISE description="Verify all github actions are pinned"
+#MISE sources=[".github/workflows/*.yaml", ".github/workflows/*.yml", ".github/actions/**/*", "mise/config.toml"]
 set -euo pipefail
 
 GITHUB_TOKEN="${GITHUB_TOKEN:-${MISE_GITHUB_TOKEN:-}}"
