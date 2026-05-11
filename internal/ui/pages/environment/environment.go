@@ -60,8 +60,9 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 		}
 
 		renderPage(w, r, layout.Props{
-			Title:       tenant.Name + " / " + env.Name,
-			CurrentPage: components.PageTenants,
+			Title:        tenant.Name + " / " + env.Name,
+			CurrentPage:  components.PageTenants,
+			GCPProjectID: gcpProjectIDFromMetadata(environment.Metadata),
 			Content: page([]breadcrumb.Crumb{
 				breadcrumb.TenantWithSwitcher(tenant.Name, toTenantNavs(allTenants)),
 				breadcrumb.EnvironmentWithSwitcher(tenant.Name, env.Name, toEnvironmentNavs(tenantEnvs)),

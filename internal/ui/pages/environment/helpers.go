@@ -237,6 +237,15 @@ func rawValueForInput(value json.RawMessage) string {
 	}
 }
 
+func gcpProjectIDFromMetadata(metadata []MetadataItem) string {
+	for _, m := range metadata {
+		if m.Key == "project_id" && !m.IsSecret {
+			return m.Value
+		}
+	}
+	return ""
+}
+
 func countEnabled(features []view.FeatureNav) int {
 	count := 0
 	for _, feature := range features {
