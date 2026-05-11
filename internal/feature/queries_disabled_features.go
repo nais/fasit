@@ -13,10 +13,6 @@ import (
 
 // FeatureDisable marks a (feature, environment) combination as disabled in the
 // authoritative disabled_features table and writes an audit entry.
-//
-// This is the new-GUI write path. Old GraphQL mutations still write to
-// feature_states; rollouts still read feature_states. See sesjon
-// fasit-explicit-feature-disabled for context.
 func FeatureDisable(ctx context.Context, envID uuid.UUID, featureName, reason string) error {
 	if err := querier(ctx).DisabledFeatureSet(ctx, featuresql.DisabledFeatureSetParams{
 		EnvironmentID: envID,
