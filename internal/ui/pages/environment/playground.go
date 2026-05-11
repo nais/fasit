@@ -38,9 +38,10 @@ func PlaygroundTabHandler(renderPage RenderPage, repo database.Repo) http.Handle
 		}
 
 		renderPage(w, r, layout.Props{
-			Title:       data.Tenant.Name + " / " + data.Environment.Name + " / " + data.Feature.Name,
-			CurrentPage: components.PageTenants,
-			Content:     featurePageContent(data),
+			Title:        data.Tenant.Name + " / " + data.Environment.Name + " / " + data.Feature.Name,
+			CurrentPage:  components.PageTenants,
+			GCPProjectID: gcpProjectIDFromMetadata(data.Environment.Metadata),
+			Content:      featurePageContent(data),
 		})
 	}
 }
@@ -63,9 +64,10 @@ func PlaygroundSubmitHandler(renderPage RenderPage, repo database.Repo) http.Han
 		data.PlaygroundResult, _ = runPlayground(r.Context(), repo, chi.URLParam(r, "tenant"), chi.URLParam(r, "env"), chi.URLParam(r, "feature"), code, r.FormValue("includeUnset") == "on")
 
 		renderPage(w, r, layout.Props{
-			Title:       data.Tenant.Name + " / " + data.Environment.Name + " / " + data.Feature.Name,
-			CurrentPage: components.PageTenants,
-			Content:     featurePageContent(data),
+			Title:        data.Tenant.Name + " / " + data.Environment.Name + " / " + data.Feature.Name,
+			CurrentPage:  components.PageTenants,
+			GCPProjectID: gcpProjectIDFromMetadata(data.Environment.Metadata),
+			Content:      featurePageContent(data),
 		})
 	}
 }

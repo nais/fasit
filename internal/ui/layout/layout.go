@@ -13,6 +13,7 @@ type Props struct {
 	Content      g.Node
 	UserEmail    string
 	AssetVersion string
+	GCPProjectID string
 }
 
 func Page(props Props) g.Node {
@@ -39,7 +40,7 @@ func Page(props Props) g.Node {
 			h.Script(h.Src("/site.js"+v), h.Defer()),
 		},
 		Body: []g.Node{
-			components.SiteHeader(props.CurrentPage, props.UserEmail),
+			components.SiteHeader(props.CurrentPage, props.UserEmail, props.GCPProjectID),
 			props.Content,
 		},
 	})

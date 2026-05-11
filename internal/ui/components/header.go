@@ -16,7 +16,7 @@ const (
 	PageNaisd       Page = "naisd"
 )
 
-func SiteHeader(currentPage Page, userEmail string) g.Node {
+func SiteHeader(currentPage Page, userEmail string, gcpProjectID string) g.Node {
 	navItem := func(href, label string, page Page) g.Node {
 		className := "item"
 		if currentPage == page {
@@ -45,6 +45,16 @@ func SiteHeader(currentPage Page, userEmail string) g.Node {
 				g.Attr("target", "_blank"),
 				g.Attr("rel", "noopener noreferrer"),
 				g.Text("Cluster management"),
+			),
+		),
+		g.If(gcpProjectID != "",
+			h.A(
+				h.Href("https://console.cloud.google.com/welcome?project="+gcpProjectID),
+				h.Class("item"),
+				g.Attr("target", "_blank"),
+				g.Attr("rel", "noopener noreferrer"),
+				g.Attr("title", "Open GCP project "+gcpProjectID),
+				g.Text("Open GCP project"),
 			),
 		),
 		h.Button(
