@@ -179,11 +179,14 @@ func getEnvironmentMetadata(ctx context.Context, repo database.Repo, env *model.
 	values, err := repo.EnvironmentValuesForEnvironment(ctx, env.ID, true)
 	if err == nil {
 		for _, val := range values {
+			uses := val.KnownUses
+			item := MetadataItem{Key: val.Key, KnownUses: &uses}
 			if val.Secret {
-				metadata = append(metadata, MetadataItem{Key: val.Key, Value: "", IsSecret: true})
+				item.IsSecret = true
 			} else {
-				addMetadata(&metadata, val.Key, rawValueToString(val.Value))
+				item.Value = rawValueToString(val.Value)
 			}
+			metadata = append(metadata, item)
 		}
 	}
 
