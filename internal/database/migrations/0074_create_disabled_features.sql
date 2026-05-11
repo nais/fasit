@@ -6,10 +6,18 @@ CREATE TABLE disabled_features(
 	PRIMARY KEY (environment_id, feature)
 );
 
-INSERT INTO disabled_features (environment_id, feature, disabled_at)
-SELECT environment_id, feature, last_modified
-FROM feature_states
-WHERE enabled = FALSE;
+INSERT INTO disabled_features(
+	environment_id,
+	feature,
+	disabled_at)
+SELECT
+	environment_id,
+	feature,
+	last_modified
+FROM
+	feature_states
+WHERE
+	enabled = FALSE;
 
 -- +goose Down
 DROP TABLE disabled_features;
