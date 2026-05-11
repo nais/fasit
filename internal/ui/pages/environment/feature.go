@@ -396,10 +396,10 @@ func overviewTab(page *FeaturePage) g.Node {
 				dialogBody,
 			),
 		),
-		h.Table(h.Class("table sortable"), h.THead(h.Tr(h.Th(g.Text("Configuration Key")), h.Th(g.Text("Value")))), h.TBody(g.Group(g.Map(page.Feature.ConfigItems, func(item FeatureConfigItem) g.Node {
+		h.Table(h.Class("table sortable"), h.THead(h.Tr(h.Th(g.Text("Configuration Key")), h.Th(g.Text("Value")), h.Th(h.Class("width-sm"), h.Title("Number of computed templates referencing this key"), g.Text("Refs")))), h.TBody(g.Group(g.Map(page.Feature.ConfigItems, func(item FeatureConfigItem) g.Node {
 			valDef := page.Feature.FeatureYAML.Values[item.Key]
 			warn := valDef.Required && item.Source == string(model.ConfigSourceHelm) && item.Value == ""
-			return h.Tr(g.If(warn, h.Class("config-warning")), h.Td(configKeyCell(item)), h.Td(configValueCell(page, item)))
+			return h.Tr(g.If(warn, h.Class("config-warning")), h.Td(configKeyCell(item)), h.Td(configValueCell(page, item)), h.Td(mappedCountCell(item)))
 		})))),
 	)
 }
@@ -700,6 +700,13 @@ func valueSpan(item FeatureConfigItem) g.Node {
 		return h.Span(h.Class("value-override"), h.Title("source: env override"), g.Text(item.Value))
 	}
 	return h.Span(h.Class("value-default"), h.Title("source: default"), g.Text(item.Value))
+}
+
+func mappedCountCell(item FeatureConfigItem) g.Node {
+	if item.MappedCount == 0 {
+		return h.Span(h.Class("text-muted"), g.Text("0"))
+	}
+	return g.Textf("%d", item.MappedCount)
 }
 
 func deleteOverrideButton(page *FeaturePage, item FeatureConfigItem) g.Node {

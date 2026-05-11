@@ -31,6 +31,7 @@ type FeatureConfigItem struct {
 	IsSecret    bool
 	IsComputed  bool
 	Template    string
+	MappedCount int
 }
 
 type FeaturePage struct {
@@ -366,10 +367,11 @@ func loadFeatureConfigItems(ctx context.Context, feat *model.Feature, envID uuid
 	hasComputed := false
 	for _, cfg := range configs {
 		item := FeatureConfigItem{
-			ID:     cfg.ID.String(),
-			Key:    cfg.Key,
-			Source: string(cfg.Source),
-			Value:  rawValueForInput(cfg.Content),
+			ID:          cfg.ID.String(),
+			Key:         cfg.Key,
+			Source:      string(cfg.Source),
+			Value:       rawValueForInput(cfg.Content),
+			MappedCount: countTemplateRefs(feat.Values, cfg.Key),
 		}
 		if cfg.Value != nil {
 			item.DisplayName = cfg.Value.DisplayName
@@ -402,6 +404,20 @@ func loadFeatureConfigItems(ctx context.Context, feat *model.Feature, envID uuid
 	}
 
 	return items, nil
+}
+
+func countTemplateRefs(values model.Values, key string) int {
+	needle := ".Configs." + key
+	count := 0
+	for k, v := range values {
+		if k == key || v.Computed == nil || v.Computed.Template == "" {
+			continue
+		}
+		if strings.Contains(v.Computed.Template, needle) {
+			count++
+		}
+	}
+	return count
 }
 
 func lookupHelmValue(m map[string]any, key string) (string, bool) {
