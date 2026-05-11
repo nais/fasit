@@ -208,6 +208,7 @@ func main() {
 	intCfg := &model.Config{Type: model.ConfigTypeInt}
 	boolCfg := &model.Config{Type: model.ConfigTypeBool}
 	secret := &model.Config{Type: model.ConfigTypeString, Secret: true}
+	strArr := &model.Config{Type: model.ConfigTypeStringArray}
 
 	featureValues := map[string]model.Values{
 		"naiserator": {
@@ -216,6 +217,10 @@ func main() {
 			"apiKey":        {DisplayName: "API Key", Description: "External API key", Config: secret},
 			"clusterDomain": {DisplayName: "Cluster Domain", Description: "Derived from environment name", Computed: &model.Computed{Template: `"{{ .Env.name }}.{{ .Tenant.Name }}.cloud.nais.io"`}},
 			"projectRef":    {DisplayName: "GCP Project Ref", Computed: &model.Computed{Template: `"projects/{{ .Env.project_id }}"`}},
+			"imageTag":      {DisplayName: "Image Tag", Description: "Override image tag; falls back to a computed default", Config: str, Computed: &model.Computed{Template: `"{{ .Env.name }}-latest"`}},
+			"featureFlags":  {DisplayName: "Feature Flags", Description: "JSON blob of toggles", Config: str},
+			"extraEnv":      {DisplayName: "Extra Env", Description: "Additional KEY=VALUE pairs", Config: strArr},
+			"motd":          {DisplayName: "Message of the Day", Description: "Multi-line banner shown in the UI", Config: str},
 		},
 		"console": {
 			"adminEmail":    {DisplayName: "Admin Email", Config: str},
@@ -256,8 +261,11 @@ func main() {
 
 	featureDefaults := map[string]map[string]any{
 		"naiserator": {
-			"replicas": 2,
-			"logLevel": "info",
+			"replicas":     2,
+			"logLevel":     "info",
+			"featureFlags": `{"experimentalA":true,"rolloutPercent":25,"regions":["eu","us"]}`,
+			"extraEnv":     []string{"FOO=bar", "BAZ=qux"},
+			"motd":         "line one\nline two\nline three",
 		},
 		"console": {
 			"adminEmail": "admin@example.com",
@@ -331,6 +339,28 @@ func main() {
 	// Disable one feature to get a DISABLED status row in the mix.
 	if _, err := feature.FeatureStatesCreateOrUpdate(ctx, envID("dev-nais", "dev"), &model.Feature{Name: "dependencytrack"}, false); err != nil {
 		log.WithError(err).Errorf("disable dependencytrack in dev-nais/dev")
+	}
+
+	// Sprinkle a couple of env-level config overrides on naiserator so the Config
+	// tab shows a mix of overridden / default rows (exercising the override-first sort).
+	overrides := []struct {
+		tenant, env, key string
+		value            string
+	}{
+		{"dev-nais", "dev", "replicas", `5`},
+		{"dev-nais", "dev", "featureFlags", `"{\"experimentalA\":false,\"rolloutPercent\":100,\"regions\":[\"eu\"]}"`},
+		{"test-partner", "prod", "logLevel", `"debug"`},
+	}
+	for _, o := range overrides {
+		id := envID(o.tenant, o.env)
+		if _, err := feature.ConfigCreate(ctx, model.NewConfiguration{
+			EnvironmentID: &id,
+			Feature:       "naiserator",
+			Key:           o.key,
+			Value:         json.RawMessage(o.value),
+		}); err != nil {
+			log.WithError(err).Errorf("seed override naiserator/%s in %s/%s", o.key, o.tenant, o.env)
+		}
 	}
 
 	type rolloutSeed struct {

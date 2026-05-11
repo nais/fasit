@@ -21,17 +21,18 @@ import (
 )
 
 type FeatureConfigItem struct {
-	ID          string
-	Key         string
-	DisplayName string
-	Description string
-	Value       string
-	Source      string
-	Type        string
-	IsSecret    bool
-	IsComputed  bool
-	Template    string
-	MappedCount int
+	ID             string
+	Key            string
+	DisplayName    string
+	Description    string
+	Value          string
+	Source         string
+	Type           string
+	IsSecret       bool
+	IsComputed     bool
+	IsConfigurable bool
+	Template       string
+	MappedCount    int
 }
 
 type FeaturePage struct {
@@ -379,6 +380,7 @@ func loadFeatureConfigItems(ctx context.Context, feat *model.Feature, envID uuid
 			if cfg.Value.Config != nil {
 				item.Type = strings.ToUpper(cfg.Value.Config.Type.String())
 				item.IsSecret = cfg.Value.Config.Secret
+				item.IsConfigurable = true
 			}
 			if cfg.Value.Computed != nil {
 				item.IsComputed = true
@@ -394,6 +396,9 @@ func loadFeatureConfigItems(ctx context.Context, feat *model.Feature, envID uuid
 		if err == nil {
 			for i, item := range items {
 				if !item.IsComputed {
+					continue
+				}
+				if item.Source == string(model.ConfigSourceEnv) {
 					continue
 				}
 				if v, ok := lookupHelmValue(rendered, item.Key); ok {
@@ -592,7 +597,7 @@ func loadFeatureLog(ctx context.Context, repo database.Repo, envID uuid.UUID, fe
 	return ret
 }
 
-func parseConfigValue(value, configType string) (any, error) {
+func parseConfigValue(value, configType, mode string) (any, error) {
 	switch configType {
 	case "INT":
 		var intVal int
@@ -610,6 +615,13 @@ func parseConfigValue(value, configType string) (any, error) {
 		}
 		return nil, fmt.Errorf("invalid bool")
 	case "STRING_ARRAY":
+		if mode == "json" {
+			var arr []string
+			if err := json.Unmarshal([]byte(value), &arr); err != nil {
+				return nil, fmt.Errorf("invalid JSON array: %w", err)
+			}
+			return arr, nil
+		}
 		var arr []string
 		if err := json.Unmarshal([]byte(value), &arr); err == nil {
 			return arr, nil
@@ -620,6 +632,17 @@ func parseConfigValue(value, configType string) (any, error) {
 		}
 		return parts, nil
 	default:
+		if mode == "json" {
+			var v any
+			if err := json.Unmarshal([]byte(value), &v); err != nil {
+				return nil, fmt.Errorf("invalid JSON: %w", err)
+			}
+			b, err := json.Marshal(v)
+			if err != nil {
+				return nil, err
+			}
+			return string(b), nil
+		}
 		return value, nil
 	}
 }
