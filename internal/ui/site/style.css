@@ -408,6 +408,30 @@ nav .nav-btn:hover {
   margin-top: 1rem;
 }
 
+.code-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.code-block-header h2 {
+  margin: 0;
+}
+.copy-btn {
+  background: var(--btn-bg);
+  border: 1px solid var(--btn-border);
+  color: var(--btn-color);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 0.25rem;
+  transition: background 0.15s, border-color 0.15s;
+}
+.copy-btn:hover {
+  background: var(--btn-hover-bg);
+  border-color: var(--btn-hover-border);
+}
+
 .code-block {
   background: var(--bg-inset);
   color: var(--text-primary);

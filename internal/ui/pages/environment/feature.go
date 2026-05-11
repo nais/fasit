@@ -443,7 +443,13 @@ func helmTab(page *FeaturePage) g.Node {
 	if page.HelmValues == "" {
 		return h.Div(h.Class("tab-content-wrapper"), h.H2(g.Text("Computed Helm Values")), h.P(g.Text("No helm values available.")))
 	}
-	return h.Div(h.Class("tab-content-wrapper"), h.H2(g.Text("Computed Helm Values")), h.Pre(h.Class("code-block"), g.Text(prettyJSON(page.HelmValues))))
+	return h.Div(h.Class("tab-content-wrapper"),
+		h.Div(h.Class("code-block-header"),
+			h.H2(g.Text("Computed Helm Values")),
+			h.Button(h.Type("button"), h.Class("copy-btn"), g.Attr("data-copy-target", "helm-values"), g.Text("Copy")),
+		),
+		h.Pre(h.Class("code-block"), h.ID("helm-values"), g.Text(prettyJSON(page.HelmValues))),
+	)
 }
 
 func playgroundTab(page *FeaturePage) g.Node {

@@ -1,3 +1,29 @@
+// Copy contents of a target element to clipboard.
+document.addEventListener("click", function (e) {
+  var btn = e.target.closest("[data-copy-target]");
+  if (!btn) return;
+  var id = btn.getAttribute("data-copy-target");
+  var target = document.getElementById(id);
+  if (!target) return;
+  var text = target.innerText;
+  var done = function () {
+    var prev = btn.textContent;
+    btn.textContent = "Copied!";
+    btn.disabled = true;
+    setTimeout(function () { btn.textContent = prev; btn.disabled = false; }, 1200);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done).catch(function () {});
+  } else {
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); done(); } catch (_) {}
+    document.body.removeChild(ta);
+  }
+});
+
 // Theme toggle
 function toggleTheme() {
   var t = document.documentElement.dataset.theme === "light" ? "dark" : "light";
