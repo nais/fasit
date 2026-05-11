@@ -146,7 +146,10 @@ func featureNavs(ctx context.Context, repo database.Repo, env *model.Environment
 	allFeatures := make([]view.FeatureNav, 0, len(names))
 	enabledFeatures := make([]view.FeatureNav, 0, len(names))
 	for _, name := range names {
-		nav := view.FeatureNav{Name: name, Enabled: !disabled[name]}
+		nav := view.FeatureNav{Name: name}
+		if _, ok := disabled[name]; !ok {
+			nav.Enabled = true
+		}
 		allFeatures = append(allFeatures, nav)
 		enabledFeatures = append(enabledFeatures, nav)
 	}
@@ -275,7 +278,7 @@ func loadFeaturePageData(ctx context.Context, repo database.Repo, tenantSlug, en
 		return nil, err
 	}
 
-	disabledAt, err := featurepkg.FeatureDisabledAt(ctx, env.ID, featureName)
+	_, disabled, err := featurepkg.FeatureDisabledAt(ctx, env.ID, featureName)
 	if err != nil {
 		return nil, err
 	}
@@ -292,7 +295,7 @@ func loadFeaturePageData(ctx context.Context, repo database.Repo, tenantSlug, en
 		Tenant:          tenant,
 		TenantSlug:      tenantSlug,
 		Environment:     &Environment{Environment: env, Metadata: getEnvironmentMetadata(ctx, repo, env)},
-		Feature:         &FeatureDetail{Feature: feat, Enabled: disabledAt == nil},
+		Feature:         &FeatureDetail{Feature: feat, Enabled: !disabled},
 		AllFeatures:     allFeatures,
 		EnabledFeatures: enabledFeatures,
 		ActiveTab:       activeTab,
