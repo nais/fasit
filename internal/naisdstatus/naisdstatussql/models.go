@@ -124,6 +124,12 @@ type DeploymentStatus struct {
 	Created       pgtype.Timestamptz
 }
 
+type DisabledFeature struct {
+	EnvironmentID uuid.UUID
+	Feature       string
+	DisabledAt    pgtype.Timestamptz
+}
+
 type EnvCost struct {
 	TenantID uuid.UUID
 	EnvID    uuid.UUID

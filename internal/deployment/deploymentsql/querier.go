@@ -15,7 +15,6 @@ type Querier interface {
 	DeleteDeploymentsByFeatureAndTarget(ctx context.Context, arg DeleteDeploymentsByFeatureAndTargetParams) error
 	DeployInstructionsByID(ctx context.Context, id uuid.UUID) (DeployInstruction, error)
 	DeployInstructionsGetDeployedFeatures(ctx context.Context, arg DeployInstructionsGetDeployedFeaturesParams) ([]string, error)
-	FeatureEnabled(ctx context.Context, arg FeatureEnabledParams) (bool, error)
 	GetDeployInstructionByDeploymentAndEnvironmentID(ctx context.Context, arg GetDeployInstructionByDeploymentAndEnvironmentIDParams) (GetDeployInstructionByDeploymentAndEnvironmentIDRow, error)
 	GetDeployment(ctx context.Context, id uuid.UUID) (GetDeploymentRow, error)
 	GetDeploymentStatus(ctx context.Context, arg GetDeploymentStatusParams) (DeploymentStatus, error)
