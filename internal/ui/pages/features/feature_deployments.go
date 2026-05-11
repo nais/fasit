@@ -27,6 +27,7 @@ type DeploymentEnvStatus struct {
 	StatusText          string
 	DeploymentID        string
 	DeploymentVersion   string
+	ChartDescription    string
 	ReleaseVersion      string
 	TargetLabels        map[string]string
 	IsOverridden        bool
@@ -44,6 +45,12 @@ type deploymentGroup struct {
 
 func loadDeploymentData(ctx context.Context, repo database.Repo, feature *model.Feature, data *DetailPage) {
 	data.DeploymentEnvs = featureDeploymentEnvStatuses(ctx, repo, feature)
+	for _, env := range data.DeploymentEnvs {
+		if env.IsOverridden {
+			continue
+		}
+		data.ChartDescriptions = append(data.ChartDescriptions, env.ChartDescription)
+	}
 }
 
 func deploymentDetailContent(data *DetailPage) g.Node {
@@ -326,6 +333,7 @@ func featureDeploymentEnvStatuses(ctx context.Context, repo database.Repo, featu
 				Enabled:           !disabled,
 				DeploymentID:      dep.ID.String(),
 				DeploymentVersion: dep.Feature.Version,
+				ChartDescription:  dep.Feature.Description,
 				TargetLabels:      dep.TargetLabels,
 			}
 			if disabled {
