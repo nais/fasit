@@ -133,20 +133,45 @@ func featureEnvironmentReleaseStatuses(ctx context.Context, repo database.Repo, 
 				LastModified: state.LastModified,
 			}
 
+			var (
+				diVersion, diStatus string
+				diTime              time.Time
+			)
 			if di, err := repo.DeployInstructionsLatestDeployedForFeature(ctx, env.ID, feature.Name); err == nil && di != nil {
 				es.LastDeployed = di.LastModified
+				diVersion = di.FeatureVersion
+				diStatus = strings.ToUpper(di.Status.String())
+				diTime = di.LastModified
 			}
 
+			var (
+				relVersion, relStatus string
+				relTime               time.Time
+			)
 			releases, err := repo.ReleaseStatusesGet(ctx, env.ID)
 			if err == nil {
 				for _, release := range releases {
 					if release.Name == feature.Name {
-						es.ReleaseVersion = release.Version
-						es.StatusText = release.Status
+						relVersion = release.Version
+						relStatus = release.Status
+						relTime = release.LastDeployed
 						break
 					}
 				}
 			}
+
+			switch {
+			case relStatus != "" && !relTime.Before(diTime):
+				es.ReleaseVersion = relVersion
+				es.StatusText = relStatus
+			case diStatus != "":
+				es.ReleaseVersion = diVersion
+				es.StatusText = diStatus
+			case relStatus != "":
+				es.ReleaseVersion = relVersion
+				es.StatusText = relStatus
+			}
+
 			if es.StatusText == "" {
 				if state.Enabled {
 					es.StatusText = "Enabled"
