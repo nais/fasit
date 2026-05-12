@@ -3,7 +3,7 @@
 # Declare variables to be passed into your templates.
 
 ingressHost: "fasit.nais.io"
-ingressClassName: "nais-io-external-iap"
+ingressClassName: "external-iap-haproxy"
 iapAudience:
 slackChannelFeatureAlerts: "nais-alerts-info"
 slackToken:
