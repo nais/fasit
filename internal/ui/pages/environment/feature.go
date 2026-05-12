@@ -783,6 +783,9 @@ func configActionsCell(page *FeaturePage, item FeatureConfigItem) g.Node {
 }
 
 func computedValueCell(item FeatureConfigItem) g.Node {
+	if item.IsSecret {
+		return h.Span(h.Class("text-muted"), g.Text("\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022"))
+	}
 	value := item.Value
 	if isMultilineValue(value) {
 		return h.Div(
