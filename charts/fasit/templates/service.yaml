@@ -19,4 +19,5 @@ spec:
   selector:
     {{- include "fasit.selectorLabels" . | nindent 4 }}
   sessionAffinity: None
-  type: ClusterIP
+  type: LoadBalancer
+  loadBalancerIP: 10.0.0.42
