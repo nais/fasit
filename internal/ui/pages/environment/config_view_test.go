@@ -73,6 +73,39 @@ func TestTryPrettyJSON(t *testing.T) {
 	})
 }
 
+func TestOverviewTab_MasksSecretComputedValue(t *testing.T) {
+	t.Parallel()
+	feat := &model.Feature{
+		Name: "f",
+		FeatureYAML: model.FeatureYAML{
+			Values: model.Values{
+				"safe":   {Computed: &model.Computed{Template: `{{ .Env.public | quote }}`}},
+				"secret": {Computed: &model.Computed{Template: `{{ .Env.token | quote }}`}},
+			},
+		},
+	}
+	page := &FeaturePage{
+		TenantSlug:  "t",
+		Environment: &Environment{Environment: &model.Environment{Name: "e"}},
+		Feature: &FeatureDetail{
+			Feature: feat,
+			Enabled: true,
+			ConfigItems: []FeatureConfigItem{
+				{Key: "safe", Value: "public-value", Source: string(model.ConfigSourceHelm), IsComputed: true},
+				{Key: "secret", Value: "real-secret", Source: string(model.ConfigSourceHelm), IsComputed: true, IsSecret: true},
+			},
+		},
+	}
+
+	var buf bytes.Buffer
+	require.NoError(t, overviewTab(page).Render(&buf))
+	html := buf.String()
+
+	assert.Contains(t, html, "public-value", "non-secret computed value should render its rendered content")
+	assert.NotContains(t, html, "real-secret", "secret computed value must never appear in rendered HTML")
+	assert.Contains(t, html, "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022", "secret computed value should render as the masked placeholder")
+}
+
 func TestOverviewTab_SplitsConfigurableAndComputed(t *testing.T) {
 	t.Parallel()
 	feat := &model.Feature{

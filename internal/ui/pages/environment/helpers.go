@@ -368,8 +368,29 @@ func loadFeatureConfigItems(ctx context.Context, feat *model.Feature, envID uuid
 		return configs[i].Key < configs[j].Key
 	})
 
-	items := make([]FeatureConfigItem, 0, len(configs))
 	hasComputed := false
+	for _, cfg := range configs {
+		if cfg.Value != nil && cfg.Value.Computed != nil {
+			hasComputed = true
+			break
+		}
+	}
+
+	var rendered map[string]any
+	var computedSecrets map[string]bool
+	probeFailed := false
+	if hasComputed {
+		var rerr error
+		rendered, computedSecrets, rerr = featurepkg.HelmValuesWithSecretTaint(ctx, feat, envID)
+		if rerr != nil {
+			rendered = nil
+		}
+		// taint==nil with no error means the probe render failed; in that
+		// case pessimistically mark every computed value as secret.
+		probeFailed = rerr == nil && computedSecrets == nil
+	}
+
+	items := make([]FeatureConfigItem, 0, len(configs))
 	for _, cfg := range configs {
 		item := FeatureConfigItem{
 			ID:          cfg.ID.String(),
@@ -389,25 +410,24 @@ func loadFeatureConfigItems(ctx context.Context, feat *model.Feature, envID uuid
 			if cfg.Value.Computed != nil {
 				item.IsComputed = true
 				item.Template = cfg.Value.Computed.Template
-				hasComputed = true
+				if probeFailed || computedSecrets[cfg.Key] {
+					item.IsSecret = true
+				}
 			}
 		}
 		items = append(items, item)
 	}
 
-	if hasComputed {
-		rendered, err := featurepkg.HelmValues(ctx, feat, envID)
-		if err == nil {
-			for i, item := range items {
-				if !item.IsComputed {
-					continue
-				}
-				if item.Source == string(model.ConfigSourceEnv) {
-					continue
-				}
-				if v, ok := lookupHelmValue(rendered, item.Key); ok {
-					items[i].Value = v
-				}
+	if rendered != nil {
+		for i, item := range items {
+			if !item.IsComputed || items[i].IsSecret {
+				continue
+			}
+			if item.Source == string(model.ConfigSourceEnv) {
+				continue
+			}
+			if v, ok := lookupHelmValue(rendered, item.Key); ok {
+				items[i].Value = v
 			}
 		}
 	}

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 	"slices"
 	"sort"
 	"time"
@@ -19,6 +20,7 @@ import (
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/errs"
 	"github.com/nais/fasit/internal/feature/featuresql"
+	"github.com/nais/fasit/internal/feature/featureutil"
 	"github.com/nais/fasit/internal/graph/model"
 )
 
@@ -46,7 +48,16 @@ func querier(ctx context.Context) featuresql.Querier {
 }
 
 func helmValues(ctx context.Context, f *model.Feature, envID uuid.UUID) (map[string]any, error) {
-	mv, envKind, err := MappingValuesForEnvironment(ctx, envID, true)
+	return computeHelmValues(ctx, f, envID, false)
+}
+
+// probeSecretSentinel is the placeholder used when re-rendering helm values
+// with secret inputs replaced. Any computed output that depends on a secret
+// will differ between the real render and the probe render.
+const probeSecretSentinel = "__FASIT_PROBE_SECRET__" //#nosec G101 -- placeholder, not a credential
+
+func computeHelmValues(ctx context.Context, f *model.Feature, envID uuid.UUID, probe bool) (map[string]any, error) {
+	mv, envKind, err := MappingValuesForEnvironment(ctx, envID, !probe)
 	if err != nil {
 		return nil, err
 	}
@@ -72,6 +83,12 @@ func helmValues(ctx context.Context, f *model.Feature, envID uuid.UUID) (map[str
 		return nil, err
 	}
 
+	if probe {
+		for _, key := range f.SecretKeys() {
+			setNestedSentinel(mp, key)
+		}
+	}
+
 	err = Generate(f.Values, envKind, mv, mp)
 
 	mp["fasit"] = map[string]any{
@@ -84,12 +101,91 @@ func helmValues(ctx context.Context, f *model.Feature, envID uuid.UUID) (map[str
 		},
 	}
 
-	missing := validateFields(f, envKind, vals, mp)
-	if len(missing) > 0 {
-		return nil, &errs.ErrMissingRequiredFields{Fields: missing}
+	if !probe {
+		missing := validateFields(f, envKind, vals, mp)
+		if len(missing) > 0 {
+			return nil, &errs.ErrMissingRequiredFields{Fields: missing}
+		}
 	}
 
 	return mp, err
+}
+
+func setNestedSentinel(m map[string]any, dottedKey string) {
+	keys, err := featureutil.SmartDotSplit(dottedKey)
+	if err != nil || len(keys) == 0 {
+		return
+	}
+	parent := m
+	for i, k := range keys {
+		if i == len(keys)-1 {
+			if _, ok := parent[k]; ok {
+				parent[k] = json.RawMessage(`"` + probeSecretSentinel + `"`)
+			}
+			return
+		}
+		next, ok := parent[k].(map[string]any)
+		if !ok {
+			return
+		}
+		parent = next
+	}
+}
+
+// HelmValuesWithSecretTaint renders the helm values for f in envID and reports
+// the set of computed value keys whose rendered output depends on a secret
+// input (a secret config or a secret environment value).
+//
+// If the probe render fails, taint is nil and the caller should treat all
+// computed values as potentially secret.
+func HelmValuesWithSecretTaint(ctx context.Context, f *model.Feature, envID uuid.UUID) (map[string]any, map[string]bool, error) {
+	real, err := HelmValues(ctx, f, envID)
+	if err != nil {
+		return nil, nil, err
+	}
+	probe, err := computeHelmValues(ctx, f, envID, true)
+	if err != nil {
+		return real, nil, nil
+	}
+	taint := computedSecretTaint(f.Values, real, probe)
+	return real, taint, nil
+}
+
+// computedSecretTaint reports which computed value keys in values render to
+// different output between the real and probe maps. A computed value with a
+// differing rendered value depends on at least one secret input.
+func computedSecretTaint(values model.Values, real, probe map[string]any) map[string]bool {
+	taint := map[string]bool{}
+	for key, val := range values {
+		if val.Computed == nil {
+			continue
+		}
+		a, aok := lookupNested(real, key)
+		b, bok := lookupNested(probe, key)
+		if aok != bok || !reflect.DeepEqual(a, b) {
+			taint[key] = true
+		}
+	}
+	return taint
+}
+
+func lookupNested(m map[string]any, dottedKey string) (any, bool) {
+	keys, err := featureutil.SmartDotSplit(dottedKey)
+	if err != nil || len(keys) == 0 {
+		return nil, false
+	}
+	var cur any = m
+	for _, k := range keys {
+		mm, ok := cur.(map[string]any)
+		if !ok {
+			return nil, false
+		}
+		cur, ok = mm[k]
+		if !ok {
+			return nil, false
+		}
+	}
+	return cur, true
 }
 
 func HelmValues(ctx context.Context, f *model.Feature, envID uuid.UUID) (map[string]any, error) {
