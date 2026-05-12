@@ -852,7 +852,7 @@ func deleteOverrideButton(page *FeaturePage, item FeatureConfigItem) g.Node {
 	popoverID := "delete-" + item.ID
 	action := featureBasePathValues(page.TenantSlug, page.Environment.Name, page.Feature.Name) + "/config/delete/" + item.ID
 	return g.Group([]g.Node{
-		h.Button(h.Type("button"), h.Class("edit-icon"), g.Attr("popovertarget", popoverID), g.Text("✕")),
+		h.Button(h.Type("button"), h.Class("edit-icon delete-icon"), g.Attr("popovertarget", popoverID), g.Text("✕")),
 		h.Div(g.Attr("popover", ""), h.ID(popoverID), h.H3(g.Text("Remove Override")), h.P(g.Textf("Remove the environment override for %s? The global default will be used instead.", item.Key)), h.Form(h.Method("POST"), h.Action(action), h.Div(h.Class("popover-actions"), h.Button(h.Type("submit"), g.Text("Remove override")), h.Button(h.Type("button"), g.Attr("popovertarget", popoverID), g.Attr("popovertargetaction", "hide"), g.Text("Cancel"))))),
 	})
 }

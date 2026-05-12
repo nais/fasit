@@ -600,7 +600,7 @@ nav .nav-btn:hover {
   border-left: 3px solid var(--status-warning);
 }
 .edit-icon {
-  color: var(--text-faint);
+  color: var(--text-muted);
   text-decoration: none;
   margin-right: 0.4rem;
   background: none;
@@ -611,6 +611,13 @@ nav .nav-btn:hover {
 }
 .edit-icon:hover {
   color: var(--text-primary);
+}
+.delete-icon {
+  color: var(--status-error);
+}
+.delete-icon:hover {
+  color: var(--status-error);
+  opacity: 0.8;
 }
 
 .config-table {
