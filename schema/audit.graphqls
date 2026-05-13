@@ -1,7 +1,0 @@
-type AuditLog {
-	actor: String!
-	description: String!
-	objectType: String!
-	objectId: String!
-	createdAt: Time!
-}
