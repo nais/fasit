@@ -606,39 +606,3 @@ func FeatureStatesCreateOrUpdate(ctx context.Context, envID uuid.UUID, feature *
 
 	return featureStateFromSQL(res), nil
 }
-
-func FeatureStateGet(ctx context.Context, envID uuid.UUID, featureName string) (*model.FeatureState, error) {
-	featureState, err := querier(ctx).FeatureStateGet(ctx, featuresql.FeatureStateGetParams{
-		EnvironmentID: envID,
-		Feature:       featureName,
-	})
-
-	if err == nil {
-		fs := featureStateFromSQL(featureState)
-		fs.EnvID = envID
-		return fs, nil
-	} else if !errors.Is(err, pgx.ErrNoRows) {
-		return nil, err
-	}
-
-	fs := &model.FeatureState{
-		ID:          model.FeatureStateID(envID, featureName),
-		FeatureName: featureName,
-		EnvID:       envID,
-		Enabled:     false,
-	}
-
-	hasDeployment, err := querier(ctx).HasMatchingDeployment(ctx, featuresql.HasMatchingDeploymentParams{
-		EnvironmentID: envID,
-		FeatureName:   featureName,
-	})
-	if err != nil {
-		return nil, err
-	}
-	if hasDeployment {
-		fs.Enabled = true
-		return fs, nil
-	}
-
-	return fs, nil
-}

@@ -14,14 +14,7 @@ const featureByName = `-- name: FeatureByName :one
 SELECT
 	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.rename,
 	features.created,
-	features.last_modified,
-	EXISTS (
-		SELECT
-			1
-		FROM
-			deployments d
-		WHERE
-			d.feature_name = fd.name) AS hasDeployments
+	features.last_modified
 FROM
 	features
 	JOIN feature_data fd ON features.name = fd.name
@@ -31,10 +24,9 @@ WHERE
 `
 
 type FeatureByNameRow struct {
-	FeatureDatum   FeatureDatum
-	Created        pgtype.Timestamptz
-	LastModified   pgtype.Timestamptz
-	Hasdeployments bool
+	FeatureDatum FeatureDatum
+	Created      pgtype.Timestamptz
+	LastModified pgtype.Timestamptz
 }
 
 func (q *Queries) FeatureByName(ctx context.Context, name string) (FeatureByNameRow, error) {
@@ -55,7 +47,6 @@ func (q *Queries) FeatureByName(ctx context.Context, name string) (FeatureByName
 		&i.FeatureDatum.Rename,
 		&i.Created,
 		&i.LastModified,
-		&i.Hasdeployments,
 	)
 	return i, err
 }
@@ -343,27 +334,19 @@ filtered AS (
 SELECT
 	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.rename,
 	filtered.created,
-	filtered.last_modified,
-	EXISTS (
-		SELECT
-			1
-		FROM
-			deployments d
-		WHERE
-			d.feature_name = fd.name) AS hasDeployments
-	FROM
-		filtered
-		JOIN feature_data fd ON filtered.name = fd.name
-			AND filtered.version = fd.version
-		ORDER BY
-			filtered.name
+	filtered.last_modified
+FROM
+	filtered
+	JOIN feature_data fd ON filtered.name = fd.name
+		AND filtered.version = fd.version
+	ORDER BY
+		filtered.name
 `
 
 type FeaturesRow struct {
-	FeatureDatum   FeatureDatum
-	Created        pgtype.Timestamptz
-	LastModified   pgtype.Timestamptz
-	Hasdeployments bool
+	FeatureDatum FeatureDatum
+	Created      pgtype.Timestamptz
+	LastModified pgtype.Timestamptz
 }
 
 func (q *Queries) Features(ctx context.Context) ([]FeaturesRow, error) {
@@ -390,7 +373,6 @@ func (q *Queries) Features(ctx context.Context) ([]FeaturesRow, error) {
 			&i.FeatureDatum.Rename,
 			&i.Created,
 			&i.LastModified,
-			&i.Hasdeployments,
 		); err != nil {
 			return nil, err
 		}
@@ -406,14 +388,7 @@ const featuresForKind = `-- name: FeaturesForKind :many
 SELECT
 	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.rename,
 	features.created,
-	features.last_modified,
-	EXISTS (
-		SELECT
-			1
-		FROM
-			deployments d
-		WHERE
-			d.feature_name = fd.name) AS hasDeployments
+	features.last_modified
 FROM
 	features
 	JOIN feature_data fd ON features.name = fd.name
@@ -425,10 +400,9 @@ ORDER BY
 `
 
 type FeaturesForKindRow struct {
-	FeatureDatum   FeatureDatum
-	Created        pgtype.Timestamptz
-	LastModified   pgtype.Timestamptz
-	Hasdeployments bool
+	FeatureDatum FeatureDatum
+	Created      pgtype.Timestamptz
+	LastModified pgtype.Timestamptz
 }
 
 func (q *Queries) FeaturesForKind(ctx context.Context, environmentKind string) ([]FeaturesForKindRow, error) {
@@ -455,7 +429,6 @@ func (q *Queries) FeaturesForKind(ctx context.Context, environmentKind string) (
 			&i.FeatureDatum.Rename,
 			&i.Created,
 			&i.LastModified,
-			&i.Hasdeployments,
 		); err != nil {
 			return nil, err
 		}
