@@ -11,9 +11,8 @@ ui/
   components/    → SiteHeader, nav, Page type constants
   pages/         → Page handlers organized by domain:
     deployments/ → Deployment list/detail/logs
-    environment/ → Environment detail, feature tabs (overview/logs/helm/rollouts/audit/playground)
-    features/    → Feature list, feature detail tabs (overview/status/deployments/rollouts)
-    rollouts/    → Rollout list/detail
+    environment/ → Environment detail, feature in env (tabs per feature: overview/logs/helm/audit/playground)
+    features/    → Feature overview, feature overview/detail
   breadcrumb/    → Supports dropdown switcher via Alternatives
   view/          → renderPage function type
   site/          → Static assets: site.css, site.js (embedded via embed.go)
@@ -35,11 +34,3 @@ ui/
 - No client-side routing — server-side `<a>` tags only
 - No template files — all HTML is Go code via gomponents
 - No new JS without discussion
-
-## Rollouts vs Deployments (UI)
-
-- **Separate nav items**: `PageRollouts` and `PageDeployments` in `components/header.go`
-- **Separate breadcrumbs**: `breadcrumb.Rollouts()` and `breadcrumb.Deployments()` — never cross-reference
-- **Separate packages**: `pages/rollouts/` and `pages/deployments/` are independent. Some helpers (`rolloutStatus`, `formatTime`, `versionCell`, `metaRow`) are duplicated across both packages by design — keep them aligned but don't extract to a shared package.
-- **Feature detail page**: Has separate "Rollouts" and "Deployments" tabs with independent data types (`RolloutItem` vs `DeploymentItem`)
-- **Environment feature page**: Conditionally shows either "Deployments" or "Rollouts" tab based on `HasDeployments` — never both
