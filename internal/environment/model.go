@@ -17,7 +17,6 @@ func environmentFromSQL(p environmentsql.Environment) *model.Environment {
 		LastModified: p.LastModified.Time,
 		Kind:         model.EnvironmentKind(p.Kind),
 		TenantID:     p.TenantID,
-		CI:           p.Ci,
 		Reconcile:    p.Reconcile,
 	}
 }
