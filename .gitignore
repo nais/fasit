@@ -12,3 +12,5 @@ node_modules
 ARCHITECTURE.md
 misc/
 .sisyphus/
+.air.toml
+tmp/

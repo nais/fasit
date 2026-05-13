@@ -1197,6 +1197,7 @@ a:hover .feature-nav-badge {
 .dep-status {
   font-size: 0.85rem;
   white-space: nowrap;
+  gap: 0.3rem;
 }
 
 .dep-target {
