@@ -241,6 +241,7 @@ func main() {
 			"featureFlags":  {DisplayName: "Feature Flags", Description: "JSON blob of toggles", Config: str},
 			"extraEnv":      {DisplayName: "Extra Env", Description: "Additional KEY=VALUE pairs", Config: strArr},
 			"motd":          {DisplayName: "Message of the Day", Description: "Multi-line banner shown in the UI", Config: str},
+			"allowedHosts":  {DisplayName: "Allowed Hosts", Description: "Required list; chart default is empty so warns until set", Required: true, Config: strArr},
 			// Computed secret: reads the secret env value db_password.
 			"dbDsn": {DisplayName: "DB DSN", Description: "Derived from secret env db_password", Computed: &model.Computed{Template: `"postgres://naiserator:{{ .Env.db_password }}@db.{{ .Env.name }}.local/naiserator"`}},
 		},
@@ -330,6 +331,7 @@ func main() {
 			"featureFlags": `{"experimentalA":true,"rolloutPercent":25,"regions":["eu","us"]}`,
 			"extraEnv":     []string{"FOO=bar", "BAZ=qux"},
 			"motd":         "line one\nline two\nline three",
+			"allowedHosts": []string{},
 		},
 		"console": {
 			"adminEmail":    "admin@example.com",
@@ -417,6 +419,12 @@ func main() {
 			b, err := json.Marshal(val)
 			if err != nil {
 				log.WithError(err).Errorf("marshal default %s/%s", featureName, key)
+				continue
+			}
+			// Skip empty values: they wouldn't satisfy required-field validation,
+			// and seeding them as globals would mask the chart default in the UI,
+			// preventing the required-but-unset warning from rendering.
+			if isEmptyJSONValue(b) {
 				continue
 			}
 			if _, err := feature.ConfigCreate(ctx, model.NewConfiguration{
@@ -604,5 +612,24 @@ func main() {
 				log.Println(err)
 			}
 		}
+	}
+}
+
+func isEmptyJSONValue(b []byte) bool {
+	var v any
+	if err := json.Unmarshal(b, &v); err != nil {
+		return false
+	}
+	switch typed := v.(type) {
+	case nil:
+		return true
+	case string:
+		return typed == ""
+	case []any:
+		return len(typed) == 0
+	case map[string]any:
+		return len(typed) == 0
+	default:
+		return false
 	}
 }

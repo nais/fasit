@@ -174,3 +174,68 @@ func TestOverviewTab_RequiredUnsetConfigWarning(t *testing.T) {
 		"required-but-unset config row skeleton should differ from non-warn row skeleton, "+
 			"indicating a visual warning indicator; but both rows have identical structure")
 }
+
+// TestOverviewTab_RequiredEmptyStructuredConfigWarning verifies that required
+// HELM-sourced fields whose chart default is an "empty" JSON value (empty
+// array, empty object, null) are also flagged as missing — not just literal
+// empty strings.
+func TestOverviewTab_RequiredEmptyStructuredConfigWarning(t *testing.T) {
+	cases := []struct {
+		name  string
+		value string
+		warn  bool
+	}{
+		{"empty string", "", true},
+		{"empty array", "[]", true},
+		{"empty object", "{}", true},
+		{"json null", "null", true},
+		{"non-empty array", `["a"]`, false},
+		{"non-empty object", `{"k":"v"}`, false},
+		{"zero number", "0", false},
+		{"false bool", "false", false},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			feat := &model.Feature{
+				Name: "f",
+				FeatureYAML: model.FeatureYAML{
+					Values: model.Values{
+						"k": model.Value{Required: true, Config: &model.Config{Type: model.ConfigTypeString}},
+					},
+				},
+			}
+			page := &FeaturePage{
+				TenantSlug:  "t",
+				Environment: &Environment{Environment: &model.Environment{Name: "e"}},
+				Feature: &FeatureDetail{
+					Feature: feat,
+					Enabled: true,
+					ConfigItems: []FeatureConfigItem{{
+						Key: "k", Value: tc.value,
+						Source: string(model.ConfigSourceHelm),
+						Type:   "STRING", IsConfigurable: true,
+					}},
+				},
+			}
+			var buf bytes.Buffer
+			require.NoError(t, overviewTab(page).Render(&buf))
+			doc, err := html.Parse(strings.NewReader(buf.String()))
+			require.NoError(t, err)
+			trs := findElements(doc, "tr")
+			require.GreaterOrEqual(t, len(trs), 2)
+			class := attrValue(trs[1], "class")
+			hasWarn := strings.Contains(class, "config-warning")
+			assert.Equal(t, tc.warn, hasWarn, "value %q: expected warn=%v, got class=%q", tc.value, tc.warn, class)
+		})
+	}
+}
+
+func attrValue(n *html.Node, key string) string {
+	for _, a := range n.Attr {
+		if a.Key == key {
+			return a.Val
+		}
+	}
+	return ""
+}

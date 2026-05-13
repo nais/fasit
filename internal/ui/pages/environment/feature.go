@@ -428,7 +428,7 @@ func configurableTable(page *FeaturePage, items []FeatureConfigItem) g.Node {
 			)),
 			h.TBody(g.Group(g.Map(items, func(item FeatureConfigItem) g.Node {
 				valDef := page.Feature.FeatureYAML.Values[item.Key]
-				warn := valDef.Required && item.Source == string(model.ConfigSourceHelm) && item.Value == ""
+				warn := valDef.Required && item.Source == string(model.ConfigSourceHelm) && isEmptyConfigValue(item.Value)
 				return h.Tr(g.If(warn, h.Class("config-warning")),
 					h.Td(configKeyCell(item)),
 					h.Td(h.Class("config-actions-col"), configActionsCell(page, item)),

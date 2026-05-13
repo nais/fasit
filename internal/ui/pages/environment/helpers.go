@@ -245,6 +245,28 @@ func rawValueForInput(value json.RawMessage) string {
 	}
 }
 
+func isEmptyConfigValue(value string) bool {
+	if value == "" {
+		return true
+	}
+	var v any
+	if err := json.Unmarshal([]byte(value), &v); err != nil {
+		return false
+	}
+	switch typed := v.(type) {
+	case nil:
+		return true
+	case string:
+		return typed == ""
+	case []any:
+		return len(typed) == 0
+	case map[string]any:
+		return len(typed) == 0
+	default:
+		return false
+	}
+}
+
 func gcpProjectIDFromMetadata(metadata []MetadataItem) string {
 	for _, m := range metadata {
 		if m.Key == "project_id" && !m.IsSecret {
