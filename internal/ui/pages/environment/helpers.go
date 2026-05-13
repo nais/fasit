@@ -344,9 +344,6 @@ func loadFeaturePageData(ctx context.Context, repo database.Repo, tenantSlug, en
 			page.HelmValuesError = herr.Error()
 		}
 	}
-	if activeTab == "rollouts" {
-		page.Rollouts = loadEnvironmentRollouts(ctx, repo, featureName)
-	}
 	if activeTab == "deployments" {
 		page.Deployments = loadEnvironmentDeployments(ctx, repo, featureName, env.ID)
 	}
@@ -515,27 +512,6 @@ func loadHelmValues(ctx context.Context, feat *model.Feature, envID uuid.UUID) (
 		return "", err
 	}
 	return string(b), nil
-}
-
-func loadEnvironmentRollouts(ctx context.Context, repo database.Repo, featureName string) []RolloutItem {
-	rollouts, err := repo.RolloutsForFeature(ctx, featureName)
-	if err != nil {
-		return nil
-	}
-	items := make([]RolloutItem, 0, len(rollouts))
-	for _, rollout := range rollouts {
-		items = append(items, RolloutItem{
-			FeatureName: rollout.FeatureName,
-			Version:     rollout.Version,
-			Status:      strings.ToUpper(rollout.Status.String()),
-			Created:     view.FormatTime(rollout.Created),
-			Completed:   view.FormatTimePtr(rollout.Completed),
-		})
-	}
-	sort.Slice(items, func(i, j int) bool {
-		return items[i].Created > items[j].Created
-	})
-	return items
 }
 
 func loadEnvironmentDeployments(ctx context.Context, repo database.Repo, featureName string, envID uuid.UUID) []EnvDeploymentItem {

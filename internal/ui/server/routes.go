@@ -9,7 +9,6 @@ import (
 	"github.com/nais/fasit/internal/ui/pages/features"
 	"github.com/nais/fasit/internal/ui/pages/labels"
 	"github.com/nais/fasit/internal/ui/pages/naisd"
-	"github.com/nais/fasit/internal/ui/pages/rollouts"
 	"github.com/nais/fasit/internal/ui/pages/tenant"
 	"github.com/nais/fasit/internal/ui/pages/tenants"
 )
@@ -44,8 +43,6 @@ func (s *Server) Routes() http.Handler {
 	r.Post("/tenants/{tenant}/envs/{env}/{feature}/toggle-reconcile", environment.ToggleFeatureStateHandler(s.repo))
 	r.Post("/tenants/{tenant}/envs/{env}/{feature}/redeploy", environment.RedeployHandler(s.repo))
 
-	r.Get("/rollouts", rollouts.Handler(s.renderPage, s.repo))
-	r.Get("/rollouts/{feature}/{version}", rollouts.DetailHandler(s.renderPage, s.repo))
 	r.Get("/deployments", deployments.ListHandler(s.renderPage))
 	r.Post("/deployments", deployments.CreateHandler())
 	r.Get("/deployments/{id}", deployments.DetailHandler(s.renderPage, s.repo))

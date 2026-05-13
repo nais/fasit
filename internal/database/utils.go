@@ -1,8 +1,6 @@
 package database
 
 import (
-	"time"
-
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -22,11 +20,4 @@ func nullStringToPtr(ns pgtype.Text) *string {
 	}
 
 	return &ns.String
-}
-
-func nullTimeToPtr(nt pgtype.Timestamptz) *time.Time {
-	if !nt.Valid {
-		return nil
-	}
-	return &nt.Time
 }

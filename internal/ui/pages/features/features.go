@@ -31,8 +31,6 @@ type DetailPage struct {
 	CurrentFeature    *Feature
 	ChartDescriptions []string
 	DeploymentEnvs    []DeploymentEnvStatus
-	RolloutEnvs       []RolloutEnvStatus
-	Rollouts          []RolloutItem
 }
 
 type Feature struct {
@@ -98,12 +96,7 @@ func jokeOfTheMoment() g.Node {
 }
 
 func detailPage(data *DetailPage) g.Node {
-	var content g.Node
-	if data.CurrentFeature.HasDeployments {
-		content = deploymentDetailContent(data)
-	} else {
-		content = rolloutDetailContent(data)
-	}
+	content := deploymentDetailContent(data)
 	return h.Div(h.Class("container"),
 		components.FeaturesSidebar(data.Features, data.CurrentFeature.Name),
 		h.Main(h.Class("main-content"),
@@ -153,11 +146,7 @@ func loadFeatureData(r *http.Request, repo database.Repo) (*DetailPage, error) {
 		Features:       toFeatureNavs(features, failed, pending),
 		CurrentFeature: &Feature{Feature: feature, Config: featureConfigItems(feature)},
 	}
-	if feature.HasDeployments {
-		loadDeploymentData(r.Context(), repo, feature, data)
-	} else {
-		loadRolloutData(r.Context(), repo, feature, data)
-	}
+	loadDeploymentData(r.Context(), repo, feature, data)
 	data.ChartDescriptions = dedupedChartDescriptions(feature, data)
 	return data, nil
 }

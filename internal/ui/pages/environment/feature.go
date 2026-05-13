@@ -239,12 +239,11 @@ func RedeployHandler(repo database.Repo) http.HandlerFunc {
 			http.Error(w, "Failed to trigger redeploy: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
-		if feature.HasDeployments {
-			if err := deployment.TriggerRedeploy(r.Context(), env.ID, feature.Name); err != nil {
-				http.Error(w, "Failed to trigger redeploy: "+err.Error(), http.StatusInternalServerError)
-				return
-			}
+		if err := deployment.TriggerRedeploy(r.Context(), env.ID, feature.Name); err != nil {
+			http.Error(w, "Failed to trigger redeploy: "+err.Error(), http.StatusInternalServerError)
+			return
 		}
+
 		http.Redirect(w, r, featureBasePath(r), http.StatusSeeOther)
 	}
 }
@@ -283,7 +282,7 @@ func featurePageContent(page *FeaturePage) g.Node {
 			),
 			h.Div(h.Class("card"),
 				h.Div(h.Class("card-body"),
-					components.TabsNav(page.ActiveTab, envFeatureTabs(page.TenantSlug, page.Environment.Name, page.Feature.Name, page.Feature.HasDeployments)),
+					components.TabsNav(page.ActiveTab, envFeatureTabs(page.TenantSlug, page.Environment.Name, page.Feature.Name)),
 					tabContent,
 				),
 			),
@@ -322,23 +321,16 @@ func metaRow(label string, value g.Node) g.Node {
 	return h.Tr(h.Td(h.Class("th-like"), g.Text(label)), h.Td(value))
 }
 
-func envFeatureTabs(tenant, env, feature string, hasDeployments bool) []components.Tab {
+func envFeatureTabs(tenant, env, feature string) []components.Tab {
 	base := featureBasePathValues(tenant, env, feature)
-	tabs := []components.Tab{
+	return []components.Tab{
 		{ID: "overview", Href: base, Label: "Config"},
 		{ID: "logs", Href: base + "/logs", Label: "Logs"},
 		{ID: "helm", Href: base + "/helm", Label: "Helm Values"},
+		{ID: "deployments", Href: base + "/deployments", Label: "Deployments"},
+		{ID: "playground", Href: base + "/playground", Label: "Playground"},
+		{ID: "audit", Href: base + "/audit", Label: "Audit"},
 	}
-	if hasDeployments {
-		tabs = append(tabs, components.Tab{ID: "deployments", Href: base + "/deployments", Label: "Deployments"})
-	} else {
-		tabs = append(tabs, components.Tab{ID: "rollouts", Href: base + "/rollouts", Label: "Rollouts"})
-	}
-	tabs = append(tabs,
-		components.Tab{ID: "playground", Href: base + "/playground", Label: "Playground"},
-		components.Tab{ID: "audit", Href: base + "/audit", Label: "Audit"},
-	)
-	return tabs
 }
 
 func redeployButton(page *FeaturePage) g.Node {
