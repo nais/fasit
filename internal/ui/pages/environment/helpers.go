@@ -45,6 +45,7 @@ type FeaturePage struct {
 	AllFeatures      []view.FeatureNav
 	EnabledFeatures  []view.FeatureNav
 	HelmValues       string
+	HelmValuesError  string
 	Rollouts         []RolloutItem
 	Deployments      []EnvDeploymentItem
 	FeatureLog       *FeatureLog
@@ -315,7 +316,11 @@ func loadFeaturePageData(ctx context.Context, repo database.Repo, tenantSlug, en
 	page.FeatureLog = loadFeatureLog(ctx, repo, env.ID, feat)
 
 	if activeTab == "helm" || activeTab == "playground" {
-		page.HelmValues, _ = loadHelmValues(ctx, feat, env.ID)
+		vals, herr := loadHelmValues(ctx, feat, env.ID)
+		page.HelmValues = vals
+		if herr != nil {
+			page.HelmValuesError = herr.Error()
+		}
 	}
 	if activeTab == "rollouts" {
 		page.Rollouts = loadEnvironmentRollouts(ctx, repo, featureName)

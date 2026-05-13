@@ -408,6 +408,29 @@ func main() {
 		log.Fatal(err)
 	}
 
+	// Persist featureDefaults as configurations_global rows so that
+	// Required-field validation passes for features that ship chart defaults
+	// (the helm tab and deploy path both validate). In production these
+	// would typically be set by an operator via the UI.
+	for featureName, defaults := range featureDefaults {
+		for key, val := range defaults {
+			b, err := json.Marshal(val)
+			if err != nil {
+				log.WithError(err).Errorf("marshal default %s/%s", featureName, key)
+				continue
+			}
+			if _, err := feature.ConfigCreate(ctx, model.NewConfiguration{
+				Feature: featureName,
+				Key:     key,
+				Value:   json.RawMessage(b),
+			}); err != nil {
+				if !strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+					log.WithError(err).Errorf("seed global default %s/%s", featureName, key)
+				}
+			}
+		}
+	}
+
 	// Enable every feature in every env so they don't default to disabled.
 	for tenantName, environments := range envs {
 		for envName := range environments {
