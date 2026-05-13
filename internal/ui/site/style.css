@@ -18,7 +18,7 @@
   --border-strong: #4a4a4a;
   --border-hover: #444;
 
-  --accent: #5B9FE6;
+  --accent: #5b9fe6;
   --accent-bg: #163554;
   --accent-hover: #1d4267;
 
@@ -143,7 +143,9 @@ nav .menu .item {
   font-size: 0.9rem;
   padding: 0.3rem 0.6rem;
   border-radius: 0.3rem;
-  transition: color 0.15s, background 0.15s;
+  transition:
+    color 0.15s,
+    background 0.15s;
 }
 nav .menu .item:hover {
   color: var(--text-primary);
@@ -181,7 +183,9 @@ nav .nav-btn {
   font-size: 0.85rem;
   padding: 0.3rem 0.7rem;
   border-radius: 0.25rem;
-  transition: background 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
 }
 nav .nav-btn:hover {
   background: var(--btn-hover-bg);
@@ -435,7 +439,9 @@ nav .nav-btn:hover {
   font-size: 0.85rem;
   padding: 0.3rem 0.7rem;
   border-radius: 0.25rem;
-  transition: background 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
 }
 .copy-btn:hover {
   background: var(--btn-hover-bg);
@@ -462,10 +468,6 @@ nav .nav-btn:hover {
 }
 .code-block span[style*="color: rgba(0, 0, 0"] {
   color: var(--diff-meta) !important;
-}
-
-.rollout-log {
-  margin-bottom: 2rem;
 }
 
 .status-success {
@@ -852,7 +854,8 @@ nav .nav-btn:hover {
   border: 1px solid var(--border);
   border-radius: 4px;
   color: var(--text-primary);
-  font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+  font-family:
+    ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, monospace;
   font-size: 0.9rem;
   padding: 0.75rem;
   box-sizing: border-box;
@@ -938,7 +941,8 @@ nav .nav-btn:hover {
 }
 .labels-json pre {
   margin: 0;
-  font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+  font-family:
+    ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, monospace;
   font-size: 0.85rem;
   line-height: 1.4;
   white-space: pre;
@@ -957,7 +961,9 @@ nav .nav-btn:hover {
   margin: 0.125rem;
   white-space: nowrap;
   text-decoration: none;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 .label-filter-tag {
   background: var(--accent-bg);
@@ -1099,7 +1105,9 @@ nav .nav-btn:hover {
   transition: transform 0.15s;
 }
 
-.deployment-group[open] > .deployment-group-summary .dep-feature-toggle::before {
+.deployment-group[open]
+  > .deployment-group-summary
+  .dep-feature-toggle::before {
   transform: rotate(90deg);
 }
 
@@ -1265,6 +1273,10 @@ a:hover .feature-nav-badge {
   animation: highlight-flash 1.2s ease-out;
 }
 @keyframes highlight-flash {
-  0%   { background: color-mix(in srgb, var(--accent) 25%, transparent); }
-  100% { background: transparent; }
+  0% {
+    background: color-mix(in srgb, var(--accent) 25%, transparent);
+  }
+  100% {
+    background: transparent;
+  }
 }

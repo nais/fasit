@@ -38,10 +38,10 @@ func statusCell(s Summary) g.Node {
 			g.Text(" DEPLOYED"),
 		})
 	}
-	return rolloutStatus(s.Status)
+	return renderStatus(s.Status)
 }
 
-func rolloutStatus(status string) g.Node {
+func renderStatus(status string) g.Node {
 	switch strings.ToUpper(status) {
 	case "DEPLOYED":
 		return g.Group([]g.Node{h.Span(h.Class("status-success"), g.Text("✓")), g.Text(" DEPLOYED")})

@@ -165,7 +165,7 @@ func detailPage(d *deployment.Deployment, statuses []deploymentStatusRow, deploy
 				return h.Tr(
 					h.Td(h.A(h.Href("/tenants/"+s.TenantName), g.Text(s.TenantName))),
 					h.Td(h.A(h.Href("/tenants/"+s.TenantName+"/envs/"+s.EnvironmentName+"/"+d.Feature.Name), g.Text(s.EnvironmentName))),
-					h.Td(rolloutStatus(s.State)),
+					h.Td(renderStatus(s.State)),
 					h.Td(g.Text(s.Message)),
 					h.Td(timeWithTitle(s.LastModified)),
 					h.Td(h.A(h.Href("/deployments/"+d.ID.String()+"/logs/"+s.EnvironmentID), g.Attr("title", "View logs"), g.Text("📋"))),
@@ -217,7 +217,7 @@ func detailPage(d *deployment.Deployment, statuses []deploymentStatusRow, deploy
 			h.TBody(g.Group(g.Map(deployInstructions, func(di deploymentsql.ListDeployInstructionsByDeploymentIDRow) g.Node {
 				return h.Tr(
 					h.Td(h.A(h.Href("/tenants/"+di.TenantName+"/envs/"+di.EnvironmentName), g.Textf("%s / %s", di.TenantName, di.EnvironmentName))),
-					h.Td(rolloutStatus(strings.ToUpper(di.DeployInstruction.Status))),
+					h.Td(renderStatus(strings.ToUpper(di.DeployInstruction.Status))),
 					h.Td(timeWithTitle(di.DeployInstruction.Created.Time)),
 					h.Td(timeWithTitle(di.DeployInstruction.LastModified.Time)),
 					h.Td(h.A(h.Href("/deployments/"+d.ID.String()+"/logs/"+di.DeployInstruction.EnvironmentID.String()), g.Attr("title", "View logs"), g.Text("📋"))),
