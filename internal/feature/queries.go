@@ -461,40 +461,9 @@ func FeatureVersionUpdate(ctx context.Context, name string, version string) erro
 	})
 }
 
-// TODO: rename to FeatureFromRollout or something similar
-func RolloutByName(ctx context.Context, name string) (*model.Feature, error) {
-	f, err := querier(ctx).RolloutByName(ctx, name)
-	if err != nil {
-		return nil, fmt.Errorf("get rollout by name from db: %w", err)
-	}
-
-	feature, err := featureFromSQL(f.FeatureDatum)
-	if err != nil {
-		return nil, fmt.Errorf("make feature: %w", err)
-	}
-	feature.GraphVars = struct {
-		EnvironmentID uuid.UUID
-		RolloutID     uuid.UUID
-	}{
-		RolloutID: f.ID,
-	}
-
-	return feature, nil
-}
-
 func FeatureByName(ctx context.Context, name string) (*model.Feature, error) {
 	f, err := querier(ctx).FeatureByName(ctx, name)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			r, err := RolloutByName(ctx, name)
-			if err == nil {
-				return r, nil
-			} else if !errors.Is(err, pgx.ErrNoRows) {
-				return nil, fmt.Errorf("get rollout by name from db: %w", err)
-			}
-
-		}
-
 		return nil, fmt.Errorf("get feature by name from db: %w", err)
 	}
 
@@ -503,7 +472,6 @@ func FeatureByName(ctx context.Context, name string) (*model.Feature, error) {
 		return nil, err
 	}
 
-	feature.HasDeployments = f.Hasdeployments
 	return feature, nil
 }
 
@@ -517,22 +485,6 @@ func FeatureByNameForEnv(ctx context.Context, name string, envID uuid.UUID) (*mo
 
 	if feat != nil {
 		return feat, nil
-	}
-
-	env, err := environment.Get(ctx, envID)
-	if err != nil {
-		return nil, fmt.Errorf("get environment from db: %w", err)
-	}
-
-	if env.CI {
-		roll, err := RolloutByName(ctx, name)
-		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-			return nil, fmt.Errorf("get rollout by name from db: %w", err)
-		}
-
-		if roll != nil {
-			return roll, nil
-		}
 	}
 
 	return FeatureByName(ctx, name)
@@ -551,7 +503,6 @@ func GetEnvironmentFeature(ctx context.Context, environmentID uuid.UUID, feature
 	if err != nil {
 		return nil, fmt.Errorf("make feature: %w", err)
 	}
-	feature.HasDeployments = true
 
 	return feature, nil
 }
@@ -569,7 +520,6 @@ func Features(ctx context.Context) ([]*model.Feature, error) {
 			return nil, fmt.Errorf("make feature: %w", err)
 		}
 
-		feature.HasDeployments = f.Hasdeployments
 		ret = append(ret, feature)
 	}
 

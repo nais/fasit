@@ -178,7 +178,6 @@ func deploymentFromSQL(d deploymentsql.Deployment, fd deploymentsql.FeatureDatum
 	if err != nil {
 		return nil, fmt.Errorf("make feature: %w", err)
 	}
-	feature.HasDeployments = true
 
 	return &Deployment{
 		ID:           d.ID,

@@ -96,7 +96,6 @@ func featuresFromSQL(rows []featuresql.FeaturesForKindRow) ([]*model.Feature, er
 		if err != nil {
 			return nil, fmt.Errorf("make feature: %w", err)
 		}
-		feature.HasDeployments = f.Hasdeployments
 		ret[i] = feature
 	}
 	return ret, nil

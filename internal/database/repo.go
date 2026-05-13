@@ -45,7 +45,6 @@ type Repo interface {
 	EnvironmentRepo
 	EnvironmentValueRepo
 	ReleaseStatusRepo
-	RolloutRepo
 
 	Transaction
 

@@ -38,11 +38,6 @@ type ReceiverStore interface {
 	EnvironmentIDByNames(ctx context.Context, tenantName string, environmentName string) (uuid.UUID, error)
 	KubernetesNodeSync(ctx context.Context, envID uuid.UUID, kn *message.KubernetesNodes) error
 	ReleaseStatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Release) error
-	RolloutCalculateDone(ctx context.Context, rolloutID uuid.UUID) (bool, error)
-	RolloutDelete(ctx context.Context, name string) error
-	RolloutEventCreate(ctx context.Context, rollout uuid.UUID, failure bool, message string, data map[string]any) error
-	RolloutStatus(ctx context.Context, name string) (model.RolloutStatus, error)
-	RolloutsUpdateStatus(ctx context.Context, status model.RolloutStatus, name string, completed bool) error
 	TxFunc(ctx context.Context, fn database.TXFunc) error
 }
 
@@ -149,110 +144,7 @@ func (r *Receiver) handlerHelm(ctx context.Context, msg message.Status) error {
 		return fmt.Errorf("updating deploy instruction status: %w", err)
 	}
 
-	// only handle CI if no deployments are created for this deployinstruction, i.e. running the old rollout paradigm
-	if env.CI && di.DeploymentID == nil {
-		if err := r.handleCI(ctx, env, di, helmStatus, msg.Tenant); err != nil {
-			r.log.WithError(err).Error("handling helm status message for CI environment")
-		}
-	}
-
 	return nil
-}
-
-func (r *Receiver) handleCI(ctx context.Context, env *model.Environment, di *model.DeployInstruction, helmStatus *message.Helm, tenant string) error {
-	featureName := di.FeatureName
-	featureVersion := di.FeatureVersion
-
-	rollout, err := feature.RolloutByName(ctx, featureName)
-	if err != nil {
-		if !errors.Is(err, pgx.ErrNoRows) {
-			return fmt.Errorf("getting rollout: %w", err)
-		} else {
-			r.log.WithField("name", featureName).Debug("not part of a rollout")
-			return nil
-		}
-	}
-
-	if rollout.Version != featureVersion {
-		r.log.WithField("name", featureName).Warn("version mismatch")
-		return nil
-	}
-
-	eventData := map[string]any{
-		"environment": env.Name,
-		"tenant":      tenant,
-	}
-
-	status := model.RolloutStatusUnknown
-	switch helmStatus.RolloutStatus {
-	case model.RolloutStatusPending:
-		if err := r.repo.RolloutEventCreate(ctx, rollout.GraphVars.RolloutID, false, "Installing helm chart...", eventData); err != nil {
-			return fmt.Errorf("creating rollout event: %w", err)
-		}
-		// We have nothing more to do here as it's still pending
-		return nil
-	case model.RolloutStatusFailed:
-		status = model.RolloutStatusFailed
-		if err := r.repo.RolloutEventCreate(ctx, rollout.GraphVars.RolloutID, true, "Helm install failed", eventData); err != nil {
-			return fmt.Errorf("creating rollout event: %w", err)
-		}
-	case model.RolloutStatusDeployed:
-		status = model.RolloutStatusDeployed
-		if err := r.repo.RolloutEventCreate(ctx, rollout.GraphVars.RolloutID, false, "Helm install succeeded", eventData); err != nil {
-			return fmt.Errorf("creating rollout event: %w", err)
-		}
-	default:
-		return fmt.Errorf("invalid helm status: %v", helmStatus.RolloutStatus)
-	}
-
-	// At this point the rollout is either failed or deployed
-	return r.repo.TxFunc(ctx, func(repo database.Repo) error {
-		last, err := r.repo.RolloutCalculateDone(ctx, rollout.GraphVars.RolloutID)
-		if err != nil {
-			return fmt.Errorf("checking if last: %w", err)
-		}
-		if !last {
-			r.log.WithField("name", featureName).Debug("not last rollout for ci")
-			return nil
-		}
-
-		r.log.WithField("name", featureName).Debug("last rollout for ci")
-
-		// Calculate proper rollout status
-		rolloutStatus, err := r.repo.RolloutStatus(ctx, rollout.Name)
-		if err != nil {
-			if errors.Is(err, pgx.ErrNoRows) {
-				r.log.WithField("name", featureName).Warn("unknown rollout")
-				return nil
-			}
-			return fmt.Errorf("getting rollout status for %q: %w", rollout.Name, err)
-		}
-
-		if status == model.RolloutStatusFailed || rolloutStatus == model.RolloutStatusFailed {
-			if err := repo.RolloutsUpdateStatus(ctx, model.RolloutStatusFailed, rollout.Name, true); err != nil {
-				return fmt.Errorf("updating rollout status (failed): %w", err)
-			}
-			r.log.WithField("name", featureName).Info("rollout failed")
-			return nil
-		}
-
-		if err := feature.FeatureVersionUpdate(ctx, rollout.Name, rollout.Version); err != nil {
-			return fmt.Errorf("updating feature version: %w", err)
-		}
-
-		if len(rollout.Rename) > 0 {
-			if err := feature.ConfigMove(ctx, rollout.Name, rollout.Rename); err != nil {
-				return fmt.Errorf("moving config: %w", err)
-			}
-		}
-
-		if err := repo.RolloutsUpdateStatus(ctx, model.RolloutStatusDeployed, rollout.Name, true); err != nil {
-			return fmt.Errorf("updating rollout status: %w", err)
-		}
-
-		r.log.WithField("name", featureName).Info("rollout succeeded")
-		return nil
-	})
 }
 
 func (r *Receiver) releaseStatus(ctx context.Context, msg message.Status) error {
