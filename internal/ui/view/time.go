@@ -22,13 +22,6 @@ func FormatTime(t time.Time) string {
 	return t.In(Oslo).Format("2006-01-02 15:04:05")
 }
 
-func FormatTimePtr(t *time.Time) string {
-	if t == nil {
-		return "-"
-	}
-	return FormatTime(*t)
-}
-
 func RelativeTime(t time.Time) string {
 	if t.IsZero() {
 		return ""

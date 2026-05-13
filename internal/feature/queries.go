@@ -517,20 +517,6 @@ func Features(ctx context.Context) ([]*model.Feature, error) {
 	return ret, nil
 }
 
-func FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, ci bool) ([]*model.Feature, error) {
-	features, err := querier(ctx).FeaturesForKind(ctx, kind.String())
-	if err != nil {
-		return nil, err
-	}
-
-	ret, err := featuresFromSQL(features)
-	if err != nil {
-		return nil, err
-	}
-
-	return ret, nil
-}
-
 func FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error) {
 	ret := []*model.FeatureState{}
 	featureStates, err := querier(ctx).FeatureStatesGet(ctx, envID)

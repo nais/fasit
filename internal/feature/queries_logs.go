@@ -52,15 +52,6 @@ func LogsGet(ctx context.Context, deployInstructionID uuid.UUID) ([]*model.LogLi
 	return logLines, nil
 }
 
-func LogsByID(ctx context.Context, id int) (*model.LogLine, error) {
-	log, err := querier(ctx).LogsByID(ctx, int64(id))
-	if err != nil {
-		return nil, err
-	}
-
-	return logLineFromSQL(log), nil
-}
-
 func logLineFromSQL(log featuresql.Log) *model.LogLine {
 	return &model.LogLine{
 		ID:                  fmt.Sprintf("%s-%d", log.DeployInstruction, log.ID),
