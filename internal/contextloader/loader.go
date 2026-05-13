@@ -5,7 +5,6 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/audit"
-	"github.com/nais/fasit/internal/cost"
 	"github.com/nais/fasit/internal/dbtx"
 	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/environment"
@@ -31,7 +30,6 @@ func NewLoaderFunc(
 	return func(ctx context.Context) context.Context {
 		ctx = dbtx.Register(ctx, pool)
 		ctx = audit.Register(ctx, pool, log)
-		ctx = cost.Register(ctx, pool)
 		ctx = environment.Register(ctx, pool)
 		ctx = feature.Register(ctx, pool)
 		ctx = naisdstatus.Register(ctx, pool)

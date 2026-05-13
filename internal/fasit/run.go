@@ -14,7 +14,6 @@ import (
 	"cloud.google.com/go/pubsub/v2"
 	"github.com/joho/godotenv"
 	"github.com/nais/fasit/internal/contextloader"
-	"github.com/nais/fasit/internal/cost"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/notifier"
 	"github.com/nais/fasit/internal/deployment"
@@ -108,17 +107,6 @@ func Run(ctx context.Context) error {
 
 	notifierService := notifier.New(pool, log)
 	go notifierService.Run(ctx)
-
-	if cfg.DisableCostUpdater {
-		log.Info("cost updater disabled")
-	} else {
-		costUpdater, err := cost.NewCostUpdater(ctx, repo, log)
-		if err != nil {
-			log.WithError(err).Error("setting up cost updater. You might need to run `gcloud auth --update-adc` if running locally")
-		} else {
-			go costUpdater.Run(ctx, 1*time.Hour)
-		}
-	}
 
 	go func() {
 		if err := runGRPC(ctx, loadContext, cfg.GRPCBindAddress, repo, log); err != nil {
