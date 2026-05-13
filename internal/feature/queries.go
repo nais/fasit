@@ -278,8 +278,11 @@ func HelmValuesWithSecretTaint(ctx context.Context, f *model.Feature, envID uuid
 		return nil, nil, false, err
 	}
 
-	// Real render for display (normal funcs, full validation).
-	real, err := renderHelmValues(data, f, templateFuncs, true)
+	// Real render for display. Validation is skipped: this path feeds the
+	// env-config view, which is a best-effort display. Missing required
+	// fields are surfaced elsewhere (and would still fail the helm-tab/
+	// deploy path, which uses HelmValues with validation enabled).
+	real, err := renderHelmValues(data, f, templateFuncs, false)
 	if err != nil {
 		return nil, nil, false, err
 	}

@@ -176,6 +176,20 @@ func main() {
 			if err != nil {
 				log.Fatal(err)
 			}
+
+			// Secret env values: consumed by computed templates in several features
+			// below. Seeded on every environment so the env-config view can show
+			// the new secret-taint masking in action.
+			secretEnvValues := map[string]string{
+				"db_password": "s3cr3t-" + env,
+				"slack_token": "xoxb-" + env + "-token",
+				"api_key":     "ak_live_" + env + "_xyz",
+			}
+			for k, v := range secretEnvValues {
+				if err := environment.SetEnvironmentValue(ctx, e.ID, k, json.RawMessage(fmt.Sprintf("%q", v)), true); err != nil {
+					log.Fatal(err)
+				}
+			}
 		}
 	}
 
@@ -210,52 +224,102 @@ func main() {
 	secret := &model.Config{Type: model.ConfigTypeString, Secret: true}
 	strArr := &model.Config{Type: model.ConfigTypeStringArray}
 
+	// Feature catalog. Each feature has 5–10 values mixing:
+	//   - plain configs (some Required)
+	//   - secret configs (Secret: true)
+	//   - computed values that reference non-secret data
+	//   - computed values that reference secret env values or secret configs
+	//     (these are the *computed secrets* the env-config view masks)
 	featureValues := map[string]model.Values{
 		"naiserator": {
-			"replicas":      {DisplayName: "Replicas", Description: "Number of replicas", Config: intCfg},
+			"replicas":      {DisplayName: "Replicas", Description: "Number of replicas", Required: true, Config: intCfg},
 			"logLevel":      {DisplayName: "Log Level", Config: str},
-			"apiKey":        {DisplayName: "API Key", Description: "External API key", Config: secret},
+			"apiKey":        {DisplayName: "API Key", Description: "External API key", Required: true, Config: secret},
 			"clusterDomain": {DisplayName: "Cluster Domain", Description: "Derived from environment name", Computed: &model.Computed{Template: `"{{ .Env.name }}.{{ .Tenant.Name }}.cloud.nais.io"`}},
 			"projectRef":    {DisplayName: "GCP Project Ref", Computed: &model.Computed{Template: `"projects/{{ .Env.project_id }}"`}},
 			"imageTag":      {DisplayName: "Image Tag", Description: "Override image tag; falls back to a computed default", Config: str, Computed: &model.Computed{Template: `"{{ .Env.name }}-latest"`}},
 			"featureFlags":  {DisplayName: "Feature Flags", Description: "JSON blob of toggles", Config: str},
 			"extraEnv":      {DisplayName: "Extra Env", Description: "Additional KEY=VALUE pairs", Config: strArr},
 			"motd":          {DisplayName: "Message of the Day", Description: "Multi-line banner shown in the UI", Config: str},
+			// Computed secret: reads the secret env value db_password.
+			"dbDsn": {DisplayName: "DB DSN", Description: "Derived from secret env db_password", Computed: &model.Computed{Template: `"postgres://naiserator:{{ .Env.db_password }}@db.{{ .Env.name }}.local/naiserator"`}},
 		},
 		"console": {
-			"adminEmail":    {DisplayName: "Admin Email", Config: str},
-			"sessionSecret": {DisplayName: "Session Secret", Config: secret},
-			"debugMode":     {DisplayName: "Debug Mode", Config: boolCfg},
+			"adminEmail":       {DisplayName: "Admin Email", Required: true, Config: str},
+			"sessionSecret":    {DisplayName: "Session Secret", Config: secret},
+			"debugMode":        {DisplayName: "Debug Mode", Config: boolCfg},
+			"port":             {DisplayName: "Port", Config: intCfg},
+			"oauthClientId":    {DisplayName: "OAuth Client ID", Config: str},
+			"baseUrl":          {DisplayName: "Base URL", Computed: &model.Computed{Template: `"https://console.{{ .Env.name }}.{{ .Tenant.Name }}.nais.io"`}},
+			"oauthRedirectUri": {DisplayName: "OAuth Redirect URI", Computed: &model.Computed{Template: `"https://console.{{ .Env.name }}.{{ .Tenant.Name }}.nais.io/oauth/callback"`}},
+			// Computed secret: reads the secret env value slack_token.
+			"slackWebhook": {DisplayName: "Slack Webhook URL", Description: "Derived from secret env slack_token", Computed: &model.Computed{Template: `"https://hooks.slack.com/services/{{ .Env.slack_token }}"`}},
 		},
 		"unleash": {
 			"instanceCount": {DisplayName: "Instance Count", Config: intCfg},
-			"dbPassword":    {DisplayName: "Database Password", Config: secret},
+			"dbPassword":    {DisplayName: "Database Password", Required: true, Config: secret},
+			"dbHost":        {DisplayName: "Database Host", Required: true, Config: str},
+			"dbName":        {DisplayName: "Database Name", Config: str},
+			"adminToken":    {DisplayName: "Admin Token", Config: secret},
+			"metricsPath":   {DisplayName: "Metrics Path", Config: str},
+			// Computed secret: reads secret config dbPassword.
+			"dbUrl": {DisplayName: "Database URL", Description: "Derived from secret config dbPassword", Computed: &model.Computed{Template: `"postgres://unleash:{{ .Configs.dbPassword }}@{{ .Configs.dbHost }}/{{ .Configs.dbName }}"`}},
 		},
 		"replicator": {
-			"syncInterval": {DisplayName: "Sync Interval", Description: "Seconds between syncs", Config: str},
-			"maxRetries":   {DisplayName: "Max Retries", Config: intCfg},
+			"syncInterval":  {DisplayName: "Sync Interval", Description: "Seconds between syncs", Config: str},
+			"maxRetries":    {DisplayName: "Max Retries", Config: intCfg},
+			"concurrency":   {DisplayName: "Concurrency", Required: true, Config: intCfg},
+			"logLevel":      {DisplayName: "Log Level", Config: str},
+			"targetCluster": {DisplayName: "Target Cluster", Computed: &model.Computed{Template: `"{{ .Env.name }}-replica"`}},
+			// Computed secret: reads secret env api_key.
+			"apiAuthHeader": {DisplayName: "API Auth Header", Description: "Derived from secret env api_key", Computed: &model.Computed{Template: `"Bearer {{ .Env.api_key }}"`}},
 		},
 		"v13s": {
-			"clusterName": {DisplayName: "Cluster Name", Config: str},
-			"dryRun":      {DisplayName: "Dry Run", Config: boolCfg},
+			"clusterName":   {DisplayName: "Cluster Name", Required: true, Config: str},
+			"dryRun":        {DisplayName: "Dry Run", Config: boolCfg},
+			"scanInterval":  {DisplayName: "Scan Interval", Config: intCfg},
+			"imageRegistry": {DisplayName: "Image Registry", Required: true, Config: str},
+			"dbPassword":    {DisplayName: "Database Password", Config: secret},
+			"apiEndpoint":   {DisplayName: "API Endpoint", Computed: &model.Computed{Template: `"https://v13s.{{ .Env.name }}.nais.io"`}},
+			// Computed secret: reads secret config dbPassword.
+			"dbUrl": {DisplayName: "Database URL", Description: "Derived from secret config dbPassword", Computed: &model.Computed{Template: `"postgres://v13s:{{ .Configs.dbPassword }}@db.{{ .Env.name }}/v13s"`}},
 		},
 		"dependencytrack": {
-			"apiUrl":   {DisplayName: "API URL", Config: str},
-			"apiToken": {DisplayName: "API Token", Config: secret},
+			"apiUrl":          {DisplayName: "API URL", Required: true, Config: str},
+			"apiToken":        {DisplayName: "API Token", Config: secret},
+			"adminEmail":      {DisplayName: "Admin Email", Config: str},
+			"pollInterval":    {DisplayName: "Poll Interval", Config: intCfg},
+			"notificationUrl": {DisplayName: "Notification URL", Computed: &model.Computed{Template: `"https://dt.{{ .Env.name }}.{{ .Tenant.Name }}.nais.io/notify"`}},
+			// Computed secret: reads secret env slack_token.
+			"slackAlertUrl": {DisplayName: "Slack Alert URL", Description: "Derived from secret env slack_token", Computed: &model.Computed{Template: `"https://hooks.slack.com/services/{{ .Env.slack_token }}/alerts"`}},
 		},
 		"kyverno": {
-			"webhookTimeout": {DisplayName: "Webhook Timeout", Description: "Timeout in seconds", Config: intCfg},
-			"replicaCount":   {DisplayName: "Replica Count", Config: intCfg},
-			"webhookURL":     {DisplayName: "Webhook URL", Computed: &model.Computed{Template: `"https://hooks.{{ .Env.name }}.{{ .Tenant.Name }}.example.com/kyverno"`}},
-			"envKind":        {DisplayName: "Environment Kind", Computed: &model.Computed{Template: `"{{ .Env.kind }}"`}},
+			"webhookTimeout":    {DisplayName: "Webhook Timeout", Description: "Timeout in seconds", Config: intCfg},
+			"replicaCount":      {DisplayName: "Replica Count", Required: true, Config: intCfg},
+			"webhookSigningKey": {DisplayName: "Webhook Signing Key", Config: secret},
+			"webhookURL":        {DisplayName: "Webhook URL", Computed: &model.Computed{Template: `"https://hooks.{{ .Env.name }}.{{ .Tenant.Name }}.example.com/kyverno"`}},
+			"envKind":           {DisplayName: "Environment Kind", Computed: &model.Computed{Template: `"{{ .Env.kind }}"`}},
+			// Computed secret: reads secret config webhookSigningKey.
+			"signedWebhookURL": {DisplayName: "Signed Webhook URL", Description: "Derived from secret config webhookSigningKey", Computed: &model.Computed{Template: `"https://hooks.{{ .Env.name }}.{{ .Tenant.Name }}.example.com/kyverno?sig={{ .Configs.webhookSigningKey }}"`}},
 		},
 		"aivenator": {
-			"aivenToken":  {DisplayName: "Aiven Token", Config: secret},
-			"projectName": {DisplayName: "Project Name", Config: str},
+			"aivenToken":   {DisplayName: "Aiven Token", Required: true, Config: secret},
+			"projectName":  {DisplayName: "Project Name", Required: true, Config: str},
+			"region":       {DisplayName: "Region", Config: str},
+			"adminEmail":   {DisplayName: "Admin Email", Config: str},
+			"serviceUrl":   {DisplayName: "Service URL", Computed: &model.Computed{Template: `"https://aiven.{{ .Env.name }}.nais.io"`}},
+			"dashboardUrl": {DisplayName: "Dashboard URL", Computed: &model.Computed{Template: `"https://aiven.{{ .Env.name }}.nais.io/dashboard"`}},
+			// Computed secret: reads secret env api_key.
+			"apiAuthHeader": {DisplayName: "API Auth Header", Description: "Derived from secret env api_key", Computed: &model.Computed{Template: `"Bearer {{ .Env.api_key }}"`}},
 		},
 		"hookd": {
-			"webhookUrl":    {DisplayName: "Webhook URL", Config: str},
+			"webhookUrl":    {DisplayName: "Webhook URL", Required: true, Config: str},
 			"webhookSecret": {DisplayName: "Webhook Secret", Config: secret},
+			"port":          {DisplayName: "Port", Config: intCfg},
+			"githubAppId":   {DisplayName: "GitHub App ID", Required: true, Config: str},
+			"slackChannel":  {DisplayName: "Slack Channel", Config: str},
+			// Computed secret: reads secret config webhookSecret.
+			"signedCallback": {DisplayName: "Signed Callback URL", Description: "Derived from secret config webhookSecret", Computed: &model.Computed{Template: `"{{ .Configs.webhookUrl }}?sig={{ .Configs.webhookSecret }}"`}},
 		},
 	}
 
@@ -268,22 +332,47 @@ func main() {
 			"motd":         "line one\nline two\nline three",
 		},
 		"console": {
-			"adminEmail": "admin@example.com",
-			"debugMode":  false,
+			"adminEmail":    "admin@example.com",
+			"debugMode":     false,
+			"port":          3000,
+			"oauthClientId": "console-local",
 		},
 		"unleash": {
 			"instanceCount": 1,
+			"dbHost":        "db.unleash.local",
+			"dbName":        "unleash",
+			"metricsPath":   "/metrics",
 		},
 		"replicator": {
 			"syncInterval": "60",
 			"maxRetries":   3,
+			"concurrency":  4,
+			"logLevel":     "info",
 		},
 		"v13s": {
-			"dryRun": false,
+			"dryRun":        false,
+			"scanInterval":  300,
+			"imageRegistry": "europe-north1-docker.pkg.dev/nais",
+		},
+		"dependencytrack": {
+			"apiUrl":       "https://dt.example.com",
+			"adminEmail":   "dt-admin@example.com",
+			"pollInterval": 600,
 		},
 		"kyverno": {
 			"webhookTimeout": 10,
 			"replicaCount":   3,
+		},
+		"aivenator": {
+			"projectName": "nais-aiven",
+			"region":      "europe-north1",
+			"adminEmail":  "aiven-admin@example.com",
+		},
+		"hookd": {
+			"webhookUrl":   "https://hookd.example.com/webhook",
+			"port":         8080,
+			"githubAppId":  "123456",
+			"slackChannel": "#deploys",
 		},
 	}
 
@@ -344,22 +433,25 @@ func main() {
 	// Sprinkle a couple of env-level config overrides on naiserator so the Config
 	// tab shows a mix of overridden / default rows (exercising the override-first sort).
 	overrides := []struct {
-		tenant, env, key string
-		value            string
+		tenant, env, feature, key string
+		value                     string
 	}{
-		{"dev-nais", "dev", "replicas", `5`},
-		{"dev-nais", "dev", "featureFlags", `"{\"experimentalA\":false,\"rolloutPercent\":100,\"regions\":[\"eu\"]}"`},
-		{"test-partner", "prod", "logLevel", `"debug"`},
+		{"dev-nais", "dev", "naiserator", "replicas", `5`},
+		{"dev-nais", "dev", "naiserator", "featureFlags", `"{\"experimentalA\":false,\"rolloutPercent\":100,\"regions\":[\"eu\"]}"`},
+		{"test-partner", "prod", "naiserator", "logLevel", `"debug"`},
+		{"test-partner", "prod", "naiserator", "apiKey", `"override-secret-naiserator-prod"`},
+		{"dev-nais", "dev", "unleash", "dbHost", `"db-override.dev.local"`},
+		{"test-partner", "dev", "console", "port", `4000`},
 	}
 	for _, o := range overrides {
 		id := envID(o.tenant, o.env)
 		if _, err := feature.ConfigCreate(ctx, model.NewConfiguration{
 			EnvironmentID: &id,
-			Feature:       "naiserator",
+			Feature:       o.feature,
 			Key:           o.key,
 			Value:         json.RawMessage(o.value),
 		}); err != nil {
-			log.WithError(err).Errorf("seed override naiserator/%s in %s/%s", o.key, o.tenant, o.env)
+			log.WithError(err).Errorf("seed override %s/%s in %s/%s", o.feature, o.key, o.tenant, o.env)
 		}
 	}
 
