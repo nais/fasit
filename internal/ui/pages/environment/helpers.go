@@ -124,19 +124,6 @@ func featureNavs(ctx context.Context, env *model.Environment) ([]view.FeatureNav
 		names = append(names, f.FeatureName)
 	}
 
-	// include features controlled by rollouts
-	featureStates, err := featurepkg.FeatureStatesGet(ctx, env.ID)
-	if err != nil {
-		return nil, nil, err
-	}
-	for _, state := range featureStates {
-		if seen[state.FeatureName] {
-			continue
-		}
-		seen[state.FeatureName] = true
-		names = append(names, state.FeatureName)
-	}
-
 	allFeatures := make([]view.FeatureNav, 0, len(names))
 	enabledFeatures := make([]view.FeatureNav, 0, len(names))
 	for _, name := range names {

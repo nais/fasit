@@ -29,7 +29,6 @@ func (s *Server) Routes() http.Handler {
 	r.Get("/tenants/{tenant}/envs/{env}/{feature}", environment.FeatureTabHandler(s.renderPage, s.repo, "overview"))
 	r.Get("/tenants/{tenant}/envs/{env}/{feature}/logs", environment.FeatureTabHandler(s.renderPage, s.repo, "logs"))
 	r.Get("/tenants/{tenant}/envs/{env}/{feature}/helm", environment.FeatureTabHandler(s.renderPage, s.repo, "helm"))
-	r.Get("/tenants/{tenant}/envs/{env}/{feature}/rollouts", environment.FeatureTabHandler(s.renderPage, s.repo, "rollouts"))
 	r.Get("/tenants/{tenant}/envs/{env}/{feature}/deployments", environment.FeatureTabHandler(s.renderPage, s.repo, "deployments"))
 	r.Get("/tenants/{tenant}/envs/{env}/{feature}/audit", environment.FeatureTabHandler(s.renderPage, s.repo, "audit"))
 	r.Get("/tenants/{tenant}/envs/{env}/{feature}/playground", environment.PlaygroundTabHandler(s.renderPage, s.repo))
