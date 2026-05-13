@@ -380,14 +380,13 @@ func loadFeatureConfigItems(ctx context.Context, feat *model.Feature, envID uuid
 	var computedSecrets map[string]bool
 	probeFailed := false
 	if hasComputed {
+		var probeOK bool
 		var rerr error
-		rendered, computedSecrets, rerr = featurepkg.HelmValuesWithSecretTaint(ctx, feat, envID)
+		rendered, computedSecrets, probeOK, rerr = featurepkg.HelmValuesWithSecretTaint(ctx, feat, envID)
 		if rerr != nil {
 			rendered = nil
 		}
-		// taint==nil with no error means the probe render failed; in that
-		// case pessimistically mark every computed value as secret.
-		probeFailed = rerr == nil && computedSecrets == nil
+		probeFailed = rerr == nil && !probeOK
 	}
 
 	items := make([]FeatureConfigItem, 0, len(configs))

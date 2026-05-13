@@ -1972,6 +1972,74 @@ func (_c *Querier_ListMappingValuesForTenant_Call) RunAndReturn(run func(ctx con
 	return _c
 }
 
+// ListSecretKeysForTenant provides a mock function for the type Querier
+func (_mock *Querier) ListSecretKeysForTenant(ctx context.Context, tenantid uuid.UUID) ([]featuresql.ListSecretKeysForTenantRow, error) {
+	ret := _mock.Called(ctx, tenantid)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListSecretKeysForTenant")
+	}
+
+	var r0 []featuresql.ListSecretKeysForTenantRow
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) ([]featuresql.ListSecretKeysForTenantRow, error)); ok {
+		return returnFunc(ctx, tenantid)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) []featuresql.ListSecretKeysForTenantRow); ok {
+		r0 = returnFunc(ctx, tenantid)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]featuresql.ListSecretKeysForTenantRow)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
+		r1 = returnFunc(ctx, tenantid)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_ListSecretKeysForTenant_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListSecretKeysForTenant'
+type Querier_ListSecretKeysForTenant_Call struct {
+	*mock.Call
+}
+
+// ListSecretKeysForTenant is a helper method to define mock.On call
+//   - ctx context.Context
+//   - tenantid uuid.UUID
+func (_e *Querier_Expecter) ListSecretKeysForTenant(ctx interface{}, tenantid interface{}) *Querier_ListSecretKeysForTenant_Call {
+	return &Querier_ListSecretKeysForTenant_Call{Call: _e.mock.On("ListSecretKeysForTenant", ctx, tenantid)}
+}
+
+func (_c *Querier_ListSecretKeysForTenant_Call) Run(run func(ctx context.Context, tenantid uuid.UUID)) *Querier_ListSecretKeysForTenant_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].(uuid.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_ListSecretKeysForTenant_Call) Return(listSecretKeysForTenantRows []featuresql.ListSecretKeysForTenantRow, err error) *Querier_ListSecretKeysForTenant_Call {
+	_c.Call.Return(listSecretKeysForTenantRows, err)
+	return _c
+}
+
+func (_c *Querier_ListSecretKeysForTenant_Call) RunAndReturn(run func(ctx context.Context, tenantid uuid.UUID) ([]featuresql.ListSecretKeysForTenantRow, error)) *Querier_ListSecretKeysForTenant_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // LogsByDeployInstruction provides a mock function for the type Querier
 func (_mock *Querier) LogsByDeployInstruction(ctx context.Context, deployInstruction uuid.UUID) ([]featuresql.Log, error) {
 	ret := _mock.Called(ctx, deployInstruction)

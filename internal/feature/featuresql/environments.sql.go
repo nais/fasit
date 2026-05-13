@@ -97,3 +97,48 @@ func (q *Queries) ListMappingValuesForTenant(ctx context.Context, arg ListMappin
 	}
 	return items, nil
 }
+
+const listSecretKeysForTenant = `-- name: ListSecretKeysForTenant :many
+SELECT
+	"environment_id",
+	"key"
+FROM
+	environment_values
+WHERE
+	"environment_id" IN (
+		SELECT
+			id
+		FROM
+			environments
+		WHERE
+			"tenant_id" = $1)
+	AND "secret" = TRUE
+ORDER BY
+	"environment_id",
+	"key"
+`
+
+type ListSecretKeysForTenantRow struct {
+	EnvironmentID uuid.UUID
+	Key           string
+}
+
+func (q *Queries) ListSecretKeysForTenant(ctx context.Context, tenantid uuid.UUID) ([]ListSecretKeysForTenantRow, error) {
+	rows, err := q.db.Query(ctx, listSecretKeysForTenant, tenantid)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListSecretKeysForTenantRow{}
+	for rows.Next() {
+		var i ListSecretKeysForTenantRow
+		if err := rows.Scan(&i.EnvironmentID, &i.Key); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
