@@ -40,16 +40,8 @@ func EnvironmentFeature(tenantName, envName, featureName string) Crumb {
 	return Crumb{Label: featureName, URL: "/tenants/" + tenantName + "/envs/" + envName + "/" + featureName}
 }
 
-func Rollouts() Crumb {
-	return Crumb{Label: "Rollouts", URL: "/rollouts"}
-}
-
 func Deployments() Crumb {
 	return Crumb{Label: "Deployments", URL: "/deployments"}
-}
-
-func Rollout(featureName, version string) Crumb {
-	return Crumb{Label: featureName + " " + version, URL: "/rollouts/" + featureName + "/" + version}
 }
 
 func Deployment(id, featureName, version string) Crumb {
