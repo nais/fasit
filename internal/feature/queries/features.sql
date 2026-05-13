@@ -43,14 +43,7 @@ ON CONFLICT (
 SELECT
 	sqlc.embed(fd),
 	features.created,
-	features.last_modified,
-	EXISTS (
-		SELECT
-			1
-		FROM
-			deployments d
-		WHERE
-			d.feature_name = fd.name) AS hasDeployments
+	features.last_modified
 FROM
 	features
 	JOIN feature_data fd ON features.name = fd.name
@@ -85,33 +78,19 @@ filtered AS (
 SELECT
 	sqlc.embed(fd),
 	filtered.created,
-	filtered.last_modified,
-	EXISTS (
-		SELECT
-			1
-		FROM
-			deployments d
-		WHERE
-			d.feature_name = fd.name) AS hasDeployments
-	FROM
-		filtered
-		JOIN feature_data fd ON filtered.name = fd.name
-			AND filtered.version = fd.version
-		ORDER BY
-			filtered.name;
+	filtered.last_modified
+FROM
+	filtered
+	JOIN feature_data fd ON filtered.name = fd.name
+		AND filtered.version = fd.version
+	ORDER BY
+		filtered.name;
 
 -- name: FeaturesForKind :many
 SELECT
 	sqlc.embed(fd),
 	features.created,
-	features.last_modified,
-	EXISTS (
-		SELECT
-			1
-		FROM
-			deployments d
-		WHERE
-			d.feature_name = fd.name) AS hasDeployments
+	features.last_modified
 FROM
 	features
 	JOIN feature_data fd ON features.name = fd.name
