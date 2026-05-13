@@ -18,7 +18,7 @@ Helper.SQLExec([[
 ]], prodID)
 
 Test.rest("create deployment", function(t)
-	t.send("POST", "/github/deployment", [[
+    t.send("POST", "/github/deployment", [[
 		{
 			"chart": "oci://clamav",
 			"version": "0.1.0-feature",
@@ -28,15 +28,15 @@ Test.rest("create deployment", function(t)
 			"ci": {"wait": true}
 		}
 	]])
-	t.check(201, {
-		id = Save("deploymentId"),
-	})
+    t.check(201, {
+        id = Save("deploymentId"),
+    })
 end)
 
 Helper.Reconcile()
 
 Test.gql("deployment is DEPLOYED in dev and DISABLED in prod", function(t)
-	t.query(string.format([[
+    t.query(string.format([[
 		{
 			deployment (id: "%s") {
 				feature {
@@ -54,30 +54,30 @@ Test.gql("deployment is DEPLOYED in dev and DISABLED in prod", function(t)
 		}
 	]], State.deploymentId))
 
-	t.check(
-		{
-			data = {
-				deployment = {
-					feature = {
-						name = "clamav",
-						version = "0.1.0-feature",
-					},
-					statuses = {
-						{
-							environment = { name = "dev" },
-							state = "DEPLOYED",
-							message = "received status from naisd.",
-						},
-						{
-							environment = { name = "prod" },
-							state = "DISABLED",
-							message = "feature is disabled in this environment",
-						},
-					},
-				},
-			},
-		}
-	)
+    t.check(
+        {
+            data = {
+                deployment = {
+                    feature = {
+                        name = "clamav",
+                        version = "0.1.0-feature",
+                    },
+                    statuses = {
+                        {
+                            environment = { name = "dev" },
+                            state = "DEPLOYED",
+                            message = "received status from naisd.",
+                        },
+                        {
+                            environment = { name = "prod" },
+                            state = "DISABLED",
+                            message = "feature is disabled in this environment",
+                        },
+                    },
+                },
+            },
+        }
+    )
 end)
 
 -- Re-enable by removing the row, deploy a new version, and confirm both
@@ -89,7 +89,7 @@ Helper.SQLExec([[
 ]], prodID)
 
 Test.rest("create follow-up deployment after re-enable", function(t)
-	t.send("POST", "/github/deployment", [[
+    t.send("POST", "/github/deployment", [[
 		{
 			"chart": "oci://clamav",
 			"version": "0.1.1-feature",
@@ -99,15 +99,15 @@ Test.rest("create follow-up deployment after re-enable", function(t)
 			"ci": {"wait": true}
 		}
 	]])
-	t.check(201, {
-		id = Save("followupDeploymentId"),
-	})
+    t.check(201, {
+        id = Save("followupDeploymentId"),
+    })
 end)
 
 Helper.Reconcile()
 
 Test.gql("follow-up deployment is DEPLOYED in both dev and prod", function(t)
-	t.query(string.format([[
+    t.query(string.format([[
 		{
 			deployment (id: "%s") {
 				statuses {
@@ -120,22 +120,22 @@ Test.gql("follow-up deployment is DEPLOYED in both dev and prod", function(t)
 		}
 	]], State.followupDeploymentId))
 
-	t.check(
-		{
-			data = {
-				deployment = {
-					statuses = {
-						{
-							environment = { name = "prod" },
-							state = "DEPLOYED",
-						},
-						{
-							environment = { name = "dev" },
-							state = "DEPLOYED",
-						},
-					},
-				},
-			},
-		}
-	)
+    t.check(
+        {
+            data = {
+                deployment = {
+                    statuses = {
+                        {
+                            environment = { name = "prod" },
+                            state = "DEPLOYED",
+                        },
+                        {
+                            environment = { name = "dev" },
+                            state = "DEPLOYED",
+                        },
+                    },
+                },
+            },
+        }
+    )
 end)
