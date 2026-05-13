@@ -5,7 +5,7 @@ Helper.CreateEnvironment(tenantID, "prod", "tenant", false, false, { kind = "ten
 Helper.CreateEnvironment(tenantID, "nonci", "tenant", false, false, { kind = "tenant" })
 
 Test.rest("create deployment", function(t)
-	t.send("POST", "/github/deployment", [[
+    t.send("POST", "/github/deployment", [[
 		{
 			"chart": "oci://allenvs",
 			"version": "1.0.0",
@@ -15,13 +15,13 @@ Test.rest("create deployment", function(t)
 			"ci": {"wait": true}
 		}
 	]])
-	t.check(201, {
-		id = NotNull(),
-	})
+    t.check(201, {
+        id = NotNull(),
+    })
 end)
 
 Test.rest("create second deployment", function(t)
-	t.send("POST", "/github/deployment", [[
+    t.send("POST", "/github/deployment", [[
 		{
 			"chart": "oci://clamav",
 			"version": "0.1.1-feature",
@@ -31,11 +31,11 @@ Test.rest("create second deployment", function(t)
 			"ci": {"wait": true}
 		}
 	]])
-	t.check(201, {
-		id = NotNull(),
-	})
+    t.check(201, {
+        id = NotNull(),
+    })
 
-	t.send("POST", "/github/deployment", [[
+    t.send("POST", "/github/deployment", [[
 		{
 			"chart": "oci://clamav",
 			"version": "0.1.0-feature",
@@ -45,13 +45,13 @@ Test.rest("create second deployment", function(t)
 			"ci": {"wait": true}
 		}
 	]])
-	t.check(201, {
-		id = NotNull(),
-	})
+    t.check(201, {
+        id = NotNull(),
+    })
 end)
 
 Test.gql("list deployments", function(t)
-	t.query [[
+    t.query [[
 		{
 			deployments {
 				feature {
@@ -66,42 +66,42 @@ Test.gql("list deployments", function(t)
 		}
 	]]
 
-	t.check(
-		{
-			data = {
-				deployments = {
-					{
-						feature = {
-							name = "clamav",
-							version = "0.1.0-feature",
-						},
-						target = {
-							{
-								key = "kind",
-								value = "tenant",
-							},
-						},
-					},
-					{
-						feature = {
-							name = "allenvs",
-							version = "1.0.0",
-						},
-						target = {
-							{
-								key = "kind",
-								value = "tenant",
-							},
-						},
-					},
-				},
-			},
-		}
-	)
+    t.check(
+        {
+            data = {
+                deployments = {
+                    {
+                        feature = {
+                            name = "clamav",
+                            version = "0.1.0-feature",
+                        },
+                        target = {
+                            {
+                                key = "kind",
+                                value = "tenant",
+                            },
+                        },
+                    },
+                    {
+                        feature = {
+                            name = "allenvs",
+                            version = "1.0.0",
+                        },
+                        target = {
+                            {
+                                key = "kind",
+                                value = "tenant",
+                            },
+                        },
+                    },
+                },
+            },
+        }
+    )
 end)
 
 Test.gql("list deployments by feature", function(t)
-	t.query [[
+    t.query [[
 		{
 			deployments (feature: "clamav") {
 				feature {
@@ -116,44 +116,44 @@ Test.gql("list deployments by feature", function(t)
 		}
 	]]
 
-	t.check(
-		{
-			data = {
-				deployments = {
-					{
-						feature = {
-							name = "clamav",
-							version = "0.1.0-feature",
-						},
-						target = {
-							{
-								key = "kind",
-								value = "tenant",
-							},
-						},
-					},
-					{
-						feature = {
-							name = "clamav",
-							version = "0.1.1-feature",
-						},
-						target = {
-							{
-								key = "kind",
-								value = "tenant",
-							},
-						},
-					},
-				},
-			},
-		}
-	)
+    t.check(
+        {
+            data = {
+                deployments = {
+                    {
+                        feature = {
+                            name = "clamav",
+                            version = "0.1.0-feature",
+                        },
+                        target = {
+                            {
+                                key = "kind",
+                                value = "tenant",
+                            },
+                        },
+                    },
+                    {
+                        feature = {
+                            name = "clamav",
+                            version = "0.1.1-feature",
+                        },
+                        target = {
+                            {
+                                key = "kind",
+                                value = "tenant",
+                            },
+                        },
+                    },
+                },
+            },
+        }
+    )
 end)
 
 Helper.Reconcile()
 
 Test.gql("list deployments by feature with status", function(t)
-	t.query [[
+    t.query [[
 		{
 			deployments (feature: "clamav") {
 				feature {
@@ -180,87 +180,87 @@ Test.gql("list deployments by feature with status", function(t)
 		}
 	]]
 
-	t.check(
-		{
-			data = {
-				deployments = {
-					{
-						feature = {
-							name = "clamav",
-							version = "0.1.0-feature",
-						},
-						statuses = {
-							{
-								environment = {
-									kind = "TENANT",
-									labels = {
-										{
-											key = "kind",
-											value = "tenant",
-										},
-									},
-									name = "prod",
-								},
-								message = "received status from naisd.",
-								state = "DEPLOYED",
-							},
-							{
-								environment = {
-									kind = "TENANT",
-									labels = {
-										{
-											key = "kind",
-											value = "tenant",
-										},
-									},
-									name = "nonci",
-								},
-								message = "received status from naisd.",
-								state = "DEPLOYED",
-							},
-							{
-								environment = {
-									kind = "TENANT",
-									labels = {
-										{
-											key = "kind",
-											value = "tenant",
-										},
-									},
-									name = "dev",
-								},
-								message = "received status from naisd.",
-								state = "DEPLOYED",
-							},
-						},
-						target = {
-							{
-								key = "kind",
-								value = "tenant",
-							},
-						},
-					},
-					{
-						feature = {
-							name = "clamav",
-							version = "0.1.1-feature",
-						},
-						statuses = {},
-						target = {
-							{
-								key = "kind",
-								value = "tenant",
-							},
-						},
-					},
-				},
-			},
-		}
-	)
+    t.check(
+        {
+            data = {
+                deployments = {
+                    {
+                        feature = {
+                            name = "clamav",
+                            version = "0.1.0-feature",
+                        },
+                        statuses = {
+                            {
+                                environment = {
+                                    kind = "TENANT",
+                                    labels = {
+                                        {
+                                            key = "kind",
+                                            value = "tenant",
+                                        },
+                                    },
+                                    name = "prod",
+                                },
+                                message = "received status from naisd.",
+                                state = "DEPLOYED",
+                            },
+                            {
+                                environment = {
+                                    kind = "TENANT",
+                                    labels = {
+                                        {
+                                            key = "kind",
+                                            value = "tenant",
+                                        },
+                                    },
+                                    name = "nonci",
+                                },
+                                message = "received status from naisd.",
+                                state = "DEPLOYED",
+                            },
+                            {
+                                environment = {
+                                    kind = "TENANT",
+                                    labels = {
+                                        {
+                                            key = "kind",
+                                            value = "tenant",
+                                        },
+                                    },
+                                    name = "dev",
+                                },
+                                message = "received status from naisd.",
+                                state = "DEPLOYED",
+                            },
+                        },
+                        target = {
+                            {
+                                key = "kind",
+                                value = "tenant",
+                            },
+                        },
+                    },
+                    {
+                        feature = {
+                            name = "clamav",
+                            version = "0.1.1-feature",
+                        },
+                        statuses = {},
+                        target = {
+                            {
+                                key = "kind",
+                                value = "tenant",
+                            },
+                        },
+                    },
+                },
+            },
+        }
+    )
 end)
 
 Test.rest("create global deployment", function(t)
-	t.send("POST", "/github/deployment", [[
+    t.send("POST", "/github/deployment", [[
 		{
 			"chart": "oci://global",
 			"version": "1.0.0",
@@ -269,16 +269,16 @@ Test.rest("create global deployment", function(t)
 		}
 	]])
 
-	t.check(201, {
-		id = Save("globalDeploymentId"),
-	})
+    t.check(201, {
+        id = Save("globalDeploymentId"),
+    })
 end)
 
 Helper.Reconcile()
 
 
 Test.gql("get global deployment", function(t)
-	t.query(string.format([[
+    t.query(string.format([[
 		{
 			deployment (id: "%s") {
 				feature {
@@ -305,75 +305,75 @@ Test.gql("get global deployment", function(t)
 		}
 	]], State.globalDeploymentId))
 
-	t.check(
-		{
-			data = {
-				deployment = {
-					feature = {
-						name = "global",
-						version = "1.0.0",
-					},
-					statuses = {
-						{
-							environment = {
-								kind = "TENANT",
-								labels = {
-									{
-										key = "kind",
-										value = "tenant",
-									},
-								},
-								name = "prod",
-							},
-							message = "received status from naisd.",
-							state = "DEPLOYED",
-						},
-						{
-							environment = {
-								kind = "TENANT",
-								labels = {
-									{
-										key = "kind",
-										value = "tenant",
-									},
-								},
-								name = "nonci",
-							},
-							message = "received status from naisd.",
-							state = "DEPLOYED",
-						},
-						{
-							environment = {
-								kind = "MANAGEMENT",
-								labels = {
-									{
-										key = "kind",
-										value = "management",
-									},
-								},
-								name = "management",
-							},
-							message = "received status from naisd.",
-							state = "DEPLOYED",
-						},
-						{
-							environment = {
-								kind = "TENANT",
-								labels = {
-									{
-										key = "kind",
-										value = "tenant",
-									},
-								},
-								name = "dev",
-							},
-							message = "received status from naisd.",
-							state = "DEPLOYED",
-						},
-					},
-					target = {},
-				},
-			},
-		}
-	)
+    t.check(
+        {
+            data = {
+                deployment = {
+                    feature = {
+                        name = "global",
+                        version = "1.0.0",
+                    },
+                    statuses = {
+                        {
+                            environment = {
+                                kind = "TENANT",
+                                labels = {
+                                    {
+                                        key = "kind",
+                                        value = "tenant",
+                                    },
+                                },
+                                name = "prod",
+                            },
+                            message = "received status from naisd.",
+                            state = "DEPLOYED",
+                        },
+                        {
+                            environment = {
+                                kind = "TENANT",
+                                labels = {
+                                    {
+                                        key = "kind",
+                                        value = "tenant",
+                                    },
+                                },
+                                name = "nonci",
+                            },
+                            message = "received status from naisd.",
+                            state = "DEPLOYED",
+                        },
+                        {
+                            environment = {
+                                kind = "MANAGEMENT",
+                                labels = {
+                                    {
+                                        key = "kind",
+                                        value = "management",
+                                    },
+                                },
+                                name = "management",
+                            },
+                            message = "received status from naisd.",
+                            state = "DEPLOYED",
+                        },
+                        {
+                            environment = {
+                                kind = "TENANT",
+                                labels = {
+                                    {
+                                        key = "kind",
+                                        value = "tenant",
+                                    },
+                                },
+                                name = "dev",
+                            },
+                            message = "received status from naisd.",
+                            state = "DEPLOYED",
+                        },
+                    },
+                    target = {},
+                },
+            },
+        }
+    )
 end)
