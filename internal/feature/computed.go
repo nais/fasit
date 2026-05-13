@@ -42,6 +42,10 @@ type ComputedValues struct {
 }
 
 func Generate(vals model.Values, kind model.EnvironmentKind, values *ComputedValues, target map[string]any) error {
+	return GenerateWith(vals, kind, values, target, templateFuncs)
+}
+
+func GenerateWith(vals model.Values, kind model.EnvironmentKind, values *ComputedValues, target map[string]any, funcs template.FuncMap) error {
 	if target == nil {
 		return fmt.Errorf("target is nil")
 	}
@@ -63,14 +67,14 @@ func Generate(vals model.Values, kind model.EnvironmentKind, values *ComputedVal
 			return err
 		}
 
-		if err := addToMap(target, values, keys, v.Computed.Template); err != nil {
+		if err := addToMap(target, values, keys, v.Computed.Template, funcs); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func addToMap(target map[string]any, values *ComputedValues, key []string, v string) error {
+func addToMap(target map[string]any, values *ComputedValues, key []string, v string, funcs template.FuncMap) error {
 	if len(key) > 1 {
 		t, ok := target[key[0]]
 		if !ok {
@@ -81,10 +85,10 @@ func addToMap(target map[string]any, values *ComputedValues, key []string, v str
 		if !ok {
 			return fmt.Errorf("key %v is not nestable", key[0])
 		}
-		return addToMap(tt, values, key[1:], v)
+		return addToMap(tt, values, key[1:], v, funcs)
 	}
 
-	val, err := renderTemplate(values, v)
+	val, err := renderTemplate(values, v, funcs)
 	if err != nil {
 		return fmt.Errorf("%v: %w", strings.Join(key, "."), err)
 	}
@@ -97,11 +101,11 @@ func addToMap(target map[string]any, values *ComputedValues, key []string, v str
 	return nil
 }
 
-func renderTemplate(values *ComputedValues, tpl string) (any, error) {
+func renderTemplate(values *ComputedValues, tpl string, funcs template.FuncMap) (any, error) {
 	if tpl == "" {
 		return nil, fmt.Errorf("empty template")
 	}
-	rdr, err := renderString(values, tpl)
+	rdr, err := renderString(values, tpl, funcs)
 	if err != nil {
 		return nil, err
 	}
@@ -116,9 +120,9 @@ func renderTemplate(values *ComputedValues, tpl string) (any, error) {
 	return v, nil
 }
 
-func renderString(values *ComputedValues, tpl string) (string, error) {
+func renderString(values *ComputedValues, tpl string, funcs template.FuncMap) (string, error) {
 	t := template.New("tpl")
-	t.Funcs(templateFuncs)
+	t.Funcs(funcs)
 	t, err := t.Parse(tpl)
 	if err != nil {
 		return "", err

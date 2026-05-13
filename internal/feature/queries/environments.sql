@@ -49,3 +49,22 @@ GROUP BY
 ORDER BY
 	"name" ASC;
 
+-- name: ListSecretKeysForTenant :many
+SELECT
+	"environment_id",
+	"key"
+FROM
+	environment_values
+WHERE
+	"environment_id" IN (
+		SELECT
+			id
+		FROM
+			environments
+		WHERE
+			"tenant_id" = @tenantID)
+	AND "secret" = TRUE
+ORDER BY
+	"environment_id",
+	"key";
+

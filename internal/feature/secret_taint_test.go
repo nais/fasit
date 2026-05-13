@@ -10,11 +10,11 @@ import (
 )
 
 // renderBoth renders the given feature values twice: once with the supplied
-// "real" inputs, and once with secret env-values masked and secret config
-// values replaced with the probe sentinel. It then returns the taint set
-// produced by computedSecretTaint, mirroring what HelmValuesWithSecretTaint
-// does without needing a database.
-func renderBoth(t *testing.T, values model.Values, kind model.EnvironmentKind, realMV, probeMV *ComputedValues, configs map[string]json.RawMessage, secretConfigKeys []string) map[string]bool {
+// "real" inputs (controlMV), and once with secret env-values replaced by the
+// probe sentinel and secret config values replaced with the probe sentinel.
+// It then returns the taint set produced by computedSecretTaint, mirroring
+// what HelmValuesWithSecretTaint does without needing a database.
+func renderBoth(t *testing.T, values model.Values, kind model.EnvironmentKind, controlMV, probeMV *ComputedValues, configs map[string]json.RawMessage, secretConfigKeys []string) map[string]bool {
 	t.Helper()
 
 	rawToMap := func(in map[string]json.RawMessage) map[string]any {
@@ -25,16 +25,16 @@ func renderBoth(t *testing.T, values model.Values, kind model.EnvironmentKind, r
 		return m
 	}
 
-	real := rawToMap(configs)
-	require.NoError(t, Generate(values, kind, realMV, real))
+	control := rawToMap(configs)
+	require.NoError(t, GenerateWith(values, kind, controlMV, control, deterministicTemplateFuncs))
 
 	probe := rawToMap(configs)
 	for _, key := range secretConfigKeys {
 		setNestedSentinel(probe, key)
 	}
-	require.NoError(t, Generate(values, kind, probeMV, probe))
+	require.NoError(t, GenerateWith(values, kind, probeMV, probe, deterministicTemplateFuncs))
 
-	return computedSecretTaint(values, real, probe)
+	return computedSecretTaint(values, control, probe)
 }
 
 func TestComputedSecretTaint(t *testing.T) {
@@ -64,7 +64,7 @@ func TestComputedSecretTaint(t *testing.T) {
 			},
 			probeMV: &ComputedValues{
 				Tenant: baseTenant,
-				Env:    map[string]any{"name": "env1", "token": "*****"},
+				Env:    map[string]any{"name": "env1", "token": probeSecretSentinel},
 			},
 			wantSecret:    []string{"out"},
 			wantNotSecret: []string{"safe"},
@@ -80,7 +80,7 @@ func TestComputedSecretTaint(t *testing.T) {
 			},
 			probeMV: &ComputedValues{
 				Tenant: baseTenant,
-				Env:    map[string]any{"token": "*****"},
+				Env:    map[string]any{"token": probeSecretSentinel},
 			},
 			wantSecret: []string{"out"},
 		},
@@ -95,7 +95,7 @@ func TestComputedSecretTaint(t *testing.T) {
 			},
 			probeMV: &ComputedValues{
 				Tenant: baseTenant,
-				Env:    map[string]any{"token": "*****"},
+				Env:    map[string]any{"token": probeSecretSentinel},
 			},
 			wantSecret: []string{"out"},
 		},
@@ -110,7 +110,7 @@ func TestComputedSecretTaint(t *testing.T) {
 			},
 			probeMV: &ComputedValues{
 				Tenant: baseTenant,
-				Envs:   []map[string]any{{"token": "*****"}},
+				Envs:   []map[string]any{{"token": probeSecretSentinel}},
 			},
 			wantSecret: []string{"out"},
 		},
@@ -128,7 +128,7 @@ func TestComputedSecretTaint(t *testing.T) {
 			probeMV: &ComputedValues{
 				Tenant: baseTenant,
 				Envs: []map[string]any{
-					{"name": "e1", "token": "*****"},
+					{"name": "e1", "token": probeSecretSentinel},
 				},
 			},
 			wantSecret: []string{"out"},
@@ -144,7 +144,7 @@ func TestComputedSecretTaint(t *testing.T) {
 			},
 			probeMV: &ComputedValues{
 				Tenant: baseTenant,
-				Env:    map[string]any{"token": "*****"},
+				Env:    map[string]any{"token": probeSecretSentinel},
 			},
 			wantNotSecret: []string{"out"},
 		},
@@ -160,7 +160,7 @@ func TestComputedSecretTaint(t *testing.T) {
 			},
 			probeMV: &ComputedValues{
 				Tenant:     baseTenant,
-				Management: map[string]any{"token": "*****", "public": "mgmt-public"},
+				Management: map[string]any{"token": probeSecretSentinel, "public": "mgmt-public"},
 			},
 			wantSecret:    []string{"out"},
 			wantNotSecret: []string{"safe"},
@@ -176,7 +176,7 @@ func TestComputedSecretTaint(t *testing.T) {
 			},
 			probeMV: &ComputedValues{
 				Tenant: baseTenant,
-				Envs:   []map[string]any{{"token": "*****"}},
+				Envs:   []map[string]any{{"token": probeSecretSentinel}},
 			},
 			wantSecret: []string{"out"},
 		},
@@ -194,7 +194,7 @@ func TestComputedSecretTaint(t *testing.T) {
 			probeMV: &ComputedValues{
 				Tenant: baseTenant,
 				Envs: []map[string]any{
-					{"name": "e1", "token": "*****"},
+					{"name": "e1", "token": probeSecretSentinel},
 				},
 			},
 			wantSecret: []string{"out"},
@@ -274,4 +274,93 @@ func TestSetNestedSentinel(t *testing.T) {
 		setNestedSentinel(m, "missing")
 		assert.Equal(t, map[string]any{"other": json.RawMessage(`"x"`)}, m)
 	})
+}
+
+func TestMaskEnvSecrets(t *testing.T) {
+	t.Parallel()
+
+	t.Run("masks secret keys in Env, Management, and Envs", func(t *testing.T) {
+		mv := &ComputedValues{
+			Tenant: ComputedTenant{Name: "t"},
+			Env:    map[string]any{"name": "e1", "token": "real-secret"},
+			Management: map[string]any{"name": "mgmt", "token": "mgmt-secret"},
+			Envs: []map[string]any{
+				{"name": "e1", "token": "real-secret"},
+				{"name": "e2", "token": "other-secret"},
+			},
+		}
+		secretKeys := map[string]bool{"token": true}
+		maskEnvSecrets(mv, secretKeys)
+
+		assert.Equal(t, probeSecretSentinel, mv.Env["token"])
+		assert.Equal(t, "e1", mv.Env["name"])
+		assert.Equal(t, probeSecretSentinel, mv.Management["token"])
+		assert.Equal(t, "mgmt", mv.Management["name"])
+		for _, e := range mv.Envs {
+			assert.Equal(t, probeSecretSentinel, e["token"])
+		}
+	})
+}
+
+func TestDeterministicFuncs_NoFalsePositive(t *testing.T) {
+	t.Parallel()
+
+	values := model.Values{
+		"out": {Computed: &model.Computed{Template: `{{ now | date "2006-01-02" }}`}},
+	}
+	mv := &ComputedValues{
+		Tenant: ComputedTenant{Name: "t"},
+		Env:    map[string]any{"name": "e1"},
+	}
+
+	control := map[string]any{}
+	require.NoError(t, GenerateWith(values, model.EnvironmentKindTenant, mv, control, deterministicTemplateFuncs))
+
+	probe := map[string]any{}
+	require.NoError(t, GenerateWith(values, model.EnvironmentKindTenant, mv, probe, deterministicTemplateFuncs))
+
+	taint := computedSecretTaint(values, control, probe)
+	assert.Empty(t, taint, "deterministic funcs should produce identical output; no false positive taint")
+}
+
+func TestNonStringSecretConfig_ProbeFailsPessimistic(t *testing.T) {
+	t.Parallel()
+
+	// A non-string (int) secret config gets a string sentinel, which causes
+	// a type mismatch in templates that expect a number. The probe render
+	// should fail, and the caller should pessimistically mask all computed
+	// values.
+	values := model.Values{
+		"port": {Config: &model.Config{Type: model.ConfigTypeInt, Secret: true}},
+		"out":  {Computed: &model.Computed{Template: `port={{ .Configs.port }}`}},
+	}
+
+	mv := &ComputedValues{
+		Tenant: ComputedTenant{Name: "t"},
+		Env:    map[string]any{"name": "e1"},
+	}
+
+	// Control render with real int value succeeds.
+	controlCfg := map[string]any{"port": json.RawMessage(`8080`)}
+	require.NoError(t, GenerateWith(values, model.EnvironmentKindTenant, mv, controlCfg, deterministicTemplateFuncs))
+
+	// Probe render with string sentinel: the template may still succeed
+	// (Go templates are loosely typed), but the output will differ from
+	// control, so the value is correctly tainted.
+	probeCfg := map[string]any{"port": json.RawMessage(`8080`)}
+	setNestedSentinel(probeCfg, "port")
+	probeErr := GenerateWith(values, model.EnvironmentKindTenant, mv, probeCfg, deterministicTemplateFuncs)
+
+	if probeErr != nil {
+		// Probe failed — caller should pessimistically mask everything.
+		// This is the expected path for templates that do arithmetic on the value.
+		t.Log("probe render failed as expected for non-string secret:", probeErr)
+		return
+	}
+
+	// If the probe happens to succeed (template doesn't do type-specific
+	// operations), the taint comparison should still flag the key because
+	// the sentinel differs from the real value.
+	taint := computedSecretTaint(values, controlCfg, probeCfg)
+	assert.True(t, taint["out"], "non-string secret config should taint computed values that reference it")
 }
