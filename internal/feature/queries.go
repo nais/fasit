@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"reflect"
 	"slices"
-	"sort"
 	"text/template"
 	"time"
 
@@ -532,42 +531,12 @@ func FeaturesForKind(ctx context.Context, kind model.EnvironmentKind, ci bool) (
 		return nil, err
 	}
 
-	if !ci {
-		ret, err := featuresFromSQL(features)
-		if err != nil {
-			return nil, err
-		}
-
-		return ret, nil
-	}
-
-	rollouts, err := querier(ctx).RolloutsForKind(ctx, featuresql.EnvironmentKind(kind))
+	ret, err := featuresFromSQL(features)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, ro := range rollouts {
-		for i, f := range features {
-			if f.FeatureDatum.Name == ro.FeatureDatum.Name {
-				// delete feature from slice
-				features = append(features[:i], features[i+1:]...)
-				break
-			}
-		}
-	}
-
-	for _, ro := range rollouts {
-		features = append(features, featuresql.FeaturesForKindRow{
-			FeatureDatum:   ro.FeatureDatum,
-			Hasdeployments: ro.Hasdeployments,
-		})
-	}
-
-	sort.Slice(features, func(i, j int) bool {
-		return features[i].FeatureDatum.Name < features[j].FeatureDatum.Name
-	})
-
-	return featuresFromSQL(features)
+	return ret, nil
 }
 
 func FeatureStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error) {
@@ -659,21 +628,6 @@ func FeatureStateGet(ctx context.Context, envID uuid.UUID, featureName string) (
 		Enabled:     false,
 	}
 
-	env, err := environment.Get(ctx, envID)
-	if err != nil {
-		return nil, err
-	}
-
-	defaultFeatures, err := querier(ctx).AutoInstallNamesForKind(ctx, featuresql.EnvironmentKind(env.Kind.String()))
-	if err != nil {
-		return nil, err
-	}
-
-	if slices.Contains(defaultFeatures, featureName) {
-		fs.Enabled = true
-		return fs, nil
-	}
-
 	hasDeployment, err := querier(ctx).HasMatchingDeployment(ctx, featuresql.HasMatchingDeploymentParams{
 		EnvironmentID: envID,
 		FeatureName:   featureName,
@@ -687,28 +641,4 @@ func FeatureStateGet(ctx context.Context, envID uuid.UUID, featureName string) (
 	}
 
 	return fs, nil
-}
-
-func RolloutStatesGet(ctx context.Context, envID uuid.UUID) ([]*model.FeatureState, error) {
-	ret := []*model.FeatureState{}
-	featureStates, err := querier(ctx).RolloutStatesGet(ctx, envID)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return ret, nil
-		}
-		return nil, err
-	}
-
-	for _, featureState := range featureStates {
-		ret = append(ret, &model.FeatureState{
-			ID:           model.FeatureStateID(envID, featureState.FeatureName),
-			FeatureName:  featureState.FeatureName,
-			EnabledAt:    nullTimeToPtr(featureState.EnabledAt),
-			Enabled:      featureState.Enabled,
-			Created:      featureState.Created.Time,
-			LastModified: featureState.LastModified.Time,
-			EnvID:        envID,
-		})
-	}
-	return ret, nil
 }

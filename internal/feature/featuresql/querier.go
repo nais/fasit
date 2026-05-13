@@ -9,8 +9,6 @@ import (
 )
 
 type Querier interface {
-	AutoInstallNamesForKind(ctx context.Context, environmentKind EnvironmentKind) ([]string, error)
-	AutoInstallsForKind(ctx context.Context, environmentKind EnvironmentKind) ([]AutoInstall, error)
 	ConfigDelete(ctx context.Context, id uuid.UUID) error
 	ConfigEnvGet(ctx context.Context, arg ConfigEnvGetParams) (ConfigurationsEnvironment, error)
 	ConfigEnvUpdateOrCreate(ctx context.Context, arg ConfigEnvUpdateOrCreateParams) (ConfigurationsEnvironment, error)
@@ -47,9 +45,6 @@ type Querier interface {
 	LogsByDeployInstruction(ctx context.Context, deployInstruction uuid.UUID) ([]Log, error)
 	LogsByID(ctx context.Context, id int64) (Log, error)
 	LogsCreate(ctx context.Context, arg []LogsCreateParams) *LogsCreateBatchResults
-	RolloutByName(ctx context.Context, name string) (RolloutByNameRow, error)
-	RolloutStatesGet(ctx context.Context, environmentID uuid.UUID) ([]RolloutStatesGetRow, error)
-	RolloutsForKind(ctx context.Context, environmentKind EnvironmentKind) ([]RolloutsForKindRow, error)
 }
 
 var _ Querier = (*Queries)(nil)
