@@ -299,7 +299,7 @@ func featureMetadataHeader(page *FeaturePage) g.Node {
 	rows = append(rows, metaRow("Current version", g.Text(currentVersion)))
 
 	if page.FeatureLog != nil && page.FeatureLog.CurrentStatus != "" {
-		rows = append(rows, metaRow("Status", rolloutStatus(page.FeatureLog.CurrentStatus)))
+		rows = append(rows, metaRow("Status", renderStatus(page.FeatureLog.CurrentStatus)))
 	}
 
 	if feat.Chart != "" {
@@ -646,7 +646,7 @@ func deploymentsTab(page *FeaturePage) g.Node {
 				return h.Tr(
 					h.Td(h.A(h.Href("/deployments/"+dep.ID), g.Text(dep.ID[:8]))),
 					h.Td(g.Text(dep.Version)),
-					h.Td(rolloutStatus(dep.Status)),
+					h.Td(renderStatus(dep.Status)),
 					h.Td(labelPills(dep.TargetLabels)),
 					h.Td(g.Text(dep.Created)),
 				)
@@ -932,14 +932,7 @@ func option(value, current string) g.Node {
 	return h.Option(append(attrs, g.Text(value))...)
 }
 
-func emptyFallback(value, fallback string) string {
-	if value == "" {
-		return fallback
-	}
-	return value
-}
-
-func rolloutStatus(status string) g.Node {
+func renderStatus(status string) g.Node {
 	switch strings.ToUpper(status) {
 	case "DEPLOYED":
 		return g.Group([]g.Node{h.Span(h.Class("status-success"), g.Text("✓")), g.Text(" DEPLOYED")})
