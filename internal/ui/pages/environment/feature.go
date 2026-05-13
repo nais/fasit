@@ -18,6 +18,7 @@ import (
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/ui/components"
+	"github.com/nais/fasit/internal/ui/view"
 	"github.com/nais/fasit/internal/ui/layout"
 	g "maragu.dev/gomponents"
 	h "maragu.dev/gomponents/html"
@@ -700,7 +701,7 @@ func auditTab(page *FeaturePage) g.Node {
 	rows := make([]g.Node, 0, len(page.AuditEntries))
 	for _, e := range page.AuditEntries {
 		cells := []g.Node{
-			h.Td(g.Text(e.CreatedAt.Format("2006-01-02 15:04:05"))),
+			h.Td(g.Text(view.FormatTime(e.CreatedAt))),
 			h.Td(g.Text(e.Actor)),
 			h.Td(g.Text(e.Description)),
 		}
