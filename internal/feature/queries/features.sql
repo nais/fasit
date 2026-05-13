@@ -10,8 +10,7 @@ INSERT INTO feature_data(
 	"values",
 	default_values,
 	timeout,
-	tpl_details,
-	"rename")
+	tpl_details)
 VALUES (
 	@feature_name,
 	@version,
@@ -24,8 +23,7 @@ VALUES (
 	@values,
 	@default_values,
 	@timeout,
-	@tpl_details,
-	@rename);
+	@tpl_details);
 
 -- name: FeatureVersionUpdate :exec
 INSERT INTO features(

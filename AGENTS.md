@@ -1,6 +1,6 @@
 # Fasit
 
-Multi-tenant feature management platform. Manages OCI Helm charts ("features") across environments, with deployment reconciliation and rollout orchestration via naisd agents.
+Multi-tenant feature management platform. Manages OCI Helm charts ("features") across environments, with deployment reconciliation and orchestration via naisd agents.
 
 ## Architecture
 
@@ -20,7 +20,6 @@ internal/
   graph/           → GraphQL resolvers (gqlgen) — see internal/graph/AGENTS.md
   ui/              → Server-rendered HTML (gomponents) — see internal/ui/AGENTS.md
   deployment/      → Deployment reconciler — see internal/deployment/AGENTS.md
-  rollout/         → Rollout reconciler: version rollouts across environments
   feature/         → Feature CRUD, template parsing, computed helm values
   environment/     → Environment CRUD, label matching
   workers/         → Background job scheduler (receiver + scheduler)
@@ -52,15 +51,7 @@ New queries go in the domain package that owns the data (`internal/deployment/qu
 
 `mise run generate` runs: sqlc, gqlgen, mockery (v3, config in `.mockery.yaml`), protoc.
 
-Never edit files in: `gensql/`, `deploymentsql/`, `environmentsql/`, `featuresql/`, `rolloutsql/`, `costsql/`, `auditsql/`, `naisdstatussql/`, `graphgen/`, `model/donotuse/`, `mocks/`.
-
-## Deployment vs Rollout
-
-- **Rollout**: Push a feature version across environments sequentially (ordered progression)
-- **Deployment**: Label-based — deploy to all environments matching target labels (`labels @> target`), reconciled periodically
-- When a feature has deployments, rollouts are effectively disabled for that feature
-- Both produce `deploy_instructions` for naisd and share `model.RolloutStatus` enum / `model.RolloutLog` type at the domain layer — this is intentional (naisd doesn't distinguish)
-- UI, API, and domain packages keep rollouts and deployments fully separate — do NOT mix them
+Never edit files in: `gensql/`, `deploymentsql/`, `environmentsql/`, `featuresql/`, `costsql/`, `auditsql/`, `naisdstatussql/`, `graphgen/`, `model/donotuse/`, `mocks/`.
 
 ## Build & Run
 

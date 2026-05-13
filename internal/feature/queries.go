@@ -432,11 +432,6 @@ func FeatureDataCreate(ctx context.Context, feat model.Feature, details *Feature
 		return fmt.Errorf("marshal details to json: %w", err)
 	}
 
-	rename, err := json.Marshal(feat.Rename)
-	if err != nil {
-		return fmt.Errorf("marshal rename to json: %w", err)
-	}
-
 	return querier(ctx).FeatureDataCreate(ctx, featuresql.FeatureDataCreateParams{
 		FeatureName:   feat.Name,
 		Version:       feat.Version,
@@ -449,7 +444,6 @@ func FeatureDataCreate(ctx context.Context, feat model.Feature, details *Feature
 		DefaultValues: defaultVals,
 		Timeout:       feat.Timeout.Milliseconds(),
 		TplDetails:    detailsBytes,
-		Rename:        rename,
 	})
 }
 
@@ -474,8 +468,6 @@ func FeatureByName(ctx context.Context, name string) (*model.Feature, error) {
 	return feature, nil
 }
 
-// TODO: rename function as it is not by env, but by rollout if ci
-// TODO: enviromentfeatures are a deployment concept, should be moved to deployment repo, but then we need to refactor repos first
 func FeatureByNameForEnv(ctx context.Context, name string, envID uuid.UUID) (*model.Feature, error) {
 	feat, err := GetEnvironmentFeature(ctx, envID, name)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {

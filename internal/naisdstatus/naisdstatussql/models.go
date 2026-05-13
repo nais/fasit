@@ -177,7 +177,6 @@ type FeatureDatum struct {
 	DefaultValues []byte
 	Timeout       int64
 	TplDetails    []byte
-	Rename        []byte
 }
 
 type FeatureState struct {

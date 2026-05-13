@@ -12,7 +12,7 @@ import (
 
 const featureByName = `-- name: FeatureByName :one
 SELECT
-	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.rename,
+	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details,
 	features.created,
 	features.last_modified
 FROM
@@ -44,7 +44,6 @@ func (q *Queries) FeatureByName(ctx context.Context, name string) (FeatureByName
 		&i.FeatureDatum.DefaultValues,
 		&i.FeatureDatum.Timeout,
 		&i.FeatureDatum.TplDetails,
-		&i.FeatureDatum.Rename,
 		&i.Created,
 		&i.LastModified,
 	)
@@ -63,8 +62,7 @@ INSERT INTO feature_data(
 	"values",
 	default_values,
 	timeout,
-	tpl_details,
-	"rename")
+	tpl_details)
 VALUES (
 	$1,
 	$2,
@@ -77,8 +75,7 @@ VALUES (
 	$8,
 	$9,
 	$10,
-	$11,
-	$12)
+	$11)
 `
 
 type FeatureDataCreateParams struct {
@@ -93,7 +90,6 @@ type FeatureDataCreateParams struct {
 	DefaultValues []byte
 	Timeout       int64
 	TplDetails    []byte
-	Rename        []byte
 }
 
 func (q *Queries) FeatureDataCreate(ctx context.Context, arg FeatureDataCreateParams) error {
@@ -109,7 +105,6 @@ func (q *Queries) FeatureDataCreate(ctx context.Context, arg FeatureDataCreatePa
 		arg.DefaultValues,
 		arg.Timeout,
 		arg.TplDetails,
-		arg.Rename,
 	)
 	return err
 }
@@ -332,7 +327,7 @@ filtered AS (
 		id
 )
 SELECT
-	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.rename,
+	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details,
 	filtered.created,
 	filtered.last_modified
 FROM
@@ -370,7 +365,6 @@ func (q *Queries) Features(ctx context.Context) ([]FeaturesRow, error) {
 			&i.FeatureDatum.DefaultValues,
 			&i.FeatureDatum.Timeout,
 			&i.FeatureDatum.TplDetails,
-			&i.FeatureDatum.Rename,
 			&i.Created,
 			&i.LastModified,
 		); err != nil {
@@ -386,7 +380,7 @@ func (q *Queries) Features(ctx context.Context) ([]FeaturesRow, error) {
 
 const featuresForKind = `-- name: FeaturesForKind :many
 SELECT
-	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.rename,
+	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details,
 	features.created,
 	features.last_modified
 FROM
@@ -426,7 +420,6 @@ func (q *Queries) FeaturesForKind(ctx context.Context, environmentKind string) (
 			&i.FeatureDatum.DefaultValues,
 			&i.FeatureDatum.Timeout,
 			&i.FeatureDatum.TplDetails,
-			&i.FeatureDatum.Rename,
 			&i.Created,
 			&i.LastModified,
 		); err != nil {

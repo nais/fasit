@@ -124,7 +124,7 @@ func (q *Queries) DeployInstructionsGetDeployedFeatures(ctx context.Context, arg
 const getDeployment = `-- name: GetDeployment :one
 SELECT
 	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description,
-	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.rename
+	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details
 FROM
 	deployments d
 	JOIN feature_data fd ON d.feature_name = fd.name
@@ -160,7 +160,6 @@ func (q *Queries) GetDeployment(ctx context.Context, id uuid.UUID) (GetDeploymen
 		&i.FeatureDatum.DefaultValues,
 		&i.FeatureDatum.Timeout,
 		&i.FeatureDatum.TplDetails,
-		&i.FeatureDatum.Rename,
 	)
 	return i, err
 }
@@ -308,7 +307,7 @@ func (q *Queries) ListDeploymentStatuses(ctx context.Context, deploymentID uuid.
 const listDeployments = `-- name: ListDeployments :many
 SELECT
 	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description,
-	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.rename
+	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details
 FROM
 	deployments d
 	JOIN (
@@ -362,7 +361,6 @@ func (q *Queries) ListDeployments(ctx context.Context) ([]ListDeploymentsRow, er
 			&i.FeatureDatum.DefaultValues,
 			&i.FeatureDatum.Timeout,
 			&i.FeatureDatum.TplDetails,
-			&i.FeatureDatum.Rename,
 		); err != nil {
 			return nil, err
 		}
@@ -377,7 +375,7 @@ func (q *Queries) ListDeployments(ctx context.Context) ([]ListDeploymentsRow, er
 const listDeploymentsByFeature = `-- name: ListDeploymentsByFeature :many
 SELECT
 	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description,
-	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.rename
+	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details
 FROM
 	deployments d
 	JOIN feature_data fd ON d.feature_name = fd.name
@@ -421,7 +419,6 @@ func (q *Queries) ListDeploymentsByFeature(ctx context.Context, featureName stri
 			&i.FeatureDatum.DefaultValues,
 			&i.FeatureDatum.Timeout,
 			&i.FeatureDatum.TplDetails,
-			&i.FeatureDatum.Rename,
 		); err != nil {
 			return nil, err
 		}
@@ -436,7 +433,7 @@ func (q *Queries) ListDeploymentsByFeature(ctx context.Context, featureName stri
 const listDeploymentsToReconcile = `-- name: ListDeploymentsToReconcile :many
 SELECT DISTINCT ON (d.feature_name, d.target)
 	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description,
-	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.rename
+	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details
 FROM
 	deployments d
 	JOIN environments e ON e.id = $1
@@ -491,7 +488,6 @@ func (q *Queries) ListDeploymentsToReconcile(ctx context.Context, environmentID 
 			&i.FeatureDatum.DefaultValues,
 			&i.FeatureDatum.Timeout,
 			&i.FeatureDatum.TplDetails,
-			&i.FeatureDatum.Rename,
 		); err != nil {
 			return nil, err
 		}

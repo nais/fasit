@@ -46,16 +46,6 @@ you can also run any of:
 - `mise run naisd-management` — test-partner/management
 - `mise run naisd-management-failing` — test-partner/management with mocked helm failures
 
-### Test local rollout
-
-```bash
-./hack/local_rollout.sh <chart> <version>
-```
-
-For the rollout to progress, you need to have naisd running, either with `mise run naisd`.
-
-You will also need to update `test-partner` `dev` to be a CI environment.
-
 ## Testing
 
 Run all tests in the project with `mise run test`.

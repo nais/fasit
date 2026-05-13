@@ -157,7 +157,7 @@ func envRow(env DeploymentEnvStatus, featureName string) g.Node {
 	if tip := statusTooltip(env); tip != "" && rowTip == "" {
 		statusCell = append(statusCell, h.Title(tip))
 	}
-	statusCell = append(statusCell, rolloutStatus(env.StatusText))
+	statusCell = append(statusCell, renderStatus(env.StatusText))
 
 	cells := []g.Node{
 		td(g.Text(env.TenantName)),
