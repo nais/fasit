@@ -10,7 +10,6 @@ import (
 	"github.com/nais/fasit/internal/contextloader"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/deployment"
-	"github.com/nais/fasit/internal/rollout"
 	"github.com/nais/fasit/internal/ui"
 	uiserver "github.com/nais/fasit/internal/ui/server"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -38,13 +37,6 @@ func SetupRouter(
 	router.Use(contextMiddleware(loadContext))
 	router.Handle("/query", iapMW(graphHandler))
 	router.Handle("/metrics", promhttp.Handler())
-
-	rout, err := rollout.New(ctx, repo)
-	if err != nil {
-		return nil, fmt.Errorf("error creating rollout handler: %w", err)
-	}
-	rout.AllowAll = insecureSkipTokenCheck
-	router.Post("/github/rollout", rout.Rollout)
 
 	deploy, err := deployment.NewHttpHandler(ctx, log)
 	if err != nil {

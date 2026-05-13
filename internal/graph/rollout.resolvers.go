@@ -56,10 +56,6 @@ func (r *mutationResolver) DeleteHelmInstall(ctx context.Context, envID uuid.UUI
 		return false, fmt.Errorf("feature %q is enabled, cannot delete helm install", name)
 	}
 
-	if err := r.deleteHelmInstallation(ctx, env, name); err != nil {
-		return false, err
-	}
-
 	audit.AuditDeleteHelmInstall(ctx, env.ID, name)
 	return true, err
 }

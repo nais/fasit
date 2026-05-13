@@ -129,7 +129,7 @@ func TestReconcile(t *testing.T) {
 			newPublisher := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
 				return mgr.publisher
 			}
-			loadContext, err := contextloader.NewLoaderFunc(mgr.db.pool, newPublisher, nil, meter, logger)
+			loadContext, err := contextloader.NewLoaderFunc(mgr.db.pool, newPublisher, meter, logger)
 			if err != nil {
 				t.Fatalf("failed to get setup context: %v", err)
 			}
@@ -212,7 +212,7 @@ func TestReconcileWhenPreviousIsInProgress(t *testing.T) {
 	newPublisher := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
 		return mgr.publisher
 	}
-	loadContext, err := contextloader.NewLoaderFunc(mgr.db.pool, newPublisher, nil, meter, logger)
+	loadContext, err := contextloader.NewLoaderFunc(mgr.db.pool, newPublisher, meter, logger)
 	if err != nil {
 		t.Fatalf("failed to get setup context: %v", err)
 	}

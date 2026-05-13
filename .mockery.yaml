@@ -18,9 +18,6 @@ packages:
   github.com/nais/fasit/internal/environment/environmentsql:
     interfaces:
       Querier:
-  github.com/nais/fasit/internal/rollout/rolloutsql:
-    interfaces:
-      Querier:
   github.com/nais/fasit/internal/audit/auditsql:
     interfaces:
       Querier:
