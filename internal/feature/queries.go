@@ -277,24 +277,29 @@ func HelmValuesWithSecretTaint(ctx context.Context, f *model.Feature, envID uuid
 	if err != nil {
 		return nil, nil, false, err
 	}
+	return renderHelmValuesWithSecretTaint(data, f)
+}
 
-	// Each render mutates its configMap (Generate writes computed keys
-	// into it), so each pass needs its own copy. The real render goes
-	// first and is allowed to mutate the original data.configMap, since
-	// the subsequent control and probe renders use their own clones.
+func renderHelmValuesWithSecretTaint(data *helmRenderData, f *model.Feature) (rendered map[string]any, taint map[string]bool, probeOK bool, err error) {
+	// Snapshot the pre-render configMap so control/probe start from the same
+	// state as the real render. addToMap is write-once: if the real render's
+	// computed values leaked into control/probe, they'd skip re-rendering and
+	// the taint diff would always be empty.
+	originalConfigMap := cloneConfigMap(data.configMap)
+
 	real, err := renderHelmValues(data, f, templateFuncs, false)
 	if err != nil {
 		return nil, nil, false, err
 	}
 
 	controlData := *data
-	controlData.configMap = cloneConfigMap(data.configMap)
+	controlData.configMap = cloneConfigMap(originalConfigMap)
 	control, cerr := renderHelmValues(&controlData, f, deterministicTemplateFuncs, false)
 
 	// Probe render (deterministic funcs, secrets masked with sentinel, no validation).
 	probeMV := cloneComputedValues(data.mv)
 	maskEnvSecrets(probeMV, data.secretEnvKeys)
-	probeCfg := cloneConfigMap(data.configMap)
+	probeCfg := cloneConfigMap(originalConfigMap)
 	for _, key := range f.SecretKeys() {
 		setNestedSentinel(probeCfg, key)
 	}
