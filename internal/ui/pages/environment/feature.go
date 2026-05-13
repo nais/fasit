@@ -511,7 +511,16 @@ func logBlock(lines []LogLine) g.Node {
 
 func helmTab(page *FeaturePage) g.Node {
 	if page.HelmValues == "" {
-		return h.Div(h.Class("tab-content-wrapper"), h.H2(g.Text("Computed Helm Values")), h.P(g.Text("No helm values available.")))
+		body := []g.Node{h.H2(g.Text("Computed Helm Values"))}
+		if page.HelmValuesError != "" {
+			body = append(body,
+				h.P(g.Text("Failed to render helm values:")),
+				h.Pre(h.Class("code-block"), g.Text(page.HelmValuesError)),
+			)
+		} else {
+			body = append(body, h.P(g.Text("No helm values available.")))
+		}
+		return h.Div(h.Class("tab-content-wrapper"), g.Group(body))
 	}
 	return h.Div(h.Class("tab-content-wrapper"),
 		h.Div(h.Class("code-block-header"),

@@ -281,8 +281,8 @@ func TestMaskEnvSecrets(t *testing.T) {
 
 	t.Run("masks secret keys in Env, Management, and Envs", func(t *testing.T) {
 		mv := &ComputedValues{
-			Tenant: ComputedTenant{Name: "t"},
-			Env:    map[string]any{"name": "e1", "token": "real-secret"},
+			Tenant:     ComputedTenant{Name: "t"},
+			Env:        map[string]any{"name": "e1", "token": "real-secret"},
 			Management: map[string]any{"name": "mgmt", "token": "mgmt-secret"},
 			Envs: []map[string]any{
 				{"name": "e1", "token": "real-secret"},
