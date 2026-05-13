@@ -11,7 +11,6 @@ const (
 	PageTenants     Page = "tenants"
 	PageFeatures    Page = "features"
 	PageDeployments Page = "deployments"
-	PageRollouts    Page = "rollouts"
 	PageLabels      Page = "labels"
 	PageNaisd       Page = "naisd"
 )
@@ -36,7 +35,6 @@ func SiteHeader(currentPage Page, userEmail string, gcpProjectID string) g.Node 
 			navItem("/", "Tenants", PageTenants),
 			navItem("/features", "Features", PageFeatures),
 			navItem("/deployments", "Deployments", PageDeployments),
-			navItem("/rollouts", "Rollouts", PageRollouts),
 			navItem("/labels", "Labels", PageLabels),
 			navItem("/naisd", "Naisd", PageNaisd),
 			h.A(
