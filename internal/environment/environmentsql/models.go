@@ -65,12 +65,6 @@ type Audit struct {
 	Metadata    []byte
 }
 
-type AutoInstall struct {
-	Kind    EnvironmentKind
-	Feature string
-	Created pgtype.Timestamptz
-}
-
 type ConfigurationsEnvironment struct {
 	ID            uuid.UUID
 	Feature       string
@@ -128,13 +122,6 @@ type DisabledFeature struct {
 	EnvironmentID uuid.UUID
 	Feature       string
 	DisabledAt    pgtype.Timestamptz
-}
-
-type EnvCost struct {
-	TenantID uuid.UUID
-	EnvID    uuid.UUID
-	Date     pgtype.Date
-	Cost     float32
 }
 
 type Environment struct {
