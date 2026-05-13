@@ -20,8 +20,7 @@ func SetupRouter(
 	ctx context.Context,
 	loadContext contextloader.LoaderFunc,
 	iapAudience string,
-	insecureSkipProxy, insecureSkipTokenCheck bool,
-	graphHandler http.Handler,
+	insecureSkipProxy bool,
 	repo database.Repo,
 	log logrus.FieldLogger,
 ) (http.Handler, error) {
@@ -35,7 +34,6 @@ func SetupRouter(
 
 	router := chi.NewMux()
 	router.Use(contextMiddleware(loadContext))
-	router.Handle("/query", iapMW(graphHandler))
 	router.Handle("/metrics", promhttp.Handler())
 
 	deploy, err := deployment.NewHttpHandler(ctx, log)
