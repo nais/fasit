@@ -235,7 +235,7 @@ func lastDeployedCell(t time.Time, extraTitle string) g.Node {
 	return h.Td(h.Title(title), g.Text(view.RelativeTime(t)))
 }
 
-func rolloutStatus(status string) g.Node {
+func renderStatus(status string) g.Node {
 	switch strings.ToUpper(status) {
 	case "DEPLOYED":
 		return g.Group([]g.Node{h.Span(h.Class("status-success"), g.Text("✓")), g.Text(" DEPLOYED")})

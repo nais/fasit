@@ -11,7 +11,7 @@ import (
 
 const getEnvironmentFeature = `-- name: GetEnvironmentFeature :one
 SELECT
-	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details, fd.rename,
+	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details,
 	ef.deployment_id
 FROM
 	environment_features ef
@@ -47,7 +47,6 @@ func (q *Queries) GetEnvironmentFeature(ctx context.Context, arg GetEnvironmentF
 		&i.FeatureDatum.DefaultValues,
 		&i.FeatureDatum.Timeout,
 		&i.FeatureDatum.TplDetails,
-		&i.FeatureDatum.Rename,
 		&i.DeploymentID,
 	)
 	return i, err

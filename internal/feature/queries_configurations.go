@@ -54,18 +54,6 @@ func EnvConfig(ctx context.Context, feature *model.Feature, envID uuid.UUID) ([]
 		knownKeys[conf.Key] = struct{}{}
 	}
 
-	for _, m := range feature.Rename {
-		for _, rv := range retVal {
-			if rv.Key == m.From {
-				_, ok := knownKeys[m.To]
-				if !ok {
-					rv.Key = m.To
-				}
-				break
-			}
-		}
-	}
-
 	return retVal, nil
 }
 

@@ -49,12 +49,6 @@ type FeatureYAML struct {
 	Target           map[string]string `json:"target,omitempty" yaml:"target,omitempty" jsonschema:"omitempty,description=Target is a set of key-value label selectors; the feature applies only to environments whose labels include all specified pairs (logical AND)."`
 	Timeout          time.Duration     `json:"timeout,omitempty" yaml:"timeout,omitempty" jsonschema:"omitempty,type=string,pattern=^(\\d+h)?(\\d+m)?(\\d+s)?$"`
 	Values           Values            `json:"values,omitempty" yaml:"values,omitempty" jsonschema:"omitempty"`
-
-	// Rename is a list of values that have been renamed to another key. This is an opperation that will be done when the rollout is created.
-	// If the key is found, it will be renamed to the new key unless the new key already exists.
-	// When this has been completely rolled out, it's safe to remove the rename statements.
-	// It is only populated if read from a chart, or if the feature is a rollout.
-	Rename []Rename `json:"rename,omitempty" yaml:"rename,omitempty" jsonschema:"omitempty"`
 }
 
 type Values map[string]Value

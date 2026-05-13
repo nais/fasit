@@ -146,12 +146,6 @@ func makeFeatureYAML(fd deploymentsql.FeatureDatum) (model.FeatureYAML, map[stri
 		return ret, nil, fmt.Errorf("unmarshal values: %w", err)
 	}
 
-	if len(fd.Rename) > 0 {
-		if err := json.Unmarshal(fd.Rename, &ret.Rename); err != nil {
-			return ret, nil, fmt.Errorf("unmarshal rename: %w", err)
-		}
-	}
-
 	return ret, retDefaultVals, nil
 }
 

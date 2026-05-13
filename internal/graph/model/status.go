@@ -1,10 +1,6 @@
 package model
 
 import (
-	"fmt"
-	"io"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -53,33 +49,6 @@ func (r RolloutStatus) IsValid() bool {
 
 func (r RolloutStatus) String() string {
 	return string(r)
-}
-
-func (r *RolloutStatus) UnmarshalGQL(v any) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	str = strings.ToLower(str)
-
-	if str == "unknown" {
-		str = ""
-	}
-
-	*r = RolloutStatus(str)
-	if !r.IsValid() {
-		return fmt.Errorf("%s is not a valid RolloutStatus", str)
-	}
-	return nil
-}
-
-func (r RolloutStatus) MarshalGQL(w io.Writer) {
-	str := r.String()
-	if str == "" {
-		str = "unknown"
-	}
-	fmt.Fprint(w, strconv.Quote(strings.ToUpper(str)))
 }
 
 type LogLine struct {
