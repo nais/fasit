@@ -217,16 +217,6 @@ combined AS (
 		last_modified
 	FROM
 		features
-	UNION
-	SELECT
-		id,
-		feature_name AS name,
-		version,
-		NULL AS last_modified
-	FROM
-		rollouts
-	WHERE
-		status = 'pending'
 ),
 filtered AS (
 	SELECT DISTINCT ON (name)
@@ -336,19 +326,6 @@ WITH combined AS (
 		last_modified
 	FROM
 		features
-	UNION ( SELECT DISTINCT ON (feature_name)
-			id,
-			feature_name AS name,
-			version,
-			MAKE_TIMESTAMPTZ(1969, 4, 20, 0, 0, 0) AS created,
-			MAKE_TIMESTAMPTZ(1969, 4, 20, 0, 0, 0) AS last_modified
-		FROM
-			rollouts
-		WHERE
-			status = 'pending'
-		ORDER BY
-			feature_name,
-			"version" DESC)
 ),
 filtered AS (
 	SELECT DISTINCT ON (name)
@@ -479,67 +456,6 @@ func (q *Queries) FeaturesForKind(ctx context.Context, environmentKind string) (
 			&i.Created,
 			&i.LastModified,
 			&i.Hasdeployments,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const rolloutStatesGet = `-- name: RolloutStatesGet :many
-SELECT
-	$1::UUID AS environment_id,
-	r.feature_name,
-	COALESCE(fs.enabled, FALSE) AS enabled,
-	fs.created,
-	fs.last_modified,
-	fs.enabled_at
-FROM
-	rollouts r
-	JOIN feature_data fd ON fd.name = r.feature_name
-		AND fd.version = r.version
-	LEFT JOIN feature_states fs ON fs.feature = r.feature_name
-		AND fs.environment_id = $1
-WHERE (
-	SELECT
-		kind
-	FROM
-		environments
-	WHERE
-		id = $1) = ANY (fd.kinds)
-ORDER BY
-	r.feature_name ASC
-`
-
-type RolloutStatesGetRow struct {
-	EnvironmentID uuid.UUID
-	FeatureName   string
-	Enabled       bool
-	Created       pgtype.Timestamptz
-	LastModified  pgtype.Timestamptz
-	EnabledAt     pgtype.Timestamptz
-}
-
-func (q *Queries) RolloutStatesGet(ctx context.Context, environmentID uuid.UUID) ([]RolloutStatesGetRow, error) {
-	rows, err := q.db.Query(ctx, rolloutStatesGet, environmentID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []RolloutStatesGetRow{}
-	for rows.Next() {
-		var i RolloutStatesGetRow
-		if err := rows.Scan(
-			&i.EnvironmentID,
-			&i.FeatureName,
-			&i.Enabled,
-			&i.Created,
-			&i.LastModified,
-			&i.EnabledAt,
 		); err != nil {
 			return nil, err
 		}

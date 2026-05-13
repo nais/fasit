@@ -244,26 +244,6 @@ type ReleaseStatus struct {
 	LastModified  pgtype.Timestamptz
 }
 
-type Rollout struct {
-	ID                 uuid.UUID
-	FeatureName        string
-	Version            string
-	Status             string
-	Created            pgtype.Timestamptz
-	Completed          pgtype.Timestamptz
-	GhRef              []byte
-	DeployInstructions []uuid.UUID
-}
-
-type RolloutEvent struct {
-	ID        uuid.UUID
-	RolloutID uuid.UUID
-	Failure   bool
-	Message   string
-	Data      []byte
-	Created   pgtype.Timestamptz
-}
-
 type Tenant struct {
 	ID           uuid.UUID
 	Name         string
