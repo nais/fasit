@@ -116,7 +116,7 @@ func main() {
 	}
 	defer cancel.Close()
 
-	loadContext, err := contextloader.NewLoaderFunc(dbConn, nil, nil, noop.NewMeterProvider().Meter(""), logrus.New())
+	loadContext, err := contextloader.NewLoaderFunc(dbConn, nil, noop.NewMeterProvider().Meter(""), logrus.New())
 	if err != nil {
 		panic(err)
 	}

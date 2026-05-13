@@ -2,17 +2,13 @@ package graph
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/notifier"
-	"github.com/nais/fasit/internal/environment"
 	featurepkg "github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
-	"github.com/nais/fasit/internal/message"
-	"github.com/nais/fasit/internal/rollout"
 	"github.com/sirupsen/logrus"
 )
 
@@ -24,18 +20,16 @@ type Resolver struct {
 	Repo database.Repo
 	Log  logrus.FieldLogger
 
-	logNotifier     *logNotifier
-	diNotifier      *updateNotifier
-	createPublisher rollout.NewPublisher
+	logNotifier *logNotifier
+	diNotifier  *updateNotifier
 }
 
-func NewResolver(ctx context.Context, repo database.Repo, notifier *notifier.Notifier, naisdPublisher rollout.NewPublisher, log logrus.FieldLogger) *Resolver {
+func NewResolver(ctx context.Context, repo database.Repo, notifier *notifier.Notifier, log logrus.FieldLogger) *Resolver {
 	return &Resolver{
-		Repo:            repo,
-		Log:             log.WithField("subsystem", "graphql"),
-		createPublisher: naisdPublisher,
-		logNotifier:     newLogNotifier(ctx, notifier, repo),
-		diNotifier:      newDeployInstructionsNotifier(ctx, notifier, repo),
+		Repo:        repo,
+		Log:         log.WithField("subsystem", "graphql"),
+		logNotifier: newLogNotifier(ctx, notifier, repo),
+		diNotifier:  newDeployInstructionsNotifier(ctx, notifier, repo),
 	}
 }
 
@@ -68,18 +62,4 @@ func (r *Resolver) missingDependencies(ctx context.Context, featureName string, 
 		ret = append(ret, mf)
 	}
 	return ret, nil
-}
-
-func (r *Resolver) deleteHelmInstallation(ctx context.Context, env *model.Environment, name string) error {
-	tenant, err := environment.GetTenant(ctx, env.TenantID)
-	if err != nil {
-		return fmt.Errorf("getting tenant: %w", err)
-	}
-
-	pub := r.createPublisher(rollout.NaisdTopicID(tenant.Name, env.Name), r.Log)
-
-	return pub.Publish(ctx, message.DeployInstruction{
-		Name:      name,
-		Uninstall: true,
-	})
 }

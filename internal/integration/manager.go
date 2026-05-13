@@ -15,7 +15,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/contextloader"
 	"github.com/nais/fasit/internal/database"
-	"github.com/nais/fasit/internal/database/notifier"
 	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/graph"
@@ -24,7 +23,6 @@ import (
 	"github.com/nais/fasit/internal/naisd"
 	"github.com/nais/fasit/internal/naisdstatus"
 	"github.com/nais/fasit/internal/provider/protogen"
-	"github.com/nais/fasit/internal/rollout"
 	"github.com/nais/fasit/internal/server"
 	"github.com/nais/fasit/internal/slack/fake"
 	"github.com/nais/fasit/internal/workers"
@@ -218,11 +216,6 @@ func TestRunner(ctx context.Context, skipSetup bool) (*testmanager.Manager, erro
 		Name: "Reconcile",
 		Doc:  "Reconcile all environments",
 		Func: func(L *lua.LState) int {
-			rolloutReconciler := L.Context().Value(reconcilerKey).(*rollout.Reconciler)
-			if err := rolloutReconciler.Reconcile(L.Context()); err != nil {
-				L.RaiseError("failed to reconcile: %s", err)
-			}
-
 			if err := deployment.GetManager(L.Context()).Reconcile(L.Context()); err != nil {
 				L.RaiseError("failed to reconcile: %s", err)
 			}
@@ -332,17 +325,9 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 			}
 			return p
 		}
-		rolloutPublisher := func(topicID string, log logrus.FieldLogger) rollout.Publisher {
-			p, ok := naisdRunner.reconcilerPublishers[topicID]
-			if !ok {
-				panic(fmt.Sprintf("no publisher for topic %q", topicID))
-			}
-			return p
-		}
-
 		meter := noop.NewMeterProvider().Meter("")
 
-		loadContext, err := contextloader.NewLoaderFunc(pool, deploymentPublisher, rolloutPublisher, meter, log)
+		loadContext, err := contextloader.NewLoaderFunc(pool, deploymentPublisher, meter, log)
 		if err != nil {
 			done()
 			return ctx, nil, nil, err
@@ -364,19 +349,11 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 
 		ctx = context.WithValue(ctx, poolKey, pool)
 
-		notifierService := notifier.New(pool, logrus.NewEntry(log))
-		reconciler, err := rollout.NewReconciler(pool, rolloutPublisher, notifierService, meter, log)
-		if err != nil {
-			done()
-			return ctx, nil, nil, err
-		}
-
 		if err := naisdRunner.start(ctx, db); err != nil {
 			done()
 			return ctx, nil, nil, err
 		}
 
-		ctx = context.WithValue(ctx, reconcilerKey, reconciler)
 		ctx = context.WithValue(ctx, naisdKey, naisdRunner)
 
 		cleanups = append(cleanups, close)
@@ -481,7 +458,6 @@ func newDB(ctx context.Context, container *postgres.PostgresContainer, connStr s
 type naisdRunner struct {
 	*runner.PubSub
 	topics                         map[string]chan pubsubMockMsg
-	reconcilerPublishers           map[string]rollout.Publisher
 	deploymentReconcilerPublishers map[string]deployment.Publisher
 
 	statusCh chan pubsubMockMsg
@@ -557,7 +533,6 @@ func newNaisdForEnv(done <-chan struct{}, tenant, env string, naisdRunner *naisd
 		pubsub:   naisdRunner.PubSub,
 		messages: reconCh,
 	}
-	naisdRunner.registerReconcilerPublisher("naisd-"+tenant+"-"+env, reconPublisher)
 	naisdRunner.registerDeploymentReconcilerPublisher("naisd-"+tenant+"-"+env, reconPublisher)
 
 	deploySubscriber := &mockSubscriber[message.DeployInstruction]{
@@ -593,13 +568,6 @@ func newNaisdForEnv(done <-chan struct{}, tenant, env string, naisdRunner *naisd
 		logrus.NewEntry(logr),
 	)
 	return mgr, executor, err
-}
-
-func (n *naisdRunner) registerReconcilerPublisher(name string, pub rollout.Publisher) {
-	if n.reconcilerPublishers == nil {
-		n.reconcilerPublishers = make(map[string]rollout.Publisher)
-	}
-	n.reconcilerPublishers[name] = pub
 }
 
 func (n *naisdRunner) registerDeploymentReconcilerPublisher(name string, pub deployment.Publisher) {

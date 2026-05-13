@@ -85,16 +85,6 @@ sql:
   - engine: "postgresql" # keep this line for Intellij formatting issues
     !!merge <<: *default_domain
     name: "Rollout reconciler SQL"
-    queries: "internal/rollout/queries"
-    gen:
-      go:
-        !!merge <<: *default_go
-        package: "rolloutsql"
-        out: "internal/rollout/rolloutsql"
-        emit_pointers_for_null_types: true
-  - engine: "postgresql" # keep this line for Intellij formatting issues
-    !!merge <<: *default_domain
-    name: "Rollout reconciler SQL"
     queries: "internal/cost/queries"
     gen:
       go:

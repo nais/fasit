@@ -21,7 +21,6 @@ import (
 	"github.com/nais/fasit/internal/ioconvenience"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/provider"
-	"github.com/nais/fasit/internal/rollout"
 	"github.com/nais/fasit/internal/slack"
 	"github.com/nais/fasit/internal/workers"
 	"github.com/sethvargo/go-envconfig"
@@ -84,11 +83,8 @@ func Run(ctx context.Context) error {
 	deploymentPublisher := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
 		return message.NewPublisher[message.DeployInstruction](pubSubClient, cfg.GCPProjectID, topicID, log)
 	}
-	rolloutPublisher := func(topicID string, log logrus.FieldLogger) rollout.Publisher {
-		return message.NewPublisher[message.DeployInstruction](pubSubClient, cfg.GCPProjectID, topicID, log)
-	}
 
-	loadContext, err := contextloader.NewLoaderFunc(pool, deploymentPublisher, rolloutPublisher, meter, log)
+	loadContext, err := contextloader.NewLoaderFunc(pool, deploymentPublisher, meter, log)
 	if err != nil {
 		return fmt.Errorf("creating setup context: %w", err)
 	}
@@ -113,20 +109,6 @@ func Run(ctx context.Context) error {
 	notifierService := notifier.New(pool, log)
 	go notifierService.Run(ctx)
 
-	reconciler, err := rollout.NewReconciler(pool, rolloutPublisher, notifierService, meter, log)
-	if err != nil {
-		return fmt.Errorf("error creating reconciler: %w", err)
-	}
-
-	go func() {
-		// TODO: this does not need to run in a goroutine as the Listen method is not blocking
-		defer log.Info("reconciler listener started")
-		if err := reconciler.Listen(ctx); err != nil {
-			log.WithError(err).Fatal("setting up reconciler listener")
-		}
-	}()
-	go reconciler.Run(ctx, 10*time.Minute)
-
 	if cfg.DisableCostUpdater {
 		log.Info("cost updater disabled")
 	} else {
@@ -138,15 +120,6 @@ func Run(ctx context.Context) error {
 		}
 	}
 
-	if cfg.GitHubPEM != "" {
-		log.Info("GitHub status reporter enabled")
-		ghstatus, err := rollout.NewGHStatusReporter(log, repo, notifierService, cfg.GitHubPEM)
-		if err != nil {
-			return fmt.Errorf("error creating github status reporter: %w", err)
-		}
-		go ghstatus.Run(ctx)
-	}
-
 	go func() {
 		if err := runGRPC(ctx, loadContext, cfg.GRPCBindAddress, repo, log); err != nil {
 			log.WithError(err).Fatal("running GRPC server")
@@ -156,7 +129,7 @@ func Run(ctx context.Context) error {
 	serverCtx, serverCancel := context.WithCancel(ctx)
 	defer serverCancel()
 
-	httpServer, err := newHTTPServer(serverCtx, loadContext, cfg, repo, notifierService, rolloutPublisher, meter, log)
+	httpServer, err := newHTTPServer(serverCtx, loadContext, cfg, repo, notifierService, meter, log)
 	if err != nil {
 		return fmt.Errorf("error creating http server: %w", err)
 	}

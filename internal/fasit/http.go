@@ -11,7 +11,6 @@ import (
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/notifier"
 	"github.com/nais/fasit/internal/graph"
-	"github.com/nais/fasit/internal/rollout"
 	"github.com/nais/fasit/internal/server"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/otel/metric"
@@ -23,11 +22,10 @@ func newHTTPServer(
 	cfg *Config,
 	repo database.Repo,
 	notifier *notifier.Notifier,
-	publisher rollout.NewPublisher,
 	meter metric.Meter,
 	log logrus.FieldLogger,
 ) (*http.Server, error) {
-	resolver := graph.NewResolver(ctx, repo, notifier, publisher, log)
+	resolver := graph.NewResolver(ctx, repo, notifier, log)
 	graphServer, err := server.SetupGraph(loadContext, resolver, meter)
 	if err != nil {
 		return nil, fmt.Errorf("setting up graph: %w", err)
