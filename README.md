@@ -93,11 +93,11 @@ This will build a new image, push it to GAR and then roll it out using Fasit.
 Retrieve password (require connecting to nais-io tenant):
 
 ```
-kubectl --context nais-io -n nais-system get secrets fasit-backend -o json | jq -r '.data.FASIT_DBCONN_STRING' | base64 -d | awk -F '=' '{print $6}'
+kubectl --context nais-io -n nais-system get secrets fasit-backend-db -o json | jq -r '.data.FASIT_DBCONN_STRING' | base64 -d | awk -F '=' '{print $6}'
 ```
 
 Connect to postgres:
 
 ```
-gcloud sql connect fasit --project nais-io --user fasit
+gcloud sql connect fasit --project nais-io --user fasit --database fasit
 ```
