@@ -46,7 +46,6 @@ type FeaturePage struct {
 	EnabledFeatures  []view.FeatureNav
 	HelmValues       string
 	HelmValuesError  string
-	Rollouts         []RolloutItem
 	Deployments      []EnvDeploymentItem
 	FeatureLog       *FeatureLog
 	ActiveTab        string
@@ -59,15 +58,6 @@ type FeatureDetail struct {
 	*model.Feature
 	Enabled     bool
 	ConfigItems []FeatureConfigItem
-}
-
-type RolloutItem struct {
-	FeatureName string
-	Version     string
-	Status      string
-	Created     string
-	Completed   string
-	Target      string
 }
 
 type EnvDeploymentItem struct {
@@ -113,7 +103,7 @@ func toEnvironmentNavs(environments []*model.Environment) []view.EnvironmentNav 
 	return ret
 }
 
-func featureNavs(ctx context.Context, repo database.Repo, env *model.Environment) ([]view.FeatureNav, []view.FeatureNav, error) {
+func featureNavs(ctx context.Context, env *model.Environment) ([]view.FeatureNav, []view.FeatureNav, error) {
 	deploymentFeatures, err := deployment.ListEnvironmentFeatures(ctx, env.ID)
 	if err != nil {
 		return nil, nil, err
@@ -297,7 +287,7 @@ func loadFeaturePageData(ctx context.Context, repo database.Repo, tenantSlug, en
 		return nil, err
 	}
 
-	allFeatures, enabledFeatures, err := featureNavs(ctx, repo, env)
+	allFeatures, enabledFeatures, err := featureNavs(ctx, env)
 	if err != nil {
 		return nil, err
 	}

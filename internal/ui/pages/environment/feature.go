@@ -255,8 +255,6 @@ func featurePageContent(page *FeaturePage) g.Node {
 		tabContent = logsTab(page)
 	case "helm":
 		tabContent = helmTab(page)
-	case "rollouts":
-		tabContent = rolloutsTab(page)
 	case "deployments":
 		tabContent = deploymentsTab(page)
 	case "audit":
@@ -419,7 +417,7 @@ func configurableTable(page *FeaturePage, items []FeatureConfigItem) g.Node {
 				h.Th(g.Text("Source")),
 			)),
 			h.TBody(g.Group(g.Map(items, func(item FeatureConfigItem) g.Node {
-				valDef := page.Feature.FeatureYAML.Values[item.Key]
+				valDef := page.Feature.Values[item.Key]
 				warn := valDef.Required && item.Source == string(model.ConfigSourceHelm) && isEmptyConfigValue(item.Value)
 				return h.Tr(g.If(warn, h.Class("config-warning")),
 					h.Td(configKeyCell(item)),
@@ -631,15 +629,6 @@ func deepMerge(dst, src map[string]any) {
 	}
 }
 
-func rolloutsTab(page *FeaturePage) g.Node {
-	if len(page.Rollouts) == 0 {
-		return h.Div(h.Class("tab-content-wrapper"), h.H2(g.Text("Rollout History")), h.P(g.Text("No rollout history available.")))
-	}
-	return h.Div(h.Class("tab-content-wrapper"), h.H2(g.Text("Rollout History")), h.Table(h.Class("table sortable"), g.Attr("data-sort-key", "env-feature-rollouts"), h.THead(h.Tr(h.Th(g.Text("Version")), h.Th(g.Text("Status")), h.Th(g.Text("Target")), h.Th(g.Text("Created")), h.Th(g.Text("Completed")))), h.TBody(g.Group(g.Map(page.Rollouts, func(rollout RolloutItem) g.Node {
-		return h.Tr(h.Td(rolloutVersionCell(rollout)), h.Td(rolloutStatus(rollout.Status)), h.Td(g.Text(emptyFallback(rollout.Target, "-"))), h.Td(g.Text(rollout.Created)), h.Td(g.Text(emptyFallback(rollout.Completed, "-"))))
-	})))))
-}
-
 func deploymentsTab(page *FeaturePage) g.Node {
 	if len(page.Deployments) == 0 {
 		return h.Div(h.Class("tab-content-wrapper"), h.H2(g.Text("Deployments")), h.P(g.Text("No deployments target this environment.")))
@@ -680,10 +669,6 @@ func labelPills(labels map[string]string) g.Node {
 		pills = append(pills, h.Span(h.Class("label-filter-tag"), g.Text(k+": "+labels[k])))
 	}
 	return g.Group(pills)
-}
-
-func rolloutVersionCell(r RolloutItem) g.Node {
-	return h.A(h.Href("/rollouts/"+r.FeatureName+"/"+r.Version), g.Text(r.Version))
 }
 
 func auditTab(page *FeaturePage) g.Node {
