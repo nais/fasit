@@ -89,18 +89,6 @@ func environmentKindToSQL(kinds []model.EnvironmentKind) []string {
 	return ret
 }
 
-func featuresFromSQL(rows []featuresql.FeaturesForKindRow) ([]*model.Feature, error) {
-	ret := make([]*model.Feature, len(rows))
-	for i, f := range rows {
-		feature, err := featureFromSQL(f.FeatureDatum)
-		if err != nil {
-			return nil, fmt.Errorf("make feature: %w", err)
-		}
-		ret[i] = feature
-	}
-	return ret, nil
-}
-
 func featureFromSQL(f featuresql.FeatureDatum) (*model.Feature, error) {
 	fyaml, defaultValues, err := makeFeatureYAML(f)
 	if err != nil {

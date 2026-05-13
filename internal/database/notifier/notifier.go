@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"slices"
 	"sync"
 	"time"
 
@@ -23,17 +22,8 @@ type Payload struct {
 	Data  map[string]any `json:"data"`
 }
 
-type Filter func(Payload) bool
-
-// WithOperations returns a filter that matches the given operations
-func WithOperations(ops ...string) Filter {
-	return func(payload Payload) bool {
-		return slices.Contains(ops, payload.Op)
-	}
-}
-
 type listener struct {
-	filters []Filter
+	filters []func(Payload) bool
 	ch      chan Payload
 }
 
@@ -88,29 +78,6 @@ func (n *Notifier) Run(ctx context.Context) {
 			}
 		}
 	}
-}
-
-// SetChannel sets the channel to listen on
-// Will not take effect after Run has been called
-func (n *Notifier) SetChannel(channel string) {
-	n.channel = channel
-}
-
-// Listen returns a channel that will receive notifications for the given table
-// It will receive all notifications for the table unless one or more filters are provided
-func (n *Notifier) Listen(table string, filters ...Filter) <-chan Payload {
-	n.lock.Lock()
-	defer n.lock.Unlock()
-
-	n.log.WithField("table", table).Debug("registering listener")
-
-	ch := make(chan Payload, 20)
-	n.listeners[table] = append(n.listeners[table], listener{
-		filters: filters,
-		ch:      ch,
-	})
-
-	return ch
 }
 
 func (n *Notifier) run(ctx context.Context) error {

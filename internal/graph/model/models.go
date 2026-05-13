@@ -17,15 +17,6 @@ type GHRef struct {
 	Ref   string `json:"ref"`
 }
 
-type Update interface {
-	IsUpdate()
-}
-
-type Warning interface {
-	IsWarning()
-	GetMessage() string
-}
-
 type AuditLog struct {
 	Actor       string    `json:"actor"`
 	Description string    `json:"description"`

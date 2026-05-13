@@ -6,21 +6,6 @@ import (
 	"github.com/google/uuid"
 )
 
-type Status struct {
-	EnvironmentID uuid.UUID     `json:"environmentID"`
-	Feature       string        `json:"feature"`
-	Version       string        `json:"version"`
-	Status        RolloutStatus `json:"status"`
-	ConfigHash    string        `json:"configHash"`
-	Created       time.Time     `json:"created"`
-	LastModified  time.Time     `json:"lastModified"`
-	Log           string        `json:"log"`
-
-	DeployInstructionID uuid.UUID `json:"-"`
-}
-
-func (s *Status) IsUpdate() {}
-
 type RolloutStatus string
 
 const (

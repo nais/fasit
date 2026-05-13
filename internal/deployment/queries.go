@@ -64,18 +64,6 @@ func GetDeployment(ctx context.Context, id uuid.UUID) (*Deployment, error) {
 	return getDeployment(ctx, fromContext(ctx).querier, id)
 }
 
-func GetDeploymentStatus(ctx context.Context, deploymentID uuid.UUID, environmentID uuid.UUID) (*DeploymentStatus, error) {
-	status, err := fromContext(ctx).querier.GetDeploymentStatus(ctx, deploymentsql.GetDeploymentStatusParams{
-		DeploymentID:  deploymentID,
-		EnvironmentID: environmentID,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("get deployment status: %w", err)
-	}
-
-	return deploymentStatusFromSQL(status), nil
-}
-
 func ListDeployInstructionsByDeploymentID(ctx context.Context, deploymentID uuid.UUID) ([]deploymentsql.ListDeployInstructionsByDeploymentIDRow, error) {
 	return fromContext(ctx).querier.ListDeployInstructionsByDeploymentID(ctx, &deploymentID)
 }

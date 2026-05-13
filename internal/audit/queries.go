@@ -12,7 +12,6 @@ import (
 	"github.com/nais/fasit/internal/audit/auditsql"
 	"github.com/nais/fasit/internal/auth"
 	"github.com/nais/fasit/internal/dbtx"
-	"github.com/nais/fasit/internal/graph/model"
 	"github.com/sirupsen/logrus"
 )
 
@@ -113,19 +112,6 @@ func actorOrUnknown(ctx context.Context, description, objectType string) string 
 	return actor
 }
 
-func AuditForEnvironment(ctx context.Context, id uuid.UUID, featureName string) ([]*model.AuditLog, error) {
-	auditLogs, err := querier(ctx).AuditForEnvironment(ctx, auditsql.AuditForEnvironmentParams{
-		EnvironmentID: id.String(),
-		Featurename:   featureName,
-		PageSize:      50,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return auditLogsFromSQL(auditLogs), nil
-}
-
 // Entry mirrors AuditLog but exposes the structured metadata column for the
 // server-rendered UI; the GraphQL surface stays on AuditLog.
 type Entry struct {
@@ -159,8 +145,4 @@ func EntriesForEnvironment(ctx context.Context, id uuid.UUID, featureName string
 		})
 	}
 	return ret, nil
-}
-
-func AuditDeleteHelmInstall(ctx context.Context, envID uuid.UUID, name string) {
-	CreateAudit(ctx, "delete helm install "+name, "environments", envID.String())
 }
