@@ -30,6 +30,8 @@ type Querier interface {
 	ListDeploymentsByFeature(ctx context.Context, featureName string) ([]ListDeploymentsByFeatureRow, error)
 	ListDeploymentsToReconcile(ctx context.Context, environmentID uuid.UUID) ([]ListDeploymentsToReconcileRow, error)
 	ListEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]ListEnvironmentFeaturesRow, error)
+	ListFeatureStatesInEnvironment(ctx context.Context, environmentID uuid.UUID) ([]ListFeatureStatesInEnvironmentRow, error)
+	ListFeatures(ctx context.Context) ([]string, error)
 	SetDeploymentStatus(ctx context.Context, arg SetDeploymentStatusParams) error
 	TimeoutDeployInstructions(ctx context.Context) error
 }
