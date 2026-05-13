@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"net/http"
 	"os"
 	"testing"
 	"time"
@@ -17,7 +16,6 @@ import (
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/environment"
-	"github.com/nais/fasit/internal/graph"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/naisd"
@@ -343,7 +341,6 @@ func newManager(ctx context.Context, skipSetup bool) testmanager.SetupFunc {
 		runners := []spec.Runner{
 			naisdRunner,
 			restRunner,
-			newGQLRunner(loadContext, db),
 			runner.NewSQLRunner(pool),
 		}
 
@@ -371,30 +368,12 @@ func newRestRunner(ctx context.Context, loadContext contextloader.LoaderFunc, re
 	log := logrus.New()
 	log.Out = io.Discard
 
-	dummyHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
-	// router.Handle("/query", iapMW(corsMW.Handler(srv)))
-	router, err := server.SetupRouter(ctx, loadContext, "", true, true, dummyHandler, repo, log)
+	router, err := server.SetupRouter(ctx, loadContext, "", true, repo, log)
 	if err != nil {
 		panic(err)
 	}
 
 	return runner.NewRestRunner(router), nil
-}
-
-func newGQLRunner(loadContext contextloader.LoaderFunc, repo database.Repo) spec.Runner {
-	log := logrus.New()
-	log.Out = io.Discard
-
-	resolver := &graph.Resolver{
-		Repo: repo,
-		Log:  logrus.NewEntry(log),
-	}
-	httpHandler, err := server.SetupGraph(loadContext, resolver, noop.NewMeterProvider().Meter(""))
-	if err != nil {
-		panic(err)
-	}
-
-	return runner.NewGQLRunner(httpHandler)
 }
 
 func startPostgresql(ctx context.Context) (*postgres.PostgresContainer, string, error) {
