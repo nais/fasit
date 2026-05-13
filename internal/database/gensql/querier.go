@@ -40,19 +40,6 @@ type Querier interface {
 	ReleaseStatusCreateOrUpdate(ctx context.Context, arg ReleaseStatusCreateOrUpdateParams) (ReleaseStatus, error)
 	ReleaseStatusDeleteByEnvironment(ctx context.Context, environmentID uuid.UUID) error
 	ReleaseStatusesGet(ctx context.Context, environmentID uuid.UUID) ([]ReleaseStatus, error)
-	RolloutByID(ctx context.Context, id uuid.UUID) (Rollout, error)
-	RolloutByNameAndVersion(ctx context.Context, arg RolloutByNameAndVersionParams) (Rollout, error)
-	RolloutCalculateDone(ctx context.Context, rolloutID uuid.UUID) (bool, error)
-	RolloutComplete(ctx context.Context, featureName string) error
-	RolloutCreate(ctx context.Context, arg RolloutCreateParams) (Rollout, error)
-	RolloutDelete(ctx context.Context, featureName string) error
-	RolloutEventCreate(ctx context.Context, arg RolloutEventCreateParams) error
-	RolloutEventForRollout(ctx context.Context, rolloutID uuid.UUID) ([]RolloutEvent, error)
-	RolloutMarkFailed(ctx context.Context, rolloutID uuid.UUID) (int64, error)
-	RolloutStatus(ctx context.Context, featureName string) (string, error)
-	RolloutUpdateStatus(ctx context.Context, arg RolloutUpdateStatusParams) error
-	Rollouts(ctx context.Context, limit int32) ([]Rollout, error)
-	RolloutsForFeature(ctx context.Context, featureName string) ([]Rollout, error)
 }
 
 var _ Querier = (*Queries)(nil)
