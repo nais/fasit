@@ -19,7 +19,6 @@ type Config struct {
 	IAPAudience               string `env:"IAP_AUDIENCE"`
 	SlackAPIToken             string `env:"SLACK_API_TOKEN"`
 	SlackChannelFeatureAlerts string `env:"SLACK_CHANNEL_FEATURE_ALERTS"`
-	DisableCostUpdater        bool   `env:"DISABLE_COST_UPDATER,default=false"`
 }
 
 // newConfig creates a new configuration instance from environment variables.
