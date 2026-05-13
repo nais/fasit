@@ -155,7 +155,7 @@ func fetchHelmRenderData(ctx context.Context, f *model.Feature, envID uuid.UUID)
 // renderHelmValues renders the helm config map from pre-fetched data.
 // When validate is true, missing required fields cause an error.
 func renderHelmValues(data *helmRenderData, f *model.Feature, funcs template.FuncMap, validate bool) (map[string]any, error) {
-	mp := cloneConfigMap(data.configMap)
+	mp := data.configMap
 	mv := data.mv
 
 	if err := GenerateWith(f.Values, data.envKind, mv, mp, funcs); err != nil {
@@ -278,33 +278,32 @@ func HelmValuesWithSecretTaint(ctx context.Context, f *model.Feature, envID uuid
 		return nil, nil, false, err
 	}
 
-	// Real render for display. Validation is skipped: this path feeds the
-	// env-config view, which is a best-effort display. Missing required
-	// fields are surfaced elsewhere (and would still fail the helm-tab/
-	// deploy path, which uses HelmValues with validation enabled).
+	// Each render mutates its configMap (Generate writes computed keys
+	// into it), so each pass needs its own copy. The real render goes
+	// first and is allowed to mutate the original data.configMap, since
+	// the subsequent control and probe renders use their own clones.
 	real, err := renderHelmValues(data, f, templateFuncs, false)
 	if err != nil {
 		return nil, nil, false, err
 	}
 
-	// Control render (deterministic funcs, real secrets, no validation).
-	control, cerr := renderHelmValues(data, f, deterministicTemplateFuncs, false)
+	controlData := *data
+	controlData.configMap = cloneConfigMap(data.configMap)
+	control, cerr := renderHelmValues(&controlData, f, deterministicTemplateFuncs, false)
 
 	// Probe render (deterministic funcs, secrets masked with sentinel, no validation).
 	probeMV := cloneComputedValues(data.mv)
 	maskEnvSecrets(probeMV, data.secretEnvKeys)
-	probeData := &helmRenderData{
-		mv:         probeMV,
-		envKind:    data.envKind,
-		configVals: data.configVals,
-		configMap:  data.configMap,
-	}
-	// Also mask config secrets in the probe config map.
 	probeCfg := cloneConfigMap(data.configMap)
 	for _, key := range f.SecretKeys() {
 		setNestedSentinel(probeCfg, key)
 	}
-	probeData.configMap = probeCfg
+	probeData := &helmRenderData{
+		mv:         probeMV,
+		envKind:    data.envKind,
+		configVals: data.configVals,
+		configMap:  probeCfg,
+	}
 
 	probe, perr := renderHelmValues(probeData, f, deterministicTemplateFuncs, false)
 
