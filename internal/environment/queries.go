@@ -82,7 +82,6 @@ func TenantEnvironments(ctx context.Context, onlyReconciled bool) ([]*model.Tena
 			Environment: model.Environment{
 				ID:           d.ID,
 				Name:         d.Name,
-				CI:           d.Ci,
 				Description:  d.Description,
 				Created:      d.Created.Time,
 				LastModified: d.LastModified.Time,

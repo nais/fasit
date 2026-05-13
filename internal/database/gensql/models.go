@@ -132,7 +132,6 @@ type Environment struct {
 	Description  pgtype.Text
 	Created      pgtype.Timestamptz
 	LastModified pgtype.Timestamptz
-	Ci           bool
 	Reconcile    bool
 	Labels       types.EnvironmentLabels
 }

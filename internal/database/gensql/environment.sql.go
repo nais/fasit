@@ -13,7 +13,7 @@ import (
 
 const environmentByNames = `-- name: EnvironmentByNames :one
 SELECT
-	e.id, e.tenant_id, e.name, e.kind, e.description, e.created, e.last_modified, e.ci, e.reconcile, e.labels
+	e.id, e.tenant_id, e.name, e.kind, e.description, e.created, e.last_modified, e.reconcile, e.labels
 FROM
 	tenants t
 	JOIN environments e ON e.tenant_id = t.id
@@ -39,7 +39,6 @@ func (q *Queries) EnvironmentByNames(ctx context.Context, arg EnvironmentByNames
 		&i.Description,
 		&i.Created,
 		&i.LastModified,
-		&i.Ci,
 		&i.Reconcile,
 		&i.Labels,
 	)
@@ -48,7 +47,7 @@ func (q *Queries) EnvironmentByNames(ctx context.Context, arg EnvironmentByNames
 
 const environmentCI = `-- name: EnvironmentCI :one
 SELECT
-	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, labels
+	id, tenant_id, name, kind, description, created, last_modified, reconcile, labels
 FROM
 	environments
 WHERE
@@ -67,7 +66,6 @@ func (q *Queries) EnvironmentCI(ctx context.Context, kind EnvironmentKind) (Envi
 		&i.Description,
 		&i.Created,
 		&i.LastModified,
-		&i.Ci,
 		&i.Reconcile,
 		&i.Labels,
 	)
@@ -86,7 +84,7 @@ VALUES (
 	$3,
 	$4)
 RETURNING
-	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, labels
+	id, tenant_id, name, kind, description, created, last_modified, reconcile, labels
 `
 
 type EnvironmentCreateParams struct {
@@ -112,7 +110,6 @@ func (q *Queries) EnvironmentCreate(ctx context.Context, arg EnvironmentCreatePa
 		&i.Description,
 		&i.Created,
 		&i.LastModified,
-		&i.Ci,
 		&i.Reconcile,
 		&i.Labels,
 	)
@@ -121,7 +118,7 @@ func (q *Queries) EnvironmentCreate(ctx context.Context, arg EnvironmentCreatePa
 
 const environmentGet = `-- name: EnvironmentGet :one
 SELECT
-	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, labels
+	id, tenant_id, name, kind, description, created, last_modified, reconcile, labels
 FROM
 	environments
 WHERE
@@ -139,7 +136,6 @@ func (q *Queries) EnvironmentGet(ctx context.Context, id uuid.UUID) (Environment
 		&i.Description,
 		&i.Created,
 		&i.LastModified,
-		&i.Ci,
 		&i.Reconcile,
 		&i.Labels,
 	)
@@ -148,7 +144,7 @@ func (q *Queries) EnvironmentGet(ctx context.Context, id uuid.UUID) (Environment
 
 const environmentGetByName = `-- name: EnvironmentGetByName :one
 SELECT
-	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, labels
+	id, tenant_id, name, kind, description, created, last_modified, reconcile, labels
 FROM
 	environments
 WHERE
@@ -172,7 +168,6 @@ func (q *Queries) EnvironmentGetByName(ctx context.Context, arg EnvironmentGetBy
 		&i.Description,
 		&i.Created,
 		&i.LastModified,
-		&i.Ci,
 		&i.Reconcile,
 		&i.Labels,
 	)
@@ -246,7 +241,7 @@ SET
 WHERE
 	id = $2
 RETURNING
-	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, labels
+	id, tenant_id, name, kind, description, created, last_modified, reconcile, labels
 `
 
 type EnvironmentSetReconcileParams struct {
@@ -265,7 +260,6 @@ func (q *Queries) EnvironmentSetReconcile(ctx context.Context, arg EnvironmentSe
 		&i.Description,
 		&i.Created,
 		&i.LastModified,
-		&i.Ci,
 		&i.Reconcile,
 		&i.Labels,
 	)
@@ -280,7 +274,7 @@ SET
 WHERE
 	id = $2
 RETURNING
-	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, labels
+	id, tenant_id, name, kind, description, created, last_modified, reconcile, labels
 `
 
 type EnvironmentUpdateParams struct {
@@ -299,7 +293,6 @@ func (q *Queries) EnvironmentUpdate(ctx context.Context, arg EnvironmentUpdatePa
 		&i.Description,
 		&i.Created,
 		&i.LastModified,
-		&i.Ci,
 		&i.Reconcile,
 		&i.Labels,
 	)
@@ -308,7 +301,7 @@ func (q *Queries) EnvironmentUpdate(ctx context.Context, arg EnvironmentUpdatePa
 
 const environmentsGet = `-- name: EnvironmentsGet :many
 SELECT
-	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, labels
+	id, tenant_id, name, kind, description, created, last_modified, reconcile, labels
 FROM
 	environments
 WHERE
@@ -339,7 +332,6 @@ func (q *Queries) EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]En
 			&i.Description,
 			&i.Created,
 			&i.LastModified,
-			&i.Ci,
 			&i.Reconcile,
 			&i.Labels,
 		); err != nil {

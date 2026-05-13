@@ -22,7 +22,7 @@ VALUES (
 	$3,
 	$4)
 RETURNING
-	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, labels
+	id, tenant_id, name, kind, description, created, last_modified, reconcile, labels
 `
 
 type CreateParams struct {
@@ -48,7 +48,6 @@ func (q *Queries) Create(ctx context.Context, arg CreateParams) (Environment, er
 		&i.Description,
 		&i.Created,
 		&i.LastModified,
-		&i.Ci,
 		&i.Reconcile,
 		&i.Labels,
 	)
@@ -57,7 +56,7 @@ func (q *Queries) Create(ctx context.Context, arg CreateParams) (Environment, er
 
 const get = `-- name: Get :one
 SELECT
-	id, tenant_id, name, kind, description, created, last_modified, ci, reconcile, labels
+	id, tenant_id, name, kind, description, created, last_modified, reconcile, labels
 FROM
 	environments
 WHERE
@@ -75,7 +74,6 @@ func (q *Queries) Get(ctx context.Context, id uuid.UUID) (Environment, error) {
 		&i.Description,
 		&i.Created,
 		&i.LastModified,
-		&i.Ci,
 		&i.Reconcile,
 		&i.Labels,
 	)

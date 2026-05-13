@@ -188,7 +188,6 @@ func (q *Queries) FeatureStateGet(ctx context.Context, arg FeatureStateGetParams
 const featureStatesGet = `-- name: FeatureStatesGet :many
 WITH env AS (
 	SELECT
-		ci,
 		kind
 	FROM
 		environments
@@ -213,13 +212,7 @@ filtered AS (
 		JOIN env ON 1 = 1
 	ORDER BY
 		name,
-		-- If environment is CI, use definition from rollouts if it exists, otherwise use definition from features
-		CASE WHEN env.ci THEN
-			id
-		END,
-		CASE WHEN NOT ci THEN
-			last_modified
-		END
+		last_modified
 )
 SELECT
 	$1::UUID AS environment_id,
@@ -322,7 +315,6 @@ filtered AS (
 	FROM
 		combined
 	ORDER BY
-		-- order by id to ensure rollout has precedence over feature
 		name,
 		id
 )
