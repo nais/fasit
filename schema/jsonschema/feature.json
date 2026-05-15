@@ -36,26 +36,6 @@
 			},
 			"type": "array"
 		},
-		"rename": {
-			"description": "Rename is a list of values that have been renamed to another key. This is an opperation that will be done when the rollout is created.\nIf the key is found, it will be renamed to the new key unless the new key already exists.\nWhen this has been completely rolled out, it's safe to remove the rename statements.\nIt is only populated if read from a chart, or if the feature is a rollout.",
-			"items": {
-				"additionalProperties": false,
-				"properties": {
-					"from": {
-						"type": "string"
-					},
-					"to": {
-						"type": "string"
-					}
-				},
-				"required": [
-					"from",
-					"to"
-				],
-				"type": "object"
-			},
-			"type": "array"
-		},
 		"target": {
 			"additionalProperties": {
 				"type": "string"

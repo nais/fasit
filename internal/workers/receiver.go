@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/nais/fasit/internal/database"
+	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/feature"
 	"github.com/nais/fasit/internal/graph/model"
@@ -28,7 +29,6 @@ type HelmListener interface {
 }
 
 type ReceiverStore interface {
-	DeployInstructionGet(ctx context.Context, id uuid.UUID) (*model.DeployInstruction, error)
 	DeployInstructionsLatestForFeature(ctx context.Context, envID uuid.UUID, featureName string) (*model.DeployInstruction, error)
 	DeployInstructionUpdateStatus(ctx context.Context, id uuid.UUID, status model.RolloutStatus) error
 	EnvironmentByNames(ctx context.Context, tenantName, environmentName string) (*model.Environment, error)
@@ -109,7 +109,7 @@ func (r *Receiver) handlerHelm(ctx context.Context, msg message.Status) error {
 		}
 	}
 
-	di, err := r.repo.DeployInstructionGet(ctx, helmStatus.DIID)
+	di, err := deployment.GetDeployInstructionByID(ctx, helmStatus.DIID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			r.log.WithField("diid", helmStatus.DIID).Warn("unknown deploy instruction")

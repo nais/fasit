@@ -7,6 +7,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/database"
 	"github.com/nais/fasit/internal/database/mocks"
+	"github.com/nais/fasit/internal/deployment/deploymentsql"
+	dsmocks "github.com/nais/fasit/internal/deployment/deploymentsql/mocks"
+	"github.com/nais/fasit/internal/deployment/deploymenttest"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
 	"github.com/nais/fasit/internal/naisdstatus/naisdstatussql"
@@ -109,8 +112,11 @@ func TestReceiver(t *testing.T) {
 			ctx = naisdstatustest.RegisterMock(ctx, t)
 			statusQuerier := naisdstatustest.GetQuerier(ctx)
 
+			dsQuerier := dsmocks.NewQuerier(t)
+			dsQuerier.On("DeployInstructionsByID", mock.Anything, tc.deployInstructionID).Return(deploymentsql.DeployInstruction{ID: tc.deployInstructionID, EnvironmentID: tc.envID}, nil).Maybe()
+			ctx = deploymenttest.RegisterWithQuerier(ctx, dsQuerier)
+
 			repo := mocks.NewRepo(t)
-			repo.On("DeployInstructionGet", mock.Anything, tc.deployInstructionID).Return(&model.DeployInstruction{ID: tc.deployInstructionID, EnvironmentID: tc.envID}, nil).Maybe()
 			repo.On("EnvironmentGet", mock.Anything, tc.envID).Return(&model.Environment{ID: tc.envID}, nil).Maybe()
 
 			if !tc.helmStatus {

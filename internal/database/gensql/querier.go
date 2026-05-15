@@ -10,7 +10,6 @@ import (
 )
 
 type Querier interface {
-	DeployInstructionsByID(ctx context.Context, id uuid.UUID) (DeployInstruction, error)
 	DeployInstructionsForFeature(ctx context.Context, arg DeployInstructionsForFeatureParams) ([]DeployInstruction, error)
 	DeployInstructionsLatestDeployedForFeature(ctx context.Context, arg DeployInstructionsLatestDeployedForFeatureParams) (DeployInstruction, error)
 	DeployInstructionsLatestForFeature(ctx context.Context, arg DeployInstructionsLatestForFeatureParams) (DeployInstruction, error)

@@ -1,11 +1,3 @@
--- name: DeployInstructionsByID :one
-SELECT
-	*
-FROM
-	deploy_instructions
-WHERE
-	id = @id;
-
 -- name: DeployInstructionsUpdateStatus :exec
 UPDATE
 	deploy_instructions

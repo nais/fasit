@@ -24,6 +24,10 @@ func Register(ctx context.Context, deploymentManager *Manager) context.Context {
 	return context.WithValue(ctx, managerKey, deploymentManager)
 }
 
+func RegisterForTest(ctx context.Context, querier deploymentsql.Querier) context.Context {
+	return context.WithValue(ctx, managerKey, &Manager{querier: querier})
+}
+
 func fromContext(ctx context.Context) *Manager {
 	return ctx.Value(managerKey).(*Manager)
 }
@@ -62,6 +66,14 @@ func CreateDeployment(ctx context.Context, req Request) (uuid.UUID, error) {
 
 func GetDeployment(ctx context.Context, id uuid.UUID) (*Deployment, error) {
 	return getDeployment(ctx, fromContext(ctx).querier, id)
+}
+
+func GetDeployInstructionByID(ctx context.Context, id uuid.UUID) (*model.DeployInstruction, error) {
+	di, err := fromContext(ctx).querier.DeployInstructionsByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return deployInstructionFromSQL(di), nil
 }
 
 func ListDeployInstructionsByDeploymentID(ctx context.Context, deploymentID uuid.UUID) ([]deploymentsql.ListDeployInstructionsByDeploymentIDRow, error) {
