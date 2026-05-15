@@ -9,33 +9,6 @@ import (
 	"github.com/google/uuid"
 )
 
-const deployInstructionsByID = `-- name: DeployInstructionsByID :one
-SELECT
-	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, deployment_id
-FROM
-	deploy_instructions
-WHERE
-	id = $1
-`
-
-func (q *Queries) DeployInstructionsByID(ctx context.Context, id uuid.UUID) (DeployInstruction, error) {
-	row := q.db.QueryRow(ctx, deployInstructionsByID, id)
-	var i DeployInstruction
-	err := row.Scan(
-		&i.ID,
-		&i.EnvironmentID,
-		&i.FeatureName,
-		&i.FeatureVersion,
-		&i.Status,
-		&i.Hash,
-		&i.Created,
-		&i.LastModified,
-		&i.Values,
-		&i.DeploymentID,
-	)
-	return i, err
-}
-
 const deployInstructionsForFeature = `-- name: DeployInstructionsForFeature :many
 SELECT
 	id, environment_id, feature_name, feature_version, status, hash, created, last_modified, values, deployment_id

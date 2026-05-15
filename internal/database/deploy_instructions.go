@@ -15,7 +15,6 @@ import (
 )
 
 type DeployInstructionRepo interface {
-	DeployInstructionGet(ctx context.Context, id uuid.UUID) (*model.DeployInstruction, error)
 	DeployInstructionsForFeature(ctx context.Context, envID uuid.UUID, featureName string, offset int) ([]*model.DeployInstruction, error)
 	DeployInstructionsLatestForFeature(ctx context.Context, envID uuid.UUID, featureName string) (*model.DeployInstruction, error)
 	DeployInstructionsLatestDeployedForFeature(ctx context.Context, envID uuid.UUID, featureName string) (*model.DeployInstruction, error)
@@ -50,15 +49,6 @@ func (r *repo) DeployInstructionsForFeature(ctx context.Context, envID uuid.UUID
 	}
 
 	return instructions, nil
-}
-
-func (r *repo) DeployInstructionGet(ctx context.Context, id uuid.UUID) (*model.DeployInstruction, error) {
-	di, err := r.querier.DeployInstructionsByID(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	return deployInstructionFromSQL(di), nil
 }
 
 func (r *repo) DeployInstructionsLatestForFeature(ctx context.Context, envID uuid.UUID, featureName string) (*model.DeployInstruction, error) {
