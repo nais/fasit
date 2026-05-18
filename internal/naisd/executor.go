@@ -20,7 +20,6 @@ type MockExecutor struct {
 	Fail          bool
 }
 
-
 func (m *MockExecutor) Execute(cmd *exec.Cmd) error {
 	m.Logger.Println(cmd.String())
 
