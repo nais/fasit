@@ -44,7 +44,7 @@ New queries go in the domain package that owns the data (`internal/deployment/qu
 
 ### Code Generation
 
-`mise run generate` runs: sqlc, gqlgen, protoc.
+`mise run generate` runs: sqlc, protoc.
 
 Never edit files in: `gensql/`, `deploymentsql/`, `environmentsql/`, `featuresql/`, `auditsql/`, `naisdstatussql/`.
 
