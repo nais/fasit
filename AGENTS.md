@@ -6,7 +6,7 @@ Multi-tenant feature management platform. Manages OCI Helm charts ("features") a
 
 ```
 cmd/
-  fasit/           → Main backend (GraphQL API + UI server + workers)
+  fasit/           → Main backend (REST API + UI server + workers)
   naisd/           → Agent binary (runs in tenant clusters, executes Helm)
   setup_local_env/ → Seeds local dev database
   generate_schema/ → Generates JSON schema for Feature.yaml
@@ -34,7 +34,7 @@ schema/            → JSON schema for Feature.yaml validation / autocomplete, a
 
 ### Context Loader (Dependency Injection)
 
-Domain packages expose `Register(ctx, pool)` and package-level functions that extract their querier from context. Wired in `internal/contextloader/loader.go`. Packages using this: `audit`, `cost`, `environment`, `feature`, `naisdstatus`, `deployment`.
+Domain packages expose `Register(ctx, pool)` and package-level functions that extract their querier from context. Wired in `internal/contextloader/loader.go`. Packages using this: `audit`, `environment`, `feature`, `naisdstatus`, `deployment`.
 
 ### sqlc
 
@@ -46,7 +46,7 @@ New queries go in the domain package that owns the data (`internal/deployment/qu
 
 `mise run generate` runs: sqlc, gqlgen, mockery (v3, config in `.mockery.yaml`), protoc.
 
-Never edit files in: `gensql/`, `deploymentsql/`, `environmentsql/`, `featuresql/`, `costsql/`, `auditsql/`, `naisdstatussql/`, `graphgen/`, `model/donotuse/`, `mocks/`.
+Never edit files in: `gensql/`, `deploymentsql/`, `environmentsql/`, `featuresql/`, `auditsql/`, `naisdstatussql/`, `mocks/`.
 
 ## Build & Run
 
