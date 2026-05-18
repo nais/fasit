@@ -11,7 +11,6 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/graph/model"
-	"k8s.io/utils/ptr"
 )
 
 func TestRepo_EnvironmentGet(t *testing.T) {
@@ -33,7 +32,7 @@ func TestRepo_EnvironmentGet(t *testing.T) {
 		ID:          id,
 		TenantID:    tenantID,
 		Name:        "testname",
-		Description: ptr.To("testdesc"),
+		Description: new("testdesc"),
 		Kind:        model.EnvironmentKindTenant,
 		Reconcile:   true,
 	}
@@ -70,7 +69,7 @@ func TestRepo_EnvironmentsGet(t *testing.T) {
 			ID:          id,
 			TenantID:    tenantID,
 			Name:        fmt.Sprintf("testname%v", i),
-			Description: ptr.To("testdesc"),
+			Description: new("testdesc"),
 			Kind:        model.EnvironmentKindManagement,
 			Reconcile:   true,
 		})
@@ -94,7 +93,7 @@ func TestRepo_EnvironmentCreate(t *testing.T) {
 
 	create := &model.EnvironmentCreate{
 		Name:        "somename",
-		Description: ptr.To("somedesc"),
+		Description: new("somedesc"),
 		TenantID:    tenantID,
 		Kind:        model.EnvironmentKindTenant,
 	}
@@ -106,7 +105,7 @@ func TestRepo_EnvironmentCreate(t *testing.T) {
 	want := &model.Environment{
 		TenantID:    tenantID,
 		Name:        "somename",
-		Description: ptr.To("somedesc"),
+		Description: new("somedesc"),
 		Kind:        model.EnvironmentKindTenant,
 		Reconcile:   true,
 	}
@@ -129,7 +128,7 @@ func TestRepo_EnvironmentUpdate(t *testing.T) {
 
 	create := &model.EnvironmentCreate{
 		Name:        "somename",
-		Description: ptr.To("somedesc"),
+		Description: new("somedesc"),
 		TenantID:    tenantID,
 		Kind:        model.EnvironmentKindTenant,
 	}
@@ -139,7 +138,7 @@ func TestRepo_EnvironmentUpdate(t *testing.T) {
 	}
 
 	res, err := repo.EnvironmentUpdate(ctx, env.ID, &model.EnvironmentUpdate{
-		Description: ptr.To("somedesc2"),
+		Description: new("somedesc2"),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -148,7 +147,7 @@ func TestRepo_EnvironmentUpdate(t *testing.T) {
 	want := &model.Environment{
 		TenantID:    tenantID,
 		Name:        "somename",
-		Description: ptr.To("somedesc2"),
+		Description: new("somedesc2"),
 		Kind:        model.EnvironmentKindTenant,
 		Reconcile:   true,
 	}
@@ -165,7 +164,7 @@ func TestRepo_EnvironmentUpdate(t *testing.T) {
 	want2 := &model.Environment{
 		TenantID:    tenantID,
 		Name:        "somename",
-		Description: ptr.To("somedesc2"),
+		Description: new("somedesc2"),
 		Kind:        model.EnvironmentKindTenant,
 		Reconcile:   true,
 	}
