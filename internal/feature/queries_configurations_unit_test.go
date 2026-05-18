@@ -1,163 +1,251 @@
 package feature
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/nais/fasit/internal/audit"
-	"github.com/nais/fasit/internal/audit/auditsql"
-	auditmocks "github.com/nais/fasit/internal/audit/auditsql/mocks"
 	"github.com/nais/fasit/internal/feature/featuresql"
 	"github.com/nais/fasit/internal/graph/model"
-	"github.com/stretchr/testify/mock"
 )
 
-func auditMatcher(t *testing.T, wantDesc string, wantMeta map[string]any) func(p auditsql.AuditCreateParams) bool {
-	t.Helper()
-	return func(p auditsql.AuditCreateParams) bool {
-		if p.Description != wantDesc {
-			return false
-		}
-		var got map[string]any
-		if err := json.Unmarshal(p.Metadata, &got); err != nil {
-			return false
-		}
-		for k, v := range wantMeta {
-			gv, ok := got[k]
-			if !ok {
-				return false
+func TestConfigCreate(t *testing.T) {
+	tests := []struct {
+		name        string
+		input       model.NewConfiguration
+		existingErr error
+		existing    featuresql.ConfigurationsGlobal
+		wantWrite   bool
+		wantAudit   string // verb in metadata, empty = no audit
+	}{
+		{
+			name: "ConfigCreate(global, new): creates and audits",
+			input: model.NewConfiguration{
+				Feature: "f1", Key: "my.key", Value: []byte(`"v"`),
+			},
+			existingErr: pgx.ErrNoRows,
+			wantWrite:   true,
+			wantAudit:   "create",
+		},
+		{
+			name: "ConfigCreate(global, same value): no-op",
+			input: model.NewConfiguration{
+				Feature: "f1", Key: "k", Value: []byte(`"v"`),
+			},
+			existing: featuresql.ConfigurationsGlobal{
+				ID: uuid.New(), Feature: "f1", Key: "k", Value: []byte(`"v"`),
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx, fq, aq := newTestCtx(t)
+
+			fq.configGlobalGetByKeyFunc = func(_ context.Context, _ featuresql.ConfigGlobalGetByKeyParams) (featuresql.ConfigurationsGlobal, error) {
+				if tc.existingErr != nil {
+					return featuresql.ConfigurationsGlobal{}, tc.existingErr
+				}
+				return tc.existing, nil
 			}
-			gj, _ := json.Marshal(gv)
-			vj, _ := json.Marshal(v)
-			if string(gj) != string(vj) {
-				return false
+
+			var wrote bool
+			fq.configGlobalUpdateOrCreateFunc = func(_ context.Context, arg featuresql.ConfigGlobalUpdateOrCreateParams) (featuresql.ConfigurationsGlobal, error) {
+				wrote = true
+				return featuresql.ConfigurationsGlobal{
+					ID: uuid.New(), Feature: arg.Feature, Key: arg.Key, Value: arg.Value,
+				}, nil
 			}
-		}
-		return true
+
+			_, err := ConfigCreate(ctx, tc.input)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if tc.wantWrite && !wrote {
+				t.Error("expected write")
+			}
+			if !tc.wantWrite && wrote {
+				t.Error("unexpected write")
+			}
+			if tc.wantAudit != "" && len(aq.Creates) == 0 {
+				t.Fatal("expected audit")
+			}
+			if tc.wantAudit != "" {
+				assertAuditMetadata(t, aq.Creates[0].Metadata, "verb", tc.wantAudit)
+			}
+			if tc.wantAudit == "" && len(aq.Creates) != 0 {
+				t.Errorf("got %d audit calls, want 0", len(aq.Creates))
+			}
+		})
 	}
 }
 
-func TestConfigCreate_Global_Creates(t *testing.T) {
-	ctx, fq := setupTestCtx(t)
-	aq := ctx.Value(audit.QuerierKey).(*auditmocks.Querier)
-	id := uuid.New()
+func TestConfigCreate_Env(t *testing.T) {
+	tests := []struct {
+		name      string
+		existing  *featuresql.ConfigurationsEnvironment
+		secret    bool
+		wantAudit map[string]any
+	}{
+		{
+			name: "ConfigCreate(env, update secret): redacted audit",
+			existing: &featuresql.ConfigurationsEnvironment{
+				ID: uuid.New(), Feature: "f1", Key: "k",
+				Value: []byte(`"old"`), Secret: true,
+			},
+			secret: true,
+			wantAudit: map[string]any{
+				"verb":   "update",
+				"secret": true,
+				"before": "<redacted>",
+				"after":  "<redacted>",
+			},
+		},
+	}
 
-	fq.EXPECT().ConfigGlobalGetByKey(mock.Anything, mock.Anything).
-		Return(featuresql.ConfigurationsGlobal{}, pgx.ErrNoRows).Once()
-	fq.EXPECT().ConfigGlobalUpdateOrCreate(mock.Anything, mock.Anything).
-		Return(featuresql.ConfigurationsGlobal{ID: id, Feature: "f1", Key: "my.key", Value: []byte(`"v"`)}, nil).Once()
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx, fq, aq := newTestCtx(t)
+			envID := uuid.New()
 
-	aq.EXPECT().AuditCreate(mock.Anything, mock.MatchedBy(auditMatcher(t, "created config my.key", map[string]any{
-		"verb":    "create",
-		"feature": "f1",
-		"key":     "my.key",
-		"secret":  false,
-		"after":   "v",
-	}))).Return(nil).Once()
+			fq.configEnvGetFunc = func(_ context.Context, _ featuresql.ConfigEnvGetParams) (featuresql.ConfigurationsEnvironment, error) {
+				if tc.existing == nil {
+					return featuresql.ConfigurationsEnvironment{}, pgx.ErrNoRows
+				}
+				return *tc.existing, nil
+			}
 
-	_, err := ConfigCreate(ctx, model.NewConfiguration{Feature: "f1", Key: "my.key", Value: []byte(`"v"`)})
-	if err != nil {
-		t.Fatal(err)
+			fq.configEnvUpdateOrCreateFunc = func(_ context.Context, arg featuresql.ConfigEnvUpdateOrCreateParams) (featuresql.ConfigurationsEnvironment, error) {
+				return featuresql.ConfigurationsEnvironment{
+					ID: uuid.New(), EnvironmentID: envID,
+					Feature: arg.Feature, Key: arg.Key, Value: arg.Value, Secret: arg.Secret,
+				}, nil
+			}
+
+			_, err := ConfigCreate(ctx, model.NewConfiguration{
+				EnvironmentID: &envID,
+				Feature:       "f1",
+				Key:           "k",
+				Value:         []byte(`"new"`),
+				Secret:        tc.secret,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if len(aq.Creates) != 1 {
+				t.Fatalf("got %d audit calls, want 1", len(aq.Creates))
+			}
+			for k, want := range tc.wantAudit {
+				assertAuditMetadataAny(t, aq.Creates[0].Metadata, k, want)
+			}
+		})
 	}
 }
 
-func TestConfigCreate_Global_NoOpSameValue(t *testing.T) {
-	ctx, fq := setupTestCtx(t)
-	id := uuid.New()
-	value := []byte(`"v"`)
-	fq.EXPECT().ConfigGlobalGetByKey(mock.Anything, mock.Anything).
-		Return(featuresql.ConfigurationsGlobal{ID: id, Feature: "f1", Key: "k", Value: value}, nil).Once()
-
-	if _, err := ConfigCreate(ctx, model.NewConfiguration{Feature: "f1", Key: "k", Value: value}); err != nil {
-		t.Fatal(err)
+func TestConfigUpdate(t *testing.T) {
+	tests := []struct {
+		name      string
+		existing  featuresql.ConfigurationsGlobal
+		newValue  []byte
+		wantWrite bool
+		wantAudit string
+	}{
+		{
+			name:     "ConfigUpdate(same value): no-op",
+			existing: featuresql.ConfigurationsGlobal{ID: uuid.New(), Feature: "f1", Key: "k", Value: []byte(`"x"`)},
+			newValue: []byte(`"x"`),
+		},
+		{
+			name:      "ConfigUpdate(different value): updates and audits",
+			existing:  featuresql.ConfigurationsGlobal{ID: uuid.New(), Feature: "f1", Key: "k", Value: []byte(`"old"`)},
+			newValue:  []byte(`"new"`),
+			wantWrite: true,
+			wantAudit: "update",
+		},
 	}
-}
 
-func TestConfigCreate_Env_UpdatesSecretRedacted(t *testing.T) {
-	ctx, fq := setupTestCtx(t)
-	aq := ctx.Value(audit.QuerierKey).(*auditmocks.Querier)
-	envID := uuid.New()
-	id := uuid.New()
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx, fq, aq := newTestCtx(t)
 
-	fq.EXPECT().ConfigEnvGet(mock.Anything, mock.Anything).
-		Return(featuresql.ConfigurationsEnvironment{ID: id, EnvironmentID: envID, Feature: "f1", Key: "k", Value: []byte(`"old"`), Secret: true}, nil).Once()
-	fq.EXPECT().ConfigEnvUpdateOrCreate(mock.Anything, mock.Anything).
-		Return(featuresql.ConfigurationsEnvironment{ID: id, EnvironmentID: envID, Feature: "f1", Key: "k", Value: []byte(`"new"`), Secret: true}, nil).Once()
+			fq.configGetByIDFunc = func(_ context.Context, _ uuid.UUID) (featuresql.ConfigurationsGlobal, error) {
+				return tc.existing, nil
+			}
 
-	aq.EXPECT().AuditCreate(mock.Anything, mock.MatchedBy(auditMatcher(t, "updated config k (secret)", map[string]any{
-		"verb":    "update",
-		"feature": "f1",
-		"key":     "k",
-		"secret":  true,
-		"before":  "<redacted>",
-		"after":   "<redacted>",
-		"envId":   envID.String(),
-	}))).Return(nil).Once()
+			var wrote bool
+			fq.configUpdateFunc = func(_ context.Context, arg featuresql.ConfigUpdateParams) (featuresql.ConfigurationsGlobal, error) {
+				wrote = true
+				return featuresql.ConfigurationsGlobal{
+					ID: tc.existing.ID, Feature: tc.existing.Feature, Key: tc.existing.Key, Value: arg.Value,
+				}, nil
+			}
 
-	_, err := ConfigCreate(ctx, model.NewConfiguration{
-		EnvironmentID: &envID,
-		Feature:       "f1",
-		Key:           "k",
-		Value:         []byte(`"new"`),
-		Secret:        true,
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-}
+			_, err := ConfigUpdate(ctx, tc.existing.ID, model.UpdateConfiguration{Value: tc.newValue})
+			if err != nil {
+				t.Fatal(err)
+			}
 
-func TestConfigUpdate_NoOp(t *testing.T) {
-	ctx, fq := setupTestCtx(t)
-	id := uuid.New()
-	value := []byte(`"x"`)
-	fq.EXPECT().ConfigGetByID(mock.Anything, id).
-		Return(featuresql.ConfigurationsGlobal{ID: id, Feature: "f1", Key: "k", Value: value}, nil).Once()
-
-	if _, err := ConfigUpdate(ctx, id, model.UpdateConfiguration{Value: value}); err != nil {
-		t.Fatal(err)
-	}
-}
-
-func TestConfigUpdate_Updates(t *testing.T) {
-	ctx, fq := setupTestCtx(t)
-	aq := ctx.Value(audit.QuerierKey).(*auditmocks.Querier)
-	id := uuid.New()
-
-	fq.EXPECT().ConfigGetByID(mock.Anything, id).
-		Return(featuresql.ConfigurationsGlobal{ID: id, Feature: "f1", Key: "k", Value: []byte(`"old"`)}, nil).Once()
-	fq.EXPECT().ConfigUpdate(mock.Anything, mock.Anything).
-		Return(featuresql.ConfigurationsGlobal{ID: id, Feature: "f1", Key: "k", Value: []byte(`"new"`)}, nil).Once()
-
-	aq.EXPECT().AuditCreate(mock.Anything, mock.MatchedBy(auditMatcher(t, "updated config k", map[string]any{
-		"verb":   "update",
-		"key":    "k",
-		"before": "old",
-		"after":  "new",
-	}))).Return(nil).Once()
-
-	if _, err := ConfigUpdate(ctx, id, model.UpdateConfiguration{Value: []byte(`"new"`)}); err != nil {
-		t.Fatal(err)
+			if tc.wantWrite != wrote {
+				t.Errorf("wrote = %v, want %v", wrote, tc.wantWrite)
+			}
+			if tc.wantAudit != "" {
+				if len(aq.Creates) != 1 {
+					t.Fatalf("got %d audit calls, want 1", len(aq.Creates))
+				}
+				assertAuditMetadata(t, aq.Creates[0].Metadata, "verb", tc.wantAudit)
+			}
+		})
 	}
 }
 
 func TestConfigDelete(t *testing.T) {
-	ctx, fq := setupTestCtx(t)
-	aq := ctx.Value(audit.QuerierKey).(*auditmocks.Querier)
+	ctx, fq, aq := newTestCtx(t)
 	id := uuid.New()
 
-	fq.EXPECT().ConfigGetByID(mock.Anything, id).
-		Return(featuresql.ConfigurationsGlobal{ID: id, Feature: "f1", Key: "k", Value: []byte(`"v"`)}, nil).Once()
-	fq.EXPECT().ConfigDelete(mock.Anything, id).Return(nil).Once()
+	fq.configGetByIDFunc = func(_ context.Context, got uuid.UUID) (featuresql.ConfigurationsGlobal, error) {
+		if got != id {
+			t.Fatalf("ConfigGetByID(%v), want %v", got, id)
+		}
+		return featuresql.ConfigurationsGlobal{ID: id, Feature: "f1", Key: "k", Value: []byte(`"v"`)}, nil
+	}
 
-	aq.EXPECT().AuditCreate(mock.Anything, mock.MatchedBy(auditMatcher(t, "deleted config k", map[string]any{
-		"verb":   "delete",
-		"key":    "k",
-		"before": "v",
-	}))).Return(nil).Once()
+	var deleted bool
+	fq.configDeleteFunc = func(_ context.Context, got uuid.UUID) error {
+		if got != id {
+			t.Fatalf("ConfigDelete(%v), want %v", got, id)
+		}
+		deleted = true
+		return nil
+	}
 
 	if err := ConfigDelete(ctx, id); err != nil {
 		t.Fatal(err)
+	}
+
+	if !deleted {
+		t.Error("expected ConfigDelete to be called")
+	}
+	if len(aq.Creates) != 1 {
+		t.Fatalf("got %d audit calls, want 1", len(aq.Creates))
+	}
+	assertAuditMetadata(t, aq.Creates[0].Metadata, "verb", "delete")
+	assertAuditMetadata(t, aq.Creates[0].Metadata, "before", "v")
+}
+
+func assertAuditMetadataAny(t *testing.T, raw []byte, key string, want any) {
+	t.Helper()
+	var m map[string]any
+	if err := json.Unmarshal(raw, &m); err != nil {
+		t.Fatalf("unmarshal audit metadata: %v", err)
+	}
+	got := m[key]
+	wantJSON, _ := json.Marshal(want)
+	gotJSON, _ := json.Marshal(got)
+	if string(gotJSON) != string(wantJSON) {
+		t.Errorf("audit metadata[%q] = %s, want %s", key, gotJSON, wantJSON)
 	}
 }

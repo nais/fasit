@@ -17,7 +17,7 @@ import (
 
 type ctxKey int
 
-// QuerierKey is exposed so tests can inject mock queriers on the context.
+// QuerierKey is exposed so tests can inject fake queriers on the context.
 const (
 	QuerierKey ctxKey = iota
 	logKey

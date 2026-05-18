@@ -7,132 +7,170 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
-	"github.com/nais/fasit/internal/audit"
-	"github.com/nais/fasit/internal/audit/auditsql"
-	auditmocks "github.com/nais/fasit/internal/audit/auditsql/mocks"
 	"github.com/nais/fasit/internal/feature/featuresql"
-	featuremocks "github.com/nais/fasit/internal/feature/featuresql/mocks"
 	"github.com/nais/fasit/internal/graph/model"
-	"github.com/sirupsen/logrus/hooks/test"
-	"github.com/stretchr/testify/mock"
 )
 
-func setupTestCtx(t *testing.T) (context.Context, *featuremocks.Querier) {
-	log, _ := test.NewNullLogger()
-	fq := featuremocks.NewQuerier(t)
-	aq := auditmocks.NewQuerier(t)
-	ctx := context.WithValue(context.Background(), QuerierKey, featuresql.Querier(fq))
-	ctx = audit.RegisterTestDeps(ctx, aq, log)
-	return ctx, fq
-}
+func TestFeatureStatesEnable(t *testing.T) {
+	tests := []struct {
+		name       string
+		existing   *featuresql.FeatureState // nil = not found
+		wantWrite  bool
+		wantAudit  string // empty = no audit expected
+		wantNoOp   bool
+	}{
+		{
+			name:      "Enable(new feature): creates enabled state",
+			existing:  nil,
+			wantWrite: true,
+			wantAudit: "enable",
+		},
+		{
+			name:     "Enable(already enabled): no-op",
+			existing: &featuresql.FeatureState{Enabled: true},
+			wantNoOp: true,
+		},
+	}
 
-func expectAudit(t *testing.T, ctx context.Context, wantDescPrefix string, wantMeta map[string]any) {
-	t.Helper()
-	q := ctx.Value(audit.QuerierKey).(*auditmocks.Querier)
-	q.EXPECT().AuditCreate(mock.Anything, mock.MatchedBy(func(p auditsql.AuditCreateParams) bool {
-		if !startsWith(p.Description, wantDescPrefix) {
-			return false
-		}
-		var got map[string]any
-		if err := json.Unmarshal(p.Metadata, &got); err != nil {
-			return false
-		}
-		for k, v := range wantMeta {
-			if got[k] != v {
-				return false
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx, fq, aq := newTestCtx(t)
+			envID := uuid.New()
+			feat := &model.Feature{Name: "f1"}
+
+			fq.featureStateGetFunc = func(_ context.Context, arg featuresql.FeatureStateGetParams) (featuresql.FeatureState, error) {
+				if arg.EnvironmentID != envID || arg.Feature != "f1" {
+					t.Fatalf("unexpected FeatureStateGet args: %+v", arg)
+				}
+				if tc.existing == nil {
+					return featuresql.FeatureState{}, pgx.ErrNoRows
+				}
+				return *tc.existing, nil
 			}
-		}
-		return true
-	})).Return(nil).Once()
-}
 
-func startsWith(s, prefix string) bool {
-	return len(s) >= len(prefix) && s[:len(prefix)] == prefix
-}
+			var wrote bool
+			fq.featureStateCreateOrUpdateFunc = func(_ context.Context, arg featuresql.FeatureStateCreateOrUpdateParams) (featuresql.FeatureState, error) {
+				wrote = true
+				if !arg.Enabled {
+					t.Error("expected Enabled=true")
+				}
+				return featuresql.FeatureState{EnvironmentID: envID, Feature: "f1", Enabled: true}, nil
+			}
 
-func TestFeatureStatesEnable_HappyPath(t *testing.T) {
-	ctx, q := setupTestCtx(t)
-	envID := uuid.New()
-	feat := &model.Feature{Name: "f1"}
+			got, err := FeatureStatesEnable(ctx, envID, feat)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got == nil {
+				t.Fatal("got nil result")
+			}
 
-	q.EXPECT().FeatureStateGet(mock.Anything, mock.Anything).Return(featuresql.FeatureState{}, pgx.ErrNoRows).Once()
-	q.EXPECT().FeatureStateCreateOrUpdate(mock.Anything, mock.MatchedBy(func(p featuresql.FeatureStateCreateOrUpdateParams) bool {
-		return p.EnvironmentID == envID && p.Feature == "f1" && p.Enabled
-	})).Return(featuresql.FeatureState{EnvironmentID: envID, Feature: "f1", Enabled: true}, nil).Once()
-
-	expectAudit(t, ctx, "enabled", map[string]any{
-		"verb":    "enable",
-		"feature": "f1",
-		"envId":   envID.String(),
-	})
-
-	if _, err := FeatureStatesEnable(ctx, envID, feat); err != nil {
-		t.Fatal(err)
+			if tc.wantNoOp && wrote {
+				t.Error("expected no write, but FeatureStateCreateOrUpdate was called")
+			}
+			if tc.wantWrite && !wrote {
+				t.Error("expected write, but FeatureStateCreateOrUpdate was not called")
+			}
+			if tc.wantAudit != "" {
+				if len(aq.Creates) != 1 {
+					t.Fatalf("got %d audit calls, want 1", len(aq.Creates))
+				}
+				assertAuditMetadata(t, aq.Creates[0].Metadata, "verb", tc.wantAudit)
+			}
+			if tc.wantNoOp && len(aq.Creates) != 0 {
+				t.Errorf("got %d audit calls, want 0", len(aq.Creates))
+			}
+		})
 	}
 }
 
-func TestFeatureStatesEnable_NoOpAlreadyEnabled(t *testing.T) {
-	ctx, q := setupTestCtx(t)
-	envID := uuid.New()
-	feat := &model.Feature{Name: "f1"}
+func TestFeatureStatesDisable(t *testing.T) {
+	tests := []struct {
+		name      string
+		existing  *featuresql.FeatureState
+		reason    string
+		wantErr   bool
+		wantWrite bool
+		wantAudit string
+	}{
+		{
+			name:      "Disable(enabled, valid reason): disables and audits",
+			existing:  &featuresql.FeatureState{Enabled: true},
+			reason:    "  broken  ",
+			wantWrite: true,
+			wantAudit: "disable",
+		},
+		{
+			name:     "Disable(enabled, blank reason): error",
+			existing: &featuresql.FeatureState{Enabled: true},
+			reason:   "   ",
+			wantErr:  true,
+		},
+		{
+			name:     "Disable(already disabled): no-op",
+			existing: &featuresql.FeatureState{Enabled: false},
+			reason:   "",
+		},
+	}
 
-	q.EXPECT().FeatureStateGet(mock.Anything, mock.Anything).Return(featuresql.FeatureState{
-		EnvironmentID: envID, Feature: "f1", Enabled: true,
-	}, nil).Once()
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx, fq, aq := newTestCtx(t)
+			envID := uuid.New()
+			feat := &model.Feature{Name: "f1"}
 
-	if _, err := FeatureStatesEnable(ctx, envID, feat); err != nil {
-		t.Fatal(err)
+			fq.featureStateGetFunc = func(_ context.Context, _ featuresql.FeatureStateGetParams) (featuresql.FeatureState, error) {
+				if tc.existing == nil {
+					return featuresql.FeatureState{}, pgx.ErrNoRows
+				}
+				return *tc.existing, nil
+			}
+
+			var wrote bool
+			fq.featureStateCreateOrUpdateFunc = func(_ context.Context, arg featuresql.FeatureStateCreateOrUpdateParams) (featuresql.FeatureState, error) {
+				wrote = true
+				if arg.Enabled {
+					t.Error("expected Enabled=false")
+				}
+				return featuresql.FeatureState{EnvironmentID: envID, Feature: "f1", Enabled: false}, nil
+			}
+
+			_, err := FeatureStatesDisable(ctx, envID, feat, tc.reason)
+			if tc.wantErr {
+				if err == nil {
+					t.Fatal("expected error")
+				}
+				return
+			}
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if tc.wantWrite && !wrote {
+				t.Error("expected write")
+			}
+			if !tc.wantWrite && wrote {
+				t.Error("unexpected write")
+			}
+			if tc.wantAudit != "" {
+				if len(aq.Creates) != 1 {
+					t.Fatalf("got %d audit calls, want 1", len(aq.Creates))
+				}
+				assertAuditMetadata(t, aq.Creates[0].Metadata, "verb", tc.wantAudit)
+				assertAuditMetadata(t, aq.Creates[0].Metadata, "reason", "broken")
+			}
+		})
 	}
 }
 
-func TestFeatureStatesDisable_HappyPath(t *testing.T) {
-	ctx, q := setupTestCtx(t)
-	envID := uuid.New()
-	feat := &model.Feature{Name: "f1"}
-
-	q.EXPECT().FeatureStateGet(mock.Anything, mock.Anything).Return(featuresql.FeatureState{
-		EnvironmentID: envID, Feature: "f1", Enabled: true,
-	}, nil).Once()
-	q.EXPECT().FeatureStateCreateOrUpdate(mock.Anything, mock.MatchedBy(func(p featuresql.FeatureStateCreateOrUpdateParams) bool {
-		return !p.Enabled && p.Feature == "f1"
-	})).Return(featuresql.FeatureState{EnvironmentID: envID, Feature: "f1", Enabled: false}, nil).Once()
-
-	expectAudit(t, ctx, "disabled: broken", map[string]any{
-		"verb":    "disable",
-		"feature": "f1",
-		"envId":   envID.String(),
-		"reason":  "broken",
-	})
-
-	if _, err := FeatureStatesDisable(ctx, envID, feat, "  broken  "); err != nil {
-		t.Fatal(err)
+func assertAuditMetadata(t *testing.T, raw []byte, key, want string) {
+	t.Helper()
+	var m map[string]any
+	if err := json.Unmarshal(raw, &m); err != nil {
+		t.Fatalf("unmarshal audit metadata: %v", err)
 	}
-}
-
-func TestFeatureStatesDisable_RequiresReason(t *testing.T) {
-	ctx, q := setupTestCtx(t)
-	envID := uuid.New()
-	feat := &model.Feature{Name: "f1"}
-
-	q.EXPECT().FeatureStateGet(mock.Anything, mock.Anything).Return(featuresql.FeatureState{
-		EnvironmentID: envID, Feature: "f1", Enabled: true,
-	}, nil).Once()
-
-	if _, err := FeatureStatesDisable(ctx, envID, feat, "   "); err == nil {
-		t.Fatal("expected error for empty reason")
-	}
-}
-
-func TestFeatureStatesDisable_NoOpAlreadyDisabled(t *testing.T) {
-	ctx, q := setupTestCtx(t)
-	envID := uuid.New()
-	feat := &model.Feature{Name: "f1"}
-
-	q.EXPECT().FeatureStateGet(mock.Anything, mock.Anything).Return(featuresql.FeatureState{
-		EnvironmentID: envID, Feature: "f1", Enabled: false,
-	}, nil).Once()
-
-	if _, err := FeatureStatesDisable(ctx, envID, feat, ""); err != nil {
-		t.Fatal(err)
+	got, _ := m[key].(string)
+	if got != want {
+		t.Errorf("audit metadata[%q] = %q, want %q", key, got, want)
 	}
 }
