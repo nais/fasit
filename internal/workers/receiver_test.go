@@ -91,19 +91,6 @@ func TestReceiver(t *testing.T) {
 			},
 			numHealthStatusCreateOrUpdate: 1,
 		},
-		"kubernetes nodes": {
-			envID:               uid,
-			deployInstructionID: diid,
-			statuses: []message.Status{
-				{
-					Type:        message.StatusKubernetesNodes,
-					Tenant:      "tenant",
-					Environment: "env",
-					Data:        []byte(`{}`),
-				},
-			},
-			numKubernetesNodeSync: 1,
-		},
 	}
 
 	for name, tc := range tests {

@@ -39,8 +39,6 @@ var embedMigrations embed.FS
 type TXFunc func(repo Repo) error
 
 type Repo interface {
-	KubernetesNodeRepo
-
 	DeployInstructionRepo
 	EnvironmentRepo
 	EnvironmentValueRepo

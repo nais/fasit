@@ -21,7 +21,7 @@ const (
 	StatusTypeHelm
 	StatusTypeHelmReleases
 	StatusTypeHealth
-	StatusKubernetesNodes
+	StatusKubernetesNodes_deprecated
 	StatusTypeLog
 )
 

@@ -71,15 +71,13 @@ func main() {
 }
 
 func run(ctx context.Context, log *logrus.Logger) error {
-	receiver, helmClient, k8sClient, statusPublisher := sharedDependencies(ctx, log)
+	receiver, helmClient, statusPublisher := sharedDependencies(ctx, log)
 
 	s := workers.NewScheduler(log.WithField("subsystem", "scheduler"))
 	helmListReporter := naisd.NewStatusReporter(cfg.TenantName, cfg.Env, helmClient, statusPublisher)
 	healthReporter := naisd.NewHealthReporter(cfg.TenantName, cfg.Env, statusPublisher)
-	kubernetesReporter := naisd.NewKubernetesReporter(cfg.TenantName, cfg.Env, k8sClient, statusPublisher)
 	s.Register("helm-list", helmListReporter, 15*time.Minute)
 	s.Register("health", healthReporter, 1*time.Minute)
-	s.Register("kubernetes", kubernetesReporter, 10*time.Minute)
 	s.Start(ctx)
 
 	receiver.RepublishHelmList = helmListReporter.Trigger
@@ -118,7 +116,7 @@ func newLogger() *logrus.Logger {
 
 func upgrade(ctx context.Context, log *logrus.Logger) {
 	log.Info("Upgrading naisd")
-	receiver, _, _, _ := sharedDependencies(ctx, log)
+	receiver, _, _ := sharedDependencies(ctx, log)
 
 	err := naisd.Upgrade(ctx, receiver, log.WithField("subsystem", "self-upgrade"))
 	if err != nil {
@@ -131,7 +129,7 @@ func upgrade(ctx context.Context, log *logrus.Logger) {
 	log.Info("Done")
 }
 
-func sharedDependencies(ctx context.Context, log *logrus.Logger) (*naisd.DeployManager, naisd.HelmClient, kubernetes.Interface, *message.Publisher[message.Status]) {
+func sharedDependencies(ctx context.Context, log *logrus.Logger) (*naisd.DeployManager, naisd.HelmClient, *message.Publisher[message.Status]) {
 	deployClient, err := pubsub.NewClient(ctx, cfg.EnvProjectID)
 	if err != nil {
 		log.WithError(err).Fatal("setting up new pub/sub client")
@@ -189,5 +187,5 @@ func sharedDependencies(ctx context.Context, log *logrus.Logger) (*naisd.DeployM
 		log.WithError(err).Fatal("setting up worker")
 	}
 
-	return receiver, helmClient, k8sClient, statusPublisher
+	return receiver, helmClient, statusPublisher
 }

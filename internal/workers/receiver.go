@@ -36,7 +36,6 @@ type ReceiverStore interface {
 	EnvironmentCreate(ctx context.Context, t *model.EnvironmentCreate) (*model.Environment, error)
 	EnvironmentGet(ctx context.Context, id uuid.UUID) (*model.Environment, error)
 	EnvironmentIDByNames(ctx context.Context, tenantName string, environmentName string) (uuid.UUID, error)
-	KubernetesNodeSync(ctx context.Context, envID uuid.UUID, kn *message.KubernetesNodes) error
 	ReleaseStatusCreateOrUpdate(ctx context.Context, environmentID uuid.UUID, h *message.Release) error
 	TxFunc(ctx context.Context, fn database.TXFunc) error
 }
@@ -84,8 +83,6 @@ func (r *Receiver) handler(ctx context.Context, msg message.Status) error {
 		return r.releaseStatus(ctx, msg)
 	case message.StatusTypeHealth:
 		return r.healthStatus(ctx, msg)
-	case message.StatusKubernetesNodes:
-		return r.kubernetesNodes(ctx, msg)
 	case message.StatusTypeLog:
 		return r.handleStatusLog(ctx, msg)
 	default:
@@ -200,28 +197,6 @@ func (r *Receiver) healthStatus(ctx context.Context, msg message.Status) error {
 		return err
 	}
 	return naisdstatus.Set(ctx, environmentID, status)
-}
-
-func (r *Receiver) kubernetesNodes(ctx context.Context, msg message.Status) error {
-	status := &message.KubernetesNodes{}
-	err := json.Unmarshal(msg.Data, status)
-	if err != nil {
-		r.log.WithError(err).Errorf("invalid json")
-		return nil
-	}
-
-	environmentID, err := r.repo.EnvironmentIDByNames(ctx, msg.Tenant, msg.Environment)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			r.log.WithField("tenant", msg.Tenant).
-				WithField("environment", msg.Environment).
-				Warn("unknown tenant and/or environment")
-			return nil
-		}
-		return err
-	}
-
-	return r.repo.KubernetesNodeSync(ctx, environmentID, status)
 }
 
 func (r *Receiver) handleStatusLog(ctx context.Context, msg message.Status) error {
