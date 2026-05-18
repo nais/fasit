@@ -45,33 +45,6 @@ func (q *Queries) EnvironmentByNames(ctx context.Context, arg EnvironmentByNames
 	return i, err
 }
 
-const environmentCI = `-- name: EnvironmentCI :one
-SELECT
-	id, tenant_id, name, kind, description, created, last_modified, reconcile, labels
-FROM
-	environments
-WHERE
-	ci = TRUE
-	AND kind = $1
-`
-
-func (q *Queries) EnvironmentCI(ctx context.Context, kind types.EnvironmentKind) (Environment, error) {
-	row := q.db.QueryRow(ctx, environmentCI, kind)
-	var i Environment
-	err := row.Scan(
-		&i.ID,
-		&i.TenantID,
-		&i.Name,
-		&i.Kind,
-		&i.Description,
-		&i.Created,
-		&i.LastModified,
-		&i.Reconcile,
-		&i.Labels,
-	)
-	return i, err
-}
-
 const environmentCreate = `-- name: EnvironmentCreate :one
 INSERT INTO environments(
 	name,

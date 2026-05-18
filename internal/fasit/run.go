@@ -15,7 +15,6 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/nais/fasit/internal/contextloader"
 	"github.com/nais/fasit/internal/database"
-	"github.com/nais/fasit/internal/database/notifier"
 	"github.com/nais/fasit/internal/deployment"
 	"github.com/nais/fasit/internal/ioconvenience"
 	"github.com/nais/fasit/internal/message"
@@ -104,9 +103,6 @@ func Run(ctx context.Context) error {
 		deployment.GetManager(ctx),
 	)
 	go receiver.Run(ctx)
-
-	notifierService := notifier.New(pool, log)
-	go notifierService.Run(ctx)
 
 	go func() {
 		if err := runGRPC(ctx, loadContext, cfg.GRPCBindAddress, repo, log); err != nil {
