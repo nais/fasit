@@ -194,21 +194,12 @@ WITH env AS (
 	WHERE
 		id = $1
 ),
-combined AS (
-	SELECT
-		NULL AS id,
-		name,
-		version,
-		last_modified
-	FROM
-		features
-),
 filtered AS (
 	SELECT DISTINCT ON (name)
 		name,
 		version
 	FROM
-		combined
+		features
 		JOIN env ON 1 = 1
 	ORDER BY
 		name,
@@ -296,38 +287,16 @@ func (q *Queries) FeatureVersionUpdate(ctx context.Context, arg FeatureVersionUp
 }
 
 const features = `-- name: Features :many
-WITH combined AS (
-	SELECT
-		NULL AS id,
-		name,
-		version,
-		created,
-		last_modified
-	FROM
-		features
-),
-filtered AS (
-	SELECT DISTINCT ON (name)
-		name AS name,
-		version,
-		created,
-		last_modified
-	FROM
-		combined
-	ORDER BY
-		name,
-		id
-)
 SELECT
 	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details,
-	filtered.created,
-	filtered.last_modified
+	features.created,
+	features.last_modified
 FROM
-	filtered
-	JOIN feature_data fd ON filtered.name = fd.name
-		AND filtered.version = fd.version
+	features
+	JOIN feature_data fd ON features.name = fd.name
+		AND features.version = fd.version
 	ORDER BY
-		filtered.name
+		features.name
 `
 
 type FeaturesRow struct {

@@ -50,38 +50,16 @@ WHERE
 	fd.name = @name;
 
 -- name: Features :many
-WITH combined AS (
-	SELECT
-		NULL AS id,
-		name,
-		version,
-		created,
-		last_modified
-	FROM
-		features
-),
-filtered AS (
-	SELECT DISTINCT ON (name)
-		name AS name,
-		version,
-		created,
-		last_modified
-	FROM
-		combined
-	ORDER BY
-		name,
-		id
-)
 SELECT
 	sqlc.embed(fd),
-	filtered.created,
-	filtered.last_modified
+	features.created,
+	features.last_modified
 FROM
-	filtered
-	JOIN feature_data fd ON filtered.name = fd.name
-		AND filtered.version = fd.version
+	features
+	JOIN feature_data fd ON features.name = fd.name
+		AND features.version = fd.version
 	ORDER BY
-		filtered.name;
+		features.name;
 
 -- name: FeaturesForKind :many
 SELECT
@@ -126,21 +104,12 @@ WITH env AS (
 	WHERE
 		id = @environment_id
 ),
-combined AS (
-	SELECT
-		NULL AS id,
-		name,
-		version,
-		last_modified
-	FROM
-		features
-),
 filtered AS (
 	SELECT DISTINCT ON (name)
 		name,
 		version
 	FROM
-		combined
+		features
 		JOIN env ON 1 = 1
 	ORDER BY
 		name,
