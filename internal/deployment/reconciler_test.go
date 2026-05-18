@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/contextloader"
@@ -440,4 +441,240 @@ func getDb(ctx context.Context, t *testing.T, container *postgres.PostgresContai
 		t:    t,
 		pool: pool,
 	}
+}
+
+func TestReconcileDisabledFeature(t *testing.T) {
+	ctx := context.Background()
+	logger, _ := test.NewNullLogger()
+
+	container, dsn, err := startPostgresql(ctx, t)
+	if err != nil {
+		t.Fatalf("failed to start postgres container: %v", err)
+	}
+
+	t.Run("disabled feature is not deployed", func(t *testing.T) {
+		mgr := setupTestMgr(ctx, t, container, dsn, logger)
+		deployment.ChartDownloader = mgr.seeder.ChartDownloader()
+
+		newPublisher := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
+			return mgr.publisher
+		}
+		loadContext, err := contextloader.NewLoaderFunc(mgr.db.pool, newPublisher, meter, logger)
+		if err != nil {
+			t.Fatalf("failed to get setup context: %v", err)
+		}
+		ctx := loadContext(ctx)
+
+		// Create two tenant environments.
+		envsToCreate := map[string]environment.Labels{
+			"tenant1:dev":  {"kind": "tenant"},
+			"tenant1:prod": {"kind": "tenant"},
+		}
+		mgr.db.createTenantsAndEnvironments(ctx, envsToCreate)
+
+		// Disable "clamav" in prod.
+		var prodEnvID uuid.UUID
+		row := mgr.db.pool.QueryRow(ctx, `SELECT e.id FROM environments e JOIN tenants t ON t.id = e.tenant_id WHERE t.name = 'tenant1' AND e.name = 'prod'`)
+		if err := row.Scan(&prodEnvID); err != nil {
+			t.Fatalf("get prod env id: %v", err)
+		}
+		_, err = mgr.db.pool.Exec(ctx, `INSERT INTO disabled_features (environment_id, feature) VALUES ($1, 'clamav')`, prodEnvID)
+		if err != nil {
+			t.Fatalf("insert disabled feature: %v", err)
+		}
+
+		// Create a deployment for clamav targeting kind=tenant (matches both dev and prod).
+		mgr.seeder.AddDeployment("clamav", "0.1.0", environment.Labels{"kind": "tenant"})
+		_, err = mgr.seeder.Seed(ctx)
+		if err != nil {
+			t.Fatalf("seeding deployments: %v", err)
+		}
+
+		// Reconcile.
+		if err := deployment.GetManager(ctx).Reconcile(ctx); err != nil {
+			t.Fatalf("reconcile: %v", err)
+		}
+
+		// Only dev should have received a deploy instruction.
+		assert.Len(t, mgr.publisher.msg, 1)
+		assert.Equal(t, "clamav", mgr.publisher.msg[0].Name)
+
+		// Query deployment statuses — prod should show DISABLED.
+		var deploymentID uuid.UUID
+		row = mgr.db.pool.QueryRow(ctx, `SELECT id FROM deployments WHERE feature_name = 'clamav'`)
+		if err := row.Scan(&deploymentID); err != nil {
+			t.Fatalf("get deployment id: %v", err)
+		}
+
+		statuses, err := deployment.ListDeploymentStatuses(ctx, deploymentID)
+		if err != nil {
+			t.Fatalf("list deployment statuses: %v", err)
+		}
+
+		var devStatus, prodStatus *deployment.DeploymentStatus
+		for _, s := range statuses {
+			if s.EnvironmentID == prodEnvID {
+				prodStatus = s
+			} else {
+				devStatus = s
+			}
+		}
+
+		if prodStatus == nil {
+			t.Fatal("expected a status entry for prod")
+		}
+		assert.Equal(t, deployment.DeploymentStatusStateDisabled, prodStatus.State)
+		assert.Equal(t, "feature is disabled in this environment", prodStatus.Message)
+
+		if devStatus == nil {
+			t.Fatal("expected a status entry for dev")
+		}
+		// Status is CREATED because the test publisher doesn't simulate naisd
+		// feedback; the important thing is that a deploy instruction was sent.
+		assert.Equal(t, deployment.DeploymentStatusStateCreated, devStatus.State)
+	})
+
+	t.Run("re-enabling allows future deploys", func(t *testing.T) {
+		mgr := setupTestMgr(ctx, t, container, dsn, logger)
+		deployment.ChartDownloader = mgr.seeder.ChartDownloader()
+
+		newPublisher := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
+			return mgr.publisher
+		}
+		loadContext, err := contextloader.NewLoaderFunc(mgr.db.pool, newPublisher, meter, logger)
+		if err != nil {
+			t.Fatalf("failed to get setup context: %v", err)
+		}
+		ctx := loadContext(ctx)
+
+		envsToCreate := map[string]environment.Labels{
+			"tenant1:dev":  {"kind": "tenant"},
+			"tenant1:prod": {"kind": "tenant"},
+		}
+		mgr.db.createTenantsAndEnvironments(ctx, envsToCreate)
+
+		// Disable clamav in prod.
+		var prodEnvID uuid.UUID
+		row := mgr.db.pool.QueryRow(ctx, `SELECT e.id FROM environments e JOIN tenants t ON t.id = e.tenant_id WHERE t.name = 'tenant1' AND e.name = 'prod'`)
+		if err := row.Scan(&prodEnvID); err != nil {
+			t.Fatalf("get prod env id: %v", err)
+		}
+		_, err = mgr.db.pool.Exec(ctx, `INSERT INTO disabled_features (environment_id, feature) VALUES ($1, 'clamav')`, prodEnvID)
+		if err != nil {
+			t.Fatalf("insert disabled feature: %v", err)
+		}
+
+		// Deploy clamav v1.
+		mgr.seeder.AddDeployment("clamav", "0.1.0", environment.Labels{"kind": "tenant"})
+		_, err = mgr.seeder.Seed(ctx)
+		if err != nil {
+			t.Fatalf("seeding deployments: %v", err)
+		}
+		if err := deployment.GetManager(ctx).Reconcile(ctx); err != nil {
+			t.Fatalf("reconcile: %v", err)
+		}
+
+		// Re-enable by removing the disabled row.
+		_, err = mgr.db.pool.Exec(ctx, `DELETE FROM disabled_features WHERE environment_id = $1 AND feature = 'clamav'`, prodEnvID)
+		if err != nil {
+			t.Fatalf("delete disabled feature: %v", err)
+		}
+
+		// Deploy new version.
+		mgr.seeder.Reset()
+		mgr.publisher.msg = nil
+		mgr.seeder.AddDeployment("clamav", "0.2.0", environment.Labels{"kind": "tenant"})
+		_, err = mgr.seeder.Seed(ctx)
+		if err != nil {
+			t.Fatalf("seeding deployments: %v", err)
+		}
+		if err := deployment.GetManager(ctx).Reconcile(ctx); err != nil {
+			t.Fatalf("reconcile: %v", err)
+		}
+
+		// Both environments should now have deploy instructions.
+		assert.Len(t, mgr.publisher.msg, 2)
+
+		var deploymentID uuid.UUID
+		row = mgr.db.pool.QueryRow(ctx, `SELECT id FROM deployments WHERE feature_name = 'clamav' AND version = '0.2.0'`)
+		if err := row.Scan(&deploymentID); err != nil {
+			t.Fatalf("get deployment id: %v", err)
+		}
+
+		statuses, err := deployment.ListDeploymentStatuses(ctx, deploymentID)
+		if err != nil {
+			t.Fatalf("list deployment statuses: %v", err)
+		}
+
+		for _, s := range statuses {
+			assert.Equal(t, deployment.DeploymentStatusStateCreated, s.State, "env %s should be CREATED (deploy sent)", s.EnvironmentID)
+		}
+	})
+}
+
+func TestReconcileGlobalDeployment(t *testing.T) {
+	ctx := context.Background()
+	logger, _ := test.NewNullLogger()
+
+	// Create environments of different kinds.
+	envsToCreate := map[string]environment.Labels{
+		"tenant1:dev":        {"kind": "tenant"},
+		"tenant1:prod":       {"kind": "tenant"},
+		"tenant1:management": {"kind": "management"},
+	}
+
+	container, dsn, err := startPostgresql(ctx, t)
+	if err != nil {
+		t.Fatalf("failed to start postgres container: %v", err)
+	}
+
+	mgr := setupTestMgr(ctx, t, container, dsn, logger)
+	deployment.ChartDownloader = mgr.seeder.ChartDownloader()
+
+	newPublisher := func(topicID string, log logrus.FieldLogger) deployment.Publisher {
+		return mgr.publisher
+	}
+	loadContext, err := contextloader.NewLoaderFunc(mgr.db.pool, newPublisher, meter, logger)
+	if err != nil {
+		t.Fatalf("failed to get setup context: %v", err)
+	}
+	ctx = loadContext(ctx)
+
+	mgr.db.createTenantsAndEnvironments(ctx, envsToCreate)
+
+	// A global deployment has an empty target — should match ALL environments.
+	mgr.seeder.AddDeployment("global-tool", "1.0.0", environment.Labels{})
+	_, err = mgr.seeder.Seed(ctx)
+	if err != nil {
+		t.Fatalf("seeding deployments: %v", err)
+	}
+
+	if err := deployment.GetManager(ctx).Reconcile(ctx); err != nil {
+		t.Fatalf("reconcile: %v", err)
+	}
+
+	// All 3 environments should receive deploy instructions.
+	assert.Len(t, mgr.publisher.msg, 3)
+
+	q := `
+		SELECT
+			t.name || ':' || e.name
+		FROM deploy_instructions di
+		JOIN environments e ON e.id = di.environment_id
+		JOIN tenants t ON t.id = e.tenant_id
+		WHERE di.status = 'deployed' AND di.feature_name = 'global-tool'
+		ORDER BY e.name
+	`
+	rows := mgr.db.runQuery(ctx, t, q)
+	var deployed []string
+	for rows.Next() {
+		var s string
+		_ = rows.Scan(&s)
+		deployed = append(deployed, s)
+	}
+
+	assert.Len(t, deployed, 3)
+	assert.Contains(t, deployed, "tenant1:dev")
+	assert.Contains(t, deployed, "tenant1:prod")
+	assert.Contains(t, deployed, "tenant1:management")
 }
