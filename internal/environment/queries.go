@@ -16,7 +16,7 @@ import (
 
 type ctxKey int
 
-// QuerierKey is exposed for testing to override querier with mocks.
+// QuerierKey is exposed so tests can inject fake queriers on the context.
 // Avoid usage by e.g. using testcontainers.
 const QuerierKey ctxKey = iota
 

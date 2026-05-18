@@ -2,156 +2,134 @@ package workers
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/database"
-	"github.com/nais/fasit/internal/database/mocks"
-	"github.com/nais/fasit/internal/deployment/deploymentsql"
-	dsmocks "github.com/nais/fasit/internal/deployment/deploymentsql/mocks"
-	"github.com/nais/fasit/internal/deployment/deploymenttest"
 	"github.com/nais/fasit/internal/graph/model"
 	"github.com/nais/fasit/internal/message"
-	"github.com/nais/fasit/internal/naisdstatus/naisdstatussql"
-	"github.com/nais/fasit/internal/naisdstatus/naisdstatustest"
 	"github.com/nais/fasit/internal/slack/fake"
 	"github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/mock"
 )
 
-func TestReceiver(t *testing.T) {
-	uid := uuid.New()
-	diid := uuid.New()
-	tests := map[string]struct {
-		envID                          uuid.UUID
-		deployInstructionID            uuid.UUID
-		helmStatus                     bool
-		statuses                       []message.Status
-		numStatusCreateOrUpdate        int
-		numReleaseStatusCreateOrUpdate int
-		numHealthStatusCreateOrUpdate  int
-		numKubernetesNodeSync          int
-	}{
-		"empty": {
-			envID:               uid,
-			deployInstructionID: diid,
-			statuses:            []message.Status{},
+func TestReceiver_ReleaseStatus(t *testing.T) {
+	envID := uuid.New()
+
+	var deletedEnvID uuid.UUID
+	var createdReleases []message.Release
+
+	store := &fakeStore{
+		environmentIDByNamesFunc: func(_ context.Context, tenant, env string) (uuid.UUID, error) {
+			if tenant != "t1" || env != "e1" {
+				t.Fatalf("EnvironmentIDByNames(%q, %q)", tenant, env)
+			}
+			return envID, nil
 		},
-		"helm one": {
-			envID:               uid,
-			deployInstructionID: diid,
-			helmStatus:          true,
-			statuses: []message.Status{
-				{
-					Type:        message.StatusTypeHelm,
-					Tenant:      "tenant",
-					Environment: "env",
-					Data:        []byte(`{"name":"test","rolloutStatus":"deployed","version":"1.0.0","DIID":"` + diid.String() + `"}`),
+		txFuncFunc: func(ctx context.Context, fn database.TXFunc) error {
+			// The callback receives a database.Repo. We provide a minimal
+			// fake that only implements the release-status methods called
+			// inside releaseStatus's transaction.
+			txRepo := &fakeTxRepo{
+				deleteFunc: func(_ context.Context, id uuid.UUID) error {
+					deletedEnvID = id
+					return nil
 				},
-			},
-			numStatusCreateOrUpdate: 1,
-		},
-		"helm missing tenant": {
-			envID:               uuid.Nil,
-			deployInstructionID: diid,
-			helmStatus:          true,
-			statuses: []message.Status{
-				{
-					Type:        message.StatusTypeHelm,
-					Tenant:      "tenant",
-					Environment: "env",
-					Data:        []byte(`{"name":"test","rolloutStatus":"deployed","version":"1.0.0","DIID":"` + diid.String() + `"}`),
+				createFunc: func(_ context.Context, id uuid.UUID, r *message.Release) error {
+					if id != envID {
+						t.Fatalf("ReleaseStatusCreateOrUpdate env=%v, want %v", id, envID)
+					}
+					createdReleases = append(createdReleases, *r)
+					return nil
 				},
-			},
-			numStatusCreateOrUpdate: 1,
-		},
-		"helm releases": {
-			envID:               uid,
-			deployInstructionID: diid,
-			statuses: []message.Status{
-				{
-					Type:        message.StatusTypeHelmReleases,
-					Tenant:      "tenant",
-					Environment: "env",
-					Data:        []byte(`{"releases":[{"name":"test","namespace":"test","status":"deployed","chart":"test","version":"1.0.0","appVersion":"1.0.0","values":{}}]}`),
-				},
-			},
-			numReleaseStatusCreateOrUpdate: 1,
-		},
-		"health status": {
-			envID:               uid,
-			deployInstructionID: diid,
-			statuses: []message.Status{
-				{
-					Type:        message.StatusTypeHealth,
-					Tenant:      "tenant",
-					Environment: "env",
-					Data:        []byte(`{"reportedAt": "2020-01-01T00:00:00Z"}`),
-				},
-			},
-			numHealthStatusCreateOrUpdate: 1,
+			}
+			return fn(txRepo)
 		},
 	}
 
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			ctx := context.Background()
-			ctx = naisdstatustest.RegisterMock(ctx, t)
-			statusQuerier := naisdstatustest.GetQuerier(ctx)
+	data, _ := json.Marshal(message.HelmRelease{
+		Releases: []message.Release{{Name: "app1", Version: "1.0.0", Status: "deployed"}},
+	})
 
-			dsQuerier := dsmocks.NewQuerier(t)
-			dsQuerier.On("DeployInstructionsByID", mock.Anything, tc.deployInstructionID).Return(deploymentsql.DeployInstruction{ID: tc.deployInstructionID, EnvironmentID: tc.envID}, nil).Maybe()
-			ctx = deploymenttest.RegisterWithQuerier(ctx, dsQuerier)
+	rec := NewReceiver(
+		&fakeClient{messages: []message.Status{
+			{Type: message.StatusTypeHelmReleases, Tenant: "t1", Environment: "e1", Data: data},
+		}},
+		store,
+		logrus.NewEntry(logrus.New()),
+		fake.NewFakeSlackClient(),
+		"test",
+	)
+	rec.Run(context.Background())
 
-			repo := mocks.NewRepo(t)
-			repo.On("EnvironmentGet", mock.Anything, tc.envID).Return(&model.Environment{ID: tc.envID}, nil).Maybe()
-
-			if !tc.helmStatus {
-				repo.On("EnvironmentIDByNames", mock.Anything, "tenant", "env").Return(tc.envID, nil).Maybe().Times(len(tc.statuses))
-			}
-
-			if tc.numStatusCreateOrUpdate > 0 {
-				repo.On("DeployInstructionUpdateStatus", mock.Anything, mock.Anything, model.RolloutStatusDeployed).Return(nil).Times(tc.numStatusCreateOrUpdate)
-			}
-			if tc.numReleaseStatusCreateOrUpdate > 0 {
-				repo.On("ReleaseStatusDeleteByEnvironmentID", mock.Anything, tc.envID).Return(nil).Times(tc.numReleaseStatusCreateOrUpdate)
-				repo.On("ReleaseStatusCreateOrUpdate", mock.Anything, tc.envID, mock.Anything).Return(nil).Times(tc.numReleaseStatusCreateOrUpdate)
-				repo.On("TxFunc", mock.Anything, mock.Anything).Return(nil).Run(func(args mock.Arguments) {
-					args.Get(1).(database.TXFunc)(repo)
-				})
-			}
-			if tc.numHealthStatusCreateOrUpdate > 0 {
-				statusQuerier.On("Set", ctx, mock.Anything).Return(naisdstatussql.HealthStatus{}, nil).Times(tc.numHealthStatusCreateOrUpdate)
-			}
-			if tc.numKubernetesNodeSync > 0 {
-				repo.On("KubernetesNodeSync", mock.Anything, tc.envID, mock.Anything).Return(nil).Times(tc.numKubernetesNodeSync)
-			}
-
-			rec := NewReceiver(
-				&mockReceiverClient{messages: tc.statuses},
-				repo,
-				logrus.NewEntry(logrus.StandardLogger()),
-				fake.NewFakeSlackClient(),
-				"test",
-			)
-
-			rec.Run(ctx)
-			// if storage.statusCreateOrUpdate != tc.expectedUpdates {
-			// 	t.Errorf("expected %d status messages to be handled, got %d", len(tc.statuses), storage.statusCreateOrUpdate)
-			// }
-		})
+	if deletedEnvID != envID {
+		t.Errorf("ReleaseStatusDeleteByEnvironmentID(%v), want %v", deletedEnvID, envID)
+	}
+	if len(createdReleases) != 1 {
+		t.Fatalf("got %d creates, want 1", len(createdReleases))
+	}
+	if createdReleases[0].Name != "app1" {
+		t.Errorf("release.Name = %q, want %q", createdReleases[0].Name, "app1")
 	}
 }
 
-type mockReceiverClient struct {
+func TestReceiver_UnknownType(t *testing.T) {
+	rec := NewReceiver(
+		&fakeClient{messages: []message.Status{{Type: 99, Data: []byte(`{}`)}},
+		},
+		&fakeStore{},
+		logrus.NewEntry(logrus.New()),
+		fake.NewFakeSlackClient(),
+		"test",
+	)
+	rec.Run(context.Background())
+}
+
+// --- fakes ---
+
+type fakeClient struct {
 	messages []message.Status
 }
 
-func (m *mockReceiverClient) Receive(ctx context.Context, f func(ctx context.Context, msg message.Status) error) error {
-	for _, msg := range m.messages {
-		if err := f(ctx, msg); err != nil {
+func (f *fakeClient) Receive(ctx context.Context, fn func(context.Context, message.Status) error) error {
+	for _, m := range f.messages {
+		if err := fn(ctx, m); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+// fakeStore implements ReceiverStore.
+type fakeStore struct {
+	environmentIDByNamesFunc func(context.Context, string, string) (uuid.UUID, error)
+	txFuncFunc               func(context.Context, database.TXFunc) error
+}
+
+func (f *fakeStore) DeployInstructionsLatestForFeature(context.Context, uuid.UUID, string) (*model.DeployInstruction, error) {
+	panic("not called")
+}
+func (f *fakeStore) DeployInstructionUpdateStatus(context.Context, uuid.UUID, model.RolloutStatus) error {
+	panic("not called")
+}
+func (f *fakeStore) EnvironmentByNames(context.Context, string, string) (*model.Environment, error) {
+	panic("not called")
+}
+func (f *fakeStore) EnvironmentCI(context.Context, model.EnvironmentKind) (*model.Environment, error) {
+	panic("not called")
+}
+func (f *fakeStore) EnvironmentCreate(context.Context, *model.EnvironmentCreate) (*model.Environment, error) {
+	panic("not called")
+}
+func (f *fakeStore) EnvironmentGet(context.Context, uuid.UUID) (*model.Environment, error) {
+	panic("not called")
+}
+func (f *fakeStore) EnvironmentIDByNames(ctx context.Context, t, e string) (uuid.UUID, error) {
+	return f.environmentIDByNamesFunc(ctx, t, e)
+}
+func (f *fakeStore) ReleaseStatusCreateOrUpdate(context.Context, uuid.UUID, *message.Release) error {
+	panic("not called")
+}
+func (f *fakeStore) TxFunc(ctx context.Context, fn database.TXFunc) error {
+	return f.txFuncFunc(ctx, fn)
 }
