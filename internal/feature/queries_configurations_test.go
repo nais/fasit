@@ -24,7 +24,6 @@ import (
 	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
-	"k8s.io/utils/ptr"
 )
 
 func TestHelmConfigMap(t *testing.T) {
@@ -159,7 +158,7 @@ func TestConfig(t *testing.T) {
 		config := model.NewConfiguration{
 			EnvironmentID: &envid,
 			Feature:       "feature5",
-			Description:   ptr.To("description"),
+			Description:   new("description"),
 			Key:           "my.key",
 			Value:         []byte(`"stringval"`),
 			Secret:        true,
@@ -188,7 +187,7 @@ func TestConfig(t *testing.T) {
 		config := model.NewConfiguration{
 			EnvironmentID: &envid,
 			Feature:       "feature5",
-			Description:   ptr.To("description"),
+			Description:   new("description"),
 			Key:           "my.key",
 			Value:         []byte(`"stringval"`),
 			Secret:        true,
@@ -215,7 +214,7 @@ func TestConfig(t *testing.T) {
 
 		config := model.NewConfiguration{
 			Feature:     "feature5",
-			Description: ptr.To("description"),
+			Description: new("description"),
 			Key:         "my.key",
 			Value:       []byte(`"stringval"`),
 			Secret:      true,
