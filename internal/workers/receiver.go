@@ -29,7 +29,6 @@ type HelmListener interface {
 }
 
 type ReceiverStore interface {
-	DeployInstructionsLatestForFeature(ctx context.Context, envID uuid.UUID, featureName string) (*model.DeployInstruction, error)
 	DeployInstructionUpdateStatus(ctx context.Context, id uuid.UUID, status model.RolloutStatus) error
 	EnvironmentGet(ctx context.Context, id uuid.UUID) (*model.Environment, error)
 	EnvironmentIDByNames(ctx context.Context, tenantName string, environmentName string) (uuid.UUID, error)
