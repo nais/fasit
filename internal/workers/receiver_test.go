@@ -119,10 +119,6 @@ func (f *fakeStore) EnvironmentByNames(context.Context, string, string) (*model.
 	panic("not called")
 }
 
-func (f *fakeStore) EnvironmentCI(context.Context, model.EnvironmentKind) (*model.Environment, error) {
-	panic("not called")
-}
-
 func (f *fakeStore) EnvironmentCreate(context.Context, *model.EnvironmentCreate) (*model.Environment, error) {
 	panic("not called")
 }

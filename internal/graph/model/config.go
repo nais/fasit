@@ -59,5 +59,3 @@ type Configuration struct {
 	Source  ConfigSource    `json:"source"`
 	Key     string          `json:"key"`
 }
-
-func (c *Configuration) IsUpdate() {}
