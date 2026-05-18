@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"reflect"
 	"slices"
 	"text/template"
@@ -247,9 +248,7 @@ func cloneStringAnyMap(m map[string]any) map[string]any {
 		return nil
 	}
 	c := make(map[string]any, len(m))
-	for k, v := range m {
-		c[k] = v
-	}
+	maps.Copy(c, m)
 	return c
 }
 

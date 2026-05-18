@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"reflect"
 	"slices"
 	"sort"
@@ -292,13 +293,11 @@ func quote(v any) string {
 // output for non-secret-dependent template expressions.
 var deterministicTemplateFuncs = func() template.FuncMap {
 	fm := make(template.FuncMap, len(templateFuncs))
-	for k, v := range templateFuncs {
-		fm[k] = v
-	}
+	maps.Copy(fm, templateFuncs)
 
 	fixedTime := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
 	fm["now"] = func() time.Time { return fixedTime }
-	fm["date"] = func(fmt string, date interface{}) string { return fixedTime.Format(fmt) }
+	fm["date"] = func(fmt string, date any) string { return fixedTime.Format(fmt) }
 	fm["uuidv4"] = func() string { return "00000000-0000-0000-0000-000000000000" }
 	fm["randAlphaNum"] = func(n int) string { return strings.Repeat("x", n) }
 	fm["randAlpha"] = func(n int) string { return strings.Repeat("x", n) }
