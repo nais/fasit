@@ -7,6 +7,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/nais/fasit/internal/database/types"
 )
 
 const listMappingValuesForTenant = `-- name: ListMappingValuesForTenant :many
@@ -68,7 +69,7 @@ type ListMappingValuesForTenantParams struct {
 type ListMappingValuesForTenantRow struct {
 	ID     uuid.UUID
 	Name   string
-	Kind   EnvironmentKind
+	Kind   types.EnvironmentKind
 	Values []byte
 }
 

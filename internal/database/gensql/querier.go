@@ -16,7 +16,7 @@ type Querier interface {
 	DeployInstructionsPrevious(ctx context.Context, id uuid.UUID) (DeployInstruction, error)
 	DeployInstructionsUpdateStatus(ctx context.Context, arg DeployInstructionsUpdateStatusParams) error
 	EnvironmentByNames(ctx context.Context, arg EnvironmentByNamesParams) (Environment, error)
-	EnvironmentCI(ctx context.Context, kind EnvironmentKind) (Environment, error)
+	EnvironmentCI(ctx context.Context, kind types.EnvironmentKind) (Environment, error)
 	EnvironmentCreate(ctx context.Context, arg EnvironmentCreateParams) (Environment, error)
 	EnvironmentGet(ctx context.Context, id uuid.UUID) (Environment, error)
 	EnvironmentGetByName(ctx context.Context, arg EnvironmentGetByNameParams) (Environment, error)

@@ -17,6 +17,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/nais/fasit/internal/audit"
+	"github.com/nais/fasit/internal/database/types"
 	"github.com/nais/fasit/internal/dbtx"
 	"github.com/nais/fasit/internal/environment"
 	"github.com/nais/fasit/internal/errs"
@@ -88,7 +89,7 @@ func helmValues(ctx context.Context, f *model.Feature, envID uuid.UUID) (map[str
 // environment and config secret values during a probe render. Any computed
 // output that differs between the control and probe renders depends on at
 // least one secret input.
-const probeSecretSentinel = "__FASIT_PROBE_a9f4e1c8d7b2__" //#nosec G101 -- placeholder, not a credential
+const probeSecretSentinel = "__FASIT_PROBE_a9f4e1c8d7b2__" // #nosec G101 -- placeholder, not a credential
 
 // helmRenderData holds everything needed to render helm values without
 // additional database access. Fetched once, rendered multiple times for
@@ -401,7 +402,7 @@ func MappingValuesForEnvironment(ctx context.Context, envID uuid.UUID, showSensi
 		if env.ID == envID {
 			mv.Env = val
 		}
-		if env.Kind == featuresql.EnvironmentKind(model.EnvironmentKindManagement) {
+		if env.Kind == types.EnvironmentKind(model.EnvironmentKindManagement) {
 			mv.Management = val
 		} else {
 			mv.Envs = append(mv.Envs, val)

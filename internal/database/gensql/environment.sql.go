@@ -55,7 +55,7 @@ WHERE
 	AND kind = $1
 `
 
-func (q *Queries) EnvironmentCI(ctx context.Context, kind EnvironmentKind) (Environment, error) {
+func (q *Queries) EnvironmentCI(ctx context.Context, kind types.EnvironmentKind) (Environment, error) {
 	row := q.db.QueryRow(ctx, environmentCI, kind)
 	var i Environment
 	err := row.Scan(
@@ -91,7 +91,7 @@ type EnvironmentCreateParams struct {
 	Name        string
 	Description pgtype.Text
 	TenantID    uuid.UUID
-	Kind        EnvironmentKind
+	Kind        types.EnvironmentKind
 }
 
 func (q *Queries) EnvironmentCreate(ctx context.Context, arg EnvironmentCreateParams) (Environment, error) {

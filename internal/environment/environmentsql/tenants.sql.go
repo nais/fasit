@@ -147,7 +147,7 @@ type TenantEnvironmentsRow struct {
 	ID           uuid.UUID
 	TenantID     uuid.UUID
 	Name         string
-	Kind         EnvironmentKind
+	Kind         types.EnvironmentKind
 	Description  *string
 	Created      pgtype.Timestamptz
 	LastModified pgtype.Timestamptz

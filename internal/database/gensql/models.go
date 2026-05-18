@@ -3,88 +3,10 @@
 package gensql
 
 import (
-	"database/sql/driver"
-	"fmt"
-
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/nais/fasit/internal/database/types"
 )
-
-type EnvironmentKind string
-
-const (
-	EnvironmentKindTenant     EnvironmentKind = "tenant"
-	EnvironmentKindManagement EnvironmentKind = "management"
-	EnvironmentKindOnprem     EnvironmentKind = "onprem"
-	EnvironmentKindLegacy     EnvironmentKind = "legacy"
-)
-
-func (e *EnvironmentKind) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = EnvironmentKind(s)
-	case string:
-		*e = EnvironmentKind(s)
-	default:
-		return fmt.Errorf("unsupported scan type for EnvironmentKind: %T", src)
-	}
-	return nil
-}
-
-type NullEnvironmentKind struct {
-	EnvironmentKind EnvironmentKind
-	Valid           bool // Valid is true if EnvironmentKind is not NULL
-}
-
-// Scan implements the Scanner interface.
-func (ns *NullEnvironmentKind) Scan(value interface{}) error {
-	if value == nil {
-		ns.EnvironmentKind, ns.Valid = "", false
-		return nil
-	}
-	ns.Valid = true
-	return ns.EnvironmentKind.Scan(value)
-}
-
-// Value implements the driver Valuer interface.
-func (ns NullEnvironmentKind) Value() (driver.Value, error) {
-	if !ns.Valid {
-		return nil, nil
-	}
-	return string(ns.EnvironmentKind), nil
-}
-
-type Audit struct {
-	ID          uuid.UUID
-	Actor       string
-	Description string
-	ObjectType  string
-	ObjectID    string
-	CreatedAt   pgtype.Timestamptz
-	Metadata    []byte
-}
-
-type ConfigurationsEnvironment struct {
-	ID            uuid.UUID
-	Feature       string
-	Key           string
-	Value         []byte
-	Description   pgtype.Text
-	Secret        bool
-	Created       pgtype.Timestamptz
-	EnvironmentID uuid.UUID
-}
-
-type ConfigurationsGlobal struct {
-	ID          uuid.UUID
-	Feature     string
-	Key         string
-	Value       []byte
-	Description pgtype.Text
-	Secret      bool
-	Created     pgtype.Timestamptz
-}
 
 type DeployInstruction struct {
 	ID             uuid.UUID
@@ -99,105 +21,16 @@ type DeployInstruction struct {
 	DeploymentID   *uuid.UUID
 }
 
-type Deployment struct {
-	ID          uuid.UUID
-	FeatureName string
-	Version     string
-	Target      types.EnvironmentLabels
-	Created     pgtype.Timestamptz
-	GhRef       []byte
-	Description pgtype.Text
-}
-
-type DeploymentStatus struct {
-	DeploymentID  uuid.UUID
-	EnvironmentID uuid.UUID
-	Status        string
-	Message       string
-	LastModified  pgtype.Timestamptz
-	Created       pgtype.Timestamptz
-}
-
-type DisabledFeature struct {
-	EnvironmentID uuid.UUID
-	Feature       string
-	DisabledAt    pgtype.Timestamptz
-}
-
 type Environment struct {
 	ID           uuid.UUID
 	TenantID     uuid.UUID
 	Name         string
-	Kind         EnvironmentKind
+	Kind         types.EnvironmentKind
 	Description  pgtype.Text
 	Created      pgtype.Timestamptz
 	LastModified pgtype.Timestamptz
 	Reconcile    bool
 	Labels       types.EnvironmentLabels
-}
-
-type EnvironmentFeature struct {
-	EnvironmentID  uuid.UUID
-	FeatureName    string
-	FeatureVersion string
-	DeploymentID   uuid.UUID
-}
-
-type EnvironmentValue struct {
-	EnvironmentID uuid.UUID
-	Key           string
-	Value         []byte
-	Secret        bool
-}
-
-type EnvironmentValuesStat struct {
-	Key      string
-	Kind     interface{}
-	Count    int64
-	Features interface{}
-}
-
-type Feature struct {
-	Name         string
-	Version      string
-	Created      pgtype.Timestamptz
-	LastModified pgtype.Timestamptz
-}
-
-type FeatureDatum struct {
-	Name          string
-	Version       string
-	Chart         string
-	Description   string
-	Source        string
-	Kinds         []EnvironmentKind
-	Dependencies  []byte
-	Values        []byte
-	DefaultValues []byte
-	Timeout       int64
-	TplDetails    []byte
-}
-
-type FeatureState struct {
-	EnvironmentID uuid.UUID
-	Feature       string
-	Enabled       bool
-	Created       pgtype.Timestamptz
-	LastModified  pgtype.Timestamptz
-	EnabledAt     pgtype.Timestamptz
-}
-
-type HealthStatus struct {
-	EnvironmentID uuid.UUID
-	ReportedAt    pgtype.Timestamptz
-}
-
-type Log struct {
-	ID                int64
-	DeployInstruction uuid.UUID
-	Time              pgtype.Timestamptz
-	Message           string
-	Kind              string
 }
 
 type ReleaseStatus struct {
@@ -209,13 +42,4 @@ type ReleaseStatus struct {
 	LastDeployed  pgtype.Timestamptz
 	Created       pgtype.Timestamptz
 	LastModified  pgtype.Timestamptz
-}
-
-type Tenant struct {
-	ID           uuid.UUID
-	Name         string
-	Description  pgtype.Text
-	Created      pgtype.Timestamptz
-	LastModified pgtype.Timestamptz
-	Ci           bool
 }
