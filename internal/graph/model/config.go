@@ -15,7 +15,6 @@ type NewConfiguration struct {
 	Key           string          `json:"key"`
 	Value         json.RawMessage `json:"value"`
 	Secret        bool
-	RolloutID     *uuid.UUID
 }
 
 type ConfigType string
@@ -52,18 +51,6 @@ func (e *ConfigType) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Configurations contains configuration and computed values for one feature
-type Configurations struct {
-	FeatureName string     `json:"-"`
-	EnvID       *uuid.UUID `json:"-"`
-	RolloutID   uuid.UUID  `json:"-"`
-}
-
-type ConfigurationGraphVars struct {
-	EnvironmentID *uuid.UUID
-	FeatureName   string
-}
-
 type Configuration struct {
 	ID      uuid.UUID       `json:"id"`
 	Value   *Value          `json:"value"`
@@ -71,8 +58,6 @@ type Configuration struct {
 	Created time.Time       `json:"created"`
 	Source  ConfigSource    `json:"source"`
 	Key     string          `json:"key"`
-
-	GraphVars ConfigurationGraphVars `json:"-" yaml:"-"`
 }
 
 func (c *Configuration) IsUpdate() {}

@@ -16,11 +16,7 @@ import (
 
 func environmentConfigurationFromSQL(c featuresql.ConfigurationsEnvironment) *model.Configuration {
 	return &model.Configuration{
-		ID: c.ID,
-		GraphVars: model.ConfigurationGraphVars{
-			EnvironmentID: &c.EnvironmentID,
-			FeatureName:   c.Feature,
-		},
+		ID:      c.ID,
 		Key:     c.Key,
 		Content: c.Value,
 		Created: c.Created.Time,
@@ -30,12 +26,11 @@ func environmentConfigurationFromSQL(c featuresql.ConfigurationsEnvironment) *mo
 
 func globalConfigFromSQL(c featuresql.ConfigurationsGlobal) *model.Configuration {
 	return &model.Configuration{
-		ID:        c.ID,
-		GraphVars: model.ConfigurationGraphVars{FeatureName: c.Feature},
-		Key:       c.Key,
-		Content:   c.Value,
-		Created:   c.Created.Time,
-		Source:    model.ConfigSourceGlobal,
+		ID:      c.ID,
+		Key:     c.Key,
+		Content: c.Value,
+		Created: c.Created.Time,
+		Source:  model.ConfigSourceGlobal,
 	}
 }
 
@@ -59,11 +54,7 @@ func EnvConfig(ctx context.Context, feature *model.Feature, envID uuid.UUID) ([]
 
 func envConfigFromSQL(conf featuresql.EnvConfigRow) *model.Configuration {
 	return &model.Configuration{
-		ID: conf.ID,
-		GraphVars: model.ConfigurationGraphVars{
-			EnvironmentID: conf.EnvironmentID,
-			FeatureName:   conf.Feature,
-		},
+		ID:      conf.ID,
 		Key:     conf.Key,
 		Content: conf.Value,
 		Source:  model.ConfigSourceEnv,

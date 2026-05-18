@@ -133,12 +133,11 @@ func TestConfig(t *testing.T) {
 
 		want := []*model.Configuration{
 			{
-				ID:        id,
-				GraphVars: model.ConfigurationGraphVars{FeatureName: "feature3"},
-				Key:       "my.key",
-				Content:   []byte(`"stringval"`),
-				Created:   created,
-				Source:    model.ConfigSourceGlobal,
+				ID:      id,
+				Key:     "my.key",
+				Content: []byte(`"stringval"`),
+				Created: created,
+				Source:  model.ConfigSourceGlobal,
 			},
 		}
 
@@ -171,10 +170,6 @@ func TestConfig(t *testing.T) {
 		}
 
 		want := &model.Configuration{
-			GraphVars: model.ConfigurationGraphVars{
-				FeatureName:   "feature5",
-				EnvironmentID: &envid,
-			},
 			Key:     config.Key,
 			Content: config.Value,
 			Source:  model.ConfigSourceEnv,
@@ -204,9 +199,6 @@ func TestConfig(t *testing.T) {
 		}
 
 		want := &model.Configuration{
-			GraphVars: model.ConfigurationGraphVars{
-				FeatureName: "feature5",
-			},
 			Key:     config.Key,
 			Content: config.Value,
 			Source:  model.ConfigSourceGlobal,
@@ -242,10 +234,9 @@ func TestConfig(t *testing.T) {
 		}
 
 		want := &model.Configuration{
-			GraphVars: model.ConfigurationGraphVars{FeatureName: config.Feature},
-			Key:       config.Key,
-			Content:   []byte(`"newval"`),
-			Source:    model.ConfigSourceGlobal,
+			Key:     config.Key,
+			Content: []byte(`"newval"`),
+			Source:  model.ConfigSourceGlobal,
 		}
 
 		opts := cmpopts.IgnoreFields(model.Configuration{}, "ID", "Created")
