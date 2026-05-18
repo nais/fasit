@@ -61,20 +61,6 @@ FROM
 	ORDER BY
 		features.name;
 
--- name: FeaturesForKind :many
-SELECT
-	sqlc.embed(fd),
-	features.created,
-	features.last_modified
-FROM
-	features
-	JOIN feature_data fd ON features.name = fd.name
-		AND features.version = fd.version
-WHERE
-	@environment_kind::TEXT = ANY (kinds::TEXT[])
-ORDER BY
-	features.name;
-
 -- name: FeatureStateCreateOrUpdate :one
 INSERT INTO feature_states(
 	environment_id,
