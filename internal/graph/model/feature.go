@@ -38,11 +38,6 @@ type Feature struct {
 	} `json:"-" yaml:"-"`
 }
 
-type Rename struct {
-	From string `json:"from"`
-	To   string `json:"to"`
-}
-
 type FeatureYAML struct {
 	Dependencies     Dependencies      `json:"dependencies,omitempty" yaml:"dependencies,omitempty" jsonschema:"omitempty"`
 	EnvironmentKinds []EnvironmentKind `json:"environmentKinds" yaml:"environmentKinds" jsonschema:"enum=management,enum=tenant,enum=onprem,enum=legacy,required"`
@@ -79,50 +74,6 @@ type Value struct {
 	Computed    *Computed         `yaml:"computed,omitempty" json:"computed,omitempty" jsonschema:"anyof_required=computed"`
 	Config      *Config           `yaml:"config,omitempty" json:"config,omitempty" jsonschema:"anyof_required=config"`
 	IgnoreKind  []EnvironmentKind `yaml:"ignoreKind,omitempty" json:"ignoreKind,omitempty" jsonschema:"enum=management,enum=tenant,enum=onprem,enum=legacy"`
-
-	// for graphql
-	GraphQLKey string `yaml:"key,omitempty" json:"key,omitempty" jsonschema:"-"`
-}
-
-func (v Value) ValidConfig(value json.RawMessage) error {
-	if v.Config == nil {
-		return fmt.Errorf("not configurable")
-	}
-
-	if v.Config.Type == "" {
-		return fmt.Errorf("type is invalid")
-	}
-
-	var val any
-	if err := json.Unmarshal(value, &val); err != nil {
-		return fmt.Errorf("unable to decode json: %w", err)
-	}
-
-	switch val := val.(type) {
-	case string:
-		if v.Config.Type == ConfigTypeString {
-			return nil
-		}
-	case int, int32, int64, float32, float64:
-		if v.Config.Type == ConfigTypeInt {
-			return nil
-		}
-	case bool:
-		if v.Config.Type == ConfigTypeBool {
-			return nil
-		}
-	case []any:
-		if v.Config.Type == ConfigTypeStringArray {
-			if !isStringArray(val) {
-				return fmt.Errorf("array contains non-string elements")
-			}
-			return nil
-		}
-	}
-	if val == nil {
-		return nil
-	}
-	return fmt.Errorf("value doesn't match the required type. Expected %v, got %T", v.Config.Type, val)
 }
 
 func FromChart(chartURL, version string) (*Feature, error) {
@@ -205,15 +156,6 @@ func (f *Feature) normalizedYAML(valuesYAML map[string]any) {
 	}
 }
 
-type FeatureHistory struct {
-	ID           uuid.UUID          `json:"id"`
-	Version      string             `json:"version"`
-	Status       RolloutStatus      `json:"status"`
-	Created      time.Time          `json:"created"`
-	LastModified time.Time          `json:"lastModified"`
-	Di           *DeployInstruction `json:"-"`
-}
-
 func pluckFromMap(key string, mp map[string]any) json.RawMessage {
 	kp, _ := featureutil.SmartDotSplit(key)
 
@@ -247,13 +189,4 @@ func (f *Feature) SecretKeys() []string {
 		}
 	}
 	return keys
-}
-
-func isStringArray(v []any) bool {
-	for _, e := range v {
-		if _, ok := e.(string); !ok {
-			return false
-		}
-	}
-	return true
 }

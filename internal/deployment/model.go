@@ -1,12 +1,9 @@
 package deployment
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
-	"strconv"
 	"strings"
 	"time"
 
@@ -77,37 +74,6 @@ func (e DeploymentStatusState) IsValid() bool {
 
 func (e DeploymentStatusState) String() string {
 	return string(e)
-}
-
-func (e *DeploymentStatusState) UnmarshalGQL(v any) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = DeploymentStatusState(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid DeploymentStatusState", str)
-	}
-	return nil
-}
-
-func (e DeploymentStatusState) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
-func (e *DeploymentStatusState) UnmarshalJSON(b []byte) error {
-	s, err := strconv.Unquote(string(b))
-	if err != nil {
-		return err
-	}
-	return e.UnmarshalGQL(s)
-}
-
-func (e DeploymentStatusState) MarshalJSON() ([]byte, error) {
-	var buf bytes.Buffer
-	e.MarshalGQL(&buf)
-	return buf.Bytes(), nil
 }
 
 func getDeployment(ctx context.Context, querier deploymentsql.Querier, id uuid.UUID) (*Deployment, error) {

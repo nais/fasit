@@ -10,14 +10,11 @@ cmd/
   naisd/           → Agent binary (runs in tenant clusters, executes Helm)
   setup_local_env/ → Seeds local dev database
   generate_schema/ → Generates JSON schema for Feature.yaml
-  tester_run/
-  tester_spec/     → Generates Lua spec for integration tests
 
 internal/
   fasit/           → App bootstrap: config, server wiring, Run()
   database/        → Postgres connection, migrations, shared repo interface
   contextloader/   → Per-request dependency injection via context.Context
-  graph/           → GraphQL resolvers (gqlgen) — see internal/graph/AGENTS.md
   ui/              → Server-rendered HTML (gomponents) — see internal/ui/AGENTS.md
   deployment/      → Deployment reconciler — see internal/deployment/AGENTS.md
   feature/         → Feature CRUD, template parsing, computed helm values
@@ -26,13 +23,11 @@ internal/
   message/         → Pub/Sub message types and publishers
   naisd/           → naisd agent logic: Helm execution, self-upgrade
   naisdstatus/     → naisd heartbeat/status tracking
-  cost/            → BigQuery cost data
   provider/        → OCI chart provider (registry interaction)
   integration/     → gRPC server for naisd communication
   ioconvenience/
 
-schema/            → GraphQL schema files (*.graphqls)
-integration_tests/ → Lua-based integration tests (tester framework)
+schema/            → JSON schema for Feature.yaml validation / autocomplete, and protobuf definitions for gRPC
 ```
 
 ## Key Patterns

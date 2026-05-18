@@ -2,9 +2,6 @@ package model
 
 import (
 	"encoding/json"
-	"fmt"
-	"io"
-	"strconv"
 	"strings"
 	"time"
 
@@ -30,13 +27,6 @@ const (
 	ConfigTypeStringArray ConfigType = "string_array"
 )
 
-var AllConfigType = []ConfigType{
-	ConfigTypeString,
-	ConfigTypeInt,
-	ConfigTypeBool,
-	ConfigTypeStringArray,
-}
-
 func (e ConfigType) IsValid() bool {
 	switch e {
 	case ConfigTypeString, ConfigTypeInt, ConfigTypeBool, ConfigTypeStringArray:
@@ -47,23 +37,6 @@ func (e ConfigType) IsValid() bool {
 
 func (e ConfigType) String() string {
 	return string(e)
-}
-
-func (e *ConfigType) UnmarshalGQL(v any) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = ConfigType(strings.ToLower(str))
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid ConfigType", str)
-	}
-	return nil
-}
-
-func (e ConfigType) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(strings.ToUpper(e.String())))
 }
 
 func (e ConfigType) MarshalJSON() ([]byte, error) {

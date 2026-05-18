@@ -1,10 +1,6 @@
 package model
 
 import (
-	"fmt"
-	"io"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -48,23 +44,4 @@ func (e EnvironmentKind) IsValid() bool {
 
 func (e EnvironmentKind) String() string {
 	return string(e)
-}
-
-func (e *EnvironmentKind) UnmarshalGQL(v any) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	str = strings.ToLower(str)
-
-	*e = EnvironmentKind(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid EnvironmentKind", str)
-	}
-	return nil
-}
-
-func (e EnvironmentKind) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(strings.ToUpper(e.String())))
 }

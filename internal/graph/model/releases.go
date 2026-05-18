@@ -2,8 +2,6 @@ package model
 
 import (
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type Release struct {
@@ -14,8 +12,4 @@ type Release struct {
 	LastDeployed time.Time `json:"lastDeployed"`
 	Created      time.Time `json:"created"`
 	LastModified time.Time `json:"lastModified"`
-
-	GraphVars struct {
-		EnvironmentID uuid.UUID
-	} `json:"-"`
 }

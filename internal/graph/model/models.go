@@ -1,12 +1,7 @@
 package model
 
 import (
-	"bytes"
 	"encoding/json"
-	"fmt"
-	"io"
-	"strconv"
-	"time"
 
 	"github.com/google/uuid"
 )
@@ -15,41 +10,6 @@ type GHRef struct {
 	Owner string `json:"owner"`
 	Repo  string `json:"repo"`
 	Ref   string `json:"ref"`
-}
-
-type AuditLog struct {
-	Actor       string    `json:"actor"`
-	Description string    `json:"description"`
-	ObjectType  string    `json:"objectType"`
-	ObjectID    string    `json:"objectId"`
-	CreatedAt   time.Time `json:"createdAt"`
-}
-
-type ComputedValue struct {
-	Value   *Value          `json:"value"`
-	Content json.RawMessage `json:"content,omitempty"`
-}
-
-type Cost struct {
-	From time.Time `json:"from"`
-	To   time.Time `json:"to"`
-}
-
-type CostFilter struct {
-	// Start date for costs
-	// Defaults to 7 days ago
-	StartDate *time.Time `json:"startDate,omitempty"`
-	// End date for costs
-	// Defaults to today
-	EndDate *time.Time `json:"endDate,omitempty"`
-}
-
-type CreateDeploymentInput struct {
-	Chart       string `json:"chart"`
-	Version     string `json:"version"`
-	Description string `json:"description"`
-	Global      bool   `json:"global"`
-	Target      string `json:"target"`
 }
 
 // EnvironmentCreate contains metadata for creating an environment
@@ -65,7 +25,6 @@ type EnvironmentLabel struct {
 	Value string `json:"value"`
 }
 
-// UpdateEnvironment contains metadata for updating an environment
 type EnvironmentUpdate struct {
 	// description of the environment
 	Description *string `json:"description,omitempty"`
@@ -76,45 +35,11 @@ type HelmValueDiff struct {
 	Diff       string              `json:"diff"`
 }
 
-type Mutation struct{}
-
-type Playground struct {
-	Result *string  `json:"result,omitempty"`
-	Errors []string `json:"errors"`
-}
-
-type PlaygroundInput struct {
-	TenantSlug           string  `json:"tenantSlug"`
-	EnvSlug              string  `json:"envSlug"`
-	FeatureName          *string `json:"featureName,omitempty"`
-	ShowSecrets          *bool   `json:"showSecrets,omitempty"`
-	IncludeChartDefaults *bool   `json:"includeChartDefaults,omitempty"`
-	IncludeUnsetConfig   *bool   `json:"includeUnsetConfig,omitempty"`
-	Code                 string  `json:"code"`
-}
-
-type Query struct{}
-
-type RolloutEvent struct {
-	ID      uuid.UUID       `json:"id"`
-	Failure bool            `json:"failure"`
-	Message string          `json:"message"`
-	Created time.Time       `json:"created"`
-	Data    json.RawMessage `json:"data,omitempty"`
-}
-
 type RolloutLog struct {
 	ID          uuid.UUID  `json:"id"`
 	TenantName  string     `json:"tenantName"`
 	Environment string     `json:"environment"`
 	Lines       []*LogLine `json:"lines"`
-}
-
-type Subscription struct{}
-
-type TenantCosts struct {
-	From time.Time `json:"from"`
-	To   time.Time `json:"to"`
 }
 
 type TenantCreate struct {
@@ -127,10 +52,6 @@ type UpdateConfiguration struct {
 	Value       json.RawMessage `json:"value"`
 }
 
-type UserInfo struct {
-	Email string `json:"email"`
-}
-
 type ConfigSource string
 
 const (
@@ -139,13 +60,6 @@ const (
 	ConfigSourceHelm    ConfigSource = "HELM"
 	ConfigSourceUnknown ConfigSource = "UNKNOWN"
 )
-
-var AllConfigSource = []ConfigSource{
-	ConfigSourceGlobal,
-	ConfigSourceEnv,
-	ConfigSourceHelm,
-	ConfigSourceUnknown,
-}
 
 func (e ConfigSource) IsValid() bool {
 	switch e {
@@ -159,37 +73,6 @@ func (e ConfigSource) String() string {
 	return string(e)
 }
 
-func (e *ConfigSource) UnmarshalGQL(v any) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = ConfigSource(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid ConfigSource", str)
-	}
-	return nil
-}
-
-func (e ConfigSource) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
-func (e *ConfigSource) UnmarshalJSON(b []byte) error {
-	s, err := strconv.Unquote(string(b))
-	if err != nil {
-		return err
-	}
-	return e.UnmarshalGQL(s)
-}
-
-func (e ConfigSource) MarshalJSON() ([]byte, error) {
-	var buf bytes.Buffer
-	e.MarshalGQL(&buf)
-	return buf.Bytes(), nil
-}
-
 type HelmValueDifference string
 
 const (
@@ -198,13 +81,6 @@ const (
 	HelmValueDifferenceNoMatch       HelmValueDifference = "NO_MATCH"
 	HelmValueDifferenceInvalidJSON   HelmValueDifference = "INVALID_JSON"
 )
-
-var AllHelmValueDifference = []HelmValueDifference{
-	HelmValueDifferenceFullMatch,
-	HelmValueDifferenceSupersetMatch,
-	HelmValueDifferenceNoMatch,
-	HelmValueDifferenceInvalidJSON,
-}
 
 func (e HelmValueDifference) IsValid() bool {
 	switch e {
@@ -216,35 +92,4 @@ func (e HelmValueDifference) IsValid() bool {
 
 func (e HelmValueDifference) String() string {
 	return string(e)
-}
-
-func (e *HelmValueDifference) UnmarshalGQL(v any) error {
-	str, ok := v.(string)
-	if !ok {
-		return fmt.Errorf("enums must be strings")
-	}
-
-	*e = HelmValueDifference(str)
-	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid HelmValueDifference", str)
-	}
-	return nil
-}
-
-func (e HelmValueDifference) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
-}
-
-func (e *HelmValueDifference) UnmarshalJSON(b []byte) error {
-	s, err := strconv.Unquote(string(b))
-	if err != nil {
-		return err
-	}
-	return e.UnmarshalGQL(s)
-}
-
-func (e HelmValueDifference) MarshalJSON() ([]byte, error) {
-	var buf bytes.Buffer
-	e.MarshalGQL(&buf)
-	return buf.Bytes(), nil
 }
