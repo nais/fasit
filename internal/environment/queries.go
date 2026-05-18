@@ -33,7 +33,7 @@ func Create(ctx context.Context, t *model.EnvironmentCreate) (*model.Environment
 		Name:        t.Name,
 		Description: t.Description,
 		TenantID:    t.TenantID,
-		Kind:        environmentsql.EnvironmentKind(t.Kind),
+		Kind:        types.EnvironmentKind(t.Kind),
 	})
 	if err != nil {
 		return nil, err

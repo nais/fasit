@@ -431,7 +431,7 @@ func (_c *Querier_EnvironmentByNames_Call) RunAndReturn(run func(ctx context.Con
 }
 
 // EnvironmentCI provides a mock function for the type Querier
-func (_mock *Querier) EnvironmentCI(ctx context.Context, kind gensql.EnvironmentKind) (gensql.Environment, error) {
+func (_mock *Querier) EnvironmentCI(ctx context.Context, kind types.EnvironmentKind) (gensql.Environment, error) {
 	ret := _mock.Called(ctx, kind)
 
 	if len(ret) == 0 {
@@ -440,15 +440,15 @@ func (_mock *Querier) EnvironmentCI(ctx context.Context, kind gensql.Environment
 
 	var r0 gensql.Environment
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, gensql.EnvironmentKind) (gensql.Environment, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, types.EnvironmentKind) (gensql.Environment, error)); ok {
 		return returnFunc(ctx, kind)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, gensql.EnvironmentKind) gensql.Environment); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, types.EnvironmentKind) gensql.Environment); ok {
 		r0 = returnFunc(ctx, kind)
 	} else {
 		r0 = ret.Get(0).(gensql.Environment)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, gensql.EnvironmentKind) error); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, types.EnvironmentKind) error); ok {
 		r1 = returnFunc(ctx, kind)
 	} else {
 		r1 = ret.Error(1)
@@ -463,20 +463,20 @@ type Querier_EnvironmentCI_Call struct {
 
 // EnvironmentCI is a helper method to define mock.On call
 //   - ctx context.Context
-//   - kind gensql.EnvironmentKind
+//   - kind types.EnvironmentKind
 func (_e *Querier_Expecter) EnvironmentCI(ctx interface{}, kind interface{}) *Querier_EnvironmentCI_Call {
 	return &Querier_EnvironmentCI_Call{Call: _e.mock.On("EnvironmentCI", ctx, kind)}
 }
 
-func (_c *Querier_EnvironmentCI_Call) Run(run func(ctx context.Context, kind gensql.EnvironmentKind)) *Querier_EnvironmentCI_Call {
+func (_c *Querier_EnvironmentCI_Call) Run(run func(ctx context.Context, kind types.EnvironmentKind)) *Querier_EnvironmentCI_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 gensql.EnvironmentKind
+		var arg1 types.EnvironmentKind
 		if args[1] != nil {
-			arg1 = args[1].(gensql.EnvironmentKind)
+			arg1 = args[1].(types.EnvironmentKind)
 		}
 		run(
 			arg0,
@@ -491,7 +491,7 @@ func (_c *Querier_EnvironmentCI_Call) Return(environment gensql.Environment, err
 	return _c
 }
 
-func (_c *Querier_EnvironmentCI_Call) RunAndReturn(run func(ctx context.Context, kind gensql.EnvironmentKind) (gensql.Environment, error)) *Querier_EnvironmentCI_Call {
+func (_c *Querier_EnvironmentCI_Call) RunAndReturn(run func(ctx context.Context, kind types.EnvironmentKind) (gensql.Environment, error)) *Querier_EnvironmentCI_Call {
 	_c.Call.Return(run)
 	return _c
 }

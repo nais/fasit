@@ -7,6 +7,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/nais/fasit/internal/database/types"
 )
 
 const environmentValueDelete = `-- name: EnvironmentValueDelete :exec
@@ -290,7 +291,7 @@ type MappingValuesForTenantParams struct {
 type MappingValuesForTenantRow struct {
 	ID     uuid.UUID
 	Name   string
-	Kind   EnvironmentKind
+	Kind   types.EnvironmentKind
 	Values []byte
 }
 

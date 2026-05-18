@@ -29,7 +29,7 @@ type CreateParams struct {
 	Name        string
 	Description *string
 	TenantID    uuid.UUID
-	Kind        EnvironmentKind
+	Kind        types.EnvironmentKind
 }
 
 func (q *Queries) Create(ctx context.Context, arg CreateParams) (Environment, error) {

@@ -74,7 +74,7 @@ func (r *repo) EnvironmentCreate(ctx context.Context, t *model.EnvironmentCreate
 		Name:        t.Name,
 		Description: ptrToNullString(t.Description),
 		TenantID:    t.TenantID,
-		Kind:        gensql.EnvironmentKind(t.Kind),
+		Kind:        types.EnvironmentKind(t.Kind),
 	})
 	if err != nil {
 		return nil, err
@@ -120,7 +120,7 @@ func (r *repo) EnvironmentIDByNames(ctx context.Context, tenantName, environment
 }
 
 func (r *repo) EnvironmentCI(ctx context.Context, kind model.EnvironmentKind) (*model.Environment, error) {
-	res, err := r.querier.EnvironmentCI(ctx, gensql.EnvironmentKind(kind))
+	res, err := r.querier.EnvironmentCI(ctx, types.EnvironmentKind(kind))
 	if err != nil {
 		return nil, err
 	}

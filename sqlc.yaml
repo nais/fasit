@@ -21,12 +21,17 @@ sql:
         emit_interface: true
         omit_sqlc_version: true
         emit_empty_slices: true
-        omit_unused_structs: false
+        omit_unused_structs: true
         overrides:
           - db_type: "uuid"
             go_type: "github.com/google/uuid.UUID"
           - db_type: "uuid"
             go_type: "*github.com/google/uuid.UUID"
+            nullable: true
+          - db_type: "environment_kind"
+            go_type: "github.com/nais/fasit/internal/database/types.EnvironmentKind"
+          - db_type: "environment_kind"
+            go_type: "*github.com/nais/fasit/internal/database/types.EnvironmentKind"
             nullable: true
           - column: "environments.labels"
             go_type: "github.com/nais/fasit/internal/database/types.EnvironmentLabels"
