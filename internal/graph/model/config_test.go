@@ -1,7 +1,6 @@
 package model
 
 import (
-	"bytes"
 	"testing"
 )
 
@@ -68,92 +67,6 @@ func TestConfigType_String(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			if tc.output != tc.input.String() {
 				t.Errorf("expected %q, got %q", tc.output, tc.input.String())
-			}
-		})
-	}
-}
-
-func TestConfigType_UnmarshalGQL(t *testing.T) {
-	tests := map[string]struct {
-		input  any
-		output ConfigType
-		valid  bool
-	}{
-		"ConfigTypeString": {
-			input:  "STRING",
-			output: ConfigTypeString,
-			valid:  true,
-		},
-		"ConfigTypeInt": {
-			input:  "INT",
-			output: ConfigTypeInt,
-			valid:  true,
-		},
-		"ConfigTypeBool": {
-			input:  "BOOL",
-			output: ConfigTypeBool,
-			valid:  true,
-		},
-		"ConfigTypeStringArray": {
-			input:  "STRING_ARRAY",
-			output: ConfigTypeStringArray,
-			valid:  true,
-		},
-		"ConfigTypeInvalid": {
-			input:  "INVALID",
-			output: ConfigType("invalid"),
-			valid:  false,
-		},
-		"ConfigTypeInvalidType": {
-			input:  123,
-			output: ConfigType(""),
-			valid:  false,
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			var output ConfigType
-			err := output.UnmarshalGQL(tc.input)
-			if tc.valid != (err == nil) {
-				t.Errorf("expected %v, got %v", tc.valid, err == nil)
-			}
-			if tc.valid && tc.output != output {
-				t.Errorf("expected %q, got %q", tc.output, output)
-			}
-		})
-	}
-}
-
-func TestConfigType_MarshalGQL(t *testing.T) {
-	tests := map[string]struct {
-		input  ConfigType
-		output any
-	}{
-		"ConfigTypeString": {
-			input:  ConfigTypeString,
-			output: `"STRING"`,
-		},
-		"ConfigTypeInt": {
-			input:  ConfigTypeInt,
-			output: `"INT"`,
-		},
-		"ConfigTypeBool": {
-			input:  ConfigTypeBool,
-			output: `"BOOL"`,
-		},
-		"ConfigTypeStringArray": {
-			input:  ConfigTypeStringArray,
-			output: `"STRING_ARRAY"`,
-		},
-	}
-
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			buf := &bytes.Buffer{}
-			tc.input.MarshalGQL(buf)
-			if tc.output != buf.String() {
-				t.Errorf("expected %q, got %q", tc.output, buf.String())
 			}
 		})
 	}
