@@ -192,24 +192,6 @@ type HealthStatus struct {
 	ReportedAt    pgtype.Timestamptz
 }
 
-type KubernetesNodeStatus struct {
-	EnvironmentID           uuid.UUID
-	Name                    string
-	KernelVersion           string
-	OsImage                 string
-	ContainerRuntimeVersion string
-	KubeletVersion          string
-	KubeProxyVersion        string
-	OperatingSystem         string
-	Architecture            string
-	Conditions              []byte
-	Allocatable             []byte
-	Capacity                []byte
-	Created                 pgtype.Timestamptz
-	LastModified            pgtype.Timestamptz
-	InternalIp              string
-}
-
 type Log struct {
 	ID                int64
 	DeployInstruction uuid.UUID

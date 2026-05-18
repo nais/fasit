@@ -31,9 +31,6 @@ type Querier interface {
 	EnvironmentValuesAcrossEnvs(ctx context.Context, key string) ([]EnvironmentValuesAcrossEnvsRow, error)
 	EnvironmentValuesForEnvironment(ctx context.Context, arg EnvironmentValuesForEnvironmentParams) ([]EnvironmentValuesForEnvironmentRow, error)
 	EnvironmentsGet(ctx context.Context, tenantID uuid.UUID) ([]Environment, error)
-	KubernetesNodeCreateOrUpdate(ctx context.Context, arg KubernetesNodeCreateOrUpdateParams) error
-	KubernetesNodeDeleteObsolete(ctx context.Context, environmentID uuid.UUID) error
-	KubernetesNodeStatuses(ctx context.Context, environmentID uuid.UUID) ([]KubernetesNodeStatus, error)
 	MappingValuesForTenant(ctx context.Context, arg MappingValuesForTenantParams) ([]MappingValuesForTenantRow, error)
 	NamesFromDeployInstruction(ctx context.Context, id uuid.UUID) (NamesFromDeployInstructionRow, error)
 	ReleaseStatusCreateOrUpdate(ctx context.Context, arg ReleaseStatusCreateOrUpdateParams) (ReleaseStatus, error)
