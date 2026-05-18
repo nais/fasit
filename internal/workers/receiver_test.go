@@ -115,10 +115,6 @@ func (f *fakeStore) DeployInstructionUpdateStatus(context.Context, uuid.UUID, mo
 	panic("not called")
 }
 
-func (f *fakeStore) EnvironmentByNames(context.Context, string, string) (*model.Environment, error) {
-	panic("not called")
-}
-
 func (f *fakeStore) EnvironmentCreate(context.Context, *model.EnvironmentCreate) (*model.Environment, error) {
 	panic("not called")
 }
