@@ -798,10 +798,7 @@ func valueDisplay(item FeatureConfigItem) g.Node {
 }
 
 func readonlyValueTextarea(value string) g.Node {
-	rows := strings.Count(value, "\n") + 1
-	if rows > 10 {
-		rows = 10
-	}
+	rows := min(strings.Count(value, "\n")+1, 10)
 	if rows < 2 {
 		rows = 2
 	}
@@ -883,10 +880,7 @@ func stringEditor(item FeatureConfigItem, currentValue string) g.Node {
 			isJSON = true
 		}
 	}
-	rows := strings.Count(display, "\n") + 1
-	if rows < 4 {
-		rows = 4
-	}
+	rows := max(strings.Count(display, "\n")+1, 4)
 	if rows > 20 {
 		rows = 20
 	}
