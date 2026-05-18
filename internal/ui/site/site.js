@@ -245,3 +245,18 @@ document.addEventListener("change", function (e) {
     // Leave content untouched if it isn't valid JSON.
   }
 });
+
+// Table text filter: [data-filter-table="<id>"] filters rows of table#<id>
+document.addEventListener("input", function (e) {
+  var input = e.target.closest("[data-filter-table]");
+  if (!input) return;
+  var tableId = input.getAttribute("data-filter-table");
+  var table = document.getElementById(tableId);
+  if (!table) return;
+  var query = input.value.toLowerCase().trim();
+  var rows = table.querySelectorAll("tbody tr");
+  rows.forEach(function (row) {
+    var text = row.textContent.toLowerCase();
+    row.style.display = !query || text.indexOf(query) !== -1 ? "" : "none";
+  });
+});

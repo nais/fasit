@@ -1,14 +1,12 @@
 package deployments
 
 import (
-	"fmt"
 	"net/http"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/nais/fasit/internal/deployment"
-	"github.com/nais/fasit/internal/ui/breadcrumb"
 	"github.com/nais/fasit/internal/ui/components"
 	"github.com/nais/fasit/internal/ui/layout"
 	"github.com/nais/fasit/internal/ui/view"
@@ -20,40 +18,6 @@ type featureGroup struct {
 	FeatureName string
 	LatestTime  time.Time
 	Targets     []Summary
-}
-
-func ListHandler(renderPage RenderPage) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		var items []Summary
-
-		deployments, err := deployment.ListDeployments(r.Context())
-		if err == nil {
-			for _, dep := range deployments {
-				statuses, _ := deployment.ListDeploymentStatuses(r.Context(), dep.ID)
-				state, disabledCount := deployment.AggregateState(statuses)
-				items = append(items, Summary{
-					FeatureName:   dep.Feature.Name,
-					Version:       dep.Feature.Version,
-					Status:        string(state),
-					Target:        deploymentTarget(dep),
-					TargetLabels:  deploymentTargetLabels(dep),
-					Created:       view.FormatTime(dep.Created),
-					Completed:     latestStatusTime(statuses),
-					DeploymentID:  dep.ID.String(),
-					createdAt:     dep.Created,
-					disabledCount: disabledCount,
-				})
-			}
-		}
-
-		groups := groupDeployments(items)
-
-		renderPage(w, r, layout.Props{
-			Title:       "Deployments",
-			CurrentPage: components.PageDeployments,
-			Content:     listPage(groups),
-		})
-	}
 }
 
 func groupDeployments(items []Summary) []featureGroup {
@@ -86,159 +50,162 @@ func groupDeployments(items []Summary) []featureGroup {
 		})
 		groups = append(groups, *fg)
 	}
-
 	sort.Slice(groups, func(i, j int) bool {
 		return groups[i].LatestTime.After(groups[j].LatestTime)
 	})
-
 	return groups
 }
 
-func listPage(groups []featureGroup) g.Node {
+func ListHandler(renderPage RenderPage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		deps, _ := deployment.ListDeployments(r.Context())
+
+		showAll := r.URL.Query().Get("show") == "all"
+
+		rows := make([]deploymentRow, 0, len(deps))
+		for _, dep := range deps {
+			statuses, _ := deployment.ListDeploymentStatuses(r.Context(), dep.ID)
+			state, _ := deployment.AggregateState(statuses)
+
+			rows = append(rows, deploymentRow{
+				FeatureName:  dep.Feature.Name,
+				Version:      dep.Feature.Version,
+				Target:       deploymentTarget(dep),
+				TargetLabels: deploymentTargetLabels(dep),
+				Status:       string(state),
+				Active:       dep.Active,
+				Created:      dep.Created,
+				DeploymentID: dep.ID.String(),
+			})
+		}
+
+		sort.Slice(rows, func(i, j int) bool {
+			return rows[i].Created.After(rows[j].Created)
+		})
+
+		renderPage(w, r, layout.Props{
+			Title:       "Deployments",
+			CurrentPage: components.PageDeployments,
+			Content:     listPage(rows, showAll),
+		})
+	}
+}
+
+type deploymentRow struct {
+	FeatureName  string
+	Version      string
+	Target       string
+	TargetLabels map[string]string
+	Status       string
+	Active       bool
+	Created      time.Time
+	DeploymentID string
+}
+
+func listPage(rows []deploymentRow, showAll bool) g.Node {
+	var toggleLink g.Node
+	if showAll {
+		toggleLink = h.A(h.Href("/deployments"), h.Class("toggle-pill active"), g.Text("Show inactive"))
+	} else {
+		toggleLink = h.A(h.Href("/deployments?show=all"), h.Class("toggle-pill"), g.Text("Show inactive"))
+	}
+
+	var filtered []deploymentRow
+	for _, r := range rows {
+		if showAll || r.Active {
+			filtered = append(filtered, r)
+		}
+	}
+
 	return h.Div(
 		h.Class("container"),
 		h.Main(
 			h.Class("main-content"),
-			components.Breadcrumbs([]breadcrumb.Crumb{breadcrumb.Deployments()}),
-			h.Div(
-				h.Class("card"),
-				h.Div(
-					h.Class("card-body"),
-					h.Div(
-						h.Class("deployments-header"),
-						h.H1(g.Text("Deployments")),
-						g.If(len(groups) > 0, h.Button(
-							h.Type("button"),
-							h.Class("btn-small"),
-							g.Attr("data-expand-all", "deployment-group"),
-							g.Text("Expand all"),
-						)),
+			components.Breadcrumbs(nil),
+			h.Div(h.Class("card"), h.Div(h.Class("card-body"),
+				h.Div(h.Class("deployments-header"),
+					h.Div(h.Class("deployments-toolbar"),
+						h.Input(
+							h.Type("search"),
+							h.Class("table-filter"),
+							h.Placeholder("Filter by feature, target, version…"),
+							g.Attr("aria-label", "Filter deployments"),
+							g.Attr("autocomplete", "off"),
+							g.Attr("data-filter-table", "deployments-table"),
+						),
+						toggleLink,
 					),
-					listContent(groups),
+					h.Button(h.Type("button"), h.Class("btn-small"), g.Attr("popovertarget", "new-deployment"), g.Text("+ New deployment")),
+					newDeploymentPopover(),
 				),
-			),
+				deploymentsTable(filtered),
+			)),
 		),
 	)
 }
 
-func listContent(groups []featureGroup) g.Node {
-	if len(groups) == 0 {
-		return h.P(g.Text("No deployments yet."))
+func deploymentsTable(rows []deploymentRow) g.Node {
+	if len(rows) == 0 {
+		return h.P(h.Class("text-muted"), g.Text("No deployments."))
 	}
 
-	bodies := make([]g.Node, len(groups))
-	for i, fg := range groups {
-		bodies[i] = deploymentGroup(fg, i == 0)
-	}
-	return h.Div(
-		h.Class("deployments-list"),
-		g.Group(bodies),
-	)
-}
+	tableRows := make([]g.Node, 0, len(rows))
+	for _, r := range rows {
+		rowClass := ""
+		if !r.Active {
+			rowClass = "deployment-inactive"
+		}
 
-func deploymentGroup(fg featureGroup, open bool) g.Node {
-	detailsAttrs := []g.Node{h.Class("deployment-group")}
-	if open {
-		detailsAttrs = append(detailsAttrs, h.Open())
-	}
+		var statusNode g.Node
+		if !r.Active {
+			statusNode = g.Group([]g.Node{h.Span(h.Class("status-disabled"), g.Text("○")), g.Text(" INACTIVE")})
+		} else {
+			statusNode = rolloutStatus(r.Status)
+		}
 
-	rows := make([]g.Node, 0, len(fg.Targets))
-	for _, dep := range fg.Targets {
-		rows = append(rows, h.Div(
-			h.Class("deployment-row"),
-			h.Div(h.Class("dep-version"), versionCell(dep)),
-			h.Div(h.Class("dep-status"), statusCell(dep)),
-			h.Div(h.Class("dep-target"), targetPills(dep.TargetLabels)),
-			h.Div(h.Class("dep-time"), timeWithTitle(dep.createdAt)),
+		tableRows = append(tableRows, h.Tr(
+			g.If(rowClass != "", h.Class(rowClass)),
+			h.Td(h.A(h.Href("/features/"+r.FeatureName), g.Text(r.FeatureName))),
+			h.Td(targetPills(r.TargetLabels)),
+			h.Td(h.A(h.Href("/deployments/"+r.DeploymentID), g.Text(r.Version))),
+			h.Td(statusNode),
+			h.Td(g.Attr("data-sort-value", r.Created.Format(time.RFC3339)), g.Text(view.RelativeTime(r.Created))),
 		))
 	}
 
-	return h.Details(
-		g.Group(detailsAttrs),
-		h.Summary(
-			h.Class("deployment-group-summary"),
-			h.Span(h.Class("dep-feature-toggle")),
-			h.A(h.Href("/features/"+fg.FeatureName), g.Text(fg.FeatureName)),
-			groupStatusBadge(fg),
-			h.Span(h.Class("dep-group-time"), timeWithTitle(fg.LatestTime)),
-		),
-		h.Div(h.Class("deployment-group-body"), g.Group(rows)),
+	return h.Table(
+		h.Class("table sortable"),
+		h.ID("deployments-table"),
+		g.Attr("data-sort-key", "deployments-list"),
+		h.THead(h.Tr(
+			h.Th(g.Text("Feature")),
+			h.Th(g.Text("Target"), g.Attr("data-no-sort", "")),
+			h.Th(g.Text("Version")),
+			h.Th(g.Text("Status")),
+			h.Th(g.Text("Updated")),
+		)),
+		h.TBody(g.Group(tableRows)),
 	)
 }
 
-func groupStatusBadge(fg featureGroup) g.Node {
-	failed := 0
-	pending := 0
-	for _, t := range fg.Targets {
-		switch t.Status {
-		case "FAILED":
-			failed++
-		case "PENDING":
-			pending++
-		}
-	}
-	switch {
-	case failed > 0:
-		return h.Span(
-			h.Class("status-badge status-error"),
-			g.Attr("title", failedTitle(failed, len(fg.Targets))),
-			g.Textf("%d failed", failed),
-		)
-	case pending > 0:
-		return h.Span(
-			h.Class("status-badge status-pending"),
-			g.Attr("title", pendingTitle(pending, len(fg.Targets))),
-			g.Textf("%d pending", pending),
-		)
-	}
-	return nil
-}
-
-func failedTitle(failed, total int) string {
-	return fmt.Sprintf("%d of %d targets failed", failed, total)
-}
-
-func pendingTitle(pending, total int) string {
-	return fmt.Sprintf("%d of %d targets pending", pending, total)
-}
-
-func targetPills(labels map[string]string) g.Node {
-	if len(labels) == 0 {
-		return allEnvironmentsPill()
-	}
-	keys := make([]string, 0, len(labels))
-	for k := range labels {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	pills := make([]g.Node, 0, len(keys))
-	for _, k := range keys {
-		pills = append(pills, labelPill(k, labels[k]))
-	}
-	return g.Group(pills)
-}
-
-func allEnvironmentsPill() g.Node {
-	return h.Span(h.Class("label-filter-tag"), g.Text("All environments"))
-}
-
-func labelPill(key, value string) g.Node {
-	return h.Span(h.Class("label-filter-tag"), g.Text(key+": "+value))
-}
-
-func latestStatusTime(statuses []*deployment.DeploymentStatus) string {
-	var latest time.Time
-	for _, s := range statuses {
-		if s.LastModified.After(latest) {
-			latest = s.LastModified
-		}
-	}
-
-	if latest.IsZero() {
-		return ""
-	}
-
-	return view.FormatTime(latest)
+func newDeploymentPopover() g.Node {
+	return h.Div(g.Attr("popover", ""), h.ID("new-deployment"),
+		h.H3(g.Text("New deployment")),
+		h.Form(h.Method("POST"), h.Action("/deployments"),
+			h.Label(g.Text("Feature")),
+			h.Input(h.Type("text"), h.Name("feature_name"), g.Attr("required", ""), g.Attr("placeholder", "e.g. naiserator")),
+			h.Label(g.Text("Chart")),
+			h.Input(h.Type("text"), h.Name("chart"), g.Attr("required", ""), g.Attr("placeholder", "e.g. oci://naiserator")),
+			h.Label(g.Text("Version")),
+			h.Input(h.Type("text"), h.Name("version"), g.Attr("required", ""), g.Attr("placeholder", "e.g. 2026-05-15-001")),
+			h.Label(g.Text("Target labels (one per line, key=value)")),
+			h.Textarea(h.Name("target_labels_raw"), g.Attr("rows", "3"), g.Attr("placeholder", "kind=tenant\ntenant=nav")),
+			h.Div(h.Class("popover-actions"),
+				h.Button(h.Type("submit"), g.Text("Deploy")),
+				h.Button(h.Type("button"), g.Attr("popovertarget", "new-deployment"), g.Attr("popovertargetaction", "hide"), g.Text("Cancel")),
+			),
+		),
+	)
 }
 
 func deploymentTarget(dep *deployment.Deployment) string {

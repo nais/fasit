@@ -22,7 +22,7 @@ func DeleteHandler() http.HandlerFunc {
 			return
 		}
 
-		http.Redirect(w, r, "/deployments", http.StatusSeeOther)
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 	}
 }
 
@@ -45,6 +45,10 @@ func DeleteByFeatureAndTargetHandler() http.HandlerFunc {
 			return
 		}
 
-		http.Redirect(w, r, "/deployments", http.StatusSeeOther)
+		redirect := r.FormValue("redirect")
+		if redirect == "" {
+			redirect = "/"
+		}
+		http.Redirect(w, r, redirect, http.StatusSeeOther)
 	}
 }

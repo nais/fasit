@@ -96,3 +96,43 @@ func (q *Queries) AuditForEnvironment(ctx context.Context, arg AuditForEnvironme
 	}
 	return items, nil
 }
+
+const auditRecent = `-- name: AuditRecent :many
+SELECT
+	id, actor, description, object_type, object_id, created_at, metadata
+FROM
+	audits
+WHERE
+	actor != '_seed'
+ORDER BY
+	created_at DESC
+LIMIT $1
+`
+
+func (q *Queries) AuditRecent(ctx context.Context, pageSize int32) ([]Audit, error) {
+	rows, err := q.db.Query(ctx, auditRecent, pageSize)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Audit{}
+	for rows.Next() {
+		var i Audit
+		if err := rows.Scan(
+			&i.ID,
+			&i.Actor,
+			&i.Description,
+			&i.ObjectType,
+			&i.ObjectID,
+			&i.CreatedAt,
+			&i.Metadata,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

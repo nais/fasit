@@ -56,7 +56,7 @@ func DetailHandler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 
 		renderPage(w, r, layout.Props{
 			Title:       fmt.Sprintf("%s %s", featureName, version),
-			CurrentPage: components.PageRollouts,
+			CurrentPage: components.PageFeatures,
 			Content:     detailPage(rollout, events, instructions),
 		})
 	}

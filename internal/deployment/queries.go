@@ -176,6 +176,30 @@ func DeleteDeploymentsByFeatureAndTarget(ctx context.Context, featureName string
 	return nil
 }
 
+func DeactivateDeploymentTarget(ctx context.Context, featureName string, target types.EnvironmentLabels) error {
+	err := fromContext(ctx).querier.DeactivateDeploymentTarget(ctx, deploymentsql.DeactivateDeploymentTargetParams{
+		FeatureName: featureName,
+		Target:      target,
+	})
+	if err != nil {
+		return err
+	}
+	audit.CreateAudit(ctx, "deactivated deployment target", "deployments", featureName)
+	return nil
+}
+
+func ActivateDeploymentTarget(ctx context.Context, featureName string, target types.EnvironmentLabels) error {
+	err := fromContext(ctx).querier.ActivateDeploymentTarget(ctx, deploymentsql.ActivateDeploymentTargetParams{
+		FeatureName: featureName,
+		Target:      target,
+	})
+	if err != nil {
+		return err
+	}
+	audit.CreateAudit(ctx, "activated deployment target", "deployments", featureName)
+	return nil
+}
+
 func TriggerRedeploy(ctx context.Context, envID uuid.UUID, featureName string) error {
 	if err := invalidateDeployInstructionHash(ctx, envID, featureName); err != nil {
 		return fmt.Errorf("invalidate hash: %w", err)
@@ -231,4 +255,12 @@ func TimeoutDeployInstructions(ctx context.Context, log logrus.FieldLogger) {
 		case <-ticker.C:
 		}
 	}
+}
+
+func ActivateDeploymentByID(ctx context.Context, id uuid.UUID) error {
+	if err := fromContext(ctx).querier.ActivateDeploymentByID(ctx, id); err != nil {
+		return err
+	}
+	audit.CreateAudit(ctx, "activated deployment version", "deployments", id.String())
+	return nil
 }

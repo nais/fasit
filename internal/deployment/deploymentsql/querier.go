@@ -9,8 +9,11 @@ import (
 )
 
 type Querier interface {
+	ActivateDeploymentByID(ctx context.Context, id uuid.UUID) error
+	ActivateDeploymentTarget(ctx context.Context, arg ActivateDeploymentTargetParams) error
 	CreateDeployInstruction(ctx context.Context, arg CreateDeployInstructionParams) (uuid.UUID, error)
 	CreateDeployment(ctx context.Context, arg CreateDeploymentParams) (Deployment, error)
+	DeactivateDeploymentTarget(ctx context.Context, arg DeactivateDeploymentTargetParams) error
 	DeleteDeployment(ctx context.Context, id uuid.UUID) error
 	DeleteDeploymentsByFeatureAndTarget(ctx context.Context, arg DeleteDeploymentsByFeatureAndTargetParams) error
 	DeployInstructionsByID(ctx context.Context, id uuid.UUID) (DeployInstruction, error)

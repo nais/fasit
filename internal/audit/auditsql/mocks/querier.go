@@ -162,3 +162,71 @@ func (_c *Querier_AuditForEnvironment_Call) RunAndReturn(run func(ctx context.Co
 	_c.Call.Return(run)
 	return _c
 }
+
+// AuditRecent provides a mock function for the type Querier
+func (_mock *Querier) AuditRecent(ctx context.Context, pageSize int32) ([]auditsql.Audit, error) {
+	ret := _mock.Called(ctx, pageSize)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AuditRecent")
+	}
+
+	var r0 []auditsql.Audit
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int32) ([]auditsql.Audit, error)); ok {
+		return returnFunc(ctx, pageSize)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, int32) []auditsql.Audit); ok {
+		r0 = returnFunc(ctx, pageSize)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]auditsql.Audit)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, int32) error); ok {
+		r1 = returnFunc(ctx, pageSize)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// Querier_AuditRecent_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'AuditRecent'
+type Querier_AuditRecent_Call struct {
+	*mock.Call
+}
+
+// AuditRecent is a helper method to define mock.On call
+//   - ctx context.Context
+//   - pageSize int32
+func (_e *Querier_Expecter) AuditRecent(ctx interface{}, pageSize interface{}) *Querier_AuditRecent_Call {
+	return &Querier_AuditRecent_Call{Call: _e.mock.On("AuditRecent", ctx, pageSize)}
+}
+
+func (_c *Querier_AuditRecent_Call) Run(run func(ctx context.Context, pageSize int32)) *Querier_AuditRecent_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 int32
+		if args[1] != nil {
+			arg1 = args[1].(int32)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *Querier_AuditRecent_Call) Return(audits []auditsql.Audit, err error) *Querier_AuditRecent_Call {
+	_c.Call.Return(audits, err)
+	return _c
+}
+
+func (_c *Querier_AuditRecent_Call) RunAndReturn(run func(ctx context.Context, pageSize int32) ([]auditsql.Audit, error)) *Querier_AuditRecent_Call {
+	_c.Call.Return(run)
+	return _c
+}

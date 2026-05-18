@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
@@ -21,6 +22,7 @@ type Summary struct {
 	TargetLabels                                                           map[string]string
 	createdAt                                                              time.Time
 	disabledCount                                                          int
+	active                                                                 bool
 }
 
 func versionCell(s Summary) g.Node {
@@ -76,4 +78,20 @@ func ghRefNode(raw []byte) g.Node {
 		return h.Pre(h.Class("code-block"), g.Text(string(raw)))
 	}
 	return h.Pre(h.Class("code-block"), g.Text(pretty.String()))
+}
+
+func targetPills(labels map[string]string) g.Node {
+	if len(labels) == 0 {
+		return h.Span(h.Class("label-filter-tag"), g.Text("All environments"))
+	}
+	keys := make([]string, 0, len(labels))
+	for k := range labels {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	pills := make([]g.Node, 0, len(keys))
+	for _, k := range keys {
+		pills = append(pills, h.Span(h.Class("label-filter-tag"), g.Text(k+": "+labels[k])))
+	}
+	return g.Group(pills)
 }

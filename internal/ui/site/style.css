@@ -272,6 +272,37 @@ nav .nav-btn:hover {
 .card-body {
   padding: 1.5rem;
 }
+
+.card-compact {
+  padding: 0.75rem;
+}
+
+.card-compact h3 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.95rem;
+}
+
+.table-compact {
+  font-size: 0.8rem;
+}
+
+.table-compact th,
+.table-compact td {
+  padding: 0.3rem 0.5rem;
+}
+
+.dep-group-count {
+  margin-left: auto;
+  font-size: 0.8rem;
+}
+
+.deployment-group-body-table {
+  padding: 0;
+}
+
+.deployment-group-body-table .table {
+  margin: 0;
+}
 .card-body h1:first-child {
   margin-top: 0;
 }
@@ -365,6 +396,45 @@ nav .nav-btn:hover {
   font-size: 0.85rem;
   color: var(--text-faint);
   border: none;
+}
+
+.environments-page {
+  padding: 1rem 2rem;
+}
+
+.environments-facets {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.facets-label {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-right: 0.25rem;
+}
+
+.facet-link {
+  font-size: 0.85rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: background 0.1s, border-color 0.1s;
+}
+
+.facet-link:hover {
+  background: var(--bg-surface-hover);
+}
+
+.facet-link.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
 }
 
 .dashboard {
@@ -803,10 +873,119 @@ nav .nav-btn:hover {
   border-color: var(--btn-hover-border);
 }
 
+.btn-danger {
+  color: var(--status-error);
+  border-color: var(--status-error);
+}
+
+.btn-danger:hover {
+  background: var(--status-error);
+  color: white;
+}
+
+.actions-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.gh-ref-link {
+  font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+  font-size: 0.85rem;
+}
+
+.danger-zone {
+  margin-top: 2rem;
+  border: 1px solid var(--status-error);
+  border-radius: 6px;
+  padding: 0;
+}
+
+.danger-zone > summary {
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  color: var(--status-error);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.danger-zone-body {
+  padding: 0.75rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.deploy-detail-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.deploy-detail-topbar h1 {
+  margin: 0;
+}
+
+.deploy-detail-topbar h1 a {
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.deploy-detail-topbar h1 a:hover {
+  text-decoration: underline;
+}
+
+
 .deployments-header {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.deployments-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.table-filter {
+  background: var(--input-bg, var(--bg-surface));
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 0.6rem 1rem;
+  font: inherit;
+  font-size: 1rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.table-filter:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.toggle-pill {
+  font-size: 0.85rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  color: var(--text-muted);
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.1s, border-color 0.1s;
+}
+
+.toggle-pill:hover {
+  background: var(--bg-surface-hover);
+}
+
+.toggle-pill.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
 }
 
 .playground-controls {
@@ -1132,6 +1311,16 @@ a:hover .status-badge {
   text-decoration: none;
 }
 
+.status-badge.status-success {
+  color: var(--status-success);
+  border-color: var(--status-success);
+}
+
+.status-badge.status-disabled {
+  color: var(--status-disabled);
+  border-color: var(--status-disabled);
+}
+
 .feature-nav-badge {
   margin-left: 0.5rem;
   font-size: 0.75rem;
@@ -1231,14 +1420,30 @@ a:hover .feature-nav-badge {
 .deployment-group-header .set-version-btn {
   margin-left: auto;
 }
+.deployment-group-header .env-actions {
+  margin-left: auto;
+}
 .deployment-group-version {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.deployment-group-version a {
   font-weight: 600;
   color: var(--accent);
-  font-size: 0.95rem;
   text-decoration: none;
 }
-.deployment-group-version:hover {
+
+.deployment-group-version a:hover {
   text-decoration: underline;
+}
+
+.deployment-inactive {
+  opacity: 0.5;
+}
+
+.deployment-inactive .deployment-group-header {
+  font-style: italic;
 }
 
 .joke {
@@ -1267,4 +1472,98 @@ a:hover .feature-nav-badge {
 @keyframes highlight-flash {
   0%   { background: color-mix(in srgb, var(--accent) 25%, transparent); }
   100% { background: transparent; }
+}
+
+/* Environment row action menu (kebab) */
+.env-actions {
+  position: relative;
+}
+
+.env-actions-toggle {
+  list-style: none;
+  cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  color: var(--text-muted);
+  transition: background 0.1s, color 0.1s;
+}
+
+.env-actions-toggle::-webkit-details-marker {
+  display: none;
+}
+
+.env-actions-toggle:hover {
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+}
+
+.env-actions-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 10;
+  margin: 0;
+  padding: 0.25rem 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  background: var(--bg-elevated);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  min-width: 10rem;
+}
+
+.env-actions-menu a,
+.env-actions-menu button {
+  display: block;
+  width: 100%;
+  padding: 0.4rem 0.75rem;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.env-actions-menu a:hover,
+.env-actions-menu button:hover {
+  background: var(--bg-surface-hover);
+}
+
+.env-actions-danger {
+  color: var(--status-error, #e55) !important;
+}
+
+.env-logs-link {
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.env-logs-link:hover {
+  color: var(--text-primary);
+}
+
+.env-action-form {
+  display: inline;
+}
+
+.env-action-icon {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0.1rem 0.3rem;
+  border-radius: 4px;
+  color: var(--text-muted);
+  transition: background 0.1s, color 0.1s;
+}
+
+.env-action-icon:hover {
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
 }

@@ -33,3 +33,14 @@ ORDER BY
 	created_at DESC
 LIMIT @page_size;
 
+-- name: AuditRecent :many
+SELECT
+	*
+FROM
+	audits
+WHERE
+	actor != '_seed'
+ORDER BY
+	created_at DESC
+LIMIT @page_size;
+

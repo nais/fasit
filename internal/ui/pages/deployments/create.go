@@ -32,6 +32,20 @@ func CreateHandler() http.HandlerFunc {
 			}
 			target[k] = v
 		}
+		if raw := strings.TrimSpace(r.FormValue("target_labels_raw")); raw != "" {
+			for _, line := range strings.Split(raw, "\n") {
+				line = strings.TrimSpace(line)
+				if line == "" {
+					continue
+				}
+				k, v, ok := strings.Cut(line, "=")
+				if !ok || k == "" {
+					http.Error(w, "invalid target label: "+line, http.StatusBadRequest)
+					return
+				}
+				target[strings.TrimSpace(k)] = strings.TrimSpace(v)
+			}
+		}
 
 		_, err := deployment.CreateDeployment(r.Context(), deployment.Request{
 			Chart:       chart,

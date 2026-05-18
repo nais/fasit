@@ -164,3 +164,11 @@ func EntriesForEnvironment(ctx context.Context, id uuid.UUID, featureName string
 func AuditDeleteHelmInstall(ctx context.Context, envID uuid.UUID, name string) {
 	CreateAudit(ctx, "delete helm install "+name, "environments", envID.String())
 }
+
+func RecentAudits(ctx context.Context, limit int32) ([]*model.AuditLog, error) {
+	rows, err := querier(ctx).AuditRecent(ctx, limit)
+	if err != nil {
+		return nil, err
+	}
+	return auditLogsFromSQL(rows), nil
+}

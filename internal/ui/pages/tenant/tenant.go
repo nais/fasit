@@ -70,7 +70,7 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 
 		renderPage(w, r, layout.Props{
 			Title:       tenant.Name,
-			CurrentPage: components.PageTenants,
+			CurrentPage: components.PageEnvironments,
 			Content:     page(breadcrumbs, data),
 		})
 	}

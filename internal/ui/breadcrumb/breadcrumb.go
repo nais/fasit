@@ -13,7 +13,7 @@ func Feature(name string) Crumb {
 }
 
 func Features() Crumb {
-	return Crumb{Label: "Features", URL: "/features"}
+	return Crumb{Label: "Features", URL: "/"}
 }
 
 func TenantWithSwitcher(name string, allTenants []view.TenantNav) Crumb {
@@ -52,6 +52,10 @@ func Rollout(featureName, version string) Crumb {
 	return Crumb{Label: featureName + " " + version, URL: "/rollouts/" + featureName + "/" + version}
 }
 
-func Deployment(id, featureName, version string) Crumb {
-	return Crumb{Label: featureName + " " + version, URL: "/deployments/" + id}
+func Deployment(id, featureName, target string) Crumb {
+	label := featureName
+	if target != "" {
+		label += " — " + target
+	}
+	return Crumb{Label: label, URL: "/deployments/" + id}
 }

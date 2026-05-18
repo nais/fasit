@@ -27,6 +27,7 @@ type DeploymentEnvStatus struct {
 	StatusText          string
 	DeploymentID        string
 	DeploymentVersion   string
+	DeploymentActive    bool
 	ChartDescription    string
 	ReleaseVersion      string
 	TargetLabels        map[string]string
@@ -40,6 +41,7 @@ type deploymentGroup struct {
 	DeploymentID string
 	Version      string
 	Labels       map[string]string
+	Active       bool
 	Environments []DeploymentEnvStatus
 }
 
@@ -71,6 +73,7 @@ func groupByDeployment(envs []DeploymentEnvStatus) []deploymentGroup {
 				DeploymentID: env.DeploymentID,
 				Version:      env.DeploymentVersion,
 				Labels:       env.TargetLabels,
+				Active:       env.DeploymentActive,
 			}
 			order = append(order, env.DeploymentID)
 		}
@@ -92,6 +95,12 @@ func groupByDeployment(envs []DeploymentEnvStatus) []deploymentGroup {
 		})
 		result = append(result, group)
 	}
+	sort.SliceStable(result, func(i, j int) bool {
+		if result[i].Active != result[j].Active {
+			return result[i].Active
+		}
+		return false
+	})
 	return result
 }
 
@@ -100,25 +109,34 @@ func deploymentStatusTable(groups []deploymentGroup, featureName, chart string) 
 	for _, group := range groups {
 		popoverID := "set-version-" + group.DeploymentID
 		headerChildren := []g.Node{}
+		headerChildren = append(headerChildren, labelPills(group.Labels))
 		if group.Version != "" {
 			headerChildren = append(headerChildren,
-				h.A(h.Href("/deployments/"+group.DeploymentID), h.Class("deployment-group-version"), h.Title("View deployment"), g.Text(group.Version)),
+				h.Span(h.Class("deployment-group-version"),
+					g.Text("version: "),
+					h.A(h.Href("/deployments/"+group.DeploymentID), h.Title("View deployment"), g.Text(group.Version)),
+				),
 			)
 		}
-		headerChildren = append(headerChildren, labelPills(group.Labels))
 		headerChildren = append(headerChildren,
-			h.Button(h.Type("button"), h.Class("btn-small set-version-btn"), g.Attr("popovertarget", popoverID), g.Text("Set version")),
+			deploymentActionMenu(group.DeploymentID, featureName, popoverID, group.Active),
 			setVersionPopover(popoverID, featureName, chart, group.Labels),
 		)
+		rowClass := "deployment-group-row"
+		if !group.Active {
+			rowClass = "deployment-group-row deployment-inactive"
+		}
 		rows := []g.Node{
-			h.Tr(h.Class("deployment-group-row"), h.ID("deployment-"+group.DeploymentID),
+			h.Tr(h.Class(rowClass), h.ID("deployment-"+group.DeploymentID),
 				h.Td(g.Attr("colspan", "6"),
 					h.Div(h.Class("deployment-group-header"), g.Group(headerChildren)),
 				),
 			),
 		}
-		for _, env := range group.Environments {
-			rows = append(rows, envRow(env, featureName))
+		if group.Active {
+			for _, env := range group.Environments {
+				rows = append(rows, envRow(env, featureName))
+			}
 		}
 		bodies = append(bodies, h.TBody(g.Group(rows)))
 	}
@@ -165,7 +183,12 @@ func envRow(env DeploymentEnvStatus, featureName string) g.Node {
 		td(statusCell...),
 		td(h.Title(view.FormatTime(env.LastModified)), g.Text(view.RelativeTime(env.LastModified))),
 		lastDeployedCell(env.LastDeployed, rowTip),
-		td(h.A(h.Href(logsHref), g.Attr("title", "View logs"), g.Text("📋"))),
+		td(
+			h.Form(h.Method("POST"), h.Action("/reconcile"), h.Class("env-action-form"),
+				h.Button(h.Type("submit"), h.Class("env-action-icon"), g.Attr("title", "Trigger reconcile"), g.Text("\u21bb")),
+			),
+			h.A(h.Href(logsHref), h.Class("env-logs-link"), g.Attr("title", "View logs"), g.Text("\U0001fab5 logs")),
+		),
 	}
 	return h.Tr(g.Group(append(rowAttrs, cells...)))
 }
@@ -333,6 +356,7 @@ func featureDeploymentEnvStatuses(ctx context.Context, repo database.Repo, featu
 				Enabled:           !disabled,
 				DeploymentID:      dep.ID.String(),
 				DeploymentVersion: dep.Feature.Version,
+				DeploymentActive:  dep.Active,
 				ChartDescription:  dep.Feature.Description,
 				TargetLabels:      dep.TargetLabels,
 			}
@@ -411,4 +435,27 @@ func targetMatchesLabels(target, envLabels map[string]string) bool {
 		}
 	}
 	return true
+}
+
+func deploymentActionMenu(deploymentID, featureName, setVersionPopoverID string, active bool) g.Node {
+	var toggleAction g.Node
+	if active {
+		toggleAction = h.Form(h.Method("POST"), h.Action("/deployments/"+deploymentID+"/deactivate"),
+			h.Input(h.Type("hidden"), h.Name("redirect"), h.Value("/features/"+featureName)),
+			h.Button(h.Type("submit"), h.Class("env-actions-danger"), g.Text("Stop deploying")),
+		)
+	} else {
+		toggleAction = h.Form(h.Method("POST"), h.Action("/deployments/"+deploymentID+"/activate"),
+			h.Input(h.Type("hidden"), h.Name("redirect"), h.Value("/features/"+featureName)),
+			h.Button(h.Type("submit"), g.Text("Resume deploying")),
+		)
+	}
+
+	return h.Details(h.Class("env-actions"),
+		h.Summary(h.Class("env-actions-toggle"), g.Attr("title", "Actions"), g.Text("⋮")),
+		h.Div(h.Class("env-actions-menu"),
+			h.Button(h.Type("button"), g.Attr("popovertarget", setVersionPopoverID), g.Text("Set version")),
+			toggleAction,
+		),
+	)
 }

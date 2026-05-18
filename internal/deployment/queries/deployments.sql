@@ -35,6 +35,15 @@ ORDER BY
 	d.created DESC;
 
 -- name: CreateDeployment :one
+WITH deactivated AS (
+	UPDATE
+		deployments
+	SET
+		active = FALSE
+	WHERE
+		feature_name = @feature_name
+		AND target = @target
+		AND active = TRUE)
 INSERT INTO deployments(
 	feature_name,
 	version,
@@ -76,7 +85,8 @@ FROM
 	JOIN feature_data fd ON d.feature_name = fd.name
 		AND d.version = fd.version
 WHERE
-	NOT EXISTS (
+	d.active = TRUE
+	AND NOT EXISTS (
 		SELECT
 			1
 		FROM
@@ -193,4 +203,41 @@ FROM
 WHERE
 	ds.deployment_id = @deployment_id
 	AND ds.environment_id = @environment_id;
+
+-- name: DeactivateDeploymentTarget :exec
+UPDATE
+	deployments
+SET
+	active = FALSE
+WHERE
+	feature_name = @feature_name
+	AND target = @target;
+
+-- name: ActivateDeploymentTarget :exec
+UPDATE
+	deployments
+SET
+	active = TRUE
+WHERE
+	feature_name = @feature_name
+	AND target = @target;
+
+-- name: ActivateDeploymentByID :exec
+WITH target AS (
+	SELECT
+		feature_name,
+		target
+	FROM
+		deployments
+	WHERE
+		id = @id)
+UPDATE
+	deployments d
+SET
+	active =(d.id = @id)
+FROM
+	target t
+WHERE
+	d.feature_name = t.feature_name
+	AND d.target = t.target;
 

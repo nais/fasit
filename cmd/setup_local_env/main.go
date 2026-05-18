@@ -125,6 +125,8 @@ func main() {
 	// about an "unknown actor" for every feature_state we create below.
 	ctx = auth.SetEmail(ctx, "setup_local_env")
 
+	repo := database.NewRepo(dbConn, log)
+
 	// Create tenants and environments first (needed for deployment status FKs).
 	for tenantName, environments := range envs {
 		_, err := environment.CreateTenant(ctx, &model.TenantCreate{Name: tenantName})
@@ -140,7 +142,10 @@ func main() {
 		}
 
 		for env, spec := range environments {
-			lbls := spec.labels
+			lbls := make(environment.Labels, len(spec.labels)+3)
+			for k, v := range spec.labels {
+				lbls[k] = v
+			}
 			lbls["kind"] = strings.ToLower(spec.kind.String())
 			lbls["environment"] = env
 			lbls["tenant"] = tenantName
@@ -152,18 +157,17 @@ func main() {
 			})
 			if err != nil {
 				if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
-					continue
+					existing, lookupErr := repo.EnvironmentGetByName(ctx, tenant.ID, env)
+					if lookupErr != nil {
+						log.Fatal(lookupErr)
+					}
+					e = existing
+				} else {
+					log.Fatal(err)
 				}
-
-				log.Fatal(err)
 			}
 
-			err = environment.SetLabels(ctx, e.ID, lbls)
-			if err != nil {
-				if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
-					continue
-				}
-
+			if err := environment.SetLabels(ctx, e.ID, lbls); err != nil {
 				log.Fatal(err)
 			}
 
@@ -193,8 +197,6 @@ func main() {
 		}
 	}
 
-	repo := database.NewRepo(dbConn, log)
-
 	envID := func(tenantName, envName string) uuid.UUID {
 		id, err := repo.EnvironmentIDByNames(ctx, tenantName, envName)
 		if err != nil {
@@ -215,8 +217,6 @@ func main() {
 	//     receives a status because no naisd is listening there)
 	tenantOnly := []model.EnvironmentKind{"tenant"}
 	managementOnly := []model.EnvironmentKind{"management"}
-	onpremOnly := []model.EnvironmentKind{"onprem"}
-	all := append(append(tenantOnly, managementOnly...), onpremOnly...)
 
 	str := &model.Config{Type: model.ConfigTypeString}
 	intCfg := &model.Config{Type: model.ConfigTypeInt}
@@ -404,7 +404,8 @@ func main() {
 	addDeployment("dependencytrack", dependencytrackDevV, environment.Labels{"kind": "tenant", "tenant": "dev-nais", "environment": "dev"}, tenantOnly)
 	addDeployment("replicator", replicatorDevV, environment.Labels{"kind": "tenant", "tenant": "dev-nais", "environment": "dev"}, tenantOnly)
 	addDeployment("unleash", unleashDevV, environment.Labels{"kind": "management", "tenant": "dev-nais"}, managementOnly)
-	addDeployment("kyverno", kyvernoV, environment.Labels{}, all)
+	addDeployment("kyverno", kyvernoV, environment.Labels{"kind": "tenant"}, tenantOnly)
+	addDeployment("kyverno", kyvernoV, environment.Labels{"kind": "management"}, managementOnly)
 
 	if _, err := seeder.Seed(ctx); err != nil {
 		log.Fatal(err)
@@ -611,6 +612,48 @@ func main() {
 			if err != nil {
 				log.Println(err)
 			}
+		}
+	}
+
+	// Seed diverse audit log entries with varied actors and timestamps.
+	// Uses NOW() + small offset to ensure they appear above the bulk
+	// setup_local_env entries that were just created.
+	auditEntries := []struct {
+		actor, description, objectType, objectID string
+		secondsAgo                               int
+	}{
+		{"alice@nav.no", "set config logLevel=debug", "configurations", "naiserator", 120},
+		{"bob@nav.no", "deployed naiserator 2026-05-13-183504-bcfb377", "deployments", "naiserator", 300},
+		{"alice@nav.no", "enabled unleash", "feature_states", "unleash", 720},
+		{"ci@github.com", "deployed kyverno 2026-05-13-183504-42eaf411", "deployments", "kyverno", 1080},
+		{"carol@ssb.no", "set config replicas=3", "configurations", "replicator", 1500},
+		{"bob@nav.no", "disabled dependencytrack", "feature_states", "dependencytrack", 3600},
+		{"ci@github.com", "deployed replicator 2026-05-13-183504-3935d89", "deployments", "replicator", 7200},
+		{"alice@nav.no", "set config apiKey=****", "configurations", "console", 10800},
+		{"carol@ssb.no", "deactivated deployment target", "deployments", "dependencytrack", 18000},
+		{"bob@nav.no", "deployed console 2026-05-13-183504-a571ff4", "deployments", "console", 28800},
+	}
+	// Delete previous seed audit entries, then insert fresh ones.
+	// Delete bulk setup_local_env audit entries that were created as
+	// side effects of feature-state toggles etc., so the curated
+	// entries below are the most recent activity visible on the landing page.
+	// Hide bulk setup_local_env audit entries by marking them, so the
+	// curated entries below are the most recent visible activity.
+	if _, err := dbConn.Exec(ctx, `UPDATE audits SET actor = '_seed' WHERE actor = 'setup_local_env'`); err != nil {
+		log.WithError(err).Error("failed to hide setup_local_env audit entries")
+	}
+	// Also clean up duplicate curated entries from previous runs.
+	for _, a := range auditEntries {
+		if _, err := dbConn.Exec(ctx, `UPDATE audits SET actor = '_seed' WHERE actor = $1 AND description = $2`, a.actor, a.description); err != nil {
+			log.WithError(err).Errorf("hide previous seed audit: %s", a.description)
+		}
+	}
+
+	for _, a := range auditEntries {
+		_, err := dbConn.Exec(ctx, `INSERT INTO audits(actor, description, object_type, object_id, created_at) VALUES ($1, $2, $3, $4, NOW() - make_interval(secs => $5::double precision))`,
+			a.actor, a.description, a.objectType, a.objectID, a.secondsAgo)
+		if err != nil {
+			log.WithError(err).Errorf("seed audit entry: %s", a.description)
 		}
 	}
 }

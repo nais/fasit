@@ -48,7 +48,7 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 
 		renderPage(w, r, layout.Props{
 			Title:       "Rollouts",
-			CurrentPage: components.PageRollouts,
+			CurrentPage: components.PageFeatures,
 			Content:     page(items),
 		})
 	}
