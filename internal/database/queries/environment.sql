@@ -76,15 +76,6 @@ WHERE
 RETURNING
 	*;
 
--- name: EnvironmentCI :one
-SELECT
-	*
-FROM
-	environments
-WHERE
-	ci = TRUE
-	AND kind = @kind;
-
 -- name: EnvironmentSetReconcile :one
 UPDATE
 	environments

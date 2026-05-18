@@ -13,7 +13,6 @@ import (
 
 type EnvironmentRepo interface {
 	EnvironmentByNames(ctx context.Context, tenantName, environmentName string) (*model.Environment, error)
-	EnvironmentCI(ctx context.Context, kind model.EnvironmentKind) (*model.Environment, error)
 	EnvironmentCreate(ctx context.Context, t *model.EnvironmentCreate) (*model.Environment, error)
 	EnvironmentGet(ctx context.Context, id uuid.UUID) (*model.Environment, error)
 	EnvironmentGetByName(ctx context.Context, tenantID uuid.UUID, name string) (*model.Environment, error)
@@ -117,14 +116,6 @@ func (r *repo) EnvironmentIDByNames(ctx context.Context, tenantName, environment
 		TenantName:      tenantName,
 	}
 	return r.querier.EnvironmentIDByNames(ctx, params)
-}
-
-func (r *repo) EnvironmentCI(ctx context.Context, kind model.EnvironmentKind) (*model.Environment, error) {
-	res, err := r.querier.EnvironmentCI(ctx, types.EnvironmentKind(kind))
-	if err != nil {
-		return nil, err
-	}
-	return environmentFromSQL(res), nil
 }
 
 func (r *repo) EnvironmentSetReconcile(ctx context.Context, environmentID uuid.UUID, reconcile bool) (*model.Environment, error) {
