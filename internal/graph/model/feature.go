@@ -7,7 +7,6 @@ import (
 	"slices"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/nais/fasit/internal/feature/featureutil"
 	"github.com/nais/fasit/internal/helm"
 	"gopkg.in/yaml.v3"
@@ -30,12 +29,6 @@ type Feature struct {
 
 	// SpecVersion is used to determine which version of the feature spec is used.
 	SpecVersion string `json:"specVersion"`
-
-	// for graphql
-	GraphVars struct {
-		EnvironmentID uuid.UUID
-		RolloutID     uuid.UUID
-	} `json:"-" yaml:"-"`
 }
 
 type FeatureYAML struct {
