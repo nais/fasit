@@ -75,7 +75,8 @@ func TestReceiver_ReleaseStatus(t *testing.T) {
 
 func TestReceiver_UnknownType(t *testing.T) {
 	rec := NewReceiver(
-		&fakeClient{messages: []message.Status{{Type: 99, Data: []byte(`{}`)}},
+		&fakeClient{
+			messages: []message.Status{{Type: 99, Data: []byte(`{}`)}},
 		},
 		&fakeStore{},
 		logrus.NewEntry(logrus.New()),
@@ -109,27 +110,35 @@ type fakeStore struct {
 func (f *fakeStore) DeployInstructionsLatestForFeature(context.Context, uuid.UUID, string) (*model.DeployInstruction, error) {
 	panic("not called")
 }
+
 func (f *fakeStore) DeployInstructionUpdateStatus(context.Context, uuid.UUID, model.RolloutStatus) error {
 	panic("not called")
 }
+
 func (f *fakeStore) EnvironmentByNames(context.Context, string, string) (*model.Environment, error) {
 	panic("not called")
 }
+
 func (f *fakeStore) EnvironmentCI(context.Context, model.EnvironmentKind) (*model.Environment, error) {
 	panic("not called")
 }
+
 func (f *fakeStore) EnvironmentCreate(context.Context, *model.EnvironmentCreate) (*model.Environment, error) {
 	panic("not called")
 }
+
 func (f *fakeStore) EnvironmentGet(context.Context, uuid.UUID) (*model.Environment, error) {
 	panic("not called")
 }
+
 func (f *fakeStore) EnvironmentIDByNames(ctx context.Context, t, e string) (uuid.UUID, error) {
 	return f.environmentIDByNamesFunc(ctx, t, e)
 }
+
 func (f *fakeStore) ReleaseStatusCreateOrUpdate(context.Context, uuid.UUID, *message.Release) error {
 	panic("not called")
 }
+
 func (f *fakeStore) TxFunc(ctx context.Context, fn database.TXFunc) error {
 	return f.txFuncFunc(ctx, fn)
 }
