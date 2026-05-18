@@ -55,15 +55,6 @@ const (
 	DeploymentStatusStateDisabled DeploymentStatusState = "DISABLED"
 )
 
-var AllDeploymentStatusState = []DeploymentStatusState{
-	DeploymentStatusStateUnknown,
-	DeploymentStatusStateCreated,
-	DeploymentStatusStatePending,
-	DeploymentStatusStateDeployed,
-	DeploymentStatusStateFailed,
-	DeploymentStatusStateDisabled,
-}
-
 func (e DeploymentStatusState) IsValid() bool {
 	switch e {
 	case DeploymentStatusStateUnknown, DeploymentStatusStateCreated, DeploymentStatusStatePending, DeploymentStatusStateDeployed, DeploymentStatusStateFailed, DeploymentStatusStateDisabled:
