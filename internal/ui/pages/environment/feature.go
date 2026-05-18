@@ -266,7 +266,7 @@ func featurePageContent(page *FeaturePage) g.Node {
 	}
 
 	return h.Div(h.Class("container"),
-		components.EnvironmentSidebar(page.Tenant.Name, page.Environment.Name, page.Feature.Name, page.AllFeatures, page.EnabledFeatures),
+		components.EnvironmentSidebar(page.Tenant.Name, page.Environment.Name, page.Feature.Name, page.AllFeatures),
 		h.Main(h.Class("main-content"),
 			components.Breadcrumbs(page.Breadcrumbs),
 			h.Div(h.Class("card"),
@@ -798,10 +798,7 @@ func valueDisplay(item FeatureConfigItem) g.Node {
 }
 
 func readonlyValueTextarea(value string) g.Node {
-	rows := min(strings.Count(value, "\n")+1, 10)
-	if rows < 2 {
-		rows = 2
-	}
+	rows := max(min(strings.Count(value, "\n")+1, 10), 2)
 	return h.Textarea(
 		g.Attr("readonly", ""),
 		h.Class("value-readonly"),
@@ -880,10 +877,7 @@ func stringEditor(item FeatureConfigItem, currentValue string) g.Node {
 			isJSON = true
 		}
 	}
-	rows := max(strings.Count(display, "\n")+1, 4)
-	if rows > 20 {
-		rows = 20
-	}
+	rows := min(max(strings.Count(display, "\n")+1, 4), 20)
 	initialMode := "raw"
 	if isJSON {
 		initialMode = "json"

@@ -13,7 +13,7 @@ const (
 	EnvironmentKindLegacy     EnvironmentKind = "legacy"
 )
 
-func (e *EnvironmentKind) Scan(src interface{}) error {
+func (e *EnvironmentKind) Scan(src any) error {
 	switch s := src.(type) {
 	case []byte:
 		*e = EnvironmentKind(s)
