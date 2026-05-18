@@ -33,7 +33,6 @@ type Querier interface {
 	FeatureStatesGet(ctx context.Context, environmentID uuid.UUID) ([]FeatureStatesGetRow, error)
 	FeatureVersionUpdate(ctx context.Context, arg FeatureVersionUpdateParams) error
 	Features(ctx context.Context) ([]FeaturesRow, error)
-	FeaturesForKind(ctx context.Context, environmentKind string) ([]FeaturesForKindRow, error)
 	GetEnvironmentFeature(ctx context.Context, arg GetEnvironmentFeatureParams) (GetEnvironmentFeatureRow, error)
 	// Returns TRUE when at least one deployment exists whose target labels
 	// are contained by the environment's labels (matching the predicate used
