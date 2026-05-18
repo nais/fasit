@@ -13,11 +13,11 @@ import (
 
 func TestFeatureStatesEnable(t *testing.T) {
 	tests := []struct {
-		name       string
-		existing   *featuresql.FeatureState // nil = not found
-		wantWrite  bool
-		wantAudit  string // empty = no audit expected
-		wantNoOp   bool
+		name      string
+		existing  *featuresql.FeatureState // nil = not found
+		wantWrite bool
+		wantAudit string // empty = no audit expected
+		wantNoOp  bool
 	}{
 		{
 			name:      "Enable(new feature): creates enabled state",
