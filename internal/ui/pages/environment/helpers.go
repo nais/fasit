@@ -43,7 +43,6 @@ type FeaturePage struct {
 	Environment      *Environment
 	Feature          *FeatureDetail
 	AllFeatures      []view.FeatureNav
-	EnabledFeatures  []view.FeatureNav
 	HelmValues       string
 	HelmValuesError  string
 	Deployments      []EnvDeploymentItem
@@ -103,44 +102,40 @@ func toEnvironmentNavs(environments []*model.Environment) []view.EnvironmentNav 
 	return ret
 }
 
-func featureNavs(ctx context.Context, env *model.Environment) ([]view.FeatureNav, []view.FeatureNav, error) {
+func featureNavs(ctx context.Context, env *model.Environment) ([]view.FeatureNav, error) {
 	deploymentFeatures, err := deployment.ListEnvironmentFeatures(ctx, env.ID)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	disabled, err := featurepkg.FeaturesDisabledIn(ctx, env.ID)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	seen := make(map[string]bool, len(deploymentFeatures))
-	var names []string
+	navs := make(map[string]view.FeatureNav, len(deploymentFeatures))
 	for _, f := range deploymentFeatures {
-		if seen[f.FeatureName] {
-			continue
+		nav, ok := navs[f.FeatureName]
+		if !ok {
+			nav = view.FeatureNav{Name: f.FeatureName}
 		}
-		seen[f.FeatureName] = true
-		names = append(names, f.FeatureName)
-	}
-
-	allFeatures := make([]view.FeatureNav, 0, len(names))
-	enabledFeatures := make([]view.FeatureNav, 0, len(names))
-	for _, name := range names {
-		nav := view.FeatureNav{Name: name}
-		if _, ok := disabled[name]; !ok {
+		if _, ok := disabled[f.FeatureName]; !ok {
 			nav.Enabled = true
 		}
-		allFeatures = append(allFeatures, nav)
-		enabledFeatures = append(enabledFeatures, nav)
+		navs[f.FeatureName] = nav
 	}
-	sort.Slice(allFeatures, func(i, j int) bool {
-		return allFeatures[i].Name < allFeatures[j].Name
-	})
-	sort.Slice(enabledFeatures, func(i, j int) bool {
-		return enabledFeatures[i].Name < enabledFeatures[j].Name
-	})
-	return allFeatures, enabledFeatures, nil
+
+	names := make([]string, 0, len(navs))
+	for name := range navs {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+
+	allFeatures := make([]view.FeatureNav, 0, len(names))
+	for _, name := range names {
+		allFeatures = append(allFeatures, navs[name])
+	}
+	return allFeatures, nil
 }
 
 func getEnvironmentMetadata(ctx context.Context, repo database.Repo, env *model.Environment) []MetadataItem {
@@ -274,7 +269,7 @@ func loadFeaturePageData(ctx context.Context, repo database.Repo, tenantSlug, en
 		return nil, err
 	}
 
-	allFeatures, enabledFeatures, err := featureNavs(ctx, env)
+	allFeatures, err := featureNavs(ctx, env)
 	if err != nil {
 		return nil, err
 	}
@@ -298,13 +293,12 @@ func loadFeaturePageData(ctx context.Context, repo database.Repo, tenantSlug, en
 			breadcrumb.EnvironmentWithSwitcher(tenant.Name, env.Name, toEnvironmentNavs(tenantEnvs)),
 			breadcrumb.EnvironmentFeature(tenant.Name, env.Name, featureName),
 		},
-		Tenant:          tenant,
-		TenantSlug:      tenantSlug,
-		Environment:     &Environment{Environment: env, Metadata: getEnvironmentMetadata(ctx, repo, env)},
-		Feature:         &FeatureDetail{Feature: feat, Enabled: !disabled},
-		AllFeatures:     allFeatures,
-		EnabledFeatures: enabledFeatures,
-		ActiveTab:       activeTab,
+		Tenant:      tenant,
+		TenantSlug:  tenantSlug,
+		Environment: &Environment{Environment: env, Metadata: getEnvironmentMetadata(ctx, repo, env)},
+		Feature:     &FeatureDetail{Feature: feat, Enabled: !disabled},
+		AllFeatures: allFeatures,
+		ActiveTab:   activeTab,
 	}
 
 	page.Feature.ConfigItems, err = loadFeatureConfigItems(ctx, feat, env.ID)

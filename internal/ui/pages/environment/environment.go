@@ -46,7 +46,7 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 			return
 		}
 
-		allFeatures, enabledFeatures, err := featureNavs(r.Context(), env)
+		allFeatures, err := featureNavs(r.Context(), env)
 		if err != nil {
 			http.Error(w, "Failed to load environment: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -67,7 +67,7 @@ func Handler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 			Content: page([]breadcrumb.Crumb{
 				breadcrumb.TenantWithSwitcher(tenant.Name, toTenantNavs(allTenants)),
 				breadcrumb.EnvironmentWithSwitcher(tenant.Name, env.Name, toEnvironmentNavs(tenantEnvs)),
-			}, tenant, environment, allFeatures, enabledFeatures),
+			}, tenant, environment, allFeatures),
 		})
 	}
 }
@@ -96,9 +96,9 @@ func plural(n int) string {
 	return "s"
 }
 
-func page(breadcrumbs []breadcrumb.Crumb, tenant *model.Tenant, environment *Environment, allFeatures, enabledFeatures []view.FeatureNav) g.Node {
+func page(breadcrumbs []breadcrumb.Crumb, tenant *model.Tenant, environment *Environment, allFeatures []view.FeatureNav) g.Node {
 	return h.Div(h.Class("container"),
-		components.EnvironmentSidebar(tenant.Name, environment.Name, "", allFeatures, enabledFeatures),
+		components.EnvironmentSidebar(tenant.Name, environment.Name, "", allFeatures),
 		h.Main(h.Class("main-content"),
 			components.Breadcrumbs(breadcrumbs),
 			h.Div(h.Class("card"),
@@ -108,7 +108,7 @@ func page(breadcrumbs []breadcrumb.Crumb, tenant *model.Tenant, environment *Env
 						g.Text(" "),
 						g.Text(tenant.Name+" / "+environment.Name),
 					),
-					h.P(h.Class("text-muted"), g.Textf("%d features enabled", countEnabled(enabledFeatures))),
+					h.P(h.Class("text-muted"), g.Textf("%d features enabled", countEnabled(allFeatures))),
 					h.H2(g.Text("Environment Metadata")),
 					h.Table(h.Class("table"),
 						h.TBody(g.Group(g.Map(environment.Metadata, func(item MetadataItem) g.Node {

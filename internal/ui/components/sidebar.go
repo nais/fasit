@@ -64,36 +64,30 @@ func StatusCountsBadge(failed, pending int) g.Node {
 	return g.Group(badges)
 }
 
-func EnvironmentSidebar(tenantName, environmentName, currentFeatureName string, allFeatures, enabledFeatures []view.FeatureNav) g.Node {
-	enabledMap := make(map[string]bool, len(enabledFeatures))
-	for _, feature := range enabledFeatures {
-		enabledMap[feature.Name] = feature.Enabled
-	}
-
+func EnvironmentSidebar(tenantName, environmentName, currentFeatureName string, allFeatures []view.FeatureNav) g.Node {
 	return h.Aside(h.Class("sidebar"),
 		sidebarFilter(),
 		h.Div(h.Class("nav"),
 			h.Ul(g.Group(g.Map(allFeatures, func(feature view.FeatureNav) g.Node {
-				syncEnabled, inEnv := enabledMap[feature.Name]
 				attrs := []g.Node{
 					h.Href("/tenants/" + tenantName + "/envs/" + environmentName + "/" + feature.Name),
 				}
 				if currentFeatureName != "" && feature.Name == currentFeatureName {
 					attrs = append(attrs, h.Class("active"))
 				}
-				if !inEnv {
+				if !feature.Enabled {
 					attrs = append(attrs, h.Style("opacity: 0.5;"))
 				}
 
-				status := h.Span(h.Style("color: gray"), g.Text("○"))
+				var status g.Node
 				switch {
 				case feature.FailedCount > 0:
 					status = h.Span(h.Class("status-error"), h.Title("failed"), g.Text("✗"))
 				case feature.PendingCount > 0:
 					status = h.Span(h.Class("status-pending"), h.Title("pending"), g.Text("⏳"))
-				case inEnv && syncEnabled:
+				case feature.Enabled:
 					status = h.Span(h.Style("color: green"), g.Text("✓"))
-				case inEnv:
+				default:
 					status = h.Span(h.Style("color: orange"), g.Text("⏸"))
 				}
 
