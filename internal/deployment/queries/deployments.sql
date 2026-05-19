@@ -69,7 +69,7 @@ WHERE
 SELECT DISTINCT ON (d.feature_name, d.target)
 	sqlc.embed(d),
 	sqlc.embed(fd),
-	(df.feature IS NOT NULL)::bool AS disabled
+(df.feature IS NOT NULL)::BOOL AS disabled
 FROM
 	deployments d
 	JOIN environments e ON e.id = @environment_id
@@ -78,10 +78,10 @@ FROM
 		AND d.version = fd.version
 	LEFT JOIN disabled_features df ON df.environment_id = e.id
 		AND df.feature = d.feature_name
-ORDER BY
-	d.feature_name,
-	d.target,
-	d.created DESC;
+	ORDER BY
+		d.feature_name,
+		d.target,
+		d.created DESC;
 
 -- name: DeployInstructionsGetDeployedFeatures :many
 SELECT DISTINCT ON (feature_name)
@@ -204,3 +204,4 @@ ORDER BY
 	d.feature_name,
 	d.target,
 	d.created DESC;
+

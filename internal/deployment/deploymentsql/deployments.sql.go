@@ -434,7 +434,7 @@ const listDeploymentsForEnvironment = `-- name: ListDeploymentsForEnvironment :m
 SELECT DISTINCT ON (d.feature_name, d.target)
 	d.id, d.feature_name, d.version, d.target, d.created, d.gh_ref, d.description,
 	fd.name, fd.version, fd.chart, fd.description, fd.source, fd.kinds, fd.dependencies, fd.values, fd.default_values, fd.timeout, fd.tpl_details,
-	(df.feature IS NOT NULL)::bool AS disabled
+(df.feature IS NOT NULL)::BOOL AS disabled
 FROM
 	deployments d
 	JOIN environments e ON e.id = $1
@@ -443,10 +443,10 @@ FROM
 		AND d.version = fd.version
 	LEFT JOIN disabled_features df ON df.environment_id = e.id
 		AND df.feature = d.feature_name
-ORDER BY
-	d.feature_name,
-	d.target,
-	d.created DESC
+	ORDER BY
+		d.feature_name,
+		d.target,
+		d.created DESC
 `
 
 type ListDeploymentsForEnvironmentRow struct {
