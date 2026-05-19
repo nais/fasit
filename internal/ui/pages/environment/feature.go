@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"sort"
@@ -129,7 +130,11 @@ func ConfigOverrideSubmitHandler() http.HandlerFunc {
 
 		feat, err := deployment.FeatureForEnvironment(r.Context(), env.ID, featureName)
 		if err != nil {
-			http.Error(w, "Failed to get feature: "+err.Error(), http.StatusInternalServerError)
+			status := http.StatusInternalServerError
+			if errors.Is(err, deployment.ErrFeatureNotFound) {
+				status = http.StatusNotFound
+			}
+			http.Error(w, "Failed to get feature: "+err.Error(), status)
 			return
 		}
 		secret := false
@@ -174,7 +179,11 @@ func ToggleFeatureStateHandler(repo database.Repo) http.HandlerFunc {
 		}
 		feature, err := deployment.FeatureForEnvironment(r.Context(), env.ID, chi.URLParam(r, "feature"))
 		if err != nil {
-			http.Error(w, "Failed to get feature: "+err.Error(), http.StatusInternalServerError)
+			status := http.StatusInternalServerError
+			if errors.Is(err, deployment.ErrFeatureNotFound) {
+				status = http.StatusNotFound
+			}
+			http.Error(w, "Failed to get feature: "+err.Error(), status)
 			return
 		}
 		enabled := r.FormValue("enabled") == "true"
@@ -223,7 +232,11 @@ func RedeployHandler() http.HandlerFunc {
 		}
 		feature, err := deployment.FeatureForEnvironment(r.Context(), env.ID, chi.URLParam(r, "feature"))
 		if err != nil {
-			http.Error(w, "Failed to get feature: "+err.Error(), http.StatusInternalServerError)
+			status := http.StatusInternalServerError
+			if errors.Is(err, deployment.ErrFeatureNotFound) {
+				status = http.StatusNotFound
+			}
+			http.Error(w, "Failed to get feature: "+err.Error(), status)
 			return
 		}
 		_, disabled, err := featurepkg.FeatureDisabledAt(r.Context(), env.ID, feature.Name)

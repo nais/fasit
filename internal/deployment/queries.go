@@ -57,7 +57,6 @@ func deploymentsFromRows(rows []deploymentsql.ListDeploymentsForEnvironmentRow) 
 		if err != nil {
 			return nil, fmt.Errorf("make deployment: %w", err)
 		}
-		dep.TplDetails = row.FeatureDatum.TplDetails
 		dep.Disabled = row.Disabled
 		deps[i] = dep
 	}
@@ -261,6 +260,8 @@ func ListEnvironmentFeatures(ctx context.Context, environmentID uuid.UUID) ([]En
 	return features, nil
 }
 
+var ErrFeatureNotFound = fmt.Errorf("feature not found")
+
 func FeatureForEnvironment(ctx context.Context, envID uuid.UUID, featureName string) (*model.Feature, error) {
 	rows, err := querier(ctx).ListDeploymentsForEnvironmentFeature(ctx, deploymentsql.ListDeploymentsForEnvironmentFeatureParams{
 		EnvironmentID: envID,
@@ -270,7 +271,7 @@ func FeatureForEnvironment(ctx context.Context, envID uuid.UUID, featureName str
 		return nil, fmt.Errorf("query deployments for feature %q: %w", featureName, err)
 	}
 	if len(rows) == 0 {
-		return nil, fmt.Errorf("no deployment found for feature %q in environment", featureName)
+		return nil, fmt.Errorf("%w: %q in environment", ErrFeatureNotFound, featureName)
 	}
 	deps := make([]*Deployment, len(rows))
 	for i, row := range rows {
@@ -282,7 +283,7 @@ func FeatureForEnvironment(ctx context.Context, envID uuid.UUID, featureName str
 	}
 	winner := filterDeployments(deps)
 	if len(winner) == 0 {
-		return nil, fmt.Errorf("no deployment found for feature %q in environment after filtering", featureName)
+		return nil, fmt.Errorf("%w: %q in environment after filtering", ErrFeatureNotFound, featureName)
 	}
 	return winner[0].Feature, nil
 }

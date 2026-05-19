@@ -1,7 +1,6 @@
 package features
 
 import (
-	"context"
 	"math/rand/v2"
 	"net/http"
 	"slices"
@@ -26,13 +25,9 @@ type RenderPage func(http.ResponseWriter, *http.Request, layout.Props)
 type DetailPage struct {
 	Breadcrumbs    []breadcrumb.Crumb
 	Features       []view.FeatureNav
-	CurrentFeature *Feature
+	CurrentFeature *model.Feature
 	DeploymentEnvs []DeploymentEnvStatus
 	Prefs          ViewPrefs
-}
-
-type Feature struct {
-	*model.Feature
 }
 
 func ListHandler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
@@ -42,8 +37,7 @@ func ListHandler(renderPage RenderPage, repo database.Repo) http.HandlerFunc {
 			http.Error(w, "Failed to load features", http.StatusInternalServerError)
 			return
 		}
-		failed, pending := featureStatusCounts(r.Context(), repo)
-		renderPage(w, r, layout.Props{Title: "Features", CurrentPage: components.PageFeatures, Content: listPage(toFeatureNavs(features, failed, pending))})
+		renderPage(w, r, layout.Props{Title: "Features", CurrentPage: components.PageFeatures, Content: listPage(toFeatureNavs(features))})
 	}
 }
 
@@ -105,30 +99,23 @@ func loadFeatureData(r *http.Request, repo database.Repo) (*DetailPage, error) {
 	if err != nil {
 		return nil, err
 	}
-	failed, pending := featureStatusCounts(r.Context(), repo)
 	featureCrumb := breadcrumb.Feature(featureName)
 	featureCrumb.Subtitle = feature.Description
 	featureCrumb.SourceURL = feature.Source
 	data := &DetailPage{
 		Breadcrumbs:    []breadcrumb.Crumb{breadcrumb.Features(), featureCrumb},
-		Features:       toFeatureNavs(features, failed, pending),
-		CurrentFeature: &Feature{Feature: feature},
+		Features:       toFeatureNavs(features),
+		CurrentFeature: feature,
 	}
 	loadDeploymentData(r.Context(), repo, feature, data)
 	return data, nil
 }
 
-func featureStatusCounts(_ context.Context, _ database.Repo) (failed, pending map[string]int) {
-	return map[string]int{}, map[string]int{}
-}
-
-func toFeatureNavs(names []string, failedCounts, pendingCounts map[string]int) []view.FeatureNav {
+func toFeatureNavs(names []string) []view.FeatureNav {
 	ret := make([]view.FeatureNav, 0, len(names))
 	for _, name := range names {
 		ret = append(ret, view.FeatureNav{
-			Name:         name,
-			FailedCount:  failedCounts[name],
-			PendingCount: pendingCounts[name],
+			Name: name,
 		})
 	}
 	sort.Slice(ret, func(i, j int) bool {
